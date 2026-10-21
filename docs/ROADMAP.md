@@ -241,7 +241,7 @@ Cards: [roadmap/M0-foundation.md](roadmap/M0-foundation.md#cards). 26 cards, at 
 | ID | Feature | Size | Depends on | Status |
 |---|---|---|---|---|
 | QA-01 | Build skeleton, pins, core merge and spike S5 | M | — | in_progress |
-| QA-02 | Core test kit: SimHarness, fakes and shared scenarios | M | QA-01 | in_progress |
+| QA-02 | Core test kit: SimHarness, fakes and shared scenarios | M | QA-01 | done |
 | QA-04 | GameTest harness (L3) | M | QA-01 | in_progress |
 | CORE-01 | Match container, lifecycle and region index | M | QA-02, QA-04 | in_progress |
 | CORE-02 | Driving port and the nine-phase tick pipeline | M | CORE-01 | in_progress |
@@ -257,7 +257,7 @@ Cards: [roadmap/M0-foundation.md](roadmap/M0-foundation.md#cards). 26 cards, at 
 | QA-08 | Continuous integration | M | QA-04, QA-05, D-23 | in_progress |
 | QA-10 | Developer commands and log tagging | S | QA-04 | in_progress |
 | QA-17 | Static gates, engine-surface inventory and fixture catalogue | M | QA-01 | in_progress |
-| PERF-01 | Budget matrix and enforcement | S | QA-07 | specified |
+| PERF-01 | Budget matrix and enforcement | S | QA-07 | in_progress |
 | PERF-02 | Spike S1: server cost per body | M | UNIT-01, QA-07 | specified |
 | PERF-03 | Spike S2: force-loaded arena cost | M | QA-05, QA-07 | specified |
 | PERF-04 | Spike S4: client frame time with many units (consent) | M | QA-06, UNIT-01 | specified |

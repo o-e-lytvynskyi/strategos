@@ -1,0 +1,21 @@
+# skeleton-20, the walking skeleton's 20 GameTest instances: one seed per line; append-only (M0 spec 7.10). Lines starting with # are ignored.
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19

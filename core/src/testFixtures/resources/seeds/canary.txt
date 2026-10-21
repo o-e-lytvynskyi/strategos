@@ -1,0 +1,2 @@
+# canary, the S6 determinism canary: one seed per line; append-only (M0 spec 7.10). Lines starting with # are ignored.
+7

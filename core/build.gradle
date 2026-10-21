@@ -30,3 +30,27 @@ tasks.named('test', Test) {
     useJUnitPlatform { excludeTags 'soak', 'replay' }
     timeout = java.time.Duration.ofMinutes(5)
 }
+
+// [T6b] long seeded determinism runs; part of verify and of verifySoak, not verifyFast.
+tasks.register('soak', Test) {
+    group = 'verification'
+    description = 'Seeded determinism soak: 200 seeds x 10,000 ticks.'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform { includeTags 'soak' }
+    timeout = java.time.Duration.ofMinutes(10)
+}
+
+// [T6b] QA-02.4: the test kit also loads inside GameTests, so it must never depend on JUnit or AssertJ.
+def fixtureDeps = configurations.named('testFixturesRuntimeClasspath').flatMap { it.incoming.artifacts.resolvedArtifacts }
+        .map { set -> set.collect { it.id.componentIdentifier.displayName } }
+tasks.register('checkTestFixturesDeps') {
+    group = 'verification'
+    description = 'Fails when core/testFixtures depends on JUnit or AssertJ.'
+    inputs.property('dependencies', fixtureDeps)
+    doLast {
+        def banned = fixtureDeps.get().findAll { it.startsWith('org.junit') || it.startsWith('org.assertj') }
+        if (banned) throw new GradleException("core/testFixtures must not depend on JUnit or AssertJ: ${banned}")
+    }
+}
+tasks.named('check') { dependsOn 'checkTestFixturesDeps' }

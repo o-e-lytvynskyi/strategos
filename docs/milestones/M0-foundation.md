@@ -357,6 +357,7 @@ Additions that 04 §1.5 does not name, each the smallest piece the named items n
 | 45 | §9.2 T5b: T5b brings all of §5.5, and `CommandOrderingTest` checks pending commands through `snapshot` and `restore` | `MatchCore#snapshot`, `restore` and `journal` arrive with T6a, as T6a's file list says, so T5b's `MatchCore` leaves them out and T6a adds the snapshot part of `CommandOrderingTest`. The code needed four small additions: `Hasher`'s static `start`, `mix`, `finish` and `resume`, so `StateHasher`, a `@HotPath` kernel, hashes without allocating unless commands are pending; `EntityStore#generationAt` for the hash's per-index generation; `MatchLog.forSim`, so `core.sim` never touches `LoggerFactory` (rule QA-10); and `PhaseTimers#currentPhaseNanos`, the reused array `FinalSystem` hands to `MetricsSink#onTick`. `SpawnUnitsRule` also refuses a faction the match does not seat (`INVALID_ARGUMENT`) |
 | 46 | §5.7: `MovementSystem` snaps a unit to its target when `d <= speed` | `d <= speed + 1e-6`: rounding leaves a diagonal move's last step a few ulps longer than the speed, so a 3-4-5 move took 21 steps, not the ⌈5 / 0.25⌉ = 20 the spec promises. The unit still lands exactly on the target, and the constant tolerance keeps every run identical |
 | 47 | §5.8: `JournalCodec` writes `{"v":1, start, ticks, checkpoints, liveTick, liveHash}` | It also writes `checkpointEvery` and `lastTick`, which a decoded journal needs to replay; another `"v"` fails to decode. Test journals with small limits come from a test-only factory (`KernelAccess.create`), since `MatchCore.create` uses the defaults of 20 and 72,000 ticks |
+| 48 | §5.9 (T6b): `SimHarness.run(Scenario)` builds a harness, plays the scenario on it and returns only the report | `run` is `forScenario(scenario).play(scenario)`, and both are public: `DeterminismCanaryTest` and `MatchSnapshotJsonFixtureTest` need the harness a scenario ran on, for the journal's checkpoint every 100 ticks and the snapshot at tick 500. `SimHarness.DEFAULT_SEED` names the default 42, which the seedless scenarios `out_of_bounds` and `stop_mid_walk` use; `Seeds.first` ignores `-Dstrategos.seed`, so rerunning one seed never moves the canary off its golden |
 
 ---
 
@@ -2486,6 +2487,9 @@ public final class SimHarness implements ScenarioContext {
     public ReplayResult replay();                     // ReplayDriver over core().journal()
     public List<String> invariantViolations(); public void assertInvariants();   // the last check; throws InvariantViolation (an AssertionError)
     public static ScenarioReport run(Scenario scenario);   // builds a harness from the scenario and runs it to isDone or timeout
+    public static SimHarness forScenario(Scenario scenario);   // the scenario's size and seed; run = forScenario(s).play(s)
+    public ScenarioReport play(Scenario scenario);   // setup, then step and onTick until isDone or timeout, then verify
+    public static final long DEFAULT_SEED = 42;      // a harness built without a seed; the seedless scenarios use it
 }
 public final class FakeBodies { public void accept(TickOutputs out); public @Nullable Pose pose(int handle); public int count();
     public record Pose(double x, double y, double z, float yaw, long tick) {} }
@@ -2546,7 +2550,7 @@ public final class JournalFiles { public static void write(Path file, JournalExp
 public final class Seeds {                          // tests draw seeds only from committed sets (QA-17.5)
     public static LongStream set(String name);     // core/src/testFixtures/resources/seeds/<name>.txt, one seed per line;
                                                    // -Dstrategos.seed=<n> -> that seed only
-    public static long first(String name);
+    public static long first(String name);         // the override does not apply: goldens stay fixed
 }   // M0 sets: m0-200 (200 seeds: invariants, replays, soak), skeleton-20 (0..19), isolation-50, canary (7)
 public final class Percentiles { public static long percentile(long[] samples, double q); }
 public record BudgetCheck(String name, long p50Limit, long p99Limit) { public List<String> violations(long[] samples); }
@@ -4073,7 +4077,7 @@ check and `release.yml`).
 
 ### 9.3 Progress
 
-- [x] T1 (2026-10-21) · [x] T2 (2026-10-21) · [x] T3 (2026-10-21) · [x] T18 (2026-10-21) · [x] T4a (2026-10-21) · [x] T4b (2026-10-21) · [x] T5a (2026-10-21) · [x] T5b (2026-10-21) · [x] T6a (2026-10-21) · [ ] T6b · [ ] T7a · [ ] T7b · [ ] T7c · [ ] T8 · [ ] T9
+- [x] T1 (2026-10-21) · [x] T2 (2026-10-21) · [x] T3 (2026-10-21) · [x] T18 (2026-10-21) · [x] T4a (2026-10-21) · [x] T4b (2026-10-21) · [x] T5a (2026-10-21) · [x] T5b (2026-10-21) · [x] T6a (2026-10-21) · [x] T6b (2026-10-21) · [ ] T7a · [ ] T7b · [ ] T7c · [ ] T8 · [ ] T9
 - [ ] Tripwire checkpoint (dates in STATE.md)
 - [ ] T9b · [ ] T10 · [ ] T11 · [ ] T11b · [ ] T12 · [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17
 

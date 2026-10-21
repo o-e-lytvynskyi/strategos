@@ -64,10 +64,18 @@ tasks.register('verifyHarness') {
             ':mod:archTest', ':core:test'
 }
 
-// [T3] the commit gate: 5 minutes, of which L3 3; ':core:soak' joins in T6b, ':core:replayJournals' in T8,
+// [T3] the commit gate: 5 minutes, of which L3 3; ':core:soak' joined in T6b, ':core:replayJournals' joins in T8,
 // the restart round trip in T9b.
 tasks.register('verify') {
     group = 'verification'
-    description = 'verifyFast + verifyHarness + L2 + L3 GameTests (report guard) + L5 smoke (marker guard).'
-    dependsOn 'verifyFast', 'verifyHarness', ':mod:check', ':mod:runGameTestServer', ':mod:runServerSmoke'
+    description = 'verifyFast + verifyHarness + L2 + core soak + L3 GameTests (report guard) + L5 smoke (marker guard).'
+    dependsOn 'verifyFast', 'verifyHarness', ':mod:check', ':core:soak', ':mod:runGameTestServer', ':mod:runServerSmoke'
+}
+
+// [T6b] The soak runs, at the milestone exit and on CI; no budget, the time is reported per run. M0's
+// one soak also runs inside verify (QA-02); QA-12's (M6) and QA-16's (M10) L3 samples join only here.
+tasks.register('verifySoak') {
+    group = 'verification'
+    description = 'The soak runs: the seeded determinism soak, 200 seeds x 10,000 ticks.'
+    dependsOn ':core:soak'
 }

@@ -9,7 +9,35 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-21 — M0 T1, T2, T3, T18, T4a, T4b, T5a, T5b, T6a
+## 2026-10-21 — M0 T1, T2, T3, T18, T4a, T4b, T5a, T5b, T6a, T6b
+
+- **M0 T6b · Test kit, scenarios, seeded runs, S6 canary** — QA-02 done; PERF-01 in progress;
+  CORE-05, CORE-07, ORD-01, QA-01.
+  - **Results:**
+    - the rest of the test kit:
+      - `SimHarness` checks `Invariants` after every step and throws `seed=<n> tick=<t>: …`;
+      - `restore`, `replay`, `runUntil`, `run` and `play`;
+      - `FakeBodies`, `ThrowingMetrics`, `RandomCommands`, `ReplayRunner`, `JournalFiles`,
+        `Seeds`, `Percentiles` and `BudgetCheck`;
+    - the scenarios `walking_skeleton`, `out_of_bounds`, `stop_mid_walk`, `patrol` and `canary`;
+    - the seed sets `m0-200`, `skeleton-20`, `isolation-50` and `canary`;
+    - `:core:test` passes 593 tests in 3.8 s wall, 2.9 s of it in tests (QA-02.1: under 10 s);
+    - the walking skeleton arrives exactly at tick 81 for all 20 seeds;
+    - 200 seeds × 1,000 ticks of random commands break no invariant;
+    - 200 seeds × 2,000 ticks replay with every checkpoint equal;
+    - the soak, 200 seeds × 10,000 ticks, takes 8.5 s and is part of `verify` and `verifySoak`;
+    - the S6 canary gives equal hashes twice in one JVM and matches its golden
+      (`golden/s6-canary.json`);
+    - the released save fixture `fixtures/match_v1.json` (the canary at tick 500) decodes to its
+      recorded hash, and a test-only step migrates it to version 2;
+    - with a checkpoint every tick, dropping the command at tick 137 names tick 137;
+    - negative checks, both reverted:
+      - a deliberately broken seed failed as `seed=1627107988357113642 tick=501: …` and reran
+        alone with `-Dstrategos.seed` (QA-02.2);
+      - `testFixturesImplementation libs.assertj` failed `checkTestFixturesDeps` (QA-02.4);
+    - CI runs `verify verifySoak`.
+  - **Problems:** none in the code. `run` is split into `forScenario` and `play`, so a test can read
+    the journal of the run it played (spec §1.6 D row 48).
 
 - **M0 T6a · Journal, snapshot, migrations, replay** — CORE-07 in progress; CORE-05, CORE-03.
   - **Results:**
@@ -142,7 +170,7 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
       versions inside `group:name:version` strings (row 40), now proven on a broken catalog; two
       comments that strayed from the spec were removed;
     - `HandleTest` pins the bit layout with literals, since handles are saved.
-- **Next:** M0 T6b · the rest of the test kit, scenarios, seeded runs and the canary.
+- **Next:** the fixes from the T5b review, then M0 T7a · unit entity, registry, renderer.
 
 ## 2026-10-21 — design closed, roadmap approved, autonomy set up
 

@@ -10,7 +10,11 @@ import dev.strategos.core.shared.Rng;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.testkit.SimHarness;
 
-/** A seeded run with moves, stops and some refused commands, for the journal's tests (T6b brings RandomCommands). */
+/**
+ * A sparse seeded run with moves, stops and some refused commands, for the journal's tests: a command every few ticks
+ * keeps one removed command visible at the next checkpoint. The seeded determinism runs use the denser
+ * {@code SeededRuns}.
+ */
 final class RandomRun {
     private RandomRun() {}
 

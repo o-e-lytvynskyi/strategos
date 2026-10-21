@@ -311,7 +311,8 @@ decision (D-21).
   4. The build fails when `core/testFixtures` depends on JUnit or AssertJ (L0).
 - **Tests:** L0, L1 · **Fixtures:** scenario definitions, test template set · **Depends on:**
   QA-01 · **Size:** M · **Tier:** T0
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-10-21 — M0 T5b, T6b: `:core:test` 593 tests in 3.8 s wall (2.9 s in tests), the soak 8.5 s (1); a temporarily broken seed failed as `seed=<n>` and reran alone with `-Dstrategos.seed=<n>` (2); `InvariantsTest`, `SeededInvariantTest`, the invariants after every `SimHarness` step (3); `checkTestFixturesDeps` failed on a temporary `testFixturesImplementation libs.assertj` (4)
 
 #### QA-04 · GameTest harness (L3)
 - **Value:** Every in-world behaviour is proven in a real server world, fast and isolated, and a
@@ -675,7 +676,7 @@ decision (D-21).
   3. The owner approves ADR-0019's table with the M0 numbers, and the ADR moves to Accepted; any
      later change needs the owner's approval and an ADR (D).
 - **Tests:** L6, D · **Depends on:** QA-07 · **Size:** S · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 #### PERF-02 · Spike S1: server cost per body
 - **Value:** The population cap and the unit body rest on measured numbers, not guesses.

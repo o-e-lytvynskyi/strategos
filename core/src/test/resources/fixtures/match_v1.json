@@ -1,0 +1,877 @@
+{
+  "slots": {
+    "generations": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "free": []
+  },
+  "units": [
+    {
+      "yaw": 149.54758,
+      "state": "walking",
+      "target": {
+        "x": 17.850986496315084,
+        "z": 10.695987273264503
+      },
+      "y": 1.0,
+      "z": 47.06455698227882,
+      "handle": 1048576,
+      "template": "strategos:unit/debug_walker",
+      "faction": 0,
+      "x": 39.23305286611854
+    },
+    {
+      "yaw": -113.29753,
+      "state": "walking",
+      "target": {
+        "x": 17.850986496315084,
+        "z": 10.695987273264503
+      },
+      "y": 1.0,
+      "z": 15.977435693582839,
+      "handle": 1048577,
+      "template": "strategos:unit/debug_walker",
+      "faction": 0,
+      "x": 5.5861461950326
+    },
+    {
+      "yaw": -34.10079,
+      "state": "walking",
+      "target": {
+        "x": 17.850986496315084,
+        "z": 10.695987273264503
+      },
+      "y": 1.0,
+      "z": 7.694488974803282,
+      "handle": 1048578,
+      "template": "strategos:unit/debug_walker",
+      "faction": 0,
+      "x": 15.818759025005505
+    },
+    {
+      "yaw": 135.63437,
+      "state": "walking",
+      "target": {
+        "x": 17.850986496315084,
+        "z": 10.695987273264503
+      },
+      "y": 1.0,
+      "z": 45.46583528713597,
+      "handle": 1048579,
+      "template": "strategos:unit/debug_walker",
+      "faction": 0,
+      "x": 51.85930635164519
+    },
+    {
+      "yaw": 135.2895,
+      "state": "walking",
+      "target": {
+        "x": 17.850986496315084,
+        "z": 10.695987273264503
+      },
+      "y": 1.0,
+      "z": 45.2893939007329,
+      "handle": 1048580,
+      "template": "strategos:unit/debug_walker",
+      "faction": 0,
+      "x": 52.096567081228955
+    },
+    {
+      "yaw": -45.495052,
+      "state": "walking",
+      "target": {
+        "x": 56.07076042490193,
+        "z": 56.013172802653216
+      },
+      "y": 1.0,
+      "z": 24.574792332713834,
+      "handle": 1048581,
+      "template": "strategos:unit/debug_walker",
+      "faction": 0,
+      "x": 24.084358371985253
+    },
+    {
+      "yaw": -46.20873,
+      "state": "walking",
+      "target": {
+        "x": 56.07076042490193,
+        "z": 56.013172802653216
+      },
+      "y": 1.0,
+      "z": 44.696269364560955,
+      "handle": 1048582,
+      "template": "strategos:unit/debug_walker",
+      "faction": 0,
+      "x": 44.26600282671516
+    },
+    {
+      "yaw": 100.513435,
+      "state": "walking",
+      "target": {
+        "x": 33.29099944886515,
+        "z": 43.05633532565871
+      },
+      "y": 1.0,
+      "z": 44.76144372665588,
+      "handle": 1048583,
+      "template": "strategos:unit/debug_walker",
+      "faction": 0,
+      "x": 42.47891773990266
+    },
+    {
+      "yaw": 107.61717,
+      "state": "walking",
+      "target": {
+        "x": 33.29099944886515,
+        "z": 43.05633532565871
+      },
+      "y": 1.0,
+      "z": 47.26373359749979,
+      "handle": 1048584,
+      "template": "strategos:unit/debug_walker",
+      "faction": 0,
+      "x": 46.54061757676767
+    },
+    {
+      "yaw": 109.61556,
+      "state": "walking",
+      "target": {
+        "x": 33.29099944886515,
+        "z": 43.05633532565871
+      },
+      "y": 1.0,
+      "z": 49.1309790616338,
+      "handle": 1048585,
+      "template": "strategos:unit/debug_walker",
+      "faction": 0,
+      "x": 50.33592671695077
+    },
+    {
+      "yaw": 170.69228,
+      "state": "walking",
+      "target": {
+        "x": 47.00087676785057,
+        "z": 18.39018512938361
+      },
+      "y": 1.0,
+      "z": 45.37383323542256,
+      "handle": 1048586,
+      "template": "strategos:unit/debug_walker",
+      "faction": 0,
+      "x": 51.42335519641573
+    },
+    {
+      "yaw": -168.73254,
+      "state": "walking",
+      "target": {
+        "x": 47.00087676785057,
+        "z": 18.39018512938361
+      },
+      "y": 1.0,
+      "z": 41.836021137534395,
+      "handle": 1048587,
+      "template": "strategos:unit/debug_walker",
+      "faction": 0,
+      "x": 42.32978115791374
+    },
+    {
+      "yaw": -158.259,
+      "state": "walking",
+      "target": {
+        "x": 47.00087676785057,
+        "z": 18.39018512938361
+      },
+      "y": 1.0,
+      "z": 40.03347884752419,
+      "handle": 1048588,
+      "template": "strategos:unit/debug_walker",
+      "faction": 0,
+      "x": 38.3700172689544
+    },
+    {
+      "yaw": 149.78792,
+      "state": "walking",
+      "target": {
+        "x": 47.00087676785057,
+        "z": 18.39018512938361
+      },
+      "y": 1.0,
+      "z": 30.870955172248195,
+      "handle": 1048589,
+      "template": "strategos:unit/debug_walker",
+      "faction": 0,
+      "x": 54.26838364339327
+    },
+    {
+      "yaw": 170.6534,
+      "state": "walking",
+      "target": {
+        "x": 47.00087676785057,
+        "z": 18.39018512938361
+      },
+      "y": 1.0,
+      "z": 29.971986365610764,
+      "handle": 1048590,
+      "template": "strategos:unit/debug_walker",
+      "faction": 0,
+      "x": 48.90714479128201
+    },
+    {
+      "yaw": -123.813576,
+      "state": "walking",
+      "target": {
+        "x": 47.00087676785057,
+        "z": 18.39018512938361
+      },
+      "y": 1.0,
+      "z": 34.62221918368614,
+      "handle": 1048591,
+      "template": "strategos:unit/debug_walker",
+      "faction": 0,
+      "x": 22.76617397814356
+    },
+    {
+      "yaw": -123.813576,
+      "state": "walking",
+      "target": {
+        "x": 47.00087676785057,
+        "z": 18.39018512938361
+      },
+      "y": 1.0,
+      "z": 34.62221918368614,
+      "handle": 1048592,
+      "template": "strategos:unit/debug_walker",
+      "faction": 0,
+      "x": 22.76617397814356
+    },
+    {
+      "yaw": -124.36681,
+      "state": "walking",
+      "target": {
+        "x": 47.00087676785057,
+        "z": 18.39018512938361
+      },
+      "y": 1.0,
+      "z": 32.03827303147947,
+      "handle": 1048593,
+      "template": "strategos:unit/debug_walker",
+      "faction": 0,
+      "x": 27.04355900682778
+    },
+    {
+      "yaw": 77.08572,
+      "state": "idle",
+      "y": 1.0,
+      "z": 34.86071792821961,
+      "handle": 1048594,
+      "template": "strategos:unit/debug_walker",
+      "faction": 0,
+      "x": 22.91635598239758
+    },
+    {
+      "yaw": -139.73032,
+      "state": "walking",
+      "target": {
+        "x": 38.982498519456804,
+        "z": 15.895835216420673
+      },
+      "y": 1.0,
+      "z": 29.138138997524628,
+      "handle": 1048595,
+      "template": "strategos:unit/debug_walker",
+      "faction": 0,
+      "x": 27.76425144145666
+    },
+    {
+      "yaw": 153.50261,
+      "state": "walking",
+      "target": {
+        "x": 38.982498519456804,
+        "z": 15.895835216420673
+      },
+      "y": 1.0,
+      "z": 43.76063510168051,
+      "handle": 1048596,
+      "template": "strategos:unit/debug_walker",
+      "faction": 0,
+      "x": 52.873786363390515
+    },
+    {
+      "yaw": 161.4033,
+      "state": "walking",
+      "target": {
+        "x": 38.982498519456804,
+        "z": 15.895835216420673
+      },
+      "y": 1.0,
+      "z": 50.5227243375475,
+      "handle": 1048597,
+      "template": "strategos:unit/debug_walker",
+      "faction": 0,
+      "x": 50.633514294800335
+    },
+    {
+      "yaw": 167.1232,
+      "state": "walking",
+      "target": {
+        "x": 38.982498519456804,
+        "z": 15.895835216420673
+      },
+      "y": 1.0,
+      "z": 43.157361611688714,
+      "handle": 1048598,
+      "template": "strategos:unit/debug_walker",
+      "faction": 0,
+      "x": 45.21460830977572
+    },
+    {
+      "yaw": -142.76942,
+      "state": "walking",
+      "target": {
+        "x": 62.0359249622724,
+        "z": 4.993027911230721
+      },
+      "y": 1.0,
+      "z": 27.57547806627957,
+      "handle": 1048599,
+      "template": "strategos:unit/debug_walker",
+      "faction": 0,
+      "x": 44.87590875743587
+    },
+    {
+      "yaw": -171.03983,
+      "state": "walking",
+      "target": {
+        "x": 62.0359249622724,
+        "z": 4.993027911230721
+      },
+      "y": 1.0,
+      "z": 49.97234693558359,
+      "handle": 1048600,
+      "template": "strategos:unit/debug_walker",
+      "faction": 0,
+      "x": 54.94394589629842
+    },
+    {
+      "yaw": -171.03983,
+      "state": "walking",
+      "target": {
+        "x": 62.0359249622724,
+        "z": 4.993027911230721
+      },
+      "y": 1.0,
+      "z": 49.97234693558359,
+      "handle": 1048601,
+      "template": "strategos:unit/debug_walker",
+      "faction": 0,
+      "x": 54.94394589629842
+    },
+    {
+      "yaw": -145.25685,
+      "state": "walking",
+      "target": {
+        "x": 62.0359249622724,
+        "z": 4.993027911230721
+      },
+      "y": 1.0,
+      "z": 37.01021954899514,
+      "handle": 1048602,
+      "template": "strategos:unit/debug_walker",
+      "faction": 0,
+      "x": 39.83047638951055
+    },
+    {
+      "yaw": 151.51901,
+      "state": "walking",
+      "target": {
+        "x": 17.850986496315084,
+        "z": 10.695987273264503
+      },
+      "y": 1.0,
+      "z": 46.02250365972514,
+      "handle": 1048603,
+      "template": "strategos:unit/debug_walker",
+      "faction": 0,
+      "x": 37.016540937992744
+    },
+    {
+      "yaw": 151.51901,
+      "state": "walking",
+      "target": {
+        "x": 17.850986496315084,
+        "z": 10.695987273264503
+      },
+      "y": 1.0,
+      "z": 46.02250365972514,
+      "handle": 1048604,
+      "template": "strategos:unit/debug_walker",
+      "faction": 0,
+      "x": 37.016540937992744
+    },
+    {
+      "yaw": 149.54758,
+      "state": "walking",
+      "target": {
+        "x": 17.850986496315084,
+        "z": 10.695987273264503
+      },
+      "y": 1.0,
+      "z": 47.06455698227882,
+      "handle": 1048605,
+      "template": "strategos:unit/debug_walker",
+      "faction": 0,
+      "x": 39.23305286611854
+    },
+    {
+      "yaw": 164.83441,
+      "state": "walking",
+      "target": {
+        "x": 20.37476321732255,
+        "z": 4.532268700869076
+      },
+      "y": 1.0,
+      "z": 53.48449917985953,
+      "handle": 1048606,
+      "template": "strategos:unit/debug_walker",
+      "faction": 1,
+      "x": 33.64322477607087
+    },
+    {
+      "yaw": 138.78189,
+      "state": "walking",
+      "target": {
+        "x": 20.37476321732255,
+        "z": 4.532268700869076
+      },
+      "y": 1.0,
+      "z": 26.400070370626445,
+      "handle": 1048607,
+      "template": "strategos:unit/debug_walker",
+      "faction": 1,
+      "x": 39.53078392547091
+    },
+    {
+      "yaw": 40.215816,
+      "state": "idle",
+      "y": 1.0,
+      "z": 55.8974336485612,
+      "handle": 1048608,
+      "template": "strategos:unit/debug_walker",
+      "faction": 1,
+      "x": 34.29724866688188
+    },
+    {
+      "yaw": 48.36678,
+      "state": "idle",
+      "y": 1.0,
+      "z": 55.8974336485612,
+      "handle": 1048609,
+      "template": "strategos:unit/debug_walker",
+      "faction": 1,
+      "x": 34.29724866688188
+    },
+    {
+      "yaw": 152.40337,
+      "state": "idle",
+      "y": 1.0,
+      "z": 18.139960053379696,
+      "handle": 1048610,
+      "template": "strategos:unit/debug_walker",
+      "faction": 1,
+      "x": 18.896495152605077
+    },
+    {
+      "yaw": 157.81013,
+      "state": "idle",
+      "y": 1.0,
+      "z": 18.139960053379696,
+      "handle": 1048611,
+      "template": "strategos:unit/debug_walker",
+      "faction": 1,
+      "x": 18.896495152605077
+    },
+    {
+      "yaw": 76.53553,
+      "state": "idle",
+      "y": 1.0,
+      "z": 18.139960053379696,
+      "handle": 1048612,
+      "template": "strategos:unit/debug_walker",
+      "faction": 1,
+      "x": 18.896495152605077
+    },
+    {
+      "yaw": 84.044525,
+      "state": "idle",
+      "y": 1.0,
+      "z": 18.139960053379696,
+      "handle": 1048613,
+      "template": "strategos:unit/debug_walker",
+      "faction": 1,
+      "x": 18.896495152605077
+    },
+    {
+      "yaw": 136.81891,
+      "state": "idle",
+      "y": 1.0,
+      "z": 1.1149711324411749,
+      "handle": 1048614,
+      "template": "strategos:unit/debug_walker",
+      "faction": 1,
+      "x": 19.21847904506741
+    },
+    {
+      "yaw": 136.81891,
+      "state": "idle",
+      "y": 1.0,
+      "z": 1.1149711324411749,
+      "handle": 1048615,
+      "template": "strategos:unit/debug_walker",
+      "faction": 1,
+      "x": 19.21847904506741
+    },
+    {
+      "yaw": 126.84633,
+      "state": "idle",
+      "y": 1.0,
+      "z": 3.314324968785492,
+      "handle": 1048616,
+      "template": "strategos:unit/debug_walker",
+      "faction": 1,
+      "x": 23.693471835932424
+    },
+    {
+      "yaw": 156.33478,
+      "state": "walking",
+      "target": {
+        "x": 23.693471835932424,
+        "z": 3.314324968785492
+      },
+      "y": 1.0,
+      "z": 4.206282826310311,
+      "handle": 1048617,
+      "template": "strategos:unit/debug_walker",
+      "faction": 1,
+      "x": 24.0843683149712
+    },
+    {
+      "yaw": 99.23598,
+      "state": "walking",
+      "target": {
+        "x": 4.794772613377432,
+        "z": 5.322801528912224
+      },
+      "y": 1.0,
+      "z": 7.983310112407469,
+      "handle": 1048618,
+      "template": "strategos:unit/debug_walker",
+      "faction": 1,
+      "x": 21.15614907694237
+    },
+    {
+      "yaw": 83.93361,
+      "state": "walking",
+      "target": {
+        "x": 4.794772613377432,
+        "z": 5.322801528912224
+      },
+      "y": 1.0,
+      "z": 3.842728877002351,
+      "handle": 1048619,
+      "template": "strategos:unit/debug_walker",
+      "faction": 1,
+      "x": 18.72147130196411
+    },
+    {
+      "yaw": 112.05802,
+      "state": "walking",
+      "target": {
+        "x": 4.794772613377432,
+        "z": 5.322801528912224
+      },
+      "y": 1.0,
+      "z": 16.09204147509886,
+      "handle": 1048620,
+      "template": "strategos:unit/debug_walker",
+      "faction": 1,
+      "x": 31.372060324417554
+    },
+    {
+      "yaw": 130.79883,
+      "state": "walking",
+      "target": {
+        "x": 4.794772613377432,
+        "z": 5.322801528912224
+      },
+      "y": 1.0,
+      "z": 39.89615632565972,
+      "handle": 1048621,
+      "template": "strategos:unit/debug_walker",
+      "faction": 1,
+      "x": 44.850054643129916
+    },
+    {
+      "yaw": 117.688705,
+      "state": "walking",
+      "target": {
+        "x": 4.794772613377432,
+        "z": 5.322801528912224
+      },
+      "y": 1.0,
+      "z": 17.15722128446185,
+      "handle": 1048622,
+      "template": "strategos:unit/debug_walker",
+      "faction": 1,
+      "x": 27.346817852121145
+    },
+    {
+      "yaw": 132.60725,
+      "state": "walking",
+      "target": {
+        "x": 4.794772613377432,
+        "z": 5.322801528912224
+      },
+      "y": 1.0,
+      "z": 51.62713963581017,
+      "handle": 1048623,
+      "template": "strategos:unit/debug_walker",
+      "faction": 1,
+      "x": 55.137560771061494
+    },
+    {
+      "yaw": 134.38638,
+      "state": "walking",
+      "target": {
+        "x": 4.794772613377432,
+        "z": 5.322801528912224
+      },
+      "y": 1.0,
+      "z": 45.856205001281715,
+      "handle": 1048624,
+      "template": "strategos:unit/debug_walker",
+      "faction": 1,
+      "x": 46.205795865017905
+    },
+    {
+      "yaw": -77.25257,
+      "state": "idle",
+      "y": 1.0,
+      "z": 48.46800135870553,
+      "handle": 1048625,
+      "template": "strategos:unit/debug_walker",
+      "faction": 1,
+      "x": 19.652213377368227
+    },
+    {
+      "yaw": 45.836388,
+      "state": "idle",
+      "y": 1.0,
+      "z": 54.1632630145174,
+      "handle": 1048626,
+      "template": "strategos:unit/debug_walker",
+      "faction": 1,
+      "x": 44.82689153531418
+    },
+    {
+      "yaw": 24.608576,
+      "state": "idle",
+      "y": 1.0,
+      "z": 54.1632630145174,
+      "handle": 1048627,
+      "template": "strategos:unit/debug_walker",
+      "faction": 1,
+      "x": 44.82689153531418
+    },
+    {
+      "yaw": -0.88569593,
+      "state": "walking",
+      "target": {
+        "x": 44.82689153531418,
+        "z": 54.1632630145174
+      },
+      "y": 1.0,
+      "z": 47.84645912936318,
+      "handle": 1048628,
+      "template": "strategos:unit/debug_walker",
+      "faction": 1,
+      "x": 44.72923664427351
+    },
+    {
+      "yaw": -47.554054,
+      "state": "walking",
+      "target": {
+        "x": 44.82689153531418,
+        "z": 54.1632630145174
+      },
+      "y": 1.0,
+      "z": 30.914535132897388,
+      "handle": 1048629,
+      "template": "strategos:unit/debug_walker",
+      "faction": 1,
+      "x": 19.407253409976565
+    },
+    {
+      "yaw": -173.50308,
+      "state": "walking",
+      "target": {
+        "x": 20.37476321732255,
+        "z": 4.532268700869076
+      },
+      "y": 1.0,
+      "z": 26.743354364564556,
+      "handle": 1048630,
+      "template": "strategos:unit/debug_walker",
+      "faction": 1,
+      "x": 17.845341719891092
+    },
+    {
+      "yaw": 145.80267,
+      "state": "walking",
+      "target": {
+        "x": 20.37476321732255,
+        "z": 4.532268700869076
+      },
+      "y": 1.0,
+      "z": 44.19059398522109,
+      "handle": 1048631,
+      "template": "strategos:unit/debug_walker",
+      "faction": 1,
+      "x": 47.32383182235452
+    },
+    {
+      "yaw": 145.80267,
+      "state": "walking",
+      "target": {
+        "x": 20.37476321732255,
+        "z": 4.532268700869076
+      },
+      "y": 1.0,
+      "z": 44.19059398522109,
+      "handle": 1048632,
+      "template": "strategos:unit/debug_walker",
+      "faction": 1,
+      "x": 47.32383182235452
+    },
+    {
+      "yaw": 131.50859,
+      "state": "walking",
+      "target": {
+        "x": 20.37476321732255,
+        "z": 4.532268700869076
+      },
+      "y": 1.0,
+      "z": 35.31483110424609,
+      "handle": 1048633,
+      "template": "strategos:unit/debug_walker",
+      "faction": 1,
+      "x": 55.15760551670631
+    },
+    {
+      "yaw": 131.50859,
+      "state": "walking",
+      "target": {
+        "x": 20.37476321732255,
+        "z": 4.532268700869076
+      },
+      "y": 1.0,
+      "z": 35.31483110424609,
+      "handle": 1048634,
+      "template": "strategos:unit/debug_walker",
+      "faction": 1,
+      "x": 55.15760551670631
+    },
+    {
+      "yaw": 129.31198,
+      "state": "walking",
+      "target": {
+        "x": 20.37476321732255,
+        "z": 4.532268700869076
+      },
+      "y": 1.0,
+      "z": 30.937793934656558,
+      "handle": 1048635,
+      "template": "strategos:unit/debug_walker",
+      "faction": 1,
+      "x": 52.62224744351341
+    }
+  ],
+  "pendingCommands": [],
+  "config": {
+    "bounds": {
+      "minY": 0,
+      "maxY": 16,
+      "flatFloorY": 1.0,
+      "sizeX": 64,
+      "sizeZ": 64
+    },
+    "factions": 2,
+    "rules": {
+      "commandsPerTick": 256,
+      "unitCap": 4096
+    },
+    "id": 1,
+    "seed": "0000000000000007"
+  },
+  "tick": 500,
+  "templateSetHash": "138d13256ab65a0f",
+  "v": 1
+}

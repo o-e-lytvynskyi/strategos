@@ -18,41 +18,111 @@ import dev.strategos.core.sim.MatchConfig;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchQueries;
 import dev.strategos.core.sim.MatchRules;
+import dev.strategos.core.sim.MatchSnapshot;
 import dev.strategos.core.sim.OutputEvent;
 import dev.strategos.core.sim.TickInputs;
 import dev.strategos.core.sim.TickOutputs;
 import dev.strategos.core.sim.UnitCreated;
+import dev.strategos.core.sim.UnitRecord;
 import dev.strategos.core.sim.UnitStateChanged;
+import dev.strategos.core.sim.journal.ReplayDriver;
+import dev.strategos.core.sim.journal.ReplayResult;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BooleanSupplier;
 
 /**
- * Runs one match in plain JUnit, as the mod would: commands submitted during a tick enter the next tick's inputs. T5b's
- * first cut; T6b adds scenarios, invariants, fake bodies and replays.
+ * Runs one match in plain JUnit, as the mod would: commands submitted during a tick enter the next tick's inputs. Every
+ * step applies its outputs to {@link FakeBodies} and checks this harness's {@link Invariants}; the first broken one
+ * throws {@link InvariantViolation}, so the invariants hold after every tick of every harness run (QA-02.3).
  */
-public final class SimHarness {
+public final class SimHarness implements ScenarioContext {
+    /** The seed of a harness built without one (M0 spec 7.10). */
+    public static final long DEFAULT_SEED = 42;
+
     private final MatchCore core;
+    private final long seed;
+    private final Invariants invariants = new Invariants();
+    private final FakeBodies bodies = new FakeBodies();
     private final List<InputEvent> pending = new ArrayList<>();
     private final List<OutputEvent> events = new ArrayList<>();
+    private List<String> violations = List.of();
     private int clientSeq;
 
     private SimHarness(MatchCore core) {
         this.core = core;
+        this.seed = core.queries().config().seed();
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
+    /**
+     * A harness continuing {@code snapshot} on a fixed clock; its bodies start where the snapshot's units stand, and
+     * its client sequence numbers start again from 1.
+     */
+    public static SimHarness restore(MatchSnapshot snapshot, TemplateSet templates) {
+        SimHarness h = new SimHarness(MatchCore.restore(snapshot, templates, CorePorts.of(new FixedClock(0))));
+        for (UnitRecord unit : snapshot.units()) {
+            h.bodies.place(unit.handle(), unit.x(), unit.y(), unit.z(), unit.yaw(), snapshot.tick());
+        }
+        return h;
+    }
+
+    /** A harness of the scenario's size and seed, the builder's defaults otherwise. */
+    public static SimHarness forScenario(Scenario scenario) {
+        return builder()
+                .size(scenario.sizeX(), scenario.sizeZ())
+                .seed(scenario.seed())
+                .build();
+    }
+
+    /** Builds a harness for {@code scenario} and plays it. */
+    public static ScenarioReport run(Scenario scenario) {
+        return forScenario(scenario).play(scenario);
+    }
+
+    /**
+     * Plays {@code scenario} on this fresh harness: setup at tick 0, then step and onTick until isDone (checked at tick
+     * 0 too) or the timeout, then verify at that tick. A scenario failure, a broken invariant or the timeout gives a
+     * failed report; every report carries the state hash of the tick the run stopped at.
+     */
+    public ScenarioReport play(Scenario scenario) {
+        try {
+            scenario.setup(this);
+            while (!scenario.isDone(this)) {
+                if (tick() >= scenario.timeoutTicks()) {
+                    return new ScenarioReport(
+                            scenario.id(), false, tick(), stateHash(), prefix() + "timed out, isDone never held");
+                }
+                step();
+                scenario.onTick(this);
+            }
+            scenario.verify(this);
+            return new ScenarioReport(scenario.id(), true, tick(), stateHash(), null);
+        } catch (InvariantViolation e) {
+            return new ScenarioReport(scenario.id(), false, tick(), stateHash(), e.getMessage());
+        } catch (ScenarioFailure e) {
+            return new ScenarioReport(scenario.id(), false, tick(), stateHash(), prefix() + e.getMessage());
+        }
+    }
+
     public MatchCore core() {
         return core;
     }
 
+    @Override
     public MatchQueries queries() {
         return core.queries();
     }
 
+    public FakeBodies bodies() {
+        return bodies;
+    }
+
     /** Queues a command for the next tick, stamped with this tick and the harness's next sequence number. */
+    @Override
     public int submit(PlayerSlot issuer, Command command) {
         int seq = ++clientSeq;
         pending.add(new CommandEnvelope(issuer, seq, tick(), command));
@@ -71,10 +141,14 @@ public final class SimHarness {
                 .toArray();
     }
 
+    /** Steps one tick with the queued commands, applies the outputs to the bodies and checks the invariants. */
     public TickOutputs step() {
         TickOutputs out = core.step(new TickInputs(tick() + 1, pending));
         pending.clear();
         events.addAll(out.events());
+        bodies.accept(out);
+        violations = List.copyOf(invariants.check(core.queries(), out.tick()));
+        assertInvariants();
         return out;
     }
 
@@ -84,31 +158,67 @@ public final class SimHarness {
         }
     }
 
+    /** Steps until {@code done} holds, checked before every step, for at most {@code maxTicks} steps; whether it did. */
+    public boolean runUntil(BooleanSupplier done, int maxTicks) {
+        for (int i = 0; i < maxTicks; i++) {
+            if (done.getAsBoolean()) {
+                return true;
+            }
+            step();
+        }
+        return done.getAsBoolean();
+    }
+
     /** Every event of {@code type} since the harness was built. */
     public <E extends OutputEvent> List<E> events(Class<E> type) {
         return events.stream().filter(type::isInstance).map(type::cast).toList();
     }
 
+    @Override
     public List<CommandResult> results() {
         return events(CommandResult.class);
     }
 
+    @Override
     public List<UnitStateChanged> stateChanges() {
         return events(UnitStateChanged.class);
     }
 
+    @Override
     public long tick() {
         return core.queries().tick();
     }
 
+    @Override
     public long stateHash() {
         return core.stateHash();
+    }
+
+    /** Replays this match's journal from its start snapshot. */
+    public ReplayResult replay() {
+        return ReplayDriver.replay(core.journal(), core.queries().templates());
+    }
+
+    /** What the last invariant check found broken; empty before the first step. */
+    public List<String> invariantViolations() {
+        return violations;
+    }
+
+    /** Throws {@link InvariantViolation}, naming the seed and the tick, when the last check found a broken invariant. */
+    public void assertInvariants() {
+        if (!violations.isEmpty()) {
+            throw new InvariantViolation(prefix() + String.join("; ", violations));
+        }
+    }
+
+    private String prefix() {
+        return "seed=" + seed + " tick=" + tick() + ": ";
     }
 
     /** A 32 x 32 match on a floor at y 1, seed 42, two factions, the built-in templates, unless told otherwise. */
     public static final class Builder {
         private MatchBounds bounds = new MatchBounds(32, 32, 0, 16, 1.0);
-        private long seed = 42;
+        private long seed = DEFAULT_SEED;
         private int factions = 2;
         private MatchRules rules = MatchRules.DEFAULTS;
         private TemplateSet templates = TemplateSet.builtin();
