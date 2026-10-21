@@ -15,8 +15,9 @@ public final class MatchFixture {
     /** A match over the whole test bounds. */
     public static MatchRuntime create(GameTestHelper h, MatchOptions options) {
         ServerLevel level = h.getLevel();
-        return StrategosServer.get().matches().create(level, MatchSpace.fromBounds(level.dimension(), h.getBounds()),
-                options);
+        return StrategosServer.get()
+                .matches()
+                .create(level, MatchSpace.fromBounds(level.dimension(), h.getBounds()), options);
     }
 
     /** A match over part of the test bounds, {@code offsetX}, {@code offsetZ} from its corner. */

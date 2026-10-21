@@ -26,14 +26,19 @@ Answer in chat or here; the next session applies the answers.
 
 Nothing yet: the owner was here on 2026-10-22.
 
+- 2026-10-22 · **M0 T7c Body and match GameTests, the batch-end check:** unit bodies and matches are
+  now tested in a real server — made, posed, re-made, never saved, never pushed, no vibrations, and
+  paused or disposed matches leave nothing behind; every GameTest batch ends with a check for leaked
+  tickets, matches and bodies.
+
 ## Now
 
-- **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 12 of 25 tasks done.
-- **Tripwire (M0 only):** T1 started 2026-10-21; T9 green not yet; M0 work days 1 of 10.
-- **In progress:** M0 T7c since 2026-10-21, on the WIP branch below (the session stopped as usage ran low).
-- **Last finished task:** M0 T7b (2026-10-21); T7a was commit 65dbc69.
-- **Next task:** M0 T7c · Body and match GameTests, the batch-end check (UNIT-01, CORE-01, CORE-06, QA-04, QA-01).
-- **WIP branch:** `wip/M0-T7c` (pushed, commit c064b5f): the ticket controller, the batch-end check, `MatchFixture` and `JUnitXmlReporter#recordFailure`, unverified; what is left is in the worklog's newest entry.
+- **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 13 of 25 tasks done.
+- **Tripwire (M0 only):** T1 started 2026-10-21; T9 green not yet; M0 work days 2 of 10.
+- **In progress:** none.
+- **Last finished task:** M0 T7c (2026-10-22); T7b was commit 24db2a8.
+- **Next task:** M0 T8 · Commands, the walking skeleton end to end, the playtest kit (ORD-01, CORE-03, QA-05, QA-09, QA-10, CORE-01, CORE-02, QA-04).
+- **WIP branch:** none.
 - **CI:** green on `main` (M0 T7b, run 39670656358: 825 tests, the S6 canary on Linux against the macOS golden); minutes used this month about 61 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.
 

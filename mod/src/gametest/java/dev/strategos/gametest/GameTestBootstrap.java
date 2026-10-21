@@ -7,6 +7,7 @@ import net.minecraft.gametest.framework.LogTestReporter;
 import net.minecraft.gametest.framework.StructureUtils;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.common.world.chunk.RegisterTicketControllersEvent;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.neoforged.neoforge.gametest.GameTestHooks;
 
@@ -26,6 +27,14 @@ public final class GameTestBootstrap {
             GlobalTestReporter.replaceWith(
                     new TeeReporter(new LogTestReporter(), new JUnitXmlReporter(Path.of(report))));
         }
-        event.register(StrategosGameTests.class); // the generator and, from T7c, the @AfterBatch hooks
+        event.register(StrategosGameTests.class); // the generator and the @AfterBatch hooks
+    }
+
+    /** Mod bus, inferred like the above: map-scale tests force chunks only through this controller. */
+    @SubscribeEvent
+    static void onRegisterTickets(RegisterTicketControllersEvent event) {
+        if (GameTestHooks.isGametestServer()) {
+            event.register(GameTestTickets.CONTROLLER);
+        }
     }
 }

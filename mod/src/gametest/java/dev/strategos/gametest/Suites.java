@@ -1,9 +1,12 @@
 package dev.strategos.gametest;
 
+import dev.strategos.gametest.suites.BodyTests;
 import dev.strategos.gametest.suites.BuildTests;
+import dev.strategos.gametest.suites.MatchTests;
 import dev.strategos.gametest.suites.RetryNoReasonSelfTest;
 import dev.strategos.gametest.suites.SelfTests;
 import dev.strategos.gametest.suites.SharedBatchSelfTest;
+import dev.strategos.gametest.suites.TicketLeakSelfTest;
 import java.util.List;
 
 /** The suites one GameTest run holds; gametest code, so static lists are fine here. */
@@ -18,8 +21,9 @@ public final class Suites {
             case "retry" -> List.of(SelfTests.class);
             case "retryNoReason" -> List.of(RetryNoReasonSelfTest.class);
             case "sharedBatch" -> List.of(SharedBatchSelfTest.class);
-            // BodyTests and MatchTests join in T7c, CommandTests in T8, PersistenceTests in T9, FaultTests in T10.
-            default -> List.of(BuildTests.class);
+            case "ticketLeak" -> List.of(TicketLeakSelfTest.class);
+            // CommandTests join in T8, PersistenceTests in T9, FaultTests in T10.
+            default -> List.of(BuildTests.class, BodyTests.class, MatchTests.class);
         };
     }
 }

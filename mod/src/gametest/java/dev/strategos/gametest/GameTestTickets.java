@@ -21,7 +21,8 @@ import net.neoforged.neoforge.common.world.chunk.TicketController;
 public final class GameTestTickets {
     public static final TicketController CONTROLLER = new TicketController(Ids.id("gametest_tickets"));
 
-    private static final UUID OWNER = UUID.nameUUIDFromBytes("strategos:gametest_tickets".getBytes(StandardCharsets.UTF_8));
+    private static final UUID OWNER =
+            UUID.nameUUIDFromBytes("strategos:gametest_tickets".getBytes(StandardCharsets.UTF_8));
     private static final Map<ResourceKey<Level>, TreeSet<Long>> HELD = new HashMap<>();
 
     private GameTestTickets() {}

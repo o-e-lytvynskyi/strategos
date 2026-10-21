@@ -9,7 +9,28 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — the owner's setup
+## 2026-10-22 — the owner's setup, M0 T7c
+
+- **M0 T7c · Body and match GameTests, the batch-end check** — UNIT-01, CORE-01, CORE-06, QA-04,
+  QA-01, all still in progress (UNIT-01's criteria 1–4 pass; 5 is NET-01's, in M1).
+  - **Results:**
+    - finished from `wip/M0-T7c` after a rebase onto `main`;
+    - `GameTestTickets` with its controller, `BatchEndCheck` after every batch's `@AfterBatch`
+      cleanup, `MatchFixture`, `JUnitXmlReporter#recordFailure`, `LogCapture`;
+    - `bodytests.*` (9, the 6,000-tick one in batch `slow`) and `matchtests.*` (3) pass;
+    - the functional run: 13 GameTests in 1.9 s of L3 wall time; the slow run: 3.0 s;
+    - `verify verifySlow` green in 22 s; `verifyHarness` runs `runGameTestTicketLeak`;
+    - S5 check 17: `-Pstrategos.selftest=ticketLeak` failed with
+      `GameTest failures in TEST-gametest.xml: [batchend.selftest]`, naming the chunk;
+    - CI now runs `verify verifySlow verifySoak`.
+  - **Problems:**
+    - `/tp` rejected the body's coordinates: the arenas lie millions of blocks out, where
+      `Double.toString` writes `1.13E7`; commands now format coordinates with `%.6f` (README);
+    - `Entity#push` ignores two entities on the very same point, so the push control's pigs stand
+      0.1 apart (spec §1.6 D row 51).
+- **Commit prefixes:** two of the assistant's docs commits of 2026-10-21/22 (92b7757, b8fcf74) start
+  with `State:` instead of `Docs:`; the skill's owner-commit search lists them, but they are not
+  the owner's. The owner's commit is 021f641.
 
 - **Owner's setup items done** (STATE "For the owner" 1a and 1b of 2026-10-21):
   - the allowlist is active: `.claude/settings.json`, identical to the proposal (commit 021f641);
@@ -20,7 +41,7 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
     month's 2,000 minutes are used.
   - **Problems:** T7b's review did not run: its three reviewers stopped at the usage limit of
     2026-10-21, so the workflow returned nothing. Run it again before finishing T7c.
-- **Next:** finish M0 T7c from `wip/M0-T7c`, after T7b's review.
+- **Next:** M0 T8 · commands, the walking skeleton end to end, the playtest kit; T7b's review is running again.
 
 ## 2026-10-21 — M0 T1, T2, T3, T18, T4a, T4b, T5a, T5b, T6a, T6b, T7a, T7b, T7c (started)
 

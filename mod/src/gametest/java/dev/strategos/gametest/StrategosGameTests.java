@@ -13,9 +13,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import net.minecraft.gametest.framework.AfterBatch;
 import net.minecraft.gametest.framework.GameTestGenerator;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.TestFunction;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Rotation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,11 +29,56 @@ public final class StrategosGameTests {
     private static final Map<String, AtomicInteger> ATTEMPTS = new ConcurrentHashMap<>();
     private static final Map<String, String> RETRY_REASONS = new ConcurrentHashMap<>();
 
+    private static final String SLOW = "slow";
+
     private StrategosGameTests() {}
+
+    // After each batch: its matches go, then nothing of it may be left (QA-04.6). Vanilla finds these by batch name.
+
+    @AfterBatch(batch = "default")
+    public static void afterDefault(ServerLevel level) {
+        afterBatch(level, "default");
+    }
+
+    @AfterBatch(batch = SLOW)
+    public static void afterSlow(ServerLevel level) {
+        afterBatch(level, SLOW);
+    }
+
+    @AfterBatch(batch = "skeleton")
+    public static void afterSkeleton(ServerLevel level) {
+        afterBatch(level, "skeleton");
+    }
+
+    @AfterBatch(batch = "isolation")
+    public static void afterIsolation(ServerLevel level) {
+        afterBatch(level, "isolation");
+    }
+
+    @AfterBatch(batch = "perf_walk")
+    public static void afterPerfWalk(ServerLevel level) {
+        afterBatch(level, "perf_walk");
+    }
+
+    @AfterBatch(batch = "perf_snapshot")
+    public static void afterPerfSnapshot(ServerLevel level) {
+        afterBatch(level, "perf_snapshot");
+    }
+
+    @AfterBatch(batch = "selftest")
+    public static void afterSelftest(ServerLevel level) {
+        afterBatch(level, "selftest");
+    }
+
+    private static void afterBatch(ServerLevel level, String batch) {
+        MatchFixture.disposeAll(level);
+        BatchEndCheck.verify(level, batch);
+    }
 
     @GameTestGenerator
     public static Collection<TestFunction> all() {
         boolean perf = Boolean.getBoolean("strategos.gametest.perf");
+        boolean slow = Boolean.getBoolean("strategos.gametest.slow"); // runGameTestSlow keeps batch slow, alone
         String selftest = System.getProperty("strategos.selftest", "");
         String filter = System.getProperty("strategos.gametest.filter", "");
         List<Declared> declared = new ArrayList<>();
@@ -46,6 +93,7 @@ public final class StrategosGameTests {
         reject(declared);
         Pattern pattern = Pattern.compile(filter);
         List<TestFunction> functions = declared.stream()
+                .filter(d -> d.test().batch().equals(SLOW) == slow)
                 .filter(d -> pattern.matcher(d.name()).find())
                 .sorted(Comparator.comparing(Declared::name))
                 .map(StrategosGameTests::function)

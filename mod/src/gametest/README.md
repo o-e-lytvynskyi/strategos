@@ -39,3 +39,26 @@ that units make no vibrations first shows a sculk sensor reacting to a vanilla m
   a `perf_*` batch, runs alone in its batch (QA-04.5). The generator rejects both mistakes before
   the server starts.
 - `-Pgametest.filter=<regex>` runs only the matching tests.
+- A test that needs a match makes it with `MatchFixture` in its own arena; it never disposes it
+  for cleanup, the batch does. Tests of one batch run side by side, so a test acts only on its own
+  match and filters what it reads (bodies, log lines) by that match's id.
+- A map-scale test forces chunks only through `GameTestTickets` and releases them itself.
+- Coordinates go into commands through `String.format(Locale.ROOT, "%.6f", …)`: the arenas lie
+  millions of blocks out, where `Double.toString` writes `1.13E7`, which the command parser
+  rejects.
+
+## After each batch
+
+Every batch ends with two steps (`@AfterBatch` in `StrategosGameTests`): its GameTest matches are
+disposed, then `BatchEndCheck` looks for leftovers — tickets still held through `GameTestTickets`,
+GameTest matches still registered, unit bodies still in the level. A leftover is logged and
+recorded as the failed case `batchend.<batch>`, then cleared so the next batch starts clean. The
+server exits 0 after such a failure, so the Gradle guard reads failed cases from the report
+(QA-04.6). `-Pstrategos.selftest=ticketLeak` shows it: one test leaks a ticket, and the run fails
+with `batchend.selftest`.
+
+## The slow batch
+
+Tests in batch `slow` run only in `./gradlew :mod:runGameTestSlow` (`verifySlow`), which runs
+nothing else; every other run leaves them out. Their time is reported, not budgeted. GameTest
+ticks run back to back, so 6,000 ticks take seconds.

@@ -42,7 +42,8 @@ public final class BatchEndCheck {
         }
         List<? extends UnitEntity> bodies = level.getEntities(EntityTypeTest.forClass(UnitEntity.class), e -> true);
         if (!bodies.isEmpty()) {
-            leftovers.add(bodies.size() + " unit bodies, the first at " + bodies.get(0).blockPosition());
+            leftovers.add(bodies.size() + " unit bodies, the first at "
+                    + bodies.get(0).blockPosition());
         }
         if (leftovers.isEmpty()) {
             return;

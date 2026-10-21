@@ -97,6 +97,15 @@ neoForge {
             systemProperty 'strategos.selftest', providers.gradleProperty('strategos.selftest').getOrElse('')
             systemProperty 'strategos.faults.rethrow', 'true'
         }
+        // [T7c] verifySlow: the GameTest batch slow alone, which every other run leaves out (§7.4)
+        gameTestSlow {
+            type = 'gameTestServer'
+            disableIdeRun()
+            gameDirectory = file('build/gametest-slow')
+            systemProperty 'strategos.gametest.report', file('build/test-results/gametest-slow/TEST-gametest-slow.xml').absolutePath
+            systemProperty 'strategos.gametest.slow', 'true'
+            systemProperty 'strategos.faults.rethrow', 'true'
+        }
         // [T3]
         serverSmoke {
             server()
@@ -143,6 +152,14 @@ neoForge {
             gameDirectory = file('build/harness/shared-batch')
             systemProperty 'strategos.gametest.report', file('build/harness/shared-batch/TEST-gametest.xml').absolutePath
             systemProperty 'strategos.selftest', 'sharedBatch'
+        }
+        // [T7c]
+        gameTestTicketLeak {
+            type = 'gameTestServer'
+            disableIdeRun()
+            gameDirectory = file('build/harness/ticket-leak')
+            systemProperty 'strategos.gametest.report', file('build/harness/ticket-leak/TEST-gametest.xml').absolutePath
+            systemProperty 'strategos.selftest', 'ticketLeak'
         }
         serverSmokeNoMarker {
             server()
@@ -288,11 +305,18 @@ def gameTestGuard = { String runTask, File report, File world, File journals, Fi
             // run; the slow and perf runs only report theirs (verifySlow, verifyPerf).
             def budget = runTask == 'runGameTestServer' ? 'budget 180 s' : 'reported per run'
             task.logger.lifecycle("L3 wall time ${xml.testsuite.@time} s (${budget}): ${report.name}")
+            // [T7c] QA-04.6: the batch-end check reports a leak as a failed case although the server exits 0.
+            def failed = cases.findAll { !it.failure.isEmpty() }.collect { "${it.@classname}.${it.@name}" }
+            if (failed) throw new GradleException("GameTest failures in ${report.name}: ${failed}")
         }
     }
 }
 gameTestGuard('runGameTestServer', file('build/test-results/gametest/TEST-gametest.xml'),
         file('build/gametest/world'), file('build/gametest/journals'), file('build/gametest/logs/latest.log'))
+// [T7c] verifySlow; after the functional run, so the measured L3 wall time stays clean.
+gameTestGuard('runGameTestSlow', file('build/test-results/gametest-slow/TEST-gametest-slow.xml'),
+        file('build/gametest-slow/world'), null, file('build/gametest-slow/logs/latest.log'))
+tasks.matching { it.name == 'runGameTestSlow' }.configureEach { mustRunAfter 'runGameTestServer' }
 
 def prepareServerSmoke = tasks.register('prepareServerSmoke', Sync) {
     from 'src/gametest/smoke-gamedir'
@@ -382,6 +406,9 @@ def expectVerdicts = { String runTask, File dir, List<String> passed, List<Strin
 }
 expectVerdicts('runGameTestRetry', file('build/harness/retry'),
         ['selftests.two_of_three'], ['selftests.exhausted'], 'selftests.two_of_three')
+// [T7c]
+expectVerdicts('runGameTestTicketLeak', file('build/harness/ticket-leak'),
+        ['ticketleakselftest.leaks_one_ticket'], ['batchend.selftest'], null)
 
 def prepareSmokeNoMarker = tasks.register('prepareServerSmokeNoMarker', Sync) {
     from 'src/gametest/smoke-gamedir'

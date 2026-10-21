@@ -55,12 +55,13 @@ tasks.register('verifyFast') {
 
 // [T3] The harness self-tests, kept for good as automated checks (QA-01, QA-04, QA-05, QA-07, QA-17):
 // every guard must fail on its broken input, and every GameTest self-test must end with its designed
-// verdict. ':mod:runGameTestTicketLeak' joins in T7c, 'checkFixturesSelftest' in T11b, ':core:jmhSelftest' in T12.
+// verdict. ':mod:runGameTestTicketLeak' joined in T7c; 'checkFixturesSelftest' joins in T11b, ':core:jmhSelftest' in T12.
 tasks.register('verifyHarness') {
     group = 'verification'
-    description = 'Proves the guards bite: empty GameTest filter, broken mod load, missing smoke marker, retry semantics, retry without a reason, solo test in a shared batch, every ArchUnit rule on its violating fixture.'
+    description = 'Proves the guards bite: empty GameTest filter, broken mod load, missing smoke marker, retry semantics, retry without a reason, solo test in a shared batch, leaked ticket, every ArchUnit rule on its violating fixture.'
     dependsOn ':mod:runGameTestEmptyFilter', ':mod:runGameTestBrokenLoad', ':mod:runServerSmokeNoMarker',
             ':mod:runGameTestRetry', ':mod:runGameTestRetryNoReason', ':mod:runGameTestSharedBatch',
+            ':mod:runGameTestTicketLeak',
             ':mod:archTest', ':core:test'
 }
 
@@ -70,6 +71,15 @@ tasks.register('verify') {
     group = 'verification'
     description = 'verifyFast + verifyHarness + L2 + core soak + L3 GameTests (report guard) + L5 smoke (marker guard).'
     dependsOn 'verifyFast', 'verifyHarness', ':mod:check', ':core:soak', ':mod:runGameTestServer', ':mod:runServerSmoke'
+}
+
+// [T7c] Per working session that touched its area, at the milestone exit and on CI; no budget, the time
+// is reported per run. The L1 tests tagged slow (':core:slowTest', registered with the first of them in M1,
+// QA-02), map-scale GameTests and PERF-05's crowd soak (M1) and QA-11's L3 sample (M3) join it.
+tasks.register('verifySlow') {
+    group = 'verification'
+    description = 'The GameTest batch slow, in a run of its own.'
+    dependsOn ':mod:runGameTestSlow'
 }
 
 // [T6b] The soak runs, at the milestone exit and on CI; no budget, the time is reported per run. M0's
