@@ -6,7 +6,7 @@ session. Last update: 2026-10-21.
 ## Where things stand
 
 Research, design and planning are complete, and the owner has approved the roadmap up to the
-first playable version. **Implementation has not started.** The owner postponed it, and M0 waits
+first playable version. The repository is on GitHub (private): `o-e-lytvynskyi/strategos`. **Implementation has not started.** The owner postponed it, and M0 waits
 for the owner's go-ahead.
 
 ## Done
@@ -65,8 +65,7 @@ for the owner's go-ahead.
 1. **M0 "Foundation"**, following [milestones/M0-foundation.md](milestones/M0-foundation.md):
    - wave A (build, harnesses, kernel, walking skeleton) within about two weeks — the tripwire;
    - then wave B (hardening; spikes S1, S2, S5, S6).
-2. **D-23: the private GitHub repository and its CI job** (QA-08). The GitHub step and the first
-   commit need the owner's go-ahead.
+2. **D-23: the CI job** (QA-08) on the private GitHub repository, which exists since 2026-10-21.
 3. **The consent batch for client windows:** S3 (scenario harness) and S4 (client frame time) in
    M0; S9 (camera) right after M0.
 
@@ -74,7 +73,6 @@ for the owner's go-ahead.
 
 - **Go-ahead:**
   - the go-ahead for M0 implementation;
-  - the first commit and the private GitHub repository (D-23);
   - consent batches for client windows (D-22).
 - **Decisions still open, needed later:**
   - D-03 civilisation themes (M7);
