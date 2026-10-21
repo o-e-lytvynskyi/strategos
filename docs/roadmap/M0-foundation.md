@@ -616,7 +616,7 @@ decision (D-21).
   3. S6 gives the same hashes on Linux as on macOS (L1, on CI).
   4. The release job starts the production jar on a client (R).
 - **Tests:** L0, L1, L2, L3, L5 · **Depends on:** QA-04, QA-05, D-23 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 #### QA-10 · Developer commands and log tagging
 - **Value:** Problems are visible and reproducible in the game, which shortens every debugging
@@ -761,7 +761,7 @@ decision (D-21).
   5. The S6 report is in `docs/spikes/` (R).
 - **Tests:** L0, L1, R · **Fixtures:** seed sets for the 200-seed runs · **Depends on:** CORE-03,
   CORE-04 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 #### CORE-07 · Persistence kernel: one blob per match
 - **Value:** Saves never lose units, resources or progress, and old saves keep loading after

@@ -302,6 +302,7 @@ def prepareServerSmoke = tasks.register('prepareServerSmoke', Sync) {
 }
 neoForge.runs.serverSmoke.taskBefore prepareServerSmoke
 def smokeDir = file('build/server-smoke')
+def smokeJUnitDir = file('build/test-results/smoke')
 // A crashed dedicated dev server very likely exits 0: the marker is the verdict.
 def smokeGuard = { String runTask, String markerName ->
     tasks.matching { it.name == runTask }.configureEach {
@@ -313,6 +314,12 @@ def smokeGuard = { String runTask, String markerName ->
             if (crashes != null && crashes.length > 0) problem = "Server smoke crashed: ${crashes*.name}"
             else if (!marker.isFile()) problem = "Server smoke marker missing: ${marker}"
             else if (new groovy.json.JsonSlurper().parse(marker).ok != true) problem = "Server smoke failed: ${marker.text}"
+            // [T18] one JUnit case per smoke run, so CI lists L5 beside L1–L3 (QA-08.1).
+            smokeJUnitDir.mkdirs()
+            def failure = problem == null ? '' : "<failure message=\"${groovy.xml.XmlUtil.escapeXml(problem)}\"/>"
+            new File(smokeJUnitDir, "TEST-${runTask}.xml").text =
+                    "<testsuite name=\"strategos.smoke\" tests=\"1\" failures=\"${problem == null ? 0 : 1}\">" +
+                    "<testcase classname=\"smoke\" name=\"${runTask}\">${failure}</testcase></testsuite>\n"
             if (problem != null) throw new GradleException(problem)
         }
     }

@@ -60,10 +60,10 @@ The owner was here on 2026-10-21 and started M0. Since then:
 
 - **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 3 of 25 tasks done.
 - **Tripwire (M0 only):** T1 started 2026-10-21; T9 green not yet; M0 work days 1 of 10.
-- **In progress:** none.
+- **In progress:** M0 T18 since 2026-10-21: its pull request waits for CI.
 - **Last finished task:** M0 T3 (2026-10-21); T2 was commit 33175b8.
 - **Next task:** M0 T18 · Continuous integration (QA-08, CORE-05), then T4a.
-- **WIP branch:** none.
+- **WIP branch:** wip/M0-T18 (the CI workflow; merged fast-forward once CI is green).
 - **CI:** none yet (M0 T18 starts right after T3; reading runs on `main` needs item 1b); minutes used this month 0 of 2,000.
 - **Overview:** `python3 tools/roadmap.py summary`.
 
