@@ -80,6 +80,11 @@ public final class EntityStore {
         return index < highWater && alive[index];
     }
 
+    /** The generation of {@code index}: its live entity's, or the one its next entity gets. */
+    public int generationAt(int index) {
+        return index < highWater ? generations[index] : 0;
+    }
+
     /** The live handle at {@code index}, or {@link Handle#NONE}. */
     public int handleAt(int index) {
         return aliveAt(index) ? Handle.of(index, generations[index]) : Handle.NONE;

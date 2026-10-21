@@ -94,6 +94,11 @@ public final class PhaseTimers {
         return lastStep + lastAdapter;
     }
 
+    /** The tick in progress, measured so far: the array is reused every tick, so copy it to keep it. */
+    public long[] currentPhaseNanos() {
+        return current;
+    }
+
     /** A copy of the last step's time per phase. */
     public long[] lastPhaseNanos() {
         return last.clone();

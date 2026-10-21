@@ -241,7 +241,7 @@ Cards: [roadmap/M0-foundation.md](roadmap/M0-foundation.md#cards). 26 cards, at 
 | ID | Feature | Size | Depends on | Status |
 |---|---|---|---|---|
 | QA-01 | Build skeleton, pins, core merge and spike S5 | M | — | in_progress |
-| QA-02 | Core test kit: SimHarness, fakes and shared scenarios | M | QA-01 | specified |
+| QA-02 | Core test kit: SimHarness, fakes and shared scenarios | M | QA-01 | in_progress |
 | QA-04 | GameTest harness (L3) | M | QA-01 | in_progress |
 | CORE-01 | Match container, lifecycle and region index | M | QA-02, QA-04 | in_progress |
 | CORE-02 | Driving port and the nine-phase tick pipeline | M | CORE-01 | in_progress |
@@ -249,7 +249,7 @@ Cards: [roadmap/M0-foundation.md](roadmap/M0-foundation.md#cards). 26 cards, at 
 | CORE-06 | Unit records, handles and the body registry | M | CORE-01 | in_progress |
 | UNIT-01 | Unit body v0: a kinematic LivingEntity view | M | CORE-06 | specified |
 | QA-09 | Launch scripts, playtest protocol and the Done ADR | S | QA-01 | in_progress |
-| ORD-01 | Walking skeleton: a debug move order end to end | S | CORE-03, UNIT-01 | specified |
+| ORD-01 | Walking skeleton: a debug move order end to end | S | CORE-03, UNIT-01 | in_progress |
 | QA-03 | Minecraft-bootstrapped unit tests (L2) | S | QA-01 | in_progress |
 | QA-05 | Server smoke (L5): boot, a headless match, a restart round trip | M | QA-01, ORD-01, CORE-07 | in_progress |
 | QA-06 | Client scenario runner and spike S3 (consent) | M | QA-01, D-22 | specified |

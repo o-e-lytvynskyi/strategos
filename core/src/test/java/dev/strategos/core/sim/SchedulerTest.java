@@ -17,7 +17,7 @@ class SchedulerTest {
         scheduler.register(system("a", Phase.MOVEMENT, Cadence.EVERY_TICK, false));
         scheduler.register(system("c", Phase.MOVEMENT, Cadence.EVERY_TICK, false));
 
-        scheduler.runPhase(Phase.MOVEMENT, new MatchState());
+        scheduler.runPhase(Phase.MOVEMENT, TestStates.empty());
 
         assertThat(log).containsExactly("b", "a", "c");
         assertThat(scheduler.systemsOf(Phase.MOVEMENT)).hasSize(3);
@@ -30,7 +30,7 @@ class SchedulerTest {
         for (int i = phases.length - 1; i >= 0; i--) { // registered in reverse, run in phase order
             scheduler.register(system(phases[i].name(), phases[i], Cadence.EVERY_TICK, false));
         }
-        MatchState state = new MatchState();
+        MatchState state = TestStates.empty();
         for (Phase phase : Phase.values()) {
             scheduler.runPhase(phase, state);
         }
@@ -45,7 +45,7 @@ class SchedulerTest {
         Scheduler scheduler = new Scheduler();
         scheduler.register(system("every", Phase.AI, Cadence.EVERY_TICK, false));
         scheduler.register(system("third", Phase.AI, new Cadence(3, 1), false));
-        MatchState state = new MatchState();
+        MatchState state = TestStates.empty();
         for (long tick = 1; tick <= 6; tick++) {
             state.setTick(tick);
             scheduler.runPhase(Phase.AI, state);

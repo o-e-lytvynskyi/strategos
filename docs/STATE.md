@@ -67,14 +67,17 @@ The owner was here on 2026-10-21 and started M0. Since then:
 - 2026-10-21 · **M0 T5a Kernel internals:** the match lifecycle, the nine-phase scheduler with
   cadences and staggering, the per-match message bus, and the entity store with generational
   handles and component stores.
+- 2026-10-21 · **M0 T5b `MatchCore`, commands, movement:** the match kernel steps nine phases; Move,
+  Stop and SpawnUnits validate and apply in canonical order with one feedback record each; units
+  walk and land exactly on their targets; the state hash ignores the clock.
 
 ## Now
 
-- **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 7 of 25 tasks done.
+- **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 8 of 25 tasks done.
 - **Tripwire (M0 only):** T1 started 2026-10-21; T9 green not yet; M0 work days 1 of 10.
 - **In progress:** none.
-- **Last finished task:** M0 T5a (2026-10-21); T4b was commit 4357dce.
-- **Next task:** M0 T5b · `MatchCore`, commands, movement (CORE-01, CORE-02, CORE-03, ORD-01).
+- **Last finished task:** M0 T5b (2026-10-21); T5a was commit aed1e94.
+- **Next task:** M0 T6a · Journal, snapshot, migrations, replay (CORE-05, CORE-07, CORE-03).
 - **WIP branch:** none.
 - **CI:** green on [pull request #1](https://github.com/o-e-lytvynskyi/strategos/pull/1); runs on `main` are not readable yet (item 1b); minutes used this month about 7 of 2,000, as of 2026-10-21.
 - **Overview:** `python3 tools/roadmap.py summary`.

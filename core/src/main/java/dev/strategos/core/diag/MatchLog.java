@@ -3,6 +3,7 @@ package dev.strategos.core.diag;
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.MatchId;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** The match's log: every line starts with {@code "[m<id> t<tick>] "}, so a match's story can be grepped (QA-10). */
 @CoreApi
@@ -13,6 +14,11 @@ public final class MatchLog {
     public MatchLog(Logger log, MatchId id) {
         this.log = log;
         this.id = id;
+    }
+
+    /** The match kernel's log, under the logger name the log scan watches; core.sim logs only through it. */
+    public static MatchLog forSim(MatchId id) {
+        return new MatchLog(LoggerFactory.getLogger("dev.strategos.core.sim.MatchCore"), id);
     }
 
     /** {@code "[m7 t1234] "}. */

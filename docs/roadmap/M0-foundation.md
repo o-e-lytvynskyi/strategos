@@ -311,7 +311,7 @@ decision (D-21).
   4. The build fails when `core/testFixtures` depends on JUnit or AssertJ (L0).
 - **Tests:** L0, L1 · **Fixtures:** scenario definitions, test template set · **Depends on:**
   QA-01 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 #### QA-04 · GameTest harness (L3)
 - **Value:** Every in-world behaviour is proven in a real server world, fast and isolated, and a
@@ -517,7 +517,7 @@ decision (D-21).
   5. Save, dispose and load in the same level keep the state hash (L3).
   6. The owner sees the move on two clients of a dedicated server (L7, acceptance).
 - **Tests:** L1, L3, L5, L7 · **Depends on:** CORE-03, UNIT-01 · **Size:** S · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 ### Wave B: harden and measure
 

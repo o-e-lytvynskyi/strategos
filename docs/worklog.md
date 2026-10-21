@@ -9,7 +9,26 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-21 — M0 T1, T2, T3, T18, T4a, T4b, T5a
+## 2026-10-21 — M0 T1, T2, T3, T18, T4a, T4b, T5a, T5b
+
+- **M0 T5b · `MatchCore`, commands, UnitAI, movement** — ORD-01 and QA-02 in progress; CORE-02,
+  CORE-03, CORE-05.
+  - **Results:**
+    - the driving port and its records;
+    - `MatchCoreImpl` with the nine-phase step;
+    - `StateHasher`;
+    - Move, Stop and SpawnUnits rules with ownership and `UNKNOWN_TARGET` for missing and stale
+      handles;
+    - 256 commands per tick, the rest next tick in order;
+    - bus-driven UnitAI and exact movement;
+    - the first cut of the test kit (`SimHarness`, clocks, `RecordingMetrics`);
+    - `:core:test` passes 124 tests;
+    - a clock ten times slower leaves 1,000 ticks of state hashes identical;
+    - the spawn positions match an independent implementation of the formula bit for bit.
+  - **Problems:**
+    - The spec's snap rule `d <= speed` made a 3-4-5 move take 21 steps instead of 20; a 1e-6
+      tolerance restores ⌈d / speed⌉ (spec §1.6 D row 46).
+    - `MatchCore`'s snapshot and journal belong to T6a (row 45).
 
 - **M0 T5a · Kernel internals** — CORE-01 and CORE-04 in progress; CORE-02, CORE-06.
   - **Results:**
@@ -110,7 +129,7 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
       versions inside `group:name:version` strings (row 40), now proven on a broken catalog; two
       comments that strayed from the spec were removed;
     - `HandleTest` pins the bit layout with literals, since handles are saved.
-- **Next:** M0 T5b · `MatchCore`, commands and movement.
+- **Next:** M0 T6a · journal, snapshot, migrations and replay.
 
 ## 2026-10-21 — design closed, roadmap approved, autonomy set up
 
