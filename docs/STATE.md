@@ -47,14 +47,18 @@ Answer in chat or here; the next session applies the answers.
   checked on each build (determinism, layering, no client code on servers, no shared static
   state, and more), each proved to catch its own deliberate violation; the list of the mod's
   hooks into Minecraft is checked against the code. Card CORE-06 is done.
+- 2026-10-22 · **M0 T10 Fault containment complete, log tagging:** an error in one match stops
+  only that match; it leaves a report in `strategos/faults/` from which the error replays, and
+  players standing in the match are told. Every log line about a match names it and its tick.
+  Cards CORE-10 and QA-10 are done.
 
 ## Now
 
-- **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 17 of 25 tasks done.
+- **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 18 of 25 tasks done.
 - **Tripwire (M0 only):** T1 started 2026-10-21; T9 green 2026-10-22; M0 work days 2 of 10.
 - **In progress:** none.
-- **Last finished task:** M0 T11 (2026-10-22); T9b was commit 52500ef.
-- **Next task:** M0 T10 · Fault containment complete, log tagging (CORE-10, QA-10).
+- **Last finished task:** M0 T10 (2026-10-22); T11 was commit 5b306ff.
+- **Next task:** M0 T11b · Fixture catalogue and its checks (QA-17, CORE-05, CORE-07, CORE-12).
 - **WIP branch:** none.
 - **CI:** green on `main` (M0 T7b review fix, run 39685642374, 6 min 28 s); minutes used this month about 83 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.

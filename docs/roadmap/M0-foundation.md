@@ -635,7 +635,8 @@ decision (D-21).
   1. Debug commands need permission level 2 and are hidden from players without it (L3).
   2. Every log line from match code carries the match id and tick (L3).
 - **Tests:** L0, L3 · **Depends on:** QA-04 · **Size:** S · **Tier:** T0
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-10-22 — M0 T4a, T8, T10, T11: `commandtests.root_requires_permission_2` (1); the GameTest guard's log scan, which fails on a planted untagged INFO line in `BodyRegistry`, with `MatchLogTest` and `simLogsOnlyThroughMatchLog` (2)
 
 #### QA-17 · Static gates, engine-surface inventory and fixture catalogue
 - **Value:** The architecture's boundaries hold by construction, every hook into Minecraft is
@@ -805,7 +806,8 @@ decision (D-21).
      way (L3).
   3. With rethrow on, the test fails after the record is written (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** CORE-02, QA-04 · **Size:** M · **Tier:** T0
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-10-22 — M0 T7b, T10: `faulttests.fault_contained_other_match_continues` (1); `faulttests.unit_entity_override_fault_contained`, `faulttests.output_applier_fault_contained` (2); `faulttests.rethrow_after_record` (3); each report's `fault.txt`, `snapshot.json` and `journal.json`, the journal replaying to the fault's hash
 
 #### CORE-12 · Save quarantine
 - **Value:** A damaged save never silently resets a match: it is kept untouched for inspection.

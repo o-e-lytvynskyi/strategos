@@ -9,7 +9,23 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M0 T9, the tripwire checkpoint, T9b, T11
+## 2026-10-22 — M0 T9, the tripwire checkpoint, T9b, T11, T10
+
+- **M0 T10 · Fault containment complete, log tagging** — CORE-10 and QA-10 done.
+  - **Results:**
+    - `FaultReport`: `strategos/faults/<match>-<tick>/` with `fault.txt` (where, tick,
+      lifecycle, versions, stack trace), `snapshot.json` and `journal.json`; a file that cannot be
+      written becomes `<name>-error.txt`, never an exception;
+    - `FaultBarrier` writes it, logs once with the report's path and tells the players standing in
+      the match;
+    - `faulttests.*` (4): a fault in the tick, in `UnitEntity#hurt` and in a command's reply each
+      stop only their match while the other steps on; RETHROW throws after the record; every
+      report's journal replays to the fault's hash;
+    - the GameTest guard's log scan (QA-10.2): a planted untagged INFO line in `BodyRegistry`
+      failed it, naming the lines; removed;
+    - 97 GameTests, 4.6 s of L3 wall time; `verify verifySlow` green in 35 s.
+  - **Problems:** the stray-body refusal in `BodyEvents` belongs to no match, so it now starts
+    with `[no match] `, which the scan accepts (spec §1.6 D row 57).
 
 - **M0 T11 · Static gates complete** — CORE-06 done; QA-17, CORE-05, QA-10 still in progress.
   - **Results:**
@@ -85,7 +101,7 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
     - pitfalls in the knowledge base (`minecraft-mod-data.md`, new, and `minecraft-mod.md`).
   - Spec §1.6 D row 54.
 
-- **Next:** M0 T10 · Fault containment complete, log tagging.
+- **Next:** M0 T11b · Fixture catalogue and its checks.
 
 ## 2026-10-22 — the owner's setup, M0 T7c, T8
 

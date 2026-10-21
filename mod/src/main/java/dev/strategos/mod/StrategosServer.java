@@ -21,12 +21,13 @@ public final class StrategosServer {
     private final MinecraftServer server;
     private final StrategosSettings settings;
     private final SpawnBudget spawnBudget = new SpawnBudget();
-    private final FaultBarrier faults = new FaultBarrier();
+    private final FaultBarrier faults;
     private final MatchRegistry matches;
 
     private StrategosServer(MinecraftServer server, StrategosSettings settings) {
         this.server = server;
         this.settings = settings;
+        this.faults = new FaultBarrier(server);
         this.matches = new MatchRegistry(server, settings, spawnBudget);
     }
 

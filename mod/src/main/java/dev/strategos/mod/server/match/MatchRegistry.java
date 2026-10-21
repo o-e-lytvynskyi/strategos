@@ -366,7 +366,7 @@ public final class MatchRegistry {
             try {
                 Files.deleteIfExists(Quarantine.dataFile(level, MatchData.name(rt.id())));
             } catch (IOException e) {
-                LOG.warn("Cannot delete the blob of disposed match {}", rt.id(), e);
+                new MatchLog(LOG, rt.id()).error(rt.tick(), "cannot delete the blob of the disposed match", e);
             }
         }
         RegistryData saved = persisted;

@@ -21,6 +21,9 @@ public final class MatchLog {
         return new MatchLog(LoggerFactory.getLogger("dev.strategos.core.sim.MatchCore"), id);
     }
 
+    /** Starts a line of match code that concerns no match (a stray unit body, say), which the log scan accepts. */
+    public static final String NO_MATCH = "[no match] ";
+
     /** {@code "[m7 t1234] "}. */
     public static String prefix(MatchId id, long tick) {
         return "[" + id + " t" + tick + "] ";

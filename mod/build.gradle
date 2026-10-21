@@ -310,6 +310,7 @@ def gameTestGuard = { String runTask, File report, File world, File journals, Fi
         timeout = Duration.ofMinutes(10)
         doFirst {
             world.deleteDir()
+            new File(world.parentFile, 'strategos/faults').deleteDir()   // [T10] this run's fault reports only
             if (journals != null) journals.deleteDir()
             report.delete()
             report.parentFile.mkdirs()
@@ -327,6 +328,15 @@ def gameTestGuard = { String runTask, File report, File world, File journals, Fi
             // [T7c] QA-04.6: the batch-end check reports a leak as a failed case although the server exits 0.
             def failed = cases.findAll { !it.failure.isEmpty() }.collect { "${it.@classname}.${it.@name}" }
             if (failed) throw new GradleException("GameTest failures in ${report.name}: ${failed}")
+            // [T10] QA-10.2: every line that match code logs carries "[m<id> t<tick>] ", or "[no match] " when it
+            // concerns none (MatchLog.NO_MATCH). MDG's file pattern is "[time] [thread/LEVEL] [logger/marker]: message".
+            def matchCode = ~/\] \[(dev\.strategos\.core\.sim\.[\w.$]+|dev\.strategos\.mod\.server\.(?:tick|body)\.[\w.$]+|dev\.strategos\.mod\.server\.match\.MatchRuntime)\/[^\]]*\]: (.*)$/
+            if (log != null && !log.isFile()) throw new GradleException("GameTest log missing for the log scan: ${log}")
+            def untagged = log == null ? [] : log.readLines().findAll { String line ->
+                def m = line =~ matchCode
+                m.find() && !(m.group(2) ==~ /(\[m\d+ t-?\d+\] |\[no match\] ).*/)
+            }
+            if (untagged) throw new GradleException("Match log lines without [m<id> t<tick>]: ${untagged.take(5)}")
         }
     }
 }

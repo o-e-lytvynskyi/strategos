@@ -1,5 +1,6 @@
 package dev.strategos.mod.server.body;
 
+import dev.strategos.core.diag.MatchLog;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.MatchId;
 import dev.strategos.mod.StrategosServer;
@@ -25,7 +26,9 @@ public final class BodyEvents {
             return;
         }
         event.setCanceled(true);
-        LOG.warn("Refused an unbound unit body at {}: only a match's body registry creates bodies", body.position());
+        LOG.warn(
+                MatchLog.NO_MATCH + "Refused an unbound unit body at {}: only a match's body registry creates bodies",
+                body.position());
     }
 
     /**

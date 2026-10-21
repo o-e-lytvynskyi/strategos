@@ -3,6 +3,7 @@ package dev.strategos.gametest;
 import dev.strategos.gametest.suites.BodyTests;
 import dev.strategos.gametest.suites.BuildTests;
 import dev.strategos.gametest.suites.CommandTests;
+import dev.strategos.gametest.suites.FaultTests;
 import dev.strategos.gametest.suites.MatchTests;
 import dev.strategos.gametest.suites.PersistenceTests;
 import dev.strategos.gametest.suites.RetryNoReasonSelfTest;
@@ -24,14 +25,14 @@ public final class Suites {
             case "retryNoReason" -> List.of(RetryNoReasonSelfTest.class);
             case "sharedBatch" -> List.of(SharedBatchSelfTest.class);
             case "ticketLeak" -> List.of(TicketLeakSelfTest.class);
-            // FaultTests join in T10.
             default ->
                 List.of(
                         BuildTests.class,
                         BodyTests.class,
                         MatchTests.class,
                         CommandTests.class,
-                        PersistenceTests.class);
+                        PersistenceTests.class,
+                        FaultTests.class);
         };
     }
 }
