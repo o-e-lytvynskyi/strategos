@@ -247,7 +247,7 @@ Cards: [roadmap/M0-foundation.md](roadmap/M0-foundation.md#cards). 26 cards, at 
 | CORE-02 | Driving port and the nine-phase tick pipeline | M | CORE-01 | in_progress |
 | CORE-03 | Command pipeline and in-memory journal | M | CORE-02 | in_progress |
 | CORE-06 | Unit records, handles and the body registry | M | CORE-01 | in_progress |
-| UNIT-01 | Unit body v0: a kinematic LivingEntity view | M | CORE-06 | specified |
+| UNIT-01 | Unit body v0: a kinematic LivingEntity view | M | CORE-06 | in_progress |
 | QA-09 | Launch scripts, playtest protocol and the Done ADR | S | QA-01 | in_progress |
 | ORD-01 | Walking skeleton: a debug move order end to end | S | CORE-03, UNIT-01 | in_progress |
 | QA-03 | Minecraft-bootstrapped unit tests (L2) | S | QA-01 | in_progress |

@@ -476,7 +476,7 @@ decision (D-21).
      packets from `onGround` flips) are checked with captured packets once QA-19 exists (L3, in
      NET-01).
 - **Tests:** L0, L2, L3, L5 · **Depends on:** CORE-06 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 #### QA-09 · Launch scripts, playtest protocol and the Done ADR
 - **Value:** The owner tries every milestone under real multiplayer conditions with one command,

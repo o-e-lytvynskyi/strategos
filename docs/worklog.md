@@ -9,7 +9,23 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-21 — M0 T1, T2, T3, T18, T4a, T4b, T5a, T5b, T6a, T6b
+## 2026-10-21 — M0 T1, T2, T3, T18, T4a, T4b, T5a, T5b, T6a, T6b, T7a
+
+- **M0 T7a · Unit entity, registry, renderer** — UNIT-01 in progress; QA-03.
+  - **Results:**
+    - `ModEntityTypes` registers `strategos:unit_humanoid` (MISC, `noSave`, `noSummon`, fire
+      immune, tracking range 10, interval 3, no velocity packets) with its attributes;
+    - `UnitEntity`: a kinematic view; the server tick is empty, no pushing, loot, riding, portals,
+      damage or equipment; the spawn data rides the complex-spawn packet;
+    - `UnitSpawnData`: four VarInts and a byte, 13 bytes at most;
+    - `Ids`, the client entry `StrategosClient` and `UnitRenderer` (the player model with the
+      vanilla wide Steve skin, never copied);
+    - `:mod:test` passes 8 tests: the type's settings, its attributes, the spawn data round trip
+      and size, and `CodecSizes`, which fails above a cap with "UnitSpawnData encoded to 8 bytes,
+      cap 7";
+    - every engine name was checked in the 21.1.264 sources first;
+    - `verify` green in 19 s; the dedicated and the GameTest server start with the type.
+  - **Problems:** none.
 
 - **M0 T5b review** (three lenses, every finding checked by a skeptic): five findings confirmed, all
   in tests and the spec; the kernel was right.
@@ -183,7 +199,7 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
       versions inside `group:name:version` strings (row 40), now proven on a broken catalog; two
       comments that strayed from the spec were removed;
     - `HandleTest` pins the bit layout with literals, since handles are saved.
-- **Next:** M0 T7a · unit entity, registry, renderer.
+- **Next:** M0 T7b · holder, match registry, tick driver, bodies.
 
 ## 2026-10-21 — design closed, roadmap approved, autonomy set up
 

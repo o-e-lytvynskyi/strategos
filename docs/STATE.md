@@ -78,14 +78,18 @@ The owner was here on 2026-10-21 and started M0. Since then:
   tick; 200 seeds replay to the same hash over 2,000 ticks and, in the soak, 10,000; the
   determinism canary has its golden hashes; the first released save fixture is committed. Card
   QA-02 is done; `:core:test` runs 593 tests in 3.8 s.
+- 2026-10-21 · **M0 T7a Unit entity, registry, renderer:** the unit body `strategos:unit_humanoid`
+  is registered (never saved, never summoned, no physics), with its 13-byte spawn data and a
+  placeholder Steve renderer on the client; the dedicated server and the GameTest server start with
+  it.
 
 ## Now
 
-- **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 10 of 25 tasks done.
+- **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 11 of 25 tasks done.
 - **Tripwire (M0 only):** T1 started 2026-10-21; T9 green not yet; M0 work days 1 of 10.
 - **In progress:** none.
-- **Last finished task:** M0 T6b (2026-10-21); T6a was commit 8a151c7.
-- **Next task:** M0 T7a · Unit entity, registry, renderer (UNIT-01, QA-03).
+- **Last finished task:** M0 T7a (2026-10-21); T6b was commit 6bbf167, its review fixes for T5b 8f088a8.
+- **Next task:** M0 T7b · Holder, match registry, tick driver, bodies (CORE-01, CORE-02, CORE-06, CORE-10, UNIT-01).
 - **WIP branch:** none.
 - **CI:** green on [pull request #1](https://github.com/o-e-lytvynskyi/strategos/pull/1); runs on `main` are not readable yet (item 1b); minutes used this month about 7 of 2,000, as of 2026-10-21.
 - **Overview:** `python3 tools/roadmap.py summary`.
