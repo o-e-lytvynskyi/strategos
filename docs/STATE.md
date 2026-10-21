@@ -3,7 +3,7 @@
 Where the project stands right now. The session log is in [worklog.md](worklog.md); the work
 procedure is the `strategos-dev` skill (`.claude/skills/strategos-dev/SKILL.md`).
 
-**Last update:** 2026-10-22 · **Owner last seen:** 2026-10-21 · **Current:** M0 Foundation —
+**Last update:** 2026-10-22 · **Owner last seen:** 2026-10-22 · **Current:** M0 Foundation —
 started 2026-10-21 (owner's go-ahead)
 
 ## For the owner
@@ -24,48 +24,7 @@ Answer in chat or here; the next session applies the answers.
 
 ## Since your last visit
 
-The owner was here on 2026-10-21 and started M0. Since then:
-
-- 2026-10-21 · **M0 T1 Build skeleton:** the build runs (Gradle 9.2.1 on Java 21, NeoForge
-  21.1.264); `verifyFast` and the first tests are green; three spec corrections (§1.6 D, rows
-  38–40).
-- 2026-10-21 · **M0 T2 GameTest harness:** the GameTest server runs our suites and writes a JUnit
-  report that the build checks; declared retries work after a fix for a vanilla 1.21.1 bug
-  (§1.6 D row 41).
-- 2026-10-21 · **M0 T3 Smoke, ArchUnit, `verify`:** the commit gate `verify` exists and is green in
-  19 s, with every guard proven to bite; ADR-0007 is Accepted on the first S5 report
-  ([spikes/S5-build-wiring.md](spikes/S5-build-wiring.md)).
-- 2026-10-21 · **M0 T18 CI:** GitHub Actions runs `verify` on Linux for every push to `main` and every
-  pull request; the first run passed in 6 min 11 s, and
-  [pull request #1](https://github.com/o-e-lytvynskyi/strategos/pull/1) shows the test results.
-- 2026-10-21 · **M0 T4a Core `shared`, `port`, `diag`:** ids with codecs, deterministic maths, the
-  counter-based RNG and the state hasher (pinned against an independent implementation), phase
-  timers and the match log.
-- 2026-10-21 · **M0 T4b Core `protocol`, `content`:** the commands `Move`, `Stop` and `SpawnUnits`
-  with their JSON codec and catalogue, `UnitSet`, the reject reasons, and the built-in unit
-  template.
-- 2026-10-21 · **M0 T5a Kernel internals:** the match lifecycle, the nine-phase scheduler with
-  cadences and staggering, the per-match message bus, and the entity store with generational
-  handles and component stores.
-- 2026-10-21 · **M0 T5b `MatchCore`, commands, movement:** the match kernel steps nine phases; Move,
-  Stop and SpawnUnits validate and apply in canonical order with one feedback record each; units
-  walk and land exactly on their targets; the state hash ignores the clock.
-- 2026-10-21 · **M0 T6a Journal, snapshot, migrations, replay:** every match keeps a journal of its
-  inputs with state-hash checkpoints; a 2,000-tick run replays to the same hash; a 500-unit
-  snapshot survives JSON; migrations run before decoding.
-- 2026-10-21 · **M0 T6b Test kit, scenarios, seeded runs, S6 canary:** the shared scenarios (the
-  walking skeleton among them) run in plain JUnit; the match invariants are checked after every
-  tick; 200 seeds replay to the same hash over 2,000 ticks and, in the soak, 10,000; the
-  determinism canary has its golden hashes; the first released save fixture is committed. Card
-  QA-02 is done; `:core:test` runs 593 tests in 3.8 s.
-- 2026-10-21 · **M0 T7a Unit entity, registry, renderer:** the unit body `strategos:unit_humanoid`
-  is registered (never saved, never summoned, no physics), with its 13-byte spawn data and a
-  placeholder Steve renderer on the client; the dedicated server and the GameTest server start with
-  it.
-- 2026-10-21 · **M0 T7b Holder, match registry, tick driver, bodies:** a server now keeps its
-  matches: they are created in a checked space, stepped every level tick before the tracker, and
-  their units get bodies (at most 64 new ones per server tick), which are re-made when something
-  removes them; a fault stops only its match. Matches exist only in memory until T9.
+Nothing yet: the owner was here on 2026-10-22.
 
 ## Now
 
