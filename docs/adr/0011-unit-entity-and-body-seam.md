@@ -4,7 +4,14 @@ Date: 2026-10-21
 
 ## Status
 
-Proposed - pending spikes S1 and S10
+Proposed - pending spike S10
+
+**S1 reported 2026-10-22** ([S1-server-cost-per-body.md](../spikes/S1-server-cost-per-body.md)),
+still Proposed until S10: at 500 moving bodies a kinematic body costs 0.10 µs per tick beyond the
+core (exit ≤ 4) and 0.12 µs in all, against 4.9 µs for a stripped `PathfinderMob` and for a physics
+`LivingEntity` on a vanilla server (2.2 and 1.9 with Lithium). The best body is far below 15 µs, so
+D-01's default stays at 150. A vanilla body's cost is movement against block collisions (76 % of
+the server thread's samples), not AI.
 
 **Amended 2026-10-21** by [ADR-0023](0023-plan-alignment-after-roadmap-approval.md), still
 Proposed: D-08 chose the observer avatar, which units never target, so units hitting players or

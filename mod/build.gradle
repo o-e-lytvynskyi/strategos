@@ -144,6 +144,20 @@ neoForge {
             systemProperty 'strategos.perf.fakeForeignLoad', providers.gradleProperty('perf.fakeForeignLoad').getOrElse('')
             systemProperty 'strategos.faults.rethrow', 'true'
         }
+        // [T13] a self-terminating dedicated server for the spikes (spec 8.3)
+        spike {
+            server()
+            disableIdeRun()
+            gameDirectory = file('build/spike')
+            programArgument('--nogui')
+            jvmArguments.addAll('-Xms4G', '-Xmx4G')
+            systemProperty 'strategos.spike', providers.gradleProperty('spike').getOrElse('')
+            systemProperty 'strategos.spike.out', file('build/spike/out').absolutePath
+            systemProperty 'strategos.neoforge.version', libs.versions.neoforge.get()
+            if (providers.gradleProperty('spike.jfr').isPresent()) {
+                jvmArgument("-XX:StartFlightRecording=filename=${file('build/spike/out/spike.jfr').absolutePath},settings=profile,dumponexit=true")
+            }
+        }
         // [T9b] run 2 of the restart round trip: run 1's game directory, never wiped (QA-05.4)
         serverSmokeRestart {
             server()
@@ -233,22 +247,23 @@ dependencies {
     archTestCompileOnly core                // the @HotPath annotation for B9's fixtures; the rules read classes by name
     archTestRuntimeOnly libs.junit.platform.launcher
 
-    // Dev-only profiles: ./gradlew <run> -Pspark | -Pcompat (client set) | -Pcompat.server (server set)
+    // Dev-only profiles: ./gradlew <run> -Pspark | -Pcompat (client set) | -Pcompat.server (server set).
+    // add(...), since a bare localRuntime here is the script's Configuration variable, not the dependency method.
     if (providers.gradleProperty('spark').isPresent()) {
-        localRuntime libs.spark
+        add('localRuntime', libs.spark)
     }
     if (providers.gradleProperty('compat').isPresent()) {
-        localRuntime libs.compat.sodium
-        localRuntime libs.compat.iris
-        localRuntime libs.compat.lithium
-        localRuntime libs.compat.modernfix
-        localRuntime libs.compat.ferritecore
-        localRuntime libs.compat.entityculling
-        localRuntime libs.compat.immediatelyfast
+        add('localRuntime', libs.compat.sodium)
+        add('localRuntime', libs.compat.iris)
+        add('localRuntime', libs.compat.lithium)
+        add('localRuntime', libs.compat.modernfix)
+        add('localRuntime', libs.compat.ferritecore)
+        add('localRuntime', libs.compat.entityculling)
+        add('localRuntime', libs.compat.immediatelyfast)
     } else if (providers.gradleProperty('compat.server').isPresent()) {
-        localRuntime libs.compat.lithium
-        localRuntime libs.compat.modernfix
-        localRuntime libs.compat.ferritecore
+        add('localRuntime', libs.compat.lithium)
+        add('localRuntime', libs.compat.modernfix)
+        add('localRuntime', libs.compat.ferritecore)
     }
 }
 
@@ -423,6 +438,30 @@ smokeGuard('runServerSmokeRestart', 'smoke-restart.json')
 tasks.matching { it.name == 'runServerSmokeRestart' }.configureEach {
     dependsOn 'runServerSmoke'
     doFirst { new File(smokeDir, 'smoke-restart.json').delete() }
+}
+
+// [T13] The spike server: a fresh flat world on every run (port 25598); the verdict is the DONE file, in
+// out/<id>, or out/<id>-lithium for the -Pcompat.server run (§1.6 D row 60).
+def prepareSpike = tasks.register('prepareSpike', Sync) {
+    from 'src/gametest/spike-gamedir'
+    into layout.buildDirectory.dir('spike')
+    preserve { include 'out/**' }                       // both runs of a spike, and the JFR recording
+    outputs.upToDateWhen { false }                      // as prepareServerSmoke
+}
+neoForge.runs.spike.taskBefore prepareSpike
+def spikeId = providers.gradleProperty('spike').getOrElse('')
+def spikeDirName = spikeId + (providers.gradleProperty('compat.server').isPresent() ? '-lithium' : '')
+def spikeOut = file('build/spike/out')
+tasks.matching { it.name == 'runSpike' }.configureEach {
+    timeout = Duration.ofMinutes(45)
+    doFirst {
+        if (!(spikeId in ['s1', 's2'])) throw new GradleException('Use -Pspike=s1 or -Pspike=s2')
+        new File(spikeOut, "${spikeDirName}/DONE").delete()
+    }
+    doLast {
+        def done = new File(spikeOut, "${spikeDirName}/DONE")
+        if (!done.isFile()) throw new GradleException("Spike ${spikeId} did not finish: ${done} missing")
+    }
 }
 
 // [T3] verifyHarness. These runs feed a guard its broken input and pass only when that guard would

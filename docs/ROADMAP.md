@@ -251,15 +251,15 @@ Cards: [roadmap/M0-foundation.md](roadmap/M0-foundation.md#cards). 26 cards, at 
 | QA-09 | Launch scripts, playtest protocol and the Done ADR | S | QA-01 | in_progress |
 | ORD-01 | Walking skeleton: a debug move order end to end | S | CORE-03, UNIT-01 | in_progress |
 | QA-03 | Minecraft-bootstrapped unit tests (L2) | S | QA-01 | in_progress |
-| QA-05 | Server smoke (L5): boot, a headless match, a restart round trip | M | QA-01, ORD-01, CORE-07 | in_progress |
+| QA-05 | Server smoke (L5): boot, a headless match, a restart round trip | M | QA-01, ORD-01, CORE-07 | done |
 | QA-06 | Client scenario runner and spike S3 (consent) | M | QA-01, D-22 | specified |
 | QA-07 | Performance harness (L6) | M | QA-02, QA-04 | done |
 | QA-08 | Continuous integration | M | QA-04, QA-05, D-23 | in_progress |
 | QA-10 | Developer commands and log tagging | S | QA-04 | done |
 | QA-17 | Static gates, engine-surface inventory and fixture catalogue | M | QA-01 | done |
 | PERF-01 | Budget matrix and enforcement | S | QA-07 | in_progress |
-| PERF-02 | Spike S1: server cost per body | M | UNIT-01, QA-07 | specified |
-| PERF-03 | Spike S2: force-loaded arena cost | M | QA-05, QA-07 | specified |
+| PERF-02 | Spike S1: server cost per body | M | UNIT-01, QA-07 | done |
+| PERF-03 | Spike S2: force-loaded arena cost | M | QA-05, QA-07 | in_progress |
 | PERF-04 | Spike S4: client frame time with many units (consent) | M | QA-06, UNIT-01 | specified |
 | CORE-04 | Match event bus | S | CORE-02 | in_progress |
 | CORE-05 | Determinism kit and spike S6 | M | CORE-03, CORE-04 | in_progress |

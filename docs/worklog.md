@@ -9,7 +9,28 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M0 T9, the tripwire checkpoint, T9b, T11, T10, T11b, T12
+## 2026-10-22 — M0 T9, the tripwire checkpoint, T9b, T11, T10, T11b, T12, T13
+
+- **M0 T13 · Spike runner and S1** — PERF-02 and QA-05 done; PERF-03 in progress (S2 is T14).
+  - **Results:**
+    - the spike runner: `runSpike` on a self-terminating dedicated server, `SpikeDriver`,
+      `SpikeRegistry`, `SpikeArena`, `SpikeMob` (P), `SpikePhysicsBody` (L), `TickSampler`,
+      `SpikeReport`, `S1BodyCost`;
+    - S1, 35 configurations in 67 s: a kinematic body costs 0.12 µs at 500 moving, 0.10 beyond
+      the core (exit ≤ 4), against 4.9 µs for P and for L; with Lithium P 2.2 and L 1.9, K the same;
+    - the verdict: S1's exit met, D-01's default stays at 150 per player;
+    - JFR: 92.7 % of the server thread in the entity loop, 76 % in `LivingEntity#travel`;
+      `MatchRuntime#tick` 0.6 %, `NaturalSpawner` 0.1 %;
+    - [the S1 report](spikes/S1-server-cost-per-body.md) and its data; ADR-0011 and ADR-0019
+      carry the numbers; D-01 records the check;
+    - `verify verifySlow` green in 33 s.
+  - **Problems:**
+    - the spec's `ticking=false` arena would freeze every body (the T7b fact): ticking tickets;
+    - a 500-unit Move broke the 300-unit limit and crashed the first run; moves go out in 300s;
+    - the first K rows ran on a cold JIT; an unrecorded warm-up pass now runs first;
+    - the `-Pspark` and `-Pcompat` profiles had never worked (`localRuntime` in `dependencies {}`
+      is the script variable); they use `add('localRuntime', …)` now.
+  - Spec §1.6 D row 60.
 
 - **M0 T12 · Performance harness** — QA-07, CORE-02 and CORE-07 done; PERF-01 (T14 left) and
   CORE-04 (the approved baseline left) in progress.
@@ -143,7 +164,7 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
     - pitfalls in the knowledge base (`minecraft-mod-data.md`, new, and `minecraft-mod.md`).
   - Spec §1.6 D row 54.
 
-- **Next:** M0 T13 · Spike runner and S1.
+- **Next:** M0 T14 · S2 and the budget proposal.
 
 ## 2026-10-22 — the owner's setup, M0 T7c, T8
 

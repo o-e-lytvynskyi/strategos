@@ -66,14 +66,18 @@ Answer in chat or here; the next session applies the answers.
   performance tests in a real server, each gate proved to fail on a synthetic overload and to
   refuse a verdict on a busy machine. The numbers are far inside the budgets; the benchmark
   baseline waits for your approval (item 1 above). Cards QA-07, CORE-02 and CORE-07 are done.
+- 2026-10-22 · **M0 T13 Spike S1, server cost per body:** a unit body costs the server about
+  0.1 µs a tick, about 40 times less than a vanilla mob (4.9 µs; 2.2 with Lithium). The default
+  population cap stays at 150 per player, as D-01 planned ([report](spikes/S1-server-cost-per-body.md)).
+  Cards PERF-02 and QA-05 are done.
 
 ## Now
 
-- **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 20 of 25 tasks done.
+- **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 21 of 25 tasks done.
 - **Tripwire (M0 only):** T1 started 2026-10-21; T9 green 2026-10-22; M0 work days 2 of 10.
 - **In progress:** none.
-- **Last finished task:** M0 T12 (2026-10-22); T11b was commit afe5cd2.
-- **Next task:** M0 T13 · Spike runner and S1 (PERF-02, QA-05, PERF-03).
+- **Last finished task:** M0 T13 (2026-10-22); T12 was commit 7e410e4.
+- **Next task:** M0 T14 · S2 and the budget proposal (PERF-03, PERF-01).
 - **WIP branch:** none.
 - **CI:** green on `main` (M0 T7b review fix, run 39685642374, 6 min 28 s); minutes used this month about 83 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.

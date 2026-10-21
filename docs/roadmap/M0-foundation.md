@@ -223,6 +223,10 @@ AI-05, MATCH-08.
 
 **Decided (2026-10-21):** as recommended, by the owner.
 
+**S1 checked (2026-10-22):** the best body at 500 moving units is the kinematic one at 0.12 µs,
+far below 15 µs, so the default stays at 150 ([S1](../spikes/S1-server-cost-per-body.md)). S4's
+half of the check waits for the owner's consent to M0's client batch.
+
 ### D-22 · Client-run (L4) consent policy
 
 **Question.** How client windows on the owner's Mac are allowed to run: 43 cards use L4, and a
@@ -557,7 +561,8 @@ decision (D-21).
   4. After the restart round trip exactly one body exists per unit, and the hash at a later tick
      equals that of an uninterrupted L1 replay (L5).
 - **Tests:** L0, L5 · **Depends on:** QA-01, ORD-01, CORE-07 · **Size:** M · **Tier:** T0
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-10-22 — M0 T3, T8, T9b, T13: `runServerSmoke` 6.1 s in S5 (1); `clientRef` failing, S5 check 9 (2); `runServerSmokeNoMarker` in `verifyHarness` (3); `runServerSmokeRestart`, one body per unit and the replayed hash equal to the live one (4); the self-terminating server mode serves the spikes (T13)
 
 #### QA-06 · Client scenario runner and spike S3 (consent)
 - **Value:** Camera, HUD and rendering can be checked by machine with screenshots, without
@@ -699,7 +704,8 @@ decision (D-21).
      best body ≤ 15 µs, or the default cap drops to 100 (D-01); the report adds its numbers to
      ADR-0011 and feeds PERF-01 (R).
 - **Tests:** L6, R · **Depends on:** UNIT-01, QA-07 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-22 — M0 T13: `./gradlew :mod:runSpike -Pspike=s1` (67 s), with Lithium and with JFR (1); [the S1 report](../spikes/S1-server-cost-per-body.md), the numbers in ADR-0011 and ADR-0019, and the verdict on D-01: a kinematic body costs 0.10 µs beyond the core at 500 moving, so the default stays at 150 (2)
 
 #### PERF-03 · Spike S2: force-loaded arena cost
 - **Value:** A match keeps simulating the whole arena without lag, wherever the camera is.
@@ -715,7 +721,7 @@ decision (D-21).
   3. Exit: ≤ 4 ms MSPT idle at 576 chunks and autosave ≤ 100 ms; the report confirms
      `ticking=false` and the sizes for D-17 (R).
 - **Tests:** L5, L6, R · **Depends on:** QA-05, QA-07 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 #### PERF-04 · Spike S4: client frame time with many units (consent)
 - **Value:** The screen stays smooth with whole armies in view.

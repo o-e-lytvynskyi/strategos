@@ -75,7 +75,10 @@ The budgets apply to the M4 Pro, at the design scale of 600 units unless noted:
 
 **What the spikes replace:**
 - **S1:** the per-body cost behind B, and with it the population cap D-01. A best body above 15 µs
-  at 500 moving units drops the default cap to 100 per player.
+  at 500 moving units drops the default cap to 100 per player. *Reported 2026-10-22: the
+  kinematic body costs 0.12 µs at 500 moving (0.10 beyond the core), so D-01 stays at 150; the
+  whole server tick with 1,000 kinematic bodies fighting is 0.19 ms p50 and 0.35 ms p99 without
+  players ([S1](../spikes/S1-server-cost-per-body.md)). T14 folds this into the revision.*
 - **S2:** the vanilla baseline of a force-loaded arena (≤ 4 ms idle at 576 chunks), which sets the
   arena size D-17.
 - **S4:** budget F, run with the owner's consent. If 200 armoured humanoids cost more than 6 ms with
