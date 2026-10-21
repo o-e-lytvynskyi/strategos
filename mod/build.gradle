@@ -97,6 +97,62 @@ neoForge {
             systemProperty 'strategos.selftest', providers.gradleProperty('strategos.selftest').getOrElse('')
             systemProperty 'strategos.faults.rethrow', 'true'
         }
+        // [T3]
+        serverSmoke {
+            server()
+            disableIdeRun()
+            gameDirectory = file('build/server-smoke')
+            programArgument('--nogui')
+            systemProperty 'strategos.smoke', 'true'
+            systemProperty 'strategos.smoke.marker', file('build/server-smoke/smoke-result.json').absolutePath
+            systemProperty 'strategos.selftest', providers.gradleProperty('strategos.selftest').getOrElse('')
+        }
+        // [T3] verifyHarness: each of these must fail the guard it targets; the inverted guards of block F pass then
+        gameTestEmptyFilter {
+            type = 'gameTestServer'
+            disableIdeRun()
+            gameDirectory = file('build/harness/empty-filter')
+            systemProperty 'strategos.gametest.report', file('build/harness/empty-filter/TEST-gametest.xml').absolutePath
+            systemProperty 'strategos.gametest.filter', '^nomatch$'
+        }
+        gameTestBrokenLoad {
+            type = 'gameTestServer'
+            disableIdeRun()
+            gameDirectory = file('build/harness/broken-load')
+            systemProperty 'strategos.gametest.report', file('build/harness/broken-load/TEST-gametest.xml').absolutePath
+            systemProperty 'strategos.selftest', 'failModLoad'
+        }
+        // [T3] verifyHarness: the GameTest self-tests of §7.4, one run each; block F checks each designed verdict
+        gameTestRetry {
+            type = 'gameTestServer'
+            disableIdeRun()
+            gameDirectory = file('build/harness/retry')
+            systemProperty 'strategos.gametest.report', file('build/harness/retry/TEST-gametest.xml').absolutePath
+            systemProperty 'strategos.selftest', 'retry'
+        }
+        gameTestRetryNoReason {
+            type = 'gameTestServer'
+            disableIdeRun()
+            gameDirectory = file('build/harness/retry-no-reason')
+            systemProperty 'strategos.gametest.report', file('build/harness/retry-no-reason/TEST-gametest.xml').absolutePath
+            systemProperty 'strategos.selftest', 'retryNoReason'
+        }
+        gameTestSharedBatch {
+            type = 'gameTestServer'
+            disableIdeRun()
+            gameDirectory = file('build/harness/shared-batch')
+            systemProperty 'strategos.gametest.report', file('build/harness/shared-batch/TEST-gametest.xml').absolutePath
+            systemProperty 'strategos.selftest', 'sharedBatch'
+        }
+        serverSmokeNoMarker {
+            server()
+            disableIdeRun()
+            gameDirectory = file('build/harness/smoke-crash')
+            programArgument('--nogui')
+            systemProperty 'strategos.smoke', 'true'
+            systemProperty 'strategos.smoke.marker', file('build/harness/smoke-crash/smoke-result.json').absolutePath
+            systemProperty 'strategos.selftest', 'crashOnStart'
+        }
     }
 }
 
@@ -237,6 +293,107 @@ def gameTestGuard = { String runTask, File report, File world, File journals, Fi
 }
 gameTestGuard('runGameTestServer', file('build/test-results/gametest/TEST-gametest.xml'),
         file('build/gametest/world'), file('build/gametest/journals'), file('build/gametest/logs/latest.log'))
+
+def prepareServerSmoke = tasks.register('prepareServerSmoke', Sync) {
+    from 'src/gametest/smoke-gamedir'
+    into layout.buildDirectory.dir('server-smoke')     // wipes world, logs and crash reports every run
+    // Never up to date: Gradle does not see what the forked server wrote there (§1.6 row 42).
+    outputs.upToDateWhen { false }
+}
+neoForge.runs.serverSmoke.taskBefore prepareServerSmoke
+def smokeDir = file('build/server-smoke')
+// A crashed dedicated dev server very likely exits 0: the marker is the verdict.
+def smokeGuard = { String runTask, String markerName ->
+    tasks.matching { it.name == runTask }.configureEach {
+        timeout = Duration.ofMinutes(5)
+        doLast {
+            def marker = new File(smokeDir, markerName)
+            def crashes = new File(smokeDir, 'crash-reports').listFiles()
+            String problem = null
+            if (crashes != null && crashes.length > 0) problem = "Server smoke crashed: ${crashes*.name}"
+            else if (!marker.isFile()) problem = "Server smoke marker missing: ${marker}"
+            else if (new groovy.json.JsonSlurper().parse(marker).ok != true) problem = "Server smoke failed: ${marker.text}"
+            if (problem != null) throw new GradleException(problem)
+        }
+    }
+}
+smokeGuard('runServerSmoke', 'smoke-result.json')
+
+// [T3] verifyHarness. These runs feed a guard its broken input and pass only when that guard would
+// have failed, so a guard that stops biting fails the build (QA-04.1, QA-04.2, QA-04.4, QA-04.5,
+// QA-05.3). A generator rejection leaves no report either: the server never starts (§7.4).
+def expectNoReport = { String runTask, File dir, String what, String named ->
+    tasks.matching { it.name == runTask }.configureEach {
+        ignoreExitValue = true                          // RunGameTask extends JavaExec
+        timeout = Duration.ofMinutes(5)
+        mustRunAfter 'runGameTestServer'                // keeps the measured L3 wall time clean
+        doFirst { dir.deleteDir(); dir.mkdirs() }
+        doLast {
+            def report = new File(dir, 'TEST-gametest.xml')
+            boolean caught = !report.isFile() ||
+                    new groovy.xml.XmlSlurper().parse(report).depthFirst().findAll { it.name() == 'testcase' }.isEmpty()
+            if (!caught) throw new GradleException("verifyHarness: ${runTask} wrote a report; the GameTest guard no longer catches ${what}")
+            // A rejection must also name the rejected test in the log.
+            def log = new File(dir, 'logs/latest.log')
+            if (named != null && !(log.isFile() && log.text.contains(named))) {
+                throw new GradleException("verifyHarness: ${runTask} did not name ${named}; the generator no longer rejects ${what}")
+            }
+        }
+    }
+}
+expectNoReport('runGameTestEmptyFilter', file('build/harness/empty-filter'), 'an empty test set', null)
+expectNoReport('runGameTestBrokenLoad', file('build/harness/broken-load'), 'a mod-loading error', null)
+expectNoReport('runGameTestRetryNoReason', file('build/harness/retry-no-reason'), 'a retry without a reason',
+        'retrynoreasonselftest.no_reason')
+expectNoReport('runGameTestSharedBatch', file('build/harness/shared-batch'), 'a solo test in a shared batch',
+        'sharedbatchselftest.')
+
+// [T3] verifyHarness. The self-tests that report pass only when their report shows the designed verdicts:
+// the retry semantics with the retry list (QA-04.4) and, from T7c, the batch-end check (QA-04.6).
+def expectVerdicts = { String runTask, File dir, List<String> passed, List<String> failed, String retried ->
+    tasks.matching { it.name == runTask }.configureEach {
+        ignoreExitValue = true                          // a failed required test makes the server exit non-zero
+        timeout = Duration.ofMinutes(5)
+        mustRunAfter 'runGameTestServer'
+        doFirst { dir.deleteDir(); dir.mkdirs() }
+        doLast {
+            def report = new File(dir, 'TEST-gametest.xml')
+            if (!report.isFile()) throw new GradleException("verifyHarness: ${runTask} wrote no report: ${report}")
+            def xml = new groovy.xml.XmlSlurper().parse(report)
+            def ok = xml.depthFirst().findAll { it.name() == 'testcase' }
+                    .collectEntries { [("${it.@classname}.${it.@name}".toString()): it.failure.isEmpty()] }
+            def wrong = passed.findAll { ok[it] != true }.collect { "${it} should pass" } +
+                    failed.findAll { ok[it] != false }.collect { "${it} should fail" }
+            def listed = xml.depthFirst().findAll { it.name() == 'property' && it.@name == 'retried' }
+                    .collect { it.@value.toString() }
+            if (retried != null && !listed.any { it.startsWith("${retried}: ") && it.contains(' attempts; ') && !it.endsWith('; ') }) {
+                wrong << "${retried} listed as retried with its reason"
+            }
+            if (wrong) throw new GradleException("verifyHarness: ${runTask} no longer shows its designed verdicts: ${wrong}")
+        }
+    }
+}
+expectVerdicts('runGameTestRetry', file('build/harness/retry'),
+        ['selftests.two_of_three'], ['selftests.exhausted'], 'selftests.two_of_three')
+
+def prepareSmokeNoMarker = tasks.register('prepareServerSmokeNoMarker', Sync) {
+    from 'src/gametest/smoke-gamedir'
+    into layout.buildDirectory.dir('harness/smoke-crash')
+    outputs.upToDateWhen { false }                      // as prepareServerSmoke
+}
+neoForge.runs.serverSmokeNoMarker.taskBefore prepareSmokeNoMarker
+def smokeCrashDir = file('build/harness/smoke-crash')
+tasks.matching { it.name == 'runServerSmokeNoMarker' }.configureEach {
+    ignoreExitValue = true
+    timeout = Duration.ofMinutes(5)
+    mustRunAfter 'runServerSmoke'                       // they share port 25599; runServerSmokeRestart joins in T9b
+    doLast {
+        def marker = new File(smokeCrashDir, 'smoke-result.json')
+        if (marker.isFile() && new groovy.json.JsonSlurper().parse(marker).ok == true) {
+            throw new GradleException('verifyHarness: a crash on start left an ok smoke marker; the smoke guard no longer bites')
+        }
+    }
+}
 
 tasks.register('generateArenas') {
     group = 'strategos'

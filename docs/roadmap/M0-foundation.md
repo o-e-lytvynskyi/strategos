@@ -552,7 +552,7 @@ decision (D-21).
   4. After the restart round trip exactly one body exists per unit, and the hash at a later tick
      equals that of an uninterrupted L1 replay (L5).
 - **Tests:** L0, L5 · **Depends on:** QA-01, ORD-01, CORE-07 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 #### QA-06 · Client scenario runner and spike S3 (consent)
 - **Value:** Camera, HUD and rendering can be checked by machine with screenshots, without
@@ -657,7 +657,7 @@ decision (D-21).
      committed sets each fail the build (L0).
 - **Tests:** L0, L2 · **Fixtures:** the catalogue itself · **Depends on:** QA-01 · **Size:** M ·
   **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 #### PERF-01 · Budget matrix and enforcement
 - **Value:** The game holds 20 TPS and smooth frames at the promised army sizes, because every

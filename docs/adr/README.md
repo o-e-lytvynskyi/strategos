@@ -15,7 +15,7 @@ governs.
 | [0004](0004-zero-runtime-dependencies.md) | No runtime dependencies besides NeoForge | Accepted | 2026-10-21 | §2 |
 | [0005](0005-clean-room-and-licensing.md) | Clean-room development and licensing policy | Accepted | 2026-10-21 | – |
 | [0006](0006-test-levels-and-definition-of-done.md) | Test levels L0–L7 and the Definition of Done | Accepted; amended by 0022 | 2026-10-21 | §16 |
-| [0007](0007-gametest-wiring.md) | GameTests inside the `strategos` mod, registered by our own generator | Proposed - pending spike S5 | 2026-10-21 | §16 |
+| [0007](0007-gametest-wiring.md) | GameTests inside the `strategos` mod, registered by our own generator | Accepted (S5) | 2026-10-21 | §16 |
 | [0008](0008-authority-and-state-model.md) | The core owns all match state; entities are views | Accepted | 2026-10-21 | §5 |
 | [0009](0009-tick-pipeline-determinism-and-fault-containment.md) | Tick pipeline, determinism boundary and fault containment | Accepted; amended by 0023 | 2026-10-21 | §4, §5 |
 | [0010](0010-match-model-and-lifecycle.md) | A match is a region of a level; arenas live in an arena world | Accepted; amended by 0023 | 2026-10-21 | §3 |
@@ -41,7 +41,7 @@ governs.
 | S2 force-loaded arena cost | 0019 (and the sizes in 0010) | M0 (PERF-03) | No |
 | S3 client harness on macOS | 0006 (the L4 consent rule) | M0 (QA-06) | Yes |
 | S4 client frame time | 0019 | M0, else with CAM-01 (PERF-04, bare humanoids); the armoured and held-item pass with ART-01 in M3 | Yes |
-| S5 build and GameTest wiring | 0007 (and the execution of 0003) | M0, first (QA-01) | No |
+| S5 build and GameTest wiring | 0007 (and the execution of 0003) | M0, first (QA-01); first report [2026-10-21](../spikes/S5-build-wiring.md), final in T15 | No |
 | S6 determinism canary | 0009 | M0 (CORE-05); Linux after D-23 | No |
 | S7 path service under load | 0015 | M1 (PATH-16) | No |
 | S8 terrain census and encoding | 0015 | M1 (PATH-01) | No |

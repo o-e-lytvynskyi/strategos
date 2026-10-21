@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="strategos.gametest" tests="2" failures="1" skipped="0" time="1.482" timestamp="2026-10-21T19:02:30">
+    <properties>
+      <property name="retried" value="selftests.two_of_three: 3 attempts; self-test of the retry semantics (QA-04.4)"/>
+    </properties>
+    <testcase classname="selftests" name="exhausted" time="0.002">
+      <failure type="net.minecraft.gametest.framework.GameTestAssertException" message="the first attempt fails by design">net.minecraft.gametest.framework.GameTestAssertException: the first attempt fails by design
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.gametest.framework.GameTestHelper.fail(GameTestHelper.java:851)
+	at TRANSFORMER/strategos@0.0.1/dev.strategos.gametest.suites.SelfTests.exhausted(SelfTests.java:35)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at TRANSFORMER/strategos@0.0.1/dev.strategos.gametest.StrategosGameTests.invoke(StrategosGameTests.java:130)
+	at TRANSFORMER/strategos@0.0.1/dev.strategos.gametest.StrategosGameTests.lambda$function$7(StrategosGameTests.java:123)
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.gametest.framework.TestFunction.run(TestFunction.java:40)
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.gametest.framework.GameTestInfo.startTest(GameTestInfo.java:162)
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.gametest.framework.GameTestInfo.tickInternal(GameTestInfo.java:124)
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.gametest.framework.GameTestInfo.tick(GameTestInfo.java:107)
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.gametest.framework.GameTestTicker.lambda$tick$0(GameTestTicker.java:39)
+	at java.base/java.util.concurrent.CopyOnWriteArrayList.forEach(CopyOnWriteArrayList.java:891)
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.gametest.framework.GameTestTicker.tick(GameTestTicker.java:39)
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.server.MinecraftServer.tickChildren(MinecraftServer.java:1070)
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.server.MinecraftServer.tickServer(MinecraftServer.java:932)
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.gametest.framework.GameTestServer.tickServer(GameTestServer.java:171)
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.server.MinecraftServer.runServer(MinecraftServer.java:713)
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.server.MinecraftServer.lambda$spin$2(MinecraftServer.java:267)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+</failure>
+    </testcase>
+    <testcase classname="selftests" name="two_of_three" time="0.000"/>
+  </testsuite>
+</testsuites>

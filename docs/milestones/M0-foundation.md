@@ -351,6 +351,7 @@ Additions that 04 §1.5 does not name, each the smallest piece the named items n
 | 39 | §4.7 (T1): `testLogging { exceptionFormat 'full' }` | `exceptionFormat = TestExceptionFormat.FULL`: Gradle 9 deprecates setting a property with the space syntax, and Gradle 10 removes it; the build runs without deprecation warnings |
 | 40 | §4.8 (T1): `checkVersionCatalog` flags `+`, `*.+`, `latest.*` and ranges, tested on the whole captured value | Gradle 9.2.1 treats any selector ending in `+` as a prefix match (`DefaultVersionSelectorScheme#isSubVersion`), so `2+` is dynamic too; and a catalog value may be a `group:name:version` or `id:version` string, whose version the old test never saw. The check now tests the part after the last `:` with Gradle's rules: ends with `+`, starts with `latest.`, or holds a range character |
 | 41 | §7.4 (T2): a test with a reason "retries as declared" through `TestFunction.maxAttempts` | On the 1.21.1 GameTest server no retry ever ran. `GameTestServer#startTests` builds its `MultipleTestTracker` once, from the first attempt of every test, and `GameTestRunner#rerunTest` never tells it of the copy (`copyReset`): after a first failure the tracker sees every test done, so the server halts before the rerun and exits with that failure. The harness adds `RerunTracking`, a `GameTestListener` attached to every test in `ServerTickEvent.Pre` before the tests' first tick; on `testAddedForRerun` it follows the copy and puts it in the tracker's place, so the server waits and counts only final outcomes. It reads the private fields `GameTestServer#testTracker` and `MultipleTestTracker#tests`, dev-only code with no mixin or access transformer (ADR-0020), and fails naming a field an update removes |
+| 42 | §4.10 F (T3; T13, T16): the `prepare*` `Sync` tasks wipe their game directory before every run | They stayed UP-TO-DATE after a run: Gradle did not see what the forked server wrote into the synced directory, so the next run started with the last run's world, logs and crash reports, and the smoke guard failed a healthy run on an old crash report. Each `prepare*` task now has `outputs.upToDateWhen { false }`, so the `Sync` runs and wipes every time |
 
 ---
 
@@ -1736,6 +1737,8 @@ tasks.matching { it.name == 'runGameTestPerf' }.configureEach {
 def prepareServerSmoke = tasks.register('prepareServerSmoke', Sync) {
     from 'src/gametest/smoke-gamedir'
     into layout.buildDirectory.dir('server-smoke')     // wipes world, logs and crash reports every run
+    // Never up to date: Gradle does not see what the forked server wrote there (§1.6 row 42).
+    outputs.upToDateWhen { false }
 }
 neoForge.runs.serverSmoke.taskBefore prepareServerSmoke
 def smokeDir = file('build/server-smoke')
@@ -1832,6 +1835,7 @@ expectVerdicts('runGameTestTicketLeak', file('build/harness/ticket-leak'),
 def prepareSmokeNoMarker = tasks.register('prepareServerSmokeNoMarker', Sync) {
     from 'src/gametest/smoke-gamedir'
     into layout.buildDirectory.dir('harness/smoke-crash')
+    outputs.upToDateWhen { false }                      // as prepareServerSmoke
 }
 neoForge.runs.serverSmokeNoMarker.taskBefore prepareSmokeNoMarker
 def smokeCrashDir = file('build/harness/smoke-crash')
@@ -1850,6 +1854,7 @@ tasks.matching { it.name == 'runServerSmokeNoMarker' }.configureEach {
 def prepareSpike = tasks.register('prepareSpike', Sync) {
     from 'src/gametest/spike-gamedir'
     into layout.buildDirectory.dir('spike')
+    outputs.upToDateWhen { false }                      // as prepareServerSmoke
 }
 neoForge.runs.spike.taskBefore prepareSpike
 def spikeId = providers.gradleProperty('spike').getOrElse('')
@@ -1868,6 +1873,7 @@ tasks.matching { it.name == 'runSpike' }.configureEach {
 def prepareScenario = tasks.register('prepareScenario', Sync) {
     from 'src/devtools/scenario-gamedir'
     into layout.buildDirectory.dir('scenario')
+    outputs.upToDateWhen { false }                      // as prepareServerSmoke
 }
 neoForge.runs.scenario.taskBefore prepareScenario
 def scenarioOut = file('build/scenario/out')
@@ -4062,7 +4068,7 @@ check and `release.yml`).
 
 ### 9.3 Progress
 
-- [x] T1 (2026-10-21) · [x] T2 (2026-10-21) · [ ] T3 · [ ] T18 · [ ] T4a · [ ] T4b · [ ] T5a · [ ] T5b · [ ] T6a · [ ] T6b · [ ] T7a · [ ] T7b · [ ] T7c · [ ] T8 · [ ] T9
+- [x] T1 (2026-10-21) · [x] T2 (2026-10-21) · [x] T3 (2026-10-21) · [ ] T18 · [ ] T4a · [ ] T4b · [ ] T5a · [ ] T5b · [ ] T6a · [ ] T6b · [ ] T7a · [ ] T7b · [ ] T7c · [ ] T8 · [ ] T9
 - [ ] Tripwire checkpoint (dates in STATE.md)
 - [ ] T9b · [ ] T10 · [ ] T11 · [ ] T11b · [ ] T12 · [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17
 

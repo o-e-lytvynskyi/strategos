@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="strategos.gametest" tests="2" failures="0" skipped="0" time="1.256" timestamp="2026-10-21T19:03:32">
+    <testcase classname="buildtests" name="core_in_mod_module" time="0.003"/>
+    <testcase classname="buildtests" name="testfixtures_in_mod_module" time="0.000"/>
+  </testsuite>
+</testsuites>

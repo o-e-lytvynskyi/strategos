@@ -4,7 +4,14 @@ Date: 2026-10-21
 
 ## Status
 
-Proposed - pending spike S5
+Accepted (2026-10-21, spike S5)
+
+> **2026-10-21, S5 first report** ([spikes/S5-build-wiring.md](../spikes/S5-build-wiring.md)): the merged
+> `gametest` source set and `core/testFixtures` run inside the `strategos` module on the GameTest server and
+> on a dedicated server, and every guard catches its broken input, so the fallback is not needed. One
+> correction: overriding the swapped annotation fields was not enough for retries, because 1.21.1's
+> GameTest server tracks only first attempts. The harness's `RerunTracking` keeps its tracker on the newest
+> attempt ([M0 spec §1.6 row 41](../milestones/M0-foundation.md#16-differences-resolved)).
 
 ## Context
 

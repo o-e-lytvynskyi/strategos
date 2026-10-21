@@ -9,15 +9,31 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-21 — M0 T1, T2
+## 2026-10-21 — M0 T1, T2, T3
 
+- **M0 T3 · Smoke, the first ArchUnit rules, `verify`, `verifyHarness`, the first S5 report** —
+  QA-05 and QA-17 in progress; QA-01, QA-04.
+  - **Results:**
+    - `verify` is green in 18.9 s warm and 19.8 s after `clean` (budget 5 min);
+    - the server smoke takes 6.1 s (budget 60 s), L2 with the game bootstrap 3.8 s;
+    - ArchUnit B5 and B11 hold on the shipped classes and flag their fixtures;
+    - every `verifyHarness` run ends with its designed verdict;
+    - every negative check and probe fails as designed (S5 checks 5–12, 15, 16), and disabling
+      the retry-reason rejection makes its inverted guard fail the build;
+    - ADR-0007 is Accepted on the S5 evidence ([spikes/S5-build-wiring.md](spikes/S5-build-wiring.md)).
+  - **Problems:**
+    - The `prepare*` `Sync` tasks stayed UP-TO-DATE after a server run, so the next smoke saw the
+      last run's crash report; they now run every time (spec §1.6 D row 42; pitfall in the
+      knowledge base).
+    - `clientRef` crashes through NeoForge's dist cleaner, not `NoClassDefFoundError`; the guard
+      catches it either way.
 - **M0 T2 · GameTest harness** — QA-04 in progress, QA-01.
   - **Results:**
     - `runGameTestServer` passes `buildtests.core_in_mod_module` and
       `buildtests.testfixtures_in_mod_module`: core and the test kit run inside the mod module;
     - L3 wall time 1.2 s of the 180 s budget;
     - `verifyFast` plus the GameTest run take 6 s warm;
-    - all four negative checks behave as designed (STATE.md, "Evidence for the S5 report");
+    - all four negative checks behave as designed (S5 checks 5, 7, 15, 16);
     - both SNBT arenas are generated and committed.
   - **Problems:**
     - Retries never ran on the 1.21.1 GameTest server: its tracker counts only first attempts,
@@ -41,7 +57,7 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
       versions inside `group:name:version` strings (row 40), now proven on a broken catalog; two
       comments that strayed from the spec were removed;
     - `HandleTest` pins the bit layout with literals, since handles are saved.
-- **Next:** M0 T3 · smoke, the first ArchUnit rules, `verify`, `verifyHarness` and the first S5 report.
+- **Next:** M0 T18 · continuous integration, then T4a.
 
 ## 2026-10-21 — design closed, roadmap approved, autonomy set up
 
