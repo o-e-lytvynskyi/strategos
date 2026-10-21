@@ -33,8 +33,15 @@ public final class GameTestTickets {
         HELD.computeIfAbsent(level.dimension(), k -> new TreeSet<>()).add(chunk.toLong());
     }
 
+    /** As {@link #force}, and the chunk also ticks entities without a player near, as a player's chunk does. */
+    public static void forceTicking(ServerLevel level, ChunkPos chunk) {
+        CONTROLLER.forceChunk(level, OWNER, chunk.x, chunk.z, true, true);
+        HELD.computeIfAbsent(level.dimension(), k -> new TreeSet<>()).add(chunk.toLong());
+    }
+
     public static void release(ServerLevel level, ChunkPos chunk) {
         CONTROLLER.forceChunk(level, OWNER, chunk.x, chunk.z, false, false);
+        CONTROLLER.forceChunk(level, OWNER, chunk.x, chunk.z, false, true);
         TreeSet<Long> held = HELD.get(level.dimension());
         if (held != null) {
             held.remove(chunk.toLong());

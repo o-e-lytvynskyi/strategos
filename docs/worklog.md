@@ -11,6 +11,21 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
 
 ## 2026-10-22 — the owner's setup, M0 T7c, T8
 
+- **M0 T7b review** (rerun after the usage limit; three lenses, each finding checked by a skeptic):
+  four findings confirmed, two engine defects, both fixed; two refuted.
+  - **Results:**
+    - a real chunk unload reaches `BodyRegistry#onLeft` with no removal reason (the leave event
+      comes before `unloadEntity`); such a body is now stale, discarded at the next materialise,
+      and its unit waits quietly for a body;
+    - `KinematicDriver` now takes the level and retires a body whose next pose leaves where
+      entities tick, so no body drops into an unloaded chunk or freezes past the simulation distance;
+    - new GameTest `bodytests.bodies_follow_entity_ticking_chunks` (batch `chunks`, solo): the old
+      code fails it ("a body stands where entities do not tick"), and without the no-reason branch
+      it fails with "left the level (null)";
+    - `GameTestTickets.forceTicking`; spec §6.6, the engine-fact row and §1.6 D row 53.
+  - **Problems:** a passing GameTest's entities are removed by vanilla (`GameTestInfo#succeed`), so
+    its match logs one line per re-made body until the batch ends; noted in the GameTest README.
+
 - **M0 T8 · Commands, the walking skeleton end to end, the playtest kit** — QA-04 and CORE-03 done;
   ORD-01, QA-05, QA-09, QA-10, CORE-01, CORE-02.
   - **Results:**
@@ -61,7 +76,7 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
     month's 2,000 minutes are used.
   - **Problems:** T7b's review did not run: its three reviewers stopped at the usage limit of
     2026-10-21, so the workflow returned nothing. Run it again before finishing T7c.
-- **Next:** M0 T9 · persistence and quarantine; T7b's review is running again.
+- **Next:** M0 T9 · persistence and quarantine.
 
 ## 2026-10-21 — M0 T1, T2, T3, T18, T4a, T4b, T5a, T5b, T6a, T6b, T7a, T7b, T7c (started)
 

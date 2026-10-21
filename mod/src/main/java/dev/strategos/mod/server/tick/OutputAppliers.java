@@ -38,7 +38,7 @@ public final class OutputAppliers {
                                     changed.to());
             }
         }
-        KinematicDriver.apply(rt.space(), rt.bodies(), out.bodies());
+        KinematicDriver.apply(level, rt.space(), rt.bodies(), out.bodies());
     }
 
     /** The leaf output types {@link #apply} handles; L2 checks they are all of them. */

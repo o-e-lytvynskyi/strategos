@@ -66,6 +66,11 @@ public final class StrategosGameTests {
         afterBatch(level, "perf_snapshot");
     }
 
+    @AfterBatch(batch = "chunks")
+    public static void afterChunks(ServerLevel level) {
+        afterBatch(level, "chunks");
+    }
+
     @AfterBatch(batch = "selftest")
     public static void afterSelftest(ServerLevel level) {
         afterBatch(level, "selftest");

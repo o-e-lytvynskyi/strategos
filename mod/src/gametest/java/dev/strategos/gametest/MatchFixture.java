@@ -28,6 +28,11 @@ public final class MatchFixture {
         return StrategosServer.get().matches().create(level, space, options);
     }
 
+    /** A match over any space, the test's arena or beyond it; a test that reaches past its arena runs alone. */
+    public static MatchRuntime create(GameTestHelper h, MatchSpace space, MatchOptions options) {
+        return StrategosServer.get().matches().create(h.getLevel(), space, options);
+    }
+
     /** An unsaved match with this seed; the arena's floor layer is the bounds' lowest, so units stand one higher. */
     public static MatchOptions options(long seed, GameTestHelper h) {
         return MatchOptions.gameTest(seed, Math.floor(h.getBounds().minY) + 1);

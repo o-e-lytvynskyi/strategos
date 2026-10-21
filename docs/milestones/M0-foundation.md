@@ -362,6 +362,7 @@ Additions that 04 §1.5 does not name, each the smallest piece the named items n
 | 50 | §6.4–§6.6 (T7b): `MatchException`; `MatchRuntime`, `BodyRegistry#onLeft` and the registry as listed | `MatchRefusedException`: Java 21 has `java.lang.MatchException`, which ErrorProne's `AvoidCommonTypeNames` flags, and a `catch` without the import would silently catch the JDK's. `MatchRuntime` also has `log()` (its `MatchLog`), `tick()` and `takeReply(CommandResult)`, which `OutputAppliers` uses from another package; `BodyRegistry#onLeft` returns whether to log, so `BodyEvents` logs once per handle with the match's tick; `MatchRegistry(settings, spawnBudget)` holds the 8..512, 128 and 2-block limits as constants and also refuses a floor outside the Y band. A space's band runs from its lowest to its highest block, both included: `fromBounds` takes the GameTest box's blocks, `ceil(maxY) - 1` at the top |
 | 51 | §7.4 (T7c): `BatchEndCheck` releases the leaked tickets; `bodytests.no_vibrations_no_push` spawns its two control pigs "on one point" | It also discards leftover unit bodies, so one leak cannot fail every later batch too. The pigs stand 0.1 blocks apart: `Entity#push` ignores two entities closer than 0.01 on both axes (Entity.java:1534–1535), so pigs on the very same point would never push. "One log line" in `bodytests.discarded_body_rematerialises` is counted by `LogCapture`, a Log4j2 appender that keeps only the lines of the test's own match |
 | 52 | §6.8 (T8): `match create` takes the Y band feet − 8 … feet + 24 | The band is cut to the level's build height (`StrategosCommands.spaceAround`, which the smoke uses too): the GameTest world's floor lies 6 blocks above the lowest buildable Y, so feet − 8 would make every `match create` there a refusal. A match id is written `m1` or `1`; replies read `accepted 3/3`, `partly accepted 2/3, NOT_OWNER` or `refused, accepted 0/3, OUT_OF_BOUNDS` |
+| 53 | §6.6 (T7b): `onLeft` parks a body removed with `UNLOADED_TO_CHUNK` and logs every other removal; `KinematicDriver.apply(space, bodies, frame)` poses every body | The T7b review found that a real unload never carries that reason: the leave event fires when the chunk is demoted and its sections go HIDDEN, with no removal reason, and `unloadEntity` sets UNLOADED_TO_CHUNK later, silently. Every unload was logged as a lost body, and the untracked entity stayed in its hidden section, to come back beside a new body if the chunk returned. A pose into a chunk not loaded did the same, and one beyond the simulation distance froze. Now a leave with no reason makes the body stale (discarded at the next materialise, outside the engine's section stream) and the unit wanted, quietly; the driver takes the level and retires a body whose pose leaves where entities tick. `bodytests.bodies_follow_entity_ticking_chunks` covers both, in a batch of its own (`chunks`) because its match reaches past the arena |
 
 ---
 
@@ -2821,15 +2822,20 @@ public final class BodyRegistry {           // one per MatchRuntime: the only cr
         // (level.isPositionEntityTicking(BlockPos.containing(x, y, z))) -> keep for later; budget exhausted -> stop;
         // else create UNIT_HUMANOID, bind(spawn data), moveTo(x, y, z, yaw, 0), setYHeadRot, setYBodyRot,
         // setOnGround(true), level.addFreshEntity(body) -> registered
-    public void onLeft(UnitEntity body);    // removedByRegistry -> ignore; else unregister, and if the unit lives, by
-                                            // getRemovalReason(): UNLOADED_TO_CHUNK -> parked, bodiless and not logged
-                                            // (04 §6.4; vanilla sets it only when the chunk's entities unload,
-                                            // PersistentEntitySectionManager.java:224–241); any other reason -> wanted
-                                            // again, so back next tick, and logged once per handle
-    public void discardAll();               // markRemovedByRegistry then discard() every body
+    public boolean onLeft(UnitEntity body); // removedByRegistry -> ignore; else unregister, then by getRemovalReason():
+                                            // null (its section stopped being tracked: the chunk unloads, the leave
+                                            // event coming before unloadEntity sets UNLOADED_TO_CHUNK; or it was moved
+                                            // into a chunk not loaded) -> stale, discarded at the next materialise,
+                                            // and wanted again, not logged (§1.6 D row 53); UNLOADED_TO_CHUNK (only an
+                                            // explicit removal) -> parked, bodiless and not logged (04 §6.4); any other
+                                            // reason -> wanted again, so back next tick; true (log it) once per handle
+    public void retire(int handle);         // the kinematic driver's: discard the body quietly, want the unit again
+    public void discardAll();               // markRemovedByRegistry then discard() every body, the stale ones too
 }
 @HotPath public final class KinematicDriver {
-    public static void apply(MatchSpace space, BodyRegistry bodies, BodyFrame frame);   // applyPose(world coordinates)
+    public static void apply(ServerLevel level, MatchSpace space, BodyRegistry bodies, BodyFrame frame);
+        // applyPose(world coordinates) where the pose's block ticks entities; elsewhere bodies.retire(handle), so a
+        // body never drops into a chunk that is not loaded nor freezes beyond the simulation distance (04 §1.4 row 1)
 }
 public final class SpawnBudget { public void reset(int perTick); public boolean tryTake(); public int remaining(); }   // 64 per server tick, all matches
 public final class BodyEvents {
@@ -3126,7 +3132,7 @@ report records the bootstrap time and the `:mod:test` time against its 60 s (QA-
 @Retention(RUNTIME) @Target(METHOD)
 public @interface StrategosTest {
     String arena() default "arena_flat_32";   // template strategos:<arena>, SNBT in src/gametest/structures
-    String batch() default "default";         // default | slow | skeleton | isolation | perf_walk | perf_snapshot | selftest
+    String batch() default "default";         // default | slow | skeleton | isolation | chunks | perf_walk | perf_snapshot | selftest
     int timeoutTicks() default 200;
     long setupTicks() default 0;
     boolean required() default true;
@@ -3263,6 +3269,7 @@ with its journal; CORE-11 (M1) exports its binary journals the same way.
 | `bodytests.stray_body_refused` | an unbound `UnitEntity` passed to `addFreshEntity` is not in the level | CORE-06 |
 | `bodytests.teleport_overwritten_by_next_pose` | `/tp <body uuid> <x+5> <y> <z>` through `performPrefixedCommand` (`Entity#getStringUUID`) on a walking unit's body → after the next step the body stands on the core pose (CORE-06.4) | CORE-06 |
 | `bodytests.no_vibrations_no_push` | controls first, as the README requires: a vanilla `Pig` walking past a second sensor (`getNavigation().moveTo`) makes it leave `INACTIVE`, and two pigs spawned on one point stand apart within 40 ticks; then a sculk sensor 1 block from a unit's path stays `INACTIVE` (`SculkSensorBlock.getPhase`); two units on one point keep their exact core positions; `hurt(generic, 5)` returns false and changes nothing (UNIT-01.2) | UNIT-01 |
+| `bodytests.bodies_follow_entity_ticking_chunks` (batch `chunks`, solo, timeout 1,600) | a match reaching past the arena: a unit walks out of the loaded area, its body goes, and back, exactly one body; a body standing in a chunk held by a `GameTestTickets` ticket, the ticket released (a real unload) and taken again: nothing logged, exactly one body (CORE-06.3 on the engine's path; §1.6 D row 53) | CORE-06 |
 | `bodytests.vanilla_kill_ignored` | `body.kill()` → body still there next tick, unit alive (M0 semantics, §1.5; CORE-06.4) | CORE-06 |
 | `bodytests.idle_body_persists_6000_ticks` (batch `slow`, timeout 6,100; in `runGameTestSlow`, `verifySlow`) | the same body entity exists after 6,000 ticks | UNIT-01 |
 | `matchtests.holder_bound_to_server` | `StrategosServer.get().server() == helper.getLevel().getServer()`; the match is listed while running; after `dispose` no runtime, no record, no `UnitEntity` in the bounds (CORE-01.4; the smoke's checks are CORE-01.6) | CORE-01 |
@@ -4208,7 +4215,7 @@ relative to its root), and with `javap` in `moddev-gradle-2.0.148.jar`, `loader-
 | `GameTestBatchFactory` splits each batch name into batches of at most 50 tests; after-batch functions are looked up by batch name | `gametest/framework/GameTestBatchFactory.java:15, 26, 64–67`; `GameTestRegistry.java:109–112` | §7.4 |
 | `GameTestRunner` runs a batch's after-batch function when the batch is done, before releasing vanilla's forced chunks; `GameTestServer#tickServer` halts and finishes the reporter when every test is done; `onServerExit` exits with the failed-required count, `onServerCrash` with 1; `TEST_GAME_RULES` and the test level's settings; `waitUntilNextTick` only runs queued tasks, so test ticks run back to back (the 1,000-tick `isolation` batch costs CPU time, not 50 s) | `GameTestRunner.java:97–105`; `GameTestServer.java:64–69, 85, 170–187, 213–215, 224–228, 234–238` | §4.10 F, §7.4, README |
 | `ReportGameListener`: a test with more than one attempt reports only its final outcome to `GlobalTestReporter` | `ReportGameListener.java:61–100` | §7.4 |
-| `PersistentEntitySectionManager` removes entities with `UNLOADED_TO_CHUNK` only when their chunk's sections unload; `ServerLevel#isPositionEntityTicking` is false for such a chunk | `world/level/entity/PersistentEntitySectionManager.java:224–241`; ServerLevel.java:1710–1711 | §6.6 |
+| `PersistentEntitySectionManager` removes entities with `UNLOADED_TO_CHUNK` only when their chunk's sections unload; `ServerLevel#isPositionEntityTicking` is false for such a chunk. The leave event comes earlier, with no removal reason: a chunk demoted below FULL makes its sections HIDDEN and `stopTracking` posts `EntityLeaveLevelEvent`; a section made for a move into a chunk not loaded starts HIDDEN too; a section that becomes accessible again re-tracks its entities with no join event | `world/level/entity/PersistentEntitySectionManager.java:149–180, 224–241, 400–449, 452–474`; ServerLevel.java:262, 1710–1711, 1793–1820; `EntitySectionStorage.java:101–105` | §6.6 |
 | `Entity#getStringUUID`, `teleportTo(double, double, double)`, `blockPosition` | Entity.java:2838, 2921, 3449 | §6.5, §7.4 |
 | `DamageSource` (public, not final; constructor from a `Holder<DamageType>`), `getMsgId`, `typeHolder`; `DamageSources#genericKill` | `world/damagesource/DamageSource.java:15, 56, 95, 145`; `DamageSources.java:265` | §6.3, §7.4 |
 | `ServerLevel#getEntities(EntityTypeTest, Predicate)`, `players`; `EntityTypeTest.forClass`; `ServerPlayer#sendSystemMessage(Component)`; `Component.literal`; `EntityType.PIG` | ServerLevel.java:843, 1438; `world/level/entity/EntityTypeTest.java:6`; `server/level/ServerPlayer.java:1625`; `network/chat/Component.java:151`; EntityType.java:533 | §6.5, §7.4, §7.5 |

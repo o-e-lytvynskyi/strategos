@@ -42,7 +42,11 @@ that units make no vibrations first shows a sculk sensor reacting to a vanilla m
 - A test that needs a match makes it with `MatchFixture` in its own arena; it never disposes it
   for cleanup, the batch does. Tests of one batch run side by side, so a test acts only on its own
   match and filters what it reads (bodies, log lines) by that match's id.
-- A map-scale test forces chunks only through `GameTestTickets` and releases them itself.
+- A map-scale test forces chunks only through `GameTestTickets` (`forceTicking` when entities must tick there) and
+  releases them itself. A test whose match reaches past its arena runs `solo` in a batch of its own.
+- When a test passes, vanilla removes every entity in its bounds (`GameTestInfo#succeed`). The test's match runs on
+  until the batch ends, so it makes its bodies again and logs one "left the level (DISCARDED)" line per unit; that is
+  expected, and the batch then disposes the match.
 - Coordinates go into commands through `String.format(Locale.ROOT, "%.6f", …)`: the arenas lie
   millions of blocks out, where `Double.toString` writes `1.13E7`, which the command parser
   rejects.

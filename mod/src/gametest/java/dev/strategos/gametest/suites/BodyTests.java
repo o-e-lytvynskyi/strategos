@@ -14,12 +14,14 @@ import static dev.strategos.gametest.suites.Units.unit;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.UnitView;
 import dev.strategos.core.testkit.SimHarness;
+import dev.strategos.gametest.GameTestTickets;
 import dev.strategos.gametest.LogCapture;
 import dev.strategos.gametest.MatchFixture;
 import dev.strategos.gametest.StrategosTest;
 import dev.strategos.mod.entity.UnitEntity;
 import dev.strategos.mod.registry.ModEntityTypes;
 import dev.strategos.mod.server.match.MatchRuntime;
+import dev.strategos.mod.server.match.MatchSpace;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -32,9 +34,11 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.animal.Pig;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SculkSensorBlock;
 import net.minecraft.world.level.block.state.properties.SculkSensorPhase;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 /** The unit body as a view of its core unit (UNIT-01, CORE-06): made, posed, never saved, re-made, never pushed. */
@@ -295,6 +299,81 @@ public final class BodyTests {
 
     private static SculkSensorPhase phase(GameTestHelper h, BlockPos sensor) {
         return SculkSensorBlock.getPhase(h.getBlockState(sensor));
+    }
+
+    /**
+     * CORE-06.3 on the engine's own path (spec 1.6 D row 53). A unit walks out of the loaded area and back: its body
+     * goes and comes back once. Then the chunk under a standing body really unloads (its ticket is released): the leave
+     * event carries no removal reason, nothing is logged, and when the chunk loads again the unit has exactly one
+     * body, not the old one shown again beside a new one. The match reaches past the arena, so the test runs alone.
+     */
+    @StrategosTest(batch = "chunks", solo = true, timeoutTicks = 1_600)
+    public static void bodiesFollowEntityTickingChunks(GameTestHelper h) {
+        AABB arena = h.getBounds();
+        MatchSpace space = new MatchSpace(
+                h.getLevel().dimension(),
+                new BlockPos((int) arena.minX, (int) arena.minY, (int) arena.minZ),
+                32,
+                96,
+                (int) arena.minY,
+                (int) arena.maxY - 1);
+        MatchRuntime rt = MatchFixture.create(h, space, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
+        ChunkPos far = new ChunkPos(BlockPos.containing(space.worldX(16), 0, space.worldZ(72)));
+        spawn(rt, 16.5, 8.5, 1, 0);
+        var state = new Object() {
+            LogCapture log;
+        };
+        h.startSequence()
+                .thenWaitUntil(() -> body(rt, onlyUnit(rt)))
+                .thenExecute(() -> {
+                    state.log = LogCapture.of(rt.id());
+                    move(rt, onlyUnit(rt), 16.5, 88.5);
+                })
+                .thenWaitUntil(() -> check(unit(rt, onlyUnit(rt)).z() > 60, "not far out yet"))
+                .thenExecute(() -> check(
+                        rt.bodies().get(onlyUnit(rt)) == null
+                                && bodiesOf(h.getLevel(), rt).isEmpty(),
+                        "a body stands where entities do not tick"))
+                .thenWaitUntil(() -> check(unit(rt, onlyUnit(rt)).state() == UnitState.IDLE, "still walking out"))
+                .thenExecute(() -> move(rt, onlyUnit(rt), 16.5, 8.5))
+                .thenWaitUntil(() -> check(
+                        unit(rt, onlyUnit(rt)).state() == UnitState.IDLE
+                                && unit(rt, onlyUnit(rt)).z() == 8.5,
+                        "still walking back"))
+                .thenWaitUntil(() -> body(rt, onlyUnit(rt)))
+                .thenExecute(() -> {
+                    check(bodiesOf(h.getLevel(), rt, onlyUnit(rt)).size() == 1, "two bodies after the walk back");
+                    GameTestTickets.forceTicking(h.getLevel(), far);
+                })
+                .thenWaitUntil(() -> check(
+                        h.getLevel().isPositionEntityTicking(far.getMiddleBlockPosition(0)),
+                        "the far chunk does not tick entities yet"))
+                .thenExecute(() -> move(rt, onlyUnit(rt), 16.5, 72.5))
+                .thenWaitUntil(() -> check(
+                        unit(rt, onlyUnit(rt)).state() == UnitState.IDLE
+                                && unit(rt, onlyUnit(rt)).z() == 72.5,
+                        "still walking to the far chunk"))
+                .thenWaitUntil(() -> body(rt, onlyUnit(rt)))
+                .thenExecute(() -> GameTestTickets.release(h.getLevel(), far))
+                .thenWaitUntil(() -> check(rt.bodies().get(onlyUnit(rt)) == null, "the far chunk still holds the body"))
+                .thenIdle(10)
+                .thenExecute(() -> GameTestTickets.forceTicking(h.getLevel(), far))
+                .thenWaitUntil(() -> body(rt, onlyUnit(rt)))
+                .thenIdle(5)
+                .thenExecute(() -> {
+                    try {
+                        int handle = onlyUnit(rt);
+                        check(
+                                bodiesOf(h.getLevel(), rt, handle).size() == 1,
+                                "the reloaded chunk shows "
+                                        + bodiesOf(h.getLevel(), rt, handle).size() + " bodies");
+                        check(state.log.lines().isEmpty(), "a lost body was logged: " + state.log.lines());
+                    } finally {
+                        state.log.close();
+                        GameTestTickets.release(h.getLevel(), far);
+                    }
+                })
+                .thenSucceed();
     }
 
     /** CORE-06.4: /kill and vanilla damage leave M0 units and their bodies untouched (spec 1.5). */
