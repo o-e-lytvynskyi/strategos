@@ -35,8 +35,27 @@ public final class JUnitXmlReporter implements TestReporter {
                     LocalDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.SECONDS));
     private final List<Result> results = new ArrayList<>(); // guarded by this
 
+    /** The run's one reporter, for {@link #recordFailure}; gametest code, so a static holder is fine. */
+    private static volatile @Nullable JUnitXmlReporter current;
+
     public JUnitXmlReporter(Path report) {
         this.report = report.toAbsolutePath();
+        current = this;
+    }
+
+    /**
+     * Adds a failed case that no GameTest reported, such as the batch-end check's {@code batchend.<batch>}: the server
+     * exits 0 after it, so only the report carries the failure to the Gradle guard (QA-04.6).
+     */
+    public static void recordFailure(String suite, String name, String message) {
+        JUnitXmlReporter reporter = current;
+        if (reporter == null) {
+            LOG.error("No GameTest report to record {}.{}: {}", suite, name, message);
+            return;
+        }
+        synchronized (reporter) {
+            reporter.results.add(new Result(suite, name, 0, new AssertionError(message), true));
+        }
     }
 
     @Override
