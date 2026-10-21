@@ -451,7 +451,8 @@ decision (D-21).
      (L3).
   5. ArchUnit proves `core` never references the body implementation (L0).
 - **Tests:** L0, L1, L3, L5 · **Depends on:** CORE-01 · **Size:** M · **Tier:** T0
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-10-22 — M0 T1, T5a, T7b, T7c, T9b, T11: `EntityStoreTest`, `HandleTest` (1); `bodytests.discarded_body_rematerialises` (2); `bodytests.unloaded_body_stays_bodiless`, and the L5 restart round trip with one body per unit after a real unload (3; demo step 5, L7, comes with the owner's session); `bodytests.teleport_overwritten_by_next_pose`, `bodytests.vanilla_kill_ignored` (4); `coreDependsOnlyOnAllowedLibraries` (5)
 
 #### UNIT-01 · Unit body v0: a kinematic LivingEntity view
 - **Value:** Units appear in the world as real Minecraft entities that every client sees, at

@@ -1,0 +1,14 @@
+{
+  "milestone": "M0",
+  "entityTypes": ["strategos:unit_humanoid"],
+  "savedData": ["strategos_registry", "strategos_match_<id>"],
+  "commands": ["strategos"],
+  "mixinConfigs": [],
+  "accessTransformers": [],
+  "payloads": [],
+  "dataMaps": [],
+  "worldgen": [],
+  "ticketControllers": [],
+  "reloadListeners": [],
+  "configs": []
+}

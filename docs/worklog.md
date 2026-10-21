@@ -9,7 +9,25 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M0 T9, the tripwire checkpoint, T9b
+## 2026-10-22 — M0 T9, the tripwire checkpoint, T9b, T11
+
+- **M0 T11 · Static gates complete** — CORE-06 done; QA-17, CORE-05, QA-10 still in progress.
+  - **Results:**
+    - `CoreArchitectureTest`: 13 rules (B1, B3, B3+ twice, B4a–e, B8, B9, B13, QA-10) over core's
+      shipped classes, each also run on its violating fixtures: one per banned API, 22 for B4;
+    - `ModArchitectureTest`: 11 rules (B2, B4, B5, B5+, B6, B7, B8, B9, B10, B11, B13) with their
+      fixtures and same-named Minecraft and NeoForge stubs;
+    - `engine-surface.json` and `EngineSurfaceInventoryTest` (L2, 5 tests): entity types,
+      saved-data names, the command root, no mixins and no access transformers equal the
+      inventory, every id appears in 04 §2.5, and an unlisted entity type, a `[[mixins]]` entry
+      and an access-transformer line are each reported;
+    - no production class broke a rule; the five `@HotPath` classes were already annotated;
+    - negative check: a temporary `HashMap` field in `MovementSystem` failed
+      `noHashOrderedCollections` on the real code; removed;
+    - `:core:test` 615 tests, `:mod:test` 45, `:mod:archTest` 11; `verify verifySlow` green in
+      34 s.
+  - **Problems:** none.
+  - Spec §1.6 D row 56.
 
 - **M0 T9b · Restart round trip and the holder's lifetime** — QA-05, CORE-01, CORE-06, all still in
   progress (QA-05 waits for T13, CORE-01 for T16, CORE-06 for T11).
@@ -67,7 +85,7 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
     - pitfalls in the knowledge base (`minecraft-mod-data.md`, new, and `minecraft-mod.md`).
   - Spec §1.6 D row 54.
 
-- **Next:** M0 T11 · Static gates complete.
+- **Next:** M0 T10 · Fault containment complete, log tagging.
 
 ## 2026-10-22 — the owner's setup, M0 T7c, T8
 

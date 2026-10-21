@@ -43,14 +43,18 @@ Answer in chat or here; the next session applies the answers.
 - 2026-10-22 · **M0 T9b Restart round trip and the holder's lifetime:** `verify` now stops the test
   server and starts it again: the saved match comes back with the same tick and hash, one body per
   unit, and walks on exactly as one uninterrupted run would.
+- 2026-10-22 · **M0 T11 Static gates complete:** every architecture rule of the spec is now
+  checked on each build (determinism, layering, no client code on servers, no shared static
+  state, and more), each proved to catch its own deliberate violation; the list of the mod's
+  hooks into Minecraft is checked against the code. Card CORE-06 is done.
 
 ## Now
 
-- **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 16 of 25 tasks done.
+- **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 17 of 25 tasks done.
 - **Tripwire (M0 only):** T1 started 2026-10-21; T9 green 2026-10-22; M0 work days 2 of 10.
 - **In progress:** none.
-- **Last finished task:** M0 T9b (2026-10-22); T9 was commit f4eefff.
-- **Next task:** M0 T11 · Static gates complete (QA-17, CORE-05, CORE-06, QA-10).
+- **Last finished task:** M0 T11 (2026-10-22); T9b was commit 52500ef.
+- **Next task:** M0 T10 · Fault containment complete, log tagging (CORE-10, QA-10).
 - **WIP branch:** none.
 - **CI:** green on `main` (M0 T7b review fix, run 39685642374, 6 min 28 s); minutes used this month about 83 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.
