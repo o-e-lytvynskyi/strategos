@@ -353,6 +353,7 @@ Additions that 04 §1.5 does not name, each the smallest piece the named items n
 | 41 | §7.4 (T2): a test with a reason "retries as declared" through `TestFunction.maxAttempts` | On the 1.21.1 GameTest server no retry ever ran. `GameTestServer#startTests` builds its `MultipleTestTracker` once, from the first attempt of every test, and `GameTestRunner#rerunTest` never tells it of the copy (`copyReset`): after a first failure the tracker sees every test done, so the server halts before the rerun and exits with that failure. The harness adds `RerunTracking`, a `GameTestListener` attached to every test in `ServerTickEvent.Pre` before the tests' first tick; on `testAddedForRerun` it follows the copy and puts it in the tracker's place, so the server waits and counts only final outcomes. It reads the private fields `GameTestServer#testTracker` and `MultipleTestTracker#tests`, dev-only code with no mixin or access transformer (ADR-0020), and fails naming a field an update removes |
 | 42 | §4.10 F (T3; T13, T16): the `prepare*` `Sync` tasks wipe their game directory before every run | They stayed UP-TO-DATE after a run: Gradle did not see what the forked server wrote into the synced directory, so the next run started with the last run's world, logs and crash reports, and the smoke guard failed a healthy run on an old crash report. Each `prepare*` task now has `outputs.upToDateWhen { false }`, so the `Sync` runs and wipes every time |
 | 43 | §9.2 T18: T18 brings `jmhSpeedRatio` (§4.9) and runs `verify verifySlow verifySoak`, with actions pinned by tag | T18 starts right after T3, when neither JMH (T12), `verifySoak` (T6b) nor `verifySlow` (T7c) exists: its first job runs `verify`, and `jmhSpeedRatio` joins with T12's perf step, as the later jobs do. Each action is pinned to the commit of its tag, with the tag in a comment, so a moved tag cannot change the build. `--max-workers=2` fits the private repository's runner (2 cores, 7 GB) with one server JVM per GameTest and smoke run |
+| 44 | §9.2 T5a: T5a brings §5.6 without `MatchState`, and `MatchLifecycle` | `MatchSystem#run` and `Scheduler#runPhase` take a `MatchState`, the scheduler reads its tick, and `AiStateStore` holds `UnitState` (§5.5). So T5a brings `MatchState` with only its tick, which T5b completes, and `UnitState`. Stores and hashes keep `UnitState` and the order kind as explicit codes (`UnitState#code()`), never as ordinals: ErrorProne's `EnumOrdinal` flags ordinals, and reordering constants must not change a hash or a save |
 
 ---
 
@@ -4069,7 +4070,7 @@ check and `release.yml`).
 
 ### 9.3 Progress
 
-- [x] T1 (2026-10-21) · [x] T2 (2026-10-21) · [x] T3 (2026-10-21) · [x] T18 (2026-10-21) · [x] T4a (2026-10-21) · [x] T4b (2026-10-21) · [ ] T5a · [ ] T5b · [ ] T6a · [ ] T6b · [ ] T7a · [ ] T7b · [ ] T7c · [ ] T8 · [ ] T9
+- [x] T1 (2026-10-21) · [x] T2 (2026-10-21) · [x] T3 (2026-10-21) · [x] T18 (2026-10-21) · [x] T4a (2026-10-21) · [x] T4b (2026-10-21) · [x] T5a (2026-10-21) · [ ] T5b · [ ] T6a · [ ] T6b · [ ] T7a · [ ] T7b · [ ] T7c · [ ] T8 · [ ] T9
 - [ ] Tripwire checkpoint (dates in STATE.md)
 - [ ] T9b · [ ] T10 · [ ] T11 · [ ] T11b · [ ] T12 · [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17
 

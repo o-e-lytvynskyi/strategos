@@ -64,14 +64,17 @@ The owner was here on 2026-10-21 and started M0. Since then:
 - 2026-10-21 · **M0 T4b Core `protocol`, `content`:** the commands `Move`, `Stop` and `SpawnUnits`
   with their JSON codec and catalogue, `UnitSet`, the reject reasons, and the built-in unit
   template.
+- 2026-10-21 · **M0 T5a Kernel internals:** the match lifecycle, the nine-phase scheduler with
+  cadences and staggering, the per-match message bus, and the entity store with generational
+  handles and component stores.
 
 ## Now
 
-- **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 6 of 25 tasks done.
+- **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 7 of 25 tasks done.
 - **Tripwire (M0 only):** T1 started 2026-10-21; T9 green not yet; M0 work days 1 of 10.
 - **In progress:** none.
-- **Last finished task:** M0 T4b (2026-10-21); T4a was commit 3cb9508.
-- **Next task:** M0 T5a · Core kernel internals.
+- **Last finished task:** M0 T5a (2026-10-21); T4b was commit 4357dce.
+- **Next task:** M0 T5b · `MatchCore`, commands, movement (CORE-01, CORE-02, CORE-03, ORD-01).
 - **WIP branch:** none.
 - **CI:** green on [pull request #1](https://github.com/o-e-lytvynskyi/strategos/pull/1); runs on `main` are not readable yet (item 1b); minutes used this month about 7 of 2,000, as of 2026-10-21.
 - **Overview:** `python3 tools/roadmap.py summary`.

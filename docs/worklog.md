@@ -9,7 +9,19 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-21 — M0 T1, T2, T3, T18, T4a, T4b
+## 2026-10-21 — M0 T1, T2, T3, T18, T4a, T4b, T5a
+
+- **M0 T5a · Kernel internals** — CORE-01 and CORE-04 in progress; CORE-02, CORE-06.
+  - **Results:**
+    - `MatchLifecycle`, checked against an independent table of its 15 transitions;
+    - `Phase`, `Cadence`, `Stagger` and `Scheduler`;
+    - `MatchBus`: FIFO after the current message, a 10,000-deep chain without stack growth;
+    - `EntityStore` with `EntitySlots`, which reuses the lowest free index and bumps generations;
+    - the component stores;
+    - `:core:test` passes 81 tests.
+  - **Problems:** the spec put `MatchState` in T5b although T5a's scheduler needs it; T5a brings it
+    with only its tick, and `UnitState` with explicit codes (spec §1.6 D row 44). NullAway caught
+    an unchecked `EnumMap.get`.
 
 - **M0 T4b · Core `protocol`, `content`** — CORE-03 in progress.
   - **Results:**
@@ -98,7 +110,7 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
       versions inside `group:name:version` strings (row 40), now proven on a broken catalog; two
       comments that strayed from the spec were removed;
     - `HandleTest` pins the bit layout with literals, since handles are saved.
-- **Next:** M0 T5a · the core kernel internals.
+- **Next:** M0 T5b · `MatchCore`, commands and movement.
 
 ## 2026-10-21 — design closed, roadmap approved, autonomy set up
 

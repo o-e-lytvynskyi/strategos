@@ -376,7 +376,7 @@ decision (D-21).
   7. No static mutable state exists besides the holders rule B8 allows (L0).
 - **Tests:** L0, L1, L2, L3, L4 (consent), L5 · **Depends on:** QA-02, QA-04 · **Size:** M ·
   **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 #### CORE-02 · Driving port and the nine-phase tick pipeline
 - **Value:** Game logic runs in a fixed order every tick, so orders feel immediate, systems never
@@ -737,7 +737,7 @@ decision (D-21).
   2. Nested publishes are queued, never recursive (L1).
   3. A JMH baseline for dispatch is committed (L6).
 - **Tests:** L0, L1, L6 · **Depends on:** CORE-02 · **Size:** S · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 #### CORE-05 · Determinism kit and spike S6
 - **Value:** Any bug seen in a match or a test can be replayed exactly, which makes fixes fast
