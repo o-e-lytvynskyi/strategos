@@ -9,7 +9,18 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-21 — M0 T1, T2, T3, T18
+## 2026-10-21 — M0 T1, T2, T3, T18, T4a
+
+- **M0 T4a · Core `shared`, `port`, `diag`** — CORE-05, CORE-02 and QA-10 in progress.
+  - **Results:**
+    - ids with JSON codecs, `DetMath`, the counter-based `Rng`, `Hasher`, `Hex64`, `Clock`,
+      `MetricsSink`, `RingHistogram`, `PhaseTimers` and `MatchLog`;
+    - `:core:test` passes 46 tests;
+    - the golden values of `Rng` and `Hasher` were computed by an independent Python
+      implementation of the spec's formulas, and the Java code matches it bit for bit;
+    - `below` passes chi-square 8.6 against the 21.67 limit.
+  - **Problems:** the test kit's `ManualClock` arrives in T5b, so `PhaseTimersTest` advances a
+    clock lambda by hand.
 
 - **M0 T18 · Continuous integration** — QA-08 and CORE-05 in progress.
   - **Results:**
@@ -76,7 +87,7 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
       versions inside `group:name:version` strings (row 40), now proven on a broken catalog; two
       comments that strayed from the spec were removed;
     - `HandleTest` pins the bit layout with literals, since handles are saved.
-- **Next:** M0 T4a · core `shared`, `port`, `diag`.
+- **Next:** M0 T4b · core `protocol` and `content`.
 
 ## 2026-10-21 — design closed, roadmap approved, autonomy set up
 

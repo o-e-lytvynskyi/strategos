@@ -244,7 +244,7 @@ Cards: [roadmap/M0-foundation.md](roadmap/M0-foundation.md#cards). 26 cards, at 
 | QA-02 | Core test kit: SimHarness, fakes and shared scenarios | M | QA-01 | specified |
 | QA-04 | GameTest harness (L3) | M | QA-01 | in_progress |
 | CORE-01 | Match container, lifecycle and region index | M | QA-02, QA-04 | specified |
-| CORE-02 | Driving port and the nine-phase tick pipeline | M | CORE-01 | specified |
+| CORE-02 | Driving port and the nine-phase tick pipeline | M | CORE-01 | in_progress |
 | CORE-03 | Command pipeline and in-memory journal | M | CORE-02 | specified |
 | CORE-06 | Unit records, handles and the body registry | M | CORE-01 | in_progress |
 | UNIT-01 | Unit body v0: a kinematic LivingEntity view | M | CORE-06 | specified |
@@ -255,7 +255,7 @@ Cards: [roadmap/M0-foundation.md](roadmap/M0-foundation.md#cards). 26 cards, at 
 | QA-06 | Client scenario runner and spike S3 (consent) | M | QA-01, D-22 | specified |
 | QA-07 | Performance harness (L6) | M | QA-02, QA-04 | specified |
 | QA-08 | Continuous integration | M | QA-04, QA-05, D-23 | in_progress |
-| QA-10 | Developer commands and log tagging | S | QA-04 | specified |
+| QA-10 | Developer commands and log tagging | S | QA-04 | in_progress |
 | QA-17 | Static gates, engine-surface inventory and fixture catalogue | M | QA-01 | in_progress |
 | PERF-01 | Budget matrix and enforcement | S | QA-07 | specified |
 | PERF-02 | Spike S1: server cost per body | M | UNIT-01, QA-07 | specified |

@@ -58,14 +58,17 @@ The owner was here on 2026-10-21 and started M0. Since then:
 - 2026-10-21 · **M0 T18 CI:** GitHub Actions runs `verify` on Linux for every push to `main` and every
   pull request; the first run passed in 6 min 11 s, and
   [pull request #1](https://github.com/o-e-lytvynskyi/strategos/pull/1) shows the test results.
+- 2026-10-21 · **M0 T4a Core `shared`, `port`, `diag`:** ids with codecs, deterministic maths, the
+  counter-based RNG and the state hasher (pinned against an independent implementation), phase
+  timers and the match log.
 
 ## Now
 
-- **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 4 of 25 tasks done.
+- **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 5 of 25 tasks done.
 - **Tripwire (M0 only):** T1 started 2026-10-21; T9 green not yet; M0 work days 1 of 10.
 - **In progress:** none.
-- **Last finished task:** M0 T18 (2026-10-21), commit 43a2f13; T3 was commit 3ab0464.
-- **Next task:** M0 T4a · Core `shared`, `port`, `diag` (CORE-05, CORE-02, QA-10).
+- **Last finished task:** M0 T4a (2026-10-21); T18 was commit 43a2f13.
+- **Next task:** M0 T4b · Core `protocol`, `content` (CORE-03).
 - **WIP branch:** none.
 - **CI:** green on [pull request #1](https://github.com/o-e-lytvynskyi/strategos/pull/1); runs on `main` are not readable yet (item 1b); minutes used this month about 7 of 2,000, as of 2026-10-21.
 - **Overview:** `python3 tools/roadmap.py summary`.

@@ -400,7 +400,7 @@ decision (D-21).
      of the demo); a frozen GameTest server stalls its own tests, so this cannot be an L3 test.
   8. Timer overhead stays below 1 % of the measured phase time (L6).
 - **Tests:** L0, L1, L2, L6 · **Depends on:** CORE-01 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 #### CORE-03 · Command pipeline and in-memory journal
 - **Value:** Every player and AI action is a server-validated command, so no client can move
@@ -631,7 +631,7 @@ decision (D-21).
   1. Debug commands need permission level 2 and are hidden from players without it (L3).
   2. Every log line from match code carries the match id and tick (L3).
 - **Tests:** L0, L3 · **Depends on:** QA-04 · **Size:** S · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 #### QA-17 · Static gates, engine-surface inventory and fixture catalogue
 - **Value:** The architecture's boundaries hold by construction, every hook into Minecraft is
