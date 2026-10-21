@@ -58,6 +58,7 @@ longer catches a retry without a reason".
 | `:mod:test` with the game bootstrap (L2) | 3.8 s | ≤ 60 s (QA-03.3) |
 | L3 wall time of `runGameTestServer` | 1.2–1.4 s | ≤ 3 min (QA-04.3) |
 | `runServerSmoke` | 6.1 s | < 60 s (QA-05.1) |
+| `runServerSmoke` then `runServerSmokeRestart` (T9b, two server boots in one game directory) | 19.2 s for both | run 1 < 60 s (QA-05.1) |
 | `clean verify` (local build cache on) | 19.8 s | ≤ 5 min |
 | `verify` again | 18.9 s | ≤ 5 min |
 

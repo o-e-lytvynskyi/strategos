@@ -125,6 +125,15 @@ neoForge {
             systemProperty 'strategos.smoke.marker', file('build/server-smoke/smoke-result.json').absolutePath
             systemProperty 'strategos.selftest', providers.gradleProperty('strategos.selftest').getOrElse('')
         }
+        // [T9b] run 2 of the restart round trip: run 1's game directory, never wiped (QA-05.4)
+        serverSmokeRestart {
+            server()
+            disableIdeRun()
+            gameDirectory = file('build/server-smoke')
+            programArgument('--nogui')
+            systemProperty 'strategos.smoke', 'restart'
+            systemProperty 'strategos.smoke.marker', file('build/server-smoke/smoke-restart.json').absolutePath
+        }
         // [T3] verifyHarness: each of these must fail the guard it targets; the inverted guards of block F pass then
         gameTestEmptyFilter {
             type = 'gameTestServer'
@@ -358,6 +367,12 @@ def smokeGuard = { String runTask, String markerName ->
     }
 }
 smokeGuard('runServerSmoke', 'smoke-result.json')
+// [T9b] Run 2 of the restart round trip: after run 1, in its game directory, which nothing wipes in between.
+smokeGuard('runServerSmokeRestart', 'smoke-restart.json')
+tasks.matching { it.name == 'runServerSmokeRestart' }.configureEach {
+    dependsOn 'runServerSmoke'
+    doFirst { new File(smokeDir, 'smoke-restart.json').delete() }
+}
 
 // [T3] verifyHarness. These runs feed a guard its broken input and pass only when that guard would
 // have failed, so a guard that stops biting fails the build (QA-04.1, QA-04.2, QA-04.4, QA-04.5,
@@ -429,7 +444,7 @@ def smokeCrashDir = file('build/harness/smoke-crash')
 tasks.matching { it.name == 'runServerSmokeNoMarker' }.configureEach {
     ignoreExitValue = true
     timeout = Duration.ofMinutes(5)
-    mustRunAfter 'runServerSmoke'                       // they share port 25599; runServerSmokeRestart joins in T9b
+    mustRunAfter 'runServerSmoke', 'runServerSmokeRestart'     // they share port 25599
     doLast {
         def marker = new File(smokeCrashDir, 'smoke-result.json')
         if (marker.isFile() && new groovy.json.JsonSlurper().parse(marker).ok == true) {

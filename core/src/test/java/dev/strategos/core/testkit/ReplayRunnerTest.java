@@ -117,4 +117,77 @@ class ReplayRunnerTest {
         assertThat(report.result().matches()).isTrue();
         assertThat(report.message()).startsWith("the replay reaches tick 200 with hash ");
     }
+
+    /** Six units walked toward {@code target} for 120 ticks, the first one ordered on at tick 60. */
+    private static SimHarness walkedFor120(Vec2d target) {
+        SimHarness h = SimHarness.builder().seed(Seeds.first("m0-200")).build();
+        int[] units = h.spawn(new FactionSlot(0), new Vec2d(8, 8), 6, 3.0);
+        h.submit(new PlayerSlot(0), Move.replace(UnitSet.of(units), target));
+        h.runTicks(59);
+        h.submit(new PlayerSlot(0), Move.replace(UnitSet.of(units[0]), new Vec2d(2.5, 30.5)));
+        h.runTicks(60);
+        return h;
+    }
+
+    /** The restored half: 60 more ticks with a new order at the restore's tick + 10. */
+    private static SimHarness restoredAndWalked(SimHarness saved) {
+        SimHarness h = SimHarness.restore(saved.core().snapshot(), TemplateSet.builtin());
+        h.runTicks(10);
+        h.submit(new PlayerSlot(0), Move.replace(UnitSet.of(h.queries().unitHandles()), new Vec2d(4.5, 8.5)));
+        h.runTicks(50);
+        return h;
+    }
+
+    /** QA-05.4 in L1: a run saved at tick 120 and restored replays as one run from its two journals. */
+    @Test
+    void aSavedAndRestoredRunReplaysAsOneFromItsTwoJournals() {
+        SimHarness saved = walkedFor120(new Vec2d(24.5, 20.5));
+        SimHarness restored = restoredAndWalked(saved);
+        assertThat(restored.core().journal().startTick())
+                .as("the restored journal starts at the save")
+                .isEqualTo(120);
+
+        ReplayReport report = ReplayRunner.chain(
+                TemplateSet.builtin(),
+                restored.stateHash(),
+                List.of(saved.core().journal(), restored.core().journal()));
+
+        assertThat(report.ok()).as(report.message()).isTrue();
+        assertThat(report.result().finalTick()).isEqualTo(180);
+        assertThat(report.message()).startsWith("the replay of 2 journals matches ");
+        assertThat(ReplayRunner.chain(
+                                TemplateSet.builtin(),
+                                restored.stateHash() + 1,
+                                List.of(saved.core().journal(), restored.core().journal()))
+                        .message())
+                .startsWith("the replay reaches tick 180 with hash ");
+    }
+
+    @Test
+    void aJournalThatStartsElsewhereIsRefusedAtTheJoin() {
+        SimHarness saved = walkedFor120(new Vec2d(24.5, 20.5));
+
+        ReplayReport report = ReplayRunner.chain(
+                TemplateSet.builtin(),
+                saved.stateHash(),
+                List.of(saved.core().journal(), saved.core().journal()));
+
+        assertThat(report.ok()).isFalse();
+        assertThat(report.message()).isEqualTo("journal 1 starts at tick 0, the replay is at tick 120");
+    }
+
+    /** A restore from another state at the same tick (a twin run with another order) is caught where the two meet. */
+    @Test
+    void aRestoreFromAnotherStateIsCaughtAtTheJoin() {
+        SimHarness saved = walkedFor120(new Vec2d(24.5, 20.5));
+        SimHarness twin = restoredAndWalked(walkedFor120(new Vec2d(20.5, 24.5)));
+
+        ReplayReport report = ReplayRunner.chain(
+                TemplateSet.builtin(),
+                twin.stateHash(),
+                List.of(saved.core().journal(), twin.core().journal()));
+
+        assertThat(report.ok()).isFalse();
+        assertThat(report.message()).startsWith("journal 1 starts from hash ").endsWith(" at tick 120");
+    }
 }

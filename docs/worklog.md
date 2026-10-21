@@ -9,7 +9,27 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M0 T9, the tripwire checkpoint
+## 2026-10-22 — M0 T9, the tripwire checkpoint, T9b
+
+- **M0 T9b · Restart round trip and the holder's lifetime** — QA-05, CORE-01, CORE-06, all still in
+  progress (QA-05 waits for T13, CORE-01 for T16, CORE-06 for T11).
+  - **Results:**
+    - `runServerSmokeRestart`, run 2 of the smoke in run 1's game directory, with its marker guard
+      and a JUnit case; `verify` runs it;
+    - run 1: a saved 16 x 16 match, the 8 units ordered back after the check, saved at tick 120
+      mid-walk, the journal exported to `journal-run1.json`;
+    - run 2: the match back `PAUSED` at tick 120 with run 1's hash; 8 bodies for 8 units and no
+      other; 60 ticks later the live hash equals the replay of both journals (9 checkpoints, tick
+      181);
+    - both markers say `holderAtAboutToStart` and `holderClearedOnStop` true (CORE-01.6);
+    - `ReplayRunner.chain` in the core test kit, which also checks the join between the journals;
+      `ReplayRunnerTest` +3 (a saved and restored run, a journal from elsewhere, a restore from
+      another state); `:core:test` 602 tests;
+    - a mutant restoring no body wishes fails run 2 ("no verdict within 600 ticks");
+    - both smoke runs 19.2 s; `verify verifySlow` green in 35 s (the second server boot runs after
+      the first: they share port 25599).
+  - **Problems:** none.
+  - Spec §1.6 D row 55.
 
 - **Tripwire checkpoint:** T1 started 2026-10-21, T9 green 2026-10-22, 2 of 10 M0 work days;
   nothing simplified.
@@ -47,7 +67,7 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
     - pitfalls in the knowledge base (`minecraft-mod-data.md`, new, and `minecraft-mod.md`).
   - Spec §1.6 D row 54.
 
-- **Next:** M0 T9b · Restart round trip and the holder's lifetime.
+- **Next:** M0 T11 · Static gates complete.
 
 ## 2026-10-22 — the owner's setup, M0 T7c, T8
 
