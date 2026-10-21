@@ -782,7 +782,7 @@ decision (D-21).
   6. Serialising a 500-unit match stays within budget G, ≤ 100 ms (L6).
 - **Tests:** L0, L1, L2, L3, L6 · **Fixtures:** save fixtures per released schema (JSON, NBT) ·
   **Depends on:** CORE-06 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 #### CORE-10 · Fault containment
 - **Value:** One match's bug never takes down a server, another match or a four-player session,

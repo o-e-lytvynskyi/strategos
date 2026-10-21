@@ -356,6 +356,7 @@ Additions that 04 §1.5 does not name, each the smallest piece the named items n
 | 44 | §9.2 T5a: T5a brings §5.6 without `MatchState`, and `MatchLifecycle` | `MatchSystem#run` and `Scheduler#runPhase` take a `MatchState`, the scheduler reads its tick, and `AiStateStore` holds `UnitState` (§5.5). So T5a brings `MatchState` with only its tick, which T5b completes, and `UnitState`. Stores and hashes keep `UnitState` and the order kind as explicit codes (`UnitState#code()`), never as ordinals: ErrorProne's `EnumOrdinal` flags ordinals, and reordering constants must not change a hash or a save |
 | 45 | §9.2 T5b: T5b brings all of §5.5, and `CommandOrderingTest` checks pending commands through `snapshot` and `restore` | `MatchCore#snapshot`, `restore` and `journal` arrive with T6a, as T6a's file list says, so T5b's `MatchCore` leaves them out and T6a adds the snapshot part of `CommandOrderingTest`. The code needed four small additions: `Hasher`'s static `start`, `mix`, `finish` and `resume`, so `StateHasher`, a `@HotPath` kernel, hashes without allocating unless commands are pending; `EntityStore#generationAt` for the hash's per-index generation; `MatchLog.forSim`, so `core.sim` never touches `LoggerFactory` (rule QA-10); and `PhaseTimers#currentPhaseNanos`, the reused array `FinalSystem` hands to `MetricsSink#onTick`. `SpawnUnitsRule` also refuses a faction the match does not seat (`INVALID_ARGUMENT`) |
 | 46 | §5.7: `MovementSystem` snaps a unit to its target when `d <= speed` | `d <= speed + 1e-6`: rounding leaves a diagonal move's last step a few ulps longer than the speed, so a 3-4-5 move took 21 steps, not the ⌈5 / 0.25⌉ = 20 the spec promises. The unit still lands exactly on the target, and the constant tolerance keeps every run identical |
+| 47 | §5.8: `JournalCodec` writes `{"v":1, start, ticks, checkpoints, liveTick, liveHash}` | It also writes `checkpointEvery` and `lastTick`, which a decoded journal needs to replay; another `"v"` fails to decode. Test journals with small limits come from a test-only factory (`KernelAccess.create`), since `MatchCore.create` uses the defaults of 20 and 72,000 ticks |
 
 ---
 
@@ -4072,7 +4073,7 @@ check and `release.yml`).
 
 ### 9.3 Progress
 
-- [x] T1 (2026-10-21) · [x] T2 (2026-10-21) · [x] T3 (2026-10-21) · [x] T18 (2026-10-21) · [x] T4a (2026-10-21) · [x] T4b (2026-10-21) · [x] T5a (2026-10-21) · [x] T5b (2026-10-21) · [ ] T6a · [ ] T6b · [ ] T7a · [ ] T7b · [ ] T7c · [ ] T8 · [ ] T9
+- [x] T1 (2026-10-21) · [x] T2 (2026-10-21) · [x] T3 (2026-10-21) · [x] T18 (2026-10-21) · [x] T4a (2026-10-21) · [x] T4b (2026-10-21) · [x] T5a (2026-10-21) · [x] T5b (2026-10-21) · [x] T6a (2026-10-21) · [ ] T6b · [ ] T7a · [ ] T7b · [ ] T7c · [ ] T8 · [ ] T9
 - [ ] Tripwire checkpoint (dates in STATE.md)
 - [ ] T9b · [ ] T10 · [ ] T11 · [ ] T11b · [ ] T12 · [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17
 

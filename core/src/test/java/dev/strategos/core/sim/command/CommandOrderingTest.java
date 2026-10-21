@@ -2,6 +2,7 @@ package dev.strategos.core.sim.command;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.Stop;
 import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.FactionSlot;
@@ -9,7 +10,10 @@ import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.CommandResult;
+import dev.strategos.core.sim.CorePorts;
 import dev.strategos.core.sim.InputEvent;
+import dev.strategos.core.sim.MatchCore;
+import dev.strategos.core.sim.MatchSnapshot;
 import dev.strategos.core.sim.TickInputs;
 import dev.strategos.core.sim.TickOutputs;
 import dev.strategos.core.testkit.SimHarness;
@@ -17,7 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-/** Snapshot and restore of pending commands join with T6a (M0 spec 1.6 row 45). */
 class CommandOrderingTest {
 
     private static List<CommandResult> results(TickOutputs out) {
@@ -80,5 +83,26 @@ class CommandOrderingTest {
                 .map(r -> r.issuer().value() + "/" + r.clientSeq())
                 .toList();
         assertThat(answered).hasSize(300).doesNotHaveDuplicates().containsExactlyInAnyOrderElementsOf(sent);
+    }
+
+    @Test
+    void pendingCommandsSurviveSnapshotAndRestoreAndApplyIdentically() {
+        SimHarness h = SimHarness.builder().build();
+        int[] units = h.spawn(new FactionSlot(0), new Vec2d(8, 8), 1, 0.0);
+        for (int i = 0; i < 300; i++) {
+            h.submit(PlayerSlot.ADMIN, new Stop(UnitSet.of(units)));
+        }
+        h.step(); // 256 apply, 44 wait
+        MatchSnapshot snapshot = h.core().snapshot();
+        assertThat(snapshot.pendingCommands()).hasSize(44);
+        MatchCore restored = MatchCore.restore(snapshot, TemplateSet.builtin(), CorePorts.of(() -> 0L));
+        assertThat(restored.stateHash()).isEqualTo(h.stateHash());
+
+        long next = h.tick() + 1;
+        List<CommandResult> live = results(h.core().step(TickInputs.empty(next)));
+        List<CommandResult> again = results(restored.step(TickInputs.empty(next)));
+
+        assertThat(again).hasSize(44).isEqualTo(live);
+        assertThat(restored.stateHash()).isEqualTo(h.core().stateHash());
     }
 }

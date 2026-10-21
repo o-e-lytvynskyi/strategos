@@ -9,7 +9,20 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-21 — M0 T1, T2, T3, T18, T4a, T4b, T5a, T5b
+## 2026-10-21 — M0 T1, T2, T3, T18, T4a, T4b, T5a, T5b, T6a
+
+- **M0 T6a · Journal, snapshot, migrations, replay** — CORE-07 in progress; CORE-05, CORE-03.
+  - **Results:**
+    - journal recording in INGEST, checkpoints and re-basing in FINAL;
+    - `MatchCore.snapshot`, `restore` and `journal`;
+    - `JournalCodec`, `ReplayDriver` and `MatchSnapshotCodec` with `"v"` and `Migrations`;
+    - `:core:test` passes 140 tests;
+    - a 2,000-tick random run replays with all 100 checkpoints equal;
+    - removing one recorded command reports the first checkpoint after it;
+    - a 500-unit snapshot survives JSON with an equal hash, and the restored core matches the original
+      for 200 more ticks;
+    - pending commands survive a snapshot.
+  - **Problems:** none; the codec's two extra fields are spec §1.6 D row 47.
 
 - **M0 T5b · `MatchCore`, commands, UnitAI, movement** — ORD-01 and QA-02 in progress; CORE-02,
   CORE-03, CORE-05.
@@ -129,7 +142,7 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
       versions inside `group:name:version` strings (row 40), now proven on a broken catalog; two
       comments that strayed from the spec were removed;
     - `HandleTest` pins the bit layout with literals, since handles are saved.
-- **Next:** M0 T6a · journal, snapshot, migrations and replay.
+- **Next:** M0 T6b · the rest of the test kit, scenarios, seeded runs and the canary.
 
 ## 2026-10-21 — design closed, roadmap approved, autonomy set up
 

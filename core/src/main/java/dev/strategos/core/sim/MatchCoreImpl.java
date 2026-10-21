@@ -7,6 +7,8 @@ import dev.strategos.core.port.MetricsSink;
 import dev.strategos.core.protocol.CommandKinds;
 import dev.strategos.core.sim.command.CommandRules;
 import dev.strategos.core.sim.command.CommandSystem;
+import dev.strategos.core.sim.journal.Journal;
+import dev.strategos.core.sim.journal.JournalWriter;
 import dev.strategos.core.sim.move.MovementSystem;
 import dev.strategos.core.sim.unitai.UnitAiSystem;
 
@@ -21,22 +23,37 @@ final class MatchCoreImpl implements MatchCore {
     private final MetricsSink metrics;
     private final FinalSystem finalSystem;
     private final QueriesImpl queries;
+    private final JournalWriter journal;
     private final Phase[] phases = Phase.values();
 
-    MatchCoreImpl(MatchConfig config, TemplateSet templates, CorePorts ports) {
+    private MatchCoreImpl(MatchState state, CorePorts ports, int checkpointEvery, int maxJournalTicks) {
         CommandRules rules = CommandRules.m0();
         rules.verifyCovers(CommandKinds.DEFAULT);
-        this.state = new MatchState(config, templates, new EntityStore(), MatchLog.forSim(config.id()));
+        this.state = state;
         this.timers = new PhaseTimers(Phase.names(), ports.clock(), TIMER_WINDOW);
         this.metrics = ports.metrics();
+        this.journal = new JournalWriter(Snapshots.take(state), checkpointEvery, maxJournalTicks);
         CommandSystem commands = new CommandSystem(state, rules);
-        scheduler.register(new IngestSystem(commands));
+        scheduler.register(new IngestSystem(commands, journal));
         scheduler.register(commands);
         scheduler.register(new UnitAiSystem(state));
         scheduler.register(new MovementSystem());
-        this.finalSystem = new FinalSystem(metrics, timers);
+        this.finalSystem = new FinalSystem(metrics, timers, journal);
         scheduler.register(finalSystem);
         this.queries = new QueriesImpl(state);
+    }
+
+    static MatchCoreImpl create(
+            MatchConfig config, TemplateSet templates, CorePorts ports, int checkpointEvery, int maxJournalTicks) {
+        MatchState state = new MatchState(config, templates, new EntityStore(), MatchLog.forSim(config.id()));
+        return new MatchCoreImpl(state, ports, checkpointEvery, maxJournalTicks);
+    }
+
+    static MatchCoreImpl restore(
+            MatchSnapshot snapshot, TemplateSet templates, CorePorts ports, int checkpointEvery, int maxJournalTicks) {
+        MatchState state = Snapshots.restore(
+                snapshot, templates, MatchLog.forSim(snapshot.config().id()));
+        return new MatchCoreImpl(state, ports, checkpointEvery, maxJournalTicks);
     }
 
     @Override
@@ -65,6 +82,16 @@ final class MatchCoreImpl implements MatchCore {
     @Override
     public long stateHash() {
         return StateHasher.hash(state);
+    }
+
+    @Override
+    public MatchSnapshot snapshot() {
+        return Snapshots.take(state);
+    }
+
+    @Override
+    public Journal journal() {
+        return journal.view();
     }
 
     @Override
