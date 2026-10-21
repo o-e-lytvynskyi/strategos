@@ -66,15 +66,20 @@ public final class StrategosGameTests {
                 .toList();
     }
 
-    /** {@code <suite simple name in lower case>.<method name in snake_case>}. */
+    /**
+     * {@code <suite simple name in lower case>.<method name in snake_case>}, a digit run being a word of its own:
+     * {@code rootRequiresPermission2} gives {@code root_requires_permission_2}.
+     */
     static String name(Class<?> suite, Method method) {
         StringBuilder name = new StringBuilder(suite.getSimpleName().toLowerCase(Locale.ROOT)).append('.');
+        char previous = '_';
         for (char c : method.getName().toCharArray()) {
-            if (Character.isUpperCase(c)) {
-                name.append('_').append(Character.toLowerCase(c));
-            } else {
-                name.append(c);
+            boolean wordStart = Character.isUpperCase(c) || (Character.isDigit(c) && !Character.isDigit(previous));
+            if (wordStart && previous != '_') {
+                name.append('_');
             }
+            name.append(Character.toLowerCase(c));
+            previous = c;
         }
         return name.toString();
     }

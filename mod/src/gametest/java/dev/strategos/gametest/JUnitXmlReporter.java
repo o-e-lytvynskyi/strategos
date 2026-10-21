@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +31,8 @@ public final class JUnitXmlReporter implements TestReporter {
     private final Path report;
     private final long startNanos = System.nanoTime();
     private final String timestamp = // UTC, the same on every machine
-            LocalDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.SECONDS).toString();
+            DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(
+                    LocalDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.SECONDS));
     private final List<Result> results = new ArrayList<>(); // guarded by this
 
     public JUnitXmlReporter(Path report) {
@@ -129,7 +131,10 @@ public final class JUnitXmlReporter implements TestReporter {
         return out.toString();
     }
 
-    /** XML text and attribute escaping; drops the control characters XML 1.0 cannot hold. */
+    /**
+     * XML text and attribute escaping. Drops what XML 1.0 cannot hold: control characters other than tab and line
+     * breaks, U+FFFE and U+FFFF, and unpaired surrogates (which would also fail the UTF-8 write and lose the report).
+     */
     static String escape(String text) {
         StringBuilder out = new StringBuilder(text.length());
         for (int i = 0; i < text.length(); i++) {
@@ -141,7 +146,13 @@ public final class JUnitXmlReporter implements TestReporter {
                 case '"' -> out.append("&quot;");
                 case '\'' -> out.append("&apos;");
                 default -> {
-                    if (c >= 0x20 || c == '\t' || c == '\n' || c == '\r') {
+                    if (Character.isHighSurrogate(c)) {
+                        if (i + 1 < text.length() && Character.isLowSurrogate(text.charAt(i + 1))) {
+                            out.append(c).append(text.charAt(++i));
+                        }
+                    } else if (Character.isLowSurrogate(c)) {
+                        // an unpaired low surrogate: dropped
+                    } else if ((c >= 0x20 && c != 0xFFFE && c != 0xFFFF) || c == '\t' || c == '\n' || c == '\r') {
                         out.append(c);
                     }
                 }

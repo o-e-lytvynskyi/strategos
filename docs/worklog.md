@@ -55,6 +55,10 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
       so it halted before a rerun and exited with the first failure. `RerunTracking` keeps the
       tracker on the newest attempt (spec §1.6 D row 41; pitfall in the knowledge base).
     - ErrorProne flagged `LocalDateTime.now()` without a zone: the report's timestamp is UTC.
+    - A review of the commit (three lenses, each finding checked by a skeptic) corrected the
+      README's account of a vanilla `server.properties` error. It also hardened the report:
+      seconds always in the timestamp, no characters XML 1.0 forbids. Test names now treat a
+      digit run as a word (`permission_2`), as T8's names need.
 - **M0 T1 · Build skeleton** — QA-01, QA-03, QA-09 and CORE-06 in progress.
   - **Results:**
     - the wrapper checksum matched the MDK's;

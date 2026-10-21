@@ -15,8 +15,11 @@ Minecraft 1.21.1 starts the GameTest server (`GameTestServer.java:64–69, 85`) 
 
 A test that relies on one of these behaving as in survival play must set it up itself.
 
-Its log starts with a vanilla error, `Failed to load properties from file: server.properties`:
-the GameTest server has no properties file and runs on its defaults, so the error is expected.
+The first run in a fresh `mod/build/gametest` logs a vanilla error, `Failed to load properties
+from file: server.properties`. Vanilla `Main` reads `server.properties` from the run directory and
+then writes a default copy there (`Main.java:123–126`), so later runs log no error. The GameTest
+server builds its world from its own settings above; from the file it takes only `level-name`
+(`world`, which the guard wipes) and the region-file compression.
 
 ## The control rule
 
