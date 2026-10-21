@@ -288,7 +288,7 @@ decision (D-21).
   7. S5 confirms ADR-0007 (the `gametest` source set inside the `strategos` mod group, registered
      by our generator) or switches to its fallback, a separate test mod (R).
 - **Tests:** L0, L3, L5 · **Depends on:** — · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 #### QA-02 · Core test kit: SimHarness, fakes and shared scenarios
 - **Value:** Game rules, whole matches and replays are checked in seconds, and one scenario runs
@@ -448,7 +448,7 @@ decision (D-21).
      (L3).
   5. ArchUnit proves `core` never references the body implementation (L0).
 - **Tests:** L0, L1, L3, L5 · **Depends on:** CORE-01 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 #### UNIT-01 · Unit body v0: a kinematic LivingEntity view
 - **Value:** Units appear in the world as real Minecraft entities that every client sees, at
@@ -497,7 +497,7 @@ decision (D-21).
   4. P0–P3 and the desync proxy are defined with examples (D).
   5. The first use of the scripts and the protocol, at the M0 acceptance, confirms ADR-0022 (D).
 - **Tests:** D, L7 · **Depends on:** QA-01 · **Size:** S · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 #### ORD-01 · Walking skeleton: a debug move order end to end
 - **Value:** The first end-to-end proof: an order goes through the server and the core, units
@@ -533,7 +533,7 @@ decision (D-21).
   2. A payload over its cap fails the helper with the actual and the allowed size (L2).
   3. `:mod:test` finishes within 60 s on the M4 Pro (L2).
 - **Tests:** L0, L2 · **Depends on:** QA-01 · **Size:** S · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 #### QA-05 · Server smoke (L5): boot, a headless match, a restart round trip
 - **Value:** The mod never crashes a dedicated server, and real save files survive a restart bit

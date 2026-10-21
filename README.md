@@ -11,9 +11,8 @@ data or art from those games.
 
 ## Status
 
-Design complete, implementation not started. The roadmap is approved up to the first playable
-version (M0–M6), and the first milestone, M0 "Foundation", is fully specified and waits for the
-go-ahead. See [docs/STATE.md](docs/STATE.md).
+Design complete; M0 "Foundation" is in progress since 2026-10-21. The roadmap is approved up to
+the first playable version (M0–M6). See [docs/STATE.md](docs/STATE.md).
 
 ## Documentation
 
