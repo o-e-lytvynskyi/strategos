@@ -423,7 +423,7 @@ decision (D-21).
   5. The journal holds every input of a seeded run in canonical order (L1).
   6. A server command enqueues through the same path as every other source (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** CORE-02 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 #### CORE-06 · Unit records, handles and the body registry
 - **Value:** Units never duplicate or vanish when chunks reload, worlds are saved or another mod

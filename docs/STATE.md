@@ -61,14 +61,17 @@ The owner was here on 2026-10-21 and started M0. Since then:
 - 2026-10-21 · **M0 T4a Core `shared`, `port`, `diag`:** ids with codecs, deterministic maths, the
   counter-based RNG and the state hasher (pinned against an independent implementation), phase
   timers and the match log.
+- 2026-10-21 · **M0 T4b Core `protocol`, `content`:** the commands `Move`, `Stop` and `SpawnUnits`
+  with their JSON codec and catalogue, `UnitSet`, the reject reasons, and the built-in unit
+  template.
 
 ## Now
 
-- **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 5 of 25 tasks done.
+- **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 6 of 25 tasks done.
 - **Tripwire (M0 only):** T1 started 2026-10-21; T9 green not yet; M0 work days 1 of 10.
 - **In progress:** none.
-- **Last finished task:** M0 T4a (2026-10-21); T18 was commit 43a2f13.
-- **Next task:** M0 T4b · Core `protocol`, `content` (CORE-03).
+- **Last finished task:** M0 T4b (2026-10-21); T4a was commit 3cb9508.
+- **Next task:** M0 T5a · Core kernel internals.
 - **WIP branch:** none.
 - **CI:** green on [pull request #1](https://github.com/o-e-lytvynskyi/strategos/pull/1); runs on `main` are not readable yet (item 1b); minutes used this month about 7 of 2,000, as of 2026-10-21.
 - **Overview:** `python3 tools/roadmap.py summary`.

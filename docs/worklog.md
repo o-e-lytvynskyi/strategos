@@ -9,7 +9,18 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-21 — M0 T1, T2, T3, T18, T4a
+## 2026-10-21 — M0 T1, T2, T3, T18, T4a, T4b
+
+- **M0 T4b · Core `protocol`, `content`** — CORE-03 in progress.
+  - **Results:**
+    - the sealed `Command` with `Move`, `Stop` and `SpawnUnits`, each hashable;
+    - `UnitSet`, capped at 300 on decode too;
+    - `CommandKinds`, whose codec dispatches on `kind` and names an unknown one;
+    - `QueueMode`, `RejectReason` and `CommandOutcome`;
+    - `TemplateSet.builtin()` with the debug walker and a golden hash;
+    - `:core:test` passes 61 tests; `verify` passes in 20 s.
+  - **Problems:** ErrorProne refused hashing `QueueMode` by its ordinal, which would let a
+    reordered enum change state hashes silently; it hashes the mode's id.
 
 - **M0 T4a · Core `shared`, `port`, `diag`** — CORE-05, CORE-02 and QA-10 in progress.
   - **Results:**
@@ -87,7 +98,7 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
       versions inside `group:name:version` strings (row 40), now proven on a broken catalog; two
       comments that strayed from the spec were removed;
     - `HandleTest` pins the bit layout with literals, since handles are saved.
-- **Next:** M0 T4b · core `protocol` and `content`.
+- **Next:** M0 T5a · the core kernel internals.
 
 ## 2026-10-21 — design closed, roadmap approved, autonomy set up
 
