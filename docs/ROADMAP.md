@@ -40,7 +40,9 @@ below, and mirror the statuses here. Revised on 2026-10-21 from the
   owner, role, task, load, health and upgrade tier of every unit; first person shows the same world
   up close.
 - **P3 Classic RTS hands.** AoE and 0 A.D. muscle memory works on day one: box select, control
-  groups, Shift queues, the idle-worker key, rally points and order previews.
+  groups, Shift queues, the idle-worker key, rally points and order previews. Every unit can always
+  be selected and ordered on its own; groups and formations never lock units together (owner,
+  2026-10-21).
 - **P4 Few decisions, all real.** Boom or rush, counters, high ground, when to ring the bell, when
   to phase up; headless matches verify that each choice can win.
 - **P5 An honest opponent.** The AI issues the same commands, announces its attacks and never

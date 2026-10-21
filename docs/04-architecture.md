@@ -1551,7 +1551,9 @@ that, and every block edit would invalidate JPS+ preprocessing ([engine §2.2](r
   simulation tick.
 - **Formations (M10).** A `FormationController` is a core entity, not a Minecraft entity. It
   follows one path at its slowest member's speed and assigns slots greedily by sorted projection.
-  Formations only walk, as in 0 A.D.
+  Formations only walk, as in 0 A.D. They never take away individual control: a click selects a
+  member, not the formation; a member given its own order leaves the formation, and the rest
+  re-slot (ORD-06, pillar P3).
 
 ### 9.5 Local avoidance, arrival and stuck handling
 

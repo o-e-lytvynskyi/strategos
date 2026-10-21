@@ -168,13 +168,18 @@ before CIV-02; D-09 ([M2](M2-command.md#d-09--camera-projection)) governs CAM-06
 - **In scope:** a `FormationController` as a core entity, not a Minecraft entity; box and line;
   slots by class with greedy assignment by sorted projection; the formation moves at its slowest
   member's speed; members fight individually, and the formation dissolves on gather or attack
-  orders.
+  orders. Individual control always wins (pillar P3): a click selects the member, not the
+  formation, and Alt+click selects the whole formation; a member given an order of its own leaves
+  the formation, and the rest re-slot and keep moving.
 - **Out of scope:** special formations (ORD-08).
 - **Acceptance:**
   1. A formation of 40 keeps slot error under 1 block while moving on flat ground (L1).
   2. Formation speed equals its slowest member's (L1).
   3. An attack order breaks the formation (L1).
   4. A formation marches across the proving ground in a GameTest (L3).
+  5. A member given an order of its own leaves the formation, and the remaining members re-slot
+     and keep moving (L1).
+  6. A click on a member selects only that unit; Alt+click selects its whole formation (L1).
 - **Tests:** L0, L1, L3 · **Depends on:** ORD-03, PATH-09 · **Size:** L · **Tier:** T1
 - **Status:** proposed
 
