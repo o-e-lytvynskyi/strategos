@@ -9,8 +9,21 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-21 — M0 T1
+## 2026-10-21 — M0 T1, T2
 
+- **M0 T2 · GameTest harness** — QA-04 in progress, QA-01.
+  - **Results:**
+    - `runGameTestServer` passes `buildtests.core_in_mod_module` and
+      `buildtests.testfixtures_in_mod_module`: core and the test kit run inside the mod module;
+    - L3 wall time 1.2 s of the 180 s budget;
+    - `verifyFast` plus the GameTest run take 6 s warm;
+    - all four negative checks behave as designed (STATE.md, "Evidence for the S5 report");
+    - both SNBT arenas are generated and committed.
+  - **Problems:**
+    - Retries never ran on the 1.21.1 GameTest server: its tracker counts only first attempts,
+      so it halted before a rerun and exited with the first failure. `RerunTracking` keeps the
+      tracker on the newest attempt (spec §1.6 D row 41; pitfall in the knowledge base).
+    - ErrorProne flagged `LocalDateTime.now()` without a zone: the report's timestamp is UTC.
 - **M0 T1 · Build skeleton** — QA-01, QA-03, QA-09 and CORE-06 in progress.
   - **Results:**
     - the wrapper checksum matched the MDK's;
@@ -28,7 +41,7 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
       versions inside `group:name:version` strings (row 40), now proven on a broken catalog; two
       comments that strayed from the spec were removed;
     - `HandleTest` pins the bit layout with literals, since handles are saved.
-- **Next:** M0 T2 · GameTest harness.
+- **Next:** M0 T3 · smoke, the first ArchUnit rules, `verify`, `verifyHarness` and the first S5 report.
 
 ## 2026-10-21 — design closed, roadmap approved, autonomy set up
 

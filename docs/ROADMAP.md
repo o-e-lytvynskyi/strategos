@@ -242,7 +242,7 @@ Cards: [roadmap/M0-foundation.md](roadmap/M0-foundation.md#cards). 26 cards, at 
 |---|---|---|---|---|
 | QA-01 | Build skeleton, pins, core merge and spike S5 | M | — | in_progress |
 | QA-02 | Core test kit: SimHarness, fakes and shared scenarios | M | QA-01 | specified |
-| QA-04 | GameTest harness (L3) | M | QA-01 | specified |
+| QA-04 | GameTest harness (L3) | M | QA-01 | in_progress |
 | CORE-01 | Match container, lifecycle and region index | M | QA-02, QA-04 | specified |
 | CORE-02 | Driving port and the nine-phase tick pipeline | M | CORE-01 | specified |
 | CORE-03 | Command pipeline and in-memory journal | M | CORE-02 | specified |

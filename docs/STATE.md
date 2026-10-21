@@ -49,17 +49,36 @@ The owner was here on 2026-10-21 and started M0. Since then:
 - 2026-10-21 · **M0 T1 Build skeleton:** the build runs (Gradle 9.2.1 on Java 21, NeoForge
   21.1.264); `verifyFast` and the first tests are green; three spec corrections (§1.6 D, rows
   38–40).
+- 2026-10-21 · **M0 T2 GameTest harness:** the GameTest server runs our suites and writes a JUnit
+  report that the build checks; declared retries work after a fix for a vanilla 1.21.1 bug
+  (§1.6 D row 41).
 
 ## Now
 
-- **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 1 of 25 tasks done.
+- **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 2 of 25 tasks done.
 - **Tripwire (M0 only):** T1 started 2026-10-21; T9 green not yet; M0 work days 1 of 10.
 - **In progress:** none.
-- **Last finished task:** M0 T1 (2026-10-21).
-- **Next task:** M0 T2 · GameTest harness (QA-04, QA-01).
+- **Last finished task:** M0 T2 (2026-10-21).
+- **Next task:** M0 T3 · Smoke, first ArchUnit rules, `verify`, `verifyHarness`, S5 first report.
 - **WIP branch:** none.
 - **CI:** none yet (M0 T18 starts right after T3; reading runs on `main` needs item 1b); minutes used this month 0 of 2,000.
 - **Overview:** `python3 tools/roadmap.py summary`.
+
+## Evidence for the S5 report
+
+T3 moves these into `docs/spikes/S5-build-wiring.md`.
+
+- **T2 negative checks (2026-10-21), S5 checks 7, 15 and 16:**
+  - `-Pgametest.filter='^nomatch$'` fails with "GameTest report missing"; the log says
+    "filter '^nomatch$' matched no GameTest".
+  - `-Pstrategos.selftest=retry`: `selftests.two_of_three` passed after 3 attempts and is listed as
+    retried with its reason; `selftests.exhausted` failed. The server reported exactly that one
+    failure, which needed `RerunTracking`.
+  - `-Pstrategos.selftest=retryNoReason` fails with "GameTest report missing"; the log names
+    `retrynoreasonselftest.no_reason`.
+  - `-Pstrategos.selftest=sharedBatch` fails with "GameTest report missing"; the log names
+    `sharedbatchselftest.plain` and `sharedbatchselftest.solo`.
+- **Times (warm, M4 Pro):** `verifyFast` plus `:mod:runGameTestServer` 6 s; L3 wall time 1.2 s.
 
 ## Blocked
 

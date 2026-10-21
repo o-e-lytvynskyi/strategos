@@ -87,6 +87,16 @@ neoForge {
             jvmArgument('-Xmx3G')
             systemProperty 'strategos.faults.rethrow', 'true'
         }
+        // [T2]
+        gameTestServer {
+            type = 'gameTestServer'
+            gameDirectory = file('build/gametest')
+            systemProperty 'strategos.gametest.report', file('build/test-results/gametest/TEST-gametest.xml').absolutePath
+            systemProperty 'strategos.gametest.filter', providers.gradleProperty('gametest.filter').getOrElse('')
+            systemProperty 'strategos.gametest.journals', file('build/gametest/journals').absolutePath
+            systemProperty 'strategos.selftest', providers.gradleProperty('strategos.selftest').getOrElse('')
+            systemProperty 'strategos.faults.rethrow', 'true'
+        }
     }
 }
 
@@ -202,3 +212,47 @@ def archTest = tasks.register('archTest', Test) {
     systemProperty 'strategos.arch.classes', archClasses.asPath
 }
 tasks.named('check') { dependsOn archTest, 'checkJarContents' }
+
+def gameTestGuard = { String runTask, File report, File world, File journals, File log ->
+    tasks.matching { it.name == runTask }.configureEach {
+        timeout = Duration.ofMinutes(10)
+        doFirst {
+            world.deleteDir()
+            if (journals != null) journals.deleteDir()
+            report.delete()
+            report.parentFile.mkdirs()
+        }
+        doLast { task ->
+            // The 1.21.1 GameTest server very likely exits 0 on an empty test set or a mod-loading error.
+            if (!report.isFile()) throw new GradleException("GameTest report missing: ${report} (empty test set or mod-loading error?)")
+            def xml = new groovy.xml.XmlSlurper().parse(report)
+            def cases = xml.depthFirst().findAll { it.name() == 'testcase' }
+            if (cases.isEmpty()) throw new GradleException("GameTest report has no <testcase>: ${report}")
+            // [T2] QA-04.3: the run's wall time on every run, against the 3-minute L3 budget for the functional
+            // run; the slow and perf runs only report theirs (verifySlow, verifyPerf).
+            def budget = runTask == 'runGameTestServer' ? 'budget 180 s' : 'reported per run'
+            task.logger.lifecycle("L3 wall time ${xml.testsuite.@time} s (${budget}): ${report.name}")
+        }
+    }
+}
+gameTestGuard('runGameTestServer', file('build/test-results/gametest/TEST-gametest.xml'),
+        file('build/gametest/world'), file('build/gametest/journals'), file('build/gametest/logs/latest.log'))
+
+tasks.register('generateArenas') {
+    group = 'strategos'
+    description = 'Regenerates the flat SNBT test arenas in src/gametest/structures; commit the output.'
+    def outDir = file('src/gametest/structures')
+    outputs.dir(outDir)
+    doLast {
+        outDir.mkdirs()
+        [32, 48].each { int n ->
+            def rows = []
+            for (int z = 0; z < n; z++) {
+                for (int x = 0; x < n; x++) rows << "        {pos: [${x}, 0, ${z}], state: \"minecraft:smooth_stone\"}"
+            }
+            new File(outDir, "arena_flat_${n}.snbt").text =
+                    "{\n    DataVersion: 3955,\n    size: [${n}, 4, ${n}],\n    data: [\n" + rows.join(',\n') +
+                    "\n    ],\n    entities: [],\n    palette: [\n        \"minecraft:smooth_stone\"\n    ]\n}\n"
+        }
+    }
+}

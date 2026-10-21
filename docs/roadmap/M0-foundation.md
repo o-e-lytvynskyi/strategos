@@ -343,7 +343,7 @@ decision (D-21).
   7. A scenario from `core/testFixtures` runs as a GameTest with the same outcome as in L1 (L3).
 - **Tests:** L0, L3, L5 · **Fixtures:** SNBT arenas · **Depends on:** QA-01 · **Size:** M ·
   **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 #### CORE-01 · Match container, lifecycle and region index
 - **Value:** Every match is self-contained, so nothing leaks between matches or worlds, and fifty

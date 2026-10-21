@@ -350,6 +350,7 @@ Additions that 04 §1.5 does not name, each the smallest piece the named items n
 | 38 | §4.8 (T1): the root `build.gradle` applies only `base` | It also declares `strategos.java-conventions` with `apply false`. `core` and `mod` apply different plugin sets (`mod` adds ModDevGradle), so each project got its own class loader and its own copy of Spotless, and Spotless's shared build service failed: "Cannot set the value of task ':mod:spotlessJava' property 'taskService'". Declared in the root, the convention plugins and their Spotless and ErrorProne load once, in the parent class loader, as Gradle's message advises |
 | 39 | §4.7 (T1): `testLogging { exceptionFormat 'full' }` | `exceptionFormat = TestExceptionFormat.FULL`: Gradle 9 deprecates setting a property with the space syntax, and Gradle 10 removes it; the build runs without deprecation warnings |
 | 40 | §4.8 (T1): `checkVersionCatalog` flags `+`, `*.+`, `latest.*` and ranges, tested on the whole captured value | Gradle 9.2.1 treats any selector ending in `+` as a prefix match (`DefaultVersionSelectorScheme#isSubVersion`), so `2+` is dynamic too; and a catalog value may be a `group:name:version` or `id:version` string, whose version the old test never saw. The check now tests the part after the last `:` with Gradle's rules: ends with `+`, starts with `latest.`, or holds a range character |
+| 41 | §7.4 (T2): a test with a reason "retries as declared" through `TestFunction.maxAttempts` | On the 1.21.1 GameTest server no retry ever ran. `GameTestServer#startTests` builds its `MultipleTestTracker` once, from the first attempt of every test, and `GameTestRunner#rerunTest` never tells it of the copy (`copyReset`): after a first failure the tracker sees every test done, so the server halts before the rerun and exits with that failure. The harness adds `RerunTracking`, a `GameTestListener` attached to every test in `ServerTickEvent.Pre` before the tests' first tick; on `testAddedForRerun` it follows the copy and puts it in the tracker's place, so the server waits and counts only final outcomes. It reads the private fields `GameTestServer#testTracker` and `MultipleTestTracker#tests`, dev-only code with no mixin or access transformer (ADR-0020), and fails naming a field an update removes |
 
 ---
 
@@ -560,7 +561,7 @@ strategos/
 │       │   ├── README.md                                (T2; GameTest server defaults, the control rule)
 │       │   ├── java/dev/strategos/gametest/
 │       │   │   ├── package-info, GameTestBootstrap, StrategosGameTests, StrategosTest, Suites,
-│       │   │   │   JUnitXmlReporter, TeeReporter                                                   (T2)
+│       │   │   │   JUnitXmlReporter, TeeReporter, RerunTracking                                    (T2)
 │       │   │   ├── MatchFixture, GameTestTickets, BatchEndCheck                                    (T7c)
 │       │   │   ├── RuntimeScenarioContext, ScenarioGameTests                                       (T8)
 │       │   │   ├── suites/ BuildTests, SelfTests, RetryNoReasonSelfTest, SharedBatchSelfTest (T2);
@@ -3175,6 +3176,13 @@ public final class JUnitXmlReporter implements TestReporter {
                                                                                     // GameTestBootstrap keeps the one instance
 }
 public final class TeeReporter implements TestReporter { /* forwards to every delegate, finish() included */ }
+@EventBusSubscriber(modid = Strategos.MOD_ID)
+public final class RerunTracking implements GameTestListener {   // §1.6 row 41: 1.21.1's server tracker ignores reruns
+    @SubscribeEvent static void onServerTickPre(ServerTickEvent.Pre event);   // once, on the GameTest server, before
+                                                                                // the tests' first tick: a listener on every test
+    public void testAddedForRerun(GameTestInfo oldTest, GameTestInfo newTest, GameTestRunner runner);
+        // follows the copy and puts it in oldTest's place in the server's tracker
+}
 
 public final class MatchFixture {                                    // [T7c]
     public static MatchRuntime create(GameTestHelper h, MatchOptions options);   // whole test bounds
@@ -3744,7 +3752,7 @@ negative checks behave as stated.
 
 - **Files:** `mod/build.gradle` run `gameTestServer`, block F (GameTest guard with its wall-time
   line), block G; `gametest/.../{package-info, GameTestBootstrap, StrategosGameTests,
-  StrategosTest, Suites, JUnitXmlReporter, TeeReporter}` with `retryReason` and `solo`, the
+  StrategosTest, Suites, JUnitXmlReporter, TeeReporter, RerunTracking}` (§1.6 row 41) with `retryReason` and `solo`, the
   generator's two rejections, the attempt count and the `retried` properties (§7.4);
   `suites/BuildTests` (both tests), `suites/SelfTests`, `suites/RetryNoReasonSelfTest`,
   `suites/SharedBatchSelfTest`; `mod/src/gametest/README.md`: the GameTest server's defaults
@@ -4054,7 +4062,7 @@ check and `release.yml`).
 
 ### 9.3 Progress
 
-- [x] T1 (2026-10-21) · [ ] T2 · [ ] T3 · [ ] T18 · [ ] T4a · [ ] T4b · [ ] T5a · [ ] T5b · [ ] T6a · [ ] T6b · [ ] T7a · [ ] T7b · [ ] T7c · [ ] T8 · [ ] T9
+- [x] T1 (2026-10-21) · [x] T2 (2026-10-21) · [ ] T3 · [ ] T18 · [ ] T4a · [ ] T4b · [ ] T5a · [ ] T5b · [ ] T6a · [ ] T6b · [ ] T7a · [ ] T7b · [ ] T7c · [ ] T8 · [ ] T9
 - [ ] Tripwire checkpoint (dates in STATE.md)
 - [ ] T9b · [ ] T10 · [ ] T11 · [ ] T11b · [ ] T12 · [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17
 
