@@ -82,14 +82,18 @@ The owner was here on 2026-10-21 and started M0. Since then:
   is registered (never saved, never summoned, no physics), with its 13-byte spawn data and a
   placeholder Steve renderer on the client; the dedicated server and the GameTest server start with
   it.
+- 2026-10-21 · **M0 T7b Holder, match registry, tick driver, bodies:** a server now keeps its
+  matches: they are created in a checked space, stepped every level tick before the tracker, and
+  their units get bodies (at most 64 new ones per server tick), which are re-made when something
+  removes them; a fault stops only its match. Matches exist only in memory until T9.
 
 ## Now
 
-- **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 11 of 25 tasks done.
+- **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 12 of 25 tasks done.
 - **Tripwire (M0 only):** T1 started 2026-10-21; T9 green not yet; M0 work days 1 of 10.
 - **In progress:** none.
-- **Last finished task:** M0 T7a (2026-10-21); T6b was commit 6bbf167, its review fixes for T5b 8f088a8.
-- **Next task:** M0 T7b · Holder, match registry, tick driver, bodies (CORE-01, CORE-02, CORE-06, CORE-10, UNIT-01).
+- **Last finished task:** M0 T7b (2026-10-21); T7a was commit 65dbc69.
+- **Next task:** M0 T7c · Body and match GameTests, the batch-end check (UNIT-01, CORE-01, CORE-06, QA-04, QA-01).
 - **WIP branch:** none.
 - **CI:** green on [pull request #1](https://github.com/o-e-lytvynskyi/strategos/pull/1); runs on `main` are not readable yet (item 1b); minutes used this month about 7 of 2,000, as of 2026-10-21.
 - **Overview:** `python3 tools/roadmap.py summary`.

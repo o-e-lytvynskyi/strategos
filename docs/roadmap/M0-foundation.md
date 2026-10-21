@@ -802,7 +802,7 @@ decision (D-21).
      way (L3).
   3. With rethrow on, the test fails after the record is written (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** CORE-02, QA-04 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 #### CORE-12 · Save quarantine
 - **Value:** A damaged save never silently resets a match: it is kept untouched for inspection.

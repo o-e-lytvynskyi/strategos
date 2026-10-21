@@ -1,5 +1,6 @@
 package dev.strategos.mod.entity;
 
+import dev.strategos.mod.server.body.BodyEvents;
 import java.util.List;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.damagesource.DamageSource;
@@ -99,9 +100,12 @@ public final class UnitEntity extends LivingEntity implements IEntityWithComplex
         return false;
     }
 
-    /** M0 has no damage model: nothing hurts a body. T7b reports the attempt to the match; CMB-01 (M2) routes it. */
+    /** M0 has no damage model: nothing hurts a body; the match logs the attempt, and CMB-01 (M2) will route it. */
     @Override
     public boolean hurt(DamageSource source, float amount) {
+        if (!level().isClientSide()) {
+            BodyEvents.onHurt(this, source, amount); // inside the match's fault barrier
+        }
         return false;
     }
 

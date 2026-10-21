@@ -4,11 +4,14 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.mod.Strategos;
+import dev.strategos.mod.StrategosServer;
+import dev.strategos.mod.platform.Ids;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.MinecraftServer;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -36,13 +39,18 @@ public final class SmokeDriver {
             return;
         }
         MinecraftServer server = event.getServer();
-        // Step 1: the mod is loaded and core runs inside the mod module. The match steps join in T8.
+        // Step 1: the mod is loaded, core runs inside the mod module, the holder exists and the unit body type is
+        // registered. The match steps join in T8.
         String problem = null;
         if (!ModList.get().isLoaded(Strategos.MOD_ID)) {
             problem = "strategos is not loaded";
         } else if (Handle.class.getModule() != Strategos.class.getModule()) {
             problem = "core runs in module " + Handle.class.getModule().getName() + ", the mod in "
                     + Strategos.class.getModule().getName();
+        } else if (StrategosServer.getOrNull() == null) {
+            problem = "no Strategos server holder after ServerStartedEvent";
+        } else if (!BuiltInRegistries.ENTITY_TYPE.containsKey(Ids.id("unit_humanoid"))) {
+            problem = "strategos:unit_humanoid is not registered";
         }
         writeMarker(problem);
         server.halt(false); // never true: this handler runs on the server thread

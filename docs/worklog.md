@@ -9,7 +9,26 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-21 — M0 T1, T2, T3, T18, T4a, T4b, T5a, T5b, T6a, T6b, T7a
+## 2026-10-21 — M0 T1, T2, T3, T18, T4a, T4b, T5a, T5b, T6a, T6b, T7a, T7b
+
+- **M0 T7b · Holder, match registry, tick driver, bodies** — CORE-10 in progress; CORE-01, CORE-02,
+  CORE-06, UNIT-01.
+  - **Results:**
+    - `StrategosServer`, the per-server holder from `ServerAboutToStartEvent` to
+      `ServerStoppedEvent`, with `StrategosSettings`;
+    - `server.match`: `MatchSpace` with its codec, `MatchOptions`, `MatchRegistry` (size, height,
+      build-height and 2-block overlap checks; create, pause, resume, dispose, unload),
+      `MatchRuntime` and the chunk-based `MatchRegionIndex`;
+    - `server.tick`: `TickDriver` in `LevelTickEvent.Pre`, gated by `/tick freeze`;
+      `InputCollector`, `OutputAppliers` and `FaultBarrier`;
+    - `server.body`: `BodyRegistry` (bodies in handle order where entities tick, within the 64-per-tick
+      budget; parked after a chunk unload, re-made after any other removal), `KinematicDriver`,
+      `SpawnBudget`, `BodyEvents`; `UnitEntity#hurt` reaches the match through the fault barrier;
+    - every engine name was checked in the 21.1.264 sources first;
+    - `:mod:test` passes 23 tests; `verify` is green, and the smoke also checks the holder and the
+      registered body type.
+  - **Problems:** the spec's `MatchException` clashes with Java 21's `java.lang.MatchException`;
+    it is `MatchRefusedException` now (spec §1.6 D row 50, with three small API additions).
 
 - **M0 T7a · Unit entity, registry, renderer** — UNIT-01 in progress; QA-03.
   - **Results:**
@@ -199,7 +218,7 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
       versions inside `group:name:version` strings (row 40), now proven on a broken catalog; two
       comments that strayed from the spec were removed;
     - `HandleTest` pins the bit layout with literals, since handles are saved.
-- **Next:** M0 T7b · holder, match registry, tick driver, bodies.
+- **Next:** M0 T7c · body and match GameTests, the batch-end check.
 
 ## 2026-10-21 — design closed, roadmap approved, autonomy set up
 

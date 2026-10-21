@@ -264,7 +264,7 @@ Cards: [roadmap/M0-foundation.md](roadmap/M0-foundation.md#cards). 26 cards, at 
 | CORE-04 | Match event bus | S | CORE-02 | in_progress |
 | CORE-05 | Determinism kit and spike S6 | M | CORE-03, CORE-04 | in_progress |
 | CORE-07 | Persistence kernel: one blob per match | M | CORE-06 | in_progress |
-| CORE-10 | Fault containment | M | CORE-02, QA-04 | specified |
+| CORE-10 | Fault containment | M | CORE-02, QA-04 | in_progress |
 | CORE-12 | Save quarantine | M | CORE-07, CORE-10 | specified |
 
 ### M1 · Movement

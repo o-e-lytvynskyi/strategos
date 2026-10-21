@@ -1,0 +1,45 @@
+package dev.strategos.mod.server.tick;
+
+import dev.strategos.core.sim.MatchLifecycle;
+import dev.strategos.mod.StrategosServer;
+import dev.strategos.mod.server.match.MatchRuntime;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.TickRateManager;
+import net.neoforged.neoforge.event.tick.LevelTickEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+
+/**
+ * Steps the matches: at the start of each server tick the spawn budget refills; at the start of each level's tick,
+ * before its entities and tracker, every RUNNING match of that level steps and every PAUSED one gets its bodies, in id
+ * order, each inside the fault barrier.
+ */
+public final class TickDriver {
+    private TickDriver() {}
+
+    public static void onServerTickPre(ServerTickEvent.Pre event) {
+        StrategosServer server = StrategosServer.getOrNull();
+        if (server != null) {
+            server.spawnBudget().reset(server.settings().spawnsPerTick());
+        }
+    }
+
+    public static void onLevelTickPre(LevelTickEvent.Pre event) {
+        if (!(event.getLevel() instanceof ServerLevel level)) {
+            return;
+        }
+        StrategosServer server = StrategosServer.getOrNull();
+        if (server == null || !shouldStep(level.tickRateManager())) {
+            return;
+        }
+        for (MatchRuntime rt : server.matches().activeIn(level)) {
+            Runnable work =
+                    rt.lifecycle() == MatchLifecycle.RUNNING ? () -> rt.tick(level) : () -> rt.materialiseOnly(level);
+            server.faults().run(rt, "tick", work);
+        }
+    }
+
+    /** A frozen game (/tick freeze) steps no match; /tick step runs as many steps as it asks for. */
+    public static boolean shouldStep(TickRateManager rates) {
+        return rates.runsNormally();
+    }
+}

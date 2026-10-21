@@ -359,6 +359,7 @@ Additions that 04 §1.5 does not name, each the smallest piece the named items n
 | 47 | §5.8: `JournalCodec` writes `{"v":1, start, ticks, checkpoints, liveTick, liveHash}` | It also writes `checkpointEvery` and `lastTick`, which a decoded journal needs to replay; another `"v"` fails to decode. Test journals with small limits come from a test-only factory (`KernelAccess.create`), since `MatchCore.create` uses the defaults of 20 and 72,000 ticks |
 | 48 | §5.9 (T6b): `SimHarness.run(Scenario)` builds a harness, plays the scenario on it and returns only the report | `run` is `forScenario(scenario).play(scenario)`, and both are public: `DeterminismCanaryTest` and `MatchSnapshotJsonFixtureTest` need the harness a scenario ran on, for the journal's checkpoint every 100 ticks and the snapshot at tick 500. `SimHarness.DEFAULT_SEED` names the default 42, which the seedless scenarios `out_of_bounds` and `stop_mid_walk` use; `Seeds.first` ignores `-Dstrategos.seed`, so rerunning one seed never moves the canary off its golden |
 | 49 | §5.7: Move's whole-command rejections are `OUT_OF_BOUNDS` and `UNSUPPORTED`; Stop has none | An empty unit set is refused whole with `INVALID_ARGUMENT`, before the other checks. For an empty set the outcome rule is ambiguous (every unit accepted, or none) and would give the only `REJECTED` result without a reason; T8's `debug move` on a match with no units replies with this reason. Found by the T5b review, with three tests that could not fail: `MoveRuleTest` now compares a refused Move with a twin match by state hash, `StopRuleTest` checks ownership on a walking unit, and `SpawnUnitsRuleTest` checks the cap with units alive and the stored poses, not only the events |
+| 50 | §6.4–§6.6 (T7b): `MatchException`; `MatchRuntime`, `BodyRegistry#onLeft` and the registry as listed | `MatchRefusedException`: Java 21 has `java.lang.MatchException`, which ErrorProne's `AvoidCommonTypeNames` flags, and a `catch` without the import would silently catch the JDK's. `MatchRuntime` also has `log()` (its `MatchLog`), `tick()` and `takeReply(CommandResult)`, which `OutputAppliers` uses from another package; `BodyRegistry#onLeft` returns whether to log, so `BodyEvents` logs once per handle with the match's tick; `MatchRegistry(settings, spawnBudget)` holds the 8..512, 128 and 2-block limits as constants and also refuses a floor outside the Y band. A space's band runs from its lowest to its highest block, both included: `fromBounds` takes the GameTest box's blocks, `ceil(maxY) - 1` at the top |
 
 ---
 
@@ -551,7 +552,7 @@ strategos/
 │       │   │   ├── client/          package-info, StrategosClient, UnitRenderer                    (T7a)
 │       │   │   ├── server/match/    package-info, MatchSpace, MatchOptions, MatchSource,
 │       │   │   │                    FaultPolicy, MatchRecord, MatchRegistry, MatchRuntime,
-│       │   │   │                    MatchRegionIndex, MatchException                               (T7b; T9 MatchRecord)
+│       │   │   │                    MatchRegionIndex, MatchRefusedException                        (T7b; T9 MatchRecord)
 │       │   │   ├── server/tick/     package-info, TickDriver, InputCollector, OutputAppliers,
 │       │   │   │                    FaultBarrier, MatchFaultException                              (T7b)
 │       │   │   │                    FaultReport                                                    (T10)
@@ -2574,7 +2575,7 @@ run and its L1 twin must report equal hashes.
 | `entity` | `UnitEntity`, `UnitSpawnData` | The common unit body |
 | `platform` | `Ids` | `ResourceLocation` creation (renamed `Identifier` in 1.21.11) |
 | `client` | `StrategosClient`, `UnitRenderer` | Client entry and the placeholder humanoid renderer |
-| `server.match` | `MatchSpace`, `MatchOptions`, `MatchSource`, `FaultPolicy`, `MatchRecord`, `MatchRegistry`, `MatchRuntime`, `MatchRegionIndex`, `MatchException` | Match lifecycle and routing |
+| `server.match` | `MatchSpace`, `MatchOptions`, `MatchSource`, `FaultPolicy`, `MatchRecord`, `MatchRegistry`, `MatchRuntime`, `MatchRegionIndex`, `MatchRefusedException` | Match lifecycle and routing |
 | `server.tick` | `TickDriver`, `InputCollector`, `OutputAppliers`, `FaultBarrier`, `FaultReport`, `MatchFaultException` | Stepping, applying, containing |
 | `server.body` | `BodyRegistry`, `KinematicDriver`, `SpawnBudget`, `BodyEvents` | Entities as views |
 | `server.persist` | `RegistryData`, `MatchData`, `NbtBridge`, `Quarantine` | `SavedData` glue over the core codecs |
@@ -2724,7 +2725,7 @@ public record MatchRecord(MatchId id, MatchSpace space, long seed, MatchLifecycl
 
 public final class MatchRegistry {
     public MatchRuntime create(ServerLevel level, MatchSpace space, MatchOptions options);
-        // MatchException if: a size outside 8..512, a Y band above 128, a band outside the
+        // MatchRefusedException if: a size outside 8..512, a Y band above 128, a band outside the
         // level's build height, or overlap with another match within 2 blocks (MatchRegionIndex).
         // Allocates the id, builds MatchConfig, MatchCore.create(config, TemplateSet.builtin(),
         // new CorePorts(options.metrics(), System::nanoTime)); CREATED -> PREPARING -> READY -> RUNNING;
@@ -2749,7 +2750,7 @@ public final class MatchRuntime {
     public @Nullable String faultMessage();
     public int submit(PlayerSlot issuer, Command command);
         // CommandEnvelope(issuer, nextClientSeq++, core.queries().tick(), command) into the inbox; applies next step;
-        // MatchException when the match is not RUNNING or PAUSED
+        // MatchRefusedException when the match is not RUNNING or PAUSED
     public int submit(PlayerSlot issuer, Command command, Consumer<CommandResult> reply);
     public void addListener(Consumer<TickOutputs> listener);   // tests and debug only
     public void tick(ServerLevel level);    // TickDriver only: collect, step, apply, materialise, dirty, listeners
@@ -2763,7 +2764,7 @@ public final class MatchRegionIndex {       // per level; chunk -> match ids (Lo
     public @Nullable MatchId at(BlockPos pos);
     public @Nullable MatchId overlapping(MatchSpace space, int margin);
 }
-public final class MatchException extends RuntimeException { public MatchException(String reason); }
+public final class MatchRefusedException extends RuntimeException { public MatchRefusedException(String reason); }
 ```
 
 Seeds: `MatchOptions.seed` when given, else `level.getRandom().nextLong()` (adapter code; the core
@@ -3263,7 +3264,7 @@ with its journal; CORE-11 (M1) exports its binary journals the same way.
 | `bodytests.vanilla_kill_ignored` | `body.kill()` → body still there next tick, unit alive (M0 semantics, §1.5; CORE-06.4) | CORE-06 |
 | `bodytests.idle_body_persists_6000_ticks` (batch `slow`, timeout 6,100; in `runGameTestSlow`, `verifySlow`) | the same body entity exists after 6,000 ticks | UNIT-01 |
 | `matchtests.holder_bound_to_server` | `StrategosServer.get().server() == helper.getLevel().getServer()`; the match is listed while running; after `dispose` no runtime, no record, no `UnitEntity` in the bounds (CORE-01.4; the smoke's checks are CORE-01.6) | CORE-01 |
-| `matchtests.overlap_rejected` | a match within 2 blocks of another throws `MatchException` naming it | CORE-01 |
+| `matchtests.overlap_rejected` | a match within 2 blocks of another throws `MatchRefusedException` naming it | CORE-01 |
 | `matchtests.pause_freezes_resume_continues` | after `pause`, tick and body positions stay fixed for 20 ticks; after `resume` they advance | CORE-01 |
 | `commandtests.root_requires_permission_2` | the dispatcher's `strategos` node: `canUse` false at permission 0, true at 2 (QA-10.1) | QA-10 |
 | `commandtests.debug_commands_use_the_command_path` | `performPrefixedCommand` of `strategos debug spawn 3` then `strategos debug move …` from a source inside the match: `CommandResult` ACCEPTED 3/3, units walk (CORE-03.6) | CORE-03 |
@@ -4078,7 +4079,7 @@ check and `release.yml`).
 
 ### 9.3 Progress
 
-- [x] T1 (2026-10-21) · [x] T2 (2026-10-21) · [x] T3 (2026-10-21) · [x] T18 (2026-10-21) · [x] T4a (2026-10-21) · [x] T4b (2026-10-21) · [x] T5a (2026-10-21) · [x] T5b (2026-10-21) · [x] T6a (2026-10-21) · [x] T6b (2026-10-21) · [x] T7a (2026-10-21) · [ ] T7b · [ ] T7c · [ ] T8 · [ ] T9
+- [x] T1 (2026-10-21) · [x] T2 (2026-10-21) · [x] T3 (2026-10-21) · [x] T18 (2026-10-21) · [x] T4a (2026-10-21) · [x] T4b (2026-10-21) · [x] T5a (2026-10-21) · [x] T5b (2026-10-21) · [x] T6a (2026-10-21) · [x] T6b (2026-10-21) · [x] T7a (2026-10-21) · [x] T7b (2026-10-21) · [ ] T7c · [ ] T8 · [ ] T9
 - [ ] Tripwire checkpoint (dates in STATE.md)
 - [ ] T9b · [ ] T10 · [ ] T11 · [ ] T11b · [ ] T12 · [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17
 
