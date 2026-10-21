@@ -13,6 +13,8 @@ import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.MatchRules;
 import dev.strategos.core.sim.UnitCreated;
+import dev.strategos.core.sim.UnitState;
+import dev.strategos.core.sim.UnitView;
 import dev.strategos.core.testkit.SimHarness;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -70,8 +72,26 @@ class SpawnUnitsRuleTest {
     }
 
     @Test
+    void theUnitCapCountsTheUnitsAlreadyAlive() {
+        SimHarness h = SimHarness.builder().rules(new MatchRules(256, 5)).build();
+        assertThat(spawn(h, PlayerSlot.ADMIN, walkers(new Vec2d(8, 8), 3, 0)).outcome())
+                .isEqualTo(CommandOutcome.ACCEPTED);
+
+        CommandResult over = spawn(h, PlayerSlot.ADMIN, walkers(new Vec2d(8, 8), 3, 0));
+
+        assertThat(over.outcome()).isEqualTo(CommandOutcome.REJECTED);
+        assertThat(over.firstReason()).isEqualTo(RejectReason.UNIT_CAP);
+        assertThat(h.queries().unitCount()).isEqualTo(3);
+        assertThat(spawn(h, PlayerSlot.ADMIN, walkers(new Vec2d(8, 8), 2, 0)).outcome())
+                .as("up to the cap")
+                .isEqualTo(CommandOutcome.ACCEPTED);
+        assertThat(h.queries().unitCount()).isEqualTo(5);
+    }
+
+    @Test
     void placesUnitsAtTheirGoldenPositionsOnTheFloor() {
-        SimHarness h = SimHarness.builder().seed(7).build();
+        // A floor at 4, apart from minY and the default 1, so a unit stored at the wrong height shows.
+        SimHarness h = SimHarness.builder().seed(7).yBand(0, 16, 4.0).build();
         CommandResult result = spawn(h, PlayerSlot.ADMIN, walkers(new Vec2d(16, 16), 4, 3.0));
         assertThat(result.outcome()).isEqualTo(CommandOutcome.ACCEPTED);
         assertThat(result.accepted()).isEqualTo(4);
@@ -82,10 +102,16 @@ class SpawnUnitsRuleTest {
         double[][] golden = GoldenSpawns.SEED_7;
         for (int i = 0; i < created.size(); i++) {
             UnitCreated u = created.get(i);
-            assertThat(new double[] {u.x(), u.z()}).as("unit %d", i).containsExactly(golden[i]);
-            assertThat(u.y()).isEqualTo(1.0);
-            assertThat(u.yaw()).isZero();
-            assertThat(h.queries().config().bounds().contains(u.x(), u.z())).isTrue();
+            UnitView stored = h.queries().unit(u.handle());
+            assertThat(stored).as("unit %d", i).isNotNull();
+            assertThat(new double[] {stored.x(), stored.z()}).as("unit %d", i).containsExactly(golden[i]);
+            assertThat(stored.y()).isEqualTo(4.0);
+            assertThat(stored.yaw()).isZero();
+            assertThat(stored.state()).isEqualTo(UnitState.IDLE);
+            assertThat(stored.target()).isNull();
+            assertThat(new double[] {u.x(), u.y(), u.z(), u.yaw()})
+                    .as("the event announces the stored pose")
+                    .containsExactly(stored.x(), stored.y(), stored.z(), stored.yaw());
             assertThat(Math.hypot(u.x() - 16, u.z() - 16)).isLessThanOrEqualTo(3.0);
         }
     }
@@ -95,8 +121,11 @@ class SpawnUnitsRuleTest {
         SimHarness h = SimHarness.builder().build();
         spawn(h, PlayerSlot.ADMIN, walkers(new Vec2d(0.1, 31.9), 50, 10.0));
         for (UnitCreated u : h.events(UnitCreated.class)) {
-            assertThat(u.x()).isBetween(0.5, 31.5);
-            assertThat(u.z()).isBetween(0.5, 31.5);
+            UnitView stored = h.queries().unit(u.handle());
+            assertThat(stored).isNotNull();
+            for (double v : new double[] {u.x(), u.z(), stored.x(), stored.z()}) {
+                assertThat(v).isBetween(0.5, 31.5);
+            }
         }
     }
 }

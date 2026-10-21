@@ -52,17 +52,33 @@ class MoveRuleTest {
     @Test
     void refusesAnotherFactionsUnitAndChangesNothing() {
         UnitView before = h.queries().unit(theirs[0]);
-        long hash = h.stateHash();
 
         CommandResult result = move(PLAYER_0, Move.replace(UnitSet.of(theirs), new Vec2d(20, 8)));
 
         assertThat(result.outcome()).isEqualTo(CommandOutcome.REJECTED);
         assertThat(result.firstReason()).isEqualTo(RejectReason.NOT_OWNER);
-        UnitView after = h.queries().unit(theirs[0]);
-        assertThat(after.state()).isEqualTo(UnitState.IDLE);
-        assertThat(after.target()).isNull();
-        assertThat(after.x()).isEqualTo(before.x());
-        assertThat(hash).as("only the tick moved").isNotEqualTo(h.stateHash());
+        assertThat(h.queries().unit(theirs[0])).isEqualTo(before);
+        // A twin with the same two spawns (the spawn stream is keyed by tick, issuer and sequence) and an empty tick
+        // where the refused Move was: equal hashes mean the Move changed no unit, order or queue.
+        SimHarness twin = SimHarness.builder().build();
+        twin.spawn(new FactionSlot(0), new Vec2d(8, 8), 2, 2.0);
+        twin.spawn(new FactionSlot(1), new Vec2d(24, 24), 1, 0.0);
+        twin.step();
+        assertThat(h.stateHash()).as("the refused Move changed nothing").isEqualTo(twin.stateHash());
+    }
+
+    @Test
+    void anEmptySetIsRefusedWholeBeforeTheOtherChecks() {
+        for (Move empty : List.of(
+                Move.replace(UnitSet.of(), new Vec2d(10, 10)),
+                Move.replace(UnitSet.of(), new Vec2d(40, 8)),
+                new Move(UnitSet.of(), new Vec2d(10, 10), QueueMode.QUEUE, 0))) {
+            CommandResult result = move(PLAYER_0, empty);
+            assertThat(result.outcome()).as("%s", empty).isEqualTo(CommandOutcome.REJECTED);
+            assertThat(result.firstReason()).as("%s", empty).isEqualTo(RejectReason.INVALID_ARGUMENT);
+            assertThat(result.accepted()).isZero();
+            assertThat(result.rejected()).isZero();
+        }
     }
 
     @Test

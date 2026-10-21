@@ -11,6 +11,19 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
 
 ## 2026-10-21 — M0 T1, T2, T3, T18, T4a, T4b, T5a, T5b, T6a, T6b
 
+- **M0 T5b review** (three lenses, every finding checked by a skeptic): five findings confirmed, all
+  in tests and the spec; the kernel was right.
+  - **Results:**
+    - `MoveRuleTest`: "a refused Move changes nothing" compares the state hash with a twin match;
+      the old assertion could never fail;
+    - `StopRuleTest`: ownership is checked on a walking unit, plus stale and never-issued handles;
+    - `SpawnUnitsRuleTest`: the unit cap with units already alive; golden positions in the stored
+      units, on a floor at y 4;
+    - the empty unit set's `INVALID_ARGUMENT` for Move and Stop is now in the spec (§1.6 D row 49);
+    - each strengthened test fails under the mutation the review named (Stop applied before the
+      ownership check, a cap that ignores live units, poses stored at `minY` or at the centre).
+  - **Problems:** none.
+
 - **M0 T6b · Test kit, scenarios, seeded runs, S6 canary** — QA-02 done; PERF-01 in progress;
   CORE-05, CORE-07, ORD-01, QA-01.
   - **Results:**
@@ -170,7 +183,7 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
       versions inside `group:name:version` strings (row 40), now proven on a broken catalog; two
       comments that strayed from the spec were removed;
     - `HandleTest` pins the bit layout with literals, since handles are saved.
-- **Next:** the fixes from the T5b review, then M0 T7a · unit entity, registry, renderer.
+- **Next:** M0 T7a · unit entity, registry, renderer.
 
 ## 2026-10-21 — design closed, roadmap approved, autonomy set up
 
