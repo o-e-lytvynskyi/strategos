@@ -30,14 +30,20 @@ Nothing yet: the owner was here on 2026-10-22.
   now tested in a real server — made, posed, re-made, never saved, never pushed, no vibrations, and
   paused or disposed matches leave nothing behind; every GameTest batch ends with a check for leaked
   tickets, matches and bodies.
+- 2026-10-22 · **M0 T8 Commands, the walking skeleton end to end, the playtest kit:** `/strategos`
+  commands create matches, spawn and order units and print hashes; the walking skeleton and 50
+  side-by-side matches run as GameTests with exactly the hashes of their plain-JUnit twins, and
+  their journals replay to the same hashes; the server smoke now runs a match. One command,
+  `scripts/playtest.sh`, starts a server and two clients for you
+  ([testing/playtest.md](testing/playtest.md)). Cards QA-04 and CORE-03 are done.
 
 ## Now
 
-- **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 13 of 25 tasks done.
+- **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 14 of 25 tasks done.
 - **Tripwire (M0 only):** T1 started 2026-10-21; T9 green not yet; M0 work days 2 of 10.
 - **In progress:** none.
-- **Last finished task:** M0 T7c (2026-10-22); T7b was commit 24db2a8.
-- **Next task:** M0 T8 · Commands, the walking skeleton end to end, the playtest kit (ORD-01, CORE-03, QA-05, QA-09, QA-10, CORE-01, CORE-02, QA-04).
+- **Last finished task:** M0 T8 (2026-10-22); T7c was commit 16d1ce8.
+- **Next task:** M0 T9 · Persistence and quarantine (CORE-07, CORE-12, CORE-01, ORD-01, QA-03, QA-09).
 - **WIP branch:** none.
 - **CI:** green on `main` (M0 T7b, run 39670656358: 825 tests, the S6 canary on Linux against the macOS golden); minutes used this month about 61 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.

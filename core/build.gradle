@@ -54,3 +54,20 @@ tasks.register('checkTestFixturesDeps') {
     }
 }
 tasks.named('check') { dependsOn 'checkTestFixturesDeps' }
+
+// [T8] cross-level check: replay the journals the GameTests exported.
+def journalsDir = rootProject.file('mod/build/gametest/journals')
+tasks.register('replayJournals', Test) {
+    group = 'verification'
+    description = 'Replays every GameTest journal in plain JUnit and compares the state hash.'
+    dependsOn ':mod:runGameTestServer'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform { includeTags 'replay' }
+    systemProperty 'strategos.journals.dir', journalsDir.absolutePath
+    outputs.upToDateWhen { false }
+    doFirst {
+        def found = journalsDir.listFiles({ File f -> f.name.endsWith('.json') } as FileFilter)
+        if (found == null || found.length == 0) throw new GradleException("No GameTest journals in ${journalsDir}")
+    }
+}

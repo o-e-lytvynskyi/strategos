@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import net.minecraft.gametest.framework.AfterBatch;
@@ -91,12 +92,21 @@ public final class StrategosGameTests {
             }
         }
         reject(declared);
+        List<Candidate> candidates = new ArrayList<>();
+        for (Declared d : declared) {
+            candidates.add(new Candidate(d.name(), d.test().batch(), () -> function(d)));
+        }
+        if (!perf && selftest.isEmpty()) { // the shared scenarios join the functional runs only
+            for (ScenarioGameTests.ScenarioTest test : ScenarioGameTests.tests()) {
+                candidates.add(new Candidate(test.name(), test.batch(), () -> ScenarioGameTests.function(test)));
+            }
+        }
         Pattern pattern = Pattern.compile(filter);
-        List<TestFunction> functions = declared.stream()
-                .filter(d -> d.test().batch().equals(SLOW) == slow)
-                .filter(d -> pattern.matcher(d.name()).find())
-                .sorted(Comparator.comparing(Declared::name))
-                .map(StrategosGameTests::function)
+        List<TestFunction> functions = candidates.stream()
+                .filter(c -> c.batch().equals(SLOW) == slow)
+                .filter(c -> pattern.matcher(c.name()).find())
+                .sorted(Comparator.comparing(Candidate::name))
+                .map(c -> c.function().get())
                 .toList();
         if (functions.isEmpty()) {
             LOG.error("filter '{}' matched no GameTest", filter);
@@ -196,4 +206,7 @@ public final class StrategosGameTests {
     }
 
     private record Declared(String name, Method method, StrategosTest test) {}
+
+    /** A test this run may hold, before the slow rule and the filter. */
+    private record Candidate(String name, String batch, Supplier<TestFunction> function) {}
 }

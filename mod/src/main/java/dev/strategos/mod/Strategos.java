@@ -2,10 +2,12 @@ package dev.strategos.mod;
 
 import dev.strategos.mod.registry.ModEntityTypes;
 import dev.strategos.mod.server.body.BodyEvents;
+import dev.strategos.mod.server.command.StrategosCommands;
 import dev.strategos.mod.server.tick.TickDriver;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
@@ -32,5 +34,6 @@ public final class Strategos {
         game.addListener(LevelTickEvent.Pre.class, TickDriver::onLevelTickPre);
         game.addListener(EntityJoinLevelEvent.class, BodyEvents::onJoin);
         game.addListener(EntityLeaveLevelEvent.class, BodyEvents::onLeave);
+        game.addListener(RegisterCommandsEvent.class, StrategosCommands::onRegister);
     }
 }

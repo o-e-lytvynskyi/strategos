@@ -80,6 +80,15 @@ neoForge {
             jvmArgument('-Xmx3G')
             systemProperty 'strategos.faults.rethrow', 'true'
         }
+        // [T8] Dev1 for the one-command multiplayer launch (QA-09.1): joins the dev server by Quick Play.
+        // It shares client's game directory, so Dev1 keeps one set of options and worlds.
+        clientJoin {
+            client()
+            gameDirectory = file('run/client')
+            programArguments.addAll('--username', 'Dev1', '--quickPlayMultiplayer', 'localhost:25565')
+            jvmArgument('-Xmx4G')
+            systemProperty 'strategos.faults.rethrow', 'true'
+        }
         server {
             server()
             gameDirectory = file('run/server')

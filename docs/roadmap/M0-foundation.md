@@ -344,7 +344,8 @@ decision (D-21).
   7. A scenario from `core/testFixtures` runs as a GameTest with the same outcome as in L1 (L3).
 - **Tests:** L0, L3, L5 · **Fixtures:** SNBT arenas · **Depends on:** QA-01 · **Size:** M ·
   **Tier:** T0
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-10-22 — M0 T2, T3, T7c, T8: `runGameTestEmptyFilter` and `runGameTestBrokenLoad` in `verifyHarness` (1, 2); the JUnit XML with every test's time and the guard's L3 wall-time line (3); `runGameTestRetry` and `runGameTestRetryNoReason` (4); `runGameTestSharedBatch` (5); `runGameTestTicketLeak`, and `-Pstrategos.selftest=ticketLeak` failing with `batchend.selftest` (6); `scenarios.*` and `isolation.*`, 73 GameTests whose hash equals their L1 twin's (7)
 
 #### CORE-01 · Match container, lifecycle and region index
 - **Value:** Every match is self-contained, so nothing leaks between matches or worlds, and fifty
@@ -424,7 +425,8 @@ decision (D-21).
   5. The journal holds every input of a seeded run in canonical order (L1).
   6. A server command enqueues through the same path as every other source (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** CORE-02 · **Size:** M · **Tier:** T0
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-10-22 — M0 T4b, T5b, T6a, T8: `CommandOrderingTest` (1, 3, 4), `MoveRuleTest` (2, 4), `UnitSetTest` (3), `JournalTest` (5), `commandtests.debug_commands_use_the_command_path` (6)
 
 #### CORE-06 · Unit records, handles and the body registry
 - **Value:** Units never duplicate or vanish when chunks reload, worlds are saved or another mod

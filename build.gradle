@@ -65,12 +65,13 @@ tasks.register('verifyHarness') {
             ':mod:archTest', ':core:test'
 }
 
-// [T3] the commit gate: 5 minutes, of which L3 3; ':core:soak' joined in T6b, ':core:replayJournals' joins in T8,
-// the restart round trip in T9b.
+// [T3] the commit gate: 5 minutes, of which L3 3; ':core:soak' joined in T6b, ':core:replayJournals' in T8;
+// the restart round trip joins in T9b.
 tasks.register('verify') {
     group = 'verification'
-    description = 'verifyFast + verifyHarness + L2 + core soak + L3 GameTests (report guard) + L5 smoke (marker guard).'
-    dependsOn 'verifyFast', 'verifyHarness', ':mod:check', ':core:soak', ':mod:runGameTestServer', ':mod:runServerSmoke'
+    description = 'verifyFast + verifyHarness + L2 + core soak + L3 GameTests (report guard) + L5 smoke (marker guard) + GameTest journal replay.'
+    dependsOn 'verifyFast', 'verifyHarness', ':mod:check', ':core:soak', ':mod:runGameTestServer', ':mod:runServerSmoke',
+            ':core:replayJournals'
 }
 
 // [T7c] Per working session that touched its area, at the milestone exit and on CI; no budget, the time

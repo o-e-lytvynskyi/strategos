@@ -9,7 +9,27 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — the owner's setup, M0 T7c
+## 2026-10-22 — the owner's setup, M0 T7c, T8
+
+- **M0 T8 · Commands, the walking skeleton end to end, the playtest kit** — QA-04 and CORE-03 done;
+  ORD-01, QA-05, QA-09, QA-10, CORE-01, CORE-02.
+  - **Results:**
+    - `StrategosCommands`: `/strategos match create|list|pause|resume|dispose`, `debug
+      spawn|move|stop|replay`, `hash`, all at permission level 2; debug orders go through the
+      inbox and reply after the step;
+    - `RuntimeScenarioContext` and `ScenarioGameTests`: `scenarios.*` (3), the 20
+      `scenarios.walking_skeleton_seed_*` in batch `skeleton` and the 50 `isolation.match_*` in
+      batch `isolation`; each stops on the same tick with the same hash as its L1 twin and exports
+      its journal;
+    - `commandtests.*` (3): permission level 2, the command path, match create, list and dispose;
+    - `:core:replayJournals` replays all 73 journals to their live hashes; it is part of `verify`;
+    - the server smoke runs a 16 x 16 match at the spawn: 8 units on the target after 100 ticks,
+      8 bodies, median tick 0.38 ms;
+    - the functional GameTest run: 89 tests, 3.8 s of L3 wall time; `verify` green in 23 s;
+    - `clientJoin` run, `scripts/playtest.sh` (checked with `sh -n` only, never run) and
+      `docs/testing/playtest.md`; `createLaunchScripts` writes `runClientJoin.sh`.
+  - **Problems:** none in the code; `match create`'s Y band is cut to the build height, since the
+    GameTest floor lies 6 blocks above it (spec §1.6 D row 52).
 
 - **M0 T7c · Body and match GameTests, the batch-end check** — UNIT-01, CORE-01, CORE-06, QA-04,
   QA-01, all still in progress (UNIT-01's criteria 1–4 pass; 5 is NET-01's, in M1).
@@ -41,7 +61,7 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
     month's 2,000 minutes are used.
   - **Problems:** T7b's review did not run: its three reviewers stopped at the usage limit of
     2026-10-21, so the workflow returned nothing. Run it again before finishing T7c.
-- **Next:** M0 T8 · commands, the walking skeleton end to end, the playtest kit; T7b's review is running again.
+- **Next:** M0 T9 · persistence and quarantine; T7b's review is running again.
 
 ## 2026-10-21 — M0 T1, T2, T3, T18, T4a, T4b, T5a, T5b, T6a, T6b, T7a, T7b, T7c (started)
 
