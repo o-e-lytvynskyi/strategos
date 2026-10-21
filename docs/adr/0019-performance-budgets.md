@@ -1,0 +1,106 @@
+# ADR-0019: Performance budgets A–G at 600 units, measured from M0
+
+Date: 2026-10-21
+
+## Status
+
+Proposed - pending spikes S1, S2 and S4
+
+**Revised 2026-10-21**, still Proposed, to follow the roadmap's
+[engineering baseline](../roadmap/M0-foundation.md#plan-wide-engineering-baseline) (the review
+requests are in [design/roadmap-changes.md](../design/roadmap-changes.md)):
+- budget D counts path-result latency, not motion start: provisional steering moves every unit on
+  the tick its order applies, so motion start can never miss the budget (TL-28);
+- the milestone targets are the roadmap's budget matrix, which gates M1 at 600 units instead of
+  300 (QAR-07, TL-37), and gates below 600 units also check the cost per unit (QAR-08);
+- a gate asserts the budgets at its milestone's target scale, and the stress pass at twice that
+  scale asserts only C p95 ≤ 50 ms (QAR-111).
+
+The numbers in the table are unchanged. PERF-01 confirms the revised table with the M0
+measurements and moves this ADR to Accepted.
+
+## Context
+
+- **Research contradiction 8.** The testing report capped "mod work" at ≤ 5 ms p50 and ≤ 10 ms p99
+  for 4 × 200 units; the engine report planned about 20 ms of the tick for units. Neither figure is
+  measured, they differ by a factor of four, and they measure different things.
+- **Every per-unit cost is an unverified extrapolation** from other versions, loaders and CPUs
+  (gap G1). Client frame time with hundreds of humanoids is unmeasured (gap G5).
+- **Unit counts** follow [01-feasibility §5.1](../01-feasibility.md):
+  - MVP: 2 × 150 (population cap D-01: 150 per player by default, decided 2026-10-21);
+  - multiplayer stage: 4 × 150 = 600;
+  - stretch: 800, only with 2× headroom.
+- **Hosts.** A host twice as slow as the owner's M4 Pro must still hold 20 TPS.
+- **MSPT misses work.** `MinecraftServer#getTickTimesNanos` covers `tickServer` only, so packet
+  handlers and the `ChunkMap#move` that every accepted movement packet triggers are invisible to
+  MSPT ([design/judgement-performance.md §6.2](../design/judgement-performance.md)).
+
+## Decision
+
+The budgets apply to the M4 Pro, at the design scale of 600 units unless noted:
+
+| ID | Budget | Measures | Target |
+|---|---|---|---|
+| A | Core | `MatchCore.step` plus our adapter appliers | p50 ≤ 5 ms, p99 ≤ 10 ms |
+| B | Strategos-attributable | A + vanilla work on our bodies + server-thread job work + replication + our between-tick handlers; measured as the same arena with and without the match | p95 ≤ 17 ms |
+| C | Whole tick | MSPT plus between-tick task time | p95 ≤ 23 ms |
+| D | Pathfinding, main thread | Admission, delivery, joins; latency counted as path-result latency, not motion start (provisional steering moves units at once) | ≤ 2 ms p99; a 100-unit order's path results within 5 ticks p95 with 200 queued |
+| E | Network per client | All bytes, ours and vanilla's | ≤ 100 KB/s with 600 visible moving units |
+| F | Client frame (200 units on screen, render distance 16, Sodium on and off) | Frame, our drawing, unit drawing, client tick | p50 ≤ 16.7 ms, p99 ≤ 25 ms; ours ≤ 3 ms; units ≤ 6 ms; client tick ≤ 1 ms |
+| G | Memory and saves | Core state, nav, autosave | ≤ 64 MB per 384² match; nav ≤ 32 MB at 512²; serialisation ≤ 100 ms |
+
+- **The two contested figures are budgets A and B.** Testing §9's figure is A, the core's own work.
+  Engine §1.2's "≈ 20 ms for units" is B, which includes vanilla's cost of our bodies. Both hold.
+- **Milestone targets** are the roadmap's
+  [budget matrix per milestone](../roadmap/M0-foundation.md#budget-matrix-per-milestone-delivered-and-kept-by-perf-01),
+  which PERF-01 delivers and keeps: the scale, window and budgets of every gate (M1 600 moving
+  units; M3 2 × 100 and 20 buildings; M4 300 units and 60 buildings; M5 300 fighting; M6 2 × 150,
+  60 buildings and the AI; M7 4 × 150 and 120 buildings). Each budget is asserted from the first
+  gate that can measure it: A and G from M0, B to E from M1, F only with the owner's consent
+  (PERF-04, PERF-14).
+- **Every perf gate** asserts the budgets at its milestone's target scale. A stress pass at twice
+  that scale asserts only C p95 ≤ 50 ms, after 200 warm-up ticks. Below 600 units the unit-driven
+  buckets are also normalised per unit: a gate fails when p95 per unit grows more than 15 % over
+  the previous milestone's committed baseline.
+- **C's R1000 profile** (1,000 units, 8 factions) is informational and never a merge gate.
+- **Enforcement.**
+  - The L6 perf batch runs alone and drops 200 warm-up ticks. It gates locally at the budget and on
+    CI at 3×.
+  - JMH fails above a 15 % regression.
+  - L2 size tests cap every payload.
+  - Every claim comes from a report in `docs/spikes/`.
+  - Baselines and thresholds change only with the owner's approval and an ADR.
+- **The core never degrades itself:** caps count work (ADR-0009). Any overload policy touches only
+  presentation rates.
+
+**What the spikes replace:**
+- **S1:** the per-body cost behind B, and with it the population cap D-01. A best body above 15 µs
+  at 500 moving units drops the default cap to 100 per player.
+- **S2:** the vanilla baseline of a force-loaded arena (≤ 4 ms idle at 576 chunks), which sets the
+  arena size D-17.
+- **S4:** budget F, run with the owner's consent. If 200 armoured humanoids cost more than 6 ms with
+  Sodium, distant units lose their layers. M0's S4 (PERF-04) measures bare humanoids, because
+  equipment layers arrive with ART-01; the armoured and held-item pass runs with ART-01 in M3
+  (noted 2026-10-21).
+
+PERF-01 confirms this table with the M0 measurements and moves this ADR to Accepted once the owner
+approves the numbers. If S4 has not run by then, budget F stays provisional, and the status says it
+is pending consent.
+
+## Consequences
+
+- Every phase has a target (§4.4 of [04-architecture.md](../04-architecture.md)), and budget
+  regressions fail the build instead of surfacing in playtests.
+- Between-tick work is accounted for, so a design that moves cost into packet handlers cannot
+  hide it.
+- Until S1, S2 and S4 report, the numbers are hypotheses, and this ADR says so in its status.
+- A slower host loses frame rate or TPS but never diverges in outcome.
+
+## Alternatives considered
+
+| Alternative | Why not |
+|---|---|
+| A single "mod time" budget | Hides vanilla's cost of our bodies, which is the largest unknown |
+| R1000 on 1,024² as the gating reference (C) | More than three times the MVP's load; would block merges of ordinary feature work |
+| MSPT alone | Misses packet-handler time, including `ChunkMap#move` per movement packet |
+| Time-based adaptive budgets in the simulation | Outcomes would depend on CPU speed |
