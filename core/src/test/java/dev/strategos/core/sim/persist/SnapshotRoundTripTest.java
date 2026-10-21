@@ -3,7 +3,9 @@ package dev.strategos.core.sim.persist;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.JsonOps;
 import dev.strategos.core.content.TemplateSet;
@@ -11,6 +13,7 @@ import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.FactionSlot;
+import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
@@ -83,6 +86,46 @@ class SnapshotRoundTripTest {
             restored.step(new TickInputs(tick, inputs));
             assertThat(restored.stateHash()).as("tick %d", tick).isEqualTo(original.stateHash());
         }
+    }
+
+    @Test
+    void slotTablesThatAreNoneDecodeToErrorsNeverExceptions() {
+        SimHarness h = SimHarness.builder().build();
+        h.spawn(new FactionSlot(0), new Vec2d(8, 8), 3, 2.0);
+        JsonObject good =
+                MatchSnapshotCodec.encode(JsonOps.INSTANCE, h.core().snapshot()).getAsJsonObject();
+        JsonArray oversized = new JsonArray();
+        for (int i = 0; i < Handle.MAX_INDEX + 2; i++) {
+            oversized.add(1);
+        }
+        List<JsonObject> broken = List.of(
+                withSlots(good, oversized, new JsonArray()),
+                withSlots(good, ints(1, Handle.MAX_GENERATION + 1, 1), new JsonArray()),
+                withSlots(good, ints(1, 1, 1), ints(5)),
+                withSlots(good, ints(1, 1, 1, 1), ints(2, 1)));
+
+        for (JsonObject json : broken) {
+            assertThat(MatchSnapshotCodec.decode(new Dynamic<>(JsonOps.INSTANCE, json), Migrations.production())
+                            .error())
+                    .isPresent();
+        }
+    }
+
+    private static JsonObject withSlots(JsonObject snapshot, JsonArray generations, JsonArray free) {
+        JsonObject copy = snapshot.deepCopy();
+        JsonObject slots = new JsonObject();
+        slots.add("generations", generations);
+        slots.add("free", free);
+        copy.add("slots", slots);
+        return copy;
+    }
+
+    private static JsonArray ints(int... values) {
+        JsonArray array = new JsonArray();
+        for (int v : values) {
+            array.add(v);
+        }
+        return array;
     }
 
     @Test

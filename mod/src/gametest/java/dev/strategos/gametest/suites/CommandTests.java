@@ -15,6 +15,10 @@ import dev.strategos.gametest.StrategosTest;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.server.command.StrategosCommands;
 import dev.strategos.mod.server.match.MatchRuntime;
+import dev.strategos.mod.server.persist.MatchData;
+import dev.strategos.mod.server.persist.Quarantine;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.commands.CommandSource;
@@ -86,7 +90,10 @@ public final class CommandTests {
                 .thenSucceed();
     }
 
-    /** CORE-01: match create makes a match around the source, list shows it, dispose removes it. */
+    /**
+     * CORE-01: match create makes a saved match around the source, with its record and, once the level saves, its blob
+     * file; list shows it; dispose removes the match, the record and the file.
+     */
     @StrategosTest
     public static void matchCreateListDispose(GameTestHelper h) {
         Recorder recorder = new Recorder();
@@ -102,13 +109,22 @@ public final class CommandTests {
                         && rt.space().sizeZ() == 16
                         && rt.space().contains(feet),
                 "the match is not 16 x 16 around the source: " + rt.space());
+        check(rt.persistent() && server.matches().record(rt.id()) != null, "match create made no saved match");
+        Path blob = Quarantine.dataFile(h.getLevel(), MatchData.name(rt.id()));
         String id = rt.id().toString();
         perform(h, source, "strategos match list");
         check(
                 recorder.lines.stream().anyMatch(l -> l.startsWith(id + " RUNNING")),
                 "match list does not show " + id + ": " + recorder.lines);
+        PersistenceTests.saveAndWait(h.getLevel());
+        check(Files.exists(blob), "no blob file after the level saved");
+
         perform(h, source, "strategos match dispose " + id);
         check(server.matches().get(rt.id()) == null, "match dispose left " + id);
+        check(server.matches().record(rt.id()) == null, "match dispose left the record of " + id);
+        check(!Files.exists(blob), "match dispose left the blob file of " + id);
+        PersistenceTests.saveAndWait(h.getLevel());
+        check(!Files.exists(blob), "the disposed blob was written again");
         h.succeed();
     }
 

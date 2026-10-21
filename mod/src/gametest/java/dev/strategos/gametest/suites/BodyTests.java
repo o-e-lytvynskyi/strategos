@@ -306,6 +306,9 @@ public final class BodyTests {
      * goes and comes back once. Then the chunk under a standing body really unloads (its ticket is released): the leave
      * event carries no removal reason, nothing is logged, and when the chunk loads again the unit has exactly one
      * body, not the old one shown again beside a new one. The match reaches past the arena, so the test runs alone.
+     * The far chunk lies at least three chunks past the arena, whose chunks the GameTest forces (level 31): two chunks
+     * from a forced one a chunk stays FULL (level 33) when released, its entities tracked but not ticking, so it never
+     * unloads; with a run's random origin, 72 blocks out was two chunks away about half the time.
      */
     @StrategosTest(batch = "chunks", solo = true, timeoutTicks = 1_600)
     public static void bodiesFollowEntityTickingChunks(GameTestHelper h) {
@@ -318,7 +321,7 @@ public final class BodyTests {
                 (int) arena.minY,
                 (int) arena.maxY - 1);
         MatchRuntime rt = MatchFixture.create(h, space, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
-        ChunkPos far = new ChunkPos(BlockPos.containing(space.worldX(16), 0, space.worldZ(72)));
+        ChunkPos far = new ChunkPos(BlockPos.containing(space.worldX(16), 0, space.worldZ(88)));
         spawn(rt, 16.5, 8.5, 1, 0);
         var state = new Object() {
             LogCapture log;
@@ -348,10 +351,10 @@ public final class BodyTests {
                 .thenWaitUntil(() -> check(
                         h.getLevel().isPositionEntityTicking(far.getMiddleBlockPosition(0)),
                         "the far chunk does not tick entities yet"))
-                .thenExecute(() -> move(rt, onlyUnit(rt), 16.5, 72.5))
+                .thenExecute(() -> move(rt, onlyUnit(rt), 16.5, 88.5))
                 .thenWaitUntil(() -> check(
                         unit(rt, onlyUnit(rt)).state() == UnitState.IDLE
-                                && unit(rt, onlyUnit(rt)).z() == 72.5,
+                                && unit(rt, onlyUnit(rt)).z() == 88.5,
                         "still walking to the far chunk"))
                 .thenWaitUntil(() -> body(rt, onlyUnit(rt)))
                 .thenExecute(() -> GameTestTickets.release(h.getLevel(), far))

@@ -11,6 +11,7 @@ import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.core.sim.TickOutputs;
 import dev.strategos.mod.server.body.BodyRegistry;
 import dev.strategos.mod.server.body.SpawnBudget;
+import dev.strategos.mod.server.persist.MatchData;
 import dev.strategos.mod.server.tick.InputCollector;
 import dev.strategos.mod.server.tick.OutputAppliers;
 import java.util.ArrayList;
@@ -33,6 +34,7 @@ public final class MatchRuntime {
     private final FaultPolicy faultPolicy;
     private final boolean persistent;
     private final @Nullable MatchCore core;
+    private final @Nullable MatchData data;
     private final BodyRegistry bodies;
     private final SpawnBudget spawnBudget;
     private final MatchLog log;
@@ -42,6 +44,7 @@ public final class MatchRuntime {
     private MatchLifecycle lifecycle = MatchLifecycle.CREATED;
     private @Nullable String faultMessage;
     private int nextClientSeq = 1;
+    private Runnable onLifecycleChange = () -> {};
 
     MatchRuntime(
             MatchId id,
@@ -50,6 +53,7 @@ public final class MatchRuntime {
             FaultPolicy faultPolicy,
             boolean persistent,
             @Nullable MatchCore core,
+            @Nullable MatchData data,
             SpawnBudget spawnBudget) {
         this.id = id;
         this.space = space;
@@ -57,6 +61,7 @@ public final class MatchRuntime {
         this.faultPolicy = faultPolicy;
         this.persistent = persistent;
         this.core = core;
+        this.data = data;
         this.spawnBudget = spawnBudget;
         this.bodies = new BodyRegistry(id, space);
         this.log = new MatchLog(LoggerFactory.getLogger(MatchRuntime.class), id);
@@ -93,6 +98,11 @@ public final class MatchRuntime {
 
     public boolean persistent() {
         return persistent;
+    }
+
+    /** A saved match's blob; null for a match that is never saved. */
+    public @Nullable MatchData data() {
+        return data;
     }
 
     public @Nullable String faultMessage() {
@@ -146,6 +156,9 @@ public final class MatchRuntime {
         long start = System.nanoTime();
         OutputAppliers.apply(this, level, out);
         bodies.materialise(level, c.queries(), spawnBudget);
+        if (data != null) {
+            data.setDirty(); // a flag only: autosave and the stop encode the snapshot at a tick boundary
+        }
         c.timers().recordAdapter(System.nanoTime() - start);
         for (Consumer<TickOutputs> listener : listeners) {
             listener.accept(out);
@@ -160,6 +173,12 @@ public final class MatchRuntime {
     /** The match registry's lifecycle step. */
     void transition(MatchLifecycle next) {
         lifecycle = lifecycle.transition(next);
+        onLifecycleChange.run();
+    }
+
+    /** The registry's hook: a saved match's record follows its lifecycle. */
+    void onLifecycleChange(Runnable hook) {
+        this.onLifecycleChange = hook;
     }
 
     /** The fault barrier's record of the first fault: where and what, and the match is FAULTED where it can be. */
@@ -171,6 +190,13 @@ public final class MatchRuntime {
         if (lifecycle.canTransitionTo(MatchLifecycle.FAULTED)) {
             lifecycle = MatchLifecycle.FAULTED;
         }
+        onLifecycleChange.run();
+    }
+
+    /** A match restored FAULTED: why, as the record or the quarantine says. */
+    void restoredFaulted(String reason) {
+        faultMessage = reason;
+        lifecycle = lifecycle.transition(MatchLifecycle.FAULTED);
     }
 
     private MatchCore requireCore() {

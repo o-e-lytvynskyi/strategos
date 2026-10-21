@@ -28,7 +28,7 @@ and `mod/run/client2/console.log`.
    chat shows `accepted 3/3` after each order.
 4. `/strategos hash` prints the tick and the state hash. `/strategos debug replay` prints
    `replay OK` with the same hash.
-5. *(Arrives with M0 T9, persistence.)* Stop the server (`stop`), start it again with
+5. Stop the server (`stop`), start it again with
    `mod/build/moddev/runServer.sh` in the same terminal, and rejoin from each client's
    multiplayer screen. `/strategos match list` shows the match `PAUSED` with the same tick;
    `/strategos hash` prints the same hash as before the stop. `/strategos match resume m1`, then
@@ -50,7 +50,7 @@ units and bodies.
 - [ ] The server and both clients started from `scripts/playtest.sh`.
 - [ ] Both clients saw the same three units walk the same 20 blocks and stop.
 - [ ] `hash` and `debug replay` printed the same hash.
-- [ ] *(From T9.)* After the restart the match came back `PAUSED`, with the same tick and hash,
+- [ ] After the restart the match came back `PAUSED`, with the same tick and hash,
       and walked on after `resume`.
 - [ ] `/tick freeze`, `step 5` and `unfreeze` did what they say.
 - [ ] The second singleplayer world showed no match and no unit.

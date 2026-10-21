@@ -110,4 +110,18 @@ class EntityStoreTest {
         assertThat(store.aliveCount()).isEqualTo(1000);
         assertThat(store.handleAt(999)).isEqualTo(last);
     }
+
+    @Test
+    void slotsThatAreNoTableAreRefusedNamingWhy() {
+        assertThatThrownBy(() -> new EntitySlots(new int[Handle.MAX_INDEX + 2], new int[0]))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("a handle can name");
+        assertThatThrownBy(() -> new EntitySlots(new int[] {1, Handle.MAX_GENERATION + 1}, new int[0]))
+                .hasMessageContaining("generation 4096");
+        assertThatThrownBy(() -> new EntitySlots(new int[] {1, 1}, new int[] {2}))
+                .hasMessageContaining("free index 2 outside 0..1");
+        assertThatThrownBy(() -> new EntitySlots(new int[] {1, 1, 1}, new int[] {2, 1}))
+                .hasMessageContaining("must ascend");
+        assertThat(EntitySlots.problem(new int[] {1, 2, 1}, new int[] {1})).isNull();
+    }
 }

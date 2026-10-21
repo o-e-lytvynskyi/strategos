@@ -24,8 +24,6 @@ Answer in chat or here; the next session applies the answers.
 
 ## Since your last visit
 
-Nothing yet: the owner was here on 2026-10-22.
-
 - 2026-10-22 · **M0 T7c Body and match GameTests, the batch-end check:** unit bodies and matches are
   now tested in a real server — made, posed, re-made, never saved, never pushed, no vibrations, and
   paused or disposed matches leave nothing behind; every GameTest batch ends with a check for leaked
@@ -36,16 +34,22 @@ Nothing yet: the owner was here on 2026-10-22.
   their journals replay to the same hashes; the server smoke now runs a match. One command,
   `scripts/playtest.sh`, starts a server and two clients for you
   ([testing/playtest.md](testing/playtest.md)). Cards QA-04 and CORE-03 are done.
+- 2026-10-22 · **M0 T9 Persistence and quarantine:** matches made with `/strategos match create`
+  are saved with the world and come back `PAUSED` after a restart, with the same tick and hash; a
+  damaged save is never overwritten: the match comes back `FAULTED` with the reason, and a file
+  the game cannot read is kept with a copy beside it. Demo step 5 (stop, restart, resume) is ready
+  to try. The two-week tripwire did not fire: the walking skeleton was green on the second work
+  day, and nothing was cut.
 
 ## Now
 
-- **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 14 of 25 tasks done.
-- **Tripwire (M0 only):** T1 started 2026-10-21; T9 green not yet; M0 work days 2 of 10.
+- **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 15 of 25 tasks done.
+- **Tripwire (M0 only):** T1 started 2026-10-21; T9 green 2026-10-22; M0 work days 2 of 10.
 - **In progress:** none.
-- **Last finished task:** M0 T8 (2026-10-22); T7c was commit 16d1ce8.
-- **Next task:** M0 T9 · Persistence and quarantine (CORE-07, CORE-12, CORE-01, ORD-01, QA-03, QA-09).
+- **Last finished task:** M0 T9 (2026-10-22); T8 was commit 4a9b996.
+- **Next task:** M0 T9b · Restart round trip and the holder's lifetime (QA-05, CORE-01, CORE-06).
 - **WIP branch:** none.
-- **CI:** green on `main` (M0 T7b, run 39670656358: 825 tests, the S6 canary on Linux against the macOS golden); minutes used this month about 61 of 2,000, as of 2026-10-22.
+- **CI:** green on `main` (M0 T7b review fix, run 39685642374, 6 min 28 s); minutes used this month about 83 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.
 
 ## Blocked

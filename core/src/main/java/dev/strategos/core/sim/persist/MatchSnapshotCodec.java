@@ -29,10 +29,19 @@ import java.util.stream.IntStream;
 public final class MatchSnapshotCodec {
     private static final Codec<int[]> INTS = Codec.INT_STREAM.xmap(IntStream::toArray, Arrays::stream);
 
-    private static final Codec<EntitySlots> SLOTS = RecordCodecBuilder.create(i -> i.group(
-                    INTS.fieldOf("generations").forGetter(EntitySlots::generations),
-                    INTS.fieldOf("free").forGetter(EntitySlots::freeIndices))
-            .apply(i, EntitySlots::new));
+    /** Arrays that are no slot table decode to an error, never an exception. */
+    private static final Codec<EntitySlots> SLOTS = RecordCodecBuilder.<int[][]>create(i -> i.group(
+                            INTS.fieldOf("generations").forGetter(s -> s[0]),
+                            INTS.fieldOf("free").forGetter(s -> s[1]))
+                    .apply(i, (generations, free) -> new int[][] {generations, free}))
+            .flatXmap(
+                    s -> {
+                        String problem = EntitySlots.problem(s[0], s[1]);
+                        return problem == null
+                                ? DataResult.success(new EntitySlots(s[0], s[1]))
+                                : DataResult.error(() -> problem);
+                    },
+                    slots -> DataResult.success(new int[][] {slots.generations(), slots.freeIndices()}));
 
     private static final Codec<UnitRecord> UNIT = RecordCodecBuilder.create(i -> i.group(
                     Codec.INT.fieldOf("handle").forGetter(UnitRecord::handle),
@@ -70,8 +79,15 @@ public final class MatchSnapshotCodec {
                 .getValue();
     }
 
-    /** Migrates to the current version, then decodes; any problem is an error, never an exception. */
+    /**
+     * Migrates to the current version, then decodes; any problem is an error, never an exception. The codecs report
+     * bad values themselves; a value a record's constructor still refuses becomes an error here too.
+     */
     public static <T> DataResult<MatchSnapshot> decode(Dynamic<T> raw, Migrations migrations) {
-        return migrations.migrate(raw, SchemaVersion.CURRENT).flatMap(CODEC::parse);
+        try {
+            return migrations.migrate(raw, SchemaVersion.CURRENT).flatMap(CODEC::parse);
+        } catch (RuntimeException e) {
+            return DataResult.error(() -> "cannot decode the snapshot: " + e.getMessage());
+        }
     }
 }

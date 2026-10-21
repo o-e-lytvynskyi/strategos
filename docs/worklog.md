@@ -9,6 +9,46 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
+## 2026-10-22 — M0 T9, the tripwire checkpoint
+
+- **Tripwire checkpoint:** T1 started 2026-10-21, T9 green 2026-10-22, 2 of 10 M0 work days;
+  nothing simplified.
+
+- **M0 T9 · Persistence and quarantine** — CORE-07, CORE-12 (now in progress), CORE-01, ORD-01,
+  QA-03, QA-09; all still in progress (CORE-07.6 is T12's, CORE-12's fixture check T11b's).
+  - **Results:**
+    - `server/persist/`: `MatchData` (one blob per match: LIVE, LOADED, QUARANTINED, DISPOSED;
+      loading never throws), `RegistryData` (records, ids, save epochs; quarantined, it refuses
+      new saved matches), `Quarantine` (guard 2: an unreadable file is copied to
+      `<name>.dat.corrupt-<epoch>` and nothing is registered under its name), `NbtBridge`;
+      `MatchRecord`;
+    - the registry loads saved matches at server start (`loadSaved` per record: restored `PAUSED`,
+      or `FAULTED` with the reason) and marks them for the shutdown save; `match create` makes
+      saved matches; dispose deletes the record and the blob file;
+    - core: a slot table that breaks its invariants is now a decode error, not an exception thrown
+      inside DFU (`EntitySlots.problem`, `MatchSnapshotCodec.decode`);
+    - L2: `MatchSnapshotNbtTest`, `MatchSnapshotFixtureTest` (`match_v1.nbt`, hash
+      6dcbd3d871040342), `MatchDataTest`, `RegistryDataTest`, `CorruptCorpusTest` over 5 corrupted
+      blobs; `:mod:test` 40 tests, `:core:test` 599;
+    - L3: `persistencetests.*` (3) and `commandtests.match_create_list_dispose` with the record
+      and the blob file; mutants caught: a quarantined blob allowed to get dirty
+      ("was written again") and `computeIfAbsent` in guard 2 ("its blob is DISPOSED");
+    - `verify verifySlow` green in 25 s; 93 GameTests, 4.5 s of L3 wall time; slow run 3.4 s.
+  - **Problems:**
+    - NeoForge writes saved data on an IO worker: the file tests wait with
+      `IOUtilities.waitUntilIOWorkerComplete()`;
+    - a quarantined blob rewritten keeps its bytes (gzip writes no time), so the test pins the
+      planted file's modification time; byte comparison alone let the first mutant live;
+    - `bodytests.bodies_follow_entity_ticking_chunks` (from the T7b review) failed in about half
+      the runs, alone too: its far chunk, 72 blocks out, was sometimes two chunks from the
+      arena's forced chunks and stayed FULL (loaded, entities tracked, not ticking), so it never
+      unloaded. Now 88 blocks out, always three chunks or more: 8 of 8 runs green, and the
+      mutant without the no-reason branch still fails;
+    - pitfalls in the knowledge base (`minecraft-mod-data.md`, new, and `minecraft-mod.md`).
+  - Spec §1.6 D row 54.
+
+- **Next:** M0 T9b · Restart round trip and the holder's lifetime.
+
 ## 2026-10-22 — the owner's setup, M0 T7c, T8
 
 - **M0 T7b review** (rerun after the usage limit; three lenses, each finding checked by a skeptic):

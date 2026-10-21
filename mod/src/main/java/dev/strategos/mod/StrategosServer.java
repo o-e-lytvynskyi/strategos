@@ -27,7 +27,7 @@ public final class StrategosServer {
     private StrategosServer(MinecraftServer server, StrategosSettings settings) {
         this.server = server;
         this.settings = settings;
-        this.matches = new MatchRegistry(settings, spawnBudget);
+        this.matches = new MatchRegistry(server, settings, spawnBudget);
     }
 
     /** The running server's holder; throws when no server runs. */
@@ -68,11 +68,21 @@ public final class StrategosServer {
         current = new StrategosServer(server, StrategosSettings.fromSystemProperties(server.getServerDirectory()));
     }
 
-    /** T9 loads the saved matches here. */
-    public static void onStarted(ServerStartedEvent event) {}
+    /** The levels exist now: the saved matches come back, PAUSED. */
+    public static void onStarted(ServerStartedEvent event) {
+        StrategosServer s = current;
+        if (s != null) {
+            s.matches.loadPersisted();
+        }
+    }
 
-    /** T9 marks the live match blobs dirty here, before the levels save. */
-    public static void onStopping(ServerStoppingEvent event) {}
+    /** After the run loop, before {@code stopServer} saves the levels: the live blobs and the registry are marked dirty. */
+    public static void onStopping(ServerStoppingEvent event) {
+        StrategosServer s = current;
+        if (s != null) {
+            s.matches.prepareSave();
+        }
+    }
 
     public static void onStopped(ServerStoppedEvent event) {
         StrategosServer s = current;

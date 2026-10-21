@@ -822,4 +822,4 @@ decision (D-21).
   3. The deserializer never throws on the corrupted-fixture corpus (L2).
 - **Tests:** L0, L2, L3 · **Fixtures:** corrupted saves for both paths (append-only) ·
   **Depends on:** CORE-07, CORE-10 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress

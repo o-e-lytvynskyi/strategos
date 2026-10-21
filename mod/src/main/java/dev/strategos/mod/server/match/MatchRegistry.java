@@ -1,6 +1,8 @@
 package dev.strategos.mod.server.match;
 
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.diag.MatchLog;
+import dev.strategos.core.port.MetricsSink;
 import dev.strategos.core.shared.MatchId;
 import dev.strategos.core.sim.CorePorts;
 import dev.strategos.core.sim.MatchBounds;
@@ -8,20 +10,34 @@ import dev.strategos.core.sim.MatchConfig;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.core.sim.MatchRules;
+import dev.strategos.core.sim.MatchSnapshot;
 import dev.strategos.mod.StrategosSettings;
 import dev.strategos.mod.server.body.SpawnBudget;
+import dev.strategos.mod.server.persist.MatchData;
+import dev.strategos.mod.server.persist.Quarantine;
+import dev.strategos.mod.server.persist.RegistryData;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-/** The server's matches, in id order: the only way to make, find, pause, drop or unload one. Server thread only. */
+/**
+ * The server's matches, in id order: the only way to make, find, pause, drop, unload or restore one. A saved
+ * (persistent) match has a record in the registry blob and a blob of its own; both load on server start and save at
+ * autosave and on stop. Server thread only.
+ */
 public final class MatchRegistry {
     public static final int MIN_SIZE = 8;
     public static final int MAX_SIZE = 512;
@@ -30,26 +46,28 @@ public final class MatchRegistry {
     /** Two matches must keep this many blocks apart. */
     public static final int MARGIN = 2;
 
+    private static final Logger LOG = LoggerFactory.getLogger(MatchRegistry.class);
+
+    private final MinecraftServer server;
     private final StrategosSettings settings;
     private final SpawnBudget spawnBudget;
     private final TreeMap<Integer, MatchRuntime> matches = new TreeMap<>();
     private final Map<ResourceKey<Level>, MatchRegionIndex> regions = new HashMap<>();
-    private int nextId = 1;
+    private @Nullable RegistryData persisted;
+    private int nextId = 1; // ids while no registry blob is usable; such matches are never saved
 
-    public MatchRegistry(StrategosSettings settings, SpawnBudget spawnBudget) {
+    public MatchRegistry(MinecraftServer server, StrategosSettings settings, SpawnBudget spawnBudget) {
+        this.server = server;
         this.settings = settings;
         this.spawnBudget = spawnBudget;
     }
 
     /**
      * A RUNNING match in {@code space}, with the next id. Throws {@link MatchRefusedException} for a size outside 8..512, a
-     * Y band taller than 128 or outside the level's build height, a floor outside the band, or another match within
-     * 2 blocks.
+     * Y band taller than 128 or outside the level's build height, a floor outside the band, another match within 2
+     * blocks, or a saved match while the registry blob is not usable.
      */
     public MatchRuntime create(ServerLevel level, MatchSpace space, MatchOptions options) {
-        if (options.persistent()) {
-            throw new UnsupportedOperationException("persistent matches arrive with M0 T9");
-        }
         if (!space.level().equals(level.dimension())) {
             throw new IllegalArgumentException("space in " + space.level().location() + ", level "
                     + level.dimension().location());
@@ -61,7 +79,8 @@ public final class MatchRegistry {
         } catch (IllegalArgumentException e) {
             throw new MatchRefusedException(String.valueOf(e.getMessage()));
         }
-        MatchId id = new MatchId(nextId++);
+        RegistryData saved = options.persistent() ? usableRegistry() : null;
+        MatchId id = allocateId();
         Long seed = options.seed();
         MatchConfig config = new MatchConfig(
                 id,
@@ -73,14 +92,28 @@ public final class MatchRegistry {
                 MatchCore.create(config, TemplateSet.builtin(), new CorePorts(options.metrics(), System::nanoTime));
         FaultPolicy policy = options.faultPolicy();
         if (policy == null) {
-            policy = settings.faultsRethrow() ? FaultPolicy.RETHROW : FaultPolicy.CONTAIN;
+            policy = defaultPolicy();
         }
-        MatchRuntime rt = new MatchRuntime(id, space, options.source(), policy, false, core, spawnBudget);
+        MatchData data = null;
+        if (saved != null) {
+            data = MatchData.live(id, core::snapshot, saved::epoch);
+            level.getDataStorage().set(MatchData.name(id), data);
+            data.setDirty();
+            saved.put(new MatchRecord(
+                    id,
+                    space,
+                    config.seed(),
+                    MatchLifecycle.CREATED,
+                    options.source(),
+                    saved.epoch(),
+                    Optional.empty()));
+        }
+        MatchRuntime rt = new MatchRuntime(id, space, options.source(), policy, saved != null, core, data, spawnBudget);
+        rt.onLifecycleChange(() -> recordChanged(rt));
         rt.transition(MatchLifecycle.PREPARING);
         rt.transition(MatchLifecycle.READY);
         rt.transition(MatchLifecycle.RUNNING);
-        matches.put(id.value(), rt);
-        regionsOf(space.level()).add(id, space);
+        register(rt);
         return rt;
     }
 
@@ -110,6 +143,12 @@ public final class MatchRegistry {
 
     public @Nullable MatchRuntime get(MatchId id) {
         return matches.get(id.value());
+    }
+
+    /** A saved match's record, or null. */
+    public @Nullable MatchRecord record(MatchId id) {
+        RegistryData saved = persisted;
+        return saved == null ? null : saved.record(id);
     }
 
     /** Every match, in id order. */
@@ -144,7 +183,7 @@ public final class MatchRegistry {
         require(id).transition(MatchLifecycle.RUNNING);
     }
 
-    /** Ends the match for good: its bodies are discarded and its region freed. */
+    /** Ends the match for good: its bodies are discarded, its region freed, its record and blob file removed. */
     public void dispose(MatchId id) {
         MatchRuntime rt = require(id);
         if (rt.lifecycle().canTransitionTo(MatchLifecycle.ENDED)) {
@@ -152,6 +191,9 @@ public final class MatchRegistry {
         }
         rt.transition(MatchLifecycle.DISPOSED);
         drop(rt);
+        if (rt.persistent()) {
+            forget(rt);
+        }
     }
 
     /** Disposes every match of {@code level} made by {@code source}: a GameTest batch's cleanup. */
@@ -163,15 +205,202 @@ public final class MatchRegistry {
         }
     }
 
-    /** A test hook: drops the runtime and its bodies as a server stop does; T9 keeps its record and blob. */
+    /** A test hook: drops the runtime and its bodies as a server stop does, keeping its record and blob. */
     public void unload(MatchId id) {
         drop(require(id));
+    }
+
+    /**
+     * A saved match back from its record and blob: PAUSED with every live unit wanted for a body, its journal starting
+     * at the restored snapshot; FAULTED with the reason when the blob is quarantined, the record says FAULTED or the
+     * snapshot does not restore. A blob whose epoch differs from the record's still loads (the blob wins).
+     */
+    public MatchRuntime restore(ServerLevel level, MatchRecord record, MatchData data) {
+        if (matches.containsKey(record.id().value())) {
+            throw new MatchRefusedException(record.id() + " is already loaded");
+        }
+        level.getDataStorage().set(MatchData.name(record.id()), data);
+        MatchLog log = new MatchLog(LOG, record.id());
+        MatchCore core = null;
+        String reason = null;
+        MatchSnapshot snapshot = data.loadedSnapshot();
+        if (data.state() == MatchData.State.QUARANTINED) {
+            reason = "its saved blob is quarantined: " + data.quarantineReason();
+        } else if (record.lifecycle() == MatchLifecycle.FAULTED) {
+            reason = record.faultMessage().orElse("it had faulted before the save");
+        } else if (data.state() != MatchData.State.LOADED || snapshot == null) {
+            reason = "its blob is " + data.state();
+        } else {
+            if (data.loadedEpoch() != record.lastEpoch()) {
+                log.warn(
+                        snapshot.tick(),
+                        "blob epoch {}, record epoch {}: the blob wins",
+                        data.loadedEpoch(),
+                        record.lastEpoch());
+            }
+            try {
+                core = MatchCore.restore(
+                        snapshot, TemplateSet.builtin(), new CorePorts(MetricsSink.none(), System::nanoTime));
+            } catch (RuntimeException e) {
+                reason = "its snapshot does not restore: " + e.getMessage();
+            }
+        }
+        MatchRuntime rt = new MatchRuntime(
+                record.id(), record.space(), record.source(), defaultPolicy(), true, core, data, spawnBudget);
+        rt.onLifecycleChange(() -> recordChanged(rt));
+        if (core == null) {
+            rt.restoredFaulted(String.valueOf(reason));
+            recordChanged(rt);
+            log.error(-1, "restored FAULTED: " + reason, new IllegalStateException(reason));
+        } else {
+            rt.transition(MatchLifecycle.PREPARING);
+            rt.transition(MatchLifecycle.READY);
+            rt.transition(MatchLifecycle.RUNNING);
+            rt.transition(MatchLifecycle.PAUSED);
+            for (int handle : core.queries().unitHandles()) {
+                rt.bodies().want(handle);
+            }
+            RegistryData saved = persisted;
+            long lastEpoch = record.lastEpoch();
+            data.attach(core::snapshot, saved != null ? saved::epoch : () -> lastEpoch);
+        }
+        register(rt);
+        return rt;
+    }
+
+    /** On server start: the registry blob, then every saved match from its own blob, or FAULTED with the reason. */
+    public void loadPersisted() {
+        RegistryData saved = Quarantine.loadRegistry(server.overworld(), System.currentTimeMillis());
+        persisted = saved;
+        if (saved.quarantineReason() != null) {
+            LOG.error("The match registry is quarantined, so no saved match loads: {}", saved.quarantineReason());
+            return;
+        }
+        for (MatchRecord record : saved.records()) {
+            loadSaved(record, saved.epoch());
+        }
+    }
+
+    /**
+     * One saved match from its record and its blob file: restored, or FAULTED with the reason when its level is gone,
+     * its file is missing or unreadable (copied to {@code <name>.dat.corrupt-<epoch>}), or its blob is quarantined.
+     */
+    public MatchRuntime loadSaved(MatchRecord record, long epoch) {
+        ServerLevel level = server.getLevel(record.space().level());
+        if (level == null) {
+            return registerFaulted(record, "its level " + record.space().level().location() + " is gone");
+        }
+        return switch (Quarantine.loadMatch(level, record.id(), epoch)) {
+            case Quarantine.Missing missing ->
+                registerFaulted(record, "its blob " + MatchData.name(record.id()) + " is missing");
+            case Quarantine.CorruptFile corrupt ->
+                registerFaulted(
+                        record, corrupt.reason() + "; kept as " + corrupt.copy().getFileName());
+            case Quarantine.Loaded loaded -> restore(level, record, loaded.data());
+        };
+    }
+
+    /** On server stop, before the levels save: a new save epoch, and every live blob and the registry dirty. */
+    public void prepareSave() {
+        RegistryData saved = persisted;
+        if (saved == null || saved.quarantineReason() != null) {
+            return;
+        }
+        long epoch = saved.nextEpoch();
+        for (MatchRuntime rt : matches.values()) {
+            MatchRecord record = saved.record(rt.id());
+            MatchData data = rt.data();
+            if (!rt.persistent() || record == null) {
+                continue;
+            }
+            boolean live = data != null && data.state() == MatchData.State.LIVE;
+            saved.put((live ? record.withLastEpoch(epoch) : record)
+                    .withLifecycle(rt.lifecycle(), Optional.ofNullable(rt.faultMessage())));
+            if (data != null && live) {
+                data.setDirty();
+            }
+        }
     }
 
     /** At server stop, after the levels unloaded every body: forgets every match without touching the world. */
     public void shutdown() {
         matches.clear();
         regions.clear();
+        persisted = null;
+    }
+
+    private MatchRuntime registerFaulted(MatchRecord record, String reason) {
+        MatchRuntime rt = new MatchRuntime(
+                record.id(), record.space(), record.source(), defaultPolicy(), true, null, null, spawnBudget);
+        rt.restoredFaulted(reason);
+        rt.onLifecycleChange(() -> recordChanged(rt));
+        recordChanged(rt);
+        new MatchLog(LOG, record.id()).error(-1, "restored FAULTED: " + reason, new IllegalStateException(reason));
+        register(rt);
+        return rt;
+    }
+
+    /** A saved match's record follows its lifecycle; dispose removes the record itself. */
+    private void recordChanged(MatchRuntime rt) {
+        RegistryData saved = persisted;
+        if (!rt.persistent()
+                || saved == null
+                || saved.quarantineReason() != null
+                || rt.lifecycle() == MatchLifecycle.DISPOSED) {
+            return;
+        }
+        MatchRecord record = saved.record(rt.id());
+        if (record != null) {
+            saved.put(record.withLifecycle(rt.lifecycle(), Optional.ofNullable(rt.faultMessage())));
+        }
+    }
+
+    /** A disposed saved match: its blob never saves again, its file goes, its record goes. */
+    private void forget(MatchRuntime rt) {
+        MatchData data = rt.data();
+        if (data != null) {
+            data.dispose();
+        }
+        ServerLevel level = server.getLevel(rt.space().level());
+        if (level != null) {
+            try {
+                Files.deleteIfExists(Quarantine.dataFile(level, MatchData.name(rt.id())));
+            } catch (IOException e) {
+                LOG.warn("Cannot delete the blob of disposed match {}", rt.id(), e);
+            }
+        }
+        RegistryData saved = persisted;
+        if (saved != null && saved.quarantineReason() == null) {
+            saved.remove(rt.id());
+        }
+    }
+
+    private RegistryData usableRegistry() {
+        RegistryData saved = persisted;
+        if (saved == null) {
+            throw new MatchRefusedException("saved matches are not loaded yet");
+        }
+        if (saved.quarantineReason() != null) {
+            throw new MatchRefusedException("saved matches are off: " + saved.quarantineReason());
+        }
+        return saved;
+    }
+
+    private MatchId allocateId() {
+        RegistryData saved = persisted;
+        if (saved != null && saved.quarantineReason() == null) {
+            return saved.allocateId();
+        }
+        return new MatchId(nextId++);
+    }
+
+    private FaultPolicy defaultPolicy() {
+        return settings.faultsRethrow() ? FaultPolicy.RETHROW : FaultPolicy.CONTAIN;
+    }
+
+    private void register(MatchRuntime rt) {
+        matches.put(rt.id().value(), rt);
+        regionsOf(rt.space().level()).add(rt.id(), rt.space());
     }
 
     private void drop(MatchRuntime rt) {

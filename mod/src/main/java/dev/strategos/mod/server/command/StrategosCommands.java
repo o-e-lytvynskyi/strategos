@@ -142,8 +142,7 @@ public final class StrategosCommands {
     private static int create(CommandSourceStack source, int sizeX, int sizeZ) {
         ServerLevel level = source.getLevel();
         BlockPos feet = BlockPos.containing(source.getPosition());
-        // Saved matches arrive with M0 T9; until then a created match lives until the server stops.
-        MatchOptions options = MatchOptions.generated(feet.getY()).withPersistent(false);
+        MatchOptions options = MatchOptions.generated(feet.getY()); // saved with the world
         return run(source, () -> {
             MatchRuntime rt = registry().create(level, spaceAround(level, feet, sizeX, sizeZ), options);
             return rt.id() + " created, " + sizeX + " x " + sizeZ + " around " + feet.toShortString();
