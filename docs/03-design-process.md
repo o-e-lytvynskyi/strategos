@@ -13,7 +13,7 @@ to something playable and tested.
 | Code | Reviews when they want to | Implements, tests and documents |
 | Tests | Approves new golden images and performance baselines; plays milestone demos and multiplayer sessions | Runs every automated level that ends on its own (L0–L3, L5, L6). A client window (L4) opens only with the owner's consent, because it can take keyboard focus |
 | Runs | Starts interactive `runClient` / `runServer` sessions themselves, to watch the logs | Never starts interactive or long-running sessions |
-| Git | Decides when to commit, tag, push or publish; the repository stays private unless the owner decides otherwise | Commits only when asked, in English, with no assistant traces |
+| Git | Decides on tags, releases and anything public; the repository stays private unless the owner decides otherwise | Commits and pushes to the private repository without asking (owner, 2026-10-21), in English, with no assistant traces |
 
 ## Where things live
 
@@ -70,7 +70,7 @@ stateDiagram-v2
    command, follows the demo script from the milestone spec, and their feedback becomes roadmap
    changes.
 5. **Close.** Update STATE.md, the roadmap statuses, the knowledge base (new pitfalls and
-   recipes) and the docs. The owner decides whether to commit or tag.
+   recipes) and the docs. The assistant commits and pushes; the owner decides on tags and releases.
 
 ## Design rules
 
@@ -112,8 +112,8 @@ A change is done when:
 - The mod follows semantic versioning, `0.x` until the MVP. The version lives in
   `gradle.properties`.
 - Trunk-based on `main`; short-lived branches only when a change needs isolation.
-- Commit messages are English, imperative, with no assistant traces. Commits happen only
-  when the owner asks.
+- Commit messages are English, imperative, with no assistant traces. The assistant commits and
+  pushes to the private GitHub repository without asking (owner, 2026-10-21).
 
 ## Communication
 

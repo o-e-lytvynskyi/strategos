@@ -38,7 +38,9 @@ and automated tests of every intermediate result.
   after asking the owner**: it can take keyboard focus.
 - **Owner approvals:** roadmap features, golden images, performance baselines and thresholds, new
   runtime dependencies, anything that changes the product.
-- **Git:** commit only when the owner asks; English messages, no assistant traces.
+- **Git:** commit and push to the private GitHub repository (`o-e-lytvynskyi/strategos`, over SSH)
+  without asking, after each green task; English messages, no assistant traces. Making anything
+  public stays the owner's decision.
 - **Language:** everything in the repository is English; chat with the owner is Russian.
 
 ## Definition of Done

@@ -54,7 +54,8 @@ only our documents and the decompiled vanilla and NeoForge sources were read.*
   runs only in the owner's consent batch (§7.7).
 - **One Gradle build at a time** in the repository. Tasks marked ∥ in §9 touch disjoint files
   and may be implemented in parallel sessions, but their Gradle runs are serialised.
-- **No commits.** The repository has no commit yet; the owner decides when to commit.
+- **Commits.** Commit and push to the private GitHub repository after each green task, without
+  asking (owner, 2026-10-21); English messages, no assistant traces.
 - **Language.** Code, comments, docs and test names in English; chat with the owner in Russian.
 - **Done means** (ADR-0006 as amended by ADR-0022, as ROADMAP.md states): the task's
   verification command is green, `./gradlew spotlessApply` leaves no diff, no ErrorProne or
