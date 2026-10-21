@@ -53,7 +53,8 @@ only our documents and the decompiled vanilla and NeoForge sources were read.*
   interactive sessions. `runScenario` opens a client window, which takes keyboard focus, so it
   runs only in the owner's consent batch (§7.7).
 - **One Gradle build at a time** in the repository. Tasks marked ∥ in §9 touch disjoint files
-  and may be implemented in parallel sessions, but their Gradle runs are serialised.
+  could run in parallel, but the strategos-dev skill allows one session at a time (its lock), so
+  they run in sequence; ∥ only means their order is free.
 - **Commits.** Commit and push to the private GitHub repository after each green task, without
   asking (owner, 2026-10-21); English messages, no assistant traces.
 - **Language.** Code, comments, docs and test names in English; chat with the owner in Russian.
@@ -82,11 +83,16 @@ only our documents and the decompiled vanilla and NeoForge sources were read.*
 
 ### 0.4 How a task is finished
 
+0. **Bootstrap (T1, T2).** `verify`, L3 and L5 are what T1–T3 build, so ADR-0006's
+   build-and-tooling row and ADR-0022's L5 rule cannot hold yet. T1 is done on
+   `./gradlew verifyFast :mod:test`, T2 on `./gradlew verifyFast :mod:runGameTestServer`; T3's
+   first green `verify` re-proves both. From T3 on, every task runs `verify`.
 1. Implement the files the task lists, nothing else.
 2. `./gradlew spotlessApply`, then the task's verification command. Fix until green.
 3. Run the task's negative checks, if any, and record their outcome where the task says.
-4. Tick the task in §9, update STATE.md (date, task, result, numbers), write new pitfalls to the
-   knowledge base.
+4. Record progress as the strategos-dev skill §5 says: tick the task in §9.3, set the card
+   statuses, update the worklog and STATE.md (date, task, result, numbers), write new pitfalls to
+   the knowledge base.
 
 ---
 
@@ -446,8 +452,8 @@ Paths are relative to the repository root. `(Tn)` names the task that creates th
 
 ```text
 strategos/
-├── .gitattributes                                   (T1)
-├── .gitignore                                       (T1)
+├── .gitattributes                                   (design commit; checked in T1)
+├── .gitignore                                       (design commit; checked in T1)
 ├── .github/workflows/verify.yml, release.yml         (T18, after the owner's go-ahead, D-23)
 ├── build.gradle                                     (T1; verify, verifyHarness T3; soak, verifySoak T6b;
 │                                                     verifySlow, ticket-leak run T7c; replay T8;
@@ -579,7 +585,9 @@ strategos/
     └── testing/playtest.md                          (T8; persistence steps T9)
 ```
 
-Documents updated in place (only by the tasks named): `docs/STATE.md` (every task),
+Documents updated in place (only by the tasks named): `docs/STATE.md`, `docs/worklog.md` and this
+spec's §9.3 (every task); `docs/ROADMAP.md` and `docs/roadmap/M0-foundation.md` (a card's status
+when its first task starts and when it is done, as the strategos-dev skill §5 says);
 `docs/05-testing.md` (T11b the fixture catalogue, T17), `docs/adr/README.md` (T3, T15),
 `docs/adr/0007-gametest-wiring.md` (T3, T15), `docs/adr/0011-unit-entity-and-body-seam.md` (T13),
 `docs/adr/0019-performance-budgets.md` (T14), `docs/04-architecture.md` §1.4 row 9 and §2.5 (T15,
@@ -732,14 +740,27 @@ Check: `./gradlew --version` reports the daemon JVM as 21.
 
 ### 4.5 Wrapper [T1]
 
-Copy `gradlew`, `gradlew.bat`, `gradle/wrapper/gradle-wrapper.jar` and
-`gradle/wrapper/gradle-wrapper.properties` from the official 1.21.1 MDK (Gradle 9.2.1; wrapper
-jar SHA-256 `7d3a4ac4de1c32b59bc6a4eb8ecb8e612ccd0cf1ae1e99f66902da64df296172`). Add
-`distributionSha256Sum=<value>` from
-`https://services.gradle.org/distributions/gradle-9.2.1-bin.zip.sha256` to the properties
-file; if the network is unavailable, leave it out and note that in STATE.md.
+Take `gradlew`, `gradlew.bat`, `gradle/wrapper/gradle-wrapper.jar` and
+`gradle/wrapper/gradle-wrapper.properties` from the official 1.21.1 MDK, at the commit the
+toolchain check built on 2026-10-20:
+
+```
+git clone https://github.com/NeoForgeMDKs/MDK-1.21.1-ModDevGradle <session temp dir>/mdk
+git -C <session temp dir>/mdk checkout 00b49d3f81a257858ca425792d59b9e5ca0f7e56   # 2026-10-18
+shasum -a 256 <session temp dir>/mdk/gradle/wrapper/gradle-wrapper.jar
+# must print 7d3a4ac4de1c32b59bc6a4eb8ecb8e612ccd0cf1ae1e99f66902da64df296172
+```
+
+Copy the four files into the repository; run nothing from the clone. The properties keep
+`distributionUrl=https\://services.gradle.org/distributions/gradle-9.2.1-bin.zip`; add
+`distributionSha256Sum=72f44c9f8ebcb1af43838f45ee5c4aa9c5444898b3468ab3f4af7b6076c5bc3f`
+(the published `gradle-9.2.1-bin.zip.sha256`, checked on 2026-10-21).
 
 ### 4.6 `.gitignore` and `.gitattributes` [T1]
+
+Both files were committed with the design on 2026-10-21 and match these blocks, including the
+two lines for the assistant's sessions (`/.session.lock`, `/.claude/settings.local.json`); T1
+checks them and leaves them unchanged.
 
 ```gitignore
 .gradle/
@@ -755,6 +776,10 @@ out/
 .DS_Store
 # Dev run directories owned by the owner's sessions (mod/run/client, mod/run/server, ...)
 run/
+# The strategos-dev skill's session lock
+/.session.lock
+# Personal Claude Code settings; the shared allowlist is .claude/settings.json
+/.claude/settings.local.json
 ```
 
 ```gitattributes
@@ -3620,7 +3645,7 @@ plans marked "pending consent":
 
 ```mermaid
 flowchart TB
-  subgraph A["Wave A: walking skeleton (tripwire: done within 2 weeks of starting T1)"]
+  subgraph A["Wave A: walking skeleton (tripwire: done within 2 weeks of M0 work)"]
     direction TB
     T1["T1 build skeleton"] --> T2["T2 GameTest harness"] --> T3["T3 smoke, first ArchUnit, verify, verifyHarness, S5 v1"]
     T1 --> T4a["T4a shared, port, diag"] --> T4b["T4b protocol, content"] --> T5a["T5a kernel internals"] --> T5b["T5b MatchCore, commands, movement"]
@@ -3675,7 +3700,8 @@ negative checks behave as stated.
 #### T1 · Build skeleton — QA-01, QA-03, QA-09, CORE-06 · depends on – · ~600 lines
 
 - **Files:** §4.1–§4.9 (core/build.gradle without the T6b/T8/T12/T18 blocks, core-conventions
-  without the JMH block, root build.gradle with `checkVersionCatalog` and `verifyFast` only);
+  without the JMH block, root build.gradle with `checkVersionCatalog` and `verifyFast` only, and `verifyFast` without
+  `'checkFixtures'`, which T11b registers);
   `mod/build.gradle` blocks A, B (runs `client`, the plain title-screen client, `client2` and
   `server` only), C, D, E; §4.11;
   `core/.../shared/package-info.java` and `Handle.java`; `shared/HandleTest`;
@@ -3690,7 +3716,7 @@ negative checks behave as stated.
   milestone exit), the build and tooling row (L4 only once QA-06 exists, in the consent batch or on
   CI), L5 on every change, and the engine-surface inventory check in L2. T1 writes no ADR; QA-09.5
   is confirmed by the first use of the scripts and the protocol, at the M0 acceptance (T17).
-- **Steps:** copy the wrapper from the MDK; write the files; `./gradlew updateDaemonJvm
+- **Steps:** copy the wrapper as §4.5 says (MDK commit `00b49d3`, checksums given there); write the files; `./gradlew updateDaemonJvm
   --jvm-version=21 --jvm-vendor=adoptium` (fallback §4.4); first build (downloads NeoForge
   21.1.264, decompiles: about 2 minutes).
 - **Verification:** `./gradlew verifyFast :mod:test` green; `./gradlew --version` shows daemon
@@ -3850,8 +3876,9 @@ negative checks behave as stated.
 
 #### Tripwire checkpoint (after T9)
 
-Record in STATE.md the date T1 started and the date T9 went green. If T9 is not green within
-two weeks of starting T1, stop and simplify before wave B (risk R11, 04 §1.5), in this order:
+Record in STATE.md the date T1 started and the date T9 went green. If T9 is not green after two
+weeks of M0 work — 10 days with `M0 T…` commits, counted by
+`git log --format=%cs --grep='^M0 T' | sort -u | wc -l` — stop and simplify before wave B (risk R11, 04 §1.5), in this order:
 (1) drop the JSON journal export and replay the journal in process inside the GameTest;
 (2) merge the four component stores into one `UnitStore`; (3) run every system every tick and
 remove `Cadence`/`Stagger` until a system needs them; (4) move quarantine guard 2 to M1 (it is
@@ -3975,9 +4002,13 @@ exists, with commits and pushes allowed without asking (2026-10-21). Start T18 r
 `verify`, and add the slow batch, the soak, the perf step and the S6 Linux check as their tasks
 land. Mind GitHub Free's 2,000 Linux minutes a month for private repositories: one job,
 `concurrency` with `cancel-in-progress`, and `paths-ignore` for documentation-only pushes; record
-the monthly use in STATE.md. Publishing stays D-21. T18 never blocks T17 or Done.
+the monthly use in STATE.md. Publishing stays D-21. T18 never blocks T17 or Done. Tick T18 when `verify` is green on CI. Its later jobs get no boxes
+of their own: the session that ticks T6b, T7c, T12 or T15 adds that task's job to
+`.github/workflows/verify.yml` in the same commit (the soak, the slow batch, perf, the S6 Linux
+check and `release.yml`).
 - **Files:** `core/build.gradle` `jmhSpeedRatio` (§4.9) and the smoke guards' JUnit output
-  (§4.10 F); `.github/workflows/verify.yml`: one `ubuntu-24.04` job on pushes and pull requests,
+  (§4.10 F); `.github/workflows/verify.yml`: one `ubuntu-24.04` job on pushes to `main` and on
+  pull requests (a pull request's branch then runs once, not twice),
   `timeout-minutes: 20`, `actions/checkout@v7.0.1`, `actions/setup-java@v6.1.0` (Temurin 21),
   `gradle/actions/setup-gradle@v6.4.0` with `cache-provider: basic`
   ([research/testing.md §11](../research/testing.md)); `./gradlew --console=plain verify
@@ -3993,6 +4024,13 @@ the monthly use in STATE.md. Publishing stays D-21. T18 never blocks T17 or Done
   `mod/build/libs/strategos-<version>.jar` with the inputs of research/testing.md §11, checked
   against its README first; no publishing. The datagen diff joins with M1's first datagen, the
   golden step with QA-18.
+- **Reading results.** Sessions read CI through the GitHub MCP server. A pull request's checks
+  are readable with the default tools (`pull_request_read`, methods `get_check_runs` and
+  `get_status`), so T18 is verified on a pull request from a short-lived branch, as QA-08.1
+  asks; afterwards `main` is fast-forwarded to the branch and pushed, which marks the pull
+  request merged. Runs on `main`, their logs and the monthly minutes need the server's `actions`
+  toolset or a logged-in `gh` (§12, STATE "For the owner"); until one exists, STATE "Now" says
+  `CI: not readable` and the owner watches CI on GitHub.
 - **Verification (R):** a pull request shows per-test results from L1, L2, L3 and L5 (QA-08.1);
   the job finishes in under 20 minutes (QA-08.2); `DeterminismCanaryTest` passes on Linux against
   the committed macOS golden (QA-08.3); a manual release run starts the production jar on a
@@ -4000,10 +4038,9 @@ the monthly use in STATE.md. Publishing stays D-21. T18 never blocks T17 or Done
 
 ### 9.3 Progress
 
-- [ ] T1 · [ ] T2 · [ ] T3 · [ ] T4a · [ ] T4b · [ ] T5a · [ ] T5b · [ ] T6a · [ ] T6b · [ ] T7a · [ ] T7b · [ ] T7c · [ ] T8 · [ ] T9
+- [ ] T1 · [ ] T2 · [ ] T3 · [ ] T18 · [ ] T4a · [ ] T4b · [ ] T5a · [ ] T5b · [ ] T6a · [ ] T6b · [ ] T7a · [ ] T7b · [ ] T7c · [ ] T8 · [ ] T9
 - [ ] Tripwire checkpoint (dates in STATE.md)
 - [ ] T9b · [ ] T10 · [ ] T11 · [ ] T11b · [ ] T12 · [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17
-- [ ] T18 (CI: start right after T3, extend as tasks land; never blocks Done)
 
 ---
 
@@ -4067,6 +4104,7 @@ Acceptance, not Done.
 |---|---|---|
 | Go-ahead for M0 | starting T1 | now |
 | ~~The go-ahead for the GitHub step of [D-23](../roadmap/M0-foundation.md#d-23--ci-and-the-private-github-repository)~~ — done on 2026-10-21: the private repository exists | QA-08 (T18), S6 on Linux | done |
+| Read access to GitHub Actions for the assistant's sessions: the GitHub MCP server's `actions` toolset, or `gh` after `gh auth login` | reading CI on `main`, its logs and the monthly minutes after T18 (T18 itself is verified on a pull request) | before T18 |
 | Consent for M0's consent batch (§7.7: S3, S4, `world_switch`, the production-jar client check; a game window opens), asked once as [D-22](../roadmap/M0-foundation.md#d-22--client-run-l4-consent-policy) decided | §8.6, CORE-01.5, QA-06 | any time after T16 |
 | Approval of the JMH baseline candidate, the enabled perf gates and the ADR-0019 revision with S1 and S2 numbers | `verifyPerf` green; PERF-01 | after T12 and T14 |
 | The S1 numbers (and S4's, if consented), which keep [D-01](../roadmap/M0-foundation.md#d-01--population-cap-per-player)'s default of 150 or drop it to 100 | ECO-06 (M3) | after T13 |

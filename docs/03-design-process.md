@@ -57,8 +57,8 @@ stateDiagram-v2
   testable acceptance criteria.
 - Only `approved` cards enter a milestone spec. Changing an approved card sets it to
   `changed` until the owner approves it again.
-- M0 "Foundation" is infrastructure the owner asked to start, so its cards are pre-approved
-  (`approved-foundation`).
+- M0 "Foundation" is infrastructure the owner asked to start, so its cards were pre-approved
+  (`approved-foundation`); they are `specified` since its implementation spec was written.
 
 ## Milestone cycle
 
@@ -115,15 +115,19 @@ A change is done when:
 The assistant develops the project in sessions the owner starts and rarely watches. The
 procedure is the `strategos-dev` skill; this section fixes the conventions it follows.
 
-**Starting work.** The owner opens Claude Code in the repository and says «продолжай» (or uses
-`/loop` for a self-paced run). The assistant works through ready tasks until a stop condition:
-nothing is ready, a task failed three times, a budget is red, a hard rule would be broken, or
-usage is running low. Sessions can end at any moment, so every finished step is committed and
+**Starting work.** The owner opens Claude Code in the repository (`minecraft/strategos`, so that
+the project settings load) and says «продолжай» (or uses `/loop` for a self-paced run).
+Unattended sessions run in auto mode. The project allowlist (`.claude/settings.json`, proposed
+in `tools/claude-settings.json` until the owner activates it) lets the work loop's commands
+through without prompts and denies force pushes and discarding the working tree; the assistant
+never edits it and proposes changes in "For the owner". The assistant works through ready tasks
+until a stop condition: nothing is ready, a task failed three times, a budget is red, a hard
+rule would be broken, or usage is running low. Sessions can end at any moment, so every finished step is committed and
 pushed, and an unfinished task lives on a `wip/Mx-Tn` branch named in STATE.md.
 
 **Gates.** Implementing a milestone starts only after the owner's go-ahead for it («начинай Mx»),
 recorded in STATE.md; planning work (writing the next milestone's spec) needs none. One session
-works at a time (a lock in `build/session.lock`).
+works at a time (a lock, `.session.lock` in the repository root, which git ignores).
 
 **Statuses and evidence.** ROADMAP.md is the source of truth; card files mirror it, and
 `tools/roadmap.py check` must pass after every change.
@@ -145,8 +149,12 @@ scope-neutral refinement — another test level, a measuring method, clearer wor
 in [design/roadmap-changes.md](design/roadmap-changes.md) "Refinements". Anything that changes what
 a card delivers sets it to `changed` and waits for the owner.
 
-**Green `main`.** Nothing reaches `main` without `verify`. Once CI exists (M0 T18), every push
+**Green `main`.** Nothing reaches `main` without `verify` once it exists (M0 T3); before that, the
+gate is `verifyFast` plus the task's own verification command, and documentation-only commits
+need `python3 tools/roadmap.py check`. Once CI exists (M0 T18), every push
 is checked on GitHub Actions as well, and a red build is the first thing the next session fixes.
+Sessions read those runs through the GitHub MCP server's `actions` tools or a logged-in `gh`, a
+one-time owner setup; a pull request's checks are readable without either.
 
 **The owner's queue.** Everything that needs the owner — decisions, consent batches for client
 windows, demos to play, baselines and goldens to approve, proposals that add scope — is a

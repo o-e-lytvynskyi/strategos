@@ -8,8 +8,8 @@ and automated tests of every intermediate result.
 
 Every work session follows the **`strategos-dev` skill**
 (`.claude/skills/strategos-dev/SKILL.md`): orient, pick the next ready task, build it test-first,
-verify, record progress, commit and push, report. The owner visits rarely and expects the
-repository itself to say what happened.
+verify, record progress, commit and push, and repeat until a stop condition; then report. The
+owner visits rarely and expects the repository itself to say what happened.
 
 1. Read [docs/STATE.md](docs/STATE.md) — the owner's queue, the current task, blockers — and the
    newest entry of [docs/worklog.md](docs/worklog.md).
@@ -34,14 +34,20 @@ repository itself to say what happened.
   not even on the web. Use the behavioural notes in `docs/research/`. MIT/Apache-2.0 code may be
   adapted with its notice in `NOTICE` ([ADR-0005](docs/adr/0005-clean-room-and-licensing.md)).
 - **Verify engine APIs before relying on them.** Grep the decompiled Minecraft 1.21.1 + NeoForge
-  sources (`neoforge-<ver>-sources.jar` from `createMinecraftArtifacts`; see the pet-projects
-  knowledge base `minecraft-mod.md`). Never trust memory for class, method or event names.
+  sources (`neoforge-<ver>-sources.jar` from `createMinecraftArtifacts`); FML, the event bus and
+  ModDevGradle are not in that jar, so check them with `javap` on the cached jars (skill §3.3).
+  Never trust memory for class, method or event names.
 - **Rules in `core`, Minecraft in `mod`.** `core` never imports Minecraft; game state is owned by
   the core ([ADR-0008](docs/adr/0008-authority-and-state-model.md)).
 - **Runs.** Only run tasks that end on their own (builds, `:core:test`, `:mod:test`,
   `runGameTestServer`, `runServerSmoke`, perf batches). The owner starts interactive `runClient`
   and `runServer` sessions. **A client window (scenario harness, spikes S3/S4/S9) opens only
   after asking the owner**: it can take keyboard focus.
+- **Permissions.** Unattended sessions run in auto mode. The project allowlist
+  (`.claude/settings.json`; until the owner activates it, the proposal
+  `tools/claude-settings.json`) lets the work loop's commands through and denies force pushes
+  and discarding the working tree. Never edit `.claude/settings.json`; propose changes in
+  "For the owner".
 - **Owner approvals:** roadmap features, golden images, performance baselines and thresholds, new
   runtime dependencies, anything that changes the product.
 - **Git:** commit and push to the private GitHub repository (`o-e-lytvynskyi/strategos`, over SSH)

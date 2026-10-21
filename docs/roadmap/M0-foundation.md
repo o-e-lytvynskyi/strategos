@@ -2,8 +2,8 @@
 
 Feature cards of milestone M0. [ROADMAP.md](../ROADMAP.md) holds the overview, the conventions
 every card follows and the status of every card; it is the source of truth for status, and the
-statuses below mirror it. M0 is infrastructure the owner asked to start, so its cards are
-`approved-foundation`. The implementation spec is [milestones/M0-foundation.md](../milestones/M0-foundation.md).
+statuses below mirror it. M0 is infrastructure the owner asked to start, so its cards were
+pre-approved (`approved-foundation`); they are `specified` since the implementation spec was written. The implementation spec is [milestones/M0-foundation.md](../milestones/M0-foundation.md).
 
 This file also holds the **plan-wide engineering baseline** (budgets, the budget matrix, the
 decisions the cards rely on, the spikes and the test aggregates), because PERF-01 and the spikes
@@ -50,7 +50,7 @@ flowchart LR
     H1["CORE-04, CORE-05 with S6, CORE-07, CORE-10, CORE-12"]
     H2["QA-03, QA-05, QA-07, QA-10, QA-17"]
     H3["PERF-01, PERF-02 (S1), PERF-03 (S2)"]
-    H4["QA-06 and PERF-04 (S3, S4) with consent; QA-08 after D-23"]
+    H4["QA-06 and PERF-04 (S3, S4) with consent; QA-08 (D-23 decided)"]
   end
   WB --> X(("M0 Done"))
 ```
@@ -87,7 +87,7 @@ flowchart LR
 **Size and critical path.** 26 cards (6 S, 20 M, 0 L), at most 66 card-days. Critical path to
 Done: QA-01 → QA-04 → CORE-01 → CORE-02 → CORE-03 → ORD-01 → QA-05 → PERF-03 (22 card-days). Its
 first six cards are the skeleton the tripwire watches (16 card-days), with CORE-06 → UNIT-01
-beside them. QA-08 (CI, after D-23) ends as late but never blocks Done.
+beside them. QA-08 (CI, D-23 decided 2026-10-21) starts right after T3 and never blocks Done.
 
 ---
 
@@ -177,7 +177,7 @@ fallback the ADR fixed in advance.
 | S3 client harness on macOS | QA-06 | M0 | yes | no focus theft, or a working container route | D-22 |
 | S4 client frame time | PERF-04; the layered pass in ART-01 | M0, else with CAM-01; layers in M3 | yes | ≤ 6 ms for 200 units with Sodium, bare in M0 and armoured with ART-01; client tick ≤ 1 ms | ADR-0019 F, D-01 |
 | S5 build wiring | QA-01 | M0 first | no | every AC of QA-01, QA-04, QA-05 | ADR-0003, ADR-0007 |
-| S6 determinism canary | CORE-05 | M0; Linux after D-23 | no | identical hashes at every checkpoint | ADR-0009 |
+| S6 determinism canary | CORE-05 | M0; Linux once CI runs (D-23) | no | identical hashes at every checkpoint | ADR-0009 |
 | S7 path service under load | PATH-16 | M1 slice 1B | no | main-thread path work ≤ 2 ms p99; path results within 5 ticks p95 | ADR-0015 (`k`, mode, W) |
 | S8 terrain census and encoding | PATH-01 | M1 slice 1A | no | ≥ 99.9 % of columns ≤ 4 surfaces; nav ≤ 32 MB at 512² (page build ≤ 0.5 ms in PATH-02) | ADR-0015 encoding |
 | S9 commander camera | CAM-01 | right after M0, client track | yes | zero snap-backs panning, ≤ 1 echo warning per jump; fill ≤ 3 s; picks within 1 block; `ChunkMap#move` ≤ 0.5 ms | ADR-0017 |

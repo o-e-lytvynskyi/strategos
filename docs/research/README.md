@@ -21,6 +21,12 @@ second pass wrongly denied.
 
 Each report ends with its fact-check verdict table (claim, verdict, correction, evidence).
 
+**Paths in these reports.** `scratchpad/…` and `/private/tmp/claude-501/…` were the research
+session's temporary directory: the decompiled Minecraft 1.21.1 + NeoForge 21.1.262 tree, the MDK
+clone, a test server and build logs. They are not project files and are gone; never look for them.
+The API reference is the project's own decompiled sources jar (strategos-dev skill §3.3), and the
+MDK commit the toolchain check built is pinned in the M0 spec §4.5.
+
 ---
 
 ## 1. Owner decisions (2026-10-20)

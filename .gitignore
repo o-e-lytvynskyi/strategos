@@ -11,3 +11,7 @@ out/
 .DS_Store
 # Dev run directories owned by the owner's sessions (mod/run/client, mod/run/server, ...)
 run/
+# The strategos-dev skill's session lock
+/.session.lock
+# Personal Claude Code settings; the shared allowlist is .claude/settings.json
+/.claude/settings.local.json

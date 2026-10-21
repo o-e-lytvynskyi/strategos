@@ -111,7 +111,7 @@ def spec_progress():
         m = re.search(r"^### [\d.]+ Progress\n(.*?)(?=^#{2,3} |\Z)", text, re.M | re.S)
         if not m:
             continue
-        boxes = re.findall(r"\[( |x)\]", m.group(1))
+        boxes = [b for b, label in CHECKBOX.findall(m.group(1)) if re.match(r"T\d", label)]
         result[path.name.split("-")[0]] = (boxes.count("x"), len(boxes))
     return result
 

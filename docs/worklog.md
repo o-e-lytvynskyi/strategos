@@ -28,11 +28,18 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
   - the promo draft;
   - the private GitHub repository `o-e-lytvynskyi/strategos`;
   - the autonomy kit: the `strategos-dev` skill, this worklog, the STATE.md layout, and
-    `tools/roadmap.py`.
+    `tools/roadmap.py`;
+  - a dry run of the kit by a fresh agent: 30 issues, all fixed;
+  - a permission allowlist for unattended sessions, proposed in `tools/claude-settings.json`;
+  - a way for sessions to read CI (M0 T18 "Reading results").
 - **Results:** `tools/roadmap.py check` passes on 245 cards, 0 problems. Open decisions: D-03,
   D-06, D-07, D-20, D-21, all needed after the MVP.
-- **Problems:** usage limits cut three multi-agent runs short. Prefer inline work and small
-  review workflows.
+- **Problems:**
+  - Usage limits cut several multi-agent runs short. Prefer inline work and small review
+    workflows.
+  - Auto mode refused to let the assistant write its own permission settings, as it should, so
+    the allowlist waits for the owner (STATE "For the owner" 2a).
+  - The GitHub MCP server's default tools cannot read Actions runs on `main` (2b).
 - **Next:** M0 T1 (build skeleton), as soon as the owner says to start M0.
 
 ## 2026-10-20 — research

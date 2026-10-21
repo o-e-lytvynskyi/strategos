@@ -16,14 +16,34 @@ Answer in chat or here; the next session applies the answers.
      [milestones/M0-foundation.md](milestones/M0-foundation.md) task by task. Every task is
      verified, committed and pushed, and this file and the worklog are updated after each one.
    - **How to start:** say «начинай M0».
-2. **Consent batch for client windows.** Nothing is queued yet. M0's batch (spikes S3 and S4)
+2. **One-time setup for unattended sessions** (recommended, about five minutes):
+   - **a. Activate the permission allowlist.**
+     - **What it does:** [tools/claude-settings.json](../tools/claude-settings.json) lets the
+       work loop's commands through without prompts: Gradle, git, `tools/roadmap.py`, unpacking
+       sources, the knowledge-base commit. It denies force pushes, `reset --hard`, `clean` and
+       similar commands that would discard work.
+     - **Why you:** the assistant may not grant itself permissions; auto mode refused it, rightly.
+     - **How:** review the file, then run in `minecraft/strategos`:
+       `git mv tools/claude-settings.json .claude/settings.json && git commit -m "Activate the Claude Code allowlist" && git push`.
+       The next session sees the commit and updates the docs that mention the proposal.
+     - **Without it:** auto mode still works, but its classifier may refuse a push or a clone
+       in a session nobody watches.
+   - **b. Let sessions read GitHub Actions.**
+     - **When:** from M0 T18, right after T3.
+     - **Options:** enable the `actions` toolset of the GitHub MCP server (recommended; it is off
+       by default and needs no new software); or install `gh` (`brew install gh`) and run
+       `gh auth login`.
+     - **Until then:** T18 is verified on a pull request, whose checks the current tools can
+       read, and "Now" says `CI: not readable` for `main`.
+   - **Blocks:** nothing yet; after T18, without (b) only you would notice a red CI on `main`.
+3. **Consent batch for client windows.** Nothing is queued yet. M0's batch (spikes S3 and S4)
    comes at T16, near the end of M0.
-3. **Open decisions,** none urgent:
+4. **Open decisions,** none urgent:
    - D-03 civilisation themes (M7);
    - D-20 multiplayer hosting (M7);
    - D-07 licence and D-21 public release and name (first public release);
    - D-06 map generation (M12).
-4. **Optional reviews:**
+5. **Optional reviews:**
    - the card refinements made after the approval
      ([design/roadmap-changes.md §8](design/roadmap-changes.md));
    - the promo draft ([promo/roadmap-announcement.md](promo/roadmap-announcement.md)).
@@ -35,15 +55,14 @@ adds a line here; the list restarts after the owner's next visit.
 
 ## Now
 
-- **Milestone:** M0 Foundation, spec [milestones/M0-foundation.md](milestones/M0-foundation.md),
-  0 of 26 tasks done.
+- **Milestone:** M0 Foundation, not started (waiting for «начинай M0»); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 0 of 25 tasks done.
+- **Tripwire (M0 only):** not started; M0 work days 0 of 10.
+- **In progress:** none.
 - **Last finished task:** none.
-- **Next task:** T1 · Build skeleton (QA-01, QA-03, QA-09, CORE-06), once the owner says
-  «начинай M0» (the skill's gate: a plain «продолжай» does not start a new milestone).
+- **Next task:** M0 T1 · Build skeleton (QA-01, QA-03, QA-09, CORE-06).
 - **WIP branch:** none.
+- **CI:** none yet (M0 T18 starts right after T3; reading runs on `main` needs item 2b); minutes used this month 0 of 2,000.
 - **Overview:** `python3 tools/roadmap.py summary`.
-- **`main`:** documentation only; there is no build yet. CI comes with T18, which can start
-  right after T3.
 
 ## Blocked
 
@@ -53,7 +72,7 @@ adds a line here; the list restarts after the owner's next visit.
 
 | Milestone | Status | Notes |
 |---|---|---|
-| M0 Foundation | specified | Spec written; tripwire: walking skeleton within two weeks of starting T1 |
+| M0 Foundation | specified | Spec written; tripwire: walking skeleton within two weeks of M0 work (10 days with M0 commits) |
 | M1–M6 (MVP) | approved | Specs are written by the assistant when each milestone starts |
 | M7–M15 | proposed | Approved by the owner closer to their time |
 
