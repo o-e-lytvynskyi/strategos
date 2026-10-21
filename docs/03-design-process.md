@@ -117,8 +117,8 @@ procedure is the `strategos-dev` skill; this section fixes the conventions it fo
 
 **Starting work.** The owner opens Claude Code in the repository (`minecraft/strategos`, so that
 the project settings load) and says «продолжай» (or uses `/loop` for a self-paced run).
-Unattended sessions run in auto mode. The project allowlist (`.claude/settings.json`, proposed
-in `tools/claude-settings.json` until the owner activates it) lets the work loop's commands
+Unattended sessions run in auto mode. The project allowlist (`.claude/settings.json`, activated
+by the owner on 2026-10-21) lets the work loop's commands
 through without prompts and denies force pushes and discarding the working tree; the assistant
 never edits it and proposes changes in "For the owner". The assistant works through ready tasks
 until a stop condition: nothing is ready, a task failed three times, a budget is red, a hard

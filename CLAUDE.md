@@ -44,10 +44,9 @@ owner visits rarely and expects the repository itself to say what happened.
   and `runServer` sessions. **A client window (scenario harness, spikes S3/S4/S9) opens only
   after asking the owner**: it can take keyboard focus.
 - **Permissions.** Unattended sessions run in auto mode. The project allowlist
-  (`.claude/settings.json`; until the owner activates it, the proposal
-  `tools/claude-settings.json`) lets the work loop's commands through and denies force pushes
-  and discarding the working tree. Never edit `.claude/settings.json`; propose changes in
-  "For the owner".
+  (`.claude/settings.json`, activated by the owner on 2026-10-21) lets the work loop's commands
+  through and denies force pushes and discarding the working tree. Never edit
+  `.claude/settings.json`; propose changes in "For the owner".
 - **Owner approvals:** roadmap features, golden images, performance baselines and thresholds, new
   runtime dependencies, anything that changes the product.
 - **Git:** commit and push to the private GitHub repository (`o-e-lytvynskyi/strategos`, over SSH)

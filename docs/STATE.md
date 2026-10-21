@@ -3,41 +3,21 @@
 Where the project stands right now. The session log is in [worklog.md](worklog.md); the work
 procedure is the `strategos-dev` skill (`.claude/skills/strategos-dev/SKILL.md`).
 
-**Last update:** 2026-10-21 · **Owner last seen:** 2026-10-21 · **Current:** M0 Foundation —
+**Last update:** 2026-10-22 · **Owner last seen:** 2026-10-21 · **Current:** M0 Foundation —
 started 2026-10-21 (owner's go-ahead)
 
 ## For the owner
 
 Answer in chat or here; the next session applies the answers.
 
-1. **One-time setup for unattended sessions** (recommended, about five minutes):
-   - **a. Activate the permission allowlist.**
-     - **What it does:** [tools/claude-settings.json](../tools/claude-settings.json) lets the
-       work loop's commands through without prompts: Gradle, git, `tools/roadmap.py`, unpacking
-       sources, the knowledge-base commit. It denies force pushes, `reset --hard`, `clean` and
-       similar commands that would discard work.
-     - **Why you:** the assistant may not grant itself permissions; auto mode refused it, rightly.
-     - **How:** review the file, then run in `minecraft/strategos`:
-       `git mv tools/claude-settings.json .claude/settings.json && git commit -m "Activate the Claude Code allowlist" && git push`.
-       The next session sees the commit and updates the docs that mention the proposal.
-     - **Without it:** auto mode still works, but its classifier may refuse a push or a clone
-       in a session nobody watches.
-   - **b. Let sessions read GitHub Actions.**
-     - **When:** from M0 T18, right after T3.
-     - **Options:** enable the `actions` toolset of the GitHub MCP server (recommended; it is off
-       by default and needs no new software); or install `gh` (`brew install gh`) and run
-       `gh auth login`.
-     - **Until then:** T18 is verified on a pull request, whose checks the current tools can
-       read, and "Now" says `CI: not readable` for `main`.
-   - **Blocks:** nothing yet; after T18, without (b) only you would notice a red CI on `main`.
-2. **Consent batch for client windows.** Nothing is queued yet. M0's batch (spikes S3 and S4)
+1. **Consent batch for client windows.** Nothing is queued yet. M0's batch (spikes S3 and S4)
    comes at T16, near the end of M0.
-3. **Open decisions,** none urgent:
+2. **Open decisions,** none urgent:
    - D-03 civilisation themes (M7);
    - D-20 multiplayer hosting (M7);
    - D-07 licence and D-21 public release and name (first public release);
    - D-06 map generation (M12).
-4. **Optional reviews:**
+3. **Optional reviews:**
    - the card refinements made after the approval
      ([design/roadmap-changes.md §8](design/roadmap-changes.md));
    - the promo draft ([promo/roadmap-announcement.md](promo/roadmap-announcement.md)).
@@ -95,7 +75,7 @@ The owner was here on 2026-10-21 and started M0. Since then:
 - **Last finished task:** M0 T7b (2026-10-21); T7a was commit 65dbc69.
 - **Next task:** M0 T7c · Body and match GameTests, the batch-end check (UNIT-01, CORE-01, CORE-06, QA-04, QA-01).
 - **WIP branch:** `wip/M0-T7c` (pushed, commit c064b5f): the ticket controller, the batch-end check, `MatchFixture` and `JUnitXmlReporter#recordFailure`, unverified; what is left is in the worklog's newest entry.
-- **CI:** green on [pull request #1](https://github.com/o-e-lytvynskyi/strategos/pull/1); runs on `main` are not readable yet (item 1b); minutes used this month about 7 of 2,000, as of 2026-10-21.
+- **CI:** green on `main` (M0 T7b, run 39670656358: 825 tests, the S6 canary on Linux against the macOS golden); minutes used this month about 61 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.
 
 ## Blocked

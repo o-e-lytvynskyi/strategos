@@ -4143,9 +4143,9 @@ Acceptance, not Done.
 
 | Needed | For | When |
 |---|---|---|
-| Go-ahead for M0 | starting T1 | now |
+| ~~Go-ahead for M0~~ — given on 2026-10-21 | starting T1 | done |
 | ~~The go-ahead for the GitHub step of [D-23](../roadmap/M0-foundation.md#d-23--ci-and-the-private-github-repository)~~ — done on 2026-10-21: the private repository exists | QA-08 (T18), S6 on Linux | done |
-| Read access to GitHub Actions for the assistant's sessions: the GitHub MCP server's `actions` toolset, or `gh` after `gh auth login` | reading CI on `main`, its logs and the monthly minutes after T18 (T18 itself is verified on a pull request) | before T18 |
+| ~~Read access to GitHub Actions for the assistant's sessions: the GitHub MCP server's `actions` toolset, or `gh` after `gh auth login`~~ — done on 2026-10-21: `gh` is logged in | reading CI on `main`, its logs and the monthly minutes after T18 (T18 itself is verified on a pull request) | before T18 |
 | Consent for M0's consent batch (§7.7: S3, S4, `world_switch`, the production-jar client check; a game window opens), asked once as [D-22](../roadmap/M0-foundation.md#d-22--client-run-l4-consent-policy) decided | §8.6, CORE-01.5, QA-06 | any time after T16 |
 | Approval of the JMH baseline candidate, the enabled perf gates and the ADR-0019 revision with S1 and S2 numbers | `verifyPerf` green; PERF-01 | after T12 and T14 |
 | The S1 numbers (and S4's, if consented), which keep [D-01](../roadmap/M0-foundation.md#d-01--population-cap-per-player)'s default of 150 or drop it to 100 | ECO-06 (M3) | after T13 |

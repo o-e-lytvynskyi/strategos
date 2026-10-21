@@ -9,6 +9,19 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
+## 2026-10-22 — the owner's setup
+
+- **Owner's setup items done** (STATE "For the owner" 1a and 1b of 2026-10-21):
+  - the allowlist is active: `.claude/settings.json`, identical to the proposal (commit 021f641);
+  - `gh` is installed and logged in as `o-e-lytvynskyi`, so sessions read CI on `main`.
+  - **Results:** CI on `main` is green; the newest run (M0 T7b, 39670656358) passed 825 tests,
+    the S6 canary on Linux against the macOS golden among them (QA-08.3). The cancelled runs (T4b,
+    T6b, the T5b review fixes) were cancelled by the next push, whose run passed. About 61 of the
+    month's 2,000 minutes are used.
+  - **Problems:** T7b's review did not run: its three reviewers stopped at the usage limit of
+    2026-10-21, so the workflow returned nothing. Run it again before finishing T7c.
+- **Next:** finish M0 T7c from `wip/M0-T7c`, after T7b's review.
+
 ## 2026-10-21 — M0 T1, T2, T3, T18, T4a, T4b, T5a, T5b, T6a, T6b, T7a, T7b, T7c (started)
 
 - **M0 T7c · Body and match GameTests, the batch-end check** — started, not finished: the session
