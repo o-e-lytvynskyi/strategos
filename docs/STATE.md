@@ -1,94 +1,79 @@
 # State
 
-Single source of truth for where the project stands. Updated at the end of every working
-session. Last update: 2026-10-21.
+Where the project stands right now. The session log is in [worklog.md](worklog.md); the work
+procedure is the `strategos-dev` skill (`.claude/skills/strategos-dev/SKILL.md`).
 
-## Where things stand
+**Last update:** 2026-10-21 · **Current:** M0 Foundation — specified, not started (waiting for
+the owner's go-ahead)
 
-Research, design and planning are complete, and the owner has approved the roadmap up to the
-first playable version. The repository is on GitHub (private): `o-e-lytvynskyi/strategos`. **Implementation has not started.** The owner postponed it, and M0 waits
-for the owner's go-ahead.
+## For the owner
 
-## Done
+Answer in chat or here; the next session applies the answers.
 
-- **Research (2026-10-20).** Two independent, fact-checked passes on six topics. The digest is
-  [research/README.md](research/README.md). The architecture resolves its gaps and
-  contradictions.
-- **Toolchain check.** The official NeoForge 1.21.1 MDK builds on the owner's Mac in 98 s, with
-  JDK 21 provisioned by Gradle.
-- **Owner decisions:**
-  - **2026-10-20:**
-    - Minecraft 1.21.1;
-    - a bounded match arena first, open world maybe later;
-    - solo against an AI first, then a 2–4 player server;
-    - RTS camera plus first person;
-    - a hybrid world.
-  - **2026-10-21:**
-    - every decision needed by M6 taken as recommended, including 150 population, AoE-style villagers, the observer avatar, solo fog of war in the MVP, perspective camera, and pause with game speeds;
-    - M0–M6 approved, with CMB-08 deferred.
+1. **Go-ahead for M0.**
+   - **Blocks:** all implementation.
+   - **What it starts:** the assistant works through
+     [milestones/M0-foundation.md](milestones/M0-foundation.md) task by task. Every task is
+     verified, committed and pushed, and this file and the worklog are updated after each one.
+   - **How to start:** say «начинай M0».
+2. **Consent batch for client windows.** Nothing is queued yet. M0's batch (spikes S3 and S4)
+   comes at T16, near the end of M0.
+3. **Open decisions,** none urgent:
+   - D-03 civilisation themes (M7);
+   - D-20 multiplayer hosting (M7);
+   - D-07 licence and D-21 public release and name (first public release);
+   - D-06 map generation (M12).
+4. **Optional reviews:**
+   - the card refinements made after the approval
+     ([design/roadmap-changes.md §8](design/roadmap-changes.md));
+   - the promo draft ([promo/roadmap-announcement.md](promo/roadmap-announcement.md)).
 
-  Details are in [ROADMAP.md](ROADMAP.md).
-- **Design.** Three competing architectures were judged on maintainability, performance and
-  delivery, and synthesised into [04-architecture.md](04-architecture.md). The result is
-  core-first: a deterministic, Minecraft-free core owns all match state, and units are kinematic
-  `LivingEntity` views.
-- **ADRs.** 23 decision records ([adr/](adr/README.md)). Five stay Proposed until their spikes
-  report:
-  - 0007 (S5);
-  - 0011 (S1, S10);
-  - 0015 (S7, S8);
-  - 0017 (S9);
-  - 0019 (S1, S2, S4).
-- **Step documents:**
-  - [01-feasibility.md](01-feasibility.md): realistic as a focused RTS; MVP in 35–49 weeks at
-    12–15 h/week; parity with 0 A.D. is not a goal;
-  - [02-tooling.md](02-tooling.md): platform, versions, libraries;
-  - [03-design-process.md](03-design-process.md): roles, artifacts, feature lifecycle;
-  - [05-testing.md](05-testing.md): test levels, commands, Definition of Done.
-- **Roadmap.** 16 milestones and 243 cards, 154 of them up to the MVP. A game designer, a tech
-  lead and QA reviewed it: 224 change requests, all accounted for in
-  [design/roadmap-changes.md](design/roadmap-changes.md). Card statuses:
-  - M0 `specified`;
-  - M1–M6 `approved`;
-  - M7–M15 `proposed`.
-- **M0 implementation spec.** [milestones/M0-foundation.md](milestones/M0-foundation.md):
-  - tasks with verification commands;
-  - the two-week walking-skeleton tripwire;
-  - spikes S1, S2, S5 and S6. S3 and S4 need consent, because they open a game window.
-- **Promo draft.** [promo/roadmap-announcement.md](promo/roadmap-announcement.md): a simplified
-  six-phase roadmap and an announcement. Review it before publishing.
-- **Knowledge base.** The pet-projects file `.claude/kb/minecraft-mod.md` covers the toolchain,
-  GameTest pitfalls, window focus theft, licences and three verified engine facts.
+## Now
 
-## Next (after the owner's go-ahead)
+- **Milestone:** M0 Foundation, spec [milestones/M0-foundation.md](milestones/M0-foundation.md),
+  0 of 26 tasks done.
+- **Last finished task:** none.
+- **Next task:** T1 · Build skeleton (QA-01, QA-03, QA-09, CORE-06).
+- **WIP branch:** none.
+- **Overview:** `python3 tools/roadmap.py summary`.
+- **`main`:** documentation only; there is no build yet. CI comes with T18, which can start
+  right after T3.
 
-1. **M0 "Foundation"**, following [milestones/M0-foundation.md](milestones/M0-foundation.md):
-   - wave A (build, harnesses, kernel, walking skeleton) within about two weeks — the tripwire;
-   - then wave B (hardening; spikes S1, S2, S5, S6).
-2. **D-23: the CI job** (QA-08) on the private GitHub repository, which exists since 2026-10-21.
-3. **The consent batch for client windows:** S3 (scenario harness) and S4 (client frame time) in
-   M0; S9 (camera) right after M0.
+## Blocked
 
-## Waiting for the owner
+- All implementation: waiting for item 1.
 
-- **Go-ahead:**
-  - the go-ahead for M0 implementation;
-  - consent batches for client windows (D-22).
-- **Decisions still open, needed later:**
-  - D-03 civilisation themes (M7);
-  - D-20 multiplayer hosting (M7);
-  - D-07 licence and D-21 public release and name (first public release);
-  - D-06 map generation (M12).
-- **Reviews:**
-  - approval of M7–M15 (proposed), as their milestones come closer;
-  - review of the promo draft before it is published anywhere;
-  - optionally, a review of the scope-neutral card refinements made after the approval
-    ([design/roadmap-changes.md §8](design/roadmap-changes.md)).
+## Milestones
+
+| Milestone | Status | Notes |
+|---|---|---|
+| M0 Foundation | specified | Spec written; tripwire: walking skeleton within two weeks of starting T1 |
+| M1–M6 (MVP) | approved | Specs are written by the assistant when each milestone starts |
+| M7–M15 | proposed | Approved by the owner closer to their time |
+
+## History
+
+- **2026-10-20:**
+  - research: two fact-checked passes;
+  - toolchain check;
+  - the owner's base decisions.
+- **2026-10-21:**
+  - design:
+    - architecture and 23 ADRs;
+    - feasibility, tooling, process and testing documents;
+    - a roadmap of 243 cards, reviewed;
+    - the M0 spec;
+    - the promo draft;
+  - the owner approved M0–M6 and the decisions needed by M6;
+  - the private GitHub repository;
+  - the autonomy kit.
+
+Details are in [worklog.md](worklog.md).
 
 ## Known follow-ups (not blocking)
 
-- [01-feasibility.md](01-feasibility.md) §3 predates the architecture in places. Its precedence
-  note says the architecture and the ADRs win. Re-estimate the document after M0.
+- [01-feasibility.md](01-feasibility.md) §3 predates the architecture in places; its precedence
+  note says the architecture and the ADRs win. Re-estimate it after M0.
 - ADRs owed by future cards:
   - ECO-03's leaf rule, which amends ADR-0021;
   - ECO-16's fauna archetype, which amends ADR-0011.

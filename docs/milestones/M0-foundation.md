@@ -106,8 +106,7 @@ Infrastructure that every later feature stands on, proven end to end by one unit
   acceptance confirms ADR-0022, the Definition-of-Done amendments accepted with the roadmap
   approval (QA-09); and CI in a private GitHub repository with one Linux job, as
   [D-23](../roadmap/M0-foundation.md#d-23--ci-and-the-private-github-repository) decided, set up
-  once M0 is implemented and the owner gives the go-ahead for the GitHub step (QA-08, never
-  blocking Done).
+  right after T3, once `verify` exists (the private repository exists and commits are allowed since 2026-10-21) (QA-08, never blocking Done).
 
 ### 1.2 The walking skeleton (ORD-01)
 
@@ -235,8 +234,7 @@ spikes, so it moves to the milestone that first needs it.
 QA-08 (continuous integration) and the Linux half of S6 are not moved out: they are M0 work.
 [D-23](../roadmap/M0-foundation.md#d-23--ci-and-the-private-github-repository), decided on
 2026-10-21, puts them in a private GitHub repository with one GitHub Actions Linux job. T18 builds
-them once M0 is implemented and the owner gives the go-ahead for the GitHub step, and they never
-block Done.
+them right after T3, once `verify` exists (the private repository exists and commits are allowed since 2026-10-21), and they never block Done.
 
 ### 1.6 Differences resolved
 
@@ -302,7 +300,7 @@ cards changed here.
 - QA-08 is size M and depends on
   [D-23](../roadmap/M0-foundation.md#d-23--ci-and-the-private-github-repository), decided as
   recommended on 2026-10-21: it is an M0 card (T18, new) in a private GitHub repository with one
-  Linux job, set up once M0 is implemented and with the owner's go-ahead for the GitHub step, and
+  Linux job, set up right after T3, once `verify` exists (the private repository exists and commits are allowed since 2026-10-21), and
   never blocking Done; S6's Linux half goes with it.
 - QA-17 also holds the fixture catalogue: §7.10 in `05-testing.md`, `checkFixtures` and the
   committed seed sets (T11b, new; T6b).
@@ -3649,7 +3647,7 @@ flowchart TB
     T12 --> T13["T13 spike runner and S1"] --> T14["T14 S2 and budget proposal"] --> T16["T16 client harness prepared, S3 and S4 plans"]
     T15["T15 S5 final, S6 report, ADR updates"]
     T17["T17 M0 close"]
-    T18["T18 CI, after the owner's go-ahead (D-23)"]
+    T18["T18 CI, from T3 on (D-23)"]
   end
   T10 --> T15
   T11b --> T15
@@ -3665,10 +3663,9 @@ Parallel-safe (disjoint files; Gradle runs still one at a time): {T2, T3} ∥ {T
 `build.gradle`; T10 waits for T9b because both edit `mod/build.gradle`; T11b waits for T9b (the
 root `build.gradle`) and T11 (its fixtures); T12 waits for T10 (both edit `gametest/Suites.java`)
 and T11b (the root `build.gradle`); T12, T13, T14 and T16 run in sequence because they all edit
-`mod/build.gradle`. T18 starts once M0 is implemented (T15 and T16 green) and the owner gives the
-go-ahead for the GitHub step of
-[D-23](../roadmap/M0-foundation.md#d-23--ci-and-the-private-github-repository), and never blocks
-T17 or Done. Sizes are lines of change, tests included *(estimates)*.
+`mod/build.gradle`. T18 starts right after T3 with the jobs that exist then and grows as later tasks land (the slow
+batch and soak after T7c and T6b, perf after T12, the S6 Linux check after T15); it never blocks
+T17 or Done ([D-23](../roadmap/M0-foundation.md#d-23--ci-and-the-private-github-repository)). Sizes are lines of change, tests included *(estimates)*.
 
 ### 9.2 Tasks
 
@@ -3971,11 +3968,14 @@ green, the owner can run the L7 demo (§1.3).
   may stop at `jmhCompare` if the owner has not approved the baseline yet: record that); §10
   walked item by item.
 
-#### T18 · Continuous integration, after the owner's go-ahead — QA-08, CORE-05 · depends on T15 and T16 (M0 implemented), the owner's go-ahead for the GitHub step of [D-23](../roadmap/M0-foundation.md#d-23--ci-and-the-private-github-repository), the private repository and the first commit · ~300 lines
+#### T18 · Continuous integration — QA-08, CORE-05 · depends on T3 (`verify` exists); extended after T6b, T7c, T12 and T15 · ~300 lines
 
-D-23 was decided as recommended on 2026-10-21: a private GitHub repository with one GitHub Actions
-Linux job, created only once M0 is implemented and the owner gives the go-ahead for the GitHub
-step; publishing stays D-21. T18 never blocks T17 or Done.
+D-23 was decided as recommended on 2026-10-21, and the private repository `o-e-lytvynskyi/strategos`
+exists, with commits and pushes allowed without asking (2026-10-21). Start T18 right after T3 with
+`verify`, and add the slow batch, the soak, the perf step and the S6 Linux check as their tasks
+land. Mind GitHub Free's 2,000 Linux minutes a month for private repositories: one job,
+`concurrency` with `cancel-in-progress`, and `paths-ignore` for documentation-only pushes; record
+the monthly use in STATE.md. Publishing stays D-21. T18 never blocks T17 or Done.
 - **Files:** `core/build.gradle` `jmhSpeedRatio` (§4.9) and the smoke guards' JUnit output
   (§4.10 F); `.github/workflows/verify.yml`: one `ubuntu-24.04` job on pushes and pull requests,
   `timeout-minutes: 20`, `actions/checkout@v7.0.1`, `actions/setup-java@v6.1.0` (Temurin 21),
@@ -4003,7 +4003,7 @@ step; publishing stays D-21. T18 never blocks T17 or Done.
 - [ ] T1 · [ ] T2 · [ ] T3 · [ ] T4a · [ ] T4b · [ ] T5a · [ ] T5b · [ ] T6a · [ ] T6b · [ ] T7a · [ ] T7b · [ ] T7c · [ ] T8 · [ ] T9
 - [ ] Tripwire checkpoint (dates in STATE.md)
 - [ ] T9b · [ ] T10 · [ ] T11 · [ ] T11b · [ ] T12 · [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17
-- [ ] T18 (after the owner's go-ahead for the GitHub step, D-23; never blocks Done)
+- [ ] T18 (CI: start right after T3, extend as tasks land; never blocks Done)
 
 ---
 
@@ -4066,12 +4066,12 @@ Acceptance, not Done.
 | Needed | For | When |
 |---|---|---|
 | Go-ahead for M0 | starting T1 | now |
-| The go-ahead for the GitHub step of [D-23](../roadmap/M0-foundation.md#d-23--ci-and-the-private-github-repository): creating the private repository and its one Linux job | QA-08 (T18), S6 on Linux | once M0 is implemented; not blocking Done |
+| ~~The go-ahead for the GitHub step of [D-23](../roadmap/M0-foundation.md#d-23--ci-and-the-private-github-repository)~~ — done on 2026-10-21: the private repository exists | QA-08 (T18), S6 on Linux | done |
 | Consent for M0's consent batch (§7.7: S3, S4, `world_switch`, the production-jar client check; a game window opens), asked once as [D-22](../roadmap/M0-foundation.md#d-22--client-run-l4-consent-policy) decided | §8.6, CORE-01.5, QA-06 | any time after T16 |
 | Approval of the JMH baseline candidate, the enabled perf gates and the ADR-0019 revision with S1 and S2 numbers | `verifyPerf` green; PERF-01 | after T12 and T14 |
 | The S1 numbers (and S4's, if consented), which keep [D-01](../roadmap/M0-foundation.md#d-01--population-cap-per-player)'s default of 150 or drop it to 100 | ECO-06 (M3) | after T13 |
 | The L7 session of §1.3, with the questionnaire | M0 Acceptance 1 (§10 row 14) | after the tripwire checkpoint |
-| Whether and when to commit | the first commit of the repository (T18 needs it) | any time; the assistant never commits on its own |
+| ~~Whether and when to commit~~ — done on 2026-10-21: the assistant commits and pushes after each green task | every task | done |
 
 ---
 

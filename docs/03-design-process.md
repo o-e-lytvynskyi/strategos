@@ -19,7 +19,10 @@ to something playable and tested.
 
 | Artifact | Purpose | Updated |
 |---|---|---|
-| [STATE.md](STATE.md) | **Single source of truth for "where are we"**: done, in progress, next, blocked, decisions waiting for the owner | At the end of every working session |
+| [STATE.md](STATE.md) | **Where things stand now**: the owner's queue ("For the owner"), the current milestone and next task ("Now"), blockers | After every task |
+| [worklog.md](worklog.md) | Append-only session log, newest first: what was done, results with numbers, problems, next | After every task |
+| `tools/roadmap.py` | `check`: ROADMAP.md and the card files agree and statuses are valid; `summary`: progress per milestone and open decisions | Run after every status change |
+| `.claude/skills/strategos-dev/` | The assistant's work procedure for autonomous sessions | When the procedure changes |
 | [ROADMAP.md](ROADMAP.md) | Milestones and feature cards with a status the owner edits | When features are proposed, approved, changed or finished |
 | [01-feasibility.md](01-feasibility.md) | Complexity, realism, risks | When estimates change materially |
 | [02-tooling.md](02-tooling.md) | Platform, versions, libraries, dependency policy | On every version bump or new dependency |
@@ -106,6 +109,51 @@ A change is done when:
 - the docs it affects are updated (STATE.md, ROADMAP.md statuses, the architecture or a new
   ADR when a decision changed);
 - any new pitfall is written to the knowledge base in the same session.
+
+## Autonomous development
+
+The assistant develops the project in sessions the owner starts and rarely watches. The
+procedure is the `strategos-dev` skill; this section fixes the conventions it follows.
+
+**Starting work.** The owner opens Claude Code in the repository and says «продолжай» (or uses
+`/loop` for a self-paced run). The assistant works through ready tasks until a stop condition:
+nothing is ready, a task failed three times, a budget is red, a hard rule would be broken, or
+usage is running low. Sessions can end at any moment, so every finished step is committed and
+pushed, and an unfinished task lives on a `wip/Mx-Tn` branch named in STATE.md.
+
+**Statuses and evidence.** ROADMAP.md is the source of truth; card files mirror it, and
+`tools/roadmap.py check` must pass after every change.
+
+| Status | Set by | When |
+|---|---|---|
+| `approved` | owner | The owner approved the card |
+| `specified` | assistant | Its milestone spec is written |
+| `in_progress` | assistant | The first task implementing it starts |
+| `done` | assistant | Every acceptance criterion passes at its level; the card gets `- **Done:** <date> — <evidence>` (test names, reports, spec task) |
+| `accepted` | assistant, on the owner's word | The owner played the milestone demo |
+| `changed` | assistant or owner | The scope must change; it waits for the owner |
+
+Milestone specs keep a "Progress" checklist (`[x] T3 (date)`); commits are named
+`Mx Tn: <summary>`, so `git log --grep "Mx Tn"` finds every task's work.
+
+**Green `main`.** Nothing reaches `main` without `verify`. Once CI exists (M0 T18), every push
+is checked on GitHub Actions as well, and a red build is the first thing the next session fixes.
+
+**The owner's queue.** Everything that needs the owner — decisions, consent batches for client
+windows, demos to play, baselines and goldens to approve, proposals that add scope — is a
+numbered item in STATE.md "For the owner", with options and a recommendation. Work that does
+not depend on it continues; the assistant never waits idle on one item while other work is ready.
+
+**Consent batches.** Runs that open a game window are queued, not run. When the owner says
+«запускай консент-батч», the assistant runs the whole batch in one go while the owner is away from
+the keyboard, and records the results.
+
+**When the owner visits** (five minutes):
+1. Read STATE.md: "For the owner" and "Now".
+2. Skim worklog.md since the last visit; optionally run `python3 tools/roadmap.py summary` or
+   look at the commits and CI on GitHub.
+3. Answer the queue: decisions, consent, approvals; play the demo when a milestone is Done.
+4. Say «продолжай».
 
 ## Versions and git
 

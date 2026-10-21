@@ -6,9 +6,15 @@ and automated tests of every intermediate result.
 
 ## Start here
 
-1. Read [docs/STATE.md](docs/STATE.md): where the project stands, what is next, what waits for
-   the owner.
-2. Read only the docs the task needs:
+Every work session follows the **`strategos-dev` skill**
+(`.claude/skills/strategos-dev/SKILL.md`): orient, pick the next ready task, build it test-first,
+verify, record progress, commit and push, report. The owner visits rarely and expects the
+repository itself to say what happened.
+
+1. Read [docs/STATE.md](docs/STATE.md) — the owner's queue, the current task, blockers — and the
+   newest entry of [docs/worklog.md](docs/worklog.md).
+2. Run `python3 tools/roadmap.py check` and `summary`.
+3. Read only the docs the task needs:
 
 | Question | Where |
 |---|---|
@@ -16,7 +22,7 @@ and automated tests of every intermediate result.
 | How the mod is built (authority, tick, units, content, pathing, network, client) | [docs/04-architecture.md](docs/04-architecture.md), decisions in [docs/adr/](docs/adr/README.md) |
 | Versions, libraries, dependency policy | [docs/02-tooling.md](docs/02-tooling.md) |
 | Test levels, commands, Definition of Done | [docs/05-testing.md](docs/05-testing.md) |
-| Roles, feature lifecycle, milestone cycle | [docs/03-design-process.md](docs/03-design-process.md) |
+| Roles, feature lifecycle, statuses and evidence, autonomous sessions | [docs/03-design-process.md](docs/03-design-process.md) |
 | What is realistic, risks, MVP | [docs/01-feasibility.md](docs/01-feasibility.md) |
 | Evidence: engine facts, prior art, mechanics | [docs/research/README.md](docs/research/README.md) |
 | The current milestone's implementation spec | `docs/milestones/` |
