@@ -12,12 +12,14 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * The 96 x 96 arena at (1024, floor, 1024), force-loaded so that its entities tick with no player near (spec 8.4, with
- * the ticking tickets of §1.6 D row 60). Positions are arena-local, like a match's.
+ * A square arena force-loaded through the spikes' ticket controller, as ADR-0010 loads arenas: S1's 96 x 96 at (1024,
+ * floor, 1024) and S2's 256² to 512² at 8192, with {@code ticking=false} tickets, which already make the chunks
+ * entity-ticking (every region ticket enters the ticking tracker, DistanceManager.java:197–202); {@code ticking=true}
+ * adds random ticks and natural spawning without players. Positions are local to the match space at the centre.
  */
 final class SpikeArena {
-    static final int ORIGIN = 1024;
-    static final int SIZE = 96;
+    static final int S1_ORIGIN = 1024;
+    static final int S1_SIZE = 96;
     /** The waypoints of "moving", 24 blocks apart. */
     static final double[] A = {36.5, 48.5};
 
@@ -30,45 +32,86 @@ final class SpikeArena {
     private static final UUID OWNER = UUID.nameUUIDFromBytes("strategos:spike_arena".getBytes(StandardCharsets.UTF_8));
 
     final ServerLevel level;
+    final int origin;
+    final int size;
     final int floorY;
+    /** A match space of up to 96 x 96 at the arena's centre. */
     final MatchSpace space;
-    private final List<long[]> chunks = new ArrayList<>();
 
-    private SpikeArena(ServerLevel level, int floorY, MatchSpace space) {
+    private final List<long[]> chunks = new ArrayList<>();
+    private boolean ticking;
+
+    private SpikeArena(ServerLevel level, int origin, int size, int floorY, MatchSpace space) {
         this.level = level;
+        this.origin = origin;
+        this.size = size;
         this.floorY = floorY;
         this.space = space;
     }
 
-    static SpikeArena open(ServerLevel level) {
+    /** S1's arena. */
+    static SpikeArena s1(ServerLevel level) {
+        return open(level, S1_ORIGIN, S1_SIZE, false);
+    }
+
+    /** Forces every chunk of the square; the chunks load synchronously (ForcedChunkManager.java:93–96). */
+    static SpikeArena open(ServerLevel level, int origin, int size, boolean ticking) {
         List<long[]> forced = new ArrayList<>();
-        for (int cx = ORIGIN >> 4; cx <= (ORIGIN + SIZE - 1) >> 4; cx++) {
-            for (int cz = ORIGIN >> 4; cz <= (ORIGIN + SIZE - 1) >> 4; cz++) {
-                SpikeRegistry.TICKETS.forceChunk(level, OWNER, cx, cz, true, true);
+        for (int cx = origin >> 4; cx <= (origin + size - 1) >> 4; cx++) {
+            for (int cz = origin >> 4; cz <= (origin + size - 1) >> 4; cz++) {
+                SpikeRegistry.TICKETS.forceChunk(level, OWNER, cx, cz, true, ticking);
                 forced.add(new long[] {cx, cz});
             }
         }
-        int centre = ORIGIN + SIZE / 2;
+        int centre = origin + size / 2;
         int floor = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, centre, centre);
+        int matchSize = Math.min(size, S1_SIZE);
         SpikeArena arena = new SpikeArena(
-                level, floor, StrategosCommands.spaceAround(level, new BlockPos(centre, floor, centre), SIZE, SIZE));
+                level,
+                origin,
+                size,
+                floor,
+                StrategosCommands.spaceAround(level, new BlockPos(centre, floor, centre), matchSize, matchSize));
         arena.chunks.addAll(forced);
+        arena.ticking = ticking;
         return arena;
+    }
+
+    int chunkCount() {
+        return chunks.size();
+    }
+
+    boolean ticking() {
+        return ticking;
+    }
+
+    /** Swaps every ticket for one of the other kind, the new one first, so no chunk unloads in between. */
+    void retick(boolean ticking) {
+        if (ticking == this.ticking) {
+            return;
+        }
+        for (long[] c : chunks) {
+            SpikeRegistry.TICKETS.forceChunk(level, OWNER, (int) c[0], (int) c[1], true, ticking);
+            SpikeRegistry.TICKETS.forceChunk(level, OWNER, (int) c[0], (int) c[1], false, this.ticking);
+        }
+        this.ticking = ticking;
     }
 
     void close() {
         for (long[] c : chunks) {
-            SpikeRegistry.TICKETS.forceChunk(level, OWNER, (int) c[0], (int) c[1], false, true);
+            SpikeRegistry.TICKETS.forceChunk(level, OWNER, (int) c[0], (int) c[1], false, ticking);
         }
         chunks.clear();
     }
 
     Vec3 world(double localX, double localZ) {
-        return new Vec3(ORIGIN + localX, floorY, ORIGIN + localZ);
+        BlockPos o = space.origin();
+        return new Vec3(o.getX() + localX, floorY, o.getZ() + localZ);
     }
 
     BlockPos block(int localX, int localZ) {
-        return new BlockPos(ORIGIN + localX, floorY, ORIGIN + localZ);
+        BlockPos o = space.origin();
+        return new BlockPos(o.getX() + localX, floorY, o.getZ() + localZ);
     }
 
     /** {@code n} positions one block apart in a square around a local point. */

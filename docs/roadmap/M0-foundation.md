@@ -721,7 +721,8 @@ decision (D-21).
   3. Exit: ≤ 4 ms MSPT idle at 576 chunks and autosave ≤ 100 ms; the report confirms
      `ticking=false` and the sizes for D-17 (R).
 - **Tests:** L5, L6, R · **Depends on:** QA-05, QA-07 · **Size:** M · **Tier:** T0
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-10-22 — M0 T13, T14: [the S2 report](../spikes/S2-force-loaded-arena.md)'s table per size and ticket mode (1); the keep-alive on the self-terminating spike server, 11,999 of 12,000 ticks with nobody online (2); idle at 576 chunks 0.06 ms against 4, autosave median 5.3 ms against 100, `ticking=false` and the sizes confirmed for D-17 (3)
 
 #### PERF-04 · Spike S4: client frame time with many units (consent)
 - **Value:** The screen stays smooth with whole armies in view.

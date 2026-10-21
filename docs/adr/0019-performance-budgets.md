@@ -4,7 +4,7 @@ Date: 2026-10-21
 
 ## Status
 
-Proposed - pending spikes S1, S2 and S4
+Proposed - S1 and S2 reported (2026-10-22); pending S4 and the owner's approval of the revision below
 
 **Revised 2026-10-21**, still Proposed, to follow the roadmap's
 [engineering baseline](../roadmap/M0-foundation.md#plan-wide-engineering-baseline) (the review
@@ -77,10 +77,11 @@ The budgets apply to the M4 Pro, at the design scale of 600 units unless noted:
 - **S1:** the per-body cost behind B, and with it the population cap D-01. A best body above 15 µs
   at 500 moving units drops the default cap to 100 per player. *Reported 2026-10-22: the
   kinematic body costs 0.12 µs at 500 moving (0.10 beyond the core), so D-01 stays at 150; the
-  whole server tick with 1,000 kinematic bodies fighting is 0.19 ms p50 and 0.35 ms p99 without
-  players ([S1](../spikes/S1-server-cost-per-body.md)). T14 folds this into the revision.*
+  whole server tick with 1,000 kinematic bodies fighting is 0.20 ms p50 and 0.30 ms p99 without
+  players ([S1](../spikes/S1-server-cost-per-body.md)); the revision proposal below carries it.*
 - **S2:** the vanilla baseline of a force-loaded arena (≤ 4 ms idle at 576 chunks), which sets the
-  arena size D-17.
+  arena size D-17. *Reported 2026-10-22: 0.06 ms idle at 576 chunks, autosave median 5.3 ms;
+  no size is limited by the server's arena cost ([S2](../spikes/S2-force-loaded-arena.md)).*
 - **S4:** budget F, run with the owner's consent. If 200 armoured humanoids cost more than 6 ms with
   Sodium, distant units lose their layers. M0's S4 (PERF-04) measures bare humanoids, because
   equipment layers arrive with ART-01; the armoured and held-item pass runs with ART-01 in M3
@@ -89,6 +90,32 @@ The budgets apply to the M4 Pro, at the design scale of 600 units unless noted:
 PERF-01 confirms this table with the M0 measurements and moves this ADR to Accepted once the owner
 approves the numbers. If S4 has not run by then, budget F stays provisional, and the status says it
 is pending consent.
+
+## Revision proposal from M0 (2026-10-22): proposed, awaiting owner approval
+
+PERF-01.3. The M0 measurements, on the M4 Pro, against the provisional table. Until the owner
+approves this proposal, the table above stays in force as it is.
+
+| Budget | Provisional | Measured in M0 | Proposed |
+|---|---|---|---|
+| A, core | p50 ≤ 5 ms, p99 ≤ 10 ms | 600 walking units in a real server, step plus adapter: p50 about 0.05 ms, p99 about 0.3 ms (`perftests.walk_600_budget_a`); one core step with 600 walkers 0.014 ms (JMH) | unchanged: M0's core has no pathfinding, combat, economy or AI yet, and the headroom is theirs |
+| B, Strategos-attributable | p95 ≤ 17 ms | 1,000 kinematic bodies fighting, the whole server tick: p50 0.20 ms, p99 0.30 ms; a body costs about 0.1 µs beyond the core ([S1](../spikes/S1-server-cost-per-body.md)); no players, so replication is not in it | unchanged; first gated by PERF-05 in M1 |
+| C, whole tick | p95 ≤ 23 ms | a 384² arena, `ticking=false`: idle p50 0.06 ms; with 600 bodies p95 0.32 ms ([S2](../spikes/S2-force-loaded-arena.md)); no between-tick work without players | unchanged |
+| D, pathfinding | ≤ 2 ms p99; 100-unit results within 5 ticks p95 | not measurable before M1's pathfinding | unchanged |
+| E, network per client | ≤ 100 KB/s with 600 visible moving units | not measurable before M1's payloads | unchanged |
+| F, client frame | p50 ≤ 16.7 ms, p99 ≤ 25 ms; ours ≤ 3 ms; units ≤ 6 ms | S4 waits for the owner's consent to M0's client batch | unchanged, provisional |
+| G, memory and saves | core state ≤ 64 MB per 384² match; nav ≤ 32 MB at 512²; serialisation ≤ 100 ms | saving a 500-unit blob: median about 1 ms (`perftests.snapshot_500_budget_g`); encoding it to JSON 0.22 ms (JMH); autosave of a 384² arena with a 600-unit match: median 6.6 ms; the heap grows by about 3 MB for 600 bodies | unchanged |
+
+- **D-01** stays at 150 per player (S1: the best body is 0.12 µs at 500 moving, against 15).
+- **Gates.** The proposal keeps the
+  [budget matrix](../roadmap/M0-foundation.md#budget-matrix-per-milestone-delivered-and-kept-by-perf-01)
+  as it is: every gate keeps its scale, window and budgets (M0: A and G, at the spike scales; M1:
+  PERF-05, 600 moving with a 1,200 stress pass, 10 minutes, A–E and G; and so on to M14). In M0
+  both perf gates are enabled: five runs of one tree gave a p95 coefficient of variation of 4.9 %
+  for A and 3.2 % for G.
+- **Why not tighten now.** The measured values are 20 to 100 times inside the budgets, but every
+  system that will spend the budgets arrives after M0. A tighter budget now would only fail later
+  for reasons M0 cannot see; the per-unit check below 600 units already catches regressions.
 
 ## Consequences
 

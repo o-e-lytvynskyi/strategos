@@ -19,7 +19,7 @@ governs.
 | [0008](0008-authority-and-state-model.md) | The core owns all match state; entities are views | Accepted | 2026-10-21 | §5 |
 | [0009](0009-tick-pipeline-determinism-and-fault-containment.md) | Tick pipeline, determinism boundary and fault containment | Accepted; amended by 0023 | 2026-10-21 | §4, §5 |
 | [0010](0010-match-model-and-lifecycle.md) | A match is a region of a level; arenas live in an arena world | Accepted; amended by 0023 | 2026-10-21 | §3 |
-| [0011](0011-unit-entity-and-body-seam.md) | Units are kinematic `LivingEntity` views behind a body seam | Proposed - pending spikes S1 and S10 | 2026-10-21 | §6 |
+| [0011](0011-unit-entity-and-body-seam.md) | Units are kinematic `LivingEntity` views behind a body seam | Proposed - S1 met; pending spike S10 | 2026-10-21 | §6 |
 | [0012](0012-template-and-content-pipeline.md) | Templates load through a reload listener with core-side inheritance | Accepted | 2026-10-21 | §8 |
 | [0013](0013-modifier-pipeline.md) | The core modifier pipeline is the single source of every stat | Accepted | 2026-10-21 | §8 |
 | [0014](0014-orders-commands-and-unitai.md) | Typed commands, server-side validation, 0 A.D. order queues and a hierarchical UnitAI | Accepted; amended by 0023 | 2026-10-21 | §7 |
@@ -27,7 +27,7 @@ governs.
 | [0016](0016-networking-and-fog-of-war.md) | One fog-aware sender, vanilla tracking behind a gate, targeted re-tracking | Accepted; amended by 0023 | 2026-10-21 | §10, §12 |
 | [0017](0017-camera-and-input.md) | A spectator body at the camera eye, a cursor-owning screen, perspective projection | Proposed - pending spike S9 | 2026-10-21 | §13 |
 | [0018](0018-persistence-and-versioning.md) | One versioned `SavedData` blob per match, codecs in core, quarantine on failure | Accepted | 2026-10-21 | §5 |
-| [0019](0019-performance-budgets.md) | Performance budgets A–G at 600 units, measured from M0 | Proposed - pending spikes S1, S2 and S4 | 2026-10-21 | §17 |
+| [0019](0019-performance-budgets.md) | Performance budgets A–G at 600 units, measured from M0 | Proposed - S1 and S2 reported; pending S4 and the owner's approval of the revision | 2026-10-21 | §17 |
 | [0020](0020-engine-surface-inventory.md) | One reviewed inventory of every hook into Minecraft | Accepted | 2026-10-21 | §2 |
 | [0021](0021-economy-and-construction-model.md) | Hybrid world economy: real-block nodes, finite deposits and fields, abstract building HP | Accepted | 2026-10-21 | §11 |
 | [0022](0022-definition-of-done-amendments.md) | Definition-of-Done amendments for networking and tooling changes, and the inventory check in L2 | Accepted | 2026-10-21 | §16 |

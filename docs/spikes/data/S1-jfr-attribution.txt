@@ -1,15 +1,15 @@
 S1, vanilla server, the whole matrix with -Pspike.jfr (JFR "profile" settings), 2026-10-22.
-Server-thread execution samples: 3,848 of 3,896. A sample counts towards every frame on its stack.
+Server-thread execution samples: 3744 of 3805. A sample counts towards every frame on its stack.
 
-ChunkMap#tick                                   40    1.0 %
-ServerChunkCache#tickChunks                     35    0.9 %
-NaturalSpawner.createState                       3    0.1 %
-entity loop (ServerLevel#tickNonPassenger)    3568   92.7 %
-  LivingEntity#travel (movement, collisions)  2929   76.1 %
-  Mob#serverAiStep (P: AI, navigation)         301    7.8 %
-MatchRuntime#tick (core step and adapter)       25    0.6 %
+ChunkMap#tick                                      47    1.3 %
+ServerChunkCache#tickChunks                        35    0.9 %
+NaturalSpawner.createState                          6    0.2 %
+entity loop (ServerLevel#tickNonPassenger)       3473   92.8 %
+  LivingEntity#travel (movement, collisions)     2819   75.3 %
+  Mob#serverAiStep (P: AI, navigation)            309    8.3 %
+MatchRuntime#tick (core step and adapter)          10    0.3 %
+MinecraftServer#saveEverything                      0    0.0 %
 
-Hottest methods (jfr view hot-methods): AbortableIterationConsumer lambda 16.8 %,
-BlockStateBase#hasLargeCollisionShape 16.1 %, ImmutableCollections$SetN#probe 6.7 %,
-ArrayList$Itr#next 6.5 %, Guava Iterators$1#hasNext 6.3 %, Long2ObjectLinkedOpenHashMap#get 4.5 %,
-Level#getChunk 3.7 %, BlockStateBase#getCollisionShape 2.8 %.
+Hottest methods (jfr view hot-methods): BlockStateBase#hasLargeCollisionShape 17.2 %, a Predicate lambda 16.7 %,
+Long2ObjectLinkedOpenHashMap#get 8.2 %, Guava Iterators$1#hasNext 6.4 %, ImmutableCollections$SetN#probe 6.1 %,
+ArrayList$Itr#next 5.2 %, BlockStateBase#getCollisionShape 2.8 %.

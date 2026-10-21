@@ -33,7 +33,10 @@ public final class GameTestTickets {
         HELD.computeIfAbsent(level.dimension(), k -> new TreeSet<>()).add(chunk.toLong());
     }
 
-    /** As {@link #force}, and the chunk also ticks entities without a player near, as a player's chunk does. */
+    /**
+     * As {@link #force}, plus random ticks and natural spawning without a player near (NeoForge's {@code forceTicks});
+     * entities tick under either ticket (DistanceManager.java:197–202).
+     */
     public static void forceTicking(ServerLevel level, ChunkPos chunk) {
         CONTROLLER.forceChunk(level, OWNER, chunk.x, chunk.z, true, true);
         HELD.computeIfAbsent(level.dimension(), k -> new TreeSet<>()).add(chunk.toLong());

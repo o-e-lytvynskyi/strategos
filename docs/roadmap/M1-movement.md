@@ -114,6 +114,11 @@ PERF-12.
 
 **Decided (2026-10-21):** as recommended, by the owner.
 
+**S2 measured (2026-10-22):** with nobody online and `ticking=false` tickets, 256², 384² and 512²
+idle at 0.07, 0.06 and 0.10 ms MSPT, and stay under 0.35 ms p99 with 600 walking bodies; autosave
+medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
+([S2](../spikes/S2-force-loaded-arena.md)).
+
 ---
 
 ## Cards

@@ -18,14 +18,19 @@ Answer in chat or here; the next session applies the answers.
    slower, and CI gets its perf step. For scale, in a real server a match tick with 600 walking
    units takes about 0.05 ms (p50) and 0.3 ms (p99) against budget A's 5 and 10 ms, and saving a
    500-unit match about 1 ms against budget G's 100 ms.
-2. **Consent batch for client windows.** Nothing is queued yet. M0's batch (spikes S3 and S4)
+2. **Performance budgets to approve (M0 T14, PERF-01.3).** ADR-0019's
+   [revision proposal](adr/0019-performance-budgets.md#revision-proposal-from-m0-2026-10-22-proposed-awaiting-owner-approval)
+   keeps every budget and the whole budget matrix as they are: what M0 measured is 20 to 100 times
+   inside them, but the systems that will spend them (pathfinding, combat, economy, AI) come later.
+   Answer «одобряю бюджеты» and the ADR becomes Accepted (budget F stays provisional until S4).
+3. **Consent batch for client windows.** Nothing is queued yet. M0's batch (spikes S3 and S4)
    comes at T16, near the end of M0.
-3. **Open decisions,** none urgent:
+4. **Open decisions,** none urgent:
    - D-03 civilisation themes (M7);
    - D-20 multiplayer hosting (M7);
    - D-07 licence and D-21 public release and name (first public release);
    - D-06 map generation (M12).
-4. **Optional reviews:**
+5. **Optional reviews:**
    - the card refinements made after the approval
      ([design/roadmap-changes.md §8](design/roadmap-changes.md));
    - the promo draft ([promo/roadmap-announcement.md](promo/roadmap-announcement.md)).
@@ -70,14 +75,19 @@ Answer in chat or here; the next session applies the answers.
   0.1 µs a tick, about 40 times less than a vanilla mob (4.9 µs; 2.2 with Lithium). The default
   population cap stays at 150 per player, as D-01 planned ([report](spikes/S1-server-cost-per-body.md)).
   Cards PERF-02 and QA-05 are done.
+- 2026-10-22 · **M0 T14 Spike S2, force-loaded arena cost, and the budget proposal:** a 384²
+  arena kept loaded with nobody online costs the server 0.06 ms a tick, and saving it about 5 ms,
+  far inside the limits of 4 and 100 ms; units keep moving there for hours. All three arena sizes
+  are affordable ([report](spikes/S2-force-loaded-arena.md)). The budget proposal waits for you
+  (item 2 above). Card PERF-03 is done.
 
 ## Now
 
-- **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 21 of 25 tasks done.
+- **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 22 of 25 tasks done.
 - **Tripwire (M0 only):** T1 started 2026-10-21; T9 green 2026-10-22; M0 work days 2 of 10.
 - **In progress:** none.
-- **Last finished task:** M0 T13 (2026-10-22); T12 was commit 7e410e4.
-- **Next task:** M0 T14 · S2 and the budget proposal (PERF-03, PERF-01).
+- **Last finished task:** M0 T14 (2026-10-22); T13 was commit 095ffc5.
+- **Next task:** M0 T16 · Client harness prepared; S3 and S4 plans (QA-06, PERF-04, CORE-01).
 - **WIP branch:** none.
 - **CI:** green on `main` (M0 T7b review fix, run 39685642374, 6 min 28 s); minutes used this month about 83 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.

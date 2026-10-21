@@ -9,7 +9,30 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M0 T9, the tripwire checkpoint, T9b, T11, T10, T11b, T12, T13
+## 2026-10-22 — M0 T9, the tripwire checkpoint, T9b, T11, T10, T11b, T12, T13, T14
+
+- **M0 T14 · S2 and the budget proposal** — PERF-03 done; PERF-01 in progress (the owner's approval
+  of the revision left).
+  - **Results:**
+    - `S2ArenaCost` on the spike server; the driver now runs any `Spike` (`S1Run`, `S2ArenaCost`);
+    - S2 in 9 s: idle MSPT p50 0.065, 0.056 and 0.103 ms at 256, 576 and 1,024 chunks; with 600
+      walking bodies under 0.35 ms p99 at every size; autosave medians 5–8 ms (the first save of a
+      fresh 256² arena 104 ms); heap about 0.06 MB per flat chunk;
+    - keep-alive: the probe ticked 11,999 of 12,000 times with nobody online on `ticking=false`
+      tickets, which ADR-0010 is right about;
+    - `ticking=true`, for the record: no extra cost under the arena's rules, 0.13 ms more under
+      the defaults;
+    - [the S2 report](spikes/S2-force-loaded-arena.md); ADR-0019's revision proposal (every budget
+      unchanged, the matrix as it is), awaiting the owner; ADR-0010 and D-17 carry the numbers;
+    - `verify verifySlow` green in 34 s.
+  - **Problems:**
+    - T13 had taken over a wrong belief that `ticking=false` tickets freeze entities without a
+      player; S2 disproved it (DistanceManager.java:197–202), so S1 was rerun on the spec's
+      tickets (same verdicts), and the knowledge base entry, D row 60 and a test helper's comment
+      were corrected;
+    - zsh passes an unquoted `$args` as one word: the first Lithium rerun got
+      `spike="s1 -Pcompat.server"`.
+  - Spec §1.6 D row 61.
 
 - **M0 T13 · Spike runner and S1** — PERF-02 and QA-05 done; PERF-03 in progress (S2 is T14).
   - **Results:**
@@ -17,15 +40,17 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
       `SpikeRegistry`, `SpikeArena`, `SpikeMob` (P), `SpikePhysicsBody` (L), `TickSampler`,
       `SpikeReport`, `S1BodyCost`;
     - S1, 35 configurations in 67 s: a kinematic body costs 0.12 µs at 500 moving, 0.10 beyond
-      the core (exit ≤ 4), against 4.9 µs for P and for L; with Lithium P 2.2 and L 1.9, K the same;
+      the core (exit ≤ 4), against about 5 µs for P and for L; with Lithium P 2.3 and L 1.9, K the
+      same (the numbers of T14's rerun);
     - the verdict: S1's exit met, D-01's default stays at 150 per player;
-    - JFR: 92.7 % of the server thread in the entity loop, 76 % in `LivingEntity#travel`;
-      `MatchRuntime#tick` 0.6 %, `NaturalSpawner` 0.1 %;
+    - JFR: 93 % of the server thread in the entity loop, 75 % in `LivingEntity#travel`;
+      `MatchRuntime#tick` 0.3 %, `NaturalSpawner` 0.2 %;
     - [the S1 report](spikes/S1-server-cost-per-body.md) and its data; ADR-0011 and ADR-0019
       carry the numbers; D-01 records the check;
     - `verify verifySlow` green in 33 s.
   - **Problems:**
-    - the spec's `ticking=false` arena would freeze every body (the T7b fact): ticking tickets;
+    - the first S1 run used ticking tickets, on the wrong belief that `ticking=false` freezes
+      entities without a player; T14's S2 disproved it, and S1 was rerun as the spec says;
     - a 500-unit Move broke the 300-unit limit and crashed the first run; moves go out in 300s;
     - the first K rows ran on a cold JIT; an unrecorded warm-up pass now runs first;
     - the `-Pspark` and `-Pcompat` profiles had never worked (`localRuntime` in `dependencies {}`
@@ -164,7 +189,7 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
     - pitfalls in the knowledge base (`minecraft-mod-data.md`, new, and `minecraft-mod.md`).
   - Spec §1.6 D row 54.
 
-- **Next:** M0 T14 · S2 and the budget proposal.
+- **Next:** M0 T16 · Client harness prepared; S3 and S4 plans.
 
 ## 2026-10-22 — the owner's setup, M0 T7c, T8
 

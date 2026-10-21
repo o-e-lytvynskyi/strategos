@@ -1,0 +1,11 @@
+S2, the whole run with -Pspike.jfr (JFR "profile" settings), 2026-10-22; a short run, so few samples.
+Server-thread execution samples: 118 of 186. A sample counts towards every frame on its stack.
+
+ChunkMap#tick                                       6    5.1 %
+ServerChunkCache#tickChunks                        94   79.7 %
+NaturalSpawner.createState                          0    0.0 %
+entity loop (ServerLevel#tickNonPassenger)          2    1.7 %
+  LivingEntity#travel (movement, collisions)        2    1.7 %
+  Mob#serverAiStep (P: AI, navigation)              0    0.0 %
+MatchRuntime#tick (core step and adapter)           8    6.8 %
+MinecraftServer#saveEverything                      1    0.8 %
