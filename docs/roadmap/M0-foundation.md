@@ -402,7 +402,8 @@ decision (D-21).
      of the demo); a frozen GameTest server stalls its own tests, so this cannot be an L3 test.
   8. Timer overhead stays below 1 % of the measured phase time (L6).
 - **Tests:** L0, L1, L2, L6 · **Depends on:** CORE-01 · **Size:** M · **Tier:** T0
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-10-22 — M0 T4a, T5a, T5b, T7b, T8, T12: `PhaseOrderTest` (1); `InputEventCoverageTest` (2); `OutputAppliersCoverageTest` (3); `ClockIndependenceTest` (4); `StaggerTest` (5); `TickGateTest` (6); `PhaseTimersBench.overhead` 0.113 µs, 0.80 % of `MovementBench.step600` (8); demo step 6 (7, L7) comes with the owner's session
 
 #### CORE-03 · Command pipeline and in-memory journal
 - **Value:** Every player and AI action is a server-validated command, so no client can move
@@ -603,7 +604,8 @@ decision (D-21).
      as a budget failure (L6).
   4. A `@HotPath` kernel that allocates fails its JMH check (L6).
 - **Tests:** L0, L6 · **Depends on:** QA-02, QA-04 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-22 — M0 T12: `:core:jmh` writes `result.json` with `gc.alloc.rate.norm`, and `jmhSelftest` in `verifyHarness` catches the 30 % slowdown (1) and the allocating kernel (4); `perftests.walk_600_budget_a` and `perftests.snapshot_500_budget_g` record p50, p95 and p99 after warm-up and fail on a breach (2); `-Pperf.fakeForeignLoad=0.3` ends `INVALID` (3)
 
 #### QA-08 · Continuous integration
 - **Value:** Every change is verified the same way on a clean Linux machine, and three
@@ -788,7 +790,8 @@ decision (D-21).
   6. Serialising a 500-unit match stays within budget G, ≤ 100 ms (L6).
 - **Tests:** L0, L1, L2, L3, L6 · **Fixtures:** save fixtures per released schema (JSON, NBT) ·
   **Depends on:** CORE-06 · **Size:** M · **Tier:** T0
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-10-22 — M0 T6a, T6b, T9, T11b, T12: `SnapshotRoundTripTest` (1); `MatchSnapshotNbtTest` (2); `MatchSnapshotJsonFixtureTest` (3); `MatchSnapshotFixtureTest` (4); `persistencetests.save_restore_same_hash` (5); `perftests.snapshot_500_budget_g`, median about 1 ms against 100 ms (6)
 
 #### CORE-10 · Fault containment
 - **Value:** One match's bug never takes down a server, another match or a four-player session,

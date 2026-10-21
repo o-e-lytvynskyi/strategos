@@ -125,6 +125,25 @@ neoForge {
             systemProperty 'strategos.smoke.marker', file('build/server-smoke/smoke-result.json').absolutePath
             systemProperty 'strategos.selftest', providers.gradleProperty('strategos.selftest').getOrElse('')
         }
+        // [T12]
+        gameTestPerf {
+            type = 'gameTestServer'
+            gameDirectory = file('build/gametest-perf')
+            jvmArguments.addAll('-Xms3G', '-Xmx3G', '-XX:+UseG1GC')     // heap and GC pinned (QA-07)
+            // JFR allocation profiling on (PERF-01): the profile settings sample allocations.
+            jvmArgument("-XX:StartFlightRecording=filename=${file('build/gametest-perf/perf.jfr').absolutePath},settings=profile,dumponexit=true")
+            systemProperty 'strategos.gametest.report', file('build/test-results/gametest-perf/TEST-gametest-perf.xml').absolutePath
+            systemProperty 'strategos.gametest.perf', 'true'
+            // no backslash: MDG writes it doubled into the VM-args file, and the regex then never matches
+            systemProperty 'strategos.gametest.filter', '^perftests[.]'
+            systemProperty 'strategos.perf.out', file('build/reports/perf').absolutePath
+            systemProperty 'strategos.perf.ciFactor', providers.gradleProperty('perf.ciFactor').getOrElse('1')
+            // gates that fail on a breach; the others only report (QA-07: enabled after 5 stable runs)
+            systemProperty 'strategos.perf.gates', providers.gradleProperty('perf.gates').getOrElse('a,g')
+            // dev only: replaces the measured foreign CPU load, for the invalid-run check (QA-07.3)
+            systemProperty 'strategos.perf.fakeForeignLoad', providers.gradleProperty('perf.fakeForeignLoad').getOrElse('')
+            systemProperty 'strategos.faults.rethrow', 'true'
+        }
         // [T9b] run 2 of the restart round trip: run 1's game directory, never wiped (QA-05.4)
         serverSmokeRestart {
             server()
@@ -326,7 +345,10 @@ def gameTestGuard = { String runTask, File report, File world, File journals, Fi
             def budget = runTask == 'runGameTestServer' ? 'budget 180 s' : 'reported per run'
             task.logger.lifecycle("L3 wall time ${xml.testsuite.@time} s (${budget}): ${report.name}")
             // [T7c] QA-04.6: the batch-end check reports a leak as a failed case although the server exits 0.
-            def failed = cases.findAll { !it.failure.isEmpty() }.collect { "${it.@classname}.${it.@name}" }
+            def failed = cases.findAll { !it.failure.isEmpty() }.collect {
+                String message = it.failure.@message.text()
+                "${it.@classname}.${it.@name}" + (message ? " (${message})" : '')
+            }
             if (failed) throw new GradleException("GameTest failures in ${report.name}: ${failed}")
             // [T10] QA-10.2: every line that match code logs carries "[m<id> t<tick>] ", or "[no match] " when it
             // concerns none (MatchLog.NO_MATCH). MDG's file pattern is "[time] [thread/LEVEL] [logger/marker]: message".
@@ -346,6 +368,24 @@ gameTestGuard('runGameTestServer', file('build/test-results/gametest/TEST-gamete
 gameTestGuard('runGameTestSlow', file('build/test-results/gametest-slow/TEST-gametest-slow.xml'),
         file('build/gametest-slow/world'), null, file('build/gametest-slow/logs/latest.log'))
 tasks.matching { it.name == 'runGameTestSlow' }.configureEach { mustRunAfter 'runGameTestServer' }
+gameTestGuard('runGameTestPerf', file('build/test-results/gametest-perf/TEST-gametest-perf.xml'),
+        file('build/gametest-perf/world'), null, file('build/gametest-perf/logs/latest.log'))
+
+// [T12] QA-07.3: a run above 25 % foreign CPU load is invalid, neither pass nor fail. Gradle can only
+// stop the build, so the message starts with INVALID, distinct from a budget failure (§1.6 row 32).
+def perfOut = file('build/reports/perf')
+tasks.matching { it.name == 'runGameTestPerf' }.configureEach {
+    // The server exits with the number of failed tests; the guard's report check names the budget instead.
+    ignoreExitValue = true
+    // org.gradle.parallel would otherwise run the perf batch beside JMH and spoil both measurements.
+    mustRunAfter ':core:jmh', ':core:jmhCompare'
+    doFirst { perfOut.deleteDir(); perfOut.mkdirs() }
+    doLast {
+        def results = (perfOut.listFiles({ File f -> f.name.endsWith('.json') } as FileFilter) ?: []) as List
+        def invalid = results.collect { new groovy.json.JsonSlurper().parse(it) }.findAll { it.verdict == 'invalid' }
+        if (invalid) throw new GradleException("INVALID run, not a regression: foreign CPU load ${invalid*.foreignCpu} above 0.25; rerun on a quiet machine")
+    }
+}
 
 def prepareServerSmoke = tasks.register('prepareServerSmoke', Sync) {
     from 'src/gametest/smoke-gamedir'

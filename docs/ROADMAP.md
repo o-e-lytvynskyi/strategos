@@ -244,7 +244,7 @@ Cards: [roadmap/M0-foundation.md](roadmap/M0-foundation.md#cards). 26 cards, at 
 | QA-02 | Core test kit: SimHarness, fakes and shared scenarios | M | QA-01 | done |
 | QA-04 | GameTest harness (L3) | M | QA-01 | done |
 | CORE-01 | Match container, lifecycle and region index | M | QA-02, QA-04 | in_progress |
-| CORE-02 | Driving port and the nine-phase tick pipeline | M | CORE-01 | in_progress |
+| CORE-02 | Driving port and the nine-phase tick pipeline | M | CORE-01 | done |
 | CORE-03 | Command pipeline and in-memory journal | M | CORE-02 | done |
 | CORE-06 | Unit records, handles and the body registry | M | CORE-01 | done |
 | UNIT-01 | Unit body v0: a kinematic LivingEntity view | M | CORE-06 | in_progress |
@@ -253,7 +253,7 @@ Cards: [roadmap/M0-foundation.md](roadmap/M0-foundation.md#cards). 26 cards, at 
 | QA-03 | Minecraft-bootstrapped unit tests (L2) | S | QA-01 | in_progress |
 | QA-05 | Server smoke (L5): boot, a headless match, a restart round trip | M | QA-01, ORD-01, CORE-07 | in_progress |
 | QA-06 | Client scenario runner and spike S3 (consent) | M | QA-01, D-22 | specified |
-| QA-07 | Performance harness (L6) | M | QA-02, QA-04 | specified |
+| QA-07 | Performance harness (L6) | M | QA-02, QA-04 | done |
 | QA-08 | Continuous integration | M | QA-04, QA-05, D-23 | in_progress |
 | QA-10 | Developer commands and log tagging | S | QA-04 | done |
 | QA-17 | Static gates, engine-surface inventory and fixture catalogue | M | QA-01 | done |
@@ -263,7 +263,7 @@ Cards: [roadmap/M0-foundation.md](roadmap/M0-foundation.md#cards). 26 cards, at 
 | PERF-04 | Spike S4: client frame time with many units (consent) | M | QA-06, UNIT-01 | specified |
 | CORE-04 | Match event bus | S | CORE-02 | in_progress |
 | CORE-05 | Determinism kit and spike S6 | M | CORE-03, CORE-04 | in_progress |
-| CORE-07 | Persistence kernel: one blob per match | M | CORE-06 | in_progress |
+| CORE-07 | Persistence kernel: one blob per match | M | CORE-06 | done |
 | CORE-10 | Fault containment | M | CORE-02, QA-04 | done |
 | CORE-12 | Save quarantine | M | CORE-07, CORE-10 | done |
 

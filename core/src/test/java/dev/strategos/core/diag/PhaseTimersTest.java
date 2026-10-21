@@ -34,6 +34,32 @@ class PhaseTimersTest {
     }
 
     @Test
+    void nextPhaseEndsOnePhaseAndBeginsTheNextAtOneReading() {
+        var reads = new Object() {
+            int count;
+        };
+        Clock counting = () -> {
+            reads.count++;
+            return now;
+        };
+        PhaseTimers timers = new PhaseTimers(List.of("ingest", "move", "final"), counting, 600);
+        timers.beginTick();
+        timers.beginPhase(0);
+        now += 10;
+        timers.nextPhase(0, 1);
+        now += 30;
+        timers.nextPhase(1, 2);
+        now += 5;
+        timers.endPhase(2);
+
+        assertThat(timers.endTick()).isEqualTo(45);
+        assertThat(timers.lastPhaseNanos()).containsExactly(10, 30, 5);
+        assertThat(reads.count)
+                .as("one reading per phase boundary, plus the tick's two")
+                .isEqualTo(6);
+    }
+
+    @Test
     void adapterTimeAddsToTheTotal() {
         PhaseTimers timers = new PhaseTimers(List.of("ingest"), clock, 600);
         timers.beginTick();

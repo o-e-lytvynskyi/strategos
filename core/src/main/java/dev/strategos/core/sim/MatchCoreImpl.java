@@ -65,11 +65,15 @@ final class MatchCoreImpl implements MatchCore {
         state.beginTick(in);
         timers.beginTick();
         for (int i = 0; i < phases.length; i++) {
+            if (i == 0) {
+                timers.beginPhase(0);
+            } else {
+                timers.nextPhase(i - 1, i);
+            }
             metrics.onPhase(in.tick(), i);
-            timers.beginPhase(i);
             scheduler.runPhase(phases[i], state);
-            timers.endPhase(i);
         }
+        timers.endPhase(phases.length - 1);
         timers.endTick();
         return finalSystem.outputs();
     }

@@ -15,3 +15,29 @@ def mcShipped = configurations.create('mcShipped') {
 configurations.named('compileOnly') { extendsFrom mcShipped }
 configurations.named('testFixturesCompileOnly') { extendsFrom mcShipped }
 configurations.named('testImplementation') { extendsFrom mcShipped }
+
+// [T12] Plugin-free JMH (me.champeau.jmh 0.7.3 predates Gradle 9 support).
+sourceSets {
+    jmh
+}
+configurations.named('jmhImplementation') { extendsFrom mcShipped }
+dependencies {
+    jmhImplementation sourceSets.main.output
+    jmhImplementation libs.findLibrary('jmh-core').get()
+    jmhAnnotationProcessor libs.findLibrary('jmh-generator').get()
+}
+def jmhResult = layout.buildDirectory.file('reports/jmh/result.json').get().asFile
+tasks.register('jmh', JavaExec) {
+    group = 'verification'
+    description = 'Runs the JMH benchmarks (-Pjmh.include=<regex>); writes build/reports/jmh/result.json.'
+    classpath = sourceSets.jmh.runtimeClasspath
+    mainClass = 'org.openjdk.jmh.Main'
+    args providers.gradleProperty('jmh.include').getOrElse('.*'),
+         '-f', '2', '-wi', '3', '-w', '1s', '-i', '5', '-r', '1s',
+         '-prof', 'gc',                                    // gc.alloc.rate.norm for the @HotPath check (QA-07.4)
+         '-jvmArgsAppend', '-Xms1g -Xmx1g -XX:+UseG1GC',   // heap and GC pinned in every fork (QA-07)
+         '-rf', 'json', '-rff', jmhResult.absolutePath
+    outputs.file(jmhResult)
+    outputs.upToDateWhen { false }
+    doFirst { jmhResult.parentFile.mkdirs() }
+}

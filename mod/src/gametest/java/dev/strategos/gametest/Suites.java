@@ -5,6 +5,7 @@ import dev.strategos.gametest.suites.BuildTests;
 import dev.strategos.gametest.suites.CommandTests;
 import dev.strategos.gametest.suites.FaultTests;
 import dev.strategos.gametest.suites.MatchTests;
+import dev.strategos.gametest.suites.PerfTests;
 import dev.strategos.gametest.suites.PersistenceTests;
 import dev.strategos.gametest.suites.RetryNoReasonSelfTest;
 import dev.strategos.gametest.suites.SelfTests;
@@ -18,7 +19,7 @@ public final class Suites {
 
     static List<Class<?>> forRun(boolean perf, String selftest) {
         if (perf) {
-            throw new IllegalStateException("no perf suite yet: PerfTests arrives with M0 T12");
+            return List.of(PerfTests.class);
         }
         return switch (selftest) {
             case "retry" -> List.of(SelfTests.class);

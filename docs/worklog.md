@@ -9,7 +9,35 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M0 T9, the tripwire checkpoint, T9b, T11, T10, T11b
+## 2026-10-22 — M0 T9, the tripwire checkpoint, T9b, T11, T10, T11b, T12
+
+- **M0 T12 · Performance harness** — QA-07, CORE-02 and CORE-07 done; PERF-01 (T14 left) and
+  CORE-04 (the approved baseline left) in progress.
+  - **Results:**
+    - JMH without a plugin (`:core:jmh`, `-prof gc`, heap and GC pinned), 5 benchmarks in µs/op:
+      `MovementBench.step600` 14.1, `StateHashBench.hash600` 22.8 at 0.16 B/op,
+      `SnapshotCodecBench.encode500` 220, `MatchBusBench.publish1000` 13.7,
+      `PhaseTimersBench.overhead` 0.113 (0.80 % of a step); 1 min 23 s;
+    - `jmhCompare` (15 % gate, 0 B/op for `@HotPath` kernels) and `jmhSelftest` in `verifyHarness`;
+      without an approved baseline `jmhCompare` fails with "No approved JMH baseline", by design;
+      the candidate is `perf/candidate-m4pro.json`;
+    - `runGameTestPerf` with JFR, gates, the foreign-load check and `PerfTests`:
+      `walk_600_budget_a` p50 about 50 µs and p99 about 0.3 ms against 5 and 10 ms;
+      `snapshot_500_budget_g` median 0.7–1.3 ms against 100 ms;
+    - five runs of one tree: p95 CV 4.9 % (A) and 3.2 % (G), so both gates stay on; an earlier
+      tree's five gave 6.4 % for A;
+    - `-Pperf.ciFactor=0.001` failed naming both budgets with the measured and allowed values;
+      `-Pperf.fakeForeignLoad=0.3` ended `INVALID run, not a regression`;
+    - `verifyPerf` exists; `verify verifySlow` green in 35 s.
+  - **Problems:**
+    - the phase timers cost 1.29 % of a step, above CORE-02.8's 1 %; `PhaseTimers.nextPhase`
+      reads the clock once per phase boundary, which made it 0.80 %;
+    - `^perftests\.` reached the server with its backslash doubled (MDG's VM-args file) and
+      matched nothing; the filter is `^perftests[.]`;
+    - ten foreign-load readings within milliseconds once gave 0.28 and a false `INVALID`; the
+      saves are now 20 ticks apart and the window opens with a discarded reading;
+    - the server's exit value hid the budget message; the perf guard now names it.
+  - Spec §1.6 D row 59; a pitfall for the knowledge base.
 
 - **M0 T11b · Fixture catalogue and its checks** — QA-17 and CORE-12 done; CORE-05, CORE-07 still
   in progress.
@@ -115,7 +143,7 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
     - pitfalls in the knowledge base (`minecraft-mod-data.md`, new, and `minecraft-mod.md`).
   - Spec §1.6 D row 54.
 
-- **Next:** M0 T12 · Performance harness.
+- **Next:** M0 T13 · Spike runner and S1.
 
 ## 2026-10-22 — the owner's setup, M0 T7c, T8
 

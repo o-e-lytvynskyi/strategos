@@ -57,6 +57,17 @@ public final class PhaseTimers {
         current[ordinal] += clock.nanoTime() - phaseStart;
     }
 
+    /**
+     * Ends phase {@code ended} and begins {@code next} at one clock reading. The step's phases follow each other, so
+     * the scheduler's few nanoseconds between two phases count to the next one; the clock is the timers' main cost
+     * (CORE-02.8: below 1 % of the step).
+     */
+    public void nextPhase(int ended, int next) {
+        long now = clock.nanoTime();
+        current[ended] += now - phaseStart;
+        phaseStart = now;
+    }
+
     /** Ends the step and records it; returns the step's nanoseconds. */
     public long endTick() {
         lastStep = clock.nanoTime() - tickStart;

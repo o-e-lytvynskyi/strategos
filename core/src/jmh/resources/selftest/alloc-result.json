@@ -1,0 +1,8 @@
+[
+  {
+    "benchmark": "dev.strategos.core.bench.Selftest.kernel",
+    "mode": "avgt",
+    "primaryMetric": { "score": 10.0, "scoreUnit": "us/op" },
+    "secondaryMetrics": { "·gc.alloc.rate.norm": { "score": 48.0, "scoreUnit": "B/op" } }
+  }
+]

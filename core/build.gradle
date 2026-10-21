@@ -71,3 +71,69 @@ tasks.register('replayJournals', Test) {
         if (found == null || found.length == 0) throw new GradleException("No GameTest journals in ${journalsDir}")
     }
 }
+
+// [T12] JMH regression gate against the owner-approved baseline of this machine, plus the
+// allocation check of the @HotPath kernels. A static method keeps the configuration cache happy.
+class JmhGate {
+    static final double LIMIT = 1.15d                 // 15 % (QA-07.1)
+    static final double MAX_KERNEL_BYTES = 1.0d        // a non-allocating kernel reports a fraction of a byte per op
+
+    static List<String> problems(File result, File baseline, List<String> kernels) {
+        def slurper = new groovy.json.JsonSlurper()
+        def key = { r -> r.benchmark + (r.params ? r.params.toString() : '') }
+        def base = slurper.parse(baseline).collectEntries { [(key(it)): it] }
+        def problems = []
+        slurper.parse(result).each { r ->
+            def b = base[key(r)]
+            if (b != null) {
+                double now = r.primaryMetric.score as double
+                double was = b.primaryMetric.score as double
+                boolean lowerIsBetter = r.mode in ['avgt', 'sample', 'ss']
+                boolean worse = lowerIsBetter ? now > was * LIMIT : now < was / LIMIT
+                if (worse) problems << String.format('%s: %.3f -> %.3f %s, a regression above 15 %%', key(r), was, now, r.primaryMetric.scoreUnit)
+            }
+            if (kernels.any { r.benchmark.endsWith(it) }) {   // QA-07.4: 0 B/op for @HotPath kernels
+                def norm = r.secondaryMetrics?.find { k, v -> k.endsWith('gc.alloc.rate.norm') }?.value
+                if (norm == null) problems << "${key(r)}: no gc.alloc.rate.norm; run JMH with -prof gc"
+                else if ((norm.score as double) > MAX_KERNEL_BYTES) problems << String.format('%s: a @HotPath kernel allocates %.1f B/op', key(r), norm.score as double)
+            }
+        }
+        problems
+    }
+}
+
+// The benchmarks of @HotPath kernels; each must report no allocation per operation.
+def hotPathKernels = ['StateHashBench.hash600']
+// -Pjmh.result and -Pjmh.baseline are paths relative to the repository root.
+def jmhResultFile = rootProject.file(providers.gradleProperty('jmh.result')
+        .getOrElse(layout.buildDirectory.file('reports/jmh/result.json').get().asFile.path))
+def jmhBaselineFile = rootProject.file(providers.gradleProperty('jmh.baseline')
+        .getOrElse("perf/baseline-${providers.gradleProperty('perf.machine').getOrElse('m4pro')}.json"))
+tasks.register('jmhCompare') {
+    group = 'verification'
+    description = 'Fails when a JMH score regresses by more than 15 % against the approved baseline, or a @HotPath kernel allocates.'
+    mustRunAfter 'jmh'
+    doLast {
+        if (!jmhBaselineFile.isFile()) {
+            throw new GradleException("No approved JMH baseline at ${jmhBaselineFile}. Show ${jmhResultFile} to the owner; copy it there only after approval.")
+        }
+        if (!jmhResultFile.isFile()) throw new GradleException("No JMH result at ${jmhResultFile}; run :core:jmh first.")
+        def problems = JmhGate.problems(jmhResultFile, jmhBaselineFile, hotPathKernels)
+        if (problems) throw new GradleException('JMH gate:\n  ' + problems.join('\n  '))
+    }
+}
+
+// [T12] verifyHarness: the gate must catch a 30 % slowdown and an allocating kernel in the fixed
+// self-test files, without timing noise (QA-07.1, QA-07.4).
+def jmhSelftestDir = file('src/jmh/resources/selftest')
+tasks.register('jmhSelftest') {
+    group = 'verification'
+    description = 'Proves the JMH gate bites: a 30 % slowdown and an allocating @HotPath kernel.'
+    doLast {
+        def baseline = new File(jmhSelftestDir, 'baseline.json')
+        def slow = JmhGate.problems(new File(jmhSelftestDir, 'slow-result.json'), baseline, [])
+        def alloc = JmhGate.problems(new File(jmhSelftestDir, 'alloc-result.json'), baseline, ['Selftest.kernel'])
+        if (!slow.any { it.contains('regression') }) throw new GradleException('The JMH gate no longer catches a 30 % slowdown')
+        if (!alloc.any { it.contains('allocates') }) throw new GradleException('The JMH gate no longer catches an allocating @HotPath kernel')
+    }
+}

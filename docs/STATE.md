@@ -10,14 +10,22 @@ started 2026-10-21 (owner's go-ahead)
 
 Answer in chat or here; the next session applies the answers.
 
-1. **Consent batch for client windows.** Nothing is queued yet. M0's batch (spikes S3 and S4)
+1. **JMH baseline to approve (M0 T12).** `perf/candidate-m4pro.json` is the first JMH run on this
+   Mac (µs per operation): one core step with 600 walking units 14.1; the state hash of 600 units
+   22.8, allocating nothing (0.16 B/op); encoding 500 units to JSON 220; 1,000 bus messages 13.7;
+   the phase timers 0.113, 0.8 % of a step. Answer «одобряю бейзлайн» and the next session copies
+   it to `perf/baseline-m4pro.json`: from then on `verifyPerf` fails when a benchmark gets 15 %
+   slower, and CI gets its perf step. For scale, in a real server a match tick with 600 walking
+   units takes about 0.05 ms (p50) and 0.3 ms (p99) against budget A's 5 and 10 ms, and saving a
+   500-unit match about 1 ms against budget G's 100 ms.
+2. **Consent batch for client windows.** Nothing is queued yet. M0's batch (spikes S3 and S4)
    comes at T16, near the end of M0.
-2. **Open decisions,** none urgent:
+3. **Open decisions,** none urgent:
    - D-03 civilisation themes (M7);
    - D-20 multiplayer hosting (M7);
    - D-07 licence and D-21 public release and name (first public release);
    - D-06 map generation (M12).
-3. **Optional reviews:**
+4. **Optional reviews:**
    - the card refinements made after the approval
      ([design/roadmap-changes.md §8](design/roadmap-changes.md));
    - the promo draft ([promo/roadmap-announcement.md](promo/roadmap-announcement.md)).
@@ -54,14 +62,18 @@ Answer in chat or here; the next session applies the answers.
 - 2026-10-22 · **M0 T11b Fixture catalogue and its checks:** every test fixture is catalogued, and
   the build now fails when a fixture a test needs is missing, a released save fixture is deleted
   or a test hard-codes a seed. Cards QA-17 and CORE-12 are done.
+- 2026-10-22 · **M0 T12 Performance harness:** benchmarks of the core's kernels and two
+  performance tests in a real server, each gate proved to fail on a synthetic overload and to
+  refuse a verdict on a busy machine. The numbers are far inside the budgets; the benchmark
+  baseline waits for your approval (item 1 above). Cards QA-07, CORE-02 and CORE-07 are done.
 
 ## Now
 
-- **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 19 of 25 tasks done.
+- **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 20 of 25 tasks done.
 - **Tripwire (M0 only):** T1 started 2026-10-21; T9 green 2026-10-22; M0 work days 2 of 10.
 - **In progress:** none.
-- **Last finished task:** M0 T11b (2026-10-22); T10 was commit 07b1b3f.
-- **Next task:** M0 T12 · Performance harness (QA-07, PERF-01, CORE-02, CORE-04, CORE-07).
+- **Last finished task:** M0 T12 (2026-10-22); T11b was commit afe5cd2.
+- **Next task:** M0 T13 · Spike runner and S1 (PERF-02, QA-05, PERF-03).
 - **WIP branch:** none.
 - **CI:** green on `main` (M0 T7b review fix, run 39685642374, 6 min 28 s); minutes used this month about 83 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.

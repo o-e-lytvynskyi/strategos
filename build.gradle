@@ -122,14 +122,14 @@ tasks.register('verifyFast') {
 
 // [T3] The harness self-tests, kept for good as automated checks (QA-01, QA-04, QA-05, QA-07, QA-17):
 // every guard must fail on its broken input, and every GameTest self-test must end with its designed
-// verdict. ':mod:runGameTestTicketLeak' joined in T7c, 'checkFixturesSelftest' in T11b; ':core:jmhSelftest' joins in T12.
+// verdict. ':mod:runGameTestTicketLeak' joined in T7c, 'checkFixturesSelftest' in T11b, ':core:jmhSelftest' in T12.
 tasks.register('verifyHarness') {
     group = 'verification'
-    description = 'Proves the guards bite: empty GameTest filter, broken mod load, missing smoke marker, retry semantics, retry without a reason, solo test in a shared batch, leaked ticket, every ArchUnit rule on its violating fixture, fixture checks.'
+    description = 'Proves the guards bite: empty GameTest filter, broken mod load, missing smoke marker, retry semantics, retry without a reason, solo test in a shared batch, leaked ticket, every ArchUnit rule on its violating fixture, fixture checks, JMH slowdown and allocating kernel.'
     dependsOn ':mod:runGameTestEmptyFilter', ':mod:runGameTestBrokenLoad', ':mod:runServerSmokeNoMarker',
             ':mod:runGameTestRetry', ':mod:runGameTestRetryNoReason', ':mod:runGameTestSharedBatch',
             ':mod:runGameTestTicketLeak',
-            ':mod:archTest', ':core:test', 'checkFixturesSelftest'
+            ':mod:archTest', ':core:test', 'checkFixturesSelftest', ':core:jmhSelftest'
 }
 
 // [T3] the commit gate: 5 minutes, of which L3 3; ':core:soak' joined in T6b, ':core:replayJournals' in T8,
@@ -156,4 +156,11 @@ tasks.register('verifySoak') {
     group = 'verification'
     description = 'The soak runs: the seeded determinism soak, 200 seeds x 10,000 ticks.'
     dependsOn ':core:soak'
+}
+
+// [T12] L6.
+tasks.register('verifyPerf') {
+    group = 'verification'
+    description = 'L6: JMH with the 15 % regression gate, then the perf GameTest batch alone.'
+    dependsOn ':core:jmh', ':core:jmhCompare', ':mod:runGameTestPerf'
 }
