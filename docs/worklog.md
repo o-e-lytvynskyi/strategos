@@ -9,7 +9,21 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M0 T9, the tripwire checkpoint, T9b, T11, T10
+## 2026-10-22 — M0 T9, the tripwire checkpoint, T9b, T11, T10, T11b
+
+- **M0 T11b · Fixture catalogue and its checks** — QA-17 and CORE-12 done; CORE-05, CORE-07 still
+  in progress.
+  - **Results:**
+    - the fixture catalogue in `docs/05-testing.md`;
+    - `released-fixtures.txt`: both `match_v1` save fixtures with their expected-hash files and the
+      7 corrupted-save files, append-only;
+    - root `checkFixtures` (in `verifyFast`) and `checkFixturesSelftest` (in `verifyHarness`), with
+      the broken inputs in `gradle/selftest/fixtures/`;
+    - three tests passed literal seeds; two now take `Seeds.first("m0-200")`, and the golden spawn
+      positions keep seed 7 in the new set `golden-spawn`;
+    - `verify verifySlow` green in 33 s.
+  - **Problems:** none.
+  - Spec §1.6 D row 58.
 
 - **M0 T10 · Fault containment complete, log tagging** — CORE-10 and QA-10 done.
   - **Results:**
@@ -101,7 +115,7 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
     - pitfalls in the knowledge base (`minecraft-mod-data.md`, new, and `minecraft-mod.md`).
   - Spec §1.6 D row 54.
 
-- **Next:** M0 T11b · Fixture catalogue and its checks.
+- **Next:** M0 T12 · Performance harness.
 
 ## 2026-10-22 — the owner's setup, M0 T7c, T8
 

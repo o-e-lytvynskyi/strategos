@@ -1,0 +1,2 @@
+# checkFixturesSelftest's broken input: a released-schema fixture that was deleted.
+core/src/test/resources/fixtures/match_v0.json

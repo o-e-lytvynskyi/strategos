@@ -256,7 +256,7 @@ Cards: [roadmap/M0-foundation.md](roadmap/M0-foundation.md#cards). 26 cards, at 
 | QA-07 | Performance harness (L6) | M | QA-02, QA-04 | specified |
 | QA-08 | Continuous integration | M | QA-04, QA-05, D-23 | in_progress |
 | QA-10 | Developer commands and log tagging | S | QA-04 | done |
-| QA-17 | Static gates, engine-surface inventory and fixture catalogue | M | QA-01 | in_progress |
+| QA-17 | Static gates, engine-surface inventory and fixture catalogue | M | QA-01 | done |
 | PERF-01 | Budget matrix and enforcement | S | QA-07 | in_progress |
 | PERF-02 | Spike S1: server cost per body | M | UNIT-01, QA-07 | specified |
 | PERF-03 | Spike S2: force-loaded arena cost | M | QA-05, QA-07 | specified |
@@ -265,7 +265,7 @@ Cards: [roadmap/M0-foundation.md](roadmap/M0-foundation.md#cards). 26 cards, at 
 | CORE-05 | Determinism kit and spike S6 | M | CORE-03, CORE-04 | in_progress |
 | CORE-07 | Persistence kernel: one blob per match | M | CORE-06 | in_progress |
 | CORE-10 | Fault containment | M | CORE-02, QA-04 | done |
-| CORE-12 | Save quarantine | M | CORE-07, CORE-10 | in_progress |
+| CORE-12 | Save quarantine | M | CORE-07, CORE-10 | done |
 
 ### M1 · Movement
 

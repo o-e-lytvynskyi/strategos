@@ -23,6 +23,7 @@ import dev.strategos.core.sim.InputEvent;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchSnapshot;
 import dev.strategos.core.sim.TickInputs;
+import dev.strategos.core.testkit.Seeds;
 import dev.strategos.core.testkit.SimHarness;
 import java.util.Arrays;
 import java.util.List;
@@ -32,7 +33,8 @@ class SnapshotRoundTripTest {
 
     /** 500 units of two factions, some walking, some with pending orders. */
     private static SimHarness fiveHundredUnits() {
-        SimHarness h = SimHarness.builder().size(64, 64).seed(13).build();
+        SimHarness h =
+                SimHarness.builder().size(64, 64).seed(Seeds.first("m0-200")).build();
         int[] a = h.spawn(new FactionSlot(0), new Vec2d(16, 16), 250, 12.0);
         int[] b = h.spawn(new FactionSlot(1), new Vec2d(48, 48), 250, 12.0);
         h.submit(new PlayerSlot(0), Move.replace(UnitSet.of(Arrays.copyOf(a, 200)), new Vec2d(48, 16)));

@@ -1,0 +1,2 @@
+# golden-spawn, the seed of SpawnUnitsRuleTest's golden spawn positions: one seed per line; append-only (M0 spec 7.10). Lines starting with # are ignored.
+7

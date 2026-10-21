@@ -662,7 +662,8 @@ decision (D-21).
      committed sets each fail the build (L0).
 - **Tests:** L0, L2 · **Fixtures:** the catalogue itself · **Depends on:** QA-01 · **Size:** M ·
   **Tier:** T0
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-10-22 — M0 T3, T11, T11b: `CoreArchitectureTest` (13 rules) and `ModArchitectureTest` (11 rules), each on its violating fixtures (1); `checkJarContents` (2); `EngineSurfaceInventoryTest` with its three made-up surfaces (3); the fixture catalogue in `docs/05-testing.md` (4); `checkFixtures` in `verifyFast`, proved by `checkFixturesSelftest` in `verifyHarness` (5)
 
 #### PERF-01 · Budget matrix and enforcement
 - **Value:** The game holds 20 TPS and smooth frames at the promised army sizes, because every
@@ -825,4 +826,5 @@ decision (D-21).
   3. The deserializer never throws on the corrupted-fixture corpus (L2).
 - **Tests:** L0, L2, L3 · **Fixtures:** corrupted saves for both paths (append-only) ·
   **Depends on:** CORE-07, CORE-10 · **Size:** M · **Tier:** T0
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-10-22 — M0 T9, T11b: `persistencetests.corrupt_content_quarantined` (1); `persistencetests.unreadable_file_quarantined` (2); `CorruptCorpusTest` over the corpus (3); the corpus listed in `released-fixtures.txt`, append-only

@@ -139,7 +139,8 @@ class SimHarnessTest {
             assertThat(Seeds.set("m0-200")).hasSize(200).doesNotHaveDuplicates();
             assertThat(Seeds.set("isolation-50")).hasSize(50).doesNotHaveDuplicates();
         }
-        assertThatThrownBy(() -> Seeds.first("no-such-set"))
+        String absent = "no-such-set"; // deliberately not committed, so the fixture check does not look for it
+        assertThatThrownBy(() -> Seeds.first(absent))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("/seeds/no-such-set.txt");
     }

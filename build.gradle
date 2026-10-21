@@ -43,11 +43,78 @@ tasks.register('checkVersionCatalog') {
     }
 }
 
+// [T11b] QA-17.5: every fixture a test names exists, no released-schema fixture is deleted, and tests
+// take seeds only from the committed sets (Seeds.set("<name>")). A static method keeps the
+// configuration cache happy: the task actions call it and capture only files.
+class FixtureCheck {
+    static final List<String> ROOTS = ['core/src/test', 'core/src/testFixtures', 'mod/src/test', 'mod/src/gametest']
+
+    static List<String> problems(File repo, File released) {
+        def problems = []
+        def resourceDirs = ROOTS.collect { new File(repo, "${it}/resources") }
+        def arenas = new File(repo, 'mod/src/gametest/structures')
+        ROOTS.collect { new File(repo, "${it}/java") }.findAll { it.isDirectory() }.each { File dir ->
+            dir.eachFileRecurse(groovy.io.FileType.FILES) { File f ->
+                if (!f.name.endsWith('.java')) return
+                f.readLines().eachWithIndex { String line, int i ->
+                    def at = "${repo.toPath().relativize(f.toPath())}:${i + 1}"
+                    (line =~ /"((?:fixtures|golden)\/[^"]+)"/).each { m ->
+                        if (!resourceDirs.any { new File(it, m[1]).exists() }) problems << "${at}: missing fixture ${m[1]}"
+                    }
+                    (line =~ /Seeds\.(?:set|first)\("([^"]+)"\)/).each { m ->
+                        if (!resourceDirs.any { new File(it, "seeds/${m[1]}.txt").isFile() }) problems << "${at}: missing fixture seeds/${m[1]}.txt"
+                    }
+                    (line =~ /arena\s*=\s*"([^"]+)"/).each { m ->
+                        if (!new File(arenas, "${m[1]}.snbt").isFile()) problems << "${at}: missing fixture arena ${m[1]}"
+                    }
+                    if (line =~ /\b(seed|withSeed|walkingSkeleton|canary|patrol|gameTest|options)\(\s*-?\d+L?\s*[,)]/) {
+                        problems << "${at}: literal seed; take it from a committed set with Seeds.set(\"<name>\")"
+                    }
+                }
+            }
+        }
+        if (released.isFile()) {
+            released.readLines()*.trim().findAll { it && !it.startsWith('#') }.each { String p ->
+                if (!new File(repo, p).isFile()) problems << "released-schema fixture deleted: ${p}"
+            }
+        }
+        problems
+    }
+}
+
+def fixturesMarker = layout.buildDirectory.file('checks/fixtures.ok')
+tasks.register('checkFixtures') {
+    group = 'verification'
+    description = 'Fails on a missing referenced fixture, a deleted released-schema fixture or a literal seed in a test (QA-17.5).'
+    def repo = rootDir
+    def released = file('released-fixtures.txt')
+    inputs.files(fileTree(dir: rootDir, includes: FixtureCheck.ROOTS.collect { "${it}/**".toString() }), released)
+    outputs.file(fixturesMarker)
+    doLast {
+        def problems = FixtureCheck.problems(repo, released)
+        if (problems) throw new GradleException('Fixture problems:\n  ' + problems.join('\n  '))
+        fixturesMarker.get().asFile.text = 'ok\n'
+    }
+}
+
+// [T11b] verifyHarness: the fixture check must catch each broken input of gradle/selftest/fixtures/
+// (a test naming a missing fixture and passing a literal seed; a released list naming a deleted file).
+def fixturesSelftestRepo = file('gradle/selftest/fixtures')
+tasks.register('checkFixturesSelftest') {
+    group = 'verification'
+    description = 'Proves checkFixtures bites: a missing fixture, a deleted released-schema fixture, a literal seed.'
+    doLast {
+        def found = FixtureCheck.problems(fixturesSelftestRepo, new File(fixturesSelftestRepo, 'released-fixtures.txt'))
+        ['missing fixture', 'released-schema fixture deleted', 'literal seed'].each { String kind ->
+            if (!found.any { it.contains(kind) }) throw new GradleException("checkFixtures no longer catches: ${kind}")
+        }
+    }
+}
+
 tasks.register('verifyFast') {
     group = 'verification'
-    description = 'L0 + L1: catalog, formatting, ErrorProne and NullAway, ArchUnit, jar check, core tests.'
-    // [T11b] 'checkFixtures' joins here (QA-17.5).
-    dependsOn 'checkVersionCatalog', ':core:check',
+    description = 'L0 + L1: catalog, fixtures, formatting, ErrorProne and NullAway, ArchUnit, jar check, core tests.'
+    dependsOn 'checkVersionCatalog', 'checkFixtures', ':core:check',
             ':mod:spotlessCheck', ':mod:compileJava', ':mod:compileTestJava',
             ':mod:compileGametestJava', ':mod:compileDevtoolsJava',
             ':mod:archTest', ':mod:checkJarContents'
@@ -55,14 +122,14 @@ tasks.register('verifyFast') {
 
 // [T3] The harness self-tests, kept for good as automated checks (QA-01, QA-04, QA-05, QA-07, QA-17):
 // every guard must fail on its broken input, and every GameTest self-test must end with its designed
-// verdict. ':mod:runGameTestTicketLeak' joined in T7c; 'checkFixturesSelftest' joins in T11b, ':core:jmhSelftest' in T12.
+// verdict. ':mod:runGameTestTicketLeak' joined in T7c, 'checkFixturesSelftest' in T11b; ':core:jmhSelftest' joins in T12.
 tasks.register('verifyHarness') {
     group = 'verification'
-    description = 'Proves the guards bite: empty GameTest filter, broken mod load, missing smoke marker, retry semantics, retry without a reason, solo test in a shared batch, leaked ticket, every ArchUnit rule on its violating fixture.'
+    description = 'Proves the guards bite: empty GameTest filter, broken mod load, missing smoke marker, retry semantics, retry without a reason, solo test in a shared batch, leaked ticket, every ArchUnit rule on its violating fixture, fixture checks.'
     dependsOn ':mod:runGameTestEmptyFilter', ':mod:runGameTestBrokenLoad', ':mod:runServerSmokeNoMarker',
             ':mod:runGameTestRetry', ':mod:runGameTestRetryNoReason', ':mod:runGameTestSharedBatch',
             ':mod:runGameTestTicketLeak',
-            ':mod:archTest', ':core:test'
+            ':mod:archTest', ':core:test', 'checkFixturesSelftest'
 }
 
 // [T3] the commit gate: 5 minutes, of which L3 3; ':core:soak' joined in T6b, ':core:replayJournals' in T8,

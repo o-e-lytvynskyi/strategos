@@ -19,6 +19,7 @@ import dev.strategos.core.sim.MatchConfig;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchRules;
 import dev.strategos.core.sim.TickInputs;
+import dev.strategos.core.testkit.Seeds;
 import dev.strategos.core.testkit.SimHarness;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -90,7 +91,7 @@ class JournalTest {
 
     @Test
     void recordsEveryEnvelopeOnceInCanonicalOrderWithinItsTick() {
-        SimHarness h = SimHarness.builder().seed(3).build();
+        SimHarness h = SimHarness.builder().seed(Seeds.first("m0-200")).build();
         int[] units = h.spawn(new FactionSlot(0), new Vec2d(8, 8), 4, 2.0);
         Set<String> sent = new HashSet<>();
         int seq = 1000;

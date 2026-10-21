@@ -15,6 +15,7 @@ import dev.strategos.core.sim.MatchRules;
 import dev.strategos.core.sim.UnitCreated;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.UnitView;
+import dev.strategos.core.testkit.Seeds;
 import dev.strategos.core.testkit.SimHarness;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -91,7 +92,10 @@ class SpawnUnitsRuleTest {
     @Test
     void placesUnitsAtTheirGoldenPositionsOnTheFloor() {
         // A floor at 4, apart from minY and the default 1, so a unit stored at the wrong height shows.
-        SimHarness h = SimHarness.builder().seed(7).yBand(0, 16, 4.0).build();
+        SimHarness h = SimHarness.builder()
+                .seed(Seeds.first("golden-spawn"))
+                .yBand(0, 16, 4.0)
+                .build();
         CommandResult result = spawn(h, PlayerSlot.ADMIN, walkers(new Vec2d(16, 16), 4, 3.0));
         assertThat(result.outcome()).isEqualTo(CommandOutcome.ACCEPTED);
         assertThat(result.accepted()).isEqualTo(4);

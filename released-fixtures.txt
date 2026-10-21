@@ -1,0 +1,13 @@
+# Released-schema save fixtures and the corrupted-save corpus (QA-17.5, spec 7.10).
+# Append-only: a fixture listed here is never changed or deleted; checkFixtures fails when one is missing.
+core/src/test/resources/fixtures/match_v1.json
+core/src/test/resources/fixtures/match_v1.expected.json
+mod/src/test/resources/fixtures/match_v1.nbt
+mod/src/test/resources/fixtures/match_v1.expected.json
+mod/src/gametest/resources/fixtures/corrupt/garbage.dat
+mod/src/gametest/resources/fixtures/corrupt/missing_snapshot.nbt
+mod/src/gametest/resources/fixtures/corrupt/negative_size.nbt
+mod/src/gametest/resources/fixtures/corrupt/oversized_slots.nbt
+mod/src/gametest/resources/fixtures/corrupt/truncated.dat
+mod/src/gametest/resources/fixtures/corrupt/version_99.nbt
+mod/src/gametest/resources/fixtures/corrupt/wrong_types.nbt

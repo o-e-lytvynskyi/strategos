@@ -51,14 +51,17 @@ Answer in chat or here; the next session applies the answers.
   only that match; it leaves a report in `strategos/faults/` from which the error replays, and
   players standing in the match are told. Every log line about a match names it and its tick.
   Cards CORE-10 and QA-10 are done.
+- 2026-10-22 · **M0 T11b Fixture catalogue and its checks:** every test fixture is catalogued, and
+  the build now fails when a fixture a test needs is missing, a released save fixture is deleted
+  or a test hard-codes a seed. Cards QA-17 and CORE-12 are done.
 
 ## Now
 
-- **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 18 of 25 tasks done.
+- **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 19 of 25 tasks done.
 - **Tripwire (M0 only):** T1 started 2026-10-21; T9 green 2026-10-22; M0 work days 2 of 10.
 - **In progress:** none.
-- **Last finished task:** M0 T10 (2026-10-22); T11 was commit 5b306ff.
-- **Next task:** M0 T11b · Fixture catalogue and its checks (QA-17, CORE-05, CORE-07, CORE-12).
+- **Last finished task:** M0 T11b (2026-10-22); T10 was commit 07b1b3f.
+- **Next task:** M0 T12 · Performance harness (QA-07, PERF-01, CORE-02, CORE-04, CORE-07).
 - **WIP branch:** none.
 - **CI:** green on `main` (M0 T7b review fix, run 39685642374, 6 min 28 s); minutes used this month about 83 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.

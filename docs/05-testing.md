@@ -75,6 +75,31 @@ Useful options:
 | `mod/src/archTest` | ArchUnit rules on the compiled classes |
 | `mod/src/scenario/golden/<platform>/` | approved golden images per platform |
 
+## Fixture catalogue
+
+Every committed fixture, where it lives, what writes it and how it may change (QA-17.4; M0 spec
+§7.10). Later cards add rows with their fixtures. `checkFixtures` (part of `verifyFast`) fails on
+a fixture a test names that does not exist, on a released-schema fixture missing from disk (the
+append-only list is `released-fixtures.txt` at the root) and on a literal seed in a test: seeds
+come from the committed sets through `Seeds.set("<name>")` or `Seeds.first("<name>")` (QA-17.5).
+`checkFixturesSelftest` (part of `verifyHarness`) proves the check catches all three on the
+broken inputs in `gradle/selftest/fixtures/`.
+
+| Kind | Location | Generator | Change rule |
+|---|---|---|---|
+| SNBT arenas | `mod/src/gametest/structures/arena_flat_<n>.snbt` | `:mod:generateArenas` | regenerate and commit; a new size is a new file |
+| Scenario definitions | `core/src/testFixtures/.../testkit/Scenarios.java` | code | reviewed like code; GameTest names follow the scenario ids |
+| Seed sets | `core/src/testFixtures/resources/seeds/<name>.txt` | written by hand | append-only; a test that needs other seeds adds a set. A harness built without a seed uses the test kit's default, 42 |
+| S6 canary golden | `core/src/test/resources/golden/s6-canary.json` | `-Dstrategos.golden.update=true` | rewritten only with a recorded reason (R12) |
+| Save fixtures, one per released schema | `core/src/test/resources/fixtures/match_v<n>.json`, `mod/src/test/resources/fixtures/match_v<n>.nbt`, each with `match_v<n>.expected.json` | `-Dstrategos.fixtures.update=true`, once per schema | never changed or deleted; listed in `released-fixtures.txt` |
+| Corrupted saves | `mod/src/gametest/resources/fixtures/corrupt/` | `CorruptCorpusTest` with `-Dstrategos.fixtures.update=true` | append-only; listed in `released-fixtures.txt` |
+| Engine-surface inventory | `mod/src/test/resources/engine-surface.json` | written by hand | changes with the code it lists, reviewed (ADR-0020) |
+| ArchUnit violating fixtures and stubs | `core/src/test/java/.../archfixture/`, `mod/src/archTest/java/` | written by hand | one per rule and per banned API; a new rule brings its fixture |
+| JMH self-test results | `core/src/jmh/resources/selftest/` | written by hand | fixed |
+| Harness self-test inputs | `gradle/selftest/fixtures/` | written by hand | fixed |
+| JMH baseline | `perf/baseline-<machine>.json` | `:core:jmh`, copied after the owner approves | only with the owner's approval |
+| GameTest journals, perf and smoke results | `mod/build/gametest/journals/`, `mod/build/reports/perf/`, `mod/build/server-smoke/` | every run | build output, never committed |
+
 ## Rules that keep the tests trustworthy
 
 1. **Test at the lowest level that can express the behaviour.** Game rules are tested in L1;
