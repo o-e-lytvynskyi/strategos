@@ -9,7 +9,22 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-21 — M0 T1, T2, T3
+## 2026-10-21 — M0 T1, T2, T3, T18
+
+- **M0 T18 · Continuous integration** — QA-08 and CORE-05 in progress.
+  - **Results:**
+    - one `ubuntu-24.04` job runs `verify` on pushes to `main` and on pull requests;
+    - the first run, with a cold cache, passed in 6 min 11 s (budget 20 min, QA-08.2);
+    - [pull request #1](https://github.com/o-e-lytvynskyi/strategos/pull/1) shows the check
+      "verify: test results" with the L1, L2, L3 and L5 cases (QA-08.1); `main` was then
+      fast-forwarded to the branch;
+    - the actions are pinned to the commits of their tags;
+    - documentation-only pushes run nothing, and a newer push cancels an older run.
+  - **Problems:**
+    - The current GitHub tools read a pull request's checks but not runs on `main`, so "Now"
+      shows CI as not readable for `main` until the owner's setup item 1b.
+    - `jmhSpeedRatio`, the soak and the slow batch join with T12, T6b and T7c
+      (spec §1.6 D row 43).
 
 - **M0 T3 · Smoke, the first ArchUnit rules, `verify`, `verifyHarness`, the first S5 report** —
   QA-05 and QA-17 in progress; QA-01, QA-04.
@@ -57,7 +72,7 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
       versions inside `group:name:version` strings (row 40), now proven on a broken catalog; two
       comments that strayed from the spec were removed;
     - `HandleTest` pins the bit layout with literals, since handles are saved.
-- **Next:** M0 T18 · continuous integration, then T4a.
+- **Next:** M0 T4a · core `shared`, `port`, `diag`.
 
 ## 2026-10-21 — design closed, roadmap approved, autonomy set up
 

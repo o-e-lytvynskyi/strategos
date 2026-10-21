@@ -55,16 +55,19 @@ The owner was here on 2026-10-21 and started M0. Since then:
 - 2026-10-21 · **M0 T3 Smoke, ArchUnit, `verify`:** the commit gate `verify` exists and is green in
   19 s, with every guard proven to bite; ADR-0007 is Accepted on the first S5 report
   ([spikes/S5-build-wiring.md](spikes/S5-build-wiring.md)).
+- 2026-10-21 · **M0 T18 CI:** GitHub Actions runs `verify` on Linux for every push to `main` and every
+  pull request; the first run passed in 6 min 11 s, and
+  [pull request #1](https://github.com/o-e-lytvynskyi/strategos/pull/1) shows the test results.
 
 ## Now
 
-- **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 3 of 25 tasks done.
+- **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 4 of 25 tasks done.
 - **Tripwire (M0 only):** T1 started 2026-10-21; T9 green not yet; M0 work days 1 of 10.
-- **In progress:** M0 T18 since 2026-10-21: its pull request waits for CI.
-- **Last finished task:** M0 T3 (2026-10-21); T2 was commit 33175b8.
-- **Next task:** M0 T18 · Continuous integration (QA-08, CORE-05), then T4a.
-- **WIP branch:** wip/M0-T18 (the CI workflow; merged fast-forward once CI is green).
-- **CI:** none yet (M0 T18 starts right after T3; reading runs on `main` needs item 1b); minutes used this month 0 of 2,000.
+- **In progress:** none.
+- **Last finished task:** M0 T18 (2026-10-21), commit 43a2f13; T3 was commit 3ab0464.
+- **Next task:** M0 T4a · Core `shared`, `port`, `diag` (CORE-05, CORE-02, QA-10).
+- **WIP branch:** none.
+- **CI:** green on [pull request #1](https://github.com/o-e-lytvynskyi/strategos/pull/1); runs on `main` are not readable yet (item 1b); minutes used this month about 7 of 2,000, as of 2026-10-21.
 - **Overview:** `python3 tools/roadmap.py summary`.
 
 ## Blocked
