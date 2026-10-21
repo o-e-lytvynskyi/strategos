@@ -451,7 +451,13 @@ applied, the rest explained); **rejected**.
 | QAR-112 | must | applied | In the roadmap (QA-04); architecture §3.4 corrected on 2026-10-21 (follow-up 2; ADR-0023 amends ADR-0010) |
 | QAR-113 | should | applied | In the roadmap (QA-19); architecture §12.5 corrected on 2026-10-21 (follow-up 3) |
 
-## 8. Refinements after the owner's approval (2026-10-21)
+## 8. Refinements
+
+Scope-neutral refinements of approved cards (test levels, measuring methods, wording, scope moved
+between cards). Each dated block below lists them; anything that changes what a card delivers is a
+`changed` card for the owner instead.
+
+### 2026-10-21, after the owner's approval
 
 After the owner approved M0–M6 and took the decisions needed by M6 as recommended, the
 documents were reconciled. These card edits move existing scope between approved cards or make

@@ -30,6 +30,9 @@ def base(status):
     return status.strip().split(" (")[0].strip().strip("`")
 
 
+RESERVE = set()
+
+
 def roadmap_cards():
     """{card id: (milestone, status)} from the per-milestone tables of ROADMAP.md."""
     cards, milestone = OrderedDict(), None
@@ -48,7 +51,12 @@ def roadmap_cards():
         m = TABLE_ROW.match(line)
         if m and milestone:
             cards[m.group(1)] = (milestone, m.group(5).strip())
+            if "(reserve" in m.group(2):
+                RESERVE.add(m.group(1))
     return cards
+
+
+DUPLICATES = []
 
 
 def card_files():
@@ -60,6 +68,8 @@ def card_files():
 
         def flush():
             if current:
+                if current in cards:
+                    DUPLICATES.append(f"{current}: card defined in {cards[current][3]} and {path.name}")
                 cards[current] = (milestone, status, done, path.name)
 
         for line in path.read_text().splitlines():
@@ -127,10 +137,16 @@ def check():
     for cid, (fms, _, _, fname) in files.items():
         if cid not in road:
             problems.append(f"{cid}: card in {fname} but missing from ROADMAP.md")
+    problems.extend(DUPLICATES)
     for p in problems:
         print("✗", p)
     print(f"{len(road)} cards checked, {len(problems)} problem(s)")
     return 1 if problems else 0
+
+
+MVP = {f"M{i}" for i in range(7)}
+ORDER = ["accepted", "done", "in_progress", "specified", "approved-foundation", "approved",
+         "changed", "proposed", "deferred", "rejected"]
 
 
 def summary():
@@ -139,15 +155,22 @@ def summary():
     for cid, (ms, status) in road.items():
         by_ms.setdefault(ms, Counter())[base(status)] += 1
     progress = spec_progress()
-    order = ["accepted", "done", "in_progress", "specified", "approved-foundation", "approved",
-             "changed", "proposed", "deferred", "rejected"]
-    print("Milestone  cards  " + "  ".join(s for s in order) + "  spec tasks")
     for ms, counts in by_ms.items():
         total = sum(counts.values())
-        cells = "  ".join(f"{counts.get(s, 0):>{len(s)}}" for s in order)
+        parts = ", ".join(f"{counts[s]} {s}" for s in ORDER if counts.get(s))
         spec = progress.get(ms)
-        spec_txt = f"{spec[0]}/{spec[1]}" if spec else "no spec"
-        print(f"{ms:<9}  {total:>5}  {cells}  {spec_txt}")
+        spec_txt = f"spec tasks {spec[0]}/{spec[1]}" if spec else "no spec yet"
+        print(f"{ms:<4} {total:>3} cards: {parts}; {spec_txt}")
+    active = [s for s in ORDER if s not in ("deferred", "rejected")]
+    mvp = [base(st) for cid, (ms, st) in road.items()
+           if ms in MVP and base(st) in active and cid not in RESERVE]
+    finished = sum(1 for s in mvp if s in DONE_LIKE)
+    left_out = sum(1 for cid, (ms, st) in road.items()
+                   if ms in MVP and (cid in RESERVE or base(st) not in active))
+    current = next((ms for ms, c in by_ms.items()
+                    if any(c.get(s) for s in ("specified", "in_progress", "approved", "approved-foundation"))), None)
+    print(f"MVP (M0–M6): {finished}/{len(mvp)} cards done ({left_out} reserve or deferred left out); "
+          f"current milestone: {current or 'none'}")
     pending = open_decisions()
     print("Open decisions:", ", ".join(pending) if pending else "none")
     return 0

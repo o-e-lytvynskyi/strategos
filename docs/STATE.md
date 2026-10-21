@@ -3,8 +3,8 @@
 Where the project stands right now. The session log is in [worklog.md](worklog.md); the work
 procedure is the `strategos-dev` skill (`.claude/skills/strategos-dev/SKILL.md`).
 
-**Last update:** 2026-10-21 · **Current:** M0 Foundation — specified, not started (waiting for
-the owner's go-ahead)
+**Last update:** 2026-10-21 · **Owner last seen:** 2026-10-21 · **Current:** M0 Foundation —
+specified, not started (waiting for the owner's go-ahead)
 
 ## For the owner
 
@@ -28,12 +28,18 @@ Answer in chat or here; the next session applies the answers.
      ([design/roadmap-changes.md §8](design/roadmap-changes.md));
    - the promo draft ([promo/roadmap-announcement.md](promo/roadmap-announcement.md)).
 
+## Since your last visit
+
+Nothing yet: the owner was here on 2026-10-21, when design closed. Each finished task or milestone
+adds a line here; the list restarts after the owner's next visit.
+
 ## Now
 
 - **Milestone:** M0 Foundation, spec [milestones/M0-foundation.md](milestones/M0-foundation.md),
   0 of 26 tasks done.
 - **Last finished task:** none.
-- **Next task:** T1 · Build skeleton (QA-01, QA-03, QA-09, CORE-06).
+- **Next task:** T1 · Build skeleton (QA-01, QA-03, QA-09, CORE-06), once the owner says
+  «начинай M0» (the skill's gate: a plain «продолжай» does not start a new milestone).
 - **WIP branch:** none.
 - **Overview:** `python3 tools/roadmap.py summary`.
 - **`main`:** documentation only; there is no build yet. CI comes with T18, which can start

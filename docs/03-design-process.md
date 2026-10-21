@@ -121,6 +121,10 @@ nothing is ready, a task failed three times, a budget is red, a hard rule would 
 usage is running low. Sessions can end at any moment, so every finished step is committed and
 pushed, and an unfinished task lives on a `wip/Mx-Tn` branch named in STATE.md.
 
+**Gates.** Implementing a milestone starts only after the owner's go-ahead for it («начинай Mx»),
+recorded in STATE.md; planning work (writing the next milestone's spec) needs none. One session
+works at a time (a lock in `build/session.lock`).
+
 **Statuses and evidence.** ROADMAP.md is the source of truth; card files mirror it, and
 `tools/roadmap.py check` must pass after every change.
 
@@ -136,6 +140,11 @@ pushed, and an unfinished task lives on a `wip/Mx-Tn` branch named in STATE.md.
 Milestone specs keep a "Progress" checklist (`[x] T3 (date)`); commits are named
 `Mx Tn: <summary>`, so `git log --grep "Mx Tn"` finds every task's work.
 
+**Refinements.** When an acceptance criterion cannot be tested as written, the assistant may make a
+scope-neutral refinement — another test level, a measuring method, clearer wording — and records it
+in [design/roadmap-changes.md](design/roadmap-changes.md) "Refinements". Anything that changes what
+a card delivers sets it to `changed` and waits for the owner.
+
 **Green `main`.** Nothing reaches `main` without `verify`. Once CI exists (M0 T18), every push
 is checked on GitHub Actions as well, and a red build is the first thing the next session fixes.
 
@@ -149,7 +158,7 @@ not depend on it continues; the assistant never waits idle on one item while oth
 the keyboard, and records the results.
 
 **When the owner visits** (five minutes):
-1. Read STATE.md: "For the owner" and "Now".
+1. Read STATE.md: "For the owner", "Since your last visit" and "Now".
 2. Skim worklog.md since the last visit; optionally run `python3 tools/roadmap.py summary` or
    look at the commits and CI on GitHub.
 3. Answer the queue: decisions, consent, approvals; play the demo when a milestone is Done.
