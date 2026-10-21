@@ -9,7 +9,31 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-21 — M0 T1, T2, T3, T18, T4a, T4b, T5a, T5b, T6a, T6b, T7a, T7b
+## 2026-10-21 — M0 T1, T2, T3, T18, T4a, T4b, T5a, T5b, T6a, T6b, T7a, T7b, T7c (started)
+
+- **M0 T7c · Body and match GameTests, the batch-end check** — started, not finished: the session
+  stopped as usage ran low. The work is on `wip/M0-T7c` (commit c064b5f, unverified).
+  - **Done on the branch:** `GameTestTickets` (the ticket controller and its held chunks),
+    `BatchEndCheck` (leftover tickets, GameTest matches and unit bodies are recorded as
+    `batchend.<batch>`, then cleared), `MatchFixture`, `JUnitXmlReporter#recordFailure`.
+  - **Left:**
+    - register the controller in `GameTestBootstrap` (`RegisterTicketControllersEvent`, GameTest
+      server only);
+    - in `StrategosGameTests`, the `@AfterBatch` hooks of every batch (`MatchFixture.disposeAll`,
+      then `BatchEndCheck.verify`), and the slow-batch rule (`strategos.gametest.slow`);
+    - `Suites`: `BodyTests` and `MatchTests` in the default run, `ticketLeak` →
+      `TicketLeakSelfTest`; the three suites of spec §7.4;
+    - `mod/build.gradle`: the runs `gameTestSlow` and `gameTestTicketLeak`, the guard's failed-case
+      check, the slow run's guard, the ticket-leak run's `expectVerdicts`; root `verifySlow`,
+      `verifyHarness` gains `:mod:runGameTestTicketLeak`; CI runs `verify verifySlow verifySoak`;
+    - the README's notes on the batch-end check and the slow batch.
+  - **Notes for the tests:** "one log line" in `discarded_body_rematerialises` needs a log capture
+    (a Log4j2 appender filtered by the match prefix); in `no_vibrations_no_push` the pig controls
+    must stay more than 8 blocks from the unit's sensor (the sculk sensor's range) and run first,
+    with the pigs discarded before the unit part.
+  - **Reviews:** T6b's review (three lenses, each finding checked by a skeptic) confirmed nothing.
+    T7b's review was still running when the session stopped: if its result is not recorded here,
+    run it again before finishing T7c.
 
 - **M0 T7b · Holder, match registry, tick driver, bodies** — CORE-10 in progress; CORE-01, CORE-02,
   CORE-06, UNIT-01.
@@ -218,7 +242,7 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
       versions inside `group:name:version` strings (row 40), now proven on a broken catalog; two
       comments that strayed from the spec were removed;
     - `HandleTest` pins the bit layout with literals, since handles are saved.
-- **Next:** M0 T7c · body and match GameTests, the batch-end check.
+- **Next:** finish M0 T7c from `wip/M0-T7c` (skill §9: rebase onto `main`, finish, green gate, fast-forward, delete the branch).
 
 ## 2026-10-21 — design closed, roadmap approved, autonomy set up
 
