@@ -9,6 +9,27 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
+## 2026-10-21 — M0 T1
+
+- **M0 T1 · Build skeleton** — QA-01, QA-03, QA-09 and CORE-06 in progress.
+  - **Results:**
+    - the wrapper checksum matched the MDK's;
+    - the daemon runs on Temurin 21;
+    - the first build took 55 s: NeoForge 21.1.264 downloaded and decompiled, 787 MiB of assets;
+    - a clean rebuild without the build cache takes 5.9 s;
+    - `HandleTest` passes 8 tests, `ModLoadsTest` 2 (the mod loads, Dist `DEDICATED_SERVER`);
+    - the jar holds `Handle.class`;
+    - no Gradle deprecation warnings.
+  - **Problems, recorded in spec §1.6 D:**
+    - Spotless was loaded twice because `core` and `mod` apply different plugin sets; the root now
+      declares the convention plugin with `apply false` (row 38; pitfall in the knowledge base);
+    - Gradle 9's property syntax (row 39);
+    - a three-lens review with adversarial checks found that `checkVersionCatalog` missed `2+` and
+      versions inside `group:name:version` strings (row 40), now proven on a broken catalog; two
+      comments that strayed from the spec were removed;
+    - `HandleTest` pins the bit layout with literals, since handles are saved.
+- **Next:** M0 T2 · GameTest harness.
+
 ## 2026-10-21 — design closed, roadmap approved, autonomy set up
 
 - **Owner decisions.**

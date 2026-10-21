@@ -1,0 +1,67 @@
+import net.ltgt.gradle.errorprone.CheckSeverity
+
+plugins {
+    id 'java'
+    id 'com.diffplug.spotless'
+    id 'net.ltgt.errorprone'
+}
+
+def libs = extensions.getByType(VersionCatalogsExtension).named('libs')
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(21)
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    errorprone libs.findLibrary('error-prone-core').get()
+    errorprone libs.findLibrary('nullaway').get()
+}
+
+// JSpecify annotations on every source set (Minecraft 1.21.1 does not ship them; compile only).
+sourceSets.configureEach { ss ->
+    dependencies.add(ss.compileOnlyConfigurationName, libs.findLibrary('jspecify').get())
+}
+
+tasks.withType(JavaCompile).configureEach { t ->
+    t.options.encoding = 'UTF-8'
+    t.options.release = 21
+    // NullAway's JSpecify mode on JDK 21.0.8+; redundant with net.ltgt.errorprone >= 4.4 but harmless.
+    t.options.compilerArgs += ['-XDaddTypeAnnotationsToSymbol=true']
+    boolean main = t.name == 'compileJava'
+    if (main) {
+        // Shipped code: every ErrorProne warning is an error.
+        t.options.compilerArgs += ['-Werror']
+    }
+    t.options.errorprone {
+        disableWarningsInGeneratedCode = true
+        excludedPaths = '.*/(build/generated|mixin)/.*'
+        check('NullAway', main ? CheckSeverity.ERROR : CheckSeverity.OFF)
+        option('NullAway:OnlyNullMarked', 'true')
+        option('NullAway:JSpecifyMode', 'true')
+    }
+}
+
+spotless {
+    java {
+        target 'src/*/java/**/*.java'
+        palantirJavaFormat(libs.findVersion('palantir').get().requiredVersion)
+        formatAnnotations()
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+}
+
+tasks.withType(Test).configureEach { t ->
+    t.useJUnitPlatform()
+    t.testLogging {
+        events 'failed'
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+    }
+    // Forward -Dstrategos.* from the Gradle command line to the test JVM:
+    // strategos.seed=<n> reruns one seed; strategos.golden.update and strategos.fixtures.update rewrite goldens.
+    t.systemProperties(providers.systemPropertiesPrefixedBy('strategos.').get())
+}

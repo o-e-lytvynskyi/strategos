@@ -1,0 +1,204 @@
+import java.time.Duration
+
+plugins {
+    id 'strategos.java-conventions'
+    id 'java-library'
+    alias(libs.plugins.moddev)
+}
+
+evaluationDependsOn(':core')
+def core = project(':core')
+
+version = providers.gradleProperty('mod_version').get()
+group = providers.gradleProperty('mod_group_id').get()
+base { archivesName = 'strategos' }
+
+sourceSets {
+    gametest   // L3 GameTests, smoke and spike drivers: dev only, never in the jar
+    devtools   // L4 client scenario harness: dev only
+    archTest   // L0 ArchUnit rules on plain JVM, no Minecraft on the classpath
+}
+
+repositories {
+    maven {
+        name = 'Modrinth'
+        url = 'https://api.modrinth.com/maven'
+        content { includeGroup 'maven.modrinth' }
+    }
+}
+
+def localRuntime = configurations.create('localRuntime') {
+    canBeConsumed = false
+    canBeResolved = false
+    description = 'Dev-only runtime mods (spark, compat profiles); never published or shipped.'
+}
+configurations.named('runtimeClasspath') { extendsFrom localRuntime }
+
+neoForge {
+    version = libs.versions.neoforge.get()
+    parchment {
+        minecraftVersion = libs.versions.parchment.minecraft.get()
+        mappingsVersion = libs.versions.parchment.mappings.get()
+    }
+    addModdingDependenciesTo sourceSets.gametest
+    addModdingDependenciesTo sourceSets.devtools
+
+    mods {
+        strategos {
+            sourceSet sourceSets.main
+            sourceSet core.sourceSets.main            // core is part of the mod module in every run
+            sourceSet core.sourceSets.testFixtures    // dev runs only: scenarios for GameTests
+            sourceSet sourceSets.gametest             // dev runs only
+            sourceSet sourceSets.devtools             // dev runs only
+        }
+    }
+
+    unitTest {
+        enable()
+        testedMod = mods.strategos
+    }
+
+    runs {
+        configureEach {
+            systemProperty 'neoforge.enabledGameTestNamespaces', 'strategos'
+            systemProperty 'strategos.gametest.structures', file('src/gametest/structures').absolutePath
+            logLevel = org.slf4j.event.Level.INFO
+        }
+        client {
+            client()
+            gameDirectory = file('run/client')
+            // A plain client: it opens the title screen and joins nothing (clientJoin does, for QA-09.1).
+            programArguments.addAll('--username', 'Dev1')
+            jvmArgument('-Xmx4G')
+            systemProperty 'strategos.faults.rethrow', 'true'
+        }
+        client2 {
+            client()
+            gameDirectory = file('run/client2')
+            // The second client of the multiplayer launch (QA-09.1): joins the dev server by Quick Play.
+            programArguments.addAll('--username', 'Dev2', '--quickPlayMultiplayer', 'localhost:25565')
+            jvmArgument('-Xmx3G')
+            systemProperty 'strategos.faults.rethrow', 'true'
+        }
+        server {
+            server()
+            gameDirectory = file('run/server')
+            programArgument('--nogui')
+            jvmArgument('-Xmx3G')
+            systemProperty 'strategos.faults.rethrow', 'true'
+        }
+    }
+}
+
+dependencies {
+    // Compile classpath and IDE; at runtime core arrives through the mod group, not this jar.
+    implementation core
+
+    testImplementation testFixtures(core)
+    testImplementation platform(libs.junit.bom)
+    testImplementation libs.junit.jupiter
+    testImplementation libs.assertj
+    testRuntimeOnly libs.junit.platform.launcher
+
+    gametestImplementation sourceSets.main.output
+    gametestImplementation core
+    gametestImplementation testFixtures(core)
+
+    devtoolsImplementation sourceSets.main.output
+    devtoolsImplementation core
+
+    archTestImplementation platform(libs.junit.bom)
+    archTestImplementation libs.junit.jupiter
+    archTestImplementation libs.archunit
+    archTestRuntimeOnly libs.junit.platform.launcher
+
+    // Dev-only profiles: ./gradlew <run> -Pspark | -Pcompat (client set) | -Pcompat.server (server set)
+    if (providers.gradleProperty('spark').isPresent()) {
+        localRuntime libs.spark
+    }
+    if (providers.gradleProperty('compat').isPresent()) {
+        localRuntime libs.compat.sodium
+        localRuntime libs.compat.iris
+        localRuntime libs.compat.lithium
+        localRuntime libs.compat.modernfix
+        localRuntime libs.compat.ferritecore
+        localRuntime libs.compat.entityculling
+        localRuntime libs.compat.immediatelyfast
+    } else if (providers.gradleProperty('compat.server').isPresent()) {
+        localRuntime libs.compat.lithium
+        localRuntime libs.compat.modernfix
+        localRuntime libs.compat.ferritecore
+    }
+}
+
+tasks.named('test', Test) {
+    maxParallelForks = 1                    // each fork would bootstrap the game again
+    timeout = Duration.ofMinutes(5)
+    systemProperty 'strategos.repoRoot', rootDir.absolutePath
+}
+
+def generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {
+    def props = [
+            minecraft_version_range: providers.gradleProperty('minecraft_version_range').get(),
+            neo_version            : libs.versions.neoforge.get(),
+            loader_version_range   : providers.gradleProperty('loader_version_range').get(),
+            mod_id                 : providers.gradleProperty('mod_id').get(),
+            mod_name               : providers.gradleProperty('mod_name').get(),
+            mod_license            : providers.gradleProperty('mod_license').get(),
+            mod_version            : providers.gradleProperty('mod_version').get(),
+    ]
+    inputs.properties props
+    expand props
+    from 'src/main/templates'
+    into layout.buildDirectory.dir('generated/sources/modMetadata')
+}
+sourceSets.main.resources.srcDir generateModMetadata
+neoForge.ideSyncTask generateModMetadata
+
+tasks.named('jar', Jar) {
+    from core.sourceSets.main.output        // one jar, one module (ADR-0003)
+    duplicatesStrategy = DuplicatesStrategy.FAIL
+    manifest {
+        attributes('Implementation-Title': 'Strategos', 'Implementation-Version': project.version)
+    }
+}
+
+def jarArchive = tasks.named('jar', Jar).flatMap { it.archiveFile }
+def coreClassDirs = core.sourceSets.main.output.classesDirs
+tasks.register('checkJarContents') {
+    group = 'verification'
+    description = 'Every core class exactly once in the mod jar; no dev-only class; no module-info.'
+    inputs.file(jarArchive)
+    inputs.files(coreClassDirs)
+    doLast {
+        def jarFile = jarArchive.get().asFile
+        def names = new java.util.zip.ZipFile(jarFile).withCloseable { z -> Collections.list(z.entries()).collect { it.name } }
+        def counts = names.countBy { it }
+        coreClassDirs.files.each { File dir ->
+            if (!dir.isDirectory()) return
+            dir.eachFileRecurse(groovy.io.FileType.FILES) { File f ->
+                if (!f.name.endsWith('.class')) return
+                def rel = dir.toPath().relativize(f.toPath()).toString().replace('\\', '/')
+                if (counts[rel] != 1) throw new GradleException("core class ${rel} occurs ${counts[rel] ?: 0} times in ${jarFile.name}")
+            }
+        }
+        def forbidden = names.findAll {
+            it.startsWith('dev/strategos/gametest/') || it.startsWith('dev/strategos/devtools/') ||
+                    it.startsWith('dev/strategos/core/testkit/') || it.startsWith('dev/strategos/arch/') ||
+                    it.endsWith('module-info.class')
+        }
+        if (forbidden) throw new GradleException("Dev-only classes or module-info in the jar: ${forbidden.take(10)}")
+        if (!names.contains('META-INF/neoforge.mods.toml')) throw new GradleException('META-INF/neoforge.mods.toml missing from the jar')
+    }
+}
+
+def archClasses = files(sourceSets.main.output.classesDirs, core.sourceSets.main.output.classesDirs)
+def archTest = tasks.register('archTest', Test) {
+    group = 'verification'
+    description = 'ArchUnit rules over the shipped classes of mod and core (plain JVM).'
+    testClassesDirs = sourceSets.archTest.output.classesDirs
+    classpath = sourceSets.archTest.runtimeClasspath
+    inputs.files(archClasses)
+    systemProperty 'strategos.arch.classes', archClasses.asPath
+}
+tasks.named('check') { dependsOn archTest, 'checkJarContents' }

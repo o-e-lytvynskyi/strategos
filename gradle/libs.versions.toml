@@ -1,0 +1,64 @@
+[versions]
+# Toolchain. settings.gradle repeats foojay because settings plugins cannot read the catalog.
+foojay = "1.0.0"
+moddev = "2.0.148"
+neoforge = "21.1.264"
+parchment-minecraft = "1.21.1"
+parchment-mappings = "2024.11.17"
+# Libraries Minecraft 1.21.1 ships; core compiles against exactly these.
+fastutil = "8.5.12"
+dfu = "8.0.16"
+gson = "2.10.1"
+slf4j = "2.0.9"
+jspecify = "1.0.1"
+# Quality gates.
+spotless = "8.10.4"
+palantir = "2.102.0"
+errorprone-gradle = "5.1.1"
+error-prone = "2.50.0"
+nullaway = "0.14.2"
+archunit = "1.5.1"
+# Tests.
+junit = "5.14.4"
+assertj = "3.27.7"
+testframework = "21.1.264"   # used from M1 (NET-01 mock players); keep in lockstep with neoforge
+jmh = "1.37"
+# Dev-only runtime mods (never shipped; Modrinth Maven).
+spark = "1.10.124-neoforge-1.21.1"
+sodium = "mc1.21.1-0.8.13-neoforge"
+iris = "1.8.14-beta.1+1.21.1-neoforge"
+lithium = "mc1.21.1-0.15.4-neoforge"
+modernfix = "5.27.26+mc1.21.1"
+ferritecore = "7.0.3-neoforge"
+entityculling = "eieYbWYb"   # Entity Culling 1.11.3 for NeoForge, as a Modrinth version id
+immediatelyfast = "1.6.15+1.21.1-neoforge"
+
+[libraries]
+fastutil = { module = "it.unimi.dsi:fastutil", version.ref = "fastutil" }
+dfu = { module = "com.mojang:datafixerupper", version.ref = "dfu" }
+gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+jspecify = { module = "org.jspecify:jspecify", version.ref = "jspecify" }
+spotless-gradle-plugin = { module = "com.diffplug.spotless:spotless-plugin-gradle", version.ref = "spotless" }
+errorprone-gradle-plugin = { module = "net.ltgt.gradle:gradle-errorprone-plugin", version.ref = "errorprone-gradle" }
+error-prone-core = { module = "com.google.errorprone:error_prone_core", version.ref = "error-prone" }
+nullaway = { module = "com.uber.nullaway:nullaway", version.ref = "nullaway" }
+archunit = { module = "com.tngtech.archunit:archunit", version.ref = "archunit" }
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+assertj = { module = "org.assertj:assertj-core", version.ref = "assertj" }
+testframework = { module = "net.neoforged:testframework", version.ref = "testframework" }
+jmh-core = { module = "org.openjdk.jmh:jmh-core", version.ref = "jmh" }
+jmh-generator = { module = "org.openjdk.jmh:jmh-generator-annprocess", version.ref = "jmh" }
+spark = { module = "maven.modrinth:spark", version.ref = "spark" }
+compat-sodium = { module = "maven.modrinth:sodium", version.ref = "sodium" }
+compat-iris = { module = "maven.modrinth:iris", version.ref = "iris" }
+compat-lithium = { module = "maven.modrinth:lithium", version.ref = "lithium" }
+compat-modernfix = { module = "maven.modrinth:modernfix", version.ref = "modernfix" }
+compat-ferritecore = { module = "maven.modrinth:ferrite-core", version.ref = "ferritecore" }
+compat-entityculling = { module = "maven.modrinth:entityculling", version.ref = "entityculling" }
+compat-immediatelyfast = { module = "maven.modrinth:immediatelyfast", version.ref = "immediatelyfast" }
+
+[plugins]
+moddev = { id = "net.neoforged.moddev", version.ref = "moddev" }

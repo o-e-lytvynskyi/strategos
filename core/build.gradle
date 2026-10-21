@@ -1,0 +1,32 @@
+plugins {
+    id 'strategos.core-conventions'
+}
+
+repositories {
+    maven {
+        name = 'Mojang'
+        url = 'https://libraries.minecraft.net'
+        content { includeGroup 'com.mojang' }
+    }
+}
+
+dependencies {
+    // Exactly what Minecraft 1.21.1 ships; provided by the game at runtime, never packaged.
+    // DFU brings gson 2.10.1, guava 32.1.2-jre and jsr305 3.0.2 transitively: they are on the
+    // compile classpath, and ArchUnit rule B1 bans their use in core code.
+    mcShipped libs.fastutil
+    mcShipped libs.dfu
+    mcShipped libs.gson
+    mcShipped libs.slf4j.api
+
+    testImplementation platform(libs.junit.bom)
+    testImplementation libs.junit.jupiter
+    testImplementation libs.assertj
+    testImplementation libs.archunit
+    testRuntimeOnly libs.junit.platform.launcher
+}
+
+tasks.named('test', Test) {
+    useJUnitPlatform { excludeTags 'soak', 'replay' }
+    timeout = java.time.Duration.ofMinutes(5)
+}

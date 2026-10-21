@@ -44,15 +44,18 @@ Answer in chat or here; the next session applies the answers.
 
 ## Since your last visit
 
-Nothing yet: the owner was here on 2026-10-21 and started M0. Each finished task or milestone
-adds a line here; the list restarts after the owner's next visit.
+The owner was here on 2026-10-21 and started M0. Since then:
+
+- 2026-10-21 · **M0 T1 Build skeleton:** the build runs (Gradle 9.2.1 on Java 21, NeoForge
+  21.1.264); `verifyFast` and the first tests are green; three spec corrections (§1.6 D, rows
+  38–40).
 
 ## Now
 
-- **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 0 of 25 tasks done.
-- **Tripwire (M0 only):** T1 started 2026-10-21; T9 green not yet; M0 work days 0 of 10.
-- **In progress:** M0 T1 since 2026-10-21.
-- **Last finished task:** none.
+- **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 1 of 25 tasks done.
+- **Tripwire (M0 only):** T1 started 2026-10-21; T9 green not yet; M0 work days 1 of 10.
+- **In progress:** none.
+- **Last finished task:** M0 T1 (2026-10-21).
 - **Next task:** M0 T2 · GameTest harness (QA-04, QA-01).
 - **WIP branch:** none.
 - **CI:** none yet (M0 T18 starts right after T3; reading runs on `main` needs item 1b); minutes used this month 0 of 2,000.

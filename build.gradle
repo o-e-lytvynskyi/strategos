@@ -1,0 +1,54 @@
+plugins {
+    id 'base'
+    // Loads the convention plugins (and Spotless, ErrorProne) once, in the root class loader: core and mod
+    // apply different plugin sets, so each would otherwise load its own copy of Spotless, whose shared build
+    // service then fails with "Cannot set the value of task ':mod:spotlessJava' property 'taskService'" (§1.6 row 38).
+    id 'strategos.java-conventions' apply false
+}
+
+def catalogFile = file('gradle/libs.versions.toml')
+def settingsFile = file('settings.gradle')
+def catalogMarker = layout.buildDirectory.file('checks/version-catalog.ok')
+
+tasks.register('checkVersionCatalog') {
+    group = 'verification'
+    description = 'Fails on a dynamic version, a range or a rich constraint in the catalog, and on a foojay pin that differs from settings.gradle.'
+    inputs.files(catalogFile, settingsFile)
+    outputs.file(catalogMarker)
+    doLast {
+        def problems = []
+        catalogFile.readLines().eachWithIndex { String line, int i ->
+            def text = line.trim()
+            if (text.isEmpty() || text.startsWith('#')) return
+            if (text =~ /\b(strictly|require|prefer|reject|rejectAll)\b/) {
+                problems << "line ${i + 1}: rich version constraint: ${text}"
+            }
+            (text =~ /(?:^[\w.-]+|version)\s*=\s*"([^"]*)"/).each { m ->
+                String v = m[1]
+                // Gradle's rules (DefaultVersionSelectorScheme): any selector ending in '+' is a prefix match, and a
+                // 'group:name:version' or 'id:version' string carries its version after the last ':' (§1.6 row 40).
+                String ver = v.substring(v.lastIndexOf(':') + 1)
+                boolean dynamic = ver.endsWith('+') || ver.startsWith('latest.') || ver.contains('[') ||
+                        ver.contains(']') || ver.contains('(') || ver.contains(')') || ver.contains(',')
+                if (dynamic) problems << "line ${i + 1}: dynamic version or range '${v}'"
+            }
+        }
+        def inCatalog = (catalogFile.text =~ /(?m)^foojay\s*=\s*"([^"]+)"/)
+        def inSettings = (settingsFile.text =~ /foojay-resolver-convention'\s+version\s+'([^']+)'/)
+        if (!inCatalog.find() || !inSettings.find() || inCatalog.group(1) != inSettings.group(1)) {
+            problems << 'foojay version in settings.gradle must equal [versions] foojay in the catalog'
+        }
+        if (problems) throw new GradleException('Version catalog problems:\n  ' + problems.join('\n  '))
+        catalogMarker.get().asFile.text = 'ok\n'
+    }
+}
+
+tasks.register('verifyFast') {
+    group = 'verification'
+    description = 'L0 + L1: catalog, formatting, ErrorProne and NullAway, ArchUnit, jar check, core tests.'
+    // [T11b] 'checkFixtures' joins here (QA-17.5).
+    dependsOn 'checkVersionCatalog', ':core:check',
+            ':mod:spotlessCheck', ':mod:compileJava', ':mod:compileTestJava',
+            ':mod:compileGametestJava', ':mod:compileDevtoolsJava',
+            ':mod:archTest', ':mod:checkJarContents'
+}

@@ -249,7 +249,8 @@ cards said and how this spec resolved it from the architecture; the final cards 
 row, and rows 2, 10 and 22 now give the final cards' resolution. **B** (rows 24–37, numbered on
 from A) lists where this spec implements a final card differently from its wording; §1.4 marks
 each one that touches an acceptance criterion. **C** lists what the reconciliation with the final
-cards changed here.
+cards changed here. **D** (rows 38 on) lists what implementing the tasks found wrong in this spec;
+the text each row names is corrected as well.
 
 **A. Roadmap draft → architecture** (criterion numbers are the draft's)
 
@@ -341,6 +342,14 @@ Additions that 04 §1.5 does not name, each the smallest piece the named items n
 - **`MatchLifecycle` in core**, so the transition table is an L1 test (CORE-01.2).
 - **`ReplayDriver` in core `main`** beside `ReplayRunner` in the test kit, so
   `/strategos debug replay` works in dev runs without shipping test code (B11).
+
+**D. Found in implementation**
+
+| # | This spec said | The implementation, and why |
+|---|---|---|
+| 38 | §4.8 (T1): the root `build.gradle` applies only `base` | It also declares `strategos.java-conventions` with `apply false`. `core` and `mod` apply different plugin sets (`mod` adds ModDevGradle), so each project got its own class loader and its own copy of Spotless, and Spotless's shared build service failed: "Cannot set the value of task ':mod:spotlessJava' property 'taskService'". Declared in the root, the convention plugins and their Spotless and ErrorProne load once, in the parent class loader, as Gradle's message advises |
+| 39 | §4.7 (T1): `testLogging { exceptionFormat 'full' }` | `exceptionFormat = TestExceptionFormat.FULL`: Gradle 9 deprecates setting a property with the space syntax, and Gradle 10 removes it; the build runs without deprecation warnings |
+| 40 | §4.8 (T1): `checkVersionCatalog` flags `+`, `*.+`, `latest.*` and ranges, tested on the whole captured value | Gradle 9.2.1 treats any selector ending in `+` as a prefix match (`DefaultVersionSelectorScheme#isSubVersion`), so `2+` is dynamic too; and a catalog value may be a `group:name:version` or `id:version` string, whose version the old test never saw. The check now tests the part after the last `:` with Gradle's rules: ends with `+`, starts with `latest.`, or holds a range character |
 
 ---
 
@@ -885,7 +894,7 @@ tasks.withType(Test).configureEach { t ->
     t.useJUnitPlatform()
     t.testLogging {
         events 'failed'
-        exceptionFormat 'full'
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
     }
     // Forward -Dstrategos.* from the Gradle command line to the test JVM:
     // strategos.seed=<n> reruns one seed; strategos.golden.update and strategos.fixtures.update rewrite goldens.
@@ -951,6 +960,10 @@ In T1 the JMH block is absent; T12 adds it.
 ```groovy
 plugins {
     id 'base'
+    // Loads the convention plugins (and Spotless, ErrorProne) once, in the root class loader: core and mod
+    // apply different plugin sets, so each would otherwise load its own copy of Spotless, whose shared build
+    // service then fails with "Cannot set the value of task ':mod:spotlessJava' property 'taskService'" (§1.6 row 38).
+    id 'strategos.java-conventions' apply false
 }
 
 def catalogFile = file('gradle/libs.versions.toml')
@@ -972,8 +985,11 @@ tasks.register('checkVersionCatalog') {
             }
             (text =~ /(?:^[\w.-]+|version)\s*=\s*"([^"]*)"/).each { m ->
                 String v = m[1]
-                boolean dynamic = v == '+' || v.endsWith('.+') || v.startsWith('latest.') || v.contains('[') ||
-                        v.contains(']') || v.contains('(') || v.contains(')') || v.contains(',')
+                // Gradle's rules (DefaultVersionSelectorScheme): any selector ending in '+' is a prefix match, and a
+                // 'group:name:version' or 'id:version' string carries its version after the last ':' (§1.6 row 40).
+                String ver = v.substring(v.lastIndexOf(':') + 1)
+                boolean dynamic = ver.endsWith('+') || ver.startsWith('latest.') || ver.contains('[') ||
+                        ver.contains(']') || ver.contains('(') || ver.contains(')') || ver.contains(',')
                 if (dynamic) problems << "line ${i + 1}: dynamic version or range '${v}'"
             }
         }
@@ -4038,7 +4054,7 @@ check and `release.yml`).
 
 ### 9.3 Progress
 
-- [ ] T1 · [ ] T2 · [ ] T3 · [ ] T18 · [ ] T4a · [ ] T4b · [ ] T5a · [ ] T5b · [ ] T6a · [ ] T6b · [ ] T7a · [ ] T7b · [ ] T7c · [ ] T8 · [ ] T9
+- [x] T1 (2026-10-21) · [ ] T2 · [ ] T3 · [ ] T18 · [ ] T4a · [ ] T4b · [ ] T5a · [ ] T5b · [ ] T6a · [ ] T6b · [ ] T7a · [ ] T7b · [ ] T7c · [ ] T8 · [ ] T9
 - [ ] Tripwire checkpoint (dates in STATE.md)
 - [ ] T9b · [ ] T10 · [ ] T11 · [ ] T11b · [ ] T12 · [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17
 

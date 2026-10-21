@@ -1,0 +1,17 @@
+plugins {
+    id 'strategos.java-conventions'
+    id 'java-library'
+    id 'java-test-fixtures'
+}
+
+def libs = extensions.getByType(VersionCatalogsExtension).named('libs')
+
+// One bucket for the libraries Minecraft ships: compile-only for main and testFixtures,
+// on the runtime classpath of tests and benchmarks.
+def mcShipped = configurations.create('mcShipped') {
+    canBeConsumed = false
+    canBeResolved = false
+}
+configurations.named('compileOnly') { extendsFrom mcShipped }
+configurations.named('testFixturesCompileOnly') { extendsFrom mcShipped }
+configurations.named('testImplementation') { extendsFrom mcShipped }

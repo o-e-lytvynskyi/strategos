@@ -137,8 +137,8 @@ approved roadmap; ideas go to "For the owner" as proposals.
    (spec R20). Never move a run out of `verify` yourself.
 6. **When reality disagrees with the plan:**
    - **An API does not exist in 1.21.1, or the spec is wrong:** correct the spec.
-     - Add a row to its differences table: in M0, §1.6 B, next free number. A cut or a deferral
-       goes to §1.5.
+     - Add a row to its table of implementation findings: in M0, §1.6 D, next free number. A
+       cut or a deferral goes to §1.5.
      - If the architecture changes, write an ADR, or a dated note on a Proposed one.
    - **An acceptance criterion cannot be tested as written:**
      - A scope-neutral refinement (another test level, a measuring method, a wording) may be
