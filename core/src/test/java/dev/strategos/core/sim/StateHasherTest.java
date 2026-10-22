@@ -9,6 +9,7 @@ import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.MatchId;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.Vec2d;
+import dev.strategos.core.sim.unitai.UnitAi;
 import dev.strategos.core.testkit.SimHarness;
 import org.junit.jupiter.api.Test;
 
@@ -57,8 +58,24 @@ class StateHasherTest {
     void aStateChangeChangesTheHash() {
         SimHarness h = walking(new MatchId(1));
         long before = h.stateHash();
-        KernelAccess.state(h.core()).ai().set(1, UnitState.WALKING);
+        KernelAccess.state(h.core()).ai().set(1, UnitAi.WALKING);
         assertThat(h.stateHash()).isNotEqualTo(before);
+    }
+
+    @Test
+    void aDataWordChangesTheHashAndZeroWordsHashAsBefore() {
+        SimHarness h = walking(new MatchId(1));
+        long before = h.stateHash();
+        AiStateStore ai = KernelAccess.state(h.core()).ai();
+        ai.setData(0, 0, 1);
+        long second = h.stateHash();
+        ai.setData(0, 1, 0);
+        long first = h.stateHash();
+        ai.setData(0, 0, 0);
+
+        assertThat(second).isNotEqualTo(before).isNotEqualTo(first);
+        assertThat(first).isNotEqualTo(before);
+        assertThat(h.stateHash()).as("words back at 0").isEqualTo(before);
     }
 
     @Test

@@ -7,7 +7,8 @@ import java.util.ArrayDeque;
 
 /**
  * The hash of a match's whole state, in a fixed order: the tick; the seed and the bounds; per index up to the high-water
- * mark, its generation and liveness, and for live units the template index, faction, x, y, z, yaw, state and order,
+ * mark, its generation and liveness, and for live units the template index, faction, x, y, z, yaw, the code of its
+ * machine's leaf (IDLE and WALKING keep M0's codes) and, once either is set, its two data words, then its order,
  * and, once the unit has asked for a path, the path (request, last request, repath flag, status, cursor, waypoints),
  * and, once it has touched terrain, its velocity, floor, step, stuck monitor and arrival latch;
  * then, once any path was requested, the next request id, the last tick a page changed and each request in flight (id, unit, due tick); then every
@@ -51,7 +52,11 @@ public final class StateHasher {
                 h = Hasher.mix(h, Double.doubleToLongBits(motion.y(i)));
                 h = Hasher.mix(h, Double.doubleToLongBits(motion.z(i)));
                 h = Hasher.mix(h, Float.floatToIntBits(motion.yaw(i)));
-                h = Hasher.mix(h, ai.state(i).code());
+                h = Hasher.mix(h, ai.code(i));
+                if (!ai.plain(i)) {
+                    h = Hasher.mix(h, ai.data0(i));
+                    h = Hasher.mix(h, ai.data1(i));
+                }
                 h = Hasher.mix(h, orders.kind(i));
                 h = Hasher.mix(h, Double.doubleToLongBits(orders.targetX(i)));
                 h = Hasher.mix(h, Double.doubleToLongBits(orders.targetZ(i)));

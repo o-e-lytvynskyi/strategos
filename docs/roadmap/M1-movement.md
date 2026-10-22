@@ -525,7 +525,8 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
   2. Machine state round-trips through the persistence codecs (L1).
   3. A static check proves every state has an exit path (L1).
 - **Tests:** L0, L1 · **Depends on:** CORE-04, CORE-06 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Done:** 2026-10-23 — M1 T17: `HfsmTransitionsTest`, one row per transition of the M1 tree plus bubbling, deferred and chained transitions on a test tree (1); `HfsmPersistenceTest` and `MatchSnapshotNbtTest.machineDataWordsSurviveNbt` (2); `HfsmExitPathTest` (3); spec §1.6 D rows 104–111
+- **Status:** done
 
 #### ORD-02 · Order queue: move and stop
 - **Value:** Orders behave as in every classic RTS: a new order replaces the old one, Shift queues

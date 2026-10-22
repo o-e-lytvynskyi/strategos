@@ -11,6 +11,7 @@ import dev.strategos.core.sim.MatchSystem;
 import dev.strategos.core.sim.MotionStore;
 import dev.strategos.core.sim.OrderReceived;
 import dev.strategos.core.sim.OrderStore;
+import dev.strategos.core.sim.PathInvalidated;
 import dev.strategos.core.sim.Phase;
 import dev.strategos.core.sim.Stagger;
 import dev.strategos.core.sim.StopOrdered;
@@ -276,7 +277,8 @@ public final class MotionSystem implements MatchSystem {
         ground(s, i);
         int stuck = motion.stuck(i);
         if (stuck >= LOST_AFTER && stuck % LOST_AFTER == 0 && !paths.repath(i) && !inLine(s, i, tx, tz)) {
-            paths.setRepath(i, true); // pushed off its route behind something: the request pass asks again
+            // pushed off its route behind something: WALKING has the request pass ask again
+            s.bus().publish(new PathInvalidated(s.entities().handleAt(i)));
         }
         double speed = s.stats().walkSpeed(i) * speedFactor(s, i);
         double dx = tx - x0;

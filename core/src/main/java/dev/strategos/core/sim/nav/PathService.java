@@ -13,6 +13,8 @@ import dev.strategos.core.sim.MatchSystem;
 import dev.strategos.core.sim.MotionStore;
 import dev.strategos.core.sim.OrderReceived;
 import dev.strategos.core.sim.OrderStore;
+import dev.strategos.core.sim.PathDelivered;
+import dev.strategos.core.sim.PathInvalidated;
 import dev.strategos.core.sim.Phase;
 import dev.strategos.core.sim.StopOrdered;
 import dev.strategos.core.sim.UnitState;
@@ -22,18 +24,21 @@ import dev.strategos.core.sim.UnitState;
  *
  * <p><b>Requests</b> ({@code UNIT_AI}, after the unit AI), in index order: a unit that got a move order this tick asks
  * for a path to its target; one whose truncated path reached its {@value #REASK_AT}th waypoint, or whose path ran out
- * short of the goal, asks again from where it stands; one whose route crosses a page republished with another slice
- * asks again, at most once every {@value #REPATH_EVERY} ticks (PATH-15). While no terrain is published a request does
- * nothing: the unit walks M0's straight line, and a match without terrain keeps M0's state and hashes. A request is
- * decided at once when the unit stands on no surface ({@code NO_PATH}), or when the target lies within {@code
- * shortMove} blocks with line of walk. Any other request takes the next id and submits a
- * {@link PathJob} over the grid as it is now, due {@code pathK} ticks later; meanwhile a unit with no path left steers
- * straight at its target (provisional steering), so every ordered unit moves on the tick its order applies.
+ * short of the goal, asks again from where it stands; one whose route crosses a page republished with another slice is
+ * sent a {@link PathInvalidated}, which its machine answers by marking it (WALKING does), and a marked unit asks again,
+ * at most once every {@value #REPATH_EVERY} ticks (PATH-15). While no terrain is published a request does nothing: the
+ * unit walks M0's straight line, and a match without terrain keeps M0's state and hashes. A request is decided at once
+ * when the unit stands on no surface ({@code NO_PATH}), or when the target lies within {@code shortMove} blocks with
+ * line of walk. Any other request takes the next id and submits a {@link PathJob} over the grid as it is now, due
+ * {@code pathK} ticks later; meanwhile a unit with no path left steers straight at its target (provisional steering),
+ * so every ordered unit moves on the tick its order applies.
  *
  * <p><b>Delivery</b> ({@code INGEST}, after the inputs): {@code STRICT} joins every job due at this tick, in id order,
  * running it here if no worker has; the result becomes the unit's path if the unit still waits for that id, and is
  * dropped as superseded otherwise. A page that changed while a job was in flight may break the path it found on the
- * grid before: such a path is walked on the current grid, and if it fails the unit asks again once allowed. Admission, {@code ADAPTIVE} delivery and the worker pool are PATH-16's.
+ * grid before: such a path is walked on the current grid, and if it fails the unit is sent a {@link PathInvalidated}.
+ * Every answer, decided at once or delivered, is posted as a {@link PathDelivered}. Admission, {@code ADAPTIVE}
+ * delivery and the worker pool are PATH-16's.
  */
 public final class PathService {
     /** A truncated path is asked for again when the unit reaches this waypoint. */
@@ -150,8 +155,10 @@ public final class PathService {
                 continue;
             }
             paths.follow(i, startFrom(s, i, p.request(), r.waypoints()), r.status());
-            if (paths.lastPageChange() > p.request().tick() && !walkable(s, i)) {
-                paths.setRepath(i, true); // terrain changed in flight and broke the route: ask again when allowed
+            boolean broken = paths.lastPageChange() > p.request().tick() && !walkable(s, i);
+            s.bus().publish(new PathDelivered(handle, r.status()));
+            if (broken) {
+                s.bus().publish(new PathInvalidated(handle)); // terrain changed in flight and broke the route
             }
             count(r.status());
             counters.expansions += r.expansions();
@@ -189,7 +196,7 @@ public final class PathService {
                 }
             }
             if (changed && !paths.repath(i) && crosses(s, i)) {
-                paths.setRepath(i, true);
+                s.bus().publish(new PathInvalidated(entities.handleAt(i))); // the unit's machine marks it to ask again
             }
             long last = paths.lastRequest(i);
             if (paths.repath(i) && (last == PathStore.NEVER || tick - last >= REPATH_EVERY)) {
@@ -218,7 +225,7 @@ public final class PathService {
         double z = motion.z(i);
         int from = startNode(grid, x, motion.y(i), z, bounds.minY());
         if (from < 0) {
-            decide(paths, i, tick, PathStore.Waypoints.NONE, PathStatus.NO_PATH);
+            decide(s, i, PathStore.Waypoints.NONE, PathStatus.NO_PATH);
             return;
         }
         double dx = gx - x;
@@ -227,7 +234,7 @@ public final class PathService {
             int end = LineOfWalk.walk(grid, from, x, z, gx, gz);
             if (end >= 0) {
                 int floor = Surface.floor(grid.surface(grid.nodeX(end), grid.nodeZ(end), SurfaceGrid.nodeLayer(end)));
-                decide(paths, i, tick, PathStore.Waypoints.of(gx, gz, floor), PathStatus.OK);
+                decide(s, i, PathStore.Waypoints.of(gx, gz, floor), PathStatus.OK);
                 return;
             }
         }
@@ -241,11 +248,13 @@ public final class PathService {
         paths.put(new PathStore.Pending(r, tick + rules.pathK(), jobs.submit(new PathJob(grid, r))));
     }
 
-    private void decide(PathStore paths, int i, long tick, PathStore.Waypoints w, PathStatus status) {
-        paths.follow(i, w, status);
-        paths.decided(i, tick);
+    /** A request answered at once, without an id. */
+    private void decide(MatchState s, int i, PathStore.Waypoints w, PathStatus status) {
+        s.paths().follow(i, w, status);
+        s.paths().decided(i, s.tick());
         counters.decided++;
         count(status);
+        s.bus().publish(new PathDelivered(s.entities().handleAt(i), status));
     }
 
     private void count(PathStatus status) {

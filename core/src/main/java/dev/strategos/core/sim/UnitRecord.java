@@ -8,9 +8,10 @@ import dev.strategos.core.sim.nav.PathStore;
 import org.jspecify.annotations.Nullable;
 
 /**
- * One unit in a snapshot; its template by string id, never by net index, so a changed set still loads. {@code path}
- * is {@link PathStore.UnitPath#NONE} for a unit that never asked for one, and {@code motion} {@link
- * MotionStore.Extra#NONE} for one that never touched terrain: so is every unit of an M0 save.
+ * One unit in a snapshot; its template by string id, never by net index, so a changed set still loads. {@code ai} is
+ * the unit's machine: its leaf and data words, the words 0 in every M0 save. {@code path} is {@link
+ * PathStore.UnitPath#NONE} for a unit that never asked for one, and {@code motion} {@link MotionStore.Extra#NONE} for
+ * one that never touched terrain: so is every unit of an M0 save.
  */
 @CoreApi
 public record UnitRecord(
@@ -21,7 +22,7 @@ public record UnitRecord(
         double y,
         double z,
         float yaw,
-        UnitState state,
+        AiStateStore.Saved ai,
         @Nullable Vec2d target,
         PathStore.UnitPath path,
         MotionStore.Extra motion) {
@@ -34,10 +35,10 @@ public record UnitRecord(
             double y,
             double z,
             float yaw,
-            UnitState state,
+            AiStateStore.Saved ai,
             @Nullable Vec2d target,
             PathStore.UnitPath path) {
-        this(handle, template, faction, x, y, z, yaw, state, target, path, MotionStore.Extra.NONE);
+        this(handle, template, faction, x, y, z, yaw, ai, target, path, MotionStore.Extra.NONE);
     }
 
     /** A unit without a path. */
@@ -49,8 +50,8 @@ public record UnitRecord(
             double y,
             double z,
             float yaw,
-            UnitState state,
+            AiStateStore.Saved ai,
             @Nullable Vec2d target) {
-        this(handle, template, faction, x, y, z, yaw, state, target, PathStore.UnitPath.NONE);
+        this(handle, template, faction, x, y, z, yaw, ai, target, PathStore.UnitPath.NONE);
     }
 }

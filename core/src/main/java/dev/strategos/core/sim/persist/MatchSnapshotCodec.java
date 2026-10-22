@@ -4,12 +4,14 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.DynamicOps;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Hex64;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
+import dev.strategos.core.sim.AiStateStore;
 import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.EntitySlots;
 import dev.strategos.core.sim.MatchConfig;
@@ -17,11 +19,12 @@ import dev.strategos.core.sim.MatchSnapshot;
 import dev.strategos.core.sim.MotionStore;
 import dev.strategos.core.sim.PageRef;
 import dev.strategos.core.sim.UnitRecord;
-import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.nav.PathRequest;
 import dev.strategos.core.sim.nav.PathResult;
 import dev.strategos.core.sim.nav.PathStatus;
 import dev.strategos.core.sim.nav.PathStore;
+import dev.strategos.core.sim.unitai.StateId;
+import dev.strategos.core.sim.unitai.UnitAi;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -130,6 +133,31 @@ public final class MatchSnapshotCodec {
                     Codec.INT.optionalFieldOf("pushed", 0).forGetter(MotionStore.Extra::pushed))
             .apply(i, MotionStore.Extra::new));
 
+    /** A leaf of the unit tree by its name; M0's {@code "idle"} and {@code "walking"} name its two leaves. */
+    private static final Codec<StateId> LEAF = Codec.STRING.comapFlatMap(
+            name -> {
+                StateId leaf = UnitAi.leaf(name);
+                return leaf != null
+                        ? DataResult.success(leaf)
+                        : DataResult.error(() -> "unknown unit state '" + name + "'");
+            },
+            StateId::name);
+
+    private static final Codec<List<Integer>> DATA = Codec.INT
+            .listOf()
+            .validate(words -> words.size() == 2
+                    ? DataResult.success(words)
+                    : DataResult.error(() -> "a unit state holds 2 data words, not " + words.size()));
+
+    /**
+     * A unit's machine, inlined into the unit: {@code "state"} as in M0, and {@code "data"} only once a word is set, so
+     * a unit with both words 0 saves exactly as before.
+     */
+    private static final MapCodec<AiStateStore.Saved> AI = RecordCodecBuilder.mapCodec(i -> i.group(
+                    LEAF.fieldOf("state").forGetter(AiStateStore.Saved::state),
+                    DATA.optionalFieldOf("data", List.of(0, 0)).forGetter(s -> List.of(s.data0(), s.data1())))
+            .apply(i, (state, data) -> new AiStateStore.Saved(state, data.get(0), data.get(1))));
+
     private static final Codec<UnitRecord> UNIT = RecordCodecBuilder.create(i -> i.group(
                     Codec.INT.fieldOf("handle").forGetter(UnitRecord::handle),
                     TemplateId.CODEC.fieldOf("template").forGetter(UnitRecord::template),
@@ -138,14 +166,14 @@ public final class MatchSnapshotCodec {
                     Codec.DOUBLE.fieldOf("y").forGetter(UnitRecord::y),
                     Codec.DOUBLE.fieldOf("z").forGetter(UnitRecord::z),
                     Codec.FLOAT.fieldOf("yaw").forGetter(UnitRecord::yaw),
-                    UnitState.CODEC.fieldOf("state").forGetter(UnitRecord::state),
+                    AI.forGetter(UnitRecord::ai),
                     Vec2d.CODEC.optionalFieldOf("target").forGetter(u -> Optional.ofNullable(u.target())),
                     UNIT_PATH.optionalFieldOf("path", PathStore.UnitPath.NONE).forGetter(UnitRecord::path),
                     MOTION.optionalFieldOf("motion", MotionStore.Extra.NONE).forGetter(UnitRecord::motion))
             .apply(
                     i,
-                    (handle, template, faction, x, y, z, yaw, state, target, path, motion) -> new UnitRecord(
-                            handle, template, faction, x, y, z, yaw, state, target.orElse(null), path, motion)));
+                    (handle, template, faction, x, y, z, yaw, ai, target, path, motion) -> new UnitRecord(
+                            handle, template, faction, x, y, z, yaw, ai, target.orElse(null), path, motion)));
 
     private static final Codec<PageRef> PAGE = RecordCodecBuilder.create(i -> i.group(
                     Codec.INT.fieldOf("x").forGetter(PageRef::x),

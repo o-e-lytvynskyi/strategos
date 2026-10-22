@@ -169,21 +169,23 @@ Answer in chat or here; the next session applies the answers.
   The avoidance adapts the open-source RVO2 library (Apache-2.0), credited in the new `NOTICE`
   file. Cards PATH-06 and UNIT-09 are done, and ADR-0011, how unit bodies work, is now accepted:
   no unit type needs vanilla physics.
+- 2026-10-23 · **M1 T17 Unit behaviour as a state machine:** each unit's behaviour now runs as a
+  small tree of states (idle and walking for now) that later units' work, combat, gathering and
+  building, plugs into without rewriting what exists. A check proves every state has a way back to
+  idle, and a unit's state is saved with the match. Nothing changes in play yet: the same matches
+  replay to the same results. Card UNIT-02 is done.
 
 ## Now
 
-- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 19 of 29 tasks done (T28, PATH-08, joined by its trigger).
+- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 20 of 29 tasks done (T28, PATH-08, joined by its trigger).
 - **In progress:** none.
 - **Paused WIP (parallel agents stopped by the owner on 2026-10-23 to save tokens; finished in the main tree):**
-  - T17 UnitAI HFSM on branch `wip/m1-t17-unitai-hfsm` (30e628c): the framework, the M1 tree and
-    `HfsmTransitionsTest` are done; `HfsmPersistenceTest`, `HfsmExitPathTest`, an NBT round trip
-    and `verify` are left.
   - T25 debug overlay on branch `wip/m1-t25-debug-overlay` (a7a110d): the dev payloads, the server
     feed, `/strategos perf` and the client overlay are done; `DebugTests`, `MockViewer#operator`
     and `verify` are left.
-- **Last finished task:** M1 T21 (2026-10-23).
-- **Next task:** M1 T17 · UnitAI HFSM (UNIT-02), finished from its branch; then T18 (needs T17), then
-  T25 from its branch.
+- **Last finished task:** M1 T17 (2026-10-23), finished from the agent's branch
+  `wip/m1-t17-unitai-hfsm`.
+- **Next task:** M1 T18 · Order queue: move and stop (ORD-02); then T25 from its branch.
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 220 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.

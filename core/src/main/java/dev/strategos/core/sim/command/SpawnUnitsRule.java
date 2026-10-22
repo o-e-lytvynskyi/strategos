@@ -16,7 +16,7 @@ import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.MotionStore;
 import dev.strategos.core.sim.Streams;
 import dev.strategos.core.sim.UnitCreated;
-import dev.strategos.core.sim.UnitState;
+import dev.strategos.core.sim.unitai.UnitAi;
 
 /**
  * SpawnUnits, admin only: creates units around a centre. Unit i stands at angle {@code 2π·u(2i)} and radius
@@ -79,7 +79,7 @@ final class SpawnUnitsRule implements CommandRule<SpawnUnits> {
             state.paths().reset(index);
             state.motion().setExtra(index, MotionStore.Extra.NONE);
             state.stats().clearPersonal(index);
-            state.ai().set(index, UnitState.IDLE);
+            state.ai().reset(index, UnitAi.IDLE);
             state.outputs()
                     .add(new UnitCreated(handle, template.netIndex(), spawn.faction(), p.x(), floorY, p.z(), 0f));
         }

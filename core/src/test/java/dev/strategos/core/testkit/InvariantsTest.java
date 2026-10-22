@@ -133,7 +133,7 @@ class InvariantsTest {
         MatchSnapshot snapshot = live.core().snapshot();
         UnitRecord sound = snapshot.units().get(0);
         UnitRecord outside = new UnitRecord(
-                unit, sound.template(), sound.faction(), 40.5, sound.y(), sound.z(), 0f, UnitState.IDLE, null);
+                unit, sound.template(), sound.faction(), 40.5, sound.y(), sound.z(), 0f, sound.ai(), null);
         SimHarness broken = SimHarness.restore(
                 new MatchSnapshot(
                         snapshot.config(),

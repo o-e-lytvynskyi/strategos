@@ -9,7 +9,22 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21
+## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17
+
+- **M1 T17 · UnitAI HFSM** — UNIT-02 done.
+  - **Results:** `core/sim/unitai/{Hfsm, StateDef, StateId, AiMessage, UnitAi, HfsmCheck}`, with
+    `UnitAiSystem` and `AiStateStore` rewritten: a tree of states with handlers that bubble,
+    transitions after the handler, enter and leave hooks, thinks by period, two data words per unit
+    saved and hashed only once set; messages `OrderFinished`, `PathDelivered`, `PathInvalidated`,
+    `Stuck`. Tests: `HfsmTransitionsTest` (36), `HfsmPersistenceTest` (5), `HfsmExitPathTest` (7),
+    an NBT round trip; every golden replays unchanged; `verify` 47 s (123 GameTests).
+  - **How:** a parallel agent built the framework, the tree and `HfsmTransitionsTest` on a branch;
+    when the owner stopped the agents it committed its work in progress there. The main tree took
+    the commit onto T21 without conflicts, sent T21's repath on a lost line through the new
+    `PathInvalidated`, wrote the persistence and exit-path tests and the NBT case, and ran `verify`.
+  - **Problems:** none in the merge. The agent met one Gradle trap: `spotlessApply` and compiling in
+    one invocation race under the configuration cache, which runs unrelated tasks in parallel, and
+    ErrorProne crashed reading a file being rewritten (pet-projects knowledge base).
 
 - **M1 T21 · Local avoidance (ORCA)** — PATH-06 done; UNIT-09 done with its avoidance check, and
   ADR-0011 Accepted (2026-10-23).

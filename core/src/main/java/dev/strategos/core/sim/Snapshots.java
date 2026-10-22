@@ -7,6 +7,8 @@ import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.nav.PageCoord;
+import dev.strategos.core.sim.unitai.StateId;
+import dev.strategos.core.sim.unitai.UnitAi;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,6 +29,7 @@ final class Snapshots {
             }
             MotionStore motion = s.motion();
             OrderStore orders = s.orders();
+            AiStateStore ai = s.ai();
             units.add(new UnitRecord(
                     entities.handleAt(i),
                     s.templates().byIndex(s.identity().templateIndex(i)).id(),
@@ -35,7 +38,7 @@ final class Snapshots {
                     motion.y(i),
                     motion.z(i),
                     motion.yaw(i),
-                    s.ai().state(i),
+                    new AiStateStore.Saved(UnitAi.leaf(ai.code(i)), ai.data0(i), ai.data1(i)),
                     orders.kind(i) == OrderStore.MOVE ? new Vec2d(orders.targetX(i), orders.targetZ(i)) : null,
                     s.paths().unitPath(i),
                     motion.extra(i)));
@@ -53,7 +56,8 @@ final class Snapshots {
 
     /**
      * A state at the snapshot's tick. Templates are looked up by id, so a changed set still loads; a unit whose template
-     * the set lacks throws, naming the unit. Terrain pages are rebuilt from {@code slices}; one whose slice is missing
+     * the set lacks, or whose state is no leaf of the unit tree, throws, naming the unit. Each unit's machine is put back
+     * as saved, without hooks. Terrain pages are rebuilt from {@code slices}; one whose slice is missing
      * stays unpublished with its slice hash known, and a slice that does not hash to its reference throws.
      */
     static MatchState restore(MatchSnapshot snapshot, TemplateSet templates, MatchLog log, SliceSource slices) {
@@ -70,10 +74,15 @@ final class Snapshots {
                 throw new IllegalArgumentException("unit " + Handle.toString(unit.handle()) + " needs template "
                         + unit.template() + ", which the template set lacks");
             }
+            StateId leaf = unit.ai().state();
+            if (!leaf.equals(UnitAi.leaf(leaf.name()))) {
+                throw new IllegalArgumentException("unit " + Handle.toString(unit.handle()) + " is in state " + leaf
+                        + ", which is no leaf of the unit tree");
+            }
             int index = Handle.index(unit.handle());
             state.identity().set(index, template.netIndex(), unit.faction().value());
             state.motion().set(index, unit.x(), unit.y(), unit.z(), unit.yaw());
-            state.ai().set(index, unit.state());
+            state.ai().restore(index, unit.ai());
             Vec2d target = unit.target();
             if (target != null) {
                 state.orders().setMove(index, target.x(), target.z());
