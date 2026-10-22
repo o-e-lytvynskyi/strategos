@@ -163,9 +163,16 @@ Answer in chat or here; the next session applies the answers.
 ## Now
 
 - **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 18 of 29 tasks done (T28, PATH-08, joined by its trigger).
-- **In progress:** T17 and T25 in parallel worktrees since 2026-10-22 (the owner asked for parallel agents); each merges after review.
+- **In progress:** M1 T21 · Local avoidance (ORCA) (PATH-06), in the main tree since 2026-10-22.
+- **Paused WIP (parallel agents stopped by the owner on 2026-10-23 to save tokens; finished in the main tree):**
+  - T17 UnitAI HFSM on branch `wip/m1-t17-unitai-hfsm` (30e628c): the framework, the M1 tree and
+    `HfsmTransitionsTest` are done; `HfsmPersistenceTest`, `HfsmExitPathTest`, an NBT round trip
+    and `verify` are left.
+  - T25 debug overlay on branch `wip/m1-t25-debug-overlay` (a7a110d): the dev payloads, the server
+    feed, `/strategos perf` and the client overlay are done; `DebugTests`, `MockViewer#operator`
+    and `verify` are left.
 - **Last finished task:** M1 T15.2 (2026-10-22).
-- **Next task:** M1 T21 · Local avoidance (ORCA) (PATH-06), on the critical path; T16 after it.
+- **Next task:** finish T21, then T17 from its branch, then T18 (needs T17), then T25 from its branch.
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 220 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.
