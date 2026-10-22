@@ -7,20 +7,27 @@ import static dev.strategos.gametest.suites.Units.match;
 import static dev.strategos.gametest.suites.Units.spawn;
 import static dev.strategos.gametest.suites.Units.unit;
 
+import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.CommandBatch;
 import dev.strategos.core.protocol.CommandOutcome;
 import dev.strategos.core.protocol.Feedback;
 import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.QueueMode;
+import dev.strategos.core.protocol.SpawnUnits;
 import dev.strategos.core.protocol.UnitSet;
+import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.InputEvent;
+import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.TickInputs;
 import dev.strategos.core.sim.UnitState;
+import dev.strategos.core.sim.UnitView;
 import dev.strategos.core.sim.journal.Journal;
 import dev.strategos.core.sim.order.OrderQueues;
+import dev.strategos.core.testkit.SimHarness;
+import dev.strategos.gametest.MatchFixture;
 import dev.strategos.gametest.StrategosTest;
 import dev.strategos.gametest.net.MockViewer;
 import dev.strategos.mod.StrategosServer;
@@ -28,8 +35,10 @@ import dev.strategos.mod.server.match.MatchRuntime;
 import dev.strategos.mod.server.net.payload.CommandsPayload;
 import dev.strategos.mod.server.net.payload.FeedbackPayload;
 import java.util.List;
+import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 
 /** Orders from players on a real server (ORD-02, spec §9.2 T18). */
@@ -90,6 +99,92 @@ public final class OrderTests {
                     return;
                 }
             }
+        });
+    }
+
+    /**
+     * ORD-03.2: on a 64 x 48 floor laid by the test, fifty walkers spawned in a disc of radius 6 round (10, 24) get one
+     * Move to (46.5, 24.5): each comes to rest within 1.5 blocks of its place, and at the end no two stand nearer than
+     * 0.6; a single walker sent alone to (46.5, 8.5) comes to rest within 0.5 of it.
+     */
+    @StrategosTest(arena = "arena_air_96", timeoutTicks = 1_200)
+    public static void fiftySettleInSlots(GameTestHelper h) {
+        for (int x = 0; x < 64; x++) {
+            for (int z = 0; z < 48; z++) {
+                h.setBlock(new BlockPos(x, 1, z), Blocks.SMOOTH_STONE); // relative y 1 is the floor layer
+            }
+        }
+        MatchRuntime rt = MatchFixture.create(h, 0, 0, 64, 48, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
+        rt.submit(
+                PlayerSlot.ADMIN,
+                new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(0), new Vec2d(10, 24), 50, 6));
+        rt.submit(
+                PlayerSlot.ADMIN,
+                new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(1), new Vec2d(10.5, 8.5), 1, 0));
+        var state = new Object() {
+            int[] group = new int[0];
+            int alone;
+            double[] placeX = new double[0];
+            double[] placeZ = new double[0];
+            double[] settled = new double[0];
+            double aloneSettled = -1;
+        };
+        h.onEachTick(() -> {
+            MatchCore core = core(rt);
+            int[] group = core.queries().unitHandlesOf(new FactionSlot(0));
+            int[] alone = core.queries().unitHandlesOf(new FactionSlot(1));
+            if (state.group.length == 0) {
+                if (group.length < 50 || alone.length < 1) {
+                    return;
+                }
+                state.group = group;
+                state.alone = alone[0];
+                rt.submit(PlayerSlot.ADMIN, Move.replace(UnitSet.of(group), new Vec2d(46.5, 24.5)));
+                rt.submit(PlayerSlot.ADMIN, Move.replace(UnitSet.of(alone[0]), new Vec2d(46.5, 8.5)));
+                return;
+            }
+            if (state.placeX.length == 0) {
+                state.placeX = new double[50];
+                state.placeZ = new double[50];
+                state.settled = new double[50];
+                for (int k = 0; k < 50; k++) {
+                    List<OrderQueues.Order> orders = core.queries().orders(state.group[k]);
+                    check(!orders.isEmpty() && orders.get(0).slot() > 0, "a member without a place: " + orders);
+                    state.placeX[k] = orders.get(0).x();
+                    state.placeZ[k] = orders.get(0).z();
+                    state.settled[k] = -1;
+                }
+                return;
+            }
+            boolean all = true;
+            for (int k = 0; k < 50; k++) {
+                UnitView u = unit(rt, state.group[k]);
+                if (u.state() == UnitState.IDLE) {
+                    if (state.settled[k] < 0) {
+                        state.settled[k] = Math.hypot(u.x() - state.placeX[k], u.z() - state.placeZ[k]);
+                        check(state.settled[k] <= 1.5, "a member came to rest " + state.settled[k] + " from its place");
+                    }
+                } else {
+                    all = false;
+                }
+            }
+            UnitView lone = unit(rt, state.alone);
+            if (lone.state() == UnitState.IDLE && state.aloneSettled < 0) {
+                state.aloneSettled = Math.hypot(lone.x() - 46.5, lone.z() - 8.5);
+                check(state.aloneSettled <= 0.5, "the lone walker came to rest " + state.aloneSettled + " off");
+            }
+            if (!all || state.aloneSettled < 0) {
+                return;
+            }
+            for (int a = 0; a < 50; a++) {
+                UnitView ua = unit(rt, state.group[a]);
+                for (int b = 0; b < a; b++) {
+                    UnitView ub = unit(rt, state.group[b]);
+                    double gap = Math.hypot(ua.x() - ub.x(), ua.z() - ub.z());
+                    check(gap >= 0.6, "two members stand " + gap + " apart at rest");
+                }
+            }
+            h.succeed();
         });
     }
 

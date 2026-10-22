@@ -46,7 +46,11 @@ class MoveRuleTest {
         assertThat(result.firstReason()).isNull();
         assertThat(result.kind()).isEqualTo("strategos:move");
         assertThat(h.queries().unit(own[0]).state()).isEqualTo(UnitState.WALKING);
-        assertThat(h.queries().unit(own[0]).target()).isEqualTo(new Vec2d(20, 8));
+        Vec2d place = h.queries().unit(own[0]).target();
+        assertThat(place).isNotNull();
+        assertThat(Math.hypot(place.x() - 20, place.z() - 8))
+                .as("each of the two takes a place round the target (ORD-03)")
+                .isLessThanOrEqualTo(0.8);
     }
 
     @Test

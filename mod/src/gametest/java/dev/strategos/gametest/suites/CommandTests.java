@@ -225,7 +225,14 @@ public final class CommandTests {
                 .thenExecuteAfter(1, () -> {
                     for (int unit : handles(rt)) {
                         List<OrderQueues.Order> orders = core(rt).queries().orders(unit);
-                        check(orders.size() == 2 && orders.get(1).z() == 24.5, "the group's second order: " + orders);
+                        check(
+                                orders.size() == 2
+                                        && orders.get(1).group() > state.group
+                                        && Math.hypot(
+                                                        orders.get(1).x() - 24.5,
+                                                        orders.get(1).z() - 24.5)
+                                                <= 1.5,
+                                "the group's second order, a place round (24.5, 24.5): " + orders);
                     }
                     perform(h, source, "strategos order move @units waypoint far_side");
                     check(

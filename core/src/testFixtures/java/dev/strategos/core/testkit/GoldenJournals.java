@@ -24,7 +24,8 @@ public final class GoldenJournals {
 
     /**
      * File name (without the extension) → the scenario that records it; the canary spans two journal segments, the
-     * synthetic crossing carries terrain pages and path requests, and the head-on gap pins avoidance.
+     * synthetic crossing carries terrain pages and path requests, the head-on gap pins avoidance and the group of
+     * fifty its places.
      */
     public static Map<String, Scenario> goldens() {
         Map<String, Scenario> goldens = new LinkedHashMap<>();
@@ -32,6 +33,7 @@ public final class GoldenJournals {
         goldens.put("canary", Scenarios.canary(Seeds.first("canary")));
         goldens.put("crossing_synthetic", Scenarios.crossingSynthetic());
         goldens.put("head_on_gap", Scenarios.headOnGap());
+        goldens.put("group_of_50_slots", Scenarios.groupOf50Slots());
         return goldens;
     }
 

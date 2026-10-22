@@ -101,6 +101,21 @@ public final class Scenarios {
         return new HeadOnGap();
     }
 
+    /**
+     * ORD-03's golden journal and its acceptance 2 in L1 (spec §5.9): on 64 x 48 of flat terrain, fifty units spawned
+     * in a disc of radius 6 round (10, 24) get one Move to (46.5, 24.5) and take places round it. Done when all stand
+     * idle; each came to rest within {@value GroupOf50Slots#NEAR} blocks of its place (it may step aside for others
+     * after), and no two stand nearer than {@value GroupOf50Slots#APART} at the end. L1 only.
+     */
+    public static Scenario groupOf50Slots() {
+        return groupOf50Slots(50);
+    }
+
+    /** As above with another seed, which scatters the spawn disc differently. */
+    public static Scenario groupOf50Slots(long seed) {
+        return new GroupOf50Slots(seed);
+    }
+
     private static void check(boolean ok, String failure) {
         if (!ok) {
             throw new ScenarioFailure(failure);
@@ -612,6 +627,122 @@ public final class Scenarios {
                 check(
                         trace(ctx, unit).equals(List.of("IDLE->WALKING", "WALKING->IDLE")),
                         Handle.toString(unit) + " walked once: " + trace(ctx, unit));
+            }
+        }
+    }
+
+    private static final class GroupOf50Slots implements Scenario {
+        static final double NEAR = 1.5;
+        static final double APART = 0.6;
+        private static final int UNITS = 50;
+        private static final Vec2d TARGET = new Vec2d(46.5, 24.5);
+
+        private int[] units = new int[0];
+        private double[] placeX = new double[0];
+        private double[] placeZ = new double[0];
+        private double[] settledOff = new double[0]; // how far from its place each unit came to rest, -1 before
+        private final long seed;
+
+        GroupOf50Slots(long seed) {
+            this.seed = seed;
+        }
+
+        @Override
+        public String id() {
+            return "group_of_50_slots";
+        }
+
+        @Override
+        public int sizeX() {
+            return 64;
+        }
+
+        @Override
+        public int sizeZ() {
+            return 48;
+        }
+
+        @Override
+        public long seed() {
+            return seed;
+        }
+
+        @Override
+        public int timeoutTicks() {
+            return 1_000;
+        }
+
+        @Override
+        public void setup(ScenarioContext ctx) {
+            VoxelWorld w = VoxelFixtures.flat(64, 48, 8, 1);
+            PageBuilder builder = new PageBuilder(MobilityClass.INFANTRY);
+            for (int pz = 0; pz < 3; pz++) {
+                for (int px = 0; px < 4; px++) {
+                    PageCoord coord = new PageCoord(px, pz);
+                    ctx.publish(TerrainPage.build(coord, w.slice(coord), builder));
+                }
+            }
+            ctx.submit(
+                    PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.DEBUG_WALKER, FACTION_0, new Vec2d(10, 24), UNITS, 6));
+        }
+
+        @Override
+        public void onTick(ScenarioContext ctx) {
+            if (units.length == 0) {
+                int[] all = ctx.queries().unitHandlesOf(FACTION_0);
+                if (all.length < UNITS) {
+                    return;
+                }
+                units = all;
+                ctx.submit(PlayerSlot.ADMIN, Move.replace(UnitSet.of(all), TARGET));
+                return;
+            }
+            if (placeX.length == 0) {
+                placeX = new double[UNITS];
+                placeZ = new double[UNITS];
+                settledOff = new double[UNITS];
+                for (int k = 0; k < UNITS; k++) {
+                    var orders = ctx.queries().orders(units[k]);
+                    check(!orders.isEmpty(), "unit " + Handle.toString(units[k]) + " got no order");
+                    placeX[k] = orders.get(0).x();
+                    placeZ[k] = orders.get(0).z();
+                    settledOff[k] = -1;
+                }
+                return;
+            }
+            for (int k = 0; k < UNITS; k++) {
+                UnitView u = alive(ctx, units[k]);
+                if (settledOff[k] < 0 && u.state() == UnitState.IDLE) {
+                    settledOff[k] = Math.hypot(u.x() - placeX[k], u.z() - placeZ[k]);
+                }
+            }
+        }
+
+        @Override
+        public boolean isDone(ScenarioContext ctx) {
+            if (placeX.length == 0) {
+                return false;
+            }
+            for (int unit : units) {
+                if (alive(ctx, unit).state() != UnitState.IDLE) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        @Override
+        public void verify(ScenarioContext ctx) {
+            for (int k = 0; k < UNITS; k++) {
+                UnitView u = alive(ctx, units[k]);
+                check(
+                        settledOff[k] >= 0 && settledOff[k] <= NEAR,
+                        "unit " + Handle.toString(units[k]) + " came to rest " + settledOff[k] + " from its place");
+                for (int j = 0; j < k; j++) {
+                    UnitView v = alive(ctx, units[j]);
+                    double gap = Math.hypot(u.x() - v.x(), u.z() - v.z());
+                    check(gap >= APART, "two units stand " + gap + " apart");
+                }
             }
         }
     }

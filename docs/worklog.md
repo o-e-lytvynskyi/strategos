@@ -9,7 +9,27 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25
+## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20
+
+- **M1 T20 · Group destination slots** — ORD-03 done.
+  - **Results:** `core/shared/SlotLayout` (rows across the facing, 4 radii apart, centred, inside
+    the match) and `core/sim/order/SlotPlanner` (snapped in a spiral to the target's component,
+    assigned column by column, front places first), wired into the Move rule for several units;
+    group members arrive within 1.5 blocks of their places when stuck; standing units part only to
+    0.6 and avoid walkers' steps rather than velocities. Tests: `SlotLayoutTest`, `SlotSnapTest`
+    (fifty from sixteen spawns), `ordertests.fifty_settle_in_slots`, the `group_of_50_slots`
+    golden (128 GameTests); `verify verifySlow verifySoak` 2 min 3 s.
+  - **Measured:** fifty settle in 174–236 ticks across sixteen spawns (one unit alone: about 146);
+    `maptests.fifty_units_one_by_one` 1.04 times the ideal time, at most 24 ticks without progress;
+    `OrcaBench.step600` 583 µs.
+  - **Problems:** the spec's spacing (2 radii and 0.1) walled members out of places the first
+    arrivals surrounded; 4 radii and 0.1 leave room to pass (D row 132). The spec's single sort
+    crossed ways inside columns; filling by rows and swapping crossing ways each walled a member out,
+    so places fill column by column, front first (D row 134). Settled members a little off their
+    places pushed each other round for ever, and a standing crowd never made way for a walker that
+    had stalled, because it avoided the walker's velocity, zero: standing units now part only to
+    0.6 and avoid the walker's step (D row 136, pet-projects knowledge base). Places beyond the
+    edge of a match without terrain sent `canary`'s units out of its space; they are drawn inside.
 
 - **Fix after CI (T21's avoidance)** — CI's `verifySlow` failed `maptests.fifty_units_one_by_one`
   from T17's push on: a walker stuck for 100 ticks among the idle units at the proving ground's

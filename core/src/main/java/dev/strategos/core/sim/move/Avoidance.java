@@ -25,7 +25,9 @@ import java.util.function.IntConsumer;
  *       {@link Separation} instead.
  *   <li>Otherwise ORCA keeps it clear of them for {@value #HORIZON} ticks, taking half of the avoidance of another
  *       unit, which takes the other half, and the whole of an agent's; a walking unit also takes the whole of the
- *       avoidance of a unit that is not walking, which plans only every few ticks.
+ *       avoidance of a unit that is not walking, which plans only every few ticks, and two units that do not walk
+ *       keep only {@value #REST_GAP} block apart. A unit that does not walk avoids each walker's step this tick, not its
+ *       velocity, so it makes way even for a walker stalled in front of it.
  *   <li>Blocked surface edges within {@value #EDGE_RANGE} blocks are static limits: the speed toward such an edge is
  *       at most (distance - radius) / {@value #EDGE_TICKS} blocks a tick, or the unit's own preferred speed toward it,
  *       whichever is more, so the edges stop avoidance from pushing a body into a wall but never the unit's own
@@ -44,6 +46,12 @@ final class Avoidance {
     static final double EDGE_TICKS = 10;
     static final double LAYER = 2;
 
+    /**
+     * How near two units that do not walk may stand before they part: a group settled a little off its places would
+     * otherwise push itself round for ever.
+     */
+    static final double REST_GAP = 0.6;
+
     /** Lets a step of exactly the unit's speed through untouched: rounding may make it a few ulps longer. */
     static final double SPEED_TOLERANCE = 1e-6;
 
@@ -58,6 +66,10 @@ final class Avoidance {
     private final double[] nearDistSq = new double[MAX_NEIGHBOURS];
     private final IntConsumer collector = this::collect;
     private final MotionStore motion;
+    private byte[] intentMode = new byte[0];
+    private double[] intentX = new double[0];
+    private double[] intentZ = new double[0];
+    private byte walkingMode;
     private int nearCount;
     private int crowd;
     private int self;
@@ -69,6 +81,18 @@ final class Avoidance {
 
     Avoidance(MotionStore motion) {
         this.motion = motion;
+    }
+
+    /**
+     * This tick's walkers: those whose {@code mode} is {@code walking}, each stepping toward (endX, endZ). A unit that
+     * does not walk avoids a walker's step rather than its velocity, so it makes way even for one that stalled in front
+     * of it.
+     */
+    void intents(byte[] mode, double[] endX, double[] endZ, byte walking) {
+        this.intentMode = mode;
+        this.intentX = endX;
+        this.intentZ = endZ;
+        this.walkingMode = walking;
     }
 
     /**
@@ -107,10 +131,21 @@ final class Avoidance {
             if (relX == 0 && relZ == 0) {
                 relX = j > i ? APART : -APART; // the higher index stands east
             }
+            boolean standing = s.ai().state(j) != UnitState.WALKING;
             // a walker takes the whole of the avoidance of a unit that is not walking: that one plans only every few
             // ticks, so it makes way too slowly to count on for half
-            double share = walking && s.ai().state(j) != UnitState.WALKING ? 1 : 0.5;
-            orca.addAgent(relX, relZ, vx, vz, motion.vx(j), motion.vz(j), radius + radius(s, j), HORIZON, share);
+            double share = walking && standing ? 1 : 0.5;
+            double reach = radius + radius(s, j);
+            if (!walking && standing) {
+                reach = Math.min(reach, REST_GAP); // two standing units part only to the gap they may rest at
+            }
+            double otherVx = motion.vx(j);
+            double otherVz = motion.vz(j);
+            if (!walking && j < intentMode.length && intentMode[j] == walkingMode) {
+                otherVx = intentX[j] - motion.x(j); // where the walker means to go this tick
+                otherVz = intentZ[j] - motion.z(j);
+            }
+            orca.addAgent(relX, relZ, vx, vz, otherVx, otherVz, reach, HORIZON, share);
         }
         double agentRange = NEIGHBOUR_RANGE * NEIGHBOUR_RANGE;
         for (int k = 0; k < agents.size(); k++) {

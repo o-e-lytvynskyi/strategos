@@ -51,9 +51,9 @@ import java.util.function.IntConsumer;
  *   <li>Heading: turns toward the motion by at most the unit's turn rate.
  *   <li>Arrival: landing on a final target posts {@link Arrived}, and the arrival latch holds the unit there: pushed more
  *       than {@value #LATCH} block away, it walks back. Avoidance never keeps a unit off a free target, so it lands
- *       there. A unit {@value #CROWDED} ticks without progress arrives where it stands when another unit stands on its
- *       target within {@value #ARRIVE_CROWD} blocks, or when it touches an idle unit that arrived at the same target,
- *       so a crowd sent to one point settles outward from it (spec §5.8 7, until ORD-03's slots in T20).
+ *       there. A unit {@value #CROWDED} ticks without progress arrives where it stands within {@value #ARRIVE_CROWD}
+ *       blocks of its place in a group order (spec §5.8 7) or of a target another unit stands on, or when it touches an
+ *       idle unit that arrived at the same target, so a crowd sent to one point settles outward from it.
  *   <li>Stuck monitor: a unit makes progress when it comes {@value #PROGRESS} block nearer its aim than its best;
  *       otherwise its count of ticks without progress grows (the ladder of T23 acts on it). Every {@value #LOST_AFTER}
  *       ticks without progress a unit checks its line of walk to its aim, and asks for a new path once avoidance has
@@ -86,6 +86,7 @@ public final class MotionSystem implements MatchSystem {
     static final int QUIET = 20;
     static final int LOST_AFTER = 20;
     static final double ARRIVE_CROWD = 1.5;
+
     static final int CROWDED = 10;
     /** How near two bodies count as touching, beyond their radii. */
     static final double TOUCH = 0.1;
@@ -120,6 +121,7 @@ public final class MotionSystem implements MatchSystem {
     private double[] endX = new double[0];
     private double[] endZ = new double[0];
     private double[] planX = new double[0];
+    private double[] speed = new double[0];
     private double[] planZ = new double[0];
 
     public MotionSystem(MatchState state) {
@@ -144,7 +146,7 @@ public final class MotionSystem implements MatchSystem {
         OrderQueues orders = s.orders();
         int highWater = entities.highWater();
         ensure(highWater);
-        for (int i = 0; i < highWater; i++) { // plan: nothing moves yet
+        for (int i = 0; i < highWater; i++) { // steer: every walker's preferred step, nothing moves yet
             if (!entities.aliveAt(i)) {
                 continue;
             }
@@ -152,6 +154,19 @@ public final class MotionSystem implements MatchSystem {
                 steer(s, i);
             } else {
                 mode[i] = SETTLING;
+            }
+        }
+        avoidance.intents(mode, endX, endZ, WALKING);
+        for (int i = 0; i < highWater; i++) { // plan, round the others' places and the walkers' steps
+            if (!entities.aliveAt(i)) {
+                continue;
+            }
+            if (mode[i] == WALKING) {
+                avoidance.plan(
+                        s, i, endX[i] - s.motion().x(i), endZ[i] - s.motion().z(i), speed[i], true);
+                planX[i] = avoidance.x();
+                planZ[i] = avoidance.z();
+            } else {
                 planIdle(s, i);
             }
         }
@@ -237,10 +252,7 @@ public final class MotionSystem implements MatchSystem {
         }
     }
 
-    /**
-     * The planning pass for a walking unit: its aim and preferred step, and the velocity avoidance plans for it; only
-     * its own path cursor and floor change.
-     */
+    /** The steering pass for a walking unit: its aim and preferred step; only its own path cursor and floor change. */
     private void steer(MatchState s, int i) {
         MotionStore motion = s.motion();
         PathStore paths = s.paths();
@@ -273,7 +285,6 @@ public final class MotionSystem implements MatchSystem {
             last = true;
         } else {
             mode[i] = SPENT;
-            planIdle(s, i);
             return;
         }
         ground(s, i);
@@ -296,9 +307,7 @@ public final class MotionSystem implements MatchSystem {
         aimZ[i] = tz;
         endX[i] = nx;
         endZ[i] = nz;
-        avoidance.plan(s, i, nx - x0, nz - z0, speed, true);
-        planX[i] = avoidance.x();
-        planZ[i] = avoidance.z();
+        this.speed[i] = speed;
     }
 
     /** The planning pass for a unit that does not walk: every {@value #IDLE_EVERY} ticks it plans to stand still. */
@@ -340,7 +349,8 @@ public final class MotionSystem implements MatchSystem {
         if (!landed && (flags[i] & LAST) != 0) {
             double d = DetMath.length(tx - x, tz - z);
             landed = motion.stuck(i) >= CROWDED
-                    && ((d <= ARRIVE_CROWD && taken(s, i, tx, tz)) || touchesArrived(s, i, tx, tz));
+                    && ((d <= ARRIVE_CROWD && (s.orders().group(i) != 0 || taken(s, i, tx, tz)))
+                            || touchesArrived(s, i, tx, tz));
         }
         if (landed) {
             if ((flags[i] & FOLLOWING) != 0) {
@@ -468,6 +478,7 @@ public final class MotionSystem implements MatchSystem {
         endX = new double[capacity];
         endZ = new double[capacity];
         planX = new double[capacity];
+        speed = new double[capacity];
         planZ = new double[capacity];
     }
 

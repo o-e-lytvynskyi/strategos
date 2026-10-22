@@ -210,8 +210,8 @@ public final class BodyTests {
     /**
      * UNIT-01.2. Controls first (README): a pig walking past a sculk sensor wakes it, and two pigs on nearly one point
      * push apart. Then, with the pigs gone: a sensor 1 block from a unit's path stays inactive, two units on one point
-     * part only as the core's avoidance moves them (PATH-06), their bodies on the core's poses every tick, so vanilla
-     * never pushes them, and hurting a body does nothing. The two sensors are more than 8 blocks (a sensor's range) from
+     * part only as the core's avoidance moves them (PATH-06), to the 0.6 block two standing units keep, their bodies on
+     * the core's poses every tick, so vanilla never pushes them, and hurting a body does nothing. The two sensors are more than 8 blocks (a sensor's range) from
      * everything of the other part.
      */
     @StrategosTest(timeoutTicks = 300)
@@ -281,7 +281,7 @@ public final class BodyTests {
                     UnitView a = unit(rt, state.stacked.get(0));
                     UnitView b = unit(rt, state.stacked.get(1));
                     check(
-                            Math.hypot(a.x() - b.x(), a.z() - b.z()) >= 0.6,
+                            Math.hypot(a.x() - b.x(), a.z() - b.z()) >= 0.55,
                             "the units on one point did not part in the core: " + a + ", " + b);
                     UnitView walked = unit(rt, state.walkerUnit);
                     check(

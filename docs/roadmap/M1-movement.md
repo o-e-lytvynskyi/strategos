@@ -576,7 +576,8 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
   2. 50 units settle within 1.5 blocks of their slots (a single unit within 0.5), and no two stand
      closer than 0.6 block at rest (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** ORD-02, PATH-04 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Done:** 2026-10-23 — M1 T20: `SlotLayoutTest`, `SlotSnapTest` (standable, the target's component, ≥ 0.8 apart, deterministic, no crossing for a block or a line) (1); `ordertests.fifty_settle_in_slots`, the `group_of_50_slots` golden and fifty from sixteen spawns in L1 (2); spec §1.6 D rows 132–137
+- **Status:** done
 
 #### PATH-06 · Local avoidance (ORCA)
 - **Value:** Armies flow around each other and around players without overlapping or jittering.

@@ -186,14 +186,21 @@ Answer in chat or here; the next session applies the answers.
   operators who ask, and never to anyone else. `/strategos perf start|stop|dump` records a match's
   timings to a CSV file. The overlay itself is checked on screen in M2's consent batch. Card
   PATH-10 is done.
+- 2026-10-23 · **M1 T20 Group places:** an order to several units now gives each its own place in a
+  block of rows round the target, facing the way the group came, 1.5 blocks apart for today's units
+  so latecomers can still walk between the first to arrive; the places snap onto walkable ground
+  reachable from the target. Fifty units sent together settle in their places from every one of
+  sixteen starting scatters tried. Units standing still now step aside for one that wants to pass,
+  even if it has stopped in front of them, and a settled group no longer shuffles. Card ORD-03 is
+  done.
 
 ## Now
 
-- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 22 of 29 tasks done (T28, PATH-08, joined by its trigger).
+- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 23 of 29 tasks done (T28, PATH-08, joined by its trigger).
 - **In progress:** none.
-- **Last finished task:** M1 T25 (2026-10-23), finished from the agent's branch
-  `wip/m1-t25-debug-overlay`; both agents' branches are merged and kept on GitHub for the record.
-- **Next task:** M1 T20 · Group destination slots (ORD-03).
+- **Last finished task:** M1 T20 (2026-10-23). The agents' branches `wip/m1-t17-unitai-hfsm` and
+  `wip/m1-t25-debug-overlay` are merged and kept on GitHub for the record.
+- **Next task:** M1 T23 · Stuck ladder (PATH-07), then T22 (worker pool and spike S7).
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 220 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.

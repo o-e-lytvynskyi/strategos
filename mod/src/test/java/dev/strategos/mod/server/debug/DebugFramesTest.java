@@ -73,7 +73,9 @@ class DebugFramesTest {
                 .as("idle units: one empty part")
                 .singleElement()
                 .satisfies(p -> assertThat(p.lines()).isEmpty());
-        h.submit(PlayerSlot.ADMIN, Move.replace(UnitSet.of(walker, far), new Vec2d(40.5, 10.5)));
+        // one order each: an order to both would give each its own place round the target (ORD-03)
+        h.submit(PlayerSlot.ADMIN, Move.replace(UnitSet.of(walker), new Vec2d(40.5, 10.5)));
+        h.submit(PlayerSlot.ADMIN, Move.replace(UnitSet.of(far), new Vec2d(40.5, 10.5)));
         h.step(); // 30 blocks: a request in flight, steering straight at the target meanwhile
 
         DebugFeedMsg.PathLine waiting = onlyLine(h, area);
