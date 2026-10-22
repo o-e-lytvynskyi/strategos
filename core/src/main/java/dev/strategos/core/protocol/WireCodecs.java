@@ -4,6 +4,7 @@ import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
+import org.jspecify.annotations.Nullable;
 
 /** Wire codecs of the shared value types the command and payload codecs are built from. */
 public final class WireCodecs {
@@ -164,6 +165,93 @@ public final class WireCodecs {
                 throw new WireException("player slot " + slot + " outside -1.." + FactionSlot.MAX);
             }
             return new PlayerSlot(slot);
+        }
+
+        @Override
+        public int maxSize() {
+            return 1;
+        }
+    };
+
+    public static final WireCodec<CommandOutcome> COMMAND_OUTCOME = new WireCodec<>() {
+        @Override
+        public void write(WireWriter out, CommandOutcome value) {
+            out.writeByte(
+                    switch (value) {
+                        case ACCEPTED -> 0;
+                        case PARTIAL -> 1;
+                        case REJECTED -> 2;
+                    });
+        }
+
+        @Override
+        public CommandOutcome read(WireReader in) {
+            int code = in.readUnsignedByte();
+            return switch (code) {
+                case 0 -> CommandOutcome.ACCEPTED;
+                case 1 -> CommandOutcome.PARTIAL;
+                case 2 -> CommandOutcome.REJECTED;
+                default -> throw new WireException("unknown command outcome " + code);
+            };
+        }
+
+        @Override
+        public int maxSize() {
+            return 1;
+        }
+    };
+
+    /** A refusal's reason as one byte, or 0 for none. */
+    public static void writeReason(WireWriter out, @Nullable RejectReason value) {
+        out.writeByte(
+                value == null
+                        ? 0
+                        : switch (value) {
+                            case UNKNOWN_TARGET -> 1;
+                            case NOT_OWNER -> 2;
+                            case OUT_OF_BOUNDS -> 3;
+                            case UNSUPPORTED -> 4;
+                            case UNKNOWN_TEMPLATE -> 5;
+                            case UNIT_CAP -> 6;
+                            case NOT_PERMITTED -> 7;
+                            case INVALID_ARGUMENT -> 8;
+                        });
+    }
+
+    public static @Nullable RejectReason readReason(WireReader in) {
+        int code = in.readUnsignedByte();
+        return switch (code) {
+            case 0 -> null;
+            case 1 -> RejectReason.UNKNOWN_TARGET;
+            case 2 -> RejectReason.NOT_OWNER;
+            case 3 -> RejectReason.OUT_OF_BOUNDS;
+            case 4 -> RejectReason.UNSUPPORTED;
+            case 5 -> RejectReason.UNKNOWN_TEMPLATE;
+            case 6 -> RejectReason.UNIT_CAP;
+            case 7 -> RejectReason.NOT_PERMITTED;
+            case 8 -> RejectReason.INVALID_ARGUMENT;
+            default -> throw new WireException("unknown reject reason " + code);
+        };
+    }
+
+    public static final WireCodec<NoticeKind> NOTICE_KIND = new WireCodec<>() {
+        @Override
+        public void write(WireWriter out, NoticeKind value) {
+            out.writeByte(
+                    switch (value) {
+                        case ORDER_FAILED -> 0;
+                        case STUCK -> 1;
+                    });
+        }
+
+        @Override
+        public NoticeKind read(WireReader in) {
+            int code = in.readUnsignedByte();
+            return switch (code) {
+                case 0 -> NoticeKind.ORDER_FAILED;
+                case 1 -> NoticeKind.STUCK;
+                default -> throw new WireException("unknown notice kind " + code);
+            };
         }
 
         @Override

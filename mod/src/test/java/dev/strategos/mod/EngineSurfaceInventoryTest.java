@@ -5,8 +5,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.tree.CommandNode;
 import dev.strategos.core.shared.MatchId;
+import dev.strategos.mod.registry.ModPayloads;
 import dev.strategos.mod.registry.ModTickets;
 import dev.strategos.mod.server.command.StrategosCommands;
+import dev.strategos.mod.server.net.PayloadSpec;
 import dev.strategos.mod.server.persist.MatchData;
 import dev.strategos.mod.server.persist.RegistryData;
 import dev.strategos.mod.testing.EngineSurface;
@@ -19,8 +21,11 @@ import java.util.List;
 import java.util.stream.Stream;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.ConnectionProtocol;
+import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.fml.ModList;
+import net.neoforged.neoforge.network.registration.NetworkRegistry;
 import net.neoforged.neoforge.registries.RegistryManager;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
@@ -90,6 +95,18 @@ class EngineSurfaceInventoryTest {
         return ids;
     }
 
+    /** Our payloads that NeoForge's registry knows on the play protocol (NetworkRegistry.java:204). */
+    private static List<String> payloads() {
+        List<String> ids = new ArrayList<>();
+        for (PayloadSpec spec : ModPayloads.specs()) {
+            PacketFlow flow = spec.toClient() ? PacketFlow.CLIENTBOUND : PacketFlow.SERVERBOUND;
+            if (NetworkRegistry.getCodec(spec.id(), ConnectionProtocol.PLAY, flow) != null) {
+                ids.add(spec.id().toString());
+            }
+        }
+        return ids;
+    }
+
     private static List<String> ticketControllers() {
         return ModTickets.all().stream().map(c -> c.id().toString()).toList();
     }
@@ -124,6 +141,7 @@ class EngineSurfaceInventoryTest {
                 worldgen,
                 ticketControllers(),
                 StrategosConfig.files(),
+                payloads(),
                 inventory());
     }
 

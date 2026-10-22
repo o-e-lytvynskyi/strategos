@@ -144,13 +144,21 @@ Answer in chat or here; the next session applies the answers.
   encoder writes them, ours and vanilla's apart. A first measurement: one such viewer watching 600
   walking units receives 41 KB/s, under the 100 KB/s budget per player. The check against a real
   client's network recording waits for M2's consent batch, as planned. Card QA-19 is done.
+- 2026-10-22 · **M1 T15.1 Payload layer:** the mod now has its own network messages: a player's
+  commands, the match a player joined, the match's state, and feedback (a command's result, or a
+  notice such as "unit stuck"). One gateway sends everything, only to the players each message is
+  meant for, and only to clients that have the mod. Bad or flooding clients are cut off after 100
+  invalid messages a minute. A unit's body now reaches players with the very position of that
+  tick, and a walking unit sends no extra data: each new body used to send one redundant packet
+  after appearing, now fixed. Card UNIT-01, left open by M0, is done; T15.2 seats players in
+  matches next.
 
 ## Now
 
-- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 16 of 28 tasks done (T28, PATH-08, joined by its trigger).
+- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 17 of 29 tasks done (T28, PATH-08, joined by its trigger).
 - **In progress:** none.
-- **Last finished task:** M1 T14 (2026-10-22).
-- **Next task:** M1 T15.1 · Payload layer and gateway (NET-01).
+- **Last finished task:** M1 T15.1 (2026-10-22).
+- **Next task:** M1 T15.2 · Roster and the fog-gate stub (NET-01).
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 220 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.

@@ -6,17 +6,21 @@ import dev.strategos.mod.server.body.SpawnBudget;
 import dev.strategos.mod.server.jobs.InlineJobExecutor;
 import dev.strategos.mod.server.match.MapImports;
 import dev.strategos.mod.server.match.MatchRegistry;
+import dev.strategos.mod.server.net.NetGateway;
 import dev.strategos.mod.server.tick.FaultBarrier;
 import dev.strategos.mod.server.world.ArenaWorld;
 import dev.strategos.mod.server.world.BlockClassTable;
 import dev.strategos.mod.server.world.BlockWriter;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.event.TagsUpdatedEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.registries.datamaps.DataMapsUpdatedEvent;
 import org.jspecify.annotations.Nullable;
 
@@ -36,6 +40,7 @@ public final class StrategosServer {
     private final BlockWriter writer;
     private final MapImports mapImports = new MapImports();
     private final JobExecutor jobs = new InlineJobExecutor();
+    private final NetGateway net;
     private volatile BlockClassTable blockClasses;
     private ArenaWorld.Outcome arena = ArenaWorld.Outcome.NOT_AN_ARENA;
 
@@ -45,6 +50,7 @@ public final class StrategosServer {
         this.faults = new FaultBarrier(server);
         this.writer = new BlockWriter(settings.writerBudget(), settings.importBudget());
         this.matches = new MatchRegistry(server, settings, spawnBudget, writer, this::blockClasses, jobs);
+        this.net = new NetGateway(server, () -> this.matches);
         this.blockClasses = buildBlockClasses();
     }
 
@@ -93,6 +99,11 @@ public final class StrategosServer {
         return settings;
     }
 
+    /** The only sender (B6). */
+    public NetGateway net() {
+        return net;
+    }
+
     public FaultBarrier faults() {
         return faults;
     }
@@ -126,6 +137,22 @@ public final class StrategosServer {
                 && event.getRegistryKey().equals(Registries.BLOCK)
                 && event.getCause() == DataMapsUpdatedEvent.UpdateCause.SERVER_RELOAD) {
             s.blockClasses = buildBlockClasses();
+        }
+    }
+
+    /** After every level ticked: what the gateway queued this tick goes out. */
+    public static void onTickPost(ServerTickEvent.Post event) {
+        StrategosServer s = current;
+        if (s != null) {
+            s.net.flush();
+        }
+    }
+
+    /** A player left: its rate limits and queue go. */
+    public static void onLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
+        StrategosServer s = current;
+        if (s != null && event.getEntity() instanceof ServerPlayer player) {
+            s.net.forget(player);
         }
     }
 

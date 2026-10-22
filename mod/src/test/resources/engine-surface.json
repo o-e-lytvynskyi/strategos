@@ -5,7 +5,7 @@
   "commands": ["strategos"],
   "mixinConfigs": ["strategos.mixins.json"],
   "accessTransformers": [],
-  "payloads": [],
+  "payloads": ["strategos:commands", "strategos:feedback", "strategos:match_join", "strategos:match_state"],
   "dataMaps": ["strategos:nav_class"],
   "worldgen": [
     "tags/worldgen/world_preset #minecraft:normal",

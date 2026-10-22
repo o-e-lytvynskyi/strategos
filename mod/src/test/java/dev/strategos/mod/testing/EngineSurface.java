@@ -44,6 +44,7 @@ public record EngineSurface(Map<String, List<String>> kinds) {
             "commands",
             "mixinConfigs",
             "accessTransformers",
+            "payloads",
             "dataMaps",
             "worldgen",
             "ticketControllers",
@@ -99,6 +100,7 @@ public record EngineSurface(Map<String, List<String>> kinds) {
             Collection<String> worldgen,
             Collection<String> ticketControllerIds,
             Collection<String> configFiles,
+            Collection<String> payloadIds,
             EngineSurface inventory) {
         Map<String, List<String>> kinds = new LinkedHashMap<>();
         kinds.put(
@@ -122,6 +124,7 @@ public record EngineSurface(Map<String, List<String>> kinds) {
         kinds.put("worldgen", List.copyOf(worldgen));
         kinds.put("ticketControllers", List.copyOf(ticketControllerIds));
         kinds.put("configs", List.copyOf(configFiles));
+        kinds.put("payloads", List.copyOf(payloadIds));
         for (String kind : KINDS) {
             if (!PROBED.contains(kind)) {
                 kinds.put(kind, inventory.of(kind));

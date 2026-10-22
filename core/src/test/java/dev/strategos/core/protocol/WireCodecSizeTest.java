@@ -12,7 +12,10 @@ import java.util.Arrays;
 import java.util.SplittableRandom;
 import org.junit.jupiter.api.Test;
 
-/** NET-01.2 for the commands, CORE-11 for the journal's envelopes: exact sizes, round trips and bounds. */
+/**
+ * NET-01.2 for the commands and the payload records, CORE-11 for the journal's envelopes: exact sizes, round trips,
+ * bounds and each payload within its cap (spec §2.7).
+ */
 class WireCodecSizeTest {
     private static final WireCodec<Command> COMMANDS = CommandKinds.DEFAULT.wireCodec();
 
@@ -115,6 +118,83 @@ class WireCodecSizeTest {
         assertThatThrownBy(() -> WireCodec.decode(COMMANDS, repeated))
                 .isInstanceOf(WireException.class)
                 .hasMessageContaining("out of order or repeated");
+    }
+
+    @Test
+    void thePayloadRecordsEncodeToTheExactSizesOfTheFormat() {
+        Move one = Move.replace(UnitSet.of(5), new Vec2d(1, 2));
+        assertThat(size(CommandBatch.WIRE, new CommandBatch(7, java.util.List.of(one))))
+                .as("sequence, count, wire id and the move")
+                .isEqualTo(1 + 1 + 2 + 20);
+        assertThat(size(MatchStateMsg.WIRE, new MatchStateMsg(3, MatchStateMsg.Lifecycle.RUNNING, 1_200)))
+                .as("id, lifecycle, the tick as a zigzag varint")
+                .isEqualTo(1 + 1 + 2);
+        assertThat(size(FeedbackMsg.WIRE, new Feedback(70_000, CommandOutcome.PARTIAL, RejectReason.NOT_OWNER, 3, 5)))
+                .as("kind, sequence, outcome, reason, accepted, total")
+                .isEqualTo(1 + 3 + 1 + 1 + 1 + 1);
+        assertThat(size(FeedbackMsg.WIRE, new NoticeMsg(NoticeKind.STUCK, 0x1234_5678, "boxed in")))
+                .as("kind, notice kind, handle, text with its length")
+                .isEqualTo(1 + 1 + 4 + 1 + 8);
+        assertThat(size(MatchJoin.WIRE, new MatchJoin(1, 100, -60, -200, 48, 48, -64, 319, 2, new PlayerSlot(1), "{}")))
+                .as("id, origin, size, band, factions, slot, rules")
+                .isEqualTo(1 + 2 + 1 + 2 + 1 + 1 + 1 + 2 + 1 + 1 + 3);
+    }
+
+    @Test
+    void thePayloadRecordsStayWithinTheirCaps() {
+        assertThat(CommandBatch.WIRE.maxSize()).as("commands").isEqualTo(4 * 1024);
+        assertThat(MatchJoin.WIRE.maxSize()).as("match_join").isLessThanOrEqualTo(4 * 1024);
+        assertThat(MatchStateMsg.WIRE.maxSize()).as("match_state").isLessThanOrEqualTo(256);
+        assertThat(FeedbackMsg.WIRE.maxSize()).as("feedback").isLessThanOrEqualTo(1024);
+
+        MatchJoin widest = new MatchJoin(
+                Integer.MAX_VALUE,
+                Integer.MIN_VALUE,
+                Integer.MIN_VALUE,
+                Integer.MIN_VALUE,
+                Integer.MAX_VALUE,
+                Integer.MAX_VALUE,
+                Integer.MIN_VALUE,
+                Integer.MIN_VALUE,
+                Integer.MAX_VALUE,
+                PlayerSlot.ADMIN,
+                "r".repeat(MatchJoin.RULES_BYTES));
+        assertThat(size(MatchJoin.WIRE, widest)).isEqualTo(MatchJoin.WIRE.maxSize());
+        assertThat(roundTrip(MatchJoin.WIRE, widest)).isEqualTo(widest);
+        NoticeMsg longest = new NoticeMsg(NoticeKind.ORDER_FAILED, -1, "d".repeat(NoticeMsg.DETAIL_BYTES));
+        assertThat(size(FeedbackMsg.WIRE, longest)).isEqualTo(FeedbackMsg.WIRE.maxSize());
+        assertThat(roundTrip(FeedbackMsg.WIRE, longest)).isEqualTo(longest);
+        Feedback all =
+                new Feedback(Integer.MAX_VALUE, CommandOutcome.REJECTED, null, Integer.MAX_VALUE, Integer.MAX_VALUE);
+        assertThat(roundTrip(FeedbackMsg.WIRE, all)).isEqualTo(all);
+        MatchStateMsg late = new MatchStateMsg(Integer.MAX_VALUE, MatchStateMsg.Lifecycle.DISPOSED, Long.MAX_VALUE);
+        assertThat(size(MatchStateMsg.WIRE, late)).isEqualTo(MatchStateMsg.WIRE.maxSize());
+        assertThat(roundTrip(MatchStateMsg.WIRE, late)).isEqualTo(late);
+    }
+
+    @Test
+    void aBatchHoldsOneToThirtyTwoCommandsInFourKilobytes() {
+        Move one = Move.replace(UnitSet.of(5), new Vec2d(1, 2));
+        java.util.List<Command> full = java.util.Collections.nCopies(Limits.BATCH_COMMANDS, one);
+        assertThat(roundTrip(CommandBatch.WIRE, new CommandBatch(0, full)).commands())
+                .hasSize(32);
+        assertThatThrownBy(() -> new CommandBatch(0, java.util.List.of())).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new CommandBatch(-1, java.util.List.of(one)))
+                .isInstanceOf(IllegalArgumentException.class);
+        byte[] tooMany = new WireWriter().writeVarInt(0).writeVarInt(33).toByteArray();
+        assertThatThrownBy(() -> WireCodec.decode(CommandBatch.WIRE, tooMany)).isInstanceOf(WireException.class);
+        byte[] none = new WireWriter().writeVarInt(0).writeVarInt(0).toByteArray();
+        assertThatThrownBy(() -> WireCodec.decode(CommandBatch.WIRE, none)).isInstanceOf(WireException.class);
+        assertThatThrownBy(() -> WireCodec.decode(CommandBatch.WIRE, new byte[Limits.BATCH_BYTES + 1]))
+                .isInstanceOf(WireException.class)
+                .hasMessageContaining("above the bound");
+        int[] run = new int[UnitSet.MAX_SIZE];
+        Arrays.setAll(run, i -> i + 1);
+        java.util.List<Command> heavy =
+                java.util.Collections.nCopies(Limits.BATCH_COMMANDS, Move.replace(UnitSet.of(run), new Vec2d(1, 2)));
+        assertThatThrownBy(() -> WireCodec.encode(CommandBatch.WIRE, new CommandBatch(0, heavy)))
+                .as("32 moves of 300 units do not fit a batch: the client splits them")
+                .isInstanceOf(IllegalStateException.class);
     }
 
     private static <T> int size(WireCodec<T> codec, T value) {

@@ -1,7 +1,9 @@
 package dev.strategos.mod.server.tick;
 
+import dev.strategos.core.protocol.NoticeMsg;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.sim.CommandResult;
+import dev.strategos.core.sim.Notice;
 import dev.strategos.core.sim.OutputEvent;
 import dev.strategos.core.sim.TickOutputs;
 import dev.strategos.core.sim.UnitCreated;
@@ -11,6 +13,8 @@ import dev.strategos.core.sim.world.WriteSite;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.server.body.KinematicDriver;
 import dev.strategos.mod.server.match.MatchRuntime;
+import dev.strategos.mod.server.net.Audience;
+import dev.strategos.mod.server.net.payload.FeedbackPayload;
 import dev.strategos.mod.server.world.BlockWriter;
 import java.util.List;
 import java.util.function.Consumer;
@@ -44,6 +48,13 @@ public final class OutputAppliers {
                             writer.state(effect.state()),
                             effect.owner());
                 }
+                case Notice notice ->
+                    StrategosServer.get()
+                            .net()
+                            .send(
+                                    new Audience.Faction(rt.id(), notice.faction()),
+                                    new FeedbackPayload(
+                                            new NoticeMsg(notice.kind(), notice.handle(), notice.detail())));
                 case UnitStateChanged changed ->
                     rt.log()
                             .debug(
@@ -59,6 +70,6 @@ public final class OutputAppliers {
 
     /** The leaf output types {@link #apply} handles; L2 checks they are all of them. */
     public static List<Class<? extends OutputEvent>> handledTypes() {
-        return List.of(CommandResult.class, UnitCreated.class, UnitStateChanged.class, WorldEffect.class);
+        return List.of(CommandResult.class, UnitCreated.class, UnitStateChanged.class, WorldEffect.class, Notice.class);
     }
 }

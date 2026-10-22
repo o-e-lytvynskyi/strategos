@@ -497,7 +497,8 @@ decision (D-21).
      packets from `onGround` flips) are checked with captured packets once QA-19 exists (L3, in
      NET-01).
 - **Tests:** L0, L2, L3, L5 · **Depends on:** CORE-06 · **Size:** M · **Tier:** T0
-- **Status:** in_progress
+- **Done:** 2026-10-22 — criteria 1–4 with M0; 5 with M1 T15.1: `nettests.pose_same_tick_no_entity_data`: every move packet of a walking unit's body, decoded as a client decodes it, puts the body where the core's pose of that tick put it, and the walk sends no entity data and no teleport, once a body's dirty spawn data is cleared before it is added (M1 spec §1.6 D row 84)
+- **Status:** done
 
 #### QA-09 · Launch scripts, playtest protocol and the Done ADR
 - **Value:** The owner tries every milestone under real multiplayer conditions with one command,

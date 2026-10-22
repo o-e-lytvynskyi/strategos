@@ -446,7 +446,7 @@ narrow mixin with a compatibility test ([01-feasibility.md §7](01-feasibility.m
 | Ticket controller | `strategos:match`, with a `LoadingValidationCallback` | Force-loading arenas (§3.4) | M1 |
 | `SavedData` | `strategos_registry` (overworld), `strategos_match_<id>` (hosting level) | Persistence (§5.6) | M0 |
 | Reload listener | `TemplateReloadListener` | Templates, maps, blueprints, AI scripts (§8.4) | M1 |
-| Payloads | Catalogue in §12.2 | Networking | M1 onward |
+| Payloads | `strategos:commands`, `strategos:match_join`, `strategos:match_state`, `strategos:feedback` (M1); the whole catalogue in §12.2 | Networking | M1 onward |
 | Key mappings, GUI layers | RTS actions; resource bar, selection panel, command card, minimap, notices, debug | Client (§13) | M2–M6 |
 | Commands | `/strategos` (server), `/strategos-client` (client) | Tooling (§15.3) | M0, M1 |
 | Config | `strategos-server.toml`, `strategos-client.toml` (`ModConfigSpec`) | Technical tunables (§15.4) | M1 |

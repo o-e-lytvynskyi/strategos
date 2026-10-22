@@ -12,6 +12,8 @@ import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.BundlePacket;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.network.protocol.game.ClientboundChunkBatchFinishedPacket;
 import net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket;
 import net.minecraft.network.protocol.game.ServerboundChunkBatchReceivedPacket;
@@ -24,11 +26,13 @@ import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.player.ChatVisiblity;
 import net.minecraft.world.level.ChunkPos;
 import net.neoforged.neoforge.network.connection.ConnectionType;
+import net.neoforged.neoforge.network.registration.NetworkRegistry;
 
 /**
  * A headless player that sees what a client would (QA-19). It joins as {@code
  * GameTestHelper#makeMockServerPlayerInLevel} joins its mock player (GameTestHelper.java:291–310), a connection on an
- * {@link EmbeddedChannel} placed in the player list, but keeps the channel: {@link #poll()} takes every packet written
+ * {@link EmbeddedChannel} placed in the player list, configured as a NeoForge client with all our channels, but keeps
+ * the channel: {@link #poll()} takes every packet written
  * to it since the last poll, unbundled, into its {@link PacketCapture} and {@link ByteCounter}, and answers each chunk
  * batch as a client does (ServerGamePacketListenerImpl.java:1904), so the server goes on sending the chunks of its
  * view; a player that never answers gets one batch. Tests poll every tick and close the viewer; a batch's end closes
@@ -80,14 +84,22 @@ public final class MockViewer implements AutoCloseable {
         player.moveTo(x, y, z, 0, 0);
         Connection connection = new Connection(PacketFlow.SERVERBOUND);
         EmbeddedChannel channel = new EmbeddedChannel(connection);
+        NetworkRegistry.configureMockConnection(connection); // a NeoForge client with every channel of ours
         server.getPlayerList().placeNewPlayer(connection, player, cookie);
         MockViewer viewer = new MockViewer(server, player, channel, acknowledging);
         OPEN.add(viewer);
         return viewer;
     }
 
-    /** Takes the packets sent since the last poll; on the server thread, once a tick. */
+    /**
+     * Takes the packets sent since the last poll; on the server thread, once a tick. The server holds a tick's packets
+     * unflushed until it sends chunks, after the GameTest ticker ({@code MinecraftServer#tickChildren} suspends
+     * flushing), so the poll flushes the channel first: it sees this tick's packets, not the last tick's.
+     */
     public void poll() {
+        if (channel.isOpen()) { // a closed channel already holds all it was sent, the server's last packet included
+            channel.flushOutbound();
+        }
         Object message;
         while ((message = channel.readOutbound()) != null) {
             if (message instanceof Packet<?> packet) { // the rest are pipeline tasks a real channel would run
@@ -113,6 +125,16 @@ public final class MockViewer implements AutoCloseable {
                 player.connection.handleChunkBatchReceived(new ServerboundChunkBatchReceivedPacket(CHUNKS_PER_TICK));
             }
         }
+    }
+
+    /** As the client would send {@code payload}: the server's connection reads it, on the server thread. */
+    public void send(CustomPacketPayload payload) {
+        channel.writeInbound(new ServerboundCustomPayloadPacket(payload));
+    }
+
+    /** Whether the server closed this viewer's connection. */
+    public boolean disconnected() {
+        return !channel.isOpen();
     }
 
     public ServerPlayer player() {

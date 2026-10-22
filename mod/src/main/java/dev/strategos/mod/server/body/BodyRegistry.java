@@ -171,6 +171,9 @@ public final class BodyRegistry {
         body.setYHeadRot(unit.yaw());
         body.setYBodyRot(unit.yaw());
         body.setOnGround(true); // the tracker records it at creation and sends a teleport on every flip
+        // The spawn packet carries the synched values the constructor set (health); left dirty, the tracker's first
+        // update would send them again, one entity-data packet per body.
+        var unused = body.getEntityData().packDirty();
         return level.addFreshEntity(body) ? body : null;
     }
 

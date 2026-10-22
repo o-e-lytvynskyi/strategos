@@ -9,8 +9,29 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14
+## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1
 
+- **M1 T15.1 · Payload layer and gateway** — NET-01 in progress (T15.2 seats players); UNIT-01
+  done (its criterion 5).
+  - **Results:** `core.protocol`: `CommandBatch`, `MatchJoin`, `MatchStateMsg`, `FeedbackMsg`
+    (`Feedback`, `NoticeMsg`), `NoticeKind`, with exact wire sizes; `core.sim.Notice` as an output.
+    `mod/server/net`: `NetGateway` (the only sender: audience checks, a queue per player flushed
+    once a tick, trackers through vanilla, no payload to a client without our channel, the
+    `commands` reader with its violations), `Audience`, `PayloadSpec`, `ByteBufWire`,
+    `RateLimiter`, `NetCounters`, `C2sHandlers`; the four M1 payloads; `ModPayloads`;
+    `ClientPayloads` through a `PayloadArrived` event (B5). `BodyRegistry` clears a body's dirty
+    data before adding it. `MockViewer` is a configured NeoForge client and can send. Tests:
+    `WireCodecSizeTest` (payloads), `PayloadRoundTripTest`, `PayloadAudienceTest`, the
+    engine-surface inventory with payloads probed, `nettests.bad_batches_dropped_and_disconnect`,
+    `nettests.pose_same_tick_no_entity_data` (115 GameTests); `verify` 46 s.
+  - **Problems:** the pose test found two things. A walking body sent an entity-data packet with its
+    health: the constructor's value stayed dirty after the spawn packet carried it (fixed in
+    `BodyRegistry`, one packet less per body). And the test first saw each tick's pose a tick late:
+    the server holds packets unflushed until it sends chunks, after the GameTest ticker, so the
+    viewer now flushes before reading (spec §1.6 D row 84). NeoForge refuses our payloads on a
+    connection that never negotiated channels, which `configureMockConnection` sets up (D row 85).
+    A codec that throws makes NeoForge disconnect at once, so the `commands` codec reads leniently
+    (D row 80).
 - **M1 T14 · Network test kit** — QA-19 done; its JFR check (QA-19.4) is in M2's consent batch.
   - **Results:** `gametest/net`: `MockViewer` (a player on an `EmbeddedChannel` that keeps its
     packets, unbundles them and answers chunk batches; closed at a batch's end), `PacketCapture`
@@ -293,7 +314,7 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
   - **Problems:** ErrorProne's `EnumOrdinal` and rule B8's ban on static arrays shaped the codecs;
     the spec's checkpoint period and header changed (spec §1.6 D rows 1–3).
 - **M1 started** on the owner's go-ahead, with consent for every kind of test.
-- **Next:** T15.1, the payload layer and gateway (NET-01); T15 was split in two, being about 1,900 lines.
+- **Next:** T15.2, the roster and the fog-gate stub (NET-01).
 
 ## 2026-10-22 — M0 approvals, the client batch, M0 accepted
 
