@@ -38,8 +38,9 @@ Aggregate tasks:
   `:mod:runServerSmokeRestart` with their marker guards) + `:core:replayJournals`, the gate
   before a task is done and before a commit;
 - `./gradlew verifyClient` = L4 (`:mod:runScenario`), with consent;
-- `./gradlew verifyPerf` = L6 (`:core:jmh`, `:core:jmhCompare`, `:mod:runGameTestPerf`). Until the
-  owner approves a JMH baseline, `jmhCompare` fails with "No approved JMH baseline", by design.
+- `./gradlew verifyPerf` = L6 (`:core:jmh`, `:core:jmhCompare` against the owner-approved
+  `perf/baseline-m4pro.json`, `:mod:runGameTestPerf`); 96 s. CI runs JMH, `:core:jmhSpeedRatio` and
+  the perf GameTests at three times the budgets nightly (`.github/workflows/perf.yml`).
 
 Measured in M0: `verify` 39 s from clean without the build cache and 31 s warm (budget 5
 minutes), `verifyHarness` 12 s, `verifySlow` 6 s, `verifySoak` 9 s; CI runs `verify verifySlow
@@ -175,8 +176,8 @@ At 600 units, the multiplayer design scale of 4 × 150 ([ADR-0019](adr/0019-perf
 | G — memory and saves | core state ≤ 64 MB per 384² match; nav ≤ 32 MB at 512²; autosave ≤ 100 ms |
 
 S1 and S2 measured them in M0, far inside every budget (a 600-unit tick about 0.05 ms p50, a
-384² arena idling at 0.06 ms); ADR-0019's revision proposal keeps them all, awaiting the owner,
-and budget F stays an estimate until S4 runs with consent. Each milestone's perf gate
+384² arena idling at 0.06 ms); the owner approved keeping them all (ADR-0019, Accepted
+2026-10-22), and budget F stays provisional until S4 reports. Each milestone's perf gate
 asserts the budgets at that milestone's target scale, from the
 [budget matrix](roadmap/M0-foundation.md#budget-matrix-per-milestone-delivered-and-kept-by-perf-01);
 a stress pass at twice that scale asserts only the whole tick, C p95 ≤ 50 ms, after 200 warm-up

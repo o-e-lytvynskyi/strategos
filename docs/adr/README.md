@@ -27,7 +27,7 @@ governs.
 | [0016](0016-networking-and-fog-of-war.md) | One fog-aware sender, vanilla tracking behind a gate, targeted re-tracking | Accepted; amended by 0023 | 2026-10-21 | §10, §12 |
 | [0017](0017-camera-and-input.md) | A spectator body at the camera eye, a cursor-owning screen, perspective projection | Proposed - pending spike S9 | 2026-10-21 | §13 |
 | [0018](0018-persistence-and-versioning.md) | One versioned `SavedData` blob per match, codecs in core, quarantine on failure | Accepted | 2026-10-21 | §5 |
-| [0019](0019-performance-budgets.md) | Performance budgets A–G at 600 units, measured from M0 | Proposed - S1 and S2 reported; pending S4 and the owner's approval of the revision | 2026-10-21 | §17 |
+| [0019](0019-performance-budgets.md) | Performance budgets A–G at 600 units, measured from M0 | Accepted (2026-10-22); F provisional until S4 | 2026-10-21 | §17 |
 | [0020](0020-engine-surface-inventory.md) | One reviewed inventory of every hook into Minecraft | Accepted | 2026-10-21 | §2 |
 | [0021](0021-economy-and-construction-model.md) | Hybrid world economy: real-block nodes, finite deposits and fields, abstract building HP | Accepted | 2026-10-21 | §11 |
 | [0022](0022-definition-of-done-amendments.md) | Definition-of-Done amendments for networking and tooling changes, and the inventory check in L2 | Accepted | 2026-10-21 | §16 |

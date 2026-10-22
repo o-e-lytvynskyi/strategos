@@ -691,7 +691,8 @@ decision (D-21).
   3. The owner approves ADR-0019's table with the M0 numbers, and the ADR moves to Accepted; any
      later change needs the owner's approval and an ADR (D).
 - **Tests:** L6, D · **Depends on:** QA-07 · **Size:** S · **Tier:** T0
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-10-22 — M0 T6b, T12, T14: `perftests.walk_600_budget_a` and `perftests.snapshot_500_budget_g` with `BudgetCheckTest`, and the overload run failing on both budgets (1); the budget matrix checked against ADR-0019's revision (2); the owner approved the revision on 2026-10-22, and ADR-0019 is Accepted (3)
 
 #### PERF-02 · Spike S1: server cost per body
 - **Value:** The population cap and the unit body rest on measured numbers, not guesses.
@@ -755,7 +756,8 @@ decision (D-21).
   2. Nested publishes are queued, never recursive (L1).
   3. A JMH baseline for dispatch is committed (L6).
 - **Tests:** L0, L1, L6 · **Depends on:** CORE-02 · **Size:** S · **Tier:** T0
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-10-22 — M0 T5a, T12: `MatchBusTest` (1, 2); `MatchBusBench.publish1000`, 13.7 µs, in the owner-approved `perf/baseline-m4pro.json` (3)
 
 #### CORE-05 · Determinism kit and spike S6
 - **Value:** Any bug seen in a match or a test can be replayed exactly, which makes fixes fast

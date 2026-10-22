@@ -4,7 +4,8 @@ Date: 2026-10-21
 
 ## Status
 
-Proposed - S1 and S2 reported (2026-10-22); pending S4 and the owner's approval of the revision below
+Accepted (2026-10-22): the owner approved the M0 revision below, every budget unchanged; budget F's
+values stay provisional until spike S4 reports
 
 **Revised 2026-10-21**, still Proposed, to follow the roadmap's
 [engineering baseline](../roadmap/M0-foundation.md#plan-wide-engineering-baseline) (the review
@@ -91,10 +92,10 @@ PERF-01 confirms this table with the M0 measurements and moves this ADR to Accep
 approves the numbers. If S4 has not run by then, budget F stays provisional, and the status says it
 is pending consent.
 
-## Revision proposal from M0 (2026-10-22): proposed, awaiting owner approval
+## Revision from M0 (2026-10-22), approved by the owner
 
-PERF-01.3. The M0 measurements, on the M4 Pro, against the provisional table. Until the owner
-approves this proposal, the table above stays in force as it is.
+PERF-01.3. The M0 measurements, on the M4 Pro, against the provisional table. The owner approved
+the proposal on 2026-10-22, so the table above stands as it is.
 
 | Budget | Provisional | Measured in M0 | Proposed |
 |---|---|---|---|

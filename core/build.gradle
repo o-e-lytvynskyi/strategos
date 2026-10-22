@@ -137,3 +137,23 @@ tasks.register('jmhSelftest') {
         if (!alloc.any { it.contains('allocates') }) throw new GradleException('The JMH gate no longer catches an allocating @HotPath kernel')
     }
 }
+
+// [T18] CI only: the CI-to-M4 Pro speed ratio, the geometric mean over every benchmark both files
+// share; CI's slow-host factor for budget C (QA-08).
+def m4proBaseline = rootProject.file('perf/baseline-m4pro.json')
+def speedRatioFile = layout.buildDirectory.file('reports/perf/speed-ratio.json').get().asFile
+tasks.register('jmhSpeedRatio') {
+    group = 'verification'
+    description = 'Writes the ratio of this machine\'s JMH scores to the approved M4 Pro baseline.'
+    mustRunAfter 'jmh'
+    doLast {
+        def slurper = new groovy.json.JsonSlurper()
+        def key = { r -> r.benchmark + (r.params ? r.params.toString() : '') }
+        def base = slurper.parse(m4proBaseline).collectEntries { [(key(it)): it.primaryMetric.score as double] }
+        def logs = slurper.parse(jmhResultFile).findAll { base[key(it)] }
+                .collect { Math.log((it.primaryMetric.score as double) / base[key(it)]) }
+        if (logs.isEmpty()) throw new GradleException("No benchmark shared with ${m4proBaseline}")
+        speedRatioFile.parentFile.mkdirs()
+        speedRatioFile.text = groovy.json.JsonOutput.toJson([ratio: Math.exp(logs.sum() / logs.size()), benchmarks: logs.size()])
+    }
+}

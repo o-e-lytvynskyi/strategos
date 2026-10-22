@@ -4154,7 +4154,7 @@ Rows 1–13, the Done gate, pass; rows 14–16, the owner's Acceptance, wait for
 | 12 | S1, S2, S5 and S6 reports with numbers; ADR-0007 Accepted; ADR-0011 and ADR-0019 carry S1 and S2; S3 and S4 written as plans pending consent |
 | 13 | Tripwire: T1 started 2026-10-21, T9 green 2026-10-22, nothing cut; STATE.md, 05-testing.md (commands, times, the fixture catalogue), playtest.md and the knowledge base are current |
 | 14 | Waits for the owner: the demo of §1.3 with `scripts/playtest.sh` and the questionnaire |
-| 15 | Waits for the owner: the ADR-0019 revision and the JMH baseline; the S1 numbers kept D-01 at 150 |
+| 15 | The owner approved the ADR-0019 revision and the JMH baseline on 2026-10-22; ADR-0019 is Accepted, `perf/baseline-m4pro.json` committed, `verifyPerf` green end to end; the S1 numbers kept D-01 at 150 |
 | 16 | D-22 and D-23 decided on 2026-10-21; ADR-0022's confirmation comes with row 14's session; the consent batch waits for the owner |
 
 **Numbers.** 25 tasks in two working days (2026-10-21 and 2026-10-22), against the plan's 66
