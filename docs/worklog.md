@@ -39,7 +39,16 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
 - **M0 accepted** on the owner's word: 25 of 26 cards `accepted`; UNIT-01 stays `in_progress`
   until NET-01 (M1); the L7 demo waived (spec §1.6 row 64), ADR-0022's confirmation moved to the
   first L7 session. CI about 220 of 2,000 minutes this month.
-- **Next:** M1's spec, then «начинай M1» from the owner.
+- **M1 specified** ([milestones/M1-movement.md](milestones/M1-movement.md)): 27 tasks in slices 1A
+  (one unit on real terrain), 1B (a group of 50), 1C (an army) and a content track; every
+  acceptance criterion of the 26 cards traced to a check; the design of the terrain model,
+  path service with deterministic delivery, motion, ORCA, orders and HFSM, the binary journal,
+  the arena world, the block writer, map import and the proving ground, content loading and
+  the payload layer; the engine APIs checked in the 21.1.264 sources (Appendix A). Deviations:
+  UNIT-09.3's screenshots on the Linux route; a `template_ack` payload for DATA-03.6;
+  `/strategos match join` for seating in M1 (§1.6). The 26 cards are `specified`; PATH-08 and
+  PATH-17 stay in reserve.
+- **Next:** «начинай M1» from the owner, then T1.
 
 ## 2026-10-22 — M0 T9, the tripwire checkpoint, T9b, T11, T10, T11b, T12, T13, T14, T16, T15, T17
 

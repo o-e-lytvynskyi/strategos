@@ -3,8 +3,8 @@
 Where the project stands right now. The session log is in [worklog.md](worklog.md); the work
 procedure is the `strategos-dev` skill (`.claude/skills/strategos-dev/SKILL.md`).
 
-**Last update:** 2026-10-22 · **Owner last seen:** 2026-10-22 · **Current:** M0 Foundation —
-Accepted on 2026-10-22; M1 Movement is specified next
+**Last update:** 2026-10-22 · **Owner last seen:** 2026-10-22 · **Current:** M1 Movement —
+specified on 2026-10-22, waiting for «начинай M1»; M0 accepted the same day
 
 ## For the owner
 
@@ -14,8 +14,12 @@ Answer in chat or here; the next session applies the answers.
    stays ready whenever you want it: `scripts/playtest.sh`, then the steps in
    [testing/playtest.md](testing/playtest.md). Its first use confirms ADR-0022, the one thing your
    acceptance left open.
-2. **M1's spec is being written** (`docs/milestones/M1-movement.md`). When it is ready you will be
-   asked for «начинай M1»: implementation starts only after it, so you can read the spec first.
+2. **M1 is specified: say «начинай M1».** The spec is
+   [milestones/M1-movement.md](milestones/M1-movement.md): 27 tasks in three slices (one unit on
+   real terrain, a group of 50, an army of 200) and a content track, with a demo for you at the end
+   (§1.3). Implementation starts only after your word, so you can read or change the spec first.
+   It moves two M1 consent items to the Linux route on CI and adds three to M2's consent batch
+   (§12).
 3. **Open decisions,** none urgent:
    - D-03 civilisation themes (M7);
    - D-20 multiplayer hosting (M7);
@@ -43,28 +47,32 @@ Answer in chat or here; the next session applies the answers.
 - 2026-10-22 · **Your rule:** a static scene is repeated two or three times, never ten (D-22, the
   skill, QA-18).
 - 2026-10-22 · **M0 accepted:** 25 of 26 cards are `accepted`; UNIT-01 closes with NET-01 in M1.
+- 2026-10-22 · **M1 specified** ([spec](milestones/M1-movement.md)): the terrain model, path service,
+  motion, avoidance, orders, the arena world, map import and the 384² proving ground, content from
+  data packs, the payload layer and the perf gate, as 27 tasks; the 26 cards are `specified`.
 
 ## Now
 
-- **Milestone:** M0 Foundation, started 2026-10-21, Done and Accepted 2026-10-22; spec [milestones/M0-foundation.md](milestones/M0-foundation.md). Next: M1 Movement.
+- **Milestone:** M1 Movement, specified 2026-10-22 ([milestones/M1-movement.md](milestones/M1-movement.md)), 0 of 27 tasks; waits for «начинай M1». M0 Done and Accepted 2026-10-22.
 - **Tripwire (M0 only):** T1 started 2026-10-21; T9 green 2026-10-22; met on day 2.
 - **In progress:** none.
-- **Last finished task:** the M0 client batch and acceptance (2026-10-22).
-- **Next task:** M1 · specify Movement (`docs/milestones/M1-movement.md`, the skill's §4).
+- **Last finished task:** M1's spec (2026-10-22).
+- **Next task:** M1 T1 (wire codec and the binary journal), after «начинай M1».
 - **WIP branch:** none.
 - **CI:** green on `main`: `verify` on every push, `perf.yml` nightly (run 39740227029 green), `release.yml` and `scenario.yml` by hand; about 220 of 2,000 minutes used this month, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.
 
 ## Blocked
 
-Nothing.
+M1's implementation waits for the owner's «начинай M1» (item 2).
 
 ## Milestones
 
 | Milestone | Status | Notes |
 |---|---|---|
 | M0 Foundation | Accepted 2026-10-22 | Started 2026-10-21; tripwire met on day 2; 25 of 26 cards accepted, UNIT-01 closes with NET-01 (M1); the L7 demo waived by the owner |
-| M1–M6 (MVP) | approved | Specs are written by the assistant when each milestone starts; M1's is next |
+| M1 Movement | specified 2026-10-22 | 27 tasks; waits for «начинай M1» |
+| M2–M6 (MVP) | approved | Specs are written by the assistant when each milestone starts |
 | M7–M15 | proposed | Approved by the owner closer to their time |
 
 ## History

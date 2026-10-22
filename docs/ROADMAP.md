@@ -273,32 +273,32 @@ Cards: [roadmap/M1-movement.md](roadmap/M1-movement.md#cards). 26 cards, at most
 
 | ID | Feature | Size | Depends on | Status |
 |---|---|---|---|---|
-| DATA-01 | Template engine | M | QA-02 | approved |
-| DATA-02 | Modifier pipeline | M | DATA-01, CORE-04 | approved |
-| DATA-03 | Content loading, client sync and spike S12 | L | DATA-01, NET-01 | approved |
-| PATH-02 | Surface pages: block classes and the page builder | M | QA-02, QA-03 | approved |
-| PATH-01 | Spike S8: terrain census and surface encoding | S | PATH-02 | approved |
-| MAP-07 | Arena world: preset, world rules and tickets | M | CORE-01, D-13 | approved |
-| BLD-15 | Block writer | M | CORE-02, CORE-10 | approved |
-| MAP-01 | Map packages, importer and the proving ground | M | BLD-15, MAP-07, PERF-03 | approved |
-| PATH-15 | Live terrain capture, page rebuilds and the block-change router | M | PATH-02, BLD-15, CORE-01 | approved |
-| PATH-03 | Path service: A*, string pulling and STRICT delivery | M | PATH-02, CORE-05 | approved |
-| PATH-05 | Path following: kinematic motion on surfaces | M | PATH-03, UNIT-01 | approved |
-| UNIT-09 | Spike S10: kinematic fidelity | M | PATH-05, PATH-15 | approved |
-| CORE-11 | Binary journal and cross-level replay | M | CORE-05, QA-04 | approved |
-| CORE-08 | Spatial index | M | CORE-02 | approved |
-| QA-19 | Network test kit: byte counts and acknowledging mock players | M | QA-03, QA-04 | approved |
-| NET-01 | Payload layer, NetGateway and the fog-gate stub | M | CORE-03, QA-03, QA-19 | approved |
-| UNIT-02 | UnitAI state machine framework | M | CORE-04, CORE-06 | approved |
-| ORD-02 | Order queue: move and stop | M | ORD-01, UNIT-02, NET-01 | approved |
-| PATH-04 | Components and reachability | M | PATH-02, PATH-15 | approved |
-| ORD-03 | Group destination slots | M | ORD-02, PATH-04 | approved |
-| PATH-06 | Local avoidance (ORCA) | M | PATH-05, CORE-08 | approved |
-| PATH-16 | Worker pool, ADAPTIVE delivery and spike S7 | M | PATH-03 | approved |
-| PATH-07 | Stuck ladder | M | PATH-05, PATH-06 | approved |
-| PATH-09 | Shared group path | M | PATH-06, ORD-03, PATH-16 | approved |
-| PATH-10 | Movement debug overlay and dev payloads | M | PATH-03, NET-01, QA-10 | approved |
-| PERF-05 | Crowd soak and the M1 perf gate | M | PATH-07, PATH-09, MAP-01, QA-07, QA-19 | approved |
+| DATA-01 | Template engine | M | QA-02 | specified |
+| DATA-02 | Modifier pipeline | M | DATA-01, CORE-04 | specified |
+| DATA-03 | Content loading, client sync and spike S12 | L | DATA-01, NET-01 | specified |
+| PATH-02 | Surface pages: block classes and the page builder | M | QA-02, QA-03 | specified |
+| PATH-01 | Spike S8: terrain census and surface encoding | S | PATH-02 | specified |
+| MAP-07 | Arena world: preset, world rules and tickets | M | CORE-01, D-13 | specified |
+| BLD-15 | Block writer | M | CORE-02, CORE-10 | specified |
+| MAP-01 | Map packages, importer and the proving ground | M | BLD-15, MAP-07, PERF-03 | specified |
+| PATH-15 | Live terrain capture, page rebuilds and the block-change router | M | PATH-02, BLD-15, CORE-01 | specified |
+| PATH-03 | Path service: A*, string pulling and STRICT delivery | M | PATH-02, CORE-05 | specified |
+| PATH-05 | Path following: kinematic motion on surfaces | M | PATH-03, UNIT-01 | specified |
+| UNIT-09 | Spike S10: kinematic fidelity | M | PATH-05, PATH-15 | specified |
+| CORE-11 | Binary journal and cross-level replay | M | CORE-05, QA-04 | specified |
+| CORE-08 | Spatial index | M | CORE-02 | specified |
+| QA-19 | Network test kit: byte counts and acknowledging mock players | M | QA-03, QA-04 | specified |
+| NET-01 | Payload layer, NetGateway and the fog-gate stub | M | CORE-03, QA-03, QA-19 | specified |
+| UNIT-02 | UnitAI state machine framework | M | CORE-04, CORE-06 | specified |
+| ORD-02 | Order queue: move and stop | M | ORD-01, UNIT-02, NET-01 | specified |
+| PATH-04 | Components and reachability | M | PATH-02, PATH-15 | specified |
+| ORD-03 | Group destination slots | M | ORD-02, PATH-04 | specified |
+| PATH-06 | Local avoidance (ORCA) | M | PATH-05, CORE-08 | specified |
+| PATH-16 | Worker pool, ADAPTIVE delivery and spike S7 | M | PATH-03 | specified |
+| PATH-07 | Stuck ladder | M | PATH-05, PATH-06 | specified |
+| PATH-09 | Shared group path | M | PATH-06, ORD-03, PATH-16 | specified |
+| PATH-10 | Movement debug overlay and dev payloads | M | PATH-03, NET-01, QA-10 | specified |
+| PERF-05 | Crowd soak and the M1 perf gate | M | PATH-07, PATH-09, MAP-01, QA-07, QA-19 | specified |
 | PATH-08 | Hierarchical long-range planner (HPA*) (reserve, outside the totals) | L | PATH-03, PATH-04 | approved |
 | PATH-17 | Flow fields for large groups (reserve, outside the totals) | M | PATH-09 | approved |
 

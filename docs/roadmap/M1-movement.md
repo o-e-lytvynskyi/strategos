@@ -146,7 +146,7 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
   5. Resolving 500 templates takes under 200 ms (L6).
 - **Tests:** L0, L1, L6 · **Fixtures:** test template sets · **Depends on:** QA-02 · **Size:** M ·
   **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### DATA-02 · Modifier pipeline
 - **Value:** Technologies, ranks, civilisation bonuses, high ground and AI handicaps stack
@@ -171,7 +171,7 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
      (L1).
   6. A cached read costs under 50 ns (L6).
 - **Tests:** L0, L1, L6 · **Depends on:** DATA-01, CORE-04 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### DATA-03 · Content loading, client sync and spike S12
 - **Value:** Content and balance load from data packs, reload during development without a
@@ -200,7 +200,7 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
   8. S12, with about 20 templates and two levels of inheritance: `/reload` ≤ 2 s, and every error
      names its file and JSON path; the report confirms ADR-0012 (R).
 - **Tests:** L0, L1, L2, L3, L5, R · **Depends on:** DATA-01, NET-01 · **Size:** L · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 ### Slice 1A · One unit on real terrain
 
@@ -226,7 +226,7 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
   4. A page builds in ≤ 0.5 ms (L6; S8's third exit number).
 - **Tests:** L0, L1, L2, L6 · **Fixtures:** `VoxelFixtures` · **Depends on:** QA-02, QA-03 ·
   **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### PATH-01 · Spike S8: terrain census and surface encoding
 - **Value:** The terrain model is proven against real Minecraft maps before armies depend on it.
@@ -245,7 +245,7 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
      names the change needed (R).
 - **Tests:** L5, R · **Fixtures:** census seeds and regions (versioned) · **Depends on:** PATH-02 ·
   **Size:** S · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### MAP-07 · Arena world: preset, world rules and tickets
 - **Value:** Players get a dedicated Strategos arena world in one click, and their own worlds'
@@ -269,7 +269,7 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
   4. Tickets of a disposed match are dropped on restart (L5).
   5. New matches take slots 2,048 blocks apart (L1).
 - **Tests:** L0, L1, L2, L3, L5 · **Depends on:** CORE-01, D-13 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### BLD-15 · Block writer
 - **Value:** Every block Strategos places or removes goes through one budgeted writer, so
@@ -289,7 +289,7 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
   3. `FakeWorld` applies effects in the same order under the same budget as the adapter (L1).
   4. The cost per placement is measured against PERF-01's threshold (L6).
 - **Tests:** L0, L1, L3, L6 · **Depends on:** CORE-02, CORE-10 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### MAP-01 · Map packages, importer and the proving ground
 - **Value:** A standard battlefield exercises every movement case, so pathing quality is measured,
@@ -313,7 +313,7 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
      that holds only our tickets (L5).
 - **Tests:** L0, L1, L3, L5 · **Fixtures:** proving-ground package and fixture with a terrain
   hash · **Depends on:** BLD-15, MAP-07, PERF-03 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### PATH-15 · Live terrain capture, page rebuilds and the block-change router
 - **Value:** The nav grid follows the live world (players, explosions, other mods) without ever
@@ -337,7 +337,7 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
   6. The router's cost per block change outside any match is reported for PERF-01's threshold (R).
 - **Tests:** L0, L1, L3, L5, L6, R · **Depends on:** PATH-02, BLD-15, CORE-01 · **Size:** M ·
   **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### PATH-03 · Path service: A*, string pulling and STRICT delivery
 - **Value:** Units find sensible routes over real terrain and respond on the tick an order arrives.
@@ -360,7 +360,7 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
      budget D triggers PATH-08 (L6).
   6. A unit crosses a GameTest arena of steps and a ford along its path (L3).
 - **Tests:** L0, L1, L3, L6 · **Depends on:** PATH-02, CORE-05 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### PATH-05 · Path following: kinematic motion on surfaces
 - **Value:** Units walk their routes smoothly over steps, slopes, bridges and shallow water, and
@@ -380,7 +380,7 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
      no ladder rung above repath (L3, solo batch).
   4. Motion costs under 5 µs per unit per tick (L6).
 - **Tests:** L0, L1, L3, L6 · **Depends on:** PATH-03, UNIT-01 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### UNIT-09 · Spike S10: kinematic fidelity
 - **Value:** Units look right on the ground (on slabs, stairs, snow, paths and in shallow water),
@@ -397,7 +397,7 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
   4. With S1 and PATH-06's avoidance check, the report sets ADR-0011 to Accepted, or names the
      templates that get `PHYSICS` bodies (R).
 - **Tests:** L3, L4 (consent), R · **Depends on:** PATH-05, PATH-15 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### CORE-11 · Binary journal and cross-level replay
 - **Value:** Nondeterminism leaking through an adapter is caught the day it appears, and any bug
@@ -418,7 +418,7 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
   4. `/strategos journal save` writes a file that `ReplayRunner` replays (L3).
 - **Tests:** L0, L1, L3 · **Fixtures:** golden journals · **Depends on:** CORE-05, QA-04 ·
   **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 ### Slice 1B · A group of 50
 
@@ -435,7 +435,7 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
   3. 1,000 radius-16 queries among 1,000 units take under 1 ms per tick, and the rebuild allocates
      nothing (L6).
 - **Tests:** L0, L1, L6 · **Depends on:** CORE-02 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### QA-19 · Network test kit: byte counts and acknowledging mock players
 - **Value:** Bandwidth and fog are tested headless, because mock players count every byte and see
@@ -456,7 +456,7 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
   4. The encoder count matches a real connection's JFR `PacketSent` total within 5 % on one
      scripted scene (R, once, consent).
 - **Tests:** L0, L3, L6, R · **Depends on:** QA-03, QA-04 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### NET-01 · Payload layer, NetGateway and the fog-gate stub
 - **Value:** The multiplayer foundation: every message is compact, validated and sent only to the
@@ -494,7 +494,7 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
      no slot in the match gets no command applied (L3).
 - **Tests:** L0, L1, L2, L3, L5 · **Depends on:** CORE-03, QA-03, QA-19 · **Size:** M ·
   **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### UNIT-02 · UnitAI state machine framework
 - **Value:** Units behave predictably: they finish tasks, react to new orders at once and never
@@ -510,7 +510,7 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
   2. Machine state round-trips through the persistence codecs (L1).
   3. A static check proves every state has an exit path (L1).
 - **Tests:** L0, L1 · **Depends on:** CORE-04, CORE-06 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### ORD-02 · Order queue: move and stop
 - **Value:** Orders behave as in every classic RTS: a new order replaces the old one, Shift queues
@@ -527,7 +527,7 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
   3. An order sent as a mock player's `commands` payload is validated and applied at the next tick
      boundary (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** ORD-01, UNIT-02, NET-01 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### PATH-04 · Components and reachability
 - **Value:** Units never try to walk where they cannot reach; an order on unreachable ground goes
@@ -543,7 +543,7 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
      the A* cap (L1).
   3. After a wall splits a region, the components equal a flood fill within 40 ticks (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** PATH-02, PATH-15 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### ORD-03 · Group destination slots
 - **Value:** A group spreads out sensibly at its destination instead of piling onto one block, and
@@ -558,7 +558,7 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
   2. 50 units settle within 1.5 blocks of their slots (a single unit within 0.5), and no two stand
      closer than 0.6 block at rest (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** ORD-02, PATH-04 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### PATH-06 · Local avoidance (ORCA)
 - **Value:** Armies flow around each other and around players without overlapping or jittering.
@@ -576,7 +576,7 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
   4. Avoidance is deterministic for equal inputs, and `NOTICE` carries the RVO2 notice (L1).
   5. Avoidance costs under 5 µs per unit per tick at 600 units (L6).
 - **Tests:** L0, L1, L3, L6 · **Depends on:** PATH-05, CORE-08 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### PATH-16 · Worker pool, ADAPTIVE delivery and spike S7
 - **Value:** Big group orders never freeze the game, and a slow host changes only how fast paths
@@ -601,7 +601,7 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
   5. The S7 report sets `k`, the live delivery mode and W, and with S8 moves ADR-0015 to Accepted
      (R).
 - **Tests:** L0, L1, L3, L6, R · **Depends on:** PATH-03 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 ### Slice 1C · An army
 
@@ -621,7 +621,7 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
   3. A unit boxed in by placed blocks in a GameTest frees itself or fails with the notice (L3).
   4. In the crowd soak, nudges stay under 1 per 1,000 orders (L6, in PERF-05).
 - **Tests:** L0, L1, L3, L6 · **Depends on:** PATH-05, PATH-06 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### PATH-09 · Shared group path
 - **Value:** An order to 150 units is as responsive as an order to one.
@@ -636,7 +636,7 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
   3. Group-path work stays within budget D at 600 units (L6).
 - **Tests:** L0, L1, L3, L6 · **Depends on:** PATH-06, ORD-03, PATH-16 · **Size:** M ·
   **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### PATH-10 · Movement debug overlay and dev payloads
 - **Value:** Movement problems become visible on screen, so they are fixed before players meet
@@ -653,7 +653,7 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
   3. Overlay goldens on the proving ground (L4, consent; in M2's consent batch).
 - **Tests:** L0, L3, L4 (consent), L5 · **Depends on:** PATH-03, NET-01, QA-10 · **Size:** M ·
   **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### PERF-05 · Crowd soak and the M1 perf gate
 - **Value:** Large armies keep moving smoothly in every build, because a long crowd test guards
@@ -672,7 +672,7 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
   4. A failing seed reproduces exactly from its journal (L1).
 - **Tests:** L1, L6 · **Fixtures:** soak seed set · **Depends on:** PATH-07, PATH-09, MAP-01,
   QA-07, QA-19 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 ### Reserve (outside the milestone's totals and critical path)
 
