@@ -284,6 +284,9 @@ cards, does not exist for M1: the M1 cards were final when this spec was written
 | 72 | §5.12: "report in handle order" | Queries report unit indices, ascending: the handle's slot, the order every system iterates in and `BodyFrame` uses. A reused slot's higher generation never moves a unit later; a handle is one `EntityStore.handleAt` away |
 | 73 | §5.12: `UnitGrid`, `SpatialQueries`, `StaticIndex` | `UnitGrid` holds the cells and answers `forEachInRadius`, `countWithin` and `nearest` (rings of cells, stopping once no farther ring can hold a nearer unit; the lower index wins a tie); one query may not start inside another's consumer, since they share one buffer. `SpatialQueries` is the match's index and the system that rebuilds the grid as the last step of `MOVEMENT`; a restored snapshot rebuilds it too, so a restored match's queries see what the original's did. Neither is saved or hashed: both derive from the state. `StaticIndex` keeps buildings, nodes and dropsites by page with a kind bitmask, a faction and a resource bitmask each; M1 fills it only in tests |
 | 74 | §7.6: `SpatialBench` | 1,000 units of two factions in a 128² battle on a 384² match; `query1000` asks, for every unit, for the enemies within 16 blocks. Only `rebuild1000` joins the allocation gate, as §4.2 lists: `query1000` reports about 2.7 B/op, JMH's own background rate (0.007 MB/s, the same as every kernel's) over its 0.39 ms operation |
+| 75 | §9.2 T14: `MockViewer` | It joins with a NeoForge connection type in its cookie and the view distance it asks for, standing where it is put. The connection's channel holds the packets as objects, between the pipeline tasks a real channel would run, which the viewer skips; bundles are taken apart. The server sends chunks to every listed player itself (`MinecraftServer#tickChildren`), so the viewer only answers each batch; its listener's own tick (keep-alive, movement checks) never runs. A batch's end closes any viewer a failed test left open |
+| 76 | QA-19: "bytes counted by encoding captured clientbound packets" | The count is each packet's encoded size before compression and framing; a bundle counts as its parts, without its delimiters. Vanilla packets count under their type id, ours under `payload/<id>` in the `strategos` namespace. QA-19.4 checks it against JFR's `PacketSent` on a real connection in M2's consent batch |
+| 77 | QA-19.3: counters "exported to perf runs" | `perftests.viewer_bytes_600` (batch `perf_viewer`) writes `viewer_bytes_600.json`: one viewer at the arena's centre while the 600 units of budget A walk, bytes per tick and per type, report-only: budget E's gate, with two seated viewers, is PERF-05's (T26) |
 
 ---
 
@@ -1650,7 +1653,7 @@ are green and its negative checks behave as stated.
 ### 9.3 Progress
 
 - [x] T1 (2026-10-22) · [x] T2 (2026-10-22) · [x] T11 (2026-10-22) · [x] T3 (2026-10-22) · [x] T4 (2026-10-22) · [x] T5 (2026-10-22) · [x] T6 (2026-10-22) · [x] T7 (2026-10-22) · [x] T8 (2026-10-22) · [x] T19 (2026-10-22) · [x] T28 (2026-10-22) · [x] T9 (2026-10-22) · [x] T12 (2026-10-22) · [x] T10 (2026-10-22)
-- [x] T13 (2026-10-22) · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17 · [ ] T18 · [ ] T20 · [ ] T21 · [ ] T22
+- [x] T13 (2026-10-22) · [x] T14 (2026-10-22) · [ ] T15 · [ ] T16 · [ ] T17 · [ ] T18 · [ ] T20 · [ ] T21 · [ ] T22
 - [ ] T23 · [ ] T24 · [ ] T25 · [ ] T26 · [ ] T27
 
 ---

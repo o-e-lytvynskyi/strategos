@@ -9,8 +9,22 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13
+## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14
 
+- **M1 T14 · Network test kit** — QA-19 done; its JFR check (QA-19.4) is in M2's consent batch.
+  - **Results:** `gametest/net`: `MockViewer` (a player on an `EmbeddedChannel` that keeps its
+    packets, unbundles them and answers chunk batches; closed at a batch's end), `PacketCapture`
+    (per type), `ByteCounter` (each packet encoded with `GameProtocols.CLIENTBOUND_TEMPLATE`, per
+    type, ours apart, encode failures kept). `nettests.acknowledging_viewer_tracks_view`,
+    `nettests.capture_per_player_and_type` (113 GameTests); `perftests.viewer_bytes_600` in a new
+    `perf_viewer` batch; `verify` 42 s.
+  - **Measured:** one viewer at the arena's centre while 600 units walk: 41 KB/s (budget E 100),
+    1,920 bytes a tick at the median and 3,456 at p99, nearly all of it position updates (190 a
+    tick, 10 bytes each).
+  - **Problems:** the first perf run crashed the GameTest server: a viewer named with 21
+    characters made `player_info_update` unencodable (a profile name has at most 16), which a mock
+    connection never notices but the byte counter does. Viewers now refuse such names, and the
+    counter records failures instead of throwing (pet-projects knowledge base).
 - **M1 T13 · Spatial index** — CORE-08 done.
   - **Results:** `core.sim.spatial`: `UnitGrid` (`@HotPath`; 8-block cells, a counting sort of
     (cell, unit index) every tick, a faction bitmask per cell; `forEachInRadius`, `countWithin`,
@@ -279,7 +293,7 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
   - **Problems:** ErrorProne's `EnumOrdinal` and rule B8's ban on static arrays shaped the codecs;
     the spec's checkpoint period and header changed (spec §1.6 D rows 1–3).
 - **M1 started** on the owner's go-ahead, with consent for every kind of test.
-- **Next:** T14, the network test kit (QA-19).
+- **Next:** T15, payloads, the gateway, the roster and the fog-gate stub (NET-01).
 
 ## 2026-10-22 — M0 approvals, the client batch, M0 accepted
 

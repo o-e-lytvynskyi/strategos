@@ -21,6 +21,7 @@ import dev.strategos.core.testkit.Percentiles;
 import dev.strategos.core.testkit.SimHarness;
 import dev.strategos.gametest.MatchFixture;
 import dev.strategos.gametest.StrategosTest;
+import dev.strategos.gametest.net.MockViewer;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.server.match.MatchRuntime;
 import dev.strategos.mod.server.match.MatchSpace;
@@ -44,6 +45,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * The L6 perf GameTests (spec 7.6), one per batch, in their own run ({@code runGameTestPerf}). Each samples the foreign
@@ -118,6 +120,77 @@ public final class PerfTests {
                             state.total,
                             window,
                             extra);
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * QA-19.3, budget E's first look (report-only until PERF-05 gates it): what one acknowledging mock viewer at the
+     * arena's centre receives while 600 units walk as in budget A, per tick and per packet type, ours and vanilla's.
+     */
+    @StrategosTest(batch = "perf_viewer", arena = "arena_flat_48", timeoutTicks = 1_200)
+    public static void viewerBytes600(GameTestHelper h) {
+        MatchRuntime rt = MatchFixture.create(h, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
+        rt.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(0), WEST, 300, 6));
+        rt.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(1), EAST, 300, 6));
+        Vec3 centre = h.absoluteVec(new Vec3(24, 2, 24));
+        MockViewer viewer = MockViewer.join(h.getLevel(), "strategos-perf", centre.x, centre.y, centre.z, 4);
+        viewer.capture().keep(false);
+        var state = new Object() {
+            long firstOrderAt = -1;
+            long orderedAt = -1;
+            boolean toEast = true;
+            int samples;
+            long last;
+            final long[] perTick = new long[SAMPLES];
+        };
+        h.startSequence()
+                .thenWaitUntil(() -> {
+                    viewer.poll();
+                    check(
+                            core(rt).queries().unitCount() == 600 && rt.bodies().count() == 600,
+                            "the 600 units and bodies are not there yet");
+                })
+                .thenWaitUntil(() -> {
+                    viewer.poll();
+                    long tick = core(rt).queries().tick();
+                    if (state.orderedAt < 0 || tick - state.orderedAt >= REORDER_EVERY) {
+                        reorder(rt, state.toEast);
+                        state.toEast = !state.toEast;
+                        state.orderedAt = tick;
+                        if (state.firstOrderAt < 0) {
+                            state.firstOrderAt = tick;
+                        }
+                    }
+                    if (tick - state.firstOrderAt == WARM_UP) {
+                        viewer.bytes().clear();
+                        state.last = 0;
+                    } else if (tick - state.firstOrderAt > WARM_UP && state.samples < SAMPLES) {
+                        long now = viewer.bytes().bytes();
+                        state.perTick[state.samples++] = now - state.last;
+                        state.last = now;
+                    }
+                    check(state.samples >= SAMPLES, "sampling: " + state.samples + " of " + SAMPLES);
+                })
+                .thenExecute(() -> {
+                    JsonObject json = new JsonObject();
+                    json.addProperty("test", "viewer_bytes_600");
+                    json.addProperty("gate", "e");
+                    json.addProperty("unit", "bytes per tick");
+                    json.addProperty("samples", SAMPLES);
+                    json.addProperty("p50", Percentiles.percentile(state.perTick, 0.50));
+                    json.addProperty("p95", Percentiles.percentile(state.perTick, 0.95));
+                    json.addProperty("p99", Percentiles.percentile(state.perTick, 0.99));
+                    json.addProperty("max", Arrays.stream(state.perTick).max().orElse(0));
+                    json.addProperty("bytesPerSecond", viewer.bytes().bytes() * 20 / SAMPLES);
+                    json.addProperty("budgetBytesPerSecond", 100 * 1024);
+                    json.addProperty("verdict", "report-only");
+                    json.add("viewer", viewer.bytes().toJson());
+                    write("viewer_bytes_600", json);
+                    viewer.close();
+                    check(
+                            viewer.bytes().failures().isEmpty(),
+                            "unencodable packets: " + viewer.bytes().failures());
                 })
                 .thenSucceed();
     }

@@ -139,13 +139,18 @@ Answer in chat or here; the next session applies the answers.
   Answers always come in the same order, and they match a slow full search on a thousand random
   tests. Avoidance (T21) is its first user; buildings, resource nodes and dropsites have their own
   index, empty until the economy arrives. Card CORE-08 is done.
+- 2026-10-22 · **M1 T14 Network test kit:** tests can now seat a pretend player that sees exactly
+  what a real client would, record every packet it gets, and count the bytes as the game's own
+  encoder writes them, ours and vanilla's apart. A first measurement: one such viewer watching 600
+  walking units receives 41 KB/s, under the 100 KB/s budget per player. The check against a real
+  client's network recording waits for M2's consent batch, as planned. Card QA-19 is done.
 
 ## Now
 
-- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 15 of 28 tasks done (T28, PATH-08, joined by its trigger).
+- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 16 of 28 tasks done (T28, PATH-08, joined by its trigger).
 - **In progress:** none.
-- **Last finished task:** M1 T13 (2026-10-22).
-- **Next task:** M1 T14 · Network test kit (QA-19).
+- **Last finished task:** M1 T14 (2026-10-22).
+- **Next task:** M1 T15 · Payloads, gateway, roster and the fog-gate stub (NET-01).
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 220 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.

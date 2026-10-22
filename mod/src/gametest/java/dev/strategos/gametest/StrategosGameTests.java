@@ -1,5 +1,6 @@
 package dev.strategos.gametest;
 
+import dev.strategos.gametest.net.MockViewer;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -61,6 +62,11 @@ public final class StrategosGameTests {
         afterBatch(level, "perf_walk");
     }
 
+    @AfterBatch(batch = "perf_viewer")
+    public static void afterPerfViewer(ServerLevel level) {
+        afterBatch(level, "perf_viewer");
+    }
+
     @AfterBatch(batch = "perf_snapshot")
     public static void afterPerfSnapshot(ServerLevel level) {
         afterBatch(level, "perf_snapshot");
@@ -117,6 +123,7 @@ public final class StrategosGameTests {
     }
 
     private static void afterBatch(ServerLevel level, String batch) {
+        MockViewer.closeAll();
         MatchFixture.disposeAll(level);
         BatchEndCheck.verify(level, batch);
     }
