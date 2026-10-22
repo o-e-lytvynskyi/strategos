@@ -11,8 +11,16 @@ import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.OrderReceived;
+import dev.strategos.core.sim.order.OrderKind;
+import dev.strategos.core.sim.order.OrderQueues;
 
-/** Move: each owned unit gets a move order to the target; the unit's AI starts walking from the bus. */
+/**
+ * Move (ORD-02, 04 §7.4): each owned unit gets a move order to the target, joined to its queue by the command's mode.
+ * {@code REPLACE} makes it the only order, {@code QUEUE} appends it and {@code PUSH_FRONT} puts it before the current
+ * one; a unit that holds {@value OrderQueues#MAX} orders refuses the last two with {@code QUEUE_FULL}. A command to
+ * several units gives their orders one new group id. A unit whose current order changed hears {@link OrderReceived},
+ * and its machine walks.
+ */
 final class MoveRule implements CommandRule<Move> {
     @Override
     public CommandKind<Move> kind() {
@@ -28,23 +36,41 @@ final class MoveRule implements CommandRule<Move> {
         if (!state.config().bounds().contains(move.target().x(), move.target().z())) {
             return Tally.rejectAll(envelope, kind(), units.size(), RejectReason.OUT_OF_BOUNDS);
         }
-        if (move.mode() != QueueMode.REPLACE || move.formation() != 0) {
+        if (move.formation() != 0) {
             return Tally.rejectAll(envelope, kind(), units.size(), RejectReason.UNSUPPORTED);
         }
+        OrderQueues orders = state.orders();
+        double x = move.target().x();
+        double z = move.target().z();
+        int group = 0;
         Tally tally = new Tally();
-        for (int i = 0; i < units.size(); i++) {
-            int handle = units.get(i);
+        for (int k = 0; k < units.size(); k++) {
+            int handle = units.get(k);
             RejectReason reason = Ownership.check(envelope.issuer(), handle, state);
             if (reason != null) {
                 tally.reject(reason);
                 continue;
             }
-            state.orders()
-                    .setMove(
-                            Handle.index(handle),
-                            move.target().x(),
-                            move.target().z());
-            state.bus().publish(new OrderReceived(handle));
+            if (group == 0 && units.size() > 1) {
+                group = state.newGroup(); // only once some unit takes the order
+            }
+            int i = Handle.index(handle);
+            int before = orders.size(i);
+            boolean joined = switch (move.mode()) {
+                case REPLACE -> {
+                    orders.replace(i, OrderKind.MOVE, x, z, group, 0);
+                    yield true;
+                }
+                case QUEUE -> orders.queue(i, OrderKind.MOVE, x, z, group, 0);
+                case PUSH_FRONT -> orders.pushFront(i, OrderKind.MOVE, x, z, group, 0);
+            };
+            if (!joined) {
+                tally.reject(RejectReason.QUEUE_FULL);
+                continue;
+            }
+            if (move.mode() != QueueMode.QUEUE || before == 0) { // a queued order waits, unless the unit is idle
+                state.bus().publish(new OrderReceived(handle));
+            }
             tally.accept();
         }
         return tally.result(envelope, kind());

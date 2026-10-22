@@ -6,6 +6,7 @@ import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.sim.nav.PathService;
 import dev.strategos.core.sim.nav.PathStore;
 import dev.strategos.core.sim.nav.SurfaceGrid;
+import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.core.sim.stats.StatBreakdown;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
@@ -38,6 +39,9 @@ public interface MatchQueries {
 
     /** A live unit's path: its waypoints, the next one, and the request it waits for; null for a dead handle. */
     PathStore.@Nullable UnitPath path(int handle);
+
+    /** A live unit's orders, the current one first (ORD-02); empty for an idle unit or a dead handle. */
+    List<OrderQueues.Order> orders(int handle);
 
     /** A live unit's terrain motion: velocity, floor, stuck monitor, arrival latch; null for a dead handle. */
     MotionStore.@Nullable Extra motion(int handle);

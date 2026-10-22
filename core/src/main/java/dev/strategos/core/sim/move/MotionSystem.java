@@ -10,7 +10,6 @@ import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.MatchSystem;
 import dev.strategos.core.sim.MotionStore;
 import dev.strategos.core.sim.OrderReceived;
-import dev.strategos.core.sim.OrderStore;
 import dev.strategos.core.sim.PathInvalidated;
 import dev.strategos.core.sim.Phase;
 import dev.strategos.core.sim.Stagger;
@@ -22,6 +21,8 @@ import dev.strategos.core.sim.nav.PathStatus;
 import dev.strategos.core.sim.nav.PathStore;
 import dev.strategos.core.sim.nav.Surface;
 import dev.strategos.core.sim.nav.SurfaceGrid;
+import dev.strategos.core.sim.order.OrderKind;
+import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.core.sim.spatial.UnitFilter;
 import dev.strategos.core.sim.stats.StatService;
 import java.util.function.IntConsumer;
@@ -102,6 +103,7 @@ public final class MotionSystem implements MatchSystem {
     private final MatchState state;
     private final Avoidance avoidance;
     private final IntConsumer toucher = this::touch;
+    private final IntConsumer taker = this::take;
     private int touchSelf;
     private double touchTargetX;
     private double touchTargetZ;
@@ -139,14 +141,14 @@ public final class MotionSystem implements MatchSystem {
             return;
         }
         EntityStore entities = s.entities();
-        OrderStore orders = s.orders();
+        OrderQueues orders = s.orders();
         int highWater = entities.highWater();
         ensure(highWater);
         for (int i = 0; i < highWater; i++) { // plan: nothing moves yet
             if (!entities.aliveAt(i)) {
                 continue;
             }
-            if (s.ai().state(i) == UnitState.WALKING && orders.kind(i) == OrderStore.MOVE) {
+            if (s.ai().state(i) == UnitState.WALKING && orders.kind(i) == OrderKind.MOVE) {
                 steer(s, i);
             } else {
                 mode[i] = SETTLING;
@@ -202,12 +204,12 @@ public final class MotionSystem implements MatchSystem {
     private static void runFlat(MatchState s) {
         EntityStore entities = s.entities();
         MotionStore motion = s.motion();
-        OrderStore orders = s.orders();
+        OrderQueues orders = s.orders();
         StatService stats = s.stats();
         BodyFrame.Builder frame = s.frame();
         int highWater = entities.highWater();
         for (int i = 0; i < highWater; i++) {
-            if (!entities.aliveAt(i) || s.ai().state(i) != UnitState.WALKING || orders.kind(i) != OrderStore.MOVE) {
+            if (!entities.aliveAt(i) || s.ai().state(i) != UnitState.WALKING || orders.kind(i) != OrderKind.MOVE) {
                 continue;
             }
             int handle = entities.handleAt(i);
@@ -242,7 +244,7 @@ public final class MotionSystem implements MatchSystem {
     private void steer(MatchState s, int i) {
         MotionStore motion = s.motion();
         PathStore paths = s.paths();
-        OrderStore orders = s.orders();
+        OrderQueues orders = s.orders();
         double x0 = motion.x(i);
         double z0 = motion.z(i);
         startY[i] = motion.y(i);
@@ -384,29 +386,38 @@ public final class MotionSystem implements MatchSystem {
                 && motion.pushed(i) == 0
                 && s.ai().state(i) == UnitState.IDLE
                 && DetMath.length(motion.x(i) - motion.latchX(i), motion.z(i) - motion.latchZ(i)) > LATCH) {
-            s.orders().setMove(i, motion.latchX(i), motion.latchZ(i));
+            s.orders().replaceMove(i, motion.latchX(i), motion.latchZ(i));
             s.bus().publish(new OrderReceived(handle)); // back to the latch point; the order releases the latch
         }
     }
 
     /**
      * Whether another unit stands on (tx, tz), its body over the point where unit {@code i}'s would be: an idle one, or
-     * one sent to the same point that made no progress for {@value #CROWDED} ticks; not one passing by.
+     * one sent to the same point that made no progress for {@value #CROWDED} ticks; not one passing by. Any such unit
+     * counts, not only the one nearest the point, which may be {@code i} itself, kept off it by another.
      */
-    private static boolean taken(MatchState s, int i, double tx, double tz) {
-        int j = s.spatial().nearest(tx, tz, UnitFilter.ANY);
-        if (j < 0 || j == i) {
-            return false;
+    private boolean taken(MatchState s, int i, double tx, double tz) {
+        touchSelf = i;
+        touchTargetX = tx;
+        touchTargetZ = tz;
+        touchRadius = radius(s, i);
+        touched = false;
+        s.spatial().forEachInRadius(tx, tz, touchRadius + MAX_RADIUS, UnitFilter.ANY, taker);
+        return touched;
+    }
+
+    private void take(int j) {
+        MatchState s = state;
+        if (touched || j == touchSelf) {
+            return;
         }
-        if (s.ai().state(j) == UnitState.WALKING
-                && (s.motion().stuck(j) < CROWDED
-                        || s.orders().targetX(j) != tx
-                        || s.orders().targetZ(j) != tz)) {
-            return false;
-        }
+        boolean standing = s.ai().state(j) != UnitState.WALKING
+                || (s.motion().stuck(j) >= CROWDED
+                        && s.orders().targetX(j) == touchTargetX
+                        && s.orders().targetZ(j) == touchTargetZ);
         MotionStore motion = s.motion();
-        double reach = radius(s, i) + radius(s, j);
-        return DetMath.length(motion.x(j) - tx, motion.z(j) - tz) < reach;
+        touched = standing
+                && DetMath.length(motion.x(j) - touchTargetX, motion.z(j) - touchTargetZ) < touchRadius + radius(s, j);
     }
 
     /**

@@ -4,12 +4,12 @@ import dev.strategos.core.sim.Arrived;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.OrderFinished;
 import dev.strategos.core.sim.OrderReceived;
-import dev.strategos.core.sim.OrderStore;
 import dev.strategos.core.sim.PathInvalidated;
 import dev.strategos.core.sim.StopOrdered;
 import dev.strategos.core.sim.Stuck;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.UnitStateChanged;
+import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.unitai.Hfsm.Context;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
@@ -92,9 +92,9 @@ public final class UnitAi {
         throw new IllegalArgumentException("no unit state has code " + code);
     }
 
-    /** The state that carries out an order of {@code kind} ({@link OrderStore}). */
+    /** The state that carries out an order of {@code kind} ({@link OrderKind}). */
     static StateId stateFor(int kind) {
-        if (kind == OrderStore.MOVE) {
+        if (kind == OrderKind.MOVE) {
             return WALKING;
         }
         throw new IllegalStateException("no unit state carries out order kind " + kind);
@@ -109,14 +109,25 @@ public final class UnitAi {
     }
 
     /**
-     * The current order is over (ADR-0014's {@code finishOrder}): with M0's single order slot the unit drops it, posts
-     * {@link OrderFinished} and goes IDLE; ORD-02's queue starts the next order instead (T18).
+     * The current order is over (ADR-0014's {@code finishOrder}, 04 §7.4): the unit drops it and posts {@link
+     * OrderFinished}; with an order queued after it, the unit carries that one out at once, in the state of its kind,
+     * as if just ordered ({@link OrderReceived} asks for its path), else it goes IDLE. A failed order does not stop the
+     * queue.
      */
     static void finishOrder(Context<MatchState> ctx, boolean failed) {
         MatchState state = ctx.host();
-        state.orders().clear(ctx.unit());
+        int i = ctx.unit();
+        state.orders().pop(i);
         state.bus().publish(new OrderFinished(ctx.handle(), failed));
-        ctx.go(IDLE);
+        if (state.orders().size(i) == 0) {
+            ctx.go(IDLE);
+            return;
+        }
+        StateId next = stateFor(state.orders().kind(i));
+        if (!ctx.in(next)) {
+            ctx.go(next);
+        }
+        state.bus().publish(new OrderReceived(ctx.handle()));
     }
 
     /** A transition between top-level states is the trace event ORD-01.3 asks for; one inside a top-level state is not. */

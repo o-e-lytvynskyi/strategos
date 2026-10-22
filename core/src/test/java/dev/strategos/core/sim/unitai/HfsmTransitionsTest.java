@@ -16,7 +16,6 @@ import dev.strategos.core.sim.KernelAccess;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.OrderFinished;
 import dev.strategos.core.sim.OrderReceived;
-import dev.strategos.core.sim.OrderStore;
 import dev.strategos.core.sim.OutputEvent;
 import dev.strategos.core.sim.PathDelivered;
 import dev.strategos.core.sim.PathInvalidated;
@@ -26,6 +25,7 @@ import dev.strategos.core.sim.Stuck;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.UnitStateChanged;
 import dev.strategos.core.sim.nav.PathStatus;
+import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.stats.StatScope;
 import dev.strategos.core.testkit.SimHarness;
 import java.util.ArrayList;
@@ -93,7 +93,7 @@ class HfsmTransitionsTest {
 
     /** A move order to (20, 20) set as the move rule sets it, then announced. */
     private static BusMessage newMove(Unit u) {
-        u.state.orders().setMove(u.index(), 20, 20);
+        u.state.orders().replaceMove(u.index(), 20, 20);
         return new OrderReceived(u.handle);
     }
 
@@ -109,13 +109,13 @@ class HfsmTransitionsTest {
     }
 
     private static void orderKept(Unit u) {
-        assertThat(u.state.orders().kind(u.index())).isEqualTo(OrderStore.MOVE);
+        assertThat(u.state.orders().kind(u.index())).isEqualTo(OrderKind.MOVE);
         nothingElse(u);
     }
 
     private static Consumer<Unit> orderFinished(boolean failed) {
         return u -> {
-            assertThat(u.state.orders().kind(u.index())).isEqualTo(OrderStore.NONE);
+            assertThat(u.state.orders().kind(u.index())).isEqualTo(OrderKind.NONE);
             assertThat(u.finished).containsExactly(new OrderFinished(u.handle, failed));
         };
     }
@@ -179,7 +179,7 @@ class HfsmTransitionsTest {
                         walking,
                         u -> new OrderFinished(u.handle, false),
                         walking,
-                        u -> assertThat(u.state.orders().kind(u.index())).isEqualTo(OrderStore.MOVE)),
+                        u -> assertThat(u.state.orders().kind(u.index())).isEqualTo(OrderKind.MOVE)),
                 row(
                         "changed stats reach no machine in M1",
                         walking,

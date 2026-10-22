@@ -3,14 +3,17 @@ package dev.strategos.mod.server.command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import dev.strategos.core.content.MapManifest;
+import dev.strategos.core.content.MapWaypoint;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.ValuePath;
 import dev.strategos.core.protocol.Command;
 import dev.strategos.core.protocol.CommandOutcome;
 import dev.strategos.core.protocol.Move;
+import dev.strategos.core.protocol.QueueMode;
 import dev.strategos.core.protocol.SpawnUnits;
 import dev.strategos.core.protocol.Stop;
 import dev.strategos.core.protocol.UnitSet;
@@ -34,6 +37,8 @@ import dev.strategos.core.sim.nav.PathStore;
 import dev.strategos.core.sim.nav.Surface;
 import dev.strategos.core.sim.nav.SurfaceGrid;
 import dev.strategos.core.sim.nav.SurfacePage;
+import dev.strategos.core.sim.order.ContextResolver;
+import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.core.sim.stats.Modifier;
 import dev.strategos.core.sim.stats.StatBreakdown;
 import dev.strategos.mod.StrategosServer;
@@ -191,6 +196,7 @@ public final class StrategosCommands {
                                                         template(ctx),
                                                         IntegerArgumentType.getInteger(ctx, "count"),
                                                         IntegerArgumentType.getInteger(ctx, "slot")))))))
+                .then(order())
                 .then(Commands.literal("debug")
                         .then(Commands.literal("spawn")
                                 .executes(ctx -> spawn(ctx.getSource(), 1, 0))
@@ -455,6 +461,116 @@ public final class StrategosCommands {
                 source.sendSuccess(() -> Component.literal(text), false);
             }
         });
+    }
+
+    /** Which units an order command names, resolved in the match at the source. */
+    private interface Units {
+        int[] of(CommandContext<CommandSourceStack> ctx, MatchRuntime rt);
+    }
+
+    /** Where an order command sends its units, in match coordinates. */
+    private interface Target {
+        Vec2d of(CommandContext<CommandSourceStack> ctx, MatchRuntime rt);
+    }
+
+    /**
+     * {@code order move <units> <x> <z> [replace|queue|front]}, {@code order move <units> waypoint <name> [mode]} and
+     * {@code order stop <units>} (ORD-02), {@code <units>} being {@code @units}, {@code @group <id>} or one handle: for
+     * the match at the source, as ADMIN, through the context of a right-click on the ground.
+     */
+    private static LiteralArgumentBuilder<CommandSourceStack> order() {
+        Units all = (ctx, rt) -> coreOf(rt).queries().unitHandles();
+        Units group = (ctx, rt) -> group(rt, IntegerArgumentType.getInteger(ctx, "group"));
+        Units one = (ctx, rt) -> new int[] {IntegerArgumentType.getInteger(ctx, "handle")};
+        return Commands.literal("order")
+                .then(Commands.literal("move")
+                        .then(moveTargets(Commands.literal("@units"), all))
+                        .then(Commands.literal("@group")
+                                .then(moveTargets(Commands.argument("group", IntegerArgumentType.integer(1)), group)))
+                        .then(moveTargets(Commands.argument("handle", IntegerArgumentType.integer()), one)))
+                .then(Commands.literal("stop")
+                        .then(Commands.literal("@units").executes(ctx -> orderStop(ctx, all)))
+                        .then(Commands.literal("@group")
+                                .then(Commands.argument("group", IntegerArgumentType.integer(1))
+                                        .executes(ctx -> orderStop(ctx, group))))
+                        .then(Commands.argument("handle", IntegerArgumentType.integer())
+                                .executes(ctx -> orderStop(ctx, one))));
+    }
+
+    /** {@code <x> <z> [mode]}, a world column, or {@code waypoint <name> [mode]}, a waypoint of the match's map. */
+    private static <T extends ArgumentBuilder<CommandSourceStack, T>> T moveTargets(T units, Units which) {
+        Target column = (ctx, rt) -> {
+            ColumnPos pos = ColumnPosArgument.getColumnPos(ctx, "pos");
+            return new Vec2d(rt.space().localX(pos.x() + 0.5), rt.space().localZ(pos.z() + 0.5));
+        };
+        Target waypoint = (ctx, rt) -> waypoint(ctx.getSource(), rt, StringArgumentType.getString(ctx, "name"));
+        return units.then(withModes(Commands.argument("pos", ColumnPosArgument.columnPos()), which, column))
+                .then(Commands.literal("waypoint")
+                        .then(withModes(Commands.argument("name", StringArgumentType.word()), which, waypoint)));
+    }
+
+    private static <T extends ArgumentBuilder<CommandSourceStack, T>> T withModes(T node, Units which, Target where) {
+        return node.executes(ctx -> orderMove(ctx, which, where, QueueMode.REPLACE))
+                .then(Commands.literal("replace").executes(ctx -> orderMove(ctx, which, where, QueueMode.REPLACE)))
+                .then(Commands.literal("queue").executes(ctx -> orderMove(ctx, which, where, QueueMode.QUEUE)))
+                .then(Commands.literal("front").executes(ctx -> orderMove(ctx, which, where, QueueMode.PUSH_FRONT)));
+    }
+
+    /** One command per {@value UnitSet#MAX_SIZE} units, so each such batch is one group. */
+    private static int orderMove(CommandContext<CommandSourceStack> ctx, Units which, Target where, QueueMode mode) {
+        return withMatchAtSource(ctx.getSource(), rt -> {
+            int[] units = which.of(ctx, rt);
+            if (units.length == 0) {
+                throw new MatchRefusedException("no such unit in " + rt.id());
+            }
+            Vec2d target = where.of(ctx, rt);
+            for (int from = 0; from < units.length; from += UnitSet.MAX_SIZE) {
+                int[] part = Arrays.copyOfRange(units, from, Math.min(units.length, from + UnitSet.MAX_SIZE));
+                send(ctx.getSource(), rt, ContextResolver.ground(UnitSet.of(part), target, mode));
+            }
+            return null;
+        });
+    }
+
+    private static int orderStop(CommandContext<CommandSourceStack> ctx, Units which) {
+        return withMatchAtSource(ctx.getSource(), rt -> {
+            int[] units = which.of(ctx, rt);
+            if (units.length == 0) {
+                throw new MatchRefusedException("no such unit in " + rt.id());
+            }
+            for (int from = 0; from < units.length; from += UnitSet.MAX_SIZE) {
+                int[] part = Arrays.copyOfRange(units, from, Math.min(units.length, from + UnitSet.MAX_SIZE));
+                send(ctx.getSource(), rt, new Stop(UnitSet.of(part)));
+            }
+            return null;
+        });
+    }
+
+    /** The units whose current order belongs to group {@code id}. */
+    private static int[] group(MatchRuntime rt, int id) {
+        MatchQueries q = coreOf(rt).queries();
+        return Arrays.stream(q.unitHandles())
+                .filter(u -> {
+                    List<OrderQueues.Order> orders = q.orders(u);
+                    return !orders.isEmpty() && orders.get(0).group() == id;
+                })
+                .toArray();
+    }
+
+    /** A waypoint of the match's map, at its column's centre in match coordinates. */
+    private static Vec2d waypoint(CommandSourceStack source, MatchRuntime rt, String name) {
+        ResourceLocation map = rt.map();
+        if (map == null) {
+            throw new MatchRefusedException(rt.id() + " was not made from a map, so it has no waypoints");
+        }
+        MapWaypoint w = MapPackageLoader.load(source.getServer(), map)
+                .manifest()
+                .waypoints()
+                .get(name);
+        if (w == null) {
+            throw new MatchRefusedException(map + " has no waypoint '" + name + "'");
+        }
+        return new Vec2d(w.x() + 0.5, w.z() + 0.5);
     }
 
     /** {@code <name> [id]}: the work gets the match named by id, or the one at the source. */

@@ -7,6 +7,7 @@ import dev.strategos.core.sim.nav.PageCoord;
 import dev.strategos.core.sim.nav.PathStore;
 import dev.strategos.core.sim.nav.SurfaceGrid;
 import dev.strategos.core.sim.nav.SurfacePage;
+import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.core.sim.spatial.SpatialQueries;
 import dev.strategos.core.sim.stats.StatService;
 import java.util.ArrayDeque;
@@ -20,13 +21,16 @@ import java.util.List;
  * live in {@code sim.*} subpackages; not {@code @CoreApi}, so the mod cannot reach it (B2).
  */
 public final class MatchState {
+    /** The first group id: 0 means an order given to one unit alone. */
+    public static final int FIRST_GROUP = 1;
+
     private long tick;
     private final MatchConfig config;
     private final TemplateSet templates;
     private final EntityStore entities;
     private final IdentityStore identity = new IdentityStore();
     private final MotionStore motion = new MotionStore();
-    private final OrderStore orders = new OrderStore();
+    private final OrderQueues orders = new OrderQueues();
     private final AiStateStore ai = new AiStateStore();
     private final PathStore paths = new PathStore();
     private final MatchBus bus = new MatchBus();
@@ -37,6 +41,7 @@ public final class MatchState {
     private final MatchLog log;
     private BodyFrame.Builder frame = BodyFrame.builder(0);
     private TickInputs input;
+    private int nextGroup = FIRST_GROUP;
     private final List<Agent> agents = new ArrayList<>();
     private SurfaceGrid surfaces;
     private final long[] pageSlices;
@@ -187,7 +192,7 @@ public final class MatchState {
         return motion;
     }
 
-    public OrderStore orders() {
+    public OrderQueues orders() {
         return orders;
     }
 
@@ -226,6 +231,20 @@ public final class MatchState {
     /** This tick's body poses. */
     public BodyFrame.Builder frame() {
         return frame;
+    }
+
+    /** A new group id for the orders of one command to several units (ORD-02); ids are never reused. */
+    public int newGroup() {
+        return nextGroup++;
+    }
+
+    /** The id the next group gets. */
+    public int nextGroup() {
+        return nextGroup;
+    }
+
+    void setNextGroup(int next) {
+        this.nextGroup = next;
     }
 
     /** This tick's agents, from its {@link AgentUpdate}s in order; none on a tick without one. */

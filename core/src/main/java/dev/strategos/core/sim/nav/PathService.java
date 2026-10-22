@@ -12,12 +12,13 @@ import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.MatchSystem;
 import dev.strategos.core.sim.MotionStore;
 import dev.strategos.core.sim.OrderReceived;
-import dev.strategos.core.sim.OrderStore;
 import dev.strategos.core.sim.PathDelivered;
 import dev.strategos.core.sim.PathInvalidated;
 import dev.strategos.core.sim.Phase;
 import dev.strategos.core.sim.StopOrdered;
 import dev.strategos.core.sim.UnitState;
+import dev.strategos.core.sim.order.OrderKind;
+import dev.strategos.core.sim.order.OrderQueues;
 
 /**
  * Paths for walking units (ADR-0015 stage 1, 04 §9.3, spec §5.7), in two passes a tick.
@@ -170,7 +171,7 @@ public final class PathService {
     private void request(MatchState s) {
         EntityStore entities = s.entities();
         PathStore paths = s.paths();
-        OrderStore orders = s.orders();
+        OrderQueues orders = s.orders();
         long tick = s.tick();
         boolean changed = s.changedPageCount() > 0;
         int highWater = entities.highWater();
@@ -179,7 +180,7 @@ public final class PathService {
                 continue;
             }
             boolean wanted = paths.takeWanted(i);
-            if (s.ai().state(i) != UnitState.WALKING || orders.kind(i) != OrderStore.MOVE) {
+            if (s.ai().state(i) != UnitState.WALKING || orders.kind(i) != OrderKind.MOVE) {
                 continue;
             }
             if (wanted) {

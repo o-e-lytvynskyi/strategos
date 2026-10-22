@@ -18,11 +18,25 @@ public record MatchSnapshot(
         List<UnitRecord> units,
         List<CommandEnvelope> pendingCommands,
         List<PageRef> pages,
-        PathStore.Queue paths) {
+        PathStore.Queue paths,
+        int nextGroup) {
     public MatchSnapshot {
         units = List.copyOf(units);
         pendingCommands = List.copyOf(pendingCommands);
         pages = List.copyOf(pages);
+    }
+
+    /** A snapshot from before group orders (ORD-02): the next group id is the first. */
+    public MatchSnapshot(
+            MatchConfig config,
+            long tick,
+            long templateSetHash,
+            EntitySlots slots,
+            List<UnitRecord> units,
+            List<CommandEnvelope> pendingCommands,
+            List<PageRef> pages,
+            PathStore.Queue paths) {
+        this(config, tick, templateSetHash, slots, units, pendingCommands, pages, paths, MatchState.FIRST_GROUP);
     }
 
     /** A snapshot with no path request in flight. */

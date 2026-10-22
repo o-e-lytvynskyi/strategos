@@ -7,6 +7,8 @@ import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.nav.PageCoord;
+import dev.strategos.core.sim.order.OrderKind;
+import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.core.sim.unitai.StateId;
 import dev.strategos.core.sim.unitai.UnitAi;
 import java.util.ArrayList;
@@ -28,7 +30,7 @@ final class Snapshots {
                 continue;
             }
             MotionStore motion = s.motion();
-            OrderStore orders = s.orders();
+            OrderQueues orders = s.orders();
             AiStateStore ai = s.ai();
             units.add(new UnitRecord(
                     entities.handleAt(i),
@@ -39,9 +41,10 @@ final class Snapshots {
                     motion.z(i),
                     motion.yaw(i),
                     new AiStateStore.Saved(UnitAi.leaf(ai.code(i)), ai.data0(i), ai.data1(i)),
-                    orders.kind(i) == OrderStore.MOVE ? new Vec2d(orders.targetX(i), orders.targetZ(i)) : null,
+                    orders.kind(i) == OrderKind.MOVE ? new Vec2d(orders.targetX(i), orders.targetZ(i)) : null,
                     s.paths().unitPath(i),
-                    motion.extra(i)));
+                    motion.extra(i),
+                    orders.saved(i)));
         }
         return new MatchSnapshot(
                 s.config(),
@@ -51,7 +54,8 @@ final class Snapshots {
                 units,
                 List.copyOf(s.pendingCommands()),
                 s.pageRefs(),
-                s.paths().queue());
+                s.paths().queue(),
+                s.nextGroup());
     }
 
     /**
@@ -68,6 +72,7 @@ final class Snapshots {
         EntityStore entities = EntityStore.restore(snapshot.slots(), alive);
         MatchState state = new MatchState(snapshot.config(), templates, entities, log);
         state.setTick(snapshot.tick());
+        state.setNextGroup(snapshot.nextGroup());
         for (UnitRecord unit : snapshot.units()) {
             UnitTemplate template = templates.byId(unit.template());
             if (template == null) {
@@ -85,7 +90,7 @@ final class Snapshots {
             state.ai().restore(index, unit.ai());
             Vec2d target = unit.target();
             if (target != null) {
-                state.orders().setMove(index, target.x(), target.z());
+                state.orders().restore(index, OrderKind.MOVE, target.x(), target.z(), unit.orders());
             } else {
                 state.orders().clear(index);
             }

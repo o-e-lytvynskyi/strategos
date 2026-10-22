@@ -174,18 +174,24 @@ Answer in chat or here; the next session applies the answers.
   building, plugs into without rewriting what exists. A check proves every state has a way back to
   idle, and a unit's state is saved with the match. Nothing changes in play yet: the same matches
   replay to the same results. Card UNIT-02 is done.
+- 2026-10-23 · **M1 T18 Order queues:** a unit now holds up to 16 orders. A new order replaces the
+  old ones, a queued one (Shift, later in the interface) waits its turn, and an urgent one goes
+  first and lets the interrupted one resume; Stop clears them all. An order to several units
+  marks them as one group, for the group places and shared paths coming next. Server commands
+  `/strategos order move @units <x> <z> [queue]`, `... waypoint <name>` and `/strategos order stop`
+  give orders by hand, the way a player's client will. Card ORD-02 is done.
 
 ## Now
 
-- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 20 of 29 tasks done (T28, PATH-08, joined by its trigger).
+- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 21 of 29 tasks done (T28, PATH-08, joined by its trigger).
 - **In progress:** none.
 - **Paused WIP (parallel agents stopped by the owner on 2026-10-23 to save tokens; finished in the main tree):**
   - T25 debug overlay on branch `wip/m1-t25-debug-overlay` (a7a110d): the dev payloads, the server
     feed, `/strategos perf` and the client overlay are done; `DebugTests`, `MockViewer#operator`
     and `verify` are left.
-- **Last finished task:** M1 T17 (2026-10-23), finished from the agent's branch
-  `wip/m1-t17-unitai-hfsm`.
-- **Next task:** M1 T18 · Order queue: move and stop (ORD-02); then T25 from its branch.
+- **Last finished task:** M1 T18 (2026-10-23).
+- **Next task:** M1 T25 · Movement debug overlay, finished from its branch; then T20 (group
+  destination slots).
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 220 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.

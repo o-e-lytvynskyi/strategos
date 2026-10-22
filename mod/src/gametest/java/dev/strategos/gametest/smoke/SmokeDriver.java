@@ -65,7 +65,7 @@ import org.slf4j.LoggerFactory;
  *   <li>the mod is loaded, core runs in the mod module, the holder exists from {@code ServerAboutToStartEvent} on, the
  *       unit body type is registered;
  *   <li>MAP-01.4: an unsaved match on the proving ground, 4,096 blocks from the spawn so that only its own tickets hold
- *       the area, imports while the server sprints (its terrain hash checked); 8 units walk from the west start, and 100
+ *       the area, imports while the server sprints (its terrain hash checked); 8 units walk from the west start, and 160
  *       ticks later, with nobody online, all 8 have bodies and stand at their target (idle within 2.5 blocks, the
  *       first on it: PATH-06's crowd arrival); the match is disposed;
  *   <li>a saved 16 x 16 match around the world spawn; 8 units around local (4, 8), ordered to (12.5, 8.5);
@@ -90,7 +90,9 @@ public final class SmokeDriver {
     private static final int REPLAY_AFTER = 60;
     private static final int DEADLINE = 600;
     private static final int MAP_UNITS = 8;
-    private static final int MAP_TICKS = 100;
+    /** The 16-block walk takes 64 ticks; the crowd then settles round the target (PATH-06's crowd arrival). */
+    private static final int MAP_TICKS = 160;
+
     private static final long MAP_DEADLINE_NANOS = 120_000_000_000L;
 
     /** The running smoke; gametest code, so static state is fine. Server thread only. */

@@ -16,6 +16,7 @@ import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.EntitySlots;
 import dev.strategos.core.sim.MatchConfig;
 import dev.strategos.core.sim.MatchSnapshot;
+import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.MotionStore;
 import dev.strategos.core.sim.PageRef;
 import dev.strategos.core.sim.UnitRecord;
@@ -23,6 +24,8 @@ import dev.strategos.core.sim.nav.PathRequest;
 import dev.strategos.core.sim.nav.PathResult;
 import dev.strategos.core.sim.nav.PathStatus;
 import dev.strategos.core.sim.nav.PathStore;
+import dev.strategos.core.sim.order.OrderKind;
+import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.core.sim.unitai.StateId;
 import dev.strategos.core.sim.unitai.UnitAi;
 import java.util.Arrays;
@@ -158,6 +161,32 @@ public final class MatchSnapshotCodec {
                     DATA.optionalFieldOf("data", List.of(0, 0)).forGetter(s -> List.of(s.data0(), s.data1())))
             .apply(i, (state, data) -> new AiStateStore.Saved(state, data.get(0), data.get(1))));
 
+    private static final Codec<Integer> ORDER_KIND = Codec.STRING.comapFlatMap(
+            name -> {
+                Integer kind = OrderKind.of(name);
+                return kind != null
+                        ? DataResult.success(kind)
+                        : DataResult.error(() -> "unknown order kind '" + name + "'");
+            },
+            OrderKind::name);
+
+    private static final Codec<OrderQueues.Order> ORDER = RecordCodecBuilder.create(i -> i.group(
+                    ORDER_KIND.fieldOf("kind").forGetter(OrderQueues.Order::kind),
+                    Vec2d.CODEC.fieldOf("target").forGetter(o -> new Vec2d(o.x(), o.z())),
+                    Codec.INT.optionalFieldOf("group", 0).forGetter(OrderQueues.Order::group),
+                    Codec.INT.optionalFieldOf("slot", 0).forGetter(OrderQueues.Order::slot))
+            .apply(i, (kind, target, group, slot) -> new OrderQueues.Order(kind, target.x(), target.z(), group, slot)));
+
+    /**
+     * The rest of a unit's queue, inlined into the unit beside its {@code "target"}: the current order's group and slot
+     * and the orders after it, each written only when set, so M0's single order saves exactly as before.
+     */
+    private static final MapCodec<OrderQueues.Saved> ORDERS = RecordCodecBuilder.mapCodec(i -> i.group(
+                    Codec.INT.optionalFieldOf("group", 0).forGetter(OrderQueues.Saved::group),
+                    Codec.INT.optionalFieldOf("slot", 0).forGetter(OrderQueues.Saved::slot),
+                    ORDER.listOf().optionalFieldOf("queue", List.of()).forGetter(OrderQueues.Saved::next))
+            .apply(i, OrderQueues.Saved::new));
+
     private static final Codec<UnitRecord> UNIT = RecordCodecBuilder.create(i -> i.group(
                     Codec.INT.fieldOf("handle").forGetter(UnitRecord::handle),
                     TemplateId.CODEC.fieldOf("template").forGetter(UnitRecord::template),
@@ -169,11 +198,12 @@ public final class MatchSnapshotCodec {
                     AI.forGetter(UnitRecord::ai),
                     Vec2d.CODEC.optionalFieldOf("target").forGetter(u -> Optional.ofNullable(u.target())),
                     UNIT_PATH.optionalFieldOf("path", PathStore.UnitPath.NONE).forGetter(UnitRecord::path),
-                    MOTION.optionalFieldOf("motion", MotionStore.Extra.NONE).forGetter(UnitRecord::motion))
+                    MOTION.optionalFieldOf("motion", MotionStore.Extra.NONE).forGetter(UnitRecord::motion),
+                    ORDERS.forGetter(UnitRecord::orders))
             .apply(
                     i,
-                    (handle, template, faction, x, y, z, yaw, ai, target, path, motion) -> new UnitRecord(
-                            handle, template, faction, x, y, z, yaw, ai, target.orElse(null), path, motion)));
+                    (handle, template, faction, x, y, z, yaw, ai, target, path, motion, orders) -> new UnitRecord(
+                            handle, template, faction, x, y, z, yaw, ai, target.orElse(null), path, motion, orders)));
 
     private static final Codec<PageRef> PAGE = RecordCodecBuilder.create(i -> i.group(
                     Codec.INT.fieldOf("x").forGetter(PageRef::x),
@@ -190,7 +220,10 @@ public final class MatchSnapshotCodec {
                     UNIT.listOf().fieldOf("units").forGetter(MatchSnapshot::units),
                     CommandEnvelope.CODEC.listOf().fieldOf("pendingCommands").forGetter(MatchSnapshot::pendingCommands),
                     PAGE.listOf().fieldOf("pages").forGetter(MatchSnapshot::pages),
-                    QUEUE.optionalFieldOf("paths", PathStore.Queue.EMPTY).forGetter(MatchSnapshot::paths))
+                    QUEUE.optionalFieldOf("paths", PathStore.Queue.EMPTY).forGetter(MatchSnapshot::paths),
+                    Codec.INT
+                            .optionalFieldOf("nextGroup", MatchState.FIRST_GROUP)
+                            .forGetter(MatchSnapshot::nextGroup))
             .apply(i, MatchSnapshot::new));
 
     private MatchSnapshotCodec() {}

@@ -3,6 +3,7 @@ package dev.strategos.core.sim;
 import dev.strategos.core.shared.Hasher;
 import dev.strategos.core.shared.HotPath;
 import dev.strategos.core.sim.nav.PathStore;
+import dev.strategos.core.sim.order.OrderQueues;
 import java.util.ArrayDeque;
 
 /**
@@ -36,7 +37,7 @@ public final class StateHasher {
         EntityStore entities = s.entities();
         IdentityStore identity = s.identity();
         MotionStore motion = s.motion();
-        OrderStore orders = s.orders();
+        OrderQueues orders = s.orders();
         AiStateStore ai = s.ai();
         PathStore paths = s.paths();
         int highWater = entities.highWater();
@@ -66,7 +67,14 @@ public final class StateHasher {
                 if (!motion.untouched(i)) {
                     h = mixMotion(h, motion, i);
                 }
+                if (orders.size(i) > 1 || orders.group(i) != 0 || orders.slot(i) != 0) {
+                    h = mixQueue(h, orders, i); // only once a unit queues or groups, so older states keep their hashes
+                }
             }
+        }
+
+        if (s.nextGroup() != MatchState.FIRST_GROUP) {
+            h = Hasher.mix(h, s.nextGroup());
         }
 
         if (paths.peekNextRequestId() != 1 || !paths.pending().isEmpty()) {
@@ -92,6 +100,19 @@ public final class StateHasher {
             h = hasher.state();
         }
         return Hasher.finish(h);
+    }
+
+    private static long mixQueue(long h, OrderQueues orders, int i) {
+        h = Hasher.mix(h, orders.size(i));
+        for (int k = 0; k < orders.size(i); k++) {
+            OrderQueues.Order o = orders.order(i, k);
+            h = Hasher.mix(h, o.kind());
+            h = Hasher.mix(h, Double.doubleToLongBits(o.x()));
+            h = Hasher.mix(h, Double.doubleToLongBits(o.z()));
+            h = Hasher.mix(h, o.group());
+            h = Hasher.mix(h, o.slot());
+        }
+        return h;
     }
 
     private static long mixMotion(long h, MotionStore motion, int i) {

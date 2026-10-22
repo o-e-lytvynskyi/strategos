@@ -22,6 +22,7 @@ import dev.strategos.core.sim.nav.MobilityClass;
 import dev.strategos.core.sim.nav.PathService;
 import dev.strategos.core.sim.nav.PathStore;
 import dev.strategos.core.sim.nav.SurfaceGrid;
+import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.core.sim.stats.StatBreakdown;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -231,6 +232,11 @@ class InvariantsTest {
         @Override
         public PathStore.@Nullable UnitPath path(int handle) {
             return null;
+        }
+
+        @Override
+        public List<OrderQueues.Order> orders(int handle) {
+            return List.of();
         }
 
         @Override

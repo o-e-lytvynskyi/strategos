@@ -5,13 +5,16 @@ import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.nav.PathStore;
+import dev.strategos.core.sim.order.OrderQueues;
 import org.jspecify.annotations.Nullable;
 
 /**
  * One unit in a snapshot; its template by string id, never by net index, so a changed set still loads. {@code ai} is
  * the unit's machine: its leaf and data words, the words 0 in every M0 save. {@code path} is {@link
  * PathStore.UnitPath#NONE} for a unit that never asked for one, and {@code motion} {@link MotionStore.Extra#NONE} for
- * one that never touched terrain: so is every unit of an M0 save.
+ * one that never touched terrain: so is every unit of an M0 save. {@code target} is the current order's, and {@code
+ * orders} the rest of the queue (ORD-02): the current order's group and slot and the orders after it, {@link
+ * OrderQueues.Saved#NONE} for M0's single order.
  */
 @CoreApi
 public record UnitRecord(
@@ -25,7 +28,24 @@ public record UnitRecord(
         AiStateStore.Saved ai,
         @Nullable Vec2d target,
         PathStore.UnitPath path,
-        MotionStore.Extra motion) {
+        MotionStore.Extra motion,
+        OrderQueues.Saved orders) {
+    /** A unit with M0's single order. */
+    public UnitRecord(
+            int handle,
+            TemplateId template,
+            FactionSlot faction,
+            double x,
+            double y,
+            double z,
+            float yaw,
+            AiStateStore.Saved ai,
+            @Nullable Vec2d target,
+            PathStore.UnitPath path,
+            MotionStore.Extra motion) {
+        this(handle, template, faction, x, y, z, yaw, ai, target, path, motion, OrderQueues.Saved.NONE);
+    }
+
     /** A unit that never touched terrain. */
     public UnitRecord(
             int handle,

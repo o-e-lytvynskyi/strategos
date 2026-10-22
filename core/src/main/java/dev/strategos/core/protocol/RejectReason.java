@@ -12,5 +12,7 @@ public enum RejectReason {
     UNKNOWN_TEMPLATE,
     UNIT_CAP,
     NOT_PERMITTED,
-    INVALID_ARGUMENT
+    INVALID_ARGUMENT,
+    /** The unit already holds the most orders a queue takes (ORD-02). */
+    QUEUE_FULL
 }

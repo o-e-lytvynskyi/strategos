@@ -130,15 +130,11 @@ class MoveRuleTest {
     }
 
     @Test
-    void queuedPushedAndFormationMovesAreUnsupported() {
-        for (Move unsupported : List.of(
-                new Move(UnitSet.of(own), new Vec2d(10, 10), QueueMode.QUEUE, 0),
-                new Move(UnitSet.of(own), new Vec2d(10, 10), QueueMode.PUSH_FRONT, 0),
-                new Move(UnitSet.of(own), new Vec2d(10, 10), QueueMode.REPLACE, 2))) {
-            CommandResult result = move(PLAYER_0, unsupported);
-            assertThat(result.outcome()).isEqualTo(CommandOutcome.REJECTED);
-            assertThat(result.firstReason()).isEqualTo(RejectReason.UNSUPPORTED);
-        }
+    void formationMovesAreUnsupported() {
+        CommandResult result = move(PLAYER_0, new Move(UnitSet.of(own), new Vec2d(10, 10), QueueMode.REPLACE, 2));
+
+        assertThat(result.outcome()).isEqualTo(CommandOutcome.REJECTED);
+        assertThat(result.firstReason()).isEqualTo(RejectReason.UNSUPPORTED);
         assertThat(h.queries().unit(own[0]).state()).isEqualTo(UnitState.IDLE);
     }
 

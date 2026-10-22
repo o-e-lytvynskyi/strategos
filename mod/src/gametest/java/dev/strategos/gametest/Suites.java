@@ -12,6 +12,7 @@ import dev.strategos.gametest.suites.MapTests;
 import dev.strategos.gametest.suites.MatchTests;
 import dev.strategos.gametest.suites.NavTests;
 import dev.strategos.gametest.suites.NetTests;
+import dev.strategos.gametest.suites.OrderTests;
 import dev.strategos.gametest.suites.PathTests;
 import dev.strategos.gametest.suites.PerfTests;
 import dev.strategos.gametest.suites.PersistenceTests;
@@ -50,6 +51,7 @@ public final class Suites {
                         MapTests.class,
                         NavTests.class,
                         NetTests.class,
+                        OrderTests.class,
                         PathTests.class,
                         WriterTests.class);
         };

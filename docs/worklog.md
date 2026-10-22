@@ -9,7 +9,22 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17
+## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18
+
+- **M1 T18 · Order queue: move and stop** — ORD-02 done.
+  - **Results:** `core/sim/order/{OrderQueues, OrderKind, ContextResolver}` replace `OrderStore`:
+    16 orders a unit, `REPLACE`, `QUEUE`, `PUSH_FRONT`, `finishOrder` going on to the next, Stop
+    clearing; group ids for commands to several units; `QUEUE_FULL`; the queue in the snapshot as
+    optional fields, no migration; `MatchQueries.orders`; `/strategos order move|stop` with
+    `@units`, `@group`, a handle, a column or a map waypoint and a mode. Tests: `OrderQueueTest`,
+    `QueuedWaypointsTest`, `ordertests.commands_payload_applies_next_tick`,
+    `commandtests.order_commands_queue_group_and_stop` (125 GameTests); `verify` 43 s.
+  - **Problems:** group ids changed `canary`'s hashes and the S6 golden, both re-recorded with the
+    reason; the other goldens only reordered their snapshot keys. The server smoke caught a unit
+    left walking 0.12 block from a shared target: T21's "target taken" looked only at the unit
+    nearest the point, which was the unit itself; it now counts every unit covering the point (D
+    row 119). A 0.5-block tolerance for stuck units was tried again and again jammed the head-on
+    formation.
 
 - **M1 T17 · UnitAI HFSM** — UNIT-02 done.
   - **Results:** `core/sim/unitai/{Hfsm, StateDef, StateId, AiMessage, UnitAi, HfsmCheck}`, with

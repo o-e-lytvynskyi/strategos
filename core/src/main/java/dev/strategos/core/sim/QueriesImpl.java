@@ -7,7 +7,10 @@ import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.nav.PathService;
 import dev.strategos.core.sim.nav.PathStore;
 import dev.strategos.core.sim.nav.SurfaceGrid;
+import dev.strategos.core.sim.order.OrderKind;
+import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.core.sim.stats.StatBreakdown;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
@@ -54,7 +57,7 @@ final class QueriesImpl implements MatchQueries {
         }
         int i = Handle.index(handle);
         int templateIndex = state.identity().templateIndex(i);
-        OrderStore orders = state.orders();
+        OrderQueues orders = state.orders();
         MotionStore motion = state.motion();
         return new UnitView(
                 handle,
@@ -66,7 +69,7 @@ final class QueriesImpl implements MatchQueries {
                 motion.z(i),
                 motion.yaw(i),
                 state.ai().state(i),
-                orders.kind(i) == OrderStore.MOVE ? new Vec2d(orders.targetX(i), orders.targetZ(i)) : null);
+                orders.kind(i) == OrderKind.MOVE ? new Vec2d(orders.targetX(i), orders.targetZ(i)) : null);
     }
 
     @Override
@@ -92,6 +95,20 @@ final class QueriesImpl implements MatchQueries {
     @Override
     public PathStore.@Nullable UnitPath path(int handle) {
         return state.entities().isAlive(handle) ? state.paths().unitPath(Handle.index(handle)) : null;
+    }
+
+    @Override
+    public List<OrderQueues.Order> orders(int handle) {
+        if (!state.entities().isAlive(handle)) {
+            return List.of();
+        }
+        int i = Handle.index(handle);
+        OrderQueues orders = state.orders();
+        List<OrderQueues.Order> out = new ArrayList<>(orders.size(i));
+        for (int k = 0; k < orders.size(i); k++) {
+            out.add(orders.order(i, k));
+        }
+        return out;
     }
 
     @Override

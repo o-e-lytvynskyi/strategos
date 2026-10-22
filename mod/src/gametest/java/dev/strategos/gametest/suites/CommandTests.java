@@ -1,8 +1,10 @@
 package dev.strategos.gametest.suites;
 
 import static dev.strategos.gametest.suites.Units.check;
+import static dev.strategos.gametest.suites.Units.core;
 import static dev.strategos.gametest.suites.Units.handles;
 import static dev.strategos.gametest.suites.Units.match;
+import static dev.strategos.gametest.suites.Units.spawn;
 import static dev.strategos.gametest.suites.Units.unit;
 
 import com.mojang.brigadier.CommandDispatcher;
@@ -12,6 +14,7 @@ import dev.strategos.core.protocol.CommandOutcome;
 import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.OutputEvent;
 import dev.strategos.core.sim.UnitState;
+import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.gametest.StrategosTest;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.server.command.StrategosCommands;
@@ -183,6 +186,60 @@ public final class CommandTests {
         PersistenceTests.saveAndWait(h.getLevel());
         check(!Files.exists(blob), "the disposed blob was written again");
         h.succeed();
+    }
+
+    /**
+     * ORD-02 (spec §6.8): {@code order move @units <x> <z> queue} gives both units one queued order and one new group;
+     * {@code order move @group <id> ... queue} appends a second to that group; a waypoint of a match made without a
+     * map is refused; {@code order stop @units} clears every queue.
+     */
+    @StrategosTest
+    public static void orderCommandsQueueGroupAndStop(GameTestHelper h) {
+        MatchRuntime rt = match(h);
+        spawn(rt, 8.5, 8.5, 2, 1);
+        Recorder recorder = new Recorder();
+        CommandSourceStack source = recorder.at(h, new Vec3(16.5, 1, 16.5));
+        BlockPos a = h.absolutePos(new BlockPos(24, 1, 8));
+        BlockPos b = h.absolutePos(new BlockPos(24, 1, 24));
+        var state = new Object() {
+            int group;
+        };
+        h.startSequence()
+                .thenWaitUntil(() -> check(handles(rt).length == 2, "not spawned yet"))
+                .thenExecute(
+                        () -> perform(h, source, "strategos order move @units " + a.getX() + " " + a.getZ() + " queue"))
+                .thenExecuteAfter(1, () -> {
+                    int[] units = handles(rt);
+                    List<OrderQueues.Order> first = core(rt).queries().orders(units[0]);
+                    List<OrderQueues.Order> second = core(rt).queries().orders(units[1]);
+                    check(first.size() == 1 && second.size() == 1, "not one order each: " + first + ", " + second);
+                    state.group = first.get(0).group();
+                    check(
+                            state.group > 0 && second.get(0).group() == state.group,
+                            "not one new group: " + first + second);
+                    perform(
+                            h,
+                            source,
+                            "strategos order move @group " + state.group + " " + b.getX() + " " + b.getZ() + " queue");
+                })
+                .thenExecuteAfter(1, () -> {
+                    for (int unit : handles(rt)) {
+                        List<OrderQueues.Order> orders = core(rt).queries().orders(unit);
+                        check(orders.size() == 2 && orders.get(1).z() == 24.5, "the group's second order: " + orders);
+                    }
+                    perform(h, source, "strategos order move @units waypoint far_side");
+                    check(
+                            recorder.lines.stream().anyMatch(l -> l.contains("no waypoints")),
+                            "a waypoint without a map was not refused: " + recorder.lines);
+                    perform(h, source, "strategos order stop @units");
+                })
+                .thenExecuteAfter(1, () -> {
+                    for (int unit : handles(rt)) {
+                        check(core(rt).queries().orders(unit).isEmpty(), "stop left orders on " + unit);
+                        check(unit(rt, unit).state() == UnitState.IDLE, "a stopped unit walks");
+                    }
+                })
+                .thenSucceed();
     }
 
     static void perform(GameTestHelper h, CommandSourceStack source, String command) {

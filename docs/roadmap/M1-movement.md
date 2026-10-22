@@ -543,7 +543,8 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
   3. An order sent as a mock player's `commands` payload is validated and applied at the next tick
      boundary (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** ORD-01, UNIT-02, NET-01 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Done:** 2026-10-23 — M1 T18: `OrderQueueTest`, the queue table, the 16-order cap and group ids (1); `QueuedWaypointsTest` (2); `ordertests.commands_payload_applies_next_tick` (3); `commandtests.order_commands_queue_group_and_stop`; spec §1.6 D rows 112–119
+- **Status:** done
 
 #### PATH-04 · Components and reachability
 - **Value:** Units never try to walk where they cannot reach; an order on unreachable ground goes
