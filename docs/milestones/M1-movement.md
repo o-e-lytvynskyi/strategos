@@ -281,6 +281,9 @@ cards, does not exist for M1: the M1 cards were final when this spec was written
 | 69 | §8.2: "the floor error per surface type" | The error is the body's Y against where vanilla physics would rest the same body: its box, lifted 1.5 blocks and dropped onto the collision shapes (`Entity.collideBoundingBox`). It is measured where the box lies over one strip and the unit is not halfway up a step. The eight lanes are walled in, since A* goes round a strip it may avoid (a pool costs four times as much), on `arena_flat_48_high`, an arena 8 blocks high, as the drop's three-block platform and the walls need. Stairs, walked along their row, count as full blocks in the core (the shape's top), and a body there overlaps the high half, as a vanilla body would |
 | 70 | §7.7: "PNGs every 2 ticks for 40 ticks" | Every 2 ticks from the order to the arrival, about 130 ticks: 40 ticks cover 10 blocks, less than the row of seven patches two blocks long with grass between. For each frame `result.json` gives the body's client-side Y and its vanilla rest Y; frames whose box lies over one patch or one stretch of grass are "settled". `tools/png_diff.py` compares two runs as S3 did |
 | 71 | §7.5: "a mock player's attack" | `FakePlayerFactory`'s `FakePlayer` attacks (`GameTestHelper#makeMockServerPlayerInLevel` is deprecated for removal), and a real arrow it owns is shot at the body |
+| 72 | §5.12: "report in handle order" | Queries report unit indices, ascending: the handle's slot, the order every system iterates in and `BodyFrame` uses. A reused slot's higher generation never moves a unit later; a handle is one `EntityStore.handleAt` away |
+| 73 | §5.12: `UnitGrid`, `SpatialQueries`, `StaticIndex` | `UnitGrid` holds the cells and answers `forEachInRadius`, `countWithin` and `nearest` (rings of cells, stopping once no farther ring can hold a nearer unit; the lower index wins a tie); one query may not start inside another's consumer, since they share one buffer. `SpatialQueries` is the match's index and the system that rebuilds the grid as the last step of `MOVEMENT`; a restored snapshot rebuilds it too, so a restored match's queries see what the original's did. Neither is saved or hashed: both derive from the state. `StaticIndex` keeps buildings, nodes and dropsites by page with a kind bitmask, a faction and a resource bitmask each; M1 fills it only in tests |
+| 74 | §7.6: `SpatialBench` | 1,000 units of two factions in a 128² battle on a 384² match; `query1000` asks, for every unit, for the enemies within 16 blocks. Only `rebuild1000` joins the allocation gate, as §4.2 lists: `query1000` reports about 2.7 B/op, JMH's own background rate (0.007 MB/s, the same as every kernel's) over its 0.39 ms operation |
 
 ---
 
@@ -1647,7 +1650,7 @@ are green and its negative checks behave as stated.
 ### 9.3 Progress
 
 - [x] T1 (2026-10-22) · [x] T2 (2026-10-22) · [x] T11 (2026-10-22) · [x] T3 (2026-10-22) · [x] T4 (2026-10-22) · [x] T5 (2026-10-22) · [x] T6 (2026-10-22) · [x] T7 (2026-10-22) · [x] T8 (2026-10-22) · [x] T19 (2026-10-22) · [x] T28 (2026-10-22) · [x] T9 (2026-10-22) · [x] T12 (2026-10-22) · [x] T10 (2026-10-22)
-- [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17 · [ ] T18 · [ ] T20 · [ ] T21 · [ ] T22
+- [x] T13 (2026-10-22) · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17 · [ ] T18 · [ ] T20 · [ ] T21 · [ ] T22
 - [ ] T23 · [ ] T24 · [ ] T25 · [ ] T26 · [ ] T27
 
 ---

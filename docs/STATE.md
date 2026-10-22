@@ -133,13 +133,19 @@ Answer in chat or here; the next session applies the answers.
   punch and arrow on a unit now reach the game's core and are recorded, to be applied with combat in
   M2; a unit still takes no vanilla damage. One visual point is in "For the owner", item 6. Card
   UNIT-09 finishes with T21's check that units walk round players.
+- 2026-10-22 · **M1 T13 Spatial index:** the game can now ask "which units are near this point" at
+  once: units sit in a grid of 8-block squares rebuilt every tick after they move (about 5 µs for a
+  thousand), and a thousand units each asking for the enemies within 16 blocks of them take 0.4 ms.
+  Answers always come in the same order, and they match a slow full search on a thousand random
+  tests. Avoidance (T21) is its first user; buildings, resource nodes and dropsites have their own
+  index, empty until the economy arrives. Card CORE-08 is done.
 
 ## Now
 
-- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 14 of 28 tasks done (T28, PATH-08, joined by its trigger).
+- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 15 of 28 tasks done (T28, PATH-08, joined by its trigger).
 - **In progress:** none.
-- **Last finished task:** M1 T10 (2026-10-22).
-- **Next task:** M1 T13 · Spatial index (CORE-08).
+- **Last finished task:** M1 T13 (2026-10-22).
+- **Next task:** M1 T14 · Network test kit (QA-19).
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 220 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.

@@ -9,8 +9,23 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10
+## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13
 
+- **M1 T13 · Spatial index** — CORE-08 done.
+  - **Results:** `core.sim.spatial`: `UnitGrid` (`@HotPath`; 8-block cells, a counting sort of
+    (cell, unit index) every tick, a faction bitmask per cell; `forEachInRadius`, `countWithin`,
+    `nearest` by rings of cells), `StaticIndex` (buildings, nodes and dropsites by page, sorted
+    indices, nearest node and dropsite), `UnitFilter` (a faction mask and required classes),
+    `SpatialQueries` (the match's index; the system that rebuilds the grid at the end of
+    `MOVEMENT`; rebuilt on restore too). `SpatialBruteForceTest` (1,000 seeds) and
+    `SpatialOrderTest` (776 core tests in all); `SpatialBench`; `verify` 40 s.
+  - **Measured:** `SpatialBench.rebuild1000` 4.8 µs, no allocation; `query1000` (1,000 radius-16
+    enemy queries among 1,000 units in a 128² battle) 0.39 ms against the 1 ms budget.
+  - **Problems:** "handle order" is taken as the slot index, the order systems iterate in, not
+    the handle's numeric value, which a reused slot's generation would reorder (spec §1.6 D row
+    72). `query1000` shows 2.7 B/op: JMH's background over a long operation, so like §4.2 only
+    the rebuild joins the allocation gate (D row 74). The brute-force test was checked against a
+    nearest search that stops a ring early, which it fails.
 - **M1 T10 · Spike S10: kinematic fidelity, external damage** — UNIT-09 in progress (it closes with
   T21's avoidance check).
   - **Results:** `ExternalDamage` (hack, pierce, crush or lethal; from a player, a mob or nothing)
@@ -264,7 +279,7 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
   - **Problems:** ErrorProne's `EnumOrdinal` and rule B8's ban on static arrays shaped the codecs;
     the spec's checkpoint period and header changed (spec §1.6 D rows 1–3).
 - **M1 started** on the owner's go-ahead, with consent for every kind of test.
-- **Next:** T13, the spatial index (CORE-08).
+- **Next:** T14, the network test kit (QA-19).
 
 ## 2026-10-22 — M0 approvals, the client batch, M0 accepted
 

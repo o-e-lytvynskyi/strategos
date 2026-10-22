@@ -446,7 +446,8 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
   3. 1,000 radius-16 queries among 1,000 units take under 1 ms per tick, and the rebuild allocates
      nothing (L6).
 - **Tests:** L0, L1, L6 · **Depends on:** CORE-02 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Done:** 2026-10-22 — M1 T13: `SpatialBruteForceTest`: over 1,000 seeds every radius query, count and nearest unit, and the static index's nearest node and dropsite, equal brute force, with units outside the space, dead and in reused slots, and fail once the nearest search stops a ring early (1); `SpatialOrderTest`: results by unit index across cells and generations, and a restored match's grid answers as the original's (2; spec §1.6 D rows 72–73); `SpatialBench`: 1,000 enemy queries of radius 16 among 1,000 units in a 128² battle take 0.39 ms, and the rebuild 4.8 µs with no allocation (3; D row 74)
+- **Status:** done
 
 #### QA-19 · Network test kit: byte counts and acknowledging mock players
 - **Value:** Bandwidth and fog are tested headless, because mock players count every byte and see

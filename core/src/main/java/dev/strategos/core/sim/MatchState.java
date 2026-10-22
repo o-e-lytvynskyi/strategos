@@ -7,6 +7,7 @@ import dev.strategos.core.sim.nav.PageCoord;
 import dev.strategos.core.sim.nav.PathStore;
 import dev.strategos.core.sim.nav.SurfaceGrid;
 import dev.strategos.core.sim.nav.SurfacePage;
+import dev.strategos.core.sim.spatial.SpatialQueries;
 import dev.strategos.core.sim.stats.StatService;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -30,6 +31,7 @@ public final class MatchState {
     private final PathStore paths = new PathStore();
     private final MatchBus bus = new MatchBus();
     private final StatService stats;
+    private final SpatialQueries spatial;
     private final ArrayDeque<CommandEnvelope> pendingCommands = new ArrayDeque<>();
     private final List<OutputEvent> outputs = new ArrayList<>();
     private final MatchLog log;
@@ -50,6 +52,7 @@ public final class MatchState {
         this.entities = entities;
         this.log = log;
         this.stats = new StatService(templates, config.factions(), identity, bus);
+        this.spatial = new SpatialQueries(config.bounds(), templates);
         this.input = TickInputs.empty(0);
         this.surfaces =
                 SurfaceGrid.empty(config.bounds().sizeX(), config.bounds().sizeZ(), MobilityClass.INFANTRY);
@@ -192,6 +195,11 @@ public final class MatchState {
 
     public PathStore paths() {
         return paths;
+    }
+
+    /** Where units and static entities are, for range queries (CORE-08). */
+    public SpatialQueries spatial() {
+        return spatial;
     }
 
     /** Every unit's numbers, through the modifier pipeline (ADR-0013). */

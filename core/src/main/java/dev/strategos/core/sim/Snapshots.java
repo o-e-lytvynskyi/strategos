@@ -102,6 +102,7 @@ final class Snapshots {
         }
         state.publishAll(pages);
         state.paths().restore(snapshot.paths()); // after the pages, whose publication must not count as a change
+        state.spatial().rebuild(state); // as the saved tick's movement left it
         if (missing > 0) {
             log.info(
                     snapshot.tick(),

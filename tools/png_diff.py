@@ -104,7 +104,7 @@ def main(argv):
         return 2
     left, right = argv[1], argv[2]
     names = sorted(n for n in os.listdir(left) if n.endswith(".png") and os.path.exists(os.path.join(right, n)))
-    out = csv.writer(sys.stdout)
+    out = csv.writer(sys.stdout, lineterminator="\n")
     out.writerow(["frame", "pixels", "differing", "loud", "box"])
     with concurrent.futures.ProcessPoolExecutor() as pool:  # frames in parallel: decoding is pure Python
         results = pool.map(compare, [os.path.join(left, n) for n in names], [os.path.join(right, n) for n in names])

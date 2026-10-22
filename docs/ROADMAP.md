@@ -286,7 +286,7 @@ Cards: [roadmap/M1-movement.md](roadmap/M1-movement.md#cards). 26 cards, at most
 | PATH-05 | Path following: kinematic motion on surfaces | M | PATH-03, UNIT-01 | done |
 | UNIT-09 | Spike S10: kinematic fidelity | M | PATH-05, PATH-15 | in_progress |
 | CORE-11 | Binary journal and cross-level replay | M | CORE-05, QA-04 | done |
-| CORE-08 | Spatial index | M | CORE-02 | specified |
+| CORE-08 | Spatial index | M | CORE-02 | done |
 | QA-19 | Network test kit: byte counts and acknowledging mock players | M | QA-03, QA-04 | specified |
 | NET-01 | Payload layer, NetGateway and the fog-gate stub | M | CORE-03, QA-03, QA-19 | in_progress |
 | UNIT-02 | UnitAI state machine framework | M | CORE-04, CORE-06 | specified |
