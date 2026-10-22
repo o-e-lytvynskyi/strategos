@@ -20,7 +20,7 @@ owner's M4 Pro on 2026-10-22 ([S5](spikes/S5-build-wiring.md), check 13).
 | **L2** Minecraft unit | Codecs, payload sizes, migrations from fixture files, shipped data through the real loaders, registries, and the engine-surface inventory check, which reads the registered types and payloads ([ADR-0022](adr/0022-definition-of-done-amendments.md)) | `./gradlew :mod:test` | 45 tests, 4.0 s | assistant on adapter or data changes |
 | **L3** GameTest | The adapters in a real server world: bodies, blocks, mock players, save and reload, fault injection, parallel matches | `./gradlew :mod:runGameTestServer` | 97 GameTests, 4.2 s of wall time | assistant before every commit |
 | **L4** client scenario | HUD, camera and rendering on screen: a PNG plus JSON per shot | `./gradlew :mod:runScenario -Pscenario=<id>`; `:mod:scenarioDiff` and the goldens arrive with QA-18 in M2 | `smoke` 11–16 s on the Mac; 2–3 min as a CI job | **only with the owner's consent** (a game window opens and takes the focus); on CI under Xvfb by hand (`.github/workflows/scenario.yml`) |
-| **L5** server smoke | The mod loads on a dedicated server with no client classes; a headless match runs | `./gradlew :mod:runServerSmoke`; `:mod:runServerSmokeRestart` adds the restart round trip | 11.5 s; 19.3 s with the restart | assistant before commit |
+| **L5** server smoke | The mod loads on a dedicated server with no client classes; a headless match runs; an arena world gets its rules once and drops a dead match's tickets on restart | `./gradlew :mod:runServerSmoke`; `:mod:runServerSmokeRestart` adds the restart round trip; `:mod:runServerSmokeArena2` runs the arena smoke's two starts | 11.5 s; 19.3 s with the restart; 11 s for the arena smoke | assistant before commit |
 | **L6** performance | The budgets of [ADR-0019](adr/0019-performance-budgets.md); JMH regressions above 15 % fail | `./gradlew verifyPerf`: `:core:jmh` and `:core:jmhCompare`, then the perf GameTest batch alone in `:mod:runGameTestPerf` | JMH 83 s; the perf batch 6 s | assistant on hot paths; the owner approves baselines |
 | **L7** manual | Feel, multiplayer, the production jar | a dedicated server and two clients (`runServer`, `runClientJoin`, `runClient2`, or `scripts/playtest.sh`), started by the owner; a plain `runClient` opens the title screen and joins nothing | — | owner at milestones |
 
@@ -34,8 +34,9 @@ Aggregate tasks:
   `:mod:runGameTestSharedBatch`, `:mod:runGameTestTicketLeak`), every ArchUnit rule on its
   violating fixture, `checkFixturesSelftest` and `:core:jmhSelftest`;
 - `./gradlew verify` = `verifyFast` + `verifyHarness` + L2 (`:mod:check`) + `:core:soak` + L3
-  (`:mod:runGameTestServer` and its report guard) + L5 (`:mod:runServerSmoke` and
-  `:mod:runServerSmokeRestart` with their marker guards) + `:core:replayJournals`, the gate
+  (`:mod:runGameTestServer` and its report guard) + L5 (`:mod:runServerSmoke`,
+  `:mod:runServerSmokeRestart`, `:mod:runServerSmokeArena` and `:mod:runServerSmokeArena2` with
+  their marker guards) + `:core:replayJournals`, the gate
   before a task is done and before a commit;
 - `./gradlew verifyClient` = L4 (`:mod:runScenario`), with consent;
 - `./gradlew verifyPerf` = L6 (`:core:jmh`, `:core:jmhCompare` against the owner-approved

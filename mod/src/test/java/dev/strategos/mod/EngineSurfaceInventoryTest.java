@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.tree.CommandNode;
 import dev.strategos.core.shared.MatchId;
+import dev.strategos.mod.registry.ModTickets;
 import dev.strategos.mod.server.command.StrategosCommands;
 import dev.strategos.mod.server.persist.MatchData;
 import dev.strategos.mod.server.persist.RegistryData;
@@ -15,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -64,6 +66,34 @@ class EngineSurfaceInventoryTest {
         return ids;
     }
 
+    /**
+     * The mod's world generation files and its tags on world generation registries, as {@code <registry dir> <id>}:
+     * {@code worldgen/biome strategos:arena}, {@code tags/worldgen/world_preset #minecraft:normal}.
+     */
+    private static List<String> worldgen() throws IOException {
+        Path data = modFile("data");
+        List<String> ids = new ArrayList<>();
+        try (Stream<Path> files = Files.walk(data)) {
+            for (Path file : files.filter(p -> p.toString().endsWith(".json")).toList()) {
+                List<String> parts = new ArrayList<>();
+                data.relativize(file).forEach(part -> parts.add(part.toString()));
+                boolean tag = parts.size() > 1 && parts.get(1).equals("tags");
+                int at = tag ? 2 : 1;
+                if (parts.size() < at + 3 || !parts.get(at).equals("worldgen")) {
+                    continue;
+                }
+                String path = String.join("/", parts.subList(at + 2, parts.size()));
+                ids.add((tag ? "tags/" : "") + "worldgen/" + parts.get(at + 1) + " " + (tag ? "#" : "") + parts.get(0)
+                        + ":" + path.substring(0, path.length() - ".json".length()));
+            }
+        }
+        return ids;
+    }
+
+    private static List<String> ticketControllers() {
+        return ModTickets.all().stream().map(c -> c.id().toString()).toList();
+    }
+
     private static Path modFile(String... path) {
         return ModList.get().getModFileById(Strategos.MOD_ID).getFile().findResource(path);
     }
@@ -77,9 +107,23 @@ class EngineSurfaceInventoryTest {
         return Files.exists(cfg) ? Files.readString(cfg, StandardCharsets.UTF_8) : null;
     }
 
-    private static EngineSurface code(List<String> entityTypes, String modsToml, @Nullable String transformers) {
+    private static EngineSurface code(List<String> entityTypes, String modsToml, @Nullable String transformers)
+            throws IOException {
+        return code(entityTypes, modsToml, transformers, worldgen());
+    }
+
+    private static EngineSurface code(
+            List<String> entityTypes, String modsToml, @Nullable String transformers, List<String> worldgen) {
         return EngineSurface.ofCode(
-                entityTypes, savedData(), commandRoots(), dataMaps(), modsToml, transformers, inventory());
+                entityTypes,
+                savedData(),
+                commandRoots(),
+                dataMaps(),
+                modsToml,
+                transformers,
+                worldgen,
+                ticketControllers(),
+                inventory());
     }
 
     @Test
@@ -101,7 +145,9 @@ class EngineSurfaceInventoryTest {
 
         for (String kind : EngineSurface.KINDS) {
             for (String id : inventory.of(kind)) {
-                String written = kind.equals("commands") ? "/" + id : id;
+                String written = kind.equals("commands")
+                        ? "/" + id
+                        : kind.equals("worldgen") ? id.substring(id.indexOf(' ') + 1) : id;
                 assertThat(section).as("%s %s in 04 §2.5", kind, id).contains(written);
             }
         }
@@ -122,6 +168,15 @@ class EngineSurfaceInventoryTest {
 
         assertThat(EngineSurface.diff(inventory(), code(entityTypes(), toml, accessTransformers())))
                 .containsExactly("mixinConfigs: strategos.mixins.json is in the code but not in the inventory");
+    }
+
+    @Test
+    void aWorldgenFileIsReported() throws IOException {
+        List<String> worldgen = new ArrayList<>(worldgen());
+        worldgen.add("worldgen/structure strategos:fort");
+
+        assertThat(EngineSurface.diff(inventory(), code(entityTypes(), modsToml(), accessTransformers(), worldgen)))
+                .containsExactly("worldgen: worldgen/structure strategos:fort is in the code but not in the inventory");
     }
 
     @Test

@@ -17,7 +17,10 @@ import net.minecraft.nbt.StringTag;
 import net.minecraft.world.level.Level;
 import org.junit.jupiter.api.Test;
 
-/** CORE-12: the registry blob keeps its records and counters, and a corrupt one is quarantined, never rewritten. */
+/**
+ * CORE-12: the registry blob keeps its records and counters, and a corrupt one is quarantined, never rewritten; MAP-07
+ * adds the arena flag and the slot counter.
+ */
 class RegistryDataTest {
     private static MatchRecord record(MatchId id, MatchLifecycle lifecycle) {
         MatchSpace space = new MatchSpace(Level.OVERWORLD, new BlockPos(id.value() * 100, 56, 0), 16, 16, 56, 88);
@@ -74,6 +77,29 @@ class RegistryDataTest {
         assertThatThrownBy(quarantined::allocateId).isInstanceOf(MatchRefusedException.class);
         quarantined.setDirty();
         assertThat(quarantined.isDirty()).as("never rewritten").isFalse();
+    }
+
+    @Test
+    void theArenaFlagAndSlotCounterRoundTripAndDefaultForAnM0Blob() {
+        RegistryData data = new RegistryData();
+        data.markArenaRulesApplied();
+        data.allocateArenaSlot();
+        CompoundTag tag = data.save(new CompoundTag(), RegistryAccess.EMPTY);
+
+        RegistryData loaded = RegistryData.load(tag, RegistryAccess.EMPTY);
+        assertThat(loaded.arenaRulesApplied()).isTrue();
+        assertThat(loaded.nextArenaSlot()).isEqualTo(1);
+
+        tag.remove("arenaRulesApplied");
+        tag.remove("nextArenaSlot");
+        RegistryData m0 = RegistryData.load(tag, RegistryAccess.EMPTY);
+        assertThat(m0.quarantineReason()).as("an M0 blob still loads").isNull();
+        assertThat(m0.arenaRulesApplied()).isFalse();
+        assertThat(m0.nextArenaSlot()).isZero();
+
+        tag.putInt("nextArenaSlot", -1);
+        assertThat(RegistryData.load(tag, RegistryAccess.EMPTY).quarantineReason())
+                .contains("negative");
     }
 
     @Test

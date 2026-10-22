@@ -1,5 +1,6 @@
 package dev.strategos.gametest;
 
+import dev.strategos.gametest.suites.ArenaTests;
 import dev.strategos.gametest.suites.BodyTests;
 import dev.strategos.gametest.suites.BuildTests;
 import dev.strategos.gametest.suites.CommandTests;
@@ -29,6 +30,7 @@ public final class Suites {
             case "ticketLeak" -> List.of(TicketLeakSelfTest.class);
             default ->
                 List.of(
+                        ArenaTests.class,
                         BuildTests.class,
                         BodyTests.class,
                         MatchTests.class,

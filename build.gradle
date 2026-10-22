@@ -136,9 +136,9 @@ tasks.register('verifyHarness') {
 // the restart round trip in T9b.
 tasks.register('verify') {
     group = 'verification'
-    description = 'verifyFast + verifyHarness + L2 + core soak + L3 GameTests (report guard) + L5 smoke and restart round trip (marker guards) + GameTest journal replay.'
+    description = 'verifyFast + verifyHarness + L2 + core soak + L3 GameTests (report guard) + L5 smoke and restart round trip and the arena smoke (marker guards) + GameTest journal replay.'
     dependsOn 'verifyFast', 'verifyHarness', ':mod:check', ':core:soak', ':mod:runGameTestServer', ':mod:runServerSmoke',
-            ':mod:runServerSmokeRestart', ':core:replayJournals'
+            ':mod:runServerSmokeRestart', ':mod:runServerSmokeArena', ':mod:runServerSmokeArena2', ':core:replayJournals'
 }
 
 // [T7c] Per working session that touched its area, at the milestone exit and on CI; no budget, the time

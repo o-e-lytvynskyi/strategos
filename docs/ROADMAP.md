@@ -278,7 +278,7 @@ Cards: [roadmap/M1-movement.md](roadmap/M1-movement.md#cards). 26 cards, at most
 | DATA-03 | Content loading, client sync and spike S12 | L | DATA-01, NET-01 | specified |
 | PATH-02 | Surface pages: block classes and the page builder | M | QA-02, QA-03 | done |
 | PATH-01 | Spike S8: terrain census and surface encoding | S | PATH-02 | done |
-| MAP-07 | Arena world: preset, world rules and tickets | M | CORE-01, D-13 | specified |
+| MAP-07 | Arena world: preset, world rules and tickets | M | CORE-01, D-13 | done |
 | BLD-15 | Block writer | M | CORE-02, CORE-10 | specified |
 | MAP-01 | Map packages, importer and the proving ground | M | BLD-15, MAP-07, PERF-03 | specified |
 | PATH-15 | Live terrain capture, page rebuilds and the block-change router | M | PATH-02, BLD-15, CORE-01 | specified |

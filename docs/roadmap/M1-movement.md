@@ -272,7 +272,8 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
   4. Tickets of a disposed match are dropped on restart (L5).
   5. New matches take slots 2,048 blocks apart (L1).
 - **Tests:** L0, L1, L2, L3, L5 · **Depends on:** CORE-01, D-13 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Done:** 2026-10-22 — M1 T4: `arenatests.preset_decodes_in_normal`: the preset decodes in `#minecraft:normal` and bakes stable (1; L3, spec §1.6 D row 14); `runServerSmokeArena` applies D-13's rules on a fresh `level-type=strategos:arena` server and records them, and `runServerSmokeArena2` keeps the owner's `doFireTick` across the restart (2); `arenatests.foreign_world_rules_untouched` (3); run 2 finds the leaked tickets of the disposed match dropped and the saved match's kept (4); `SlotAllocatorTest` and the smoke's slots 0, 1 and 2 (5); the lobby pad follows with the block writer in T5
+- **Status:** done
 
 #### BLD-15 · Block writer
 - **Value:** Every block Strategos places or removes goes through one budgeted writer, so

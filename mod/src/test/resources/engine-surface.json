@@ -7,8 +7,12 @@
   "accessTransformers": [],
   "payloads": [],
   "dataMaps": ["strategos:nav_class"],
-  "worldgen": [],
-  "ticketControllers": [],
+  "worldgen": [
+    "tags/worldgen/world_preset #minecraft:normal",
+    "worldgen/biome strategos:arena",
+    "worldgen/world_preset strategos:arena"
+  ],
+  "ticketControllers": ["strategos:match"],
   "reloadListeners": [],
   "configs": []
 }

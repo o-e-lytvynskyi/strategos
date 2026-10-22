@@ -45,13 +45,19 @@ Answer in chat or here; the next session applies the answers.
   and a 512² map needs at most 3.4 MB. One rule changes for the open world (M13): the height band
   must follow the terrain page by page, because one band per map missed up to 13 % of a hilly
   area. [Report](spikes/S8-terrain-census.md). Card PATH-01 is done.
+- 2026-10-22 · **M1 T4 Arena world:** a new world type, "Strategos Arena" in Create World
+  (`level-type=strategos:arena` on a dedicated server): an empty world that gets the arena rules
+  once on its first start: no mob spawning, fire, griefing or weather, no random ticks, fixed noon.
+  Changes you make to these rules later stay. Matches in it take their own slots 2,048 blocks apart
+  and keep their area loaded until they end; if a server dies, the next start cleans up what a
+  finished match left loaded. The lobby pad comes with the next task. Card MAP-07 is done.
 
 ## Now
 
-- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 4 of 27 tasks done.
+- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 5 of 27 tasks done.
 - **In progress:** none.
-- **Last finished task:** M1 T3 (2026-10-22).
-- **Next task:** M1 T4 · Arena world, slots and tickets.
+- **Last finished task:** M1 T4 (2026-10-22).
+- **Next task:** M1 T5 · Block writer and the config file.
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 220 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.

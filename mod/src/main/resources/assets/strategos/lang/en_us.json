@@ -1,3 +1,4 @@
 {
-  "entity.strategos.unit_humanoid": "Unit"
+  "entity.strategos.unit_humanoid": "Unit",
+  "generator.strategos.arena": "Strategos Arena"
 }

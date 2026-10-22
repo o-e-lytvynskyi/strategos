@@ -9,8 +9,23 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11, T3
+## 2026-10-22 — M1 start, T1, T2, T11, T3, T4
 
+- **M1 T4 · Arena world, slots and tickets** — MAP-07 done.
+  - **Results:**
+    - The `strategos:arena` world preset (a void flat overworld, biome `strategos:arena`, the
+      vanilla nether and end) is listed in `#minecraft:normal` and bakes stable.
+    - `ArenaWorld` applies D-13's rules on an arena's first start and records that in the
+      registry blob, so the owner's later changes stick; other worlds are never touched.
+    - `SlotAllocator` places matches 2,048 blocks apart, and the registry counts the slots.
+    - `ArenaTickets` force a match's space under the `strategos:match` controller and release it on
+      dispose; the validation callback drops dead matches' tickets.
+    - The arena smoke runs twice on a dedicated server; the inventory now probes world generation
+      data and ticket controllers.
+    - `verify` 33 s, 101 GameTests, 54 L2 tests.
+  - **Problems:** the lobby pad needs the block writer (rule B7), so it moves to T5; the preset is
+    checked in a GameTest, since world presets exist only on a server (spec §1.6 D rows 14–16).
+    The negative check holds: applying the rules on every start fails run 2.
 - **M1 T3 · Spike S8, terrain census** — PATH-01 done.
   - **Results:** `./gradlew :mod:runSpike -Pspike=s8` measures 11 vanilla 512² squares (6,800
     distinct pages) and the three L1 fixtures in 1 min 30 s, under three Y-band rules. The cap of 4
@@ -55,7 +70,7 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
   - **Problems:** ErrorProne's `EnumOrdinal` and rule B8's ban on static arrays shaped the codecs;
     the spec's checkpoint period and header changed (spec §1.6 D rows 1–3).
 - **M1 started** on the owner's go-ahead, with consent for every kind of test.
-- **Next:** T4, arena world, slots and tickets.
+- **Next:** T5, the block writer and the config file.
 
 ## 2026-10-22 — M0 approvals, the client batch, M0 accepted
 

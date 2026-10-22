@@ -30,6 +30,8 @@ import dev.strategos.mod.server.match.MatchRefusedException;
 import dev.strategos.mod.server.match.MatchRegistry;
 import dev.strategos.mod.server.match.MatchRuntime;
 import dev.strategos.mod.server.match.MatchSpace;
+import dev.strategos.mod.server.world.ArenaPolicy;
+import dev.strategos.mod.server.world.ArenaWorld;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -177,10 +179,18 @@ public final class StrategosCommands {
         return IntegerArgumentType.integer(MatchRegistry.MIN_SIZE, MatchRegistry.MAX_SIZE);
     }
 
+    /** In an arena world, in the next slot; elsewhere around the source's feet (M0). Saved with the world either way. */
     private static int create(CommandSourceStack source, int sizeX, int sizeZ) {
+        if (ArenaWorld.isArena(source.getServer())) {
+            return run(source, () -> {
+                MatchRuntime rt = registry().createInArena(sizeX, sizeZ, MatchOptions.generated(ArenaPolicy.FLOOR_Y));
+                return rt.id() + " created, " + sizeX + " x " + sizeZ + " in the arena slot at "
+                        + rt.space().origin().toShortString();
+            });
+        }
         ServerLevel level = source.getLevel();
         BlockPos feet = BlockPos.containing(source.getPosition());
-        MatchOptions options = MatchOptions.generated(feet.getY()); // saved with the world
+        MatchOptions options = MatchOptions.generated(feet.getY());
         return run(source, () -> {
             MatchRuntime rt = registry().create(level, spaceAround(level, feet, sizeX, sizeZ), options);
             return rt.id() + " created, " + sizeX + " x " + sizeZ + " around " + feet.toShortString();

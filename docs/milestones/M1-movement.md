@@ -223,6 +223,9 @@ cards, does not exist for M1: the M1 cards were final when this spec was written
 | 11 | §5.4: the floor in bits 0–10 (0–2,047); the cost code in 3 bits, capped at 7 | The floor takes 12 bits: a full block on a 128-block band's top voxel stands at 2,048 sixteenths, which S8's first run hit. The cost code takes 2 bits, capped at 3 (it counts 0–4 blocked orthogonal neighbours). The layout S8 fixed: floor 0–11, headroom 12–18, kind 19–21, cost 22–23, links 24–31. A page also counts the columns that overflowed (`SurfacePage.overflowColumns`) |
 | 12 | §8.1: one band per square, 16 blocks below its lowest terrain, against the exit of ≥ 99.9 % of columns within 4 surfaces | That band fails the exit: 98.18 % of 1.74 million distinct columns, 95.87 % in the worst square. Pits pull it down, so 95–110 blocks of caves enter it and 4 % of columns have their terrain above it. The cap itself never drops a surface within 16 blocks of the terrain. A band per page (16 blocks below the page's lowest terrain) meets the exit in every square: 99.992 %, worst square 99.977 %. **The change:** packaged maps keep the manifest's band; terrain taken from an existing world gets a band per page, with the page's base Y stored in the page, carried by PATH-13 (M13), whose card now says so. The census measures all three band rules, and its totals count overlapping squares once |
 | 13 | §8.1: the census generates chunks through the spike arena's tickets and reports the router's cost per block change | The census adds region tickets of its own `TicketType` and polls `getChunkNow`, at most 128 chunks in flight: NeoForge's `forceChunk` loads synchronously (ForcedChunkManager.java:96) and hung the server once. The router arrives in T7, which measures its cost and adds it to the S8 report |
+| 14 | MAP-07.1: `ArenaPresetTest` (L2); MAP-07.5: `SlotAllocatorTest` (L1) | World presets, biomes and dimension types are data-driven registries that exist only on a server with its data packs, so the preset is checked by the GameTest `arenatests.preset_decodes_in_normal`: in `#minecraft:normal`, three vanilla stems, a void flat overworld of biome `strategos:arena`, baked stable (not experimental), a biome without spawners, precipitation or features. `SlotAllocatorTest` is plain JUnit in `:mod:test` (L2 by location, no Minecraft bootstrap), as row 8; the arena smoke repeats the slot rule at L5 (slots 0, 1, then 2 after the restart) |
+| 15 | §6.3: the first start of an arena world also builds a 9 × 9 stone lobby pad | Rule B7 lets only `BlockWriter` place blocks, and it arrives in T5; T4 applies and records the rules only, and T5 builds the pad through the writer with a flag of its own. `match create` in an arena world takes the next slot, with the band Y 0–127 and units at Y 64 until MAP-01's maps bring their own band. The registry blob stays at `v` 1: `arenaRulesApplied` and `nextArenaSlot` are optional, so an M0 blob loads |
+| 16 | §6.3: `validate` removes the tickets of UUIDs that name no saved, undisposed match | The callback runs while the server prepares its levels, before `ServerStartedEvent` (MinecraftServer.java:522), so it reads the registry blob itself; a quarantined blob keeps every ticket, since it cannot say which matches live. The tickets are not ticking: entities tick on any region ticket (S2). The arena smoke also proves the other half: a saved match keeps its tickets across the restart, and disposing a match releases them. The inventory writes world generation entries as `<registry dir> <id>` (`worldgen/biome strategos:arena`) |
 
 ---
 
@@ -1363,7 +1366,8 @@ are green and its negative checks behave as stated.
   `mod/server/world/{BlockWriter, OwnWrite, ProtectedBlockIndex}`; `StrategosConfig` and its
   registration (`javap` on FML's `ModContainer` first); tests `FakeWorldOrderTest`,
   `writertests.budget_holds_across_two_matches`, `perftests.block_writer_cost`; inventory entry for
-  the config.
+  the config; `ArenaWorld` builds the lobby pad through the writer, once, with a flag of its own in
+  the registry blob (§1.6 D row 15).
 - **Verification:** `verify`; `./gradlew verifyPerf` shows `block_writer_cost`.
 
 #### T6 · Map packages, importer and the proving ground — MAP-01 · depends on T2, T5 · ~1,600 lines
@@ -1575,7 +1579,7 @@ are green and its negative checks behave as stated.
 
 ### 9.3 Progress
 
-- [x] T1 (2026-10-22) · [x] T2 (2026-10-22) · [x] T11 (2026-10-22) · [x] T3 (2026-10-22) · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T12 · [ ] T10
+- [x] T1 (2026-10-22) · [x] T2 (2026-10-22) · [x] T11 (2026-10-22) · [x] T3 (2026-10-22) · [x] T4 (2026-10-22) · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T12 · [ ] T10
 - [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17 · [ ] T18 · [ ] T19 · [ ] T20 · [ ] T21 · [ ] T22
 - [ ] T23 · [ ] T24 · [ ] T25 · [ ] T26 · [ ] T27
 

@@ -4,6 +4,7 @@ import dev.strategos.mod.registry.ModDataMaps;
 import dev.strategos.mod.server.body.SpawnBudget;
 import dev.strategos.mod.server.match.MatchRegistry;
 import dev.strategos.mod.server.tick.FaultBarrier;
+import dev.strategos.mod.server.world.ArenaWorld;
 import dev.strategos.mod.server.world.BlockClassTable;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.MinecraftServer;
@@ -29,6 +30,7 @@ public final class StrategosServer {
     private final FaultBarrier faults;
     private final MatchRegistry matches;
     private volatile BlockClassTable blockClasses;
+    private ArenaWorld.Outcome arena = ArenaWorld.Outcome.NOT_AN_ARENA;
 
     private StrategosServer(MinecraftServer server, StrategosSettings settings) {
         this.server = server;
@@ -76,6 +78,11 @@ public final class StrategosServer {
         return spawnBudget;
     }
 
+    /** What the arena check did on this start. */
+    public ArenaWorld.Outcome arena() {
+        return arena;
+    }
+
     /** Immutable: page jobs read it from any thread; a data map reload replaces it. */
     public BlockClassTable blockClasses() {
         return blockClasses;
@@ -104,11 +111,12 @@ public final class StrategosServer {
         current = new StrategosServer(server, StrategosSettings.fromSystemProperties(server.getServerDirectory()));
     }
 
-    /** The levels exist now: the saved matches come back, PAUSED. */
+    /** The levels exist now: the saved matches come back, PAUSED, and a new arena world gets its rules. */
     public static void onStarted(ServerStartedEvent event) {
         StrategosServer s = current;
         if (s != null) {
             s.matches.loadPersisted();
+            s.arena = ArenaWorld.onStarted(s.server, s.matches.persisted());
         }
     }
 

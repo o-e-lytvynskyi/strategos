@@ -16,8 +16,10 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * The server's saved matches, {@code strategos_registry} in the overworld's data storage: {@code {v: 1, epoch, nextId,
- * records}}. It hands out match ids (never reused) and counts save epochs. Loading never throws: a registry that does
- * not decode is quarantined, keeps its raw tag, is never rewritten and refuses new saved matches.
+ * records, arenaRulesApplied, nextArenaSlot}}, the last two optional (M1, absent before). It hands out match ids and
+ * arena slots (neither ever reused), counts save epochs and records that an arena world got its rules. Loading never
+ * throws: a registry that does not decode is quarantined, keeps its raw tag, is never rewritten and refuses new saved
+ * matches.
  */
 public final class RegistryData extends SavedData {
     public static final String NAME = "strategos_registry";
@@ -29,6 +31,8 @@ public final class RegistryData extends SavedData {
     private final TreeMap<Integer, MatchRecord> records = new TreeMap<>();
     private long epoch;
     private int nextId = 1;
+    private boolean arenaRulesApplied;
+    private int nextArenaSlot;
     private @Nullable CompoundTag raw;
     private @Nullable String quarantineReason;
 
@@ -60,6 +64,11 @@ public final class RegistryData extends SavedData {
             RegistryData data = new RegistryData();
             data.epoch = tag.getLong("epoch");
             data.nextId = tag.getInt("nextId");
+            data.arenaRulesApplied = tag.getBoolean("arenaRulesApplied");
+            data.nextArenaSlot = tag.getInt("nextArenaSlot");
+            if (data.nextArenaSlot < 0) {
+                return quarantined(tag, "the next arena slot " + data.nextArenaSlot + " is negative");
+            }
             for (MatchRecord record : decoded.getOrThrow()) {
                 if (record.id().value() >= data.nextId) {
                     return quarantined(tag, "record " + record.id() + " is not below the next id " + data.nextId);
@@ -95,6 +104,29 @@ public final class RegistryData extends SavedData {
         MatchId id = new MatchId(nextId++);
         setDirty();
         return id;
+    }
+
+    /** The next arena slot, {@link #allocateArenaSlot()} not called. */
+    public int nextArenaSlot() {
+        return nextArenaSlot;
+    }
+
+    /** The next arena slot, counted as used even when the match then fails. */
+    public int allocateArenaSlot() {
+        requireUsable();
+        int slot = nextArenaSlot++;
+        setDirty();
+        return slot;
+    }
+
+    public boolean arenaRulesApplied() {
+        return arenaRulesApplied;
+    }
+
+    public void markArenaRulesApplied() {
+        requireUsable();
+        arenaRulesApplied = true;
+        setDirty();
     }
 
     public long epoch() {
@@ -146,6 +178,8 @@ public final class RegistryData extends SavedData {
         tag.putInt("v", VERSION);
         tag.putLong("epoch", epoch);
         tag.putInt("nextId", nextId);
+        tag.putBoolean("arenaRulesApplied", arenaRulesApplied);
+        tag.putInt("nextArenaSlot", nextArenaSlot);
         tag.put("records", NbtBridge.encode(RECORDS, List.copyOf(records.values())));
         return tag;
     }

@@ -2,6 +2,7 @@ package dev.strategos.mod;
 
 import dev.strategos.mod.registry.ModDataMaps;
 import dev.strategos.mod.registry.ModEntityTypes;
+import dev.strategos.mod.registry.ModTickets;
 import dev.strategos.mod.server.body.BodyEvents;
 import dev.strategos.mod.server.command.StrategosCommands;
 import dev.strategos.mod.server.tick.TickDriver;
@@ -29,6 +30,7 @@ public final class Strategos {
     public Strategos(IEventBus modBus) {
         ModEntityTypes.register(modBus);
         ModDataMaps.register(modBus);
+        ModTickets.register(modBus);
         IEventBus game = NeoForge.EVENT_BUS;
         game.addListener(ServerAboutToStartEvent.class, StrategosServer::onAboutToStart);
         game.addListener(ServerStartedEvent.class, StrategosServer::onStarted);

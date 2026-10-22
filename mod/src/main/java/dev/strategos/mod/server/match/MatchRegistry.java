@@ -16,6 +16,9 @@ import dev.strategos.mod.server.body.SpawnBudget;
 import dev.strategos.mod.server.persist.MatchData;
 import dev.strategos.mod.server.persist.Quarantine;
 import dev.strategos.mod.server.persist.RegistryData;
+import dev.strategos.mod.server.world.ArenaPolicy;
+import dev.strategos.mod.server.world.ArenaTickets;
+import dev.strategos.mod.server.world.ArenaWorld;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -36,7 +39,8 @@ import org.slf4j.LoggerFactory;
 /**
  * The server's matches, in id order: the only way to make, find, pause, drop, unload or restore one. A saved
  * (persistent) match has a record in the registry blob and a blob of its own; both load on server start and save at
- * autosave and on stop. Server thread only.
+ * autosave and on stop. In an arena world a player's match takes the next slot and holds chunk tickets over its space
+ * until it is disposed ({@link ArenaPolicy}). Server thread only.
  */
 public final class MatchRegistry {
     public static final int MIN_SIZE = 8;
@@ -111,10 +115,30 @@ public final class MatchRegistry {
         MatchRuntime rt = new MatchRuntime(id, space, options.source(), policy, saved != null, core, data, spawnBudget);
         rt.onLifecycleChange(() -> recordChanged(rt));
         rt.transition(MatchLifecycle.PREPARING);
+        if (ArenaPolicy.governs(server, space, options.source())) {
+            ArenaTickets.force(level, id, space);
+        }
         rt.transition(MatchLifecycle.READY);
         rt.transition(MatchLifecycle.RUNNING);
         register(rt);
         return rt;
+    }
+
+    /**
+     * A RUNNING match of {@code sizeX} x {@code sizeZ} in the arena's next slot, saved with the world. Throws {@link
+     * MatchRefusedException} outside an arena world and when the registry blob cannot count the slot.
+     */
+    public MatchRuntime createInArena(int sizeX, int sizeZ, MatchOptions options) {
+        if (!ArenaWorld.isArena(server)) {
+            throw new MatchRefusedException("this world is not a Strategos arena");
+        }
+        int slot = usableRegistry().allocateArenaSlot();
+        return create(server.overworld(), ArenaPolicy.slotSpace(slot, sizeX, sizeZ), options);
+    }
+
+    /** The registry blob as loaded on server start, quarantined or not; null before. */
+    public @Nullable RegistryData persisted() {
+        return persisted;
     }
 
     private void check(ServerLevel level, MatchSpace space) {
@@ -183,7 +207,10 @@ public final class MatchRegistry {
         require(id).transition(MatchLifecycle.RUNNING);
     }
 
-    /** Ends the match for good: its bodies are discarded, its region freed, its record and blob file removed. */
+    /**
+     * Ends the match for good: its bodies are discarded, its region freed, its chunk tickets released, its record and
+     * blob file removed.
+     */
     public void dispose(MatchId id) {
         MatchRuntime rt = require(id);
         if (rt.lifecycle().canTransitionTo(MatchLifecycle.ENDED)) {
@@ -193,6 +220,10 @@ public final class MatchRegistry {
         drop(rt);
         if (rt.persistent()) {
             forget(rt);
+        }
+        ServerLevel level = server.getLevel(rt.space().level());
+        if (level != null && ArenaPolicy.governs(server, rt.space(), rt.source()) && !settings.leakTickets()) {
+            ArenaTickets.release(level, id, rt.space());
         }
     }
 

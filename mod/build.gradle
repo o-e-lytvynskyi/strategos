@@ -180,6 +180,24 @@ neoForge {
             systemProperty 'strategos.s4.count', providers.gradleProperty('s4.count').getOrElse('200')
             systemProperty 'strategos.s4.renderDistance', providers.gradleProperty('s4.renderDistance').getOrElse('16')
         }
+        // [M1 T4] the arena smoke: a fresh strategos:arena world, then a restart in the same directory (MAP-07.2, .4)
+        serverSmokeArena {
+            server()
+            disableIdeRun()
+            gameDirectory = file('build/smoke-arena')
+            programArgument('--nogui')
+            systemProperty 'strategos.smoke', 'arena1'
+            systemProperty 'strategos.smoke.leakTickets', 'true'
+            systemProperty 'strategos.smoke.marker', file('build/smoke-arena/arena-run1.json').absolutePath
+        }
+        serverSmokeArena2 {
+            server()
+            disableIdeRun()
+            gameDirectory = file('build/smoke-arena')
+            programArgument('--nogui')
+            systemProperty 'strategos.smoke', 'arena2'
+            systemProperty 'strategos.smoke.marker', file('build/smoke-arena/arena-run2.json').absolutePath
+        }
         // [T9b] run 2 of the restart round trip: run 1's game directory, never wiped (QA-05.4)
         serverSmokeRestart {
             server()
@@ -434,12 +452,12 @@ neoForge.runs.serverSmoke.taskBefore prepareServerSmoke
 def smokeDir = file('build/server-smoke')
 def smokeJUnitDir = file('build/test-results/smoke')
 // A crashed dedicated dev server very likely exits 0: the marker is the verdict.
-def smokeGuard = { String runTask, String markerName ->
+def smokeGuard = { String runTask, String markerName, File dir = smokeDir ->
     tasks.matching { it.name == runTask }.configureEach {
         timeout = Duration.ofMinutes(5)
         doLast {
-            def marker = new File(smokeDir, markerName)
-            def crashes = new File(smokeDir, 'crash-reports').listFiles()
+            def marker = new File(dir, markerName)
+            def crashes = new File(dir, 'crash-reports').listFiles()
             String problem = null
             if (crashes != null && crashes.length > 0) problem = "Server smoke crashed: ${crashes*.name}"
             else if (!marker.isFile()) problem = "Server smoke marker missing: ${marker}"
@@ -460,6 +478,21 @@ smokeGuard('runServerSmokeRestart', 'smoke-restart.json')
 tasks.matching { it.name == 'runServerSmokeRestart' }.configureEach {
     dependsOn 'runServerSmoke'
     doFirst { new File(smokeDir, 'smoke-restart.json').delete() }
+}
+
+// [M1 T4] The arena smoke: run 1 on a fresh arena world, run 2 restarts it in the same directory.
+def prepareServerSmokeArena = tasks.register('prepareServerSmokeArena', Sync) {
+    from 'src/gametest/smoke-arena-gamedir'
+    into layout.buildDirectory.dir('smoke-arena')      // wipes world, logs and crash reports every run 1
+    outputs.upToDateWhen { false }
+}
+neoForge.runs.serverSmokeArena.taskBefore prepareServerSmokeArena
+def smokeArenaDir = file('build/smoke-arena')
+smokeGuard('runServerSmokeArena', 'arena-run1.json', smokeArenaDir)
+smokeGuard('runServerSmokeArena2', 'arena-run2.json', smokeArenaDir)
+tasks.matching { it.name == 'runServerSmokeArena2' }.configureEach {
+    dependsOn 'runServerSmokeArena'
+    doFirst { new File(smokeArenaDir, 'arena-run2.json').delete() }
 }
 
 // [T13] The spike server: a fresh flat world on every run (port 25598); the verdict is the DONE file, in
