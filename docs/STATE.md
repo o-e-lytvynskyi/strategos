@@ -193,14 +193,22 @@ Answer in chat or here; the next session applies the answers.
   sixteen starting scatters tried. Units standing still now step aside for one that wants to pass,
   even if it has stopped in front of them, and a settled group no longer shuffles. Card ORD-03 is
   done.
+- 2026-10-23 · **M1 T23 Stuck ladder:** a unit that makes no progress now works its way out in
+  steps: after 2 seconds it asks for a new route, after 5 it walks to the nearest free spot close by,
+  after 10 it walks its route for 3 seconds ignoring other units, after 20 it is nudged up to 4
+  blocks along its route, and after 30 its order fails and its player gets a "stuck" notice. A
+  unit walled in by other units walks out on the third step; one penned in by blocks mid-walk
+  finds the opening. Nothing ever teleports or leaves the match. The overlay shows each unit's
+  step. Card PATH-07 is done.
 
 ## Now
 
-- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 23 of 29 tasks done (T28, PATH-08, joined by its trigger).
+- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 24 of 29 tasks done (T28, PATH-08, joined by its trigger).
 - **In progress:** none.
-- **Last finished task:** M1 T20 (2026-10-23). The agents' branches `wip/m1-t17-unitai-hfsm` and
+- **Last finished task:** M1 T23 (2026-10-23). The agents' branches `wip/m1-t17-unitai-hfsm` and
   `wip/m1-t25-debug-overlay` are merged and kept on GitHub for the record.
-- **Next task:** M1 T23 · Stuck ladder (PATH-07), then T22 (worker pool and spike S7).
+- **Next task:** M1 T22 · Worker pool, ADAPTIVE delivery and spike S7 (PATH-16), then T24 (shared
+  group path) and T16 (content loading and client sync).
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 220 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.

@@ -43,6 +43,9 @@ public interface MatchQueries {
     /** A live unit's orders, the current one first (ORD-02); empty for an idle unit or a dead handle. */
     List<OrderQueues.Order> orders(int handle);
 
+    /** How often each rung of the stuck ladder (1 to 5) was reached in this run, by rung; not saved (PATH-07). */
+    long[] ladderRungs();
+
     /** A live unit's terrain motion: velocity, floor, stuck monitor, arrival latch; null for a dead handle. */
     MotionStore.@Nullable Extra motion(int handle);
 

@@ -347,6 +347,10 @@ cards, does not exist for M1: the M1 cards were final when this spec was written
 | 135 | §5.8 7 and ORD-03.2: "within 1.5 blocks of a group member's slot" | A group member that lands on its place arrives there; one 10 ticks without progress within 1.5 blocks of it arrives where it stands. ORD-03.2 is measured as each member comes to rest: a standing member steps aside for walkers afterwards. A single unit lands on its target exactly, within 0.5 as the card asks |
 | 136 | §5.11, refined in T20 | Two units that do not walk part only to 0.6 block, ORD-03.2's least gap: members settled a little off their places pushed each other round for ever. And a unit that does not walk avoids each walker's step this tick, not its velocity: the planning pass steers every walker before any unit plans, so a standing unit makes way even for a walker stalled in front of it, which `maptests.fifty_units_one_by_one` had stuck again. The fifty there take at most 1.04 times their ideal time, with at most 24 ticks without progress, and fifty sent as one group settle from all sixteen spawn scatters tried |
 | 137 | §9.2 T20: tests and goldens | `SlotLayoutTest`, `SlotSnapTest` (a walled pen beside the target, a block and a line heading at it, fifty from sixteen spawns), `ordertests.fifty_settle_in_slots` in the world with a lone walker beside them, and the `group_of_50_slots` golden; `canary`, `head_on_gap` and the S6 golden were re-recorded. Older tests that sent several units to one point now find each at its place: `MoveRuleTest`, `DebugFramesTest`, `commandtests.order_commands_queue_group_and_stop` |
+| 138 | §5.8 8: "progress when its distance to the current waypoint drops 0.05 block below its best" | Passing a waypoint is progress too, and a new route is not: a repath's or a re-ask's first waypoint takes over as the aim and the count goes on, so the ladder, whose first rung asks for a path, climbs; a count that restarted with every new aim never got past that rung. A new current order (`OrderReceived`, also a queued order taking over) and a stop start the count again and end the ladder's walks; arrival ends them too |
+| 139 | §5.11: the ladder's rungs | 40: a new path, unless one is asked already (the lost-line check of D row 99 skips that count). 100: a walk of up to 40 ticks, steered instead of the waypoint and never arriving, to the centre of the nearest free column within 3 columns, the unit's own left out, in slot snapping's spiral (D row 133, now `nav.Spiral`); free is inside the match, a passable surface of the unit's component within 2 blocks of its height, and no other unit within 0.6; it ends within 0.1 of the spot. 200: 60 ticks whose plan is the preferred step, no avoidance. 400: the first free column along the path from 1 block to 4, sampled every 0.5; the unit is displaced to it leg by leg by `MotionSystem.impulse`, stopping where blocked, passes the waypoints it went beyond, and its best distance follows, so the nudge is no progress. 600: a `Notice(STUCK)` to its faction, then `Stuck(5)` and `finishOrder(failed)`. Footprints arrive with BLD-03, so no candidate is in one yet |
+| 140 | §5.11: "every rung is counted per unit and match" | Per match in `MatchState`, read through `MatchQueries.ladderRungs()`: statistics, neither saved nor hashed, so nothing depends on who reads them. Per unit the rung follows from the count, `MotionStore.Extra.rung()`, which the overlay's markers now carry. A detour and a ghost walk are motion state, saved in a nested `ladder` (a `RecordCodecBuilder` group holds at most 16 fields) and hashed only while set, so a match where no unit climbs keeps its hashes |
+| 141 | §9.2 T23: tests | PATH-07.1's "boxed-in unit with no exit" is one a modifier holds at walk speed 0: a unit walled in by terrain has no path, which ends its move where it stands (D row 33), and one walled in by units walks out at the third rung (`aUnitWalledInByOthersWalksOutWithAvoidanceOff`), so only a unit that cannot move has no exit from every rung. `pathtests.boxed_in_frees_or_fails` builds the pen's east wall five columns ahead of the walking unit: a page is rebuilt 4 quiet ticks plus `pageK` after its last change, and a unit two columns from the wall walked into the stale columns first. Only the `head_on_gap` golden was re-recorded: 15 of its units held up in the gap reach the first rung and one the second, and every other golden keeps its checkpoints. The server smoke now finds each unit of its group orders within 2.5 blocks of its own place (1.5 of a member's arrival, 1.0 of the latch) instead of 2.5 of the target: its match seed is random, and since T20 about 1 seed in 40 left a member, rightly, 2.5–2.8 blocks from the target (the same 10 of 400 seeds with T23 as before it) |
 
 ---
 
@@ -1672,8 +1676,10 @@ are green and its negative checks behave as stated.
 
 #### T23 · Stuck ladder — PATH-07 · depends on T21 · ~800 lines
 
-- **Files:** `core/sim/move/StuckLadder`; `Notice(STUCK)`; counters in `MatchQueries`; tests
-  `StuckLadderTest`, `pathtests.boxed_in_frees_or_fails`.
+- **Files:** `core/sim/move/StuckLadder`; `core/sim/nav/Spiral` (shared with `SlotPlanner`); the
+  detour and ghost walk in `MotionStore` (`Ladder`); `Notice(STUCK)`; counters in `MatchState`
+  and `MatchQueries`; the overlay's rung per marker; tests `StuckLadderTest`, `SpiralTest`,
+  `pathtests.boxed_in_frees_or_fails`.
 - **Verification:** `verify`.
 
 #### T24 · Shared group path — PATH-09 · depends on T20, T22, T23 · ~1,000 lines
@@ -1723,7 +1729,7 @@ are green and its negative checks behave as stated.
 
 - [x] T1 (2026-10-22) · [x] T2 (2026-10-22) · [x] T11 (2026-10-22) · [x] T3 (2026-10-22) · [x] T4 (2026-10-22) · [x] T5 (2026-10-22) · [x] T6 (2026-10-22) · [x] T7 (2026-10-22) · [x] T8 (2026-10-22) · [x] T19 (2026-10-22) · [x] T28 (2026-10-22) · [x] T9 (2026-10-22) · [x] T12 (2026-10-22) · [x] T10 (2026-10-22)
 - [x] T13 (2026-10-22) · [x] T14 (2026-10-22) · [x] T15.1 (2026-10-22) · [x] T15.2 (2026-10-22) · [ ] T16 · [x] T17 (2026-10-23) · [x] T18 (2026-10-23) · [x] T20 (2026-10-23) · [x] T21 (2026-10-23) · [ ] T22
-- [ ] T23 · [ ] T24 · [x] T25 (2026-10-23) · [ ] T26 · [ ] T27
+- [x] T23 (2026-10-23) · [ ] T24 · [x] T25 (2026-10-23) · [ ] T26 · [ ] T27
 
 ---
 

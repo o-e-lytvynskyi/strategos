@@ -5,12 +5,11 @@ import dev.strategos.core.sim.MatchBounds;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.MotionStore;
 import dev.strategos.core.sim.nav.PathService;
+import dev.strategos.core.sim.nav.Spiral;
 import dev.strategos.core.sim.nav.Surface;
 import dev.strategos.core.sim.nav.SurfaceGrid;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.List;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -26,7 +25,7 @@ import org.jspecify.annotations.Nullable;
 public final class SlotPlanner {
     static final int SNAP = 3;
 
-    /** The spiral: (dx, dz) within {@value #SNAP} columns, by distance, then Z, then X. */
+    /** The spiral: (dx, dz) within {@value #SNAP} columns. */
     private final int[] spiral;
 
     private double[] xs = new double[0];
@@ -34,22 +33,7 @@ public final class SlotPlanner {
     private int[] slots = new int[0];
 
     public SlotPlanner() {
-        List<int[]> cells = new ArrayList<>();
-        for (int dz = -SNAP; dz <= SNAP; dz++) {
-            for (int dx = -SNAP; dx <= SNAP; dx++) {
-                if (dx * dx + dz * dz <= SNAP * SNAP) {
-                    cells.add(new int[] {dx, dz});
-                }
-            }
-        }
-        cells.sort(Comparator.<int[]>comparingInt(c -> c[0] * c[0] + c[1] * c[1])
-                .thenComparingInt(c -> c[1])
-                .thenComparingInt(c -> c[0]));
-        spiral = new int[cells.size() * 2];
-        for (int k = 0; k < cells.size(); k++) {
-            spiral[2 * k] = cells.get(k)[0];
-            spiral[2 * k + 1] = cells.get(k)[1];
-        }
+        spiral = Spiral.of(SNAP);
     }
 
     /** Plans the places of the units at {@code indices} for a group order to (tx, tz); read them by position. */

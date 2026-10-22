@@ -54,10 +54,12 @@ import java.util.function.IntConsumer;
  *       there. A unit {@value #CROWDED} ticks without progress arrives where it stands within {@value #ARRIVE_CROWD}
  *       blocks of its place in a group order (spec §5.8 7) or of a target another unit stands on, or when it touches an
  *       idle unit that arrived at the same target, so a crowd sent to one point settles outward from it.
- *   <li>Stuck monitor: a unit makes progress when it comes {@value #PROGRESS} block nearer its aim than its best;
- *       otherwise its count of ticks without progress grows (the ladder of T23 acts on it). Every {@value #LOST_AFTER}
- *       ticks without progress a unit checks its line of walk to its aim, and asks for a new path once avoidance has
- *       pushed it where that line is lost.
+ *   <li>Stuck monitor: a unit makes progress when it comes {@value #PROGRESS} block nearer its aim than its best, or
+ *       passes a waypoint; otherwise, a new route included, its count of ticks without progress grows, and a new order
+ *       starts it again. Every {@value #LOST_AFTER} ticks without progress a unit checks its line of walk to its aim,
+ *       and asks for a new path once avoidance has pushed it where that line is lost.
+ *   <li>Stuck ladder (PATH-07): at its rungs' counts the {@link StuckLadder} asks for a path, walks the unit to a free
+ *       spot nearby, walks it with avoidance off, nudges it along its path, and at last fails its order.
  * </ol>
  *
  * Idle units settle: their height follows their floor. Every {@value #IDLE_EVERY} ticks, staggered, an idle unit plans
@@ -100,9 +102,11 @@ public final class MotionSystem implements MatchSystem {
     private static final byte LANDS = 1;
     private static final byte FOLLOWING = 2;
     private static final byte LAST = 4;
+    private static final byte DETOUR = 8;
 
     private final MatchState state;
     private final Avoidance avoidance;
+    private final StuckLadder ladder = new StuckLadder();
     private final IntConsumer toucher = this::touch;
     private final IntConsumer taker = this::take;
     private int touchSelf;
@@ -161,7 +165,10 @@ public final class MotionSystem implements MatchSystem {
             if (!entities.aliveAt(i)) {
                 continue;
             }
-            if (mode[i] == WALKING) {
+            if (mode[i] == WALKING && s.motion().ghostTicks(i) > 0) {
+                planX[i] = endX[i] - s.motion().x(i); // the stuck ladder walks it with avoidance off
+                planZ[i] = endZ[i] - s.motion().z(i);
+            } else if (mode[i] == WALKING) {
                 avoidance.plan(
                         s, i, endX[i] - s.motion().x(i), endZ[i] - s.motion().z(i), speed[i], true);
                 planX[i] = avoidance.x();
@@ -270,6 +277,7 @@ public final class MotionSystem implements MatchSystem {
             }
             paths.advance(i);
             cursor++;
+            passed(motion, i);
         }
         boolean following = cursor < path.count();
         double tx;
@@ -289,20 +297,27 @@ public final class MotionSystem implements MatchSystem {
         }
         ground(s, i);
         int stuck = motion.stuck(i);
-        if (stuck >= LOST_AFTER && stuck % LOST_AFTER == 0 && !paths.repath(i) && !inLine(s, i, tx, tz)) {
+        if (stuck >= LOST_AFTER
+                && stuck % LOST_AFTER == 0
+                && stuck != StuckLadder.REPATH // the ladder asked at that count already
+                && !paths.repath(i)
+                && !inLine(s, i, tx, tz)) {
             // pushed off its route behind something: WALKING has the request pass ask again
             s.bus().publish(new PathInvalidated(s.entities().handleAt(i)));
         }
         double speed = s.stats().walkSpeed(i) * speedFactor(s, i);
-        double dx = tx - x0;
-        double dz = tz - z0;
+        boolean detour = motion.detourTicks(i) > 0; // the stuck ladder's walk to a free spot, steered instead
+        double sx = detour ? motion.detourX(i) : tx;
+        double sz = detour ? motion.detourZ(i) : tz;
+        double dx = sx - x0;
+        double dz = sz - z0;
         double d = DetMath.length(dx, dz);
         boolean lands = d <= speed + SNAP_TOLERANCE;
-        double nx = lands ? tx : x0 + dx / d * speed;
-        double nz = lands ? tz : z0 + dz / d * speed;
+        double nx = lands ? sx : x0 + dx / d * speed;
+        double nz = lands ? sz : z0 + dz / d * speed;
         mode[i] = WALKING;
         avoiding[i] = false;
-        flags[i] = (byte) ((lands ? LANDS : 0) | (following ? FOLLOWING : 0) | (last ? LAST : 0));
+        flags[i] = detour ? DETOUR : (byte) ((lands ? LANDS : 0) | (following ? FOLLOWING : 0) | (last ? LAST : 0));
         aimX[i] = tx;
         aimZ[i] = tz;
         endX[i] = nx;
@@ -342,9 +357,7 @@ public final class MotionSystem implements MatchSystem {
         motion.set(i, x, motion.y(i), z, yaw);
         height(s, i);
         monitor(s, i, tx, tz);
-        if (moved || motion.y(i) != startY[i] || yaw != yaw0) {
-            s.frame().add(handle, x, motion.y(i), z, yaw, STANDING);
-        }
+        StuckLadder.countDown(motion, i);
         boolean landed = preferred && (flags[i] & LANDS) != 0 && x == tx && z == tz;
         if (!landed && (flags[i] & LAST) != 0) {
             double d = DetMath.length(tx - x, tz - z);
@@ -357,10 +370,17 @@ public final class MotionSystem implements MatchSystem {
                 paths.advance(i);
                 if ((flags[i] & LAST) != 0) {
                     arrive(s, i, handle);
+                } else {
+                    passed(motion, i);
                 }
             } else {
                 arrive(s, i, handle);
             }
+        } else {
+            ladder.climb(s, i, handle); // a nudge displaces it
+        }
+        if (moved || motion.x(i) != x || motion.z(i) != z || motion.y(i) != startY[i] || yaw != yaw0) {
+            s.frame().add(handle, motion.x(i), motion.y(i), motion.z(i), yaw, STANDING);
         }
     }
 
@@ -486,6 +506,8 @@ public final class MotionSystem implements MatchSystem {
         MotionStore motion = s.motion();
         motion.setLatch(i, true, motion.x(i), motion.z(i));
         motion.setVelocity(i, 0, 0);
+        motion.setDetour(i, 0, 0, 0);
+        motion.setGhostTicks(i, 0);
         s.bus().publish(new Arrived(handle));
     }
 
@@ -494,6 +516,14 @@ public final class MotionSystem implements MatchSystem {
         if (motion.latched(i)) {
             motion.setLatch(i, false, 0, 0);
         }
+        passed(motion, i); // a new walk: its first tick sets the best
+        motion.setDetour(i, 0, 0, 0);
+        motion.setGhostTicks(i, 0);
+    }
+
+    /** Unit {@code i} passed a waypoint, or starts a walk: progress, so its next tick measures from scratch. */
+    private static void passed(MotionStore motion, int i) {
+        motion.setProgress(i, motion.aimX(i), motion.aimZ(i), Double.POSITIVE_INFINITY, 0);
     }
 
     /**
@@ -613,12 +643,17 @@ public final class MotionSystem implements MatchSystem {
         motion.set(i, motion.x(i), y, motion.z(i), motion.yaw(i));
     }
 
-    /** The stuck monitor: progress is coming {@value #PROGRESS} block nearer the aim than the best so far. */
+    /**
+     * The stuck monitor: progress is coming {@value #PROGRESS} block nearer the aim than the best so far, or passing a
+     * waypoint ({@link #passed}); a new aim from a new route is not, so the count goes on.
+     */
     private static void monitor(MatchState s, int i, double tx, double tz) {
         MotionStore motion = s.motion();
         double d = DetMath.length(tx - motion.x(i), tz - motion.z(i));
-        if (tx != motion.aimX(i) || tz != motion.aimZ(i)) {
-            motion.setProgress(i, tx, tz, d, 0); // a new aim
+        if (motion.best(i) == Double.POSITIVE_INFINITY) {
+            motion.setProgress(i, tx, tz, d, 0); // the first tick of a walk, or after a waypoint
+        } else if (tx != motion.aimX(i) || tz != motion.aimZ(i)) {
+            motion.setProgress(i, tx, tz, d, motion.stuck(i) + 1); // a new route
         } else if (d < motion.best(i) - PROGRESS) {
             motion.setProgress(i, tx, tz, d, 0);
         } else {

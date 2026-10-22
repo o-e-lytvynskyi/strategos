@@ -98,6 +98,11 @@ final class QueriesImpl implements MatchQueries {
     }
 
     @Override
+    public long[] ladderRungs() {
+        return state.rungs();
+    }
+
+    @Override
     public List<OrderQueues.Order> orders(int handle) {
         if (!state.entities().isAlive(handle)) {
             return List.of();

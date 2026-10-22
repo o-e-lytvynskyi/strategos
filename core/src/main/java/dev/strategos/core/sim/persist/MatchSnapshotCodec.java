@@ -118,6 +118,13 @@ public final class MatchSnapshotCodec {
                             .forGetter(PathStore.Queue::lastPageChange))
             .apply(i, PathStore.Queue::new));
 
+    private static final Codec<MotionStore.Ladder> LADDER = RecordCodecBuilder.create(i -> i.group(
+                    Codec.DOUBLE.optionalFieldOf("detourX", 0.0).forGetter(MotionStore.Ladder::detourX),
+                    Codec.DOUBLE.optionalFieldOf("detourZ", 0.0).forGetter(MotionStore.Ladder::detourZ),
+                    Codec.INT.optionalFieldOf("detourTicks", 0).forGetter(MotionStore.Ladder::detourTicks),
+                    Codec.INT.optionalFieldOf("ghostTicks", 0).forGetter(MotionStore.Ladder::ghostTicks))
+            .apply(i, MotionStore.Ladder::new));
+
     /** Each field defaults to a unit that never touched terrain, the only motion an M0 save has. */
     private static final Codec<MotionStore.Extra> MOTION = RecordCodecBuilder.create(i -> i.group(
                     Codec.DOUBLE.optionalFieldOf("vx", 0.0).forGetter(MotionStore.Extra::vx),
@@ -133,7 +140,8 @@ public final class MatchSnapshotCodec {
                     Codec.BOOL.optionalFieldOf("latched", false).forGetter(MotionStore.Extra::latched),
                     Codec.DOUBLE.optionalFieldOf("latchX", 0.0).forGetter(MotionStore.Extra::latchX),
                     Codec.DOUBLE.optionalFieldOf("latchZ", 0.0).forGetter(MotionStore.Extra::latchZ),
-                    Codec.INT.optionalFieldOf("pushed", 0).forGetter(MotionStore.Extra::pushed))
+                    Codec.INT.optionalFieldOf("pushed", 0).forGetter(MotionStore.Extra::pushed),
+                    LADDER.optionalFieldOf("ladder", MotionStore.Ladder.NONE).forGetter(MotionStore.Extra::ladder))
             .apply(i, MotionStore.Extra::new));
 
     /** A leaf of the unit tree by its name; M0's {@code "idle"} and {@code "walking"} name its two leaves. */

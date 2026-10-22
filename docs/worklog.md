@@ -9,7 +9,33 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20
+## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23
+
+- **M1 T23 · Stuck ladder** — PATH-07 done.
+  - **Results:** `core/sim/move/StuckLadder` acts on the stuck monitor's count: at 40 ticks a new
+    path, at 100 a walk of up to 40 ticks to the nearest free spot within 3 columns, at 200 a
+    60-tick walk with avoidance off, at 400 a nudge of up to 4 blocks along the path to the first
+    free column, at 600 a failed order and a STUCK notice. Every rung is posted as `Stuck` and
+    counted per match (`MatchQueries.ladderRungs()`); each unit's rung is on the overlay's markers;
+    the detour and the ghost walk are saved and hashed only while set; `core/sim/nav/Spiral` is
+    shared with slot snapping. The monitor's count now goes on through a new route and restarts
+    with a new order. Tests: `StuckLadderTest` (5), `SpiralTest` (2),
+    `pathtests.boxed_in_frees_or_fails`; `head_on_gap` re-recorded (129 GameTests);
+    `verify verifySlow verifySoak` 1 min 54 s.
+  - **Measured:** in `head_on_gap` 15 units reach the first rung and one the second, none higher;
+    a unit walled in by eight units held still walks out at the third rung.
+  - **Problems:** the monitor restarted its count at every new aim, so the first rung's new path
+    would have kept a stuck unit on that rung for ever; a new route is no progress now, passing a
+    waypoint is (D row 138). A box of terrain ends a move with no path rather than failing it, and
+    units are no wall to a walk with avoidance off, so the L1 test's unit "with no exit" is one
+    held at walk speed 0 (D row 141). The GameTest's pen first stood two columns ahead of the unit,
+    which walked into its walls before their pages were rebuilt; it stands five ahead now. The
+    first full gate failed the server smoke: a group member 2.55 blocks from the target against a
+    2.5 check. The smoke's match seed is random; its scenario over 400 seeds in L1 fails the same
+    10 seeds at the same points before T23 as after it, so since T20 the check was tighter than the
+    rules (1.5 blocks of a member's place, which can be 2.1 from the target). It now measures each
+    unit against its own place, within 2.5.
+  - **Next:** T22 (worker pool, ADAPTIVE delivery, spike S7).
 
 - **M1 T20 · Group destination slots** — ORD-03 done.
   - **Results:** `core/shared/SlotLayout` (rows across the facing, 4 radii apart, centred, inside

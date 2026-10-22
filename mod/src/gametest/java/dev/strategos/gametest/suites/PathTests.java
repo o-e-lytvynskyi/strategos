@@ -9,6 +9,7 @@ import static dev.strategos.gametest.suites.Units.unit;
 
 import dev.strategos.core.port.JobScratch;
 import dev.strategos.core.sim.PageRef;
+import dev.strategos.core.sim.Stuck;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.UnitView;
 import dev.strategos.core.sim.nav.PathJob;
@@ -26,7 +27,10 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.level.block.Blocks;
 
-/** Paths in a real level (PATH-03.6, PATH-15.1): over steps and through a ford, and round a wall built mid-walk. */
+/**
+ * Paths in a real level (PATH-03.6, PATH-15.1, PATH-07.3): over steps and through a ford, round a wall built mid-walk,
+ * and out of a pen built round a walking unit.
+ */
 public final class PathTests {
     private PathTests() {}
 
@@ -115,6 +119,66 @@ public final class PathTests {
                 check(u.z() == 24.5, "stopped at z " + u.z());
                 long asked = core(rt).queries().pathStats().requests() - state.requestsBefore;
                 check(asked >= 1, "no new request after the wall");
+                h.succeed();
+            }
+        });
+    }
+
+    /**
+     * PATH-07.3: a unit walks east across the arena; once it is under way a pen three high goes up round it, its east
+     * wall five columns ahead, so its pages are rebuilt before the unit gets there (PageJobs), the others two columns to
+     * either side and running back two columns behind it, open on the west, away from the target. The unit never
+     * stands in the pen's walls, and it frees itself, out of the opening and round the pen to its target, or its order
+     * fails at the stuck ladder's last rung.
+     */
+    @StrategosTest(arena = "arena_flat_48", timeoutTicks = 1_200)
+    public static void boxedInFreesOrFails(GameTestHelper h) {
+        MatchRuntime rt = MatchFixture.create(h, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
+        spawn(rt, 4.5, 24.5, 1, 0);
+        var state = new Object() {
+            boolean ordered;
+            boolean penned;
+            int x;
+            int z;
+        };
+        h.onEachTick(() -> {
+            if (core(rt).queries().unitCount() != 1) {
+                return;
+            }
+            int handle = onlyUnit(rt);
+            if (!state.ordered) {
+                state.ordered = true;
+                move(rt, handle, 44.5, 24.5);
+                return;
+            }
+            UnitView u = unit(rt, handle);
+            if (!state.penned && u.x() > 12) {
+                state.penned = true;
+                state.x = (int) Math.floor(u.x());
+                state.z = (int) Math.floor(u.z());
+                for (int y = 2; y <= 4; y++) { // relative y 1 is the floor layer
+                    for (int d = -2; d <= 2; d++) {
+                        h.setBlock(new BlockPos(state.x + 5, y, state.z + d), Blocks.STONE);
+                    }
+                    for (int d = -2; d <= 5; d++) {
+                        h.setBlock(new BlockPos(state.x + d, y, state.z - 2), Blocks.STONE);
+                        h.setBlock(new BlockPos(state.x + d, y, state.z + 2), Blocks.STONE);
+                    }
+                }
+                return;
+            }
+            if (state.penned) {
+                int cx = (int) Math.floor(u.x()) - state.x;
+                int cz = (int) Math.floor(u.z()) - state.z;
+                boolean east = cx == 5 && Math.abs(cz) <= 2;
+                boolean side = Math.abs(cz) == 2 && cx >= -2 && cx <= 5;
+                check(!east && !side, "inside the pen's wall at " + u.x() + ", " + u.z());
+            }
+            if (u.state() == UnitState.IDLE && u.target() == null) {
+                check(state.penned, "stopped before the pen went up");
+                boolean freed = u.x() == 44.5 && u.z() == 24.5;
+                boolean failed = core(rt).queries().ladderRungs()[Stuck.GIVE_UP] == 1;
+                check(freed || failed, "neither arrived nor failed: stopped at " + u.x() + ", " + u.z());
                 h.succeed();
             }
         });

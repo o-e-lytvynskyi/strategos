@@ -42,6 +42,7 @@ public final class MatchState {
     private BodyFrame.Builder frame = BodyFrame.builder(0);
     private TickInputs input;
     private int nextGroup = FIRST_GROUP;
+    private final long[] rungs = new long[Stuck.GIVE_UP + 1]; // the stuck ladder's rungs reached in this run, by rung
     private final List<Agent> agents = new ArrayList<>();
     private SurfaceGrid surfaces;
     private final long[] pageSlices;
@@ -231,6 +232,16 @@ public final class MatchState {
     /** This tick's body poses. */
     public BodyFrame.Builder frame() {
         return frame;
+    }
+
+    /** Counts a rung of the stuck ladder reached (PATH-07): statistics for the overlay and the soak, not state. */
+    public void countRung(int rung) {
+        rungs[rung]++;
+    }
+
+    /** How often each rung of the stuck ladder was reached in this run, by rung; index 0 is unused. */
+    public long[] rungs() {
+        return rungs.clone();
     }
 
     /** A new group id for the orders of one command to several units (ORD-02); ids are never reused. */

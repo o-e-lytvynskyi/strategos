@@ -20,8 +20,8 @@ import java.util.function.Function;
 
 /**
  * What each layer of the movement overlay carries, read from a match's queries (PATH-10): functions of the core's
- * read-only views and an area, so L2 checks them on a harness match with no level. The extension points of later cards
- * are {@link #tier} (activity tiers, M4) and {@link #rung} (the stuck ladder, T23).
+ * read-only views and an area, so L2 checks them on a harness match with no level. A later card extends {@link #tier}
+ * (activity tiers, M4).
  */
 public final class DebugFrames {
     private DebugFrames() {}
@@ -120,7 +120,7 @@ public final class DebugFrames {
                 continue;
             }
             DebugFeedMsg.Point at = DebugFeedMsg.Point.ofBlocks(unit.x(), unit.y() - origin.y(), unit.z());
-            marks.add(new DebugFeedMsg.Mark(handle, at, tier(unit), motion.stuck(), rung()));
+            marks.add(new DebugFeedMsg.Mark(handle, at, tier(unit), motion.stuck(), motion.rung()));
         }
         return parts(marks, DebugFeedMsg.MAX_MARKS, part -> new DebugFeedMsg.Marks(origin, part));
     }
@@ -153,11 +153,6 @@ public final class DebugFrames {
     /** A unit's activity tier: M1 has two, idle 0 and moving 1 (04 §6.5); the LOD tiers of M4 add theirs here. */
     static int tier(UnitView unit) {
         return unit.state() == UnitState.WALKING ? 1 : 0;
-    }
-
-    /** The stuck ladder's rung a unit is on: none until the ladder (T23) keeps rungs for the queries to report. */
-    static int rung() {
-        return 0;
     }
 
     /** {@code items} in parts of at most {@code max}; one empty part for none, so a subscriber's old ones go. */

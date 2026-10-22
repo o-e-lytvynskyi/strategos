@@ -18,6 +18,7 @@ import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.UnitView;
 import dev.strategos.core.sim.journal.JournalExport;
+import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.core.testkit.JournalFiles;
 import dev.strategos.core.testkit.ReplayRunner;
 import dev.strategos.mod.Strategos;
@@ -66,10 +67,11 @@ import org.slf4j.LoggerFactory;
  *       unit body type is registered;
  *   <li>MAP-01.4: an unsaved match on the proving ground, 4,096 blocks from the spawn so that only its own tickets hold
  *       the area, imports while the server sprints (its terrain hash checked); 8 units walk from the west start, and 160
- *       ticks later, with nobody online, all 8 have bodies and stand at their target (idle within 2.5 blocks, the
- *       first on it: PATH-06's crowd arrival); the match is disposed;
+ *       ticks later, with nobody online, all 8 have bodies and stand at their places round the target (idle within 2.5
+ *       blocks of each one's own); the match is disposed;
  *   <li>a saved 16 x 16 match around the world spawn; 8 units around local (4, 8), ordered to (12.5, 8.5);
- *   <li>100 server ticks later: every unit at the target, 8 bodies, the match RUNNING; then ordered back to (4.5, 8.5);
+ *   <li>100 server ticks later: every unit at its place round the target, 8 bodies, the match RUNNING; then ordered back
+ *       to (4.5, 8.5);
  *   <li>20 ticks later, the units still walking: the marker with the numbers, the live journal in
  *       {@code journal-run1.strj}, and {@code halt}; the stop saves the match. A 600-tick deadline fails the run.
  * </ol>
@@ -86,6 +88,10 @@ public final class SmokeDriver {
     private static final Vec2d TARGET = new Vec2d(12.5, 8.5);
     private static final Vec2d BACK = new Vec2d(4.5, 8.5);
     private static final int CHECK_AT = 100;
+
+    /** How far from its place a unit of a group order may stand once arrived: 1.5 blocks of arrival, 1.0 of latch. */
+    private static final double PLACE_REACH = 2.5;
+
     private static final int SAVE_AFTER = 20;
     private static final int REPLAY_AFTER = 60;
     private static final int DEADLINE = 600;
@@ -111,6 +117,7 @@ public final class SmokeDriver {
         final MatchRuntime match;
         final long startNanos = System.nanoTime();
         int runningTicks = -1;
+        Vec2d @Nullable [] places;
 
         MapStep(MinecraftServer server, MatchRuntime match) {
             this.server = server;
@@ -124,6 +131,7 @@ public final class SmokeDriver {
         final boolean restart;
         int ticks;
         boolean ordered;
+        Vec2d @Nullable [] places;
         boolean orderedBack;
         long restoredTick = -1;
         int bodiesAt = -1;
@@ -282,6 +290,8 @@ public final class SmokeDriver {
         if (!r.ordered && units.length == UNITS) {
             r.match.submit(PlayerSlot.ADMIN, Move.replace(UnitSet.of(units), TARGET));
             r.ordered = true;
+        } else if (r.ordered && r.places == null) {
+            r.places = places(core, units);
         }
         if (r.ticks == CHECK_AT) {
             String problem = matchProblem(r, core, units);
@@ -336,6 +346,8 @@ public final class SmokeDriver {
         int[] units = core.queries().unitHandles();
         if (m.runningTicks == 0 && units.length == MAP_UNITS) {
             m.match.submit(PlayerSlot.ADMIN, Move.replace(UnitSet.of(units), new Vec2d(40.5, 192.5)));
+        } else if (m.places == null) {
+            m.places = places(core, units);
         }
         if (units.length == MAP_UNITS && ++m.runningTicks >= MAP_TICKS) {
             String problem = null;
@@ -344,13 +356,7 @@ public final class SmokeDriver {
             } else if (m.match.bodies().count() != MAP_UNITS) {
                 problem = m.match.bodies().count() + " bodies on the proving ground, not " + MAP_UNITS;
             } else {
-                for (int handle : units) {
-                    UnitView unit = core.queries().unit(handle);
-                    if (unit == null || !arrived(unit, 40.5, 192.5)) {
-                        problem = "unit " + Handle.toString(handle) + " is not on its target: " + unit;
-                        break;
-                    }
-                }
+                problem = notAtPlaces(core, units, m.places);
             }
             StrategosServer.get().matches().dispose(m.match.id());
             mapStep = null;
@@ -407,12 +413,37 @@ public final class SmokeDriver {
         return null;
     }
 
+    /** Each unit's place in its group order (ORD-03), once every unit has the order; null before. */
+    private static Vec2d @Nullable [] places(MatchCore core, int[] units) {
+        Vec2d[] places = new Vec2d[units.length];
+        for (int k = 0; k < units.length; k++) {
+            List<OrderQueues.Order> orders = core.queries().orders(units[k]);
+            if (orders.isEmpty()) {
+                return null;
+            }
+            places[k] = new Vec2d(orders.get(0).x(), orders.get(0).z());
+        }
+        return places;
+    }
+
     /**
-     * Whether a unit ordered with seven others to (x, z) arrived: idle within 2.5 blocks of it, as PATH-06's crowd
-     * arrival settles them outward from the first, which stands on it.
+     * The first unit ordered with seven others that has not arrived, null when every one has: arrived is idle within
+     * {@value #PLACE_REACH} blocks of its own place, the reach of a group member's arrival (1.5 blocks, spec §1.6 D row
+     * 135) and of the arrival latch (1.0) that holds it after.
      */
-    private static boolean arrived(UnitView unit, double x, double z) {
-        return unit.state() == UnitState.IDLE && Math.hypot(unit.x() - x, unit.z() - z) <= 2.5;
+    private static @Nullable String notAtPlaces(MatchCore core, int[] units, Vec2d @Nullable [] places) {
+        if (places == null) {
+            return "the units never had their orders";
+        }
+        for (int k = 0; k < units.length; k++) {
+            UnitView unit = core.queries().unit(units[k]);
+            if (unit == null
+                    || unit.state() != UnitState.IDLE
+                    || Math.hypot(unit.x() - places[k].x(), unit.z() - places[k].z()) > PLACE_REACH) {
+                return "unit " + Handle.toString(units[k]) + " is not at its place " + places[k] + ": " + unit;
+            }
+        }
+        return null;
     }
 
     private static @Nullable String matchProblem(Run r, MatchCore core, int[] units) {
@@ -425,11 +456,9 @@ public final class SmokeDriver {
         if (units.length != UNITS) {
             return units.length + " units, not " + UNITS;
         }
-        for (int handle : units) {
-            UnitView unit = core.queries().unit(handle);
-            if (unit == null || !arrived(unit, TARGET.x(), TARGET.z())) {
-                return "unit " + Handle.toString(handle) + " is not on the target: " + unit;
-            }
+        String away = notAtPlaces(core, units, r.places);
+        if (away != null) {
+            return away;
         }
         if (r.match.bodies().count() != UNITS) {
             return r.match.bodies().count() + " bodies, not " + UNITS + " (" + Arrays.toString(units) + ")";

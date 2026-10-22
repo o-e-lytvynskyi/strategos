@@ -641,7 +641,8 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
   3. A unit boxed in by placed blocks in a GameTest frees itself or fails with the notice (L3).
   4. In the crowd soak, nudges stay under 1 per 1,000 orders (L6, in PERF-05).
 - **Tests:** L0, L1, L3, L6 · **Depends on:** PATH-05, PATH-06 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Done:** 2026-10-23 — M1 T23: `StuckLadderTest.aUnitThatCannotMoveClimbsEveryRungAndFailsAt600`, rungs 1–5 at 40, 100, 200, 400 and 600 ticks without progress, the count rising by one every tick through a new route and the nudge, then a failed order and one STUCK notice (1); `noRungTakesAUnitOutOfTheMatchSpace`, a unit in the match's corner hemmed in by others detours to the nearest free spot inside and is nudged to the first free column ahead; footprints arrive with BLD-03 (2); `pathtests.boxed_in_frees_or_fails`, a unit penned in mid-walk walks out of the opening and round to its target (3); the soak's nudge count is PERF-05's, in T26, through `MatchQueries.ladderRungs()` (4); spec §1.6 D rows 138–141
+- **Status:** done
 
 #### PATH-09 · Shared group path
 - **Value:** An order to 150 units is as responsive as an order to one.

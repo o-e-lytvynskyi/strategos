@@ -235,6 +235,11 @@ class InvariantsTest {
         }
 
         @Override
+        public long[] ladderRungs() {
+            return new long[6];
+        }
+
+        @Override
         public List<OrderQueues.Order> orders(int handle) {
             return List.of();
         }

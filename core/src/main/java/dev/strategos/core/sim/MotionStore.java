@@ -1,6 +1,7 @@
 package dev.strategos.core.sim;
 
 import dev.strategos.core.shared.CoreApi;
+import dev.strategos.core.sim.move.StuckLadder;
 import java.util.Arrays;
 
 /**
@@ -30,6 +31,10 @@ public final class MotionStore {
     private double[] latchX = new double[0];
     private double[] latchZ = new double[0];
     private int[] pushed = new int[0];
+    private double[] detourX = new double[0];
+    private double[] detourZ = new double[0];
+    private int[] detourTicks = new int[0];
+    private int[] ghostTicks = new int[0];
 
     /** The terrain part of a unit's motion, as a snapshot keeps it. */
     @CoreApi
@@ -45,10 +50,26 @@ public final class MotionStore {
             boolean latched,
             double latchX,
             double latchZ,
-            int pushed) {
+            int pushed,
+            Ladder ladder) {
         /** A unit that never touched terrain. */
         public static final Extra NONE =
-                new Extra(0, 0, NO_FLOOR, false, 0, 0, Double.POSITIVE_INFINITY, 0, false, 0, 0, 0);
+                new Extra(0, 0, NO_FLOOR, false, 0, 0, Double.POSITIVE_INFINITY, 0, false, 0, 0, 0, Ladder.NONE);
+
+        /** The stuck ladder's rung its count of ticks without progress reached: 0 for none, then 1 to 5 (PATH-07). */
+        public int rung() {
+            return StuckLadder.rung(stuck);
+        }
+    }
+
+    /**
+     * What the stuck ladder (PATH-07) has a unit doing: walking {@code detourTicks} more ticks toward (detourX, detourZ),
+     * a free spot nearby, and walking with avoidance off for {@code ghostTicks} more. {@link #NONE} for a unit it never
+     * reached.
+     */
+    @CoreApi
+    public record Ladder(double detourX, double detourZ, int detourTicks, int ghostTicks) {
+        public static final Ladder NONE = new Ladder(0, 0, 0, 0);
     }
 
     public void ensureCapacity(int size) {
@@ -73,6 +94,10 @@ public final class MotionStore {
             latchX = Arrays.copyOf(latchX, capacity);
             latchZ = Arrays.copyOf(latchZ, capacity);
             pushed = Arrays.copyOf(pushed, capacity);
+            detourX = Arrays.copyOf(detourX, capacity);
+            detourZ = Arrays.copyOf(detourZ, capacity);
+            detourTicks = Arrays.copyOf(detourTicks, capacity);
+            ghostTicks = Arrays.copyOf(ghostTicks, capacity);
         }
     }
 
@@ -180,6 +205,34 @@ public final class MotionStore {
         pushed[i] = ticks;
     }
 
+    public double detourX(int i) {
+        return detourX[i];
+    }
+
+    public double detourZ(int i) {
+        return detourZ[i];
+    }
+
+    /** Ticks the unit still walks toward its detour point; 0 for none. */
+    public int detourTicks(int i) {
+        return detourTicks[i];
+    }
+
+    public void setDetour(int i, double x, double z, int ticks) {
+        detourX[i] = ticks == 0 ? 0 : x;
+        detourZ[i] = ticks == 0 ? 0 : z;
+        detourTicks[i] = ticks;
+    }
+
+    /** Ticks the unit still walks with avoidance off; 0 for none. */
+    public int ghostTicks(int i) {
+        return ghostTicks[i];
+    }
+
+    public void setGhostTicks(int i, int ticks) {
+        ghostTicks[i] = ticks;
+    }
+
     /** The arrival latch holds the unit to (x, z); {@code latched} false releases it. */
     public void setLatch(int i, boolean latched, double x, double z) {
         this.latched[i] = latched;
@@ -201,7 +254,10 @@ public final class MotionStore {
                 latched[i],
                 latchX[i],
                 latchZ[i],
-                pushed[i]);
+                pushed[i],
+                detourTicks[i] == 0 && ghostTicks[i] == 0
+                        ? Ladder.NONE
+                        : new Ladder(detourX[i], detourZ[i], detourTicks[i], ghostTicks[i]));
     }
 
     public void setExtra(int i, Extra e) {
@@ -217,6 +273,10 @@ public final class MotionStore {
         latchX[i] = e.latchX();
         latchZ[i] = e.latchZ();
         pushed[i] = e.pushed();
+        detourX[i] = e.ladder().detourX();
+        detourZ[i] = e.ladder().detourZ();
+        detourTicks[i] = e.ladder().detourTicks();
+        ghostTicks[i] = e.ladder().ghostTicks();
     }
 
     /** Whether unit {@code i}'s terrain part is still {@link Extra#NONE}'s: it never touched terrain. */
@@ -230,6 +290,8 @@ public final class MotionStore {
                 && best[i] == Double.POSITIVE_INFINITY
                 && stuck[i] == 0
                 && !latched[i]
-                && pushed[i] == 0;
+                && pushed[i] == 0
+                && detourTicks[i] == 0
+                && ghostTicks[i] == 0;
     }
 }

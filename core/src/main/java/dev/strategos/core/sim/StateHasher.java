@@ -130,6 +130,12 @@ public final class StateHasher {
         if (motion.pushed(i) != 0) {
             h = Hasher.mix(h, motion.pushed(i)); // only once avoidance pushed it, so older states keep their hashes
         }
+        if (motion.detourTicks(i) != 0 || motion.ghostTicks(i) != 0) { // only on the stuck ladder's rungs
+            h = Hasher.mix(h, Double.doubleToLongBits(motion.detourX(i)));
+            h = Hasher.mix(h, Double.doubleToLongBits(motion.detourZ(i)));
+            h = Hasher.mix(h, motion.detourTicks(i));
+            h = Hasher.mix(h, motion.ghostTicks(i));
+        }
         return h;
     }
 
