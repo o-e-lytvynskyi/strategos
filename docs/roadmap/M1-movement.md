@@ -172,7 +172,8 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
      (L1).
   6. A cached read costs under 50 ns (L6).
 - **Tests:** L0, L1, L6 · **Depends on:** DATA-01, CORE-04 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Done:** 2026-10-22 — M1 T12: `ModifierStagesTest`: twenty table rows fix the stages, priority, the order of replace, multiply and add, filters and the clamp at the end of each stage (1; spec §1.6 D rows 62–63); `ModifierOrderTest`: 200 seeded insertion orders of twenty random sets of faction and unit modifiers give every value and token list to the bit, and fail once the canonical order is cut (2); `TokensModifierTest` (3; D row 64); `StatInvalidationTest`: a faction modifier evaluates again exactly the blocks it reaches, a unit's own only its overlay, each posting `StatsChanged`, and one that reaches nothing posts nothing (4; D row 65); `StatBreakdownTest` (5); `StatReadBench.cachedRead` 2.4 ns, no allocation (6)
+- **Status:** done
 
 #### DATA-03 · Content loading, client sync and spike S12
 - **Value:** Content and balance load from data packs, reload during development without a

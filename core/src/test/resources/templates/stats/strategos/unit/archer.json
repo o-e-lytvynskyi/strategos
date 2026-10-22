@@ -1,0 +1,6 @@
+{
+  "parent": "strategos:template/unit_base",
+  "Identity": { "name": "strategos.unit.archer", "classes": "+Infantry +Ranged" },
+  "UnitMotion": { "walkSpeed": 0.22 },
+  "Health": { "max": 80 }
+}

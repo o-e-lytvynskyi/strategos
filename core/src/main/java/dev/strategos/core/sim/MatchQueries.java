@@ -6,6 +6,7 @@ import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.sim.nav.PathService;
 import dev.strategos.core.sim.nav.PathStore;
 import dev.strategos.core.sim.nav.SurfaceGrid;
+import dev.strategos.core.sim.stats.StatBreakdown;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
@@ -40,6 +41,12 @@ public interface MatchQueries {
 
     /** A live unit's terrain motion: velocity, floor, stuck monitor, arrival latch; null for a dead handle. */
     MotionStore.@Nullable Extra motion(int handle);
+
+    /**
+     * How a live unit's value at a value path comes about: base, modifiers, result (ADR-0013); null for a dead handle or
+     * a path the set lacks.
+     */
+    @Nullable StatBreakdown stats(int handle, String path);
 
     /** The path service's counts since the match started. */
     PathService.Stats pathStats();

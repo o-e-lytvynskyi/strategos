@@ -1,0 +1,5 @@
+{
+  "parent": "strategos:template/unit_base",
+  "Identity": { "name": "strategos.unit.spearman", "classes": "+Infantry +Melee" },
+  "Attack": { "Melee": { "damage": { "hack": 3, "pierce": 2.5 } } }
+}

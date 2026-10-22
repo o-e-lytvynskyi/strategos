@@ -9,8 +9,27 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9
+## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12
 
+- **M1 T12 · Modifier pipeline** — DATA-02 done.
+  - **Results:** `core.sim.stats`: `Modifier` (replace, multiply, add, or a token edit `+a -b`;
+    a class filter, stage, priority and source id), `ClassFilter` (clauses OR-ed, `+` and `!`,
+    compiled to bitsets), `StatService` (`@HotPath`): blocks per template and faction plus
+    overlays for units with modifiers of their own, evaluated per stage in a canonical order and
+    clamped to the path's declared range, invalidated exactly where a change reaches, posting
+    `StatsChanged` on the match bus; `StatBreakdown`. `TemplateSet` gains token paths, base values
+    and the core's paths with their typed defaults (`CorePaths`). `MotionSystem` reads speed and
+    turn rate through the service. `/strategos stats <handle> [path]` and
+    `MatchQueries.stats`. Five test classes (15 tests) and a motion test (767 core tests);
+    `commandtests.stats_show_values_and_breakdowns` (109 GameTests); `verify` 40 s.
+  - **Measured:** `StatReadBench.cachedRead` 2.4 ns (budget 50 ns), no allocation;
+    `MotionBench.step600` 24.4 µs with the reads through the service (23.8 µs before).
+  - **Problems:** `StatsChanged` cannot live in the stats package, since the sealed bus message
+    type of an unnamed module permits only its own package (spec §1.6 D row 61). Turn rate and
+    radius have typed defaults a template's JSON may leave out, so the core's paths are interned in
+    every set at those defaults (D row 63). The order test was checked against an evaluation in
+    insertion order, which it fails. Modifiers are not yet saved or hashed: nothing adds them in a
+    real match before TECH-01 (D row 66).
 - **M1 T9 · Motion on surfaces** — PATH-05 done.
   - **Results:** `MotionSystem` replaces `MovementSystem`. On terrain a unit stands on a floor (in
     sixteenths, which a page rebuild does not shift), climbs a step over two ticks, falls half a
@@ -225,7 +244,7 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
   - **Problems:** ErrorProne's `EnumOrdinal` and rule B8's ban on static arrays shaped the codecs;
     the spec's checkpoint period and header changed (spec §1.6 D rows 1–3).
 - **M1 started** on the owner's go-ahead, with consent for every kind of test.
-- **Next:** T9, motion on surfaces (PATH-05).
+- **Next:** T10, spike S10: kinematic fidelity and external damage (UNIT-09).
 
 ## 2026-10-22 — M0 approvals, the client batch, M0 accepted
 

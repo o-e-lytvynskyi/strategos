@@ -7,6 +7,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import dev.strategos.core.content.MapManifest;
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.content.ValuePath;
 import dev.strategos.core.protocol.Command;
 import dev.strategos.core.protocol.CommandOutcome;
 import dev.strategos.core.protocol.Move;
@@ -33,6 +34,8 @@ import dev.strategos.core.sim.nav.PathStore;
 import dev.strategos.core.sim.nav.Surface;
 import dev.strategos.core.sim.nav.SurfaceGrid;
 import dev.strategos.core.sim.nav.SurfacePage;
+import dev.strategos.core.sim.stats.Modifier;
+import dev.strategos.core.sim.stats.StatBreakdown;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.server.content.MapPackage;
 import dev.strategos.mod.server.content.MapPackageLoader;
@@ -222,6 +225,18 @@ public final class StrategosCommands {
                             registry().rebuildPages(rt);
                             return rt.id() + ": every page captured again, published next tick";
                         })))
+                .then(Commands.literal("stats")
+                        .then(Commands.argument("handle", IntegerArgumentType.integer())
+                                .executes(ctx -> withMatchAtSource(
+                                        ctx.getSource(),
+                                        rt -> showStats(rt, IntegerArgumentType.getInteger(ctx, "handle"))))
+                                .then(Commands.argument("path", StringArgumentType.greedyString())
+                                        .executes(ctx -> withMatchAtSource(
+                                                ctx.getSource(),
+                                                rt -> showStat(
+                                                        rt,
+                                                        IntegerArgumentType.getInteger(ctx, "handle"),
+                                                        StringArgumentType.getString(ctx, "path")))))))
                 .then(withMatch("hash", (source, rt) -> {
                     MatchCore core = coreOf(rt);
                     return rt.id() + " tick " + core.queries().tick() + ", hash " + Hex64.format(core.stateHash());
@@ -568,6 +583,57 @@ public final class StrategosCommands {
             line.append(" …");
         }
         return line.toString();
+    }
+
+    /** Every value a unit has, after modifiers. */
+    private static String showStats(MatchRuntime rt, int handle) {
+        MatchQueries q = coreOf(rt).queries();
+        UnitView unit = q.unit(handle);
+        if (unit == null) {
+            throw new MatchRefusedException(rt.id() + " has no unit " + Handle.toString(handle));
+        }
+        StringBuilder line = new StringBuilder(rt.id() + " " + Handle.toString(handle) + " " + unit.template() + ":");
+        for (ValuePath p : q.templates().valuePaths().all()) {
+            StatBreakdown b = q.stats(handle, p.path());
+            if (b != null && !Double.isNaN(b.result())) {
+                line.append(' ').append(p.path()).append(' ').append(number(b.result()));
+                if (!b.modifiers().isEmpty()) {
+                    line.append(" (").append(b.modifiers().size()).append(" modifiers)");
+                }
+            }
+        }
+        return line.toString();
+    }
+
+    /** One value's base, the modifiers that make it, and the result. */
+    private static String showStat(MatchRuntime rt, int handle, String path) {
+        MatchQueries q = coreOf(rt).queries();
+        if (q.unit(handle) == null) {
+            throw new MatchRefusedException(rt.id() + " has no unit " + Handle.toString(handle));
+        }
+        StatBreakdown b = q.stats(handle, path);
+        if (b == null) {
+            throw new MatchRefusedException("no value path '" + path + "'; /strategos stats " + handle + " lists them");
+        }
+        StringBuilder line =
+                new StringBuilder(rt.id() + " " + Handle.toString(handle) + " " + path + ": base " + number(b.base()));
+        for (Modifier m : b.modifiers()) {
+            line.append(", ")
+                    .append(m.op().name().toLowerCase(Locale.ROOT))
+                    .append(' ')
+                    .append(number(m.value()))
+                    .append(" (source ")
+                    .append(m.sourceId())
+                    .append(", stage ")
+                    .append(m.stage())
+                    .append(')');
+        }
+        return line.append(", result ").append(number(b.result())).toString();
+    }
+
+    /** A value as data writes it: {@code 45}, {@code 0.1875}. */
+    private static String number(double v) {
+        return v == Math.rint(v) && Math.abs(v) < 1e15 ? Long.toString((long) v) : Double.toString(v);
     }
 
     private static TemplateId template(CommandContext<CommandSourceStack> ctx) {

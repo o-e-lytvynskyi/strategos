@@ -1,7 +1,5 @@
 package dev.strategos.core.sim.move;
 
-import dev.strategos.core.content.TemplateSet;
-import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.shared.DetMath;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.HotPath;
@@ -22,6 +20,7 @@ import dev.strategos.core.sim.nav.PathStatus;
 import dev.strategos.core.sim.nav.PathStore;
 import dev.strategos.core.sim.nav.Surface;
 import dev.strategos.core.sim.nav.SurfaceGrid;
+import dev.strategos.core.sim.stats.StatService;
 
 /**
  * P4: kinematic motion (PATH-05, spec §5.8). While no terrain is published, M0's: every walking unit with a move order
@@ -40,7 +39,7 @@ import dev.strategos.core.sim.nav.SurfaceGrid;
  *   <li>Height: an up-step rises halfway on the first tick and onto the new floor on the second, so a block takes two
  *       ticks; a drop falls at most {@value #FALL} block a tick; a surface that vanished drops the unit to the next one
  *       below.
- *   <li>Heading: turns toward the motion by at most the template's turn rate.
+ *   <li>Heading: turns toward the motion by at most the unit's turn rate.
  *   <li>Arrival: landing on a final target posts {@link Arrived}, and the arrival latch holds the unit there: pushed more
  *       than {@value #LATCH} block away, it walks back.
  *   <li>Stuck monitor: a unit makes progress when it comes {@value #PROGRESS} block nearer its aim than its best;
@@ -48,8 +47,8 @@ import dev.strategos.core.sim.nav.SurfaceGrid;
  * </ol>
  *
  * Idle units settle: their height follows their floor, and a latched unit pushed off its point walks back. Every unit
- * that moved or changed height joins the tick's frame, in index order. This is the one place movement reads the
- * template's speed and turn rate (M1's stat service replaces the read).
+ * that moved or changed height joins the tick's frame, in index order. Speed and turn rate come from the {@link
+ * StatService}, so modifiers reach them.
  */
 @HotPath
 public final class MotionSystem implements MatchSystem {
@@ -135,7 +134,7 @@ public final class MotionSystem implements MatchSystem {
         EntityStore entities = s.entities();
         MotionStore motion = s.motion();
         OrderStore orders = s.orders();
-        TemplateSet templates = s.templates();
+        StatService stats = s.stats();
         BodyFrame.Builder frame = s.frame();
         int highWater = entities.highWater();
         for (int i = 0; i < highWater; i++) {
@@ -145,7 +144,7 @@ public final class MotionSystem implements MatchSystem {
             int handle = entities.handleAt(i);
             double tx = orders.targetX(i);
             double tz = orders.targetZ(i);
-            double speed = templates.byIndex(s.identity().templateIndex(i)).walkSpeed();
+            double speed = stats.walkSpeed(i);
             double x = motion.x(i);
             double y = motion.y(i);
             double z = motion.z(i);
@@ -206,9 +205,8 @@ public final class MotionSystem implements MatchSystem {
             settle(s, i); // a spent partial path: the next request pass asks again
             return;
         }
-        UnitTemplate template = s.templates().byIndex(s.identity().templateIndex(i));
         ground(s, i);
-        double speed = template.walkSpeed() * speedFactor(s, i);
+        double speed = s.stats().walkSpeed(i) * speedFactor(s, i);
         double dx = tx - x0;
         double dz = tz - z0;
         double d = DetMath.length(dx, dz);
@@ -219,7 +217,7 @@ public final class MotionSystem implements MatchSystem {
         double x = motion.x(i);
         double z = motion.z(i);
         motion.setVelocity(i, x - x0, z - z0);
-        float yaw = turn(yaw0, x - x0, z - z0, dx, dz, (float) template.turnRate());
+        float yaw = turn(yaw0, x - x0, z - z0, dx, dz, (float) s.stats().turnRate(i));
         motion.set(i, x, motion.y(i), z, yaw);
         height(s, i);
         monitor(s, i, tx, tz);

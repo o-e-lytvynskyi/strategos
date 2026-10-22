@@ -127,7 +127,7 @@ class JmhGate {
 }
 
 // The benchmarks of @HotPath kernels; each must report no allocation per operation.
-def hotPathKernels = ['StateHashBench.hash600', 'MotionBench.step600']
+def hotPathKernels = ['StateHashBench.hash600', 'MotionBench.step600', 'StatReadBench.cachedRead']
 // -Pjmh.result and -Pjmh.baseline are paths relative to the repository root.
 def jmhResultFile = rootProject.file(providers.gradleProperty('jmh.result')
         .getOrElse(layout.buildDirectory.file('reports/jmh/result.json').get().asFile.path))

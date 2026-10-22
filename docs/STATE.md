@@ -111,13 +111,21 @@ Answer in chat or here; the next session applies the answers.
   arrive within their ideal time (the slowest in 0.96 of it), none stuck. Moving 600 units costs
   about 24 µs a tick. A unit that has arrived holds its spot and walks back if pushed more than a
   block away. A match without terrain still moves exactly as in M0. Card PATH-05 is done.
+- 2026-10-22 · **M1 T12 Modifier pipeline:** every number a unit uses now comes from one place
+  that technologies, ranks, civilisation bonuses and AI handicaps will feed later: the template's
+  value, changed by modifiers of the unit's faction and its own, which multiply, add or replace a
+  value, or add and remove entries of a list (such as what a building can train), and can target
+  classes of units ("Infantry+Melee", "not Champion"). The result never depends on the order the
+  modifiers were added in, a read costs about 2 ns, and `/strategos stats <unit>` shows each value
+  and how it came about. Movement already reads its speed and turn rate this way. Nothing in the
+  game adds modifiers yet; the first technologies will. Card DATA-02 is done.
 
 ## Now
 
-- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 12 of 28 tasks done (T28, PATH-08, joined by its trigger).
+- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 13 of 28 tasks done (T28, PATH-08, joined by its trigger).
 - **In progress:** none.
-- **Last finished task:** M1 T9 (2026-10-22).
-- **Next task:** M1 T12 · Modifier pipeline (DATA-02).
+- **Last finished task:** M1 T12 (2026-10-22).
+- **Next task:** M1 T10 · Spike S10: kinematic fidelity, external damage (UNIT-09).
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 220 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.
@@ -167,3 +175,5 @@ Details are in [worklog.md](worklog.md).
   - ECO-16's fauna archetype, which amends ADR-0011.
 - ADR-0022 waits for its confirmation at the first L7 session the owner plays.
 - Budget F is measured for bare humanoids only; ART-01 (M3) runs the armoured pass.
+- Modifiers are not yet saved or hashed: the first real source (TECH-01's research or an AI
+  handicap) brings their input, snapshot field and hashing ([M1 spec §1.6 D row 66](milestones/M1-movement.md)).

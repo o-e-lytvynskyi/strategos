@@ -22,6 +22,7 @@ import dev.strategos.core.sim.nav.MobilityClass;
 import dev.strategos.core.sim.nav.PathService;
 import dev.strategos.core.sim.nav.PathStore;
 import dev.strategos.core.sim.nav.SurfaceGrid;
+import dev.strategos.core.sim.stats.StatBreakdown;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -234,6 +235,11 @@ class InvariantsTest {
 
         @Override
         public MotionStore.@Nullable Extra motion(int handle) {
+            return null;
+        }
+
+        @Override
+        public @Nullable StatBreakdown stats(int handle, String path) {
             return null;
         }
 

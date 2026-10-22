@@ -7,6 +7,7 @@ import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.nav.PathService;
 import dev.strategos.core.sim.nav.PathStore;
 import dev.strategos.core.sim.nav.SurfaceGrid;
+import dev.strategos.core.sim.stats.StatBreakdown;
 import java.util.Arrays;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
@@ -96,6 +97,11 @@ final class QueriesImpl implements MatchQueries {
     @Override
     public MotionStore.@Nullable Extra motion(int handle) {
         return state.entities().isAlive(handle) ? state.motion().extra(Handle.index(handle)) : null;
+    }
+
+    @Override
+    public @Nullable StatBreakdown stats(int handle, String path) {
+        return state.entities().isAlive(handle) ? state.stats().breakdown(Handle.index(handle), path) : null;
     }
 
     @Override

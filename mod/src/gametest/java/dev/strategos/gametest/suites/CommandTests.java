@@ -117,6 +117,37 @@ public final class CommandTests {
     }
 
     /**
+     * DATA-02: {@code stats <handle>} lists a unit's values after modifiers, {@code stats <handle> <path>} breaks one
+     * down into its base, modifiers and result, and an unknown path is refused.
+     */
+    @StrategosTest
+    public static void statsShowValuesAndBreakdowns(GameTestHelper h) {
+        MatchRuntime rt = match(h);
+        Recorder recorder = new Recorder();
+        CommandSourceStack source = recorder.at(h, new Vec3(16.5, 1, 16.5));
+        perform(h, source, "strategos spawn strategos:unit/infantry 1");
+        h.startSequence()
+                .thenWaitUntil(() -> check(handles(rt).length == 1, "no infantry yet: " + recorder.lines))
+                .thenExecute(() -> {
+                    int handle = handles(rt)[0];
+                    recorder.lines.clear();
+                    perform(h, source, "strategos stats " + handle);
+                    perform(h, source, "strategos stats " + handle + " UnitMotion/walkSpeed");
+                    perform(h, source, "strategos stats " + handle + " Nothing/here");
+                    check(recorder.lines.size() == 3, "replies: " + recorder.lines);
+                    check(
+                            recorder.lines.get(0).contains("UnitMotion/turnRate 45")
+                                    && recorder.lines.get(0).contains("UnitMotion/walkSpeed 0.1875"),
+                            "the list: " + recorder.lines.get(0));
+                    check(
+                            recorder.lines.get(1).endsWith("UnitMotion/walkSpeed: base 0.1875, result 0.1875"),
+                            "the breakdown: " + recorder.lines.get(1));
+                    check(recorder.lines.get(2).contains("no value path"), "the refusal: " + recorder.lines.get(2));
+                })
+                .thenSucceed();
+    }
+
+    /**
      * CORE-01: match create makes a saved match around the source, with its record and, once the level saves, its blob
      * file; list shows it; dispose removes the match, the record and the file.
      */

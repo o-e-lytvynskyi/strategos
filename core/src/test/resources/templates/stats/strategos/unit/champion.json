@@ -1,0 +1,6 @@
+{
+  "parent": "strategos:template/unit_base",
+  "Identity": { "name": "strategos.unit.champion", "classes": "+Infantry +Melee +Champion" },
+  "Health": { "max": 250 },
+  "Attack": { "Melee": { "damage": { "hack": 8 } } }
+}

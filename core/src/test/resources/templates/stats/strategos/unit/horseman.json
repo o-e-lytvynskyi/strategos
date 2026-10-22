@@ -1,0 +1,6 @@
+{
+  "parent": "strategos:template/unit_base",
+  "Identity": { "name": "strategos.unit.horseman", "classes": "+Cavalry +Melee" },
+  "UnitMotion": { "walkSpeed": 0.35, "turnRate": 30 },
+  "Health": { "max": 160 }
+}

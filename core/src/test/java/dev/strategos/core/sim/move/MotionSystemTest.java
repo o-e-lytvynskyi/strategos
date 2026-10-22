@@ -3,6 +3,7 @@ package dev.strategos.core.sim.move;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 
+import dev.strategos.core.content.CorePaths;
 import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.FactionSlot;
@@ -17,6 +18,7 @@ import dev.strategos.core.sim.UnitView;
 import dev.strategos.core.sim.nav.MobilityClass;
 import dev.strategos.core.sim.nav.PageBuilder;
 import dev.strategos.core.sim.nav.PageCoord;
+import dev.strategos.core.sim.stats.Modifier;
 import dev.strategos.core.testkit.SimHarness;
 import dev.strategos.core.testkit.VoxelFixtures;
 import dev.strategos.core.testkit.VoxelWorld;
@@ -26,7 +28,8 @@ import org.junit.jupiter.api.Test;
  * PATH-05.1 (spec §5.8): on terrain a 1-block step takes exactly two ticks and Y ends on the floor; drops fall half a
  * block a tick and deeper ones are never taken; shallow water halves the speed; hazards are never entered; the heading
  * turns at most the turn rate; the arrival latch brings a pushed unit back; an impulse stays on walkable surfaces; a
- * vanished surface drops a unit to the next; a blocked unit's stuck count grows.
+ * vanished surface drops a unit to the next; a blocked unit's stuck count grows; speed comes through the stat service, so
+ * a modifier changes the walk.
  */
 class MotionSystemTest {
     private static final FactionSlot F0 = new FactionSlot(0);
@@ -202,6 +205,19 @@ class MotionSystemTest {
         }
 
         assertThat(ys).containsExactly(2.5, 2.0, 1.5, 1.0, 1.0);
+    }
+
+    @Test
+    void aSpeedModifierChangesTheWalk() {
+        SimHarness h = harness(VoxelFixtures.flat(32, 32, 16, 1));
+        int unit = h.spawn(F0, new Vec2d(4.5, 16.5), 1, 0)[0];
+        state(h).stats().add(F0, Modifier.mul(CorePaths.WALK_SPEED, 2, 1));
+        order(h, unit, 28.5, 16.5);
+
+        double x = unit(h, unit).x();
+        h.step();
+
+        assertThat(unit(h, unit).x() - x).isCloseTo(2 * SPEED, within(1e-12));
     }
 
     @Test

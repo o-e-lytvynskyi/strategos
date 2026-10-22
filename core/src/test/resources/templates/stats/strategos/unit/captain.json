@@ -1,0 +1,5 @@
+{
+  "parent": "strategos:template/unit_base",
+  "Identity": { "name": "strategos.unit.captain", "classes": "+Infantry +Hero" },
+  "Production": { "units": "strategos:unit/spearman strategos:unit/archer" }
+}

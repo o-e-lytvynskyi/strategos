@@ -274,7 +274,7 @@ Cards: [roadmap/M1-movement.md](roadmap/M1-movement.md#cards). 26 cards, at most
 | ID | Feature | Size | Depends on | Status |
 |---|---|---|---|---|
 | DATA-01 | Template engine | M | QA-02 | done |
-| DATA-02 | Modifier pipeline | M | DATA-01, CORE-04 | specified |
+| DATA-02 | Modifier pipeline | M | DATA-01, CORE-04 | done |
 | DATA-03 | Content loading, client sync and spike S12 | L | DATA-01, NET-01 | specified |
 | PATH-02 | Surface pages: block classes and the page builder | M | QA-02, QA-03 | done |
 | PATH-01 | Spike S8: terrain census and surface encoding | S | PATH-02 | done |
