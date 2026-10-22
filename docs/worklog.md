@@ -9,8 +9,23 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11
+## 2026-10-22 — M1 start, T1, T2, T11, T3
 
+- **M1 T3 · Spike S8, terrain census** — PATH-01 done.
+  - **Results:** `./gradlew :mod:runSpike -Pspike=s8` measures 11 vanilla 512² squares (6,800
+    distinct pages) and the three L1 fixtures in 1 min 30 s, under three Y-band rules. The cap of 4
+    never drops a surface within 16 blocks of the terrain. In a band per page 99.992 % of columns
+    need at most 4 surfaces (worst square 99.977 %); pages average about 2 KB, nav at most 3.4 MB at
+    512², a page builds in 42–84 µs median. The surface layout is fixed: floor 12 bits, cost code
+    2. [The report](spikes/S8-terrain-census.md); ADR-0015 carries the numbers, still Proposed
+    pending S7. `verify` 34 s, 685 core tests, 99 GameTests.
+  - **Problems:**
+    - The spec's band per square, from its lowest terrain, failed the exit (98.18 %). Pits pull
+      it down, and up to 12.7 % of a square's columns end up above it. Terrain taken from existing
+      worlds gets a band per page; PATH-13 (M13) carries it (spec §1.6 D rows 11–13).
+    - Forcing chunks through `forceChunk` generates them synchronously and hung the spike server
+      once; the census loads through its own region tickets now. Pitfall recorded in the
+      knowledge base.
 - **M1 T11 · Template engine** — DATA-01 done.
   - **Results:** `TemplateCompiler` (parent chains with cycle detection naming the chain, mixins,
     `$op`, `$disable`, `$append`, `$remove`, class-token edits, abstract templates), every problem
@@ -40,7 +55,7 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
   - **Problems:** ErrorProne's `EnumOrdinal` and rule B8's ban on static arrays shaped the codecs;
     the spec's checkpoint period and header changed (spec §1.6 D rows 1–3).
 - **M1 started** on the owner's go-ahead, with consent for every kind of test.
-- **Next:** T2, block classes and surface pages.
+- **Next:** T4, arena world, slots and tickets.
 
 ## 2026-10-22 — M0 approvals, the client batch, M0 accepted
 
