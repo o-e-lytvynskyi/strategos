@@ -1,0 +1,47 @@
+# The release check (M0 T15, QA-08.4): on v* tags and by hand, verify, then start the production jar on a
+# headless client. Nothing is published (D-21). Actions are pinned to the commit of the tag in the comment.
+name: release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          cache-provider: basic
+      - name: verify
+        run: ./gradlew --console=plain --max-workers=2 verify
+      # mc-runtime-test loads every jar in run/mods; the -sources jar, if any, stays out.
+      - name: Stage the production jar
+        run: |
+          mkdir -p run/mods
+          find mod/build/libs -name 'strategos-*.jar' ! -name '*-sources.jar' -exec cp {} run/mods/ \;
+          ls -l run/mods
+      # Its README lists no input that pins a NeoForge build: it takes the newest for 1.21.1, which our
+      # metadata accepts ([21.1.264,)).
+      - name: Start the jar on a headless client
+        uses: headlesshq/mc-runtime-test@dfc8a2a0145f723b01abda5e1cf59eaba516d128 # 5.0.0
+        with:
+          mc: 1.21.1
+          modloader: neoforge
+          mc-runtime-test: neoforge
+          java: '21'
+          xvfb: 'true'
