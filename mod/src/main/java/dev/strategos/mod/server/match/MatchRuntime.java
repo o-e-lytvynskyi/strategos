@@ -8,6 +8,7 @@ import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchLifecycle;
+import dev.strategos.core.sim.MatchRules;
 import dev.strategos.core.sim.TickOutputs;
 import dev.strategos.mod.server.body.BodyRegistry;
 import dev.strategos.mod.server.body.SpawnBudget;
@@ -64,7 +65,8 @@ public final class MatchRuntime {
             SpawnBudget spawnBudget,
             @Nullable ResourceLocation map) {
         this.map = map;
-        this.pages = new PageJobs(space);
+        this.pages = new PageJobs(
+                space, core != null ? core.queries().config().rules().pageK() : MatchRules.DEFAULTS.pageK());
         this.id = id;
         this.space = space;
         this.source = source;

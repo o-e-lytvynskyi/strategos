@@ -25,7 +25,14 @@ Answer in chat or here; the next session applies the answers.
    64 blocks a tick take 0.02 ms (0.065 ms at p99) on this Mac. The proposed limit is 1.15 ms a
    tick at p99, 5 % of the whole-tick budget C. Say yes and it becomes a gate in `verifyPerf`
    ([M1 spec §1.6 D row 20](milestones/M1-movement.md)).
-5. **Optional reviews:**
+5. **For your information: the long-route planner (card PATH-08, HPA*) left the reserve.** The
+   roadmap had it waiting for one measurement, and T8 took it: a single unit's path across the
+   384² proving ground needs about 30,000 search steps, more than the 20,000 cap, and about 4.5 ms
+   of server time, over the 2 ms a tick the budget allows all pathfinding. Units still arrive (they
+   walk to the river bank and ask again), but the route is poor. As the roadmap says, the planner
+   now joins M1 as task T28, after the reachability task (T19). Nothing to do unless you would
+   rather hold it back ([M1 spec §1.6 D row 42](milestones/M1-movement.md)).
+6. **Optional reviews:**
    - the card refinements made after the approval
      ([design/roadmap-changes.md §8](design/roadmap-changes.md));
    - the promo draft ([promo/roadmap-announcement.md](promo/roadmap-announcement.md)).
@@ -75,13 +82,22 @@ Answer in chat or here; the next session applies the answers.
   own building never costs a rebuild. Every match builds all its pages when it starts (512 x 512 in
   about 1 s), and replays rebuild the same pages from their recorded terrain. Card BLD-15 is done;
   PATH-15 finishes when paths arrive in T8.
+- 2026-10-22 · **M1 T8 Pathfinding:** units now find their way over real terrain: they climb steps
+  of up to a block, drop up to three, wade fords, use doors and avoid deep water, lava and cliffs.
+  A unit moves on the tick its order arrives: a short move with a clear line is decided at once,
+  a longer one starts straight while its route is computed and switches to it two ticks later.
+  When a wall goes up across a route, the units on it re-plan around it. A match without terrain
+  behaves exactly as in M0. `/strategos nav show|path|rebuild` shows a page, a unit's route (with
+  particles) and rebuilds the terrain. A server setting `journal = disk` now also writes each
+  match's journal to the world folder. One measurement fired the long-route planner's trigger (see
+  item 5 above). Cards PATH-03 and PATH-15 are done.
 
 ## Now
 
-- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 8 of 27 tasks done.
+- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 9 of 28 tasks done (T28, PATH-08, joined by its trigger).
 - **In progress:** none.
-- **Last finished task:** M1 T7 (2026-10-22).
-- **Next task:** M1 T8 · Path service: A*, string pulling and STRICT delivery.
+- **Last finished task:** M1 T8 (2026-10-22).
+- **Next task:** M1 T9 · Motion on surfaces (PATH-05).
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 220 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.
@@ -95,7 +111,7 @@ Nothing.
 | Milestone | Status | Notes |
 |---|---|---|
 | M0 Foundation | Accepted 2026-10-22 | Started 2026-10-21; tripwire met on day 2; 25 of 26 cards accepted, UNIT-01 closes with NET-01 (M1); the L7 demo waived by the owner |
-| M1 Movement | in progress | Started 2026-10-22 on the owner's go-ahead; 27 tasks |
+| M1 Movement | in progress | Started 2026-10-22 on the owner's go-ahead; 28 tasks (T28, PATH-08, joined by its R3 trigger in T8) |
 | M2–M6 (MVP) | approved | Specs are written by the assistant when each milestone starts |
 | M7–M15 | proposed | Approved by the owner closer to their time |
 

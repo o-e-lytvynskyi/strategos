@@ -2,8 +2,11 @@ package dev.strategos.gametest;
 
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.shared.Hex64;
+import dev.strategos.core.sim.InputEvent;
 import dev.strategos.core.sim.MatchConfig;
 import dev.strategos.core.sim.MatchCore;
+import dev.strategos.core.sim.TerrainPage;
+import dev.strategos.core.sim.TickInputs;
 import dev.strategos.core.sim.journal.JournalExport;
 import dev.strategos.core.testkit.JournalFiles;
 import dev.strategos.core.testkit.Scenario;
@@ -24,8 +27,9 @@ import net.minecraft.world.level.block.Rotation;
 
 /**
  * The shared scenarios as GameTests (M0 spec 7.4): each runs in its own arena, and on its first done tick it verifies,
- * checks that its L1 twin (a {@code SimHarness} on the live match's config) stops at the same tick with the same hash,
- * and exports its journal for {@code :core:replayJournals}.
+ * checks that its L1 twin (a {@code SimHarness} on the live match's config, given the terrain pages the match published
+ * at the same ticks) stops at the same tick with the same hash, and exports its journal for {@code
+ * :core:replayJournals}.
  */
 public final class ScenarioGameTests {
     /** {@code isolation.match_00} to {@code _49}: 50 patrol matches side by side in one batch (CORE-01.1). */
@@ -130,14 +134,21 @@ public final class ScenarioGameTests {
     /** The L1 twin: a harness on the live config (the match id aside, which the hash leaves out), played alone. */
     private static void checkTwin(String name, MatchCore core, Scenario twin, long tick, long hash) {
         MatchConfig live = core.queries().config();
-        ScenarioReport report = SimHarness.builder()
+        SimHarness harness = SimHarness.builder()
                 .bounds(live.bounds())
                 .seed(live.seed())
                 .factions(live.factions())
                 .rules(live.rules())
                 .templates(TemplateSet.builtin())
-                .build()
-                .play(twin);
+                .build();
+        for (TickInputs inputs : core.journal().nonEmptyTicks()) {
+            for (InputEvent event : inputs.events()) {
+                if (event instanceof TerrainPage page) {
+                    harness.schedule(inputs.tick(), page); // the world's terrain, at the ticks it was published
+                }
+            }
+        }
+        ScenarioReport report = harness.play(twin);
         if (!report.passed() || report.ticks() != tick || report.finalHash() != hash) {
             throw new GameTestAssertException(name + ": the L1 twin stopped at tick " + report.ticks() + " with hash "
                     + Hex64.format(report.finalHash()) + (report.passed() ? "" : " (" + report.failure() + ")")

@@ -75,6 +75,7 @@ final class SpawnUnitsRule implements CommandRule<SpawnUnits> {
             state.identity().set(index, template.netIndex(), spawn.faction().value());
             state.motion().set(index, p.x(), floorY, p.z(), 0f);
             state.orders().clear(index);
+            state.paths().reset(index);
             state.ai().set(index, UnitState.IDLE);
             state.outputs()
                     .add(new UnitCreated(handle, template.netIndex(), spawn.faction(), p.x(), floorY, p.z(), 0f));

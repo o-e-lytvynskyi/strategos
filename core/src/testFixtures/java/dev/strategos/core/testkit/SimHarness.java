@@ -20,6 +20,8 @@ import dev.strategos.core.sim.MatchQueries;
 import dev.strategos.core.sim.MatchRules;
 import dev.strategos.core.sim.MatchSnapshot;
 import dev.strategos.core.sim.OutputEvent;
+import dev.strategos.core.sim.SliceSource;
+import dev.strategos.core.sim.TerrainPage;
 import dev.strategos.core.sim.TickInputs;
 import dev.strategos.core.sim.TickOutputs;
 import dev.strategos.core.sim.UnitCreated;
@@ -27,8 +29,13 @@ import dev.strategos.core.sim.UnitRecord;
 import dev.strategos.core.sim.UnitStateChanged;
 import dev.strategos.core.sim.journal.ReplayDriver;
 import dev.strategos.core.sim.journal.ReplayResult;
+import dev.strategos.core.sim.nav.MobilityClass;
+import dev.strategos.core.sim.nav.PageBuilder;
+import dev.strategos.core.sim.nav.PageCoord;
+import dev.strategos.core.sim.nav.SurfaceGrid;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TreeMap;
 import java.util.function.BooleanSupplier;
 
 /**
@@ -45,6 +52,7 @@ public final class SimHarness implements ScenarioContext {
     private final Invariants invariants = new Invariants();
     private final FakeBodies bodies = new FakeBodies();
     private final List<InputEvent> pending = new ArrayList<>();
+    private final TreeMap<Long, List<InputEvent>> scheduled = new TreeMap<>();
     private final List<OutputEvent> events = new ArrayList<>();
     private List<String> violations = List.of();
     private int clientSeq;
@@ -63,7 +71,12 @@ public final class SimHarness implements ScenarioContext {
      * its client sequence numbers start again from 1.
      */
     public static SimHarness restore(MatchSnapshot snapshot, TemplateSet templates) {
-        SimHarness h = new SimHarness(MatchCore.restore(snapshot, templates, CorePorts.of(new FixedClock(0))));
+        return restore(snapshot, templates, SliceSource.NONE);
+    }
+
+    /** As {@link #restore(MatchSnapshot, TemplateSet)}, the snapshot's terrain pages rebuilt from {@code slices}. */
+    public static SimHarness restore(MatchSnapshot snapshot, TemplateSet templates, SliceSource slices) {
+        SimHarness h = new SimHarness(MatchCore.restore(snapshot, templates, CorePorts.of(new FixedClock(0)), slices));
         for (UnitRecord unit : snapshot.units()) {
             h.bodies.place(unit.handle(), unit.x(), unit.y(), unit.z(), unit.yaw(), snapshot.tick());
         }
@@ -141,8 +154,38 @@ public final class SimHarness implements ScenarioContext {
                 .toArray();
     }
 
+    /** Queues a terrain page for the next tick, as a page job's delivery does. */
+    @Override
+    public void publish(TerrainPage page) {
+        pending.add(page);
+    }
+
+    /** Every page of {@code world} for the next tick, as a match's prewarm does. */
+    public void publishAll(VoxelWorld world) {
+        PageBuilder builder = new PageBuilder(MobilityClass.INFANTRY);
+        SurfaceGrid grid = core.queries().surfaces();
+        for (int pz = 0; pz < grid.pagesZ(); pz++) {
+            for (int px = 0; px < grid.pagesX(); px++) {
+                PageCoord coord = new PageCoord(px, pz);
+                publish(TerrainPage.build(coord, world.slice(coord), builder));
+            }
+        }
+    }
+
+    /** Adds {@code event} to the inputs of {@code tick}, such as the terrain a live match published then. */
+    public void schedule(long tick, InputEvent event) {
+        if (tick <= tick()) {
+            throw new IllegalArgumentException("tick " + tick + " has passed; the harness is at " + tick());
+        }
+        scheduled.computeIfAbsent(tick, t -> new ArrayList<>()).add(event);
+    }
+
     /** Steps one tick with the queued commands, applies the outputs to the bodies and checks the invariants. */
     public TickOutputs step() {
+        List<InputEvent> due = scheduled.remove(tick() + 1);
+        if (due != null) {
+            pending.addAll(due);
+        }
         TickOutputs out = core.step(new TickInputs(tick() + 1, pending));
         pending.clear();
         events.addAll(out.events());

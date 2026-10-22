@@ -19,6 +19,9 @@ dependencies {
     mcShipped libs.gson
     mcShipped libs.slf4j.api
 
+    // [M1 T8] CrossingBench crosses the generated proving ground of the test kit.
+    jmhImplementation testFixtures(project)
+
     testImplementation platform(libs.junit.bom)
     testImplementation libs.junit.jupiter
     testImplementation libs.assertj

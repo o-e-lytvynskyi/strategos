@@ -18,6 +18,8 @@ import dev.strategos.core.sim.UnitRecord;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.UnitView;
 import dev.strategos.core.sim.nav.MobilityClass;
+import dev.strategos.core.sim.nav.PathService;
+import dev.strategos.core.sim.nav.PathStore;
 import dev.strategos.core.sim.nav.SurfaceGrid;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -222,6 +224,16 @@ class InvariantsTest {
         @Override
         public List<PageRef> pageRefs() {
             return List.of();
+        }
+
+        @Override
+        public PathStore.@Nullable UnitPath path(int handle) {
+            return null;
+        }
+
+        @Override
+        public PathService.Stats pathStats() {
+            return new PathService.Stats(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
         }
     }
 }

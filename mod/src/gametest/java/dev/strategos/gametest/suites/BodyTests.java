@@ -311,11 +311,21 @@ public final class BodyTests {
      * unloads; with a run's random origin, 72 blocks out was two chunks away about half the time. The GameTest server
      * ticks back to back (GameTestServer#waitUntilNextTick only runs tasks), while a forced chunk's entities load on the
      * IO worker in wall-clock time: on CI 1,600 ticks once ran out in 3 s, before they had, so the timeout is in ticks
-     * enough for about half a minute there.
+     * enough for about half a minute there. The unit walks a path (PATH-03), and past the arena stand the barrier wall
+     * the GameTest builds round it, then ground two blocks lower and the level's own, so the test lays a causeway out
+     * at the floor's level first (GameTestHelper positions count from the structure block, a block under the floor).
      */
     @StrategosTest(batch = "chunks", solo = true, timeoutTicks = 16_000)
     public static void bodiesFollowEntityTickingChunks(GameTestHelper h) {
         AABB arena = h.getBounds();
+        for (int z = 32; z < 96; z++) { // a causeway at the floor's level out through the GameTest's barrier wall
+            for (int x = 14; x <= 18; x++) {
+                h.setBlock(new BlockPos(x, 1, z), Blocks.SMOOTH_STONE); // relative y 1: the floor layer
+                for (int y = 2; y <= 5; y++) {
+                    h.setBlock(new BlockPos(x, y, z), Blocks.AIR);
+                }
+            }
+        }
         MatchSpace space = new MatchSpace(
                 h.getLevel().dimension(),
                 new BlockPos((int) arena.minX, (int) arena.minY, (int) arena.minZ),

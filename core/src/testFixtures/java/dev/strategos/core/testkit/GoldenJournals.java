@@ -22,11 +22,15 @@ public final class GoldenJournals {
 
     private GoldenJournals() {}
 
-    /** File name (without the extension) → the scenario that records it; the canary spans two journal segments. */
+    /**
+     * File name (without the extension) → the scenario that records it; the canary spans two journal segments, and the
+     * synthetic crossing carries terrain pages and path requests.
+     */
     public static Map<String, Scenario> goldens() {
         Map<String, Scenario> goldens = new LinkedHashMap<>();
         goldens.put("walking_skeleton", Scenarios.walkingSkeleton(Seeds.first("skeleton-20")));
         goldens.put("canary", Scenarios.canary(Seeds.first("canary")));
+        goldens.put("crossing_synthetic", Scenarios.crossingSynthetic());
         return goldens;
     }
 

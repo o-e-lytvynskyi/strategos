@@ -13,10 +13,12 @@ import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.core.sim.MatchRules;
 import dev.strategos.core.sim.MatchSnapshot;
+import dev.strategos.mod.StrategosConfig;
 import dev.strategos.mod.StrategosSettings;
 import dev.strategos.mod.server.body.SpawnBudget;
 import dev.strategos.mod.server.content.MapPackage;
 import dev.strategos.mod.server.content.MapPackageLoader;
+import dev.strategos.mod.server.persist.DiskJournal;
 import dev.strategos.mod.server.persist.MatchData;
 import dev.strategos.mod.server.persist.Quarantine;
 import dev.strategos.mod.server.persist.RegistryData;
@@ -116,8 +118,7 @@ public final class MatchRegistry {
                 bounds,
                 options.factions(),
                 MatchRules.DEFAULTS);
-        MatchCore core =
-                MatchCore.create(config, TemplateSet.builtin(), new CorePorts(options.metrics(), System::nanoTime));
+        MatchCore core = MatchCore.create(config, TemplateSet.builtin(), ports(options.metrics(), id));
         FaultPolicy policy = options.faultPolicy();
         if (policy == null) {
             policy = defaultPolicy();
@@ -158,6 +159,15 @@ public final class MatchRegistry {
     /** Every page of the match captured now, built and published on its next tick (PATH-15: prewarm at prepare). */
     private void prewarm(ServerLevel level, MatchRuntime rt) {
         rt.pages().prewarm(level, rt.tick() + 1, blockClasses.get(), jobs);
+    }
+
+    /** {@code /strategos nav rebuild}: every page captured again now and published on the match's next tick. */
+    public void rebuildPages(MatchRuntime rt) {
+        ServerLevel level = server.getLevel(rt.space().level());
+        if (level == null) {
+            throw new MatchRefusedException(rt.id() + "'s level is not loaded");
+        }
+        prewarm(level, rt);
     }
 
     /** The matches still importing their map. */
@@ -331,6 +341,7 @@ public final class MatchRegistry {
      */
     public void dispose(MatchId id) {
         MatchRuntime rt = require(id);
+        writeJournal(rt);
         if (rt.lifecycle().canTransitionTo(MatchLifecycle.ENDED)) {
             rt.transition(MatchLifecycle.ENDED);
         } else if (rt.lifecycle() == MatchLifecycle.PREPARING || rt.lifecycle() == MatchLifecycle.READY) {
@@ -396,8 +407,7 @@ public final class MatchRegistry {
                         record.lastEpoch());
             }
             try {
-                core = MatchCore.restore(
-                        snapshot, TemplateSet.builtin(), new CorePorts(MetricsSink.none(), System::nanoTime));
+                core = MatchCore.restore(snapshot, TemplateSet.builtin(), ports(MetricsSink.none(), record.id()));
             } catch (RuntimeException e) {
                 reason = "its snapshot does not restore: " + e.getMessage();
             }
@@ -468,6 +478,9 @@ public final class MatchRegistry {
 
     /** On server stop, before the levels save: a new save epoch, and every live blob and the registry dirty. */
     public void prepareSave() {
+        for (MatchRuntime rt : matches.values()) {
+            writeJournal(rt);
+        }
         RegistryData saved = persisted;
         if (saved == null || saved.quarantineReason() != null) {
             return;
@@ -546,6 +559,19 @@ public final class MatchRegistry {
         RegistryData saved = persisted;
         if (saved != null && saved.quarantineReason() == null) {
             saved.remove(rt.id());
+        }
+    }
+
+    /** The core's ports: the server's clock and path jobs, and the journal setting's sink. */
+    private CorePorts ports(MetricsSink metrics, MatchId id) {
+        return new CorePorts(metrics, System::nanoTime, jobs, DiskJournal.sink(settings.journal(), server, id));
+    }
+
+    /** With {@code journal = disk}, the match's journal is written once more when it is disposed or saved. */
+    private void writeJournal(MatchRuntime rt) {
+        MatchCore core = rt.core();
+        if (settings.journal() == StrategosConfig.Journal.DISK && core != null) {
+            DiskJournal.writeNow(server, rt.id(), core);
         }
     }
 

@@ -1,25 +1,30 @@
 package dev.strategos.core.sim;
 
 import dev.strategos.core.diag.PhaseTimers;
+import dev.strategos.core.port.JournalSink;
 import dev.strategos.core.port.MetricsSink;
+import dev.strategos.core.sim.journal.JournalExport;
+import dev.strategos.core.sim.journal.JournalFormat;
 import dev.strategos.core.sim.journal.JournalWriter;
 import org.jspecify.annotations.Nullable;
 
 /**
  * P8: checks that the bus came to rest, builds the tick's outputs, records a state-hash checkpoint every
- * {@code checkpointEvery} ticks, starts a journal segment on a fresh snapshot at each segment boundary, and reports
- * the phase times.
+ * {@code checkpointEvery} ticks, at each segment boundary hands the kept journal to a sink that writes it and starts
+ * the next segment on a fresh snapshot, and reports the phase times.
  */
 final class FinalSystem implements MatchSystem {
     private final MetricsSink metrics;
     private final PhaseTimers timers;
     private final JournalWriter journal;
+    private final JournalSink sink;
     private @Nullable TickOutputs outputs;
 
-    FinalSystem(MetricsSink metrics, PhaseTimers timers, JournalWriter journal) {
+    FinalSystem(MetricsSink metrics, PhaseTimers timers, JournalWriter journal, JournalSink sink) {
         this.metrics = metrics;
         this.timers = timers;
         this.journal = journal;
+        this.sink = sink;
     }
 
     @Override
@@ -38,6 +43,10 @@ final class FinalSystem implements MatchSystem {
             journal.checkpoint(tick, StateHasher.hash(state));
         }
         if (journal.segmentDue()) {
+            if (sink.writes()) {
+                sink.write(
+                        tick, JournalFormat.encode(new JournalExport(journal.view(), tick, StateHasher.hash(state))));
+            }
             journal.startSegment(Snapshots.take(state));
         }
         metrics.onTick(tick, timers.currentPhaseNanos());

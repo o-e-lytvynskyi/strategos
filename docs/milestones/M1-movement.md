@@ -240,6 +240,18 @@ cards, does not exist for M1: the M1 cards were final when this spec was written
 | 28 | §2.2 step 4: page jobs due at `t + pageK` on worker threads | Jobs run at their join on the server thread (`InlineJobExecutor`) until T8 brings the pool and `pageK` joins `MatchRules`; until then the delay is `PageJobs.DELAY` (4). States whose collision depends on their position are classified at capture, on the main thread, with their real position; `PathInvalidated` and the 20-tick repath limit come with paths (T8) |
 | 29 | §7.3, §7.6: the nav tests and PATH-15's perf tests | `navtests.block_change_rebuilds_pages` and `navtests.own_writes_never_dirty` run in the default batch. `perftests.page_capture_and_publication` (`perf_pages`) asserts the card's 0.4 ms p95 and 4 pages a tick itself, reporting under the unlisted gate `pages`: 245 µs p95 with all 9 pages changing every 8 ticks. `perftests.prewarm_512_generated` (`perf_prewarm`): 1.1 s and 1.07 MB for a flat 512². The router costs 37 ns a change outside any match (PATH-15.6, in the S8 report). The negative check holds: without the `OwnWrite` check, 6 pages are captured after own writes |
 | 30 | §8.2: `JOBS_NEVER_TOUCH_THE_LEVEL` | Minecraft is not on the ArchUnit classpath, so the rule names the types: `Level`, `ServerLevel`, `LevelChunk`, `ChunkAccess`, `ServerChunkCache`, `ChunkMap`, and the entity package; `archTest` now has core at runtime for its fixture. B10 lets a mixin package carry its `@NullMarked` annotation |
+| 31 | §2.4: every walking unit asks `PathService` | A request does nothing while no page is published (grid version 0): the unit walks M0's straight line and keeps no path state, and `StateHasher` mixes a unit's path only once it has asked and the queue only once any request was made. A match without terrain, as every M0 scenario and golden, keeps M0's states and hashes bit for bit; `walking_skeleton` and `canary` were re-recorded only to journal format 2 with every checkpoint unchanged |
+| 32 | §5.6: A* from the unit's surface | The start is the passable surface of the unit's column whose floor is nearest its feet (the upper on a tie); until T9 moves Y, a unit keeps M0's height, so the nearest floor stands in for the surface it walks on. A column with no passable surface decides `NO_PATH` at once |
+| 33 | §5.6: `PARTIAL` after 20,000 expansions | A search whose open set runs out without the goal returns `NO_PATH` with the path to the expanded node of least h (then g, then id), empty when that node is the start; at the cap it returns `PARTIAL` to that node, and `NO_PATH` when that node is the start. The move ends at the end of a `NO_PATH` path (`Arrived`, now "the move is over"); at the end of a `PARTIAL` or truncated one the unit asks again from where it stands. PATH-04's `makeGoalReachable` (T19) will move unreachable goals first |
+| 34 | §5.6: the farthest later node with line of walk becomes the next waypoint | `StringPuller` probes the nodes after an anchor at doubling distances and narrows the first miss by bisection: a few walks per waypoint instead of one per node. Every waypoint keeps line of walk from the one before (`StringPullerTest`); the last is the goal point itself, after the goal column's centre only when the waypoint before cannot see it |
+| 35 | §5.7, PATH-03.2: a new order 2 ticks later drops the first result | Delivery runs in `INGEST`, before `COMMANDS`: a result due at the tick a new order applies is delivered and replaced by that order's request in the same tick, so it never steers (`aResultDueAsANewOrderAppliesNeverSteers`); a result due after the new request is dropped and counted (`supersededResultDropped`, the order a tick later) |
+| 36 | §5.13: `testkit.InlineJobExecutor`; T8: `CorePorts` gains `jobs` and `journal` | `JobExecutor.inline()` in `core.port` (`ReplayDriver` in core `main` needs one), the default of `CorePorts.of` and of the two-argument constructor; the mod keeps its server-thread `InlineJobExecutor` until T22's pool, so `pathThreads` is read in T22. `JournalSink` (port): `keepTicks()` (an hour), `writes()` and `write(tick, bytes)`, the whole kept journal at each segment's end. The mod's `DiskJournal`: `off` keeps one segment, `memory` an hour, `disk` also writes `<world>/strategos/journals/match-<id>.strj` at each segment's end, at dispose and at save. `PageJobs` now takes its delay from the match's `pageK` (D row 28) |
+| 37 | §2.6: the snapshot holds the path service's waiting queue and results | T8 has no admission, so no waiting queue: `MatchSnapshot.paths` holds the next request id and every request in flight with its due tick and its result, joined when the snapshot is taken (quiesce); `UnitRecord.path` holds waypoints, cursor, status, request, last request and the repath flag, each field defaulted, so M0 saves decode. A replay from any segment of a journal with requests in flight across segment starts reaches the same hashes (`aJournalWithPathsReplaysFromAnySegment`) |
+| 38 | PATH-15: `PathInvalidated` and repaths at most once per 20 ticks | A page counts as changed when its slice hash differs from the one last known there; a restore whose slices are missing keeps their hashes known, so a restart's prewarm republishing the same slices changes nothing. In `UNIT_AI`, a walking unit whose remaining route's bounding boxes meet a changed page is marked, and asks again once 20 ticks have passed since its last request; the message itself comes with the HFSM (T17) |
+| 39 | §5.4: `SurfaceGrid` covers the match's pages | Pages are captured whole, so a match whose size is not a multiple of 16 has columns of real terrain beyond its edge in its last pages; `SurfaceGrid` keeps the match's size and treats those columns as outside, so no path leaves the match |
+| 40 | §7.4: the scenario GameTests' L1 twin | The twin is given the terrain pages the live match published, at their ticks, from its journal (`SimHarness.schedule`), so twin and world compute the same paths; L1 scenarios publish terrain through `ScenarioContext.publish` (L1 only) |
+| 41 | §7.4: `pathtests.unit_crosses_steps_and_ford`, `pathtests.new_wall_blocks_path` | Both build their terrain in `arena_flat_48` at the start (GameTestHelper positions count from the structure block, a block under the floor). The ford test's match leaves out the arena's first and last rows, where stone holds the river in. `bodytests.bodies_follow_entity_ticking_chunks` lays a causeway out through the barrier wall the GameTest builds round each arena, since its unit now walks a path. Negative checks: a river shallow everywhere fails the ford test ("in the deep river"), and no repath after the wall fails the wall test ("inside the wall") |
+| 42 | T8: `CrossingBench` reports; a miss of budget D goes to STATE for PATH-08 | Both crossings hit the 20,000-expansion cap and return `PARTIAL` to the west bank across from the goal: 384² p50 4.41 ms, p95 4.60 ms, p99 4.78 ms; 512² p50 4.51 ms, p95 4.70 ms, p99 4.98 ms (M4 Pro, JMH sample mode, 2 forks). Uncapped, they need 29,293 and 30,930 expansions (costs 405.2 and 550.4, about 8 ms). One crossing exceeds budget D's 2 ms a tick on the server thread: R3 fires, and PATH-08 (HPA*) leaves the reserve as T28, after T19 (PATH-04) |
 
 ---
 
@@ -1295,6 +1307,7 @@ flowchart TB
     T19 --> T20
     T13 --> T21["T21 ORCA"]
     T8 --> T22["T22 pool, ADAPTIVE, S7"]
+    T19 --> T28["T28 HPA*, PATH-08 (R3)"]
   end
   subgraph X["Slice 1C: an army"]
     T23["T23 stuck ladder"] --> T24["T24 group paths"] --> T26["T26 crowd soak, perf gate"] --> T27["T27 M1 close"]
@@ -1308,6 +1321,7 @@ flowchart TB
   T21 --> T23
   T20 --> T24
   T22 --> T24
+  T28 --> T24
   T21 --> T10
   T15 --> T25
   T8 --> T25
@@ -1591,10 +1605,20 @@ are green and its negative checks behave as stated.
   02-tooling.md current; the JMH baseline additions proposed to the owner; STATE.md with the demo
   of §1.3 and the M2 consent items; feasibility §6.5 effort note.
 
+#### T28 · Hierarchical long-range planner (HPA*) — PATH-08 · depends on T8, T19 · ~1,500 lines
+
+- **Why:** reserve card; R3 fired in T8 (§1.6 D row 42): a 384² or 512² crossing hits the
+  20,000-expansion cap and one search takes 4.4–4.7 ms, over budget D's 2 ms a tick.
+- **Files:** per PATH-08's scope: portals on page edges per mobility class and surface layer,
+  intra-page portal costs by Dijkstra at page build, A* over portals (at most 4,000 expansions) for a
+  corridor of pages, low-level A* inside the corridor, corridors cached per (from page, to page,
+  class, grid version); `CrossingBench` reports both planners; tests per PATH-08's acceptance.
+- **Verification:** `verify`; `CrossingBench` within budget D; PATH-08.1–3.
+
 ### 9.3 Progress
 
-- [x] T1 (2026-10-22) · [x] T2 (2026-10-22) · [x] T11 (2026-10-22) · [x] T3 (2026-10-22) · [x] T4 (2026-10-22) · [x] T5 (2026-10-22) · [x] T6 (2026-10-22) · [x] T7 (2026-10-22) · [ ] T8 · [ ] T9 · [ ] T12 · [ ] T10
-- [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17 · [ ] T18 · [ ] T19 · [ ] T20 · [ ] T21 · [ ] T22
+- [x] T1 (2026-10-22) · [x] T2 (2026-10-22) · [x] T11 (2026-10-22) · [x] T3 (2026-10-22) · [x] T4 (2026-10-22) · [x] T5 (2026-10-22) · [x] T6 (2026-10-22) · [x] T7 (2026-10-22) · [x] T8 (2026-10-22) · [ ] T9 · [ ] T12 · [ ] T10
+- [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17 · [ ] T18 · [ ] T19 · [ ] T28 · [ ] T20 · [ ] T21 · [ ] T22
 - [ ] T23 · [ ] T24 · [ ] T25 · [ ] T26 · [ ] T27
 
 ---
@@ -1628,7 +1652,7 @@ for the owner; rows 11–13 are the owner's Acceptance. Consent items never bloc
 |---|---|---|---|
 | R1 | The proving ground imports slower than 30 s | `proving_ground_imports_within_30s` | Raise the import budget while no match runs; write sections directly with a light recompute after (an ADR amendment of the single writer, B7); or ship the proving ground as region files for tests |
 | R2 | More than 4 surfaces in too many columns (S8) | the census | A cap of 6 with a wider overflow, or a narrower Y band per map |
-| R3 | Flat A* misses budget D at 384² or 512² | `CrossingBench`, PERF-05 | PATH-08 (HPA*) leaves the reserve |
+| R3 | Flat A* misses budget D at 384² or 512² | `CrossingBench`, PERF-05 | PATH-08 (HPA*) leaves the reserve. **Fired in T8** (§1.6 D row 42): T28 |
 | R4 | `STRICT` joins stall the main thread on slow hosts | S7 | `ADAPTIVE` live, `k` = 3–4, a lower W |
 | R5 | ORCA jitters in dense blobs or at corners | the head-on test, the overlay | Separation in more cells, a larger arrival latch, a slower turn rate; PATH-17's flow fields are the reserve |
 | R6 | Journals of map-scale tests grow too large in memory | heap in the map batch | Slices stored once per hash (planned), segments flushed to disk in tests, a shorter segment |
@@ -1721,4 +1745,5 @@ Checked with `javap` when first used (not in the sources jar): FML's `ModContain
 | PATH-10 | T25 |
 | PERF-05 | T26 |
 | UNIT-01 (M0, criterion 5) | T15 |
-| PATH-08, PATH-17 (reserve) | none unless triggered |
+| PATH-08 (reserve, triggered by R3 in T8) | T28 |
+| PATH-17 (reserve) | none unless triggered |

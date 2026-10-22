@@ -10,6 +10,7 @@ import dev.strategos.core.sim.command.CommandSystem;
 import dev.strategos.core.sim.journal.Journal;
 import dev.strategos.core.sim.journal.JournalWriter;
 import dev.strategos.core.sim.move.MovementSystem;
+import dev.strategos.core.sim.nav.PathService;
 import dev.strategos.core.sim.unitai.UnitAiSystem;
 
 /** The match kernel: the systems registered in phase order and the nine-phase step. */
@@ -24,6 +25,7 @@ final class MatchCoreImpl implements MatchCore {
     private final FinalSystem finalSystem;
     private final QueriesImpl queries;
     private final JournalWriter journal;
+    private final PathService paths;
     private final Phase[] phases = Phase.values();
 
     private MatchCoreImpl(
@@ -34,14 +36,17 @@ final class MatchCoreImpl implements MatchCore {
         this.timers = new PhaseTimers(Phase.names(), ports.clock(), TIMER_WINDOW);
         this.metrics = ports.metrics();
         this.journal = new JournalWriter(Snapshots.take(state), slices, checkpointEvery, maxJournalTicks);
+        this.paths = new PathService(state, ports.jobs(), ports.clock());
         CommandSystem commands = new CommandSystem(state, rules);
         scheduler.register(new IngestSystem(commands, journal));
+        scheduler.register(paths.delivery());
         scheduler.register(commands);
         scheduler.register(new UnitAiSystem(state));
+        scheduler.register(paths.requests());
         scheduler.register(new MovementSystem());
-        this.finalSystem = new FinalSystem(metrics, timers, journal);
+        this.finalSystem = new FinalSystem(metrics, timers, journal, ports.journal());
         scheduler.register(finalSystem);
-        this.queries = new QueriesImpl(state);
+        this.queries = new QueriesImpl(state, paths);
     }
 
     static MatchCoreImpl create(

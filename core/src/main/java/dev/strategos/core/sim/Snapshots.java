@@ -14,7 +14,10 @@ import java.util.List;
 final class Snapshots {
     private Snapshots() {}
 
-    /** The state at its current tick: everything a restore needs, units in index order. */
+    /**
+     * The state at its current tick: everything a restore needs, units in index order. Path jobs in flight are joined,
+     * so their results travel with the snapshot.
+     */
     static MatchSnapshot take(MatchState s) {
         EntityStore entities = s.entities();
         List<UnitRecord> units = new ArrayList<>(entities.aliveCount());
@@ -33,7 +36,8 @@ final class Snapshots {
                     motion.z(i),
                     motion.yaw(i),
                     s.ai().state(i),
-                    orders.kind(i) == OrderStore.MOVE ? new Vec2d(orders.targetX(i), orders.targetZ(i)) : null));
+                    orders.kind(i) == OrderStore.MOVE ? new Vec2d(orders.targetX(i), orders.targetZ(i)) : null,
+                    s.paths().unitPath(i)));
         }
         return new MatchSnapshot(
                 s.config(),
@@ -42,13 +46,14 @@ final class Snapshots {
                 entities.slots(),
                 units,
                 List.copyOf(s.pendingCommands()),
-                s.pageRefs());
+                s.pageRefs(),
+                s.paths().queue());
     }
 
     /**
      * A state at the snapshot's tick. Templates are looked up by id, so a changed set still loads; a unit whose template
      * the set lacks throws, naming the unit. Terrain pages are rebuilt from {@code slices}; one whose slice is missing
-     * stays unpublished, and a slice that does not hash to its reference throws.
+     * stays unpublished with its slice hash known, and a slice that does not hash to its reference throws.
      */
     static MatchState restore(MatchSnapshot snapshot, TemplateSet templates, MatchLog log, SliceSource slices) {
         int[] alive = new int[snapshot.units().size()];
@@ -74,12 +79,15 @@ final class Snapshots {
             } else {
                 state.orders().clear(index);
             }
+            state.paths().set(index, unit.path());
         }
+        state.paths().restore(snapshot.paths());
         state.pendingCommands().addAll(snapshot.pendingCommands());
         int missing = 0;
         for (PageRef ref : snapshot.pages()) {
             byte[] slice = slices.slice(ref.slice());
             if (slice == null) {
+                state.expect(ref);
                 missing++;
                 continue;
             }

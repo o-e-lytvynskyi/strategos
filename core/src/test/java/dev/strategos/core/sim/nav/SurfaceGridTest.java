@@ -29,6 +29,26 @@ class SurfaceGridTest {
     }
 
     @Test
+    void columnsBeyondTheMatchAreOutsideThoughTheirPageHoldsThem() {
+        VoxelWorld w = VoxelFixtures.flat(48, 48, 16, 1);
+        SurfaceGrid grid = SurfaceGrid.empty(40, 40, MobilityClass.INFANTRY);
+        PageBuilder builder = new PageBuilder(MobilityClass.INFANTRY);
+        for (int pz = 0; pz < 3; pz++) {
+            for (int px = 0; px < 3; px++) {
+                PageCoord page = new PageCoord(px, pz);
+                grid = grid.publish(builder.build(w.slice(page), NavOverlay.EMPTY, page));
+            }
+        }
+
+        assertThat(grid.page(2, 0).count(SurfacePage.column(9, 5)))
+                .as("captured whole")
+                .isOne();
+        assertThat(grid.count(41, 5)).as("but beyond the match").isZero();
+        assertThat(grid.neighbour(39, 5, 0, Dir.E)).isEqualTo(-1);
+        assertThat(grid.neighbour(39, 5, 0, Dir.W)).isZero();
+    }
+
+    @Test
     void publishingLeavesTheOldGridAlone() {
         SurfaceGrid before = VoxelFixtures.flat(32, 16, 16, 1).grid();
         VoxelWorld changed = VoxelFixtures.flat(32, 16, 16, 1);

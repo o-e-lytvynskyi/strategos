@@ -14,8 +14,12 @@ import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.MatchQueries;
+import dev.strategos.core.sim.TerrainPage;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.UnitView;
+import dev.strategos.core.sim.nav.MobilityClass;
+import dev.strategos.core.sim.nav.PageBuilder;
+import dev.strategos.core.sim.nav.PageCoord;
 import java.util.ArrayList;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
@@ -70,6 +74,16 @@ public final class Scenarios {
      */
     public static Scenario canary(long seed) {
         return new Canary(seed);
+    }
+
+    /**
+     * PATH-03's golden journal (spec §5.10): 64 x 48 of terrain, a ridge of one-block steps at x 20..26, then a river at
+     * x 36..41, two blocks deep but for a ford at z 30..35. Setup publishes the pages and spawns four units in the west;
+     * once they exist they are ordered east, across the ridge and through the ford; done when all four stand on their
+     * targets. L1 only: a GameTest takes its terrain from its world.
+     */
+    public static Scenario crossingSynthetic() {
+        return new CrossingSynthetic();
     }
 
     private static void check(boolean ok, String failure) {
@@ -483,6 +497,107 @@ public final class Scenarios {
         public void verify(ScenarioContext ctx) {
             int alive = ctx.queries().unitCount();
             check(alive == units, alive + " units alive, not " + units);
+        }
+    }
+
+    private static final class CrossingSynthetic implements Scenario {
+        private static final int[] ROWS = {6, 14, 22, 40};
+        private static final int TICKS = 1_200;
+
+        private boolean ordered;
+
+        @Override
+        public String id() {
+            return "crossing_synthetic";
+        }
+
+        @Override
+        public int sizeX() {
+            return 64;
+        }
+
+        @Override
+        public int sizeZ() {
+            return 48;
+        }
+
+        @Override
+        public long seed() {
+            return 3;
+        }
+
+        @Override
+        public int timeoutTicks() {
+            return TICKS;
+        }
+
+        static VoxelWorld terrain() {
+            VoxelWorld w = VoxelFixtures.flat(64, 48, 16, 1);
+            int[] ridge = {2, 3, 4, 4, 3, 2, 1};
+            for (int i = 0; i < ridge.length; i++) {
+                w.fill(20 + i, 0, 0, 20 + i, ridge[i] - 1, 47, VoxelFixtures.SOLID);
+            }
+            for (int z = 0; z < 48; z++) {
+                boolean ford = z >= 30 && z <= 35;
+                w.fill(36, 1, z, 41, ford ? 1 : 2, z, VoxelFixtures.WATER);
+            }
+            return w;
+        }
+
+        @Override
+        public void setup(ScenarioContext ctx) {
+            VoxelWorld w = terrain();
+            PageBuilder builder = new PageBuilder(MobilityClass.INFANTRY);
+            for (int pz = 0; pz < 3; pz++) {
+                for (int px = 0; px < 4; px++) {
+                    PageCoord coord = new PageCoord(px, pz);
+                    ctx.publish(TerrainPage.build(coord, w.slice(coord), builder));
+                }
+            }
+            for (int row : ROWS) {
+                ctx.submit(
+                        PlayerSlot.ADMIN,
+                        new SpawnUnits(TemplateSet.DEBUG_WALKER, FACTION_0, new Vec2d(4.5, row + 0.5), 1, 0));
+            }
+        }
+
+        @Override
+        public void onTick(ScenarioContext ctx) {
+            int[] units = ctx.queries().unitHandlesOf(FACTION_0);
+            if (ordered || units.length < ROWS.length) {
+                return;
+            }
+            ordered = true;
+            for (int i = 0; i < units.length; i++) {
+                UnitView unit = alive(ctx, units[i]);
+                ctx.submit(PlayerSlot.ADMIN, Move.replace(UnitSet.of(units[i]), new Vec2d(58.5, unit.z())));
+            }
+        }
+
+        @Override
+        public boolean isDone(ScenarioContext ctx) {
+            if (!ordered) {
+                return false;
+            }
+            for (int unit : ctx.queries().unitHandlesOf(FACTION_0)) {
+                if (alive(ctx, unit).state() != UnitState.IDLE
+                        || alive(ctx, unit).x() != 58.5) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        @Override
+        public void verify(ScenarioContext ctx) {
+            int[] units = ctx.queries().unitHandlesOf(FACTION_0);
+            check(units.length == ROWS.length, "expected " + ROWS.length + " units, found " + units.length);
+            check(ctx.queries().pathStats().ok() >= ROWS.length, "every crossing needs a path to its goal");
+            for (int unit : units) {
+                check(
+                        trace(ctx, unit).equals(List.of("IDLE->WALKING", "WALKING->IDLE")),
+                        Handle.toString(unit) + " walked once: " + trace(ctx, unit));
+            }
         }
     }
 

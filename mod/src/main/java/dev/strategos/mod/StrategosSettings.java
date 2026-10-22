@@ -5,7 +5,8 @@ import java.nio.file.Path;
 /**
  * The server's switches: whether a match fault is rethrown after it is recorded (the dev and GameTest runs set
  * {@code strategos.faults.rethrow=true}; production contains faults), the bodies created per server tick, where fault
- * reports go, the block writer's budgets from {@link StrategosConfig}, and a dev hook for the arena smoke: {@code
+ * reports go, the block writer's budgets and the journal setting from {@link StrategosConfig}, and a dev hook for the
+ * arena smoke: {@code
  * strategos.smoke.leakTickets} makes disposing an arena match keep its chunk tickets, as a crash would, so the next
  * start must drop them (MAP-07.4).
  */
@@ -15,7 +16,8 @@ public record StrategosSettings(
         Path faultDir,
         boolean leakTickets,
         int writerBudget,
-        int importBudget) {
+        int importBudget,
+        StrategosConfig.Journal journal) {
     public static final int SPAWNS_PER_TICK = 64;
 
     /** From the system properties and the server config, which NeoForge has loaded by {@code ServerAboutToStartEvent}. */
@@ -27,6 +29,7 @@ public record StrategosSettings(
                 serverDir.resolve("strategos").resolve("faults"),
                 Boolean.getBoolean("strategos.smoke.leakTickets"),
                 config.writerBudget.getAsInt(),
-                config.importBudget.getAsInt());
+                config.importBudget.getAsInt(),
+                config.journal.get());
     }
 }

@@ -173,5 +173,6 @@ All fixtures stay within 4 surfaces.
 - **The router's cost per block change** (PATH-15.6), measured with the router in T7: 37 ns a change
   outside any match (`perftests.page_capture_and_publication`, 100,000 calls on the M4 Pro). Inside
   a match, a change that keeps the block's nav class costs one more table lookup; one that changes
-  it dirties its page, which is rebuilt within 40 ticks. Long-crossing expansions come from
-  `CrossingBench` (T8). S8 gives PATH-08 (HPA*) no trigger either way.
+  it dirties its page, which is rebuilt within 40 ticks. S8 gives PATH-08 (HPA*) no trigger
+  either way; the long crossings did (`CrossingBench`, T8: 29,293 and 30,930 expansions for the
+  384² and 512² crossings, above the 20,000 cap, ADR-0015's second revision).

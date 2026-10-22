@@ -4,6 +4,7 @@ import dev.strategos.core.protocol.Command;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.MatchQueries;
+import dev.strategos.core.sim.TerrainPage;
 import dev.strategos.core.sim.UnitStateChanged;
 import java.util.List;
 
@@ -23,4 +24,9 @@ public interface ScenarioContext {
     List<UnitStateChanged> stateChanges();
 
     long stateHash();
+
+    /** Queues a terrain page for the next tick; only L1 takes terrain this way, a GameTest from its world. */
+    default void publish(TerrainPage page) {
+        throw new UnsupportedOperationException("this match takes its terrain from the world");
+    }
 }

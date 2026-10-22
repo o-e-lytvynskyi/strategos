@@ -343,7 +343,8 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
   6. The router's cost per block change outside any match is reported for PERF-01's threshold (R).
 - **Tests:** L0, L1, L3, L5, L6, R · **Depends on:** PATH-02, BLD-15, CORE-01 · **Size:** M ·
   **Tier:** T0
-- **Status:** in_progress
+- **Done:** 2026-10-22 — M1 T7, T8: `navtests.block_change_rebuilds_pages` and `pathtests.new_wall_blocks_path`, whose negative check (no repath) fails with the unit inside the wall (1); `navtests.own_writes_never_dirty` (2); `TerrainReplayTest` (3); `perftests.page_capture_and_publication`, 245 µs p95 (4); `perftests.prewarm_512_generated`, 1.1 s (5); the router's cost, 37 ns a change, in the S8 report (6)
+- **Status:** done
 
 #### PATH-03 · Path service: A*, string pulling and STRICT delivery
 - **Value:** Units find sensible routes over real terrain and respond on the tick an order arrives.
@@ -366,7 +367,8 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
      budget D triggers PATH-08 (L6).
   6. A unit crosses a GameTest arena of steps and a ford along its path (L3).
 - **Tests:** L0, L1, L3, L6 · **Depends on:** PATH-02, CORE-05 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Done:** 2026-10-22 — M1 T8: `GridAStarTest`: costs equal a reference Dijkstra on 96 pairs over random terrain, and each rule (water x4, door x1.5, slow x2, +0.5 a rise, +0.1 a cost point) adds its cost (1); `PathServiceTest.supersededResultDropped` and `aResultDueAsANewOrderAppliesNeverSteers` (2; spec §1.6 D row 35); `PathServiceTest.movesAtOnceThenFollowsAtTPlusK` (3); `GridAStarTest.capReturnsPartialTowardTheNearestExpandedNode` (4); `CrossingBench`: both crossings hit the cap, p95 4.60 ms (384²) and 4.70 ms (512²), over budget D, so R3 fires and PATH-08 joins M1 as T28 (5; D row 42); `pathtests.unit_crosses_steps_and_ford`, whose negative check (a river shallow everywhere) fails (6)
+- **Status:** done
 
 #### PATH-05 · Path following: kinematic motion on surfaces
 - **Value:** Units walk their routes smoothly over steps, slopes, bridges and shallow water, and
@@ -686,7 +688,9 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
 #### PATH-08 · Hierarchical long-range planner (HPA*)
 - **Value:** Long orders across large maps are planned quickly and take sensible routes.
 - **Reserve:** starts only when S8 or the 384² and 512² crossings (PATH-03, PERF-05) miss budget D;
-  needed at the latest by open-world navigation (PATH-13).
+  needed at the latest by open-world navigation (PATH-13). **Triggered 2026-10-22** by PATH-03's
+  `CrossingBench`: both crossings hit the 20,000-expansion cap in 4.4–4.7 ms (budget D: 2 ms a
+  tick); spec task T28, after PATH-04.
 - **In scope:** architecture §9.3, stage 2: portals on page edges per mobility class and surface
   layer; intra-page portal costs by Dijkstra at page build; A* over portals (at most 4,000
   expansions) gives a corridor of pages; low-level A* inside the corridor; corridors cached per
@@ -697,7 +701,7 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
   2. A 384-block query expands at most 10 % of flat A*'s nodes (L6).
   3. Corridors update within one rebuild cycle after a wall is built (L3).
 - **Tests:** L0, L1, L3, L6 · **Depends on:** PATH-03, PATH-04 · **Size:** L · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### PATH-17 · Flow fields for large groups
 - **Value:** Very large groups move as one without a path per unit.

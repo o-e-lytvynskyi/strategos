@@ -17,7 +17,12 @@ import dev.strategos.core.sim.MatchSnapshot;
 import dev.strategos.core.sim.PageRef;
 import dev.strategos.core.sim.UnitRecord;
 import dev.strategos.core.sim.UnitState;
+import dev.strategos.core.sim.nav.PathRequest;
+import dev.strategos.core.sim.nav.PathResult;
+import dev.strategos.core.sim.nav.PathStatus;
+import dev.strategos.core.sim.nav.PathStore;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
@@ -44,6 +49,63 @@ public final class MatchSnapshotCodec {
                     },
                     slots -> DataResult.success(new int[][] {slots.generations(), slots.freeIndices()}));
 
+    private static final Codec<double[]> DOUBLES = Codec.DOUBLE
+            .listOf()
+            .xmap(
+                    l -> l.stream().mapToDouble(Double::doubleValue).toArray(),
+                    a -> Arrays.stream(a).boxed().toList());
+
+    private static final Codec<PathStore.Waypoints> WAYPOINTS = RecordCodecBuilder.create(i -> i.group(
+                    DOUBLES.fieldOf("x").forGetter(PathStore.Waypoints::xs),
+                    DOUBLES.fieldOf("z").forGetter(PathStore.Waypoints::zs),
+                    INTS.fieldOf("floor").forGetter(PathStore.Waypoints::floors),
+                    Codec.BOOL.optionalFieldOf("truncated", false).forGetter(PathStore.Waypoints::truncated))
+            .apply(i, PathStore.Waypoints::new));
+
+    /** Each field defaults to a unit that never asked, the only path an M0 save has. */
+    private static final Codec<PathStore.UnitPath> UNIT_PATH = RecordCodecBuilder.create(i -> i.group(
+                    WAYPOINTS
+                            .optionalFieldOf("waypoints", PathStore.Waypoints.NONE)
+                            .forGetter(PathStore.UnitPath::waypoints),
+                    Codec.INT.optionalFieldOf("cursor", 0).forGetter(PathStore.UnitPath::cursor),
+                    PathStatus.CODEC.optionalFieldOf("status", PathStatus.OK).forGetter(PathStore.UnitPath::status),
+                    Codec.INT.optionalFieldOf("request", 0).forGetter(PathStore.UnitPath::request),
+                    Codec.LONG
+                            .optionalFieldOf("lastRequest", PathStore.NEVER)
+                            .forGetter(PathStore.UnitPath::lastRequest),
+                    Codec.BOOL.optionalFieldOf("repath", false).forGetter(PathStore.UnitPath::repath))
+            .apply(i, PathStore.UnitPath::new));
+
+    private static final Codec<PathRequest> REQUEST = RecordCodecBuilder.create(i -> i.group(
+                    Codec.INT.fieldOf("id").forGetter(PathRequest::id),
+                    Codec.INT.fieldOf("handle").forGetter(PathRequest::handle),
+                    Codec.LONG.fieldOf("tick").forGetter(PathRequest::tick),
+                    Codec.INT.fieldOf("fromNode").forGetter(PathRequest::fromNode),
+                    Codec.DOUBLE.fieldOf("goalX").forGetter(PathRequest::goalX),
+                    Codec.DOUBLE.fieldOf("goalZ").forGetter(PathRequest::goalZ),
+                    Codec.INT.fieldOf("cap").forGetter(PathRequest::cap),
+                    Codec.INT.optionalFieldOf("groupId", 0).forGetter(PathRequest::groupId),
+                    Codec.BOOL.optionalFieldOf("join", false).forGetter(PathRequest::join))
+            .apply(i, PathRequest::new));
+
+    private static final Codec<PathResult> RESULT = RecordCodecBuilder.create(i -> i.group(
+                    Codec.INT.fieldOf("requestId").forGetter(PathResult::requestId),
+                    PathStatus.CODEC.fieldOf("status").forGetter(PathResult::status),
+                    WAYPOINTS.fieldOf("waypoints").forGetter(PathResult::waypoints),
+                    Codec.INT.fieldOf("expansions").forGetter(PathResult::expansions))
+            .apply(i, PathResult::new));
+
+    private static final Codec<PathStore.Delivery> DELIVERY = RecordCodecBuilder.create(i -> i.group(
+                    REQUEST.fieldOf("request").forGetter(PathStore.Delivery::request),
+                    Codec.LONG.fieldOf("due").forGetter(PathStore.Delivery::due),
+                    RESULT.fieldOf("result").forGetter(PathStore.Delivery::result))
+            .apply(i, PathStore.Delivery::new));
+
+    private static final Codec<PathStore.Queue> QUEUE = RecordCodecBuilder.create(i -> i.group(
+                    Codec.INT.optionalFieldOf("nextRequestId", 1).forGetter(PathStore.Queue::nextRequestId),
+                    DELIVERY.listOf().optionalFieldOf("deliveries", List.of()).forGetter(PathStore.Queue::deliveries))
+            .apply(i, PathStore.Queue::new));
+
     private static final Codec<UnitRecord> UNIT = RecordCodecBuilder.create(i -> i.group(
                     Codec.INT.fieldOf("handle").forGetter(UnitRecord::handle),
                     TemplateId.CODEC.fieldOf("template").forGetter(UnitRecord::template),
@@ -53,11 +115,12 @@ public final class MatchSnapshotCodec {
                     Codec.DOUBLE.fieldOf("z").forGetter(UnitRecord::z),
                     Codec.FLOAT.fieldOf("yaw").forGetter(UnitRecord::yaw),
                     UnitState.CODEC.fieldOf("state").forGetter(UnitRecord::state),
-                    Vec2d.CODEC.optionalFieldOf("target").forGetter(u -> Optional.ofNullable(u.target())))
+                    Vec2d.CODEC.optionalFieldOf("target").forGetter(u -> Optional.ofNullable(u.target())),
+                    UNIT_PATH.optionalFieldOf("path", PathStore.UnitPath.NONE).forGetter(UnitRecord::path))
             .apply(
                     i,
-                    (handle, template, faction, x, y, z, yaw, state, target) ->
-                            new UnitRecord(handle, template, faction, x, y, z, yaw, state, target.orElse(null))));
+                    (handle, template, faction, x, y, z, yaw, state, target, path) ->
+                            new UnitRecord(handle, template, faction, x, y, z, yaw, state, target.orElse(null), path)));
 
     private static final Codec<PageRef> PAGE = RecordCodecBuilder.create(i -> i.group(
                     Codec.INT.fieldOf("x").forGetter(PageRef::x),
@@ -73,7 +136,8 @@ public final class MatchSnapshotCodec {
                     SLOTS.fieldOf("slots").forGetter(MatchSnapshot::slots),
                     UNIT.listOf().fieldOf("units").forGetter(MatchSnapshot::units),
                     CommandEnvelope.CODEC.listOf().fieldOf("pendingCommands").forGetter(MatchSnapshot::pendingCommands),
-                    PAGE.listOf().fieldOf("pages").forGetter(MatchSnapshot::pages))
+                    PAGE.listOf().fieldOf("pages").forGetter(MatchSnapshot::pages),
+                    QUEUE.optionalFieldOf("paths", PathStore.Queue.EMPTY).forGetter(MatchSnapshot::paths))
             .apply(i, MatchSnapshot::new));
 
     private MatchSnapshotCodec() {}

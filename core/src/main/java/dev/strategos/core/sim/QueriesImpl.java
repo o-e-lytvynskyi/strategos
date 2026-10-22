@@ -4,6 +4,8 @@ import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.Vec2d;
+import dev.strategos.core.sim.nav.PathService;
+import dev.strategos.core.sim.nav.PathStore;
 import dev.strategos.core.sim.nav.SurfaceGrid;
 import java.util.Arrays;
 import java.util.List;
@@ -12,9 +14,11 @@ import org.jspecify.annotations.Nullable;
 /** {@link MatchQueries} over a match's state. */
 final class QueriesImpl implements MatchQueries {
     private final MatchState state;
+    private final PathService paths;
 
-    QueriesImpl(MatchState state) {
+    QueriesImpl(MatchState state, PathService paths) {
         this.state = state;
+        this.paths = paths;
     }
 
     @Override
@@ -82,6 +86,16 @@ final class QueriesImpl implements MatchQueries {
     @Override
     public List<PageRef> pageRefs() {
         return state.pageRefs();
+    }
+
+    @Override
+    public PathStore.@Nullable UnitPath path(int handle) {
+        return state.entities().isAlive(handle) ? state.paths().unitPath(Handle.index(handle)) : null;
+    }
+
+    @Override
+    public PathService.Stats pathStats() {
+        return paths.stats(state);
     }
 
     /** The live handles, of one faction or of all when {@code faction} is -1, sorted. */

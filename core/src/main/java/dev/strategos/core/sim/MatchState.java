@@ -4,9 +4,11 @@ import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.diag.MatchLog;
 import dev.strategos.core.sim.nav.MobilityClass;
 import dev.strategos.core.sim.nav.PageCoord;
+import dev.strategos.core.sim.nav.PathStore;
 import dev.strategos.core.sim.nav.SurfaceGrid;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
 
@@ -23,6 +25,7 @@ public final class MatchState {
     private final MotionStore motion = new MotionStore();
     private final OrderStore orders = new OrderStore();
     private final AiStateStore ai = new AiStateStore();
+    private final PathStore paths = new PathStore();
     private final MatchBus bus = new MatchBus();
     private final ArrayDeque<CommandEnvelope> pendingCommands = new ArrayDeque<>();
     private final List<OutputEvent> outputs = new ArrayList<>();
@@ -32,6 +35,11 @@ public final class MatchState {
     private SurfaceGrid surfaces;
     private final long[] pageSlices;
     private final BitSet published;
+    /** Pages whose slice is known: published, or named by a restored snapshot whose slice was missing. */
+    private final BitSet known;
+
+    private int[] changed = new int[4];
+    private int changedCount;
 
     MatchState(MatchConfig config, TemplateSet templates, EntityStore entities, MatchLog log) {
         this.config = config;
@@ -43,6 +51,7 @@ public final class MatchState {
                 SurfaceGrid.empty(config.bounds().sizeX(), config.bounds().sizeZ(), MobilityClass.INFANTRY);
         this.pageSlices = new long[surfaces.pagesX() * surfaces.pagesZ()];
         this.published = new BitSet(pageSlices.length);
+        this.known = new BitSet(pageSlices.length);
         ensureCapacity(entities.highWater());
     }
 
@@ -51,17 +60,54 @@ public final class MatchState {
         return surfaces;
     }
 
-    /** Publishes a rebuilt page; a page outside the match's grid is refused. */
+    /**
+     * Publishes a rebuilt page; a page outside the match's grid is refused. A page whose slice differs from the one
+     * last known there counts as changed this tick: routes across it are asked for again (PATH-15).
+     */
     public void publish(TerrainPage page) {
-        PageCoord c = page.coord();
+        int index = pageIndex(page.coord());
+        boolean changes = !known.get(index) || pageSlices[index] != page.sliceHash();
+        surfaces = surfaces.publish(page.page());
+        pageSlices[index] = page.sliceHash();
+        published.set(index);
+        known.set(index);
+        if (changes) {
+            if (changedCount == changed.length) {
+                changed = Arrays.copyOf(changed, changedCount * 2);
+            }
+            changed[changedCount++] = index;
+        }
+    }
+
+    /**
+     * A restored page whose slice is missing: it stays unpublished, but its slice hash is known, so the same slice
+     * published again (a restart's prewarm) does not count as a change.
+     */
+    void expect(PageRef ref) {
+        int index = pageIndex(new PageCoord(ref.x(), ref.z()));
+        pageSlices[index] = ref.slice();
+        known.set(index);
+    }
+
+    private int pageIndex(PageCoord c) {
         if (c.x() >= surfaces.pagesX() || c.z() >= surfaces.pagesZ()) {
             throw new IllegalArgumentException(
                     "page " + c + " outside the match's " + surfaces.pagesX() + " x " + surfaces.pagesZ() + " pages");
         }
-        surfaces = surfaces.publish(page.page());
-        int index = c.z() * surfaces.pagesX() + c.x();
-        pageSlices[index] = page.sliceHash();
-        published.set(index);
+        return c.z() * surfaces.pagesX() + c.x();
+    }
+
+    /** How many pages changed this tick. */
+    public int changedPageCount() {
+        return changedCount;
+    }
+
+    /** This tick's {@code k}th changed page, by index {@code z * pagesX + x}, in publication order. */
+    public int changedPage(int k) {
+        if (k >= changedCount) {
+            throw new IndexOutOfBoundsException("changed page " + k + " of " + changedCount);
+        }
+        return changed[k];
     }
 
     /** The published pages, in page order, by the hash of the slice each was built from. */
@@ -78,6 +124,7 @@ public final class MatchState {
         tick = in.tick();
         input = in;
         outputs.clear();
+        changedCount = 0;
         frame = BodyFrame.builder(entities.aliveCount());
     }
 
@@ -91,6 +138,7 @@ public final class MatchState {
         motion.ensureCapacity(size);
         orders.ensureCapacity(size);
         ai.ensureCapacity(size);
+        paths.ensureCapacity(size);
     }
 
     public long tick() {
@@ -123,6 +171,10 @@ public final class MatchState {
 
     public AiStateStore ai() {
         return ai;
+    }
+
+    public PathStore paths() {
+        return paths;
     }
 
     public MatchBus bus() {

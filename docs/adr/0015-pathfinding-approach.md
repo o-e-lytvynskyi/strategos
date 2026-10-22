@@ -28,6 +28,12 @@ Proposed: D-08's observer avatar is not one of ORCA's non-reactive agents, so un
   lowest terrain failed the exit (98.2 %) and left up to 12.7 % of a square's columns above the
   band. Packaged maps keep the manifest's band.
 
+**Revised 2026-10-22** with PATH-03's `CrossingBench` (M1 T8), still Proposed pending S7. Flat A*
+with the costs above crosses the generated proving ground (384²) and its 512² version only with
+29,293 and 30,930 expansions; at the 20,000 cap both return `PARTIAL` to the bank across the river
+from the goal, in 4.4–4.5 ms (p95 4.60 and 4.70 ms, M4 Pro), more than budget D's 2 ms a tick for
+one search on the server thread. HPA*'s trigger has fired: PATH-08 leaves the reserve (M1 T28).
+
 ## Context
 
 Research contradictions 4, 5 and 11, and gap G8. Pathfinding at scale is the hardest problem of

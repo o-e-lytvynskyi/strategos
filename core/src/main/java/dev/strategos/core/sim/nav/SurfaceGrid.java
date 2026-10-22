@@ -8,20 +8,25 @@ import java.util.Arrays;
  * A match's published pages (04 §9.1): {@code pagesX x pagesZ} pages over the match space, replaced copy-on-write, so
  * a path job keeps the grid it captured while the core publishes newer pages. A node is a surface, numbered {@code
  * (page * 256 + column) * 4 + layer}. Links inside a page come from its packed bits; links across a page edge follow
- * {@link PageBuilder#linkable}, with the same smallest-rise choice.
+ * {@link PageBuilder#linkable}, with the same smallest-rise choice. Columns of the last pages beyond the match's size
+ * are outside: a page is captured whole, but no path leaves the match.
  */
 @CoreApi
 @HotPath
 public final class SurfaceGrid {
+    private final int sizeX;
+    private final int sizeZ;
     private final int pagesX;
     private final int pagesZ;
     private final MobilityClass mobility;
     private final SurfacePage[] pages;
     private final long version;
 
-    private SurfaceGrid(int pagesX, int pagesZ, MobilityClass mobility, SurfacePage[] pages, long version) {
-        this.pagesX = pagesX;
-        this.pagesZ = pagesZ;
+    private SurfaceGrid(int sizeX, int sizeZ, MobilityClass mobility, SurfacePage[] pages, long version) {
+        this.sizeX = sizeX;
+        this.sizeZ = sizeZ;
+        this.pagesX = (sizeX + 15) >> 4;
+        this.pagesZ = (sizeZ + 15) >> 4;
         this.mobility = mobility;
         this.pages = pages;
         this.version = version;
@@ -37,7 +42,7 @@ public final class SurfaceGrid {
                 pages[pz * pagesX + px] = SurfacePage.empty(new PageCoord(px, pz));
             }
         }
-        return new SurfaceGrid(pagesX, pagesZ, mobility, pages, 0);
+        return new SurfaceGrid(sizeX, sizeZ, mobility, pages, 0);
     }
 
     /** A new grid with {@code page} in its place; this grid is unchanged. */
@@ -48,7 +53,16 @@ public final class SurfaceGrid {
         }
         SurfacePage[] copy = Arrays.copyOf(pages, pages.length);
         copy[c.z() * pagesX + c.x()] = page;
-        return new SurfaceGrid(pagesX, pagesZ, mobility, copy, version + 1);
+        return new SurfaceGrid(sizeX, sizeZ, mobility, copy, version + 1);
+    }
+
+    /** The match's columns along X; the pages may hold up to 15 more. */
+    public int sizeX() {
+        return sizeX;
+    }
+
+    public int sizeZ() {
+        return sizeZ;
     }
 
     public int pagesX() {
@@ -84,8 +98,9 @@ public final class SurfaceGrid {
         return page(localX >> 4, localZ >> 4).surface(SurfacePage.column(localX & 15, localZ & 15), layer);
     }
 
+    /** Whether the match-local column is in the match. */
     public boolean inside(int localX, int localZ) {
-        return localX >= 0 && localZ >= 0 && localX < pagesX * 16 && localZ < pagesZ * 16;
+        return localX >= 0 && localZ >= 0 && localX < sizeX && localZ < sizeZ;
     }
 
     /**

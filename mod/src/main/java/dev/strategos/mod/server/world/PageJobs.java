@@ -16,20 +16,18 @@ import net.minecraft.server.level.ServerLevel;
 /**
  * Keeps a match's terrain pages in step with its level (04 §9.2, PATH-15). A block change marks its page dirty; after
  * each step, at most {@link #PER_TICK} pages that have been quiet for {@link #QUIET} ticks, or dirty for {@link
- * #MAX_WAIT}, oldest first, are captured on the main thread and built as jobs due {@link #DELAY} ticks later; a due job
- * is joined and enters that tick's inputs as a {@code TerrainPage}. Until then units keep the stale page. At prepare and
- * at resume every page is captured and joined for the next tick. Server thread only.
+ * #MAX_WAIT}, oldest first, are captured on the main thread and built as jobs due the rule {@code pageK} ticks later;
+ * a due job is joined and enters that tick's inputs as a {@code TerrainPage}. Until then units keep the stale page. At
+ * prepare and at resume every page is captured and joined for the next tick. Server thread only.
  */
 public final class PageJobs {
     public static final int QUIET = 4;
     public static final int MAX_WAIT = 40;
     public static final int PER_TICK = 4;
-    /** The page jobs' delivery delay; it becomes the rule {@code pageK} with the path rules (T8). */
-    public static final int DELAY = 4;
-
     private static final long CLEAN = Long.MIN_VALUE;
 
     private final MatchSpace space;
+    private final int delay;
     private final int pagesX;
     private final int pagesZ;
     private final long[] firstDirty;
@@ -44,8 +42,10 @@ public final class PageJobs {
     /** A page job and the tick it is due. */
     private record InFlight(int page, long due, JobHandle<TerrainPage> job) {}
 
-    public PageJobs(MatchSpace space) {
+    /** A match's pages, rebuilt jobs due {@code delay} ticks (the match's {@code pageK}) after their capture. */
+    public PageJobs(MatchSpace space, int delay) {
         this.space = space;
+        this.delay = delay;
         this.pagesX = (space.sizeX() + VoxelSlice.SIDE - 1) / VoxelSlice.SIDE;
         this.pagesZ = (space.sizeZ() + VoxelSlice.SIDE - 1) / VoxelSlice.SIDE;
         this.firstDirty = new long[pagesX * pagesZ];
@@ -97,7 +97,7 @@ public final class PageJobs {
             lastChange[page] = CLEAN;
             dirty--;
             lastCaptured++;
-            submit(level, page, tick + DELAY, table, jobs);
+            submit(level, page, tick + delay, table, jobs);
         }
     }
 

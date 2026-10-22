@@ -26,7 +26,11 @@ public interface MatchCore {
 
     static MatchCore create(MatchConfig config, TemplateSet templates, CorePorts ports) {
         return MatchCoreImpl.create(
-                config, templates, ports, Journal.DEFAULT_CHECKPOINT_EVERY, Journal.DEFAULT_MAX_TICKS);
+                config,
+                templates,
+                ports,
+                Journal.DEFAULT_CHECKPOINT_EVERY,
+                ports.journal().keepTicks());
     }
 
     /**
@@ -40,6 +44,11 @@ public interface MatchCore {
     /** As {@link #restore(MatchSnapshot, TemplateSet, CorePorts)}, its terrain pages rebuilt from {@code slices}. */
     static MatchCore restore(MatchSnapshot snapshot, TemplateSet templates, CorePorts ports, SliceSource slices) {
         return MatchCoreImpl.restore(
-                snapshot, templates, ports, slices, Journal.DEFAULT_CHECKPOINT_EVERY, Journal.DEFAULT_MAX_TICKS);
+                snapshot,
+                templates,
+                ports,
+                slices,
+                Journal.DEFAULT_CHECKPOINT_EVERY,
+                ports.journal().keepTicks());
     }
 }

@@ -9,8 +9,35 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7
+## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8
 
+- **M1 T8 · Path service: A*, string pulling and STRICT delivery** — PATH-03 and PATH-15 done;
+  PATH-08 (HPA*) leaves the reserve as T28.
+  - **Results:** `LineOfWalk` (supercover, corners need both sides), `GridAStar` (8 neighbours, the
+    cost rules, octile heuristic, a heap by f, h, id, stamped open-addressing scratch that follows
+    the cap), `StringPuller` (doubling probes and bisection, at most 64 waypoints, the goal point
+    last), `PathJob` and `PathService`: short moves decided at once, provisional steering on the
+    order's tick, `STRICT` delivery at t+2 in id order, superseded results dropped, re-asks at the
+    48th waypoint and at the end of a partial path, repaths when a changed page crosses a route (at
+    most once in 20 ticks). `MatchRules` gain the path rules with codec defaults; `CorePorts` gain
+    `jobs` and `journal` (`JournalSink`; `journal = off|memory|disk`, disk writing
+    `match-<id>.strj`); snapshots carry each unit's path and the requests in flight, joined when
+    taken. `/strategos nav show|path|rebuild`. The `crossing_synthetic` golden. 41 new core tests
+    (727 in all), among them a replay from every segment of a journal with requests in flight;
+    `pathtests.unit_crosses_steps_and_ford` and `pathtests.new_wall_blocks_path`, each with a
+    negative check that fails; `verify` 41 s with 106 GameTests; `verifySlow` green.
+  - **Measured:** `CrossingBench`: both crossings hit the 20,000 cap and return `PARTIAL` (p95 4.60
+    ms at 384², 4.70 ms at 512²); uncapped they need 29,293 and 30,930 expansions. Budget D (2 ms a
+    tick) is missed, so R3 fires: PATH-08 joins M1 as T28, after T19.
+  - **Problems:**
+    - A match without terrain must keep M0's hashes, so a request does nothing until a page is
+      published, and the hash mixes path state only once a unit has asked: every M0 golden and
+      fixture is unchanged (the two goldens were re-recorded only to journal format 2).
+    - GameTest positions count from the structure block, a block under the floor; the first path
+      tests built their terrain a block low. The far-walking body test now lays a causeway through
+      the barrier wall GameTests build round each arena, since its unit walks a path.
+    - A page is captured whole, so a match not a multiple of 16 had walkable columns beyond its
+      edge; the grid now keeps the match's size (spec §1.6 D rows 31–42).
 - **M1 T7 · Live capture, page rebuilds and the router** — BLD-15 done; PATH-15 in progress (its
   wall test needs T8's paths).
   - **Results:**
@@ -139,7 +166,7 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
   - **Problems:** ErrorProne's `EnumOrdinal` and rule B8's ban on static arrays shaped the codecs;
     the spec's checkpoint period and header changed (spec §1.6 D rows 1–3).
 - **M1 started** on the owner's go-ahead, with consent for every kind of test.
-- **Next:** T8, the path service: A*, string pulling and STRICT delivery.
+- **Next:** T9, motion on surfaces (PATH-05).
 
 ## 2026-10-22 — M0 approvals, the client batch, M0 accepted
 
