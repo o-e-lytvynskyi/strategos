@@ -81,6 +81,11 @@ flowchart LR
    Accepted (PERF-01), and has the S1 numbers for D-01.
 3. D-22 and D-23 are decided, or knowingly left open.
 
+**Accepted on 2026-10-22,** on the owner's word in chat, with every approval of item 2 given; the
+owner delegated the testing and did not play the L7 demo of item 1, so QA-09's and ORD-01's L7
+criteria are waived and ADR-0022 waits for the first L7 session the owner plays. UNIT-01 stays
+`in_progress`: its criterion 5 is NET-01's, in M1.
+
 **Retires.** F-R5 (if S3 runs), F-R9, F-R15/A-R3 (in part), F-R19/A-R10 (arena cost), A-R11
 (tripwire); measures F-R1/A-R2, F-R2/A-R8 (with consent) and F-R12 (build storm in S1).
 
@@ -224,8 +229,11 @@ AI-05, MATCH-08.
 **Decided (2026-10-21):** as recommended, by the owner.
 
 **S1 checked (2026-10-22):** the best body at 500 moving units is the kinematic one at 0.12 µs,
-far below 15 µs, so the default stays at 150 ([S1](../spikes/S1-server-cost-per-body.md)). S4's
-half of the check waits for the owner's consent to M0's client batch.
+far below 15 µs, so the default stays at 150 ([S1](../spikes/S1-server-cost-per-body.md)).
+
+**S4 checked (2026-10-22):** 200 bare humanoids cost 0.69 ms of the client frame with the compat
+set and 4.47 ms without it, against 6 ms, so the default stays at 150
+([S4](../spikes/S4-client-frame-time.md)); the armoured pass with ART-01 (M3) repeats the check.
 
 ### D-22 · Client-run (L4) consent policy
 
@@ -295,7 +303,7 @@ decision (D-21).
   7. S5 confirms ADR-0007 (the `gametest` source set inside the `strategos` mod group, registered
      by our generator) or switches to its fallback, a separate test mod (R).
 - **Tests:** L0, L3, L5 · **Depends on:** — · **Size:** M · **Tier:** T0
-- **Status:** done
+- **Status:** accepted
 - **Done:** 2026-10-22 — M0 T1, T2, T3, T6b, T7c, T15: `clean verifyFast` without the build cache in 8.6 s, warm 0.4 s, and `checkVersionCatalog` failing on `2.+` (1); `checkJarContents` (2); smoke step 1 on a dedicated server (3); `buildtests.*` (4); S5 check 11's probes (5); the configuration cache reused, S5 check 2 (6); [the S5 report](../spikes/S5-build-wiring.md) and ADR-0007 Accepted (7)
 
 #### QA-02 · Core test kit: SimHarness, fakes and shared scenarios
@@ -319,7 +327,7 @@ decision (D-21).
   4. The build fails when `core/testFixtures` depends on JUnit or AssertJ (L0).
 - **Tests:** L0, L1 · **Fixtures:** scenario definitions, test template set · **Depends on:**
   QA-01 · **Size:** M · **Tier:** T0
-- **Status:** done
+- **Status:** accepted
 - **Done:** 2026-10-21 — M0 T5b, T6b: `:core:test` 593 tests in 3.8 s wall (2.9 s in tests), the soak 8.5 s (1); a temporarily broken seed failed as `seed=<n>` and reran alone with `-Dstrategos.seed=<n>` (2); `InvariantsTest`, `SeededInvariantTest`, the invariants after every `SimHarness` step (3); `checkTestFixturesDeps` failed on a temporary `testFixturesImplementation libs.assertj` (4)
 
 #### QA-04 · GameTest harness (L3)
@@ -352,7 +360,7 @@ decision (D-21).
   7. A scenario from `core/testFixtures` runs as a GameTest with the same outcome as in L1 (L3).
 - **Tests:** L0, L3, L5 · **Fixtures:** SNBT arenas · **Depends on:** QA-01 · **Size:** M ·
   **Tier:** T0
-- **Status:** done
+- **Status:** accepted
 - **Done:** 2026-10-22 — M0 T2, T3, T7c, T8: `runGameTestEmptyFilter` and `runGameTestBrokenLoad` in `verifyHarness` (1, 2); the JUnit XML with every test's time and the guard's L3 wall-time line (3); `runGameTestRetry` and `runGameTestRetryNoReason` (4); `runGameTestSharedBatch` (5); `runGameTestTicketLeak`, and `-Pstrategos.selftest=ticketLeak` failing with `batchend.selftest` (6); `scenarios.*` and `isolation.*`, 73 GameTests whose hash equals their L1 twin's (7)
 
 #### CORE-01 · Match container, lifecycle and region index
@@ -386,7 +394,8 @@ decision (D-21).
   7. No static mutable state exists besides the holders rule B8 allows (L0).
 - **Tests:** L0, L1, L2, L3, L4 (consent), L5 · **Depends on:** QA-02, QA-04 · **Size:** M ·
   **Tier:** T0
-- **Status:** in_progress
+- **Done:** 2026-10-22 — M0 T5a, T7b, T7c, T8, T9, T9b, T16 and the client batch: `isolation.match_00`…`_49`, 50 matches 1,000 ticks side by side, each hash equal to its L1 twin (1); `MatchLifecycleTest` (2); `MatchSpaceTest`, `MatchRegionIndexTest` (3); `matchtests.holder_bound_to_server` (4); the `world_switch` scenario, run in the consent batch on 2026-10-22 (5); the server smoke's `holderAtAboutToStart` and `holderClearedOnStop` (6); `NO_STATIC_MUTABLE_STATE_EXCEPT_HOLDERS`, rule B8 (7)
+- **Status:** accepted
 
 #### CORE-02 · Driving port and the nine-phase tick pipeline
 - **Value:** Game logic runs in a fixed order every tick, so orders feel immediate, systems never
@@ -410,7 +419,7 @@ decision (D-21).
      of the demo); a frozen GameTest server stalls its own tests, so this cannot be an L3 test.
   8. Timer overhead stays below 1 % of the measured phase time (L6).
 - **Tests:** L0, L1, L2, L6 · **Depends on:** CORE-01 · **Size:** M · **Tier:** T0
-- **Status:** done
+- **Status:** accepted
 - **Done:** 2026-10-22 — M0 T4a, T5a, T5b, T7b, T8, T12: `PhaseOrderTest` (1); `InputEventCoverageTest` (2); `OutputAppliersCoverageTest` (3); `ClockIndependenceTest` (4); `StaggerTest` (5); `TickGateTest` (6); `PhaseTimersBench.overhead` 0.113 µs, 0.80 % of `MovementBench.step600` (8); demo step 6 (7, L7) comes with the owner's session
 
 #### CORE-03 · Command pipeline and in-memory journal
@@ -434,7 +443,7 @@ decision (D-21).
   5. The journal holds every input of a seeded run in canonical order (L1).
   6. A server command enqueues through the same path as every other source (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** CORE-02 · **Size:** M · **Tier:** T0
-- **Status:** done
+- **Status:** accepted
 - **Done:** 2026-10-22 — M0 T4b, T5b, T6a, T8: `CommandOrderingTest` (1, 3, 4), `MoveRuleTest` (2, 4), `UnitSetTest` (3), `JournalTest` (5), `commandtests.debug_commands_use_the_command_path` (6)
 
 #### CORE-06 · Unit records, handles and the body registry
@@ -460,7 +469,7 @@ decision (D-21).
      (L3).
   5. ArchUnit proves `core` never references the body implementation (L0).
 - **Tests:** L0, L1, L3, L5 · **Depends on:** CORE-01 · **Size:** M · **Tier:** T0
-- **Status:** done
+- **Status:** accepted
 - **Done:** 2026-10-22 — M0 T1, T5a, T7b, T7c, T9b, T11: `EntityStoreTest`, `HandleTest` (1); `bodytests.discarded_body_rematerialises` (2); `bodytests.unloaded_body_stays_bodiless`, and the L5 restart round trip with one body per unit after a real unload (3; demo step 5, L7, comes with the owner's session); `bodytests.teleport_overwritten_by_next_pose`, `bodytests.vanilla_kill_ignored` (4); `coreDependsOnlyOnAllowedLibraries` (5)
 
 #### UNIT-01 · Unit body v0: a kinematic LivingEntity view
@@ -510,7 +519,8 @@ decision (D-21).
   4. P0–P3 and the desync proxy are defined with examples (D).
   5. The first use of the scripts and the protocol, at the M0 acceptance, confirms ADR-0022 (D).
 - **Tests:** D, L7 · **Depends on:** QA-01 · **Size:** S · **Tier:** T0
-- **Status:** in_progress
+- **Done:** 2026-10-22 — M0 T1, T8, T9: `scripts/playtest.sh` and `docs/testing/playtest.md` with the checklist, the questionnaire and the report template (2), P0–P3 and the desync proxy with examples (4). Criteria 1, 3 and 5 (L7) were waived when the owner accepted M0 without the session; ADR-0022's confirmation moves to the first L7 session the owner plays
+- **Status:** accepted
 
 #### ORD-01 · Walking skeleton: a debug move order end to end
 - **Value:** The first end-to-end proof: an order goes through the server and the core, units
@@ -530,7 +540,8 @@ decision (D-21).
   5. Save, dispose and load in the same level keep the state hash (L3).
   6. The owner sees the move on two clients of a dedicated server (L7, acceptance).
 - **Tests:** L1, L3, L5, L7 · **Depends on:** CORE-03, UNIT-01 · **Size:** S · **Tier:** T0
-- **Status:** in_progress
+- **Done:** 2026-10-22 — M0 T5b, T6b, T8, T9: `scenarios.walking_skeleton_seed_00`…`_19` in batch `skeleton`, exact arrival at tick 81 (1); `scenarios.out_of_bounds`, refused with `OUT_OF_BOUNDS` (2); `WalkingSkeletonTest` and `UnitAiTransitionsTest`, the trace (3); `:core:replayJournals` over every exported journal (4); `persistencetests.save_restore_same_hash` (5). Criterion 6 (L7) was waived when the owner accepted M0 without the demo
+- **Status:** accepted
 
 ### Wave B: harden and measure
 
@@ -546,7 +557,7 @@ decision (D-21).
   2. A payload over its cap fails the helper with the actual and the allowed size (L2).
   3. `:mod:test` finishes within 60 s on the M4 Pro (L2).
 - **Tests:** L0, L2 · **Depends on:** QA-01 · **Size:** S · **Tier:** T0
-- **Status:** done
+- **Status:** accepted
 - **Done:** 2026-10-22 — M0 T1, T7a, T9, T15: `UnitSpawnDataTest`, `CodecSizesTest` (1, 2); `:mod:test` in 4.0 s with 45 tests, S5 check 13 (3)
 
 #### QA-05 · Server smoke (L5): boot, a headless match, a restart round trip
@@ -566,7 +577,7 @@ decision (D-21).
   4. After the restart round trip exactly one body exists per unit, and the hash at a later tick
      equals that of an uninterrupted L1 replay (L5).
 - **Tests:** L0, L5 · **Depends on:** QA-01, ORD-01, CORE-07 · **Size:** M · **Tier:** T0
-- **Status:** done
+- **Status:** accepted
 - **Done:** 2026-10-22 — M0 T3, T8, T9b, T13: `runServerSmoke` 6.1 s in S5 (1); `clientRef` failing, S5 check 9 (2); `runServerSmokeNoMarker` in `verifyHarness` (3); `runServerSmokeRestart`, one body per unit and the replayed hash equal to the live one (4); the self-terminating server mode serves the spikes (T13)
 
 #### QA-06 · Client scenario runner and spike S3 (consent)
@@ -590,7 +601,8 @@ decision (D-21).
      it once CI exists).
   3. The S3 report answers each question, including the container verdict, and feeds D-22 (R).
 - **Tests:** L0, L4 (consent) · **Depends on:** QA-01, D-22 · **Size:** M · **Tier:** T0
-- **Status:** in_progress
+- **Done:** 2026-10-22 — M0 T16 and the client batch: `smoke` writes three PNGs and `result.json` in 11–16 s, and `stall` ends through the watchdog with exit 1 after 20 s (1); the production jar loads on a NeoForge 21.1.264 client in CI's release run 39697935330, which replaces the hand check now that CI exists (2); [the S3 report](../spikes/S3-client-scenario-harness.md), with the Linux route on CI (`scenario.yml`) and its numbers for D-22 (3)
+- **Status:** accepted
 
 #### QA-07 · Performance harness (L6)
 - **Value:** Tick and frame rates stay stable as features grow, because every hot path has a
@@ -614,7 +626,7 @@ decision (D-21).
      as a budget failure (L6).
   4. A `@HotPath` kernel that allocates fails its JMH check (L6).
 - **Tests:** L0, L6 · **Depends on:** QA-02, QA-04 · **Size:** M · **Tier:** T0
-- **Status:** done
+- **Status:** accepted
 - **Done:** 2026-10-22 — M0 T12: `:core:jmh` writes `result.json` with `gc.alloc.rate.norm`, and `jmhSelftest` in `verifyHarness` catches the 30 % slowdown (1) and the allocating kernel (4); `perftests.walk_600_budget_a` and `perftests.snapshot_500_budget_g` record p50, p95 and p99 after warm-up and fail on a breach (2); `-Pperf.fakeForeignLoad=0.3` ends `INVALID` (3)
 
 #### QA-08 · Continuous integration
@@ -632,7 +644,7 @@ decision (D-21).
   3. S6 gives the same hashes on Linux as on macOS (L1, on CI).
   4. The release job starts the production jar on a client (R).
 - **Tests:** L0, L1, L2, L3, L5 · **Depends on:** QA-04, QA-05, D-23 · **Size:** M · **Tier:** T0
-- **Status:** done
+- **Status:** accepted
 - **Done:** 2026-10-22 — M0 T18, T15: the pull request of T18 showed per-test results from L1, L2, L3 and L5 (1); `verify verifySlow verifySoak` in 6 to 10 minutes (2); `DeterminismCanaryTest` against the macOS golden on every Linux run (3); the manual `release.yml` run 39697935330 started `strategos-0.0.1.jar` on a headless client with mc-runtime-test, which entered a world and finished cleanly (4)
 
 #### QA-10 · Developer commands and log tagging
@@ -648,7 +660,7 @@ decision (D-21).
   1. Debug commands need permission level 2 and are hidden from players without it (L3).
   2. Every log line from match code carries the match id and tick (L3).
 - **Tests:** L0, L3 · **Depends on:** QA-04 · **Size:** S · **Tier:** T0
-- **Status:** done
+- **Status:** accepted
 - **Done:** 2026-10-22 — M0 T4a, T8, T10, T11: `commandtests.root_requires_permission_2` (1); the GameTest guard's log scan, which fails on a planted untagged INFO line in `BodyRegistry`, with `MatchLogTest` and `simLogsOnlyThroughMatchLog` (2)
 
 #### QA-17 · Static gates, engine-surface inventory and fixture catalogue
@@ -675,7 +687,7 @@ decision (D-21).
      committed sets each fail the build (L0).
 - **Tests:** L0, L2 · **Fixtures:** the catalogue itself · **Depends on:** QA-01 · **Size:** M ·
   **Tier:** T0
-- **Status:** done
+- **Status:** accepted
 - **Done:** 2026-10-22 — M0 T3, T11, T11b: `CoreArchitectureTest` (13 rules) and `ModArchitectureTest` (11 rules), each on its violating fixtures (1); `checkJarContents` (2); `EngineSurfaceInventoryTest` with its three made-up surfaces (3); the fixture catalogue in `docs/05-testing.md` (4); `checkFixtures` in `verifyFast`, proved by `checkFixturesSelftest` in `verifyHarness` (5)
 
 #### PERF-01 · Budget matrix and enforcement
@@ -694,7 +706,7 @@ decision (D-21).
   3. The owner approves ADR-0019's table with the M0 numbers, and the ADR moves to Accepted; any
      later change needs the owner's approval and an ADR (D).
 - **Tests:** L6, D · **Depends on:** QA-07 · **Size:** S · **Tier:** T0
-- **Status:** done
+- **Status:** accepted
 - **Done:** 2026-10-22 — M0 T6b, T12, T14: `perftests.walk_600_budget_a` and `perftests.snapshot_500_budget_g` with `BudgetCheckTest`, and the overload run failing on both budgets (1); the budget matrix checked against ADR-0019's revision (2); the owner approved the revision on 2026-10-22, and ADR-0019 is Accepted (3)
 
 #### PERF-02 · Spike S1: server cost per body
@@ -711,7 +723,7 @@ decision (D-21).
      best body ≤ 15 µs, or the default cap drops to 100 (D-01); the report adds its numbers to
      ADR-0011 and feeds PERF-01 (R).
 - **Tests:** L6, R · **Depends on:** UNIT-01, QA-07 · **Size:** M · **Tier:** T0
-- **Status:** done
+- **Status:** accepted
 - **Done:** 2026-10-22 — M0 T13: `./gradlew :mod:runSpike -Pspike=s1` (67 s), with Lithium and with JFR (1); [the S1 report](../spikes/S1-server-cost-per-body.md), the numbers in ADR-0011 and ADR-0019, and the verdict on D-01: a kinematic body costs 0.10 µs beyond the core at 500 moving, so the default stays at 150 (2)
 
 #### PERF-03 · Spike S2: force-loaded arena cost
@@ -728,7 +740,7 @@ decision (D-21).
   3. Exit: ≤ 4 ms MSPT idle at 576 chunks and autosave ≤ 100 ms; the report confirms
      `ticking=false` and the sizes for D-17 (R).
 - **Tests:** L5, L6, R · **Depends on:** QA-05, QA-07 · **Size:** M · **Tier:** T0
-- **Status:** done
+- **Status:** accepted
 - **Done:** 2026-10-22 — M0 T13, T14: [the S2 report](../spikes/S2-force-loaded-arena.md)'s table per size and ticket mode (1); the keep-alive on the self-terminating spike server, 11,999 of 12,000 ticks with nobody online (2); idle at 576 chunks 0.06 ms against 4, autosave median 5.3 ms against 100, `ticking=false` and the sizes confirmed for D-17 (3)
 
 #### PERF-04 · Spike S4: client frame time with many units (consent)
@@ -745,7 +757,8 @@ decision (D-21).
      the level of detail needed; the numbers feed D-01, D-04 and ADR-0019, and the armoured
      threshold waits for ART-01 (R).
 - **Tests:** L4 (consent), R · **Depends on:** QA-06, UNIT-01 · **Size:** M · **Tier:** T0
-- **Status:** in_progress
+- **Done:** 2026-10-22 — the client batch: [the S4 report](../spikes/S4-client-frame-time.md), twelve runs with frame and frame-interval p50 and p99, the client tick and the entity share (1); 200 bare humanoids cost 0.69 ms with the compat set and the client tick is 0.72 ms p50, so no level of detail is needed; D-01 stays at 150, D-04 and ADR-0019 carry the numbers, and the armoured threshold waits for ART-01 (2)
+- **Status:** accepted
 
 #### CORE-04 · Match event bus
 - **Value:** Systems react to each other (a unit dies, a building completes) at once and in the
@@ -759,7 +772,7 @@ decision (D-21).
   2. Nested publishes are queued, never recursive (L1).
   3. A JMH baseline for dispatch is committed (L6).
 - **Tests:** L0, L1, L6 · **Depends on:** CORE-02 · **Size:** S · **Tier:** T0
-- **Status:** done
+- **Status:** accepted
 - **Done:** 2026-10-22 — M0 T5a, T12: `MatchBusTest` (1, 2); `MatchBusBench.publish1000`, 13.7 µs, in the owner-approved `perf/baseline-m4pro.json` (3)
 
 #### CORE-05 · Determinism kit and spike S6
@@ -784,7 +797,7 @@ decision (D-21).
   5. The S6 report is in `docs/spikes/` (R).
 - **Tests:** L0, L1, R · **Fixtures:** seed sets for the 200-seed runs · **Depends on:** CORE-03,
   CORE-04 · **Size:** M · **Tier:** T0
-- **Status:** done
+- **Status:** accepted
 - **Done:** 2026-10-22 — M0 T4a, T5b, T6a, T6b, T11, T11b, T15, T18: `SeededReplaySoakTest`, 200 × 10,000 (1); B4's 22 violating fixtures in `CoreArchitectureTest` (2); `ReplayRunnerTest` (3); `DeterminismCanaryTest`, on macOS and on Linux CI (4); [the S6 report](../spikes/S6-determinism-canary.md) (5)
 
 #### CORE-07 · Persistence kernel: one blob per match
@@ -806,7 +819,7 @@ decision (D-21).
   6. Serialising a 500-unit match stays within budget G, ≤ 100 ms (L6).
 - **Tests:** L0, L1, L2, L3, L6 · **Fixtures:** save fixtures per released schema (JSON, NBT) ·
   **Depends on:** CORE-06 · **Size:** M · **Tier:** T0
-- **Status:** done
+- **Status:** accepted
 - **Done:** 2026-10-22 — M0 T6a, T6b, T9, T11b, T12: `SnapshotRoundTripTest` (1); `MatchSnapshotNbtTest` (2); `MatchSnapshotJsonFixtureTest` (3); `MatchSnapshotFixtureTest` (4); `persistencetests.save_restore_same_hash` (5); `perftests.snapshot_500_budget_g`, median about 1 ms against 100 ms (6)
 
 #### CORE-10 · Fault containment
@@ -826,7 +839,7 @@ decision (D-21).
      way (L3).
   3. With rethrow on, the test fails after the record is written (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** CORE-02, QA-04 · **Size:** M · **Tier:** T0
-- **Status:** done
+- **Status:** accepted
 - **Done:** 2026-10-22 — M0 T7b, T10: `faulttests.fault_contained_other_match_continues` (1); `faulttests.unit_entity_override_fault_contained`, `faulttests.output_applier_fault_contained` (2); `faulttests.rethrow_after_record` (3); each report's `fault.txt`, `snapshot.json` and `journal.json`, the journal replaying to the fault's hash
 
 #### CORE-12 · Save quarantine
@@ -845,5 +858,5 @@ decision (D-21).
   3. The deserializer never throws on the corrupted-fixture corpus (L2).
 - **Tests:** L0, L2, L3 · **Fixtures:** corrupted saves for both paths (append-only) ·
   **Depends on:** CORE-07, CORE-10 · **Size:** M · **Tier:** T0
-- **Status:** done
+- **Status:** accepted
 - **Done:** 2026-10-22 — M0 T9, T11b: `persistencetests.corrupt_content_quarantined` (1); `persistencetests.unreadable_file_quarantined` (2); `CorruptCorpusTest` over the corpus (3); the corpus listed in `released-fixtures.txt`, append-only

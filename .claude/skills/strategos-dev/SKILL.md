@@ -289,8 +289,8 @@ Do this after each task, before committing.
    - baselines and goldens to approve;
    - «начинай M(x+1)», if its spec is ready.
 5. Record planned against actual effort. After M0, re-estimate docs/01-feasibility.md.
-6. Cards become `accepted` only when the owner has played the demo. Tags and releases are the
-   owner's call.
+6. Cards become `accepted` only on the owner's word: after the demo, or when the owner accepts the
+   milestone without it, which the spec's Results record. Tags and releases are the owner's call.
 
 ## 8. Stop conditions
 

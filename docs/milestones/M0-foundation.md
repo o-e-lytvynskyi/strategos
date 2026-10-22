@@ -372,6 +372,8 @@ Additions that 04 §1.5 does not name, each the smallest piece the named items n
 | 60 | §8.3 and §8.4 (T13): output in `out/<id>`; the plan as listed; the dev-only profiles of §4.10 C | The `-Pcompat.server` run writes `out/<id>-lithium`, and `prepareSpike` keeps `out/`, so both runs and the JFR recording survive each other; the guard checks the matching `DONE`. An unrecorded pass of K, P and L (500 fighting each) runs before the first baseline: on a cold JIT the first K rows came out slower than later, larger ones. Work a game does inside the tick (combat events, the build storm) runs in `ServerTickEvent.Pre`, and the driver's bookkeeping in `Post`, after the tick's time is taken (MinecraftServer.java:950–958). Moves go out 300 units at a time, a unit set's limit. The `-Pspark` and `-Pcompat` profiles never worked: in `dependencies {}` a bare `localRuntime` is the script's `Configuration` variable, so they now use `add('localRuntime', …)`. SpikeMob's MAX_HEALTH of 1,000,000 is clamped by vanilla to 1,024. T13's first S1 run used ticking tickets on the wrong belief that `ticking=false` freezes entities without a player; S2 disproved it (every region ticket enters the ticking tracker, DistanceManager.java:197–202), and S1 was rerun on the spec's `ticking=false`, with the same verdicts |
 | 61 | §8.5 (T14): a body's `tickCount` for the keep-alive; the import time per size; one driver for S1 | The keep-alive probe is a `SpikePhysicsBody`: `UnitEntity` does nothing on the server's tick, so its `tickCount` never moves. The 600 bodies walk in a 96 × 96 match space at the arena's centre. Each size is released 100 ticks before the next, so only the first size's import time (256 chunks in 242 ms) is cold. The driver now runs a `Spike` (`S1Run`, `S2ArenaCost`) and keeps the world rules, pacing and deadline; `SpikeArena` takes an origin, a size and a ticket mode, and swaps tickets in place for the `ticking=true` record. The JFR run of S2 has only 118 server-thread samples |
 | 62 | §7.7 (T16): the runner and four scenario classes | Two helpers carry what the scenarios share: `ScenarioContext` (the result, a screenshot request, a request for another world) and `ScenarioWorld` (the player, a match at the player, the spectator camera through commands). `Scenario#setup` runs on the integrated server for each world a scenario enters, so `world_switch` sets world A up and checks world B in the same method; the runner does the Save and Quit through `Minecraft#tell`. `FrameTimer` times both frames and client ticks. Smoke's match is 16 × 16 and unsaved; S4's is 64 × 64. Every API was checked against the 21.1.264 sources and the code compiles in `verifyFast`; none of it has run, which is the owner's consent batch |
+| 63 | §8.6 and §7.7 (the client batch, after T17): S3's ten smoke runs; the harness as T16 built it; `-Pcompat` on the classpath | Each run showed something that moved a frame between runs, and the harness now pins it: the scene sits at a fixed anchor, (0, the heightmap's floor, 0), since the player's spawn point moves within the spawn radius; the time is frozen at noon with no daylight or weather cycle; `sendCommandFeedback` is off, so no chat lines show; the spectator camera is held on every client tick and frame with the mouse released, since a focused window's mouse turned it; the vignette is pinned at 0, since it fades by 1 % a client tick (Gui.java:1298–1303) and a slow load on llvmpipe left it mid-fade. S4 lifts the frame limit (260), times the frame interval beside the CPU frame (`RenderFrameEvent` wraps only `GameRenderer#render`) and waits for the terrain before its baseline. `-Pcompat`'s client set goes into the run's `mods` folder (`clientCompat`, `installClientCompat` for the owner's client runs): FML does not unpack the JarJar libraries of a classpath mod, and Sodium crashed. The Linux route is `.github/workflows/scenario.yml`, by hand. The owner cut repeats of a static scene from ten to two or three during the batch (D-22's amendment), after the ten had run |
+| 64 | §10 row 14: the L7 acceptance session | The owner accepted M0 on their word on 2026-10-22, with every approval, and delegated the testing; the session was not played. QA-09.1, .3 and .5 and ORD-01.6 are waived, and ADR-0022's confirmation moves to the first L7 session the owner plays |
 
 ---
 
@@ -3676,6 +3678,9 @@ the owner to approve; until then ADR-0019 keeps its provisional values (PERF-01.
 
 ### 8.6 S3 and S4: prepared, pending consent (T16)
 
+*Run on 2026-10-22 in the client batch, after the owner's consent: [S3](../spikes/S3-client-scenario-harness.md)
+and [S4](../spikes/S4-client-frame-time.md); what changed on the way is §1.6 row 63.*
+
 Both open a game window, which can take keyboard focus, so they wait for the owner's consent; as
 [D-22](../roadmap/M0-foundation.md#d-22--client-run-l4-consent-policy) decided, they belong to M0's
 consent batch (§7.7), asked once. T16 builds and compiles their harness and writes the reports as
@@ -4102,7 +4107,7 @@ check and `release.yml`).
 
 - [x] T1 (2026-10-21) · [x] T2 (2026-10-21) · [x] T3 (2026-10-21) · [x] T18 (2026-10-21) · [x] T4a (2026-10-21) · [x] T4b (2026-10-21) · [x] T5a (2026-10-21) · [x] T5b (2026-10-21) · [x] T6a (2026-10-21) · [x] T6b (2026-10-21) · [x] T7a (2026-10-21) · [x] T7b (2026-10-21) · [x] T7c (2026-10-22) · [x] T8 (2026-10-22) · [x] T9 (2026-10-22)
 - [x] Tripwire checkpoint (dates in STATE.md; 2026-10-22, nothing cut)
-- [x] T9b (2026-10-22) · [x] T10 (2026-10-22) · [x] T11 (2026-10-22) · [x] T11b (2026-10-22) · [x] T12 (2026-10-22; the JMH baseline awaits the owner) · [x] T13 (2026-10-22) · [x] T14 (2026-10-22; the ADR-0019 revision awaits the owner) · [x] T15 (2026-10-22) · [x] T16 (2026-10-22; built, not run: consent) · [x] T17 (2026-10-22)
+- [x] T9b (2026-10-22) · [x] T10 (2026-10-22) · [x] T11 (2026-10-22) · [x] T11b (2026-10-22) · [x] T12 (2026-10-22; the JMH baseline approved the same day) · [x] T13 (2026-10-22) · [x] T14 (2026-10-22; the ADR-0019 revision approved the same day) · [x] T15 (2026-10-22) · [x] T16 (2026-10-22; run in the client batch the same day) · [x] T17 (2026-10-22)
 
 ---
 
@@ -4135,12 +4140,14 @@ Acceptance, not Done.
 
 ### 10.1 Results (M0 T17, 2026-10-22)
 
-Rows 1–13, the Done gate, pass; rows 14–16, the owner's Acceptance, wait for the owner. M0 is
-**Done, pending Acceptance**.
+Rows 1–13, the Done gate, pass. The owner accepted M0 on 2026-10-22 on their word, with the approvals
+of row 15 and the consent batch of row 16, and waived the L7 session of row 14 (§1.6 row 64). M0 is
+**Accepted**; 25 of 26 cards are `accepted`, and UNIT-01 stays `in_progress` until NET-01 (M1)
+closes its criterion 5.
 
 | # | Outcome |
 |---|---|
-| 1 | Every card is `done` except those whose open criteria wait for the owner and never block Done: QA-06 and PERF-04 (consent), CORE-01 (`world_switch`, consent, and demo step 7), QA-09 and ORD-01 (the M0 acceptance session), PERF-01 (the owner's approval of the ADR-0019 revision), CORE-04 (the approved JMH baseline) and UNIT-01 (criterion 5 is NET-01's, in M1). QA-08 is done: the manual release run 39697935330 started the production jar on a headless NeoForge 21.1.264 client, which entered a world and finished cleanly |
+| 1 | Every card is `done` except those whose open criteria wait for the owner and never block Done: QA-06 and PERF-04 (consent), CORE-01 (`world_switch`, consent, and demo step 7), QA-09 and ORD-01 (the M0 acceptance session), PERF-01 (the owner's approval of the ADR-0019 revision), CORE-04 (the approved JMH baseline) and UNIT-01 (criterion 5 is NET-01's, in M1). QA-08 is done: the manual release run 39697935330 started the production jar on a headless NeoForge 21.1.264 client, which entered a world and finished cleanly. After T17 the owner's approvals closed PERF-01 and CORE-04, and the client batch closed QA-06, PERF-04 and CORE-01 |
 | 2 | `clean verify` without the build cache green in 39.3 s, warm 31.2 s; `verifySlow` 6.2 s and `verifySoak` 9.1 s green; `verifyHarness` (12.3 s) proves every guard listed, `checkFixturesSelftest` and `jmhSelftest` included ([S5](../spikes/S5-build-wiring.md)) |
 | 3 | The probes bite: S5 checks 9–12; the configuration cache is reused on the second `verifyFast` (check 2) |
 | 4 | `checkJarContents`, `buildtests.*` and smoke step 1 pass |
@@ -4151,11 +4158,11 @@ Rows 1–13, the Done gate, pass; rows 14–16, the owner's Acceptance, wait for
 | 9 | 13 core and 11 mod ArchUnit rules on the code and on their fixtures; `EngineSurfaceInventoryTest` and its three made-up surfaces; `checkFixtures`, `checkTestFixturesDeps`; the log scan |
 | 10 | JMH writes `result.json` with allocations; `jmhSelftest` fails both files as designed; both perf GameTests pass (A: p50 0.05 ms, p99 0.3 ms; G: median about 1 ms); the overload and `INVALID` checks behave; the candidate baseline and the five-run CVs (A 4.9 %, G 3.2 %) are with the owner. `verifyPerf` stops at `jmhCompare` ("No approved JMH baseline") until the owner approves, as designed |
 | 11 | L3 4.2 s against 3 minutes; smoke run 1 11.5 s against 60 s; `:mod:test` 4.0 s against 60 s; warm `verifyFast` 0.4 s (8.6 s from clean) against 1 minute; `verify` 39 s against 5 minutes; `verifySlow` and `verifySoak` reported |
-| 12 | S1, S2, S5 and S6 reports with numbers; ADR-0007 Accepted; ADR-0011 and ADR-0019 carry S1 and S2; S3 and S4 written as plans pending consent |
+| 12 | S1, S2, S5 and S6 reports with numbers; ADR-0007 Accepted; ADR-0011 and ADR-0019 carry S1 and S2; S3 and S4 written as plans pending consent, then run in the client batch: S3 found the window takes the focus and a working Linux route on CI, S4 put 200 bare humanoids at 0.69 ms of the frame with the compat set |
 | 13 | Tripwire: T1 started 2026-10-21, T9 green 2026-10-22, nothing cut; STATE.md, 05-testing.md (commands, times, the fixture catalogue), playtest.md and the knowledge base are current |
-| 14 | Waits for the owner: the demo of §1.3 with `scripts/playtest.sh` and the questionnaire |
+| 14 | Waived: the owner accepted M0 without the session (§1.6 row 64); `scripts/playtest.sh` and the questionnaire wait for the first session the owner plays |
 | 15 | The owner approved the ADR-0019 revision and the JMH baseline on 2026-10-22; ADR-0019 is Accepted, `perf/baseline-m4pro.json` committed, `verifyPerf` green end to end; the S1 numbers kept D-01 at 150 |
-| 16 | D-22 and D-23 decided on 2026-10-21; ADR-0022's confirmation comes with row 14's session; the consent batch waits for the owner |
+| 16 | D-22 and D-23 decided on 2026-10-21, D-22 amended on 2026-10-22 (a static scene is repeated two or three times); ADR-0022's confirmation moves to the first L7 session; the consent batch ran on 2026-10-22: S3, S4 and `world_switch` |
 
 **Numbers.** 25 tasks in two working days (2026-10-21 and 2026-10-22), against the plan's 66
 card-days and 4–6 weeks. 616 L1, 45 L2, 11 archTest and 97 GameTests, and CI on Linux in 6 to 10
@@ -4165,10 +4172,11 @@ minutes. A kinematic body costs the server 0.12 µs a tick, a 384² arena 0.06 m
 gates, the fault containment, the perf harness and the spikes, and none changed the product.
 
 **Follow-ups.**
-- The owner's items in STATE.md: the M0 acceptance session, the budget revision, the JMH
-  baseline, the client consent batch.
-- With the approved baseline: T18's CI perf step (`:core:jmh :core:jmhSpeedRatio
-  :mod:runGameTestPerf -Pperf.ciFactor=3`).
+- The owner's items are closed (2026-10-22): M0 accepted, the budget revision and the JMH
+  baseline approved, the client batch run.
+- T18's CI perf step is `.github/workflows/perf.yml`, nightly and by hand (`:core:jmh
+  :core:jmhSpeedRatio :mod:runGameTestPerf -Pperf.ciFactor=3`); its first run, 39740227029, was
+  green.
 - M1 is specified next.
 
 ## 11. Risks and fallbacks

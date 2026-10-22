@@ -19,7 +19,7 @@ owner's M4 Pro on 2026-10-22 ([S5](spikes/S5-build-wiring.md), check 13).
 | **L1** core unit | All game rules and whole matches without Minecraft: state machines, modifiers, templates, pathfinding, economy, AI-versus-AI, replays, client maths and view-models | `./gradlew :core:test`; the seeded soak `:core:soak` and the GameTest journal replay `:core:replayJournals` run in `verify` | 616 tests in 3.6 s; the soak 9 s; 73 journals in 0.2 s | assistant, continuously |
 | **L2** Minecraft unit | Codecs, payload sizes, migrations from fixture files, shipped data through the real loaders, registries, and the engine-surface inventory check, which reads the registered types and payloads ([ADR-0022](adr/0022-definition-of-done-amendments.md)) | `./gradlew :mod:test` | 45 tests, 4.0 s | assistant on adapter or data changes |
 | **L3** GameTest | The adapters in a real server world: bodies, blocks, mock players, save and reload, fault injection, parallel matches | `./gradlew :mod:runGameTestServer` | 97 GameTests, 4.2 s of wall time | assistant before every commit |
-| **L4** client scenario | HUD, camera and rendering on screen: a PNG plus JSON per shot | `./gradlew :mod:runScenario -Pscenario=<id>`; `:mod:scenarioDiff` and the goldens arrive with QA-18 in M2 | not run yet: consent | **only with the owner's consent** (a game window opens and can take focus); CI under Xvfb |
+| **L4** client scenario | HUD, camera and rendering on screen: a PNG plus JSON per shot | `./gradlew :mod:runScenario -Pscenario=<id>`; `:mod:scenarioDiff` and the goldens arrive with QA-18 in M2 | `smoke` 11–16 s on the Mac; 2–3 min as a CI job | **only with the owner's consent** (a game window opens and takes the focus); on CI under Xvfb by hand (`.github/workflows/scenario.yml`) |
 | **L5** server smoke | The mod loads on a dedicated server with no client classes; a headless match runs | `./gradlew :mod:runServerSmoke`; `:mod:runServerSmokeRestart` adds the restart round trip | 11.5 s; 19.3 s with the restart | assistant before commit |
 | **L6** performance | The budgets of [ADR-0019](adr/0019-performance-budgets.md); JMH regressions above 15 % fail | `./gradlew verifyPerf`: `:core:jmh` and `:core:jmhCompare`, then the perf GameTest batch alone in `:mod:runGameTestPerf` | JMH 83 s; the perf batch 6 s | assistant on hot paths; the owner approves baselines |
 | **L7** manual | Feel, multiplayer, the production jar | a dedicated server and two clients (`runServer`, `runClientJoin`, `runClient2`, or `scripts/playtest.sh`), started by the owner; a plain `runClient` opens the title screen and joins nothing | — | owner at milestones |
@@ -156,10 +156,16 @@ Therefore:
   picking, selection and view-models. L4 only confirms the drawing.
 - The assistant opens a client window only after asking the owner. Under decision D-22 (taken
   on 2026-10-21) consent is asked once per card or milestone batch; each milestone spec lists its
-  consent batch. Spike S3 checks whether a focus-free launch is possible on macOS, or whether a
-  Linux container with Xvfb can render the scenarios instead.
+  consent batch, and a static scene is repeated two or three times (amended 2026-10-22). Spike
+  [S3](spikes/S3-client-scenario-harness.md) found that every Mac run takes the focus for about
+  15 s, and that the same scenarios render on Linux under Xvfb with no window.
 - On CI (decision D-23: a private GitHub repository with one Linux job), L4 runs under Xvfb with
-  Mesa and its own Linux goldens, with no consent needed.
+  Mesa's llvmpipe and its own Linux goldens, with no consent needed: `gh workflow run
+  scenario.yml -f scenario=<id>`, the PNGs and logs in the run's artifact.
+- A repeatable frame needs the pinned scene of S3: a fixed anchor, the time frozen at noon, no
+  chat, the camera held with the mouse released, the vignette pinned; a capture at tick 60 or
+  later, after the terrain has arrived; the units' idle animation still differs by a few dozen
+  pixels, so QA-18 masks them or freezes the ticks.
 
 ## Performance budgets
 
@@ -177,7 +183,8 @@ At 600 units, the multiplayer design scale of 4 × 150 ([ADR-0019](adr/0019-perf
 
 S1 and S2 measured them in M0, far inside every budget (a 600-unit tick about 0.05 ms p50, a
 384² arena idling at 0.06 ms); the owner approved keeping them all (ADR-0019, Accepted
-2026-10-22), and budget F stays provisional until S4 reports. Each milestone's perf gate
+2026-10-22); S4 then measured budget F for bare humanoids (200 cost 0.69 ms of the frame with
+the client compat set), and F stays provisional for armoured units until ART-01. Each milestone's perf gate
 asserts the budgets at that milestone's target scale, from the
 [budget matrix](roadmap/M0-foundation.md#budget-matrix-per-milestone-delivered-and-kept-by-perf-01);
 a stress pass at twice that scale asserts only the whole tick, C p95 ≤ 50 ms, after 200 warm-up

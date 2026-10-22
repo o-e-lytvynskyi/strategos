@@ -1,0 +1,26 @@
+batch,run,note,windowFocused,contentScale,windowWidth,windowHeight,framebufferWidth,framebufferHeight,guiScale,glRenderer,camera,ok
+s3,run1,"first batch, camera at the player",True,1.0,1280,720,1280,720,2.0,Apple M4 Pro,1.5 -54.0 -4.5 0.0 45.0,True
+s3,run2,"first batch, camera at the player",True,1.0,1280,720,1280,720,2.0,Apple M4 Pro,5.5 -54.0 -14.5 0.0 45.0,True
+s3,run3,"first batch, camera at the player",True,1.0,1280,720,1280,720,2.0,Apple M4 Pro,0.5 -54.0 -2.5 0.0 45.0,True
+s3,run4,"first batch, camera at the player",True,1.0,1280,720,1280,720,2.0,Apple M4 Pro,-8.5 -54.0 -1.5 0.0 45.0,True
+s3,run5,"first batch, camera at the player",True,1.0,1280,720,1280,720,2.0,Apple M4 Pro,6.5 -54.0 -7.5 0.0 45.0,True
+s3,run6,"first batch, camera at the player",True,1.0,1280,720,1280,720,2.0,Apple M4 Pro,-5.5 -54.0 -13.5 0.0 45.0,True
+s3,run7,"first batch, camera at the player",False,1.0,1280,720,1280,720,2.0,Apple M4 Pro,-0.5 -54.0 -2.5 0.0 45.0,True
+s3,run8,"first batch, camera at the player",False,1.0,1280,720,1280,720,2.0,Apple M4 Pro,4.5 -54.0 -9.5 0.0 45.0,True
+s3,run9,"first batch, camera at the player",True,1.0,1280,720,1280,720,2.0,Apple M4 Pro,-0.5 -54.0 -2.5 0.0 45.0,True
+s3,run10,"first batch, camera at the player",True,1.0,1280,720,1280,720,2.0,Apple M4 Pro,8.5 -54.0 2.5 0.0 45.0,True
+s3b,run1,after the time and chat fixes,True,1.0,1280,720,1280,720,2.0,Apple M4 Pro,-7.5 -54.0 2.5 0.0 45.0,True
+s3b,run2,after the time and chat fixes,False,1.0,1280,720,1280,720,2.0,Apple M4 Pro,4.5 -54.0 -13.5 0.0 45.0,True
+s3b,run3,after the time and chat fixes,True,1.0,1280,720,1280,720,2.0,Apple M4 Pro,2.5 -54.0 -8.5 0.0 45.0,True
+s3final,run1,fixed anchor,True,1.0,1280,720,1280,720,2.0,Apple M4 Pro,0.5 -54.0 -5.5 0.0 45.0,True
+s3final,run2,fixed anchor,True,1.0,1280,720,1280,720,2.0,Apple M4 Pro,0.5 -54.0 -5.5 0.0 45.0,True
+s3final,run3,fixed anchor,True,1.0,1280,720,1280,720,2.0,Apple M4 Pro,0.5 -54.0 -5.5 0.0 45.0,True
+s3final,run4,fixed anchor,False,1.0,1280,720,1280,720,2.0,Apple M4 Pro,0.5 -54.0 -5.5 0.0 45.0,True
+s3final,run5,fixed anchor,True,1.0,1280,720,1280,720,2.0,Apple M4 Pro,0.5 -54.0 -5.5 0.0 45.0,True
+s3final,run6,fixed anchor,True,1.0,1280,720,1280,720,2.0,Apple M4 Pro,0.5 -54.0 -5.5 0.0 45.0,True
+s3final,run7,fixed anchor,True,1.0,1280,720,1280,720,2.0,Apple M4 Pro,0.5 -54.0 -5.5 0.0 45.0,True
+s3final,run8,fixed anchor,True,1.0,1280,720,1280,720,2.0,Apple M4 Pro,0.5 -54.0 -5.5 0.0 45.0,True
+s3final,run9,fixed anchor,True,1.0,1280,720,1280,720,2.0,Apple M4 Pro,0.5 -54.0 -5.5 0.0 45.0,True
+s3final,run10,fixed anchor,True,1.0,1280,720,1280,720,2.0,Apple M4 Pro,0.5 -54.0 -5.5 0.0 45.0,True
+s3confirm,smoke-1,"final harness, camera held",True,1.0,1280,720,1280,720,2.0,Apple M4 Pro,0.5 -54.0 -5.5 0.0 45.0,True
+s3confirm,smoke-2,"final harness, camera held",True,1.0,1280,720,1280,720,2.0,Apple M4 Pro,0.5 -54.0 -5.5 0.0 45.0,True

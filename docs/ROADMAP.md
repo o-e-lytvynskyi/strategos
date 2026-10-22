@@ -240,32 +240,32 @@ Cards: [roadmap/M0-foundation.md](roadmap/M0-foundation.md#cards). 26 cards, at 
 
 | ID | Feature | Size | Depends on | Status |
 |---|---|---|---|---|
-| QA-01 | Build skeleton, pins, core merge and spike S5 | M | — | done |
-| QA-02 | Core test kit: SimHarness, fakes and shared scenarios | M | QA-01 | done |
-| QA-04 | GameTest harness (L3) | M | QA-01 | done |
-| CORE-01 | Match container, lifecycle and region index | M | QA-02, QA-04 | in_progress |
-| CORE-02 | Driving port and the nine-phase tick pipeline | M | CORE-01 | done |
-| CORE-03 | Command pipeline and in-memory journal | M | CORE-02 | done |
-| CORE-06 | Unit records, handles and the body registry | M | CORE-01 | done |
+| QA-01 | Build skeleton, pins, core merge and spike S5 | M | — | accepted |
+| QA-02 | Core test kit: SimHarness, fakes and shared scenarios | M | QA-01 | accepted |
+| QA-04 | GameTest harness (L3) | M | QA-01 | accepted |
+| CORE-01 | Match container, lifecycle and region index | M | QA-02, QA-04 | accepted |
+| CORE-02 | Driving port and the nine-phase tick pipeline | M | CORE-01 | accepted |
+| CORE-03 | Command pipeline and in-memory journal | M | CORE-02 | accepted |
+| CORE-06 | Unit records, handles and the body registry | M | CORE-01 | accepted |
 | UNIT-01 | Unit body v0: a kinematic LivingEntity view | M | CORE-06 | in_progress |
-| QA-09 | Launch scripts, playtest protocol and the Done ADR | S | QA-01 | in_progress |
-| ORD-01 | Walking skeleton: a debug move order end to end | S | CORE-03, UNIT-01 | in_progress |
-| QA-03 | Minecraft-bootstrapped unit tests (L2) | S | QA-01 | done |
-| QA-05 | Server smoke (L5): boot, a headless match, a restart round trip | M | QA-01, ORD-01, CORE-07 | done |
-| QA-06 | Client scenario runner and spike S3 (consent) | M | QA-01, D-22 | in_progress |
-| QA-07 | Performance harness (L6) | M | QA-02, QA-04 | done |
-| QA-08 | Continuous integration | M | QA-04, QA-05, D-23 | done |
-| QA-10 | Developer commands and log tagging | S | QA-04 | done |
-| QA-17 | Static gates, engine-surface inventory and fixture catalogue | M | QA-01 | done |
-| PERF-01 | Budget matrix and enforcement | S | QA-07 | done |
-| PERF-02 | Spike S1: server cost per body | M | UNIT-01, QA-07 | done |
-| PERF-03 | Spike S2: force-loaded arena cost | M | QA-05, QA-07 | done |
-| PERF-04 | Spike S4: client frame time with many units (consent) | M | QA-06, UNIT-01 | in_progress |
-| CORE-04 | Match event bus | S | CORE-02 | done |
-| CORE-05 | Determinism kit and spike S6 | M | CORE-03, CORE-04 | done |
-| CORE-07 | Persistence kernel: one blob per match | M | CORE-06 | done |
-| CORE-10 | Fault containment | M | CORE-02, QA-04 | done |
-| CORE-12 | Save quarantine | M | CORE-07, CORE-10 | done |
+| QA-09 | Launch scripts, playtest protocol and the Done ADR | S | QA-01 | accepted |
+| ORD-01 | Walking skeleton: a debug move order end to end | S | CORE-03, UNIT-01 | accepted |
+| QA-03 | Minecraft-bootstrapped unit tests (L2) | S | QA-01 | accepted |
+| QA-05 | Server smoke (L5): boot, a headless match, a restart round trip | M | QA-01, ORD-01, CORE-07 | accepted |
+| QA-06 | Client scenario runner and spike S3 (consent) | M | QA-01, D-22 | accepted |
+| QA-07 | Performance harness (L6) | M | QA-02, QA-04 | accepted |
+| QA-08 | Continuous integration | M | QA-04, QA-05, D-23 | accepted |
+| QA-10 | Developer commands and log tagging | S | QA-04 | accepted |
+| QA-17 | Static gates, engine-surface inventory and fixture catalogue | M | QA-01 | accepted |
+| PERF-01 | Budget matrix and enforcement | S | QA-07 | accepted |
+| PERF-02 | Spike S1: server cost per body | M | UNIT-01, QA-07 | accepted |
+| PERF-03 | Spike S2: force-loaded arena cost | M | QA-05, QA-07 | accepted |
+| PERF-04 | Spike S4: client frame time with many units (consent) | M | QA-06, UNIT-01 | accepted |
+| CORE-04 | Match event bus | S | CORE-02 | accepted |
+| CORE-05 | Determinism kit and spike S6 | M | CORE-03, CORE-04 | accepted |
+| CORE-07 | Persistence kernel: one blob per match | M | CORE-06 | accepted |
+| CORE-10 | Fault containment | M | CORE-02, QA-04 | accepted |
+| CORE-12 | Save quarantine | M | CORE-07, CORE-10 | accepted |
 
 ### M1 · Movement
 

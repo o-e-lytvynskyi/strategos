@@ -138,7 +138,7 @@ works at a time (a lock, `.session.lock` in the repository root, which git ignor
 | `specified` | assistant | Its milestone spec is written |
 | `in_progress` | assistant | The first task implementing it starts |
 | `done` | assistant | Every acceptance criterion passes at its level; the card gets `- **Done:** <date> — <evidence>` (test names, reports, spec task) |
-| `accepted` | assistant, on the owner's word | The owner played the milestone demo |
+| `accepted` | assistant, on the owner's word | The owner played the milestone demo, or accepted the milestone without it (M0, 2026-10-22) |
 | `changed` | assistant or owner | The scope must change; it waits for the owner |
 
 Milestone specs keep a "Progress" checklist (`[x] T3 (date)`); commits are named

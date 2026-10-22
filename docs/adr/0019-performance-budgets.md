@@ -4,8 +4,9 @@ Date: 2026-10-21
 
 ## Status
 
-Accepted (2026-10-22): the owner approved the M0 revision below, every budget unchanged; budget F's
-values stay provisional until spike S4 reports
+Accepted (2026-10-22): the owner approved the M0 revision below, every budget unchanged; spike S4
+then measured budget F for bare humanoids, inside every value, and F stays provisional for armoured
+units until ART-01's pass (M3)
 
 **Revised 2026-10-21**, still Proposed, to follow the roadmap's
 [engineering baseline](../roadmap/M0-foundation.md#plan-wide-engineering-baseline) (the review
@@ -86,7 +87,9 @@ The budgets apply to the M4 Pro, at the design scale of 600 units unless noted:
 - **S4:** budget F, run with the owner's consent. If 200 armoured humanoids cost more than 6 ms with
   Sodium, distant units lose their layers. M0's S4 (PERF-04) measures bare humanoids, because
   equipment layers arrive with ART-01; the armoured and held-item pass runs with ART-01 in M3
-  (noted 2026-10-21).
+  (noted 2026-10-21). *Reported 2026-10-22: 200 bare humanoids cost 0.69 ms of the frame with the
+  client compat set (Sodium and the rest) and 4.47 ms without it, and the client tick is 0.72 ms
+  p50; D-01 stays at 150 ([S4](../spikes/S4-client-frame-time.md)).*
 
 PERF-01 confirms this table with the M0 measurements and moves this ADR to Accepted once the owner
 approves the numbers. If S4 has not run by then, budget F stays provisional, and the status says it
@@ -104,10 +107,11 @@ the proposal on 2026-10-22, so the table above stands as it is.
 | C, whole tick | p95 ≤ 23 ms | a 384² arena, `ticking=false`: idle p50 0.06 ms; with 600 bodies p95 0.32 ms ([S2](../spikes/S2-force-loaded-arena.md)); no between-tick work without players | unchanged |
 | D, pathfinding | ≤ 2 ms p99; 100-unit results within 5 ticks p95 | not measurable before M1's pathfinding | unchanged |
 | E, network per client | ≤ 100 KB/s with 600 visible moving units | not measurable before M1's payloads | unchanged |
-| F, client frame | p50 ≤ 16.7 ms, p99 ≤ 25 ms; ours ≤ 3 ms; units ≤ 6 ms | S4 waits for the owner's consent to M0's client batch | unchanged, provisional |
+| F, client frame | p50 ≤ 16.7 ms, p99 ≤ 25 ms; ours ≤ 3 ms; units ≤ 6 ms; client tick ≤ 1 ms | Filled in after the approval, from [S4](../spikes/S4-client-frame-time.md): 200 bare humanoids at render distance 16, with the client compat set / vanilla: frame p50 1.06 / 4.95 ms, p99 3.93 / 7.42 ms; units 0.69 / 4.47 ms; client tick p50 0.72 / 0.91 ms, p99 0.91 / 1.30 ms; M0 draws nothing of its own | unchanged; provisional for armoured units until ART-01's pass (M3) |
 | G, memory and saves | core state ≤ 64 MB per 384² match; nav ≤ 32 MB at 512²; serialisation ≤ 100 ms | saving a 500-unit blob: median about 1 ms (`perftests.snapshot_500_budget_g`); encoding it to JSON 0.22 ms (JMH); autosave of a 384² arena with a 600-unit match: median 6.6 ms; the heap grows by about 3 MB for 600 bodies | unchanged |
 
-- **D-01** stays at 150 per player (S1: the best body is 0.12 µs at 500 moving, against 15).
+- **D-01** stays at 150 per player (S1: the best body is 0.12 µs at 500 moving, against 15; S4:
+  200 bare humanoids cost 0.69 ms of the frame with the compat set, against 6).
 - **Gates.** The proposal keeps the
   [budget matrix](../roadmap/M0-foundation.md#budget-matrix-per-milestone-delivered-and-kept-by-perf-01)
   as it is: every gate keeps its scale, window and budgets (M0: A and G, at the spike scales; M1:

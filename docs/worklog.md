@@ -9,6 +9,38 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
+## 2026-10-22 — M0 approvals, the client batch, M0 accepted
+
+- **The owner's approvals** («м0 принимаю и все одобряю»): the JMH baseline committed as
+  `perf/baseline-m4pro.json`, `jmhSpeedRatio` (0.98 locally), ADR-0019 Accepted with every budget
+  unchanged; PERF-01 and CORE-04 done. `.github/workflows/perf.yml` runs `:core:jmh
+  :core:jmhSpeedRatio :mod:runGameTestPerf -Pperf.ciFactor=3` nightly and by hand; its first run,
+  39740227029, was green in 3 min 42 s.
+- **The client batch** (consent given with the acceptance) — QA-06, PERF-04 and CORE-01 done.
+  - **S3** ([report](spikes/S3-client-scenario-harness.md)): 25 smoke runs on the Mac in four
+    batches; the window had the focus at the end of 21; frames repeat to the pixel at tick 60 once
+    the scene is pinned; `stall` ends through the watchdog; `.github/workflows/scenario.yml` runs
+    any scenario on Linux under Xvfb and llvmpipe in 2–3 minutes, frames repeatable at tick 60
+    except the units' idle animation; goldens per platform.
+  - **S4** ([report](spikes/S4-client-frame-time.md)): twelve runs; 200 bare humanoids cost
+    0.69 ms of the frame with the compat set and 4.47 ms without it, the client tick 0.72 ms p50;
+    D-01 stays at 150; budget F measured for bare humanoids, armoured with ART-01.
+  - `world_switch` passed (CORE-01.5).
+  - **Problems, each fixed in the harness:** the player's spawn point moves within the spawn
+    radius (a fixed anchor now); light changed with the load time (time frozen at noon); chat lines
+    in the frames (`sendCommandFeedback` off); a focused window's mouse turned the spectator
+    camera (held each tick and frame, the mouse released); FPS capped at 60 and only the CPU side
+    timed (no cap, the frame interval timed too); Sodium crashed on the classpath, its JarJar
+    libraries not unpacked (the client set now goes into the run's `mods` folder,
+    `installClientCompat` for the owner's client runs); on Linux the vignette was still fading
+    after a load of varying length (pinned at 0).
+- **The owner's rule:** a static scene is repeated two or three times, not ten — D-22 amended,
+  QA-18.1 three runs, the skill's consent batch.
+- **M0 accepted** on the owner's word: 25 of 26 cards `accepted`; UNIT-01 stays `in_progress`
+  until NET-01 (M1); the L7 demo waived (spec §1.6 row 64), ADR-0022's confirmation moved to the
+  first L7 session. CI about 220 of 2,000 minutes this month.
+- **Next:** M1's spec, then «начинай M1» from the owner.
+
 ## 2026-10-22 — M0 T9, the tripwire checkpoint, T9b, T11, T10, T11b, T12, T13, T14, T16, T15, T17
 
 - **M0 T17 · M0 close** — QA-08 done; M0 is Done, pending the owner's Acceptance.

@@ -27,7 +27,7 @@ governs.
 | [0016](0016-networking-and-fog-of-war.md) | One fog-aware sender, vanilla tracking behind a gate, targeted re-tracking | Accepted; amended by 0023 | 2026-10-21 | §10, §12 |
 | [0017](0017-camera-and-input.md) | A spectator body at the camera eye, a cursor-owning screen, perspective projection | Proposed - pending spike S9 | 2026-10-21 | §13 |
 | [0018](0018-persistence-and-versioning.md) | One versioned `SavedData` blob per match, codecs in core, quarantine on failure | Accepted | 2026-10-21 | §5 |
-| [0019](0019-performance-budgets.md) | Performance budgets A–G at 600 units, measured from M0 | Accepted (2026-10-22); F provisional until S4 | 2026-10-21 | §17 |
+| [0019](0019-performance-budgets.md) | Performance budgets A–G at 600 units, measured from M0 | Accepted (2026-10-22); F measured by S4 for bare humanoids, armoured with ART-01 | 2026-10-21 | §17 |
 | [0020](0020-engine-surface-inventory.md) | One reviewed inventory of every hook into Minecraft | Accepted | 2026-10-21 | §2 |
 | [0021](0021-economy-and-construction-model.md) | Hybrid world economy: real-block nodes, finite deposits and fields, abstract building HP | Accepted | 2026-10-21 | §11 |
 | [0022](0022-definition-of-done-amendments.md) | Definition-of-Done amendments for networking and tooling changes, and the inventory check in L2 | Accepted | 2026-10-21 | §16 |
@@ -39,8 +39,8 @@ governs.
 |---|---|---|---|
 | S1 server cost per body | 0011, 0019 | M0 (PERF-02); reported [2026-10-22](../spikes/S1-server-cost-per-body.md) | No |
 | S2 force-loaded arena cost | 0019 (and the sizes in 0010) | M0 (PERF-03); reported [2026-10-22](../spikes/S2-force-loaded-arena.md) | No |
-| S3 client harness on macOS | 0006 (the L4 consent rule) | M0 (QA-06); [prepared](../spikes/S3-client-scenario-harness.md), pending consent | Yes |
-| S4 client frame time | 0019 | M0, else with CAM-01 (PERF-04, bare humanoids); the armoured and held-item pass with ART-01 in M3; [prepared](../spikes/S4-client-frame-time.md), pending consent | Yes |
+| S3 client harness on macOS | 0006 (the L4 consent rule) | M0 (QA-06); reported [2026-10-22](../spikes/S3-client-scenario-harness.md), with the Linux route on CI | Yes |
+| S4 client frame time | 0019 | M0, else with CAM-01 (PERF-04, bare humanoids); the armoured and held-item pass with ART-01 in M3; bare humanoids reported [2026-10-22](../spikes/S4-client-frame-time.md) | Yes |
 | S5 build and GameTest wiring | 0007 (and the execution of 0003) | M0, first (QA-01); [final report](../spikes/S5-build-wiring.md) 2026-10-22 | No |
 | S6 determinism canary | 0009 | M0 (CORE-05); reported [2026-10-22](../spikes/S6-determinism-canary.md), Linux on CI | No |
 | S7 path service under load | 0015 | M1 (PATH-16) | No |
