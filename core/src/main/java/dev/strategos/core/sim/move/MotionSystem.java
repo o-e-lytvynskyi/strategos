@@ -296,7 +296,7 @@ public final class MotionSystem implements MatchSystem {
         aimZ[i] = tz;
         endX[i] = nx;
         endZ[i] = nz;
-        avoidance.plan(s, i, nx - x0, nz - z0, speed);
+        avoidance.plan(s, i, nx - x0, nz - z0, speed, true);
         planX[i] = avoidance.x();
         planZ[i] = avoidance.z();
     }
@@ -305,7 +305,7 @@ public final class MotionSystem implements MatchSystem {
     private void planIdle(MatchState s, int i) {
         avoiding[i] = Stagger.selects(s.tick(), i, IDLE_EVERY);
         if (avoiding[i]) {
-            avoidance.plan(s, i, 0, 0, s.stats().walkSpeed(i) * speedFactor(s, i));
+            avoidance.plan(s, i, 0, 0, s.stats().walkSpeed(i) * speedFactor(s, i), false);
             planX[i] = avoidance.x();
             planZ[i] = avoidance.z();
         }

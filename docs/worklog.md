@@ -11,6 +11,13 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
 
 ## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25
 
+- **Fix after CI (T21's avoidance)** — CI's `verifySlow` failed `maptests.fifty_units_one_by_one`
+  from T17's push on: a walker stuck for 100 ticks among the idle units at the proving ground's
+  west start, counting on them to make way for half while they plan only every 4 ticks. A walking
+  unit now takes the whole of the avoidance of a unit that is not walking (spec §1.6 D row 131);
+  the slowest of the fifty takes 1.09 times its ideal time. The local gate had run `verify` only;
+  the skill now runs CI's `verify verifySlow verifySoak` before pushing movement changes.
+
 - **M1 T25 · Movement debug overlay and dev payloads** — PATH-10 done; its overlay goldens wait for
   M2's consent batch, as planned.
   - **Results:** `core/protocol/{DebugLayer, DebugSubscribe, DebugFeedMsg}` with exact sizes; the

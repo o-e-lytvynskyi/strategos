@@ -5,6 +5,7 @@ import dev.strategos.core.sim.Agent;
 import dev.strategos.core.sim.AgentUpdate;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.MotionStore;
+import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.nav.Dir;
 import dev.strategos.core.sim.nav.SurfaceGrid;
 import dev.strategos.core.sim.spatial.UnitFilter;
@@ -23,7 +24,8 @@ import java.util.function.IntConsumer;
  *   <li>A unit with more than {@value #CROWD} of them within {@value Separation#RANGE} blocks steers by
  *       {@link Separation} instead.
  *   <li>Otherwise ORCA keeps it clear of them for {@value #HORIZON} ticks, taking half of the avoidance of another
- *       unit, which takes the other half, and the whole of an agent's.
+ *       unit, which takes the other half, and the whole of an agent's; a walking unit also takes the whole of the
+ *       avoidance of a unit that is not walking, which plans only every few ticks.
  *   <li>Blocked surface edges within {@value #EDGE_RANGE} blocks are static limits: the speed toward such an edge is
  *       at most (distance - radius) / {@value #EDGE_TICKS} blocks a tick, or the unit's own preferred speed toward it,
  *       whichever is more, so the edges stop avoidance from pushing a body into a wall but never the unit's own
@@ -73,7 +75,7 @@ final class Avoidance {
      * Plans unit {@code i}'s velocity, preferring (prefX, prefZ) within {@code maxSpeed}; read it with {@link #x()},
      * {@link #z()}.
      */
-    void plan(MatchState s, int i, double prefX, double prefZ, double maxSpeed) {
+    void plan(MatchState s, int i, double prefX, double prefZ, double maxSpeed, boolean walking) {
         self = i;
         selfX = motion.x(i);
         selfY = motion.y(i);
@@ -105,7 +107,10 @@ final class Avoidance {
             if (relX == 0 && relZ == 0) {
                 relX = j > i ? APART : -APART; // the higher index stands east
             }
-            orca.addAgent(relX, relZ, vx, vz, motion.vx(j), motion.vz(j), radius + radius(s, j), HORIZON, 0.5);
+            // a walker takes the whole of the avoidance of a unit that is not walking: that one plans only every few
+            // ticks, so it makes way too slowly to count on for half
+            double share = walking && s.ai().state(j) != UnitState.WALKING ? 1 : 0.5;
+            orca.addAgent(relX, relZ, vx, vz, motion.vx(j), motion.vz(j), radius + radius(s, j), HORIZON, share);
         }
         double agentRange = NEIGHBOUR_RANGE * NEIGHBOUR_RANGE;
         for (int k = 0; k < agents.size(); k++) {
