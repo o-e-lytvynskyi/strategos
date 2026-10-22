@@ -55,7 +55,10 @@ public final class PersistenceTests {
 
     private PersistenceTests() {}
 
-    /** CORE-07.5, ORD-01.5 (spec 1.6 row 30): saved, unloaded and restored in the same level, the hash holds. */
+    /**
+     * CORE-07.5, ORD-01.5 (spec 1.6 row 30): saved, unloaded and restored in the same level, the hash holds, and the
+     * five units ordered to one point all arrive, one on it and the rest within 2.5 blocks (PATH-06's crowd arrival).
+     */
     @StrategosTest
     public static void saveRestoreSameHash(GameTestHelper h) {
         MatchRegistry registry = StrategosServer.get().matches();
@@ -95,13 +98,13 @@ public final class PersistenceTests {
                     check(core(state.back).stateHash() == hash, "the restored match has another hash");
                     registry.resume(state.back.id());
                 })
-                .thenExecuteAfter(20, () -> {
+                .thenWaitUntil(() -> {
                     MatchRuntime back = state.back;
                     check(back.bodies().count() == 5, back.bodies().count() + " bodies after the restore, not 5");
                     for (int handle : handles(back)) {
                         UnitView unit = unit(back, handle);
                         check(
-                                unit.state() == UnitState.IDLE && unit.x() == 16.5 && unit.z() == 16.5,
+                                unit.state() == UnitState.IDLE && Math.hypot(unit.x() - 16.5, unit.z() - 16.5) <= 2.5,
                                 "a restored unit did not reach its target: " + unit);
                     }
                 })

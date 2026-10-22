@@ -9,6 +9,8 @@ import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.MatchId;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.Vec2d;
+import dev.strategos.core.sim.Agent;
+import dev.strategos.core.sim.AgentUpdate;
 import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.CorePorts;
@@ -38,6 +40,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeMap;
 import java.util.function.BooleanSupplier;
+import java.util.function.LongFunction;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Runs one match in plain JUnit, as the mod would: commands submitted during a tick enter the next tick's inputs. Every
@@ -53,6 +57,7 @@ public final class SimHarness implements ScenarioContext {
     private final Invariants invariants = new Invariants();
     private final FakeBodies bodies = new FakeBodies();
     private final List<InputEvent> pending = new ArrayList<>();
+    private @Nullable LongFunction<List<Agent>> agents;
     private final TreeMap<Long, List<InputEvent>> scheduled = new TreeMap<>();
     private final List<OutputEvent> events = new ArrayList<>();
     private List<String> violations = List.of();
@@ -155,6 +160,14 @@ public final class SimHarness implements ScenarioContext {
                 .toArray();
     }
 
+    /**
+     * Gives every coming tick the agents {@code perTick} lists for it, as the agent tracker does; an empty list is a
+     * tick without an update.
+     */
+    public void agents(LongFunction<List<Agent>> perTick) {
+        this.agents = perTick;
+    }
+
     /** Queues damage a unit's body took for the next tick, as the damage bridge does. */
     public void damage(ExternalDamage damage) {
         pending.add(damage);
@@ -191,6 +204,10 @@ public final class SimHarness implements ScenarioContext {
         List<InputEvent> due = scheduled.remove(tick() + 1);
         if (due != null) {
             pending.addAll(due);
+        }
+        List<Agent> present = agents == null ? List.of() : agents.apply(tick() + 1);
+        if (!present.isEmpty()) {
+            pending.add(new AgentUpdate(present));
         }
         TickOutputs out = core.step(new TickInputs(tick() + 1, pending));
         pending.clear();

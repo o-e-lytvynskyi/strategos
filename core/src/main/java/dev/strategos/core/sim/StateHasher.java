@@ -100,7 +100,11 @@ public final class StateHasher {
         h = Hasher.mix(h, motion.stuck(i));
         h = Hasher.mix(h, motion.latched(i) ? 1L : 0L);
         h = Hasher.mix(h, Double.doubleToLongBits(motion.latchX(i)));
-        return Hasher.mix(h, Double.doubleToLongBits(motion.latchZ(i)));
+        h = Hasher.mix(h, Double.doubleToLongBits(motion.latchZ(i)));
+        if (motion.pushed(i) != 0) {
+            h = Hasher.mix(h, motion.pushed(i)); // only once avoidance pushed it, so older states keep their hashes
+        }
+        return h;
     }
 
     private static long mixPath(long h, PathStore paths, int i) {

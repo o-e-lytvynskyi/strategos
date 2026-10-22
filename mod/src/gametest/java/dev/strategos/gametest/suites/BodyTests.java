@@ -210,8 +210,9 @@ public final class BodyTests {
     /**
      * UNIT-01.2. Controls first (README): a pig walking past a sculk sensor wakes it, and two pigs on nearly one point
      * push apart. Then, with the pigs gone: a sensor 1 block from a unit's path stays inactive, two units on one point
-     * keep their exact core positions, and hurting a body does nothing. The two sensors are more than 8 blocks (a
-     * sensor's range) from everything of the other part.
+     * part only as the core's avoidance moves them (PATH-06), their bodies on the core's poses every tick, so vanilla
+     * never pushes them, and hurting a body does nothing. The two sensors are more than 8 blocks (a sensor's range) from
+     * everything of the other part.
      */
     @StrategosTest(timeoutTicks = 300)
     public static void noVibrationsNoPush(GameTestHelper h) {
@@ -231,7 +232,6 @@ public final class BodyTests {
             boolean pigsPushed;
             int walkerUnit;
             List<Integer> stacked = new ArrayList<>();
-            List<Vec3> stackedAt = new ArrayList<>();
             float health;
         };
         h.startSequence()
@@ -265,7 +265,6 @@ public final class BodyTests {
                             state.walkerUnit = handle;
                         } else {
                             state.stacked.add(handle);
-                            state.stackedAt.add(new Vec3(unit.x(), unit.y(), unit.z()));
                         }
                     }
                     check(state.stacked.size() == 2, "the two units on one point are " + state.stacked);
@@ -275,14 +274,15 @@ public final class BodyTests {
                     check(phase(h, unitSensor) == SculkSensorPhase.INACTIVE, "a walking unit woke a sculk sensor");
                     for (int i = 0; i < 2; i++) {
                         int handle = state.stacked.get(i);
-                        UnitView unit = unit(rt, handle);
-                        check(
-                                new Vec3(unit.x(), unit.y(), unit.z()).equals(state.stackedAt.get(i)),
-                                "a unit on a shared point moved in the core");
                         assertOnCorePose(rt, body(rt, handle), handle, 0);
                     }
                 })
                 .thenExecute(() -> {
+                    UnitView a = unit(rt, state.stacked.get(0));
+                    UnitView b = unit(rt, state.stacked.get(1));
+                    check(
+                            Math.hypot(a.x() - b.x(), a.z() - b.z()) >= 0.6,
+                            "the units on one point did not part in the core: " + a + ", " + b);
                     UnitView walked = unit(rt, state.walkerUnit);
                     check(
                             walked.state() == UnitState.IDLE && walked.x() == 19.5,

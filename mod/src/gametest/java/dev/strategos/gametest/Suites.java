@@ -1,6 +1,7 @@
 package dev.strategos.gametest;
 
 import dev.strategos.gametest.suites.ArenaTests;
+import dev.strategos.gametest.suites.AvoidTests;
 import dev.strategos.gametest.suites.BodyTests;
 import dev.strategos.gametest.suites.BuildTests;
 import dev.strategos.gametest.suites.CommandTests;
@@ -37,6 +38,7 @@ public final class Suites {
             default ->
                 List.of(
                         ArenaTests.class,
+                        AvoidTests.class,
                         BuildTests.class,
                         BodyTests.class,
                         MatchTests.class,

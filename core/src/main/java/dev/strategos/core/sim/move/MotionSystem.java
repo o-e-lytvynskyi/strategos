@@ -12,6 +12,7 @@ import dev.strategos.core.sim.MotionStore;
 import dev.strategos.core.sim.OrderReceived;
 import dev.strategos.core.sim.OrderStore;
 import dev.strategos.core.sim.Phase;
+import dev.strategos.core.sim.Stagger;
 import dev.strategos.core.sim.StopOrdered;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.nav.Dir;
@@ -20,7 +21,9 @@ import dev.strategos.core.sim.nav.PathStatus;
 import dev.strategos.core.sim.nav.PathStore;
 import dev.strategos.core.sim.nav.Surface;
 import dev.strategos.core.sim.nav.SurfaceGrid;
+import dev.strategos.core.sim.spatial.UnitFilter;
 import dev.strategos.core.sim.stats.StatService;
+import java.util.function.IntConsumer;
 
 /**
  * P4: kinematic motion (PATH-05, spec §5.8). While no terrain is published, M0's: every walking unit with a move order
@@ -34,6 +37,10 @@ import dev.strategos.core.sim.stats.StatService;
  *       of walk from there, or the target while the request is in flight (provisional steering).
  *   <li>Speed: the walk speed, × {@value #SHALLOW} in shallow water, × {@value #SLOW} on slow ground; within one step of
  *       its waypoint or target the unit lands on it exactly, so on flat open ground it moves as in M0.
+ *   <li>Avoidance (PATH-06): the step is the unit's preferred velocity, and {@link Avoidance} plans the velocity it
+ *       takes around the other units and the tick's agents. Every unit plans before any moves, so the plans see the
+ *       same positions; a plan equal to the preferred step is that step, landing included, so a unit with nothing
+ *       near moves exactly as without avoidance.
  *   <li>Integration: the new point, and in a new column the surface the current one links to; with no link the move is
  *       tried along X alone, then Z alone, else the unit stays.
  *   <li>Height: an up-step rises halfway on the first tick and onto the new floor on the second, so a block takes two
@@ -41,14 +48,21 @@ import dev.strategos.core.sim.stats.StatService;
  *       below.
  *   <li>Heading: turns toward the motion by at most the unit's turn rate.
  *   <li>Arrival: landing on a final target posts {@link Arrived}, and the arrival latch holds the unit there: pushed more
- *       than {@value #LATCH} block away, it walks back.
+ *       than {@value #LATCH} block away, it walks back. Avoidance never keeps a unit off a free target, so it lands
+ *       there. A unit {@value #CROWDED} ticks without progress arrives where it stands when another unit stands on its
+ *       target within {@value #ARRIVE_CROWD} blocks, or when it touches an idle unit that arrived at the same target,
+ *       so a crowd sent to one point settles outward from it (spec §5.8 7, until ORD-03's slots in T20).
  *   <li>Stuck monitor: a unit makes progress when it comes {@value #PROGRESS} block nearer its aim than its best;
- *       otherwise its count of ticks without progress grows (the ladder of T23 acts on it).
+ *       otherwise its count of ticks without progress grows (the ladder of T23 acts on it). Every {@value #LOST_AFTER}
+ *       ticks without progress a unit checks its line of walk to its aim, and asks for a new path once avoidance has
+ *       pushed it where that line is lost.
  * </ol>
  *
- * Idle units settle: their height follows their floor, and a latched unit pushed off its point walks back. Every unit
- * that moved or changed height joins the tick's frame, in index order. Speed and turn rate come from the {@link
- * StatService}, so modifiers reach them.
+ * Idle units settle: their height follows their floor. Every {@value #IDLE_EVERY} ticks, staggered, an idle unit plans
+ * with a zero preferred velocity, so it steps aside for others; once it stood quiet for {@value #QUIET} ticks after
+ * that, a latched unit more than {@value #LATCH} block off its point walks back. Every unit that moved or changed
+ * height joins the tick's frame, in index order. Speed and turn rate come from the {@link StatService}, so modifiers
+ * reach them.
  */
 @HotPath
 public final class MotionSystem implements MatchSystem {
@@ -66,11 +80,48 @@ public final class MotionSystem implements MatchSystem {
     static final double FALL = 0.5;
     static final double LATCH = 1.0;
     static final double PROGRESS = 0.05;
+    static final int IDLE_EVERY = 4;
+    static final int QUIET = 20;
+    static final int LOST_AFTER = 20;
+    static final double ARRIVE_CROWD = 1.5;
+    static final int CROWDED = 10;
+    /** How near two bodies count as touching, beyond their radii. */
+    static final double TOUCH = 0.1;
+    /** The largest unit radius the touch query looks for, in blocks. */
+    private static final double MAX_RADIUS = 1;
+
+    private static final byte SETTLING = 0;
+    private static final byte WALKING = 1;
+    private static final byte SPENT = 2; // walking, with no waypoint and no request: nowhere to go this tick
+
+    private static final byte LANDS = 1;
+    private static final byte FOLLOWING = 2;
+    private static final byte LAST = 4;
 
     private final MatchState state;
+    private final Avoidance avoidance;
+    private final IntConsumer toucher = this::touch;
+    private int touchSelf;
+    private double touchTargetX;
+    private double touchTargetZ;
+    private double touchRadius;
+    private boolean touched;
+
+    // per unit index, from the planning pass to the moving pass
+    private byte[] mode = new byte[0];
+    private byte[] flags = new byte[0];
+    private boolean[] avoiding = new boolean[0];
+    private double[] startY = new double[0];
+    private double[] aimX = new double[0];
+    private double[] aimZ = new double[0];
+    private double[] endX = new double[0];
+    private double[] endZ = new double[0];
+    private double[] planX = new double[0];
+    private double[] planZ = new double[0];
 
     public MotionSystem(MatchState state) {
         this.state = state;
+        this.avoidance = new Avoidance(state.motion());
         state.bus().subscribe(OrderReceived.class, m -> release(Handle.index(m.handle())));
         state.bus().subscribe(StopOrdered.class, m -> release(Handle.index(m.handle())));
     }
@@ -89,14 +140,31 @@ public final class MotionSystem implements MatchSystem {
         EntityStore entities = s.entities();
         OrderStore orders = s.orders();
         int highWater = entities.highWater();
-        for (int i = 0; i < highWater; i++) {
+        ensure(highWater);
+        for (int i = 0; i < highWater; i++) { // plan: nothing moves yet
             if (!entities.aliveAt(i)) {
                 continue;
             }
             if (s.ai().state(i) == UnitState.WALKING && orders.kind(i) == OrderStore.MOVE) {
-                walk(s, i);
+                steer(s, i);
             } else {
-                settle(s, i);
+                mode[i] = SETTLING;
+                planIdle(s, i);
+            }
+        }
+        for (int i = 0; i < highWater; i++) { // move
+            if (!entities.aliveAt(i)) {
+                continue;
+            }
+            switch (mode[i]) {
+                case WALKING -> stride(s, i);
+                case SPENT -> {
+                    if (s.paths().status(i) == PathStatus.NO_PATH) {
+                        arrive(s, i, entities.handleAt(i)); // nowhere nearer to go
+                    }
+                    settle(s, i); // a spent partial path: the next request pass asks again
+                }
+                default -> settle(s, i);
             }
         }
     }
@@ -166,15 +234,17 @@ public final class MotionSystem implements MatchSystem {
         }
     }
 
-    private void walk(MatchState s, int i) {
+    /**
+     * The planning pass for a walking unit: its aim and preferred step, and the velocity avoidance plans for it; only
+     * its own path cursor and floor change.
+     */
+    private void steer(MatchState s, int i) {
         MotionStore motion = s.motion();
         PathStore paths = s.paths();
         OrderStore orders = s.orders();
-        int handle = s.entities().handleAt(i);
         double x0 = motion.x(i);
-        double y0 = motion.y(i);
         double z0 = motion.z(i);
-        float yaw0 = motion.yaw(i);
+        startY[i] = motion.y(i);
         PathStore.Waypoints path = paths.path(i);
         int cursor = paths.cursor(i);
         while (cursor < path.count() - 1 || (cursor < path.count() && !ends(path, paths.status(i)))) {
@@ -199,13 +269,15 @@ public final class MotionSystem implements MatchSystem {
             tz = orders.targetZ(i);
             last = true;
         } else {
-            if (paths.status(i) == PathStatus.NO_PATH) {
-                arrive(s, i, handle); // nowhere nearer to go
-            }
-            settle(s, i); // a spent partial path: the next request pass asks again
+            mode[i] = SPENT;
+            planIdle(s, i);
             return;
         }
         ground(s, i);
+        int stuck = motion.stuck(i);
+        if (stuck >= LOST_AFTER && stuck % LOST_AFTER == 0 && !paths.repath(i) && !inLine(s, i, tx, tz)) {
+            paths.setRepath(i, true); // pushed off its route behind something: the request pass asks again
+        }
         double speed = s.stats().walkSpeed(i) * speedFactor(s, i);
         double dx = tx - x0;
         double dz = tz - z0;
@@ -213,21 +285,63 @@ public final class MotionSystem implements MatchSystem {
         boolean lands = d <= speed + SNAP_TOLERANCE;
         double nx = lands ? tx : x0 + dx / d * speed;
         double nz = lands ? tz : z0 + dz / d * speed;
+        mode[i] = WALKING;
+        avoiding[i] = false;
+        flags[i] = (byte) ((lands ? LANDS : 0) | (following ? FOLLOWING : 0) | (last ? LAST : 0));
+        aimX[i] = tx;
+        aimZ[i] = tz;
+        endX[i] = nx;
+        endZ[i] = nz;
+        avoidance.plan(s, i, nx - x0, nz - z0, speed);
+        planX[i] = avoidance.x();
+        planZ[i] = avoidance.z();
+    }
+
+    /** The planning pass for a unit that does not walk: every {@value #IDLE_EVERY} ticks it plans to stand still. */
+    private void planIdle(MatchState s, int i) {
+        avoiding[i] = Stagger.selects(s.tick(), i, IDLE_EVERY);
+        if (avoiding[i]) {
+            avoidance.plan(s, i, 0, 0, s.stats().walkSpeed(i) * speedFactor(s, i));
+            planX[i] = avoidance.x();
+            planZ[i] = avoidance.z();
+        }
+    }
+
+    /** The moving pass for a walking unit: its planned velocity, or its preferred step exactly when they agree. */
+    private void stride(MatchState s, int i) {
+        MotionStore motion = s.motion();
+        PathStore paths = s.paths();
+        int handle = s.entities().handleAt(i);
+        double x0 = motion.x(i);
+        double z0 = motion.z(i);
+        float yaw0 = motion.yaw(i);
+        double tx = aimX[i];
+        double tz = aimZ[i];
+        boolean preferred = planX[i] == endX[i] - x0 && planZ[i] == endZ[i] - z0;
+        double nx = preferred ? endX[i] : x0 + planX[i];
+        double nz = preferred ? endZ[i] : z0 + planZ[i];
         boolean moved = move(s, i, nx, nz);
         double x = motion.x(i);
         double z = motion.z(i);
         motion.setVelocity(i, x - x0, z - z0);
-        float yaw = turn(yaw0, x - x0, z - z0, dx, dz, (float) s.stats().turnRate(i));
+        float yaw =
+                turn(yaw0, x - x0, z - z0, tx - x0, tz - z0, (float) s.stats().turnRate(i));
         motion.set(i, x, motion.y(i), z, yaw);
         height(s, i);
         monitor(s, i, tx, tz);
-        if (moved || motion.y(i) != y0 || yaw != yaw0) {
+        if (moved || motion.y(i) != startY[i] || yaw != yaw0) {
             s.frame().add(handle, x, motion.y(i), z, yaw, STANDING);
         }
-        if (lands && x == tx && z == tz) {
-            if (following) {
+        boolean landed = preferred && (flags[i] & LANDS) != 0 && x == tx && z == tz;
+        if (!landed && (flags[i] & LAST) != 0) {
+            double d = DetMath.length(tx - x, tz - z);
+            landed = motion.stuck(i) >= CROWDED
+                    && ((d <= ARRIVE_CROWD && taken(s, i, tx, tz)) || touchesArrived(s, i, tx, tz));
+        }
+        if (landed) {
+            if ((flags[i] & FOLLOWING) != 0) {
                 paths.advance(i);
-                if (last) {
+                if ((flags[i] & LAST) != 0) {
                     arrive(s, i, handle);
                 }
             } else {
@@ -236,24 +350,112 @@ public final class MotionSystem implements MatchSystem {
         }
     }
 
-    /** An idle unit: its height follows its floor; latched and pushed off its point, it walks back. */
+    /**
+     * A unit that does not walk: its height follows its floor, and it takes its planned step aside. A latched unit
+     * that stood quiet for {@value #QUIET} ticks after its last step aside, more than {@value #LATCH} block off its
+     * point, walks back.
+     */
     private void settle(MatchState s, int i) {
         MotionStore motion = s.motion();
         int handle = s.entities().handleAt(i);
+        double x0 = motion.x(i);
         double y0 = motion.y(i);
+        double z0 = motion.z(i);
+        boolean pushed = false;
         if (ground(s, i)) {
-            motion.setVelocity(i, 0, 0);
+            if (avoiding[i] && (planX[i] != 0 || planZ[i] != 0)) {
+                move(s, i, x0 + planX[i], z0 + planZ[i]);
+                pushed = motion.x(i) != x0 || motion.z(i) != z0;
+            }
+            motion.setVelocity(i, motion.x(i) - x0, motion.z(i) - z0);
             height(s, i);
-            if (motion.y(i) != y0) {
+            if (pushed || motion.y(i) != y0) {
                 s.frame().add(handle, motion.x(i), motion.y(i), motion.z(i), motion.yaw(i), STANDING);
             }
         }
+        if (pushed) {
+            motion.setPushed(i, QUIET);
+        } else if (motion.pushed(i) > 0) {
+            motion.setPushed(i, motion.pushed(i) - 1);
+        }
         if (motion.latched(i)
+                && motion.pushed(i) == 0
                 && s.ai().state(i) == UnitState.IDLE
                 && DetMath.length(motion.x(i) - motion.latchX(i), motion.z(i) - motion.latchZ(i)) > LATCH) {
             s.orders().setMove(i, motion.latchX(i), motion.latchZ(i));
             s.bus().publish(new OrderReceived(handle)); // back to the latch point; the order releases the latch
         }
+    }
+
+    /**
+     * Whether another unit stands on (tx, tz), its body over the point where unit {@code i}'s would be: an idle one, or
+     * one sent to the same point that made no progress for {@value #CROWDED} ticks; not one passing by.
+     */
+    private static boolean taken(MatchState s, int i, double tx, double tz) {
+        int j = s.spatial().nearest(tx, tz, UnitFilter.ANY);
+        if (j < 0 || j == i) {
+            return false;
+        }
+        if (s.ai().state(j) == UnitState.WALKING
+                && (s.motion().stuck(j) < CROWDED
+                        || s.orders().targetX(j) != tx
+                        || s.orders().targetZ(j) != tz)) {
+            return false;
+        }
+        MotionStore motion = s.motion();
+        double reach = radius(s, i) + radius(s, j);
+        return DetMath.length(motion.x(j) - tx, motion.z(j) - tz) < reach;
+    }
+
+    /**
+     * Whether unit {@code i} touches an idle unit that last walked to the same target (tx, tz): a crowd sent to one
+     * point settles outward from it, each unit where it meets the ones that arrived.
+     */
+    private boolean touchesArrived(MatchState s, int i, double tx, double tz) {
+        MotionStore motion = s.motion();
+        touchSelf = i;
+        touchTargetX = tx;
+        touchTargetZ = tz;
+        touchRadius = radius(s, i);
+        touched = false;
+        s.spatial()
+                .forEachInRadius(motion.x(i), motion.z(i), touchRadius + MAX_RADIUS + TOUCH, UnitFilter.ANY, toucher);
+        return touched;
+    }
+
+    private void touch(int j) {
+        MatchState s = state;
+        MotionStore motion = s.motion();
+        if (touched
+                || j == touchSelf
+                || s.ai().state(j) != UnitState.IDLE
+                || motion.aimX(j) != touchTargetX
+                || motion.aimZ(j) != touchTargetZ) {
+            return;
+        }
+        double gap = DetMath.length(motion.x(j) - motion.x(touchSelf), motion.z(j) - motion.z(touchSelf));
+        touched = gap < touchRadius + radius(s, j) + TOUCH;
+    }
+
+    private static double radius(MatchState s, int i) {
+        return s.templates().byIndex(s.identity().templateIndex(i)).radius();
+    }
+
+    private void ensure(int size) {
+        if (size <= mode.length) {
+            return;
+        }
+        int capacity = Math.max(size, mode.length * 2);
+        mode = new byte[capacity];
+        flags = new byte[capacity];
+        avoiding = new boolean[capacity];
+        startY = new double[capacity];
+        aimX = new double[capacity];
+        aimZ = new double[capacity];
+        endX = new double[capacity];
+        endZ = new double[capacity];
+        planX = new double[capacity];
+        planZ = new double[capacity];
     }
 
     private void arrive(MatchState s, int i, int handle) {
@@ -461,7 +663,7 @@ public final class MotionSystem implements MatchSystem {
     }
 
     /** The layer of the column's surface with this floor, or -1. */
-    private static int layerOf(SurfaceGrid grid, int x, int z, int floor) {
+    static int layerOf(SurfaceGrid grid, int x, int z, int floor) {
         int count = grid.count(x, z);
         for (int layer = 0; layer < count; layer++) {
             if (Surface.floor(grid.surface(x, z, layer)) == floor) {

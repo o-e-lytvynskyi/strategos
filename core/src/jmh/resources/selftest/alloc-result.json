@@ -4,5 +4,11 @@
     "mode": "avgt",
     "primaryMetric": { "score": 10.0, "scoreUnit": "us/op" },
     "secondaryMetrics": { "·gc.alloc.rate.norm": { "score": 48.0, "scoreUnit": "B/op" } }
+  },
+  {
+    "benchmark": "dev.strategos.core.bench.Selftest.longKernel",
+    "mode": "avgt",
+    "primaryMetric": { "score": 450.0, "scoreUnit": "us/op" },
+    "secondaryMetrics": { "·gc.alloc.rate.norm": { "score": 48.0, "scoreUnit": "B/op" } }
   }
 ]

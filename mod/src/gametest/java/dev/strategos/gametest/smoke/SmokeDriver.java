@@ -66,9 +66,10 @@ import org.slf4j.LoggerFactory;
  *       unit body type is registered;
  *   <li>MAP-01.4: an unsaved match on the proving ground, 4,096 blocks from the spawn so that only its own tickets hold
  *       the area, imports while the server sprints (its terrain hash checked); 8 units walk from the west start, and 100
- *       ticks later, with nobody online, all 8 have bodies and stand on their target; the match is disposed;
+ *       ticks later, with nobody online, all 8 have bodies and stand at their target (idle within 2.5 blocks, the
+ *       first on it: PATH-06's crowd arrival); the match is disposed;
  *   <li>a saved 16 x 16 match around the world spawn; 8 units around local (4, 8), ordered to (12.5, 8.5);
- *   <li>100 server ticks later: every unit on the target, 8 bodies, the match RUNNING; then ordered back to (4.5, 8.5);
+ *   <li>100 server ticks later: every unit at the target, 8 bodies, the match RUNNING; then ordered back to (4.5, 8.5);
  *   <li>20 ticks later, the units still walking: the marker with the numbers, the live journal in
  *       {@code journal-run1.strj}, and {@code halt}; the stop saves the match. A 600-tick deadline fails the run.
  * </ol>
@@ -343,7 +344,7 @@ public final class SmokeDriver {
             } else {
                 for (int handle : units) {
                     UnitView unit = core.queries().unit(handle);
-                    if (unit == null || unit.x() != 40.5 || unit.z() != 192.5) {
+                    if (unit == null || !arrived(unit, 40.5, 192.5)) {
                         problem = "unit " + Handle.toString(handle) + " is not on its target: " + unit;
                         break;
                     }
@@ -404,6 +405,14 @@ public final class SmokeDriver {
         return null;
     }
 
+    /**
+     * Whether a unit ordered with seven others to (x, z) arrived: idle within 2.5 blocks of it, as PATH-06's crowd
+     * arrival settles them outward from the first, which stands on it.
+     */
+    private static boolean arrived(UnitView unit, double x, double z) {
+        return unit.state() == UnitState.IDLE && Math.hypot(unit.x() - x, unit.z() - z) <= 2.5;
+    }
+
     private static @Nullable String matchProblem(Run r, MatchCore core, int[] units) {
         if (r.match.lifecycle() != MatchLifecycle.RUNNING) {
             return "the match is " + r.match.lifecycle() + ": " + r.match.faultMessage();
@@ -416,7 +425,7 @@ public final class SmokeDriver {
         }
         for (int handle : units) {
             UnitView unit = core.queries().unit(handle);
-            if (unit == null || unit.x() != TARGET.x() || unit.z() != TARGET.z()) {
+            if (unit == null || !arrived(unit, TARGET.x(), TARGET.z())) {
                 return "unit " + Handle.toString(handle) + " is not on the target: " + unit;
             }
         }

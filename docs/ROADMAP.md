@@ -284,7 +284,7 @@ Cards: [roadmap/M1-movement.md](roadmap/M1-movement.md#cards). 26 cards, at most
 | PATH-15 | Live terrain capture, page rebuilds and the block-change router | M | PATH-02, BLD-15, CORE-01 | done |
 | PATH-03 | Path service: A*, string pulling and STRICT delivery | M | PATH-02, CORE-05 | done |
 | PATH-05 | Path following: kinematic motion on surfaces | M | PATH-03, UNIT-01 | done |
-| UNIT-09 | Spike S10: kinematic fidelity | M | PATH-05, PATH-15 | in_progress |
+| UNIT-09 | Spike S10: kinematic fidelity | M | PATH-05, PATH-15 | done |
 | CORE-11 | Binary journal and cross-level replay | M | CORE-05, QA-04 | done |
 | CORE-08 | Spatial index | M | CORE-02 | done |
 | QA-19 | Network test kit: byte counts and acknowledging mock players | M | QA-03, QA-04 | done |
@@ -293,7 +293,7 @@ Cards: [roadmap/M1-movement.md](roadmap/M1-movement.md#cards). 26 cards, at most
 | ORD-02 | Order queue: move and stop | M | ORD-01, UNIT-02, NET-01 | specified |
 | PATH-04 | Components and reachability | M | PATH-02, PATH-15 | done |
 | ORD-03 | Group destination slots | M | ORD-02, PATH-04 | specified |
-| PATH-06 | Local avoidance (ORCA) | M | PATH-05, CORE-08 | specified |
+| PATH-06 | Local avoidance (ORCA) | M | PATH-05, CORE-08 | done |
 | PATH-16 | Worker pool, ADAPTIVE delivery and spike S7 | M | PATH-03 | specified |
 | PATH-07 | Stuck ladder | M | PATH-05, PATH-06 | specified |
 | PATH-09 | Shared group path | M | PATH-06, ORD-03, PATH-16 | specified |

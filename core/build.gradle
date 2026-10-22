@@ -101,6 +101,11 @@ tasks.register('rebaselineJournals', JavaExec) {
 class JmhGate {
     static final double LIMIT = 1.15d                 // 15 % (QA-07.1)
     static final double MAX_KERNEL_BYTES = 1.0d        // a non-allocating kernel reports a fraction of a byte per op
+    // JMH's own threads allocate about 7 KB/s, which -prof gc counts in every op, so a long op shows a few bytes of it
+    // (M1 T21: 1.8 B over a 264 µs step, the same rate in every benchmark). A kernel may report twice that rate over
+    // its op, when that is more than the fixed byte.
+    static final double BACKGROUND_BYTES_PER_SECOND = 14_000d
+    static final Map<String, Double> SECONDS_PER_UNIT = ['ns/op': 1e-9d, 'us/op': 1e-6d, 'ms/op': 1e-3d, 's/op': 1d]
 
     static List<String> problems(File result, File baseline, List<String> kernels) {
         def slurper = new groovy.json.JsonSlurper()
@@ -119,7 +124,11 @@ class JmhGate {
             if (kernels.any { r.benchmark.endsWith(it) }) {   // QA-07.4: 0 B/op for @HotPath kernels
                 def norm = r.secondaryMetrics?.find { k, v -> k.endsWith('gc.alloc.rate.norm') }?.value
                 if (norm == null) problems << "${key(r)}: no gc.alloc.rate.norm; run JMH with -prof gc"
-                else if ((norm.score as double) > MAX_KERNEL_BYTES) problems << String.format('%s: a @HotPath kernel allocates %.1f B/op', key(r), norm.score as double)
+                else {
+                    double seconds = (r.primaryMetric.score as double) * (SECONDS_PER_UNIT[r.primaryMetric.scoreUnit] ?: 0d)
+                    double allowed = Math.max(MAX_KERNEL_BYTES, seconds * BACKGROUND_BYTES_PER_SECOND)
+                    if ((norm.score as double) > allowed) problems << String.format('%s: a @HotPath kernel allocates %.1f B/op (%.1f allowed for JMH\'s own background)', key(r), norm.score as double, allowed)
+                }
             }
         }
         problems
@@ -127,7 +136,7 @@ class JmhGate {
 }
 
 // The benchmarks of @HotPath kernels; each must report no allocation per operation.
-def hotPathKernels = ['StateHashBench.hash600', 'MotionBench.step600', 'StatReadBench.cachedRead', 'SpatialBench.rebuild1000']
+def hotPathKernels = ['StateHashBench.hash600', 'MotionBench.step600', 'OrcaBench.step600', 'StatReadBench.cachedRead', 'SpatialBench.rebuild1000']
 // -Pjmh.result and -Pjmh.baseline are paths relative to the repository root.
 def jmhResultFile = rootProject.file(providers.gradleProperty('jmh.result')
         .getOrElse(layout.buildDirectory.file('reports/jmh/result.json').get().asFile.path))
@@ -148,7 +157,8 @@ tasks.register('jmhCompare') {
 }
 
 // [T12] verifyHarness: the gate must catch a 30 % slowdown and an allocating kernel in the fixed
-// self-test files, without timing noise (QA-07.1, QA-07.4).
+// self-test files, without timing noise (QA-07.1, QA-07.4); [T21] a long kernel that allocates is caught too, and one
+// that shows only JMH's background passes.
 def jmhSelftestDir = file('src/jmh/resources/selftest')
 tasks.register('jmhSelftest') {
     group = 'verification'
@@ -156,9 +166,12 @@ tasks.register('jmhSelftest') {
     doLast {
         def baseline = new File(jmhSelftestDir, 'baseline.json')
         def slow = JmhGate.problems(new File(jmhSelftestDir, 'slow-result.json'), baseline, [])
-        def alloc = JmhGate.problems(new File(jmhSelftestDir, 'alloc-result.json'), baseline, ['Selftest.kernel'])
+        def kernels = ['Selftest.kernel', 'Selftest.longKernel']
+        def alloc = JmhGate.problems(new File(jmhSelftestDir, 'alloc-result.json'), baseline, kernels)
+        def background = JmhGate.problems(new File(jmhSelftestDir, 'background-result.json'), baseline, kernels)
         if (!slow.any { it.contains('regression') }) throw new GradleException('The JMH gate no longer catches a 30 % slowdown')
-        if (!alloc.any { it.contains('allocates') }) throw new GradleException('The JMH gate no longer catches an allocating @HotPath kernel')
+        if (alloc.count { it.contains('allocates') } != 2) throw new GradleException('The JMH gate no longer catches an allocating @HotPath kernel, short and long: ' + alloc)
+        if (!background.isEmpty()) throw new GradleException('The JMH gate takes JMH\'s own background for a kernel\'s allocation: ' + background)
     }
 }
 

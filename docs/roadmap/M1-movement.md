@@ -407,7 +407,8 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
   4. With S1 and PATH-06's avoidance check, the report sets ADR-0011 to Accepted, or names the
      templates that get `PHYSICS` bodies (R).
 - **Tests:** L3, L4 (consent), R · **Depends on:** PATH-05, PATH-15 · **Size:** M · **Tier:** T0
-- **Status:** in_progress
+- **Done:** 2026-10-23 — M1 T10, T21: `fidelitytests.pose_traces`, floor error 0 on all eight surfaces (1); `fidelitytests.player_melee_and_arrow_journaled` (2); the `s10_steps` frames on the Linux route, no pops, the Mac look deferred to M2's consent batch as the card allows (3); [S10](../spikes/S10-kinematic-fidelity.md) with `avoidtests.walk_around_mock_player` sets ADR-0011 to Accepted, no `PHYSICS` bodies (4)
+- **Status:** done
 
 #### CORE-11 · Binary journal and cross-level replay
 - **Value:** Nondeterminism leaking through an adapter is caught the day it appears, and any bug
@@ -591,7 +592,8 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
   4. Avoidance is deterministic for equal inputs, and `NOTICE` carries the RVO2 notice (L1).
   5. Avoidance costs under 5 µs per unit per tick at 600 units (L6).
 - **Tests:** L0, L1, L3, L6 · **Depends on:** PATH-05, CORE-08 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Done:** 2026-10-23 — M1 T21: `avoidtests.head_on_groups_through_gap` and the `head_on_gap` golden, every unit of both groups of 50 arrives (1) and no two stay closer than 0.4 for more than 5 ticks (2); `avoidtests.walk_around_mock_player`, never nearer than the two radii (3); `OrcaTest`, `AvoidanceTest.theSameInputsGiveTheSameState`, `NoticeFileTest` (4); `OrcaBench.step600` 0.96 µs a unit (5); spec §1.6 D rows 90–103
+- **Status:** done
 
 #### PATH-16 · Worker pool, ADAPTIVE delivery and spike S7
 - **Value:** Big group orders never freeze the game, and a slow host changes only how fast paths

@@ -3,7 +3,7 @@
 Where the project stands right now. The session log is in [worklog.md](worklog.md); the work
 procedure is the `strategos-dev` skill (`.claude/skills/strategos-dev/SKILL.md`).
 
-**Last update:** 2026-10-22 · **Owner last seen:** 2026-10-22 · **Current:** M1 Movement — started 2026-10-22 (owner's go-ahead)
+**Last update:** 2026-10-23 · **Owner last seen:** 2026-10-22 · **Current:** M1 Movement — started 2026-10-22 (owner's go-ahead)
 
 ## For the owner
 
@@ -159,11 +159,21 @@ Answer in chat or here; the next session applies the answers.
   is ignored. Units are shown only to their own match's players and to players in no match, such
   as an operator watching: a member of another match standing next to them sees nothing of them.
   Card NET-01 is done.
+- 2026-10-23 · **M1 T21 Units walk round each other:** units now step round one another, round
+  players and round mobs instead of walking through them. Two groups of 50 sent head-on through a
+  6-block gap in a wall both get through, and no two units ever stand inside each other; a unit
+  standing still steps aside for one walking past; a unit pushed behind a wall asks for a new
+  route. A group sent to one point settles around it rather than piling onto it (each unit gets a
+  place of its own when group orders arrive in T20). A player of the match itself is its observer
+  and is walked through, as decided in D-08. It costs under 1 µs a unit per tick (the budget is 5).
+  The avoidance adapts the open-source RVO2 library (Apache-2.0), credited in the new `NOTICE`
+  file. Cards PATH-06 and UNIT-09 are done, and ADR-0011, how unit bodies work, is now accepted:
+  no unit type needs vanilla physics.
 
 ## Now
 
-- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 18 of 29 tasks done (T28, PATH-08, joined by its trigger).
-- **In progress:** M1 T21 · Local avoidance (ORCA) (PATH-06), in the main tree since 2026-10-22.
+- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 19 of 29 tasks done (T28, PATH-08, joined by its trigger).
+- **In progress:** none.
 - **Paused WIP (parallel agents stopped by the owner on 2026-10-23 to save tokens; finished in the main tree):**
   - T17 UnitAI HFSM on branch `wip/m1-t17-unitai-hfsm` (30e628c): the framework, the M1 tree and
     `HfsmTransitionsTest` are done; `HfsmPersistenceTest`, `HfsmExitPathTest`, an NBT round trip
@@ -171,8 +181,9 @@ Answer in chat or here; the next session applies the answers.
   - T25 debug overlay on branch `wip/m1-t25-debug-overlay` (a7a110d): the dev payloads, the server
     feed, `/strategos perf` and the client overlay are done; `DebugTests`, `MockViewer#operator`
     and `verify` are left.
-- **Last finished task:** M1 T15.2 (2026-10-22).
-- **Next task:** finish T21, then T17 from its branch, then T18 (needs T17), then T25 from its branch.
+- **Last finished task:** M1 T21 (2026-10-23).
+- **Next task:** M1 T17 · UnitAI HFSM (UNIT-02), finished from its branch; then T18 (needs T17), then
+  T25 from its branch.
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 220 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.

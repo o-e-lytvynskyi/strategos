@@ -126,7 +126,8 @@ public final class MatchSnapshotCodec {
                     Codec.INT.optionalFieldOf("stuck", 0).forGetter(MotionStore.Extra::stuck),
                     Codec.BOOL.optionalFieldOf("latched", false).forGetter(MotionStore.Extra::latched),
                     Codec.DOUBLE.optionalFieldOf("latchX", 0.0).forGetter(MotionStore.Extra::latchX),
-                    Codec.DOUBLE.optionalFieldOf("latchZ", 0.0).forGetter(MotionStore.Extra::latchZ))
+                    Codec.DOUBLE.optionalFieldOf("latchZ", 0.0).forGetter(MotionStore.Extra::latchZ),
+                    Codec.INT.optionalFieldOf("pushed", 0).forGetter(MotionStore.Extra::pushed))
             .apply(i, MotionStore.Extra::new));
 
     private static final Codec<UnitRecord> UNIT = RecordCodecBuilder.create(i -> i.group(

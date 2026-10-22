@@ -13,7 +13,8 @@ import java.util.function.IntConsumer;
  * of each tick's movement by a counting sort of (cell, unit index): no incremental bookkeeping, index order inside each
  * cell, and per cell the bitmask of the factions in it, so a query skips cells without a faction it wants. A unit
  * outside the space counts in the border cell nearest it. Queries report unit indices in ascending order (the handle's
- * slot, the order systems iterate in) and allocate nothing; one must not start inside another's consumer.
+ * slot, the order systems iterate in), through a bitmask of the units found rather than a sort, and allocate nothing;
+ * one must not start inside another's consumer.
  */
 @HotPath
 public final class UnitGrid {
@@ -32,6 +33,7 @@ public final class UnitGrid {
     private int[] unitFaction = new int[0];
     private long[] unitClasses = new long[0];
     private int[] found = new int[0];
+    private long[] marks = new long[0]; // per 64 unit indices, those the running query found
     private int count;
     private boolean reporting;
 
@@ -98,14 +100,32 @@ public final class UnitGrid {
             throw new IllegalStateException("a spatial query inside another's consumer");
         }
         int n = collect(x, z, r, filter);
-        Arrays.sort(found, 0, n);
+        if (n == 0) {
+            return;
+        }
+        int first = Integer.MAX_VALUE;
+        int last = -1;
+        for (int k = 0; k < n; k++) {
+            int unit = found[k];
+            int word = unit >>> 6;
+            marks[word] |= 1L << unit;
+            first = Math.min(first, word);
+            last = Math.max(last, word);
+        }
         reporting = true;
         try {
-            for (int k = 0; k < n; k++) {
-                consumer.accept(found[k]);
+            for (int word = first; word <= last; word++) {
+                long bits = marks[word];
+                marks[word] = 0;
+                while (bits != 0) {
+                    int bit = Long.numberOfTrailingZeros(bits);
+                    bits &= bits - 1;
+                    consumer.accept((word << 6) | bit);
+                }
             }
         } finally {
             reporting = false;
+            Arrays.fill(marks, first, last + 1, 0); // what a consumer that threw left unreported
         }
     }
 
@@ -213,5 +233,6 @@ public final class UnitGrid {
         unitFaction = new int[capacity];
         unitClasses = new long[capacity];
         found = new int[capacity];
+        marks = new long[(capacity + 63) >>> 6];
     }
 }

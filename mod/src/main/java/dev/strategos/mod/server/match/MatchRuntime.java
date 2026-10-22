@@ -4,6 +4,7 @@ import dev.strategos.core.diag.MatchLog;
 import dev.strategos.core.protocol.Command;
 import dev.strategos.core.shared.MatchId;
 import dev.strategos.core.shared.PlayerSlot;
+import dev.strategos.core.sim.AgentUpdate;
 import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.ExternalDamage;
@@ -11,6 +12,7 @@ import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.core.sim.MatchRules;
 import dev.strategos.core.sim.TickOutputs;
+import dev.strategos.mod.server.body.AgentTracker;
 import dev.strategos.mod.server.body.BodyRegistry;
 import dev.strategos.mod.server.body.SpawnBudget;
 import dev.strategos.mod.server.persist.MatchData;
@@ -45,6 +47,7 @@ public final class MatchRuntime {
     private final @Nullable ResourceLocation map;
     private final PageJobs pages;
     private final MatchRoster roster;
+    private final AgentTracker agents;
     private final List<CommandEnvelope> inbox = new ArrayList<>();
     private final List<ExternalDamage> damage = new ArrayList<>();
     private final Map<ReplyKey, Consumer<CommandResult>> replies = new HashMap<>();
@@ -81,6 +84,7 @@ public final class MatchRuntime {
         this.bodies = new BodyRegistry(id, space);
         this.log = new MatchLog(LoggerFactory.getLogger(MatchRuntime.class), id);
         this.roster = data != null ? data.roster() : new MatchRoster();
+        this.agents = new AgentTracker(space);
     }
 
     /** Who sits in the match; a saved match's is its blob's. */
@@ -225,7 +229,8 @@ public final class MatchRuntime {
     public void tick(ServerLevel level) {
         MatchCore c = requireCore();
         long next = c.queries().tick() + 1;
-        TickOutputs out = c.step(InputCollector.collect(next, inbox, pages.due(next), damage));
+        AgentUpdate agents = this.agents.track(level, roster.members());
+        TickOutputs out = c.step(InputCollector.collect(next, inbox, pages.due(next), agents, damage));
         long start = System.nanoTime();
         OutputAppliers.apply(this, level, out);
         bodies.materialise(level, c.queries(), spawnBudget);

@@ -86,6 +86,21 @@ public final class Scenarios {
         return new CrossingSynthetic();
     }
 
+    /**
+     * PATH-06's golden journal and its acceptance 1 and 2 in L1 (spec §5.10, §5.11): 64 x 32 of flat terrain with a
+     * wall two blocks thick at x 31..32, three high, but for a gap six blocks wide at z 13..18. Fifty units of faction
+     * 0 stand in ten columns and five rows 1.5 blocks apart from (4.5, 12.5), fifty of faction 1 mirrored east of the
+     * wall; once all exist, each group is ordered {@value HeadOnGap#SHIFT} blocks across the wall, keeping its
+     * formation, so the groups meet head-on in the gap, row against row on the same lines, and the first to arrive
+     * take the farthest places. The spacing leaves room to walk between units that have arrived: one block, with radii
+     * of 0.35, would not. Done when every unit is idle within 2.5 blocks of its target: it arrives on it, or within
+     * 1.5 blocks while another stands on it, and may step aside since by less than the latch's block. No two units may stay closer
+     * than {@value HeadOnGap#CLOSE} block for more than {@value HeadOnGap#CLOSE_TICKS} ticks in a row. L1 only.
+     */
+    public static Scenario headOnGap() {
+        return new HeadOnGap();
+    }
+
     private static void check(boolean ok, String failure) {
         if (!ok) {
             throw new ScenarioFailure(failure);
@@ -598,6 +613,134 @@ public final class Scenarios {
                         trace(ctx, unit).equals(List.of("IDLE->WALKING", "WALKING->IDLE")),
                         Handle.toString(unit) + " walked once: " + trace(ctx, unit));
             }
+        }
+    }
+
+    private static final class HeadOnGap implements Scenario {
+        static final double CLOSE = 0.4;
+        static final int CLOSE_TICKS = 5;
+        private static final int COLUMNS = 10;
+        private static final int ROWS = 5;
+        private static final int UNITS = 2 * COLUMNS * ROWS;
+        private static final double SPACING = 1.5;
+        private static final double SHIFT = 41.5;
+        /** A unit that arrived beside a taken target, and may have stepped aside since, by less than a block. */
+        private static final double ARRIVED = 2.5;
+
+        private int[] units = new int[0];
+        private double[] targetX = new double[0];
+        private double[] targetZ = new double[0];
+        private int[] streak = new int[0];
+        private int longestClose;
+
+        @Override
+        public String id() {
+            return "head_on_gap";
+        }
+
+        @Override
+        public int sizeX() {
+            return 64;
+        }
+
+        @Override
+        public int sizeZ() {
+            return 32;
+        }
+
+        @Override
+        public long seed() {
+            return 6;
+        }
+
+        @Override
+        public int timeoutTicks() {
+            return 2_000;
+        }
+
+        static VoxelWorld terrain() {
+            VoxelWorld w = VoxelFixtures.flat(64, 32, 8, 1);
+            w.fill(31, 1, 0, 32, 3, 12, VoxelFixtures.SOLID);
+            w.fill(31, 1, 19, 32, 3, 31, VoxelFixtures.SOLID);
+            return w;
+        }
+
+        @Override
+        public void setup(ScenarioContext ctx) {
+            VoxelWorld w = terrain();
+            PageBuilder builder = new PageBuilder(MobilityClass.INFANTRY);
+            for (int pz = 0; pz < 2; pz++) {
+                for (int px = 0; px < 4; px++) {
+                    PageCoord coord = new PageCoord(px, pz);
+                    ctx.publish(TerrainPage.build(coord, w.slice(coord), builder));
+                }
+            }
+            for (int c = 0; c < COLUMNS; c++) {
+                for (int r = 0; r < ROWS; r++) {
+                    Vec2d west = new Vec2d(4.5 + SPACING * c, 12.5 + SPACING * r);
+                    ctx.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.DEBUG_WALKER, FACTION_0, west, 1, 0));
+                    Vec2d east = new Vec2d(64 - west.x(), west.z());
+                    ctx.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.DEBUG_WALKER, FACTION_1, east, 1, 0));
+                }
+            }
+        }
+
+        @Override
+        public void onTick(ScenarioContext ctx) {
+            if (units.length == 0) {
+                int[] all = ctx.queries().unitHandles();
+                if (all.length < UNITS) {
+                    return;
+                }
+                units = all;
+                targetX = new double[UNITS];
+                targetZ = new double[UNITS];
+                streak = new int[UNITS * UNITS];
+                for (int i = 0; i < UNITS; i++) {
+                    UnitView unit = alive(ctx, units[i]);
+                    targetX[i] = unit.x() < 32 ? unit.x() + SHIFT : unit.x() - SHIFT;
+                    targetZ[i] = unit.z();
+                    ctx.submit(PlayerSlot.ADMIN, Move.replace(UnitSet.of(units[i]), new Vec2d(targetX[i], targetZ[i])));
+                }
+                return;
+            }
+            double[] xs = new double[UNITS];
+            double[] zs = new double[UNITS];
+            for (int i = 0; i < UNITS; i++) {
+                UnitView unit = alive(ctx, units[i]);
+                xs[i] = unit.x();
+                zs[i] = unit.z();
+            }
+            for (int i = 0; i < UNITS; i++) {
+                for (int j = i + 1; j < UNITS; j++) {
+                    int k = i * UNITS + j;
+                    streak[k] = Math.hypot(xs[i] - xs[j], zs[i] - zs[j]) < CLOSE ? streak[k] + 1 : 0;
+                    longestClose = Math.max(longestClose, streak[k]);
+                }
+            }
+        }
+
+        @Override
+        public boolean isDone(ScenarioContext ctx) {
+            if (units.length == 0) {
+                return false;
+            }
+            for (int i = 0; i < UNITS; i++) {
+                UnitView unit = alive(ctx, units[i]);
+                if (unit.state() != UnitState.IDLE
+                        || Math.hypot(unit.x() - targetX[i], unit.z() - targetZ[i]) > ARRIVED) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        @Override
+        public void verify(ScenarioContext ctx) {
+            check(units.length == UNITS, "expected " + UNITS + " units, found " + units.length);
+            check(
+                    longestClose <= CLOSE_TICKS,
+                    "two units stayed closer than " + CLOSE + " for " + longestClose + " ticks");
         }
     }
 

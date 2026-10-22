@@ -37,6 +37,7 @@ public final class MatchState {
     private final MatchLog log;
     private BodyFrame.Builder frame = BodyFrame.builder(0);
     private TickInputs input;
+    private final List<Agent> agents = new ArrayList<>();
     private SurfaceGrid surfaces;
     private final long[] pageSlices;
     private final BitSet published;
@@ -146,6 +147,7 @@ public final class MatchState {
         outputs.clear();
         changedCount = 0;
         frame = BodyFrame.builder(entities.aliveCount());
+        agents.clear();
     }
 
     void setTick(long tick) {
@@ -224,6 +226,15 @@ public final class MatchState {
     /** This tick's body poses. */
     public BodyFrame.Builder frame() {
         return frame;
+    }
+
+    /** This tick's agents, from its {@link AgentUpdate}s in order; none on a tick without one. */
+    public List<Agent> agents() {
+        return agents;
+    }
+
+    void addAgents(List<Agent> more) {
+        agents.addAll(more);
     }
 
     /** This tick's inputs, which INGEST reads. */

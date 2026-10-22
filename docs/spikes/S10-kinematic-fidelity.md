@@ -1,6 +1,6 @@
 # S10: kinematic fidelity
 
-*Written with M1 T10 on 2026-10-22; completed with T21's avoidance check. Spec:
+*Written with M1 T10 on 2026-10-22; completed with T21's avoidance check on 2026-10-23. Spec:
 [M1 §8.2](../milestones/M1-movement.md#82-s10-kinematic-fidelity-t10-completed-in-t21--confirms-adr-0011);
 card UNIT-09.*
 
@@ -118,8 +118,13 @@ of 921,600 differ, 2,583 of them by more than 8 levels
 
 - **`PHYSICS` bodies are not needed for fidelity.** Kinematic bodies are exact on every listed
   surface; together with S1's cost (0.12 µs a body against about 5 µs for a physics body), nothing
-  so far argues for physics bodies. ADR-0011 stays Proposed until PATH-06's avoidance check
-  (`avoidtests.walk_around_mock_player`, T21), which completes this report.
+  argues for physics bodies.
+- **Units walk round players (T21, 2026-10-23).** In `avoidtests.walk_around_mock_player` a
+  first-person mock player in no match stands on a walker's straight line: the agent tracker
+  journals it as the tick's agent and the walker goes round it, never nearer than their two radii
+  (0.35 + 0.3), and arrives. A member of the match is its observer and is passed through
+  (`avoidtests.member_avatar_passed_through`, D-08). So kinematic bodies need no physics to make way
+  for players either. **ADR-0011 is Accepted**; no template gets a `PHYSICS` body (UNIT-09.4).
 - **A proposal for the owner:** stand a unit on the highest surface under its whole footprint, as a
   vanilla body does, instead of the one under its centre. The feet would then never cut into a
   step's edge or hang over a ledge; it is a change to PATH-05's motion, best made before the Mac
@@ -137,4 +142,5 @@ of 921,600 differ, 2,583 of them by more than 8 levels
 
 - The error is measured against vanilla's rest height (D row 69); the frames cover the whole walk,
   not 40 ticks (D row 70); the mock player is a `FakePlayer` (D row 71).
-- UNIT-09 stays `in_progress` until T21 adds the avoidance check and sets ADR-0011's status.
+- UNIT-09 is done with T21's avoidance check (2026-10-23); its screenshots (UNIT-09.3) remain the
+  optional Mac pass of M2's consent batch.

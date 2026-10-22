@@ -9,7 +9,33 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2
+## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21
+
+- **M1 T21 · Local avoidance (ORCA)** — PATH-06 done; UNIT-09 done with its avoidance check, and
+  ADR-0011 Accepted (2026-10-23).
+  - **Results:** `core/sim/move/{Orca, OrcaLine, Separation, Avoidance}`: RVO2 2.0.3's solver and
+    agent lines ported (Apache-2.0; `NOTICE`, `licenses/Apache-2.0.txt`, the changes in `Orca`'s
+    header), blocked surface edges as static limits, separation in crowds, idle units stepping aside
+    every 4 ticks; `MotionSystem` plans every unit before any moves; arrival beside a taken target and
+    on touching a crowd that arrived; a lost line of walk asks for a new path. `core/sim/{Agent,
+    AgentUpdate}` (journal input 5) and `mod/server/body/AgentTracker` (players outside the match and
+    mobs, not members: D-08). Tests: `OrcaTest`, `AvoidanceTest`, `AgentUpdateTest`, `NoticeFileTest`,
+    the `head_on_gap` golden (crossing_synthetic re-recorded; walking_skeleton and canary
+    byte-identical), `avoidtests.head_on_groups_through_gap`, `walk_around_mock_player`,
+    `member_avatar_passed_through` (123 GameTests); `verify` 42 s.
+  - **Measured:** `OrcaBench.step600` 577 µs, 0.96 µs a unit (budget 5); `MotionBench.step600`
+    340 µs; `SpatialBench.query1000` 0.39 → 0.25 ms. Both groups of 50 arrive in about 350 ticks
+    (one unit alone: 166).
+  - **Problems:** plain ORCA brakes a head-on pair on one line to a stop: a bound preference is
+    turned 0.001 radian and solved again (D row 93). The gate found 19.6 KB a step in
+    `MotionBench`: `Arrays.sort` on a grid query's results allocates a merge buffer once it sorts 44
+    or more indices in several runs; the grid now reports through a bitmask (D row 102). JMH's own
+    threads add about 0.007 B per µs of an op, so the 0-allocation gate now allows that over long
+    ops, its self-test extended (D row 103). With avoidance a crowd sent to one point never landed,
+    which broke 52 GameTests and the smoke: arrival beside a taken target and on touching an
+    arrived crowd (D row 98); a 0.5-block tolerance and stuck walkers sent elsewhere counting as
+    occupants both jammed the head-on formation and were dropped. A straight path pushed past a
+    gap's edge left units on the wall until they repath on a lost line of walk (D row 99).
 
 - **Parallel work:** at the owner's suggestion T17 (UnitAI HFSM) and T25 (debug overlay) are built
   by two agents in their own worktrees while the main tree goes on; each branch is reviewed,

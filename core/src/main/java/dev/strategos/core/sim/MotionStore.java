@@ -29,6 +29,7 @@ public final class MotionStore {
     private boolean[] latched = new boolean[0];
     private double[] latchX = new double[0];
     private double[] latchZ = new double[0];
+    private int[] pushed = new int[0];
 
     /** The terrain part of a unit's motion, as a snapshot keeps it. */
     @CoreApi
@@ -43,10 +44,11 @@ public final class MotionStore {
             int stuck,
             boolean latched,
             double latchX,
-            double latchZ) {
+            double latchZ,
+            int pushed) {
         /** A unit that never touched terrain. */
         public static final Extra NONE =
-                new Extra(0, 0, NO_FLOOR, false, 0, 0, Double.POSITIVE_INFINITY, 0, false, 0, 0);
+                new Extra(0, 0, NO_FLOOR, false, 0, 0, Double.POSITIVE_INFINITY, 0, false, 0, 0, 0);
     }
 
     public void ensureCapacity(int size) {
@@ -70,6 +72,7 @@ public final class MotionStore {
             latched = Arrays.copyOf(latched, capacity);
             latchX = Arrays.copyOf(latchX, capacity);
             latchZ = Arrays.copyOf(latchZ, capacity);
+            pushed = Arrays.copyOf(pushed, capacity);
         }
     }
 
@@ -165,6 +168,18 @@ public final class MotionStore {
         return latchZ[i];
     }
 
+    /**
+     * Ticks a unit that stepped aside for others waits, quiet, before it may walk back to its latch point; 0 when it
+     * was never pushed or has waited.
+     */
+    public int pushed(int i) {
+        return pushed[i];
+    }
+
+    public void setPushed(int i, int ticks) {
+        pushed[i] = ticks;
+    }
+
     /** The arrival latch holds the unit to (x, z); {@code latched} false releases it. */
     public void setLatch(int i, boolean latched, double x, double z) {
         this.latched[i] = latched;
@@ -185,7 +200,8 @@ public final class MotionStore {
                 stuck[i],
                 latched[i],
                 latchX[i],
-                latchZ[i]);
+                latchZ[i],
+                pushed[i]);
     }
 
     public void setExtra(int i, Extra e) {
@@ -200,6 +216,7 @@ public final class MotionStore {
         latched[i] = e.latched();
         latchX[i] = e.latchX();
         latchZ[i] = e.latchZ();
+        pushed[i] = e.pushed();
     }
 
     /** Whether unit {@code i}'s terrain part is still {@link Extra#NONE}'s: it never touched terrain. */
@@ -212,6 +229,7 @@ public final class MotionStore {
                 && aimZ[i] == 0
                 && best[i] == Double.POSITIVE_INFINITY
                 && stuck[i] == 0
-                && !latched[i];
+                && !latched[i]
+                && pushed[i] == 0;
     }
 }

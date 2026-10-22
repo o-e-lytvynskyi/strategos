@@ -4,7 +4,15 @@ Date: 2026-10-21
 
 ## Status
 
-Proposed - pending spike S10
+Accepted - 2026-10-23, by S1 and S10 with PATH-06's avoidance check (M1 T21)
+
+**S10 completed 2026-10-23** by `avoidtests.walk_around_mock_player`: a kinematic unit walks round a
+first-person player, the player arriving in the core as a journaled `AgentUpdate`, never nearer
+than their two radii; a member of the match, the D-08 observer, is passed through. Every exit
+criterion is met: S1's costs below, and S10's floor error 0 with no visible pops on the Linux
+frames. No template needs a `PHYSICS` body. The owner's proposal from S10, standing units on the
+highest surface under their whole footprint, is a change to PATH-05's motion and not an exit
+criterion.
 
 **S10 reported 2026-10-22** ([S10-kinematic-fidelity.md](../spikes/S10-kinematic-fidelity.md)),
 still Proposed until PATH-06's avoidance check (T21) completes it: on slabs, stairs, snow, carpet,

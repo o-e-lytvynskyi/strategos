@@ -6,9 +6,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * P0: puts the tick's inputs in canonical order (terrain pages by page, Z then X, then commands, then damage to bodies
- * in the order it came), records them in the journal and routes each to its one handler: the pages are published
- * together, a command is queued; damage is only recorded until CMB-01 applies it.
+ * P0: puts the tick's inputs in canonical order (terrain pages by page, Z then X, then commands, then the agents, then
+ * damage to bodies in the order it came), records them in the journal and routes each to its one handler: the pages are
+ * published together, a command is queued, the agents are the tick's for avoidance; damage is only recorded until
+ * CMB-01 applies it.
  */
 final class IngestSystem implements MatchSystem {
     private final CommandSystem commands;
@@ -21,7 +22,7 @@ final class IngestSystem implements MatchSystem {
 
     /** Every {@link InputEvent} type this system routes; a test checks it against the sealed list. */
     static List<Class<? extends InputEvent>> handledTypes() {
-        return List.of(CommandEnvelope.class, TerrainPage.class, ExternalDamage.class);
+        return List.of(CommandEnvelope.class, TerrainPage.class, AgentUpdate.class, ExternalDamage.class);
     }
 
     @Override
@@ -39,6 +40,7 @@ final class IngestSystem implements MatchSystem {
             switch (event) {
                 case TerrainPage page -> pages.add(page);
                 case CommandEnvelope envelope -> commands.enqueue(envelope);
+                case AgentUpdate update -> state.addAgents(update.agents());
                 case ExternalDamage damage -> {} // journaled above; CMB-01 applies it
             }
         }
@@ -53,14 +55,15 @@ final class IngestSystem implements MatchSystem {
         if (a instanceof CommandEnvelope ca && b instanceof CommandEnvelope cb) {
             return CommandEnvelope.CANONICAL.compare(ca, cb);
         }
-        return Integer.compare(rank(a), rank(b)); // two damage records keep their order
+        return Integer.compare(rank(a), rank(b)); // two damage records, or two agent updates, keep their order
     }
 
     private static int rank(InputEvent event) {
         return switch (event) {
             case TerrainPage page -> 0;
             case CommandEnvelope envelope -> 1;
-            case ExternalDamage damage -> 2;
+            case AgentUpdate update -> 2;
+            case ExternalDamage damage -> 3;
         };
     }
 }

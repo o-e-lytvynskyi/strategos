@@ -19,7 +19,7 @@ governs.
 | [0008](0008-authority-and-state-model.md) | The core owns all match state; entities are views | Accepted | 2026-10-21 | §5 |
 | [0009](0009-tick-pipeline-determinism-and-fault-containment.md) | Tick pipeline, determinism boundary and fault containment | Accepted; amended by 0023 | 2026-10-21 | §4, §5 |
 | [0010](0010-match-model-and-lifecycle.md) | A match is a region of a level; arenas live in an arena world | Accepted; amended by 0023 | 2026-10-21 | §3 |
-| [0011](0011-unit-entity-and-body-seam.md) | Units are kinematic `LivingEntity` views behind a body seam | Proposed - S1 met; pending spike S10 | 2026-10-21 | §6 |
+| [0011](0011-unit-entity-and-body-seam.md) | Units are kinematic `LivingEntity` views behind a body seam | Accepted 2026-10-23 (S1, S10) | 2026-10-21 | §6 |
 | [0012](0012-template-and-content-pipeline.md) | Templates load through a reload listener with core-side inheritance | Accepted | 2026-10-21 | §8 |
 | [0013](0013-modifier-pipeline.md) | The core modifier pipeline is the single source of every stat | Accepted | 2026-10-21 | §8 |
 | [0014](0014-orders-commands-and-unitai.md) | Typed commands, server-side validation, 0 A.D. order queues and a hierarchical UnitAI | Accepted; amended by 0023 | 2026-10-21 | §7 |
@@ -46,7 +46,7 @@ governs.
 | S7 path service under load | 0015 | M1 (PATH-16) | No |
 | S8 terrain census and encoding | 0015 | M1 (PATH-01); reported [2026-10-22](../spikes/S8-terrain-census.md) | No |
 | S9 commander camera on a dedicated server | 0017 | Right after M0, on the client track (CAM-01) | Yes (clients) |
-| S10 kinematic fidelity | 0011 | M1 (UNIT-09) | Screenshots: yes |
+| S10 kinematic fidelity | 0011 | M1 (UNIT-09); reported [2026-10-22, completed 2026-10-23](../spikes/S10-kinematic-fidelity.md) | Screenshots: yes |
 | S11 bandwidth | 0016 (whether the tier-4 reserve is needed) | M7 (NET-04) | Real clients: yes |
 | S12 content cycle | 0012 (its targets, not the decision) | M1 (DATA-03) | No |
 
