@@ -19,6 +19,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.fml.ModList;
+import net.neoforged.neoforge.registries.RegistryManager;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
@@ -56,6 +57,13 @@ class EngineSurfaceInventoryTest {
         return roots;
     }
 
+    /** Every registered data map type, on any registry (RegistryManager.java:74). */
+    private static List<String> dataMaps() {
+        List<String> ids = new ArrayList<>();
+        RegistryManager.getDataMaps().values().forEach(types -> types.keySet().forEach(id -> ids.add(id.toString())));
+        return ids;
+    }
+
     private static Path modFile(String... path) {
         return ModList.get().getModFileById(Strategos.MOD_ID).getFile().findResource(path);
     }
@@ -70,7 +78,8 @@ class EngineSurfaceInventoryTest {
     }
 
     private static EngineSurface code(List<String> entityTypes, String modsToml, @Nullable String transformers) {
-        return EngineSurface.ofCode(entityTypes, savedData(), commandRoots(), modsToml, transformers, inventory());
+        return EngineSurface.ofCode(
+                entityTypes, savedData(), commandRoots(), dataMaps(), modsToml, transformers, inventory());
     }
 
     @Test

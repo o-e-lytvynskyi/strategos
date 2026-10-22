@@ -17,9 +17,9 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * The mod's hooks into the engine (ADR-0020, rule B12): the inventory in {@code engine-surface.json} on one side, what
- * the code registers on the other, and one comparison. M0 reads entity types, saved-data names, command roots, mixin
- * configs and access transformers from the code; the other kinds have no probe yet (payloads and data maps get theirs
- * with M1's first ones), so the code side repeats the inventory for them.
+ * the code registers on the other, and one comparison. The code side reads entity types, saved-data names, command
+ * roots, mixin configs, access transformers and data map types; the kinds without a probe yet get theirs with their
+ * first registration in M1, and until then the code side repeats the inventory for them.
  */
 public record EngineSurface(Map<String, List<String>> kinds) {
     /** Every kind, in the inventory's order. */
@@ -36,9 +36,9 @@ public record EngineSurface(Map<String, List<String>> kinds) {
             "reloadListeners",
             "configs");
 
-    /** The kinds the code side reads in M0. */
+    /** The kinds the code side reads. */
     public static final List<String> PROBED =
-            List.of("entityTypes", "savedData", "commands", "mixinConfigs", "accessTransformers");
+            List.of("entityTypes", "savedData", "commands", "mixinConfigs", "accessTransformers", "dataMaps");
 
     public EngineSurface {
         Map<String, List<String>> sorted = new LinkedHashMap<>();
@@ -83,6 +83,7 @@ public record EngineSurface(Map<String, List<String>> kinds) {
             Collection<String> entityTypeIds,
             List<String> savedData,
             Collection<String> commandRoots,
+            Collection<String> dataMapIds,
             String modsToml,
             @Nullable String accessTransformerCfg,
             EngineSurface inventory) {
@@ -102,6 +103,9 @@ public record EngineSurface(Map<String, List<String>> kinds) {
                     .forEach(transformers::add);
         }
         kinds.put("accessTransformers", transformers);
+        kinds.put(
+                "dataMaps",
+                dataMapIds.stream().filter(id -> id.startsWith("strategos:")).toList());
         for (String kind : KINDS) {
             if (!PROBED.contains(kind)) {
                 kinds.put(kind, inventory.of(kind));

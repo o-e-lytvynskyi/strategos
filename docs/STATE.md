@@ -32,13 +32,16 @@ Answer in chat or here; the next session applies the answers.
   one-minute segments, each replayable on its own; `/strategos journal save <name>` writes one, and
   two golden journals pin the core's behaviour (a change fails until re-recorded with a reason).
   Card CORE-11 is done.
+- 2026-10-22 · **M1 T2 Terrain pages:** every block state now has a navigation class, and 16 x 16
+  pages of standable surfaces are built from them: slabs, stairs, carpets, snow, water, doors,
+  bridges, wall walkways and tower floors, in 27 µs a page. Card PATH-02 is done.
 
 ## Now
 
-- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 1 of 27 tasks done.
+- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 2 of 27 tasks done.
 - **In progress:** none.
-- **Last finished task:** M1 T1 (2026-10-22).
-- **Next task:** M1 T2 · Block classes and surface pages.
+- **Last finished task:** M1 T2 (2026-10-22).
+- **Next task:** M1 T11 · Template engine.
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 220 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.

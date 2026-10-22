@@ -226,7 +226,8 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
   4. A page builds in ≤ 0.5 ms (L6; S8's third exit number).
 - **Tests:** L0, L1, L2, L6 · **Fixtures:** `VoxelFixtures` · **Depends on:** QA-02, QA-03 ·
   **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Done:** 2026-10-22 — M1 T2: `BlockClassTableTest` classifies every registered block state and matches the fixture table, overrides included (1); `PageBuilderTest`, 15 cases from slabs to bridges, wall walkways, towers, doors and water (2); `PageHashTest` (3); `PageBuilderBench.build` 27 µs against 0.5 ms (4)
+- **Status:** done
 
 #### PATH-01 · Spike S8: terrain census and surface encoding
 - **Value:** The terrain model is proven against real Minecraft maps before armies depend on it.

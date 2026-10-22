@@ -20,4 +20,11 @@ public final class HotPathFixtures {
             return value;
         }
     }
+
+    /** A kernel by name without {@code @HotPath}: HOT_KERNELS_MARKED flags it. */
+    public static final class PageBuilder {
+        int build() {
+            return 1;
+        }
+    }
 }

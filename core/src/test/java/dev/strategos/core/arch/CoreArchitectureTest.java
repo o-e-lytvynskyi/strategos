@@ -231,6 +231,20 @@ class CoreArchitectureTest {
             .callMethodWhere(boxingCall())
             .because("per-tick kernels neither stream nor box (B9)");
 
+    /** The per-tick kernels of M1 (spec §7.1), named as they land; each carries {@code @HotPath}, so B9 covers it. */
+    static final List<String> HOT_KERNELS =
+            List.of("PageBuilder", "SurfaceGrid", "GridAStar", "MotionSystem", "Orca", "UnitGrid", "StatService");
+
+    static final ArchRule HOT_KERNELS_MARKED = classes()
+            .that()
+            .resideInAPackage("dev.strategos.core.sim..")
+            .and(DescribedPredicate.describe(
+                    "are named hot kernels " + HOT_KERNELS, (JavaClass c) -> HOT_KERNELS.contains(c.getSimpleName())))
+            .should()
+            .beAnnotatedWith("dev.strategos.core.shared.HotPath")
+            .allowEmptyShould(true)
+            .because("the kernels the budgets measure stay inside B9's checks");
+
     static final ArchRule EVERY_PACKAGE_IS_NULL_MARKED =
             classes().should(resideInANullMarkedPackage()).because("NullAway checks only @NullMarked code (B13)");
 
@@ -342,6 +356,12 @@ class CoreArchitectureTest {
     void hotPathsDoNotStreamOrBox() {
         HOT_PATHS_DO_NOT_STREAM_OR_BOX.check(CORE);
         assertEachBites(HOT_PATHS_DO_NOT_STREAM_OR_BOX, HotPathFixtures.Streaming.class, HotPathFixtures.Boxing.class);
+    }
+
+    @Test
+    void hotKernelsAreMarked() {
+        HOT_KERNELS_MARKED.check(CORE);
+        assertBites(HOT_KERNELS_MARKED, HotPathFixtures.PageBuilder.class);
     }
 
     @Test

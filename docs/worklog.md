@@ -9,8 +9,17 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1
+## 2026-10-22 — M1 start, T1, T2
 
+- **M1 T2 · Block classes and surface pages** — PATH-02 done.
+  - **Results:** `BlockClass` (16 bits: collision top and flags), `VoxelSlice` with its run-length
+    form, `PageBuilder` (up to 4 surfaces a column, kinds, in-page links, cost codes, footprints),
+    `SurfaceGrid` (copy-on-write pages, links across page edges by the same rule), `VoxelWorld` and
+    `VoxelFixtures` for L1; `BlockClassTable` over every block state with the `strategos:nav_class`
+    data map, now probed by the inventory test; the `HOT_KERNELS_MARKED` rule. 22 nav tests, 3 L2
+    tests; a page builds in 27 µs against 0.5 ms; `verify` 31 s.
+  - **Problems:** tags are unbound in L2, so vanilla blocks are classified by class and fluid type,
+    with tags as an addition and a rebuild on tag reloads (spec §1.6 D rows 4–7).
 - **M1 T1 · Wire codec and the binary journal** — CORE-11 done; NET-01 in progress (its codec base).
   - **Results:** `WireWriter`/`WireReader` (bounded varints, zigzag, raw doubles, UTF-8 checked)
     and `WireCodec`s for the commands (a one-unit Move is 20 bytes, 300 consecutive handles 320) and

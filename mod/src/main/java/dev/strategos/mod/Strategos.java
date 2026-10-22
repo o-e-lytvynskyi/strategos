@@ -1,5 +1,6 @@
 package dev.strategos.mod;
 
+import dev.strategos.mod.registry.ModDataMaps;
 import dev.strategos.mod.registry.ModEntityTypes;
 import dev.strategos.mod.server.body.BodyEvents;
 import dev.strategos.mod.server.command.StrategosCommands;
@@ -8,6 +9,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.event.TagsUpdatedEvent;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
@@ -16,6 +18,7 @@ import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.registries.datamaps.DataMapsUpdatedEvent;
 
 /** The common entry; it never references the client package, whose entry is {@code StrategosClient}. */
 @Mod(Strategos.MOD_ID)
@@ -25,6 +28,7 @@ public final class Strategos {
     /** FML injects the mod bus; the server's lifecycle, ticks and entity events come from the game bus. */
     public Strategos(IEventBus modBus) {
         ModEntityTypes.register(modBus);
+        ModDataMaps.register(modBus);
         IEventBus game = NeoForge.EVENT_BUS;
         game.addListener(ServerAboutToStartEvent.class, StrategosServer::onAboutToStart);
         game.addListener(ServerStartedEvent.class, StrategosServer::onStarted);
@@ -35,5 +39,7 @@ public final class Strategos {
         game.addListener(EntityJoinLevelEvent.class, BodyEvents::onJoin);
         game.addListener(EntityLeaveLevelEvent.class, BodyEvents::onLeave);
         game.addListener(RegisterCommandsEvent.class, StrategosCommands::onRegister);
+        game.addListener(DataMapsUpdatedEvent.class, StrategosServer::onDataMapsUpdated);
+        game.addListener(TagsUpdatedEvent.class, StrategosServer::onTagsUpdated);
     }
 }

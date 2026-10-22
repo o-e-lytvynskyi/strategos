@@ -1,13 +1,18 @@
 package dev.strategos.mod;
 
+import dev.strategos.mod.registry.ModDataMaps;
 import dev.strategos.mod.server.body.SpawnBudget;
 import dev.strategos.mod.server.match.MatchRegistry;
 import dev.strategos.mod.server.tick.FaultBarrier;
+import dev.strategos.mod.server.world.BlockClassTable;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.server.MinecraftServer;
+import net.neoforged.neoforge.event.TagsUpdatedEvent;
 import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
+import net.neoforged.neoforge.registries.datamaps.DataMapsUpdatedEvent;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -23,12 +28,19 @@ public final class StrategosServer {
     private final SpawnBudget spawnBudget = new SpawnBudget();
     private final FaultBarrier faults;
     private final MatchRegistry matches;
+    private volatile BlockClassTable blockClasses;
 
     private StrategosServer(MinecraftServer server, StrategosSettings settings) {
         this.server = server;
         this.settings = settings;
         this.faults = new FaultBarrier(server);
         this.matches = new MatchRegistry(server, settings, spawnBudget);
+        this.blockClasses = buildBlockClasses();
+    }
+
+    /** Every block state's nav class, with the {@code strategos:nav_class} overrides of the loaded data packs. */
+    private static BlockClassTable buildBlockClasses() {
+        return BlockClassTable.build(block -> block.builtInRegistryHolder().getData(ModDataMaps.NAV_CLASS));
     }
 
     /** The running server's holder; throws when no server runs. */
@@ -62,6 +74,29 @@ public final class StrategosServer {
 
     public SpawnBudget spawnBudget() {
         return spawnBudget;
+    }
+
+    /** Immutable: page jobs read it from any thread; a data map reload replaces it. */
+    public BlockClassTable blockClasses() {
+        return blockClasses;
+    }
+
+    /** Tags reloaded on the server: other mods' doors, fences, leaves and climbables may have changed. */
+    public static void onTagsUpdated(TagsUpdatedEvent event) {
+        StrategosServer s = current;
+        if (s != null && event.getUpdateCause() == TagsUpdatedEvent.UpdateCause.SERVER_DATA_LOAD) {
+            s.blockClasses = buildBlockClasses();
+        }
+    }
+
+    /** The block registry's data maps reloaded on the server: the overrides may have changed. */
+    public static void onDataMapsUpdated(DataMapsUpdatedEvent event) {
+        StrategosServer s = current;
+        if (s != null
+                && event.getRegistryKey().equals(Registries.BLOCK)
+                && event.getCause() == DataMapsUpdatedEvent.UpdateCause.SERVER_RELOAD) {
+            s.blockClasses = buildBlockClasses();
+        }
     }
 
     public static void onAboutToStart(ServerAboutToStartEvent event) {
