@@ -9,6 +9,7 @@ pixels differ in any channel, how many differ by more than 8 levels in some chan
 Minecraft's screenshots are; needs nothing beyond the standard library.
 """
 
+import concurrent.futures
 import csv
 import os
 import struct
@@ -105,9 +106,10 @@ def main(argv):
     names = sorted(n for n in os.listdir(left) if n.endswith(".png") and os.path.exists(os.path.join(right, n)))
     out = csv.writer(sys.stdout)
     out.writerow(["frame", "pixels", "differing", "loud", "box"])
-    for name in names:
-        pixels, differ, loud, box = compare(os.path.join(left, name), os.path.join(right, name))
-        out.writerow([name, pixels, differ, loud, "" if box is None else " ".join(map(str, box))])
+    with concurrent.futures.ProcessPoolExecutor() as pool:  # frames in parallel: decoding is pure Python
+        results = pool.map(compare, [os.path.join(left, n) for n in names], [os.path.join(right, n) for n in names])
+        for name, (pixels, differ, loud, box) in zip(names, results):
+            out.writerow([name, pixels, differ, loud, "" if box is None else " ".join(map(str, box))])
     return 0
 
 

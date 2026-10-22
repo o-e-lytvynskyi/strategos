@@ -31,7 +31,14 @@ Answer in chat or here; the next session applies the answers.
    time, over the 2 ms a tick the budget allows all pathfinding. T28 added it: the same crossing
    now takes about 2,800 steps and a fraction of a millisecond, and its route is within 1 % of the
    best one. Nothing to do; it is in the roadmap's rules ([M1 spec §1.6 D rows 42 and 47–53](milestones/M1-movement.md)).
-6. **Optional reviews:**
+6. **A proposal from spike S10, your call, not urgent:** units now stand exactly on slabs, stairs,
+   snow, carpet, paths, farmland and in shallow water, but they take a step when its edge passes
+   their centre, so for about two frames per step up a foot cuts into the step's edge, and on the
+   way down it hangs over the ledge ([frames and numbers](spikes/S10-kinematic-fidelity.md)). A
+   vanilla body stands on the highest block under its whole footprint instead. I propose the same
+   rule for our units, a change to the motion of card PATH-05, before your Mac look at the steps in
+   M2's consent batch. Say yes and it joins M1 as a small task; no, and the steps stay as they are.
+7. **Optional reviews:**
    - the card refinements made after the approval
      ([design/roadmap-changes.md §8](design/roadmap-changes.md));
    - the promo draft ([promo/roadmap-announcement.md](promo/roadmap-announcement.md)).
@@ -119,13 +126,20 @@ Answer in chat or here; the next session applies the answers.
   modifiers were added in, a read costs about 2 ns, and `/strategos stats <unit>` shows each value
   and how it came about. Movement already reads its speed and turn rate this way. Nothing in the
   game adds modifiers yet; the first technologies will. Card DATA-02 is done.
+- 2026-10-22 · **M1 T10 Spike S10, how units sit on the ground:** units walking over slabs,
+  stairs, snow, carpet, dirt paths, farmland and through a shallow pool stand exactly where a
+  vanilla body would, and drop off a ledge half a block a tick. On a real client (the Linux route
+  on CI, twice) the steps show as smooth ramps without jumps; frames are in the report. A player's
+  punch and arrow on a unit now reach the game's core and are recorded, to be applied with combat in
+  M2; a unit still takes no vanilla damage. One visual point is in "For the owner", item 6. Card
+  UNIT-09 finishes with T21's check that units walk round players.
 
 ## Now
 
-- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 13 of 28 tasks done (T28, PATH-08, joined by its trigger).
-- **In progress:** M1 T10 since 2026-10-22.
-- **Last finished task:** M1 T12 (2026-10-22).
-- **Next task:** M1 T10 · Spike S10: kinematic fidelity, external damage (UNIT-09).
+- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 14 of 28 tasks done (T28, PATH-08, joined by its trigger).
+- **In progress:** none.
+- **Last finished task:** M1 T10 (2026-10-22).
+- **Next task:** M1 T13 · Spatial index (CORE-08).
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 220 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.

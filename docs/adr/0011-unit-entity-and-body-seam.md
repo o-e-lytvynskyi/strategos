@@ -6,6 +6,14 @@ Date: 2026-10-21
 
 Proposed - pending spike S10
 
+**S10 reported 2026-10-22** ([S10-kinematic-fidelity.md](../spikes/S10-kinematic-fidelity.md)),
+still Proposed until PATH-06's avoidance check (T21) completes it: on slabs, stairs, snow, carpet,
+dirt paths, farmland, shallow water and after drops a kinematic body rests exactly where a vanilla
+body would (error 0), and a player's blow and arrow reach the core as journaled `ExternalDamage`.
+At a step's edge the client shows a ramp about a block long, with the feet cutting into the edge
+for about two frames, since the core steps at the unit's centre; no surface calls for a physics
+body.
+
 **S1 reported 2026-10-22** ([S1-server-cost-per-body.md](../spikes/S1-server-cost-per-body.md)),
 still Proposed until S10: at 500 moving bodies a kinematic body costs 0.10 µs per tick beyond the
 core (exit ≤ 4) and 0.12 µs in all, against about 5 µs for a stripped `PathfinderMob` and for a

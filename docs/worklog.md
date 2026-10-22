@@ -9,8 +9,28 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12
+## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10
 
+- **M1 T10 · Spike S10: kinematic fidelity, external damage** — UNIT-09 in progress (it closes with
+  T21's avoidance check).
+  - **Results:** `ExternalDamage` (hack, pierce, crush or lethal; from a player, a mob or nothing)
+    is a journaled input (kind 6), recorded but not applied until CMB-01; `DamageBridge` makes it
+    from `UnitEntity#hurt`, and the runtime queues it after the commands.
+    `fidelitytests.pose_traces` (eight walled lanes on the new 8-high `arena_flat_48_high`) and
+    `fidelitytests.player_melee_and_arrow_journaled` (a `FakePlayer`'s blow and arrow); the
+    `s10_steps` client scenario, run twice on the Linux route; `tools/png_diff.py`;
+    [the S10 report](spikes/S10-kinematic-fidelity.md) with five frames; a dated note on ADR-0011.
+    `ExternalDamageTest` (770 core tests in all); 111 GameTests; `verify` 40 s.
+  - **Measured:** the floor error against vanilla's rest height is 0 on all eight surfaces (73
+    ticks each, 145 in the pool, 25 after the drop); the drop falls half a block a tick. On the
+    client, 0 a block or more from a patch's edge, up to 1/6 block within half a block, mid-step at
+    the edge. The two runs' frames differ only round the unit, by up to one tick's walk.
+  - **Problems:** the first `verify` failed `faulttests.unit_entity_override_fault_contained`: it
+    injected its fault through `DamageSource#getMsgId`, which the bridge no longer calls; it now
+    throws from `getEntity` (the bridge reads it inside the fault barrier). A four-high arena could
+    not hold the drop's platform or the lanes' walls, which A* needs, or it goes round a strip it
+    may avoid (spec §1.6 D row 69). The frames show feet cutting into a step's edge for about two
+    frames per step: a proposal for the owner (STATE item 6).
 - **M1 T12 · Modifier pipeline** — DATA-02 done.
   - **Results:** `core.sim.stats`: `Modifier` (replace, multiply, add, or a token edit `+a -b`;
     a class filter, stage, priority and source id), `ClassFilter` (clauses OR-ed, `+` and `!`,
@@ -244,7 +264,7 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
   - **Problems:** ErrorProne's `EnumOrdinal` and rule B8's ban on static arrays shaped the codecs;
     the spec's checkpoint period and header changed (spec §1.6 D rows 1–3).
 - **M1 started** on the owner's go-ahead, with consent for every kind of test.
-- **Next:** T10, spike S10: kinematic fidelity and external damage (UNIT-09).
+- **Next:** T13, the spatial index (CORE-08).
 
 ## 2026-10-22 — M0 approvals, the client batch, M0 accepted
 
