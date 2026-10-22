@@ -7,9 +7,9 @@ import java.util.List;
 
 /**
  * P0: puts the tick's inputs in canonical order (terrain pages by page, Z then X, then commands, then the agents, then
- * damage to bodies in the order it came), records them in the journal and routes each to its one handler: the pages are
- * published together, a command is queued, the agents are the tick's for avoidance; damage is only recorded until
- * CMB-01 applies it.
+ * damage to bodies in the order it came, then path deliveries), records them in the journal and routes each to its one
+ * handler: the pages are published together, a command is queued, the agents are the tick's for avoidance, a delivery
+ * lists the finished jobs the path service applies this tick; damage is only recorded until CMB-01 applies it.
  */
 final class IngestSystem implements MatchSystem {
     private final CommandSystem commands;
@@ -22,7 +22,8 @@ final class IngestSystem implements MatchSystem {
 
     /** Every {@link InputEvent} type this system routes; a test checks it against the sealed list. */
     static List<Class<? extends InputEvent>> handledTypes() {
-        return List.of(CommandEnvelope.class, TerrainPage.class, AgentUpdate.class, ExternalDamage.class);
+        return List.of(
+                CommandEnvelope.class, TerrainPage.class, AgentUpdate.class, ExternalDamage.class, JobDelivery.class);
     }
 
     @Override
@@ -42,6 +43,7 @@ final class IngestSystem implements MatchSystem {
                 case CommandEnvelope envelope -> commands.enqueue(envelope);
                 case AgentUpdate update -> state.addAgents(update.agents());
                 case ExternalDamage damage -> {} // journaled above; CMB-01 applies it
+                case JobDelivery delivery -> state.addDelivery(delivery);
             }
         }
         state.publishAll(pages);
@@ -55,7 +57,7 @@ final class IngestSystem implements MatchSystem {
         if (a instanceof CommandEnvelope ca && b instanceof CommandEnvelope cb) {
             return CommandEnvelope.CANONICAL.compare(ca, cb);
         }
-        return Integer.compare(rank(a), rank(b)); // two damage records, or two agent updates, keep their order
+        return Integer.compare(rank(a), rank(b)); // two of the other kinds keep their order
     }
 
     private static int rank(InputEvent event) {
@@ -64,6 +66,7 @@ final class IngestSystem implements MatchSystem {
             case CommandEnvelope envelope -> 1;
             case AgentUpdate update -> 2;
             case ExternalDamage damage -> 3;
+            case JobDelivery delivery -> 4;
         };
     }
 }

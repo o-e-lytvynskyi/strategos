@@ -110,7 +110,7 @@ class ModArchitectureTest {
             .should(beFinalAndImmutablyTyped())
             .because("an integrated server restarts in the same JVM; only the holders keep state (B8)");
 
-    // mod.server.jobs is empty in M0; the rule covers every other mod class.
+    // mod.server.jobs holds the job pool (M1 T22); the rule covers every other mod class.
     private static final ArchRule THREADS_ONLY_IN_SERVER_JOBS = noClasses()
             .that()
             .resideInAPackage("dev.strategos.mod..")

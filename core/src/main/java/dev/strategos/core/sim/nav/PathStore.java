@@ -2,6 +2,7 @@ package dev.strategos.core.sim.nav;
 
 import dev.strategos.core.port.JobHandle;
 import dev.strategos.core.shared.CoreApi;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -13,8 +14,8 @@ import org.jspecify.annotations.Nullable;
 /**
  * Each unit's path, by handle index (04 §9.3): the waypoints it follows and the next one, the status they came with,
  * the request it waits for (0 for none), the tick of its last request, and whether changed terrain wants a new one;
- * and the match's requests in flight, by id, with the tick each is due. All of it is part of the snapshot and the state
- * hash; only the flag an order sets for this tick's request is not.
+ * and the match's requests waiting for admission, in id order, and in flight, by id, with the tick each is due (PATH-16).
+ * All of it is part of the snapshot and the state hash; only the flag an order sets for this tick's request is not.
  */
 public final class PathStore {
     /** The tick of a unit that never asked: the repath limit does not hold it back. */
@@ -30,6 +31,7 @@ public final class PathStore {
     private int nextRequestId = 1;
     private long lastPageChange = NEVER;
     private final TreeMap<Integer, Pending> pending = new TreeMap<>();
+    private final ArrayDeque<Waiting> waiting = new ArrayDeque<>();
 
     /**
      * Up to {@link #MAX} points to walk through in order: column centres, the last one the goal itself when the path
@@ -144,16 +146,23 @@ public final class PathStore {
     /** A request in flight: its job, and the tick its result is applied. */
     public record Pending(PathRequest request, long due, JobHandle<PathResult> job) {}
 
+    /**
+     * A request waiting for admission: its id and unit; the rest (where the unit stands, its target, the grid) is taken
+     * when it is admitted.
+     */
+    @CoreApi
+    public record Waiting(int id, int handle) {}
+
     /** A request in flight as a snapshot keeps it, its result already computed. */
     @CoreApi
     public record Delivery(PathRequest request, long due, PathResult result) {}
 
     /**
-     * The match's requests in flight, the next request id, and the last tick a page changed, as a snapshot keeps
-     * them.
+     * The match's requests in flight and waiting for admission, the next request id, and the last tick a page changed,
+     * as a snapshot keeps them.
      */
     @CoreApi
-    public record Queue(int nextRequestId, List<Delivery> deliveries, long lastPageChange) {
+    public record Queue(int nextRequestId, List<Delivery> deliveries, long lastPageChange, List<Waiting> waiting) {
         public static final Queue EMPTY = new Queue(1, List.of(), NEVER);
 
         public Queue {
@@ -161,6 +170,12 @@ public final class PathStore {
                 throw new IllegalArgumentException("request ids start at 1, not " + nextRequestId);
             }
             deliveries = List.copyOf(deliveries);
+            waiting = List.copyOf(waiting);
+        }
+
+        /** A queue from before admission (PATH-16): nothing waits. */
+        public Queue(int nextRequestId, List<Delivery> deliveries, long lastPageChange) {
+            this(nextRequestId, deliveries, lastPageChange, List.of());
         }
     }
 
@@ -260,6 +275,17 @@ public final class PathStore {
         repath[i] = false;
     }
 
+    /**
+     * A request at {@code tick} that found the queue full: the unit keeps its path and waits for nothing, and its status
+     * says to ask again later.
+     */
+    public void busy(int i, long tick) {
+        status[i] = (byte) PathStatus.BUSY.code();
+        request[i] = 0;
+        lastRequest[i] = tick;
+        repath[i] = false;
+    }
+
     public void setRepath(int i, boolean value) {
         repath[i] = value;
     }
@@ -300,6 +326,39 @@ public final class PathStore {
         pending.put(p.request().id(), p);
     }
 
+    /** A request joins the end of the admission queue. */
+    public void enqueue(Waiting w) {
+        waiting.addLast(w);
+    }
+
+    /** The first request waiting for admission, if any. */
+    public @Nullable Waiting peekWaiting() {
+        return waiting.peekFirst();
+    }
+
+    public void pollWaiting() {
+        waiting.removeFirst();
+    }
+
+    /** The requests waiting for admission, first in line first. */
+    public Collection<Waiting> waiting() {
+        return waiting;
+    }
+
+    /** The requests waiting or in flight. */
+    public int outstanding() {
+        return waiting.size() + pending.size();
+    }
+
+    /** The request in flight with {@code id}, removed. */
+    public Pending take(int id) {
+        Pending p = pending.remove(id);
+        if (p == null) {
+            throw new IllegalArgumentException("no request " + id + " in flight");
+        }
+        return p;
+    }
+
     /** The requests in flight, by id; ids grow with the tick they were made, so due ticks never decrease. */
     public Collection<Pending> pending() {
         return pending.values();
@@ -324,13 +383,15 @@ public final class PathStore {
         for (Pending p : pending.values()) {
             deliveries.add(new Delivery(p.request(), p.due(), p.job().join()));
         }
-        return new Queue(nextRequestId, deliveries, lastPageChange);
+        return new Queue(nextRequestId, deliveries, lastPageChange, List.copyOf(waiting));
     }
 
     /** Restores the queue: each result is delivered at its due tick as if its job had just finished. */
     public void restore(Queue queue) {
         nextRequestId = queue.nextRequestId();
         lastPageChange = queue.lastPageChange();
+        waiting.clear();
+        waiting.addAll(queue.waiting());
         pending.clear();
         for (Delivery d : queue.deliveries()) {
             PathResult result = d.result();

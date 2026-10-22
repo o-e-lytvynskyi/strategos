@@ -23,7 +23,7 @@ governs.
 | [0012](0012-template-and-content-pipeline.md) | Templates load through a reload listener with core-side inheritance | Accepted | 2026-10-21 | §8 |
 | [0013](0013-modifier-pipeline.md) | The core modifier pipeline is the single source of every stat | Accepted | 2026-10-21 | §8 |
 | [0014](0014-orders-commands-and-unitai.md) | Typed commands, server-side validation, 0 A.D. order queues and a hierarchical UnitAI | Accepted; amended by 0023 | 2026-10-21 | §7 |
-| [0015](0015-pathfinding-approach.md) | Layered 2.5D surface grid, staged search, ORCA and deterministic job delivery | Proposed - pending spike S7 (S8 reported 2026-10-22) | 2026-10-21 | §9 |
+| [0015](0015-pathfinding-approach.md) | Layered 2.5D surface grid, staged search, ORCA and deterministic job delivery | Accepted 2026-10-23, with spikes S7 and S8 | 2026-10-21 | §9 |
 | [0016](0016-networking-and-fog-of-war.md) | One fog-aware sender, vanilla tracking behind a gate, targeted re-tracking | Accepted; amended by 0023 | 2026-10-21 | §10, §12 |
 | [0017](0017-camera-and-input.md) | A spectator body at the camera eye, a cursor-owning screen, perspective projection | Proposed - pending spike S9 | 2026-10-21 | §13 |
 | [0018](0018-persistence-and-versioning.md) | One versioned `SavedData` blob per match, codecs in core, quarantine on failure | Accepted | 2026-10-21 | §5 |
@@ -43,7 +43,7 @@ governs.
 | S4 client frame time | 0019 | M0, else with CAM-01 (PERF-04, bare humanoids); the armoured and held-item pass with ART-01 in M3; bare humanoids reported [2026-10-22](../spikes/S4-client-frame-time.md) | Yes |
 | S5 build and GameTest wiring | 0007 (and the execution of 0003) | M0, first (QA-01); [final report](../spikes/S5-build-wiring.md) 2026-10-22 | No |
 | S6 determinism canary | 0009 | M0 (CORE-05); reported [2026-10-22](../spikes/S6-determinism-canary.md), Linux on CI | No |
-| S7 path service under load | 0015 | M1 (PATH-16) | No |
+| S7 path service under load | 0015 | M1 (PATH-16); reported [2026-10-23](../spikes/S7-path-service-under-load.md) | No |
 | S8 terrain census and encoding | 0015 | M1 (PATH-01); reported [2026-10-22](../spikes/S8-terrain-census.md) | No |
 | S9 commander camera on a dedicated server | 0017 | Right after M0, on the client track (CAM-01) | Yes (clients) |
 | S10 kinematic fidelity | 0011 | M1 (UNIT-09); reported [2026-10-22, completed 2026-10-23](../spikes/S10-kinematic-fidelity.md) | Screenshots: yes |

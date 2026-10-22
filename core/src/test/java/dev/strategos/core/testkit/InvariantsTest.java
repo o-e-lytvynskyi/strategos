@@ -240,6 +240,11 @@ class InvariantsTest {
         }
 
         @Override
+        public int[] finishedPathJobs(long tick) {
+            return new int[0];
+        }
+
+        @Override
         public List<OrderQueues.Order> orders(int handle) {
             return List.of();
         }
@@ -256,7 +261,7 @@ class InvariantsTest {
 
         @Override
         public PathService.Stats pathStats() {
-            return new PathService.Stats(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+            return new PathService.Stats(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
         }
     }
 }

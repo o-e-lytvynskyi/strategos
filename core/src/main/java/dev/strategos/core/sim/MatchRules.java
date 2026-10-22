@@ -27,6 +27,13 @@ public record MatchRules(
         int joinCap,
         int shortMove,
         int groupMin) {
+    /**
+     * The admission window W's default, in expansion caps a tick: 80 searches at the 20,000 cap. Spike S7 set it (M1
+     * T22): behind 200 requests a 100-unit order's results arrive within 4 ticks at p95, with the main thread's path work
+     * at most 0.6 ms at p99 on one to four threads and on the slow-host proxy.
+     */
+    public static final int DEFAULT_W = 1_600_000;
+
     public static final MatchRules DEFAULTS = new MatchRules(256, 4096);
 
     public static final Codec<MatchRules> CODEC = RecordCodecBuilder.create(i -> i.group(
@@ -39,7 +46,7 @@ public record MatchRules(
                             .forGetter(MatchRules::delivery),
                     positive("pathK", 2, MatchRules::pathK),
                     positive("pageK", 4, MatchRules::pageK),
-                    positive("admissionW", 200_000, MatchRules::admissionW),
+                    positive("admissionW", DEFAULT_W, MatchRules::admissionW),
                     positive("maxOutstanding", 2_048, MatchRules::maxOutstanding),
                     positive("busyRetry", 10, MatchRules::busyRetry),
                     positive("searchCap", 20_000, MatchRules::searchCap),
@@ -63,11 +70,15 @@ public record MatchRules(
                 || groupMin < 1) {
             throw new IllegalArgumentException("path rules need positive values");
         }
+        if (searchCap > admissionW || joinCap > admissionW) {
+            throw new IllegalArgumentException("a search's cap " + Math.max(searchCap, joinCap)
+                    + " does not fit the admission window " + admissionW + ", so it would never be admitted");
+        }
     }
 
     /** M0's two limits with the path rules' defaults. */
     public MatchRules(int commandsPerTick, int unitCap) {
-        this(commandsPerTick, unitCap, DeliveryMode.STRICT, 2, 4, 200_000, 2_048, 10, 20_000, 2_000, 24, 8);
+        this(commandsPerTick, unitCap, DeliveryMode.STRICT, 2, 4, DEFAULT_W, 2_048, 10, 20_000, 2_000, 24, 8);
     }
 
     /** These rules with another expansion cap per search. */

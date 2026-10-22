@@ -88,6 +88,14 @@ public final class StateHasher {
                     h = Hasher.mix(h, p.due());
                 }
             }
+            if (!paths.waiting()
+                    .isEmpty()) { // only while requests wait for admission, so older states keep their hashes
+                h = Hasher.mix(h, paths.waiting().size());
+                for (PathStore.Waiting w : paths.waiting()) {
+                    h = Hasher.mix(h, w.id());
+                    h = Hasher.mix(h, w.handle());
+                }
+            }
         }
 
         ArrayDeque<CommandEnvelope> pending = s.pendingCommands();

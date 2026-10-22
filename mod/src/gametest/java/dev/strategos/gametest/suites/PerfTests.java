@@ -14,12 +14,14 @@ import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.Vec2d;
+import dev.strategos.core.sim.MatchRules;
 import dev.strategos.core.sim.world.WritePriority;
 import dev.strategos.core.sim.world.WriteSite;
 import dev.strategos.core.testkit.BudgetCheck;
 import dev.strategos.core.testkit.Percentiles;
 import dev.strategos.core.testkit.SimHarness;
 import dev.strategos.gametest.MatchFixture;
+import dev.strategos.gametest.PathLoad;
 import dev.strategos.gametest.StrategosTest;
 import dev.strategos.gametest.net.MockViewer;
 import dev.strategos.mod.StrategosServer;
@@ -63,6 +65,9 @@ public final class PerfTests {
     private static final int REORDER_EVERY = 120;
     private static final int WRITER_WARM_UP = 100;
     private static final int WRITES_PER_TICK = 64;
+    private static final int GROUP_RESULTS_TICKS = 5;
+    private static final int PATH_WARM_UP = 2;
+    private static final int PATH_RUNS = 10;
 
     private PerfTests() {}
 
@@ -396,6 +401,65 @@ public final class PerfTests {
                     check(bytes <= 32L << 20, "nav takes " + bytes + " bytes");
                 })
                 .thenSucceed();
+    }
+
+    /**
+     * PATH-16.4, budget D: {@link PathLoad} with the match rules' defaults (spike S7's {@code k}, delivery and W) and
+     * the server's path threads, {@value #PATH_WARM_UP} runs to warm up and {@value #PATH_RUNS} measured, their ticks and
+     * latencies pooled: the main thread's path work at most 2 ms at p99, and the results of the 100-unit order behind
+     * 200 requests within 5 ticks at p95.
+     */
+    @StrategosTest(batch = "perf_paths", arena = "arena_flat_48", timeoutTicks = 200)
+    public static void pathBudgetD(GameTestHelper h) {
+        Window window = new Window();
+        h.startSequence()
+                .thenExecute(() -> {
+                    MatchRules d = MatchRules.DEFAULTS;
+                    MatchRules rules = PathLoad.rules(d.delivery(), d.pathK(), d.admissionW());
+                    PathLoad load = new PathLoad();
+                    for (int k = 0; k < PATH_WARM_UP; k++) {
+                        load.run(rules, StrategosServer.get().jobs());
+                    }
+                    window.start();
+                    List<PathLoad.Result> runs = new ArrayList<>();
+                    for (int k = 0; k < PATH_RUNS; k++) {
+                        runs.add(load.run(rules, StrategosServer.get().jobs()));
+                        window.sampleForeignLoad();
+                    }
+                    PathLoad.Result r = PathLoad.Result.pooled(runs);
+                    JsonObject extra = new JsonObject();
+                    extra.addProperty("threads", StrategosServer.get().jobs().threads());
+                    extra.addProperty("delivery", d.delivery().id());
+                    extra.addProperty("k", d.pathK());
+                    extra.addProperty("w", d.admissionW());
+                    extra.addProperty("join_p99_ns", r.joinP99());
+                    extra.addProperty("group_p50_ticks", r.groupP50());
+                    extra.addProperty("group_p95_ticks", r.groupP95());
+                    extra.addProperty("group_max_ticks", r.groupMax());
+                    extra.addProperty("all_p95_ticks", r.allP95());
+                    extra.addProperty("ticks_measured", r.ticks());
+                    extra.addProperty("unfinished_joins", r.stats().unfinished());
+                    verdict(
+                            h,
+                            "path_budget_d",
+                            "d",
+                            new BudgetCheck("budget D", Long.MAX_VALUE, scaled(2 * MS)),
+                            r.work(),
+                            window,
+                            extra);
+                    if (window.meanForeignLoad() <= INVALID_FOREIGN_LOAD && gated("d")) {
+                        check(
+                                r.groupP95() <= GROUP_RESULTS_TICKS,
+                                "the 100-unit order's results take " + r.groupP95() + " ticks at p95");
+                    }
+                })
+                .thenSucceed();
+    }
+
+    /** Whether a gate is listed in {@code strategos.perf.gates}, so it fails the run rather than reports. */
+    private static boolean gated(String gate) {
+        return Arrays.asList(System.getProperty("strategos.perf.gates", "a,g").split(","))
+                .contains(gate);
     }
 
     /** What the router costs per block change outside any match, averaged over 100,000 calls. */

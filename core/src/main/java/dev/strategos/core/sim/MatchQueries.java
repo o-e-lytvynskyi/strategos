@@ -46,6 +46,12 @@ public interface MatchQueries {
     /** How often each rung of the stuck ladder (1 to 5) was reached in this run, by rung; not saved (PATH-07). */
     long[] ladderRungs();
 
+    /**
+     * For an {@code ADAPTIVE} adapter about to step tick {@code tick}: the path requests in flight due by then whose jobs
+     * have finished, ascending, which it hands in as that tick's {@link JobDelivery} (PATH-16).
+     */
+    int[] finishedPathJobs(long tick);
+
     /** A live unit's terrain motion: velocity, floor, stuck monitor, arrival latch; null for a dead handle. */
     MotionStore.@Nullable Extra motion(int handle);
 

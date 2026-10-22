@@ -8,10 +8,12 @@ import dev.strategos.core.sim.AgentUpdate;
 import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.ExternalDamage;
+import dev.strategos.core.sim.JobDelivery;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.core.sim.MatchRules;
 import dev.strategos.core.sim.TickOutputs;
+import dev.strategos.core.sim.nav.DeliveryMode;
 import dev.strategos.mod.server.body.AgentTracker;
 import dev.strategos.mod.server.body.BodyRegistry;
 import dev.strategos.mod.server.body.SpawnBudget;
@@ -230,7 +232,8 @@ public final class MatchRuntime {
         MatchCore c = requireCore();
         long next = c.queries().tick() + 1;
         AgentUpdate agents = this.agents.track(level, roster.members());
-        TickOutputs out = c.step(InputCollector.collect(next, inbox, pages.due(next), agents, damage));
+        TickOutputs out =
+                c.step(InputCollector.collect(next, inbox, pages.due(next), agents, damage, delivery(c, next)));
         long start = System.nanoTime();
         OutputAppliers.apply(this, level, out);
         bodies.materialise(level, c.queries(), spawnBudget);
@@ -241,6 +244,18 @@ public final class MatchRuntime {
         for (Consumer<TickOutputs> listener : listeners) {
             listener.accept(out);
         }
+    }
+
+    /**
+     * In {@code ADAPTIVE}, the path jobs finished now and due by tick {@code next}, which that tick applies: the timing
+     * is decided here, once, and journaled (PATH-16); null in {@code STRICT} or when none has finished.
+     */
+    private static @Nullable JobDelivery delivery(MatchCore c, long next) {
+        if (c.queries().config().rules().delivery() != DeliveryMode.ADAPTIVE) {
+            return null;
+        }
+        int[] finished = c.queries().finishedPathJobs(next);
+        return finished.length == 0 ? null : new JobDelivery(finished);
     }
 
     /** The tick driver's work for a PAUSED match: its units get their bodies, nothing moves. */

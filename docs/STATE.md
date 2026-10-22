@@ -200,15 +200,22 @@ Answer in chat or here; the next session applies the answers.
   unit walled in by other units walks out on the third step; one penned in by blocks mid-walk
   finds the opening. Nothing ever teleports or leaves the match. The overlay shows each unit's
   step. Card PATH-07 is done.
+- 2026-10-23 · **M1 T22 Path threads:** paths are now searched on up to four background threads,
+  and a match still plays exactly the same on any number of them: one match gives the same result
+  on 0, 1 and 4 threads, and a save taken while searches run continues exactly. Spike S7 fired 300
+  path requests at once on the proving ground: the server thread spends at most 0.6 ms a tick on
+  paths, even on a deliberately overloaded machine, and a 100-unit order queued behind 200 others
+  gets its paths within 4 ticks (0.2 s). It set how many searches start each tick (80), and the
+  pathfinding decision, ADR-0015, is now accepted. Card PATH-16 is done.
 
 ## Now
 
-- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 24 of 29 tasks done (T28, PATH-08, joined by its trigger).
+- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 25 of 29 tasks done (T28, PATH-08, joined by its trigger).
 - **In progress:** none.
-- **Last finished task:** M1 T23 (2026-10-23). The agents' branches `wip/m1-t17-unitai-hfsm` and
+- **Last finished task:** M1 T22 (2026-10-23). The agents' branches `wip/m1-t17-unitai-hfsm` and
   `wip/m1-t25-debug-overlay` are merged and kept on GitHub for the record.
-- **Next task:** M1 T22 · Worker pool, ADAPTIVE delivery and spike S7 (PATH-16), then T24 (shared
-  group path) and T16 (content loading and client sync).
+- **Next task:** M1 T24 · Shared group path (PATH-09), then T16 (content loading and client sync),
+  T26 (crowd soak and the M1 perf gate) and T27 (M1 close).
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 220 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.

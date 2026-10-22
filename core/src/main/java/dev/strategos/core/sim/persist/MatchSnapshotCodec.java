@@ -110,12 +110,18 @@ public final class MatchSnapshotCodec {
                     RESULT.fieldOf("result").forGetter(PathStore.Delivery::result))
             .apply(i, PathStore.Delivery::new));
 
+    private static final Codec<PathStore.Waiting> WAITING = RecordCodecBuilder.create(i -> i.group(
+                    Codec.INT.fieldOf("id").forGetter(PathStore.Waiting::id),
+                    Codec.INT.fieldOf("handle").forGetter(PathStore.Waiting::handle))
+            .apply(i, PathStore.Waiting::new));
+
     private static final Codec<PathStore.Queue> QUEUE = RecordCodecBuilder.create(i -> i.group(
                     Codec.INT.optionalFieldOf("nextRequestId", 1).forGetter(PathStore.Queue::nextRequestId),
                     DELIVERY.listOf().optionalFieldOf("deliveries", List.of()).forGetter(PathStore.Queue::deliveries),
                     Codec.LONG
                             .optionalFieldOf("lastPageChange", PathStore.NEVER)
-                            .forGetter(PathStore.Queue::lastPageChange))
+                            .forGetter(PathStore.Queue::lastPageChange),
+                    WAITING.listOf().optionalFieldOf("waiting", List.of()).forGetter(PathStore.Queue::waiting))
             .apply(i, PathStore.Queue::new));
 
     private static final Codec<MotionStore.Ladder> LADDER = RecordCodecBuilder.create(i -> i.group(

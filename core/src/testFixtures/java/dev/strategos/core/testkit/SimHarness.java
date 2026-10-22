@@ -2,6 +2,8 @@ package dev.strategos.core.testkit;
 
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.port.Clock;
+import dev.strategos.core.port.JobExecutor;
+import dev.strategos.core.port.JournalSink;
 import dev.strategos.core.port.MetricsSink;
 import dev.strategos.core.protocol.Command;
 import dev.strategos.core.protocol.SpawnUnits;
@@ -16,6 +18,7 @@ import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.CorePorts;
 import dev.strategos.core.sim.ExternalDamage;
 import dev.strategos.core.sim.InputEvent;
+import dev.strategos.core.sim.JobDelivery;
 import dev.strategos.core.sim.MatchBounds;
 import dev.strategos.core.sim.MatchConfig;
 import dev.strategos.core.sim.MatchCore;
@@ -32,6 +35,7 @@ import dev.strategos.core.sim.UnitRecord;
 import dev.strategos.core.sim.UnitStateChanged;
 import dev.strategos.core.sim.journal.ReplayDriver;
 import dev.strategos.core.sim.journal.ReplayResult;
+import dev.strategos.core.sim.nav.DeliveryMode;
 import dev.strategos.core.sim.nav.MobilityClass;
 import dev.strategos.core.sim.nav.PageBuilder;
 import dev.strategos.core.sim.nav.PageCoord;
@@ -91,9 +95,15 @@ public final class SimHarness implements ScenarioContext {
 
     /** A harness of the scenario's size and seed, the builder's defaults otherwise. */
     public static SimHarness forScenario(Scenario scenario) {
+        return forScenario(scenario, JobExecutor.inline());
+    }
+
+    /** As {@link #forScenario(Scenario)}, its path and page jobs run by {@code jobs}. */
+    public static SimHarness forScenario(Scenario scenario, JobExecutor jobs) {
         return builder()
                 .size(scenario.sizeX(), scenario.sizeZ())
                 .seed(scenario.seed())
+                .jobs(jobs)
                 .build();
     }
 
@@ -209,6 +219,12 @@ public final class SimHarness implements ScenarioContext {
         if (!present.isEmpty()) {
             pending.add(new AgentUpdate(present));
         }
+        if (core.queries().config().rules().delivery() == DeliveryMode.ADAPTIVE) {
+            int[] finished = core.queries().finishedPathJobs(tick() + 1); // the adapter's part, as the mod's
+            if (finished.length > 0) {
+                pending.add(new JobDelivery(finished));
+            }
+        }
         TickOutputs out = core.step(new TickInputs(tick() + 1, pending));
         pending.clear();
         events.addAll(out.events());
@@ -290,6 +306,7 @@ public final class SimHarness implements ScenarioContext {
         private TemplateSet templates = TemplateSet.builtin();
         private Clock clock = new FixedClock(0);
         private MetricsSink metrics = MetricsSink.none();
+        private JobExecutor jobs = JobExecutor.inline();
         private MatchId id = new MatchId(1);
 
         private Builder() {}
@@ -344,9 +361,16 @@ public final class SimHarness implements ScenarioContext {
             return this;
         }
 
+        /** Where path and page jobs run: inline at their join unless told otherwise. */
+        public Builder jobs(JobExecutor jobs) {
+            this.jobs = jobs;
+            return this;
+        }
+
         public SimHarness build() {
             MatchConfig config = new MatchConfig(id, seed, bounds, factions, rules);
-            return new SimHarness(MatchCore.create(config, templates, new CorePorts(metrics, clock)));
+            return new SimHarness(
+                    MatchCore.create(config, templates, new CorePorts(metrics, clock, jobs, JournalSink.MEMORY)));
         }
     }
 }

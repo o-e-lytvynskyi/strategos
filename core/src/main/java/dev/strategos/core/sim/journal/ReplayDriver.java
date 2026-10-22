@@ -1,6 +1,9 @@
 package dev.strategos.core.sim.journal;
 
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.port.JobExecutor;
+import dev.strategos.core.port.JournalSink;
+import dev.strategos.core.port.MetricsSink;
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.sim.CorePorts;
 import dev.strategos.core.sim.MatchCore;
@@ -17,10 +20,15 @@ public final class ReplayDriver {
     private ReplayDriver() {}
 
     public static ReplayResult replay(Journal journal, TemplateSet templates) {
+        return replay(journal, templates, JobExecutor.inline());
+    }
+
+    /** As {@link #replay(Journal, TemplateSet)}, its path and page jobs run by {@code jobs}: never another result. */
+    public static ReplayResult replay(Journal journal, TemplateSet templates, JobExecutor jobs) {
         MatchCore core = MatchCore.restore(
                 journal.start(),
                 templates,
-                CorePorts.of(() -> 0L),
+                new CorePorts(MetricsSink.none(), () -> 0L, jobs, JournalSink.MEMORY),
                 journal.segments().get(0)::slice);
         List<TickInputs> recorded = journal.nonEmptyTicks();
         long[] checkpointTicks = journal.checkpointTicks();

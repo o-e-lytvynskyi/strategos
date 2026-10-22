@@ -103,6 +103,11 @@ final class QueriesImpl implements MatchQueries {
     }
 
     @Override
+    public int[] finishedPathJobs(long tick) {
+        return paths.finished(state, tick);
+    }
+
+    @Override
     public List<OrderQueues.Order> orders(int handle) {
         if (!state.entities().isAlive(handle)) {
             return List.of();

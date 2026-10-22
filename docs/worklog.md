@@ -9,7 +9,28 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23
+## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22
+
+- **M1 T22 · Worker pool, ADAPTIVE delivery and spike S7** — PATH-16 done; ADR-0015 Accepted.
+  - **Results:** `PooledJobExecutor` (`strategos-path-N` daemons) and `PathThreads` (the setting,
+    or `clamp(cores / 3, 1, 4)` integrated and `clamp(cores / 2 - 1, 1, 4)` dedicated) in
+    `mod/server/jobs`; requests wait for admission within W, `BUSY` past 2,048 outstanding with a
+    retry 10 ticks later, `ADAPTIVE` delivery from a journaled `JobDelivery` (input kind 3) with a
+    join 8 ticks after due; the admission queue is saved and hashed while it holds a request.
+    Tests: `ThreadCountHashTest` (4), `AdmissionTest` (2), the canary on 0, 1 and 4 threads,
+    `PathThreadsTest` (4), `pathtests.save_quiesces_and_continues`, `perftests.path_budget_d`;
+    `head_on_gap` re-recorded (130 GameTests); `verify verifySlow verifySoak` 1 min 48 s.
+  - **Measured (S7, 34 configurations):** with any worker the main thread's path work is at most
+    0.56 ms at p99 (slow-host proxy) and `STRICT`'s join at most 0.03 ms; inline it is 34 ms. A
+    100-unit order behind 200 requests waits 30 ticks at W = 200,000 and 4 at 1,600,000, now the
+    default; `k` stays 2, `STRICT` is live everywhere. The perf test: 0.26 ms at p99, 4 ticks.
+  - **Problems:** the first S7 run stepped ticks back to back, so the workers had no time between
+    them and the main thread joined half the jobs unfinished; ticks are paced 50 ms now (D row
+    146). `perf.fakeForeignLoad` only fakes a measured number, so the slow-host proxy loads the
+    host with 24 busy threads. The perf test's first run in a cold JVM joined 17 unfinished jobs
+    (11.6 ms on one tick); it warms up twice and pools ten runs. The save test first had 24 units,
+    which the new W admits in one tick, so none waited at the save; it has 96.
+  - **Next:** T24 (shared group path).
 
 - **M1 T23 · Stuck ladder** — PATH-07 done.
   - **Results:** `core/sim/move/StuckLadder` acts on the stuck monitor's count: at 40 ticks a new

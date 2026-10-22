@@ -44,6 +44,7 @@ public final class MatchState {
     private int nextGroup = FIRST_GROUP;
     private final long[] rungs = new long[Stuck.GIVE_UP + 1]; // the stuck ladder's rungs reached in this run, by rung
     private final List<Agent> agents = new ArrayList<>();
+    private final List<JobDelivery> deliveries = new ArrayList<>();
     private SurfaceGrid surfaces;
     private final long[] pageSlices;
     private final BitSet published;
@@ -154,6 +155,7 @@ public final class MatchState {
         changedCount = 0;
         frame = BodyFrame.builder(entities.aliveCount());
         agents.clear();
+        deliveries.clear();
     }
 
     void setTick(long tick) {
@@ -265,6 +267,20 @@ public final class MatchState {
 
     void addAgents(List<Agent> more) {
         agents.addAll(more);
+    }
+
+    /** Whether this tick's {@link JobDelivery} inputs list path request {@code id}; none on a tick without one. */
+    public boolean delivered(int id) {
+        for (JobDelivery delivery : deliveries) {
+            if (delivery.contains(id)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    void addDelivery(JobDelivery delivery) {
+        deliveries.add(delivery);
     }
 
     /** This tick's inputs, which INGEST reads. */

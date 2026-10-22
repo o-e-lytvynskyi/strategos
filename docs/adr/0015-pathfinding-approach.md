@@ -4,7 +4,17 @@ Date: 2026-10-21
 
 ## Status
 
-Proposed - pending spike S7 (S8 reported 2026-10-22)
+Accepted 2026-10-23, with spikes S7 and S8
+
+**Accepted 2026-10-23** with spike [S7](../spikes/S7-path-service-under-load.md) (M1 T22), whose
+exits are met on one to four path threads and on the slow-host proxy:
+- **`k` = 2**, unchanged: with `k` = 1 `STRICT` joins unfinished jobs, 5.5 ms at p99.
+- **`STRICT` is the live delivery mode everywhere:** its join stays at 0.022 ms at p99 on the
+  slow-host proxy, inside the 0.5 ms rule. `ADAPTIVE` stays built and tested.
+- **W = 1,600,000** expansion caps a tick (80 searches at the 20,000 cap), not the estimated
+  200,000: behind 200 requests a 100-unit order's results arrive in 4 ticks at p95, where
+  200,000 took 30, and the main thread's path work stays at 0.38 ms at p99 (0.56 ms on the
+  slow-host proxy).
 
 **Revised 2026-10-21**, still Proposed, to follow the roadmap's
 [spike table](../roadmap/M0-foundation.md#spikes) and the revised ADR-0019: S7's latency criterion
@@ -105,7 +115,8 @@ the project ([01-feasibility §3.1](../01-feasibility.md)) and was RoN's main pe
   - S7 picks the live mode: `STRICT` everywhere if its join stays ≤ 0.5 ms p99 on the slow-host
     proxy.
 - **Admission** counts work: requests are admitted in id order while the summed expansion caps stay
-  within W per tick (starting estimate 200,000). A queue beyond 2,048 answers `BUSY`,
+  within W per tick (1,600,000 since S7; the starting estimate was 200,000). A queue beyond 2,048
+  answers `BUSY`,
   deterministically and distinct from `NO_PATH`.
 - **Threads.** Integrated server `clamp(cores/3, 1, 4)`, dedicated `clamp(cores/2 − 1, 1, 4)`;
   `pathThreads = 0` runs jobs inline. Identical hashes for 0, 1 and 4 threads are an L1 test.
@@ -115,7 +126,7 @@ the project ([01-feasibility §3.1](../01-feasibility.md)) and was RoN's main pe
     rebuilt after 4 quiet ticks, at most 4 pages per tick, while stale pages keep serving.
 - **Responsiveness.** A unit steers on a provisional straight line from the tick its order applies.
 
-**Exit criteria that confirm this ADR:**
+**Exit criteria that confirm this ADR** (both met; see the status):
 - **S8:** ≥ 99.9 % of columns need at most 4 surfaces; a page builds in ≤ 0.5 ms; nav fits 32 MB
   at 512². Met on 2026-10-22, in a band that follows the terrain (see the revision above).
 - **S7:** main-thread path work ≤ 2 ms p99, and a 100-unit order's path results within 5 ticks

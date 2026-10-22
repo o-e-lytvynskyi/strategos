@@ -36,7 +36,8 @@ import java.util.function.IntConsumer;
  *
  * <ol>
  *   <li>Steering: the next waypoint, passed once within {@value #ADVANCE_WITHIN} block when the one after is in line
- *       of walk from there, or the target while the request is in flight (provisional steering).
+ *       of walk from there, or the target while the request waits or is in flight, or after a {@code BUSY} answer
+ *       (provisional steering).
  *   <li>Speed: the walk speed, × {@value #SHALLOW} in shallow water, × {@value #SLOW} on slow ground; within one step of
  *       its waypoint or target the unit lands on it exactly, so on flat open ground it moves as in M0.
  *   <li>Avoidance (PATH-06): the step is the unit's preferred velocity, and {@link Avoidance} plans the velocity it
@@ -287,8 +288,8 @@ public final class MotionSystem implements MatchSystem {
             tx = path.x(cursor);
             tz = path.z(cursor);
             last = cursor == path.count() - 1 && ends(path, paths.status(i));
-        } else if (paths.request(i) != 0) {
-            tx = orders.targetX(i);
+        } else if (paths.request(i) != 0 || paths.status(i) == PathStatus.BUSY) {
+            tx = orders.targetX(i); // provisional steering, while its request waits or the queue was full
             tz = orders.targetZ(i);
             last = true;
         } else {

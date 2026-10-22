@@ -7,6 +7,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import dev.strategos.core.port.JobExecutor;
 import dev.strategos.core.shared.Hex64;
 import dev.strategos.core.sim.journal.Journal;
 import dev.strategos.core.testkit.Scenario;
@@ -14,6 +15,7 @@ import dev.strategos.core.testkit.ScenarioReport;
 import dev.strategos.core.testkit.Scenarios;
 import dev.strategos.core.testkit.Seeds;
 import dev.strategos.core.testkit.SimHarness;
+import dev.strategos.core.testkit.ThreadedJobExecutor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -23,8 +25,9 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Spike S6 (ADR-0009): the canary twice in one JVM gives the same hash at every 100th tick, and those hashes equal the
- * committed golden, which CI checks on Linux against this macOS file (QA-08.3). {@code -Dstrategos.golden.update=true}
- * rewrites the golden (the test JVM runs in {@code core/}); commit that change with its reason (R12).
+ * committed golden, which CI checks on Linux against this macOS file (QA-08.3); on 0, 1 and 4 path threads alike
+ * (PATH-16.1). {@code -Dstrategos.golden.update=true} rewrites the golden (the test JVM runs in {@code core/}); commit
+ * that change with its reason (R12).
  */
 class DeterminismCanaryTest {
     private static final String GOLDEN = "golden/s6-canary.json";
@@ -32,8 +35,12 @@ class DeterminismCanaryTest {
 
     /** The run in the golden's form: the hash at every 100th tick, from the journal's checkpoints, and the final one. */
     private static JsonObject run(long seed) {
+        return run(seed, JobExecutor.inline());
+    }
+
+    private static JsonObject run(long seed, JobExecutor jobs) {
         Scenario canary = Scenarios.canary(seed);
-        SimHarness h = SimHarness.forScenario(canary);
+        SimHarness h = SimHarness.forScenario(canary, jobs);
         ScenarioReport report = h.play(canary);
         assertThat(report.failure()).isNull();
 
@@ -79,6 +86,17 @@ class DeterminismCanaryTest {
             assertThat(in).as("the committed golden " + GOLDEN).isNotNull();
             JsonElement committed = JsonParser.parseString(new String(in.readAllBytes(), StandardCharsets.UTF_8));
             assertThat(first).as("the canary against " + GOLDEN).isEqualTo(committed);
+        }
+    }
+
+    @Test
+    void theCanaryIsTheSameOnZeroOneAndFourPathThreads() {
+        long seed = Seeds.first("canary");
+        JsonObject inline = run(seed);
+        try (ThreadedJobExecutor one = new ThreadedJobExecutor(1);
+                ThreadedJobExecutor four = new ThreadedJobExecutor(4)) {
+            assertThat(run(seed, one)).as("one path thread").isEqualTo(inline);
+            assertThat(run(seed, four)).as("four path threads").isEqualTo(inline);
         }
     }
 }

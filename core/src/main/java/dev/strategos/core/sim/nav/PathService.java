@@ -7,6 +7,7 @@ import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.sim.Arrived;
 import dev.strategos.core.sim.EntityStore;
+import dev.strategos.core.sim.JobDelivery;
 import dev.strategos.core.sim.MatchBounds;
 import dev.strategos.core.sim.MatchRules;
 import dev.strategos.core.sim.MatchState;
@@ -20,6 +21,7 @@ import dev.strategos.core.sim.StopOrdered;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.order.OrderQueues;
+import java.util.Arrays;
 
 /**
  * Paths for walking units (ADR-0015 stage 1, 04 §9.3, spec §5.7), in two passes a tick.
@@ -31,16 +33,24 @@ import dev.strategos.core.sim.order.OrderQueues;
  * at most once every {@value #REPATH_EVERY} ticks (PATH-15). While no terrain is published a request does nothing: the
  * unit walks M0's straight line, and a match without terrain keeps M0's state and hashes. A request is decided at once
  * when the unit stands on no surface ({@code NO_PATH}), or when the target lies within {@code shortMove} blocks with
- * line of walk. Any other request takes the next id and submits a {@link PathJob} over the grid as it is now, due
- * {@code pathK} ticks later; meanwhile a unit with no path left steers straight at its target (provisional steering),
- * so every ordered unit moves on the tick its order applies.
+ * line of walk. Any other request takes the next id and waits for admission; meanwhile a unit with no path left steers
+ * straight at its target (provisional steering), so every ordered unit moves on the tick its order applies. With
+ * {@code maxOutstanding} requests already waiting or in flight, a request is answered {@code BUSY} at once: the unit
+ * keeps its path, or steers at its target, and asks again {@code busyRetry} ticks later.
  *
- * <p><b>Delivery</b> ({@code INGEST}, after the inputs): {@code STRICT} joins every job due at this tick, in id order,
- * running it here if no worker has; the result becomes the unit's path if the unit still waits for that id, and is
- * dropped as superseded otherwise. A page that changed while a job was in flight may break the path it found on the
- * grid before: such a path is walked on the current grid, and if it fails the unit is sent a {@link PathInvalidated}.
- * Every answer, decided at once or delivered, is posted as a {@link PathDelivered}. Admission, {@code ADAPTIVE}
- * delivery and the worker pool are PATH-16's.
+ * <p><b>Admission</b> (PATH-16, at the end of the request pass): waiting requests in id order, while the expansion caps
+ * admitted this tick fit the window W ({@code admissionW}); each admitted request becomes a {@link PathJob} over the
+ * grid as it is now, from where its unit now stands, submitted to the {@link JobExecutor} and due {@code pathK} ticks
+ * later. A request whose unit died or asked again meanwhile is dropped as superseded.
+ *
+ * <p><b>Delivery</b> ({@code INGEST}, after the inputs), in id order: {@code STRICT} joins every job due at this tick,
+ * running it here if no worker has; {@code ADAPTIVE} applies the due jobs the tick's {@link JobDelivery} lists, which
+ * the adapter found finished ({@link #finished}), and joins any due {@value #HELP_AFTER} ticks ago. The result becomes
+ * the unit's path if the unit still waits for that id, and is dropped as superseded otherwise. A page that changed
+ * while a job was in flight may break the path it found on the grid before: such a path is walked on the current grid,
+ * and if it fails the unit is sent a {@link PathInvalidated}. Every answer, decided at once or delivered, is posted as
+ * a {@link PathDelivered}. The executor's threads never change a result, and in {@code ADAPTIVE} the journaled
+ * delivery fixes the timing, so a match plays the same on any number of threads.
  */
 public final class PathService {
     /** A truncated path is asked for again when the unit reaches this waypoint. */
@@ -49,8 +59,11 @@ public final class PathService {
     /** Changed terrain makes a unit ask again at most once in this many ticks (PATH-15). */
     public static final int REPATH_EVERY = 20;
 
-    /** The delivered results whose latency {@link Stats#latencyP95()} covers. */
+    /** The delivered results whose latency {@link Stats#latencyP95()} covers, and the ticks {@code workP99} does. */
     public static final int LATENCY_WINDOW = 600;
+
+    /** {@code ADAPTIVE} joins a job this many ticks after it was due, finished or not. */
+    public static final int HELP_AFTER = 8;
 
     private final JobExecutor jobs;
     private final Clock clock;
@@ -61,7 +74,11 @@ public final class PathService {
     /**
      * Counts since the match started, for the debug command, the overlay and the perf tests; not part of the state.
      * {@code latencyP95}: the 95th percentile of the latency of the last {@value #LATENCY_WINDOW} results applied, in
-     * ticks from request to delivery (PATH-10's panel).
+     * ticks from the unit's request to delivery (PATH-10's panel). {@code waiting}: requests waiting for admission;
+     * {@code busy}: requests answered {@code BUSY}; {@code workP99}: the 99th percentile of the main thread's path work
+     * a tick (delivery, joins, requests and admission) over the last {@value #LATENCY_WINDOW} ticks, and {@code
+     * lastWork} the last tick's, in nanoseconds; {@code unfinished}: results joined before their job had finished, so
+     * the main thread ran the job or waited for it.
      */
     @CoreApi
     public record Stats(
@@ -76,7 +93,12 @@ public final class PathService {
             long latencyTicks,
             long joinNanos,
             int inFlight,
-            long latencyP95) {}
+            long latencyP95,
+            int waiting,
+            long busy,
+            long workP99,
+            long lastWork,
+            long unfinished) {}
 
     private static final class Counters {
         long requests;
@@ -89,16 +111,18 @@ public final class PathService {
         int maxExpansions;
         long latencyTicks;
         long joinNanos;
+        long busy;
+        long tickWork;
+        long lastWork;
+        long unfinished;
         final RingHistogram latency = new RingHistogram(LATENCY_WINDOW);
+        final RingHistogram work = new RingHistogram(LATENCY_WINDOW);
     }
 
     public PathService(MatchState state, JobExecutor jobs, Clock clock) {
         this.jobs = jobs;
         this.clock = clock;
         this.rules = state.config().rules();
-        if (rules.delivery() != DeliveryMode.STRICT) {
-            throw new IllegalArgumentException("delivery " + rules.delivery().id() + " arrives with PATH-16");
-        }
         this.shortMoveSquared = (double) rules.shortMove() * rules.shortMove();
         state.bus().subscribe(OrderReceived.class, m -> state.paths().want(Handle.index(m.handle())));
         state.bus().subscribe(StopOrdered.class, m -> state.paths().clear(Handle.index(m.handle())));
@@ -115,7 +139,9 @@ public final class PathService {
 
             @Override
             public void run(MatchState state) {
+                long start = clock.nanoTime();
                 deliver(state);
+                counters.tickWork += clock.nanoTime() - start;
             }
         };
     }
@@ -130,7 +156,12 @@ public final class PathService {
 
             @Override
             public void run(MatchState state) {
+                long start = clock.nanoTime();
                 request(state);
+                admit(state);
+                counters.lastWork = counters.tickWork + clock.nanoTime() - start;
+                counters.work.record(counters.lastWork);
+                counters.tickWork = 0;
             }
         };
     }
@@ -149,35 +180,85 @@ public final class PathService {
                 c.latencyTicks,
                 c.joinNanos,
                 state.paths().pending().size(),
-                c.latency.percentile(0.95));
+                c.latency.percentile(0.95),
+                state.paths().waiting().size(),
+                c.busy,
+                c.work.percentile(0.99),
+                c.lastWork,
+                c.unfinished);
+    }
+
+    /**
+     * For an {@code ADAPTIVE} adapter, before it steps tick {@code tick}: the requests in flight due by then whose jobs
+     * have finished, ascending; every one due when the executor has no threads, since its jobs run at their join. The
+     * adapter hands them in as that tick's {@link JobDelivery}.
+     */
+    public int[] finished(MatchState state, long tick) {
+        int n = 0;
+        int[] ids = new int[state.paths().pending().size()];
+        for (PathStore.Pending p : state.paths().pending()) {
+            if (p.due() > tick) {
+                break; // due ticks never fall as ids rise
+            }
+            if (jobs.threads() == 0 || p.job().isDone()) {
+                ids[n++] = p.request().id();
+            }
+        }
+        return Arrays.copyOf(ids, n);
     }
 
     private void deliver(MatchState s) {
         long tick = s.tick();
         PathStore paths = s.paths();
-        PathStore.Pending p;
-        while ((p = paths.pollDue(tick)) != null) {
-            long start = clock.nanoTime();
-            PathResult r = p.job().join();
-            counters.joinNanos += clock.nanoTime() - start;
-            int handle = p.request().handle();
-            int i = Handle.index(handle);
-            if (!s.entities().isAlive(handle) || paths.request(i) != r.requestId()) {
-                counters.superseded++;
-                continue;
+        if (rules.delivery() == DeliveryMode.STRICT) {
+            PathStore.Pending p;
+            while ((p = paths.pollDue(tick)) != null) {
+                apply(s, p);
             }
-            paths.follow(i, startFrom(s, i, p.request(), r.waypoints()), r.status());
-            boolean broken = paths.lastPageChange() > p.request().tick() && !walkable(s, i);
-            s.bus().publish(new PathDelivered(handle, r.status()));
-            if (broken) {
-                s.bus().publish(new PathInvalidated(handle)); // terrain changed in flight and broke the route
-            }
-            count(r.status());
-            counters.expansions += r.expansions();
-            counters.maxExpansions = Math.max(counters.maxExpansions, r.expansions());
-            counters.latencyTicks += tick - p.request().tick();
-            counters.latency.record(tick - p.request().tick());
+            return;
         }
+        int n = 0;
+        int[] ready = new int[paths.pending().size()];
+        for (PathStore.Pending p : paths.pending()) {
+            if (p.due() > tick) {
+                break;
+            }
+            if (p.due() + HELP_AFTER <= tick || s.delivered(p.request().id())) {
+                ready[n++] = p.request().id();
+            }
+        }
+        for (int k = 0; k < n; k++) {
+            apply(s, paths.take(ready[k]));
+        }
+    }
+
+    /** A result joined and given to its unit, if the unit still waits for it. */
+    private void apply(MatchState s, PathStore.Pending p) {
+        PathStore paths = s.paths();
+        if (!p.job().isDone()) {
+            counters.unfinished++;
+        }
+        long start = clock.nanoTime();
+        PathResult r = p.job().join();
+        counters.joinNanos += clock.nanoTime() - start;
+        int handle = p.request().handle();
+        int i = Handle.index(handle);
+        if (!s.entities().isAlive(handle) || paths.request(i) != r.requestId()) {
+            counters.superseded++;
+            return;
+        }
+        long latency = s.tick() - paths.lastRequest(i);
+        paths.follow(i, startFrom(s, i, p.request(), r.waypoints()), r.status());
+        boolean broken = paths.lastPageChange() > p.request().tick() && !walkable(s, i);
+        s.bus().publish(new PathDelivered(handle, r.status()));
+        if (broken) {
+            s.bus().publish(new PathInvalidated(handle)); // terrain changed in flight and broke the route
+        }
+        count(r.status());
+        counters.expansions += r.expansions();
+        counters.maxExpansions = Math.max(counters.maxExpansions, r.expansions());
+        counters.latencyTicks += latency;
+        counters.latency.record(latency);
     }
 
     private void request(MatchState s) {
@@ -197,6 +278,12 @@ public final class PathService {
             }
             if (wanted) {
                 request(s, i, false);
+                continue;
+            }
+            if (paths.request(i) == 0 && paths.status(i) == PathStatus.BUSY) {
+                if (tick - paths.lastRequest(i) >= rules.busyRetry()) {
+                    request(s, i, true); // the queue was full: ask again
+                }
                 continue;
             }
             if (paths.request(i) == 0) {
@@ -251,14 +338,74 @@ public final class PathService {
                 return;
             }
         }
-        int id = paths.nextRequestId();
-        PathRequest r =
-                new PathRequest(id, s.entities().handleAt(i), tick, from, x, z, gx, gz, rules.searchCap(), 0, false);
         if (!keepPath) {
             paths.follow(i, PathStore.Waypoints.NONE, PathStatus.OK);
         }
+        if (paths.outstanding() >= rules.maxOutstanding()) {
+            busy(s, i);
+            return;
+        }
+        int id = paths.nextRequestId();
         paths.awaiting(i, id, tick);
+        paths.enqueue(new PathStore.Waiting(id, s.entities().handleAt(i)));
+    }
+
+    /**
+     * Admission: waiting requests in id order while the caps admitted this tick fit W, each a job over the grid as it is
+     * now, from where its unit now stands.
+     */
+    private void admit(MatchState s) {
+        PathStore paths = s.paths();
+        long spent = 0;
+        PathStore.Waiting w;
+        while ((w = paths.peekWaiting()) != null) {
+            int i = Handle.index(w.handle());
+            if (!s.entities().isAlive(w.handle()) || paths.request(i) != w.id()) {
+                paths.pollWaiting();
+                counters.superseded++;
+                continue;
+            }
+            if (spent + rules.searchCap() > rules.admissionW()) {
+                return;
+            }
+            paths.pollWaiting();
+            spent += rules.searchCap();
+            submit(s, i, w);
+        }
+    }
+
+    private void submit(MatchState s, int i, PathStore.Waiting w) {
+        PathStore paths = s.paths();
+        MotionStore motion = s.motion();
+        SurfaceGrid grid = s.surfaces();
+        long tick = s.tick();
+        double x = motion.x(i);
+        double z = motion.z(i);
+        int from = startNode(grid, x, motion.y(i), z, s.config().bounds().minY());
+        if (from < 0) {
+            decide(s, i, PathStore.Waypoints.NONE, PathStatus.NO_PATH); // it stands on no surface now
+            return;
+        }
+        PathRequest r = new PathRequest(
+                w.id(),
+                w.handle(),
+                tick,
+                from,
+                x,
+                z,
+                s.orders().targetX(i),
+                s.orders().targetZ(i),
+                rules.searchCap(),
+                0,
+                false);
         paths.put(new PathStore.Pending(r, tick + rules.pathK(), jobs.submit(new PathJob(grid, r))));
+    }
+
+    /** The queue is full: the unit keeps its path, or steers at its target, and asks again after {@code busyRetry}. */
+    private void busy(MatchState s, int i) {
+        s.paths().busy(i, s.tick());
+        counters.busy++;
+        s.bus().publish(new PathDelivered(s.entities().handleAt(i), PathStatus.BUSY));
     }
 
     /** A request answered at once, without an id. */

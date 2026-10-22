@@ -4,13 +4,14 @@ import dev.strategos.core.sim.AgentUpdate;
 import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.ExternalDamage;
 import dev.strategos.core.sim.InputEvent;
+import dev.strategos.core.sim.JobDelivery;
 import dev.strategos.core.sim.TerrainPage;
 import dev.strategos.core.sim.TickInputs;
 import java.util.ArrayList;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
-/** Turns a match's inbox and its due terrain pages into the next tick's inputs. */
+/** Turns a match's inbox, its due terrain pages, its agents, damage and finished path jobs into the next tick's inputs. */
 public final class InputCollector {
     private InputCollector() {}
 
@@ -37,13 +38,27 @@ public final class InputCollector {
             List<TerrainPage> pages,
             @Nullable AgentUpdate agents,
             List<ExternalDamage> damage) {
-        List<InputEvent> events = new ArrayList<>(pages.size() + inbox.size() + damage.size() + 1);
+        return collect(tick, inbox, pages, agents, damage, null);
+    }
+
+    /** As above, and last the path jobs an {@code ADAPTIVE} match found finished, if any (PATH-16). */
+    public static TickInputs collect(
+            long tick,
+            List<CommandEnvelope> inbox,
+            List<TerrainPage> pages,
+            @Nullable AgentUpdate agents,
+            List<ExternalDamage> damage,
+            @Nullable JobDelivery delivery) {
+        List<InputEvent> events = new ArrayList<>(pages.size() + inbox.size() + damage.size() + 2);
         events.addAll(pages);
         events.addAll(inbox);
         if (agents != null) {
             events.add(agents);
         }
         events.addAll(damage);
+        if (delivery != null) {
+            events.add(delivery);
+        }
         inbox.clear();
         damage.clear();
         return new TickInputs(tick, events);

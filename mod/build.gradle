@@ -550,7 +550,7 @@ def spikeOut = file('build/spike/out')
 tasks.matching { it.name == 'runSpike' }.configureEach {
     timeout = Duration.ofMinutes(45)
     doFirst {
-        if (!(spikeId in ['s1', 's2', 's8'])) throw new GradleException('Use -Pspike=s1, s2 or s8')
+        if (!(spikeId in ['s1', 's2', 's7', 's8'])) throw new GradleException('Use -Pspike=s1, s2, s7 or s8')
         new File(spikeOut, "${spikeDirName}/DONE").delete()
     }
     doLast {

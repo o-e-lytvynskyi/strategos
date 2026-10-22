@@ -6,7 +6,7 @@ import dev.strategos.mod.server.body.SpawnBudget;
 import dev.strategos.mod.server.debug.DebugFeed;
 import dev.strategos.mod.server.debug.PerfDump;
 import dev.strategos.mod.server.fog.InterestSets;
-import dev.strategos.mod.server.jobs.InlineJobExecutor;
+import dev.strategos.mod.server.jobs.PathThreads;
 import dev.strategos.mod.server.match.MapImports;
 import dev.strategos.mod.server.match.MatchRegistry;
 import dev.strategos.mod.server.net.NetGateway;
@@ -42,7 +42,7 @@ public final class StrategosServer {
     private final MatchRegistry matches;
     private final BlockWriter writer;
     private final MapImports mapImports = new MapImports();
-    private final JobExecutor jobs = new InlineJobExecutor();
+    private final JobExecutor jobs;
     private final NetGateway net;
     private final InterestSets interest = new InterestSets();
     private final DebugFeed debug;
@@ -53,6 +53,8 @@ public final class StrategosServer {
     private StrategosServer(MinecraftServer server, StrategosSettings settings) {
         this.server = server;
         this.settings = settings;
+        this.jobs = PathThreads.executor(PathThreads.count(
+                settings.pathThreads(), Runtime.getRuntime().availableProcessors(), server.isDedicatedServer()));
         this.faults = new FaultBarrier(server);
         this.writer = new BlockWriter(settings.writerBudget(), settings.importBudget());
         this.matches = new MatchRegistry(server, settings, spawnBudget, writer, this::blockClasses, jobs);
@@ -89,7 +91,7 @@ public final class StrategosServer {
         return matches;
     }
 
-    /** Where page jobs (and, from T8, path jobs) run. */
+    /** Where page and path jobs run: the {@code strategos-path-N} pool, or inline with {@code pathThreads = 0}. */
     public JobExecutor jobs() {
         return jobs;
     }
@@ -221,6 +223,13 @@ public final class StrategosServer {
         StrategosServer s = current;
         if (s != null) {
             s.matches.shutdown();
+            if (s.jobs instanceof AutoCloseable pool) {
+                try {
+                    pool.close(); // the matches are saved and gone: no join waits on a worker now
+                } catch (Exception e) {
+                    throw new IllegalStateException("the path job pool did not stop", e);
+                }
+            }
         }
         current = null;
     }

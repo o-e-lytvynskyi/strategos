@@ -621,7 +621,8 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
   5. The S7 report sets `k`, the live delivery mode and W, and with S8 moves ADR-0015 to Accepted
      (R).
 - **Tests:** L0, L1, L3, L6, R · **Depends on:** PATH-03 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Done:** 2026-10-23 — M1 T22: `ThreadCountHashTest` and the canary, the same hash on every tick with 0, 1 and 4 threads in `STRICT`, and a live `ADAPTIVE` run on 4 threads replayed from its journal on 0 and 1 (1); `AdmissionTest`, never more than W a tick and request 2,049 `BUSY`, asking again 10 ticks later (2); `pathtests.save_quiesces_and_continues`, the save restored apart from the level on the live hash 200 ticks on (3); `perftests.path_budget_d`, the main thread's path work 0.26 ms at p99 and the 100-unit order's results in 4 ticks at p95 behind 200 requests (4); [the S7 report](../spikes/S7-path-service-under-load.md): `k` 2, `STRICT` live, W 1,600,000, ADR-0015 Accepted (5); spec §1.6 D rows 142–147
+- **Status:** done
 
 ### Slice 1C · An army
 

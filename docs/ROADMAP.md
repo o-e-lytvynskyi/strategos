@@ -294,7 +294,7 @@ Cards: [roadmap/M1-movement.md](roadmap/M1-movement.md#cards). 26 cards, at most
 | PATH-04 | Components and reachability | M | PATH-02, PATH-15 | done |
 | ORD-03 | Group destination slots | M | ORD-02, PATH-04 | done |
 | PATH-06 | Local avoidance (ORCA) | M | PATH-05, CORE-08 | done |
-| PATH-16 | Worker pool, ADAPTIVE delivery and spike S7 | M | PATH-03 | specified |
+| PATH-16 | Worker pool, ADAPTIVE delivery and spike S7 | M | PATH-03 | done |
 | PATH-07 | Stuck ladder | M | PATH-05, PATH-06 | done |
 | PATH-09 | Shared group path | M | PATH-06, ORD-03, PATH-16 | specified |
 | PATH-10 | Movement debug overlay and dev payloads | M | PATH-03, NET-01, QA-10 | done |

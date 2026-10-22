@@ -153,6 +153,11 @@ final class SpikeReport {
         write("DONE", "done\n");
     }
 
+    /** A file of the spike's own, beside the shared ones. */
+    void writeText(String name, String text) {
+        write(name, text);
+    }
+
     private void write(String name, String text) {
         try {
             Files.createDirectories(dir);

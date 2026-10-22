@@ -2,14 +2,20 @@ package dev.strategos.gametest.suites;
 
 import static dev.strategos.gametest.suites.Units.check;
 import static dev.strategos.gametest.suites.Units.core;
+import static dev.strategos.gametest.suites.Units.handles;
 import static dev.strategos.gametest.suites.Units.move;
 import static dev.strategos.gametest.suites.Units.onlyUnit;
 import static dev.strategos.gametest.suites.Units.spawn;
 import static dev.strategos.gametest.suites.Units.unit;
 
 import dev.strategos.core.port.JobScratch;
+import dev.strategos.core.shared.Hex64;
+import dev.strategos.core.sim.CorePorts;
+import dev.strategos.core.sim.MatchCore;
+import dev.strategos.core.sim.MatchSnapshot;
 import dev.strategos.core.sim.PageRef;
 import dev.strategos.core.sim.Stuck;
+import dev.strategos.core.sim.TickInputs;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.UnitView;
 import dev.strategos.core.sim.nav.PathJob;
@@ -23,15 +29,23 @@ import dev.strategos.gametest.MatchFixture;
 import dev.strategos.gametest.StrategosTest;
 import dev.strategos.mod.server.match.MatchOptions;
 import dev.strategos.mod.server.match.MatchRuntime;
+import dev.strategos.mod.server.persist.MatchData;
+import java.util.HashMap;
+import java.util.Map;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.Blocks;
+import org.jspecify.annotations.Nullable;
 
 /**
- * Paths in a real level (PATH-03.6, PATH-15.1, PATH-07.3): over steps and through a ford, round a wall built mid-walk,
- * and out of a pen built round a walking unit.
+ * Paths in a real level (PATH-03.6, PATH-15.1, PATH-07.3, PATH-16.3): over steps and through a ford, round a wall built
+ * mid-walk, out of a pen built round a walking unit, and on from a save taken with requests outstanding.
  */
 public final class PathTests {
+    /** The units of the save test: more than the 80 searches one tick admits. */
+    private static final int UNITS = 96;
+
     private PathTests() {}
 
     /**
@@ -181,6 +195,83 @@ public final class PathTests {
                 check(freed || failed, "neither arrived nor failed: stopped at " + u.x() + ", " + u.z());
                 h.succeed();
             }
+        });
+    }
+
+    /**
+     * PATH-16.3: ninety-six units are sent one by one across the arena, more than one tick's admission takes (80 at the
+     * default W), so their requests run as jobs and some wait; the first tick some wait and some are in flight, the
+     * match is saved, which joins every job in flight and keeps its result. The save, read back and restored apart
+     * from the level, steps the live match's journaled inputs for 200 ticks and ends on the live match's hash.
+     */
+    @StrategosTest(arena = "arena_flat_48", timeoutTicks = 600)
+    public static void saveQuiescesAndContinues(GameTestHelper h) {
+        MatchRuntime rt = MatchFixture.create(
+                h, MatchFixture.options(SimHarness.DEFAULT_SEED, h).withPersistent(true));
+        spawn(rt, 6, 23, UNITS, 4);
+        var state = new Object() {
+            boolean ordered;
+
+            @Nullable MatchCore twin;
+
+            long savedAt;
+        };
+        h.onEachTick(() -> {
+            MatchCore live = core(rt);
+            int[] units = handles(rt);
+            if (units.length < UNITS) {
+                return;
+            }
+            if (!state.ordered) {
+                state.ordered = true;
+                for (int k = 0; k < units.length; k++) {
+                    move(rt, units[k], 44.5, 2.5 + 1.75 * (k % 24));
+                }
+                return;
+            }
+            MatchCore twin = state.twin;
+            if (twin == null) {
+                PathService.Stats paths = live.queries().pathStats();
+                if (paths.waiting() == 0 || paths.inFlight() == 0) {
+                    check(paths.ok() == 0, "the requests were answered before the save: " + paths);
+                    return;
+                }
+                MatchData data = rt.data();
+                check(data != null, "the persistent match has no blob");
+                CompoundTag tag = data.save(new CompoundTag(), h.getLevel().registryAccess());
+                MatchSnapshot saved = MatchData.load(rt.id(), tag).loadedSnapshot();
+                check(saved != null, "the save does not read back");
+                check(
+                        saved.paths().deliveries().size() == paths.inFlight()
+                                && saved.paths().waiting().size() == paths.waiting(),
+                        "the save kept " + saved.paths().deliveries().size() + " results and "
+                                + saved.paths().waiting().size() + " waiting requests of " + paths);
+                MatchCore back = MatchCore.restore(
+                        saved,
+                        live.queries().templates(),
+                        CorePorts.of(() -> 0L),
+                        live.journal().segments().get(0)::slice);
+                check(back.stateHash() == live.stateHash(), "the save restores to another hash");
+                state.twin = back;
+                state.savedAt = live.queries().tick();
+                return;
+            }
+            long now = live.queries().tick();
+            if (now < state.savedAt + 200) {
+                return;
+            }
+            Map<Long, TickInputs> recorded = new HashMap<>();
+            for (TickInputs inputs : live.journal().nonEmptyTicks()) {
+                recorded.put(inputs.tick(), inputs);
+            }
+            for (long t = state.savedAt + 1; t <= now; t++) {
+                twin.step(recorded.getOrDefault(t, TickInputs.empty(t)));
+            }
+            check(
+                    twin.stateHash() == live.stateHash(),
+                    "200 ticks after the save the restored match has hash " + Hex64.format(twin.stateHash())
+                            + ", the live one " + Hex64.format(live.stateHash()));
+            h.succeed();
         });
     }
 

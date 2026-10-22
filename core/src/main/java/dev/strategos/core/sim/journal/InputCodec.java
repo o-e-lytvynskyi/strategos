@@ -8,6 +8,7 @@ import dev.strategos.core.sim.AgentUpdate;
 import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.ExternalDamage;
 import dev.strategos.core.sim.InputEvent;
+import dev.strategos.core.sim.JobDelivery;
 import dev.strategos.core.sim.SliceSource;
 import dev.strategos.core.sim.TerrainPage;
 import dev.strategos.core.sim.nav.PageCoord;
@@ -17,12 +18,14 @@ import java.util.List;
 /**
  * Every journaled input as a one-byte kind and its body: 1 a command envelope; 2 a terrain page, as its page
  * coordinates and its slice's hash, the slice itself in the segment's 'L' records and the page rebuilt from it when
- * read; 5 the tick's agents, a count and each one's id and six floats; 6 damage a body took, as its handle, kind,
- * amount and source kind (3 and 4 are the spec's later inputs).
+ * read; 3 a path delivery, a count and the ids ascending, each as its gap from the one before; 5 the tick's agents, a
+ * count and each one's id and six floats; 6 damage a body took, as its handle, kind, amount and source kind (4 is the
+ * spec's later content swap).
  */
 final class InputCodec {
     private static final int COMMAND = 1;
     private static final int TERRAIN_PAGE = 2;
+    private static final int JOB_DELIVERY = 3;
     private static final int AGENT_UPDATE = 5;
     private static final int EXTERNAL_DAMAGE = 6;
 
@@ -59,6 +62,15 @@ final class InputCodec {
                 out.writeByte(damage.kind().code());
                 out.writeFloat(damage.amount());
                 out.writeByte(damage.sourceKind().code());
+            }
+            case JobDelivery delivery -> {
+                out.writeByte(JOB_DELIVERY);
+                out.writeVarInt(delivery.count());
+                int last = 0;
+                for (int k = 0; k < delivery.count(); k++) {
+                    out.writeVarInt(delivery.id(k) - last);
+                    last = delivery.id(k);
+                }
             }
         }
     }
@@ -115,6 +127,20 @@ final class InputCodec {
                 } catch (IllegalArgumentException e) {
                     throw new WireException("external damage: " + e.getMessage());
                 }
+            }
+            case JOB_DELIVERY -> {
+                int n = in.readVarInt(JobDelivery.MAX_IDS);
+                int[] ids = new int[n];
+                int last = 0;
+                for (int k = 0; k < n; k++) {
+                    int gap = in.readVarInt(Integer.MAX_VALUE);
+                    if (gap < 1 || last > Integer.MAX_VALUE - gap) {
+                        throw new WireException("path delivery: ids must rise, gap " + gap + " after " + last);
+                    }
+                    last += gap;
+                    ids[k] = last;
+                }
+                yield new JobDelivery(ids);
             }
             default -> throw new WireException("unknown input kind " + kind);
         };
