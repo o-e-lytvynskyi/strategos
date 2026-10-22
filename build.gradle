@@ -158,6 +158,13 @@ tasks.register('verifySoak') {
     dependsOn ':core:soak'
 }
 
+// [T16] L4: opens a game window; only with the owner's consent.
+tasks.register('verifyClient') {
+    group = 'verification'
+    description = 'L4 client scenarios; ask the owner first.'
+    dependsOn ':mod:runScenario'
+}
+
 // [T12] L6.
 tasks.register('verifyPerf') {
     group = 'verification'

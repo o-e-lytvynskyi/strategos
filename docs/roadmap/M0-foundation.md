@@ -585,7 +585,7 @@ decision (D-21).
      it once CI exists).
   3. The S3 report answers each question, including the container verdict, and feeds D-22 (R).
 - **Tests:** L0, L4 (consent) · **Depends on:** QA-01, D-22 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 #### QA-07 · Performance harness (L6)
 - **Value:** Tick and frame rates stay stable as features grow, because every hot path has a
@@ -738,7 +738,7 @@ decision (D-21).
      the level of detail needed; the numbers feed D-01, D-04 and ADR-0019, and the armoured
      threshold waits for ART-01 (R).
 - **Tests:** L4 (consent), R · **Depends on:** QA-06, UNIT-01 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 #### CORE-04 · Match event bus
 - **Value:** Systems react to each other (a unit dies, a building completes) at once and in the

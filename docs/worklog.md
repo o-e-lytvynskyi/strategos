@@ -9,7 +9,20 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M0 T9, the tripwire checkpoint, T9b, T11, T10, T11b, T12, T13, T14
+## 2026-10-22 — M0 T9, the tripwire checkpoint, T9b, T11, T10, T11b, T12, T13, T14, T16
+
+- **M0 T16 · Client harness prepared; S3 and S4 plans** — QA-06 and PERF-04 in progress (their runs
+  wait for the owner's consent); CORE-01 waits for `world_switch` the same way.
+  - **Results:**
+    - `mod/src/devtools`: `ScenarioRunner` with its watchdog, `ScenarioContext`, `ScenarioWorld`,
+      `FrameTimer`, and the scenarios `smoke`, `stall`, `world_switch` and `s4_units`;
+    - the `scenario` run with `prepareScenario` and its `result.json` guard; root `verifyClient`;
+      `scenario-gamedir/options.txt`;
+    - every client API checked against the 21.1.264 sources; `verifyFast` compiles it;
+    - [S3](spikes/S3-client-scenario-harness.md) and [S4](spikes/S4-client-frame-time.md) written as
+      plans pending consent; STATE asks for the consent batch.
+  - **Problems:** none; nothing of it was run.
+  - Spec §1.6 D row 62.
 
 - **M0 T14 · S2 and the budget proposal** — PERF-03 done; PERF-01 in progress (the owner's approval
   of the revision left).
@@ -189,7 +202,7 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
     - pitfalls in the knowledge base (`minecraft-mod-data.md`, new, and `minecraft-mod.md`).
   - Spec §1.6 D row 54.
 
-- **Next:** M0 T16 · Client harness prepared; S3 and S4 plans.
+- **Next:** M0 T15 · S5 final, S6 report, ADR updates.
 
 ## 2026-10-22 — the owner's setup, M0 T7c, T8
 

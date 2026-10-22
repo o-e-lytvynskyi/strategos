@@ -158,6 +158,19 @@ neoForge {
                 jvmArgument("-XX:StartFlightRecording=filename=${file('build/spike/out/spike.jfr').absolutePath},settings=profile,dumponexit=true")
             }
         }
+        // [T16] opens a game window: owner's consent only (D-22)
+        scenario {
+            client()
+            disableIdeRun()
+            gameDirectory = file('build/scenario')
+            programArguments.addAll('--username', 'ScenarioBot', '--width', '1280', '--height', '720')
+            jvmArgument('-Xmx3G')
+            systemProperty 'strategos.scenario', providers.gradleProperty('scenario').getOrElse('smoke')
+            systemProperty 'strategos.scenario.out', file('build/scenario/out').absolutePath
+            systemProperty 'strategos.scenario.timeoutSeconds', providers.gradleProperty('scenario.timeoutSeconds').getOrElse('180')
+            systemProperty 'strategos.s4.count', providers.gradleProperty('s4.count').getOrElse('200')
+            systemProperty 'strategos.s4.renderDistance', providers.gradleProperty('s4.renderDistance').getOrElse('16')
+        }
         // [T9b] run 2 of the restart round trip: run 1's game directory, never wiped (QA-05.4)
         serverSmokeRestart {
             server()
@@ -461,6 +474,25 @@ tasks.matching { it.name == 'runSpike' }.configureEach {
     doLast {
         def done = new File(spikeOut, "${spikeDirName}/DONE")
         if (!done.isFile()) throw new GradleException("Spike ${spikeId} did not finish: ${done} missing")
+    }
+}
+
+// [T16] L4, only with the owner's consent: a fresh game directory per run, and the verdict is
+// result.json with "ok": true (the watchdog exits 1 without one).
+def prepareScenario = tasks.register('prepareScenario', Sync) {
+    from 'src/devtools/scenario-gamedir'
+    into layout.buildDirectory.dir('scenario')
+    outputs.upToDateWhen { false }                      // as prepareServerSmoke
+}
+neoForge.runs.scenario.taskBefore prepareScenario
+def scenarioOut = file('build/scenario/out')
+tasks.matching { it.name == 'runScenario' }.configureEach {
+    timeout = Duration.ofMinutes(5)
+    doLast {
+        def result = new File(scenarioOut, 'result.json')
+        if (!result.isFile() || new groovy.json.JsonSlurper().parse(result).ok != true) {
+            throw new GradleException("Scenario failed or wrote no result: ${result}")
+        }
     }
 }
 

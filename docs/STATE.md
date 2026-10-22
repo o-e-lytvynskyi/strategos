@@ -23,8 +23,18 @@ Answer in chat or here; the next session applies the answers.
    keeps every budget and the whole budget matrix as they are: what M0 measured is 20 to 100 times
    inside them, but the systems that will spend them (pathfinding, combat, economy, AI) come later.
    Answer «одобряю бюджеты» and the ADR becomes Accepted (budget F stays provisional until S4).
-3. **Consent batch for client windows.** Nothing is queued yet. M0's batch (spikes S3 and S4)
-   comes at T16, near the end of M0.
+3. **Consent batch for client windows (M0 T16, D-22).** The client harness is built and has never
+   been run. M0's batch opens a game window on this Mac and can take the keyboard focus, so it runs
+   only when you say so, at a time that suits you:
+   - S3: `./gradlew :mod:runScenario -Pscenario=smoke` ten times, `-Pscenario=stall
+     -Pscenario.timeoutSeconds=20` once, and the production jar in a separate client profile
+     ([plan](spikes/S3-client-scenario-harness.md));
+   - S4: `-Pscenario=s4_units` at 200, 500 and 1,000 units, render distance 16 and 24, with and
+     without `-Pcompat` ([plan](spikes/S4-client-frame-time.md));
+   - CORE-01.5: `-Pscenario=world_switch`.
+
+   Answer «согласен на клиентский батч» (optionally with a time), and a session runs it while you
+   are away from the keyboard. None of it blocks M0's Done.
 4. **Open decisions,** none urgent:
    - D-03 civilisation themes (M7);
    - D-20 multiplayer hosting (M7);
@@ -80,14 +90,17 @@ Answer in chat or here; the next session applies the answers.
   far inside the limits of 4 and 100 ms; units keep moving there for hours. All three arena sizes
   are affordable ([report](spikes/S2-force-loaded-arena.md)). The budget proposal waits for you
   (item 2 above). Card PERF-03 is done.
+- 2026-10-22 · **M0 T16 Client harness prepared:** scripted client scenarios (screenshots, a
+  world switch, frame times with many units) are built and compile, but have not run: they open a
+  game window, so they wait for your consent (item 3 above).
 
 ## Now
 
-- **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 22 of 25 tasks done.
+- **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 23 of 25 tasks done.
 - **Tripwire (M0 only):** T1 started 2026-10-21; T9 green 2026-10-22; M0 work days 2 of 10.
 - **In progress:** none.
-- **Last finished task:** M0 T14 (2026-10-22); T13 was commit 095ffc5.
-- **Next task:** M0 T16 · Client harness prepared; S3 and S4 plans (QA-06, PERF-04, CORE-01).
+- **Last finished task:** M0 T16 (2026-10-22); T14 was commit 9c9b6c7.
+- **Next task:** M0 T15 · S5 final, S6 report, ADR updates (QA-01, CORE-05, QA-03).
 - **WIP branch:** none.
 - **CI:** green on `main` (M0 T7b review fix, run 39685642374, 6 min 28 s); minutes used this month about 83 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.
