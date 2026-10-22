@@ -293,7 +293,7 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
   - **Problems:** ErrorProne's `EnumOrdinal` and rule B8's ban on static arrays shaped the codecs;
     the spec's checkpoint period and header changed (spec §1.6 D rows 1–3).
 - **M1 started** on the owner's go-ahead, with consent for every kind of test.
-- **Next:** T15, payloads, the gateway, the roster and the fog-gate stub (NET-01).
+- **Next:** T15.1, the payload layer and gateway (NET-01); T15 was split in two, being about 1,900 lines.
 
 ## 2026-10-22 — M0 approvals, the client batch, M0 accepted
 

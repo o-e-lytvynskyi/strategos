@@ -150,7 +150,7 @@ Answer in chat or here; the next session applies the answers.
 - **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 16 of 28 tasks done (T28, PATH-08, joined by its trigger).
 - **In progress:** none.
 - **Last finished task:** M1 T14 (2026-10-22).
-- **Next task:** M1 T15 · Payloads, gateway, roster and the fog-gate stub (NET-01).
+- **Next task:** M1 T15.1 · Payload layer and gateway (NET-01).
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 220 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.

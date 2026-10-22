@@ -161,7 +161,7 @@ items never block Done (§10). UNIT-01's criterion 5, left open by M0, closes wi
 | **1B** | | | | | |
 | CORE-08 | Spatial index | M | CORE-02 | T13 | 1 `SpatialBruteForceTest`, 1,000 seeds (L1) · 2 `SpatialOrderTest` (L1) · 3 `SpatialBench` (L6) |
 | QA-19 | Network test kit | M | QA-03, QA-04 | T14 | 1 `nettests.acknowledging_viewer_tracks_view` (L3) · 2 `nettests.capture_per_player_and_type` (L3) · 3 the perf report's byte counters (L6) · 4 the JFR comparison (R, consent; M2's batch, §12) |
-| NET-01 | Payload layer, NetGateway and the fog-gate stub | M | CORE-03, QA-03, QA-19 | T15 | 1 `PayloadRoundTripTest` (L2) · 2 `WireCodecSizeTest` (L1) · 3 `PayloadAudienceTest` (L2) · 4 rule B6 (L0) · 5 `nettests.other_match_gets_nothing`, `nettests.same_match_paired_and_informed` (L3) · 6 `nettests.bad_batches_dropped_and_disconnect` (L3) · 7 `FogGateTest` (L2; §1.6 row 8) · 8 `nettests.pose_same_tick_no_entity_data` (L3) · 9 `nettests.issuer_from_uuid_slot`, `nettests.unseated_player_commands_ignored` (L3) |
+| NET-01 | Payload layer, NetGateway and the fog-gate stub | M | CORE-03, QA-03, QA-19 | T15.1, T15.2 | 1 `PayloadRoundTripTest` (L2) · 2 `WireCodecSizeTest` (L1) · 3 `PayloadAudienceTest` (L2) · 4 rule B6 (L0) · 5 `nettests.other_match_gets_nothing`, `nettests.same_match_paired_and_informed` (L3) · 6 `nettests.bad_batches_dropped_and_disconnect` (L3) · 7 `FogGateTest` (L2; §1.6 row 8) · 8 `nettests.pose_same_tick_no_entity_data` (L3) · 9 `nettests.issuer_from_uuid_slot`, `nettests.unseated_player_commands_ignored` (L3) |
 | UNIT-02 | UnitAI state machine framework | M | CORE-04, CORE-06 | T17 | 1 `HfsmTransitionsTest` (L1) · 2 `HfsmPersistenceTest` (L1) · 3 `HfsmExitPathTest` (L1) |
 | ORD-02 | Order queue: move and stop | M | ORD-01, UNIT-02, NET-01 | T18 | 1 `OrderQueueTest` (L1) · 2 `QueuedWaypointsTest` (L1) · 3 `ordertests.commands_payload_applies_next_tick` (L3) |
 | PATH-04 | Components and reachability | M | PATH-02, PATH-15 | T19 | 1 `ComponentsFloodFillTest`, 500 grids (L1) · 2 `MakeGoalReachableTest` (L1) · 3 `navtests.wall_splits_components` (L3) |
@@ -1083,7 +1083,7 @@ input   := u8(kind) body   1 CommandEnvelope · 2 TerrainPage(px, pz, sliceHash)
 
 | Command | Task |
 |---|---|
-| `/strategos match create [size] [map=<id>]`, `/strategos match join <id> <slot> [player]` | T6, T15 |
+| `/strategos match create [size] [map=<id>]`, `/strategos match join <id> <slot> [player]` | T6, T15.2 |
 | `/strategos map export <id> <from> <to>`, `/strategos map import <id>`, `/strategos map list` | T6 |
 | `/strategos spawn <template> [count] [slot]` (M0's `debug spawn` stays as an alias) | T11 |
 | `/strategos order move <units> <x> <z> [queue]`, `/strategos order move <units> waypoint=<name>`, `/strategos order stop <units>`; `<units>` is `@units`, `@group <id>` or handles | T18 |
@@ -1119,7 +1119,7 @@ M0 §7's harnesses stay; M1 adds the network kit (QA-19), the map batch and the 
 
 | Rule or check | Asserts | Task |
 |---|---|---|
-| B6 `ONLY_NET_GATEWAY_SENDS` (M0 rule, now with a real gateway) | Only `server.net.NetGateway` calls `PacketDistributor` or `Connection#send` | T15 |
+| B6 `ONLY_NET_GATEWAY_SENDS` (M0 rule, now with a real gateway) | Only `server.net.NetGateway` calls `PacketDistributor` or `Connection#send` | T15.1 |
 | B7 `ONLY_BLOCK_WRITER_WRITES_BLOCKS` (M0 rule) | Only `server.world.BlockWriter` calls `setBlock`, `removeBlock`, `destroyBlock` | T5 |
 | B10 `MIXINS_ONLY_ROUTE` (M0 rule) | `LevelChunkMixin` calls only `BlockChangeRouter` | T7 |
 | New `JOBS_NEVER_TOUCH_THE_LEVEL` | Classes implementing `PureJob` in `mod` reference no `Level`, `LevelChunk`, `ServerChunkCache`, `ChunkMap` or `Entity` type; fixture `LevelTouchingJobFixture` | T7 |
@@ -1333,10 +1333,10 @@ flowchart TB
   end
   subgraph B["Slice 1B: a group of 50"]
     T13["T13 spatial index"]
-    T14["T14 network test kit"] --> T15["T15 payloads, gateway, roster, fog stub"]
-    T15 --> T16["T16 content loading, sync, S12"]
+    T14["T14 network test kit"] --> T15_1["T15.1 payloads, gateway"] --> T15_2["T15.2 roster, fog stub"]
+    T15_2 --> T16["T16 content loading, sync, S12"]
     T17["T17 HFSM"] --> T18["T18 order queue"]
-    T15 --> T18
+    T15_2 --> T18
     T7 --> T19["T19 components"]
     T18 --> T20["T20 slots"]
     T19 --> T20
@@ -1348,7 +1348,7 @@ flowchart TB
     T23["T23 stuck ladder"] --> T24["T24 group paths"] --> T26["T26 crowd soak, perf gate"] --> T27["T27 M1 close"]
     T25["T25 overlay, dev payloads"] --> T27
   end
-  T1 --> T15
+  T1 --> T15_1
   T11 --> T16
   T12 --> T16
   T9 --> T17
@@ -1358,7 +1358,7 @@ flowchart TB
   T22 --> T24
   T28 --> T24
   T21 --> T10
-  T15 --> T25
+  T15_1 --> T25
   T8 --> T25
   T6 --> T26
   T14 --> T26
@@ -1531,20 +1531,29 @@ are green and its negative checks behave as stated.
   `nettests.capture_per_player_and_type`.
 - **Verification:** `verify`; a perf run's report shows the counters.
 
-#### T15 · Payloads, gateway, roster and the fog-gate stub — NET-01 (UNIT-01.5) · depends on T1, T14 · ~1,900 lines
+#### T15.1 · Payload layer and gateway — NET-01 (UNIT-01.5) · depends on T1, T14 · ~1,000 lines
 
 - **Files:** `core/protocol/{CommandBatch, MatchJoin, MatchStateMsg, Feedback, NoticeMsg}`;
-  `core/sim/{Notice, NoticeKind}`; `mod/server/net/**` (§6.5); `mod/server/fog/{FogGate,
-  InterestSets}`; `UnitEntity#broadcastToPlayer`, `startSeenByPlayer`, `stopSeenByPlayer`;
-  `mod/server/match/MatchRoster` and `/strategos match join`; `mod/client/net/ClientPayloads`;
-  `mod/registry/ModPayloads`; tests `PayloadRoundTripTest`, `PayloadAudienceTest`,
-  `WireCodecSizeTest` (payloads), `FogGateTest`, `nettests.other_match_gets_nothing`,
-  `nettests.same_match_paired_and_informed`, `nettests.bad_batches_dropped_and_disconnect`,
-  `nettests.pose_same_tick_no_entity_data`, `nettests.issuer_from_uuid_slot`,
-  `nettests.unseated_player_commands_ignored`; inventory entries for the payloads.
+  `core/sim/{Notice, NoticeKind}`; `FakeNet` in `core/testFixtures`; `mod/server/net/{NetGateway,
+  Audience, PayloadSpec, ByteBufWire, RateLimiter, C2sHandlers, NetCounters}` (§6.5);
+  `mod/registry/ModPayloads`; `mod/client/net/ClientPayloads`; tests `PayloadRoundTripTest`,
+  `PayloadAudienceTest`, `WireCodecSizeTest` (payloads), rule B6,
+  `nettests.bad_batches_dropped_and_disconnect`, `nettests.pose_same_tick_no_entity_data`;
+  inventory entries for the payloads. Until T15.2 seats players, the `commands` handler counts every
+  sender as unseated.
 - **Verification:** `verify`. UNIT-01 becomes `done` with `pose_same_tick_no_entity_data`.
 
-#### T16 · Content loading, client sync and spike S12 — DATA-03 · depends on T11, T12, T15 · ~1,500 lines
+#### T15.2 · Roster and the fog-gate stub — NET-01 · depends on T15.1 · ~900 lines
+
+- **Files:** `mod/server/match/MatchRoster`, saved with the match, and `/strategos match join`; the
+  `commands` handler's issuer from the slot bound to the sender's UUID; `match_join` and
+  `match_state` to the match's members; `mod/server/fog/{FogGate, InterestSets}`;
+  `UnitEntity#broadcastToPlayer`, `startSeenByPlayer`, `stopSeenByPlayer`; tests `FogGateTest`,
+  `nettests.other_match_gets_nothing`, `nettests.same_match_paired_and_informed`,
+  `nettests.issuer_from_uuid_slot`, `nettests.unseated_player_commands_ignored`.
+- **Verification:** `verify`. NET-01 becomes `done`.
+
+#### T16 · Content loading, client sync and spike S12 — DATA-03 · depends on T11, T12, T15.2 · ~1,500 lines
 
 - **Files:** `mod/server/content/{TemplateReloadListener, TemplateLint, TemplateSync}`;
   `core/sim/ContentSwap` with INGEST's swap; `core/content/TemplateIdTable`;
@@ -1560,7 +1569,7 @@ are green and its negative checks behave as stated.
   `UnitAiTransitionsTest` and the walking skeleton keep passing.
 - **Verification:** `verify` (the M0 skeleton goldens unchanged, or re-baselined with a reason).
 
-#### T18 · Order queue: move and stop — ORD-02 · depends on T15, T17 · ~900 lines
+#### T18 · Order queue: move and stop — ORD-02 · depends on T15.2, T17 · ~900 lines
 
 - **Files:** `core/sim/order/{OrderQueues, OrderKind, ContextResolver}` replacing `OrderStore`;
   group fan-out and group ids; `QUEUE_FULL`; `/strategos order …`; snapshot fields and migration;
@@ -1613,7 +1622,7 @@ are green and its negative checks behave as stated.
   `maptests.two_hundred_cross`, `perftests.group_paths_budget_d`.
 - **Verification:** `verify verifySlow verifyPerf`.
 
-#### T25 · Movement debug overlay and dev payloads — PATH-10 · depends on T8, T15 · ~1,200 lines
+#### T25 · Movement debug overlay and dev payloads — PATH-10 · depends on T8, T15.1 · ~1,200 lines
 
 - **Files:** `core/protocol/{DebugSubscribe, DebugFeed}`; their payloads (optional);
   `mod/server/debug/{DebugFeed, PerfDump}`; `mod/client/debug/{DebugOverlayHost, MovementOverlay,
@@ -1653,7 +1662,7 @@ are green and its negative checks behave as stated.
 ### 9.3 Progress
 
 - [x] T1 (2026-10-22) · [x] T2 (2026-10-22) · [x] T11 (2026-10-22) · [x] T3 (2026-10-22) · [x] T4 (2026-10-22) · [x] T5 (2026-10-22) · [x] T6 (2026-10-22) · [x] T7 (2026-10-22) · [x] T8 (2026-10-22) · [x] T19 (2026-10-22) · [x] T28 (2026-10-22) · [x] T9 (2026-10-22) · [x] T12 (2026-10-22) · [x] T10 (2026-10-22)
-- [x] T13 (2026-10-22) · [x] T14 (2026-10-22) · [ ] T15 · [ ] T16 · [ ] T17 · [ ] T18 · [ ] T20 · [ ] T21 · [ ] T22
+- [x] T13 (2026-10-22) · [x] T14 (2026-10-22) · [ ] T15.1 · [ ] T15.2 · [ ] T16 · [ ] T17 · [ ] T18 · [ ] T20 · [ ] T21 · [ ] T22
 - [ ] T23 · [ ] T24 · [ ] T25 · [ ] T26 · [ ] T27
 
 ---
@@ -1768,7 +1777,7 @@ Checked with `javap` when first used (not in the sources jar): FML's `ModContain
 | CORE-11 | T1 |
 | CORE-08 | T13 |
 | QA-19 | T14 |
-| NET-01 | T15 |
+| NET-01 | T15.1, T15.2 |
 | UNIT-02 | T17 |
 | ORD-02 | T18 |
 | PATH-04 | T19 |
@@ -1779,6 +1788,6 @@ Checked with `javap` when first used (not in the sources jar): FML's `ModContain
 | PATH-09 | T24 |
 | PATH-10 | T25 |
 | PERF-05 | T26 |
-| UNIT-01 (M0, criterion 5) | T15 |
+| UNIT-01 (M0, criterion 5) | T15.1 |
 | PATH-08 (reserve, triggered by R3 in T8) | T28 |
 | PATH-17 (reserve) | none unless triggered |
