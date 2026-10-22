@@ -348,7 +348,7 @@ an open owner decision yourself.
 |---|---|
 | Go-ahead | «начинай Mx» for a specified milestone |
 | Decision | Options and a recommendation |
-| Consent batch | The client-window runs, their duration, and the phrase «запускай консент-батч» (the owner then steps away from the keyboard) |
+| Consent batch | The client-window runs, their duration, and the phrase «запускай консент-батч» (the owner then steps away from the keyboard); a static scene is repeated two or three times, never more (D-22) |
 | Demo | Exact commands and steps; the owner's verdict goes into the milestone's Acceptance |
 | Approval | Performance baselines, goldens, ADR thresholds, `changed` cards |
 | Proposal | Ideas that would add scope |

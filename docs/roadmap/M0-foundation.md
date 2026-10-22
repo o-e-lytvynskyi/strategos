@@ -246,6 +246,9 @@ always needs consent on the M4 Pro.
 
 **Decided (2026-10-21):** as recommended, by the owner.
 
+**Amended (2026-10-22), by the owner:** a static scene is repeated two or three times, not ten:
+repeatability checks such as S3's and the golden runs of QA-18.1.
+
 ### D-23 · CI and the private GitHub repository
 
 **Question.** Does the project get a private GitHub repository with CI?

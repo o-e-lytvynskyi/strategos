@@ -267,8 +267,8 @@ perspective only.
   the Linux container route if D-22 picks it; the golden step on CI (QA-08) if D-23 allows.
 - **Out of scope:** frame-time gates (PERF-14).
 - **Acceptance:**
-  1. Ten consecutive runs differ by less than the threshold, or the variance is masked and
-     documented (L4, consent).
+  1. Three consecutive runs differ by less than the threshold, or the variance is masked and
+     documented (L4, consent; three, not ten, since the owner's amendment of D-22 on 2026-10-22).
   2. A changed golden fails the CI job, with no window on the owner's Mac (L4, on CI).
   3. A scenario drives `RtsScreen` through our API (L4, consent).
   4. The README states the approval procedure, and goldens change only with the owner's approval
