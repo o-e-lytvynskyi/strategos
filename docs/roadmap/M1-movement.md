@@ -407,7 +407,7 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
   4. With S1 and PATH-06's avoidance check, the report sets ADR-0011 to Accepted, or names the
      templates that get `PHYSICS` bodies (R).
 - **Tests:** L3, L4 (consent), R · **Depends on:** PATH-05, PATH-15 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 #### CORE-11 · Binary journal and cross-level replay
 - **Value:** Nondeterminism leaking through an adapter is caught the day it appears, and any bug

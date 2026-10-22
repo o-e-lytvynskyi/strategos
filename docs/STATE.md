@@ -123,7 +123,7 @@ Answer in chat or here; the next session applies the answers.
 ## Now
 
 - **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 13 of 28 tasks done (T28, PATH-08, joined by its trigger).
-- **In progress:** none.
+- **In progress:** M1 T10 since 2026-10-22.
 - **Last finished task:** M1 T12 (2026-10-22).
 - **Next task:** M1 T10 · Spike S10: kinematic fidelity, external damage (UNIT-09).
 - **WIP branch:** none.

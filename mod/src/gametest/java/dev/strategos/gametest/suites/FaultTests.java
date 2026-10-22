@@ -38,7 +38,9 @@ import java.util.List;
 import java.util.Map;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Fault containment in a real server (CORE-10, 04 §2.4): a fault stops its own match, leaves its report, and the
@@ -154,8 +156,8 @@ public final class FaultTests {
                     DamageSource throwing = new DamageSource(
                             h.getLevel().damageSources().generic().typeHolder()) {
                         @Override
-                        public String getMsgId() {
-                            throw new IllegalStateException("injected fault in getMsgId");
+                        public @Nullable Entity getEntity() {
+                            throw new IllegalStateException("injected fault in getEntity");
                         }
                     };
                     UnitEntity victim = body(a, handles(a)[0]);

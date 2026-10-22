@@ -6,6 +6,7 @@ import dev.strategos.core.shared.MatchId;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.CommandResult;
+import dev.strategos.core.sim.ExternalDamage;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.core.sim.MatchRules;
@@ -44,6 +45,7 @@ public final class MatchRuntime {
     private final @Nullable ResourceLocation map;
     private final PageJobs pages;
     private final List<CommandEnvelope> inbox = new ArrayList<>();
+    private final List<ExternalDamage> damage = new ArrayList<>();
     private final Map<ReplyKey, Consumer<CommandResult>> replies = new HashMap<>();
     private final List<Consumer<TickOutputs>> listeners = new ArrayList<>();
     private MatchLifecycle lifecycle = MatchLifecycle.CREATED;
@@ -178,6 +180,11 @@ public final class MatchRuntime {
         return seq;
     }
 
+    /** Damage one of the match's bodies took, for the next step's inputs, after the commands. */
+    public void damage(ExternalDamage hit) {
+        damage.add(hit);
+    }
+
     /** As {@link #submit(PlayerSlot, Command)}, and {@code reply} gets the command's result after its step. */
     public int submit(PlayerSlot issuer, Command command, Consumer<CommandResult> reply) {
         int seq = submit(issuer, command);
@@ -199,7 +206,7 @@ public final class MatchRuntime {
     public void tick(ServerLevel level) {
         MatchCore c = requireCore();
         long next = c.queries().tick() + 1;
-        TickOutputs out = c.step(InputCollector.collect(next, inbox, pages.due(next)));
+        TickOutputs out = c.step(InputCollector.collect(next, inbox, pages.due(next), damage));
         long start = System.nanoTime();
         OutputAppliers.apply(this, level, out);
         bodies.materialise(level, c.queries(), spawnBudget);

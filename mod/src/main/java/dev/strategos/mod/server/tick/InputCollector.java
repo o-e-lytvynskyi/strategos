@@ -1,6 +1,7 @@
 package dev.strategos.mod.server.tick;
 
 import dev.strategos.core.sim.CommandEnvelope;
+import dev.strategos.core.sim.ExternalDamage;
 import dev.strategos.core.sim.InputEvent;
 import dev.strategos.core.sim.TerrainPage;
 import dev.strategos.core.sim.TickInputs;
@@ -18,10 +19,18 @@ public final class InputCollector {
 
     /** The pages first, then the inbox, which it clears; the core sorts both into canonical order. */
     public static TickInputs collect(long tick, List<CommandEnvelope> inbox, List<TerrainPage> pages) {
-        List<InputEvent> events = new ArrayList<>(pages.size() + inbox.size());
+        return collect(tick, inbox, pages, new ArrayList<>());
+    }
+
+    /** As above, and then the damage bodies took since the last step, in the order it came, which it also clears. */
+    public static TickInputs collect(
+            long tick, List<CommandEnvelope> inbox, List<TerrainPage> pages, List<ExternalDamage> damage) {
+        List<InputEvent> events = new ArrayList<>(pages.size() + inbox.size() + damage.size());
         events.addAll(pages);
         events.addAll(inbox);
+        events.addAll(damage);
         inbox.clear();
+        damage.clear();
         return new TickInputs(tick, events);
     }
 }

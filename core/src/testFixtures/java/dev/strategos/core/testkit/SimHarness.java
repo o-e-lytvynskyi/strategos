@@ -12,6 +12,7 @@ import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.CorePorts;
+import dev.strategos.core.sim.ExternalDamage;
 import dev.strategos.core.sim.InputEvent;
 import dev.strategos.core.sim.MatchBounds;
 import dev.strategos.core.sim.MatchConfig;
@@ -152,6 +153,11 @@ public final class SimHarness implements ScenarioContext {
                 .filter(UnitCreated.class::isInstance)
                 .mapToInt(e -> ((UnitCreated) e).handle())
                 .toArray();
+    }
+
+    /** Queues damage a unit's body took for the next tick, as the damage bridge does. */
+    public void damage(ExternalDamage damage) {
+        pending.add(damage);
     }
 
     /** Queues a terrain page for the next tick, as a page job's delivery does. */

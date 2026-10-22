@@ -2,6 +2,6 @@ package dev.strategos.core.sim;
 
 import dev.strategos.core.shared.CoreApi;
 
-/** Something entering a match in a tick's inputs: a command or a rebuilt terrain page. */
+/** Something entering a match in a tick's inputs: a command, a rebuilt terrain page, or damage a body took. */
 @CoreApi
-public sealed interface InputEvent permits CommandEnvelope, TerrainPage {}
+public sealed interface InputEvent permits CommandEnvelope, TerrainPage, ExternalDamage {}

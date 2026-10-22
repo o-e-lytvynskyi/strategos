@@ -78,6 +78,7 @@ public final class ScenarioRunner {
             case "stall" -> new StallScenario();
             case "world_switch" -> new WorldSwitchScenario();
             case "s4_units" -> new UnitsFrameTimeScenario();
+            case "s10_steps" -> new S10StepsScenario();
             default -> null;
         };
     }

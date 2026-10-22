@@ -70,7 +70,11 @@ public final class BodyEvents {
         if (rt == null) {
             return;
         }
-        server.faults().run(rt, "hurt", () -> rt.log().debug(rt.tick(), "ignored {} {}", amount, source.getMsgId()));
+        UnitSpawnData data = body.spawnData();
+        if (data == null) {
+            return;
+        }
+        server.faults().run(rt, "hurt", () -> rt.damage(DamageBridge.of(data.handle(), source, amount)));
     }
 
     private static @Nullable MatchRuntime runtimeOf(StrategosServer server, UnitEntity body) {

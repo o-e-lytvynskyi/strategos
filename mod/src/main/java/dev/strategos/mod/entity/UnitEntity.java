@@ -100,7 +100,10 @@ public final class UnitEntity extends LivingEntity implements IEntityWithComplex
         return false;
     }
 
-    /** M0 has no damage model: nothing hurts a body; the match logs the attempt, and CMB-01 (M2) will route it. */
+    /**
+     * Nothing hurts a body: the damage becomes the core's {@code ExternalDamage} input (UNIT-09), which CMB-01 (M2)
+     * applies; until then a unit takes none, and false tells vanilla the blow did nothing.
+     */
     @Override
     public boolean hurt(DamageSource source, float amount) {
         if (!level().isClientSide()) {

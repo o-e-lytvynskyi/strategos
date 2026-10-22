@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       scenario:
-        description: 'smoke, world_switch, s4_units or stall'
+        description: 'smoke, world_switch, s4_units, s10_steps or stall'
         required: true
         default: 'smoke'
 
