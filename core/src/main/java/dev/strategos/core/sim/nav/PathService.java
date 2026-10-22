@@ -1,5 +1,6 @@
 package dev.strategos.core.sim.nav;
 
+import dev.strategos.core.diag.RingHistogram;
 import dev.strategos.core.port.Clock;
 import dev.strategos.core.port.JobExecutor;
 import dev.strategos.core.shared.CoreApi;
@@ -48,13 +49,20 @@ public final class PathService {
     /** Changed terrain makes a unit ask again at most once in this many ticks (PATH-15). */
     public static final int REPATH_EVERY = 20;
 
+    /** The delivered results whose latency {@link Stats#latencyP95()} covers. */
+    public static final int LATENCY_WINDOW = 600;
+
     private final JobExecutor jobs;
     private final Clock clock;
     private final MatchRules rules;
     private final double shortMoveSquared;
     private final Counters counters = new Counters();
 
-    /** Counts since the match started, for the debug command and the perf tests; not part of the state. */
+    /**
+     * Counts since the match started, for the debug command, the overlay and the perf tests; not part of the state.
+     * {@code latencyP95}: the 95th percentile of the latency of the last {@value #LATENCY_WINDOW} results applied, in
+     * ticks from request to delivery (PATH-10's panel).
+     */
     @CoreApi
     public record Stats(
             long requests,
@@ -67,7 +75,8 @@ public final class PathService {
             int maxExpansions,
             long latencyTicks,
             long joinNanos,
-            int inFlight) {}
+            int inFlight,
+            long latencyP95) {}
 
     private static final class Counters {
         long requests;
@@ -80,6 +89,7 @@ public final class PathService {
         int maxExpansions;
         long latencyTicks;
         long joinNanos;
+        final RingHistogram latency = new RingHistogram(LATENCY_WINDOW);
     }
 
     public PathService(MatchState state, JobExecutor jobs, Clock clock) {
@@ -138,7 +148,8 @@ public final class PathService {
                 c.maxExpansions,
                 c.latencyTicks,
                 c.joinNanos,
-                state.paths().pending().size());
+                state.paths().pending().size(),
+                c.latency.percentile(0.95));
     }
 
     private void deliver(MatchState s) {
@@ -165,6 +176,7 @@ public final class PathService {
             counters.expansions += r.expansions();
             counters.maxExpansions = Math.max(counters.maxExpansions, r.expansions());
             counters.latencyTicks += tick - p.request().tick();
+            counters.latency.record(tick - p.request().tick());
         }
     }
 

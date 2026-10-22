@@ -18,9 +18,11 @@ import org.jspecify.annotations.Nullable;
 /**
  * The mod's hooks into the engine (ADR-0020, rule B12): the inventory in {@code engine-surface.json} on one side, what
  * the code registers on the other, and one comparison. The code side reads entity types, saved-data names, command
- * roots, mixin configs, access transformers, data map types, world generation data, ticket controllers and config
- * files; the kinds without a probe yet get theirs with their first registration in M1, and until then the code side
- * repeats the inventory for them.
+ * roots, mixin configs, access transformers, data map types, world generation data, ticket controllers, config files
+ * and payloads; the kinds without a probe yet get theirs with their first registration, and until then the code side
+ * repeats the inventory for them. The client's registrations (key mappings, GUI layers, client commands) have no
+ * probe: {@code :mod:test} runs as a dedicated server (FML's {@code forgejunitdev} target), where the client's
+ * registration events never fire, so they are listed for the record and checked against 04 §2.5 only.
  */
 public record EngineSurface(Map<String, List<String>> kinds) {
     /** Every kind, in the inventory's order. */
@@ -35,7 +37,10 @@ public record EngineSurface(Map<String, List<String>> kinds) {
             "worldgen",
             "ticketControllers",
             "reloadListeners",
-            "configs");
+            "configs",
+            "keyMappings",
+            "guiLayers",
+            "clientCommands");
 
     /** The kinds the code side reads. */
     public static final List<String> PROBED = List.of(
@@ -78,6 +83,9 @@ public record EngineSurface(Map<String, List<String>> kinds) {
             kinds.put("ticketControllers", inventory.ticketControllers);
             kinds.put("reloadListeners", inventory.reloadListeners);
             kinds.put("configs", inventory.configs);
+            kinds.put("keyMappings", inventory.keyMappings);
+            kinds.put("guiLayers", inventory.guiLayers);
+            kinds.put("clientCommands", inventory.clientCommands);
             return new EngineSurface(kinds);
         } catch (IOException e) {
             throw new UncheckedIOException("cannot read the inventory " + json, e);
@@ -191,5 +199,8 @@ public record EngineSurface(Map<String, List<String>> kinds) {
         List<String> ticketControllers = List.of();
         List<String> reloadListeners = List.of();
         List<String> configs = List.of();
+        List<String> keyMappings = List.of();
+        List<String> guiLayers = List.of();
+        List<String> clientCommands = List.of();
     }
 }

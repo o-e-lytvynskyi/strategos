@@ -9,6 +9,7 @@ import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.CommandEnvelope;
 import java.util.Arrays;
+import java.util.List;
 import java.util.SplittableRandom;
 import org.junit.jupiter.api.Test;
 
@@ -195,6 +196,134 @@ class WireCodecSizeTest {
         assertThatThrownBy(() -> WireCodec.encode(CommandBatch.WIRE, new CommandBatch(0, heavy)))
                 .as("32 moves of 300 units do not fit a batch: the client splits them")
                 .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void theDebugRecordsEncodeToTheExactSizesOfTheFormat() {
+        assertThat(size(DebugSubscribe.WIRE, new DebugSubscribe(DebugLayer.ALL, 32)))
+                .as("layers, radius")
+                .isEqualTo(2);
+        DebugFeedMsg.Origin origin = new DebugFeedMsg.Origin(100, -60, -200);
+        DebugFeedMsg.Point a = new DebugFeedMsg.Point(160, 16, 160);
+        DebugFeedMsg.Point b = new DebugFeedMsg.Point(320, 16, 160);
+        DebugFeedMsg.Cells page = new DebugFeedMsg.Cells(origin, 3, 4, List.of(new DebugFeedMsg.Cell(17, 32, 0)));
+        assertThat(size(DebugFeedMsg.WIRE, new DebugFeedMsg(DebugLayer.SURFACES, 1_200, page)))
+                .as("layer, stamp, origin, page, count, one surface")
+                .isEqualTo(1 + 2 + 5 + 2 + 1 + 3);
+        DebugFeedMsg.Paths paths = new DebugFeedMsg.Paths(
+                origin, List.of(new DebugFeedMsg.PathLine(0x0100_0005, 0, false, List.of(a, b))));
+        assertThat(size(DebugFeedMsg.WIRE, new DebugFeedMsg(DebugLayer.PATHS, 1_200, paths)))
+                .as("layer, stamp, origin, count, handle, status, flag, two points")
+                .isEqualTo(1 + 2 + 5 + 1 + 4 + 1 + 1 + 1 + 5 + 5);
+        DebugFeedMsg.Marks marks =
+                new DebugFeedMsg.Marks(origin, List.of(new DebugFeedMsg.Mark(0x0100_0005, a, 1, 0, 0)));
+        assertThat(size(DebugFeedMsg.WIRE, new DebugFeedMsg(DebugLayer.UNITS, 1_200, marks)))
+                .as("layer, stamp, origin, count, handle, point, tier, stuck, rung")
+                .isEqualTo(1 + 2 + 5 + 1 + 4 + 5 + 1 + 1 + 1);
+        DebugFeedMsg.Panel panel = new DebugFeedMsg.Panel(
+                1, 1_200, 2, 0, 3, 1, 2, 0, 0, 0, 40, 30, 2, 5_000, List.of(new DebugFeedMsg.Timing("step", 120_000)));
+        assertThat(size(DebugFeedMsg.WIRE, new DebugFeedMsg(DebugLayer.PANEL, 1_200, panel)))
+                .as("layer, stamp, fourteen numbers, a count and one timing")
+                .isEqualTo(1 + 2 + (1 + 2 + 11 + 2) + 1 + (1 + 4 + 3));
+    }
+
+    @Test
+    void theDebugRecordsStayWithinTheirCaps() {
+        assertThat(DebugSubscribe.WIRE.maxSize()).as("debug_subscribe").isLessThanOrEqualTo(64);
+        assertThat(DebugFeedMsg.WIRE.maxSize()).as("debug_feed").isLessThanOrEqualTo(64 * 1024);
+        DebugSubscribe all = new DebugSubscribe(DebugLayer.ALL, DebugSubscribe.MAX_RADIUS);
+        assertThat(size(DebugSubscribe.WIRE, all)).isEqualTo(DebugSubscribe.WIRE.maxSize());
+        assertThat(roundTrip(DebugSubscribe.WIRE, all)).isEqualTo(all);
+
+        DebugFeedMsg.Origin far = new DebugFeedMsg.Origin(Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE);
+        int edge = -DebugFeedMsg.COORD_LIMIT;
+        DebugFeedMsg.Point corner = new DebugFeedMsg.Point(edge, edge, edge);
+        DebugFeedMsg.Cells cells = new DebugFeedMsg.Cells(
+                far,
+                DebugFeedMsg.MAX_PAGE,
+                DebugFeedMsg.MAX_PAGE,
+                java.util.Collections.nCopies(
+                        DebugFeedMsg.MAX_CELLS, new DebugFeedMsg.Cell(255, DebugFeedMsg.MAX_FLOOR, Integer.MAX_VALUE)));
+        DebugFeedMsg.Paths paths = new DebugFeedMsg.Paths(
+                far,
+                java.util.Collections.nCopies(
+                        DebugFeedMsg.MAX_LINES,
+                        new DebugFeedMsg.PathLine(
+                                -1, 3, true, java.util.Collections.nCopies(DebugFeedMsg.MAX_POINTS, corner))));
+        DebugFeedMsg.Marks marks = new DebugFeedMsg.Marks(
+                far,
+                java.util.Collections.nCopies(
+                        DebugFeedMsg.MAX_MARKS, new DebugFeedMsg.Mark(-1, corner, 255, Integer.MAX_VALUE, 255)));
+        long most = Long.MAX_VALUE;
+        int many = Integer.MAX_VALUE;
+        DebugFeedMsg.Panel panel = new DebugFeedMsg.Panel(
+                many,
+                most,
+                many,
+                many,
+                most,
+                most,
+                most,
+                most,
+                most,
+                most,
+                most,
+                many,
+                most,
+                most,
+                java.util.Collections.nCopies(
+                        DebugFeedMsg.MAX_TIMINGS, new DebugFeedMsg.Timing("t".repeat(DebugFeedMsg.NAME_BYTES), most)));
+
+        assertWidest(new DebugFeedMsg(DebugLayer.COMPONENTS, most, cells), DebugFeedMsg.CELLS);
+        assertWidest(new DebugFeedMsg(DebugLayer.PATHS, most, paths), DebugFeedMsg.PATHS);
+        assertWidest(new DebugFeedMsg(DebugLayer.UNITS, most, marks), DebugFeedMsg.MARKS);
+        assertWidest(new DebugFeedMsg(DebugLayer.PANEL, most, panel), DebugFeedMsg.PANEL);
+        assertThat(DebugFeedMsg.WIRE.maxSize()).isEqualTo(1 + 9 + DebugFeedMsg.PATHS.maxSize());
+    }
+
+    @Test
+    void theDebugRecordsRefuseWhatTheyCannotHold() {
+        assertThatThrownBy(() -> new DebugSubscribe(DebugLayer.ALL + 1, 32))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new DebugSubscribe(DebugLayer.ALL, DebugSubscribe.MAX_RADIUS + 1))
+                .isInstanceOf(IllegalArgumentException.class);
+        byte[] narrow = new WireWriter().writeVarInt(1).writeVarInt(2).toByteArray();
+        assertThatThrownBy(() -> WireCodec.decode(DebugSubscribe.WIRE, narrow))
+                .isInstanceOf(WireException.class)
+                .hasMessageContaining("radius 2");
+        byte[] unknown = new WireWriter().writeByte(9).writeVarLong(0).toByteArray();
+        assertThatThrownBy(() -> WireCodec.decode(DebugFeedMsg.WIRE, unknown))
+                .isInstanceOf(WireException.class)
+                .hasMessageContaining("unknown debug layer 9");
+        byte[] beyond = new WireWriter()
+                .writeByte(DebugLayer.PATHS.code())
+                .writeVarLong(0)
+                .writeZigZag(0)
+                .writeZigZag(0)
+                .writeZigZag(0)
+                .writeVarInt(1)
+                .writeInt(5)
+                .writeByte(0)
+                .writeBoolean(false)
+                .writeVarInt(1)
+                .writeZigZag(DebugFeedMsg.COORD_LIMIT)
+                .writeZigZag(0)
+                .writeZigZag(0)
+                .toByteArray();
+        assertThatThrownBy(() -> WireCodec.decode(DebugFeedMsg.WIRE, beyond))
+                .isInstanceOf(WireException.class)
+                .hasMessageContaining("too far");
+        DebugFeedMsg.Marks none = new DebugFeedMsg.Marks(new DebugFeedMsg.Origin(0, 0, 0), List.of());
+        assertThatThrownBy(() -> new DebugFeedMsg(DebugLayer.PANEL, 0, none))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("cannot carry");
+    }
+
+    private static <P extends DebugFeedMsg.Payload> void assertWidest(DebugFeedMsg widest, WireCodec<P> payload) {
+        assertThat(size(DebugFeedMsg.WIRE, widest))
+                .as("the widest %s", widest.layer())
+                .isEqualTo(1 + 9 + payload.maxSize());
+        assertThat(roundTrip(DebugFeedMsg.WIRE, widest)).isEqualTo(widest);
     }
 
     private static <T> int size(WireCodec<T> codec, T value) {

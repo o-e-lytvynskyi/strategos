@@ -297,7 +297,7 @@ Cards: [roadmap/M1-movement.md](roadmap/M1-movement.md#cards). 26 cards, at most
 | PATH-16 | Worker pool, ADAPTIVE delivery and spike S7 | M | PATH-03 | specified |
 | PATH-07 | Stuck ladder | M | PATH-05, PATH-06 | specified |
 | PATH-09 | Shared group path | M | PATH-06, ORD-03, PATH-16 | specified |
-| PATH-10 | Movement debug overlay and dev payloads | M | PATH-03, NET-01, QA-10 | specified |
+| PATH-10 | Movement debug overlay and dev payloads | M | PATH-03, NET-01, QA-10 | done |
 | PERF-05 | Crowd soak and the M1 perf gate | M | PATH-07, PATH-09, MAP-01, QA-07, QA-19 | specified |
 | PATH-08 | Hierarchical long-range planner (HPA*) (reserve, outside the totals) | L | PATH-03, PATH-04 | done |
 | PATH-17 | Flow fields for large groups (reserve, outside the totals) | M | PATH-09 | approved |

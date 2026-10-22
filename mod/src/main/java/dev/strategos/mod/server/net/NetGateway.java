@@ -4,6 +4,7 @@ import com.mojang.serialization.JsonOps;
 import dev.strategos.core.content.CanonicalJson;
 import dev.strategos.core.protocol.Command;
 import dev.strategos.core.protocol.CommandBatch;
+import dev.strategos.core.protocol.DebugFeedMsg;
 import dev.strategos.core.protocol.Feedback;
 import dev.strategos.core.protocol.FeedbackMsg;
 import dev.strategos.core.protocol.MatchJoin;
@@ -23,6 +24,7 @@ import dev.strategos.mod.server.match.MatchRegistry;
 import dev.strategos.mod.server.match.MatchRuntime;
 import dev.strategos.mod.server.match.MatchSpace;
 import dev.strategos.mod.server.net.payload.CommandsPayload;
+import dev.strategos.mod.server.net.payload.DebugFeedPayload;
 import dev.strategos.mod.server.net.payload.FeedbackPayload;
 import dev.strategos.mod.server.net.payload.MatchJoinPayload;
 import dev.strategos.mod.server.net.payload.MatchStatePayload;
@@ -228,6 +230,11 @@ public final class NetGateway {
         queued.remove(player.getUUID());
     }
 
+    /** Another handler refused what {@code player} sent: a violation, counted as the gateway's own are. */
+    public void refused(ServerPlayer player, String reason) {
+        refuse(player, server.getTickCount(), reason);
+    }
+
     private void refuse(ServerPlayer player, long tick, String reason) {
         counters.violation(player.getGameProfile().getName(), reason);
         if (limiter.violation(player.getUUID(), tick)) {
@@ -284,6 +291,7 @@ public final class NetGateway {
             case MatchJoinPayload p -> WireCodec.encode(MatchJoin.WIRE, p.join()).length;
             case MatchStatePayload p -> WireCodec.encode(MatchStateMsg.WIRE, p.state()).length;
             case FeedbackPayload p -> WireCodec.encode(FeedbackMsg.WIRE, p.message()).length;
+            case DebugFeedPayload p -> WireCodec.encode(DebugFeedMsg.WIRE, p.message()).length;
             default -> 0;
         };
     }

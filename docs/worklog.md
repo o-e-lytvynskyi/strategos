@@ -9,7 +9,27 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18
+## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25
+
+- **M1 T25 · Movement debug overlay and dev payloads** — PATH-10 done; its overlay goldens wait for
+  M2's consent batch, as planned.
+  - **Results:** `core/protocol/{DebugLayer, DebugSubscribe, DebugFeedMsg}` with exact sizes; the
+    optional payloads `debug_subscribe` and `debug_feed`; `mod/server/debug/{DebugFeed, DebugFrames,
+    PerfDump}` (operators only, per layer at 2–10 Hz); `/strategos perf start|stop|dump` and
+    `/strategos debug subscribe`; `mod/client/debug/{DebugOverlayHost, MovementOverlay,
+    OverlayPanel, ClientDebugState}` with the F8 key and `/strategos-client overlay`; the path
+    latency p95; inventory entries. Tests: `DebugFramesTest` and the payload size, round-trip and
+    audience tests, `MockViewer#operator`, `debugtests.unsubscribed_gets_no_dev_payload` and
+    `debugtests.subscribed_gets_feed` (127 GameTests); `verify` 46 s, the smoke loading no client
+    class.
+  - **How:** the parallel agent built everything but the GameTests on a branch and committed it when
+    the owner stopped the agents; the main tree took it onto T18, resolving two conflicts with
+    T15.2 by keeping both sides, added the operator viewer and the two GameTests, and ran `verify`.
+  - **Problems:** GameTestServer gives operators level 0, so the test operator needs an ops entry of
+    its own level; `:mod:test` runs as a dedicated server, so the client's registrations are
+    checked against the architecture's table only; Brigadier merges a second `/strategos` root into
+    the first (pet-projects knowledge base, which now keeps the build pitfalls in a file of their
+    own).
 
 - **M1 T18 · Order queue: move and stop** — ORD-02 done.
   - **Results:** `core/sim/order/{OrderQueues, OrderKind, ContextResolver}` replace `OrderStore`:

@@ -77,6 +77,21 @@ class PathServiceTest {
         assertThat(unit(h, unit).z()).isEqualTo(20.5);
     }
 
+    /** PATH-10's panel: the latency percentile counts the ticks from a request to its delivery, k in STRICT. */
+    @Test
+    void latencyPercentileIsTheDeliveryDelay() {
+        SimHarness h = harness(wallWithGapAtTheSouth());
+        int unit = h.spawn(F0, new Vec2d(10.5, 20.5), 1, 0)[0];
+        assertThat(h.queries().pathStats().latencyP95()).as("no result yet").isZero();
+
+        order(h, unit, 30.5, 20.5);
+        h.step();
+        h.step();
+
+        assertThat(path(h, unit).request()).as("delivered").isZero();
+        assertThat(h.queries().pathStats().latencyP95()).isEqualTo(2);
+    }
+
     @Test
     void supersededResultDropped() {
         SimHarness h = harness(wallWithGapAtTheSouth());

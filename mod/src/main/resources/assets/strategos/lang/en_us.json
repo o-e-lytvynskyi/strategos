@@ -1,4 +1,6 @@
 {
   "entity.strategos.unit_humanoid": "Unit",
-  "generator.strategos.arena": "Strategos Arena"
+  "generator.strategos.arena": "Strategos Arena",
+  "key.categories.strategos": "Strategos",
+  "key.strategos.overlay": "Movement overlay"
 }

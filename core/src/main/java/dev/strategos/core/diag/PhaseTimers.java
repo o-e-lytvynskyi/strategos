@@ -105,6 +105,11 @@ public final class PhaseTimers {
         return lastStep + lastAdapter;
     }
 
+    /** The phases' names, in the order of {@link #lastPhaseNanos()}. */
+    public List<String> phaseNames() {
+        return phaseNames;
+    }
+
     /** The tick in progress, measured so far: the array is reused every tick, so copy it to keep it. */
     public long[] currentPhaseNanos() {
         return current;

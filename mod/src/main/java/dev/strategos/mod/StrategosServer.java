@@ -3,6 +3,8 @@ package dev.strategos.mod;
 import dev.strategos.core.port.JobExecutor;
 import dev.strategos.mod.registry.ModDataMaps;
 import dev.strategos.mod.server.body.SpawnBudget;
+import dev.strategos.mod.server.debug.DebugFeed;
+import dev.strategos.mod.server.debug.PerfDump;
 import dev.strategos.mod.server.fog.InterestSets;
 import dev.strategos.mod.server.jobs.InlineJobExecutor;
 import dev.strategos.mod.server.match.MapImports;
@@ -43,6 +45,8 @@ public final class StrategosServer {
     private final JobExecutor jobs = new InlineJobExecutor();
     private final NetGateway net;
     private final InterestSets interest = new InterestSets();
+    private final DebugFeed debug;
+    private final PerfDump perf;
     private volatile BlockClassTable blockClasses;
     private ArenaWorld.Outcome arena = ArenaWorld.Outcome.NOT_AN_ARENA;
 
@@ -53,6 +57,9 @@ public final class StrategosServer {
         this.writer = new BlockWriter(settings.writerBudget(), settings.importBudget());
         this.matches = new MatchRegistry(server, settings, spawnBudget, writer, this::blockClasses, jobs);
         this.net = new NetGateway(server, () -> this.matches, faults);
+        this.debug =
+                new DebugFeed(server, () -> this.matches, net, StrategosConfig.INSTANCE.debugPermission.getAsInt());
+        this.perf = new PerfDump(server, () -> this.matches);
         this.blockClasses = buildBlockClasses();
     }
 
@@ -111,6 +118,16 @@ public final class StrategosServer {
         return interest;
     }
 
+    /** The movement overlay's feed to subscribed operators (PATH-10). */
+    public DebugFeed debug() {
+        return debug;
+    }
+
+    /** {@code /strategos perf}'s recordings. */
+    public PerfDump perf() {
+        return perf;
+    }
+
     public FaultBarrier faults() {
         return faults;
     }
@@ -147,10 +164,12 @@ public final class StrategosServer {
         }
     }
 
-    /** After every level ticked: what the gateway queued this tick goes out. */
+    /** After every level ticked: the perf rows and the debug feed of this tick, then what the gateway queued goes out. */
     public static void onTickPost(ServerTickEvent.Post event) {
         StrategosServer s = current;
         if (s != null) {
+            s.perf.tick();
+            s.debug.tick();
             s.net.flush();
         }
     }
@@ -166,12 +185,13 @@ public final class StrategosServer {
         }
     }
 
-    /** A player left: its rate limits and queue go; its seat stays, for its return. */
+    /** A player left: its rate limits, queue and debug subscription go; its seat stays, for its return. */
     public static void onLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
         StrategosServer s = current;
         if (s != null && event.getEntity() instanceof ServerPlayer player) {
             s.net.forget(player);
             s.interest.forget(player.getUUID());
+            s.debug.forget(player);
         }
     }
 

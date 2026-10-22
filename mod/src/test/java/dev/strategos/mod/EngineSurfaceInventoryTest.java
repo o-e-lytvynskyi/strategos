@@ -164,7 +164,7 @@ class EngineSurfaceInventoryTest {
 
         for (String kind : EngineSurface.KINDS) {
             for (String id : inventory.of(kind)) {
-                String written = kind.equals("commands")
+                String written = kind.equals("commands") || kind.equals("clientCommands")
                         ? "/" + id
                         : kind.equals("worldgen") ? id.substring(id.indexOf(' ') + 1) : id;
                 assertThat(section).as("%s %s in 04 §2.5", kind, id).contains(written);

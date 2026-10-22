@@ -5,7 +5,14 @@
   "commands": ["strategos"],
   "mixinConfigs": ["strategos.mixins.json"],
   "accessTransformers": [],
-  "payloads": ["strategos:commands", "strategos:feedback", "strategos:match_join", "strategos:match_state"],
+  "payloads": [
+    "strategos:commands",
+    "strategos:debug_feed",
+    "strategos:debug_subscribe",
+    "strategos:feedback",
+    "strategos:match_join",
+    "strategos:match_state"
+  ],
   "dataMaps": ["strategos:nav_class"],
   "worldgen": [
     "tags/worldgen/world_preset #minecraft:normal",
@@ -14,5 +21,8 @@
   ],
   "ticketControllers": ["strategos:match"],
   "reloadListeners": [],
-  "configs": ["strategos-server.toml"]
+  "configs": ["strategos-server.toml"],
+  "keyMappings": ["key.strategos.overlay"],
+  "guiLayers": ["strategos:debug_panel"],
+  "clientCommands": ["strategos-client"]
 }

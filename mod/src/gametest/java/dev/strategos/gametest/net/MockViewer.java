@@ -22,6 +22,7 @@ import net.minecraft.server.level.ClientInformation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
+import net.minecraft.server.players.ServerOpListEntry;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.player.ChatVisiblity;
 import net.minecraft.world.level.ChunkPos;
@@ -52,6 +53,7 @@ public final class MockViewer implements AutoCloseable {
     private final ByteCounter bytes;
     private final Set<ChunkPos> chunks = new HashSet<>();
     private int batches;
+    private boolean operator;
 
     private MockViewer(MinecraftServer server, ServerPlayer player, EmbeddedChannel channel, boolean acknowledging) {
         this.server = server;
@@ -137,6 +139,17 @@ public final class MockViewer implements AutoCloseable {
         channel.writeInbound(new ServerboundCustomPayloadPacket(payload));
     }
 
+    /**
+     * Makes this viewer an operator of permission {@code level} until it closes. GameTestServer grants operators added
+     * the usual way level 0 ({@code getOperatorUserPermissionLevel}), so the entry names its level itself; it is saved in
+     * the server's {@code ops.json} and removed again on close.
+     */
+    public MockViewer operator(int level) {
+        server.getPlayerList().getOps().add(new ServerOpListEntry(player.getGameProfile(), level, false));
+        operator = true;
+        return this;
+    }
+
     /** Whether the server closed this viewer's connection. */
     public boolean disconnected() {
         return !channel.isOpen();
@@ -168,6 +181,9 @@ public final class MockViewer implements AutoCloseable {
     @Override
     public void close() {
         if (OPEN.remove(this)) {
+            if (operator) {
+                server.getPlayerList().getOps().remove(player.getGameProfile());
+            }
             server.getPlayerList().remove(player);
             channel.finishAndReleaseAll(); // closes it, dropping what it still held
         }

@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import dev.strategos.mod.registry.ModPayloads;
+import dev.strategos.mod.server.net.payload.DebugFeedPayload;
+import dev.strategos.mod.server.net.payload.DebugSubscribePayload;
 import java.util.HashSet;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
@@ -31,7 +33,24 @@ class PayloadAudienceTest {
             }
         }
         assertThat(ids)
-                .contains("strategos:commands", "strategos:match_join", "strategos:match_state", "strategos:feedback");
+                .contains(
+                        "strategos:commands",
+                        "strategos:match_join",
+                        "strategos:match_state",
+                        "strategos:feedback",
+                        "strategos:debug_subscribe",
+                        "strategos:debug_feed");
+    }
+
+    /** PATH-10: the debug feed goes to one subscribed player at a time, never to a faction, a match or trackers. */
+    @Test
+    void theDebugFeedGoesToOnePlayer() {
+        PayloadSpec feed = ModPayloads.spec(DebugFeedPayload.TYPE.id());
+        assertThat(feed).isNotNull();
+        assertThat(feed.audiences()).containsExactly(Audience.Kind.PLAYER);
+        PayloadSpec subscribe = ModPayloads.spec(DebugSubscribePayload.TYPE.id());
+        assertThat(subscribe).isNotNull();
+        assertThat(subscribe.toClient()).isFalse();
     }
 
     @Test

@@ -4,6 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.strategos.core.protocol.CommandBatch;
 import dev.strategos.core.protocol.CommandOutcome;
+import dev.strategos.core.protocol.DebugFeedMsg;
+import dev.strategos.core.protocol.DebugLayer;
+import dev.strategos.core.protocol.DebugSubscribe;
 import dev.strategos.core.protocol.Feedback;
 import dev.strategos.core.protocol.Limits;
 import dev.strategos.core.protocol.MatchJoin;
@@ -17,6 +20,8 @@ import dev.strategos.core.protocol.WireWriter;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.mod.server.net.payload.CommandsPayload;
+import dev.strategos.mod.server.net.payload.DebugFeedPayload;
+import dev.strategos.mod.server.net.payload.DebugSubscribePayload;
 import dev.strategos.mod.server.net.payload.FeedbackPayload;
 import dev.strategos.mod.server.net.payload.MatchJoinPayload;
 import dev.strategos.mod.server.net.payload.MatchStatePayload;
@@ -60,6 +65,40 @@ class PayloadRoundTripTest {
         assertThat(MatchStatePayload.SPEC.cap()).isLessThanOrEqualTo(256);
         assertThat(FeedbackPayload.SPEC.cap()).isLessThanOrEqualTo(1024);
         assertThat(MatchJoinPayload.SPEC.cap()).isLessThanOrEqualTo(4096);
+    }
+
+    /** PATH-10's dev payloads (spec §2.7): {@code debug_subscribe} within 64 B, {@code debug_feed} within 64 KiB. */
+    @Test
+    void theDevPayloadsRoundTripWithinTheirCaps() {
+        roundTrip(
+                DebugSubscribePayload.STREAM_CODEC,
+                new DebugSubscribePayload(new DebugSubscribe(DebugLayer.ALL, 48)),
+                DebugSubscribePayload.SPEC.cap());
+        DebugFeedMsg.Origin origin = new DebugFeedMsg.Origin(-1_000, 60, 2_000);
+        roundTrip(
+                DebugFeedPayload.STREAM_CODEC,
+                new DebugFeedPayload(new DebugFeedMsg(
+                        DebugLayer.COMPONENTS,
+                        7,
+                        new DebugFeedMsg.Cells(origin, 2, 3, List.of(new DebugFeedMsg.Cell(255, 64, 70_000))))),
+                DebugFeedPayload.SPEC.cap());
+        roundTrip(
+                DebugFeedPayload.STREAM_CODEC,
+                new DebugFeedPayload(new DebugFeedMsg(
+                        DebugLayer.PATHS,
+                        7,
+                        new DebugFeedMsg.Paths(
+                                origin,
+                                List.of(new DebugFeedMsg.PathLine(
+                                        42,
+                                        1,
+                                        true,
+                                        List.of(
+                                                new DebugFeedMsg.Point(8, 16, 8),
+                                                new DebugFeedMsg.Point(-24, 32, 400))))))),
+                DebugFeedPayload.SPEC.cap());
+        assertThat(DebugSubscribePayload.SPEC.cap()).isLessThanOrEqualTo(64);
+        assertThat(DebugFeedPayload.SPEC.cap()).isLessThanOrEqualTo(64 * 1024);
     }
 
     @Test

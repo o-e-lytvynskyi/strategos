@@ -251,7 +251,7 @@ class InvariantsTest {
 
         @Override
         public PathService.Stats pathStats() {
-            return new PathService.Stats(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+            return new PathService.Stats(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
         }
     }
 }

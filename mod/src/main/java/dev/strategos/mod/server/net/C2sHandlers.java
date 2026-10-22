@@ -2,6 +2,7 @@ package dev.strategos.mod.server.net;
 
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.server.net.payload.CommandsPayload;
+import dev.strategos.mod.server.net.payload.DebugSubscribePayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.slf4j.Logger;
@@ -26,6 +27,22 @@ public final class C2sHandlers {
             server.net().commands(player, payload);
         } catch (RuntimeException e) {
             LOG.error("the commands of {} failed", player.getGameProfile().getName(), e);
+        }
+    }
+
+    /** An operator's overlay subscription (PATH-10), for the debug feed to check and keep. */
+    public static void debugSubscribe(DebugSubscribePayload payload, IPayloadContext context) {
+        StrategosServer server = StrategosServer.getOrNull();
+        if (server == null || !(context.player() instanceof ServerPlayer player)) {
+            return;
+        }
+        try {
+            server.debug().subscribe(player, payload.request());
+        } catch (RuntimeException e) {
+            LOG.error(
+                    "the debug subscription of {} failed",
+                    player.getGameProfile().getName(),
+                    e);
         }
     }
 }

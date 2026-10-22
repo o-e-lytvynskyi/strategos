@@ -5,6 +5,7 @@ import dev.strategos.mod.registry.ModEntityTypes;
 import dev.strategos.mod.registry.ModPayloads;
 import dev.strategos.mod.registry.ModTickets;
 import dev.strategos.mod.server.body.BodyEvents;
+import dev.strategos.mod.server.command.DebugCommands;
 import dev.strategos.mod.server.command.StrategosCommands;
 import dev.strategos.mod.server.tick.TickDriver;
 import net.neoforged.bus.api.IEventBus;
@@ -53,6 +54,7 @@ public final class Strategos {
         game.addListener(EntityJoinLevelEvent.class, BodyEvents::onJoin);
         game.addListener(EntityLeaveLevelEvent.class, BodyEvents::onLeave);
         game.addListener(RegisterCommandsEvent.class, StrategosCommands::onRegister);
+        game.addListener(RegisterCommandsEvent.class, DebugCommands::onRegister);
         game.addListener(DataMapsUpdatedEvent.class, StrategosServer::onDataMapsUpdated);
         game.addListener(TagsUpdatedEvent.class, StrategosServer::onTagsUpdated);
     }
