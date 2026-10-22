@@ -61,9 +61,12 @@ has built it.
 
 #### PATH-13 · On-demand navigation for open worlds
 - **Value:** Units path well in natural terrain without loading the world around them.
-- **In scope:** pages built on chunk load under a count budget; sparse paged grids; persisted
-  portal summaries for unloaded pages; HPA* (PATH-08 leaves the reserve here) with a second
-  hierarchy level of 4 × 4 pages; navigation never loads a chunk.
+- **In scope:** pages built on chunk load under a count budget; sparse paged grids; a Y band per
+  page that follows the terrain (16 blocks below the page's lowest terrain, up to 128 high, its
+  base Y stored in the page, links across pages comparing absolute floors: spike S8 showed one band
+  from a region's lowest terrain misses up to 12.7 % of its columns); persisted portal summaries
+  for unloaded pages; HPA* (PATH-08 leaves the reserve here) with a second hierarchy level of
+  4 × 4 pages; navigation never loads a chunk.
 - **Out of scope:** arena prewarm (PATH-15).
 - **Acceptance:**
   1. Pathing never causes a chunk load (L3).

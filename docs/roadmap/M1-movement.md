@@ -247,7 +247,8 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
      names the change needed (R).
 - **Tests:** L5, R · **Fixtures:** census seeds and regions (versioned) · **Depends on:** PATH-02 ·
   **Size:** S · **Tier:** T0
-- **Status:** specified
+- **Done:** 2026-10-22 — M1 T3: `./gradlew :mod:runSpike -Pspike=s8` measures 11 vanilla 512² squares (seed and biomes in `census/s8-regions.json`) and the three fixtures on a self-terminating server in 1 min 30 s (1); [the S8 report](../spikes/S8-terrain-census.md): the cap of 4 never drops a surface within 16 blocks of the terrain; in a band per page 99.992 % of 1.74 million columns need ≤ 4 surfaces, nav ≤ 3.4 MB at 512², a page builds in ≤ 0.37 ms p95; the spec's band per square failed (98.18 %), so terrain from existing worlds gets a band per page (PATH-13); ADR-0015 carries the numbers, pending S7 (2)
+- **Status:** done
 
 #### MAP-07 · Arena world: preset, world rules and tickets
 - **Value:** Players get a dedicated Strategos arena world in one click, and their own worlds'

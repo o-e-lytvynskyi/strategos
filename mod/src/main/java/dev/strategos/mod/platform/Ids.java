@@ -7,6 +7,11 @@ import net.minecraft.resources.ResourceLocation;
 public final class Ids {
     private Ids() {}
 
+    /** A full {@code namespace:path} id; a malformed one throws. */
+    public static ResourceLocation parse(String id) {
+        return ResourceLocation.parse(id);
+    }
+
     /** {@code strategos:<path>}. */
     public static ResourceLocation id(String path) {
         return ResourceLocation.fromNamespaceAndPath(Strategos.MOD_ID, path);

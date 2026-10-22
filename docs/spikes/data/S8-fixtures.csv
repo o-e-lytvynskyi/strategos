@@ -1,0 +1,4 @@
+fixture,columns,cols_0,cols_1,cols_2,cols_3,cols_4,cols_5,cols_6,cols_7_plus,share_within_4,share_within_6,near_columns_over_4,share_near_within_4,ground_dropped_columns,above_band_columns,below_band_columns,page_bytes_mean,page_bytes_max,nav_bytes
+bridge,256,0,192,64,0,0,0,0,0,1.000000,1.000000,0,1.000000,0,0,0,2324,2324,2324
+wall_walkway,256,0,256,0,0,0,0,0,0,1.000000,1.000000,0,1.000000,0,0,0,2068,2068,2068
+tower,256,0,220,0,36,0,0,0,0,1.000000,1.000000,0,1.000000,0,0,0,2356,2356,2356

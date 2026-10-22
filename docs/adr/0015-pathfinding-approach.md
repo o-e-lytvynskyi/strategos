@@ -4,7 +4,7 @@ Date: 2026-10-21
 
 ## Status
 
-Proposed - pending spikes S8 and S7
+Proposed - pending spike S7 (S8 reported 2026-10-22)
 
 **Revised 2026-10-21**, still Proposed, to follow the roadmap's
 [spike table](../roadmap/M0-foundation.md#spikes) and the revised ADR-0019: S7's latency criterion
@@ -15,6 +15,18 @@ PERF-05, and PATH-08 is the reserve card that builds it.
 **Amended 2026-10-21** by [ADR-0023](0023-plan-alignment-after-roadmap-approval.md), still
 Proposed: D-08's observer avatar is not one of ORCA's non-reactive agents, so units pass through it
 (PATH-06).
+
+**Revised 2026-10-22** with spike [S8](../spikes/S8-terrain-census.md), still Proposed pending S7.
+- **Confirmed:** 4 surfaces a column, topmost first. On 1.74 million vanilla columns, 99.99 % need
+  at most 4 in a band that follows the terrain, and the cap never drops a surface within 16 blocks
+  of the terrain.
+- **Bit layout fixed:** floor 12 bits, headroom 7, kind 3, cost code 2, links 8.
+- **Measured:** 2.0–2.8 KB a page, at most 3.4 MB at 512²; a page builds in 42–84 µs (median) and
+  at most 0.37 ms (p95).
+- **One rule changes:** terrain taken from an existing world gets a band per page: 16 blocks below
+  the page's lowest terrain, with the page's base Y stored in the page. One band from the region's
+  lowest terrain failed the exit (98.2 %) and left up to 12.7 % of a square's columns above the
+  band. Packaged maps keep the manifest's band.
 
 ## Context
 
@@ -89,7 +101,7 @@ the project ([01-feasibility §3.1](../01-feasibility.md)) and was RoN's main pe
 
 **Exit criteria that confirm this ADR:**
 - **S8:** ≥ 99.9 % of columns need at most 4 surfaces; a page builds in ≤ 0.5 ms; nav fits 32 MB
-  at 512².
+  at 512². Met on 2026-10-22, in a band that follows the terrain (see the revision above).
 - **S7:** main-thread path work ≤ 2 ms p99, and a 100-unit order's path results within 5 ticks
   p95 with 200 requests queued.
 

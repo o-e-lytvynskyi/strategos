@@ -190,6 +190,7 @@ class PageBuilderTest {
         assertThat(Surface.floor(page.surface(column, 0))).isEqualTo(13 * 16);
         assertThat(Surface.floor(page.surface(column, 3))).isEqualTo(4 * 16);
         assertThat(page.overflow()).isEqualTo(1);
+        assertThat(page.overflowColumns()).isEqualTo(1);
     }
 
     @Test

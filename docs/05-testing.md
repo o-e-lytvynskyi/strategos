@@ -61,8 +61,9 @@ Useful options:
 - `-Pstrategos.selftest=<name>` starts a harness self-test whose run must fail: `retry`,
   `retryNoReason`, `sharedBatch`, `ticketLeak` and `failModLoad` for `runGameTestServer`,
   `crashOnStart` and `clientRef` for `runServerSmoke`.
-- `./gradlew :mod:runSpike -Pspike=s1` (or `s2`) runs spike S1 or S2 on a self-terminating
-  dedicated server; `-Pspike.jfr` adds a JFR recording.
+- `./gradlew :mod:runSpike -Pspike=s1` (or `s2`, `s8`) runs spike S1, S2 or S8 on a
+  self-terminating dedicated server (S8 on a vanilla world of its own); `-Pspike.jfr` adds a JFR
+  recording.
 - `-Pcompat` adds the client compatibility set (Sodium, Iris, Lithium and others) to a run, and
   `-Pcompat.server` the server set (Lithium, ModernFix, FerriteCore).
 - `-Pjmh.include='<regex>'` limits `:core:jmh` to the matching benchmarks; `-Pjmh.result=<path>`

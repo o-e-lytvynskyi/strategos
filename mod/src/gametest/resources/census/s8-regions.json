@@ -1,0 +1,17 @@
+{
+  "seed": 20261022,
+  "searchFrom": [0, 0],
+  "biomes": [
+    "minecraft:plains",
+    "minecraft:forest",
+    "minecraft:taiga",
+    "minecraft:desert",
+    "minecraft:savanna",
+    "minecraft:swamp",
+    "minecraft:jungle",
+    "minecraft:windswept_hills",
+    "minecraft:badlands",
+    "minecraft:river",
+    "minecraft:beach"
+  ]
+}

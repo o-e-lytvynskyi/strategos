@@ -465,7 +465,8 @@ tasks.matching { it.name == 'runServerSmokeRestart' }.configureEach {
 // [T13] The spike server: a fresh flat world on every run (port 25598); the verdict is the DONE file, in
 // out/<id>, or out/<id>-lithium for the -Pcompat.server run (§1.6 D row 60).
 def prepareSpike = tasks.register('prepareSpike', Sync) {
-    from 'src/gametest/spike-gamedir'
+    // S8 counts surfaces on vanilla terrain, so it gets a normal world with the census seed (M1 T3).
+    from providers.gradleProperty('spike').getOrElse('') == 's8' ? 'src/gametest/spike-s8-gamedir' : 'src/gametest/spike-gamedir'
     into layout.buildDirectory.dir('spike')
     preserve { include 'out/**' }                       // both runs of a spike, and the JFR recording
     outputs.upToDateWhen { false }                      // as prepareServerSmoke
@@ -477,7 +478,7 @@ def spikeOut = file('build/spike/out')
 tasks.matching { it.name == 'runSpike' }.configureEach {
     timeout = Duration.ofMinutes(45)
     doFirst {
-        if (!(spikeId in ['s1', 's2'])) throw new GradleException('Use -Pspike=s1 or -Pspike=s2')
+        if (!(spikeId in ['s1', 's2', 's8'])) throw new GradleException('Use -Pspike=s1, s2 or s8')
         new File(spikeOut, "${spikeDirName}/DONE").delete()
     }
     doLast {

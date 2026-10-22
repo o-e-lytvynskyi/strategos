@@ -31,6 +31,8 @@ public final class PageBuilder {
     public SurfacePage build(VoxelSlice slice, NavOverlay overlay, PageCoord coord) {
         Arrays.fill(counts, 0);
         int overflow = 0;
+        int overflowColumns = 0;
+        int lastOverflowColumn = -1;
         int height = slice.height();
         for (int x = 0; x < VoxelSlice.SIDE; x++) {
             for (int z = 0; z < VoxelSlice.SIDE; z++) {
@@ -73,6 +75,10 @@ public final class PageBuilder {
                         continue;
                     }
                     if (counts[column] == SurfacePage.MAX_LAYERS) {
+                        if (lastOverflowColumn != column) {
+                            overflowColumns++;
+                            lastOverflowColumn = column;
+                        }
                         overflow++;
                         continue;
                     }
@@ -97,7 +103,7 @@ public final class PageBuilder {
             System.arraycopy(scratch, column * SurfacePage.MAX_LAYERS, surfaces, start[column], counts[column]);
         }
         link(start, surfaces);
-        return new SurfacePage(coord, start, surfaces, overflow);
+        return new SurfacePage(coord, start, surfaces, overflow, overflowColumns);
     }
 
     /** Sets the in-page link bits and cost codes. */

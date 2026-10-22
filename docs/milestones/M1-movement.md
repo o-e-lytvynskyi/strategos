@@ -220,6 +220,9 @@ cards, does not exist for M1: the M1 cards were final when this spec was written
 | 8 | §5.3: mixins merge after the parent, "each parent, then the mixins left to right" | A mixin is laid over the child's inherited JSON as written, so its class edits stay edits (`+Builder` adds, it does not replace) and its `$op`s apply to what the child inherits; a mixin therefore has no parent or mixins of its own, and a template some other template lists as a mixin is an overlay that is never compiled on its own |
 | 9 | §5.3: decode the flattened JSON with core DFU codecs | A field-by-field reader decodes the unit components, so every problem carries its exact JSON pointer (`/UnitMotion/walkSpeed: expected a number, got "fast"`); DFU stays for snapshots and manifests |
 | 10 | §5.3: `UnitTemplate` is rewritten | It grows (name, classes, turn rate, mobility, model, skin, radius) and keeps M0's six-field constructor for code-defined sets; `TemplateSet.builtin()` compiles the bundled JSON (debug walker and infantry, mirrored in `mod/src/main/resources/data/strategos/strategos/templates/`) with the same compiler, and its version is pinned by `TemplateSetTest`. Net indices follow id order until T16's `TemplateIdTable`. The infantry walks 0.1875 blocks a tick (3/16, exact in binary). 500 templates compile in 4.15 ms (`TemplateCompileBench`, against 200 ms) |
+| 11 | §5.4: the floor in bits 0–10 (0–2,047); the cost code in 3 bits, capped at 7 | The floor takes 12 bits: a full block on a 128-block band's top voxel stands at 2,048 sixteenths, which S8's first run hit. The cost code takes 2 bits, capped at 3 (it counts 0–4 blocked orthogonal neighbours). The layout S8 fixed: floor 0–11, headroom 12–18, kind 19–21, cost 22–23, links 24–31. A page also counts the columns that overflowed (`SurfacePage.overflowColumns`) |
+| 12 | §8.1: one band per square, 16 blocks below its lowest terrain, against the exit of ≥ 99.9 % of columns within 4 surfaces | That band fails the exit: 98.18 % of 1.74 million distinct columns, 95.87 % in the worst square. Pits pull it down, so 95–110 blocks of caves enter it and 4 % of columns have their terrain above it. The cap itself never drops a surface within 16 blocks of the terrain. A band per page (16 blocks below the page's lowest terrain) meets the exit in every square: 99.992 %, worst square 99.977 %. **The change:** packaged maps keep the manifest's band; terrain taken from an existing world gets a band per page, with the page's base Y stored in the page, carried by PATH-13 (M13), whose card now says so. The census measures all three band rules, and its totals count overlapping squares once |
+| 13 | §8.1: the census generates chunks through the spike arena's tickets and reports the router's cost per block change | The census adds region tickets of its own `TicketType` and polls `getChunkNow`, at most 128 chunks in flight: NeoForge's `forceChunk` loads synchronously (ForcedChunkManager.java:96) and hung the server once. The router arrives in T7, which measures its cost and adds it to the S8 report |
 
 ---
 
@@ -1572,7 +1575,7 @@ are green and its negative checks behave as stated.
 
 ### 9.3 Progress
 
-- [x] T1 (2026-10-22) · [x] T2 (2026-10-22) · [x] T11 (2026-10-22) · [ ] T3 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T12 · [ ] T10
+- [x] T1 (2026-10-22) · [x] T2 (2026-10-22) · [x] T11 (2026-10-22) · [x] T3 (2026-10-22) · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T12 · [ ] T10
 - [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17 · [ ] T18 · [ ] T19 · [ ] T20 · [ ] T21 · [ ] T22
 - [ ] T23 · [ ] T24 · [ ] T25 · [ ] T26 · [ ] T27
 

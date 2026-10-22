@@ -39,13 +39,19 @@ Answer in chat or here; the next session applies the answers.
   edit operations; every mistake is reported with its file and field, all at once; 500 templates
   compile in 4 ms. `/strategos spawn <template> [count] [slot]` spawns any unit type. Card DATA-01
   is done.
+- 2026-10-22 · **M1 T3 Terrain census (spike S8):** 11 vanilla terrain squares of 512² were measured
+  against the surface pages. Four layers per column are enough: what the cap drops is only cave
+  floors deep underground, never anything within 16 blocks of the surface. Pages take about 2 KB,
+  and a 512² map needs at most 3.4 MB. One rule changes for the open world (M13): the height band
+  must follow the terrain page by page, because one band per map missed up to 13 % of a hilly
+  area. [Report](spikes/S8-terrain-census.md). Card PATH-01 is done.
 
 ## Now
 
-- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 3 of 27 tasks done.
+- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 4 of 27 tasks done.
 - **In progress:** none.
-- **Last finished task:** M1 T11 (2026-10-22).
-- **Next task:** M1 T3 · Spike S8: terrain census.
+- **Last finished task:** M1 T3 (2026-10-22).
+- **Next task:** M1 T4 · Arena world, slots and tickets.
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 220 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.

@@ -18,9 +18,10 @@ public final class SurfacePage {
     private final int[] start;
     private final int[] surfaces;
     private final int overflow;
+    private final int overflowColumns;
     private final long hash;
 
-    SurfacePage(PageCoord coord, int[] start, int[] surfaces, int overflow) {
+    SurfacePage(PageCoord coord, int[] start, int[] surfaces, int overflow, int overflowColumns) {
         if (start.length != COLUMNS + 1 || start[COLUMNS] != surfaces.length) {
             throw new IllegalArgumentException("column offsets do not cover the surfaces");
         }
@@ -28,6 +29,7 @@ public final class SurfacePage {
         this.start = start;
         this.surfaces = surfaces;
         this.overflow = overflow;
+        this.overflowColumns = overflowColumns;
         long h = Hasher.start(0x9A9E);
         for (int s : start) {
             h = Hasher.mix(h, s);
@@ -40,7 +42,7 @@ public final class SurfacePage {
 
     /** A page with no surface at all. */
     public static SurfacePage empty(PageCoord coord) {
-        return new SurfacePage(coord, new int[COLUMNS + 1], new int[0], 0);
+        return new SurfacePage(coord, new int[COLUMNS + 1], new int[0], 0, 0);
     }
 
     public static int column(int x, int z) {
@@ -72,6 +74,11 @@ public final class SurfacePage {
         return overflow;
     }
 
+    /** Columns that had more than {@link #MAX_LAYERS} surfaces. */
+    public int overflowColumns() {
+        return overflowColumns;
+    }
+
     /** The page's memory as stored: offsets and surfaces, in bytes, for S8 and budget G. */
     public int bytes() {
         return 16 + 4 * (start.length + surfaces.length);
@@ -88,7 +95,8 @@ public final class SurfacePage {
                 && other.coord.equals(coord)
                 && Arrays.equals(other.start, start)
                 && Arrays.equals(other.surfaces, surfaces)
-                && other.overflow == overflow;
+                && other.overflow == overflow
+                && other.overflowColumns == overflowColumns;
     }
 
     @Override
