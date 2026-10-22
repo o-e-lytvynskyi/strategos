@@ -20,35 +20,61 @@ public final class StringPuller {
      * {@code toGoal} the path ends in the column of ({@code goalX}, {@code goalZ}), where the unit should stop exactly.
      */
     public static PathStore.Waypoints pull(SurfaceGrid grid, int[] nodes, boolean toGoal, double goalX, double goalZ) {
+        return pull(grid, nodes, toGoal, goalX, goalZ, Double.NaN, Double.NaN);
+    }
+
+    /**
+     * As {@link #pull(SurfaceGrid, int[], boolean, double, double)}, the first anchor at ({@code fromX}, {@code
+     * fromZ}) in the first node's column, where the unit stood (NaN for the column's centre): the first waypoint is
+     * then in line of walk from that point. Where that point sees no node but its own, the column's centre comes
+     * first, and the pulling goes on from there.
+     */
+    public static PathStore.Waypoints pull(
+            SurfaceGrid grid, int[] nodes, boolean toGoal, double goalX, double goalZ, double fromX, double fromZ) {
         int max = PathStore.Waypoints.MAX;
         double[] xs = new double[max];
         double[] zs = new double[max];
         int[] floors = new int[max];
         int[] from = new int[max]; // the anchor node each waypoint is seen from
+        double[] seenX = new double[max]; // and the point it is seen from
+        double[] seenZ = new double[max];
         int count = 0;
         int last = nodes.length - 1;
         int anchor = 0;
+        boolean exact = !Double.isNaN(fromX) && last >= 0;
+        if (exact && last > 0 && farthestFrom(grid, nodes, fromX, fromZ) == 0) {
+            int n = nodes[0];
+            xs[0] = grid.nodeX(n) + 0.5; // round the corner of its own column first
+            zs[0] = grid.nodeZ(n) + 0.5;
+            floors[0] = floor(grid, n);
+            from[0] = n;
+            seenX[0] = fromX;
+            seenZ[0] = fromZ;
+            count = 1;
+            exact = false;
+        }
         boolean truncated = false;
         while (anchor < last) {
             if (count == max) {
                 truncated = true;
                 break;
             }
-            int next = farthest(grid, nodes, anchor);
+            boolean fromStart = anchor == 0 && exact;
+            int next = fromStart ? farthestFrom(grid, nodes, fromX, fromZ) : farthest(grid, nodes, anchor);
             int n = nodes[next];
             xs[count] = grid.nodeX(n) + 0.5;
             zs[count] = grid.nodeZ(n) + 0.5;
             floors[count] = floor(grid, n);
             from[count] = nodes[anchor];
+            seenX[count] = fromStart ? fromX : grid.nodeX(nodes[anchor]) + 0.5;
+            seenZ[count] = fromStart ? fromZ : grid.nodeZ(nodes[anchor]) + 0.5;
             count++;
             anchor = next;
         }
         if (toGoal && !truncated && last >= 0) {
             int goal = nodes[last];
-            int seer = count > 0 ? from[count - 1] : goal;
             boolean sees = count > 0
-                    && LineOfWalk.walk(grid, seer, grid.nodeX(seer) + 0.5, grid.nodeZ(seer) + 0.5, goalX, goalZ)
-                            == goal;
+                    && LineOfWalk.walk(grid, from[count - 1], seenX[count - 1], seenZ[count - 1], goalX, goalZ) == goal;
             if (sees) {
                 xs[count - 1] = goalX; // the goal point replaces its column's centre
                 zs[count - 1] = goalZ;
@@ -63,6 +89,35 @@ public final class StringPuller {
         }
         return new PathStore.Waypoints(
                 Arrays.copyOf(xs, count), Arrays.copyOf(zs, count), Arrays.copyOf(floors, count), truncated);
+    }
+
+    /** The farthest index the point (x, z) in the first node's column sees; 0 when it sees none but its own. */
+    private static int farthestFrom(SurfaceGrid grid, int[] nodes, double x, double z) {
+        int last = nodes.length - 1;
+        int seen = 0;
+        int unseen = -1;
+        for (int reach = 1; seen < last; reach *= 2) {
+            int probe = Math.min(reach, last);
+            if (sees(grid, nodes[0], x, z, nodes[probe])) {
+                seen = probe;
+            } else {
+                unseen = probe;
+                break;
+            }
+        }
+        while (unseen > seen + 1) {
+            int mid = (seen + unseen) >>> 1;
+            if (sees(grid, nodes[0], x, z, nodes[mid])) {
+                seen = mid;
+            } else {
+                unseen = mid;
+            }
+        }
+        return seen;
+    }
+
+    private static boolean sees(SurfaceGrid grid, int from, double x, double z, int to) {
+        return LineOfWalk.walk(grid, from, x, z, grid.nodeX(to) + 0.5, grid.nodeZ(to) + 0.5) == to;
     }
 
     /** The farthest index after {@code anchor} that the anchor sees, by doubling probes and then bisection. */

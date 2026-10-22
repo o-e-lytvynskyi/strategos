@@ -13,6 +13,7 @@ import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.MatchBounds;
 import dev.strategos.core.sim.MatchState;
+import dev.strategos.core.sim.MotionStore;
 import dev.strategos.core.sim.Streams;
 import dev.strategos.core.sim.UnitCreated;
 import dev.strategos.core.sim.UnitState;
@@ -76,6 +77,7 @@ final class SpawnUnitsRule implements CommandRule<SpawnUnits> {
             state.motion().set(index, p.x(), floorY, p.z(), 0f);
             state.orders().clear(index);
             state.paths().reset(index);
+            state.motion().setExtra(index, MotionStore.Extra.NONE);
             state.ai().set(index, UnitState.IDLE);
             state.outputs()
                     .add(new UnitCreated(handle, template.netIndex(), spawn.faction(), p.x(), floorY, p.z(), 0f));

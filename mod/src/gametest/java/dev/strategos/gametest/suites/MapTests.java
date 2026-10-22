@@ -1,7 +1,27 @@
 package dev.strategos.gametest.suites;
 
+import static dev.strategos.gametest.suites.Units.check;
+import static dev.strategos.gametest.suites.Units.core;
+import static dev.strategos.gametest.suites.Units.move;
+import static dev.strategos.gametest.suites.Units.onlyUnit;
+import static dev.strategos.gametest.suites.Units.spawn;
+import static dev.strategos.gametest.suites.Units.unit;
+
 import dev.strategos.core.content.MapManifest;
+import dev.strategos.core.content.StartSlot;
+import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchLifecycle;
+import dev.strategos.core.sim.MotionStore;
+import dev.strategos.core.sim.UnitState;
+import dev.strategos.core.sim.UnitView;
+import dev.strategos.core.sim.journal.ReplayDriver;
+import dev.strategos.core.sim.journal.ReplayResult;
+import dev.strategos.core.sim.nav.GridAStar;
+import dev.strategos.core.sim.nav.PathService;
+import dev.strategos.core.sim.nav.PathStatus;
+import dev.strategos.core.sim.nav.Surface;
+import dev.strategos.core.sim.nav.SurfaceGrid;
 import dev.strategos.core.sim.world.WritePriority;
 import dev.strategos.core.sim.world.WriteSite;
 import dev.strategos.core.testkit.SimHarness;
@@ -9,6 +29,7 @@ import dev.strategos.gametest.GameTestTickets;
 import dev.strategos.gametest.MatchFixture;
 import dev.strategos.gametest.StrategosTest;
 import dev.strategos.mod.StrategosServer;
+import dev.strategos.mod.entity.UnitEntity;
 import dev.strategos.mod.platform.Ids;
 import dev.strategos.mod.server.content.MapPackage;
 import dev.strategos.mod.server.content.MapPackageLoader;
@@ -20,6 +41,9 @@ import dev.strategos.mod.server.match.MatchSpace;
 import dev.strategos.mod.server.world.BlockWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;
@@ -29,6 +53,8 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.FenceBlock;
 import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The map batch (spec §7.4, MAP-01), in {@code runGameTestSlow}: each test alone in its batch, importing far from its
@@ -39,10 +65,15 @@ import net.minecraft.world.level.block.state.BlockState;
  */
 public final class MapTests {
     static final ResourceLocation PROVING_GROUND = Ids.id("proving_ground");
+    private static final Logger LOG = LoggerFactory.getLogger(MapTests.class);
     private static final int FAR = 2_048;
     private static final int IMPORT_LANE = 1;
     private static final int TWICE_LANE = 2;
     private static final int ROUNDTRIP_LANE = 3;
+    private static final int CROSS_LANE = 4;
+    private static final int BODY_LANE = 5;
+    private static final int FIFTY_LANE = 6;
+    private static final int FIFTY = 50;
 
     private MapTests() {}
 
@@ -182,6 +213,218 @@ public final class MapTests {
                     }
                 })
                 .thenSucceed();
+    }
+
+    /**
+     * Slice 1A's demo (PATH-05, spec §1.2): one unit walks the imported proving ground from its west start to its east
+     * start, over its hills, steps and ramps and across the river; it arrives on the target, and the match's journal,
+     * replayed in L1 from its start (the pages' slices included), reaches the live match's hash.
+     */
+    @StrategosTest(batch = "map_cross", solo = true, timeoutTicks = 60_000)
+    public static void unitCrossesProvingGround(GameTestHelper h) {
+        MatchRuntime rt = provingGround(h, CROSS_LANE, 0);
+        crossing(h, rt, (unit, core) -> {}, core -> {
+            ReplayResult replay = ReplayDriver.replay(core.journal(), TemplateSet.builtin());
+            check(replay.matches(), "the journal does not replay: " + replay);
+            check(replay.finalHash() == core.stateHash(), "the replay ends on another hash: " + replay);
+        });
+    }
+
+    /**
+     * PATH-05.2: along the same crossing, every tick the unit has a body, the body's Y is the core's Y within 1/16
+     * block; and the core's Y did follow the terrain, more than two blocks up and down.
+     */
+    @StrategosTest(batch = "map_body", solo = true, timeoutTicks = 60_000)
+    public static void bodyYFollowsCoreFloor(GameTestHelper h) {
+        MatchRuntime rt = provingGround(h, BODY_LANE, 0);
+        var seen = new Object() {
+            int bodies;
+            double low = Double.POSITIVE_INFINITY;
+            double high = Double.NEGATIVE_INFINITY;
+        };
+        crossing(
+                h,
+                rt,
+                (unit, core) -> {
+                    UnitEntity body = rt.bodies().get(unit.handle());
+                    seen.low = Math.min(seen.low, unit.y());
+                    seen.high = Math.max(seen.high, unit.y());
+                    if (body != null) {
+                        seen.bodies++;
+                        check(
+                                Math.abs(body.getY() - unit.y()) <= 1 / 16.0,
+                                "body Y " + body.getY() + ", core Y " + unit.y() + " at tick "
+                                        + core.queries().tick());
+                    }
+                },
+                core -> {
+                    check(seen.bodies > 500, "the unit had a body on " + seen.bodies + " ticks");
+                    check(seen.high - seen.low > 2, "the walk stayed between Y " + seen.low + " and " + seen.high);
+                });
+    }
+
+    /**
+     * PATH-05.3 (spec §1.6 B row 5): 50 units spawned at the west start are ordered one by one, ten ticks apart, each
+     * to its own point by the east start. Each arrives within 1.5 times its ideal time, the time a walker at its speed
+     * needs along a cheapest path (slowed in water and on slow ground), plus ten ticks for the request; and no unit
+     * goes 100 ticks without progress.
+     */
+    @StrategosTest(batch = "map_fifty", solo = true, timeoutTicks = 120_000)
+    public static void fiftyUnitsOneByOne(GameTestHelper h) {
+        MatchRuntime rt = provingGround(h, FIFTY_LANE, 0);
+        MapManifest m = manifest(h);
+        StartSlot west = m.startSlots().get(0);
+        StartSlot east = m.startSlots().get(1);
+        var state = new Object() {
+            boolean spawned;
+            int[] units;
+            int ordered;
+            long nextOrder;
+            final long[] orderedAt = new long[FIFTY];
+            final double[] ideal = new double[FIFTY];
+            final long[] arrivedAt = new long[FIFTY];
+            int arrived;
+            int mostStuck;
+            String worst = "";
+            double slowest; // the largest ratio of a unit's time to its ideal
+        };
+        h.onEachTick(() -> {
+            if (rt.lifecycle() == MatchLifecycle.PREPARING) {
+                return;
+            }
+            check(rt.lifecycle() == MatchLifecycle.RUNNING, "the match is " + rt.lifecycle());
+            MatchCore core = core(rt);
+            if (!state.spawned) {
+                state.spawned = true;
+                spawn(rt, west.x() + 0.5, west.z() + 0.5, FIFTY, 6);
+                return;
+            }
+            if (state.units == null) {
+                int[] handles = core.queries().unitHandles();
+                if (handles.length < FIFTY) {
+                    return;
+                }
+                state.units = handles;
+                state.nextOrder = core.queries().tick();
+            }
+            long tick = core.queries().tick();
+            if (state.ordered < FIFTY && tick >= state.nextOrder) {
+                int k = state.ordered++;
+                double tx = east.x() + 0.5 - (k % 5) * 2;
+                double tz = east.z() + 0.5 + (k / 5 - 5) * 2;
+                UnitView u = unit(rt, state.units[k]);
+                state.ideal[k] = idealTicks(core, u, tx, tz);
+                state.orderedAt[k] = tick;
+                state.nextOrder = tick + 10;
+                move(rt, state.units[k], tx, tz);
+            }
+            for (int k = 0; k < state.ordered; k++) {
+                if (state.arrivedAt[k] != 0) {
+                    continue;
+                }
+                MotionStore.Extra motion = core.queries().motion(state.units[k]);
+                if (motion != null && motion.stuck() > state.mostStuck) {
+                    state.mostStuck = motion.stuck();
+                    UnitView stuck = unit(rt, state.units[k]);
+                    state.worst = "unit " + k + " at " + stuck.x() + ", " + stuck.y() + ", " + stuck.z() + " aiming at "
+                            + motion.aimX() + ", " + motion.aimZ() + ", path "
+                            + core.queries().path(state.units[k]);
+                }
+                UnitView u = unit(rt, state.units[k]);
+                if (u.state() == UnitState.IDLE && u.target() == null && tick > state.orderedAt[k] + 2) {
+                    state.arrivedAt[k] = tick;
+                    state.arrived++;
+                    long took = tick - state.orderedAt[k];
+                    state.slowest = Math.max(state.slowest, took / state.ideal[k]);
+                    check(
+                            took <= 1.5 * state.ideal[k] + 10,
+                            "unit " + k + " took " + took + " ticks, ideal " + state.ideal[k]);
+                }
+            }
+            check(state.mostStuck < 100, "a unit went " + state.mostStuck + " ticks without progress: " + state.worst);
+            if (state.arrived == FIFTY) {
+                LOG.info(
+                        "fifty_units_one_by_one: the slowest unit took {} times its ideal time; at most {} ticks"
+                                + " without progress",
+                        String.format(Locale.ROOT, "%.2f", state.slowest),
+                        state.mostStuck);
+                h.succeed();
+            }
+        });
+    }
+
+    /**
+     * Walks one unit from the proving ground's west start to its east start, calling {@code eachTick} every tick it is
+     * on its way and {@code atTheEnd} once it stands on the target.
+     */
+    private static void crossing(
+            GameTestHelper h, MatchRuntime rt, BiConsumer<UnitView, MatchCore> eachTick, Consumer<MatchCore> atTheEnd) {
+        MapManifest m = manifest(h);
+        StartSlot west = m.startSlots().get(0);
+        StartSlot east = m.startSlots().get(1);
+        double tx = east.x() + 0.5;
+        double tz = east.z() + 0.5;
+        var state = new Object() {
+            boolean spawned;
+            boolean ordered;
+        };
+        h.onEachTick(() -> {
+            if (rt.lifecycle() == MatchLifecycle.PREPARING) {
+                return;
+            }
+            check(rt.lifecycle() == MatchLifecycle.RUNNING, "the match is " + rt.lifecycle());
+            MatchCore core = core(rt);
+            if (!state.spawned) {
+                state.spawned = true;
+                spawn(rt, west.x() + 0.5, west.z() + 0.5, 1, 0);
+                return;
+            }
+            if (core.queries().unitCount() == 0) {
+                return;
+            }
+            int handle = onlyUnit(rt);
+            if (!state.ordered) {
+                state.ordered = true;
+                move(rt, handle, tx, tz);
+                return;
+            }
+            UnitView u = unit(rt, handle);
+            eachTick.accept(u, core);
+            if (u.state() == UnitState.IDLE && u.target() == null) {
+                check(u.x() == tx && u.z() == tz, "stopped at " + u.x() + ", " + u.z());
+                atTheEnd.accept(core);
+                h.succeed();
+            }
+        });
+    }
+
+    /**
+     * The ticks a walker at the unit's speed needs along a cheapest path from where it stands to (tx, tz): each step's
+     * length, slowed to half in shallow water and to six tenths on slow ground.
+     */
+    private static double idealTicks(MatchCore core, UnitView unit, double tx, double tz) {
+        SurfaceGrid grid = core.queries().surfaces();
+        double speed = core.queries().templates().byIndex(unit.templateIndex()).walkSpeed();
+        int from = PathService.startNode(
+                grid,
+                unit.x(),
+                unit.y(),
+                unit.z(),
+                core.queries().config().bounds().minY());
+        GridAStar.Result path =
+                new GridAStar().search(grid, from, (int) Math.floor(tx), (int) Math.floor(tz), 1_000_000);
+        check(path.status() == PathStatus.OK, "no path from the west start: " + path.status());
+        int[] nodes = path.nodes();
+        double ticks = 0;
+        for (int i = 1; i < nodes.length; i++) {
+            int x = grid.nodeX(nodes[i]);
+            int z = grid.nodeZ(nodes[i]);
+            double length = x != grid.nodeX(nodes[i - 1]) && z != grid.nodeZ(nodes[i - 1]) ? Math.sqrt(2) : 1;
+            int kind = Surface.kind(grid.surface(x, z, SurfaceGrid.nodeLayer(nodes[i])));
+            double factor = kind == Surface.SHALLOW_WATER ? 0.5 : kind == Surface.SLOW ? 0.6 : 1;
+            ticks += length / (speed * factor);
+        }
+        return ticks;
     }
 
     /** A proving-ground match in the test's lane east of it, {@code dz} blocks along Z, its band from the test's floor. */

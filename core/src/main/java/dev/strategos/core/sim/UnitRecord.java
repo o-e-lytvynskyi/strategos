@@ -9,7 +9,8 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * One unit in a snapshot; its template by string id, never by net index, so a changed set still loads. {@code path}
- * is {@link PathStore.UnitPath#NONE} for a unit that never asked for one, and for every unit of an M0 save.
+ * is {@link PathStore.UnitPath#NONE} for a unit that never asked for one, and {@code motion} {@link
+ * MotionStore.Extra#NONE} for one that never touched terrain: so is every unit of an M0 save.
  */
 @CoreApi
 public record UnitRecord(
@@ -22,7 +23,23 @@ public record UnitRecord(
         float yaw,
         UnitState state,
         @Nullable Vec2d target,
-        PathStore.UnitPath path) {
+        PathStore.UnitPath path,
+        MotionStore.Extra motion) {
+    /** A unit that never touched terrain. */
+    public UnitRecord(
+            int handle,
+            TemplateId template,
+            FactionSlot faction,
+            double x,
+            double y,
+            double z,
+            float yaw,
+            UnitState state,
+            @Nullable Vec2d target,
+            PathStore.UnitPath path) {
+        this(handle, template, faction, x, y, z, yaw, state, target, path, MotionStore.Extra.NONE);
+    }
+
     /** A unit without a path. */
     public UnitRecord(
             int handle,

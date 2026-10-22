@@ -283,7 +283,7 @@ Cards: [roadmap/M1-movement.md](roadmap/M1-movement.md#cards). 26 cards, at most
 | MAP-01 | Map packages, importer and the proving ground | M | BLD-15, MAP-07, PERF-03 | done |
 | PATH-15 | Live terrain capture, page rebuilds and the block-change router | M | PATH-02, BLD-15, CORE-01 | done |
 | PATH-03 | Path service: A*, string pulling and STRICT delivery | M | PATH-02, CORE-05 | done |
-| PATH-05 | Path following: kinematic motion on surfaces | M | PATH-03, UNIT-01 | specified |
+| PATH-05 | Path following: kinematic motion on surfaces | M | PATH-03, UNIT-01 | done |
 | UNIT-09 | Spike S10: kinematic fidelity | M | PATH-05, PATH-15 | specified |
 | CORE-11 | Binary journal and cross-level replay | M | CORE-05, QA-04 | done |
 | CORE-08 | Spatial index | M | CORE-02 | specified |

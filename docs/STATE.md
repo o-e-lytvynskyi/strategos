@@ -103,13 +103,21 @@ Answer in chat or here; the next session applies the answers.
   tenth of the search, and the route is within 1 % of the best. When a wall goes up, the long
   routes know it as soon as its pages are rebuilt. A path that went stale while it was being
   computed is now checked when it arrives. Card PATH-08 is done.
+- 2026-10-22 · **M1 T9 Motion on surfaces:** units now walk on the real ground. They climb a
+  one-block step over two ticks, drop down ledges of up to three blocks half a block a tick, wade
+  through shallow water at half speed, never step into lava, turn no faster than their template
+  allows, and stand exactly on the floor the navigation grid sees; their bodies follow that height
+  within a sixteenth of a block. Fifty units sent across the proving ground one after another all
+  arrive within their ideal time (the slowest in 0.96 of it), none stuck. Moving 600 units costs
+  about 24 µs a tick. A unit that has arrived holds its spot and walks back if pushed more than a
+  block away. A match without terrain still moves exactly as in M0. Card PATH-05 is done.
 
 ## Now
 
-- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 11 of 28 tasks done (T28, PATH-08, joined by its trigger).
+- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 12 of 28 tasks done (T28, PATH-08, joined by its trigger).
 - **In progress:** none.
-- **Last finished task:** M1 T28 (2026-10-22).
-- **Next task:** M1 T9 · Motion on surfaces (PATH-05).
+- **Last finished task:** M1 T9 (2026-10-22).
+- **Next task:** M1 T12 · Modifier pipeline (DATA-02).
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 220 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.

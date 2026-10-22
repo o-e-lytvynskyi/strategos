@@ -94,6 +94,11 @@ final class QueriesImpl implements MatchQueries {
     }
 
     @Override
+    public MotionStore.@Nullable Extra motion(int handle) {
+        return state.entities().isAlive(handle) ? state.motion().extra(Handle.index(handle)) : null;
+    }
+
+    @Override
     public PathService.Stats pathStats() {
         return paths.stats(state);
     }

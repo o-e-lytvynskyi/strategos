@@ -388,7 +388,8 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
      no ladder rung above repath (L3, solo batch).
   4. Motion costs under 5 µs per unit per tick (L6).
 - **Tests:** L0, L1, L3, L6 · **Depends on:** PATH-03, UNIT-01 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Done:** 2026-10-22 — M1 T9: `MotionSystemTest.upStepOverTwoTicks`: a unit is halfway up on the tick it enters a 1-block step and on the new floor the next (1); `maptests.body_y_follows_core_floor`: the body's Y within 1/16 block of the core's on every tick across ramps, steps and the bridge (2); `maptests.fifty_units_one_by_one`: the slowest of 50 units ordered ten ticks apart arrives in 0.96 of its ideal time, and no unit goes more than 1 tick without progress (3; spec §1.6 D rows 58–59); `MotionBench.step600`: 23.8 µs a tick for 600 units, 0.04 µs per unit, no allocation (4; D row 57)
+- **Status:** done
 
 #### UNIT-09 · Spike S10: kinematic fidelity
 - **Value:** Units look right on the ground (on slabs, stairs, snow, paths and in shallow water),

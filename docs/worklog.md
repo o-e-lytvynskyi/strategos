@@ -9,8 +9,32 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28
+## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9
 
+- **M1 T9 · Motion on surfaces** — PATH-05 done.
+  - **Results:** `MotionSystem` replaces `MovementSystem`. On terrain a unit stands on a floor (in
+    sixteenths, which a page rebuild does not shift), climbs a step over two ticks, falls half a
+    block a tick, walks at ×0.5 in shallow water and ×0.6 on slow ground, never enters a hazard,
+    turns at its template's rate, slides along walls (X, then Z) and lands exactly on its
+    waypoint; a stuck monitor counts the ticks without progress; the arrival latch walks a unit
+    pushed more than a block back; `MotionSystem.impulse` moves a unit in short steps along
+    walkable surfaces. Without terrain it is M0's movement to the bit, and the terrain fields are
+    hashed and saved only once used. Requests keep the unit's exact point and paths are pulled
+    from it. `MotionStore.Extra` in snapshots, `MatchQueries.motion`, `BodyFrame.Builder.reset`.
+    `MotionSystemTest` (10) and a string-pulling property test (751 core tests in all);
+    `maptests.unit_crosses_proving_ground`, `body_y_follows_core_floor` and
+    `fifty_units_one_by_one` in the slow map batches; `MotionBench` joins the `@HotPath`
+    allocation gate; `verify verifySlow` 1 min 54 s.
+  - **Measured:** `MotionBench.step600` 23.8 µs a tick for 600 units (0.04 µs per unit against
+    the 5 µs budget), 0.16 B/op; the slowest of the fifty units in 0.96 of its ideal time (the
+    ideal follows the grid path, which string pulling shortens), at most 1 tick without progress.
+  - **Problems:** slowing within a block of the target made the scenario GameTests, now on
+    terrain, arrive three ticks late; units land exactly instead (spec §1.6 D row 54). The fifty
+    units first failed with a unit pressed into a corner for 100 ticks: paths were pulled from the
+    start column's centre while the unit stood at its edge, a line M0's straight movement ignored
+    but motion on surfaces does not; requests now keep the exact point (D row 59). The canary
+    golden came out byte-different with every hash unchanged: a new field of the unit codec
+    reorders the JSON keys (pet-projects knowledge base).
 - **M1 T28 · Hierarchical long-range planner (HPA*)** — PATH-08 done; R3 resolved.
   - **Results:** `Portals`, the abstract graph, updated with the grid on publish: entrances along
     page borders, a portal at every fifth crossing and at each end, costs between a page's portals

@@ -9,7 +9,7 @@ import dev.strategos.core.sim.command.CommandRules;
 import dev.strategos.core.sim.command.CommandSystem;
 import dev.strategos.core.sim.journal.Journal;
 import dev.strategos.core.sim.journal.JournalWriter;
-import dev.strategos.core.sim.move.MovementSystem;
+import dev.strategos.core.sim.move.MotionSystem;
 import dev.strategos.core.sim.nav.PathService;
 import dev.strategos.core.sim.unitai.UnitAiSystem;
 
@@ -43,7 +43,7 @@ final class MatchCoreImpl implements MatchCore {
         scheduler.register(commands);
         scheduler.register(new UnitAiSystem(state));
         scheduler.register(paths.requests());
-        scheduler.register(new MovementSystem());
+        scheduler.register(new MotionSystem(state));
         this.finalSystem = new FinalSystem(metrics, timers, journal, ports.journal());
         scheduler.register(finalSystem);
         this.queries = new QueriesImpl(state, paths);

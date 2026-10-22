@@ -149,7 +149,7 @@ public final class PathService {
                 counters.superseded++;
                 continue;
             }
-            paths.follow(i, r.waypoints(), r.status());
+            paths.follow(i, startFrom(s, i, p.request(), r.waypoints()), r.status());
             if (paths.lastPageChange() > p.request().tick() && !walkable(s, i)) {
                 paths.setRepath(i, true); // terrain changed in flight and broke the route: ask again when allowed
             }
@@ -232,7 +232,8 @@ public final class PathService {
             }
         }
         int id = paths.nextRequestId();
-        PathRequest r = new PathRequest(id, s.entities().handleAt(i), tick, from, gx, gz, rules.searchCap(), 0, false);
+        PathRequest r =
+                new PathRequest(id, s.entities().handleAt(i), tick, from, x, z, gx, gz, rules.searchCap(), 0, false);
         if (!keepPath) {
             paths.follow(i, PathStore.Waypoints.NONE, PathStatus.OK);
         }
@@ -283,6 +284,38 @@ public final class PathService {
     /** The column holding coordinate {@code v}, kept inside {@code 0 .. limit - 1}. */
     static int clampColumn(double v, int limit) {
         return Math.max(0, Math.min(limit - 1, (int) Math.floor(v)));
+    }
+
+    /**
+     * The waypoints a unit follows from where it now stands: a path searched from where it stood when it asked, which
+     * provisional steering may have left, gets that point first when the unit cannot walk straight to its first
+     * waypoint.
+     */
+    private static PathStore.Waypoints startFrom(MatchState s, int i, PathRequest r, PathStore.Waypoints w) {
+        if (w.count() == 0 || Double.isNaN(r.fromX())) {
+            return w;
+        }
+        SurfaceGrid grid = s.surfaces();
+        double x = s.motion().x(i);
+        double z = s.motion().z(i);
+        int node = startNode(grid, x, s.motion().y(i), z, s.config().bounds().minY());
+        if (node >= 0 && LineOfWalk.walk(grid, node, x, z, w.x(0), w.z(0)) >= 0) {
+            return w;
+        }
+        int keep = Math.min(w.count(), PathStore.Waypoints.MAX - 1);
+        double[] xs = new double[keep + 1];
+        double[] zs = new double[keep + 1];
+        int[] floors = new int[keep + 1];
+        xs[0] = r.fromX();
+        zs[0] = r.fromZ();
+        floors[0] = Surface.floor(
+                grid.surface(grid.nodeX(r.fromNode()), grid.nodeZ(r.fromNode()), SurfaceGrid.nodeLayer(r.fromNode())));
+        for (int k = 0; k < keep; k++) {
+            xs[k + 1] = w.x(k);
+            zs[k + 1] = w.z(k);
+            floors[k + 1] = w.floor(k);
+        }
+        return new PathStore.Waypoints(xs, zs, floors, w.truncated() || keep < w.count());
     }
 
     /** Whether unit {@code i}'s path can still be walked on the current grid, from where it stands. */

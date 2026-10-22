@@ -13,6 +13,7 @@ import dev.strategos.core.sim.MatchConfig;
 import dev.strategos.core.sim.MatchQueries;
 import dev.strategos.core.sim.MatchRules;
 import dev.strategos.core.sim.MatchSnapshot;
+import dev.strategos.core.sim.MotionStore;
 import dev.strategos.core.sim.PageRef;
 import dev.strategos.core.sim.UnitRecord;
 import dev.strategos.core.sim.UnitState;
@@ -228,6 +229,11 @@ class InvariantsTest {
 
         @Override
         public PathStore.@Nullable UnitPath path(int handle) {
+            return null;
+        }
+
+        @Override
+        public MotionStore.@Nullable Extra motion(int handle) {
             return null;
         }
 

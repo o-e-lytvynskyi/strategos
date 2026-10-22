@@ -38,6 +38,9 @@ public interface MatchQueries {
     /** A live unit's path: its waypoints, the next one, and the request it waits for; null for a dead handle. */
     PathStore.@Nullable UnitPath path(int handle);
 
+    /** A live unit's terrain motion: velocity, floor, stuck monitor, arrival latch; null for a dead handle. */
+    MotionStore.@Nullable Extra motion(int handle);
+
     /** The path service's counts since the match started. */
     PathService.Stats pathStats();
 }

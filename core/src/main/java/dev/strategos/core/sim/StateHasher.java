@@ -8,7 +8,8 @@ import java.util.ArrayDeque;
 /**
  * The hash of a match's whole state, in a fixed order: the tick; the seed and the bounds; per index up to the high-water
  * mark, its generation and liveness, and for live units the template index, faction, x, y, z, yaw, state and order,
- * and, once the unit has asked for a path, the path (request, last request, repath flag, status, cursor, waypoints);
+ * and, once the unit has asked for a path, the path (request, last request, repath flag, status, cursor, waypoints),
+ * and, once it has touched terrain, its velocity, floor, step, stuck monitor and arrival latch;
  * then, once any path was requested, the next request id, the last tick a page changed and each request in flight (id, unit, due tick); then every
  * pending command. A match that never asks for a path, such as one without terrain, hashes as in M0. The match id is
  * left out, so the L1 twin of a GameTest match agrees; so are the terrain grid, which the twin rebuilds from the same
@@ -57,6 +58,9 @@ public final class StateHasher {
                 if (paths.lastRequest(i) != PathStore.NEVER) {
                     h = mixPath(h, paths, i);
                 }
+                if (!motion.untouched(i)) {
+                    h = mixMotion(h, motion, i);
+                }
             }
         }
 
@@ -83,6 +87,20 @@ public final class StateHasher {
             h = hasher.state();
         }
         return Hasher.finish(h);
+    }
+
+    private static long mixMotion(long h, MotionStore motion, int i) {
+        h = Hasher.mix(h, Double.doubleToLongBits(motion.vx(i)));
+        h = Hasher.mix(h, Double.doubleToLongBits(motion.vz(i)));
+        h = Hasher.mix(h, motion.floor(i));
+        h = Hasher.mix(h, motion.rising(i) ? 1L : 0L);
+        h = Hasher.mix(h, Double.doubleToLongBits(motion.aimX(i)));
+        h = Hasher.mix(h, Double.doubleToLongBits(motion.aimZ(i)));
+        h = Hasher.mix(h, Double.doubleToLongBits(motion.best(i)));
+        h = Hasher.mix(h, motion.stuck(i));
+        h = Hasher.mix(h, motion.latched(i) ? 1L : 0L);
+        h = Hasher.mix(h, Double.doubleToLongBits(motion.latchX(i)));
+        return Hasher.mix(h, Double.doubleToLongBits(motion.latchZ(i)));
     }
 
     private static long mixPath(long h, PathStore paths, int i) {

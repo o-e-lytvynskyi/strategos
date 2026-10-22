@@ -14,6 +14,7 @@ import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.EntitySlots;
 import dev.strategos.core.sim.MatchConfig;
 import dev.strategos.core.sim.MatchSnapshot;
+import dev.strategos.core.sim.MotionStore;
 import dev.strategos.core.sim.PageRef;
 import dev.strategos.core.sim.UnitRecord;
 import dev.strategos.core.sim.UnitState;
@@ -81,6 +82,8 @@ public final class MatchSnapshotCodec {
                     Codec.INT.fieldOf("handle").forGetter(PathRequest::handle),
                     Codec.LONG.fieldOf("tick").forGetter(PathRequest::tick),
                     Codec.INT.fieldOf("fromNode").forGetter(PathRequest::fromNode),
+                    Codec.DOUBLE.optionalFieldOf("fromX", Double.NaN).forGetter(PathRequest::fromX),
+                    Codec.DOUBLE.optionalFieldOf("fromZ", Double.NaN).forGetter(PathRequest::fromZ),
                     Codec.DOUBLE.fieldOf("goalX").forGetter(PathRequest::goalX),
                     Codec.DOUBLE.fieldOf("goalZ").forGetter(PathRequest::goalZ),
                     Codec.INT.fieldOf("cap").forGetter(PathRequest::cap),
@@ -109,6 +112,23 @@ public final class MatchSnapshotCodec {
                             .forGetter(PathStore.Queue::lastPageChange))
             .apply(i, PathStore.Queue::new));
 
+    /** Each field defaults to a unit that never touched terrain, the only motion an M0 save has. */
+    private static final Codec<MotionStore.Extra> MOTION = RecordCodecBuilder.create(i -> i.group(
+                    Codec.DOUBLE.optionalFieldOf("vx", 0.0).forGetter(MotionStore.Extra::vx),
+                    Codec.DOUBLE.optionalFieldOf("vz", 0.0).forGetter(MotionStore.Extra::vz),
+                    Codec.INT.optionalFieldOf("floor", MotionStore.NO_FLOOR).forGetter(MotionStore.Extra::floor),
+                    Codec.BOOL.optionalFieldOf("rising", false).forGetter(MotionStore.Extra::rising),
+                    Codec.DOUBLE.optionalFieldOf("aimX", 0.0).forGetter(MotionStore.Extra::aimX),
+                    Codec.DOUBLE.optionalFieldOf("aimZ", 0.0).forGetter(MotionStore.Extra::aimZ),
+                    Codec.DOUBLE
+                            .optionalFieldOf("best", Double.POSITIVE_INFINITY)
+                            .forGetter(MotionStore.Extra::best),
+                    Codec.INT.optionalFieldOf("stuck", 0).forGetter(MotionStore.Extra::stuck),
+                    Codec.BOOL.optionalFieldOf("latched", false).forGetter(MotionStore.Extra::latched),
+                    Codec.DOUBLE.optionalFieldOf("latchX", 0.0).forGetter(MotionStore.Extra::latchX),
+                    Codec.DOUBLE.optionalFieldOf("latchZ", 0.0).forGetter(MotionStore.Extra::latchZ))
+            .apply(i, MotionStore.Extra::new));
+
     private static final Codec<UnitRecord> UNIT = RecordCodecBuilder.create(i -> i.group(
                     Codec.INT.fieldOf("handle").forGetter(UnitRecord::handle),
                     TemplateId.CODEC.fieldOf("template").forGetter(UnitRecord::template),
@@ -119,11 +139,12 @@ public final class MatchSnapshotCodec {
                     Codec.FLOAT.fieldOf("yaw").forGetter(UnitRecord::yaw),
                     UnitState.CODEC.fieldOf("state").forGetter(UnitRecord::state),
                     Vec2d.CODEC.optionalFieldOf("target").forGetter(u -> Optional.ofNullable(u.target())),
-                    UNIT_PATH.optionalFieldOf("path", PathStore.UnitPath.NONE).forGetter(UnitRecord::path))
+                    UNIT_PATH.optionalFieldOf("path", PathStore.UnitPath.NONE).forGetter(UnitRecord::path),
+                    MOTION.optionalFieldOf("motion", MotionStore.Extra.NONE).forGetter(UnitRecord::motion))
             .apply(
                     i,
-                    (handle, template, faction, x, y, z, yaw, state, target, path) ->
-                            new UnitRecord(handle, template, faction, x, y, z, yaw, state, target.orElse(null), path)));
+                    (handle, template, faction, x, y, z, yaw, state, target, path, motion) -> new UnitRecord(
+                            handle, template, faction, x, y, z, yaw, state, target.orElse(null), path, motion)));
 
     private static final Codec<PageRef> PAGE = RecordCodecBuilder.create(i -> i.group(
                     Codec.INT.fieldOf("x").forGetter(PageRef::x),

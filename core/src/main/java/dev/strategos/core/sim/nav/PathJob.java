@@ -51,8 +51,14 @@ public record PathJob(SurfaceGrid grid, PathRequest request) implements PureJob<
                 }
             }
         }
-        PathStore.Waypoints waypoints =
-                StringPuller.pull(grid, found.nodes(), found.status() == PathStatus.OK, goal.x(), goal.z());
+        PathStore.Waypoints waypoints = StringPuller.pull(
+                grid,
+                found.nodes(),
+                found.status() == PathStatus.OK,
+                goal.x(),
+                goal.z(),
+                request.fromX(),
+                request.fromZ());
         return new PathResult(request.id(), found.status(), waypoints, found.expansions() + goal.inspected());
     }
 

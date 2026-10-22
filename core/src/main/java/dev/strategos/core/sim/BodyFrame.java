@@ -109,6 +109,11 @@ public final class BodyFrame {
             count++;
         }
 
+        /** Empties the builder, keeping its arrays: for a benchmark that runs a system again and again. */
+        public void reset() {
+            count = 0;
+        }
+
         public BodyFrame build() {
             if (count == 0) {
                 return EMPTY;
