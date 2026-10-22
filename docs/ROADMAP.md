@@ -254,7 +254,7 @@ Cards: [roadmap/M0-foundation.md](roadmap/M0-foundation.md#cards). 26 cards, at 
 | QA-05 | Server smoke (L5): boot, a headless match, a restart round trip | M | QA-01, ORD-01, CORE-07 | done |
 | QA-06 | Client scenario runner and spike S3 (consent) | M | QA-01, D-22 | in_progress |
 | QA-07 | Performance harness (L6) | M | QA-02, QA-04 | done |
-| QA-08 | Continuous integration | M | QA-04, QA-05, D-23 | in_progress |
+| QA-08 | Continuous integration | M | QA-04, QA-05, D-23 | done |
 | QA-10 | Developer commands and log tagging | S | QA-04 | done |
 | QA-17 | Static gates, engine-surface inventory and fixture catalogue | M | QA-01 | done |
 | PERF-01 | Budget matrix and enforcement | S | QA-07 | in_progress |

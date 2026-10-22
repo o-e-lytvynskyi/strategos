@@ -9,7 +9,24 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M0 T9, the tripwire checkpoint, T9b, T11, T10, T11b, T12, T13, T14, T16, T15
+## 2026-10-22 — M0 T9, the tripwire checkpoint, T9b, T11, T10, T11b, T12, T13, T14, T16, T15, T17
+
+- **M0 T17 · M0 close** — QA-08 done; M0 is Done, pending the owner's Acceptance.
+  - **Results:**
+    - T17's runs, each on its own: `verify` 30.7 s; `verifySlow verifySoak` 5.8 s; `verifyPerf`
+      ran JMH (83 s) and stopped at `jmhCompare` with "No approved JMH baseline", as designed; the
+      perf batch alone passed (A p50 0.054 ms, G median 0.72 ms);
+    - T15's job for CI: `release.yml` (on `v*` tags and by hand), whose manual run 39697935330
+      started the production jar on a headless NeoForge 21.1.264 client: the game entered a world
+      and finished cleanly (QA-08.4);
+    - spec §10 walked row by row (§10.1): rows 1–13 pass, 14–16 wait for the owner;
+    - health check: the largest main class has 423 lines, no ArchUnit exceptions, no TODOs,
+      `verify` grew from 19.8 s (T3) to 31 s; CI about 170 of 2,000 minutes this month;
+    - 05-testing.md has M0's commands, times and options; 01-feasibility.md §6.5 is
+      re-estimated (the MVP at about 20–30 weeks, bounded by the owner's playtests);
+    - STATE.md: the acceptance session with exact commands, the two approvals and the consent
+      batch for the owner.
+  - **Problems:** none.
 
 - **M0 T15 · S5 final, S6 report, ADR updates** — QA-01, QA-03 and CORE-05 done.
   - **Results:**
@@ -215,7 +232,7 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
     - pitfalls in the knowledge base (`minecraft-mod-data.md`, new, and `minecraft-mod.md`).
   - Spec §1.6 D row 54.
 
-- **Next:** M0 T17 · M0 close.
+- **Next:** M1 · specify Movement (`docs/milestones/M1-movement.md`).
 
 ## 2026-10-22 — the owner's setup, M0 T7c, T8
 

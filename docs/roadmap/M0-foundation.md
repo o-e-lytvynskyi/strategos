@@ -629,7 +629,8 @@ decision (D-21).
   3. S6 gives the same hashes on Linux as on macOS (L1, on CI).
   4. The release job starts the production jar on a client (R).
 - **Tests:** L0, L1, L2, L3, L5 · **Depends on:** QA-04, QA-05, D-23 · **Size:** M · **Tier:** T0
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-10-22 — M0 T18, T15: the pull request of T18 showed per-test results from L1, L2, L3 and L5 (1); `verify verifySlow verifySoak` in 6 to 10 minutes (2); `DeterminismCanaryTest` against the macOS golden on every Linux run (3); the manual `release.yml` run 39697935330 started `strategos-0.0.1.jar` on a headless client with mc-runtime-test, which entered a world and finished cleanly (4)
 
 #### QA-10 · Developer commands and log tagging
 - **Value:** Problems are visible and reproducible in the game, which shortens every debugging

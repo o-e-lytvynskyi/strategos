@@ -7,22 +7,21 @@ and the rules that keep the tests trustworthy. The decisions behind this page ar
 [04-architecture.md §16](04-architecture.md) (testing seams). The evidence is in
 [research/testing.md](research/testing.md).
 
-M0 builds every harness on this page. The task names and options below are the ones the M0
-implementation spec defines ([milestones/M0-foundation.md](milestones/M0-foundation.md) §4, §7
-and §8). They exist once M0 is built; until then they are the target interface, not yet working
-tasks. The few that arrive after M0 say when.
+M0 built every harness on this page ([milestones/M0-foundation.md](milestones/M0-foundation.md)
+§4, §7 and §8); the few pieces that arrive later say when. The times are M0's, measured on the
+owner's M4 Pro on 2026-10-22 ([S5](spikes/S5-build-wiring.md), check 13).
 
 ## Levels
 
-| Level | What it proves | Command | Typical time *(estimate)* | Runs it |
+| Level | What it proves | Command | Time in M0 | Runs it |
 |---|---|---|---|---|
-| **L0** static | Formatting, compilation, ErrorProne + NullAway (JSpecify), ArchUnit boundary and determinism rules, the version catalog and the jar contents | `./gradlew checkVersionCatalog spotlessCheck compileJava :mod:archTest :mod:checkJarContents`; the core ArchUnit rules run in `:core:test` | 10–60 s | assistant after every edit batch |
-| **L1** core unit | All game rules and whole matches without Minecraft: state machines, modifiers, templates, pathfinding, economy, AI-versus-AI, replays, client maths and view-models | `./gradlew :core:test`; the seeded soak `:core:soak` and the GameTest journal replay `:core:replayJournals` run in `verify` | seconds | assistant, continuously |
-| **L2** Minecraft unit | Codecs, payload sizes, migrations from fixture files, shipped data through the real loaders, registries, and the engine-surface inventory check, which reads the registered types and payloads ([ADR-0022](adr/0022-definition-of-done-amendments.md)) | `./gradlew :mod:test` | 15–40 s | assistant on adapter or data changes |
-| **L3** GameTest | The adapters in a real server world: bodies, blocks, mock players, save and reload, fault injection, parallel matches | `./gradlew :mod:runGameTestServer` | 40–120 s | assistant before every commit |
-| **L4** client scenario | HUD, camera and rendering on screen: a PNG plus JSON per shot | `./gradlew :mod:runScenario -Pscenario=<id>`; `:mod:scenarioDiff` and the goldens arrive with QA-18 in M2 | 45–120 s | **only with the owner's consent** (a game window opens and can take focus); CI under Xvfb |
-| **L5** server smoke | The mod loads on a dedicated server with no client classes; a headless match runs | `./gradlew :mod:runServerSmoke` | 20–40 s | assistant before commit |
-| **L6** performance | The budgets of [ADR-0019](adr/0019-performance-budgets.md); JMH regressions above 15 % fail | `./gradlew verifyPerf`: `:core:jmh` and `:core:jmhCompare`, then the perf GameTest batch alone in `:mod:runGameTestPerf` | minutes | assistant on hot paths; the owner approves baselines |
+| **L0** static | Formatting, compilation, ErrorProne + NullAway (JSpecify), ArchUnit boundary and determinism rules, the version catalog and the jar contents | `./gradlew checkVersionCatalog spotlessCheck compileJava :mod:archTest :mod:checkJarContents`; the core ArchUnit rules run in `:core:test` | inside `verifyFast`: 8.6 s from clean, 0.4 s warm | assistant after every edit batch |
+| **L1** core unit | All game rules and whole matches without Minecraft: state machines, modifiers, templates, pathfinding, economy, AI-versus-AI, replays, client maths and view-models | `./gradlew :core:test`; the seeded soak `:core:soak` and the GameTest journal replay `:core:replayJournals` run in `verify` | 616 tests in 3.6 s; the soak 9 s; 73 journals in 0.2 s | assistant, continuously |
+| **L2** Minecraft unit | Codecs, payload sizes, migrations from fixture files, shipped data through the real loaders, registries, and the engine-surface inventory check, which reads the registered types and payloads ([ADR-0022](adr/0022-definition-of-done-amendments.md)) | `./gradlew :mod:test` | 45 tests, 4.0 s | assistant on adapter or data changes |
+| **L3** GameTest | The adapters in a real server world: bodies, blocks, mock players, save and reload, fault injection, parallel matches | `./gradlew :mod:runGameTestServer` | 97 GameTests, 4.2 s of wall time | assistant before every commit |
+| **L4** client scenario | HUD, camera and rendering on screen: a PNG plus JSON per shot | `./gradlew :mod:runScenario -Pscenario=<id>`; `:mod:scenarioDiff` and the goldens arrive with QA-18 in M2 | not run yet: consent | **only with the owner's consent** (a game window opens and can take focus); CI under Xvfb |
+| **L5** server smoke | The mod loads on a dedicated server with no client classes; a headless match runs | `./gradlew :mod:runServerSmoke`; `:mod:runServerSmokeRestart` adds the restart round trip | 11.5 s; 19.3 s with the restart | assistant before commit |
+| **L6** performance | The budgets of [ADR-0019](adr/0019-performance-budgets.md); JMH regressions above 15 % fail | `./gradlew verifyPerf`: `:core:jmh` and `:core:jmhCompare`, then the perf GameTest batch alone in `:mod:runGameTestPerf` | JMH 83 s; the perf batch 6 s | assistant on hot paths; the owner approves baselines |
 | **L7** manual | Feel, multiplayer, the production jar | a dedicated server and two clients (`runServer`, `runClientJoin`, `runClient2`, or `scripts/playtest.sh`), started by the owner; a plain `runClient` opens the title screen and joins nothing | — | owner at milestones |
 
 Aggregate tasks:
@@ -39,7 +38,12 @@ Aggregate tasks:
   `:mod:runServerSmokeRestart` with their marker guards) + `:core:replayJournals`, the gate
   before a task is done and before a commit;
 - `./gradlew verifyClient` = L4 (`:mod:runScenario`), with consent;
-- `./gradlew verifyPerf` = L6 (`:core:jmh`, `:core:jmhCompare`, `:mod:runGameTestPerf`).
+- `./gradlew verifyPerf` = L6 (`:core:jmh`, `:core:jmhCompare`, `:mod:runGameTestPerf`). Until the
+  owner approves a JMH baseline, `jmhCompare` fails with "No approved JMH baseline", by design.
+
+Measured in M0: `verify` 39 s from clean without the build cache and 31 s warm (budget 5
+minutes), `verifyHarness` 12 s, `verifySlow` 6 s, `verifySoak` 9 s; CI runs `verify verifySlow
+verifySoak` in 6 to 10 minutes.
 
 `verifySlow` exists from M0 for the GameTest batch `slow` (`:mod:runGameTestSlow`); map-scale
 GameTests, `@Tag("slow")` L1 runs and the crowd soak join it from M1. `verifySoak` runs
@@ -60,7 +64,21 @@ Useful options:
   dedicated server; `-Pspike.jfr` adds a JFR recording.
 - `-Pcompat` adds the client compatibility set (Sodium, Iris, Lithium and others) to a run, and
   `-Pcompat.server` the server set (Lithium, ModernFix, FerriteCore).
-- `-Pjmh.include='<regex>'` limits `:core:jmh` to the matching benchmarks.
+- `-Pjmh.include='<regex>'` limits `:core:jmh` to the matching benchmarks; `-Pjmh.result=<path>`
+  and `-Pjmh.baseline=<path>` (from the repository root) point `jmhCompare` at other files, and
+  `-Pperf.machine=<id>` picks `perf/baseline-<id>.json` (default `m4pro`).
+- `-Pperf.ciFactor=<f>` scales the perf GameTests' budgets (CI uses 3; 0.001 is the synthetic
+  overload of T12), `-Pperf.gates=a,g` lists the gates that fail on a breach (the others only
+  report), and `-Pperf.fakeForeignLoad=<x>` replaces the measured foreign CPU load, so 0.3 shows an
+  `INVALID` run. Results go to `mod/build/reports/perf/`.
+- The spikes write `mod/build/spike/out/<id>/` (`results.csv`, `results.md`, `env.json`, `DONE`),
+  and `mod/build/spike/out/<id>-lithium/` with `-Pcompat.server`.
+- `-Pscenario=<id>` picks the L4 scenario (`smoke`, `stall`, `world_switch`, `s4_units`),
+  `-Pscenario.timeoutSeconds=<n>` the watchdog (default 180), `-Ps4.count=<n>` and
+  `-Ps4.renderDistance=<d>` S4's units and render distance. Only with the owner's consent.
+- `-Dstrategos.fixtures.update=true` (on `:core:test` or `:mod:test`) writes missing save
+  fixtures and corrupted-corpus files, and `-Dstrategos.golden.update=true` rewrites the S6
+  canary golden; both are rare, deliberate and reviewed (§ Fixture catalogue).
 
 ## Where tests live
 
@@ -156,7 +174,9 @@ At 600 units, the multiplayer design scale of 4 × 150 ([ADR-0019](adr/0019-perf
 | F — client frame, 200 units on screen | p50 ≤ 16.7 ms (60 fps), p99 ≤ 25 ms; our own drawing ≤ 3 ms; units ≤ 6 ms; client tick ≤ 1 ms |
 | G — memory and saves | core state ≤ 64 MB per 384² match; nav ≤ 32 MB at 512²; autosave ≤ 100 ms |
 
-These are estimates until spikes S1, S2 and S4 measure them. Each milestone's perf gate
+S1 and S2 measured them in M0, far inside every budget (a 600-unit tick about 0.05 ms p50, a
+384² arena idling at 0.06 ms); ADR-0019's revision proposal keeps them all, awaiting the owner,
+and budget F stays an estimate until S4 runs with consent. Each milestone's perf gate
 asserts the budgets at that milestone's target scale, from the
 [budget matrix](roadmap/M0-foundation.md#budget-matrix-per-milestone-delivered-and-kept-by-perf-01);
 a stress pass at twice that scale asserts only the whole tick, C p95 ≤ 50 ms, after 200 warm-up

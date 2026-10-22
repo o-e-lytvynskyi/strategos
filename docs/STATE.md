@@ -4,13 +4,24 @@ Where the project stands right now. The session log is in [worklog.md](worklog.m
 procedure is the `strategos-dev` skill (`.claude/skills/strategos-dev/SKILL.md`).
 
 **Last update:** 2026-10-22 · **Owner last seen:** 2026-10-22 · **Current:** M0 Foundation —
-started 2026-10-21 (owner's go-ahead)
+Done on 2026-10-22 (its automated gate), Acceptance waits for the owner's session; M1 is
+specified next
 
 ## For the owner
 
 Answer in chat or here; the next session applies the answers.
 
-1. **JMH baseline to approve (M0 T12).** `perf/candidate-m4pro.json` is the first JMH run on this
+1. **M0 is Done: your acceptance session (L7).** Everything automated passes; what is left is
+   yours. From the repository root run `scripts/playtest.sh`: it starts the dedicated server in
+   the terminal and two clients that join it. Then follow the demo in
+   [testing/playtest.md](testing/playtest.md): `op Dev1` in the server console; as Dev1
+   `/strategos match create 64 64`, `/strategos debug spawn 3`, `/strategos debug move ~20 ~`;
+   `/strategos hash` and `/strategos debug replay`; `stop`, start the server again with
+   `mod/build/moddev/runServer.sh`, rejoin, `/strategos match resume m1`; `/tick freeze`, `step 5`,
+   `unfreeze`; the singleplayer world switch. Fill in the checklist, the questionnaire and the
+   report there, or just tell me what you saw. «M0 принимаю» makes the cards `accepted`; any bug
+   becomes the first task.
+2. **JMH baseline to approve (M0 T12).** `perf/candidate-m4pro.json` is the first JMH run on this
    Mac (µs per operation): one core step with 600 walking units 14.1; the state hash of 600 units
    22.8, allocating nothing (0.16 B/op); encoding 500 units to JSON 220; 1,000 bus messages 13.7;
    the phase timers 0.113, 0.8 % of a step. Answer «одобряю бейзлайн» and the next session copies
@@ -18,12 +29,12 @@ Answer in chat or here; the next session applies the answers.
    slower, and CI gets its perf step. For scale, in a real server a match tick with 600 walking
    units takes about 0.05 ms (p50) and 0.3 ms (p99) against budget A's 5 and 10 ms, and saving a
    500-unit match about 1 ms against budget G's 100 ms.
-2. **Performance budgets to approve (M0 T14, PERF-01.3).** ADR-0019's
+3. **Performance budgets to approve (M0 T14, PERF-01.3).** ADR-0019's
    [revision proposal](adr/0019-performance-budgets.md#revision-proposal-from-m0-2026-10-22-proposed-awaiting-owner-approval)
    keeps every budget and the whole budget matrix as they are: what M0 measured is 20 to 100 times
    inside them, but the systems that will spend them (pathfinding, combat, economy, AI) come later.
    Answer «одобряю бюджеты» and the ADR becomes Accepted (budget F stays provisional until S4).
-3. **Consent batch for client windows (M0 T16, D-22).** The client harness is built and has never
+4. **Consent batch for client windows (M0 T16, D-22).** The client harness is built and has never
    been run. M0's batch opens a game window on this Mac and can take the keyboard focus, so it runs
    only when you say so, at a time that suits you:
    - S3: `./gradlew :mod:runScenario -Pscenario=smoke` ten times, `-Pscenario=stall
@@ -35,12 +46,12 @@ Answer in chat or here; the next session applies the answers.
 
    Answer «согласен на клиентский батч» (optionally with a time), and a session runs it while you
    are away from the keyboard. None of it blocks M0's Done.
-4. **Open decisions,** none urgent:
+5. **Open decisions,** none urgent:
    - D-03 civilisation themes (M7);
    - D-20 multiplayer hosting (M7);
    - D-07 licence and D-21 public release and name (first public release);
    - D-06 map generation (M12).
-5. **Optional reviews:**
+6. **Optional reviews:**
    - the card refinements made after the approval
      ([design/roadmap-changes.md §8](design/roadmap-changes.md));
    - the promo draft ([promo/roadmap-announcement.md](promo/roadmap-announcement.md)).
@@ -80,7 +91,7 @@ Answer in chat or here; the next session applies the answers.
 - 2026-10-22 · **M0 T12 Performance harness:** benchmarks of the core's kernels and two
   performance tests in a real server, each gate proved to fail on a synthetic overload and to
   refuse a verdict on a busy machine. The numbers are far inside the budgets; the benchmark
-  baseline waits for your approval (item 1 above). Cards QA-07, CORE-02 and CORE-07 are done.
+  baseline waits for your approval (item 2 above). Cards QA-07, CORE-02 and CORE-07 are done.
 - 2026-10-22 · **M0 T13 Spike S1, server cost per body:** a unit body costs the server about
   0.1 µs a tick, about 40 times less than a vanilla mob (4.9 µs; 2.2 with Lithium). The default
   population cap stays at 150 per player, as D-01 planned ([report](spikes/S1-server-cost-per-body.md)).
@@ -89,23 +100,28 @@ Answer in chat or here; the next session applies the answers.
   arena kept loaded with nobody online costs the server 0.06 ms a tick, and saving it about 5 ms,
   far inside the limits of 4 and 100 ms; units keep moving there for hours. All three arena sizes
   are affordable ([report](spikes/S2-force-loaded-arena.md)). The budget proposal waits for you
-  (item 2 above). Card PERF-03 is done.
+  (item 3 above). Card PERF-03 is done.
 - 2026-10-22 · **M0 T16 Client harness prepared:** scripted client scenarios (screenshots, a
   world switch, frame times with many units) are built and compile, but have not run: they open a
-  game window, so they wait for your consent (item 3 above).
+  game window, so they wait for your consent (item 4 above).
 - 2026-10-22 · **M0 T15 Build and determinism reports:** the build wiring and the determinism
   canary are confirmed with their final numbers (a clean full check in 39 s; the same results on
   macOS and Linux). Cards QA-01, QA-03 and CORE-05 are done.
+- 2026-10-22 · **M0 Foundation is Done:** all 25 tasks, in two working days; every automated check
+  of the milestone passes ([results](milestones/M0-foundation.md#101-results-m0-t17-2026-10-22)).
+  Eighteen cards are done; the other eight wait only for you: the acceptance session (item 1),
+  the two approvals (items 2 and 3) and the consent batch (item 4). The next sessions write M1's
+  spec; when it is ready you will be asked for «начинай M1».
 
 ## Now
 
-- **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 24 of 25 tasks done.
+- **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 25 of 25 tasks done; Done 2026-10-22, Acceptance waits for the owner.
 - **Tripwire (M0 only):** T1 started 2026-10-21; T9 green 2026-10-22; M0 work days 2 of 10.
 - **In progress:** none.
-- **Last finished task:** M0 T15 (2026-10-22); T16 was commit 9427f65.
-- **Next task:** M0 T17 · M0 close (all cards).
+- **Last finished task:** M0 T17 (2026-10-22); T15 was commit 34fbe38, its release workflow 125268c.
+- **Next task:** M1 · specify Movement (`docs/milestones/M1-movement.md`, the skill's §4).
 - **WIP branch:** none.
-- **CI:** green on `main` (M0 T7b review fix, run 39685642374, 6 min 28 s); minutes used this month about 83 of 2,000, as of 2026-10-22.
+- **CI:** green on `main` (M0 T15's release workflow, run 39697922471, 5 min 33 s) and the manual release run 39697935330 (the production jar on a headless client); minutes used this month about 170 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.
 
 ## Blocked
@@ -116,7 +132,7 @@ Nothing.
 
 | Milestone | Status | Notes |
 |---|---|---|
-| M0 Foundation | in progress | Started 2026-10-21; tripwire: walking skeleton within two weeks of M0 work (10 days with M0 commits) |
+| M0 Foundation | Done 2026-10-22; Acceptance waits | Started 2026-10-21; tripwire met on day 2; 18 of 26 cards done, 8 wait for the owner's session, approvals or consent |
 | M1–M6 (MVP) | approved | Specs are written by the assistant when each milestone starts |
 | M7–M15 | proposed | Approved by the owner closer to their time |
 
@@ -136,15 +152,18 @@ Nothing.
   - the owner approved M0–M6 and the decisions needed by M6;
   - the private GitHub repository;
   - the autonomy kit.
+- **2026-10-21 to 2026-10-22:** M0 built, all 25 tasks: the build and its gates, every test
+  harness, the deterministic kernel with persistence, quarantine and fault containment, the
+  walking skeleton, the performance harness and spikes S1, S2, S5 and S6, with S3 and S4 prepared.
 
 Details are in [worklog.md](worklog.md).
 
 ## Known follow-ups (not blocking)
 
 - [01-feasibility.md](01-feasibility.md) §3 predates the architecture in places; its precedence
-  note says the architecture and the ADRs win. Re-estimate it after M0.
+  note says the architecture and the ADRs win. §6.5 was re-estimated after M0 (2026-10-22).
 - ADRs owed by future cards:
   - ECO-03's leaf rule, which amends ADR-0021;
   - ECO-16's fauna archetype, which amends ADR-0011.
-- S5 confirms or updates ADR-0007's batch list, and measures `verify`'s 5-minute budget with the
-  harness runs (risk R20).
+- T18's CI perf step comes with the approved JMH baseline (item 2), since it needs it
+  (`jmhSpeedRatio`).

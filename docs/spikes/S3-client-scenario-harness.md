@@ -39,7 +39,9 @@ same scenario).
    must end it with exit 1, so the task fails, as designed (QA-06.1).
 4. The production-jar check (QA-06.2, §1.6 row 31): a separate NeoForge 21.1.264 client profile
    with `mod/build/libs/strategos-0.0.1.jar` in its `mods` folder reaches the title screen with
-   Strategos in the mod list and no error in its log.
+   Strategos in the mod list and no error in its log. CI's release workflow already does the
+   headless half: run 39697935330 (2026-10-22) found `strategos-0.0.1.jar` on a NeoForge 21.1.264
+   client under Xvfb, entered a world and finished cleanly.
 
 ## Results
 

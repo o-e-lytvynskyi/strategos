@@ -4102,7 +4102,7 @@ check and `release.yml`).
 
 - [x] T1 (2026-10-21) · [x] T2 (2026-10-21) · [x] T3 (2026-10-21) · [x] T18 (2026-10-21) · [x] T4a (2026-10-21) · [x] T4b (2026-10-21) · [x] T5a (2026-10-21) · [x] T5b (2026-10-21) · [x] T6a (2026-10-21) · [x] T6b (2026-10-21) · [x] T7a (2026-10-21) · [x] T7b (2026-10-21) · [x] T7c (2026-10-22) · [x] T8 (2026-10-22) · [x] T9 (2026-10-22)
 - [x] Tripwire checkpoint (dates in STATE.md; 2026-10-22, nothing cut)
-- [x] T9b (2026-10-22) · [x] T10 (2026-10-22) · [x] T11 (2026-10-22) · [x] T11b (2026-10-22) · [x] T12 (2026-10-22; the JMH baseline awaits the owner) · [x] T13 (2026-10-22) · [x] T14 (2026-10-22; the ADR-0019 revision awaits the owner) · [x] T15 (2026-10-22) · [x] T16 (2026-10-22; built, not run: consent) · [ ] T17
+- [x] T9b (2026-10-22) · [x] T10 (2026-10-22) · [x] T11 (2026-10-22) · [x] T11b (2026-10-22) · [x] T12 (2026-10-22; the JMH baseline awaits the owner) · [x] T13 (2026-10-22) · [x] T14 (2026-10-22; the ADR-0019 revision awaits the owner) · [x] T15 (2026-10-22) · [x] T16 (2026-10-22; built, not run: consent) · [x] T17 (2026-10-22)
 
 ---
 
@@ -4132,6 +4132,44 @@ Acceptance, not Done.
 | 16 | [D-22](../roadmap/M0-foundation.md#d-22--client-run-l4-consent-policy) and [D-23](../roadmap/M0-foundation.md#d-23--ci-and-the-private-github-repository) decided (as recommended, 2026-10-21); ADR-0022, accepted with the roadmap, confirmed by the session of row 14, the first use of the scripts and the protocol (QA-09.5); the consent batch of §7.7 run or pending | STATE.md "Waiting for the owner" |
 
 ---
+
+### 10.1 Results (M0 T17, 2026-10-22)
+
+Rows 1–13, the Done gate, pass; rows 14–16, the owner's Acceptance, wait for the owner. M0 is
+**Done, pending Acceptance**.
+
+| # | Outcome |
+|---|---|
+| 1 | Every card is `done` except those whose open criteria wait for the owner and never block Done: QA-06 and PERF-04 (consent), CORE-01 (`world_switch`, consent, and demo step 7), QA-09 and ORD-01 (the M0 acceptance session), PERF-01 (the owner's approval of the ADR-0019 revision), CORE-04 (the approved JMH baseline) and UNIT-01 (criterion 5 is NET-01's, in M1). QA-08 is done: the manual release run 39697935330 started the production jar on a headless NeoForge 21.1.264 client, which entered a world and finished cleanly |
+| 2 | `clean verify` without the build cache green in 39.3 s, warm 31.2 s; `verifySlow` 6.2 s and `verifySoak` 9.1 s green; `verifyHarness` (12.3 s) proves every guard listed, `checkFixturesSelftest` and `jmhSelftest` included ([S5](../spikes/S5-build-wiring.md)) |
+| 3 | The probes bite: S5 checks 9–12; the configuration cache is reused on the second `verifyFast` (check 2) |
+| 4 | `checkJarContents`, `buildtests.*` and smoke step 1 pass |
+| 5 | 20 of 20 `scenarios.walking_skeleton_seed_*`; `scenarios.out_of_bounds` refused with `OUT_OF_BOUNDS`; the L1 trace; 73 GameTests equal their L1 twins and 73 journals replay to their live hashes; `persistencetests.save_restore_same_hash`; the restart round trip has one body per unit and equals the replay of both journals (T9b) |
+| 6 | `MatchSnapshotNbtTest`, `MatchSnapshotJsonFixtureTest`, `MatchSnapshotFixtureTest` with `MigrationsTest`; both quarantine GameTests keep their files (mutants proved them); `CorruptCorpusTest` over 7 corpus files |
+| 7 | The four `faulttests.*`, each report's journal replaying to the fault's hash |
+| 8 | `:core:test` 616 tests in 3.6 s, the soak 200 × 10,000 in 8.4 s, `DeterminismCanaryTest` ([S6](../spikes/S6-determinism-canary.md)) |
+| 9 | 13 core and 11 mod ArchUnit rules on the code and on their fixtures; `EngineSurfaceInventoryTest` and its three made-up surfaces; `checkFixtures`, `checkTestFixturesDeps`; the log scan |
+| 10 | JMH writes `result.json` with allocations; `jmhSelftest` fails both files as designed; both perf GameTests pass (A: p50 0.05 ms, p99 0.3 ms; G: median about 1 ms); the overload and `INVALID` checks behave; the candidate baseline and the five-run CVs (A 4.9 %, G 3.2 %) are with the owner. `verifyPerf` stops at `jmhCompare` ("No approved JMH baseline") until the owner approves, as designed |
+| 11 | L3 4.2 s against 3 minutes; smoke run 1 11.5 s against 60 s; `:mod:test` 4.0 s against 60 s; warm `verifyFast` 0.4 s (8.6 s from clean) against 1 minute; `verify` 39 s against 5 minutes; `verifySlow` and `verifySoak` reported |
+| 12 | S1, S2, S5 and S6 reports with numbers; ADR-0007 Accepted; ADR-0011 and ADR-0019 carry S1 and S2; S3 and S4 written as plans pending consent |
+| 13 | Tripwire: T1 started 2026-10-21, T9 green 2026-10-22, nothing cut; STATE.md, 05-testing.md (commands, times, the fixture catalogue), playtest.md and the knowledge base are current |
+| 14 | Waits for the owner: the demo of §1.3 with `scripts/playtest.sh` and the questionnaire |
+| 15 | Waits for the owner: the ADR-0019 revision and the JMH baseline; the S1 numbers kept D-01 at 150 |
+| 16 | D-22 and D-23 decided on 2026-10-21; ADR-0022's confirmation comes with row 14's session; the consent batch waits for the owner |
+
+**Numbers.** 25 tasks in two working days (2026-10-21 and 2026-10-22), against the plan's 66
+card-days and 4–6 weeks. 616 L1, 45 L2, 11 archTest and 97 GameTests, and CI on Linux in 6 to 10
+minutes. A kinematic body costs the server 0.12 µs a tick, a 384² arena 0.06 ms idle.
+
+**Deviations.** §1.6 rows 1–62; those after T8 came from building the persistence, the static
+gates, the fault containment, the perf harness and the spikes, and none changed the product.
+
+**Follow-ups.**
+- The owner's items in STATE.md: the M0 acceptance session, the budget revision, the JMH
+  baseline, the client consent batch.
+- With the approved baseline: T18's CI perf step (`:core:jmh :core:jmhSpeedRatio
+  :mod:runGameTestPerf -Pperf.ciFactor=3`).
+- M1 is specified next.
 
 ## 11. Risks and fallbacks
 

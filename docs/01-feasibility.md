@@ -803,6 +803,20 @@ card-days, but its cards start right after M0 on the client track beside the hea
 M1, M3 and M6 shrink. That does not contradict the estimate, so the MVP stays at 35–49 weeks, with
 M2's weeks counted from M1's Done. The whole table is re-estimated after M0 from measured
 throughput (§8). M9–M15 follow in ROADMAP.md; the whole roadmap is 243 cards and 928 card-days,
+
+**Re-estimate after M0 (2026-10-22).** M0's Done gate took two working days of unattended
+assistant runs (2026-10-21 and 2026-10-22) against the 4–6 weeks above, and next to none of the
+owner's hours: approvals, the CI setup and the permission list. Its Acceptance (the playtest,
+the budget approval, the client consent batch) is the part that waits for the owner. So:
+- the code-heavy, headless work (M1, most of M4, the AI and simulation cards of M5 and M6) runs
+  at the assistant's pace, days to a few weeks a milestone, and stops being the calendar's limit;
+- the calendar is set by what needs the owner in a running client: M2's camera and feel, M3's
+  "would I play another?", the balance and AI verdicts of M5 and M6, and every milestone's
+  playtest. At 12–15 owner hours a week those keep roughly the weeks of the table for M2, M3, M5
+  and M6;
+- the MVP estimate moves from 35–49 weeks to about 20–30, bounded by the owner's playtests,
+  approvals and consent batches rather than by code. The next re-estimate follows M1, the first
+  milestone with real pathfinding.
 plus two reserve cards.
 
 ---
