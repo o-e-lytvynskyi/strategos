@@ -11,8 +11,8 @@ data or art from those games.
 
 ## Status
 
-Design complete; M0 "Foundation" is in progress since 2026-10-21. The roadmap is approved up to
-the first playable version (M0–M6). See [docs/STATE.md](docs/STATE.md).
+Design complete; M0 "Foundation" was accepted on 2026-10-22, and M1 "Movement" is in progress
+since 2026-10-22. The roadmap is approved up to the first playable version (M0–M6). See [docs/STATE.md](docs/STATE.md).
 
 ## Documentation
 
