@@ -1,0 +1,7 @@
+{
+  "parent": "strategos:template/unit_base",
+  "abstract": true,
+  "Identity": { "classes": "+Infantry +Melee" },
+  "Health": { "max": { "$op": "mul", "value": 1.2 } },
+  "Attack": { "Melee": { "damage": { "hack": 4 } } }
+}

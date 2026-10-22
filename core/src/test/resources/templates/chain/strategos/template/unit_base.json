@@ -1,0 +1,8 @@
+{
+  "abstract": true,
+  "Identity": { "classes": "Unit Organic" },
+  "UnitMotion": { "walkSpeed": 0.2, "turnRate": 45 },
+  "Body": { "entityType": "strategos:unit_humanoid", "width": 0.6, "height": 1.8 },
+  "Health": { "max": 100 },
+  "Cost": { "food": 50, "population": 1 }
+}

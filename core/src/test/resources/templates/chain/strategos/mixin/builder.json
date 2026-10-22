@@ -1,0 +1,6 @@
+{
+  "abstract": true,
+  "Identity": { "classes": "+Builder" },
+  "Builder": { "rate": 1.0 },
+  "Cost": { "wood": 10 }
+}

@@ -10,32 +10,44 @@ import org.junit.jupiter.api.Test;
 class TemplateSetTest {
 
     @Test
-    void builtinHoldsTheDebugWalker() {
+    void builtinHoldsTheDebugWalkerAndTheInfantry() {
         TemplateSet set = TemplateSet.builtin();
-        UnitTemplate walker = set.byId(new TemplateId("strategos:unit/debug_walker"));
+        UnitTemplate walker = set.byId(TemplateSet.DEBUG_WALKER);
+        UnitTemplate infantry = set.byId(TemplateSet.INFANTRY);
 
         assertThat(walker).isNotNull();
-        assertThat(walker.netIndex()).isZero();
+        assertThat(walker.netIndex()).as("ids sort debug_walker first").isZero();
         assertThat(walker.walkSpeed()).isEqualTo(0.25);
         assertThat(walker.bodyType()).isEqualTo("strategos:unit_humanoid");
         assertThat(walker.width()).isEqualTo(0.6f);
         assertThat(walker.height()).isEqualTo(1.8f);
+        assertThat(walker.classes()).containsExactly("Unit");
+        assertThat(infantry).isNotNull();
+        assertThat(infantry.netIndex()).isEqualTo(1);
+        assertThat(infantry.walkSpeed()).as("3/16, exact in binary").isEqualTo(0.1875);
+        assertThat(infantry.classes()).containsExactly("Infantry", "Organic", "Unit");
         assertThat(set.byIndex(0)).isSameAs(walker);
-        assertThat(set.all()).containsExactly(walker);
+        assertThat(set.all()).containsExactly(walker, infantry);
         assertThat(set.byId(new TemplateId("strategos:unit/nobody"))).isNull();
+        assertThat(set.tokens().all()).containsExactly("Infantry", "Organic", "Unit");
+        assertThat(set.valuePaths().byPath("UnitMotion/walkSpeed")).isNotNull();
     }
 
     @Test
-    void hashMatchesItsGoldenValue() {
-        // Computed once from the field order of TemplateSet#hash by an independent implementation.
-        assertThat(TemplateSet.builtin().hash()).isEqualTo(1408803309861886479L);
+    void theVersionIsTheShaOfTheCanonicalJson() {
+        TemplateSet set = TemplateSet.builtin();
+        assertThat(set.version()).as("pins the canonical form").isEqualTo(BUILTIN_VERSION);
+        assertThat(set.hash()).isEqualTo(Long.parseUnsignedLong(BUILTIN_VERSION.substring(0, 16), 16));
     }
 
     @Test
     void everyFieldChangesTheHash() {
         long base = set(new UnitTemplate(TemplateSet.DEBUG_WALKER, 0, "strategos:unit_humanoid", 0.25, 0.6f, 1.8f))
                 .hash();
-        assertThat(base).isEqualTo(TemplateSet.builtin().hash());
+        assertThat(set(new UnitTemplate(TemplateSet.DEBUG_WALKER, 0, "strategos:unit_humanoid", 0.25, 0.6f, 1.8f))
+                        .hash())
+                .as("equal content, equal hash")
+                .isEqualTo(base);
         assertThat(set(new UnitTemplate(
                                 new TemplateId("strategos:unit/other"), 0, "strategos:unit_humanoid", 0.25, 0.6f, 1.8f))
                         .hash())
@@ -64,8 +76,10 @@ class TemplateSetTest {
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> set(new UnitTemplate(walker.id(), 0, walker.bodyType(), 0, 0.6f, 1.8f)))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> TemplateSet.builtin().byIndex(1)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> TemplateSet.builtin().byIndex(2)).isInstanceOf(IllegalArgumentException.class);
     }
+
+    private static final String BUILTIN_VERSION = "0ffbbb73061fbadac5bbae73683df52c361eda364a470c007c7d4dcc9150d641";
 
     private static TemplateSet set(UnitTemplate template) {
         return new TemplateSet(List.of(template));

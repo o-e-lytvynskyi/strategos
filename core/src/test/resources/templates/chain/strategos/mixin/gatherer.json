@@ -1,0 +1,6 @@
+{
+  "abstract": true,
+  "Identity": { "classes": "+Gatherer" },
+  "Gatherer": { "rates": { "food": 0.5 } },
+  "Abilities": ["gather"]
+}

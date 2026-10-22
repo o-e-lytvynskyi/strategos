@@ -146,7 +146,8 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
   5. Resolving 500 templates takes under 200 ms (L6).
 - **Tests:** L0, L1, L6 · **Fixtures:** test template sets · **Depends on:** QA-02 · **Size:** M ·
   **Tier:** T0
-- **Status:** specified
+- **Done:** 2026-10-22 — M1 T11: `TemplateCompilerTest.chainWithTwoMixins` against `golden/spearman_flat.json` (1); `MergeOpsTest`, 16 rows (2); `TemplateProblemsTest`: a cycle naming its chain, unknown parents and mixins, bad fields, all reported together (3); `TemplateFilterTest` (4); `TemplateCompileBench.compile500` 4.15 ms against 200 ms (5)
+- **Status:** done
 
 #### DATA-02 · Modifier pipeline
 - **Value:** Technologies, ranks, civilisation bonuses, high ground and AI handicaps stack

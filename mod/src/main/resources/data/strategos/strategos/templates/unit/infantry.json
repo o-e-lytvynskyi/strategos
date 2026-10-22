@@ -1,0 +1,5 @@
+{
+  "parent": "strategos:template/unit_infantry",
+  "Identity": { "name": "strategos.unit.infantry" },
+  "Body": { "skin": "strategos:units/infantry" }
+}

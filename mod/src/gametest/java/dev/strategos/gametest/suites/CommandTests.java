@@ -7,6 +7,7 @@ import static dev.strategos.gametest.suites.Units.unit;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.tree.CommandNode;
+import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.CommandOutcome;
 import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.OutputEvent;
@@ -86,6 +87,31 @@ public final class CommandTests {
                             .filter(l -> l.endsWith("accepted 3/3"))
                             .count();
                     check(replies == 2, "the source got " + recorder.lines + ", not two replies of accepted 3/3");
+                })
+                .thenSucceed();
+    }
+
+    /** DATA-01: {@code spawn <template> <count>} spawns units of any template the match's set holds, and refuses others. */
+    @StrategosTest
+    public static void spawnAnyTemplate(GameTestHelper h) {
+        MatchRuntime rt = match(h);
+        Recorder recorder = new Recorder();
+        CommandSourceStack source = recorder.at(h, new Vec3(16.5, 1, 16.5));
+        perform(h, source, "strategos spawn strategos:unit/infantry 3");
+        perform(h, source, "strategos spawn strategos:unit/nobody 2");
+        h.startSequence()
+                .thenWaitUntil(() -> check(recorder.lines.size() == 2, "replies so far: " + recorder.lines))
+                .thenExecute(() -> {
+                    int[] units = handles(rt);
+                    check(units.length == 3, units.length + " units, not 3 infantry");
+                    for (int handle : units) {
+                        check(
+                                unit(rt, handle).template().equals(TemplateSet.INFANTRY),
+                                "unit " + handle + " is a " + unit(rt, handle).template());
+                    }
+                    check(
+                            recorder.lines.stream().anyMatch(l -> l.contains("UNKNOWN_TEMPLATE")),
+                            "the unknown template was not refused: " + recorder.lines);
                 })
                 .thenSucceed();
     }

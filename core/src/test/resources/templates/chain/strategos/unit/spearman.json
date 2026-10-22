@@ -1,0 +1,10 @@
+{
+  "parent": "strategos:template/unit_infantry_melee",
+  "mixins": ["strategos:mixin/builder", "strategos:mixin/gatherer"],
+  "Identity": { "name": "strategos.unit.spearman", "classes": "+Spearman -Organic" },
+  "Cost": { "food": { "$op": "add", "value": 10 } },
+  "Health": { "max": { "$op": "mul", "value": 1.1 } },
+  "Attack": { "Melee": { "damage": { "pierce": 4.5 } } },
+  "Abilities": { "$append": ["build"] },
+  "Body": { "skin": "strategos:units/spearman" }
+}

@@ -16,6 +16,7 @@ import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Hex64;
 import dev.strategos.core.shared.MatchId;
 import dev.strategos.core.shared.PlayerSlot;
+import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.MatchCore;
@@ -38,6 +39,7 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.ResourceLocationArgument;
 import net.minecraft.commands.arguments.coordinates.ColumnPosArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -94,6 +96,21 @@ public final class StrategosCommands {
                             registry().dispose(rt.id());
                             return rt.id() + " disposed";
                         })))
+                .then(Commands.literal("spawn")
+                        .then(Commands.argument("template", ResourceLocationArgument.id())
+                                .executes(ctx -> spawn(ctx.getSource(), template(ctx), 1, 0))
+                                .then(Commands.argument("count", IntegerArgumentType.integer(1, UnitSet.MAX_SIZE))
+                                        .executes(ctx -> spawn(
+                                                ctx.getSource(),
+                                                template(ctx),
+                                                IntegerArgumentType.getInteger(ctx, "count"),
+                                                0))
+                                        .then(Commands.argument("slot", IntegerArgumentType.integer(0, FactionSlot.MAX))
+                                                .executes(ctx -> spawn(
+                                                        ctx.getSource(),
+                                                        template(ctx),
+                                                        IntegerArgumentType.getInteger(ctx, "count"),
+                                                        IntegerArgumentType.getInteger(ctx, "slot")))))))
                 .then(Commands.literal("debug")
                         .then(Commands.literal("spawn")
                                 .executes(ctx -> spawn(ctx.getSource(), 1, 0))
@@ -191,13 +208,15 @@ public final class StrategosCommands {
     }
 
     private static int spawn(CommandSourceStack source, int count, int faction) {
+        return spawn(source, TemplateSet.DEBUG_WALKER, count, faction);
+    }
+
+    /** Units of {@code template} around the source, through the command path (an unknown template is refused there). */
+    private static int spawn(CommandSourceStack source, TemplateId template, int count, int faction) {
         return withMatchAtSource(source, rt -> {
             MatchSpace space = rt.space();
             Vec2d at = new Vec2d(space.localX(source.getPosition().x), space.localZ(source.getPosition().z));
-            send(
-                    source,
-                    rt,
-                    new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(faction), at, count, count > 1 ? 2 : 0));
+            send(source, rt, new SpawnUnits(template, new FactionSlot(faction), at, count, count > 1 ? 2 : 0));
             return null;
         });
     }
@@ -324,6 +343,10 @@ public final class StrategosCommands {
         }
         return rt.id() + ": journal of ticks " + export.journal().startTick() + "–" + export.liveTick()
                 + " saved to strategos/journals/" + name + ".strj";
+    }
+
+    private static TemplateId template(CommandContext<CommandSourceStack> ctx) {
+        return new TemplateId(ResourceLocationArgument.getId(ctx, "template").toString());
     }
 
     private static MatchCore coreOf(MatchRuntime rt) {

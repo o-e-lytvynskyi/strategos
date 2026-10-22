@@ -9,8 +9,17 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2
+## 2026-10-22 — M1 start, T1, T2, T11
 
+- **M1 T11 · Template engine** — DATA-01 done.
+  - **Results:** `TemplateCompiler` (parent chains with cycle detection naming the chain, mixins,
+    `$op`, `$disable`, `$append`, `$remove`, class-token edits, abstract templates), every problem
+    collected with file and JSON pointer, `TemplateFilter` (foundation, preview, mirage),
+    canonical JSON and SHA-256 versions, class tokens and value paths interned; the builtin set
+    (debug walker, infantry) compiled from the bundled JSON; `/strategos spawn`. 26 content tests
+    (16 merge rows), the golden spearman; 500 templates in 4.15 ms; `verify` 34 s, 99 GameTests.
+  - **Problems:** mixins merged in flattened form turned class edits into replacements; they are
+    now overlays applied as written (spec §1.6 D rows 8–10).
 - **M1 T2 · Block classes and surface pages** — PATH-02 done.
   - **Results:** `BlockClass` (16 bits: collision top and flags), `VoxelSlice` with its run-length
     form, `PageBuilder` (up to 4 surfaces a column, kinds, in-page links, cost codes, footprints),

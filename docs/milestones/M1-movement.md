@@ -217,6 +217,9 @@ cards, does not exist for M1: the M1 cards were final when this spec was written
 | 5 | §5.4: links across page edges are computed when a page is published next to its neighbours | Pages hold in-page links only; `SurfaceGrid.neighbour` applies the same rule (`PageBuilder.linkable`) across page edges at query time, so republishing a page never touches its neighbours. Cost codes count blocked neighbours inside the page; a page edge counts as open |
 | 6 | §6.2: the table reads `#doors`, `#fence_gates`, `#fences`, `#walls`, `#leaves`, `#climbable` and fluid tags | Tags are not bound before a server loads its data packs (L2 has none), so vanilla's doors, gates, fences, walls, leaves and climbables are recognised by their block classes and water and lava by their fluid types; the tags still add other mods' blocks. The table is rebuilt on `TagsUpdatedEvent` (server data load) as well as `DataMapsUpdatedEvent`. The data map is not synced: clients do not need it in M1 |
 | 7 | §9.2 T2: `:core:jmh -Pjmh.includes=…` | The property is `-Pjmh.include=<regex>` (M0's) |
+| 8 | §5.3: mixins merge after the parent, "each parent, then the mixins left to right" | A mixin is laid over the child's inherited JSON as written, so its class edits stay edits (`+Builder` adds, it does not replace) and its `$op`s apply to what the child inherits; a mixin therefore has no parent or mixins of its own, and a template some other template lists as a mixin is an overlay that is never compiled on its own |
+| 9 | §5.3: decode the flattened JSON with core DFU codecs | A field-by-field reader decodes the unit components, so every problem carries its exact JSON pointer (`/UnitMotion/walkSpeed: expected a number, got "fast"`); DFU stays for snapshots and manifests |
+| 10 | §5.3: `UnitTemplate` is rewritten | It grows (name, classes, turn rate, mobility, model, skin, radius) and keeps M0's six-field constructor for code-defined sets; `TemplateSet.builtin()` compiles the bundled JSON (debug walker and infantry, mirrored in `mod/src/main/resources/data/strategos/strategos/templates/`) with the same compiler, and its version is pinned by `TemplateSetTest`. Net indices follow id order until T16's `TemplateIdTable`. The infantry walks 0.1875 blocks a tick (3/16, exact in binary). 500 templates compile in 4.15 ms (`TemplateCompileBench`, against 200 ms) |
 
 ---
 
@@ -1569,7 +1572,7 @@ are green and its negative checks behave as stated.
 
 ### 9.3 Progress
 
-- [x] T1 (2026-10-22) · [x] T2 (2026-10-22) · [ ] T11 · [ ] T3 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T12 · [ ] T10
+- [x] T1 (2026-10-22) · [x] T2 (2026-10-22) · [x] T11 (2026-10-22) · [ ] T3 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T12 · [ ] T10
 - [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17 · [ ] T18 · [ ] T19 · [ ] T20 · [ ] T21 · [ ] T22
 - [ ] T23 · [ ] T24 · [ ] T25 · [ ] T26 · [ ] T27
 

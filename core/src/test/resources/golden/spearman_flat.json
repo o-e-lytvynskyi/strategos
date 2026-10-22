@@ -1,0 +1,11 @@
+{
+  "Abilities": ["gather", "build"],
+  "Attack": { "Melee": { "damage": { "hack": 4, "pierce": 4.5 } } },
+  "Body": { "entityType": "strategos:unit_humanoid", "height": 1.8, "skin": "strategos:units/spearman", "width": 0.6 },
+  "Builder": { "rate": 1.0 },
+  "Cost": { "food": 60, "population": 1, "wood": 10 },
+  "Gatherer": { "rates": { "food": 0.5 } },
+  "Health": { "max": 132 },
+  "Identity": { "classes": "Builder Gatherer Infantry Melee Spearman Unit", "name": "strategos.unit.spearman" },
+  "UnitMotion": { "turnRate": 45, "walkSpeed": 0.2 }
+}

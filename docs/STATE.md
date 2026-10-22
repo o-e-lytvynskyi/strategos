@@ -35,13 +35,17 @@ Answer in chat or here; the next session applies the answers.
 - 2026-10-22 · **M1 T2 Terrain pages:** every block state now has a navigation class, and 16 x 16
   pages of standable surfaces are built from them: slabs, stairs, carpets, snow, water, doors,
   bridges, wall walkways and tower floors, in 27 µs a page. Card PATH-02 is done.
+- 2026-10-22 · **M1 T11 Template engine:** units are now defined in JSON with parents, mixins and
+  edit operations; every mistake is reported with its file and field, all at once; 500 templates
+  compile in 4 ms. `/strategos spawn <template> [count] [slot]` spawns any unit type. Card DATA-01
+  is done.
 
 ## Now
 
-- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 2 of 27 tasks done.
+- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 3 of 27 tasks done.
 - **In progress:** none.
-- **Last finished task:** M1 T2 (2026-10-22).
-- **Next task:** M1 T11 · Template engine.
+- **Last finished task:** M1 T11 (2026-10-22).
+- **Next task:** M1 T3 · Spike S8: terrain census.
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 220 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.
