@@ -4,7 +4,8 @@ import com.mojang.blaze3d.platform.GlUtil;
 import com.mojang.blaze3d.platform.Window;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.server.IntegratedServer;
-import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.core.BlockPos;
+import org.lwjgl.glfw.GLFW;
 
 /** S3's smoke (QA-06.1): five units at the player, a fixed camera, three PNGs and the window's facts. */
 final class SmokeScenario implements Scenario {
@@ -15,9 +16,10 @@ final class SmokeScenario implements Scenario {
 
     @Override
     public void setup(IntegratedServer server, ScenarioContext ctx) {
-        ServerPlayer player = ScenarioWorld.player(server);
-        ScenarioWorld.matchAtPlayer(server, 16, 5, false);
-        ScenarioWorld.camera(server, player.getX(), player.getY() + 6, player.getZ() - 6, 0, 45);
+        BlockPos anchor = ScenarioWorld.anchor(server);
+        ScenarioWorld.matchAtAnchor(server, 16, 5, false);
+        ScenarioWorld.camera(server, anchor.getX() + 0.5, anchor.getY() + 6, anchor.getZ() - 5.5, 0, 45);
+        ctx.holdCamera(anchor.getX() + 0.5, anchor.getY() + 6, anchor.getZ() - 5.5, 0, 45);
     }
 
     @Override
@@ -29,6 +31,13 @@ final class SmokeScenario implements Scenario {
             return false;
         }
         Window window = mc.getWindow();
+        float[] scaleX = new float[1];
+        float[] scaleY = new float[1];
+        GLFW.glfwGetWindowContentScale(window.getWindow(), scaleX, scaleY);
+        ctx.result.addProperty("windowFocused", GLFW.glfwGetWindowAttrib(window.getWindow(), GLFW.GLFW_FOCUSED) != 0);
+        ctx.result.addProperty("contentScale", scaleX[0]);
+        ctx.result.addProperty("windowWidth", window.getScreenWidth());
+        ctx.result.addProperty("windowHeight", window.getScreenHeight());
         ctx.result.addProperty("framebufferWidth", window.getWidth());
         ctx.result.addProperty("framebufferHeight", window.getHeight());
         ctx.result.addProperty("guiScale", window.getGuiScale());

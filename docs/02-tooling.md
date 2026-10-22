@@ -64,8 +64,11 @@ JOML or Netty ([ADR-0003](adr/0003-module-layout-and-core-merge.md)).
 - **spark 1.10.124** as `localRuntime` for profiling in dev runs; JFR (`/jfr start|stop`,
   `jfr view hot-methods`) for text-readable profiles; async-profiler 4.x with `-e itimer` on macOS.
 - **Compatibility profile** `-Pcompat` adds Sodium 0.8.13, Iris 1.8.14-beta.1, Lithium,
-  ModernFix, FerriteCore, Entity Culling and ImmediatelyFast to dev runs, so every client
-  feature can be checked against the mods most players run.
+  ModernFix, FerriteCore, Entity Culling and ImmediatelyFast to dev client runs, so every client
+  feature can be checked against the mods most players run. They go into the run's `mods`
+  folder (`strategos-compat-*.jar`), since FML does not unpack a classpath mod's JarJar
+  libraries; `-Pcompat.server` puts Lithium, ModernFix and FerriteCore on a server run's
+  classpath, where they need none.
 - **CI** (D-23; M0 T18, in the private repository `o-e-lytvynskyi/strategos`): one Linux job on GitHub Actions with
   `gradle/actions/setup-gradle` on `cache-provider: basic`; client scenarios under Xvfb + Mesa.
 

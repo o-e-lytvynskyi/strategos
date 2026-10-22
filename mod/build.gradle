@@ -33,6 +33,15 @@ def localRuntime = configurations.create('localRuntime') {
     description = 'Dev-only runtime mods (spark, compat profiles); never published or shipped.'
 }
 configurations.named('runtimeClasspath') { extendsFrom localRuntime }
+// The client compatibility set (-Pcompat) goes into a client run's mods folder, not onto the classpath: FML does
+// not extract the JarJar libraries of a mod it is handed from the classpath ("passed in as source"), so Sodium
+// lost its API and every client crashed (found by S4, 2026-10-22).
+def clientCompat = configurations.create('clientCompat') {
+    canBeConsumed = false
+    canBeResolved = true
+    transitive = false
+    description = 'Dev-only client mods of -Pcompat, copied into client runs\' mods folders.'
+}
 
 neoForge {
     version = libs.versions.neoforge.get()
@@ -266,13 +275,13 @@ dependencies {
         add('localRuntime', libs.spark)
     }
     if (providers.gradleProperty('compat').isPresent()) {
-        add('localRuntime', libs.compat.sodium)
-        add('localRuntime', libs.compat.iris)
-        add('localRuntime', libs.compat.lithium)
-        add('localRuntime', libs.compat.modernfix)
-        add('localRuntime', libs.compat.ferritecore)
-        add('localRuntime', libs.compat.entityculling)
-        add('localRuntime', libs.compat.immediatelyfast)
+        add('clientCompat', libs.compat.sodium)
+        add('clientCompat', libs.compat.iris)
+        add('clientCompat', libs.compat.lithium)
+        add('clientCompat', libs.compat.modernfix)
+        add('clientCompat', libs.compat.ferritecore)
+        add('clientCompat', libs.compat.entityculling)
+        add('clientCompat', libs.compat.immediatelyfast)
     } else if (providers.gradleProperty('compat.server').isPresent()) {
         add('localRuntime', libs.compat.lithium)
         add('localRuntime', libs.compat.modernfix)
@@ -477,10 +486,31 @@ tasks.matching { it.name == 'runSpike' }.configureEach {
     }
 }
 
+// The owner's client runs get -Pcompat's client set in their mods folders, renamed strategos-compat-*, and lose
+// it again in a run without -Pcompat; mods the owner put there themselves are never touched.
+def clientRunDirs = [file('run/client'), file('run/client2')]
+def installClientCompat = tasks.register('installClientCompat') {
+    def jars = files(clientCompat)
+    inputs.files(jars)
+    outputs.upToDateWhen { false }
+    doLast {
+        clientRunDirs.each { File dir ->
+            def mods = new File(dir, 'mods')
+            mods.mkdirs()
+            (mods.listFiles({ File f -> f.name.startsWith('strategos-compat-') } as FileFilter) ?: []).each { it.delete() }
+            jars.each { File jar -> java.nio.file.Files.copy(jar.toPath(), new File(mods, "strategos-compat-${jar.name}").toPath()) }
+        }
+    }
+}
+neoForge.runs.client.taskBefore installClientCompat
+neoForge.runs.client2.taskBefore installClientCompat
+neoForge.runs.clientJoin.taskBefore installClientCompat
+
 // [T16] L4, only with the owner's consent: a fresh game directory per run, and the verdict is
 // result.json with "ok": true (the watchdog exits 1 without one).
 def prepareScenario = tasks.register('prepareScenario', Sync) {
     from 'src/devtools/scenario-gamedir'
+    from(clientCompat) { into 'mods' }                  // -Pcompat only; empty otherwise
     into layout.buildDirectory.dir('scenario')
     outputs.upToDateWhen { false }                      // as prepareServerSmoke
 }

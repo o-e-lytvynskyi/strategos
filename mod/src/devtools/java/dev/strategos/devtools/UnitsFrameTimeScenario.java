@@ -4,7 +4,8 @@ import dev.strategos.mod.server.match.MatchRuntime;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.server.IntegratedServer;
-import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.core.BlockPos;
+import net.neoforged.fml.ModList;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -15,8 +16,11 @@ import org.jspecify.annotations.Nullable;
 final class UnitsFrameTimeScenario implements Scenario {
     private static final int FRAMES = 600;
     private static final int SETTLE = 40;
+    /** After the render distance changes, at least this many ticks and every section rendered before timing. */
+    private static final int LOAD_MIN = 100;
 
     private enum Stage {
+        LOADING,
         BASELINE,
         SPAWNING,
         SETTLING,
@@ -29,10 +33,15 @@ final class UnitsFrameTimeScenario implements Scenario {
     private final AtomicInteger bodies = new AtomicInteger();
     private volatile @Nullable MatchRuntime match;
     private @Nullable IntegratedServer server;
-    private Stage stage = Stage.BASELINE;
+    private Stage stage = Stage.LOADING;
     private int settled;
+    private int loading;
     private FrameTimer frames = new FrameTimer(FRAMES);
+    /** From one frame's start to the next's, with no frame limit: CPU and GPU together, as the screen sees it. */
+    private FrameTimer intervals = new FrameTimer(FRAMES);
+
     private FrameTimer ticks = new FrameTimer(FRAMES);
+    private double baselineIntervalP50 = Double.NaN;
     private double baselineP50 = Double.NaN;
 
     @Override
@@ -43,14 +52,17 @@ final class UnitsFrameTimeScenario implements Scenario {
     @Override
     public void setup(IntegratedServer server, ScenarioContext ctx) {
         this.server = server;
-        ServerPlayer player = ScenarioWorld.player(server);
-        ScenarioWorld.camera(server, player.getX(), player.getY() + 30, player.getZ() - 25, 0, 50);
+        BlockPos anchor = ScenarioWorld.anchor(server);
+        ScenarioWorld.camera(server, anchor.getX() + 0.5, anchor.getY() + 30, anchor.getZ() - 24.5, 0, 50);
+        ctx.holdCamera(anchor.getX() + 0.5, anchor.getY() + 30, anchor.getZ() - 24.5, 0, 50);
     }
 
     @Override
     public void frameStart() {
+        intervals.end();
         if (stage == Stage.BASELINE || stage == Stage.UNITS) {
             frames.start();
+            intervals.start();
         }
     }
 
@@ -75,15 +87,24 @@ final class UnitsFrameTimeScenario implements Scenario {
     public boolean tick(Minecraft mc, ScenarioContext ctx, int tick) {
         if (tick == 1) {
             mc.options.renderDistance().set(renderDistance);
+            mc.options.framerateLimit().set(260); // unlimited, so the interval measures the frame, not the cap
         }
         IntegratedServer s = server;
         switch (stage) {
+            case LOADING -> {
+                if (++loading >= LOAD_MIN && mc.levelRenderer.hasRenderedAllSections()) {
+                    ctx.result.addProperty("loadTicks", loading);
+                    stage = Stage.BASELINE;
+                }
+            }
             case BASELINE -> {
                 if (frames.full()) {
                     baselineP50 = frames.ms(0.50);
+                    baselineIntervalP50 = intervals.ms(0.50);
                     frames = new FrameTimer(FRAMES);
+                    intervals = new FrameTimer(FRAMES);
                     if (s != null) {
-                        s.execute(() -> match = ScenarioWorld.matchAtPlayer(s, 64, count, false));
+                        s.execute(() -> match = ScenarioWorld.matchAtAnchor(s, 64, count, false));
                     }
                     stage = Stage.SPAWNING;
                 }
@@ -107,6 +128,7 @@ final class UnitsFrameTimeScenario implements Scenario {
                 if (frames.full()) {
                     double p50 = frames.ms(0.50);
                     ctx.result.addProperty("units", count);
+                    ctx.result.addProperty("sodium", ModList.get().isLoaded("sodium"));
                     ctx.result.addProperty("renderDistance", renderDistance);
                     ctx.result.addProperty("frameBaselineP50Ms", baselineP50);
                     ctx.result.addProperty("frameP50Ms", p50);
@@ -115,6 +137,17 @@ final class UnitsFrameTimeScenario implements Scenario {
                     ctx.result.addProperty("clientTickP50Ms", ticks.ms(0.50));
                     ctx.result.addProperty("clientTickP99Ms", ticks.ms(0.99));
                     ctx.result.addProperty("entityShare", (p50 - baselineP50) / p50);
+                    double interval = intervals.ms(0.50);
+                    ctx.result.addProperty("frameIntervalBaselineP50Ms", baselineIntervalP50);
+                    ctx.result.addProperty("frameIntervalP50Ms", interval);
+                    ctx.result.addProperty("frameIntervalP99Ms", intervals.ms(0.99));
+                    ctx.result.addProperty("frameIntervalShare", (interval - baselineIntervalP50) / interval);
+                    if (mc.player != null) {
+                        ctx.result.addProperty(
+                                "camera",
+                                mc.player.getX() + " " + mc.player.getY() + " " + mc.player.getZ() + " "
+                                        + mc.player.getYRot() + " " + mc.player.getXRot());
+                    }
                     ctx.result.addProperty("ok", true);
                     stage = Stage.DONE;
                     return true;

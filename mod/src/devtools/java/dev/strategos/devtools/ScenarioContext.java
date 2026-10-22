@@ -15,6 +15,9 @@ final class ScenarioContext {
 
     long nextSeed;
 
+    /** x, y, z, yaw, pitch the runner holds the camera at, or null; set from the server thread. */
+    volatile double @Nullable [] camera;
+
     ScenarioContext(Path out) {
         this.out = out;
     }
@@ -22,6 +25,14 @@ final class ScenarioContext {
     /** A PNG of the next rendered frame, {@code <name>.png} in the output directory. */
     void capture(String name) {
         captureName = name;
+    }
+
+    /**
+     * Holds the camera at a pose on the client, every tick and frame: a focused window would otherwise turn a spectator
+     * with the owner's mouse or move it with their keys.
+     */
+    void holdCamera(double x, double y, double z, float yaw, float pitch) {
+        camera = new double[] {x, y, z, yaw, pitch};
     }
 
     /** Save and quit, then create and enter another world, as the vanilla pause menu does. */

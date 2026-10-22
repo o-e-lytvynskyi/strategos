@@ -14,6 +14,7 @@ import net.minecraft.client.server.IntegratedServer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.levelgen.Heightmap;
 
 /** Server-side helpers of the scenarios, on the integrated server's thread. */
 final class ScenarioWorld {
@@ -23,17 +24,31 @@ final class ScenarioWorld {
         return server.getPlayerList().getPlayers().get(0);
     }
 
-    /** A match of {@code size} x {@code size} centred on the player, with {@code count} units at its centre. */
-    static MatchRuntime matchAtPlayer(IntegratedServer server, int size, int count, boolean persistent) {
-        ServerPlayer player = player(server);
-        ServerLevel level = player.serverLevel();
-        BlockPos feet = player.blockPosition();
+    /** The scenarios' match seed: with the world's fixed seed, every run places the same units the same way. */
+    static final long SEED = 42;
+
+    /**
+     * The fixed point a scenario builds around: (0, floor, 0) of the flat world, the floor from the heightmap. The
+     * player spawns somewhere within the spawn radius, which differs from run to run, and a camera may already stand
+     * above the floor, so nothing is placed relative to the player.
+     */
+    static BlockPos anchor(IntegratedServer server) {
+        ServerLevel level = player(server).serverLevel();
+        return new BlockPos(0, level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, 0, 0), 0);
+    }
+
+    /** A match of {@code size} x {@code size} centred on the anchor, with {@code count} units at its centre. */
+    static MatchRuntime matchAtAnchor(IntegratedServer server, int size, int count, boolean persistent) {
+        ServerLevel level = player(server).serverLevel();
+        BlockPos feet = anchor(server);
         MatchRuntime match = StrategosServer.get()
                 .matches()
                 .create(
                         level,
                         StrategosCommands.spaceAround(level, feet, size, size),
-                        MatchOptions.generated(feet.getY()).withPersistent(persistent));
+                        MatchOptions.generated(feet.getY())
+                                .withPersistent(persistent)
+                                .withSeed(SEED));
         for (int left = count; left > 0; left -= 300) {
             match.submit(
                     PlayerSlot.ADMIN,
@@ -47,9 +62,17 @@ final class ScenarioWorld {
         return match;
     }
 
-    /** The camera: the player in spectator mode at a fixed pose. */
+    /**
+     * The camera: the player in spectator mode at a fixed pose, at noon with the day and weather cycles off, so the
+     * light is the same in every run, and with no command feedback in the chat.
+     */
     static void camera(IntegratedServer server, double x, double y, double z, float yaw, float pitch) {
         String name = player(server).getGameProfile().getName();
+        run(server, "gamerule sendCommandFeedback false");
+        run(server, "gamerule doDaylightCycle false");
+        run(server, "gamerule doWeatherCycle false");
+        run(server, "time set 6000");
+        run(server, "weather clear");
         run(server, "gamemode spectator " + name);
         run(server, String.format(Locale.ROOT, "tp %s %.3f %.3f %.3f %.1f %.1f", name, x, y, z, yaw, pitch));
     }

@@ -30,7 +30,7 @@ final class WorldSwitchScenario implements Scenario {
     @Override
     public void setup(IntegratedServer server, ScenarioContext ctx) {
         if (!switched) {
-            matchA = ScenarioWorld.matchAtPlayer(server, 16, 3, true);
+            matchA = ScenarioWorld.matchAtAnchor(server, 16, 3, true);
             holderA.set(StrategosServer.get());
             return;
         }

@@ -22,6 +22,7 @@ import net.minecraft.world.level.LevelSettings;
 import net.minecraft.world.level.WorldDataConfiguration;
 import net.minecraft.world.level.levelgen.WorldOptions;
 import net.minecraft.world.level.levelgen.presets.WorldPresets;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -124,7 +125,20 @@ public final class ScenarioRunner {
     static void onClientTickPre(ClientTickEvent.Pre event) {
         Run r = run;
         if (r != null && r.phase == Phase.RUNNING) {
+            holdCamera(Minecraft.getInstance(), r.ctx);
             r.scenario.clientTickStart();
+        }
+    }
+
+    /** The scenario's camera pose, with the cursor released, so input to a focused window changes nothing. */
+    private static void holdCamera(Minecraft mc, ScenarioContext ctx) {
+        double[] pose = ctx.camera;
+        if (mc.mouseHandler.isMouseGrabbed()) {
+            mc.mouseHandler.releaseMouse();
+        }
+        if (pose != null && mc.player != null) {
+            mc.player.moveTo(pose[0], pose[1], pose[2], (float) pose[3], (float) pose[4]);
+            mc.player.setDeltaMovement(Vec3.ZERO);
         }
     }
 
@@ -174,6 +188,7 @@ public final class ScenarioRunner {
     static void onFramePre(RenderFrameEvent.Pre event) {
         Run r = run;
         if (r != null && r.phase == Phase.RUNNING) {
+            holdCamera(Minecraft.getInstance(), r.ctx);
             r.scenario.frameStart();
         }
     }
