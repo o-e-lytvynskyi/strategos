@@ -4,8 +4,8 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.mojang.serialization.JsonOps;
 import dev.strategos.core.sim.MatchCore;
-import dev.strategos.core.sim.journal.JournalCodec;
 import dev.strategos.core.sim.journal.JournalExport;
+import dev.strategos.core.sim.journal.JournalFormat;
 import dev.strategos.core.sim.persist.MatchSnapshotCodec;
 import dev.strategos.mod.Strategos;
 import dev.strategos.mod.server.match.MatchRuntime;
@@ -22,7 +22,8 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * A faulted match's record, written once to {@code <faultDir>/<match>-<tick>/}: {@code fault.txt} (where, tick,
- * lifecycle, versions, stack trace), {@code snapshot.json} and {@code journal.json}, from which the fault replays.
+ * lifecycle, versions, stack trace), {@code snapshot.json} and the binary {@code journal.strj}, from which the fault
+ * replays.
  * Each file is written on its own: one that fails becomes {@code <name>-error.txt}, and writing never throws.
  */
 final class FaultReport {
@@ -37,22 +38,19 @@ final class FaultReport {
             return null;
         }
         MatchCore core = rt.core();
-        writeGuarded(dir, "fault.txt", () -> faultText(rt, fault, where));
+        writeGuarded(dir, "fault.txt", () -> utf8(faultText(rt, fault, where)));
         writeGuarded(dir, "snapshot.json", () -> {
             if (core == null) {
                 throw new IllegalStateException("the match has no core");
             }
-            return pretty(MatchSnapshotCodec.encode(JsonOps.INSTANCE, core.snapshot()));
+            return utf8(pretty(MatchSnapshotCodec.encode(JsonOps.INSTANCE, core.snapshot())));
         });
-        writeGuarded(dir, "journal.json", () -> {
+        writeGuarded(dir, "journal.strj", () -> {
             if (core == null) {
                 throw new IllegalStateException("the match has no core");
             }
-            JournalExport export =
-                    new JournalExport(core.journal(), core.queries().tick(), core.stateHash());
-            return pretty(JournalCodec.CODEC
-                    .encodeStart(JsonOps.INSTANCE, export)
-                    .getOrThrow(message -> new IllegalStateException("cannot encode the journal: " + message)));
+            return JournalFormat.encode(
+                    new JournalExport(core.journal(), core.queries().tick(), core.stateHash()));
         });
         return dir;
     }
@@ -82,9 +80,13 @@ final class FaultReport {
         return new GsonBuilder().setPrettyPrinting().create().toJson(json) + "\n";
     }
 
-    private static void writeGuarded(Path dir, String name, Supplier<String> content) {
+    private static byte[] utf8(String text) {
+        return text.getBytes(StandardCharsets.UTF_8);
+    }
+
+    private static void writeGuarded(Path dir, String name, Supplier<byte[]> content) {
         try {
-            Files.writeString(dir.resolve(name), content.get(), StandardCharsets.UTF_8);
+            Files.write(dir.resolve(name), content.get());
         } catch (IOException | RuntimeException | StackOverflowError e) {
             StringWriter trace = new StringWriter();
             e.printStackTrace(new PrintWriter(trace));

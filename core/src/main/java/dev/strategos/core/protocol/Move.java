@@ -15,6 +15,31 @@ public record Move(UnitSet units, Vec2d target, QueueMode mode, int formation) i
                     Codec.INT.fieldOf("formation").forGetter(Move::formation))
             .apply(i, Move::new));
 
+    /** Units, target, queue mode, formation; wire id 1. */
+    static final WireCodec<Move> WIRE = new WireCodec<>() {
+        @Override
+        public void write(WireWriter out, Move value) {
+            WireCodecs.UNIT_SET.write(out, value.units());
+            WireCodecs.VEC2D.write(out, value.target());
+            WireCodecs.QUEUE_MODE.write(out, value.mode());
+            out.writeZigZag(value.formation());
+        }
+
+        @Override
+        public Move read(WireReader in) {
+            return new Move(
+                    WireCodecs.UNIT_SET.read(in),
+                    WireCodecs.VEC2D.read(in),
+                    WireCodecs.QUEUE_MODE.read(in),
+                    in.readZigZagInt());
+        }
+
+        @Override
+        public int maxSize() {
+            return WireCodecs.UNIT_SET.maxSize() + WireCodecs.VEC2D.maxSize() + WireCodecs.QUEUE_MODE.maxSize() + 5;
+        }
+    };
+
     /** Replaces the units' orders, with no formation. */
     public static Move replace(UnitSet units, Vec2d target) {
         return new Move(units, target, QueueMode.REPLACE, 0);

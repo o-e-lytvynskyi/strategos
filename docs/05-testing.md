@@ -110,6 +110,7 @@ broken inputs in `gradle/selftest/fixtures/`.
 | Scenario definitions | `core/src/testFixtures/.../testkit/Scenarios.java` | code | reviewed like code; GameTest names follow the scenario ids |
 | Seed sets | `core/src/testFixtures/resources/seeds/<name>.txt` | written by hand | append-only; a test that needs other seeds adds a set. A harness built without a seed uses the test kit's default, 42 |
 | S6 canary golden | `core/src/test/resources/golden/s6-canary.json` | `-Dstrategos.golden.update=true` | rewritten only with a recorded reason (R12) |
+| Golden journals | `core/src/test/resources/journals/<name>.strj` and `REBASELINE.md` | `./gradlew :core:rebaselineJournals -Preason="…"` | re-recorded only with a reason, which the task appends to `REBASELINE.md` (CORE-11.3) |
 | Save fixtures, one per released schema | `core/src/test/resources/fixtures/match_v<n>.json`, `mod/src/test/resources/fixtures/match_v<n>.nbt`, each with `match_v<n>.expected.json` | `-Dstrategos.fixtures.update=true`, once per schema | never changed or deleted; listed in `released-fixtures.txt` |
 | Corrupted saves | `mod/src/gametest/resources/fixtures/corrupt/` | `CorruptCorpusTest` with `-Dstrategos.fixtures.update=true` | append-only; listed in `released-fixtures.txt` |
 | Engine-surface inventory | `mod/src/test/resources/engine-surface.json` | written by hand | changes with the code it lists, reviewed (ADR-0020) |
@@ -117,7 +118,7 @@ broken inputs in `gradle/selftest/fixtures/`.
 | JMH self-test results | `core/src/jmh/resources/selftest/` | written by hand | fixed |
 | Harness self-test inputs | `gradle/selftest/fixtures/` | written by hand | fixed |
 | JMH baseline | `perf/baseline-<machine>.json` | `:core:jmh`, copied after the owner approves | only with the owner's approval |
-| GameTest journals, perf and smoke results | `mod/build/gametest/journals/`, `mod/build/reports/perf/`, `mod/build/server-smoke/` | every run | build output, never committed |
+| GameTest journals (binary `.strj`), perf and smoke results | `mod/build/gametest/journals/`, `mod/build/reports/perf/`, `mod/build/server-smoke/` | every run | build output, never committed |
 
 ## Rules that keep the tests trustworthy
 

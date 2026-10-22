@@ -54,12 +54,13 @@ class ReplayDriverTest {
             }
         }
         Journal broken = new Journal(
-                journal.start(),
-                journal.lastTick(),
-                ticks,
                 journal.checkpointEvery(),
-                journal.checkpointTicks(),
-                journal.checkpointHashes());
+                List.of(new Journal.Segment(
+                        journal.start(),
+                        journal.lastTick(),
+                        ticks,
+                        journal.checkpointTicks(),
+                        journal.checkpointHashes())));
 
         ReplayResult replay = ReplayDriver.replay(broken, TemplateSet.builtin());
 

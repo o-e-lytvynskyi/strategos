@@ -31,7 +31,7 @@ class GameTestJournalReplayTest {
         }
         List<Path> files;
         try (Stream<Path> listed = Files.list(Path.of(dir))) {
-            files = listed.filter(p -> p.getFileName().toString().endsWith(".json"))
+            files = listed.filter(p -> p.getFileName().toString().endsWith(JournalFiles.EXTENSION))
                     .sorted()
                     .toList();
         }

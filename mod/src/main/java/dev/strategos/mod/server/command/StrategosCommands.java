@@ -19,6 +19,8 @@ import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.MatchCore;
+import dev.strategos.core.sim.journal.JournalExport;
+import dev.strategos.core.sim.journal.JournalFormat;
 import dev.strategos.core.sim.journal.ReplayDriver;
 import dev.strategos.core.sim.journal.ReplayResult;
 import dev.strategos.mod.StrategosServer;
@@ -27,9 +29,13 @@ import dev.strategos.mod.server.match.MatchRefusedException;
 import dev.strategos.mod.server.match.MatchRegistry;
 import dev.strategos.mod.server.match.MatchRuntime;
 import dev.strategos.mod.server.match.MatchSpace;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.coordinates.ColumnPosArgument;
@@ -37,6 +43,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ColumnPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.storage.LevelResource;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import org.jspecify.annotations.Nullable;
 
@@ -52,6 +59,8 @@ public final class StrategosCommands {
     public static final int BELOW = 8;
 
     public static final int ABOVE = 24;
+
+    private static final Pattern JOURNAL_NAME = Pattern.compile("[a-z0-9_-]{1,64}");
 
     private StrategosCommands() {}
 
@@ -109,6 +118,18 @@ public final class StrategosCommands {
                                         .executes(ctx ->
                                                 stop(ctx.getSource(), IntegerArgumentType.getInteger(ctx, "handle")))))
                         .then(withMatch("replay", StrategosCommands::replay)))
+                .then(Commands.literal("journal")
+                        .then(Commands.literal("save")
+                                .then(Commands.argument("name", StringArgumentType.word())
+                                        .executes(ctx -> withMatchAtSource(
+                                                ctx.getSource(),
+                                                rt -> saveJournal(rt, StringArgumentType.getString(ctx, "name"))))
+                                        .then(Commands.argument("id", StringArgumentType.word())
+                                                .executes(ctx -> run(
+                                                        ctx.getSource(),
+                                                        () -> saveJournal(
+                                                                byId(StringArgumentType.getString(ctx, "id")),
+                                                                StringArgumentType.getString(ctx, "name"))))))))
                 .then(withMatch("hash", (source, rt) -> {
                     MatchCore core = coreOf(rt);
                     return rt.id() + " tick " + core.queries().tick() + ", hash " + Hex64.format(core.stateHash());
@@ -277,6 +298,32 @@ public final class StrategosCommands {
             throw new MatchRefusedException("no match " + id);
         }
         return rt;
+    }
+
+    /**
+     * CORE-11.4: writes the match's journal, from its oldest kept segment to now, to
+     * {@code <world>/strategos/journals/<name>.strj}, which {@code ReplayRunner} replays in plain JUnit.
+     */
+    private static String saveJournal(MatchRuntime rt, String name) {
+        if (!JOURNAL_NAME.matcher(name).matches()) {
+            throw new MatchRefusedException("journal names are 1 to 64 of a-z, 0-9, _ and -; got '" + name + "'");
+        }
+        MatchCore core = coreOf(rt);
+        Path file = StrategosServer.get()
+                .server()
+                .getWorldPath(LevelResource.ROOT)
+                .resolve("strategos")
+                .resolve("journals")
+                .resolve(name + ".strj");
+        JournalExport export = new JournalExport(core.journal(), core.queries().tick(), core.stateHash());
+        try {
+            Files.createDirectories(file.getParent());
+            Files.write(file, JournalFormat.encode(export));
+        } catch (IOException e) {
+            throw new MatchRefusedException("cannot write " + file + ": " + e.getMessage());
+        }
+        return rt.id() + ": journal of ticks " + export.journal().startTick() + "–" + export.liveTick()
+                + " saved to strategos/journals/" + name + ".strj";
     }
 
     private static MatchCore coreOf(MatchRuntime rt) {

@@ -145,11 +145,12 @@ public final class ScenarioGameTests {
         }
     }
 
-    /** {@code <journals>/<test name>.json}, for {@code :core:replayJournals}; runs without the directory skip it. */
+    /** {@code <journals>/<test name>.strj}, for {@code :core:replayJournals}; runs without the directory skip it. */
     private static void exportJournal(String name, MatchCore core, long tick, long hash) {
         String dir = System.getProperty("strategos.gametest.journals");
         if (dir != null && !dir.isBlank()) {
-            JournalFiles.write(Path.of(dir, name + ".json"), new JournalExport(core.journal(), tick, hash));
+            JournalFiles.write(
+                    Path.of(dir, name + JournalFiles.EXTENSION), new JournalExport(core.journal(), tick, hash));
         }
     }
 }

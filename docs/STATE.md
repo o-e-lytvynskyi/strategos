@@ -28,14 +28,17 @@ Answer in chat or here; the next session applies the answers.
 
 ## Since your last visit
 
-Nothing yet: the owner was here on 2026-10-22.
+- 2026-10-22 · **M1 T1 Binary journal:** every match's input journal is now a compact binary file in
+  one-minute segments, each replayable on its own; `/strategos journal save <name>` writes one, and
+  two golden journals pin the core's behaviour (a change fails until re-recorded with a reason).
+  Card CORE-11 is done.
 
 ## Now
 
-- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 0 of 27 tasks done.
+- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 1 of 27 tasks done.
 - **In progress:** none.
-- **Last finished task:** none in M1; M0 closed with commit b7722d9, M1 specified in f6439fc.
-- **Next task:** M1 T1 · Wire codec and the binary journal.
+- **Last finished task:** M1 T1 (2026-10-22).
+- **Next task:** M1 T2 · Block classes and surface pages.
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 220 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.

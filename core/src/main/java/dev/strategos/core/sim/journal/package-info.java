@@ -1,4 +1,4 @@
-/** The input journal with state-hash checkpoints, its JSON codec and the replay driver (ADR-0009). */
+/** The input journal in segments with state-hash checkpoints, its binary file format and the replay driver (ADR-0009). */
 @NullMarked
 package dev.strategos.core.sim.journal;
 

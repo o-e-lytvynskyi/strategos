@@ -67,8 +67,25 @@ tasks.register('replayJournals', Test) {
     systemProperty 'strategos.journals.dir', journalsDir.absolutePath
     outputs.upToDateWhen { false }
     doFirst {
-        def found = journalsDir.listFiles({ File f -> f.name.endsWith('.json') } as FileFilter)
+        def found = journalsDir.listFiles({ File f -> f.name.endsWith('.strj') } as FileFilter)
         if (found == null || found.length == 0) throw new GradleException("No GameTest journals in ${journalsDir}")
+    }
+}
+
+// [M1 T1] CORE-11.3: records the golden journals again from their scenarios; the reason is mandatory and is appended
+// to src/test/resources/journals/REBASELINE.md with the date and the names.
+def journalsResourceDir = file('src/test/resources/journals')
+tasks.register('rebaselineJournals', JavaExec) {
+    group = 'verification'
+    description = 'Re-records the golden journals; -Preason="why the hashes changed" is required.'
+    classpath = sourceSets.test.runtimeClasspath   // the test classpath carries the game's libraries (mcShipped)
+    mainClass = 'dev.strategos.core.testkit.GoldenJournals'
+    def reason = providers.gradleProperty('reason')
+    args(journalsResourceDir.absolutePath, reason.getOrElse(''))
+    doFirst {
+        if (!reason.isPresent() || reason.get().isBlank()) {
+            throw new GradleException('rebaselineJournals needs -Preason="why the golden hashes changed"')
+        }
     }
 }
 

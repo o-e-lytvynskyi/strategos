@@ -7,7 +7,8 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * P8: checks that the bus came to rest, builds the tick's outputs, records a state-hash checkpoint every
- * {@code checkpointEvery} ticks, re-bases the journal on a fresh snapshot past its limit, and reports the phase times.
+ * {@code checkpointEvery} ticks, starts a journal segment on a fresh snapshot at each segment boundary, and reports
+ * the phase times.
  */
 final class FinalSystem implements MatchSystem {
     private final MetricsSink metrics;
@@ -36,8 +37,8 @@ final class FinalSystem implements MatchSystem {
         if (tick % journal.checkpointEvery() == 0) {
             journal.checkpoint(tick, StateHasher.hash(state));
         }
-        if (journal.needsRebase()) {
-            journal.rebase(Snapshots.take(state));
+        if (journal.segmentDue()) {
+            journal.startSegment(Snapshots.take(state));
         }
         metrics.onTick(tick, timers.currentPhaseNanos());
     }

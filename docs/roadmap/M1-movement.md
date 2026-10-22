@@ -418,7 +418,8 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
   4. `/strategos journal save` writes a file that `ReplayRunner` replays (L3).
 - **Tests:** L0, L1, L3 · **Fixtures:** golden journals · **Depends on:** CORE-05, QA-04 ·
   **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Done:** 2026-10-22 — M1 T1: `:core:replayJournals` replays all 73 GameTest journals as binary `.strj` files (1); `JournalSegmentTest`, the canary cut at tick 1,200 with each segment replaying from its own snapshot (2); `GoldenJournalTest` over `walking_skeleton` and `canary`, where a flipped input byte fails at tick 20 naming `rebaselineJournals` (3); `journaltests.journal_save_replays` (4)
+- **Status:** done
 
 ### Slice 1B · A group of 50
 
@@ -494,7 +495,7 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
      no slot in the match gets no command applied (L3).
 - **Tests:** L0, L1, L2, L3, L5 · **Depends on:** CORE-03, QA-03, QA-19 · **Size:** M ·
   **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 #### UNIT-02 · UnitAI state machine framework
 - **Value:** Units behave predictably: they finish tasks, react to new orders at once and never

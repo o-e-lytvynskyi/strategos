@@ -63,7 +63,7 @@ import org.slf4j.LoggerFactory;
  *   <li>a saved 16 x 16 match around the world spawn; 8 units around local (4, 8), ordered to (12.5, 8.5);
  *   <li>100 server ticks later: every unit on the target, 8 bodies, the match RUNNING; then ordered back to (4.5, 8.5);
  *   <li>20 ticks later, the units still walking: the marker with the numbers, the live journal in
- *       {@code journal-run1.json}, and {@code halt}; the stop saves the match. A 600-tick deadline fails the run.
+ *       {@code journal-run1.strj}, and {@code halt}; the stop saves the match. A 600-tick deadline fails the run.
  * </ol>
  *
  * <p>Run 2: the match is back PAUSED with run 1's tick and hash; resumed, the level holds exactly one body per unit;
@@ -159,7 +159,7 @@ public final class SmokeDriver {
         JournalExport journal;
         try {
             run1 = readMarker(sibling("smoke-result.json"));
-            journal = JournalFiles.read(sibling("journal-run1.json"));
+            journal = JournalFiles.read(sibling("journal-run1.strj"));
         } catch (RuntimeException e) {
             finish(server, "run 1 left no marker or journal: " + e.getMessage(), null);
             return;
@@ -238,7 +238,7 @@ public final class SmokeDriver {
                 return;
             }
             JournalFiles.write(
-                    sibling("journal-run1.json"),
+                    sibling("journal-run1.strj"),
                     new JournalExport(core.journal(), core.queries().tick(), core.stateHash()));
             finish(r.server, null, r);
         }

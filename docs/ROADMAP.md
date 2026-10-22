@@ -285,10 +285,10 @@ Cards: [roadmap/M1-movement.md](roadmap/M1-movement.md#cards). 26 cards, at most
 | PATH-03 | Path service: A*, string pulling and STRICT delivery | M | PATH-02, CORE-05 | specified |
 | PATH-05 | Path following: kinematic motion on surfaces | M | PATH-03, UNIT-01 | specified |
 | UNIT-09 | Spike S10: kinematic fidelity | M | PATH-05, PATH-15 | specified |
-| CORE-11 | Binary journal and cross-level replay | M | CORE-05, QA-04 | specified |
+| CORE-11 | Binary journal and cross-level replay | M | CORE-05, QA-04 | done |
 | CORE-08 | Spatial index | M | CORE-02 | specified |
 | QA-19 | Network test kit: byte counts and acknowledging mock players | M | QA-03, QA-04 | specified |
-| NET-01 | Payload layer, NetGateway and the fog-gate stub | M | CORE-03, QA-03, QA-19 | specified |
+| NET-01 | Payload layer, NetGateway and the fog-gate stub | M | CORE-03, QA-03, QA-19 | in_progress |
 | UNIT-02 | UnitAI state machine framework | M | CORE-04, CORE-06 | specified |
 | ORD-02 | Order queue: move and stop | M | ORD-01, UNIT-02, NET-01 | specified |
 | PATH-04 | Components and reachability | M | PATH-02, PATH-15 | specified |

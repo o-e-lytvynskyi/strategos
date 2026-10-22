@@ -9,6 +9,21 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
+## 2026-10-22 — M1 start, T1
+
+- **M1 T1 · Wire codec and the binary journal** — CORE-11 done; NET-01 in progress (its codec base).
+  - **Results:** `WireWriter`/`WireReader` (bounded varints, zigzag, raw doubles, UTF-8 checked)
+    and `WireCodec`s for the commands (a one-unit Move is 20 bytes, 300 consecutive handles 320) and
+    the command envelope; journals in 1,200-tick segments, each with its snapshot; the binary
+    `.strj` format replaces M0's JSON in GameTest exports, fault reports and the restart smoke; two
+    golden journals (`walking_skeleton`, `canary` across two segments) with `rebaselineJournals`
+    and its log; `/strategos journal save <name>`. `:core:test` 637 tests; `verify` 33 s; 98
+    GameTests; 73 journals replay.
+  - **Problems:** ErrorProne's `EnumOrdinal` and rule B8's ban on static arrays shaped the codecs;
+    the spec's checkpoint period and header changed (spec §1.6 D rows 1–3).
+- **M1 started** on the owner's go-ahead, with consent for every kind of test.
+- **Next:** T2, block classes and surface pages.
+
 ## 2026-10-22 — M0 approvals, the client batch, M0 accepted
 
 - **The owner's approvals** («м0 принимаю и все одобряю»): the JMH baseline committed as

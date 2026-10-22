@@ -210,6 +210,9 @@ cards, does not exist for M1: the M1 cards were final when this spec was written
 
 | # | Spec said | Found and changed |
 |---|---|---|
+| 1 | §5.10: a checkpoint every 100 ticks; the header holds the core version, `MatchConfig` and `MatchRules` | Checkpoints stay at M0's 20 ticks, so a divergence is found within a second. The header holds the command catalogue's fingerprint (`id=wireId`, refused if another build's) and the checkpoint period; each segment's snapshot carries the config, the rules and its own schema `"v"`, and migrates when read, as saves do. The magic is an `int` (rule B8 bans static arrays) |
+| 2 | T1 lists `JournalSink` | No sink is needed while journals live in memory and are written whole by `/strategos journal save`, the GameTest export and fault reports (now `journal.strj`); the sink and `journal = disk` arrive with the config in T5 |
+| 3 | §5.10: segments kept for the whole match | The writer keeps segments spanning at most M0's 72,000 ticks; with a shorter `maxTicks` (M0's re-base test, 50) segments shrink to it, so M0's re-base behaviour is the special case |
 
 ---
 
@@ -1562,7 +1565,7 @@ are green and its negative checks behave as stated.
 
 ### 9.3 Progress
 
-- [ ] T1 · [ ] T2 · [ ] T11 · [ ] T3 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T12 · [ ] T10
+- [x] T1 (2026-10-22) · [ ] T2 · [ ] T11 · [ ] T3 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T12 · [ ] T10
 - [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17 · [ ] T18 · [ ] T19 · [ ] T20 · [ ] T21 · [ ] T22
 - [ ] T23 · [ ] T24 · [ ] T25 · [ ] T26 · [ ] T27
 

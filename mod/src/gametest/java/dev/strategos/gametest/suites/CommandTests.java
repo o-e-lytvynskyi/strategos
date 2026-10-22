@@ -128,13 +128,13 @@ public final class CommandTests {
         h.succeed();
     }
 
-    private static void perform(GameTestHelper h, CommandSourceStack source, String command) {
+    static void perform(GameTestHelper h, CommandSourceStack source, String command) {
         MinecraftServer server = h.getLevel().getServer();
         server.getCommands().performPrefixedCommand(source, command);
     }
 
     /** A command source that keeps every line sent to it. */
-    private static final class Recorder implements CommandSource {
+    static final class Recorder implements CommandSource {
         final List<String> lines = new ArrayList<>();
 
         /** An operator's source (permission 2) at a point of the test's arena. */

@@ -77,7 +77,7 @@ public final class FaultTests {
      */
     private static void checkReport(MatchRuntime rt, long tick, String where) {
         Path dir = StrategosServer.get().faults().faultDir().resolve(rt.id() + "-" + tick);
-        for (String file : List.of("fault.txt", "snapshot.json", "journal.json")) {
+        for (String file : List.of("fault.txt", "snapshot.json", "journal.strj")) {
             check(Files.isRegularFile(dir.resolve(file)), "the fault report lacks " + file + ": " + dir);
         }
         try {
@@ -86,7 +86,7 @@ public final class FaultTests {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-        JournalExport export = JournalFiles.read(dir.resolve("journal.json"));
+        JournalExport export = JournalFiles.read(dir.resolve("journal.strj"));
         ReplayRunner.ReplayReport replay =
                 ReplayRunner.check(export.journal(), TemplateSet.builtin(), export.liveHash());
         check(replay.ok(), "the fault's journal does not replay: " + replay.message());
