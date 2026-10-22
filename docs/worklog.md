@@ -9,7 +9,20 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M0 T9, the tripwire checkpoint, T9b, T11, T10, T11b, T12, T13, T14, T16
+## 2026-10-22 — M0 T9, the tripwire checkpoint, T9b, T11, T10, T11b, T12, T13, T14, T16, T15
+
+- **M0 T15 · S5 final, S6 report, ADR updates** — QA-01, QA-03 and CORE-05 done.
+  - **Results:**
+    - S5 final: all 17 checks hold; cold `clean verify` without the build cache 39.3 s, warm 31.2 s;
+      `clean verifyFast` 8.6 s, warm 0.4 s, the configuration cache reused; `:mod:test` 4.0 s; L3
+      4.2 s; smoke 11.5 s, with the restart run 19.3 s; `verifyHarness` 12.3 s; `:core:soak`
+      9.1 s; `verifySlow` 6.2 s;
+    - [the S6 report](spikes/S6-determinism-canary.md): the canary equals its golden at all 20
+      checkpoints on macOS and Linux, 400 seeded replays equal their live runs, all 73 GameTest
+      journals replay to their live hashes;
+    - ADR-0007 and ADR-0009 carry the final evidence; the ADR index's pending table and 04 §1.4
+      row 9 are updated.
+  - **Problems:** none.
 
 - **M0 T16 · Client harness prepared; S3 and S4 plans** — QA-06 and PERF-04 in progress (their runs
   wait for the owner's consent); CORE-01 waits for `world_switch` the same way.
@@ -202,7 +215,7 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
     - pitfalls in the knowledge base (`minecraft-mod-data.md`, new, and `minecraft-mod.md`).
   - Spec §1.6 D row 54.
 
-- **Next:** M0 T15 · S5 final, S6 report, ADR updates.
+- **Next:** M0 T17 · M0 close.
 
 ## 2026-10-22 — the owner's setup, M0 T7c, T8
 

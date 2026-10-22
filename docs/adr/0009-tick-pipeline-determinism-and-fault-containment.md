@@ -5,7 +5,9 @@ Date: 2026-10-21
 ## Status
 
 Accepted; amended by [ADR-0023](0023-plan-alignment-after-roadmap-approval.md) (the production
-journal ring arrives in M4, with MATCH-04)
+journal ring arrives in M4, with MATCH-04). Spike S6 (2026-10-22) confirmed the determinism
+boundary: the canary matches its golden on macOS and Linux, and every replay its live run
+([S6](../spikes/S6-determinism-canary.md)).
 
 ## Context
 

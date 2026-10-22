@@ -1,7 +1,7 @@
-# S5: build wiring — first report
+# S5: build wiring
 
-*First version, written with M0 T3 on 2026-10-21; T15 completes it with checks 1, 2, 13, 14 and
-17 under the final M0 build. Spec: [M0 §8.1](../milestones/M0-foundation.md#81-s5-build-wiring-t3-first-version-t15-final--confirms-adr-0007-and-executes-adr-0003).*
+*Final report: first written with M0 T3 on 2026-10-21, completed with T15 on 2026-10-22 (checks 1,
+2, 13, 14 and 17 under the final M0 build). Spec: [M0 §8.1](../milestones/M0-foundation.md#81-s5-build-wiring-t3-first-version-t15-final--confirms-adr-0007-and-executes-adr-0003).*
 
 ## Question and exit criterion
 
@@ -20,7 +20,7 @@ separate `strategos_gametest` mod, M0 §11 R1).
 - Gradle 9.2.1, its daemon on Temurin 21.0.12.1; Java toolchain 21.
 - NeoForge 21.1.264, ModDevGradle 2.0.148, Parchment 1.21.1/2024.11.17.
 - 2026-10-21, on the working trees of M0 T1–T3; commits `e5d9477` (T1), `33175b8` (T2) and the T3
-  commit.
+  commit. The final checks: 2026-10-22, on the M0 T16 tree (commit `9427f65`).
 
 ## Method
 
@@ -31,6 +31,8 @@ Each check ran as the "How" column of M0 §8.1 says, from the repository root wi
 
 | # | Check | Result |
 |---|---|---|
+| 1 | Clean build and `verify` | Green: `./gradlew clean` then `./gradlew verify --no-build-cache` in 39.3 s, and `verify` again in 31.2 s (2026-10-22) |
+| 2 | Configuration cache | Both `verifyFast` runs print "Reusing configuration cache." (0.35 and 0.36 s); no task needed `notCompatibleWithConfigurationCache` |
 | 3 | Core merged in dev | Pass. `buildtests.core_in_mod_module` and `buildtests.testfixtures_in_mod_module` pass on the GameTest server. The smoke's step 1 passes on a dedicated server: `strategos` is loaded and `Handle` runs in the mod's module |
 | 4 | Core merged in the jar | Pass. `:mod:checkJarContents` finds every core class exactly once, no dev-only class and no `module-info`; `strategos-0.0.1.jar` holds `dev/strategos/core/shared/Handle.class` |
 | 5 | Empty test set | Fails as designed: "GameTest report missing"; the log says "filter '^nomatch$' matched no GameTest" and then "No test functions were given!". The JVM exited 0: the guard runs only after a zero exit, and it was the guard that failed the build |
@@ -43,27 +45,35 @@ Each check ran as the "How" column of M0 §8.1 says, from the repository root wi
 | 12 | ArchUnit probe | Fails as designed: `ProbeClient` in mod `main` breaks B5 ("Method <dev.strategos.mod.ProbeClient.client()> calls method <net.minecraft.client.Minecraft.getInstance()>") |
 | 15 | Retry without a reason | Fails as designed; the log names "retrynoreasonselftest.no_reason: 2 attempts without a retryReason (QA-04.4)" |
 | 16 | Solo test in a shared batch | Fails as designed; the log names "batch 'selftest' must hold one test but holds [sharedbatchselftest.plain, sharedbatchselftest.solo] (QA-04.5)" |
+| 13 | Timings | Every one inside its budget: see the table below |
+| 14 | Workspace clean | No probe file is left (`git status` shows only the report's own changes), and `verify` is green again |
+| 17 | Leaked ticket | Fails as designed (T7c, 2026-10-22): `-Pstrategos.selftest=ticketLeak` gives "GameTest failures in TEST-gametest.xml: [batchend.selftest]", naming the chunk; the next run starts clean. `verifyHarness` repeats it as `runGameTestTicketLeak` |
 
-`verifyHarness` repeats checks 5, 6, 7, 9 (`crashOnStart`), 15 and 16 on every `verify` through
-inverted guards. The inversion was proven by disabling the generator's retry-reason rejection
+`verifyHarness` repeats checks 5, 6, 7, 9 (`crashOnStart`), 15, 16 and 17 on every `verify`
+through inverted guards. The inversion was proven by disabling the generator's retry-reason rejection
 for one run: `runGameTestRetryNoReason` then failed with "wrote a report; the GameTest guard no
 longer catches a retry without a reason".
 
-### Times so far (check 13 is final in T15)
+### Times (check 13, final, 2026-10-22)
 
 | Run | Time | Budget |
 |---|---|---|
-| First build of the checkout (downloads NeoForge, decompiles, 787 MiB of assets) | 55 s | – |
-| `clean verifyFast :mod:test` without the build cache | 5.9 s | `verifyFast` ≤ 1 min (QA-01.1) |
-| `:mod:test` with the game bootstrap (L2) | 3.8 s | ≤ 60 s (QA-03.3) |
-| L3 wall time of `runGameTestServer` | 1.2–1.4 s | ≤ 3 min (QA-04.3) |
-| `runServerSmoke` | 6.1 s | < 60 s (QA-05.1) |
-| `runServerSmoke` then `runServerSmokeRestart` (T9b, two server boots in one game directory) | 19.2 s for both | run 1 < 60 s (QA-05.1) |
-| `clean verify` (local build cache on) | 19.8 s | ≤ 5 min |
-| `verify` again | 18.9 s | ≤ 5 min |
+| First build of the checkout (downloads NeoForge, decompiles, 787 MiB of assets; 2026-10-21) | 55 s | – |
+| `clean verifyFast` without the build cache | 8.6 s | `verifyFast` ≤ 1 min (QA-01.1) |
+| `verifyFast` warm | 0.4 s | ≤ 1 min |
+| `:mod:test` with the game bootstrap (L2, 45 tests), rerun | 4.0 s | ≤ 60 s (QA-03.3) |
+| L3 wall time of `runGameTestServer` (97 GameTests), as the guard prints it | 4.2 s | ≤ 3 min (QA-04.3) |
+| `runServerSmoke` | 11.5 s | < 60 s (QA-05.1) |
+| `runServerSmoke` then `runServerSmokeRestart` (two server boots) | 19.3 s for both | reported |
+| `verifyHarness` (eight harness runs, `:mod:archTest`, `:core:test` with 616 tests, the fixture and JMH self-tests) | 12.3 s | reported |
+| `:core:soak` (200 seeds × 10,000 ticks), rerun; `verifySoak` runs it | 9.1 s | reported |
+| `verifySlow` alone (the slow GameTest batch, 1.5 s of L3 wall time) | 6.2 s | reported |
+| `clean verify` without the build cache (cold) | 39.3 s | ≤ 5 min |
+| `verify` again (warm) | 31.2 s | ≤ 5 min |
 
 The configuration cache is reused on the second `verifyFast` ("Reusing configuration cache.",
-check 2's criterion).
+check 2's criterion). CI runs `verify verifySlow verifySoak` in 6 to 10 minutes on GitHub's
+runners (T18).
 
 ## Analysis
 
@@ -96,9 +106,4 @@ M0 §1.6 D:
 
 ## Follow-ups
 
-- **T15:**
-  - check 1 (a clean `verify` without the build cache);
-  - check 13 with the restart run, `verifySlow` and `:core:soak`;
-  - check 14;
-  - check 17 after T7c.
-- **T18:** the same checks on Linux CI.
+- None for M0. CI repeats `verify verifySlow verifySoak` on Linux on every push (T18).

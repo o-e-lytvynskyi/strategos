@@ -4102,7 +4102,7 @@ check and `release.yml`).
 
 - [x] T1 (2026-10-21) · [x] T2 (2026-10-21) · [x] T3 (2026-10-21) · [x] T18 (2026-10-21) · [x] T4a (2026-10-21) · [x] T4b (2026-10-21) · [x] T5a (2026-10-21) · [x] T5b (2026-10-21) · [x] T6a (2026-10-21) · [x] T6b (2026-10-21) · [x] T7a (2026-10-21) · [x] T7b (2026-10-21) · [x] T7c (2026-10-22) · [x] T8 (2026-10-22) · [x] T9 (2026-10-22)
 - [x] Tripwire checkpoint (dates in STATE.md; 2026-10-22, nothing cut)
-- [x] T9b (2026-10-22) · [x] T10 (2026-10-22) · [x] T11 (2026-10-22) · [x] T11b (2026-10-22) · [x] T12 (2026-10-22; the JMH baseline awaits the owner) · [x] T13 (2026-10-22) · [x] T14 (2026-10-22; the ADR-0019 revision awaits the owner) · [ ] T15 · [x] T16 (2026-10-22; built, not run: consent) · [ ] T17
+- [x] T9b (2026-10-22) · [x] T10 (2026-10-22) · [x] T11 (2026-10-22) · [x] T11b (2026-10-22) · [x] T12 (2026-10-22; the JMH baseline awaits the owner) · [x] T13 (2026-10-22) · [x] T14 (2026-10-22; the ADR-0019 revision awaits the owner) · [x] T15 (2026-10-22) · [x] T16 (2026-10-22; built, not run: consent) · [ ] T17
 
 ---
 

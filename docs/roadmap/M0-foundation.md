@@ -292,7 +292,8 @@ decision (D-21).
   7. S5 confirms ADR-0007 (the `gametest` source set inside the `strategos` mod group, registered
      by our generator) or switches to its fallback, a separate test mod (R).
 - **Tests:** L0, L3, L5 · **Depends on:** — · **Size:** M · **Tier:** T0
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-10-22 — M0 T1, T2, T3, T6b, T7c, T15: `clean verifyFast` without the build cache in 8.6 s, warm 0.4 s, and `checkVersionCatalog` failing on `2.+` (1); `checkJarContents` (2); smoke step 1 on a dedicated server (3); `buildtests.*` (4); S5 check 11's probes (5); the configuration cache reused, S5 check 2 (6); [the S5 report](../spikes/S5-build-wiring.md) and ADR-0007 Accepted (7)
 
 #### QA-02 · Core test kit: SimHarness, fakes and shared scenarios
 - **Value:** Game rules, whole matches and replays are checked in seconds, and one scenario runs
@@ -542,7 +543,8 @@ decision (D-21).
   2. A payload over its cap fails the helper with the actual and the allowed size (L2).
   3. `:mod:test` finishes within 60 s on the M4 Pro (L2).
 - **Tests:** L0, L2 · **Depends on:** QA-01 · **Size:** S · **Tier:** T0
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-10-22 — M0 T1, T7a, T9, T15: `UnitSpawnDataTest`, `CodecSizesTest` (1, 2); `:mod:test` in 4.0 s with 45 tests, S5 check 13 (3)
 
 #### QA-05 · Server smoke (L5): boot, a headless match, a restart round trip
 - **Value:** The mod never crashes a dedicated server, and real save files survive a restart bit
@@ -776,7 +778,8 @@ decision (D-21).
   5. The S6 report is in `docs/spikes/` (R).
 - **Tests:** L0, L1, R · **Fixtures:** seed sets for the 200-seed runs · **Depends on:** CORE-03,
   CORE-04 · **Size:** M · **Tier:** T0
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-10-22 — M0 T4a, T5b, T6a, T6b, T11, T11b, T15, T18: `SeededReplaySoakTest`, 200 × 10,000 (1); B4's 22 violating fixtures in `CoreArchitectureTest` (2); `ReplayRunnerTest` (3); `DeterminismCanaryTest`, on macOS and on Linux CI (4); [the S6 report](../spikes/S6-determinism-canary.md) (5)
 
 #### CORE-07 · Persistence kernel: one blob per match
 - **Value:** Saves never lose units, resources or progress, and old saves keep loading after

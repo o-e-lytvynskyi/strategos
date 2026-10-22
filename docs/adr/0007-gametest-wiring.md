@@ -13,6 +13,9 @@ Accepted (2026-10-21, spike S5)
 > GameTest server tracks only first attempts. The harness's `RerunTracking` keeps its tracker on the newest
 > attempt ([M0 spec §1.6 row 41](../milestones/M0-foundation.md#16-differences-resolved)).
 
+> **2026-10-22, S5 final report:** all 17 checks hold under the final M0 build, with the timings
+> of check 13 inside every budget (a cold `clean verify` in 39 s); the decision stands.
+
 ## Context
 
 Research contradiction 9: one report made GameTests a separate test mod with its own `mods.toml`

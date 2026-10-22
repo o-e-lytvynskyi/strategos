@@ -93,14 +93,17 @@ Answer in chat or here; the next session applies the answers.
 - 2026-10-22 · **M0 T16 Client harness prepared:** scripted client scenarios (screenshots, a
   world switch, frame times with many units) are built and compile, but have not run: they open a
   game window, so they wait for your consent (item 3 above).
+- 2026-10-22 · **M0 T15 Build and determinism reports:** the build wiring and the determinism
+  canary are confirmed with their final numbers (a clean full check in 39 s; the same results on
+  macOS and Linux). Cards QA-01, QA-03 and CORE-05 are done.
 
 ## Now
 
-- **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 23 of 25 tasks done.
+- **Milestone:** M0 Foundation, started 2026-10-21 (owner's go-ahead); spec [milestones/M0-foundation.md](milestones/M0-foundation.md); 24 of 25 tasks done.
 - **Tripwire (M0 only):** T1 started 2026-10-21; T9 green 2026-10-22; M0 work days 2 of 10.
 - **In progress:** none.
-- **Last finished task:** M0 T16 (2026-10-22); T14 was commit 9c9b6c7.
-- **Next task:** M0 T15 · S5 final, S6 report, ADR updates (QA-01, CORE-05, QA-03).
+- **Last finished task:** M0 T15 (2026-10-22); T16 was commit 9427f65.
+- **Next task:** M0 T17 · M0 close (all cards).
 - **WIP branch:** none.
 - **CI:** green on `main` (M0 T7b review fix, run 39685642374, 6 min 28 s); minutes used this month about 83 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.

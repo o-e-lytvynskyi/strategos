@@ -37,12 +37,12 @@ governs.
 
 | Spike | Confirms | Runs in (card) | Owner consent |
 |---|---|---|---|
-| S1 server cost per body | 0011, 0019 | M0 (PERF-02) | No |
-| S2 force-loaded arena cost | 0019 (and the sizes in 0010) | M0 (PERF-03) | No |
-| S3 client harness on macOS | 0006 (the L4 consent rule) | M0 (QA-06) | Yes |
-| S4 client frame time | 0019 | M0, else with CAM-01 (PERF-04, bare humanoids); the armoured and held-item pass with ART-01 in M3 | Yes |
-| S5 build and GameTest wiring | 0007 (and the execution of 0003) | M0, first (QA-01); first report [2026-10-21](../spikes/S5-build-wiring.md), final in T15 | No |
-| S6 determinism canary | 0009 | M0 (CORE-05); Linux after D-23 | No |
+| S1 server cost per body | 0011, 0019 | M0 (PERF-02); reported [2026-10-22](../spikes/S1-server-cost-per-body.md) | No |
+| S2 force-loaded arena cost | 0019 (and the sizes in 0010) | M0 (PERF-03); reported [2026-10-22](../spikes/S2-force-loaded-arena.md) | No |
+| S3 client harness on macOS | 0006 (the L4 consent rule) | M0 (QA-06); [prepared](../spikes/S3-client-scenario-harness.md), pending consent | Yes |
+| S4 client frame time | 0019 | M0, else with CAM-01 (PERF-04, bare humanoids); the armoured and held-item pass with ART-01 in M3; [prepared](../spikes/S4-client-frame-time.md), pending consent | Yes |
+| S5 build and GameTest wiring | 0007 (and the execution of 0003) | M0, first (QA-01); [final report](../spikes/S5-build-wiring.md) 2026-10-22 | No |
+| S6 determinism canary | 0009 | M0 (CORE-05); reported [2026-10-22](../spikes/S6-determinism-canary.md), Linux on CI | No |
 | S7 path service under load | 0015 | M1 (PATH-16) | No |
 | S8 terrain census and encoding | 0015 | M1 (PATH-01) | No |
 | S9 commander camera on a dedicated server | 0017 | Right after M0, on the client track (CAM-01) | Yes (clients) |
