@@ -61,13 +61,21 @@ Answer in chat or here; the next session applies the answers.
   world now gets its 9 x 9 stone lobby pad, once. Servers have a config file,
   `serverconfig/strategos-server.toml`. Card BLD-15 is half done: its last check, that the
   writer's own blocks never trigger navigation rebuilds, comes with the terrain capture in T7.
+- 2026-10-22 · **M1 T6 Maps and the proving ground:** maps now ship as packages of vanilla
+  structure tiles plus a manifest, and import block by block without stalling the server. The
+  first map is the proving ground, 384 x 384, built to test movement: hills, ramps, a staircase, a
+  cliff band, a river with two fords and two bridges, a forest, a narrow pass and a walled yard. A
+  test checks that every point on it can be reached from the west start. It imports in 1–7 s, and
+  its terrain is verified block for block by a hash. `/strategos match create map
+  strategos:proving_ground` starts a match on it; `/strategos map export|import|list` copies
+  regions as maps. Card MAP-01 is done.
 
 ## Now
 
-- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 6 of 27 tasks done.
+- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 7 of 27 tasks done.
 - **In progress:** none.
-- **Last finished task:** M1 T5 (2026-10-22).
-- **Next task:** M1 T6 · Map packages, importer and the proving ground.
+- **Last finished task:** M1 T6 (2026-10-22).
+- **Next task:** M1 T7 · Live capture, page rebuilds and the router.
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 220 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.

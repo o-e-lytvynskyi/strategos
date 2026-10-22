@@ -9,10 +9,10 @@ import net.neoforged.neoforge.event.tick.LevelTickEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 /**
- * Steps the matches: at the start of each server tick the spawn budget and the block writer's budget refill; at the
- * start of each level's tick, before its entities and tracker, every RUNNING match of that level steps and every PAUSED
- * one gets its bodies, in id order, each inside the fault barrier, and then the block writer writes that level's
- * share.
+ * Steps the matches: at the start of each server tick the spawn budget and the block writer's budget refill, and map
+ * imports feed the writer (a preparing match's inside the fault barrier); at the start of each level's tick, before its
+ * entities and tracker, every RUNNING match of that level steps and every PAUSED one gets its bodies, in id order, each
+ * inside the fault barrier, and then the block writer writes that level's share.
  */
 public final class TickDriver {
     private TickDriver() {}
@@ -22,6 +22,10 @@ public final class TickDriver {
         if (server != null) {
             server.spawnBudget().reset(server.settings().spawnsPerTick());
             server.writer().startTick();
+            for (MatchRuntime rt : server.matches().preparing()) {
+                server.faults().run(rt, "import", () -> server.matches().stepPreparing(rt));
+            }
+            server.mapImports().tick();
         }
     }
 

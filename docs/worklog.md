@@ -9,8 +9,32 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5
+## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6
 
+- **M1 T6 · Map packages, importer and the proving ground** — MAP-01 done.
+  - **Results:**
+    - Core: `MapManifest`, `StartSlot`, `MapWaypoint`, `TerrainHash`.
+    - `ProvingGround`, the deterministic 384² generator, is the source of truth. `ProvingGroundTest`
+      checks it against the committed package and walks the surface grid: every start slot and
+      waypoint is reachable from the west start; the ridge top and the deep river are not.
+    - `runMapgen` writes the package: 144 tiles, 612 KB. `MapTile` is read and written in vanilla's
+      structure format, both ways (`MapTileCodecTest`).
+    - `MapPackageLoader` (world exports first, then data packs) and `MapImporter`: tiles through
+      the block writer, base fill, Y order, fluids last, then the light wait and the hash check.
+    - `MapExporter`; matches on maps (`PREPARING` until the import ends); `/strategos map` and
+      `match create map`.
+    - Three map tests in `runGameTestSlow`; the server smoke's map step.
+    - The proving ground imports in 1.2–2.4 s on the GameTest server and in 7 s on a sprinting
+      dedicated one. `verify verifySlow` 71 s, 102 + 4 GameTests, 697 core tests.
+  - **Problems:**
+    - The writer's shape pass made leaves at tile edges recount their distance, so imports skip it.
+    - A column with air under a lintel must also store the stone below the air, or the import
+      fills the opening.
+    - The map tests need lanes 2,048 blocks apart.
+    - Disposing a preparing match has to fault it first (spec §1.6 D rows 21–25).
+    - The negative check behaves as specified.
+- **CI:** the M0 chunk-ticking GameTest flaked once: 1,600 ticks ran out in 3 s while entity data
+  was still loading. Its timeout is now 16,000 ticks; pitfall recorded.
 - **M1 T5 · Block writer and the config file** — BLD-15 in progress (its acceptance 2 is T7's).
   - **Results:**
     - Core: `WorldEffect` (a new output), `WritePriority`, `WriteSite` and `WriteScheduler`, which
@@ -90,7 +114,7 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
   - **Problems:** ErrorProne's `EnumOrdinal` and rule B8's ban on static arrays shaped the codecs;
     the spec's checkpoint period and header changed (spec §1.6 D rows 1–3).
 - **M1 started** on the owner's go-ahead, with consent for every kind of test.
-- **Next:** T6, map packages, the importer and the proving ground.
+- **Next:** T7, live terrain capture, page rebuilds and the block-change router.
 
 ## 2026-10-22 — M0 approvals, the client batch, M0 accepted
 

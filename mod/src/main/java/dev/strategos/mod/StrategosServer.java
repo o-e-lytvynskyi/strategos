@@ -2,6 +2,7 @@ package dev.strategos.mod;
 
 import dev.strategos.mod.registry.ModDataMaps;
 import dev.strategos.mod.server.body.SpawnBudget;
+import dev.strategos.mod.server.match.MapImports;
 import dev.strategos.mod.server.match.MatchRegistry;
 import dev.strategos.mod.server.tick.FaultBarrier;
 import dev.strategos.mod.server.world.ArenaWorld;
@@ -31,6 +32,7 @@ public final class StrategosServer {
     private final FaultBarrier faults;
     private final MatchRegistry matches;
     private final BlockWriter writer;
+    private final MapImports mapImports = new MapImports();
     private volatile BlockClassTable blockClasses;
     private ArenaWorld.Outcome arena = ArenaWorld.Outcome.NOT_AN_ARENA;
 
@@ -67,6 +69,11 @@ public final class StrategosServer {
 
     public MatchRegistry matches() {
         return matches;
+    }
+
+    /** Map imports that belong to no match. */
+    public MapImports mapImports() {
+        return mapImports;
     }
 
     /** Every block Strategos writes goes through it (rule B7). */

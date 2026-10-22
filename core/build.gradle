@@ -29,6 +29,10 @@ dependencies {
 tasks.named('test', Test) {
     useJUnitPlatform { excludeTags 'soak', 'replay' }
     timeout = java.time.Duration.ofMinutes(5)
+    // [M1 T6] ProvingGroundTest compares the generator with the committed map package of the mod's devtools.
+    systemProperty 'strategos.repoRoot', rootDir.absolutePath
+    inputs.files(rootProject.fileTree('mod/src/devtools/resources/data/strategos/strategos/maps'))
+            .withPropertyName('mapManifests')
 }
 
 // [T6b] long seeded determinism runs; part of verify and of verifySoak, not verifyFast.

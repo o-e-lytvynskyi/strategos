@@ -5,6 +5,7 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
+import dev.strategos.core.content.MapManifest;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.Command;
 import dev.strategos.core.protocol.CommandOutcome;
@@ -25,6 +26,10 @@ import dev.strategos.core.sim.journal.JournalFormat;
 import dev.strategos.core.sim.journal.ReplayDriver;
 import dev.strategos.core.sim.journal.ReplayResult;
 import dev.strategos.mod.StrategosServer;
+import dev.strategos.mod.server.content.MapPackage;
+import dev.strategos.mod.server.content.MapPackageLoader;
+import dev.strategos.mod.server.match.MapExporter;
+import dev.strategos.mod.server.match.MapImporter;
 import dev.strategos.mod.server.match.MatchOptions;
 import dev.strategos.mod.server.match.MatchRefusedException;
 import dev.strategos.mod.server.match.MatchRegistry;
@@ -41,10 +46,13 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.ResourceLocationArgument;
+import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.commands.arguments.coordinates.ColumnPosArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ColumnPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.storage.LevelResource;
@@ -79,6 +87,14 @@ public final class StrategosCommands {
                 .then(Commands.literal("match")
                         .then(Commands.literal("create")
                                 .executes(ctx -> create(ctx.getSource(), DEFAULT_SIZE, DEFAULT_SIZE))
+                                .then(Commands.literal("map")
+                                        .then(Commands.argument("map", ResourceLocationArgument.id())
+                                                .suggests((ctx, builder) -> SharedSuggestionProvider.suggestResource(
+                                                        MapPackageLoader.list(
+                                                                ctx.getSource().getServer()),
+                                                        builder))
+                                                .executes(ctx -> createOnMap(
+                                                        ctx.getSource(), ResourceLocationArgument.getId(ctx, "map")))))
                                 .then(Commands.argument("sizeX", size())
                                         .then(Commands.argument("sizeZ", size())
                                                 .executes(ctx -> create(
@@ -98,6 +114,28 @@ public final class StrategosCommands {
                             registry().dispose(rt.id());
                             return rt.id() + " disposed";
                         })))
+                .then(Commands.literal("map")
+                        .then(Commands.literal("list").executes(ctx -> listMaps(ctx.getSource())))
+                        .then(Commands.literal("import")
+                                .then(Commands.argument("map", ResourceLocationArgument.id())
+                                        .suggests((ctx, builder) -> SharedSuggestionProvider.suggestResource(
+                                                MapPackageLoader.list(
+                                                        ctx.getSource().getServer()),
+                                                builder))
+                                        .then(Commands.argument("at", BlockPosArgument.blockPos())
+                                                .executes(ctx -> importMap(
+                                                        ctx.getSource(),
+                                                        ResourceLocationArgument.getId(ctx, "map"),
+                                                        BlockPosArgument.getLoadedBlockPos(ctx, "at"))))))
+                        .then(Commands.literal("export")
+                                .then(Commands.argument("map", ResourceLocationArgument.id())
+                                        .then(Commands.argument("from", BlockPosArgument.blockPos())
+                                                .then(Commands.argument("to", BlockPosArgument.blockPos())
+                                                        .executes(ctx -> exportMap(
+                                                                ctx.getSource(),
+                                                                ResourceLocationArgument.getId(ctx, "map"),
+                                                                BlockPosArgument.getLoadedBlockPos(ctx, "from"),
+                                                                BlockPosArgument.getLoadedBlockPos(ctx, "to"))))))))
                 .then(Commands.literal("spawn")
                         .then(Commands.argument("template", ResourceLocationArgument.id())
                                 .executes(ctx -> spawn(ctx.getSource(), template(ctx), 1, 0))
@@ -194,6 +232,69 @@ public final class StrategosCommands {
         return run(source, () -> {
             MatchRuntime rt = registry().create(level, spaceAround(level, feet, sizeX, sizeZ), options);
             return rt.id() + " created, " + sizeX + " x " + sizeZ + " around " + feet.toShortString();
+        });
+    }
+
+    /**
+     * A match on a map package: in an arena world, in the next slot; elsewhere, its west edge 8 blocks east of the source
+     * and its band from 16 blocks under the source's feet. It stays PREPARING while the map imports.
+     */
+    private static int createOnMap(CommandSourceStack source, ResourceLocation map) {
+        if (ArenaWorld.isArena(source.getServer())) {
+            return run(source, () -> {
+                MatchRuntime rt = registry().createInArena(map, MatchOptions.generated(ArenaPolicy.FLOOR_Y));
+                return rt.id() + " created on " + map + " in the arena slot at "
+                        + rt.space().origin().toShortString() + "; importing";
+            });
+        }
+        ServerLevel level = source.getLevel();
+        BlockPos feet = BlockPos.containing(source.getPosition());
+        return run(source, () -> {
+            MapManifest m;
+            try {
+                m = MapPackageLoader.load(source.getServer(), map).manifest();
+            } catch (IllegalArgumentException e) {
+                throw new MatchRefusedException(String.valueOf(e.getMessage()));
+            }
+            BlockPos origin = new BlockPos(feet.getX() + 8, feet.getY() - 16, feet.getZ() - m.sizeZ() / 2);
+            MatchSpace space = new MatchSpace(
+                    level.dimension(), origin, m.sizeX(), m.sizeZ(), origin.getY(), origin.getY() + m.height() - 1);
+            double floor = origin.getY()
+                    + (m.startSlots().isEmpty() ? 0 : m.startSlots().get(0).y());
+            MatchRuntime rt = registry()
+                    .create(level, space, MatchOptions.generated(feet.getY()).withMap(map, floor));
+            return rt.id() + " created on " + map + " at " + origin.toShortString() + "; importing";
+        });
+    }
+
+    private static int listMaps(CommandSourceStack source) {
+        List<ResourceLocation> maps = MapPackageLoader.list(source.getServer());
+        String line = maps.isEmpty() ? "no map packages" : "maps: " + maps;
+        source.sendSuccess(() -> Component.literal(line), false);
+        return maps.size();
+    }
+
+    /** A map imported at {@code at}, outside any match; it finishes over the next ticks. */
+    private static int importMap(CommandSourceStack source, ResourceLocation map, BlockPos at) {
+        return run(source, () -> {
+            MapPackage pkg;
+            try {
+                pkg = MapPackageLoader.load(source.getServer(), map);
+            } catch (IllegalArgumentException e) {
+                throw new MatchRefusedException(String.valueOf(e.getMessage()));
+            }
+            StrategosServer server = StrategosServer.get();
+            server.mapImports().start(new MapImporter(source.getLevel(), pkg, at, 0, server.writer()));
+            return "importing " + map + " at " + at.toShortString();
+        });
+    }
+
+    private static int exportMap(CommandSourceStack source, ResourceLocation map, BlockPos from, BlockPos to) {
+        return run(source, () -> {
+            MapManifest m = MapExporter.export(source.getLevel(), map, from, to);
+            return "exported " + map + ": " + m.sizeX() + " x " + m.height() + " x " + m.sizeZ() + ", "
+                    + m.tilesX() * m.tilesZ() + " tiles, terrain "
+                    + m.terrainHash().substring(0, 12);
         });
     }
 

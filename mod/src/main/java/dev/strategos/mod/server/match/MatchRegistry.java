@@ -1,5 +1,6 @@
 package dev.strategos.mod.server.match;
 
+import dev.strategos.core.content.MapManifest;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.diag.MatchLog;
 import dev.strategos.core.port.MetricsSink;
@@ -13,6 +14,8 @@ import dev.strategos.core.sim.MatchRules;
 import dev.strategos.core.sim.MatchSnapshot;
 import dev.strategos.mod.StrategosSettings;
 import dev.strategos.mod.server.body.SpawnBudget;
+import dev.strategos.mod.server.content.MapPackage;
+import dev.strategos.mod.server.content.MapPackageLoader;
 import dev.strategos.mod.server.persist.MatchData;
 import dev.strategos.mod.server.persist.Quarantine;
 import dev.strategos.mod.server.persist.RegistryData;
@@ -30,6 +33,7 @@ import java.util.Optional;
 import java.util.TreeMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
@@ -71,9 +75,11 @@ public final class MatchRegistry {
     }
 
     /**
-     * A RUNNING match in {@code space}, with the next id. Throws {@link MatchRefusedException} for a size outside 8..512, a
-     * Y band taller than 128 or outside the level's build height, a floor outside the band, another match within 2
-     * blocks, or a saved match while the registry blob is not usable.
+     * A RUNNING match in {@code space}, with the next id; with a map, a PREPARING one that starts once the map is
+     * imported and its terrain hash checked ({@link #stepPreparing}). Throws {@link MatchRefusedException} for a size
+     * outside 8..512, a Y band taller than 128 or outside the level's build height, a floor outside the band, another
+     * match within 2 blocks, a map that is missing or does not fit the space, or a saved match while the registry blob
+     * is not usable.
      */
     public MatchRuntime create(ServerLevel level, MatchSpace space, MatchOptions options) {
         if (!space.level().equals(level.dimension())) {
@@ -81,6 +87,8 @@ public final class MatchRegistry {
                     + level.dimension().location());
         }
         check(level, space);
+        ResourceLocation mapId = options.map();
+        MapPackage map = mapId == null ? null : loadMap(mapId, space);
         MatchBounds bounds;
         try {
             bounds = space.toBounds(options.flatFloorY());
@@ -114,18 +122,81 @@ public final class MatchRegistry {
                     MatchLifecycle.CREATED,
                     options.source(),
                     saved.epoch(),
-                    Optional.empty()));
+                    Optional.empty(),
+                    Optional.ofNullable(mapId).map(ResourceLocation::toString)));
         }
-        MatchRuntime rt = new MatchRuntime(id, space, options.source(), policy, saved != null, core, data, spawnBudget);
+        MatchRuntime rt =
+                new MatchRuntime(id, space, options.source(), policy, saved != null, core, data, spawnBudget, mapId);
         rt.onLifecycleChange(() -> recordChanged(rt));
         rt.transition(MatchLifecycle.PREPARING);
-        if (ArenaPolicy.governs(server, space, options.source())) {
+        if (holdsTickets(rt)) {
             ArenaTickets.force(level, id, space);
+        }
+        register(rt);
+        if (map != null) {
+            rt.importer(new MapImporter(level, map, space.origin(), id.value(), writer));
+            return rt;
         }
         rt.transition(MatchLifecycle.READY);
         rt.transition(MatchLifecycle.RUNNING);
-        register(rt);
         return rt;
+    }
+
+    /** The matches still importing their map. */
+    public List<MatchRuntime> preparing() {
+        List<MatchRuntime> list = new ArrayList<>();
+        for (MatchRuntime rt : matches.values()) {
+            if (rt.lifecycle() == MatchLifecycle.PREPARING && rt.importer() != null) {
+                list.add(rt);
+            }
+        }
+        return list;
+    }
+
+    /**
+     * One tick of a preparing match's import. When it is done, the terrain hash of what stands in the level must be the
+     * manifest's: the match then starts RUNNING; otherwise it faults with both hashes.
+     */
+    public void stepPreparing(MatchRuntime rt) {
+        MapImporter importer = rt.importer();
+        if (rt.lifecycle() != MatchLifecycle.PREPARING || importer == null || !importer.step()) {
+            return;
+        }
+        rt.imported(importer.hash(), importer.millis());
+        rt.importer(null);
+        String expected = importer.map().manifest().terrainHash();
+        if (!expected.equals(importer.hash())) {
+            rt.fault(
+                    new IllegalStateException("the imported terrain hashes to " + importer.hash() + ", the manifest of "
+                            + rt.map() + " says " + expected),
+                    "import");
+            return;
+        }
+        rt.log().info(rt.tick(), "map {} imported in {} ms", String.valueOf(rt.map()), importer.millis());
+        rt.transition(MatchLifecycle.READY);
+        rt.transition(MatchLifecycle.RUNNING);
+    }
+
+    /** An arena match, or one on a map, holds tickets over its whole space until it is disposed. */
+    private boolean holdsTickets(MatchRuntime rt) {
+        return rt.map() != null || ArenaPolicy.governs(server, rt.space(), rt.source());
+    }
+
+    /** The package, checked against the space: the same size, and a band as high as the map. */
+    private MapPackage loadMap(ResourceLocation id, MatchSpace space) {
+        MapPackage map;
+        try {
+            map = MapPackageLoader.load(server, id);
+        } catch (IllegalArgumentException e) {
+            throw new MatchRefusedException(String.valueOf(e.getMessage()));
+        }
+        MapManifest m = map.manifest();
+        int height = space.maxY() - space.minY() + 1;
+        if (m.sizeX() != space.sizeX() || m.sizeZ() != space.sizeZ() || m.height() != height) {
+            throw new MatchRefusedException("map " + id + " is " + m.sizeX() + " x " + m.sizeZ() + " x " + m.height()
+                    + ", the space " + space.sizeX() + " x " + space.sizeZ() + " x " + height);
+        }
+        return map;
     }
 
     /**
@@ -138,6 +209,27 @@ public final class MatchRegistry {
         }
         int slot = usableRegistry().allocateArenaSlot();
         return create(server.overworld(), ArenaPolicy.slotSpace(slot, sizeX, sizeZ), options);
+    }
+
+    /**
+     * A match on map package {@code map} in the arena's next slot: the map's size, its band from its {@code minY}, its
+     * units standing at its first start slot until movement follows the terrain (T9).
+     */
+    public MatchRuntime createInArena(ResourceLocation map, MatchOptions options) {
+        if (!ArenaWorld.isArena(server)) {
+            throw new MatchRefusedException("this world is not a Strategos arena");
+        }
+        MapManifest m;
+        try {
+            m = MapPackageLoader.load(server, map).manifest();
+        } catch (IllegalArgumentException e) {
+            throw new MatchRefusedException(String.valueOf(e.getMessage()));
+        }
+        int slot = usableRegistry().allocateArenaSlot();
+        MatchSpace space = ArenaPolicy.slotSpace(slot, m.sizeX(), m.sizeZ(), m.minY(), m.minY() + m.height() - 1);
+        double floor =
+                m.minY() + (m.startSlots().isEmpty() ? 0 : m.startSlots().get(0).y());
+        return create(server.overworld(), space, options.withMap(map, floor));
     }
 
     /** The registry blob as loaded on server start, quarantined or not; null before. */
@@ -219,7 +311,10 @@ public final class MatchRegistry {
         MatchRuntime rt = require(id);
         if (rt.lifecycle().canTransitionTo(MatchLifecycle.ENDED)) {
             rt.transition(MatchLifecycle.ENDED);
+        } else if (rt.lifecycle() == MatchLifecycle.PREPARING || rt.lifecycle() == MatchLifecycle.READY) {
+            rt.fault(new IllegalStateException("disposed before it started"), "dispose"); // no direct way to DISPOSED
         }
+        rt.importer(null);
         rt.transition(MatchLifecycle.DISPOSED);
         drop(rt);
         if (rt.persistent()) {
@@ -228,7 +323,7 @@ public final class MatchRegistry {
         ServerLevel level = server.getLevel(rt.space().level());
         if (level != null) {
             writer.forget(level, id.value());
-            if (ArenaPolicy.governs(server, rt.space(), rt.source()) && !settings.leakTickets()) {
+            if (holdsTickets(rt) && !settings.leakTickets()) {
                 ArenaTickets.release(level, id, rt.space());
             }
         }
@@ -266,6 +361,8 @@ public final class MatchRegistry {
             reason = "its saved blob is quarantined: " + data.quarantineReason();
         } else if (record.lifecycle() == MatchLifecycle.FAULTED) {
             reason = record.faultMessage().orElse("it had faulted before the save");
+        } else if (record.lifecycle() == MatchLifecycle.PREPARING) {
+            reason = "the server stopped while it was importing its map";
         } else if (data.state() != MatchData.State.LOADED || snapshot == null) {
             reason = "its blob is " + data.state();
         } else {
@@ -284,7 +381,15 @@ public final class MatchRegistry {
             }
         }
         MatchRuntime rt = new MatchRuntime(
-                record.id(), record.space(), record.source(), defaultPolicy(), true, core, data, spawnBudget);
+                record.id(),
+                record.space(),
+                record.source(),
+                defaultPolicy(),
+                true,
+                core,
+                data,
+                spawnBudget,
+                record.map().map(ResourceLocation::parse).orElse(null));
         rt.onLifecycleChange(() -> recordChanged(rt));
         if (core == null) {
             rt.restoredFaulted(String.valueOf(reason));
@@ -369,7 +474,15 @@ public final class MatchRegistry {
 
     private MatchRuntime registerFaulted(MatchRecord record, String reason) {
         MatchRuntime rt = new MatchRuntime(
-                record.id(), record.space(), record.source(), defaultPolicy(), true, null, null, spawnBudget);
+                record.id(),
+                record.space(),
+                record.source(),
+                defaultPolicy(),
+                true,
+                null,
+                null,
+                spawnBudget,
+                record.map().map(ResourceLocation::parse).orElse(null));
         rt.restoredFaulted(reason);
         rt.onLifecycleChange(() -> recordChanged(rt));
         recordChanged(rt);

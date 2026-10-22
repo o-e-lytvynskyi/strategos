@@ -280,7 +280,7 @@ Cards: [roadmap/M1-movement.md](roadmap/M1-movement.md#cards). 26 cards, at most
 | PATH-01 | Spike S8: terrain census and surface encoding | S | PATH-02 | done |
 | MAP-07 | Arena world: preset, world rules and tickets | M | CORE-01, D-13 | done |
 | BLD-15 | Block writer | M | CORE-02, CORE-10 | in_progress |
-| MAP-01 | Map packages, importer and the proving ground | M | BLD-15, MAP-07, PERF-03 | specified |
+| MAP-01 | Map packages, importer and the proving ground | M | BLD-15, MAP-07, PERF-03 | done |
 | PATH-15 | Live terrain capture, page rebuilds and the block-change router | M | PATH-02, BLD-15, CORE-01 | specified |
 | PATH-03 | Path service: A*, string pulling and STRICT delivery | M | PATH-02, CORE-05 | specified |
 | PATH-05 | Path following: kinematic motion on surfaces | M | PATH-03, UNIT-01 | specified |

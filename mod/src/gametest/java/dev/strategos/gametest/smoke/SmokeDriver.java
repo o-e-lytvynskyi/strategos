@@ -3,6 +3,7 @@ package dev.strategos.gametest.smoke;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import dev.strategos.core.content.MapManifest;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.SpawnUnits;
@@ -24,8 +25,10 @@ import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.entity.UnitEntity;
 import dev.strategos.mod.platform.Ids;
 import dev.strategos.mod.server.command.StrategosCommands;
+import dev.strategos.mod.server.content.MapPackageLoader;
 import dev.strategos.mod.server.match.MatchOptions;
 import dev.strategos.mod.server.match.MatchRuntime;
+import dev.strategos.mod.server.match.MatchSpace;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
@@ -35,6 +38,7 @@ import java.util.Arrays;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.entity.EntityTypeTest;
@@ -60,6 +64,9 @@ import org.slf4j.LoggerFactory;
  * <ol>
  *   <li>the mod is loaded, core runs in the mod module, the holder exists from {@code ServerAboutToStartEvent} on, the
  *       unit body type is registered;
+ *   <li>MAP-01.4: an unsaved match on the proving ground, 4,096 blocks from the spawn so that only its own tickets hold
+ *       the area, imports while the server sprints (its terrain hash checked); 8 units walk from the west start, and 100
+ *       ticks later, with nobody online, all 8 have bodies and stand on their target; the match is disposed;
  *   <li>a saved 16 x 16 match around the world spawn; 8 units around local (4, 8), ordered to (12.5, 8.5);
  *   <li>100 server ticks later: every unit on the target, 8 bodies, the match RUNNING; then ordered back to (4.5, 8.5);
  *   <li>20 ticks later, the units still walking: the marker with the numbers, the live journal in
@@ -81,14 +88,32 @@ public final class SmokeDriver {
     private static final int SAVE_AFTER = 20;
     private static final int REPLAY_AFTER = 60;
     private static final int DEADLINE = 600;
+    private static final int MAP_UNITS = 8;
+    private static final int MAP_TICKS = 100;
+    private static final long MAP_DEADLINE_NANOS = 120_000_000_000L;
 
     /** The running smoke; gametest code, so static state is fine. Server thread only. */
     private static @Nullable Run run;
+
+    private static @Nullable MapStep mapStep;
 
     private static boolean holderAtAboutToStart;
     private static boolean markerWritten;
 
     private SmokeDriver() {}
+
+    /** Run 1's map step: the match on the proving ground, then its units' walk. */
+    private static final class MapStep {
+        final MinecraftServer server;
+        final MatchRuntime match;
+        final long startNanos = System.nanoTime();
+        int runningTicks = -1;
+
+        MapStep(MinecraftServer server, MatchRuntime match) {
+            this.server = server;
+            this.match = match;
+        }
+    }
 
     private static final class Run {
         final MinecraftServer server;
@@ -139,6 +164,36 @@ public final class SmokeDriver {
             startRestart(server);
             return;
         }
+        ServerLevel overworld = server.overworld();
+        BlockPos spawn = overworld.getSharedSpawnPos();
+        int bottom = overworld.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, spawn.getX(), spawn.getZ());
+        BlockPos origin = new BlockPos(spawn.getX() + 4_096, bottom, spawn.getZ());
+        ResourceLocation map = Ids.id("proving_ground");
+        MapManifest manifest = MapPackageLoader.load(server, map).manifest();
+        MatchSpace space = new MatchSpace(
+                overworld.dimension(),
+                origin,
+                manifest.sizeX(),
+                manifest.sizeZ(),
+                origin.getY(),
+                origin.getY() + manifest.height() - 1);
+        MatchRuntime mapMatch = StrategosServer.get()
+                .matches()
+                .create(
+                        overworld,
+                        space,
+                        MatchOptions.generated(bottom)
+                                .withPersistent(false)
+                                .withMap(
+                                        map,
+                                        origin.getY()
+                                                + manifest.startSlots().get(0).y()));
+        server.tickRateManager().requestGameToSprint(1_000_000);
+        mapStep = new MapStep(server, mapMatch);
+    }
+
+    /** After the map step: the M0 match around the world spawn. */
+    private static void startRun1(MinecraftServer server) {
         ServerLevel overworld = server.overworld();
         BlockPos spawn = overworld.getSharedSpawnPos();
         int floor = overworld.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, spawn.getX(), spawn.getZ());
@@ -194,6 +249,11 @@ public final class SmokeDriver {
 
     @SubscribeEvent
     static void onServerTickPost(ServerTickEvent.Post event) {
+        MapStep m = mapStep;
+        if (m != null) {
+            tickMapStep(m);
+            return;
+        }
         Run r = run;
         if (r == null) {
             return;
@@ -241,6 +301,62 @@ public final class SmokeDriver {
                     sibling("journal-run1.strj"),
                     new JournalExport(core.journal(), core.queries().tick(), core.stateHash()));
             finish(r.server, null, r);
+        }
+    }
+
+    private static void tickMapStep(MapStep m) {
+        if (System.nanoTime() - m.startNanos > MAP_DEADLINE_NANOS) {
+            mapStep = null;
+            finish(m.server, "the map step took over 2 minutes: the match is " + m.match.lifecycle(), null);
+            return;
+        }
+        if (m.match.lifecycle() == MatchLifecycle.PREPARING) {
+            return;
+        }
+        MatchCore core = m.match.core();
+        if (m.match.lifecycle() != MatchLifecycle.RUNNING || core == null) {
+            mapStep = null;
+            finish(
+                    m.server,
+                    "the proving-ground match is " + m.match.lifecycle() + ": " + m.match.faultMessage(),
+                    null);
+            return;
+        }
+        if (m.runningTicks < 0) {
+            m.server.tickRateManager().stopSprinting();
+            m.runningTicks = 0;
+            m.match.submit(
+                    PlayerSlot.ADMIN,
+                    new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(0), new Vec2d(24.5, 192.5), MAP_UNITS, 2));
+            return;
+        }
+        int[] units = core.queries().unitHandles();
+        if (m.runningTicks == 0 && units.length == MAP_UNITS) {
+            m.match.submit(PlayerSlot.ADMIN, Move.replace(UnitSet.of(units), new Vec2d(40.5, 192.5)));
+        }
+        if (units.length == MAP_UNITS && ++m.runningTicks >= MAP_TICKS) {
+            String problem = null;
+            if (m.server.getPlayerCount() != 0) {
+                problem = "a player is online during the map step";
+            } else if (m.match.bodies().count() != MAP_UNITS) {
+                problem = m.match.bodies().count() + " bodies on the proving ground, not " + MAP_UNITS;
+            } else {
+                for (int handle : units) {
+                    UnitView unit = core.queries().unit(handle);
+                    if (unit == null || unit.x() != 40.5 || unit.z() != 192.5) {
+                        problem = "unit " + Handle.toString(handle) + " is not on its target: " + unit;
+                        break;
+                    }
+                }
+            }
+            StrategosServer.get().matches().dispose(m.match.id());
+            mapStep = null;
+            if (problem != null) {
+                finish(m.server, problem, null);
+                return;
+            }
+            LOG.info("Server smoke: the proving ground imported in {} ms", m.match.importMillis());
+            startRun1(m.server);
         }
     }
 

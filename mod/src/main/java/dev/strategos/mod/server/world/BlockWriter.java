@@ -31,7 +31,9 @@ import org.jspecify.annotations.Nullable;
  *
  * Each write uses {@code UPDATE_CLIENTS | UPDATE_KNOWN_SHAPE} (Block.java:78, 81), so neighbours do not cascade, with
  * {@link OwnWrite} set, and keeps the {@link ProtectedBlockIndex} in step. A site whose queue empties gets one
- * shape-update pass over the outside of what it wrote. Server thread only.
+ * shape-update pass over the outside of what it wrote, except for {@code IMPORT} writes: a map's tiles hold their final
+ * states, and a pass at a tile's edge would change them (leaves recount their distance on the tick it schedules).
+ * Server thread only.
  */
 public final class BlockWriter {
     public static final int FLAGS = Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE;
@@ -52,8 +54,8 @@ public final class BlockWriter {
         void wrote(ServerLevel level, long tick, WriteSite site, BlockPos pos, BlockState state);
     }
 
-    /** A write waiting: where, what, and who protects it (0 for nobody). */
-    private record Pending(BlockPos pos, BlockState state, int owner) {}
+    /** A write waiting: where, what, who protects it (0 for nobody), and whether the shape pass covers it. */
+    private record Pending(BlockPos pos, BlockState state, int owner, boolean shaped) {}
 
     /** One level's queue, protected blocks, and what each site wrote since its last shape pass. */
     private static final class LevelWrites {
@@ -70,7 +72,9 @@ public final class BlockWriter {
 
     public void enqueue(
             ServerLevel level, WriteSite site, WritePriority priority, BlockPos pos, BlockState state, int owner) {
-        writesOf(level).scheduler.enqueue(site, priority, new Pending(pos.immutable(), state, owner));
+        writesOf(level)
+                .scheduler
+                .enqueue(site, priority, new Pending(pos.immutable(), state, owner, priority != WritePriority.IMPORT));
     }
 
     /** A block state written as Minecraft prints it, such as {@code minecraft:oak_stairs[facing=east]}; cached. */
@@ -133,9 +137,11 @@ public final class BlockWriter {
         } else {
             writes.protectedBlocks.release(w.pos());
         }
-        writes.written
-                .computeIfAbsent(site, k -> new LongOpenHashSet())
-                .add(w.pos().asLong());
+        if (w.shaped()) {
+            writes.written
+                    .computeIfAbsent(site, k -> new LongOpenHashSet())
+                    .add(w.pos().asLong());
+        }
     }
 
     /**
@@ -185,6 +191,12 @@ public final class BlockWriter {
 
     public ProtectedBlockIndex protectedBlocks(ServerLevel level) {
         return writesOf(level).protectedBlocks;
+    }
+
+    /** Writes waiting at one site of {@code level}. */
+    public int pending(ServerLevel level, WriteSite site) {
+        LevelWrites writes = levels.get(level.dimension());
+        return writes == null ? 0 : writes.scheduler.pending(site);
     }
 
     /** Writes waiting in {@code level}. */

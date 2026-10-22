@@ -198,6 +198,16 @@ neoForge {
             systemProperty 'strategos.smoke', 'arena2'
             systemProperty 'strategos.smoke.marker', file('build/smoke-arena/arena-run2.json').absolutePath
         }
+        // [M1 T6] writes the proving ground's map package into the devtools resources, then stops (spec 4.1)
+        mapgen {
+            server()
+            disableIdeRun()
+            gameDirectory = file('build/mapgen')
+            programArgument('--nogui')
+            systemProperty 'strategos.mapgen', 'proving_ground'
+            systemProperty 'strategos.mapgen.out', file('src/devtools/resources').absolutePath
+            systemProperty 'strategos.mapgen.marker', file('build/mapgen/mapgen-result.json').absolutePath
+        }
         // [T9b] run 2 of the restart round trip: run 1's game directory, never wiped (QA-05.4)
         serverSmokeRestart {
             server()
@@ -280,6 +290,7 @@ dependencies {
 
     devtoolsImplementation sourceSets.main.output
     devtoolsImplementation core
+    devtoolsImplementation testFixtures(core)   // [M1 T6] mapgen writes the package from ProvingGround
 
     archTestImplementation platform(libs.junit.bom)
     archTestImplementation libs.junit.jupiter
@@ -364,6 +375,9 @@ tasks.register('checkJarContents') {
                     it.endsWith('module-info.class')
         }
         if (forbidden) throw new GradleException("Dev-only classes or module-info in the jar: ${forbidden.take(10)}")
+        // [M1 T6] the proving ground's package lives in the devtools resources: dev runs load it, the jar never does
+        def maps = names.findAll { it.startsWith('data/strategos/strategos/maps/') || it.startsWith('data/strategos/structure/') }
+        if (maps) throw new GradleException("Map packages in the jar: ${maps.take(10)}")
         if (!names.contains('META-INF/neoforge.mods.toml')) throw new GradleException('META-INF/neoforge.mods.toml missing from the jar')
     }
 }
@@ -478,6 +492,30 @@ smokeGuard('runServerSmokeRestart', 'smoke-restart.json')
 tasks.matching { it.name == 'runServerSmokeRestart' }.configureEach {
     dependsOn 'runServerSmoke'
     doFirst { new File(smokeDir, 'smoke-restart.json').delete() }
+}
+
+// [M1 T6] mapgen: a fresh void world each run; the guard checks the marker and that the manifest names its hash.
+def prepareMapgen = tasks.register('prepareMapgen', Sync) {
+    from 'src/gametest/spike-gamedir'
+    into layout.buildDirectory.dir('mapgen')
+    outputs.upToDateWhen { false }
+}
+neoForge.runs.mapgen.taskBefore prepareMapgen
+def mapgenMarker = file('build/mapgen/mapgen-result.json')
+def mapgenManifest = file('src/devtools/resources/data/strategos/strategos/maps/proving_ground.json')
+tasks.matching { it.name == 'runMapgen' }.configureEach {
+    timeout = Duration.ofMinutes(5)
+    doLast {
+        def marker = mapgenMarker
+        if (!marker.isFile()) throw new GradleException("mapgen wrote no marker: ${marker}")
+        def result = new groovy.json.JsonSlurper().parse(marker)
+        if (result.ok != true) throw new GradleException("mapgen failed: ${marker.text}")
+        def manifest = mapgenManifest
+        if (!manifest.isFile()) throw new GradleException("mapgen wrote no manifest: ${manifest}")
+        if (new groovy.json.JsonSlurper().parse(manifest).terrainHash != result.terrainHash) {
+            throw new GradleException('the manifest does not name the generator\'s terrain hash')
+        }
+    }
 }
 
 // [M1 T4] The arena smoke: run 1 on a fresh arena world, run 2 restarts it in the same directory.

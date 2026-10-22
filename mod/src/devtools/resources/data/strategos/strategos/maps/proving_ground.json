@@ -1,0 +1,79 @@
+{
+  "waypoints": {
+    "bridge": {
+      "x": 192,
+      "y": 13,
+      "z": 96
+    },
+    "east": {
+      "x": 360,
+      "y": 16,
+      "z": 192
+    },
+    "far_side": {
+      "x": 340,
+      "y": 14,
+      "z": 192
+    },
+    "ford": {
+      "x": 192,
+      "y": 11,
+      "z": 143
+    },
+    "pass": {
+      "x": 268,
+      "y": 13,
+      "z": 128
+    },
+    "west": {
+      "x": 24,
+      "y": 16,
+      "z": 192
+    },
+    "yard": {
+      "x": 316,
+      "y": 16,
+      "z": 260
+    }
+  },
+  "version": 1,
+  "terrainHash": "a2424dd03e26f0159bc5e09cf099f4a3de6dc32505ff31c85a49e807accb74a8",
+  "tileSize": 32,
+  "palette": [
+    "minecraft:air",
+    "minecraft:stone",
+    "minecraft:grass_block",
+    "minecraft:dirt",
+    "minecraft:water",
+    "minecraft:sand",
+    "minecraft:oak_planks",
+    "minecraft:oak_fence[east\u003dtrue,west\u003dtrue]",
+    "minecraft:oak_fence[east\u003dtrue]",
+    "minecraft:oak_fence[west\u003dtrue]",
+    "minecraft:stone_bricks",
+    "minecraft:oak_log",
+    "minecraft:oak_leaves[persistent\u003dtrue]",
+    "minecraft:oak_fence_gate[facing\u003deast]",
+    "minecraft:cobblestone"
+  ],
+  "startSlots": [
+    {
+      "x": 24,
+      "y": 16,
+      "z": 192,
+      "yaw": 270.0
+    },
+    {
+      "x": 360,
+      "y": 16,
+      "z": 192,
+      "yaw": 90.0
+    }
+  ],
+  "minY": 0,
+  "height": 64,
+  "baseBlock": "minecraft:stone",
+  "id": "strategos:proving_ground",
+  "sizeX": 384,
+  "sizeZ": 384
+}

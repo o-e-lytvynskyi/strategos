@@ -71,6 +71,21 @@ public final class StrategosGameTests {
         afterBatch(level, "chunks");
     }
 
+    @AfterBatch(batch = "map_import")
+    public static void afterMapImport(ServerLevel level) {
+        afterBatch(level, "map_import");
+    }
+
+    @AfterBatch(batch = "map_twice")
+    public static void afterMapTwice(ServerLevel level) {
+        afterBatch(level, "map_twice");
+    }
+
+    @AfterBatch(batch = "map_roundtrip")
+    public static void afterMapRoundtrip(ServerLevel level) {
+        afterBatch(level, "map_roundtrip");
+    }
+
     @AfterBatch(batch = "writer")
     public static void afterWriter(ServerLevel level) {
         afterBatch(level, "writer");
@@ -84,6 +99,11 @@ public final class StrategosGameTests {
     @AfterBatch(batch = "selftest")
     public static void afterSelftest(ServerLevel level) {
         afterBatch(level, "selftest");
+    }
+
+    /** The batches of {@code runGameTestSlow}: {@code slow} and the map batches ({@code map_…}), which only it runs. */
+    private static boolean slow(String batch) {
+        return batch.equals(SLOW) || batch.startsWith("map_");
     }
 
     private static void afterBatch(ServerLevel level, String batch) {
@@ -118,7 +138,7 @@ public final class StrategosGameTests {
         }
         Pattern pattern = Pattern.compile(filter);
         List<TestFunction> functions = candidates.stream()
-                .filter(c -> c.batch().equals(SLOW) == slow)
+                .filter(c -> slow(c.batch()) == slow)
                 .filter(c -> pattern.matcher(c.name()).find())
                 .sorted(Comparator.comparing(Candidate::name))
                 .map(c -> c.function().get())

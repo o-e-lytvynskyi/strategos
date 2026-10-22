@@ -31,7 +31,12 @@ public final class ArenaPolicy {
 
     /** Slot {@code slot}'s space of {@code sizeX} x {@code sizeZ} blocks over {@link #MIN_Y}..{@link #MAX_Y}. */
     public static MatchSpace slotSpace(int slot, int sizeX, int sizeZ) {
+        return slotSpace(slot, sizeX, sizeZ, MIN_Y, MAX_Y);
+    }
+
+    /** Slot {@code slot}'s space over a map's own band, {@code minY}..{@code maxY}. */
+    public static MatchSpace slotSpace(int slot, int sizeX, int sizeZ, int minY, int maxY) {
         return new MatchSpace(
-                Level.OVERWORLD, new BlockPos(SlotAllocator.originX(slot), MIN_Y, 0), sizeX, sizeZ, MIN_Y, MAX_Y);
+                Level.OVERWORLD, new BlockPos(SlotAllocator.originX(slot), minY, 0), sizeX, sizeZ, minY, maxY);
     }
 }

@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.LoggerFactory;
@@ -38,6 +39,7 @@ public final class MatchRuntime {
     private final BodyRegistry bodies;
     private final SpawnBudget spawnBudget;
     private final MatchLog log;
+    private final @Nullable ResourceLocation map;
     private final List<CommandEnvelope> inbox = new ArrayList<>();
     private final Map<ReplyKey, Consumer<CommandResult>> replies = new HashMap<>();
     private final List<Consumer<TickOutputs>> listeners = new ArrayList<>();
@@ -45,6 +47,9 @@ public final class MatchRuntime {
     private @Nullable String faultMessage;
     private int nextClientSeq = 1;
     private Runnable onLifecycleChange = () -> {};
+    private @Nullable MapImporter importer;
+    private @Nullable String importedHash;
+    private long importMillis = -1;
 
     MatchRuntime(
             MatchId id,
@@ -54,7 +59,9 @@ public final class MatchRuntime {
             boolean persistent,
             @Nullable MatchCore core,
             @Nullable MatchData data,
-            SpawnBudget spawnBudget) {
+            SpawnBudget spawnBudget,
+            @Nullable ResourceLocation map) {
+        this.map = map;
         this.id = id;
         this.space = space;
         this.source = source;
@@ -65,6 +72,35 @@ public final class MatchRuntime {
         this.spawnBudget = spawnBudget;
         this.bodies = new BodyRegistry(id, space);
         this.log = new MatchLog(LoggerFactory.getLogger(MatchRuntime.class), id);
+    }
+
+    /** The map package the match was made on, or null. */
+    public @Nullable ResourceLocation map() {
+        return map;
+    }
+
+    /** The import that prepares the match, until it is done; null for a match without a map or once it is RUNNING. */
+    public @Nullable MapImporter importer() {
+        return importer;
+    }
+
+    void importer(@Nullable MapImporter importer) {
+        this.importer = importer;
+    }
+
+    /** The terrain hash the finished import read back, or null before (or without a map). */
+    public @Nullable String importedHash() {
+        return importedHash;
+    }
+
+    /** How long the import took, or -1. */
+    public long importMillis() {
+        return importMillis;
+    }
+
+    void imported(@Nullable String hash, long millis) {
+        this.importedHash = hash;
+        this.importMillis = millis;
     }
 
     public MatchId id() {

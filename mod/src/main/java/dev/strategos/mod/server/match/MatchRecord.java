@@ -11,7 +11,8 @@ import java.util.Optional;
 
 /**
  * What the match registry blob keeps of a saved match: where it lives, its seed, its lifecycle, who made it, the save
- * epoch of its last blob, and why it faulted if it did. The match itself is in its own blob.
+ * epoch of its last blob, why it faulted if it did, and the map package it was made on, if any (M1, optional). The
+ * match itself is in its own blob.
  */
 public record MatchRecord(
         MatchId id,
@@ -20,7 +21,8 @@ public record MatchRecord(
         MatchLifecycle lifecycle,
         MatchSource source,
         long lastEpoch,
-        Optional<String> faultMessage) {
+        Optional<String> faultMessage,
+        Optional<String> map) {
     private static final Codec<MatchLifecycle> LIFECYCLE = byName(MatchLifecycle.values());
     private static final Codec<MatchSource> SOURCE = byName(MatchSource.values());
 
@@ -31,15 +33,28 @@ public record MatchRecord(
                     LIFECYCLE.fieldOf("lifecycle").forGetter(MatchRecord::lifecycle),
                     SOURCE.fieldOf("source").forGetter(MatchRecord::source),
                     Codec.LONG.fieldOf("lastEpoch").forGetter(MatchRecord::lastEpoch),
-                    Codec.STRING.optionalFieldOf("faultMessage").forGetter(MatchRecord::faultMessage))
+                    Codec.STRING.optionalFieldOf("faultMessage").forGetter(MatchRecord::faultMessage),
+                    Codec.STRING.optionalFieldOf("map").forGetter(MatchRecord::map))
             .apply(i, MatchRecord::new));
 
+    /** A record of a match made without a map. */
+    public MatchRecord(
+            MatchId id,
+            MatchSpace space,
+            long seed,
+            MatchLifecycle lifecycle,
+            MatchSource source,
+            long lastEpoch,
+            Optional<String> faultMessage) {
+        this(id, space, seed, lifecycle, source, lastEpoch, faultMessage, Optional.empty());
+    }
+
     public MatchRecord withLifecycle(MatchLifecycle lifecycle, Optional<String> faultMessage) {
-        return new MatchRecord(id, space, seed, lifecycle, source, lastEpoch, faultMessage);
+        return new MatchRecord(id, space, seed, lifecycle, source, lastEpoch, faultMessage, map);
     }
 
     public MatchRecord withLastEpoch(long lastEpoch) {
-        return new MatchRecord(id, space, seed, lifecycle, source, lastEpoch, faultMessage);
+        return new MatchRecord(id, space, seed, lifecycle, source, lastEpoch, faultMessage, map);
     }
 
     /** An enum by its lower-case name, never its ordinal, so reordering constants cannot change a save. */

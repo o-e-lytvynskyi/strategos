@@ -317,7 +317,8 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
      that holds only our tickets (L5).
 - **Tests:** L0, L1, L3, L5 · **Fixtures:** proving-ground package and fixture with a terrain
   hash · **Depends on:** BLD-15, MAP-07, PERF-03 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Done:** 2026-10-22 — M1 T6: `maptests.proving_ground_imports_within_30s` imports and starts a match on the proving ground in 1.2–2.4 s, its terrain hash the manifest's (1); `maptests.two_imports_equal_hashes` and `maptests.export_import_round_trip` (2); `ProvingGroundTest` (the committed manifest carries the generator's hash, slots and waypoints, and every waypoint is reachable) and `MapTileCodecTest` (3); the server smoke's map step: a match on the imported proving ground walks its units for 100 ticks with nobody online, 4,096 blocks from the spawn (4)
+- **Status:** done
 
 #### PATH-15 · Live terrain capture, page rebuilds and the block-change router
 - **Value:** The nav grid follows the live world (players, explosions, other mods) without ever

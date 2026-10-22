@@ -20,7 +20,7 @@ owner's M4 Pro on 2026-10-22 ([S5](spikes/S5-build-wiring.md), check 13).
 | **L2** Minecraft unit | Codecs, payload sizes, migrations from fixture files, shipped data through the real loaders, registries, and the engine-surface inventory check, which reads the registered types and payloads ([ADR-0022](adr/0022-definition-of-done-amendments.md)) | `./gradlew :mod:test` | 45 tests, 4.0 s | assistant on adapter or data changes |
 | **L3** GameTest | The adapters in a real server world: bodies, blocks, mock players, save and reload, fault injection, parallel matches | `./gradlew :mod:runGameTestServer` | 97 GameTests, 4.2 s of wall time | assistant before every commit |
 | **L4** client scenario | HUD, camera and rendering on screen: a PNG plus JSON per shot | `./gradlew :mod:runScenario -Pscenario=<id>`; `:mod:scenarioDiff` and the goldens arrive with QA-18 in M2 | `smoke` 11–16 s on the Mac; 2–3 min as a CI job | **only with the owner's consent** (a game window opens and takes the focus); on CI under Xvfb by hand (`.github/workflows/scenario.yml`) |
-| **L5** server smoke | The mod loads on a dedicated server with no client classes; a headless match runs; an arena world gets its rules once and drops a dead match's tickets on restart | `./gradlew :mod:runServerSmoke`; `:mod:runServerSmokeRestart` adds the restart round trip; `:mod:runServerSmokeArena2` runs the arena smoke's two starts | 11.5 s; 19.3 s with the restart; 11 s for the arena smoke | assistant before commit |
+| **L5** server smoke | The mod loads on a dedicated server with no client classes; a match on the imported proving ground and a headless match run with nobody online; an arena world gets its rules once and drops a dead match's tickets on restart | `./gradlew :mod:runServerSmoke`; `:mod:runServerSmokeRestart` adds the restart round trip; `:mod:runServerSmokeArena2` runs the arena smoke's two starts | 32 s with the restart (the map step imports for 7 s while the server sprints); 11 s for the arena smoke | assistant before commit |
 | **L6** performance | The budgets of [ADR-0019](adr/0019-performance-budgets.md); JMH regressions above 15 % fail | `./gradlew verifyPerf`: `:core:jmh` and `:core:jmhCompare`, then the perf GameTest batch alone in `:mod:runGameTestPerf` | JMH 83 s; the perf batch 6 s | assistant on hot paths; the owner approves baselines |
 | **L7** manual | Feel, multiplayer, the production jar | a dedicated server and two clients (`runServer`, `runClientJoin`, `runClient2`, or `scripts/playtest.sh`), started by the owner; a plain `runClient` opens the title screen and joins nothing | — | owner at milestones |
 
@@ -47,8 +47,10 @@ Measured in M0: `verify` 39 s from clean without the build cache and 31 s warm (
 minutes), `verifyHarness` 12 s, `verifySlow` 6 s, `verifySoak` 9 s; CI runs `verify verifySlow
 verifySoak` in 6 to 10 minutes.
 
-`verifySlow` exists from M0 for the GameTest batch `slow` (`:mod:runGameTestSlow`); map-scale
-GameTests, `@Tag("slow")` L1 runs and the crowd soak join it from M1. `verifySoak` runs
+`verifySlow` exists from M0 for the GameTest batch `slow` (`:mod:runGameTestSlow`); from M1 the
+same run also takes the map batches (`map_import`, `map_twice`, `map_roundtrip`: each test alone,
+importing the proving ground 2,048 blocks or more from its structure; 45 s with the slow batch),
+and `@Tag("slow")` L1 runs and the crowd soak join it. `verifySoak` runs
 `:core:soak` from M0 (it is also inside `verify`); the L3 samples of QA-12 (M6) and QA-16 (M10)
 join it later. The roadmap's
 [test aggregates](roadmap/M0-foundation.md#test-aggregates-and-wall-time-budgets) give the
@@ -62,6 +64,10 @@ Useful options:
 - `-Pstrategos.selftest=<name>` starts a harness self-test whose run must fail: `retry`,
   `retryNoReason`, `sharedBatch`, `ticketLeak` and `failModLoad` for `runGameTestServer`,
   `crashOnStart` and `clientRef` for `runServerSmoke`.
+- `./gradlew :mod:runMapgen` regenerates the proving ground's map package in
+  `mod/src/devtools/resources/` from `ProvingGround` (core test fixtures), on a self-terminating
+  server; commit its output. `ProvingGroundTest` fails while the committed package and the
+  generator disagree.
 - `./gradlew :mod:runSpike -Pspike=s1` (or `s2`, `s8`) runs spike S1, S2 or S8 on a
   self-terminating dedicated server (S8 on a vanilla world of its own); `-Pspike.jfr` adds a JFR
   recording.
