@@ -130,12 +130,17 @@ public final class ScenarioRunner {
         }
     }
 
-    /** The scenario's camera pose, with the cursor released, so input to a focused window changes nothing. */
+    /**
+     * The scenario's camera pose, with the cursor released, so input to a focused window changes nothing. The vignette
+     * fades by 1 % a client tick towards the light at the camera (Gui#updateVignetteBrightness), so a frame would
+     * depend on how many ticks the load took; it is pinned at its limit under the open noon sky, 0.
+     */
     private static void holdCamera(Minecraft mc, ScenarioContext ctx) {
         double[] pose = ctx.camera;
         if (mc.mouseHandler.isMouseGrabbed()) {
             mc.mouseHandler.releaseMouse();
         }
+        mc.gui.vignetteBrightness = 0f;
         if (pose != null && mc.player != null) {
             mc.player.moveTo(pose[0], pose[1], pose[2], (float) pose[3], (float) pose[4]);
             mc.player.setDeltaMovement(Vec3.ZERO);
