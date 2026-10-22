@@ -20,9 +20,10 @@ public final class SurfacePage {
     private final PageCoord coord;
     private final int[] start;
     private final int[] surfaces;
-    private final int[] component;
+    private final short[] component;
     private final int components;
     private final long[] drops;
+    private final short[] layers;
     private final int overflow;
     private final int overflowColumns;
     private final long hash;
@@ -31,12 +32,16 @@ public final class SurfacePage {
             PageCoord coord,
             int[] start,
             int[] surfaces,
-            int[] component,
+            short[] component,
             int components,
             long[] drops,
+            short[] layers,
             int overflow,
             int overflowColumns) {
-        if (start.length != COLUMNS + 1 || start[COLUMNS] != surfaces.length || component.length != surfaces.length) {
+        if (start.length != COLUMNS + 1
+                || start[COLUMNS] != surfaces.length
+                || component.length != surfaces.length
+                || layers.length != surfaces.length) {
             throw new IllegalArgumentException("column offsets do not cover the surfaces");
         }
         this.coord = coord;
@@ -45,6 +50,7 @@ public final class SurfacePage {
         this.component = component;
         this.components = components;
         this.drops = drops;
+        this.layers = layers;
         this.overflow = overflow;
         this.overflowColumns = overflowColumns;
         long h = Hasher.start(0x9A9E);
@@ -59,7 +65,8 @@ public final class SurfacePage {
 
     /** A page with no surface at all. */
     public static SurfacePage empty(PageCoord coord) {
-        return new SurfacePage(coord, new int[COLUMNS + 1], new int[0], new int[0], 0, new long[0], 0, 0);
+        return new SurfacePage(
+                coord, new int[COLUMNS + 1], new int[0], new short[0], 0, new long[0], new short[0], 0, 0);
     }
 
     public static int column(int x, int z) {
@@ -96,6 +103,18 @@ public final class SurfacePage {
         return components;
     }
 
+    /**
+     * The layer of the surface in the neighbouring column {@code dir} that a surface links to inside the page, or -1:
+     * the link bit and the layer the builder chose (the smallest rise), so a search need not choose again.
+     */
+    public int target(int column, int layer, int dir) {
+        int i = start[column] + layer;
+        if (!Surface.linked(surfaces[i], dir)) {
+            return -1;
+        }
+        return (layers[i] >>> (2 * dir)) & 3;
+    }
+
     /** The one-way links between local components, {@code from << 32 | to}, sorted; the page's own array. */
     long[] drops() {
         return drops;
@@ -111,9 +130,12 @@ public final class SurfacePage {
         return overflowColumns;
     }
 
-    /** The page's memory as stored: offsets and surfaces, in bytes, for S8 and budget G. */
+    /**
+     * The page's memory as stored, in bytes, for S8 and budget G: offsets and surfaces, and per surface its local
+     * component and link layers (two {@code short}s), plus the one-way links.
+     */
     public int bytes() {
-        return 16 + 4 * (start.length + surfaces.length);
+        return 16 + 4 * (start.length + surfaces.length) + 4 * surfaces.length + 8 * drops.length;
     }
 
     /** Depends on the surfaces only, not on the coordinate: equal slices give equal hashes (PATH-02.3). */

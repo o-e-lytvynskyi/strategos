@@ -25,13 +25,12 @@ Answer in chat or here; the next session applies the answers.
    64 blocks a tick take 0.02 ms (0.065 ms at p99) on this Mac. The proposed limit is 1.15 ms a
    tick at p99, 5 % of the whole-tick budget C. Say yes and it becomes a gate in `verifyPerf`
    ([M1 spec §1.6 D row 20](milestones/M1-movement.md)).
-5. **For your information: the long-route planner (card PATH-08, HPA*) left the reserve.** The
-   roadmap had it waiting for one measurement, and T8 took it: a single unit's path across the
-   384² proving ground needs about 30,000 search steps, more than the 20,000 cap, and about 4.5 ms
-   of server time, over the 2 ms a tick the budget allows all pathfinding. Units still arrive (they
-   walk to the river bank and ask again), but the route is poor. As the roadmap says, the planner
-   now joins M1 as task T28, after the reachability task (T19). Nothing to do unless you would
-   rather hold it back ([M1 spec §1.6 D row 42](milestones/M1-movement.md)).
+5. **For your information: the long-route planner (card PATH-08, HPA*) left the reserve and is built.**
+   The roadmap had it waiting for one measurement, which T8 took: one unit's path across the
+   384² proving ground needed about 30,000 search steps, over the 20,000 cap, and 4.5 ms of server
+   time, over the 2 ms a tick the budget allows all pathfinding. T28 added it: the same crossing
+   now takes about 2,800 steps and a fraction of a millisecond, and its route is within 1 % of the
+   best one. Nothing to do; it is in the roadmap's rules ([M1 spec §1.6 D rows 42 and 47–53](milestones/M1-movement.md)).
 6. **Optional reviews:**
    - the card refinements made after the approval
      ([design/roadmap-changes.md §8](design/roadmap-changes.md));
@@ -98,13 +97,19 @@ Answer in chat or here; the next session applies the answers.
   not climb it, and the reachability rules know that. Rebuilding a page updates it within the same
   tick. Card PATH-04 is done. T19 was taken before T9 because T9's crossing tests need the
   long-route planner (T28), which builds on it.
+- 2026-10-22 · **M1 T28 Long routes (HPA*):** a long order is now planned in two levels: first
+  from one page edge crossing to the next across the map, then step by step inside each page. A
+  unit crossing the whole proving ground gets its route in about 0.3 ms instead of 4.5 ms, using a
+  tenth of the search, and the route is within 1 % of the best. When a wall goes up, the long
+  routes know it as soon as its pages are rebuilt. A path that went stale while it was being
+  computed is now checked when it arrives. Card PATH-08 is done.
 
 ## Now
 
-- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 10 of 28 tasks done (T28, PATH-08, joined by its trigger).
+- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 11 of 28 tasks done (T28, PATH-08, joined by its trigger).
 - **In progress:** none.
-- **Last finished task:** M1 T19 (2026-10-22).
-- **Next task:** M1 T28 · Hierarchical long-range planner (HPA*, PATH-08), then T9.
+- **Last finished task:** M1 T28 (2026-10-22).
+- **Next task:** M1 T9 · Motion on surfaces (PATH-05).
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 220 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.

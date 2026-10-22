@@ -86,6 +86,7 @@ public final class MatchState {
                     changed = Arrays.copyOf(changed, changedCount * 2);
                 }
                 changed[changedCount++] = index;
+                paths.pageChanged(tick);
             }
             built.add(page.page());
         }

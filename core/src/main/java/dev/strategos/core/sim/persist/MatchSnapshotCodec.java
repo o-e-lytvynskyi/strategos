@@ -103,7 +103,10 @@ public final class MatchSnapshotCodec {
 
     private static final Codec<PathStore.Queue> QUEUE = RecordCodecBuilder.create(i -> i.group(
                     Codec.INT.optionalFieldOf("nextRequestId", 1).forGetter(PathStore.Queue::nextRequestId),
-                    DELIVERY.listOf().optionalFieldOf("deliveries", List.of()).forGetter(PathStore.Queue::deliveries))
+                    DELIVERY.listOf().optionalFieldOf("deliveries", List.of()).forGetter(PathStore.Queue::deliveries),
+                    Codec.LONG
+                            .optionalFieldOf("lastPageChange", PathStore.NEVER)
+                            .forGetter(PathStore.Queue::lastPageChange))
             .apply(i, PathStore.Queue::new));
 
     private static final Codec<UnitRecord> UNIT = RecordCodecBuilder.create(i -> i.group(

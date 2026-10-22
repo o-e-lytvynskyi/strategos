@@ -183,10 +183,15 @@ class GridAStarTest {
 
     /** 48 x 48 columns of ground 1 to 4 high, with shallow and deep water, doors, soul sand and walls. */
     static SurfaceGrid randomTerrain(long seed) {
+        return randomTerrain(seed, 48);
+    }
+
+    /** As {@link #randomTerrain(long)}, {@code size} x {@code size}. */
+    static SurfaceGrid randomTerrain(long seed, int size) {
         Random r = new Random(seed);
-        VoxelWorld w = new VoxelWorld(48, 16, 48);
-        for (int x = 0; x < 48; x++) {
-            for (int z = 0; z < 48; z++) {
+        VoxelWorld w = new VoxelWorld(size, 16, size);
+        for (int x = 0; x < size; x++) {
+            for (int z = 0; z < size; z++) {
                 int ground = 1 + r.nextInt(4);
                 w.fill(x, 0, z, x, ground - 1, z, VoxelFixtures.SOLID);
                 int roll = r.nextInt(100);

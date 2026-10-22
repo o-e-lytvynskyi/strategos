@@ -1,6 +1,7 @@
 package dev.strategos.core.bench;
 
 import dev.strategos.core.port.JobScratch;
+import dev.strategos.core.sim.nav.GridAStar;
 import dev.strategos.core.sim.nav.PathJob;
 import dev.strategos.core.sim.nav.PathRequest;
 import dev.strategos.core.sim.nav.PathResult;
@@ -18,16 +19,18 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 
 /**
- * PATH-03.5 (spec §1.6 row 2): one unit's path from the west start to the east start of the generated proving ground,
- * 384², and of its 512² version, over the river by the ford or a bridge: A* and string pulling, as a {@code STRICT}
- * join runs them on the server thread. Sampled, so the report has p95; each trial prints the expansions and waypoints.
- * Budget D gives the main thread 2 ms a tick for all path work; a crossing above that is PATH-08's trigger (R3).
+ * PATH-03.5 and PATH-08.2: one unit's path from the west start to the east start of the generated proving ground,
+ * 384², and of its 512² version, over the river by the ford or a bridge, as a {@code STRICT} join runs it on the server
+ * thread: {@code cross384} and {@code cross512} through the path service's job (two levels, HPA*, since T28), {@code
+ * flat384} and {@code flat512} through flat A* at its 20,000 cap, which R3 measured in T8. Sampled, so the report has
+ * p95; each trial prints the expansions and waypoints. Budget D gives the main thread 2 ms a tick for all path work.
  */
 @State(Scope.Thread)
 @BenchmarkMode(Mode.SampleTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 public class CrossingBench {
     private final JobScratch scratch = new JobScratch();
+    private final GridAStar flat = new GridAStar();
     private PathJob job384;
     private PathJob job512;
 
@@ -47,6 +50,21 @@ public class CrossingBench {
         return job512.run(scratch);
     }
 
+    @Benchmark
+    public GridAStar.Result flat384() {
+        return flat(job384);
+    }
+
+    @Benchmark
+    public GridAStar.Result flat512() {
+        return flat(job512);
+    }
+
+    private GridAStar.Result flat(PathJob job) {
+        PathRequest r = job.request();
+        return flat.search(job.grid(), r.fromNode(), (int) r.goalX(), (int) r.goalZ(), r.cap());
+    }
+
     private PathJob crossing(int size) {
         SurfaceGrid grid = ProvingGround.generate(size).voxels().grid();
         int middle = size / 2;
@@ -54,13 +72,16 @@ public class CrossingBench {
         PathJob job =
                 new PathJob(grid, new PathRequest(1, 1, 0, from, size - 24 + 0.5, middle + 0.5, 20_000, 0, false));
         PathResult result = job.run(scratch);
+        GridAStar.Result flatResult = flat(job);
         System.out.printf(
                 Locale.ROOT,
-                "crossing %d: %s, %d expansions, %d waypoints%n",
+                "crossing %d: %s, %d expansions, %d waypoints; flat %s, %d expansions%n",
                 size,
                 result.status(),
                 result.expansions(),
-                result.waypoints().count());
+                result.waypoints().count(),
+                flatResult.status(),
+                flatResult.expansions());
         return job;
     }
 }

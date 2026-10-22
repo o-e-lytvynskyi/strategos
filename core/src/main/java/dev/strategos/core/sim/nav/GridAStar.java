@@ -82,6 +82,23 @@ public final class GridAStar {
      * most {@code cap} nodes.
      */
     public Result search(SurfaceGrid grid, int from, int goalX, int goalZ, int cap) {
+        return run(grid, from, goalX, goalZ, -1, -1, -1, cap);
+    }
+
+    /**
+     * The cheapest path from node {@code from} to any surface of column ({@code goalX}, {@code goalZ}) through the
+     * surfaces of page ({@code pageX}, {@code pageZ}) only: a hierarchical path's refinement inside one page.
+     */
+    public Result searchInPage(SurfaceGrid grid, int from, int goalX, int goalZ, int pageX, int pageZ, int cap) {
+        return run(grid, from, goalX, goalZ, -1, pageX, pageZ, cap);
+    }
+
+    /** As {@link #searchInPage}, to node {@code to} itself. */
+    public Result searchInPage(SurfaceGrid grid, int from, int to, int pageX, int pageZ, int cap) {
+        return run(grid, from, grid.nodeX(to), grid.nodeZ(to), to, pageX, pageZ, cap);
+    }
+
+    private Result run(SurfaceGrid grid, int from, int goalX, int goalZ, int goalNode, int pageX, int pageZ, int cap) {
         this.goalX = goalX;
         this.goalZ = goalZ;
         size = 0;
@@ -103,7 +120,7 @@ public final class GridAStar {
             expansions++;
             int x = column[s] >>> 16;
             int z = column[s] & 0xFFFF;
-            if (x == goalX && z == goalZ) {
+            if (goalNode >= 0 ? node[s] == goalNode : x == goalX && z == goalZ) {
                 return new Result(PathStatus.OK, path(s), g[s], expansions);
             }
             if (better(s, best)) {
@@ -121,6 +138,9 @@ public final class GridAStar {
                 }
                 int nx = x + Dir.dx(dir);
                 int nz = z + Dir.dz(dir);
+                if (pageX >= 0 && ((nx >> 4) != pageX || (nz >> 4) != pageZ)) {
+                    continue;
+                }
                 int n = slot(grid.node(nx, nz, nl), nx, nz);
                 if (closed[n]) {
                     continue;

@@ -9,8 +9,27 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19
+## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28
 
+- **M1 T28 · Hierarchical long-range planner (HPA*)** — PATH-08 done; R3 resolved.
+  - **Results:** `Portals`, the abstract graph, updated with the grid on publish: entrances along
+    page borders, a portal at every fifth crossing and at each end, costs between a page's portals
+    by a Dijkstra over its own links (pages now store each link's target layer). `HierarchicalSearch`:
+    start and goal joined by Dijkstras inside their pages, A* over the portals (at most 4,000
+    expansions, `PARTIAL` beyond), each step refined inside its page. `PathJob` searches goals four
+    pages away or more in two levels, nearer ones flat within 4,000 expansions and in two levels
+    when that is not enough. A path delivered after a page changed in flight is walked on the
+    current grid and asked again for if broken. `pathtests.hierarchical_paths_follow_a_new_wall`
+    on a new 96 × 96 arena; `HierarchicalSearchTest` (5, 740 core tests in all); `CrossingBench` gains flat variants; `verify` 41 s, `verifySlow` and the perf GameTests green.
+  - **Measured:** the 384² and 512² crossings within 1 % of full A*'s cost with 9.4 % and 9.7 % of
+    its expansions; the worst of 300 random pairs +4.05 % and +3.65 %. `CrossingBench`: the two-level crossing 0.28 ms p50, 0.31 ms p95 (384²) and 0.31 / 0.33 ms (512²), against flat A*'s 4.3 / 4.5 ms at its cap. Components and
+    portals of a 512² prewarm 216 ms once; one republished page about 0.3 ms.
+  - **Problems:** A* inside the corridor (the architecture's wording) was exact but expanded a
+    quarter of flat A*'s nodes; step-by-step refinement meets both of PATH-08's numbers (spec §1.6 D
+    rows 47–48). The wall test found units walking into a wall whose last page was published while
+    their request was in flight; results are now checked on arrival (D row 51). Its first negative
+    check passed, since stale portals fall back to a flat search; the test now bounds the
+    expansions (D row 52).
 - **M1 T19 · Components and reachability** — PATH-04 done; taken before T9 (spec §1.6 D row 46).
   - **Results:** each page labels its local components (surfaces linked both ways) and keeps its
     one-way links between them; `Components` joins pages across their edges, recomputing only the
@@ -182,7 +201,7 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
   - **Problems:** ErrorProne's `EnumOrdinal` and rule B8's ban on static arrays shaped the codecs;
     the spec's checkpoint period and header changed (spec §1.6 D rows 1–3).
 - **M1 started** on the owner's go-ahead, with consent for every kind of test.
-- **Next:** T28, the hierarchical long-range planner (HPA*, PATH-08), then T9.
+- **Next:** T9, motion on surfaces (PATH-05).
 
 ## 2026-10-22 — M0 approvals, the client batch, M0 accepted
 

@@ -28,6 +28,7 @@ public final class PathStore {
     private boolean[] repath = new boolean[0];
     private boolean[] wanted = new boolean[0];
     private int nextRequestId = 1;
+    private long lastPageChange = NEVER;
     private final TreeMap<Integer, Pending> pending = new TreeMap<>();
 
     /**
@@ -147,10 +148,13 @@ public final class PathStore {
     @CoreApi
     public record Delivery(PathRequest request, long due, PathResult result) {}
 
-    /** The match's requests in flight and the next request id, as a snapshot keeps them. */
+    /**
+     * The match's requests in flight, the next request id, and the last tick a page changed, as a snapshot keeps
+     * them.
+     */
     @CoreApi
-    public record Queue(int nextRequestId, List<Delivery> deliveries) {
-        public static final Queue EMPTY = new Queue(1, List.of());
+    public record Queue(int nextRequestId, List<Delivery> deliveries, long lastPageChange) {
+        public static final Queue EMPTY = new Queue(1, List.of(), NEVER);
 
         public Queue {
             if (nextRequestId < 1) {
@@ -277,6 +281,16 @@ public final class PathStore {
         return nextRequestId++;
     }
 
+    /** A page changed at {@code tick}: results requested before it are checked when they arrive. */
+    public void pageChanged(long tick) {
+        lastPageChange = tick;
+    }
+
+    /** The last tick a page changed, {@link #NEVER} before the first. */
+    public long lastPageChange() {
+        return lastPageChange;
+    }
+
     /** The id the next request will take. */
     public int peekNextRequestId() {
         return nextRequestId;
@@ -310,12 +324,13 @@ public final class PathStore {
         for (Pending p : pending.values()) {
             deliveries.add(new Delivery(p.request(), p.due(), p.job().join()));
         }
-        return new Queue(nextRequestId, deliveries);
+        return new Queue(nextRequestId, deliveries, lastPageChange);
     }
 
     /** Restores the queue: each result is delivered at its due tick as if its job had just finished. */
     public void restore(Queue queue) {
         nextRequestId = queue.nextRequestId();
+        lastPageChange = queue.lastPageChange();
         pending.clear();
         for (Delivery d : queue.deliveries()) {
             PathResult result = d.result();

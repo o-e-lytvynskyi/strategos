@@ -81,7 +81,6 @@ final class Snapshots {
             }
             state.paths().set(index, unit.path());
         }
-        state.paths().restore(snapshot.paths());
         state.pendingCommands().addAll(snapshot.pendingCommands());
         int missing = 0;
         List<TerrainPage> pages = new ArrayList<>();
@@ -100,6 +99,7 @@ final class Snapshots {
             pages.add(page);
         }
         state.publishAll(pages);
+        state.paths().restore(snapshot.paths()); // after the pages, whose publication must not count as a change
         if (missing > 0) {
             log.info(
                     snapshot.tick(),

@@ -103,12 +103,15 @@ public final class PageBuilder {
             System.arraycopy(scratch, column * SurfacePage.MAX_LAYERS, surfaces, start[column], counts[column]);
         }
         int[] component = new int[surfaces.length];
-        long[] drops = link(start, surfaces, component, mobility);
+        short[] layers = new short[surfaces.length];
+        long[] drops = link(start, surfaces, component, layers, mobility);
         int components = 0;
-        for (int label : component) {
-            components = Math.max(components, label + 1);
+        short[] labels = new short[surfaces.length];
+        for (int i = 0; i < component.length; i++) {
+            components = Math.max(components, component[i] + 1);
+            labels[i] = (short) component[i]; // at most 1,024 surfaces a page
         }
-        return new SurfacePage(coord, start, surfaces, component, components, drops, overflow, overflowColumns);
+        return new SurfacePage(coord, start, surfaces, labels, components, drops, layers, overflow, overflowColumns);
     }
 
     /**
@@ -117,7 +120,7 @@ public final class PageBuilder {
      * (a drop of more than a step) joins nothing: it is kept as a one-way link between the two components, returned as
      * {@code from << 32 | to}, sorted and distinct.
      */
-    private static long[] link(int[] start, int[] surfaces, int[] component, MobilityClass mobility) {
+    private static long[] link(int[] start, int[] surfaces, int[] component, short[] layers, MobilityClass mobility) {
         int[] target = new int[surfaces.length * Dir.COUNT];
         Arrays.fill(target, -1);
         for (int x = 0; x < VoxelSlice.SIDE; x++) {
@@ -136,10 +139,12 @@ public final class PageBuilder {
                         if (nx < 0 || nz < 0 || nx >= VoxelSlice.SIDE || nz >= VoxelSlice.SIDE) {
                             continue;
                         }
-                        int t = best(start, surfaces, SurfacePage.column(nx, nz), s, mobility);
+                        int nc = SurfacePage.column(nx, nz);
+                        int t = best(start, surfaces, nc, s, mobility);
                         if (t >= 0) {
                             links |= 1 << dir;
                             target[i * Dir.COUNT + dir] = t;
+                            layers[i] |= (short) ((t - start[nc]) << (2 * dir));
                         } else {
                             blocked++;
                         }
@@ -150,10 +155,12 @@ public final class PageBuilder {
                         }
                         int nx = x + Dir.dx(dir);
                         int nz = z + Dir.dz(dir);
-                        int t = best(start, surfaces, SurfacePage.column(nx, nz), s, mobility);
+                        int nc = SurfacePage.column(nx, nz);
+                        int t = best(start, surfaces, nc, s, mobility);
                         if (t >= 0) {
                             links |= 1 << dir;
                             target[i * Dir.COUNT + dir] = t;
+                            layers[i] |= (short) ((t - start[nc]) << (2 * dir));
                         }
                     }
                     surfaces[i] = Surface.withCost(Surface.withLinks(s, links), blocked);

@@ -75,6 +75,8 @@ class SurfaceGridTest {
         assertThat(grid.nodeX(node)).isEqualTo(37);
         assertThat(grid.nodeZ(node)).isEqualTo(21);
         assertThat(SurfaceGrid.nodeLayer(node)).isZero();
-        assertThat(grid.bytes()).as("6 flat pages").isLessThan(6 * 2_200L);
+        assertThat(grid.bytes())
+                .as("6 flat pages with their components and portals")
+                .isLessThan(6 * 4_000L);
     }
 }

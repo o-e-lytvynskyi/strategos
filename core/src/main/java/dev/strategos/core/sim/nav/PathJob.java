@@ -5,21 +5,52 @@ import dev.strategos.core.port.PureJob;
 import dev.strategos.core.shared.DetMath;
 import java.util.Arrays;
 import java.util.BitSet;
+import org.jspecify.annotations.Nullable;
 
 /**
- * One request's search (04 §9.3): the goal made reachable, A* over the grid as it was when the request was made, then
- * string pulling. Pure: the grid is immutable (copy-on-write), and the search's scratch belongs to the thread that runs
+ * One request's search (04 §9.3): the goal made reachable, then A* over the grid as it was when the request was made,
+ * in two levels when the goal is {@value #HIERARCHICAL_PAGES} pages away or more (HPA*, PATH-08) and flat otherwise,
+ * then string pulling. Pure: the grid is immutable (copy-on-write), and the search's scratch belongs to the thread that runs
  * it.
  */
 public record PathJob(SurfaceGrid grid, PathRequest request) implements PureJob<PathResult> {
+    /**
+     * Goals this many pages away or more are searched in two levels (PATH-08). A nearer one is searched flat, within
+     * {@link #NEAR_CAP} expansions, and in two levels when that is not enough: a near goal behind a long detour.
+     */
+    static final int HIERARCHICAL_PAGES = 4;
+
+    static final int NEAR_CAP = 4_000;
+
     /** A goal point, its column, and the columns inspected to find it (counted as expansions). */
     record Goal(double x, double z, int columnX, int columnZ, int inspected) {}
 
     @Override
     public PathResult run(JobScratch scratch) {
         GridAStar search = scratch.get(GridAStar.class, GridAStar::new);
-        Goal goal = makeGoalReachable(grid, grid.reachableFrom(request.fromNode()), request.goalX(), request.goalZ());
-        GridAStar.Result found = search.search(grid, request.fromNode(), goal.columnX(), goal.columnZ(), request.cap());
+        BitSet reachable = grid.reachableFrom(request.fromNode());
+        Goal goal = makeGoalReachable(grid, reachable, request.goalX(), request.goalZ());
+        int from = request.fromNode();
+        int pages = Math.max(
+                Math.abs((grid.nodeX(from) >> 4) - (goal.columnX() >> 4)),
+                Math.abs((grid.nodeZ(from) >> 4) - (goal.columnZ() >> 4)));
+        HierarchicalSearch hierarchical = scratch.get(HierarchicalSearch.class, HierarchicalSearch::new);
+        GridAStar.Result found;
+        if (pages >= HIERARCHICAL_PAGES) {
+            GridAStar.@Nullable Result far =
+                    hierarchical.search(grid, search, from, goal.columnX(), goal.columnZ(), reachable, request.cap());
+            found = far != null ? far : search.search(grid, from, goal.columnX(), goal.columnZ(), request.cap());
+        } else {
+            found = search.search(grid, from, goal.columnX(), goal.columnZ(), Math.min(request.cap(), NEAR_CAP));
+            if (found.status() == PathStatus.PARTIAL && pages > 0) {
+                GridAStar.@Nullable Result far = hierarchical.search(
+                        grid, search, from, goal.columnX(), goal.columnZ(), reachable, request.cap());
+                if (far != null) { // a near goal behind a long detour
+                    found = new GridAStar.Result(
+                            far.status(), far.nodes(), far.cost(), far.expansions() + found.expansions());
+                }
+            }
+        }
         PathStore.Waypoints waypoints =
                 StringPuller.pull(grid, found.nodes(), found.status() == PathStatus.OK, goal.x(), goal.z());
         return new PathResult(request.id(), found.status(), waypoints, found.expansions() + goal.inspected());

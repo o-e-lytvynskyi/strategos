@@ -32,7 +32,8 @@ import dev.strategos.core.sim.UnitState;
  *
  * <p><b>Delivery</b> ({@code INGEST}, after the inputs): {@code STRICT} joins every job due at this tick, in id order,
  * running it here if no worker has; the result becomes the unit's path if the unit still waits for that id, and is
- * dropped as superseded otherwise. Admission, {@code ADAPTIVE} delivery and the worker pool are PATH-16's.
+ * dropped as superseded otherwise. A page that changed while a job was in flight may break the path it found on the
+ * grid before: such a path is walked on the current grid, and if it fails the unit asks again once allowed. Admission, {@code ADAPTIVE} delivery and the worker pool are PATH-16's.
  */
 public final class PathService {
     /** A truncated path is asked for again when the unit reaches this waypoint. */
@@ -149,6 +150,9 @@ public final class PathService {
                 continue;
             }
             paths.follow(i, r.waypoints(), r.status());
+            if (paths.lastPageChange() > p.request().tick() && !walkable(s, i)) {
+                paths.setRepath(i, true); // terrain changed in flight and broke the route: ask again when allowed
+            }
             count(r.status());
             counters.expansions += r.expansions();
             counters.maxExpansions = Math.max(counters.maxExpansions, r.expansions());
@@ -279,6 +283,21 @@ public final class PathService {
     /** The column holding coordinate {@code v}, kept inside {@code 0 .. limit - 1}. */
     static int clampColumn(double v, int limit) {
         return Math.max(0, Math.min(limit - 1, (int) Math.floor(v)));
+    }
+
+    /** Whether unit {@code i}'s path can still be walked on the current grid, from where it stands. */
+    private static boolean walkable(MatchState s, int i) {
+        SurfaceGrid grid = s.surfaces();
+        PathStore.Waypoints w = s.paths().path(i);
+        double x = s.motion().x(i);
+        double z = s.motion().z(i);
+        int node = startNode(grid, x, s.motion().y(i), z, s.config().bounds().minY());
+        for (int k = 0; k < w.count() && node >= 0; k++) {
+            node = LineOfWalk.walk(grid, node, x, z, w.x(k), w.z(k));
+            x = w.x(k);
+            z = w.z(k);
+        }
+        return node >= 0;
     }
 
     /** Whether unit {@code i}'s route from where it stands to its target crosses a changed page (bounding boxes). */

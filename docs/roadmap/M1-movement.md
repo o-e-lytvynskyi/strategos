@@ -702,7 +702,8 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
   2. A 384-block query expands at most 10 % of flat A*'s nodes (L6).
   3. Corridors update within one rebuild cycle after a wall is built (L3).
 - **Tests:** L0, L1, L3, L6 · **Depends on:** PATH-03, PATH-04 · **Size:** L · **Tier:** T0
-- **Status:** specified
+- **Done:** 2026-10-22 — M1 T28: `HierarchicalSearchTest`: the 384² and 512² crossings within 1 % of full A*, 40 pairs on the proving ground and random terrain within 5 %, every step along a link (1); `CrossingBench`: the crossings expand 9.4 % and 9.7 % of flat A*'s nodes and take 0.31 / 0.33 ms p95 (2; spec §1.6 D rows 47–50); `pathtests.hierarchical_paths_follow_a_new_wall`: on the tick the wall's pages are published a fresh request goes round it, and with stale portals the test fails (3)
+- **Status:** done
 
 #### PATH-17 · Flow fields for large groups
 - **Value:** Very large groups move as one without a path per unit.

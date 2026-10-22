@@ -25,15 +25,16 @@ public final class SurfaceGrid {
     private final SurfacePage[] pages;
     private final long version;
     private final Components components;
+    private final Portals portals;
 
-    /** A grid over {@code pages}; its components are {@code previous}'s updated for {@code changed}, or computed. */
+    /** A grid over {@code pages}; its components and portals are {@code previous}'s updated for {@code changed}. */
     private SurfaceGrid(
             int sizeX,
             int sizeZ,
             MobilityClass mobility,
             SurfacePage[] pages,
             long version,
-            @Nullable Components previous,
+            @Nullable SurfaceGrid previous,
             int[] changed) {
         this.sizeX = sizeX;
         this.sizeZ = sizeZ;
@@ -42,7 +43,8 @@ public final class SurfaceGrid {
         this.mobility = mobility;
         this.pages = pages;
         this.version = version;
-        this.components = previous == null ? Components.of(this) : previous.update(this, changed);
+        this.components = previous == null ? Components.of(this) : previous.components.update(this, changed);
+        this.portals = previous == null ? Portals.of(this) : previous.portals.update(this, changed);
     }
 
     /** A grid of empty pages covering {@code sizeX x sizeZ} match-local columns. */
@@ -79,7 +81,12 @@ public final class SurfaceGrid {
             changed[i] = c.z() * pagesX + c.x();
             copy[changed[i]] = page;
         }
-        return new SurfaceGrid(sizeX, sizeZ, mobility, copy, version + changed.length, components, changed);
+        return new SurfaceGrid(sizeX, sizeZ, mobility, copy, version + changed.length, this, changed);
+    }
+
+    /** The portal graph of hierarchical search (PATH-08). */
+    Portals portals() {
+        return portals;
     }
 
     /** Reachability over this grid's surfaces (PATH-04). */
@@ -156,11 +163,11 @@ public final class SurfaceGrid {
         if (!inside(nx, nz)) {
             return -1;
         }
-        int from = surface(localX, localZ, layer);
         boolean samePage = (nx >> 4) == (localX >> 4) && (nz >> 4) == (localZ >> 4);
         if (samePage) {
-            return Surface.linked(from, dir) ? bestLayer(nx, nz, from) : -1;
+            return page(localX >> 4, localZ >> 4).target(SurfacePage.column(localX & 15, localZ & 15), layer, dir);
         }
+        int from = surface(localX, localZ, layer);
         if (Dir.diagonal(dir)
                 && (neighbour(localX, localZ, layer, Dir.left(dir)) < 0
                         || neighbour(localX, localZ, layer, Dir.right(dir)) < 0)) {
@@ -211,9 +218,9 @@ public final class SurfaceGrid {
         return node % SurfacePage.MAX_LAYERS;
     }
 
-    /** The memory of the pages as stored, in bytes (budget G, S8). */
+    /** The memory of the pages as stored, with their components and portals, in bytes (budget G, S8). */
     public long bytes() {
-        long total = 0;
+        long total = components.bytes() + portals.bytes();
         for (SurfacePage page : pages) {
             total += page.bytes();
         }

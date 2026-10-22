@@ -147,6 +147,16 @@ public final class Components {
         return false;
     }
 
+    /** The memory of the labels, masks and links, in bytes (budget G). */
+    long bytes() {
+        long total = 4L * (first.length + label.length + edgeStart.length + edges.length);
+        for (int page = 0; page < local.length; page++) {
+            int[] labels = local[page].labels;
+            total += 8L * (local[page].masks.length + border[page].length) + (labels == null ? 0 : 4L * labels.length);
+        }
+        return total;
+    }
+
     /** How many components there are. */
     public int count() {
         int count = 0;

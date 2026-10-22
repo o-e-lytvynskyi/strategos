@@ -7,9 +7,16 @@ import static dev.strategos.gametest.suites.Units.onlyUnit;
 import static dev.strategos.gametest.suites.Units.spawn;
 import static dev.strategos.gametest.suites.Units.unit;
 
+import dev.strategos.core.port.JobScratch;
+import dev.strategos.core.sim.PageRef;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.UnitView;
+import dev.strategos.core.sim.nav.PathJob;
+import dev.strategos.core.sim.nav.PathRequest;
+import dev.strategos.core.sim.nav.PathResult;
 import dev.strategos.core.sim.nav.PathService;
+import dev.strategos.core.sim.nav.PathStatus;
+import dev.strategos.core.sim.nav.SurfaceGrid;
 import dev.strategos.core.testkit.SimHarness;
 import dev.strategos.gametest.MatchFixture;
 import dev.strategos.gametest.StrategosTest;
@@ -111,6 +118,99 @@ public final class PathTests {
                 h.succeed();
             }
         });
+    }
+
+    /**
+     * PATH-08.3: on a 96 x 96 floor laid by the test, a unit walks a path in two levels (its goal six pages away); once
+     * it is under way a wall three high goes up across its route at x 48 (z 0..79), placed outside the writer. On the
+     * tick the wall's pages are published, a fresh request already goes round the wall's end in under 1,500
+     * expansions, so the portals followed the wall within one rebuild cycle (stale portals send the search to its flat
+     * fallback, about 2,500 here); the unit asks again, walks round it, never stands in it, and arrives.
+     */
+    @StrategosTest(arena = "arena_air_96", timeoutTicks = 1_600)
+    public static void hierarchicalPathsFollowANewWall(GameTestHelper h) {
+        for (int x = 0; x < 96; x++) {
+            for (int z = 0; z < 96; z++) {
+                h.setBlock(new BlockPos(x, 1, z), Blocks.SMOOTH_STONE); // relative y 1 is the floor layer
+            }
+        }
+        MatchRuntime rt = MatchFixture.create(h, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
+        spawn(rt, 4.5, 48.5, 1, 0);
+        var state = new Object() {
+            boolean ordered;
+            long[] before;
+            boolean walled;
+            boolean checked;
+        };
+        h.onEachTick(() -> {
+            if (core(rt).queries().unitCount() != 1) {
+                return;
+            }
+            int handle = onlyUnit(rt);
+            if (!state.ordered) {
+                state.ordered = true;
+                move(rt, handle, 91.5, 48.5);
+                return;
+            }
+            UnitView u = unit(rt, handle);
+            if (!state.walled && u.x() > 8) {
+                state.walled = true;
+                state.before = wallPageSlices(rt);
+                for (int z = 0; z < 80; z++) {
+                    for (int y = 2; y <= 4; y++) {
+                        h.setBlock(new BlockPos(48, y, z), Blocks.STONE);
+                    }
+                }
+                return;
+            }
+            if (state.walled) {
+                check(!(u.x() >= 48 && u.x() < 49 && u.z() < 80), "inside the wall at " + u.x() + ", " + u.z());
+                if (!state.checked && published(state.before, wallPageSlices(rt))) {
+                    state.checked = true;
+                    SurfaceGrid grid = core(rt).queries().surfaces();
+                    int from = PathService.startNode(
+                            grid, 4.5, u.y(), 48.5, rt.space().minY());
+                    PathResult fresh = new PathJob(
+                                    grid, new PathRequest(1, handle, 0, from, 91.5, 48.5, 20_000, 0, false))
+                            .run(new JobScratch());
+                    check(fresh.status() == PathStatus.OK, "a fresh request: " + fresh.status());
+                    boolean round = false;
+                    for (int i = 0; i < fresh.waypoints().count(); i++) {
+                        round |= fresh.waypoints().z(i) >= 80;
+                    }
+                    check(round, "a fresh request still goes through the wall: " + fresh.waypoints());
+                    check(
+                            fresh.expansions() < 1_500,
+                            "the portals did not follow the wall, a flat search did: " + fresh.expansions()
+                                    + " expansions");
+                }
+            }
+            if (u.state() == UnitState.IDLE && u.target() == null && u.x() == 91.5) {
+                check(state.checked, "arrived before the wall's pages were published");
+                check(u.z() == 48.5, "stopped at z " + u.z());
+                h.succeed();
+            }
+        });
+    }
+
+    /** The slice hashes of the pages the wall stands in: x 48 is page column 3, z 0..79 page rows 0..4. */
+    private static long[] wallPageSlices(MatchRuntime rt) {
+        long[] slices = new long[5];
+        for (PageRef ref : core(rt).queries().pageRefs()) {
+            if (ref.x() == 3 && ref.z() < 5) {
+                slices[ref.z()] = ref.slice();
+            }
+        }
+        return slices;
+    }
+
+    private static boolean published(long[] before, long[] now) {
+        for (int i = 0; i < before.length; i++) {
+            if (before[i] == now[i]) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

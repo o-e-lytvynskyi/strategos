@@ -34,6 +34,16 @@ with the costs above crosses the generated proving ground (384²) and its 512² 
 from the goal, in 4.4–4.5 ms (p95 4.60 and 4.70 ms, M4 Pro), more than budget D's 2 ms a tick for
 one search on the server thread. HPA*'s trigger has fired: PATH-08 leaves the reserve (M1 T28).
 
+**Revised 2026-10-22** with PATH-08 (M1 T28), still Proposed pending S7. HPA* is built over page portals:
+a portal at every fifth crossing of each entrance along a page border, the costs between a page's
+portals by a Dijkstra inside the page, updated on publish with the grid's components. The chain of
+portals is refined step by step inside each page (A* inside the whole corridor found the optimum
+but expanded 24.5 % of flat A*'s nodes on the crossing). The 384² and 512² crossings cost within
+1 % of full A* and expand 9.4 % and 9.7 % of its nodes; over 300 random pairs four pages apart or
+more the worst is +4.05 % (384²) and +3.65 % (512²). Goals nearer than four pages stay flat.
+Reachability (PATH-04) joins only surfaces linked both ways; drops of more than a step are a DAG
+between components, so a three-high wall with a walkable top no longer joins its two sides.
+
 ## Context
 
 Research contradictions 4, 5 and 11, and gap G8. Pathfinding at scale is the hardest problem of

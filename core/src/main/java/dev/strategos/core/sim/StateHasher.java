@@ -9,7 +9,7 @@ import java.util.ArrayDeque;
  * The hash of a match's whole state, in a fixed order: the tick; the seed and the bounds; per index up to the high-water
  * mark, its generation and liveness, and for live units the template index, faction, x, y, z, yaw, state and order,
  * and, once the unit has asked for a path, the path (request, last request, repath flag, status, cursor, waypoints);
- * then, once any path was requested, the next request id and each request in flight (id, unit, due tick); then every
+ * then, once any path was requested, the next request id, the last tick a page changed and each request in flight (id, unit, due tick); then every
  * pending command. A match that never asks for a path, such as one without terrain, hashes as in M0. The match id is
  * left out, so the L1 twin of a GameTest match agrees; so are the terrain grid, which the twin rebuilds from the same
  * pages, and the results in flight, which a job may not have computed yet. The unit loop mixes a plain {@code long},
@@ -62,6 +62,7 @@ public final class StateHasher {
 
         if (paths.peekNextRequestId() != 1 || !paths.pending().isEmpty()) {
             h = Hasher.mix(h, paths.peekNextRequestId());
+            h = Hasher.mix(h, paths.lastPageChange());
             h = Hasher.mix(h, paths.pending().size());
             if (!paths.pending().isEmpty()) {
                 for (PathStore.Pending p : paths.pending()) {
