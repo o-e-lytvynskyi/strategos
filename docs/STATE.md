@@ -21,7 +21,11 @@ Answer in chat or here; the next session applies the answers.
    - D-20 multiplayer hosting (M7);
    - D-07 licence and D-21 public release and name (first public release);
    - D-06 map generation (M12).
-4. **Optional reviews:**
+4. **A threshold to approve, not urgent:** the block writer's cost is measured but not yet gated.
+   64 blocks a tick take 0.02 ms (0.065 ms at p99) on this Mac. The proposed limit is 1.15 ms a
+   tick at p99, 5 % of the whole-tick budget C. Say yes and it becomes a gate in `verifyPerf`
+   ([M1 spec §1.6 D row 20](milestones/M1-movement.md)).
+5. **Optional reviews:**
    - the card refinements made after the approval
      ([design/roadmap-changes.md §8](design/roadmap-changes.md));
    - the promo draft ([promo/roadmap-announcement.md](promo/roadmap-announcement.md)).
@@ -51,13 +55,19 @@ Answer in chat or here; the next session applies the answers.
   Changes you make to these rules later stay. Matches in it take their own slots 2,048 blocks apart
   and keep their area loaded until they end; if a server dies, the next start cleans up what a
   finished match left loaded. The lobby pad comes with the next task. Card MAP-07 is done.
+- 2026-10-22 · **M1 T5 Block writer:** every block Strategos places or removes now goes through one
+  writer with a shared budget of 64 blocks a tick. Building sites take turns and write in bursts,
+  so a busy match never spikes the tick. A match's blocks are protected until it ends. A new arena
+  world now gets its 9 x 9 stone lobby pad, once. Servers have a config file,
+  `serverconfig/strategos-server.toml`. Card BLD-15 is half done: its last check, that the
+  writer's own blocks never trigger navigation rebuilds, comes with the terrain capture in T7.
 
 ## Now
 
-- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 5 of 27 tasks done.
+- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 6 of 27 tasks done.
 - **In progress:** none.
-- **Last finished task:** M1 T4 (2026-10-22).
-- **Next task:** M1 T5 · Block writer and the config file.
+- **Last finished task:** M1 T5 (2026-10-22).
+- **Next task:** M1 T6 · Map packages, importer and the proving ground.
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 220 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.

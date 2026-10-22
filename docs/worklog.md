@@ -9,8 +9,28 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11, T3, T4
+## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5
 
+- **M1 T5 · Block writer and the config file** — BLD-15 in progress (its acceptance 2 is T7's).
+  - **Results:**
+    - Core: `WorldEffect` (a new output), `WritePriority`, `WriteSite` and `WriteScheduler`, which
+      sets the shared budget, the round-robin bursts at most every 4 ticks, and priority then
+      arrival within a site.
+    - `FakeWorld` in the test kit; `FakeWorldOrderTest`, 6 cases.
+    - Mod: `BlockWriter`, the only block writer (rule B7), with one scheduler per level, `OwnWrite`
+      around every write, `ProtectedBlockIndex` keyed by match and handle, the shape pass when a
+      site empties, and the drop of a disposed match's writes and protection.
+    - `StrategosConfig` (`strategos-server.toml`, every key of spec §4.4); the arena's lobby pad.
+    - `writertests.budget_holds_across_two_matches` checks at most 64 a tick, bursts 4 ticks apart
+      and the scheduler's exact order. `perftests.block_writer_cost` measures 0.32 µs a block and
+      20 µs per tick of 64 (65 µs at p99), report-only.
+    - `verify` 35 s, 102 GameTests, 691 core tests.
+  - **Problems:**
+    - A sealed `OutputEvent` outside a named module permits only its own package, so `WorldEffect`
+      sits in `core.sim`.
+    - Solo GameTests need batches of their own, `writer` and `perf_writer`.
+    - The sink for `journal = disk` moves to T8, with `CorePorts.journal` (spec §1.6 D rows 17–20,
+      row 2 corrected).
 - **M1 T4 · Arena world, slots and tickets** — MAP-07 done.
   - **Results:**
     - The `strategos:arena` world preset (a void flat overworld, biome `strategos:arena`, the
@@ -70,7 +90,7 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
   - **Problems:** ErrorProne's `EnumOrdinal` and rule B8's ban on static arrays shaped the codecs;
     the spec's checkpoint period and header changed (spec §1.6 D rows 1–3).
 - **M1 started** on the owner's go-ahead, with consent for every kind of test.
-- **Next:** T5, the block writer and the config file.
+- **Next:** T6, map packages, the importer and the proving ground.
 
 ## 2026-10-22 — M0 approvals, the client batch, M0 accepted
 

@@ -16,8 +16,9 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * The server's saved matches, {@code strategos_registry} in the overworld's data storage: {@code {v: 1, epoch, nextId,
- * records, arenaRulesApplied, nextArenaSlot}}, the last two optional (M1, absent before). It hands out match ids and
- * arena slots (neither ever reused), counts save epochs and records that an arena world got its rules. Loading never
+ * records, arenaRulesApplied, lobbyPadBuilt, nextArenaSlot}}, the last three optional (M1, absent before). It hands out
+ * match ids and arena slots (neither ever reused), counts save epochs and records that an arena world got its rules and
+ * its lobby pad. Loading never
  * throws: a registry that does not decode is quarantined, keeps its raw tag, is never rewritten and refuses new saved
  * matches.
  */
@@ -32,6 +33,7 @@ public final class RegistryData extends SavedData {
     private long epoch;
     private int nextId = 1;
     private boolean arenaRulesApplied;
+    private boolean lobbyPadBuilt;
     private int nextArenaSlot;
     private @Nullable CompoundTag raw;
     private @Nullable String quarantineReason;
@@ -65,6 +67,7 @@ public final class RegistryData extends SavedData {
             data.epoch = tag.getLong("epoch");
             data.nextId = tag.getInt("nextId");
             data.arenaRulesApplied = tag.getBoolean("arenaRulesApplied");
+            data.lobbyPadBuilt = tag.getBoolean("lobbyPadBuilt");
             data.nextArenaSlot = tag.getInt("nextArenaSlot");
             if (data.nextArenaSlot < 0) {
                 return quarantined(tag, "the next arena slot " + data.nextArenaSlot + " is negative");
@@ -129,6 +132,16 @@ public final class RegistryData extends SavedData {
         setDirty();
     }
 
+    public boolean lobbyPadBuilt() {
+        return lobbyPadBuilt;
+    }
+
+    public void markLobbyPadBuilt() {
+        requireUsable();
+        lobbyPadBuilt = true;
+        setDirty();
+    }
+
     public long epoch() {
         return epoch;
     }
@@ -179,6 +192,7 @@ public final class RegistryData extends SavedData {
         tag.putLong("epoch", epoch);
         tag.putInt("nextId", nextId);
         tag.putBoolean("arenaRulesApplied", arenaRulesApplied);
+        tag.putBoolean("lobbyPadBuilt", lobbyPadBuilt);
         tag.putInt("nextArenaSlot", nextArenaSlot);
         tag.put("records", NbtBridge.encode(RECORDS, List.copyOf(records.values())));
         return tag;

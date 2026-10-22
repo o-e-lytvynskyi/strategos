@@ -13,7 +13,7 @@ public @interface StrategosTest {
     /** Template {@code strategos:<arena>}, an SNBT file in {@code src/gametest/structures}. */
     String arena() default "arena_flat_32";
 
-    /** default | slow | skeleton | isolation | chunks | perf_walk | perf_snapshot | selftest. */
+    /** default | slow | skeleton | isolation | chunks | writer | perf_walk | perf_snapshot | perf_writer | selftest. */
     String batch() default "default";
 
     int timeoutTicks() default 200;

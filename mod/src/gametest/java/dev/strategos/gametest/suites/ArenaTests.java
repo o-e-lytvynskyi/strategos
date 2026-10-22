@@ -105,7 +105,10 @@ public final class ArenaTests {
         RegistryData registry = StrategosServer.get().matches().persisted();
         boolean recorded = registry != null && registry.arenaRulesApplied();
 
-        ArenaWorld.Outcome outcome = ArenaWorld.onStarted(server, registry);
+        int pending = StrategosServer.get().writer().pending(server.overworld());
+
+        ArenaWorld.Outcome outcome =
+                ArenaWorld.onStarted(server, registry, StrategosServer.get().writer());
 
         if (outcome != ArenaWorld.Outcome.NOT_AN_ARENA) {
             helper.fail("the arena check did " + outcome + " in a world that is not an arena");
@@ -118,8 +121,11 @@ public final class ArenaTests {
             helper.fail(
                     "the time moved from " + time + " to " + server.overworld().getDayTime());
         }
-        if (recorded || (registry != null && registry.arenaRulesApplied())) {
-            helper.fail("the registry records arena rules in a world that is not an arena");
+        if (recorded || (registry != null && (registry.arenaRulesApplied() || registry.lobbyPadBuilt()))) {
+            helper.fail("the registry records arena rules or a lobby pad in a world that is not an arena");
+        }
+        if (StrategosServer.get().writer().pending(server.overworld()) != pending) {
+            helper.fail("the arena check queued block writes in a world that is not an arena");
         }
         helper.succeed();
     }

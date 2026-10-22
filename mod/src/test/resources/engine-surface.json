@@ -14,5 +14,5 @@
   ],
   "ticketControllers": ["strategos:match"],
   "reloadListeners": [],
-  "configs": []
+  "configs": ["strategos-server.toml"]
 }

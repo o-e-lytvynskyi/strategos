@@ -6,6 +6,7 @@ import dev.strategos.mod.server.match.MatchRegistry;
 import dev.strategos.mod.server.tick.FaultBarrier;
 import dev.strategos.mod.server.world.ArenaWorld;
 import dev.strategos.mod.server.world.BlockClassTable;
+import dev.strategos.mod.server.world.BlockWriter;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.MinecraftServer;
 import net.neoforged.neoforge.event.TagsUpdatedEvent;
@@ -29,6 +30,7 @@ public final class StrategosServer {
     private final SpawnBudget spawnBudget = new SpawnBudget();
     private final FaultBarrier faults;
     private final MatchRegistry matches;
+    private final BlockWriter writer;
     private volatile BlockClassTable blockClasses;
     private ArenaWorld.Outcome arena = ArenaWorld.Outcome.NOT_AN_ARENA;
 
@@ -36,7 +38,8 @@ public final class StrategosServer {
         this.server = server;
         this.settings = settings;
         this.faults = new FaultBarrier(server);
-        this.matches = new MatchRegistry(server, settings, spawnBudget);
+        this.writer = new BlockWriter(settings.writerBudget(), settings.importBudget());
+        this.matches = new MatchRegistry(server, settings, spawnBudget, writer);
         this.blockClasses = buildBlockClasses();
     }
 
@@ -64,6 +67,11 @@ public final class StrategosServer {
 
     public MatchRegistry matches() {
         return matches;
+    }
+
+    /** Every block Strategos writes goes through it (rule B7). */
+    public BlockWriter writer() {
+        return writer;
     }
 
     public StrategosSettings settings() {
@@ -116,7 +124,7 @@ public final class StrategosServer {
         StrategosServer s = current;
         if (s != null) {
             s.matches.loadPersisted();
-            s.arena = ArenaWorld.onStarted(s.server, s.matches.persisted());
+            s.arena = ArenaWorld.onStarted(s.server, s.matches.persisted(), s.writer);
         }
     }
 

@@ -5,6 +5,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import dev.strategos.core.shared.MatchId;
 import dev.strategos.core.sim.MatchLifecycle;
+import dev.strategos.core.sim.world.WritePriority;
+import dev.strategos.core.sim.world.WriteSite;
 import dev.strategos.mod.Strategos;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.registry.ModTickets;
@@ -26,6 +28,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.block.Blocks;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -41,13 +44,14 @@ import org.slf4j.LoggerFactory;
  * <p>Run 1, on a fresh world, with {@code strategos.smoke.leakTickets}:
  *
  * <ol>
- *   <li>the start applied D-13's rules and the registry recorded it;
- *   <li>the owner turns {@code doFireTick} on;
+ *   <li>the start applied D-13's rules and built the 9 x 9 lobby pad, and the registry recorded both;
+ *   <li>the owner turns {@code doFireTick} on and digs out one corner of the pad;
  *   <li>match A takes slot 0 and B slot 1, 2,048 blocks on, each holding its chunk tickets;
  *   <li>A is disposed, but the hook keeps its tickets, as a crash would; B stays, saved.
  * </ol>
  *
- * <p>Run 2: the rules were not applied again ({@code doFireTick} is still on); A's tickets were dropped when the level
+ * <p>Run 2: the rules were not applied again ({@code doFireTick} is still on), nor the pad rebuilt (the corner is still
+ * air); A's tickets were dropped when the level
  * loaded and B's kept; B is back PAUSED; a new match C takes slot 2, never a used one, and disposing it releases its
  * tickets.
  */
@@ -103,7 +107,27 @@ public final class ArenaSmokeDriver {
         if (!s.settings().leakTickets()) {
             return "run 1 needs strategos.smoke.leakTickets";
         }
-        server.getGameRules().getRule(GameRules.RULE_DOFIRETICK).set(true, server); // the owner's later change
+        String pad = padProblem(server, true);
+        if (pad != null) {
+            return pad;
+        }
+        if (!registry.lobbyPadBuilt()) {
+            return "the registry does not record the lobby pad";
+        }
+        server.getGameRules().getRule(GameRules.RULE_DOFIRETICK).set(true, server); // the owner's later changes
+        ServerLevel overworld = server.overworld();
+        s.writer()
+                .enqueue(
+                        overworld,
+                        new WriteSite(0, 1),
+                        WritePriority.CONSTRUCTION,
+                        padCorner(server),
+                        Blocks.AIR.defaultBlockState(),
+                        0);
+        s.writer().flush(overworld, server.getTickCount(), false);
+        if (!overworld.getBlockState(padCorner(server)).isAir()) {
+            return "the owner's dig through the writer left the pad's corner in place";
+        }
 
         MatchRegistry matches = s.matches();
         MatchRuntime a = matches.createInArena(SIZE, SIZE, MatchOptions.generated(ArenaPolicy.FLOOR_Y));
@@ -135,6 +159,10 @@ public final class ArenaSmokeDriver {
         if (!server.getGameRules().getBoolean(GameRules.RULE_DOFIRETICK)) {
             return "doFireTick is off again: the second start re-applied the arena rules over the owner's change";
         }
+        String pad = padProblem(server, false);
+        if (pad != null) {
+            return pad;
+        }
         JsonObject run1 = readMarker(markerFile().resolveSibling("arena-run1.json"));
         MatchId leaked = new MatchId(run1.get("leaked").getAsInt());
         MatchId kept = new MatchId(run1.get("kept").getAsInt());
@@ -162,6 +190,29 @@ public final class ArenaSmokeDriver {
             return "disposing " + c.id() + " left its tickets";
         }
         marker.addProperty("slot", 2);
+        return null;
+    }
+
+    /** The pad's corner the owner digs out in run 1. */
+    private static BlockPos padCorner(MinecraftServer server) {
+        return server.overworld().getSharedSpawnPos().below().offset(-ArenaWorld.PAD_REACH, 0, -ArenaWorld.PAD_REACH);
+    }
+
+    /** The 9 x 9 stone pad under the spawn; run 2 expects the corner run 1 dug out to stay air. */
+    private static @Nullable String padProblem(MinecraftServer server, boolean whole) {
+        ServerLevel level = server.overworld();
+        BlockPos floor = level.getSharedSpawnPos().below();
+        for (int dx = -ArenaWorld.PAD_REACH; dx <= ArenaWorld.PAD_REACH; dx++) {
+            for (int dz = -ArenaWorld.PAD_REACH; dz <= ArenaWorld.PAD_REACH; dz++) {
+                BlockPos pos = floor.offset(dx, 0, dz);
+                boolean corner = pos.equals(padCorner(server));
+                boolean stone = level.getBlockState(pos).is(Blocks.STONE);
+                if (stone != (whole || !corner)) {
+                    return "the lobby pad at " + pos + " is " + level.getBlockState(pos)
+                            + (corner && !whole ? ": the second start rebuilt the corner the owner dug out" : "");
+                }
+            }
+        }
         return null;
     }
 

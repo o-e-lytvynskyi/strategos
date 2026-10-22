@@ -14,13 +14,17 @@ import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.Vec2d;
+import dev.strategos.core.sim.world.WritePriority;
+import dev.strategos.core.sim.world.WriteSite;
 import dev.strategos.core.testkit.BudgetCheck;
 import dev.strategos.core.testkit.Percentiles;
 import dev.strategos.core.testkit.SimHarness;
 import dev.strategos.gametest.MatchFixture;
 import dev.strategos.gametest.StrategosTest;
+import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.server.match.MatchRuntime;
 import dev.strategos.mod.server.persist.MatchData;
+import dev.strategos.mod.server.world.BlockWriter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.management.ManagementFactory;
@@ -30,9 +34,13 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.GameTestSequence;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 
 /**
  * The L6 perf GameTests (spec 7.6), one per batch, in their own run ({@code runGameTestPerf}). Each samples the foreign
@@ -48,6 +56,8 @@ public final class PerfTests {
     private static final int WARM_UP = 200;
     private static final int SAMPLES = 600;
     private static final int REORDER_EVERY = 120;
+    private static final int WRITER_WARM_UP = 100;
+    private static final int WRITES_PER_TICK = 64;
 
     private PerfTests() {}
 
@@ -145,6 +155,77 @@ public final class PerfTests {
                         saves,
                         window,
                         new JsonObject()))
+                .thenSucceed();
+    }
+
+    /**
+     * BLD-15.4: the writer's cost at its full budget: 64 blocks a tick, stone and air in turn over four 16 x 16 sites
+     * that take turns, 600 ticks after 100 of warm-up; the samples are the {@code setBlock} time of each tick's 64
+     * writes. Report-only under gate {@code c} (PERF-01 has no per-block threshold); the reference limits are 5 % of
+     * budget C for a tick's writes at p99 (1.15 ms) and a tenth of that at the median.
+     */
+    @StrategosTest(batch = "perf_writer", arena = "arena_flat_48", timeoutTicks = 1_200)
+    public static void blockWriterCost(GameTestHelper h) {
+        MatchRuntime rt = MatchFixture.create(h, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
+        ServerLevel level = h.getLevel();
+        BlockWriter writer = StrategosServer.get().writer();
+        int ticks = WRITER_WARM_UP + SAMPLES + 8;
+        int perSite = ticks * WRITES_PER_TICK / 4;
+        BlockState[] states = {Blocks.STONE.defaultBlockState(), Blocks.AIR.defaultBlockState()};
+        for (int site = 0; site < 4; site++) {
+            BlockPos corner = rt.space().origin().offset(site % 2 * 16, 2, site / 2 * 16);
+            for (int i = 0; i < perSite; i++) {
+                writer.enqueue(
+                        level,
+                        new WriteSite(rt.id().value(), site + 1),
+                        WritePriority.CONSTRUCTION,
+                        corner.offset(i % 16, 0, i / 16 % 16),
+                        states[i / 256 % 2],
+                        0);
+            }
+        }
+        Window window = new Window();
+        var state = new Object() {
+            long lastNanos = writer.writeNanos();
+            long lastPlacements = writer.placements();
+            int seen;
+            int samples;
+            long[] perTick = new long[SAMPLES];
+            long[] perBlock = new long[SAMPLES];
+        };
+        h.startSequence()
+                .thenWaitUntil(() -> {
+                    long nanos = writer.writeNanos() - state.lastNanos;
+                    long placed = writer.placements() - state.lastPlacements;
+                    state.lastNanos = writer.writeNanos();
+                    state.lastPlacements = writer.placements();
+                    if (placed > 0 && state.seen++ >= WRITER_WARM_UP) {
+                        if (state.samples == 0) {
+                            window.start();
+                        }
+                        state.perTick[state.samples] = nanos;
+                        state.perBlock[state.samples++] = nanos / placed;
+                        if (state.samples % 20 == 0) {
+                            window.sampleForeignLoad();
+                        }
+                    }
+                    check(state.samples >= SAMPLES, "sampling: " + state.samples + " of " + SAMPLES);
+                })
+                .thenExecute(() -> {
+                    StrategosServer.get().matches().dispose(rt.id());
+                    JsonObject extra = new JsonObject();
+                    extra.addProperty("ns_per_block_p50", Percentiles.percentile(state.perBlock, 0.50));
+                    extra.addProperty("ns_per_block_p99", Percentiles.percentile(state.perBlock, 0.99));
+                    extra.addProperty("blocks_per_tick", WRITES_PER_TICK);
+                    verdict(
+                            h,
+                            "block_writer_cost",
+                            "c",
+                            new BudgetCheck("the writer's 64 blocks a tick", scaled(115_000), scaled(1_150_000)),
+                            state.perTick,
+                            window,
+                            extra);
+                })
                 .thenSucceed();
     }
 

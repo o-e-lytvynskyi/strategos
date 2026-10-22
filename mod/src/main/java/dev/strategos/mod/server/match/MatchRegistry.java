@@ -19,6 +19,7 @@ import dev.strategos.mod.server.persist.RegistryData;
 import dev.strategos.mod.server.world.ArenaPolicy;
 import dev.strategos.mod.server.world.ArenaTickets;
 import dev.strategos.mod.server.world.ArenaWorld;
+import dev.strategos.mod.server.world.BlockWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -55,15 +56,18 @@ public final class MatchRegistry {
     private final MinecraftServer server;
     private final StrategosSettings settings;
     private final SpawnBudget spawnBudget;
+    private final BlockWriter writer;
     private final TreeMap<Integer, MatchRuntime> matches = new TreeMap<>();
     private final Map<ResourceKey<Level>, MatchRegionIndex> regions = new HashMap<>();
     private @Nullable RegistryData persisted;
     private int nextId = 1; // ids while no registry blob is usable; such matches are never saved
 
-    public MatchRegistry(MinecraftServer server, StrategosSettings settings, SpawnBudget spawnBudget) {
+    public MatchRegistry(
+            MinecraftServer server, StrategosSettings settings, SpawnBudget spawnBudget, BlockWriter writer) {
         this.server = server;
         this.settings = settings;
         this.spawnBudget = spawnBudget;
+        this.writer = writer;
     }
 
     /**
@@ -208,8 +212,8 @@ public final class MatchRegistry {
     }
 
     /**
-     * Ends the match for good: its bodies are discarded, its region freed, its chunk tickets released, its record and
-     * blob file removed.
+     * Ends the match for good: its bodies are discarded, its region freed, its waiting block writes dropped and its
+     * blocks unprotected, its chunk tickets released, its record and blob file removed.
      */
     public void dispose(MatchId id) {
         MatchRuntime rt = require(id);
@@ -222,8 +226,11 @@ public final class MatchRegistry {
             forget(rt);
         }
         ServerLevel level = server.getLevel(rt.space().level());
-        if (level != null && ArenaPolicy.governs(server, rt.space(), rt.source()) && !settings.leakTickets()) {
-            ArenaTickets.release(level, id, rt.space());
+        if (level != null) {
+            writer.forget(level, id.value());
+            if (ArenaPolicy.governs(server, rt.space(), rt.source()) && !settings.leakTickets()) {
+                ArenaTickets.release(level, id, rt.space());
+            }
         }
     }
 

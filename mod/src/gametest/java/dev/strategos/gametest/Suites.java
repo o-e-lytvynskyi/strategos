@@ -13,6 +13,7 @@ import dev.strategos.gametest.suites.RetryNoReasonSelfTest;
 import dev.strategos.gametest.suites.SelfTests;
 import dev.strategos.gametest.suites.SharedBatchSelfTest;
 import dev.strategos.gametest.suites.TicketLeakSelfTest;
+import dev.strategos.gametest.suites.WriterTests;
 import java.util.List;
 
 /** The suites one GameTest run holds; gametest code, so static lists are fine here. */
@@ -37,7 +38,8 @@ public final class Suites {
                         CommandTests.class,
                         PersistenceTests.class,
                         FaultTests.class,
-                        JournalTests.class);
+                        JournalTests.class,
+                        WriterTests.class);
         };
     }
 }

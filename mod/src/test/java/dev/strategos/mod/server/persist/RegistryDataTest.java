@@ -83,18 +83,22 @@ class RegistryDataTest {
     void theArenaFlagAndSlotCounterRoundTripAndDefaultForAnM0Blob() {
         RegistryData data = new RegistryData();
         data.markArenaRulesApplied();
+        data.markLobbyPadBuilt();
         data.allocateArenaSlot();
         CompoundTag tag = data.save(new CompoundTag(), RegistryAccess.EMPTY);
 
         RegistryData loaded = RegistryData.load(tag, RegistryAccess.EMPTY);
         assertThat(loaded.arenaRulesApplied()).isTrue();
+        assertThat(loaded.lobbyPadBuilt()).isTrue();
         assertThat(loaded.nextArenaSlot()).isEqualTo(1);
 
         tag.remove("arenaRulesApplied");
+        tag.remove("lobbyPadBuilt");
         tag.remove("nextArenaSlot");
         RegistryData m0 = RegistryData.load(tag, RegistryAccess.EMPTY);
         assertThat(m0.quarantineReason()).as("an M0 blob still loads").isNull();
         assertThat(m0.arenaRulesApplied()).isFalse();
+        assertThat(m0.lobbyPadBuilt()).isFalse();
         assertThat(m0.nextArenaSlot()).isZero();
 
         tag.putInt("nextArenaSlot", -1);

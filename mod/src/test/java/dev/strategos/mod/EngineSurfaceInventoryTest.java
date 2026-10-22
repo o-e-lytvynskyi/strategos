@@ -123,6 +123,7 @@ class EngineSurfaceInventoryTest {
                 transformers,
                 worldgen,
                 ticketControllers(),
+                StrategosConfig.files(),
                 inventory());
     }
 

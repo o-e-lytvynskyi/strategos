@@ -293,7 +293,7 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
   3. `FakeWorld` applies effects in the same order under the same budget as the adapter (L1).
   4. The cost per placement is measured against PERF-01's threshold (L6).
 - **Tests:** L0, L1, L3, L6 · **Depends on:** CORE-02, CORE-10 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 #### MAP-01 · Map packages, importer and the proving ground
 - **Value:** A standard battlefield exercises every movement case, so pathing quality is measured,

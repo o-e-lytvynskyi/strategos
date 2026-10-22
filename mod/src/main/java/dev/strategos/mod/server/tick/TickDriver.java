@@ -9,9 +9,10 @@ import net.neoforged.neoforge.event.tick.LevelTickEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 /**
- * Steps the matches: at the start of each server tick the spawn budget refills; at the start of each level's tick,
- * before its entities and tracker, every RUNNING match of that level steps and every PAUSED one gets its bodies, in id
- * order, each inside the fault barrier.
+ * Steps the matches: at the start of each server tick the spawn budget and the block writer's budget refill; at the
+ * start of each level's tick, before its entities and tracker, every RUNNING match of that level steps and every PAUSED
+ * one gets its bodies, in id order, each inside the fault barrier, and then the block writer writes that level's
+ * share.
  */
 public final class TickDriver {
     private TickDriver() {}
@@ -20,6 +21,7 @@ public final class TickDriver {
         StrategosServer server = StrategosServer.getOrNull();
         if (server != null) {
             server.spawnBudget().reset(server.settings().spawnsPerTick());
+            server.writer().startTick();
         }
     }
 
@@ -31,11 +33,14 @@ public final class TickDriver {
         if (server == null || !shouldStep(level.tickRateManager())) {
             return;
         }
+        boolean running = false;
         for (MatchRuntime rt : server.matches().activeIn(level)) {
+            running |= rt.lifecycle() == MatchLifecycle.RUNNING;
             Runnable work =
                     rt.lifecycle() == MatchLifecycle.RUNNING ? () -> rt.tick(level) : () -> rt.materialiseOnly(level);
             server.faults().run(rt, "tick", work);
         }
+        server.writer().flush(level, level.getServer().getTickCount(), running);
     }
 
     /** A frozen game (/tick freeze) steps no match; /tick step runs as many steps as it asks for. */

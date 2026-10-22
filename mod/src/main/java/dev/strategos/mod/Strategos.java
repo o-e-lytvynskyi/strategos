@@ -7,7 +7,9 @@ import dev.strategos.mod.server.body.BodyEvents;
 import dev.strategos.mod.server.command.StrategosCommands;
 import dev.strategos.mod.server.tick.TickDriver;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.TagsUpdatedEvent;
@@ -26,8 +28,12 @@ import net.neoforged.neoforge.registries.datamaps.DataMapsUpdatedEvent;
 public final class Strategos {
     public static final String MOD_ID = "strategos";
 
-    /** FML injects the mod bus; the server's lifecycle, ticks and entity events come from the game bus. */
-    public Strategos(IEventBus modBus) {
+    /**
+     * FML injects the mod bus and the container (FMLModContainer#constructMod); the server's lifecycle, ticks and entity
+     * events come from the game bus.
+     */
+    public Strategos(IEventBus modBus, ModContainer container) {
+        container.registerConfig(ModConfig.Type.SERVER, StrategosConfig.SPEC, StrategosConfig.FILE);
         ModEntityTypes.register(modBus);
         ModDataMaps.register(modBus);
         ModTickets.register(modBus);

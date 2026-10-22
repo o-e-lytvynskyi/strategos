@@ -18,9 +18,9 @@ import org.jspecify.annotations.Nullable;
 /**
  * The mod's hooks into the engine (ADR-0020, rule B12): the inventory in {@code engine-surface.json} on one side, what
  * the code registers on the other, and one comparison. The code side reads entity types, saved-data names, command
- * roots, mixin configs, access transformers, data map types, world generation data and ticket controllers; the kinds
- * without a probe yet get theirs with their first registration in M1, and until then the code side repeats the
- * inventory for them.
+ * roots, mixin configs, access transformers, data map types, world generation data, ticket controllers and config
+ * files; the kinds without a probe yet get theirs with their first registration in M1, and until then the code side
+ * repeats the inventory for them.
  */
 public record EngineSurface(Map<String, List<String>> kinds) {
     /** Every kind, in the inventory's order. */
@@ -46,7 +46,8 @@ public record EngineSurface(Map<String, List<String>> kinds) {
             "accessTransformers",
             "dataMaps",
             "worldgen",
-            "ticketControllers");
+            "ticketControllers",
+            "configs");
 
     public EngineSurface {
         Map<String, List<String>> sorted = new LinkedHashMap<>();
@@ -86,7 +87,7 @@ public record EngineSurface(Map<String, List<String>> kinds) {
      * The code's surface from what the probes read: registered entity type ids (any namespace; only {@code
      * strategos:} ones count), saved-data names, command roots, the mod's {@code neoforge.mods.toml} and its access
      * transformer file ({@code null} when there is none), the world generation files as {@code <registry dir> <id>}
-     * and the ticket controller ids. Unprobed kinds are copied from {@code inventory}.
+     * the ticket controller ids and the config file names. Unprobed kinds are copied from {@code inventory}.
      */
     public static EngineSurface ofCode(
             Collection<String> entityTypeIds,
@@ -97,6 +98,7 @@ public record EngineSurface(Map<String, List<String>> kinds) {
             @Nullable String accessTransformerCfg,
             Collection<String> worldgen,
             Collection<String> ticketControllerIds,
+            Collection<String> configFiles,
             EngineSurface inventory) {
         Map<String, List<String>> kinds = new LinkedHashMap<>();
         kinds.put(
@@ -119,6 +121,7 @@ public record EngineSurface(Map<String, List<String>> kinds) {
                 dataMapIds.stream().filter(id -> id.startsWith("strategos:")).toList());
         kinds.put("worldgen", List.copyOf(worldgen));
         kinds.put("ticketControllers", List.copyOf(ticketControllerIds));
+        kinds.put("configs", List.copyOf(configFiles));
         for (String kind : KINDS) {
             if (!PROBED.contains(kind)) {
                 kinds.put(kind, inventory.of(kind));
