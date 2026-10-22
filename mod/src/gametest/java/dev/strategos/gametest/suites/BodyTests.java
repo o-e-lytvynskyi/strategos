@@ -308,9 +308,12 @@ public final class BodyTests {
      * body, not the old one shown again beside a new one. The match reaches past the arena, so the test runs alone.
      * The far chunk lies at least three chunks past the arena, whose chunks the GameTest forces (level 31): two chunks
      * from a forced one a chunk stays FULL (level 33) when released, its entities tracked but not ticking, so it never
-     * unloads; with a run's random origin, 72 blocks out was two chunks away about half the time.
+     * unloads; with a run's random origin, 72 blocks out was two chunks away about half the time. The GameTest server
+     * ticks back to back (GameTestServer#waitUntilNextTick only runs tasks), while a forced chunk's entities load on the
+     * IO worker in wall-clock time: on CI 1,600 ticks once ran out in 3 s, before they had, so the timeout is in ticks
+     * enough for about half a minute there.
      */
-    @StrategosTest(batch = "chunks", solo = true, timeoutTicks = 1_600)
+    @StrategosTest(batch = "chunks", solo = true, timeoutTicks = 16_000)
     public static void bodiesFollowEntityTickingChunks(GameTestHelper h) {
         AABB arena = h.getBounds();
         MatchSpace space = new MatchSpace(
