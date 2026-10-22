@@ -293,7 +293,8 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
   3. `FakeWorld` applies effects in the same order under the same budget as the adapter (L1).
   4. The cost per placement is measured against PERF-01's threshold (L6).
 - **Tests:** L0, L1, L3, L6 · **Depends on:** CORE-02, CORE-10 · **Size:** M · **Tier:** T0
-- **Status:** in_progress
+- **Done:** 2026-10-22 — M1 T5, T7: `writertests.budget_holds_across_two_matches` (1); `navtests.own_writes_never_dirty`, whose negative check fails with 6 pages captured once the router's `OwnWrite` check is gone (2); `FakeWorldOrderTest` (3); `perftests.block_writer_cost`, 0.32 µs a block, report-only (4)
+- **Status:** done
 
 #### MAP-01 · Map packages, importer and the proving ground
 - **Value:** A standard battlefield exercises every movement case, so pathing quality is measured,
@@ -342,7 +343,7 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
   6. The router's cost per block change outside any match is reported for PERF-01's threshold (R).
 - **Tests:** L0, L1, L3, L5, L6, R · **Depends on:** PATH-02, BLD-15, CORE-01 · **Size:** M ·
   **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 #### PATH-03 · Path service: A*, string pulling and STRICT delivery
 - **Value:** Units find sensible routes over real terrain and respond on the tick an order arrives.

@@ -165,10 +165,10 @@ class EngineSurfaceInventoryTest {
 
     @Test
     void aMixinsEntryIsReported() throws IOException {
-        String toml = modsToml() + "\n[[mixins]]\nconfig=\"strategos.mixins.json\"\n";
+        String toml = modsToml() + "\n[[mixins]]\nconfig=\"strategos.extra.mixins.json\"\n";
 
         assertThat(EngineSurface.diff(inventory(), code(entityTypes(), toml, accessTransformers())))
-                .containsExactly("mixinConfigs: strategos.mixins.json is in the code but not in the inventory");
+                .containsExactly("mixinConfigs: strategos.extra.mixins.json is in the code but not in the inventory");
     }
 
     @Test

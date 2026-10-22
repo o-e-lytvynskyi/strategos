@@ -8,6 +8,7 @@ import dev.strategos.gametest.suites.FaultTests;
 import dev.strategos.gametest.suites.JournalTests;
 import dev.strategos.gametest.suites.MapTests;
 import dev.strategos.gametest.suites.MatchTests;
+import dev.strategos.gametest.suites.NavTests;
 import dev.strategos.gametest.suites.PerfTests;
 import dev.strategos.gametest.suites.PersistenceTests;
 import dev.strategos.gametest.suites.RetryNoReasonSelfTest;
@@ -41,6 +42,7 @@ public final class Suites {
                         FaultTests.class,
                         JournalTests.class,
                         MapTests.class,
+                        NavTests.class,
                         WriterTests.class);
         };
     }

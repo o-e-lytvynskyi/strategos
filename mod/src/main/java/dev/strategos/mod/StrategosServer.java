@@ -1,7 +1,9 @@
 package dev.strategos.mod;
 
+import dev.strategos.core.port.JobExecutor;
 import dev.strategos.mod.registry.ModDataMaps;
 import dev.strategos.mod.server.body.SpawnBudget;
+import dev.strategos.mod.server.jobs.InlineJobExecutor;
 import dev.strategos.mod.server.match.MapImports;
 import dev.strategos.mod.server.match.MatchRegistry;
 import dev.strategos.mod.server.tick.FaultBarrier;
@@ -33,6 +35,7 @@ public final class StrategosServer {
     private final MatchRegistry matches;
     private final BlockWriter writer;
     private final MapImports mapImports = new MapImports();
+    private final JobExecutor jobs = new InlineJobExecutor();
     private volatile BlockClassTable blockClasses;
     private ArenaWorld.Outcome arena = ArenaWorld.Outcome.NOT_AN_ARENA;
 
@@ -41,7 +44,7 @@ public final class StrategosServer {
         this.settings = settings;
         this.faults = new FaultBarrier(server);
         this.writer = new BlockWriter(settings.writerBudget(), settings.importBudget());
-        this.matches = new MatchRegistry(server, settings, spawnBudget, writer);
+        this.matches = new MatchRegistry(server, settings, spawnBudget, writer, this::blockClasses, jobs);
         this.blockClasses = buildBlockClasses();
     }
 
@@ -69,6 +72,11 @@ public final class StrategosServer {
 
     public MatchRegistry matches() {
         return matches;
+    }
+
+    /** Where page jobs (and, from T8, path jobs) run. */
+    public JobExecutor jobs() {
+        return jobs;
     }
 
     /** Map imports that belong to no match. */

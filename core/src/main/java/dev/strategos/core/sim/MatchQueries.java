@@ -3,6 +3,8 @@ package dev.strategos.core.sim;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.FactionSlot;
+import dev.strategos.core.sim.nav.SurfaceGrid;
+import java.util.List;
 import org.jspecify.annotations.Nullable;
 
 /** Read-only questions about a match at its last completed tick. */
@@ -24,4 +26,10 @@ public interface MatchQueries {
     int[] unitHandles();
 
     int[] unitHandlesOf(FactionSlot faction);
+
+    /** The published terrain pages: an immutable grid, replaced when a page is published. */
+    SurfaceGrid surfaces();
+
+    /** The published pages by the hash of their slices, in page order. */
+    List<PageRef> pageRefs();
 }

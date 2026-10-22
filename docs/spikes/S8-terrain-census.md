@@ -170,6 +170,8 @@ All fixtures stay within 4 surfaces.
   failed on a ProtoChunk, and the server thread waited for the chunk forever.
 - **Build times are single samples** on the server thread between ticks. `PageBuilderBench` (JMH)
   stays the reference.
-- **The router's cost per block change** (PATH-15.6) is measured with the router in T7 and added
-  here then. Long-crossing expansions come from `CrossingBench` (T8). S8 gives PATH-08 (HPA*) no
-  trigger either way.
+- **The router's cost per block change** (PATH-15.6), measured with the router in T7: 37 ns a change
+  outside any match (`perftests.page_capture_and_publication`, 100,000 calls on the M4 Pro). Inside
+  a match, a change that keeps the block's nav class costs one more table lookup; one that changes
+  it dirties its page, which is rebuilt within 40 ticks. Long-crossing expansions come from
+  `CrossingBench` (T8). S8 gives PATH-08 (HPA*) no trigger either way.

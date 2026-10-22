@@ -24,9 +24,22 @@ public final class Migrations {
         this.steps = List.copyOf(steps);
     }
 
-    /** The shipped chain; M0 has no steps. */
+    /** The shipped chain: 1 to 2 adds the terrain pages, none in an M0 snapshot. */
     public static Migrations production() {
-        return new Migrations(List.of());
+        return new Migrations(List.of(new AddTerrainPages()));
+    }
+
+    /** Schema 1 to 2: M0's snapshots had no terrain, so their page list is empty. */
+    private static final class AddTerrainPages implements MigrationStep {
+        @Override
+        public int from() {
+            return 1;
+        }
+
+        @Override
+        public <T> Dynamic<T> apply(Dynamic<T> input) {
+            return input.set("pages", input.emptyList());
+        }
     }
 
     /**

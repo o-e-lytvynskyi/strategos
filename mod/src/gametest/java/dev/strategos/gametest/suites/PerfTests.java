@@ -23,8 +23,11 @@ import dev.strategos.gametest.MatchFixture;
 import dev.strategos.gametest.StrategosTest;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.server.match.MatchRuntime;
+import dev.strategos.mod.server.match.MatchSpace;
 import dev.strategos.mod.server.persist.MatchData;
+import dev.strategos.mod.server.world.BlockChangeRouter;
 import dev.strategos.mod.server.world.BlockWriter;
+import dev.strategos.mod.server.world.PageJobs;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.management.ManagementFactory;
@@ -227,6 +230,111 @@ public final class PerfTests {
                             extra);
                 })
                 .thenSucceed();
+    }
+
+    /**
+     * PATH-15.4: page capture and publication on the main thread with every page of a 48 x 48 match changing every 8
+     * ticks: at most 4 pages captured a tick, and the capture plus the join of due pages (with the inline executor,
+     * their builds too) at most 0.4 ms at p95 over 600 ticks. Also PATH-15.6, for the S8 report: what the block-change
+     * router costs per change outside any match.
+     */
+    @StrategosTest(batch = "perf_pages", arena = "arena_flat_48", timeoutTicks = 1_200)
+    public static void pageCaptureAndPublication(GameTestHelper h) {
+        MatchRuntime rt = MatchFixture.create(h, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
+        Window window = new Window();
+        var state = new Object() {
+            int ticks;
+            int samples;
+            int mostCaptured;
+            long[] nanos = new long[SAMPLES];
+        };
+        h.startSequence()
+                .thenWaitUntil(() -> check(core(rt).queries().pageRefs().size() == 9, "prewarm"))
+                .thenWaitUntil(() -> {
+                    int t = state.ticks++;
+                    if (t % 8 == 0) {
+                        for (int page = 0; page < 9; page++) {
+                            BlockPos at = new BlockPos(page % 3 * 16 + 8, 2, page / 3 * 16 + 8);
+                            h.setBlock(at, (t / 8) % 2 == 0 ? Blocks.STONE : Blocks.AIR);
+                        }
+                    }
+                    if (t >= WRITER_WARM_UP) {
+                        if (state.samples == 0) {
+                            window.start();
+                        }
+                        state.nanos[state.samples++] =
+                                rt.pages().lastCaptureNanos() + rt.pages().lastJoinNanos();
+                        state.mostCaptured =
+                                Math.max(state.mostCaptured, rt.pages().lastCaptured());
+                        if (state.samples % 20 == 0) {
+                            window.sampleForeignLoad();
+                        }
+                    }
+                    check(state.samples >= SAMPLES, "sampling: " + state.samples + " of " + SAMPLES);
+                })
+                .thenExecute(() -> {
+                    check(state.mostCaptured <= PageJobs.PER_TICK, state.mostCaptured + " pages captured in a tick");
+                    check(
+                            rt.pages().captured() > 9 + 60,
+                            "too few rebuilds: " + rt.pages().captured());
+                    JsonObject extra = new JsonObject();
+                    extra.addProperty("pages_captured", rt.pages().captured());
+                    extra.addProperty("most_pages_a_tick", state.mostCaptured);
+                    extra.addProperty("router_ns_outside_matches", routerNanos(h));
+                    verdict(
+                            h,
+                            "page_capture_and_publication",
+                            "pages",
+                            new BudgetCheck("page capture and publication", Long.MAX_VALUE, Long.MAX_VALUE),
+                            state.nanos,
+                            window,
+                            extra);
+                    long p95 = Percentiles.percentile(state.nanos, 0.95);
+                    if (window.meanForeignLoad() <= INVALID_FOREIGN_LOAD) {
+                        check(p95 <= scaled(400_000), "capture and publication take " + p95 + " ns at p95");
+                    }
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * PATH-15.5, budget G: a 512² region of the test world, 64 blocks high, prewarms in at most 30 s of wall time (every
+     * page captured, built and published on the first tick), and its nav takes at most 32 MB.
+     */
+    @StrategosTest(batch = "perf_prewarm", arena = "arena_flat_48", timeoutTicks = 2_000)
+    public static void prewarm512Generated(GameTestHelper h) {
+        BlockPos corner = h.absolutePos(BlockPos.ZERO);
+        BlockPos origin = new BlockPos(corner.getX() + 8_192, corner.getY(), corner.getZ());
+        MatchSpace space =
+                new MatchSpace(h.getLevel().dimension(), origin, 512, 512, origin.getY(), origin.getY() + 63);
+        long start = System.nanoTime();
+        MatchRuntime rt = MatchFixture.create(h, space, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
+        h.startSequence()
+                .thenWaitUntil(() -> check(core(rt).queries().pageRefs().size() == 1_024, "prewarm"))
+                .thenExecute(() -> {
+                    long millis = (System.nanoTime() - start) / MS;
+                    long bytes = core(rt).queries().surfaces().bytes();
+                    JsonObject json = new JsonObject();
+                    json.addProperty("test", "prewarm_512_generated");
+                    json.addProperty("prewarm_ms", millis);
+                    json.addProperty("nav_bytes", bytes);
+                    write("prewarm_512_generated", json);
+                    check(millis <= 30_000, "the prewarm took " + millis + " ms");
+                    check(bytes <= 32L << 20, "nav takes " + bytes + " bytes");
+                })
+                .thenSucceed();
+    }
+
+    /** What the router costs per block change outside any match, averaged over 100,000 calls. */
+    private static long routerNanos(GameTestHelper h) {
+        StrategosServer s = StrategosServer.get();
+        BlockPos far = h.absolutePos(BlockPos.ZERO).offset(100_000, 0, 0);
+        long start = System.nanoTime();
+        for (int i = 0; i < 100_000; i++) {
+            BlockChangeRouter.route(
+                    s, h.getLevel(), far, Blocks.AIR.defaultBlockState(), Blocks.STONE.defaultBlockState());
+        }
+        return (System.nanoTime() - start) / 100_000;
     }
 
     private static void reorder(MatchRuntime rt, boolean toEast) {

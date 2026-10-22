@@ -435,7 +435,7 @@ narrow mixin with a compatibility test ([01-feasibility.md §7](01-feasibility.m
 
 | Kind | Item | Purpose | Lands in |
 |---|---|---|---|
-| Mixin | `LevelChunkMixin`: RETURN of `LevelChunk#setBlockState(BlockPos, BlockState, boolean)` (LevelChunk.java:239), routed to `BlockChangeRouter` | Sees every block change, direct chunk writes included (fact 12): nav invalidation for external edits, node shrinkage, protection backstop | M1 |
+| Mixin | `LevelChunkMixin` (config `strategos.mixins.json`): RETURN of `LevelChunk#setBlockState(BlockPos, BlockState, boolean)` (LevelChunk.java:239), routed to `BlockChangeRouter` | Sees every block change, direct chunk writes included (fact 12): nav invalidation for external edits, node shrinkage, protection backstop | M1 |
 | Mixin | `ServerPlayerMixin`: HEAD of `ServerPlayer#broadcastToPlayer(ServerPlayer)` (ServerPlayer.java:957) and HEAD of `ServerPlayer#attack(Entity)` (1767) | Hides enemy commanders always and enemy first-person bodies in fog (spectators see spectators, 957–962); a commander can never spectate a unit by attacking it (1767–1769) | M7 |
 | Mixin | `ServerGamePacketListenerImplMixin`: HEAD of `handleTeleportToEntityPacket` (ServerGamePacketListenerImpl.java:1204) | Drops spectator teleports to any entity for match members; no NeoForge event covers this path | M7 |
 | Access transformer | `public net.minecraft.server.level.ChunkMap entityMap` (ChunkMap.java:150) and `public net.minecraft.server.level.ChunkMap$TrackedEntity` (1278) | Targeted `TrackedEntity#updatePlayer` (1327) for flipped pairs and chunk-sent re-pairs | M8 |

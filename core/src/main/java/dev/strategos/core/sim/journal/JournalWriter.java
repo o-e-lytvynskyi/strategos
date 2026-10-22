@@ -1,11 +1,17 @@
 package dev.strategos.core.sim.journal;
 
+import dev.strategos.core.sim.InputEvent;
 import dev.strategos.core.sim.MatchSnapshot;
+import dev.strategos.core.sim.PageRef;
+import dev.strategos.core.sim.SliceSource;
+import dev.strategos.core.sim.TerrainPage;
 import dev.strategos.core.sim.TickInputs;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Records a match's journal in segments; public but not {@code @CoreApi}: only the core writes it (rule B2 keeps the
@@ -23,10 +29,30 @@ public final class JournalWriter {
     private long[] checkpointTicks = new long[16];
     private long[] checkpointHashes = new long[16];
     private int checkpoints;
+    /** The slice of every page now published, by page key. */
+    private final Map<Long, Long> pages = new TreeMap<>();
+    /** Encoded slices: those of the published pages and of the current segment's inputs. */
+    private final Map<Long, byte[]> slices = new TreeMap<>();
+    /** The current segment's slices: its start pages' and its inputs'. */
+    private final Map<Long, byte[]> segmentSlices = new TreeMap<>();
 
     /** Segments of {@link Journal#SEGMENT_TICKS}, or of {@code maxTicks} when that is shorter. */
     public JournalWriter(MatchSnapshot start, int checkpointEvery, int maxTicks) {
+        this(start, SliceSource.NONE, checkpointEvery, maxTicks);
+    }
+
+    /** As above, the start snapshot's pages taking their slices from {@code startSlices}. */
+    public JournalWriter(MatchSnapshot start, SliceSource startSlices, int checkpointEvery, int maxTicks) {
         this(start, checkpointEvery, maxTicks, Math.min(Journal.SEGMENT_TICKS, maxTicks));
+        for (PageRef ref : start.pages()) {
+            byte[] slice = startSlices.slice(ref.slice());
+            if (slice == null) {
+                throw new IllegalArgumentException("no slice for page (" + ref.x() + ", " + ref.z() + ") of the start");
+            }
+            pages.put(key(ref.x(), ref.z()), ref.slice());
+            slices.put(ref.slice(), slice);
+            segmentSlices.put(ref.slice(), slice);
+        }
     }
 
     public JournalWriter(MatchSnapshot start, int checkpointEvery, int maxTicks, int segmentTicks) {
@@ -53,7 +79,19 @@ public final class JournalWriter {
         if (!canonical.events().isEmpty()) {
             ticks.add(canonical);
         }
+        for (InputEvent event : canonical.events()) {
+            if (event instanceof TerrainPage page) {
+                byte[] slice = page.slice();
+                pages.put(key(page.coord().x(), page.coord().z()), page.sliceHash());
+                slices.put(page.sliceHash(), slice);
+                segmentSlices.put(page.sliceHash(), slice);
+            }
+        }
         lastTick = canonical.tick();
+    }
+
+    private static long key(int x, int z) {
+        return ((long) x << 32) | (z & 0xFFFF_FFFFL);
     }
 
     public void checkpoint(long tick, long hash) {
@@ -83,6 +121,16 @@ public final class JournalWriter {
         start = next;
         ticks.clear();
         checkpoints = 0;
+        slices.keySet().retainAll(pages.values());
+        segmentSlices.clear();
+        for (PageRef ref : next.pages()) {
+            byte[] slice = slices.get(ref.slice());
+            if (slice == null) {
+                throw new IllegalStateException(
+                        "no slice for page (" + ref.x() + ", " + ref.z() + ") of the new segment");
+            }
+            segmentSlices.put(ref.slice(), slice);
+        }
         while (!closed.isEmpty() && closed.peekFirst().startTick() < lastTick - maxTicks + segmentTicks) {
             closed.removeFirst();
         }
@@ -101,6 +149,7 @@ public final class JournalWriter {
                 lastTick,
                 ticks,
                 Arrays.copyOf(checkpointTicks, checkpoints),
-                Arrays.copyOf(checkpointHashes, checkpoints));
+                Arrays.copyOf(checkpointHashes, checkpoints),
+                segmentSlices);
     }
 }

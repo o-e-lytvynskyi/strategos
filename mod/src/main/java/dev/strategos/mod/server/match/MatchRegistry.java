@@ -3,6 +3,7 @@ package dev.strategos.mod.server.match;
 import dev.strategos.core.content.MapManifest;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.diag.MatchLog;
+import dev.strategos.core.port.JobExecutor;
 import dev.strategos.core.port.MetricsSink;
 import dev.strategos.core.shared.MatchId;
 import dev.strategos.core.sim.CorePorts;
@@ -22,6 +23,7 @@ import dev.strategos.mod.server.persist.RegistryData;
 import dev.strategos.mod.server.world.ArenaPolicy;
 import dev.strategos.mod.server.world.ArenaTickets;
 import dev.strategos.mod.server.world.ArenaWorld;
+import dev.strategos.mod.server.world.BlockClassTable;
 import dev.strategos.mod.server.world.BlockWriter;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -31,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.function.Supplier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -61,17 +64,26 @@ public final class MatchRegistry {
     private final StrategosSettings settings;
     private final SpawnBudget spawnBudget;
     private final BlockWriter writer;
+    private final Supplier<BlockClassTable> blockClasses;
+    private final JobExecutor jobs;
     private final TreeMap<Integer, MatchRuntime> matches = new TreeMap<>();
     private final Map<ResourceKey<Level>, MatchRegionIndex> regions = new HashMap<>();
     private @Nullable RegistryData persisted;
     private int nextId = 1; // ids while no registry blob is usable; such matches are never saved
 
     public MatchRegistry(
-            MinecraftServer server, StrategosSettings settings, SpawnBudget spawnBudget, BlockWriter writer) {
+            MinecraftServer server,
+            StrategosSettings settings,
+            SpawnBudget spawnBudget,
+            BlockWriter writer,
+            Supplier<BlockClassTable> blockClasses,
+            JobExecutor jobs) {
         this.server = server;
         this.settings = settings;
         this.spawnBudget = spawnBudget;
         this.writer = writer;
+        this.blockClasses = blockClasses;
+        this.jobs = jobs;
     }
 
     /**
@@ -137,9 +149,15 @@ public final class MatchRegistry {
             rt.importer(new MapImporter(level, map, space.origin(), id.value(), writer));
             return rt;
         }
+        prewarm(level, rt);
         rt.transition(MatchLifecycle.READY);
         rt.transition(MatchLifecycle.RUNNING);
         return rt;
+    }
+
+    /** Every page of the match captured now, built and published on its next tick (PATH-15: prewarm at prepare). */
+    private void prewarm(ServerLevel level, MatchRuntime rt) {
+        rt.pages().prewarm(level, rt.tick() + 1, blockClasses.get(), jobs);
     }
 
     /** The matches still importing their map. */
@@ -173,6 +191,10 @@ public final class MatchRegistry {
             return;
         }
         rt.log().info(rt.tick(), "map {} imported in {} ms", String.valueOf(rt.map()), importer.millis());
+        ServerLevel level = server.getLevel(rt.space().level());
+        if (level != null) {
+            prewarm(level, rt);
+        }
         rt.transition(MatchLifecycle.READY);
         rt.transition(MatchLifecycle.RUNNING);
     }
@@ -397,6 +419,7 @@ public final class MatchRegistry {
             log.error(-1, "restored FAULTED: " + reason, new IllegalStateException(reason));
         } else {
             rt.transition(MatchLifecycle.PREPARING);
+            prewarm(level, rt);
             rt.transition(MatchLifecycle.READY);
             rt.transition(MatchLifecycle.RUNNING);
             rt.transition(MatchLifecycle.PAUSED);

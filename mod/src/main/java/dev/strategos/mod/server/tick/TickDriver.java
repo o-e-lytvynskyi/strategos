@@ -40,8 +40,12 @@ public final class TickDriver {
         boolean running = false;
         for (MatchRuntime rt : server.matches().activeIn(level)) {
             running |= rt.lifecycle() == MatchLifecycle.RUNNING;
-            Runnable work =
-                    rt.lifecycle() == MatchLifecycle.RUNNING ? () -> rt.tick(level) : () -> rt.materialiseOnly(level);
+            Runnable work = rt.lifecycle() == MatchLifecycle.RUNNING
+                    ? () -> {
+                        rt.tick(level);
+                        rt.pages().tick(level, rt.tick(), server.blockClasses(), server.jobs());
+                    }
+                    : () -> rt.materialiseOnly(level);
             server.faults().run(rt, "tick", work);
         }
         server.writer().flush(level, level.getServer().getTickCount(), running);

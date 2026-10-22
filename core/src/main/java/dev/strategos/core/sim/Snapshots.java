@@ -6,6 +6,7 @@ import dev.strategos.core.diag.MatchLog;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.Vec2d;
+import dev.strategos.core.sim.nav.PageCoord;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,14 +36,21 @@ final class Snapshots {
                     orders.kind(i) == OrderStore.MOVE ? new Vec2d(orders.targetX(i), orders.targetZ(i)) : null));
         }
         return new MatchSnapshot(
-                s.config(), s.tick(), s.templates().hash(), entities.slots(), units, List.copyOf(s.pendingCommands()));
+                s.config(),
+                s.tick(),
+                s.templates().hash(),
+                entities.slots(),
+                units,
+                List.copyOf(s.pendingCommands()),
+                s.pageRefs());
     }
 
     /**
      * A state at the snapshot's tick. Templates are looked up by id, so a changed set still loads; a unit whose template
-     * the set lacks throws, naming the unit.
+     * the set lacks throws, naming the unit. Terrain pages are rebuilt from {@code slices}; one whose slice is missing
+     * stays unpublished, and a slice that does not hash to its reference throws.
      */
-    static MatchState restore(MatchSnapshot snapshot, TemplateSet templates, MatchLog log) {
+    static MatchState restore(MatchSnapshot snapshot, TemplateSet templates, MatchLog log, SliceSource slices) {
         int[] alive = new int[snapshot.units().size()];
         for (int i = 0; i < alive.length; i++) {
             alive[i] = snapshot.units().get(i).handle();
@@ -68,6 +76,27 @@ final class Snapshots {
             }
         }
         state.pendingCommands().addAll(snapshot.pendingCommands());
+        int missing = 0;
+        for (PageRef ref : snapshot.pages()) {
+            byte[] slice = slices.slice(ref.slice());
+            if (slice == null) {
+                missing++;
+                continue;
+            }
+            TerrainPage page = TerrainPage.rebuild(new PageCoord(ref.x(), ref.z()), slice);
+            if (page.sliceHash() != ref.slice()) {
+                throw new IllegalArgumentException("the slice of page (" + ref.x() + ", " + ref.z() + ") hashes to "
+                        + Long.toHexString(page.sliceHash()) + ", the snapshot says " + Long.toHexString(ref.slice()));
+            }
+            state.publish(page);
+        }
+        if (missing > 0) {
+            log.info(
+                    snapshot.tick(),
+                    "{} of {} terrain pages restored without their slices",
+                    missing,
+                    snapshot.pages().size());
+        }
         if (snapshot.templateSetHash() != templates.hash()) {
             log.warn(
                     snapshot.tick(),

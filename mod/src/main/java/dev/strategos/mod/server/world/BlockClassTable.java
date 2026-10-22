@@ -6,6 +6,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.FluidTags;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -74,6 +75,33 @@ public final class BlockClassTable {
 
     public short classOf(int stateId) {
         return classes[stateId];
+    }
+
+    /** Whether a class needs the block's real position: its shape depends on it, and it has a collision. */
+    public static boolean needsPosition(short c) {
+        return BlockClass.is(c, BlockClass.POSITION_DEPENDENT) && !BlockClass.is(c, BlockClass.PASSABLE);
+    }
+
+    /**
+     * The class of {@code state} where it stands: the table's, unless {@link #needsPosition} says its shape depends on
+     * its position, then from its real collision shape there. Main thread only, since it reads the level.
+     */
+    public short classAt(BlockState state, BlockGetter level, BlockPos pos) {
+        short c = classOf(state);
+        if (!needsPosition(c)) {
+            return c;
+        }
+        VoxelShape shape = state.getCollisionShape(level, pos);
+        int top = shape.isEmpty() ? 0 : Math.min(24, (int) Math.round(shape.max(Direction.Axis.Y) * 16));
+        int flags = c & ~(BlockClass.TOP_MASK | BlockClass.PASSABLE | BlockClass.STANDABLE);
+        if (shape.isEmpty()) {
+            flags |= BlockClass.PASSABLE;
+        }
+        boolean obstacleOnly = (flags & (BlockClass.DOOR | BlockClass.CLIMBABLE | BlockClass.LEAVES)) != 0;
+        if (!obstacleOnly && top > 0 && topFaceArea(shape) >= 0.5) {
+            flags |= BlockClass.STANDABLE;
+        }
+        return BlockClass.of(top, flags);
     }
 
     public int size() {

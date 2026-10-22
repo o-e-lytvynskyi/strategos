@@ -10,6 +10,10 @@ description='''
 A real-time strategy layer for Minecraft: command a faction, gather, build and fight.
 '''
 
+# [M1 T7] LevelChunkMixin hands every block change to BlockChangeRouter (04 §2.5).
+[[mixins]]
+config="strategos.mixins.json"
+
 [[dependencies.${mod_id}]]
     modId="neoforge"
     type="required"

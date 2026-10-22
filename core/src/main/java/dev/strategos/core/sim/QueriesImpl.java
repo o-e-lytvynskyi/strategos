@@ -4,7 +4,9 @@ import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.Vec2d;
+import dev.strategos.core.sim.nav.SurfaceGrid;
 import java.util.Arrays;
+import java.util.List;
 import org.jspecify.annotations.Nullable;
 
 /** {@link MatchQueries} over a match's state. */
@@ -70,6 +72,16 @@ final class QueriesImpl implements MatchQueries {
     @Override
     public int[] unitHandlesOf(FactionSlot faction) {
         return handles(faction.value());
+    }
+
+    @Override
+    public SurfaceGrid surfaces() {
+        return state.surfaces();
+    }
+
+    @Override
+    public List<PageRef> pageRefs() {
+        return state.pageRefs();
     }
 
     /** The live handles, of one faction or of all when {@code faction} is -1, sorted. */

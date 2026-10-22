@@ -2,8 +2,12 @@ package dev.strategos.core.sim;
 
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.diag.MatchLog;
+import dev.strategos.core.sim.nav.MobilityClass;
+import dev.strategos.core.sim.nav.PageCoord;
+import dev.strategos.core.sim.nav.SurfaceGrid;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.List;
 
 /**
@@ -25,6 +29,9 @@ public final class MatchState {
     private final MatchLog log;
     private BodyFrame.Builder frame = BodyFrame.builder(0);
     private TickInputs input;
+    private SurfaceGrid surfaces;
+    private final long[] pageSlices;
+    private final BitSet published;
 
     MatchState(MatchConfig config, TemplateSet templates, EntityStore entities, MatchLog log) {
         this.config = config;
@@ -32,7 +39,38 @@ public final class MatchState {
         this.entities = entities;
         this.log = log;
         this.input = TickInputs.empty(0);
+        this.surfaces =
+                SurfaceGrid.empty(config.bounds().sizeX(), config.bounds().sizeZ(), MobilityClass.INFANTRY);
+        this.pageSlices = new long[surfaces.pagesX() * surfaces.pagesZ()];
+        this.published = new BitSet(pageSlices.length);
         ensureCapacity(entities.highWater());
+    }
+
+    /** The published terrain: a copy-on-write grid, so a job keeps the one it captured. */
+    public SurfaceGrid surfaces() {
+        return surfaces;
+    }
+
+    /** Publishes a rebuilt page; a page outside the match's grid is refused. */
+    public void publish(TerrainPage page) {
+        PageCoord c = page.coord();
+        if (c.x() >= surfaces.pagesX() || c.z() >= surfaces.pagesZ()) {
+            throw new IllegalArgumentException(
+                    "page " + c + " outside the match's " + surfaces.pagesX() + " x " + surfaces.pagesZ() + " pages");
+        }
+        surfaces = surfaces.publish(page.page());
+        int index = c.z() * surfaces.pagesX() + c.x();
+        pageSlices[index] = page.sliceHash();
+        published.set(index);
+    }
+
+    /** The published pages, in page order, by the hash of the slice each was built from. */
+    public List<PageRef> pageRefs() {
+        List<PageRef> refs = new ArrayList<>(published.cardinality());
+        for (int i = published.nextSetBit(0); i >= 0; i = published.nextSetBit(i + 1)) {
+            refs.add(new PageRef(i % surfaces.pagesX(), i / surfaces.pagesX(), pageSlices[i]));
+        }
+        return refs;
     }
 
     /** Starts a tick: its number and inputs, a cleared output list and a new body frame. */

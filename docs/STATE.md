@@ -69,13 +69,19 @@ Answer in chat or here; the next session applies the answers.
   its terrain is verified block for block by a hash. `/strategos match create map
   strategos:proving_ground` starts a match on it; `/strategos map export|import|list` copies
   regions as maps. Card MAP-01 is done.
+- 2026-10-22 · **M1 T7 Live terrain:** the navigation grid now follows the world as it changes.
+  Any block placed or broken in a match area by a player, an explosion or another mod rebuilds the
+  affected 16 x 16 page within 2 seconds, never more than 4 pages a tick, at 0.25 ms. Strategos's
+  own building never costs a rebuild. Every match builds all its pages when it starts (512 x 512 in
+  about 1 s), and replays rebuild the same pages from their recorded terrain. Card BLD-15 is done;
+  PATH-15 finishes when paths arrive in T8.
 
 ## Now
 
-- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 7 of 27 tasks done.
+- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 8 of 27 tasks done.
 - **In progress:** none.
-- **Last finished task:** M1 T6 (2026-10-22).
-- **Next task:** M1 T7 · Live capture, page rebuilds and the router.
+- **Last finished task:** M1 T7 (2026-10-22).
+- **Next task:** M1 T8 · Path service: A*, string pulling and STRICT delivery.
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 220 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.

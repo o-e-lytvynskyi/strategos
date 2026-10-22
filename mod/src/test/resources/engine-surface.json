@@ -3,7 +3,7 @@
   "entityTypes": ["strategos:unit_humanoid"],
   "savedData": ["strategos_registry", "strategos_match_<id>"],
   "commands": ["strategos"],
-  "mixinConfigs": [],
+  "mixinConfigs": ["strategos.mixins.json"],
   "accessTransformers": [],
   "payloads": [],
   "dataMaps": ["strategos:nav_class"],

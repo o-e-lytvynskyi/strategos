@@ -14,6 +14,7 @@ import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.EntitySlots;
 import dev.strategos.core.sim.MatchConfig;
 import dev.strategos.core.sim.MatchSnapshot;
+import dev.strategos.core.sim.PageRef;
 import dev.strategos.core.sim.UnitRecord;
 import dev.strategos.core.sim.UnitState;
 import java.util.Arrays;
@@ -58,6 +59,12 @@ public final class MatchSnapshotCodec {
                     (handle, template, faction, x, y, z, yaw, state, target) ->
                             new UnitRecord(handle, template, faction, x, y, z, yaw, state, target.orElse(null))));
 
+    private static final Codec<PageRef> PAGE = RecordCodecBuilder.create(i -> i.group(
+                    Codec.INT.fieldOf("x").forGetter(PageRef::x),
+                    Codec.INT.fieldOf("z").forGetter(PageRef::z),
+                    Hex64.CODEC.fieldOf("slice").forGetter(PageRef::slice))
+            .apply(i, PageRef::new));
+
     /** The fields, without {@code "v"}. */
     public static final Codec<MatchSnapshot> CODEC = RecordCodecBuilder.create(i -> i.group(
                     MatchConfig.CODEC.fieldOf("config").forGetter(MatchSnapshot::config),
@@ -65,7 +72,8 @@ public final class MatchSnapshotCodec {
                     Hex64.CODEC.fieldOf("templateSetHash").forGetter(MatchSnapshot::templateSetHash),
                     SLOTS.fieldOf("slots").forGetter(MatchSnapshot::slots),
                     UNIT.listOf().fieldOf("units").forGetter(MatchSnapshot::units),
-                    CommandEnvelope.CODEC.listOf().fieldOf("pendingCommands").forGetter(MatchSnapshot::pendingCommands))
+                    CommandEnvelope.CODEC.listOf().fieldOf("pendingCommands").forGetter(MatchSnapshot::pendingCommands),
+                    PAGE.listOf().fieldOf("pages").forGetter(MatchSnapshot::pages))
             .apply(i, MatchSnapshot::new));
 
     private MatchSnapshotCodec() {}

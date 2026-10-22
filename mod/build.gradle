@@ -296,6 +296,7 @@ dependencies {
     archTestImplementation libs.junit.jupiter
     archTestImplementation libs.archunit
     archTestCompileOnly core                // the @HotPath annotation for B9's fixtures; the rules read classes by name
+    archTestRuntimeOnly core                // [M1 T7] the job fixture implements PureJob, so loading it needs core
     archTestRuntimeOnly libs.junit.platform.launcher
 
     // Dev-only profiles: ./gradlew <run> -Pspark | -Pcompat (client set) | -Pcompat.server (server set).

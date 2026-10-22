@@ -13,9 +13,12 @@ import dev.strategos.core.sim.MatchConfig;
 import dev.strategos.core.sim.MatchQueries;
 import dev.strategos.core.sim.MatchRules;
 import dev.strategos.core.sim.MatchSnapshot;
+import dev.strategos.core.sim.PageRef;
 import dev.strategos.core.sim.UnitRecord;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.UnitView;
+import dev.strategos.core.sim.nav.MobilityClass;
+import dev.strategos.core.sim.nav.SurfaceGrid;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -209,6 +212,16 @@ class InvariantsTest {
                     .mapToInt(UnitView::handle)
                     .sorted()
                     .toArray();
+        }
+
+        @Override
+        public SurfaceGrid surfaces() {
+            return SurfaceGrid.empty(config.bounds().sizeX(), config.bounds().sizeZ(), MobilityClass.INFANTRY);
+        }
+
+        @Override
+        public List<PageRef> pageRefs() {
+            return List.of();
         }
     }
 }

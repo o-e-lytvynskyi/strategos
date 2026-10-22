@@ -17,7 +17,11 @@ public final class ReplayDriver {
     private ReplayDriver() {}
 
     public static ReplayResult replay(Journal journal, TemplateSet templates) {
-        MatchCore core = MatchCore.restore(journal.start(), templates, CorePorts.of(() -> 0L));
+        MatchCore core = MatchCore.restore(
+                journal.start(),
+                templates,
+                CorePorts.of(() -> 0L),
+                journal.segments().get(0)::slice);
         List<TickInputs> recorded = journal.nonEmptyTicks();
         long[] checkpointTicks = journal.checkpointTicks();
         long[] checkpointHashes = journal.checkpointHashes();

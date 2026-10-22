@@ -9,8 +9,33 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6
+## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7
 
+- **M1 T7 · Live capture, page rebuilds and the router** — BLD-15 done; PATH-15 in progress (its
+  wall test needs T8's paths).
+  - **Results:**
+    - Core:
+      - `TerrainPage` inputs are published in INGEST into a copy-on-write `SurfaceGrid`.
+      - Snapshot schema 2 holds the page references, with migration 1 → 2.
+      - The journal format, version 2, stores each segment's slices in 'L' records.
+      - The job port (`PureJob`, `JobHandle`, `JobExecutor`, `JobScratch`).
+      - `TerrainReplayTest`: rebuilt pages carry the published hashes, from the start and from the
+        second segment alone.
+    - Mod:
+      - `LevelChunkMixin` feeds `BlockChangeRouter`: own writes are skipped, and only a change of
+        nav class dirties a page.
+      - `SliceCapture` copies sections on the main thread; `PageJob` builds the page anywhere.
+      - `PageJobs` waits 4 quiet ticks (at most 40), takes 4 pages a tick and delivers 4 ticks
+        later; it prewarms at prepare and at resume.
+      - Rule `JOBS_NEVER_TOUCH_THE_LEVEL`.
+    - Two nav GameTests; page capture at 245 µs p95; a 512² prewarm in 1.1 s at 1.07 MB; the
+      router at 37 ns a change outside matches.
+    - `verify verifySlow` 71 s, 104 + 4 GameTests, 698 core tests.
+  - **Problems:**
+    - The state hash leaves the grid out, so a resumed match keeps its hash while its pages are
+      republished from fresh captures.
+    - B4's ordered-collection rule shaped the journal's slice maps.
+    - Spec §1.6 D rows 26–30.
 - **M1 T6 · Map packages, importer and the proving ground** — MAP-01 done.
   - **Results:**
     - Core: `MapManifest`, `StartSlot`, `MapWaypoint`, `TerrainHash`.
@@ -114,7 +139,7 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
   - **Problems:** ErrorProne's `EnumOrdinal` and rule B8's ban on static arrays shaped the codecs;
     the spec's checkpoint period and header changed (spec §1.6 D rows 1–3).
 - **M1 started** on the owner's go-ahead, with consent for every kind of test.
-- **Next:** T7, live terrain capture, page rebuilds and the block-change router.
+- **Next:** T8, the path service: A*, string pulling and STRICT delivery.
 
 ## 2026-10-22 — M0 approvals, the client batch, M0 accepted
 

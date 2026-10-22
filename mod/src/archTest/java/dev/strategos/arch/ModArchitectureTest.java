@@ -21,6 +21,7 @@ import dev.strategos.mod.archfixture.ClientReferenceFixture;
 import dev.strategos.mod.archfixture.CoreInternalsFixture;
 import dev.strategos.mod.archfixture.DevCodeReferenceFixture;
 import dev.strategos.mod.archfixture.HotPathFixtures;
+import dev.strategos.mod.archfixture.LevelTouchingJobFixture;
 import dev.strategos.mod.archfixture.ModClientReferenceFixture;
 import dev.strategos.mod.archfixture.SendFixtures;
 import dev.strategos.mod.archfixture.StaticStateFixtures;
@@ -144,12 +145,35 @@ class ModArchitectureTest {
                                     c.getPackageName(),
                                     "java",
                                     "org.spongepowered",
+                                    "org.jspecify",
                                     "com.llamalad7.mixinextras",
                                     "net.minecraft",
                                     "net.neoforged",
                                     "dev.strategos.mod.mixin")))
             .allowEmptyShould(true)
             .because("a mixin only hands the event to a router (B10)");
+
+    /** The types a job must never hold: what the level owns lives on the server thread only. */
+    private static final List<String> LEVEL_TYPES = List.of(
+            "net.minecraft.world.level.Level",
+            "net.minecraft.server.level.ServerLevel",
+            "net.minecraft.world.level.chunk.LevelChunk",
+            "net.minecraft.world.level.chunk.ChunkAccess",
+            "net.minecraft.server.level.ServerChunkCache",
+            "net.minecraft.server.level.ChunkMap");
+
+    private static final ArchRule JOBS_NEVER_TOUCH_THE_LEVEL = noClasses()
+            .that()
+            .implement("dev.strategos.core.port.PureJob")
+            .and()
+            .resideInAPackage("dev.strategos.mod..")
+            .should()
+            .dependOnClassesThat(DescribedPredicate.describe(
+                    "are a level, a chunk, the chunk source or map, or an entity",
+                    (JavaClass c) -> LEVEL_TYPES.contains(c.getName())
+                            || startsWithAny(c.getPackageName(), "net.minecraft.world.entity")))
+            .allowEmptyShould(true)
+            .because("a job runs off the server thread, on copies, so its result never depends on where it runs (B4)");
 
     private static final ArchRule MAIN_NEVER_DEPENDS_ON_DEV_CODE = noClasses()
             .should()
@@ -220,6 +244,12 @@ class ModArchitectureTest {
     void mixinsOnlyRoute() {
         MIXINS_ONLY_ROUTE.check(SHIPPED);
         assertBites(MIXINS_ONLY_ROUTE, RoutingFixture.class);
+    }
+
+    @Test
+    void jobsNeverTouchTheLevel() {
+        JOBS_NEVER_TOUCH_THE_LEVEL.check(SHIPPED);
+        assertBites(JOBS_NEVER_TOUCH_THE_LEVEL, LevelTouchingJobFixture.class);
     }
 
     @Test

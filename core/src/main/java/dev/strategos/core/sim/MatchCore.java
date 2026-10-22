@@ -34,7 +34,12 @@ public interface MatchCore {
      * template-set hash is allowed and logged.
      */
     static MatchCore restore(MatchSnapshot snapshot, TemplateSet templates, CorePorts ports) {
+        return restore(snapshot, templates, ports, SliceSource.NONE);
+    }
+
+    /** As {@link #restore(MatchSnapshot, TemplateSet, CorePorts)}, its terrain pages rebuilt from {@code slices}. */
+    static MatchCore restore(MatchSnapshot snapshot, TemplateSet templates, CorePorts ports, SliceSource slices) {
         return MatchCoreImpl.restore(
-                snapshot, templates, ports, Journal.DEFAULT_CHECKPOINT_EVERY, Journal.DEFAULT_MAX_TICKS);
+                snapshot, templates, ports, slices, Journal.DEFAULT_CHECKPOINT_EVERY, Journal.DEFAULT_MAX_TICKS);
     }
 }

@@ -26,13 +26,14 @@ final class MatchCoreImpl implements MatchCore {
     private final JournalWriter journal;
     private final Phase[] phases = Phase.values();
 
-    private MatchCoreImpl(MatchState state, CorePorts ports, int checkpointEvery, int maxJournalTicks) {
+    private MatchCoreImpl(
+            MatchState state, CorePorts ports, SliceSource slices, int checkpointEvery, int maxJournalTicks) {
         CommandRules rules = CommandRules.m0();
         rules.verifyCovers(CommandKinds.DEFAULT);
         this.state = state;
         this.timers = new PhaseTimers(Phase.names(), ports.clock(), TIMER_WINDOW);
         this.metrics = ports.metrics();
-        this.journal = new JournalWriter(Snapshots.take(state), checkpointEvery, maxJournalTicks);
+        this.journal = new JournalWriter(Snapshots.take(state), slices, checkpointEvery, maxJournalTicks);
         CommandSystem commands = new CommandSystem(state, rules);
         scheduler.register(new IngestSystem(commands, journal));
         scheduler.register(commands);
@@ -46,14 +47,19 @@ final class MatchCoreImpl implements MatchCore {
     static MatchCoreImpl create(
             MatchConfig config, TemplateSet templates, CorePorts ports, int checkpointEvery, int maxJournalTicks) {
         MatchState state = new MatchState(config, templates, new EntityStore(), MatchLog.forSim(config.id()));
-        return new MatchCoreImpl(state, ports, checkpointEvery, maxJournalTicks);
+        return new MatchCoreImpl(state, ports, SliceSource.NONE, checkpointEvery, maxJournalTicks);
     }
 
     static MatchCoreImpl restore(
-            MatchSnapshot snapshot, TemplateSet templates, CorePorts ports, int checkpointEvery, int maxJournalTicks) {
+            MatchSnapshot snapshot,
+            TemplateSet templates,
+            CorePorts ports,
+            SliceSource slices,
+            int checkpointEvery,
+            int maxJournalTicks) {
         MatchState state = Snapshots.restore(
-                snapshot, templates, MatchLog.forSim(snapshot.config().id()));
-        return new MatchCoreImpl(state, ports, checkpointEvery, maxJournalTicks);
+                snapshot, templates, MatchLog.forSim(snapshot.config().id()), slices);
+        return new MatchCoreImpl(state, ports, slices, checkpointEvery, maxJournalTicks);
     }
 
     @Override

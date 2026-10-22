@@ -1,4 +1,6 @@
-/** The core's ports to the outside world: time and metrics, with primitive signatures only. */
+/**
+ * The core's ports to the outside world: time, metrics and jobs (pure work on other threads), with plain signatures.
+ */
 @NullMarked
 package dev.strategos.core.port;
 

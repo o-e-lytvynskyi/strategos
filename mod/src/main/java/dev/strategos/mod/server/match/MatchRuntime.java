@@ -14,6 +14,7 @@ import dev.strategos.mod.server.body.SpawnBudget;
 import dev.strategos.mod.server.persist.MatchData;
 import dev.strategos.mod.server.tick.InputCollector;
 import dev.strategos.mod.server.tick.OutputAppliers;
+import dev.strategos.mod.server.world.PageJobs;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -40,6 +41,7 @@ public final class MatchRuntime {
     private final SpawnBudget spawnBudget;
     private final MatchLog log;
     private final @Nullable ResourceLocation map;
+    private final PageJobs pages;
     private final List<CommandEnvelope> inbox = new ArrayList<>();
     private final Map<ReplyKey, Consumer<CommandResult>> replies = new HashMap<>();
     private final List<Consumer<TickOutputs>> listeners = new ArrayList<>();
@@ -62,6 +64,7 @@ public final class MatchRuntime {
             SpawnBudget spawnBudget,
             @Nullable ResourceLocation map) {
         this.map = map;
+        this.pages = new PageJobs(space);
         this.id = id;
         this.space = space;
         this.source = source;
@@ -72,6 +75,11 @@ public final class MatchRuntime {
         this.spawnBudget = spawnBudget;
         this.bodies = new BodyRegistry(id, space);
         this.log = new MatchLog(LoggerFactory.getLogger(MatchRuntime.class), id);
+    }
+
+    /** The match's terrain pages: dirtied by block changes, captured, built and delivered as inputs. */
+    public PageJobs pages() {
+        return pages;
     }
 
     /** The map package the match was made on, or null. */
@@ -188,7 +196,8 @@ public final class MatchRuntime {
     /** The tick driver's step: the inbox becomes the next tick's inputs; outputs and bodies are applied after it. */
     public void tick(ServerLevel level) {
         MatchCore c = requireCore();
-        TickOutputs out = c.step(InputCollector.collect(c.queries().tick() + 1, inbox));
+        long next = c.queries().tick() + 1;
+        TickOutputs out = c.step(InputCollector.collect(next, inbox, pages.due(next)));
         long start = System.nanoTime();
         OutputAppliers.apply(this, level, out);
         bodies.materialise(level, c.queries(), spawnBudget);

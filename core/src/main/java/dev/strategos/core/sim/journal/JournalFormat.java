@@ -21,6 +21,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.TreeMap;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
@@ -31,18 +34,21 @@ import org.jspecify.annotations.Nullable;
  *
  * <pre>
  * file    := "STRJ" u16(version) string(command catalogue fingerprint) varint(checkpointEvery) record*
- * record  := 'S' varlong(tick) bytes(snapshot: JSON with "v", deflated) varint(0: no terrain pages yet)
+ * record  := 'S' varlong(tick) bytes(snapshot: JSON with "v", deflated) varint(0, reserved)
+ *          | 'L' long(slice hash) bytes(slice, run-length)      after its segment's 'S', once per slice
  *          | 'K' varlong(tick) varint(n) input*
  *          | 'C' varlong(tick) long(state hash)
  *          | 'E' varlong(last tick) varlong(live tick) long(live hash)
  * </pre>
  *
- * A segment runs from its 'S' to the next 'S' or the 'E'. Snapshots migrate when read, as saves do; a file written by
- * another command catalogue is refused, since its command numbers mean other things.
+ * A segment runs from its 'S' to the next 'S' or the 'E', and holds the slices of its start's terrain pages (which the
+ * snapshot lists, schema 2) and of its inputs', so it replays on its own. Snapshots migrate when read, as saves do; a
+ * file written by another command catalogue is refused, since its command numbers mean other things. Version 1, before
+ * terrain, still reads.
  */
 @CoreApi
 public final class JournalFormat {
-    public static final int VERSION = 1;
+    public static final int VERSION = 2;
 
     /** "STRJ" in ASCII. */
     private static final int MAGIC = 0x5354_524A;
@@ -67,6 +73,11 @@ public final class JournalFormat {
             out.writeVarLong(segment.startTick());
             out.writeBytes(deflate(snapshotJson(segment.start())));
             out.writeVarInt(0);
+            for (long hash : segment.sliceHashes()) {
+                out.writeByte('L');
+                out.writeLong(hash);
+                out.writeBytes(Objects.requireNonNull(segment.slice(hash)));
+            }
             List<TickInputs> ticks = segment.nonEmptyTicks();
             long[] checkpointTicks = segment.checkpointTicks();
             long[] checkpointHashes = segment.checkpointHashes();
@@ -81,7 +92,7 @@ public final class JournalFormat {
                     out.writeVarLong(tick.tick());
                     out.writeVarInt(tick.events().size());
                     for (InputEvent event : tick.events()) {
-                        InputCodec.INSTANCE.write(out, event);
+                        InputCodec.write(out, event);
                     }
                 } else {
                     out.writeByte('C');
@@ -105,8 +116,8 @@ public final class JournalFormat {
             throw new WireException("not a Strategos journal (no STRJ header)");
         }
         int version = in.readUnsignedShort();
-        if (version != VERSION) {
-            throw new WireException("journal format version " + version + "; this build reads " + VERSION);
+        if (version != VERSION && version != 1) {
+            throw new WireException("journal format version " + version + "; this build reads 1 and " + VERSION);
         }
         String fingerprint = in.readString(FINGERPRINT_BYTES);
         if (!fingerprint.equals(CommandKinds.DEFAULT.fingerprint())) {
@@ -134,13 +145,18 @@ public final class JournalFormat {
                     }
                     current = new SegmentBuilder(snapshot);
                 }
+                case 'L' -> {
+                    SegmentBuilder segment = require(current, tag);
+                    long hash = in.readLong();
+                    segment.slices.put(hash, in.readBytes(MAX_DEFLATED));
+                }
                 case 'K' -> {
                     SegmentBuilder segment = require(current, tag);
                     long tick = in.readVarLong();
                     int n = in.readVarInt(MAX_INPUTS_PER_TICK);
                     List<InputEvent> events = new ArrayList<>(n);
                     for (int i = 0; i < n; i++) {
-                        events.add(InputCodec.INSTANCE.read(in));
+                        events.add(InputCodec.read(in, segment.slices::get));
                     }
                     segment.ticks.add(new TickInputs(tick, events));
                 }
@@ -232,6 +248,7 @@ public final class JournalFormat {
     private static final class SegmentBuilder {
         private final MatchSnapshot start;
         private final List<TickInputs> ticks = new ArrayList<>();
+        private final Map<Long, byte[]> slices = new TreeMap<>();
         private long[] checkpointTicks = new long[16];
         private long[] checkpointHashes = new long[16];
         private int checkpoints;
@@ -257,7 +274,8 @@ public final class JournalFormat {
                         lastTick,
                         ticks,
                         Arrays.copyOf(checkpointTicks, checkpoints),
-                        Arrays.copyOf(checkpointHashes, checkpoints));
+                        Arrays.copyOf(checkpointHashes, checkpoints),
+                        slices);
             } catch (IllegalArgumentException e) {
                 throw new WireException(String.valueOf(e.getMessage()));
             }

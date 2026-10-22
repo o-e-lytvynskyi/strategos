@@ -91,6 +91,16 @@ public final class StrategosGameTests {
         afterBatch(level, "writer");
     }
 
+    @AfterBatch(batch = "perf_pages")
+    public static void afterPerfPages(ServerLevel level) {
+        afterBatch(level, "perf_pages");
+    }
+
+    @AfterBatch(batch = "perf_prewarm")
+    public static void afterPerfPrewarm(ServerLevel level) {
+        afterBatch(level, "perf_prewarm");
+    }
+
     @AfterBatch(batch = "perf_writer")
     public static void afterPerfWriter(ServerLevel level) {
         afterBatch(level, "perf_writer");
