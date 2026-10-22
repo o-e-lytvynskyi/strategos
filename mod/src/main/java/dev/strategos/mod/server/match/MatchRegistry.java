@@ -6,6 +6,7 @@ import dev.strategos.core.diag.MatchLog;
 import dev.strategos.core.port.JobExecutor;
 import dev.strategos.core.port.MetricsSink;
 import dev.strategos.core.shared.MatchId;
+import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.sim.CorePorts;
 import dev.strategos.core.sim.MatchBounds;
 import dev.strategos.core.sim.MatchConfig;
@@ -35,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.UUID;
 import java.util.function.Supplier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
@@ -69,6 +71,7 @@ public final class MatchRegistry {
     private final Supplier<BlockClassTable> blockClasses;
     private final JobExecutor jobs;
     private final TreeMap<Integer, MatchRuntime> matches = new TreeMap<>();
+    private final Map<UUID, MatchId> seated = new HashMap<>(); // who sits where, across the matches' rosters
     private final Map<ResourceKey<Level>, MatchRegionIndex> regions = new HashMap<>();
     private @Nullable RegistryData persisted;
     private int nextId = 1; // ids while no registry blob is usable; such matches are never saved
@@ -601,12 +604,67 @@ public final class MatchRegistry {
     private void register(MatchRuntime rt) {
         matches.put(rt.id().value(), rt);
         regionsOf(rt.space().level()).add(rt.id(), rt.space());
+        for (UUID player : rt.roster().members()) {
+            seated.put(player, rt.id());
+        }
     }
 
     private void drop(MatchRuntime rt) {
         rt.bodies().discardAll();
         matches.remove(rt.id().value());
         regionsOf(rt.space().level()).remove(rt.id());
+        for (UUID player : rt.roster().members()) {
+            seated.remove(player, rt.id());
+        }
+    }
+
+    /** Where a player sits: its match and slot. */
+    public record Seat(MatchRuntime match, PlayerSlot slot) {}
+
+    /**
+     * Seats {@code player} in {@code rt} at {@code slot}, out of any match it sat in; a saved match's blob is marked to
+     * save it. Refused for a slot the match has no faction for, or one someone else holds.
+     */
+    public void join(MatchRuntime rt, UUID player, PlayerSlot slot) {
+        MatchCore core = rt.core();
+        if (core == null) {
+            throw new MatchRefusedException("match " + rt.id() + " is " + rt.lifecycle() + " and seats no one");
+        }
+        int factions = core.queries().config().factions();
+        if (slot.value() >= factions) {
+            throw new MatchRefusedException(
+                    "match " + rt.id() + " has " + factions + " factions, so no slot " + slot.value());
+        }
+        rt.roster().seat(player, slot); // refused before anything changes if the slot is taken
+        MatchId before = seated.put(player, rt.id());
+        if (before != null && !before.equals(rt.id())) {
+            MatchRuntime old = matches.get(before.value());
+            if (old != null) {
+                old.roster().unseat(player);
+                markRoster(old);
+            }
+        }
+        markRoster(rt);
+    }
+
+    public @Nullable Seat seatOf(UUID player) {
+        MatchId id = seated.get(player);
+        MatchRuntime rt = id == null ? null : matches.get(id.value());
+        PlayerSlot slot = rt == null ? null : rt.roster().slotOf(player);
+        return rt == null || slot == null ? null : new Seat(rt, slot);
+    }
+
+    /** The id of the match {@code player} sits in, or 0: what the fog gate asks for every pairing. */
+    public int matchOf(UUID player) {
+        MatchId id = seated.get(player);
+        return id == null ? 0 : id.value();
+    }
+
+    private static void markRoster(MatchRuntime rt) {
+        MatchData data = rt.data();
+        if (data != null && data.state() == MatchData.State.LIVE) {
+            data.setDirty();
+        }
     }
 
     private MatchRuntime require(MatchId id) {

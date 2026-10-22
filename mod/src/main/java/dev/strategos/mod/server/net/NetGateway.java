@@ -1,7 +1,10 @@
 package dev.strategos.mod.server.net;
 
+import com.mojang.serialization.JsonOps;
+import dev.strategos.core.content.CanonicalJson;
 import dev.strategos.core.protocol.Command;
 import dev.strategos.core.protocol.CommandBatch;
+import dev.strategos.core.protocol.Feedback;
 import dev.strategos.core.protocol.FeedbackMsg;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.MatchStateMsg;
@@ -9,15 +12,23 @@ import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.Stop;
 import dev.strategos.core.protocol.WireCodec;
 import dev.strategos.core.shared.MatchId;
+import dev.strategos.core.shared.PlayerSlot;
+import dev.strategos.core.sim.CommandResult;
+import dev.strategos.core.sim.MatchCore;
+import dev.strategos.core.sim.MatchLifecycle;
+import dev.strategos.core.sim.MatchRules;
 import dev.strategos.mod.entity.UnitEntity;
 import dev.strategos.mod.registry.ModPayloads;
 import dev.strategos.mod.server.match.MatchRegistry;
 import dev.strategos.mod.server.match.MatchRuntime;
+import dev.strategos.mod.server.match.MatchSpace;
 import dev.strategos.mod.server.net.payload.CommandsPayload;
 import dev.strategos.mod.server.net.payload.FeedbackPayload;
 import dev.strategos.mod.server.net.payload.MatchJoinPayload;
 import dev.strategos.mod.server.net.payload.MatchStatePayload;
+import dev.strategos.mod.server.tick.FaultBarrier;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,33 +47,78 @@ import org.jspecify.annotations.Nullable;
  * flushed once a tick ({@code ServerTickEvent.Post}), all of a player's in one bundle, and a player whose client lacks
  * our channel, such as a vanilla client, gets none; to a body's trackers it goes at once, through vanilla's tracking.
  * Every payload's record bytes are counted per type and player. It also reads the {@code commands} clients send:
- * refused batches and senders with no seat are violations, and the 101st in a minute disconnects (spec §6.5).
+ * refused batches and senders with no seat are violations, and the 101st in a minute disconnects (spec §6.5); a seated
+ * sender's commands carry its slot as issuer and go to its match inside the match's fault barrier, and each result goes
+ * back to it as {@code feedback}. Members of a match get its {@code match_state} on every change of its lifecycle and
+ * every 5 seconds, which keeps their clients' clock of the match in step (04 §12.2).
  */
 public final class NetGateway {
     /** The reason a player hears when it is disconnected for its violations. */
     public static final String TOO_MANY = "strategos: too many invalid packets";
 
+    /** Ticks between two {@code match_state}s of a match whose lifecycle did not change: the clock sync. */
+    private static final int STATE_EVERY = 100;
+
     private final MinecraftServer server;
     private final Supplier<MatchRegistry> matches;
+    private final FaultBarrier faults;
     private final Map<UUID, List<CustomPacketPayload>> queued = new LinkedHashMap<>();
+    private final Map<Integer, MatchLifecycle> lastState = new HashMap<>();
     private final NetCounters counters = new NetCounters();
     private final RateLimiter limiter = new RateLimiter();
 
-    public NetGateway(MinecraftServer server, Supplier<MatchRegistry> matches) {
+    public NetGateway(MinecraftServer server, Supplier<MatchRegistry> matches, FaultBarrier faults) {
         this.server = server;
         this.matches = matches;
+        this.faults = faults;
     }
 
     /** Sends {@code payload} to {@code audience}; a type that does not declare the audience is refused. */
     public void send(Audience audience, CustomPacketPayload payload) {
         check(ModPayloads.spec(payload.type().id()), payload.type().id(), audience.kind());
         switch (audience) {
-            case Audience.Player p -> queue(p.player(), payload);
+            case Audience.Player p -> queue(p.player().getUUID(), payload);
             case Audience.TrackersOf t -> toTrackers(t, payload);
-            case Audience.Faction f -> members(f.match());
-            case Audience.SeesCell c -> members(c.match());
-            case Audience.Match m -> members(m.match());
+            case Audience.Faction f -> {
+                MatchRuntime rt = matches.get().get(f.match());
+                if (rt != null) {
+                    rt.roster().of(f.faction()).forEach(player -> queue(player, payload));
+                }
+            }
+            case Audience.SeesCell c -> toMembers(c.match(), payload); // every member sees every cell until fog (M8)
+            case Audience.Match m -> toMembers(m.match(), payload);
         }
+    }
+
+    /**
+     * Tells {@code player}, just seated in {@code rt} at {@code slot}, which match it is in ({@code match_join}); the
+     * next flush sends the match's state to its members, the player among them, as {@code match_state} goes only to a
+     * match.
+     */
+    public void joined(MatchRuntime rt, ServerPlayer player, PlayerSlot slot) {
+        MatchCore core = rt.core();
+        if (core == null) {
+            return;
+        }
+        MatchSpace space = rt.space();
+        String rules = CanonicalJson.write(MatchRules.CODEC
+                .encodeStart(JsonOps.INSTANCE, core.queries().config().rules())
+                .getOrThrow());
+        send(
+                new Audience.Player(player),
+                new MatchJoinPayload(new MatchJoin(
+                        rt.id().value(),
+                        space.origin().getX(),
+                        space.origin().getY(),
+                        space.origin().getZ(),
+                        space.sizeX(),
+                        space.sizeZ(),
+                        space.minY(),
+                        space.maxY(),
+                        core.queries().config().factions(),
+                        slot,
+                        rules)));
+        lastState.remove(rt.id().value());
     }
 
     /** Refuses a payload type the server does not send ({@code spec} null or client-to-server) or an audience it lacks. */
@@ -75,8 +131,21 @@ public final class NetGateway {
         }
     }
 
-    /** Sends every queued payload, a player's together; once a tick, after the matches have stepped. */
+    /**
+     * Sends every queued payload, a player's together; once a tick, after the matches have stepped. A match's members
+     * first get its {@code match_state} when its lifecycle changed, and every {@value #STATE_EVERY} ticks.
+     */
     public void flush() {
+        int tick = server.getTickCount();
+        Map<Integer, MatchLifecycle> now = new HashMap<>();
+        for (MatchRuntime rt : matches.get().all()) {
+            now.put(rt.id().value(), rt.lifecycle());
+            if (lastState.get(rt.id().value()) != rt.lifecycle() || tick % STATE_EVERY == 0) {
+                send(new Audience.Match(rt.id()), state(rt));
+            }
+        }
+        lastState.clear();
+        lastState.putAll(now); // a disposed match is forgotten
         for (Map.Entry<UUID, List<CustomPacketPayload>> e : queued.entrySet()) {
             ServerPlayer player = server.getPlayerList().getPlayer(e.getKey());
             if (player == null) {
@@ -115,7 +184,38 @@ public final class NetGateway {
             refuse(player, tick, "over rate");
             return;
         }
-        refuse(player, tick, "unseated"); // T15.2's roster seats players; until then no one is
+        MatchRegistry.Seat seat = matches.get().seatOf(player.getUUID());
+        if (seat == null) {
+            refuse(player, tick, "unseated");
+            return;
+        }
+        MatchRuntime rt = seat.match();
+        if (rt.lifecycle() != MatchLifecycle.RUNNING && rt.lifecycle() != MatchLifecycle.PAUSED) {
+            counters.violation(player.getGameProfile().getName(), "match " + rt.lifecycle()); // dropped, not a fault
+            return;
+        }
+        UUID id = player.getUUID();
+        faults.run(rt, "commands", () -> {
+            for (int k = 0; k < batch.commands().size(); k++) {
+                int seq = batch.clientSeq() + k;
+                rt.submit(seat.slot(), batch.commands().get(k), seq, result -> feedback(id, seq, result));
+            }
+        });
+    }
+
+    /** A command's result for the player who sent it, if it is still here. */
+    private void feedback(UUID player, int seq, CommandResult result) {
+        ServerPlayer online = server.getPlayerList().getPlayer(player);
+        if (online != null) {
+            send(
+                    new Audience.Player(online),
+                    new FeedbackPayload(new Feedback(
+                            seq,
+                            result.outcome(),
+                            result.firstReason(),
+                            result.accepted(),
+                            result.accepted() + result.rejected())));
+        }
     }
 
     public NetCounters counters() {
@@ -136,8 +236,29 @@ public final class NetGateway {
         }
     }
 
-    private void queue(ServerPlayer player, CustomPacketPayload payload) {
-        queued.computeIfAbsent(player.getUUID(), k -> new ArrayList<>()).add(payload);
+    private void queue(UUID player, CustomPacketPayload payload) {
+        queued.computeIfAbsent(player, k -> new ArrayList<>()).add(payload);
+    }
+
+    private void toMembers(MatchId match, CustomPacketPayload payload) {
+        MatchRuntime rt = matches.get().get(match);
+        if (rt != null) {
+            rt.roster().members().forEach(player -> queue(player, payload));
+        }
+    }
+
+    private static MatchStatePayload state(MatchRuntime rt) {
+        MatchStateMsg.Lifecycle lifecycle = switch (rt.lifecycle()) {
+            case CREATED -> MatchStateMsg.Lifecycle.CREATED;
+            case PREPARING -> MatchStateMsg.Lifecycle.PREPARING;
+            case READY -> MatchStateMsg.Lifecycle.READY;
+            case RUNNING -> MatchStateMsg.Lifecycle.RUNNING;
+            case PAUSED -> MatchStateMsg.Lifecycle.PAUSED;
+            case ENDED -> MatchStateMsg.Lifecycle.ENDED;
+            case FAULTED -> MatchStateMsg.Lifecycle.FAULTED;
+            case DISPOSED -> MatchStateMsg.Lifecycle.DISPOSED;
+        };
+        return new MatchStatePayload(new MatchStateMsg(rt.id().value(), lifecycle, Math.max(0, rt.tick())));
     }
 
     private void toTrackers(Audience.TrackersOf trackers, CustomPacketPayload payload) {
@@ -148,10 +269,6 @@ public final class NetGateway {
             counters.sent(payload.type().id(), "trackers", size(payload));
         }
     }
-
-    /** A match's members, the players T15.2's roster seats; none yet. */
-    @SuppressWarnings("UnusedVariable") // the match names the roster to read once it exists
-    private void members(MatchId match) {}
 
     private static int handles(Command command) {
         return switch (command) {

@@ -3,6 +3,7 @@ package dev.strategos.mod;
 import dev.strategos.core.port.JobExecutor;
 import dev.strategos.mod.registry.ModDataMaps;
 import dev.strategos.mod.server.body.SpawnBudget;
+import dev.strategos.mod.server.fog.InterestSets;
 import dev.strategos.mod.server.jobs.InlineJobExecutor;
 import dev.strategos.mod.server.match.MapImports;
 import dev.strategos.mod.server.match.MatchRegistry;
@@ -41,6 +42,7 @@ public final class StrategosServer {
     private final MapImports mapImports = new MapImports();
     private final JobExecutor jobs = new InlineJobExecutor();
     private final NetGateway net;
+    private final InterestSets interest = new InterestSets();
     private volatile BlockClassTable blockClasses;
     private ArenaWorld.Outcome arena = ArenaWorld.Outcome.NOT_AN_ARENA;
 
@@ -50,7 +52,7 @@ public final class StrategosServer {
         this.faults = new FaultBarrier(server);
         this.writer = new BlockWriter(settings.writerBudget(), settings.importBudget());
         this.matches = new MatchRegistry(server, settings, spawnBudget, writer, this::blockClasses, jobs);
-        this.net = new NetGateway(server, () -> this.matches);
+        this.net = new NetGateway(server, () -> this.matches, faults);
         this.blockClasses = buildBlockClasses();
     }
 
@@ -104,6 +106,11 @@ public final class StrategosServer {
         return net;
     }
 
+    /** The bodies each player is paired with. */
+    public InterestSets interest() {
+        return interest;
+    }
+
     public FaultBarrier faults() {
         return faults;
     }
@@ -148,11 +155,23 @@ public final class StrategosServer {
         }
     }
 
-    /** A player left: its rate limits and queue go. */
+    /** A player came in: one that sits in a match hears which, as it did when it joined it ({@code match_join}). */
+    public static void onLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
+        StrategosServer s = current;
+        if (s != null && event.getEntity() instanceof ServerPlayer player) {
+            MatchRegistry.Seat seat = s.matches.seatOf(player.getUUID());
+            if (seat != null) {
+                s.net.joined(seat.match(), player, seat.slot());
+            }
+        }
+    }
+
+    /** A player left: its rate limits and queue go; its seat stays, for its return. */
     public static void onLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
         StrategosServer s = current;
         if (s != null && event.getEntity() instanceof ServerPlayer player) {
             s.net.forget(player);
+            s.interest.forget(player.getUUID());
         }
     }
 

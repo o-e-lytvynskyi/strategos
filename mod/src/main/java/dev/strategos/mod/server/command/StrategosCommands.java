@@ -59,6 +59,7 @@ import java.util.regex.Pattern;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.ResourceLocationArgument;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.commands.arguments.coordinates.ColumnPosArgument;
@@ -68,6 +69,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ColumnPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.storage.LevelResource;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
@@ -127,7 +129,31 @@ public final class StrategosCommands {
                         .then(withMatch("dispose", (source, rt) -> {
                             registry().dispose(rt.id());
                             return rt.id() + " disposed";
-                        })))
+                        }))
+                        .then(Commands.literal("join")
+                                .then(Commands.argument("id", StringArgumentType.word())
+                                        .then(Commands.argument("slot", IntegerArgumentType.integer(0, FactionSlot.MAX))
+                                                .executes(ctx -> {
+                                                    ServerPlayer player =
+                                                            ctx.getSource().getPlayerOrException();
+                                                    return run(
+                                                            ctx.getSource(),
+                                                            () -> join(
+                                                                    StringArgumentType.getString(ctx, "id"),
+                                                                    IntegerArgumentType.getInteger(ctx, "slot"),
+                                                                    player));
+                                                })
+                                                .then(Commands.argument("player", EntityArgument.player())
+                                                        .executes(ctx -> {
+                                                            ServerPlayer player =
+                                                                    EntityArgument.getPlayer(ctx, "player");
+                                                            return run(
+                                                                    ctx.getSource(),
+                                                                    () -> join(
+                                                                            StringArgumentType.getString(ctx, "id"),
+                                                                            IntegerArgumentType.getInteger(ctx, "slot"),
+                                                                            player));
+                                                        }))))))
                 .then(Commands.literal("map")
                         .then(Commands.literal("list").executes(ctx -> listMaps(ctx.getSource())))
                         .then(Commands.literal("import")
@@ -583,6 +609,15 @@ public final class StrategosCommands {
             line.append(" …");
         }
         return line.toString();
+    }
+
+    /** Seats {@code player} in match {@code id} at {@code slot} and tells it so; it leaves any match it sat in. */
+    private static String join(String id, int slot, ServerPlayer player) {
+        MatchRuntime rt = byId(id);
+        PlayerSlot seat = new PlayerSlot(slot);
+        registry().join(rt, player.getUUID(), seat);
+        StrategosServer.get().net().joined(rt, player, seat);
+        return player.getGameProfile().getName() + " sits in " + rt.id() + " at slot " + slot;
     }
 
     /** Every value a unit has, after modifiers. */

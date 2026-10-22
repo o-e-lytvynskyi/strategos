@@ -1,15 +1,34 @@
 package dev.strategos.gametest.suites;
 
 import static dev.strategos.gametest.suites.Units.check;
+import static dev.strategos.gametest.suites.Units.core;
 import static dev.strategos.gametest.suites.Units.handles;
 import static dev.strategos.gametest.suites.Units.match;
 import static dev.strategos.gametest.suites.Units.move;
 import static dev.strategos.gametest.suites.Units.spawn;
 import static dev.strategos.gametest.suites.Units.unit;
 
+import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.protocol.CommandBatch;
+import dev.strategos.core.protocol.CommandOutcome;
+import dev.strategos.core.protocol.Feedback;
 import dev.strategos.core.protocol.Limits;
+import dev.strategos.core.protocol.MatchStateMsg;
+import dev.strategos.core.protocol.Move;
+import dev.strategos.core.protocol.RejectReason;
+import dev.strategos.core.protocol.SpawnUnits;
+import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.protocol.WireWriter;
+import dev.strategos.core.shared.FactionSlot;
+import dev.strategos.core.shared.PlayerSlot;
+import dev.strategos.core.shared.Vec2d;
+import dev.strategos.core.sim.CommandEnvelope;
+import dev.strategos.core.sim.InputEvent;
+import dev.strategos.core.sim.TickInputs;
 import dev.strategos.core.sim.UnitState;
+import dev.strategos.core.sim.journal.Journal;
+import dev.strategos.core.testkit.SimHarness;
+import dev.strategos.gametest.MatchFixture;
 import dev.strategos.gametest.StrategosTest;
 import dev.strategos.gametest.net.MockViewer;
 import dev.strategos.mod.StrategosServer;
@@ -18,13 +37,20 @@ import dev.strategos.mod.server.match.MatchRuntime;
 import dev.strategos.mod.server.net.NetCounters;
 import dev.strategos.mod.server.net.RateLimiter;
 import dev.strategos.mod.server.net.payload.CommandsPayload;
+import dev.strategos.mod.server.net.payload.FeedbackPayload;
+import dev.strategos.mod.server.net.payload.MatchJoinPayload;
+import dev.strategos.mod.server.net.payload.MatchStatePayload;
 import io.netty.buffer.Unpooled;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.network.protocol.common.ClientboundDisconnectPacket;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.network.protocol.game.ClientboundMoveEntityPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
@@ -169,6 +195,262 @@ public final class NetTests {
                 h.succeed();
             }
         });
+    }
+
+    /**
+     * NET-01.5: a player seated in the match beside its units is paired with their bodies (its interest set holds
+     * them) and gets {@code match_join} and the match's {@code match_state}.
+     */
+    @StrategosTest(timeoutTicks = 300)
+    public static void sameMatchPairedAndInformed(GameTestHelper h) {
+        MatchRuntime rt = match(h);
+        spawn(rt, 16.5, 16.5, 3, 1);
+        Vec3 at = h.absoluteVec(new Vec3(16.5, 2, 8.5));
+        MockViewer viewer = MockViewer.join(h.getLevel(), "strategos-same", at.x, at.y, at.z, 4);
+        seat(rt, viewer, 0);
+        h.onEachTick(() -> {
+            viewer.poll();
+            Set<Integer> bodies = bodyIds(rt);
+            if (bodies.size() == 3 && added(viewer).containsAll(bodies)) {
+                List<Integer> paired = StrategosServer.get()
+                        .interest()
+                        .handles(viewer.player().getUUID(), rt.id().value());
+                check(paired.size() == 3, "paired with " + paired);
+                check(
+                        payloads(viewer, MatchJoinPayload.class).stream()
+                                .anyMatch(p -> p.join().matchId() == rt.id().value()
+                                        && p.join().slot().value() == 0),
+                        "no match_join");
+                check(
+                        payloads(viewer, MatchStatePayload.class).stream()
+                                .anyMatch(p -> p.state().matchId() == rt.id().value()
+                                        && p.state().lifecycle() == MatchStateMsg.Lifecycle.RUNNING),
+                        "no match_state");
+                viewer.close();
+                h.succeed();
+            }
+        });
+    }
+
+    /** NET-01.5: a player seated while it was away hears, as it logs in, which match it sits in, and its state. */
+    @StrategosTest(timeoutTicks = 100)
+    public static void seatedPlayerRejoinsInformed(GameTestHelper h) {
+        MatchRuntime rt = match(h);
+        String name = "strategos-back";
+        StrategosServer.get().matches().join(rt, MockViewer.uuidOf(name), new PlayerSlot(1));
+        Vec3 at = h.absoluteVec(new Vec3(16.5, 2, 8.5));
+        MockViewer viewer = MockViewer.join(h.getLevel(), name, at.x, at.y, at.z, 2);
+        h.onEachTick(() -> {
+            viewer.poll();
+            boolean joined = payloads(viewer, MatchJoinPayload.class).stream()
+                    .anyMatch(p -> p.join().matchId() == rt.id().value()
+                            && p.join().slot().value() == 1);
+            boolean state = payloads(viewer, MatchStatePayload.class).stream()
+                    .anyMatch(p -> p.state().matchId() == rt.id().value());
+            if (joined && state) {
+                viewer.close();
+                h.succeed();
+            }
+        });
+    }
+
+    /**
+     * NET-01.5: a member of another match standing beside this match's units is never paired with their bodies and
+     * gets none of this match's payloads, while a player in no match beside it is paired with them.
+     */
+    @StrategosTest(timeoutTicks = 300)
+    public static void otherMatchGetsNothing(GameTestHelper h) {
+        MatchRuntime a = MatchFixture.create(h, 0, 0, 14, 32, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
+        MatchRuntime b = MatchFixture.create(h, 18, 0, 14, 32, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
+        spawn(a, 8.5, 16.5, 3, 1);
+        Vec3 at = h.absoluteVec(new Vec3(9.5, 2, 12.5));
+        MockViewer member = MockViewer.join(h.getLevel(), "strategos-other", at.x, at.y, at.z, 4);
+        MockViewer outsider = MockViewer.join(h.getLevel(), "strategos-none", at.x, at.y, at.z, 4);
+        seat(b, member, 0);
+        var state = new Object() {
+            int ticks;
+        };
+        h.onEachTick(() -> {
+            member.poll();
+            outsider.poll();
+            Set<Integer> bodies = bodyIds(a);
+            if (bodies.size() != 3 || !added(outsider).containsAll(bodies)) {
+                return; // the outsider sees them first: they are there to be seen
+            }
+            for (int id : added(member)) {
+                check(!bodies.contains(id), "the other match's member was sent body " + id);
+            }
+            check(
+                    StrategosServer.get()
+                            .interest()
+                            .handles(member.player().getUUID(), a.id().value())
+                            .isEmpty(),
+                    "the other match's member is paired with A's bodies");
+            for (MatchStatePayload p : payloads(member, MatchStatePayload.class)) {
+                check(p.state().matchId() != a.id().value(), "the other match's member got A's state");
+            }
+            if (++state.ticks >= 20) {
+                check(
+                        payloads(member, MatchStatePayload.class).stream()
+                                .anyMatch(p -> p.state().matchId() == b.id().value()),
+                        "B's member never got B's state");
+                member.close();
+                outsider.close();
+                h.succeed();
+            }
+        });
+    }
+
+    /**
+     * NET-01.9: a seated player's commands carry the slot bound to its UUID as issuer: its batch's first command, for
+     * its faction's units, is accepted, the second, for another faction's unit, refused as not its own; both arrive in
+     * the journal under its slot and its numbers, and each result comes back to it as feedback.
+     */
+    @StrategosTest(timeoutTicks = 300)
+    public static void issuerFromUuidSlot(GameTestHelper h) {
+        MatchRuntime rt = match(h);
+        rt.submit(
+                PlayerSlot.ADMIN,
+                new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(1), new Vec2d(16.5, 16.5), 2, 1));
+        spawn(rt, 8.5, 8.5, 1, 0);
+        Vec3 at = h.absoluteVec(new Vec3(16.5, 2, 8.5));
+        MockViewer viewer = MockViewer.join(h.getLevel(), "strategos-slot", at.x, at.y, at.z, 2);
+        seat(rt, viewer, 1);
+        var state = new Object() {
+            boolean sent;
+        };
+        h.onEachTick(() -> {
+            viewer.poll();
+            int[] own = core(rt).queries().unitHandlesOf(new FactionSlot(1));
+            int[] other = core(rt).queries().unitHandlesOf(new FactionSlot(0));
+            if (own.length != 2 || other.length != 1) {
+                return;
+            }
+            if (!state.sent) {
+                state.sent = true;
+                viewer.send(CommandsPayload.of(new CommandBatch(
+                        7,
+                        List.of(
+                                Move.replace(UnitSet.of(own), new Vec2d(24.5, 24.5)),
+                                Move.replace(UnitSet.of(other), new Vec2d(24.5, 24.5))))));
+                return;
+            }
+            List<Feedback> results = new ArrayList<>();
+            for (FeedbackPayload p : payloads(viewer, FeedbackPayload.class)) {
+                if (p.message() instanceof Feedback f) {
+                    results.add(f);
+                }
+            }
+            if (results.size() < 2) {
+                return;
+            }
+            check(
+                    results.contains(new Feedback(7, CommandOutcome.ACCEPTED, null, 2, 2)),
+                    "the own move's feedback: " + results);
+            check(
+                    results.contains(new Feedback(8, CommandOutcome.REJECTED, RejectReason.NOT_OWNER, 0, 1)),
+                    "the other faction's move's feedback: " + results);
+            List<CommandEnvelope> sent = envelopes(rt, 1);
+            check(
+                    sent.size() == 2
+                            && sent.get(0).clientSeq() == 7
+                            && sent.get(1).clientSeq() == 8,
+                    "journaled under slot 1: " + sent);
+            viewer.close();
+            h.succeed();
+        });
+    }
+
+    /**
+     * NET-01.9: a player with no seat in the match sends a move for its units: nothing reaches the core, the units
+     * stay, no feedback comes back, and the gateway counts the violation.
+     */
+    @StrategosTest(timeoutTicks = 200)
+    public static void unseatedPlayerCommandsIgnored(GameTestHelper h) {
+        MatchRuntime rt = match(h);
+        spawn(rt, 8.5, 8.5, 2, 1);
+        Vec3 at = h.absoluteVec(new Vec3(16.5, 2, 8.5));
+        String name = "strategos-lone";
+        MockViewer viewer = MockViewer.join(h.getLevel(), name, at.x, at.y, at.z, 2);
+        NetCounters counters = StrategosServer.get().net().counters();
+        var state = new Object() {
+            long sentAt = -1;
+            int before;
+        };
+        h.onEachTick(() -> {
+            viewer.poll();
+            int[] units = handles(rt);
+            if (units.length != 2) {
+                return;
+            }
+            if (state.sentAt < 0) {
+                state.sentAt = core(rt).queries().tick();
+                state.before = counters.violations(name);
+                viewer.send(CommandsPayload.of(
+                        new CommandBatch(1, List.of(Move.replace(UnitSet.of(units), new Vec2d(24.5, 24.5))))));
+                return;
+            }
+            if (core(rt).queries().tick() < state.sentAt + 20) {
+                return;
+            }
+            for (int unit : units) {
+                check(unit(rt, unit).state() == UnitState.IDLE, "a unit moved for an unseated player");
+            }
+            check(envelopes(rt, 0).isEmpty(), "a command of a player slot reached the core");
+            check(payloads(viewer, FeedbackPayload.class).isEmpty(), "feedback for an unseated player");
+            check(counters.violations(name) == state.before + 1, "violations " + counters.violations(name));
+            viewer.close();
+            h.succeed();
+        });
+    }
+
+    private static void seat(MatchRuntime rt, MockViewer viewer, int slot) {
+        StrategosServer.get().matches().join(rt, viewer.player().getUUID(), new PlayerSlot(slot));
+        StrategosServer.get().net().joined(rt, viewer.player(), new PlayerSlot(slot));
+    }
+
+    private static Set<Integer> bodyIds(MatchRuntime rt) {
+        Set<Integer> ids = new HashSet<>();
+        for (int handle : handles(rt)) {
+            UnitEntity body = rt.bodies().get(handle);
+            if (body != null) {
+                ids.add(body.getId());
+            }
+        }
+        return ids;
+    }
+
+    private static Set<Integer> added(MockViewer viewer) {
+        Set<Integer> ids = new HashSet<>();
+        for (ClientboundAddEntityPacket p : viewer.capture().of(ClientboundAddEntityPacket.class)) {
+            ids.add(p.getId());
+        }
+        return ids;
+    }
+
+    private static <P extends CustomPacketPayload> List<P> payloads(MockViewer viewer, Class<P> type) {
+        List<P> out = new ArrayList<>();
+        for (ClientboundCustomPayloadPacket p : viewer.capture().of(ClientboundCustomPayloadPacket.class)) {
+            if (type.isInstance(p.payload())) {
+                out.add(type.cast(p.payload()));
+            }
+        }
+        return out;
+    }
+
+    /** The commands the match's journal holds from player slots at or above {@code minSlot}, in order. */
+    private static List<CommandEnvelope> envelopes(MatchRuntime rt, int minSlot) {
+        List<CommandEnvelope> out = new ArrayList<>();
+        for (Journal.Segment segment : core(rt).journal().segments()) {
+            for (TickInputs tick : segment.nonEmptyTicks()) {
+                for (InputEvent event : tick.events()) {
+                    if (event instanceof CommandEnvelope e && e.issuer().value() >= minSlot) {
+                        out.add(e);
+                    }
+                }
+            }
+        }
+        return out;
     }
 
     private static boolean isBody(@Nullable Entity entity, UnitEntity body) {

@@ -6,7 +6,9 @@ import dev.strategos.core.shared.MatchId;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.entity.UnitEntity;
 import dev.strategos.mod.entity.UnitSpawnData;
+import dev.strategos.mod.server.fog.FogGate;
 import dev.strategos.mod.server.match.MatchRuntime;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
@@ -75,6 +77,28 @@ public final class BodyEvents {
             return;
         }
         server.faults().run(rt, "hurt", () -> rt.damage(DamageBridge.of(data.handle(), source, amount)));
+    }
+
+    /** Whether vanilla's tracking may pair {@code player} with a body of match {@code match} (the fog gate). */
+    public static boolean canSee(int match, ServerPlayer player) {
+        StrategosServer server = StrategosServer.getOrNull();
+        if (server == null) {
+            return FogGate.decide(match, 0); // no server holder, so no one sits in a match
+        }
+        return FogGate.canSee(match, player.getUUID(), server.matches()::matchOf);
+    }
+
+    /** A pairing began ({@code seen}) or ended: the player's interest set follows. */
+    public static void paired(ServerPlayer player, UnitSpawnData body, boolean seen) {
+        StrategosServer server = StrategosServer.getOrNull();
+        if (server == null) {
+            return;
+        }
+        if (seen) {
+            server.interest().start(player.getUUID(), body.matchId(), body.handle());
+        } else {
+            server.interest().stop(player.getUUID(), body.matchId(), body.handle());
+        }
     }
 
     private static @Nullable MatchRuntime runtimeOf(StrategosServer server, UnitEntity body) {

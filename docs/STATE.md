@@ -152,13 +152,20 @@ Answer in chat or here; the next session applies the answers.
   tick, and a walking unit sends no extra data: each new body used to send one redundant packet
   after appearing, now fixed. Card UNIT-01, left open by M0, is done; T15.2 seats players in
   matches next.
+- 2026-10-22 · **M1 T15.2 Seats in a match:** a player can now take a seat in a match with
+  `/strategos match join <id> <slot> [player]`, one player to a slot. The seat is saved with the
+  match and outlives a logout: a returning player is told again which match it sits in. A seated
+  player's commands act for its own faction only, and each gets an answer; a player without a seat
+  is ignored. Units are shown only to their own match's players and to players in no match, such
+  as an operator watching: a member of another match standing next to them sees nothing of them.
+  Card NET-01 is done.
 
 ## Now
 
-- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 17 of 29 tasks done (T28, PATH-08, joined by its trigger).
-- **In progress:** none.
-- **Last finished task:** M1 T15.1 (2026-10-22).
-- **Next task:** M1 T15.2 · Roster and the fog-gate stub (NET-01).
+- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 18 of 29 tasks done (T28, PATH-08, joined by its trigger).
+- **In progress:** T17 and T25 in parallel worktrees since 2026-10-22 (the owner asked for parallel agents); each merges after review.
+- **Last finished task:** M1 T15.2 (2026-10-22).
+- **Next task:** M1 T21 · Local avoidance (ORCA) (PATH-06), on the critical path; T16 after it.
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 220 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.

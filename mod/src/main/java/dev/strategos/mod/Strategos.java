@@ -47,6 +47,7 @@ public final class Strategos {
         game.addListener(ServerStoppedEvent.class, StrategosServer::onStopped);
         game.addListener(ServerTickEvent.Pre.class, TickDriver::onServerTickPre);
         game.addListener(ServerTickEvent.Post.class, StrategosServer::onTickPost);
+        game.addListener(PlayerEvent.PlayerLoggedInEvent.class, StrategosServer::onLoggedIn);
         game.addListener(PlayerEvent.PlayerLoggedOutEvent.class, StrategosServer::onLoggedOut);
         game.addListener(LevelTickEvent.Pre.class, TickDriver::onLevelTickPre);
         game.addListener(EntityJoinLevelEvent.class, BodyEvents::onJoin);

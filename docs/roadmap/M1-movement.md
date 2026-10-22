@@ -507,7 +507,8 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
      no slot in the match gets no command applied (L3).
 - **Tests:** L0, L1, L2, L3, L5 · **Depends on:** CORE-03, QA-03, QA-19 · **Size:** M ·
   **Tier:** T0
-- **Status:** in_progress
+- **Done:** 2026-10-22 — M1 T15.1, T15.2: `PayloadRoundTripTest`, every payload within its cap (1); `WireCodecSizeTest` (2); `PayloadAudienceTest` (3); rule B6 (4); `nettests.other_match_gets_nothing`, `nettests.same_match_paired_and_informed` (5; spec §1.6 D row 89); `nettests.bad_batches_dropped_and_disconnect` (6); `FogGateTest` (7); `nettests.pose_same_tick_no_entity_data` (8); `nettests.issuer_from_uuid_slot`, `nettests.unseated_player_commands_ignored` (9; D row 88). `template_set` comes with DATA-03 in T16, as the spec's payload table assigns it
+- **Status:** done
 
 #### UNIT-02 · UnitAI state machine framework
 - **Value:** Units behave predictably: they finish tasks, react to new orders at once and never

@@ -3,6 +3,7 @@ package dev.strategos.mod.entity;
 import dev.strategos.mod.server.body.BodyEvents;
 import java.util.List;
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -114,6 +115,31 @@ public final class UnitEntity extends LivingEntity implements IEntityWithComplex
 
     @Override
     public void knockback(double strength, double x, double z) {}
+
+    /** The fog gate (NET-01): another match's member is never paired with this body; an unbound body with no one. */
+    @Override
+    public boolean broadcastToPlayer(ServerPlayer player) {
+        UnitSpawnData data = spawnData;
+        return data != null && BodyEvents.canSee(data.matchId(), player);
+    }
+
+    @Override
+    public void startSeenByPlayer(ServerPlayer player) {
+        super.startSeenByPlayer(player);
+        UnitSpawnData data = spawnData;
+        if (data != null) {
+            BodyEvents.paired(player, data, true);
+        }
+    }
+
+    @Override
+    public void stopSeenByPlayer(ServerPlayer player) {
+        super.stopSeenByPlayer(player);
+        UnitSpawnData data = spawnData;
+        if (data != null) {
+            BodyEvents.paired(player, data, false);
+        }
+    }
 
     @Override
     public Iterable<ItemStack> getArmorSlots() {

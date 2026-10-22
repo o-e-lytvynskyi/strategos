@@ -76,7 +76,7 @@ public final class MockViewer implements AutoCloseable {
             throw new IllegalArgumentException("a player name has at most 16 characters, not '" + name + "'");
         }
         MinecraftServer server = level.getServer();
-        GameProfile profile = new GameProfile(UUID.nameUUIDFromBytes(name.getBytes(StandardCharsets.UTF_8)), name);
+        GameProfile profile = new GameProfile(uuidOf(name), name);
         ClientInformation information = new ClientInformation(
                 "en_us", viewDistance, ChatVisiblity.FULL, true, 0, HumanoidArm.RIGHT, false, false);
         CommonListenerCookie cookie = new CommonListenerCookie(profile, 0, information, false, ConnectionType.NEOFORGE);
@@ -89,6 +89,11 @@ public final class MockViewer implements AutoCloseable {
         MockViewer viewer = new MockViewer(server, player, channel, acknowledging);
         OPEN.add(viewer);
         return viewer;
+    }
+
+    /** The UUID a viewer named {@code name} joins with, the same in every run: one can be seated before it joins. */
+    public static UUID uuidOf(String name) {
+        return UUID.nameUUIDFromBytes(name.getBytes(StandardCharsets.UTF_8));
     }
 
     /**

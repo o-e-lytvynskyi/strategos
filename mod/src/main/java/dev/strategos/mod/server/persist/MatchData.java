@@ -5,6 +5,7 @@ import dev.strategos.core.shared.MatchId;
 import dev.strategos.core.sim.MatchSnapshot;
 import dev.strategos.core.sim.persist.MatchSnapshotCodec;
 import dev.strategos.core.sim.persist.Migrations;
+import dev.strategos.mod.server.match.MatchRoster;
 import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 import net.minecraft.core.HolderLookup;
@@ -16,8 +17,9 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * One match's blob, {@code strategos_match_<id>} in its level's data storage: {@code {v: 1, epoch, snapshot}}, the
- * snapshot in the core's schema with its own {@code "v"}. Loading never throws (guard 1 of ADR-0018): a blob that does
- * not decode is QUARANTINED, keeps its raw tag and is never dirty, so the file stays as it was.
+ * snapshot in the core's schema with its own {@code "v"}, and the {@code roster} once anyone sits in the match.
+ * Loading never throws (guard 1 of ADR-0018): a blob that does not decode is QUARANTINED, keeps its raw tag and is
+ * never dirty, so the file stays as it was.
  */
 public final class MatchData extends SavedData {
     public enum State {
@@ -41,6 +43,7 @@ public final class MatchData extends SavedData {
     private long loadedEpoch;
     private @Nullable CompoundTag raw;
     private @Nullable String quarantineReason;
+    private MatchRoster roster = new MatchRoster();
 
     private MatchData(MatchId id, State state) {
         this.id = id;
@@ -96,6 +99,9 @@ public final class MatchData extends SavedData {
             MatchData data = new MatchData(id, State.LOADED);
             data.loaded = snapshot;
             data.loadedEpoch = tag.getLong("epoch");
+            if (tag.contains("roster", Tag.TAG_LIST)) {
+                data.roster = MatchRoster.load(tag.getList("roster", Tag.TAG_COMPOUND));
+            }
             return data;
         } catch (RuntimeException e) {
             return quarantined(id, tag, "cannot read the blob: " + e);
@@ -128,6 +134,11 @@ public final class MatchData extends SavedData {
 
     public @Nullable String quarantineReason() {
         return quarantineReason;
+    }
+
+    /** Who sits in the match: the runtime's roster, saved with the snapshot. */
+    public MatchRoster roster() {
+        return roster;
     }
 
     /** LOADED to LIVE once its match is restored: from now on saving encodes that match. */
@@ -165,14 +176,14 @@ public final class MatchData extends SavedData {
                 if (live == null || saveEpoch == null) {
                     throw new IllegalStateException("a LIVE blob without its match");
                 }
-                write(tag, saveEpoch.getAsLong(), live.get());
+                write(tag, saveEpoch.getAsLong(), live.get(), roster);
             }
             case LOADED -> {
                 MatchSnapshot kept = loaded;
                 if (kept == null) {
                     throw new IllegalStateException("a LOADED blob without its snapshot");
                 }
-                write(tag, loadedEpoch, kept);
+                write(tag, loadedEpoch, kept, roster);
             }
             case QUARANTINED -> {
                 CompoundTag kept = raw;
@@ -183,9 +194,13 @@ public final class MatchData extends SavedData {
         return tag;
     }
 
-    private static void write(CompoundTag tag, long epoch, MatchSnapshot snapshot) {
+    /** A match nobody sits in keeps M0's blob: the roster is written only once it seats someone. */
+    private static void write(CompoundTag tag, long epoch, MatchSnapshot snapshot, MatchRoster roster) {
         tag.putInt("v", VERSION);
         tag.putLong("epoch", epoch);
         tag.put("snapshot", MatchSnapshotCodec.encode(NbtOps.INSTANCE, snapshot));
+        if (!roster.isEmpty()) {
+            tag.put("roster", roster.save());
+        }
     }
 }

@@ -44,6 +44,7 @@ public final class MatchRuntime {
     private final MatchLog log;
     private final @Nullable ResourceLocation map;
     private final PageJobs pages;
+    private final MatchRoster roster;
     private final List<CommandEnvelope> inbox = new ArrayList<>();
     private final List<ExternalDamage> damage = new ArrayList<>();
     private final Map<ReplyKey, Consumer<CommandResult>> replies = new HashMap<>();
@@ -79,6 +80,12 @@ public final class MatchRuntime {
         this.spawnBudget = spawnBudget;
         this.bodies = new BodyRegistry(id, space);
         this.log = new MatchLog(LoggerFactory.getLogger(MatchRuntime.class), id);
+        this.roster = data != null ? data.roster() : new MatchRoster();
+    }
+
+    /** Who sits in the match; a saved match's is its blob's. */
+    public MatchRoster roster() {
+        return roster;
     }
 
     /** The match's terrain pages: dirtied by block changes, captured, built and delivered as inputs. */
@@ -183,6 +190,18 @@ public final class MatchRuntime {
     /** Damage one of the match's bodies took, for the next step's inputs, after the commands. */
     public void damage(ExternalDamage hit) {
         damage.add(hit);
+    }
+
+    /**
+     * A player's command, numbered {@code clientSeq} by its client, for the next step; {@code reply} gets its result.
+     * Only a RUNNING or PAUSED match takes commands.
+     */
+    public void submit(PlayerSlot issuer, Command command, int clientSeq, Consumer<CommandResult> reply) {
+        if (lifecycle != MatchLifecycle.RUNNING && lifecycle != MatchLifecycle.PAUSED) {
+            throw new MatchRefusedException("match " + id + " is " + lifecycle + " and takes no commands");
+        }
+        inbox.add(new CommandEnvelope(issuer, clientSeq, requireCore().queries().tick(), command));
+        replies.put(new ReplyKey(issuer.value(), clientSeq), reply);
     }
 
     /** As {@link #submit(PlayerSlot, Command)}, and {@code reply} gets the command's result after its step. */

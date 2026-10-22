@@ -9,7 +9,27 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1
+## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2
+
+- **Parallel work:** at the owner's suggestion T17 (UnitAI HFSM) and T25 (debug overlay) are built
+  by two agents in their own worktrees while the main tree goes on; each branch is reviewed,
+  verified and merged here, and its docs are written here.
+- **M1 T15.2 · Roster and the fog-gate stub** — NET-01 done.
+  - **Results:** `MatchRoster` (a player's UUID bound to a slot, saved in the match blob once
+    someone sits in it) with the registry's seat index and `/strategos match join <id> <slot>
+    [player]`; `NetGateway` resolves `Faction`, `SeesCell` and `Match` to the roster, sends
+    `match_join` on joining and at login with a seat, `match_state` to a match's members on every
+    lifecycle change and every 5 s, and submits a seated sender's commands as its slot, each result
+    back as `feedback`; `mod/server/fog/{FogGate, InterestSets}` behind
+    `UnitEntity#broadcastToPlayer`, `startSeenByPlayer` and `stopSeenByPlayer`. Tests: `FogGateTest`,
+    `MatchRosterTest`, `nettests.same_match_paired_and_informed`, `nettests.other_match_gets_nothing`,
+    `nettests.issuer_from_uuid_slot`, `nettests.unseated_player_commands_ignored`,
+    `nettests.seated_player_rejoins_informed` (120 GameTests); `verify` 43 s.
+  - **Problems:** `joined` first sent the state to the new player alone, which `match_state`'s
+    audience (a match) forbids; the next flush now sends it to all the members (spec §1.6 D row
+    87). A player in no match keeps seeing every match's bodies, as the M0 demo's observer needs (D
+    row 89). Rejoin at login was in the architecture's table but not the task; it is one handler
+    and one test.
 
 - **M1 T15.1 · Payload layer and gateway** — NET-01 in progress (T15.2 seats players); UNIT-01
   done (its criterion 5).

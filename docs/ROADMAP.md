@@ -288,7 +288,7 @@ Cards: [roadmap/M1-movement.md](roadmap/M1-movement.md#cards). 26 cards, at most
 | CORE-11 | Binary journal and cross-level replay | M | CORE-05, QA-04 | done |
 | CORE-08 | Spatial index | M | CORE-02 | done |
 | QA-19 | Network test kit: byte counts and acknowledging mock players | M | QA-03, QA-04 | done |
-| NET-01 | Payload layer, NetGateway and the fog-gate stub | M | CORE-03, QA-03, QA-19 | in_progress |
+| NET-01 | Payload layer, NetGateway and the fog-gate stub | M | CORE-03, QA-03, QA-19 | done |
 | UNIT-02 | UnitAI state machine framework | M | CORE-04, CORE-06 | specified |
 | ORD-02 | Order queue: move and stop | M | ORD-01, UNIT-02, NET-01 | specified |
 | PATH-04 | Components and reachability | M | PATH-02, PATH-15 | done |
