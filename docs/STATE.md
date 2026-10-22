@@ -91,13 +91,20 @@ Answer in chat or here; the next session applies the answers.
   particles) and rebuilds the terrain. A server setting `journal = disk` now also writes each
   match's journal to the world folder. One measurement fired the long-route planner's trigger (see
   item 5 above). Cards PATH-03 and PATH-15 are done.
+- 2026-10-22 · **M1 T19 Reachability:** the navigation grid now knows which ground connects to which. An
+  order to a spot a unit cannot reach (inside a closed yard, across deep water, on top of a wall)
+  sends it to the nearest point it can reach, found in well under a millisecond, instead of
+  searching the whole map. Drops are one-way: a unit may jump down a two- or three-block ledge but
+  not climb it, and the reachability rules know that. Rebuilding a page updates it within the same
+  tick. Card PATH-04 is done. T19 was taken before T9 because T9's crossing tests need the
+  long-route planner (T28), which builds on it.
 
 ## Now
 
-- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 9 of 28 tasks done (T28, PATH-08, joined by its trigger).
+- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 10 of 28 tasks done (T28, PATH-08, joined by its trigger).
 - **In progress:** none.
-- **Last finished task:** M1 T8 (2026-10-22).
-- **Next task:** M1 T9 · Motion on surfaces (PATH-05).
+- **Last finished task:** M1 T19 (2026-10-22).
+- **Next task:** M1 T28 · Hierarchical long-range planner (HPA*, PATH-08), then T9.
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 220 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.

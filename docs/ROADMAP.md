@@ -291,7 +291,7 @@ Cards: [roadmap/M1-movement.md](roadmap/M1-movement.md#cards). 26 cards, at most
 | NET-01 | Payload layer, NetGateway and the fog-gate stub | M | CORE-03, QA-03, QA-19 | in_progress |
 | UNIT-02 | UnitAI state machine framework | M | CORE-04, CORE-06 | specified |
 | ORD-02 | Order queue: move and stop | M | ORD-01, UNIT-02, NET-01 | specified |
-| PATH-04 | Components and reachability | M | PATH-02, PATH-15 | specified |
+| PATH-04 | Components and reachability | M | PATH-02, PATH-15 | done |
 | ORD-03 | Group destination slots | M | ORD-02, PATH-04 | specified |
 | PATH-06 | Local avoidance (ORCA) | M | PATH-05, CORE-08 | specified |
 | PATH-16 | Worker pool, ADAPTIVE delivery and spike S7 | M | PATH-03 | specified |

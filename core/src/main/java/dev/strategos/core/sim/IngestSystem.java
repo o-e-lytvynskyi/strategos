@@ -7,7 +7,7 @@ import java.util.List;
 
 /**
  * P0: puts the tick's inputs in canonical order (terrain pages by page, Z then X, then commands), records them in the
- * journal and routes each to its one handler: a page is published, a command queued.
+ * journal and routes each to its one handler: the pages are published together, a command is queued.
  */
 final class IngestSystem implements MatchSystem {
     private final CommandSystem commands;
@@ -33,12 +33,14 @@ final class IngestSystem implements MatchSystem {
         List<InputEvent> events = new ArrayList<>(state.input().events());
         events.sort(IngestSystem::canonical); // stable
         journal.record(new TickInputs(state.tick(), events));
+        List<TerrainPage> pages = new ArrayList<>();
         for (InputEvent event : events) {
             switch (event) {
-                case TerrainPage page -> state.publish(page);
+                case TerrainPage page -> pages.add(page);
                 case CommandEnvelope envelope -> commands.enqueue(envelope);
             }
         }
+        state.publishAll(pages);
     }
 
     private static int canonical(InputEvent a, InputEvent b) {

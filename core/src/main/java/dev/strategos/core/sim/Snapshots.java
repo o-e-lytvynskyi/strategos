@@ -84,6 +84,7 @@ final class Snapshots {
         state.paths().restore(snapshot.paths());
         state.pendingCommands().addAll(snapshot.pendingCommands());
         int missing = 0;
+        List<TerrainPage> pages = new ArrayList<>();
         for (PageRef ref : snapshot.pages()) {
             byte[] slice = slices.slice(ref.slice());
             if (slice == null) {
@@ -96,8 +97,9 @@ final class Snapshots {
                 throw new IllegalArgumentException("the slice of page (" + ref.x() + ", " + ref.z() + ") hashes to "
                         + Long.toHexString(page.sliceHash()) + ", the snapshot says " + Long.toHexString(ref.slice()));
             }
-            state.publish(page);
+            pages.add(page);
         }
+        state.publishAll(pages);
         if (missing > 0) {
             log.info(
                     snapshot.tick(),

@@ -221,7 +221,7 @@ class PathServiceTest {
     }
 
     @Test
-    void aUnitWithNoWayOutGoesAsNearAsItCanAndStops() {
+    void anOrderOutOfAClosedRoomEndsAtItsNearestPoint() {
         VoxelWorld w = VoxelFixtures.flat(32, 32, 16, 1);
         w.fill(4, 1, 4, 12, 6, 4, VoxelFixtures.SOLID);
         w.fill(4, 1, 12, 12, 6, 12, VoxelFixtures.SOLID);
@@ -231,12 +231,18 @@ class PathServiceTest {
         int unit = h.spawn(F0, new Vec2d(6.5, 8.5), 1, 0)[0];
 
         order(h, unit, 25.5, 8.5);
+        h.runTicks(2);
 
+        PathStore.UnitPath path = path(h, unit);
+        assertThat(path.status()).as("PATH-04: the goal moved into the room").isEqualTo(PathStatus.OK);
+        assertThat(path.waypoints().x(path.waypoints().count() - 1)).isEqualTo(11.5);
+        assertThat(h.queries().pathStats().expansions())
+                .as("under 1 % of the cap, no flood")
+                .isLessThan(200);
         assertThat(h.runUntil(() -> unit(h, unit).state() == UnitState.IDLE, 200))
                 .isTrue();
         assertThat(unit(h, unit).x()).isEqualTo(11.5);
         assertThat(unit(h, unit).z()).isEqualTo(8.5);
-        assertThat(h.queries().pathStats().noPath()).isOne();
         assertThat(unit(h, unit).target()).as("the move is over").isNull();
     }
 

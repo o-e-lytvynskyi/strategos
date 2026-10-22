@@ -7,7 +7,10 @@ import java.util.Arrays;
 /**
  * The standable surfaces of one page's 256 columns, at most 4 per column, topmost first (04 §9.1); immutable, built by
  * {@link PageBuilder}. Columns are numbered {@code x * 16 + z}. Links in the packed surfaces cover neighbours inside
- * the page; {@link SurfaceGrid} decides links across page edges with the same rule.
+ * the page; {@link SurfaceGrid} decides links across page edges with the same rule. Each surface also carries its
+ * local component: the surfaces joined by in-page links both ways share one, numbered from 0 in surface order, and the
+ * page keeps its one-way links (drops of more than a step) between them (PATH-04); {@link Components} joins them
+ * across pages.
  */
 @CoreApi
 public final class SurfacePage {
@@ -17,17 +20,31 @@ public final class SurfacePage {
     private final PageCoord coord;
     private final int[] start;
     private final int[] surfaces;
+    private final int[] component;
+    private final int components;
+    private final long[] drops;
     private final int overflow;
     private final int overflowColumns;
     private final long hash;
 
-    SurfacePage(PageCoord coord, int[] start, int[] surfaces, int overflow, int overflowColumns) {
-        if (start.length != COLUMNS + 1 || start[COLUMNS] != surfaces.length) {
+    SurfacePage(
+            PageCoord coord,
+            int[] start,
+            int[] surfaces,
+            int[] component,
+            int components,
+            long[] drops,
+            int overflow,
+            int overflowColumns) {
+        if (start.length != COLUMNS + 1 || start[COLUMNS] != surfaces.length || component.length != surfaces.length) {
             throw new IllegalArgumentException("column offsets do not cover the surfaces");
         }
         this.coord = coord;
         this.start = start;
         this.surfaces = surfaces;
+        this.component = component;
+        this.components = components;
+        this.drops = drops;
         this.overflow = overflow;
         this.overflowColumns = overflowColumns;
         long h = Hasher.start(0x9A9E);
@@ -42,7 +59,7 @@ public final class SurfacePage {
 
     /** A page with no surface at all. */
     public static SurfacePage empty(PageCoord coord) {
-        return new SurfacePage(coord, new int[COLUMNS + 1], new int[0], 0, 0);
+        return new SurfacePage(coord, new int[COLUMNS + 1], new int[0], new int[0], 0, new long[0], 0, 0);
     }
 
     public static int column(int x, int z) {
@@ -67,6 +84,21 @@ public final class SurfacePage {
 
     public int surfaceCount() {
         return surfaces.length;
+    }
+
+    /** The local component of a surface: 0 .. {@link #components()} - 1. */
+    public int component(int column, int layer) {
+        return component[start[column] + layer];
+    }
+
+    /** How many local components the page's surfaces form. */
+    public int components() {
+        return components;
+    }
+
+    /** The one-way links between local components, {@code from << 32 | to}, sorted; the page's own array. */
+    long[] drops() {
+        return drops;
     }
 
     /** Surfaces dropped because their column already had {@link #MAX_LAYERS}; S8 counts them. */

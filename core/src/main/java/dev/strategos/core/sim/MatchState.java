@@ -6,6 +6,7 @@ import dev.strategos.core.sim.nav.MobilityClass;
 import dev.strategos.core.sim.nav.PageCoord;
 import dev.strategos.core.sim.nav.PathStore;
 import dev.strategos.core.sim.nav.SurfaceGrid;
+import dev.strategos.core.sim.nav.SurfacePage;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -65,18 +66,30 @@ public final class MatchState {
      * last known there counts as changed this tick: routes across it are asked for again (PATH-15).
      */
     public void publish(TerrainPage page) {
-        int index = pageIndex(page.coord());
-        boolean changes = !known.get(index) || pageSlices[index] != page.sliceHash();
-        surfaces = surfaces.publish(page.page());
-        pageSlices[index] = page.sliceHash();
-        published.set(index);
-        known.set(index);
-        if (changes) {
-            if (changedCount == changed.length) {
-                changed = Arrays.copyOf(changed, changedCount * 2);
-            }
-            changed[changedCount++] = index;
+        publishAll(List.of(page));
+    }
+
+    /** Publishes a tick's rebuilt pages at once, in their order, so the grid's components are joined once. */
+    public void publishAll(List<TerrainPage> pages) {
+        if (pages.isEmpty()) {
+            return;
         }
+        List<SurfacePage> built = new ArrayList<>(pages.size());
+        for (TerrainPage page : pages) {
+            int index = pageIndex(page.coord());
+            boolean changes = !known.get(index) || pageSlices[index] != page.sliceHash();
+            pageSlices[index] = page.sliceHash();
+            published.set(index);
+            known.set(index);
+            if (changes) {
+                if (changedCount == changed.length) {
+                    changed = Arrays.copyOf(changed, changedCount * 2);
+                }
+                changed[changedCount++] = index;
+            }
+            built.add(page.page());
+        }
+        surfaces = surfaces.publishAll(built);
     }
 
     /**

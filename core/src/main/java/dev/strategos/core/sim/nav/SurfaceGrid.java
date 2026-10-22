@@ -3,6 +3,9 @@ package dev.strategos.core.sim.nav;
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.HotPath;
 import java.util.Arrays;
+import java.util.BitSet;
+import java.util.List;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A match's published pages (04 §9.1): {@code pagesX x pagesZ} pages over the match space, replaced copy-on-write, so
@@ -21,8 +24,17 @@ public final class SurfaceGrid {
     private final MobilityClass mobility;
     private final SurfacePage[] pages;
     private final long version;
+    private final Components components;
 
-    private SurfaceGrid(int sizeX, int sizeZ, MobilityClass mobility, SurfacePage[] pages, long version) {
+    /** A grid over {@code pages}; its components are {@code previous}'s updated for {@code changed}, or computed. */
+    private SurfaceGrid(
+            int sizeX,
+            int sizeZ,
+            MobilityClass mobility,
+            SurfacePage[] pages,
+            long version,
+            @Nullable Components previous,
+            int[] changed) {
         this.sizeX = sizeX;
         this.sizeZ = sizeZ;
         this.pagesX = (sizeX + 15) >> 4;
@@ -30,6 +42,7 @@ public final class SurfaceGrid {
         this.mobility = mobility;
         this.pages = pages;
         this.version = version;
+        this.components = previous == null ? Components.of(this) : previous.update(this, changed);
     }
 
     /** A grid of empty pages covering {@code sizeX x sizeZ} match-local columns. */
@@ -42,18 +55,48 @@ public final class SurfaceGrid {
                 pages[pz * pagesX + px] = SurfacePage.empty(new PageCoord(px, pz));
             }
         }
-        return new SurfaceGrid(sizeX, sizeZ, mobility, pages, 0);
+        return new SurfaceGrid(sizeX, sizeZ, mobility, pages, 0, null, new int[0]);
     }
 
     /** A new grid with {@code page} in its place; this grid is unchanged. */
     public SurfaceGrid publish(SurfacePage page) {
-        PageCoord c = page.coord();
-        if (c.x() >= pagesX || c.z() >= pagesZ) {
-            throw new IllegalArgumentException("page " + c + " outside a grid of " + pagesX + " x " + pagesZ);
-        }
+        return publishAll(List.of(page));
+    }
+
+    /**
+     * A new grid with {@code published} in their places, a later page replacing an earlier one at the same place, and
+     * its components updated once; this grid is unchanged. The version grows by the number of pages.
+     */
+    public SurfaceGrid publishAll(List<SurfacePage> published) {
         SurfacePage[] copy = Arrays.copyOf(pages, pages.length);
-        copy[c.z() * pagesX + c.x()] = page;
-        return new SurfaceGrid(sizeX, sizeZ, mobility, copy, version + 1);
+        int[] changed = new int[published.size()];
+        for (int i = 0; i < changed.length; i++) {
+            SurfacePage page = published.get(i);
+            PageCoord c = page.coord();
+            if (c.x() >= pagesX || c.z() >= pagesZ) {
+                throw new IllegalArgumentException("page " + c + " outside a grid of " + pagesX + " x " + pagesZ);
+            }
+            changed[i] = c.z() * pagesX + c.x();
+            copy[changed[i]] = page;
+        }
+        return new SurfaceGrid(sizeX, sizeZ, mobility, copy, version + changed.length, components, changed);
+    }
+
+    /** Reachability over this grid's surfaces (PATH-04). */
+    public Components components() {
+        return components;
+    }
+
+    /** The components a unit standing on {@code node} can reach (PATH-04). */
+    public BitSet reachableFrom(int node) {
+        return components.reachable(component(node));
+    }
+
+    /** The component of a node: two surfaces reach each other exactly when their components are equal. */
+    public int component(int node) {
+        int page = node / (SurfacePage.COLUMNS * SurfacePage.MAX_LAYERS);
+        int column = (node / SurfacePage.MAX_LAYERS) % SurfacePage.COLUMNS;
+        return components.of(this, page, column, nodeLayer(node));
     }
 
     /** The match's columns along X; the pages may hold up to 15 more. */

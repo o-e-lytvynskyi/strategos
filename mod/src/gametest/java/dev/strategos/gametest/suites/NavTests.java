@@ -1,6 +1,7 @@
 package dev.strategos.gametest.suites;
 
 import dev.strategos.core.sim.MatchCore;
+import dev.strategos.core.sim.nav.Dir;
 import dev.strategos.core.sim.nav.SurfaceGrid;
 import dev.strategos.core.sim.world.WritePriority;
 import dev.strategos.core.sim.world.WriteSite;
@@ -10,10 +11,16 @@ import dev.strategos.gametest.StrategosTest;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.server.match.MatchRuntime;
 import dev.strategos.mod.server.world.BlockWriter;
+import java.util.ArrayDeque;
+import java.util.BitSet;
+import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.level.block.Blocks;
+import org.jspecify.annotations.Nullable;
 
 /** Terrain pages in a real level (PATH-15): rebuilt for other edits, never for the block writer's. */
 public final class NavTests {
@@ -99,6 +106,78 @@ public final class NavTests {
                     }
                 })
                 .thenSucceed();
+    }
+
+    /**
+     * PATH-04.3: a wall three high across the arena at x 16, placed outside the writer, splits its floor in two; within
+     * 40 ticks neither half reaches the other, and from either half and from the wall's top what the components say is
+     * reachable equals a flood fill along the grid's links.
+     */
+    @StrategosTest(timeoutTicks = 200)
+    public static void wallSplitsComponents(GameTestHelper h) {
+        MatchRuntime rt = MatchFixture.create(h, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
+        var state = new Object() {
+            long placedAt;
+        };
+        h.startSequence()
+                .thenWaitUntil(() -> h.assertTrue(core(rt).queries().pageRefs().size() == 4, "prewarm"))
+                .thenExecute(() -> {
+                    SurfaceGrid grid = core(rt).queries().surfaces();
+                    h.assertTrue(
+                            grid.component(grid.node(4, 4, 0)) == grid.component(grid.node(28, 4, 0)),
+                            "the floor is split before the wall");
+                    state.placedAt = rt.tick();
+                    for (int z = 0; z < 32; z++) {
+                        for (int y = 2; y <= 4; y++) { // relative y 1 is the floor layer
+                            h.setBlock(new BlockPos(16, y, z), Blocks.STONE);
+                        }
+                    }
+                })
+                .thenWaitUntil(() -> {
+                    SurfaceGrid grid = core(rt).queries().surfaces();
+                    h.assertTrue(
+                            !grid.reachableFrom(grid.node(4, 4, 0)).get(grid.component(grid.node(28, 4, 0))),
+                            "the west half still reaches the east");
+                })
+                .thenExecute(() -> {
+                    h.assertTrue(rt.tick() - state.placedAt <= 40, "split after " + (rt.tick() - state.placedAt));
+                    SurfaceGrid grid = core(rt).queries().surfaces();
+                    for (int start : new int[] {grid.node(4, 4, 0), grid.node(28, 4, 0), grid.node(16, 4, 0)}) {
+                        String mismatch = floodFillMismatch(grid, start);
+                        h.assertTrue(mismatch == null, String.valueOf(mismatch));
+                    }
+                })
+                .thenSucceed();
+    }
+
+    /** Null when the nodes a flood fill along the links reaches from {@code start} are those the components say. */
+    private static @Nullable String floodFillMismatch(SurfaceGrid grid, int start) {
+        Set<Integer> filled = new TreeSet<>(List.of(start));
+        ArrayDeque<Integer> open = new ArrayDeque<>(List.of(start));
+        while (!open.isEmpty()) {
+            int node = open.poll();
+            int x = grid.nodeX(node);
+            int z = grid.nodeZ(node);
+            for (int dir = 0; dir < Dir.COUNT; dir++) {
+                int nl = grid.neighbour(x, z, SurfaceGrid.nodeLayer(node), dir);
+                if (nl >= 0 && filled.add(grid.node(x + Dir.dx(dir), z + Dir.dz(dir), nl))) {
+                    open.add(grid.node(x + Dir.dx(dir), z + Dir.dz(dir), nl));
+                }
+            }
+        }
+        BitSet reachable = grid.reachableFrom(start);
+        for (int x = 0; x < grid.sizeX(); x++) {
+            for (int z = 0; z < grid.sizeZ(); z++) {
+                for (int layer = 0; layer < grid.count(x, z); layer++) {
+                    int node = grid.node(x, z, layer);
+                    if (reachable.get(grid.component(node)) != filled.contains(node)) {
+                        return "from node " + start + ", node (" + x + ", " + z + ", " + layer + "): components say "
+                                + reachable.get(grid.component(node)) + ", the flood fill " + filled.contains(node);
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     private static MatchCore core(MatchRuntime rt) {

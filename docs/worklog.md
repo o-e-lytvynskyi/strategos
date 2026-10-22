@@ -9,8 +9,24 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8
+## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19
 
+- **M1 T19 · Components and reachability** — PATH-04 done; taken before T9 (spec §1.6 D row 46).
+  - **Results:** each page labels its local components (surfaces linked both ways) and keeps its
+    one-way links between them; `Components` joins pages across their edges, recomputing only the
+    changed pages and their neighbours, and keeps a column mask per local component;
+    `SurfaceGrid.reachableFrom` gives a unit's component and those downstream by drops;
+    `makeGoalReachable` in `PathJob` moves an unreachable goal to the nearest reachable column.
+    A tick's pages are published together. 8 new core tests (735 in all) with 500 random grids
+    checked against a flood fill along the links; `navtests.wall_splits_components`, with a
+    negative check that fails; `verify` 42 s.
+  - **Measured:** on the 512² generated terrain, a full prewarm's components take 23 ms once; one
+    republished page 0.11 ms p50, 0.27 ms p95; a goal in a closed box or across a lake resolves in
+    under 200 inspected columns.
+  - **Problems:** links are one-way at drops of more than a step; joining them both ways let a
+    three-high wall with a walkable top join the floors on its two sides. Components now join only
+    two-way links, and drops are a DAG between them (D row 43). Pages are captured whole, so a page
+    past the match's edge gets its labels again from the match's own columns (D row 44).
 - **M1 T8 · Path service: A*, string pulling and STRICT delivery** — PATH-03 and PATH-15 done;
   PATH-08 (HPA*) leaves the reserve as T28.
   - **Results:** `LineOfWalk` (supercover, corners need both sides), `GridAStar` (8 neighbours, the
@@ -166,7 +182,7 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
   - **Problems:** ErrorProne's `EnumOrdinal` and rule B8's ban on static arrays shaped the codecs;
     the spec's checkpoint period and header changed (spec §1.6 D rows 1–3).
 - **M1 started** on the owner's go-ahead, with consent for every kind of test.
-- **Next:** T9, motion on surfaces (PATH-05).
+- **Next:** T28, the hierarchical long-range planner (HPA*, PATH-08), then T9.
 
 ## 2026-10-22 — M0 approvals, the client batch, M0 accepted
 

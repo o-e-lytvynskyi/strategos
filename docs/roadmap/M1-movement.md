@@ -552,7 +552,8 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
      the A* cap (L1).
   3. After a wall splits a region, the components equal a flood fill within 40 ticks (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** PATH-02, PATH-15 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Done:** 2026-10-22 — M1 T19: `ComponentsFloodFillTest`: on 500 random grids, some not a whole number of pages, what the components reach (a unit's component and those downstream by one-way drops) equals a flood fill along the links from random starts, also after republishes (1; spec §1.6 D row 43); `MakeGoalReachableTest`: the nearest reachable column within 1e-3 block of a brute force, an island and a closed box under 200 inspected columns (2); `navtests.wall_splits_components`, whose negative check (one-way links joined both ways) fails (3)
+- **Status:** done
 
 #### ORD-03 · Group destination slots
 - **Value:** A group spreads out sensibly at its destination instead of piling onto one block, and

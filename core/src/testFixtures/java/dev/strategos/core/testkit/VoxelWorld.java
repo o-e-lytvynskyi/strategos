@@ -6,7 +6,10 @@ import dev.strategos.core.sim.nav.NavOverlay;
 import dev.strategos.core.sim.nav.PageBuilder;
 import dev.strategos.core.sim.nav.PageCoord;
 import dev.strategos.core.sim.nav.SurfaceGrid;
+import dev.strategos.core.sim.nav.SurfacePage;
 import dev.strategos.core.sim.nav.VoxelSlice;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A mutable grid of block classes for L1 terrain: {@code sizeX x height x sizeZ} voxels, match-local, air until
@@ -82,13 +85,14 @@ public final class VoxelWorld {
     public SurfaceGrid grid(MobilityClass mobility, NavOverlay overlay) {
         SurfaceGrid grid = SurfaceGrid.empty(sizeX, sizeZ, mobility);
         PageBuilder builder = new PageBuilder(mobility);
+        List<SurfacePage> pages = new ArrayList<>();
         for (int pz = 0; pz < grid.pagesZ(); pz++) {
             for (int px = 0; px < grid.pagesX(); px++) {
                 PageCoord page = new PageCoord(px, pz);
-                grid = grid.publish(builder.build(slice(page), overlay, page));
+                pages.add(builder.build(slice(page), overlay, page));
             }
         }
-        return grid;
+        return grid.publishAll(pages);
     }
 
     public SurfaceGrid grid() {

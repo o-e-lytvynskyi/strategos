@@ -102,12 +102,24 @@ public final class PageBuilder {
         for (int column = 0; column < SurfacePage.COLUMNS; column++) {
             System.arraycopy(scratch, column * SurfacePage.MAX_LAYERS, surfaces, start[column], counts[column]);
         }
-        link(start, surfaces);
-        return new SurfacePage(coord, start, surfaces, overflow, overflowColumns);
+        int[] component = new int[surfaces.length];
+        long[] drops = link(start, surfaces, component, mobility);
+        int components = 0;
+        for (int label : component) {
+            components = Math.max(components, label + 1);
+        }
+        return new SurfacePage(coord, start, surfaces, component, components, drops, overflow, overflowColumns);
     }
 
-    /** Sets the in-page link bits and cost codes. */
-    private void link(int[] start, int[] surfaces) {
+    /**
+     * Sets the in-page link bits and cost codes, and labels each surface with its local component: surfaces joined by
+     * links both ways share one, numbered in order of their first surface. A link the other surface does not return
+     * (a drop of more than a step) joins nothing: it is kept as a one-way link between the two components, returned as
+     * {@code from << 32 | to}, sorted and distinct.
+     */
+    private static long[] link(int[] start, int[] surfaces, int[] component, MobilityClass mobility) {
+        int[] target = new int[surfaces.length * Dir.COUNT];
+        Arrays.fill(target, -1);
         for (int x = 0; x < VoxelSlice.SIDE; x++) {
             for (int z = 0; z < VoxelSlice.SIDE; z++) {
                 int column = SurfacePage.column(x, z);
@@ -124,8 +136,10 @@ public final class PageBuilder {
                         if (nx < 0 || nz < 0 || nx >= VoxelSlice.SIDE || nz >= VoxelSlice.SIDE) {
                             continue;
                         }
-                        if (best(start, surfaces, SurfacePage.column(nx, nz), s) >= 0) {
+                        int t = best(start, surfaces, SurfacePage.column(nx, nz), s, mobility);
+                        if (t >= 0) {
                             links |= 1 << dir;
+                            target[i * Dir.COUNT + dir] = t;
                         } else {
                             blocked++;
                         }
@@ -136,18 +150,82 @@ public final class PageBuilder {
                         }
                         int nx = x + Dir.dx(dir);
                         int nz = z + Dir.dz(dir);
-                        if (best(start, surfaces, SurfacePage.column(nx, nz), s) >= 0) {
+                        int t = best(start, surfaces, SurfacePage.column(nx, nz), s, mobility);
+                        if (t >= 0) {
                             links |= 1 << dir;
+                            target[i * Dir.COUNT + dir] = t;
                         }
                     }
                     surfaces[i] = Surface.withCost(Surface.withLinks(s, links), blocked);
                 }
             }
         }
+        int[] parent = new int[surfaces.length];
+        for (int i = 0; i < surfaces.length; i++) {
+            parent[i] = i;
+        }
+        for (int i = 0; i < surfaces.length; i++) {
+            for (int dir = 0; dir < Dir.COUNT; dir++) {
+                int j = target[i * Dir.COUNT + dir];
+                if (j >= 0 && target[j * Dir.COUNT + Dir.opposite(dir)] == i) {
+                    union(parent, i, j);
+                }
+            }
+        }
+        int components = 0;
+        for (int i = 0; i < surfaces.length; i++) {
+            int root = find(parent, i); // the lowest index of each set is its root, so roots come first
+            component[i] = root == i ? components++ : component[root];
+        }
+        long[] drops = new long[8];
+        int n = 0;
+        for (int i = 0; i < surfaces.length; i++) {
+            for (int dir = 0; dir < Dir.COUNT; dir++) {
+                int j = target[i * Dir.COUNT + dir];
+                if (j >= 0 && component[i] != component[j]) {
+                    if (n == drops.length) {
+                        drops = Arrays.copyOf(drops, n * 2);
+                    }
+                    drops[n++] = (long) component[i] << 32 | component[j];
+                }
+            }
+        }
+        return distinct(drops, n);
+    }
+
+    /** The first {@code n} values sorted, without repeats. */
+    static long[] distinct(long[] values, int n) {
+        Arrays.sort(values, 0, n);
+        int distinct = 0;
+        for (int i = 0; i < n; i++) {
+            if (distinct == 0 || values[distinct - 1] != values[i]) {
+                values[distinct++] = values[i];
+            }
+        }
+        return Arrays.copyOf(values, distinct);
+    }
+
+    /** Joins two union-find sets; the lower index becomes the root, so labels follow surface order. */
+    private static void union(int[] parent, int a, int b) {
+        int ra = find(parent, a);
+        int rb = find(parent, b);
+        if (ra < rb) {
+            parent[rb] = ra;
+        } else if (rb < ra) {
+            parent[ra] = rb;
+        }
+    }
+
+    private static int find(int[] parent, int i) {
+        while (parent[i] != i) {
+            parent[i] = parent[parent[i]];
+            i = parent[i];
+        }
+        return i;
     }
 
     /** The index of the surface of {@code column} that {@code from} links to, or -1. */
-    private int best(int[] start, int[] surfaces, int column, int from) {
+    private static int best(int[] start, int[] surfaces, int column, int from, MobilityClass mobility) {
         int best = -1;
         int bestRise = Integer.MAX_VALUE;
         for (int i = start[column]; i < start[column + 1]; i++) {
