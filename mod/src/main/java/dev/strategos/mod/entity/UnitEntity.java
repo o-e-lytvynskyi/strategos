@@ -18,13 +18,16 @@ import org.jspecify.annotations.Nullable;
 /**
  * The body of one core unit. A view: never saved (its type is {@code noSave}), created only by the body registry and
  * posed by the kinematic driver; the core owns its position. No physics, pushing, loot, riding, portals, damage or
- * equipment.
+ * armour; its hands hold only what the core says, its task's tool and its load (ECO-05), and vanilla shows them to its
+ * trackers.
  */
 public final class UnitEntity extends LivingEntity implements IEntityWithComplexSpawn {
     private @Nullable UnitSpawnData spawnData;
     private boolean removedByRegistry;
 
     private boolean selectedOnClient;
+    private ItemStack mainHand = ItemStack.EMPTY;
+    private ItemStack offHand = ItemStack.EMPTY;
 
     public UnitEntity(EntityType<? extends UnitEntity> type, Level level) {
         super(type, level);
@@ -209,11 +212,36 @@ public final class UnitEntity extends LivingEntity implements IEntityWithComplex
 
     @Override
     public ItemStack getItemBySlot(EquipmentSlot slot) {
-        return ItemStack.EMPTY;
+        return switch (slot) {
+            case MAINHAND -> mainHand;
+            case OFFHAND -> offHand;
+            default -> ItemStack.EMPTY;
+        };
     }
 
+    /** The hands only: what the core's gear puts there on the server, or the equipment packet on a client. */
     @Override
-    public void setItemSlot(EquipmentSlot slot, ItemStack stack) {}
+    public void setItemSlot(EquipmentSlot slot, ItemStack stack) {
+        if (slot == EquipmentSlot.MAINHAND) {
+            mainHand = stack;
+        } else if (slot == EquipmentSlot.OFFHAND) {
+            offHand = stack;
+        }
+    }
+
+    /**
+     * On the server: the body holds {@code tool} and {@code load}; whether they changed. A body in a level tells its
+     * trackers through the gateway, since its server tick, which would notice the change, never runs
+     * ({@code LivingEntity#detectEquipmentUpdates}); a new body's spawn pairing sends them (ServerEntity.java:274).
+     */
+    public boolean hold(ItemStack tool, ItemStack load) {
+        if (ItemStack.matches(tool, mainHand) && ItemStack.matches(load, offHand)) {
+            return false;
+        }
+        mainHand = tool;
+        offHand = load;
+        return true;
+    }
 
     @Override
     public HumanoidArm getMainArm() {

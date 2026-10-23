@@ -80,7 +80,8 @@ public final class BalanceData {
                                 v.get("kind").getAsString(),
                                 v.has("resource") ? v.get("resource").getAsString() : "",
                                 v.has("subtype") ? v.get("subtype").getAsString() : "",
-                                v.has("amount") ? v.get("amount").getAsBigDecimal() : BigDecimal.ZERO));
+                                v.has("amount") ? v.get("amount").getAsBigDecimal() : BigDecimal.ZERO,
+                                v.has("regrow") ? v.get("regrow").getAsBigDecimal() : BigDecimal.ZERO));
                     }
                 }
                 Path notes = ns.resolve("strategos/balance/provenance.json");

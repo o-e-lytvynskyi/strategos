@@ -27,7 +27,8 @@ class CommandCodecTest {
                 new AttackMove(UnitSet.of(2), new Vec2d(30.25, 9), QueueMode.PUSH_FRONT),
                 new Follow(UnitSet.of(1, 9), QueueMode.REPLACE),
                 new Grant(new FactionSlot(1), "wood", 250),
-                new SpawnBuilding(new TemplateId("strategos:building/house"), new FactionSlot(0), -3, 40, 2));
+                new SpawnBuilding(new TemplateId("strategos:building/house"), new FactionSlot(0), -3, 40, 2),
+                new Gather(UnitSet.of(7, 8), 12, -5, 300, QueueMode.QUEUE));
     }
 
     @Test

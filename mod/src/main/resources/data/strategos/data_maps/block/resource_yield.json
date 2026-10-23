@@ -4,6 +4,6 @@
     "#minecraft:leaves": { "kind": "leaves" },
     "#minecraft:base_stone_overworld": { "kind": "stone", "resource": "stone", "subtype": "rock", "amount": 5 },
     "#c:ores/iron": { "kind": "ore", "resource": "iron", "subtype": "ore", "amount": 10 },
-    "minecraft:sweet_berry_bush": { "kind": "forage", "resource": "food", "subtype": "fruit", "amount": 60 }
+    "minecraft:sweet_berry_bush": { "kind": "forage", "resource": "food", "subtype": "fruit", "amount": 60, "regrow": 0.1 }
   }
 }

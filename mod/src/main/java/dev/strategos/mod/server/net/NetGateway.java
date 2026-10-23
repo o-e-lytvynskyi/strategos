@@ -1,5 +1,6 @@
 package dev.strategos.mod.server.net;
 
+import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.JsonOps;
 import dev.strategos.core.content.CanonicalJson;
 import dev.strategos.core.protocol.Attack;
@@ -43,9 +44,13 @@ import java.util.UUID;
 import java.util.function.Supplier;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jspecify.annotations.Nullable;
 
@@ -106,6 +111,24 @@ public final class NetGateway {
         if (player.connection.hasChannel(payload)) {
             counters.sent(payload.type().id(), player.getGameProfile().getName(), size(payload));
             PacketDistributor.sendToPlayer(player, payload);
+        }
+    }
+
+    /**
+     * A body's hands changed (ECO-05): its trackers get vanilla's equipment packet at once, the tool in the main hand and
+     * the load in the off hand, as {@code LivingEntity#detectEquipmentUpdates} would send it if a body's server tick ran.
+     * Vanilla's tracking is the audience, so the fog gate that decides who tracks a body decides who sees them.
+     */
+    public void equipment(UnitEntity body, ItemStack tool, ItemStack load) {
+        if (body.level() instanceof ServerLevel level && body.isAddedToLevel()) {
+            level.getChunkSource()
+                    .broadcast(
+                            body,
+                            new ClientboundSetEquipmentPacket(
+                                    body.getId(),
+                                    List.of(
+                                            Pair.of(EquipmentSlot.MAINHAND, tool.copy()),
+                                            Pair.of(EquipmentSlot.OFFHAND, load.copy()))));
         }
     }
 

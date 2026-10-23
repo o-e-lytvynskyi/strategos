@@ -9,7 +9,8 @@ import dev.strategos.core.sim.journal.JournalWriter;
 import org.jspecify.annotations.Nullable;
 
 /**
- * P8: checks that the bus came to rest and the treasury balances (ECO-01), builds the tick's outputs, records a state-hash checkpoint every
+ * P8: checks that the bus came to rest, the treasury balances (ECO-01) and the gathered resources add up (ECO-05),
+ * builds the tick's outputs, records a state-hash checkpoint every
  * {@code checkpointEvery} ticks, at each segment boundary hands the kept journal to a sink that writes it and starts
  * the next segment on a fresh snapshot, and reports the phase times.
  */
@@ -40,6 +41,10 @@ final class FinalSystem implements MatchSystem {
         String treasury = state.treasury().broken();
         if (treasury != null) { // ECO-01: a few sums a tick, so every run checks it, a GameTest's and a server's too
             throw new IllegalStateException("the treasury is out of balance at tick " + state.tick() + ": " + treasury);
+        }
+        String economy = state.economyBroken();
+        if (economy != null) { // ECO-05: what nodes gave is carried, delivered or dropped, every step
+            throw new IllegalStateException("the economy is out of balance at tick " + state.tick() + ": " + economy);
         }
         long tick = state.tick();
         outputs = new TickOutputs(tick, state.frame().build(), state.outputs());

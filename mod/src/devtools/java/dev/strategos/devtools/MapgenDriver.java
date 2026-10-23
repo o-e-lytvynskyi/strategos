@@ -97,7 +97,7 @@ public final class MapgenDriver {
                 ProvingGround.PALETTE,
                 ground.startSlots(),
                 ground.waypoints(),
-                1,
+                ProvingGround.VERSION,
                 hash);
         Path maps = out.resolve("data/strategos/strategos/maps");
         Path tiles = out.resolve("data/strategos/structure/strategos/maps/proving_ground");

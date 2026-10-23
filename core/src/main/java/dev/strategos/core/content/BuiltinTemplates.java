@@ -70,6 +70,10 @@ final class BuiltinTemplates {
               "Health": { "max": 50 },
               "Behaviour": { "flee": 8 },
               "Cost": { "resources": { "food": 60 }, "population": 1, "time": 10 },
+              "ResourceGatherer": {
+                "rates": { "food": { "fruit": 1 }, "wood": { "tree": 0.6 } },
+                "capacities": { "food": 10, "wood": 10 }
+              },
               "Body": { "skin": "strategos:units/worker" }
             }
             """;

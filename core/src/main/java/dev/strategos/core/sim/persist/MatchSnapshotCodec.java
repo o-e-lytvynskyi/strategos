@@ -21,6 +21,7 @@ import dev.strategos.core.sim.MotionStore;
 import dev.strategos.core.sim.PageRef;
 import dev.strategos.core.sim.UnitRecord;
 import dev.strategos.core.sim.build.BuildingStore;
+import dev.strategos.core.sim.econ.CarryStore;
 import dev.strategos.core.sim.econ.NodeStore;
 import dev.strategos.core.sim.nav.MemberPath;
 import dev.strategos.core.sim.nav.PathRequest;
@@ -274,8 +275,18 @@ public final class MatchSnapshotCodec {
                     Codec.LONG.listOf().fieldOf("blocks").forGetter(NodeStore.Saved::blocks),
                     Codec.INT.fieldOf("gone").forGetter(NodeStore.Saved::gone),
                     Codec.INT.listOf().fieldOf("slots").forGetter(NodeStore.Saved::slots),
-                    Codec.INT.listOf().fieldOf("claims").forGetter(NodeStore.Saved::claims))
+                    Codec.INT.listOf().fieldOf("claims").forGetter(NodeStore.Saved::claims),
+                    Codec.LONG.optionalFieldOf("most", 0L).forGetter(NodeStore.Saved::most),
+                    Codec.LONG.optionalFieldOf("regrow", 0L).forGetter(NodeStore.Saved::regrow),
+                    Codec.INT.optionalFieldOf("growth", 0).forGetter(NodeStore.Saved::growth))
             .apply(i, NodeStore.Saved::new));
+
+    private static final Codec<CarryStore.Saved> CARRY = RecordCodecBuilder.create(i -> i.group(
+                    Codec.INT.fieldOf("handle").forGetter(CarryStore.Saved::handle),
+                    Codec.INT.fieldOf("resource").forGetter(CarryStore.Saved::resource),
+                    Codec.INT.fieldOf("subtype").forGetter(CarryStore.Saved::subtype),
+                    Codec.LONG.fieldOf("amount").forGetter(CarryStore.Saved::amount))
+            .apply(i, CarryStore.Saved::new));
 
     private static final Codec<BuildingStore.Saved> BUILDING = RecordCodecBuilder.create(i -> i.group(
                     Codec.INT.fieldOf("generation").forGetter(BuildingStore.Saved::generation),
@@ -310,7 +321,9 @@ public final class MatchSnapshotCodec {
                             .optionalFieldOf("terrainEdits", List.of())
                             .forGetter(MatchSnapshot::terrainEdits),
                     NODE.listOf().optionalFieldOf("nodes", List.of()).forGetter(MatchSnapshot::nodes),
-                    BUILDING.listOf().optionalFieldOf("buildings", List.of()).forGetter(MatchSnapshot::buildings))
+                    BUILDING.listOf().optionalFieldOf("buildings", List.of()).forGetter(MatchSnapshot::buildings),
+                    Codec.LONG.listOf().optionalFieldOf("ledger", List.of()).forGetter(MatchSnapshot::ledger),
+                    CARRY.listOf().optionalFieldOf("carried", List.of()).forGetter(MatchSnapshot::carried))
             .apply(i, MatchSnapshot::new));
 
     private MatchSnapshotCodec() {}

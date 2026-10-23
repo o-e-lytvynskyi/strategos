@@ -5,15 +5,20 @@ import dev.strategos.core.content.StartSlot;
 import dev.strategos.core.content.TerrainHash;
 import dev.strategos.core.shared.DetMath;
 import dev.strategos.core.shared.Rng;
+import dev.strategos.core.sim.nav.Material;
+import dev.strategos.core.sim.nav.MaterialKind;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The proving ground (spec §6.4, MAP-01): a deterministic map that exercises every movement case. Over rolling hills
  * it has a mesa with two ramps and a staircase of 1-block steps, a cliff band with one ramp through it, a river two
  * blocks deep with two fords one block deep, a plank bridge with railings and a stone arch, a forest, a 3-block-wide
  * pass between cliffs, and a walled yard with a gate and wall walkways; start slots near the west and east edges.
+ * Version 2 (M3 T9, ECO-05) adds for the first loop a grove of twelve oaks near each start slot and eight berry bushes
+ * behind it, the east's the west's turned half round the map's centre, so the two starts are alike.
  *
  * <p>It is the source of truth: {@code MapgenDriver} writes the map package from it, the manifest stores its terrain
  * hash, and L1 builds the same terrain from it ({@link #voxels()}). Heights are combined with min and max of functions
@@ -42,7 +47,8 @@ public final class ProvingGround {
             "minecraft:oak_log",
             "minecraft:oak_leaves[persistent=true]",
             "minecraft:oak_fence_gate[facing=east]",
-            "minecraft:cobblestone");
+            "minecraft:cobblestone",
+            "minecraft:sweet_berry_bush[age=3]");
 
     public static final byte AIR = 0;
     public static final byte STONE = 1;
@@ -59,6 +65,16 @@ public final class ProvingGround {
     public static final byte LEAVES = 12;
     public static final byte GATE = 13;
     public static final byte COBBLESTONE = 14;
+    public static final byte BUSH = 15;
+
+    /** The map's version: 2 since the groves and bushes of M3 T9. */
+    public static final int VERSION = 2;
+
+    /** What a log, a leaf and a bush are to the economy, as the mod's {@code strategos:resource_yield} entries say. */
+    public static final Material LOG_MATERIAL = new Material(MaterialKind.LOG, "wood", "tree", 20_000);
+
+    public static final Material LEAF_MATERIAL = new Material(MaterialKind.LEAVES, "", "", 0);
+    public static final Material BUSH_MATERIAL = new Material(MaterialKind.FORAGE, "food", "fruit", 60_000, 100);
 
     /** The river's middle column; it runs north to south, 7 wide. */
     public static final int RIVER_X = 192;
@@ -95,6 +111,7 @@ public final class ProvingGround {
         bridges();
         yard();
         forest();
+        groves();
         noGrassUnderBlocks();
         for (int x = 0; x < size; x++) {
             for (int z = 0; z < size; z++) {
@@ -180,6 +197,10 @@ public final class ProvingGround {
                     if (b != AIR) {
                         world.set(x, y, z, classOf(b));
                     }
+                    Material m = materialOf(b);
+                    if (m != null) {
+                        world.material(x, y, z, m);
+                    }
                 }
             }
         }
@@ -192,8 +213,18 @@ public final class ProvingGround {
             case FENCE, FENCE_WEST_END, FENCE_EAST_END -> VoxelFixtures.FENCE;
             case LEAVES -> VoxelFixtures.LEAVES;
             case GATE -> VoxelFixtures.DOOR;
+            case BUSH -> VoxelFixtures.BUSH;
             case AIR -> VoxelFixtures.AIR;
             default -> VoxelFixtures.SOLID;
+        };
+    }
+
+    private static @Nullable Material materialOf(byte b) {
+        return switch (b) {
+            case LOG -> LOG_MATERIAL;
+            case LEAVES -> LEAF_MATERIAL;
+            case BUSH -> BUSH_MATERIAL;
+            default -> null;
         };
     }
 
@@ -389,6 +420,59 @@ public final class ProvingGround {
                             leaf(x + dx, crown + 2, z + dz);
                         }
                     }
+                }
+            }
+        }
+    }
+
+    /**
+     * Version 2: near the west start (24, 192) twelve oaks in a 4 x 3 grid 7 apart over X 56–77, Z 222–236, south of
+     * the crossings' lanes, and behind it, to the west, eight berry bushes at X 3 and 6, Z 184, 187, 197 and 200, past
+     * the 14 blocks the soaks spawn within; the east start gets the same turned half round the centre (x, z to size - 1
+     * - x, size - 1 - z).
+     */
+    private void groves() {
+        for (int cx = 0; cx < 4; cx++) {
+            for (int cz = 0; cz < 3; cz++) {
+                int trunk = 4 + (cx + cz) % 2;
+                oak(56 + cx * 7, 222 + cz * 7, trunk);
+                oak(size - 1 - (56 + cx * 7), size - 1 - (222 + cz * 7), trunk);
+            }
+        }
+        for (int x : new int[] {3, 6}) {
+            for (int z : new int[] {184, 187, 197, 200}) {
+                bush(x, z);
+                bush(size - 1 - x, size - 1 - z);
+            }
+        }
+    }
+
+    private void bush(int x, int z) {
+        int ground = groundTop(x, z);
+        set(x, ground, z, DIRT);
+        set(x, ground + 1, z, BUSH);
+    }
+
+    /** An oak as the forest's: a trunk on dirt, a 5 x 5 canopy two layers deep without its corners, 3 x 3, a cross. */
+    private void oak(int x, int z, int trunk) {
+        int ground = groundTop(x, z);
+        set(x, ground, z, DIRT);
+        int crown = ground + trunk;
+        for (int y = ground + 1; y <= crown; y++) {
+            set(x, y, z, LOG);
+        }
+        for (int dx = -2; dx <= 2; dx++) {
+            for (int dz = -2; dz <= 2; dz++) {
+                boolean corner = Math.abs(dx) == 2 && Math.abs(dz) == 2;
+                if (!corner) {
+                    leaf(x + dx, crown - 1, z + dz);
+                    leaf(x + dx, crown, z + dz);
+                }
+                if (Math.abs(dx) <= 1 && Math.abs(dz) <= 1) {
+                    leaf(x + dx, crown + 1, z + dz);
+                }
+                if (Math.abs(dx) + Math.abs(dz) <= 1) {
+                    leaf(x + dx, crown + 2, z + dz);
                 }
             }
         }

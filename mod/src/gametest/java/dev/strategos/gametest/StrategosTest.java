@@ -37,4 +37,10 @@ public @interface StrategosTest {
 
     /** Changes server-wide state (tick rate, /reload, game rules, time), so it runs alone in its batch (QA-04.5). */
     boolean solo() default false;
+
+    /**
+     * Passed to {@code TestFunction.skyAccess}: no barrier roof over the arena, for a test whose blocks rise above it,
+     * such as vanilla-grown trees (ECO-03.5).
+     */
+    boolean skyAccess() default false;
 }

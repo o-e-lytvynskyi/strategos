@@ -1,8 +1,10 @@
 package dev.strategos.mod.server.tick;
 
+import dev.strategos.core.shared.MatchId;
 import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.server.match.MatchRuntime;
+import dev.strategos.mod.server.net.FxSender;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.TickRateManager;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
@@ -59,6 +61,12 @@ public final class TickDriver {
             server.faults().run(rt, "tick", work);
         }
         server.writer().flush(level, level.getServer().getTickCount(), running);
+        server.writer().takeWritten(level).forEach((match, written) -> {
+            MatchRuntime rt = server.matches().get(new MatchId(match));
+            if (rt != null) { // AUD-04: what the writer broke and placed, to those who see it
+                server.faults().run(rt, "fx", () -> FxSender.sendWritten(rt, written, server.net()));
+            }
+        });
     }
 
     /** A frozen game (/tick freeze) steps no match; /tick step runs as many steps as it asks for. */

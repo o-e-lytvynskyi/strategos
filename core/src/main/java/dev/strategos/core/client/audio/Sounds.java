@@ -29,10 +29,13 @@ public final class Sounds {
 
     private Sounds() {}
 
+    /** A unit event's cue; a block's event sounds its block's own sound type (AUD-04), so it has none here. */
     public static Cue of(FxKind kind) {
         return switch (kind) {
             case UNIT_HIT -> UNIT_HIT;
             case UNIT_DIED -> UNIT_DIED;
+            case BLOCK_CRACK, BLOCK_BREAK, BLOCK_PLACE ->
+                throw new IllegalArgumentException(kind + " sounds its block's own sound type");
         };
     }
 
@@ -52,8 +55,13 @@ public final class Sounds {
      * as in first person, it is the cue's own.
      */
     public static float volume(Cue cue, double height, double pitch) {
+        return volume(cue.volume(), height, pitch);
+    }
+
+    /** As {@link #volume(Cue, double, double)}, for a sound of volume {@code base}: a block's (AUD-04). */
+    public static float volume(float base, double height, double pitch) {
         double sin = Math.sin(Math.toRadians(Math.max(5, Math.min(90, pitch))));
         double focus = Math.max(0, height) / sin;
-        return (float) Math.max(cue.volume(), REACH * focus / ATTENUATION);
+        return (float) Math.max(base, REACH * focus / ATTENUATION);
     }
 }

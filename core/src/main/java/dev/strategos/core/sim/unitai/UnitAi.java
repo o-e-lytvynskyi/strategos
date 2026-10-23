@@ -35,10 +35,16 @@ import org.jspecify.annotations.Nullable;
  *   FOLLOW                       Stuck at its last rung: wait; PathInvalidated: as WALKING
  *     FOLLOW_WALKING   every 5   think: the place behind the leader, walked to; Arrived: wait there
  *     FOLLOW_WAITING   every 5   think: once the place moves, walk again
+ *   GATHER                       leave: the work slot is given up; Attacked: hit back, or flee; Stuck at its last
+ *                                rung: the order failed; PathInvalidated: as WALKING
+ *     GATHER_APPROACHING every 5 enter: a slot at the node, walked to; think: a spent node is replaced; Arrived: work
+ *     GATHERING        every 1   think: gather at the rate; full: home; the node spent: the next one
+ *     GATHER_RETURNING every 5   enter: the nearest dropsite; think: one lost is replaced; Arrived: deliver, go back
  * </pre>
  *
  * Whichever of them finds its target dead takes up the nearest enemy in sight, from a new place, or else goes on with
- * its next order: finding a new target is a step, not a state, so no unit ever rests in it.
+ * its next order: finding a new target is a step, not a state, so no unit ever rests in it. Finding the next node is a
+ * step too ({@link Gathering}).
  *
  * IDLE and WALKING keep M0's codes, 0 and 1, so a match hashes as in M0, and M0's names, so M0's saves load. An
  * engagement the unit takes up itself goes before its orders ({@link OrderKind#ENGAGE}), so when it ends the unit goes
@@ -46,7 +52,8 @@ import org.jspecify.annotations.Nullable;
  * movement systems walk them; striking reports COMBAT. Units without a melee attack never engage; hit while idle, one
  * with a flee distance runs that far from the blow ({@link OrderKind#FLEE}, walked as a move, before its orders). A message
  * no state handles, such as an arrival while idle, is dropped. GATHER and BUILD (M3) add their subtrees under
- * INDIVIDUAL, each entered through {@link #stateFor} from its order kind.
+ * INDIVIDUAL, each entered through {@link #stateFor} from its order kind; gathering's approach and way home report
+ * WALKING, its work GATHERING.
  */
 public final class UnitAi {
     public static final StateId IDLE = new StateId(0, "idle", UnitState.IDLE);
@@ -60,6 +67,10 @@ public final class UnitAi {
     public static final StateId FOLLOW = new StateId(8, "follow", null);
     public static final StateId FOLLOW_WALKING = new StateId(9, "follow.walking", UnitState.WALKING);
     public static final StateId FOLLOW_WAITING = new StateId(10, "follow.waiting", UnitState.IDLE);
+    public static final StateId GATHER = new StateId(11, "gather", null);
+    public static final StateId GATHER_APPROACHING = new StateId(12, "gather.approaching", UnitState.WALKING);
+    public static final StateId GATHERING = new StateId(13, "gather.gathering", UnitState.GATHERING);
+    public static final StateId GATHER_RETURNING = new StateId(14, "gather.returning", UnitState.WALKING);
 
     private UnitAi() {}
 
@@ -144,6 +155,35 @@ public final class UnitAi {
                                 .think(ctx -> Following.keepUp(ctx, false))
                                 .on(Arrived.class, (ctx, m) -> {}) // already there
                                 .transitions(next(FOLLOW_WALKING))
+                                .build(),
+                        StateDef.<MatchState>child(GATHER, INDIVIDUAL)
+                                .initial(GATHER_APPROACHING)
+                                .leave(Gathering::leave)
+                                .on(Attacked.class, (ctx, m) -> hit(ctx, m.attacker()))
+                                .on(Stuck.class, UnitAi::giveUp)
+                                .on(PathInvalidated.class, UnitAi::repath)
+                                .on(Arrived.class, (ctx, m) -> {}) // working: nowhere to walk to
+                                .transitions(next())
+                                .build(),
+                        StateDef.<MatchState>child(GATHER_APPROACHING, GATHER)
+                                .thinkEvery(5)
+                                .enter(Gathering::approach)
+                                .think(Gathering::keepApproaching)
+                                .on(Arrived.class, Gathering::arrived)
+                                .transitions(next(GATHER_APPROACHING, GATHERING, GATHER_RETURNING))
+                                .build(),
+                        StateDef.<MatchState>child(GATHERING, GATHER)
+                                .thinkEvery(1)
+                                .enter(Gathering::begin)
+                                .think(Gathering::work)
+                                .transitions(next(GATHER_APPROACHING, GATHER_RETURNING))
+                                .build(),
+                        StateDef.<MatchState>child(GATHER_RETURNING, GATHER)
+                                .thinkEvery(5)
+                                .enter(Gathering::headHome)
+                                .think(Gathering::keepHeadingHome)
+                                .on(Arrived.class, Gathering::delivered)
+                                .transitions(next(GATHER_APPROACHING, GATHER_RETURNING))
                                 .build()),
                 UnitAi::changed);
     }
@@ -153,7 +193,7 @@ public final class UnitAi {
      * {@code more}.
      */
     private static StateId[] next(StateId... more) {
-        List<StateId> all = new ArrayList<>(List.of(IDLE, WALKING, COMBAT, WALKING_AND_FIGHTING, FOLLOW));
+        List<StateId> all = new ArrayList<>(List.of(IDLE, WALKING, COMBAT, WALKING_AND_FIGHTING, FOLLOW, GATHER));
         all.addAll(List.of(more));
         return all.toArray(StateId[]::new);
     }
@@ -167,7 +207,7 @@ public final class UnitAi {
     }
 
     /** Hit by {@code attacker} (a handle): a unit that can fight hits back, one that cannot runs, if it ever does. */
-    private static void hit(Context<MatchState> ctx, int attacker) {
+    static void hit(Context<MatchState> ctx, int attacker) {
         if (ctx.host().stats().canMelee(ctx.unit())) {
             Melee.retaliate(ctx, attacker);
         } else {
@@ -188,7 +228,17 @@ public final class UnitAi {
     /** The tree's leaves, the states a unit can be in and a save can name. */
     public static List<StateId> leaves() {
         return List.of(
-                IDLE, WALKING, WALKING_AND_FIGHTING, APPROACHING, ATTACKING, CHASING, FOLLOW_WALKING, FOLLOW_WAITING);
+                IDLE,
+                WALKING,
+                WALKING_AND_FIGHTING,
+                APPROACHING,
+                ATTACKING,
+                CHASING,
+                FOLLOW_WALKING,
+                FOLLOW_WAITING,
+                GATHER_APPROACHING,
+                GATHERING,
+                GATHER_RETURNING);
     }
 
     /** The leaf saved as {@code name}, or null for any other name. */
@@ -218,6 +268,7 @@ public final class UnitAi {
             case OrderKind.ATTACK, OrderKind.ENGAGE -> COMBAT;
             case OrderKind.ATTACK_MOVE -> WALKING_AND_FIGHTING;
             case OrderKind.FOLLOW -> FOLLOW;
+            case OrderKind.GATHER -> GATHER;
             default -> throw new IllegalStateException("no unit state carries out order kind " + kind);
         };
     }

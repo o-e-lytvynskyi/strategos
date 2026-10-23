@@ -11,6 +11,7 @@ import dev.strategos.mod.server.commander.ObserverRules;
 import dev.strategos.mod.server.content.TemplateReloadListener;
 import dev.strategos.mod.server.content.TemplateSync;
 import dev.strategos.mod.server.tick.TickDriver;
+import dev.strategos.mod.server.world.MatchGrowth;
 import java.util.List;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.neoforged.bus.api.IEventBus;
@@ -29,6 +30,7 @@ import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.level.ChunkWatchEvent;
+import net.neoforged.neoforge.event.level.block.CropGrowEvent;
 import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
@@ -77,6 +79,7 @@ public final class Strategos {
         game.addListener(PlayerInteractEvent.RightClickBlock.class, ObserverRules::onRightClickBlock);
         game.addListener(PlayerInteractEvent.LeftClickBlock.class, ObserverRules::onLeftClickBlock);
         game.addListener(PlayerInteractEvent.EntityInteract.class, ObserverRules::onEntityInteract);
+        game.addListener(CropGrowEvent.Pre.class, MatchGrowth::onCropGrowPre);
     }
 
     /** The listeners every data pack reload gets, made fresh for each; the engine-surface inventory reads them (B12). */

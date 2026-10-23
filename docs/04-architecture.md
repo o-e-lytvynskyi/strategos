@@ -459,7 +459,8 @@ Main events used: `LevelTickEvent.Pre/Post`, `ServerAboutToStartEvent`, `ServerS
 `EntityLeaveLevelEvent`, `PlayerEvent.PlayerLoggedInEvent/PlayerLoggedOutEvent`,
 `ChunkWatchEvent.Sent` (M2), `PlayerTickEvent.Post` (M7), `AttackEntityEvent` (M2),
 `LivingIncomingDamageEvent` and `PlayerInteractEvent.RightClickBlock`, `LeftClickBlock` and `EntityInteract`
-(M2, the first-person observer), the protection events of §11.9 (M4),
+(M2, the first-person observer), `CropGrowEvent.Pre` (M3, ECO-05: no plant in a match space grows by
+itself), the protection events of §11.9 (M4),
 `PlayLevelSoundEvent.AtEntity` as a backstop (M8) and `RegisterGameTestsEvent` (gametest source
 set).
 
@@ -798,7 +799,7 @@ unit's cadence. A hashed timer wheel replaces the polling only if profiles show 
 | Orders, queue, UnitAI state, stance, cooldowns | Core | None |
 | Stats | Core modifier pipeline | None (`PHYSICS` mirrors only) |
 | Faction, template, rank of a unit | Core | Spawn data (`IEntityWithComplexSpawn`) |
-| Carried resource, action pose | Core | Two synced bytes, changed only on transitions |
+| Carried resource and task tool; action pose | Core | The body's hands, sent by the gateway on a change as vanilla's equipment packet (ECO-05); the pose a synced byte, changed only on transitions |
 | Buildings: footprint, progress, HP, damage stage, queue, rally | Core | Blocks are the picture; there is no building entity |
 | Resource nodes | Core | Trees and stone are real blocks; deposits and fields are placed blocks with abstract amounts |
 | Treasury, population, techs, diplomacy | Core | Payloads only |
@@ -989,8 +990,9 @@ is fixed at startup (fact 23), so units map onto three types by body size.
   - riding refused; `canUsePortal` and `canChangeDimensions` false (Entity.java:2781, 2785).
 - **`onGround` stays true** except during scripted falls, because every flip forces a teleport
   packet (ServerEntity.java:150).
-- **`SynchedEntityData`** carries only two bytes (carried resource, action pose), changed only on
-  transitions: every dirty value forces a full position update that tick (ServerEntity.java:121).
+- **`SynchedEntityData`** carries only the action pose byte, changed only on transitions: every
+  dirty value forces a full position update that tick (ServerEntity.java:121). The carried load and
+  the task's tool are the body's hands (§6.2, ECO-05).
 - **`hurt` and `knockback` are routed to the core** (§6.7). `broadcastToPlayer` asks `FogGate`
   (§10.4).
 
@@ -1007,7 +1009,12 @@ is fixed at startup (fact 23), so units map onto three types by body size.
   - large units widen `getBoundingBoxForCulling` (3030).
 - **Equipment** (armour, held items) comes from the client's template copy and the rank in the
   spawn data. The abstract equipment methods are backed by small arrays (LivingEntity.java:2074–2078,
-  3127), so no equipment packets are needed.
+  3127), so no equipment packets are needed. The exception is the hands (M3, ECO-05): a working
+  unit's tool and its carried load are match state, so the core posts `UnitGear` on a change, the
+  body's hands hold the items, and the gateway sends vanilla's `ClientboundSetEquipmentPacket` to
+  the body's trackers at once, since the body's server tick, which would notice the change
+  (`LivingEntity#detectEquipmentUpdates`), never runs; a new tracker gets them with the body's
+  pairing (ServerEntity.java:274).
 
 ### 6.3 The body seam
 
@@ -1147,6 +1154,14 @@ flowchart TD
 - **As built (M2, AUD-01).** A hit or death sounds once per unit per tick, to its trackers, as an
   `fx` event; order acknowledgements come from `feedback` on the client. From the RTS camera a sound's
   volume is raised so it carries 2.5 times the distance to the ground in view.
+- **The world's edits (M3, AUD-04).** The block writer is silent (flags 2 and 16, no `destroyBlock`),
+  so what it does is told as `fx` to those who see the cell (until fog, every member): the core
+  posts a tree's next log's crack, a stage for each tenth of its share taken, when it changes; the
+  writer records each block it breaks for a node or a collapse and each it places for construction,
+  with the state's id, and after its flush they leave by 16 × 16 page, 64 to a payload. A client shows
+  them as vanilla does: the crack with `ClientLevel#destroyBlockProgress` under a breaker id of the
+  block's own, a break's particles with `addDestroyBlockEffect` and its `SoundType`'s break sound, a
+  placement's place sound, at vanilla's block volume and pitch, six of a kind a tick at most.
 
 ### 6.8 Vanilla interactions
 
@@ -1437,7 +1452,8 @@ NeoForge data maps on `minecraft:block`, registered in `RegisterDataMapTypesEven
 - `strategos:nav_class` overrides the derived navigation class for blocks whose collision shape
   misleads, including other mods' blocks (M1).
 - `strategos:resource_yield` maps a block or a tag (`#minecraft:logs`) to a resource and an amount
-  per block (M3).
+  per block, and forage to its regrowth a second (M3). It is synced to clients, not required of them,
+  so a right click on such a block gathers there (ECO-05).
 
 `DataMapsUpdatedEvent` triggers a re-classification and node re-scan of idle matches.
 
@@ -1975,7 +1991,7 @@ writer and node discovery fill it.
 | Mobs breaking blocks | `LivingDestroyBlockEvent`, `EntityMobGriefingEvent` | Deny inside match regions |
 | Pistons | `PistonEvent.Pre` | Cancel inside match regions |
 | Fluids | `BlockEvent.FluidPlaceBlockEvent` | Cancel on protected targets |
-| Crop growth near first-person players | `CropGrowEvent.Pre` (`setResult`) | Deny inside fields; the core drives crop age |
+| Crop growth | `CropGrowEvent.Pre` (`setResult`) | Deny anywhere in a match space (M3: berry bushes, then fields); the core drives the age |
 | Natural spawns | `MobSpawnEvent.PositionCheck` | Deny inside match regions; the arena world and `ticking=false` tickets already avoid them |
 | Fire | No event exists: fire removes blocks silently (fact 25) | Arena world: `doFireTick` false; blueprints avoid flammable blocks |
 | Anything else: other mods, direct chunk writes | `LevelChunkMixin` sees a protected position changed without the writer's flag | Restore it at the end of the tick, optionally count it as damage, log once per source |
@@ -2832,6 +2848,7 @@ DFU (`Codec`, `Dynamic`, `JsonOps`, `Lifecycle`) and JDK classes are libraries o
 | `EntityType.Builder#of`, `sized`, `noSummon`, `noSave`, `fireImmune`, `clientTrackingRange`, `updateInterval`, `setShouldReceiveVelocityUpdates`; `LightningBolt` with `Integer.MAX_VALUE` | `net/minecraft/world/entity/EntityType.java:1273, 1281, 1334, 1339, 1344, 1359, 1364, 1384, 474` | Unit types, reserve channel |
 | `MobCategory.MISC`; `NaturalSpawner.createState` skips `MISC` | `world/entity/MobCategory.java:15`; `world/level/NaturalSpawner.java:74` | Spawner cost |
 | `LivingEntity#kill`, `createLivingAttributes`, `tickDeath`, `shouldDropLoot`, `hurt`, incoming-damage hook, i-frame branch, `die` (entity event 3), `knockback`, `swing`, `handleDamageEvent`, entity event 3 handler, equipment methods, `travel` → `calculateEntityAnimation`, `aiStep`, `pushEntities`, `isPushable`, `getMainArm`, final `getDimensions`, `getDefaultDimensions` | `world/entity/LivingEntity.java:302, 321, 565, 577, 1142, 1153, 1190, 1408–1434, 1529, 1857, 1881, 1902–1910, 2074–2078, 2219–2346, 2721, 2891, 3071, 3127, 3423, 3427` | Unit body |
+| `ClientboundSetEquipmentPacket`; `ServerChunkCache#broadcast(Entity, Packet)`; `ServerEntity#sendPairingData`'s equipment; `ClientPacketListener#handleSetEquipment` → `setItemSlot` | `network/protocol/game/ClientboundSetEquipmentPacket.java`; `server/level/ServerChunkCache.java:482`; `server/level/ServerEntity.java:274–287`; `client/multiplayer/ClientPacketListener.java:1398` | Unit body hands (ECO-05) |
 | `Entity#getTeamColor`, `playSound`, `getMovementEmission`, `shouldRenderAtSqrDistance`, `getEncodeId`, `isCurrentlyGlowing`, `canUsePortal`, `canChangeDimensions`, `broadcastToPlayer`, `getBoundingBoxForCulling`, `startSeenByPlayer`, `stopSeenByPlayer`, `checkDespawn`, `getRemovalReason`; global id counter | `world/entity/Entity.java:281, 1138, 1184, 1692, 1914, 2407, 2781, 2785, 3021, 3030, 3085, 3091, 3555, 3642, 135–154` | Unit body, fog, interest sets |
 | `Mob#serverAiStep` (final), `customServerAiStep` | `world/entity/Mob.java:773, 818` | Why not a mob |
 | `IEntityWithComplexSpawn#writeSpawnData`, `readSpawnData` | `net/neoforged/neoforge/entity/IEntityWithComplexSpawn.java:21, 29` | Spawn data |

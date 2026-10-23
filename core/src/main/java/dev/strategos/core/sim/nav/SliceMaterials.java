@@ -82,6 +82,9 @@ public final class SliceMaterials {
             out.writeString(m.resource(), MAX_STRING);
             out.writeString(m.subtype(), MAX_STRING);
             out.writeVarLong(m.amount());
+            if (m.kind() == MaterialKind.FORAGE) {
+                out.writeVarLong(m.regrow()); // forage only (ECO-05), so a slice without it encodes as before
+            }
         }
         out.writeVarInt(voxels.length);
         int last = -1;
@@ -103,8 +106,11 @@ public final class SliceMaterials {
             } catch (IllegalArgumentException e) {
                 throw new WireException("unknown material kind " + kind);
             }
-            legend.add(
-                    new Material(materialKind, in.readString(MAX_STRING), in.readString(MAX_STRING), in.readVarLong()));
+            String resource = in.readString(MAX_STRING);
+            String subtype = in.readString(MAX_STRING);
+            long amount = in.readVarLong();
+            long regrow = materialKind == MaterialKind.FORAGE ? in.readVarLong() : 0;
+            legend.add(new Material(materialKind, resource, subtype, amount, regrow));
         }
         int count = in.readVarInt(slots);
         int[] voxels = new int[count];

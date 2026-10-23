@@ -10,6 +10,7 @@ import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.PlayerSlot;
+import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.Arrived;
 import dev.strategos.core.sim.Attacked;
@@ -49,19 +50,27 @@ import org.junit.jupiter.params.provider.MethodSource;
 class UnitTreeTransitionsTest {
     /**
      * One spearman of a real match and an enemy spearman, in the row's start state: IDLE; WALKING by an order and a
-     * tick; any other set as data, as a save restores it, with the enemy placed for it. A row publishes on the bus
-     * between ticks, as a system would, or steps a tick.
+     * tick; any other set as data, as a save restores it, with the enemy placed for it. A gather row's unit is a worker
+     * instead, beside a tree ({@link GatherTransitionRows#setUp}). A row publishes on the bus between ticks, as a system
+     * would, or steps a tick.
      */
-    private static final class Unit {
+    static final class Unit {
         final SimHarness h = SimHarness.builder().build();
-        final int handle = spearman(h, 0, new Vec2d(4, 8));
-        final int enemy = spearman(h, 1, new Vec2d(28, 28)); // 31 blocks off: out of sight
+        final int handle;
+        final int enemy;
         final MatchState state = KernelAccess.state(h.core());
         final List<OrderFinished> finished = new ArrayList<>();
+        int node;
+        int dropsite;
 
-        Unit(StateId from) {
+        Unit(StateId from, boolean worker) {
+            handle = spawn(h, worker ? TemplateSet.WORKER : TemplateSet.INFANTRY, 0, new Vec2d(4, 8));
+            enemy = spawn(h, TemplateSet.INFANTRY, 1, new Vec2d(28, 28)); // 31 blocks off: out of sight
             state.bus().subscribe(OrderFinished.class, finished::add);
             int i = index();
+            if (worker) {
+                GatherTransitionRows.setUp(this);
+            }
             if (from.equals(UnitAi.WALKING)) {
                 h.submit(PlayerSlot.ADMIN, Move.replace(UnitSet.of(handle), new Vec2d(20, 8)));
                 h.step();
@@ -71,6 +80,10 @@ class UnitTreeTransitionsTest {
             } else if (from.equals(UnitAi.FOLLOW_WALKING) || from.equals(UnitAi.FOLLOW_WAITING)) {
                 state.orders().replace(i, OrderKind.FOLLOW, 4, 8, 0, 0, 0); // behind slot 0's commander
                 state.ai().set(i, from);
+            } else if (from.equals(UnitAi.GATHER_APPROACHING)
+                    || from.equals(UnitAi.GATHERING)
+                    || from.equals(UnitAi.GATHER_RETURNING)) {
+                GatherTransitionRows.start(this, from);
             } else if (!from.equals(UnitAi.IDLE)) {
                 double ex = from.equals(UnitAi.ATTACKING) ? 5.2 : 10; // in reach (a 0.5 gap), or 6 blocks off
                 place(enemy, ex, 8);
@@ -114,8 +127,8 @@ class UnitTreeTransitionsTest {
         }
     }
 
-    private static int spearman(SimHarness h, int faction, Vec2d at) {
-        h.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.INFANTRY, new FactionSlot(faction), at, 1, 0));
+    private static int spawn(SimHarness h, TemplateId template, int faction, Vec2d at) {
+        h.submit(PlayerSlot.ADMIN, new SpawnUnits(template, new FactionSlot(faction), at, 1, 0));
         return h.step().events().stream()
                 .filter(UnitCreated.class::isInstance)
                 .mapToInt(e -> ((UnitCreated) e).handle())
@@ -129,42 +142,52 @@ class UnitTreeTransitionsTest {
             Function<Unit, @Nullable BusMessage> message,
             StateId to,
             Consumer<Unit> effects) {
-        return Arguments.of(name, from, message, to, effects);
+        return Arguments.of(name, from, message, to, effects, false);
+    }
+
+    /** A row whose unit is a worker beside a tree, a dropsite in the east ({@link GatherTransitionRows}). */
+    static Arguments workerRow(
+            String name,
+            StateId from,
+            Function<Unit, @Nullable BusMessage> message,
+            StateId to,
+            Consumer<Unit> effects) {
+        return Arguments.of(name, from, message, to, effects, true);
     }
 
     /** A move order to (20, 20) set as the move rule sets it, then announced. */
-    private static BusMessage newMove(Unit u) {
+    static BusMessage newMove(Unit u) {
         u.state.orders().replaceMove(u.index(), 20, 20);
         return new OrderReceived(u.handle);
     }
 
     /** The player's attack on the enemy, 6 blocks off, set as the attack rule sets it, then announced. */
-    private static BusMessage newAttack(Unit u) {
+    static BusMessage newAttack(Unit u) {
         u.place(u.enemy, 10, 8);
         u.state.orders().replace(u.index(), OrderKind.ATTACK, 10, 8, 0, 0, u.enemy);
         return new OrderReceived(u.handle);
     }
 
     /** An attack-move to (20, 20), set as its rule sets it, then announced. */
-    private static BusMessage newAttackMove(Unit u) {
+    static BusMessage newAttackMove(Unit u) {
         u.state.orders().replace(u.index(), OrderKind.ATTACK_MOVE, 20, 20, 0, 0);
         return new OrderReceived(u.handle);
     }
 
     /** Following slot 0's commander, set as the follow rule sets it, then announced. */
-    private static BusMessage newFollow(Unit u) {
+    static BusMessage newFollow(Unit u) {
         u.state.orders().replace(u.index(), OrderKind.FOLLOW, 4, 8, 0, 0, 0);
         return new OrderReceived(u.handle);
     }
 
     /** A stop as the stop rule makes it: the order cleared, then announced. */
-    private static BusMessage stop(Unit u) {
+    static BusMessage stop(Unit u) {
         u.state.orders().clear(u.index());
         return new StopOrdered(u.handle);
     }
 
     /** The enemy's blow, as the COMBAT phase tells of one the unit lived through. */
-    private static BusMessage blow(Unit u) {
+    static BusMessage blow(Unit u) {
         return new Attacked(u.handle, u.enemy);
     }
 
@@ -174,7 +197,7 @@ class UnitTreeTransitionsTest {
         return new Arrived(u.handle);
     }
 
-    private static void nothingElse(Unit u) {
+    static void nothingElse(Unit u) {
         assertThat(u.finished).isEmpty();
         assertThat(u.state.paths().repath(u.index())).isFalse();
     }
@@ -184,7 +207,7 @@ class UnitTreeTransitionsTest {
         nothingElse(u);
     }
 
-    private static Consumer<Unit> kept(int kind) {
+    static Consumer<Unit> kept(int kind) {
         return u -> {
             assertThat(u.state.orders().kind(u.index())).isEqualTo(kind);
             assertThat(u.finished).isEmpty();
@@ -201,7 +224,7 @@ class UnitTreeTransitionsTest {
         };
     }
 
-    private static Consumer<Unit> orderFinished(boolean failed) {
+    static Consumer<Unit> orderFinished(boolean failed) {
         return u -> {
             assertThat(u.state.orders().kind(u.index())).isEqualTo(OrderKind.NONE);
             assertThat(u.finished).containsExactly(new OrderFinished(u.handle, failed));
@@ -209,6 +232,10 @@ class UnitTreeTransitionsTest {
     }
 
     static Stream<Arguments> unitRows() {
+        return Stream.concat(rows(), GatherTransitionRows.rows());
+    }
+
+    private static Stream<Arguments> rows() {
         StateId idle = UnitAi.IDLE;
         StateId walking = UnitAi.WALKING;
         StateId fighting = UnitAi.WALKING_AND_FIGHTING;
@@ -578,8 +605,9 @@ class UnitTreeTransitionsTest {
             StateId from,
             Function<Unit, @Nullable BusMessage> message,
             StateId to,
-            Consumer<Unit> effects) {
-        Unit u = new Unit(from);
+            Consumer<Unit> effects,
+            boolean worker) {
+        Unit u = new Unit(from, worker);
 
         List<UnitStateChanged> events = u.publish(message.apply(u));
 

@@ -2,6 +2,7 @@ package dev.strategos.core.sim.econ;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import dev.strategos.core.sim.BlockCracked;
 import dev.strategos.core.sim.KernelAccess;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.OutputEvent;
@@ -183,5 +184,44 @@ class TreeFellingTest {
                     .isNotNegative();
         }
         assertThat(s.nodes().claimNearest(1, 13, 0, 0)).as("a thirteenth").isEqualTo(-1);
+    }
+
+    /**
+     * AUD-04: the next log's crack rises a stage for each tenth of its share taken, on the log that goes next, and is
+     * posted only when it changes; a log's last tenth fells it, the next log, whole, shows none, and its first
+     * thousandth taken starts its crack at stage 0.
+     */
+    @Test
+    void aLogsCrackRisesWithWhatIsTakenOfIt() {
+        MatchState s = match(TreeFixtures.one(Species.OAK));
+        long[] blocks = s.nodes().blocks(1);
+        long top = blocks[0];
+        List<Integer> stages = new ArrayList<>();
+        for (int k = 1; k <= 10; k++) {
+            int out = s.outputs().size();
+            Felling.take(s, 1, TreeFixtures.PER_LOG / 10);
+            for (OutputEvent e : s.outputs().subList(out, s.outputs().size())) {
+                if (e instanceof BlockCracked c) {
+                    assertThat(NodeStore.pack(c.x(), c.y(), c.z()))
+                            .as("on the log that goes next")
+                            .isEqualTo(top);
+                    stages.add(c.stage());
+                }
+            }
+        }
+        assertThat(stages).containsExactly(1, 2, 3, 4, 5, 6, 7, 8, 9);
+        assertThat(s.nodes().gone(1)).as("the tenth tenth fells it").isEqualTo(1);
+        Felling.take(s, 1, 1);
+        assertThat(s.outputs().get(s.outputs().size() - 1))
+                .as("a thousandth of the next log starts its crack")
+                .isEqualTo(new BlockCracked(NodeStore.x(blocks[1]), NodeStore.y(blocks[1]), NodeStore.z(blocks[1]), 0));
+        int out = s.outputs().size();
+        Felling.take(s, 1, 1);
+        assertThat(s.outputs().subList(out, s.outputs().size()))
+                .as("posted only on a change")
+                .noneMatch(BlockCracked.class::isInstance);
+        Felling.take(s, 1, TreeFixtures.PER_LOG / 10);
+        assertThat(s.outputs().get(s.outputs().size() - 1))
+                .isEqualTo(new BlockCracked(NodeStore.x(blocks[1]), NodeStore.y(blocks[1]), NodeStore.z(blocks[1]), 1));
     }
 }

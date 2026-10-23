@@ -9,6 +9,29 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
+## 2026-10-24 — M3 T9–T10
+
+- **The owner, past midnight:** «можешь любые тесты проводить и как закончишь м3 - начинай м4, все решения
+  принимай сам, которые рекомендуешь» (STATE item 6).
+- **M3 T9 · ECO-05, gathering, dropsites and berry bushes; ECO-03 done.** Workers take a free slot at a tree or a
+  bush, gather at their rate in a fixed-point remainder (the worker: 1 food or 0.6 wood a second, 10 a trip), carry
+  the load to their nearest dropsite that takes it and come back; a spent node gives way to the nearest of its kind
+  within 24 blocks, and with none the worker takes its load home and idles with a notice. A spearman gathers once
+  its template says so. The economy's books balance every step: what nodes held, regrew and lost against what is
+  carried, gathered and dropped. Bushes regrow slowly while they hold some, show their amount as their age, and grow
+  by no random tick inside a match. A right click on a resource block gathers there; a worker shows its axe and its
+  load in its hands. The proving ground v2 has a grove near each start and berry bushes behind it. ECO-05 waits for
+  its golden and the owner's look; ECO-03 is done. Lessons in the knowledge base: the GameTest arena's barrier roof
+  keeps vanilla trees from growing, a body without a server tick sends no equipment change, an unsynced data map is
+  invisible to clients.
+- **The owner asked how destruction works now;** answered in chat: buildings fall whole at 0 HP, top-down under
+  the writer's budget, the floor left; nothing in play can hit one until T21's torches; damage stages, repair and
+  protection are M4's.
+- **M3 T10 · AUD-04, the world's edits seen and heard.** The next log of a tree being chopped shows vanilla's crack,
+  a stage for each tenth of it; a felled log and a fallen building's blocks break with their particles and sound, and
+  every block a building gains plays its place sound, for those who see the cell. The golden of a cracked log waits
+  for T30's batch. Next: T11–T12, placement and construction.
+
 ## 2026-10-23 (evening) — M3 spec, T1–T8
 
 - **M3 T8 · ECO-03, felling and the canopy.** A log's worth gathered takes the highest log; the

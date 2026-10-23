@@ -37,6 +37,23 @@ public final class StrategosGameTests {
 
     // After each batch: its matches go, then nothing of it may be left (QA-04.6). Vanilla finds these by batch name.
 
+    @AfterBatch(batch = "eco_growth")
+    public static void afterEcoGrowth(ServerLevel level) {
+        dev.strategos.gametest.suites.EcoTests.restoreRandomTicks(level);
+        afterBatch(level, "eco_growth");
+    }
+
+    @AfterBatch(batch = "eco_gather")
+    public static void afterEcoGather(ServerLevel level) {
+        afterBatch(level, "eco_gather");
+    }
+
+    @AfterBatch(batch = "eco_felling")
+    public static void afterEcoFelling(ServerLevel level) {
+        dev.strategos.gametest.suites.EcoTests.restoreRandomTicks(level);
+        afterBatch(level, "eco_felling");
+    }
+
     @AfterBatch(batch = "default")
     public static void afterDefault(ServerLevel level) {
         afterBatch(level, "default");
@@ -280,7 +297,7 @@ public final class StrategosGameTests {
                 false,
                 t.attempts(),
                 t.successes(),
-                false,
+                t.skyAccess(),
                 helper -> invoke(d, helper));
     }
 

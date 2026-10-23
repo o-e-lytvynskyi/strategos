@@ -15,6 +15,7 @@ import dev.strategos.mod.client.net.ClientPayloads;
 import dev.strategos.mod.client.rts.RtsMode.Pick;
 import dev.strategos.mod.entity.UnitEntity;
 import dev.strategos.mod.entity.UnitSpawnData;
+import dev.strategos.mod.registry.ModDataMaps;
 import dev.strategos.mod.server.net.payload.CommandsPayload;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,9 +23,11 @@ import java.util.List;
 import java.util.Map;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -42,6 +45,8 @@ final class RtsOrders {
     private static final DustParticleOptions ATTACK_MARKER = new DustParticleOptions(new Vector3f(1f, 0.2f, 0.15f), 4f);
     private static final DustParticleOptions ATTACK_MOVE_MARKER =
             new DustParticleOptions(new Vector3f(1f, 0.6f, 0.1f), 4f);
+    private static final DustParticleOptions GATHER_MARKER =
+            new DustParticleOptions(new Vector3f(0.3f, 0.9f, 0.3f), 4f);
 
     private final RtsMode mode;
     private boolean previewing;
@@ -122,15 +127,23 @@ final class RtsOrders {
                 && body.spawnData().faction() != join.slot().value()) {
             enemy = body.spawnData().handle();
         }
-        Command command = OrderIntents.context(
-                mode.selection().handles(), enemy, wx - join.originX(), wz - join.originZ(), shift, armed);
+        boolean resource = !armed && pick.entityId() < 0 && yieldsResource(mc, pick);
+        Command command = resource
+                ? OrderIntents.gather(
+                        mode.selection().handles(),
+                        (int) Math.floor(pick.x()) - join.originX(),
+                        (int) Math.floor(pick.y()),
+                        (int) Math.floor(pick.z()) - join.originZ(),
+                        shift)
+                : OrderIntents.context(
+                        mode.selection().handles(), enemy, wx - join.originX(), wz - join.originZ(), shift, armed);
         if (command == null) {
             return;
         }
         if (ClientPayloads.toServer(new CommandsPayload(new CommandBatch(clientSeq++, List.of(command)), ""))) {
             ordersSent++;
             lastCommand = command;
-            int kind = armed ? 2 : enemy != 0 ? 1 : 0;
+            int kind = armed ? 2 : enemy != 0 ? 1 : resource ? 3 : 0;
             double my = pick.entityId() < 0 ? pick.y() + 1 : pick.y() + (enemy != 0 ? 2.2 : 0); // over a target's head
             markers.add(new double[] {wx, my, wz, shift ? 200 : 40, kind});
         }
@@ -169,7 +182,19 @@ final class RtsOrders {
         }
     }
 
-    /** The clicked point and queued waypoints, as dust, for a while: white a move, red an attack, orange attack-move. */
+    /** Whether the block picked has a {@code strategos:resource_yield} entry, which the server syncs (ECO-05). */
+    private static boolean yieldsResource(Minecraft mc, Pick pick) {
+        if (mc.level == null) {
+            return false;
+        }
+        BlockState state = mc.level.getBlockState(BlockPos.containing(pick.x(), pick.y(), pick.z()));
+        return state.getBlockHolder().getData(ModDataMaps.RESOURCE_YIELD) != null;
+    }
+
+    /**
+     * The clicked point and queued waypoints, as dust, for a while: white a move, red an attack, orange attack-move,
+     * green gathering.
+     */
     void showMarkers(Minecraft mc, long ticks) {
         if (mc.level == null) {
             return;
@@ -177,7 +202,8 @@ final class RtsOrders {
         markers.removeIf(m -> --m[3] <= 0);
         if (ticks % 4 == 0) {
             for (double[] m : markers) {
-                DustParticleOptions dust = m[4] == 1 ? ATTACK_MARKER : m[4] == 2 ? ATTACK_MOVE_MARKER : MARKER;
+                DustParticleOptions dust =
+                        m[4] == 1 ? ATTACK_MARKER : m[4] == 2 ? ATTACK_MOVE_MARKER : m[4] == 3 ? GATHER_MARKER : MARKER;
                 mc.level.addParticle(dust, true, m[0], m[1] + 0.2, m[2], 0, 0.05, 0);
             }
         }

@@ -14,10 +14,12 @@ import dev.strategos.core.protocol.CommandOutcome;
 import dev.strategos.core.protocol.Feedback;
 import dev.strategos.core.protocol.Fx;
 import dev.strategos.core.protocol.FxKind;
+import dev.strategos.core.protocol.Gather;
 import dev.strategos.core.protocol.Limits;
 import dev.strategos.core.protocol.MatchStateMsg;
 import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.RejectReason;
+import dev.strategos.core.protocol.SpawnBuilding;
 import dev.strategos.core.protocol.SpawnUnits;
 import dev.strategos.core.protocol.TemplateAck;
 import dev.strategos.core.protocol.TemplateSetView;
@@ -25,6 +27,7 @@ import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.protocol.WireWriter;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
+import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.ExternalDamage;
@@ -55,6 +58,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.protocol.Packet;
@@ -68,6 +72,8 @@ import net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket;
 import net.minecraft.network.protocol.game.VecDeltaCodec;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.connection.ConnectionType;
 import org.jspecify.annotations.Nullable;
@@ -590,6 +596,73 @@ public final class NetTests {
                 }
             }
         });
+    }
+
+    /**
+     * AUD-04.1: the world's edits reach those who see their cells (until fog, the match's members): a seated player gets
+     * a civic centre's placements, the cracks of the log a worker chops, rising, and the log's break with the oak log's
+     * state; a player standing beside it with no seat, the control, gets none of them.
+     */
+    @StrategosTest(timeoutTicks = 1_200)
+    public static void worldFxReachWhoSeesTheCell(GameTestHelper h) {
+        for (int y = 2; y <= 3; y++) {
+            h.setBlock(new BlockPos(8, y, 8), Blocks.OAK_LOG);
+        }
+        MatchRuntime rt = match(h);
+        Vec3 at = h.absoluteVec(new Vec3(10.5, 2, 10.5));
+        MockViewer member = MockViewer.join(h.getLevel(), "strategos-wfxin", at.x, at.y, at.z, 4);
+        MockViewer outsider = MockViewer.join(h.getLevel(), "strategos-wfxout", at.x + 1, at.y, at.z, 4);
+        seat(rt, member, 0);
+        rt.submit(
+                PlayerSlot.ADMIN,
+                new SpawnBuilding(new TemplateId("strategos:building/civic_centre"), new FactionSlot(0), 14, 14, 0));
+        rt.submit(
+                PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.WORKER, new FactionSlot(0), new Vec2d(10.5, 10.5), 1, 0));
+        int y = h.absolutePos(new BlockPos(8, 2, 8)).getY();
+        var state = new Object() {
+            boolean ordered;
+        };
+        h.onEachTick(() -> {
+            member.poll();
+            outsider.poll();
+            if (!state.ordered && handles(rt).length == 1) {
+                rt.submit(PlayerSlot.ADMIN, Gather.replace(UnitSet.of(handles(rt)), 8, y, 8));
+                state.ordered = true;
+            }
+        });
+        h.startSequence()
+                .thenWaitUntil(() -> {
+                    List<Fx.Event> got = fxOf(member, rt);
+                    long places = got.stream()
+                            .filter(e -> e.kind() == FxKind.BLOCK_PLACE)
+                            .count();
+                    List<Integer> cracks = got.stream()
+                            .filter(e -> e.kind() == FxKind.BLOCK_CRACK)
+                            .map(Fx.Event::data)
+                            .toList();
+                    List<Fx.Event> breaks = got.stream()
+                            .filter(e -> e.kind() == FxKind.BLOCK_BREAK)
+                            .toList();
+                    check(!breaks.isEmpty(), "no log broken yet");
+                    check(places > 100, "only " + places + " placements of the centre");
+                    check(cracks.size() >= 5, "only the cracks " + cracks);
+                    for (int k = 1; k < cracks.size() && k < 5; k++) {
+                        check(cracks.get(k) > cracks.get(k - 1), "the first log's cracks do not rise: " + cracks);
+                    }
+                    Fx.Event log = breaks.get(0);
+                    check(
+                            Block.stateById(log.data()).is(Blocks.OAK_LOG),
+                            "the break is of " + Block.stateById(log.data()));
+                    check(
+                            (int) Math.floor(log.x8() / 8.0) == 8 && (int) Math.floor(log.z8() / 8.0) == 8,
+                            "the break is at " + log);
+                })
+                .thenExecute(() -> {
+                    check(payloads(outsider, FxPayload.class).isEmpty(), "the outsider got fx");
+                    member.close();
+                    outsider.close();
+                })
+                .thenSucceed();
     }
 
     /** The {@code fx} events of {@code rt} the viewer was sent since its capture was last cleared. */

@@ -8,5 +8,7 @@ public enum NoticeKind {
     ORDER_FAILED,
     STUCK,
     /** One of its units died (CMB-01). */
-    UNIT_LOST
+    UNIT_LOST,
+    /** A worker found nothing more to gather within reach, or nowhere to take its load, and stands idle (ECO-05). */
+    IDLE_WORKER
 }

@@ -6,6 +6,7 @@ import dev.strategos.core.diag.MatchLog;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.Vec2d;
+import dev.strategos.core.sim.econ.CarryStore;
 import dev.strategos.core.sim.nav.PageCoord;
 import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.order.OrderQueues;
@@ -60,7 +61,39 @@ final class Snapshots {
                 treasury(s),
                 s.terrainEdits().save(),
                 s.nodes().count() > 0 ? s.nodes().save() : List.of(),
-                s.buildings().empty() ? List.of() : s.buildings().save());
+                s.buildings().empty() ? List.of() : s.buildings().save(),
+                ledger(s),
+                s.carry().empty() ? List.of() : s.carry().save(entities.highWater(), entities::handleAt));
+    }
+
+    /** The economy ledger's counters, or none while nothing was found or taken (ECO-05). */
+    private static List<Long> ledger(MatchState s) {
+        if (s.ledger().empty()) {
+            return List.of();
+        }
+        List<Long> out = new ArrayList<>();
+        for (long v : s.ledger().save()) {
+            out.add(v);
+        }
+        return out;
+    }
+
+    /**
+     * The ledger as saved; a save from before gathering that has nodes gets one whose balances hold: what its nodes hold
+     * is what was found, and nothing was taken.
+     */
+    private static void restoreLedger(MatchState state, MatchSnapshot snapshot) {
+        if (!snapshot.ledger().isEmpty()) {
+            long[] counters = new long[snapshot.ledger().size()];
+            for (int k = 0; k < counters.length; k++) {
+                counters[k] = snapshot.ledger().get(k);
+            }
+            state.ledger().restore(counters);
+            return;
+        }
+        for (int id = 1; id <= state.nodes().count(); id++) {
+            state.ledger().found(state.nodes().resource(id), state.nodes().amount(id));
+        }
     }
 
     /** The treasury's counters, or none while it is empty, so a match without an economy saves as before. */
@@ -135,6 +168,15 @@ final class Snapshots {
         if (!snapshot.buildings().isEmpty()) {
             state.restoreBuildings(snapshot.buildings()); // before the pages, so their footprints are laid over them
         }
+        for (CarryStore.Saved load : snapshot.carried()) {
+            if (!state.entities().isAlive(load.handle())) {
+                throw new IllegalArgumentException(
+                        "a saved load for " + Handle.toString(load.handle()) + ", which is no live unit");
+            }
+            state.carry().restore(Handle.index(load.handle()), load);
+        }
+        restoreLedger(state, snapshot);
+        state.restoreClaims();
         int missing = 0;
         List<TerrainPage> pages = new ArrayList<>();
         for (PageRef ref : snapshot.pages()) {

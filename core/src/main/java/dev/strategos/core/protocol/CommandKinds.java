@@ -23,8 +23,10 @@ public final class CommandKinds {
             new CommandKind<>("strategos:grant", 7, Grant.class, Grant.CODEC, Grant.WIRE, true);
     public static final CommandKind<SpawnBuilding> SPAWN_BUILDING = new CommandKind<>(
             "strategos:spawn_building", 8, SpawnBuilding.class, SpawnBuilding.CODEC, SpawnBuilding.WIRE, true);
-    public static final CommandKinds DEFAULT =
-            new CommandKinds(List.of(MOVE, STOP, SPAWN_UNITS, ATTACK, ATTACK_MOVE, FOLLOW, GRANT, SPAWN_BUILDING));
+    public static final CommandKind<Gather> GATHER =
+            new CommandKind<>("strategos:gather", 9, Gather.class, Gather.CODEC, Gather.WIRE, false);
+    public static final CommandKinds DEFAULT = new CommandKinds(
+            List.of(MOVE, STOP, SPAWN_UNITS, ATTACK, ATTACK_MOVE, FOLLOW, GRANT, SPAWN_BUILDING, GATHER));
 
     private final List<CommandKind<?>> kinds;
     private final Codec<Command> codec;

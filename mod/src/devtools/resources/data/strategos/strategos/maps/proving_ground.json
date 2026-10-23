@@ -36,8 +36,8 @@
       "z": 260
     }
   },
-  "version": 1,
-  "terrainHash": "a2424dd03e26f0159bc5e09cf099f4a3de6dc32505ff31c85a49e807accb74a8",
+  "version": 2,
+  "terrainHash": "e8cf0e6ecd4ee4d6cf5870169b83695702a4692b769e966d4ac8d7af3cbbaa6f",
   "tileSize": 32,
   "palette": [
     "minecraft:air",
@@ -54,7 +54,8 @@
     "minecraft:oak_log",
     "minecraft:oak_leaves[persistent\u003dtrue]",
     "minecraft:oak_fence_gate[facing\u003deast]",
-    "minecraft:cobblestone"
+    "minecraft:cobblestone",
+    "minecraft:sweet_berry_bush[age\u003d3]"
   ],
   "startSlots": [
     {

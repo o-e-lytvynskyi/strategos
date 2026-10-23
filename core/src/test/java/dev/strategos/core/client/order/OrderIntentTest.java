@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import dev.strategos.core.protocol.Attack;
 import dev.strategos.core.protocol.AttackMove;
 import dev.strategos.core.protocol.Follow;
+import dev.strategos.core.protocol.Gather;
 import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.QueueMode;
 import dev.strategos.core.protocol.UnitSet;
@@ -41,6 +42,16 @@ class OrderIntentTest {
                 .isEqualTo(new AttackMove(UnitSet.of(3, 7), new Vec2d(4, 5), QueueMode.REPLACE));
         assertThat(OrderIntents.context(List.of(), 0x100005, 4, 5, false, false))
                 .isNull();
+    }
+
+    /** ECO-05: a right click on a resource block gathers there, queued with Shift; none without a selection. */
+    @Test
+    void aClickOnAResourceGathersThere() {
+        assertThat(OrderIntents.gather(List.of(9, 4), 16, 70, -3, false))
+                .isEqualTo(new Gather(UnitSet.of(4, 9), 16, 70, -3, QueueMode.REPLACE));
+        assertThat(OrderIntents.gather(List.of(9), 16, 70, -3, true))
+                .isEqualTo(new Gather(UnitSet.of(9), 16, 70, -3, QueueMode.QUEUE));
+        assertThat(OrderIntents.gather(List.of(), 16, 70, -3, false)).isNull();
     }
 
     /** CAM-07.1: follow-me sends one Follow of the selection, none without one. */

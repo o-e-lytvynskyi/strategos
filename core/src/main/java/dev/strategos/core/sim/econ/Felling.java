@@ -1,6 +1,7 @@
 package dev.strategos.core.sim.econ;
 
 import dev.strategos.core.shared.CoreApi;
+import dev.strategos.core.sim.BlockCracked;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.WorldEffect;
 import dev.strategos.core.sim.nav.BlockClass;
@@ -24,9 +25,14 @@ public final class Felling {
 
     private Felling() {}
 
-    /** Takes up to {@code want} thousandths from tree {@code node}; what it gave. Logs and leaves follow. */
+    /**
+     * Takes up to {@code want} thousandths from tree {@code node}; what it gave. Logs and leaves follow, and the next log's
+     * crack shows how much of it has gone (AUD-04).
+     */
     public static long take(MatchState s, int node, long want) {
         NodeStore nodes = s.nodes();
+        int crackBefore = crack(nodes, node);
+        int goneBefore = nodes.gone(node);
         long given = nodes.take(node, want);
         long[] blocks = nodes.blocks(node);
         long per = Math.max(1, nodes.perBlock(node));
@@ -41,7 +47,31 @@ public final class Felling {
         if (felled) {
             thin(s, node, blocks);
         }
+        int crackAfter = crack(nodes, node);
+        if ((crackAfter != crackBefore || nodes.gone(node) != goneBefore)
+                && crackAfter != BlockCracked.NONE
+                && nodes.gone(node) < blocks.length) {
+            long top = blocks[nodes.gone(node)];
+            s.outputs().add(new BlockCracked(NodeStore.x(top), NodeStore.y(top), NodeStore.z(top), crackAfter));
+        }
         return given;
+    }
+
+    /**
+     * The crack of tree {@code node}'s next log, 0 to 9 by how much of its share has gone, or none when its share is
+     * whole or nothing is left. A felled log's crack goes with the block.
+     */
+    public static int crack(NodeStore nodes, int node) {
+        long amount = nodes.amount(node);
+        long per = Math.max(1, nodes.perBlock(node));
+        if (amount <= 0) {
+            return BlockCracked.NONE;
+        }
+        long inTop = amount - ((amount + per - 1) / per - 1) * per; // what the next log still holds: (0, per]
+        if (inTop >= per) {
+            return BlockCracked.NONE;
+        }
+        return (int) Math.min(9, (per - inTop) * 10 / per);
     }
 
     /** The leaves round tree {@code node} that no standing log holds any more go. */

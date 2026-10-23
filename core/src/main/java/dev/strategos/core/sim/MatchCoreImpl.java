@@ -47,7 +47,9 @@ final class MatchCoreImpl implements MatchCore {
         scheduler.register(new MotionSystem(state));
         scheduler.register(state.spatial()); // the grid's rebuild ends MOVEMENT
         scheduler.register(new CombatSystem());
+        scheduler.register(new EconomySystem());
         scheduler.register(new TerrainSystem());
+        scheduler.register(new GearSystem());
         this.finalSystem = new FinalSystem(metrics, timers, journal, ports.journal());
         scheduler.register(finalSystem);
         this.queries = new QueriesImpl(state, paths);

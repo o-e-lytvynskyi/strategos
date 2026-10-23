@@ -131,12 +131,13 @@ public final class ReplicationService {
         return new UnitDetail(matchId, q.tick(), units);
     }
 
-    /** A state's code in a summary entry: IDLE 0, WALKING 1, COMBAT 2. */
+    /** A state's code in a summary entry: IDLE 0, WALKING 1, COMBAT 2, GATHERING 3. */
     public static int stateCode(UnitState state) {
         return switch (state) {
             case IDLE -> 0;
             case WALKING -> 1;
             case COMBAT -> 2;
+            case GATHERING -> 3;
         };
     }
 }

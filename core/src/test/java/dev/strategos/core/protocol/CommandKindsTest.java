@@ -24,7 +24,8 @@ class CommandKindsTest {
                         "strategos:attack_move",
                         "strategos:follow",
                         "strategos:grant",
-                        "strategos:spawn_building");
+                        "strategos:spawn_building",
+                        "strategos:gather");
     }
 
     @Test

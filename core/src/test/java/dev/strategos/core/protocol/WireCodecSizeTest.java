@@ -92,7 +92,7 @@ class WireCodecSizeTest {
         assertThat(CommandKinds.DEFAULT.fingerprint())
                 .isEqualTo("strategos:move=1,strategos:stop=2,strategos:spawn_units=3,"
                         + "strategos:attack=4,strategos:attack_move=5,strategos:follow=6,strategos:grant=7,"
-                        + "strategos:spawn_building=8");
+                        + "strategos:spawn_building=8,strategos:gather=9");
         assertThat(CommandKinds.DEFAULT.reads("strategos:move=1,strategos:stop=2,strategos:spawn_units=3"))
                 .as("M1's journals read")
                 .isTrue();
@@ -110,9 +110,9 @@ class WireCodecSizeTest {
 
     @Test
     void refusesUnknownIdsTruncationsAndNonFinitePositions() {
-        assertThatThrownBy(() -> WireCodec.decode(COMMANDS, new byte[] {0, 9}))
+        assertThatThrownBy(() -> WireCodec.decode(COMMANDS, new byte[] {0, 10}))
                 .isInstanceOf(WireException.class)
-                .hasMessageContaining("unknown command wire id 9");
+                .hasMessageContaining("unknown command wire id 10");
         byte[] move = WireCodec.encode(COMMANDS, Move.replace(UnitSet.of(5), new Vec2d(1, 2)));
         assertThatThrownBy(() -> WireCodec.decode(COMMANDS, Arrays.copyOf(move, move.length - 1)))
                 .isInstanceOf(WireException.class);
@@ -375,6 +375,20 @@ class WireCodecSizeTest {
     }
 
     @Test
+    void aGatherRoundTripsWithinItsSize() {
+        Gather widest = new Gather(
+                UnitSet.of(java.util.stream.IntStream.range(0, UnitSet.MAX_SIZE)
+                        .map(k -> Integer.MAX_VALUE - k)
+                        .toArray()),
+                Integer.MIN_VALUE,
+                Integer.MAX_VALUE,
+                Integer.MIN_VALUE,
+                QueueMode.PUSH_FRONT);
+        assertThat(roundTrip(COMMANDS, widest)).isEqualTo(widest);
+        assertThat(size(Gather.WIRE, widest)).isLessThanOrEqualTo(Gather.WIRE.maxSize());
+    }
+
+    @Test
     void aGrantRoundTrips() {
         Grant grant = new Grant(new FactionSlot(3), "stone", Grant.MAX);
         assertThat(roundTrip(COMMANDS, grant)).isEqualTo(grant);
@@ -402,14 +416,39 @@ class WireCodecSizeTest {
         Fx one = new Fx(7, List.of(Fx.Event.at(FxKind.UNIT_HIT, 12.5, -3.25, 200)));
         assertThat(size(Fx.WIRE, one)).isEqualTo(1 + 1 + 1 + 2 + 1 + 2);
         assertThat(roundTrip(Fx.WIRE, one)).isEqualTo(one);
-        Fx.Event widest = new Fx.Event(FxKind.UNIT_DIED, Fx.MAX_EIGHTHS, Integer.MIN_VALUE, Fx.MAX_EIGHTHS);
+        Fx.Event widest =
+                new Fx.Event(FxKind.BLOCK_BREAK, Fx.MAX_EIGHTHS, Integer.MIN_VALUE, Fx.MAX_EIGHTHS, Integer.MIN_VALUE);
         Fx full = new Fx(Integer.MAX_VALUE, java.util.Collections.nCopies(Fx.MAX_EVENTS, widest));
         assertThat(size(Fx.WIRE, full)).isEqualTo(Fx.WIRE.maxSize());
         assertThat(roundTrip(Fx.WIRE, full)).isEqualTo(full);
         assertThatThrownBy(() -> new Fx(1, java.util.Collections.nCopies(Fx.MAX_EVENTS + 1, widest)))
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> new Fx.Event(FxKind.UNIT_HIT, -1, 0, 0)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new Fx.Event(FxKind.UNIT_HIT, 0, 0, 0, 3))
+                .as("a unit's event carries no datum")
+                .isInstanceOf(IllegalArgumentException.class);
     }
+
+    /**
+     * AUD-04.2: the writer's whole budget in one tick, 64 placements of states with ids past the vanilla registry's, at
+     * the far edge of a 512-block space, is one payload of at most {@value #FX_TICK_CAP} bytes.
+     */
+    @Test
+    void aSixtyFourPlacementTickFitsTheFxCap() {
+        List<Fx.Event> placed = new java.util.ArrayList<>();
+        for (int k = 0; k < Fx.MAX_EVENTS; k++) {
+            placed.add(Fx.Event.block(FxKind.BLOCK_PLACE, 511 - k % 8, 319, 511 - k / 8, 90_000 + k));
+        }
+        Fx tick = new Fx(1_000, placed);
+        assertThat(size(Fx.WIRE, tick)).isLessThanOrEqualTo(FX_TICK_CAP);
+        assertThat(roundTrip(Fx.WIRE, tick)).isEqualTo(tick);
+        Fx crack = new Fx(1, List.of(Fx.Event.block(FxKind.BLOCK_CRACK, 3, 70, 4, -1)));
+        assertThat(roundTrip(Fx.WIRE, crack)).isEqualTo(crack);
+        assertThat(size(Fx.WIRE, crack)).isEqualTo(1 + 1 + 1 + 2 + 2 + 2 + 1);
+    }
+
+    /** AUD-04.2's cap for one tick's world fx to one viewer: 64 placements in under a kilobyte. */
+    private static final int FX_TICK_CAP = 1_000;
 
     private static <T> int size(WireCodec<T> codec, T value) {
         return WireCodec.encode(codec, value).length;

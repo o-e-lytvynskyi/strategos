@@ -2,6 +2,7 @@ package dev.strategos.mod.server.tick;
 
 import dev.strategos.core.protocol.NoticeMsg;
 import dev.strategos.core.shared.Handle;
+import dev.strategos.core.sim.BlockCracked;
 import dev.strategos.core.sim.BuildingDestroyed;
 import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.Notice;
@@ -9,6 +10,7 @@ import dev.strategos.core.sim.OutputEvent;
 import dev.strategos.core.sim.TickOutputs;
 import dev.strategos.core.sim.UnitCreated;
 import dev.strategos.core.sim.UnitDied;
+import dev.strategos.core.sim.UnitGear;
 import dev.strategos.core.sim.UnitHurt;
 import dev.strategos.core.sim.UnitStateChanged;
 import dev.strategos.core.sim.UnitStruck;
@@ -16,6 +18,7 @@ import dev.strategos.core.sim.WorldEffect;
 import dev.strategos.core.sim.world.WriteSite;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.entity.UnitEntity;
+import dev.strategos.mod.server.body.GearItems;
 import dev.strategos.mod.server.body.KinematicDriver;
 import dev.strategos.mod.server.match.MatchRuntime;
 import dev.strategos.mod.server.net.Audience;
@@ -27,6 +30,7 @@ import java.util.function.Consumer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.level.block.state.BlockState;
 
 /** Applies a step's outputs to the world: fx, replies, body requests, block writes for the writer, then the poses. */
 public final class OutputAppliers {
@@ -59,18 +63,38 @@ public final class OutputAppliers {
                 }
                 case UnitDied died ->
                     rt.bodies().die(died.handle(), level.damageSources().generic());
+                case BlockCracked cracked -> {} // FxSender sent it before the outputs applied
                 case BuildingDestroyed destroyed ->
                     rt.log().info(out.tick(), "building {} fell", destroyed.handle()); // its blocks are effects
                 case WorldEffect effect -> {
                     BlockWriter writer = StrategosServer.get().writer();
                     BlockPos origin = rt.space().origin();
-                    writer.enqueue(
-                            level,
-                            new WriteSite(rt.id().value(), effect.site()),
-                            effect.priority(),
-                            new BlockPos(origin.getX() + effect.x(), effect.y(), origin.getZ() + effect.z()),
-                            writer.state(effect.state()),
-                            effect.owner());
+                    BlockPos pos = new BlockPos(origin.getX() + effect.x(), effect.y(), origin.getZ() + effect.z());
+                    BlockState state = effect.propertiesOnly()
+                            ? BlockWriter.withProperties(level.getBlockState(pos), effect.state())
+                            : writer.state(effect.state());
+                    if (state != null) { // properties the block standing there lacks: someone replaced it
+                        writer.enqueue(
+                                level,
+                                new WriteSite(rt.id().value(), effect.site()),
+                                effect.priority(),
+                                pos,
+                                state,
+                                effect.owner());
+                    }
+                }
+                case UnitGear gear -> {
+                    var core = rt.core(); // outputs come from a step, so the core is there
+                    if (core != null) {
+                        rt.bodies()
+                                .gear(
+                                        gear.handle(),
+                                        GearItems.tool(gear.tool()),
+                                        GearItems.load(
+                                                core.queries().config().rules().economy(),
+                                                gear.resource(),
+                                                gear.subtype()));
+                    }
                 }
                 case Notice notice ->
                     StrategosServer.get()
@@ -103,6 +127,8 @@ public final class OutputAppliers {
                 UnitHurt.class,
                 UnitDied.class,
                 BuildingDestroyed.class,
+                BlockCracked.class,
+                UnitGear.class,
                 WorldEffect.class,
                 Notice.class);
     }

@@ -3,7 +3,7 @@
 Where the project stands right now. The session log is in [worklog.md](worklog.md); the work
 procedure is the `strategos-dev` skill (`.claude/skills/strategos-dev/SKILL.md`).
 
-**Last update:** 2026-10-23 · **Owner last seen:** 2026-10-23 · **Current:** M3 — started 2026-10-23 at the owner's word (without windows); M1 and M2 Done
+**Last update:** 2026-10-24 · **Owner last seen:** 2026-10-24 · **Current:** M3 — started 2026-10-23 at the owner's word; M1 and M2 Done; M4 follows M3 straight on
 
 ## For the owner
 
@@ -41,7 +41,11 @@ Answer in chat or here; the next session applies the answers.
    - S10's footprint rule joins M1 as T29.
    The five far-off decisions (D-03, D-06, D-07, D-20, D-21) stay open: none is needed before M7, and two of them
    are about the licence and going public.
-6. **Needs a window, when you have one (the work does not wait for it):** `pose_high`, the camera at its top height,
+6. **Your word of 2026-10-24:** «можешь любые тесты проводить и как закончишь м3 - начинай м4, все решения
+   принимай сам, которые рекомендуешь». Any test may run, client windows included; once M3 is done its successor's
+   spec is written and M4 starts without waiting; the recommended decisions are taken and recorded here. M3's
+   window tests (its goldens) run together in its consent batch, T30, so they take the screen once.
+   **Needs a window, when one is open anyway (the work does not wait for it):** `pose_high`, the camera at its top height,
    shows the world's edge. The tilt I suggested would also hide the far markers, which need the view to reach
    160 blocks; the edge is more likely the scene's own: a fresh flat world still generating chunks when the camera
    has just risen. The fix is probably for the scene to wait for the ground, then a new `pose_high` on this Mac
@@ -69,7 +73,8 @@ Answer in chat or here; the next session applies the answers.
    read 16–26 % over this morning's baseline; `MatchBusBench`, whose code no M3 task touched, reads 14.4 µs at the
    commit before M3's code against the baseline's 12.0. The one real growth is M3 T2's relationships in template
    compilation: 6.36 ms against 5.86 at that commit (+8.6 %). No new baseline is proposed now; the next full run at
-   a quiet moment decides, and a proposal follows if the growth stays.
+   a quiet moment decides, and a proposal follows if the growth stays. At T9 (2026-10-24, past midnight) the gate
+   names only `MatchBusBench` (14.3 µs against 12.0), still untouched; the rest are within 15 %.
 
 ## Since your last visit
 
@@ -371,10 +376,11 @@ Answer in chat or here; the next session applies the answers.
 - **Milestone:** M3 First loop, started 2026-10-23 at your word, without windows; spec:
   [milestones/M3-first-loop.md](milestones/M3-first-loop.md) (31 tasks, every card `specified`).
   M1 and M2 are Done (2026-10-23).
-- **In progress:** M3 T9, gathering, dropsites and berry bushes (ECO-05), with ECO-03's worker checks.
-- **Last finished task:** M3 T8 (2026-10-23), felling and the canopy; the balance sheet is [balance/sheet.md](balance/sheet.md).
-- **Next task:** M3's tasks in the spec's order (§7.1), headless; anything needing a window goes to
-  item 6.
+- **In progress:** M3 T11–T12, placement mode and validators (BLD-02), progressive construction (BLD-03).
+- **Last finished task:** M3 T10 (2026-10-24), the world's edits as `fx`: cracks, break particles and sounds, place
+  sounds; before it T9, gathering, dropsites, berry bushes and the proving ground v2. The balance sheet is
+  [balance/sheet.md](balance/sheet.md).
+- **Next task:** M3's tasks in the spec's order (§7.1); its window tests in T30; then M4.
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 960 of 2,000 (48 %), as of 2026-10-23.
 - **Overview:** `python3 tools/roadmap.py summary`.
@@ -390,8 +396,8 @@ Nothing.
 | M0 Foundation | Accepted 2026-10-22 | Started 2026-10-21; tripwire met on day 2; 25 of 26 cards accepted, UNIT-01 closes with NET-01 (M1); the L7 demo waived by the owner |
 | M1 Movement | Done 2026-10-23 | Started 2026-10-22 on the owner's go-ahead; 29 tasks (T28, PATH-08, joined by its R3 trigger in T8; T29 by the owner's word); Accepted waits for the L7 demo |
 | M2 Command | Done 2026-10-23 | Started 2026-10-23 at the owner's word; 23 tasks; Accepted waits for `pose_high` (a window) and the L7 demo |
-| M3 First loop | In progress | Started 2026-10-23 at the owner's word, without windows; spec written the same day, 31 tasks |
-| M4–M6 (MVP) | approved | Specs are written by the assistant when each milestone starts |
+| M3 First loop | In progress | Started 2026-10-23 at the owner's word; spec written the same day, 31 tasks; T1–T10 done by 2026-10-24 |
+| M4–M6 (MVP) | approved | Specs are written by the assistant when each milestone starts; M4 follows M3 at once (the owner, 2026-10-24) |
 | M7–M15 | proposed | Approved by the owner closer to their time |
 
 ## History

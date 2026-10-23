@@ -338,11 +338,11 @@ Cards: [roadmap/M3-first-loop.md](roadmap/M3-first-loop.md#cards). 27 cards, at 
 | DATA-04 | Balance sheet: relationships, provenance and timing targets | M | DATA-02, D-11 | done |
 | ECO-01 | Resources and treasury | M | CORE-03, NET-01, D-10 | in_progress |
 | ECO-02 | Resource nodes: discovery and index | M | CORE-08, PATH-04, MAP-01 | done |
-| ECO-03 | Woodcutting on real trees, with natural canopy thinning | L | ECO-02, BLD-15, PATH-15 | in_progress |
-| ECO-05 | Gathering, dropsites and berry bushes | L | ECO-01, ECO-02, UNIT-04, BLD-01 | specified |
+| ECO-03 | Woodcutting on real trees, with natural canopy thinning | L | ECO-02, BLD-15, PATH-15 | done |
+| ECO-05 | Gathering, dropsites and berry bushes | L | ECO-01, ECO-02, UNIT-04, BLD-01 | in_progress |
 | UNIT-04 | Starting units and the worker model | S | UNIT-02, DATA-04, D-02 | done |
 | BLD-01 | Building records and blueprints | M | CORE-06, DATA-03, PATH-15 | done |
-| AUD-04 | World-edit feedback: cracks, particles and sounds | M | ECO-03, BLD-15, NET-01 | specified |
+| AUD-04 | World-edit feedback: cracks, particles and sounds | M | ECO-03, BLD-15, NET-01 | in_progress |
 | BLD-02 | Placement mode and validators | M | BLD-01, CAM-04 | specified |
 | BLD-03 | Progressive construction | M | BLD-02, UNIT-04, BLD-15 | specified |
 | ECO-06 | Population and housing | S | ECO-01, BLD-01, D-01 | specified |

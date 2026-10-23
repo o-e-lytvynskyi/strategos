@@ -101,7 +101,7 @@ class TemplateSetTest {
     }
 
     // M3: the buildings and their blueprints
-    private static final String BUILTIN_VERSION = "dca9ed65012921f761785d176b0af93697e7e3b3d1e49cadc1b4c547ec93ade5";
+    private static final String BUILTIN_VERSION = "297996301e098c2d43af5a18b31d4bd9b538f54fde68af1dbcfc337376b40d08";
 
     private static TemplateSet set(UnitTemplate template) {
         return new TemplateSet(List.of(template));

@@ -11,6 +11,9 @@ class FxMappingTest {
     @Test
     void everyOrderOutcomeAndCombatEventMapsToItsSound() {
         for (FxKind kind : FxKind.values()) {
+            if (kind.carriesData()) {
+                continue; // a block's own sound type (AUD-04)
+            }
             assertThat(Sounds.of(kind).sound()).startsWith("minecraft:");
             assertThat(Sounds.of(kind).category()).isEqualTo(Sounds.Category.UNITS);
         }

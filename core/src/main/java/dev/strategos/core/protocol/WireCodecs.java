@@ -246,6 +246,7 @@ public final class WireCodecs {
                         case ORDER_FAILED -> 0;
                         case STUCK -> 1;
                         case UNIT_LOST -> 2;
+                        case IDLE_WORKER -> 3;
                     });
         }
 
@@ -256,6 +257,7 @@ public final class WireCodecs {
                 case 0 -> NoticeKind.ORDER_FAILED;
                 case 1 -> NoticeKind.STUCK;
                 case 2 -> NoticeKind.UNIT_LOST;
+                case 3 -> NoticeKind.IDLE_WORKER;
                 default -> throw new WireException("unknown notice kind " + code);
             };
         }
@@ -273,6 +275,9 @@ public final class WireCodecs {
                     switch (value) {
                         case UNIT_HIT -> 0;
                         case UNIT_DIED -> 1;
+                        case BLOCK_CRACK -> 2;
+                        case BLOCK_BREAK -> 3;
+                        case BLOCK_PLACE -> 4;
                     });
         }
 
@@ -282,6 +287,9 @@ public final class WireCodecs {
             return switch (code) {
                 case 0 -> FxKind.UNIT_HIT;
                 case 1 -> FxKind.UNIT_DIED;
+                case 2 -> FxKind.BLOCK_CRACK;
+                case 3 -> FxKind.BLOCK_BREAK;
+                case 4 -> FxKind.BLOCK_PLACE;
                 default -> throw new WireException("unknown fx kind " + code);
             };
         }

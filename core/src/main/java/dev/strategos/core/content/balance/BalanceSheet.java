@@ -10,6 +10,7 @@ import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.content.ValuePath;
 import dev.strategos.core.shared.TemplateId;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -34,8 +35,25 @@ public final class BalanceSheet {
     /** One number of a concrete template. */
     public record Row(TemplateId template, String path, BigDecimal value, String source, String provenance) {}
 
-    /** A {@code strategos:resource_yield} entry (ECO-02): the block or tag, its kind, what it yields and how much. */
-    public record Yield(String key, String kind, String resource, String subtype, BigDecimal amount) {}
+    /**
+     * A {@code strategos:resource_yield} entry (ECO-02): the block or tag, its kind, what it yields and how much, and
+     * for forage what it regrows a second (ECO-05).
+     */
+    public record Yield(
+            String key, String kind, String resource, String subtype, BigDecimal amount, BigDecimal regrow) {
+        /** An entry that does not regrow. */
+        public Yield(String key, String kind, String resource, String subtype, BigDecimal amount) {
+            this(key, kind, resource, subtype, amount, BigDecimal.ZERO);
+        }
+    }
+
+    /**
+     * One load a gatherer carries (ECO-05): its template, the resource and subtype, the rate a second and the most it
+     * carries, and how long a full load takes at that rate: {@code ticks} = ceil(20 × capacity ÷ rate), as the core
+     * gathers it.
+     */
+    public record Load(
+            TemplateId template, String resource, String subtype, BigDecimal rate, BigDecimal capacity, long ticks) {}
 
     /** The provenance key of the resource yields: notes by entry key. */
     public static final String YIELDS = "resource_yield";
@@ -50,6 +68,7 @@ public final class BalanceSheet {
     private final List<Yield> yields = new ArrayList<>();
     private final List<String> yieldNotes = new ArrayList<>();
     private final Map<String, List<String>> gatherers = new TreeMap<>();
+    private final List<Load> loads = new ArrayList<>();
     private final Map<String, List<String>> spenders = new TreeMap<>();
     private final List<String> problems = new ArrayList<>();
 
@@ -117,6 +136,7 @@ public final class BalanceSheet {
                 }
                 sheet.sinks(t.id(), path, value);
             }
+            sheet.loads(t.id(), flat);
             for (String path : CorePaths.all()) {
                 if (t.isBuilding() || paths.contains(path)) { // the core's unit defaults mean nothing to a building
                     continue;
@@ -161,6 +181,11 @@ public final class BalanceSheet {
         return List.copyOf(rows);
     }
 
+    /** The loads gatherers carry, by template, resource and subtype. */
+    public List<Load> loads() {
+        return List.copyOf(loads);
+    }
+
     public List<Derivation> overrides() {
         return List.copyOf(overrides);
     }
@@ -168,6 +193,31 @@ public final class BalanceSheet {
     /** What the build refuses; empty for a good sheet. */
     public List<String> problems() {
         return List.copyOf(problems);
+    }
+
+    /** Template {@code template}'s loads: each rate above 0 with the capacity for its resource. */
+    private void loads(TemplateId template, JsonObject flat) {
+        JsonElement rates = at(flat, "ResourceGatherer/rates");
+        if (rates == null || !rates.isJsonObject()) {
+            return;
+        }
+        for (Map.Entry<String, JsonElement> r :
+                new TreeMap<>(rates.getAsJsonObject().asMap()).entrySet()) {
+            if (!r.getValue().isJsonObject()) {
+                continue;
+            }
+            JsonElement cap = at(flat, "ResourceGatherer/capacities/" + r.getKey());
+            BigDecimal capacity = cap == null ? BigDecimal.ZERO : new BigDecimal(cap.getAsString());
+            for (Map.Entry<String, JsonElement> st :
+                    new TreeMap<>(r.getValue().getAsJsonObject().asMap()).entrySet()) {
+                BigDecimal rate = new BigDecimal(st.getValue().getAsString());
+                if (rate.signum() <= 0 || capacity.signum() <= 0) {
+                    continue;
+                }
+                BigDecimal ticks = capacity.multiply(BigDecimal.valueOf(20)).divide(rate, 0, RoundingMode.CEILING);
+                loads.add(new Load(template, r.getKey(), st.getKey(), rate, capacity, ticks.longValueExact()));
+            }
+        }
     }
 
     /** Gathered resources and who gathers them, and spent resources and who spends them, for {@link #markdown()}. */
@@ -261,7 +311,8 @@ public final class BalanceSheet {
         if (yields.isEmpty()) {
             sb.append("None.\n");
         } else {
-            sb.append("| Block or tag | Kind | Yields | Amount | Provenance |\n|---|---|---|---|---|\n");
+            sb.append("| Block or tag | Kind | Yields | Amount | Regrows a second | Provenance |\n");
+            sb.append("|---|---|---|---|---|---|\n");
             for (int i = 0; i < yields.size(); i++) {
                 Yield y = yields.get(i);
                 String what = y.resource().isEmpty() ? "nothing" : y.resource() + " (" + y.subtype() + ")";
@@ -274,7 +325,32 @@ public final class BalanceSheet {
                         .append(" | ")
                         .append(plain(y.amount()))
                         .append(" | ")
+                        .append(y.regrow().signum() > 0 ? plain(y.regrow()) : "–")
+                        .append(" | ")
                         .append(cell(yieldNotes.get(i)))
+                        .append(" |\n");
+            }
+        }
+        sb.append("\n## Gathering\n\n");
+        if (loads.isEmpty()) {
+            sb.append("No template gathers yet.\n");
+        } else {
+            sb.append(
+                    "A full load takes ceil(20 × carried ÷ rate) ticks of gathering, walking not counted (ECO-05).\n\n");
+            sb.append("| Template | Resource | Rate a second | Carries | A load in |\n|---|---|---|---|---|\n");
+            for (Load l : loads) {
+                sb.append("| ")
+                        .append(l.template().value())
+                        .append(" | ")
+                        .append(l.resource())
+                        .append(" (")
+                        .append(l.subtype())
+                        .append(") | ")
+                        .append(plain(l.rate()))
+                        .append(" | ")
+                        .append(plain(l.capacity()))
+                        .append(" | ")
+                        .append(seconds(l.ticks()))
                         .append(" |\n");
             }
         }
@@ -296,6 +372,12 @@ public final class BalanceSheet {
             }
         }
         return sb.toString();
+    }
+
+    /** {@code ticks} as seconds, to the tenth, and the ticks: "16.7 s (334 ticks)". */
+    private static String seconds(long ticks) {
+        BigDecimal s = BigDecimal.valueOf(ticks).divide(BigDecimal.valueOf(20), 1, RoundingMode.HALF_UP);
+        return s.toPlainString() + " s (" + ticks + " ticks)";
     }
 
     public String csv() {

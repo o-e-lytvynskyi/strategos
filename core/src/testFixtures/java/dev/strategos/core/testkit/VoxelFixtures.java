@@ -21,6 +21,9 @@ public final class VoxelFixtures {
     public static final short WATER = BlockClass.of(0, BlockClass.PASSABLE | BlockClass.WATER);
     public static final short LAVA = BlockClass.of(0, BlockClass.PASSABLE | BlockClass.LAVA | BlockClass.HAZARD);
     public static final short LEAVES = BlockClass.of(16, BlockClass.LEAVES);
+    /** A sweet berry bush: no collision, a hazard to walk into, as the mod's table classifies it. */
+    public static final short BUSH = BlockClass.of(0, BlockClass.PASSABLE | BlockClass.HAZARD);
+
     public static final short MAGMA = BlockClass.of(16, BlockClass.STANDABLE | BlockClass.HAZARD);
     public static final short SOUL_SAND = BlockClass.of(14, BlockClass.STANDABLE | BlockClass.SLOW);
     public static final short LADDER = BlockClass.of(16, BlockClass.CLIMBABLE);

@@ -6,16 +6,20 @@ import dev.strategos.core.sim.nav.MaterialKind;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.IntPredicate;
 
 /**
  * A match's resource nodes (ECO-02, 04 §11.2): trees and forage plants found in its terrain at prepare. Node ids are 1
  * up, 0 none; a node keeps its kind, the resource and subtype it yields (indices into the match's {@link EconomyRules}),
  * the amount left in thousandths and the amount each block yields, where its work centres (a trunk's base), its blocks
  * top-down with how many are gone, and its work slots: the cells round its base, each claimed by a unit's handle or
- * free. Not commanded, so not entities (M3 spec §1.6 row 3).
+ * free. A bush also regrows (ECO-05): so many thousandths a second, kept in a fixed-point remainder, up to the amount it
+ * was found with, while it holds any. Not commanded, so not entities (M3 spec §1.6 row 3).
  */
 @CoreApi
 public final class NodeStore {
+    private static final long TICKS_PER_SECOND = 20;
+
     private int count;
     private boolean discovered;
     private MaterialKind[] kind = new MaterialKind[16];
@@ -30,6 +34,9 @@ public final class NodeStore {
     private int[] gone = new int[16];
     private int[][] slots = new int[16][];
     private int[][] claims = new int[16][];
+    private long[] most = new long[16];
+    private long[] regrow = new long[16];
+    private int[] growth = new int[16];
 
     /** A position packed as nodes store it: match-local x and z, absolute y. */
     public static long pack(int x, int y, int z) {
@@ -80,6 +87,9 @@ public final class NodeStore {
             this.gone = Arrays.copyOf(this.gone, n);
             this.slots = Arrays.copyOf(this.slots, n);
             this.claims = Arrays.copyOf(this.claims, n);
+            this.most = Arrays.copyOf(this.most, n);
+            this.regrow = Arrays.copyOf(this.regrow, n);
+            this.growth = Arrays.copyOf(this.growth, n);
         }
         int k = count++;
         this.kind[k] = kind;
@@ -93,6 +103,9 @@ public final class NodeStore {
         this.blocks[k] = blocks.clone();
         this.slots[k] = slots.clone();
         this.claims[k] = new int[slots.length];
+        this.most[k] = amount;
+        this.regrow[k] = 0;
+        this.growth[k] = 0;
         return k + 1;
     }
 
@@ -173,6 +186,38 @@ public final class NodeStore {
         return claims[at(id)][slot];
     }
 
+    /** The amount the node was found with, in thousandths: what a bush regrows up to. */
+    public long most(int id) {
+        return most[at(id)];
+    }
+
+    /** What the node regrows a second, in thousandths; 0 for a tree. */
+    public long regrow(int id) {
+        return regrow[at(id)];
+    }
+
+    /** Node {@code id} regrows {@code perSecond} thousandths a second (a bush, ECO-05). */
+    public void setRegrow(int id, long perSecond) {
+        regrow[at(id)] = Math.max(0, perSecond);
+    }
+
+    /**
+     * One tick of regrowth: a node that holds some and less than it was found with gains its rate's share, the
+     * remainder kept for the next tick; what it gained, in thousandths.
+     */
+    public long grow(int id) {
+        int k = at(id);
+        if (regrow[k] == 0 || amount[k] <= 0 || amount[k] >= most[k]) {
+            growth[k] = 0;
+            return 0;
+        }
+        long acc = growth[k] + regrow[k];
+        long gained = Math.min(acc / TICKS_PER_SECOND, most[k] - amount[k]);
+        growth[k] = (int) (acc - (acc / TICKS_PER_SECOND) * TICKS_PER_SECOND);
+        amount[k] += gained;
+        return gained;
+    }
+
     /** Whether the node yields nothing more. */
     public boolean exhausted(int id) {
         return amount[at(id)] <= 0;
@@ -191,6 +236,14 @@ public final class NodeStore {
 
     /** {@code handle} takes the free slot nearest (x, z), the lowest on a tie; its index, or -1 when none is free. */
     public int claimNearest(int id, int handle, double x, double z) {
+        return claimNearest(id, handle, x, z, cell -> true);
+    }
+
+    /**
+     * {@code handle} takes the free slot nearest (x, z) whose cell {@code standable} accepts, the lowest on a tie; its
+     * index, or -1 when none is free. A slot the handle holds already is kept.
+     */
+    public int claimNearest(int id, int handle, double x, double z, IntPredicate standable) {
         int k = at(id);
         int best = -1;
         double bestD = Double.POSITIVE_INFINITY;
@@ -198,7 +251,7 @@ public final class NodeStore {
             if (claims[k][s] == handle) {
                 return s; // it holds one already
             }
-            if (claims[k][s] != 0) {
+            if (claims[k][s] != 0 || !standable.test(slots[k][s])) {
                 continue;
             }
             double dx = (slots[k][s] >>> 16) + 0.5 - x;
@@ -213,6 +266,29 @@ public final class NodeStore {
             claims[k][best] = handle;
         }
         return best;
+    }
+
+    /** Whether node {@code id} has a free slot whose cell {@code standable} accepts, or one {@code handle} holds. */
+    public boolean hasRoom(int id, int handle, IntPredicate standable) {
+        int k = at(id);
+        for (int s = 0; s < slots[k].length; s++) {
+            if (claims[k][s] == handle || (claims[k][s] == 0 && standable.test(slots[k][s]))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** The node whose slot {@code handle} holds, 0 for none: a restored unit's claim. */
+    public int claimedBy(int handle) {
+        for (int k = 0; k < count; k++) {
+            for (int c : claims[k]) {
+                if (c == handle) {
+                    return k + 1;
+                }
+            }
+        }
+        return 0;
     }
 
     /** {@code handle} gives up any slot it holds on the node. */
@@ -230,25 +306,82 @@ public final class NodeStore {
         int k = at(id);
         long given = Math.max(0, Math.min(want, amount[k]));
         amount[k] -= given;
+        if (amount[k] == 0) {
+            growth[k] = 0;
+        }
         return given;
+    }
+
+    /** The node one of whose standing blocks is at {@code packed}, or 0. */
+    public int holding(long packed) {
+        for (int k = 0; k < count; k++) {
+            for (int i = gone[k]; i < blocks[k].length; i++) {
+                if (blocks[k][i] == packed) {
+                    return k + 1;
+                }
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * The node of {@code kind} (and, unless {@code resource} is -1, of that resource and subtype) with a standing block
+     * nearest {@code packed}, within {@code reach} blocks; the lower id on a tie; 0 for none.
+     */
+    public int nearestBlock(long packed, MaterialKind kind, int resource, int subtype, double reach) {
+        int x = x(packed);
+        int y = y(packed);
+        int z = z(packed);
+        int best = 0;
+        double bestD = reach * reach;
+        for (int k = 0; k < count; k++) {
+            if (this.kind[k] != kind
+                    || (resource >= 0 && (this.resource[k] != resource || this.subtype[k] != subtype))) {
+                continue;
+            }
+            for (int i = gone[k]; i < blocks[k].length; i++) {
+                double dx = x(blocks[k][i]) - x;
+                double dy = y(blocks[k][i]) - y;
+                double dz = z(blocks[k][i]) - z;
+                double d = dx * dx + dy * dy + dz * dz;
+                if (d < bestD || (d == bestD && best == 0)) {
+                    best = k + 1;
+                    bestD = d;
+                }
+            }
+        }
+        return best;
+    }
+
+    /** The sum of what the nodes of {@code resource} hold, in thousandths. */
+    public long remaining(int resource) {
+        long sum = 0;
+        for (int k = 0; k < count; k++) {
+            if (this.resource[k] == resource) {
+                sum += amount[k];
+            }
+        }
+        return sum;
     }
 
     /**
      * Block {@code packed} of the node went without the core (ECO-02, 04 §11.4: a player broke it): it leaves the node
-     * and takes its yield, credited to nobody. False if the node holds no such block still standing.
+     * and takes its yield, credited to nobody: what it lost, in thousandths, or -1 if the node holds no such block still
+     * standing.
      */
-    public boolean lose(int id, long packed) {
+    public long lose(int id, long packed) {
         int k = at(id);
         for (int i = gone[k]; i < blocks[k].length; i++) {
             if (blocks[k][i] == packed) {
                 long[] b = blocks[k];
                 System.arraycopy(b, i + 1, b, i, b.length - i - 1);
                 blocks[k] = Arrays.copyOf(b, b.length - 1);
-                amount[k] = Math.max(0, amount[k] - perBlock[k]);
-                return true;
+                long lost = Math.min(amount[k], perBlock[k]);
+                amount[k] -= lost;
+                return lost;
             }
         }
-        return false;
+        return -1;
     }
 
     /** The node's next block is gone: the top one first. */
@@ -270,6 +403,11 @@ public final class NodeStore {
             for (int c : claims[k]) {
                 x = Hasher.mix(x, c);
             }
+            if (regrow[k] != 0) { // only bushes regrow (ECO-05), so trees hash as before
+                x = Hasher.mix(x, regrow[k]);
+                x = Hasher.mix(x, growth[k]);
+                x = Hasher.mix(x, most[k]);
+            }
         }
         return x;
     }
@@ -287,7 +425,10 @@ public final class NodeStore {
             List<Long> blocks,
             int gone,
             List<Integer> slots,
-            List<Integer> claims) {
+            List<Integer> claims,
+            long most,
+            long regrow,
+            int growth) {
         public Saved {
             blocks = List.copyOf(blocks);
             slots = List.copyOf(slots);
@@ -320,7 +461,10 @@ public final class NodeStore {
                     b,
                     gone[k],
                     s,
-                    c));
+                    c,
+                    most[k],
+                    regrow[k],
+                    growth[k]));
         }
         return out;
     }
@@ -352,6 +496,9 @@ public final class NodeStore {
                     s);
             int k = id - 1;
             gone[k] = n.gone();
+            most[k] = n.most() > 0 ? n.most() : n.amount(); // a save from before regrowth: its amount
+            regrow[k] = n.regrow();
+            growth[k] = n.growth();
             for (int i = 0; i < s.length && i < n.claims().size(); i++) {
                 claims[k][i] = n.claims().get(i);
             }

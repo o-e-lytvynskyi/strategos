@@ -1,13 +1,16 @@
 package dev.strategos.mod.server.world;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import dev.strategos.core.protocol.FxKind;
 import dev.strategos.core.sim.world.WritePriority;
 import dev.strategos.core.sim.world.WriteScheduler;
 import dev.strategos.core.sim.world.WriteSite;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import net.minecraft.commands.arguments.blocks.BlockStateParser;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -17,6 +20,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.Property;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -54,14 +58,21 @@ public final class BlockWriter {
         void wrote(ServerLevel level, long tick, WriteSite site, BlockPos pos, BlockState state);
     }
 
-    /** A write waiting: where, what, who protects it (0 for nobody), and whether the shape pass covers it. */
-    private record Pending(BlockPos pos, BlockState state, int owner, boolean shaped) {}
+    /** A write waiting: where, what, who protects it (0 for nobody), whether the shape pass covers it, its priority. */
+    private record Pending(BlockPos pos, BlockState state, int owner, boolean shaped, WritePriority priority) {}
+
+    /**
+     * A write the match's viewers see and hear (AUD-04): a block broken (a node's removal, a building's collapse) or
+     * placed (construction), with the state that went or came, by its id.
+     */
+    public record Written(BlockPos pos, FxKind kind, int stateId) {}
 
     /** One level's queue, protected blocks, and what each site wrote since its last shape pass. */
     private static final class LevelWrites {
         final WriteScheduler<Pending> scheduler = new WriteScheduler<>();
         final ProtectedBlockIndex protectedBlocks = new ProtectedBlockIndex();
         final Map<WriteSite, LongOpenHashSet> written = new HashMap<>();
+        final Map<Integer, List<Written>> fx = new TreeMap<>();
     }
 
     public BlockWriter(int budget, int importBudget) {
@@ -74,7 +85,10 @@ public final class BlockWriter {
             ServerLevel level, WriteSite site, WritePriority priority, BlockPos pos, BlockState state, int owner) {
         writesOf(level)
                 .scheduler
-                .enqueue(site, priority, new Pending(pos.immutable(), state, owner, priority != WritePriority.IMPORT));
+                .enqueue(
+                        site,
+                        priority,
+                        new Pending(pos.immutable(), state, owner, priority != WritePriority.IMPORT, priority));
     }
 
     /** A block state written as Minecraft prints it, such as {@code minecraft:oak_stairs[facing=east]}; cached. */
@@ -91,6 +105,40 @@ public final class BlockWriter {
         } catch (CommandSyntaxException e) {
             throw new IllegalArgumentException("not a block state: " + text + " (" + e.getMessage() + ")", e);
         }
+    }
+
+    /**
+     * {@code current} with the properties {@code text} names, {@code [age=2]} or {@code [age=2,facing=east]} (a
+     * core's property-only effect, ECO-05); null when the block has no such property or value, or the text is malformed.
+     */
+    public static @Nullable BlockState withProperties(BlockState current, String text) {
+        if (text.length() < 2 || text.charAt(0) != '[' || text.charAt(text.length() - 1) != ']') {
+            return null;
+        }
+        BlockState out = current;
+        for (String pair : text.substring(1, text.length() - 1).split(",", -1)) {
+            int eq = pair.indexOf('=');
+            if (eq <= 0) {
+                return null;
+            }
+            Property<?> property = current.getBlock()
+                    .getStateDefinition()
+                    .getProperty(pair.substring(0, eq).trim());
+            if (property == null) {
+                return null;
+            }
+            BlockState next = with(out, property, pair.substring(eq + 1).trim());
+            if (next == null) {
+                return null;
+            }
+            out = next;
+        }
+        return out;
+    }
+
+    private static <T extends Comparable<T>> @Nullable BlockState with(
+            BlockState state, Property<T> property, String value) {
+        return property.getValue(value).map(v -> state.setValue(property, v)).orElse(null);
     }
 
     /** At the start of each server tick: the shared budget refills. */
@@ -124,6 +172,12 @@ public final class BlockWriter {
     private void write(ServerLevel level, LevelWrites writes, long tick, WriteSite site, Pending w) {
         Observer o = observer;
         long start = System.nanoTime();
+        if (site.match() != 0) {
+            Written seen = seen(level.getBlockState(w.pos()), w);
+            if (seen != null) {
+                writes.fx.computeIfAbsent(site.match(), k -> new ArrayList<>()).add(seen);
+            }
+        }
         ownWrite.around(() -> {
             level.setBlock(w.pos(), w.state(), FLAGS);
             if (o != null) {
@@ -174,6 +228,29 @@ public final class BlockWriter {
         }));
     }
 
+    /** What a write shows: a removal by a node or a collapse breaks the block there, construction places one. */
+    private static @Nullable Written seen(BlockState before, Pending w) {
+        boolean removes = w.state().isAir() && !before.isAir();
+        if (removes && (w.priority() == WritePriority.NODE_REMOVAL || w.priority() == WritePriority.DAMAGE_STAGE)) {
+            return new Written(w.pos(), FxKind.BLOCK_BREAK, Block.getId(before));
+        }
+        if (!w.state().isAir() && w.priority() == WritePriority.CONSTRUCTION) {
+            return new Written(w.pos(), FxKind.BLOCK_PLACE, Block.getId(w.state()));
+        }
+        return null;
+    }
+
+    /** The writes of {@code level} seen since the last call, by match id, ascending; the record is cleared. */
+    public Map<Integer, List<Written>> takeWritten(ServerLevel level) {
+        LevelWrites writes = levels.get(level.dimension());
+        if (writes == null || writes.fx.isEmpty()) {
+            return Map.of();
+        }
+        Map<Integer, List<Written>> out = new TreeMap<>(writes.fx);
+        writes.fx.clear();
+        return out;
+    }
+
     /** A disposed match: its waiting writes are dropped and its blocks are no longer protected. */
     public void forget(ServerLevel level, int match) {
         LevelWrites writes = levels.get(level.dimension());
@@ -183,6 +260,7 @@ public final class BlockWriter {
         writes.scheduler.drop(match);
         writes.protectedBlocks.releaseMatch(match);
         writes.written.keySet().removeIf(site -> site.match() == match);
+        writes.fx.remove(match);
     }
 
     public OwnWrite ownWrite() {

@@ -23,7 +23,7 @@ public final class NodeDiscovery {
     private NodeDiscovery() {}
 
     /** One material block found: where, what it yields. */
-    private record Found(long key, int x, int y, int z, int resource, int subtype, long amount) {}
+    private record Found(long key, int x, int y, int z, int resource, int subtype, long amount, long regrow) {}
 
     /**
      * Discovers into the empty {@code store} from page {@code p}'s slice ({@code slices.apply(p)}, null for a page not
@@ -62,7 +62,8 @@ public final class NodeDiscovery {
                     int band = m.voxel(k) % height;
                     int x = px * VoxelSlice.SIDE + column / VoxelSlice.SIDE;
                     int z = pz * VoxelSlice.SIDE + column % VoxelSlice.SIDE;
-                    Found f = new Found(key(x, band, z), x, minY + band, z, resource, subtype, mat.amount());
+                    Found f = new Found(
+                            key(x, band, z), x, minY + band, z, resource, subtype, mat.amount(), mat.regrow());
                     (mat.kind() == MaterialKind.LOG ? logs : forage).add(f);
                 }
             }
@@ -80,7 +81,7 @@ public final class NodeDiscovery {
         }
         forage.sort((a, b) -> Long.compare(a.key(), b.key()));
         for (Found f : forage) {
-            store.add(
+            int id = store.add(
                     MaterialKind.FORAGE,
                     f.resource(),
                     f.subtype(),
@@ -91,6 +92,7 @@ public final class NodeDiscovery {
                     f.y(),
                     new long[] {NodeStore.pack(f.x(), f.y(), f.z())},
                     ring(new int[] {NodeStore.cell(f.x(), f.z())}));
+            store.setRegrow(id, f.regrow());
         }
         store.markDiscovered();
     }

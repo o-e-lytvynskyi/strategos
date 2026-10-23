@@ -52,13 +52,13 @@ class MaterialTableTest {
 
     @Test
     void anyBlockWithAnEntryHasItsMaterialInEveryState() {
-        ResourceYield melon = new ResourceYield("forage", "food", "fruit", 40);
+        ResourceYield melon = new ResourceYield("forage", "food", "fruit", 40, 0);
         MaterialTable table = MaterialTable.build(block -> block == Blocks.MELON ? melon : null);
 
         assertThat(table.of(Blocks.MELON.defaultBlockState()))
                 .isEqualTo(new Material(MaterialKind.FORAGE, "food", "fruit", 40_000));
         assertThat(table.of(Blocks.OAK_LOG.defaultBlockState())).isNull();
-        ResourceYield log = new ResourceYield("log", "wood", "tree", 20);
+        ResourceYield log = new ResourceYield("log", "wood", "tree", 20, 0);
         MaterialTable logs = MaterialTable.build(block -> block == Blocks.OAK_LOG ? log : null);
         Blocks.OAK_LOG
                 .getStateDefinition()

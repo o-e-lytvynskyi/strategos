@@ -119,6 +119,9 @@ public final class StateHasher {
         if (!s.buildings().empty()) { // only once a building stood (BLD-01)
             h = s.buildings().mix(h);
         }
+        if (!s.carry().empty()) { // only while a unit carries something (ECO-05)
+            h = s.carry().mix(h, s.entities().highWater());
+        }
 
         ArrayDeque<CommandEnvelope> pending = s.pendingCommands();
         h = Hasher.mix(h, pending.size());

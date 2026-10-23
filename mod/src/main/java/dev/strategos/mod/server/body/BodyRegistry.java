@@ -3,6 +3,7 @@ package dev.strategos.mod.server.body;
 import dev.strategos.core.shared.MatchId;
 import dev.strategos.core.sim.MatchQueries;
 import dev.strategos.core.sim.UnitView;
+import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.entity.UnitEntity;
 import dev.strategos.mod.entity.UnitSpawnData;
 import dev.strategos.mod.registry.ModEntityTypes;
@@ -16,6 +17,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.item.ItemStack;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -42,6 +44,7 @@ public final class BodyRegistry {
     private final IntRBTreeSet reported = new IntRBTreeSet();
     private final List<UnitEntity> stale = new ArrayList<>();
     private final List<UnitEntity> dying = new ArrayList<>();
+    private final Int2ObjectRBTreeMap<ItemStack[]> gear = new Int2ObjectRBTreeMap<>();
 
     public BodyRegistry(MatchId id, MatchSpace space) {
         this.id = id;
@@ -146,11 +149,28 @@ public final class BodyRegistry {
     public void die(int handle, DamageSource source) {
         wanted.remove(handle);
         parked.remove(handle);
+        gear.remove(handle);
         UnitEntity body = bodies.remove(handle);
         if (body != null) {
             body.markRemovedByRegistry();
             body.dieAsUnit(source);
             dying.add(body);
+        }
+    }
+
+    /**
+     * Unit {@code handle} holds {@code tool} and {@code load} (ECO-05): its body now, and every body made for it later,
+     * until the gear changes or the unit dies.
+     */
+    public void gear(int handle, ItemStack tool, ItemStack load) {
+        if (tool.isEmpty() && load.isEmpty()) {
+            gear.remove(handle);
+        } else {
+            gear.put(handle, new ItemStack[] {tool, load});
+        }
+        UnitEntity body = bodies.get(handle);
+        if (body != null && body.hold(tool, load)) {
+            StrategosServer.get().net().equipment(body, tool, load);
         }
     }
 
@@ -207,6 +227,10 @@ public final class BodyRegistry {
         body.setYHeadRot(unit.yaw());
         body.setYBodyRot(unit.yaw());
         body.setOnGround(true); // the tracker records it at creation and sends a teleport on every flip
+        ItemStack[] held = gear.get(handle);
+        if (held != null) {
+            body.hold(held[0], held[1]); // not yet in the level: its spawn pairing sends them
+        }
         // The spawn packet carries the synched values the constructor set (health); left dirty, the tracker's first
         // update would send them again, one entity-data packet per body.
         var unused = body.getEntityData().packDirty();

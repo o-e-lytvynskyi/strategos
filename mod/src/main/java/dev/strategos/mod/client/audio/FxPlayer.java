@@ -5,21 +5,29 @@ import dev.strategos.core.client.audio.Sounds;
 import dev.strategos.core.client.camera.CameraRig;
 import dev.strategos.core.protocol.Feedback;
 import dev.strategos.core.protocol.Fx;
+import dev.strategos.core.protocol.FxKind;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.mod.client.rts.RtsMode;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.state.BlockState;
 import org.jspecify.annotations.Nullable;
 
 /**
  * Plays the match's sounds on this client (AUD-01): an {@code fx} event where it happened, loud enough to carry from
- * the RTS camera's height and at most six of a kind a tick; an order's acknowledgement as an interface sound. Nothing
- * here reaches the server, and the server plays none of these.
+ * the RTS camera's height and at most six of a kind a tick; an order's acknowledgement as an interface sound. The
+ * world's edits (AUD-04) show as vanilla shows them: a crack through {@code ClientLevel#destroyBlockProgress}
+ * (ClientLevel.java:686) under a breaker id of the block's own, a break's particles through {@code
+ * addDestroyBlockEffect} (962) and its sound type's break sound, a placement's place sound, both at vanilla's volume
+ * and pitch for blocks. Nothing here reaches the server, and the server plays none of these.
  */
 public final class FxPlayer {
     private final RtsMode rts;
@@ -37,6 +45,10 @@ public final class FxPlayer {
         }
         CameraRig rig = rts.active() ? rts.rig() : null;
         for (Fx.Event e : fx.events()) {
+            if (e.kind().carriesData()) {
+                block(level, join, e, rig);
+                continue;
+            }
             Sounds.Cue cue = Sounds.of(e.kind());
             SoundEvent sound = sound(cue);
             if (sound == null || !budget.take(e.kind(), level.getGameTime())) {
@@ -56,6 +68,43 @@ public final class FxPlayer {
                     false);
             played++;
         }
+    }
+
+    private void block(ClientLevel level, MatchJoin join, Fx.Event e, @Nullable CameraRig rig) {
+        BlockPos pos = BlockPos.containing(
+                join.originX() + e.x8() / 8.0, join.originY() + e.y8() / 8.0, join.originZ() + e.z8() / 8.0);
+        if (e.kind() == FxKind.BLOCK_CRACK) {
+            level.destroyBlockProgress(breaker(pos), pos, e.data());
+            return;
+        }
+        BlockState state = Block.stateById(e.data());
+        if (e.kind() == FxKind.BLOCK_BREAK) {
+            level.destroyBlockProgress(breaker(pos), pos, -1); // the crack goes with the block
+        }
+        if (!budget.take(e.kind(), level.getGameTime())) {
+            return;
+        }
+        SoundType type = state.getSoundType();
+        if (e.kind() == FxKind.BLOCK_BREAK) {
+            level.addDestroyBlockEffect(pos, state);
+        }
+        float base = (type.getVolume() + 1.0F) / 2.0F; // vanilla's for a broken or placed block
+        float volume = rig == null
+                ? base
+                : Sounds.volume(base, rig.height(), rig.pose().pitch());
+        level.playLocalSound(
+                pos,
+                e.kind() == FxKind.BLOCK_BREAK ? type.getBreakSound() : type.getPlaceSound(),
+                SoundSource.BLOCKS,
+                volume,
+                type.getPitch() * 0.8F,
+                false);
+        played++;
+    }
+
+    /** A breaker id of the block's own, negative so it never meets an entity's: one crack per block. */
+    private static int breaker(BlockPos pos) {
+        return Integer.MIN_VALUE | (Long.hashCode(pos.asLong()) & Integer.MAX_VALUE);
     }
 
     /** An order's acknowledgement, accepted or refused. */

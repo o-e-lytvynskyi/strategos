@@ -323,7 +323,8 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
      rebuild (L3).
 - **Tests:** L0, L1, L3, L5 · **Fixtures:** tree fixtures per species, 2 × 2 trees and touching
   canopies · **Depends on:** ECO-02, BLD-15, PATH-15 · **Size:** L · **Tier:** T0
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-10-24 — M3 T8–T9: a worker gathers the sheet's load in the sheet's time with the mod's own templates (1), logs leave top-down on ten species' shapes, 2 × 2 trunks included (2), a neighbour's leaves stay (3), a 2 × 2 tree takes its twelve workers (4), four vanilla-grown trees felled with random ticks off never keep a leaf vanilla would decay for a second (5), and a unit walks through a felled tree's corridor with no page job (6); its L5 soak is M3's whole-match soak (spec §1.6 rows 36–44)
 
 #### ECO-05 · Gathering, dropsites and berry bushes
 - **Value:** Workers gather, carry and deliver on their own, pick the next node when one runs out,
@@ -354,7 +355,7 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   10. The owner confirms that tool and load read at that distance (L7, acceptance).
 - **Tests:** L0, L1, L3, L4 (consent), L5, L7 · **Depends on:** ECO-01, ECO-02, UNIT-04, BLD-01 ·
   **Size:** L · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 #### UNIT-04 · Starting units and the worker model
 - **Value:** Workers gather and build, spearmen fight, and who else may gather follows the worker
@@ -415,7 +416,7 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   4. The owner's checklist for chopping, mining and building passes (L7, acceptance).
 - **Tests:** L0, L1, L3, L4 (consent), L7 · **Depends on:** ECO-03, BLD-15, NET-01 · **Size:** M ·
   **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 ### Slice 3.2 · Building and training
 

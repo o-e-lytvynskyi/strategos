@@ -15,9 +15,13 @@ public final class ModDataMaps {
                     Ids.id("nav_class"), Registries.BLOCK, NavClassOverride.CODEC)
             .build();
 
-    /** What a block is to the economy (ECO-02): a log, leaves, rock, ore, a forage plant, a crop, and its yield. */
+    /**
+     * What a block is to the economy (ECO-02): a log, leaves, rock, ore, a forage plant, a crop, and its yield. Synced to
+     * clients, not required of them (ECO-05): a right click on such a block gathers there.
+     */
     public static final DataMapType<Block, ResourceYield> RESOURCE_YIELD = DataMapType.builder(
                     Ids.id("resource_yield"), Registries.BLOCK, ResourceYield.CODEC)
+            .synced(ResourceYield.CODEC, false)
             .build();
 
     private ModDataMaps() {}

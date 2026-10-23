@@ -11,14 +11,19 @@ import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.combat.Damage;
 import dev.strategos.core.sim.combat.HealthStore;
 import dev.strategos.core.sim.econ.Amount;
+import dev.strategos.core.sim.econ.CarryStore;
 import dev.strategos.core.sim.econ.Costs;
 import dev.strategos.core.sim.econ.EconomyRules;
+import dev.strategos.core.sim.econ.Forage;
+import dev.strategos.core.sim.econ.GatherRates;
+import dev.strategos.core.sim.econ.Ledger;
 import dev.strategos.core.sim.econ.NodeDiscovery;
 import dev.strategos.core.sim.econ.NodeIndex;
 import dev.strategos.core.sim.econ.NodeStore;
 import dev.strategos.core.sim.econ.Treasury;
 import dev.strategos.core.sim.nav.BlockClass;
 import dev.strategos.core.sim.nav.FootprintOverlay;
+import dev.strategos.core.sim.nav.Material;
 import dev.strategos.core.sim.nav.MaterialKind;
 import dev.strategos.core.sim.nav.MobilityClass;
 import dev.strategos.core.sim.nav.PageBuilder;
@@ -61,6 +66,9 @@ public final class MatchState {
     private final HealthStore health = new HealthStore();
     private final Treasury treasury;
     private final Costs costs;
+    private final GatherRates gatherRates;
+    private final CarryStore carry = new CarryStore();
+    private final Ledger ledger;
     private final List<Damage> damage = new ArrayList<>();
     private final MatchBus bus = new MatchBus();
     private final StatService stats;
@@ -112,6 +120,9 @@ public final class MatchState {
         }
         this.costs = new Costs(economy);
         costs.swap(stats);
+        this.gatherRates = new GatherRates(economy);
+        gatherRates.swap(stats);
+        this.ledger = new Ledger(economy.size());
         this.spatial = new SpatialQueries(config.bounds(), templates);
         this.input = TickInputs.empty(0);
         this.surfaces =
@@ -192,6 +203,10 @@ public final class MatchState {
                 b.minY(),
                 i -> sliceBytes[i] == null ? null : VoxelSlice.decode(sliceBytes[i]));
         nodeIndex = null;
+        for (int id = 1; id <= nodes.count(); id++) {
+            ledger.found(nodes.resource(id), nodes.amount(id));
+        }
+        Forage.showAll(this);
     }
 
     /**
@@ -233,6 +248,31 @@ public final class MatchState {
         }
         out.sort((a, c) -> Long.compare(a[0], c[0]));
         return out;
+    }
+
+    /**
+     * The material at match-local (x, z) and absolute height y as the core now sees its terrain, or null: none, or one
+     * the core has taken away.
+     */
+    public @Nullable Material materialAt(int x, int y, int z) {
+        MatchBounds b = config.bounds();
+        if (x < 0 || z < 0 || x >= b.sizeX() || z >= b.sizeZ()) {
+            return null;
+        }
+        int page = (z >> 4) * surfaces.pagesX() + (x >> 4);
+        if (sliceBytes[page] == null) {
+            return null;
+        }
+        VoxelSlice slice = VoxelSlice.decode(sliceBytes[page]);
+        int band = y - b.minY();
+        if (band < 0 || band >= slice.height()) {
+            return null;
+        }
+        int edited = terrainEdits.classAt(page, TerrainEdits.cell(x & 15, band, z & 15));
+        if (edited >= 0 && BlockClass.is((short) edited, BlockClass.PASSABLE)) {
+            return null;
+        }
+        return slice.materials().at(((x & 15) * 16 + (z & 15)) * slice.height() + band);
     }
 
     /** The match's resource nodes (ECO-02). */
@@ -369,7 +409,10 @@ public final class MatchState {
                 boolean shown = slice.materials().at(column * slice.height() + band) != null;
                 boolean ours = terrainEdits.classAt(page, TerrainEdits.cell(x & 15, band, z & 15)) >= 0;
                 if (!shown && !ours) {
-                    nodes.lose(id, blocks[k]);
+                    long lost = nodes.lose(id, blocks[k]);
+                    if (lost > 0) {
+                        ledger.lost(nodes.resource(id), lost);
+                    }
                 }
             }
         }
@@ -520,6 +563,7 @@ public final class MatchState {
         ai.ensureCapacity(size);
         paths.ensureCapacity(size);
         health.ensureCapacity(size);
+        carry.ensureCapacity(size);
     }
 
     /** The damage each unit has taken (CMB-01). */
@@ -547,8 +591,77 @@ public final class MatchState {
      * (path results and waiting requests for it are dropped on arrival); a unit spawned there later resets every store.
      */
     public void removeUnit(int handle) {
-        health.reset(Handle.index(handle));
+        int i = Handle.index(handle);
+        health.reset(i);
+        releaseClaim(i, handle);
+        dropLoad(i);
         entities.destroy(handle);
+    }
+
+    /** Unit {@code i} ({@code handle}) gives up the work slot it holds, if any (ECO-05). */
+    public void releaseClaim(int i, int handle) {
+        int node = carry.claimed(i);
+        if (node != 0) {
+            nodes.release(node, handle);
+            carry.setClaimed(i, 0);
+        }
+    }
+
+    /** Unit {@code i} drops what it carries: lost to everyone, as the ledger records. */
+    public void dropLoad(int i) {
+        int resource = carry.resource(i);
+        long dropped = carry.clear(i);
+        if (dropped > 0) {
+            ledger.dropped(resource, dropped);
+        }
+    }
+
+    /** The claims a restored match's nodes hold, put back on their units (ECO-05). */
+    void restoreClaims() {
+        for (int id = 1; id <= nodes.count(); id++) {
+            for (int slot = 0; slot < nodes.slotCount(id); slot++) {
+                int handle = nodes.claim(id, slot);
+                if (handle != 0 && entities.isAlive(handle)) {
+                    carry.setClaimed(Handle.index(handle), id);
+                }
+            }
+        }
+    }
+
+    /** What each unit carries and the slot it holds (ECO-05). */
+    public CarryStore carry() {
+        return carry;
+    }
+
+    /** Where gathered resources come from and go (ECO-05). */
+    public Ledger ledger() {
+        return ledger;
+    }
+
+    /** Gathering rates and carry capacities through the modifiers (ECO-05). */
+    public GatherRates gatherRates() {
+        return gatherRates;
+    }
+
+    /**
+     * The first resource balance that does not hold (ECO-05, {@link Ledger}), or null: checked in FINAL each step, the
+     * treasury's beside it.
+     */
+    public @Nullable String economyBroken() {
+        if (ledger.empty() && carry.empty()) {
+            return null;
+        }
+        for (int r = 0; r < ledger.resources(); r++) {
+            long gathered = 0;
+            for (int f = 0; f < treasury.factions(); f++) {
+                gathered += treasury.gathered(f, r);
+            }
+            String broken = ledger.broken(r, nodes.remaining(r), carry.total(r, entities.highWater()), gathered);
+            if (broken != null) {
+                return broken;
+            }
+        }
+        return null;
     }
 
     public long tick() {
@@ -705,6 +818,7 @@ public final class MatchState {
         templates = set;
         stats.swap(set);
         costs.swap(stats);
+        gatherRates.swap(stats);
         spatial.swap(set);
     }
 
