@@ -10,10 +10,11 @@ import org.junit.jupiter.api.Test;
 class TemplateSetTest {
 
     @Test
-    void builtinHoldsTheDebugWalkerAndTheInfantry() {
+    void builtinHoldsTheDebugWalkerTheInfantryAndTheWorker() {
         TemplateSet set = TemplateSet.builtin();
         UnitTemplate walker = set.byId(TemplateSet.DEBUG_WALKER);
         UnitTemplate infantry = set.byId(TemplateSet.INFANTRY);
+        UnitTemplate worker = set.byId(TemplateSet.WORKER);
 
         assertThat(walker).isNotNull();
         assertThat(walker.netIndex()).as("ids sort debug_walker first").isZero();
@@ -27,9 +28,15 @@ class TemplateSetTest {
         assertThat(infantry.walkSpeed()).as("3/16, exact in binary").isEqualTo(0.1875);
         assertThat(infantry.classes()).containsExactly("Infantry", "Organic", "Spearman", "Unit");
         assertThat(set.byIndex(0)).isSameAs(walker);
-        assertThat(set.all()).containsExactly(walker, infantry);
+        assertThat(worker).isNotNull();
+        assertThat(worker.netIndex())
+                .as("ids sort the worker after the infantry: M2's indices stay")
+                .isEqualTo(2);
+        assertThat(worker.classes()).containsExactly("Builder", "Gatherer", "Organic", "Unit", "Worker");
+        assertThat(set.all()).containsExactly(walker, infantry, worker);
         assertThat(set.byId(new TemplateId("strategos:unit/nobody"))).isNull();
-        assertThat(set.tokens().all()).containsExactly("Infantry", "Organic", "Spearman", "Unit");
+        assertThat(set.tokens().all())
+                .containsExactly("Builder", "Gatherer", "Infantry", "Organic", "Spearman", "Unit", "Worker");
         assertThat(set.valuePaths().byPath("UnitMotion/walkSpeed")).isNotNull();
     }
 
@@ -80,11 +87,11 @@ class TemplateSetTest {
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> set(new UnitTemplate(walker.id(), 0, walker.bodyType(), 0, 0.6f, 1.8f)))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> TemplateSet.builtin().byIndex(2)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> TemplateSet.builtin().byIndex(3)).isInstanceOf(IllegalArgumentException.class);
     }
 
     private static final String BUILTIN_VERSION =
-            "f784a0c49affac3fa85348725fc8c9c26f2de0b0ee281e54c8f0e2dce6d8a647"; // M2: the spearman
+            "b99c4facfd893f776c9f82334fe7141520ee8a9239ac165e0bb6651edbf63713"; // M3: the worker, the spearman's cost
 
     private static TemplateSet set(UnitTemplate template) {
         return new TemplateSet(List.of(template));

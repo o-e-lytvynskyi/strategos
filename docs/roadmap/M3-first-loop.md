@@ -368,7 +368,8 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   3. A spawned worker and spearman carry their template's stats, read through the modifier
      pipeline (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** UNIT-02, DATA-04, D-02 · **Size:** S · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-23 — M3 T3: the worker template, gathering and building as the `Gatherer` and `Builder` class tokens read through the modifier pipeline (1; spec §1.6 row 24), both templates on the balance sheet (2), a spawned worker and spearman with their values in a GameTest (3); a worker hit while idle runs 8 blocks from the blow
 
 #### BLD-01 · Building records and blueprints
 - **Value:** Buildings are real structures with roles (dropsite, housing, training) that every

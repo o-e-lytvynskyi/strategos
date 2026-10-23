@@ -95,7 +95,7 @@ same. The verdict answers "is this fun?" before M4 to M6 deepen the systems (dec
 | Card | Task | Checks (level) |
 |---|---|---|
 | DATA-04 | T2 | 1 `BalanceSheetTest.aRelationshipChangesEveryDerivedValue` (L1) · 2 `BalanceSheetTest.theCommittedSheetIsTheOneTheModsDataGivesAndADiffShowsTheChangedNumber` (L1) · 3 `BalanceSheetTest.anOverrideNeedsAMarkerAndAReasonAndIsListed` (L1) · 4 `BalanceSheetTest.everyValueHasProvenance` (L1) · 5 `BalanceSheetTest.everyGatherableResourceIsSpentTwice` (L1) · 6 the timing targets in `docs/balance/sheet.md` (D) |
-| UNIT-04 | T3 | 1 `WorkerModelTest.gatheringAndBuildingFollowClassTokens` (L1) · 2 both templates in the sheet (L1) · 3 `unittests.spawned_worker_and_spearman_read_their_stats` (L3) |
+| UNIT-04 | T3 | 1 `WorkerModelTest.gatheringAndBuildingFollowClassTokens` (L1) · 2 `WorkerModelTest.bothTemplatesAreOnTheBalanceSheet` (L1) · 3 `contenttests.spawned_worker_and_spearman_read_their_stats` (L3) |
 | ECO-01 | T4 | 1 `TreasuryInvariantTest` over 200 seeded streams (L1) · 2 `PaymentTest.anUnpayableCommandNamesTheMissingAmounts` (L1) · 3 `ecotests.faction_state_reaches_its_own_faction_only` (L3) · 4 `WireCodecSizeTest.aFactionStateRoundTripsWithinItsCap`, its audience declared (L2) |
 | ECO-02 | T6 | 1 `NodeDiscoveryTest` against a reference flood fill on synthetic slices (L1) · 2 `NodeIndexTest.nearestEqualsBruteForce` on random maps (L1) · 3 `NodeSlotsTest` over seeded competitions (L1) · 4 `ecotests.a_resource_yield_entry_makes_a_node` (L3) · 5 `perftests.node_index_proving_ground` under 2 s (L6) |
 | BLD-01 | T7 | 1 `BlueprintRoundTripTest` (L2) · 2 `BlueprintLintTest` (L2) · 3 `buildtests.civic_centre_accepts_everything_and_houses` (L3) · 4 `buildtests.units_path_around_a_footprint` with no page job (L3) · 5 `buildtests.building_state_owner_fields_to_the_owner_only` (L3) |
@@ -159,6 +159,7 @@ Rows written while specifying; tasks append theirs.
 | 21 | T1: the health check | `HfsmTransitionsTest` (935 lines) split into `UnitTreeTransitionsTest` (the unit tree's 63 rows) and `HfsmTransitionsTest` (the framework's 19 cases on a test tree): 82 cases, as before. `PerfTests` (883) keeps its tests, so their names (`perftests.*`, which the perf filter and the docs use) stay; their verdicts, JSON files, the soaks' judgement and the foreign-load window moved to `PerfVerdicts`: 681 lines. `RtsMode` (780) keeps its public calls; the orders it sends (the right click with its preview and markers, stop, the first-person keys, the crosshair pick) moved to `RtsOrders`: 605 lines. `MotionSystem` is 776 lines since T29 moved its footing out, so it stays as it is. `verify` green, the golden journals unchanged; `perftests.snapshot_500_budget_g` passes through the moved verdict code; `rts_select` and `rts_first_person` on CI's Linux route check `RtsOrders` |
 | 22 | T2: where relationships live | In the templates, not in a separate file: a value is `{"$derive": {"from", "path", "factor", "offset", "round"}, "note": ".."}`, `from` a template or `"self"`, evaluated exactly in decimals after flattening, per concrete template, so one written in an abstract parent derives in each child from its own values; a chain of them resolves in any order, a cycle is a problem naming it. A child sets a derived value only with `{"$override": x, "reason": ".."}`; a plain number, an `$op` or an object over it is a problem, as is an override of a value nothing derives. Markers never reach a set: the flattened JSON a journal or a client gets holds the numbers, so `fromFlattened` and every older journal are unchanged. Provenance notes for the numbers templates set live in `strategos/balance/provenance.json`, keyed by the template that sets each (a mixin or a parent), with the key `core` for the core's defaults, which the sheet lists for every path a template leaves out; a derived value's note is its relationship's. The timing targets are `strategos/balance/targets.json`. Costs are `Cost/resources/<resource>`, beside `Cost/population` and `Cost/time`, so the sink check reads resources by their path |
 | 23 | T2: tests and the sheet | `BalanceSheetTest` (6): a relationship's factor changed changes the cost of both children that inherit it, rounded half up to its step (DATA-04.1); a chain through three templates and a cycle; the committed `docs/balance/sheet.md` and `sheet.csv` equal what the mod's data gives, the data compiles to the built-in set, and a changed spearman's hack shows in the CSV diff as two rows, its own and the pierce derived from it (DATA-04.2); an override needs its marker and reason and is listed with what the formula gives (.3); a number without a note fails, a derived one takes its relationship's, and the mod's data has a note for every row (.4); a gathered resource spent by one template fails, by two passes (.5). The first relationships: a spearman's pierce is its hack, and its pierce resistance its hack resistance; the flattened set is unchanged, so the template SHA and the golden journals are too. The sheet's first targets: first house by 1:30, barracks by 4:00, the bot's first wave from 8:00, a match within 30:00 (DATA-04.6) |
+| 24 | T3: the worker | `unit/worker`: `+Worker +Gatherer +Builder +Organic`, 50 hit points, `Behaviour/flee` 8 (a new core path, 0 to 32, default 0), 60 food, one population, 10 s; the spearman now costs the worker's food (derived), 40 wood and 1.5 × the worker's time (derived, 15 s). Who gathers and builds is `StatService#canGather` and `#canBuild`: the `Gatherer` and `Builder` tokens as modifiers leave them, so a faction modifier that adds `Gatherer` to its spearmen makes them gather (D-02's citizen-soldiers as data). Fleeing: a unit with no melee attack and a flee distance, hit while idle, takes up `OrderKind.FLEE` (code 6, saved as `flee`) before its orders, to the point that far from it straight away from the attacker, walked as a move; there, it goes back to its next order or stands. The gathering and building states take it up the same way (T9, T12). The worker draws as the others do, the placeholder Steve, until ART-01. The new ids sort after M2's, so their net indices stay (0, 1) and the worker is 2; the set's SHA changed (`TemplateSetTest`), the golden journals did not, since they carry their own sets. Building ids sort before `unit/`: T7 pins the indices (§9 R10). Tests: `WorkerModelTest` (3; UNIT-04.1, .2 and the flight), `contenttests.spawned_worker_and_spearman_read_their_stats` (UNIT-04.3) |
 
 ### 1.7 Consent plan
 
@@ -416,8 +417,8 @@ report lists placement, writer and `fx` times.
   `sheet.csv`; `balanceSheet` (§1.6 rows 22–23). **Verification:** `verify`.
 
 #### T3 · Starting units and the worker model — UNIT-04
-- **Files:** `unit/worker.json`; class tokens `Gatherer`, `Builder`; the sheet's rows; `unittests`.
-  **Verification:** `verify`.
+- **Files:** `unit/worker.json`; class tokens `Gatherer`, `Builder`; `Behaviour/flee` and `Fleeing`; the sheet's
+  rows; `WorkerModelTest`, `contenttests` (§1.6 row 24). **Verification:** `verify`.
 
 #### T4 · Resources and treasury — ECO-01
 - **Files:** `core.sim.econ` (`Amount`, `Treasury`, `Cost`, payment); resources in data; the
@@ -500,7 +501,7 @@ report lists placement, writer and `fx` times.
 
 ### 7.3 Progress
 
-- [x] T1 (2026-10-23) · [x] T2 (2026-10-23) · [ ] T3 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11
+- [x] T1 (2026-10-23) · [x] T2 (2026-10-23) · [x] T3 (2026-10-23) · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11
 - [ ] T12 · [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17 · [ ] T18 · [ ] T19 · [ ] T20 · [ ] T21
 - [ ] T22 · [ ] T23 · [ ] T24 · [ ] T25 · [ ] T26 · [ ] T27 · [ ] T28 · [ ] T29 · [ ] T30 · [ ] T31
 
@@ -537,6 +538,7 @@ The roadmap's Done gate, then the owner's acceptance.
 | R7 | Pacing misses 30 minutes | the headless telemetry | Tune the sheet (DATA-04), never code |
 | R8 | A golden journal's hash changes with the economy | `GoldenJournalTest` | Empty stores hash as before (§0.3); else re-record with a reason |
 | R9 | Client tasks cannot be checked without a window | CI's Linux route fails to show it | The view-model's L1 test and the scenario on CI; the rest waits for T30, and the owner is told |
+| R10 | New template ids shift the net indices saves and the built-in set rely on (`building/` sorts before `unit/`) | `TemplateSetTest`, the released fixtures | The built-in set and a session's table start from a pinned order (M2's ids first), new ids appended (T7) |
 
 ---
 

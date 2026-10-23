@@ -7,7 +7,8 @@ package dev.strategos.core.content;
  * at least 1, a resistance level within ±20 (0.9^20 lets 12 % through, 0.9^-20 eight times as much, CMB-01). A melee
  * attack (CMB-02) deals its hack, pierce and crush at its reach, in blocks between the two bodies' edges, a wind-up
  * after it starts and then every period, in ticks; a unit whose amounts are all 0 has none. A unit's vision range is
- * where it notices enemies to fight. Paths the core does not read are unbounded.
+ * where it notices enemies to fight, and its flee distance how far a unit with no melee attack runs from a blow (0 to 32
+ * blocks). Paths the core does not read are unbounded.
  */
 public final class CorePaths {
     public static final String WALK_SPEED = "UnitMotion/walkSpeed";
@@ -23,6 +24,9 @@ public final class CorePaths {
     public static final String MELEE_PREPARE = "Attack/Melee/prepare";
     public static final String MELEE_REPEAT = "Attack/Melee/repeat";
     public static final String VISION = "Vision/range";
+    /** How far a unit without a melee attack runs from a blow, in blocks; 0 stands (UNIT-04). */
+    public static final String FLEE = "Behaviour/flee";
+
     public static final double DEFAULT_HEALTH = 100;
     public static final double MAX_RESISTANCE = 20;
     public static final double DEFAULT_REACH = 1;
@@ -45,14 +49,23 @@ public final class CorePaths {
                 MELEE_REACH,
                 MELEE_PREPARE,
                 MELEE_REPEAT,
-                VISION);
+                VISION,
+                FLEE);
     }
 
     private CorePaths() {}
 
     public static double min(String path) {
         return switch (path) {
-            case WALK_SPEED, TURN_RATE, MELEE_HACK, MELEE_PIERCE, MELEE_CRUSH, MELEE_REACH, MELEE_PREPARE, VISION -> 0;
+            case WALK_SPEED,
+                    TURN_RATE,
+                    MELEE_HACK,
+                    MELEE_PIERCE,
+                    MELEE_CRUSH,
+                    MELEE_REACH,
+                    MELEE_PREPARE,
+                    VISION,
+                    FLEE -> 0;
             case HEALTH, MELEE_REPEAT -> 1;
             case RESIST_HACK, RESIST_PIERCE, RESIST_CRUSH -> -MAX_RESISTANCE;
             default -> Double.NEGATIVE_INFINITY;
@@ -66,6 +79,7 @@ public final class CorePaths {
             case MELEE_REACH -> 8;
             case MELEE_PREPARE, MELEE_REPEAT -> 200;
             case VISION -> 64;
+            case FLEE -> 32;
             case RESIST_HACK, RESIST_PIERCE, RESIST_CRUSH -> MAX_RESISTANCE;
             default -> Double.POSITIVE_INFINITY;
         };

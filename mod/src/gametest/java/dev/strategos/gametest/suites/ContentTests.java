@@ -10,10 +10,16 @@ import static dev.strategos.gametest.suites.Units.unit;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import dev.strategos.core.content.CorePaths;
 import dev.strategos.core.content.RawTemplate;
 import dev.strategos.core.content.TemplateProblem;
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.protocol.SpawnUnits;
+import dev.strategos.core.shared.FactionSlot;
+import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.TemplateId;
+import dev.strategos.core.shared.Vec2d;
+import dev.strategos.core.sim.stats.StatBreakdown;
 import dev.strategos.gametest.StrategosTest;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.server.content.ServerTemplates;
@@ -26,6 +32,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
  * DATA-03.3 and .4 in a real server (spec §7.3): a reload's templates handed over as the listener's apply hands them.
  * A set with errors, or one that drops a live unit's template, is refused and the server keeps its set; a good one
  * changes a walking unit's speed from the next tick. Each runs alone in its batch: the server's set is server-wide.
+ * UNIT-04.3 reads a worker's and a spearman's values from the bundled set, in a batch of its own.
  */
 public final class ContentTests {
     private static final String UNITS = "data/strategos/strategos/templates/unit/";
@@ -153,6 +160,61 @@ public final class ContentTests {
                     check(server.templates().set().version().equals(before), "the bundled set loads back as another");
                 })
                 .thenSucceed();
+    }
+
+    /**
+     * UNIT-04.3: a worker and a spearman spawned from the server's bundled set carry their templates' values, read
+     * through the modifier pipeline: the worker's 50 hit points, flight of 8 blocks and no attack, the spearman's 100,
+     * none and 3 hack; and only the worker gathers and builds.
+     */
+    @StrategosTest(batch = "content_units", timeoutTicks = 100)
+    public static void spawnedWorkerAndSpearmanReadTheirStats(GameTestHelper h) {
+        MatchRuntime rt = match(h);
+        rt.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.WORKER, new FactionSlot(0), new Vec2d(8.5, 8.5), 1, 0));
+        rt.submit(
+                PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.INFANTRY, new FactionSlot(0), new Vec2d(12.5, 8.5), 1, 0));
+        h.startSequence()
+                .thenWaitUntil(() -> check(handles(rt).length == 2, "not both spawned yet"))
+                .thenExecute(() -> {
+                    int worker = -1;
+                    int spearman = -1;
+                    var templates = core(rt).queries().templates();
+                    for (int handle : handles(rt)) {
+                        var id = templates
+                                .byIndex(unit(rt, handle).templateIndex())
+                                .id();
+                        if (id.equals(TemplateSet.WORKER)) {
+                            worker = handle;
+                        } else if (id.equals(TemplateSet.INFANTRY)) {
+                            spearman = handle;
+                        }
+                    }
+                    check(worker != -1 && spearman != -1, "a worker and a spearman: " + worker + ", " + spearman);
+                    stat(rt, worker, CorePaths.HEALTH, 50);
+                    stat(rt, worker, CorePaths.FLEE, 8);
+                    stat(rt, worker, CorePaths.MELEE_HACK, 0);
+                    stat(rt, spearman, CorePaths.HEALTH, 100);
+                    stat(rt, spearman, CorePaths.FLEE, 0);
+                    stat(rt, spearman, CorePaths.MELEE_HACK, 3);
+                    var classes = core(rt).queries()
+                            .templates()
+                            .byIndex(unit(rt, worker).templateIndex())
+                            .classes();
+                    check(
+                            classes.contains("Gatherer") && classes.contains("Builder"),
+                            "the worker's classes " + classes);
+                    var soldier = core(rt).queries()
+                            .templates()
+                            .byIndex(unit(rt, spearman).templateIndex())
+                            .classes();
+                    check(!soldier.contains("Gatherer") && !soldier.contains("Builder"), "the spearman's " + soldier);
+                })
+                .thenSucceed();
+    }
+
+    private static void stat(MatchRuntime rt, int handle, String path, double expected) {
+        StatBreakdown b = core(rt).queries().stats(handle, path);
+        check(b != null && b.result() == expected, "unit " + handle + " " + path + ": " + b + ", not " + expected);
     }
 
     /** The loaded data packs' templates, the bundled ones in a GameTest server, as a reload reads them. */

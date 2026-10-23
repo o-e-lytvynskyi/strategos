@@ -52,7 +52,25 @@ final class BuiltinTemplates {
                 "pierce": { "$derive": { "from": "self", "path": "Resistance/hack" }, "note": "Shield and padding stop a thrust as well as a cut" },
                 "crush": 2
               },
+              "Cost": {
+                "resources": {
+                  "food": { "$derive": { "from": "strategos:unit/worker", "path": "Cost/resources/food" }, "note": "A soldier eats what a worker does" },
+                  "wood": 40
+                },
+                "population": 1,
+                "time": { "$derive": { "from": "strategos:unit/worker", "path": "Cost/time", "factor": 1.5 }, "note": "Drilling a spearman takes half again a worker's training" }
+              },
               "Body": { "skin": "strategos:units/infantry" }
+            }
+            """;
+    static final String WORKER = """
+            {
+              "parent": "strategos:template/unit_base",
+              "Identity": { "name": "strategos.unit.worker", "classes": "+Worker +Gatherer +Builder +Organic" },
+              "Health": { "max": 50 },
+              "Behaviour": { "flee": 8 },
+              "Cost": { "resources": { "food": 60 }, "population": 1, "time": 10 },
+              "Body": { "skin": "strategos:units/worker" }
             }
             """;
 
@@ -63,7 +81,8 @@ final class BuiltinTemplates {
                 raw("strategos:template/unit_base", UNIT_BASE),
                 raw("strategos:template/unit_infantry", UNIT_INFANTRY),
                 raw("strategos:unit/debug_walker", DEBUG_WALKER),
-                raw("strategos:unit/infantry", INFANTRY)));
+                raw("strategos:unit/infantry", INFANTRY),
+                raw("strategos:unit/worker", WORKER)));
         if (!result.ok()) {
             throw new IllegalStateException("the builtin templates do not compile: " + result.problems());
         }

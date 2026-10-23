@@ -24,7 +24,7 @@ import org.jspecify.annotations.Nullable;
  * <pre>
  * INDIVIDUAL                     OrderReceived: the state of the order's kind (an attack's afresh)
  *                                StopOrdered: IDLE
- *   IDLE               every 10  think: an enemy in sight is engaged; Attacked: hit back
+ *   IDLE               every 10  think: an enemy in sight is engaged; Attacked: hit back, or flee
  *   WALKING            every 5   Arrived: the order is done; Stuck at its last rung: the order failed
  *                                PathInvalidated: ask for a path again once allowed
  *   WALKING_AND_FIGHTING every 5 as WALKING, and think: an enemy in sight is engaged; Attacked: hit back
@@ -43,7 +43,8 @@ import org.jspecify.annotations.Nullable;
  * IDLE and WALKING keep M0's codes, 0 and 1, so a match hashes as in M0, and M0's names, so M0's saves load. An
  * engagement the unit takes up itself goes before its orders ({@link OrderKind#ENGAGE}), so when it ends the unit goes
  * back to what it was doing: walking and fighting on, or standing idle. Approaching and chasing report WALKING, for the
- * movement systems walk them; striking reports COMBAT. Units without a melee attack never engage. A message
+ * movement systems walk them; striking reports COMBAT. Units without a melee attack never engage; hit while idle, one
+ * with a flee distance runs that far from the blow ({@link OrderKind#FLEE}, walked as a move, before its orders). A message
  * no state handles, such as an arrival while idle, is dropped. GATHER and BUILD (M3) add their subtrees under
  * INDIVIDUAL, each entered through {@link #stateFor} from its order kind.
  */
@@ -77,7 +78,7 @@ public final class UnitAi {
                                 .thinkEvery(10)
                                 .think(UnitAi::engageNearest)
                                 .on(StopOrdered.class, (ctx, m) -> {}) // nothing to stop
-                                .on(Attacked.class, (ctx, m) -> Melee.retaliate(ctx, m.attacker()))
+                                .on(Attacked.class, (ctx, m) -> hit(ctx, m.attacker()))
                                 .build(),
                         StateDef.<MatchState>child(WALKING, INDIVIDUAL)
                                 .thinkEvery(5)
@@ -165,6 +166,15 @@ public final class UnitAi {
         }
     }
 
+    /** Hit by {@code attacker} (a handle): a unit that can fight hits back, one that cannot runs, if it ever does. */
+    private static void hit(Context<MatchState> ctx, int attacker) {
+        if (ctx.host().stats().canMelee(ctx.unit())) {
+            Melee.retaliate(ctx, attacker);
+        } else {
+            Fleeing.away(ctx, attacker);
+        }
+    }
+
     private static void giveUp(Context<MatchState> ctx, Stuck m) {
         if (m.rung() == Stuck.GIVE_UP) {
             finishOrder(ctx, true);
@@ -204,7 +214,7 @@ public final class UnitAi {
     /** The state that carries out an order of {@code kind} ({@link OrderKind}). */
     static StateId stateFor(int kind) {
         return switch (kind) {
-            case OrderKind.MOVE -> WALKING;
+            case OrderKind.MOVE, OrderKind.FLEE -> WALKING;
             case OrderKind.ATTACK, OrderKind.ENGAGE -> COMBAT;
             case OrderKind.ATTACK_MOVE -> WALKING_AND_FIGHTING;
             case OrderKind.FOLLOW -> FOLLOW;

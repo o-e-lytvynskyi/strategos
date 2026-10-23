@@ -57,6 +57,12 @@ public final class StatService {
     private double[] max = new double[0];
     private static final String IDENTITY_CLASSES = "Identity/classes";
 
+    /** The class token of units that gather (UNIT-04). */
+    public static final String GATHERER = "Gatherer";
+
+    /** The class token of units that build and repair (UNIT-04). */
+    public static final String BUILDER = "Builder";
+
     private int walkSpeed;
     private int health;
     private int[] resistance = new int[3];
@@ -65,6 +71,7 @@ public final class StatService {
     private int prepare;
     private int repeat;
     private int vision;
+    private int flee;
     private int classesPath;
     private int turnRate;
     private StatBlock[] blocks = new StatBlock[0];
@@ -154,6 +161,7 @@ public final class StatService {
         this.prepare = path(CorePaths.MELEE_PREPARE);
         this.repeat = path(CorePaths.MELEE_REPEAT);
         this.vision = path(CorePaths.VISION);
+        this.flee = path(CorePaths.FLEE);
         this.classesPath = tokenPath(IDENTITY_CLASSES);
         this.blocks = new StatBlock[count * factions];
         for (int k = 0; k < blocks.length; k++) {
@@ -227,6 +235,21 @@ public final class StatService {
     /** How far unit {@code index} notices enemies, in blocks. */
     public double vision(int index) {
         return read(index, vision);
+    }
+
+    /** How far unit {@code index} runs from a blow when it cannot hit back, in blocks; 0 for none (UNIT-04). */
+    public double fleeDistance(int index) {
+        return read(index, flee);
+    }
+
+    /** Whether unit {@code index} gathers: its classes hold {@value #GATHERER} (D-02, UNIT-04). */
+    public boolean canGather(int index) {
+        return classes(index).contains(GATHERER);
+    }
+
+    /** Whether unit {@code index} builds and repairs: its classes hold {@value #BUILDER} (D-02, UNIT-04). */
+    public boolean canBuild(int index) {
+        return classes(index).contains(BUILDER);
     }
 
     /** Unit {@code index}'s class tokens, as modifiers leave them; empty for a template without classes. */

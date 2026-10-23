@@ -9,7 +9,13 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-23 (evening) — M3 spec, T1, T2
+## 2026-10-23 (evening) — M3 spec, T1, T2, T3
+
+- **M3 T3 · UNIT-04, the worker.** 50 hit points, 60 food, 10 s, `+Gatherer +Builder`; the
+  spearman's cost derives from it (60 food, 15 s) plus 40 wood. Gathering and building are class
+  tokens through the modifier pipeline, so citizen-soldiers stay a data change (D-02). A worker hit
+  while idle runs 8 blocks from the blow (`OrderKind.FLEE`). The template set's SHA changed, no
+  golden journal did. Next: T4, the treasury.
 
 - **M3 T2 · DATA-04, the balance sheet** ([balance/sheet.md](balance/sheet.md)).
   - **Results:** relationships are `$derive` values in the templates (`from`, `path`, `factor`,

@@ -22,6 +22,7 @@ import org.jspecify.annotations.Nullable;
 public final class TemplateSet {
     public static final TemplateId DEBUG_WALKER = new TemplateId("strategos:unit/debug_walker");
     public static final TemplateId INFANTRY = new TemplateId("strategos:unit/infantry");
+    public static final TemplateId WORKER = new TemplateId("strategos:unit/worker");
 
     private static final TemplateSet BUILTIN = BuiltinTemplates.compile();
 
@@ -253,7 +254,8 @@ public final class TemplateSet {
                     CorePaths.RESIST_CRUSH,
                     CorePaths.MELEE_HACK,
                     CorePaths.MELEE_PIERCE,
-                    CorePaths.MELEE_CRUSH -> 0;
+                    CorePaths.MELEE_CRUSH,
+                    CorePaths.FLEE -> 0;
             case CorePaths.MELEE_REACH -> CorePaths.DEFAULT_REACH;
             case CorePaths.MELEE_PREPARE -> CorePaths.DEFAULT_PREPARE;
             case CorePaths.MELEE_REPEAT -> CorePaths.DEFAULT_REPEAT;

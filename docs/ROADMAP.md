@@ -340,7 +340,7 @@ Cards: [roadmap/M3-first-loop.md](roadmap/M3-first-loop.md#cards). 27 cards, at 
 | ECO-02 | Resource nodes: discovery and index | M | CORE-08, PATH-04, MAP-01 | specified |
 | ECO-03 | Woodcutting on real trees, with natural canopy thinning | L | ECO-02, BLD-15, PATH-15 | specified |
 | ECO-05 | Gathering, dropsites and berry bushes | L | ECO-01, ECO-02, UNIT-04, BLD-01 | specified |
-| UNIT-04 | Starting units and the worker model | S | UNIT-02, DATA-04, D-02 | specified |
+| UNIT-04 | Starting units and the worker model | S | UNIT-02, DATA-04, D-02 | done |
 | BLD-01 | Building records and blueprints | M | CORE-06, DATA-03, PATH-15 | specified |
 | AUD-04 | World-edit feedback: cracks, particles and sounds | M | ECO-03, BLD-15, NET-01 | specified |
 | BLD-02 | Placement mode and validators | M | BLD-01, CAM-04 | specified |

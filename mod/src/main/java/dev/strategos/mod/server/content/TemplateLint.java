@@ -24,7 +24,7 @@ public final class TemplateLint {
 
     /** The skins M1 ships, and none. */
     static List<String> skins() {
-        return List.of("", "strategos:units/debug_walker", "strategos:units/infantry");
+        return List.of("", "strategos:units/debug_walker", "strategos:units/infantry", "strategos:units/worker");
     }
 
     /** The problems of {@code set} against the server's registries; {@code files} gives each template's file. */

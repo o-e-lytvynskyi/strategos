@@ -15,5 +15,13 @@
     "pierce": { "$derive": { "from": "self", "path": "Resistance/hack" }, "note": "Shield and padding stop a thrust as well as a cut" },
     "crush": 2
   },
+  "Cost": {
+    "resources": {
+      "food": { "$derive": { "from": "strategos:unit/worker", "path": "Cost/resources/food" }, "note": "A soldier eats what a worker does" },
+      "wood": 40
+    },
+    "population": 1,
+    "time": { "$derive": { "from": "strategos:unit/worker", "path": "Cost/time", "factor": 1.5 }, "note": "Drilling a spearman takes half again a worker's training" }
+  },
   "Body": { "skin": "strategos:units/infantry" }
 }
