@@ -9,7 +9,14 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24, T16, T26; M2 spec, M2 T1, T3, T5, T11, T13, T9, T21, T8, T6, T19
+## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24, T16, T26; M2 spec, M2 T1, T3, T5, T11, T13, T9, T21, T8, T6, T19, T2, T4
+
+- **M2 T2 · Health check** — no card.
+  - **Results:** `StrategosCommands` split into the root and five subtree classes, the test kit's
+    `Scenarios` into its facade and three classes by area; the largest file is now 311 lines.
+    CAM-02 closed as well (T4): its pose goldens are proposed.
+  - **Problems:** none; the formatter dropped the imports each part did not use.
+  - **Next:** combat, headless: CMB-01.
 
 - **M2 T19 · First person and back** — CAM-05 done; UI-04 done (T12).
   - **Results:** core `ModeSwitch`, the payload `mode_switch`, `CommanderService#switchMode` (rate,

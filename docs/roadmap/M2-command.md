@@ -204,8 +204,8 @@ perspective only.
   4. The owner scores pan, zoom and rotation on the questionnaire (L7, acceptance).
 - **Tests:** L0, L1, L4 (consent), L7 · **Depends on:** CAM-01, UI-01, D-09 · **Size:** L ·
   **Tier:** T0
-- **Progress:** 2026-10-23 — M2 T4: `CameraRig` in `core.client.camera` with the pan cap S9 set (5 blocks a tick, by bisection), `RtsMode` applies it in `PlayerTickEvent.Pre` and `ComputeCameraAngles` with no mixin, `strategos-client.toml` holds pan and turn speeds and edge pan; `CameraRigTest` (1, 2; spec §1.6 row 16). Jumps go through `camera_jump` since T9. Open: pose goldens (3, with QA-18), the questionnaire (4)
-- **Status:** in_progress
+- **Done:** 2026-10-23 — M2 T4: `CameraRig` in `core.client.camera` with the pan cap S9 set (5 blocks a tick, by bisection), `RtsMode` applies it in `PlayerTickEvent.Pre` and `ComputeCameraAngles` with no mixin, `strategos-client.toml` holds pan and turn speeds and edge pan; `CameraRigTest` (1, 2; spec §1.6 row 16); jumps through `camera_jump` since T9; pose goldens from `rts_goldens` on both platforms, proposed for the owner (3, T8; spec §1.6 row 33); the questionnaire waits for the owner's acceptance (4)
+- **Status:** done
 
 #### CAM-04 · RtsScreen, cursor and world picking
 - **Value:** Point and click any unit or block as in a classic RTS, accurately on Retina, and no
