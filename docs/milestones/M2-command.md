@@ -139,6 +139,10 @@ Rows written while specifying; tasks append theirs.
 | 14 | CAM-04: picking units, and the hover | Units are picked by rays against the boxes of the level's unit bodies within 192 blocks of the camera, a scan per click; NET-08's client unit index replaces it. The hover highlight comes with UI-03's selection outline, which draws it |
 | 15 | §1.3: the demo's keys | Rotate on comma and period, attack-move on Z, first person on V, as row 11 sets; the script is amended |
 | 16 | T3–T5: tests | `ActionMapTest` (3), `GestureTest` (4), `DefaultKeysTest` (3), `ScreenKeysTest` (2), `CameraRigTest` (5: the same pose at 30, 60 and 144 fps for keys and zoom, the same turn for a drag, the margin, the eye's 5-block step found by bisection, the terrain), `PickingTest` (3, with framebuffer pixels shown to miss). L4 on this Mac: `rts_basics` (the window's 1280 × 720 points on a 2× framebuffer): 10 clicks through the screen's own handlers on 10 gold blocks, all exact; W held for 20 ticks pans more than 10 blocks; chat and the pause menu close back to the RTS screen with the cursor free; no attack, use or interaction reaches the server; attack-move rebound to G fires on G. Two screenshots of the default pose wait for QA-18's goldens |
+| 17 | UNIT-03: no name tags | Vanilla draws a name tag over every living entity within 64 blocks (`LivingEntityRenderer#shouldShowName`), so a crowd seen from above was a field of "Unit" labels; `UnitRenderer` shows none. Unit names come with the HUD's tooltips |
+| 18 | UNIT-03, UI-03: the outline | The body's client-side glow (`isCurrentlyGlowing`, an instance flag the client's selection sets, so common code never references the client, B5) and `getTeamColor` by faction: blue, red, green, yellow, purple, orange, cyan, then white. Vanilla's outline effect renders the blue darker, a navy line; the consent batch's goldens decide the shade |
+| 19 | UI-03, UI-04: pruning and centring before NET-08 and CAM-03 | The selection and groups drop dead units through `prune` (L1), which the client calls once NET-08 tells it of deaths; a unit out of range is not dead. Centring on the selection (Space) or a group (a double tap) pans the rig to it at the 5-block cap (`CameraRig#panTo`) until CAM-03's `camera_jump` makes long jumps a server teleport |
+| 20 | T7, T11, T12: tests | `BoxSelectTest` (2), `SelectionRulesTest` (3), `ControlGroupsTest` (3), `CameraRigTest.aPanToAPointGlidesAtTheCapAndAKeyStopsIt`, `bodytests.no_unit_on_a_team`. L4 on this Mac, `rts_select`: seated in slot 0 beside 150 own units and 20 enemies, a drag over the window selects the 150, which glow while no enemy does; an empty click clears; a double click takes all 150 of the type; an enemy click inspects and selects nothing; Ctrl+1, then 1, recalls the 150. Open: UNIT-03.3 (render at 192 blocks, beyond the 160-block tracking range, so it needs NET-08's markers to show anything), UI-04.4 (the first-person round trip on screen, with CAM-05) |
 
 ### 1.7 Consent plan
 
@@ -402,7 +406,7 @@ second (5 minutes, M1 §1.6 row 162's pacing); budgets A, B and C as M1's soak m
 
 ### 7.3 Progress
 
-- [x] T1 (2026-10-23) · [ ] T2 · [x] T3 (2026-10-23) · [ ] T4 (rig and options done; goldens with QA-18, jumps with CAM-03) · [x] T5 (2026-10-23) · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11 · [ ] T12
+- [x] T1 (2026-10-23) · [ ] T2 · [x] T3 (2026-10-23) · [ ] T4 (rig and options done; goldens with QA-18, jumps with CAM-03) · [x] T5 (2026-10-23) · [ ] T6 · [ ] T7 (outline and tags done; the 192-block check with NET-08) · [ ] T8 · [ ] T9 · [ ] T10 · [x] T11 (2026-10-23) · [ ] T12 (all but the first-person round trip, with CAM-05)
 - [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17 · [ ] T18 · [ ] T19 · [ ] T20 · [ ] T21 · [ ] T22 · [ ] T23
 
 ---

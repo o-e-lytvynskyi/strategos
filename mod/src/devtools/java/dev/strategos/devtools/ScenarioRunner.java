@@ -84,6 +84,7 @@ public final class ScenarioRunner {
             case "s10_steps" -> new S10StepsScenario();
             case "s9" -> new S9CameraScenario();
             case "rts_basics" -> new RtsBasicsScenario();
+            case "rts_select" -> new RtsSelectScenario();
             default -> null;
         };
     }

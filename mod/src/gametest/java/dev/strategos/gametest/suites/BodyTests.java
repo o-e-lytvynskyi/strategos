@@ -45,6 +45,30 @@ import net.minecraft.world.phys.Vec3;
 public final class BodyTests {
     private BodyTests() {}
 
+    /**
+     * UNIT-03.1: no scoreboard team ever holds a unit's body; the selection outline is the body's glow on its own
+     * client, coloured by faction, never a team colour, and the server's glowing flag stays off.
+     */
+    @StrategosTest
+    public static void noUnitOnATeam(GameTestHelper h) {
+        MatchRuntime rt = match(h);
+        spawn(rt, 16, 16, 10, 6);
+        h.runAfterDelay(3, () -> {
+            List<UnitEntity> bodies = bodiesOf(h.getLevel(), rt);
+            check(bodies.size() == 10, bodies.size() + " bodies, not 10");
+            var scoreboard = h.getLevel().getScoreboard();
+            for (UnitEntity body : bodies) {
+                check(
+                        scoreboard.getPlayersTeam(body.getScoreboardName()) == null,
+                        "body " + body.getScoreboardName() + " is on team "
+                                + scoreboard.getPlayersTeam(body.getScoreboardName()));
+                check(body.getTeam() == null, "body " + body.getId() + " has a team");
+                check(!body.isCurrentlyGlowing(), "body " + body.getId() + " glows on the server");
+            }
+            h.succeed();
+        });
+    }
+
     @StrategosTest
     public static void materialisesOneBodyPerUnit(GameTestHelper h) {
         MatchRuntime rt = match(h);

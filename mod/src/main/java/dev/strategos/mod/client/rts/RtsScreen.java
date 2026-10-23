@@ -4,8 +4,12 @@ import dev.strategos.core.client.input.Action;
 import dev.strategos.core.client.input.ActionContext;
 import dev.strategos.core.client.input.InputState;
 import dev.strategos.core.client.input.KeyCode;
+import dev.strategos.core.client.input.Modifiers;
 import dev.strategos.core.client.input.ScreenKeys;
 import dev.strategos.core.client.pick.Picking;
+import dev.strategos.core.client.select.Seen;
+import dev.strategos.core.client.select.Selection;
+import java.util.List;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
@@ -13,6 +17,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The RTS screen (CAM-04, ADR-0017, 04 §13.3): non-pausing and full-window, it owns every input, so vanilla's attack,
@@ -101,9 +106,7 @@ public final class RtsScreen extends Screen {
             mode.leave();
             return true;
         }
-        for (InputState.Event e : in.keyDown(KeyCode.key(keyCode), modifiers, Util.getMillis())) {
-            mode.fired(e.action());
-        }
+        handle(in.keyDown(KeyCode.key(keyCode), modifiers, Util.getMillis()));
         return true;
     }
 
@@ -154,15 +157,52 @@ public final class RtsScreen extends Screen {
         return true;
     }
 
-    /** Selection and orders come with UI-03 and UI-05; until then a click picks, for the hover and for scenarios. */
-    private void handle(java.util.List<InputState.Event> events) {
+    /** Selection (UI-03) and control groups (UI-04); orders come with UI-05. */
+    private void handle(List<InputState.Event> events) {
+        Selection selection = mode.selection();
         for (InputState.Event e : events) {
             mode.fired(e.action());
-            if (e.action() == Action.SELECT || e.action() == Action.ORDER_CONTEXT) {
-                mode.pick(
-                        Picking.toWindow(e.x(), width, windowWidth()), Picking.toWindow(e.y(), height, windowHeight()));
+            boolean shift = Modifiers.shift(e.modifiers());
+            switch (e.action()) {
+                case SELECT -> selection.click(mode.seenAt(pickAt(e.x(), e.y())), shift);
+                case SELECT_ALL_OF_TYPE -> {
+                    Seen unit = mode.seenAt(pickAt(e.x(), e.y()));
+                    if (unit != null) {
+                        selection.allOfType(onScreen(mode.seen()), unit, shift);
+                    }
+                }
+                case BOX_SELECT -> selection.box(mode.seen(), x(e.x()), y(e.y()), x(e.toX()), y(e.toY()), shift);
+                case ORDER_CONTEXT -> pickAt(e.x(), e.y());
+                case CONTROL_GROUP_SET -> mode.groups().set(e.group(), selection);
+                case CONTROL_GROUP_ADD -> mode.groups().add(e.group(), selection);
+                case CONTROL_GROUP_SELECT -> mode.groups().recall(e.group(), selection);
+                case CONTROL_GROUP_CENTRE -> mode.centreOn(mode.groups().members(e.group()));
+                case CAMERA_CENTRE_ON_SELECTION -> mode.centreOn(selection.handles());
+                default -> {}
             }
         }
+    }
+
+    private RtsMode.@Nullable Pick pickAt(double guiX, double guiY) {
+        return mode.pick(x(guiX), y(guiY));
+    }
+
+    /** GUI pixels to window points. */
+    private double x(double gui) {
+        return Picking.toWindow(gui, width, windowWidth());
+    }
+
+    private double y(double gui) {
+        return Picking.toWindow(gui, height, windowHeight());
+    }
+
+    /** The units whose feet project inside the window. */
+    private static List<Seen> onScreen(List<Seen> seen) {
+        double w = windowWidth();
+        double h = windowHeight();
+        return seen.stream()
+                .filter(s -> s.feetX() >= 0 && s.feetX() <= w && s.feetY() >= 0 && s.feetY() <= h)
+                .toList();
     }
 
     private static double windowWidth() {
@@ -177,13 +217,13 @@ public final class RtsScreen extends Screen {
     private static int modifiers() {
         int mods = 0;
         if (hasShiftDown()) {
-            mods |= dev.strategos.core.client.input.Modifiers.SHIFT;
+            mods |= Modifiers.SHIFT;
         }
         if (hasControlDown()) {
-            mods |= dev.strategos.core.client.input.Modifiers.CTRL;
+            mods |= Modifiers.CTRL;
         }
         if (hasAltDown()) {
-            mods |= dev.strategos.core.client.input.Modifiers.ALT;
+            mods |= Modifiers.ALT;
         }
         return mods;
     }

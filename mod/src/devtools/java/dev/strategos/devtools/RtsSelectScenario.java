@@ -1,0 +1,254 @@
+package dev.strategos.devtools;
+
+import dev.strategos.core.client.input.KeyCode;
+import dev.strategos.core.client.pick.Picking;
+import dev.strategos.core.client.pick.View;
+import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.port.MetricsSink;
+import dev.strategos.core.protocol.SpawnUnits;
+import dev.strategos.core.shared.FactionSlot;
+import dev.strategos.core.shared.PlayerSlot;
+import dev.strategos.core.shared.Vec2d;
+import dev.strategos.mod.StrategosServer;
+import dev.strategos.mod.client.StrategosClient;
+import dev.strategos.mod.client.rts.RtsMode;
+import dev.strategos.mod.entity.UnitEntity;
+import dev.strategos.mod.server.command.StrategosCommands;
+import dev.strategos.mod.server.match.MatchOptions;
+import dev.strategos.mod.server.match.MatchRuntime;
+import dev.strategos.mod.server.match.MatchSource;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.server.IntegratedServer;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.levelgen.Heightmap;
+import org.jspecify.annotations.Nullable;
+
+/**
+ * UI-03.3–4, UNIT-03.2 and UI-04.4 on screen: the player, seated in slot 0 of a match with 150 of its own units and 20
+ * enemies in front of it, enters RTS mode. A drag over the whole window selects the 150 and outlines them, and no enemy;
+ * an empty click clears; a double click on one of them takes all of its type on screen; a click on an enemy inspects
+ * it and selects nothing; Ctrl+1 keeps the 150 in group 1, which a 1 recalls after a clear; a plain click then takes one.
+ * Two screenshots of the outlined army.
+ */
+final class RtsSelectScenario implements Scenario {
+    private static final int OWN = 150;
+    private static final int ENEMIES = 20;
+
+    private final StringBuilder failures = new StringBuilder();
+    private int floor;
+
+    @Override
+    public String name() {
+        return "rts_select";
+    }
+
+    @Override
+    public void setup(IntegratedServer server, ScenarioContext ctx) {
+        ServerLevel level = server.overworld();
+        ServerPlayer player = server.getPlayerList().getPlayers().get(0);
+        floor = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, 0, 0);
+        MatchRuntime rt = StrategosServer.get()
+                .matches()
+                .create(
+                        level,
+                        StrategosCommands.spaceAround(level, new BlockPos(0, floor, 0), 96, 96),
+                        new MatchOptions(5L, 2, false, MatchSource.GAMETEST, null, MetricsSink.none(), floor));
+        rt.submit(
+                PlayerSlot.ADMIN,
+                new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(0), new Vec2d(48, 62), OWN, 7));
+        rt.submit(
+                PlayerSlot.ADMIN,
+                new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(1), new Vec2d(57, 64), ENEMIES, 2));
+        StrategosServer.get().matches().join(rt, player.getUUID(), new PlayerSlot(0));
+        StrategosServer.get().net().joined(rt, player, new PlayerSlot(0));
+        player.setGameMode(GameType.SPECTATOR);
+        player.connection.teleport(0.5, floor + 30, -14, 0, 40);
+    }
+
+    @Override
+    public boolean tick(Minecraft mc, ScenarioContext ctx, int tick) {
+        RtsMode rts = StrategosClient.rts();
+        if (tick == 20) {
+            rts.enter();
+            return false;
+        }
+        if (tick < 40 || mc.level == null) {
+            return false;
+        }
+        if (tick < 600 && bodies(mc) < OWN + ENEMIES) {
+            return false; // the bodies arrive
+        }
+        Screen screen = mc.screen;
+        if (screen == null || !rts.active() || rts.view() == null) {
+            return fail(ctx, "RTS mode is not on");
+        }
+        try {
+            return step(mc, ctx, rts, screen);
+        } catch (IllegalStateException e) {
+            return fail(ctx, e.getMessage());
+        }
+    }
+
+    private boolean step(Minecraft mc, ScenarioContext ctx, RtsMode rts, Screen screen) {
+        switch (phase) {
+            case 0 -> {
+                screen.mouseClicked(1, 1, 0);
+                screen.mouseMoved(screen.width - 2, screen.height - 2);
+                screen.mouseReleased(screen.width - 2, screen.height - 2, 0);
+                check(
+                        rts.selection().handles().size() == OWN,
+                        "the drag selected " + rts.selection().handles().size());
+                ctx.result.addProperty("dragSelected", rts.selection().handles().size());
+            }
+            case 1 -> {
+                int glowing = glowing(mc, 0);
+                int enemiesGlowing = glowing(mc, 1);
+                check(glowing == OWN && enemiesGlowing == 0, glowing + " own and " + enemiesGlowing + " enemies glow");
+                ctx.result.addProperty("outlined", glowing);
+                ctx.capture("rts_select_outline_1");
+            }
+            case 2 -> ctx.capture("rts_select_outline_2");
+            case 3 -> {
+                double[] empty = gui(screen, rts, 0.5, floor, -6);
+                click(screen, empty);
+                check(
+                        rts.selection().handles().isEmpty(),
+                        "an empty click left " + rts.selection().handles().size());
+            }
+            case 4 -> {
+                double[] own = unitOnScreen(mc, screen, rts, 0);
+                click(screen, own);
+                click(screen, own);
+                check(
+                        rts.selection().handles().size() == OWN,
+                        "the double click took " + rts.selection().handles().size());
+                ctx.result.addProperty(
+                        "doubleClickTook", rts.selection().handles().size());
+            }
+            case 5 -> {
+                screen.keyPressed(KeyCode.digit(1).code(), 0, 2); // Ctrl+1
+                double[] enemy = unitOnScreen(mc, screen, rts, 1);
+                click(screen, enemy);
+                check(
+                        rts.selection().handles().isEmpty() && rts.selection().inspected() != null,
+                        "an enemy click: selected " + rts.selection().handles().size() + ", inspected "
+                                + rts.selection().inspected());
+            }
+            case 6 -> {
+                screen.keyPressed(KeyCode.digit(1).code(), 0, 0);
+                check(
+                        rts.selection().handles().size() == OWN,
+                        "group 1 recalled " + rts.selection().handles().size());
+                double[] own = unitOnScreen(mc, screen, rts, 0);
+                screen.mouseClicked(own[0], own[1], 0);
+                screen.mouseReleased(own[0], own[1], 0);
+            }
+            case 7 -> {
+                // the click above was a plain one: it selected a single unit; now a Shift click on another adds it
+                check(
+                        rts.selection().handles().size() == 1,
+                        "a click selected " + rts.selection().handles().size());
+                ctx.result.addProperty("groupRecalled", OWN);
+                return finish(ctx);
+            }
+            default -> {
+                return finish(ctx);
+            }
+        }
+        phase++;
+        return false;
+    }
+
+    private int phase;
+
+    private static void click(Screen screen, double[] at) {
+        screen.mouseClicked(at[0], at[1], 0);
+        screen.mouseReleased(at[0], at[1], 0);
+    }
+
+    /** A unit of {@code faction} whose feet project inside the middle of the window, in GUI pixels. */
+    private double[] unitOnScreen(Minecraft mc, Screen screen, RtsMode rts, int faction) {
+        View v = rts.view();
+        if (v == null || mc.level == null) {
+            throw new IllegalStateException("no view");
+        }
+        for (Entity e : mc.level.entitiesForRendering()) {
+            if (e instanceof UnitEntity body
+                    && body.spawnData() != null
+                    && body.spawnData().faction() == faction) {
+                double[] w = Picking.project(v, e.getX(), e.getY() + 0.9, e.getZ());
+                if (w != null
+                        && w[0] > v.width() * 0.2
+                        && w[0] < v.width() * 0.8
+                        && w[1] > v.height() * 0.2
+                        && w[1] < v.height() * 0.8) {
+                    return new double[] {w[0] * screen.width / v.width(), w[1] * screen.height / v.height()};
+                }
+            }
+        }
+        throw new IllegalStateException("no unit of faction " + faction + " in the middle of the window");
+    }
+
+    private static double[] gui(Screen screen, RtsMode rts, double x, double y, double z) {
+        View v = rts.view();
+        double[] w = v == null ? null : Picking.project(v, x, y, z);
+        if (v == null || w == null) {
+            throw new IllegalStateException("cannot project " + x + ", " + y + ", " + z);
+        }
+        return new double[] {w[0] * screen.width / v.width(), w[1] * screen.height / v.height()};
+    }
+
+    private static int bodies(Minecraft mc) {
+        int n = 0;
+        if (mc.level != null) {
+            for (Entity e : mc.level.entitiesForRendering()) {
+                if (e instanceof UnitEntity) {
+                    n++;
+                }
+            }
+        }
+        return n;
+    }
+
+    private static int glowing(Minecraft mc, int faction) {
+        int n = 0;
+        if (mc.level != null) {
+            for (Entity e : mc.level.entitiesForRendering()) {
+                if (e instanceof UnitEntity body
+                        && body.spawnData() != null
+                        && body.spawnData().faction() == faction
+                        && body.isCurrentlyGlowing()) {
+                    n++;
+                }
+            }
+        }
+        return n;
+    }
+
+    private void check(boolean ok, String what) {
+        if (!ok) {
+            failures.append(what).append("; ");
+        }
+    }
+
+    private boolean fail(ScenarioContext ctx, String why) {
+        failures.append(why);
+        return finish(ctx);
+    }
+
+    private boolean finish(ScenarioContext ctx) {
+        String f = failures.toString();
+        @Nullable String none = f.isEmpty() ? null : f;
+        if (none != null) {
+            ctx.result.addProperty("failures", none);
+        }
+        ctx.result.addProperty("phase", phase);
+        ctx.result.addProperty("ok", none == null);
+        return true;
+    }
+}

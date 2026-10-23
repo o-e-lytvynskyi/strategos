@@ -110,4 +110,25 @@ class CameraRigTest {
         assertThat(rig.focusX()).isEqualTo(300);
         assertThat(rig.pose(0.5).y()).isCloseTo(70 + CameraRig.DEFAULT_HEIGHT, within(1e-9));
     }
+
+    @Test
+    void aPanToAPointGlidesAtTheCapAndAKeyStopsIt() {
+        CameraRig rig = new CameraRig(SPACE, 50, 50, 64, 0);
+        rig.panTo(350, 50);
+        double most = 0;
+        for (int t = 0; t < 120; t++) {
+            CameraPose before = rig.pose();
+            rig.tick(CameraInput.NONE, FLAT);
+            most = Math.max(most, before.eyeDistance(rig.pose()));
+        }
+        assertThat(rig.focusX()).isCloseTo(350, within(0.5));
+        assertThat(most).isLessThanOrEqualTo(CameraRig.MAX_EYE_STEP + 1e-9);
+
+        rig.panTo(50, 50);
+        rig.tick(CameraInput.NONE, FLAT);
+        double x = rig.focusX();
+        rig.tick(new CameraInput(0, 1, 0, 0, 0), FLAT);
+        rig.tick(CameraInput.NONE, FLAT);
+        assertThat(rig.focusX()).as("the key took over").isGreaterThan(x - 5.5);
+    }
 }

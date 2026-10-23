@@ -24,6 +24,8 @@ public final class UnitEntity extends LivingEntity implements IEntityWithComplex
     private @Nullable UnitSpawnData spawnData;
     private boolean removedByRegistry;
 
+    private boolean selectedOnClient;
+
     public UnitEntity(EntityType<? extends UnitEntity> type, Level level) {
         super(type, level);
     }
@@ -40,6 +42,41 @@ public final class UnitEntity extends LivingEntity implements IEntityWithComplex
     /** The server's binding, or what the client read from the spawn packet; null before either. */
     public @Nullable UnitSpawnData spawnData() {
         return spawnData;
+    }
+
+    /** How far a body renders (UNIT-03): 192 blocks, the RTS camera's reach at its highest. */
+    static final double RENDER_DISTANCE = 192;
+
+    /** On a client: whether the player has it selected, which draws its outline (UNIT-03); the client's code sets it. */
+    public void selectedOnClient(boolean selected) {
+        this.selectedOnClient = selected;
+    }
+
+    /** A selected body glows on its own client only: never a scoreboard team, never the server's glowing flag. */
+    @Override
+    public boolean isCurrentlyGlowing() {
+        return level().isClientSide() ? selectedOnClient : super.isCurrentlyGlowing();
+    }
+
+    /** The outline's colour: its faction's (blue, red, green, yellow, purple, orange, cyan; beyond them, white). */
+    @Override
+    public int getTeamColor() {
+        UnitSpawnData data = spawnData;
+        return switch (data == null ? -1 : data.faction()) {
+            case 0 -> 0x3B82F6;
+            case 1 -> 0xEF4444;
+            case 2 -> 0x22C55E;
+            case 3 -> 0xEAB308;
+            case 4 -> 0xA855F7;
+            case 5 -> 0xF97316;
+            case 6 -> 0x06B6D4;
+            default -> 0xF5F5F5;
+        };
+    }
+
+    @Override
+    public boolean shouldRenderAtSqrDistance(double distance) {
+        return distance < RENDER_DISTANCE * RENDER_DISTANCE;
     }
 
     /** The body registry removes this body itself, so its leave event is not a lost body. */

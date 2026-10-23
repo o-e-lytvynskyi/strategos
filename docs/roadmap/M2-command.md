@@ -261,7 +261,8 @@ perspective only.
      consent).
   3. Units render out to 192 blocks at the highest camera position (L4, consent).
 - **Tests:** L0, L3, L4 (consent) · **Depends on:** UNIT-01 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Progress:** 2026-10-23 — M2 T7: `bodytests.no_unit_on_a_team` (1); `rts_select` on the owner's Mac: the selected 150 glow in their faction's colour and no enemy does (2; spec §1.6 rows 17–18); render distance 192 set, its L4 check waits for NET-08's markers (3)
+- **Status:** in_progress
 
 #### QA-18 · Scenario diff, goldens and the CI golden job
 - **Value:** Client changes are checked against approved pictures, on the Mac with consent or on
@@ -350,7 +351,8 @@ perspective only.
   4. The outline shows on selected units only (L4, consent).
 - **Tests:** L0, L1, L4 (consent) · **Depends on:** CAM-04, UI-02, UNIT-03 · **Size:** M ·
   **Tier:** T0
-- **Status:** specified
+- **Done:** 2026-10-23 — M2 T11: `BoxSelectTest`, feet or head inside, handle order, partly visible units (1); `SelectionRulesTest`: enemies inspected never selected, at most 300, Shift toggles (2); `rts_select` on the owner's Mac: a drag selects 150, a double click takes all 150 of the type (3), the outline only on the selected (4; spec §1.6 row 20)
+- **Status:** done
 
 #### UI-04 · Control groups
 - **Value:** Keep armies on number keys and recall them instantly (P3).
@@ -363,7 +365,8 @@ perspective only.
   3. Groups survive the first-person round trip in the client model (L1).
   4. The same round trip on screen keeps the groups (L4, consent).
 - **Tests:** L0, L1, L4 (consent) · **Depends on:** UI-03 · **Size:** S · **Tier:** T0
-- **Status:** specified
+- **Progress:** 2026-10-23 — M2 T12: `ControlGroupsTest` (1–3); `rts_select`: Ctrl+1 then 1 recalls 150; centring pans at the cap until CAM-03 (spec §1.6 row 19). Open: the first-person round trip on screen (4, with CAM-05)
+- **Status:** in_progress
 
 #### UI-05 · Order feedback and destination preview
 - **Value:** Before releasing the click you see exactly where each unit will stand; after it,

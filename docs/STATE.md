@@ -260,6 +260,13 @@ Answer in chat or here; the next session applies the answers.
   speeds and edge panning are in `strategos-client.toml`. Checked in a window on your Mac. Selecting,
   ordering and being seated as a commander come next. Cards UI-01 and CAM-04 are done; CAM-02 waits
   for its golden pictures and the jumps.
+- 2026-10-23 · **M2 T7, T11, T12 Selection, control groups, outlines:** in the RTS view a click
+  selects one of your units, a drag boxes many, Shift adds or removes, a double click takes every unit
+  of that type on screen; an enemy can be clicked to look at but never joins; at most 300. Ctrl+1–9
+  keeps a group, the digit recalls it, a double tap brings the camera there. Selected units get an
+  outline in their faction's colour (blue for you; it reads rather dark, see the pictures in the
+  consent batch), and the "Unit" labels over every head are gone. Checked on your Mac with 150 units
+  and 20 enemies. Card UI-03 is done; UI-04 and UNIT-03 wait for first person and far markers.
 
 ## Now
 
@@ -267,7 +274,7 @@ Answer in chat or here; the next session applies the answers.
 - **In progress:** none.
 - **Last finished task:** M1 T26 (2026-10-23). The agents' branches `wip/m1-t17-unitai-hfsm` and
   `wip/m1-t25-debug-overlay` are merged and kept on GitHub for the record.
-- **Last M2 task:** T5, RtsScreen and picking (2026-10-23); T3 and T5 done, T4 open for its goldens and jumps.
+- **Last M2 task:** T11, selection (2026-10-23); T1, T3, T5, T11 done; T4, T7, T12 open for parts that need later tasks.
 - **Next task:** while the Mac's windows are mine today, the window work that is ready (M2's L4
   items as their tasks land); M1 T27 (M1 close, headless); then M2's tasks in the spec's order.
 - **WIP branch:** none.

@@ -9,7 +9,19 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24, T16, T26; M2 spec, M2 T1, T3, T5
+## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24, T16, T26; M2 spec, M2 T1, T3, T5, T11
+
+- **M2 T7, T11, T12 · Selection, control groups, the outline** — UI-03 done; UI-04, UNIT-03 in
+  progress.
+  - **Results:** `core.client.select` (`Selection`, `ControlGroups`, `Seen`), `CameraRig#panTo`; the
+    body's client glow and faction colour, a 192-block render distance, no name tags; the RTS screen
+    selects, boxes, takes a type and keeps groups; the scenario `rts_select`. Tests: 9 new in L1,
+    `bodytests.no_unit_on_a_team`, `rts_select` green on the owner's Mac.
+  - **Problems:** the first `rts_select` looked for an enemy in the window's middle that was not
+    there, and its exception killed the client; scenario steps now fail into the result. Name tags
+    over every unit (vanilla shows them within 64 blocks). The outline effect darkens the faction
+    blue.
+  - **Next:** orders from the RTS screen and the destination preview (UI-05), then CAM-03.
 
 - **M2 T3–T5 · Input layer, camera rig, RtsScreen and picking** — UI-01 and CAM-04 done, CAM-02 in
   progress.

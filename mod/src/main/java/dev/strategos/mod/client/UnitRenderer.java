@@ -7,7 +7,11 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.resources.ResourceLocation;
 
-/** The placeholder unit: the player model with the wide Steve skin, read from the game's own resources. */
+/**
+ * The unit renderer for the RTS view (UNIT-03): the placeholder player model with the wide Steve skin, read from the
+ * game's own resources, no name tag, an outline in its faction's colour when selected (the body's client glow), out
+ * to 192 blocks (the body's render distance).
+ */
 public final class UnitRenderer extends LivingEntityRenderer<UnitEntity, PlayerModel<UnitEntity>> {
     /** Referenced at run time, never copied into the mod (ADR-0005). */
     private static final ResourceLocation TEXTURE =
@@ -20,5 +24,11 @@ public final class UnitRenderer extends LivingEntityRenderer<UnitEntity, PlayerM
     @Override
     public ResourceLocation getTextureLocation(UnitEntity entity) {
         return TEXTURE;
+    }
+
+    /** No name tag: vanilla shows one over every living entity within 64 blocks, a crowd of labels from above (UNIT-03). */
+    @Override
+    protected boolean shouldShowName(UnitEntity entity) {
+        return false;
     }
 }

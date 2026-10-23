@@ -1,5 +1,7 @@
 package dev.strategos.core.client.camera;
 
+import org.jspecify.annotations.Nullable;
+
 /**
  * The RTS camera (CAM-02, ADR-0017, 04 §13.2): a focus on the ground, a yaw, a pitch of 35–70° (default 55°), a height
  * of 8–64 blocks above the focus ground (default 24) and a FOV of 55°. Each client tick it steps once: pan, rotation and
@@ -35,6 +37,7 @@ public final class CameraRig {
     private double heightTarget = DEFAULT_HEIGHT;
     private double pitch = DEFAULT_PITCH;
     private CameraPose last;
+    private double @Nullable [] panTarget;
     private CameraPose current;
 
     public CameraRig(CameraLimits limits, double focusX, double focusZ, double ground, double yaw) {
@@ -63,6 +66,15 @@ public final class CameraRig {
         double fz = Math.cos(radians);
         double nextX = limits.clampX(focusX + (in.forward() * fx - in.right() * fz) * speed);
         double nextZ = limits.clampZ(focusZ + (in.forward() * fz + in.right() * fx) * speed);
+        double[] glide = panTarget;
+        if (glide != null) { // a pan to a point: the cap below keeps it to 5 blocks a tick
+            if (in.forward() != 0 || in.right() != 0 || Math.hypot(glide[0] - focusX, glide[1] - focusZ) < 0.5) {
+                panTarget = null;
+            } else {
+                nextX = limits.clampX(glide[0]);
+                nextZ = limits.clampZ(glide[1]);
+            }
+        }
         yawTarget += in.rotate() * ROTATE_PER_TICK * in.rotateSpeed() + in.dragDegrees();
         if (in.zoomNotches() != 0) {
             heightTarget = clamp(heightTarget / Math.pow(ZOOM_PER_NOTCH, in.zoomNotches()), MIN_HEIGHT, MAX_HEIGHT);
@@ -108,6 +120,14 @@ public final class CameraRig {
     /** The current tick's pose: where the player stands as the camera. */
     public CameraPose pose() {
         return current;
+    }
+
+    /**
+     * Pans the focus to a point at the eye's cap, 5 blocks a tick, as centring on a selection or a group does without a
+     * server jump; a pan key stops it.
+     */
+    public void panTo(double x, double z) {
+        panTarget = new double[] {x, z};
     }
 
     /** Puts the focus at a point, as a jump does; the eye moves with it, so the next tick starts there. */

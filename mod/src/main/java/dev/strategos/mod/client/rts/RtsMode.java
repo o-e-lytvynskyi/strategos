@@ -8,10 +8,16 @@ import dev.strategos.core.client.input.Action;
 import dev.strategos.core.client.input.InputState;
 import dev.strategos.core.client.pick.Picking;
 import dev.strategos.core.client.pick.View;
+import dev.strategos.core.client.select.ControlGroups;
+import dev.strategos.core.client.select.Seen;
+import dev.strategos.core.client.select.Selection;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.mod.client.StrategosClient;
 import dev.strategos.mod.client.StrategosClientConfig;
 import dev.strategos.mod.entity.UnitEntity;
+import dev.strategos.mod.entity.UnitSpawnData;
+import java.util.ArrayList;
+import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
@@ -45,6 +51,8 @@ public final class RtsMode {
     private static final int TRACKING_REACH = 192;
 
     private final RtsKeys keys = new RtsKeys();
+    private final ControlGroups groups = new ControlGroups();
+    private Selection selection = new Selection(-1);
     private @Nullable CameraRig rig;
     private @Nullable InputState input;
     private @Nullable View view;
@@ -88,6 +96,90 @@ public final class RtsMode {
         lastAction = action;
     }
 
+    /** The player's selection; the faction it may select follows the seat. */
+    public Selection selection() {
+        MatchJoin join = StrategosClient.match();
+        int faction = join == null ? -1 : join.slot().value();
+        if (selection.faction() != faction) {
+            selection = new Selection(faction);
+        }
+        return selection;
+    }
+
+    public ControlGroups groups() {
+        return groups;
+    }
+
+    /** The unit bodies near the camera with their feet and heads projected in window points, for selection. */
+    List<Seen> seen() {
+        View v = view;
+        Minecraft mc = Minecraft.getInstance();
+        List<Seen> out = new ArrayList<>();
+        if (v == null || mc.level == null) {
+            return out;
+        }
+        MatchJoin join = StrategosClient.match();
+        for (Entity e : mc.level.entitiesForRendering()) {
+            if (!(e instanceof UnitEntity body) || body.spawnData() == null) {
+                continue;
+            }
+            UnitSpawnData data = body.spawnData();
+            if ((join != null && data.matchId() != join.matchId())
+                    || e.distanceToSqr(v.camX(), v.camY(), v.camZ()) > TRACKING_REACH * TRACKING_REACH) {
+                continue;
+            }
+            double[] feet = Picking.project(v, e.getX(), e.getY(), e.getZ());
+            double[] head = Picking.project(v, e.getX(), e.getBoundingBox().maxY, e.getZ());
+            out.add(new Seen(
+                    data.handle(),
+                    data.faction(),
+                    data.templateIndex(),
+                    feet == null ? Double.NaN : feet[0],
+                    feet == null ? Double.NaN : feet[1],
+                    head == null ? Double.NaN : head[0],
+                    head == null ? Double.NaN : head[1]));
+        }
+        return out;
+    }
+
+    /** The seen unit whose body {@code pick} hit, or null. */
+    @Nullable Seen seenAt(@Nullable Pick pick) {
+        Minecraft mc = Minecraft.getInstance();
+        if (pick == null || pick.entityId() < 0 || mc.level == null) {
+            return null;
+        }
+        Entity e = mc.level.getEntity(pick.entityId());
+        if (!(e instanceof UnitEntity body) || body.spawnData() == null) {
+            return null;
+        }
+        UnitSpawnData d = body.spawnData();
+        return new Seen(d.handle(), d.faction(), d.templateIndex(), 0, 0, 0, 0);
+    }
+
+    /** Pans the camera to the centre of the units {@code handles} names that have bodies here. */
+    void centreOn(List<Integer> handles) {
+        CameraRig r = rig;
+        Minecraft mc = Minecraft.getInstance();
+        if (r == null || mc.level == null || handles.isEmpty()) {
+            return;
+        }
+        double x = 0;
+        double z = 0;
+        int n = 0;
+        for (Entity e : mc.level.entitiesForRendering()) {
+            if (e instanceof UnitEntity body
+                    && body.spawnData() != null
+                    && handles.contains(body.spawnData().handle())) {
+                x += e.getX();
+                z += e.getZ();
+                n++;
+            }
+        }
+        if (n > 0) {
+            r.panTo(x / n, z / n);
+        }
+    }
+
     /** The last pick, for scenarios and the hover outline; null before any. */
     public @Nullable Pick lastPick() {
         return lastPick;
@@ -116,6 +208,7 @@ public final class RtsMode {
     public void leave() {
         rig = null;
         input = null;
+        outlines(Minecraft.getInstance());
         Minecraft mc = Minecraft.getInstance();
         if (mc.screen instanceof RtsScreen) {
             mc.setScreen(null);
@@ -148,8 +241,27 @@ public final class RtsMode {
             }
             return;
         }
+        outlines(mc);
         if (mc.screen == null) { // chat, the pause menu or anything else closed over it: the RTS screen comes back
             mc.setScreen(new RtsScreen(this));
+        }
+    }
+
+    /** Selected bodies glow in their faction's colour (UNIT-03), others not. */
+    private void outlines(Minecraft mc) {
+        if (mc.level == null) {
+            return;
+        }
+        Selection s = selection();
+        MatchJoin join = StrategosClient.match();
+        for (Entity e : mc.level.entitiesForRendering()) {
+            if (e instanceof UnitEntity body) {
+                UnitSpawnData data = body.spawnData();
+                body.selectedOnClient(data != null
+                        && rig != null
+                        && (join == null || data.matchId() == join.matchId())
+                        && s.contains(data.handle()));
+            }
         }
     }
 
