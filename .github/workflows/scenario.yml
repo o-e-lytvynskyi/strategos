@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       scenario:
-        description: 'smoke, world_switch, s4_units, s10_steps, rts_basics, rts_select, rts_goldens or stall'
+        description: 'smoke, world_switch, s4_units, s10_steps, rts_basics, rts_select, rts_goldens, overlay_goldens or stall'
         required: true
         default: 'smoke'
       goldens:
@@ -17,7 +17,7 @@ on:
         default: 'mod/src/devtools/goldens'
 
 concurrency:
-  group: scenario-${{ github.ref }}
+  group: scenario-${{ github.ref }}-${{ inputs.scenario }}
   cancel-in-progress: true
 
 permissions:
