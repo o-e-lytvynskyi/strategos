@@ -578,7 +578,8 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   2. Each notification fires once per cause, not once per tick (L1).
   3. Goldens (L4, consent).
 - **Tests:** L0, L1, L4 (consent) · **Depends on:** UI-07, ECO-05 · **Size:** S · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
+- **Progress:** 2026-10-24 — M3 T19: the key visits every idle worker in a stable order (1), each notice fires once per cause (2) (spec §1.6 rows 58–59); the goldens (3) wait for T30's batch
 
 #### ART-01 · Placeholder look and the style guide
 - **Value:** Units and buildings look like Minecraft and show owner and role at a glance, so the

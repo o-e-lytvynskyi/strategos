@@ -6,6 +6,7 @@
   "strategos.building.civic_centre": "Civic centre",
   "strategos.building.house": "House",
   "strategos.building.barracks": "Barracks",
+  "strategos.building.field": "Field",
   "strategos.resource.food": "Food",
   "strategos.resource.wood": "Wood",
   "strategos.resource.stone": "Stone",
@@ -26,5 +27,9 @@
   "key.strategos.stop": "Stop",
   "key.strategos.toggle_first_person": "First person",
   "key.strategos.toggle_rts": "RTS mode",
-  "key.strategos.order_here": "Order the selection here"
+  "key.strategos.order_here": "Order the selection here",
+  "key.strategos.follow_me": "Selection follows me",
+  "key.strategos.build": "Place a building",
+  "key.strategos.rotate": "Turn the building",
+  "key.strategos.next_idle_worker": "Next idle worker"
 }

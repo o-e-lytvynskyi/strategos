@@ -4,6 +4,7 @@ import dev.strategos.core.client.camera.CameraInput;
 import dev.strategos.core.client.camera.CameraLimits;
 import dev.strategos.core.client.camera.CameraPose;
 import dev.strategos.core.client.camera.CameraRig;
+import dev.strategos.core.client.hud.IdleWorkers;
 import dev.strategos.core.client.input.Action;
 import dev.strategos.core.client.input.InputState;
 import dev.strategos.core.client.pick.Picking;
@@ -16,6 +17,8 @@ import dev.strategos.core.protocol.CameraJump;
 import dev.strategos.core.protocol.Command;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.ModeSwitch;
+import dev.strategos.core.protocol.UnitSummary;
+import dev.strategos.core.shared.Handle;
 import dev.strategos.mod.client.StrategosClient;
 import dev.strategos.mod.client.StrategosClientConfig;
 import dev.strategos.mod.client.net.ClientPayloads;
@@ -66,6 +69,11 @@ public final class RtsMode {
     private final ControlGroups groups = new ControlGroups();
     private final RtsOrders orders = new RtsOrders(this);
     private final RtsPlacement placement = new RtsPlacement(this);
+    private final IdleWorkers idle = new IdleWorkers();
+    /** The idle worker the key took whose body has not arrived yet, its index; -1 for none, and ticks left to wait. */
+    private int pendingIdle = -1;
+
+    private int pendingIdleTicks;
     private Selection selection = new Selection(-1);
     private @Nullable CameraRig rig;
     private @Nullable InputState input;
@@ -143,6 +151,45 @@ public final class RtsMode {
     /** One command from the HUD (UI-06), as a batch of its own; whether it went. */
     public boolean send(Command command) {
         return orders.send(command);
+    }
+
+    /**
+     * The idle-worker key (UI-10): the next idle worker, in index order, is selected and the camera goes to it; a far
+     * one is selected when its body arrives after the jump.
+     */
+    public void nextIdleWorker() {
+        MatchJoin join = StrategosClient.match();
+        if (join == null || rig == null) {
+            return;
+        }
+        UnitSummary.Entry e =
+                idle.next(StrategosClient.model().units(), join.slot().value(), StrategosClient.templates());
+        if (e == null) {
+            return;
+        }
+        centreOn(join.originX() + e.qx() / 8.0, join.originZ() + e.qz() / 8.0);
+        pendingIdle = e.index();
+        pendingIdleTicks = 100;
+        selectPendingIdle();
+    }
+
+    private void selectPendingIdle() {
+        Minecraft mc = Minecraft.getInstance();
+        if (pendingIdle < 0 || mc.level == null) {
+            return;
+        }
+        for (Entity e : mc.level.entitiesForRendering()) {
+            if (e instanceof UnitEntity body
+                    && body.spawnData() != null
+                    && Handle.index(body.spawnData().handle()) == pendingIdle) {
+                selection().set(List.of(body.spawnData().handle()));
+                pendingIdle = -1;
+                return;
+            }
+        }
+        if (--pendingIdleTicks <= 0) {
+            pendingIdle = -1;
+        }
     }
 
     /** The building template placement mode is armed with, its net index; -1 when it is not armed. For scenarios. */
@@ -393,6 +440,7 @@ public final class RtsMode {
             return;
         }
         ticks++;
+        selectPendingIdle();
         outlines(mc);
         orders.showPreview(mc, ticks);
         orders.showMarkers(mc, ticks);

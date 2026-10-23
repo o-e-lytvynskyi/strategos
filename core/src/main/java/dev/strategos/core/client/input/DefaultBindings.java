@@ -33,6 +33,7 @@ public final class DefaultBindings {
                 rts(Action.TOGGLE_FIRST_PERSON, KeyCode.V),
                 rts(Action.BUILD, KeyCode.B),
                 rts(Action.ROTATE, KeyCode.R),
+                rts(Action.NEXT_IDLE_WORKER, KeyCode.I),
                 new Binding(Action.TOGGLE_RTS, ActionContext.IN_GAME, KeyCode.key(KeyCode.F6), Modifiers.NONE, true),
                 new Binding(Action.ORDER_HERE, ActionContext.IN_GAME, KeyCode.key(KeyCode.G), Modifiers.NONE, true),
                 new Binding(Action.FOLLOW_ME, ActionContext.IN_GAME, KeyCode.key(KeyCode.R), Modifiers.NONE, true),

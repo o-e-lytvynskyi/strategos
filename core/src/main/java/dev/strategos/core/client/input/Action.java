@@ -35,7 +35,9 @@ public enum Action {
     /** Placement mode (BLD-02): the next building template to place, after the last none, until the command card. */
     BUILD(false),
     /** Placement mode: the ghost turns a quarter. */
-    ROTATE(false);
+    ROTATE(false),
+    /** The next idle worker, in a stable order: selected, the camera on it (UI-10). */
+    NEXT_IDLE_WORKER(false);
 
     private final boolean held;
 

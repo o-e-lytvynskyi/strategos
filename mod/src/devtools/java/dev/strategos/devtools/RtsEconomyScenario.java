@@ -45,7 +45,7 @@ import org.lwjgl.glfw.GLFW;
  * enters RTS mode. A click on the centre selects it, and the command card offers a worker; a click on that button sends
  * one Train, which the server queues; a right click on the ground sets the centre's rally point. A click on a worker
  * shows its details in the panel; the card's build page opens and its house button arms placement, which Escape
- * disarms. The resource bar shows the stock and the population before and after the worker's cost (UI-07).
+ * disarms; the idle-worker key then takes each idle worker in turn (UI-10). The resource bar shows the stock and the population before and after the worker's cost (UI-07).
  * Screenshots of the centre's and the worker's selection and of the bar, for UI-06.4's and UI-07.4's goldens (T30).
  */
 final class RtsEconomyScenario implements Scenario {
@@ -219,6 +219,27 @@ final class RtsEconomyScenario implements Scenario {
                 ctx.result.addProperty("armed", rts.placementTemplate() == house);
                 screen.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
                 check(rts.placementTemplate() == -1, "Escape left placement armed");
+                rts.selection().clear();
+            }
+            case 8 -> { // UI-10: the idle-worker key takes the idle workers one by one, in index order
+                java.util.List<Integer> taken = new java.util.ArrayList<>();
+                for (int k = 0; k < WORKERS + 1; k++) {
+                    screen.keyPressed(GLFW.GLFW_KEY_I, 0, 0);
+                    check(
+                            rts.selection().handles().size() == 1,
+                            "the key selected " + rts.selection().handles());
+                    taken.addAll(rts.selection().handles());
+                }
+                check(
+                        taken.size() == WORKERS + 1
+                                && taken.subList(0, WORKERS).stream().distinct().count() == WORKERS
+                                && taken.get(WORKERS).equals(taken.get(0)),
+                        "the key took " + taken);
+                ctx.result.addProperty("idleVisited", taken.stream().distinct().count());
+                wait = 2;
+            }
+            case 9 -> {
+                ctx.capture("idle_worker");
                 return finish(ctx);
             }
             default -> {

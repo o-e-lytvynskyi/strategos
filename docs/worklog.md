@@ -9,7 +9,7 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-24 — M3 T9–T18
+## 2026-10-24 — M3 T9–T19
 
 - **The owner, past midnight:** «можешь любые тесты проводить и как закончишь м3 - начинай м4, все решения
   принимай сам, которые рекомендуешь» (STATE item 6).
@@ -56,7 +56,11 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
   window, clicks through it all; its two frames wait as golden candidates for T30.
 - **M3 T18 · UI-07, the resource bar.** Along the top: each resource's stock and income a minute, the population
   (red at the cap) and the idle workers; a hover tells who gathers what, or that houses are needed. The income is
-  exactly what was gathered over the last minute. Next: T19, the idle-worker key and notices.
+  exactly what was gathered over the last minute.
+- **M3 T19 · UI-10, idle workers and notices.** I (or a click on the idle count) selects the next idle worker and
+  takes the camera there, visiting each in turn. Top right, "not enough wood", "population capped: build houses" and
+  "a worker is idle" show once per cause, not every time the server repeats it. The language file now names the
+  field and the newer keys. Next: T20, the placeholder look and the style guide.
 
 ## 2026-10-23 (evening) — M3 spec, T1–T8
 

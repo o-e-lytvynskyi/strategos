@@ -40,6 +40,7 @@ public final class ClientPayloads {
             case MatchStatePayload p -> StrategosClient.state(p.state());
             case FeedbackPayload p -> {
                 LOG.info("feedback: {}", p.message());
+                StrategosClient.hud().feedback(p.message());
                 if (p.message() instanceof Feedback f) {
                     StrategosClient.sounds().feedback(f);
                 }

@@ -219,6 +219,7 @@ public final class RtsScreen extends Screen {
                 case CAMERA_CENTRE_ON_SELECTION -> mode.centreOn(selection.handles());
                 case TOGGLE_FIRST_PERSON -> mode.toFirstPerson();
                 case STOP -> mode.stop();
+                case NEXT_IDLE_WORKER -> mode.nextIdleWorker();
                 default -> {}
             }
         }

@@ -2,6 +2,7 @@ package dev.strategos.mod.client.hud;
 
 import dev.strategos.core.client.hud.CardController;
 import dev.strategos.core.client.hud.CommandCard;
+import dev.strategos.core.client.hud.EconomyNotices;
 import dev.strategos.core.client.hud.GroupBar;
 import dev.strategos.core.client.hud.HudLayout;
 import dev.strategos.core.client.hud.HudRect;
@@ -15,6 +16,7 @@ import dev.strategos.core.client.select.Selection;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.FactionState;
+import dev.strategos.core.protocol.FeedbackMsg;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.UiQuery;
 import dev.strategos.core.protocol.UnitDetail;
@@ -61,6 +63,7 @@ public final class RtsHud {
     public static final ResourceLocation SELECTION = Ids.id("rts_selection");
     public static final ResourceLocation CARD = Ids.id("rts_command_card");
     public static final ResourceLocation RESOURCES = Ids.id("rts_resources");
+    public static final ResourceLocation NOTICES = Ids.id("rts_notices");
     public static final ResourceLocation GROUPS = Ids.id("rts_groups");
     public static final ResourceLocation TOOLTIP = Ids.id("rts_tooltip");
     public static final ResourceLocation INSPECT = Ids.id("first_person_inspect");
@@ -104,6 +107,9 @@ public final class RtsHud {
     private ResourceBar resources = ResourceBar.EMPTY;
     private List<Segment> segments = List.of();
     private @Nullable String barHover;
+    private final EconomyNotices notices = new EconomyNotices();
+    private List<EconomyNotices.Shown> shownNotices = List.of();
+    private long clientTicks;
 
     /** One part of the resource bar: where it is, its icon (null for none), its text and colour, and its tooltip. */
     record Segment(HudRect at, @Nullable String icon, String text, int colour, String tooltip) {}
@@ -127,6 +133,7 @@ public final class RtsHud {
             e.registerAboveAll(SELECTION, this::drawSelection);
             e.registerAboveAll(CARD, this::drawCard);
             e.registerAboveAll(RESOURCES, this::drawResources);
+            e.registerAboveAll(NOTICES, this::drawNotices);
             e.registerAboveAll(GROUPS, this::drawGroups);
             e.registerAboveAll(TOOLTIP, this::drawTooltip);
             e.registerAboveAll(INSPECT, this::drawInspect);
@@ -169,6 +176,13 @@ public final class RtsHud {
         }
         HudLayout l = layout();
         int pad = theme.padding();
+        List<Segment> parts = segments;
+        if (!parts.isEmpty() && l.resourceBar().contains(x, y)) {
+            if (button == 0 && parts.get(parts.size() - 1).at().contains(x, y)) {
+                mode.nextIdleWorker(); // the idle count is the idle-worker button
+            }
+            return true;
+        }
         if (!card.buttons().isEmpty() && l.commandCard().contains(x, y)) {
             if (button == 0) {
                 CardController.Click c = controller.click(
@@ -219,8 +233,19 @@ public final class RtsHud {
         }
     }
 
+    /** A feedback message from the server: the economy's become notices (UI-10). */
+    public void feedback(FeedbackMsg msg) {
+        notices.accept(msg, clientTicks, StrategosClient.resources());
+    }
+
+    /** The notices shown now, the newest first, for scenarios. */
+    public List<EconomyNotices.Shown> notices() {
+        return shownNotices;
+    }
+
     private void build() {
         long start = System.nanoTime();
+        clientTicks++;
         Minecraft mc = Minecraft.getInstance();
         if (!mode.active() || mc.level == null) {
             summary = SelectionSummary.EMPTY;
@@ -277,7 +302,9 @@ public final class RtsHud {
         FactionState faction = StrategosClient.model().faction();
         if (faction != null) {
             income.accept(faction);
+            notices.population(faction.populationUsed(), faction.populationCap());
         }
+        shownNotices = notices.shown(clientTicks);
         resources = ResourceBar.of(faction, StrategosClient.resources(), income);
         segments = segments(mc.font, layout().resourceBar(), resources);
         barHover = null;
@@ -365,6 +392,38 @@ public final class RtsHud {
                 small(g, s.icon(), s.at().x(), s.at().y() + 2);
             }
             g.drawString(font, s.text(), s.at().x() + 10, s.at().y() + 2, s.colour(), false);
+        }
+    }
+
+    /** The newest notices, right-aligned in the notices' strip, the newest nearest the corner. */
+    private void drawNotices(GuiGraphics g, DeltaTracker delta) {
+        List<EconomyNotices.Shown> shown = shownNotices;
+        if (!shown() || shown.isEmpty()) {
+            return;
+        }
+        Font font = Minecraft.getInstance().font;
+        HudRect r = layout().notices();
+        int x = r.right();
+        for (EconomyNotices.Shown s : shown) {
+            String text = switch (s.cause()) {
+                case NOT_ENOUGH_RESOURCES -> "Not enough " + s.detail();
+                case POPULATION_CAPPED -> "Population capped: build houses";
+                case DEPOSIT_EXHAUSTED -> s.count() > 1 ? "Workers idle (" + s.count() + ")" : "A worker is idle";
+            };
+            int w = font.width(text) + 2 * theme.padding();
+            if (x - w < r.x()) {
+                break;
+            }
+            x -= w;
+            panel(g, new HudRect(x, r.y(), w, r.height()));
+            g.drawString(
+                    font,
+                    text,
+                    x + theme.padding(),
+                    r.y() + 2,
+                    s.cause() == EconomyNotices.Cause.DEPOSIT_EXHAUSTED ? theme.text() : 0xFFFF9060,
+                    false);
+            x -= 2;
         }
     }
 
