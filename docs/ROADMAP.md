@@ -313,10 +313,10 @@ Cards: [roadmap/M2-command.md](roadmap/M2-command.md#cards). 20 cards, at most 6
 | CAM-02 | RTS camera rig | L | CAM-01, UI-01, D-09 | done |
 | CAM-04 | RtsScreen, cursor and world picking | M | CAM-01, UI-01 | done |
 | UI-02 | HUD framework | M | UI-01, QA-06 | done |
-| UNIT-03 | Unit renderer for the RTS view | M | UNIT-01 | in_progress |
+| UNIT-03 | Unit renderer for the RTS view | M | UNIT-01 | done |
 | QA-18 | Scenario diff, goldens and the CI golden job | M | QA-06, CAM-04, D-22 | done |
 | CAM-03 | Commander body, jumps and the chunk-sent re-pair | M | CAM-01, CORE-03, NET-01, QA-19 | done |
-| NET-08 | Tier-2 replication: summaries, far markers and details | M | NET-01, UNIT-03 | specified |
+| NET-08 | Tier-2 replication: summaries, far markers and details | M | NET-01, UNIT-03 | in_progress |
 | UI-03 | Selection | M | CAM-04, UI-02, UNIT-03 | done |
 | UI-04 | Control groups | S | UI-03 | done |
 | UI-05 | Order feedback and destination preview | M | ORD-03, UI-02, CAM-04 | done |

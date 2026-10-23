@@ -9,7 +9,19 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24, T16, T26; M2 spec, M2 T1, T3, T5, T11, T13, T9, T21, T8, T6, T19, T2, T4, T14
+## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24, T16, T26; M2 spec, M2 T1, T3, T5, T11, T13, T9, T21, T8, T6, T19, T2, T4, T14, T10 (part), T7
+
+- **M2 T10 (part) · Summaries and far markers** — NET-08 in progress; UNIT-03 done (T7).
+  - **Results:** core `UnitSummary` and its codec, `ReplicationService` with `Visibility`,
+    `ClientMatchModel`; the mod's `unit_summary` payload and `Replication` sender at 2 Hz;
+    `FarMarkers`; the scenario `far_markers`; tests in L1 (5) and L3 (1).
+  - **Measured:** 6.0 bytes a unit; four frames in 2 s; on screen 5 bodies and 12 markers for the
+    17 units in view.
+  - **Problems:** ArchUnit's B2 wanted `@CoreApi` on the replication types; the scene's first unit
+    count was off by six; in a 512² or 384² space the integrated server's stop never finished its
+    chunk unloading (a thread dump: the server thread in `ChunkMap#processUnloads`, G1 busy), not
+    found yet, 256² works.
+  - **Next:** `ui_query`, `unit_detail` and `unit_hud`.
 
 - **M2 T14 · Damage model** — CMB-01 in progress (its unit-on-unit check with T15).
   - **Results:** `sim.combat` (damage packets, the formula, damage taken per unit, the COMBAT

@@ -15,7 +15,8 @@
     "strategos:match_state",
     "strategos:mode_switch",
     "strategos:template_ack",
-    "strategos:template_set"
+    "strategos:template_set",
+    "strategos:unit_summary"
   ],
   "dataMaps": ["strategos:nav_class"],
   "worldgen": [

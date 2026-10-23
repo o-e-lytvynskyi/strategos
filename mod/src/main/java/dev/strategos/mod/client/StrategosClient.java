@@ -1,5 +1,6 @@
 package dev.strategos.mod.client;
 
+import dev.strategos.core.client.model.ClientMatchModel;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.MatchStateMsg;
@@ -8,6 +9,7 @@ import dev.strategos.mod.client.debug.ClientDebugState;
 import dev.strategos.mod.client.debug.DebugOverlayHost;
 import dev.strategos.mod.client.hud.RtsHud;
 import dev.strategos.mod.client.net.ClientPayloads;
+import dev.strategos.mod.client.overlay.FarMarkers;
 import dev.strategos.mod.client.rts.RtsMode;
 import dev.strategos.mod.registry.ModEntityTypes;
 import dev.strategos.mod.server.net.payload.PayloadArrived;
@@ -30,6 +32,8 @@ public final class StrategosClient {
     private static final ClientDebugState DEBUG = new ClientDebugState();
     private static final RtsMode RTS = new RtsMode();
     private static final RtsHud HUD = new RtsHud(RTS);
+    private static final ClientMatchModel MODEL = new ClientMatchModel();
+    private static final FarMarkers FAR = new FarMarkers(MODEL);
     private static volatile @Nullable MatchJoin match;
     private static volatile @Nullable MatchStateMsg state;
     private static volatile TemplateSet templates = TemplateSet.builtin();
@@ -44,10 +48,22 @@ public final class StrategosClient {
             match = null;
             state = null;
             DEBUG.reset();
+            MODEL.clear();
         });
         new DebugOverlayHost(modBus, DEBUG);
         RTS.register(modBus);
         HUD.register(modBus); // after RTS mode: its tick builds from the tick RTS mode just ran
+        FAR.register();
+    }
+
+    /** What replication told this client of its match (NET-08); the client thread's only. */
+    public static ClientMatchModel model() {
+        return MODEL;
+    }
+
+    /** The far-unit markers (NET-08). */
+    public static FarMarkers farMarkers() {
+        return FAR;
     }
 
     /** The RTS HUD (UI-02); the client thread's only. */

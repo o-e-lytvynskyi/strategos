@@ -262,8 +262,8 @@ perspective only.
      consent).
   3. Units render out to 192 blocks at the highest camera position (L4, consent).
 - **Tests:** L0, L3, L4 (consent) · **Depends on:** UNIT-01 · **Size:** M · **Tier:** T0
-- **Progress:** 2026-10-23 — M2 T7: `bodytests.no_unit_on_a_team` (1); `rts_select` on the owner's Mac: the selected 150 glow in their faction's colour and no enemy does (2; spec §1.6 rows 17–18); render distance 192 set, its L4 check waits for NET-08's markers (3)
-- **Status:** in_progress
+- **Done:** 2026-10-23 — M2 T7: `bodytests.no_unit_on_a_team` (1); `rts_select` on the owner's Mac: the selected 150 glow in their faction's colour and no enemy does, and `rts_goldens` proposes the outline's goldens (2; spec §1.6 rows 17–18); render distance 192, and from the top height bodies within the 160-block pairing range and NET-08's markers past it show every unit on screen (3, `far_markers`; row 57)
+- **Status:** done
 
 #### QA-18 · Scenario diff, goldens and the CI golden job
 - **Value:** Client changes are checked against approved pictures, on the Mac with consent or on
@@ -338,7 +338,8 @@ perspective only.
      highest camera position (L4, consent).
 - **Tests:** L0, L1, L2, L3, L4 (consent), L5 · **Depends on:** NET-01, UNIT-03 · **Size:** M ·
   **Tier:** T0
-- **Status:** specified
+- **Progress:** 2026-10-23 — M2 T10: `unit_summary` (core `UnitSummary`, `ReplicationService`, `ClientMatchModel`; the mod's `Replication` at 2 Hz) and far markers; `UnitSummaryCodecTest` (1), `ReplicationServiceTest` (2), `replicationtests.summaries_at_two_hertz_own_and_visible_only` (3), `far_markers` on the owner's Mac (5); spec §1.6 rows 54–57. Open: `ui_query` and `unit_detail` (4), `unit_hud`
+- **Status:** in_progress
 
 #### UI-03 · Selection
 - **Value:** Grab exactly the units you want, anywhere on the map: click, drag a box, Shift to add,

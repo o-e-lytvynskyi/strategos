@@ -1,6 +1,7 @@
 package dev.strategos.mod.client.net;
 
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.TemplateAck;
 import dev.strategos.mod.client.StrategosClient;
 import dev.strategos.mod.server.net.payload.DebugFeedPayload;
@@ -10,6 +11,7 @@ import dev.strategos.mod.server.net.payload.MatchStatePayload;
 import dev.strategos.mod.server.net.payload.PayloadArrived;
 import dev.strategos.mod.server.net.payload.TemplateAckPayload;
 import dev.strategos.mod.server.net.payload.TemplateSetPayload;
+import dev.strategos.mod.server.net.payload.UnitSummaryPayload;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -33,6 +35,12 @@ public final class ClientPayloads {
             case FeedbackPayload p -> LOG.info("feedback: {}", p.message());
             case DebugFeedPayload p -> StrategosClient.debug().accept(p.message());
             case TemplateSetPayload p -> templates(p);
+            case UnitSummaryPayload p -> {
+                MatchJoin join = StrategosClient.match();
+                if (join != null) {
+                    StrategosClient.model().accept(p.summary(), join.matchId());
+                }
+            }
             default -> LOG.debug("unhandled payload {}", event.payload().type().id());
         }
     }

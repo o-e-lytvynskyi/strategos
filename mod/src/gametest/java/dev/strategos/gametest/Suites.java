@@ -21,6 +21,7 @@ import dev.strategos.gametest.suites.OrderTests;
 import dev.strategos.gametest.suites.PathTests;
 import dev.strategos.gametest.suites.PerfTests;
 import dev.strategos.gametest.suites.PersistenceTests;
+import dev.strategos.gametest.suites.ReplicationTests;
 import dev.strategos.gametest.suites.RetryNoReasonSelfTest;
 import dev.strategos.gametest.suites.SelfTests;
 import dev.strategos.gametest.suites.SharedBatchSelfTest;
@@ -48,6 +49,7 @@ public final class Suites {
                         BuildTests.class,
                         BodyTests.class,
                         CameraTests.class,
+                        ReplicationTests.class,
                         CombatTests.class,
                         FirstPersonTests.class,
                         MatchTests.class,

@@ -19,6 +19,7 @@ import dev.strategos.mod.server.jobs.PathThreads;
 import dev.strategos.mod.server.match.MapImports;
 import dev.strategos.mod.server.match.MatchRegistry;
 import dev.strategos.mod.server.net.NetGateway;
+import dev.strategos.mod.server.net.Replication;
 import dev.strategos.mod.server.tick.BetweenTicks;
 import dev.strategos.mod.server.tick.FaultBarrier;
 import dev.strategos.mod.server.world.ArenaWorld;
@@ -69,6 +70,7 @@ public final class StrategosServer {
     private final NetGateway net;
     private final InterestSets interest = new InterestSets();
     private final DebugFeed debug;
+    private final Replication replication;
     private final PerfDump perf;
     private volatile BlockClassTable blockClasses;
     private ArenaWorld.Outcome arena = ArenaWorld.Outcome.NOT_AN_ARENA;
@@ -93,6 +95,7 @@ public final class StrategosServer {
         this.debug =
                 new DebugFeed(server, () -> this.matches, net, StrategosConfig.INSTANCE.debugPermission.getAsInt());
         this.perf = new PerfDump(server, () -> this.matches);
+        this.replication = new Replication(server, () -> this.matches, net);
         this.blockClasses = buildBlockClasses();
     }
 
@@ -220,6 +223,11 @@ public final class StrategosServer {
         return interest;
     }
 
+    /** Replication tier 2's sender (NET-08). */
+    public Replication replication() {
+        return replication;
+    }
+
     /** The movement overlay's feed to subscribed operators (PATH-10). */
     public DebugFeed debug() {
         return debug;
@@ -278,6 +286,7 @@ public final class StrategosServer {
             long start = System.nanoTime();
             s.perf.tick();
             s.debug.tick();
+            s.replication.tick();
             s.net.flush();
             s.betweenTicks.tickEnds(System.nanoTime() - start);
         }
