@@ -1,5 +1,7 @@
 {
   "entity.strategos.unit_humanoid": "Unit",
+  "strategos.unit.debug_walker": "Debug walker",
+  "strategos.unit.infantry": "Infantry",
   "generator.strategos.arena": "Strategos Arena",
   "key.categories.strategos": "Strategos",
   "key.strategos.overlay": "Movement overlay",

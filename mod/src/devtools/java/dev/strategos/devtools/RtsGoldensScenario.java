@@ -153,15 +153,29 @@ final class RtsGoldensScenario implements Scenario {
                 int selected = rts.selection().handles().size();
                 ctx.result.addProperty("selected", selected);
                 check(selected == OWN, "the drag selected " + selected);
+                screen.keyPressed(KeyCode.digit(1).code(), 0, 2); // Ctrl+1: the group bar shows group 1
                 next();
             }
             case 3 -> {
                 if (inPhase >= 5) {
-                    ctx.capture("outline");
+                    ctx.capture("outline"); // with the HUD's selection panel and group bar (UI-02.3)
                     next();
                 }
             }
             case 4 -> {
+                double[] enemy = enemyOnScreen(mc, rts);
+                screen.mouseMoved(
+                        enemy[0] * screen.width / mc.getWindow().getScreenWidth(),
+                        enemy[1] * screen.height / mc.getWindow().getScreenHeight()); // the HUD's tooltip names it
+                next();
+            }
+            case 5 -> {
+                if (inPhase >= 2) {
+                    ctx.capture("hud_tooltip");
+                    next();
+                }
+            }
+            case 6 -> {
                 double[] empty = gui(screen, rts, 0.5, floor, 4.5);
                 screen.mouseClicked(empty[0], empty[1], 0);
                 screen.mouseReleased(empty[0], empty[1], 0);
@@ -171,14 +185,14 @@ final class RtsGoldensScenario implements Scenario {
                 screen.keyPressed(KeyCode.PERIOD, 0, 0); // a quarter turn right: 20 ticks at 4.5° a tick
                 next();
             }
-            case 5 -> {
+            case 7 -> {
                 if (inPhase >= 20) {
                     screen.keyReleased(KeyCode.PERIOD, 0, 0);
                     screen.mouseScrolled(screen.width / 2.0, screen.height / 2.0, 0, 6); // in, to 10.4 blocks up
                     next();
                 }
             }
-            case 6 -> {
+            case 8 -> {
                 if (inPhase >= SETTLE && mc.levelRenderer.hasRenderedAllSections()) {
                     ctx.result.addProperty("closeHeight", rig(rts).height());
                     ctx.capture("pose_turned_close");
@@ -186,14 +200,14 @@ final class RtsGoldensScenario implements Scenario {
                     next();
                 }
             }
-            case 7 -> {
+            case 9 -> {
                 if (inPhase >= 20) {
                     screen.keyReleased(KeyCode.COMMA, 0, 0);
                     screen.mouseScrolled(screen.width / 2.0, screen.height / 2.0, 0, -20); // out, to the top
                     next();
                 }
             }
-            case 8 -> {
+            case 10 -> {
                 if (inPhase >= SETTLE && mc.levelRenderer.hasRenderedAllSections()) {
                     ctx.result.addProperty("highHeight", rig(rts).height());
                     check(Math.abs(rig(rts).height() - CameraRig.MAX_HEIGHT) < 0.01, "the top is " + rig(rts).height());
@@ -201,7 +215,7 @@ final class RtsGoldensScenario implements Scenario {
                     next();
                 }
             }
-            case 9 -> {
+            case 11 -> {
                 IntegratedServer server = mc.getSingleplayerServer();
                 if (server != null) {
                     server.execute(() -> ScenarioWorld.run(server, "tick unfreeze"));
@@ -245,6 +259,25 @@ final class RtsGoldensScenario implements Scenario {
     private void next() {
         phase++;
         inPhase = 0;
+    }
+
+    /** Where an enemy's chest projects, in window points: the tooltip's unit. */
+    private static double[] enemyOnScreen(Minecraft mc, RtsMode rts) {
+        View v = rts.view();
+        if (v == null || mc.level == null) {
+            throw new IllegalStateException("no view");
+        }
+        for (Entity e : mc.level.entitiesForRendering()) {
+            if (e instanceof UnitEntity body
+                    && body.spawnData() != null
+                    && body.spawnData().faction() == 1) {
+                double[] w = Picking.project(v, e.getX(), e.getY() + 0.9, e.getZ());
+                if (w != null && w[0] > 0 && w[0] < v.width() && w[1] > 0 && w[1] < v.height()) {
+                    return w;
+                }
+            }
+        }
+        throw new IllegalStateException("no enemy on screen");
     }
 
     private static CameraRig rig(RtsMode rts) {

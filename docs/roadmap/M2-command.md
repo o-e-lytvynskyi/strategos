@@ -244,7 +244,8 @@ perspective only.
      JMH); PERF-14 confirms budget F on screen.
   3. HUD goldens (L4, consent).
 - **Tests:** L0, L1, L4 (consent), L6 · **Depends on:** UI-01, QA-06 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Done:** 2026-10-23 — M2 T6: `HudLayout` with `HudLayoutTest` at every listed window and GUI scale (1); `HudBench.hudFrame200`, 1.47 µs for 200 selected units, and PERF-14 with the HUD within budget F (2); the selection summary, group bar and tooltip in `rts_goldens`, proposed as goldens for the owner (3); M2 spec §1.6 rows 40–42
+- **Status:** done
 
 #### UNIT-03 · Unit renderer for the RTS view
 - **Value:** Units read well from high above: visible far away, outlined when selected, moving

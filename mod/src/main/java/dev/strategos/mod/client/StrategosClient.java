@@ -6,6 +6,7 @@ import dev.strategos.core.protocol.MatchStateMsg;
 import dev.strategos.mod.Strategos;
 import dev.strategos.mod.client.debug.ClientDebugState;
 import dev.strategos.mod.client.debug.DebugOverlayHost;
+import dev.strategos.mod.client.hud.RtsHud;
 import dev.strategos.mod.client.net.ClientPayloads;
 import dev.strategos.mod.client.rts.RtsMode;
 import dev.strategos.mod.registry.ModEntityTypes;
@@ -28,6 +29,7 @@ import org.jspecify.annotations.Nullable;
 public final class StrategosClient {
     private static final ClientDebugState DEBUG = new ClientDebugState();
     private static final RtsMode RTS = new RtsMode();
+    private static final RtsHud HUD = new RtsHud(RTS);
     private static volatile @Nullable MatchJoin match;
     private static volatile @Nullable MatchStateMsg state;
     private static volatile TemplateSet templates = TemplateSet.builtin();
@@ -45,6 +47,12 @@ public final class StrategosClient {
         });
         new DebugOverlayHost(modBus, DEBUG);
         RTS.register(modBus);
+        HUD.register(modBus); // after RTS mode: its tick builds from the tick RTS mode just ran
+    }
+
+    /** The RTS HUD (UI-02); the client thread's only. */
+    public static RtsHud hud() {
+        return HUD;
     }
 
     /** RTS mode on this client (CAM-02, CAM-04); the client thread's only. */

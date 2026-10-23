@@ -9,7 +9,20 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24, T16, T26; M2 spec, M2 T1, T3, T5, T11, T13, T9, T21, T8
+## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24, T16, T26; M2 spec, M2 T1, T3, T5, T11, T13, T9, T21, T8, T6
+
+- **M2 T6 · HUD framework** — UI-02 done.
+  - **Results:** `core.client.hud` (`HudLayout`, `HudRect`, `HudTheme`, `SelectionSummary`,
+    `GroupBar`), `mod.client.hud.RtsHud` (three GUI layers, the vanilla survival layers cancelled
+    in RTS mode, view-models once a tick, its own timers), the hover tooltip, the units' names in
+    the language file; `HudLayoutTest` (5), `HudViewModelTest` (3), `HudBench`; the HUD in
+    `rts_goldens` and PERF-14.
+  - **Measured:** `HudBench` 1.47 µs for 200 units; on screen 0.028 ms a frame and 0.042 ms a tick;
+    PERF-14 with the HUD still within every budget (vanilla 2.56 / 6.11 ms a frame).
+  - **Problems:** ArchUnit's B8 caught a static array of colours and a static set of layer ids;
+    a template's name is a translation key; the tooltip never saw a cursor moved with GLFW, so it
+    follows the RTS screen's `mouseMoved`.
+  - **Next:** CI's Linux frames of the HUD, then the headless tasks: T2's split, combat.
 
 - **M2 T8 · Scenario diff and goldens** — QA-18 done; M2 T22 early: M1's QA-19.4 and PATH-10.3,
   the `-Pcompat` pass.

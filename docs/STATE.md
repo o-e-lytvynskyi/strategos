@@ -46,7 +46,8 @@ Answer in chat or here; the next session applies the answers.
 8. **Pictures to approve, not urgent (M2's consent batch):** the reference frames the client tests
    compare with, for this Mac and for CI's Linux renderer, in
    [goldens-proposed](../mod/src/devtools/goldens-proposed/): the RTS camera at three poses, a
-   selected group outlined, and the movement overlay. Say yes and they become the goldens
+   selected group outlined with the HUD's panel and group bar, a unit's tooltip, and the movement
+   overlay. Say yes and they become the goldens
    (procedure in [mod/src/devtools/README.md](../mod/src/devtools/README.md)). Two things to look
    at while you do:
    - the outline reads dark navy rather than the faction's blue: the outline effect darkens it;
@@ -307,6 +308,11 @@ Answer in chat or here; the next session applies the answers.
   picture fails the run; CI proves it each time by spoiling a copy. A fixed scene with the camera
   at three poses and a selected group outlined repeats to the pixel on both platforms. The
   pictures wait for your yes (below). Card QA-18 is done.
+- 2026-10-23 · **M2 T6 The RTS HUD:** in the RTS view the survival bars, hotbar and crosshair are
+  gone; a panel at the bottom says how many units are selected and of which types, a bar above it
+  shows your control groups, and hovering a unit names it with its faction's colour. The layout
+  holds every window size and GUI scale tested, and the HUD costs well under a tenth of a
+  millisecond a frame on this Mac. Card UI-02 is done.
 - 2026-10-23 · **Three items of M2's consent batch, early, with today's Mac:** the network byte
   counter that the headless tests use matches a real client's own measurement to 0.006 % (M1's
   QA-19.4); the movement overlay has its pictures too (M1's PATH-10.3); and the RTS scenarios pass
@@ -318,7 +324,7 @@ Answer in chat or here; the next session applies the answers.
 - **In progress:** none.
 - **Last finished task:** M1 T26 (2026-10-23). The agents' branches `wip/m1-t17-unitai-hfsm` and
   `wip/m1-t25-debug-overlay` are merged and kept on GitHub for the record.
-- **Last M2 task:** T8, the scenario diff and goldens (2026-10-23); T1, T3, T5, T8, T9, T11, T13, T21 done; T4, T7, T12 open for parts that need later tasks; three consent-batch items (T22) done early.
+- **Last M2 task:** T6, the HUD (2026-10-23); T1, T3, T5, T6, T8, T9, T11, T13, T21 done; T4, T7, T12 open for parts that need later tasks; three consent-batch items (T22) done early.
 - **Next task:** while the Mac's windows are mine today, the window work that is ready (M2's L4
   items as their tasks land); M1 T27 (M1 close, headless); then M2's tasks in the spec's order.
 - **WIP branch:** none.

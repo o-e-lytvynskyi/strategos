@@ -91,6 +91,10 @@ final class RtsFrameScenario implements Scenario {
         final FrameTimer frames = new FrameTimer(CAPACITY);
         final FrameTimer intervals = new FrameTimer(CAPACITY);
         final FrameTimer ticks = new FrameTimer(CAPACITY);
+        /** The HUD's own timers (UI-02): its layers' drawing each frame, its view-models' building each tick. */
+        final FrameTimer hudDraw = new FrameTimer(CAPACITY);
+
+        final FrameTimer hudBuild = new FrameTimer(CAPACITY);
 
         JsonObject json() {
             JsonObject o = new JsonObject();
@@ -101,6 +105,9 @@ final class RtsFrameScenario implements Scenario {
             o.addProperty("frameMaxMs", intervals.maxMs());
             o.addProperty("clientTickP50Ms", ticks.ms(0.50));
             o.addProperty("clientTickP99Ms", ticks.ms(0.99));
+            o.addProperty("hudDrawP50Ms", hudDraw.ms(0.50));
+            o.addProperty("hudDrawP99Ms", hudDraw.ms(0.99));
+            o.addProperty("hudBuildP50Ms", hudBuild.ms(0.50));
             return o;
         }
     }
@@ -165,6 +172,7 @@ final class RtsFrameScenario implements Scenario {
         Sample s = sample;
         if (s != null) {
             s.frames.end();
+            s.hudDraw.add(StrategosClient.hud().drawNanos());
         }
     }
 
@@ -181,6 +189,7 @@ final class RtsFrameScenario implements Scenario {
         Sample s = sample;
         if (s != null) {
             s.ticks.end();
+            s.hudBuild.add(StrategosClient.hud().buildNanos());
         }
     }
 
@@ -464,6 +473,9 @@ final class RtsFrameScenario implements Scenario {
         ctx.result.addProperty("clientTickP50Ms", rtsCapped.ticks.ms(0.50));
         ctx.result.addProperty("clientTickP99Ms", rtsCapped.ticks.ms(0.99));
         ctx.result.addProperty("tickCap", TICK_CAP);
+        ctx.result.addProperty("hudDrawP50Ms", rts.hudDraw.ms(0.50));
+        ctx.result.addProperty("hudDrawP99Ms", rts.hudDraw.ms(0.99));
+        ctx.result.addProperty("hudBuildP50Ms", rtsCapped.hudBuild.ms(0.50));
         ctx.result.addProperty("units", 2 * PER_SIDE);
         ctx.result.addProperty("renderDistance", RENDER_DISTANCE);
         ctx.result.addProperty("sodium", ModList.get().isLoaded("sodium"));

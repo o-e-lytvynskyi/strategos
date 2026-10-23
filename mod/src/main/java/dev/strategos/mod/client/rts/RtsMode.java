@@ -83,6 +83,7 @@ public final class RtsMode {
     private int clientSeq = 1;
     private int ordersSent;
     private final List<double[]> markers = new ArrayList<>(); // world x, y, z, ticks left
+    private double @Nullable [] cursor;
 
     /** What the last pick hit: a body's entity id, or a block, and where. */
     public record Pick(int entityId, double x, double y, double z) {}
@@ -352,6 +353,16 @@ public final class RtsMode {
         zoom += notches;
     }
 
+    /** Where the RTS screen last saw the cursor, in GUI pixels; the HUD's hover tooltip follows it. */
+    void cursor(double guiX, double guiY) {
+        cursor = new double[] {guiX, guiY};
+    }
+
+    /** The cursor in GUI pixels as the RTS screen last saw it, or null before it moved. */
+    public double @Nullable [] cursor() {
+        return cursor;
+    }
+
     private void tick() {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) {
@@ -480,6 +491,13 @@ public final class RtsMode {
      * with NET-08.
      */
     @Nullable Pick pick(double x, double y) {
+        Pick found = find(x, y);
+        lastPick = found;
+        return found;
+    }
+
+    /** What {@link #pick} finds, without remembering it: the HUD's hover tooltip asks every tick. */
+    public @Nullable Pick find(double x, double y) {
         View v = view;
         Minecraft mc = Minecraft.getInstance();
         if (v == null || mc.level == null || mc.player == null) {
@@ -517,7 +535,6 @@ public final class RtsMode {
                         hit.getBlockPos().getZ());
             }
         }
-        lastPick = found;
         return found;
     }
 

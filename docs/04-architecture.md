@@ -2259,7 +2259,10 @@ It is measured at four levels:
   requirements and population with the shared template and stat code.
 - **`HudLayout.compute(screenW, screenH, guiScale)`** returns rectangles. It is pure and tested at
   1280 × 720, 1920 × 1080, 2560 × 1440 and 3456 × 2234 with GUI scales 1–4 (UI-02). Drawing and
-  hit-testing use the same rectangles.
+  hit-testing use the same rectangles. Since M2: the resource bar and notices at the top, the
+  minimap, selection panel and command card at the bottom with the control-group bar above the
+  panel; M2 draws the selection summary, the group bar and the hover tooltip (`mod.client.hud.RtsHud`),
+  the rest wait for their cards.
 - **Drawing.**
   - GUI layers registered with `RegisterGuiLayersEvent` draw view-models only. The GUI renders
     before the screen is drawn (GameRenderer.java:1078–1094), so our layers show under

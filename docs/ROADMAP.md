@@ -312,7 +312,7 @@ Cards: [roadmap/M2-command.md](roadmap/M2-command.md#cards). 20 cards, at most 6
 | UI-01 | Input action layer and key bindings | M | QA-01 | done |
 | CAM-02 | RTS camera rig | L | CAM-01, UI-01, D-09 | in_progress |
 | CAM-04 | RtsScreen, cursor and world picking | M | CAM-01, UI-01 | done |
-| UI-02 | HUD framework | M | UI-01, QA-06 | specified |
+| UI-02 | HUD framework | M | UI-01, QA-06 | done |
 | UNIT-03 | Unit renderer for the RTS view | M | UNIT-01 | in_progress |
 | QA-18 | Scenario diff, goldens and the CI golden job | M | QA-06, CAM-04, D-22 | done |
 | CAM-03 | Commander body, jumps and the chunk-sent re-pair | M | CAM-01, CORE-03, NET-01, QA-19 | done |

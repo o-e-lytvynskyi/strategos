@@ -23,6 +23,13 @@ final class FrameTimer {
         start = -1;
     }
 
+    /** A duration measured elsewhere, in nanoseconds. */
+    void add(long nanos) {
+        if (count < samples.length) {
+            samples[count++] = nanos;
+        }
+    }
+
     boolean full() {
         return count == samples.length;
     }

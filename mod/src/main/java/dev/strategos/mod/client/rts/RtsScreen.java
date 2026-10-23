@@ -139,6 +139,7 @@ public final class RtsScreen extends Screen {
 
     @Override
     public void mouseMoved(double mouseX, double mouseY) {
+        mode.cursor(mouseX, mouseY);
         InputState in = mode.input();
         if (in != null) {
             in.mouseMove(mouseX, mouseY);
