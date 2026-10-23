@@ -72,16 +72,21 @@ Answer in chat or here; the next session applies the answers.
    at the JMH comparison (its perf GameTests pass on their own). It includes the movement benchmark that had
    silently stopped running since M1's T22 (now 255 µs, faster than M1 measured it); the avoidance one is the next
    task, since it still allocates a little (7 bytes a step, the stuck ladder's messages).
-11. **Two more perf gates, your call, not urgent:** of the soak's budgets, D now fails a run on a breach (five runs
+11. **A rule to settle, your call (the last item of M1's Done gate):** the avoidance benchmark (`OrcaBench`) allocates
+   7 bytes a step against the 6 the "kernels allocate nothing" rule (QA-07.4) allows: when a unit in a crowd stalls
+   long enough, the stuck ladder announces it with two small messages. That is memory per stall, not per unit per
+   tick. The options: (a) the rule allows a kernel's allocation per event, measured as such, and M1 is Done; or (b)
+   the ladder's events go out without allocating, a change to the core's message bus of a few hours. I suggest (a).
+12. **Two more perf gates, your call, not urgent:** of the soak's budgets, D now fails a run on a breach (five runs
    varied by 4.7 %, inside QA-07's 5 %). C (the tick with our handlers) and E (bytes a viewer) varied by 14 %, all of
    it one run inside the whole perf batch (the four alone: 1.2 % or less), and sit at a third of their limits or
    less (C 7–9 ms of 23, E 7–10 KB/s of 100). Say yes and they gate too; B (the tick against an empty arena) keeps
    reporting, since it moves with its own baseline by 23 %.
-12. **The M1 demo, whenever you like (L7):** [milestones/M1-movement.md §1.3](milestones/M1-movement.md): an Arena
+13. **The M1 demo, whenever you like (L7):** [milestones/M1-movement.md §1.3](milestones/M1-movement.md): an Arena
    world, `/strategos match create map=strategos:proving_ground`, `/strategos spawn strategos:unit/infantry 200`,
    F8 for the movement overlay, `/strategos order move @units waypoint=far_side`, then the questionnaire. (The
    infantry are spearmen since M2; 200 of one faction do not fight.) That session confirms ADR-0022.
-13. **Optional reviews:**
+14. **Optional reviews:**
    - the card refinements made after the approval
      ([design/roadmap-changes.md §8](design/roadmap-changes.md));
    - the promo draft ([promo/roadmap-announcement.md](promo/roadmap-announcement.md)).
@@ -386,8 +391,8 @@ Answer in chat or here; the next session applies the answers.
 - **Last finished task:** M1 T27's close work (2026-10-23): five soak runs and the gate decision, the
   compat server run, schema 2 released with its fixtures, §10.1, the health check.
 - **Last M2 task:** T20, first-person orders (2026-10-23).
-- **Next task:** `OrcaBench`'s 7.3 B a step from the stuck ladder's `Stuck` messages (M1 spec §1.6 D row
-  169); then M1 is Done, but for your word on the JMH baseline (item 10). Then M2 T23 (close), headless.
+- **Next task:** M2 T23 (close), headless. M1 is Done once you settle item 11 (`OrcaBench`'s 7.3 B a step
+  from the stuck ladder's messages) and approve the JMH baseline (item 10).
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 960 of 2,000 (48 %), as of 2026-10-23.
 - **Overview:** `python3 tools/roadmap.py summary`.

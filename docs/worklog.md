@@ -25,9 +25,10 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
     `SnapshotCodecBench.encode500` 220 → 285 µs against M0's baseline, grown with M1's features
     (measured at four commits: 21.3 and 275 already at M1 T26); a new baseline proposed.
     `MotionBench` and `OrcaBench` had not run since M1 T22 (their set-up waited four ticks for paths
-    the admission window spreads over eight, and JMH skips a benchmark whose set-up throws); fixed,
-    they run, but `OrcaBench` allocates 138 B a step through bus messages. Recorded in the knowledge
-    base.
+    the admission window spreads over eight, and JMH skips a benchmark whose set-up throws). Running
+    again, they measured crowds at the stuck ladder's last rungs, avoidance off; putting the units
+    back now restarts their ladder: `MotionBench` 255 µs (T21 340), `OrcaBench` 450 µs (T21 577) and
+    7.3 B a step, the ladder's `Stuck` messages, against 6.3 allowed. Recorded in the knowledge base.
   - **Next:** the movement benchmarks, then M1 is Done; M2 T23.
 
 - **M2 T20 · First-person orders** — CAM-07 done (its inspect panel for the owner's look).
