@@ -160,7 +160,7 @@ perspective only.
      height limit (R).
 - **Tests:** L4 (consent), R · **Depends on:** QA-06, QA-09, UNIT-01, D-22 · **Size:** L ·
   **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### UI-01 · Input action layer and key bindings
 - **Value:** Every RTS control can be rebound in the standard Controls screen, with familiar RTS
@@ -181,7 +181,7 @@ perspective only.
      (L4, consent).
 - **Tests:** L0, L1, L4 (consent) · **Fixtures:** vanilla 1.21.1 default-key table ·
   **Depends on:** QA-01 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### CAM-02 · RTS camera rig
 - **Value:** Survey and steer the battle from above as in the classics, with smooth pan, zoom and
@@ -202,7 +202,7 @@ perspective only.
   4. The owner scores pan, zoom and rotation on the questionnaire (L7, acceptance).
 - **Tests:** L0, L1, L4 (consent), L7 · **Depends on:** CAM-01, UI-01, D-09 · **Size:** L ·
   **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### CAM-04 · RtsScreen, cursor and world picking
 - **Value:** Point and click any unit or block as in a classic RTS, accurately on Retina, and no
@@ -224,7 +224,7 @@ perspective only.
   4. After chat and the pause menu close, the cursor stays free and no attack or use packet is
      ever sent (L4, consent).
 - **Tests:** L0, L1, L4 (consent) · **Depends on:** CAM-01, UI-01 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### UI-02 · HUD framework
 - **Value:** A clean RTS screen that stays readable at any resolution and GUI scale.
@@ -240,7 +240,7 @@ perspective only.
      JMH); PERF-14 confirms budget F on screen.
   3. HUD goldens (L4, consent).
 - **Tests:** L0, L1, L4 (consent), L6 · **Depends on:** UI-01, QA-06 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### UNIT-03 · Unit renderer for the RTS view
 - **Value:** Units read well from high above: visible far away, outlined when selected, moving
@@ -257,7 +257,7 @@ perspective only.
      consent).
   3. Units render out to 192 blocks at the highest camera position (L4, consent).
 - **Tests:** L0, L3, L4 (consent) · **Depends on:** UNIT-01 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### QA-18 · Scenario diff, goldens and the CI golden job
 - **Value:** Client changes are checked against approved pictures, on the Mac with consent or on
@@ -275,7 +275,7 @@ perspective only.
      (D).
 - **Tests:** L0, L4 (consent), D · **Fixtures:** goldens per platform · **Depends on:** QA-06,
   CAM-04, D-22 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### CAM-03 · Commander body, jumps and the chunk-sent re-pair
 - **Value:** Wherever the camera looks, terrain and units are loaded and current, in singleplayer
@@ -302,7 +302,7 @@ perspective only.
      (L6).
 - **Tests:** L0, L1, L3, L5, L6 · **Depends on:** CAM-01, CORE-03, NET-01, QA-19 · **Size:** M ·
   **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### NET-08 · Tier-2 replication: summaries, far markers and details
 - **Value:** Armies never vanish when the camera zooms out, and panels show exact orders and
@@ -325,7 +325,7 @@ perspective only.
      highest camera position (L4, consent).
 - **Tests:** L0, L1, L2, L3, L4 (consent), L5 · **Depends on:** NET-01, UNIT-03 · **Size:** M ·
   **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### UI-03 · Selection
 - **Value:** Grab exactly the units you want, anywhere on the map: click, drag a box, Shift to add,
@@ -346,7 +346,7 @@ perspective only.
   4. The outline shows on selected units only (L4, consent).
 - **Tests:** L0, L1, L4 (consent) · **Depends on:** CAM-04, UI-02, UNIT-03 · **Size:** M ·
   **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### UI-04 · Control groups
 - **Value:** Keep armies on number keys and recall them instantly (P3).
@@ -359,7 +359,7 @@ perspective only.
   3. Groups survive the first-person round trip in the client model (L1).
   4. The same round trip on screen keeps the groups (L4, consent).
 - **Tests:** L0, L1, L4 (consent) · **Depends on:** UI-03 · **Size:** S · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### UI-05 · Order feedback and destination preview
 - **Value:** Before releasing the click you see exactly where each unit will stand; after it,
@@ -379,7 +379,7 @@ perspective only.
   6. The owner finds the preview readable at every camera height (L7, acceptance).
 - **Tests:** L0, L1, L3, L4 (consent), L7 · **Depends on:** ORD-03, UI-02, CAM-04 · **Size:** M ·
   **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### CAM-05 · First person and back, with observer rules
 - **Value:** Step down into your town as a normal player, walk among your soldiers and return to
@@ -404,7 +404,7 @@ perspective only.
      acceptance).
 - **Tests:** L0, L1, L3, L4 (consent), L7 · **Depends on:** CAM-03, D-08 · **Size:** M ·
   **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### CAM-07 · First-person orders: follow me, attack what I look at, inspect
 - **Value:** First person has a purpose: lead the selection, point at a target and inspect what
@@ -421,7 +421,7 @@ perspective only.
   4. Inspecting shows the looked-at unit's details (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** CAM-05, ORD-04, NET-08 · **Size:** M ·
   **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 ### Battle sandbox
 
@@ -449,7 +449,7 @@ perspective only.
   5. A dead unit runs `die()` and `tickDeath()`, its record and body are gone, and its owner is
      notified within one tick (L3).
 - **Tests:** L0, L1, L3, L5 · **Depends on:** DATA-02, UNIT-02 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### CMB-02 · Melee combat with a default aggressive behaviour
 - **Value:** Soldiers close in, strike on a steady rhythm, chase a fleeing target and defend
@@ -468,7 +468,7 @@ perspective only.
   5. A GameTest fight between two squads ends with the survivors the L1 run predicts (L3).
   6. A 2 × 100 melee soak holds budgets A–C for 5 minutes (L6).
 - **Tests:** L0, L1, L3, L6 · **Depends on:** CMB-01, PATH-06 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### ORD-04 · Attack and attack-move
 - **Value:** Send armies to fight the way RTS players expect: attack a target, or attack-move
@@ -484,7 +484,7 @@ perspective only.
   4. Markers for attack and attack-move (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** ORD-02, CMB-02, UI-05 · **Size:** M ·
   **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### CMB-06 · Health bars, hit flash and death
 - **Value:** You see who is winning a fight at a glance (P2).
@@ -498,7 +498,7 @@ perspective only.
   3. Goldens of health bars at three camera heights (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent), L6 · **Depends on:** CMB-01, UI-02, NET-08 · **Size:** S ·
   **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### AUD-01 · Order, hit and death sounds
 - **Value:** Orders and fights sound right, so you notice action off-screen (P2).
@@ -516,7 +516,7 @@ perspective only.
   4. The owner's checklist passes (L7, acceptance).
 - **Tests:** L0, L1, L2, L3, L7 · **Depends on:** ORD-02, CMB-01, NET-01 · **Size:** S ·
   **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### PERF-14 · Client frame gate (consent)
 - **Value:** The client stays smooth as features grow, measured on the owner's Mac instead of
@@ -532,4 +532,4 @@ perspective only.
   2. Results are archived per machine, and the owner approves the baselines (R).
 - **Tests:** L6 (client, consent), R · **Depends on:** UI-02, UNIT-03, QA-06 · **Size:** S ·
   **Tier:** T0
-- **Status:** approved
+- **Status:** specified

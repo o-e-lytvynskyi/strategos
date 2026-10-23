@@ -1,0 +1,436 @@
+# M2 — Command: implementation spec
+
+*Written 2026-10-23 by the assistant while M1 closed, from the 20 approved M2 cards in
+[roadmap/M2-command.md](../roadmap/M2-command.md), [04-architecture.md](../04-architecture.md)
+(cited as "04 §n"), the ADRs in [adr/](../adr/README.md), chiefly
+[ADR-0017](../adr/0017-camera-and-input.md), and M1's spec and code
+([M1-movement.md](M1-movement.md), cited as "M1 §n"). Status: **specified**. The decisions M2
+needs, D-08, D-09 and D-24, were taken as recommended on 2026-10-21. Unlike M1's spec, this one
+cites the engine lines that the architecture and ADR-0017 already verified; every other Minecraft
+or NeoForge name is checked in `build/mc-src` by the task that first uses it, and recorded in §1.6
+when it differs (§0.2). Clean-room as in M1: our documents, our code, decompiled vanilla and
+NeoForge only.*
+
+---
+
+## 0. Read this first
+
+### 0.1 Authority
+
+As M1 §0.1: the architecture and the ADRs decide *what*, this spec *how M2 builds it*; the cards
+define scope and acceptance; ROADMAP.md holds the statuses; a disagreement is recorded in §1.6.
+M1's code is the starting point.
+
+### 0.2 Working rules for every task
+
+M1 §0.2 holds, with these changes:
+- **Engine names** are verified by the task that first uses them, in `build/mc-src` (vanilla and
+  NeoForge) or with `javap` (FML, the event bus), before code relies on them; a name that differs
+  from this spec is a §1.6 row.
+- **Client windows.** M2 is the client track. `runScenario` and a client joining the spike server
+  open a window and take keyboard focus: they run only with the owner's consent. The owner gave it
+  for 2026-10-23 («мак до вечера в твоем распоряжении»); outside such a grant, L4 items run on the
+  Linux route on CI (`scenario.yml`, Xvfb, llvmpipe), and what needs this Mac (Retina picking,
+  absolute frame times, the owner's goldens) waits in the consent batch (§1.7).
+- **Runs** add `runSpike -Pspike=s9` and the client that joins it (§5); both end on their own.
+- **Done** as M1 §0.4, with this spec's progress list (§7.3).
+
+### 0.3 Code conventions
+
+M1 §0.3 holds. Additions:
+
+| Topic | Rule |
+|---|---|
+| Client maths | Camera, picking, box selection, HUD layout and slot preview are pure `core.client` classes, L1-tested; the mod's client package applies them and draws |
+| Client never decides | The client sends intents as commands; the server checks ownership, ranges and rules for every one (04 §12.6) |
+| Extract, then draw | Overlays and HUD build immutable frame data from the client model once per frame, then draw from it (04 §13.6) |
+| Sounds and effects | Only as `fx` events to their audiences, played client-side; never a server-side `playSound` (AUD-01) |
+
+### 0.4 How a task is finished
+
+As M1 §0.4.
+
+---
+
+## 1. Goal, demo and scope
+
+### 1.1 Goal
+
+Command armies from an AoE-style RTS camera: box selection, mouse orders with a preview of where
+each unit will stand, control groups, in singleplayer and on a dedicated server; drop into first
+person and back; fight a first battle. M2 retires the camera risk (F-R4/A-R6) with spike S9.
+
+### 1.2 Slices
+
+| Slice | Content | Demo at its end |
+|---|---|---|
+| 2A camera | S9 (CAM-01), UI-01, CAM-02, CAM-04, CAM-03, UI-02, UNIT-03, QA-18 | Pan, rotate and zoom over the proving ground on a dedicated server; jumps refill the view within 3 s; clicks pick units and blocks |
+| 2B commanding | NET-08, UI-03, UI-04, UI-05 | Box-select 150 units, see their slots under the held right button, put them on group 1, jump back to them |
+| 2C battle | CMB-01, CMB-02, ORD-04, CMB-06, AUD-01 | 30 spearmen attack-move into 30 across the river; health bars, hits and deaths decide it |
+| 2D first person | CAM-05, CAM-07 | Drop among the soldiers, lead them with "follow me", return |
+| gates | PERF-14 (consent), the 2 × 100 melee soak, the consent batch | M2's Done gate |
+
+### 1.3 Demo script (L7, the owner)
+
+1. `scripts/playtest.sh` starts the dedicated test server and the owner's client (the owner runs
+   it). `/strategos match create map strategos:proving_ground`, then `/strategos match join 1 0`.
+2. The client enters RTS mode: the cursor is free, the camera above the west start.
+3. Pan with WASD and the screen edge, rotate with Q/E or a middle drag, zoom with the wheel.
+4. `/strategos spawn strategos:unit/infantry 30 0` and `... 30 1` across the river.
+5. Drag a box round your 30, hold the right button on the far bank, see the slots, release.
+6. Ctrl+1, pan away, double-tap 1: the camera jumps back.
+7. Attack-move (A + click) into the enemy; watch the bars, hear the hits.
+8. F5 (first person) among the soldiers; "follow me"; F5 back.
+9. The questionnaire (`docs/testing/playtest.md`).
+
+### 1.4 Cards, tasks and checks (traceability)
+
+| Card | Task | Checks (level) |
+|---|---|---|
+| CAM-01 | T1 | S9 report: snap-backs, coverage, picking, `ChunkMap#move`, Sodium and Iris (L4, consent; R) |
+| UI-01 | T3 | 1 `ActionMapTest`, `GestureTest` (L1) · 2 `DefaultKeysTest` against `vanilla-keys-1.21.1.json` (L1) · 3 rebinding on screen (L4, consent) |
+| CAM-02 | T4 | 1 `CameraRigTest.samePoseAtAnyFrameRate` (L1) · 2 `CameraRigTest.staysInsideTheMargin` (L1) · 3 pose goldens (L4) · 4 questionnaire (L7) |
+| CAM-04 | T5 | 1 `PickingTest` at GUI 1–4 × framebuffer 1×, 2× (L1) · 2 `RtsKeysTest` (L1) · 3 10 scripted clicks (L4) · 4 no attack or use packet (L4) |
+| UI-02 | T6 | 1 `HudLayoutTest` (L1) · 2 `HudBench` (L6) · 3 HUD goldens (L4) |
+| UNIT-03 | T7 | 1 `bodytests.no_unit_on_a_team` (L3) · 2 outline (L4) · 3 192-block render (L4) |
+| QA-18 | T8 | 1 three runs within threshold (L4) · 2 a changed golden fails on CI (L4, CI) · 3 a scenario drives `RtsScreen` (L4) · 4 README procedure (D) |
+| CAM-03 | T9 | 1 `cameratests.jump_moves_body`, `cameratests.jump_limits` (L3) · 2 `cameratests.pan_12000_no_snapback` (L3) · 3 `cameratests.chunk_sent_repair` (L3) · 4 `cameratests.units_ignore_commander` (L3) · 5 `perftests.commander_pan_move_cost` (L6) |
+| NET-08 | T10 | 1 `UnitSummaryCodecTest` (L1) · 2 `ReplicationInterestTest` (L1) · 3 `nettests.summaries_own_and_visible` (L3) · 4 `nettests.detail_own_only` (L3) · 5 markers beyond range (L4) |
+| UI-03 | T11 | 1 `BoxSelectTest` (L1) · 2 `SelectionRulesTest` (L1) · 3 drag 150 and double click (L4) · 4 outline on selected only (L4) |
+| UI-04 | T12 | 1–3 `ControlGroupsTest` (L1) · 4 round trip on screen (L4) |
+| UI-05 | T13 | 1 `SlotPreviewTest` (L1) · 2 `ordertests.preview_matches_server` (L3) · 3 `OrderIntentTest` (L1) · 4 `ordertests.shift_queues` (L3) · 5 markers (L4) · 6 questionnaire (L7) |
+| CMB-01 | T14 | 1 `DamageFormulaTest` (L1) · 2 `FocusFireTest` (L1) · 3 `combattests.no_vanilla_hurt` (L3) · 4 `combattests.vanilla_sources_routed` (L3) · 5 `combattests.death_cleanup` (L3) |
+| CMB-02 | T15 | 1–4 `MeleeTest` (L1) · 5 `combattests.squad_fight_matches_l1` (L3) · 6 `perftests.melee_soak_2x100` (L6) |
+| ORD-04 | T16 | 1 `ContextOrderTest` (L1) · 2 `AttackMoveTest` (L1) · 3 `combattests.attack_move_through_squad` (L3) · 4 markers (L4) |
+| CMB-06 | T17 | 1 `nettests.unit_hud_audience` (L3) · 2 `HealthBarBench` (L6) · 3 bar goldens (L4) |
+| AUD-01 | T18 | 1 `FxMappingTest` (L1) · 2 `combattests.no_server_sounds` (L3) · 3 `nettests.fx_audience` (L3) · 4 checklist (L7) |
+| CAM-05 | T19 | 1 `cameratests.first_person_round_trip` (L3) · 2 `cameratests.drop_point_rules` (L3) · 3 `ClientModelRoundTripTest` (L1) · 4 `avoidtests.observer_in_gap` (L3) · 5 `ObserverVisionTest` (L1) · 6 the owner's round trip (L7) |
+| CAM-07 | T20 | 1 `FirstPersonIntentTest` (L1) · 2 `CrosshairPickTest` (L1) · 3 `ordertests.follow_me` (L3) · 4 inspect (L4) |
+| PERF-14 | T21 | 1 frame budgets on this Mac (L6 client, consent) · 2 the archive and the owner's baseline (R) |
+
+T2 is the health check's split of two large classes (§7.2); T22 the consent batch; T23 the close.
+
+### 1.5 Moved out of M2, with the reason
+
+| Item | To | Why |
+|---|---|---|
+| A dev-only latency injector for S9 | S11 (NET-04, M7) | S9 runs server and client on one Mac; internet latency matters for the multiplayer bandwidth spike, not for whether the body strategy works. S9 records loopback only (§1.6 row 1) |
+| Measuring both S9 fallbacks in full | Only if the decided body misses an exit criterion | ADR-0017 fixed the fallbacks in advance; S9 measures the decided strategy against every criterion and the fallbacks' costs only where the decision needs them (§1.6 row 2) |
+
+### 1.6 Differences resolved
+
+Rows written while specifying; tasks append theirs.
+
+| # | Item | Resolution |
+|---|---|---|
+| 1 | CAM-01: "on a LAN and with a dev-only latency injector" | Server and client on this Mac over loopback, which is a LAN; the injector moves to S11 (§1.5) |
+| 2 | CAM-01: "ADR-0017's three body strategies" | The decided strategy is measured against all five exit criteria; fallback 1 (a camera entity, the body teleported to the focus 5 times a second) and fallback 2 (a parked body) are measured only if it misses one. The pre-agreed fallbacks need no comparison when the decision passes |
+| 3 | CAM-01: "two scripted clients" | One real client (the scenario runner, joining by Quick Play) and one server-side mock commander (QA-19's `MockViewer`, a spectator driven through `handleMovePlayer` like a client), so a single Gradle build runs the spike; the second commander measures the per-commander `ChunkMap#move` cost and the coverage with two viewers. Two real clients join if the runner can start a second one without a second build |
+| 4 | Every L4 item | With a consent grant on this Mac, or on the Linux route on CI; goldens are per platform (QA-18), and only the owner approves them |
+
+### 1.7 Consent plan
+
+- **Today's grant (2026-10-23):** S9 (T1) first, because it alone needs this Mac's Retina display,
+  then any L4 item that is ready.
+- **The consent batch (T22):** what needs the owner's eyes or approval: the goldens (pose, outline,
+  markers, health bars, HUD) on macOS, the same scenarios once under `-Pcompat` (Sodium, Iris),
+  PERF-14, M1's QA-19.4 (a real client's JFR `PacketSent` against QA-19's count), PATH-10.3
+  (overlay goldens, with QA-18), the optional Mac pass of UNIT-09.3. Pending consent blocks
+  Accepted, not Done.
+
+---
+
+## 2. Design of the M2 slice
+
+### 2.1 Components
+
+| Component | Where | Card |
+|---|---|---|
+| `Action`, `Binding`, `ActionMap`, `InputState`, `KeyCode` | `core.client.input` | UI-01 |
+| `CameraRig`, `CameraPose`, `CameraLimits` | `core.client.camera` | CAM-02 |
+| `Picking` (rays from matrices and cursor), `BoxSelect` | `core.client.pick` | CAM-04, UI-03 |
+| `HudLayout`, theme tokens | `core.client.hud` | UI-02 |
+| `ClientMatchModel` (summaries, details, HUD state), `Selection`, `ControlGroups` | `core.client.model` | NET-08, UI-03, UI-04 |
+| `SlotPreview` (M1's slot layout on a client terrain view) | `core.client.order` | UI-05 |
+| `ReplicationService` (summaries, details, HUD changes, per-faction interest) | `core.sim.replicate`, outside the hashed state | NET-08 |
+| Damage model, `CombatSystem`, COMBAT states | `core.sim.combat`, `core.sim.unitai` | CMB-01, CMB-02 |
+| Attack and attack-move orders | `core.sim.order` | ORD-04 |
+| `RtsMode` (enter, leave, first person), `RtsScreen`, rig application, picking hooks | `mod.client.rts` | CAM-02, CAM-04, CAM-05 |
+| HUD layers, health bars, order markers, far markers | `mod.client.hud`, `mod.client.overlay` | UI-02, UI-05, CMB-06, NET-08 |
+| `CommanderService` (`camera_jump`, `mode_switch`, chunk-sent re-pair, restore on leave) | `mod.server.commander` | CAM-03, CAM-05 |
+| `FxSender`, the `fx` payload | `mod.server.net` | AUD-01 |
+
+### 2.2 The commander camera (ADR-0017, 04 §13.1–13.2)
+
+- **RTS mode** begins when a seated player's client gets `match_join` and the player presses the
+  RTS toggle, and on login when the seat says so. The server sets spectator mode
+  (`ServerPlayer#setGameMode`), the client opens `RtsScreen`.
+- **The rig** is pure: focus, yaw, pitch 35–70° (default 55°), height 8–64 above the focus ground
+  (default 24; S9 sets the final upper limit), FOV 55°. Pan by keys, screen edge and drag; rotate by
+  keys and middle drag; zoom by the wheel; per-tick targets smoothed so the same input gives the
+  same pose at any frame rate; clamped to the match space plus a margin.
+- **Applying it:** position per tick in `PlayerTickEvent.Pre` (after `setOldPosAndRot`, so
+  `Camera#setup` interpolates), angles per frame in `ViewportEvent.ComputeCameraAngles`, FOV in
+  `ViewportEvent.ComputeFov`; view bobbing off while in RTS mode. No camera mixin.
+- **Limits:** a pan moves at most 8 blocks a tick (the server snaps back more than about 10 a
+  packet, ServerGamePacketListenerImpl.java:918). Every jump is a `camera_jump` answered by a
+  server teleport (`ServerGamePacketListenerImpl#teleport`), in singleplayer too.
+- **After a jump** the server marks the commander on `ChunkWatchEvent.Sent` and runs
+  `ServerChunkCache#move(player)` once on the next tick, so bodies in newly sent chunks pair at
+  once (M1's `MockViewer#moved` showed that sending a chunk pairs nothing).
+- **Leaving** the match or the server restores the player's game mode and position.
+
+### 2.3 Input and the screen (04 §13.3–13.4)
+
+- `RtsScreen` is a non-pausing full-window screen that owns every input: vanilla attack, use,
+  hotbar, inventory, drop, the spectator menu and scroll-to-fly-speed are inert by construction.
+  It forwards F1, F2, F3 and F11, opens chat, maps Escape to "cancel targeting or placement, else
+  pause", and reopens after chat or the pause menu close (`ScreenEvent.Closing`).
+- `KeyMapping`s are registered in `RegisterKeyMappingsEvent` under an RTS-only
+  `IKeyConflictContext`; `RtsScreen` matches them with `KeyMapping#matches`, held keys polled with
+  `InputConstants.isKeyDown`. Defaults follow a documented table; none uses Ctrl + click (a right
+  click on macOS).
+- **Picking** unprojects the cursor with the `RenderLevelStageEvent` matrices, normalising by
+  `Window#getScreenWidth/Height`, never the framebuffer: blocks by `level.clip`, units by rays
+  against the client unit index's boxes.
+- **Selection** projects feet and heads (box select), Shift adds and removes, a double click takes
+  every unit of that template on screen; enemies can be inspected, never selected; at most 300.
+  The selection is client state; every command is checked on the server.
+
+### 2.4 Orders from the client
+
+- Right click issues the context order: Move on ground, Attack on an enemy (ORD-04); Shift queues;
+  attack-move is a hotkey plus a click. Each click sends exactly one command through M1's
+  `commands` payload.
+- **The destination preview** runs M1's slot layout (`core.sim.order` slots) on the client against
+  a terrain view built from loaded chunks with the same `BlockClassTable`; dragging sets facing and
+  width. Where the client lacks reachability data the server's slots may differ within a
+  documented tolerance (UI-05.2).
+- Markers: the clicked point, queued waypoints, path lines for the selection, attack markers.
+
+### 2.5 Replication tier 2 (NET-08, 04 §12.2–12.4)
+
+| Payload | Direction | Rate and cap | Audience |
+|---|---|---|---|
+| `strategos:unit_summary` | S2C | 2 Hz, full frames, about 6 B a unit | own units in full, enemies while visible, observers all |
+| `strategos:ui_query` | C2S | ≤ 32 handles, 4 a second | – |
+| `strategos:unit_detail` | S2C | ≤ 10 Hz | the asker, own units only |
+| `strategos:unit_hud` | S2C | changes only, ≤ 5 Hz | those who may see the unit |
+| `strategos:camera_jump` | C2S | 4 a second, inside the space plus 32 | commanders |
+| `strategos:mode_switch` | C2S | 1 a second, 5 s cooldown | commanders |
+| `strategos:fx` | S2C | per event | the unit's trackers, or players whose faction sees the cell |
+
+`ReplicationService` reads the core after each step and is not part of the hashed state. Far
+units known from summaries but beyond the tracking range are drawn as markers.
+
+### 2.6 Combat (CMB-01, CMB-02, ORD-04; 04 §6.7)
+
+- **Damage** types hack, pierce and crush; resistance 0.9^level per type; bonus multipliers by
+  class token; all unit-on-unit damage resolved in the core, never through `LivingEntity#hurt`, and
+  HP never mirrored into vanilla health. Bodies show hits through
+  `ServerLevel#broadcastDamageEvent` and `LivingEntity#swing`; at death the adapter sets health to
+  0, calls `die()` and drives `tickDeath()`. Vanilla sources hitting units (player melee, arrows,
+  explosions, `/kill`) arrive as M1's journaled `ExternalDamage` as hack, pierce, crush and lethal.
+  Vanilla armour, shields, totems and loot never apply.
+- **Melee:** the UnitAI's COMBAT states (approaching, attacking, chasing, finding a new target);
+  wind-up and repeat in ticks; reach; engagement slots round a target; the default aggressive
+  behaviour (retaliate when attacked, idle units attack enemies entering range, scanned by activity
+  tier through M1's spatial index).
+- **Templates** gain `Attack/Melee` (damage per type, reach, wind-up, repeat), `Resistance` and
+  `Health`, read through M1's modifier pipeline; the bundled infantry becomes a spearman.
+
+### 2.7 First person (CAM-05, CAM-07; D-08)
+
+`mode_switch` to first person: the server checks the match rule, a 5 s cooldown and that the drop
+point is inside the space and standable (explored cells come with fog in M6; until then every cell
+counts as explored), sets adventure mode and teleports; back to spectator with the rig above the
+anchor. The observer rules: no vision of its own, units ignore it for avoidance, it cannot be hurt,
+attack (`AttackEntityEvent` cancelled for match bodies) or edit blocks. First-person orders: "move
+the selection to where I look", "follow me", "attack what I look at", inspect.
+
+---
+
+## 3. Build changes
+
+- `mod/build.gradle`: `runSpike` accepts `s9`; a client run that joins the spike server by Quick
+  Play (`--quickPlayMultiplayer localhost:25598`), with `-Pcompat` for the Sodium and Iris pass.
+- `core`: the `core.client` packages (pure, L1-tested), no Minecraft imports, as the rest of core.
+- Goldens per platform under `mod/src/devtools/resources/goldens/<platform>/` (QA-18).
+
+---
+
+## 4. Tests per level
+
+| Level | M2 adds |
+|---|---|
+| L0 | ArchUnit: `core.client` imports no Minecraft; only `mod.client` touches `Minecraft`; B6 for the new payloads |
+| L1 | Input, rig, picking, box select, HUD layout, control groups, slot preview, damage, melee, attack-move, replication interest and codecs, first-person intents |
+| L2 | Round trips and caps of the seven new payloads |
+| L3 | `cameratests.*` with mock commanders; `combattests.*`; `ordertests.*`; `nettests` for summaries, details, HUD and `fx` audiences |
+| L4 | Scenario goldens per platform (QA-18), on CI's Linux route or with consent on this Mac |
+| L5 | The server smoke with a seated commander |
+| L6 | `perftests.melee_soak_2x100` (A–C, 5 minutes, paced as M1's soak), `perftests.commander_pan_move_cost`, `HudBench`, `HealthBarBench`; PERF-14 on this Mac with consent |
+| L7 | The owner's battle sandbox and questionnaire |
+
+---
+
+## 5. Spike S9: the commander camera on a dedicated server (T1) — confirms ADR-0017
+
+- **Server:** `./gradlew :mod:runSpike -Pspike=s9`, the self-terminating spike server on a fresh flat
+  world (port 25598). It creates a 384² match and spreads about 1,000 debug walkers over it, half of
+  them walking between random points, so tracked bodies move; it adds one mock commander (a
+  spectator `MockViewer` driven at 8 blocks a tick on a lawnmower path, §1.6 row 3) and waits for
+  the real client.
+- **Client:** the scenario runner joins by Quick Play and plays `s9`: RTS mode with a spike rig
+  (spike code, never promoted): pans at 10, 30 and 60 blocks a second along fixed paths, twenty
+  300-block jumps through a spike `camera_jump`, then picking checks.
+- **Measured:**
+  - snap-backs: `ClientboundPlayerPositionPacket`s the client receives outside jumps (a client
+    counter), and the server's "moved too quickly" and "moved wrongly" warnings;
+  - coverage: after each jump, the time until every chunk within the view radius is loaded on the
+    client and every server body inside the tracking range exists on the client;
+  - `ChunkMap#move` per commander per tick: the server times `ServerChunkCache#move` for each
+    commander once a tick, the call each accepted movement packet makes;
+  - picking at GUI scale 2 on this Mac's Retina display: for 20 known blocks and units, the cursor
+    at their projected screen point picks them within one block;
+  - all of it once more with `-Pcompat` (Sodium, Iris).
+- **Exit:** zero snap-backs while panning, at most the known one-off echo warning per jump; full
+  coverage within 3 s after a 300-block jump; picks within one block; `ChunkMap#move` ≤ 0.5 ms per
+  panning commander per tick; the same under Sodium and Iris. The report confirms ADR-0017 or
+  adopts the fallback its numbers choose, and sets the camera height limit.
+- **Output:** `docs/spikes/S9-commander-camera.md`.
+
+## 6. The melee soak (T15) — CMB-02.6
+
+On the proving ground, two factions of 100 spearmen at the two fords, sent at each other with
+attack-move every 600 ticks after each wave ends (respawned to 100), 6,000 ticks paced at 20 a
+second (5 minutes, M1 §1.6 row 162's pacing); budgets A, B and C as M1's soak measures them.
+
+---
+
+## 7. Task breakdown
+
+### 7.1 Order
+
+- **Today, with the Mac:** T1 (S9). Its numbers decide CAM-02, CAM-03 and CAM-04.
+- **Headless, in this order:** T2 (health check), T14 (CMB-01), T15 (CMB-02), T16 (ORD-04, core
+  part), T10 (NET-08), T9 (CAM-03), T3 (UI-01), T4 (CAM-02), T5 (CAM-04), T6 (UI-02), T7 (UNIT-03),
+  T11 (UI-03), T12 (UI-04), T13 (UI-05), T17 (CMB-06), T18 (AUD-01), T19 (CAM-05), T20 (CAM-07).
+- **With windows (a grant or CI's Linux route):** T8 (QA-18) once T5 exists, then each task's L4
+  items; T21 (PERF-14) and T22 (the consent batch) with consent; T23 closes.
+
+### 7.2 Tasks
+
+#### T1 · Spike S9, the commander camera — CAM-01 · ~1,200 lines of spike code
+- **Files:** `gametest/spike/S9Camera` (server side), `devtools/S9CameraScenario` and a spike rig
+  (client side), `docs/spikes/S9-commander-camera.md`.
+- **Verification:** the S9 runs of §5; `verify`.
+
+#### T2 · Health check from M1's close · ~300 lines moved
+- Split `server/command/StrategosCommands` (864 lines) by subtree and the test kit's `Scenarios`
+  (977) by area; no behaviour change. **Verification:** `verify`.
+
+#### T3 · Input action layer — UI-01
+- **Files:** `core.client.input`; `mod.client.rts.RtsKeys` (`KeyMapping`s, conflict context); the
+  vanilla default-key table fixture. **Verification:** `verify`; L4 rebinding with consent.
+
+#### T4 · Camera rig — CAM-02
+- **Files:** `core.client.camera`; `mod.client.rts.RigApplier`; client options. **Verification:**
+  `verify`; pose goldens (L4).
+
+#### T5 · `RtsScreen`, cursor and picking — CAM-04
+- **Files:** `mod.client.rts.RtsScreen`, `RtsMode`; `core.client.pick`. **Verification:** `verify`;
+  10 scripted clicks (L4).
+
+#### T6 · HUD framework — UI-02
+- **Files:** `core.client.hud`; `mod.client.hud` layers; `HudBench`. **Verification:** `verify`;
+  goldens (L4).
+
+#### T7 · Unit renderer for the RTS view — UNIT-03
+- **Files:** `mod.client.UnitRenderer` (outline, team colour, 192-block distance).
+  **Verification:** `verify`; outline goldens (L4).
+
+#### T8 · Scenario diff and goldens — QA-18
+- **Files:** `devtools` `scenarioDiff`, goldens per platform, `scenario.yml`'s golden step, the
+  README procedure. **Verification:** three runs; a changed golden fails on CI.
+
+#### T9 · Commander body, jumps, chunk-sent re-pair — CAM-03
+- **Files:** `mod.server.commander`; payload `camera_jump`; `cameratests`;
+  `perftests.commander_pan_move_cost`. **Verification:** `verify verifyPerf`.
+
+#### T10 · Tier-2 replication — NET-08
+- **Files:** `core.sim.replicate`, `core.client.model.ClientMatchModel`; payloads `unit_summary`,
+  `ui_query`, `unit_detail`, `unit_hud`; far markers. **Verification:** `verify`.
+
+#### T11 · Selection — UI-03 · T12 · Control groups — UI-04 · T13 · Order feedback and preview — UI-05
+- **Files:** `core.client.model.Selection`, `ControlGroups`; `core.client.order.SlotPreview`;
+  `mod.client.overlay` markers. **Verification:** `verify`; L4 items.
+
+#### T14 · Damage model — CMB-01 · T15 · Melee and the soak — CMB-02 · T16 · Attack and attack-move — ORD-04
+- **Files:** `core.sim.combat`, COMBAT states in `core.sim.unitai`, `Attack` and `AttackMove`
+  commands, template components; `combattests`; `perftests.melee_soak_2x100`; goldens re-recorded
+  with a reason where hashes change. **Verification:** `verify verifySlow verifyPerf`.
+
+#### T17 · Health bars — CMB-06 · T18 · Sounds — AUD-01
+- **Files:** `mod.client.overlay.HealthBars`, `HealthBarBench`; `fx` payload, `FxSender`, client
+  playback. **Verification:** `verify`; goldens (L4).
+
+#### T19 · First person — CAM-05 · T20 · First-person orders — CAM-07
+- **Files:** `mode_switch`; observer rules in `mod.server.commander` and the avoidance agents;
+  first-person intents. **Verification:** `verify`.
+
+#### T21 · Client frame gate — PERF-14 (consent)
+- The S4 scene grown to the RTS view, on this Mac, Sodium on and off; archived per machine.
+
+#### T22 · The consent batch
+- §1.7's list, run in one sitting with the owner's consent.
+
+#### T23 · M2 close
+- §8 walked into results; health check; docs; STATE with the demo and the owner's items.
+
+### 7.3 Progress
+
+- [ ] T1 · [ ] T2 · [ ] T3 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11 · [ ] T12
+- [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17 · [ ] T18 · [ ] T19 · [ ] T20 · [ ] T21 · [ ] T22 · [ ] T23
+
+---
+
+## 8. Acceptance checklist (M2 exit)
+
+The roadmap's Done gate, then the owner's acceptance.
+
+| # | Criterion | Evidence |
+|---|---|---|
+| 1 | Every acceptance criterion of the M2 cards passes at its level | §1.4 |
+| 2 | L1: rig, picking, selection, layout and slot preview at every tested resolution, GUI scale and framebuffer scale | `CameraRigTest`, `PickingTest`, `BoxSelectTest`, `HudLayoutTest`, `SlotPreviewTest` |
+| 3 | L3: a mock commander pans 12,000 ticks at 8 blocks a tick with 20 jumps and gets no position packet but the jumps'; bodies pair within a tick of `ChunkWatchEvent.Sent`; coverage within 3 s of a 300-block jump | `cameratests.*` |
+| 4 | L6: the 2 × 100 melee soak holds A–C for 5 minutes; `ChunkMap#move` ≤ 0.5 ms per panning commander | `perftests.melee_soak_2x100`, `perftests.commander_pan_move_cost` |
+| 5 | The consent batch: goldens approved by the owner, once under `-Pcompat`; PERF-14; M1's deferred items | T22 |
+| 6 | ADR-0017 accepted with the S9 numbers, or its fallback adopted | S9 report, the ADR |
+| 7 | M1's gates still pass; `verify`, `verifySlow`, `verifySoak`, `verifyPerf` green; CI green | the runs |
+| 8 | L7: 10 minutes of panning and 20 jumps without a snap-back; the battle sandbox scores "commanding a fight" ≥ 3 of 5, none ≤ 2 | the owner's note in STATE.md |
+
+---
+
+## 9. Risks and fallbacks
+
+| # | Risk | Sign | Fallback |
+|---|---|---|---|
+| R1 | The spectator body snaps back or costs too much `ChunkMap#move` | S9 | ADR-0017's fallback 1, then 2 |
+| R2 | A chunk-sent re-pair misses bodies after a jump | `cameratests.chunk_sent_repair` | A second `move` a few ticks later; a coverage check |
+| R3 | `RtsScreen` loses the cursor after chat or the pause menu | CAM-04.4 | Reopen on `ScreenEvent.Closing` and on the next tick |
+| R4 | Retina picking is off by the framebuffer scale | S9, `PickingTest` | Normalise by window size everywhere (ADR-0017) |
+| R5 | The client slot preview disagrees with the server near cliffs | UI-05.2 | A documented tolerance; the server's slots win |
+| R6 | Combat breaks the golden journals' hashes | `GoldenJournalTest` | Re-record with a reason (M1's procedure) |
+| R7 | Goldens differ between runs | QA-18.1 | Masks for animated areas, documented |
+| R8 | The window grant ends before S9 finishes | the clock | Save the state; the rest of S9 waits for the next grant, headless tasks go on |
+
+---
+
+## 10. Owner inputs
+
+| Input | When | Blocks |
+|---|---|---|
+| Consent for client windows | per grant; today's until the evening | L4 items only |
+| Goldens and the PERF-14 baseline | T22 | Accepted |
+| The questionnaire | after the demo | Accepted |

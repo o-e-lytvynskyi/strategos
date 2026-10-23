@@ -298,7 +298,7 @@ Cards: [roadmap/M1-movement.md](roadmap/M1-movement.md#cards). 26 cards, at most
 | PATH-07 | Stuck ladder | M | PATH-05, PATH-06 | done |
 | PATH-09 | Shared group path | M | PATH-06, ORD-03, PATH-16 | done |
 | PATH-10 | Movement debug overlay and dev payloads | M | PATH-03, NET-01, QA-10 | done |
-| PERF-05 | Crowd soak and the M1 perf gate | M | PATH-07, PATH-09, MAP-01, QA-07, QA-19 | specified |
+| PERF-05 | Crowd soak and the M1 perf gate | M | PATH-07, PATH-09, MAP-01, QA-07, QA-19 | done |
 | PATH-08 | Hierarchical long-range planner (HPA*) (reserve, outside the totals) | L | PATH-03, PATH-04 | done |
 | PATH-17 | Flow fields for large groups (reserve, outside the totals) | M | PATH-09 | approved |
 
@@ -308,26 +308,26 @@ Cards: [roadmap/M2-command.md](roadmap/M2-command.md#cards). 20 cards, at most 6
 
 | ID | Feature | Size | Depends on | Status |
 |---|---|---|---|---|
-| CAM-01 | Spike S9: commander camera on a dedicated server | L | QA-06, QA-09, UNIT-01, D-22 | approved |
-| UI-01 | Input action layer and key bindings | M | QA-01 | approved |
-| CAM-02 | RTS camera rig | L | CAM-01, UI-01, D-09 | approved |
-| CAM-04 | RtsScreen, cursor and world picking | M | CAM-01, UI-01 | approved |
-| UI-02 | HUD framework | M | UI-01, QA-06 | approved |
-| UNIT-03 | Unit renderer for the RTS view | M | UNIT-01 | approved |
-| QA-18 | Scenario diff, goldens and the CI golden job | M | QA-06, CAM-04, D-22 | approved |
-| CAM-03 | Commander body, jumps and the chunk-sent re-pair | M | CAM-01, CORE-03, NET-01, QA-19 | approved |
-| NET-08 | Tier-2 replication: summaries, far markers and details | M | NET-01, UNIT-03 | approved |
-| UI-03 | Selection | M | CAM-04, UI-02, UNIT-03 | approved |
-| UI-04 | Control groups | S | UI-03 | approved |
-| UI-05 | Order feedback and destination preview | M | ORD-03, UI-02, CAM-04 | approved |
-| CAM-05 | First person and back, with observer rules | M | CAM-03, D-08 | approved |
-| CAM-07 | First-person orders: follow me, attack what I look at, inspect | M | CAM-05, ORD-04, NET-08 | approved |
-| CMB-01 | Damage model in the core | M | DATA-02, UNIT-02 | approved |
-| CMB-02 | Melee combat with a default aggressive behaviour | M | CMB-01, PATH-06 | approved |
-| ORD-04 | Attack and attack-move | M | ORD-02, CMB-02, UI-05 | approved |
-| CMB-06 | Health bars, hit flash and death | S | CMB-01, UI-02, NET-08 | approved |
-| AUD-01 | Order, hit and death sounds | S | ORD-02, CMB-01, NET-01 | approved |
-| PERF-14 | Client frame gate (consent) | S | UI-02, UNIT-03, QA-06 | approved |
+| CAM-01 | Spike S9: commander camera on a dedicated server | L | QA-06, QA-09, UNIT-01, D-22 | specified |
+| UI-01 | Input action layer and key bindings | M | QA-01 | specified |
+| CAM-02 | RTS camera rig | L | CAM-01, UI-01, D-09 | specified |
+| CAM-04 | RtsScreen, cursor and world picking | M | CAM-01, UI-01 | specified |
+| UI-02 | HUD framework | M | UI-01, QA-06 | specified |
+| UNIT-03 | Unit renderer for the RTS view | M | UNIT-01 | specified |
+| QA-18 | Scenario diff, goldens and the CI golden job | M | QA-06, CAM-04, D-22 | specified |
+| CAM-03 | Commander body, jumps and the chunk-sent re-pair | M | CAM-01, CORE-03, NET-01, QA-19 | specified |
+| NET-08 | Tier-2 replication: summaries, far markers and details | M | NET-01, UNIT-03 | specified |
+| UI-03 | Selection | M | CAM-04, UI-02, UNIT-03 | specified |
+| UI-04 | Control groups | S | UI-03 | specified |
+| UI-05 | Order feedback and destination preview | M | ORD-03, UI-02, CAM-04 | specified |
+| CAM-05 | First person and back, with observer rules | M | CAM-03, D-08 | specified |
+| CAM-07 | First-person orders: follow me, attack what I look at, inspect | M | CAM-05, ORD-04, NET-08 | specified |
+| CMB-01 | Damage model in the core | M | DATA-02, UNIT-02 | specified |
+| CMB-02 | Melee combat with a default aggressive behaviour | M | CMB-01, PATH-06 | specified |
+| ORD-04 | Attack and attack-move | M | ORD-02, CMB-02, UI-05 | specified |
+| CMB-06 | Health bars, hit flash and death | S | CMB-01, UI-02, NET-08 | specified |
+| AUD-01 | Order, hit and death sounds | S | ORD-02, CMB-01, NET-01 | specified |
+| PERF-14 | Client frame gate (consent) | S | UI-02, UNIT-03, QA-06 | specified |
 
 ### M3 · First loop
 
