@@ -45,7 +45,8 @@ final class BuiltinTemplates {
                   "reach": 1.2,
                   "prepare": 10,
                   "repeat": 20
-                }
+                },
+                "Structure": { "fire": 3, "prepare": 10, "repeat": 20 }
               },
               "Resistance": {
                 "hack": 5,
@@ -85,7 +86,8 @@ final class BuiltinTemplates {
               "Identity": { "classes": "Structure" },
               "Building": { "material": "stone" },
               "Placement": { "civicReach": 48 },
-              "Health": { "max": 500 }
+              "Health": { "max": 500 },
+              "Resistance": { "fire": 7 }
             }
             """;
     static final String CIVIC_CENTRE = """
@@ -106,6 +108,7 @@ final class BuiltinTemplates {
               "parent": "strategos:template/building_base",
               "Identity": { "name": "strategos.building.field", "icon": "minecraft:wheat", "classes": "+Field" },
               "Building": { "blueprint": "strategos:field", "material": "wood" },
+              "Resistance": { "fire": 0 },
               "Footprint": { "obstructs": 0 },
               "Health": { "max": 200 },
               "Cost": { "resources": { "wood": 60 }, "time": 20 },
@@ -117,6 +120,7 @@ final class BuiltinTemplates {
               "parent": "strategos:template/building_base",
               "Identity": { "name": "strategos.building.house", "icon": "minecraft:oak_door", "classes": "+House" },
               "Building": { "blueprint": "strategos:house", "material": "wood" },
+              "Resistance": { "fire": 0 },
               "Health": { "max": 400 },
               "Cost": { "resources": { "wood": 80 }, "time": 30 },
               "Housing": { "capacity": 5 }
@@ -127,6 +131,7 @@ final class BuiltinTemplates {
               "parent": "strategos:template/building_base",
               "Identity": { "name": "strategos.building.barracks", "icon": "minecraft:shield", "classes": "+Barracks" },
               "Building": { "blueprint": "strategos:barracks", "material": "wood" },
+              "Resistance": { "fire": 0 },
               "Health": { "max": 1200 },
               "Cost": { "resources": { "wood": 200 }, "time": 60 },
               "Trainer": { "units": "strategos:unit/infantry" }

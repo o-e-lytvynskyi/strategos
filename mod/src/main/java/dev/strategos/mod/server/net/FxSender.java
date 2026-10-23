@@ -3,6 +3,7 @@ package dev.strategos.mod.server.net;
 import dev.strategos.core.protocol.Fx;
 import dev.strategos.core.protocol.FxKind;
 import dev.strategos.core.sim.BlockCracked;
+import dev.strategos.core.sim.FlameShown;
 import dev.strategos.core.sim.OutputEvent;
 import dev.strategos.core.sim.TickOutputs;
 import dev.strategos.core.sim.UnitDied;
@@ -22,7 +23,7 @@ import net.minecraft.core.BlockPos;
 /**
  * A step's {@code fx} (AUD-01, AUD-04): a unit hit or killed in the tick sounds once, at its body, for the players who
  * track the body, a death in place of the tick's hits; it runs before the outputs apply, while the dead still have
- * bodies. The world's edits go to those who see their cells: the core's cracks with the step, the blocks the writer
+ * bodies. The world's edits go to those who see their cells: the core's cracks and a torch's flames with the step, the blocks the writer
  * broke and placed after its flush. A page's events of a tick travel together, at most {@value Fx#MAX_EVENTS} to a
  * payload; until fog (M8) every member sees every cell.
  */
@@ -44,6 +45,9 @@ public final class FxSender {
             if (event instanceof BlockCracked c) {
                 cracks.add(Fx.Event.block(
                         FxKind.BLOCK_CRACK, c.x(), c.y() - rt.space().origin().getY(), c.z(), c.stage()));
+            } else if (event instanceof FlameShown f) {
+                cracks.add(Fx.Event.at(
+                        FxKind.FLAME, f.x(), f.y() - rt.space().origin().getY(), f.z()));
             }
         }
         sendWorld(rt, cracks, net);

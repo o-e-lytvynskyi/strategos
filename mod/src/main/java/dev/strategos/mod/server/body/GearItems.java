@@ -20,6 +20,7 @@ public final class GearItems {
             case UnitGear.PICKAXE -> new ItemStack(Items.IRON_PICKAXE);
             case UnitGear.HOE -> new ItemStack(Items.IRON_HOE);
             case UnitGear.BUILDING -> new ItemStack(Items.MACE);
+            case UnitGear.TORCH -> new ItemStack(Items.TORCH);
             default -> ItemStack.EMPTY;
         };
     }

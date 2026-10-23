@@ -12,13 +12,17 @@ public final class DamageFormula {
 
     private DamageFormula() {}
 
-    /** {@code resistance} holds the target's levels by {@link DamageType#index()}; {@code classes} its tokens. */
+    /**
+     * {@code resistance} holds the target's levels by {@link DamageType#index()}, a type past its end at level 0;
+     * {@code classes} its tokens.
+     */
     public static double dealt(Damage d, double[] resistance, List<String> classes) {
         double sum = 0;
         for (DamageType type : DamageType.values()) {
             float amount = d.amount(type);
             if (amount > 0) {
-                sum += amount * DetMath.pow(RESIST_BASE, resistance[type.index()]);
+                double level = type.index() < resistance.length ? resistance[type.index()] : 0;
+                sum += amount * DetMath.pow(RESIST_BASE, level);
             }
         }
         for (Damage.Bonus b : d.bonuses()) {

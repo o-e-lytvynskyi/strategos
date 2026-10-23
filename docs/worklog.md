@@ -9,7 +9,7 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-24 — M3 T9–T20
+## 2026-10-24 — M3 T9–T21
 
 - **The owner, past midnight:** «можешь любые тесты проводить и как закончишь м3 - начинай м4, все решения
   принимай сам, которые рекомендуешь» (STATE item 6).
@@ -66,8 +66,13 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
   faction's banner; workers' tools and loads, which the server had been sending all along, are finally drawn (the
   renderer had no layers). The debug walker stays bare, so the accepted goldens hold. The style guide
   ([docs/art/style-guide.md](art/style-guide.md)) fixes colours, roles and per-building ranges, and a test holds the
-  blueprints to them. Frames from 24 and 64 blocks wait for T30's golden batch. Next: T21, torches against
-  buildings.
+  blueprints to them. Frames from 24 and 64 blocks wait for T30's golden batch.
+- **M3 T21 · CMB-03 done, torches.** A right click on an enemy building sends spearmen to burn it: each takes a
+  place round it, lights a torch and strikes once a second; wood takes every blow whole, stone about half, so ten
+  spearmen burn a house in 13.5 s and a civic centre in about two and a half minutes (the balance sheet's new burn
+  table). Flames and smoke show on the walls, and never a fire block: with fire tick on, nothing in the match catches
+  while a control fire outside spreads. A burnt house leaves the match and its blocks go. Next: T22, scenarios, rules
+  and victory.
 
 ## 2026-10-23 (evening) — M3 spec, T1–T8
 

@@ -3,5 +3,6 @@
   "Identity": { "classes": "Structure" },
   "Building": { "material": "stone" },
   "Placement": { "civicReach": 48 },
-  "Health": { "max": 500 }
+  "Health": { "max": 500 },
+  "Resistance": { "fire": 7 }
 }

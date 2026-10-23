@@ -625,7 +625,8 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
      burn, while a control fire outside the match spreads (L3).
   5. A GameTest burn ends with the building removed and its footprint cleared (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** CMB-02, BLD-01, D-12 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-24 — M3 T21: ten spearmen burn a house on the sheet's 134th blow, at the tick their rhythm gives, and the sheet's 13.5 s for ten from one tick (1); a blow on wood takes 2.09 times one on stone (2); a torch only against a building (3); with fire tick on no fire block appears in the match while a control fire spreads (4); a burnt house leaves the match, its blocks gone (5) (spec §1.6 rows 62–63)
 
 #### MATCH-01 · Scenarios, match rules and a first victory
 - **Value:** A match starts from a ready-made setup, plays under fair rules and ends with a clear

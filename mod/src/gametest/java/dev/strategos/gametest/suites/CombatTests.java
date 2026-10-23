@@ -375,4 +375,147 @@ public final class CombatTests {
         }
         return n;
     }
+
+    static final dev.strategos.core.shared.TemplateId HOUSE =
+            new dev.strategos.core.shared.TemplateId("strategos:building/house");
+
+    /** The level's fire tick before the burn test turned it on, put back after its batch; null untouched. */
+    private static final java.util.concurrent.atomic.AtomicReference<Boolean> FIRE_TICK =
+            new java.util.concurrent.atomic.AtomicReference<>();
+
+    /** After the burn batch: the fire tick the test found. */
+    public static void restoreFireTick(net.minecraft.server.level.ServerLevel level) {
+        Boolean before = FIRE_TICK.getAndSet(null);
+        if (before != null) {
+            level.getGameRules()
+                    .getRule(net.minecraft.world.level.GameRules.RULE_DOFIRETICK)
+                    .set(before, level.getServer());
+        }
+    }
+
+    /** Faction 1's house at (6, 10) and ten of faction 0's spearmen sent to burn it once it stands. */
+    private static void raid(MatchRuntime rt) {
+        rt.submit(PlayerSlot.ADMIN, new dev.strategos.core.protocol.SpawnBuilding(HOUSE, new FactionSlot(1), 6, 10, 0));
+        rt.submit(
+                PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.INFANTRY, new FactionSlot(0), new Vec2d(8, 22), 10, 1.5));
+    }
+
+    private static void torch(MatchRuntime rt) {
+        int house = core(rt).queries().buildings().get(0).handle();
+        rt.submit(
+                new PlayerSlot(0),
+                dev.strategos.core.protocol.Attack.replace(
+                        UnitSet.of(core(rt).queries().unitHandles()), house));
+    }
+
+    /**
+     * CMB-03.4: with fire tick on, ten spearmen burn a house down and no fire block appears anywhere in the match
+     * space, while a control fire on planks outside it spreads.
+     */
+    @StrategosTest(batch = "combat_burn", timeoutTicks = 1_600, solo = true)
+    public static void aBurnMakesNoFireBlock(GameTestHelper h) {
+        var rule = h.getLevel().getGameRules().getRule(net.minecraft.world.level.GameRules.RULE_DOFIRETICK);
+        FIRE_TICK.compareAndSet(null, rule.get());
+        rule.set(true, h.getLevel().getServer());
+        for (int x = 27; x <= 31; x++) {
+            for (int z = 4; z <= 10; z++) {
+                h.setBlock(new net.minecraft.core.BlockPos(x, 1, z), net.minecraft.world.level.block.Blocks.OAK_PLANKS);
+            }
+        }
+        h.setBlock(new net.minecraft.core.BlockPos(29, 2, 7), net.minecraft.world.level.block.Blocks.FIRE);
+        MatchRuntime rt = dev.strategos.gametest.MatchFixture.create(
+                h,
+                0,
+                0,
+                24,
+                32,
+                dev.strategos.gametest.MatchFixture.options(dev.strategos.core.testkit.SimHarness.DEFAULT_SEED, h));
+        raid(rt);
+        h.onEachTick(() -> {
+            if (h.getTick() % 5 != 0) {
+                return;
+            }
+            for (int x = 0; x < 24; x++) {
+                for (int z = 0; z < 32; z++) {
+                    for (int y = 1; y <= 9; y++) {
+                        var pos = new net.minecraft.core.BlockPos(x, y, z);
+                        if (h.getBlockState(pos).is(net.minecraft.tags.BlockTags.FIRE)) {
+                            h.fail("a fire block in the match at " + pos);
+                        }
+                    }
+                }
+            }
+        });
+        h.startSequence()
+                .thenWaitUntil(() -> check(
+                        core(rt).queries().unitHandles().length == 10
+                                && !core(rt).queries().buildings().isEmpty(),
+                        "not ready"))
+                .thenExecute(() -> torch(rt))
+                .thenWaitUntil(() -> check(core(rt).queries().buildings().isEmpty(), "the house still stands"))
+                .thenWaitUntil(() -> {
+                    int fires = 0;
+                    int planks = 0;
+                    for (int x = 27; x <= 31; x++) {
+                        for (int z = 4; z <= 10; z++) {
+                            if (h.getBlockState(new net.minecraft.core.BlockPos(x, 2, z))
+                                    .is(net.minecraft.tags.BlockTags.FIRE)) {
+                                fires++;
+                            }
+                            if (h.getBlockState(new net.minecraft.core.BlockPos(x, 1, z))
+                                    .is(net.minecraft.world.level.block.Blocks.OAK_PLANKS)) {
+                                planks++;
+                            }
+                        }
+                    }
+                    check(
+                            fires > 1 || planks < 35,
+                            "the control fire has not spread yet: " + fires + " fires, " + planks + " planks");
+                })
+                .thenSucceed();
+    }
+
+    /** CMB-03.5: burnt down, a house leaves the match and its blocks above the floor are gone, the ground free. */
+    @StrategosTest(timeoutTicks = 1_200)
+    public static void aBurntBuildingIsRemovedAndCleared(GameTestHelper h) {
+        MatchRuntime rt = match(h);
+        raid(rt);
+        var state = new Object() {
+            dev.strategos.core.sim.build.BuildingView house;
+        };
+        h.startSequence()
+                .thenWaitUntil(() -> check(
+                        core(rt).queries().unitHandles().length == 10
+                                && !core(rt).queries().buildings().isEmpty(),
+                        "not ready"))
+                .thenExecute(() -> {
+                    state.house = core(rt).queries().buildings().get(0);
+                    torch(rt);
+                })
+                .thenWaitUntil(() -> check(core(rt).queries().buildings().isEmpty(), "the house still stands"))
+                .thenWaitUntil(() -> {
+                    var house = state.house;
+                    MatchCore core = core(rt);
+                    int index = java.util.Objects.requireNonNull(
+                                    core.queries().templates().byId(HOUSE))
+                            .netIndex();
+                    var b = java.util.Objects.requireNonNull(
+                            core.queries().templates().blueprint(index));
+                    var at = house.footprint();
+                    var origin = rt.space().origin();
+                    for (int k = 0; k < b.count(); k++) {
+                        if (b.y(k) == 0) {
+                            continue; // the floor layer stays, as every fall leaves it
+                        }
+                        var pos = new net.minecraft.core.BlockPos(
+                                origin.getX() + at.worldX(b.x(k), b.z(k)),
+                                house.baseY() + b.y(k),
+                                origin.getZ() + at.worldZ(b.x(k), b.z(k)));
+                        check(
+                                h.getLevel().getBlockState(pos).isAir(),
+                                pos + " still stands: " + h.getLevel().getBlockState(pos));
+                    }
+                })
+                .thenSucceed();
+    }
 }

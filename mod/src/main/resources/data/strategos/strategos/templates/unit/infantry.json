@@ -8,7 +8,8 @@
       "reach": 1.2,
       "prepare": 10,
       "repeat": 20
-    }
+    },
+    "Structure": { "fire": 3, "prepare": 10, "repeat": 20 }
   },
   "Resistance": {
     "hack": 5,

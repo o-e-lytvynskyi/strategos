@@ -2,6 +2,7 @@
   "parent": "strategos:template/building_base",
   "Identity": { "name": "strategos.building.field", "icon": "minecraft:wheat", "classes": "+Field" },
   "Building": { "blueprint": "strategos:field", "material": "wood" },
+  "Resistance": { "fire": 0 },
   "Footprint": { "obstructs": 0 },
   "Health": { "max": 200 },
   "Cost": { "resources": { "wood": 60 }, "time": 20 },

@@ -27,6 +27,8 @@ public final class OrderKind {
     public static final int GATHER = 7;
     /** Building a foundation or a site (BLD-03), whose handle the queue holds as the target. */
     public static final int BUILD = 8;
+    /** Burning a building with a torch (CMB-03), whose handle the queue holds as the target. */
+    public static final int BURN = 9;
 
     private OrderKind() {}
 
@@ -41,6 +43,7 @@ public final class OrderKind {
             case FLEE -> "flee";
             case GATHER -> "gather";
             case BUILD -> "build";
+            case BURN -> "burn";
             default -> throw new IllegalArgumentException("no order kind " + kind);
         };
     }
@@ -56,6 +59,7 @@ public final class OrderKind {
             case "flee" -> FLEE;
             case "gather" -> GATHER;
             case "build" -> BUILD;
+            case "burn" -> BURN;
             default -> null;
         };
     }
@@ -67,9 +71,9 @@ public final class OrderKind {
 
     /**
      * Whether an order of {@code kind} holds a target: the unit it attacks, the player slot it follows, the node it
-     * gathers at, or the building it builds.
+     * gathers at, or the building it builds or burns.
      */
     public static boolean targets(int kind) {
-        return attacks(kind) || kind == FOLLOW || kind == GATHER || kind == BUILD;
+        return attacks(kind) || kind == FOLLOW || kind == GATHER || kind == BUILD || kind == BURN;
     }
 }

@@ -196,6 +196,7 @@ final class Melee {
                 (float) stats.meleeDamage(i, 0),
                 (float) stats.meleeDamage(i, 1),
                 (float) stats.meleeDamage(i, 2),
+                0,
                 List.of(),
                 false));
         s.outputs().add(new UnitStruck(ctx.handle(), target));

@@ -27,7 +27,7 @@ class DamageFormulaTest {
 
     @Test
     void eachTypeMeetsItsOwnResistance() {
-        Damage mixed = new Damage(1, 2, 10, 5, 2, List.of(), false);
+        Damage mixed = new Damage(1, 2, 10, 5, 2, 0, List.of(), false);
         assertThat(DamageFormula.dealt(mixed, new double[] {1, 2, 0}, List.of()))
                 .isCloseTo(9 + 4.05 + 2, within(1e-12));
         assertThat(DamageFormula.dealt(mixed, NONE, List.of())).isEqualTo(17);
@@ -39,7 +39,7 @@ class DamageFormulaTest {
     @Test
     void bonusesApplyForTheTargetsClassesOnly() {
         Damage spear = new Damage(
-                1, 2, 10, 0, 0, List.of(new Damage.Bonus("Cavalry", 3), new Damage.Bonus("Elephant", 2)), false);
+                1, 2, 10, 0, 0, 0, List.of(new Damage.Bonus("Cavalry", 3), new Damage.Bonus("Elephant", 2)), false);
         assertThat(DamageFormula.dealt(spear, NONE, List.of("Infantry"))).isEqualTo(10);
         assertThat(DamageFormula.dealt(spear, NONE, List.of("Cavalry", "Organic")))
                 .isEqualTo(30);
@@ -51,9 +51,9 @@ class DamageFormulaTest {
 
     @Test
     void amountsAndBonusesMustBeFinite() {
-        assertThatThrownBy(() -> new Damage(1, 2, Float.NaN, 0, 0, List.of(), false))
+        assertThatThrownBy(() -> new Damage(1, 2, Float.NaN, 0, 0, 0, List.of(), false))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> new Damage(1, 2, 0, -1, 0, List.of(), false))
+        assertThatThrownBy(() -> new Damage(1, 2, 0, -1, 0, 0, List.of(), false))
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> new Damage.Bonus("Cavalry", Float.POSITIVE_INFINITY))
                 .isInstanceOf(IllegalArgumentException.class);

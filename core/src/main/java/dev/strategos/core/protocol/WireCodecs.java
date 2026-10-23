@@ -292,6 +292,7 @@ public final class WireCodecs {
                         case BLOCK_CRACK -> 2;
                         case BLOCK_BREAK -> 3;
                         case BLOCK_PLACE -> 4;
+                        case FLAME -> 5;
                     });
         }
 
@@ -304,6 +305,7 @@ public final class WireCodecs {
                 case 2 -> FxKind.BLOCK_CRACK;
                 case 3 -> FxKind.BLOCK_BREAK;
                 case 4 -> FxKind.BLOCK_PLACE;
+                case 5 -> FxKind.FLAME;
                 default -> throw new WireException("unknown fx kind " + code);
             };
         }

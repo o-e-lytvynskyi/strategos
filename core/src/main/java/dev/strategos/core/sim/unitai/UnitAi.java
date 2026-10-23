@@ -45,6 +45,11 @@ import org.jspecify.annotations.Nullable;
  *     BUILD_APPROACHING every 5  enter: a slot round the building, walked to; think: one done or lost ends it; Arrived:
  *                                build
  *     BUILDING         every 1   enter: commit a foundation; think: the rate joins the site's work, until it is done
+ *   BURN                         Attacked: hit back; Stuck at its last rung: the order failed; PathInvalidated: as
+ *                                WALKING
+ *     BURN_APPROACHING every 5   enter: a free place round the building, walked to; think: one gone ends it; Arrived:
+ *                                burn
+ *     BURNING          every 1   enter: the torch's wind-up; think: a blow of fire when it is over, then every period
  * </pre>
  *
  * Whichever of them finds its target dead takes up the nearest enemy in sight, from a new place, or else goes on with
@@ -56,7 +61,7 @@ import org.jspecify.annotations.Nullable;
  * back to what it was doing: walking and fighting on, or standing idle. Approaching and chasing report WALKING, for the
  * movement systems walk them; striking reports COMBAT. Units without a melee attack never engage; hit while idle, one
  * with a flee distance runs that far from the blow ({@link OrderKind#FLEE}, walked as a move, before its orders). A message
- * no state handles, such as an arrival while idle, is dropped. GATHER and BUILD (M3) add their subtrees under
+ * no state handles, such as an arrival while idle, is dropped. GATHER, BUILD and BURN (M3) add their subtrees under
  * INDIVIDUAL, each entered through {@link #stateFor} from its order kind; gathering's approach and way home report
  * WALKING, its work GATHERING.
  */
@@ -79,6 +84,9 @@ public final class UnitAi {
     public static final StateId BUILD = new StateId(15, "build", null);
     public static final StateId BUILD_APPROACHING = new StateId(16, "build.approaching", UnitState.WALKING);
     public static final StateId BUILDING = new StateId(17, "build.building", UnitState.BUILDING);
+    public static final StateId BURN = new StateId(18, "burn", null);
+    public static final StateId BURN_APPROACHING = new StateId(19, "burn.approaching", UnitState.WALKING);
+    public static final StateId BURNING = new StateId(20, "burn.burning", UnitState.COMBAT);
 
     private UnitAi() {}
 
@@ -214,6 +222,27 @@ public final class UnitAi {
                                 .enter(Constructing::begin)
                                 .think(Constructing::work)
                                 .transitions(next())
+                                .build(),
+                        StateDef.<MatchState>child(BURN, INDIVIDUAL)
+                                .initial(BURN_APPROACHING)
+                                .on(Attacked.class, (ctx, m) -> hit(ctx, m.attacker()))
+                                .on(Stuck.class, UnitAi::giveUp)
+                                .on(PathInvalidated.class, UnitAi::repath)
+                                .on(Arrived.class, (ctx, m) -> {}) // burning: nowhere to walk to
+                                .transitions(next())
+                                .build(),
+                        StateDef.<MatchState>child(BURN_APPROACHING, BURN)
+                                .thinkEvery(5)
+                                .enter(Burning::approach)
+                                .think(Burning::keepApproaching)
+                                .on(Arrived.class, Burning::arrived)
+                                .transitions(next(BURNING))
+                                .build(),
+                        StateDef.<MatchState>child(BURNING, BURN)
+                                .thinkEvery(1)
+                                .enter(Burning::begin)
+                                .think(Burning::work)
+                                .transitions(next())
                                 .build()),
                 UnitAi::changed);
     }
@@ -224,7 +253,7 @@ public final class UnitAi {
      */
     private static StateId[] next(StateId... more) {
         List<StateId> all =
-                new ArrayList<>(List.of(IDLE, WALKING, COMBAT, WALKING_AND_FIGHTING, FOLLOW, GATHER, BUILD));
+                new ArrayList<>(List.of(IDLE, WALKING, COMBAT, WALKING_AND_FIGHTING, FOLLOW, GATHER, BUILD, BURN));
         all.addAll(List.of(more));
         return all.toArray(StateId[]::new);
     }
@@ -271,7 +300,9 @@ public final class UnitAi {
                 GATHERING,
                 GATHER_RETURNING,
                 BUILD_APPROACHING,
-                BUILDING);
+                BUILDING,
+                BURN_APPROACHING,
+                BURNING);
     }
 
     /** The leaf saved as {@code name}, or null for any other name. */
@@ -303,6 +334,7 @@ public final class UnitAi {
             case OrderKind.FOLLOW -> FOLLOW;
             case OrderKind.GATHER -> GATHER;
             case OrderKind.BUILD -> BUILD;
+            case OrderKind.BURN -> BURN;
             default -> throw new IllegalStateException("no unit state carries out order kind " + kind);
         };
     }

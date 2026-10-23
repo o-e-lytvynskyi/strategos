@@ -2,6 +2,7 @@
   "parent": "strategos:template/building_base",
   "Identity": { "name": "strategos.building.barracks", "icon": "minecraft:shield", "classes": "+Barracks" },
   "Building": { "blueprint": "strategos:barracks", "material": "wood" },
+  "Resistance": { "fire": 0 },
   "Health": { "max": 1200 },
   "Cost": { "resources": { "wood": 200 }, "time": 60 },
   "Trainer": { "units": "strategos:unit/infantry" }

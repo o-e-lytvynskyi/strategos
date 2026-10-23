@@ -51,26 +51,35 @@ class UnitTreeTransitionsTest {
     /**
      * One spearman of a real match and an enemy spearman, in the row's start state: IDLE; WALKING by an order and a
      * tick; any other set as data, as a save restores it, with the enemy placed for it. A gather row's unit is a worker
-     * instead, beside a tree ({@link GatherTransitionRows#setUp}). A row publishes on the bus between ticks, as a system
+     * instead, beside a tree ({@link GatherTransitionRows#setUp}), with a torch and an enemy house ({@link
+     * BurnTransitionRows#setUp}). A row publishes on the bus between ticks, as a system
      * would, or steps a tick.
      */
     static final class Unit {
-        final SimHarness h = SimHarness.builder().build();
+        final SimHarness h;
         final int handle;
         final int enemy;
-        final MatchState state = KernelAccess.state(h.core());
+        final MatchState state;
         final List<OrderFinished> finished = new ArrayList<>();
         int node;
         int dropsite;
         int site;
+        int enemyHouse;
 
         Unit(StateId from, boolean worker) {
+            h = worker
+                    ? SimHarness.builder()
+                            .templates(BurnTransitionRows.torchWorkers())
+                            .build()
+                    : SimHarness.builder().build();
+            state = KernelAccess.state(h.core());
             handle = spawn(h, worker ? TemplateSet.WORKER : TemplateSet.INFANTRY, 0, new Vec2d(4, 8));
             enemy = spawn(h, TemplateSet.INFANTRY, 1, new Vec2d(28, 28)); // 31 blocks off: out of sight
             state.bus().subscribe(OrderFinished.class, finished::add);
             int i = index();
             if (worker) {
                 GatherTransitionRows.setUp(this);
+                BurnTransitionRows.setUp(this);
             }
             if (from.equals(UnitAi.WALKING)) {
                 h.submit(PlayerSlot.ADMIN, Move.replace(UnitSet.of(handle), new Vec2d(20, 8)));
@@ -87,6 +96,8 @@ class UnitTreeTransitionsTest {
                 GatherTransitionRows.start(this, from);
             } else if (from.equals(UnitAi.BUILD_APPROACHING) || from.equals(UnitAi.BUILDING)) {
                 BuildTransitionRows.start(this, from);
+            } else if (from.equals(UnitAi.BURN_APPROACHING) || from.equals(UnitAi.BURNING)) {
+                BurnTransitionRows.start(this, from);
             } else if (!from.equals(UnitAi.IDLE)) {
                 double ex = from.equals(UnitAi.ATTACKING) ? 5.2 : 10; // in reach (a 0.5 gap), or 6 blocks off
                 place(enemy, ex, 8);
@@ -235,7 +246,7 @@ class UnitTreeTransitionsTest {
     }
 
     static Stream<Arguments> unitRows() {
-        return Stream.of(rows(), GatherTransitionRows.rows(), BuildTransitionRows.rows())
+        return Stream.of(rows(), GatherTransitionRows.rows(), BuildTransitionRows.rows(), BurnTransitionRows.rows())
                 .flatMap(r -> r);
     }
 

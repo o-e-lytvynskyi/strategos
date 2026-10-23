@@ -6,8 +6,10 @@ import dev.strategos.core.content.CorePaths;
 import dev.strategos.core.content.Derivation;
 import dev.strategos.core.content.RawTemplate;
 import dev.strategos.core.content.TemplateCompiler;
+import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.content.ValuePath;
+import dev.strategos.core.shared.DetMath;
 import dev.strategos.core.shared.TemplateId;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -55,6 +57,13 @@ public final class BalanceSheet {
     public record Load(
             TemplateId template, String resource, String subtype, BigDecimal rate, BigDecimal capacity, long ticks) {}
 
+    /**
+     * How a torch bearer burns a building down (CMB-03): {@code hits} blows of its fire, each times 0.9 to the
+     * building's {@code Resistance/fire}, added up as the core adds them, take its hit points; ten bearers striking
+     * together from one tick finish in {@code tenTicks}: the wind-up, then a period for each further round of ten.
+     */
+    public record Burn(TemplateId attacker, TemplateId building, BigDecimal perHit, long hits, long tenTicks) {}
+
     /** The provenance key of the resource yields: notes by entry key. */
     public static final String YIELDS = "resource_yield";
 
@@ -69,6 +78,7 @@ public final class BalanceSheet {
     private final List<String> yieldNotes = new ArrayList<>();
     private final Map<String, List<String>> gatherers = new TreeMap<>();
     private final List<Load> loads = new ArrayList<>();
+    private final List<Burn> burns = new ArrayList<>();
     private final Map<String, List<String>> spenders = new TreeMap<>();
     private final List<String> problems = new ArrayList<>();
 
@@ -152,6 +162,7 @@ public final class BalanceSheet {
                 sheet.rows.add(new Row(t.id(), path, value, "the core's default", note == null ? "" : note));
             }
         }
+        sheet.burns(result.set(), concrete);
         for (Yield y : yields) {
             String note =
                     provenance.getOrDefault(YIELDS, Collections.emptyMap()).get(y.key());
@@ -179,6 +190,48 @@ public final class BalanceSheet {
 
     public List<Row> rows() {
         return List.copyOf(rows);
+    }
+
+    /** How long torches take to burn each building, by attacker and building. */
+    public List<Burn> burns() {
+        return List.copyOf(burns);
+    }
+
+    /** Every torch bearer against every building with hit points. */
+    private void burns(TemplateSet set, List<UnitTemplate> templates) {
+        ValuePath fire = set.valuePaths().byPath("Attack/Structure/fire");
+        ValuePath prepare = set.valuePaths().byPath("Attack/Structure/prepare");
+        ValuePath repeat = set.valuePaths().byPath("Attack/Structure/repeat");
+        ValuePath resist = set.valuePaths().byPath("Resistance/fire");
+        ValuePath health = set.valuePaths().byPath(CorePaths.HEALTH);
+        if (fire == null || prepare == null || repeat == null || health == null) {
+            return;
+        }
+        for (UnitTemplate a : templates) {
+            double blow = set.value(a.netIndex(), fire.id());
+            if (a.isBuilding() || !(blow > 0)) {
+                continue;
+            }
+            for (UnitTemplate b : templates) {
+                double hp = set.value(b.netIndex(), health.id());
+                if (!b.isBuilding() || !(hp > 0)) {
+                    continue;
+                }
+                double level = resist == null ? 0 : set.value(b.netIndex(), resist.id());
+                double dealt = (float) blow * DetMath.pow(0.9, Double.isFinite(level) ? level : 0);
+                long hits = 0;
+                double taken = 0;
+                while (taken < hp) { // as the core adds blows up
+                    taken += dealt;
+                    hits++;
+                }
+                long rounds = (hits + 9) / 10;
+                long ticks = (long) set.value(a.netIndex(), prepare.id())
+                        + (rounds - 1) * (long) set.value(a.netIndex(), repeat.id());
+                burns.add(new Burn(
+                        a.id(), b.id(), BigDecimal.valueOf(dealt).setScale(3, RoundingMode.HALF_UP), hits, ticks));
+            }
+        }
     }
 
     /** The loads gatherers carry, by template, resource and subtype. */
@@ -351,6 +404,27 @@ public final class BalanceSheet {
                         .append(plain(l.capacity()))
                         .append(" | ")
                         .append(seconds(l.ticks()))
+                        .append(" |\n");
+            }
+        }
+        sb.append("\n## Burning down\n\n");
+        if (burns.isEmpty()) {
+            sb.append("No template carries a torch yet.\n");
+        } else {
+            sb.append("A torch's fire times 0.9 to the building's fire resistance a blow; ten bearers striking together"
+                    + " from one tick take the wind-up and a period for each further round of ten (CMB-03).\n\n");
+            sb.append("| Attacker | Building | Fire a blow | Blows | Ten bearers in |\n|---|---|---|---|---|\n");
+            for (Burn b : burns) {
+                sb.append("| ")
+                        .append(b.attacker().value())
+                        .append(" | ")
+                        .append(b.building().value())
+                        .append(" | ")
+                        .append(plain(b.perHit()))
+                        .append(" | ")
+                        .append(b.hits())
+                        .append(" | ")
+                        .append(seconds(b.tenTicks()))
                         .append(" |\n");
             }
         }

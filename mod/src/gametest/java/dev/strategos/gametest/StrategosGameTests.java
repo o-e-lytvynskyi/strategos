@@ -64,6 +64,12 @@ public final class StrategosGameTests {
         afterBatch(level, "eco_crops");
     }
 
+    @AfterBatch(batch = "combat_burn")
+    public static void afterCombatBurn(ServerLevel level) {
+        dev.strategos.gametest.suites.CombatTests.restoreFireTick(level);
+        afterBatch(level, "combat_burn");
+    }
+
     @AfterBatch(batch = "eco_gather")
     public static void afterEcoGather(ServerLevel level) {
         afterBatch(level, "eco_gather");

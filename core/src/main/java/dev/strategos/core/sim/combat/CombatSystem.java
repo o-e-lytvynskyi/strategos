@@ -1,10 +1,12 @@
 package dev.strategos.core.sim.combat;
 
+import dev.strategos.core.content.CorePaths;
 import dev.strategos.core.protocol.NoticeKind;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.sim.Attacked;
 import dev.strategos.core.sim.BuildingDestroyed;
+import dev.strategos.core.sim.BuildingHurt;
 import dev.strategos.core.sim.EntityStore;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.MatchSystem;
@@ -42,7 +44,7 @@ public final class CombatSystem implements MatchSystem {
         HealthStore health = s.health();
         List<int[]> dying = new ArrayList<>(); // handle, last attacker
         List<Integer> falling = new ArrayList<>();
-        double[] resistance = new double[3];
+        double[] resistance = new double[3]; // a unit's hack, pierce and crush: no unit takes fire
         for (Damage d : packets) {
             int target = d.target();
             if (BuildingStore.isBuilding(target)) {
@@ -63,8 +65,8 @@ public final class CombatSystem implements MatchSystem {
             if (d.lethal()) {
                 dealt = left;
             } else {
-                for (DamageType type : DamageType.values()) {
-                    resistance[type.index()] = stats.resistance(i, type.index());
+                for (int type = 0; type < resistance.length; type++) {
+                    resistance[type] = stats.resistance(i, type);
                 }
                 dealt = DamageFormula.dealt(d, resistance, stats.classes(i));
             }
@@ -94,8 +96,9 @@ public final class CombatSystem implements MatchSystem {
     }
 
     /**
-     * A blow on a building (BLD-01): its amounts, or all that is left for a lethal one, with no resistance until
-     * CMB-03 gives buildings theirs; one that reaches its most falls once the tick's blows are dealt.
+     * A blow on a building (BLD-01, CMB-03): as {@link DamageFormula} gives it against the building's template's
+     * resistances, fire's from {@code Resistance/fire}, or all that is left for a lethal one; a building that reaches
+     * its most falls once the tick's blows are dealt.
      */
     private static void hitBuilding(MatchState s, Damage d, List<Integer> falling) {
         int target = d.target();
@@ -104,10 +107,38 @@ public final class CombatSystem implements MatchSystem {
         }
         double max = s.buildingMaxHp(target);
         double taken = s.buildings().damage(target);
-        double dealt = d.lethal() ? max - taken : d.hack() + d.pierce() + d.crush();
+        double dealt = d.lethal() ? max - taken : DamageFormula.dealt(d, resistance(s, target), classesOf(s, target));
         s.buildings().setDamage(target, Math.min(max, taken + dealt));
         if (taken + dealt >= max) {
             falling.add(target);
         }
+        s.outputs().add(new BuildingHurt(target, d.attacker(), (float) dealt));
+    }
+
+    /** The path of a building's fire resistance (CMB-03), read like its template's other values. */
+    public static final String RESIST_FIRE = "Resistance/fire";
+
+    /** A torch's fire a blow, its wind-up and its period in ticks (CMB-03, the template's structure attack). */
+    public static final String TORCH_FIRE = "Attack/Structure/fire";
+
+    public static final String TORCH_PREPARE = "Attack/Structure/prepare";
+    public static final String TORCH_REPEAT = "Attack/Structure/repeat";
+
+    /** Building {@code handle}'s resistance levels: hack, pierce, crush and fire, from its template. */
+    static double[] resistance(MatchState s, int handle) {
+        int template = s.buildings().template(handle);
+        int faction = s.buildings().faction(handle);
+        String[] paths = {CorePaths.RESIST_HACK, CorePaths.RESIST_PIERCE, CorePaths.RESIST_CRUSH, RESIST_FIRE};
+        double[] out = new double[paths.length];
+        for (int k = 0; k < paths.length; k++) {
+            int p = s.stats().path(paths[k]);
+            double v = p < 0 ? Double.NaN : s.stats().blockValue(template, faction, p);
+            out[k] = Double.isFinite(v) ? v : 0;
+        }
+        return out;
+    }
+
+    private static List<String> classesOf(MatchState s, int handle) {
+        return s.templates().byIndex(s.buildings().template(handle)).classes();
     }
 }

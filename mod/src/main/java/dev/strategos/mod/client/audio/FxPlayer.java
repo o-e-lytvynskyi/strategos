@@ -12,6 +12,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
@@ -48,6 +49,9 @@ public final class FxPlayer {
             if (e.kind().carriesData()) {
                 block(level, join, e, rig);
                 continue;
+            }
+            if (e.kind() == FxKind.FLAME) {
+                flames(level, join, e);
             }
             Sounds.Cue cue = Sounds.of(e.kind());
             SoundEvent sound = sound(cue);
@@ -100,6 +104,29 @@ public final class FxPlayer {
                 type.getPitch() * 0.8F,
                 false);
         played++;
+    }
+
+    /**
+     * A torch's flames on a building's block (CMB-03): flame particles and smoke over it, forced, since the RTS camera
+     * is further than vanilla's 32 blocks for plain particles; never a fire block.
+     */
+    private static void flames(ClientLevel level, MatchJoin join, Fx.Event e) {
+        double x = join.originX() + e.x8() / 8.0 + 0.5;
+        double y = join.originY() + e.y8() / 8.0 + 0.5;
+        double z = join.originZ() + e.z8() / 8.0 + 0.5;
+        var rng = level.getRandom();
+        for (int k = 0; k < 6; k++) {
+            level.addParticle(
+                    ParticleTypes.FLAME,
+                    true,
+                    x + (rng.nextDouble() - 0.5) * 0.9,
+                    y + (rng.nextDouble() - 0.5) * 0.9,
+                    z + (rng.nextDouble() - 0.5) * 0.9,
+                    0,
+                    0.02,
+                    0);
+        }
+        level.addParticle(ParticleTypes.LARGE_SMOKE, true, x, y + 0.6, z, 0, 0.05, 0);
     }
 
     /** A breaker id of the block's own, negative so it never meets an entity's: one crack per block. */

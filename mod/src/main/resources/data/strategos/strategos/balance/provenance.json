@@ -31,7 +31,10 @@
     "Resistance/hack": "0.9^5 lets 59 % through: shield and padding make a fight between two spearmen last tens of seconds",
     "Resistance/crush": "Padding does little against blunt blows; crush belongs to cavalry and siege later",
     "Cost/resources/wood": "Forty wood: the shaft and the shield; wood gathered early goes to both houses and soldiers",
-    "Cost/population": "One house's room for one soldier, as for a worker"
+    "Cost/population": "One house's room for one soldier, as for a worker",
+    "Attack/Structure/fire": "Three fire a blow: ten spearmen burn a wooden house in 13.5 s and a stone civic centre in about two and a half minutes, so a raid hurts but alone does not end a match (CMB-03, D-12)",
+    "Attack/Structure/prepare": "Half a second to light the torch and reach the wall, as the spear's wind-up",
+    "Attack/Structure/repeat": "A blow of fire a second, the spear's rhythm"
   },
   "strategos:unit/worker": {
     "Health/max": "Half a spearman's: a raid on workers costs their owner dearly, so workers are worth guarding",
@@ -64,13 +67,15 @@
     "Placement/spacing": "Sixty-four blocks between centres: a second centre claims new ground, not a corner of the first's"
   },
   "strategos:template/building_base": {
-    "Placement/civicReach": "Within 48 blocks of an own centre's footprint: a town grows round its centre, the stand-in for territory until TERR-02"
+    "Placement/civicReach": "Within 48 blocks of an own centre's footprint: a town grows round its centre, the stand-in for territory until TERR-02",
+    "Resistance/fire": "Stone: 0.9^7 lets 48 % of a torch's fire through, so wood burns more than twice as fast per hit point (CMB-03)"
   },
   "strategos:building/house": {
     "Health/max": "Four hundred: a house burns in well under a minute to a squad (CMB-03)",
     "Cost/resources/wood": "Eighty wood: a worker's first trip or two to a tree; the first house by 1:30 (the timing target)",
     "Cost/time": "Thirty seconds for one builder",
-    "Housing/capacity": "Five: a house a few trainings, so housing paces growth"
+    "Housing/capacity": "Five: a house a few trainings, so housing paces growth",
+    "Resistance/fire": "Timber and thatch: fire's whole blow lands, twice as fast per hit point as stone (CMB-03)"
   },
   "strategos:building/field": {
     "Health/max": "Two hundred: a field burns quickly, a cheap thing to raid",
@@ -79,11 +84,13 @@
     "Footprint/obstructs": "No: farmers stand on their field, and units walk through the crop",
     "Field/amount": "Three hundred food a sowing: five farmers reap it in about two and a half minutes",
     "Field/ripenTime": "Thirty seconds to ripen, while its farmers wait",
-    "Field/reseed/wood": "Forty wood to sow again: cheaper than a new field, so a reseed is the habit (D-14)"
+    "Field/reseed/wood": "Forty wood to sow again: cheaper than a new field, so a reseed is the habit (D-14)",
+    "Resistance/fire": "Timber and thatch: fire's whole blow lands, twice as fast per hit point as stone (CMB-03)"
   },
   "strategos:building/barracks": {
     "Health/max": "Twelve hundred: between a house and the centre",
     "Cost/resources/wood": "Two hundred wood: the barracks by 4:00 (the timing target) after a house and steady chopping",
-    "Cost/time": "A minute for one builder"
+    "Cost/time": "A minute for one builder",
+    "Resistance/fire": "Timber and thatch: fire's whole blow lands, twice as fast per hit point as stone (CMB-03)"
   }
 }

@@ -4,7 +4,7 @@ import dev.strategos.core.shared.CoreApi;
 
 /**
  * A change in the match the mod reacts to: a unit created, striking, hurt or dead, a unit's state or its gear changed,
- * a building destroyed, a block's crack.
+ * a building hurt or destroyed, a block's crack, a torch's flames.
  */
 @CoreApi
 public sealed interface MatchEvent extends OutputEvent
@@ -14,5 +14,7 @@ public sealed interface MatchEvent extends OutputEvent
                 UnitHurt,
                 UnitDied,
                 BuildingDestroyed,
+                BuildingHurt,
                 UnitGear,
-                BlockCracked {}
+                BlockCracked,
+                FlameShown {}

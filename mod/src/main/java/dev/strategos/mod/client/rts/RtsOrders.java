@@ -5,6 +5,7 @@ import dev.strategos.core.client.order.OrderIntents;
 import dev.strategos.core.client.order.SlotPreview;
 import dev.strategos.core.client.pick.CrosshairPick;
 import dev.strategos.core.client.pick.Picking;
+import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.Command;
 import dev.strategos.core.protocol.CommandBatch;
 import dev.strategos.core.protocol.MatchJoin;
@@ -105,7 +106,7 @@ final class RtsOrders {
 
     /**
      * The context order for the selection to what the cursor at window points picks (UI-05, ORD-04): an Attack on an
-     * enemy's body, else a Move to the block or unit there, or with attack-move armed an AttackMove there, match-local,
+     * enemy's body or building, else a Move to the block or unit there, or with attack-move armed an AttackMove there, match-local,
      * queued with Shift; one command per click. Attack-move disarms with the click.
      */
     void order(double x, double y, boolean shift) {
@@ -140,7 +141,11 @@ final class RtsOrders {
                 && body.spawnData().faction() != join.slot().value()) {
             enemy = body.spawnData().handle();
         }
-        boolean resource = !armed && pick.entityId() < 0 && yieldsResource(mc, pick);
+        BuildingState.Entry struck = mode.buildingAt(pick);
+        if (enemy == 0 && struck != null && struck.faction() != join.slot().value()) {
+            enemy = struck.handle(); // an enemy's building: an attack, which torches carry out (CMB-03)
+        }
+        boolean resource = !armed && enemy == 0 && pick.entityId() < 0 && yieldsResource(mc, pick);
         Command command = resource
                 ? OrderIntents.gather(
                         mode.selection().handles(),
