@@ -36,8 +36,8 @@ import org.lwjgl.glfw.GLFW;
  * outlined, a quarter turn right and zoomed in, and a quarter turn back at the top height.
  */
 final class RtsGoldensScenario implements Scenario {
-    private static final int OWN = 12;
-    private static final int ENEMIES = 8;
+    static final int OWN = 12;
+    static final int ENEMIES = 8;
     /** Ticks for a pose to settle: the rig eases 35 % of the way a tick. */
     private static final int SETTLE = 50;
     /** Far enough that the top pose (64 blocks up) sees ground to the window's corners. */
@@ -55,9 +55,18 @@ final class RtsGoldensScenario implements Scenario {
 
     @Override
     public void setup(IntegratedServer server, ScenarioContext ctx) {
+        floor = server.overworld().getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, 0, 0);
+        scene(server);
+    }
+
+    /**
+     * The goldens' scene, shared with the overlay's ({@link OverlayGoldensScenario}): noon, no weather, the blocks, a
+     * 128² match with the two groups, and the player seated in slot 0 as its commander, its RTS focus at (0.5, 18).
+     */
+    static MatchRuntime scene(IntegratedServer server) {
         ServerLevel level = server.overworld();
         ServerPlayer player = ScenarioWorld.player(server);
-        floor = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, 0, 0);
+        int floor = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, 0, 0);
         ScenarioWorld.run(server, "gamerule sendCommandFeedback false");
         ScenarioWorld.run(server, "gamerule doDaylightCycle false");
         ScenarioWorld.run(server, "gamerule doWeatherCycle false");
@@ -93,6 +102,7 @@ final class RtsGoldensScenario implements Scenario {
         StrategosServer.get().net().joined(rt, player, new PlayerSlot(0));
         double back = CameraRig.DEFAULT_HEIGHT / Math.tan(Math.toRadians(CameraRig.DEFAULT_PITCH));
         player.connection.teleport(0.5, floor + 24, 18 - back, 0, 55); // RTS mode's focus: (0.5, 18)
+        return rt;
     }
 
     @Override
@@ -207,9 +217,11 @@ final class RtsGoldensScenario implements Scenario {
 
     /**
      * Frozen bodies still draw their idle arm swing from their age, which differs by the ticks each lived on this
-     * client before the freeze, and their legs from the last walk speed: both pinned, so every run draws one pose.
+     * client before the freeze, and their legs from the last walk speed; a body frozen mid-step of its interpolation
+     * stands short of where the server put it. All pinned, so every run draws one pose: age 0, no walk, at its target,
+     * body and head turned as the server last said.
      */
-    private static void pinBodies(Minecraft mc) {
+    static void pinBodies(Minecraft mc) {
         if (mc.level == null) {
             return;
         }
@@ -218,6 +230,14 @@ final class RtsGoldensScenario implements Scenario {
                 body.tickCount = 0;
                 body.walkAnimation.update(0, 1);
                 body.walkAnimation.update(0, 1);
+                float yaw = body.lerpTargetYRot();
+                body.setPos(body.lerpTargetX(), body.lerpTargetY(), body.lerpTargetZ());
+                body.setYRot(yaw);
+                body.yBodyRot = yaw;
+                body.yHeadRot = yaw;
+                body.setOldPosAndRot();
+                body.yBodyRotO = yaw;
+                body.yHeadRotO = yaw;
             }
         }
     }
@@ -244,7 +264,7 @@ final class RtsGoldensScenario implements Scenario {
         return new double[] {w[0] * screen.width / v.width(), w[1] * screen.height / v.height()};
     }
 
-    private static int bodies(Minecraft mc) {
+    static int bodies(Minecraft mc) {
         int n = 0;
         if (mc.level != null) {
             for (Entity e : mc.level.entitiesForRendering()) {
