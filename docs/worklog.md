@@ -9,7 +9,7 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-24 — M3 T9–T19
+## 2026-10-24 — M3 T9–T20
 
 - **The owner, past midnight:** «можешь любые тесты проводить и как закончишь м3 - начинай м4, все решения
   принимай сам, которые рекомендуешь» (STATE item 6).
@@ -60,7 +60,14 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
 - **M3 T19 · UI-10, idle workers and notices.** I (or a click on the idle count) selects the next idle worker and
   takes the camera there, visiting each in turn. Top right, "not enough wood", "population capped: build houses" and
   "a worker is idle" show once per cause, not every time the server repeats it. The language file now names the
-  field and the newer keys. Next: T20, the placeholder look and the style guide.
+  field and the newer keys.
+- **M3 T20 · ART-01, the placeholder look.** Units now show who they belong to and what they do: every worker and
+  spearman wears a tunic in its faction's colour; a spearman adds an iron helmet, a trident and a shield with its
+  faction's banner; workers' tools and loads, which the server had been sending all along, are finally drawn (the
+  renderer had no layers). The debug walker stays bare, so the accepted goldens hold. The style guide
+  ([docs/art/style-guide.md](art/style-guide.md)) fixes colours, roles and per-building ranges, and a test holds the
+  blueprints to them. Frames from 24 and 64 blocks wait for T30's golden batch. Next: T21, torches against
+  buildings.
 
 ## 2026-10-23 (evening) — M3 spec, T1–T8
 

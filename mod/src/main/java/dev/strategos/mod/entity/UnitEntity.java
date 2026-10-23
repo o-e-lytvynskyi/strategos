@@ -29,6 +29,16 @@ public final class UnitEntity extends LivingEntity implements IEntityWithComplex
     private ItemStack mainHand = ItemStack.EMPTY;
     private ItemStack offHand = ItemStack.EMPTY;
 
+    /**
+     * On a client only, the look the renderer dresses it in (ART-01): head, chest, legs and feet, then what its hands
+     * hold when its gear leaves them empty; never on the server, which sends the hands alone.
+     */
+    private ItemStack[] worn = {ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY};
+
+    private ItemStack restMain = ItemStack.EMPTY;
+    private ItemStack restOff = ItemStack.EMPTY;
+    private boolean dressed;
+
     public UnitEntity(EntityType<? extends UnitEntity> type, Level level) {
         super(type, level);
     }
@@ -213,10 +223,27 @@ public final class UnitEntity extends LivingEntity implements IEntityWithComplex
     @Override
     public ItemStack getItemBySlot(EquipmentSlot slot) {
         return switch (slot) {
-            case MAINHAND -> mainHand;
-            case OFFHAND -> offHand;
+            case MAINHAND -> mainHand.isEmpty() ? restMain : mainHand;
+            case OFFHAND -> offHand.isEmpty() ? restOff : offHand;
+            case HEAD -> worn[0];
+            case CHEST -> worn[1];
+            case LEGS -> worn[2];
+            case FEET -> worn[3];
             default -> ItemStack.EMPTY;
         };
+    }
+
+    /** Whether a client's renderer dressed it already. */
+    public boolean dressed() {
+        return dressed;
+    }
+
+    /** On a client: the look it wears, and what its hands hold at rest (ART-01). */
+    public void dress(ItemStack head, ItemStack chest, ItemStack legs, ItemStack feet, ItemStack main, ItemStack off) {
+        worn = new ItemStack[] {head, chest, legs, feet};
+        restMain = main;
+        restOff = off;
+        dressed = true;
     }
 
     /** The hands only: what the core's gear puts there on the server, or the equipment packet on a client. */

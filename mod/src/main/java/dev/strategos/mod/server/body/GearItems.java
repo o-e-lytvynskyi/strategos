@@ -9,7 +9,7 @@ import net.minecraft.world.item.Items;
 /**
  * What a body holds for the core's gear (ECO-05, M3 spec §2.4): iron tools, read at a distance by their heads, the
  * mace for building (§1.6 row 9), and the load as the item it comes from: a log, sweet berries, wheat, cobblestone or
- * raw iron. Placeholders until the style guide (ART-01) picks the looks.
+ * raw iron, as the style guide's roles say (docs/art/style-guide.md §3).
  */
 public final class GearItems {
     private GearItems() {}

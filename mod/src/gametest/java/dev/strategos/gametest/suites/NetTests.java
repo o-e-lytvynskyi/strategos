@@ -855,7 +855,6 @@ public final class NetTests {
         MatchRuntime rt = MatchFixture.create(h, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
         rt.submit(PlayerSlot.ADMIN, new SpawnBuilding(ProdTests.CIVIC_CENTRE, new FactionSlot(0), 14, 10, 0));
         EcoTests.workers(rt, 10, 16, 3);
-        MockViewer owner = BuildingTests.seated(h, rt, "strategos-fstate", 0);
         java.util.Map<Long, dev.strategos.core.protocol.FactionState> server = new java.util.HashMap<>();
         rt.addListener(out -> {
             var q = core(rt).queries();
@@ -864,6 +863,12 @@ public final class NetTests {
                     dev.strategos.core.sim.replicate.ReplicationService.factionState(
                             q, rt.id().value(), new FactionSlot(0)));
         });
+        // the seat's first state goes out at once, before any tick: recorded as the core stands now
+        server.put(
+                core(rt).queries().tick(),
+                dev.strategos.core.sim.replicate.ReplicationService.factionState(
+                        core(rt).queries(), rt.id().value(), new FactionSlot(0)));
+        MockViewer owner = BuildingTests.seated(h, rt, "strategos-fstate", 0);
         int y = h.absolutePos(bush).getY();
         h.startSequence()
                 .thenWaitUntil(

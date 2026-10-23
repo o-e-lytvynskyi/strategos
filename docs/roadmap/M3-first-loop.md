@@ -604,7 +604,8 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
      the numbers feed D-01 and ADR-0019's budget F (L6 client, consent; M3's consent batch).
 - **Tests:** L3, L4 (consent), L6 (client, consent), L7, D · **Depends on:** UNIT-03, BLD-01,
   D-04 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
+- **Progress:** 2026-10-24 — M3 T20: the placeholder blueprints pass the lint and the construction GameTests (1); the style guide with the per-class ranges, checked by `StyleGuideRangesTest` (2); bodies dressed by faction and role (spec §1.6 rows 60–61); the goldens (3) and the armoured frame pass (5) wait for T30's batch, the owner's look (4) for the demo
 
 ### Slice 3.3 · Buildings fall, victory and orientation
 
