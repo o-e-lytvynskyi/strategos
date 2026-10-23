@@ -2,5 +2,18 @@
   "entity.strategos.unit_humanoid": "Unit",
   "generator.strategos.arena": "Strategos Arena",
   "key.categories.strategos": "Strategos",
-  "key.strategos.overlay": "Movement overlay"
+  "key.strategos.overlay": "Movement overlay",
+  "key.strategos.camera_pan_forward": "Pan forward",
+  "key.strategos.camera_pan_back": "Pan back",
+  "key.strategos.camera_pan_left": "Pan left",
+  "key.strategos.camera_pan_right": "Pan right",
+  "key.strategos.camera_rotate_left": "Rotate left",
+  "key.strategos.camera_rotate_right": "Rotate right",
+  "key.strategos.camera_zoom_in": "Zoom in",
+  "key.strategos.camera_zoom_out": "Zoom out",
+  "key.strategos.camera_centre_on_selection": "Centre on the selection",
+  "key.strategos.attack_move": "Attack-move",
+  "key.strategos.stop": "Stop",
+  "key.strategos.toggle_first_person": "First person",
+  "key.strategos.toggle_rts": "RTS mode"
 }

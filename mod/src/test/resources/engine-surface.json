@@ -24,7 +24,22 @@
   "ticketControllers": ["strategos:match"],
   "reloadListeners": ["strategos:templates"],
   "configs": ["strategos-server.toml"],
-  "keyMappings": ["key.strategos.overlay"],
+  "keyMappings": [
+    "key.strategos.overlay",
+    "key.strategos.camera_pan_forward",
+    "key.strategos.camera_pan_back",
+    "key.strategos.camera_pan_left",
+    "key.strategos.camera_pan_right",
+    "key.strategos.camera_rotate_left",
+    "key.strategos.camera_rotate_right",
+    "key.strategos.camera_zoom_in",
+    "key.strategos.camera_zoom_out",
+    "key.strategos.camera_centre_on_selection",
+    "key.strategos.attack_move",
+    "key.strategos.stop",
+    "key.strategos.toggle_first_person",
+    "key.strategos.toggle_rts"
+  ],
   "guiLayers": ["strategos:debug_panel"],
   "clientCommands": ["strategos-client"]
 }

@@ -83,6 +83,7 @@ public final class ScenarioRunner {
             case "s4_units" -> new UnitsFrameTimeScenario();
             case "s10_steps" -> new S10StepsScenario();
             case "s9" -> new S9CameraScenario();
+            case "rts_basics" -> new RtsBasicsScenario();
             default -> null;
         };
     }

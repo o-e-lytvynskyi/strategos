@@ -9,7 +9,22 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24, T16, T26; M2 spec, M2 T1
+## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24, T16, T26; M2 spec, M2 T1, T3, T5
+
+- **M2 T3–T5 · Input layer, camera rig, RtsScreen and picking** — UI-01 and CAM-04 done, CAM-02 in
+  progress.
+  - **Results:** `core.client.input` (actions, contexts, bindings, `ActionMap`, `InputState` with
+    gestures, `ScreenKeys`), `core.client.camera` (`CameraRig`, its eye capped at 5 blocks a tick),
+    `core.client.pick` (`Picking`, `Mat4`, `View`); `mod.client.rts` (`RtsKeys` in an RTS-only
+    conflict context, `RtsMode`, `RtsScreen`); `strategos-client.toml`; the scenario
+    `rts_basics`. Tests: 20 new in L1; `rts_basics` twice on the owner's Mac, all checks green.
+  - **Problems:** NeoForge's `UNIVERSAL` context conflicts with everything, so vanilla's universal
+    keys (Q, E, the digits) rule out the classic rotate keys and make the control groups fixed for
+    now (spec §1.6 rows 11–12). A frame-rate test of a mouse drag cannot be exact, since a drag lands
+    in the tick of its frame; the rig's linear scaling of a step overshot the 5-block cap on
+    rotations, now bisected. ErrorProne refused reference comparisons and a static assignment in
+    the client's constructor.
+  - **Next:** M2's selection and the unit renderer while the Mac is lent, then M1 T27.
 
 - **M2 spec, T1 · Spike S9, the commander camera** — CAM-01 done; ADR-0017 Accepted.
   - **Results:** the M2 spec (`docs/milestones/M2-command.md`, 23 tasks, the 20 cards

@@ -182,7 +182,8 @@ perspective only.
      (L4, consent).
 - **Tests:** L0, L1, L4 (consent) · **Fixtures:** vanilla 1.21.1 default-key table ·
   **Depends on:** QA-01 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Done:** 2026-10-23 — M2 T3: `ActionMapTest`, `GestureTest` (1); `DefaultKeysTest` against `client/vanilla-keys-1.21.1.json`, generated from Options.java, and no Ctrl + click (2; spec §1.6 row 11); `rts_basics` on the owner's Mac: attack-move rebound to G through its `KeyMapping` fires on G, and chat opens from the RTS screen (3; rows 12 and 16)
+- **Status:** done
 
 #### CAM-02 · RTS camera rig
 - **Value:** Survey and steer the battle from above as in the classics, with smooth pan, zoom and
@@ -203,7 +204,8 @@ perspective only.
   4. The owner scores pan, zoom and rotation on the questionnaire (L7, acceptance).
 - **Tests:** L0, L1, L4 (consent), L7 · **Depends on:** CAM-01, UI-01, D-09 · **Size:** L ·
   **Tier:** T0
-- **Status:** specified
+- **Progress:** 2026-10-23 — M2 T4: `CameraRig` in `core.client.camera` with the pan cap S9 set (5 blocks a tick, by bisection), `RtsMode` applies it in `PlayerTickEvent.Pre` and `ComputeCameraAngles` with no mixin, `strategos-client.toml` holds pan and turn speeds and edge pan; `CameraRigTest` (1, 2; spec §1.6 row 16). Open: pose goldens (3, with QA-18), jumps through `camera_jump` (with CAM-03), the questionnaire (4)
+- **Status:** in_progress
 
 #### CAM-04 · RtsScreen, cursor and world picking
 - **Value:** Point and click any unit or block as in a classic RTS, accurately on Retina, and no
@@ -225,7 +227,8 @@ perspective only.
   4. After chat and the pause menu close, the cursor stays free and no attack or use packet is
      ever sent (L4, consent).
 - **Tests:** L0, L1, L4 (consent) · **Depends on:** CAM-01, UI-01 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Done:** 2026-10-23 — M2 T5: `PickingTest` at GUI scales 1–4 and framebuffer scales 1× and 2×, framebuffer pixels shown to miss (1); `ScreenKeysTest` (2); `rts_basics` on the owner's Mac: 10 clicks through `RtsScreen` hit 10 gold blocks exactly (3); after chat and the pause menu the screen is back with the cursor free, and no attack, use or interaction reached the server (4); the hover highlight comes with UI-03 (spec §1.6 row 14)
+- **Status:** done
 
 #### UI-02 · HUD framework
 - **Value:** A clean RTS screen that stays readable at any resolution and GUI scale.

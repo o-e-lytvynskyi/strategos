@@ -251,6 +251,15 @@ Answer in chat or here; the next session applies the answers.
   out of it for the next tasks: jumps take effect at the start of the next server tick, and pans
   stop at 5 blocks a tick. ADR-0017, the camera decision, is accepted.
   [Report](spikes/S9-commander-camera.md). Card CAM-01 is done.
+- 2026-10-23 · **M2 T3–T5 RTS controls, the camera rig and the RTS screen:** a spectator presses F6
+  and gets the RTS view: the cursor is free, the camera pans on W A S D and at the screen's edge,
+  turns on comma and period or a middle drag, and zooms on the wheel, smoothly at any frame rate.
+  Clicks pick exactly the block or unit under the cursor on the Retina screen; chat (T) and the pause
+  menu (Escape) open over it and it comes back when they close; no click ever breaks a block or
+  hits anything. Every RTS key can be rebound in vanilla's Controls screen without a conflict mark;
+  speeds and edge panning are in `strategos-client.toml`. Checked in a window on your Mac. Selecting,
+  ordering and being seated as a commander come next. Cards UI-01 and CAM-04 are done; CAM-02 waits
+  for its golden pictures and the jumps.
 
 ## Now
 
@@ -258,7 +267,7 @@ Answer in chat or here; the next session applies the answers.
 - **In progress:** none.
 - **Last finished task:** M1 T26 (2026-10-23). The agents' branches `wip/m1-t17-unitai-hfsm` and
   `wip/m1-t25-debug-overlay` are merged and kept on GitHub for the record.
-- **Last M2 task:** T1, spike S9 (2026-10-23).
+- **Last M2 task:** T5, RtsScreen and picking (2026-10-23); T3 and T5 done, T4 open for its goldens and jumps.
 - **Next task:** while the Mac's windows are mine today, the window work that is ready (M2's L4
   items as their tasks land); M1 T27 (M1 close, headless); then M2's tasks in the spec's order.
 - **WIP branch:** none.

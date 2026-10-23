@@ -7,11 +7,14 @@ import dev.strategos.mod.Strategos;
 import dev.strategos.mod.client.debug.ClientDebugState;
 import dev.strategos.mod.client.debug.DebugOverlayHost;
 import dev.strategos.mod.client.net.ClientPayloads;
+import dev.strategos.mod.client.rts.RtsMode;
 import dev.strategos.mod.registry.ModEntityTypes;
 import dev.strategos.mod.server.net.payload.PayloadArrived;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.common.NeoForge;
@@ -24,11 +27,13 @@ import org.jspecify.annotations.Nullable;
 @Mod(value = Strategos.MOD_ID, dist = Dist.CLIENT)
 public final class StrategosClient {
     private static final ClientDebugState DEBUG = new ClientDebugState();
+    private static final RtsMode RTS = new RtsMode();
     private static volatile @Nullable MatchJoin match;
     private static volatile @Nullable MatchStateMsg state;
     private static volatile TemplateSet templates = TemplateSet.builtin();
 
-    public StrategosClient(IEventBus modBus) {
+    public StrategosClient(IEventBus modBus, ModContainer container) {
+        container.registerConfig(ModConfig.Type.CLIENT, StrategosClientConfig.SPEC, StrategosClientConfig.FILE);
         modBus.addListener(
                 EntityRenderersEvent.RegisterRenderers.class,
                 e -> e.registerEntityRenderer(ModEntityTypes.UNIT_HUMANOID.get(), UnitRenderer::new));
@@ -39,6 +44,12 @@ public final class StrategosClient {
             DEBUG.reset();
         });
         new DebugOverlayHost(modBus, DEBUG);
+        RTS.register(modBus);
+    }
+
+    /** RTS mode on this client (CAM-02, CAM-04); the client thread's only. */
+    public static RtsMode rts() {
+        return RTS;
     }
 
     /** The developer overlay's state (PATH-10); the client thread's only. */

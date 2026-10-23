@@ -75,12 +75,12 @@ person and back; fight a first battle. M2 retires the camera risk (F-R4/A-R6) wi
 1. `scripts/playtest.sh` starts the dedicated test server and the owner's client (the owner runs
    it). `/strategos match create map strategos:proving_ground`, then `/strategos match join 1 0`.
 2. The client enters RTS mode: the cursor is free, the camera above the west start.
-3. Pan with WASD and the screen edge, rotate with Q/E or a middle drag, zoom with the wheel.
+3. Pan with WASD and the screen edge, rotate with comma and period or a middle drag, zoom with the wheel.
 4. `/strategos spawn strategos:unit/infantry 30 0` and `... 30 1` across the river.
 5. Drag a box round your 30, hold the right button on the far bank, see the slots, release.
 6. Ctrl+1, pan away, double-tap 1: the camera jumps back.
-7. Attack-move (A + click) into the enemy; watch the bars, hear the hits.
-8. F5 (first person) among the soldiers; "follow me"; F5 back.
+7. Attack-move (Z + click) into the enemy; watch the bars, hear the hits.
+8. V (first person) among the soldiers; "follow me"; V back.
 9. The questionnaire (`docs/testing/playtest.md`).
 
 ### 1.4 Cards, tasks and checks (traceability)
@@ -133,6 +133,12 @@ Rows written while specifying; tasks append theirs.
 | 8 | S9: picking is checked against the rendered frame | For each of 20 gold blocks the client projects the block with the frame's own matrices, sets the OS cursor there with GLFW, reads it back in window points, unprojects it and clips; and the frame's pixel at that point, the window point times the framebuffer scale (2 on this Retina display), must be gold. A projection that used framebuffer sizes would miss by half the screen |
 | 9 | CAM-02, CAM-03: the pan cap | 5 blocks a tick, not 8. The server lets a packet move `10 × √k` blocks from the tick's first good position for `k` packets since its last tick (ServerGamePacketListenerImpl.java:910–919); a client running two ticks in one frame sends two packets in one server tick, and at 8 a tick the second is 16 blocks away. Under Iris and Sodium that snapped back 89 and 4 of 200 packets at 8 a tick in S9's two runs, none at 5 or below; the vanilla client never bunched here. CAM-03.2's mock pans at 5. ADR-0017 and 04 §13.2 amended |
 | 10 | T1: S9's results | The decided body passes: see [the report](../spikes/S9-commander-camera.md). ADR-0017 Accepted with rows 5 and 9; neither fallback measured (row 2); the height stays 8–64 |
+| 11 | UI-01.2: what "collide" means, and the layout | A collision is what the Controls screen marks: the same key in contexts that are live together (NeoForge: `UNIVERSAL` conflicts with every context, `IN_GAME` and `GUI` only with themselves; Options.java:1557–1571 sets which vanilla keys are `IN_GAME`). The RTS keys live in a context of their own, active only while `RtsScreen` is open, so they may share vanilla's in-game keys and must avoid its universal ones (E, Q, F, P, L, C, X, the digits, F2, F11, right and middle click). Defaults: pan W A S D, rotate comma and period, zoom = and - and the wheel, attack-move Z, stop H, first person V, centre on the selection Space; RTS mode F6 in game. The table `client/vanilla-keys-1.21.1.json` is generated from Options.java; `DefaultKeysTest` checks the rule and that it catches Q |
+| 12 | UI-01: what is not a key mapping | The mouse gestures (left selects, a drag boxes, a double click takes the type, right orders, middle drags to rotate), Escape, and the control groups on the digits, which vanilla binds to the hotbar in every context, are fixed until UI-17's hotkey screen; UI-01.3's "every action can be rebound" covers the key mappings. The L4 check rebinds attack-move to G through its `KeyMapping`, as the Controls screen does, and G fires it |
+| 13 | CAM-02, CAM-04 before CAM-03 | Until CAM-03 makes a seated commander a spectator, RTS mode starts only for a player who already is one (in the scenarios, the integrated server sets it); jumps through `camera_jump` and the rig's limits from a seat come with CAM-03. Without a seat the limits are a 4,096-block square round the player |
+| 14 | CAM-04: picking units, and the hover | Units are picked by rays against the boxes of the level's unit bodies within 192 blocks of the camera, a scan per click; NET-08's client unit index replaces it. The hover highlight comes with UI-03's selection outline, which draws it |
+| 15 | §1.3: the demo's keys | Rotate on comma and period, attack-move on Z, first person on V, as row 11 sets; the script is amended |
+| 16 | T3–T5: tests | `ActionMapTest` (3), `GestureTest` (4), `DefaultKeysTest` (3), `ScreenKeysTest` (2), `CameraRigTest` (5: the same pose at 30, 60 and 144 fps for keys and zoom, the same turn for a drag, the margin, the eye's 5-block step found by bisection, the terrain), `PickingTest` (3, with framebuffer pixels shown to miss). L4 on this Mac: `rts_basics` (the window's 1280 × 720 points on a 2× framebuffer): 10 clicks through the screen's own handlers on 10 gold blocks, all exact; W held for 20 ticks pans more than 10 blocks; chat and the pause menu close back to the RTS screen with the cursor free; no attack, use or interaction reaches the server; attack-move rebound to G fires on G. Two screenshots of the default pose wait for QA-18's goldens |
 
 ### 1.7 Consent plan
 
@@ -396,7 +402,7 @@ second (5 minutes, M1 §1.6 row 162's pacing); budgets A, B and C as M1's soak m
 
 ### 7.3 Progress
 
-- [x] T1 (2026-10-23) · [ ] T2 · [ ] T3 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11 · [ ] T12
+- [x] T1 (2026-10-23) · [ ] T2 · [x] T3 (2026-10-23) · [ ] T4 (rig and options done; goldens with QA-18, jumps with CAM-03) · [x] T5 (2026-10-23) · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11 · [ ] T12
 - [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17 · [ ] T18 · [ ] T19 · [ ] T20 · [ ] T21 · [ ] T22 · [ ] T23
 
 ---

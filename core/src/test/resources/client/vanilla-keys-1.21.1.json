@@ -1,0 +1,197 @@
+{
+  "source": "Minecraft 1.21.1 Options.java with NeoForge 21.1.264 (setForgeKeybindProperties); regenerate per Minecraft version",
+  "bindings": [
+    {
+      "name": "key.forward",
+      "type": "key",
+      "code": 87,
+      "context": "IN_GAME"
+    },
+    {
+      "name": "key.left",
+      "type": "key",
+      "code": 65,
+      "context": "IN_GAME"
+    },
+    {
+      "name": "key.back",
+      "type": "key",
+      "code": 83,
+      "context": "IN_GAME"
+    },
+    {
+      "name": "key.right",
+      "type": "key",
+      "code": 68,
+      "context": "IN_GAME"
+    },
+    {
+      "name": "key.jump",
+      "type": "key",
+      "code": 32,
+      "context": "IN_GAME"
+    },
+    {
+      "name": "key.sneak",
+      "type": "key",
+      "code": 340,
+      "context": "IN_GAME"
+    },
+    {
+      "name": "key.sprint",
+      "type": "key",
+      "code": 341,
+      "context": "IN_GAME"
+    },
+    {
+      "name": "key.inventory",
+      "type": "key",
+      "code": 69,
+      "context": "UNIVERSAL"
+    },
+    {
+      "name": "key.swapOffhand",
+      "type": "key",
+      "code": 70,
+      "context": "UNIVERSAL"
+    },
+    {
+      "name": "key.drop",
+      "type": "key",
+      "code": 81,
+      "context": "UNIVERSAL"
+    },
+    {
+      "name": "key.use",
+      "type": "mouse",
+      "code": 1,
+      "context": "UNIVERSAL"
+    },
+    {
+      "name": "key.attack",
+      "type": "mouse",
+      "code": 0,
+      "context": "IN_GAME"
+    },
+    {
+      "name": "key.pickItem",
+      "type": "mouse",
+      "code": 2,
+      "context": "UNIVERSAL"
+    },
+    {
+      "name": "key.chat",
+      "type": "key",
+      "code": 84,
+      "context": "IN_GAME"
+    },
+    {
+      "name": "key.playerlist",
+      "type": "key",
+      "code": 258,
+      "context": "IN_GAME"
+    },
+    {
+      "name": "key.command",
+      "type": "key",
+      "code": 47,
+      "context": "IN_GAME"
+    },
+    {
+      "name": "key.socialInteractions",
+      "type": "key",
+      "code": 80,
+      "context": "UNIVERSAL"
+    },
+    {
+      "name": "key.screenshot",
+      "type": "key",
+      "code": 291,
+      "context": "UNIVERSAL"
+    },
+    {
+      "name": "key.togglePerspective",
+      "type": "key",
+      "code": 294,
+      "context": "IN_GAME"
+    },
+    {
+      "name": "key.fullscreen",
+      "type": "key",
+      "code": 300,
+      "context": "UNIVERSAL"
+    },
+    {
+      "name": "key.advancements",
+      "type": "key",
+      "code": 76,
+      "context": "UNIVERSAL"
+    },
+    {
+      "name": "key.saveToolbarActivator",
+      "type": "key",
+      "code": 67,
+      "context": "UNIVERSAL"
+    },
+    {
+      "name": "key.loadToolbarActivator",
+      "type": "key",
+      "code": 88,
+      "context": "UNIVERSAL"
+    },
+    {
+      "name": "key.hotbar.1",
+      "type": "key",
+      "code": 49,
+      "context": "UNIVERSAL"
+    },
+    {
+      "name": "key.hotbar.2",
+      "type": "key",
+      "code": 50,
+      "context": "UNIVERSAL"
+    },
+    {
+      "name": "key.hotbar.3",
+      "type": "key",
+      "code": 51,
+      "context": "UNIVERSAL"
+    },
+    {
+      "name": "key.hotbar.4",
+      "type": "key",
+      "code": 52,
+      "context": "UNIVERSAL"
+    },
+    {
+      "name": "key.hotbar.5",
+      "type": "key",
+      "code": 53,
+      "context": "UNIVERSAL"
+    },
+    {
+      "name": "key.hotbar.6",
+      "type": "key",
+      "code": 54,
+      "context": "UNIVERSAL"
+    },
+    {
+      "name": "key.hotbar.7",
+      "type": "key",
+      "code": 55,
+      "context": "UNIVERSAL"
+    },
+    {
+      "name": "key.hotbar.8",
+      "type": "key",
+      "code": 56,
+      "context": "UNIVERSAL"
+    },
+    {
+      "name": "key.hotbar.9",
+      "type": "key",
+      "code": 57,
+      "context": "UNIVERSAL"
+    }
+  ]
+}
