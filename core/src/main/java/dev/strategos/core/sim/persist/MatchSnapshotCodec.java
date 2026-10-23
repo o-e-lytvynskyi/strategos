@@ -272,7 +272,8 @@ public final class MatchSnapshotCodec {
                     QUEUE.optionalFieldOf("paths", PathStore.Queue.EMPTY).forGetter(MatchSnapshot::paths),
                     Codec.INT
                             .optionalFieldOf("nextGroup", MatchState.FIRST_GROUP)
-                            .forGetter(MatchSnapshot::nextGroup))
+                            .forGetter(MatchSnapshot::nextGroup),
+                    Codec.LONG.listOf().optionalFieldOf("treasury", List.of()).forGetter(MatchSnapshot::treasury))
             .apply(i, MatchSnapshot::new));
 
     private MatchSnapshotCodec() {}

@@ -4,6 +4,7 @@ import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.Vec2d;
+import dev.strategos.core.sim.econ.FactionTreasury;
 import dev.strategos.core.sim.nav.PathService;
 import dev.strategos.core.sim.nav.PathStore;
 import dev.strategos.core.sim.nav.SurfaceGrid;
@@ -23,6 +24,11 @@ final class QueriesImpl implements MatchQueries {
     QueriesImpl(MatchState state, PathService paths) {
         this.state = state;
         this.paths = paths;
+    }
+
+    @Override
+    public FactionTreasury treasury(FactionSlot faction) {
+        return state.treasury().view(faction.value());
     }
 
     @Override

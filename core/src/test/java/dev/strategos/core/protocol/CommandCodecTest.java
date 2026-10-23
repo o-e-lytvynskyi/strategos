@@ -24,7 +24,8 @@ class CommandCodecTest {
                 new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(1), new Vec2d(4, 8), 8, 2.0),
                 new Attack(UnitSet.of(4, 6), 0x300007, QueueMode.QUEUE),
                 new AttackMove(UnitSet.of(2), new Vec2d(30.25, 9), QueueMode.PUSH_FRONT),
-                new Follow(UnitSet.of(1, 9), QueueMode.REPLACE));
+                new Follow(UnitSet.of(1, 9), QueueMode.REPLACE),
+                new Grant(new FactionSlot(1), "wood", 250));
     }
 
     @Test

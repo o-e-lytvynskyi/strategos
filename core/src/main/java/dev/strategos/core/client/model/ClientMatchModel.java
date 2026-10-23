@@ -1,11 +1,13 @@
 package dev.strategos.core.client.model;
 
+import dev.strategos.core.protocol.FactionState;
 import dev.strategos.core.protocol.UnitDetail;
 import dev.strategos.core.protocol.UnitHud;
 import dev.strategos.core.protocol.UnitSummary;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.jspecify.annotations.Nullable;
 
 /**
  * What the client knows of its match (NET-08): the units its faction knows, from the last {@code unit_summary}, a full
@@ -13,6 +15,8 @@ import java.util.Map;
  * points from {@code unit_hud}, whole until told otherwise; and the details its {@code ui_query} asked for.
  */
 public final class ClientMatchModel {
+    private @Nullable FactionState faction;
+
     private int matchId = -1;
     private long tick = -1;
     private List<UnitSummary.Entry> units = List.of();
@@ -40,6 +44,20 @@ public final class ClientMatchModel {
         for (UnitHud.Entry e : hud.units()) {
             health.put(e.index(), e.health());
         }
+    }
+
+    /** Takes the player's faction's state: the joined match's, newer ticks only (ECO-01). */
+    public void accept(FactionState state, int joinedMatch) {
+        FactionState last = faction;
+        if (state.matchId() == joinedMatch
+                && (last == null || last.matchId() != joinedMatch || state.tick() >= last.tick())) {
+            faction = state;
+        }
+    }
+
+    /** The last faction state of the joined match, or null before the first. */
+    public @Nullable FactionState faction() {
+        return faction;
     }
 
     /** Takes the details the last query asked for: the joined match's. */

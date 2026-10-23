@@ -277,7 +277,7 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
      mock player does (L3).
   4. `faction_state` round-trips within its cap and declares its audience (L2).
 - **Tests:** L0, L1, L2, L3 · **Depends on:** CORE-03, NET-01, D-10 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 #### ECO-02 · Resource nodes: discovery and index
 - **Value:** Workers find the nearest tree, bush or deposit instantly, and blocks from other mods

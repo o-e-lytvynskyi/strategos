@@ -21,7 +21,8 @@ public final class CommandRules {
                 .register(new SpawnUnitsRule())
                 .register(new AttackRule())
                 .register(new AttackMoveRule())
-                .register(new FollowRule());
+                .register(new FollowRule())
+                .register(new GrantRule());
     }
 
     /** A second rule for a kind throws. */

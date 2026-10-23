@@ -5,6 +5,8 @@ import dev.strategos.core.protocol.CommandOutcome;
 import dev.strategos.core.protocol.RejectReason;
 import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.CommandResult;
+import java.util.ArrayList;
+import java.util.List;
 import org.jspecify.annotations.Nullable;
 
 /** Counts a command's accepted and refused units, remembering the first refusal, and makes its result. */
@@ -37,6 +39,23 @@ final class Tally {
     static CommandResult acceptAll(CommandEnvelope envelope, CommandKind<?> kind, int units) {
         return new CommandResult(
                 envelope.issuer(), envelope.clientSeq(), kind.id(), CommandOutcome.ACCEPTED, units, 0, null);
+    }
+
+    /** A refusal for want of resources: what the faction lacks per resource, in thousandths (ECO-01). */
+    static CommandResult unaffordable(CommandEnvelope envelope, CommandKind<?> kind, int units, long[] missing) {
+        List<Long> lack = new ArrayList<>(missing.length);
+        for (long m : missing) {
+            lack.add(m);
+        }
+        return new CommandResult(
+                envelope.issuer(),
+                envelope.clientSeq(),
+                kind.id(),
+                CommandOutcome.REJECTED,
+                0,
+                units,
+                RejectReason.NOT_ENOUGH_RESOURCES,
+                lack);
     }
 
     /** A whole-command refusal: no unit accepted, {@code units} refused. */

@@ -22,7 +22,8 @@ class CommandKindsTest {
                         "strategos:spawn_units",
                         "strategos:attack",
                         "strategos:attack_move",
-                        "strategos:follow");
+                        "strategos:follow",
+                        "strategos:grant");
     }
 
     @Test
@@ -47,10 +48,10 @@ class CommandKindsTest {
     }
 
     @Test
-    void onlySpawnUnitsIsAdminOnly() {
+    void onlySpawnUnitsAndGrantAreAdminOnly() {
         assertThat(CommandKinds.DEFAULT.all())
                 .filteredOn(CommandKind::adminOnly)
-                .containsExactly(CommandKinds.SPAWN_UNITS);
+                .containsExactly(CommandKinds.SPAWN_UNITS, CommandKinds.GRANT);
     }
 
     @Test

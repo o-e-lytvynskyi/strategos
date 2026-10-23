@@ -9,7 +9,15 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-23 (evening) — M3 spec, T1, T2, T3
+## 2026-10-23 (evening) — M3 spec, T1, T2, T3, T4
+
+- **M3 T4 · ECO-01, resources and the treasury.** Resources are match rules copied from
+  `strategos/resources/*.json` when a match is created; amounts in thousandths; each faction's
+  stock with granted, gathered, spent and refunded counters, balanced by the core itself every step;
+  an admin `Grant`; refusals for want of resources name what is missing; `faction_state` to each
+  seated player of the faction when it changes. 200 seeded streams balance; the GameTest shows a
+  faction's state never reaches the other. ECO-01 stays in progress until the first paying commands
+  (T11, T14). Next: T5, the core's own terrain edits.
 
 - **M3 T3 · UNIT-04, the worker.** 50 hit points, 60 food, 10 s, `+Gatherer +Builder`; the
   spearman's cost derives from it (60 food, 15 s) plus 40 wood. Gathering and building are class

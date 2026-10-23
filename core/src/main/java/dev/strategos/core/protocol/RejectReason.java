@@ -14,5 +14,7 @@ public enum RejectReason {
     NOT_PERMITTED,
     INVALID_ARGUMENT,
     /** The unit already holds the most orders a queue takes (ORD-02). */
-    QUEUE_FULL
+    QUEUE_FULL,
+    /** The faction cannot pay; the result names the missing amounts (ECO-01). */
+    NOT_ENOUGH_RESOURCES
 }

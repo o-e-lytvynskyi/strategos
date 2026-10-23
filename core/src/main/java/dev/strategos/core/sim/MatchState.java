@@ -6,6 +6,10 @@ import dev.strategos.core.diag.MatchLog;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.sim.combat.Damage;
 import dev.strategos.core.sim.combat.HealthStore;
+import dev.strategos.core.sim.econ.Amount;
+import dev.strategos.core.sim.econ.Costs;
+import dev.strategos.core.sim.econ.EconomyRules;
+import dev.strategos.core.sim.econ.Treasury;
 import dev.strategos.core.sim.nav.MobilityClass;
 import dev.strategos.core.sim.nav.PageCoord;
 import dev.strategos.core.sim.nav.PathStore;
@@ -38,6 +42,8 @@ public final class MatchState {
     private final AiStateStore ai = new AiStateStore();
     private final PathStore paths = new PathStore();
     private final HealthStore health = new HealthStore();
+    private final Treasury treasury;
+    private final Costs costs;
     private final List<Damage> damage = new ArrayList<>();
     private final MatchBus bus = new MatchBus();
     private final StatService stats;
@@ -68,6 +74,18 @@ public final class MatchState {
         this.entities = entities;
         this.log = log;
         this.stats = new StatService(templates, config.factions(), identity, bus);
+        EconomyRules economy = config.rules().economy();
+        this.treasury = new Treasury(config.factions(), economy.size());
+        for (int f = 0; f < config.factions(); f++) {
+            for (int r = 0; r < economy.size(); r++) {
+                long start = economy.resources().get(r).start();
+                if (start > 0) {
+                    treasury.grant(f, r, start * Amount.UNIT); // the starting resources (MATCH-01)
+                }
+            }
+        }
+        this.costs = new Costs(economy);
+        costs.swap(stats);
         this.spatial = new SpatialQueries(config.bounds(), templates);
         this.input = TickInputs.empty(0);
         this.surfaces =
@@ -251,6 +269,16 @@ public final class MatchState {
         return spatial;
     }
 
+    /** Every faction's resources and their counters (ECO-01). */
+    public Treasury treasury() {
+        return treasury;
+    }
+
+    /** What templates cost each faction (ECO-01). */
+    public Costs costs() {
+        return costs;
+    }
+
     /** Every unit's numbers, through the modifier pipeline (ADR-0013). */
     public StatService stats() {
         return stats;
@@ -353,6 +381,7 @@ public final class MatchState {
         }
         templates = set;
         stats.swap(set);
+        costs.swap(stats);
         spatial.swap(set);
     }
 

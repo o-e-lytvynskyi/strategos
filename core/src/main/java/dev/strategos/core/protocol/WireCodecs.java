@@ -216,6 +216,7 @@ public final class WireCodecs {
                             case NOT_PERMITTED -> 7;
                             case INVALID_ARGUMENT -> 8;
                             case QUEUE_FULL -> 9;
+                            case NOT_ENOUGH_RESOURCES -> 10;
                         });
     }
 
@@ -232,6 +233,7 @@ public final class WireCodecs {
             case 7 -> RejectReason.NOT_PERMITTED;
             case 8 -> RejectReason.INVALID_ARGUMENT;
             case 9 -> RejectReason.QUEUE_FULL;
+            case 10 -> RejectReason.NOT_ENOUGH_RESOURCES;
             default -> throw new WireException("unknown reject reason " + code);
         };
     }

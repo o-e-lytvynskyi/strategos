@@ -1,6 +1,7 @@
 package dev.strategos.core.sim.replicate;
 
 import dev.strategos.core.content.CorePaths;
+import dev.strategos.core.protocol.FactionState;
 import dev.strategos.core.protocol.UiQuery;
 import dev.strategos.core.protocol.UnitDetail;
 import dev.strategos.core.protocol.UnitSummary;
@@ -10,6 +11,7 @@ import dev.strategos.core.shared.Handle;
 import dev.strategos.core.sim.MatchQueries;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.UnitView;
+import dev.strategos.core.sim.econ.FactionTreasury;
 import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.core.sim.stats.StatBreakdown;
 import java.util.ArrayList;
@@ -48,6 +50,21 @@ public final class ReplicationService {
             }
         }
         return new UnitSummary(matchId, q.tick(), entries);
+    }
+
+    /**
+     * Faction {@code faction}'s {@code faction_state} (ECO-01): its treasury's stock, gathered and spent per resource;
+     * population and workers are 0 until ECO-06 and ECO-05 count them.
+     */
+    public static FactionState factionState(MatchQueries q, int matchId, FactionSlot faction) {
+        FactionTreasury t = q.treasury(faction);
+        int n = t.stock().size();
+        List<Integer> workers = new ArrayList<>(n);
+        for (int r = 0; r < n; r++) {
+            workers.add(0);
+        }
+        return new FactionState(
+                matchId, faction.value(), q.tick(), t.stock(), t.gathered(), t.spent(), 0, 0, 0, workers);
     }
 
     /**

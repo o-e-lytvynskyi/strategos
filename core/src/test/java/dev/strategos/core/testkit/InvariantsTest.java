@@ -18,6 +18,7 @@ import dev.strategos.core.sim.PageRef;
 import dev.strategos.core.sim.UnitRecord;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.UnitView;
+import dev.strategos.core.sim.econ.FactionTreasury;
 import dev.strategos.core.sim.nav.MobilityClass;
 import dev.strategos.core.sim.nav.PathService;
 import dev.strategos.core.sim.nav.PathStore;
@@ -157,6 +158,11 @@ class InvariantsTest {
 
     /** A 32 x 32 match, y 0..16, holding exactly the units it is given; {@code cap} is its unit cap. */
     private static final class FakeQueries implements MatchQueries {
+        @Override
+        public FactionTreasury treasury(FactionSlot faction) {
+            throw new UnsupportedOperationException();
+        }
+
         private final MatchConfig config;
         private final List<UnitView> units = new ArrayList<>();
 

@@ -19,11 +19,27 @@ public record MatchSnapshot(
         List<CommandEnvelope> pendingCommands,
         List<PageRef> pages,
         PathStore.Queue paths,
-        int nextGroup) {
+        int nextGroup,
+        List<Long> treasury) {
     public MatchSnapshot {
         units = List.copyOf(units);
+        treasury = List.copyOf(treasury);
         pendingCommands = List.copyOf(pendingCommands);
         pages = List.copyOf(pages);
+    }
+
+    /** A snapshot from before the economy (ECO-01): no treasury. */
+    public MatchSnapshot(
+            MatchConfig config,
+            long tick,
+            long templateSetHash,
+            EntitySlots slots,
+            List<UnitRecord> units,
+            List<CommandEnvelope> pendingCommands,
+            List<PageRef> pages,
+            PathStore.Queue paths,
+            int nextGroup) {
+        this(config, tick, templateSetHash, slots, units, pendingCommands, pages, paths, nextGroup, List.of());
     }
 
     /** A snapshot from before group orders (ORD-02): the next group id is the first. */

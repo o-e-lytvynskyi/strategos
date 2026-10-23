@@ -3,6 +3,7 @@ package dev.strategos.core.sim;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.FactionSlot;
+import dev.strategos.core.sim.econ.FactionTreasury;
 import dev.strategos.core.sim.nav.PathService;
 import dev.strategos.core.sim.nav.PathStore;
 import dev.strategos.core.sim.nav.SurfaceGrid;
@@ -14,6 +15,9 @@ import org.jspecify.annotations.Nullable;
 /** Read-only questions about a match at its last completed tick. */
 @CoreApi
 public interface MatchQueries {
+    /** Faction {@code faction}'s treasury (ECO-01); the match's resources are {@code config().rules().economy()}. */
+    FactionTreasury treasury(FactionSlot faction);
+
     /** A live unit's hit points now (CMB-01): its most less the damage it took; NaN for no live unit. */
     double hitPoints(int handle);
 

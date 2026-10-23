@@ -3,6 +3,7 @@ package dev.strategos.core.sim;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.strategos.core.shared.CoreApi;
+import dev.strategos.core.sim.econ.EconomyRules;
 import dev.strategos.core.sim.nav.DeliveryMode;
 import java.util.function.Function;
 
@@ -11,7 +12,8 @@ import java.util.function.Function;
  * §2.6): when results are delivered and {@code pathK} ticks after their request, {@code pageK} ticks for a page
  * rebuild, the admission window W in expansions per tick, the requests that may wait before {@code BUSY}, the ticks a
  * busy unit waits, the expansion caps of a search and a group join, the length of a move decided at once, and the
- * smallest group that shares a path. Each path rule has its default in the codec, so M0's rules still decode.
+ * smallest group that shares a path; and the economy (ECO-01: the resources and what each faction starts with). Each has
+ * its default in the codec, so M0's, M1's and M2's rules still decode.
  */
 @CoreApi
 public record MatchRules(
@@ -26,7 +28,8 @@ public record MatchRules(
         int searchCap,
         int joinCap,
         int shortMove,
-        int groupMin) {
+        int groupMin,
+        EconomyRules economy) {
     /**
      * The admission window W's default, in expansion caps a tick: 80 searches at the 20,000 cap. Spike S7 set it (M1
      * T22): behind 200 requests a 100-unit order's results arrive within 4 ticks at p95, with the main thread's path work
@@ -52,7 +55,10 @@ public record MatchRules(
                     positive("searchCap", 20_000, MatchRules::searchCap),
                     positive("joinCap", 2_000, MatchRules::joinCap),
                     positive("shortMove", 24, MatchRules::shortMove),
-                    positive("groupMin", 8, MatchRules::groupMin))
+                    positive("groupMin", 8, MatchRules::groupMin),
+                    EconomyRules.CODEC
+                            .optionalFieldOf("economy", EconomyRules.DEFAULTS)
+                            .forGetter(MatchRules::economy))
             .apply(i, MatchRules::new));
 
     public MatchRules {
@@ -81,6 +87,54 @@ public record MatchRules(
         this(commandsPerTick, unitCap, DeliveryMode.STRICT, 2, 4, DEFAULT_W, 2_048, 10, 20_000, 2_000, 24, 8);
     }
 
+    /** M1's and M2's rules, with D-10's resources starting at 0. */
+    public MatchRules(
+            int commandsPerTick,
+            int unitCap,
+            DeliveryMode delivery,
+            int pathK,
+            int pageK,
+            int admissionW,
+            int maxOutstanding,
+            int busyRetry,
+            int searchCap,
+            int joinCap,
+            int shortMove,
+            int groupMin) {
+        this(
+                commandsPerTick,
+                unitCap,
+                delivery,
+                pathK,
+                pageK,
+                admissionW,
+                maxOutstanding,
+                busyRetry,
+                searchCap,
+                joinCap,
+                shortMove,
+                groupMin,
+                EconomyRules.DEFAULTS);
+    }
+
+    /** These rules with another economy (ECO-01). */
+    public MatchRules withEconomy(EconomyRules rules) {
+        return new MatchRules(
+                commandsPerTick,
+                unitCap,
+                delivery,
+                pathK,
+                pageK,
+                admissionW,
+                maxOutstanding,
+                busyRetry,
+                searchCap,
+                joinCap,
+                shortMove,
+                groupMin,
+                rules);
+    }
+
     /** These rules with another expansion cap per search. */
     public MatchRules withSearchCap(int cap) {
         return new MatchRules(
@@ -95,7 +149,8 @@ public record MatchRules(
                 cap,
                 joinCap,
                 shortMove,
-                groupMin);
+                groupMin,
+                economy);
     }
 
     private static <O> RecordCodecBuilder<O, Integer> positive(String name, int fallback, Function<O, Integer> getter) {

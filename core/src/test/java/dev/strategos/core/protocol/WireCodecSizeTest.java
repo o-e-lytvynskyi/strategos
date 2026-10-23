@@ -8,6 +8,7 @@ import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.CommandEnvelope;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.SplittableRandom;
@@ -90,7 +91,7 @@ class WireCodecSizeTest {
     void theCatalogueNumbersItsKindsOnce() {
         assertThat(CommandKinds.DEFAULT.fingerprint())
                 .isEqualTo("strategos:move=1,strategos:stop=2,strategos:spawn_units=3,"
-                        + "strategos:attack=4,strategos:attack_move=5,strategos:follow=6");
+                        + "strategos:attack=4,strategos:attack_move=5,strategos:follow=6,strategos:grant=7");
         assertThat(CommandKinds.DEFAULT.reads("strategos:move=1,strategos:stop=2,strategos:spawn_units=3"))
                 .as("M1's journals read")
                 .isTrue();
@@ -139,8 +140,8 @@ class WireCodecSizeTest {
                 .as("id, lifecycle, the tick as a zigzag varint")
                 .isEqualTo(1 + 1 + 2);
         assertThat(size(FeedbackMsg.WIRE, new Feedback(70_000, CommandOutcome.PARTIAL, RejectReason.NOT_OWNER, 3, 5)))
-                .as("kind, sequence, outcome, reason, accepted, total")
-                .isEqualTo(1 + 3 + 1 + 1 + 1 + 1);
+                .as("kind, sequence, outcome, reason, accepted, total, no missing amounts")
+                .isEqualTo(1 + 3 + 1 + 1 + 1 + 1 + 1);
         assertThat(size(FeedbackMsg.WIRE, new NoticeMsg(NoticeKind.STUCK, 0x1234_5678, "boxed in")))
                 .as("kind, notice kind, handle, text with its length")
                 .isEqualTo(1 + 1 + 4 + 1 + 8);
@@ -325,6 +326,58 @@ class WireCodecSizeTest {
         assertThatThrownBy(() -> new DebugFeedMsg(DebugLayer.PANEL, 0, none))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("cannot carry");
+    }
+
+    @Test
+    void aFactionStateRoundTripsWithinItsCap() {
+        List<Long> amounts = new ArrayList<>();
+        List<Integer> workers = new ArrayList<>();
+        for (int r = 0; r < FactionState.MAX_RESOURCES; r++) {
+            amounts.add(Long.MAX_VALUE - r);
+            workers.add(Integer.MAX_VALUE - r);
+        }
+        FactionState widest = new FactionState(
+                Integer.MAX_VALUE, 7, Long.MAX_VALUE, amounts, amounts, amounts, 150, 200, 99, workers);
+        assertThat(size(FactionState.WIRE, widest)).isLessThanOrEqualTo(FactionState.WIRE.maxSize());
+        assertThat(roundTrip(FactionState.WIRE, widest)).isEqualTo(widest);
+
+        FactionState opening = new FactionState(
+                1,
+                0,
+                400,
+                List.of(300_000L, 200_000L, 0L, 0L),
+                List.of(0L, 0L, 0L, 0L),
+                List.of(0L, 0L, 0L, 0L),
+                5,
+                20,
+                0,
+                List.of(0, 0, 0, 0));
+        assertThat(size(FactionState.WIRE, opening))
+                .as("a usual state is a few dozen bytes")
+                .isLessThan(40);
+        assertThat(roundTrip(FactionState.WIRE, opening)).isEqualTo(opening);
+    }
+
+    @Test
+    void aRefusalForWantOfResourcesCarriesTheMissingAmounts() {
+        List<Long> missing = new ArrayList<>();
+        for (int r = 0; r < Feedback.MAX_MISSING; r++) {
+            missing.add(Long.MAX_VALUE);
+        }
+        Feedback widest = new Feedback(
+                Integer.MAX_VALUE, CommandOutcome.REJECTED, RejectReason.NOT_ENOUGH_RESOURCES, 0, 300, missing);
+        assertThat(size(FeedbackMsg.WIRE, widest)).isLessThanOrEqualTo(FeedbackMsg.WIRE.maxSize());
+        assertThat(roundTrip(FeedbackMsg.WIRE, widest)).isEqualTo(widest);
+        Feedback some = new Feedback(
+                4, CommandOutcome.REJECTED, RejectReason.NOT_ENOUGH_RESOURCES, 0, 1, List.of(0L, 35_000L, 0L, 0L));
+        assertThat(roundTrip(FeedbackMsg.WIRE, some)).isEqualTo(some);
+    }
+
+    @Test
+    void aGrantRoundTrips() {
+        Grant grant = new Grant(new FactionSlot(3), "stone", Grant.MAX);
+        assertThat(roundTrip(COMMANDS, grant)).isEqualTo(grant);
+        assertThat(size(Grant.WIRE, grant)).isLessThanOrEqualTo(Grant.WIRE.maxSize());
     }
 
     private static <P extends DebugFeedMsg.Payload> void assertWidest(DebugFeedMsg widest, WireCodec<P> payload) {

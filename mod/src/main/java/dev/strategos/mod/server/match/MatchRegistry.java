@@ -14,6 +14,7 @@ import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.core.sim.MatchRules;
 import dev.strategos.core.sim.MatchSnapshot;
+import dev.strategos.core.sim.econ.EconomyRules;
 import dev.strategos.mod.StrategosConfig;
 import dev.strategos.mod.StrategosSettings;
 import dev.strategos.mod.server.body.SpawnBudget;
@@ -72,6 +73,7 @@ public final class MatchRegistry {
     private final Supplier<BlockClassTable> blockClasses;
     private final JobExecutor jobs;
     private final Supplier<TemplateSet> templates; // the server's current set, for new and restored matches
+    private final Supplier<EconomyRules> economy; // the data packs' resources, for new matches (ECO-01)
     private final TreeMap<Integer, MatchRuntime> matches = new TreeMap<>();
     private final Map<UUID, MatchId> seated = new HashMap<>(); // who sits where, across the matches' rosters
     private final Map<ResourceKey<Level>, MatchRegionIndex> regions = new HashMap<>();
@@ -87,7 +89,8 @@ public final class MatchRegistry {
             BlockWriter writer,
             Supplier<BlockClassTable> blockClasses,
             JobExecutor jobs,
-            Supplier<TemplateSet> templates) {
+            Supplier<TemplateSet> templates,
+            Supplier<EconomyRules> economy) {
         this.server = server;
         this.settings = settings;
         this.spawnBudget = spawnBudget;
@@ -95,6 +98,7 @@ public final class MatchRegistry {
         this.blockClasses = blockClasses;
         this.jobs = jobs;
         this.templates = templates;
+        this.economy = economy;
     }
 
     /**
@@ -126,7 +130,7 @@ public final class MatchRegistry {
                 seed != null ? seed : level.getRandom().nextLong(),
                 bounds,
                 options.factions(),
-                MatchRules.DEFAULTS);
+                MatchRules.DEFAULTS.withEconomy(economy.get()));
         MatchCore core = MatchCore.create(config, templates.get(), ports(options.metrics(), id));
         FaultPolicy policy = options.faultPolicy();
         if (policy == null) {

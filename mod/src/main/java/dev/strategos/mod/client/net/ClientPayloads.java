@@ -6,6 +6,7 @@ import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.TemplateAck;
 import dev.strategos.mod.client.StrategosClient;
 import dev.strategos.mod.server.net.payload.DebugFeedPayload;
+import dev.strategos.mod.server.net.payload.FactionStatePayload;
 import dev.strategos.mod.server.net.payload.FeedbackPayload;
 import dev.strategos.mod.server.net.payload.FxPayload;
 import dev.strategos.mod.server.net.payload.MatchJoinPayload;
@@ -60,6 +61,12 @@ public final class ClientPayloads {
                 MatchJoin join = StrategosClient.match();
                 if (join != null) {
                     StrategosClient.model().accept(p.hud(), join.matchId());
+                }
+            }
+            case FactionStatePayload p -> {
+                MatchJoin join = StrategosClient.match();
+                if (join != null) {
+                    StrategosClient.model().accept(p.state(), join.matchId());
                 }
             }
             case UnitDetailPayload p -> {

@@ -5,9 +5,11 @@ import com.mojang.serialization.JsonOps;
 import dev.strategos.core.content.RawTemplate;
 import dev.strategos.core.content.TemplateProblem;
 import dev.strategos.core.port.JobExecutor;
+import dev.strategos.core.sim.econ.EconomyRules;
 import dev.strategos.mod.registry.ModDataMaps;
 import dev.strategos.mod.server.body.SpawnBudget;
 import dev.strategos.mod.server.commander.CommanderService;
+import dev.strategos.mod.server.content.ResourceFiles;
 import dev.strategos.mod.server.content.ServerTemplates;
 import dev.strategos.mod.server.content.TemplateFiles;
 import dev.strategos.mod.server.content.TemplateReloadListener;
@@ -84,7 +86,7 @@ public final class StrategosServer {
         this.writer = new BlockWriter(settings.writerBudget(), settings.importBudget());
         loadTemplatesAtStart();
         this.matches = new MatchRegistry(
-                server, settings, spawnBudget, writer, this::blockClasses, jobs, () -> templates.set());
+                server, settings, spawnBudget, writer, this::blockClasses, jobs, () -> templates.set(), this::economy);
         this.matches.onUnseated(uuid -> {
             ServerPlayer player = server.getPlayerList().getPlayer(uuid);
             if (player != null) {
@@ -184,6 +186,17 @@ public final class StrategosServer {
         return new ConditionalOps<>(
                 RegistryOps.create(JsonOps.INSTANCE, server.registryAccess()),
                 server.getServerResources().managers().getConditionContext());
+    }
+
+    /**
+     * The resources of the loaded data packs (ECO-01), read when a match is created: a new match copies them into its
+     * rules. A bad file is logged and D-10's four are used.
+     */
+    public EconomyRules economy() {
+        List<String> problems = new ArrayList<>();
+        EconomyRules rules = ResourceFiles.read(server.getResourceManager(), problems);
+        problems.forEach(p -> LOG.error("Resources: {}", p));
+        return rules;
     }
 
     /** The templates of the data packs the server started with, read here: no server was up when they applied. */

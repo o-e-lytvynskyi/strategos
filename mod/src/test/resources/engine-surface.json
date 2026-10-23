@@ -9,6 +9,7 @@
     "strategos:camera_jump",
     "strategos:commands",
     "strategos:debug_feed",
+    "strategos:faction_state",
     "strategos:debug_subscribe",
     "strategos:feedback",
     "strategos:fx",

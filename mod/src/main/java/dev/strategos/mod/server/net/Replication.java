@@ -1,5 +1,6 @@
 package dev.strategos.mod.server.net;
 
+import dev.strategos.core.protocol.FactionState;
 import dev.strategos.core.protocol.UiQuery;
 import dev.strategos.core.protocol.UnitDetail;
 import dev.strategos.core.protocol.UnitHud;
@@ -12,6 +13,7 @@ import dev.strategos.core.sim.replicate.ReplicationService;
 import dev.strategos.core.sim.replicate.Visibility;
 import dev.strategos.mod.server.match.MatchRegistry;
 import dev.strategos.mod.server.match.MatchRuntime;
+import dev.strategos.mod.server.net.payload.FactionStatePayload;
 import dev.strategos.mod.server.net.payload.UnitDetailPayload;
 import dev.strategos.mod.server.net.payload.UnitHudPayload;
 import dev.strategos.mod.server.net.payload.UnitSummaryPayload;
@@ -40,6 +42,8 @@ public final class Replication {
     public static final int HUD_EVERY = 4;
     /** 10 Hz. */
     public static final int DETAIL_EVERY = 2;
+    /** {@code faction_state} is looked at every 5 ticks and sent to a player when it changed: four a second at most. */
+    public static final int FACTION_EVERY = 5;
 
     public static final int QUERIES_PER_SECOND = 4;
 
@@ -60,6 +64,8 @@ public final class Replication {
     private final Supplier<MatchRegistry> matches;
     private final NetGateway net;
     private final Map<MatchId, Visibility> visibility = new HashMap<>();
+
+    private final Map<UUID, FactionState> factions = new HashMap<>();
 
     public Replication(MinecraftServer server, Supplier<MatchRegistry> matches, NetGateway net) {
         this.server = server;
@@ -100,6 +106,7 @@ public final class Replication {
     public void forget(UUID player) {
         huds.remove(player);
         subscriptions.remove(player);
+        factions.remove(player);
     }
 
     public void tick() {
@@ -109,6 +116,9 @@ public final class Replication {
         }
         if (now % DETAIL_EVERY == 0) {
             sendDetails();
+        }
+        if (now % FACTION_EVERY == 0) {
+            sendFactions();
         }
         if (now % SUMMARY_EVERY != 0) {
             return;
@@ -128,6 +138,38 @@ public final class Replication {
                         new Audience.Faction(rt.id(), faction),
                         new UnitSummaryPayload(ReplicationService.summary(
                                 core.queries(), rt.id().value(), faction, visibility(rt))));
+            }
+        }
+    }
+
+    /**
+     * Each seated player's faction state, when it differs from the last one that player got, so a player who just
+     * joined gets it at the next look; to that player only, so a faction's state never reaches another (ECO-01.3).
+     */
+    private void sendFactions() {
+        for (MatchRuntime rt : matches.get().all()) {
+            MatchCore core = rt.core();
+            if (core == null || rt.lifecycle() != MatchLifecycle.RUNNING) {
+                continue;
+            }
+            for (UUID player : rt.roster().members()) {
+                MatchRegistry.Seat seat = matches.get().seatOf(player);
+                ServerPlayer online = server.getPlayerList().getPlayer(player);
+                if (seat == null
+                        || seat.match() != rt
+                        || online == null
+                        || seat.slot().isAdmin()) {
+                    continue;
+                }
+                FactionState now = ReplicationService.factionState(
+                        core.queries(),
+                        rt.id().value(),
+                        new FactionSlot(seat.slot().value()));
+                FactionState last = factions.get(player);
+                if (last == null || !last.sameAs(now)) {
+                    factions.put(player, now);
+                    net.send(new Audience.Player(online), new FactionStatePayload(now));
+                }
             }
         }
     }

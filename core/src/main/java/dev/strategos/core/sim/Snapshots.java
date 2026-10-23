@@ -56,7 +56,20 @@ final class Snapshots {
                 List.copyOf(s.pendingCommands()),
                 s.pageRefs(),
                 s.paths().queue(),
-                s.nextGroup());
+                s.nextGroup(),
+                treasury(s));
+    }
+
+    /** The treasury's counters, or none while it is empty, so a match without an economy saves as before. */
+    private static List<Long> treasury(MatchState s) {
+        if (s.treasury().empty()) {
+            return List.of();
+        }
+        List<Long> out = new ArrayList<>();
+        for (long v : s.treasury().save()) {
+            out.add(v);
+        }
+        return out;
     }
 
     /**
@@ -74,6 +87,18 @@ final class Snapshots {
         MatchState state = new MatchState(snapshot.config(), templates, entities, log);
         state.setTick(snapshot.tick());
         state.setNextGroup(snapshot.nextGroup());
+        long[] counters =
+                new long[state.treasury().factions() * state.treasury().resources() * 5];
+        if (!snapshot.treasury().isEmpty() && snapshot.treasury().size() != counters.length) {
+            throw new IllegalArgumentException(
+                    "a saved treasury of " + snapshot.treasury().size() + " counters for "
+                            + state.treasury().factions() + " factions and "
+                            + state.treasury().resources() + " resources");
+        }
+        for (int k = 0; k < snapshot.treasury().size(); k++) {
+            counters[k] = snapshot.treasury().get(k);
+        }
+        state.treasury().restore(counters); // as saved, the starting grant included; none saved is none at all
         for (UnitRecord unit : snapshot.units()) {
             UnitTemplate template = templates.byId(unit.template());
             if (template == null) {

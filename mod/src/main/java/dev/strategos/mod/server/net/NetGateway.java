@@ -233,7 +233,8 @@ public final class NetGateway {
                             result.outcome(),
                             result.firstReason(),
                             result.accepted(),
-                            result.accepted() + result.rejected())));
+                            result.accepted() + result.rejected(),
+                            result.missing())));
         }
     }
 

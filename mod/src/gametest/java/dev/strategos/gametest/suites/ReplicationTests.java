@@ -5,6 +5,8 @@ import static dev.strategos.gametest.suites.Units.core;
 import static dev.strategos.gametest.suites.Units.match;
 
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.protocol.FactionState;
+import dev.strategos.core.protocol.Grant;
 import dev.strategos.core.protocol.SpawnUnits;
 import dev.strategos.core.protocol.UiQuery;
 import dev.strategos.core.protocol.UnitDetail;
@@ -20,6 +22,7 @@ import dev.strategos.gametest.net.MockViewer;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.server.match.MatchRuntime;
 import dev.strategos.mod.server.net.Replication;
+import dev.strategos.mod.server.net.payload.FactionStatePayload;
 import dev.strategos.mod.server.net.payload.UiQueryPayload;
 import dev.strategos.mod.server.net.payload.UnitDetailPayload;
 import dev.strategos.mod.server.net.payload.UnitHudPayload;
@@ -30,7 +33,10 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.world.phys.Vec3;
 
-/** Replication tier 2 to mock players (NET-08): who gets which units' summaries, and how often. */
+/**
+ * Replication tier 2 to mock players (NET-08): who gets which units' summaries, and how often; and each faction's
+ * {@code faction_state} to its own players only (ECO-01).
+ */
 public final class ReplicationTests {
     private ReplicationTests() {}
 
@@ -182,6 +188,48 @@ public final class ReplicationTests {
                     b.close();
                 })
                 .thenSucceed();
+    }
+
+    /**
+     * ECO-01.3: after a grant to faction 0, its seated player gets a {@code faction_state} with the wood, the player of
+     * faction 1 gets its own, empty, and never faction 0's; each gets one state, not one every look, while nothing
+     * changes.
+     */
+    @StrategosTest(timeoutTicks = 200)
+    public static void factionStateReachesItsOwnFactionOnly(GameTestHelper h) {
+        MatchRuntime rt = match(h);
+        MockViewer a = seated(h, rt, "strategos-fs-a", 0);
+        MockViewer b = seated(h, rt, "strategos-fs-b", 1);
+        rt.submit(PlayerSlot.ADMIN, new Grant(new FactionSlot(0), "wood", 120));
+        h.startSequence()
+                .thenWaitUntil(() -> check(
+                        core(rt).queries().treasury(new FactionSlot(0)).stock().get(1) == 120_000L, "no grant yet"))
+                .thenExecuteAfter(30, () -> {
+                    List<FactionState> toA = factionStates(a, rt);
+                    List<FactionState> toB = factionStates(b, rt);
+                    check(!toA.isEmpty() && !toB.isEmpty(), "states: " + toA.size() + " to a, " + toB.size() + " to b");
+                    check(toA.stream().allMatch(st -> st.faction() == 0), "faction 0's player got " + toA);
+                    check(toB.stream().allMatch(st -> st.faction() == 1), "faction 1's player got " + toB);
+                    FactionState lastA = toA.get(toA.size() - 1);
+                    check(lastA.stock().get(1) == 120_000L, "faction 0's wood " + lastA.stock());
+                    check(toB.get(toB.size() - 1).stock().stream().allMatch(v -> v == 0L), "faction 1's " + toB);
+                    check(toB.size() == 1, "faction 1's unchanged state came " + toB.size() + " times");
+                    a.close();
+                    b.close();
+                })
+                .thenSucceed();
+    }
+
+    private static List<FactionState> factionStates(MockViewer viewer, MatchRuntime rt) {
+        viewer.poll();
+        List<FactionState> out = new ArrayList<>();
+        for (ClientboundCustomPayloadPacket p : viewer.capture().of(ClientboundCustomPayloadPacket.class)) {
+            if (p.payload() instanceof FactionStatePayload f
+                    && f.state().matchId() == rt.id().value()) {
+                out.add(f.state());
+            }
+        }
+        return out;
     }
 
     private static List<Integer> hudIndices(MockViewer viewer) {
