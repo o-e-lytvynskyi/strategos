@@ -1,6 +1,7 @@
 package dev.strategos.devtools;
 
 import com.google.gson.GsonBuilder;
+import com.mojang.blaze3d.platform.GlUtil;
 import com.mojang.blaze3d.platform.NativeImage;
 import dev.strategos.mod.Strategos;
 import java.io.IOException;
@@ -8,6 +9,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Locale;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
 import net.minecraft.client.gui.screens.ConnectScreen;
@@ -87,6 +89,7 @@ public final class ScenarioRunner {
             case "rts_basics" -> new RtsBasicsScenario();
             case "rts_select" -> new RtsSelectScenario();
             case "rts_frame" -> new RtsFrameScenario();
+            case "rts_goldens" -> new RtsGoldensScenario();
             default -> null;
         };
     }
@@ -298,9 +301,25 @@ public final class ScenarioRunner {
             r.ctx.result.addProperty("ok", true);
         }
         r.ctx.result.addProperty("scenario", r.scenario.name());
+        r.ctx.result.addProperty("platform", platform());
         write(r.ctx.out, r.ctx.result);
         LOG.info("Scenario {} done: {}", r.scenario.name(), r.ctx.result);
         mc.stop();
+    }
+
+    /**
+     * Whose goldens this run's frames are compared with (QA-18): {@code macos}, {@code linux-llvmpipe} (CI's Xvfb and
+     * Mesa), else the OS and the GL renderer.
+     */
+    static String platform() {
+        String os = System.getProperty("os.name").toLowerCase(Locale.ROOT);
+        String gl = GlUtil.getRenderer().toLowerCase(Locale.ROOT);
+        if (os.startsWith("mac")) {
+            return "macos";
+        }
+        int space = os.indexOf(' ');
+        String system = space < 0 ? os : os.substring(0, space);
+        return gl.contains("llvmpipe") ? system + "-llvmpipe" : system + "-" + gl.replaceAll("[^a-z0-9]+", "-");
     }
 
     private static com.google.gson.JsonObject failure(String reason) {

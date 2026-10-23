@@ -122,14 +122,15 @@ tasks.register('verifyFast') {
 
 // [T3] The harness self-tests, kept for good as automated checks (QA-01, QA-04, QA-05, QA-07, QA-17):
 // every guard must fail on its broken input, and every GameTest self-test must end with its designed
-// verdict. ':mod:runGameTestTicketLeak' joined in T7c, 'checkFixturesSelftest' in T11b, ':core:jmhSelftest' in T12.
+// verdict. ':mod:runGameTestTicketLeak' joined in T7c, 'checkFixturesSelftest' in T11b, ':core:jmhSelftest' in T12,
+// ':mod:checkScenarioDiffSelftest' in M2 T8.
 tasks.register('verifyHarness') {
     group = 'verification'
-    description = 'Proves the guards bite: empty GameTest filter, broken mod load, missing smoke marker, retry semantics, retry without a reason, solo test in a shared batch, leaked ticket, every ArchUnit rule on its violating fixture, fixture checks, JMH slowdown and allocating kernel.'
+    description = 'Proves the guards bite: empty GameTest filter, broken mod load, missing smoke marker, retry semantics, retry without a reason, solo test in a shared batch, leaked ticket, every ArchUnit rule on its violating fixture, fixture checks, JMH slowdown and allocating kernel, the scenario diff.'
     dependsOn ':mod:runGameTestEmptyFilter', ':mod:runGameTestBrokenLoad', ':mod:runServerSmokeNoMarker',
             ':mod:runGameTestRetry', ':mod:runGameTestRetryNoReason', ':mod:runGameTestSharedBatch',
             ':mod:runGameTestTicketLeak',
-            ':mod:archTest', ':core:test', 'checkFixturesSelftest', ':core:jmhSelftest'
+            ':mod:archTest', ':core:test', 'checkFixturesSelftest', ':core:jmhSelftest', ':mod:checkScenarioDiffSelftest'
 }
 
 // [T3] the commit gate: 5 minutes, of which L3 3; ':core:soak' joined in T6b, ':core:replayJournals' in T8,

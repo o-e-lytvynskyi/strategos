@@ -1,14 +1,20 @@
 # L4 on Linux under Xvfb and Mesa (S3's container route, QA-06): one client scenario, by hand. No window opens
-# on anyone's screen, so it needs no consent. Actions are pinned to the commit of the tag in the comment.
+# on anyone's screen, so it needs no consent. The run's frames are compared with the linux-llvmpipe goldens
+# (scenarioDiff, QA-18), and where there are goldens a copy with a square inverted must fail the diff
+# (QA-18.2). Actions are pinned to the commit of the tag in the comment.
 name: scenario
 
 on:
   workflow_dispatch:
     inputs:
       scenario:
-        description: 'smoke, world_switch, s4_units, s10_steps or stall'
+        description: 'smoke, world_switch, s4_units, s10_steps, rts_basics, rts_select, rts_goldens or stall'
         required: true
         default: 'smoke'
+      goldens:
+        description: 'the goldens tree: mod/src/devtools/goldens, or mod/src/devtools/goldens-proposed to try proposals before approval'
+        required: true
+        default: 'mod/src/devtools/goldens'
 
 concurrency:
   group: scenario-${{ github.ref }}
@@ -35,9 +41,23 @@ jobs:
       - name: scenario
         env:
           SCENARIO: ${{ inputs.scenario }}
+          GOLDENS: ${{ inputs.goldens }}
         run: >-
           xvfb-run -a -s "-screen 0 1920x1080x24 +extension GLX +render -noreset"
-          ./gradlew --console=plain :mod:runScenario -Pscenario="$SCENARIO"
+          ./gradlew --console=plain :mod:runScenario -Pscenario="$SCENARIO" -Pgoldens.root="$PWD/$GOLDENS"
+      - name: An altered golden fails the diff
+        env:
+          SCENARIO: ${{ inputs.scenario }}
+          GOLDENS: ${{ inputs.goldens }}
+        run: |
+          goldens="$GOLDENS/linux-llvmpipe/$SCENARIO"
+          if [ ! -d "$goldens" ]; then echo "no linux-llvmpipe goldens for $SCENARIO"; exit 0; fi
+          altered="$RUNNER_TEMP/altered"
+          mkdir -p "$altered/linux-llvmpipe" && cp -R "$goldens" "$altered/linux-llvmpipe/"
+          python3 tools/alter_golden.py "$altered"
+          if ./gradlew --console=plain :mod:scenarioDiff -Pscenario="$SCENARIO" -Pgoldens.root="$altered"; then
+            echo "scenarioDiff passed an altered golden"; exit 1
+          fi
       - name: Screenshots and logs
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -47,5 +67,6 @@ jobs:
           if-no-files-found: ignore
           path: |
             mod/build/scenario/out/
+            mod/build/scenario/diff/
             mod/build/scenario/logs/
             mod/build/scenario/crash-reports/

@@ -615,6 +615,76 @@ tasks.matching { it.name == 'runScenario' }.configureEach {
             throw new GradleException("Scenario failed or wrote no result: ${result}")
         }
     }
+    finalizedBy 'scenarioDiff'
+}
+
+// [M2 T8] QA-18: every scenario run's frames against the goldens of its platform and scenario,
+// src/devtools/goldens/<platform>/<scenario>/ (the platform from result.json; -Pgoldens.root= another
+// tree, as CI's altered-golden check uses). The shrunk frames land in build/scenario/diff/candidates/,
+// a golden that differs fails the build with its difference image beside them; a scenario with no
+// goldens yet only leaves candidates. Goldens change only with the owner's approval (devtools README).
+def goldensRoot = providers.gradleProperty('goldens.root').map { new File(it) }.getOrElse(file('src/devtools/goldens'))
+def scenarioDiffDir = file('build/scenario/diff')
+def scenarioName = providers.gradleProperty('scenario').orElse('smoke')
+tasks.register('scenarioDiff') {
+    group = 'verification'
+    description = 'Compares the last scenario run\'s frames with the goldens of its platform (QA-18).'
+    def out = scenarioOut
+    def root = goldensRoot
+    def diff = scenarioDiffDir
+    def name = scenarioName
+    onlyIf { new File(out, 'result.json').isFile() }
+    doLast {
+        def result = new groovy.json.JsonSlurper().parse(new File(out, 'result.json'))
+        def goldens = new File(root, "${result.platform}/${name.get()}")
+        def report = ScenarioDiff.compare(out, goldens, diff)
+        new File(diff, 'report.json').text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(report)) + '\n'
+        if (!goldens.isDirectory()) {
+            logger.lifecycle("scenarioDiff: no goldens for ${name.get()} on ${result.platform}; candidates in ${diff}/candidates")
+        }
+        report.frames.each { logger.lifecycle("scenarioDiff: ${it.frame} nmse ${it.nmse} (threshold ${it.threshold})") }
+        if (report.problems) {
+            throw new GradleException("Goldens differ (${goldens}):\n  " + report.problems.join('\n  ') + "\nSee ${diff}")
+        }
+    }
+}
+
+// Copies the last run's candidates over its goldens. Only on the owner's word (QA-18.4).
+tasks.register('approveGoldens') {
+    group = 'verification'
+    description = 'Makes the last scenario run\'s candidates its platform\'s goldens; only with the owner\'s approval.'
+    def out = scenarioOut
+    def root = goldensRoot
+    def diff = scenarioDiffDir
+    def name = scenarioName
+    doLast {
+        def result = new groovy.json.JsonSlurper().parse(new File(out, 'result.json'))
+        def goldens = new File(root, "${result.platform}/${name.get()}")
+        goldens.mkdirs()
+        new File(diff, 'candidates').listFiles().findAll { it.name.endsWith('.png') }.each { File f ->
+            java.nio.file.Files.copy(f.toPath(), new File(goldens, f.name).toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+            logger.lifecycle("approveGoldens: ${goldens.name}/${f.name}")
+        }
+    }
+}
+
+// [M2 T8] verifyHarness: the diff must pass a golden's own frame, a frame changed only under its mask
+// and one with a little noise, and fail a changed frame and a missing one (QA-18.2's mechanism).
+def diffSelftest = rootProject.file('gradle/selftest/goldens')
+tasks.register('checkScenarioDiffSelftest') {
+    group = 'verification'
+    description = 'Proves scenarioDiff bites: a changed frame and a missing frame fail; noise and masked changes pass.'
+    def fixtures = diffSelftest
+    def work = file('build/harness/scenario-diff')
+    doLast {
+        def golden = new File(fixtures, 'golden')
+        ['same': false, 'noise': false, 'masked': false, 'changed': true, 'missing': true].each { String run, boolean fails ->
+            def report = ScenarioDiff.compare(new File(fixtures, run), golden, new File(work, run))
+            if (!report.problems.isEmpty() != fails) {
+                throw new GradleException("scenarioDiff ${fails ? 'passed' : 'failed'} the '${run}' run: ${report}")
+            }
+        }
+    }
 }
 
 // [T3] verifyHarness. These runs feed a guard its broken input and pass only when that guard would
@@ -712,5 +782,115 @@ tasks.register('generateArenas') {
                     "{\n    DataVersion: 3955,\n    size: [${n}, 4, ${n}],\n    data: [\n" + rows.join(',\n') +
                     "\n    ],\n    entities: [],\n    palette: [\n        \"minecraft:smooth_stone\"\n    ]\n}\n"
         }
+    }
+}
+
+// [M2 T8] QA-18. Frames are box-filtered to at most WIDTH pixels across before they are compared, the size
+// goldens are kept at: a 2560-pixel Retina frame is 4 MB, a shrunk one a few hundred KB, and a one-pixel
+// shift of a thin edge matters less. The measure is the normalised mean squared error over RGB outside
+// the masks, 0 for the same picture and 1 for black against white. goldens.json beside the goldens may
+// set a threshold for all frames and, per frame, a threshold and masks, [x0, y0, x1, y1] in golden pixels.
+class ScenarioDiff {
+    static final int WIDTH = 640
+    /** 17 times the Mac's run-to-run noise in rts_goldens, a thirteenth of its outlines' whole signal (M2 §1.6). */
+    static final double THRESHOLD = 1.0e-5
+
+    @groovy.transform.CompileStatic
+    static java.awt.image.BufferedImage shrink(java.awt.image.BufferedImage image) {
+        int f = Math.max(1, (int) Math.ceil(image.width / (double) WIDTH))
+        int w = image.width.intdiv(f) as int
+        int h = image.height.intdiv(f) as int
+        def out = new java.awt.image.BufferedImage(w, h, java.awt.image.BufferedImage.TYPE_INT_RGB)
+        int n = f * f
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+                int r = 0, g = 0, b = 0
+                for (int dy = 0; dy < f; dy++) {
+                    for (int dx = 0; dx < f; dx++) {
+                        int rgb = image.getRGB(x * f + dx, y * f + dy)
+                        r += (rgb >> 16) & 0xFF
+                        g += (rgb >> 8) & 0xFF
+                        b += rgb & 0xFF
+                    }
+                }
+                out.setRGB(x, y, ((r.intdiv(n) as int) << 16) | ((g.intdiv(n) as int) << 8) | (b.intdiv(n) as int))
+            }
+        }
+        return out
+    }
+
+    @groovy.transform.CompileStatic
+    static boolean masked(List<List<Integer>> masks, int x, int y) {
+        for (List<Integer> m : masks) {
+            if (x >= m[0] && x < m[2] && y >= m[1] && y < m[3]) return true
+        }
+        return false
+    }
+
+    /** The error over the pixels outside the masks; and a difference image, 8 times as loud. */
+    @groovy.transform.CompileStatic
+    static double nmse(java.awt.image.BufferedImage a, java.awt.image.BufferedImage b, List<List<Integer>> masks,
+            java.awt.image.BufferedImage loud) {
+        double sum = 0
+        long count = 0
+        for (int y = 0; y < a.height; y++) {
+            for (int x = 0; x < a.width; x++) {
+                if (masked(masks, x, y)) continue
+                int p = a.getRGB(x, y)
+                int q = b.getRGB(x, y)
+                int dr = ((p >> 16) & 0xFF) - ((q >> 16) & 0xFF)
+                int dg = ((p >> 8) & 0xFF) - ((q >> 8) & 0xFF)
+                int db = (p & 0xFF) - (q & 0xFF)
+                sum += dr * dr + dg * dg + db * db
+                count += 3
+                int d = Math.min(255, 8 * Math.max(Math.abs(dr), Math.max(Math.abs(dg), Math.abs(db))))
+                loud.setRGB(x, y, (d << 16) | (d << 8) | d)
+            }
+        }
+        return count == 0 ? 0 : sum / (count * 255.0 * 255.0)
+    }
+
+    /** Every golden of {@code goldens} against the frame of its name in {@code out}; shrunk frames go to diff/candidates. */
+    static Map compare(File out, File goldens, File diff) {
+        def candidates = new File(diff, 'candidates')
+        candidates.mkdirs()
+        (out.listFiles() ?: []).findAll { it.name.endsWith('.png') }.each { File f ->
+            javax.imageio.ImageIO.write(shrink(javax.imageio.ImageIO.read(f)), 'png', new File(candidates, f.name))
+        }
+        def frames = []
+        def problems = []
+        if (!goldens.isDirectory()) {
+            return [goldens: goldens.path, frames: frames, problems: problems]
+        }
+        def configFile = new File(goldens, 'goldens.json')
+        Map config = configFile.isFile() ? (Map) new groovy.json.JsonSlurper().parse(configFile) : [:]
+        Map perFrame = (Map) (config.frames ?: [:])
+        goldens.listFiles().findAll { it.name.endsWith('.png') }.sort { it.name }.each { File g ->
+            String name = g.name - '.png'
+            def frame = new File(candidates, g.name)
+            if (!frame.isFile()) {
+                problems << "${name}: the run has no such frame"
+                return
+            }
+            def a = javax.imageio.ImageIO.read(g)
+            def b = javax.imageio.ImageIO.read(frame)
+            if (a.width != b.width || a.height != b.height) {
+                problems << "${name}: ${b.width}x${b.height} against the golden's ${a.width}x${a.height}"
+                return
+            }
+            Map own = (Map) (perFrame[name] ?: [:])
+            List<List<Integer>> masks = (List<List<Integer>>) (own.masks ?: [])
+            double threshold = (own.threshold ?: config.threshold ?: THRESHOLD) as double
+            def loud = new java.awt.image.BufferedImage(a.width, a.height, java.awt.image.BufferedImage.TYPE_INT_RGB)
+            double e = nmse(a, b, masks, loud)
+            frames << [frame: name, nmse: e, threshold: threshold, ok: e <= threshold]
+            if (e > threshold) {
+                problems << "${name}: nmse ${e} over ${threshold}"
+                javax.imageio.ImageIO.write(loud, 'png', new File(diff, "${name}-diff.png"))
+            }
+        }
+        def known = goldens.listFiles().collect { it.name }
+        def fresh = (out.listFiles() ?: []).findAll { it.name.endsWith('.png') && !(it.name in known) }.collect { it.name - '.png' }
+        return [goldens: goldens.path, frames: frames, problems: problems, fresh: fresh]
     }
 }
