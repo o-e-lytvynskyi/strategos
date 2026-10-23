@@ -133,6 +133,23 @@ class JmhGate {
         }
         problems
     }
+
+    // A benchmark whose set-up throws is skipped and the run still succeeds, so a missing result is a failure of its
+    // own: MotionBench and OrcaBench were missing from M1 T22 to M1's close unnoticed.
+    static List<String> missing(File result, File baseline, List<String> kernels) {
+        def slurper = new groovy.json.JsonSlurper()
+        def key = { r -> r.benchmark + (r.params ? r.params.toString() : '') }
+        def results = slurper.parse(result)
+        def ran = results.collect { key(it) } as Set
+        def problems = []
+        slurper.parse(baseline).each { b ->
+            if (!ran.contains(key(b))) problems << "${key(b)}: in the baseline but not in the result (did its set-up throw?)"
+        }
+        kernels.each { k ->
+            if (!results.any { it.benchmark.endsWith(k) }) problems << "${k}: a @HotPath kernel missing from the result (did its set-up throw?)"
+        }
+        problems
+    }
 }
 
 // The benchmarks of @HotPath kernels; each must report no allocation per operation.
@@ -152,6 +169,7 @@ tasks.register('jmhCompare') {
         }
         if (!jmhResultFile.isFile()) throw new GradleException("No JMH result at ${jmhResultFile}; run :core:jmh first.")
         def problems = JmhGate.problems(jmhResultFile, jmhBaselineFile, hotPathKernels)
+                + JmhGate.missing(jmhResultFile, jmhBaselineFile, hotPathKernels)
         if (problems) throw new GradleException('JMH gate:\n  ' + problems.join('\n  '))
     }
 }
@@ -162,7 +180,7 @@ tasks.register('jmhCompare') {
 def jmhSelftestDir = file('src/jmh/resources/selftest')
 tasks.register('jmhSelftest') {
     group = 'verification'
-    description = 'Proves the JMH gate bites: a 30 % slowdown and an allocating @HotPath kernel.'
+    description = 'Proves the JMH gate bites: a 30 % slowdown, an allocating @HotPath kernel and a missing benchmark.'
     doLast {
         def baseline = new File(jmhSelftestDir, 'baseline.json')
         def slow = JmhGate.problems(new File(jmhSelftestDir, 'slow-result.json'), baseline, [])
@@ -172,6 +190,8 @@ tasks.register('jmhSelftest') {
         if (!slow.any { it.contains('regression') }) throw new GradleException('The JMH gate no longer catches a 30 % slowdown')
         if (alloc.count { it.contains('allocates') } != 2) throw new GradleException('The JMH gate no longer catches an allocating @HotPath kernel, short and long: ' + alloc)
         if (!background.isEmpty()) throw new GradleException('The JMH gate takes JMH\'s own background for a kernel\'s allocation: ' + background)
+        def missing = JmhGate.missing(new File(jmhSelftestDir, 'slow-result.json'), baseline, ['Selftest.kernel'])
+        if (!missing.any { it.contains('Selftest.kernel') }) throw new GradleException('The JMH gate no longer catches a benchmark missing from the result: ' + missing)
     }
 }
 

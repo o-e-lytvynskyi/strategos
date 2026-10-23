@@ -154,7 +154,7 @@ neoForge {
             // [M1 T26] the crowd soak's length; CI's nightly run shortens it to fit its job
             systemProperty 'strategos.soak.ticks', providers.gradleProperty('soak.ticks').getOrElse('12000')
             // gates that fail on a breach; the others only report (QA-07: enabled after 5 stable runs)
-            systemProperty 'strategos.perf.gates', providers.gradleProperty('perf.gates').getOrElse('a,g')
+            systemProperty 'strategos.perf.gates', providers.gradleProperty('perf.gates').getOrElse('a,d,g') // d from M1 T27 (QA-07: 4.7 % over five runs)
             // dev only: replaces the measured foreign CPU load, for the invalid-run check (QA-07.3)
             systemProperty 'strategos.perf.fakeForeignLoad', providers.gradleProperty('perf.fakeForeignLoad').getOrElse('')
             systemProperty 'strategos.faults.rethrow', 'true'
