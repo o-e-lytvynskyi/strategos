@@ -74,7 +74,7 @@ class InvariantsTest {
     }
 
     @Test
-    void catchesAWalkingUnitWithoutProgressForMoreThan400Ticks() {
+    void catchesAWalkingUnitWithoutProgressForLongerThanTheLadderAllows() {
         Invariants invariants = new Invariants();
         FakeQueries q = new FakeQueries(4).with(unit(2, 4.5, 1.0, 8.5, UnitState.WALKING, TARGET));
 
@@ -82,7 +82,8 @@ class InvariantsTest {
             assertThat(invariants.check(q, tick)).as("tick %d", tick).isEmpty();
         }
         assertThat(invariants.check(q, Invariants.STUCK_TICKS + 1))
-                .containsExactly("unit #2.1 is WALKING without progress toward (20.5, 8.5) for 401 ticks");
+                .containsExactly("unit #2.1 is WALKING without progress toward (20.5, 8.5) for "
+                        + (Invariants.STUCK_TICKS + 1) + " ticks");
     }
 
     @Test
@@ -261,7 +262,7 @@ class InvariantsTest {
 
         @Override
         public PathService.Stats pathStats() {
-            return new PathService.Stats(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+            return new PathService.Stats(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
         }
     }
 }

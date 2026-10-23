@@ -658,7 +658,8 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
   3. Group-path work stays within budget D at 600 units (L6).
 - **Tests:** L0, L1, L3, L6 · **Depends on:** PATH-06, ORD-03, PATH-16 · **Size:** M ·
   **Tier:** T0
-- **Status:** specified
+- **Done:** 2026-10-23 — M1 T24: `GroupPathTest`, an order to 150 units makes one request where one by one makes 150, and all settle (1); `maptests.two_hundred_cross`, the slowest of 200 in 1.21 times its ideal time, at most 57 ticks without progress, no rung above the repath (2); `perftests.group_paths_budget_d`, 600 units in four groups, 0.49 ms at p99 on the main thread (3); spec §1.6 D rows 148–153
+- **Status:** done
 
 #### PATH-10 · Movement debug overlay and dev payloads
 - **Value:** Movement problems become visible on screen, so they are fixed before players meet

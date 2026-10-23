@@ -4,6 +4,7 @@ import dev.strategos.core.diag.RingHistogram;
 import dev.strategos.core.port.Clock;
 import dev.strategos.core.port.JobExecutor;
 import dev.strategos.core.shared.CoreApi;
+import dev.strategos.core.shared.DetMath;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.sim.Arrived;
 import dev.strategos.core.sim.EntityStore;
@@ -21,7 +22,13 @@ import dev.strategos.core.sim.StopOrdered;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.order.OrderQueues;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Paths for walking units (ADR-0015 stage 1, 04 §9.3, spec §5.7), in two passes a tick.
@@ -78,7 +85,9 @@ public final class PathService {
      * {@code busy}: requests answered {@code BUSY}; {@code workP99}: the 99th percentile of the main thread's path work
      * a tick (delivery, joins, requests and admission) over the last {@value #LATENCY_WINDOW} ticks, and {@code
      * lastWork} the last tick's, in nanoseconds; {@code unfinished}: results joined before their job had finished, so
-     * the main thread ran the job or waited for it.
+     * the main thread ran the job or waited for it. {@code groupRequests}: the requests made for groups, each counted
+     * once in {@code requests} too (PATH-09); {@code joins}: members that joined their group's path by a search;
+     * {@code unjoined}: members that could not join it and asked for paths of their own.
      */
     @CoreApi
     public record Stats(
@@ -98,7 +107,10 @@ public final class PathService {
             long busy,
             long workP99,
             long lastWork,
-            long unfinished) {}
+            long unfinished,
+            long groupRequests,
+            long joins,
+            long unjoined) {}
 
     private static final class Counters {
         long requests;
@@ -115,6 +127,9 @@ public final class PathService {
         long tickWork;
         long lastWork;
         long unfinished;
+        long groupRequests;
+        long joins;
+        long unjoined;
         final RingHistogram latency = new RingHistogram(LATENCY_WINDOW);
         final RingHistogram work = new RingHistogram(LATENCY_WINDOW);
     }
@@ -185,7 +200,10 @@ public final class PathService {
                 c.busy,
                 c.work.percentile(0.99),
                 c.lastWork,
-                c.unfinished);
+                c.unfinished,
+                c.groupRequests,
+                c.joins,
+                c.unjoined);
     }
 
     /**
@@ -232,31 +250,62 @@ public final class PathService {
         }
     }
 
-    /** A result joined and given to its unit, if the unit still waits for it. */
+    /** A result joined and given to its unit, or a group's to its members, those that still wait for it. */
     private void apply(MatchState s, PathStore.Pending p) {
-        PathStore paths = s.paths();
         if (!p.job().isDone()) {
             counters.unfinished++;
         }
         long start = clock.nanoTime();
         PathResult r = p.job().join();
         counters.joinNanos += clock.nanoTime() - start;
-        int handle = p.request().handle();
+        counters.expansions += r.expansions();
+        counters.maxExpansions = Math.max(counters.maxExpansions, r.expansions());
+        PathRequest q = p.request();
+        if (q.groupId() != 0) {
+            for (MemberPath m : r.members()) {
+                give(s, m.handle(), q, r, m.fromNode(), m.fromX(), m.fromZ(), m.join(), m.waypoints());
+            }
+            return;
+        }
+        give(s, q.handle(), q, r, q.fromNode(), q.fromX(), q.fromZ(), MemberPath.LINE, r.waypoints());
+    }
+
+    /**
+     * A result's path for one unit, from where it stood when the job was made, if the unit still waits for it; a group
+     * member that could not join asks for a path of its own this tick.
+     */
+    private void give(
+            MatchState s,
+            int handle,
+            PathRequest q,
+            PathResult r,
+            int fromNode,
+            double fromX,
+            double fromZ,
+            int join,
+            PathStore.Waypoints w) {
+        PathStore paths = s.paths();
         int i = Handle.index(handle);
         if (!s.entities().isAlive(handle) || paths.request(i) != r.requestId()) {
             counters.superseded++;
             return;
         }
+        if (join == MemberPath.NONE) {
+            counters.unjoined++;
+            paths.want(i); // this tick's request pass asks for its own
+            return;
+        }
+        if (join == MemberPath.SEARCH) {
+            counters.joins++;
+        }
         long latency = s.tick() - paths.lastRequest(i);
-        paths.follow(i, startFrom(s, i, p.request(), r.waypoints()), r.status());
-        boolean broken = paths.lastPageChange() > p.request().tick() && !walkable(s, i);
+        paths.follow(i, startFrom(s, i, fromNode, fromX, fromZ, w), r.status());
+        boolean broken = paths.lastPageChange() > q.tick() && !walkable(s, i);
         s.bus().publish(new PathDelivered(handle, r.status()));
         if (broken) {
             s.bus().publish(new PathInvalidated(handle)); // terrain changed in flight and broke the route
         }
         count(r.status());
-        counters.expansions += r.expansions();
-        counters.maxExpansions = Math.max(counters.maxExpansions, r.expansions());
         counters.latencyTicks += latency;
         counters.latency.record(latency);
     }
@@ -268,6 +317,7 @@ public final class PathService {
         long tick = s.tick();
         boolean changed = s.changedPageCount() > 0;
         int highWater = entities.highWater();
+        Map<Integer, IntList> groups = grouped(s);
         for (int i = 0; i < highWater; i++) {
             if (!entities.aliveAt(i)) {
                 continue;
@@ -277,7 +327,10 @@ public final class PathService {
                 continue;
             }
             if (wanted) {
-                request(s, i, false);
+                IntList group = groups.get(orders.group(i));
+                if (group == null || !group.contains(i)) {
+                    request(s, i, false);
+                }
                 continue;
             }
             if (paths.request(i) == 0 && paths.status(i) == PathStatus.BUSY) {
@@ -303,6 +356,60 @@ public final class PathService {
                 request(s, i, true);
             }
         }
+        for (Map.Entry<Integer, IntList> group : groups.entrySet()) {
+            groupRequest(s, group.getKey(), group.getValue());
+        }
+    }
+
+    /**
+     * The groups that ask for one path this tick (PATH-09): of the units given a move order this tick, those of one
+     * group order whose own target lies beyond {@code shortMove}, when they are {@code groupMin} or more; by group id,
+     * each with its members in index order.
+     */
+    private Map<Integer, IntList> grouped(MatchState s) {
+        Map<Integer, IntList> groups = new TreeMap<>();
+        if (s.surfaces().version() == 0) {
+            return groups;
+        }
+        OrderQueues orders = s.orders();
+        MotionStore motion = s.motion();
+        for (int i = 0; i < s.entities().highWater(); i++) {
+            if (!s.entities().aliveAt(i)
+                    || !s.paths().wanted(i)
+                    || orders.group(i) == 0
+                    || s.ai().state(i) != UnitState.WALKING
+                    || orders.kind(i) != OrderKind.MOVE) {
+                continue;
+            }
+            double dx = orders.targetX(i) - motion.x(i);
+            double dz = orders.targetZ(i) - motion.z(i);
+            if (dx * dx + dz * dz > shortMoveSquared) {
+                groups.computeIfAbsent(orders.group(i), g -> new IntArrayList()).add(i);
+            }
+        }
+        groups.values().removeIf(members -> members.size() < rules.groupMin());
+        return groups;
+    }
+
+    /** One request for a group's members: they drop their paths and wait for its id, as one in the queue. */
+    private void groupRequest(MatchState s, int group, IntList members) {
+        PathStore paths = s.paths();
+        counters.requests++;
+        for (int k = 0; k < members.size(); k++) {
+            paths.follow(members.getInt(k), PathStore.Waypoints.NONE, PathStatus.OK);
+        }
+        if (paths.outstanding() >= rules.maxOutstanding()) {
+            for (int k = 0; k < members.size(); k++) {
+                busy(s, members.getInt(k));
+            }
+            return;
+        }
+        counters.groupRequests++;
+        int id = paths.nextRequestId();
+        for (int k = 0; k < members.size(); k++) {
+            paths.awaiting(members.getInt(k), id, s.tick());
+        }
+        paths.enqueue(new PathStore.Waiting(id, s.entities().handleAt(members.getInt(0)), group));
     }
 
     /**
@@ -359,6 +466,23 @@ public final class PathService {
         long spent = 0;
         PathStore.Waiting w;
         while ((w = paths.peekWaiting()) != null) {
+            if (w.group() != 0) {
+                IntList members = awaiting(s, w.id());
+                if (members.size() == 0) {
+                    paths.pollWaiting();
+                    counters.superseded++;
+                    continue;
+                }
+                int joins = Math.min(members.size(), maxJoins());
+                long cost = rules.searchCap() + (long) joins * rules.joinCap();
+                if (spent + cost > rules.admissionW()) {
+                    return;
+                }
+                paths.pollWaiting();
+                spent += cost;
+                submitGroup(s, w, members, joins);
+                continue;
+            }
             int i = Handle.index(w.handle());
             if (!s.entities().isAlive(w.handle()) || paths.request(i) != w.id()) {
                 paths.pollWaiting();
@@ -372,6 +496,100 @@ public final class PathService {
             spent += rules.searchCap();
             submit(s, i, w);
         }
+    }
+
+    /** The joins one group's job may search: as many as fit W beside the group's own search. */
+    private int maxJoins() {
+        return Math.max(0, (rules.admissionW() - rules.searchCap()) / rules.joinCap());
+    }
+
+    /** The live units waiting for request {@code id}, in index order. */
+    private static IntList awaiting(MatchState s, int id) {
+        IntList members = new IntArrayList();
+        for (int i = 0; i < s.entities().highWater(); i++) {
+            if (s.entities().aliveAt(i) && s.paths().request(i) == id) {
+                members.add(i);
+            }
+        }
+        return members;
+    }
+
+    /**
+     * A group's job: from the surface nearest its members' centroid (or the member nearest it, when the centroid stands
+     * on none) to the place nearest the centroid of their places, each member from where it stands now; a member that
+     * stands on no surface is answered {@code NO_PATH} at once.
+     */
+    private void submitGroup(MatchState s, PathStore.Waiting w, IntList members, int joins) {
+        MotionStore motion = s.motion();
+        OrderQueues orders = s.orders();
+        SurfaceGrid grid = s.surfaces();
+        int minY = s.config().bounds().minY();
+        List<GroupPaths.Member> standing = new ArrayList<>(members.size());
+        double cx = 0;
+        double cy = 0;
+        double cz = 0;
+        double px = 0;
+        double pz = 0;
+        for (int k = 0; k < members.size(); k++) {
+            int i = members.getInt(k);
+            int from = startNode(grid, motion.x(i), motion.y(i), motion.z(i), minY);
+            if (from < 0) {
+                decide(s, i, PathStore.Waypoints.NONE, PathStatus.NO_PATH);
+                continue;
+            }
+            standing.add(new GroupPaths.Member(
+                    s.entities().handleAt(i), from, motion.x(i), motion.z(i), orders.targetX(i), orders.targetZ(i)));
+            cx += motion.x(i);
+            cy += motion.y(i);
+            cz += motion.z(i);
+            px += orders.targetX(i);
+            pz += orders.targetZ(i);
+        }
+        if (standing.isEmpty()) {
+            return;
+        }
+        int n = standing.size();
+        cx /= n;
+        cy /= n;
+        cz /= n;
+        px /= n;
+        pz /= n;
+        int from = startNode(grid, cx, cy, cz, minY);
+        double fromX = cx;
+        double fromZ = cz;
+        GroupPaths.Member goal = standing.get(0);
+        GroupPaths.Member nearest = standing.get(0);
+        for (GroupPaths.Member m : standing) {
+            if (DetMath.length(m.placeX() - px, m.placeZ() - pz)
+                    < DetMath.length(goal.placeX() - px, goal.placeZ() - pz)) {
+                goal = m;
+            }
+            if (DetMath.length(m.x() - cx, m.z() - cz) < DetMath.length(nearest.x() - cx, nearest.z() - cz)) {
+                nearest = m;
+            }
+        }
+        if (from < 0) {
+            from = nearest.fromNode();
+            fromX = nearest.x();
+            fromZ = nearest.z();
+        }
+        PathRequest r = new PathRequest(
+                w.id(),
+                w.handle(),
+                s.tick(),
+                from,
+                fromX,
+                fromZ,
+                goal.placeX(),
+                goal.placeZ(),
+                rules.searchCap(),
+                w.group(),
+                false);
+        s.paths()
+                .put(new PathStore.Pending(
+                        r,
+                        s.tick() + rules.pathK(),
+                        jobs.submit(new GroupJob(grid, r, standing, rules.joinCap(), joins))));
     }
 
     private void submit(MatchState s, int i, PathStore.Waiting w) {
@@ -460,8 +678,9 @@ public final class PathService {
      * provisional steering may have left, gets that point first when the unit cannot walk straight to its first
      * waypoint.
      */
-    private static PathStore.Waypoints startFrom(MatchState s, int i, PathRequest r, PathStore.Waypoints w) {
-        if (w.count() == 0 || Double.isNaN(r.fromX())) {
+    private static PathStore.Waypoints startFrom(
+            MatchState s, int i, int fromNode, double fromX, double fromZ, PathStore.Waypoints w) {
+        if (w.count() == 0 || Double.isNaN(fromX)) {
             return w;
         }
         SurfaceGrid grid = s.surfaces();
@@ -475,10 +694,10 @@ public final class PathService {
         double[] xs = new double[keep + 1];
         double[] zs = new double[keep + 1];
         int[] floors = new int[keep + 1];
-        xs[0] = r.fromX();
-        zs[0] = r.fromZ();
+        xs[0] = fromX;
+        zs[0] = fromZ;
         floors[0] = Surface.floor(
-                grid.surface(grid.nodeX(r.fromNode()), grid.nodeZ(r.fromNode()), SurfaceGrid.nodeLayer(r.fromNode())));
+                grid.surface(grid.nodeX(fromNode), grid.nodeZ(fromNode), SurfaceGrid.nodeLayer(fromNode)));
         for (int k = 0; k < keep; k++) {
             xs[k + 1] = w.x(k);
             zs[k + 1] = w.z(k);

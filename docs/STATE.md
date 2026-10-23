@@ -3,7 +3,7 @@
 Where the project stands right now. The session log is in [worklog.md](worklog.md); the work
 procedure is the `strategos-dev` skill (`.claude/skills/strategos-dev/SKILL.md`).
 
-**Last update:** 2026-10-23 · **Owner last seen:** 2026-10-22 · **Current:** M1 Movement — started 2026-10-22 (owner's go-ahead)
+**Last update:** 2026-10-23 · **Owner last seen:** 2026-10-23 · **Current:** M1 Movement — started 2026-10-22 (owner's go-ahead)
 
 ## For the owner
 
@@ -13,32 +13,35 @@ Answer in chat or here; the next session applies the answers.
    stays ready whenever you want it: `scripts/playtest.sh`, then the steps in
    [testing/playtest.md](testing/playtest.md). Its first use confirms ADR-0022, the one thing your
    acceptance left open.
-2. **Your consent for M1's tests (2026-10-22):** every kind of test, client windows included. With
+2. **Your go-ahead for M2 (2026-10-23):** «когда закончишь М1 - приступай сразу к М2». Once T27
+   closes M1, the M2 spec is written and its tasks start without waiting; M1's acceptance items
+   for you (the demo, consent batches) are listed here and do not hold M2 up.
+3. **Your consent for M1's tests (2026-10-22):** every kind of test, client windows included. With
    the lid closed and no display, a Mac window may not render, so client scenarios run on the
    Linux route on CI first; a Mac run is used only where a measurement needs this Mac.
-3. **Open decisions,** none urgent:
+4. **Open decisions,** none urgent:
    - D-03 civilisation themes (M7);
    - D-20 multiplayer hosting (M7);
    - D-07 licence and D-21 public release and name (first public release);
    - D-06 map generation (M12).
-4. **A threshold to approve, not urgent:** the block writer's cost is measured but not yet gated.
+5. **A threshold to approve, not urgent:** the block writer's cost is measured but not yet gated.
    64 blocks a tick take 0.02 ms (0.065 ms at p99) on this Mac. The proposed limit is 1.15 ms a
    tick at p99, 5 % of the whole-tick budget C. Say yes and it becomes a gate in `verifyPerf`
    ([M1 spec §1.6 D row 20](milestones/M1-movement.md)).
-5. **For your information: the long-route planner (card PATH-08, HPA*) left the reserve and is built.**
+6. **For your information: the long-route planner (card PATH-08, HPA*) left the reserve and is built.**
    The roadmap had it waiting for one measurement, which T8 took: one unit's path across the
    384² proving ground needed about 30,000 search steps, over the 20,000 cap, and 4.5 ms of server
    time, over the 2 ms a tick the budget allows all pathfinding. T28 added it: the same crossing
    now takes about 2,800 steps and a fraction of a millisecond, and its route is within 1 % of the
    best one. Nothing to do; it is in the roadmap's rules ([M1 spec §1.6 D rows 42 and 47–53](milestones/M1-movement.md)).
-6. **A proposal from spike S10, your call, not urgent:** units now stand exactly on slabs, stairs,
+7. **A proposal from spike S10, your call, not urgent:** units now stand exactly on slabs, stairs,
    snow, carpet, paths, farmland and in shallow water, but they take a step when its edge passes
    their centre, so for about two frames per step up a foot cuts into the step's edge, and on the
    way down it hangs over the ledge ([frames and numbers](spikes/S10-kinematic-fidelity.md)). A
    vanilla body stands on the highest block under its whole footprint instead. I propose the same
    rule for our units, a change to the motion of card PATH-05, before your Mac look at the steps in
    M2's consent batch. Say yes and it joins M1 as a small task; no, and the steps stay as they are.
-7. **Optional reviews:**
+8. **Optional reviews:**
    - the card refinements made after the approval
      ([design/roadmap-changes.md §8](design/roadmap-changes.md));
    - the promo draft ([promo/roadmap-announcement.md](promo/roadmap-announcement.md)).
@@ -207,15 +210,22 @@ Answer in chat or here; the next session applies the answers.
   paths, even on a deliberately overloaded machine, and a 100-unit order queued behind 200 others
   gets its paths within 4 ticks (0.2 s). It set how many searches start each tick (80), and the
   pathfinding decision, ADR-0015, is now accepted. Card PATH-16 is done.
+- 2026-10-23 · **M1 T24 Shared group paths:** an order to a group of eight or more now plans one
+  path for all of them, so 150 units make one search instead of 150; they walk it side by side in
+  lanes matching their places, closing up through narrow ways, and spread to their places near the
+  goal. 200 units crossed the whole proving ground as one order, the slowest in 1.21 times the
+  time it would take alone, and none got stuck long enough to need more than a new path: units in
+  a crowded formation now simply swap places instead of pushing toward their own. Card PATH-09 is
+  done.
 
 ## Now
 
-- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 25 of 29 tasks done (T28, PATH-08, joined by its trigger).
+- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 26 of 29 tasks done (T28, PATH-08, joined by its trigger).
 - **In progress:** none.
-- **Last finished task:** M1 T22 (2026-10-23). The agents' branches `wip/m1-t17-unitai-hfsm` and
+- **Last finished task:** M1 T24 (2026-10-23). The agents' branches `wip/m1-t17-unitai-hfsm` and
   `wip/m1-t25-debug-overlay` are merged and kept on GitHub for the record.
-- **Next task:** M1 T24 · Shared group path (PATH-09), then T16 (content loading and client sync),
-  T26 (crowd soak and the M1 perf gate) and T27 (M1 close).
+- **Next task:** M1 T16 · Content loading, client sync and spike S12 (DATA-03), then T26 (crowd
+  soak and the M1 perf gate) and T27 (M1 close); then M2, on your go-ahead of 2026-10-23.
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 220 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.

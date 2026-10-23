@@ -9,7 +9,30 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22
+## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24
+
+- **M1 T24 · Shared group path** — PATH-09 done.
+  - **Results:** a group order of eight or more long moves makes one request (`GroupJob`): one
+    search from the members' centroid to the place nearest their places' centroid, and in the same
+    job every member's path, joined by line of walk or a search of at most 2,000 expansions,
+    following the group's path in lanes at its place's offset (closing up to half and a quarter in
+    narrow ways), leaving for its place 8 blocks from the goal. Members in a crowd trade places, and
+    pass an intermediate waypoint within 2 blocks after 10 ticks without progress. Tests:
+    `GroupPathTest` (7), `maptests.two_hundred_cross`, `perftests.group_paths_budget_d`;
+    `group_of_50_slots` and `head_on_gap` re-recorded (130 GameTests, 8 slow);
+    `verify verifySlow verifySoak` 2 min 33 s; the perf batch passes.
+  - **Measured:** 150 units, 1 request where one by one makes 150. 200 across the proving ground:
+    the slowest in 1.21 times its ideal time, at most 57 ticks without progress, rung 1 only (32).
+    600 units in four groups: 0.49 ms at p99 on the main thread, 10 requests, 14 joins searched.
+  - **Problems:** 200 units arriving at once at a 15 by 14 formation left a unit 133 ticks without
+    progress: the crowd pushed members past their places and they could not get back. A wider
+    arrival radius broke ORD-03.2 for fifty; trading places fixed it (D row 151), after three bugs
+    found by tracing one unit: the partner kept walking its old path to the place it gave, the
+    trader's aim still pointed at the old place so a partner touching it settled there, and a
+    partner whose step this tick was already planned toward the given place took it. Lanes
+    collapsed onto one corner point at walls; half and quarter offsets close them up instead. The
+    test kit's 400-tick stuck invariant predates the ladder's 600 (D row 152).
+  - **Next:** T16 (content loading, client sync, spike S12).
 
 - **M1 T22 · Worker pool, ADAPTIVE delivery and spike S7** — PATH-16 done; ADR-0015 Accepted.
   - **Results:** `PooledJobExecutor` (`strategos-path-N` daemons) and `PathThreads` (the setting,

@@ -456,6 +456,55 @@ public final class PerfTests {
                 .thenSucceed();
     }
 
+    /**
+     * PATH-09.3, budget D at 600 units: {@link PathLoad#groups}, four groups of 150 sent across the proving ground at
+     * once, with the rules' defaults and the server's path threads, one run to warm up and three measured, their ticks
+     * pooled: the main thread's path work at most 2 ms at p99, and at most a tenth of the requests one by one would
+     * make (members that trade places in the same tick may ask together again).
+     */
+    @StrategosTest(batch = "perf_group_paths", arena = "arena_flat_48", timeoutTicks = 200)
+    public static void groupPathsBudgetD(GameTestHelper h) {
+        Window window = new Window();
+        h.startSequence()
+                .thenExecute(() -> {
+                    MatchRules d = MatchRules.DEFAULTS;
+                    MatchRules rules = PathLoad.rules(d.delivery(), d.pathK(), d.admissionW());
+                    PathLoad load = new PathLoad();
+                    load.groups(rules, StrategosServer.get().jobs());
+                    window.start();
+                    List<PathLoad.Result> runs = new ArrayList<>();
+                    for (int k = 0; k < 3; k++) {
+                        runs.add(load.groups(rules, StrategosServer.get().jobs()));
+                        window.sampleForeignLoad();
+                    }
+                    PathLoad.Result r = PathLoad.Result.pooled(runs);
+                    JsonObject extra = new JsonObject();
+                    extra.addProperty("threads", StrategosServer.get().jobs().threads());
+                    extra.addProperty("units", 4 * PathLoad.GROUP_OF);
+                    extra.addProperty("join_p99_ns", r.joinP99());
+                    extra.addProperty("answers_p95_ticks", r.allP95());
+                    extra.addProperty("requests_last_run", r.stats().requests());
+                    extra.addProperty("group_requests_last_run", r.stats().groupRequests());
+                    extra.addProperty("joins_last_run", r.stats().joins());
+                    extra.addProperty("ticks_measured", r.ticks());
+                    verdict(
+                            h,
+                            "group_paths_budget_d",
+                            "d",
+                            new BudgetCheck("budget D, group paths", Long.MAX_VALUE, scaled(2 * MS)),
+                            r.work(),
+                            window,
+                            extra);
+                    check(
+                            r.stats().groupRequests() >= 4,
+                            "group requests: " + r.stats().groupRequests());
+                    check(
+                            r.stats().requests() <= 60,
+                            "600 units in groups made " + r.stats().requests() + " requests, over a tenth of 600");
+                })
+                .thenSucceed();
+    }
+
     /** Whether a gate is listed in {@code strategos.perf.gates}, so it fails the run rather than reports. */
     private static boolean gated(String gate) {
         return Arrays.asList(System.getProperty("strategos.perf.gates", "a,g").split(","))

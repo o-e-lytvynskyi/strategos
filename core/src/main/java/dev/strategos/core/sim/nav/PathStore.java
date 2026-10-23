@@ -147,11 +147,16 @@ public final class PathStore {
     public record Pending(PathRequest request, long due, JobHandle<PathResult> job) {}
 
     /**
-     * A request waiting for admission: its id and unit; the rest (where the unit stands, its target, the grid) is taken
-     * when it is admitted.
+     * A request waiting for admission: its id, and its unit, or for a group's request (PATH-09) its group and first
+     * member; the rest (where the units stand, their targets, the grid) is taken when it is admitted.
      */
     @CoreApi
-    public record Waiting(int id, int handle) {}
+    public record Waiting(int id, int handle, int group) {
+        /** A unit's own request. */
+        public Waiting(int id, int handle) {
+            this(id, handle, 0);
+        }
+    }
 
     /** A request in flight as a snapshot keeps it, its result already computed. */
     @CoreApi
@@ -293,6 +298,11 @@ public final class PathStore {
     /** An order arrived this tick: the unit asks for a path in this tick's request pass. */
     public void want(int i) {
         wanted[i] = true;
+    }
+
+    /** Whether an order arrived this tick, keeping the flag. */
+    public boolean wanted(int i) {
+        return wanted[i];
     }
 
     /** Whether an order arrived this tick, clearing the flag. */

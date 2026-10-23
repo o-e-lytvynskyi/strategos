@@ -99,6 +99,21 @@ public final class OrderQueues {
         count[i] = 1;
     }
 
+    /** Units {@code i} and {@code j} trade the places of their current orders: targets and place numbers (ORD-03). */
+    public void tradePlaces(int i, int j) {
+        int a = at(i, 0);
+        int b = at(j, 0);
+        double x = xs[a];
+        double z = zs[a];
+        int slot = slots[a];
+        xs[a] = xs[b];
+        zs[a] = zs[b];
+        slots[a] = slots[b];
+        xs[b] = x;
+        zs[b] = z;
+        slots[b] = slot;
+    }
+
     /** A single move to (x, z), alone: the arrival latch's walk back and M0's orders. */
     public void replaceMove(int i, double x, double z) {
         replace(i, OrderKind.MOVE, x, z, 0, 0);

@@ -20,6 +20,7 @@ import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.MotionStore;
 import dev.strategos.core.sim.PageRef;
 import dev.strategos.core.sim.UnitRecord;
+import dev.strategos.core.sim.nav.MemberPath;
 import dev.strategos.core.sim.nav.PathRequest;
 import dev.strategos.core.sim.nav.PathResult;
 import dev.strategos.core.sim.nav.PathStatus;
@@ -97,11 +98,23 @@ public final class MatchSnapshotCodec {
                     Codec.BOOL.optionalFieldOf("join", false).forGetter(PathRequest::join))
             .apply(i, PathRequest::new));
 
+    private static final Codec<MemberPath> MEMBER_PATH = RecordCodecBuilder.create(i -> i.group(
+                    Codec.INT.fieldOf("handle").forGetter(MemberPath::handle),
+                    Codec.INT.fieldOf("fromNode").forGetter(MemberPath::fromNode),
+                    Codec.DOUBLE.fieldOf("fromX").forGetter(MemberPath::fromX),
+                    Codec.DOUBLE.fieldOf("fromZ").forGetter(MemberPath::fromZ),
+                    Codec.intRange(MemberPath.NONE, MemberPath.SEARCH)
+                            .fieldOf("join")
+                            .forGetter(MemberPath::join),
+                    WAYPOINTS.fieldOf("waypoints").forGetter(MemberPath::waypoints))
+            .apply(i, MemberPath::new));
+
     private static final Codec<PathResult> RESULT = RecordCodecBuilder.create(i -> i.group(
                     Codec.INT.fieldOf("requestId").forGetter(PathResult::requestId),
                     PathStatus.CODEC.fieldOf("status").forGetter(PathResult::status),
                     WAYPOINTS.fieldOf("waypoints").forGetter(PathResult::waypoints),
-                    Codec.INT.fieldOf("expansions").forGetter(PathResult::expansions))
+                    Codec.INT.fieldOf("expansions").forGetter(PathResult::expansions),
+                    MEMBER_PATH.listOf().optionalFieldOf("members", List.of()).forGetter(PathResult::members))
             .apply(i, PathResult::new));
 
     private static final Codec<PathStore.Delivery> DELIVERY = RecordCodecBuilder.create(i -> i.group(
@@ -112,7 +125,8 @@ public final class MatchSnapshotCodec {
 
     private static final Codec<PathStore.Waiting> WAITING = RecordCodecBuilder.create(i -> i.group(
                     Codec.INT.fieldOf("id").forGetter(PathStore.Waiting::id),
-                    Codec.INT.fieldOf("handle").forGetter(PathStore.Waiting::handle))
+                    Codec.INT.fieldOf("handle").forGetter(PathStore.Waiting::handle),
+                    Codec.INT.optionalFieldOf("group", 0).forGetter(PathStore.Waiting::group))
             .apply(i, PathStore.Waiting::new));
 
     private static final Codec<PathStore.Queue> QUEUE = RecordCodecBuilder.create(i -> i.group(

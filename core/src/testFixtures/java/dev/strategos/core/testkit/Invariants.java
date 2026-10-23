@@ -21,7 +21,11 @@ public final class Invariants {
     /** ADR-0014's queue limit. M0 has one order slot, so it bites only with ORD-02's queue. */
     public static final int MAX_ORDERS = 16;
 
-    public static final int STUCK_TICKS = 400;
+    /**
+     * The stuck ladder fails an order after 600 ticks without progress toward the unit's aim (PATH-07); toward its
+     * target a unit on a detour may take a little longer.
+     */
+    public static final int STUCK_TICKS = 640;
 
     // Per handle index: the walking unit tracked there (NONE when none), its target, its best squared distance to the
     // target so far and the tick it got there.

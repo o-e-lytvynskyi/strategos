@@ -10,6 +10,10 @@ import static dev.strategos.gametest.suites.Units.unit;
 import dev.strategos.core.content.MapManifest;
 import dev.strategos.core.content.StartSlot;
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.protocol.Move;
+import dev.strategos.core.protocol.UnitSet;
+import dev.strategos.core.shared.PlayerSlot;
+import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.core.sim.MotionStore;
@@ -40,6 +44,7 @@ import dev.strategos.mod.server.match.MatchRuntime;
 import dev.strategos.mod.server.match.MatchSpace;
 import dev.strategos.mod.server.world.BlockWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.function.BiConsumer;
@@ -74,6 +79,8 @@ public final class MapTests {
     private static final int BODY_LANE = 5;
     private static final int FIFTY_LANE = 6;
     private static final int FIFTY = 50;
+    private static final int CROWD_LANE = 7;
+    private static final int CROWD = 200;
 
     private MapTests() {}
 
@@ -393,6 +400,103 @@ public final class MapTests {
             if (u.state() == UnitState.IDLE && u.target() == null) {
                 check(u.x() == tx && u.z() == tz, "stopped at " + u.x() + ", " + u.z());
                 atTheEnd.accept(core);
+                h.succeed();
+            }
+        });
+    }
+
+    /**
+     * PATH-09.2: 200 units spawned round the west start, ordered as one group to the east start, all arrive at their
+     * places within 1.5 times each one's ideal time (and 10 ticks), with no ladder rung above the repath: no unit goes
+     * 100 ticks without progress. The group's paths are one request.
+     */
+    @StrategosTest(batch = "map_crowd", solo = true, timeoutTicks = 120_000)
+    public static void twoHundredCross(GameTestHelper h) {
+        MatchRuntime rt = provingGround(h, CROWD_LANE, 0);
+        MapManifest m = manifest(h);
+        StartSlot west = m.startSlots().get(0);
+        StartSlot east = m.startSlots().get(1);
+        var state = new Object() {
+            boolean spawned;
+            int[] units;
+            long orderedAt = -1;
+            double[] ideal;
+            int arrived;
+            boolean[] in;
+            int mostStuck;
+            String worst = "";
+            double slowest;
+        };
+        h.onEachTick(() -> {
+            if (rt.lifecycle() == MatchLifecycle.PREPARING) {
+                return;
+            }
+            check(rt.lifecycle() == MatchLifecycle.RUNNING, "the match is " + rt.lifecycle());
+            MatchCore core = core(rt);
+            if (!state.spawned) {
+                state.spawned = true;
+                spawn(rt, west.x() + 0.5, west.z() + 0.5, CROWD, 12);
+                return;
+            }
+            if (state.units == null) {
+                int[] handles = core.queries().unitHandles();
+                if (handles.length < CROWD) {
+                    return;
+                }
+                state.units = handles;
+                state.in = new boolean[CROWD];
+                rt.submit(
+                        PlayerSlot.ADMIN, Move.replace(UnitSet.of(handles), new Vec2d(east.x() + 0.5, east.z() + 0.5)));
+                return;
+            }
+            long tick = core.queries().tick();
+            if (state.ideal == null) {
+                state.ideal = new double[CROWD];
+                for (int k = 0; k < CROWD; k++) {
+                    var orders = core.queries().orders(state.units[k]);
+                    check(!orders.isEmpty(), "a unit got no order");
+                    state.ideal[k] = idealTicks(
+                            core,
+                            unit(rt, state.units[k]),
+                            orders.get(0).x(),
+                            orders.get(0).z());
+                }
+                state.orderedAt = tick - 1;
+                return;
+            }
+            for (int k = 0; k < CROWD; k++) {
+                if (state.in[k]) {
+                    continue;
+                }
+                MotionStore.Extra motion = core.queries().motion(state.units[k]);
+                if (motion != null && motion.stuck() > state.mostStuck) {
+                    state.mostStuck = motion.stuck();
+                    UnitView stuck = unit(rt, state.units[k]);
+                    state.worst = "unit " + k + " at " + stuck.x() + ", " + stuck.y() + ", " + stuck.z();
+                }
+                UnitView u = unit(rt, state.units[k]);
+                if (u.state() == UnitState.IDLE && u.target() == null) {
+                    state.in[k] = true;
+                    state.arrived++;
+                    long took = tick - state.orderedAt;
+                    state.slowest = Math.max(state.slowest, took / state.ideal[k]);
+                    check(
+                            took <= 1.5 * state.ideal[k] + 10,
+                            "unit " + k + " took " + took + " ticks, ideal " + state.ideal[k]);
+                }
+            }
+            check(state.mostStuck < 100, "a unit went " + state.mostStuck + " ticks without progress: " + state.worst);
+            if (state.arrived == CROWD) {
+                PathService.Stats paths = core.queries().pathStats();
+                LOG.info(
+                        "two_hundred_cross: the slowest unit took {} times its ideal time; at most {} ticks without"
+                                + " progress; {} requests, {} for the group; rungs {}",
+                        String.format(Locale.ROOT, "%.2f", state.slowest),
+                        state.mostStuck,
+                        paths.requests(),
+                        paths.groupRequests(),
+                        Arrays.toString(core.queries().ladderRungs()));
+                check(paths.groupRequests() == 1, "the group asked " + paths.groupRequests() + " times");
                 h.succeed();
             }
         });

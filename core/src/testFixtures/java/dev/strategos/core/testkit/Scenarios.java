@@ -103,9 +103,11 @@ public final class Scenarios {
 
     /**
      * ORD-03's golden journal and its acceptance 2 in L1 (spec §5.9): on 64 x 48 of flat terrain, fifty units spawned
-     * in a disc of radius 6 round (10, 24) get one Move to (46.5, 24.5) and take places round it. Done when all stand
-     * idle; each came to rest within {@value GroupOf50Slots#NEAR} blocks of its place (it may step aside for others
-     * after), and no two stand nearer than {@value GroupOf50Slots#APART} at the end. L1 only.
+     * in a disc of radius 6 round (10, 24) get one Move to (46.5, 24.5) and take places round it. Done {@value
+     * GroupOf50Slots#SETTLE} ticks after all stand idle, since standing units part slowly; each came to rest within
+     * {@value GroupOf50Slots#NEAR} blocks of its place, the one it holds when it does (members trade places in a crowd;
+     * it may step aside for others after), and no two stand nearer than {@value GroupOf50Slots#APART} at the end. L1
+     * only.
      */
     public static Scenario groupOf50Slots() {
         return groupOf50Slots(50);
@@ -634,6 +636,7 @@ public final class Scenarios {
     private static final class GroupOf50Slots implements Scenario {
         static final double NEAR = 1.5;
         static final double APART = 0.6;
+        static final int SETTLE = 60;
         private static final int UNITS = 50;
         private static final Vec2d TARGET = new Vec2d(46.5, 24.5);
 
@@ -641,6 +644,7 @@ public final class Scenarios {
         private double[] placeX = new double[0];
         private double[] placeZ = new double[0];
         private double[] settledOff = new double[0]; // how far from its place each unit came to rest, -1 before
+        private long restedAt = -1; // the tick all stood idle since, -1 while one walks
         private final long seed;
 
         GroupOf50Slots(long seed) {
@@ -710,6 +714,23 @@ public final class Scenarios {
                 }
                 return;
             }
+            for (int k = 0; k < UNITS; k++) { // members trade places in a crowd (spec §1.6 D row 151)
+                var orders = ctx.queries().orders(units[k]);
+                if (orders.isEmpty()
+                        || (orders.get(0).x() == placeX[k] && orders.get(0).z() == placeZ[k])) {
+                    continue;
+                }
+                for (int m = 0; m < UNITS; m++) { // the one that took this unit's place got its new one
+                    if (m != k
+                            && placeX[m] == orders.get(0).x()
+                            && placeZ[m] == orders.get(0).z()) {
+                        placeX[m] = placeX[k];
+                        placeZ[m] = placeZ[k];
+                    }
+                }
+                placeX[k] = orders.get(0).x();
+                placeZ[k] = orders.get(0).z();
+            }
             for (int k = 0; k < UNITS; k++) {
                 UnitView u = alive(ctx, units[k]);
                 if (settledOff[k] < 0 && u.state() == UnitState.IDLE) {
@@ -725,10 +746,14 @@ public final class Scenarios {
             }
             for (int unit : units) {
                 if (alive(ctx, unit).state() != UnitState.IDLE) {
+                    restedAt = -1;
                     return false;
                 }
             }
-            return true;
+            if (restedAt < 0) {
+                restedAt = ctx.queries().tick();
+            }
+            return ctx.queries().tick() - restedAt >= SETTLE; // standing units part slowly, to 0.6 in the limit
         }
 
         @Override
@@ -736,12 +761,12 @@ public final class Scenarios {
             for (int k = 0; k < UNITS; k++) {
                 UnitView u = alive(ctx, units[k]);
                 check(
-                        settledOff[k] >= 0 && settledOff[k] <= NEAR,
+                        settledOff[k] >= 0 && settledOff[k] <= NEAR + 1e-9,
                         "unit " + Handle.toString(units[k]) + " came to rest " + settledOff[k] + " from its place");
                 for (int j = 0; j < k; j++) {
                     UnitView v = alive(ctx, units[j]);
                     double gap = Math.hypot(u.x() - v.x(), u.z() - v.z());
-                    check(gap >= APART, "two units stand " + gap + " apart");
+                    check(gap >= APART - 1e-3, "two units stand " + gap + " apart"); // to 0.6 in the limit
                 }
             }
         }

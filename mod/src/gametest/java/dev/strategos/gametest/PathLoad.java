@@ -40,6 +40,8 @@ public final class PathLoad {
     public static final int GROUP = 100;
     public static final int MAX_TICKS = 600;
     public static final long TICK_NANOS = 50_000_000;
+    public static final int GROUP_OF = 150;
+    public static final int AFTER = 40;
 
     private final ProvingGround ground = ProvingGround.generate();
     private final List<TerrainPage> pages = new ArrayList<>();
@@ -256,6 +258,83 @@ public final class PathLoad {
                 return;
             }
         }
+    }
+
+    /**
+     * Budget D's group load (PATH-09.3): 600 units in four groups of 150, at the middle of each edge, each sent as one
+     * group across to the opposite edge in one tick; the ticks are paced as in {@link #run} until every unit has its
+     * answer, then {@value #AFTER} more, while the groups walk and the ladder repaths whoever is held up. The work is
+     * measured from the orders' tick; the latencies are every unit's.
+     */
+    public Result groups(MatchRules rules, JobExecutor jobs) {
+        SimHarness h = SimHarness.builder()
+                .size(ProvingGround.SIZE, ProvingGround.SIZE)
+                .yBand(0, ProvingGround.HEIGHT, 16)
+                .rules(rules)
+                .jobs(jobs)
+                .clock(System::nanoTime)
+                .build();
+        pages.forEach(h::publish);
+        double side = ProvingGround.SIZE;
+        double middle = side / 2 + 0.5;
+        Vec2d[] from = {
+            new Vec2d(40.5, middle),
+            new Vec2d(side - 40.5, middle),
+            new Vec2d(middle, 40.5),
+            new Vec2d(middle, side - 40.5)
+        };
+        for (int g = 0; g < from.length; g++) {
+            h.submit(
+                    PlayerSlot.ADMIN,
+                    new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(g % 2), from[g], GROUP_OF, 12));
+            h.step();
+        }
+        int[] all = h.queries().unitHandles();
+        h.runTicks(5); // onto the terrain
+        for (int g = 0; g < from.length; g++) {
+            int[] members = Arrays.copyOfRange(all, g * GROUP_OF, (g + 1) * GROUP_OF);
+            Vec2d to = from[g ^ 1];
+            h.submit(PlayerSlot.ADMIN, Move.replace(UnitSet.of(members), to));
+        }
+        long[] work = new long[MAX_TICKS];
+        long[] joins = new long[MAX_TICKS];
+        long joined = h.queries().pathStats().joinNanos();
+        long[] latency = new long[all.length];
+        Arrays.fill(latency, -1);
+        int ticks = 0;
+        int after = -1;
+        long orderedAt = h.tick() + 1;
+        long next = System.nanoTime();
+        while (after < AFTER && ticks < MAX_TICKS) {
+            pace(next);
+            next = System.nanoTime() + TICK_NANOS;
+            h.step();
+            PathService.Stats stats = h.queries().pathStats();
+            work[ticks] = stats.lastWork();
+            joins[ticks++] = stats.joinNanos() - joined;
+            joined = stats.joinNanos();
+            int answered = 0;
+            for (int k = 0; k < all.length; k++) {
+                if (latency[k] < 0 && answered(h, all[k])) {
+                    latency[k] = h.tick() - orderedAt;
+                }
+                answered += latency[k] >= 0 ? 1 : 0;
+            }
+            if (answered == all.length || after >= 0) {
+                after++;
+            }
+        }
+        for (int k = 0; k < latency.length; k++) {
+            if (latency[k] < 0) {
+                latency[k] = Long.MAX_VALUE;
+            }
+        }
+        return new Result(
+                Arrays.copyOf(work, ticks),
+                Arrays.copyOf(joins, ticks),
+                latency,
+                latency,
+                h.queries().pathStats());
     }
 
     /** Whether the unit's last request has its answer: it waits for none and was not turned away. */

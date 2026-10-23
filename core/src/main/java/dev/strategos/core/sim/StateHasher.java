@@ -94,6 +94,9 @@ public final class StateHasher {
                 for (PathStore.Waiting w : paths.waiting()) {
                     h = Hasher.mix(h, w.id());
                     h = Hasher.mix(h, w.handle());
+                    if (w.group() != 0) {
+                        h = Hasher.mix(h, w.group());
+                    }
                 }
             }
         }

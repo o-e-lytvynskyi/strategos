@@ -152,7 +152,16 @@ class ThreadCountHashTest {
         return new Run(h, hashes);
     }
 
-    private record Run(SimHarness harness, long[] hashes) {}
+    /** A run's harness and the state hash of each of its ticks. */
+    private static final class Run {
+        final SimHarness harness;
+        final long[] hashes;
+
+        Run(SimHarness harness, long[] hashes) {
+            this.harness = harness;
+            this.hashes = hashes;
+        }
+    }
 
     private static MatchRules rules(DeliveryMode mode) {
         MatchRules d = MatchRules.DEFAULTS;

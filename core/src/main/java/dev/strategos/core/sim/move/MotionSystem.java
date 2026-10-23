@@ -89,6 +89,7 @@ public final class MotionSystem implements MatchSystem {
     static final int QUIET = 20;
     static final int LOST_AFTER = 20;
     static final double ARRIVE_CROWD = 1.5;
+    static final double PASS_CROWD = 2.0;
 
     static final int CROWDED = 10;
     /** How near two bodies count as touching, beyond their radii. */
@@ -271,9 +272,11 @@ public final class MotionSystem implements MatchSystem {
         PathStore.Waypoints path = paths.path(i);
         int cursor = paths.cursor(i);
         while (cursor < path.count() - 1 || (cursor < path.count() && !ends(path, paths.status(i)))) {
-            // an intermediate waypoint within half a block is passed, if the next is in line of walk from here
-            if (DetMath.length(path.x(cursor) - x0, path.z(cursor) - z0) > ADVANCE_WITHIN
-                    || (cursor + 1 < path.count() && !inLine(s, i, path.x(cursor + 1), path.z(cursor + 1)))) {
+            // an intermediate waypoint within half a block is passed, if the next is in line of walk from here; in a
+            // crowd that kept the unit from it for CROWDED ticks, within PASS_CROWD
+            double d = DetMath.length(path.x(cursor) - x0, path.z(cursor) - z0);
+            boolean near = d <= ADVANCE_WITHIN || (motion.stuck(i) >= CROWDED && d <= PASS_CROWD);
+            if (!near || (cursor + 1 < path.count() && !inLine(s, i, path.x(cursor + 1), path.z(cursor + 1)))) {
                 break;
             }
             paths.advance(i);
@@ -364,7 +367,8 @@ public final class MotionSystem implements MatchSystem {
             double d = DetMath.length(tx - x, tz - z);
             landed = motion.stuck(i) >= CROWDED
                     && ((d <= ARRIVE_CROWD && (s.orders().group(i) != 0 || taken(s, i, tx, tz)))
-                            || touchesArrived(s, i, tx, tz));
+                            || touchesArrived(s, i, tx, tz)
+                            || tradePlace(s, i, x, z, d));
         }
         if (landed) {
             if ((flags[i] & FOLLOWING) != 0) {
@@ -520,6 +524,48 @@ public final class MotionSystem implements MatchSystem {
         passed(motion, i); // a new walk: its first tick sets the best
         motion.setDetour(i, 0, 0, 0);
         motion.setGhostTicks(i, 0);
+    }
+
+    /**
+     * A group member kept {@value #CROWDED} ticks or more from its place in a crowd takes, every {@value #CROWDED}
+     * ticks, the place of a member still walking to one within {@value #ARRIVE_CROWD} blocks of it, the nearest, if
+     * nearer than its own; that member is given its place and asks for a path there. Units of a formation do not care
+     * which place is whose, and a crowd that pushed one past its place fills up anyway. True when it traded, so it
+     * arrives where it stands.
+     */
+    private boolean tradePlace(MatchState s, int i, double x, double z, double d) {
+        OrderQueues orders = s.orders();
+        int group = orders.group(i);
+        if (group == 0 || s.motion().stuck(i) % CROWDED != 0) {
+            return false;
+        }
+        int best = -1;
+        double nearest = Math.min(d, ARRIVE_CROWD);
+        for (int j = 0; j < s.entities().highWater(); j++) {
+            if (j == i
+                    || !s.entities().aliveAt(j)
+                    || orders.group(j) != group
+                    || orders.kind(j) != OrderKind.MOVE
+                    || s.ai().state(j) != UnitState.WALKING) {
+                continue;
+            }
+            double to = DetMath.length(orders.targetX(j) - x, orders.targetZ(j) - z);
+            if (to < nearest) {
+                nearest = to;
+                best = j;
+            }
+        }
+        if (best < 0) {
+            return false;
+        }
+        orders.tradePlaces(i, best);
+        MotionStore motion = s.motion();
+        // it arrives aiming at the place it took, so a crowd round the one it gave does not settle on it
+        motion.setProgress(i, orders.targetX(i), orders.targetZ(i), motion.best(i), motion.stuck(i));
+        s.paths().follow(best, PathStore.Waypoints.NONE, PathStatus.OK); // its way led to the place it gave
+        s.paths().want(best); // the next request pass asks for a path to the place it got
+        mode[best] = SPENT; // and it does not take this tick's step, planned toward the place it gave
+        return true;
     }
 
     /** Unit {@code i} passed a waypoint, or starts a walk: progress, so its next tick measures from scratch. */
