@@ -1,6 +1,7 @@
 package dev.strategos.core.sim.command;
 
 import dev.strategos.core.content.Blueprint;
+import dev.strategos.core.content.Footprint;
 import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.protocol.CommandKind;
 import dev.strategos.core.protocol.CommandKinds;
@@ -10,7 +11,6 @@ import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.MatchBounds;
 import dev.strategos.core.sim.MatchState;
-import dev.strategos.core.sim.build.Footprint;
 import dev.strategos.core.sim.nav.Surface;
 import dev.strategos.core.sim.nav.SurfaceGrid;
 

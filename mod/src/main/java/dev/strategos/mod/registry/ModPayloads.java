@@ -2,6 +2,7 @@ package dev.strategos.mod.registry;
 
 import dev.strategos.mod.server.net.C2sHandlers;
 import dev.strategos.mod.server.net.PayloadSpec;
+import dev.strategos.mod.server.net.payload.BuildingStatePayload;
 import dev.strategos.mod.server.net.payload.CameraJumpPayload;
 import dev.strategos.mod.server.net.payload.CommandsPayload;
 import dev.strategos.mod.server.net.payload.DebugFeedPayload;
@@ -53,6 +54,7 @@ public final class ModPayloads {
         registrar.playToClient(UnitSummaryPayload.TYPE, UnitSummaryPayload.STREAM_CODEC, PayloadArrived::post);
         registrar.playToClient(UnitHudPayload.TYPE, UnitHudPayload.STREAM_CODEC, PayloadArrived::post);
         registrar.playToClient(FactionStatePayload.TYPE, FactionStatePayload.STREAM_CODEC, PayloadArrived::post);
+        registrar.playToClient(BuildingStatePayload.TYPE, BuildingStatePayload.STREAM_CODEC, PayloadArrived::post);
         registrar.playToClient(UnitDetailPayload.TYPE, UnitDetailPayload.STREAM_CODEC, PayloadArrived::post);
         registrar.playToClient(FxPayload.TYPE, FxPayload.STREAM_CODEC, PayloadArrived::post);
         registrar.playToServer(
@@ -83,6 +85,7 @@ public final class ModPayloads {
                 UnitSummaryPayload.SPEC,
                 UnitHudPayload.SPEC,
                 FactionStatePayload.SPEC,
+                BuildingStatePayload.SPEC,
                 UnitDetailPayload.SPEC,
                 FxPayload.SPEC,
                 UiQueryPayload.SPEC,

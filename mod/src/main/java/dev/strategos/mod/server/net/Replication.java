@@ -1,5 +1,6 @@
 package dev.strategos.mod.server.net;
 
+import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.FactionState;
 import dev.strategos.core.protocol.UiQuery;
 import dev.strategos.core.protocol.UnitDetail;
@@ -13,6 +14,7 @@ import dev.strategos.core.sim.replicate.ReplicationService;
 import dev.strategos.core.sim.replicate.Visibility;
 import dev.strategos.mod.server.match.MatchRegistry;
 import dev.strategos.mod.server.match.MatchRuntime;
+import dev.strategos.mod.server.net.payload.BuildingStatePayload;
 import dev.strategos.mod.server.net.payload.FactionStatePayload;
 import dev.strategos.mod.server.net.payload.UnitDetailPayload;
 import dev.strategos.mod.server.net.payload.UnitHudPayload;
@@ -66,6 +68,7 @@ public final class Replication {
     private final Map<MatchId, Visibility> visibility = new HashMap<>();
 
     private final Map<UUID, FactionState> factions = new HashMap<>();
+    private final Map<UUID, BuildingState> buildings = new HashMap<>();
 
     public Replication(MinecraftServer server, Supplier<MatchRegistry> matches, NetGateway net) {
         this.server = server;
@@ -107,6 +110,7 @@ public final class Replication {
         huds.remove(player);
         subscriptions.remove(player);
         factions.remove(player);
+        buildings.remove(player);
     }
 
     public void tick() {
@@ -119,6 +123,9 @@ public final class Replication {
         }
         if (now % FACTION_EVERY == 0) {
             sendFactions();
+        }
+        if (now % SUMMARY_EVERY == 0) {
+            sendBuildings();
         }
         if (now % SUMMARY_EVERY != 0) {
             return;
@@ -169,6 +176,36 @@ public final class Replication {
                 if (last == null || !last.sameAs(now)) {
                     factions.put(player, now);
                     net.send(new Audience.Player(online), new FactionStatePayload(now));
+                }
+            }
+        }
+    }
+
+    /**
+     * Each seated player's buildings (BLD-01), when they differ from the last the player got, at the summaries' pace:
+     * its own faction's with the owner's fields, the others' without them.
+     */
+    private void sendBuildings() {
+        for (MatchRuntime rt : matches.get().all()) {
+            MatchCore core = rt.core();
+            if (core == null || rt.lifecycle() != MatchLifecycle.RUNNING) {
+                continue;
+            }
+            for (UUID player : rt.roster().members()) {
+                MatchRegistry.Seat seat = matches.get().seatOf(player);
+                ServerPlayer online = server.getPlayerList().getPlayer(player);
+                if (seat == null || seat.match() != rt || online == null) {
+                    continue;
+                }
+                FactionSlot viewer = seat.slot().isAdmin()
+                        ? null
+                        : new FactionSlot(seat.slot().value());
+                BuildingState now =
+                        ReplicationService.buildingState(core.queries(), rt.id().value(), viewer);
+                BuildingState last = buildings.get(player);
+                if ((last == null && !now.buildings().isEmpty()) || (last != null && !last.sameAs(now))) {
+                    buildings.put(player, now);
+                    net.send(new Audience.Player(online), new BuildingStatePayload(now));
                 }
             }
         }

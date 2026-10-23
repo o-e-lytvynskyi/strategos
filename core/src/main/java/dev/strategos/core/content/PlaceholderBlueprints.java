@@ -10,7 +10,7 @@ import java.util.TreeMap;
  * M3's placeholder buildings (BLD-01, ART-01), generated in code so construction never waits for art: a civic centre,
  * a house and a barracks of non-flammable blocks, each a floor, walls with a doorway on its north side (z = 0) and a
  * roof. The mod's {@code .nbt} structures are written from these and read back equal (BLD-01.1); owner-built
- * blueprints may replace them later. Build order, damage ranks and markers follow {@link #shape}.
+ * blueprints may replace them later. Build order and damage ranks follow {@link #build}.
  */
 public final class PlaceholderBlueprints {
     public static final String CIVIC_CENTRE = "strategos:civic_centre";
@@ -103,10 +103,11 @@ public final class PlaceholderBlueprints {
      * A blueprint of {@code cells} (by x, then y, then z, each a palette index or -1 for none) in build order: Y up,
      * then X, then Z. Ranks: -1 for the two lowest layers of the outer ring, which damage never removes (04 §11.8:
      * no passages); every other block a hash of the id and its index, raised above the block under it, so damage
-     * takes a block only after what it holds up. The door marker and the spawn marker stand in the doorway.
+     * takes a block only after what it holds up. The mod's loader builds a blueprint read from a structure the same
+     * way, so order and ranks never depend on how a file lists its blocks.
      */
-    static Blueprint shape(
-            String id, int sx, int sy, int sz, List<String> palette, int[] cells, int dx, int dy, int dz) {
+    public static Blueprint build(
+            String id, int sx, int sy, int sz, List<String> palette, int[] cells, List<Blueprint.Marker> markers) {
         List<int[]> blocks = new ArrayList<>();
         int[] rankAt = new int[sx * sy * sz];
         java.util.Arrays.fill(rankAt, -2); // no block
@@ -148,7 +149,7 @@ public final class PlaceholderBlueprints {
                 palette,
                 flat,
                 ranks.stream().mapToInt(Integer::intValue).toArray(),
-                List.of(new Blueprint.Marker("door", dx, dy, dz), new Blueprint.Marker("spawn", dx, dy, dz)));
+                markers);
     }
 
     /** The problems of a blueprint's own rules (04 §11.7–11.8): its door, its ranks; flammable blocks are the mod's. */
@@ -243,8 +244,16 @@ public final class PlaceholderBlueprints {
             }
         }
 
+        /** The blueprint, its door marker in the doorway's lower cell and its spawn marker above it. */
         Blueprint blueprint(String id, int dx, int dy, int dz) {
-            return shape(id, sx, sy, sz, palette, cells, dx, dy, dz);
+            return build(
+                    id,
+                    sx,
+                    sy,
+                    sz,
+                    palette,
+                    cells,
+                    List.of(new Blueprint.Marker("door", dx, dy, dz), new Blueprint.Marker("spawn", dx, dy + 1, dz)));
         }
     }
 }

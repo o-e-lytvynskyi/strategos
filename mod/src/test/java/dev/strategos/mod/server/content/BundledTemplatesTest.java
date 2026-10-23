@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.mojang.serialization.JsonOps;
 import dev.strategos.core.content.RawTemplate;
 import dev.strategos.core.content.TemplateCompiler;
+import dev.strategos.core.content.TemplateIdTable;
 import dev.strategos.core.content.TemplateProblem;
 import dev.strategos.core.content.TemplateSet;
 import java.io.IOException;
@@ -27,8 +28,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 /**
- * DATA-03.1 (spec §6.6): the mod's bundled templates, read by the reload listener from a pack of the mod's resources,
- * compile and lint against the registries with no problem, into the very set the core builds in; a broken file is
+ * DATA-03.1 (spec §6.6): the mod's bundled templates, read by the reload listener from a pack of the mod's resources
+ * with their blueprint files (BLD-01), compile and lint against the registries with no problem, into the very set the
+ * core builds in; a broken file is
  * reported with its file and JSON pointer.
  */
 class BundledTemplatesTest {
@@ -99,7 +101,8 @@ class BundledTemplatesTest {
             TemplateFiles.Read read = new TemplateReloadListener().prepare(resources, null);
             List<TemplateProblem> problems = new ArrayList<>(read.problems());
             List<RawTemplate> raws = TemplateFiles.raws(read, JsonOps.INSTANCE, problems);
-            TemplateCompiler.Result result = TemplateCompiler.compile(raws);
+            TemplateCompiler.Result result =
+                    TemplateCompiler.compile(raws, TemplateIdTable.EMPTY, TemplateFiles.blueprints(read, problems));
             problems.addAll(result.problems());
             problems.addAll(TemplateLint.check(result.set(), REGISTRIES, t -> t.id().value()));
             return new Loaded(raws, result, problems);

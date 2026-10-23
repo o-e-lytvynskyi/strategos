@@ -100,9 +100,8 @@ class TemplateSetTest {
         assertThatThrownBy(() -> TemplateSet.builtin().byIndex(6)).isInstanceOf(IllegalArgumentException.class);
     }
 
-    private static final String BUILTIN_VERSION =
-            "6f70b8e716c903c3ee97818105a7895f5c746714eec5c4a32a2e7856d5960a68"; // M3: the buildings and their
-    // blueprints
+    // M3: the buildings and their blueprints
+    private static final String BUILTIN_VERSION = "dca9ed65012921f761785d176b0af93697e7e3b3d1e49cadc1b4c547ec93ade5";
 
     private static TemplateSet set(UnitTemplate template) {
         return new TemplateSet(List.of(template));

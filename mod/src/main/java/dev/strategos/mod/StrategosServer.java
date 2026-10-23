@@ -2,6 +2,7 @@ package dev.strategos.mod;
 
 import com.google.gson.JsonElement;
 import com.mojang.serialization.JsonOps;
+import dev.strategos.core.content.Blueprint;
 import dev.strategos.core.content.RawTemplate;
 import dev.strategos.core.content.TemplateProblem;
 import dev.strategos.core.port.JobExecutor;
@@ -30,6 +31,7 @@ import dev.strategos.mod.server.world.BlockWriter;
 import dev.strategos.mod.server.world.MaterialTable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.RegistryOps;
@@ -167,7 +169,18 @@ public final class StrategosServer {
      * running match; the outcome is logged, and told to the operators online.
      */
     public ServerTemplates.Outcome loadTemplates(List<RawTemplate> raws, List<TemplateProblem> problems) {
-        return report(templates.load(raws, problems, server.registryAccess(), matches.all()));
+        return loadTemplates(raws, problems, packBlueprints(problems));
+    }
+
+    /** As {@link #loadTemplates(List, List)}, with the blueprints the reload read (BLD-01). */
+    public ServerTemplates.Outcome loadTemplates(
+            List<RawTemplate> raws, List<TemplateProblem> problems, Map<String, Blueprint> blueprints) {
+        return report(templates.load(raws, problems, server.registryAccess(), matches.all(), blueprints));
+    }
+
+    /** The blueprints of the loaded data packs, read now on this thread. */
+    public Map<String, Blueprint> packBlueprints(List<TemplateProblem> problems) {
+        return TemplateFiles.blueprints(TemplateFiles.read(server.getResourceManager()), problems);
     }
 
     private ServerTemplates.Outcome report(ServerTemplates.Outcome outcome) {
@@ -218,7 +231,8 @@ public final class StrategosServer {
     /** The templates of the data packs the server started with, read here: no server was up when they applied. */
     private void loadTemplatesAtStart() {
         List<TemplateProblem> problems = new ArrayList<>();
-        report(templates.load(packTemplates(problems), problems, server.registryAccess(), List.of()));
+        report(templates.load(
+                packTemplates(problems), problems, server.registryAccess(), List.of(), packBlueprints(problems)));
     }
 
     /** The templates of the loaded data packs, read now on this thread; the problems of the files go to {@code problems}. */

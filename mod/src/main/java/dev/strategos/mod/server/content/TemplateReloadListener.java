@@ -38,6 +38,6 @@ public final class TemplateReloadListener extends SimplePreparableReloadListener
         }
         List<TemplateProblem> problems = new ArrayList<>(read.problems());
         List<RawTemplate> raws = TemplateFiles.raws(read, makeConditionalOps(), problems);
-        server.loadTemplates(raws, problems);
+        server.loadTemplates(raws, problems, TemplateFiles.blueprints(read, problems));
     }
 }

@@ -1,9 +1,11 @@
 package dev.strategos.core.sim.replicate;
 
 import dev.strategos.core.content.CorePaths;
+import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.FactionState;
 import dev.strategos.core.protocol.UiQuery;
 import dev.strategos.core.protocol.UnitDetail;
+import dev.strategos.core.protocol.UnitHud;
 import dev.strategos.core.protocol.UnitSummary;
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.FactionSlot;
@@ -11,6 +13,7 @@ import dev.strategos.core.shared.Handle;
 import dev.strategos.core.sim.MatchQueries;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.UnitView;
+import dev.strategos.core.sim.build.BuildingView;
 import dev.strategos.core.sim.econ.FactionTreasury;
 import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.core.sim.stats.StatBreakdown;
@@ -50,6 +53,39 @@ public final class ReplicationService {
             }
         }
         return new UnitSummary(matchId, q.tick(), entries);
+    }
+
+    /**
+     * The buildings {@code viewer} knows of (BLD-01): every building until fog (M6); its own with the owner's fields,
+     * which stay empty until production (PROD-01) and rally points (PROD-03) fill them; null {@code viewer}, an
+     * observer, sees every building as no one's own.
+     */
+    public static BuildingState buildingState(MatchQueries q, int matchId, @Nullable FactionSlot viewer) {
+        List<BuildingState.Entry> out = new ArrayList<>();
+        for (BuildingView b : q.buildings()) {
+            boolean own = viewer != null && viewer.value() == b.faction();
+            int template = q.templates().byId(b.template()) == null
+                    ? -1
+                    : java.util.Objects.requireNonNull(q.templates().byId(b.template()))
+                            .netIndex();
+            out.add(new BuildingState.Entry(
+                    b.handle(),
+                    template,
+                    b.faction(),
+                    b.footprint().anchorX(),
+                    b.footprint().anchorZ(),
+                    b.footprint().rotation(),
+                    b.baseY(),
+                    b.state(),
+                    (int) b.progress(),
+                    UnitHud.Entry.health(b.hitPoints(), b.maxHitPoints()),
+                    own,
+                    List.of(),
+                    false,
+                    0,
+                    0));
+        }
+        return new BuildingState(matchId, q.tick(), out);
     }
 
     /**

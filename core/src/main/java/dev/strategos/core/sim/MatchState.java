@@ -2,12 +2,12 @@ package dev.strategos.core.sim;
 
 import dev.strategos.core.content.Blueprint;
 import dev.strategos.core.content.CorePaths;
+import dev.strategos.core.content.Footprint;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.diag.MatchLog;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.sim.build.BuildingStore;
-import dev.strategos.core.sim.build.Footprint;
 import dev.strategos.core.sim.combat.Damage;
 import dev.strategos.core.sim.combat.HealthStore;
 import dev.strategos.core.sim.econ.Amount;

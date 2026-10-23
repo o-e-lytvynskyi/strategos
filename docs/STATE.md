@@ -371,8 +371,8 @@ Answer in chat or here; the next session applies the answers.
 - **Milestone:** M3 First loop, started 2026-10-23 at your word, without windows; spec:
   [milestones/M3-first-loop.md](milestones/M3-first-loop.md) (31 tasks, every card `specified`).
   M1 and M2 are Done (2026-10-23).
-- **In progress:** M3 T7, building records and blueprints (BLD-01).
-- **Last finished task:** M3 T6 (2026-10-23), resource nodes; the balance sheet is [balance/sheet.md](balance/sheet.md).
+- **In progress:** M3 T8, woodcutting and the canopy (ECO-03).
+- **Last finished task:** M3 T7 (2026-10-23), buildings and blueprints; the balance sheet is [balance/sheet.md](balance/sheet.md).
 - **Next task:** M3's tasks in the spec's order (§7.1), headless; anything needing a window goes to
   item 6.
 - **WIP branch:** none.

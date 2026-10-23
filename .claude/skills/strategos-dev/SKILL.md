@@ -141,6 +141,9 @@ approved roadmap; ideas go to "For the owner" as proposals.
      note (M3 T2): `BalanceSheetTest` fails while `docs/balance/` is stale, and the sheet's diff in
      the commit is what the owner reviews, like a golden. A new number needs its provenance note in
      `strategos/balance/provenance.json` in the same change.
+   - `./gradlew :mod:test --tests '*BlueprintFilesTest*' -Dstrategos.blueprints.update=true` after changing a
+     placeholder blueprint in `PlaceholderBlueprints` (M3 T7): it rewrites the shipped `.nbt` files, and the
+     template set's pinned SHA in `TemplateSetTest` changes with it.
 
    Before that, the gate is `verifyFast` plus the task's verification command (M0 spec §0.4,
    "Bootstrap").

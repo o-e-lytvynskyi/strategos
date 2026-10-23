@@ -1,5 +1,6 @@
 package dev.strategos.mod.server.content;
 
+import dev.strategos.core.content.Blueprint;
 import dev.strategos.core.content.RawTemplate;
 import dev.strategos.core.content.TemplateCompiler;
 import dev.strategos.core.content.TemplateIdTable;
@@ -13,6 +14,7 @@ import dev.strategos.mod.server.match.MatchRuntime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import net.minecraft.core.RegistryAccess;
 import org.jspecify.annotations.Nullable;
 
@@ -65,9 +67,10 @@ public final class ServerTemplates {
             List<RawTemplate> raws,
             List<TemplateProblem> readProblems,
             RegistryAccess registries,
-            Collection<MatchRuntime> matches) {
+            Collection<MatchRuntime> matches,
+            Map<String, Blueprint> blueprints) {
         loads++;
-        TemplateCompiler.Result result = TemplateCompiler.compile(raws, table);
+        TemplateCompiler.Result result = TemplateCompiler.compile(raws, table, blueprints);
         List<TemplateProblem> found = new ArrayList<>(readProblems);
         found.addAll(result.problems());
         found.addAll(TemplateLint.check(result.set(), registries, t -> fileOf(raws, t)));

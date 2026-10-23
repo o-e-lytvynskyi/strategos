@@ -395,7 +395,8 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
      does (L3).
 - **Tests:** L0, L1, L2, L3, L5 · **Fixtures:** generated test blueprints · **Depends on:**
   CORE-06, DATA-03, PATH-15 · **Size:** M · **Tier:** T0
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-10-23 — M3 T7: placeholder blueprints round-trip as structure files (1), the lint refuses a burning block, a missing door and a ranked bottom ring (2), a civic centre takes every resource and houses 20 (3), units walk round a footprint with no page job (4), `building_state`'s owner fields reach the owner only (5); selecting a building on screen comes with UI-06 (spec §1.6 rows 31–35)
 
 #### AUD-04 · World-edit feedback: cracks, particles and sounds
 - **Value:** Chopping, mining and the block-by-block rise of buildings, the spectacle this mod is

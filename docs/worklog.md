@@ -9,7 +9,15 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-23 (evening) — M3 spec, T1, T2, T3, T4, T5, T6
+## 2026-10-23 (evening) — M3 spec, T1–T7
+
+- **M3 T7 · BLD-01, buildings and blueprints.** Building templates (civic centre, house, barracks)
+  with their blueprints in the flattened JSON, so journals and clients carry the shape; three
+  placeholders drawn in code from non-flammable blocks and shipped as structure files that read
+  back equal; buildings in a store of their own whose handles sit above the units' indices; an
+  admin `SpawnBuilding` and `/strategos build place`; footprints blocked by the core, walked round,
+  with no page job; buildings fall at 0 HP and give their ground back; `building_state` to each
+  player, the owner's fields to the owner only. Next: T8, woodcutting.
 
 - **M3 T6 · ECO-02, resource nodes.** The `resource_yield` data map (logs 20 wood, berry bushes 60
   food; rock and iron ore indexed for M4) gives every block state a material; captures carry them in

@@ -1,5 +1,9 @@
 package dev.strategos.core.client.model;
 
+import dev.strategos.core.content.Blueprint;
+import dev.strategos.core.content.Footprint;
+import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.FactionState;
 import dev.strategos.core.protocol.UnitDetail;
 import dev.strategos.core.protocol.UnitHud;
@@ -16,6 +20,7 @@ import org.jspecify.annotations.Nullable;
  */
 public final class ClientMatchModel {
     private @Nullable FactionState faction;
+    private @Nullable BuildingState buildings;
 
     private int matchId = -1;
     private long tick = -1;
@@ -53,6 +58,41 @@ public final class ClientMatchModel {
                 && (last == null || last.matchId() != joinedMatch || state.tick() >= last.tick())) {
             faction = state;
         }
+    }
+
+    /** Takes the buildings the player knows of: the joined match's, newer ticks only (BLD-01). */
+    public void accept(BuildingState state, int joinedMatch) {
+        BuildingState last = buildings;
+        if (state.matchId() == joinedMatch
+                && (last == null || last.matchId() != joinedMatch || state.tick() >= last.tick())) {
+            buildings = state;
+        }
+    }
+
+    /** The buildings the player knows of; empty before the first state. */
+    public List<BuildingState.Entry> buildings() {
+        BuildingState b = buildings;
+        return b == null ? List.of() : b.buildings();
+    }
+
+    /**
+     * The building whose footprint holds match-local column ({@code x}, {@code z}), by its template's blueprint in
+     * {@code templates}, or null: what a click on a building's block picks (BLD-01).
+     */
+    public BuildingState.@Nullable Entry buildingAt(TemplateSet templates, int x, int z) {
+        for (BuildingState.Entry e : buildings()) {
+            Blueprint bp = templates.blueprint(e.template());
+            if (bp == null) {
+                continue;
+            }
+            Footprint at = Footprint.of(bp, e.x(), e.z(), e.rotation());
+            for (int cell : at.columns(bp)) {
+                if ((cell >>> 16) == x && (cell & 0xFFFF) == z) {
+                    return e;
+                }
+            }
+        }
+        return null;
     }
 
     /** The last faction state of the joined match, or null before the first. */

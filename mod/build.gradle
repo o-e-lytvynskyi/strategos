@@ -389,7 +389,10 @@ tasks.register('checkJarContents') {
         }
         if (forbidden) throw new GradleException("Dev-only classes or module-info in the jar: ${forbidden.take(10)}")
         // [M1 T6] the proving ground's package lives in the devtools resources: dev runs load it, the jar never does
-        def maps = names.findAll { it.startsWith('data/strategos/strategos/maps/') || it.startsWith('data/strategos/structure/') }
+        // [M3 T7] building blueprints (data/strategos/structure/strategos/buildings/) ship; map tiles do not
+        def maps = names.findAll {
+            it.startsWith('data/strategos/strategos/maps/') || it.startsWith('data/strategos/structure/strategos/maps/')
+        }
         if (maps) throw new GradleException("Map packages in the jar: ${maps.take(10)}")
         if (!names.contains('META-INF/neoforge.mods.toml')) throw new GradleException('META-INF/neoforge.mods.toml missing from the jar')
     }

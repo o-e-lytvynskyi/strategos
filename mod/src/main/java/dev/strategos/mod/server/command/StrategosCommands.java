@@ -55,6 +55,7 @@ public final class StrategosCommands {
                 .then(MatchCommands.match())
                 .then(MapCommands.map())
                 .then(UnitCommands.spawn())
+                .then(BuildCommands.build())
                 .then(UnitCommands.order())
                 .then(TemplateCommands.templates())
                 .then(UnitCommands.debug())
