@@ -1,5 +1,7 @@
 .gradle/
 build/
+# ... but a source package named build (core.sim.build, M3 T7) is no build directory
+!**/src/**/build/
 !gradle/wrapper/gradle-wrapper.jar
 .kotlin/
 .idea/
