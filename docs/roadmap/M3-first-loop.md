@@ -277,7 +277,8 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
      mock player does (L3).
   4. `faction_state` round-trips within its cap and declares its audience (L2).
 - **Tests:** L0, L1, L2, L3 · **Depends on:** CORE-03, NET-01, D-10 · **Size:** M · **Tier:** T0
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-10-24 — M3 T4, T11, T14: the treasury balances over 200 seeded streams (1); the paying commands, `PlaceBuilding` and `Train`, refuse a lack with the missing amounts (2); `faction_state` reaches its faction only (3) within its cap (4)
 
 #### ECO-02 · Resource nodes: discovery and index
 - **Value:** Workers find the nearest tree, bush or deposit instantly, and blocks from other mods
@@ -477,7 +478,8 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   3. The cap never exceeds the match maximum (L1).
   4. A GameTest shows a queue waiting with "housing needed" (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** ECO-01, BLD-01, D-01 · **Size:** S · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-24 — M3 T13: the counters equal a scan through seeded training and deaths (1), training waits at the cap with one notice and resumes when a house stands (2), the cap stays at the match's maximum (3), a GameTest's queue waits with "housing needed" (4) (spec §1.6 rows 50–51)
 
 #### ECO-09 · Fields with manual reseed
 - **Value:** Farms are the steady food source that lets a match last: up to five farmers, crops
@@ -510,7 +512,8 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   3. A full population cap pauses the head of the queue without losing progress (L1).
   4. A unit spawns at the door on a standable surface, never inside a wall (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** BLD-01, ECO-06 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-24 — M3 T14: seeded queues and cancels lose and duplicate nothing (1), a sixth entry is refused (2), a full cap pauses the head keeping its progress (3), a trained unit stands at the door on the ground (4) (spec §1.6 rows 50–51)
 
 #### PROD-03 · Rally points
 - **Value:** New units go straight where they are needed: to a spot, to work, or to a building
@@ -525,7 +528,7 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   3. The marker shows for the selected building (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** PROD-01, ECO-05 · **Size:** S ·
   **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 #### UI-06 · Selection panel and command card
 - **Value:** See what you selected and act on it: train, build and stop buttons with costs.

@@ -139,7 +139,11 @@ public final class Construction {
         }
     }
 
-    private static int @Nullable [] nearestFree(MatchState s, Footprint at, int cx, int cz) {
+    /**
+     * The free cell outside footprint {@code at} nearest (cx, cz), ring by ring, the lower distance first: ground with
+     * no footprint on it. Null when none lies within the footprint's size and 8 more.
+     */
+    public static int @Nullable [] nearestFree(MatchState s, Footprint at, int cx, int cz) {
         MatchBounds bounds = s.config().bounds();
         for (int r = 1; r <= Math.max(at.spanX(), at.spanZ()) + 8; r++) {
             int[] best = null;

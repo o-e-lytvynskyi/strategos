@@ -166,6 +166,21 @@ class InvariantsTest {
         }
 
         @Override
+        public int populationUsed(FactionSlot faction) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int populationCap(FactionSlot faction) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int[] workers(FactionSlot faction) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public List<NodeView> nodes() {
             return List.of();
         }

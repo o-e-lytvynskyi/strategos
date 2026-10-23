@@ -259,6 +259,7 @@ public final class WireCodecs {
                         case STUCK -> 1;
                         case UNIT_LOST -> 2;
                         case IDLE_WORKER -> 3;
+                        case HOUSING_NEEDED -> 4;
                     });
         }
 
@@ -270,6 +271,7 @@ public final class WireCodecs {
                 case 1 -> NoticeKind.STUCK;
                 case 2 -> NoticeKind.UNIT_LOST;
                 case 3 -> NoticeKind.IDLE_WORKER;
+                case 4 -> NoticeKind.HOUSING_NEEDED;
                 default -> throw new WireException("unknown notice kind " + code);
             };
         }

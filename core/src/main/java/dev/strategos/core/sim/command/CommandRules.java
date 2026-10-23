@@ -25,7 +25,10 @@ public final class CommandRules {
                 .register(new GrantRule())
                 .register(new SpawnBuildingRule())
                 .register(new GatherRule())
-                .register(new PlaceBuildingRule());
+                .register(new PlaceBuildingRule())
+                .register(new TrainRules.TrainRule())
+                .register(new TrainRules.CancelRule())
+                .register(new TrainRules.RallyRule());
     }
 
     /** A second rule for a kind throws. */

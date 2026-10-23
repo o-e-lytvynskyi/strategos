@@ -9,7 +9,7 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-24 — M3 T9–T12
+## 2026-10-24 — M3 T9–T15
 
 - **The owner, past midnight:** «можешь любые тесты проводить и как закончишь м3 - начинай м4, все решения
   принимай сам, которые рекомендуешь» (STATE item 6).
@@ -37,7 +37,12 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
   a left click places with the selected workers. The first builder's arrival commits the site, units on it step off,
   and the blocks rise in build order as the work adds up, n builders finishing in ceil(T ÷ n^0.7) ticks; a save
   mid-build resumes at the same block, and the writer's budget never changes the hash. The ghost's goldens wait for
-  T30's batch. Next: T13–T15, population, production and rally points.
+  T30's batch.
+- **M3 T13–T15 · ECO-06 and PROD-01 done, PROD-03; ECO-01 done.** Population is counted as units and buildings come
+  and go: the civic centre houses 20, a house 5, the cap never past the match's 150. A building trains up to five in
+  turn, paid on joining and refunded on cancel; a head at the cap waits with one "housing needed" notice, and a
+  trained unit steps out by the door. A rally point on a tree sends new workers to chop it, on the ground walks them
+  there, and survives a save. The rally marker's golden waits for a selected building (UI-06) in T30. Next: T16, fields.
 
 ## 2026-10-23 (evening) — M3 spec, T1–T8
 

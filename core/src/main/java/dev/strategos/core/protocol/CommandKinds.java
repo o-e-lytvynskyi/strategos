@@ -27,8 +27,26 @@ public final class CommandKinds {
             new CommandKind<>("strategos:gather", 9, Gather.class, Gather.CODEC, Gather.WIRE, false);
     public static final CommandKind<PlaceBuilding> PLACE_BUILDING = new CommandKind<>(
             "strategos:place_building", 10, PlaceBuilding.class, PlaceBuilding.CODEC, PlaceBuilding.WIRE, false);
+    public static final CommandKind<Train> TRAIN =
+            new CommandKind<>("strategos:train", 11, Train.class, Train.CODEC, Train.WIRE, false);
+    public static final CommandKind<CancelTrain> CANCEL_TRAIN = new CommandKind<>(
+            "strategos:cancel_train", 12, CancelTrain.class, CancelTrain.CODEC, CancelTrain.WIRE, false);
+    public static final CommandKind<SetRally> SET_RALLY =
+            new CommandKind<>("strategos:set_rally", 13, SetRally.class, SetRally.CODEC, SetRally.WIRE, false);
     public static final CommandKinds DEFAULT = new CommandKinds(List.of(
-            MOVE, STOP, SPAWN_UNITS, ATTACK, ATTACK_MOVE, FOLLOW, GRANT, SPAWN_BUILDING, GATHER, PLACE_BUILDING));
+            MOVE,
+            STOP,
+            SPAWN_UNITS,
+            ATTACK,
+            ATTACK_MOVE,
+            FOLLOW,
+            GRANT,
+            SPAWN_BUILDING,
+            GATHER,
+            PLACE_BUILDING,
+            TRAIN,
+            CANCEL_TRAIN,
+            SET_RALLY));
 
     private final List<CommandKind<?>> kinds;
     private final Codec<Command> codec;

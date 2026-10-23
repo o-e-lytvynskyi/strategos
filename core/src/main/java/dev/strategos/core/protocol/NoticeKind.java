@@ -10,5 +10,7 @@ public enum NoticeKind {
     /** One of its units died (CMB-01). */
     UNIT_LOST,
     /** A worker found nothing more to gather within reach, or nowhere to take its load, and stands idle (ECO-05). */
-    IDLE_WORKER
+    IDLE_WORKER,
+    /** A building's training waits: its faction's population is at its cap (ECO-06). */
+    HOUSING_NEEDED
 }

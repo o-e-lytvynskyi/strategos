@@ -26,7 +26,10 @@ class CommandKindsTest {
                         "strategos:grant",
                         "strategos:spawn_building",
                         "strategos:gather",
-                        "strategos:place_building");
+                        "strategos:place_building",
+                        "strategos:train",
+                        "strategos:cancel_train",
+                        "strategos:set_rally");
     }
 
     @Test

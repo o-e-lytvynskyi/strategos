@@ -10,6 +10,7 @@ import dev.strategos.core.sim.econ.CarryStore;
 import dev.strategos.core.sim.nav.PageCoord;
 import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.order.OrderQueues;
+import dev.strategos.core.sim.prod.Production;
 import dev.strategos.core.sim.unitai.StateId;
 import dev.strategos.core.sim.unitai.UnitAi;
 import java.util.ArrayList;
@@ -177,6 +178,7 @@ final class Snapshots {
         }
         restoreLedger(state, snapshot);
         state.restoreClaims();
+        Production.recount(state); // the population follows from the state (ECO-06)
         int missing = 0;
         List<TerrainPage> pages = new ArrayList<>();
         for (PageRef ref : snapshot.pages()) {

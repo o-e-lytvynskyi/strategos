@@ -6,6 +6,7 @@ import dev.strategos.core.content.Footprint;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.diag.MatchLog;
+import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.combat.Damage;
@@ -35,8 +36,11 @@ import dev.strategos.core.sim.nav.SurfacePage;
 import dev.strategos.core.sim.nav.TerrainEdits;
 import dev.strategos.core.sim.nav.VoxelSlice;
 import dev.strategos.core.sim.order.OrderQueues;
+import dev.strategos.core.sim.prod.Population;
+import dev.strategos.core.sim.prod.Production;
 import dev.strategos.core.sim.spatial.SpatialQueries;
 import dev.strategos.core.sim.stats.StatService;
+import dev.strategos.core.sim.unitai.UnitAi;
 import dev.strategos.core.sim.world.WritePriority;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -69,6 +73,7 @@ public final class MatchState {
     private final GatherRates gatherRates;
     private final CarryStore carry = new CarryStore();
     private final Ledger ledger;
+    private final Population population;
     private final List<Damage> damage = new ArrayList<>();
     private final MatchBus bus = new MatchBus();
     private final StatService stats;
@@ -123,6 +128,7 @@ public final class MatchState {
         this.gatherRates = new GatherRates(economy);
         gatherRates.swap(stats);
         this.ledger = new Ledger(economy.size());
+        this.population = new Population(config.factions(), economy.populationMax());
         this.spatial = new SpatialQueries(config.bounds(), templates);
         this.input = TickInputs.empty(0);
         this.surfaces =
@@ -356,6 +362,7 @@ public final class MatchState {
                     b.palette().get(b.state(k)),
                     handle));
         }
+        Production.finished(this, handle); // its housing counts (ECO-06)
         return handle;
     }
 
@@ -364,6 +371,7 @@ public final class MatchState {
      * foundation; its columns are released, and the core's terrain gets the air the writer will leave.
      */
     public void destroyBuilding(int handle) {
+        Production.lost(this, handle); // its housing and its queue (ECO-06, PROD-01)
         Blueprint b = blueprintOf(handle);
         Footprint at = footprintOf(handle);
         int baseY = buildings.baseY(handle);
@@ -599,10 +607,51 @@ public final class MatchState {
      */
     public void removeUnit(int handle) {
         int i = Handle.index(handle);
+        population.remove(identity.faction(i), unitPopulation(i));
         health.reset(i);
         releaseClaim(i, handle);
         dropLoad(i);
         entities.destroy(handle);
+    }
+
+    /**
+     * A new unit of template {@code template} for {@code faction} at (x, y, z), facing {@code yaw}, idle, with every
+     * store reset; it takes its population (ECO-06). Its handle; {@link UnitCreated} tells the mod.
+     */
+    public int spawnUnit(int template, int faction, double x, double y, double z, float yaw) {
+        int handle = entities.create();
+        int index = Handle.index(handle);
+        ensureCapacity(index + 1);
+        identity.set(index, template, faction);
+        motion.set(index, x, y, z, yaw);
+        orders.clear(index);
+        paths.reset(index);
+        motion.setExtra(index, MotionStore.Extra.NONE);
+        stats.clearPersonal(index);
+        health.reset(index);
+        ai.reset(index, UnitAi.IDLE);
+        population.add(faction, unitPopulation(index));
+        outputs.add(new UnitCreated(handle, template, new FactionSlot(faction), x, y, z, yaw));
+        return handle;
+    }
+
+    /** What unit {@code i} takes of its faction's population: its {@code Cost/population}, 0 for none (ECO-06). */
+    public int unitPopulation(int i) {
+        int path = stats.path(Population.COST);
+        double v = path < 0 ? Double.NaN : stats.read(i, path);
+        return Double.isFinite(v) && v > 0 ? (int) Math.round(v) : 0;
+    }
+
+    /** What a unit of {@code template} for {@code faction} takes of the population. */
+    public int templatePopulation(int template, int faction) {
+        int path = stats.path(Population.COST);
+        double v = path < 0 ? Double.NaN : stats.blockValue(template, faction, path);
+        return Double.isFinite(v) && v > 0 ? (int) Math.round(v) : 0;
+    }
+
+    /** The factions' population counters (ECO-06). */
+    public Population population() {
+        return population;
     }
 
     /** Unit {@code i} ({@code handle}) gives up the work slot it holds, if any (ECO-05). */

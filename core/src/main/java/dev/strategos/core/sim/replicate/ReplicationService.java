@@ -13,6 +13,7 @@ import dev.strategos.core.shared.Handle;
 import dev.strategos.core.sim.MatchQueries;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.UnitView;
+import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.build.BuildingView;
 import dev.strategos.core.sim.econ.FactionTreasury;
 import dev.strategos.core.sim.order.OrderQueues;
@@ -80,27 +81,37 @@ public final class ReplicationService {
                     (int) b.progress(),
                     UnitHud.Entry.health(b.hitPoints(), b.maxHitPoints()),
                     own,
-                    List.of(),
-                    false,
-                    0,
-                    0));
+                    own ? b.queue() : List.of(),
+                    own && b.rallyKind() != BuildingStore.RALLY_NONE,
+                    own ? (int) Math.floor(b.rallyX()) : 0,
+                    own ? (int) Math.floor(b.rallyZ()) : 0));
         }
         return new BuildingState(matchId, q.tick(), out);
     }
 
     /**
-     * Faction {@code faction}'s {@code faction_state} (ECO-01): its treasury's stock, gathered and spent per resource;
-     * population and workers are 0 until ECO-06 and ECO-05 count them.
+     * Faction {@code faction}'s {@code faction_state} (ECO-01): its treasury's stock, gathered and spent per resource,
+     * its population and cap (ECO-06), its idle workers and its gatherers per resource (ECO-05).
      */
     public static FactionState factionState(MatchQueries q, int matchId, FactionSlot faction) {
         FactionTreasury t = q.treasury(faction);
         int n = t.stock().size();
+        int[] counted = q.workers(faction);
         List<Integer> workers = new ArrayList<>(n);
         for (int r = 0; r < n; r++) {
-            workers.add(0);
+            workers.add(r < counted.length - 1 ? counted[r] : 0);
         }
         return new FactionState(
-                matchId, faction.value(), q.tick(), t.stock(), t.gathered(), t.spent(), 0, 0, 0, workers);
+                matchId,
+                faction.value(),
+                q.tick(),
+                t.stock(),
+                t.gathered(),
+                t.spent(),
+                q.populationUsed(faction),
+                q.populationCap(faction),
+                counted[counted.length - 1],
+                workers);
     }
 
     /**

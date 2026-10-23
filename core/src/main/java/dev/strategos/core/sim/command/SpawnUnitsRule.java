@@ -6,17 +6,13 @@ import dev.strategos.core.protocol.CommandKinds;
 import dev.strategos.core.protocol.RejectReason;
 import dev.strategos.core.protocol.SpawnUnits;
 import dev.strategos.core.shared.DetMath;
-import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.Rng;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.MatchBounds;
 import dev.strategos.core.sim.MatchState;
-import dev.strategos.core.sim.MotionStore;
 import dev.strategos.core.sim.Streams;
-import dev.strategos.core.sim.UnitCreated;
-import dev.strategos.core.sim.unitai.UnitAi;
 
 /**
  * SpawnUnits, admin only: creates units around a centre. Unit i stands at angle {@code 2π·u(2i)} and radius
@@ -73,19 +69,7 @@ final class SpawnUnitsRule implements CommandRule<SpawnUnits> {
                             spawn.center().x() + r * DetMath.cos(angle),
                             spawn.center().z() + r * DetMath.sin(angle)),
                     0.5);
-            int handle = state.entities().create();
-            int index = Handle.index(handle);
-            state.ensureCapacity(index + 1);
-            state.identity().set(index, template.netIndex(), spawn.faction().value());
-            state.motion().set(index, p.x(), floorY, p.z(), 0f);
-            state.orders().clear(index);
-            state.paths().reset(index);
-            state.motion().setExtra(index, MotionStore.Extra.NONE);
-            state.stats().clearPersonal(index);
-            state.health().reset(index);
-            state.ai().reset(index, UnitAi.IDLE);
-            state.outputs()
-                    .add(new UnitCreated(handle, template.netIndex(), spawn.faction(), p.x(), floorY, p.z(), 0f));
+            state.spawnUnit(template.netIndex(), spawn.faction().value(), p.x(), floorY, p.z(), 0f);
         }
         return Tally.acceptAll(envelope, kind(), spawn.count());
     }

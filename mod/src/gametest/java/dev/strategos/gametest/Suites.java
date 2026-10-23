@@ -24,6 +24,7 @@ import dev.strategos.gametest.suites.OrderTests;
 import dev.strategos.gametest.suites.PathTests;
 import dev.strategos.gametest.suites.PerfTests;
 import dev.strategos.gametest.suites.PersistenceTests;
+import dev.strategos.gametest.suites.ProdTests;
 import dev.strategos.gametest.suites.ReplicationTests;
 import dev.strategos.gametest.suites.RetryNoReasonSelfTest;
 import dev.strategos.gametest.suites.SelfTests;
@@ -60,6 +61,7 @@ public final class Suites {
                         CommandTests.class,
                         ContentTests.class,
                         ConstructionTests.class,
+                        ProdTests.class,
                         DebugTests.class,
                         EcoTests.class,
                         PersistenceTests.class,

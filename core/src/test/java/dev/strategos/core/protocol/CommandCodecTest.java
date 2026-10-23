@@ -30,7 +30,10 @@ class CommandCodecTest {
                 new SpawnBuilding(new TemplateId("strategos:building/house"), new FactionSlot(0), -3, 40, 2),
                 new Gather(UnitSet.of(7, 8), 12, -5, 300, QueueMode.QUEUE),
                 new PlaceBuilding(
-                        new TemplateId("strategos:building/house"), 40, 7, 1, UnitSet.of(2, 3), QueueMode.REPLACE));
+                        new TemplateId("strategos:building/house"), 40, 7, 1, UnitSet.of(2, 3), QueueMode.REPLACE),
+                new Train(0x80003, new TemplateId("strategos:unit/worker")),
+                new CancelTrain(0x80003, 4),
+                new SetRally(UnitSet.of(0x80003, 0x80004), 30, 70, -2));
     }
 
     @Test

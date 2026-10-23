@@ -37,6 +37,11 @@ public final class StrategosGameTests {
 
     // After each batch: its matches go, then nothing of it may be left (QA-04.6). Vanilla finds these by batch name.
 
+    @AfterBatch(batch = "production")
+    public static void afterProduction(ServerLevel level) {
+        afterBatch(level, "production");
+    }
+
     @AfterBatch(batch = "construction")
     public static void afterConstruction(ServerLevel level) {
         afterBatch(level, "construction");

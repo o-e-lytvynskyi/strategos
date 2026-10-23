@@ -56,7 +56,12 @@ final class QueriesImpl implements MatchQueries {
                     drops == null || drops.isBlank()
                             ? List.of()
                             : List.of(drops.trim().split("\\s+")),
-                    Double.isFinite(house) ? house : 0));
+                    Double.isFinite(house) ? house : 0,
+                    java.util.Arrays.stream(b.queue(handle)).boxed().toList(),
+                    trainedThousandths(handle),
+                    b.rallyKind(handle),
+                    b.rallyX(handle),
+                    b.rallyZ(handle)));
         }
         return out;
     }
@@ -80,6 +85,48 @@ final class QueriesImpl implements MatchQueries {
                     n.gone(id),
                     n.slotCount(id),
                     n.freeSlots(id)));
+        }
+        return out;
+    }
+
+    /** The head entry's progress, in thousandths of its training. */
+    private long trainedThousandths(int handle) {
+        BuildingStore b = state.buildings();
+        if (b.queueSize(handle) == 0) {
+            return 0;
+        }
+        long ticks = dev.strategos.core.sim.prod.Production.ticks(state, b.queue(handle)[0], b.faction(handle));
+        return Math.min(BuildingStore.FULL, b.trained(handle) * BuildingStore.FULL / ticks);
+    }
+
+    @Override
+    public int populationUsed(FactionSlot faction) {
+        return state.population().used(faction.value());
+    }
+
+    @Override
+    public int populationCap(FactionSlot faction) {
+        return state.population().cap(faction.value());
+    }
+
+    @Override
+    public int[] workers(FactionSlot faction) {
+        int resources = state.config().rules().economy().size();
+        int[] out = new int[resources + 1];
+        for (int i = 0; i < state.entities().highWater(); i++) {
+            if (!state.entities().aliveAt(i)
+                    || state.identity().faction(i) != faction.value()
+                    || !state.stats().canGather(i)) {
+                continue;
+            }
+            int node = state.orders().kind(i) == dev.strategos.core.sim.order.OrderKind.GATHER
+                    ? state.orders().target(i)
+                    : 0;
+            if (node >= 1 && node <= state.nodes().count()) {
+                out[state.nodes().resource(node)]++;
+            } else if (state.ai().state(i) == UnitState.IDLE) {
+                out[resources]++;
+            }
         }
         return out;
     }

@@ -96,7 +96,8 @@ class WireCodecSizeTest {
         assertThat(CommandKinds.DEFAULT.fingerprint())
                 .isEqualTo("strategos:move=1,strategos:stop=2,strategos:spawn_units=3,"
                         + "strategos:attack=4,strategos:attack_move=5,strategos:follow=6,strategos:grant=7,"
-                        + "strategos:spawn_building=8,strategos:gather=9,strategos:place_building=10");
+                        + "strategos:spawn_building=8,strategos:gather=9,strategos:place_building=10,strategos:train=11,"
+                        + "strategos:cancel_train=12,strategos:set_rally=13");
         assertThat(CommandKinds.DEFAULT.reads("strategos:move=1,strategos:stop=2,strategos:spawn_units=3"))
                 .as("M1's journals read")
                 .isTrue();
@@ -114,9 +115,9 @@ class WireCodecSizeTest {
 
     @Test
     void refusesUnknownIdsTruncationsAndNonFinitePositions() {
-        assertThatThrownBy(() -> WireCodec.decode(COMMANDS, new byte[] {0, 11}))
+        assertThatThrownBy(() -> WireCodec.decode(COMMANDS, new byte[] {0, 14}))
                 .isInstanceOf(WireException.class)
-                .hasMessageContaining("unknown command wire id 11");
+                .hasMessageContaining("unknown command wire id 14");
         byte[] move = WireCodec.encode(COMMANDS, Move.replace(UnitSet.of(5), new Vec2d(1, 2)));
         assertThatThrownBy(() -> WireCodec.decode(COMMANDS, Arrays.copyOf(move, move.length - 1)))
                 .isInstanceOf(WireException.class);

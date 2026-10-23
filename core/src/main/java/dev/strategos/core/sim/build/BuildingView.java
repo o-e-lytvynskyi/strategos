@@ -7,7 +7,9 @@ import java.util.List;
 
 /**
  * A copy of one building for cold readers (BLD-01): its handle, template, faction, where it stands, state, progress,
- * hit points and their most, the resources it takes in as a dropsite and the housing it gives once finished.
+ * hit points and their most, the resources it takes in as a dropsite and the housing it gives once finished; its
+ * queue (templates' net indices, the head first) with the head's progress in thousandths, and its rally point (its
+ * kind, {@link BuildingStore#RALLY_NONE} for none, and where).
  */
 @CoreApi
 public record BuildingView(
@@ -21,8 +23,14 @@ public record BuildingView(
         double hitPoints,
         double maxHitPoints,
         List<String> dropsite,
-        double housing) {
+        double housing,
+        List<Integer> queue,
+        long trained,
+        int rallyKind,
+        double rallyX,
+        double rallyZ) {
     public BuildingView {
         dropsite = List.copyOf(dropsite);
+        queue = List.copyOf(queue);
     }
 }

@@ -26,6 +26,18 @@ public interface MatchQueries {
     /** Faction {@code faction}'s treasury (ECO-01); the match's resources are {@code config().rules().economy()}. */
     FactionTreasury treasury(FactionSlot faction);
 
+    /** The population faction {@code faction} uses, its units' and its reservations (ECO-06). */
+    int populationUsed(FactionSlot faction);
+
+    /** The most population faction {@code faction} may use now (ECO-06). */
+    int populationCap(FactionSlot faction);
+
+    /**
+     * Faction {@code faction}'s gatherers (ECO-05): per resource of the economy those on a gather order at a node of
+     * it, and last the idle ones.
+     */
+    int[] workers(FactionSlot faction);
+
     /** A live unit's hit points now (CMB-01): its most less the damage it took; NaN for no live unit. */
     double hitPoints(int handle);
 

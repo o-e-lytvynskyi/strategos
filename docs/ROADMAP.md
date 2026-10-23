@@ -336,7 +336,7 @@ Cards: [roadmap/M3-first-loop.md](roadmap/M3-first-loop.md#cards). 27 cards, at 
 | ID | Feature | Size | Depends on | Status |
 |---|---|---|---|---|
 | DATA-04 | Balance sheet: relationships, provenance and timing targets | M | DATA-02, D-11 | done |
-| ECO-01 | Resources and treasury | M | CORE-03, NET-01, D-10 | in_progress |
+| ECO-01 | Resources and treasury | M | CORE-03, NET-01, D-10 | done |
 | ECO-02 | Resource nodes: discovery and index | M | CORE-08, PATH-04, MAP-01 | done |
 | ECO-03 | Woodcutting on real trees, with natural canopy thinning | L | ECO-02, BLD-15, PATH-15 | done |
 | ECO-05 | Gathering, dropsites and berry bushes | L | ECO-01, ECO-02, UNIT-04, BLD-01 | in_progress |
@@ -345,10 +345,10 @@ Cards: [roadmap/M3-first-loop.md](roadmap/M3-first-loop.md#cards). 27 cards, at 
 | AUD-04 | World-edit feedback: cracks, particles and sounds | M | ECO-03, BLD-15, NET-01 | in_progress |
 | BLD-02 | Placement mode and validators | M | BLD-01, CAM-04 | in_progress |
 | BLD-03 | Progressive construction | M | BLD-02, UNIT-04, BLD-15 | done |
-| ECO-06 | Population and housing | S | ECO-01, BLD-01, D-01 | specified |
+| ECO-06 | Population and housing | S | ECO-01, BLD-01, D-01 | done |
 | ECO-09 | Fields with manual reseed | M | ECO-05, BLD-01 | specified |
-| PROD-01 | Production queue | M | BLD-01, ECO-06 | specified |
-| PROD-03 | Rally points | S | PROD-01, ECO-05 | specified |
+| PROD-01 | Production queue | M | BLD-01, ECO-06 | done |
+| PROD-03 | Rally points | S | PROD-01, ECO-05 | in_progress |
 | UI-06 | Selection panel and command card | M | UI-03, PROD-01, BLD-02 | specified |
 | UI-07 | Resource bar, population and workers per resource | M | ECO-01, ECO-06, UI-02 | specified |
 | UI-10 | Idle-worker key and economy notifications | S | UI-07, ECO-05 | specified |

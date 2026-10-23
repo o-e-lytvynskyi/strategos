@@ -48,6 +48,14 @@ public final class BuildingStore {
     private int[] placed = new int[8];
     private int[][] slots = new int[8][];
     private int[][] claims = new int[8][];
+    private int[][] queue = new int[8][]; // per building its entries' template net indices, the head first
+    private long[] trained = new long[8]; // the head's ticks of training
+    private boolean[] reserved = new boolean[8]; // whether the head holds its population
+    private boolean[] waiting = new boolean[8]; // whether the head waits for housing, told once
+    private int[] rallyKind = new int[8];
+    private double[] rallyX = new double[8];
+    private double[] rallyZ = new double[8];
+    private int[] rallyTarget = new int[8];
     // a step's scratch, neither hashed nor saved: the builders at work this tick and their rates
     private int[] tickBuilders = new int[8];
     private double[] tickRates = new double[8];
@@ -84,6 +92,14 @@ public final class BuildingStore {
         this.placed[k] = 0;
         this.slots[k] = new int[0];
         this.claims[k] = new int[0];
+        this.queue[k] = new int[0];
+        this.trained[k] = 0;
+        this.reserved[k] = false;
+        this.waiting[k] = false;
+        this.rallyKind[k] = RALLY_NONE;
+        this.rallyX[k] = 0;
+        this.rallyZ[k] = 0;
+        this.rallyTarget[k] = 0;
         return Handle.of(BASE + k, generation[k]);
     }
 
@@ -105,6 +121,114 @@ public final class BuildingStore {
         claims = Arrays.copyOf(claims, n);
         tickBuilders = Arrays.copyOf(tickBuilders, n);
         tickRates = Arrays.copyOf(tickRates, n);
+        queue = Arrays.copyOf(queue, n);
+        trained = Arrays.copyOf(trained, n);
+        reserved = Arrays.copyOf(reserved, n);
+        waiting = Arrays.copyOf(waiting, n);
+        rallyKind = Arrays.copyOf(rallyKind, n);
+        rallyX = Arrays.copyOf(rallyX, n);
+        rallyZ = Arrays.copyOf(rallyZ, n);
+        rallyTarget = Arrays.copyOf(rallyTarget, n);
+    }
+
+    /** The most entries a queue holds (PROD-01). */
+    public static final int QUEUE_MAX = 5;
+
+    /** No rally point; a point on the ground; a resource node; a building (PROD-03). */
+    public static final int RALLY_NONE = 0;
+
+    public static final int RALLY_POINT = 1;
+    public static final int RALLY_NODE = 2;
+    public static final int RALLY_BUILDING = 3;
+
+    /** Building {@code handle}'s queue: its entries' template net indices, the head first. */
+    public int[] queue(int handle) {
+        return queue[at(handle)].clone();
+    }
+
+    public int queueSize(int handle) {
+        return queue[at(handle)].length;
+    }
+
+    /** Adds an entry of {@code template} at the queue's end; false when it is full. */
+    public boolean enqueue(int handle, int template) {
+        int k = at(handle);
+        if (queue[k].length >= QUEUE_MAX) {
+            return false;
+        }
+        queue[k] = Arrays.copyOf(queue[k], queue[k].length + 1);
+        queue[k][queue[k].length - 1] = template;
+        return true;
+    }
+
+    /** Takes entry {@code index} out of the queue; its template. The head's training starts afresh. */
+    public int dequeue(int handle, int index) {
+        int k = at(handle);
+        int[] q = queue[k];
+        int template = q[index];
+        int[] out = new int[q.length - 1];
+        System.arraycopy(q, 0, out, 0, index);
+        System.arraycopy(q, index + 1, out, index, q.length - index - 1);
+        queue[k] = out;
+        if (index == 0) {
+            trained[k] = 0;
+            reserved[k] = false;
+            waiting[k] = false;
+        }
+        return template;
+    }
+
+    /** The head's ticks of training. */
+    public long trained(int handle) {
+        return trained[at(handle)];
+    }
+
+    public void setTrained(int handle, long ticks) {
+        trained[at(handle)] = ticks;
+    }
+
+    /** Whether the head holds its population. */
+    public boolean reserved(int handle) {
+        return reserved[at(handle)];
+    }
+
+    public void setReserved(int handle, boolean value) {
+        reserved[at(handle)] = value;
+    }
+
+    /** Whether the head waits for housing, so the notice is told once. */
+    public boolean waiting(int handle) {
+        return waiting[at(handle)];
+    }
+
+    public void setWaiting(int handle, boolean value) {
+        waiting[at(handle)] = value;
+    }
+
+    public int rallyKind(int handle) {
+        return rallyKind[at(handle)];
+    }
+
+    public double rallyX(int handle) {
+        return rallyX[at(handle)];
+    }
+
+    public double rallyZ(int handle) {
+        return rallyZ[at(handle)];
+    }
+
+    /** The rally's node id or building handle, 0 for a point. */
+    public int rallyTarget(int handle) {
+        return rallyTarget[at(handle)];
+    }
+
+    /** Building {@code handle}'s rally point: its kind, the point, and the node or building it names. */
+    public void setRally(int handle, int kind, double x, double z, int target) {
+        int k = at(handle);
+        rallyKind[k] = kind;
+        rallyX[k] = x;
+        rallyZ[k] = z;
+        rallyTarget[k] = target;
     }
 
     /** A builder at work on building {@code handle} this tick, at {@code rate} (BLD-03). */
@@ -343,9 +467,47 @@ public final class BuildingStore {
                         x = Hasher.mix(x, c);
                     }
                 }
+                if (queue[k].length > 0
+                        || rallyKind[k] != RALLY_NONE) { // only once it trains or rallies (PROD-01, -03)
+                    x = Hasher.mix(x, queue[k].length);
+                    for (int t : queue[k]) {
+                        x = Hasher.mix(x, t);
+                    }
+                    x = Hasher.mix(x, trained[k]);
+                    x = Hasher.mix(x, reserved[k] ? 1 : 0);
+                    x = Hasher.mix(x, waiting[k] ? 1 : 0);
+                    x = Hasher.mix(x, rallyKind[k]);
+                    x = Hasher.mix(x, Double.doubleToLongBits(rallyX[k]));
+                    x = Hasher.mix(x, Double.doubleToLongBits(rallyZ[k]));
+                    x = Hasher.mix(x, rallyTarget[k]);
+                }
             }
         }
         return x;
+    }
+
+    /** A site's construction as a snapshot keeps it (BLD-03). */
+    public record Site(long work, int placed, List<Integer> slots, List<Integer> claims) {
+        public static final Site NONE = new Site(0, 0, List.of(), List.of());
+
+        public Site {
+            slots = List.copyOf(slots);
+            claims = List.copyOf(claims);
+        }
+    }
+
+    /** A queue as a snapshot keeps it (PROD-01): its entries, the head's ticks, its reservation and its wait. */
+    public record Production(List<Integer> queue, long trained, boolean reserved, boolean waiting) {
+        public static final Production NONE = new Production(List.of(), 0, false, false);
+
+        public Production {
+            queue = List.copyOf(queue);
+        }
+    }
+
+    /** A rally point as a snapshot keeps it (PROD-03). */
+    public record Rally(int kind, double x, double z, int target) {
+        public static final Rally NONE = new Rally(RALLY_NONE, 0, 0, 0);
     }
 
     /** One slot as a snapshot keeps it; a free slot keeps only its generation. */
@@ -361,19 +523,29 @@ public final class BuildingStore {
             int state,
             long progress,
             double damage,
-            long work,
-            int placed,
-            List<Integer> slots,
-            List<Integer> claims) {
-        public Saved {
-            slots = List.copyOf(slots);
-            claims = List.copyOf(claims);
-        }
-    }
+            Site site,
+            Production production,
+            Rally rally) {}
 
     public List<Saved> save() {
         List<Saved> out = new ArrayList<>(high);
         for (int k = 0; k < high; k++) {
+            Site site = new Site(
+                    work[k],
+                    placed[k],
+                    Arrays.stream(slots[k] == null ? new int[0] : slots[k])
+                            .boxed()
+                            .toList(),
+                    Arrays.stream(claims[k] == null ? new int[0] : claims[k])
+                            .boxed()
+                            .toList());
+            Production production = new Production(
+                    Arrays.stream(queue[k] == null ? new int[0] : queue[k])
+                            .boxed()
+                            .toList(),
+                    trained[k],
+                    reserved[k],
+                    waiting[k]);
             out.add(new Saved(
                     generation[k],
                     alive[k],
@@ -386,14 +558,9 @@ public final class BuildingStore {
                     state[k],
                     progress[k],
                     damage[k],
-                    work[k],
-                    placed[k],
-                    Arrays.stream(slots[k] == null ? new int[0] : slots[k])
-                            .boxed()
-                            .toList(),
-                    Arrays.stream(claims[k] == null ? new int[0] : claims[k])
-                            .boxed()
-                            .toList()));
+                    site,
+                    production,
+                    new Rally(rallyKind[k], rallyX[k], rallyZ[k], rallyTarget[k])));
         }
         return out;
     }
@@ -417,13 +584,22 @@ public final class BuildingStore {
             state[k] = s.state();
             progress[k] = s.progress();
             damage[k] = s.damage();
-            work[k] = s.work();
-            placed[k] = s.placed();
-            slots[k] = s.slots().stream().mapToInt(Integer::intValue).toArray();
+            work[k] = s.site().work();
+            placed[k] = s.site().placed();
+            slots[k] = s.site().slots().stream().mapToInt(Integer::intValue).toArray();
             claims[k] = new int[slots[k].length];
-            for (int i = 0; i < claims[k].length && i < s.claims().size(); i++) {
-                claims[k][i] = s.claims().get(i);
+            for (int i = 0; i < claims[k].length && i < s.site().claims().size(); i++) {
+                claims[k][i] = s.site().claims().get(i);
             }
+            queue[k] =
+                    s.production().queue().stream().mapToInt(Integer::intValue).toArray();
+            trained[k] = s.production().trained();
+            reserved[k] = s.production().reserved();
+            waiting[k] = s.production().waiting();
+            rallyKind[k] = s.rally().kind();
+            rallyX[k] = s.rally().x();
+            rallyZ[k] = s.rally().z();
+            rallyTarget[k] = s.rally().target();
         }
     }
 }

@@ -288,6 +288,27 @@ public final class MatchSnapshotCodec {
                     Codec.LONG.fieldOf("amount").forGetter(CarryStore.Saved::amount))
             .apply(i, CarryStore.Saved::new));
 
+    private static final Codec<BuildingStore.Site> SITE = RecordCodecBuilder.create(i -> i.group(
+                    Codec.LONG.optionalFieldOf("work", 0L).forGetter(BuildingStore.Site::work),
+                    Codec.INT.optionalFieldOf("placed", 0).forGetter(BuildingStore.Site::placed),
+                    Codec.INT.listOf().optionalFieldOf("slots", List.of()).forGetter(BuildingStore.Site::slots),
+                    Codec.INT.listOf().optionalFieldOf("claims", List.of()).forGetter(BuildingStore.Site::claims))
+            .apply(i, BuildingStore.Site::new));
+
+    private static final Codec<BuildingStore.Production> PRODUCTION = RecordCodecBuilder.create(i -> i.group(
+                    Codec.INT.listOf().optionalFieldOf("queue", List.of()).forGetter(BuildingStore.Production::queue),
+                    Codec.LONG.optionalFieldOf("trained", 0L).forGetter(BuildingStore.Production::trained),
+                    Codec.BOOL.optionalFieldOf("reserved", false).forGetter(BuildingStore.Production::reserved),
+                    Codec.BOOL.optionalFieldOf("waiting", false).forGetter(BuildingStore.Production::waiting))
+            .apply(i, BuildingStore.Production::new));
+
+    private static final Codec<BuildingStore.Rally> RALLY = RecordCodecBuilder.create(i -> i.group(
+                    Codec.INT.optionalFieldOf("kind", BuildingStore.RALLY_NONE).forGetter(BuildingStore.Rally::kind),
+                    Codec.DOUBLE.optionalFieldOf("x", 0.0).forGetter(BuildingStore.Rally::x),
+                    Codec.DOUBLE.optionalFieldOf("z", 0.0).forGetter(BuildingStore.Rally::z),
+                    Codec.INT.optionalFieldOf("target", 0).forGetter(BuildingStore.Rally::target))
+            .apply(i, BuildingStore.Rally::new));
+
     private static final Codec<BuildingStore.Saved> BUILDING = RecordCodecBuilder.create(i -> i.group(
                     Codec.INT.fieldOf("generation").forGetter(BuildingStore.Saved::generation),
                     Codec.BOOL.fieldOf("alive").forGetter(BuildingStore.Saved::alive),
@@ -300,10 +321,11 @@ public final class MatchSnapshotCodec {
                     Codec.INT.fieldOf("state").forGetter(BuildingStore.Saved::state),
                     Codec.LONG.fieldOf("progress").forGetter(BuildingStore.Saved::progress),
                     Codec.DOUBLE.fieldOf("damage").forGetter(BuildingStore.Saved::damage),
-                    Codec.LONG.optionalFieldOf("work", 0L).forGetter(BuildingStore.Saved::work),
-                    Codec.INT.optionalFieldOf("placed", 0).forGetter(BuildingStore.Saved::placed),
-                    Codec.INT.listOf().optionalFieldOf("slots", List.of()).forGetter(BuildingStore.Saved::slots),
-                    Codec.INT.listOf().optionalFieldOf("claims", List.of()).forGetter(BuildingStore.Saved::claims))
+                    SITE.optionalFieldOf("site", BuildingStore.Site.NONE).forGetter(BuildingStore.Saved::site),
+                    PRODUCTION
+                            .optionalFieldOf("production", BuildingStore.Production.NONE)
+                            .forGetter(BuildingStore.Saved::production),
+                    RALLY.optionalFieldOf("rally", BuildingStore.Rally.NONE).forGetter(BuildingStore.Saved::rally))
             .apply(i, BuildingStore.Saved::new));
 
     /** The fields, without {@code "v"}. */
