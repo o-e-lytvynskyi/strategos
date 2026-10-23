@@ -348,6 +348,10 @@ Answer in chat or here; the next session applies the answers.
   Left alone, a soldier attacks any enemy that comes within 12 blocks and hits back when hit. H
   stops. Two hundred spearmen fighting at the river's fords for five minutes kept the server well
   inside its budgets (the core 0.8 ms a tick). Cards CMB-01, CMB-02 and ORD-04 are done.
+- 2026-10-23 · **M2 T20 First-person orders:** in first person, G on an enemy now attacks it; R makes
+  your selection follow you, in rows behind you, and they wait where they are when you stop or go
+  back to the RTS view; looking at a unit shows its name and, for your own, its hit points and what
+  it is doing. Card CAM-07 is done.
 
 ## Now
 
@@ -355,7 +359,7 @@ Answer in chat or here; the next session applies the answers.
 - **In progress:** none.
 - **Last finished task:** M1 T26 (2026-10-23). The agents' branches `wip/m1-t17-unitai-hfsm` and
   `wip/m1-t25-debug-overlay` are merged and kept on GitHub for the record.
-- **Last M2 task:** T15 and T16, melee, attack and attack-move (2026-10-23); T1–T19, T21 done; three consent-batch items (T22) done early.
+- **Last M2 task:** T20, first-person orders (2026-10-23); T1–T21 done; three consent-batch items (T22) done early.
 - **Next task:** while the Mac's windows are mine today, the window work that is ready (M2's L4
   items as their tasks land); M1 T27 (M1 close, headless); then M2's tasks in the spec's order.
 - **WIP branch:** none.

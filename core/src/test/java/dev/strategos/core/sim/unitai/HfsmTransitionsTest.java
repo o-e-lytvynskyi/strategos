@@ -74,6 +74,9 @@ class HfsmTransitionsTest {
             } else if (from.equals(UnitAi.WALKING_AND_FIGHTING)) {
                 state.orders().replace(i, OrderKind.ATTACK_MOVE, 20, 8, 0, 0);
                 state.ai().set(i, from);
+            } else if (from.equals(UnitAi.FOLLOW_WALKING) || from.equals(UnitAi.FOLLOW_WAITING)) {
+                state.orders().replace(i, OrderKind.FOLLOW, 4, 8, 0, 0, 0); // behind slot 0's commander
+                state.ai().set(i, from);
             } else if (!from.equals(UnitAi.IDLE)) {
                 double ex = from.equals(UnitAi.ATTACKING) ? 5.2 : 10; // in reach (a 0.5 gap), or 6 blocks off
                 place(enemy, ex, 8);
@@ -154,6 +157,12 @@ class HfsmTransitionsTest {
         return new OrderReceived(u.handle);
     }
 
+    /** Following slot 0's commander, set as the follow rule sets it, then announced. */
+    private static BusMessage newFollow(Unit u) {
+        u.state.orders().replace(u.index(), OrderKind.FOLLOW, 4, 8, 0, 0, 0);
+        return new OrderReceived(u.handle);
+    }
+
     /** A stop as the stop rule makes it: the order cleared, then announced. */
     private static BusMessage stop(Unit u) {
         u.state.orders().clear(u.index());
@@ -212,6 +221,8 @@ class HfsmTransitionsTest {
         StateId approaching = UnitAi.APPROACHING;
         StateId attacking = UnitAi.ATTACKING;
         StateId chasing = UnitAi.CHASING;
+        StateId following = UnitAi.FOLLOW_WALKING;
+        StateId waiting = UnitAi.FOLLOW_WAITING;
         return Stream.of(
                 row("an order starts walking (the root's handler)", idle, HfsmTransitionsTest::newMove, walking, u -> {
                     assertThat(u.state.orders().targetZ(u.index())).isEqualTo(20);
@@ -449,7 +460,106 @@ class HfsmTransitionsTest {
                         chasing,
                         HfsmTransitionsTest::arrivedInReach,
                         attacking,
-                        kept(OrderKind.ATTACK)));
+                        kept(OrderKind.ATTACK)),
+                // CAM-07
+                row(
+                        "a follow order walks behind",
+                        idle,
+                        HfsmTransitionsTest::newFollow,
+                        following,
+                        kept(OrderKind.FOLLOW)),
+                row(
+                        "a follow while walking",
+                        walking,
+                        HfsmTransitionsTest::newFollow,
+                        following,
+                        kept(OrderKind.FOLLOW)),
+                row(
+                        "a follow while walking and fighting",
+                        fighting,
+                        HfsmTransitionsTest::newFollow,
+                        following,
+                        kept(OrderKind.FOLLOW)),
+                row(
+                        "a follow while closing in",
+                        approaching,
+                        HfsmTransitionsTest::newFollow,
+                        following,
+                        kept(OrderKind.FOLLOW)),
+                row(
+                        "a follow while striking",
+                        attacking,
+                        HfsmTransitionsTest::newFollow,
+                        following,
+                        kept(OrderKind.FOLLOW)),
+                row(
+                        "a follow while chasing",
+                        chasing,
+                        HfsmTransitionsTest::newFollow,
+                        following,
+                        kept(OrderKind.FOLLOW)),
+                row(
+                        "a follower at its place waits",
+                        following,
+                        u -> new Arrived(u.handle),
+                        waiting,
+                        kept(OrderKind.FOLLOW)),
+                row(
+                        "a stop while following idles",
+                        following,
+                        HfsmTransitionsTest::stop,
+                        idle,
+                        HfsmTransitionsTest::nothingElse),
+                row("a move while following", following, HfsmTransitionsTest::newMove, walking, kept(OrderKind.MOVE)),
+                row(
+                        "an attack while following",
+                        following,
+                        HfsmTransitionsTest::newAttack,
+                        approaching,
+                        kept(OrderKind.ATTACK)),
+                row(
+                        "an attack-move while following",
+                        following,
+                        HfsmTransitionsTest::newAttackMove,
+                        fighting,
+                        kept(OrderKind.ATTACK_MOVE)),
+                row(
+                        "a follower that cannot get there waits",
+                        following,
+                        u -> new Stuck(u.handle, Stuck.GIVE_UP),
+                        waiting,
+                        kept(OrderKind.FOLLOW)),
+                row(
+                        "a new follow while waiting walks afresh",
+                        waiting,
+                        HfsmTransitionsTest::newFollow,
+                        following,
+                        kept(OrderKind.FOLLOW)),
+                row(
+                        "a stop while waiting idles",
+                        waiting,
+                        HfsmTransitionsTest::stop,
+                        idle,
+                        HfsmTransitionsTest::nothingElse),
+                row("a move while waiting", waiting, HfsmTransitionsTest::newMove, walking, kept(OrderKind.MOVE)),
+                row(
+                        "an attack while waiting",
+                        waiting,
+                        HfsmTransitionsTest::newAttack,
+                        approaching,
+                        kept(OrderKind.ATTACK)),
+                row(
+                        "an attack-move while waiting",
+                        waiting,
+                        HfsmTransitionsTest::newAttackMove,
+                        fighting,
+                        kept(OrderKind.ATTACK_MOVE)),
+                row(
+                        "a blow while waiting is not hit back (it follows)",
+                        waiting,
+                        HfsmTransitionsTest::blow,
+                        waiting,
+                        kept(OrderKind.FOLLOW)));
     }
 
     @ParameterizedTest(name = "{0}")
@@ -506,6 +616,8 @@ class HfsmTransitionsTest {
         assertThat(tree.thinkPeriod(UnitAi.APPROACHING)).isEqualTo(5);
         assertThat(tree.thinkPeriod(UnitAi.ATTACKING)).isEqualTo(1);
         assertThat(tree.thinkPeriod(UnitAi.CHASING)).isEqualTo(5);
+        assertThat(tree.thinkPeriod(UnitAi.FOLLOW_WALKING)).isEqualTo(5);
+        assertThat(tree.thinkPeriod(UnitAi.FOLLOW_WAITING)).isEqualTo(5);
         MatchState state = KernelAccess.state(SimHarness.builder().build().core());
         assertThat(tree.machine(state, state.ai()).thinks()).isTrue();
     }

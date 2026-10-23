@@ -8,6 +8,7 @@ import dev.strategos.core.client.input.Action;
 import dev.strategos.core.client.input.InputState;
 import dev.strategos.core.client.order.OrderIntents;
 import dev.strategos.core.client.order.SlotPreview;
+import dev.strategos.core.client.pick.CrosshairPick;
 import dev.strategos.core.client.pick.Picking;
 import dev.strategos.core.client.pick.View;
 import dev.strategos.core.client.select.ControlGroups;
@@ -18,7 +19,6 @@ import dev.strategos.core.protocol.Command;
 import dev.strategos.core.protocol.CommandBatch;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.ModeSwitch;
-import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.Stop;
 import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.mod.client.StrategosClient;
@@ -30,7 +30,9 @@ import dev.strategos.mod.server.net.payload.CameraJumpPayload;
 import dev.strategos.mod.server.net.payload.CommandsPayload;
 import dev.strategos.mod.server.net.payload.ModeSwitchPayload;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.particles.DustParticleOptions;
@@ -450,6 +452,11 @@ public final class RtsMode {
                     orderHere(mc);
                 }
             }
+            while (keys.mapping(Action.FOLLOW_ME).consumeClick()) {
+                if (firstPerson) {
+                    followMe();
+                }
+            }
             MatchJoin join = StrategosClient.match();
             if (join != null && join.matchId() != autoEntered && mc.player.isSpectator()) {
                 autoEntered = join.matchId(); // a seat makes a commander: RTS mode, once per match joined
@@ -500,20 +507,73 @@ public final class RtsMode {
         if (player == null || mc.level == null || join == null) {
             return;
         }
+        UnitEntity looked = crosshairUnit();
+        UnitSpawnData data = looked == null ? null : looked.spawnData();
+        Command command;
+        if (data != null && data.faction() != join.slot().value()) {
+            command = OrderIntents.context(selection().handles(), data.handle(), 0, 0, false, false); // CAM-07
+        } else {
+            Vec3 eye = player.getEyePosition();
+            Vec3 far = eye.add(player.getViewVector(1).scale(128));
+            BlockHitResult hit =
+                    mc.level.clip(new ClipContext(eye, far, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, player));
+            if (hit.getType() != HitResult.Type.BLOCK) {
+                return;
+            }
+            double wx = hit.getBlockPos().getX() + 0.5;
+            double wz = hit.getBlockPos().getZ() + 0.5;
+            command = OrderIntents.move(selection().handles(), wx - join.originX(), wz - join.originZ(), false);
+        }
+        send(command);
+    }
+
+    /** In first person: the selection follows the player, keeping places behind it (CAM-07). */
+    private void followMe() {
+        send(OrderIntents.follow(selection().handles()));
+    }
+
+    private void send(@Nullable Command command) {
+        if (command != null
+                && ClientPayloads.toServer(new CommandsPayload(new CommandBatch(clientSeq++, List.of(command)), ""))) {
+            ordersSent++;
+            lastCommand = command;
+        }
+    }
+
+    /**
+     * In first person: the match's body under the crosshair, the nearest the look's ray enters before any block within
+     * reach (CAM-07.2); null for none.
+     */
+    public @Nullable UnitEntity crosshairUnit() {
+        Minecraft mc = Minecraft.getInstance();
+        LocalPlayer player = mc.player;
+        MatchJoin join = StrategosClient.match();
+        if (player == null || mc.level == null || join == null) {
+            return null;
+        }
         Vec3 eye = player.getEyePosition();
-        Vec3 far = eye.add(player.getViewVector(1).scale(128));
+        Picking.Ray ray = CrosshairPick.ray(eye.x, eye.y, eye.z, player.getYRot(), player.getXRot());
+        Vec3 far = eye.add(player.getViewVector(1).scale(CrosshairPick.REACH));
         BlockHitResult hit =
                 mc.level.clip(new ClipContext(eye, far, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, player));
-        if (hit.getType() != HitResult.Type.BLOCK) {
-            return;
+        double block =
+                hit.getType() == HitResult.Type.BLOCK ? hit.getLocation().distanceTo(eye) : Double.POSITIVE_INFINITY;
+        List<CrosshairPick.Body> bodies = new ArrayList<>();
+        Map<Integer, UnitEntity> byHandle = new HashMap<>();
+        for (Entity e : mc.level.entitiesForRendering()) {
+            if (e instanceof UnitEntity body
+                    && body.spawnData() != null
+                    && body.spawnData().matchId() == join.matchId()
+                    && !body.isDeadOrDying()
+                    && e.distanceToSqr(eye) < CrosshairPick.REACH * CrosshairPick.REACH) {
+                var box = e.getBoundingBox();
+                bodies.add(new CrosshairPick.Body(
+                        body.spawnData().handle(), box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ));
+                byHandle.put(body.spawnData().handle(), body);
+            }
         }
-        double wx = hit.getBlockPos().getX() + 0.5;
-        double wz = hit.getBlockPos().getZ() + 0.5;
-        Move move = OrderIntents.move(selection().handles(), wx - join.originX(), wz - join.originZ(), false);
-        if (move != null
-                && ClientPayloads.toServer(new CommandsPayload(new CommandBatch(clientSeq++, List.of(move)), ""))) {
-            ordersSent++;
-        }
+        int handle = CrosshairPick.pick(ray, bodies, block);
+        return handle == 0 ? null : byHandle.get(handle);
     }
 
     /** Selected bodies glow in their faction's colour (UNIT-03), others not. */

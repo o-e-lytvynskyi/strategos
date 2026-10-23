@@ -127,7 +127,7 @@ public final class StateHasher {
             h = Hasher.mix(h, Double.doubleToLongBits(o.z()));
             h = Hasher.mix(h, o.group());
             h = Hasher.mix(h, o.slot());
-            if (OrderKind.attacks(o.kind())) { // only attacks hold a target: every older queue hashes as before
+            if (OrderKind.targets(o.kind())) { // only attacks and follows hold one: older queues hash as before
                 h = Hasher.mix(h, o.target());
             }
         }

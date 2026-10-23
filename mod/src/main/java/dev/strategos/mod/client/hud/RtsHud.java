@@ -8,7 +8,12 @@ import dev.strategos.core.client.hud.SelectionSummary;
 import dev.strategos.core.client.pick.Picking;
 import dev.strategos.core.client.select.Selection;
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.UiQuery;
+import dev.strategos.core.protocol.UnitDetail;
+import dev.strategos.core.protocol.UnitHud;
+import dev.strategos.core.shared.Handle;
+import dev.strategos.core.sim.UnitState;
 import dev.strategos.mod.client.StrategosClient;
 import dev.strategos.mod.client.net.ClientPayloads;
 import dev.strategos.mod.client.rts.RtsMode;
@@ -45,6 +50,7 @@ public final class RtsHud {
     public static final ResourceLocation SELECTION = Ids.id("rts_selection");
     public static final ResourceLocation GROUPS = Ids.id("rts_groups");
     public static final ResourceLocation TOOLTIP = Ids.id("rts_tooltip");
+    public static final ResourceLocation INSPECT = Ids.id("first_person_inspect");
 
     /** What RTS mode hides: a commander has no hotbar, crosshair or survival bars. */
     private final Set<ResourceLocation> hidden = Set.of(
@@ -64,11 +70,19 @@ public final class RtsHud {
     /** The hovered unit's tooltip: its type's name and its faction. */
     record Tooltip(String name, int faction) {}
 
+    /**
+     * In first person, the unit under the crosshair (CAM-07.4): its type's name, faction and handle, and what the
+     * client knows of it: an own unit's hit points and state from {@code unit_detail}, an enemy's share of its hit
+     * points from {@code unit_hud}.
+     */
+    record Inspect(String name, int faction, int handle, String detail) {}
+
     private final RtsMode mode;
     private final HudTheme theme = HudTheme.DEFAULT;
     private SelectionSummary summary = SelectionSummary.EMPTY;
     private GroupBar bar = new GroupBar(List.of());
     private @Nullable Tooltip tooltip;
+    private @Nullable Inspect inspect;
     private long buildNanos;
     /** Ticks between two {@code ui_query}s: four a second, the server's limit. */
     private static final int QUERY_EVERY = 5;
@@ -87,6 +101,7 @@ public final class RtsHud {
             e.registerAboveAll(SELECTION, this::drawSelection);
             e.registerAboveAll(GROUPS, this::drawGroups);
             e.registerAboveAll(TOOLTIP, this::drawTooltip);
+            e.registerAboveAll(INSPECT, this::drawInspect);
         });
         NeoForge.EVENT_BUS.addListener(RenderGuiLayerEvent.Pre.class, this::onLayer);
         NeoForge.EVENT_BUS.addListener(ClientTickEvent.Post.class, e -> build());
@@ -119,8 +134,10 @@ public final class RtsHud {
             summary = SelectionSummary.EMPTY;
             bar = new GroupBar(List.of());
             tooltip = null;
+            inspect = mode.firstPerson() && mc.level != null ? inspected() : null;
             return;
         }
+        inspect = null;
         Map<Integer, UnitSpawnData> bodies = new HashMap<>();
         for (Entity e : mc.level.entitiesForRendering()) {
             if (e instanceof UnitEntity body && body.spawnData() != null) {
@@ -156,6 +173,41 @@ public final class RtsHud {
             queried = List.copyOf(wanted);
             sinceQuery = 0;
         }
+    }
+
+    /** The unit under the first-person crosshair, its own details asked for (CAM-07.4). */
+    private @Nullable Inspect inspected() {
+        UnitEntity body = mode.crosshairUnit();
+        MatchJoin join = StrategosClient.match();
+        UnitSpawnData data = body == null ? null : body.spawnData();
+        if (data == null || join == null) {
+            return null;
+        }
+        String detail;
+        if (data.faction() == join.slot().value()) {
+            query(List.of(data.handle()));
+            UnitDetail.Unit known = null;
+            for (UnitDetail.Unit u : StrategosClient.model().details()) {
+                if (u.handle() == data.handle()) {
+                    known = u;
+                }
+            }
+            detail = known == null
+                    ? "…"
+                    : Math.round(known.health()) + " / " + Math.round(known.maxHealth()) + " · "
+                            + UnitState.ofCode(known.state()).id();
+        } else {
+            int health = StrategosClient.model().health(Handle.index(data.handle()));
+            detail = Math.round(100.0 * health / UnitHud.WHOLE) + " %";
+        }
+        return new Inspect(
+                name(StrategosClient.templates(), data.templateIndex()), data.faction(), data.handle(), detail);
+    }
+
+    /** The first-person inspection, for scenarios; null when the crosshair is on no unit. */
+    public @Nullable String inspecting() {
+        Inspect i = inspect;
+        return i == null ? null : i.name() + " " + i.detail();
     }
 
     private @Nullable Tooltip hovered(Minecraft mc, TemplateSet templates) {
@@ -273,6 +325,32 @@ public final class RtsHud {
             g.drawString(font, t.name(), r.x() + pad + swatch + 3, r.y() + pad + 1, theme.text(), false);
         }
         drawNanos = System.nanoTime() - drawing;
+    }
+
+    /** Under the first-person crosshair: a panel with the unit's name, faction swatch and what is known of it. */
+    private void drawInspect(GuiGraphics g, DeltaTracker delta) {
+        Inspect i = inspect;
+        Minecraft mc = Minecraft.getInstance();
+        if (i == null || mc.options.hideGui || mode.active()) {
+            return;
+        }
+        Font font = mc.font;
+        int pad = theme.padding();
+        int swatch = font.lineHeight - 2;
+        int w = Math.max(swatch + 3 + font.width(i.name()), font.width(i.detail())) + 2 * pad;
+        int h = 2 * font.lineHeight + 2 * pad + 1;
+        int x = mc.getWindow().getGuiScaledWidth() / 2 + 8;
+        int y = mc.getWindow().getGuiScaledHeight() / 2 + 8;
+        HudRect r = new HudRect(x, y, w, h);
+        panel(g, r);
+        g.fill(
+                r.x() + pad,
+                r.y() + pad + 1,
+                r.x() + pad + swatch,
+                r.y() + pad + 1 + swatch,
+                theme.faction(i.faction()));
+        g.drawString(font, i.name(), r.x() + pad + swatch + 3, r.y() + pad + 1, theme.text(), false);
+        g.drawString(font, i.detail(), r.x() + pad, r.y() + pad + 2 + font.lineHeight, theme.text(), false);
     }
 
     /** In RTS mode with the GUI shown: F1 hides the HUD as it hides vanilla's. */

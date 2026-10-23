@@ -17,7 +17,10 @@ public final class CommandKinds {
             new CommandKind<>("strategos:attack", 4, Attack.class, Attack.CODEC, Attack.WIRE, false);
     public static final CommandKind<AttackMove> ATTACK_MOVE =
             new CommandKind<>("strategos:attack_move", 5, AttackMove.class, AttackMove.CODEC, AttackMove.WIRE, false);
-    public static final CommandKinds DEFAULT = new CommandKinds(List.of(MOVE, STOP, SPAWN_UNITS, ATTACK, ATTACK_MOVE));
+    public static final CommandKind<Follow> FOLLOW =
+            new CommandKind<>("strategos:follow", 6, Follow.class, Follow.CODEC, Follow.WIRE, false);
+    public static final CommandKinds DEFAULT =
+            new CommandKinds(List.of(MOVE, STOP, SPAWN_UNITS, ATTACK, ATTACK_MOVE, FOLLOW));
 
     private final List<CommandKind<?>> kinds;
     private final Codec<Command> codec;

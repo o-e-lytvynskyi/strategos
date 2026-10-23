@@ -21,7 +21,8 @@ class CommandKindsTest {
                         "strategos:stop",
                         "strategos:spawn_units",
                         "strategos:attack",
-                        "strategos:attack_move");
+                        "strategos:attack_move",
+                        "strategos:follow");
     }
 
     @Test

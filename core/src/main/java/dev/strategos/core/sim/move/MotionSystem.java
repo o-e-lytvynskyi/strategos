@@ -422,6 +422,7 @@ public final class MotionSystem implements MatchSystem {
         if (motion.latched(i)
                 && motion.pushed(i) == 0
                 && s.ai().state(i) == UnitState.IDLE
+                && s.orders().kind(i) == OrderKind.NONE // a waiting follower keeps its order: its think moves it
                 && DetMath.length(motion.x(i) - motion.latchX(i), motion.z(i) - motion.latchZ(i)) > LATCH) {
             s.orders().replaceMove(i, motion.latchX(i), motion.latchZ(i));
             s.bus().publish(new OrderReceived(handle)); // back to the latch point; the order releases the latch

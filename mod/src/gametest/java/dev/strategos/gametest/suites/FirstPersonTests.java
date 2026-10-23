@@ -5,6 +5,7 @@ import static dev.strategos.gametest.suites.Units.core;
 import static dev.strategos.gametest.suites.Units.match;
 
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.protocol.Follow;
 import dev.strategos.core.protocol.ModeSwitch;
 import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.SpawnUnits;
@@ -251,6 +252,78 @@ public final class FirstPersonTests {
             }
         }
         return true;
+    }
+
+    /**
+     * CAM-07.3: six walkers follow their commander, who stepped down into first person and walks east 0.15 a tick; while
+     * it walks they keep behind it, never more than 12 blocks back, and once it stops they wait in their places behind
+     * it, each its own, and stay there.
+     */
+    @StrategosTest(timeoutTicks = 600)
+    public static void followersKeepPlacesBehindAWalkingPlayer(GameTestHelper h) {
+        MatchRuntime rt = match(h);
+        MockViewer viewer = commander(h, rt, "strategos-fol");
+        MatchSpace s = rt.space();
+        rt.submit(
+                PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(0), new Vec2d(5, 16), 6, 2));
+        var state = new Object() {
+            int[] units = new int[0];
+            int walked;
+            double most;
+            double[] rest = new double[0];
+        };
+        h.startSequence()
+                .thenWaitUntil(() ->
+                        check(Units.bodiesOf(h.getLevel(), rt).size() == 6, "the bodies are not there yet"))
+                .thenExecute(() -> {
+                    accept(viewer);
+                    viewer.send(new ModeSwitchPayload(new ModeSwitch(true, s.worldX(9.5), s.worldZ(16.5))));
+                })
+                .thenExecuteAfter(2, () -> {
+                    check(StrategosServer.get().commanders().observes(viewer.player()), "not in first person");
+                    state.units = core(rt).queries().unitHandlesOf(new FactionSlot(0));
+                    rt.submit(new PlayerSlot(0), Follow.replace(UnitSet.of(state.units)));
+                })
+                .thenWaitUntil(() -> {
+                    ServerPlayer p = viewer.player();
+                    if (state.walked < 100) {
+                        state.walked++;
+                        p.moveTo(p.getX() + 0.15, p.getY(), p.getZ(), -90, 0); // east, facing it
+                    }
+                    double leader = s.localX(p.getX());
+                    if (state.walked > 40 && state.walked < 100) {
+                        for (int unit : state.units) {
+                            UnitView u = core(rt).queries().unit(unit);
+                            check(u != null && u.x() < leader, "a follower ahead of a player walking east");
+                            state.most = Math.max(state.most, leader - u.x());
+                        }
+                    }
+                    check(state.walked >= 100, "still walking");
+                })
+                .thenExecuteAfter(100, () -> {
+                    double leader = s.localX(viewer.player().getX());
+                    double lz = s.localZ(viewer.player().getZ());
+                    check(state.most < 12, "a follower fell " + state.most + " blocks behind");
+                    state.rest = new double[state.units.length * 2];
+                    for (int k = 0; k < state.units.length; k++) {
+                        UnitView u = core(rt).queries().unit(state.units[k]);
+                        check(u != null, "a follower died");
+                        check(u.state() == UnitState.IDLE, "a follower is " + u.state() + " once the player stopped");
+                        check(
+                                leader - u.x() > 1 && leader - u.x() < 8 && Math.abs(u.z() - lz) < 4,
+                                "a follower waits at " + u.x() + ", " + u.z() + ", not behind " + leader + ", " + lz);
+                        state.rest[2 * k] = u.x();
+                        state.rest[2 * k + 1] = u.z();
+                    }
+                })
+                .thenExecuteAfter(40, () -> {
+                    for (int k = 0; k < state.units.length; k++) {
+                        UnitView u = core(rt).queries().unit(state.units[k]);
+                        check(u.x() == state.rest[2 * k] && u.z() == state.rest[2 * k + 1], "a waiting follower moved");
+                    }
+                    viewer.close();
+                })
+                .thenSucceed();
     }
 
     /** A viewer seated in slot 0 of {@code rt} and made its commander. */

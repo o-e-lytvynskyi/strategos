@@ -439,7 +439,8 @@ perspective only.
   4. Inspecting shows the looked-at unit's details (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** CAM-05, ORD-04, NET-08 · **Size:** M ·
   **Tier:** T0
-- **Status:** specified
+- **Done:** 2026-10-23 — M2 T20: `LeaderUpdate`, `Follow` and the FOLLOW states; `CrosshairPick`; G attacks an enemy in view, R follows, looking inspects; `OrderIntentTest` (1), `CrosshairPickTest` (2), `FollowTest` and `firstpersontests.followers_keep_places_behind_a_walking_player` (3), the inspect panel in `rts_first_person` on this Mac, for the owner's look (4); M2 spec §1.6 rows 75–77
+- **Status:** done
 
 ### Battle sandbox
 

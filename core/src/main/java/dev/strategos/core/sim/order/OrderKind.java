@@ -4,9 +4,9 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * What an order asks a unit to do, as the code its queue stores and the name a save uses. M1 has moves; M2 adds the
- * player's attack on a unit and attack-move to a place (ORD-04), and the engagement a unit takes up itself: on an
- * enemy it noticed idle or walking and fighting, or on one that hit it (CMB-02). GATHER and BUILD follow with their
- * cards.
+ * player's attack on a unit and attack-move to a place (ORD-04), the engagement a unit takes up itself: on an enemy it
+ * noticed idle or walking and fighting, or on one that hit it (CMB-02), and following a commander in first person
+ * (CAM-07). GATHER and BUILD follow with their cards.
  */
 public final class OrderKind {
     /** No order: an empty queue's current kind. */
@@ -19,6 +19,8 @@ public final class OrderKind {
     public static final int ATTACK_MOVE = 3;
     /** An attack the unit took up itself, put before its orders: given up when the target leaves its sight. */
     public static final int ENGAGE = 4;
+    /** Keeping a place behind a commander in first person (CAM-07), whose player slot the queue holds as the target. */
+    public static final int FOLLOW = 5;
 
     private OrderKind() {}
 
@@ -29,6 +31,7 @@ public final class OrderKind {
             case ATTACK -> "attack";
             case ATTACK_MOVE -> "attack_move";
             case ENGAGE -> "engage";
+            case FOLLOW -> "follow";
             default -> throw new IllegalArgumentException("no order kind " + kind);
         };
     }
@@ -40,6 +43,7 @@ public final class OrderKind {
             case "attack" -> ATTACK;
             case "attack_move" -> ATTACK_MOVE;
             case "engage" -> ENGAGE;
+            case "follow" -> FOLLOW;
             default -> null;
         };
     }
@@ -47,5 +51,10 @@ public final class OrderKind {
     /** Whether an order of {@code kind} attacks a unit, which its queue holds as the order's target. */
     public static boolean attacks(int kind) {
         return kind == ATTACK || kind == ENGAGE;
+    }
+
+    /** Whether an order of {@code kind} holds a target: the unit it attacks, or the player slot it follows. */
+    public static boolean targets(int kind) {
+        return attacks(kind) || kind == FOLLOW;
     }
 }

@@ -3,6 +3,7 @@ package dev.strategos.core.client.order;
 import dev.strategos.core.protocol.Attack;
 import dev.strategos.core.protocol.AttackMove;
 import dev.strategos.core.protocol.Command;
+import dev.strategos.core.protocol.Follow;
 import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.QueueMode;
 import dev.strategos.core.protocol.UnitSet;
@@ -45,5 +46,14 @@ public final class OrderIntents {
         }
         int[] handles = selection.stream().mapToInt(Integer::intValue).toArray();
         return new Move(UnitSet.of(handles), new Vec2d(localX, localZ), shift ? QueueMode.QUEUE : QueueMode.REPLACE, 0);
+    }
+
+    /** First person's follow-me (CAM-07): the selection follows the player; none without a selection. */
+    public static @Nullable Follow follow(List<Integer> selection) {
+        if (selection.isEmpty()) {
+            return null;
+        }
+        return Follow.replace(
+                UnitSet.of(selection.stream().mapToInt(Integer::intValue).toArray()));
     }
 }

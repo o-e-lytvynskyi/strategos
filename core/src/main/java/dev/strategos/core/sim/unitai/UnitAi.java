@@ -18,7 +18,8 @@ import java.util.List;
 import org.jspecify.annotations.Nullable;
 
 /**
- * The UnitAI tree (UNIT-02, 04 §7.5): M1's walking and M2's melee (CMB-02). Every unit starts IDLE.
+ * The UnitAI tree (UNIT-02, 04 §7.5): M1's walking, M2's melee (CMB-02) and following (CAM-07). Every unit starts
+ * IDLE.
  *
  * <pre>
  * INDIVIDUAL                     OrderReceived: the state of the order's kind (an attack's afresh)
@@ -31,6 +32,9 @@ import org.jspecify.annotations.Nullable;
  *     APPROACHING      every 5   enter: a place round the target; think and Arrived: strike in reach, walk on
  *     ATTACKING        every 1   enter: the wind-up; think: strike when it is over, then every period
  *     CHASING          every 5   think and Arrived: strike in reach, else follow the target
+ *   FOLLOW                       Stuck at its last rung: wait; PathInvalidated: as WALKING
+ *     FOLLOW_WALKING   every 5   think: the place behind the leader, walked to; Arrived: wait there
+ *     FOLLOW_WAITING   every 5   think: once the place moves, walk again
  * </pre>
  *
  * Whichever of them finds its target dead takes up the nearest enemy in sight, from a new place, or else goes on with
@@ -52,6 +56,9 @@ public final class UnitAi {
     public static final StateId ATTACKING = new StateId(5, "combat.attacking", UnitState.COMBAT);
     public static final StateId CHASING = new StateId(6, "combat.chasing", UnitState.WALKING);
     public static final StateId WALKING_AND_FIGHTING = new StateId(7, "walking_and_fighting", UnitState.WALKING);
+    public static final StateId FOLLOW = new StateId(8, "follow", null);
+    public static final StateId FOLLOW_WALKING = new StateId(9, "follow.walking", UnitState.WALKING);
+    public static final StateId FOLLOW_WAITING = new StateId(10, "follow.waiting", UnitState.IDLE);
 
     private UnitAi() {}
 
@@ -113,6 +120,29 @@ public final class UnitAi {
                                 .think(ctx -> Melee.close(ctx, true, engagement))
                                 .on(Arrived.class, (ctx, m) -> Melee.close(ctx, true, engagement))
                                 .transitions(next(ATTACKING, APPROACHING))
+                                .build(),
+                        StateDef.<MatchState>child(FOLLOW, INDIVIDUAL)
+                                .initial(FOLLOW_WALKING)
+                                .on(Stuck.class, (ctx, m) -> {
+                                    if (m.rung() == Stuck.GIVE_UP) {
+                                        ctx.go(FOLLOW_WAITING); // a follower that cannot get there waits for the next
+                                        // place
+                                    }
+                                })
+                                .on(PathInvalidated.class, UnitAi::repath)
+                                .transitions(next(FOLLOW_WAITING))
+                                .build(),
+                        StateDef.<MatchState>child(FOLLOW_WALKING, FOLLOW)
+                                .thinkEvery(5)
+                                .think(ctx -> Following.keepUp(ctx, true))
+                                .on(Arrived.class, (ctx, m) -> ctx.go(FOLLOW_WAITING))
+                                .transitions(next(FOLLOW_WAITING))
+                                .build(),
+                        StateDef.<MatchState>child(FOLLOW_WAITING, FOLLOW)
+                                .thinkEvery(5)
+                                .think(ctx -> Following.keepUp(ctx, false))
+                                .on(Arrived.class, (ctx, m) -> {}) // already there
+                                .transitions(next(FOLLOW_WALKING))
                                 .build()),
                 UnitAi::changed);
     }
@@ -122,7 +152,7 @@ public final class UnitAi {
      * {@code more}.
      */
     private static StateId[] next(StateId... more) {
-        List<StateId> all = new ArrayList<>(List.of(IDLE, WALKING, COMBAT, WALKING_AND_FIGHTING));
+        List<StateId> all = new ArrayList<>(List.of(IDLE, WALKING, COMBAT, WALKING_AND_FIGHTING, FOLLOW));
         all.addAll(List.of(more));
         return all.toArray(StateId[]::new);
     }
@@ -147,7 +177,8 @@ public final class UnitAi {
 
     /** The tree's leaves, the states a unit can be in and a save can name. */
     public static List<StateId> leaves() {
-        return List.of(IDLE, WALKING, WALKING_AND_FIGHTING, APPROACHING, ATTACKING, CHASING);
+        return List.of(
+                IDLE, WALKING, WALKING_AND_FIGHTING, APPROACHING, ATTACKING, CHASING, FOLLOW_WALKING, FOLLOW_WAITING);
     }
 
     /** The leaf saved as {@code name}, or null for any other name. */
@@ -176,18 +207,19 @@ public final class UnitAi {
             case OrderKind.MOVE -> WALKING;
             case OrderKind.ATTACK, OrderKind.ENGAGE -> COMBAT;
             case OrderKind.ATTACK_MOVE -> WALKING_AND_FIGHTING;
+            case OrderKind.FOLLOW -> FOLLOW;
             default -> throw new IllegalStateException("no unit state carries out order kind " + kind);
         };
     }
 
     /**
-     * A new current order: the unit enters the state of its kind, or carries on in it; an attack always starts afresh,
-     * from a place round its own target.
+     * A new current order: the unit enters the state of its kind, or carries on in it; an attack or a follow always
+     * starts afresh, from a place round its own target or behind its own leader.
      */
     private static void startOrder(Context<MatchState> ctx) {
         int kind = ctx.host().orders().kind(ctx.unit());
         StateId target = stateFor(kind);
-        if (!ctx.in(target) || OrderKind.attacks(kind)) {
+        if (!ctx.in(target) || OrderKind.targets(kind)) {
             ctx.go(target);
         }
     }
@@ -209,7 +241,7 @@ public final class UnitAi {
         }
         int kind = state.orders().kind(i);
         StateId next = stateFor(kind);
-        if (!ctx.in(next) || OrderKind.attacks(kind)) {
+        if (!ctx.in(next) || OrderKind.targets(kind)) {
             ctx.go(next);
         }
         state.bus().publish(new OrderReceived(ctx.handle()));

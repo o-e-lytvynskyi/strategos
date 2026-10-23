@@ -6,6 +6,7 @@ import dev.strategos.core.sim.ContentSwap;
 import dev.strategos.core.sim.ExternalDamage;
 import dev.strategos.core.sim.InputEvent;
 import dev.strategos.core.sim.JobDelivery;
+import dev.strategos.core.sim.LeaderUpdate;
 import dev.strategos.core.sim.TerrainPage;
 import dev.strategos.core.sim.TickInputs;
 import java.util.ArrayList;
@@ -62,12 +63,26 @@ public final class InputCollector {
             List<ExternalDamage> damage,
             @Nullable JobDelivery delivery,
             @Nullable ContentSwap swap) {
-        List<InputEvent> events = new ArrayList<>(pages.size() + inbox.size() + damage.size() + 2);
+        return collect(tick, inbox, pages, agents, List.of(), damage, delivery, swap);
+    }
+
+    /** As above, with where the match's commanders in first person stand, who lead their followers (CAM-07). */
+    public static TickInputs collect(
+            long tick,
+            List<CommandEnvelope> inbox,
+            List<TerrainPage> pages,
+            @Nullable AgentUpdate agents,
+            List<LeaderUpdate> leaders,
+            List<ExternalDamage> damage,
+            @Nullable JobDelivery delivery,
+            @Nullable ContentSwap swap) {
+        List<InputEvent> events = new ArrayList<>(pages.size() + inbox.size() + damage.size() + leaders.size() + 2);
         events.addAll(pages);
         events.addAll(inbox);
         if (agents != null) {
             events.add(agents);
         }
+        events.addAll(leaders);
         events.addAll(damage);
         if (delivery != null) {
             events.add(delivery);

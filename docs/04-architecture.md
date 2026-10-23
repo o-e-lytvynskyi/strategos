@@ -684,7 +684,7 @@ public record TickInputs(long tick, List<InputEvent> events) { }       // canoni
 public record TickOutputs(BodyFrame bodies, List<OutputEvent> events) { }
 
 public sealed interface InputEvent permits CommandEnvelope, WorldChange, TerrainPage, AgentUpdate,
-        ExternalDamage, ExternalImpulse, SessionEvent, JobDelivery, ContentSwap, RuleChange { }
+        LeaderUpdate, ExternalDamage, ExternalImpulse, SessionEvent, JobDelivery, ContentSwap, RuleChange { }
 public sealed interface OutputEvent permits WorldEffect, PageRequest, VisibilityFlip, FxEvent,
         HurtAgent, Notice, ReplicationFrame, MatchEvent { }
 ```
@@ -1577,6 +1577,8 @@ that, and every block edit would invalidate JPS+ preprocessing ([engine §2.2](r
   - First-person players and vanilla mobs in the region arrive as `AgentUpdate` inputs and count
     as non-reactive agents, so units walk around them. D-08's observer avatar is excluded, so
     units pass through it (PATH-06); a fighting avatar (CMB-08, deferred) would count.
+  - The observer's position does reach the core, as a `LeaderUpdate` each tick (M2, CAM-07), for
+    the units that follow it; that input holds for its tick only, like the agents.
   - The cadence follows the activity tier (§6.5).
   - In cells with more than six units, ORCA gives way to cheap separation steering, which bounds
     the cost inside blobs (C).

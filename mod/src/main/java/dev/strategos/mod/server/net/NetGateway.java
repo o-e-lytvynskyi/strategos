@@ -9,6 +9,7 @@ import dev.strategos.core.protocol.CommandBatch;
 import dev.strategos.core.protocol.DebugFeedMsg;
 import dev.strategos.core.protocol.Feedback;
 import dev.strategos.core.protocol.FeedbackMsg;
+import dev.strategos.core.protocol.Follow;
 import dev.strategos.core.protocol.Fx;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.MatchStateMsg;
@@ -299,6 +300,7 @@ public final class NetGateway {
             case Stop stop -> stop.units().size();
             case Attack attack -> attack.units().size();
             case AttackMove move -> move.units().size();
+            case Follow follow -> follow.units().size();
             default -> 0;
         };
     }

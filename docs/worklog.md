@@ -9,7 +9,20 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24, T16, T26; M2 spec, M2 T1, T3, T5, T11, T13, T9, T21, T8, T6, T19, T2, T4, T14, T10 (part), T7, T10, T17, T18, T15, T16
+## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24, T16, T26; M2 spec, M2 T1, T3, T5, T11, T13, T9, T21, T8, T6, T19, T2, T4, T14, T10 (part), T7, T10, T17, T18, T15, T16, T20
+
+- **M2 T20 · First-person orders** — CAM-07 done (its inspect panel for the owner's look).
+  - **Results:** the `LeaderUpdate` input (where each first-person commander stands, every tick,
+    journaled), the `Follow` command and rule, the FOLLOW states with `Following`; `CrosshairPick`;
+    G attacks the enemy in view, R follows, the inspect panel by the crosshair. Tests: `FollowTest`
+    (2), `CrosshairPickTest` (2), an `OrderIntentTest`, 18 more rows of UNIT-02.1's table,
+    `firstpersontests.followers_keep_places_behind_a_walking_player`, and `rts_first_person`'s new
+    phases on this Mac.
+  - **Problems:** the scenario's first G on an enemy sent a Move: an own unit stood in the line of
+    sight, which the crosshair rightly picked; the scene now aims at an enemy the crosshair really
+    picks. The latch walk-back would have replaced a waiting follower's order; it now walks back
+    only units without one.
+  - **Next:** M1 T27 (close), then M2's consent batch (T22, the owner's) and close (T23).
 
 - **M2 T15 and T16 · Melee, attack and attack-move** — CMB-02 done, ORD-04 done, CMB-01 done (its
   unit-on-unit half).

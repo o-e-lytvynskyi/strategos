@@ -27,8 +27,10 @@ public enum Action {
     CONTROL_GROUP_CENTRE(false),
     TOGGLE_FIRST_PERSON(false),
     TOGGLE_RTS(false),
-    /** In first person: the selection moves to where the player looks (CAM-05). */
+    /** In first person: the selection moves to where the player looks, or attacks the enemy there (CAM-05, CAM-07). */
     ORDER_HERE(false),
+    /** In first person: the selection follows the player (CAM-07). */
+    FOLLOW_ME(false),
     CANCEL(false);
 
     private final boolean held;

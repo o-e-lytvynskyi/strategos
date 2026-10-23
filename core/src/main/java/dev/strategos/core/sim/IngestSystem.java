@@ -32,7 +32,8 @@ final class IngestSystem implements MatchSystem {
                 AgentUpdate.class,
                 ExternalDamage.class,
                 JobDelivery.class,
-                ContentSwap.class);
+                ContentSwap.class,
+                LeaderUpdate.class);
     }
 
     @Override
@@ -54,6 +55,7 @@ final class IngestSystem implements MatchSystem {
                 case ExternalDamage damage -> state.queueDamage(packet(damage));
                 case JobDelivery delivery -> state.addDelivery(delivery);
                 case ContentSwap swap -> state.swapTemplates(swap.set());
+                case LeaderUpdate leader -> state.setLeader(leader);
             }
         }
         state.publishAll(pages);
@@ -88,6 +90,7 @@ final class IngestSystem implements MatchSystem {
             case ExternalDamage damage -> 3;
             case JobDelivery delivery -> 4;
             case ContentSwap swap -> 5;
+            case LeaderUpdate leader -> 6;
         };
     }
 }

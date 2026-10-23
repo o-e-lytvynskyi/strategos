@@ -50,6 +50,8 @@ public final class MatchState {
     private int nextGroup = FIRST_GROUP;
     private final long[] rungs = new long[Stuck.GIVE_UP + 1]; // the stuck ladder's rungs reached in this run, by rung
     private final List<Agent> agents = new ArrayList<>();
+    private final float[] leaders = new float[LeaderUpdate.SLOTS * 3]; // per slot x, z, yaw
+    private final boolean[] leading = new boolean[LeaderUpdate.SLOTS];
     private final List<JobDelivery> deliveries = new ArrayList<>();
     private SurfaceGrid surfaces;
     private final long[] pageSlices;
@@ -161,6 +163,7 @@ public final class MatchState {
         changedCount = 0;
         frame = BodyFrame.builder(entities.aliveCount());
         agents.clear();
+        Arrays.fill(leading, false);
         deliveries.clear();
     }
 
@@ -303,6 +306,32 @@ public final class MatchState {
 
     void addAgents(List<Agent> more) {
         agents.addAll(more);
+    }
+
+    void setLeader(LeaderUpdate leader) {
+        int at = leader.slot() * 3;
+        leaders[at] = leader.x();
+        leaders[at + 1] = leader.z();
+        leaders[at + 2] = leader.yaw();
+        leading[leader.slot()] = true;
+    }
+
+    /** Whether the commander of player slot {@code slot} stands in first person this tick (CAM-07). */
+    public boolean leads(int slot) {
+        return slot >= 0 && slot < LeaderUpdate.SLOTS && leading[slot];
+    }
+
+    /** This tick's X of the commander of {@code slot}, when it {@link #leads}. */
+    public double leaderX(int slot) {
+        return leaders[slot * 3];
+    }
+
+    public double leaderZ(int slot) {
+        return leaders[slot * 3 + 1];
+    }
+
+    public double leaderYaw(int slot) {
+        return leaders[slot * 3 + 2];
     }
 
     /**

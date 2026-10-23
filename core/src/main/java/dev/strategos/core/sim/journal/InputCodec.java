@@ -13,6 +13,7 @@ import dev.strategos.core.sim.ContentSwap;
 import dev.strategos.core.sim.ExternalDamage;
 import dev.strategos.core.sim.InputEvent;
 import dev.strategos.core.sim.JobDelivery;
+import dev.strategos.core.sim.LeaderUpdate;
 import dev.strategos.core.sim.SliceSource;
 import dev.strategos.core.sim.TerrainPage;
 import dev.strategos.core.sim.nav.PageCoord;
@@ -33,6 +34,7 @@ final class InputCodec {
     private static final int CONTENT_SWAP = 4;
     private static final int AGENT_UPDATE = 5;
     private static final int EXTERNAL_DAMAGE = 6;
+    private static final int LEADER_UPDATE = 7;
 
     private InputCodec() {}
 
@@ -71,6 +73,13 @@ final class InputCodec {
             case ContentSwap swap -> {
                 out.writeByte(CONTENT_SWAP);
                 TemplateSetView.WIRE.write(out, TemplateSetView.of(swap.set(), TemplateIdTable.EMPTY));
+            }
+            case LeaderUpdate leader -> {
+                out.writeByte(LEADER_UPDATE);
+                out.writeVarInt(leader.slot());
+                out.writeFloat(leader.x());
+                out.writeFloat(leader.z());
+                out.writeFloat(leader.yaw());
             }
             case JobDelivery delivery -> {
                 out.writeByte(JOB_DELIVERY);
@@ -121,6 +130,17 @@ final class InputCodec {
                     }
                 }
                 yield new AgentUpdate(agents);
+            }
+            case LEADER_UPDATE -> {
+                int slot = in.readVarInt();
+                float x = in.readFloat();
+                float z = in.readFloat();
+                float yaw = in.readFloat();
+                try {
+                    yield new LeaderUpdate(slot, x, z, yaw);
+                } catch (IllegalArgumentException e) {
+                    throw new WireException("leader update: " + e.getMessage());
+                }
             }
             case EXTERNAL_DAMAGE -> {
                 int handle = in.readInt();

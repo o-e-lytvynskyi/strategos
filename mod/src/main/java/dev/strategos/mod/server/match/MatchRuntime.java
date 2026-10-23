@@ -10,11 +10,13 @@ import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.ContentSwap;
 import dev.strategos.core.sim.ExternalDamage;
 import dev.strategos.core.sim.JobDelivery;
+import dev.strategos.core.sim.LeaderUpdate;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.core.sim.MatchRules;
 import dev.strategos.core.sim.TickOutputs;
 import dev.strategos.core.sim.nav.DeliveryMode;
+import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.server.body.AgentTracker;
 import dev.strategos.mod.server.body.BodyRegistry;
 import dev.strategos.mod.server.body.SpawnBudget;
@@ -26,9 +28,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Consumer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.LoggerFactory;
 
@@ -241,8 +245,8 @@ public final class MatchRuntime {
         AgentUpdate agents = this.agents.track(level, roster.members());
         ContentSwap swap = this.swap;
         this.swap = null;
-        TickOutputs out =
-                c.step(InputCollector.collect(next, inbox, pages.due(next), agents, damage, delivery(c, next), swap));
+        TickOutputs out = c.step(InputCollector.collect(
+                next, inbox, pages.due(next), agents, leaders(level), damage, delivery(c, next), swap));
         long start = System.nanoTime();
         OutputAppliers.apply(this, level, out);
         bodies.materialise(level, c.queries(), spawnBudget);
@@ -253,6 +257,31 @@ public final class MatchRuntime {
         for (Consumer<TickOutputs> listener : listeners) {
             listener.accept(out);
         }
+    }
+
+    /**
+     * Where the match's seated players stand who stepped down into first person (CAM-07): their followers keep places
+     * behind them. A commander in the RTS view, or away, leads no one this tick.
+     */
+    private List<LeaderUpdate> leaders(ServerLevel level) {
+        List<LeaderUpdate> leaders = new ArrayList<>(0);
+        for (UUID member : roster.members()) {
+            PlayerSlot slot = roster.slotOf(member);
+            ServerPlayer player = level.getServer().getPlayerList().getPlayer(member);
+            if (slot == null
+                    || slot.value() >= LeaderUpdate.SLOTS
+                    || player == null
+                    || !player.level().dimension().equals(level.dimension())
+                    || !StrategosServer.get().commanders().observes(player)) {
+                continue;
+            }
+            leaders.add(new LeaderUpdate(
+                    slot.value(),
+                    (float) space.localX(player.getX()),
+                    (float) space.localZ(player.getZ()),
+                    player.getYRot()));
+        }
+        return leaders;
     }
 
     /**

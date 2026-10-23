@@ -32,6 +32,7 @@ public final class DefaultBindings {
                 rts(Action.TOGGLE_FIRST_PERSON, KeyCode.V),
                 new Binding(Action.TOGGLE_RTS, ActionContext.IN_GAME, KeyCode.key(KeyCode.F6), Modifiers.NONE, true),
                 new Binding(Action.ORDER_HERE, ActionContext.IN_GAME, KeyCode.key(KeyCode.G), Modifiers.NONE, true),
+                new Binding(Action.FOLLOW_ME, ActionContext.IN_GAME, KeyCode.key(KeyCode.R), Modifiers.NONE, true),
                 fixed(Action.SELECT, KeyCode.mouse(KeyCode.MOUSE_LEFT)),
                 fixed(Action.ORDER_CONTEXT, KeyCode.mouse(KeyCode.MOUSE_RIGHT)),
                 fixed(Action.CANCEL, KeyCode.key(KeyCode.ESCAPE)));

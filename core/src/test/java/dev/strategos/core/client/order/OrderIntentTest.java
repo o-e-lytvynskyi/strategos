@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.strategos.core.protocol.Attack;
 import dev.strategos.core.protocol.AttackMove;
+import dev.strategos.core.protocol.Follow;
 import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.QueueMode;
 import dev.strategos.core.protocol.UnitSet;
@@ -40,5 +41,12 @@ class OrderIntentTest {
                 .isEqualTo(new AttackMove(UnitSet.of(3, 7), new Vec2d(4, 5), QueueMode.REPLACE));
         assertThat(OrderIntents.context(List.of(), 0x100005, 4, 5, false, false))
                 .isNull();
+    }
+
+    /** CAM-07.1: follow-me sends one Follow of the selection, none without one. */
+    @Test
+    void followMeSendsOneFollowOfTheSelection() {
+        assertThat(OrderIntents.follow(List.of(4, 2))).isEqualTo(Follow.replace(UnitSet.of(2, 4)));
+        assertThat(OrderIntents.follow(List.of())).isNull();
     }
 }
