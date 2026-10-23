@@ -81,7 +81,9 @@ class HudAndDetailTest {
         UnitDetail detail = new UnitDetail(
                 2,
                 99,
-                List.of(new UnitDetail.Unit(5, 1, 1, 40.5f, 100f, 0.25f, List.of(new UnitDetail.Order(1, 3, 4)))));
+                List.of(
+                        new UnitDetail.Unit(5, 1, 1, 40.5f, 100f, 0.25f, List.of(new UnitDetail.Order(1, 3, 4)), -1, 0),
+                        new UnitDetail.Unit(6, 2, 3, 25f, 25f, 0.2f, List.of(), 1, 7_250)));
         assertThat(WireCodec.decode(UnitDetail.WIRE, WireCodec.encode(UnitDetail.WIRE, detail)))
                 .isEqualTo(detail);
         assertThat(UnitHud.Entry.health(0.1, 100)).as("alive is never 0").isEqualTo(1);

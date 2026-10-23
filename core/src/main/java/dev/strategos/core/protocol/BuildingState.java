@@ -7,7 +7,9 @@ import java.util.List;
 /**
  * The {@code building_state} payload (BLD-01, 04 §12.2): the buildings of match {@code matchId} a player knows of, each
  * with where it stands, its state, progress and hit points (in 255ths of its most); its own faction's also carry what
- * only the owner sees: the production queue's template indices and the rally point. Until fog (M6) every building is
+ * only the owner sees: the production queue's template indices, the head's progress in thousandths and the rally
+ * point, and for a field (ECO-09) the food its crop holds, in thousandths (-1 for no field), and the ticks it still
+ * ripens. Until fog (M6) every building is
  * known. Sent to each seated player when it changes.
  */
 @CoreApi
@@ -32,13 +34,16 @@ public record BuildingState(int matchId, long tick, List<Entry> buildings) {
             List<Integer> queue,
             boolean rally,
             int rallyX,
-            int rallyZ) {
+            int rallyZ,
+            int trained,
+            int fieldLeft,
+            int fieldRipening) {
         public Entry {
             queue = List.copyOf(queue);
             if (queue.size() > MAX_QUEUE || health < 0 || health > UnitHud.WHOLE || rotation < 0 || rotation > 3) {
                 throw new IllegalArgumentException("a building entry out of range: " + handle);
             }
-            if (!own && (!queue.isEmpty() || rally)) {
+            if (!own && (!queue.isEmpty() || rally || trained != 0 || fieldLeft != -1 || fieldRipening != 0)) {
                 throw new IllegalArgumentException("a building of another faction carries owner fields: " + handle);
             }
         }
@@ -82,6 +87,13 @@ public record BuildingState(int matchId, long tick, List<Entry> buildings) {
                     if (e.rally()) {
                         out.writeZigZag(e.rallyX()).writeZigZag(e.rallyZ());
                     }
+                    if (!e.queue().isEmpty()) {
+                        out.writeVarInt(e.trained());
+                    }
+                    out.writeVarInt(e.fieldLeft() + 1);
+                    if (e.fieldLeft() >= 0) {
+                        out.writeVarInt(e.fieldRipening());
+                    }
                 }
             }
         }
@@ -107,6 +119,9 @@ public record BuildingState(int matchId, long tick, List<Entry> buildings) {
                 boolean rally = false;
                 int rx = 0;
                 int rz = 0;
+                int trained = 0;
+                int fieldLeft = -1;
+                int ripening = 0;
                 if (own) {
                     int q = in.readVarInt(MAX_QUEUE);
                     for (int i = 0; i < q; i++) {
@@ -116,6 +131,13 @@ public record BuildingState(int matchId, long tick, List<Entry> buildings) {
                     if (rally) {
                         rx = in.readZigZagInt();
                         rz = in.readZigZagInt();
+                    }
+                    if (q > 0) {
+                        trained = in.readVarInt();
+                    }
+                    fieldLeft = in.readVarInt() - 1;
+                    if (fieldLeft >= 0) {
+                        ripening = in.readVarInt();
                     }
                 }
                 out.add(new Entry(
@@ -133,14 +155,20 @@ public record BuildingState(int matchId, long tick, List<Entry> buildings) {
                         queue,
                         rally,
                         rx,
-                        rz));
+                        rz,
+                        trained,
+                        fieldLeft,
+                        ripening));
             }
             return new BuildingState(matchId, tick, out);
         }
 
         @Override
         public int maxSize() {
-            return 5 + 10 + 2 + MAX_BUILDINGS * (5 + 5 + 5 + 5 + 5 + 1 + 5 + 5 + 1 + 1 + 1 + MAX_QUEUE * 5 + 1 + 10);
+            return 5
+                    + 10
+                    + 2
+                    + MAX_BUILDINGS * (5 + 5 + 5 + 5 + 5 + 1 + 5 + 5 + 1 + 1 + 1 + MAX_QUEUE * 5 + 1 + 10 + 5 + 5 + 5);
         }
     };
 }

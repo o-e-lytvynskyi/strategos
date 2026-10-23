@@ -89,6 +89,7 @@ public final class ScenarioRunner {
             case "s9" -> new S9CameraScenario();
             case "rts_basics" -> new RtsBasicsScenario();
             case "rts_select" -> new RtsSelectScenario();
+            case "rts_economy" -> new RtsEconomyScenario();
             case "rts_frame" -> new RtsFrameScenario();
             case "rts_goldens" -> new RtsGoldensScenario();
             case "far_markers" -> new FarMarkersScenario();

@@ -8,6 +8,7 @@ import dev.strategos.core.client.pick.Picking;
 import dev.strategos.core.protocol.Command;
 import dev.strategos.core.protocol.CommandBatch;
 import dev.strategos.core.protocol.MatchJoin;
+import dev.strategos.core.protocol.SetRally;
 import dev.strategos.core.protocol.Stop;
 import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.mod.client.StrategosClient;
@@ -119,6 +120,18 @@ final class RtsOrders {
         }
         double wx = pick.entityId() < 0 ? pick.x() + 0.5 : pick.x();
         double wz = pick.entityId() < 0 ? pick.z() + 0.5 : pick.z();
+        Integer building = mode.selection().building();
+        if (building != null) { // a selected building's right click sets its rally point (PROD-03)
+            SetRally rally = new SetRally(
+                    UnitSet.of(building),
+                    (int) Math.floor(pick.x()) - join.originX(),
+                    (int) Math.floor(pick.y()),
+                    (int) Math.floor(pick.z()) - join.originZ());
+            if (send(rally)) {
+                markers.add(new double[] {wx, pick.entityId() < 0 ? pick.y() + 1 : pick.y(), wz, 40, 0});
+            }
+            return;
+        }
         int enemy = 0;
         if (pick.entityId() >= 0
                 && mc.level.getEntity(pick.entityId()) instanceof UnitEntity body
@@ -241,12 +254,15 @@ final class RtsOrders {
         send(OrderIntents.follow(mode.selection().handles()));
     }
 
-    private void send(@Nullable Command command) {
+    /** One command, as its own batch, the last sent; whether it went. */
+    boolean send(@Nullable Command command) {
         if (command != null
                 && ClientPayloads.toServer(new CommandsPayload(new CommandBatch(clientSeq++, List.of(command)), ""))) {
             ordersSent++;
             lastCommand = command;
+            return true;
         }
+        return false;
     }
 
     /**

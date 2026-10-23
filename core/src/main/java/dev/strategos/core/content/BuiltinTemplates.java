@@ -29,7 +29,7 @@ final class BuiltinTemplates {
     static final String DEBUG_WALKER = """
             {
               "parent": "strategos:template/unit_base",
-              "Identity": { "name": "strategos.unit.debug_walker" },
+              "Identity": { "name": "strategos.unit.debug_walker", "icon": "minecraft:armor_stand" },
               "UnitMotion": { "walkSpeed": 0.25 },
               "Body": { "skin": "strategos:units/debug_walker" }
             }
@@ -37,7 +37,7 @@ final class BuiltinTemplates {
     static final String INFANTRY = """
             {
               "parent": "strategos:template/unit_infantry",
-              "Identity": { "name": "strategos.unit.infantry", "classes": "+Spearman" },
+              "Identity": { "name": "strategos.unit.infantry", "icon": "minecraft:trident", "classes": "+Spearman" },
               "Attack": {
                 "Melee": {
                   "hack": 3,
@@ -66,7 +66,7 @@ final class BuiltinTemplates {
     static final String WORKER = """
             {
               "parent": "strategos:template/unit_base",
-              "Identity": { "name": "strategos.unit.worker", "classes": "+Worker +Gatherer +Builder +Organic" },
+              "Identity": { "name": "strategos.unit.worker", "icon": "minecraft:wooden_axe", "classes": "+Worker +Gatherer +Builder +Organic" },
               "Health": { "max": 50 },
               "Behaviour": { "flee": 8 },
               "Cost": { "resources": { "food": 60 }, "population": 1, "time": 10 },
@@ -91,7 +91,7 @@ final class BuiltinTemplates {
     static final String CIVIC_CENTRE = """
             {
               "parent": "strategos:template/building_base",
-              "Identity": { "name": "strategos.building.civic_centre", "classes": "+CivicCentre" },
+              "Identity": { "name": "strategos.building.civic_centre", "icon": "minecraft:bell", "classes": "+CivicCentre" },
               "Building": { "blueprint": "strategos:civic_centre" },
               "Placement": { "civicReach": 0, "spacing": 64 },
               "Health": { "max": 2000 },
@@ -104,7 +104,7 @@ final class BuiltinTemplates {
     static final String FIELD = """
             {
               "parent": "strategos:template/building_base",
-              "Identity": { "name": "strategos.building.field", "classes": "+Field" },
+              "Identity": { "name": "strategos.building.field", "icon": "minecraft:wheat", "classes": "+Field" },
               "Building": { "blueprint": "strategos:field", "material": "wood" },
               "Footprint": { "obstructs": 0 },
               "Health": { "max": 200 },
@@ -115,7 +115,7 @@ final class BuiltinTemplates {
     static final String HOUSE = """
             {
               "parent": "strategos:template/building_base",
-              "Identity": { "name": "strategos.building.house", "classes": "+House" },
+              "Identity": { "name": "strategos.building.house", "icon": "minecraft:oak_door", "classes": "+House" },
               "Building": { "blueprint": "strategos:house", "material": "wood" },
               "Health": { "max": 400 },
               "Cost": { "resources": { "wood": 80 }, "time": 30 },
@@ -125,7 +125,7 @@ final class BuiltinTemplates {
     static final String BARRACKS = """
             {
               "parent": "strategos:template/building_base",
-              "Identity": { "name": "strategos.building.barracks", "classes": "+Barracks" },
+              "Identity": { "name": "strategos.building.barracks", "icon": "minecraft:shield", "classes": "+Barracks" },
               "Building": { "blueprint": "strategos:barracks", "material": "wood" },
               "Health": { "max": 1200 },
               "Cost": { "resources": { "wood": 200 }, "time": 60 },

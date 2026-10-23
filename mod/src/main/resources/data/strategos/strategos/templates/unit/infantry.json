@@ -1,6 +1,6 @@
 {
   "parent": "strategos:template/unit_infantry",
-  "Identity": { "name": "strategos.unit.infantry", "classes": "+Spearman" },
+  "Identity": { "name": "strategos.unit.infantry", "icon": "minecraft:trident", "classes": "+Spearman" },
   "Attack": {
     "Melee": {
       "hack": 3,

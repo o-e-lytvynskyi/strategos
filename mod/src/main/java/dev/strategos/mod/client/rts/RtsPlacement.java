@@ -2,8 +2,8 @@ package dev.strategos.mod.client.rts;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.serialization.JsonOps;
 import dev.strategos.core.client.build.ClientPlacement;
+import dev.strategos.core.client.hud.CommandCard;
 import dev.strategos.core.content.Blueprint;
 import dev.strategos.core.content.Footprint;
 import dev.strategos.core.content.PlacementRules;
@@ -15,15 +15,11 @@ import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.PlaceBuilding;
 import dev.strategos.core.protocol.QueueMode;
 import dev.strategos.core.protocol.UnitSet;
-import dev.strategos.core.sim.MatchRules;
-import dev.strategos.core.sim.econ.ResourceDef;
 import dev.strategos.mod.client.StrategosClient;
 import dev.strategos.mod.client.net.ClientPayloads;
 import dev.strategos.mod.registry.ModDataMaps;
 import dev.strategos.mod.server.net.payload.CommandsPayload;
 import dev.strategos.mod.server.world.ResourceYield;
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -45,7 +41,7 @@ import org.jspecify.annotations.Nullable;
  * blocks as translucent boxes, each column coloured by the verdict the client's run of {@link PlacementRules} gives it
  * (green where it may go, red where a rule fails); its build key cycles the templates, its rotate key turns it a
  * quarter, a left click sends {@link PlaceBuilding} with the selected builders (Shift queues it and keeps the mode
- * armed), a right click or Escape disarms. The command card arms it with UI-06; until then the build key does. The
+ * armed), a right click or Escape disarms. The command card's build page arms it (UI-06), and the build key too. The
  * verdict is recomputed on a move or a turn and once a second; the server's word stands.
  */
 final class RtsPlacement {
@@ -80,9 +76,15 @@ final class RtsPlacement {
 
     /** The build key: the next building template, after the last none. */
     void cycle() {
-        List<Integer> buildings = buildings(StrategosClient.templates());
+        List<Integer> buildings = CommandCard.buildings(StrategosClient.templates());
         int next = buildings.indexOf(armed) + 1;
         armed = next < buildings.size() ? buildings.get(next) : -1;
+        ghost = null;
+    }
+
+    /** The command card's build button: placement armed with {@code template}. */
+    void arm(int template) {
+        armed = template;
         ghost = null;
     }
 
@@ -125,8 +127,8 @@ final class RtsPlacement {
         PlacementRules.World world = ClientPlacement.world(
                 templates, StrategosClient.model().buildings(), join.sizeX(), join.sizeZ(), new Columns(level, join));
         FactionState faction = StrategosClient.model().faction();
-        PlacementRules.Params params =
-                ClientPlacement.params(templates, armed, resources(join), faction == null ? null : faction.stock());
+        PlacementRules.Params params = ClientPlacement.params(
+                templates, armed, StrategosClient.resources(), faction == null ? null : faction.stock());
         PlacementRules.Verdict verdict =
                 PlacementRules.check(world, b, at, join.slot().value(), params);
         double stand = Double.NEGATIVE_INFINITY;
@@ -236,30 +238,6 @@ final class RtsPlacement {
         q.addVertex(p, bx, by, bz).setColor(argb);
         q.addVertex(p, cx, cy, cz).setColor(argb);
         q.addVertex(p, dx, dy, dz).setColor(argb);
-    }
-
-    /** The building templates with a blueprint, by net index. */
-    private static List<Integer> buildings(TemplateSet templates) {
-        List<Integer> out = new ArrayList<>();
-        for (UnitTemplate t : templates.all()) {
-            if (t.isBuilding() && templates.blueprint(t.netIndex()) != null) {
-                out.add(t.netIndex());
-            }
-        }
-        out.sort(Comparator.naturalOrder());
-        return out;
-    }
-
-    /** The match's resources in their order, from the rules it was joined with. */
-    private static List<String> resources(MatchJoin join) {
-        try {
-            MatchRules rules = MatchRules.CODEC
-                    .parse(JsonOps.INSTANCE, com.google.gson.JsonParser.parseString(join.rules()))
-                    .getOrThrow();
-            return rules.economy().resources().stream().map(ResourceDef::id).toList();
-        } catch (RuntimeException e) {
-            return List.of();
-        }
     }
 
     /** The client's columns: the top standing floor of its loaded blocks, leaves skipped, water no land. */

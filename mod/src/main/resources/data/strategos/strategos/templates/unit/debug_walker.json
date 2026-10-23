@@ -1,6 +1,6 @@
 {
   "parent": "strategos:template/unit_base",
-  "Identity": { "name": "strategos.unit.debug_walker" },
+  "Identity": { "name": "strategos.unit.debug_walker", "icon": "minecraft:armor_stand" },
   "UnitMotion": { "walkSpeed": 0.25 },
   "Body": { "skin": "strategos:units/debug_walker" }
 }

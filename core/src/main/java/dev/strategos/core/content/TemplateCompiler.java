@@ -361,7 +361,7 @@ public final class TemplateCompiler {
         JsonObject motion = f.object(json, "", "UnitMotion", true);
         JsonObject body = f.object(json, "", "Body", true);
         if (identity != null) {
-            f.known(identity, "/Identity", "name", "classes");
+            f.known(identity, "/Identity", "name", "classes", "icon");
         }
         if (motion != null) {
             f.known(motion, "/UnitMotion", "walkSpeed", "turnRate", "mobility");

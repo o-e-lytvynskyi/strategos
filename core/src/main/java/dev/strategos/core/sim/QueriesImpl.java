@@ -61,7 +61,9 @@ final class QueriesImpl implements MatchQueries {
                     trainedThousandths(handle),
                     b.rallyKind(handle),
                     b.rallyX(handle),
-                    b.rallyZ(handle)));
+                    b.rallyZ(handle),
+                    b.field(handle) == 0 ? -1 : state.nodes().amount(b.field(handle)),
+                    b.field(handle) == 0 ? 0 : state.nodes().ripening(b.field(handle))));
         }
         return out;
     }
@@ -136,6 +138,16 @@ final class QueriesImpl implements MatchQueries {
     @Override
     public FactionTreasury treasury(FactionSlot faction) {
         return state.treasury().view(faction.value());
+    }
+
+    @Override
+    public int carriedResource(int handle) {
+        return state.entities().isAlive(handle) ? state.carry().resource(Handle.index(handle)) : -1;
+    }
+
+    @Override
+    public long carriedAmount(int handle) {
+        return state.entities().isAlive(handle) ? state.carry().amount(Handle.index(handle)) : 0;
     }
 
     @Override

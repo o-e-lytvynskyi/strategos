@@ -547,7 +547,8 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   4. Goldens for a worker, a civic centre and a barracks selection (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** UI-03, PROD-01, BLD-02 · **Size:** M ·
   **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
+- **Progress:** 2026-10-24 — M3 T17: layouts at every window and scale (1), one click one command and the view-models equal the model (2), the queue a mock player receives is the server's (3) (spec §1.6 rows 54–55); the goldens (4) wait for T30's batch
 
 #### UI-07 · Resource bar, population and workers per resource
 - **Value:** Know your economy at a glance, the way modern AoE shows it (P2).

@@ -9,6 +9,8 @@ import dev.strategos.core.client.input.ScreenKeys;
 import dev.strategos.core.client.pick.Picking;
 import dev.strategos.core.client.select.Seen;
 import dev.strategos.core.client.select.Selection;
+import dev.strategos.core.protocol.BuildingState;
+import dev.strategos.mod.client.StrategosClient;
 import java.util.List;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
@@ -30,6 +32,9 @@ public final class RtsScreen extends Screen {
     private static final int BOX = 0x80FFFFFF;
 
     private final RtsMode mode;
+
+    /** Whether the press now held went to the HUD, so its release does too. */
+    private boolean hudPress;
 
     RtsScreen(RtsMode mode) {
         super(Component.literal("Strategos"));
@@ -72,7 +77,9 @@ public final class RtsScreen extends Screen {
         if (in == null) {
             return false;
         }
-        switch (ScreenKeys.route(keyCode, in.context())) {
+        // placing a building is the placement context, however it was armed: Escape disarms it, not pause
+        ActionContext context = mode.placement().armed() ? ActionContext.PLACEMENT : in.context();
+        switch (ScreenKeys.route(keyCode, context)) {
             case HIDE_GUI -> mc.options.hideGui = !mc.options.hideGui;
             case SCREENSHOT ->
                 Screenshot.grab(
@@ -124,6 +131,10 @@ public final class RtsScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (StrategosClient.hud().click(mouseX, mouseY, button)) {
+            hudPress = true;
+            return true;
+        }
         InputState in = mode.input();
         if (in != null) {
             handle(in.mouseDown(button, mouseX, mouseY, modifiers(), Util.getMillis()));
@@ -133,6 +144,10 @@ public final class RtsScreen extends Screen {
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if (hudPress) {
+            hudPress = false;
+            return true;
+        }
         InputState in = mode.input();
         if (in != null) {
             handle(in.mouseUp(button, mouseX, mouseY, modifiers(), Util.getMillis()));
@@ -170,7 +185,14 @@ public final class RtsScreen extends Screen {
             switch (e.action()) {
                 case SELECT -> {
                     if (!mode.placement().place(shift)) {
-                        selection.click(mode.seenAt(pickAt(e.x(), e.y())), shift);
+                        RtsMode.Pick pick = pickAt(e.x(), e.y());
+                        Seen unit = mode.seenAt(pick);
+                        BuildingState.Entry building = unit == null ? mode.buildingAt(pick) : null;
+                        if (building != null) {
+                            selection.clickBuilding(building.handle(), building.faction());
+                        } else {
+                            selection.click(unit, shift);
+                        }
                     }
                 }
                 case SELECT_ALL_OF_TYPE -> {

@@ -1,6 +1,6 @@
 {
   "parent": "strategos:template/building_base",
-  "Identity": { "name": "strategos.building.house", "classes": "+House" },
+  "Identity": { "name": "strategos.building.house", "icon": "minecraft:oak_door", "classes": "+House" },
   "Building": { "blueprint": "strategos:house", "material": "wood" },
   "Health": { "max": 400 },
   "Cost": { "resources": { "wood": 80 }, "time": 30 },

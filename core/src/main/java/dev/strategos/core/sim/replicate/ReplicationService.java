@@ -84,7 +84,10 @@ public final class ReplicationService {
                     own ? b.queue() : List.of(),
                     own && b.rallyKind() != BuildingStore.RALLY_NONE,
                     own ? (int) Math.floor(b.rallyX()) : 0,
-                    own ? (int) Math.floor(b.rallyZ()) : 0));
+                    own ? (int) Math.floor(b.rallyZ()) : 0,
+                    own && !b.queue().isEmpty() ? (int) b.trained() : 0,
+                    own && b.fieldAmount() >= 0 ? (int) Math.min(Integer.MAX_VALUE - 1, b.fieldAmount()) : -1,
+                    own && b.fieldAmount() >= 0 ? (int) Math.min(Integer.MAX_VALUE, b.fieldRipening()) : 0));
         }
         return new BuildingState(matchId, q.tick(), out);
     }
@@ -137,7 +140,9 @@ public final class ReplicationService {
                     (float) q.hitPoints(handle),
                     (float) q.maxHitPoints(handle),
                     speed == null ? 0 : (float) speed.result(),
-                    orders));
+                    orders,
+                    q.carriedResource(handle),
+                    q.carriedAmount(handle)));
         }
         return new UnitDetail(matchId, q.tick(), units);
     }

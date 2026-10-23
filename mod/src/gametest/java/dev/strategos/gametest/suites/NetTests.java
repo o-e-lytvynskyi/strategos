@@ -791,4 +791,52 @@ public final class NetTests {
             }
         });
     }
+
+    /**
+     * UI-06.3: the queue a seated mock player receives is the server's: at the tick of each {@code building_state}, the
+     * centre's queue and its head's progress equal what the core held then.
+     */
+    @StrategosTest(timeoutTicks = 600)
+    public static void theQueueReachesItsOwnerAsTheServerHasIt(GameTestHelper h) {
+        MatchRuntime rt = match(h);
+        ProdTests.town(rt);
+        MockViewer owner = BuildingTests.seated(h, rt, "strategos-queue", 0);
+        java.util.Map<Long, String> server = new java.util.HashMap<>();
+        rt.addListener(out -> {
+            var q = core(rt).queries();
+            for (var b : q.buildings()) {
+                server.put(q.tick(), b.queue() + " " + b.trained());
+            }
+        });
+        h.startSequence()
+                .thenWaitUntil(() -> check(!core(rt).queries().buildings().isEmpty(), "no centre yet"))
+                .thenExecute(() -> {
+                    int centre = ProdTests.centre(rt).handle();
+                    for (int k = 0; k < 3; k++) {
+                        rt.submit(ProdTests.P0, new dev.strategos.core.protocol.Train(centre, TemplateSet.WORKER));
+                    }
+                })
+                .thenExecuteAfter(160, () -> {
+                    List<dev.strategos.core.protocol.BuildingState> got = BuildingTests.states(owner, rt);
+                    int matched = 0;
+                    boolean midway = false;
+                    for (var state : got) {
+                        var e = state.buildings().get(0);
+                        String expected = server.get(state.tick());
+                        if (expected == null || e.queue().isEmpty()) {
+                            continue;
+                        }
+                        check(
+                                (e.queue() + " " + e.trained()).equals(expected),
+                                "at tick " + state.tick() + " the owner got " + e.queue() + " " + e.trained()
+                                        + ", the server held " + expected);
+                        matched++;
+                        midway |= e.queue().size() >= 2 && e.trained() > 0 && e.trained() < 1000;
+                    }
+                    check(matched >= 3, "only " + matched + " states with a queue matched, of " + got.size());
+                    check(midway, "no state caught a head in training with more behind it");
+                    owner.close();
+                })
+                .thenSucceed();
+    }
 }

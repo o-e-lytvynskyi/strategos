@@ -7,8 +7,9 @@ import java.util.List;
 /**
  * The {@code unit_detail} payload (NET-08): what a player's {@code ui_query} asked for, own units only, when it
  * changed and at most ten times a second: each unit's template, state, hit points and their most, effective walk
- * speed, and its orders (kind and match-local target), at most {@value #MAX_ORDERS} of them. Cooldowns and carried
- * loads join with the cards that bring them.
+ * speed, its orders (kind and match-local target), at most {@value #MAX_ORDERS} of them, and the load it carries
+ * (UI-06): the resource's index in the match's economy, -1 for none, and the amount in thousandths. Cooldowns join with
+ * the cards that bring them.
  */
 @CoreApi
 public record UnitDetail(int matchId, long tick, List<Unit> units) {
@@ -21,7 +22,15 @@ public record UnitDetail(int matchId, long tick, List<Unit> units) {
     /** One unit's details. */
     @CoreApi
     public record Unit(
-            int handle, int template, int state, float health, float maxHealth, float walkSpeed, List<Order> orders) {
+            int handle,
+            int template,
+            int state,
+            float health,
+            float maxHealth,
+            float walkSpeed,
+            List<Order> orders,
+            int carried,
+            long load) {
         public Unit {
             orders = List.copyOf(orders.size() > MAX_ORDERS ? orders.subList(0, MAX_ORDERS) : orders);
         }
@@ -51,6 +60,10 @@ public record UnitDetail(int matchId, long tick, List<Unit> units) {
                 for (Order o : u.orders()) {
                     out.writeVarInt(o.kind()).writeFloat(o.x()).writeFloat(o.z());
                 }
+                out.writeVarInt(u.carried() + 1);
+                if (u.carried() >= 0) {
+                    out.writeVarLong(u.load());
+                }
             }
         }
 
@@ -72,14 +85,16 @@ public record UnitDetail(int matchId, long tick, List<Unit> units) {
                 for (int j = 0; j < orders; j++) {
                     list.add(new Order(in.readVarInt(), in.readFloat(), in.readFloat()));
                 }
-                units.add(new Unit(handle, template, state, health, max, speed, list));
+                int carried = in.readVarInt() - 1;
+                long load = carried >= 0 ? in.readVarLong() : 0;
+                units.add(new Unit(handle, template, state, health, max, speed, list, carried, load));
             }
             return new UnitDetail(matchId, tick, units);
         }
 
         @Override
         public int maxSize() {
-            return 5 + 10 + 5 + UiQuery.MAX_HANDLES * (4 + 5 + 1 + 12 + 5 + MAX_ORDERS * (5 + 8));
+            return 5 + 10 + 5 + UiQuery.MAX_HANDLES * (4 + 5 + 1 + 12 + 5 + MAX_ORDERS * (5 + 8) + 5 + 10);
         }
     };
 }

@@ -38,6 +38,12 @@ public interface MatchQueries {
      */
     int[] workers(FactionSlot faction);
 
+    /** The resource a live unit carries, its index in the economy, or -1 when it carries none or is dead (ECO-05). */
+    int carriedResource(int handle);
+
+    /** How much a live unit carries, in thousandths; 0 when it carries none or is dead. */
+    long carriedAmount(int handle);
+
     /** A live unit's hit points now (CMB-01): its most less the damage it took; NaN for no live unit. */
     double hitPoints(int handle);
 

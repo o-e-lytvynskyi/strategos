@@ -1,9 +1,13 @@
 package dev.strategos.mod.client;
 
+import com.google.gson.JsonParser;
+import com.mojang.serialization.JsonOps;
 import dev.strategos.core.client.model.ClientMatchModel;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.MatchStateMsg;
+import dev.strategos.core.sim.MatchRules;
+import dev.strategos.core.sim.econ.ResourceDef;
 import dev.strategos.mod.Strategos;
 import dev.strategos.mod.client.audio.FxPlayer;
 import dev.strategos.mod.client.debug.ClientDebugState;
@@ -15,6 +19,7 @@ import dev.strategos.mod.client.overlay.HealthBarOverlay;
 import dev.strategos.mod.client.rts.RtsMode;
 import dev.strategos.mod.registry.ModEntityTypes;
 import dev.strategos.mod.server.net.payload.PayloadArrived;
+import java.util.List;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -39,6 +44,7 @@ public final class StrategosClient {
     private static final HealthBarOverlay BARS = new HealthBarOverlay(MODEL, RTS);
     private static final FxPlayer SOUNDS = new FxPlayer(RTS);
     private static volatile @Nullable MatchJoin match;
+    private static volatile List<String> resources = List.of();
     private static volatile @Nullable MatchStateMsg state;
     private static volatile TemplateSet templates = TemplateSet.builtin();
 
@@ -50,6 +56,7 @@ public final class StrategosClient {
         NeoForge.EVENT_BUS.addListener(PayloadArrived.class, ClientPayloads::onPayload);
         NeoForge.EVENT_BUS.addListener(ClientPlayerNetworkEvent.LoggingOut.class, e -> {
             match = null;
+            resources = List.of();
             state = null;
             DEBUG.reset();
             MODEL.clear();
@@ -102,6 +109,23 @@ public final class StrategosClient {
 
     public static void match(MatchJoin join) {
         match = join;
+        resources = resources(join);
+    }
+
+    /** The joined match's resources in their order, from the rules it was joined with; empty before a join. */
+    public static List<String> resources() {
+        return resources;
+    }
+
+    private static List<String> resources(MatchJoin join) {
+        try {
+            MatchRules rules = MatchRules.CODEC
+                    .parse(JsonOps.INSTANCE, JsonParser.parseString(join.rules()))
+                    .getOrThrow();
+            return rules.economy().resources().stream().map(ResourceDef::id).toList();
+        } catch (RuntimeException e) {
+            return List.of();
+        }
     }
 
     public static @Nullable MatchStateMsg state() {

@@ -1,6 +1,6 @@
 {
   "parent": "strategos:template/building_base",
-  "Identity": { "name": "strategos.building.field", "classes": "+Field" },
+  "Identity": { "name": "strategos.building.field", "icon": "minecraft:wheat", "classes": "+Field" },
   "Building": { "blueprint": "strategos:field", "material": "wood" },
   "Footprint": { "obstructs": 0 },
   "Health": { "max": 200 },

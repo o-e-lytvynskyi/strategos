@@ -130,7 +130,7 @@ public final class BuildingTests {
                 .thenSucceed();
     }
 
-    private static MockViewer seated(GameTestHelper h, MatchRuntime rt, String name, int slot) {
+    static MockViewer seated(GameTestHelper h, MatchRuntime rt, String name, int slot) {
         Vec3 at = h.absoluteVec(new Vec3(8.5, 20, 8.5));
         MockViewer viewer = MockViewer.join(h.getLevel(), name, at.x, at.y, at.z, 4);
         StrategosServer.get().matches().join(rt, viewer.player().getUUID(), new PlayerSlot(slot));
@@ -138,7 +138,7 @@ public final class BuildingTests {
         return viewer;
     }
 
-    private static List<BuildingState> states(MockViewer viewer, MatchRuntime rt) {
+    static List<BuildingState> states(MockViewer viewer, MatchRuntime rt) {
         viewer.poll();
         List<BuildingState> out = new ArrayList<>();
         for (ClientboundCustomPayloadPacket p : viewer.capture().of(ClientboundCustomPayloadPacket.class)) {

@@ -11,6 +11,7 @@ import dev.strategos.core.client.pick.View;
 import dev.strategos.core.client.select.ControlGroups;
 import dev.strategos.core.client.select.Seen;
 import dev.strategos.core.client.select.Selection;
+import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.CameraJump;
 import dev.strategos.core.protocol.Command;
 import dev.strategos.core.protocol.MatchJoin;
@@ -137,6 +138,37 @@ public final class RtsMode {
     /** STOP: the selection's orders end (ORD-02). */
     public void stop() {
         orders.stop();
+    }
+
+    /** One command from the HUD (UI-06), as a batch of its own; whether it went. */
+    public boolean send(Command command) {
+        return orders.send(command);
+    }
+
+    /** The building template placement mode is armed with, its net index; -1 when it is not armed. For scenarios. */
+    public int placementTemplate() {
+        return placement.template();
+    }
+
+    /** The command card's build button: placement armed with building template {@code template} (BLD-02). */
+    public void armPlacement(int template) {
+        placement.arm(template);
+    }
+
+    /**
+     * The building the pick at window points stands in, by its blueprint's columns, or null: a picked unit, the sky or
+     * open ground pick none (UI-06).
+     */
+    BuildingState.@Nullable Entry buildingAt(@Nullable Pick pick) {
+        MatchJoin join = StrategosClient.match();
+        if (pick == null || pick.entityId() >= 0 || join == null) {
+            return null;
+        }
+        return StrategosClient.model()
+                .buildingAt(
+                        StrategosClient.templates(),
+                        (int) Math.floor(pick.x()) - join.originX(),
+                        (int) Math.floor(pick.z()) - join.originZ());
     }
 
     /** Orders sent from the RTS screen and in first person, for scenarios. */

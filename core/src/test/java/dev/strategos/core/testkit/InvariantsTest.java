@@ -181,6 +181,16 @@ class InvariantsTest {
         }
 
         @Override
+        public int carriedResource(int handle) {
+            return -1;
+        }
+
+        @Override
+        public long carriedAmount(int handle) {
+            return 0;
+        }
+
+        @Override
         public List<NodeView> nodes() {
             return List.of();
         }
