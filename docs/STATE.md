@@ -46,8 +46,8 @@ Answer in chat or here; the next session applies the answers.
 8. **Pictures to approve, not urgent (M2's consent batch):** the reference frames the client tests
    compare with, for this Mac and for CI's Linux renderer, in
    [goldens-proposed](../mod/src/devtools/goldens-proposed/): the RTS camera at three poses, a
-   selected group outlined with the HUD's panel and group bar, a unit's tooltip, and the movement
-   overlay. Say yes and they become the goldens
+   selected group outlined with the HUD's panel and group bar, a unit's tooltip, health bars over
+   the selected and the hurt at three heights, and the movement overlay. Say yes and they become the goldens
    (procedure in [mod/src/devtools/README.md](../mod/src/devtools/README.md)). Two things to look
    at while you do:
    - the outline reads dark navy rather than the faction's blue: the outline effect darkens it;
@@ -332,6 +332,10 @@ Answer in chat or here; the next session applies the answers.
   counter that the headless tests use matches a real client's own measurement to 0.006 % (M1's
   QA-19.4); the movement overlay has its pictures too (M1's PATH-10.3); and the RTS scenarios pass
   with Sodium and Iris.
+- 2026-10-23 · **M2 T17 Health bars:** in the RTS view every selected unit, and every hurt one, has
+  a bar over its head that runs from green to red as it loses hit points; F1 hides them with the
+  rest of the interface. They cost a few hundredths of a millisecond a frame. Card CMB-06 is done;
+  its pictures wait for you with the others (item 8).
 
 ## Now
 
@@ -339,7 +343,7 @@ Answer in chat or here; the next session applies the answers.
 - **In progress:** none.
 - **Last finished task:** M1 T26 (2026-10-23). The agents' branches `wip/m1-t17-unitai-hfsm` and
   `wip/m1-t25-debug-overlay` are merged and kept on GitHub for the record.
-- **Last M2 task:** T10, replication tier 2 and 3 (2026-10-23), T14 before it (its unit-on-unit check with T15); T1–T6, T8, T9, T11, T12, T13, T19, T21 done; T7 open for NET-08's markers; three consent-batch items (T22) done early.
+- **Last M2 task:** T17, health bars (2026-10-23); T1–T13, T17, T19, T21 done; T14 done but for its unit-on-unit check with T15; three consent-batch items (T22) done early.
 - **Next task:** while the Mac's windows are mine today, the window work that is ready (M2's L4
   items as their tasks land); M1 T27 (M1 close, headless); then M2's tasks in the spec's order.
 - **WIP branch:** none.

@@ -9,7 +9,20 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24, T16, T26; M2 spec, M2 T1, T3, T5, T11, T13, T9, T21, T8, T6, T19, T2, T4, T14, T10 (part), T7
+## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24, T16, T26; M2 spec, M2 T1, T3, T5, T11, T13, T9, T21, T8, T6, T19, T2, T4, T14, T10 (part), T7, T10, T17
+
+- **M2 T17 · Health bars** — CMB-06 done (its goldens proposed).
+  - **Results:** core `HealthBars` (which units get a bar, where, how wide, what colour) with
+    `HealthBarsTest` (2) and `HealthBarBench`; the mod's `HealthBarOverlay` at `AFTER_PARTICLES`,
+    hidden with F1; `rts_goldens` hurts five units before its shots, so every frame has bars at its
+    height; `rts_frame` times the bars' pass.
+  - **Measured:** extraction of 300 units 0.92 µs (card: under 0.5 ms); PERF-14 with bars over
+    the selected hundred: frame p50 2.70 ms (1.86 with Sodium), our drawing 0.82 ms (0.87), of which
+    the bars 0.024 ms (0.011); budgets 16.7 and 3 ms.
+  - **Problems:** the fill was nudged along the camera's left × up, which is its look direction, so
+    it sat behind its back and the depth test hid it; it goes against the look now. Recorded in the
+    knowledge base.
+  - **Next:** T18, the `fx` payload and sounds (AUD-01).
 
 - **M2 T10 · Replication tiers 2 and 3** — NET-08 done; UNIT-03 done (T7).
   - **Then:** `unit_hud` (core `HudMemory`, 5 Hz, changes only, per player), `ui_query` and

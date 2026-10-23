@@ -517,8 +517,8 @@ perspective only.
   3. Goldens of health bars at three camera heights (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent), L6 · **Depends on:** CMB-01, UI-02, NET-08 · **Size:** S ·
   **Tier:** T0
-- **Progress:** 2026-10-23 — with M2 T10: `replicationtests.hud_reaches_only_those_who_see` (1); the hit flash and death came with CMB-01. Open: the bars themselves, their bench (2) and goldens (3)
-- **Status:** in_progress
+- **Done:** 2026-10-23 — M2 T10: `replicationtests.hud_reaches_only_those_who_see` (1); M2 T17: `HealthBarBench.bars300`, 0.92 µs for 300 units, and PERF-14 with bars over the selected hundred within budget F (2); bars over the selected and the hurt in `rts_goldens` at three heights, proposed as goldens for the owner (3); the hit flash and death came with CMB-01; M2 spec §1.6 rows 61–63
+- **Status:** done
 
 #### AUD-01 · Order, hit and death sounds
 - **Value:** Orders and fights sound right, so you notice action off-screen (P2).

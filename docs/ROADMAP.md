@@ -325,7 +325,7 @@ Cards: [roadmap/M2-command.md](roadmap/M2-command.md#cards). 20 cards, at most 6
 | CMB-01 | Damage model in the core | M | DATA-02, UNIT-02 | in_progress |
 | CMB-02 | Melee combat with a default aggressive behaviour | M | CMB-01, PATH-06 | specified |
 | ORD-04 | Attack and attack-move | M | ORD-02, CMB-02, UI-05 | specified |
-| CMB-06 | Health bars, hit flash and death | S | CMB-01, UI-02, NET-08 | in_progress |
+| CMB-06 | Health bars, hit flash and death | S | CMB-01, UI-02, NET-08 | done |
 | AUD-01 | Order, hit and death sounds | S | ORD-02, CMB-01, NET-01 | specified |
 | PERF-14 | Client frame gate (consent) | S | UI-02, UNIT-03, QA-06 | in_progress |
 

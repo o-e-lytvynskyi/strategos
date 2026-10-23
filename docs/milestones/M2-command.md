@@ -183,6 +183,9 @@ Rows written while specifying; tasks append theirs.
 | 58 | NET-08: `unit_hud` | Each seated player has a `HudMemory` (core): every 4 ticks (5 Hz) it gets the units it sees whose hit points, in 255ths of their most, differ from what it was last sent, once each; a unit never listed is whole, and a unit still alive never shows 0. To that player only (`Player` audience), so each player's memory stays its own |
 | 59 | NET-08: `ui_query` and `unit_detail` | A query (at most 32 handles, four a second; a fifth in a second is refused) replaces the player's subscription, an empty one ends it; every 2 ticks (10 Hz) the player gets `unit_detail` when it differs from the last sent: its own live units among the handles, each with template, state, hit points and their most, effective walk speed and its orders, at most 16. The client's HUD asks for the selection's details when the selection changes, at most every 5 ticks. The visibility rule a test sets is the match's own (`Replication#visibility(match, rule)`), since a batch's tests run together |
 | 60 | T10: tests | `HudAndDetailTest` (3: the hud lists changes once and only what the viewer sees, details for own units only, the three codecs round-trip), `replicationtests.detail_answers_own_units_only` (NET-08.4), `replicationtests.hud_reaches_only_those_who_see` (the hidden enemy's hit points never reach faction 0, faction 1 gets both: CMB-06.1). With rows 54–57, every acceptance item of NET-08 |
+| 61 | CMB-06: which units get a bar | `HealthBars` (`core.client.hud`) takes each body of the match the client draws, with its hit points from `ClientMatchModel` (`unit_hud`'s 255ths; a unit never listed is whole): a selected unit gets a bar, and so does an unselected one below whole. The bar sits half a block over the head, 1.5 times the body's width and at least 0.9 blocks wide, fills from the left and runs green, whole, through yellow at half to red. It is extracted once a frame from the bodies' interpolated positions; units without a body (far markers) get none |
+| 62 | CMB-06: the drawing | `HealthBarOverlay` draws the frame's bars in one batch at `AFTER_PARTICLES`, each a dark back and its fill as quads facing the camera, the fill nudged 0.01 block toward the camera against the look vector (the camera's left × up points away from it; the first cut hid the fill behind its back). `debugQuads` keeps the depth test, so the ground and bodies in front hide a bar; F1 hides them with the GUI |
+| 63 | T17: tests and numbers | `HealthBarsTest` (2: a bar for the selected and the hurt only, half a block over the head and at least 0.9 wide; the colour green, yellow at half, red), `HealthBarBench.bars300`: 0.92 µs for 300 units against CMB-06.2's 0.5 ms. `rts_goldens` hurts five units (20 to 90 hit points, two own and three enemies) before its shots and waits a second for `unit_hud`, so the close, default and top poses all show bars, over the selected group in the outline and tooltip frames too; re-recorded three times on this Mac (identical but for 2.9e-10 in `pose_high`) and once on CI's llvmpipe, proposed in `goldens-proposed` (CMB-06.3). PERF-14 again, three runs a profile with bars over the selected hundred: frame p50 2.70 ms and p99 6.22 ms without performance mods, 1.86 and 4.78 with Sodium; our drawing 0.82 and 0.87 ms against 3, of which the bars' pass is 0.024 and 0.011 ms (CMB-06.2's budget F; `perf/client/m4pro.json`) |
 
 ### 1.7 Consent plan
 
@@ -428,6 +431,8 @@ second (5 minutes, M1 §1.6 row 162's pacing); budgets A, B and C as M1's soak m
   with a reason where hashes change. **Verification:** `verify verifySlow verifyPerf`.
 
 #### T17 · Health bars — CMB-06 · T18 · Sounds — AUD-01
+- T17 (§1.6 rows 61–63): `HealthBars` (`core.client.hud`), `HealthBarOverlay`, `HealthBarBench`, the
+  hurt phase of `rts_goldens` and the bars' timer in `rts_frame`.
 - **Files:** `mod.client.overlay.HealthBars`, `HealthBarBench`; `fx` payload, `FxSender`, client
   playback. **Verification:** `verify`; goldens (L4).
 
@@ -451,7 +456,7 @@ second (5 minutes, M1 §1.6 row 162's pacing); budgets A, B and C as M1's soak m
 ### 7.3 Progress
 
 - [x] T1 (2026-10-23) · [x] T2 (2026-10-23) · [x] T3 (2026-10-23) · [x] T4 (2026-10-23) · [x] T5 (2026-10-23) · [x] T6 (2026-10-23) · [x] T7 (2026-10-23) · [x] T8 (2026-10-23) · [x] T9 (2026-10-23) · [x] T10 (2026-10-23) · [x] T11 (2026-10-23) · [x] T12 (2026-10-23)
-- [x] T13 (2026-10-23) · [ ] T14 (the damage model done; the unit-on-unit check with T15) · [ ] T15 · [ ] T16 · [ ] T17 · [ ] T18 · [x] T19 (2026-10-23) · [ ] T20 · [x] T21 (2026-10-23) · [ ] T22 · [ ] T23
+- [x] T13 (2026-10-23) · [ ] T14 (the damage model done; the unit-on-unit check with T15) · [ ] T15 · [ ] T16 · [x] T17 (2026-10-23) · [ ] T18 · [x] T19 (2026-10-23) · [ ] T20 · [x] T21 (2026-10-23) · [ ] T22 · [ ] T23
 
 ---
 
