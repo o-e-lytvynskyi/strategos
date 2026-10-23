@@ -29,9 +29,10 @@ governs.
 | [0018](0018-persistence-and-versioning.md) | One versioned `SavedData` blob per match, codecs in core, quarantine on failure | Accepted | 2026-10-21 | §5 |
 | [0019](0019-performance-budgets.md) | Performance budgets A–G at 600 units, measured from M0 | Accepted (2026-10-22); F measured by S4 for bare humanoids, armoured with ART-01 | 2026-10-21 | §17 |
 | [0020](0020-engine-surface-inventory.md) | One reviewed inventory of every hook into Minecraft | Accepted | 2026-10-21 | §2 |
-| [0021](0021-economy-and-construction-model.md) | Hybrid world economy: real-block nodes, finite deposits and fields, abstract building HP | Accepted | 2026-10-21 | §11 |
+| [0021](0021-economy-and-construction-model.md) | Hybrid world economy: real-block nodes, finite deposits and fields, abstract building HP | Accepted; leaf rule superseded by 0024 | 2026-10-21 | §11 |
 | [0022](0022-definition-of-done-amendments.md) | Definition-of-Done amendments for networking and tooling changes, and the inventory check in L2 | Accepted | 2026-10-21 | §16 |
 | [0023](0023-plan-alignment-after-roadmap-approval.md) | Plan alignment after the roadmap's approval; the roadmap governs the schedule | Accepted | 2026-10-21 | §1.5, §3.4, §5.5, §6.7, §7.5, §9.5, §10, §13.7 |
+| [0024](0024-canopy-thinning-by-the-vanilla-distance-rule.md) | Canopy thinning by vanilla's leaf-distance rule | Accepted; supersedes 0021's leaf rule | 2026-10-23 | §11 |
 
 ## Pending measurements
 
@@ -59,11 +60,11 @@ The spikes, their questions and exit criteria are in
 Future cards owe these decisions as new ADRs. Each takes the next free number when it is written
 and names the part of an older ADR that it replaces or extends. QA-09's Definition-of-Done
 amendment, planned here before, is written: [ADR-0022](0022-definition-of-done-amendments.md),
-accepted with the roadmap on 2026-10-21.
+accepted with the roadmap on 2026-10-21; so is ECO-03's canopy rule, [ADR-0024](0024-canopy-thinning-by-the-vanilla-distance-rule.md)
+(M3 T8).
 
 | Card | When | Decision | Effect on existing ADRs |
 |---|---|---|---|
-| ECO-03 | M3 | Leaves go while a tree is felled, as vanilla would decay them: once no remaining log is within six leaf steps (`LeavesBlock.DECAY_DISTANCE` = 7), computed by the core | Supersedes ADR-0021's leaf rule (leaves only when the tree is exhausted) |
 | ECO-16 | M4 | A fauna model archetype for livestock: a `strategos:unit_fauna` entity type, or a renderer that dispatches by archetype | Amends ADR-0011; the engine-surface inventory ([04-architecture.md §2.5](../04-architecture.md), ADR-0020) lists the new type or renderer |
 | QA-14 | 2027-Q2 or the MVP gate, whichever comes first | The 26.x platform decision (stay, port or keep two branches) and the next review date | Records the outcome of ADR-0001's decision gate; supersedes ADR-0001 unless the decision is to stay |
 | UNIT-08 | M14 | The body mode or entity type of ships | Amends ADR-0011 if ships need a mode or type it does not list |

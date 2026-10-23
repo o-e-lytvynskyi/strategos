@@ -1849,7 +1849,7 @@ and refund counters. Conservation is an invariant the core checks after every st
 
 | Node | World | Core model | Depletion |
 |---|---|---|---|
-| Tree | Real log and leaf blocks | `TreeNode`: log positions top-down, amount per log (data map), remaining | Each per-log quota removes the top log; leaves are removed (budgeted) when the tree is exhausted, because forced chunks without random ticks never decay them |
+| Tree | Real log and leaf blocks | A node: log positions top-down, amount per log (data map), remaining | Each per-log quota removes the top log; the leaves no standing log holds within six leaf steps go with it, by vanilla's own rule, since forced chunks without random ticks never decay them (ADR-0024) |
 | Stone outcrop | Real stone and ore blocks above ground | `StoneNode`: blocks ordered top-down and outside-in | The same; the order lowers hills instead of digging pits that trap units, and never goes below the surrounding floor |
 | Deposit (mine, quarry) | Blocks placed by the map | `DepositNode`: amount (for example 1,000 or 5,000), gatherer slots, visual stages at 75, 50, 25 and 0 % | A stage change swaps that stage's blocks |
 | **Field** | A building | `FieldNode`: **a finite amount** (data), 5 gatherer slots, diminishing returns of 0.9 per extra gatherer ([mechanics §1.2](research/mechanics.md)), and a reseed rule: manual, automatic at a cost, or free regrowth (D-14, decided 2026-10-21: manual reseed in M3, automatic reseed for wood toggled at the farmstead from M4) | When the amount runs out, the field follows its reseed rule; the crop age shows progress |

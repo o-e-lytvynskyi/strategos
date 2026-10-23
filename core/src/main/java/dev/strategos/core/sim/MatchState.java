@@ -19,10 +19,12 @@ import dev.strategos.core.sim.econ.NodeStore;
 import dev.strategos.core.sim.econ.Treasury;
 import dev.strategos.core.sim.nav.BlockClass;
 import dev.strategos.core.sim.nav.FootprintOverlay;
+import dev.strategos.core.sim.nav.MaterialKind;
 import dev.strategos.core.sim.nav.MobilityClass;
 import dev.strategos.core.sim.nav.PageBuilder;
 import dev.strategos.core.sim.nav.PageCoord;
 import dev.strategos.core.sim.nav.PathStore;
+import dev.strategos.core.sim.nav.SliceMaterials;
 import dev.strategos.core.sim.nav.SurfaceGrid;
 import dev.strategos.core.sim.nav.SurfacePage;
 import dev.strategos.core.sim.nav.TerrainEdits;
@@ -161,6 +163,7 @@ public final class MatchState {
             sliceBytes[index] = page.slice();
             if (page.sampleTick() >= 0) {
                 terrainEdits.dropUpTo(index, page.sampleTick());
+                losses(index, page.coord());
             }
             if (terrainEdits.count(index) > 0 || footprints.any(index)) {
                 built.add(rebuilt(index, page.coord()));
@@ -189,6 +192,47 @@ public final class MatchState {
                 b.minY(),
                 i -> sliceBytes[i] == null ? null : VoxelSlice.decode(sliceBytes[i]));
         nodeIndex = null;
+    }
+
+    /**
+     * The materials in the box (x0..x1, y0..y1, z0..z1), match-local x and z, absolute y, as the core now sees its
+     * terrain: each page's last slice, less every voxel the core has edited since (ECO-03). Positions are packed by
+     * {@link NodeStore#pack}; the result is in position order.
+     */
+    public List<long[]> materialsIn(int x0, int y0, int z0, int x1, int y1, int z1, MaterialKind kind) {
+        List<long[]> out = new ArrayList<>(); // packed position, material amount
+        MatchBounds b = config.bounds();
+        for (int pz = Math.max(0, z0 >> 4); pz <= Math.min(surfaces.pagesZ() - 1, z1 >> 4); pz++) {
+            for (int px = Math.max(0, x0 >> 4); px <= Math.min(surfaces.pagesX() - 1, x1 >> 4); px++) {
+                int page = pz * surfaces.pagesX() + px;
+                if (sliceBytes[page] == null) {
+                    continue;
+                }
+                VoxelSlice slice = VoxelSlice.decode(sliceBytes[page]);
+                SliceMaterials m = slice.materials();
+                int height = slice.height();
+                for (int k = 0; k < m.size(); k++) {
+                    if (m.material(k).kind() != kind) {
+                        continue;
+                    }
+                    int column = m.voxel(k) / height;
+                    int band = m.voxel(k) % height;
+                    int x = px * 16 + column / 16;
+                    int z = pz * 16 + column % 16;
+                    int y = b.minY() + band;
+                    if (x < x0 || x > x1 || z < z0 || z > z1 || y < y0 || y > y1) {
+                        continue;
+                    }
+                    int edited = terrainEdits.classAt(page, TerrainEdits.cell(column / 16, band, column % 16));
+                    if (edited >= 0 && BlockClass.is((short) edited, BlockClass.PASSABLE)) {
+                        continue; // the core took it away
+                    }
+                    out.add(new long[] {NodeStore.pack(x, y, z), m.material(k).amount()});
+                }
+            }
+        }
+        out.sort((a, c) -> Long.compare(a[0], c[0]));
+        return out;
     }
 
     /** The match's resource nodes (ECO-02). */
@@ -300,6 +344,35 @@ public final class MatchState {
             nodeIndex = index;
         }
         return index;
+    }
+
+    /**
+     * A capture after an edit someone else made (04 §11.4): a node block it no longer shows, that the core still counts
+     * and did not take itself, went without the core, and the node loses it, crediting nobody.
+     */
+    private void losses(int page, PageCoord coord) {
+        if (!nodes.discovered() || nodes.count() == 0) {
+            return;
+        }
+        VoxelSlice slice = VoxelSlice.decode(sliceBytes[page]);
+        int minY = config.bounds().minY();
+        for (int id = 1; id <= nodes.count(); id++) {
+            long[] blocks = nodes.blocks(id);
+            for (int k = nodes.gone(id); k < blocks.length; k++) {
+                int x = NodeStore.x(blocks[k]);
+                int z = NodeStore.z(blocks[k]);
+                int band = NodeStore.y(blocks[k]) - minY;
+                if (x >> 4 != coord.x() || z >> 4 != coord.z() || band < 0 || band >= slice.height()) {
+                    continue;
+                }
+                int column = (x & 15) * 16 + (z & 15);
+                boolean shown = slice.materials().at(column * slice.height() + band) != null;
+                boolean ours = terrainEdits.classAt(page, TerrainEdits.cell(x & 15, band, z & 15)) >= 0;
+                if (!shown && !ours) {
+                    nodes.lose(id, blocks[k]);
+                }
+            }
+        }
     }
 
     /** Page {@code index}'s surfaces from its last slice, the core's edits and its footprints. */

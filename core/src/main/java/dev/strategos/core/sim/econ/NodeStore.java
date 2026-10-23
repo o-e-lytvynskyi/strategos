@@ -233,6 +233,24 @@ public final class NodeStore {
         return given;
     }
 
+    /**
+     * Block {@code packed} of the node went without the core (ECO-02, 04 §11.4: a player broke it): it leaves the node
+     * and takes its yield, credited to nobody. False if the node holds no such block still standing.
+     */
+    public boolean lose(int id, long packed) {
+        int k = at(id);
+        for (int i = gone[k]; i < blocks[k].length; i++) {
+            if (blocks[k][i] == packed) {
+                long[] b = blocks[k];
+                System.arraycopy(b, i + 1, b, i, b.length - i - 1);
+                blocks[k] = Arrays.copyOf(b, b.length - 1);
+                amount[k] = Math.max(0, amount[k] - perBlock[k]);
+                return true;
+            }
+        }
+        return false;
+    }
+
     /** The node's next block is gone: the top one first. */
     public void removeTop(int id) {
         int k = at(id);

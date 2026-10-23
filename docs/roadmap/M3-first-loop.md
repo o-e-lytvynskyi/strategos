@@ -323,7 +323,7 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
      rebuild (L3).
 - **Tests:** L0, L1, L3, L5 · **Fixtures:** tree fixtures per species, 2 × 2 trees and touching
   canopies · **Depends on:** ECO-02, BLD-15, PATH-15 · **Size:** L · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 #### ECO-05 · Gathering, dropsites and berry bushes
 - **Value:** Workers gather, carry and deliver on their own, pick the next node when one runs out,

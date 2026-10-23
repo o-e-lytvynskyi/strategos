@@ -74,6 +74,16 @@ public final class TerrainEdits {
         return counts[page];
     }
 
+    /** The class the latest edit gave cell {@code cell} of page {@code page}, or -1 when none did. */
+    public int classAt(int page, int cell) {
+        for (int k = counts[page] - 1; k >= 0; k--) {
+            if (voxels[page][k] == cell) {
+                return classes[page][k] & 0xFFFF;
+            }
+        }
+        return -1;
+    }
+
     /** Whether any page holds an edit. */
     public boolean empty() {
         for (int c : counts) {

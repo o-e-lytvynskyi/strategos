@@ -4,7 +4,8 @@ Date: 2026-10-21
 
 ## Status
 
-Accepted
+Accepted; the leaf rule (leaves only at exhaustion) superseded by [ADR-0024](0024-canopy-thinning-by-the-vanilla-distance-rule.md)
+on 2026-10-23
 
 ## Context
 

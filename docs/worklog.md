@@ -9,7 +9,15 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-23 (evening) — M3 spec, T1–T7
+## 2026-10-23 (evening) — M3 spec, T1–T8
+
+- **M3 T8 · ECO-03, felling and the canopy.** A log's worth gathered takes the highest log; the
+  canopy thins by vanilla's own distance rule, which the writer's flags keep vanilla from applying
+  (ADR-0024, superseding ADR-0021's leaves-at-the-end rule); on ten species' shapes, 2 × 2 trunks
+  and leaning acacias included, no leaf vanilla would decay is ever left, and a neighbour's leaves
+  stay. A log someone else breaks leaves the tree and credits nobody. Also: the `.gitignore` rule
+  `build/` had kept the `core.sim.build` package out of git, so CI failed on T7's second part;
+  fixed, and the pitfall is in the knowledge base. Next: T9, gathering.
 
 - **M3 T7 · BLD-01, buildings and blueprints.** Building templates (civic centre, house, barracks)
   with their blueprints in the flattened JSON, so journals and clients carry the shape; three
