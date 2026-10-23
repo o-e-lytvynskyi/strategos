@@ -250,8 +250,8 @@ public final class PerfTests {
     /**
      * BLD-15.4: the writer's cost at its full budget: 64 blocks a tick, stone and air in turn over four 16 x 16 sites
      * that take turns, 600 ticks after 100 of warm-up; the samples are the {@code setBlock} time of each tick's 64
-     * writes. Report-only under gate {@code c} (PERF-01 has no per-block threshold); the reference limits are 5 % of
-     * budget C for a tick's writes at p99 (1.15 ms) and a tenth of that at the median.
+     * writes. A gate under {@code c}: the owner approved its limits on 2026-10-23, 5 % of budget C for a tick's
+     * writes at p99 (1.15 ms) and a tenth of that at the median.
      */
     @StrategosTest(batch = "perf_writer", arena = "arena_flat_48", timeoutTicks = 1_200)
     public static void blockWriterCost(GameTestHelper h) {
@@ -763,7 +763,8 @@ public final class PerfTests {
 
     /** Whether a gate is listed in {@code strategos.perf.gates}, so it fails the run rather than reports. */
     private static boolean gated(String gate) {
-        return Arrays.asList(System.getProperty("strategos.perf.gates", "a,d,g").split(","))
+        return Arrays.asList(
+                        System.getProperty("strategos.perf.gates", "a,c,d,e,g").split(","))
                 .contains(gate);
     }
 
@@ -803,7 +804,7 @@ public final class PerfTests {
         double foreign = window.meanForeignLoad();
         List<String> violations = budget.violations(samples);
         boolean listed = Arrays.asList(
-                        System.getProperty("strategos.perf.gates", "a,d,g").split(","))
+                        System.getProperty("strategos.perf.gates", "a,c,d,e,g").split(","))
                 .contains(gate);
         String verdict;
         if (foreign > INVALID_FOREIGN_LOAD) {

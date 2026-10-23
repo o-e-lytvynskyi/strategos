@@ -9,6 +9,7 @@
     "oursMs": 3,
     "clientTickP50Ms": 1
   },
+  "approved": "2026-10-23: the owner approved the newest results as this Mac's baselines (PERF-14), which later milestones' scenes are compared with",
   "machine": {
     "id": "m4pro",
     "cpu": "Apple M4 Pro, 12 cores",

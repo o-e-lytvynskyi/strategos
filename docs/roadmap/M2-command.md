@@ -556,11 +556,11 @@ perspective only.
   2. Results are archived per machine, and the owner approves the baselines (R).
 - **Tests:** L6 (client, consent), R · **Depends on:** UI-02, UNIT-03, QA-06 · **Size:** S ·
   **Tier:** T0
-- **Progress:** 2026-10-23 — M2 T21: the scenario `rts_frame` (2 × 100 units in the RTS view at
+- **Done:** 2026-10-23 — M2 T21: the scenario `rts_frame` (2 × 100 units in the RTS view at
   render distance 16, walking, the own hundred outlined) and the archive `perf/client/m4pro.json`.
   On this Mac, medians of three runs: vanilla frame 2.59 / 5.73 ms (p50 / p99), units 1.36 ms, our
   drawing 0.53 ms, client tick 0.80 ms; Sodium and Iris 1.56 / 4.40 ms, 0.32, 0.60 and 0.81 ms (1,
-  M2 spec §1.6 rows 28–30). The client tick is timed at vanilla's 120 frames a second. Open: the
-  run with the HUD and health bars in M2's consent batch, and the owner's approval of the baselines
-  (2)
-- **Status:** in_progress
+  M2 spec §1.6 rows 28–30). The client tick is timed at vanilla's 120 frames a second. The runs with
+  the HUD (T6) and the health bars (T17) on top, and the owner's approval of the baselines,
+  2026-10-23 (2)
+- **Status:** done

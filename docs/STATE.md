@@ -21,77 +21,47 @@ Answer in chat or here; the next session applies the answers.
    Linux route on CI first; a Mac run is used only where a measurement needs this Mac.
    **And for today (2026-10-23):** «мак до вечера в твоем распоряжении, можешь делать все, что
    посчитаешь нужным, чтобы ускорить разработку, кроме субагентов» — this Mac, client windows
-   included, is mine until the evening; no subagents. When you say so, the state is saved and work
-   goes on without windows.
+   included, was mine until the evening; no subagents. **From the evening of 2026-10-23: no windows**
+   («пока без окон»); work that needs one is listed in item 6 and does not hold the rest up.
 4. **Open decisions,** none urgent:
    - D-03 civilisation themes (M7);
    - D-20 multiplayer hosting (M7);
    - D-07 licence and D-21 public release and name (first public release);
    - D-06 map generation (M12).
-5. **A threshold to approve, not urgent:** the block writer's cost is measured but not yet gated.
-   64 blocks a tick take 0.02 ms (0.065 ms at p99) on this Mac. The proposed limit is 1.15 ms a
-   tick at p99, 5 % of the whole-tick budget C. Say yes and it becomes a gate in `verifyPerf`
-   ([M1 spec §1.6 D row 20](milestones/M1-movement.md)).
-6. **For your information: the long-route planner (card PATH-08, HPA*) left the reserve and is built.**
+5. **Your decisions of 2026-10-23 (evening):** «Давай примем все решения что ты рекомендуешь и начнем м3 пока без
+   окон, если работа встанет из-за того что тебе будут нужны окна - дай мне знать. По поводу решений с байтами,
+   держим в голове, что можно это оптимизировать». Applied:
+   - the block writer's limits gate (1.15 ms a tick at p99, a tenth at the median), under gate `c`;
+   - PERF-14's baselines are this Mac's ([perf/client/m4pro.json](../perf/client/m4pro.json)); card PERF-14 done;
+   - the goldens are approved but `pose_high` (see item 6);
+   - the JMH baseline is the full run of 2026-10-23 (18 benchmarks, [perf/baseline-m4pro.json](../perf/baseline-m4pro.json));
+   - QA-07.4 allows a kernel's events their messages: `OrcaBench` may spend 16 B a step on the stuck ladder's;
+     an allocation-free bus stays a known follow-up, as you said;
+   - gates `c` and `e` join `a`, `d` and `g`;
+   - S10's footprint rule joins M1 as T29.
+   The five far-off decisions (D-03, D-06, D-07, D-20, D-21) stay open: none is needed before M7, and two of them
+   are about the licence and going public.
+6. **Needs a window, when you have one (the work does not wait for it):** `pose_high`, the camera at its top height,
+   shows the world's edge. The tilt I suggested would also hide the far markers, which need the view to reach
+   160 blocks; the edge is more likely the scene's own: a fresh flat world still generating chunks when the camera
+   has just risen. The fix is probably for the scene to wait for the ground, then a new `pose_high` on this Mac
+   (CI's Linux one can follow headless). The camera stays as it is.
+7. **For your information: the long-route planner (card PATH-08, HPA*) left the reserve and is built.**
    The roadmap had it waiting for one measurement, which T8 took: one unit's path across the
    384² proving ground needed about 30,000 search steps, over the 20,000 cap, and 4.5 ms of server
    time, over the 2 ms a tick the budget allows all pathfinding. T28 added it: the same crossing
    now takes about 2,800 steps and a fraction of a millisecond, and its route is within 1 % of the
    best one. Nothing to do; it is in the roadmap's rules ([M1 spec §1.6 D rows 42 and 47–53](milestones/M1-movement.md)).
-7. **Baselines to approve, not urgent: the client frame gate (PERF-14).** On this Mac, 200 units in the
-   RTS view cost a frame of 2.6 ms without performance mods and 1.6 ms with Sodium and Iris, the
-   client tick 0.8 ms ([numbers](../perf/client/m4pro.json), [M2 spec §1.6 rows 28–30](milestones/M2-command.md)).
-   Say yes and these become this Mac's baselines, which later milestones' scenes are compared
-   with.
-8. **Pictures to approve, not urgent (M2's consent batch):** the reference frames the client tests
-   compare with, for this Mac and for CI's Linux renderer, in
-   [goldens-proposed](../mod/src/devtools/goldens-proposed/): the RTS camera at three poses, a
-   selected group outlined with the HUD's panel and group bar, a unit's tooltip, health bars over
-   the selected and the hurt at three heights, and the movement overlay. Say yes and they become the goldens
-   (procedure in [mod/src/devtools/README.md](../mod/src/devtools/README.md)). Two things to look
-   at while you do:
-   - the outline reads dark navy rather than the faction's blue: the outline effect darkens it;
-   - at the camera's top height (64 blocks) the top of the window shows the edge of the loaded
-     world and the sky (`pose_high`). The options: limit the top height by the render distance,
-     tilt the camera down more as it rises, or hide the edge with fog. I suggest the tilt; say
-     which you prefer before these pictures are approved, since it changes `pose_high`.
-9. **A proposal from spike S10, your call, not urgent:** units now stand exactly on slabs, stairs,
-   snow, carpet, paths, farmland and in shallow water, but they take a step when its edge passes
-   their centre, so for about two frames per step up a foot cuts into the step's edge, and on the
-   way down it hangs over the ledge ([frames and numbers](spikes/S10-kinematic-fidelity.md)). A
-   vanilla body stands on the highest block under its whole footprint instead. I propose the same
-   rule for our units, a change to the motion of card PATH-05, before your Mac look at the steps in
-   M2's consent batch. Say yes and it joins M1 as a small task; no, and the steps stay as they are.
-10. **Benchmarks to approve, with a finding (JMH, M1's close).** Two of the five benchmarks you approved at M0 are
-   slower now, through M1's features, not a fault: one core step with 600 walking units 14.1 µs at M0, 22.3 µs now
-   (21.3 already at M1's T26; M1 added the spatial grid's rebuild and the path passes to every step), and encoding a
-   500-unit save 220 µs, now 285 µs (M1's paths, motion and orders in the save). Both are far inside the tick's
-   budget (5 ms). No M1 task ran the comparison, so it stayed red unnoticed; the session now runs it whenever the
-   core's step or saves change. [perf/baseline-m4pro.proposed.json](../perf/baseline-m4pro.proposed.json) holds all
-   16 benchmarks that run today. Say yes and it replaces `perf/baseline-m4pro.json`; until then `verifyPerf` stops
-   at the JMH comparison (its perf GameTests pass on their own). It includes the movement benchmark that had
-   silently stopped running since M1's T22 (now 255 µs, faster than M1 measured it); the avoidance one is the next
-   task, since it still allocates a little (7 bytes a step, the stuck ladder's messages).
-11. **A rule to settle, your call (the last item of M1's Done gate):** the avoidance benchmark (`OrcaBench`) allocates
-   7 bytes a step against the 6 the "kernels allocate nothing" rule (QA-07.4) allows: when a unit in a crowd stalls
-   long enough, the stuck ladder announces it with two small messages. That is memory per stall, not per unit per
-   tick. The options: (a) the rule allows a kernel's allocation per event, measured as such, and M1 is Done; or (b)
-   the ladder's events go out without allocating, a change to the core's message bus of a few hours. I suggest (a).
-12. **Two more perf gates, your call, not urgent:** of the soak's budgets, D now fails a run on a breach (five runs
-   varied by 4.7 %, inside QA-07's 5 %). C (the tick with our handlers) and E (bytes a viewer) varied by 14 %, all of
-   it one run inside the whole perf batch (the four alone: 1.2 % or less), and sit at a third of their limits or
-   less (C 7–9 ms of 23, E 7–10 KB/s of 100). Say yes and they gate too; B (the tick against an empty arena) keeps
-   reporting, since it moves with its own baseline by 23 %.
-13. **The M2 demo and consent batch (T22), when you have an hour:** [milestones/M2-command.md §1.3](milestones/M2-command.md):
+8. **The M2 demo, when you have an hour (T22's last part, L7):** [milestones/M2-command.md §1.3](milestones/M2-command.md):
    `scripts/playtest.sh`, `/strategos match create map strategos:proving_ground`, `/strategos match join 1 0`,
    `/strategos spawn strategos:unit/infantry 30 0` and `... 30 1`, then box-select, Ctrl+1, attack-move with Z and a
    right click, V into first person, R (follow), G on an enemy, V back; the questionnaire in
-   `docs/testing/playtest.md`. The batch also holds the pictures (item 8) and PERF-14's baselines (item 7).
-14. **The M1 demo, whenever you like (L7):** [milestones/M1-movement.md §1.3](milestones/M1-movement.md): an Arena
+   `docs/testing/playtest.md`.
+9. **The M1 demo, whenever you like (L7):** [milestones/M1-movement.md §1.3](milestones/M1-movement.md): an Arena
    world, `/strategos match create map=strategos:proving_ground`, `/strategos spawn strategos:unit/infantry 200`,
    F8 for the movement overlay, `/strategos order move @units waypoint=far_side`, then the questionnaire. (The
    infantry are spearmen since M2; 200 of one faction do not fight.) That session confirms ADR-0022.
-15. **Optional reviews:**
+10. **Optional reviews:**
    - the card refinements made after the approval
      ([design/roadmap-changes.md §8](design/roadmap-changes.md));
    - the promo draft ([promo/roadmap-announcement.md](promo/roadmap-announcement.md)).

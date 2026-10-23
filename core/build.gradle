@@ -106,6 +106,11 @@ class JmhGate {
     // its op, when that is more than the fixed byte.
     static final double BACKGROUND_BYTES_PER_SECOND = 14_000d
     static final Map<String, Double> SECONDS_PER_UNIT = ['ns/op': 1e-9d, 'us/op': 1e-6d, 'ms/op': 1e-3d, 's/op': 1d]
+    // QA-07.4 as the owner settled it (2026-10-23): a kernel allocates nothing per unit per tick, but an event it
+    // announces may cost a message. OrcaBench's crossing stalls units long enough for the stuck ladder's first rungs:
+    // about 0.3 events a step, each a PathInvalidated and a Stuck record, 7.3 B a step at M1's close. The bytes a
+    // kernel's events may cost per op; an allocation-free bus would bring them back to the rule.
+    static final Map<String, Double> EVENT_BYTES = ['OrcaBench.step600': 16d]
 
     static List<String> problems(File result, File baseline, List<String> kernels) {
         def slurper = new groovy.json.JsonSlurper()
@@ -126,7 +131,8 @@ class JmhGate {
                 if (norm == null) problems << "${key(r)}: no gc.alloc.rate.norm; run JMH with -prof gc"
                 else {
                     double seconds = (r.primaryMetric.score as double) * (SECONDS_PER_UNIT[r.primaryMetric.scoreUnit] ?: 0d)
-                    double allowed = Math.max(MAX_KERNEL_BYTES, seconds * BACKGROUND_BYTES_PER_SECOND)
+                    double events = EVENT_BYTES.find { k, v -> r.benchmark.endsWith(k) }?.value ?: 0d
+                    double allowed = Math.max(MAX_KERNEL_BYTES, seconds * BACKGROUND_BYTES_PER_SECOND) + events
                     if ((norm.score as double) > allowed) problems << String.format('%s: a @HotPath kernel allocates %.1f B/op (%.1f allowed for JMH\'s own background)', key(r), norm.score as double, allowed)
                 }
             }

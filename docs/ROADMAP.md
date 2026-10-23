@@ -327,7 +327,7 @@ Cards: [roadmap/M2-command.md](roadmap/M2-command.md#cards). 20 cards, at most 6
 | ORD-04 | Attack and attack-move | M | ORD-02, CMB-02, UI-05 | done |
 | CMB-06 | Health bars, hit flash and death | S | CMB-01, UI-02, NET-08 | done |
 | AUD-01 | Order, hit and death sounds | S | ORD-02, CMB-01, NET-01 | done |
-| PERF-14 | Client frame gate (consent) | S | UI-02, UNIT-03, QA-06 | in_progress |
+| PERF-14 | Client frame gate (consent) | S | UI-02, UNIT-03, QA-06 | done |
 
 ### M3 · First loop
 
