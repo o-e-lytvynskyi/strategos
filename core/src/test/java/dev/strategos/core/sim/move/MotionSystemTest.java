@@ -34,6 +34,8 @@ import org.junit.jupiter.api.Test;
 class MotionSystemTest {
     private static final FactionSlot F0 = new FactionSlot(0);
     private static final double SPEED = 0.25;
+    /** The debug walker's radius. */
+    private static final double RADIUS = 0.35;
 
     @Test
     void upStepOverTwoTicks() {
@@ -46,18 +48,57 @@ class MotionSystemTest {
         order(h, unit, 8.5, 1.5);
 
         double before = unit(h, unit).y();
-        h.runUntil(() -> unit(h, unit).x() >= 4, 40);
+        h.runUntil(() -> unit(h, unit).x() + RADIUS >= 4, 40); // its footprint's edge reaches the step (S10)
         double halfway = unit(h, unit).y();
+        double centre = unit(h, unit).x();
         h.step();
         double after = unit(h, unit).y();
 
         assertThat(before).as("on the low floor").isEqualTo(1.0);
-        assertThat(halfway).as("halfway up on the tick it enters the step").isEqualTo(1.5);
+        assertThat(centre).as("its centre still on the low floor").isLessThan(4);
+        assertThat(halfway)
+                .as("halfway up on the tick its footprint reaches the step")
+                .isEqualTo(1.5);
         assertThat(after).as("on the new floor the tick after").isEqualTo(2.0);
         assertThat(h.runUntil(() -> unit(h, unit).state() == UnitState.IDLE, 100))
                 .isTrue();
         assertThat(unit(h, unit).y()).isEqualTo(2.0);
         assertThat(unit(h, unit).x()).isEqualTo(8.5);
+    }
+
+    /** S10: down a one-block step the body stays on the ledge until its whole footprint has left it, as vanilla's. */
+    @Test
+    void aBodyLeavesAStepOnlyWhenItsFootprintHas() {
+        SimHarness h = harness(VoxelFixtures.heightmap(16, """
+                2222111111
+                2222111111
+                """));
+        int unit = h.spawn(F0, new Vec2d(1.5, 0.5), 1, 0)[0];
+        order(h, unit, 8.5, 0.5);
+
+        h.runUntil(() -> unit(h, unit).x() >= 4, 40);
+        assertThat(unit(h, unit).y())
+                .as("its centre over the low floor, its footprint still on the step")
+                .isEqualTo(2.0);
+        h.runUntil(() -> unit(h, unit).x() - RADIUS >= 4, 40);
+        h.step();
+        h.step();
+        assertThat(unit(h, unit).y()).as("down once the footprint has left").isEqualTo(1.0);
+    }
+
+    /** A wall's top beside a unit is more than a step up: the body never stands on it. */
+    @Test
+    void aBodyNeverStandsOnAWallItBrushes() {
+        SimHarness h = harness(VoxelFixtures.heightmap(16, """
+                1111111111
+                1111111111
+                4444444444
+                """));
+        int unit = h.spawn(F0, new Vec2d(1.5, 1.7), 1, 0)[0]; // 0.3 from the wall's column: its footprint overlaps it
+        order(h, unit, 8.5, 1.7);
+        assertThat(h.runUntil(() -> unit(h, unit).state() == UnitState.IDLE, 100))
+                .isTrue();
+        assertThat(unit(h, unit).y()).isEqualTo(1.0);
     }
 
     @Test

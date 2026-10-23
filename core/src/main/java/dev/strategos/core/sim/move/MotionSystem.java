@@ -90,6 +90,7 @@ public final class MotionSystem implements MatchSystem {
     static final int QUIET = 20;
     static final int LOST_AFTER = 20;
     static final double ARRIVE_CROWD = 1.5;
+
     static final double PASS_CROWD = 2.0;
 
     static final int CROWDED = 10;
@@ -361,7 +362,7 @@ public final class MotionSystem implements MatchSystem {
         float yaw =
                 turn(yaw0, x - x0, z - z0, tx - x0, tz - z0, (float) s.stats().turnRate(i));
         motion.set(i, x, motion.y(i), z, yaw);
-        height(s, i);
+        Footing.height(s, i);
         monitor(s, i, tx, tz);
         StuckLadder.countDown(motion, i);
         boolean landed = preferred && (flags[i] & LANDS) != 0 && x == tx && z == tz;
@@ -409,7 +410,7 @@ public final class MotionSystem implements MatchSystem {
                 pushed = motion.x(i) != x0 || motion.z(i) != z0;
             }
             motion.setVelocity(i, motion.x(i) - x0, motion.z(i) - z0);
-            height(s, i);
+            Footing.height(s, i);
             if (pushed || motion.y(i) != y0) {
                 s.frame().add(handle, motion.x(i), motion.y(i), motion.z(i), motion.yaw(i), STANDING);
             }
@@ -668,29 +669,6 @@ public final class MotionSystem implements MatchSystem {
         motion.setFloor(i, Surface.floor(grid.surface(ncx, ncz, nl)));
         motion.set(i, nx, motion.y(i), nz, motion.yaw(i));
         return true;
-    }
-
-    /** Height toward the floor: halfway up a step on the first tick and onto it on the second; down at most a half. */
-    private static void height(MatchState s, int i) {
-        MotionStore motion = s.motion();
-        if (motion.floor(i) == MotionStore.NO_FLOOR) {
-            return;
-        }
-        double floorY = s.config().bounds().minY() + motion.floor(i) / 16.0;
-        double y = motion.y(i);
-        if (floorY > y) {
-            if (motion.rising(i)) {
-                y = floorY;
-                motion.setRising(i, false);
-            } else {
-                y = y + (floorY - y) / 2;
-                motion.setRising(i, true);
-            }
-        } else {
-            y = Math.max(floorY, y - FALL);
-            motion.setRising(i, false);
-        }
-        motion.set(i, motion.x(i), y, motion.z(i), motion.yaw(i));
     }
 
     /**

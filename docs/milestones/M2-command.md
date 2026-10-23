@@ -474,7 +474,7 @@ second (5 minutes, M1 §1.6 row 162's pacing); budgets A, B and C as M1's soak m
 ### 7.3 Progress
 
 - [x] T1 (2026-10-23) · [x] T2 (2026-10-23) · [x] T3 (2026-10-23) · [x] T4 (2026-10-23) · [x] T5 (2026-10-23) · [x] T6 (2026-10-23) · [x] T7 (2026-10-23) · [x] T8 (2026-10-23) · [x] T9 (2026-10-23) · [x] T10 (2026-10-23) · [x] T11 (2026-10-23) · [x] T12 (2026-10-23)
-- [x] T13 (2026-10-23) · [x] T14 (2026-10-23) · [x] T15 (2026-10-23) · [x] T16 (2026-10-23) · [x] T17 (2026-10-23) · [x] T18 (2026-10-23) · [x] T19 (2026-10-23) · [x] T20 (2026-10-23) · [x] T21 (2026-10-23) · [ ] T22 (the owner's) · [ ] T23 (all but the JMH items, §8.1)
+- [x] T13 (2026-10-23) · [x] T14 (2026-10-23) · [x] T15 (2026-10-23) · [x] T16 (2026-10-23) · [x] T17 (2026-10-23) · [x] T18 (2026-10-23) · [x] T19 (2026-10-23) · [x] T20 (2026-10-23) · [x] T21 (2026-10-23) · [ ] T22 (the owner's: all but `pose_high` and the demo) · [x] T23 (2026-10-23)
 
 ---
 
@@ -501,9 +501,9 @@ The roadmap's Done gate, then the owner's acceptance.
 | 2 | Pass | `CameraRigTest`, `PickingTest`, `BoxSelectTest`, `HudLayoutTest`, `SlotPreviewParityTest` |
 | 3 | Pass: the 12,000-tick pan with 20 jumps and no snap-back, the chunk-sent re-pair, units ignoring the commander | `cameratests.pan_no_snap_back`, `jump_moves_body_and_limits`, `chunk_sent_repair`, `units_ignore_commander` |
 | 4 | The melee soak, twice: A p50 0.68–0.79 ms, B p95 1.95–3.35 ms, C p95 5.2–6.1 ms, 28,082 hits and 953 deaths both times; a panning commander's `ChunkMap#move` 0.08 ms at p99 (0.5) | `perftests.melee_soak_200`, `perftests.commander_pan_move_cost` |
-| 5 | The owner's (T22). Done early: QA-19.4 (0.006 %), PATH-10.3's overlay goldens proposed, the RTS scenarios once under `-Pcompat` | §1.6 rows 38–39, STATE.md |
+| 5 | The owner approved the goldens, PERF-14's baselines and the rest on 2026-10-23, but `pose_high`, whose world edge needs a window to look into; done early: QA-19.4 (0.006 %), PATH-10.3's overlay goldens, the RTS scenarios once under `-Pcompat`; UNIT-09.3's optional Mac pass not taken | §1.6 rows 38–39, STATE.md |
 | 6 | ADR-0017 accepted with S9's numbers; no fallback needed | §1.6 row 10, the ADR |
-| 7 | **Open, with M1's:** `verify`, `verifySlow`, `verifySoak` and the perf batch green, CI green; `jmhCompare` waits for the owner's new JMH baseline, and `OrcaBench`'s allocation for the owner's word on the kernel rule | M1 spec §10.1 rows 7–8, §1.6 D row 169 |
+| 7 | Pass since the owner's word of 2026-10-23: `verify`, `verifySlow`, `verifySoak` and `verifyPerf` green on the new JMH baseline, `OrcaBench`'s events allowed their messages; CI green | M1 spec §10.1 rows 7–8, §1.6 D row 169 |
 | 8 | The owner's | STATE.md |
 
 **Deviations.** M2 ran alongside M1's close, at the owner's word: T27's runs measured M2's tree. Finding a
@@ -514,7 +514,7 @@ between them sends them the long way round.
 **Follow-ups.** The health check is M1's (its §10.1: the same tree): `RtsMode` grew to 780 lines with M2
 and is next to split, with `MotionSystem` (798); the two test classes over 800 lines split by area.
 
-**Status.** Done gate rows 1–4 and 6 pass; row 7 waits with M1's two items; rows 5 and 8 are the owner's.
+**Status.** **M2 is Done** (2026-10-23): rows 1–4, 6 and 7 pass; row 5's `pose_high` and row 8's demo are the owner's and block Accepted, not Done (§1.7).
 
 ---
 

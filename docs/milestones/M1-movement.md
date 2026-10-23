@@ -379,6 +379,7 @@ cards, does not exist for M1: the M1 cards were final when this spec was written
 | 167 | §9.2 T26: tests and numbers | `perftests.crowd_soak_600` (paced, 11,800 samples after the warm-up): A p50 1.6 ms and p99 3.1 ms against 5 and 10; B p95 4.7 ms against 17; C p95 7.3 ms against 23 (the tick's p50 5.1 ms, the empty arena's 2.2–4.0); D p99 0.34 ms against 2; E 3.3 KB/s per viewer against 100, each viewer paired with 43 bodies on average and 92 at most (QA-19's `viewer_bytes_600` keeps budget E with all 600 in view, 41 KB/s); G nav 2.9 MB at 384². 600 group orders, 18,437 unit orders, none failed, no nudge; the ladder repathed 344 times, stepped aside 30 and walked without avoidance 3; the longest run without progress 214 ticks. `perftests.stress_1200`: C p95 9.4 ms against 50; 120 group orders, none failed, longest stuck 272 ticks. `maptests.crowd_soak_orders` (unpaced) the same checks in 40 s. `SoakSeedReplayTest`: 200 units, 1,200 ticks, the journal through its disk format replays to the run's hash at every checkpoint, 1.2 s |
 | 168 | T27: the soak's gates decided | Five runs of one commit (d19baff, M2's tree): the first inside the whole perf batch, four of the soak alone. p95 varied by 4.7 % for D, which now gates (`perf.gates` defaults to `a,d,g`); by 13.6 % for C and 14.5 % for E, all of it the batch's first run against at most 1.2 % for the four alone, both at a third of their limits or less; by 23 % for B, with its baseline. C and E are proposed to the owner as gates; B reports |
 | 169 | T27: the JMH gate | `jmhCompare` had not run since M0's close. Against M0's approved baseline `MovementBench.step600` is 22.3 µs (14.1 at M0) and `SnapshotCodecBench.encode500` 285 µs (220): measured at M1 T26 they were already 21.3 and 275, M1's features' cost (the grid's rebuild and the path passes in every step; paths, motion and orders in the save), and M2 adds 4 % and 5 %; the other three are within 2 %, so the machine is the same. A baseline of all 16 benchmarks that run is proposed (`perf/baseline-m4pro.proposed.json`). `MotionBench` and `OrcaBench` had not run since T22: their set-up waited four ticks for 600 paths the admission window spreads over eight, and JMH skips a benchmark whose set-up throws while the run succeeds. With the window open in their set-up they ran, but measured something else: T23's stuck ladder, which came after T21's measurement, let the crowded units reach its last rungs, where avoidance is off, so `OrcaBench` took 110 µs against T21's 577 and allocated 138 B a step (about 0.3 `Stuck`, 0.56 `Arrived` and 0.55 `OrderReceived` messages a step, each a record on the bus, and the machine's answers). Putting the units back now also starts their ladder afresh, as a fresh walk does: `MotionBench` 255 µs and 1.7 B a step (T21: 340 µs), within the gate, and joins the proposed baseline; `OrcaBench` 450 µs (T21: 577) and 7.3 B a step against the gate's 6.3, the `Stuck` messages of the first rungs in the crossing. `jmhCompare` now fails on a benchmark missing from the result. `OrcaBench` is the first task of the next session: an event's allocation allowed for, or the ladder's events without a record each |
+| 170 | T29: standing on the footprint | The floor a body eases toward is the highest passable surface under its footprint (its radius round its centre) at most one block, the step a walk climbs, above its own column's floor; walking still follows its own column's surfaces, so paths, links and the ladder are unchanged. A one-block step: the body rises when its footprint's edge reaches it, 0.35 block before its centre, and leaves a ledge only once its footprint has; a wall's top beside it is more than a step up and never counts; a drop of two blocks or more falls when the centre crosses, as before. `MotionSystemTest` (13: the step's rise by the footprint, the ledge, the wall), `fidelitytests.pose_traces` still 0 on every surface, `crossing_synthetic` rebaselined (its walkers rise a tick or two sooner), the other four goldens keep every checkpoint hash. `MotionBench` 272 µs, `OrcaBench` 466 µs (baseline 262 and 453). The body's footing moved to `Footing`, which brought `MotionSystem` back to 776 lines |
 
 ---
 
@@ -1744,6 +1745,13 @@ are green and its negative checks behave as stated.
   02-tooling.md current; the JMH baseline additions proposed to the owner; STATE.md with the demo
   of §1.3 and the M2 consent items; feasibility §6.5 effort note.
 
+#### T29 · Standing on the footprint (S10's proposal) — PATH-05 · depends on T9, T21 · ~150 lines
+
+- The owner's yes of 2026-10-23: a body stands on the highest passable surface under its whole footprint, within a
+  step of its own column's floor, as a vanilla body rests on the highest shape under its box.
+- **Files:** `core.sim.move.Footing` (out of `MotionSystem`, which was past 800 lines), `MotionSystemTest`, the
+  golden journals rebaselined. **Verification:** `verify verifySlow`; `s10_steps` on CI's Linux route.
+
 #### T28 · Hierarchical long-range planner (HPA*) — PATH-08 · depends on T8, T19 · ~1,500 lines
 
 - **Why:** reserve card; R3 fired in T8 (§1.6 D row 42): a 384² or 512² crossing hits the
@@ -1758,7 +1766,7 @@ are green and its negative checks behave as stated.
 
 - [x] T1 (2026-10-22) · [x] T2 (2026-10-22) · [x] T11 (2026-10-22) · [x] T3 (2026-10-22) · [x] T4 (2026-10-22) · [x] T5 (2026-10-22) · [x] T6 (2026-10-22) · [x] T7 (2026-10-22) · [x] T8 (2026-10-22) · [x] T19 (2026-10-22) · [x] T28 (2026-10-22) · [x] T9 (2026-10-22) · [x] T12 (2026-10-22) · [x] T10 (2026-10-22)
 - [x] T13 (2026-10-22) · [x] T14 (2026-10-22) · [x] T15.1 (2026-10-22) · [x] T15.2 (2026-10-22) · [x] T16 (2026-10-23) · [x] T17 (2026-10-23) · [x] T18 (2026-10-23) · [x] T20 (2026-10-23) · [x] T21 (2026-10-23) · [x] T22 (2026-10-23)
-- [x] T23 (2026-10-23) · [x] T24 (2026-10-23) · [x] T25 (2026-10-23) · [x] T26 (2026-10-23) · [ ] T27 (all but the movement benchmarks and the owner's baseline, §10.1)
+- [x] T23 (2026-10-23) · [x] T24 (2026-10-23) · [x] T25 (2026-10-23) · [x] T26 (2026-10-23) · [x] T27 (2026-10-23) · [x] T29 (2026-10-23)
 
 ---
 
@@ -1793,8 +1801,8 @@ for the owner; rows 11–13 are the owner's Acceptance. Consent items never bloc
 | 4 | Identical hashes with 0, 1 and 4 path threads in both modes; every behaviour GameTest's journal replays; the five golden journals keep their hashes through M2's changes | `ThreadCountHashTest`, `:core:replayJournals`, `GoldenJournalTest` |
 | 5 | ADR-0015 accepted with S7 and S8 (2026-10-23), ADR-0012 confirmed by S12, ADR-0011 accepted with S1 and S10 (kinematic bodies, no `PHYSICS` mode) | the ADR index |
 | 6 | All 153 GameTests pass with Lithium 0.15.4, ModernFix 5.27.26 and FerriteCore 7.0.3 on the server (`-Pcompat.server`, 27 s); the inventory lists `LevelChunkMixin`, the ticket controller, the data map, the preset and the payloads, M2's too | T27's run, `EngineSurfaceInventoryTest` |
-| 7 | **Open.** `verify` 45–50 s warm, `verifySlow` 2 min 39 s and `verifySoak` green, CI green; `verifyPerf`'s perf batch green (12 tests, 22.5 min), but `jmhCompare` red against M0's baseline: two benchmarks grew with M1's features, a new baseline proposed to the owner (D row 169) | the runs, `verify.yml` |
-| 8 | **Open.** `:mod:archTest` holds every rule and `JOBS_NEVER_TOUCH_THE_LEVEL` bites `LevelTouchingJobFixture`; of the `@HotPath` kernels five allocate nothing, but `OrcaBench` 7.3 B a step against 6.3 allowed, the stuck ladder's `Stuck` messages, behind a set-up that had not run since T22 (D row 169) | `:mod:archTest`, `:core:test`, `jmhCompare` |
+| 7 | **Pass since the owner's word of 2026-10-23** (the new JMH baseline). `verify` 45–50 s warm, `verifySlow` 2 min 39 s and `verifySoak` green, CI green; `verifyPerf`'s perf batch green (12 tests, 22.5 min), but `jmhCompare` red against M0's baseline: two benchmarks grew with M1's features, a new baseline proposed to the owner (D row 169) | the runs, `verify.yml` |
+| 8 | **Pass since the owner's word of 2026-10-23** (QA-07.4 allows `OrcaBench` 16 B a step for its events). `:mod:archTest` holds every rule and `JOBS_NEVER_TOUCH_THE_LEVEL` bites `LevelTouchingJobFixture`; of the `@HotPath` kernels five allocate nothing, but `OrcaBench` 7.3 B a step against 6.3 allowed, the stuck ladder's `Stuck` messages, behind a set-up that had not run since T22 (D row 169) | `:mod:archTest`, `:core:test`, `jmhCompare` |
 | 9 | 1A: one unit crosses the proving ground and its journal replays to the live hash; 1B: 50 units in slots and two groups head-on through the gap; 1C: 200 across | `maptests.unit_crosses_proving_ground`, the golden journals `group_of_50_slots` and `head_on_gap`, `avoidtests.head_on_groups_through_gap`, `maptests.two_hundred_cross` |
 | 10 | STATE, worklog, 05-testing.md (commands, times, batches), 02-tooling.md, the knowledge base and `NOTICE` current | this commit |
 | 11–13 | The owner's: the demo of §1.3 with the overlay, the JMH baseline additions, the optional hand-finish | STATE.md "For the owner" |
@@ -1812,8 +1820,10 @@ of the month's 2,000 minutes (48 %). The first tasks after this close: the movem
 (`OrcaBench`'s 7.3 B a step from the ladder's `Stuck` messages: an event's allocation allowed for, or
 the events without a record each), `MotionSystem` split before it passes 800 lines, and `PerfTests` split by area.
 
-**Status.** Done gate rows 1–6 and 9–10 pass; rows 7 and 8 wait for the movement benchmarks' task and
-the owner's word on the JMH baseline, so M1 is not yet Done.
+**Status.** Done gate rows 1–6 and 9–10 pass; rows 7 and 8 waited for the movement benchmarks and the
+owner's word, which came on 2026-10-23: the new JMH baseline, and QA-07.4 allowing a kernel's events their
+messages (`OrcaBench` 16 B a step). T29, S10's footprint rule, joined at the same word. **M1 is Done**
+(2026-10-23); rows 11–13 are the owner's acceptance.
 
 ---
 

@@ -9,7 +9,23 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24, T16, T26; M2 spec, M2 T1, T3, T5, T11, T13, T9, T21, T8, T6, T19, T2, T4, T14, T10 (part), T7, T10, T17, T18, T15, T16, T20; M1 T27 (part)
+## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24, T16, T26; M2 spec, M2 T1, T3, T5, T11, T13, T9, T21, T8, T6, T19, T2, T4, T14, T10 (part), T7, T10, T17, T18, T15, T16, T20; M1 T27, T29; M2 T23
+
+- **The owner's decisions of 2026-10-23 · M1 T29 · M1 and M2 Done.**
+  - **Results:** «Давай примем все решения что ты рекомендуешь и начнем м3 пока без окон»: the JMH
+    baseline is a full run of 18 benchmarks; `JmhGate.EVENT_BYTES` gives `OrcaBench` 16 B a step for
+    the stuck ladder's messages (an allocation-free bus is a known follow-up, as the owner said);
+    gates `a,c,d,e,g` by default, which makes the block writer's limit a gate; PERF-14's baselines
+    approved, card done; every golden approved but `pose_high`. T29: `Footing`, the body standing on
+    the highest surface under its footprint within a step, three `MotionSystemTest` cases, the
+    golden journals rebaselined (only `crossing_synthetic` changed).
+  - **Measured:** `MotionBench` 272 µs and `OrcaBench` 466 µs with T29 (baseline 262 and 453);
+    `pose_traces` 0 on every surface; 153 GameTests.
+  - **Problems:** the camera tilt I had suggested for the top pose's world edge would also have hidden
+    the far markers, which need the view to reach 160 blocks; the edge more likely comes from the
+    scene's fresh flat world still generating chunks. The tilt was written and taken out again;
+    `pose_high` waits for a window. `MotionSystem` passed 800 lines with T29: the footing moved out.
+  - **Next:** the M3 spec, then M3's tasks without windows.
 
 - **M1 T27 (part) · M1's close** — all but the movement benchmarks.
   - **Results:** five crowd-soak runs of one commit and the gate decision (`d` gates now; `c` and

@@ -3,7 +3,7 @@
 Where the project stands right now. The session log is in [worklog.md](worklog.md); the work
 procedure is the `strategos-dev` skill (`.claude/skills/strategos-dev/SKILL.md`).
 
-**Last update:** 2026-10-23 · **Owner last seen:** 2026-10-23 · **Current:** M1 Movement and M2 Command, both closing — each Done once the JMH items (For the owner 10–11) are settled
+**Last update:** 2026-10-23 · **Owner last seen:** 2026-10-23 · **Current:** M3 — started 2026-10-23 at the owner's word (without windows); M1 and M2 Done
 
 ## For the owner
 
@@ -351,6 +351,10 @@ Answer in chat or here; the next session applies the answers.
   your selection follow you, in rows behind you, and they wait where they are when you stop or go
   back to the RTS view; looking at a unit shows its name and, for your own, its hit points and what
   it is doing. Card CAM-07 is done.
+- 2026-10-23 · **Your decisions applied; M1 and M2 are Done:** the new benchmark baseline, the kernel rule
+  for messages, gates C and E, the block writer's limit, PERF-14's baselines and the pictures (all but the top
+  pose, item 6) are in. S10's rule is built (M1 T29): a unit now steps onto a stair or slab as soon as its
+  feet reach it and leaves a ledge only when its feet have, as a vanilla mob does.
 - 2026-10-23 · **M1's close (T27), all but one task:** the 600-unit crowd soak ran five times on one
   commit: every budget held, and budget D (path work) now fails a run that breaks it. Every GameTest
   passes with Lithium, ModernFix and FerriteCore on the server. Saves of format 2 are released, and two
@@ -359,15 +363,11 @@ Answer in chat or here; the next session applies the answers.
 
 ## Now
 
-- **Milestone:** M1 Movement, closing: T27 done but for the movement benchmarks (Done gate rows 7–8,
-  [§10.1](milestones/M1-movement.md)); M2 Command in parallel since 2026-10-23, at your word: T1–T21
-  done, T22 (the consent batch) yours, T23 its close.
-- **In progress:** none.
-- **Last finished task:** M1 T27's close work (2026-10-23): five soak runs and the gate decision, the
-  compat server run, schema 2 released with its fixtures, §10.1, the health check.
-- **Last M2 task:** T23's close work (2026-10-23): §8.1, all but the JMH items; before it T20, first-person orders.
-- **Next task:** none ready without you. M1 and M2 are Done once you settle item 11 and approve the JMH
-  baseline (item 10); M2's consent batch (T22) is yours; M3's spec waits for «начинай M3».
+- **Milestone:** M3 First loop, started 2026-10-23 at your word, without windows; its spec is being
+  written ([milestones/](milestones/)). M1 and M2 are Done (2026-10-23).
+- **In progress:** the M3 spec.
+- **Last finished task:** M1 T29 (2026-10-23), S10's footprint rule.
+- **Next task:** M3's tasks in its spec's order, headless; anything needing a window goes to item 6.
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 960 of 2,000 (48 %), as of 2026-10-23.
 - **Overview:** `python3 tools/roadmap.py summary`.
@@ -381,8 +381,9 @@ Nothing.
 | Milestone | Status | Notes |
 |---|---|---|
 | M0 Foundation | Accepted 2026-10-22 | Started 2026-10-21; tripwire met on day 2; 25 of 26 cards accepted, UNIT-01 closes with NET-01 (M1); the L7 demo waived by the owner |
-| M1 Movement | in progress | Started 2026-10-22 on the owner's go-ahead; 28 tasks (T28, PATH-08, joined by its R3 trigger in T8) |
-| M2–M6 (MVP) | approved | Specs are written by the assistant when each milestone starts |
+| M1 Movement | Done 2026-10-23 | Started 2026-10-22 on the owner's go-ahead; 29 tasks (T28, PATH-08, joined by its R3 trigger in T8; T29 by the owner's word); Accepted waits for the L7 demo |
+| M2 Command | Done 2026-10-23 | Started 2026-10-23 at the owner's word; 23 tasks; Accepted waits for `pose_high` (a window) and the L7 demo |
+| M3–M6 (MVP) | approved | Specs are written by the assistant when each milestone starts; M3 at the owner's word of 2026-10-23 |
 | M7–M15 | proposed | Approved by the owner closer to their time |
 
 ## History
