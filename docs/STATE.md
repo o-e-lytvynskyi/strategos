@@ -69,8 +69,9 @@ Answer in chat or here; the next session applies the answers.
    budget (5 ms). No M1 task ran the comparison, so it stayed red unnoticed; the session now runs it whenever the
    core's step or saves change. [perf/baseline-m4pro.proposed.json](../perf/baseline-m4pro.proposed.json) holds all
    16 benchmarks that run today. Say yes and it replaces `perf/baseline-m4pro.json`; until then `verifyPerf` stops
-   at the JMH comparison (its perf GameTests pass on their own). Two movement benchmarks are not in it yet: they
-   had silently stopped running since M1's T22 and are the next task.
+   at the JMH comparison (its perf GameTests pass on their own). It includes the movement benchmark that had
+   silently stopped running since M1's T22 (now 255 µs, faster than M1 measured it); the avoidance one is the next
+   task, since it still allocates a little (7 bytes a step, the stuck ladder's messages).
 11. **Two more perf gates, your call, not urgent:** of the soak's budgets, D now fails a run on a breach (five runs
    varied by 4.7 %, inside QA-07's 5 %). C (the tick with our handlers) and E (bytes a viewer) varied by 14 %, all of
    it one run inside the whole perf batch (the four alone: 1.2 % or less), and sit at a third of their limits or
@@ -385,8 +386,8 @@ Answer in chat or here; the next session applies the answers.
 - **Last finished task:** M1 T27's close work (2026-10-23): five soak runs and the gate decision, the
   compat server run, schema 2 released with its fixtures, §10.1, the health check.
 - **Last M2 task:** T20, first-person orders (2026-10-23).
-- **Next task:** the movement benchmarks (M1 spec §1.6 D row 169): `OrcaBench`'s allocation through
-  bus messages, and their numbers; then M1 is Done. Then M2 T23 (close), headless.
+- **Next task:** `OrcaBench`'s 7.3 B a step from the stuck ladder's `Stuck` messages (M1 spec §1.6 D row
+  169); then M1 is Done, but for your word on the JMH baseline (item 10). Then M2 T23 (close), headless.
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 960 of 2,000 (48 %), as of 2026-10-23.
 - **Overview:** `python3 tools/roadmap.py summary`.

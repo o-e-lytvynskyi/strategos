@@ -125,6 +125,12 @@ public class OrcaBench {
                 state.motion().set(i, x[k], y[k], z[k], state.motion().yaw(i));
                 state.motion().setVelocity(i, 0, 0);
                 state.paths().follow(i, paths[k], PathStatus.OK);
+                MotionStore m = state.motion(); // a fresh walk: the stuck ladder starts again from its first rung
+                m.setProgress(i, m.aimX(i), m.aimZ(i), Double.POSITIVE_INFINITY, 0);
+                m.setGhostTicks(i, 0);
+                m.setDetour(i, 0, 0, 0);
+                m.setPushed(i, 0);
+                m.setLatch(i, false, 0, 0);
             }
             state.spatial().rebuild(state);
         }
