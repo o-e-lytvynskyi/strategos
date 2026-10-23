@@ -272,6 +272,13 @@ Answer in chat or here; the next session applies the answers.
   they go; with Shift the order waits behind the current one, and a marker stays on the spot. Checked
   on your Mac with 150 units, which all got the order. Turning the formation by dragging and path
   lines come later. Card UI-05 is done.
+- 2026-10-23 · **M2 T9 The commander on the server:** `/strategos match join <id> <slot>` now makes
+  you the match's commander: a spectator above the field, straight in the RTS view, and when the
+  match ends you get back your game mode and the place you came from, even after a restart. Jumping
+  the camera far (a group's double tap) goes through the server, which places you there at the start
+  of its next tick; units in the new view appear at once even if the camera stands still; and units
+  walk through the commander as if it were not there. A 10-minute pan with 20 jumps drew not one
+  rubber-band. Card CAM-03 is done.
 
 ## Now
 
@@ -279,7 +286,7 @@ Answer in chat or here; the next session applies the answers.
 - **In progress:** none.
 - **Last finished task:** M1 T26 (2026-10-23). The agents' branches `wip/m1-t17-unitai-hfsm` and
   `wip/m1-t25-debug-overlay` are merged and kept on GitHub for the record.
-- **Last M2 task:** T13, orders and the preview (2026-10-23); T1, T3, T5, T11, T13 done; T4, T7, T12 open for parts that need later tasks.
+- **Last M2 task:** T9, the commander's server side (2026-10-23); T1, T3, T5, T9, T11, T13 done; T4, T7, T12 open for parts that need later tasks.
 - **Next task:** while the Mac's windows are mine today, the window work that is ready (M2's L4
   items as their tasks land); M1 T27 (M1 close, headless); then M2's tasks in the spec's order.
 - **WIP branch:** none.

@@ -1,6 +1,8 @@
 package dev.strategos.mod.server.net;
 
 import dev.strategos.mod.StrategosServer;
+import dev.strategos.mod.server.match.MatchRegistry;
+import dev.strategos.mod.server.net.payload.CameraJumpPayload;
 import dev.strategos.mod.server.net.payload.CommandsPayload;
 import dev.strategos.mod.server.net.payload.DebugSubscribePayload;
 import dev.strategos.mod.server.net.payload.TemplateAckPayload;
@@ -58,6 +60,19 @@ public final class C2sHandlers {
             server.templateSync().ack(server, player, payload.ack());
         } catch (RuntimeException e) {
             LOG.error("the template ack of {} failed", player.getGameProfile().getName(), e);
+        }
+    }
+
+    /** A commander's camera jump (CAM-03): checked, queued for the next tick's start, or refused. */
+    public static void cameraJump(CameraJumpPayload payload, IPayloadContext context) {
+        StrategosServer server = StrategosServer.getOrNull();
+        if (server == null || !(context.player() instanceof ServerPlayer player)) {
+            return;
+        }
+        MatchRegistry.Seat seat = server.matches().seatOf(player.getUUID());
+        if (seat != null) {
+            server.commanders()
+                    .jump(player, seat.match(), payload.jump(), server.server().getTickCount());
         }
     }
 

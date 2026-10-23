@@ -24,7 +24,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.levelgen.Heightmap;
 import org.jspecify.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
@@ -59,18 +58,18 @@ final class RtsSelectScenario implements Scenario {
                 .matches()
                 .create(
                         level,
-                        StrategosCommands.spaceAround(level, new BlockPos(0, floor, 0), 96, 96),
+                        StrategosCommands.spaceAround(level, new BlockPos(0, floor, 0), 256, 256),
                         new MatchOptions(5L, 2, false, MatchSource.GAMETEST, null, MetricsSink.none(), floor));
         rt.submit(
                 PlayerSlot.ADMIN,
-                new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(0), new Vec2d(48, 62), OWN, 7));
+                new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(0), new Vec2d(128, 142), OWN, 7));
         rt.submit(
                 PlayerSlot.ADMIN,
-                new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(1), new Vec2d(57, 64), ENEMIES, 2));
+                new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(1), new Vec2d(137, 144), ENEMIES, 2));
         match = rt;
         StrategosServer.get().matches().join(rt, player.getUUID(), new PlayerSlot(0));
+        StrategosServer.get().commanders().enter(player, rt); // what /strategos match join does
         StrategosServer.get().net().joined(rt, player, new PlayerSlot(0));
-        player.setGameMode(GameType.SPECTATOR);
         player.connection.teleport(0.5, floor + 30, -14, 0, 40);
     }
 
@@ -191,6 +190,19 @@ final class RtsSelectScenario implements Scenario {
                 check(queued == OWN, queued + " of " + OWN + " units with the queued order behind");
                 ctx.result.addProperty("queued", queued);
                 ctx.capture("rts_order_markers");
+                var rig = rts.rig();
+                if (rig != null) {
+                    jumpTo = new double[] {rig.focusX() + 100, rig.focusZ()};
+                    rts.centreOn(jumpTo[0], jumpTo[1]); // far: a camera_jump the server answers with a teleport
+                }
+            }
+            case 39, 40, 41, 42, 43, 44, 45, 46, 47, 48 -> {}
+            case 49 -> {
+                var rig = rts.rig();
+                check(
+                        rig != null && Math.abs(rig.focusX() - jumpTo[0]) < 1 && Math.abs(rig.focusZ() - jumpTo[1]) < 1,
+                        "the jump left the focus at " + (rig == null ? "nothing" : rig.focusX() + ", " + rig.focusZ()));
+                ctx.result.addProperty("jumped", rig != null && Math.abs(rig.focusX() - jumpTo[0]) < 1);
                 return finish(ctx);
             }
             default -> {
@@ -203,6 +215,7 @@ final class RtsSelectScenario implements Scenario {
 
     private int phase;
     private double[] orderAt = new double[2];
+    private double[] jumpTo = new double[2];
     private volatile @Nullable MatchRuntime match;
 
     private static void click(Screen screen, double[] at) {

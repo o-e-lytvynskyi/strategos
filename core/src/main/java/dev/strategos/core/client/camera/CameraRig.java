@@ -130,6 +130,21 @@ public final class CameraRig {
         panTarget = new double[] {x, z};
     }
 
+    /** The eye the camera would have with its focus at (x, z) on ground {@code groundAt}: a jump's target. */
+    public CameraPose eyeFor(double x, double z, double groundAt) {
+        return eye(new double[] {limits.clampX(x), limits.clampZ(z), yaw, height, groundAt});
+    }
+
+    /**
+     * Takes over where the server put the eye, a teleport the rig did not ask for or a jump's answer: the focus is
+     * found back from the eye along the view, at the current height.
+     */
+    public void rebaseOnEye(double eyeX, double eyeY, double eyeZ) {
+        double radians = Math.toRadians(yaw);
+        double back = height / Math.tan(Math.toRadians(pitch));
+        jumpTo(eyeX - Math.sin(radians) * back, eyeZ + Math.cos(radians) * back, eyeY - height);
+    }
+
     /** Puts the focus at a point, as a jump does; the eye moves with it, so the next tick starts there. */
     public void jumpTo(double x, double z, double groundAt) {
         focusX = limits.clampX(x);

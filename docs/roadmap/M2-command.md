@@ -204,7 +204,7 @@ perspective only.
   4. The owner scores pan, zoom and rotation on the questionnaire (L7, acceptance).
 - **Tests:** L0, L1, L4 (consent), L7 · **Depends on:** CAM-01, UI-01, D-09 · **Size:** L ·
   **Tier:** T0
-- **Progress:** 2026-10-23 — M2 T4: `CameraRig` in `core.client.camera` with the pan cap S9 set (5 blocks a tick, by bisection), `RtsMode` applies it in `PlayerTickEvent.Pre` and `ComputeCameraAngles` with no mixin, `strategos-client.toml` holds pan and turn speeds and edge pan; `CameraRigTest` (1, 2; spec §1.6 row 16). Open: pose goldens (3, with QA-18), jumps through `camera_jump` (with CAM-03), the questionnaire (4)
+- **Progress:** 2026-10-23 — M2 T4: `CameraRig` in `core.client.camera` with the pan cap S9 set (5 blocks a tick, by bisection), `RtsMode` applies it in `PlayerTickEvent.Pre` and `ComputeCameraAngles` with no mixin, `strategos-client.toml` holds pan and turn speeds and edge pan; `CameraRigTest` (1, 2; spec §1.6 row 16). Jumps go through `camera_jump` since T9. Open: pose goldens (3, with QA-18), the questionnaire (4)
 - **Status:** in_progress
 
 #### CAM-04 · RtsScreen, cursor and world picking
@@ -307,7 +307,8 @@ perspective only.
      (L6).
 - **Tests:** L0, L1, L3, L5, L6 · **Depends on:** CAM-01, CORE-03, NET-01, QA-19 · **Size:** M ·
   **Tier:** T0
-- **Status:** specified
+- **Done:** 2026-10-23 — M2 T9: `cameratests.jump_moves_body_and_limits` (1); `cameratests.pan_no_snap_back`, 12,000 ticks at 5 blocks a tick with 20 jumps, 20 position packets (2); `cameratests.chunk_sent_repair`, every body within a tick of its chunk after a 470-block jump, coverage within 3 s, and failing with the re-pair off (3); `cameratests.units_ignore_commander` (4); `perftests.commander_pan_move_cost`, 0.10 ms at p99 with 600 units (5); the commander's own state back when the match ends, kept across restarts (spec §1.6 rows 25–27)
+- **Status:** done
 
 #### NET-08 · Tier-2 replication: summaries, far markers and details
 - **Value:** Armies never vanish when the camera zooms out, and panels show exact orders and

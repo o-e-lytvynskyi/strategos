@@ -9,7 +9,20 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24, T16, T26; M2 spec, M2 T1, T3, T5, T11, T13
+## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24, T16, T26; M2 spec, M2 T1, T3, T5, T11, T13, T9
+
+- **M2 T9 · Commander body, jumps, chunk-sent re-pair** — CAM-03 done.
+  - **Results:** `mod.server.commander.CommanderService` (enter, leave, jumps at the tick's start,
+    the re-pair after `ChunkWatchEvent.Sent`), the payload `camera_jump` (core `CameraJump`), the
+    registry's unseat hook; the client enters RTS mode on its seat and centres far by a jump.
+    Tests: `cameratests` (4), `perftests.commander_pan_move_cost`, a rig test; `rts_select` jumps.
+  - **Measured:** 20 position packets for 20 jumps in 12,000 ticks of panning; pairings within a tick
+    of their chunks; `ChunkMap#move` 0.10 ms at p99 with 600 units.
+  - **Problems:** the first tests asked the fixture for spaces beyond their structure (refused) and
+    beyond 512 blocks; a match without a map holds no tickets, so the units' chunks needed the
+    test's own; a mock's first move from where the seat put it was 22 blocks, a snap-back; a player
+    name of 17 characters. The re-pair test was checked by switching the re-pair off: it fails.
+  - **Next:** combat (CMB-01, CMB-02, ORD-04), headless.
 
 - **M2 T13 · Order feedback and destination preview** — UI-05 done.
   - **Results:** `core.client.order` (`OrderIntents`, `SlotPreview` on `SlotLayout`), the right

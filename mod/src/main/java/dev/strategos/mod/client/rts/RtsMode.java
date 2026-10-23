@@ -13,6 +13,7 @@ import dev.strategos.core.client.pick.View;
 import dev.strategos.core.client.select.ControlGroups;
 import dev.strategos.core.client.select.Seen;
 import dev.strategos.core.client.select.Selection;
+import dev.strategos.core.protocol.CameraJump;
 import dev.strategos.core.protocol.CommandBatch;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.Move;
@@ -21,6 +22,7 @@ import dev.strategos.mod.client.StrategosClientConfig;
 import dev.strategos.mod.client.net.ClientPayloads;
 import dev.strategos.mod.entity.UnitEntity;
 import dev.strategos.mod.entity.UnitSpawnData;
+import dev.strategos.mod.server.net.payload.CameraJumpPayload;
 import dev.strategos.mod.server.net.payload.CommandsPayload;
 import java.util.ArrayList;
 import java.util.List;
@@ -57,6 +59,11 @@ public final class RtsMode {
     private static final double EDGE_POINTS = 6;
     private static final double DRAG_DEGREES_PER_PIXEL = 0.4;
     private static final int TRACKING_REACH = 192;
+    /** Farther than this, centring jumps through the server instead of panning. */
+    private static final double FAR = 48;
+    /** The player standing farther than this from the rig's eye was teleported. */
+    private static final double TELEPORTED = 16;
+
     private static final DustParticleOptions PREVIEW = new DustParticleOptions(new Vector3f(0.35f, 0.65f, 1f), 3f);
     private static final DustParticleOptions MARKER = new DustParticleOptions(new Vector3f(1f, 1f, 1f), 4f);
 
@@ -70,6 +77,8 @@ public final class RtsMode {
     private @Nullable Pick lastPick;
     private @Nullable Action lastAction;
     private boolean previewing;
+    private int autoEntered;
+    private double @Nullable [] pendingJump;
     private long ticks;
     private int clientSeq = 1;
     private int ordersSent;
@@ -191,7 +200,30 @@ public final class RtsMode {
             }
         }
         if (n > 0) {
-            r.panTo(x / n, z / n);
+            centreOn(x / n, z / n);
+        }
+    }
+
+    /**
+     * The camera to a point: a pan at the rig's cap when it is near, else a {@code camera_jump} the server answers
+     * with a teleport, which the rig then takes over (CAM-03).
+     */
+    public void centreOn(double x, double z) {
+        CameraRig r = rig;
+        Minecraft mc = Minecraft.getInstance();
+        if (r == null) {
+            return;
+        }
+        if (Math.hypot(x - r.focusX(), z - r.focusZ()) <= FAR || StrategosClient.match() == null) {
+            r.panTo(x, z);
+            return;
+        }
+        CameraPose eye = r.eyeFor(x, z, ground(x, z, r.pose().y()));
+        if (ClientPayloads.toServer(new CameraJumpPayload(
+                new CameraJump(eye.x(), eye.y(), eye.z(), (float) eye.yaw(), (float) eye.pitch())))) {
+            pendingJump = new double[] {x, z};
+        } else if (mc.player != null) {
+            r.panTo(x, z);
         }
     }
 
@@ -332,6 +364,11 @@ public final class RtsMode {
             while (keys.mapping(Action.TOGGLE_RTS).consumeClick()) {
                 enter();
             }
+            MatchJoin join = StrategosClient.match();
+            if (join != null && join.matchId() != autoEntered && mc.player.isSpectator()) {
+                autoEntered = join.matchId(); // a seat makes a commander: RTS mode, once per match joined
+                enter();
+            }
             return;
         }
         ticks++;
@@ -368,6 +405,17 @@ public final class RtsMode {
         Minecraft mc = Minecraft.getInstance();
         if (r == null || in == null || !(event.getEntity() instanceof LocalPlayer player)) {
             return;
+        }
+        CameraPose was = r.pose();
+        double eyeY = player.getY() + player.getEyeHeight();
+        if (Math.sqrt(player.distanceToSqr(was.x(), was.y() - player.getEyeHeight(), was.z())) > TELEPORTED) {
+            double[] jump = pendingJump;
+            pendingJump = null;
+            if (jump != null) {
+                r.jumpTo(jump[0], jump[1], eyeY - r.height());
+            } else {
+                r.rebaseOnEye(player.getX(), eyeY, player.getZ());
+            }
         }
         double[] edge = edgePan(mc);
         double forward = held(in, Action.CAMERA_PAN_FORWARD) - held(in, Action.CAMERA_PAN_BACK) + edge[1];

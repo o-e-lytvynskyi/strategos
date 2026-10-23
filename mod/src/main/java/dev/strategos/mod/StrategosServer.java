@@ -7,6 +7,7 @@ import dev.strategos.core.content.TemplateProblem;
 import dev.strategos.core.port.JobExecutor;
 import dev.strategos.mod.registry.ModDataMaps;
 import dev.strategos.mod.server.body.SpawnBudget;
+import dev.strategos.mod.server.commander.CommanderService;
 import dev.strategos.mod.server.content.ServerTemplates;
 import dev.strategos.mod.server.content.TemplateFiles;
 import dev.strategos.mod.server.content.TemplateReloadListener;
@@ -33,6 +34,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.common.conditions.ConditionalOps;
 import net.neoforged.neoforge.event.TagsUpdatedEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.level.ChunkWatchEvent;
 import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
@@ -63,6 +65,7 @@ public final class StrategosServer {
     private final JobExecutor jobs;
     private final ServerTemplates templates = new ServerTemplates();
     private final TemplateSync templateSync = new TemplateSync();
+    private final CommanderService commanders = new CommanderService();
     private final NetGateway net;
     private final InterestSets interest = new InterestSets();
     private final DebugFeed debug;
@@ -80,6 +83,12 @@ public final class StrategosServer {
         loadTemplatesAtStart();
         this.matches = new MatchRegistry(
                 server, settings, spawnBudget, writer, this::blockClasses, jobs, () -> templates.set());
+        this.matches.onUnseated(uuid -> {
+            ServerPlayer player = server.getPlayerList().getPlayer(uuid);
+            if (player != null) {
+                commanders.leave(server, player);
+            }
+        });
         this.net = new NetGateway(server, () -> this.matches, faults);
         this.debug =
                 new DebugFeed(server, () -> this.matches, net, StrategosConfig.INSTANCE.debugPermission.getAsInt());
@@ -121,6 +130,11 @@ public final class StrategosServer {
     /** The server's template set, its id table and the last load's problems (DATA-03). */
     public ServerTemplates templates() {
         return templates;
+    }
+
+    /** The seated players' RTS bodies, jumps and re-pairs (CAM-03). */
+    public CommanderService commanders() {
+        return commanders;
     }
 
     public TemplateSync templateSync() {
@@ -269,13 +283,24 @@ public final class StrategosServer {
         }
     }
 
+    /** A chunk reached a player: a commander re-pairs at the next tick's start (CAM-03). */
+    public static void onChunkSent(ChunkWatchEvent.Sent event) {
+        StrategosServer s = current;
+        if (s != null) {
+            s.commanders.chunkSent(event.getPlayer());
+        }
+    }
+
     /** A player came in: one that sits in a match hears which, as it did when it joined it ({@code match_join}). */
     public static void onLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
         StrategosServer s = current;
         if (s != null && event.getEntity() instanceof ServerPlayer player) {
             MatchRegistry.Seat seat = s.matches.seatOf(player.getUUID());
             if (seat != null) {
+                s.commanders.enter(player, seat.match());
                 s.net.joined(seat.match(), player, seat.slot());
+            } else {
+                s.commanders.leave(s.server, player); // its match ended while it was away
             }
         }
     }
@@ -285,6 +310,7 @@ public final class StrategosServer {
         StrategosServer s = current;
         if (s != null && event.getEntity() instanceof ServerPlayer player) {
             s.net.forget(player);
+            s.commanders.forget(player);
             s.templateSync.forget(player);
             s.interest.forget(player.getUUID());
             s.debug.forget(player);

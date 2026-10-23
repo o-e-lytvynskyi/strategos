@@ -776,11 +776,15 @@ public final class StrategosCommands {
         return line.toString();
     }
 
-    /** Seats {@code player} in match {@code id} at {@code slot} and tells it so; it leaves any match it sat in. */
+    /**
+     * Seats {@code player} in match {@code id} at {@code slot}, makes it the match's commander and tells it so; it
+     * leaves any match it sat in.
+     */
     private static String join(String id, int slot, ServerPlayer player) {
         MatchRuntime rt = byId(id);
         PlayerSlot seat = new PlayerSlot(slot);
         registry().join(rt, player.getUUID(), seat);
+        StrategosServer.get().commanders().enter(player, rt);
         StrategosServer.get().net().joined(rt, player, seat);
         return player.getGameProfile().getName() + " sits in " + rt.id() + " at slot " + slot;
     }

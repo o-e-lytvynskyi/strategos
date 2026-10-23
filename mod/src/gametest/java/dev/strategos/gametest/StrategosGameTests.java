@@ -77,6 +77,16 @@ public final class StrategosGameTests {
         afterBatch(level, "chunks");
     }
 
+    @AfterBatch(batch = "camera_pan")
+    public static void afterCameraPan(ServerLevel level) {
+        afterBatch(level, "camera_pan");
+    }
+
+    @AfterBatch(batch = "camera_repair")
+    public static void afterCameraRepair(ServerLevel level) {
+        afterBatch(level, "camera_repair");
+    }
+
     @AfterBatch(batch = "content_errors")
     public static void afterContentErrors(ServerLevel level) {
         afterBatch(level, "content_errors");
@@ -125,6 +135,11 @@ public final class StrategosGameTests {
     @AfterBatch(batch = "writer")
     public static void afterWriter(ServerLevel level) {
         afterBatch(level, "writer");
+    }
+
+    @AfterBatch(batch = "perf_commander")
+    public static void afterPerfCommander(ServerLevel level) {
+        afterBatch(level, "perf_commander");
     }
 
     @AfterBatch(batch = "perf_pages")

@@ -131,4 +131,16 @@ class CameraRigTest {
         rig.tick(CameraInput.NONE, FLAT);
         assertThat(rig.focusX()).as("the key took over").isGreaterThan(x - 5.5);
     }
+
+    @Test
+    void aJumpsEyeRebasesTheFocus() {
+        CameraRig rig = new CameraRig(SPACE, 50, 50, 64, 30);
+        CameraPose target = rig.eyeFor(300, 200, 70);
+
+        rig.rebaseOnEye(target.x(), target.y(), target.z());
+
+        assertThat(rig.focusX()).isCloseTo(300, within(1e-9));
+        assertThat(rig.focusZ()).isCloseTo(200, within(1e-9));
+        assertThat(rig.pose().eyeDistance(target)).isCloseTo(0, within(1e-9));
+    }
 }

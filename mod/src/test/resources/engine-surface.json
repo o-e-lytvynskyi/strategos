@@ -6,6 +6,7 @@
   "mixinConfigs": ["strategos.mixins.json"],
   "accessTransformers": [],
   "payloads": [
+    "strategos:camera_jump",
     "strategos:commands",
     "strategos:debug_feed",
     "strategos:debug_subscribe",

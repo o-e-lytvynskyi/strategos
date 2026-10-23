@@ -44,6 +44,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.GameTestSequence;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket;
+import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -643,6 +645,88 @@ public final class PerfTests {
             broken.add(name + ": p" + Math.round(q * 100) + " " + value + " ns above the limit " + limit);
         }
         return json;
+    }
+
+    /**
+     * CAM-03.5: what a panning commander costs in the chunk map: a mock commander, a spectator, pans 5 blocks a tick
+     * across the arena while 600 units walk, and each tick the call each of its movement packets makes,
+     * {@code ServerChunkCache#move}, is timed; at most 0.5 ms at p99, under gate {@code c}.
+     */
+    @StrategosTest(batch = "perf_commander", arena = "arena_flat_48", timeoutTicks = 1_400)
+    public static void commanderPanMoveCost(GameTestHelper h) {
+        MatchRuntime rt = MatchFixture.create(h, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
+        rt.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(0), WEST, 300, 6));
+        rt.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(1), EAST, 300, 6));
+        Vec3 corner = h.absoluteVec(new Vec3(0, 26, 24));
+        MockViewer viewer = MockViewer.join(h.getLevel(), "strategos-pancst", corner.x, corner.y, corner.z, 8);
+        viewer.capture().keep(true);
+        StrategosServer.get().matches().join(rt, viewer.player().getUUID(), new PlayerSlot(0));
+        StrategosServer.get().commanders().enter(viewer.player(), rt);
+        Window window = new Window();
+        var state = new Object() {
+            double x = corner.x;
+            double direction = 5;
+            boolean placed;
+            int ticks;
+            int samples;
+            final long[] nanos = new long[SAMPLES];
+        };
+        h.onEachTick(() -> {
+            viewer.poll();
+            for (var p : viewer.capture().of(ClientboundPlayerPositionPacket.class)) {
+                viewer.player()
+                        .connection
+                        .handleAcceptTeleportPacket(
+                                new net.minecraft.network.protocol.game.ServerboundAcceptTeleportationPacket(
+                                        p.getId()));
+            }
+            viewer.capture().clear();
+            if (!state.placed) {
+                state.placed = true;
+                viewer.player().connection.teleport(state.x, corner.y, corner.z, 0, 55);
+                return;
+            }
+            if (core(rt).queries().unitCount() < 600) {
+                return;
+            }
+            if (state.ticks % REORDER_EVERY == 0) {
+                reorder(rt, state.ticks / REORDER_EVERY % 2 == 0);
+            }
+            state.ticks++;
+            state.x += state.direction;
+            if (state.x > corner.x + 48 || state.x < corner.x) {
+                state.direction = -state.direction;
+                state.x += 2 * state.direction;
+            }
+            viewer.player()
+                    .connection
+                    .handleMovePlayer(
+                            new ServerboundMovePlayerPacket.PosRot(state.x, corner.y, corner.z, 0, 55, false));
+            long start = System.nanoTime();
+            h.getLevel().getChunkSource().move(viewer.player());
+            long took = System.nanoTime() - start;
+            if (state.ticks > WARM_UP && state.samples < SAMPLES) {
+                if (state.samples == 0) {
+                    window.start();
+                }
+                state.nanos[state.samples++] = took;
+                if (state.samples % 20 == 0) {
+                    window.sampleForeignLoad();
+                }
+            }
+            if (state.samples >= SAMPLES) {
+                viewer.close();
+                verdict(
+                        h,
+                        "commander_pan_move_cost",
+                        "c",
+                        new BudgetCheck("ChunkMap#move per panning commander", Long.MAX_VALUE, scaled(MS / 2)),
+                        state.nanos,
+                        window,
+                        new JsonObject());
+                h.succeed();
+            }
+        });
     }
 
     /** Whether a gate is listed in {@code strategos.perf.gates}, so it fails the run rather than reports. */

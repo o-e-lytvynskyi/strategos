@@ -24,6 +24,7 @@ import net.neoforged.neoforge.event.TagsUpdatedEvent;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.level.ChunkWatchEvent;
 import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
@@ -66,6 +67,7 @@ public final class Strategos {
         game.addListener(
                 AddReloadListenerEvent.class, event -> reloadListeners().forEach(event::addListener));
         game.addListener(OnDatapackSyncEvent.class, TemplateSync::onDatapackSync);
+        game.addListener(ChunkWatchEvent.Sent.class, StrategosServer::onChunkSent);
     }
 
     /** The listeners every data pack reload gets, made fresh for each; the engine-surface inventory reads them (B12). */

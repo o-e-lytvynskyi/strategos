@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
@@ -76,6 +77,8 @@ public final class MatchRegistry {
     private final Map<ResourceKey<Level>, MatchRegionIndex> regions = new HashMap<>();
     private @Nullable RegistryData persisted;
     private int nextId = 1; // ids while no registry blob is usable; such matches are never saved
+
+    private Consumer<UUID> unseated = player -> {};
 
     public MatchRegistry(
             MinecraftServer server,
@@ -617,8 +620,15 @@ public final class MatchRegistry {
         matches.remove(rt.id().value());
         regionsOf(rt.space().level()).remove(rt.id());
         for (UUID player : rt.roster().members()) {
-            seated.remove(player, rt.id());
+            if (seated.remove(player, rt.id())) {
+                unseated.accept(player);
+            }
         }
+    }
+
+    /** Called with each player a match's end unseats, for its commander's state to come back (CAM-03). */
+    public void onUnseated(Consumer<UUID> hook) {
+        this.unseated = hook;
     }
 
     /** Where a player sits: its match and slot. */

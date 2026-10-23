@@ -21,6 +21,7 @@ public final class TickDriver {
         StrategosServer server = StrategosServer.getOrNull();
         if (server != null) {
             server.betweenTicks().tickStarts();
+            server.commanders().tickStarts(server.server()); // before the connections tick (S9)
             server.spawnBudget().reset(server.settings().spawnsPerTick());
             server.writer().startTick();
             for (MatchRuntime rt : server.matches().preparing()) {
