@@ -427,7 +427,7 @@ second (5 minutes, M1 §1.6 row 162's pacing); budgets A, B and C as M1's soak m
 
 ### 7.3 Progress
 
-- [x] T1 (2026-10-23) · [ ] T2 · [x] T3 (2026-10-23) · [ ] T4 (rig, options and jumps done; goldens with QA-18) · [x] T5 (2026-10-23) · [ ] T6 · [ ] T7 (outline and tags done; the 192-block check with NET-08) · [ ] T8 · [x] T9 (2026-10-23) · [ ] T10 · [x] T11 (2026-10-23) · [ ] T12 (all but the first-person round trip, with CAM-05)
+- [x] T1 (2026-10-23) · [ ] T2 · [x] T3 (2026-10-23) · [ ] T4 (rig, options and jumps done; goldens with QA-18) · [x] T5 (2026-10-23) · [ ] T6 · [ ] T7 (outline and tags done; the 192-block check with NET-08) · [x] T8 (2026-10-23) · [x] T9 (2026-10-23) · [ ] T10 · [x] T11 (2026-10-23) · [ ] T12 (all but the first-person round trip, with CAM-05)
 - [x] T13 (2026-10-23) · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17 · [ ] T18 · [ ] T19 · [ ] T20 · [x] T21 (2026-10-23) · [ ] T22 · [ ] T23
 
 ---

@@ -9,7 +9,27 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24, T16, T26; M2 spec, M2 T1, T3, T5, T11, T13, T9, T21
+## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24, T16, T26; M2 spec, M2 T1, T3, T5, T11, T13, T9, T21, T8
+
+- **M2 T8 · Scenario diff and goldens** — QA-18 done; M2 T22 early: M1's QA-19.4 and PATH-10.3,
+  the `-Pcompat` pass.
+  - **Results:** `scenarioDiff` after every scenario run (frames shrunk to 640 across, normalised
+    mean squared error outside masks, threshold 1e-5) and its selftest; `approveGoldens`; the
+    scenes `rts_goldens` and `overlay_goldens`; goldens proposed for macOS and linux-llvmpipe; the
+    CI job's altered-golden check; the procedure in `mod/src/devtools/README.md`. The spike `qa19`
+    with its client scenario.
+  - **Measured:** three Mac runs and two CI runs of `rts_goldens` identical to the pixel; an
+    inverted square 3.2e-3 to 3.7e-3; the outline 1.3e-4 of its frame; the overlay's three runs
+    within 1.7e-8. QA-19.4: JFR 719,780 bytes against the encoder's 719,736, 0.006 %.
+  - **Problems:** on llvmpipe a shot is taken frames after it is asked for, so the scene had moved
+    on (the outline gone, the turn half done), which first looked like llvmpipe not drawing the
+    outline; the scene now waits for each shot. Frozen bodies still swung their arms by their
+    age, which differs per run, and stood mid-interpolation; they are pinned. Sodium's frames
+    differ from vanilla's by 1.2e-5, so a Sodium run is its own platform. Two dispatches of one
+    workflow cancelled each other; the group now includes the scenario. The JFR dump holds other
+    events, filtered by type. At the top height the view shows the loaded world's edge (for the
+    owner).
+  - **Next:** the owner's approval of the goldens; then UI-02, the HUD, while the Mac is lent.
 
 - **M2 T21 · Client frame gate** — PERF-14 in progress (the HUD's re-run and the owner's approval
   open).

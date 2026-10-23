@@ -677,7 +677,7 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
   3. Overlay goldens on the proving ground (L4, consent; in M2's consent batch).
 - **Tests:** L0, L3, L4 (consent), L5 · **Depends on:** PATH-03, NET-01, QA-10 · **Size:** M ·
   **Tier:** T0
-- **Done:** 2026-10-23 — M1 T25: `debugtests.unsubscribed_gets_no_dev_payload`, `debugtests.subscribed_gets_feed` (1); rule B5 and the server smoke, which loads no client class (2); the overlay goldens wait for M2's consent batch, as the card plans (3); spec §1.6 D rows 120–130
+- **Done:** 2026-10-23 — M1 T25: `debugtests.unsubscribed_gets_no_dev_payload`, `debugtests.subscribed_gets_feed` (1); rule B5 and the server smoke, which loads no client class (2); the overlay goldens wait for M2's consent batch, as the card plans (3); spec §1.6 D rows 120–130. 2026-10-23, early in that batch: `overlay_goldens` proposes them for macOS and linux-llvmpipe, waiting for the owner's approval (3; M2 spec §1.6 row 39)
 - **Status:** done
 
 #### PERF-05 · Crowd soak and the M1 perf gate

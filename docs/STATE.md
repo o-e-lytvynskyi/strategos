@@ -43,14 +43,25 @@ Answer in chat or here; the next session applies the answers.
    client tick 0.8 ms ([numbers](../perf/client/m4pro.json), [M2 spec §1.6 rows 28–30](milestones/M2-command.md)).
    Say yes and these become this Mac's baselines, which later milestones' scenes are compared
    with.
-8. **A proposal from spike S10, your call, not urgent:** units now stand exactly on slabs, stairs,
+8. **Pictures to approve, not urgent (M2's consent batch):** the reference frames the client tests
+   compare with, for this Mac and for CI's Linux renderer, in
+   [goldens-proposed](../mod/src/devtools/goldens-proposed/): the RTS camera at three poses, a
+   selected group outlined, and the movement overlay. Say yes and they become the goldens
+   (procedure in [mod/src/devtools/README.md](../mod/src/devtools/README.md)). Two things to look
+   at while you do:
+   - the outline reads dark navy rather than the faction's blue: the outline effect darkens it;
+   - at the camera's top height (64 blocks) the top of the window shows the edge of the loaded
+     world and the sky (`pose_high`). The options: limit the top height by the render distance,
+     tilt the camera down more as it rises, or hide the edge with fog. I suggest the tilt; say
+     which you prefer before these pictures are approved, since it changes `pose_high`.
+9. **A proposal from spike S10, your call, not urgent:** units now stand exactly on slabs, stairs,
    snow, carpet, paths, farmland and in shallow water, but they take a step when its edge passes
    their centre, so for about two frames per step up a foot cuts into the step's edge, and on the
    way down it hangs over the ledge ([frames and numbers](spikes/S10-kinematic-fidelity.md)). A
    vanilla body stands on the highest block under its whole footprint instead. I propose the same
    rule for our units, a change to the motion of card PATH-05, before your Mac look at the steps in
    M2's consent batch. Say yes and it joins M1 as a small task; no, and the steps stay as they are.
-9. **Optional reviews:**
+10. **Optional reviews:**
    - the card refinements made after the approval
      ([design/roadmap-changes.md §8](design/roadmap-changes.md));
    - the promo draft ([promo/roadmap-announcement.md](promo/roadmap-announcement.md)).
@@ -291,6 +302,15 @@ Answer in chat or here; the next session applies the answers.
   and 0.8 ms. Every number is well inside the card's budgets of 16.7 ms, 25 ms, 6 ms, 3 ms and 1 ms
   ([archive](../perf/client/m4pro.json)). The HUD and health bars are not there yet, so the scene
   runs again with them in M2's consent batch. Card PERF-14 is in progress.
+- 2026-10-23 · **M2 T8 Pictures that catch changes:** every client scenario's frames are now compared
+  with approved pictures of their platform, this Mac's and CI's Linux renderer, and a changed
+  picture fails the run; CI proves it each time by spoiling a copy. A fixed scene with the camera
+  at three poses and a selected group outlined repeats to the pixel on both platforms. The
+  pictures wait for your yes (below). Card QA-18 is done.
+- 2026-10-23 · **Three items of M2's consent batch, early, with today's Mac:** the network byte
+  counter that the headless tests use matches a real client's own measurement to 0.006 % (M1's
+  QA-19.4); the movement overlay has its pictures too (M1's PATH-10.3); and the RTS scenarios pass
+  with Sodium and Iris.
 
 ## Now
 
@@ -298,7 +318,7 @@ Answer in chat or here; the next session applies the answers.
 - **In progress:** none.
 - **Last finished task:** M1 T26 (2026-10-23). The agents' branches `wip/m1-t17-unitai-hfsm` and
   `wip/m1-t25-debug-overlay` are merged and kept on GitHub for the record.
-- **Last M2 task:** T21, the client frame gate (2026-10-23); T1, T3, T5, T9, T11, T13, T21 done; T4, T7, T12 open for parts that need later tasks.
+- **Last M2 task:** T8, the scenario diff and goldens (2026-10-23); T1, T3, T5, T8, T9, T11, T13, T21 done; T4, T7, T12 open for parts that need later tasks; three consent-batch items (T22) done early.
 - **Next task:** while the Mac's windows are mine today, the window work that is ready (M2's L4
   items as their tasks land); M1 T27 (M1 close, headless); then M2's tasks in the spec's order.
 - **WIP branch:** none.

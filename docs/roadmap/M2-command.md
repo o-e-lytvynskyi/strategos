@@ -280,12 +280,13 @@ perspective only.
      (D).
 - **Tests:** L0, L4 (consent), D · **Fixtures:** goldens per platform · **Depends on:** QA-06,
   CAM-04, D-22 · **Size:** M · **Tier:** T0
-- **Progress:** 2026-10-23 — M2 T8: `scenarioDiff` with masks and its selftest in `verifyHarness`,
-  the scenario `rts_goldens` driving `RtsScreen` (3), three runs on this Mac identical to the pixel
-  against the threshold of 1e-5 (1), proposed macOS goldens, the CI job's altered-golden check, and the
-  approval procedure in `mod/src/devtools/README.md` (4; M2 spec §1.6 rows 32–34). Open: the
-  linux-llvmpipe run of the CI job (2), and the owner's approval of the goldens
-- **Status:** in_progress
+- **Done:** 2026-10-23 — M2 T8: `scenarioDiff` with masks and its selftest in `verifyHarness`; the
+  scenario `rts_goldens` driving `RtsScreen` through its keys, wheel and mouse (3); three runs on
+  this Mac and two on CI's llvmpipe identical to the pixel against the threshold of 1e-5 (1); the CI
+  job fails a copy of the goldens with a square inverted, 3.2e-3 to 3.7e-3 (2); the approval
+  procedure in `mod/src/devtools/README.md`, and the goldens proposed for both platforms wait for
+  the owner (4); M2 spec §1.6 rows 32–37
+- **Status:** done
 
 #### CAM-03 · Commander body, jumps and the chunk-sent re-pair
 - **Value:** Wherever the camera looks, terrain and units are loaded and current, in singleplayer
