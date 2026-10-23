@@ -763,7 +763,7 @@ public final class PerfTests {
 
     /** Whether a gate is listed in {@code strategos.perf.gates}, so it fails the run rather than reports. */
     private static boolean gated(String gate) {
-        return Arrays.asList(System.getProperty("strategos.perf.gates", "a,g").split(","))
+        return Arrays.asList(System.getProperty("strategos.perf.gates", "a,d,g").split(","))
                 .contains(gate);
     }
 
@@ -803,7 +803,7 @@ public final class PerfTests {
         double foreign = window.meanForeignLoad();
         List<String> violations = budget.violations(samples);
         boolean listed = Arrays.asList(
-                        System.getProperty("strategos.perf.gates", "a,g").split(","))
+                        System.getProperty("strategos.perf.gates", "a,d,g").split(","))
                 .contains(gate);
         String verdict;
         if (foreign > INVALID_FOREIGN_LOAD) {

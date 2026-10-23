@@ -9,7 +9,26 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24, T16, T26; M2 spec, M2 T1, T3, T5, T11, T13, T9, T21, T8, T6, T19, T2, T4, T14, T10 (part), T7, T10, T17, T18, T15, T16, T20
+## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24, T16, T26; M2 spec, M2 T1, T3, T5, T11, T13, T9, T21, T8, T6, T19, T2, T4, T14, T10 (part), T7, T10, T17, T18, T15, T16, T20; M1 T27 (part)
+
+- **M1 T27 (part) · M1's close** — all but the movement benchmarks.
+  - **Results:** five crowd-soak runs of one commit and the gate decision (`d` gates now; `c` and
+    `e` proposed); `-Pcompat.server` with every GameTest; schema 2 released with the `match_v2`
+    fixtures (JSON and NBT, the same match, the same hash) in `released-fixtures.txt`; M1 spec §10.1
+    and D rows 168–169; 05-testing.md and 02-tooling.md; `jmhCompare` fails on a missing
+    benchmark; the skill runs `jmhCompare` on changes to the core's step or saves.
+  - **Measured:** the soak, five runs: A p50 1.75–1.90 ms, B 2.6–4.5, C 6.9–9.3, D 0.36–0.40 ms,
+    E 7.1–10.3 KB/s; stress C 9.3 ms; the melee soak again 28,082 hits and 953 deaths (the same
+    run); 153 GameTests with Lithium 0.15.4, ModernFix 5.27.26 and FerriteCore 7.0.3 in 27 s;
+    `verify` 50 s, `verifySlow` 2 min 39 s, the perf batch 22.5 min.
+  - **Problems:** `jmhCompare` red since M1: `MovementBench.step600` 14.1 → 22.3 µs and
+    `SnapshotCodecBench.encode500` 220 → 285 µs against M0's baseline, grown with M1's features
+    (measured at four commits: 21.3 and 275 already at M1 T26); a new baseline proposed.
+    `MotionBench` and `OrcaBench` had not run since M1 T22 (their set-up waited four ticks for paths
+    the admission window spreads over eight, and JMH skips a benchmark whose set-up throws); fixed,
+    they run, but `OrcaBench` allocates 138 B a step through bus messages. Recorded in the knowledge
+    base.
+  - **Next:** the movement benchmarks, then M1 is Done; M2 T23.
 
 - **M2 T20 · First-person orders** — CAM-07 done (its inspect panel for the owner's look).
   - **Results:** the `LeaderUpdate` input (where each first-person commander stands, every tick,

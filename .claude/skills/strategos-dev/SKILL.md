@@ -131,7 +131,12 @@ approved roadmap; ideas go to "For the owner" as proposals.
    - `./gradlew verify verifySlow verifySoak`, what CI runs, before pushing a change that touches
      movement, pathing, orders or the tick, since the slow map tests (`maptests.*` on the proving
      ground) and the soak are not in `verify`: M1 T21's avoidance passed `verify` and failed
-     `maptests.fifty_units_one_by_one` on CI.
+     `maptests.fifty_units_one_by_one` on CI;
+   - `./gradlew :core:jmh :core:jmhCompare` before closing a task that changes the core's step,
+     its codecs or a `@HotPath` kernel. No M1 task ran it, and M1 grew `MovementBench.step600` by
+     58 % and `SnapshotCodecBench.encode500` by 29 % against M0's approved baseline unnoticed until
+     M1's close. A red `jmhCompare` goes to "For the owner" the same day: the cause, and a proposed
+     baseline (`perf/baseline-<machine>.proposed.json`) when the growth is the features' own cost.
 
    Before that, the gate is `verifyFast` plus the task's verification command (M0 spec §0.4,
    "Bootstrap").

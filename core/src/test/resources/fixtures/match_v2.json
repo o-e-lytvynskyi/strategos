@@ -1,0 +1,578 @@
+{
+  "pages": [
+    {
+      "x": 0,
+      "z": 0,
+      "slice": "f7ee2203cf664385"
+    },
+    {
+      "x": 1,
+      "z": 0,
+      "slice": "f7ee2203cf664385"
+    },
+    {
+      "x": 2,
+      "z": 0,
+      "slice": "f7ee2203cf664385"
+    },
+    {
+      "x": 3,
+      "z": 0,
+      "slice": "f7ee2203cf664385"
+    },
+    {
+      "x": 0,
+      "z": 1,
+      "slice": "f7ee2203cf664385"
+    },
+    {
+      "x": 1,
+      "z": 1,
+      "slice": "f7ee2203cf664385"
+    },
+    {
+      "x": 2,
+      "z": 1,
+      "slice": "f7ee2203cf664385"
+    },
+    {
+      "x": 3,
+      "z": 1,
+      "slice": "f7ee2203cf664385"
+    }
+  ],
+  "paths": {
+    "lastPageChange": 1
+  },
+  "nextGroup": 3,
+  "units": [
+    {
+      "path": {
+        "lastRequest": 30,
+        "waypoints": {
+          "x": [
+            26.469547564036503
+          ],
+          "z": [
+            16.312213812313818
+          ],
+          "floor": [
+            16
+          ]
+        }
+      },
+      "motion": {
+        "aimX": 26.469547564036503,
+        "aimZ": 16.312213812313818,
+        "floor": 16
+      },
+      "slot": 3,
+      "attacks": 1048582,
+      "queue": [
+        {
+          "group": 1,
+          "slot": 6,
+          "kind": "attack_move",
+          "target": {
+            "x": 31.223015410072296,
+            "z": 14.51379848371263
+          }
+        }
+      ],
+      "kind": "engage",
+      "yaw": -112.381294,
+      "state": "combat.attacking",
+      "data": [
+        405,
+        0
+      ],
+      "target": {
+        "x": 26.190779349421607,
+        "z": 15.089146989805688
+      },
+      "x": 24.4362500683436,
+      "y": 1.0,
+      "z": 15.804501395249545,
+      "handle": 1048576,
+      "template": "strategos:unit/infantry",
+      "faction": 0
+    },
+    {
+      "path": {
+        "lastRequest": 23,
+        "waypoints": {
+          "x": [
+            26.23946103358018
+          ],
+          "z": [
+            17.726589703964006
+          ],
+          "floor": [
+            16
+          ]
+        }
+      },
+      "motion": {
+        "aimX": 26.23946103358018,
+        "aimZ": 17.726589703964006,
+        "floor": 16
+      },
+      "slot": 3,
+      "attacks": 1048587,
+      "queue": [
+        {
+          "group": 1,
+          "slot": 1,
+          "kind": "attack_move",
+          "target": {
+            "x": 32.77698458992771,
+            "z": 17.48620151628737
+          }
+        }
+      ],
+      "kind": "engage",
+      "damage": 46.05822000000001,
+      "yaw": -114.16015,
+      "state": "combat.attacking",
+      "data": [
+        416,
+        0
+      ],
+      "target": {
+        "x": 26.02796859793893,
+        "z": 17.050653412573975
+      },
+      "x": 24.502238628097025,
+      "y": 1.0,
+      "z": 17.735068409220453,
+      "handle": 1048578,
+      "template": "strategos:unit/infantry",
+      "faction": 0
+    },
+    {
+      "path": {
+        "lastRequest": 135,
+        "waypoints": {
+          "x": [
+            25.841511547386897
+          ],
+          "z": [
+            17.92587568076037
+          ],
+          "floor": [
+            16
+          ]
+        }
+      },
+      "motion": {
+        "aimX": 25.841511547386897,
+        "aimZ": 17.92587568076037,
+        "floor": 16
+      },
+      "slot": 4,
+      "attacks": 1048587,
+      "queue": [
+        {
+          "group": 1,
+          "slot": 5,
+          "kind": "attack_move",
+          "target": {
+            "x": 31.250122475499513,
+            "z": 16.01355353271361
+          }
+        }
+      ],
+      "kind": "engage",
+      "yaw": -85.29788,
+      "state": "combat.attacking",
+      "data": [
+        416,
+        0
+      ],
+      "target": {
+        "x": 26.02796859793893,
+        "z": 17.050653412573975
+      },
+      "x": 24.36937890555299,
+      "y": 1.0,
+      "z": 16.914230692626194,
+      "handle": 1048579,
+      "template": "strategos:unit/infantry",
+      "faction": 0
+    },
+    {
+      "path": {
+        "lastRequest": 21,
+        "waypoints": {
+          "x": [
+            27.871516177690424
+          ],
+          "z": [
+            16.972579705474566
+          ],
+          "floor": [
+            16
+          ]
+        }
+      },
+      "motion": {
+        "aimX": 27.871516177690424,
+        "aimZ": 16.972579705474566,
+        "floor": 16
+      },
+      "slot": 2,
+      "attacks": 1048582,
+      "queue": [
+        {
+          "group": 1,
+          "slot": 3,
+          "kind": "attack_move",
+          "target": {
+            "x": 32.722770459073274,
+            "z": 14.486691418285414
+          }
+        }
+      ],
+      "kind": "engage",
+      "damage": 92.11644000000003,
+      "yaw": -98.104675,
+      "state": "combat.attacking",
+      "data": [
+        405,
+        0
+      ],
+      "target": {
+        "x": 26.190779349421607,
+        "z": 15.089146989805688
+      },
+      "x": 25.000909680244153,
+      "y": 1.0,
+      "z": 15.250797715724486,
+      "handle": 1048580,
+      "template": "strategos:unit/infantry",
+      "faction": 0
+    },
+    {
+      "path": {
+        "lastRequest": 30,
+        "waypoints": {
+          "x": [
+            26.469547564036503
+          ],
+          "z": [
+            17.784456998747363
+          ],
+          "floor": [
+            16
+          ]
+        }
+      },
+      "motion": {
+        "aimX": 26.469547564036503,
+        "aimZ": 17.784456998747363,
+        "floor": 16
+      },
+      "slot": 2,
+      "attacks": 1048587,
+      "queue": [
+        {
+          "group": 1,
+          "slot": 4,
+          "kind": "attack_move",
+          "target": {
+            "x": 31.27722954092673,
+            "z": 17.513308581714586
+          }
+        }
+      ],
+      "kind": "engage",
+      "damage": 77.94468000000002,
+      "yaw": -141.07176,
+      "state": "combat.attacking",
+      "data": [
+        416,
+        0
+      ],
+      "target": {
+        "x": 26.02796859793893,
+        "z": 17.050653412573975
+      },
+      "x": 24.97615568755058,
+      "y": 1.0,
+      "z": 18.3528653790479,
+      "handle": 1048581,
+      "template": "strategos:unit/infantry",
+      "faction": 0
+    },
+    {
+      "path": {
+        "lastRequest": 24,
+        "waypoints": {
+          "x": [
+            25.54972104995342
+          ],
+          "z": [
+            15.719636128312906
+          ],
+          "floor": [
+            16
+          ]
+        }
+      },
+      "motion": {
+        "aimX": 25.54972104995342,
+        "aimZ": 15.719636128312906,
+        "floor": 16
+      },
+      "attacks": 1048580,
+      "queue": [
+        {
+          "group": 2,
+          "slot": 4,
+          "kind": "attack_move",
+          "target": {
+            "x": 20.879079379181977,
+            "z": 14.5718125315292
+          }
+        }
+      ],
+      "kind": "engage",
+      "damage": 92.11644000000003,
+      "yaw": 81.895325,
+      "state": "combat.attacking",
+      "data": [
+        406,
+        0
+      ],
+      "target": {
+        "x": 25.000363046146866,
+        "z": 15.282712282610234
+      },
+      "x": 26.193198002777653,
+      "y": 1.0,
+      "z": 15.081010713872152,
+      "handle": 1048582,
+      "template": "strategos:unit/infantry",
+      "faction": 1
+    },
+    {
+      "path": {
+        "lastRequest": 21,
+        "waypoints": {
+          "x": [
+            23.878836062951205
+          ],
+          "z": [
+            16.50760304454888
+          ],
+          "floor": [
+            16
+          ]
+        }
+      },
+      "motion": {
+        "aimX": 23.878836062951205,
+        "aimZ": 16.50760304454888,
+        "floor": 16
+      },
+      "slot": 5,
+      "attacks": 1048581,
+      "queue": [
+        {
+          "group": 2,
+          "slot": 3,
+          "kind": "attack_move",
+          "target": {
+            "x": 19.120920620818023,
+            "z": 17.4281874684708
+          }
+        }
+      ],
+      "kind": "engage",
+      "yaw": 66.7866,
+      "state": "combat.attacking",
+      "data": [
+        406,
+        0
+      ],
+      "target": {
+        "x": 24.97615568755058,
+        "z": 18.3528653790479
+      },
+      "x": 26.591779603332327,
+      "y": 1.0,
+      "z": 17.65996061750826,
+      "handle": 1048585,
+      "template": "strategos:unit/infantry",
+      "faction": 1
+    },
+    {
+      "path": {
+        "lastRequest": 136,
+        "waypoints": {
+          "x": [
+            25.000363046146866
+          ],
+          "z": [
+            15.282712282610234
+          ],
+          "floor": [
+            16
+          ]
+        }
+      },
+      "motion": {
+        "best": 1.7845763042759801,
+        "aimX": 25.000363046146866,
+        "aimZ": 15.282712282610234,
+        "floor": 16
+      },
+      "slot": 1,
+      "attacks": 1048580,
+      "queue": [
+        {
+          "group": 2,
+          "slot": 1,
+          "kind": "attack_move",
+          "target": {
+            "x": 19.384897652732544,
+            "z": 14.43982401557194
+          }
+        }
+      ],
+      "kind": "engage",
+      "yaw": 114.41963,
+      "state": "combat.attacking",
+      "data": [
+        410,
+        0
+      ],
+      "target": {
+        "x": 25.000363046146866,
+        "z": 15.282712282610234
+      },
+      "x": 26.6371831556952,
+      "y": 1.0,
+      "z": 15.993720380146044,
+      "handle": 1048586,
+      "template": "strategos:unit/infantry",
+      "faction": 1
+    },
+    {
+      "path": {
+        "lastRequest": 136,
+        "waypoints": {
+          "x": [
+            24.673011702474103
+          ],
+          "z": [
+            17.70720359396754
+          ],
+          "floor": [
+            16
+          ]
+        }
+      },
+      "motion": {
+        "best": 1.5242751241123247,
+        "aimX": 24.673011702474103,
+        "aimZ": 17.70720359396754,
+        "floor": 16
+      },
+      "attacks": 1048578,
+      "queue": [
+        {
+          "group": 2,
+          "slot": 5,
+          "kind": "attack_move",
+          "target": {
+            "x": 20.747090863224717,
+            "z": 16.06599425797863
+          }
+        }
+      ],
+      "kind": "engage",
+      "damage": 42.51528000000001,
+      "yaw": 65.83985,
+      "state": "combat.attacking",
+      "data": [
+        419,
+        0
+      ],
+      "target": {
+        "x": 24.673011702474103,
+        "z": 17.70720359396754
+      },
+      "x": 26.02796859793893,
+      "y": 1.0,
+      "z": 17.050653412573975,
+      "handle": 1048587,
+      "template": "strategos:unit/infantry",
+      "faction": 1
+    },
+    {
+      "path": {
+        "lastRequest": 82
+      },
+      "motion": {
+        "latchX": 14.0,
+        "latchZ": 26.0,
+        "best": 0.0,
+        "latched": true,
+        "aimX": 14.0,
+        "aimZ": 26.0,
+        "floor": 16
+      },
+      "yaw": -90.0,
+      "state": "idle",
+      "x": 14.0,
+      "y": 1.0,
+      "z": 26.0,
+      "handle": 1048588,
+      "template": "strategos:unit/debug_walker",
+      "faction": 0
+    }
+  ],
+  "pendingCommands": [],
+  "config": {
+    "bounds": {
+      "minY": 0,
+      "maxY": 16,
+      "flatFloorY": 1.0,
+      "sizeX": 64,
+      "sizeZ": 32
+    },
+    "factions": 2,
+    "rules": {
+      "commandsPerTick": 256,
+      "unitCap": 4096
+    },
+    "id": 1,
+    "seed": "000000000000002a"
+  },
+  "tick": 400,
+  "templateSetHash": "f784a0c49affac3f",
+  "slots": {
+    "generations": [
+      1,
+      2,
+      1,
+      1,
+      1,
+      1,
+      1,
+      2,
+      2,
+      1,
+      1,
+      1,
+      1
+    ],
+    "free": [
+      1,
+      7,
+      8
+    ]
+  },
+  "v": 2
+}

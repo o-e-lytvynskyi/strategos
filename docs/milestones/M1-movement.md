@@ -377,6 +377,8 @@ cards, does not exist for M1: the M1 cards were final when this spec was written
 | 165 | §1.6 D row 10, as built | `verifySlow` runs `maptests.crowd_soak_orders` (batch `map_soak`): the soak's 600 units for 12,000 unpaced ticks with the correctness checks only, about 40 s. `verifyPerf` runs `perftests.crowd_soak_600` (paced, about 13 minutes with the import, settling and baseline) and `perftests.stress_1200` (paced, about 2.5 minutes, gating C only). CI's nightly `perf.yml` shortens the soak to 2,400 ticks (`-Psoak.ticks=2400`) at three times the budgets, its job's timeout raised to 30 minutes; `runGameTestPerf`'s own timeout is 40 minutes; `-Pperf.filter` and, for the slow run, `-Pgametest.filter` pick tests |
 | 166 | §8.5, QA-07: the soak's gates | Gates `a` and `g` fail the soak on a breach, as M0 set; `b`, `c`, `d` and `e` report until five runs of one commit show a p95 coefficient of variation of at most 5 % (QA-07). Three valid runs of T26's code (two more were lost to a compile of other work during the loop): C 7.31, 7.33, 7.24 ms (0.5 %), D 0.34, 0.37, 0.33 ms (4.3 %), E 3.26, 3.27, 3.25 KB/s (0.2 %), A p99 3.11, 3.52, 3.10 ms (6 %), B 5.05, 3.35, 4.84 ms (17 %), A p50 1.60, 1.16, 1.53 ms. B varies with its baseline, the empty arena's median tick, 2.2–4.0 ms between runs. The remaining runs and the gate decision are T27's |
 | 167 | §9.2 T26: tests and numbers | `perftests.crowd_soak_600` (paced, 11,800 samples after the warm-up): A p50 1.6 ms and p99 3.1 ms against 5 and 10; B p95 4.7 ms against 17; C p95 7.3 ms against 23 (the tick's p50 5.1 ms, the empty arena's 2.2–4.0); D p99 0.34 ms against 2; E 3.3 KB/s per viewer against 100, each viewer paired with 43 bodies on average and 92 at most (QA-19's `viewer_bytes_600` keeps budget E with all 600 in view, 41 KB/s); G nav 2.9 MB at 384². 600 group orders, 18,437 unit orders, none failed, no nudge; the ladder repathed 344 times, stepped aside 30 and walked without avoidance 3; the longest run without progress 214 ticks. `perftests.stress_1200`: C p95 9.4 ms against 50; 120 group orders, none failed, longest stuck 272 ticks. `maptests.crowd_soak_orders` (unpaced) the same checks in 40 s. `SoakSeedReplayTest`: 200 units, 1,200 ticks, the journal through its disk format replays to the run's hash at every checkpoint, 1.2 s |
+| 168 | T27: the soak's gates decided | Five runs of one commit (d19baff, M2's tree): the first inside the whole perf batch, four of the soak alone. p95 varied by 4.7 % for D, which now gates (`perf.gates` defaults to `a,d,g`); by 13.6 % for C and 14.5 % for E, all of it the batch's first run against at most 1.2 % for the four alone, both at a third of their limits or less; by 23 % for B, with its baseline. C and E are proposed to the owner as gates; B reports |
+| 169 | T27: the JMH gate | `jmhCompare` had not run since M0's close. Against M0's approved baseline `MovementBench.step600` is 22.3 µs (14.1 at M0) and `SnapshotCodecBench.encode500` 285 µs (220): measured at M1 T26 they were already 21.3 and 275, M1's features' cost (the grid's rebuild and the path passes in every step; paths, motion and orders in the save), and M2 adds 4 % and 5 %; the other three are within 2 %, so the machine is the same. A baseline of all 16 benchmarks that run is proposed (`perf/baseline-m4pro.proposed.json`). `MotionBench` and `OrcaBench` had not run since T22: their set-up waited four ticks for 600 paths the admission window spreads over eight, and JMH skips a benchmark whose set-up throws while the run succeeds. With the window open in their set-up they run, at 86 µs and 110 µs against T21's 24 and 577, and `OrcaBench` allocates 138 B a step: about 0.3 `Stuck`, 0.56 `Arrived` and 0.55 `OrderReceived` messages a step (T23's ladder, the latch's walk-back, T17's machine answering), each a record on the bus, behaviours that came after T21's measurement. `jmhCompare` now fails on a benchmark missing from the result. Neither is in the proposed baseline; they are the first task of the next session |
 
 ---
 
@@ -1756,7 +1758,7 @@ are green and its negative checks behave as stated.
 
 - [x] T1 (2026-10-22) · [x] T2 (2026-10-22) · [x] T11 (2026-10-22) · [x] T3 (2026-10-22) · [x] T4 (2026-10-22) · [x] T5 (2026-10-22) · [x] T6 (2026-10-22) · [x] T7 (2026-10-22) · [x] T8 (2026-10-22) · [x] T19 (2026-10-22) · [x] T28 (2026-10-22) · [x] T9 (2026-10-22) · [x] T12 (2026-10-22) · [x] T10 (2026-10-22)
 - [x] T13 (2026-10-22) · [x] T14 (2026-10-22) · [x] T15.1 (2026-10-22) · [x] T15.2 (2026-10-22) · [x] T16 (2026-10-23) · [x] T17 (2026-10-23) · [x] T18 (2026-10-23) · [x] T20 (2026-10-23) · [x] T21 (2026-10-23) · [x] T22 (2026-10-23)
-- [x] T23 (2026-10-23) · [x] T24 (2026-10-23) · [x] T25 (2026-10-23) · [x] T26 (2026-10-23) · [ ] T27
+- [x] T23 (2026-10-23) · [x] T24 (2026-10-23) · [x] T25 (2026-10-23) · [x] T26 (2026-10-23) · [ ] T27 (all but the movement benchmarks and the owner's baseline, §10.1)
 
 ---
 
@@ -1780,6 +1782,38 @@ for the owner; rows 11–13 are the owner's Acceptance. Consent items never bloc
 | 11 | L7: the owner watches the crossing with the overlay in a client (§1.3), and fills the questionnaire; that session confirms ADR-0022 | owner's note in STATE.md |
 | 12 | The owner approves the JMH baseline additions of §7.6 | STATE.md |
 | 13 | Optional: the owner hand-finishes the proving ground; the generator stays the source of truth | STATE.md |
+
+### 10.1 Results (T27, 2026-10-23)
+
+| # | Result | Evidence |
+|---|---|---|
+| 1 | Every §1.4 criterion passes at its level. Of the three consent items handed to M2's batch, QA-19.4 is done (a real client's JFR `PacketSent` within 0.006 % of QA-19's count, M2 spec §1.6 row 38) and PATH-10.3's overlay goldens are proposed (row 39); the optional Mac pass of UNIT-09.3 waits in M2's batch, its Linux route green | §1.4, M2 spec §1.6 rows 38–39 |
+| 2 | All four GameTests pass in the main and map batches | `maptests.two_hundred_cross`, `avoidtests.head_on_groups_through_gap`, `pathtests.boxed_in_frees_or_fails`, `nettests.template_set_before_pairing` |
+| 3 | Five runs of one commit pass: A p50 1.75–1.90 ms and p99 3.24–3.37 (limits 5 and 10), B p95 2.6–4.5 ms (17), C p95 6.9–9.3 ms (23), D p99 0.36–0.40 ms (2), E 7.1–10.3 KB/s a viewer (100), G 2.9 MB (32); 18,437 unit orders, none failed, no nudge, at most 214 ticks without progress; the stress pass at 1,200 units C p95 9.3 ms (50). D gates from now; C and E are proposed (D row 168) | `perftests.crowd_soak_600`, `perftests.stress_1200` |
+| 4 | Identical hashes with 0, 1 and 4 path threads in both modes; every behaviour GameTest's journal replays; the five golden journals keep their hashes through M2's changes | `ThreadCountHashTest`, `:core:replayJournals`, `GoldenJournalTest` |
+| 5 | ADR-0015 accepted with S7 and S8 (2026-10-23), ADR-0012 confirmed by S12, ADR-0011 accepted with S1 and S10 (kinematic bodies, no `PHYSICS` mode) | the ADR index |
+| 6 | All 153 GameTests pass with Lithium 0.15.4, ModernFix 5.27.26 and FerriteCore 7.0.3 on the server (`-Pcompat.server`, 27 s); the inventory lists `LevelChunkMixin`, the ticket controller, the data map, the preset and the payloads, M2's too | T27's run, `EngineSurfaceInventoryTest` |
+| 7 | **Open.** `verify` 45–50 s warm, `verifySlow` 2 min 39 s and `verifySoak` green, CI green; `verifyPerf`'s perf batch green (12 tests, 22.5 min), but `jmhCompare` red against M0's baseline: two benchmarks grew with M1's features, a new baseline proposed to the owner (D row 169) | the runs, `verify.yml` |
+| 8 | **Open.** `:mod:archTest` holds every rule and `JOBS_NEVER_TOUCH_THE_LEVEL` bites `LevelTouchingJobFixture`; of the `@HotPath` kernels four allocate nothing, but `OrcaBench` 138 B a step through bus messages, behind a set-up that had not run since T22 (D row 169) | `:mod:archTest`, `:core:test`, `jmhCompare` |
+| 9 | 1A: one unit crosses the proving ground and its journal replays to the live hash; 1B: 50 units in slots and two groups head-on through the gap; 1C: 200 across | `maptests.unit_crosses_proving_ground`, the golden journals `group_of_50_slots` and `head_on_gap`, `avoidtests.head_on_groups_through_gap`, `maptests.two_hundred_cross` |
+| 10 | STATE, worklog, 05-testing.md (commands, times, batches), 02-tooling.md, the knowledge base and `NOTICE` current | this commit |
+| 11–13 | The owner's: the demo of §1.3 with the overlay, the JMH baseline additions, the optional hand-finish | STATE.md "For the owner" |
+
+**Deviations.** T28 (PATH-08, HPA*) joined M1 when T8's measurement fired its trigger (§1.6 D row 42).
+M2 began before T27, at the owner's word, so this close runs on M2's tree: the bundled infantry is a
+spearman now (no M1 scene has two factions of it near each other), and the journal reader accepts
+journals with fewer command kinds (M2 spec §1.6 row 73). Schema 2 is released with M2's optional
+fields so far (an order's kind and target, damage taken), each written only when set.
+
+**Follow-ups.** The health check (skill §7): no TODOs; no ArchUnit exception; two classes over 800
+lines, both tests (`HfsmTransitionsTest` 935, its table of rows; `PerfTests` 882); `MotionSystem` (798)
+and `RtsMode` (780) near the line; `verify` grew from 31 s to 45–50 s with 153 GameTests; CI about 960
+of the month's 2,000 minutes (48 %). The first tasks after this close: the movement benchmarks
+(`OrcaBench`'s allocation: pooled messages, or a bench that measures the kernel without arrivals and
+the ladder), `MotionSystem` split before it passes 800 lines, and `PerfTests` split by area.
+
+**Status.** Done gate rows 1–6 and 9–10 pass; rows 7 and 8 wait for the movement benchmarks' task and
+the owner's word on the JMH baseline, so M1 is not yet Done.
 
 ---
 

@@ -62,7 +62,25 @@ Answer in chat or here; the next session applies the answers.
    vanilla body stands on the highest block under its whole footprint instead. I propose the same
    rule for our units, a change to the motion of card PATH-05, before your Mac look at the steps in
    M2's consent batch. Say yes and it joins M1 as a small task; no, and the steps stay as they are.
-10. **Optional reviews:**
+10. **Benchmarks to approve, with a finding (JMH, M1's close).** Two of the five benchmarks you approved at M0 are
+   slower now, through M1's features, not a fault: one core step with 600 walking units 14.1 µs at M0, 22.3 µs now
+   (21.3 already at M1's T26; M1 added the spatial grid's rebuild and the path passes to every step), and encoding a
+   500-unit save 220 µs, now 285 µs (M1's paths, motion and orders in the save). Both are far inside the tick's
+   budget (5 ms). No M1 task ran the comparison, so it stayed red unnoticed; the session now runs it whenever the
+   core's step or saves change. [perf/baseline-m4pro.proposed.json](../perf/baseline-m4pro.proposed.json) holds all
+   16 benchmarks that run today. Say yes and it replaces `perf/baseline-m4pro.json`; until then `verifyPerf` stops
+   at the JMH comparison (its perf GameTests pass on their own). Two movement benchmarks are not in it yet: they
+   had silently stopped running since M1's T22 and are the next task.
+11. **Two more perf gates, your call, not urgent:** of the soak's budgets, D now fails a run on a breach (five runs
+   varied by 4.7 %, inside QA-07's 5 %). C (the tick with our handlers) and E (bytes a viewer) varied by 14 %, all of
+   it one run inside the whole perf batch (the four alone: 1.2 % or less), and sit at a third of their limits or
+   less (C 7–9 ms of 23, E 7–10 KB/s of 100). Say yes and they gate too; B (the tick against an empty arena) keeps
+   reporting, since it moves with its own baseline by 23 %.
+12. **The M1 demo, whenever you like (L7):** [milestones/M1-movement.md §1.3](milestones/M1-movement.md): an Arena
+   world, `/strategos match create map=strategos:proving_ground`, `/strategos spawn strategos:unit/infantry 200`,
+   F8 for the movement overlay, `/strategos order move @units waypoint=far_side`, then the questionnaire. (The
+   infantry are spearmen since M2; 200 of one faction do not fight.) That session confirms ADR-0022.
+13. **Optional reviews:**
    - the card refinements made after the approval
      ([design/roadmap-changes.md §8](design/roadmap-changes.md));
    - the promo draft ([promo/roadmap-announcement.md](promo/roadmap-announcement.md)).
@@ -352,18 +370,25 @@ Answer in chat or here; the next session applies the answers.
   your selection follow you, in rows behind you, and they wait where they are when you stop or go
   back to the RTS view; looking at a unit shows its name and, for your own, its hit points and what
   it is doing. Card CAM-07 is done.
+- 2026-10-23 · **M1's close (T27), all but one task:** the 600-unit crowd soak ran five times on one
+  commit: every budget held, and budget D (path work) now fails a run that breaks it. Every GameTest
+  passes with Lithium, ModernFix and FerriteCore on the server. Saves of format 2 are released, and two
+  fixture files keep them readable from now on. One thing is left: two movement benchmarks had
+  silently stopped running in M1 (item 10); with them fixed, M1 is Done.
 
 ## Now
 
-- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 28 of 29 tasks done (T28, PATH-08, joined by its trigger). M2's spec is written ([milestones/M2-command.md](milestones/M2-command.md)).
+- **Milestone:** M1 Movement, closing: T27 done but for the movement benchmarks (Done gate rows 7–8,
+  [§10.1](milestones/M1-movement.md)); M2 Command in parallel since 2026-10-23, at your word: T1–T21
+  done, T22 (the consent batch) yours, T23 its close.
 - **In progress:** none.
-- **Last finished task:** M1 T26 (2026-10-23). The agents' branches `wip/m1-t17-unitai-hfsm` and
-  `wip/m1-t25-debug-overlay` are merged and kept on GitHub for the record.
-- **Last M2 task:** T20, first-person orders (2026-10-23); T1–T21 done; three consent-batch items (T22) done early.
-- **Next task:** while the Mac's windows are mine today, the window work that is ready (M2's L4
-  items as their tasks land); M1 T27 (M1 close, headless); then M2's tasks in the spec's order.
+- **Last finished task:** M1 T27's close work (2026-10-23): five soak runs and the gate decision, the
+  compat server run, schema 2 released with its fixtures, §10.1, the health check.
+- **Last M2 task:** T20, first-person orders (2026-10-23).
+- **Next task:** the movement benchmarks (M1 spec §1.6 D row 169): `OrcaBench`'s allocation through
+  bus messages, and their numbers; then M1 is Done. Then M2 T23 (close), headless.
 - **WIP branch:** none.
-- **CI:** green; minutes used this month about 220 of 2,000, as of 2026-10-22.
+- **CI:** green; minutes used this month about 960 of 2,000 (48 %), as of 2026-10-23.
 - **Overview:** `python3 tools/roadmap.py summary`.
 
 ## Blocked

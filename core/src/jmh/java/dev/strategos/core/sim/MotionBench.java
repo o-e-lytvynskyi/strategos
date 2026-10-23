@@ -56,8 +56,7 @@ public class MotionBench {
         for (int x = 40; x < 128; x += 24) {
             w.fill(x, 1, 0, x + 11, 1, 127, VoxelFixtures.SOLID); // terraces one block up, crossed by every walk
         }
-        MatchConfig config = new MatchConfig(
-                new MatchId(1), 42, new MatchBounds(128, 128, 0, 16, 1.0), 2, new MatchRules(UNITS, 4096));
+        MatchConfig config = new MatchConfig(new MatchId(1), 42, new MatchBounds(128, 128, 0, 16, 1.0), 2, rules());
         MatchCore core = MatchCore.create(config, TemplateSet.builtin(), CorePorts.of(System::nanoTime));
         List<InputEvent> first = new ArrayList<>();
         PageBuilder builder = new PageBuilder(MobilityClass.INFANTRY);
@@ -123,5 +122,26 @@ public class MotionBench {
 
     private static CommandEnvelope command(int seq, Command command) {
         return new CommandEnvelope(PlayerSlot.ADMIN, seq, 0, command);
+    }
+
+    /**
+     * M1's rules with no admission window: every unit's path is delivered in the few ticks the set-up steps, as before
+     * spike S7 set the window (M1 T22), which spreads 600 requests over about eight ticks.
+     */
+    private static MatchRules rules() {
+        MatchRules m = new MatchRules(UNITS, 4096);
+        return new MatchRules(
+                m.commandsPerTick(),
+                m.unitCap(),
+                m.delivery(),
+                m.pathK(),
+                m.pageK(),
+                Integer.MAX_VALUE,
+                m.maxOutstanding(),
+                m.busyRetry(),
+                m.searchCap(),
+                m.joinCap(),
+                m.shortMove(),
+                m.groupMin());
     }
 }

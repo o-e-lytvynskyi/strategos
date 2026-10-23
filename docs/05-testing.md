@@ -21,7 +21,7 @@ owner's M4 Pro on 2026-10-22 ([S5](spikes/S5-build-wiring.md), check 13).
 | **L3** GameTest | The adapters in a real server world: bodies, blocks, mock players, save and reload, fault injection, parallel matches | `./gradlew :mod:runGameTestServer` | 97 GameTests, 4.2 s of wall time | assistant before every commit |
 | **L4** client scenario | HUD, camera and rendering on screen: a PNG plus JSON per shot | `./gradlew :mod:runScenario -Pscenario=<id>`, which ends with `:mod:scenarioDiff` against the platform's goldens ([devtools README](../mod/src/devtools/README.md)) | `smoke` 11–16 s on the Mac; 2–3 min as a CI job | **only with the owner's consent** (a game window opens and takes the focus); on CI under Xvfb by hand (`.github/workflows/scenario.yml`) |
 | **L5** server smoke | The mod loads on a dedicated server with no client classes; a match on the imported proving ground and a headless match run with nobody online; an arena world gets its rules once and drops a dead match's tickets on restart | `./gradlew :mod:runServerSmoke`; `:mod:runServerSmokeRestart` adds the restart round trip; `:mod:runServerSmokeArena2` runs the arena smoke's two starts | 32 s with the restart (the map step imports for 7 s while the server sprints); 11 s for the arena smoke | assistant before commit |
-| **L6** performance | The budgets of [ADR-0019](adr/0019-performance-budgets.md); JMH regressions above 15 % fail | `./gradlew verifyPerf`: `:core:jmh` and `:core:jmhCompare`, then the perf GameTest batch alone in `:mod:runGameTestPerf` | JMH 83 s; the perf batch 6 s | assistant on hot paths; the owner approves baselines |
+| **L6** performance | The budgets of [ADR-0019](adr/0019-performance-budgets.md); JMH regressions above 15 % fail | `./gradlew verifyPerf`: `:core:jmh` and `:core:jmhCompare`, then the perf GameTest batch alone in `:mod:runGameTestPerf` | M0: JMH 83 s, the perf batch 6 s; M1's close: JMH about 4 minutes for 18 benchmarks, the perf batch 22.5 minutes (12 of them the 600-unit soak's 12,000 paced ticks) | assistant on hot paths; the owner approves baselines |
 | **L7** manual | Feel, multiplayer, the production jar | a dedicated server and two clients (`runServer`, `runClientJoin`, `runClient2`, or `scripts/playtest.sh`), started by the owner; a plain `runClient` opens the title screen and joins nothing | — | owner at milestones |
 
 Aggregate tasks:
@@ -40,12 +40,13 @@ Aggregate tasks:
   before a task is done and before a commit;
 - `./gradlew verifyClient` = L4 (`:mod:runScenario`), with consent;
 - `./gradlew verifyPerf` = L6 (`:core:jmh`, `:core:jmhCompare` against the owner-approved
-  `perf/baseline-m4pro.json`, `:mod:runGameTestPerf`); 96 s. CI runs JMH, `:core:jmhSpeedRatio` and
+  `perf/baseline-m4pro.json`, `:mod:runGameTestPerf`); 96 s in M0, about 27 minutes at M1's close. CI runs JMH, `:core:jmhSpeedRatio` and
   the perf GameTests at three times the budgets nightly (`.github/workflows/perf.yml`).
 
 Measured in M0: `verify` 39 s from clean without the build cache and 31 s warm (budget 5
 minutes), `verifyHarness` 12 s, `verifySlow` 6 s, `verifySoak` 9 s; CI runs `verify verifySlow
-verifySoak` in 6 to 10 minutes.
+verifySoak` in 6 to 10 minutes. At M1's close (with M2's first tasks): `verify` 45–50 s warm with
+153 GameTests, `verifySlow` 2 min 39 s with the map batches; CI's `verify` job about 8 minutes.
 
 `verifySlow` exists from M0 for the GameTest batch `slow` (`:mod:runGameTestSlow`); from M1 the
 same run also takes the map batches (`map_import`, `map_twice`, `map_roundtrip`: each test alone,
@@ -77,8 +78,8 @@ Useful options:
   and `-Pjmh.baseline=<path>` (from the repository root) point `jmhCompare` at other files, and
   `-Pperf.machine=<id>` picks `perf/baseline-<id>.json` (default `m4pro`).
 - `-Pperf.ciFactor=<f>` scales the perf GameTests' budgets (CI uses 3; 0.001 is the synthetic
-  overload of T12), `-Pperf.gates=a,g` lists the gates that fail on a breach (the others only
-  report), and `-Pperf.fakeForeignLoad=<x>` replaces the measured foreign CPU load, so 0.3 shows an
+  overload of T12), `-Pperf.gates=a,d,g` lists the gates that fail on a breach (the others only
+  report; `d` joined at M1's close, after five runs of one commit varied by 4.7 % at p95, QA-07), and `-Pperf.fakeForeignLoad=<x>` replaces the measured foreign CPU load, so 0.3 shows an
   `INVALID` run. Results go to `mod/build/reports/perf/`.
 - The spikes write `mod/build/spike/out/<id>/` (`results.csv`, `results.md`, `env.json`, `DONE`),
   and `mod/build/spike/out/<id>-lithium/` with `-Pcompat.server`.

@@ -68,7 +68,14 @@ JOML or Netty ([ADR-0003](adr/0003-module-layout-and-core-merge.md)).
   feature can be checked against the mods most players run. They go into the run's `mods`
   folder (`strategos-compat-*.jar`), since FML does not unpack a classpath mod's JarJar
   libraries; `-Pcompat.server` puts Lithium, ModernFix and FerriteCore on a server run's
-  classpath, where they need none.
+  classpath, where they need none. At M1's close every GameTest (153) passes with Lithium 0.15.4,
+  ModernFix 5.27.26 and FerriteCore 7.0.3 on the server.
+- **Config and mixins** (M1): `serverconfig/strategos-server.toml` per world (`pathThreads`,
+  `journal`, `writerBudget`, `importBudget`, the command limits `commandRate`, `commandBurst`,
+  `handleRate`, `violationsPerMinute`, `maxMatches`, `debugPermission`) and
+  `config/strategos-client.toml` (`panSpeed`, `rotateSpeed`, `edgePan`), both NeoForge
+  `ModConfigSpec`s with the generated screen. One mixin, `LevelChunkMixin` in
+  `strategos.mixins.json`, routes block changes in match spaces (BLD-15, PATH-15).
 - **CI** (D-23; M0 T18, in the private repository `o-e-lytvynskyi/strategos`): one Linux job on GitHub Actions with
   `gradle/actions/setup-gradle` on `cache-provider: basic`; client scenarios under Xvfb + Mesa.
 

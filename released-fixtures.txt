@@ -4,6 +4,10 @@ core/src/test/resources/fixtures/match_v1.json
 core/src/test/resources/fixtures/match_v1.expected.json
 mod/src/test/resources/fixtures/match_v1.nbt
 mod/src/test/resources/fixtures/match_v1.expected.json
+core/src/test/resources/fixtures/match_v2.json
+core/src/test/resources/fixtures/match_v2.expected.json
+mod/src/test/resources/fixtures/match_v2.nbt
+mod/src/test/resources/fixtures/match_v2.expected.json
 mod/src/gametest/resources/fixtures/corrupt/garbage.dat
 mod/src/gametest/resources/fixtures/corrupt/missing_snapshot.nbt
 mod/src/gametest/resources/fixtures/corrupt/negative_size.nbt
