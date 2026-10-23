@@ -10,6 +10,7 @@ import dev.strategos.core.protocol.SpawnUnits;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.Vec2d;
+import dev.strategos.core.sim.ExternalDamage;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.client.StrategosClient;
 import dev.strategos.mod.client.rts.RtsMode;
@@ -27,11 +28,13 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.Heightmap;
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 
 /**
  * The RTS view's goldens (QA-18, CAM-02.3, UNIT-03.3): a fixed scene of a few blocks and 12 own and 8 enemy units,
- * the game frozen once they stand ({@code /tick freeze}, so bodies draw at a fixed partial tick), driven only through
+ * five of them hurt so their health bars show, the game frozen once they stand ({@code /tick freeze}, so bodies draw
+ * at a fixed partial tick), driven only through
  * {@code RtsScreen}'s keys, wheel and mouse (QA-18.3). Frames: the default pose, the own units box-selected and
  * outlined, a quarter turn right and zoomed in, and a quarter turn back at the top height.
  */
@@ -45,6 +48,7 @@ final class RtsGoldensScenario implements Scenario {
 
     private final StringBuilder failures = new StringBuilder();
     private int floor;
+    private volatile @Nullable MatchRuntime match;
     private int phase;
     private int inPhase;
 
@@ -56,7 +60,30 @@ final class RtsGoldensScenario implements Scenario {
     @Override
     public void setup(IntegratedServer server, ScenarioContext ctx) {
         floor = server.overworld().getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, 0, 0);
-        scene(server);
+        match = scene(server);
+    }
+
+    /** Two own units and three enemies lose different shares of their hit points, in handle order. */
+    private void hurt(Minecraft mc) {
+        MatchRuntime rt = match;
+        IntegratedServer server = mc.getSingleplayerServer();
+        if (rt == null || server == null) {
+            return;
+        }
+        server.execute(() -> {
+            var core = rt.core();
+            if (core == null) {
+                return;
+            }
+            int[] own = core.queries().unitHandlesOf(new FactionSlot(0));
+            int[] enemies = core.queries().unitHandlesOf(new FactionSlot(1));
+            float[] amounts = {20, 55, 35, 70, 90};
+            int[] targets = {own[0], own[1], enemies[0], enemies[1], enemies[2]};
+            for (int k = 0; k < targets.length; k++) {
+                rt.damage(new ExternalDamage(
+                        targets[k], ExternalDamage.Kind.HACK, amounts[k], ExternalDamage.SourceKind.NONE));
+            }
+        });
     }
 
     /**
@@ -128,25 +155,31 @@ final class RtsGoldensScenario implements Scenario {
         }
         inPhase++;
         switch (phase) {
-            case 0 -> { // the bodies arrive and stand, then the game freezes
+            case 0 -> { // the bodies arrive and stand; five are hurt, for the health bars (CMB-06.3)
                 if (bodies(mc) == OWN + ENEMIES && inPhase >= 100 && mc.levelRenderer.hasRenderedAllSections()) {
-                    IntegratedServer server = mc.getSingleplayerServer();
-                    if (server != null) {
-                        server.execute(() -> ScenarioWorld.run(server, "tick freeze"));
-                    }
+                    hurt(mc);
                     next();
                 } else if (inPhase > 600) {
                     return fail(ctx, bodies(mc) + " bodies arrived");
                 }
             }
-            case 1 -> {
+            case 1 -> { // the hit points reach the client (unit_hud, 5 Hz), then the game freezes
+                if (inPhase >= 20) {
+                    IntegratedServer server = mc.getSingleplayerServer();
+                    if (server != null) {
+                        server.execute(() -> ScenarioWorld.run(server, "tick freeze"));
+                    }
+                    next();
+                }
+            }
+            case 2 -> {
                 if (inPhase >= 20) {
                     pinBodies(mc);
                     ctx.capture("pose_default");
                     next();
                 }
             }
-            case 2 -> {
+            case 3 -> {
                 screen.mouseClicked(1, 1, 0);
                 screen.mouseMoved(screen.width - 2, screen.height - 2);
                 screen.mouseReleased(screen.width - 2, screen.height - 2, 0);
@@ -156,26 +189,26 @@ final class RtsGoldensScenario implements Scenario {
                 screen.keyPressed(KeyCode.digit(1).code(), 0, 2); // Ctrl+1: the group bar shows group 1
                 next();
             }
-            case 3 -> {
+            case 4 -> {
                 if (inPhase >= 5) {
                     ctx.capture("outline"); // with the HUD's selection panel and group bar (UI-02.3)
                     next();
                 }
             }
-            case 4 -> {
+            case 5 -> {
                 double[] enemy = enemyOnScreen(mc, rts);
                 screen.mouseMoved(
                         enemy[0] * screen.width / mc.getWindow().getScreenWidth(),
                         enemy[1] * screen.height / mc.getWindow().getScreenHeight()); // the HUD's tooltip names it
                 next();
             }
-            case 5 -> {
+            case 6 -> {
                 if (inPhase >= 2) {
                     ctx.capture("hud_tooltip");
                     next();
                 }
             }
-            case 6 -> {
+            case 7 -> {
                 double[] empty = gui(screen, rts, 0.5, floor, 4.5);
                 screen.mouseClicked(empty[0], empty[1], 0);
                 screen.mouseReleased(empty[0], empty[1], 0);
@@ -185,14 +218,14 @@ final class RtsGoldensScenario implements Scenario {
                 screen.keyPressed(KeyCode.PERIOD, 0, 0); // a quarter turn right: 20 ticks at 4.5° a tick
                 next();
             }
-            case 7 -> {
+            case 8 -> {
                 if (inPhase >= 20) {
                     screen.keyReleased(KeyCode.PERIOD, 0, 0);
                     screen.mouseScrolled(screen.width / 2.0, screen.height / 2.0, 0, 6); // in, to 10.4 blocks up
                     next();
                 }
             }
-            case 8 -> {
+            case 9 -> {
                 if (inPhase >= SETTLE && mc.levelRenderer.hasRenderedAllSections()) {
                     ctx.result.addProperty("closeHeight", rig(rts).height());
                     ctx.capture("pose_turned_close");
@@ -200,14 +233,14 @@ final class RtsGoldensScenario implements Scenario {
                     next();
                 }
             }
-            case 9 -> {
+            case 10 -> {
                 if (inPhase >= 20) {
                     screen.keyReleased(KeyCode.COMMA, 0, 0);
                     screen.mouseScrolled(screen.width / 2.0, screen.height / 2.0, 0, -20); // out, to the top
                     next();
                 }
             }
-            case 10 -> {
+            case 11 -> {
                 if (inPhase >= SETTLE && mc.levelRenderer.hasRenderedAllSections()) {
                     ctx.result.addProperty("highHeight", rig(rts).height());
                     check(Math.abs(rig(rts).height() - CameraRig.MAX_HEIGHT) < 0.01, "the top is " + rig(rts).height());
@@ -215,7 +248,7 @@ final class RtsGoldensScenario implements Scenario {
                     next();
                 }
             }
-            case 11 -> {
+            case 12 -> {
                 IntegratedServer server = mc.getSingleplayerServer();
                 if (server != null) {
                     server.execute(() -> ScenarioWorld.run(server, "tick unfreeze"));

@@ -95,6 +95,8 @@ final class RtsFrameScenario implements Scenario {
         final FrameTimer hudDraw = new FrameTimer(CAPACITY);
 
         final FrameTimer hudBuild = new FrameTimer(CAPACITY);
+        /** The health bars' pass each frame (CMB-06): their extraction from the bodies and their drawing. */
+        final FrameTimer bars = new FrameTimer(CAPACITY);
 
         JsonObject json() {
             JsonObject o = new JsonObject();
@@ -108,6 +110,8 @@ final class RtsFrameScenario implements Scenario {
             o.addProperty("hudDrawP50Ms", hudDraw.ms(0.50));
             o.addProperty("hudDrawP99Ms", hudDraw.ms(0.99));
             o.addProperty("hudBuildP50Ms", hudBuild.ms(0.50));
+            o.addProperty("barsP50Ms", bars.ms(0.50));
+            o.addProperty("barsP99Ms", bars.ms(0.99));
             return o;
         }
     }
@@ -173,6 +177,7 @@ final class RtsFrameScenario implements Scenario {
         if (s != null) {
             s.frames.end();
             s.hudDraw.add(StrategosClient.hud().drawNanos());
+            s.bars.add(StrategosClient.healthBars().nanos());
         }
     }
 
@@ -476,6 +481,9 @@ final class RtsFrameScenario implements Scenario {
         ctx.result.addProperty("hudDrawP50Ms", rts.hudDraw.ms(0.50));
         ctx.result.addProperty("hudDrawP99Ms", rts.hudDraw.ms(0.99));
         ctx.result.addProperty("hudBuildP50Ms", rtsCapped.hudBuild.ms(0.50));
+        ctx.result.addProperty("barsP50Ms", rts.bars.ms(0.50));
+        ctx.result.addProperty("barsP99Ms", rts.bars.ms(0.99));
+        ctx.result.addProperty("barsDrawn", StrategosClient.healthBars().drawn());
         ctx.result.addProperty("units", 2 * PER_SIDE);
         ctx.result.addProperty("renderDistance", RENDER_DISTANCE);
         ctx.result.addProperty("sodium", ModList.get().isLoaded("sodium"));
