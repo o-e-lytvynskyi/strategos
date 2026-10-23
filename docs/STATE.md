@@ -3,7 +3,7 @@
 Where the project stands right now. The session log is in [worklog.md](worklog.md); the work
 procedure is the `strategos-dev` skill (`.claude/skills/strategos-dev/SKILL.md`).
 
-**Last update:** 2026-10-23 · **Owner last seen:** 2026-10-23 · **Current:** M1 Movement — started 2026-10-22 (owner's go-ahead)
+**Last update:** 2026-10-23 · **Owner last seen:** 2026-10-23 · **Current:** M1 Movement and M2 Command, both closing — each Done once the JMH items (For the owner 10–11) are settled
 
 ## For the owner
 
@@ -82,11 +82,16 @@ Answer in chat or here; the next session applies the answers.
    it one run inside the whole perf batch (the four alone: 1.2 % or less), and sit at a third of their limits or
    less (C 7–9 ms of 23, E 7–10 KB/s of 100). Say yes and they gate too; B (the tick against an empty arena) keeps
    reporting, since it moves with its own baseline by 23 %.
-13. **The M1 demo, whenever you like (L7):** [milestones/M1-movement.md §1.3](milestones/M1-movement.md): an Arena
+13. **The M2 demo and consent batch (T22), when you have an hour:** [milestones/M2-command.md §1.3](milestones/M2-command.md):
+   `scripts/playtest.sh`, `/strategos match create map strategos:proving_ground`, `/strategos match join 1 0`,
+   `/strategos spawn strategos:unit/infantry 30 0` and `... 30 1`, then box-select, Ctrl+1, attack-move with Z and a
+   right click, V into first person, R (follow), G on an enemy, V back; the questionnaire in
+   `docs/testing/playtest.md`. The batch also holds the pictures (item 8) and PERF-14's baselines (item 7).
+14. **The M1 demo, whenever you like (L7):** [milestones/M1-movement.md §1.3](milestones/M1-movement.md): an Arena
    world, `/strategos match create map=strategos:proving_ground`, `/strategos spawn strategos:unit/infantry 200`,
    F8 for the movement overlay, `/strategos order move @units waypoint=far_side`, then the questionnaire. (The
    infantry are spearmen since M2; 200 of one faction do not fight.) That session confirms ADR-0022.
-14. **Optional reviews:**
+15. **Optional reviews:**
    - the card refinements made after the approval
      ([design/roadmap-changes.md §8](design/roadmap-changes.md));
    - the promo draft ([promo/roadmap-announcement.md](promo/roadmap-announcement.md)).
@@ -390,9 +395,9 @@ Answer in chat or here; the next session applies the answers.
 - **In progress:** none.
 - **Last finished task:** M1 T27's close work (2026-10-23): five soak runs and the gate decision, the
   compat server run, schema 2 released with its fixtures, §10.1, the health check.
-- **Last M2 task:** T20, first-person orders (2026-10-23).
-- **Next task:** M2 T23 (close), headless. M1 is Done once you settle item 11 (`OrcaBench`'s 7.3 B a step
-  from the stuck ladder's messages) and approve the JMH baseline (item 10).
+- **Last M2 task:** T23's close work (2026-10-23): §8.1, all but the JMH items; before it T20, first-person orders.
+- **Next task:** none ready without you. M1 and M2 are Done once you settle item 11 and approve the JMH
+  baseline (item 10); M2's consent batch (T22) is yours; M3's spec waits for «начинай M3».
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 960 of 2,000 (48 %), as of 2026-10-23.
 - **Overview:** `python3 tools/roadmap.py summary`.
