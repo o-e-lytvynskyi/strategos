@@ -113,6 +113,9 @@ final class RtsGoldensScenario implements Scenario {
         if (tick < 40 || screen == null || !rts.active() || rts.view() == null) {
             return tick > 600 && fail(ctx, "RTS mode is not on");
         }
+        if (ctx.captureName != null) {
+            return false; // a slow renderer (llvmpipe) takes the shot frames later; nothing moves until it is taken
+        }
         inPhase++;
         switch (phase) {
             case 0 -> { // the bodies arrive and stand, then the game freezes
@@ -128,6 +131,7 @@ final class RtsGoldensScenario implements Scenario {
             }
             case 1 -> {
                 if (inPhase >= 20) {
+                    pinBodies(mc);
                     ctx.capture("pose_default");
                     next();
                 }
@@ -199,6 +203,23 @@ final class RtsGoldensScenario implements Scenario {
             }
         }
         return false;
+    }
+
+    /**
+     * Frozen bodies still draw their idle arm swing from their age, which differs by the ticks each lived on this
+     * client before the freeze, and their legs from the last walk speed: both pinned, so every run draws one pose.
+     */
+    private static void pinBodies(Minecraft mc) {
+        if (mc.level == null) {
+            return;
+        }
+        for (Entity e : mc.level.entitiesForRendering()) {
+            if (e instanceof UnitEntity body) {
+                body.tickCount = 0;
+                body.walkAnimation.update(0, 1);
+                body.walkAnimation.update(0, 1);
+            }
+        }
     }
 
     private void next() {
