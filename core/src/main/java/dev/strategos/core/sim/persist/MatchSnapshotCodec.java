@@ -202,16 +202,23 @@ public final class MatchSnapshotCodec {
                     ORDER_KIND.fieldOf("kind").forGetter(OrderQueues.Order::kind),
                     Vec2d.CODEC.fieldOf("target").forGetter(o -> new Vec2d(o.x(), o.z())),
                     Codec.INT.optionalFieldOf("group", 0).forGetter(OrderQueues.Order::group),
-                    Codec.INT.optionalFieldOf("slot", 0).forGetter(OrderQueues.Order::slot))
-            .apply(i, (kind, target, group, slot) -> new OrderQueues.Order(kind, target.x(), target.z(), group, slot)));
+                    Codec.INT.optionalFieldOf("slot", 0).forGetter(OrderQueues.Order::slot),
+                    Codec.INT.optionalFieldOf("attacks", 0).forGetter(OrderQueues.Order::target))
+            .apply(
+                    i,
+                    (kind, target, group, slot, unit) ->
+                            new OrderQueues.Order(kind, target.x(), target.z(), group, slot, unit)));
 
     /**
-     * The rest of a unit's queue, inlined into the unit beside its {@code "target"}: the current order's group and slot
-     * and the orders after it, each written only when set, so M0's single order saves exactly as before.
+     * The rest of a unit's queue, inlined into the unit beside its {@code "target"}: the current order's kind, group,
+     * slot and attacked unit, and the orders after it, each written only when set, so M0's single order saves exactly
+     * as before.
      */
     private static final MapCodec<OrderQueues.Saved> ORDERS = RecordCodecBuilder.mapCodec(i -> i.group(
+                    ORDER_KIND.optionalFieldOf("kind", OrderKind.MOVE).forGetter(OrderQueues.Saved::kind),
                     Codec.INT.optionalFieldOf("group", 0).forGetter(OrderQueues.Saved::group),
                     Codec.INT.optionalFieldOf("slot", 0).forGetter(OrderQueues.Saved::slot),
+                    Codec.INT.optionalFieldOf("attacks", 0).forGetter(OrderQueues.Saved::target),
                     ORDER.listOf().optionalFieldOf("queue", List.of()).forGetter(OrderQueues.Saved::next))
             .apply(i, OrderQueues.Saved::new));
 

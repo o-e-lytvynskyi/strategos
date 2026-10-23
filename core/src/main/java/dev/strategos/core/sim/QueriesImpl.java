@@ -81,7 +81,7 @@ final class QueriesImpl implements MatchQueries {
                 motion.z(i),
                 motion.yaw(i),
                 state.ai().state(i),
-                orders.kind(i) == OrderKind.MOVE ? new Vec2d(orders.targetX(i), orders.targetZ(i)) : null);
+                orders.kind(i) != OrderKind.NONE ? new Vec2d(orders.targetX(i), orders.targetZ(i)) : null);
     }
 
     @Override

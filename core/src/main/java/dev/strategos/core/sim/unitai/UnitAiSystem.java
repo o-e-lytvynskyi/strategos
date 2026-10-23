@@ -1,6 +1,7 @@
 package dev.strategos.core.sim.unitai;
 
 import dev.strategos.core.sim.Arrived;
+import dev.strategos.core.sim.Attacked;
 import dev.strategos.core.sim.BusMessage;
 import dev.strategos.core.sim.EntityStore;
 import dev.strategos.core.sim.MatchState;
@@ -41,7 +42,8 @@ public final class UnitAiSystem implements MatchSystem {
                 new Route<>(PathDelivered.class, PathDelivered::handle),
                 new Route<>(PathInvalidated.class, PathInvalidated::handle),
                 new Route<>(Arrived.class, Arrived::handle),
-                new Route<>(Stuck.class, Stuck::handle));
+                new Route<>(Stuck.class, Stuck::handle),
+                new Route<>(Attacked.class, Attacked::handle));
         for (Class<? extends AiMessage> type : tree.messageTypes()) {
             if (routes.stream().noneMatch(route -> route.type() == type)) {
                 throw new IllegalArgumentException(

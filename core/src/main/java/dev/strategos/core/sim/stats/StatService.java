@@ -60,6 +60,11 @@ public final class StatService {
     private int walkSpeed;
     private int health;
     private int[] resistance = new int[3];
+    private int[] melee = new int[3];
+    private int reach;
+    private int prepare;
+    private int repeat;
+    private int vision;
     private int classesPath;
     private int turnRate;
     private StatBlock[] blocks = new StatBlock[0];
@@ -144,6 +149,11 @@ public final class StatService {
         this.health = path(CorePaths.HEALTH);
         this.resistance =
                 new int[] {path(CorePaths.RESIST_HACK), path(CorePaths.RESIST_PIERCE), path(CorePaths.RESIST_CRUSH)};
+        this.melee = new int[] {path(CorePaths.MELEE_HACK), path(CorePaths.MELEE_PIERCE), path(CorePaths.MELEE_CRUSH)};
+        this.reach = path(CorePaths.MELEE_REACH);
+        this.prepare = path(CorePaths.MELEE_PREPARE);
+        this.repeat = path(CorePaths.MELEE_REPEAT);
+        this.vision = path(CorePaths.VISION);
         this.classesPath = tokenPath(IDENTITY_CLASSES);
         this.blocks = new StatBlock[count * factions];
         for (int k = 0; k < blocks.length; k++) {
@@ -187,6 +197,36 @@ public final class StatService {
     /** Unit {@code index}'s resistance level against damage type {@code type}: 0 hack, 1 pierce, 2 crush. */
     public double resistance(int index, int type) {
         return read(index, resistance[type]);
+    }
+
+    /** Unit {@code index}'s melee damage of type {@code type} (0 hack, 1 pierce, 2 crush) per hit (CMB-02). */
+    public double meleeDamage(int index, int type) {
+        return read(index, melee[type]);
+    }
+
+    /** Whether unit {@code index} has a melee attack: some damage per hit. */
+    public boolean canMelee(int index) {
+        return meleeDamage(index, 0) > 0 || meleeDamage(index, 1) > 0 || meleeDamage(index, 2) > 0;
+    }
+
+    /** Unit {@code index}'s melee reach, in blocks between its edge and its target's. */
+    public double meleeReach(int index) {
+        return read(index, reach);
+    }
+
+    /** The ticks from the start of unit {@code index}'s attack to its first hit. */
+    public int meleePrepare(int index) {
+        return (int) Math.round(read(index, prepare));
+    }
+
+    /** The ticks between unit {@code index}'s hits. */
+    public int meleeRepeat(int index) {
+        return (int) Math.max(1, Math.round(read(index, repeat)));
+    }
+
+    /** How far unit {@code index} notices enemies, in blocks. */
+    public double vision(int index) {
+        return read(index, vision);
     }
 
     /** Unit {@code index}'s class tokens, as modifiers leave them; empty for a template without classes. */

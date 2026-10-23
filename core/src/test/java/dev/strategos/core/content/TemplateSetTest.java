@@ -25,11 +25,11 @@ class TemplateSetTest {
         assertThat(infantry).isNotNull();
         assertThat(infantry.netIndex()).isEqualTo(1);
         assertThat(infantry.walkSpeed()).as("3/16, exact in binary").isEqualTo(0.1875);
-        assertThat(infantry.classes()).containsExactly("Infantry", "Organic", "Unit");
+        assertThat(infantry.classes()).containsExactly("Infantry", "Organic", "Spearman", "Unit");
         assertThat(set.byIndex(0)).isSameAs(walker);
         assertThat(set.all()).containsExactly(walker, infantry);
         assertThat(set.byId(new TemplateId("strategos:unit/nobody"))).isNull();
-        assertThat(set.tokens().all()).containsExactly("Infantry", "Organic", "Unit");
+        assertThat(set.tokens().all()).containsExactly("Infantry", "Organic", "Spearman", "Unit");
         assertThat(set.valuePaths().byPath("UnitMotion/walkSpeed")).isNotNull();
     }
 
@@ -83,7 +83,8 @@ class TemplateSetTest {
         assertThatThrownBy(() -> TemplateSet.builtin().byIndex(2)).isInstanceOf(IllegalArgumentException.class);
     }
 
-    private static final String BUILTIN_VERSION = "0ffbbb73061fbadac5bbae73683df52c361eda364a470c007c7d4dcc9150d641";
+    private static final String BUILTIN_VERSION =
+            "f784a0c49affac3fa85348725fc8c9c26f2de0b0ee281e54c8f0e2dce6d8a647"; // M2: the spearman
 
     private static TemplateSet set(UnitTemplate template) {
         return new TemplateSet(List.of(template));

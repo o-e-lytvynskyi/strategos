@@ -18,6 +18,7 @@ import dev.strategos.core.sim.OrderReceived;
 import dev.strategos.core.sim.PathDelivered;
 import dev.strategos.core.sim.PathInvalidated;
 import dev.strategos.core.sim.Phase;
+import dev.strategos.core.sim.PlaceMoved;
 import dev.strategos.core.sim.StopOrdered;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.order.OrderKind;
@@ -140,6 +141,7 @@ public final class PathService {
         this.rules = state.config().rules();
         this.shortMoveSquared = (double) rules.shortMove() * rules.shortMove();
         state.bus().subscribe(OrderReceived.class, m -> state.paths().want(Handle.index(m.handle())));
+        state.bus().subscribe(PlaceMoved.class, m -> state.paths().want(Handle.index(m.handle())));
         state.bus().subscribe(StopOrdered.class, m -> state.paths().clear(Handle.index(m.handle())));
         state.bus().subscribe(Arrived.class, m -> state.paths().clear(Handle.index(m.handle())));
     }
@@ -323,7 +325,7 @@ public final class PathService {
                 continue;
             }
             boolean wanted = paths.takeWanted(i);
-            if (s.ai().state(i) != UnitState.WALKING || orders.kind(i) != OrderKind.MOVE) {
+            if (s.ai().state(i) != UnitState.WALKING || orders.kind(i) == OrderKind.NONE) {
                 continue;
             }
             if (wanted) {
@@ -378,7 +380,7 @@ public final class PathService {
                     || !s.paths().wanted(i)
                     || orders.group(i) == 0
                     || s.ai().state(i) != UnitState.WALKING
-                    || orders.kind(i) != OrderKind.MOVE) {
+                    || (orders.kind(i) != OrderKind.MOVE && orders.kind(i) != OrderKind.ATTACK_MOVE)) {
                 continue;
             }
             double dx = orders.targetX(i) - motion.x(i);

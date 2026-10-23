@@ -10,6 +10,7 @@ import dev.strategos.core.sim.UnitCreated;
 import dev.strategos.core.sim.UnitDied;
 import dev.strategos.core.sim.UnitHurt;
 import dev.strategos.core.sim.UnitStateChanged;
+import dev.strategos.core.sim.UnitStruck;
 import dev.strategos.core.sim.WorldEffect;
 import dev.strategos.core.sim.world.WriteSite;
 import dev.strategos.mod.StrategosServer;
@@ -24,6 +25,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionHand;
 
 /** Applies a step's outputs to the world: fx, replies, body requests, block writes for the writer, then the poses. */
 public final class OutputAppliers {
@@ -42,6 +44,12 @@ public final class OutputAppliers {
                     }
                 }
                 case UnitCreated created -> rt.bodies().want(created.handle());
+                case UnitStruck struck -> {
+                    UnitEntity body = rt.bodies().get(struck.attacker());
+                    if (body != null) { // the arm's swing, for those who track the body
+                        body.swing(InteractionHand.MAIN_HAND);
+                    }
+                }
                 case UnitHurt hurt -> {
                     UnitEntity body = rt.bodies().get(hurt.handle());
                     if (body != null) { // the red flash, for those who track the body
@@ -88,6 +96,7 @@ public final class OutputAppliers {
                 CommandResult.class,
                 UnitCreated.class,
                 UnitStateChanged.class,
+                UnitStruck.class,
                 UnitHurt.class,
                 UnitDied.class,
                 WorldEffect.class,

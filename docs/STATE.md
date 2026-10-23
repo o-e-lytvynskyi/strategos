@@ -341,6 +341,13 @@ Answer in chat or here; the next session applies the answers.
   order you give answers with a short "yes", a refused one with a "no". The server itself never
   plays a unit's sound, so nothing leaks past fog of war later. Card AUD-01 is done; whether it
   sounds right is yours to judge in the demo.
+- 2026-10-23 · **M2 T15 and T16 Melee, attack and attack-move:** units fight now. The bundled
+  infantry is a spearman: right-click an enemy and your selection closes in, each soldier to its own
+  place round it, and strikes every second until it dies, chasing it if it runs. Press Z and then
+  right-click the ground to attack-move: they walk there and fight whatever they meet on the way.
+  Left alone, a soldier attacks any enemy that comes within 12 blocks and hits back when hit. H
+  stops. Two hundred spearmen fighting at the river's fords for five minutes kept the server well
+  inside its budgets (the core 0.8 ms a tick). Cards CMB-01, CMB-02 and ORD-04 are done.
 
 ## Now
 
@@ -348,7 +355,7 @@ Answer in chat or here; the next session applies the answers.
 - **In progress:** none.
 - **Last finished task:** M1 T26 (2026-10-23). The agents' branches `wip/m1-t17-unitai-hfsm` and
   `wip/m1-t25-debug-overlay` are merged and kept on GitHub for the record.
-- **Last M2 task:** T18, sounds (2026-10-23); T1–T13, T17–T19, T21 done; T14 done but for its unit-on-unit check with T15; three consent-batch items (T22) done early.
+- **Last M2 task:** T15 and T16, melee, attack and attack-move (2026-10-23); T1–T19, T21 done; three consent-batch items (T22) done early.
 - **Next task:** while the Mac's windows are mine today, the window work that is ready (M2's L4
   items as their tasks land); M1 T27 (M1 close, headless); then M2's tasks in the spec's order.
 - **WIP branch:** none.

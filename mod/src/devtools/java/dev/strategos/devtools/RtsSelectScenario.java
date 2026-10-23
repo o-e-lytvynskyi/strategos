@@ -5,10 +5,12 @@ import dev.strategos.core.client.pick.Picking;
 import dev.strategos.core.client.pick.View;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.port.MetricsSink;
+import dev.strategos.core.protocol.Attack;
 import dev.strategos.core.protocol.SpawnUnits;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.Vec2d;
+import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.client.StrategosClient;
 import dev.strategos.mod.client.rts.RtsMode;
@@ -34,8 +36,9 @@ import org.lwjgl.glfw.GLFW;
  * an empty click clears; a double click on one of them takes all of its type on screen; a click on an enemy inspects
  * it and selects nothing; Ctrl+1 keeps the 150 in group 1, which a 1 recalls after a clear; a plain click then takes one.
  * Then orders (UI-05): group 1 back, the right button held on the ground shows the places, its release sends one Move
- * that gives all 150 an order there, and a Shift click queues a second behind it.
- * Two screenshots of the outlined army.
+ * that gives all 150 an order there, and a Shift click queues a second behind it. Then ORD-04: a right click on an
+ * enemy sends an Attack (a red marker; debug walkers cannot strike, so the server refuses it), and Z then a right click
+ * on the ground an AttackMove that all 150 hold (an orange marker). Screenshots of the outlined army and the markers.
  */
 final class RtsSelectScenario implements Scenario {
     private static final int OWN = 150;
@@ -190,14 +193,40 @@ final class RtsSelectScenario implements Scenario {
                 check(queued == OWN, queued + " of " + OWN + " units with the queued order behind");
                 ctx.result.addProperty("queued", queued);
                 ctx.capture("rts_order_markers");
+            }
+            case 39 -> { // ORD-04: a right click on an enemy attacks it
+                double[] enemy = unitOnScreen(mc, screen, rts, 1);
+                screen.mouseClicked(enemy[0], enemy[1], 1);
+                screen.mouseReleased(enemy[0], enemy[1], 1);
+            }
+            case 40, 41, 42, 43, 44, 45 -> {}
+            case 46 -> {
+                check(rts.lastCommand() instanceof Attack, "an enemy's right click sent " + rts.lastCommand());
+                ctx.result.addProperty("attackSent", rts.lastCommand() instanceof Attack);
+                ctx.capture("rts_attack_marker");
+                screen.keyPressed(KeyCode.Z, 0, 0); // arms attack-move for the next right click
+                check(rts.attackMoveArmed(), "Z did not arm attack-move");
+            }
+            case 47 -> {
+                double[] at = gui(screen, rts, 6.5, floor, 0.5);
+                screen.mouseClicked(at[0], at[1], 1);
+                screen.mouseReleased(at[0], at[1], 1);
+                check(!rts.attackMoveArmed(), "the click did not disarm attack-move");
+            }
+            case 48, 49, 50, 51, 52, 53 -> {}
+            case 54 -> {
+                int moving = attackMoving(6.5, 0.5);
+                check(moving == OWN, moving + " of " + OWN + " units attack-moving to the click");
+                ctx.result.addProperty("attackMoving", moving);
+                ctx.capture("rts_attack_move_marker");
                 var rig = rts.rig();
                 if (rig != null) {
                     jumpTo = new double[] {rig.focusX() + 100, rig.focusZ()};
                     rts.centreOn(jumpTo[0], jumpTo[1]); // far: a camera_jump the server answers with a teleport
                 }
             }
-            case 39, 40, 41, 42, 43, 44, 45, 46, 47, 48 -> {}
-            case 49 -> {
+            case 55, 56, 57, 58, 59, 60, 61, 62, 63, 64 -> {}
+            case 65 -> {
                 var rig = rts.rig();
                 check(
                         rig != null && Math.abs(rig.focusX() - jumpTo[0]) < 1 && Math.abs(rig.focusZ() - jumpTo[1]) < 1,
@@ -273,6 +302,37 @@ final class RtsSelectScenario implements Scenario {
                     for (int h : core.queries().unitHandlesOf(new FactionSlot(0))) {
                         var orders = core.queries().orders(h);
                         if (orders.size() >= count
+                                && Math.hypot(
+                                                orders.get(0).x() - lx,
+                                                orders.get(0).z() - lz)
+                                        < 15) {
+                            n++;
+                        }
+                    }
+                    return n;
+                })
+                .join();
+    }
+
+    /** Own units whose current order is an attack-move ending within 15 blocks of the world point. */
+    private int attackMoving(double wx, double wz) {
+        MatchRuntime rt = match;
+        IntegratedServer server = Minecraft.getInstance().getSingleplayerServer();
+        if (rt == null || server == null) {
+            return -1;
+        }
+        return server.submit(() -> {
+                    var core = rt.core();
+                    if (core == null) {
+                        return -1;
+                    }
+                    int n = 0;
+                    double lx = wx - rt.space().origin().getX();
+                    double lz = wz - rt.space().origin().getZ();
+                    for (int h : core.queries().unitHandlesOf(new FactionSlot(0))) {
+                        var orders = core.queries().orders(h);
+                        if (!orders.isEmpty()
+                                && orders.get(0).kind() == OrderKind.ATTACK_MOVE
                                 && Math.hypot(
                                                 orders.get(0).x() - lx,
                                                 orders.get(0).z() - lz)

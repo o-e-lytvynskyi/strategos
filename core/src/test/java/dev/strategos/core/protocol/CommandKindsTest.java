@@ -16,7 +16,12 @@ class CommandKindsTest {
                 CommandKinds.DEFAULT.all().stream().map(CommandKind::id).toList();
         assertThat(ids)
                 .doesNotHaveDuplicates()
-                .containsExactly("strategos:move", "strategos:stop", "strategos:spawn_units");
+                .containsExactly(
+                        "strategos:move",
+                        "strategos:stop",
+                        "strategos:spawn_units",
+                        "strategos:attack",
+                        "strategos:attack_move");
     }
 
     @Test

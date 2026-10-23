@@ -8,8 +8,10 @@ import java.util.List;
 /**
  * Each unit's order queue (ORD-02, 04 §7.4, spec §5.9), by handle index: a ring of at most {@value #MAX} orders, each
  * a kind ({@link OrderKind}), a target on the ground plane, a group id (0 for an order given to one unit alone) and the
- * unit's slot in its group (0 until ORD-03's slots). The first is the current order, which the unit's machine carries
- * out; the others wait their turn. Replaces M0's single order, which is a queue of one.
+ * unit's slot in its group (0 until ORD-03's slots). An attack also holds the unit it attacks, and its slot is the
+ * attacker's place round that unit (CMB-02); its place on the ground is where the attacker walks to, which the machine
+ * moves as the target does. The first is the current order, which the unit's machine carries out; the others wait
+ * their turn. Replaces M0's single order, which is a queue of one.
  */
 public final class OrderQueues {
     /** The most orders a unit holds. */
@@ -22,18 +24,29 @@ public final class OrderQueues {
     private double[] zs = new double[0];
     private int[] groups = new int[0];
     private int[] slots = new int[0];
+    private int[] targets = new int[0];
 
-    /** One order as a save keeps it. */
+    /** One order as a save keeps it; {@code target} is the attacked unit's handle, 0 for any other kind. */
     @CoreApi
-    public record Order(int kind, double x, double z, int group, int slot) {}
+    public record Order(int kind, double x, double z, int group, int slot, int target) {
+        /** An order that attacks no unit. */
+        public Order(int kind, double x, double z, int group, int slot) {
+            this(kind, x, z, group, slot, 0);
+        }
+    }
 
     /**
-     * The part of a unit's queue its save keeps beside the current order's target: that order's group and slot, and
-     * the orders after it. {@link #NONE} for M0's single order.
+     * The part of a unit's queue its save keeps beside the current order's place: that order's kind, group, slot and
+     * attacked unit, and the orders after it. {@link #NONE} for M0's single order, a move.
      */
     @CoreApi
-    public record Saved(int group, int slot, List<Order> next) {
-        public static final Saved NONE = new Saved(0, 0, List.of());
+    public record Saved(int kind, int group, int slot, int target, List<Order> next) {
+        public static final Saved NONE = new Saved(OrderKind.MOVE, 0, 0, 0, List.of());
+
+        /** A current move's rest, as M1 saved it. */
+        public Saved(int group, int slot, List<Order> next) {
+            this(OrderKind.MOVE, group, slot, 0, next);
+        }
 
         public Saved {
             next = List.copyOf(next);
@@ -54,6 +67,7 @@ public final class OrderQueues {
             zs = Arrays.copyOf(zs, capacity * MAX);
             groups = Arrays.copyOf(groups, capacity * MAX);
             slots = Arrays.copyOf(slots, capacity * MAX);
+            targets = Arrays.copyOf(targets, capacity * MAX);
         }
     }
 
@@ -83,19 +97,43 @@ public final class OrderQueues {
         return count[i] == 0 ? 0 : slots[at(i, 0)];
     }
 
+    /** The unit the current order attacks, 0 for any other order. */
+    public int target(int i) {
+        return count[i] == 0 ? 0 : targets[at(i, 0)];
+    }
+
+    /** The current order's place on the ground moves to (x, z): an attacker's walk follows its target. */
+    public void setPlace(int i, double x, double z) {
+        int at = at(i, 0);
+        xs[at] = x;
+        zs[at] = z;
+    }
+
+    /** The current attack turns on {@code target}, from place {@code slot} round it. */
+    public void retarget(int i, int target, int slot) {
+        int at = at(i, 0);
+        targets[at] = target;
+        slots[at] = slot;
+    }
+
     /** The {@code k}th order of unit {@code i}, 0 being the current one. */
     public Order order(int i, int k) {
         if (k < 0 || k >= count[i]) {
             throw new IndexOutOfBoundsException("order " + k + " of a queue of " + count[i]);
         }
         int at = at(i, k);
-        return new Order(kinds[at], xs[at], zs[at], groups[at], slots[at]);
+        return new Order(kinds[at], xs[at], zs[at], groups[at], slots[at], targets[at]);
     }
 
     /** The current order finishes and the queue is cleared; the new order is the only one. */
     public void replace(int i, int kind, double x, double z, int group, int slot) {
+        replace(i, kind, x, z, group, slot, 0);
+    }
+
+    /** As {@link #replace(int, int, double, double, int, int)}, for an order that attacks {@code target}. */
+    public void replace(int i, int kind, double x, double z, int group, int slot, int target) {
         clear(i);
-        put(i, 0, kind, x, z, group, slot);
+        put(i, 0, kind, x, z, group, slot, target);
         count[i] = 1;
     }
 
@@ -121,10 +159,15 @@ public final class OrderQueues {
 
     /** Appends an order; false, and nothing changes, when the unit already holds {@value #MAX}. */
     public boolean queue(int i, int kind, double x, double z, int group, int slot) {
+        return queue(i, kind, x, z, group, slot, 0);
+    }
+
+    /** As {@link #queue(int, int, double, double, int, int)}, for an order that attacks {@code target}. */
+    public boolean queue(int i, int kind, double x, double z, int group, int slot, int target) {
         if (count[i] == MAX) {
             return false;
         }
-        put(i, count[i], kind, x, z, group, slot);
+        put(i, count[i], kind, x, z, group, slot, target);
         count[i]++;
         return true;
     }
@@ -134,12 +177,17 @@ public final class OrderQueues {
      * holds {@value #MAX}.
      */
     public boolean pushFront(int i, int kind, double x, double z, int group, int slot) {
+        return pushFront(i, kind, x, z, group, slot, 0);
+    }
+
+    /** As {@link #pushFront(int, int, double, double, int, int)}, for an order that attacks {@code target}. */
+    public boolean pushFront(int i, int kind, double x, double z, int group, int slot, int target) {
         if (count[i] == MAX) {
             return false;
         }
         head[i] = (head[i] + MAX - 1) % MAX;
         count[i]++;
-        put(i, 0, kind, x, z, group, slot);
+        put(i, 0, kind, x, z, group, slot, target);
         return true;
     }
 
@@ -148,7 +196,7 @@ public final class OrderQueues {
         if (count[i] == 0) {
             return;
         }
-        put(i, 0, OrderKind.NONE, 0, 0, 0, 0);
+        put(i, 0, OrderKind.NONE, 0, 0, 0, 0, 0);
         head[i] = (head[i] + 1) % MAX;
         count[i]--;
         if (count[i] == 0) {
@@ -159,43 +207,42 @@ public final class OrderQueues {
     /** Every order goes. */
     public void clear(int i) {
         for (int k = 0; k < count[i]; k++) {
-            put(i, k, OrderKind.NONE, 0, 0, 0, 0);
+            put(i, k, OrderKind.NONE, 0, 0, 0, 0, 0);
         }
         head[i] = 0;
         count[i] = 0;
     }
 
-    /** What a save keeps of unit {@code i}'s queue besides the current order's kind and target. */
+    /** What a save keeps of unit {@code i}'s queue besides the current order's place. */
     public Saved saved(int i) {
-        if (count[i] <= 1 && group(i) == 0 && slot(i) == 0) {
+        int kind = count[i] == 0 ? OrderKind.MOVE : kind(i);
+        if (count[i] <= 1 && kind == OrderKind.MOVE && group(i) == 0 && slot(i) == 0) {
             return Saved.NONE;
         }
         List<Order> next = new ArrayList<>(count[i]);
         for (int k = 1; k < count[i]; k++) {
             next.add(order(i, k));
         }
-        return new Saved(group(i), slot(i), next);
+        return new Saved(kind, group(i), slot(i), target(i), next);
     }
 
-    /** Unit {@code i}'s queue as saved: the current move to (x, z), if any, then the saved orders after it. */
-    public void restore(int i, int kind, double x, double z, Saved saved) {
+    /** Unit {@code i}'s queue as saved: the current order to (x, z), if any, then the saved orders after it. */
+    public void restore(int i, double x, double z, Saved saved) {
         clear(i);
-        if (kind == OrderKind.NONE) {
-            return;
-        }
-        replace(i, kind, x, z, saved.group(), saved.slot());
+        replace(i, saved.kind(), x, z, saved.group(), saved.slot(), saved.target());
         for (Order o : saved.next()) {
-            queue(i, o.kind(), o.x(), o.z(), o.group(), o.slot());
+            queue(i, o.kind(), o.x(), o.z(), o.group(), o.slot(), o.target());
         }
     }
 
-    private void put(int i, int k, int kind, double x, double z, int group, int slot) {
+    private void put(int i, int k, int kind, double x, double z, int group, int slot, int target) {
         int at = at(i, k);
         kinds[at] = (byte) kind;
         xs[at] = x;
         zs[at] = z;
         groups[at] = group;
         slots[at] = slot;
+        targets[at] = target;
     }
 
     private int at(int i, int k) {

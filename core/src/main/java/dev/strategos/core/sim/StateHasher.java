@@ -3,6 +3,7 @@ package dev.strategos.core.sim;
 import dev.strategos.core.shared.Hasher;
 import dev.strategos.core.shared.HotPath;
 import dev.strategos.core.sim.nav.PathStore;
+import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.order.OrderQueues;
 import java.util.ArrayDeque;
 
@@ -126,6 +127,9 @@ public final class StateHasher {
             h = Hasher.mix(h, Double.doubleToLongBits(o.z()));
             h = Hasher.mix(h, o.group());
             h = Hasher.mix(h, o.slot());
+            if (OrderKind.attacks(o.kind())) { // only attacks hold a target: every older queue hashes as before
+                h = Hasher.mix(h, o.target());
+            }
         }
         return h;
     }

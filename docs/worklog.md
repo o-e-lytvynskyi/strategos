@@ -9,7 +9,28 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24, T16, T26; M2 spec, M2 T1, T3, T5, T11, T13, T9, T21, T8, T6, T19, T2, T4, T14, T10 (part), T7, T10, T17, T18
+## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24, T16, T26; M2 spec, M2 T1, T3, T5, T11, T13, T9, T21, T8, T6, T19, T2, T4, T14, T10 (part), T7, T10, T17, T18, T15, T16
+
+- **M2 T15 and T16 · Melee, attack and attack-move** — CMB-02 done, ORD-04 done, CMB-01 done (its
+  unit-on-unit half).
+  - **Results:** the COMBAT subtree (approaching, attacking, chasing; finding a new target as a
+    step) and walking and fighting in `UnitAi`; `Melee` and `Engagement` (places round a target);
+    the order kinds ATTACK, ATTACK_MOVE and ENGAGE, the target in the order queue, saved and hashed
+    only when set; `Attacked`, `UnitStruck`, `PlaceMoved`; the melee and vision core paths; the
+    spearman; the `Attack` and `AttackMove` commands and rules; the client's right click on an
+    enemy, Z for attack-move, H for stop, coloured markers. Tests: `MeleeTest` (7), 43 rows of
+    UNIT-02.1's table, `OrderIntentTest`, codec tests, two GameTests whose journals replay in L1 to
+    the live hash, `perftests.melee_soak_200`, and `rts_select`'s new phases.
+  - **Measured:** the melee soak, 2 × 100 spearmen at the fords for 6,000 paced ticks: 10 waves,
+    28,082 hits, 953 deaths; A p50 0.79 ms (p99 1.97), B p95 1.95 ms, C p95 6.07 ms, all within
+    their budgets. A spearman kills another in 29 hits.
+  - **Problems:** a reach of 1.2 failed at 1.2000000000000002 (rounding: compared with 1e-9 now);
+    places were picked from the units near the target only, so ten attackers on their way all took
+    the same one; the enemy scan read a unit killed since the grid's last rebuild; the journal
+    reader refused M1's journals once the catalogue grew (it now reads any journal whose kinds keep
+    their numbers); UNIT-02.1's table wanted a row per declared transition, so the tree declares
+    only the transitions it makes; a GameTest name from `meleeSoak2x100` is `melee_soak_2x_100`.
+  - **Next:** T20, first-person orders (CAM-07), then M1 T27 and M2's close.
 
 - **M2 T18 · Sounds** — AUD-01 done (its checklist the owner's).
   - **Results:** core `Fx` and `FxKind` with their codec, `Sounds` and `SoundBudget`

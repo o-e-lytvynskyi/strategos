@@ -56,6 +56,11 @@ public final class SpatialQueries implements MatchSystem {
         return units.nearest(x, z, filter);
     }
 
+    /** The unit nearest (x, z) within {@code r} that passes {@code filter}; -1 when none does. */
+    public int nearest(double x, double z, double r, UnitFilter filter) {
+        return units.nearest(x, z, r, filter);
+    }
+
     public int countWithin(double x, double z, double r, UnitFilter filter) {
         return units.countWithin(x, z, r, filter);
     }

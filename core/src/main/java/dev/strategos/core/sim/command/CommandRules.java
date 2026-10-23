@@ -13,12 +13,14 @@ import java.util.List;
 public final class CommandRules {
     private final List<CommandRule<?>> rules = new ArrayList<>();
 
-    /** M0's rules: Move, Stop and SpawnUnits. */
+    /** The match's rules: M0's Move, Stop and SpawnUnits, and M2's Attack and AttackMove (ORD-04). */
     public static CommandRules m0() {
         return new CommandRules()
                 .register(new MoveRule())
                 .register(new StopRule())
-                .register(new SpawnUnitsRule());
+                .register(new SpawnUnitsRule())
+                .register(new AttackRule())
+                .register(new AttackMoveRule());
     }
 
     /** A second rule for a kind throws. */

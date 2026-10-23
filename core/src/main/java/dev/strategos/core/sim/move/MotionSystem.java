@@ -12,6 +12,7 @@ import dev.strategos.core.sim.MotionStore;
 import dev.strategos.core.sim.OrderReceived;
 import dev.strategos.core.sim.PathInvalidated;
 import dev.strategos.core.sim.Phase;
+import dev.strategos.core.sim.PlaceMoved;
 import dev.strategos.core.sim.Stagger;
 import dev.strategos.core.sim.StopOrdered;
 import dev.strategos.core.sim.UnitState;
@@ -135,6 +136,7 @@ public final class MotionSystem implements MatchSystem {
         this.avoidance = new Avoidance(state.motion());
         state.bus().subscribe(OrderReceived.class, m -> release(Handle.index(m.handle())));
         state.bus().subscribe(StopOrdered.class, m -> release(Handle.index(m.handle())));
+        state.bus().subscribe(PlaceMoved.class, m -> release(Handle.index(m.handle())));
     }
 
     @Override
@@ -156,7 +158,7 @@ public final class MotionSystem implements MatchSystem {
             if (!entities.aliveAt(i)) {
                 continue;
             }
-            if (s.ai().state(i) == UnitState.WALKING && orders.kind(i) == OrderKind.MOVE) {
+            if (s.ai().state(i) == UnitState.WALKING && orders.kind(i) != OrderKind.NONE) {
                 steer(s, i);
             } else {
                 mode[i] = SETTLING;
@@ -233,7 +235,7 @@ public final class MotionSystem implements MatchSystem {
         BodyFrame.Builder frame = s.frame();
         int highWater = entities.highWater();
         for (int i = 0; i < highWater; i++) {
-            if (!entities.aliveAt(i) || s.ai().state(i) != UnitState.WALKING || orders.kind(i) != OrderKind.MOVE) {
+            if (!entities.aliveAt(i) || s.ai().state(i) != UnitState.WALKING || orders.kind(i) == OrderKind.NONE) {
                 continue;
             }
             int handle = entities.handleAt(i);
@@ -545,7 +547,7 @@ public final class MotionSystem implements MatchSystem {
             if (j == i
                     || !s.entities().aliveAt(j)
                     || orders.group(j) != group
-                    || orders.kind(j) != OrderKind.MOVE
+                    || orders.kind(j) != orders.kind(i)
                     || s.ai().state(j) != UnitState.WALKING) {
                 continue;
             }

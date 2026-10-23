@@ -13,7 +13,11 @@ public final class CommandKinds {
             new CommandKind<>("strategos:stop", 2, Stop.class, Stop.CODEC, Stop.WIRE, false);
     public static final CommandKind<SpawnUnits> SPAWN_UNITS =
             new CommandKind<>("strategos:spawn_units", 3, SpawnUnits.class, SpawnUnits.CODEC, SpawnUnits.WIRE, true);
-    public static final CommandKinds DEFAULT = new CommandKinds(List.of(MOVE, STOP, SPAWN_UNITS));
+    public static final CommandKind<Attack> ATTACK =
+            new CommandKind<>("strategos:attack", 4, Attack.class, Attack.CODEC, Attack.WIRE, false);
+    public static final CommandKind<AttackMove> ATTACK_MOVE =
+            new CommandKind<>("strategos:attack_move", 5, AttackMove.class, AttackMove.CODEC, AttackMove.WIRE, false);
+    public static final CommandKinds DEFAULT = new CommandKinds(List.of(MOVE, STOP, SPAWN_UNITS, ATTACK, ATTACK_MOVE));
 
     private final List<CommandKind<?>> kinds;
     private final Codec<Command> codec;
@@ -89,6 +93,23 @@ public final class CommandKinds {
             sb.append(kind.id()).append('=').append(kind.wireId());
         }
         return sb.toString();
+    }
+
+    /**
+     * Whether a journal written with catalogue {@code fingerprint} reads in this one: each of its kinds has the same
+     * wire id here. A later build that only adds kinds reads every older journal (M2's attacks after M1's moves).
+     */
+    public boolean reads(String fingerprint) {
+        if (fingerprint.isEmpty()) {
+            return false;
+        }
+        List<String> here = List.of(fingerprint().split(",", -1));
+        for (String pair : fingerprint.split(",", -1)) {
+            if (!here.contains(pair)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /** Every command as a map with {@code "kind": "<id>"}; an unknown id fails naming it. */

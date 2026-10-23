@@ -89,7 +89,15 @@ class WireCodecSizeTest {
     @Test
     void theCatalogueNumbersItsKindsOnce() {
         assertThat(CommandKinds.DEFAULT.fingerprint())
-                .isEqualTo("strategos:move=1,strategos:stop=2,strategos:spawn_units=3");
+                .isEqualTo("strategos:move=1,strategos:stop=2,strategos:spawn_units=3,"
+                        + "strategos:attack=4,strategos:attack_move=5");
+        assertThat(CommandKinds.DEFAULT.reads("strategos:move=1,strategos:stop=2,strategos:spawn_units=3"))
+                .as("M1's journals read")
+                .isTrue();
+        assertThat(CommandKinds.DEFAULT.reads("strategos:move=1,strategos:attack=2"))
+                .isFalse();
+        assertThat(CommandKinds.DEFAULT.reads("strategos:move=1,strategos:fly=6"))
+                .isFalse();
         assertThat(CommandKinds.DEFAULT.byWireId(2)).isSameAs(CommandKinds.STOP);
         assertThatThrownBy(() -> new CommandKinds(java.util.List.of(
                         CommandKinds.MOVE,

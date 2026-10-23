@@ -7,6 +7,7 @@ import dev.strategos.core.protocol.QueueMode;
 import dev.strategos.core.protocol.RejectReason;
 import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.Handle;
+import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.MatchState;
@@ -32,15 +33,40 @@ final class MoveRule implements CommandRule<Move> {
 
     @Override
     public CommandResult apply(CommandEnvelope envelope, Move move, MatchState state) {
-        UnitSet units = move.units();
+        return walk(
+                envelope,
+                kind(),
+                OrderKind.MOVE,
+                move.units(),
+                move.target(),
+                move.mode(),
+                move.formation(),
+                state,
+                slots);
+    }
+
+    /**
+     * Gives each owned unit of {@code units} an order of {@code orderKind} to {@code target}, joined by {@code mode},
+     * each in its own place round it: a move's, and an attack-move's ({@link AttackMoveRule}).
+     */
+    static CommandResult walk(
+            CommandEnvelope envelope,
+            CommandKind<?> kind,
+            int orderKind,
+            UnitSet units,
+            Vec2d target,
+            QueueMode mode,
+            int formation,
+            MatchState state,
+            SlotPlanner slots) {
         if (units.size() == 0) {
-            return Tally.rejectAll(envelope, kind(), 0, RejectReason.INVALID_ARGUMENT);
+            return Tally.rejectAll(envelope, kind, 0, RejectReason.INVALID_ARGUMENT);
         }
-        if (!state.config().bounds().contains(move.target().x(), move.target().z())) {
-            return Tally.rejectAll(envelope, kind(), units.size(), RejectReason.OUT_OF_BOUNDS);
+        if (!state.config().bounds().contains(target.x(), target.z())) {
+            return Tally.rejectAll(envelope, kind, units.size(), RejectReason.OUT_OF_BOUNDS);
         }
-        if (move.formation() != 0) {
-            return Tally.rejectAll(envelope, kind(), units.size(), RejectReason.UNSUPPORTED);
+        if (formation != 0) {
+            return Tally.rejectAll(envelope, kind, units.size(), RejectReason.UNSUPPORTED);
         }
         OrderQueues orders = state.orders();
         Tally tally = new Tally();
@@ -62,32 +88,32 @@ final class MoveRule implements CommandRule<Move> {
         }
         boolean placed = n > 1;
         if (placed) {
-            slots.plan(state, indices, move.target().x(), move.target().z());
+            slots.plan(state, indices, target.x(), target.z());
         }
         for (int k = 0; k < n; k++) {
             int handle = taking[k];
             int i = indices[k];
-            double x = placed ? slots.x(k) : move.target().x();
-            double z = placed ? slots.z(k) : move.target().z();
+            double x = placed ? slots.x(k) : target.x();
+            double z = placed ? slots.z(k) : target.z();
             int slot = placed ? slots.slot(k) : 0;
             int before = orders.size(i);
-            boolean joined = switch (move.mode()) {
+            boolean joined = switch (mode) {
                 case REPLACE -> {
-                    orders.replace(i, OrderKind.MOVE, x, z, group, slot);
+                    orders.replace(i, orderKind, x, z, group, slot);
                     yield true;
                 }
-                case QUEUE -> orders.queue(i, OrderKind.MOVE, x, z, group, slot);
-                case PUSH_FRONT -> orders.pushFront(i, OrderKind.MOVE, x, z, group, slot);
+                case QUEUE -> orders.queue(i, orderKind, x, z, group, slot);
+                case PUSH_FRONT -> orders.pushFront(i, orderKind, x, z, group, slot);
             };
             if (!joined) {
                 tally.reject(RejectReason.QUEUE_FULL);
                 continue;
             }
-            if (move.mode() != QueueMode.QUEUE || before == 0) { // a queued order waits, unless the unit is idle
+            if (mode != QueueMode.QUEUE || before == 0) { // a queued order waits, unless the unit is idle
                 state.bus().publish(new OrderReceived(handle));
             }
             tally.accept();
         }
-        return tally.result(envelope, kind());
+        return tally.result(envelope, kind);
     }
 }

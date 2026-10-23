@@ -6,9 +6,11 @@ import static dev.strategos.gametest.suites.Units.core;
 import dev.strategos.core.content.MapManifest;
 import dev.strategos.core.content.StartSlot;
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.protocol.AttackMove;
 import dev.strategos.core.protocol.CommandOutcome;
 import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.SpawnUnits;
+import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.PlayerSlot;
@@ -16,7 +18,10 @@ import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.core.sim.MatchQueries;
 import dev.strategos.core.sim.MotionStore;
+import dev.strategos.core.sim.OutputEvent;
 import dev.strategos.core.sim.Stuck;
+import dev.strategos.core.sim.UnitDied;
+import dev.strategos.core.sim.UnitHurt;
 import dev.strategos.core.sim.UnitView;
 import dev.strategos.core.sim.journal.JournalExport;
 import dev.strategos.core.testkit.JournalFiles;
@@ -62,8 +67,30 @@ final class CrowdSoak {
 
     private static final int[] RUNG_TICKS = {0, 40, 100, 200, 400, 600};
 
-    /** One soak: its seed set line, units per faction, soak ticks, whether it measures budgets, how many viewers. */
-    record Config(String name, int seedLine, int perFaction, int ticks, boolean budgets, int viewers, int lane) {}
+    /**
+     * One soak: its seed set line, units per faction, soak ticks, whether it measures budgets, how many viewers, its
+     * lane, and whether it is the melee soak's waves (CMB-02.6) rather than the crowd's seeded moves.
+     */
+    record Config(
+            String name,
+            int seedLine,
+            int perFaction,
+            int ticks,
+            boolean budgets,
+            int viewers,
+            int lane,
+            boolean melee) {
+        Config(String name, int seedLine, int perFaction, int ticks, boolean budgets, int viewers, int lane) {
+            this(name, seedLine, perFaction, ticks, budgets, viewers, lane, false);
+        }
+    }
+
+    /** The melee soak's spawns: each faction on its bank of the river, half at each ford (Z 140–146 and 236–242). */
+    static final double[] BANK_X = {ProvingGround.RIVER_X - 20.5, ProvingGround.RIVER_X + 20.5};
+
+    static final double[] FORD_Z = {143.5, 239.5};
+    /** A melee wave ends when a side is gone or after this many ticks; then both sides are filled up again. */
+    static final int WAVE_TICKS = 600;
 
     /**
      * What a soak saw. Samples are per soak tick after the warm-up, in nanoseconds: {@code core} the core's step with our
@@ -93,6 +120,7 @@ final class CrowdSoak {
         private final long navBytes;
         private final int units;
         private final @Nullable Path journal;
+        private final long[] fights;
 
         Result(
                 Config config,
@@ -114,7 +142,8 @@ final class CrowdSoak {
                 String worst,
                 long navBytes,
                 int units,
-                @Nullable Path journal) {
+                @Nullable Path journal,
+                long[] fights) {
             this.config = config;
             this.seed = seed;
             this.core = core;
@@ -135,6 +164,12 @@ final class CrowdSoak {
             this.navBytes = navBytes;
             this.units = units;
             this.journal = journal;
+            this.fights = fights;
+        }
+
+        /** The melee soak's waves sent, hits and deaths; zeros for the crowd's. */
+        long[] fights() {
+            return fights;
         }
 
         Config config() {
@@ -277,6 +312,11 @@ final class CrowdSoak {
     private long seenSum;
     private int seenSamples;
     private int seenMost;
+    private int waveTicks;
+    private int waves;
+    private boolean sendWave;
+    private long hits;
+    private long deaths;
 
     private CrowdSoak(
             GameTestHelper h, Config config, Consumer<Result> done, Runnable windowStarts, Runnable everySecond) {
@@ -303,7 +343,23 @@ final class CrowdSoak {
     static void start(
             GameTestHelper h, Config config, Consumer<Result> done, Runnable windowStarts, Runnable everySecond) {
         CrowdSoak soak = new CrowdSoak(h, config, done, windowStarts, everySecond);
+        if (config.melee()) {
+            soak.rt.addListener(out -> {
+                for (OutputEvent e : out.events()) {
+                    if (e instanceof UnitHurt) {
+                        soak.hits++;
+                    } else if (e instanceof UnitDied) {
+                        soak.deaths++;
+                    }
+                }
+            });
+        }
         h.onEachTick(soak::tick);
+    }
+
+    /** The melee soak's waves sent, hits and deaths. */
+    long[] fights() {
+        return new long[] {waves, hits, deaths};
     }
 
     private void tick() {
@@ -408,6 +464,10 @@ final class CrowdSoak {
                 }
             }
         }
+        if (config.melee()) {
+            wave(q);
+            return;
+        }
         Move move = orders.next(q.tick() + 1, q);
         if (move != null) {
             rt.submit(PlayerSlot.ADMIN, move, result -> {
@@ -450,7 +510,8 @@ final class CrowdSoak {
                 worst,
                 q.surfaces().bytes(),
                 q.unitCount(),
-                exportJournal()));
+                exportJournal(),
+                fights()));
     }
 
     /** {@code <out>/<name>.strj} for a replay, when the run names an output directory. */
@@ -484,8 +545,76 @@ final class CrowdSoak {
         }
     }
 
+    /**
+     * The melee soak's waves (CMB-02.6): each side attack-moves through its fords to the other's bank; a wave ends when a
+     * side is gone or after {@value #WAVE_TICKS} ticks, and both sides are filled up to {@code perFaction} at their
+     * fords and sent again.
+     */
+    private void wave(MatchQueries q) {
+        int[] west = q.unitHandlesOf(new FactionSlot(0));
+        int[] east = q.unitHandlesOf(new FactionSlot(1));
+        if (sendWave) {
+            sendWave = false;
+            waves++;
+            waveTicks = 0;
+            for (int f = 0; f < 2; f++) {
+                int[] side = f == 0 ? west : east;
+                for (int k = 0; k < 2; k++) { // each through the ford nearer it, to the other bank
+                    List<Integer> here = new ArrayList<>();
+                    for (int unit : side) {
+                        UnitView view = q.unit(unit);
+                        if (view != null && (view.z() < 191.5) == (k == 0)) {
+                            here.add(unit);
+                        }
+                    }
+                    if (!here.isEmpty()) {
+                        rt.submit(
+                                PlayerSlot.ADMIN,
+                                AttackMove.replace(
+                                        UnitSet.of(here.stream()
+                                                .mapToInt(Integer::intValue)
+                                                .toArray()),
+                                        new Vec2d(BANK_X[1 - f], FORD_Z[k])));
+                    }
+                }
+            }
+            return;
+        }
+        if (++waveTicks < WAVE_TICKS && west.length > 0 && east.length > 0 && waves > 0) {
+            return;
+        }
+        meleeSpawn(0, config.perFaction() - west.length);
+        meleeSpawn(1, config.perFaction() - east.length);
+        sendWave = true; // the tick after, when the new units are in the match
+    }
+
+    /** {@code count} spearmen of faction {@code f} on its bank, split between the fords. */
+    private void meleeSpawn(int f, int count) {
+        for (int k = 0; k < 2 && count > 0; k++) {
+            int here = k == 0 ? (count + 1) / 2 : count / 2;
+            if (here > 0) {
+                rt.submit(
+                        PlayerSlot.ADMIN,
+                        new SpawnUnits(
+                                TemplateSet.INFANTRY, new FactionSlot(f), new Vec2d(BANK_X[f], FORD_Z[k]), here, 5),
+                        result -> {
+                            if (result.outcome() != CommandOutcome.ACCEPTED) {
+                                refused++;
+                            }
+                        });
+            }
+        }
+    }
+
     /** Each faction's units round its start slot, in spawns of at most {@value #PER_SPAWN} a block of rows apart. */
     private void spawn() {
+        if (config.melee()) {
+            meleeSpawn(0, config.perFaction());
+            meleeSpawn(1, config.perFaction());
+            spawnedAt = System.nanoTime();
+            next(Phase.SPAWNING);
+            return;
+        }
         for (int f = 0; f < 2; f++) {
             StartSlot slot = manifest.startSlots().get(f);
             int left = config.perFaction();

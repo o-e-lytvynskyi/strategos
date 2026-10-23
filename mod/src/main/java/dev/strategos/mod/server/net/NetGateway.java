@@ -2,6 +2,8 @@ package dev.strategos.mod.server.net;
 
 import com.mojang.serialization.JsonOps;
 import dev.strategos.core.content.CanonicalJson;
+import dev.strategos.core.protocol.Attack;
+import dev.strategos.core.protocol.AttackMove;
 import dev.strategos.core.protocol.Command;
 import dev.strategos.core.protocol.CommandBatch;
 import dev.strategos.core.protocol.DebugFeedMsg;
@@ -295,6 +297,8 @@ public final class NetGateway {
         return switch (command) {
             case Move move -> move.units().size();
             case Stop stop -> stop.units().size();
+            case Attack attack -> attack.units().size();
+            case AttackMove move -> move.units().size();
             default -> 0;
         };
     }

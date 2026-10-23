@@ -1135,6 +1135,11 @@ flowchart TD
   combat hash and save as before. Packets queue during the tick and `CombatSystem` applies them in
   COMBAT; the dead leave at the phase's end, each a `UnitDied` and a `UNIT_LOST` notice to the
   faction, the core's first removal of a unit.
+- **As built (M2, CMB-02).** COMBAT holds approaching, attacking and chasing; finding a new target
+  is a step, not a state. An attack the unit takes up itself goes before its orders (ENGAGE), so
+  it resumes them afterwards. Attackers take places on rings round their target, read from the
+  attackers' orders; a hit lands on the tick its wind-up or period ends, as a `Damage` packet for
+  the same tick's COMBAT phase and a `UnitStruck` that swings the body's arm.
 - **Units are silent on the server.** A server-side `Entity#playSound` broadcasts to everyone in
   range regardless of fog (Entity.java:1138; ServerLevel.java:989–1035). Units never reach it: they
   never call `super.hurt` and never `move`, and their bodies are silent (`isSilent`). Unit sounds

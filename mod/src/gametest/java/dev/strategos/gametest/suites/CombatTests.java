@@ -9,17 +9,27 @@ import static dev.strategos.gametest.suites.Units.spawn;
 
 import com.mojang.authlib.GameProfile;
 import dev.strategos.core.client.audio.Sounds;
+import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.protocol.AttackMove;
 import dev.strategos.core.protocol.FxKind;
 import dev.strategos.core.protocol.NoticeKind;
 import dev.strategos.core.protocol.NoticeMsg;
+import dev.strategos.core.protocol.SpawnUnits;
+import dev.strategos.core.protocol.UnitSet;
+import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
+import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.ExternalDamage;
 import dev.strategos.core.sim.InputEvent;
+import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.TickInputs;
+import dev.strategos.core.sim.journal.ReplayDriver;
+import dev.strategos.core.sim.journal.ReplayResult;
 import dev.strategos.gametest.StrategosTest;
 import dev.strategos.gametest.net.MockViewer;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.entity.UnitEntity;
+import dev.strategos.mod.entity.UnitSpawnData;
 import dev.strategos.mod.server.match.MatchRuntime;
 import dev.strategos.mod.server.net.payload.FeedbackPayload;
 import java.util.ArrayList;
@@ -239,6 +249,105 @@ public final class CombatTests {
                     check(heard.bodies == 0, "the bodies sounded " + heard.bodies + " times on the server");
                 })
                 .thenSucceed();
+    }
+
+    /**
+     * CMB-02.5 and CMB-01.3's unit-on-unit half: five spearmen a side attack-move into each other on the arena floor
+     * and fight until one side is gone. The match's journal, replayed in L1 from its start (the terrain's pages
+     * included), ends on the live match's hash, so the same units survive with the same hit points; and every body
+     * kept its full vanilla health until its unit died, however often it was hit.
+     */
+    @StrategosTest(timeoutTicks = 3_000)
+    public static void squadsFightAsTheCorePredicts(GameTestHelper h) {
+        MatchRuntime rt = match(h);
+        rt.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.INFANTRY, new FactionSlot(0), new Vec2d(6, 16), 5, 2));
+        rt.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.INFANTRY, new FactionSlot(1), new Vec2d(26, 16), 5, 2));
+        var state = new Object() {
+            boolean ordered;
+            int hurtBodies;
+        };
+        h.onEachTick(() -> {
+            MatchCore core = core(rt);
+            int[] west = core.queries().unitHandlesOf(new FactionSlot(0));
+            int[] east = core.queries().unitHandlesOf(new FactionSlot(1));
+            if (!state.ordered) {
+                if (west.length == 5 && east.length == 5) {
+                    rt.submit(new PlayerSlot(0), AttackMove.replace(UnitSet.of(west), new Vec2d(26, 16)));
+                    rt.submit(new PlayerSlot(1), AttackMove.replace(UnitSet.of(east), new Vec2d(6, 16)));
+                    state.ordered = true;
+                }
+                return;
+            }
+            for (UnitEntity body : Units.bodiesOf(h.getLevel(), rt)) {
+                if (!body.isDeadOrDying()) {
+                    UnitSpawnData data = body.spawnData();
+                    check(
+                            body.getHealth() == body.getMaxHealth(),
+                            "a living body's vanilla health fell to " + body.getHealth());
+                    if (data != null
+                            && core.queries().hitPoints(data.handle())
+                                    < core.queries().maxHitPoints(data.handle())) {
+                        state.hurtBodies++;
+                    }
+                }
+            }
+            if (west.length > 0 && east.length > 0) {
+                return;
+            }
+            check(state.hurtBodies > 0, "no living body was ever hurt");
+            ReplayResult replay = ReplayDriver.replay(core.journal(), TemplateSet.builtin());
+            check(replay.matches(), "the journal does not replay: " + replay);
+            check(replay.finalHash() == core.stateHash(), "the replay ends on another hash: " + replay);
+            check(west.length + east.length > 0, "both sides died to the last unit");
+            h.succeed();
+        });
+    }
+
+    /**
+     * ORD-04.3: five spearmen attack-move through three debug walkers standing in their way, kill them and walk on to
+     * the point; replayed in L1, the journal ends on the live hash.
+     */
+    @StrategosTest(timeoutTicks = 3_000)
+    public static void attackMoveThroughASquadAsTheCorePredicts(GameTestHelper h) {
+        MatchRuntime rt = match(h);
+        rt.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.INFANTRY, new FactionSlot(0), new Vec2d(4, 16), 5, 2));
+        rt.submit(
+                PlayerSlot.ADMIN,
+                new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(1), new Vec2d(16, 16), 3, 1.5));
+        var state = new Object() {
+            boolean ordered;
+            int[] squad = new int[0];
+        };
+        h.onEachTick(() -> {
+            MatchCore core = core(rt);
+            if (!state.ordered) {
+                int[] west = core.queries().unitHandlesOf(new FactionSlot(0));
+                if (west.length == 5 && core.queries().unitHandlesOf(new FactionSlot(1)).length == 3) {
+                    state.squad = west;
+                    rt.submit(new PlayerSlot(0), AttackMove.replace(UnitSet.of(west), new Vec2d(28, 16)));
+                    state.ordered = true;
+                }
+                return;
+            }
+            if (core.queries().unitHandlesOf(new FactionSlot(1)).length > 0) {
+                return;
+            }
+            for (int unit : state.squad) {
+                if (!core.queries().orders(unit).isEmpty()) {
+                    return; // still walking on
+                }
+            }
+            for (int unit : state.squad) {
+                check(
+                        core.queries().unit(unit).x() > 24,
+                        "a spearman stopped short at "
+                                + core.queries().unit(unit).x());
+            }
+            ReplayResult replay = ReplayDriver.replay(core.journal(), TemplateSet.builtin());
+            check(replay.matches(), "the journal does not replay: " + replay);
+            check(replay.finalHash() == core.stateHash(), "the replay ends on another hash: " + replay);
+            h.succeed();
+        });
     }
 
     /** The kinds of the vanilla damage the unit took, as the journal holds it. */

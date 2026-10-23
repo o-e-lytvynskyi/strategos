@@ -14,10 +14,13 @@ import dev.strategos.core.client.select.ControlGroups;
 import dev.strategos.core.client.select.Seen;
 import dev.strategos.core.client.select.Selection;
 import dev.strategos.core.protocol.CameraJump;
+import dev.strategos.core.protocol.Command;
 import dev.strategos.core.protocol.CommandBatch;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.ModeSwitch;
 import dev.strategos.core.protocol.Move;
+import dev.strategos.core.protocol.Stop;
+import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.mod.client.StrategosClient;
 import dev.strategos.mod.client.StrategosClientConfig;
 import dev.strategos.mod.client.net.ClientPayloads;
@@ -69,6 +72,9 @@ public final class RtsMode {
 
     private static final DustParticleOptions PREVIEW = new DustParticleOptions(new Vector3f(0.35f, 0.65f, 1f), 3f);
     private static final DustParticleOptions MARKER = new DustParticleOptions(new Vector3f(1f, 1f, 1f), 4f);
+    private static final DustParticleOptions ATTACK_MARKER = new DustParticleOptions(new Vector3f(1f, 0.2f, 0.15f), 4f);
+    private static final DustParticleOptions ATTACK_MOVE_MARKER =
+            new DustParticleOptions(new Vector3f(1f, 0.6f, 0.1f), 4f);
 
     private final RtsKeys keys = new RtsKeys();
     private final ControlGroups groups = new ControlGroups();
@@ -85,7 +91,10 @@ public final class RtsMode {
     private long ticks;
     private int clientSeq = 1;
     private int ordersSent;
-    private final List<double[]> markers = new ArrayList<>(); // world x, y, z, ticks left
+    private final List<double[]> markers =
+            new ArrayList<>(); // world x, y, z, ticks left, kind (0 move, 1 attack, 2 attack-move)
+    private boolean attackMove;
+    private @Nullable Command lastCommand;
     private double @Nullable [] cursor;
     /** Stepped down into first person (CAM-05): the RTS view comes back when the server makes this a spectator again. */
     private boolean firstPerson;
@@ -126,6 +135,34 @@ public final class RtsMode {
 
     void fired(Action action) {
         lastAction = action;
+        if (action == Action.ATTACK_MOVE) {
+            attackMove = true; // for the next right click
+        } else if (action == Action.CANCEL || action == Action.SELECT || action == Action.BOX_SELECT) {
+            attackMove = false;
+        }
+    }
+
+    /** The last command a right click sent, for scenarios; null before any. */
+    public @Nullable Command lastCommand() {
+        return lastCommand;
+    }
+
+    /** Whether the next right click attack-moves (ORD-04): its key was pressed since the last order. */
+    public boolean attackMoveArmed() {
+        return attackMove;
+    }
+
+    /** STOP: the selection's orders end (ORD-02). */
+    public void stop() {
+        if (selection().handles().isEmpty()) {
+            return;
+        }
+        int[] handles =
+                selection().handles().stream().mapToInt(Integer::intValue).toArray();
+        if (ClientPayloads.toServer(
+                new CommandsPayload(new CommandBatch(clientSeq++, List.of(new Stop(UnitSet.of(handles)))), ""))) {
+            ordersSent++;
+        }
     }
 
     /** The player's selection; the faction it may select follows the seat. */
@@ -245,25 +282,41 @@ public final class RtsMode {
     }
 
     /**
-     * The context order for the selection to what the cursor at window points picks (UI-05): a Move to the block or
-     * unit there, match-local, queued with Shift; one command per click. Attack on an enemy comes with ORD-04.
+     * The context order for the selection to what the cursor at window points picks (UI-05, ORD-04): an Attack on an
+     * enemy's body, else a Move to the block or unit there, or with attack-move armed an AttackMove there, match-local,
+     * queued with Shift; one command per click. Attack-move disarms with the click.
      */
     public void order(double x, double y, boolean shift) {
         previewing = false;
+        boolean armed = attackMove;
+        attackMove = false;
         Pick pick = pick(x, y);
         MatchJoin join = StrategosClient.match();
-        if (pick == null || join == null) {
+        Minecraft mc = Minecraft.getInstance();
+        if (pick == null || join == null || mc.level == null) {
             return;
         }
         double wx = pick.entityId() < 0 ? pick.x() + 0.5 : pick.x();
         double wz = pick.entityId() < 0 ? pick.z() + 0.5 : pick.z();
-        Move move = OrderIntents.move(selection().handles(), wx - join.originX(), wz - join.originZ(), shift);
-        if (move == null) {
+        int enemy = 0;
+        if (pick.entityId() >= 0
+                && mc.level.getEntity(pick.entityId()) instanceof UnitEntity body
+                && body.spawnData() != null
+                && body.spawnData().matchId() == join.matchId()
+                && body.spawnData().faction() != join.slot().value()) {
+            enemy = body.spawnData().handle();
+        }
+        Command command = OrderIntents.context(
+                selection().handles(), enemy, wx - join.originX(), wz - join.originZ(), shift, armed);
+        if (command == null) {
             return;
         }
-        if (ClientPayloads.toServer(new CommandsPayload(new CommandBatch(clientSeq++, List.of(move)), ""))) {
+        if (ClientPayloads.toServer(new CommandsPayload(new CommandBatch(clientSeq++, List.of(command)), ""))) {
             ordersSent++;
-            markers.add(new double[] {wx, pick.entityId() < 0 ? pick.y() + 1 : pick.y(), wz, shift ? 200 : 40});
+            lastCommand = command;
+            int kind = armed ? 2 : enemy != 0 ? 1 : 0;
+            double my = pick.entityId() < 0 ? pick.y() + 1 : pick.y() + (enemy != 0 ? 2.2 : 0); // over a target's head
+            markers.add(new double[] {wx, my, wz, shift ? 200 : 40, kind});
         }
     }
 
@@ -300,7 +353,7 @@ public final class RtsMode {
         }
     }
 
-    /** The clicked point and queued waypoints, as dust, for a while. */
+    /** The clicked point and queued waypoints, as dust, for a while: white a move, red an attack, orange attack-move. */
     private void showMarkers(Minecraft mc) {
         if (mc.level == null) {
             return;
@@ -308,7 +361,8 @@ public final class RtsMode {
         markers.removeIf(m -> --m[3] <= 0);
         if (ticks % 4 == 0) {
             for (double[] m : markers) {
-                mc.level.addParticle(MARKER, true, m[0], m[1] + 0.2, m[2], 0, 0.05, 0);
+                DustParticleOptions dust = m[4] == 1 ? ATTACK_MARKER : m[4] == 2 ? ATTACK_MOVE_MARKER : MARKER;
+                mc.level.addParticle(dust, true, m[0], m[1] + 0.2, m[2], 0, 0.05, 0);
             }
         }
     }

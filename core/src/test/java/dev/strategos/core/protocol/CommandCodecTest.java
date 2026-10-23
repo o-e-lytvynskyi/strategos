@@ -21,7 +21,9 @@ class CommandCodecTest {
         return List.of(
                 new Move(UnitSet.of(3, 1, 2), new Vec2d(12.5, 8.5), QueueMode.REPLACE, 0),
                 new Stop(UnitSet.of(5)),
-                new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(1), new Vec2d(4, 8), 8, 2.0));
+                new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(1), new Vec2d(4, 8), 8, 2.0),
+                new Attack(UnitSet.of(4, 6), 0x300007, QueueMode.QUEUE),
+                new AttackMove(UnitSet.of(2), new Vec2d(30.25, 9), QueueMode.PUSH_FRONT));
     }
 
     @Test

@@ -37,7 +37,9 @@ final class BuiltinTemplates {
     static final String INFANTRY = """
             {
               "parent": "strategos:template/unit_infantry",
-              "Identity": { "name": "strategos.unit.infantry" },
+              "Identity": { "name": "strategos.unit.infantry", "classes": "+Spearman" },
+              "Attack": { "Melee": { "hack": 3, "pierce": 3, "reach": 1.2, "prepare": 10, "repeat": 20 } },
+              "Resistance": { "hack": 5, "pierce": 5, "crush": 2 },
               "Body": { "skin": "strategos:units/infantry" }
             }
             """;

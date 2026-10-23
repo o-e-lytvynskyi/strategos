@@ -248,7 +248,16 @@ public final class TemplateSet {
             case CorePaths.WALK_SPEED -> t.walkSpeed();
             case CorePaths.TURN_RATE -> t.turnRate();
             case CorePaths.HEALTH -> CorePaths.DEFAULT_HEALTH;
-            case CorePaths.RESIST_HACK, CorePaths.RESIST_PIERCE, CorePaths.RESIST_CRUSH -> 0;
+            case CorePaths.RESIST_HACK,
+                    CorePaths.RESIST_PIERCE,
+                    CorePaths.RESIST_CRUSH,
+                    CorePaths.MELEE_HACK,
+                    CorePaths.MELEE_PIERCE,
+                    CorePaths.MELEE_CRUSH -> 0;
+            case CorePaths.MELEE_REACH -> CorePaths.DEFAULT_REACH;
+            case CorePaths.MELEE_PREPARE -> CorePaths.DEFAULT_PREPARE;
+            case CorePaths.MELEE_REPEAT -> CorePaths.DEFAULT_REPEAT;
+            case CorePaths.VISION -> CorePaths.DEFAULT_VISION;
             default -> Double.NaN;
         };
     }

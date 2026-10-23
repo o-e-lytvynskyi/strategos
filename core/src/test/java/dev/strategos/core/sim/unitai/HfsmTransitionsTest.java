@@ -3,7 +3,9 @@ package dev.strategos.core.sim.unitai;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.Move;
+import dev.strategos.core.protocol.SpawnUnits;
 import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
@@ -11,6 +13,7 @@ import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.AiStateStore;
 import dev.strategos.core.sim.Arrived;
+import dev.strategos.core.sim.Attacked;
 import dev.strategos.core.sim.BusMessage;
 import dev.strategos.core.sim.KernelAccess;
 import dev.strategos.core.sim.MatchState;
@@ -22,6 +25,7 @@ import dev.strategos.core.sim.PathInvalidated;
 import dev.strategos.core.sim.StatsChanged;
 import dev.strategos.core.sim.StopOrdered;
 import dev.strategos.core.sim.Stuck;
+import dev.strategos.core.sim.UnitCreated;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.UnitStateChanged;
 import dev.strategos.core.sim.nav.PathStatus;
@@ -33,33 +37,49 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 /**
- * UNIT-02.1: the M1 tree, one row per message and state, each through the match's own bus and routing; then the
- * framework's rules on a test tree: bubbling and overriding handlers, transitions run once the handler returns, the
- * order of leave and enter hooks across nested states, chained and refused transitions, data words, thinks, and
- * messages dispatched from inside a handler.
+ * UNIT-02.1: the unit tree, one row per message and state, each through the match's own bus and routing (and, for a
+ * change only a think makes, a tick); then the framework's rules on a test tree: bubbling and overriding handlers,
+ * transitions run once the handler returns, the order of leave and enter hooks across nested states, chained and
+ * refused transitions, data words, thinks, and messages dispatched from inside a handler.
  */
 class HfsmTransitionsTest {
 
-    // ---- The M1 tree ----
+    // ---- The unit tree ----
 
-    /** One unit of a real match, IDLE or WALKING, whose bus a row publishes on between ticks, as a system would. */
+    /**
+     * One spearman of a real match and an enemy spearman, in the row's start state: IDLE; WALKING by an order and a
+     * tick; any other set as data, as a save restores it, with the enemy placed for it. A row publishes on the bus
+     * between ticks, as a system would, or steps a tick.
+     */
     private static final class Unit {
         final SimHarness h = SimHarness.builder().build();
-        final int handle = h.spawn(new FactionSlot(0), new Vec2d(4, 8), 1, 0.0)[0];
+        final int handle = spearman(h, 0, new Vec2d(4, 8));
+        final int enemy = spearman(h, 1, new Vec2d(28, 28)); // 31 blocks off: out of sight
         final MatchState state = KernelAccess.state(h.core());
         final List<OrderFinished> finished = new ArrayList<>();
 
         Unit(StateId from) {
             state.bus().subscribe(OrderFinished.class, finished::add);
+            int i = index();
             if (from.equals(UnitAi.WALKING)) {
                 h.submit(PlayerSlot.ADMIN, Move.replace(UnitSet.of(handle), new Vec2d(20, 8)));
                 h.step();
+            } else if (from.equals(UnitAi.WALKING_AND_FIGHTING)) {
+                state.orders().replace(i, OrderKind.ATTACK_MOVE, 20, 8, 0, 0);
+                state.ai().set(i, from);
+            } else if (!from.equals(UnitAi.IDLE)) {
+                double ex = from.equals(UnitAi.ATTACKING) ? 5.2 : 10; // in reach (a 0.5 gap), or 6 blocks off
+                place(enemy, ex, 8);
+                state.orders().replace(i, OrderKind.ATTACK, ex, 8, 0, 0, enemy);
+                state.ai().set(i, from);
+                state.ai().setData(i, from.equals(UnitAi.ATTACKING) ? 10 : 0, 0);
             }
             assertThat(leaf()).as("the row's start").isEqualTo(from);
         }
@@ -72,13 +92,24 @@ class HfsmTransitionsTest {
             return UnitAi.leaf(state.ai().code(index()));
         }
 
-        /** Publishes {@code message}; the trace events it added. */
-        List<UnitStateChanged> publish(BusMessage message) {
-            int before = state.outputs().size();
-            state.bus().publish(message);
+        void place(int unit, double x, double z) {
+            int k = Handle.index(unit);
+            state.motion().set(k, x, state.motion().y(k), z, 0);
+        }
+
+        /** Publishes {@code message}, or steps a tick for none; the unit's trace events that added. */
+        List<UnitStateChanged> publish(@Nullable BusMessage message) {
+            List<OutputEvent> added;
+            if (message == null) {
+                added = h.step().events();
+            } else {
+                int before = state.outputs().size();
+                state.bus().publish(message);
+                added = state.outputs().subList(before, state.outputs().size());
+            }
             List<UnitStateChanged> events = new ArrayList<>();
-            for (OutputEvent e : state.outputs().subList(before, state.outputs().size())) {
-                if (e instanceof UnitStateChanged change) {
+            for (OutputEvent e : added) {
+                if (e instanceof UnitStateChanged change && change.handle() == handle) {
                     events.add(change);
                 }
             }
@@ -86,8 +117,21 @@ class HfsmTransitionsTest {
         }
     }
 
+    private static int spearman(SimHarness h, int faction, Vec2d at) {
+        h.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.INFANTRY, new FactionSlot(faction), at, 1, 0));
+        return h.step().events().stream()
+                .filter(UnitCreated.class::isInstance)
+                .mapToInt(e -> ((UnitCreated) e).handle())
+                .findFirst()
+                .orElseThrow();
+    }
+
     private static Arguments row(
-            String name, StateId from, Function<Unit, BusMessage> message, StateId to, Consumer<Unit> effects) {
+            String name,
+            StateId from,
+            Function<Unit, @Nullable BusMessage> message,
+            StateId to,
+            Consumer<Unit> effects) {
         return Arguments.of(name, from, message, to, effects);
     }
 
@@ -97,10 +141,34 @@ class HfsmTransitionsTest {
         return new OrderReceived(u.handle);
     }
 
+    /** The player's attack on the enemy, 6 blocks off, set as the attack rule sets it, then announced. */
+    private static BusMessage newAttack(Unit u) {
+        u.place(u.enemy, 10, 8);
+        u.state.orders().replace(u.index(), OrderKind.ATTACK, 10, 8, 0, 0, u.enemy);
+        return new OrderReceived(u.handle);
+    }
+
+    /** An attack-move to (20, 20), set as its rule sets it, then announced. */
+    private static BusMessage newAttackMove(Unit u) {
+        u.state.orders().replace(u.index(), OrderKind.ATTACK_MOVE, 20, 20, 0, 0);
+        return new OrderReceived(u.handle);
+    }
+
     /** A stop as the stop rule makes it: the order cleared, then announced. */
     private static BusMessage stop(Unit u) {
         u.state.orders().clear(u.index());
         return new StopOrdered(u.handle);
+    }
+
+    /** The enemy's blow, as the COMBAT phase tells of one the unit lived through. */
+    private static BusMessage blow(Unit u) {
+        return new Attacked(u.handle, u.enemy);
+    }
+
+    /** The enemy stands in reach and the unit arrives. */
+    private static BusMessage arrivedInReach(Unit u) {
+        u.place(u.enemy, 5.2, 8);
+        return new Arrived(u.handle);
     }
 
     private static void nothingElse(Unit u) {
@@ -113,6 +181,23 @@ class HfsmTransitionsTest {
         nothingElse(u);
     }
 
+    private static Consumer<Unit> kept(int kind) {
+        return u -> {
+            assertThat(u.state.orders().kind(u.index())).isEqualTo(kind);
+            assertThat(u.finished).isEmpty();
+        };
+    }
+
+    private static Consumer<Unit> engaged(int before) {
+        return u -> {
+            assertThat(u.state.orders().kind(u.index())).isEqualTo(OrderKind.ENGAGE);
+            assertThat(u.state.orders().target(u.index())).isEqualTo(u.enemy);
+            assertThat(u.state.orders().size(u.index()))
+                    .as("its orders wait behind it")
+                    .isEqualTo(before + 1);
+        };
+    }
+
     private static Consumer<Unit> orderFinished(boolean failed) {
         return u -> {
             assertThat(u.state.orders().kind(u.index())).isEqualTo(OrderKind.NONE);
@@ -120,9 +205,13 @@ class HfsmTransitionsTest {
         };
     }
 
-    static Stream<Arguments> m1Rows() {
+    static Stream<Arguments> unitRows() {
         StateId idle = UnitAi.IDLE;
         StateId walking = UnitAi.WALKING;
+        StateId fighting = UnitAi.WALKING_AND_FIGHTING;
+        StateId approaching = UnitAi.APPROACHING;
+        StateId attacking = UnitAi.ATTACKING;
+        StateId chasing = UnitAi.CHASING;
         return Stream.of(
                 row("an order starts walking (the root's handler)", idle, HfsmTransitionsTest::newMove, walking, u -> {
                     assertThat(u.state.orders().targetZ(u.index())).isEqualTo(20);
@@ -175,15 +264,21 @@ class HfsmTransitionsTest {
                         walking,
                         HfsmTransitionsTest::orderKept),
                 row(
-                        "a finished order is no message for M1's states",
+                        "a finished order is no message for the states",
                         walking,
                         u -> new OrderFinished(u.handle, false),
                         walking,
                         u -> assertThat(u.state.orders().kind(u.index())).isEqualTo(OrderKind.MOVE)),
                 row(
-                        "changed stats reach no machine in M1",
+                        "changed stats reach no machine",
                         walking,
                         u -> new StatsChanged(StatScope.UNIT, u.handle, List.of("UnitMotion/walkSpeed")),
+                        walking,
+                        HfsmTransitionsTest::orderKept),
+                row(
+                        "a blow while walking is no reason to stop (a player's move)",
+                        walking,
+                        HfsmTransitionsTest::blow,
                         walking,
                         HfsmTransitionsTest::orderKept),
                 row(
@@ -203,12 +298,168 @@ class HfsmTransitionsTest {
                         idle,
                         u -> new PathInvalidated(u.handle),
                         idle,
-                        HfsmTransitionsTest::nothingElse));
+                        HfsmTransitionsTest::nothingElse),
+                // CMB-02 and ORD-04
+                row(
+                        "an attack order closes in",
+                        idle,
+                        HfsmTransitionsTest::newAttack,
+                        approaching,
+                        kept(OrderKind.ATTACK)),
+                row(
+                        "an attack while walking closes in",
+                        walking,
+                        HfsmTransitionsTest::newAttack,
+                        approaching,
+                        kept(OrderKind.ATTACK)),
+                row(
+                        "an attack-move walks and fights",
+                        idle,
+                        HfsmTransitionsTest::newAttackMove,
+                        fighting,
+                        kept(OrderKind.ATTACK_MOVE)),
+                row(
+                        "an attack-move while walking",
+                        walking,
+                        HfsmTransitionsTest::newAttackMove,
+                        fighting,
+                        kept(OrderKind.ATTACK_MOVE)),
+                row("an idle unit hit hits back", idle, HfsmTransitionsTest::blow, approaching, engaged(0)),
+                row(
+                        "an attack-move's arrival finishes it",
+                        fighting,
+                        u -> new Arrived(u.handle),
+                        idle,
+                        orderFinished(false)),
+                row(
+                        "a move while walking and fighting",
+                        fighting,
+                        HfsmTransitionsTest::newMove,
+                        walking,
+                        kept(OrderKind.MOVE)),
+                row(
+                        "a unit walking and fighting hits back, its walk waiting",
+                        fighting,
+                        HfsmTransitionsTest::blow,
+                        approaching,
+                        engaged(1)),
+                row(
+                        "an attack while walking and fighting",
+                        fighting,
+                        HfsmTransitionsTest::newAttack,
+                        approaching,
+                        kept(OrderKind.ATTACK)),
+                row(
+                        "a stop while walking and fighting idles",
+                        fighting,
+                        HfsmTransitionsTest::stop,
+                        idle,
+                        HfsmTransitionsTest::nothingElse),
+                row(
+                        "a stop while closing in idles",
+                        approaching,
+                        HfsmTransitionsTest::stop,
+                        idle,
+                        HfsmTransitionsTest::nothingElse),
+                row(
+                        "a move while closing in",
+                        approaching,
+                        HfsmTransitionsTest::newMove,
+                        walking,
+                        kept(OrderKind.MOVE)),
+                row(
+                        "an attack-move while closing in",
+                        approaching,
+                        HfsmTransitionsTest::newAttackMove,
+                        fighting,
+                        kept(OrderKind.ATTACK_MOVE)),
+                row(
+                        "arriving in reach strikes",
+                        approaching,
+                        HfsmTransitionsTest::arrivedInReach,
+                        attacking,
+                        kept(OrderKind.ATTACK)),
+                row(
+                        "arriving short of reach takes a free place and walks on",
+                        approaching,
+                        u -> new Arrived(u.handle),
+                        approaching,
+                        kept(OrderKind.ATTACK)),
+                row(
+                        "an attack the unit cannot reach fails",
+                        approaching,
+                        u -> new Stuck(u.handle, Stuck.GIVE_UP),
+                        idle,
+                        orderFinished(true)),
+                row(
+                        "a blow while closing in keeps the target",
+                        approaching,
+                        HfsmTransitionsTest::blow,
+                        approaching,
+                        kept(OrderKind.ATTACK)),
+                row(
+                        "a stop while striking idles",
+                        attacking,
+                        HfsmTransitionsTest::stop,
+                        idle,
+                        HfsmTransitionsTest::nothingElse),
+                row("a move while striking", attacking, HfsmTransitionsTest::newMove, walking, kept(OrderKind.MOVE)),
+                row(
+                        "an attack-move while striking",
+                        attacking,
+                        HfsmTransitionsTest::newAttackMove,
+                        fighting,
+                        kept(OrderKind.ATTACK_MOVE)),
+                row(
+                        "a new attack while striking closes in on it afresh",
+                        attacking,
+                        HfsmTransitionsTest::newAttack,
+                        approaching,
+                        kept(OrderKind.ATTACK)),
+                row(
+                        "a target stepping out of reach is chased (a tick)",
+                        attacking,
+                        u -> {
+                            u.place(u.enemy, 9, 8);
+                            return null;
+                        },
+                        chasing,
+                        kept(OrderKind.ATTACK)),
+                row(
+                        "a stop while chasing idles",
+                        chasing,
+                        HfsmTransitionsTest::stop,
+                        idle,
+                        HfsmTransitionsTest::nothingElse),
+                row("a move while chasing", chasing, HfsmTransitionsTest::newMove, walking, kept(OrderKind.MOVE)),
+                row(
+                        "an attack-move while chasing",
+                        chasing,
+                        HfsmTransitionsTest::newAttackMove,
+                        fighting,
+                        kept(OrderKind.ATTACK_MOVE)),
+                row(
+                        "a new attack while chasing closes in afresh",
+                        chasing,
+                        HfsmTransitionsTest::newAttack,
+                        approaching,
+                        kept(OrderKind.ATTACK)),
+                row(
+                        "catching up strikes",
+                        chasing,
+                        HfsmTransitionsTest::arrivedInReach,
+                        attacking,
+                        kept(OrderKind.ATTACK)));
     }
 
     @ParameterizedTest(name = "{0}")
-    @MethodSource("m1Rows")
-    void theM1Tree(String name, StateId from, Function<Unit, BusMessage> message, StateId to, Consumer<Unit> effects) {
+    @MethodSource("unitRows")
+    void theUnitTree(
+            String name,
+            StateId from,
+            Function<Unit, @Nullable BusMessage> message,
+            StateId to,
+            Consumer<Unit> effects) {
         Unit u = new Unit(from);
 
         List<UnitStateChanged> events = u.publish(message.apply(u));
@@ -227,18 +478,18 @@ class HfsmTransitionsTest {
     }
 
     @Test
-    void everyTransitionTheM1TreeDeclaresHasARow() {
+    void everyTransitionTheTreeDeclaresHasARow() {
         Hfsm<MatchState> tree = UnitAi.tree();
         List<String> declared = new ArrayList<>();
         for (StateId leaf : tree.leaves()) {
             for (StateId to : HfsmCheck.next(tree, leaf)) {
-                if (!to.equals(
-                        leaf)) { // re-entering itself is no M1 transition: IDLE stops nothing, WALKING carries on
+                if (!to.equals(leaf)) { // re-entering itself is no transition a row can tell from staying
                     declared.add(leaf + " -> " + to);
                 }
             }
         }
-        List<String> rows = m1Rows().map(Arguments::get)
+        List<String> rows = unitRows()
+                .map(Arguments::get)
                 .filter(a -> !a[1].equals(a[3]))
                 .map(a -> a[1] + " -> " + a[3])
                 .distinct()
@@ -247,12 +498,16 @@ class HfsmTransitionsTest {
     }
 
     @Test
-    void m1StatesDeclareTheirThinkPeriodsButNoneThinksYet() {
+    void theStatesThinkAtTheirPeriods() {
         Hfsm<MatchState> tree = UnitAi.tree();
         assertThat(tree.thinkPeriod(UnitAi.IDLE)).isEqualTo(10);
         assertThat(tree.thinkPeriod(UnitAi.WALKING)).isEqualTo(5);
+        assertThat(tree.thinkPeriod(UnitAi.WALKING_AND_FIGHTING)).isEqualTo(5);
+        assertThat(tree.thinkPeriod(UnitAi.APPROACHING)).isEqualTo(5);
+        assertThat(tree.thinkPeriod(UnitAi.ATTACKING)).isEqualTo(1);
+        assertThat(tree.thinkPeriod(UnitAi.CHASING)).isEqualTo(5);
         MatchState state = KernelAccess.state(SimHarness.builder().build().core());
-        assertThat(tree.machine(state, state.ai()).thinks()).isFalse();
+        assertThat(tree.machine(state, state.ai()).thinks()).isTrue();
     }
 
     @Test

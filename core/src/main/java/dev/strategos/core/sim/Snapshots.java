@@ -41,7 +41,7 @@ final class Snapshots {
                     motion.z(i),
                     motion.yaw(i),
                     new AiStateStore.Saved(UnitAi.leaf(ai.code(i)), ai.data0(i), ai.data1(i)),
-                    orders.kind(i) == OrderKind.MOVE ? new Vec2d(orders.targetX(i), orders.targetZ(i)) : null,
+                    orders.kind(i) != OrderKind.NONE ? new Vec2d(orders.targetX(i), orders.targetZ(i)) : null,
                     s.paths().unitPath(i),
                     motion.extra(i),
                     orders.saved(i),
@@ -91,7 +91,7 @@ final class Snapshots {
             state.ai().restore(index, unit.ai());
             Vec2d target = unit.target();
             if (target != null) {
-                state.orders().restore(index, OrderKind.MOVE, target.x(), target.z(), unit.orders());
+                state.orders().restore(index, target.x(), target.z(), unit.orders());
             } else {
                 state.orders().clear(index);
             }

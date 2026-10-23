@@ -11,12 +11,15 @@ import java.util.Locale;
 @CoreApi
 public enum UnitState {
     IDLE,
-    WALKING;
+    WALKING,
+    /** Fighting where it stands: striking, or choosing its next target (CMB-02); approaching and chasing walk. */
+    COMBAT;
 
     public int code() {
         return switch (this) {
             case IDLE -> 0;
             case WALKING -> 1;
+            case COMBAT -> 2;
         };
     }
 
@@ -24,6 +27,7 @@ public enum UnitState {
         return switch (code) {
             case 0 -> IDLE;
             case 1 -> WALKING;
+            case 2 -> COMBAT;
             default -> throw new IllegalArgumentException("no unit state with code " + code);
         };
     }

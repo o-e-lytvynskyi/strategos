@@ -467,8 +467,8 @@ perspective only.
   5. A dead unit runs `die()` and `tickDeath()`, its record and body are gone, and its owner is
      notified within one tick (L3).
 - **Tests:** L0, L1, L3, L5 · **Depends on:** DATA-02, UNIT-02 · **Size:** M · **Tier:** T0
-- **Progress:** 2026-10-23 — M2 T14: `sim.combat` (`Damage`, `DamageFormula`, `HealthStore`, `CombatSystem`), `UnitHurt` and `UnitDied`, the body's flash and death; `DamageFormulaTest` (1), `CombatSystemTest` (2, 5's core side), `combattests.vanilla_blows_become_core_damage` (4, and 3's vanilla health), `combattests.a_dead_units_body_dies_and_goes` (5); spec §1.6 rows 50–53. Open: 3's unit-on-unit hits, with CMB-02's melee
-- **Status:** in_progress
+- **Done:** 2026-10-23 — M2 T14: `sim.combat` (`Damage`, `DamageFormula`, `HealthStore`, `CombatSystem`), `UnitHurt` and `UnitDied`, the body's flash and death; `DamageFormulaTest` (1), `CombatSystemTest` (2, 5's core side), `combattests.vanilla_blows_become_core_damage` (4, and 3's vanilla health), `combattests.a_dead_units_body_dies_and_goes` (5); spec §1.6 rows 50–53. M2 T15: `combattests.squads_fight_as_the_core_predicts`, spearmen hitting spearmen, every living body's vanilla health full throughout (3)
+- **Status:** done
 
 #### CMB-02 · Melee combat with a default aggressive behaviour
 - **Value:** Soldiers close in, strike on a steady rhythm, chase a fleeing target and defend
@@ -487,7 +487,8 @@ perspective only.
   5. A GameTest fight between two squads ends with the survivors the L1 run predicts (L3).
   6. A 2 × 100 melee soak holds budgets A–C for 5 minutes (L6).
 - **Tests:** L0, L1, L3, L6 · **Depends on:** CMB-01, PATH-06 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Done:** 2026-10-23 — M2 T15: the COMBAT subtree, `Melee`, `Engagement`, the spearman; `MeleeTest` (1–4), `combattests.squads_fight_as_the_core_predicts` (5), `perftests.melee_soak_200`: A p50 0.79 ms, B p95 1.95 ms, C p95 6.07 ms over 6,000 ticks of 2 × 100 spearmen fighting at the fords (6); M2 spec §1.6 rows 67–72, 74
+- **Status:** done
 
 #### ORD-04 · Attack and attack-move
 - **Value:** Send armies to fight the way RTS players expect: attack a target, or attack-move
@@ -503,7 +504,8 @@ perspective only.
   4. Markers for attack and attack-move (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** ORD-02, CMB-02, UI-05 · **Size:** M ·
   **Tier:** T0
-- **Status:** specified
+- **Done:** 2026-10-23 — M2 T16: `Attack` and `AttackMove` with their rules, the client's context order, Z and H; `OrderIntentTest` (1), `MeleeTest.attackMovingUnitsFightWhatTheyMeetThenGoOn` (2), `combattests.attack_move_through_a_squad_as_the_core_predicts` (3), red and orange markers in `rts_select` on this Mac, for the owner's look (4); M2 spec §1.6 rows 73–74
+- **Status:** done
 
 #### CMB-06 · Health bars, hit flash and death
 - **Value:** You see who is winning a fight at a glance (P2).

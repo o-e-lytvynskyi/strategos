@@ -74,6 +74,8 @@ public final class PerfTests {
     private static final int STRESS_TICKS = 2_400;
     private static final int SOAK_LANE = 1;
     private static final int STRESS_LANE = 2;
+    private static final int MELEE_LANE = 3;
+    private static final int MELEE_TICKS = 6_000;
 
     private PerfTests() {}
 
@@ -545,8 +547,30 @@ public final class PerfTests {
                 window::sampleForeignLoad);
     }
 
-    /** The soak's verdicts: its own failures always, each budget as its gate says; an invalid run asserts nothing. */
+    /**
+     * CMB-02.6 (M2 spec §6): the melee soak, two factions of 100 spearmen on the proving ground, each on its bank of the
+     * river with half at each ford, sent at each other with attack-move; a wave ends when a side is gone or after 600
+     * ticks, and both are filled up to 100 and sent again, for 6,000 ticks paced at 20 a second; two seated viewers at
+     * the centre. Budgets A, B and C gate as in the crowd soak; the rest is reported. Writes
+     * {@code melee_soak_200.json}.
+     */
+    @StrategosTest(batch = "perf_melee", arena = "arena_flat_48", timeoutTicks = 40_000)
+    public static void meleeSoak200(GameTestHelper h) {
+        Window window = new Window();
+        CrowdSoak.start(
+                h,
+                new CrowdSoak.Config("melee_soak_200", 0, 100, MELEE_TICKS, true, 2, MELEE_LANE, true),
+                r -> judgeSoak(h, r, window, false),
+                window::start,
+                window::sampleForeignLoad);
+    }
+
+    /**
+     * The soak's verdicts: its own failures always (the melee soak's only reported), each budget as its gate says; an
+     * invalid run asserts nothing.
+     */
     private static void judgeSoak(GameTestHelper h, CrowdSoak.Result r, Window window, boolean stress) {
+        boolean melee = r.config().melee();
         double foreign = window.meanForeignLoad();
         long without = Percentiles.percentile(r.baseline(), 0.50);
         long[] b = Arrays.stream(r.tick()).map(t -> Math.max(0, t - without)).toArray();
@@ -566,14 +590,14 @@ public final class PerfTests {
             budgets.add("a_p99", budget("a", "budget A", r.core(), 0.99, scaled(10 * MS), broken, gated("a")));
             budgets.add("b", budget("b", "budget B", b, 0.95, scaled(17 * MS), broken, gated("b")));
             budgets.add("c", budget("c", "budget C", c, 0.95, scaled(23 * MS), broken, gated("c")));
-            budgets.add("d", budget("d", "budget D", r.paths(), 0.99, scaled(2 * MS), broken, gated("d")));
+            budgets.add("d", budget("d", "budget D", r.paths(), 0.99, scaled(2 * MS), broken, gated("d") && !melee));
             JsonArray viewers = new JsonArray();
             for (long bytes : r.viewerBytes()) {
                 long perSecond = Math.round(bytes / seconds);
                 JsonObject viewer = new JsonObject();
                 viewer.addProperty("bytesPerSecond", perSecond);
                 viewer.addProperty("limit", 100 * 1024);
-                if (perSecond > 100 * 1024 && gated("e")) {
+                if (perSecond > 100 * 1024 && gated("e") && !melee) {
                     broken.add("budget E: " + perSecond + " bytes per second for a viewer, above 102,400");
                 }
                 viewers.add(viewer);
@@ -581,7 +605,7 @@ public final class PerfTests {
             budgets.add("e", viewers);
             budgets.addProperty("e_bodies_paired_mean", r.viewerUnits());
             budgets.addProperty("e_bodies_paired_most", r.viewerUnitsMost());
-            if (r.navBytes() > 32L << 20 && gated("g")) {
+            if (r.navBytes() > 32L << 20 && gated("g") && !melee) {
                 broken.add("budget G: nav takes " + r.navBytes() + " bytes at 384²");
             }
         }
@@ -613,7 +637,15 @@ public final class PerfTests {
         json.addProperty("worst", r.worst());
         json.addProperty("journal", String.valueOf(r.journal()));
         json.addProperty("foreignCpu", foreign);
-        List<String> failures = r.failures();
+        if (melee) {
+            json.addProperty("waves", r.fights()[0]);
+            json.addProperty("hits", r.fights()[1]);
+            json.addProperty("deaths", r.fights()[2]);
+            JsonArray notes = new JsonArray();
+            r.failures().forEach(notes::add); // the crowd soak's own checks: fighting units stand by design
+            json.add("crowdChecks", notes);
+        }
+        List<String> failures = melee ? List.of() : r.failures();
         JsonArray failed = new JsonArray();
         failures.forEach(failed::add);
         broken.forEach(failed::add);

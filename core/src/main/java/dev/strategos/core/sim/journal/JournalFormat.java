@@ -120,7 +120,7 @@ public final class JournalFormat {
             throw new WireException("journal format version " + version + "; this build reads 1 and " + VERSION);
         }
         String fingerprint = in.readString(FINGERPRINT_BYTES);
-        if (!fingerprint.equals(CommandKinds.DEFAULT.fingerprint())) {
+        if (!CommandKinds.DEFAULT.reads(fingerprint)) {
             throw new WireException("journal written with commands [" + fingerprint + "]; this build has ["
                     + CommandKinds.DEFAULT.fingerprint() + "]");
         }

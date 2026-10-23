@@ -9,4 +9,6 @@ public sealed interface BusMessage
                 PathInvalidated,
                 Arrived,
                 Stuck,
-                StatsChanged {}
+                StatsChanged,
+                Attacked,
+                PlaceMoved {}

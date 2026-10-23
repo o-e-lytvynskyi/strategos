@@ -140,7 +140,7 @@ class OrderQueueTest {
         pushFront(q, 3);
         OrderQueues back = queues();
 
-        back.restore(0, q.kind(0), q.targetX(0), q.targetZ(0), q.saved(0));
+        back.restore(0, q.targetX(0), q.targetZ(0), q.saved(0));
 
         assertThat(targets(back)).isEqualTo(targets(q));
         OrderQueues single = queues();

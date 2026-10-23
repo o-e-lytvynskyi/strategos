@@ -142,11 +142,24 @@ public final class UnitGrid {
 
     /** The unit nearest (x, z) that passes {@code filter}, the lower index on a tie; -1 when none does. */
     public int nearest(double x, double z, UnitFilter filter) {
+        return nearest(x, z, Double.POSITIVE_INFINITY, filter);
+    }
+
+    /**
+     * The unit nearest (x, z) within {@code r} that passes {@code filter}, the lower index on a tie; -1 when none does.
+     * Only the cells that reach within {@code r} are looked at.
+     */
+    public int nearest(double x, double z, double r, UnitFilter filter) {
         int qx = clamp((int) Math.floor(x / CELL), cellsX);
         int qz = clamp((int) Math.floor(z / CELL), cellsZ);
         int best = -1;
-        double bestD2 = Double.POSITIVE_INFINITY;
+        double bestD2 = r * r;
         int rings = Math.max(cellsX, cellsZ);
+        if (r < Double.POSITIVE_INFINITY) {
+            rings = Math.min(rings, (int) Math.ceil(r / CELL) + 1);
+        } else {
+            bestD2 = Double.POSITIVE_INFINITY;
+        }
         for (int ring = 0; ring <= rings; ring++) {
             if (best >= 0 && ring > 0) {
                 double bound = outside(x, z, qx, qz, ring - 1);
@@ -172,7 +185,7 @@ public final class UnitGrid {
                         double dx = xs[e] - x;
                         double dz = zs[e] - z;
                         double d2 = dx * dx + dz * dz;
-                        if ((d2 < bestD2 || (d2 == bestD2 && units[e] < best))
+                        if ((d2 < bestD2 || (d2 == bestD2 && (best < 0 || units[e] < best)))
                                 && filter.passes(unitFaction[e], unitClasses[e])) {
                             best = units[e];
                             bestD2 = d2;
