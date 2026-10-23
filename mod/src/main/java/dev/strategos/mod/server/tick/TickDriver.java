@@ -20,6 +20,7 @@ public final class TickDriver {
     public static void onServerTickPre(ServerTickEvent.Pre event) {
         StrategosServer server = StrategosServer.getOrNull();
         if (server != null) {
+            server.betweenTicks().tickStarts();
             server.spawnBudget().reset(server.settings().spawnsPerTick());
             server.writer().startTick();
             for (MatchRuntime rt : server.matches().preparing()) {

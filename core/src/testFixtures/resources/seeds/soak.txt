@@ -1,0 +1,3 @@
+# soak, PERF-05's crowd soak (M1 spec 8.5): line 1 the 600-unit soak, line 2 the 1,200-unit stress pass: one seed per line; append-only (M0 spec 7.10). Lines starting with # are ignored.
+5050
+1200

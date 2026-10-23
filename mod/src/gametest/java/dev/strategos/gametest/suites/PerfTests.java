@@ -68,6 +68,10 @@ public final class PerfTests {
     private static final int GROUP_RESULTS_TICKS = 5;
     private static final int PATH_WARM_UP = 2;
     private static final int PATH_RUNS = 10;
+    private static final int SOAK_TICKS = Integer.getInteger("strategos.soak.ticks", 12_000);
+    private static final int STRESS_TICKS = 2_400;
+    private static final int SOAK_LANE = 1;
+    private static final int STRESS_LANE = 2;
 
     private PerfTests() {}
 
@@ -503,6 +507,142 @@ public final class PerfTests {
                             "600 units in groups made " + r.stats().requests() + " requests, over a tenth of 600");
                 })
                 .thenSucceed();
+    }
+
+    /**
+     * PERF-05.1–2 (M1 spec §8.5): the crowd soak, 600 units on the proving ground under 12,000 ticks of seeded
+     * orders (unless {@code strategos.soak.ticks} shortens them), two seated viewers at its centre. It fails on a failed order, more than 1 nudge per 1,000 unit
+     * orders or a unit more than 400 ticks without progress, and, for each gate listed, on a broken budget: A p50 at most
+     * 5 ms and p99 at most 10 ms; B p95 at most 17 ms, the tick less the same arena's median tick without units; C p95
+     * at most 23 ms, the tick with our handlers' time before it; D p99 at most 2 ms; E at most 100 KB/s per viewer; G
+     * nav at most 32 MB. Writes {@code crowd_soak_600.json} and the match's journal beside it.
+     */
+    @StrategosTest(batch = "perf_soak", arena = "arena_flat_48", timeoutTicks = 80_000)
+    public static void crowdSoak600(GameTestHelper h) {
+        Window window = new Window();
+        CrowdSoak.start(
+                h,
+                new CrowdSoak.Config("crowd_soak_600", 0, 300, SOAK_TICKS, true, 2, SOAK_LANE),
+                r -> judgeSoak(h, r, window, false),
+                window::start,
+                window::sampleForeignLoad);
+    }
+
+    /**
+     * PERF-05.3: the stress pass, 1,200 units under {@value #STRESS_TICKS} ticks of seeded orders: only budget C, p95 at
+     * most 50 ms, gates; the rest is reported. Writes {@code stress_1200.json}.
+     */
+    @StrategosTest(batch = "perf_stress", arena = "arena_flat_48", timeoutTicks = 80_000)
+    public static void stress1200(GameTestHelper h) {
+        Window window = new Window();
+        CrowdSoak.start(
+                h,
+                new CrowdSoak.Config("stress_1200", 1, 600, STRESS_TICKS, true, 0, STRESS_LANE),
+                r -> judgeSoak(h, r, window, true),
+                window::start,
+                window::sampleForeignLoad);
+    }
+
+    /** The soak's verdicts: its own failures always, each budget as its gate says; an invalid run asserts nothing. */
+    private static void judgeSoak(GameTestHelper h, CrowdSoak.Result r, Window window, boolean stress) {
+        double foreign = window.meanForeignLoad();
+        long without = Percentiles.percentile(r.baseline(), 0.50);
+        long[] b = Arrays.stream(r.tick()).map(t -> Math.max(0, t - without)).toArray();
+        long[] c = new long[r.tick().length];
+        for (int i = 0; i < c.length; i++) {
+            c[i] = r.tick()[i] + r.between()[i];
+        }
+        double seconds = r.tick().length / 20.0;
+        List<String> broken = new ArrayList<>();
+        JsonObject budgets = new JsonObject();
+        if (stress) {
+            budgets.add("c", budget("c", "budget C, stress", c, 0.95, scaled(50 * MS), broken, true));
+            budgets.add("a", budget("a", "budget A", r.core(), 0.99, Long.MAX_VALUE, broken, false));
+            budgets.add("d", budget("d", "budget D", r.paths(), 0.99, Long.MAX_VALUE, broken, false));
+        } else {
+            budgets.add("a", budget("a", "budget A", r.core(), 0.50, scaled(5 * MS), broken, gated("a")));
+            budgets.add("a_p99", budget("a", "budget A", r.core(), 0.99, scaled(10 * MS), broken, gated("a")));
+            budgets.add("b", budget("b", "budget B", b, 0.95, scaled(17 * MS), broken, gated("b")));
+            budgets.add("c", budget("c", "budget C", c, 0.95, scaled(23 * MS), broken, gated("c")));
+            budgets.add("d", budget("d", "budget D", r.paths(), 0.99, scaled(2 * MS), broken, gated("d")));
+            JsonArray viewers = new JsonArray();
+            for (long bytes : r.viewerBytes()) {
+                long perSecond = Math.round(bytes / seconds);
+                JsonObject viewer = new JsonObject();
+                viewer.addProperty("bytesPerSecond", perSecond);
+                viewer.addProperty("limit", 100 * 1024);
+                if (perSecond > 100 * 1024 && gated("e")) {
+                    broken.add("budget E: " + perSecond + " bytes per second for a viewer, above 102,400");
+                }
+                viewers.add(viewer);
+            }
+            budgets.add("e", viewers);
+            budgets.addProperty("e_bodies_paired_mean", r.viewerUnits());
+            budgets.addProperty("e_bodies_paired_most", r.viewerUnitsMost());
+            if (r.navBytes() > 32L << 20 && gated("g")) {
+                broken.add("budget G: nav takes " + r.navBytes() + " bytes at 384²");
+            }
+        }
+        JsonObject json = new JsonObject();
+        json.addProperty("test", r.config().name());
+        json.addProperty("seed", r.seed());
+        json.addProperty("units", r.units());
+        json.addProperty("ticks", r.config().ticks());
+        json.addProperty("samples", r.tick().length);
+        json.addProperty("baselineTickP50", without);
+        json.addProperty("baselineTickP95", Percentiles.percentile(r.baseline(), 0.95));
+        json.addProperty("tickP50", Percentiles.percentile(r.tick(), 0.50));
+        json.addProperty("tickP95", Percentiles.percentile(r.tick(), 0.95));
+        json.addProperty("betweenTicksMax", Arrays.stream(r.between()).max().orElse(0));
+        json.add("budgets", budgets);
+        json.addProperty("navBytes", r.navBytes());
+        json.addProperty("groupOrders", r.groupOrders());
+        json.addProperty("unitOrders", r.unitOrders());
+        json.addProperty("failedOrders", r.failedOrders());
+        json.addProperty("nudges", r.nudges());
+        JsonArray rungs = new JsonArray();
+        Arrays.stream(r.rungs()).forEach(rungs::add);
+        json.add("ladderRungs", rungs);
+        JsonArray histogram = new JsonArray();
+        Arrays.stream(r.stuck()).forEach(histogram::add);
+        json.add("stuckHistogram", histogram);
+        json.addProperty("stuckHistogramBuckets", "<40, 40, 100, 200, 400, 600+ ticks without progress");
+        json.addProperty("mostStuck", r.mostStuck());
+        json.addProperty("worst", r.worst());
+        json.addProperty("journal", String.valueOf(r.journal()));
+        json.addProperty("foreignCpu", foreign);
+        List<String> failures = r.failures();
+        JsonArray failed = new JsonArray();
+        failures.forEach(failed::add);
+        broken.forEach(failed::add);
+        json.add("violations", failed);
+        String verdict = foreign > INVALID_FOREIGN_LOAD ? "invalid" : failed.isEmpty() ? "pass" : "fail";
+        json.addProperty("verdict", verdict);
+        write(r.config().name(), json);
+        if (verdict.equals("fail")) {
+            h.fail(String.join("; ", failures.isEmpty() ? broken : failures));
+        } else {
+            h.succeed();
+        }
+    }
+
+    /** One budget's figure as JSON; a breach of a gated one joins {@code broken}. */
+    private static JsonObject budget(
+            String gate, String name, long[] samples, double q, long limit, List<String> broken, boolean gates) {
+        long value = Percentiles.percentile(samples, q);
+        JsonObject json = new JsonObject();
+        json.addProperty("gate", gate);
+        json.addProperty("percentile", q);
+        json.addProperty("ns", value);
+        json.addProperty("p50", Percentiles.percentile(samples, 0.50));
+        json.addProperty("max", Arrays.stream(samples).max().orElse(0));
+        json.addProperty("limit", limit == Long.MAX_VALUE ? -1 : limit);
+        boolean over = value > limit;
+        json.addProperty("verdict", limit == Long.MAX_VALUE || !gates ? "report-only" : over ? "fail" : "pass");
+        if (over && gates) {
+            broken.add(name + ": p" + Math.round(q * 100) + " " + value + " ns above the limit " + limit);
+        }
+        return json;
     }
 
     /** Whether a gate is listed in {@code strategos.perf.gates}, so it fails the run rather than reports. */

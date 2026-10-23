@@ -19,6 +19,10 @@ Answer in chat or here; the next session applies the answers.
 3. **Your consent for M1's tests (2026-10-22):** every kind of test, client windows included. With
    the lid closed and no display, a Mac window may not render, so client scenarios run on the
    Linux route on CI first; a Mac run is used only where a measurement needs this Mac.
+   **And for today (2026-10-23):** «мак до вечера в твоем распоряжении, можешь делать все, что
+   посчитаешь нужным, чтобы ускорить разработку, кроме субагентов» — this Mac, client windows
+   included, is mine until the evening; no subagents. When you say so, the state is saved and work
+   goes on without windows.
 4. **Open decisions,** none urgent:
    - D-03 civilisation themes (M7);
    - D-20 multiplayer hosting (M7);
@@ -227,15 +231,25 @@ Answer in chat or here; the next session applies the answers.
   0.26–0.33 s against a 2 s target (the unit types themselves take 2 ms of it), and each of twelve
   planted mistakes was reported at its file and field. [Report](spikes/S12-content-cycle.md).
   ADR-0012, how content loads, is confirmed. Card DATA-03 is done.
+- 2026-10-23 · **M1 T26 Crowd soak, the M1 performance gate:** 600 units on the proving ground took
+  random group orders for ten real minutes (18,437 unit orders): none failed, none needed the
+  ladder's nudge, and no unit stood more than 11 seconds without progress. Every budget held with
+  room to spare: our core 1.6 ms a tick (limit 5), everything Strategos adds 4.7 ms (17), the whole
+  server tick 7.3 ms (23), pathfinding on the main thread 0.34 ms (2), 3.3 KB/s per watching player
+  (100), navigation memory 2.9 MB (32). 1,200 units kept the tick at 9.4 ms (limit 50). The soak
+  runs in `verifyPerf` (about 15 minutes, paced like a real server) and its order checks in
+  `verifySlow` (40 s); the nightly CI run does the first 2 minutes. Budgets B–E only report for now:
+  the rule wants five steady runs first, and two of mine were lost; the rest come with T27. Card
+  PERF-05 is done.
 
 ## Now
 
-- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 27 of 29 tasks done (T28, PATH-08, joined by its trigger).
-- **In progress:** none.
-- **Last finished task:** M1 T16 (2026-10-23). The agents' branches `wip/m1-t17-unitai-hfsm` and
+- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 28 of 29 tasks done (T28, PATH-08, joined by its trigger). M2's spec is written ([milestones/M2-command.md](milestones/M2-command.md)).
+- **In progress:** M2 T1, spike S9 (the commander camera), on this Mac while you lend it today.
+- **Last finished task:** M1 T26 (2026-10-23). The agents' branches `wip/m1-t17-unitai-hfsm` and
   `wip/m1-t25-debug-overlay` are merged and kept on GitHub for the record.
-- **Next task:** M1 T26 · Crowd soak and the M1 perf gate, then T27 (M1 close); then M2, on your
-  go-ahead of 2026-10-23.
+- **Next task:** M2 T1 (S9) while the Mac's windows are mine; M1 T27 (M1 close, headless) after;
+  then M2's headless tasks.
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 220 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.

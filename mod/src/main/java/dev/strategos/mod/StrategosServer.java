@@ -18,6 +18,7 @@ import dev.strategos.mod.server.jobs.PathThreads;
 import dev.strategos.mod.server.match.MapImports;
 import dev.strategos.mod.server.match.MatchRegistry;
 import dev.strategos.mod.server.net.NetGateway;
+import dev.strategos.mod.server.tick.BetweenTicks;
 import dev.strategos.mod.server.tick.FaultBarrier;
 import dev.strategos.mod.server.world.ArenaWorld;
 import dev.strategos.mod.server.world.BlockClassTable;
@@ -54,6 +55,7 @@ public final class StrategosServer {
     private final MinecraftServer server;
     private final StrategosSettings settings;
     private final SpawnBudget spawnBudget = new SpawnBudget();
+    private final BetweenTicks betweenTicks = new BetweenTicks();
     private final FaultBarrier faults;
     private final MatchRegistry matches;
     private final BlockWriter writer;
@@ -218,6 +220,11 @@ public final class StrategosServer {
         return faults;
     }
 
+    /** Our work outside the server's measured ticks (budget C). */
+    public BetweenTicks betweenTicks() {
+        return betweenTicks;
+    }
+
     public SpawnBudget spawnBudget() {
         return spawnBudget;
     }
@@ -254,9 +261,11 @@ public final class StrategosServer {
     public static void onTickPost(ServerTickEvent.Post event) {
         StrategosServer s = current;
         if (s != null) {
+            long start = System.nanoTime();
             s.perf.tick();
             s.debug.tick();
             s.net.flush();
+            s.betweenTicks.tickEnds(System.nanoTime() - start);
         }
     }
 

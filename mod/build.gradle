@@ -123,6 +123,10 @@ neoForge {
             systemProperty 'strategos.gametest.report', file('build/test-results/gametest-slow/TEST-gametest-slow.xml').absolutePath
             systemProperty 'strategos.gametest.slow', 'true'
             systemProperty 'strategos.faults.rethrow', 'true'
+            systemProperty 'strategos.gametest.filter', providers.gradleProperty('gametest.filter').getOrElse('')
+            // [M1 T26] the crowd soak's correctness checks: its length, and where its report and journal go
+            systemProperty 'strategos.soak.ticks', providers.gradleProperty('soak.ticks').getOrElse('12000')
+            systemProperty 'strategos.soak.out', file('build/reports/soak').absolutePath
         }
         // [T3]
         serverSmoke {
@@ -144,9 +148,11 @@ neoForge {
             systemProperty 'strategos.gametest.report', file('build/test-results/gametest-perf/TEST-gametest-perf.xml').absolutePath
             systemProperty 'strategos.gametest.perf', 'true'
             // no backslash: MDG writes it doubled into the VM-args file, and the regex then never matches
-            systemProperty 'strategos.gametest.filter', '^perftests[.]'
+            systemProperty 'strategos.gametest.filter', '^perftests[.]' + providers.gradleProperty('perf.filter').getOrElse('')
             systemProperty 'strategos.perf.out', file('build/reports/perf').absolutePath
             systemProperty 'strategos.perf.ciFactor', providers.gradleProperty('perf.ciFactor').getOrElse('1')
+            // [M1 T26] the crowd soak's length; CI's nightly run shortens it to fit its job
+            systemProperty 'strategos.soak.ticks', providers.gradleProperty('soak.ticks').getOrElse('12000')
             // gates that fail on a breach; the others only report (QA-07: enabled after 5 stable runs)
             systemProperty 'strategos.perf.gates', providers.gradleProperty('perf.gates').getOrElse('a,g')
             // dev only: replaces the measured foreign CPU load, for the invalid-run check (QA-07.3)
@@ -177,6 +183,8 @@ neoForge {
             systemProperty 'strategos.scenario', providers.gradleProperty('scenario').getOrElse('smoke')
             systemProperty 'strategos.scenario.out', file('build/scenario/out').absolutePath
             systemProperty 'strategos.scenario.timeoutSeconds', providers.gradleProperty('scenario.timeoutSeconds').getOrElse('180')
+            // [M2 T1] the server a joining scenario (S9) connects to
+            systemProperty 'strategos.scenario.server', providers.gradleProperty('scenario.server').getOrElse('localhost:25598')
             systemProperty 'strategos.s4.count', providers.gradleProperty('s4.count').getOrElse('200')
             systemProperty 'strategos.s4.renderDistance', providers.gradleProperty('s4.renderDistance').getOrElse('16')
         }
@@ -445,6 +453,8 @@ gameTestGuard('runGameTestPerf', file('build/test-results/gametest-perf/TEST-gam
 // stop the build, so the message starts with INVALID, distinct from a budget failure (§1.6 row 32).
 def perfOut = file('build/reports/perf')
 tasks.matching { it.name == 'runGameTestPerf' }.configureEach {
+    // [M1 T26] the crowd soak runs 12,000 ticks paced at 50 ms, ten minutes of wall time, and the stress pass two
+    timeout = Duration.ofMinutes(40)
     // The server exits with the number of failed tests; the guard's report check names the budget instead.
     ignoreExitValue = true
     // org.gradle.parallel would otherwise run the perf batch beside JMH and spoil both measurements.
@@ -538,9 +548,10 @@ tasks.matching { it.name == 'runServerSmokeArena2' }.configureEach {
 // out/<id>, or out/<id>-lithium for the -Pcompat.server run (§1.6 D row 60).
 def prepareSpike = tasks.register('prepareSpike', Sync) {
     // S8 counts surfaces on vanilla terrain, so it gets a normal world with the census seed (M1 T3); S12's world
-    // holds its two data packs, the errors pack disabled at creation (M1 T16).
+    // holds its two data packs, the errors pack disabled at creation (M1 T16); S9 a view distance of 10 (M2 T1).
     def spike = providers.gradleProperty('spike').getOrElse('')
-    from spike == 's8' ? 'src/gametest/spike-s8-gamedir' : spike == 's12' ? 'src/gametest/spike-s12-gamedir' : 'src/gametest/spike-gamedir'
+    def dirs = [s8: 'src/gametest/spike-s8-gamedir', s9: 'src/gametest/spike-s9-gamedir', s12: 'src/gametest/spike-s12-gamedir']
+    from dirs.get(spike, 'src/gametest/spike-gamedir')
     into layout.buildDirectory.dir('spike')
     preserve { include 'out/**' }                       // both runs of a spike, and the JFR recording
     outputs.upToDateWhen { false }                      // as prepareServerSmoke
@@ -552,7 +563,7 @@ def spikeOut = file('build/spike/out')
 tasks.matching { it.name == 'runSpike' }.configureEach {
     timeout = Duration.ofMinutes(45)
     doFirst {
-        if (!(spikeId in ['s1', 's2', 's7', 's8', 's12'])) throw new GradleException('Use -Pspike=s1, s2, s7, s8 or s12')
+        if (!(spikeId in ['s1', 's2', 's7', 's8', 's9', 's12'])) throw new GradleException('Use -Pspike=s1, s2, s7, s8, s9 or s12')
         new File(spikeOut, "${spikeDirName}/DONE").delete()
     }
     doLast {

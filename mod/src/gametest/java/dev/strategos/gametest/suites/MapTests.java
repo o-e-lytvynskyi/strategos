@@ -81,6 +81,7 @@ public final class MapTests {
     private static final int FIFTY = 50;
     private static final int CROWD_LANE = 7;
     private static final int CROWD = 200;
+    private static final int SOAK_LANE = 8;
 
     private MapTests() {}
 
@@ -531,8 +532,39 @@ public final class MapTests {
         return ticks;
     }
 
+    /**
+     * PERF-05.2's correctness checks in {@code verifySlow} (M1 spec §1.6 D row 10): the crowd soak of 600 units without
+     * budgets, its first {@code strategos.soak.ticks} ticks (all 12,000 by default): no failed order, at most 1 nudge
+     * per 1,000 unit orders, no unit more than 400 ticks without progress.
+     */
+    @StrategosTest(batch = "map_soak", solo = true, timeoutTicks = 80_000)
+    public static void crowdSoakOrders(GameTestHelper h) {
+        int ticks = Integer.getInteger("strategos.soak.ticks", 12_000);
+        CrowdSoak.start(
+                h,
+                new CrowdSoak.Config("crowd_soak_orders", 0, 300, ticks, false, 0, SOAK_LANE),
+                r -> {
+                    LOG.info(
+                            "crowd soak: {} unit orders in {} groups, rungs {}, stuck histogram {}, most stuck {} ({})",
+                            r.unitOrders(),
+                            r.groupOrders(),
+                            Arrays.toString(r.rungs()),
+                            Arrays.toString(r.stuck()),
+                            r.mostStuck(),
+                            r.worst());
+                    List<String> failures = r.failures();
+                    if (failures.isEmpty()) {
+                        h.succeed();
+                    } else {
+                        h.fail(String.join("; ", failures));
+                    }
+                },
+                () -> {},
+                () -> {});
+    }
+
     /** A proving-ground match in the test's lane east of it, {@code dz} blocks along Z, its band from the test's floor. */
-    private static MatchRuntime provingGround(GameTestHelper h, int lane, int dz) {
+    static MatchRuntime provingGround(GameTestHelper h, int lane, int dz) {
         MapManifest m = manifest(h);
         BlockPos corner = h.absolutePos(BlockPos.ZERO);
         BlockPos origin = new BlockPos(corner.getX() + lane * FAR, corner.getY(), corner.getZ() + dz);
@@ -543,7 +575,7 @@ public final class MapTests {
         return MatchFixture.create(h, space, options);
     }
 
-    private static MapManifest manifest(GameTestHelper h) {
+    static MapManifest manifest(GameTestHelper h) {
         return MapPackageLoader.load(h.getLevel().getServer(), PROVING_GROUND).manifest();
     }
 

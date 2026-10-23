@@ -107,6 +107,21 @@ public final class StrategosGameTests {
         afterBatch(level, "map_roundtrip");
     }
 
+    @AfterBatch(batch = "map_soak")
+    public static void afterMapSoak(ServerLevel level) {
+        afterBatch(level, "map_soak");
+    }
+
+    @AfterBatch(batch = "perf_soak")
+    public static void afterPerfSoak(ServerLevel level) {
+        afterBatch(level, "perf_soak");
+    }
+
+    @AfterBatch(batch = "perf_stress")
+    public static void afterPerfStress(ServerLevel level) {
+        afterBatch(level, "perf_stress");
+    }
+
     @AfterBatch(batch = "writer")
     public static void afterWriter(ServerLevel level) {
         afterBatch(level, "writer");
@@ -138,6 +153,7 @@ public final class StrategosGameTests {
     }
 
     private static void afterBatch(ServerLevel level, String batch) {
+        TickPacer.pace(false);
         MockViewer.closeAll();
         MatchFixture.disposeAll(level);
         BatchEndCheck.verify(level, batch);

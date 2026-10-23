@@ -9,7 +9,25 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24, T16
+## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24, T16, T26
+
+- **M1 T26 · Crowd soak and the M1 perf gate** — PERF-05 done.
+  - **Results:** `CrowdSoak` (gametest) drives the soak on the imported proving ground with
+    `SoakOrders` (test kit) from `seeds/soak.txt`; `perftests.crowd_soak_600` and
+    `perftests.stress_1200` in `verifyPerf`, paced by `TickPacer`; `maptests.crowd_soak_orders` in
+    `verifySlow`; `SoakSeedReplayTest` (L1); `BetweenTicks` adds our post-tick work and payload
+    handlers to budget C; `runGameTestPerf` gets 40 minutes and `-Pperf.filter`, CI's nightly run
+    shortens the soak to 2,400 ticks. `verify verifySlow verifySoak` green.
+  - **Measured:** the soak: A 1.6 / 3.1 ms, B 4.7, C 7.3, D 0.34 ms, E 3.3 KB/s, G 2.9 MB; 18,437
+    unit orders, none failed, no nudge, at most 214 ticks without progress. Stress at 1,200: C p95
+    9.4 ms. Three valid repeat runs: C, D and E vary by at most 4.3 %, B by 17 % with its baseline.
+  - **Problems:** unpaced, the GameTest server gave the path workers no time and budget D read
+    6.0 ms at p99; paced in `ServerTickEvent.Post`, after the tick's time is stored, it reads 0.34.
+    Our own post-tick work runs after that point too and was outside budget C. Spawns above 300 are
+    refused. Bodies wait for their chunks' entities in wall time, not ticks. A compile of the next
+    task's code during the repeat runs broke two of the five: gates `b`–`e` stay report-only until
+    T27's runs (D row 166).
+  - **Next:** M2 T1 (S9) on the Mac while it is lent; M1 T27 headless after.
 
 - **M1 T16 · Content loading, client sync and spike S12** — DATA-03 done; ADR-0012 confirmed.
   - **Results:** `TemplateReloadListener` reads `data/*/strategos/templates/**.json` off the main

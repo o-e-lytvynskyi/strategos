@@ -697,7 +697,8 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
   4. A failing seed reproduces exactly from its journal (L1).
 - **Tests:** L1, L6 · **Fixtures:** soak seed set · **Depends on:** PATH-07, PATH-09, MAP-01,
   QA-07, QA-19 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Done:** 2026-10-23 — M1 T26: `perftests.crowd_soak_600` from `verifyPerf`, paced at 20 ticks a second, writes `crowd_soak_600.json` (percentiles of A–E, G, the stuck histogram, nudges, bytes) and its journal (1; spec §1.6 D rows 161–165); it fails on a failed order, more than 1 nudge per 1,000 unit orders, a unit over 400 ticks without progress, and on a broken budget for each gate listed: A 1.6 / 3.1 ms, B 4.7, C 7.3, D 0.34 ms, E 3.3 KB/s, G 2.9 MB, no failed order, no nudge, at most 214 ticks stuck; gates `b`–`e` report until QA-07's five stable runs (2; D row 166); `perftests.stress_1200`: C p95 9.4 ms (3); `SoakSeedReplayTest` (4); `maptests.crowd_soak_orders` runs the checks in `verifySlow` (D row 165)
+- **Status:** done
 
 ### Reserve (outside the milestone's totals and critical path)
 
