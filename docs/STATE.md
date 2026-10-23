@@ -336,6 +336,11 @@ Answer in chat or here; the next session applies the answers.
   a bar over its head that runs from green to red as it loses hit points; F1 hides them with the
   rest of the interface. They cost a few hundredths of a millisecond a frame. Card CMB-06 is done;
   its pictures wait for you with the others (item 8).
+- 2026-10-23 · **M2 T18 Sounds:** a unit that is hit or dies now sounds, but only for players who
+  can see it; from the RTS camera the sound carries to the ground in view and somewhat beyond. An
+  order you give answers with a short "yes", a refused one with a "no". The server itself never
+  plays a unit's sound, so nothing leaks past fog of war later. Card AUD-01 is done; whether it
+  sounds right is yours to judge in the demo.
 
 ## Now
 
@@ -343,7 +348,7 @@ Answer in chat or here; the next session applies the answers.
 - **In progress:** none.
 - **Last finished task:** M1 T26 (2026-10-23). The agents' branches `wip/m1-t17-unitai-hfsm` and
   `wip/m1-t25-debug-overlay` are merged and kept on GitHub for the record.
-- **Last M2 task:** T17, health bars (2026-10-23); T1–T13, T17, T19, T21 done; T14 done but for its unit-on-unit check with T15; three consent-batch items (T22) done early.
+- **Last M2 task:** T18, sounds (2026-10-23); T1–T13, T17–T19, T21 done; T14 done but for its unit-on-unit check with T15; three consent-batch items (T22) done early.
 - **Next task:** while the Mac's windows are mine today, the window work that is ready (M2's L4
   items as their tasks land); M1 T27 (M1 close, headless); then M2's tasks in the spec's order.
 - **WIP branch:** none.

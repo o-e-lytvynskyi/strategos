@@ -74,6 +74,16 @@ public final class UnitEntity extends LivingEntity implements IEntityWithComplex
         };
     }
 
+    /**
+     * A body never sounds by itself (AUD-01): a server-side sound reaches everyone in range, fog or not, so every
+     * vanilla path through {@code Entity#playSound} (a splash, a death, a hurt) stops here; the unit's sounds are
+     * {@code fx} events its trackers play.
+     */
+    @Override
+    public boolean isSilent() {
+        return true;
+    }
+
     @Override
     public boolean shouldRenderAtSqrDistance(double distance) {
         return distance < RENDER_DISTANCE * RENDER_DISTANCE;

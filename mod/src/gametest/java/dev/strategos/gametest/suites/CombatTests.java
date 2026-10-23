@@ -8,6 +8,8 @@ import static dev.strategos.gametest.suites.Units.onlyUnit;
 import static dev.strategos.gametest.suites.Units.spawn;
 
 import com.mojang.authlib.GameProfile;
+import dev.strategos.core.client.audio.Sounds;
+import dev.strategos.core.protocol.FxKind;
 import dev.strategos.core.protocol.NoticeKind;
 import dev.strategos.core.protocol.NoticeMsg;
 import dev.strategos.core.shared.PlayerSlot;
@@ -23,15 +25,23 @@ import dev.strategos.mod.server.net.payload.FeedbackPayload;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Consumer;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.entity.projectile.Arrow;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.common.util.FakePlayer;
 import net.neoforged.neoforge.common.util.FakePlayerFactory;
+import net.neoforged.neoforge.event.PlayLevelSoundEvent;
 
 /**
  * The damage model on real bodies (CMB-01): vanilla's blows reach the core as its own damage, the body's vanilla health
@@ -152,6 +162,81 @@ public final class CombatTests {
                     check(rt.bodies().dyingCount() == 0, rt.bodies().dyingCount() + " bodies still dying");
                     check(Units.bodiesOf(h.getLevel(), rt).isEmpty(), "a body of the match is still in the level");
                     owner.close();
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * AUD-01.2: bodies hit by a player, shot and killed, and asked to sound the way vanilla's splash, fire and fall
+     * do, never sound on the server through either of vanilla's sound events, while a pig hit beside them does (the
+     * positive control); and every cue the client plays is a vanilla sound.
+     */
+    @StrategosTest(timeoutTicks = 200)
+    public static void noServerSounds(GameTestHelper h) {
+        for (Sounds.Cue cue : List.of(
+                Sounds.ORDER_ACCEPTED, Sounds.ORDER_REFUSED, Sounds.of(FxKind.UNIT_HIT), Sounds.of(FxKind.UNIT_DIED))) {
+            check(
+                    BuiltInRegistries.SOUND_EVENT.containsKey(ResourceLocation.parse(cue.sound())),
+                    cue.sound() + " is no vanilla sound");
+        }
+        MatchRuntime rt = match(h);
+        spawn(rt, 16, 16, 2, 3);
+        Pig pig = h.spawnWithNoFreeWill(EntityType.PIG, new Vec3(4.5, 2, 4.5));
+        var heard = new Object() {
+            int bodies;
+            int pig;
+        };
+        Consumer<PlayLevelSoundEvent.AtEntity> atEntity = e -> {
+            if (e.getEntity() instanceof UnitEntity) {
+                heard.bodies++;
+            }
+        };
+        Consumer<PlayLevelSoundEvent.AtPosition> atPosition = e -> {
+            for (UnitEntity body : Units.bodiesOf(h.getLevel(), rt)) {
+                if (body.position().distanceTo(e.getPosition()) < 1e-3) {
+                    heard.bodies++;
+                }
+            }
+            if (pig.position().distanceTo(e.getPosition()) < 1e-3) {
+                heard.pig++;
+            }
+        };
+        var state = new Object() {
+            int[] units = new int[0];
+        };
+        h.startSequence()
+                .thenWaitUntil(() -> {
+                    state.units = Units.handles(rt);
+                    check(state.units.length == 2, state.units.length + " units");
+                    body(rt, state.units[0]);
+                    body(rt, state.units[1]);
+                })
+                .thenExecute(() -> {
+                    NeoForge.EVENT_BUS.addListener(PlayLevelSoundEvent.AtEntity.class, atEntity);
+                    NeoForge.EVENT_BUS.addListener(PlayLevelSoundEvent.AtPosition.class, atPosition);
+                    UnitEntity body = body(rt, state.units[0]);
+                    FakePlayer player = FakePlayerFactory.get(
+                            h.getLevel(), new GameProfile(UUID.nameUUIDFromBytes(new byte[] {22}), "strategos-aud1"));
+                    player.moveTo(body.getX() - 1.5, body.getY(), body.getZ(), -90, 0);
+                    player.attack(body);
+                    Arrow arrow = new Arrow(
+                            h.getLevel(), body.getX(), body.getY() + 3, body.getZ(), new ItemStack(Items.ARROW), null);
+                    body.hurt(h.getLevel().damageSources().arrow(arrow, player), 4);
+                    body.playSound(
+                            SoundEvents.GENERIC_SPLASH, 1, 1); // the call a splash, a fire's hiss or a fall makes
+                    body.makeSound(SoundEvents.PLAYER_HURT);
+                    pig.hurt(h.getLevel().damageSources().playerAttack(player), 1);
+                    rt.damage(new ExternalDamage(
+                            state.units[1], ExternalDamage.Kind.LETHAL, 0, ExternalDamage.SourceKind.NONE));
+                })
+                .thenWaitUntil(() ->
+                        check(Units.bodiesOf(h.getLevel(), rt).size() == 1, "the dead body is still there"))
+                .thenExecute(() -> {
+                    NeoForge.EVENT_BUS.unregister(atEntity);
+                    NeoForge.EVENT_BUS.unregister(atPosition);
+                    check(core(rt).queries().unit(state.units[1]) == null, "the killed unit lives");
+                    check(heard.pig > 0, "the pig's hurt was not heard: the listeners hear nothing");
+                    check(heard.bodies == 0, "the bodies sounded " + heard.bodies + " times on the server");
                 })
                 .thenSucceed();
     }

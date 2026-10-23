@@ -1,11 +1,13 @@
 package dev.strategos.mod.client.net;
 
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.protocol.Feedback;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.TemplateAck;
 import dev.strategos.mod.client.StrategosClient;
 import dev.strategos.mod.server.net.payload.DebugFeedPayload;
 import dev.strategos.mod.server.net.payload.FeedbackPayload;
+import dev.strategos.mod.server.net.payload.FxPayload;
 import dev.strategos.mod.server.net.payload.MatchJoinPayload;
 import dev.strategos.mod.server.net.payload.MatchStatePayload;
 import dev.strategos.mod.server.net.payload.PayloadArrived;
@@ -34,7 +36,18 @@ public final class ClientPayloads {
         switch (event.payload()) {
             case MatchJoinPayload p -> StrategosClient.match(p.join());
             case MatchStatePayload p -> StrategosClient.state(p.state());
-            case FeedbackPayload p -> LOG.info("feedback: {}", p.message());
+            case FeedbackPayload p -> {
+                LOG.info("feedback: {}", p.message());
+                if (p.message() instanceof Feedback f) {
+                    StrategosClient.sounds().feedback(f);
+                }
+            }
+            case FxPayload p -> {
+                MatchJoin join = StrategosClient.match();
+                if (join != null) {
+                    StrategosClient.sounds().accept(p.fx(), join);
+                }
+            }
             case DebugFeedPayload p -> StrategosClient.debug().accept(p.message());
             case TemplateSetPayload p -> templates(p);
             case UnitSummaryPayload p -> {

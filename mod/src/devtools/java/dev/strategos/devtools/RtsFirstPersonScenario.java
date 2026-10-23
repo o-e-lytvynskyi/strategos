@@ -26,6 +26,7 @@ final class RtsFirstPersonScenario implements Scenario {
     private int phase;
     private int inPhase;
     private int backPressed;
+    private int soundsBefore;
 
     @Override
     public String name() {
@@ -100,11 +101,15 @@ final class RtsFirstPersonScenario implements Scenario {
                 if (inPhase == 5) {
                     ctx.capture("first_person");
                 } else if (inPhase == 10) {
+                    soundsBefore = StrategosClient.sounds().played();
                     KeyMapping.click(InputConstants.Type.KEYSYM.getOrCreate(KeyCode.G)); // the selection to the view
                 } else if (inPhase == 20) {
                     check(rts.ordersSent() == 1, rts.ordersSent() + " orders sent from first person");
                     ctx.result.addProperty("orderedFromFirstPerson", ordered());
                     check(ordered() == RtsGoldensScenario.OWN, ordered() + " units took the order from first person");
+                    int acks = StrategosClient.sounds().played() - soundsBefore; // AUD-01: the order acknowledged
+                    ctx.result.addProperty("orderAckSounds", acks);
+                    check(acks == 1, acks + " acknowledgements for one order");
                 } else if (inPhase >= 110) { // past the 5 s cooldown since the switch
                     KeyMapping.click(InputConstants.Type.KEYSYM.getOrCreate(KeyCode.F6)); // back
                     backPressed = tick;

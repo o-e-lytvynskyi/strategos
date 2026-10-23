@@ -50,6 +50,7 @@ final class RtsGoldensScenario implements Scenario {
     private int floor;
     private volatile @Nullable MatchRuntime match;
     private int phase;
+    private int soundsBefore;
     private int inPhase;
 
     @Override
@@ -157,6 +158,7 @@ final class RtsGoldensScenario implements Scenario {
         switch (phase) {
             case 0 -> { // the bodies arrive and stand; five are hurt, for the health bars (CMB-06.3)
                 if (bodies(mc) == OWN + ENEMIES && inPhase >= 100 && mc.levelRenderer.hasRenderedAllSections()) {
+                    soundsBefore = StrategosClient.sounds().played();
                     hurt(mc);
                     next();
                 } else if (inPhase > 600) {
@@ -165,6 +167,9 @@ final class RtsGoldensScenario implements Scenario {
             }
             case 1 -> { // the hit points reach the client (unit_hud, 5 Hz), then the game freezes
                 if (inPhase >= 20) {
+                    int sounds = StrategosClient.sounds().played() - soundsBefore; // AUD-01: each hit's fx played
+                    ctx.result.addProperty("hitSounds", sounds);
+                    check(sounds == 5, sounds + " hit sounds for five hits");
                     IntegratedServer server = mc.getSingleplayerServer();
                     if (server != null) {
                         server.execute(() -> ScenarioWorld.run(server, "tick freeze"));

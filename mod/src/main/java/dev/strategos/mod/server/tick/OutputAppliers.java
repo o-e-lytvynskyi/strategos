@@ -17,6 +17,7 @@ import dev.strategos.mod.entity.UnitEntity;
 import dev.strategos.mod.server.body.KinematicDriver;
 import dev.strategos.mod.server.match.MatchRuntime;
 import dev.strategos.mod.server.net.Audience;
+import dev.strategos.mod.server.net.FxSender;
 import dev.strategos.mod.server.net.payload.FeedbackPayload;
 import dev.strategos.mod.server.world.BlockWriter;
 import java.util.List;
@@ -24,11 +25,12 @@ import java.util.function.Consumer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 
-/** Applies a step's outputs to the world: replies, body requests, block writes for the writer, then the poses. */
+/** Applies a step's outputs to the world: fx, replies, body requests, block writes for the writer, then the poses. */
 public final class OutputAppliers {
     private OutputAppliers() {}
 
     public static void apply(MatchRuntime rt, ServerLevel level, TickOutputs out) {
+        FxSender.send(rt, out, StrategosServer.get().net()); // while the dead still have their bodies
         for (OutputEvent event : out.events()) {
             switch (event) {
                 case CommandResult result -> {

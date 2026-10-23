@@ -9,7 +9,22 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24, T16, T26; M2 spec, M2 T1, T3, T5, T11, T13, T9, T21, T8, T6, T19, T2, T4, T14, T10 (part), T7, T10, T17
+## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24, T16, T26; M2 spec, M2 T1, T3, T5, T11, T13, T9, T21, T8, T6, T19, T2, T4, T14, T10 (part), T7, T10, T17, T18
+
+- **M2 T18 · Sounds** — AUD-01 done (its checklist the owner's).
+  - **Results:** core `Fx` and `FxKind` with their codec, `Sounds` and `SoundBudget`
+    (`core.client.audio`); the mod's `fx` payload, `FxSender` (a hit or death once per unit per tick,
+    to the body's trackers), `FxPlayer` (`playLocalSound`, volume raised for the RTS camera, six a
+    tick per kind), acknowledgements from `feedback`; silent bodies. Tests: `FxMappingTest` (3), a
+    codec test, `combattests.no_server_sounds`, `nettests.fx_audience`, and sound counts in two
+    scenarios.
+  - **Measured:** 6–7 bytes an event; five hits, five sounds; one order, one acknowledgement.
+  - **Problems:** two seated players cannot share a slot; the far one sits in the other faction. The
+    first `no_server_sounds` passed without `isSilent` too, since no tested vanilla path sounded; it
+    now makes the bodies call `playSound` and `makeSound`, and fails without it. The architecture
+    said `AtEntity` would catch a body's sound; `Entity#playSound` posts `AtPosition`. Corrected, and
+    recorded in the knowledge base.
+  - **Next:** T15, melee (CMB-02) and its soak.
 
 - **M2 T17 · Health bars** — CMB-06 done (its goldens proposed).
   - **Results:** core `HealthBars` (which units get a bar, where, how wide, what colour) with

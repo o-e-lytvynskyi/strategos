@@ -11,6 +11,7 @@
     "strategos:debug_feed",
     "strategos:debug_subscribe",
     "strategos:feedback",
+    "strategos:fx",
     "strategos:match_join",
     "strategos:match_state",
     "strategos:mode_switch",

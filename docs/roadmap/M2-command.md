@@ -536,7 +536,8 @@ perspective only.
   4. The owner's checklist passes (L7, acceptance).
 - **Tests:** L0, L1, L2, L3, L7 · **Depends on:** ORD-02, CMB-01, NET-01 · **Size:** S ·
   **Tier:** T0
-- **Status:** specified
+- **Done:** 2026-10-23 — M2 T18: `FxMappingTest` (1); `combattests.no_server_sounds`, both of vanilla's sound events, with a pig as the positive control (2); `nettests.fx_audience`, the tracker gets the hit and the death and a member 240 blocks off nothing (3); on this Mac the goldens scene's five hits start five sounds and an order one acknowledgement; the owner's checklist waits for the demo (4); M2 spec §1.6 rows 64–66
+- **Status:** done
 
 #### PERF-14 · Client frame gate (consent)
 - **Value:** The client stays smooth as features grow, measured on the owner's Mac instead of

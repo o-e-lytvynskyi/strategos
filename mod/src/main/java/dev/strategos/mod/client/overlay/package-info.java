@@ -1,4 +1,4 @@
-/** The client's world overlays for the RTS view (04 §13.6): far-unit markers (NET-08), later health bars (CMB-06). */
+/** The client's world overlays for the RTS view (04 §13.6): far-unit markers (NET-08) and health bars (CMB-06). */
 @NullMarked
 package dev.strategos.mod.client.overlay;
 

@@ -12,6 +12,8 @@ import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.CommandBatch;
 import dev.strategos.core.protocol.CommandOutcome;
 import dev.strategos.core.protocol.Feedback;
+import dev.strategos.core.protocol.Fx;
+import dev.strategos.core.protocol.FxKind;
 import dev.strategos.core.protocol.Limits;
 import dev.strategos.core.protocol.MatchStateMsg;
 import dev.strategos.core.protocol.Move;
@@ -25,6 +27,7 @@ import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.CommandEnvelope;
+import dev.strategos.core.sim.ExternalDamage;
 import dev.strategos.core.sim.InputEvent;
 import dev.strategos.core.sim.TickInputs;
 import dev.strategos.core.sim.UnitState;
@@ -42,6 +45,7 @@ import dev.strategos.mod.server.net.NetCounters;
 import dev.strategos.mod.server.net.RateLimiter;
 import dev.strategos.mod.server.net.payload.CommandsPayload;
 import dev.strategos.mod.server.net.payload.FeedbackPayload;
+import dev.strategos.mod.server.net.payload.FxPayload;
 import dev.strategos.mod.server.net.payload.MatchJoinPayload;
 import dev.strategos.mod.server.net.payload.MatchStatePayload;
 import dev.strategos.mod.server.net.payload.TemplateAckPayload;
@@ -502,6 +506,101 @@ public final class NetTests {
                     viewer.close();
                 })
                 .thenSucceed();
+    }
+
+    /**
+     * AUD-01.3: a unit's hit and its death reach the seated player who tracks its body as {@code fx}, at the body, and
+     * never the one seated in the match 240 blocks off, whom every member's payload reaches (until fog, every cell's
+     * too): it gets the match's state, so it is listening.
+     */
+    @StrategosTest(timeoutTicks = 400)
+    public static void fxAudience(GameTestHelper h) {
+        MatchRuntime rt = match(h);
+        spawn(rt, 16.5, 16.5, 1, 0);
+        Vec3 at = h.absoluteVec(new Vec3(12.5, 2, 12.5));
+        MockViewer near = MockViewer.join(h.getLevel(), "strategos-fxnear", at.x, at.y, at.z, 4);
+        MockViewer far = MockViewer.join(h.getLevel(), "strategos-fxfar", at.x + 240, at.y, at.z, 2);
+        seat(rt, near, 0);
+        seat(rt, far, 1);
+        var state = new Object() {
+            int unit = -1;
+            int step;
+            int ticks;
+        };
+        h.onEachTick(() -> {
+            near.poll();
+            far.poll();
+            state.ticks++;
+            switch (state.step) {
+                case 0 -> { // the near player tracks the body before anything happens to it
+                    int[] units = handles(rt);
+                    UnitEntity body = units.length == 1 ? rt.bodies().get(units[0]) : null;
+                    if (body != null && added(near).contains(body.getId())) {
+                        state.unit = units[0];
+                        near.capture().clear();
+                        rt.damage(new ExternalDamage(
+                                state.unit, ExternalDamage.Kind.HACK, 10, ExternalDamage.SourceKind.NONE));
+                        state.step++;
+                        state.ticks = 0;
+                    }
+                }
+                case 1, 2 -> {
+                    List<Fx.Event> got = fxOf(near, rt);
+                    if (got.isEmpty()) {
+                        check(
+                                state.ticks < 10,
+                                "no fx " + state.ticks + " ticks after the " + (state.step == 1 ? "hit" : "kill"));
+                        return;
+                    }
+                    FxKind expected = state.step == 1 ? FxKind.UNIT_HIT : FxKind.UNIT_DIED;
+                    check(
+                            got.size() == 1 && got.get(0).kind() == expected,
+                            "the near player got " + got + ", not one " + expected);
+                    UnitEntity body = Units.bodiesOf(h.getLevel(), rt).get(0);
+                    Fx.Event e = got.get(0);
+                    double dx = rt.space().worldX(e.x8() / 8.0) - body.getX();
+                    double dz = rt.space().worldZ(e.z8() / 8.0) - body.getZ();
+                    double dy = rt.space().origin().getY() + e.y8() / 8.0 - body.getY();
+                    check(
+                            Math.abs(dx) <= 0.0625 && Math.abs(dy) <= 0.0625 && Math.abs(dz) <= 0.0625,
+                            "the fx is off its body by " + dx + ", " + dy + ", " + dz);
+                    near.capture().clear();
+                    if (state.step == 1) {
+                        rt.damage(new ExternalDamage(
+                                state.unit, ExternalDamage.Kind.LETHAL, 0, ExternalDamage.SourceKind.NONE));
+                    }
+                    state.step++;
+                    state.ticks = 0;
+                }
+                default -> {
+                    if (state.ticks < 20) {
+                        return;
+                    }
+                    check(
+                            payloads(far, FxPayload.class).isEmpty(),
+                            "the far player got fx: " + payloads(far, FxPayload.class));
+                    check(
+                            payloads(far, MatchStatePayload.class).stream()
+                                    .anyMatch(
+                                            p -> p.state().matchId() == rt.id().value()),
+                            "the far player never got the match's state: it hears nothing");
+                    near.close();
+                    far.close();
+                    h.succeed();
+                }
+            }
+        });
+    }
+
+    /** The {@code fx} events of {@code rt} the viewer was sent since its capture was last cleared. */
+    private static List<Fx.Event> fxOf(MockViewer viewer, MatchRuntime rt) {
+        List<Fx.Event> events = new ArrayList<>();
+        for (FxPayload p : payloads(viewer, FxPayload.class)) {
+            if (p.fx().matchId() == rt.id().value()) {
+                events.addAll(p.fx().events());
+            }
+        }
+        return events;
     }
 
     private static void seat(MatchRuntime rt, MockViewer viewer, int slot) {

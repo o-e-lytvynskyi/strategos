@@ -264,5 +264,31 @@ public final class WireCodecs {
         }
     };
 
+    public static final WireCodec<FxKind> FX_KIND = new WireCodec<>() {
+        @Override
+        public void write(WireWriter out, FxKind value) {
+            out.writeByte(
+                    switch (value) {
+                        case UNIT_HIT -> 0;
+                        case UNIT_DIED -> 1;
+                    });
+        }
+
+        @Override
+        public FxKind read(WireReader in) {
+            int code = in.readUnsignedByte();
+            return switch (code) {
+                case 0 -> FxKind.UNIT_HIT;
+                case 1 -> FxKind.UNIT_DIED;
+                default -> throw new WireException("unknown fx kind " + code);
+            };
+        }
+
+        @Override
+        public int maxSize() {
+            return 1;
+        }
+    };
+
     private WireCodecs() {}
 }

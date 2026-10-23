@@ -5,6 +5,7 @@ import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.MatchStateMsg;
 import dev.strategos.mod.Strategos;
+import dev.strategos.mod.client.audio.FxPlayer;
 import dev.strategos.mod.client.debug.ClientDebugState;
 import dev.strategos.mod.client.debug.DebugOverlayHost;
 import dev.strategos.mod.client.hud.RtsHud;
@@ -36,6 +37,7 @@ public final class StrategosClient {
     private static final ClientMatchModel MODEL = new ClientMatchModel();
     private static final FarMarkers FAR = new FarMarkers(MODEL);
     private static final HealthBarOverlay BARS = new HealthBarOverlay(MODEL, RTS);
+    private static final FxPlayer SOUNDS = new FxPlayer(RTS);
     private static volatile @Nullable MatchJoin match;
     private static volatile @Nullable MatchStateMsg state;
     private static volatile TemplateSet templates = TemplateSet.builtin();
@@ -62,6 +64,11 @@ public final class StrategosClient {
     /** What replication told this client of its match (NET-08); the client thread's only. */
     public static ClientMatchModel model() {
         return MODEL;
+    }
+
+    /** The match's sounds (AUD-01); the client thread's only. */
+    public static FxPlayer sounds() {
+        return SOUNDS;
     }
 
     /** The health bars (CMB-06). */

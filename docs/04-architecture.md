@@ -446,7 +446,7 @@ narrow mixin with a compatibility test ([01-feasibility.md §7](01-feasibility.m
 | Ticket controller | `strategos:match`, with a `LoadingValidationCallback` | Force-loading arenas (§3.4) | M1 |
 | `SavedData` | `strategos_registry` (overworld), `strategos_match_<id>` (hosting level) | Persistence (§5.6) | M0 |
 | Reload listener | `TemplateReloadListener`, named `strategos:templates` | Templates, maps, blueprints, AI scripts (§8.4) | M1 |
-| Payloads | `strategos:commands`, `strategos:match_join`, `strategos:match_state`, `strategos:feedback`, `strategos:template_set`, `strategos:template_ack`, `strategos:camera_jump`, `strategos:mode_switch`, `strategos:unit_summary`, `strategos:unit_hud`, `strategos:ui_query` and `strategos:unit_detail` (M2), and the optional dev payloads `strategos:debug_subscribe` and `strategos:debug_feed` (M1); the whole catalogue in §12.2 | Networking | M1 onward |
+| Payloads | `strategos:commands`, `strategos:match_join`, `strategos:match_state`, `strategos:feedback`, `strategos:template_set`, `strategos:template_ack`, `strategos:camera_jump`, `strategos:mode_switch`, `strategos:unit_summary`, `strategos:unit_hud`, `strategos:ui_query`, `strategos:unit_detail` and `strategos:fx` (M2), and the optional dev payloads `strategos:debug_subscribe` and `strategos:debug_feed` (M1); the whole catalogue in §12.2 | Networking | M1 onward |
 | Key mappings, GUI layers | The movement overlay's key `key.strategos.overlay` (F8) and panel `strategos:debug_panel` (M1); the RTS keys `key.strategos.camera_pan_forward`, `key.strategos.camera_pan_back`, `key.strategos.camera_pan_left`, `key.strategos.camera_pan_right`, `key.strategos.camera_rotate_left`, `key.strategos.camera_rotate_right`, `key.strategos.camera_zoom_in`, `key.strategos.camera_zoom_out`, `key.strategos.camera_centre_on_selection`, `key.strategos.attack_move`, `key.strategos.stop`, `key.strategos.toggle_first_person`, `key.strategos.toggle_rts` (M2, UI-01), `key.strategos.order_here` (M2, CAM-05); the HUD's layers `strategos:rts_selection`, `strategos:rts_groups`, `strategos:rts_tooltip` (M2, UI-02); resource bar, selection panel, command card, minimap, notices | Client (§13) | M1–M6 |
 | Commands | `/strategos` (server), `/strategos-client` (client) | Tooling (§15.3) | M0, M1 |
 | Config | `strategos-server.toml`, `strategos-client.toml` (`ModConfigSpec`) | Technical tunables (§15.4) | M1 |
@@ -1137,8 +1137,11 @@ flowchart TD
   faction, the core's first removal of a unit.
 - **Units are silent on the server.** A server-side `Entity#playSound` broadcasts to everyone in
   range regardless of fog (Entity.java:1138; ServerLevel.java:989–1035). Units never reach it: they
-  never call `super.hurt` and never `move`. Unit sounds are `fx` events played client-side with
-  `ClientLevel#playLocalSound` (ClientLevel.java:560).
+  never call `super.hurt` and never `move`, and their bodies are silent (`isSilent`). Unit sounds
+  are `fx` events played client-side with `ClientLevel#playLocalSound` (ClientLevel.java:560).
+- **As built (M2, AUD-01).** A hit or death sounds once per unit per tick, to its trackers, as an
+  `fx` event; order acknowledgements come from `feedback` on the client. From the RTS camera a sound's
+  volume is raised so it carries 2.5 times the distance to the ground in view.
 
 ### 6.8 Vanilla interactions
 
@@ -1787,7 +1790,7 @@ flowchart LR
 | Enemy players: commanders, first-person bodies | Hidden (M7) | `ServerPlayerMixin` |
 | Our payloads: summaries, details, buildings, faction state | Hidden | Interest rules in the core and audiences in `NetGateway` (§12.3) |
 | Our sounds and particles | Hidden | `fx` audiences: trackers of the unit, or players whose faction sees the cell; per-player `ServerLevel#sendParticles(ServerPlayer, …)` (ServerLevel.java:1276) |
-| Vanilla positional sounds of our entities | Never produced | Units never call `super.hurt` or `move` (§6.7); `PlayLevelSoundEvent.AtEntity` cancels any that slip through (ServerLevel.java:1020–1023) |
+| Vanilla positional sounds of our entities | Never produced | Units never call `super.hurt` or `move` (§6.7), and `UnitEntity#isSilent` stops every path through `Entity#playSound`, which posts `PlayLevelSoundEvent.AtPosition`, not `AtEntity` (Entity.java:1138–1141, ServerLevel.java:989–1000); `combattests.no_server_sounds` listens to both |
 | Projectile visuals | Hidden unless either end is visible | Audience `SeesCell` for launch or impact |
 | Our block writes | Silent | Flags 2 and 16 play no break effects; `destroyBlock` is never called |
 | Block changes: felled trees, rising buildings, damage stages | **Visible** | Chunk updates go to every player tracking the chunk. Documented; terrain secrecy is FOW-06 |

@@ -335,6 +335,20 @@ class WireCodecSizeTest {
         assertThat(roundTrip(ModeSwitch.WIRE, ModeSwitch.BACK)).isEqualTo(ModeSwitch.BACK);
     }
 
+    @Test
+    void anFxBatchRoundTripsWithinItsCap() {
+        Fx one = new Fx(7, List.of(Fx.Event.at(FxKind.UNIT_HIT, 12.5, -3.25, 200)));
+        assertThat(size(Fx.WIRE, one)).isEqualTo(1 + 1 + 1 + 2 + 1 + 2);
+        assertThat(roundTrip(Fx.WIRE, one)).isEqualTo(one);
+        Fx.Event widest = new Fx.Event(FxKind.UNIT_DIED, Fx.MAX_EIGHTHS, Integer.MIN_VALUE, Fx.MAX_EIGHTHS);
+        Fx full = new Fx(Integer.MAX_VALUE, java.util.Collections.nCopies(Fx.MAX_EVENTS, widest));
+        assertThat(size(Fx.WIRE, full)).isEqualTo(Fx.WIRE.maxSize());
+        assertThat(roundTrip(Fx.WIRE, full)).isEqualTo(full);
+        assertThatThrownBy(() -> new Fx(1, java.util.Collections.nCopies(Fx.MAX_EVENTS + 1, widest)))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new Fx.Event(FxKind.UNIT_HIT, -1, 0, 0)).isInstanceOf(IllegalArgumentException.class);
+    }
+
     private static <T> int size(WireCodec<T> codec, T value) {
         return WireCodec.encode(codec, value).length;
     }

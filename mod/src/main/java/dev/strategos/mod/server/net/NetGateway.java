@@ -7,6 +7,7 @@ import dev.strategos.core.protocol.CommandBatch;
 import dev.strategos.core.protocol.DebugFeedMsg;
 import dev.strategos.core.protocol.Feedback;
 import dev.strategos.core.protocol.FeedbackMsg;
+import dev.strategos.core.protocol.Fx;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.MatchStateMsg;
 import dev.strategos.core.protocol.Move;
@@ -26,6 +27,7 @@ import dev.strategos.mod.server.match.MatchSpace;
 import dev.strategos.mod.server.net.payload.CommandsPayload;
 import dev.strategos.mod.server.net.payload.DebugFeedPayload;
 import dev.strategos.mod.server.net.payload.FeedbackPayload;
+import dev.strategos.mod.server.net.payload.FxPayload;
 import dev.strategos.mod.server.net.payload.MatchJoinPayload;
 import dev.strategos.mod.server.net.payload.MatchStatePayload;
 import dev.strategos.mod.server.tick.FaultBarrier;
@@ -304,6 +306,7 @@ public final class NetGateway {
             case MatchStatePayload p -> WireCodec.encode(MatchStateMsg.WIRE, p.state()).length;
             case FeedbackPayload p -> WireCodec.encode(FeedbackMsg.WIRE, p.message()).length;
             case DebugFeedPayload p -> WireCodec.encode(DebugFeedMsg.WIRE, p.message()).length;
+            case FxPayload p -> WireCodec.encode(Fx.WIRE, p.fx()).length;
             default -> 0;
         };
     }
