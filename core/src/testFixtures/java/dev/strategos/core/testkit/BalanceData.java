@@ -9,6 +9,7 @@ import dev.strategos.core.content.balance.BalanceSheet;
 import dev.strategos.core.shared.TemplateId;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -21,7 +22,8 @@ import java.util.stream.Stream;
 /**
  * The mod's content as the balance sheet reads it (DATA-04), straight from a data directory ({@code
  * mod/src/main/resources/data}): every {@code <ns>/strategos/templates/**.json} as a raw template (without NeoForge's
- * conditions), every {@code <ns>/strategos/balance/provenance.json} merged, and {@code
+ * conditions), every {@code <ns>/data_maps/block/resource_yield.json} entry, every {@code
+ * <ns>/strategos/balance/provenance.json} merged, and {@code
  * strategos/strategos/balance/targets.json}. {@link #main} writes {@code sheet.md} and {@code sheet.csv}
  * ({@code :core:balanceSheet}).
  */
@@ -31,18 +33,24 @@ public final class BalanceData {
     private final List<RawTemplate> raws;
     private final Map<String, Map<String, String>> provenance;
     private final List<BalanceSheet.Target> targets;
+    private final List<BalanceSheet.Yield> yields;
 
     private BalanceData(
-            List<RawTemplate> raws, Map<String, Map<String, String>> provenance, List<BalanceSheet.Target> targets) {
+            List<RawTemplate> raws,
+            Map<String, Map<String, String>> provenance,
+            List<BalanceSheet.Target> targets,
+            List<BalanceSheet.Yield> yields) {
         this.raws = raws;
         this.provenance = provenance;
         this.targets = targets;
+        this.yields = yields;
     }
 
     public static BalanceData read(Path data) {
         List<RawTemplate> raws = new ArrayList<>();
         Map<String, Map<String, String>> provenance = new TreeMap<>();
         List<BalanceSheet.Target> targets = new ArrayList<>();
+        List<BalanceSheet.Yield> yields = new ArrayList<>();
         try (Stream<Path> namespaces = Files.list(data)) {
             for (Path ns : namespaces.sorted().toList()) {
                 Path templates = ns.resolve("strategos/templates");
@@ -58,6 +66,21 @@ public final class BalanceData {
                             raws.add(new RawTemplate(
                                     new TemplateId(id), data.relativize(f).toString(), json));
                         }
+                    }
+                }
+                Path map = ns.resolve("data_maps/block/resource_yield.json");
+                if (Files.isRegularFile(map)) {
+                    for (Map.Entry<String, JsonElement> e : parse(map)
+                            .getAsJsonObject()
+                            .getAsJsonObject("values")
+                            .entrySet()) {
+                        JsonObject v = e.getValue().getAsJsonObject();
+                        yields.add(new BalanceSheet.Yield(
+                                e.getKey(),
+                                v.get("kind").getAsString(),
+                                v.has("resource") ? v.get("resource").getAsString() : "",
+                                v.has("subtype") ? v.get("subtype").getAsString() : "",
+                                v.has("amount") ? v.get("amount").getAsBigDecimal() : BigDecimal.ZERO));
                     }
                 }
                 Path notes = ns.resolve("strategos/balance/provenance.json");
@@ -85,7 +108,7 @@ public final class BalanceData {
                         o.get("note").getAsString()));
             }
         }
-        return new BalanceData(List.copyOf(raws), provenance, List.copyOf(targets));
+        return new BalanceData(List.copyOf(raws), provenance, List.copyOf(targets), List.copyOf(yields));
     }
 
     public List<RawTemplate> raws() {
@@ -100,9 +123,13 @@ public final class BalanceData {
         return targets;
     }
 
+    public List<BalanceSheet.Yield> yields() {
+        return yields;
+    }
+
     /** The compiled set and its sheet. */
     public BalanceSheet sheet() {
-        return BalanceSheet.of(compile(), raws, provenance, targets);
+        return BalanceSheet.of(compile(), raws, provenance, targets, yields);
     }
 
     public TemplateCompiler.Result compile() {
@@ -124,7 +151,7 @@ public final class BalanceData {
         if (!result.problems().isEmpty()) {
             throw new IllegalStateException("template problems: " + result.problems());
         }
-        BalanceSheet sheet = BalanceSheet.of(result, data.raws, data.provenance, data.targets);
+        BalanceSheet sheet = BalanceSheet.of(result, data.raws, data.provenance, data.targets, data.yields);
         Path out = Path.of(args[1]);
         Files.createDirectories(out);
         Files.writeString(out.resolve("sheet.md"), sheet.markdown(), StandardCharsets.UTF_8);

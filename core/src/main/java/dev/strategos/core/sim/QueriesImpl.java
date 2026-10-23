@@ -4,7 +4,11 @@ import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.Vec2d;
+import dev.strategos.core.sim.econ.EconomyRules;
 import dev.strategos.core.sim.econ.FactionTreasury;
+import dev.strategos.core.sim.econ.NodeStore;
+import dev.strategos.core.sim.econ.NodeView;
+import dev.strategos.core.sim.econ.ResourceDef;
 import dev.strategos.core.sim.nav.PathService;
 import dev.strategos.core.sim.nav.PathStore;
 import dev.strategos.core.sim.nav.SurfaceGrid;
@@ -24,6 +28,29 @@ final class QueriesImpl implements MatchQueries {
     QueriesImpl(MatchState state, PathService paths) {
         this.state = state;
         this.paths = paths;
+    }
+
+    @Override
+    public List<NodeView> nodes() {
+        NodeStore n = state.nodes();
+        EconomyRules economy = state.config().rules().economy();
+        List<NodeView> out = new ArrayList<>(n.count());
+        for (int id = 1; id <= n.count(); id++) {
+            ResourceDef r = economy.resources().get(n.resource(id));
+            out.add(new NodeView(
+                    id,
+                    n.kind(id),
+                    r.id(),
+                    r.subtypes().get(n.subtype(id)),
+                    n.amount(id),
+                    n.anchorX(id),
+                    n.anchorZ(id),
+                    n.blocks(id).length,
+                    n.gone(id),
+                    n.slotCount(id),
+                    n.freeSlots(id)));
+        }
+        return out;
     }
 
     @Override

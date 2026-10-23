@@ -297,7 +297,8 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   5. Indexing the proving ground takes under 2 s during prepare (L6).
 - **Tests:** L0, L1, L2, L3, L6 · **Depends on:** CORE-08, PATH-04, MAP-01 · **Size:** M ·
   **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-23 — M3 T6: discovery from the slices' materials equals a reference flood fill over 20 seeded forests (1), nearest-node queries equal brute force (2), slot claims never exceed a node's slots (3), a `resource_yield` entry makes a node with no code (4), the proving ground indexed in 32.8 ms (5); spec §1.6 rows 29–30
 
 #### ECO-03 · Woodcutting on real trees, with natural canopy thinning
 - **Value:** Workers chop real Minecraft trees log by log, the forest visibly recedes, and leaves

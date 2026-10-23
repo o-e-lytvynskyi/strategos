@@ -18,26 +18,41 @@ public final class VoxelSlice {
 
     private final int height;
     private final short[] voxels;
+    private final SliceMaterials materials;
     private final long hash;
 
-    /** {@code voxels} is copied; {@code POSITION_DEPENDENT} is cleared from every class. */
+    /** {@code voxels} is copied; {@code POSITION_DEPENDENT} is cleared from every class. No materials. */
     public VoxelSlice(int height, short[] voxels) {
+        this(height, voxels, SliceMaterials.none());
+    }
+
+    /** As {@link #VoxelSlice(int, short[])}, with the voxels' materials (ECO-02). */
+    public VoxelSlice(int height, short[] voxels, SliceMaterials materials) {
         if (height < 1 || height > MAX_HEIGHT) {
             throw new IllegalArgumentException("slice height " + height + " outside 1.." + MAX_HEIGHT);
         }
         if (voxels.length != SIDE * SIDE * height) {
             throw new IllegalArgumentException(voxels.length + " voxels for a slice of height " + height);
         }
+        if (!materials.isEmpty() && materials.voxel(materials.size() - 1) >= voxels.length) {
+            throw new IllegalArgumentException("a material voxel outside a slice of " + voxels.length);
+        }
         this.height = height;
         this.voxels = new short[voxels.length];
         for (int i = 0; i < voxels.length; i++) {
             this.voxels[i] = BlockClass.forSlice(voxels[i]);
         }
+        this.materials = materials;
         this.hash = computeHash();
     }
 
     public int height() {
         return height;
+    }
+
+    /** The blocks with a {@code resource_yield} entry (ECO-02); empty for most slices. */
+    public SliceMaterials materials() {
+        return materials;
     }
 
     /** The class at column (x, z), 0–15 each, and band level y, 0 to height - 1. */
@@ -56,10 +71,13 @@ public final class VoxelSlice {
         for (int k = 0; k < indices.length; k++) {
             copy[indices[k]] = classes[k];
         }
-        return new VoxelSlice(height, copy);
+        return new VoxelSlice(height, copy, materials); // the core's nodes know which materials it removed
     }
 
-    /** Per column: the number of runs, then each run's class and length, as varints. */
+    /**
+     * Per column: the number of runs, then each run's class and length, as varints; then, only when there are any, the
+     * materials ({@link SliceMaterials}).
+     */
     public byte[] encode() {
         WireWriter out = new WireWriter(1_024);
         out.writeVarInt(height);
@@ -83,6 +101,9 @@ public final class VoxelSlice {
                 out.writeVarInt(length);
                 y += length;
             }
+        }
+        if (!materials.isEmpty()) {
+            materials.write(out);
         }
         return out.toByteArray();
     }
@@ -111,8 +132,9 @@ public final class VoxelSlice {
                 throw new WireException("column " + column + " holds " + y + " of " + height + " voxels");
             }
         }
+        SliceMaterials materials = in.remaining() > 0 ? SliceMaterials.read(in, voxels.length) : SliceMaterials.none();
         in.expectEnd();
-        return new VoxelSlice(height, voxels);
+        return new VoxelSlice(height, voxels, materials);
     }
 
     /** Equal slices have equal hashes. */
@@ -126,12 +148,18 @@ public final class VoxelSlice {
         for (short v : voxels) {
             h = Hasher.mix(h, v);
         }
+        if (!materials.isEmpty()) {
+            h = materials.mix(h);
+        }
         return Hasher.finish(h);
     }
 
     @Override
     public boolean equals(Object o) {
-        return o instanceof VoxelSlice other && other.height == height && Arrays.equals(other.voxels, voxels);
+        return o instanceof VoxelSlice other
+                && other.height == height
+                && Arrays.equals(other.voxels, voxels)
+                && other.materials.equals(materials);
     }
 
     @Override

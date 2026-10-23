@@ -39,5 +39,12 @@
     "Cost/resources/food": "Sixty food: the civic centre's first worker pays back its cost in about a minute of berry picking",
     "Cost/population": "One house's room for one worker",
     "Cost/time": "Ten seconds: a civic centre with a full queue adds a worker every ten seconds, the pace the first house's timing target (1:30) assumes"
+  },
+  "resource_yield": {
+    "#minecraft:logs": "Twenty wood a log: an oak of four or five logs holds about ninety, a few minutes of one worker's chopping",
+    "#minecraft:leaves": "Leaves yield nothing: they are the canopy that thins as a tree is felled (ECO-03)",
+    "#minecraft:base_stone_overworld": "Five stone a block of rock: indexed now, gathered from ECO-07 (M4)",
+    "#c:ores/iron": "Ten iron a block of ore: indexed now, gathered from ECO-08 (M4)",
+    "minecraft:sweet_berry_bush": "Sixty food a bush, a worker's cost: early food that runs out, so fields matter (ECO-09)"
   }
 }

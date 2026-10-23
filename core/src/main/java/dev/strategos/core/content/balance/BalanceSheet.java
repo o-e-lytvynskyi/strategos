@@ -34,6 +34,12 @@ public final class BalanceSheet {
     /** One number of a concrete template. */
     public record Row(TemplateId template, String path, BigDecimal value, String source, String provenance) {}
 
+    /** A {@code strategos:resource_yield} entry (ECO-02): the block or tag, its kind, what it yields and how much. */
+    public record Yield(String key, String kind, String resource, String subtype, BigDecimal amount) {}
+
+    /** The provenance key of the resource yields: notes by entry key. */
+    public static final String YIELDS = "resource_yield";
+
     /** The provenance key of the core's own defaults, for the paths a template leaves out ({@link CorePaths}). */
     public static final String CORE = "core";
 
@@ -41,6 +47,8 @@ public final class BalanceSheet {
     private final List<Derivation> overrides = new ArrayList<>();
     private final List<Derivation> derived = new ArrayList<>();
     private final List<Target> targets;
+    private final List<Yield> yields = new ArrayList<>();
+    private final List<String> yieldNotes = new ArrayList<>();
     private final Map<String, List<String>> gatherers = new TreeMap<>();
     private final Map<String, List<String>> spenders = new TreeMap<>();
     private final List<String> problems = new ArrayList<>();
@@ -58,6 +66,16 @@ public final class BalanceSheet {
             List<RawTemplate> raws,
             Map<String, Map<String, String>> provenance,
             List<Target> targets) {
+        return of(result, raws, provenance, targets, List.of());
+    }
+
+    /** As the four-argument form, with the data map's resource yields, each needing its provenance note too. */
+    public static BalanceSheet of(
+            TemplateCompiler.Result result,
+            List<RawTemplate> raws,
+            Map<String, Map<String, String>> provenance,
+            List<Target> targets,
+            List<Yield> yields) {
         BalanceSheet sheet = new BalanceSheet(targets);
         Map<String, JsonObject> byId = new TreeMap<>();
         raws.forEach(r -> byId.put(r.id().value(), r.json()));
@@ -113,10 +131,19 @@ public final class BalanceSheet {
                 sheet.rows.add(new Row(t.id(), path, value, "the core's default", note == null ? "" : note));
             }
         }
+        for (Yield y : yields) {
+            String note =
+                    provenance.getOrDefault(YIELDS, Collections.emptyMap()).get(y.key());
+            used.computeIfAbsent(YIELDS, a -> new TreeSet<>()).add(y.key());
+            if (note == null || note.isBlank()) {
+                sheet.problems.add("resource yield " + y.key() + ": no provenance note");
+            }
+            sheet.yields.add(y);
+            sheet.yieldNotes.add(note == null ? "" : note);
+        }
         provenance.forEach((template, notes) -> notes.keySet().forEach(key -> {
             if (!used.getOrDefault(template, new TreeSet<>()).contains(key)) {
-                sheet.problems.add("provenance names " + template + " " + key + ", which sets no number of a"
-                        + " concrete template there");
+                sheet.problems.add("provenance names " + template + " " + key + ", which sets no number there");
             }
         }));
         sheet.gatherers.forEach((resource, who) -> {
@@ -226,6 +253,27 @@ public final class BalanceSheet {
                         .append(plain(d.derived()))
                         .append(" | ")
                         .append(cell(d.note()))
+                        .append(" |\n");
+            }
+        }
+        sb.append("\n## Resource yields\n\n");
+        if (yields.isEmpty()) {
+            sb.append("None.\n");
+        } else {
+            sb.append("| Block or tag | Kind | Yields | Amount | Provenance |\n|---|---|---|---|---|\n");
+            for (int i = 0; i < yields.size(); i++) {
+                Yield y = yields.get(i);
+                String what = y.resource().isEmpty() ? "nothing" : y.resource() + " (" + y.subtype() + ")";
+                sb.append("| ")
+                        .append(cell(y.key()))
+                        .append(" | ")
+                        .append(y.kind())
+                        .append(" | ")
+                        .append(what)
+                        .append(" | ")
+                        .append(plain(y.amount()))
+                        .append(" | ")
+                        .append(cell(yieldNotes.get(i)))
                         .append(" |\n");
             }
         }

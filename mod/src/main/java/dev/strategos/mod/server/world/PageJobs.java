@@ -19,7 +19,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * Keeps a match's terrain pages in step with its level (04 §9.2, PATH-15). A block change marks its page dirty; after
  * each step, at most {@link #PER_TICK} pages that have been quiet for {@link #QUIET} ticks, or dirty for {@link
  * #MAX_WAIT}, oldest first, are captured on the main thread and built as jobs due the rule {@code pageK} ticks later;
- * a due job is joined and enters that tick's inputs as a {@code TerrainPage}. Until then units keep the stale page. At
+ * a due job is joined and enters that tick's inputs as a {@code TerrainPage}, with its blocks' materials (ECO-02). Until then units keep the stale page. At
  * prepare and at resume every page is captured and joined for the next tick. Server thread only.
  */
 public final class PageJobs {
@@ -76,18 +76,30 @@ public final class PageJobs {
      * each with the writes match {@code match} still waits to make there laid over it, sampled at {@code tick}.
      */
     public void tick(
-            ServerLevel level, long tick, BlockClassTable table, JobExecutor jobs, BlockWriter writer, int match) {
+            ServerLevel level,
+            long tick,
+            BlockClassTable table,
+            MaterialTable materials,
+            JobExecutor jobs,
+            BlockWriter writer,
+            int match) {
         long start = System.nanoTime();
         lastCaptured = 0;
         try {
-            captureDue(level, tick, table, jobs, writer, match);
+            captureDue(level, tick, table, materials, jobs, writer, match);
         } finally {
             lastCaptureNanos = System.nanoTime() - start;
         }
     }
 
     private void captureDue(
-            ServerLevel level, long tick, BlockClassTable table, JobExecutor jobs, BlockWriter writer, int match) {
+            ServerLevel level,
+            long tick,
+            BlockClassTable table,
+            MaterialTable materials,
+            JobExecutor jobs,
+            BlockWriter writer,
+            int match) {
         for (int n = 0; n < PER_TICK && dirty > 0; n++) {
             int page = -1;
             for (int i = 0; i < firstDirty.length; i++) {
@@ -113,7 +125,9 @@ public final class PageJobs {
                     new BlockPos(x0, space.minY(), z0),
                     new BlockPos(x0 + VoxelSlice.SIDE - 1, space.maxY(), z0 + VoxelSlice.SIDE - 1));
             inFlight.add(new InFlight(
-                    page, tick + delay, jobs.submit(SliceCapture.capture(level, space, coord, table, pending, tick))));
+                    page,
+                    tick + delay,
+                    jobs.submit(SliceCapture.capture(level, space, coord, table, materials, pending, tick))));
             captured++;
         }
     }
@@ -122,9 +136,15 @@ public final class PageJobs {
      * Every page, captured now and due at {@code due}: a new match's terrain, or a resumed one's. Their sample tick is
      * unknown, so every edit the core keeps still applies over them: a restart may have lost writes that were waiting.
      */
-    public void prewarm(ServerLevel level, long due, BlockClassTable table, JobExecutor jobs) {
+    public void prewarm(ServerLevel level, long due, BlockClassTable table, MaterialTable materials, JobExecutor jobs) {
         for (int page = 0; page < pagesX * pagesZ; page++) {
-            submit(level, page, due, table, jobs);
+            PageCoord coord = new PageCoord(page % pagesX, page / pagesX);
+            inFlight.add(new InFlight(
+                    page,
+                    due,
+                    jobs.submit(SliceCapture.capture(
+                            level, space, coord, table, materials, Map.of(), TerrainPage.UNKNOWN))));
+            captured++;
         }
     }
 
@@ -176,11 +196,5 @@ public final class PageJobs {
     /** Pages captured since the match was made. */
     public long captured() {
         return captured;
-    }
-
-    private void submit(ServerLevel level, int page, long due, BlockClassTable table, JobExecutor jobs) {
-        PageCoord coord = new PageCoord(page % pagesX, page / pagesX);
-        inFlight.add(new InFlight(page, due, jobs.submit(SliceCapture.capture(level, space, coord, table))));
-        captured++;
     }
 }

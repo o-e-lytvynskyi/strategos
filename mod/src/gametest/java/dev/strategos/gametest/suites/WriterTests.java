@@ -74,6 +74,7 @@ public final class WriterTests {
                                     rt.space(),
                                     page,
                                     StrategosServer.get().blockClasses(),
+                                    StrategosServer.get().materials(),
                                     pending,
                                     rt.tick()))
                             .join();

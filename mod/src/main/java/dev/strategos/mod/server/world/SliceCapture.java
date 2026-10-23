@@ -26,7 +26,7 @@ public final class SliceCapture {
     private SliceCapture() {}
 
     public static PageJob capture(ServerLevel level, MatchSpace space, PageCoord coord, BlockClassTable table) {
-        return capture(level, space, coord, table, Map.of(), TerrainPage.UNKNOWN);
+        return capture(level, space, coord, table, MaterialTable.none(), Map.of(), TerrainPage.UNKNOWN);
     }
 
     /**
@@ -39,6 +39,7 @@ public final class SliceCapture {
             MatchSpace space,
             PageCoord coord,
             BlockClassTable table,
+            MaterialTable materials,
             Map<BlockPos, BlockState> pending,
             long sampleTick) {
         int x0 = space.origin().getX() + coord.x() * VoxelSlice.SIDE;
@@ -87,6 +88,8 @@ public final class SliceCapture {
                 }
             }
         }
+        List<Integer> pendingIndices = new ArrayList<>();
+        List<BlockState> pendingStates = new ArrayList<>();
         for (Map.Entry<BlockPos, BlockState> w : pending.entrySet()) {
             BlockPos at = w.getKey();
             int px = at.getX() - x0;
@@ -94,8 +97,11 @@ public final class SliceCapture {
             int py = at.getY() - minY;
             if (px >= 0 && pz >= 0 && px < VoxelSlice.SIDE && pz < VoxelSlice.SIDE && py >= 0 && py < height) {
                 short cls = table.classOf(w.getValue());
-                indices.add((px * VoxelSlice.SIDE + pz) * height + py);
+                int index = (px * VoxelSlice.SIDE + pz) * height + py;
+                indices.add(index);
                 classes.add(BlockClassTable.needsPosition(cls) ? table.classAt(w.getValue(), level, at) : cls);
+                pendingIndices.add(index);
+                pendingStates.add(w.getValue());
             }
         }
         int[] overrideIndices = new int[indices.size()];
@@ -119,6 +125,9 @@ public final class SliceCapture {
                 overrideIndices,
                 overrideClasses,
                 table,
+                materials,
+                pendingIndices.stream().mapToInt(Integer::intValue).toArray(),
+                pendingStates,
                 sampleTick);
     }
 

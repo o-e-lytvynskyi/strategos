@@ -9,6 +9,9 @@ import dev.strategos.core.sim.combat.HealthStore;
 import dev.strategos.core.sim.econ.Amount;
 import dev.strategos.core.sim.econ.Costs;
 import dev.strategos.core.sim.econ.EconomyRules;
+import dev.strategos.core.sim.econ.NodeDiscovery;
+import dev.strategos.core.sim.econ.NodeIndex;
+import dev.strategos.core.sim.econ.NodeStore;
 import dev.strategos.core.sim.econ.Treasury;
 import dev.strategos.core.sim.nav.FootprintOverlay;
 import dev.strategos.core.sim.nav.MobilityClass;
@@ -27,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Everything a snapshot holds plus per-tick scratch, with no Minecraft reference. Public accessors, because the systems
@@ -74,6 +78,8 @@ public final class MatchState {
     private final FootprintOverlay footprints;
     private final BitSet rebuild;
     private final PageBuilder rebuilder = new PageBuilder(MobilityClass.INFANTRY);
+    private final NodeStore nodes = new NodeStore();
+    private @Nullable NodeIndex nodeIndex;
 
     private int[] changed = new int[4];
     private int changedCount;
@@ -156,6 +162,40 @@ public final class MatchState {
             }
         }
         surfaces = surfaces.publishAll(built);
+        if (!nodes.discovered() && published.cardinality() == pageSlices.length) {
+            discoverNodes();
+        }
+    }
+
+    /**
+     * ECO-02: the match's nodes, found once every page of its space is published, from the slices' materials (M3 spec
+     * §1.6 rows 1–2); restored ones are kept.
+     */
+    private void discoverNodes() {
+        MatchBounds b = config.bounds();
+        NodeDiscovery.discover(
+                nodes,
+                config.rules().economy(),
+                surfaces.pagesX(),
+                surfaces.pagesZ(),
+                b.minY(),
+                i -> sliceBytes[i] == null ? null : VoxelSlice.decode(sliceBytes[i]));
+        nodeIndex = null;
+    }
+
+    /** The match's resource nodes (ECO-02). */
+    public NodeStore nodes() {
+        return nodes;
+    }
+
+    /** Where the nodes are, built on first use after discovery or a restore. */
+    public NodeIndex nodeIndex() {
+        NodeIndex index = nodeIndex;
+        if (index == null) {
+            index = new NodeIndex(nodes, config.rules().economy(), surfaces.pagesX(), surfaces.pagesZ());
+            nodeIndex = index;
+        }
+        return index;
     }
 
     /** Page {@code index}'s surfaces from its last slice, the core's edits and its footprints. */

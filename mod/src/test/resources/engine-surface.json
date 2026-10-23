@@ -23,7 +23,7 @@
     "strategos:unit_hud",
     "strategos:unit_summary"
   ],
-  "dataMaps": ["strategos:nav_class"],
+  "dataMaps": ["strategos:nav_class", "strategos:resource_yield"],
   "worldgen": [
     "tags/worldgen/world_preset #minecraft:normal",
     "worldgen/biome strategos:arena",

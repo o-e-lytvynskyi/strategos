@@ -1,6 +1,7 @@
 package dev.strategos.core.sim;
 
 import dev.strategos.core.shared.CoreApi;
+import dev.strategos.core.sim.econ.NodeStore;
 import dev.strategos.core.sim.nav.PathStore;
 import java.util.List;
 
@@ -21,13 +22,43 @@ public record MatchSnapshot(
         PathStore.Queue paths,
         int nextGroup,
         List<Long> treasury,
-        List<Long> terrainEdits) {
+        List<Long> terrainEdits,
+        List<NodeStore.Saved> nodes) {
     public MatchSnapshot {
         units = List.copyOf(units);
         treasury = List.copyOf(treasury);
         terrainEdits = List.copyOf(terrainEdits);
+        nodes = List.copyOf(nodes);
         pendingCommands = List.copyOf(pendingCommands);
         pages = List.copyOf(pages);
+    }
+
+    /** A snapshot from before resource nodes (ECO-02). */
+    public MatchSnapshot(
+            MatchConfig config,
+            long tick,
+            long templateSetHash,
+            EntitySlots slots,
+            List<UnitRecord> units,
+            List<CommandEnvelope> pendingCommands,
+            List<PageRef> pages,
+            PathStore.Queue paths,
+            int nextGroup,
+            List<Long> treasury,
+            List<Long> terrainEdits) {
+        this(
+                config,
+                tick,
+                templateSetHash,
+                slots,
+                units,
+                pendingCommands,
+                pages,
+                paths,
+                nextGroup,
+                treasury,
+                terrainEdits,
+                List.of());
     }
 
     /** A snapshot from before the core edited terrain (M3 T5). */

@@ -113,6 +113,9 @@ public final class StateHasher {
         if (!s.terrainEdits().empty()) { // only once the core edited its terrain (M3)
             h = s.terrainEdits().mix(h);
         }
+        if (s.nodes().count() > 0) { // only once a match found resource nodes (ECO-02)
+            h = s.nodes().mix(h);
+        }
 
         ArrayDeque<CommandEnvelope> pending = s.pendingCommands();
         h = Hasher.mix(h, pending.size());

@@ -50,6 +50,7 @@ public final class TickDriver {
                                         level,
                                         rt.tick(),
                                         server.blockClasses(),
+                                        server.materials(),
                                         server.jobs(),
                                         server.writer(),
                                         rt.id().value());

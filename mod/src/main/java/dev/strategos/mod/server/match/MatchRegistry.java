@@ -29,6 +29,7 @@ import dev.strategos.mod.server.world.ArenaTickets;
 import dev.strategos.mod.server.world.ArenaWorld;
 import dev.strategos.mod.server.world.BlockClassTable;
 import dev.strategos.mod.server.world.BlockWriter;
+import dev.strategos.mod.server.world.MaterialTable;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -71,6 +72,7 @@ public final class MatchRegistry {
     private final SpawnBudget spawnBudget;
     private final BlockWriter writer;
     private final Supplier<BlockClassTable> blockClasses;
+    private final Supplier<MaterialTable> materials;
     private final JobExecutor jobs;
     private final Supplier<TemplateSet> templates; // the server's current set, for new and restored matches
     private final Supplier<EconomyRules> economy; // the data packs' resources, for new matches (ECO-01)
@@ -88,6 +90,7 @@ public final class MatchRegistry {
             SpawnBudget spawnBudget,
             BlockWriter writer,
             Supplier<BlockClassTable> blockClasses,
+            Supplier<MaterialTable> materials,
             JobExecutor jobs,
             Supplier<TemplateSet> templates,
             Supplier<EconomyRules> economy) {
@@ -96,6 +99,7 @@ public final class MatchRegistry {
         this.spawnBudget = spawnBudget;
         this.writer = writer;
         this.blockClasses = blockClasses;
+        this.materials = materials;
         this.jobs = jobs;
         this.templates = templates;
         this.economy = economy;
@@ -171,7 +175,7 @@ public final class MatchRegistry {
 
     /** Every page of the match captured now, built and published on its next tick (PATH-15: prewarm at prepare). */
     private void prewarm(ServerLevel level, MatchRuntime rt) {
-        rt.pages().prewarm(level, rt.tick() + 1, blockClasses.get(), jobs);
+        rt.pages().prewarm(level, rt.tick() + 1, blockClasses.get(), materials.get(), jobs);
     }
 
     /** {@code /strategos nav rebuild}: every page captured again now and published on the match's next tick. */

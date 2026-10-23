@@ -201,7 +201,8 @@ class BalanceSheetTest {
             }
             changed.add(new RawTemplate(raw.id(), raw.file(), json));
         }
-        String after = BalanceSheet.of(TemplateCompiler.compile(changed), changed, data.provenance(), data.targets())
+        String after = BalanceSheet.of(
+                        TemplateCompiler.compile(changed), changed, data.provenance(), data.targets(), data.yields())
                 .csv();
         List<String> before = sheet.csv().lines().toList();
         List<String> diff = after.lines().filter(l -> !before.contains(l)).toList();

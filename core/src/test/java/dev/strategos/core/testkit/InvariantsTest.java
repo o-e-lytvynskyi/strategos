@@ -19,6 +19,7 @@ import dev.strategos.core.sim.UnitRecord;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.UnitView;
 import dev.strategos.core.sim.econ.FactionTreasury;
+import dev.strategos.core.sim.econ.NodeView;
 import dev.strategos.core.sim.nav.MobilityClass;
 import dev.strategos.core.sim.nav.PathService;
 import dev.strategos.core.sim.nav.PathStore;
@@ -161,6 +162,11 @@ class InvariantsTest {
         @Override
         public FactionTreasury treasury(FactionSlot faction) {
             throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public List<NodeView> nodes() {
+            return List.of();
         }
 
         private final MatchConfig config;

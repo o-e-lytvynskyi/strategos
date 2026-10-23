@@ -20,6 +20,7 @@ import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.MotionStore;
 import dev.strategos.core.sim.PageRef;
 import dev.strategos.core.sim.UnitRecord;
+import dev.strategos.core.sim.econ.NodeStore;
 import dev.strategos.core.sim.nav.MemberPath;
 import dev.strategos.core.sim.nav.PathRequest;
 import dev.strategos.core.sim.nav.PathResult;
@@ -260,6 +261,21 @@ public final class MatchSnapshotCodec {
                     Hex64.CODEC.fieldOf("slice").forGetter(PageRef::slice))
             .apply(i, PageRef::new));
 
+    private static final Codec<NodeStore.Saved> NODE = RecordCodecBuilder.create(i -> i.group(
+                    Codec.INT.fieldOf("kind").forGetter(NodeStore.Saved::kind),
+                    Codec.INT.fieldOf("resource").forGetter(NodeStore.Saved::resource),
+                    Codec.INT.fieldOf("subtype").forGetter(NodeStore.Saved::subtype),
+                    Codec.LONG.fieldOf("perBlock").forGetter(NodeStore.Saved::perBlock),
+                    Codec.LONG.fieldOf("amount").forGetter(NodeStore.Saved::amount),
+                    Codec.DOUBLE.fieldOf("anchorX").forGetter(NodeStore.Saved::anchorX),
+                    Codec.DOUBLE.fieldOf("anchorZ").forGetter(NodeStore.Saved::anchorZ),
+                    Codec.INT.fieldOf("baseY").forGetter(NodeStore.Saved::baseY),
+                    Codec.LONG.listOf().fieldOf("blocks").forGetter(NodeStore.Saved::blocks),
+                    Codec.INT.fieldOf("gone").forGetter(NodeStore.Saved::gone),
+                    Codec.INT.listOf().fieldOf("slots").forGetter(NodeStore.Saved::slots),
+                    Codec.INT.listOf().fieldOf("claims").forGetter(NodeStore.Saved::claims))
+            .apply(i, NodeStore.Saved::new));
+
     /** The fields, without {@code "v"}. */
     public static final Codec<MatchSnapshot> CODEC = RecordCodecBuilder.create(i -> i.group(
                     MatchConfig.CODEC.fieldOf("config").forGetter(MatchSnapshot::config),
@@ -277,7 +293,8 @@ public final class MatchSnapshotCodec {
                     Codec.LONG
                             .listOf()
                             .optionalFieldOf("terrainEdits", List.of())
-                            .forGetter(MatchSnapshot::terrainEdits))
+                            .forGetter(MatchSnapshot::terrainEdits),
+                    NODE.listOf().optionalFieldOf("nodes", List.of()).forGetter(MatchSnapshot::nodes))
             .apply(i, MatchSnapshot::new));
 
     private MatchSnapshotCodec() {}

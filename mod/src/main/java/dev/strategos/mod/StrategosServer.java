@@ -27,6 +27,7 @@ import dev.strategos.mod.server.tick.FaultBarrier;
 import dev.strategos.mod.server.world.ArenaWorld;
 import dev.strategos.mod.server.world.BlockClassTable;
 import dev.strategos.mod.server.world.BlockWriter;
+import dev.strategos.mod.server.world.MaterialTable;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.registries.Registries;
@@ -75,6 +76,7 @@ public final class StrategosServer {
     private final Replication replication;
     private final PerfDump perf;
     private volatile BlockClassTable blockClasses;
+    private volatile MaterialTable materials;
     private ArenaWorld.Outcome arena = ArenaWorld.Outcome.NOT_AN_ARENA;
 
     private StrategosServer(MinecraftServer server, StrategosSettings settings) {
@@ -86,7 +88,15 @@ public final class StrategosServer {
         this.writer = new BlockWriter(settings.writerBudget(), settings.importBudget());
         loadTemplatesAtStart();
         this.matches = new MatchRegistry(
-                server, settings, spawnBudget, writer, this::blockClasses, jobs, () -> templates.set(), this::economy);
+                server,
+                settings,
+                spawnBudget,
+                writer,
+                this::blockClasses,
+                this::materials,
+                jobs,
+                () -> templates.set(),
+                this::economy);
         this.matches.onUnseated(uuid -> {
             ServerPlayer player = server.getPlayerList().getPlayer(uuid);
             if (player != null) {
@@ -99,11 +109,17 @@ public final class StrategosServer {
         this.perf = new PerfDump(server, () -> this.matches);
         this.replication = new Replication(server, () -> this.matches, net);
         this.blockClasses = buildBlockClasses();
+        this.materials = buildMaterials();
     }
 
     /** Every block state's nav class, with the {@code strategos:nav_class} overrides of the loaded data packs. */
     private static BlockClassTable buildBlockClasses() {
         return BlockClassTable.build(block -> block.builtInRegistryHolder().getData(ModDataMaps.NAV_CLASS));
+    }
+
+    /** Every block state's material, from the {@code strategos:resource_yield} entries of the loaded data packs. */
+    private static MaterialTable buildMaterials() {
+        return MaterialTable.build(block -> block.builtInRegistryHolder().getData(ModDataMaps.RESOURCE_YIELD));
     }
 
     /** The running server's holder; throws when no server runs. */
@@ -274,11 +290,17 @@ public final class StrategosServer {
         return blockClasses;
     }
 
+    /** Every block state's material (ECO-02). */
+    public MaterialTable materials() {
+        return materials;
+    }
+
     /** Tags reloaded on the server: other mods' doors, fences, leaves and climbables may have changed. */
     public static void onTagsUpdated(TagsUpdatedEvent event) {
         StrategosServer s = current;
         if (s != null && event.getUpdateCause() == TagsUpdatedEvent.UpdateCause.SERVER_DATA_LOAD) {
             s.blockClasses = buildBlockClasses();
+            s.materials = buildMaterials();
         }
     }
 
@@ -289,6 +311,7 @@ public final class StrategosServer {
                 && event.getRegistryKey().equals(Registries.BLOCK)
                 && event.getCause() == DataMapsUpdatedEvent.UpdateCause.SERVER_RELOAD) {
             s.blockClasses = buildBlockClasses();
+            s.materials = buildMaterials();
         }
     }
 

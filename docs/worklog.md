@@ -9,7 +9,14 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-23 (evening) — M3 spec, T1, T2, T3, T4, T5
+## 2026-10-23 (evening) — M3 spec, T1, T2, T3, T4, T5, T6
+
+- **M3 T6 · ECO-02, resource nodes.** The `resource_yield` data map (logs 20 wood, berry bushes 60
+  food; rock and iron ore indexed for M4) gives every block state a material; captures carry them in
+  the slice; the core finds trees (logs joined through 26 neighbours) and bushes once every page is
+  in, with work slots round each base, and an index answers the nearest node as brute force does.
+  The proving ground indexes in 32.8 ms (budget 2 s); its one forest is in the east, so its v2 adds a
+  western one. Next: T7, buildings and blueprints.
 
 - **M3 T5 · the core's own terrain edits** (for ECO-03 and BLD-01). The core records the voxels it
   changes and the footprint columns it blocks, and rebuilds those pages itself from their last

@@ -4,10 +4,13 @@ import dev.strategos.core.port.JobScratch;
 import dev.strategos.core.port.PureJob;
 import dev.strategos.core.sim.TerrainPage;
 import dev.strategos.core.sim.nav.BlockClass;
+import dev.strategos.core.sim.nav.Material;
 import dev.strategos.core.sim.nav.MobilityClass;
 import dev.strategos.core.sim.nav.PageBuilder;
 import dev.strategos.core.sim.nav.PageCoord;
+import dev.strategos.core.sim.nav.SliceMaterials;
 import dev.strategos.core.sim.nav.VoxelSlice;
+import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.PalettedContainer;
@@ -15,7 +18,8 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * A page build as a pure job (04 §9.2, PATH-15): it classifies the captured section copies through the immutable class
- * table, applies the classes {@link SliceCapture} found with real positions, and builds the page. It holds no level,
+ * table, finds their materials through the immutable material table (ECO-02), applies the classes {@link SliceCapture}
+ * found with real positions and the match's waiting writes, and builds the page. It holds no level,
  * chunk or entity (rule {@code JOBS_NEVER_TOUCH_THE_LEVEL}), so it runs on any thread with the same result.
  */
 final class PageJob implements PureJob<TerrainPage> {
@@ -33,6 +37,9 @@ final class PageJob implements PureJob<TerrainPage> {
     private final int[] overrideIndices;
     private final short[] overrideClasses;
     private final BlockClassTable table;
+    private final MaterialTable materials;
+    private final int[] pendingIndices;
+    private final List<BlockState> pendingStates;
     private final long sampleTick;
 
     PageJob(
@@ -50,6 +57,9 @@ final class PageJob implements PureJob<TerrainPage> {
             int[] overrideIndices,
             short[] overrideClasses,
             BlockClassTable table,
+            MaterialTable materials,
+            int[] pendingIndices,
+            List<BlockState> pendingStates,
             long sampleTick) {
         this.coord = coord;
         this.x0 = x0;
@@ -65,12 +75,16 @@ final class PageJob implements PureJob<TerrainPage> {
         this.overrideIndices = overrideIndices;
         this.overrideClasses = overrideClasses;
         this.table = table;
+        this.materials = materials;
+        this.pendingIndices = pendingIndices;
+        this.pendingStates = List.copyOf(pendingStates);
         this.sampleTick = sampleTick;
     }
 
     @Override
     public TerrainPage run(JobScratch scratch) {
         short[] voxels = new short[VoxelSlice.SIDE * VoxelSlice.SIDE * height];
+        @Nullable Material[] found = new Material[voxels.length];
         for (int x = 0; x < VoxelSlice.SIDE; x++) {
             int wx = x0 + x;
             for (int z = 0; z < VoxelSlice.SIDE; z++) {
@@ -79,15 +93,53 @@ final class PageJob implements PureJob<TerrainPage> {
                 for (int y = 0; y < height; y++) {
                     int wy = minY + y;
                     PalettedContainer<BlockState> section = copies.get(chunk * sections + (wy >> 4) - sectionY0);
-                    voxels[(x * VoxelSlice.SIDE + z) * height + y] =
-                            section == null ? BlockClass.AIR : table.classOf(section.get(wx & 15, wy & 15, wz & 15));
+                    int index = (x * VoxelSlice.SIDE + z) * height + y;
+                    if (section == null) {
+                        voxels[index] = BlockClass.AIR;
+                    } else {
+                        BlockState state = section.get(wx & 15, wy & 15, wz & 15);
+                        voxels[index] = table.classOf(state);
+                        found[index] = materials.of(state);
+                    }
                 }
             }
         }
         for (int i = 0; i < overrideIndices.length; i++) {
             voxels[overrideIndices[i]] = overrideClasses[i];
         }
+        for (int i = 0; i < pendingIndices.length; i++) {
+            found[pendingIndices[i]] = materials.of(pendingStates.get(i)); // the waiting write's block
+        }
         PageBuilder builder = scratch.get(PageBuilder.class, () -> new PageBuilder(MobilityClass.INFANTRY));
-        return TerrainPage.build(coord, new VoxelSlice(height, voxels), builder, sampleTick);
+        return TerrainPage.build(coord, new VoxelSlice(height, voxels, materials(found)), builder, sampleTick);
+    }
+
+    /** The voxels with a material, in index order, with a legend of the distinct ones. */
+    private static SliceMaterials materials(@Nullable Material[] found) {
+        List<Material> legend = new ArrayList<>();
+        int count = 0;
+        for (Material m : found) {
+            if (m != null) {
+                count++;
+            }
+        }
+        int[] voxels = new int[count];
+        int[] entries = new int[count];
+        int k = 0;
+        for (int i = 0; i < found.length; i++) {
+            Material m = found[i];
+            if (m == null) {
+                continue;
+            }
+            int entry = legend.indexOf(m);
+            if (entry < 0) {
+                entry = legend.size();
+                legend.add(m);
+            }
+            voxels[k] = i;
+            entries[k] = entry;
+            k++;
+        }
+        return new SliceMaterials(legend, voxels, entries);
     }
 }
