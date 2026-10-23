@@ -27,7 +27,9 @@ mod/src/devtools/goldens-proposed/<platform>/<scenario>/       proposals waiting
 ```
 
 - **Platforms:** `macos`, and `linux-llvmpipe` for CI's Xvfb and Mesa. The same frame differs on
-  92 % of its pixels between the two, so each has its own goldens.
+  92 % of its pixels between the two, so each has its own goldens. A run with Sodium (`-Pcompat`)
+  adds `-sodium`, since Sodium shades and loads the far terrain its own way: its frames differ from
+  vanilla's by about 1.2e-5, over the threshold.
 - **Size:** frames are box-filtered to at most 640 pixels across before they are compared, the size
   goldens are kept at.
 - **Measure:** the normalised mean squared error over RGB, 0 for the same picture and 1 for black

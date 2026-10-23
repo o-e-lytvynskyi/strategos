@@ -31,6 +31,7 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RenderFrameEvent;
@@ -309,17 +310,18 @@ public final class ScenarioRunner {
 
     /**
      * Whose goldens this run's frames are compared with (QA-18): {@code macos}, {@code linux-llvmpipe} (CI's Xvfb and
-     * Mesa), else the OS and the GL renderer.
+     * Mesa), else the OS and the GL renderer; with {@code -sodium} after it when Sodium draws, which shades and loads
+     * the far terrain its own way.
      */
     static String platform() {
         String os = System.getProperty("os.name").toLowerCase(Locale.ROOT);
         String gl = GlUtil.getRenderer().toLowerCase(Locale.ROOT);
-        if (os.startsWith("mac")) {
-            return "macos";
-        }
         int space = os.indexOf(' ');
         String system = space < 0 ? os : os.substring(0, space);
-        return gl.contains("llvmpipe") ? system + "-llvmpipe" : system + "-" + gl.replaceAll("[^a-z0-9]+", "-");
+        String base = os.startsWith("mac")
+                ? "macos"
+                : gl.contains("llvmpipe") ? system + "-llvmpipe" : system + "-" + gl.replaceAll("[^a-z0-9]+", "-");
+        return ModList.get().isLoaded("sodium") ? base + "-sodium" : base;
     }
 
     private static com.google.gson.JsonObject failure(String reason) {

@@ -17,3 +17,4 @@ run/
 /.claude/settings.local.json
 # Worktrees of parallel agents, merged into main after review
 /.claude/worktrees/
+__pycache__/
