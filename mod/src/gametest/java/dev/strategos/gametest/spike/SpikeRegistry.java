@@ -29,10 +29,10 @@ public final class SpikeRegistry {
 
     private SpikeRegistry() {}
 
-    /** Not for S9, whose real client joins: a client without these types fails the registry sync. */
+    /** Not for S9 and QA-19.4, whose real clients join: a client without these types fails the registry sync. */
     static boolean active() {
         String spike = System.getProperty("strategos.spike", "");
-        return !spike.isBlank() && !spike.equals("s9");
+        return !spike.isBlank() && !spike.equals("s9") && !spike.equals("qa19");
     }
 
     @SubscribeEvent

@@ -1,0 +1,85 @@
+{
+  "clientViewDistance": 10,
+  "mockViewDistance": 10,
+  "units": 300,
+  "windowTicks": 1200,
+  "jfrBytes": 719780,
+  "mockBytes": 719736,
+  "difference": 6.112978965795104E-5,
+  "pass": true,
+  "jfr": {
+    "packets": 81481,
+    "bytes": 719780,
+    "types": {
+      "minecraft:custom_payload": {
+        "packets": 60,
+        "bytes": 2460
+      },
+      "minecraft:keep_alive": {
+        "packets": 4,
+        "bytes": 36
+      },
+      "minecraft:move_entity_pos": {
+        "packets": 42481,
+        "bytes": 410802
+      },
+      "minecraft:move_entity_pos_rot": {
+        "packets": 19249,
+        "bytes": 225487
+      },
+      "minecraft:move_entity_rot": {
+        "packets": 3,
+        "bytes": 16
+      },
+      "minecraft:player_info_update": {
+        "packets": 2,
+        "bytes": 74
+      },
+      "minecraft:rotate_head": {
+        "packets": 19380,
+        "bytes": 71973
+      },
+      "minecraft:teleport_entity": {
+        "packets": 302,
+        "bytes": 8932
+      }
+    }
+  },
+  "mock": {
+    "packets": 81476,
+    "bytes": 719736,
+    "ours": 0,
+    "vanilla": 719736,
+    "failures": 0,
+    "types": {
+      "minecraft:move_entity_pos": {
+        "packets": 42481,
+        "bytes": 410822
+      },
+      "minecraft:move_entity_pos_rot": {
+        "packets": 19249,
+        "bytes": 225487
+      },
+      "minecraft:move_entity_rot": {
+        "packets": 3,
+        "bytes": 16
+      },
+      "minecraft:player_info_update": {
+        "packets": 2,
+        "bytes": 74
+      },
+      "minecraft:rotate_head": {
+        "packets": 19380,
+        "bytes": 71973
+      },
+      "minecraft:teleport_entity": {
+        "packets": 301,
+        "bytes": 8904
+      },
+      "payload/neoforge:custom_time_packet": {
+        "packets": 60,
+        "bytes": 2460
+      }
+    }
+  }
+}

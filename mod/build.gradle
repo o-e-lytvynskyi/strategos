@@ -554,7 +554,8 @@ def prepareSpike = tasks.register('prepareSpike', Sync) {
     // S8 counts surfaces on vanilla terrain, so it gets a normal world with the census seed (M1 T3); S12's world
     // holds its two data packs, the errors pack disabled at creation (M1 T16); S9 a view distance of 10 (M2 T1).
     def spike = providers.gradleProperty('spike').getOrElse('')
-    def dirs = [s8: 'src/gametest/spike-s8-gamedir', s9: 'src/gametest/spike-s9-gamedir', s12: 'src/gametest/spike-s12-gamedir']
+    def dirs = [s8: 'src/gametest/spike-s8-gamedir', s9: 'src/gametest/spike-s9-gamedir', qa19: 'src/gametest/spike-s9-gamedir',
+                s12: 'src/gametest/spike-s12-gamedir']
     from dirs.get(spike, 'src/gametest/spike-gamedir')
     into layout.buildDirectory.dir('spike')
     preserve { include 'out/**' }                       // both runs of a spike, and the JFR recording
@@ -567,7 +568,7 @@ def spikeOut = file('build/spike/out')
 tasks.matching { it.name == 'runSpike' }.configureEach {
     timeout = Duration.ofMinutes(45)
     doFirst {
-        if (!(spikeId in ['s1', 's2', 's7', 's8', 's9', 's12'])) throw new GradleException('Use -Pspike=s1, s2, s7, s8, s9 or s12')
+        if (!(spikeId in ['s1', 's2', 's7', 's8', 's9', 's12', 'qa19'])) throw new GradleException('Use -Pspike=s1, s2, s7, s8, s9, s12 or qa19')
         new File(spikeOut, "${spikeDirName}/DONE").delete()
     }
     doLast {

@@ -91,6 +91,7 @@ public final class ScenarioRunner {
             case "rts_select" -> new RtsSelectScenario();
             case "rts_frame" -> new RtsFrameScenario();
             case "rts_goldens" -> new RtsGoldensScenario();
+            case "qa19" -> new PacketSentScenario();
             default -> null;
         };
     }

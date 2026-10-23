@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Runs a spike on the self-terminating dedicated server (spec 8.3) when {@code strategos.spike} is {@code s1},
- * {@code s2}, {@code s7}, {@code s8}, {@code s9} or {@code s12}: the world rules of an arena (04 §3.2), ticks back to back, then the spike until it is done, its report,
+ * {@code s2}, {@code s7}, {@code s8}, {@code s9}, {@code s12} or {@code qa19}: the world rules of an arena (04 §3.2), ticks back to back, then the spike until it is done, its report,
  * {@code DONE} and {@code halt}. A 40-minute deadline writes what it has and halts without {@code DONE}.
  */
 @EventBusSubscriber(modid = Strategos.MOD_ID)
@@ -41,7 +41,7 @@ public final class SpikeDriver {
         }
         arenaRules(server);
         server.getGameRules().getRule(GameRules.RULE_MAX_ENTITY_CRAMMING).set(0, server);
-        if (!id.equals("s9")) { // S9's client plays at 20 ticks a second, as a player would
+        if (!id.equals("s9") && !id.equals("qa19")) { // their clients play at 20 ticks a second, as a player would
             server.tickRateManager().requestGameToSprint(Integer.MAX_VALUE);
         }
         Spike spike = switch (id) {
@@ -51,6 +51,7 @@ public final class SpikeDriver {
             case "s7" -> new S7PathLoad(server);
             case "s12" -> new S12ContentCycle(server);
             case "s9" -> new S9Camera(server);
+            case "qa19" -> new PacketSentCheck(server);
             default -> throw new IllegalArgumentException("no spike " + id);
         };
         running = new Running(server, spike, System.nanoTime());
