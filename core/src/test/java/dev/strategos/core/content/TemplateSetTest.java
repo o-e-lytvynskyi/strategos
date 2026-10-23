@@ -33,10 +33,20 @@ class TemplateSetTest {
                 .as("ids sort the worker after the infantry: M2's indices stay")
                 .isEqualTo(2);
         assertThat(worker.classes()).containsExactly("Builder", "Gatherer", "Organic", "Unit", "Worker");
-        assertThat(set.all()).containsExactly(walker, infantry, worker);
+        assertThat(set.all()).hasSize(6);
+        assertThat(set.all().subList(0, 3)).containsExactly(walker, infantry, worker);
+        assertThat(set.all().subList(3, 6))
+                .as("the buildings, appended after M2's pinned units, in id order")
+                .extracting(t -> t.id().value())
+                .containsExactly(
+                        "strategos:building/barracks", "strategos:building/civic_centre", "strategos:building/house");
+        assertThat(set.all().subList(3, 6)).allMatch(UnitTemplate::isBuilding);
+        assertThat(set.blueprint(4)).isEqualTo(PlaceholderBlueprints.civicCentre());
+        assertThat(set.blueprint(0)).isNull();
         assertThat(set.byId(new TemplateId("strategos:unit/nobody"))).isNull();
         assertThat(set.tokens().all())
-                .containsExactly("Builder", "Gatherer", "Infantry", "Organic", "Spearman", "Unit", "Worker");
+                .contains("Builder", "Gatherer", "Infantry", "Organic", "Spearman", "Unit", "Worker")
+                .contains("Barracks", "CivicCentre", "House", "Structure");
         assertThat(set.valuePaths().byPath("UnitMotion/walkSpeed")).isNotNull();
     }
 
@@ -87,11 +97,12 @@ class TemplateSetTest {
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> set(new UnitTemplate(walker.id(), 0, walker.bodyType(), 0, 0.6f, 1.8f)))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> TemplateSet.builtin().byIndex(3)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> TemplateSet.builtin().byIndex(6)).isInstanceOf(IllegalArgumentException.class);
     }
 
     private static final String BUILTIN_VERSION =
-            "b99c4facfd893f776c9f82334fe7141520ee8a9239ac165e0bb6651edbf63713"; // M3: the worker, the spearman's cost
+            "6f70b8e716c903c3ee97818105a7895f5c746714eec5c4a32a2e7856d5960a68"; // M3: the buildings and their
+    // blueprints
 
     private static TemplateSet set(UnitTemplate template) {
         return new TemplateSet(List.of(template));

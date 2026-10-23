@@ -5,7 +5,7 @@ import dev.strategos.core.shared.TemplateId;
 import java.util.List;
 
 /**
- * A unit type as the core reads it (04 §8.3, §8.8): {@code netIndex} is its index in the set, sent instead of the id;
+ * A unit type as the core reads it (04 §8.3, §8.8), or a building's ({@link #isBuilding}, BLD-01): {@code netIndex} is its index in the set, sent instead of the id;
  * classes are its tokens, sorted; speed in blocks per tick, turn rate in degrees per tick; the body's entity type,
  * model archetype, skin and size in blocks; {@code radius} is its footprint for avoidance and slot spacing.
  */
@@ -25,6 +25,8 @@ public record UnitTemplate(
         double radius) {
     public static final double DEFAULT_TURN_RATE = 45;
     public static final double DEFAULT_RADIUS = 0.35;
+    /** The mobility of a building's template: it never moves and has no body (BLD-01). */
+    public static final String BUILDING = "building";
 
     public UnitTemplate {
         classes = List.copyOf(classes);
@@ -46,6 +48,16 @@ public record UnitTemplate(
                 width,
                 height,
                 DEFAULT_RADIUS);
+    }
+
+    /** A building's template (BLD-01): a name and classes; its numbers are value paths, its shape its blueprint. */
+    public static UnitTemplate building(TemplateId id, int netIndex, String name, List<String> classes) {
+        return new UnitTemplate(id, netIndex, name, classes, 0, 0, BUILDING, "", "", "", 0, 0, 0);
+    }
+
+    /** Whether this is a building's template, not a unit's. */
+    public boolean isBuilding() {
+        return BUILDING.equals(mobility);
     }
 
     /** This template at another net index (the session's {@link TemplateIdTable} gives it). */

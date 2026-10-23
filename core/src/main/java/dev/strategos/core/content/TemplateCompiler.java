@@ -50,11 +50,17 @@ public final class TemplateCompiler {
         return compile(raws, TemplateIdTable.EMPTY);
     }
 
+    /** As {@link #compile(List, TemplateIdTable, Map)}, buildings shaped by the placeholder blueprints. */
+    public static Result compile(List<RawTemplate> raws, TemplateIdTable table) {
+        return compile(raws, table, PlaceholderBlueprints.byId());
+    }
+
     /**
      * The set's templates hold their indices in {@code table}; a template the table lacks is appended (DATA-03), so a
-     * reload keeps every index the session gave.
+     * reload keeps every index the session gave. A building template names its blueprint in {@code Building/blueprint};
+     * {@code blueprints} supplies it, and its JSON joins the flattened template under {@code Blueprint} (BLD-01).
      */
-    public static Result compile(List<RawTemplate> raws, TemplateIdTable table) {
+    public static Result compile(List<RawTemplate> raws, TemplateIdTable table, Map<String, Blueprint> blueprints) {
         List<TemplateProblem> problems = new ArrayList<>();
         Map<String, RawTemplate> byId = new TreeMap<>();
         for (RawTemplate raw : raws) {
@@ -78,6 +84,26 @@ public final class TemplateCompiler {
         }
         List<Derivation> derivations = Derivations.apply(
                 flattened, id -> Objects.requireNonNull(byId.get(id.value())).file(), problems);
+        for (Map.Entry<TemplateId, JsonObject> e : flattened.entrySet()) {
+            JsonElement b = e.getValue().get("Building");
+            if (isAbstract(e.getValue())
+                    || b == null
+                    || !b.isJsonObject()
+                    || e.getValue().has("Blueprint")) {
+                continue;
+            }
+            JsonObject building = b.getAsJsonObject();
+            JsonElement name = building.get("blueprint");
+            Blueprint bp = name != null && name.isJsonPrimitive() ? blueprints.get(name.getAsString()) : null;
+            if (bp == null) {
+                problems.add(TemplateProblem.error(
+                        Objects.requireNonNull(byId.get(e.getKey().value())).file(),
+                        "/Building/blueprint",
+                        "unknown blueprint " + name));
+            } else {
+                e.getValue().add("Blueprint", bp.toJson());
+            }
+        }
         List<UnitTemplate> units = new ArrayList<>();
         List<JsonObject> unitJson = new ArrayList<>();
         for (Map.Entry<TemplateId, JsonObject> e : flattened.entrySet()) {
@@ -326,6 +352,9 @@ public final class TemplateCompiler {
     /** The unit components of a flattened template, field by field; null after recording what is wrong. */
     private static @Nullable UnitTemplate decode(
             TemplateId id, int netIndex, JsonObject json, String file, List<TemplateProblem> problems) {
+        if (json.has("Building")) {
+            return decodeBuilding(id, netIndex, json, file, problems);
+        }
         int before = problems.size();
         Fields f = new Fields(file, problems);
         JsonObject identity = f.object(json, "", "Identity", true);
@@ -373,6 +402,38 @@ public final class TemplateCompiler {
                 (float) width,
                 (float) height,
                 radius);
+    }
+
+    /**
+     * A building's template (BLD-01): its identity and its blueprint, which must keep the blueprint rules (a door; ranks
+     * that respect supports and spare the two lowest outer layers); a trainer also needs a spawn marker.
+     */
+    private static @Nullable UnitTemplate decodeBuilding(
+            TemplateId id, int netIndex, JsonObject json, String file, List<TemplateProblem> problems) {
+        int before = problems.size();
+        Fields f = new Fields(file, problems);
+        JsonObject identity = f.object(json, "", "Identity", true);
+        String name = identity == null ? id.value() : f.string(identity, "/Identity", "name", id.value());
+        String classes = identity == null ? "" : f.string(identity, "/Identity", "classes", "");
+        JsonElement shape = json.get("Blueprint");
+        if (shape == null || !shape.isJsonObject()) {
+            problems.add(TemplateProblem.error(file, "/Building/blueprint", "a building needs its blueprint"));
+            return null;
+        }
+        Blueprint bp = Blueprint.fromJson(shape.getAsJsonObject(), file, problems);
+        if (bp != null) {
+            for (String p : PlaceholderBlueprints.problems(bp)) {
+                problems.add(TemplateProblem.error(file, "/Blueprint", p));
+            }
+            if (json.has("Trainer") && bp.marker("spawn") == null) {
+                problems.add(
+                        TemplateProblem.error(file, "/Blueprint", bp.id() + " trains units but has no spawn marker"));
+            }
+        }
+        if (problems.size() > before) {
+            return null;
+        }
+        return UnitTemplate.building(id, netIndex, name, MergeOps.tokens(classes));
     }
 
     /** Reads typed fields, recording a problem at the field's pointer for anything missing or of the wrong type. */

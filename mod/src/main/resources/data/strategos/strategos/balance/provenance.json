@@ -46,5 +46,23 @@
     "#minecraft:base_stone_overworld": "Five stone a block of rock: indexed now, gathered from ECO-07 (M4)",
     "#c:ores/iron": "Ten iron a block of ore: indexed now, gathered from ECO-08 (M4)",
     "minecraft:sweet_berry_bush": "Sixty food a bush, a worker's cost: early food that runs out, so fields matter (ECO-09)"
+  },
+  "strategos:building/civic_centre": {
+    "Health/max": "Two thousand: ten spearmen with torches take minutes, so a raid alone does not end a match (CMB-03)",
+    "Cost/resources/wood": "Three hundred wood: a second centre is a late, deliberate expansion, not an opening move",
+    "Cost/resources/stone": "Two hundred stone: stone matters from M4; until then only the starting centre exists",
+    "Cost/time": "Two and a half minutes: the largest build of the first loop",
+    "Housing/capacity": "Twenty: the five starting workers and fifteen more before the first house is needed"
+  },
+  "strategos:building/house": {
+    "Health/max": "Four hundred: a house burns in well under a minute to a squad (CMB-03)",
+    "Cost/resources/wood": "Eighty wood: a worker's first trip or two to a tree; the first house by 1:30 (the timing target)",
+    "Cost/time": "Thirty seconds for one builder",
+    "Housing/capacity": "Five: a house a few trainings, so housing paces growth"
+  },
+  "strategos:building/barracks": {
+    "Health/max": "Twelve hundred: between a house and the centre",
+    "Cost/resources/wood": "Two hundred wood: the barracks by 4:00 (the timing target) after a house and steady chopping",
+    "Cost/time": "A minute for one builder"
   }
 }

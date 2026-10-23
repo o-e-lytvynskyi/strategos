@@ -35,6 +35,7 @@ public final class TemplateSet {
     private final ValuePaths tokenPaths;
     private final double[][] values; // by net index, then value path id; NaN where a template has no such number
     private final @Nullable String[][] texts; // by net index, then token path id
+    private final @Nullable Blueprint[] blueprints; // by net index: a building's shape
 
     /** A set from code: each template's JSON is {@link UnitTemplate#toJson()}. */
     public TemplateSet(List<UnitTemplate> templates) {
@@ -57,7 +58,8 @@ public final class TemplateSet {
                 throw new IllegalArgumentException(t.id() + " has net index " + t.netIndex() + " at position " + i);
             }
             position[t.netIndex()] = i;
-            if (!(t.walkSpeed() > 0 && t.width() > 0 && t.height() > 0 && t.turnRate() > 0 && t.radius() > 0)) {
+            if (!t.isBuilding()
+                    && !(t.walkSpeed() > 0 && t.width() > 0 && t.height() > 0 && t.turnRate() > 0 && t.radius() > 0)) {
                 throw new IllegalArgumentException(t.id() + " needs a positive speed, turn rate and size");
             }
             for (int j = 0; j < i; j++) {
@@ -83,6 +85,15 @@ public final class TemplateSet {
         this.tokens = new ClassTokens(tokenNames);
         this.valuePaths = new ValuePaths(paths);
         this.tokenPaths = new ValuePaths(lists);
+        this.blueprints = new Blueprint[indices];
+        for (int k = 0; k < templates.size(); k++) {
+            JsonElement bp = copies.get(k).get("Blueprint");
+            if (templates.get(k).isBuilding() && bp != null && bp.isJsonObject()) {
+                List<TemplateProblem> problems = new ArrayList<>();
+                blueprints[templates.get(k).netIndex()] = Blueprint.fromJson(
+                        bp.getAsJsonObject(), templates.get(k).id().value(), problems);
+            }
+        }
         this.values = new double[indices][valuePaths.size()];
         this.texts = new String[indices][tokenPaths.size()];
         for (double[] row : values) {
@@ -129,6 +140,11 @@ public final class TemplateSet {
             throw new IllegalArgumentException("no template with net index " + netIndex);
         }
         return templates.get(position[netIndex]);
+    }
+
+    /** Building template {@code netIndex}'s blueprint (BLD-01), or null for a unit's or a building without one. */
+    public @Nullable Blueprint blueprint(int netIndex) {
+        return netIndex >= 0 && netIndex < blueprints.length ? blueprints[netIndex] : null;
     }
 
     /** Whether a template holds {@code netIndex}: false for a retired index or one past the set's. */

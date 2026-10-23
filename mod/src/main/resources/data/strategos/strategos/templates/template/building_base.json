@@ -1,0 +1,6 @@
+{
+  "abstract": true,
+  "Identity": { "classes": "Structure" },
+  "Building": { "material": "stone" },
+  "Health": { "max": 500 }
+}

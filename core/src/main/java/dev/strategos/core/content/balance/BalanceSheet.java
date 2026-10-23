@@ -88,6 +88,7 @@ public final class BalanceSheet {
             JsonObject flat = Objects.requireNonNull(result.set().flattened(t.id()));
             List<String> paths = new ArrayList<>();
             numbers(flat, "", paths);
+            paths.removeIf(p -> p.startsWith("Blueprint/")); // a building's shape is geometry, not balance
             for (String path : paths) {
                 BigDecimal value =
                         new BigDecimal(Objects.requireNonNull(at(flat, path)).getAsString());
@@ -117,7 +118,7 @@ public final class BalanceSheet {
                 sheet.sinks(t.id(), path, value);
             }
             for (String path : CorePaths.all()) {
-                if (paths.contains(path)) {
+                if (t.isBuilding() || paths.contains(path)) { // the core's unit defaults mean nothing to a building
                     continue;
                 }
                 ValuePath vp = Objects.requireNonNull(result.set().valuePaths().byPath(path));

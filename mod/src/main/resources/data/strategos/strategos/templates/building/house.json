@@ -1,0 +1,8 @@
+{
+  "parent": "strategos:template/building_base",
+  "Identity": { "name": "strategos.building.house", "classes": "+House" },
+  "Building": { "blueprint": "strategos:house", "material": "wood" },
+  "Health": { "max": 400 },
+  "Cost": { "resources": { "wood": 80 }, "time": 30 },
+  "Housing": { "capacity": 5 }
+}

@@ -74,15 +74,71 @@ final class BuiltinTemplates {
             }
             """;
 
+    static final String BUILDING_BASE = """
+            {
+              "abstract": true,
+              "Identity": { "classes": "Structure" },
+              "Building": { "material": "stone" },
+              "Health": { "max": 500 }
+            }
+            """;
+    static final String CIVIC_CENTRE = """
+            {
+              "parent": "strategos:template/building_base",
+              "Identity": { "name": "strategos.building.civic_centre", "classes": "+CivicCentre" },
+              "Building": { "blueprint": "strategos:civic_centre" },
+              "Health": { "max": 2000 },
+              "Cost": { "resources": { "wood": 300, "stone": 200 }, "time": 150 },
+              "Dropsite": { "resources": "food wood stone iron" },
+              "Housing": { "capacity": 20 },
+              "Trainer": { "units": "strategos:unit/worker" }
+            }
+            """;
+    static final String HOUSE = """
+            {
+              "parent": "strategos:template/building_base",
+              "Identity": { "name": "strategos.building.house", "classes": "+House" },
+              "Building": { "blueprint": "strategos:house", "material": "wood" },
+              "Health": { "max": 400 },
+              "Cost": { "resources": { "wood": 80 }, "time": 30 },
+              "Housing": { "capacity": 5 }
+            }
+            """;
+    static final String BARRACKS = """
+            {
+              "parent": "strategos:template/building_base",
+              "Identity": { "name": "strategos.building.barracks", "classes": "+Barracks" },
+              "Building": { "blueprint": "strategos:barracks", "material": "wood" },
+              "Health": { "max": 1200 },
+              "Cost": { "resources": { "wood": 200 }, "time": 60 },
+              "Trainer": { "units": "strategos:unit/infantry" }
+            }
+            """;
+
+    /**
+     * The net indices the built-in set gives, in the order its templates arrived: M2's units first, so their indices
+     * stay 0 and 1 whatever ids later templates sort under (M3 spec §9 R10); a new id is appended.
+     */
+    private static final TemplateIdTable PINNED = new TemplateIdTable(List.of(
+            new TemplateId("strategos:unit/debug_walker"),
+            new TemplateId("strategos:unit/infantry"),
+            new TemplateId("strategos:unit/worker")));
+
     private BuiltinTemplates() {}
 
     static TemplateSet compile() {
-        TemplateCompiler.Result result = TemplateCompiler.compile(List.of(
-                raw("strategos:template/unit_base", UNIT_BASE),
-                raw("strategos:template/unit_infantry", UNIT_INFANTRY),
-                raw("strategos:unit/debug_walker", DEBUG_WALKER),
-                raw("strategos:unit/infantry", INFANTRY),
-                raw("strategos:unit/worker", WORKER)));
+        TemplateCompiler.Result result = TemplateCompiler.compile(
+                List.of(
+                        raw("strategos:template/unit_base", UNIT_BASE),
+                        raw("strategos:template/unit_infantry", UNIT_INFANTRY),
+                        raw("strategos:template/building_base", BUILDING_BASE),
+                        raw("strategos:unit/debug_walker", DEBUG_WALKER),
+                        raw("strategos:unit/infantry", INFANTRY),
+                        raw("strategos:unit/worker", WORKER),
+                        raw("strategos:building/civic_centre", CIVIC_CENTRE),
+                        raw("strategos:building/house", HOUSE),
+                        raw("strategos:building/barracks", BARRACKS)),
+                PINNED);
         if (!result.ok()) {
             throw new IllegalStateException("the builtin templates do not compile: " + result.problems());
         }

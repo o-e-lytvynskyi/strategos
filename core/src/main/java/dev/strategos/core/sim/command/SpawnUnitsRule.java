@@ -42,6 +42,9 @@ final class SpawnUnitsRule implements CommandRule<SpawnUnits> {
         if (template == null) {
             return Tally.rejectAll(envelope, kind(), requested, RejectReason.UNKNOWN_TEMPLATE);
         }
+        if (template.isBuilding()) {
+            return Tally.rejectAll(envelope, kind(), requested, RejectReason.UNSUPPORTED); // buildings are placed
+        }
         // The faction must be seated in this match, besides the spec's count and spread ranges.
         if (spawn.count() < 1
                 || spawn.count() > MAX_COUNT
