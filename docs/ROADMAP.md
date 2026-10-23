@@ -316,7 +316,7 @@ Cards: [roadmap/M2-command.md](roadmap/M2-command.md#cards). 20 cards, at most 6
 | UNIT-03 | Unit renderer for the RTS view | M | UNIT-01 | done |
 | QA-18 | Scenario diff, goldens and the CI golden job | M | QA-06, CAM-04, D-22 | done |
 | CAM-03 | Commander body, jumps and the chunk-sent re-pair | M | CAM-01, CORE-03, NET-01, QA-19 | done |
-| NET-08 | Tier-2 replication: summaries, far markers and details | M | NET-01, UNIT-03 | in_progress |
+| NET-08 | Tier-2 replication: summaries, far markers and details | M | NET-01, UNIT-03 | done |
 | UI-03 | Selection | M | CAM-04, UI-02, UNIT-03 | done |
 | UI-04 | Control groups | S | UI-03 | done |
 | UI-05 | Order feedback and destination preview | M | ORD-03, UI-02, CAM-04 | done |
@@ -325,7 +325,7 @@ Cards: [roadmap/M2-command.md](roadmap/M2-command.md#cards). 20 cards, at most 6
 | CMB-01 | Damage model in the core | M | DATA-02, UNIT-02 | in_progress |
 | CMB-02 | Melee combat with a default aggressive behaviour | M | CMB-01, PATH-06 | specified |
 | ORD-04 | Attack and attack-move | M | ORD-02, CMB-02, UI-05 | specified |
-| CMB-06 | Health bars, hit flash and death | S | CMB-01, UI-02, NET-08 | specified |
+| CMB-06 | Health bars, hit flash and death | S | CMB-01, UI-02, NET-08 | in_progress |
 | AUD-01 | Order, hit and death sounds | S | ORD-02, CMB-01, NET-01 | specified |
 | PERF-14 | Client frame gate (consent) | S | UI-02, UNIT-03, QA-06 | in_progress |
 

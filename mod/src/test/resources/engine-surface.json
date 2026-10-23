@@ -16,6 +16,9 @@
     "strategos:mode_switch",
     "strategos:template_ack",
     "strategos:template_set",
+    "strategos:ui_query",
+    "strategos:unit_detail",
+    "strategos:unit_hud",
     "strategos:unit_summary"
   ],
   "dataMaps": ["strategos:nav_class"],

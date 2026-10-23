@@ -313,10 +313,11 @@ Answer in chat or here; the next session applies the answers.
   shows your control groups, and hovering a unit names it with its faction's colour. The layout
   holds every window size and GUI scale tested, and the HUD costs well under a tenth of a
   millisecond a frame on this Mac. Card UI-02 is done.
-- 2026-10-23 · **M2 T10 (part) Armies never vanish:** every player now gets, twice a second, where
+- 2026-10-23 · **M2 T10 Armies never vanish:** every player now gets, twice a second, where
   all the units it knows stand, its own and the enemies it sees (all of them until fog). Units too
   far away for the game to show their bodies are drawn as squares of their colour on the ground, so
-  zooming out never hides an army. Card UNIT-03 is done; NET-08 is in progress.
+  zooming out never hides an army. Each player also gets the hit points of the units it sees when
+  they change, and the details of its selection. Cards UNIT-03 and NET-08 are done.
 - 2026-10-23 · **M2 T14 Units can be hurt and die:** each unit now has hit points (100 by default)
   and resistances to hack, pierce and crush damage; a player's blow, an arrow, an explosion or
   `/kill` takes them off in the match's own rules, and the body flashes red. A unit that dies falls
@@ -338,7 +339,7 @@ Answer in chat or here; the next session applies the answers.
 - **In progress:** none.
 - **Last finished task:** M1 T26 (2026-10-23). The agents' branches `wip/m1-t17-unitai-hfsm` and
   `wip/m1-t25-debug-overlay` are merged and kept on GitHub for the record.
-- **Last M2 task:** T10's summaries and far markers (2026-10-23), T14 before it (its unit-on-unit check with T15); T1–T6, T8, T9, T11, T12, T13, T19, T21 done; T7 open for NET-08's markers; three consent-batch items (T22) done early.
+- **Last M2 task:** T10, replication tier 2 and 3 (2026-10-23), T14 before it (its unit-on-unit check with T15); T1–T6, T8, T9, T11, T12, T13, T19, T21 done; T7 open for NET-08's markers; three consent-batch items (T22) done early.
 - **Next task:** while the Mac's windows are mine today, the window work that is ready (M2's L4
   items as their tasks land); M1 T27 (M1 close, headless); then M2's tasks in the spec's order.
 - **WIP branch:** none.

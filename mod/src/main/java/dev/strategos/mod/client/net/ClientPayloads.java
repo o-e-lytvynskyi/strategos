@@ -11,6 +11,8 @@ import dev.strategos.mod.server.net.payload.MatchStatePayload;
 import dev.strategos.mod.server.net.payload.PayloadArrived;
 import dev.strategos.mod.server.net.payload.TemplateAckPayload;
 import dev.strategos.mod.server.net.payload.TemplateSetPayload;
+import dev.strategos.mod.server.net.payload.UnitDetailPayload;
+import dev.strategos.mod.server.net.payload.UnitHudPayload;
 import dev.strategos.mod.server.net.payload.UnitSummaryPayload;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientPacketListener;
@@ -39,6 +41,18 @@ public final class ClientPayloads {
                 MatchJoin join = StrategosClient.match();
                 if (join != null) {
                     StrategosClient.model().accept(p.summary(), join.matchId());
+                }
+            }
+            case UnitHudPayload p -> {
+                MatchJoin join = StrategosClient.match();
+                if (join != null) {
+                    StrategosClient.model().accept(p.hud(), join.matchId());
+                }
+            }
+            case UnitDetailPayload p -> {
+                MatchJoin join = StrategosClient.match();
+                if (join != null) {
+                    StrategosClient.model().accept(p.detail(), join.matchId());
                 }
             }
             default -> LOG.debug("unhandled payload {}", event.payload().type().id());

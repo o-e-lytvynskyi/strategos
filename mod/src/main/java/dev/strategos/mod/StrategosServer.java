@@ -323,6 +323,7 @@ public final class StrategosServer {
             s.templateSync.forget(player);
             s.interest.forget(player.getUUID());
             s.debug.forget(player);
+            s.replication.forget(player.getUUID());
         }
     }
 

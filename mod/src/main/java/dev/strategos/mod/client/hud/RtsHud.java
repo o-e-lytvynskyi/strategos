@@ -8,11 +8,14 @@ import dev.strategos.core.client.hud.SelectionSummary;
 import dev.strategos.core.client.pick.Picking;
 import dev.strategos.core.client.select.Selection;
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.protocol.UiQuery;
 import dev.strategos.mod.client.StrategosClient;
+import dev.strategos.mod.client.net.ClientPayloads;
 import dev.strategos.mod.client.rts.RtsMode;
 import dev.strategos.mod.entity.UnitEntity;
 import dev.strategos.mod.entity.UnitSpawnData;
 import dev.strategos.mod.platform.Ids;
+import dev.strategos.mod.server.net.payload.UiQueryPayload;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,6 +70,11 @@ public final class RtsHud {
     private GroupBar bar = new GroupBar(List.of());
     private @Nullable Tooltip tooltip;
     private long buildNanos;
+    /** Ticks between two {@code ui_query}s: four a second, the server's limit. */
+    private static final int QUERY_EVERY = 5;
+
+    private List<Integer> queried = List.of();
+    private int sinceQuery = QUERY_EVERY;
     private long drawNanos;
     private long drawing;
 
@@ -133,7 +141,21 @@ public final class RtsHud {
                 inspectedData == null ? null : name(templates, inspectedData.templateIndex()));
         bar = GroupBar.of(mode.groups());
         tooltip = hovered(mc, templates);
+        query(selection.handles());
         buildNanos = System.nanoTime() - start;
+    }
+
+    /** The selection's details, asked for again when it changes, at most every {@value #QUERY_EVERY} ticks (NET-08). */
+    private void query(List<Integer> handles) {
+        List<Integer> wanted = handles.size() > UiQuery.MAX_HANDLES ? handles.subList(0, UiQuery.MAX_HANDLES) : handles;
+        sinceQuery++;
+        if (wanted.equals(queried) || sinceQuery < QUERY_EVERY) {
+            return;
+        }
+        if (ClientPayloads.toServer(new UiQueryPayload(new UiQuery(wanted)))) {
+            queried = List.copyOf(wanted);
+            sinceQuery = 0;
+        }
     }
 
     private @Nullable Tooltip hovered(Minecraft mc, TemplateSet templates) {

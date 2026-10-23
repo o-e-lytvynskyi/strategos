@@ -13,6 +13,9 @@ import dev.strategos.mod.server.net.payload.ModeSwitchPayload;
 import dev.strategos.mod.server.net.payload.PayloadArrived;
 import dev.strategos.mod.server.net.payload.TemplateAckPayload;
 import dev.strategos.mod.server.net.payload.TemplateSetPayload;
+import dev.strategos.mod.server.net.payload.UiQueryPayload;
+import dev.strategos.mod.server.net.payload.UnitDetailPayload;
+import dev.strategos.mod.server.net.payload.UnitHudPayload;
 import dev.strategos.mod.server.net.payload.UnitSummaryPayload;
 import java.util.List;
 import net.minecraft.resources.ResourceLocation;
@@ -46,6 +49,10 @@ public final class ModPayloads {
         registrar.playToClient(FeedbackPayload.TYPE, FeedbackPayload.STREAM_CODEC, PayloadArrived::post);
         registrar.playToClient(TemplateSetPayload.TYPE, TemplateSetPayload.STREAM_CODEC, PayloadArrived::post);
         registrar.playToClient(UnitSummaryPayload.TYPE, UnitSummaryPayload.STREAM_CODEC, PayloadArrived::post);
+        registrar.playToClient(UnitHudPayload.TYPE, UnitHudPayload.STREAM_CODEC, PayloadArrived::post);
+        registrar.playToClient(UnitDetailPayload.TYPE, UnitDetailPayload.STREAM_CODEC, PayloadArrived::post);
+        registrar.playToServer(
+                UiQueryPayload.TYPE, UiQueryPayload.STREAM_CODEC, C2sHandlers.timed(C2sHandlers::uiQuery));
         registrar.playToServer(
                 TemplateAckPayload.TYPE, TemplateAckPayload.STREAM_CODEC, C2sHandlers.timed(C2sHandlers::templateAck));
         registrar.playToServer(
@@ -70,6 +77,9 @@ public final class ModPayloads {
                 FeedbackPayload.SPEC,
                 TemplateSetPayload.SPEC,
                 UnitSummaryPayload.SPEC,
+                UnitHudPayload.SPEC,
+                UnitDetailPayload.SPEC,
+                UiQueryPayload.SPEC,
                 TemplateAckPayload.SPEC,
                 CameraJumpPayload.SPEC,
                 ModeSwitchPayload.SPEC,

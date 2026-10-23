@@ -11,6 +11,12 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
 
 ## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24, T16, T26; M2 spec, M2 T1, T3, T5, T11, T13, T9, T21, T8, T6, T19, T2, T4, T14, T10 (part), T7
 
+- **M2 T10 · Replication tiers 2 and 3** — NET-08 done; UNIT-03 done (T7).
+  - **Then:** `unit_hud` (core `HudMemory`, 5 Hz, changes only, per player), `ui_query` and
+    `unit_detail` (10 Hz, own units only), the client model's hit points and details, the HUD's
+    query on a selection change; `HudAndDetailTest` (3) and two GameTests. The test visibility rule
+    is per match now: two tests in one batch overwrote each other's.
+
 - **M2 T10 (part) · Summaries and far markers** — NET-08 in progress; UNIT-03 done (T7).
   - **Results:** core `UnitSummary` and its codec, `ReplicationService` with `Visibility`,
     `ClientMatchModel`; the mod's `unit_summary` payload and `Replication` sender at 2 Hz;

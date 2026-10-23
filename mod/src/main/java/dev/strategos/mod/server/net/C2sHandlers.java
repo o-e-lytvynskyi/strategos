@@ -7,6 +7,7 @@ import dev.strategos.mod.server.net.payload.CommandsPayload;
 import dev.strategos.mod.server.net.payload.DebugSubscribePayload;
 import dev.strategos.mod.server.net.payload.ModeSwitchPayload;
 import dev.strategos.mod.server.net.payload.TemplateAckPayload;
+import dev.strategos.mod.server.net.payload.UiQueryPayload;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
@@ -74,6 +75,19 @@ public final class C2sHandlers {
         if (seat != null) {
             server.commanders()
                     .jump(player, seat.match(), payload.jump(), server.server().getTickCount());
+        }
+    }
+
+    /** A seated player's detail subscription (NET-08), kept by replication within its rate. */
+    public static void uiQuery(UiQueryPayload payload, IPayloadContext context) {
+        StrategosServer server = StrategosServer.getOrNull();
+        if (server == null || !(context.player() instanceof ServerPlayer player)) {
+            return;
+        }
+        MatchRegistry.Seat seat = server.matches().seatOf(player.getUUID());
+        if (seat != null) {
+            server.replication()
+                    .query(player, seat, payload.query(), server.server().getTickCount());
         }
     }
 

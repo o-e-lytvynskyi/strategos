@@ -1,5 +1,8 @@
 package dev.strategos.core.sim.replicate;
 
+import dev.strategos.core.content.CorePaths;
+import dev.strategos.core.protocol.UiQuery;
+import dev.strategos.core.protocol.UnitDetail;
 import dev.strategos.core.protocol.UnitSummary;
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.FactionSlot;
@@ -7,6 +10,8 @@ import dev.strategos.core.shared.Handle;
 import dev.strategos.core.sim.MatchQueries;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.UnitView;
+import dev.strategos.core.sim.order.OrderQueues;
+import dev.strategos.core.sim.stats.StatBreakdown;
 import java.util.ArrayList;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
@@ -43,6 +48,34 @@ public final class ReplicationService {
             }
         }
         return new UnitSummary(matchId, q.tick(), entries);
+    }
+
+    /**
+     * The details a {@code ui_query} asked for (NET-08.4): the viewer's own live units among {@code handles}, in their
+     * order; another faction's unit, or a dead one, is left out.
+     */
+    public static UnitDetail detail(MatchQueries q, int matchId, FactionSlot viewer, List<Integer> handles) {
+        List<UnitDetail.Unit> units = new ArrayList<>();
+        for (int handle : handles) {
+            UnitView unit = q.unit(handle);
+            if (unit == null || !unit.faction().equals(viewer) || units.size() == UiQuery.MAX_HANDLES) {
+                continue;
+            }
+            List<UnitDetail.Order> orders = new ArrayList<>();
+            for (OrderQueues.Order o : q.orders(handle)) {
+                orders.add(new UnitDetail.Order(o.kind(), (float) o.x(), (float) o.z()));
+            }
+            StatBreakdown speed = q.stats(handle, CorePaths.WALK_SPEED);
+            units.add(new UnitDetail.Unit(
+                    handle,
+                    unit.templateIndex(),
+                    stateCode(unit.state()),
+                    (float) q.hitPoints(handle),
+                    (float) q.maxHitPoints(handle),
+                    speed == null ? 0 : (float) speed.result(),
+                    orders));
+        }
+        return new UnitDetail(matchId, q.tick(), units);
     }
 
     /** A state's code in a summary entry: IDLE 0, WALKING 1. */

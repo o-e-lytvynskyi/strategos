@@ -338,8 +338,8 @@ perspective only.
      highest camera position (L4, consent).
 - **Tests:** L0, L1, L2, L3, L4 (consent), L5 · **Depends on:** NET-01, UNIT-03 · **Size:** M ·
   **Tier:** T0
-- **Progress:** 2026-10-23 — M2 T10: `unit_summary` (core `UnitSummary`, `ReplicationService`, `ClientMatchModel`; the mod's `Replication` at 2 Hz) and far markers; `UnitSummaryCodecTest` (1), `ReplicationServiceTest` (2), `replicationtests.summaries_at_two_hertz_own_and_visible_only` (3), `far_markers` on the owner's Mac (5); spec §1.6 rows 54–57. Open: `ui_query` and `unit_detail` (4), `unit_hud`
-- **Status:** in_progress
+- **Done:** 2026-10-23 — M2 T10: `unit_summary` (core `UnitSummary`, `ReplicationService`, `ClientMatchModel`; the mod's `Replication` at 2 Hz), far markers, `unit_hud` (5 Hz, changes only), `ui_query` and `unit_detail` (10 Hz, own units); `UnitSummaryCodecTest` (1), `ReplicationServiceTest` (2), `replicationtests.summaries_at_two_hertz_own_and_visible_only` (3), `replicationtests.detail_answers_own_units_only` (4), `far_markers` on the owner's Mac (5), `HudAndDetailTest`; spec §1.6 rows 54–60
+- **Status:** done
 
 #### UI-03 · Selection
 - **Value:** Grab exactly the units you want, anywhere on the map: click, drag a box, Shift to add,
@@ -517,7 +517,8 @@ perspective only.
   3. Goldens of health bars at three camera heights (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent), L6 · **Depends on:** CMB-01, UI-02, NET-08 · **Size:** S ·
   **Tier:** T0
-- **Status:** specified
+- **Progress:** 2026-10-23 — with M2 T10: `replicationtests.hud_reaches_only_those_who_see` (1); the hit flash and death came with CMB-01. Open: the bars themselves, their bench (2) and goldens (3)
+- **Status:** in_progress
 
 #### AUD-01 · Order, hit and death sounds
 - **Value:** Orders and fights sound right, so you notice action off-screen (P2).
