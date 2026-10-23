@@ -27,6 +27,7 @@ import net.minecraft.world.level.levelgen.WorldOptions;
 import net.minecraft.world.level.levelgen.presets.WorldPresets;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
@@ -85,6 +86,7 @@ public final class ScenarioRunner {
             case "s9" -> new S9CameraScenario();
             case "rts_basics" -> new RtsBasicsScenario();
             case "rts_select" -> new RtsSelectScenario();
+            case "rts_frame" -> new RtsFrameScenario();
             default -> null;
         };
     }
@@ -128,7 +130,8 @@ public final class ScenarioRunner {
         watchdog.start();
     }
 
-    @SubscribeEvent
+    /** First and last on the bus, so a scenario's client tick timer spans every mod's tick work (PERF-14). */
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
     static void onClientTickPre(ClientTickEvent.Pre event) {
         Run r = run;
         if (r != null && r.phase == Phase.RUNNING) {
@@ -154,7 +157,7 @@ public final class ScenarioRunner {
         }
     }
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.LOWEST)
     static void onClientTickPost(ClientTickEvent.Post event) {
         if (!started) {
             start();

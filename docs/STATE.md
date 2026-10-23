@@ -38,14 +38,19 @@ Answer in chat or here; the next session applies the answers.
    time, over the 2 ms a tick the budget allows all pathfinding. T28 added it: the same crossing
    now takes about 2,800 steps and a fraction of a millisecond, and its route is within 1 % of the
    best one. Nothing to do; it is in the roadmap's rules ([M1 spec §1.6 D rows 42 and 47–53](milestones/M1-movement.md)).
-7. **A proposal from spike S10, your call, not urgent:** units now stand exactly on slabs, stairs,
+7. **Baselines to approve, not urgent: the client frame gate (PERF-14).** On this Mac, 200 units in the
+   RTS view cost a frame of 2.6 ms without performance mods and 1.6 ms with Sodium and Iris, the
+   client tick 0.8 ms ([numbers](../perf/client/m4pro.json), [M2 spec §1.6 rows 28–30](milestones/M2-command.md)).
+   Say yes and these become this Mac's baselines, which later milestones' scenes are compared
+   with.
+8. **A proposal from spike S10, your call, not urgent:** units now stand exactly on slabs, stairs,
    snow, carpet, paths, farmland and in shallow water, but they take a step when its edge passes
    their centre, so for about two frames per step up a foot cuts into the step's edge, and on the
    way down it hangs over the ledge ([frames and numbers](spikes/S10-kinematic-fidelity.md)). A
    vanilla body stands on the highest block under its whole footprint instead. I propose the same
    rule for our units, a change to the motion of card PATH-05, before your Mac look at the steps in
    M2's consent batch. Say yes and it joins M1 as a small task; no, and the steps stay as they are.
-8. **Optional reviews:**
+9. **Optional reviews:**
    - the card refinements made after the approval
      ([design/roadmap-changes.md §8](design/roadmap-changes.md));
    - the promo draft ([promo/roadmap-announcement.md](promo/roadmap-announcement.md)).
@@ -279,6 +284,13 @@ Answer in chat or here; the next session applies the answers.
   of its next tick; units in the new view appear at once even if the camera stands still; and units
   walk through the commander as if it were not there. A 10-minute pan with 20 jumps drew not one
   rubber-band. Card CAM-03 is done.
+- 2026-10-23 · **M2 T21 Client frame times in the RTS view** (on your Mac): 200 units walking under
+  the RTS camera at render distance 16, a hundred of them selected and outlined. Without the
+  performance mods a frame takes 2.6 ms (5.7 ms at p99), the units 1.4 ms of it, our outline and
+  markers 0.5 ms, and the client tick 0.8 ms; with Sodium and Iris 1.6 ms (4.4 ms at p99), 0.3, 0.6
+  and 0.8 ms. Every number is well inside the card's budgets of 16.7 ms, 25 ms, 6 ms, 3 ms and 1 ms
+  ([archive](../perf/client/m4pro.json)). The HUD and health bars are not there yet, so the scene
+  runs again with them in M2's consent batch. Card PERF-14 is in progress.
 
 ## Now
 
@@ -286,7 +298,7 @@ Answer in chat or here; the next session applies the answers.
 - **In progress:** none.
 - **Last finished task:** M1 T26 (2026-10-23). The agents' branches `wip/m1-t17-unitai-hfsm` and
   `wip/m1-t25-debug-overlay` are merged and kept on GitHub for the record.
-- **Last M2 task:** T9, the commander's server side (2026-10-23); T1, T3, T5, T9, T11, T13 done; T4, T7, T12 open for parts that need later tasks.
+- **Last M2 task:** T21, the client frame gate (2026-10-23); T1, T3, T5, T9, T11, T13, T21 done; T4, T7, T12 open for parts that need later tasks.
 - **Next task:** while the Mac's windows are mine today, the window work that is ready (M2's L4
   items as their tasks land); M1 T27 (M1 close, headless); then M2's tasks in the spec's order.
 - **WIP branch:** none.

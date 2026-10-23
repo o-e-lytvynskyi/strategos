@@ -9,7 +9,26 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24, T16, T26; M2 spec, M2 T1, T3, T5, T11, T13, T9
+## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24, T16, T26; M2 spec, M2 T1, T3, T5, T11, T13, T9, T21
+
+- **M2 T21 · Client frame gate** — PERF-14 in progress (the HUD's re-run and the owner's approval
+  open).
+  - **Results:** the scenario `rts_frame` (2 × 100 walking units in the RTS view at render distance
+    16, the own hundred outlined, a marker), the budgets checked in the scenario, the archive
+    `perf/client/m4pro.json`, `-Pscenario.jfr` for scenario runs; the runner's tick listeners now
+    run first and last on the bus, so the client tick timer spans every mod's work.
+  - **Measured (medians of 3 runs):** vanilla frame 2.59 / 5.73 ms (p50 / p99), units 1.36 ms, our
+    drawing 0.53 ms, client tick 0.80 / 0.92 ms; Sodium and Iris 1.56 / 4.40, 0.32, 0.60, 0.81 /
+    1.01 ms.
+  - **Problems:** the first runs failed the client tick at 2.0–2.5 ms: with no frame limit vanilla's
+    animated-texture upload in the tick waits for the GPU (JFR's native samples), so the tick is
+    timed at vanilla's 120 frames a second. A tick with no units ran longer than with them under the
+    compat set, so it is no baseline. The real OS cursor's edge pan moved the camera off the armies
+    in one run; the scene now holds the cursor mid-window and fails if the camera moves. JFR's JSON
+    export of a 1 ms sampling run was 4.6 GB; the recording is read with `jdk.jfr.consumer` instead.
+    `runServerSmoke` failed once on a unit 3.1 blocks from its place: the smoke kept each unit's
+    first place, while M1's place trading changes it; it now follows the orders (M2 §1.6 row 31).
+  - **Next:** the rest of today's window work (QA-18's goldens), then the headless tasks.
 
 - **M2 T9 · Commander body, jumps, chunk-sent re-pair** — CAM-03 done.
   - **Results:** `mod.server.commander.CommanderService` (enter, leave, jumps at the tick's start,

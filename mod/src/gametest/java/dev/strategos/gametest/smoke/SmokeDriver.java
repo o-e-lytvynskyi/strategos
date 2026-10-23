@@ -290,8 +290,8 @@ public final class SmokeDriver {
         if (!r.ordered && units.length == UNITS) {
             r.match.submit(PlayerSlot.ADMIN, Move.replace(UnitSet.of(units), TARGET));
             r.ordered = true;
-        } else if (r.ordered && r.places == null) {
-            r.places = places(core, units);
+        } else if (r.ordered) {
+            r.places = places(core, units, r.places);
         }
         if (r.ticks == CHECK_AT) {
             String problem = matchProblem(r, core, units);
@@ -346,8 +346,8 @@ public final class SmokeDriver {
         int[] units = core.queries().unitHandles();
         if (m.runningTicks == 0 && units.length == MAP_UNITS) {
             m.match.submit(PlayerSlot.ADMIN, Move.replace(UnitSet.of(units), new Vec2d(40.5, 192.5)));
-        } else if (m.places == null) {
-            m.places = places(core, units);
+        } else {
+            m.places = places(core, units, m.places);
         }
         if (units.length == MAP_UNITS && ++m.runningTicks >= MAP_TICKS) {
             String problem = null;
@@ -413,15 +413,20 @@ public final class SmokeDriver {
         return null;
     }
 
-    /** Each unit's place in its group order (ORD-03), once every unit has the order; null before. */
-    private static Vec2d @Nullable [] places(MatchCore core, int[] units) {
-        Vec2d[] places = new Vec2d[units.length];
+    /**
+     * Each unit's place in its group order (ORD-03), once every unit has had the order; null before. Read every tick
+     * while the order lasts: a stuck member trades places with a walking teammate (M1 spec §1.6 row 151), which changes both
+     * orders, and an arrived unit's order is gone, so its last place stays.
+     */
+    private static Vec2d @Nullable [] places(MatchCore core, int[] units, Vec2d @Nullable [] previous) {
+        Vec2d[] places = previous != null && previous.length == units.length ? previous : new Vec2d[units.length];
         for (int k = 0; k < units.length; k++) {
             List<OrderQueues.Order> orders = core.queries().orders(units[k]);
-            if (orders.isEmpty()) {
+            if (!orders.isEmpty()) {
+                places[k] = new Vec2d(orders.get(0).x(), orders.get(0).z());
+            } else if (places[k] == null) {
                 return null;
             }
-            places[k] = new Vec2d(orders.get(0).x(), orders.get(0).z());
         }
         return places;
     }
