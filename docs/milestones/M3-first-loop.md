@@ -156,6 +156,7 @@ Rows written while specifying; tasks append theirs.
 | 18 | MATCH-01: who loses | A faction with no civic centre left loses; the last faction with one wins. A civic centre still a foundation counts as none |
 | 19 | Saves | Snapshot schema 3 adds treasuries, nodes, buildings, production and rally points; schema 2 saves load into it unchanged (a fixture pair, as M2's `match_v2`) |
 | 20 | `building_state` | To its faction in full (footprint, template, progress, HP, queue, rally, population); to the others the same fields but queue, rally and population, once the building is seen (every building until fog). Coalesced per building to one a tick at most |
+| 21 | T1: the health check | `HfsmTransitionsTest` (935 lines) split into `UnitTreeTransitionsTest` (the unit tree's 63 rows) and `HfsmTransitionsTest` (the framework's 19 cases on a test tree): 82 cases, as before. `PerfTests` (883) keeps its tests, so their names (`perftests.*`, which the perf filter and the docs use) stay; their verdicts, JSON files, the soaks' judgement and the foreign-load window moved to `PerfVerdicts`: 681 lines. `RtsMode` (780) keeps its public calls; the orders it sends (the right click with its preview and markers, stop, the first-person keys, the crosshair pick) moved to `RtsOrders`: 605 lines. `MotionSystem` is 776 lines since T29 moved its footing out, so it stays as it is. `verify` green, the golden journals unchanged; `perftests.snapshot_500_budget_g` passes through the moved verdict code; `rts_select` and `rts_first_person` on CI's Linux route check `RtsOrders` |
 
 ### 1.7 Consent plan
 
@@ -405,9 +406,8 @@ report lists placement, writer and `fx` times.
 ### 7.2 Tasks
 
 #### T1 · Health check from M2's close · ~1,200 lines moved
-- Split `RtsMode` (780 lines) by concern (input, orders, first person), `MotionSystem` (798) by
-  phase, `HfsmTransitionsTest` and `PerfTests` (over 800 each) by area; no behaviour change.
-  **Verification:** `verify`; the golden journals unchanged.
+- Split `RtsMode` (780 lines) by concern, `HfsmTransitionsTest` and `PerfTests` (over 800 each) by
+  area; no behaviour change (§1.6 row 21). **Verification:** `verify`; the golden journals unchanged.
 
 #### T2 · Balance sheet — DATA-04
 - **Files:** `core.content.balance`; `balance/relationships.json`; `docs/balance/sheet.md`,
@@ -498,7 +498,7 @@ report lists placement, writer and `fx` times.
 
 ### 7.3 Progress
 
-- [ ] T1 · [ ] T2 · [ ] T3 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11
+- [x] T1 (2026-10-23) · [ ] T2 · [ ] T3 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11
 - [ ] T12 · [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17 · [ ] T18 · [ ] T19 · [ ] T20 · [ ] T21
 - [ ] T22 · [ ] T23 · [ ] T24 · [ ] T25 · [ ] T26 · [ ] T27 · [ ] T28 · [ ] T29 · [ ] T30 · [ ] T31
 
