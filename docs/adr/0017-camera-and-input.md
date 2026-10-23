@@ -4,7 +4,19 @@ Date: 2026-10-21
 
 ## Status
 
-Proposed - pending spike S9
+Accepted 2026-10-23, with spike S9 and two amendments
+
+**Accepted 2026-10-23** with spike [S9](../spikes/S9-commander-camera.md) (M2 T1): on a dedicated
+server with 1,000 bodies, a real client and a mock commander, the decided body met every exit
+criterion, vanilla and under Sodium and Iris: no snap-back at 10–100 blocks a second, coverage
+0.3 s after 300-block jumps, picks exact on Retina, `ChunkMap#move` 0.19–0.22 ms at p99 per
+commander. Two amendments, both from its runs: **pans are capped at 5 blocks a tick**, not 8, since
+a client that runs two ticks in one frame sends two packets in one server tick, and the second, at
+8 a tick, passes the server's `10 × √k` blocks (ServerGamePacketListenerImpl.java:910–919); and
+**a jump teleports at the start of the next server tick** (`ServerTickEvent.Pre`), since a teleport
+after the connections tick is answered between ticks and measured against the tick's first good
+position (262), which drew 2–3 "moved too quickly" a jump. With that, no echo warning occurs at
+jumps. Neither fallback is needed; the camera height stays 8–64 blocks.
 
 *Note 2026-10-21:* the owner decided D-08 (the observer avatar: no vision, units pass through it, explored cells only; first-person combat, CMB-08, deferred) and D-09 (perspective), both as recommended. ADR-0023 records them; this ADR stays Proposed until S9 reports.
 
@@ -44,7 +56,7 @@ sources:
   - In RTS mode the commander's own player stays the camera entity, in spectator mode, positioned
     at the camera eye: in `PlayerTickEvent.Pre` per tick for position, in `ComputeCameraAngles` per
     frame for angles. No camera mixin.
-  - Pans are capped at 8 blocks per tick.
+  - Pans are capped at 5 blocks per tick (8 before S9).
   - Jumps (minimap, control groups, alerts) always go through the server as `camera_jump`,
     answered by a server teleport, even in singleplayer, so development exercises the dedicated
     server's checks.

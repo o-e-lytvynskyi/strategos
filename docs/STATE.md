@@ -241,15 +241,26 @@ Answer in chat or here; the next session applies the answers.
   `verifySlow` (40 s); the nightly CI run does the first 2 minutes. Budgets B–E only report for now:
   the rule wants five steady runs first, and two of mine were lost; the rest come with T27. Card
   PERF-05 is done.
+- 2026-10-23 · **M2 T1 Spike S9, the RTS camera on a dedicated server** (on your Mac, in its
+  window): the planned camera works. A real client panned across a 384² match with 1,000 units and
+  was jumped 300 blocks twenty times: no rubber-banding while panning at 10–100 blocks a second, the
+  view and every unit in it were there 0.3 s after each jump, a mouse click picked exactly the
+  intended block on the Retina screen every time, and the server work per commander stayed at a
+  fifth of a millisecond. With Sodium and Iris the same, except that panning at 160 blocks a
+  second sometimes snapped back, so the camera's top speed is 100 blocks a second. Two rules came
+  out of it for the next tasks: jumps take effect at the start of the next server tick, and pans
+  stop at 5 blocks a tick. ADR-0017, the camera decision, is accepted.
+  [Report](spikes/S9-commander-camera.md). Card CAM-01 is done.
 
 ## Now
 
 - **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 28 of 29 tasks done (T28, PATH-08, joined by its trigger). M2's spec is written ([milestones/M2-command.md](milestones/M2-command.md)).
-- **In progress:** M2 T1, spike S9 (the commander camera), on this Mac while you lend it today.
+- **In progress:** none.
 - **Last finished task:** M1 T26 (2026-10-23). The agents' branches `wip/m1-t17-unitai-hfsm` and
   `wip/m1-t25-debug-overlay` are merged and kept on GitHub for the record.
-- **Next task:** M2 T1 (S9) while the Mac's windows are mine; M1 T27 (M1 close, headless) after;
-  then M2's headless tasks.
+- **Last M2 task:** T1, spike S9 (2026-10-23).
+- **Next task:** while the Mac's windows are mine today, the window work that is ready (M2's L4
+  items as their tasks land); M1 T27 (M1 close, headless); then M2's tasks in the spec's order.
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 220 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.

@@ -16,8 +16,8 @@ import net.neoforged.neoforge.registries.RegisterEvent;
 import org.jspecify.annotations.Nullable;
 
 /**
- * The spikes' own entity types and ticket controller, registered only when {@code strategos.spike} is set, so no
- * other run, L2 or production ever sees them (spec 6.10). Mod bus, which FML infers for these events.
+ * The spikes' own entity types and ticket controller, registered only when {@code strategos.spike} is set (and not
+ * S9's), so no other run, L2 or production ever sees them (spec 6.10). Mod bus, which FML infers for these events.
  */
 @EventBusSubscriber(modid = Strategos.MOD_ID)
 public final class SpikeRegistry {
@@ -29,8 +29,10 @@ public final class SpikeRegistry {
 
     private SpikeRegistry() {}
 
+    /** Not for S9, whose real client joins: a client without these types fails the registry sync. */
     static boolean active() {
-        return !System.getProperty("strategos.spike", "").isBlank();
+        String spike = System.getProperty("strategos.spike", "");
+        return !spike.isBlank() && !spike.equals("s9");
     }
 
     @SubscribeEvent

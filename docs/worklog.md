@@ -9,7 +9,25 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24, T16, T26
+## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24, T16, T26; M2 spec, M2 T1
+
+- **M2 spec, T1 · Spike S9, the commander camera** — CAM-01 done; ADR-0017 Accepted.
+  - **Results:** the M2 spec (`docs/milestones/M2-command.md`, 23 tasks, the 20 cards
+    `specified`). S9: `S9Camera` (spike server: a 384² match, 1,000 walkers, a mock commander at 8
+    blocks a tick), `S9CameraScenario` (client: picking, pans, jumps taken over), the scenario
+    runner joins a server when a scenario names one, `LogCapture.containing`. Four runs on the
+    owner's Mac with its window, the last vanilla and two with `-Pcompat` reported.
+  - **Measured:** no snap-back at 10–100 blocks a second, none at jumps; coverage 0.30 s after
+    300-block jumps, every body in range paired; picks 20 of 20 exact on a 2× framebuffer, gold in
+    every sampled pixel; `ChunkMap#move` 0.19–0.22 ms at p99 per commander. Under Iris and Sodium
+    8 blocks a tick snapped back 89 and 4 of 200 packets.
+  - **Problems:** jumps teleported in `ServerTickEvent.Post` drew 2–3 "moved too quickly" each,
+    since the client's answer is measured against the tick's old first good position; in `Pre`
+    none. The harness's render distance of 5 limited tracking to 80 blocks; the client sets 10.
+    The client read the floor from a heightmap it does not have and aimed four blocks into the
+    ground. The mock's turn moved 30, then 8 + 8 blocks in one packet. Gradle killed the client at
+    its 5-minute task timeout; it now follows `-Pscenario.timeoutSeconds`.
+  - **Next:** M1 T27 and M2's tasks; L4 items while the Mac is lent.
 
 - **M1 T26 · Crowd soak and the M1 perf gate** — PERF-05 done.
   - **Results:** `CrowdSoak` (gametest) drives the soak on the imported proving ground with

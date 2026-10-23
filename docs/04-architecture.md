@@ -2172,8 +2172,13 @@ It is measured at four levels:
 
   No camera mixin is needed.
 - **Server limits.**
-  - Pans are capped at 8 blocks per tick, below the dedicated server's "moved too quickly" limit of
-    10 blocks per packet (ServerGamePacketListenerImpl.java:918–919).
+  - Pans are capped at 5 blocks per tick, inside the dedicated server's "moved too quickly" limit
+    of `10 × √k` blocks from the tick's first good position for `k` packets in one server tick
+    (ServerGamePacketListenerImpl.java:910–919), even when a slow client sends four in one (spike
+    S9; the cap was 8 before it).
+  - Jumps teleport at the start of the next server tick (`ServerTickEvent.Pre`), before the
+    connections tick: a teleport after it is answered between ticks and measured against the old
+    first good position (262), a "moved too quickly" each time (S9).
   - The singleplayer host is exempt from that check, which would hide the problem in development.
     So jumps go through the server in every mode: minimap clicks, control-group and idle-unit jumps
     all send `camera_jump`. The server validates it and answers with

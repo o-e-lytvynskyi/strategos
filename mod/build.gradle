@@ -603,7 +603,8 @@ def prepareScenario = tasks.register('prepareScenario', Sync) {
 neoForge.runs.scenario.taskBefore prepareScenario
 def scenarioOut = file('build/scenario/out')
 tasks.matching { it.name == 'runScenario' }.configureEach {
-    timeout = Duration.ofMinutes(5)
+    // the runner's own watchdog ends a stuck scenario first; S9 asks for more (M2 T1)
+    timeout = Duration.ofSeconds(Long.parseLong(providers.gradleProperty('scenario.timeoutSeconds').getOrElse('180')) + 120)
     doLast {
         def result = new File(scenarioOut, 'result.json')
         if (!result.isFile() || new groovy.json.JsonSlurper().parse(result).ok != true) {

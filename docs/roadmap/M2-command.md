@@ -160,7 +160,8 @@ perspective only.
      height limit (R).
 - **Tests:** L4 (consent), R · **Depends on:** QA-06, QA-09, UNIT-01, D-22 · **Size:** L ·
   **Tier:** T0
-- **Status:** specified
+- **Done:** 2026-10-23 — M2 T1, on the owner's Mac with consent ([S9](../spikes/S9-commander-camera.md)): no snap-back at 10–100 blocks a second in 3,500 ticks with 20 jumps, none at jumps once they teleport at the tick's start (1; spec §1.6 row 5); coverage 0.30 s after 300-block jumps, every body in range paired (2); picks 20 of 20 exact at GUI scale 2 on a 2× framebuffer, checked against the frame's pixels (3; row 8); `ChunkMap#move` 0.19–0.22 ms p99 per commander (4); the same under Sodium and Iris, where 8 blocks a tick snapped back, so pans cap at 5 (5; row 9); ADR-0017 Accepted with two amendments, neither fallback needed, height 8–64 (6)
+- **Status:** done
 
 #### UI-01 · Input action layer and key bindings
 - **Value:** Every RTS control can be rebound in the standard Controls screen, with familiar RTS

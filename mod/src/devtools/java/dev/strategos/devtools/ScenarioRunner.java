@@ -10,8 +10,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
+import net.minecraft.client.gui.screens.ConnectScreen;
 import net.minecraft.client.gui.screens.GenericMessageScreen;
 import net.minecraft.client.gui.screens.TitleScreen;
+import net.minecraft.client.multiplayer.ServerData;
+import net.minecraft.client.multiplayer.resolver.ServerAddress;
 import net.minecraft.client.server.IntegratedServer;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -79,6 +82,7 @@ public final class ScenarioRunner {
             case "world_switch" -> new WorldSwitchScenario();
             case "s4_units" -> new UnitsFrameTimeScenario();
             case "s10_steps" -> new S10StepsScenario();
+            case "s9" -> new S9CameraScenario();
             default -> null;
         };
     }
@@ -160,12 +164,34 @@ public final class ScenarioRunner {
         Minecraft mc = Minecraft.getInstance();
         switch (r.phase) {
             case TITLE -> {
-                if (mc.screen instanceof TitleScreen && mc.getOverlay() == null) {
-                    createWorld(mc, r.world, r.seed);
+                if (mc.screen instanceof TitleScreen title && mc.getOverlay() == null) {
+                    String address = r.scenario.server();
+                    if (address != null) {
+                        ConnectScreen.startConnecting(
+                                title,
+                                mc,
+                                ServerAddress.parseString(address),
+                                new ServerData("strategos-spike", address, ServerData.Type.OTHER),
+                                false,
+                                null);
+                    } else {
+                        createWorld(mc, r.world, r.seed);
+                    }
                     r.phase = Phase.LOADING;
                 }
             }
             case LOADING -> {
+                if (r.scenario.server() != null) {
+                    if (mc.level != null
+                            && mc.player != null
+                            && mc.screen == null
+                            && mc.levelRenderer.hasRenderedAllSections()) {
+                        r.scenario.joined(mc, r.ctx);
+                        r.ticks = 0;
+                        r.phase = Phase.RUNNING;
+                    }
+                    return;
+                }
                 IntegratedServer server = mc.getSingleplayerServer();
                 if (server != null
                         && mc.level != null

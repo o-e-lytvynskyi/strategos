@@ -127,6 +127,12 @@ Rows written while specifying; tasks append theirs.
 | 2 | CAM-01: "ADR-0017's three body strategies" | The decided strategy is measured against all five exit criteria; fallback 1 (a camera entity, the body teleported to the focus 5 times a second) and fallback 2 (a parked body) are measured only if it misses one. The pre-agreed fallbacks need no comparison when the decision passes |
 | 3 | CAM-01: "two scripted clients" | One real client (the scenario runner, joining by Quick Play) and one server-side mock commander (QA-19's `MockViewer`, a spectator driven through `handleMovePlayer` like a client), so a single Gradle build runs the spike; the second commander measures the per-commander `ChunkMap#move` cost and the coverage with two viewers. Two real clients join if the runner can start a second one without a second build |
 | 4 | Every L4 item | With a consent grant on this Mac, or on the Linux route on CI; goldens are per platform (QA-18), and only the owner approves them |
+| 5 | S9, CAM-03: when a jump teleports | A teleport between ticks or in `ServerTickEvent.Post` draws two or three "moved too quickly" warnings a jump: each tick `ServerGamePacketListenerImpl#tick` takes the player's position as the first good one (ServerGamePacketListenerImpl.java:262), and the client's answer, which reaches the server in the gap between ticks, is measured against the old position. S9's first run counted 56 warnings in 20 jumps. A teleport in `ServerTickEvent.Pre`, before the connections tick, draws none (the third run: 0 in 20). CAM-03 queues each accepted `camera_jump` and teleports at the start of the next tick; the ADR's "one-off echo warning per jump" does not occur |
+| 6 | S9: the client's view distance | The scenario harness's `options.txt` sets a render distance of 5, and the server tracks entities within the player's own view distance (`ChunkMap#getPlayerViewDistance`), so S9's client sets 10, a player's usual value, and its coverage check uses the player's distance |
+| 7 | S9: a match without a map holds no tickets | Only arena and map matches force-load their space (M1 T4), so S9's flat-world match had bodies only where the two commanders loaded chunks: 600 to 1,000 of its 1,000 units at a time. Coverage counts the bodies that exist |
+| 8 | S9: picking is checked against the rendered frame | For each of 20 gold blocks the client projects the block with the frame's own matrices, sets the OS cursor there with GLFW, reads it back in window points, unprojects it and clips; and the frame's pixel at that point, the window point times the framebuffer scale (2 on this Retina display), must be gold. A projection that used framebuffer sizes would miss by half the screen |
+| 9 | CAM-02, CAM-03: the pan cap | 5 blocks a tick, not 8. The server lets a packet move `10 × √k` blocks from the tick's first good position for `k` packets since its last tick (ServerGamePacketListenerImpl.java:910–919); a client running two ticks in one frame sends two packets in one server tick, and at 8 a tick the second is 16 blocks away. Under Iris and Sodium that snapped back 89 and 4 of 200 packets at 8 a tick in S9's two runs, none at 5 or below; the vanilla client never bunched here. CAM-03.2's mock pans at 5. ADR-0017 and 04 §13.2 amended |
+| 10 | T1: S9's results | The decided body passes: see [the report](../spikes/S9-commander-camera.md). ADR-0017 Accepted with rows 5 and 9; neither fallback measured (row 2); the height stays 8–64 |
 
 ### 1.7 Consent plan
 
@@ -172,9 +178,9 @@ Rows written while specifying; tasks append theirs.
 - **Applying it:** position per tick in `PlayerTickEvent.Pre` (after `setOldPosAndRot`, so
   `Camera#setup` interpolates), angles per frame in `ViewportEvent.ComputeCameraAngles`, FOV in
   `ViewportEvent.ComputeFov`; view bobbing off while in RTS mode. No camera mixin.
-- **Limits:** a pan moves at most 8 blocks a tick (the server snaps back more than about 10 a
-  packet, ServerGamePacketListenerImpl.java:918). Every jump is a `camera_jump` answered by a
-  server teleport (`ServerGamePacketListenerImpl#teleport`), in singleplayer too.
+- **Limits:** a pan moves at most 5 blocks a tick (S9, §1.6 row 9). Every jump is a `camera_jump`
+  answered by a server teleport (`ServerGamePacketListenerImpl#teleport`), in singleplayer too,
+  queued and applied at the start of the next tick (§1.6 row 5).
 - **After a jump** the server marks the commander on `ChunkWatchEvent.Sent` and runs
   `ServerChunkCache#move(player)` once on the next tick, so bodies in newly sent chunks pair at
   once (M1's `MockViewer#moved` showed that sending a chunk pairs nothing).
@@ -390,7 +396,7 @@ second (5 minutes, M1 §1.6 row 162's pacing); budgets A, B and C as M1's soak m
 
 ### 7.3 Progress
 
-- [ ] T1 · [ ] T2 · [ ] T3 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11 · [ ] T12
+- [x] T1 (2026-10-23) · [ ] T2 · [ ] T3 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11 · [ ] T12
 - [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17 · [ ] T18 · [ ] T19 · [ ] T20 · [ ] T21 · [ ] T22 · [ ] T23
 
 ---
@@ -403,7 +409,7 @@ The roadmap's Done gate, then the owner's acceptance.
 |---|---|---|
 | 1 | Every acceptance criterion of the M2 cards passes at its level | §1.4 |
 | 2 | L1: rig, picking, selection, layout and slot preview at every tested resolution, GUI scale and framebuffer scale | `CameraRigTest`, `PickingTest`, `BoxSelectTest`, `HudLayoutTest`, `SlotPreviewTest` |
-| 3 | L3: a mock commander pans 12,000 ticks at 8 blocks a tick with 20 jumps and gets no position packet but the jumps'; bodies pair within a tick of `ChunkWatchEvent.Sent`; coverage within 3 s of a 300-block jump | `cameratests.*` |
+| 3 | L3: a mock commander pans 12,000 ticks at 5 blocks a tick (§1.6 row 9) with 20 jumps and gets no position packet but the jumps'; bodies pair within a tick of `ChunkWatchEvent.Sent`; coverage within 3 s of a 300-block jump | `cameratests.*` |
 | 4 | L6: the 2 × 100 melee soak holds A–C for 5 minutes; `ChunkMap#move` ≤ 0.5 ms per panning commander | `perftests.melee_soak_2x100`, `perftests.commander_pan_move_cost` |
 | 5 | The consent batch: goldens approved by the owner, once under `-Pcompat`; PERF-14; M1's deferred items | T22 |
 | 6 | ADR-0017 accepted with the S9 numbers, or its fallback adopted | S9 report, the ADR |

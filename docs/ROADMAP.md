@@ -308,7 +308,7 @@ Cards: [roadmap/M2-command.md](roadmap/M2-command.md#cards). 20 cards, at most 6
 
 | ID | Feature | Size | Depends on | Status |
 |---|---|---|---|---|
-| CAM-01 | Spike S9: commander camera on a dedicated server | L | QA-06, QA-09, UNIT-01, D-22 | specified |
+| CAM-01 | Spike S9: commander camera on a dedicated server | L | QA-06, QA-09, UNIT-01, D-22 | done |
 | UI-01 | Input action layer and key bindings | M | QA-01 | specified |
 | CAM-02 | RTS camera rig | L | CAM-01, UI-01, D-09 | specified |
 | CAM-04 | RtsScreen, cursor and world picking | M | CAM-01, UI-01 | specified |
