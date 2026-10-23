@@ -335,7 +335,7 @@ Cards: [roadmap/M3-first-loop.md](roadmap/M3-first-loop.md#cards). 27 cards, at 
 
 | ID | Feature | Size | Depends on | Status |
 |---|---|---|---|---|
-| DATA-04 | Balance sheet: relationships, provenance and timing targets | M | DATA-02, D-11 | specified |
+| DATA-04 | Balance sheet: relationships, provenance and timing targets | M | DATA-02, D-11 | done |
 | ECO-01 | Resources and treasury | M | CORE-03, NET-01, D-10 | specified |
 | ECO-02 | Resource nodes: discovery and index | M | CORE-08, PATH-04, MAP-01 | specified |
 | ECO-03 | Woodcutting on real trees, with natural canopy thinning | L | ECO-02, BLD-15, PATH-15 | specified |

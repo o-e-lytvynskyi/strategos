@@ -136,7 +136,11 @@ approved roadmap; ideas go to "For the owner" as proposals.
      its codecs or a `@HotPath` kernel. No M1 task ran it, and M1 grew `MovementBench.step600` by
      58 % and `SnapshotCodecBench.encode500` by 29 % against M0's approved baseline unnoticed until
      M1's close. A red `jmhCompare` goes to "For the owner" the same day: the cause, and a proposed
-     baseline (`perf/baseline-<machine>.proposed.json`) when the growth is the features' own cost.
+     baseline (`perf/baseline-<machine>.proposed.json`) when the growth is the features' own cost;
+   - `./gradlew :core:balanceSheet` after changing a template number, a relationship or a provenance
+     note (M3 T2): `BalanceSheetTest` fails while `docs/balance/` is stale, and the sheet's diff in
+     the commit is what the owner reviews, like a golden. A new number needs its provenance note in
+     `strategos/balance/provenance.json` in the same change.
 
    Before that, the gate is `verifyFast` plus the task's verification command (M0 spec §0.4,
    "Bootstrap").

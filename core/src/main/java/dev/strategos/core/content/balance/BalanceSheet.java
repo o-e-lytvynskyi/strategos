@@ -1,0 +1,354 @@
+package dev.strategos.core.content.balance;
+
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import dev.strategos.core.content.CorePaths;
+import dev.strategos.core.content.Derivation;
+import dev.strategos.core.content.RawTemplate;
+import dev.strategos.core.content.TemplateCompiler;
+import dev.strategos.core.content.UnitTemplate;
+import dev.strategos.core.content.ValuePath;
+import dev.strategos.core.shared.TemplateId;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import org.jspecify.annotations.Nullable;
+
+/**
+ * The balance sheet (DATA-04): every number of every concrete template, where it comes from (the template in its chain
+ * that sets it, the relationship that derives it, an override and its reason, or the core's default for a path the
+ * core reads, under the provenance key {@value #CORE}) and its provenance note, with the
+ * Normal opening's timing targets, every override, and the resource sinks. Rendered as Markdown and CSV from a compiled
+ * set; its {@link #problems()} are what the build refuses: a number set without a provenance note, a note for a number
+ * nobody sets, and a gatherable resource spent by fewer than two templates.
+ */
+public final class BalanceSheet {
+    /** A timing target of the Normal opening: what, by when (m:ss), and why. */
+    public record Target(String event, String by, String note) {}
+
+    /** One number of a concrete template. */
+    public record Row(TemplateId template, String path, BigDecimal value, String source, String provenance) {}
+
+    /** The provenance key of the core's own defaults, for the paths a template leaves out ({@link CorePaths}). */
+    public static final String CORE = "core";
+
+    private final List<Row> rows = new ArrayList<>();
+    private final List<Derivation> overrides = new ArrayList<>();
+    private final List<Derivation> derived = new ArrayList<>();
+    private final List<Target> targets;
+    private final Map<String, List<String>> gatherers = new TreeMap<>();
+    private final Map<String, List<String>> spenders = new TreeMap<>();
+    private final List<String> problems = new ArrayList<>();
+
+    private BalanceSheet(List<Target> targets) {
+        this.targets = List.copyOf(targets);
+    }
+
+    /**
+     * The sheet of {@code result}, compiled from {@code raws}, with {@code provenance} (for each template, the note of
+     * each value path it sets) and {@code targets}.
+     */
+    public static BalanceSheet of(
+            TemplateCompiler.Result result,
+            List<RawTemplate> raws,
+            Map<String, Map<String, String>> provenance,
+            List<Target> targets) {
+        BalanceSheet sheet = new BalanceSheet(targets);
+        Map<String, JsonObject> byId = new TreeMap<>();
+        raws.forEach(r -> byId.put(r.id().value(), r.json()));
+        Map<String, Derivation> derivations = new TreeMap<>();
+        result.derivations().forEach(d -> derivations.put(d.template().value() + "#" + d.path(), d));
+        Map<String, TreeSet<String>> used = new TreeMap<>();
+        List<UnitTemplate> concrete = new ArrayList<>(result.set().all());
+        concrete.sort((a, b) -> a.id().value().compareTo(b.id().value()));
+        for (UnitTemplate t : concrete) {
+            JsonObject flat = Objects.requireNonNull(result.set().flattened(t.id()));
+            List<String> paths = new ArrayList<>();
+            numbers(flat, "", paths);
+            for (String path : paths) {
+                BigDecimal value =
+                        new BigDecimal(Objects.requireNonNull(at(flat, path)).getAsString());
+                Derivation d = derivations.get(t.id().value() + "#" + path);
+                if (d != null) {
+                    String source = d.overridden()
+                            ? "override of " + d.formula() + " (" + plain(d.derived()) + ")"
+                            : "derived: " + d.formula();
+                    sheet.rows.add(new Row(t.id(), path, value, source, d.note()));
+                    (d.overridden() ? sheet.overrides : sheet.derived).add(d);
+                } else {
+                    String key = keyPath(path);
+                    String author = author(byId, t.id().value(), key, new ArrayList<>());
+                    String note = author == null
+                            ? null
+                            : provenance
+                                    .getOrDefault(author, Collections.emptyMap())
+                                    .get(key);
+                    if (author != null) {
+                        used.computeIfAbsent(author, a -> new TreeSet<>()).add(key);
+                    }
+                    if (note == null || note.isBlank()) {
+                        sheet.problems.add(t.id() + " " + path + " (set in " + author + "): no provenance note");
+                    }
+                    sheet.rows.add(new Row(t.id(), path, value, "set in " + author, note == null ? "" : note));
+                }
+                sheet.sinks(t.id(), path, value);
+            }
+            for (String path : CorePaths.all()) {
+                if (paths.contains(path)) {
+                    continue;
+                }
+                ValuePath vp = Objects.requireNonNull(result.set().valuePaths().byPath(path));
+                BigDecimal value = BigDecimal.valueOf(result.set().value(t.netIndex(), vp.id()));
+                String note =
+                        provenance.getOrDefault(CORE, Collections.emptyMap()).get(path);
+                used.computeIfAbsent(CORE, a -> new TreeSet<>()).add(path);
+                if (note == null || note.isBlank()) {
+                    sheet.problems.add(t.id() + " " + path + " (the core's default): no provenance note");
+                }
+                sheet.rows.add(new Row(t.id(), path, value, "the core's default", note == null ? "" : note));
+            }
+        }
+        provenance.forEach((template, notes) -> notes.keySet().forEach(key -> {
+            if (!used.getOrDefault(template, new TreeSet<>()).contains(key)) {
+                sheet.problems.add("provenance names " + template + " " + key + ", which sets no number of a"
+                        + " concrete template there");
+            }
+        }));
+        sheet.gatherers.forEach((resource, who) -> {
+            int spent = sheet.spenders.getOrDefault(resource, List.of()).size();
+            if (spent < 2) {
+                sheet.problems.add("resource " + resource + " is gathered (" + String.join(", ", who) + ") but"
+                        + " spent by " + spent + " template" + (spent == 1 ? "" : "s") + "; at least two must cost it");
+            }
+        });
+        return sheet;
+    }
+
+    public List<Row> rows() {
+        return List.copyOf(rows);
+    }
+
+    public List<Derivation> overrides() {
+        return List.copyOf(overrides);
+    }
+
+    /** What the build refuses; empty for a good sheet. */
+    public List<String> problems() {
+        return List.copyOf(problems);
+    }
+
+    /** Gathered resources and who gathers them, and spent resources and who spends them, for {@link #markdown()}. */
+    private void sinks(TemplateId template, String path, BigDecimal value) {
+        if (value.signum() <= 0) {
+            return;
+        }
+        String[] p = path.split("/", -1);
+        if (p.length >= 3 && p[0].equals("ResourceGatherer") && p[1].equals("rates")) {
+            gatherers.computeIfAbsent(p[2], r -> new ArrayList<>()).add(template.value());
+        }
+        if (p.length == 3 && p[0].equals("Cost") && p[1].equals("resources")) {
+            spenders.computeIfAbsent(p[2], r -> new ArrayList<>()).add(template.value());
+        }
+    }
+
+    public String markdown() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("# Balance sheet\n\n");
+        sb.append("Generated by `./gradlew :core:balanceSheet` from the templates and `strategos/balance/` in the mod's"
+                + " data; `BalanceSheetTest` fails while this file is stale. A change is approved like a golden"
+                + " (DATA-04): every number is Strategos's own, authored at Minecraft's scale (ADR-0005).\n\n");
+        sb.append("## Timing targets: the Normal opening\n\n");
+        sb.append("| Event | By | Note |\n|---|---|---|\n");
+        for (Target t : targets) {
+            sb.append("| ")
+                    .append(cell(t.event()))
+                    .append(" | ")
+                    .append(cell(t.by()))
+                    .append(" | ")
+                    .append(cell(t.note()))
+                    .append(" |\n");
+        }
+        sb.append("\n## Templates\n");
+        TemplateId current = null;
+        for (Row r : rows) {
+            if (!r.template().equals(current)) {
+                current = r.template();
+                sb.append("\n### ").append(current.value()).append("\n\n");
+                sb.append("| Value | Amount | Source | Provenance |\n|---|---|---|---|\n");
+            }
+            sb.append("| ")
+                    .append(cell(r.path()))
+                    .append(" | ")
+                    .append(plain(r.value()))
+                    .append(" | ")
+                    .append(cell(r.source()))
+                    .append(" | ")
+                    .append(cell(r.provenance()))
+                    .append(" |\n");
+        }
+        sb.append("\n## Relationships\n\n");
+        if (derived.isEmpty()) {
+            sb.append("None yet.\n");
+        } else {
+            sb.append("| Template | Value | Formula | Gives | Note |\n|---|---|---|---|---|\n");
+            for (Derivation d : derived) {
+                sb.append("| ")
+                        .append(d.template().value())
+                        .append(" | ")
+                        .append(cell(d.path()))
+                        .append(" | ")
+                        .append(cell(d.formula()))
+                        .append(" | ")
+                        .append(plain(d.value()))
+                        .append(" | ")
+                        .append(cell(d.note()))
+                        .append(" |\n");
+            }
+        }
+        sb.append("\n## Overrides\n\n");
+        if (overrides.isEmpty()) {
+            sb.append("None.\n");
+        } else {
+            sb.append("| Template | Value | Set to | The formula gives | Reason |\n|---|---|---|---|---|\n");
+            for (Derivation d : overrides) {
+                sb.append("| ")
+                        .append(d.template().value())
+                        .append(" | ")
+                        .append(cell(d.path()))
+                        .append(" | ")
+                        .append(plain(d.value()))
+                        .append(" | ")
+                        .append(plain(d.derived()))
+                        .append(" | ")
+                        .append(cell(d.note()))
+                        .append(" |\n");
+            }
+        }
+        sb.append("\n## Resource sinks\n\n");
+        TreeSet<String> resources = new TreeSet<>(gatherers.keySet());
+        resources.addAll(spenders.keySet());
+        if (resources.isEmpty()) {
+            sb.append("No template gathers or costs a resource yet.\n");
+        } else {
+            sb.append("| Resource | Gathered by | Spent by |\n|---|---|---|\n");
+            for (String r : resources) {
+                sb.append("| ")
+                        .append(r)
+                        .append(" | ")
+                        .append(String.join(", ", gatherers.getOrDefault(r, List.of())))
+                        .append(" | ")
+                        .append(String.join(", ", spenders.getOrDefault(r, List.of())))
+                        .append(" |\n");
+            }
+        }
+        return sb.toString();
+    }
+
+    public String csv() {
+        StringBuilder sb = new StringBuilder("template,path,value,source,provenance\n");
+        for (Row r : rows) {
+            sb.append(r.template().value())
+                    .append(',')
+                    .append(r.path())
+                    .append(',')
+                    .append(plain(r.value()))
+                    .append(',')
+                    .append(quote(r.source()))
+                    .append(',')
+                    .append(quote(r.provenance()))
+                    .append('\n');
+        }
+        return sb.toString();
+    }
+
+    /**
+     * The template in {@code id}'s chain that sets {@code key}: its own file, then its mixins from the last, then its
+     * parent's chain; null if none does.
+     */
+    private static @Nullable String author(Map<String, JsonObject> raws, String id, String key, List<String> seen) {
+        JsonObject raw = raws.get(id);
+        if (raw == null || seen.contains(id)) {
+            return null;
+        }
+        seen.add(id);
+        if (at(raw, key) != null) {
+            return id;
+        }
+        JsonElement mixins = raw.get("mixins");
+        if (mixins != null && mixins.isJsonArray()) {
+            for (int i = mixins.getAsJsonArray().size() - 1; i >= 0; i--) {
+                String found = author(raws, mixins.getAsJsonArray().get(i).getAsString(), key, seen);
+                if (found != null) {
+                    return found;
+                }
+            }
+        }
+        JsonElement parent = raw.get("parent");
+        return parent == null ? null : author(raws, parent.getAsString(), key, seen);
+    }
+
+    /** A path up to its first array index: arrays are replaced whole, so whoever sets the array sets its numbers. */
+    private static String keyPath(String path) {
+        StringBuilder sb = new StringBuilder();
+        for (String part : path.split("/", -1)) {
+            if (!part.isEmpty() && part.chars().allMatch(Character::isDigit)) {
+                break;
+            }
+            sb.append(sb.length() == 0 ? "" : "/").append(part);
+        }
+        return sb.toString();
+    }
+
+    private static void numbers(JsonElement e, String prefix, List<String> out) {
+        if (e.isJsonObject()) {
+            for (String key : new TreeSet<>(e.getAsJsonObject().keySet())) {
+                numbers(e.getAsJsonObject().get(key), prefix.isEmpty() ? key : prefix + "/" + key, out);
+            }
+        } else if (e.isJsonArray()) {
+            for (int i = 0; i < e.getAsJsonArray().size(); i++) {
+                numbers(e.getAsJsonArray().get(i), prefix + "/" + i, out);
+            }
+        } else if (e.isJsonPrimitive() && e.getAsJsonPrimitive().isNumber()) {
+            out.add(prefix);
+        }
+    }
+
+    private static @Nullable JsonElement at(JsonObject json, String path) {
+        JsonElement e = json;
+        for (String part : path.split("/", -1)) {
+            if (e != null && e.isJsonObject()) {
+                e = e.getAsJsonObject().get(part);
+            } else if (e != null
+                    && e.isJsonArray()
+                    && !part.isEmpty()
+                    && part.chars().allMatch(Character::isDigit)) {
+                int i = Integer.parseInt(part);
+                e = i < e.getAsJsonArray().size() ? e.getAsJsonArray().get(i) : null;
+            } else {
+                return null;
+            }
+        }
+        return e;
+    }
+
+    private static String plain(@Nullable BigDecimal v) {
+        if (v == null) {
+            return "?";
+        }
+        BigDecimal s = v.stripTrailingZeros();
+        return (s.scale() < 0 ? s.setScale(0) : s).toPlainString();
+    }
+
+    private static String cell(String s) {
+        return s.replace("|", "\\|").replace("\n", " ");
+    }
+
+    private static String quote(String s) {
+        return "\"" + s.replace("\"", "\"\"") + "\"";
+    }
+}

@@ -9,7 +9,24 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-23 (evening) — M3 spec
+## 2026-10-23 (evening) — M3 spec, T1, T2
+
+- **M3 T2 · DATA-04, the balance sheet** ([balance/sheet.md](balance/sheet.md)).
+  - **Results:** relationships are `$derive` values in the templates (`from`, `path`, `factor`,
+    `offset`, `round`, with a note), evaluated exactly after flattening for each concrete template,
+    so one in an abstract parent derives in every child; `$override` with a reason is the only way
+    past one. Markers never reach a set, so journals and clients see numbers as before. The sheet
+    lists every number of every concrete template with its source (the template that sets it, the
+    relationship, an override, or the core's default) and its provenance note, the overrides, the
+    resource sinks and the Normal opening's targets (first house 1:30, barracks 4:00, first wave
+    8:00, a match within 30:00). `BalanceSheetTest` (6) fails while `docs/balance/` is stale.
+  - **First relationships:** a spearman's pierce is its hack, its pierce resistance its hack
+    resistance; the set's SHA and the golden journals did not change.
+  - **Next:** T3, the worker.
+
+- **M3 T1 · health check.** `HfsmTransitionsTest` split in two (82 cases as before), the perf
+  suite's shared verdict code moved to `PerfVerdicts` (test names kept), `RtsMode`'s orders moved
+  to `RtsOrders`; `rts_select` and `rts_first_person` pass on CI's Linux route with it.
 
 - **The M3 spec** ([milestones/M3-first-loop.md](milestones/M3-first-loop.md)), at the owner's word
   «начнем м3 пока без окон».

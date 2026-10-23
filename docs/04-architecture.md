@@ -1395,6 +1395,8 @@ full chain. It then applies mixins left to right, then the template's own body
 | `{"$append": [..]}`, `{"$remove": [..]}` | Edit an inherited array |
 | `"classes": "+Cavalry -Organic"` | Add or remove class tokens |
 | `"abstract": true` | The template cannot be instantiated |
+| `{"$derive": {"from", "path", "factor", "offset", "round"}, "note": ".."}` | A relationship (DATA-04): the value is `from`'s (`"self"` for the template itself) at `path`, times `factor` plus `offset`, rounded half up to a multiple of `round`; inherited as written and evaluated per concrete template after flattening |
+| `{"$override": x, "reason": ".."}` | The only way to set a derived value; listed in the balance sheet with its reason |
 
 **Derived kinds.** Code-defined filters in `content.TemplateFilter`, tested in L1, derive related
 kinds from one definition:

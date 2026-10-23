@@ -19,8 +19,8 @@ import org.jspecify.annotations.Nullable;
  * Compiles template files into a {@link TemplateSet} (04 §8.3, DATA-01): resolves {@code parent} chains with a cycle
  * check that names the chain, lays the {@code mixins} over the parent left to right, each as written (a template some
  * other template lists as a mixin is an overlay and never compiled on its own), and then the
- * template's own body ({@link MergeOps}), and decodes every template that is not {@code abstract} into a {@link
- * UnitTemplate}, field by
+ * template's own body ({@link MergeOps}), evaluates the relationships ({@link Derivations}, DATA-04), and decodes every
+ * template that is not {@code abstract} into a {@link UnitTemplate}, field by
  * field, so each problem names its file and JSON pointer. Every problem is collected; templates with problems are left
  * out of the set, and the caller decides whether a set with problems may be used.
  */
@@ -28,14 +28,15 @@ public final class TemplateCompiler {
     private TemplateCompiler() {}
 
     /**
-     * The set, every template flattened (abstract ones too), the problems, and the id table that gave the set its net
-     * indices: the one passed in, with the set's new ids appended.
+     * The set, every template flattened (abstract ones too), the problems, the id table that gave the set its net
+     * indices (the one passed in, with the set's new ids appended), and the values relationships set (DATA-04).
      */
     public record Result(
             TemplateSet set,
             Map<TemplateId, JsonObject> flattened,
             List<TemplateProblem> problems,
-            TemplateIdTable table) {
+            TemplateIdTable table,
+            List<Derivation> derivations) {
         public boolean ok() {
             return problems.stream().noneMatch(p -> p.severity() == TemplateProblem.Severity.ERROR);
         }
@@ -75,6 +76,8 @@ public final class TemplateCompiler {
                 flattened.put(new TemplateId(id), flat);
             }
         }
+        List<Derivation> derivations = Derivations.apply(
+                flattened, id -> Objects.requireNonNull(byId.get(id.value())).file(), problems);
         List<UnitTemplate> units = new ArrayList<>();
         List<JsonObject> unitJson = new ArrayList<>();
         for (Map.Entry<TemplateId, JsonObject> e : flattened.entrySet()) {
@@ -94,7 +97,7 @@ public final class TemplateCompiler {
         for (int k = 0; k < units.size(); k++) {
             flats.add(new Flat(units.get(k).id(), next.indexOf(units.get(k).id()), unitJson.get(k)));
         }
-        return new Result(set(flats, units), flattened, List.copyOf(problems), next);
+        return new Result(set(flats, units), flattened, List.copyOf(problems), next, List.copyOf(derivations));
     }
 
     /**
@@ -124,7 +127,7 @@ public final class TemplateCompiler {
                     .findFirst()
                     .orElse(new TemplateId("strategos:retired/" + k)));
         }
-        return new Result(set(kept, units), flattened, List.copyOf(problems), new TemplateIdTable(ids));
+        return new Result(set(kept, units), flattened, List.copyOf(problems), new TemplateIdTable(ids), List.of());
     }
 
     /** The decoded units at their flats' net indices, ascending. */
@@ -160,7 +163,7 @@ public final class TemplateCompiler {
         return ids;
     }
 
-    private static boolean isAbstract(JsonObject flat) {
+    static boolean isAbstract(JsonObject flat) {
         JsonElement a = flat.get("abstract");
         return a != null && a.isJsonPrimitive() && a.getAsJsonPrimitive().isBoolean() && a.getAsBoolean();
     }

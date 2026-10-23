@@ -257,7 +257,8 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   6. The sheet carries the Normal opening's timing targets (D).
 - **Tests:** L0, L1, D · **Fixtures:** the committed balance sheet · **Depends on:** DATA-02,
   D-11 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-23 — M3 T2: `$derive` relationships in the templates, evaluated after flattening, and `$override` with a reason as the only way past one; `BalanceSheetTest` (1–5; spec §1.6 rows 22–23); [docs/balance/sheet.md](../balance/sheet.md) with every number's source and provenance, the overrides, the resource sinks and the Normal opening's timing targets (6)
 
 #### ECO-01 · Resources and treasury
 - **Value:** A clear economy in the AoE and 0 A.D. style: resources in a treasury, spent on units,

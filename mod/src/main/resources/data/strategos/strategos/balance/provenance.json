@@ -1,0 +1,33 @@
+{
+  "core": {
+    "Health/max": "A hundred hit points: a round number every damage figure is read against (CMB-01)",
+    "Resistance/hack": "No armour: every unit is unarmoured until its template says otherwise",
+    "Resistance/pierce": "No armour: every unit is unarmoured until its template says otherwise",
+    "Resistance/crush": "No armour: every unit is unarmoured until its template says otherwise",
+    "Attack/Melee/hack": "No melee attack: a unit whose amounts are all 0 has none (CMB-02)",
+    "Attack/Melee/pierce": "No melee attack: a unit whose amounts are all 0 has none (CMB-02)",
+    "Attack/Melee/crush": "No melee attack: a unit whose amounts are all 0 has none (CMB-02)",
+    "Attack/Melee/reach": "A block between the two bodies' edges, an arm's length",
+    "Attack/Melee/prepare": "Half a second's wind-up before the first blow, so an attack reads",
+    "Attack/Melee/repeat": "A blow a second",
+    "Vision/range": "Twelve blocks: an enemy at the edge of the default camera's view is noticed (CMB-02)"
+  },
+  "strategos:template/unit_base": {
+    "UnitMotion/walkSpeed": "3.75 blocks a second, a little under a walking player's 4.3, so a crowd reads as marching; M1's movement baselines are measured at it (D-11)",
+    "UnitMotion/turnRate": "Degrees a tick: a full turn in eight ticks, quick enough for orders to feel immediate, slow enough to see the turn",
+    "Body/width": "A player's hit box, so the vanilla humanoid model fits (D-04)",
+    "Body/height": "A player's hit box, so the vanilla humanoid model fits (D-04)",
+    "Body/radius": "The avoidance radius, a little over half the width, so a dense crowd still shows gaps between bodies (M1, PATH-06)"
+  },
+  "strategos:unit/debug_walker": {
+    "UnitMotion/walkSpeed": "Five blocks a second: the movement tests' brisk walker, never a game unit"
+  },
+  "strategos:unit/infantry": {
+    "Attack/Melee/hack": "With 100 hit points and resistance 5, one spearman kills another in 29 blows, about half a minute at a blow a second (M2, CMB-02)",
+    "Attack/Melee/reach": "A spear reaches a little past an arm's length",
+    "Attack/Melee/prepare": "Half a second's wind-up before the first thrust, so a charge reads",
+    "Attack/Melee/repeat": "A thrust a second",
+    "Resistance/hack": "0.9^5 lets 59 % through: shield and padding make a fight between two spearmen last tens of seconds",
+    "Resistance/crush": "Padding does little against blunt blows; crush belongs to cavalry and siege later"
+  }
+}

@@ -38,8 +38,20 @@ final class BuiltinTemplates {
             {
               "parent": "strategos:template/unit_infantry",
               "Identity": { "name": "strategos.unit.infantry", "classes": "+Spearman" },
-              "Attack": { "Melee": { "hack": 3, "pierce": 3, "reach": 1.2, "prepare": 10, "repeat": 20 } },
-              "Resistance": { "hack": 5, "pierce": 5, "crush": 2 },
+              "Attack": {
+                "Melee": {
+                  "hack": 3,
+                  "pierce": { "$derive": { "from": "self", "path": "Attack/Melee/hack" }, "note": "A spear thrusts as hard as it cuts" },
+                  "reach": 1.2,
+                  "prepare": 10,
+                  "repeat": 20
+                }
+              },
+              "Resistance": {
+                "hack": 5,
+                "pierce": { "$derive": { "from": "self", "path": "Resistance/hack" }, "note": "Shield and padding stop a thrust as well as a cut" },
+                "crush": 2
+              },
               "Body": { "skin": "strategos:units/infantry" }
             }
             """;

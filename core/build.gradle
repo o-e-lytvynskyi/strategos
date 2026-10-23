@@ -36,6 +36,19 @@ tasks.named('test', Test) {
     systemProperty 'strategos.repoRoot', rootDir.absolutePath
     inputs.files(rootProject.fileTree('mod/src/devtools/resources/data/strategos/strategos/maps'))
             .withPropertyName('mapManifests')
+    // [M3 T2] DATA-04.2: BalanceSheetTest compares the sheet built from the mod's data with docs/balance.
+    inputs.files(rootProject.fileTree('mod/src/main/resources/data')).withPropertyName('modData')
+    inputs.files(rootProject.fileTree('docs/balance')).withPropertyName('balanceSheet')
+}
+
+// [M3 T2] DATA-04: writes docs/balance/sheet.md and sheet.csv from the mod's templates and balance data; fails on a
+// template problem or a sheet problem (a number without provenance, a resource spent fewer than twice).
+tasks.register('balanceSheet', JavaExec) {
+    group = 'documentation'
+    description = 'Regenerates docs/balance/sheet.md and sheet.csv from the mod data.'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'dev.strategos.core.testkit.BalanceData'
+    args(rootProject.file('mod/src/main/resources/data').absolutePath, rootProject.file('docs/balance').absolutePath)
 }
 
 // [T6b] long seeded determinism runs; part of verify and of verifySoak, not verifyFast.

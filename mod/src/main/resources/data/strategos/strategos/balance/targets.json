@@ -1,0 +1,10 @@
+{
+  "opening": "Normal",
+  "targets": [
+    { "event": "First house finished", "by": "1:30", "note": "Five starting workers, one of them building while four gather; D-11" },
+    { "event": "Barracks finished", "by": "4:00", "note": "The first spearmen can train before the bot's first wave" },
+    { "event": "The bot's first wave leaves", "by": "8:00", "note": "Announced 30 s ahead (AI-17); time to see it coming on the minimap" },
+    { "event": "A match against the bot ends", "by": "30:00", "note": "M3's Done gate; the MVP's matches end within 45 minutes, a median of 20 to 35 (D-11)" },
+    { "event": "Town reached", "by": "12:00", "note": "From M6, when phases arrive (TECH-01); a placeholder until then" }
+  ]
+}

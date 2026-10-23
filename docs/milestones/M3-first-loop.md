@@ -94,7 +94,7 @@ same. The verdict answers "is this fun?" before M4 to M6 deepen the systems (dec
 
 | Card | Task | Checks (level) |
 |---|---|---|
-| DATA-04 | T2 | 1 `BalanceSheetTest.aRelationshipChangesEveryDerivedValue` (L1) · 2 `balanceCheck`: the committed sheet equals the regenerated one, and a changed value shows in its diff (L1) · 3 `BalanceSheetTest.anOverrideNeedsAMarkerAndAReason`, the override list (L1) · 4 `BalanceSheetTest.everyValueHasProvenance` (L1) · 5 `BalanceSheetTest.everyGatherableResourceIsSpentTwice` (L1) · 6 the timing targets in `docs/balance/sheet.md` (D) |
+| DATA-04 | T2 | 1 `BalanceSheetTest.aRelationshipChangesEveryDerivedValue` (L1) · 2 `BalanceSheetTest.theCommittedSheetIsTheOneTheModsDataGivesAndADiffShowsTheChangedNumber` (L1) · 3 `BalanceSheetTest.anOverrideNeedsAMarkerAndAReasonAndIsListed` (L1) · 4 `BalanceSheetTest.everyValueHasProvenance` (L1) · 5 `BalanceSheetTest.everyGatherableResourceIsSpentTwice` (L1) · 6 the timing targets in `docs/balance/sheet.md` (D) |
 | UNIT-04 | T3 | 1 `WorkerModelTest.gatheringAndBuildingFollowClassTokens` (L1) · 2 both templates in the sheet (L1) · 3 `unittests.spawned_worker_and_spearman_read_their_stats` (L3) |
 | ECO-01 | T4 | 1 `TreasuryInvariantTest` over 200 seeded streams (L1) · 2 `PaymentTest.anUnpayableCommandNamesTheMissingAmounts` (L1) · 3 `ecotests.faction_state_reaches_its_own_faction_only` (L3) · 4 `WireCodecSizeTest.aFactionStateRoundTripsWithinItsCap`, its audience declared (L2) |
 | ECO-02 | T6 | 1 `NodeDiscoveryTest` against a reference flood fill on synthetic slices (L1) · 2 `NodeIndexTest.nearestEqualsBruteForce` on random maps (L1) · 3 `NodeSlotsTest` over seeded competitions (L1) · 4 `ecotests.a_resource_yield_entry_makes_a_node` (L3) · 5 `perftests.node_index_proving_ground` under 2 s (L6) |
@@ -157,6 +157,8 @@ Rows written while specifying; tasks append theirs.
 | 19 | Saves | Snapshot schema 3 adds treasuries, nodes, buildings, production and rally points; schema 2 saves load into it unchanged (a fixture pair, as M2's `match_v2`) |
 | 20 | `building_state` | To its faction in full (footprint, template, progress, HP, queue, rally, population); to the others the same fields but queue, rally and population, once the building is seen (every building until fog). Coalesced per building to one a tick at most |
 | 21 | T1: the health check | `HfsmTransitionsTest` (935 lines) split into `UnitTreeTransitionsTest` (the unit tree's 63 rows) and `HfsmTransitionsTest` (the framework's 19 cases on a test tree): 82 cases, as before. `PerfTests` (883) keeps its tests, so their names (`perftests.*`, which the perf filter and the docs use) stay; their verdicts, JSON files, the soaks' judgement and the foreign-load window moved to `PerfVerdicts`: 681 lines. `RtsMode` (780) keeps its public calls; the orders it sends (the right click with its preview and markers, stop, the first-person keys, the crosshair pick) moved to `RtsOrders`: 605 lines. `MotionSystem` is 776 lines since T29 moved its footing out, so it stays as it is. `verify` green, the golden journals unchanged; `perftests.snapshot_500_budget_g` passes through the moved verdict code; `rts_select` and `rts_first_person` on CI's Linux route check `RtsOrders` |
+| 22 | T2: where relationships live | In the templates, not in a separate file: a value is `{"$derive": {"from", "path", "factor", "offset", "round"}, "note": ".."}`, `from` a template or `"self"`, evaluated exactly in decimals after flattening, per concrete template, so one written in an abstract parent derives in each child from its own values; a chain of them resolves in any order, a cycle is a problem naming it. A child sets a derived value only with `{"$override": x, "reason": ".."}`; a plain number, an `$op` or an object over it is a problem, as is an override of a value nothing derives. Markers never reach a set: the flattened JSON a journal or a client gets holds the numbers, so `fromFlattened` and every older journal are unchanged. Provenance notes for the numbers templates set live in `strategos/balance/provenance.json`, keyed by the template that sets each (a mixin or a parent), with the key `core` for the core's defaults, which the sheet lists for every path a template leaves out; a derived value's note is its relationship's. The timing targets are `strategos/balance/targets.json`. Costs are `Cost/resources/<resource>`, beside `Cost/population` and `Cost/time`, so the sink check reads resources by their path |
+| 23 | T2: tests and the sheet | `BalanceSheetTest` (6): a relationship's factor changed changes the cost of both children that inherit it, rounded half up to its step (DATA-04.1); a chain through three templates and a cycle; the committed `docs/balance/sheet.md` and `sheet.csv` equal what the mod's data gives, the data compiles to the built-in set, and a changed spearman's hack shows in the CSV diff as two rows, its own and the pierce derived from it (DATA-04.2); an override needs its marker and reason and is listed with what the formula gives (.3); a number without a note fails, a derived one takes its relationship's, and the mod's data has a note for every row (.4); a gathered resource spent by one template fails, by two passes (.5). The first relationships: a spearman's pierce is its hack, and its pierce resistance its hack resistance; the flattened set is unchanged, so the template SHA and the golden journals are too. The sheet's first targets: first house by 1:30, barracks by 4:00, the bot's first wave from 8:00, a match within 30:00 (DATA-04.6) |
 
 ### 1.7 Consent plan
 
@@ -199,15 +201,14 @@ Rows written while specifying; tasks append theirs.
 - **Templates:** `unit/worker` (`+Gatherer +Builder`, flees by default), `unit/infantry` (the
   spearman, M2), `building/civic_centre` (dropsite for every resource, housing, trains workers),
   `building/house` (housing), `building/barracks` (trains spearmen), `building/field`
-  (`FieldNode`). Values through M1's modifier pipeline: `Cost/<resource>`, `Cost/population`,
-  `Cost/time`, `ResourceGatherer/rates/<type.subtype>`, `ResourceGatherer/capacity`,
+  (`FieldNode`). Values through M1's modifier pipeline: `Cost/resources/<resource>`, `Cost/population`,
+  `Cost/time`, `ResourceGatherer/rates/<resource>/<subtype>`, `ResourceGatherer/capacity`,
   `Builder/rate`, `Footprint/*`, `Housing`, `Trainer/list`, `Placement/civicReach`, `Field/*`.
 - **The sheet** is computed from data by `:core:balanceSheet` into `docs/balance/sheet.md` and
-  `sheet.csv`; `balanceCheck` in `verify` regenerates it and fails on any difference, as
-  `FixtureCheck` does, so a changed number shows in the diff and is approved like a golden.
-  Relationships live in `data/strategos/strategos/balance/relationships.json` (for example
-  "spearman cost ≈ 1.5 × worker cost", "house build time ≈ ½ × barracks"); a template value that
-  departs from its derived value needs `{"$override": x, "reason": "..."}`.
+  `sheet.csv`; `BalanceSheetTest` in `verify` fails on any difference, so a changed number shows in
+  the diff and is approved like a golden. Relationships are `$derive` values in the templates
+  (§1.6 row 22; for example "spearman cost ≈ 1.5 × worker cost"); a template that departs from a
+  derived value needs `{"$override": x, "reason": "..."}`.
 - **Timing targets** for the Normal opening (D-11), authored by T2 and tuned by playtests: first
   house by 1:30, barracks by 4:00, first bot wave from 8:00, a 1 v 1 against the bot within 30
   minutes. Numbers are our own, from relationships and these targets (ADR-0005).
@@ -344,7 +345,7 @@ Rows written while specifying; tasks append theirs.
 
 ## 3. Build changes
 
-- `core/build.gradle`: `balanceSheet` and `balanceCheck` (in `verify`); `headlessMatches`
+- `core/build.gradle`: `balanceSheet` (its check is `BalanceSheetTest`, in `verify`); `headlessMatches`
   (`-Pseeds`, `-Plimit`); the JMH kernels `NodeIndexBench.nearest`, `ConstructionBench.tick` and
   `GatherBench.tick600` with `@HotPath` where they are kernels, and their baselines proposed.
 - `mod/build.gradle`: `runBlueprintgen` (devtools) and `checkBlueprints` (in `verify`); the
@@ -410,8 +411,9 @@ report lists placement, writer and `fx` times.
   area; no behaviour change (§1.6 row 21). **Verification:** `verify`; the golden journals unchanged.
 
 #### T2 · Balance sheet — DATA-04
-- **Files:** `core.content.balance`; `balance/relationships.json`; `docs/balance/sheet.md`,
-  `sheet.csv`; `balanceSheet`, `balanceCheck`. **Verification:** `verify`.
+- **Files:** `$derive` and `$override` in `MergeOps`, `Derivations`; `core.content.balance`;
+  `testkit.BalanceData`; `balance/provenance.json`, `balance/targets.json`; `docs/balance/sheet.md`,
+  `sheet.csv`; `balanceSheet` (§1.6 rows 22–23). **Verification:** `verify`.
 
 #### T3 · Starting units and the worker model — UNIT-04
 - **Files:** `unit/worker.json`; class tokens `Gatherer`, `Builder`; the sheet's rows; `unittests`.
@@ -498,7 +500,7 @@ report lists placement, writer and `fx` times.
 
 ### 7.3 Progress
 
-- [x] T1 (2026-10-23) · [ ] T2 · [ ] T3 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11
+- [x] T1 (2026-10-23) · [x] T2 (2026-10-23) · [ ] T3 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11
 - [ ] T12 · [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17 · [ ] T18 · [ ] T19 · [ ] T20 · [ ] T21
 - [ ] T22 · [ ] T23 · [ ] T24 · [ ] T25 · [ ] T26 · [ ] T27 · [ ] T28 · [ ] T29 · [ ] T30 · [ ] T31
 
