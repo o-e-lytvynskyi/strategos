@@ -27,12 +27,15 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.levelgen.Heightmap;
 import org.jspecify.annotations.Nullable;
+import org.lwjgl.glfw.GLFW;
 
 /**
  * UI-03.3–4, UNIT-03.2 and UI-04.4 on screen: the player, seated in slot 0 of a match with 150 of its own units and 20
  * enemies in front of it, enters RTS mode. A drag over the whole window selects the 150 and outlines them, and no enemy;
  * an empty click clears; a double click on one of them takes all of its type on screen; a click on an enemy inspects
  * it and selects nothing; Ctrl+1 keeps the 150 in group 1, which a 1 recalls after a clear; a plain click then takes one.
+ * Then orders (UI-05): group 1 back, the right button held on the ground shows the places, its release sends one Move
+ * that gives all 150 an order there, and a Shift click queues a second behind it.
  * Two screenshots of the outlined army.
  */
 final class RtsSelectScenario implements Scenario {
@@ -64,6 +67,7 @@ final class RtsSelectScenario implements Scenario {
         rt.submit(
                 PlayerSlot.ADMIN,
                 new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(1), new Vec2d(57, 64), ENEMIES, 2));
+        match = rt;
         StrategosServer.get().matches().join(rt, player.getUUID(), new PlayerSlot(0));
         StrategosServer.get().net().joined(rt, player, new PlayerSlot(0));
         player.setGameMode(GameType.SPECTATOR);
@@ -149,11 +153,44 @@ final class RtsSelectScenario implements Scenario {
                 screen.mouseReleased(own[0], own[1], 0);
             }
             case 7 -> {
-                // the click above was a plain one: it selected a single unit; now a Shift click on another adds it
+                // the click above was a plain one: it selected a single unit
                 check(
                         rts.selection().handles().size() == 1,
                         "a click selected " + rts.selection().handles().size());
                 ctx.result.addProperty("groupRecalled", OWN);
+            }
+            case 8, 9, 10, 11, 12, 13, 14 -> {} // past the double tap's 300 ms, so the next 1 recalls
+            case 15 -> {
+                screen.keyPressed(KeyCode.digit(1).code(), 0, 0);
+                check(
+                        rts.selection().handles().size() == OWN,
+                        "1 recalled " + rts.selection().handles().size());
+                orderAt = gui(screen, rts, 0.5, floor, 4.5);
+                double[] w = window(rts, 0.5, floor, 4.5); // the preview follows the OS cursor, as a player's does
+                GLFW.glfwSetCursorPos(mc.getWindow().getWindow(), w[0], w[1]);
+                screen.mouseClicked(orderAt[0], orderAt[1], 1); // the right button, held: the preview
+            }
+            case 16, 17, 18, 19, 20, 21, 22, 23 -> {} // the preview shows for a few ticks
+            case 24 -> ctx.capture("rts_order_preview");
+            case 25 -> {
+                screen.mouseReleased(orderAt[0], orderAt[1], 1);
+                check(rts.ordersSent() == 1, rts.ordersSent() + " orders sent for one click");
+            }
+            case 26, 27, 28, 29, 30, 31 -> {} // the order reaches the server's next step
+            case 32 -> {
+                int ordered = ordered(1, 0.5, 4.5);
+                check(ordered == OWN, ordered + " of " + OWN + " units ordered near the click");
+                ctx.result.addProperty("ordered", ordered);
+                // Shift is read from the keyboard, so the queued click goes in through the mode, as the screen sends it
+                double[] w = window(rts, 10.5, floor, 2.5);
+                rts.order(w[0], w[1], true);
+            }
+            case 33, 34, 35, 36, 37 -> {}
+            case 38 -> {
+                int queued = ordered(2, 0.5, 4.5);
+                check(queued == OWN, queued + " of " + OWN + " units with the queued order behind");
+                ctx.result.addProperty("queued", queued);
+                ctx.capture("rts_order_markers");
                 return finish(ctx);
             }
             default -> {
@@ -165,6 +202,8 @@ final class RtsSelectScenario implements Scenario {
     }
 
     private int phase;
+    private double[] orderAt = new double[2];
+    private volatile @Nullable MatchRuntime match;
 
     private static void click(Screen screen, double[] at) {
         screen.mouseClicked(at[0], at[1], 0);
@@ -201,6 +240,45 @@ final class RtsSelectScenario implements Scenario {
             throw new IllegalStateException("cannot project " + x + ", " + y + ", " + z);
         }
         return new double[] {w[0] * screen.width / v.width(), w[1] * screen.height / v.height()};
+    }
+
+    /** Own units with at least {@code count} orders, the first ending within 15 blocks of the world point. */
+    private int ordered(int count, double wx, double wz) {
+        MatchRuntime rt = match;
+        IntegratedServer server = Minecraft.getInstance().getSingleplayerServer();
+        if (rt == null || server == null) {
+            return -1;
+        }
+        return server.submit(() -> {
+                    var core = rt.core();
+                    if (core == null) {
+                        return -1;
+                    }
+                    int n = 0;
+                    double lx = wx - rt.space().origin().getX();
+                    double lz = wz - rt.space().origin().getZ();
+                    for (int h : core.queries().unitHandlesOf(new FactionSlot(0))) {
+                        var orders = core.queries().orders(h);
+                        if (orders.size() >= count
+                                && Math.hypot(
+                                                orders.get(0).x() - lx,
+                                                orders.get(0).z() - lz)
+                                        < 15) {
+                            n++;
+                        }
+                    }
+                    return n;
+                })
+                .join();
+    }
+
+    private static double[] window(RtsMode rts, double x, double y, double z) {
+        View v = rts.view();
+        double[] w = v == null ? null : Picking.project(v, x, y, z);
+        if (w == null) {
+            throw new IllegalStateException("cannot project " + x + ", " + y + ", " + z);
+        }
+        return w;
     }
 
     private static int bodies(Minecraft mc) {

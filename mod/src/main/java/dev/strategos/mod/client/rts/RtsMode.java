@@ -6,20 +6,27 @@ import dev.strategos.core.client.camera.CameraPose;
 import dev.strategos.core.client.camera.CameraRig;
 import dev.strategos.core.client.input.Action;
 import dev.strategos.core.client.input.InputState;
+import dev.strategos.core.client.order.OrderIntents;
+import dev.strategos.core.client.order.SlotPreview;
 import dev.strategos.core.client.pick.Picking;
 import dev.strategos.core.client.pick.View;
 import dev.strategos.core.client.select.ControlGroups;
 import dev.strategos.core.client.select.Seen;
 import dev.strategos.core.client.select.Selection;
+import dev.strategos.core.protocol.CommandBatch;
 import dev.strategos.core.protocol.MatchJoin;
+import dev.strategos.core.protocol.Move;
 import dev.strategos.mod.client.StrategosClient;
 import dev.strategos.mod.client.StrategosClientConfig;
+import dev.strategos.mod.client.net.ClientPayloads;
 import dev.strategos.mod.entity.UnitEntity;
 import dev.strategos.mod.entity.UnitSpawnData;
+import dev.strategos.mod.server.net.payload.CommandsPayload;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ClipContext;
@@ -35,6 +42,7 @@ import net.neoforged.neoforge.client.event.ViewportEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -49,6 +57,8 @@ public final class RtsMode {
     private static final double EDGE_POINTS = 6;
     private static final double DRAG_DEGREES_PER_PIXEL = 0.4;
     private static final int TRACKING_REACH = 192;
+    private static final DustParticleOptions PREVIEW = new DustParticleOptions(new Vector3f(0.35f, 0.65f, 1f), 3f);
+    private static final DustParticleOptions MARKER = new DustParticleOptions(new Vector3f(1f, 1f, 1f), 4f);
 
     private final RtsKeys keys = new RtsKeys();
     private final ControlGroups groups = new ControlGroups();
@@ -59,6 +69,11 @@ public final class RtsMode {
     private double zoom;
     private @Nullable Pick lastPick;
     private @Nullable Action lastAction;
+    private boolean previewing;
+    private long ticks;
+    private int clientSeq = 1;
+    private int ordersSent;
+    private final List<double[]> markers = new ArrayList<>(); // world x, y, z, ticks left
 
     /** What the last pick hit: a body's entity id, or a block, and where. */
     public record Pick(int entityId, double x, double y, double z) {}
@@ -180,6 +195,84 @@ public final class RtsMode {
         }
     }
 
+    /** Orders sent from the RTS screen, for scenarios. */
+    public int ordersSent() {
+        return ordersSent;
+    }
+
+    void preview(boolean on) {
+        previewing = on;
+    }
+
+    /**
+     * The context order for the selection to what the cursor at window points picks (UI-05): a Move to the block or
+     * unit there, match-local, queued with Shift; one command per click. Attack on an enemy comes with ORD-04.
+     */
+    public void order(double x, double y, boolean shift) {
+        previewing = false;
+        Pick pick = pick(x, y);
+        MatchJoin join = StrategosClient.match();
+        if (pick == null || join == null) {
+            return;
+        }
+        double wx = pick.entityId() < 0 ? pick.x() + 0.5 : pick.x();
+        double wz = pick.entityId() < 0 ? pick.z() + 0.5 : pick.z();
+        Move move = OrderIntents.move(selection().handles(), wx - join.originX(), wz - join.originZ(), shift);
+        if (move == null) {
+            return;
+        }
+        if (ClientPayloads.toServer(new CommandsPayload(new CommandBatch(clientSeq++, List.of(move)), ""))) {
+            ordersSent++;
+            markers.add(new double[] {wx, pick.entityId() < 0 ? pick.y() + 1 : pick.y(), wz, shift ? 200 : 40});
+        }
+    }
+
+    /**
+     * While the right button is held: each selected unit's place, as dust, every few ticks; forced, since a plain
+     * particle further than 32 blocks from the camera, as the RTS camera always is, is never made (LevelRenderer).
+     */
+    private void showPreview(Minecraft mc) {
+        MatchJoin join = StrategosClient.match();
+        if (!previewing || join == null || mc.level == null || ticks % 3 != 0) {
+            return;
+        }
+        Pick pick = pick(mc.mouseHandler.xpos(), mc.mouseHandler.ypos());
+        if (pick == null) {
+            return;
+        }
+        double tx = (pick.entityId() < 0 ? pick.x() + 0.5 : pick.x()) - join.originX();
+        double tz = (pick.entityId() < 0 ? pick.z() + 0.5 : pick.z()) - join.originZ();
+        List<double[]> members = new ArrayList<>();
+        double radius = 0;
+        for (Entity e : mc.level.entitiesForRendering()) {
+            if (e instanceof UnitEntity body
+                    && body.spawnData() != null
+                    && selection().contains(body.spawnData().handle())) {
+                members.add(new double[] {e.getX() - join.originX(), e.getZ() - join.originZ()});
+                var template =
+                        StrategosClient.templates().byIndex(body.spawnData().templateIndex());
+                radius = Math.max(radius, template == null ? 0.35 : template.radius());
+            }
+        }
+        double y = pick.entityId() < 0 ? pick.y() + 1.1 : pick.y() + 0.1;
+        for (double[] place : SlotPreview.places(members, radius, tx, tz, join.sizeX(), join.sizeZ())) {
+            mc.level.addParticle(PREVIEW, true, place[0] + join.originX(), y, place[1] + join.originZ(), 0, 0, 0);
+        }
+    }
+
+    /** The clicked point and queued waypoints, as dust, for a while. */
+    private void showMarkers(Minecraft mc) {
+        if (mc.level == null) {
+            return;
+        }
+        markers.removeIf(m -> --m[3] <= 0);
+        if (ticks % 4 == 0) {
+            for (double[] m : markers) {
+                mc.level.addParticle(MARKER, true, m[0], m[1] + 0.2, m[2], 0, 0.05, 0);
+            }
+        }
+    }
+
     /** The last pick, for scenarios and the hover outline; null before any. */
     public @Nullable Pick lastPick() {
         return lastPick;
@@ -241,7 +334,10 @@ public final class RtsMode {
             }
             return;
         }
+        ticks++;
         outlines(mc);
+        showPreview(mc);
+        showMarkers(mc);
         if (mc.screen == null) { // chat, the pause menu or anything else closed over it: the RTS screen comes back
             mc.setScreen(new RtsScreen(this));
         }

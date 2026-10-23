@@ -9,7 +9,18 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24, T16, T26; M2 spec, M2 T1, T3, T5, T11
+## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24, T16, T26; M2 spec, M2 T1, T3, T5, T11, T13
+
+- **M2 T13 · Order feedback and destination preview** — UI-05 done.
+  - **Results:** `core.client.order` (`OrderIntents`, `SlotPreview` on `SlotLayout`), the right
+    button previews on press and orders on release, Move commands from the RTS screen, forced dust
+    for places and markers. Tests: `OrderIntentTest`, `SlotPreviewParityTest` (2); `rts_select` now
+    orders 150 units and queues a second order, green on the owner's Mac.
+  - **Problems:** the scenario's second press of 1 within 300 ms was a double tap, as designed, and
+    centred instead of recalling; the preview follows the OS cursor, which the scenario now moves;
+    the first order point lay beyond the window's top; plain particles more than 32 blocks from the
+    camera are never made, so they are forced.
+  - **Next:** CAM-03, the commander's server side, then combat.
 
 - **M2 T7, T11, T12 · Selection, control groups, the outline** — UI-03 done; UI-04, UNIT-03 in
   progress.

@@ -47,10 +47,14 @@ class GestureTest {
     }
 
     @Test
-    void aRightClickOrdersAndAMiddleDragRotates() {
+    void theRightButtonPreviewsThenOrdersAndAMiddleDragRotates() {
         assertThat(input.mouseDown(KeyCode.MOUSE_RIGHT, 5, 5, Modifiers.SHIFT, 0))
-                .extracting(InputState.Event::action, e -> Modifiers.shift(e.modifiers()))
-                .containsExactly(org.assertj.core.groups.Tuple.tuple(Action.ORDER_CONTEXT, true));
+                .extracting(InputState.Event::action)
+                .containsExactly(Action.ORDER_PREVIEW);
+        assertThat(input.mouseUp(KeyCode.MOUSE_RIGHT, 9, 5, Modifiers.SHIFT, 400))
+                .as("released where the order goes, held as long as it likes")
+                .extracting(InputState.Event::action, InputState.Event::x, e -> Modifiers.shift(e.modifiers()))
+                .containsExactly(org.assertj.core.groups.Tuple.tuple(Action.ORDER_CONTEXT, 9.0, true));
         input.mouseDown(KeyCode.MOUSE_MIDDLE, 100, 0, Modifiers.NONE, 0);
         input.mouseMove(130, 0);
         input.mouseMove(125, 0);

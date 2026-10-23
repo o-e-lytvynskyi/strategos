@@ -157,7 +157,7 @@ public final class RtsScreen extends Screen {
         return true;
     }
 
-    /** Selection (UI-03) and control groups (UI-04); orders come with UI-05. */
+    /** Selection (UI-03), control groups (UI-04) and orders (UI-05). */
     private void handle(List<InputState.Event> events) {
         Selection selection = mode.selection();
         for (InputState.Event e : events) {
@@ -172,7 +172,8 @@ public final class RtsScreen extends Screen {
                     }
                 }
                 case BOX_SELECT -> selection.box(mode.seen(), x(e.x()), y(e.y()), x(e.toX()), y(e.toY()), shift);
-                case ORDER_CONTEXT -> pickAt(e.x(), e.y());
+                case ORDER_PREVIEW -> mode.preview(true);
+                case ORDER_CONTEXT -> mode.order(x(e.x()), y(e.y()), shift);
                 case CONTROL_GROUP_SET -> mode.groups().set(e.group(), selection);
                 case CONTROL_GROUP_ADD -> mode.groups().add(e.group(), selection);
                 case CONTROL_GROUP_SELECT -> mode.groups().recall(e.group(), selection);

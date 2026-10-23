@@ -386,7 +386,8 @@ perspective only.
   6. The owner finds the preview readable at every camera height (L7, acceptance).
 - **Tests:** L0, L1, L3, L4 (consent), L7 · **Depends on:** ORD-03, UI-02, CAM-04 · **Size:** M ·
   **Tier:** T0
-- **Status:** specified
+- **Done:** 2026-10-23 — M2 T13: `SlotPreviewParityTest`, equal places without terrain (1) and within the 3-column snap on the proving ground, in L1 (2; spec §1.6 rows 21–22); `OrderIntentTest`, one Move per click (3), Shift queues (4), and on the server all 150 units of `rts_select` hold the order and the queued one; the preview's places and the markers on the owner's Mac (5; row 23); facing and width by dragging, and path lines, come later (row 21); the owner's verdict is the questionnaire's (6)
+- **Status:** done
 
 #### CAM-05 · First person and back, with observer rules
 - **Value:** Step down into your town as a normal player, walk among your soldiers and return to

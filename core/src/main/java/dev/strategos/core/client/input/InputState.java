@@ -8,8 +8,9 @@ import java.util.Set;
 /**
  * Turns one screen's raw input into action events (04 §13.3), in GUI pixels and milliseconds: a left click selects, a
  * second within {@value #DOUBLE_CLICK_MS} ms and {@value #DRAG_PIXELS} pixels of the first takes every unit of that
- * type, a left drag of at least {@value #DRAG_PIXELS} pixels boxes; a right click orders; a middle drag rotates; a
- * control group's digit pressed twice within {@value #DOUBLE_CLICK_MS} ms centres on it. Held actions are polled.
+ * type, a left drag of at least {@value #DRAG_PIXELS} pixels boxes; a middle drag rotates; a
+ * control group's digit pressed twice within {@value #DOUBLE_CLICK_MS} ms centres on it; the right button previews the
+ * order while held and issues it on release. Held actions are polled.
  */
 public final class InputState {
     public static final long DOUBLE_CLICK_MS = 300;
@@ -33,6 +34,7 @@ public final class InputState {
     private double lastClickX;
     private double lastClickY;
     private boolean middleDown;
+    private boolean rightDown;
     private double middleX;
     private double rotateDrag;
     private int lastGroup = -1;
@@ -94,7 +96,10 @@ public final class InputState {
                 downX = x;
                 downY = y;
             }
-            case KeyCode.MOUSE_RIGHT -> out.add(Event.at(Action.ORDER_CONTEXT, x, y, mods));
+            case KeyCode.MOUSE_RIGHT -> {
+                rightDown = true;
+                out.add(Event.at(Action.ORDER_PREVIEW, x, y, mods));
+            }
             case KeyCode.MOUSE_MIDDLE -> {
                 middleDown = true;
                 middleX = x;
@@ -118,6 +123,11 @@ public final class InputState {
         List<Event> out = new ArrayList<>(1);
         if (button == KeyCode.MOUSE_MIDDLE) {
             middleDown = false;
+        }
+        if (button == KeyCode.MOUSE_RIGHT && rightDown) {
+            rightDown = false;
+            out.add(Event.at(Action.ORDER_CONTEXT, x, y, mods));
+            return out;
         }
         if (button != KeyCode.MOUSE_LEFT || !leftDown) {
             return out;

@@ -17,6 +17,7 @@ public enum Action {
     SELECT(false),
     BOX_SELECT(false),
     SELECT_ALL_OF_TYPE(false),
+    ORDER_PREVIEW(false),
     ORDER_CONTEXT(false),
     ATTACK_MOVE(false),
     STOP(false),
