@@ -116,6 +116,9 @@ public final class StateHasher {
         if (s.nodes().count() > 0) { // only once a match found resource nodes (ECO-02)
             h = s.nodes().mix(h);
         }
+        if (!s.buildings().empty()) { // only once a building stood (BLD-01)
+            h = s.buildings().mix(h);
+        }
 
         ArrayDeque<CommandEnvelope> pending = s.pendingCommands();
         h = Hasher.mix(h, pending.size());

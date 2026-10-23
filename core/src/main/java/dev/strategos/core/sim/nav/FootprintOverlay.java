@@ -47,6 +47,13 @@ public final class FootprintOverlay {
         masks[page][column >> 6] &= ~(1L << (column & 63));
     }
 
+    /** Whether match-local column (x, z) is blocked. */
+    public boolean blocked(int x, int z) {
+        int page = pageOf(x, z);
+        int column = SurfacePage.column(x & 15, z & 15);
+        return blockedCounts[page] > 0 && (masks[page][column >> 6] & (1L << (column & 63))) != 0;
+    }
+
     /** Whether page {@code page} has a blocked column. */
     public boolean any(int page) {
         return blockedCounts[page] > 0;

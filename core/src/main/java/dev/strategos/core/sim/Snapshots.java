@@ -59,7 +59,8 @@ final class Snapshots {
                 s.nextGroup(),
                 treasury(s),
                 s.terrainEdits().save(),
-                s.nodes().count() > 0 ? s.nodes().save() : List.of());
+                s.nodes().count() > 0 ? s.nodes().save() : List.of(),
+                s.buildings().empty() ? List.of() : s.buildings().save());
     }
 
     /** The treasury's counters, or none while it is empty, so a match without an economy saves as before. */
@@ -130,6 +131,9 @@ final class Snapshots {
         state.terrainEdits().restore(snapshot.terrainEdits()); // before the pages, whose publication applies them
         if (!snapshot.nodes().isEmpty()) {
             state.nodes().restore(snapshot.nodes()); // before the pages, so their publication finds none again
+        }
+        if (!snapshot.buildings().isEmpty()) {
+            state.restoreBuildings(snapshot.buildings()); // before the pages, so their footprints are laid over them
         }
         int missing = 0;
         List<TerrainPage> pages = new ArrayList<>();

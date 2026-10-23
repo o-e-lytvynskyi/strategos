@@ -22,7 +22,8 @@ public final class CommandRules {
                 .register(new AttackRule())
                 .register(new AttackMoveRule())
                 .register(new FollowRule())
-                .register(new GrantRule());
+                .register(new GrantRule())
+                .register(new SpawnBuildingRule());
     }
 
     /** A second rule for a kind throws. */

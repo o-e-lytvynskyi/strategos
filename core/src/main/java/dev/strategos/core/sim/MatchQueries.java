@@ -3,6 +3,7 @@ package dev.strategos.core.sim;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.FactionSlot;
+import dev.strategos.core.sim.build.BuildingView;
 import dev.strategos.core.sim.econ.FactionTreasury;
 import dev.strategos.core.sim.econ.NodeView;
 import dev.strategos.core.sim.nav.PathService;
@@ -16,6 +17,9 @@ import org.jspecify.annotations.Nullable;
 /** Read-only questions about a match at its last completed tick. */
 @CoreApi
 public interface MatchQueries {
+    /** The match's standing buildings, by slot (BLD-01). */
+    List<BuildingView> buildings();
+
     /** The match's resource nodes, by id (ECO-02); empty before discovery. */
     List<NodeView> nodes();
 

@@ -4,6 +4,7 @@ import dev.strategos.core.protocol.NoticeKind;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.sim.Attacked;
+import dev.strategos.core.sim.BuildingDestroyed;
 import dev.strategos.core.sim.EntityStore;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.MatchSystem;
@@ -11,6 +12,7 @@ import dev.strategos.core.sim.Notice;
 import dev.strategos.core.sim.Phase;
 import dev.strategos.core.sim.UnitDied;
 import dev.strategos.core.sim.UnitHurt;
+import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.stats.StatService;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,9 +41,14 @@ public final class CombatSystem implements MatchSystem {
         StatService stats = s.stats();
         HealthStore health = s.health();
         List<int[]> dying = new ArrayList<>(); // handle, last attacker
+        List<Integer> falling = new ArrayList<>();
         double[] resistance = new double[3];
         for (Damage d : packets) {
             int target = d.target();
+            if (BuildingStore.isBuilding(target)) {
+                hitBuilding(s, d, falling);
+                continue;
+            }
             if (!entities.isAlive(target)) {
                 continue;
             }
@@ -69,6 +76,13 @@ public final class CombatSystem implements MatchSystem {
                 s.bus().publish(new Attacked(target, d.attacker())); // an aggressive unit hits back (CMB-02)
             }
         }
+        falling.sort(null);
+        for (int handle : falling) {
+            FactionSlot faction = new FactionSlot(s.buildings().faction(handle));
+            s.outputs().add(new BuildingDestroyed(handle, faction));
+            s.outputs().add(new Notice(faction, NoticeKind.UNIT_LOST, handle, "destroyed"));
+            s.destroyBuilding(handle);
+        }
         dying.sort((a, b) -> Integer.compare(a[0], b[0]));
         for (int[] dead : dying) {
             int handle = dead[0];
@@ -76,6 +90,24 @@ public final class CombatSystem implements MatchSystem {
             s.outputs().add(new UnitDied(handle, faction, dead[1]));
             s.outputs().add(new Notice(faction, NoticeKind.UNIT_LOST, handle, "died"));
             s.removeUnit(handle);
+        }
+    }
+
+    /**
+     * A blow on a building (BLD-01): its amounts, or all that is left for a lethal one, with no resistance until
+     * CMB-03 gives buildings theirs; one that reaches its most falls once the tick's blows are dealt.
+     */
+    private static void hitBuilding(MatchState s, Damage d, List<Integer> falling) {
+        int target = d.target();
+        if (!s.buildings().alive(target) || falling.contains(target)) {
+            return;
+        }
+        double max = s.buildingMaxHp(target);
+        double taken = s.buildings().damage(target);
+        double dealt = d.lethal() ? max - taken : d.hack() + d.pierce() + d.crush();
+        s.buildings().setDamage(target, Math.min(max, taken + dealt));
+        if (taken + dealt >= max) {
+            falling.add(target);
         }
     }
 }

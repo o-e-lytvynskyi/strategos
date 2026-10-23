@@ -2,6 +2,7 @@ package dev.strategos.mod.server.tick;
 
 import dev.strategos.core.protocol.NoticeMsg;
 import dev.strategos.core.shared.Handle;
+import dev.strategos.core.sim.BuildingDestroyed;
 import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.Notice;
 import dev.strategos.core.sim.OutputEvent;
@@ -58,6 +59,8 @@ public final class OutputAppliers {
                 }
                 case UnitDied died ->
                     rt.bodies().die(died.handle(), level.damageSources().generic());
+                case BuildingDestroyed destroyed ->
+                    rt.log().info(out.tick(), "building {} fell", destroyed.handle()); // its blocks are effects
                 case WorldEffect effect -> {
                     BlockWriter writer = StrategosServer.get().writer();
                     BlockPos origin = rt.space().origin();
@@ -99,6 +102,7 @@ public final class OutputAppliers {
                 UnitStruck.class,
                 UnitHurt.class,
                 UnitDied.class,
+                BuildingDestroyed.class,
                 WorldEffect.class,
                 Notice.class);
     }

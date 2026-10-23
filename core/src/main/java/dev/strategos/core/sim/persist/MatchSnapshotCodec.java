@@ -20,6 +20,7 @@ import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.MotionStore;
 import dev.strategos.core.sim.PageRef;
 import dev.strategos.core.sim.UnitRecord;
+import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.econ.NodeStore;
 import dev.strategos.core.sim.nav.MemberPath;
 import dev.strategos.core.sim.nav.PathRequest;
@@ -276,6 +277,20 @@ public final class MatchSnapshotCodec {
                     Codec.INT.listOf().fieldOf("claims").forGetter(NodeStore.Saved::claims))
             .apply(i, NodeStore.Saved::new));
 
+    private static final Codec<BuildingStore.Saved> BUILDING = RecordCodecBuilder.create(i -> i.group(
+                    Codec.INT.fieldOf("generation").forGetter(BuildingStore.Saved::generation),
+                    Codec.BOOL.fieldOf("alive").forGetter(BuildingStore.Saved::alive),
+                    Codec.INT.fieldOf("template").forGetter(BuildingStore.Saved::template),
+                    Codec.INT.fieldOf("faction").forGetter(BuildingStore.Saved::faction),
+                    Codec.INT.fieldOf("x").forGetter(BuildingStore.Saved::anchorX),
+                    Codec.INT.fieldOf("z").forGetter(BuildingStore.Saved::anchorZ),
+                    Codec.INT.fieldOf("rotation").forGetter(BuildingStore.Saved::rotation),
+                    Codec.INT.fieldOf("baseY").forGetter(BuildingStore.Saved::baseY),
+                    Codec.INT.fieldOf("state").forGetter(BuildingStore.Saved::state),
+                    Codec.LONG.fieldOf("progress").forGetter(BuildingStore.Saved::progress),
+                    Codec.DOUBLE.fieldOf("damage").forGetter(BuildingStore.Saved::damage))
+            .apply(i, BuildingStore.Saved::new));
+
     /** The fields, without {@code "v"}. */
     public static final Codec<MatchSnapshot> CODEC = RecordCodecBuilder.create(i -> i.group(
                     MatchConfig.CODEC.fieldOf("config").forGetter(MatchSnapshot::config),
@@ -294,7 +309,8 @@ public final class MatchSnapshotCodec {
                             .listOf()
                             .optionalFieldOf("terrainEdits", List.of())
                             .forGetter(MatchSnapshot::terrainEdits),
-                    NODE.listOf().optionalFieldOf("nodes", List.of()).forGetter(MatchSnapshot::nodes))
+                    NODE.listOf().optionalFieldOf("nodes", List.of()).forGetter(MatchSnapshot::nodes),
+                    BUILDING.listOf().optionalFieldOf("buildings", List.of()).forGetter(MatchSnapshot::buildings))
             .apply(i, MatchSnapshot::new));
 
     private MatchSnapshotCodec() {}

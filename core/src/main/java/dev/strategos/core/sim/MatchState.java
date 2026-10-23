@@ -1,9 +1,13 @@
 package dev.strategos.core.sim;
 
+import dev.strategos.core.content.Blueprint;
+import dev.strategos.core.content.CorePaths;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.diag.MatchLog;
 import dev.strategos.core.shared.Handle;
+import dev.strategos.core.sim.build.BuildingStore;
+import dev.strategos.core.sim.build.Footprint;
 import dev.strategos.core.sim.combat.Damage;
 import dev.strategos.core.sim.combat.HealthStore;
 import dev.strategos.core.sim.econ.Amount;
@@ -13,6 +17,7 @@ import dev.strategos.core.sim.econ.NodeDiscovery;
 import dev.strategos.core.sim.econ.NodeIndex;
 import dev.strategos.core.sim.econ.NodeStore;
 import dev.strategos.core.sim.econ.Treasury;
+import dev.strategos.core.sim.nav.BlockClass;
 import dev.strategos.core.sim.nav.FootprintOverlay;
 import dev.strategos.core.sim.nav.MobilityClass;
 import dev.strategos.core.sim.nav.PageBuilder;
@@ -25,11 +30,13 @@ import dev.strategos.core.sim.nav.VoxelSlice;
 import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.core.sim.spatial.SpatialQueries;
 import dev.strategos.core.sim.stats.StatService;
+import dev.strategos.core.sim.world.WritePriority;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
+import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -79,6 +86,7 @@ public final class MatchState {
     private final BitSet rebuild;
     private final PageBuilder rebuilder = new PageBuilder(MobilityClass.INFANTRY);
     private final NodeStore nodes = new NodeStore();
+    private final BuildingStore buildings = new BuildingStore();
     private @Nullable NodeIndex nodeIndex;
 
     private int[] changed = new int[4];
@@ -188,6 +196,102 @@ public final class MatchState {
         return nodes;
     }
 
+    /** The match's buildings (BLD-01). */
+    public BuildingStore buildings() {
+        return buildings;
+    }
+
+    /** Building {@code handle}'s blueprint. */
+    public Blueprint blueprintOf(int handle) {
+        return Objects.requireNonNull(
+                templates.blueprint(buildings.template(handle)), "a building template without a blueprint");
+    }
+
+    /** Where building {@code handle} stands. */
+    public Footprint footprintOf(int handle) {
+        Blueprint b = blueprintOf(handle);
+        return buildings.footprint(handle, b.sizeX(), b.sizeZ());
+    }
+
+    /** Building {@code handle}'s most hit points: {@code Health/max} through its faction's modifiers. */
+    public double buildingMaxHp(int handle) {
+        int path = stats.path(CorePaths.HEALTH);
+        double v =
+                path < 0 ? Double.NaN : stats.blockValue(buildings.template(handle), buildings.faction(handle), path);
+        return Double.isFinite(v) && v > 0 ? v : CorePaths.DEFAULT_HEALTH;
+    }
+
+    /**
+     * A finished building at once (BLD-01's instant placement, for scenarios and tests): its footprint's columns are
+     * blocked for units, and the writer is asked to clear its volume and place its blocks in build order. Its handle.
+     */
+    public int placeComplete(int template, int faction, Footprint at, int baseY) {
+        int handle = buildings.create(template, faction, at, baseY, BuildingStore.COMPLETE, BuildingStore.FULL);
+        Blueprint b = blueprintOf(handle);
+        for (int cell : at.columns(b)) {
+            blockColumn(cell >>> 16, cell & 0xFFFF);
+        }
+        int site = Handle.index(handle);
+        boolean[] filled = new boolean[b.sizeX() * b.sizeY() * b.sizeZ()];
+        for (int k = 0; k < b.count(); k++) {
+            filled[(b.x(k) * b.sizeY() + b.y(k)) * b.sizeZ() + b.z(k)] = true;
+        }
+        for (int x = 0; x < b.sizeX(); x++) {
+            for (int z = 0; z < b.sizeZ(); z++) {
+                if (!b.covers(x, z)) {
+                    continue;
+                }
+                for (int y = 0; y < b.sizeY(); y++) {
+                    if (!filled[(x * b.sizeY() + y) * b.sizeZ() + z]) {
+                        outputs.add(new WorldEffect(
+                                site,
+                                WritePriority.CONSTRUCTION,
+                                at.worldX(x, z),
+                                baseY + y,
+                                at.worldZ(x, z),
+                                WorldEffect.AIR,
+                                0));
+                    }
+                }
+            }
+        }
+        for (int k = 0; k < b.count(); k++) {
+            outputs.add(new WorldEffect(
+                    site,
+                    WritePriority.CONSTRUCTION,
+                    at.worldX(b.x(k), b.z(k)),
+                    baseY + b.y(k),
+                    at.worldZ(b.x(k), b.z(k)),
+                    b.palette().get(b.state(k)),
+                    handle));
+        }
+        return handle;
+    }
+
+    /**
+     * Building {@code handle} falls (BLD-01: 0 hit points): its blocks above its floor layer go, the floor stays as a
+     * foundation; its columns are released, and the core's terrain gets the air the writer will leave.
+     */
+    public void destroyBuilding(int handle) {
+        Blueprint b = blueprintOf(handle);
+        Footprint at = footprintOf(handle);
+        int baseY = buildings.baseY(handle);
+        int site = Handle.index(handle);
+        for (int k = b.count() - 1; k >= 0; k--) { // top-down, the reverse of the build order
+            if (b.y(k) == 0) {
+                continue;
+            }
+            int x = at.worldX(b.x(k), b.z(k));
+            int z = at.worldZ(b.x(k), b.z(k));
+            outputs.add(new WorldEffect(site, WritePriority.DAMAGE_STAGE, x, baseY + b.y(k), z, WorldEffect.AIR, 0));
+            editVoxel(x, baseY + b.y(k), z, BlockClass.AIR);
+        }
+        for (int cell : at.columns(b)) {
+            releaseColumn(cell >>> 16, cell & 0xFFFF);
+        }
+        buildings.remove(handle);
+    }
+
     /** Where the nodes are, built on first use after discovery or a restore. */
     public NodeIndex nodeIndex() {
         NodeIndex index = nodeIndex;
@@ -217,6 +321,23 @@ public final class MatchState {
         int index = pageIndex(PageCoord.of(x, z));
         terrainEdits.add(index, TerrainEdits.cell(x & 15, band, z & 15), cls, tick);
         rebuild.set(index);
+    }
+
+    /** A snapshot's buildings, their footprints blocked again (the writer's blocks are the world's already). */
+    void restoreBuildings(List<BuildingStore.Saved> saved) {
+        buildings.restore(saved);
+        for (int handle : buildings.handles()) {
+            if (buildings.state(handle) != BuildingStore.FOUNDATION) {
+                for (int cell : footprintOf(handle).columns(blueprintOf(handle))) {
+                    footprints.block(cell >>> 16, cell & 0xFFFF);
+                }
+            }
+        }
+    }
+
+    /** Whether a building's footprint blocks match-local column (x, z). */
+    public boolean footprintAt(int x, int z) {
+        return footprints.blocked(x, z);
     }
 
     /** Blocks a footprint column (BLD-01); its page is rebuilt in this tick's WORLD phase. */

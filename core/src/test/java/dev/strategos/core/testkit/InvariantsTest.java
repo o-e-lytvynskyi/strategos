@@ -18,6 +18,7 @@ import dev.strategos.core.sim.PageRef;
 import dev.strategos.core.sim.UnitRecord;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.UnitView;
+import dev.strategos.core.sim.build.BuildingView;
 import dev.strategos.core.sim.econ.FactionTreasury;
 import dev.strategos.core.sim.econ.NodeView;
 import dev.strategos.core.sim.nav.MobilityClass;
@@ -166,6 +167,11 @@ class InvariantsTest {
 
         @Override
         public List<NodeView> nodes() {
+            return List.of();
+        }
+
+        @Override
+        public List<BuildingView> buildings() {
             return List.of();
         }
 

@@ -9,6 +9,7 @@ import com.mojang.serialization.DataResult;
 import com.mojang.serialization.JsonOps;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.shared.FactionSlot;
+import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -25,7 +26,8 @@ class CommandCodecTest {
                 new Attack(UnitSet.of(4, 6), 0x300007, QueueMode.QUEUE),
                 new AttackMove(UnitSet.of(2), new Vec2d(30.25, 9), QueueMode.PUSH_FRONT),
                 new Follow(UnitSet.of(1, 9), QueueMode.REPLACE),
-                new Grant(new FactionSlot(1), "wood", 250));
+                new Grant(new FactionSlot(1), "wood", 250),
+                new SpawnBuilding(new TemplateId("strategos:building/house"), new FactionSlot(0), -3, 40, 2));
     }
 
     @Test

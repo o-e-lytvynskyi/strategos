@@ -4,6 +4,8 @@ import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.Vec2d;
+import dev.strategos.core.sim.build.BuildingStore;
+import dev.strategos.core.sim.build.BuildingView;
 import dev.strategos.core.sim.econ.EconomyRules;
 import dev.strategos.core.sim.econ.FactionTreasury;
 import dev.strategos.core.sim.econ.NodeStore;
@@ -28,6 +30,35 @@ final class QueriesImpl implements MatchQueries {
     QueriesImpl(MatchState state, PathService paths) {
         this.state = state;
         this.paths = paths;
+    }
+
+    @Override
+    public List<BuildingView> buildings() {
+        BuildingStore b = state.buildings();
+        List<BuildingView> out = new ArrayList<>();
+        int dropsites = state.stats().tokenPath("Dropsite/resources");
+        int housing = state.stats().path("Housing/capacity");
+        for (int handle : b.handles()) {
+            int template = b.template(handle);
+            String drops = dropsites < 0 ? null : state.templates().text(template, dropsites);
+            double house = housing < 0 ? Double.NaN : state.stats().blockValue(template, b.faction(handle), housing);
+            double max = state.buildingMaxHp(handle);
+            out.add(new BuildingView(
+                    handle,
+                    state.templates().byIndex(template).id(),
+                    b.faction(handle),
+                    state.footprintOf(handle),
+                    b.baseY(handle),
+                    b.state(handle),
+                    b.progress(handle),
+                    max - b.damage(handle),
+                    max,
+                    drops == null || drops.isBlank()
+                            ? List.of()
+                            : List.of(drops.trim().split("\\s+")),
+                    Double.isFinite(house) ? house : 0));
+        }
+        return out;
     }
 
     @Override
