@@ -363,11 +363,13 @@ Answer in chat or here; the next session applies the answers.
 
 ## Now
 
-- **Milestone:** M3 First loop, started 2026-10-23 at your word, without windows; its spec is being
-  written ([milestones/](milestones/)). M1 and M2 are Done (2026-10-23).
-- **In progress:** the M3 spec.
-- **Last finished task:** M1 T29 (2026-10-23), S10's footprint rule.
-- **Next task:** M3's tasks in its spec's order, headless; anything needing a window goes to item 6.
+- **Milestone:** M3 First loop, started 2026-10-23 at your word, without windows; spec:
+  [milestones/M3-first-loop.md](milestones/M3-first-loop.md) (31 tasks, every card `specified`).
+  M1 and M2 are Done (2026-10-23).
+- **In progress:** M3 T1, the health check from M2's close.
+- **Last finished task:** the M3 spec (2026-10-23).
+- **Next task:** M3's tasks in the spec's order (§7.1), headless; anything needing a window goes to
+  item 6.
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 960 of 2,000 (48 %), as of 2026-10-23.
 - **Overview:** `python3 tools/roadmap.py summary`.
@@ -383,7 +385,8 @@ Nothing.
 | M0 Foundation | Accepted 2026-10-22 | Started 2026-10-21; tripwire met on day 2; 25 of 26 cards accepted, UNIT-01 closes with NET-01 (M1); the L7 demo waived by the owner |
 | M1 Movement | Done 2026-10-23 | Started 2026-10-22 on the owner's go-ahead; 29 tasks (T28, PATH-08, joined by its R3 trigger in T8; T29 by the owner's word); Accepted waits for the L7 demo |
 | M2 Command | Done 2026-10-23 | Started 2026-10-23 at the owner's word; 23 tasks; Accepted waits for `pose_high` (a window) and the L7 demo |
-| M3–M6 (MVP) | approved | Specs are written by the assistant when each milestone starts; M3 at the owner's word of 2026-10-23 |
+| M3 First loop | In progress | Started 2026-10-23 at the owner's word, without windows; spec written the same day, 31 tasks |
+| M4–M6 (MVP) | approved | Specs are written by the assistant when each milestone starts |
 | M7–M15 | proposed | Approved by the owner closer to their time |
 
 ## History

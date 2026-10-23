@@ -331,37 +331,37 @@ Cards: [roadmap/M2-command.md](roadmap/M2-command.md#cards). 20 cards, at most 6
 
 ### M3 · First loop
 
-Cards: [roadmap/M3-first-loop.md](roadmap/M3-first-loop.md#cards). 27 cards, at most 81 card-days.
+Cards: [roadmap/M3-first-loop.md](roadmap/M3-first-loop.md#cards). 27 cards, at most 81 card-days. Implementation spec: [milestones/M3-first-loop.md](milestones/M3-first-loop.md).
 
 | ID | Feature | Size | Depends on | Status |
 |---|---|---|---|---|
-| DATA-04 | Balance sheet: relationships, provenance and timing targets | M | DATA-02, D-11 | approved |
-| ECO-01 | Resources and treasury | M | CORE-03, NET-01, D-10 | approved |
-| ECO-02 | Resource nodes: discovery and index | M | CORE-08, PATH-04, MAP-01 | approved |
-| ECO-03 | Woodcutting on real trees, with natural canopy thinning | L | ECO-02, BLD-15, PATH-15 | approved |
-| ECO-05 | Gathering, dropsites and berry bushes | L | ECO-01, ECO-02, UNIT-04, BLD-01 | approved |
-| UNIT-04 | Starting units and the worker model | S | UNIT-02, DATA-04, D-02 | approved |
-| BLD-01 | Building records and blueprints | M | CORE-06, DATA-03, PATH-15 | approved |
-| AUD-04 | World-edit feedback: cracks, particles and sounds | M | ECO-03, BLD-15, NET-01 | approved |
-| BLD-02 | Placement mode and validators | M | BLD-01, CAM-04 | approved |
-| BLD-03 | Progressive construction | M | BLD-02, UNIT-04, BLD-15 | approved |
-| ECO-06 | Population and housing | S | ECO-01, BLD-01, D-01 | approved |
-| ECO-09 | Fields with manual reseed | M | ECO-05, BLD-01 | approved |
-| PROD-01 | Production queue | M | BLD-01, ECO-06 | approved |
-| PROD-03 | Rally points | S | PROD-01, ECO-05 | approved |
-| UI-06 | Selection panel and command card | M | UI-03, PROD-01, BLD-02 | approved |
-| UI-07 | Resource bar, population and workers per resource | M | ECO-01, ECO-06, UI-02 | approved |
-| UI-10 | Idle-worker key and economy notifications | S | UI-07, ECO-05 | approved |
-| ART-01 | Placeholder look and the style guide | M | UNIT-03, BLD-01, D-04 | approved |
-| CMB-03 | Attacking buildings with torches | M | CMB-02, BLD-01, D-12 | approved |
-| MATCH-01 | Scenarios, match rules and a first victory | M | CORE-01, DATA-03, MAP-01 | approved |
-| UI-11 | Basic minimap | M | UI-02, CAM-03, NET-08, D-16 | approved |
-| UI-12 | Under-attack alert with jump key | S | UI-10, MATCH-01 | approved |
-| MATCH-05 | Pause and game speed | S | CORE-01, CORE-03, D-18 | approved |
-| AI-01 | AI player framework | M | CORE-03 | approved |
-| AI-17 | Scripted bot with announced waves | M | AI-01, ORD-04, PROD-01, ECO-03, ECO-05, ECO-09, BLD-03 | approved |
-| QA-11 | Headless match runner | M | AI-17, MATCH-01 | approved |
-| PERF-06 | First-loop perf gate | S | BLD-03, ECO-05, PERF-05 | approved |
+| DATA-04 | Balance sheet: relationships, provenance and timing targets | M | DATA-02, D-11 | specified |
+| ECO-01 | Resources and treasury | M | CORE-03, NET-01, D-10 | specified |
+| ECO-02 | Resource nodes: discovery and index | M | CORE-08, PATH-04, MAP-01 | specified |
+| ECO-03 | Woodcutting on real trees, with natural canopy thinning | L | ECO-02, BLD-15, PATH-15 | specified |
+| ECO-05 | Gathering, dropsites and berry bushes | L | ECO-01, ECO-02, UNIT-04, BLD-01 | specified |
+| UNIT-04 | Starting units and the worker model | S | UNIT-02, DATA-04, D-02 | specified |
+| BLD-01 | Building records and blueprints | M | CORE-06, DATA-03, PATH-15 | specified |
+| AUD-04 | World-edit feedback: cracks, particles and sounds | M | ECO-03, BLD-15, NET-01 | specified |
+| BLD-02 | Placement mode and validators | M | BLD-01, CAM-04 | specified |
+| BLD-03 | Progressive construction | M | BLD-02, UNIT-04, BLD-15 | specified |
+| ECO-06 | Population and housing | S | ECO-01, BLD-01, D-01 | specified |
+| ECO-09 | Fields with manual reseed | M | ECO-05, BLD-01 | specified |
+| PROD-01 | Production queue | M | BLD-01, ECO-06 | specified |
+| PROD-03 | Rally points | S | PROD-01, ECO-05 | specified |
+| UI-06 | Selection panel and command card | M | UI-03, PROD-01, BLD-02 | specified |
+| UI-07 | Resource bar, population and workers per resource | M | ECO-01, ECO-06, UI-02 | specified |
+| UI-10 | Idle-worker key and economy notifications | S | UI-07, ECO-05 | specified |
+| ART-01 | Placeholder look and the style guide | M | UNIT-03, BLD-01, D-04 | specified |
+| CMB-03 | Attacking buildings with torches | M | CMB-02, BLD-01, D-12 | specified |
+| MATCH-01 | Scenarios, match rules and a first victory | M | CORE-01, DATA-03, MAP-01 | specified |
+| UI-11 | Basic minimap | M | UI-02, CAM-03, NET-08, D-16 | specified |
+| UI-12 | Under-attack alert with jump key | S | UI-10, MATCH-01 | specified |
+| MATCH-05 | Pause and game speed | S | CORE-01, CORE-03, D-18 | specified |
+| AI-01 | AI player framework | M | CORE-03 | specified |
+| AI-17 | Scripted bot with announced waves | M | AI-01, ORD-04, PROD-01, ECO-03, ECO-05, ECO-09, BLD-03 | specified |
+| QA-11 | Headless match runner | M | AI-17, MATCH-01 | specified |
+| PERF-06 | First-loop perf gate | S | BLD-03, ECO-05, PERF-05 | specified |
 
 ### M4 · Economy and construction
 

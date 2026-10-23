@@ -167,8 +167,10 @@ def summary():
     finished = sum(1 for s in mvp if s in DONE_LIKE)
     left_out = sum(1 for cid, (ms, st) in road.items()
                    if ms in MVP and (cid in RESERVE or base(st) not in active))
-    current = next((ms for ms, c in by_ms.items()
-                    if any(c.get(s) for s in ("specified", "in_progress", "approved", "approved-foundation"))), None)
+    open_statuses = ("specified", "in_progress", "approved", "approved-foundation")
+    current = next((ms for ms in by_ms
+                    if any(m == ms and base(st) in open_statuses and cid not in RESERVE
+                           for cid, (m, st) in road.items())), None)  # a reserve card never holds a milestone open
     print(f"MVP (M0–M6): {finished}/{len(mvp)} cards done ({left_out} reserve or deferred left out); "
           f"current milestone: {current or 'none'}")
     pending = open_decisions()

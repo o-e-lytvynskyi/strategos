@@ -257,7 +257,7 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   6. The sheet carries the Normal opening's timing targets (D).
 - **Tests:** L0, L1, D · **Fixtures:** the committed balance sheet · **Depends on:** DATA-02,
   D-11 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### ECO-01 · Resources and treasury
 - **Value:** A clear economy in the AoE and 0 A.D. style: resources in a treasury, spent on units,
@@ -276,7 +276,7 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
      mock player does (L3).
   4. `faction_state` round-trips within its cap and declares its audience (L2).
 - **Tests:** L0, L1, L2, L3 · **Depends on:** CORE-03, NET-01, D-10 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### ECO-02 · Resource nodes: discovery and index
 - **Value:** Workers find the nearest tree, bush or deposit instantly, and blocks from other mods
@@ -296,7 +296,7 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   5. Indexing the proving ground takes under 2 s during prepare (L6).
 - **Tests:** L0, L1, L2, L3, L6 · **Depends on:** CORE-08, PATH-04, MAP-01 · **Size:** M ·
   **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### ECO-03 · Woodcutting on real trees, with natural canopy thinning
 - **Value:** Workers chop real Minecraft trees log by log, the forest visibly recedes, and leaves
@@ -321,7 +321,7 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
      rebuild (L3).
 - **Tests:** L0, L1, L3, L5 · **Fixtures:** tree fixtures per species, 2 × 2 trees and touching
   canopies · **Depends on:** ECO-02, BLD-15, PATH-15 · **Size:** L · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### ECO-05 · Gathering, dropsites and berry bushes
 - **Value:** Workers gather, carry and deliver on their own, pick the next node when one runs out,
@@ -352,7 +352,7 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   10. The owner confirms that tool and load read at that distance (L7, acceptance).
 - **Tests:** L0, L1, L3, L4 (consent), L5, L7 · **Depends on:** ECO-01, ECO-02, UNIT-04, BLD-01 ·
   **Size:** L · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### UNIT-04 · Starting units and the worker model
 - **Value:** Workers gather and build, spearmen fight, and who else may gather follows the worker
@@ -367,7 +367,7 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   3. A spawned worker and spearman carry their template's stats, read through the modifier
      pipeline (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** UNIT-02, DATA-04, D-02 · **Size:** S · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### BLD-01 · Building records and blueprints
 - **Value:** Buildings are real structures with roles (dropsite, housing, training) that every
@@ -392,7 +392,7 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
      does (L3).
 - **Tests:** L0, L1, L2, L3, L5 · **Fixtures:** generated test blueprints · **Depends on:**
   CORE-06, DATA-03, PATH-15 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### AUD-04 · World-edit feedback: cracks, particles and sounds
 - **Value:** Chopping, mining and the block-by-block rise of buildings, the spectacle this mod is
@@ -411,7 +411,7 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   4. The owner's checklist for chopping, mining and building passes (L7, acceptance).
 - **Tests:** L0, L1, L3, L4 (consent), L7 · **Depends on:** ECO-03, BLD-15, NET-01 · **Size:** M ·
   **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 ### Slice 3.2 · Building and training
 
@@ -434,7 +434,7 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   4. Goldens for valid and invalid previews (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** BLD-01, CAM-04 · **Size:** M ·
   **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### BLD-03 · Progressive construction
 - **Value:** Buildings rise block by block, and more builders finish faster, with diminishing
@@ -456,7 +456,7 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   6. With three constructions at once, the writer never exceeds 64 placements per tick, and each
      site flushes at most every 4 ticks (L3).
 - **Tests:** L0, L1, L3, L5 · **Depends on:** BLD-02, UNIT-04, BLD-15 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### ECO-06 · Population and housing
 - **Value:** Houses raise the population cap, and running out of room is obvious (P4).
@@ -471,7 +471,7 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   3. The cap never exceeds the match maximum (L1).
   4. A GameTest shows a queue waiting with "housing needed" (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** ECO-01, BLD-01, D-01 · **Size:** S · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### ECO-09 · Fields with manual reseed
 - **Value:** Farms are the steady food source that lets a match last: up to five farmers, crops
@@ -489,7 +489,7 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
      only through the core, while a control crop outside the match grows (L3).
   4. A field yields and is reseeded in a GameTest (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** ECO-05, BLD-01 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### PROD-01 · Production queue
 - **Value:** Buildings train units in a queue you can manage.
@@ -504,7 +504,7 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   3. A full population cap pauses the head of the queue without losing progress (L1).
   4. A unit spawns at the door on a standable surface, never inside a wall (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** BLD-01, ECO-06 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### PROD-03 · Rally points
 - **Value:** New units go straight where they are needed: to a spot, to work, or to a building
@@ -519,7 +519,7 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   3. The marker shows for the selected building (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** PROD-01, ECO-05 · **Size:** S ·
   **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### UI-06 · Selection panel and command card
 - **Value:** See what you selected and act on it: train, build and stop buttons with costs.
@@ -537,7 +537,7 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   4. Goldens for a worker, a civic centre and a barracks selection (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** UI-03, PROD-01, BLD-02 · **Size:** M ·
   **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### UI-07 · Resource bar, population and workers per resource
 - **Value:** Know your economy at a glance, the way modern AoE shows it (P2).
@@ -553,7 +553,7 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   4. Goldens (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** ECO-01, ECO-06, UI-02 · **Size:** M ·
   **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### UI-10 · Idle-worker key and economy notifications
 - **Value:** Never lose track of an idle worker on a big map, or wonder why training stopped (P3).
@@ -566,7 +566,7 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   2. Each notification fires once per cause, not once per tick (L1).
   3. Goldens (L4, consent).
 - **Tests:** L0, L1, L4 (consent) · **Depends on:** UI-07, ECO-05 · **Size:** S · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### ART-01 · Placeholder look and the style guide
 - **Value:** Units and buildings look like Minecraft and show owner and role at a glance, so the
@@ -591,7 +591,7 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
      the numbers feed D-01 and ADR-0019's budget F (L6 client, consent; M3's consent batch).
 - **Tests:** L3, L4 (consent), L6 (client, consent), L7, D · **Depends on:** UNIT-03, BLD-01,
   D-04 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 ### Slice 3.3 · Buildings fall, victory and orientation
 
@@ -611,7 +611,7 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
      burn, while a control fire outside the match spreads (L3).
   5. A GameTest burn ends with the building removed and its footprint cleared (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** CMB-02, BLD-01, D-12 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### MATCH-01 · Scenarios, match rules and a first victory
 - **Value:** A match starts from a ready-made setup, plays under fair rules and ends with a clear
@@ -634,7 +634,7 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   6. The end screen shows them (L4, consent).
 - **Tests:** L0, L1, L2, L3, L4 (consent) · **Depends on:** CORE-01, DATA-03, MAP-01 · **Size:** M ·
   **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### UI-11 · Basic minimap
 - **Value:** Find the enemy base and see an attack coming on a 384-block map (P2, P3).
@@ -651,7 +651,7 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   4. A golden confirms the drawing (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** UI-02, CAM-03, NET-08, D-16 · **Size:** M ·
   **Tier:** T1 (pulled into the MVP by D-16)
-- **Status:** approved
+- **Status:** specified
 
 #### UI-12 · Under-attack alert with jump key
 - **Value:** You notice an attack in time, wherever the camera is (P3, P5).
@@ -665,7 +665,7 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   3. A golden of the alert (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** UI-10, MATCH-01 · **Size:** S ·
   **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### MATCH-05 · Pause and game speed
 - **Value:** Pause a solo game to think, and play slower or faster.
@@ -684,7 +684,7 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
      re-asserts it at MVP scale.
 - **Tests:** L0, L1, L2, L3, L6 · **Depends on:** CORE-01, CORE-03, D-18 · **Size:** S ·
   **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 ### Slice 3.4 · The opponent
 
@@ -703,7 +703,7 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   3. A think never exceeds its evaluation-unit cap (L1).
   4. AI commands pass the same validators as human commands (L1).
 - **Tests:** L0, L1 · **Depends on:** CORE-03 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### AI-17 · Scripted bot with announced waves
 - **Value:** A first opponent that builds, trains and attacks, and always announces its attacks, so
@@ -723,7 +723,7 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   4. Each think stays within the `AiBudget` (L1).
 - **Tests:** L0, L1, L3 · **Depends on:** AI-01, ORD-04, PROD-01, ECO-03, ECO-05, ECO-09, BLD-03 ·
   **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### QA-11 · Headless match runner
 - **Value:** Every build plays full matches unattended, so crashes, stalls and absurd balance are
@@ -745,7 +745,7 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   5. The observe command creates the match with an observer bound to it (L3).
 - **Tests:** L0, L1, L3, L5 · **Fixtures:** seed sets for headless matches · **Depends on:**
   AI-17, MATCH-01 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### PERF-06 · First-loop perf gate
 - **Value:** The first playable build already holds its budgets, so performance never becomes a
@@ -761,4 +761,4 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   3. The stress pass holds C p95 ≤ 50 ms (L6).
   4. The report lists placement, writer and `fx` times (R).
 - **Tests:** L6, R · **Depends on:** BLD-03, ECO-05, PERF-05 · **Size:** S · **Tier:** T0
-- **Status:** approved
+- **Status:** specified

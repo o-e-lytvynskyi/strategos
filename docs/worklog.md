@@ -9,6 +9,23 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
+## 2026-10-23 (evening) — M3 spec
+
+- **The M3 spec** ([milestones/M3-first-loop.md](milestones/M3-first-loop.md)), at the owner's word
+  «начнем м3 пока без окон».
+  - **Results:** 27 cards specified in 31 tasks over four slices; the critical path DATA-04 → UNIT-04
+    → ECO-05 → ECO-09 → AI-17 → QA-11. Twenty differences resolved while specifying (§1.6), the main
+    ones: the core learns materials from a sparse list in each captured page; buildings are entities
+    in the one `EntityStore`, nodes have a store of their own; the core edits its own terrain and
+    rebuilds its pages, and a later capture is the world plus the writer's pending writes, so only
+    newer edits are re-applied; leaves thin by vanilla's distance rule (ADR-0024 to come); "wooden"
+    buildings are a template value, since palettes stay non-flammable.
+  - **Windows:** none from now; L4 checks go to CI's Linux route, macOS goldens and the looks to
+    the consent batch (T30).
+  - **Also:** `tools/roadmap.py` no longer counts a reserve card as holding its milestone open, so
+    the summary names M3 as current, not M1.
+  - **Next:** T1, the health check from M2's close.
+
 ## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24, T16, T26; M2 spec, M2 T1, T3, T5, T11, T13, T9, T21, T8, T6, T19, T2, T4, T14, T10 (part), T7, T10, T17, T18, T15, T16, T20; M1 T27, T29; M2 T23
 
 - **The owner's decisions of 2026-10-23 · M1 T29 · M1 and M2 Done.**
