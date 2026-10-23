@@ -1,0 +1,7 @@
+{
+  "parent": "s12:template/base",
+  "abstract": true,
+  "Identity": {
+    "classes": "+Infantry +Organic"
+  }
+}

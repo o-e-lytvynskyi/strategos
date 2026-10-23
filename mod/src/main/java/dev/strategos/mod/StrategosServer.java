@@ -1,8 +1,16 @@
 package dev.strategos.mod;
 
+import com.google.gson.JsonElement;
+import com.mojang.serialization.JsonOps;
+import dev.strategos.core.content.RawTemplate;
+import dev.strategos.core.content.TemplateProblem;
 import dev.strategos.core.port.JobExecutor;
 import dev.strategos.mod.registry.ModDataMaps;
 import dev.strategos.mod.server.body.SpawnBudget;
+import dev.strategos.mod.server.content.ServerTemplates;
+import dev.strategos.mod.server.content.TemplateFiles;
+import dev.strategos.mod.server.content.TemplateReloadListener;
+import dev.strategos.mod.server.content.TemplateSync;
 import dev.strategos.mod.server.debug.DebugFeed;
 import dev.strategos.mod.server.debug.PerfDump;
 import dev.strategos.mod.server.fog.InterestSets;
@@ -14,9 +22,14 @@ import dev.strategos.mod.server.tick.FaultBarrier;
 import dev.strategos.mod.server.world.ArenaWorld;
 import dev.strategos.mod.server.world.BlockClassTable;
 import dev.strategos.mod.server.world.BlockWriter;
+import java.util.ArrayList;
+import java.util.List;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.RegistryOps;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.neoforge.common.conditions.ConditionalOps;
 import net.neoforged.neoforge.event.TagsUpdatedEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
@@ -26,6 +39,8 @@ import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.registries.datamaps.DataMapsUpdatedEvent;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Everything Strategos keeps for one running server, from {@code ServerAboutToStartEvent} (before the levels exist)
@@ -33,6 +48,7 @@ import org.jspecify.annotations.Nullable;
  * first exception); everything else hangs off it.
  */
 public final class StrategosServer {
+    private static final Logger LOG = LoggerFactory.getLogger(StrategosServer.class);
     private static volatile @Nullable StrategosServer current;
 
     private final MinecraftServer server;
@@ -43,6 +59,8 @@ public final class StrategosServer {
     private final BlockWriter writer;
     private final MapImports mapImports = new MapImports();
     private final JobExecutor jobs;
+    private final ServerTemplates templates = new ServerTemplates();
+    private final TemplateSync templateSync = new TemplateSync();
     private final NetGateway net;
     private final InterestSets interest = new InterestSets();
     private final DebugFeed debug;
@@ -57,7 +75,9 @@ public final class StrategosServer {
                 settings.pathThreads(), Runtime.getRuntime().availableProcessors(), server.isDedicatedServer()));
         this.faults = new FaultBarrier(server);
         this.writer = new BlockWriter(settings.writerBudget(), settings.importBudget());
-        this.matches = new MatchRegistry(server, settings, spawnBudget, writer, this::blockClasses, jobs);
+        loadTemplatesAtStart();
+        this.matches = new MatchRegistry(
+                server, settings, spawnBudget, writer, this::blockClasses, jobs, () -> templates.set());
         this.net = new NetGateway(server, () -> this.matches, faults);
         this.debug =
                 new DebugFeed(server, () -> this.matches, net, StrategosConfig.INSTANCE.debugPermission.getAsInt());
@@ -94,6 +114,70 @@ public final class StrategosServer {
     /** Where page and path jobs run: the {@code strategos-path-N} pool, or inline with {@code pathThreads = 0}. */
     public JobExecutor jobs() {
         return jobs;
+    }
+
+    /** The server's template set, its id table and the last load's problems (DATA-03). */
+    public ServerTemplates templates() {
+        return templates;
+    }
+
+    public TemplateSync templateSync() {
+        return templateSync;
+    }
+
+    /**
+     * A reload's templates, from {@link TemplateReloadListener}: compiled, linted and, when good, swapped into every
+     * running match; the outcome is logged, and told to the operators online.
+     */
+    public ServerTemplates.Outcome loadTemplates(List<RawTemplate> raws, List<TemplateProblem> problems) {
+        return report(templates.load(raws, problems, server.registryAccess(), matches.all()));
+    }
+
+    private ServerTemplates.Outcome report(ServerTemplates.Outcome outcome) {
+        if (outcome.accepted()) {
+            LOG.info("Templates: {}", outcome.message());
+        } else {
+            LOG.error("Templates: {}", outcome.message());
+            outcome.problems().forEach(p -> LOG.error("  {}", p));
+        }
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            if (player.hasPermissions(2)) {
+                player.sendSystemMessage(Component.literal("[Strategos] templates " + outcome.message()));
+            }
+        }
+        return outcome;
+    }
+
+    /**
+     * {@code /strategos templates reload}: the loaded data packs' templates read again, without a full {@code /reload};
+     * a good set goes to every player too.
+     */
+    public ServerTemplates.Outcome reloadTemplates() {
+        List<TemplateProblem> problems = new ArrayList<>();
+        ServerTemplates.Outcome outcome = loadTemplates(packTemplates(problems), problems);
+        if (outcome.accepted()) {
+            server.getPlayerList().getPlayers().forEach(player -> templateSync.send(this, player));
+        }
+        return outcome;
+    }
+
+    private ConditionalOps<JsonElement> conditionalOps() {
+        return new ConditionalOps<>(
+                RegistryOps.create(JsonOps.INSTANCE, server.registryAccess()),
+                server.getServerResources().managers().getConditionContext());
+    }
+
+    /** The templates of the data packs the server started with, read here: no server was up when they applied. */
+    private void loadTemplatesAtStart() {
+        List<TemplateProblem> problems = new ArrayList<>();
+        report(templates.load(packTemplates(problems), problems, server.registryAccess(), List.of()));
+    }
+
+    /** The templates of the loaded data packs, read now on this thread; the problems of the files go to {@code problems}. */
+    public List<RawTemplate> packTemplates(List<TemplateProblem> problems) {
+        TemplateFiles.Read read = TemplateFiles.read(server.getResourceManager());
+        problems.addAll(read.problems());
+        return TemplateFiles.raws(read, conditionalOps(), problems);
     }
 
     /** Map imports that belong to no match. */
@@ -192,6 +276,7 @@ public final class StrategosServer {
         StrategosServer s = current;
         if (s != null && event.getEntity() instanceof ServerPlayer player) {
             s.net.forget(player);
+            s.templateSync.forget(player);
             s.interest.forget(player.getUUID());
             s.debug.forget(player);
         }

@@ -27,14 +27,33 @@ import org.jspecify.annotations.Nullable;
 public final class TemplateCompiler {
     private TemplateCompiler() {}
 
-    /** The compiled set, the flattened JSON of every resolved template, abstract ones included, and the problems. */
-    public record Result(TemplateSet set, Map<TemplateId, JsonObject> flattened, List<TemplateProblem> problems) {
+    /**
+     * The set, every template flattened (abstract ones too), the problems, and the id table that gave the set its net
+     * indices: the one passed in, with the set's new ids appended.
+     */
+    public record Result(
+            TemplateSet set,
+            Map<TemplateId, JsonObject> flattened,
+            List<TemplateProblem> problems,
+            TemplateIdTable table) {
         public boolean ok() {
             return problems.stream().noneMatch(p -> p.severity() == TemplateProblem.Severity.ERROR);
         }
     }
 
+    /** A flattened template with its net index: a journal's or a client's copy of a set. */
+    public record Flat(TemplateId id, int netIndex, JsonObject json) {}
+
+    /** Compiles with a fresh id table: net indices in id order. */
     public static Result compile(List<RawTemplate> raws) {
+        return compile(raws, TemplateIdTable.EMPTY);
+    }
+
+    /**
+     * The set's templates hold their indices in {@code table}; a template the table lacks is appended (DATA-03), so a
+     * reload keeps every index the session gave.
+     */
+    public static Result compile(List<RawTemplate> raws, TemplateIdTable table) {
         List<TemplateProblem> problems = new ArrayList<>();
         Map<String, RawTemplate> byId = new TreeMap<>();
         for (RawTemplate raw : raws) {
@@ -70,7 +89,59 @@ public final class TemplateCompiler {
                 unitJson.add(json);
             }
         }
-        return new Result(new TemplateSet(units, unitJson), flattened, List.copyOf(problems));
+        TemplateIdTable next = table.with(units.stream().map(UnitTemplate::id).toList());
+        List<Flat> flats = new ArrayList<>();
+        for (int k = 0; k < units.size(); k++) {
+            flats.add(new Flat(units.get(k).id(), next.indexOf(units.get(k).id()), unitJson.get(k)));
+        }
+        return new Result(set(flats, units), flattened, List.copyOf(problems), next);
+    }
+
+    /**
+     * A set from flattened templates at their net indices, decoded as {@link #compile} decodes them: a journal's or a
+     * client's copy. The problems name each template by its id.
+     */
+    public static Result fromFlattened(List<Flat> flats) {
+        List<TemplateProblem> problems = new ArrayList<>();
+        List<UnitTemplate> units = new ArrayList<>();
+        List<Flat> kept = new ArrayList<>();
+        Map<TemplateId, JsonObject> flattened = new LinkedHashMap<>();
+        List<TemplateId> ids = new ArrayList<>();
+        for (Flat f : flats) {
+            flattened.put(f.id(), f.json().deepCopy());
+            UnitTemplate unit = decode(f.id(), f.netIndex(), f.json(), f.id().value(), problems);
+            if (unit != null) {
+                units.add(unit);
+                kept.add(f);
+            }
+        }
+        int top = kept.stream().mapToInt(Flat::netIndex).max().orElse(-1);
+        for (int k = 0; k <= top; k++) {
+            int index = k;
+            ids.add(kept.stream()
+                    .filter(f -> f.netIndex() == index)
+                    .map(Flat::id)
+                    .findFirst()
+                    .orElse(new TemplateId("strategos:retired/" + k)));
+        }
+        return new Result(set(kept, units), flattened, List.copyOf(problems), new TemplateIdTable(ids));
+    }
+
+    /** The decoded units at their flats' net indices, ascending. */
+    private static TemplateSet set(List<Flat> flats, List<UnitTemplate> units) {
+        List<Integer> order = new ArrayList<>();
+        for (int k = 0; k < flats.size(); k++) {
+            order.add(k);
+        }
+        order.sort(
+                (a, b) -> Integer.compare(flats.get(a).netIndex(), flats.get(b).netIndex()));
+        List<UnitTemplate> placed = new ArrayList<>();
+        List<JsonObject> json = new ArrayList<>();
+        for (int k : order) {
+            placed.add(units.get(k).atIndex(flats.get(k).netIndex()));
+            json.add(flats.get(k).json());
+        }
+        return new TemplateSet(placed, json);
     }
 
     /** The ids some template lists as a mixin: they are overlays, never compiled on their own. */
@@ -257,6 +328,15 @@ public final class TemplateCompiler {
         JsonObject identity = f.object(json, "", "Identity", true);
         JsonObject motion = f.object(json, "", "UnitMotion", true);
         JsonObject body = f.object(json, "", "Body", true);
+        if (identity != null) {
+            f.known(identity, "/Identity", "name", "classes");
+        }
+        if (motion != null) {
+            f.known(motion, "/UnitMotion", "walkSpeed", "turnRate", "mobility");
+        }
+        if (body != null) {
+            f.known(body, "/Body", "entityType", "model", "skin", "width", "height", "radius");
+        }
         String name = identity == null ? id.value() : f.string(identity, "/Identity", "name", id.value());
         String classes = identity == null ? "" : f.string(identity, "/Identity", "classes", "");
         double walkSpeed = motion == null ? 0 : f.positive(motion, "/UnitMotion", "walkSpeed", null);
@@ -294,6 +374,20 @@ public final class TemplateCompiler {
 
     /** Reads typed fields, recording a problem at the field's pointer for anything missing or of the wrong type. */
     private record Fields(String file, List<TemplateProblem> problems) {
+        /**
+         * Records an error at each key of a component the core decodes that is not one of its fields: a typo. Other
+         * components pass unchecked: their numbers are value paths, and later cards decode them.
+         */
+        void known(JsonObject object, String pointer, String... fields) {
+            List<String> known = List.of(fields);
+            for (String key : new TreeSet<>(object.keySet())) {
+                if (!known.contains(key)) {
+                    problems.add(TemplateProblem.error(
+                            file, pointer + "/" + key, "unknown key '" + key + "'; known here: " + known));
+                }
+            }
+        }
+
         @Nullable JsonObject object(JsonObject parent, String pointer, String key, boolean required) {
             JsonElement e = parent.get(key);
             if (e == null) {

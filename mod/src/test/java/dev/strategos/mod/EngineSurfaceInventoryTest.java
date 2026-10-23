@@ -24,6 +24,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.ConnectionProtocol;
 import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.network.registration.NetworkRegistry;
 import net.neoforged.neoforge.registries.RegistryManager;
@@ -111,6 +112,13 @@ class EngineSurfaceInventoryTest {
         return ModTickets.all().stream().map(c -> c.id().toString()).toList();
     }
 
+    /** The names of the listeners the mod adds to every data pack reload. */
+    private static List<String> reloadListeners() {
+        return Strategos.reloadListeners().stream()
+                .map(PreparableReloadListener::getName)
+                .toList();
+    }
+
     private static Path modFile(String... path) {
         return ModList.get().getModFileById(Strategos.MOD_ID).getFile().findResource(path);
     }
@@ -140,6 +148,7 @@ class EngineSurfaceInventoryTest {
                 transformers,
                 worldgen,
                 ticketControllers(),
+                reloadListeners(),
                 StrategosConfig.files(),
                 payloads(),
                 inventory());

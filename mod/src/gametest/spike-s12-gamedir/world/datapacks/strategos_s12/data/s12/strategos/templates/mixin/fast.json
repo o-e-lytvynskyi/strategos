@@ -1,0 +1,8 @@
+{
+  "UnitMotion": {
+    "walkSpeed": {
+      "$op": "mul",
+      "value": 1.25
+    }
+  }
+}

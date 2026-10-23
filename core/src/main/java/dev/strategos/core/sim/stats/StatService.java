@@ -44,19 +44,20 @@ public final class StatService {
             .thenComparing(e -> e.modifier().filter())
             .thenComparingInt(e -> e.own() ? 1 : 0);
 
-    private final TemplateSet templates;
     private final int factions;
     private final IdentityStore identity;
     private final MatchBus bus;
-    private final int numbers;
-    private final int lists;
-    private final long[] classes;
-    private final List<List<@Nullable List<String>>> baseTokens;
-    private final double[] min;
-    private final double[] max;
-    private final int walkSpeed;
-    private final int turnRate;
-    private final StatBlock[] blocks;
+    // from the template set, rebuilt by a swap
+    private TemplateSet templates;
+    private int numbers;
+    private int lists;
+    private long[] classes = new long[0];
+    private List<List<@Nullable List<String>>> baseTokens = List.of();
+    private double[] min = new double[0];
+    private double[] max = new double[0];
+    private int walkSpeed;
+    private int turnRate;
+    private StatBlock[] blocks = new StatBlock[0];
     private final long[] versions;
     private final List<List<Entry>> factionModifiers = new ArrayList<>();
     private @Nullable Personal[] personal = new Personal[0];
@@ -69,7 +70,7 @@ public final class StatService {
     /** A unit's own modifiers and the overlay that evaluates them over its faction's. */
     private static final class Personal {
         final List<Entry> modifiers = new ArrayList<>();
-        final StatBlock block;
+        StatBlock block;
         long version;
 
         Personal(int numbers, int lists) {
@@ -82,23 +83,54 @@ public final class StatService {
         this.factions = factions;
         this.identity = identity;
         this.bus = bus;
-        this.numbers = templates.valuePaths().size();
-        this.lists = templates.tokenPaths().size();
-        int count = templates.all().size();
+        build(templates);
+        this.versions = new long[factions];
+        for (int f = 0; f < factions; f++) {
+            factionModifiers.add(new ArrayList<>());
+        }
+    }
+
+    /**
+     * A new template set (DATA-03's {@code ContentSwap}): the values come from it, each modifier finds its path in it
+     * again, and every cached block and overlay is evaluated afresh on its next read. The modifiers themselves stay.
+     */
+    public void swap(TemplateSet set) {
+        build(set);
+        for (List<Entry> list : factionModifiers) {
+            reentry(list);
+        }
+        for (Personal own : personal) {
+            if (own != null) {
+                reentry(own.modifiers);
+                own.block = new StatBlock(numbers, lists);
+                own.version++;
+            }
+        }
+        for (int f = 0; f < factions; f++) {
+            versions[f]++;
+        }
+    }
+
+    /** What a set gives: its paths, each template's classes and token lists, and a fresh block per template and faction. */
+    private void build(TemplateSet set) {
+        this.templates = set;
+        this.numbers = set.valuePaths().size();
+        this.lists = set.tokenPaths().size();
+        int count = set.indexCount();
         this.classes = new long[count];
         this.baseTokens = new ArrayList<>(count);
         for (int t = 0; t < count; t++) {
-            classes[t] = templates.tokens().bits(templates.byIndex(t).classes());
+            classes[t] = set.has(t) ? set.tokens().bits(set.byIndex(t).classes()) : 0;
             List<@Nullable List<String>> tokens = new ArrayList<>(lists);
             for (int k = 0; k < lists; k++) {
-                String text = templates.text(t, k);
+                String text = set.has(t) ? set.text(t, k) : null;
                 tokens.add(text == null ? null : TokenEdit.split(text));
             }
             baseTokens.add(tokens);
         }
         this.min = new double[numbers];
         this.max = new double[numbers];
-        for (ValuePath p : templates.valuePaths().all()) {
+        for (ValuePath p : set.valuePaths().all()) {
             min[p.id()] = p.min();
             max[p.id()] = p.max();
         }
@@ -108,10 +140,12 @@ public final class StatService {
         for (int k = 0; k < blocks.length; k++) {
             blocks[k] = new StatBlock(numbers, lists);
         }
-        this.versions = new long[factions];
-        for (int f = 0; f < factions; f++) {
-            factionModifiers.add(new ArrayList<>());
-        }
+    }
+
+    /** Each entry's path and filter found again in the current set, in canonical order. */
+    private void reentry(List<Entry> list) {
+        list.replaceAll(e -> entry(e.modifier(), e.own()));
+        list.sort(ORDER);
     }
 
     /** A value path's id in this set, or -1. */

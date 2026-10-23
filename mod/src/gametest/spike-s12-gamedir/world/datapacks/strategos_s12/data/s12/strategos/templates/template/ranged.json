@@ -1,0 +1,10 @@
+{
+  "parent": "s12:template/base",
+  "abstract": true,
+  "Identity": {
+    "classes": "+Ranged +Organic"
+  },
+  "UnitMotion": {
+    "walkSpeed": 0.2
+  }
+}

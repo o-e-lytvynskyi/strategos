@@ -20,7 +20,7 @@ governs.
 | [0009](0009-tick-pipeline-determinism-and-fault-containment.md) | Tick pipeline, determinism boundary and fault containment | Accepted; amended by 0023 | 2026-10-21 | §4, §5 |
 | [0010](0010-match-model-and-lifecycle.md) | A match is a region of a level; arenas live in an arena world | Accepted; amended by 0023 | 2026-10-21 | §3 |
 | [0011](0011-unit-entity-and-body-seam.md) | Units are kinematic `LivingEntity` views behind a body seam | Accepted 2026-10-23 (S1, S10) | 2026-10-21 | §6 |
-| [0012](0012-template-and-content-pipeline.md) | Templates load through a reload listener with core-side inheritance | Accepted | 2026-10-21 | §8 |
+| [0012](0012-template-and-content-pipeline.md) | Templates load through a reload listener with core-side inheritance | Accepted; confirmed by S12 2026-10-23 | 2026-10-21 | §8 |
 | [0013](0013-modifier-pipeline.md) | The core modifier pipeline is the single source of every stat | Accepted | 2026-10-21 | §8 |
 | [0014](0014-orders-commands-and-unitai.md) | Typed commands, server-side validation, 0 A.D. order queues and a hierarchical UnitAI | Accepted; amended by 0023 | 2026-10-21 | §7 |
 | [0015](0015-pathfinding-approach.md) | Layered 2.5D surface grid, staged search, ORCA and deterministic job delivery | Accepted 2026-10-23, with spikes S7 and S8 | 2026-10-21 | §9 |
@@ -48,7 +48,7 @@ governs.
 | S9 commander camera on a dedicated server | 0017 | Right after M0, on the client track (CAM-01) | Yes (clients) |
 | S10 kinematic fidelity | 0011 | M1 (UNIT-09); reported [2026-10-22, completed 2026-10-23](../spikes/S10-kinematic-fidelity.md) | Screenshots: yes |
 | S11 bandwidth | 0016 (whether the tier-4 reserve is needed) | M7 (NET-04) | Real clients: yes |
-| S12 content cycle | 0012 (its targets, not the decision) | M1 (DATA-03) | No |
+| S12 content cycle | 0012 (its targets, not the decision) | M1 (DATA-03); reported [2026-10-23](../spikes/S12-content-cycle.md) | No |
 
 The spikes, their questions and exit criteria are in
 [04-architecture.md §19.2](../04-architecture.md); their cards and schedule follow the roadmap's

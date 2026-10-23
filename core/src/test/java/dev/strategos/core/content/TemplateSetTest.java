@@ -69,7 +69,11 @@ class TemplateSetTest {
     @Test
     void rejectsAnInconsistentSet() {
         UnitTemplate walker = TemplateSet.builtin().byIndex(0);
-        assertThatThrownBy(() -> set(new UnitTemplate(walker.id(), 1, walker.bodyType(), 0.25, 0.6f, 1.8f)))
+        UnitTemplate infantry = TemplateSet.builtin().byIndex(1);
+        assertThatThrownBy(() -> new TemplateSet(List.of(infantry, walker)))
+                .as("net indices out of order")
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> set(new UnitTemplate(walker.id(), -1, walker.bodyType(), 0.25, 0.6f, 1.8f)))
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(
                         () -> new TemplateSet(List.of(walker, new UnitTemplate(walker.id(), 1, "b", 0.25, 0.6f, 1.8f))))

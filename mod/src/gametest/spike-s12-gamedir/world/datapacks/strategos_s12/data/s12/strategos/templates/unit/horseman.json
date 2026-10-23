@@ -1,0 +1,6 @@
+{
+  "parent": "s12:template/cavalry",
+  "Identity": {
+    "name": "s12.unit.horseman"
+  }
+}

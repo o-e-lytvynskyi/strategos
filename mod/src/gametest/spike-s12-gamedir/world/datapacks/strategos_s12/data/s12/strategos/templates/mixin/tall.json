@@ -1,0 +1,8 @@
+{
+  "Body": {
+    "height": {
+      "$op": "add",
+      "value": 0.2
+    }
+  }
+}

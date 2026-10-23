@@ -1,0 +1,16 @@
+{
+  "parent": "s12:template/base",
+  "abstract": true,
+  "Identity": {
+    "classes": "+Cavalry +Organic"
+  },
+  "UnitMotion": {
+    "walkSpeed": 0.3,
+    "turnRate": 30
+  },
+  "Body": {
+    "width": 1.2,
+    "height": 2.2,
+    "radius": 0.6
+  }
+}

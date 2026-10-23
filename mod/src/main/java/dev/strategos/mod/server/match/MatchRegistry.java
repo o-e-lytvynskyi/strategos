@@ -70,6 +70,7 @@ public final class MatchRegistry {
     private final BlockWriter writer;
     private final Supplier<BlockClassTable> blockClasses;
     private final JobExecutor jobs;
+    private final Supplier<TemplateSet> templates; // the server's current set, for new and restored matches
     private final TreeMap<Integer, MatchRuntime> matches = new TreeMap<>();
     private final Map<UUID, MatchId> seated = new HashMap<>(); // who sits where, across the matches' rosters
     private final Map<ResourceKey<Level>, MatchRegionIndex> regions = new HashMap<>();
@@ -82,13 +83,15 @@ public final class MatchRegistry {
             SpawnBudget spawnBudget,
             BlockWriter writer,
             Supplier<BlockClassTable> blockClasses,
-            JobExecutor jobs) {
+            JobExecutor jobs,
+            Supplier<TemplateSet> templates) {
         this.server = server;
         this.settings = settings;
         this.spawnBudget = spawnBudget;
         this.writer = writer;
         this.blockClasses = blockClasses;
         this.jobs = jobs;
+        this.templates = templates;
     }
 
     /**
@@ -121,7 +124,7 @@ public final class MatchRegistry {
                 bounds,
                 options.factions(),
                 MatchRules.DEFAULTS);
-        MatchCore core = MatchCore.create(config, TemplateSet.builtin(), ports(options.metrics(), id));
+        MatchCore core = MatchCore.create(config, templates.get(), ports(options.metrics(), id));
         FaultPolicy policy = options.faultPolicy();
         if (policy == null) {
             policy = defaultPolicy();
@@ -410,7 +413,7 @@ public final class MatchRegistry {
                         record.lastEpoch());
             }
             try {
-                core = MatchCore.restore(snapshot, TemplateSet.builtin(), ports(MetricsSink.none(), record.id()));
+                core = MatchCore.restore(snapshot, templates.get(), ports(MetricsSink.none(), record.id()));
             } catch (RuntimeException e) {
                 reason = "its snapshot does not restore: " + e.getMessage();
             }

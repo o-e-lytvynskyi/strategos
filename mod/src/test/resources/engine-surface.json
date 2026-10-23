@@ -11,7 +11,9 @@
     "strategos:debug_subscribe",
     "strategos:feedback",
     "strategos:match_join",
-    "strategos:match_state"
+    "strategos:match_state",
+    "strategos:template_ack",
+    "strategos:template_set"
   ],
   "dataMaps": ["strategos:nav_class"],
   "worldgen": [
@@ -20,7 +22,7 @@
     "worldgen/world_preset strategos:arena"
   ],
   "ticketControllers": ["strategos:match"],
-  "reloadListeners": [],
+  "reloadListeners": ["strategos:templates"],
   "configs": ["strategos-server.toml"],
   "keyMappings": ["key.strategos.overlay"],
   "guiLayers": ["strategos:debug_panel"],

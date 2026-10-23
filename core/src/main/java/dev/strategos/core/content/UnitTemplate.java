@@ -48,6 +48,12 @@ public record UnitTemplate(
                 DEFAULT_RADIUS);
     }
 
+    /** This template at another net index (the session's {@link TemplateIdTable} gives it). */
+    public UnitTemplate atIndex(int index) {
+        return new UnitTemplate(
+                id, index, name, classes, walkSpeed, turnRate, mobility, bodyType, model, skin, width, height, radius);
+    }
+
     /** The template as flattened JSON, the form a data file would compile to. */
     public JsonObject toJson() {
         JsonObject identity = new JsonObject();

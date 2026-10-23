@@ -217,15 +217,25 @@ Answer in chat or here; the next session applies the answers.
   time it would take alone, and none got stuck long enough to need more than a new path: units in
   a crowded formation now simply swap places instead of pushing toward their own. Card PATH-09 is
   done.
+- 2026-10-23 · **M1 T16 Content from data packs:** unit types now load from data packs, and
+  `/reload` changes them in a running world: units already walking move at a new speed from the
+  next tick. A reload with a mistake in it keeps the old units and lists every mistake with its
+  file and field, in the log, to operators online and in `/strategos templates errors`; one that
+  would remove a unit type still on the field is refused with its name. Every player gets the unit
+  types when joining, before seeing any unit, and again after each reload; a client that got a
+  different set asks for it again. Spike S12 timed `/reload` with twenty test unit types at
+  0.26–0.33 s against a 2 s target (the unit types themselves take 2 ms of it), and each of twelve
+  planted mistakes was reported at its file and field. [Report](spikes/S12-content-cycle.md).
+  ADR-0012, how content loads, is confirmed. Card DATA-03 is done.
 
 ## Now
 
-- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 26 of 29 tasks done (T28, PATH-08, joined by its trigger).
+- **Milestone:** M1 Movement, started 2026-10-22 (owner's go-ahead); spec [milestones/M1-movement.md](milestones/M1-movement.md); 27 of 29 tasks done (T28, PATH-08, joined by its trigger).
 - **In progress:** none.
-- **Last finished task:** M1 T24 (2026-10-23). The agents' branches `wip/m1-t17-unitai-hfsm` and
+- **Last finished task:** M1 T16 (2026-10-23). The agents' branches `wip/m1-t17-unitai-hfsm` and
   `wip/m1-t25-debug-overlay` are merged and kept on GitHub for the record.
-- **Next task:** M1 T16 · Content loading, client sync and spike S12 (DATA-03), then T26 (crowd
-  soak and the M1 perf gate) and T27 (M1 close); then M2, on your go-ahead of 2026-10-23.
+- **Next task:** M1 T26 · Crowd soak and the M1 perf gate, then T27 (M1 close); then M2, on your
+  go-ahead of 2026-10-23.
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 220 of 2,000, as of 2026-10-22.
 - **Overview:** `python3 tools/roadmap.py summary`.

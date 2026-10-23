@@ -14,8 +14,9 @@ public @interface StrategosTest {
     String arena() default "arena_flat_32";
 
     /**
-     * default | slow | skeleton | isolation | chunks | writer | map_import | map_twice | map_roundtrip | perf_walk |
-     * perf_snapshot | perf_writer | selftest; {@code slow} and the {@code map_} batches run only in runGameTestSlow.
+     * default | slow | skeleton | isolation | chunks | writer | content_errors | content_used | content_speed |
+     * map_import | map_twice | map_roundtrip | perf_walk | perf_snapshot | perf_writer | selftest; {@code slow} and the
+     * {@code map_} batches run only in runGameTestSlow.
      */
     String batch() default "default";
 

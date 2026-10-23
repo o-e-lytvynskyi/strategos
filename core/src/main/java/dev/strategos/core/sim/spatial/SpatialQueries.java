@@ -21,6 +21,11 @@ public final class SpatialQueries implements MatchSystem {
         this.statics = new StaticIndex(bounds.sizeX(), bounds.sizeZ());
     }
 
+    /** A new template set's class bits (DATA-03). */
+    public void swap(TemplateSet templates) {
+        units.swap(templates);
+    }
+
     @Override
     public Phase phase() {
         return Phase.MOVEMENT;

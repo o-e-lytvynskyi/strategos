@@ -9,6 +9,8 @@ import dev.strategos.mod.server.net.payload.FeedbackPayload;
 import dev.strategos.mod.server.net.payload.MatchJoinPayload;
 import dev.strategos.mod.server.net.payload.MatchStatePayload;
 import dev.strategos.mod.server.net.payload.PayloadArrived;
+import dev.strategos.mod.server.net.payload.TemplateAckPayload;
+import dev.strategos.mod.server.net.payload.TemplateSetPayload;
 import java.util.List;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
@@ -37,6 +39,8 @@ public final class ModPayloads {
         registrar.playToClient(MatchJoinPayload.TYPE, MatchJoinPayload.STREAM_CODEC, PayloadArrived::post);
         registrar.playToClient(MatchStatePayload.TYPE, MatchStatePayload.STREAM_CODEC, PayloadArrived::post);
         registrar.playToClient(FeedbackPayload.TYPE, FeedbackPayload.STREAM_CODEC, PayloadArrived::post);
+        registrar.playToClient(TemplateSetPayload.TYPE, TemplateSetPayload.STREAM_CODEC, PayloadArrived::post);
+        registrar.playToServer(TemplateAckPayload.TYPE, TemplateAckPayload.STREAM_CODEC, C2sHandlers::templateAck);
         // The dev payloads (PATH-10): a client or server without them still connects.
         PayloadRegistrar optional = registrar.optional();
         optional.playToServer(
@@ -51,6 +55,8 @@ public final class ModPayloads {
                 MatchJoinPayload.SPEC,
                 MatchStatePayload.SPEC,
                 FeedbackPayload.SPEC,
+                TemplateSetPayload.SPEC,
+                TemplateAckPayload.SPEC,
                 DebugSubscribePayload.SPEC,
                 DebugFeedPayload.SPEC);
     }

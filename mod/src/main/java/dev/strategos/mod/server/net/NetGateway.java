@@ -93,6 +93,18 @@ public final class NetGateway {
     }
 
     /**
+     * Sends {@code payload} to {@code player} at once rather than with the tick's flush: the template set, which must
+     * reach a joining player before any body it could pair (DATA-03.6).
+     */
+    public void sendNow(ServerPlayer player, CustomPacketPayload payload) {
+        check(ModPayloads.spec(payload.type().id()), payload.type().id(), Audience.Kind.PLAYER);
+        if (player.connection.hasChannel(payload)) {
+            counters.sent(payload.type().id(), player.getGameProfile().getName(), size(payload));
+            PacketDistributor.sendToPlayer(player, payload);
+        }
+    }
+
+    /**
      * Tells {@code player}, just seated in {@code rt} at {@code slot}, which match it is in ({@code match_join}); the
      * next flush sends the match's state to its members, the player among them, as {@code match_state} goes only to a
      * match.

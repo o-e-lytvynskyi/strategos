@@ -1,0 +1,12 @@
+{
+  "parent": "s12:template/infantry",
+  "Identity": {
+    "name": "s12e.broken"
+  },
+  "UnitMotion": {
+    "walkSpeed": {
+      "$op": "pow",
+      "value": 2
+    }
+  }
+}

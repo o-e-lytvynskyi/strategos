@@ -1,0 +1,10 @@
+{
+  "parent": "s12:template/infantry",
+  "Identity": {
+    "name": "s12e.broken"
+  },
+  "mixins": [
+    "s12:mixin/fast",
+    "s12:mixin/winged"
+  ]
+}

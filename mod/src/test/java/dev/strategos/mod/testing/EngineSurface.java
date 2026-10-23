@@ -18,8 +18,8 @@ import org.jspecify.annotations.Nullable;
 /**
  * The mod's hooks into the engine (ADR-0020, rule B12): the inventory in {@code engine-surface.json} on one side, what
  * the code registers on the other, and one comparison. The code side reads entity types, saved-data names, command
- * roots, mixin configs, access transformers, data map types, world generation data, ticket controllers, config files
- * and payloads; the kinds without a probe yet get theirs with their first registration, and until then the code side
+ * roots, mixin configs, access transformers, data map types, world generation data, ticket controllers, reload
+ * listeners, config files and payloads; the kinds without a probe yet get theirs with their first registration, and until then the code side
  * repeats the inventory for them. The client's registrations (key mappings, GUI layers, client commands) have no
  * probe: {@code :mod:test} runs as a dedicated server (FML's {@code forgejunitdev} target), where the client's
  * registration events never fire, so they are listed for the record and checked against 04 §2.5 only.
@@ -53,6 +53,7 @@ public record EngineSurface(Map<String, List<String>> kinds) {
             "dataMaps",
             "worldgen",
             "ticketControllers",
+            "reloadListeners",
             "configs");
 
     public EngineSurface {
@@ -96,7 +97,8 @@ public record EngineSurface(Map<String, List<String>> kinds) {
      * The code's surface from what the probes read: registered entity type ids (any namespace; only {@code
      * strategos:} ones count), saved-data names, command roots, the mod's {@code neoforge.mods.toml} and its access
      * transformer file ({@code null} when there is none), the world generation files as {@code <registry dir> <id>}
-     * the ticket controller ids and the config file names. Unprobed kinds are copied from {@code inventory}.
+     * the ticket controller ids, the reload listeners' names and the config file names. Unprobed kinds are copied from
+     * {@code inventory}.
      */
     public static EngineSurface ofCode(
             Collection<String> entityTypeIds,
@@ -107,6 +109,7 @@ public record EngineSurface(Map<String, List<String>> kinds) {
             @Nullable String accessTransformerCfg,
             Collection<String> worldgen,
             Collection<String> ticketControllerIds,
+            Collection<String> reloadListenerNames,
             Collection<String> configFiles,
             Collection<String> payloadIds,
             EngineSurface inventory) {
@@ -131,6 +134,7 @@ public record EngineSurface(Map<String, List<String>> kinds) {
                 dataMapIds.stream().filter(id -> id.startsWith("strategos:")).toList());
         kinds.put("worldgen", List.copyOf(worldgen));
         kinds.put("ticketControllers", List.copyOf(ticketControllerIds));
+        kinds.put("reloadListeners", List.copyOf(reloadListenerNames));
         kinds.put("configs", List.copyOf(configFiles));
         kinds.put("payloads", List.copyOf(payloadIds));
         for (String kind : KINDS) {

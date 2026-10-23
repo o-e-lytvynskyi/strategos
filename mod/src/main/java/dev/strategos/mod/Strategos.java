@@ -7,12 +7,18 @@ import dev.strategos.mod.registry.ModTickets;
 import dev.strategos.mod.server.body.BodyEvents;
 import dev.strategos.mod.server.command.DebugCommands;
 import dev.strategos.mod.server.command.StrategosCommands;
+import dev.strategos.mod.server.content.TemplateReloadListener;
+import dev.strategos.mod.server.content.TemplateSync;
 import dev.strategos.mod.server.tick.TickDriver;
+import java.util.List;
+import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.AddReloadListenerEvent;
+import net.neoforged.neoforge.event.OnDatapackSyncEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.TagsUpdatedEvent;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
@@ -57,5 +63,13 @@ public final class Strategos {
         game.addListener(RegisterCommandsEvent.class, DebugCommands::onRegister);
         game.addListener(DataMapsUpdatedEvent.class, StrategosServer::onDataMapsUpdated);
         game.addListener(TagsUpdatedEvent.class, StrategosServer::onTagsUpdated);
+        game.addListener(
+                AddReloadListenerEvent.class, event -> reloadListeners().forEach(event::addListener));
+        game.addListener(OnDatapackSyncEvent.class, TemplateSync::onDatapackSync);
+    }
+
+    /** The listeners every data pack reload gets, made fresh for each; the engine-surface inventory reads them (B12). */
+    public static List<PreparableReloadListener> reloadListeners() {
+        return List.of(new TemplateReloadListener());
     }
 }

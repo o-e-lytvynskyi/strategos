@@ -134,6 +134,16 @@ public final class MockViewer implements AutoCloseable {
         }
     }
 
+    /**
+     * As the client's position packet would (ServerGamePacketListenerImpl.java:970), at least once a second: the chunk
+     * map pairs the viewer with each entity whose chunk it has received since. A viewer that joins beside standing
+     * entities gets them only this way: their chunks were still pending when it joined (ChunkMap.java:245, 1024), and
+     * sending a chunk pairs nothing (PlayerChunkSender.java:76).
+     */
+    public void moved() {
+        player.serverLevel().getChunkSource().move(player);
+    }
+
     /** As the client would send {@code payload}: the server's connection reads it, on the server thread. */
     public void send(CustomPacketPayload payload) {
         channel.writeInbound(new ServerboundCustomPayloadPacket(payload));

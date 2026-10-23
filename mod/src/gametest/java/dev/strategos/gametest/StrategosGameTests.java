@@ -77,6 +77,21 @@ public final class StrategosGameTests {
         afterBatch(level, "chunks");
     }
 
+    @AfterBatch(batch = "content_errors")
+    public static void afterContentErrors(ServerLevel level) {
+        afterBatch(level, "content_errors");
+    }
+
+    @AfterBatch(batch = "content_used")
+    public static void afterContentUsed(ServerLevel level) {
+        afterBatch(level, "content_used");
+    }
+
+    @AfterBatch(batch = "content_speed")
+    public static void afterContentSpeed(ServerLevel level) {
+        afterBatch(level, "content_speed");
+    }
+
     @AfterBatch(batch = "map_import")
     public static void afterMapImport(ServerLevel level) {
         afterBatch(level, "map_import");

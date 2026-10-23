@@ -1,0 +1,10 @@
+{
+  "parent": "s12:template/infantry",
+  "mixins": [
+    "s12:mixin/heavy",
+    "s12:mixin/tall"
+  ],
+  "Identity": {
+    "name": "s12.unit.pikeman"
+  }
+}

@@ -9,7 +9,35 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24
+## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24, T16
+
+- **M1 T16 · Content loading, client sync and spike S12** — DATA-03 done; ADR-0012 confirmed.
+  - **Results:** `TemplateReloadListener` reads `data/*/strategos/templates/**.json` off the main
+    thread and hands the files whose conditions hold to `StrategosServer#loadTemplates`, which
+    compiles them against the session's append-only `TemplateIdTable`, lints them (`TemplateLint`:
+    entity type, model, skin) and, when nothing is wrong and no running match loses a live unit's
+    template, installs the set and queues a journaled `ContentSwap` in every match; the core swaps
+    stats, spatial classes and templates at the tick boundary. `template_set` (the set at its net
+    indices and the id table, ≤ 256 KB) goes to each player at `OnDatapackSyncEvent`, at once; the
+    client stores it and answers `template_ack` with its SHA-256, a mismatch resent at most every 20
+    ticks. `/strategos templates reload|errors|dump`. Tests: `TemplateIdTableTest` (3),
+    `TemplateLintTest`, `ContentSwapReplayTest` (2), `BundledTemplatesTest` (2),
+    `TemplateSetPayloadSizeTest`, `contenttests.*` (3, each alone in its batch),
+    `nettests.template_set_before_pairing`, `nettests.template_hash_mismatch_resends` (135
+    GameTests, 8 slow); the engine-surface inventory probes reload listeners now;
+    `verify verifySlow verifySoak` 2 min 48 s.
+  - **Measured (S12, two runs):** `/reload` 0.26–0.33 s end to end with 20 test templates (two
+    levels of inheritance, four mixins), the templates' own work 1.4–2.3 ms of it; each of 12
+    planted errors reported at its file and JSON pointer, and no other.
+  - **Problems:** the startup reload applies before `StrategosServer` exists, so the server reads
+    the packs itself at its start (D row 154). S12's packs cannot live in the gametest resources,
+    which every dev run loads as part of the mod; they are world packs of the spike's game
+    directory (D row 159). A mock viewer joining beside standing bodies was never paired with
+    them: their chunks were pending at its join, and in 1.21.1 sending a chunk pairs nothing, only
+    the client's next position packet does; `MockViewer#moved` sends one (D row 160). The lint's
+    two static lists broke rule B8, and an M0 check that a player gets no payload of ours before
+    NET-01 now has to let the template set through.
+  - **Next:** T26 (crowd soak and the M1 perf gate), then T27 (M1 close) and M2.
 
 - **M1 T24 · Shared group path** — PATH-09 done.
   - **Results:** a group order of eight or more long moves makes one request (`GroupJob`): one

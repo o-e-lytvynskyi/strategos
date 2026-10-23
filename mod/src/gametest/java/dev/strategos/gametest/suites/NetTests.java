@@ -17,6 +17,8 @@ import dev.strategos.core.protocol.MatchStateMsg;
 import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.RejectReason;
 import dev.strategos.core.protocol.SpawnUnits;
+import dev.strategos.core.protocol.TemplateAck;
+import dev.strategos.core.protocol.TemplateSetView;
 import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.protocol.WireWriter;
 import dev.strategos.core.shared.FactionSlot;
@@ -33,6 +35,8 @@ import dev.strategos.gametest.StrategosTest;
 import dev.strategos.gametest.net.MockViewer;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.entity.UnitEntity;
+import dev.strategos.mod.server.content.ServerTemplates;
+import dev.strategos.mod.server.content.TemplateSync;
 import dev.strategos.mod.server.match.MatchRuntime;
 import dev.strategos.mod.server.net.NetCounters;
 import dev.strategos.mod.server.net.RateLimiter;
@@ -40,6 +44,8 @@ import dev.strategos.mod.server.net.payload.CommandsPayload;
 import dev.strategos.mod.server.net.payload.FeedbackPayload;
 import dev.strategos.mod.server.net.payload.MatchJoinPayload;
 import dev.strategos.mod.server.net.payload.MatchStatePayload;
+import dev.strategos.mod.server.net.payload.TemplateAckPayload;
+import dev.strategos.mod.server.net.payload.TemplateSetPayload;
 import io.netty.buffer.Unpooled;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -67,6 +73,8 @@ import org.jspecify.annotations.Nullable;
  * per player and type; batches a client sends; bodies' poses on the wire.
  */
 public final class NetTests {
+    private static final String TEMPLATE_SET = "payload/" + TemplateSetPayload.TYPE.id();
+
     private NetTests() {}
 
     /**
@@ -404,6 +412,98 @@ public final class NetTests {
         });
     }
 
+    /**
+     * DATA-03.6, §1.6 D row 9: a player joining beside a match's bodies gets the server's template set, its table
+     * with it, before the packet that adds any body: its client knows each body's template when it sees one.
+     */
+    @StrategosTest(timeoutTicks = 200)
+    public static void templateSetBeforePairing(GameTestHelper h) {
+        MatchRuntime rt = match(h);
+        spawn(rt, 16.5, 16.5, 4, 2);
+        Vec3 at = h.absoluteVec(new Vec3(16.5, 2, 16.5));
+        MockViewer[] viewer = new MockViewer[1];
+        h.startSequence()
+                .thenWaitUntil(() ->
+                        check(bodyIds(rt).size() == 4, "bodies " + bodyIds(rt).size()))
+                .thenExecute(() -> {
+                    viewer[0] = MockViewer.join(h.getLevel(), "strategos-tset", at.x, at.y, at.z, 4);
+                    seat(rt, viewer[0], 1);
+                })
+                .thenWaitUntil(() -> {
+                    viewer[0].moved();
+                    viewer[0].poll();
+                    check(
+                            added(viewer[0]).containsAll(bodyIds(rt)),
+                            "the viewer sees " + added(viewer[0]) + " of " + bodyIds(rt) + "; chunks "
+                                    + viewer[0].chunks().size() + "; "
+                                    + viewer[0].capture().counts());
+                })
+                .thenExecute(() -> {
+                    List<Packet<?>> all = viewer[0].capture().all();
+                    Set<Integer> bodies = bodyIds(rt);
+                    int set = -1;
+                    int body = -1;
+                    for (int k = 0; k < all.size(); k++) {
+                        Packet<?> p = all.get(k);
+                        if (set < 0
+                                && p instanceof ClientboundCustomPayloadPacket c
+                                && c.payload() instanceof TemplateSetPayload) {
+                            set = k;
+                        }
+                        if (body < 0 && p instanceof ClientboundAddEntityPacket a && bodies.contains(a.getId())) {
+                            body = k;
+                        }
+                    }
+                    check(set >= 0, "no template set: " + viewer[0].capture().counts());
+                    check(set < body, "the template set came at packet " + set + ", the first body at " + body);
+                    ServerTemplates server = StrategosServer.get().templates();
+                    TemplateSetView view =
+                            payloads(viewer[0], TemplateSetPayload.class).get(0).view();
+                    check(
+                            view.toSet().version().equals(server.set().version()),
+                            "the viewer got " + view.version() + ", the server runs "
+                                    + server.set().version());
+                    check(view.table().equals(server.table().ids()), "the viewer got the table " + view.table());
+                    viewer[0].close();
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * DATA-03.6: a client that acknowledges another set gets the server's again, at most once a second; one that
+     * acknowledges the server's gets nothing more.
+     */
+    @StrategosTest(timeoutTicks = 100)
+    public static void templateHashMismatchResends(GameTestHelper h) {
+        Vec3 at = h.absoluteVec(new Vec3(8.5, 2, 8.5));
+        MockViewer viewer = MockViewer.join(h.getLevel(), "strategos-tack", at.x, at.y, at.z, 2);
+        TemplateSync sync = StrategosServer.get().templateSync();
+        long resent = sync.resent();
+        int[] sets = new int[1];
+        h.startSequence()
+                .thenExecute(() -> {
+                    viewer.poll();
+                    sets[0] = payloads(viewer, TemplateSetPayload.class).size();
+                    check(sets[0] == 1, "the join sent " + sets[0] + " template sets");
+                    viewer.send(new TemplateAckPayload(new TemplateAck(
+                            StrategosServer.get().templates().set().sha())));
+                })
+                .thenExecuteAfter(1, () -> {
+                    viewer.poll();
+                    check(payloads(viewer, TemplateSetPayload.class).size() == 1, "a matching ack got a resend");
+                    viewer.send(new TemplateAckPayload(new TemplateAck(new byte[TemplateAck.SHA_BYTES])));
+                    viewer.send(new TemplateAckPayload(new TemplateAck(new byte[TemplateAck.SHA_BYTES])));
+                })
+                .thenExecuteAfter(1, () -> {
+                    viewer.poll();
+                    int now = payloads(viewer, TemplateSetPayload.class).size();
+                    check(now == 2, "two mismatched acks within a second got " + (now - 1) + " resends");
+                    check(sync.resent() - resent == 1, "resends counted " + (sync.resent() - resent));
+                    viewer.close();
+                })
+                .thenSucceed();
+    }
+
     private static void seat(MatchRuntime rt, MockViewer viewer, int slot) {
         StrategosServer.get().matches().join(rt, viewer.player().getUUID(), new PlayerSlot(slot));
         StrategosServer.get().net().joined(rt, viewer.player(), new PlayerSlot(slot));
@@ -469,7 +569,8 @@ public final class NetTests {
 
     /**
      * QA-19.2: three units' bodies reach the viewer beside them as add-entity packets, with their bytes counted under
-     * that type; a viewer 400 blocks away gets none of them; neither gets a payload of ours before NET-01.
+     * that type; a viewer 400 blocks away gets none of them; neither, seated in no match, gets a payload of ours but
+     * the template set every player gets at login (DATA-03).
      */
     @StrategosTest(timeoutTicks = 400)
     public static void capturePerPlayerAndType(GameTestHelper h) {
@@ -502,7 +603,13 @@ public final class NetTests {
                 check(
                         close.capture().counts().get("minecraft:add_entity") >= 3,
                         "counts " + close.capture().counts());
-                check(close.bytes().ours() == 0 && far.bytes().ours() == 0, "a payload of ours before NET-01");
+                for (MockViewer v : List.of(close, far)) {
+                    check(
+                            v.bytes().ours() == v.bytes().bytes(TEMPLATE_SET)
+                                    && v.bytes().bytes(TEMPLATE_SET) > 0,
+                            "payloads of ours beyond the template set: "
+                                    + v.bytes().toJson());
+                }
                 check(
                         close.bytes().failures().isEmpty(),
                         "unencodable packets: " + close.bytes().failures());

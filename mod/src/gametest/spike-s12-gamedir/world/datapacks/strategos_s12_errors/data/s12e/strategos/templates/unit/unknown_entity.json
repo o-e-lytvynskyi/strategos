@@ -1,0 +1,9 @@
+{
+  "parent": "s12:template/infantry",
+  "Identity": {
+    "name": "s12e.broken"
+  },
+  "Body": {
+    "entityType": "s12e:dragon"
+  }
+}

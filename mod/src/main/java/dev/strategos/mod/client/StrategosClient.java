@@ -1,5 +1,6 @@
 package dev.strategos.mod.client;
 
+import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.MatchStateMsg;
 import dev.strategos.mod.Strategos;
@@ -25,6 +26,7 @@ public final class StrategosClient {
     private static final ClientDebugState DEBUG = new ClientDebugState();
     private static volatile @Nullable MatchJoin match;
     private static volatile @Nullable MatchStateMsg state;
+    private static volatile TemplateSet templates = TemplateSet.builtin();
 
     public StrategosClient(IEventBus modBus) {
         modBus.addListener(
@@ -58,5 +60,14 @@ public final class StrategosClient {
 
     public static void state(MatchStateMsg update) {
         state = update;
+    }
+
+    /** The server's template set as this client decoded it (DATA-03); the bundled one before the first arrives. */
+    public static TemplateSet templates() {
+        return templates;
+    }
+
+    public static void templates(TemplateSet set) {
+        templates = set;
     }
 }

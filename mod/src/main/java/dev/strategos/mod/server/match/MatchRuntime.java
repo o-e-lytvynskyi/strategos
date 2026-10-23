@@ -7,6 +7,7 @@ import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.sim.AgentUpdate;
 import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.CommandResult;
+import dev.strategos.core.sim.ContentSwap;
 import dev.strategos.core.sim.ExternalDamage;
 import dev.strategos.core.sim.JobDelivery;
 import dev.strategos.core.sim.MatchCore;
@@ -36,6 +37,7 @@ import org.slf4j.LoggerFactory;
  * server thread touches it; only the match registry makes one.
  */
 public final class MatchRuntime {
+    private @Nullable ContentSwap swap; // a reload's set, for the next step
     private final MatchId id;
     private final MatchSpace space;
     private final MatchSource source;
@@ -227,13 +229,20 @@ public final class MatchRuntime {
         listeners.add(listener);
     }
 
+    /** A reload's new template set, which the next step swaps in (DATA-03); a later one replaces it. */
+    public void queueSwap(ContentSwap swap) {
+        this.swap = swap;
+    }
+
     /** The tick driver's step: the inbox becomes the next tick's inputs; outputs and bodies are applied after it. */
     public void tick(ServerLevel level) {
         MatchCore c = requireCore();
         long next = c.queries().tick() + 1;
         AgentUpdate agents = this.agents.track(level, roster.members());
+        ContentSwap swap = this.swap;
+        this.swap = null;
         TickOutputs out =
-                c.step(InputCollector.collect(next, inbox, pages.due(next), agents, damage, delivery(c, next)));
+                c.step(InputCollector.collect(next, inbox, pages.due(next), agents, damage, delivery(c, next), swap));
         long start = System.nanoTime();
         OutputAppliers.apply(this, level, out);
         bodies.materialise(level, c.queries(), spawnBudget);

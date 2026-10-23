@@ -1,0 +1,14 @@
+{
+  "UnitMotion": {
+    "walkSpeed": {
+      "$op": "mul",
+      "value": 0.8
+    }
+  },
+  "Body": {
+    "radius": {
+      "$op": "add",
+      "value": 0.05
+    }
+  }
+}

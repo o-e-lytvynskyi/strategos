@@ -1,0 +1,9 @@
+{
+  "parent": "s12:template/ranged",
+  "mixins": [
+    "s12:mixin/fast"
+  ],
+  "Identity": {
+    "name": "s12.unit.slinger"
+  }
+}

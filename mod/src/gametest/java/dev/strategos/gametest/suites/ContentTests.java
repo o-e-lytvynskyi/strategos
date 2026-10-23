@@ -1,0 +1,205 @@
+package dev.strategos.gametest.suites;
+
+import static dev.strategos.gametest.suites.Units.check;
+import static dev.strategos.gametest.suites.Units.core;
+import static dev.strategos.gametest.suites.Units.handles;
+import static dev.strategos.gametest.suites.Units.match;
+import static dev.strategos.gametest.suites.Units.move;
+import static dev.strategos.gametest.suites.Units.spawn;
+import static dev.strategos.gametest.suites.Units.unit;
+
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import dev.strategos.core.content.RawTemplate;
+import dev.strategos.core.content.TemplateProblem;
+import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.shared.TemplateId;
+import dev.strategos.gametest.StrategosTest;
+import dev.strategos.mod.StrategosServer;
+import dev.strategos.mod.server.content.ServerTemplates;
+import dev.strategos.mod.server.match.MatchRuntime;
+import java.util.ArrayList;
+import java.util.List;
+import net.minecraft.gametest.framework.GameTestHelper;
+
+/**
+ * DATA-03.3 and .4 in a real server (spec §7.3): a reload's templates handed over as the listener's apply hands them.
+ * A set with errors, or one that drops a live unit's template, is refused and the server keeps its set; a good one
+ * changes a walking unit's speed from the next tick. Each runs alone in its batch: the server's set is server-wide.
+ */
+public final class ContentTests {
+    private static final String UNITS = "data/strategos/strategos/templates/unit/";
+
+    private ContentTests() {}
+
+    /**
+     * DATA-03.3: a reload with a compile error, a lint error and a file that did not parse is refused, each problem
+     * naming its file and JSON path; the server's set and id table stay, and so does a running match's set.
+     */
+    @StrategosTest(batch = "content_errors", solo = true, timeoutTicks = 100)
+    public static void reloadWithErrorsKeepsSet(GameTestHelper h) {
+        StrategosServer server = StrategosServer.get();
+        String before = server.templates().set().version();
+        int table = server.templates().table().size();
+        MatchRuntime rt = match(h);
+        List<TemplateProblem> problems = new ArrayList<>();
+        List<RawTemplate> raws = bundled(server, problems);
+        raws.add(raw("broken_speed", """
+                {"parent": "strategos:template/unit_base", "Identity": {"name": "broken"},
+                 "UnitMotion": {"walkSpeed": "fast"}}"""));
+        raws.add(raw("broken_skin", """
+                {"parent": "strategos:template/unit_base", "Identity": {"name": "broken"},
+                 "Body": {"skin": "strategos:units/none"}}"""));
+        problems.add(TemplateProblem.error(UNITS + "garbled.json", "", "does not parse: unterminated object"));
+
+        ServerTemplates.Outcome outcome = server.loadTemplates(raws, problems);
+
+        check(!outcome.accepted(), "a set with errors was accepted: " + outcome.message());
+        named(outcome, UNITS + "broken_speed.json", "/UnitMotion/walkSpeed");
+        named(outcome, UNITS + "broken_skin.json", "/Body/skin");
+        named(outcome, UNITS + "garbled.json", "");
+        check(
+                server.templates().set().version().equals(before),
+                "the set changed: " + server.templates().set());
+        check(
+                server.templates().table().size() == table,
+                "the id table grew: " + server.templates().table());
+        h.startSequence()
+                .thenExecuteAfter(
+                        2,
+                        () -> check(
+                                core(rt).queries().templates().version().equals(before),
+                                "the match swapped to " + core(rt).queries().templates()))
+                .thenSucceed();
+    }
+
+    /**
+     * DATA-03.3: a reload that drops the template of a live unit of a running match is refused with the template and
+     * the match named; the unit keeps its template and the server its set.
+     */
+    @StrategosTest(batch = "content_used", solo = true, timeoutTicks = 100)
+    public static void reloadRemovingUsedTemplateRefused(GameTestHelper h) {
+        StrategosServer server = StrategosServer.get();
+        String before = server.templates().set().version();
+        MatchRuntime rt = match(h);
+        spawn(rt, 16.5, 16.5, 1, 0);
+        h.startSequence()
+                .thenWaitUntil(() -> check(handles(rt).length == 1, "no unit yet"))
+                .thenExecute(() -> {
+                    List<TemplateProblem> problems = new ArrayList<>();
+                    List<RawTemplate> raws = bundled(server, problems);
+                    raws.removeIf(r -> r.id().equals(TemplateSet.DEBUG_WALKER));
+
+                    ServerTemplates.Outcome outcome = server.loadTemplates(raws, problems);
+
+                    check(!outcome.accepted(), "a set without a live unit's template was accepted");
+                    check(
+                            outcome.message().contains(TemplateSet.DEBUG_WALKER.value())
+                                    && outcome.message()
+                                            .contains("match " + rt.id().value()),
+                            "the refusal names neither the template nor the match: " + outcome.message());
+                    check(server.templates().set().version().equals(before), "the set changed");
+                })
+                .thenExecuteAfter(2, () -> {
+                    check(
+                            unit(rt, handles(rt)[0]).template().equals(TemplateSet.DEBUG_WALKER),
+                            "the unit's template changed");
+                    check(core(rt).queries().templates().version().equals(before), "the match swapped");
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * DATA-03.4: a walking unit's step is the bundled walk speed until a reload raises it, and the new speed from the
+     * next tick on; the bundled set loads back at the end, at the same version.
+     */
+    @StrategosTest(batch = "content_speed", solo = true, timeoutTicks = 300)
+    public static void reloadChangesSpeedNextTick(GameTestHelper h) {
+        StrategosServer server = StrategosServer.get();
+        String before = server.templates().set().version();
+        double bundledSpeed = speed(TemplateSet.builtin());
+        double faster = 0.375;
+        MatchRuntime rt = match(h);
+        spawn(rt, 4.5, 16.5, 1, 0);
+        double[] x = new double[2];
+        h.startSequence()
+                .thenWaitUntil(() -> check(handles(rt).length == 1, "no unit yet"))
+                .thenExecute(() -> move(rt, handles(rt)[0], 28.5, 16.5))
+                .thenWaitUntil(() -> {
+                    double now = x(rt);
+                    double step = now - x[0];
+                    x[0] = now;
+                    check(Math.abs(step - bundledSpeed) < 1e-6, "not walking at the bundled speed yet: " + step);
+                })
+                .thenExecute(() -> {
+                    List<TemplateProblem> problems = new ArrayList<>();
+                    List<RawTemplate> raws = withWalkerSpeed(bundled(server, problems), faster);
+                    ServerTemplates.Outcome outcome = server.loadTemplates(raws, problems);
+                    check(outcome.accepted(), "the faster set was refused: " + outcome.message() + " " + problems);
+                    x[1] = x(rt);
+                })
+                .thenExecuteAfter(1, () -> {
+                    double step = x(rt) - x[1];
+                    check(Math.abs(step - faster) < 1e-6, "the tick after the reload stepped " + step);
+                    check(
+                            core(rt).queries()
+                                    .templates()
+                                    .version()
+                                    .equals(server.templates().set().version()),
+                            "the match runs " + core(rt).queries().templates());
+                    List<TemplateProblem> problems = new ArrayList<>();
+                    ServerTemplates.Outcome back = server.loadTemplates(bundled(server, problems), problems);
+                    check(back.accepted(), "the bundled set did not load back: " + back.message());
+                    check(server.templates().set().version().equals(before), "the bundled set loads back as another");
+                })
+                .thenSucceed();
+    }
+
+    /** The loaded data packs' templates, the bundled ones in a GameTest server, as a reload reads them. */
+    private static List<RawTemplate> bundled(StrategosServer server, List<TemplateProblem> problems) {
+        List<RawTemplate> raws = new ArrayList<>(server.packTemplates(problems));
+        check(problems.isEmpty(), "the bundled templates have problems: " + problems);
+        check(!raws.isEmpty(), "no template in the loaded data packs");
+        return raws;
+    }
+
+    private static List<RawTemplate> withWalkerSpeed(List<RawTemplate> raws, double speed) {
+        List<RawTemplate> out = new ArrayList<>();
+        for (RawTemplate r : raws) {
+            if (r.id().equals(TemplateSet.DEBUG_WALKER)) {
+                JsonObject json = r.json();
+                json.getAsJsonObject("UnitMotion").addProperty("walkSpeed", speed);
+                out.add(new RawTemplate(r.id(), r.file(), json));
+            } else {
+                out.add(r);
+            }
+        }
+        return out;
+    }
+
+    private static RawTemplate raw(String name, String json) {
+        return new RawTemplate(
+                new TemplateId("strategos:unit/" + name),
+                UNITS + name + ".json",
+                JsonParser.parseString(json).getAsJsonObject());
+    }
+
+    private static void named(ServerTemplates.Outcome outcome, String file, String pointer) {
+        check(
+                outcome.problems().stream()
+                        .anyMatch(p -> p.severity() == TemplateProblem.Severity.ERROR
+                                && p.file().equals(file)
+                                && p.pointer().equals(pointer)),
+                "no error at " + file + " " + pointer + " in " + outcome.problems());
+    }
+
+    private static double speed(TemplateSet set) {
+        var walker = set.byId(TemplateSet.DEBUG_WALKER);
+        check(walker != null, "no debug walker in " + set);
+        return walker.walkSpeed();
+    }
+
+    private static double x(MatchRuntime rt) {
+        return unit(rt, handles(rt)[0]).x();
+    }
+}

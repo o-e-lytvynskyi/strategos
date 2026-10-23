@@ -7,9 +7,10 @@ import java.util.List;
 
 /**
  * P0: puts the tick's inputs in canonical order (terrain pages by page, Z then X, then commands, then the agents, then
- * damage to bodies in the order it came, then path deliveries), records them in the journal and routes each to its one
- * handler: the pages are published together, a command is queued, the agents are the tick's for avoidance, a delivery
- * lists the finished jobs the path service applies this tick; damage is only recorded until CMB-01 applies it.
+ * damage to bodies in the order it came, then path deliveries, then a template set), records them in the journal and
+ * routes each to its one handler: the pages are published together, a command is queued, the agents are the tick's for
+ * avoidance, a delivery lists the finished jobs the path service applies this tick, a new template set is swapped in
+ * before any command applies; damage is only recorded until CMB-01 applies it.
  */
 final class IngestSystem implements MatchSystem {
     private final CommandSystem commands;
@@ -23,7 +24,12 @@ final class IngestSystem implements MatchSystem {
     /** Every {@link InputEvent} type this system routes; a test checks it against the sealed list. */
     static List<Class<? extends InputEvent>> handledTypes() {
         return List.of(
-                CommandEnvelope.class, TerrainPage.class, AgentUpdate.class, ExternalDamage.class, JobDelivery.class);
+                CommandEnvelope.class,
+                TerrainPage.class,
+                AgentUpdate.class,
+                ExternalDamage.class,
+                JobDelivery.class,
+                ContentSwap.class);
     }
 
     @Override
@@ -44,6 +50,7 @@ final class IngestSystem implements MatchSystem {
                 case AgentUpdate update -> state.addAgents(update.agents());
                 case ExternalDamage damage -> {} // journaled above; CMB-01 applies it
                 case JobDelivery delivery -> state.addDelivery(delivery);
+                case ContentSwap swap -> state.swapTemplates(swap.set());
             }
         }
         state.publishAll(pages);
@@ -67,6 +74,7 @@ final class IngestSystem implements MatchSystem {
             case AgentUpdate update -> 2;
             case ExternalDamage damage -> 3;
             case JobDelivery delivery -> 4;
+            case ContentSwap swap -> 5;
         };
     }
 }

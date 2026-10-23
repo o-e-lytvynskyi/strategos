@@ -202,7 +202,8 @@ medians 5–8 ms. Server cost limits no size; 512² still waits for PERF-12
   8. S12, with about 20 templates and two levels of inheritance: `/reload` ≤ 2 s, and every error
      names its file and JSON path; the report confirms ADR-0012 (R).
 - **Tests:** L0, L1, L2, L3, L5, R · **Depends on:** DATA-01, NET-01 · **Size:** L · **Tier:** T0
-- **Status:** specified
+- **Done:** 2026-10-23 — M1 T16: `BundledTemplatesTest`, the bundled pack through the listener's reader, compile and lint with no problem into the built-in set, and a broken file at its file and pointers (1); `TemplateLintTest`, `TemplateIdTableTest` (2; spec §1.6 D rows 155–156); `contenttests.reload_with_errors_keeps_set`, `contenttests.reload_removing_used_template_refused`, each alone in its batch (3; D row 157); `contenttests.reload_changes_speed_next_tick`: 0.25 then 0.375 a tick from the tick after the reload (4); `ContentSwapReplayTest`, through the journal's disk format (5; D row 155); `nettests.template_set_before_pairing`, `nettests.template_hash_mismatch_resends` (6; D rows 9, 158, 160); `TemplateSetPayloadSizeTest` (7); [S12](../spikes/S12-content-cycle.md): `/reload` 0.26–0.33 s, twelve planted errors each at its file and JSON pointer, ADR-0012 confirmed (8; D row 159)
+- **Status:** done
 
 ### Slice 1A · One unit on real terrain
 

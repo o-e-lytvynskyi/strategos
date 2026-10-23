@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import dev.strategos.core.shared.Hex64;
 import dev.strategos.core.shared.TemplateId;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -15,6 +16,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * An immutable set of unit templates in net-index order, with their flattened JSON (04 §8.3): its version is the
  * SHA-256 of the canonical JSON of every template keyed by id, so two servers with equal content have equal versions.
+ * Net indices come from the session's {@link TemplateIdTable}, so a set after a reload may leave a retired one out.
  * {@link TemplateCompiler} builds sets from data; the constructor builds one from code, as tests and M0 did.
  */
 public final class TemplateSet {
@@ -25,6 +27,7 @@ public final class TemplateSet {
 
     private final List<UnitTemplate> templates;
     private final List<JsonObject> flattened;
+    private final int[] position; // by net index: the template's place in the list, -1 for a retired index
     private final byte[] sha;
     private final ClassTokens tokens;
     private final ValuePaths valuePaths;
@@ -37,17 +40,22 @@ public final class TemplateSet {
         this(templates, json(templates));
     }
 
-    /** Each template's {@code netIndex} must be its position; ids must be distinct; speeds and sizes positive. */
+    /** Templates ascending by {@code netIndex}, ids distinct; speeds and sizes positive. */
     TemplateSet(List<UnitTemplate> templates, List<JsonObject> flattened) {
         if (templates.size() != flattened.size()) {
             throw new IllegalArgumentException("one JSON per template");
         }
         Set<String> tokenNames = new LinkedHashSet<>();
+        int indices = templates.stream().mapToInt(UnitTemplate::netIndex).max().orElse(-1) + 1;
+        this.position = new int[Math.max(0, indices)];
+        Arrays.fill(position, -1);
         for (int i = 0; i < templates.size(); i++) {
             UnitTemplate t = templates.get(i);
-            if (t.netIndex() != i) {
+            if (t.netIndex() < 0
+                    || (i > 0 && t.netIndex() <= templates.get(i - 1).netIndex())) {
                 throw new IllegalArgumentException(t.id() + " has net index " + t.netIndex() + " at position " + i);
             }
+            position[t.netIndex()] = i;
             if (!(t.walkSpeed() > 0 && t.width() > 0 && t.height() > 0 && t.turnRate() > 0 && t.radius() > 0)) {
                 throw new IllegalArgumentException(t.id() + " needs a positive speed, turn rate and size");
             }
@@ -74,17 +82,21 @@ public final class TemplateSet {
         this.tokens = new ClassTokens(tokenNames);
         this.valuePaths = new ValuePaths(paths);
         this.tokenPaths = new ValuePaths(lists);
-        this.values = new double[templates.size()][valuePaths.size()];
-        this.texts = new String[templates.size()][tokenPaths.size()];
-        for (int i = 0; i < templates.size(); i++) {
-            JsonObject json = copies.get(i);
+        this.values = new double[indices][valuePaths.size()];
+        this.texts = new String[indices][tokenPaths.size()];
+        for (double[] row : values) {
+            Arrays.fill(row, Double.NaN); // a retired index has no numbers
+        }
+        for (int k = 0; k < templates.size(); k++) {
+            int i = templates.get(k).netIndex();
+            JsonObject json = copies.get(k);
             for (ValuePath p : valuePaths.all()) {
                 JsonElement leaf = leaf(json, p.path());
                 values[i][p.id()] = leaf != null
                                 && leaf.isJsonPrimitive()
                                 && leaf.getAsJsonPrimitive().isNumber()
                         ? leaf.getAsDouble()
-                        : typed(templates.get(i), p.path());
+                        : typed(templates.get(k), p.path());
             }
             for (ValuePath p : tokenPaths.all()) {
                 JsonElement leaf = leaf(json, p.path());
@@ -112,10 +124,20 @@ public final class TemplateSet {
     }
 
     public UnitTemplate byIndex(int netIndex) {
-        if (netIndex < 0 || netIndex >= templates.size()) {
+        if (!has(netIndex)) {
             throw new IllegalArgumentException("no template with net index " + netIndex);
         }
-        return templates.get(netIndex);
+        return templates.get(position[netIndex]);
+    }
+
+    /** Whether a template holds {@code netIndex}: false for a retired index or one past the set's. */
+    public boolean has(int netIndex) {
+        return netIndex >= 0 && netIndex < position.length && position[netIndex] >= 0;
+    }
+
+    /** One past the highest net index: the size of anything indexed by template. */
+    public int indexCount() {
+        return position.length;
     }
 
     /** In net-index order. */
@@ -126,7 +148,7 @@ public final class TemplateSet {
     /** A copy of a template's flattened JSON, or null for an unknown id. */
     public @Nullable JsonObject flattened(TemplateId id) {
         UnitTemplate t = byId(id);
-        return t == null ? null : flattened.get(t.netIndex()).deepCopy();
+        return t == null ? null : flattened.get(position[t.netIndex()]).deepCopy();
     }
 
     /** The SHA-256 of the canonical JSON of every template. */

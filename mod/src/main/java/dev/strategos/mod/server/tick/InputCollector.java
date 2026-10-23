@@ -2,6 +2,7 @@ package dev.strategos.mod.server.tick;
 
 import dev.strategos.core.sim.AgentUpdate;
 import dev.strategos.core.sim.CommandEnvelope;
+import dev.strategos.core.sim.ContentSwap;
 import dev.strategos.core.sim.ExternalDamage;
 import dev.strategos.core.sim.InputEvent;
 import dev.strategos.core.sim.JobDelivery;
@@ -49,6 +50,18 @@ public final class InputCollector {
             @Nullable AgentUpdate agents,
             List<ExternalDamage> damage,
             @Nullable JobDelivery delivery) {
+        return collect(tick, inbox, pages, agents, damage, delivery, null);
+    }
+
+    /** As above, and a new template set to swap in, if a reload gave one (DATA-03). */
+    public static TickInputs collect(
+            long tick,
+            List<CommandEnvelope> inbox,
+            List<TerrainPage> pages,
+            @Nullable AgentUpdate agents,
+            List<ExternalDamage> damage,
+            @Nullable JobDelivery delivery,
+            @Nullable ContentSwap swap) {
         List<InputEvent> events = new ArrayList<>(pages.size() + inbox.size() + damage.size() + 2);
         events.addAll(pages);
         events.addAll(inbox);
@@ -58,6 +71,9 @@ public final class InputCollector {
         events.addAll(damage);
         if (delivery != null) {
             events.add(delivery);
+        }
+        if (swap != null) {
+            events.add(swap);
         }
         inbox.clear();
         damage.clear();

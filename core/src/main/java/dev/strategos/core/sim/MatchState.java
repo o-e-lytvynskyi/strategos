@@ -1,6 +1,7 @@
 package dev.strategos.core.sim;
 
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.diag.MatchLog;
 import dev.strategos.core.sim.nav.MobilityClass;
 import dev.strategos.core.sim.nav.PageCoord;
@@ -26,7 +27,7 @@ public final class MatchState {
 
     private long tick;
     private final MatchConfig config;
-    private final TemplateSet templates;
+    private TemplateSet templates;
     private final EntityStore entities;
     private final IdentityStore identity = new IdentityStore();
     private final MotionStore motion = new MotionStore();
@@ -267,6 +268,28 @@ public final class MatchState {
 
     void addAgents(List<Agent> more) {
         agents.addAll(more);
+    }
+
+    /**
+     * INGEST's template swap (DATA-03): the stats and the spatial index take the new set's values; refused, keeping the
+     * set, when a live unit's template is missing from it or holds another net index there.
+     */
+    void swapTemplates(TemplateSet set) {
+        for (int i = 0; i < entities.highWater(); i++) {
+            if (!entities.aliveAt(i)) {
+                continue;
+            }
+            int index = identity.templateIndex(i);
+            UnitTemplate now = templates.byIndex(index);
+            UnitTemplate next = set.byId(now.id());
+            if (next == null || next.netIndex() != index) {
+                log.warn(tick, "template set {} refused: unit {} uses {}, which it lacks", set, i, now.id());
+                return;
+            }
+        }
+        templates = set;
+        stats.swap(set);
+        spatial.swap(set);
     }
 
     /** Whether this tick's {@link JobDelivery} inputs list path request {@code id}; none on a tick without one. */

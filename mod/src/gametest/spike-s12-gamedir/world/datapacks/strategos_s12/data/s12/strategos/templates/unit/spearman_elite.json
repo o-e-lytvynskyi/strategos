@@ -1,0 +1,9 @@
+{
+  "parent": "s12:template/infantry",
+  "mixins": [
+    "s12:mixin/elite"
+  ],
+  "Identity": {
+    "name": "s12.unit.spearman_elite"
+  }
+}

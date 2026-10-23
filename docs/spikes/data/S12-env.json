@@ -1,0 +1,10 @@
+{
+  "jvm": "OpenJDK 64-Bit Server VM 21.0.12.1 (Eclipse Adoptium)",
+  "os": "Mac OS X 27.0.1 aarch64",
+  "cpus": 12,
+  "maxHeapMb": 4096,
+  "neoforge": "21.1.264",
+  "lithium": false,
+  "modernfix": false,
+  "ferritecore": false
+}

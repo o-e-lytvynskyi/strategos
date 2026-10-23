@@ -4,7 +4,15 @@ Date: 2026-10-21
 
 ## Status
 
-Accepted
+Accepted; targets confirmed 2026-10-23 by spike S12
+
+**Confirmed 2026-10-23** by spike [S12](../spikes/S12-content-cycle.md) (M1 T16): `/reload` takes
+0.26–0.33 s end to end with twenty test templates over two levels of inheritance and mixins, the
+templates' own share about 2 ms, and each of twelve planted errors is reported at its file and
+JSON pointer. Two details of the implementation, neither a change of the decision: at the server's
+start the listener applies before any server exists, so the server reads the same files itself
+when it starts; and the client acknowledges every set with the SHA-256 it decoded, the server
+resending on a mismatch (§1.6 D row 9 of the M1 spec).
 
 ## Context
 

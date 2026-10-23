@@ -445,8 +445,8 @@ narrow mixin with a compatibility test ([01-feasibility.md §7](01-feasibility.m
 | World generation data | World preset `strategos:arena` in `#minecraft:normal`; biome `strategos:arena` | The arena world (§3.2) | M1 |
 | Ticket controller | `strategos:match`, with a `LoadingValidationCallback` | Force-loading arenas (§3.4) | M1 |
 | `SavedData` | `strategos_registry` (overworld), `strategos_match_<id>` (hosting level) | Persistence (§5.6) | M0 |
-| Reload listener | `TemplateReloadListener` | Templates, maps, blueprints, AI scripts (§8.4) | M1 |
-| Payloads | `strategos:commands`, `strategos:match_join`, `strategos:match_state`, `strategos:feedback`, and the optional dev payloads `strategos:debug_subscribe` and `strategos:debug_feed` (M1); the whole catalogue in §12.2 | Networking | M1 onward |
+| Reload listener | `TemplateReloadListener`, named `strategos:templates` | Templates, maps, blueprints, AI scripts (§8.4) | M1 |
+| Payloads | `strategos:commands`, `strategos:match_join`, `strategos:match_state`, `strategos:feedback`, `strategos:template_set`, `strategos:template_ack`, and the optional dev payloads `strategos:debug_subscribe` and `strategos:debug_feed` (M1); the whole catalogue in §12.2 | Networking | M1 onward |
 | Key mappings, GUI layers | The movement overlay's key `key.strategos.overlay` (F8) and panel `strategos:debug_panel` (M1); RTS actions; resource bar, selection panel, command card, minimap, notices | Client (§13) | M1–M6 |
 | Commands | `/strategos` (server), `/strategos-client` (client) | Tooling (§15.3) | M0, M1 |
 | Config | `strategos-server.toml`, `strategos-client.toml` (`ModConfigSpec`) | Technical tunables (§15.4) | M1 |

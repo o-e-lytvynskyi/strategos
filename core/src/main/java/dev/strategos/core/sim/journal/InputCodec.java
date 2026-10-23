@@ -1,11 +1,15 @@
 package dev.strategos.core.sim.journal;
 
+import dev.strategos.core.content.TemplateIdTable;
+import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.protocol.TemplateSetView;
 import dev.strategos.core.protocol.WireException;
 import dev.strategos.core.protocol.WireReader;
 import dev.strategos.core.protocol.WireWriter;
 import dev.strategos.core.sim.Agent;
 import dev.strategos.core.sim.AgentUpdate;
 import dev.strategos.core.sim.CommandEnvelope;
+import dev.strategos.core.sim.ContentSwap;
 import dev.strategos.core.sim.ExternalDamage;
 import dev.strategos.core.sim.InputEvent;
 import dev.strategos.core.sim.JobDelivery;
@@ -18,14 +22,15 @@ import java.util.List;
 /**
  * Every journaled input as a one-byte kind and its body: 1 a command envelope; 2 a terrain page, as its page
  * coordinates and its slice's hash, the slice itself in the segment's 'L' records and the page rebuilt from it when
- * read; 3 a path delivery, a count and the ids ascending, each as its gap from the one before; 5 the tick's agents, a
- * count and each one's id and six floats; 6 damage a body took, as its handle, kind, amount and source kind (4 is the
- * spec's later content swap).
+ * read; 3 a path delivery, a count and the ids ascending, each as its gap from the one before; 4 a template set swapped
+ * in, as its {@link TemplateSetView}, whose version is checked when read; 5 the tick's agents, a count and each one's
+ * id and six floats; 6 damage a body took, as its handle, kind, amount and source kind.
  */
 final class InputCodec {
     private static final int COMMAND = 1;
     private static final int TERRAIN_PAGE = 2;
     private static final int JOB_DELIVERY = 3;
+    private static final int CONTENT_SWAP = 4;
     private static final int AGENT_UPDATE = 5;
     private static final int EXTERNAL_DAMAGE = 6;
 
@@ -62,6 +67,10 @@ final class InputCodec {
                 out.writeByte(damage.kind().code());
                 out.writeFloat(damage.amount());
                 out.writeByte(damage.sourceKind().code());
+            }
+            case ContentSwap swap -> {
+                out.writeByte(CONTENT_SWAP);
+                TemplateSetView.WIRE.write(out, TemplateSetView.of(swap.set(), TemplateIdTable.EMPTY));
             }
             case JobDelivery delivery -> {
                 out.writeByte(JOB_DELIVERY);
@@ -127,6 +136,20 @@ final class InputCodec {
                 } catch (IllegalArgumentException e) {
                     throw new WireException("external damage: " + e.getMessage());
                 }
+            }
+            case CONTENT_SWAP -> {
+                TemplateSetView view = TemplateSetView.WIRE.read(in);
+                TemplateSet set;
+                try {
+                    set = view.toSet();
+                } catch (IllegalArgumentException e) {
+                    throw new WireException("content swap: " + e.getMessage());
+                }
+                if (!set.version().equals(view.version())) {
+                    throw new WireException(
+                            "content swap: the set decodes to " + set.version() + ", not " + view.version());
+                }
+                yield new ContentSwap(set);
             }
             case JOB_DELIVERY -> {
                 int n = in.readVarInt(JobDelivery.MAX_IDS);

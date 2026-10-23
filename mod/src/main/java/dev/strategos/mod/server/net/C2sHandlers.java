@@ -3,6 +3,7 @@ package dev.strategos.mod.server.net;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.server.net.payload.CommandsPayload;
 import dev.strategos.mod.server.net.payload.DebugSubscribePayload;
+import dev.strategos.mod.server.net.payload.TemplateAckPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.slf4j.Logger;
@@ -27,6 +28,19 @@ public final class C2sHandlers {
             server.net().commands(player, payload);
         } catch (RuntimeException e) {
             LOG.error("the commands of {} failed", player.getGameProfile().getName(), e);
+        }
+    }
+
+    /** A client's answer to a template set (DATA-03.6): a mismatch is resent. */
+    public static void templateAck(TemplateAckPayload payload, IPayloadContext context) {
+        StrategosServer server = StrategosServer.getOrNull();
+        if (server == null || !(context.player() instanceof ServerPlayer player)) {
+            return;
+        }
+        try {
+            server.templateSync().ack(server, player, payload.ack());
+        } catch (RuntimeException e) {
+            LOG.error("the template ack of {} failed", player.getGameProfile().getName(), e);
         }
     }
 

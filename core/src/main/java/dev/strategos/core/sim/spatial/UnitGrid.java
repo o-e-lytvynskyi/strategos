@@ -1,6 +1,7 @@
 package dev.strategos.core.sim.spatial;
 
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.shared.HotPath;
 import dev.strategos.core.sim.EntityStore;
 import dev.strategos.core.sim.IdentityStore;
@@ -22,7 +23,7 @@ public final class UnitGrid {
 
     private final int cellsX;
     private final int cellsZ;
-    private final long[] templateClasses;
+    private long[] templateClasses = new long[0];
     private final int[] start; // per cell its first entry; the last holds the count
     private final int[] next;
     private final int[] factions;
@@ -43,9 +44,14 @@ public final class UnitGrid {
         this.start = new int[cellsX * cellsZ + 1];
         this.next = new int[cellsX * cellsZ];
         this.factions = new int[cellsX * cellsZ];
-        this.templateClasses = new long[templates.all().size()];
-        for (int t = 0; t < templateClasses.length; t++) {
-            templateClasses[t] = templates.tokens().bits(templates.byIndex(t).classes());
+        swap(templates);
+    }
+
+    /** Each template's class bits from {@code templates}, a new set's after a swap (DATA-03). */
+    public void swap(TemplateSet templates) {
+        templateClasses = new long[templates.indexCount()];
+        for (UnitTemplate t : templates.all()) {
+            templateClasses[t.netIndex()] = templates.tokens().bits(t.classes());
         }
     }
 

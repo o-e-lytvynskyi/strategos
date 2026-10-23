@@ -1,11 +1,15 @@
 package dev.strategos.mod.client.net;
 
+import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.protocol.TemplateAck;
 import dev.strategos.mod.client.StrategosClient;
 import dev.strategos.mod.server.net.payload.DebugFeedPayload;
 import dev.strategos.mod.server.net.payload.FeedbackPayload;
 import dev.strategos.mod.server.net.payload.MatchJoinPayload;
 import dev.strategos.mod.server.net.payload.MatchStatePayload;
 import dev.strategos.mod.server.net.payload.PayloadArrived;
+import dev.strategos.mod.server.net.payload.TemplateAckPayload;
+import dev.strategos.mod.server.net.payload.TemplateSetPayload;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -28,8 +32,25 @@ public final class ClientPayloads {
             case MatchStatePayload p -> StrategosClient.state(p.state());
             case FeedbackPayload p -> LOG.info("feedback: {}", p.message());
             case DebugFeedPayload p -> StrategosClient.debug().accept(p.message());
+            case TemplateSetPayload p -> templates(p);
             default -> LOG.debug("unhandled payload {}", event.payload().type().id());
         }
+    }
+
+    /**
+     * The server's template set (DATA-03.6): decoded and kept, then acknowledged with the SHA-256 of what this client
+     * decoded; a set that does not decode is acknowledged with zeros, so the server sends it again.
+     */
+    static void templates(TemplateSetPayload payload) {
+        byte[] sha = new byte[TemplateAck.SHA_BYTES];
+        try {
+            TemplateSet set = payload.view().toSet();
+            StrategosClient.templates(set);
+            sha = set.sha();
+        } catch (IllegalArgumentException e) {
+            LOG.error("the server's template set does not decode", e);
+        }
+        toServer(new TemplateAckPayload(new TemplateAck(sha)));
     }
 
     /** Sends {@code payload} to the server if the connection has its channel; false when it has none. */

@@ -1,13 +1,16 @@
 package dev.strategos.mod.server.command;
 
+import com.google.gson.JsonObject;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
+import dev.strategos.core.content.CanonicalJson;
 import dev.strategos.core.content.MapManifest;
 import dev.strategos.core.content.MapWaypoint;
+import dev.strategos.core.content.TemplateProblem;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.ValuePath;
 import dev.strategos.core.protocol.Command;
@@ -44,6 +47,7 @@ import dev.strategos.core.sim.stats.StatBreakdown;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.server.content.MapPackage;
 import dev.strategos.mod.server.content.MapPackageLoader;
+import dev.strategos.mod.server.content.ServerTemplates;
 import dev.strategos.mod.server.match.MapExporter;
 import dev.strategos.mod.server.match.MapImporter;
 import dev.strategos.mod.server.match.MatchOptions;
@@ -197,6 +201,7 @@ public final class StrategosCommands {
                                                         IntegerArgumentType.getInteger(ctx, "count"),
                                                         IntegerArgumentType.getInteger(ctx, "slot")))))))
                 .then(order())
+                .then(templates())
                 .then(Commands.literal("debug")
                         .then(Commands.literal("spawn")
                                 .executes(ctx -> spawn(ctx.getSource(), 1, 0))
@@ -398,6 +403,50 @@ public final class StrategosCommands {
             source.sendSuccess(() -> Component.literal(line), false);
         }
         return all.size();
+    }
+
+    /** {@code templates reload|errors|dump <id>} (DATA-03): the data packs' templates again, the last problems, one. */
+    private static LiteralArgumentBuilder<CommandSourceStack> templates() {
+        return Commands.literal("templates")
+                .then(Commands.literal("reload").executes(ctx -> reloadTemplates(ctx.getSource())))
+                .then(Commands.literal("errors").executes(ctx -> templateErrors(ctx.getSource())))
+                .then(Commands.literal("dump")
+                        .then(Commands.argument("template", ResourceLocationArgument.id())
+                                .executes(ctx -> dumpTemplate(ctx.getSource(), template(ctx)))));
+    }
+
+    private static int reloadTemplates(CommandSourceStack source) {
+        StrategosServer server = StrategosServer.get();
+        ServerTemplates.Outcome outcome = server.reloadTemplates();
+        if (!outcome.accepted()) {
+            source.sendFailure(Component.literal(outcome.message()));
+            outcome.problems().forEach(p -> source.sendFailure(Component.literal(p.toString())));
+            return 0;
+        }
+        source.sendSuccess(() -> Component.literal(outcome.message()), true);
+        return 1;
+    }
+
+    private static int templateErrors(CommandSourceStack source) {
+        ServerTemplates templates = StrategosServer.get().templates();
+        source.sendSuccess(() -> Component.literal(templates.outcome()), false);
+        if (templates.problems().isEmpty()) {
+            source.sendSuccess(() -> Component.literal("no problems"), false);
+        }
+        for (TemplateProblem p : templates.problems()) {
+            source.sendSuccess(() -> Component.literal(p.toString()), false);
+        }
+        return templates.problems().size();
+    }
+
+    private static int dumpTemplate(CommandSourceStack source, TemplateId id) {
+        JsonObject json = StrategosServer.get().templates().set().flattened(id);
+        if (json == null) {
+            source.sendFailure(Component.literal("no template " + id));
+            return 0;
+        }
+        source.sendSuccess(() -> Component.literal(id + " " + CanonicalJson.write(json)), false);
+        return 1;
     }
 
     private static int spawn(CommandSourceStack source, int count, int faction) {

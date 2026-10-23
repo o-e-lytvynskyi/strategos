@@ -1,0 +1,64 @@
+{
+  "run1": {
+    "reloadNanos": [
+      331666750,
+      281210000,
+      307534750
+    ],
+    "errorsReloadNanos": 278897458,
+    "templateWorkNanos": [
+      2274084,
+      1671792,
+      1624333
+    ],
+    "templates": 14,
+    "s12Units": 12,
+    "problems": [
+      "ERROR data/s12e/strategos/templates/unit/garbled.json: /: does not parse: java.io.EOFException: End of input at line 4 column 1 path $.Identity.name",
+      "ERROR data/s12e/strategos/templates/unit/not_an_object.json: /: a template is a JSON object",
+      "ERROR data/s12e/strategos/templates/unit/bad_op.json: /UnitMotion/walkSpeed/$op: unknown $op 'pow'; add, mul or replace",
+      "ERROR data/s12e/strategos/templates/unit/cycle_a.json: /parent: inheritance cycle s12e:unit/cycle_a \u2192 s12e:unit/cycle_b \u2192 s12e:unit/cycle_a",
+      "ERROR data/s12e/strategos/templates/unit/missing_mixin.json: /mixins/1: unknown mixin 's12:mixin/winged' in s12e:unit/missing_mixin \u2192 s12:mixin/winged",
+      "ERROR data/s12e/strategos/templates/unit/missing_parent.json: /parent: unknown parent 's12:template/legion' in s12e:unit/missing_parent \u2192 s12:template/legion",
+      "ERROR data/s12e/strategos/templates/unit/negative_speed.json: /UnitMotion/walkSpeed: expected a positive number, got -1",
+      "ERROR data/s12e/strategos/templates/unit/typo_key.json: /UnitMotion/walkSped: unknown key 'walkSped'; known here: [walkSpeed, turnRate, mobility]",
+      "ERROR data/s12e/strategos/templates/unit/unknown_mobility.json: /UnitMotion/mobility: unknown mobility 'flying'; M1 has infantry",
+      "ERROR data/s12e/strategos/templates/unit/wrong_type.json: /Body/width: expected a number, got \"wide\"",
+      "ERROR data/s12e/strategos/templates/unit/unknown_entity.json: /Body/entityType: unknown entity type 's12e:dragon'",
+      "ERROR data/s12e/strategos/templates/unit/unknown_skin.json: /Body/skin: unknown skin 's12e:units/gold'"
+    ],
+    "failures": [],
+    "pass": true
+  },
+  "run2": {
+    "reloadNanos": [
+      291683333,
+      261358250,
+      257028792
+    ],
+    "errorsReloadNanos": 270940417,
+    "templateWorkNanos": [
+      2002625,
+      1540833,
+      1441750
+    ],
+    "templates": 14,
+    "s12Units": 12,
+    "problems": [
+      "ERROR data/s12e/strategos/templates/unit/garbled.json: /: does not parse: java.io.EOFException: End of input at line 4 column 1 path $.Identity.name",
+      "ERROR data/s12e/strategos/templates/unit/not_an_object.json: /: a template is a JSON object",
+      "ERROR data/s12e/strategos/templates/unit/bad_op.json: /UnitMotion/walkSpeed/$op: unknown $op 'pow'; add, mul or replace",
+      "ERROR data/s12e/strategos/templates/unit/cycle_a.json: /parent: inheritance cycle s12e:unit/cycle_a \u2192 s12e:unit/cycle_b \u2192 s12e:unit/cycle_a",
+      "ERROR data/s12e/strategos/templates/unit/missing_mixin.json: /mixins/1: unknown mixin 's12:mixin/winged' in s12e:unit/missing_mixin \u2192 s12:mixin/winged",
+      "ERROR data/s12e/strategos/templates/unit/missing_parent.json: /parent: unknown parent 's12:template/legion' in s12e:unit/missing_parent \u2192 s12:template/legion",
+      "ERROR data/s12e/strategos/templates/unit/negative_speed.json: /UnitMotion/walkSpeed: expected a positive number, got -1",
+      "ERROR data/s12e/strategos/templates/unit/typo_key.json: /UnitMotion/walkSped: unknown key 'walkSped'; known here: [walkSpeed, turnRate, mobility]",
+      "ERROR data/s12e/strategos/templates/unit/unknown_mobility.json: /UnitMotion/mobility: unknown mobility 'flying'; M1 has infantry",
+      "ERROR data/s12e/strategos/templates/unit/wrong_type.json: /Body/width: expected a number, got \"wide\"",
+      "ERROR data/s12e/strategos/templates/unit/unknown_entity.json: /Body/entityType: unknown entity type 's12e:dragon'",
+      "ERROR data/s12e/strategos/templates/unit/unknown_skin.json: /Body/skin: unknown skin 's12e:units/gold'"
+    ],
+    "failures": [],
+    "pass": true
+  }
+}
