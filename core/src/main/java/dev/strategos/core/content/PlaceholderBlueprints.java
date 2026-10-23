@@ -16,12 +16,13 @@ public final class PlaceholderBlueprints {
     public static final String CIVIC_CENTRE = "strategos:civic_centre";
     public static final String HOUSE = "strategos:house";
     public static final String BARRACKS = "strategos:barracks";
+    public static final String FIELD = "strategos:field";
 
     private PlaceholderBlueprints() {}
 
     /** Every placeholder. */
     public static List<Blueprint> all() {
-        return List.of(civicCentre(), house(), barracks());
+        return List.of(civicCentre(), house(), barracks(), field());
     }
 
     /** Every placeholder, by id, in id order. */
@@ -52,6 +53,14 @@ public final class PlaceholderBlueprints {
         g.fill(0, 5, 0, 10, 5, 10, 0);
         g.fill(2, 6, 2, 8, 6, 8, 2);
         return g.blueprint(CIVIC_CENTRE, 5, 1, 0);
+    }
+
+    /** 5 x 2 x 5: farmland, moist, under young wheat (ECO-09); its door the south edge's middle, for the lint. */
+    public static Blueprint field() {
+        Grid g = new Grid(5, 2, 5, List.of("minecraft:farmland[moisture=7]", "minecraft:wheat[age=0]"));
+        g.fill(0, 0, 0, 4, 0, 4, 0);
+        g.fill(0, 1, 0, 4, 1, 4, 1);
+        return g.blueprint(FIELD, 2, 0, 0); // markers inside its two layers
     }
 
     /** 5 x 5 x 5: packed-mud walls on a cobblestone floor, crimson-plank corner posts and roof (crimson wood never burns). */

@@ -5,20 +5,22 @@ import dev.strategos.core.protocol.CancelTrain;
 import dev.strategos.core.protocol.CommandKind;
 import dev.strategos.core.protocol.CommandKinds;
 import dev.strategos.core.protocol.RejectReason;
+import dev.strategos.core.protocol.Reseed;
 import dev.strategos.core.protocol.SetRally;
 import dev.strategos.core.protocol.Train;
 import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.build.BuildingStore;
+import dev.strategos.core.sim.econ.Fields;
 import dev.strategos.core.sim.prod.Production;
 import org.jspecify.annotations.Nullable;
 
 /**
  * The production commands (PROD-01, PROD-03): Train joins an entry to a finished building's queue that trains the
  * template, paying its cost, or is refused (a full queue as {@code QUEUE_FULL}, a lack with the missing amounts);
- * CancelTrain refunds an entry; SetRally points buildings' new units at the ground, a node or a building. Each building
- * must be the issuer's faction's.
+ * CancelTrain refunds an entry; SetRally points buildings' new units at the ground, a node or a building; Reseed sows an
+ * empty field again (ECO-09). Each building must be the issuer's faction's.
  */
 final class TrainRules {
     private TrainRules() {}
@@ -87,6 +89,37 @@ final class TrainRules {
                 return Tally.rejectAll(envelope, kind(), 1, RejectReason.INVALID_ARGUMENT);
             }
             Production.cancel(state, cancel.building(), cancel.index());
+            return Tally.acceptAll(envelope, kind(), 1);
+        }
+    }
+
+    /** Reseed (ECO-09): an own finished field reaped empty ripens again, its reseed paid, or the lack is named. */
+    static final class ReseedRule implements CommandRule<Reseed> {
+        @Override
+        public CommandKind<Reseed> kind() {
+            return CommandKinds.RESEED;
+        }
+
+        @Override
+        public CommandResult apply(CommandEnvelope envelope, Reseed reseed, MatchState state) {
+            RejectReason reason = own(envelope, reseed.field(), state);
+            if (reason != null) {
+                return Tally.rejectAll(envelope, kind(), 1, reason);
+            }
+            if (state.buildings().field(reseed.field()) == 0) {
+                return Tally.rejectAll(envelope, kind(), 1, RejectReason.UNSUPPORTED);
+            }
+            if (!Fields.empty(state, reseed.field())) {
+                return Tally.rejectAll(envelope, kind(), 1, RejectReason.INVALID_ARGUMENT); // it still holds or ripens
+            }
+            int faction = state.buildings().faction(reseed.field());
+            long[] cost = Fields.reseedCost(state, reseed.field());
+            long[] missing = state.treasury().missing(faction, cost);
+            if (missing != null) {
+                return Tally.unaffordable(envelope, kind(), 1, missing);
+            }
+            state.treasury().pay(faction, cost);
+            Fields.reseed(state, reseed.field());
             return Tally.acceptAll(envelope, kind(), 1);
         }
     }

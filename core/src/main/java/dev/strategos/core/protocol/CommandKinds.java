@@ -33,6 +33,8 @@ public final class CommandKinds {
             "strategos:cancel_train", 12, CancelTrain.class, CancelTrain.CODEC, CancelTrain.WIRE, false);
     public static final CommandKind<SetRally> SET_RALLY =
             new CommandKind<>("strategos:set_rally", 13, SetRally.class, SetRally.CODEC, SetRally.WIRE, false);
+    public static final CommandKind<Reseed> RESEED =
+            new CommandKind<>("strategos:reseed", 14, Reseed.class, Reseed.CODEC, Reseed.WIRE, false);
     public static final CommandKinds DEFAULT = new CommandKinds(List.of(
             MOVE,
             STOP,
@@ -46,7 +48,8 @@ public final class CommandKinds {
             PLACE_BUILDING,
             TRAIN,
             CANCEL_TRAIN,
-            SET_RALLY));
+            SET_RALLY,
+            RESEED));
 
     private final List<CommandKind<?>> kinds;
     private final Codec<Command> codec;

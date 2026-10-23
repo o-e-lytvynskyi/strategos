@@ -19,4 +19,5 @@ public sealed interface Command extends Hashable
                 PlaceBuilding,
                 Train,
                 CancelTrain,
-                SetRally {}
+                SetRally,
+                Reseed {}

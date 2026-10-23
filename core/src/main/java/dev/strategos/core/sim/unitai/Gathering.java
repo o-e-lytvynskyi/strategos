@@ -13,6 +13,7 @@ import dev.strategos.core.sim.PlaceMoved;
 import dev.strategos.core.sim.econ.CarryStore;
 import dev.strategos.core.sim.econ.Dropsites;
 import dev.strategos.core.sim.econ.Felling;
+import dev.strategos.core.sim.econ.Fields;
 import dev.strategos.core.sim.econ.Forage;
 import dev.strategos.core.sim.econ.GatherRates;
 import dev.strategos.core.sim.econ.NodeStore;
@@ -144,13 +145,20 @@ final class Gathering {
             ctx.go(UnitAi.GATHER_RETURNING);
             return;
         }
-        long acc = ctx.data0() + rates.rate(s.stats(), i, resource, subtype);
+        long rate = rates.rate(s.stats(), i, resource, subtype);
+        if (nodes.kind(node) == MaterialKind.CROP) { // a field's farmers share in diminishing returns (ECO-09)
+            rate = Math.round(rate * Fields.share(Fields.farmers(nodes, node)));
+        }
+        long acc = ctx.data0() + rate;
         long whole = acc / TICKS_PER_SECOND;
         ctx.setData((int) (acc - whole * TICKS_PER_SECOND), 0);
         long want = Math.min(whole, room);
         if (want > 0) {
-            long taken =
-                    nodes.kind(node) == MaterialKind.LOG ? Felling.take(s, node, want) : Forage.take(s, node, want);
+            long taken = switch (nodes.kind(node)) {
+                case LOG -> Felling.take(s, node, want);
+                case CROP -> Fields.take(s, node, want);
+                default -> Forage.take(s, node, want);
+            };
             if (taken > 0) {
                 carry.add(i, resource, subtype, taken);
                 s.ledger().taken(resource, taken);

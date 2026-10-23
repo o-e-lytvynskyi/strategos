@@ -33,20 +33,23 @@ class TemplateSetTest {
                 .as("ids sort the worker after the infantry: M2's indices stay")
                 .isEqualTo(2);
         assertThat(worker.classes()).containsExactly("Builder", "Gatherer", "Organic", "Unit", "Worker");
-        assertThat(set.all()).hasSize(6);
+        assertThat(set.all()).hasSize(7);
         assertThat(set.all().subList(0, 3)).containsExactly(walker, infantry, worker);
-        assertThat(set.all().subList(3, 6))
+        assertThat(set.all().subList(3, 7))
                 .as("the buildings, appended after M2's pinned units, in id order")
                 .extracting(t -> t.id().value())
                 .containsExactly(
-                        "strategos:building/barracks", "strategos:building/civic_centre", "strategos:building/house");
-        assertThat(set.all().subList(3, 6)).allMatch(UnitTemplate::isBuilding);
+                        "strategos:building/barracks",
+                        "strategos:building/civic_centre",
+                        "strategos:building/field",
+                        "strategos:building/house");
+        assertThat(set.all().subList(3, 7)).allMatch(UnitTemplate::isBuilding);
         assertThat(set.blueprint(4)).isEqualTo(PlaceholderBlueprints.civicCentre());
         assertThat(set.blueprint(0)).isNull();
         assertThat(set.byId(new TemplateId("strategos:unit/nobody"))).isNull();
         assertThat(set.tokens().all())
                 .contains("Builder", "Gatherer", "Infantry", "Organic", "Spearman", "Unit", "Worker")
-                .contains("Barracks", "CivicCentre", "House", "Structure");
+                .contains("Barracks", "CivicCentre", "Field", "House", "Structure");
         assertThat(set.valuePaths().byPath("UnitMotion/walkSpeed")).isNotNull();
     }
 
@@ -97,11 +100,11 @@ class TemplateSetTest {
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> set(new UnitTemplate(walker.id(), 0, walker.bodyType(), 0, 0.6f, 1.8f)))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> TemplateSet.builtin().byIndex(6)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> TemplateSet.builtin().byIndex(7)).isInstanceOf(IllegalArgumentException.class);
     }
 
     // M3: the buildings and their blueprints
-    private static final String BUILTIN_VERSION = "55a56cdde76a6d701b12a2cb3825050ac4a2e5458e84b13b0be1f4067b1e0734";
+    private static final String BUILTIN_VERSION = "ca1e8589258b1162fde626ce0a33f04b79c9dd603e50426cc6dec472620425f2";
 
     private static TemplateSet set(UnitTemplate template) {
         return new TemplateSet(List.of(template));

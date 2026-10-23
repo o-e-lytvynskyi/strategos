@@ -14,7 +14,8 @@ import java.util.function.IntPredicate;
  * the amount left in thousandths and the amount each block yields, where its work centres (a trunk's base), its blocks
  * top-down with how many are gone, and its work slots: the cells round its base, each claimed by a unit's handle or
  * free. A bush also regrows (ECO-05): so many thousandths a second, kept in a fixed-point remainder, up to the amount it
- * was found with, while it holds any. Not commanded, so not entities (M3 spec §1.6 row 3).
+ * was found with, while it holds any; a field (ECO-09) keeps in the same remainder the ticks it has left to ripen. Not
+ * commanded, so not entities (M3 spec §1.6 row 3).
  */
 @CoreApi
 public final class NodeStore {
@@ -218,9 +219,26 @@ public final class NodeStore {
         return gained;
     }
 
-    /** Whether the node yields nothing more. */
+    /** Whether the node yields nothing more: empty, and not a field that ripens. */
     public boolean exhausted(int id) {
-        return amount[at(id)] <= 0;
+        int k = at(id);
+        return amount[k] <= 0 && !(kind[k] == MaterialKind.CROP && growth[k] > 0);
+    }
+
+    /** A field's ticks left to ripen, 0 for a ripe or empty one or any other node (ECO-09). */
+    public long ripening(int id) {
+        int k = at(id);
+        return kind[k] == MaterialKind.CROP ? growth[k] : 0;
+    }
+
+    /** Field node {@code id} ripens for {@code ticks} more. */
+    public void setRipening(int id, long ticks) {
+        growth[at(id)] = (int) Math.max(0, ticks);
+    }
+
+    /** A ripe field holds {@code value} thousandths again. */
+    public void refill(int id, long value) {
+        amount[at(id)] = Math.max(0, value);
     }
 
     /** The free slots. */
@@ -403,7 +421,7 @@ public final class NodeStore {
             for (int c : claims[k]) {
                 x = Hasher.mix(x, c);
             }
-            if (regrow[k] != 0) { // only bushes regrow (ECO-05), so trees hash as before
+            if (regrow[k] != 0 || kind[k] == MaterialKind.CROP) { // only bushes and fields (ECO-05, -09) grow
                 x = Hasher.mix(x, regrow[k]);
                 x = Hasher.mix(x, growth[k]);
                 x = Hasher.mix(x, most[k]);

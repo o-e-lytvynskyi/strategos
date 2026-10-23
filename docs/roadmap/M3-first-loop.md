@@ -497,7 +497,8 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
      only through the core, while a control crop outside the match grows (L3).
   4. A field yields and is reseeded in a GameTest (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** ECO-05, BLD-01 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-24 — M3 T16: n = 1 to 5 farmers reap `rate × (1 − 0.9ⁿ) ÷ 0.1` within a thousandth each (1); a field reaped empty stays at age 0 until a reseed, which charges its 40 wood or names what is lacking (2); with random ticks and a first-person player beside it, the field's age follows only the core while a control wheat outside grows (3); two farmers reap a field empty, bring its food home, and a reseed ripens it again (4) (spec §1.6 rows 52–53)
 
 #### PROD-01 · Production queue
 - **Value:** Buildings train units in a queue you can manage.

@@ -56,6 +56,7 @@ public final class BuildingStore {
     private double[] rallyX = new double[8];
     private double[] rallyZ = new double[8];
     private int[] rallyTarget = new int[8];
+    private int[] field = new int[8]; // a field's crop node, 0 for none (ECO-09)
     // a step's scratch, neither hashed nor saved: the builders at work this tick and their rates
     private int[] tickBuilders = new int[8];
     private double[] tickRates = new double[8];
@@ -100,6 +101,7 @@ public final class BuildingStore {
         this.rallyX[k] = 0;
         this.rallyZ[k] = 0;
         this.rallyTarget[k] = 0;
+        this.field[k] = 0;
         return Handle.of(BASE + k, generation[k]);
     }
 
@@ -129,6 +131,16 @@ public final class BuildingStore {
         rallyX = Arrays.copyOf(rallyX, n);
         rallyZ = Arrays.copyOf(rallyZ, n);
         rallyTarget = Arrays.copyOf(rallyTarget, n);
+        field = Arrays.copyOf(field, n);
+    }
+
+    /** A field's crop node, 0 for none or for a building that is no field (ECO-09). */
+    public int field(int handle) {
+        return field[at(handle)];
+    }
+
+    public void setField(int handle, int node) {
+        field[at(handle)] = node;
     }
 
     /** The most entries a queue holds (PROD-01). */
@@ -525,7 +537,8 @@ public final class BuildingStore {
             double damage,
             Site site,
             Production production,
-            Rally rally) {}
+            Rally rally,
+            int field) {}
 
     public List<Saved> save() {
         List<Saved> out = new ArrayList<>(high);
@@ -560,7 +573,8 @@ public final class BuildingStore {
                     damage[k],
                     site,
                     production,
-                    new Rally(rallyKind[k], rallyX[k], rallyZ[k], rallyTarget[k])));
+                    new Rally(rallyKind[k], rallyX[k], rallyZ[k], rallyTarget[k]),
+                    field[k]));
         }
         return out;
     }
@@ -600,6 +614,7 @@ public final class BuildingStore {
             rallyX[k] = s.rally().x();
             rallyZ[k] = s.rally().z();
             rallyTarget[k] = s.rally().target();
+            field[k] = s.field();
         }
     }
 }

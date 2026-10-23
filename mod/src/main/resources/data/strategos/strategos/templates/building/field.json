@@ -1,0 +1,9 @@
+{
+  "parent": "strategos:template/building_base",
+  "Identity": { "name": "strategos.building.field", "classes": "+Field" },
+  "Building": { "blueprint": "strategos:field", "material": "wood" },
+  "Footprint": { "obstructs": 0 },
+  "Health": { "max": 200 },
+  "Cost": { "resources": { "wood": 60 }, "time": 20 },
+  "Field": { "amount": 300, "ripenTime": 30, "reseed": { "wood": 40 } }
+}

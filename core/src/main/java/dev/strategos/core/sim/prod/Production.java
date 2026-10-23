@@ -14,6 +14,7 @@ import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.build.Construction;
 import dev.strategos.core.sim.build.Placing;
 import dev.strategos.core.sim.econ.Dropsites;
+import dev.strategos.core.sim.econ.Fields;
 import dev.strategos.core.sim.order.OrderKind;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
@@ -153,9 +154,12 @@ public final class Production {
         s.bus().publish(new OrderReceived(unit));
     }
 
-    /** A building of faction {@code faction} now stands finished: its housing counts. */
+    /** Building {@code handle} now stands finished: its housing counts, and a field starts to ripen. */
     public static void finished(MatchState s, int handle) {
         s.population().house(s.buildings().faction(handle), housing(s, handle));
+        if (Fields.isField(s, s.buildings().template(handle), s.buildings().faction(handle))) {
+            Fields.create(s, handle); // a field's crop starts to ripen (ECO-09)
+        }
     }
 
     /**
@@ -168,6 +172,7 @@ public final class Production {
         if (b.state(handle) == BuildingStore.COMPLETE) {
             s.population().unhouse(faction, housing(s, handle));
         }
+        Fields.lost(s, handle);
         while (b.queueSize(handle) > 0) {
             cancel(s, handle, b.queueSize(handle) - 1);
         }

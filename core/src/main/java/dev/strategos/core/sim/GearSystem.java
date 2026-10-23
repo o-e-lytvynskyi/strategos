@@ -1,7 +1,6 @@
 package dev.strategos.core.sim;
 
 import dev.strategos.core.sim.econ.CarryStore;
-import dev.strategos.core.sim.nav.MaterialKind;
 import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.unitai.UnitAi;
 import java.util.Arrays;
@@ -68,6 +67,10 @@ final class GearSystem implements MatchSystem {
         if (node < 1 || node > s.nodes().count()) {
             return UnitGear.NONE;
         }
-        return s.nodes().kind(node) == MaterialKind.LOG ? UnitGear.AXE : UnitGear.NONE;
+        return switch (s.nodes().kind(node)) {
+            case LOG -> UnitGear.AXE;
+            case CROP -> UnitGear.HOE;
+            default -> UnitGear.NONE;
+        };
     }
 }

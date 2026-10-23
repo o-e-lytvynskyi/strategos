@@ -424,4 +424,133 @@ public final class EcoTests {
                         (rt.pages().captured() - state.captured) + " pages captured after the felling started"))
                 .thenSucceed();
     }
+
+    static final TemplateId FIELD = new TemplateId("strategos:building/field");
+
+    private static int cropAge(GameTestHelper h, BlockPos relative) {
+        BlockState state = h.getBlockState(relative);
+        check(state.is(Blocks.WHEAT), "no wheat at " + relative + ": " + state);
+        return state.getValue(net.minecraft.world.level.block.CropBlock.AGE);
+    }
+
+    /** The age the core shows for field node {@code n}, as {@code Fields#age} computes it, ripening over 600 ticks. */
+    private static int expectedAge(NodeView n) {
+        if (n.ripening() > 0) {
+            return (int) Math.min(6, (600 - n.ripening()) * 7 / 600);
+        }
+        return n.amount() <= 0 ? 0 : (int) ((7 * n.amount() + n.most() - 1) / n.most());
+    }
+
+    /**
+     * ECO-09.3: with random ticks running and a first-person player beside the field, its crop's age changes only as the
+     * core says, a tick behind at most, while a control wheat outside the match grows by itself.
+     */
+    @StrategosTest(batch = "eco_crops", timeoutTicks = 1_600, solo = true)
+    public static void cropsChangeOnlyThroughTheCore(GameTestHelper h) {
+        BlockPos control = new BlockPos(28, 2, 8);
+        h.setBlock(
+                control.below(),
+                Blocks.FARMLAND.defaultBlockState().setValue(net.minecraft.world.level.block.FarmBlock.MOISTURE, 7));
+        h.setBlock(control, Blocks.WHEAT);
+        MatchRuntime rt = MatchFixture.create(h, 0, 0, 24, 32, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
+        rt.submit(PlayerSlot.ADMIN, new SpawnBuilding(CIVIC_CENTRE, new FactionSlot(0), 2, 16, 0));
+        rt.submit(PlayerSlot.ADMIN, new SpawnBuilding(FIELD, new FactionSlot(0), 8, 4, 0));
+        net.minecraft.world.phys.Vec3 at = h.absoluteVec(new net.minecraft.world.phys.Vec3(14.5, 2, 6.5));
+        dev.strategos.gametest.net.MockViewer player =
+                dev.strategos.gametest.net.MockViewer.join(h.getLevel(), "strategos-crops", at.x, at.y, at.z, 4);
+        GameRules.IntegerValue rule = h.getLevel().getGameRules().getRule(GameRules.RULE_RANDOMTICKING);
+        RANDOM_TICKS.compareAndSet(-1, rule.get());
+        rule.set(1_000, h.getLevel().getServer()); // the card's 3 would take minutes to grow the control once
+        var state = new Object() {
+            int lagging;
+            int changes;
+            int last = -1;
+        };
+        h.onEachTick(() -> {
+            NodeView field = core(rt).queries().nodes().stream()
+                    .filter(n -> n.kind() == MaterialKind.CROP)
+                    .findFirst()
+                    .orElse(null);
+            if (field == null || !h.getBlockState(new BlockPos(10, 2, 6)).is(Blocks.WHEAT)) {
+                return; // the writer has not raised the field yet
+            }
+            int shown = cropAge(h, new BlockPos(10, 2, 6));
+            int want = expectedAge(field);
+            if (shown != want) {
+                state.lagging++; // the writer's flush may come a tick after the core's word
+                if (state.lagging > 2) {
+                    h.fail("the crop shows " + shown + " where the core says " + want);
+                }
+            } else {
+                state.lagging = 0;
+            }
+            if (shown != state.last) {
+                state.changes++;
+                state.last = shown;
+            }
+        });
+        h.startSequence()
+                .thenWaitUntil(() -> {
+                    check(cropAge(h, control) >= 3, "the control has not grown yet");
+                    check(state.changes >= 4, "the field's crop rose only " + state.changes + " times");
+                })
+                .thenExecute(player::close)
+                .thenSucceed();
+    }
+
+    /** ECO-09.4: two farmers reap a field empty, its food comes home, and paid for, it is sown again and ripens. */
+    @StrategosTest(batch = "eco_gather", timeoutTicks = 12_000)
+    public static void aFieldYieldsAndIsReseeded(GameTestHelper h) {
+        MatchRuntime rt = Units.match(h);
+        rt.submit(PlayerSlot.ADMIN, new SpawnBuilding(CIVIC_CENTRE, new FactionSlot(0), 2, 16, 0));
+        rt.submit(PlayerSlot.ADMIN, new SpawnBuilding(FIELD, new FactionSlot(0), 8, 4, 0));
+        rt.submit(PlayerSlot.ADMIN, new dev.strategos.core.protocol.Grant(new FactionSlot(0), "wood", 100));
+        workers(rt, 12, 8, 2);
+        int y = h.absolutePos(new BlockPos(10, 2, 6)).getY();
+        var state = new Object() {
+            int field;
+        };
+        h.startSequence()
+                .thenWaitUntil(() -> check(
+                        handles(rt).length == 2
+                                && core(rt).queries().buildings().size() == 2,
+                        "not ready"))
+                .thenExecute(() -> {
+                    state.field = core(rt).queries().buildings().stream()
+                            .filter(b -> b.template().equals(FIELD))
+                            .findFirst()
+                            .orElseThrow()
+                            .handle();
+                    rt.submit(PlayerSlot.ADMIN, Gather.replace(UnitSet.of(handles(rt)), 10, y, 6));
+                })
+                .thenWaitUntil(() -> {
+                    NodeView n = core(rt).queries().nodes().stream()
+                            .filter(v -> v.kind() == MaterialKind.CROP)
+                            .findFirst()
+                            .orElseThrow();
+                    check(n.amount() == 0 && n.ripening() == 0, "not reaped yet: " + n);
+                })
+                .thenWaitUntil(() -> {
+                    FactionTreasury t = core(rt).queries().treasury(new FactionSlot(0));
+                    check(t.gathered().get(0) >= 300_000, "not all home yet: " + t.gathered());
+                    check(cropAge(h, new BlockPos(10, 2, 6)) == 0, "an empty field's crop is not at age 0");
+                })
+                .thenExecute(() -> rt.submit(PlayerSlot.ADMIN, new dev.strategos.core.protocol.Reseed(state.field)))
+                .thenWaitUntil(() -> {
+                    NodeView n = core(rt).queries().nodes().stream()
+                            .filter(v -> v.kind() == MaterialKind.CROP)
+                            .findFirst()
+                            .orElseThrow();
+                    check(n.amount() == 300_000, "not ripe again: " + n);
+                    check(
+                            core(rt).queries()
+                                            .treasury(new FactionSlot(0))
+                                            .stock()
+                                            .get(1)
+                                    == 60_000,
+                            "the reseed did not cost forty wood");
+                    check(cropAge(h, new BlockPos(10, 2, 6)) == 7, "the ripe crop is not at age 7");
+                })
+                .thenSucceed();
+    }
 }

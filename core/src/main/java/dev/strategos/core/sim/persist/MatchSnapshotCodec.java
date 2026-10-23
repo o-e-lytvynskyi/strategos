@@ -325,7 +325,8 @@ public final class MatchSnapshotCodec {
                     PRODUCTION
                             .optionalFieldOf("production", BuildingStore.Production.NONE)
                             .forGetter(BuildingStore.Saved::production),
-                    RALLY.optionalFieldOf("rally", BuildingStore.Rally.NONE).forGetter(BuildingStore.Saved::rally))
+                    RALLY.optionalFieldOf("rally", BuildingStore.Rally.NONE).forGetter(BuildingStore.Saved::rally),
+                    Codec.INT.optionalFieldOf("field", 0).forGetter(BuildingStore.Saved::field))
             .apply(i, BuildingStore.Saved::new));
 
     /** The fields, without {@code "v"}. */

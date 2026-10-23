@@ -9,6 +9,7 @@ import dev.strategos.core.diag.MatchLog;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.sim.build.BuildingStore;
+import dev.strategos.core.sim.build.Placing;
 import dev.strategos.core.sim.combat.Damage;
 import dev.strategos.core.sim.combat.HealthStore;
 import dev.strategos.core.sim.econ.Amount;
@@ -325,8 +326,10 @@ public final class MatchState {
     public int placeComplete(int template, int faction, Footprint at, int baseY) {
         int handle = buildings.create(template, faction, at, baseY, BuildingStore.COMPLETE, BuildingStore.FULL);
         Blueprint b = blueprintOf(handle);
-        for (int cell : at.columns(b)) {
-            blockColumn(cell >>> 16, cell & 0xFFFF);
+        if (Placing.obstructs(this, template, faction)) { // a field does not (ECO-09)
+            for (int cell : at.columns(b)) {
+                blockColumn(cell >>> 16, cell & 0xFFFF);
+            }
         }
         int site = Handle.index(handle);
         boolean[] filled = new boolean[b.sizeX() * b.sizeY() * b.sizeZ()];
@@ -385,10 +388,29 @@ public final class MatchState {
             outputs.add(new WorldEffect(site, WritePriority.DAMAGE_STAGE, x, baseY + b.y(k), z, WorldEffect.AIR, 0));
             editVoxel(x, baseY + b.y(k), z, BlockClass.AIR);
         }
-        for (int cell : at.columns(b)) {
-            releaseColumn(cell >>> 16, cell & 0xFFFF);
+        if (Placing.obstructs(this, buildings.template(handle), buildings.faction(handle))) {
+            for (int cell : at.columns(b)) {
+                releaseColumn(cell >>> 16, cell & 0xFFFF);
+            }
         }
         buildings.remove(handle);
+    }
+
+    /** A node added after discovery, a field's (ECO-09): its id; the index is built again on its next use. */
+    public int addNode(
+            MaterialKind kind,
+            int resource,
+            int subtype,
+            long perBlock,
+            long amount,
+            double anchorX,
+            double anchorZ,
+            int baseY,
+            long[] blocks,
+            int[] slots) {
+        int id = nodes.add(kind, resource, subtype, perBlock, amount, anchorX, anchorZ, baseY, blocks, slots);
+        nodeIndex = null;
+        return id;
     }
 
     /** Where the nodes are, built on first use after discovery or a restore. */

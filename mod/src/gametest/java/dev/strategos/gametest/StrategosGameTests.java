@@ -58,6 +58,12 @@ public final class StrategosGameTests {
         afterBatch(level, "eco_growth");
     }
 
+    @AfterBatch(batch = "eco_crops")
+    public static void afterEcoCrops(ServerLevel level) {
+        dev.strategos.gametest.suites.EcoTests.restoreRandomTicks(level);
+        afterBatch(level, "eco_crops");
+    }
+
     @AfterBatch(batch = "eco_gather")
     public static void afterEcoGather(ServerLevel level) {
         afterBatch(level, "eco_gather");

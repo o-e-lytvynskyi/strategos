@@ -29,7 +29,8 @@ class CommandKindsTest {
                         "strategos:place_building",
                         "strategos:train",
                         "strategos:cancel_train",
-                        "strategos:set_rally");
+                        "strategos:set_rally",
+                        "strategos:reseed");
     }
 
     @Test

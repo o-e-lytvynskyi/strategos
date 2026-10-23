@@ -9,7 +9,7 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-24 — M3 T9–T15
+## 2026-10-24 — M3 T9–T16
 
 - **The owner, past midnight:** «можешь любые тесты проводить и как закончишь м3 - начинай м4, все решения
   принимай сам, которые рекомендуешь» (STATE item 6).
@@ -42,7 +42,12 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
   and go: the civic centre houses 20, a house 5, the cap never past the match's 150. A building trains up to five in
   turn, paid on joining and refunded on cancel; a head at the cap waits with one "housing needed" notice, and a
   trained unit steps out by the door. A rally point on a tree sends new workers to chop it, on the ground walks them
-  there, and survives a save. The rally marker's golden waits for a selected building (UI-06) in T30. Next: T16, fields.
+  there, and survives a save. The rally marker's golden waits for a selected building (UI-06) in T30.
+- **M3 T16 · ECO-09 done, fields with manual reseed.** A field (5 × 5, 60 wood, walked over) ripens for 30 s, its
+  wheat rising through every age, then holds 300 food; up to five farmers reap it, each extra one adding less
+  (0.9 of the one before, as in 0 A.D.), and the crop's age shows what is left. Reaped empty it stays bare until its
+  owner pays 40 wood to sow it again. Vanilla never grows a crop inside a match: the core alone sets the ages. Next:
+  T17, the selection panel and command card.
 
 ## 2026-10-23 (evening) — M3 spec, T1–T8
 

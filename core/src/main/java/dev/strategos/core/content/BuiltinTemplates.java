@@ -72,7 +72,7 @@ final class BuiltinTemplates {
               "Cost": { "resources": { "food": 60 }, "population": 1, "time": 10 },
               "Builder": { "rate": 1 },
               "ResourceGatherer": {
-                "rates": { "food": { "fruit": 1 }, "wood": { "tree": 0.6 } },
+                "rates": { "food": { "fruit": 1, "grain": 0.5 }, "wood": { "tree": 0.6 } },
                 "capacities": { "food": 10, "wood": 10 }
               },
               "Body": { "skin": "strategos:units/worker" }
@@ -99,6 +99,17 @@ final class BuiltinTemplates {
               "Dropsite": { "resources": "food wood stone iron" },
               "Housing": { "capacity": 20 },
               "Trainer": { "units": "strategos:unit/worker" }
+            }
+            """;
+    static final String FIELD = """
+            {
+              "parent": "strategos:template/building_base",
+              "Identity": { "name": "strategos.building.field", "classes": "+Field" },
+              "Building": { "blueprint": "strategos:field", "material": "wood" },
+              "Footprint": { "obstructs": 0 },
+              "Health": { "max": 200 },
+              "Cost": { "resources": { "wood": 60 }, "time": 20 },
+              "Field": { "amount": 300, "ripenTime": 30, "reseed": { "wood": 40 } }
             }
             """;
     static final String HOUSE = """
@@ -143,6 +154,7 @@ final class BuiltinTemplates {
                         raw("strategos:unit/infantry", INFANTRY),
                         raw("strategos:unit/worker", WORKER),
                         raw("strategos:building/civic_centre", CIVIC_CENTRE),
+                        raw("strategos:building/field", FIELD),
                         raw("strategos:building/house", HOUSE),
                         raw("strategos:building/barracks", BARRACKS)),
                 PINNED);

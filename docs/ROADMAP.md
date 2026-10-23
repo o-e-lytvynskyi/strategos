@@ -346,7 +346,7 @@ Cards: [roadmap/M3-first-loop.md](roadmap/M3-first-loop.md#cards). 27 cards, at 
 | BLD-02 | Placement mode and validators | M | BLD-01, CAM-04 | in_progress |
 | BLD-03 | Progressive construction | M | BLD-02, UNIT-04, BLD-15 | done |
 | ECO-06 | Population and housing | S | ECO-01, BLD-01, D-01 | done |
-| ECO-09 | Fields with manual reseed | M | ECO-05, BLD-01 | specified |
+| ECO-09 | Fields with manual reseed | M | ECO-05, BLD-01 | done |
 | PROD-01 | Production queue | M | BLD-01, ECO-06 | done |
 | PROD-03 | Rally points | S | PROD-01, ECO-05 | in_progress |
 | UI-06 | Selection panel and command card | M | UI-03, PROD-01, BLD-02 | specified |

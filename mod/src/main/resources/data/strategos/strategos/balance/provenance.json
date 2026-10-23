@@ -41,6 +41,7 @@
     "Cost/time": "Ten seconds: a civic centre with a full queue adds a worker every ten seconds, the pace the first house's timing target (1:30) assumes",
     "Builder/rate": "One builder's worth: a building's time is what one worker takes, and more builders add with diminishing returns (BLD-03)",
     "ResourceGatherer/rates/food/fruit": "A berry a second: a bush's sixty food in a minute, so the first worker pays back its own cost quickly",
+    "ResourceGatherer/rates/food/grain": "Half a berry picker's: a field's farmers are its steady food, five of them about two a second together (ECO-09)",
     "ResourceGatherer/rates/wood/tree": "Slower than picking: a log's twenty wood in about half a minute, so an oak keeps a worker busy for a few minutes",
     "ResourceGatherer/capacities/food": "Ten food a trip: short trips, so a bush near the centre keeps food coming steadily",
     "ResourceGatherer/capacities/wood": "Ten wood a trip, half a log: eight trips pay for the first house (the timing target, 1:30)"
@@ -50,6 +51,7 @@
     "#minecraft:leaves": "Leaves yield nothing: they are the canopy that thins as a tree is felled (ECO-03)",
     "#minecraft:base_stone_overworld": "Five stone a block of rock: indexed now, gathered from ECO-07 (M4)",
     "#c:ores/iron": "Ten iron a block of ore: indexed now, gathered from ECO-08 (M4)",
+    "minecraft:wheat": "A field's crop: its food is the field's own amount, not the block's (ECO-09)",
     "minecraft:sweet_berry_bush": "Sixty food a bush, a worker's cost; a bush left alone fills again in ten minutes, but an emptied one stays empty: early food that runs out, so fields matter (ECO-09)"
   },
   "strategos:building/civic_centre": {
@@ -69,6 +71,15 @@
     "Cost/resources/wood": "Eighty wood: a worker's first trip or two to a tree; the first house by 1:30 (the timing target)",
     "Cost/time": "Thirty seconds for one builder",
     "Housing/capacity": "Five: a house a few trainings, so housing paces growth"
+  },
+  "strategos:building/field": {
+    "Health/max": "Two hundred: a field burns quickly, a cheap thing to raid",
+    "Cost/resources/wood": "Sixty wood: a worker's first two trips to a tree, after the berries run low",
+    "Cost/time": "Twenty seconds: a field goes in faster than a house",
+    "Footprint/obstructs": "No: farmers stand on their field, and units walk through the crop",
+    "Field/amount": "Three hundred food a sowing: five farmers reap it in about two and a half minutes",
+    "Field/ripenTime": "Thirty seconds to ripen, while its farmers wait",
+    "Field/reseed/wood": "Forty wood to sow again: cheaper than a new field, so a reseed is the habit (D-14)"
   },
   "strategos:building/barracks": {
     "Health/max": "Twelve hundred: between a house and the centre",

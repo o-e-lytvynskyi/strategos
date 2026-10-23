@@ -73,10 +73,13 @@ public final class Construction {
         int baseY = buildings.baseY(handle);
         int site = Handle.index(handle);
         MatchBounds bounds = s.config().bounds();
+        boolean obstructs = Placing.obstructs(s, buildings.template(handle), buildings.faction(handle));
         for (int cell : at.columns(b)) {
             int x = cell >>> 16;
             int z = cell & 0xFFFF;
-            s.blockColumn(x, z);
+            if (obstructs) {
+                s.blockColumn(x, z); // a field's are walked on (ECO-09)
+            }
             double ground = Placing.floor(s.surfaces(), bounds, x, z);
             int top = Double.isNaN(ground) ? baseY : (int) Math.round(ground) - 1; // the ground's top block
             for (int y = top + 1; y < baseY; y++) {
@@ -107,7 +110,9 @@ public final class Construction {
                 }
             }
         }
-        evict(s, at);
+        if (obstructs) {
+            evict(s, at);
+        }
         buildings.setState(handle, BuildingStore.CONSTRUCTING, buildings.progress(handle));
     }
 

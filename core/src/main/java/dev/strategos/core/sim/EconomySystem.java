@@ -2,12 +2,13 @@ package dev.strategos.core.sim;
 
 import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.build.Construction;
+import dev.strategos.core.sim.econ.Fields;
 import dev.strategos.core.sim.econ.Forage;
 import dev.strategos.core.sim.prod.Production;
 
 /**
  * P6, ECONOMY: bushes regrow (ECO-05), sites take their builders' work of the tick (BLD-03), and finished buildings
- * train (PROD-01, ECO-06); fields follow with their card.
+ * train (PROD-01, ECO-06); fields ripen (ECO-09).
  */
 final class EconomySystem implements MatchSystem {
     @Override
@@ -22,6 +23,7 @@ final class EconomySystem implements MatchSystem {
         }
         BuildingStore buildings = state.buildings();
         if (!buildings.empty()) {
+            Fields.ripen(state);
             for (int handle : buildings.handles()) {
                 if (buildings.state(handle) == BuildingStore.CONSTRUCTING) {
                     Construction.step(state, handle);

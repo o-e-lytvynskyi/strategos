@@ -94,6 +94,13 @@ public final class Placing {
         };
     }
 
+    /** Whether a building of {@code template} blocks units on its columns: {@code Footprint/obstructs}, yes unless 0. */
+    public static boolean obstructs(MatchState s, int template, int faction) {
+        int p = s.stats().path("Footprint/obstructs");
+        double v = p < 0 ? Double.NaN : s.stats().blockValue(template, faction, p);
+        return !Double.isFinite(v) || v != 0;
+    }
+
     /** The height a unit stands at on column (x, z)'s top surface, or no land under water or with no surface. */
     public static double floor(SurfaceGrid grid, MatchBounds bounds, int x, int z) {
         if (grid.version() == 0) {
