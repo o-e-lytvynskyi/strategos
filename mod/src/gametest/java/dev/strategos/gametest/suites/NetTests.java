@@ -839,4 +839,71 @@ public final class NetTests {
                 })
                 .thenSucceed();
     }
+
+    /**
+     * UI-07.3: each {@code faction_state} a seated mock player receives is the server's at its tick, the workers per
+     * resource and the idle ones included: one worker on an oak, one on a bush, one idle.
+     */
+    @StrategosTest(batch = "eco_gather", timeoutTicks = 1_200)
+    public static void factionStateEqualsTheServer(GameTestHelper h) {
+        for (int y = 2; y <= 4; y++) {
+            h.setBlock(new BlockPos(6, y, 6), net.minecraft.world.level.block.Blocks.OAK_LOG);
+        }
+        BlockPos bush = new BlockPos(6, 2, 26);
+        h.setBlock(bush.below(), net.minecraft.world.level.block.Blocks.DIRT);
+        h.setBlock(bush, net.minecraft.world.level.block.Blocks.SWEET_BERRY_BUSH);
+        MatchRuntime rt = MatchFixture.create(h, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
+        rt.submit(PlayerSlot.ADMIN, new SpawnBuilding(ProdTests.CIVIC_CENTRE, new FactionSlot(0), 14, 10, 0));
+        EcoTests.workers(rt, 10, 16, 3);
+        MockViewer owner = BuildingTests.seated(h, rt, "strategos-fstate", 0);
+        java.util.Map<Long, dev.strategos.core.protocol.FactionState> server = new java.util.HashMap<>();
+        rt.addListener(out -> {
+            var q = core(rt).queries();
+            server.put(
+                    q.tick(),
+                    dev.strategos.core.sim.replicate.ReplicationService.factionState(
+                            q, rt.id().value(), new FactionSlot(0)));
+        });
+        int y = h.absolutePos(bush).getY();
+        h.startSequence()
+                .thenWaitUntil(
+                        () -> check(handles(rt).length == 3 && EcoTests.nodeAt(rt, 6.5, 6.5) != null, "not ready yet"))
+                .thenExecute(() -> {
+                    int[] units = handles(rt);
+                    rt.submit(PlayerSlot.ADMIN, Gather.replace(UnitSet.of(units[0]), 6, y + 1, 6));
+                    rt.submit(PlayerSlot.ADMIN, Gather.replace(UnitSet.of(units[1]), 6, y, 26));
+                })
+                .thenExecuteAfter(700, () -> {
+                    owner.poll();
+                    List<dev.strategos.core.protocol.FactionState> got = new ArrayList<>();
+                    for (var p : owner.capture()
+                            .of(net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket.class)) {
+                        if (p.payload() instanceof dev.strategos.mod.server.net.payload.FactionStatePayload f
+                                && f.state().matchId() == rt.id().value()) {
+                            got.add(f.state());
+                        }
+                    }
+                    int split = 0;
+                    for (var state : got) {
+                        var expected = server.get(state.tick());
+                        check(expected != null, "no server state at tick " + state.tick());
+                        check(
+                                state.sameAs(expected) && state.tick() == expected.tick(),
+                                "at tick " + state.tick() + " the owner got " + state + ", the server held "
+                                        + expected);
+                        if (state.workers().get(0) == 1 && state.workers().get(1) == 1 && state.idleWorkers() == 1) {
+                            split++;
+                        }
+                    }
+                    check(
+                            got.size() >= 3,
+                            "only " + got.size() + " faction states"); // sent when they change: on deliveries
+                    check(
+                            split > 0,
+                            "no state counted one on wood, one on food and one idle: " + got.get(got.size() - 1));
+                    check(got.get(got.size() - 1).gathered().get(1) > 0, "no wood came home");
+                    owner.close();
+                })
+                .thenSucceed();
+    }
 }

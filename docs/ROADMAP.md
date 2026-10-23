@@ -350,7 +350,7 @@ Cards: [roadmap/M3-first-loop.md](roadmap/M3-first-loop.md#cards). 27 cards, at 
 | PROD-01 | Production queue | M | BLD-01, ECO-06 | done |
 | PROD-03 | Rally points | S | PROD-01, ECO-05 | in_progress |
 | UI-06 | Selection panel and command card | M | UI-03, PROD-01, BLD-02 | in_progress |
-| UI-07 | Resource bar, population and workers per resource | M | ECO-01, ECO-06, UI-02 | specified |
+| UI-07 | Resource bar, population and workers per resource | M | ECO-01, ECO-06, UI-02 | in_progress |
 | UI-10 | Idle-worker key and economy notifications | S | UI-07, ECO-05 | specified |
 | ART-01 | Placeholder look and the style guide | M | UNIT-03, BLD-01, D-04 | specified |
 | CMB-03 | Attacking buildings with torches | M | CMB-02, BLD-01, D-12 | specified |

@@ -7,8 +7,8 @@ import java.util.List;
  * framebuffer pixels at GUI scale {@code guiScale}, the GUI size rounded up as Minecraft's window rounds it. Everything
  * lies inside the safe area, a margin in from the window's edges, and no two parts overlap. The bottom row holds the
  * minimap on the left, the command card on the right and the selection panel between them, centred and capped in width,
- * with the control-group bar above it; the top row holds the resource bar on the left and notices on the right. Drawing
- * and hit-testing use the same rectangles.
+ * with the control-group bar above it; the top row holds the resource bar on the left (the safe width less 100, or 45 %
+ * of it where that is more, at most 300) and notices on the right. Drawing and hit-testing use the same rectangles.
  */
 public record HudLayout(
         int guiWidth,
@@ -26,6 +26,7 @@ public record HudLayout(
     static final int ROW_MIN = 48;
     static final int ROW_MAX = 120;
     static final int SELECTION_MAX = 360;
+    static final int RESOURCES_MAX = 300;
 
     public static HudLayout compute(int screenWidth, int screenHeight, int guiScale) {
         if (screenWidth <= 0 || screenHeight <= 0 || guiScale <= 0) {
@@ -45,7 +46,7 @@ public record HudLayout(
         int selectionX = minimap.right() + GAP + (between - selectionWidth) / 2;
         HudRect selection = new HudRect(selectionX, safe.bottom() - selectionHeight, selectionWidth, selectionHeight);
         HudRect groups = new HudRect(selectionX, selection.y() - GAP - BAR_HEIGHT, selectionWidth, BAR_HEIGHT);
-        int resourceWidth = Math.min(Math.round(safe.width() * 0.45f), 220);
+        int resourceWidth = Math.min(RESOURCES_MAX, Math.max(Math.round(safe.width() * 0.45f), safe.width() - 100));
         HudRect resources = new HudRect(safe.x(), safe.y(), resourceWidth, BAR_HEIGHT);
         HudRect notices =
                 new HudRect(resources.right() + GAP, safe.y(), safe.right() - resources.right() - GAP, BAR_HEIGHT);

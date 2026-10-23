@@ -6,12 +6,15 @@ import dev.strategos.core.client.hud.GroupBar;
 import dev.strategos.core.client.hud.HudLayout;
 import dev.strategos.core.client.hud.HudRect;
 import dev.strategos.core.client.hud.HudTheme;
+import dev.strategos.core.client.hud.Income;
+import dev.strategos.core.client.hud.ResourceBar;
 import dev.strategos.core.client.hud.SelectionPanel;
 import dev.strategos.core.client.hud.SelectionSummary;
 import dev.strategos.core.client.pick.Picking;
 import dev.strategos.core.client.select.Selection;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.BuildingState;
+import dev.strategos.core.protocol.FactionState;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.UiQuery;
 import dev.strategos.core.protocol.UnitDetail;
@@ -57,6 +60,7 @@ import org.jspecify.annotations.Nullable;
 public final class RtsHud {
     public static final ResourceLocation SELECTION = Ids.id("rts_selection");
     public static final ResourceLocation CARD = Ids.id("rts_command_card");
+    public static final ResourceLocation RESOURCES = Ids.id("rts_resources");
     public static final ResourceLocation GROUPS = Ids.id("rts_groups");
     public static final ResourceLocation TOOLTIP = Ids.id("rts_tooltip");
     public static final ResourceLocation INSPECT = Ids.id("first_person_inspect");
@@ -96,6 +100,14 @@ public final class RtsHud {
     private final Map<String, ItemStack> icons = new HashMap<>();
     private GroupBar bar = new GroupBar(List.of());
     private @Nullable Tooltip tooltip;
+    private final Income income = new Income();
+    private ResourceBar resources = ResourceBar.EMPTY;
+    private List<Segment> segments = List.of();
+    private @Nullable String barHover;
+
+    /** One part of the resource bar: where it is, its icon (null for none), its text and colour, and its tooltip. */
+    record Segment(HudRect at, @Nullable String icon, String text, int colour, String tooltip) {}
+
     private @Nullable Inspect inspect;
     private long buildNanos;
     /** Ticks between two {@code ui_query}s: four a second, the server's limit. */
@@ -114,6 +126,7 @@ public final class RtsHud {
         modBus.addListener(RegisterGuiLayersEvent.class, e -> {
             e.registerAboveAll(SELECTION, this::drawSelection);
             e.registerAboveAll(CARD, this::drawCard);
+            e.registerAboveAll(RESOURCES, this::drawResources);
             e.registerAboveAll(GROUPS, this::drawGroups);
             e.registerAboveAll(TOOLTIP, this::drawTooltip);
             e.registerAboveAll(INSPECT, this::drawInspect);
@@ -261,9 +274,111 @@ public final class RtsHud {
         double[] gui = cursorGui(mc);
         hovered = card.at(layout().commandCard(), theme.padding(), gui[0], gui[1]);
         bar = GroupBar.of(mode.groups());
-        tooltip = hovered == null ? hovered(mc, templates) : null;
+        FactionState faction = StrategosClient.model().faction();
+        if (faction != null) {
+            income.accept(faction);
+        }
+        resources = ResourceBar.of(faction, StrategosClient.resources(), income);
+        segments = segments(mc.font, layout().resourceBar(), resources);
+        barHover = null;
+        for (Segment s : segments) {
+            if (s.at().contains(gui[0], gui[1])) {
+                barHover = s.tooltip();
+            }
+        }
+        tooltip = hovered == null && barHover == null ? hovered(mc, templates) : null;
         query(selection.handles());
         buildNanos = System.nanoTime() - start;
+    }
+
+    /** The resource bar as last built, for scenarios. */
+    public ResourceBar resources() {
+        return resources;
+    }
+
+    /**
+     * The bar's parts, left to right: each resource's icon and stock, with its income a minute where all of them fit,
+     * the population (red at its cap) and the idle workers.
+     */
+    private static List<Segment> segments(Font font, HudRect bar, ResourceBar b) {
+        for (boolean incomes : new boolean[] {true, false}) {
+            List<Segment> out = new ArrayList<>();
+            int x = bar.x() + 3;
+            for (ResourceBar.Entry e : b.resources()) {
+                String text =
+                        incomes && e.perMinute() > 0 ? e.stock() + " +" + e.perMinute() : String.valueOf(e.stock());
+                int w = 10 + font.width(text);
+                out.add(new Segment(
+                        new HudRect(x, bar.y(), w, bar.height()),
+                        resourceIcon(e.id()),
+                        text,
+                        HudTheme.DEFAULT.text(),
+                        e.id() + ": " + e.stock() + " · " + e.perMinute() + " a minute · " + e.workers()
+                                + " gathering"));
+                x += w + 6;
+            }
+            String pop = b.populationUsed() + "/" + b.populationCap();
+            int pw = 10 + font.width(pop);
+            out.add(new Segment(
+                    new HudRect(x, bar.y(), pw, bar.height()),
+                    "minecraft:player_head",
+                    pop,
+                    b.capped() ? 0xFFFF6060 : HudTheme.DEFAULT.text(),
+                    b.capped() ? "Population " + pop + ": build houses to train more" : "Population " + pop));
+            x += pw + 6;
+            String idle = String.valueOf(b.idleWorkers());
+            int iw = 10 + font.width(idle);
+            out.add(new Segment(
+                    new HudRect(x, bar.y(), iw, bar.height()),
+                    "minecraft:wooden_axe",
+                    idle,
+                    b.idleWorkers() > 0 ? HudTheme.DEFAULT.accent() : HudTheme.DEFAULT.dimText(),
+                    b.idleWorkers() + " idle workers"));
+            x += iw;
+            if (x <= bar.right() || !incomes) {
+                return out;
+            }
+        }
+        return List.of();
+    }
+
+    /** A resource's icon, by its id: the item a player knows it by. */
+    private static String resourceIcon(String id) {
+        return switch (id) {
+            case "food" -> "minecraft:apple";
+            case "wood" -> "minecraft:oak_log";
+            case "stone" -> "minecraft:cobblestone";
+            case "iron" -> "minecraft:iron_ingot";
+            default -> "minecraft:paper";
+        };
+    }
+
+    private void drawResources(GuiGraphics g, DeltaTracker delta) {
+        List<Segment> parts = segments;
+        if (!shown() || parts.isEmpty() || resources.resources().isEmpty()) {
+            return;
+        }
+        Font font = Minecraft.getInstance().font;
+        panel(g, layout().resourceBar());
+        for (Segment s : parts) {
+            if (s.icon() != null) {
+                small(g, s.icon(), s.at().x(), s.at().y() + 2);
+            }
+            g.drawString(font, s.text(), s.at().x() + 10, s.at().y() + 2, s.colour(), false);
+        }
+    }
+
+    /** An item at half size, 8 pixels, its corner at ({@code x}, {@code y}). */
+    private void small(GuiGraphics g, String id, int x, int y) {
+        ItemStack stack = stack(id);
+        if (stack.isEmpty()) {
+            return;
+        }
+        g.pose().pushPose();
+        g.pose().translate(x, y, 0);
+        g.pose().scale(0.5f, 0.5f, 1);
+        g.renderItem(stack, 0, 0);
+        g.pose().popPose();
     }
 
     /** One unit's details: the one own unit selected, from its {@code unit_detail}, or the enemy inspected. */
@@ -545,10 +660,7 @@ public final class RtsHud {
     }
 
     private void item(GuiGraphics g, String id, HudRect cell) {
-        ItemStack stack = icons.computeIfAbsent(id, k -> {
-            ResourceLocation rl = ResourceLocation.tryParse(k);
-            return rl == null ? ItemStack.EMPTY : new ItemStack(BuiltInRegistries.ITEM.get(rl));
-        });
+        ItemStack stack = stack(id);
         if (stack.isEmpty()) {
             return;
         }
@@ -559,6 +671,13 @@ public final class RtsHud {
         g.pose().scale(scale, scale, 1);
         g.renderItem(stack, 0, 0);
         g.pose().popPose();
+    }
+
+    private ItemStack stack(String id) {
+        return icons.computeIfAbsent(id, k -> {
+            ResourceLocation rl = ResourceLocation.tryParse(k);
+            return rl == null ? ItemStack.EMPTY : new ItemStack(BuiltInRegistries.ITEM.get(rl));
+        });
     }
 
     /** The cursor in GUI pixels, as Minecraft turns window points into a screen's mouse position. */
@@ -602,6 +721,15 @@ public final class RtsHud {
         Tooltip t = tooltip;
         Minecraft mc = Minecraft.getInstance();
         CommandCard.Button b = hovered;
+        String bar = barHover;
+        if (shown() && bar != null) {
+            Font font = mc.font;
+            int pad = theme.padding();
+            double[] gui = cursorGui(mc);
+            HudRect r = layout().tooltip(font.width(bar) + 2 * pad, font.lineHeight + 2 * pad, gui[0], gui[1]);
+            panel(g, r);
+            g.drawString(font, bar, r.x() + pad, r.y() + pad + 1, theme.text(), false);
+        }
         if (shown() && b != null) {
             Font font = mc.font;
             String text = describe(b, StrategosClient.templates());

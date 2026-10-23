@@ -9,7 +9,7 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-24 — M3 T9–T17
+## 2026-10-24 — M3 T9–T18
 
 - **The owner, past midnight:** «можешь любые тесты проводить и как закончишь м3 - начинай м4, все решения
   принимай сам, которые рекомендуешь» (STATE item 6).
@@ -53,7 +53,10 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
   an empty field, stops units, and opens a build page whose buttons arm placement; costs show on hover, and a button
   the stock does not cover is dimmed. A right click with a building selected sets its rally point. Escape now
   disarms placement however it was armed (it paused the game after the build key). A client scenario, run here in a
-  window, clicks through it all; its two frames wait as golden candidates for T30. Next: T18, the resource bar.
+  window, clicks through it all; its two frames wait as golden candidates for T30.
+- **M3 T18 · UI-07, the resource bar.** Along the top: each resource's stock and income a minute, the population
+  (red at the cap) and the idle workers; a hover tells who gathers what, or that houses are needed. The income is
+  exactly what was gathered over the last minute. Next: T19, the idle-worker key and notices.
 
 ## 2026-10-23 (evening) — M3 spec, T1–T8
 

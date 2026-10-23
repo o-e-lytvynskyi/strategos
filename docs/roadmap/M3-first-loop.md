@@ -564,7 +564,8 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   4. Goldens (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** ECO-01, ECO-06, UI-02 · **Size:** M ·
   **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
+- **Progress:** 2026-10-24 — M3 T18: income per minute equals a seeded gathered minute (1), the bar equals the model after every state (2), the state a mock player receives is the server's, workers included (3) (spec §1.6 rows 56–57); the goldens (4) wait for T30's batch
 
 #### UI-10 · Idle-worker key and economy notifications
 - **Value:** Never lose track of an idle worker on a big map, or wonder why training stopped (P3).

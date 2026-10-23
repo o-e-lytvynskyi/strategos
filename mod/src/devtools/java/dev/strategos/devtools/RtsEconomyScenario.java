@@ -4,6 +4,7 @@ import dev.strategos.core.client.hud.CommandCard;
 import dev.strategos.core.client.hud.HudLayout;
 import dev.strategos.core.client.hud.HudRect;
 import dev.strategos.core.client.hud.HudTheme;
+import dev.strategos.core.client.hud.ResourceBar;
 import dev.strategos.core.client.hud.SelectionPanel;
 import dev.strategos.core.client.pick.Picking;
 import dev.strategos.core.client.pick.View;
@@ -44,7 +45,8 @@ import org.lwjgl.glfw.GLFW;
  * enters RTS mode. A click on the centre selects it, and the command card offers a worker; a click on that button sends
  * one Train, which the server queues; a right click on the ground sets the centre's rally point. A click on a worker
  * shows its details in the panel; the card's build page opens and its house button arms placement, which Escape
- * disarms. Screenshots of the centre's and the worker's selection, for UI-06.4's goldens (T30).
+ * disarms. The resource bar shows the stock and the population before and after the worker's cost (UI-07).
+ * Screenshots of the centre's and the worker's selection and of the bar, for UI-06.4's and UI-07.4's goldens (T30).
  */
 final class RtsEconomyScenario implements Scenario {
     private static final TemplateId CIVIC_CENTRE = new TemplateId("strategos:building/civic_centre");
@@ -148,6 +150,13 @@ final class RtsEconomyScenario implements Scenario {
                 check(
                         hud.panel().kind() == SelectionPanel.Kind.BUILDING,
                         "the panel shows " + hud.panel().kind());
+                ResourceBar bar = hud.resources();
+                check(
+                        bar.resources().size() == 4
+                                && bar.resources().get(0).stock() == 300
+                                && bar.populationUsed() == WORKERS
+                                && bar.populationCap() == 20,
+                        "the resource bar " + bar);
                 ctx.capture("select_civic_centre");
                 wait = 2;
             }
@@ -162,6 +171,12 @@ final class RtsEconomyScenario implements Scenario {
                 BuildingView c = centre();
                 check(c != null && c.queue().size() == 1, "the server's queue " + (c == null ? null : c.queue()));
                 ctx.result.addProperty("queued", c == null ? -1 : c.queue().size());
+                ResourceBar bar = hud.resources();
+                check(
+                        bar.resources().get(0).stock() == 240 && bar.populationUsed() == WORKERS + 1,
+                        "after the worker's 60 food and its reserved place, the bar " + bar);
+                ctx.result.addProperty("foodAfterTrain", bar.resources().get(0).stock());
+                ctx.capture("resource_bar");
                 double[] ground = gui(screen, rts, 12.5, floor, 6.5);
                 screen.mouseClicked(ground[0], ground[1], 1);
                 screen.mouseReleased(ground[0], ground[1], 1);

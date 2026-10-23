@@ -75,13 +75,13 @@ public final class EcoTests {
     }
 
     /** Faction 0's {@code count} workers round match-local (x, z), spawned at the next step. */
-    private static void workers(MatchRuntime rt, double x, double z, int count) {
+    static void workers(MatchRuntime rt, double x, double z, int count) {
         rt.submit(
                 PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.WORKER, new FactionSlot(0), new Vec2d(x, z), count, 1.5));
     }
 
     /** The node whose blocks include match-local (x, z) at height y; null before discovery. */
-    private static @Nullable NodeView nodeAt(MatchRuntime rt, double anchorX, double anchorZ) {
+    static @Nullable NodeView nodeAt(MatchRuntime rt, double anchorX, double anchorZ) {
         for (NodeView n : core(rt).queries().nodes()) {
             if (n.anchorX() == anchorX && n.anchorZ() == anchorZ) {
                 return n;
