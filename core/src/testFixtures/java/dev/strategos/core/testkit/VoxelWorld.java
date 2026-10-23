@@ -73,6 +73,11 @@ public final class VoxelWorld {
         return this;
     }
 
+    /** The material at (x, y, z), or null. */
+    public @Nullable Material materialAt(int x, int y, int z) {
+        return materials.get(((long) x << 32) | ((long) z << 12) | y);
+    }
+
     /** Fills the box between two corners, both inclusive. */
     public VoxelWorld fill(int x0, int y0, int z0, int x1, int y1, int z1, short c) {
         for (int x = Math.min(x0, x1); x <= Math.max(x0, x1); x++) {

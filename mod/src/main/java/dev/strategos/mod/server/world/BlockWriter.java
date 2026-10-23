@@ -42,7 +42,7 @@ import org.jspecify.annotations.Nullable;
 public final class BlockWriter {
     public static final int FLAGS = Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE;
 
-    private final int budget;
+    private int budget;
     private final int importBudget;
     private final Map<ResourceKey<Level>, LevelWrites> levels = new HashMap<>();
     private final Map<String, BlockState> states = new HashMap<>();
@@ -139,6 +139,19 @@ public final class BlockWriter {
     private static <T extends Comparable<T>> @Nullable BlockState with(
             BlockState state, Property<T> property, String value) {
         return property.getValue(value).map(v -> state.setValue(property, v)).orElse(null);
+    }
+
+    /** The placements a tick shares while a match runs. */
+    public int budget() {
+        return budget;
+    }
+
+    /** A new shared budget from the next tick on: a GameTest's, which shows the core's state never waits on it. */
+    public void budget(int placements) {
+        if (placements < 1) {
+            throw new IllegalArgumentException("a writer budget of " + placements);
+        }
+        this.budget = placements;
     }
 
     /** At the start of each server tick: the shared budget refills. */

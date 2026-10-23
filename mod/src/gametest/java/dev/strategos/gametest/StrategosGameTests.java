@@ -37,6 +37,16 @@ public final class StrategosGameTests {
 
     // After each batch: its matches go, then nothing of it may be left (QA-04.6). Vanilla finds these by batch name.
 
+    @AfterBatch(batch = "construction")
+    public static void afterConstruction(ServerLevel level) {
+        afterBatch(level, "construction");
+    }
+
+    @AfterBatch(batch = "construction_budget")
+    public static void afterConstructionBudget(ServerLevel level) {
+        afterBatch(level, "construction_budget");
+    }
+
     @AfterBatch(batch = "eco_growth")
     public static void afterEcoGrowth(ServerLevel level) {
         dev.strategos.gametest.suites.EcoTests.restoreRandomTicks(level);

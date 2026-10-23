@@ -1931,6 +1931,13 @@ or add nodes.
   On success the cost is deducted, an uncommitted `Foundation` entity is created, and the builders
   get `BUILD` orders.
 
+- **As built (M3 T11–T12).** One `PlacementRules` in `core.content` judges for client and server
+  over a `World` each (the server's surfaces, footprints and nodes; the client's `building_state`
+  and loaded blocks), so a ghost colours each column as the server would judge it; `PlaceBuilding`
+  pays and lays the foundation. The first builder's arrival commits it: its columns block units,
+  those on it move off, the writer clears and fills; builders' work adds `r × n^0.7` a tick in whole
+  millionths, so n builders finish in ceil(T ÷ n^0.7) ticks, and the blocks follow it in build order.
+
 ### 11.7 Blueprints, progressive construction and the block writer
 
 - **Blueprints.** `BlueprintLoader` parses each `.nbt` file (`size`, `palette`,

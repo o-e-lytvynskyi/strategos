@@ -17,6 +17,7 @@ public record KeyCode(Kind kind, int code) {
     public static final int PERIOD = 46;
     public static final int EQUAL = 61;
     public static final int A = 65;
+    public static final int B = 66;
     public static final int D = 68;
     public static final int G = 71;
     public static final int H = 72;

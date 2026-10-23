@@ -11,8 +11,7 @@ import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.MatchBounds;
 import dev.strategos.core.sim.MatchState;
-import dev.strategos.core.sim.nav.Surface;
-import dev.strategos.core.sim.nav.SurfaceGrid;
+import dev.strategos.core.sim.build.Placing;
 
 /**
  * SpawnBuilding, admin only (BLD-01): a finished building of a building template for a seated faction, its corner at
@@ -45,8 +44,6 @@ final class SpawnBuildingRule implements CommandRule<SpawnBuilding> {
         Footprint at = Footprint.of(b, spawn.x(), spawn.z(), spawn.rotation());
         MatchBounds bounds = state.config().bounds();
         int[] columns = at.columns(b);
-        int stand = Integer.MIN_VALUE;
-        SurfaceGrid grid = state.surfaces();
         for (int cell : columns) {
             int x = cell >>> 16;
             int z = cell & 0xFFFF;
@@ -56,15 +53,8 @@ final class SpawnBuildingRule implements CommandRule<SpawnBuilding> {
             if (state.footprintAt(x, z)) {
                 return Tally.rejectAll(envelope, kind(), 0, RejectReason.INVALID_ARGUMENT);
             }
-            if (grid.count(x, z) > 0) {
-                int top = grid.surface(x, z, grid.count(x, z) - 1);
-                stand = Math.max(stand, bounds.minY() + (int) Math.round(Surface.floor(top) / 16.0));
-            }
         }
-        if (stand == Integer.MIN_VALUE) {
-            stand = (int) Math.round(bounds.flatFloorY());
-        }
-        state.placeComplete(template.netIndex(), spawn.faction().value(), at, stand - 1);
+        state.placeComplete(template.netIndex(), spawn.faction().value(), at, Placing.baseY(state, b, at));
         return Tally.acceptAll(envelope, kind(), 0);
     }
 }

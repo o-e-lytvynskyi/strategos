@@ -8,6 +8,7 @@ import dev.strategos.gametest.suites.BuildingTests;
 import dev.strategos.gametest.suites.CameraTests;
 import dev.strategos.gametest.suites.CombatTests;
 import dev.strategos.gametest.suites.CommandTests;
+import dev.strategos.gametest.suites.ConstructionTests;
 import dev.strategos.gametest.suites.ContentTests;
 import dev.strategos.gametest.suites.DebugTests;
 import dev.strategos.gametest.suites.EcoTests;
@@ -58,6 +59,7 @@ public final class Suites {
                         MatchTests.class,
                         CommandTests.class,
                         ContentTests.class,
+                        ConstructionTests.class,
                         DebugTests.class,
                         EcoTests.class,
                         PersistenceTests.class,

@@ -15,7 +15,9 @@ public enum UnitState {
     /** Fighting where it stands: striking, or choosing its next target (CMB-02); approaching and chasing walk. */
     COMBAT,
     /** Gathering at a resource node (ECO-05); approaching it and carrying a load back walk. */
-    GATHERING;
+    GATHERING,
+    /** Building a foundation or a site (BLD-03); walking to it walks. */
+    BUILDING;
 
     public int code() {
         return switch (this) {
@@ -23,6 +25,7 @@ public enum UnitState {
             case WALKING -> 1;
             case COMBAT -> 2;
             case GATHERING -> 3;
+            case BUILDING -> 4;
         };
     }
 
@@ -32,6 +35,7 @@ public enum UnitState {
             case 1 -> WALKING;
             case 2 -> COMBAT;
             case 3 -> GATHERING;
+            case 4 -> BUILDING;
             default -> throw new IllegalArgumentException("no unit state with code " + code);
         };
     }

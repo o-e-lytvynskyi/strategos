@@ -40,6 +40,11 @@ import org.jspecify.annotations.Nullable;
  *     GATHER_APPROACHING every 5 enter: a slot at the node, walked to; think: a spent node is replaced; Arrived: work
  *     GATHERING        every 1   think: gather at the rate; full: home; the node spent: the next one
  *     GATHER_RETURNING every 5   enter: the nearest dropsite; think: one lost is replaced; Arrived: deliver, go back
+ *   BUILD                        leave: the builder slot is given up; Attacked: hit back, or flee; Stuck at its last
+ *                                rung: the order failed; PathInvalidated: as WALKING
+ *     BUILD_APPROACHING every 5  enter: a slot round the building, walked to; think: one done or lost ends it; Arrived:
+ *                                build
+ *     BUILDING         every 1   enter: commit a foundation; think: the rate joins the site's work, until it is done
  * </pre>
  *
  * Whichever of them finds its target dead takes up the nearest enemy in sight, from a new place, or else goes on with
@@ -71,6 +76,9 @@ public final class UnitAi {
     public static final StateId GATHER_APPROACHING = new StateId(12, "gather.approaching", UnitState.WALKING);
     public static final StateId GATHERING = new StateId(13, "gather.gathering", UnitState.GATHERING);
     public static final StateId GATHER_RETURNING = new StateId(14, "gather.returning", UnitState.WALKING);
+    public static final StateId BUILD = new StateId(15, "build", null);
+    public static final StateId BUILD_APPROACHING = new StateId(16, "build.approaching", UnitState.WALKING);
+    public static final StateId BUILDING = new StateId(17, "build.building", UnitState.BUILDING);
 
     private UnitAi() {}
 
@@ -184,6 +192,28 @@ public final class UnitAi {
                                 .think(Gathering::keepHeadingHome)
                                 .on(Arrived.class, Gathering::delivered)
                                 .transitions(next(GATHER_APPROACHING, GATHER_RETURNING))
+                                .build(),
+                        StateDef.<MatchState>child(BUILD, INDIVIDUAL)
+                                .initial(BUILD_APPROACHING)
+                                .leave(Constructing::leave)
+                                .on(Attacked.class, (ctx, m) -> hit(ctx, m.attacker()))
+                                .on(Stuck.class, UnitAi::giveUp)
+                                .on(PathInvalidated.class, UnitAi::repath)
+                                .on(Arrived.class, (ctx, m) -> {}) // building: nowhere to walk to
+                                .transitions(next())
+                                .build(),
+                        StateDef.<MatchState>child(BUILD_APPROACHING, BUILD)
+                                .thinkEvery(5)
+                                .enter(Constructing::approach)
+                                .think(Constructing::keepApproaching)
+                                .on(Arrived.class, Constructing::arrived)
+                                .transitions(next(BUILDING))
+                                .build(),
+                        StateDef.<MatchState>child(BUILDING, BUILD)
+                                .thinkEvery(1)
+                                .enter(Constructing::begin)
+                                .think(Constructing::work)
+                                .transitions(next())
                                 .build()),
                 UnitAi::changed);
     }
@@ -193,7 +223,8 @@ public final class UnitAi {
      * {@code more}.
      */
     private static StateId[] next(StateId... more) {
-        List<StateId> all = new ArrayList<>(List.of(IDLE, WALKING, COMBAT, WALKING_AND_FIGHTING, FOLLOW, GATHER));
+        List<StateId> all =
+                new ArrayList<>(List.of(IDLE, WALKING, COMBAT, WALKING_AND_FIGHTING, FOLLOW, GATHER, BUILD));
         all.addAll(List.of(more));
         return all.toArray(StateId[]::new);
     }
@@ -238,7 +269,9 @@ public final class UnitAi {
                 FOLLOW_WAITING,
                 GATHER_APPROACHING,
                 GATHERING,
-                GATHER_RETURNING);
+                GATHER_RETURNING,
+                BUILD_APPROACHING,
+                BUILDING);
     }
 
     /** The leaf saved as {@code name}, or null for any other name. */
@@ -269,6 +302,7 @@ public final class UnitAi {
             case OrderKind.ATTACK_MOVE -> WALKING_AND_FIGHTING;
             case OrderKind.FOLLOW -> FOLLOW;
             case OrderKind.GATHER -> GATHER;
+            case OrderKind.BUILD -> BUILD;
             default -> throw new IllegalStateException("no unit state carries out order kind " + kind);
         };
     }

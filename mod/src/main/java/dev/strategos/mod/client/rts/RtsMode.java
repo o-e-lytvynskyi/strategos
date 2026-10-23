@@ -64,6 +64,7 @@ public final class RtsMode {
     private final RtsKeys keys = new RtsKeys();
     private final ControlGroups groups = new ControlGroups();
     private final RtsOrders orders = new RtsOrders(this);
+    private final RtsPlacement placement = new RtsPlacement(this);
     private Selection selection = new Selection(-1);
     private @Nullable CameraRig rig;
     private @Nullable InputState input;
@@ -91,6 +92,7 @@ public final class RtsMode {
         NeoForge.EVENT_BUS.addListener(ViewportEvent.ComputeCameraAngles.class, this::onAngles);
         NeoForge.EVENT_BUS.addListener(ViewportEvent.ComputeFov.class, this::onFov);
         NeoForge.EVENT_BUS.addListener(RenderLevelStageEvent.class, this::onStage);
+        NeoForge.EVENT_BUS.addListener(RenderLevelStageEvent.class, placement::render);
     }
 
     public boolean active() {
@@ -125,6 +127,11 @@ public final class RtsMode {
     /** Whether the next right click attack-moves (ORD-04): its key was pressed since the last order. */
     public boolean attackMoveArmed() {
         return orders.attackMoveArmed();
+    }
+
+    /** Placement mode (BLD-02). */
+    RtsPlacement placement() {
+        return placement;
     }
 
     /** STOP: the selection's orders end (ORD-02). */
@@ -357,6 +364,7 @@ public final class RtsMode {
         outlines(mc);
         orders.showPreview(mc, ticks);
         orders.showMarkers(mc, ticks);
+        placement.tick(mc, ticks);
         if (mc.screen == null) { // chat, the pause menu or anything else closed over it: the RTS screen comes back
             mc.setScreen(new RtsScreen(this));
         }

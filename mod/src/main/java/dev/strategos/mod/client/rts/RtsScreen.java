@@ -84,7 +84,10 @@ public final class RtsScreen extends Screen {
                 mc.getWindow().toggleFullScreen();
                 mc.options.fullscreen().set(mc.getWindow().isFullscreen());
             }
-            case CANCEL -> in.context(ActionContext.RTS);
+            case CANCEL -> {
+                mode.placement().cancel();
+                in.context(ActionContext.RTS);
+            }
             case PAUSE -> mc.pauseGame(false);
             case ACTIONS -> {
                 return actionKey(mc, in, keyCode, scanCode, modifiers);
@@ -165,7 +168,11 @@ public final class RtsScreen extends Screen {
             mode.fired(e.action());
             boolean shift = Modifiers.shift(e.modifiers());
             switch (e.action()) {
-                case SELECT -> selection.click(mode.seenAt(pickAt(e.x(), e.y())), shift);
+                case SELECT -> {
+                    if (!mode.placement().place(shift)) {
+                        selection.click(mode.seenAt(pickAt(e.x(), e.y())), shift);
+                    }
+                }
                 case SELECT_ALL_OF_TYPE -> {
                     Seen unit = mode.seenAt(pickAt(e.x(), e.y()));
                     if (unit != null) {
@@ -174,7 +181,15 @@ public final class RtsScreen extends Screen {
                 }
                 case BOX_SELECT -> selection.box(mode.seen(), x(e.x()), y(e.y()), x(e.toX()), y(e.toY()), shift);
                 case ORDER_PREVIEW -> mode.preview(true);
-                case ORDER_CONTEXT -> mode.order(x(e.x()), y(e.y()), shift);
+                case ORDER_CONTEXT -> {
+                    if (mode.placement().armed()) {
+                        mode.placement().cancel(); // a right click while placing disarms, as in the classics
+                    } else {
+                        mode.order(x(e.x()), y(e.y()), shift);
+                    }
+                }
+                case BUILD -> mode.placement().cycle();
+                case ROTATE -> mode.placement().rotate();
                 case CONTROL_GROUP_SET -> mode.groups().set(e.group(), selection);
                 case CONTROL_GROUP_ADD -> mode.groups().add(e.group(), selection);
                 case CONTROL_GROUP_SELECT -> mode.groups().recall(e.group(), selection);

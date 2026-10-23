@@ -299,7 +299,11 @@ public final class MatchSnapshotCodec {
                     Codec.INT.fieldOf("baseY").forGetter(BuildingStore.Saved::baseY),
                     Codec.INT.fieldOf("state").forGetter(BuildingStore.Saved::state),
                     Codec.LONG.fieldOf("progress").forGetter(BuildingStore.Saved::progress),
-                    Codec.DOUBLE.fieldOf("damage").forGetter(BuildingStore.Saved::damage))
+                    Codec.DOUBLE.fieldOf("damage").forGetter(BuildingStore.Saved::damage),
+                    Codec.LONG.optionalFieldOf("work", 0L).forGetter(BuildingStore.Saved::work),
+                    Codec.INT.optionalFieldOf("placed", 0).forGetter(BuildingStore.Saved::placed),
+                    Codec.INT.listOf().optionalFieldOf("slots", List.of()).forGetter(BuildingStore.Saved::slots),
+                    Codec.INT.listOf().optionalFieldOf("claims", List.of()).forGetter(BuildingStore.Saved::claims))
             .apply(i, BuildingStore.Saved::new));
 
     /** The fields, without {@code "v"}. */

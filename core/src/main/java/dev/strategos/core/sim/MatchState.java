@@ -297,12 +297,19 @@ public final class MatchState {
         return buildings.footprint(handle, b.sizeX(), b.sizeZ());
     }
 
-    /** Building {@code handle}'s most hit points: {@code Health/max} through its faction's modifiers. */
+    /**
+     * Building {@code handle}'s most hit points: {@code Health/max} through its faction's modifiers, rising with its
+     * construction from a thousandth of it at the foundation (BLD-03).
+     */
     public double buildingMaxHp(int handle) {
         int path = stats.path(CorePaths.HEALTH);
         double v =
                 path < 0 ? Double.NaN : stats.blockValue(buildings.template(handle), buildings.faction(handle), path);
-        return Double.isFinite(v) && v > 0 ? v : CorePaths.DEFAULT_HEALTH;
+        double full = Double.isFinite(v) && v > 0 ? v : CorePaths.DEFAULT_HEALTH;
+        if (buildings.state(handle) == BuildingStore.COMPLETE) {
+            return full;
+        }
+        return full * Math.max(1, buildings.progress(handle)) / BuildingStore.FULL;
     }
 
     /**
@@ -605,6 +612,11 @@ public final class MatchState {
             nodes.release(node, handle);
             carry.setClaimed(i, 0);
         }
+        int site = carry.site(i);
+        if (site != 0) {
+            buildings.release(site, handle);
+            carry.setSite(i, 0);
+        }
     }
 
     /** Unit {@code i} drops what it carries: lost to everyone, as the ledger records. */
@@ -616,8 +628,16 @@ public final class MatchState {
         }
     }
 
-    /** The claims a restored match's nodes hold, put back on their units (ECO-05). */
+    /** The claims a restored match's nodes and buildings hold, put back on their units (ECO-05, BLD-03). */
     void restoreClaims() {
+        for (int handle : buildings.handles()) {
+            for (int slot = 0; slot < buildings.slotCount(handle); slot++) {
+                int unit = buildings.claim(handle, slot);
+                if (unit != 0 && entities.isAlive(unit)) {
+                    carry.setSite(Handle.index(unit), handle);
+                }
+            }
+        }
         for (int id = 1; id <= nodes.count(); id++) {
             for (int slot = 0; slot < nodes.slotCount(id); slot++) {
                 int handle = nodes.claim(id, slot);

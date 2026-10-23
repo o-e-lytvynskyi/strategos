@@ -7,4 +7,4 @@ import dev.strategos.core.shared.Hashable;
  * ({@link RejectReason#INVALID_ARGUMENT}) rather than the constructor throwing, so a journal always decodes.
  */
 public sealed interface Command extends Hashable
-        permits Move, Stop, SpawnUnits, Attack, AttackMove, Follow, Grant, SpawnBuilding, Gather {}
+        permits Move, Stop, SpawnUnits, Attack, AttackMove, Follow, Grant, SpawnBuilding, Gather, PlaceBuilding {}

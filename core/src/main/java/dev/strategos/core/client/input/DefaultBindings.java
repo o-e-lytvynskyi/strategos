@@ -7,7 +7,8 @@ import java.util.List;
  * camera pans on W, A, S and D, which vanilla binds only in game (they never conflict); it rotates on comma and period
  * ("<" and ">") and zooms on "=" and "-" and the wheel, because vanilla's Q and E bind drop and inventory in every
  * context. Attack-move is Z, beside A, where the classics put attack; stop is H (halt); first person is V (view);
- * Space centres on the selection. Outside the screen, F6 enters RTS mode. Fixed, not rebindable: the mouse (left
+ * Space centres on the selection; B arms placement and cycles its buildings, R turns the ghost. Outside the screen, F6
+ * enters RTS mode. Fixed, not rebindable: the mouse (left
  * selects, a drag boxes, a double click takes all of a type, right orders, middle drags to rotate), Escape (cancel,
  * else pause) and the control groups on the digits (Ctrl sets, Shift adds, the digit selects, a double tap centres),
  * whose keys vanilla binds to the hotbar in every context (spec M2 §1.6). No default uses Ctrl + click, which macOS
@@ -30,6 +31,8 @@ public final class DefaultBindings {
                 rts(Action.ATTACK_MOVE, KeyCode.Z),
                 rts(Action.STOP, KeyCode.H),
                 rts(Action.TOGGLE_FIRST_PERSON, KeyCode.V),
+                rts(Action.BUILD, KeyCode.B),
+                rts(Action.ROTATE, KeyCode.R),
                 new Binding(Action.TOGGLE_RTS, ActionContext.IN_GAME, KeyCode.key(KeyCode.F6), Modifiers.NONE, true),
                 new Binding(Action.ORDER_HERE, ActionContext.IN_GAME, KeyCode.key(KeyCode.G), Modifiers.NONE, true),
                 new Binding(Action.FOLLOW_ME, ActionContext.IN_GAME, KeyCode.key(KeyCode.R), Modifiers.NONE, true),

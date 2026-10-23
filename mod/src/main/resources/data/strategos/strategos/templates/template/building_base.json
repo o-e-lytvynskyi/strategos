@@ -2,5 +2,6 @@
   "abstract": true,
   "Identity": { "classes": "Structure" },
   "Building": { "material": "stone" },
+  "Placement": { "civicReach": 48 },
   "Health": { "max": 500 }
 }

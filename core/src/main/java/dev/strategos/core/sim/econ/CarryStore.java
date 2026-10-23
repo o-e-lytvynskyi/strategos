@@ -10,7 +10,8 @@ import java.util.List;
  * What each unit carries (ECO-05, 04 §11.4), by handle index: one resource and subtype at a time (indices into the
  * match's {@link EconomyRules}) and the amount in thousandths. A unit carries nothing until it gathers; a load of
  * another resource is dropped when it starts on a new one, as is the load of a unit that dies. The store also keeps the
- * node whose work slot each unit holds, which the nodes' claims say too: it is how a unit gives its slot up.
+ * node whose work slot each unit holds, and the building whose builder slot it holds, which the nodes' and the
+ * buildings' claims say too: it is how a unit gives its slot up.
  */
 @CoreApi
 public final class CarryStore {
@@ -21,6 +22,7 @@ public final class CarryStore {
     private int[] subtype = new int[0];
     private long[] amount = new long[0];
     private int[] claimed = new int[0];
+    private int[] site = new int[0];
     private int carrying;
 
     /** One unit's load as a snapshot keeps it. */
@@ -34,6 +36,7 @@ public final class CarryStore {
             subtype = Arrays.copyOf(subtype, capacity);
             amount = Arrays.copyOf(amount, capacity);
             claimed = Arrays.copyOf(claimed, capacity);
+            site = Arrays.copyOf(site, capacity);
             Arrays.fill(resource, old, capacity, NONE);
         }
     }
@@ -59,6 +62,15 @@ public final class CarryStore {
 
     public void setClaimed(int i, int node) {
         claimed[i] = node;
+    }
+
+    /** The building whose builder slot unit {@code i} holds, 0 for none (BLD-03). */
+    public int site(int i) {
+        return i < site.length ? site[i] : 0;
+    }
+
+    public void setSite(int i, int building) {
+        site[i] = building;
     }
 
     /** Whether any unit carries anything: only then does the store hash and save. */

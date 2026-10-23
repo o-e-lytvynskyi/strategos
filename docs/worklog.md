@@ -9,7 +9,7 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-24 — M3 T9–T10
+## 2026-10-24 — M3 T9–T12
 
 - **The owner, past midnight:** «можешь любые тесты проводить и как закончишь м3 - начинай м4, все решения
   принимай сам, которые рекомендуешь» (STATE item 6).
@@ -30,7 +30,14 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
 - **M3 T10 · AUD-04, the world's edits seen and heard.** The next log of a tree being chopped shows vanilla's crack,
   a stage for each tenth of it; a felled log and a fallen building's blocks break with their particles and sound, and
   every block a building gains plays its place sound, for those who see the cell. The golden of a cracked log waits
-  for T30's batch. Next: T11–T12, placement and construction.
+  for T30's batch.
+- **M3 T11–T12 · BLD-02, placement; BLD-03 done, construction.** One set of placement rules judges for the client
+  and the server: inside, free, on land, flat within 2, civic centres 64 apart, others within 48 of an own centre,
+  affordable; a refusal names its rule. In RTS mode B arms placement and cycles the buildings, R turns the ghost,
+  a left click places with the selected workers. The first builder's arrival commits the site, units on it step off,
+  and the blocks rise in build order as the work adds up, n builders finishing in ceil(T ÷ n^0.7) ticks; a save
+  mid-build resumes at the same block, and the writer's budget never changes the hash. The ghost's goldens wait for
+  T30's batch. Next: T13–T15, population, production and rally points.
 
 ## 2026-10-23 (evening) — M3 spec, T1–T8
 

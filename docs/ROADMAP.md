@@ -343,8 +343,8 @@ Cards: [roadmap/M3-first-loop.md](roadmap/M3-first-loop.md#cards). 27 cards, at 
 | UNIT-04 | Starting units and the worker model | S | UNIT-02, DATA-04, D-02 | done |
 | BLD-01 | Building records and blueprints | M | CORE-06, DATA-03, PATH-15 | done |
 | AUD-04 | World-edit feedback: cracks, particles and sounds | M | ECO-03, BLD-15, NET-01 | in_progress |
-| BLD-02 | Placement mode and validators | M | BLD-01, CAM-04 | specified |
-| BLD-03 | Progressive construction | M | BLD-02, UNIT-04, BLD-15 | specified |
+| BLD-02 | Placement mode and validators | M | BLD-01, CAM-04 | in_progress |
+| BLD-03 | Progressive construction | M | BLD-02, UNIT-04, BLD-15 | done |
 | ECO-06 | Population and housing | S | ECO-01, BLD-01, D-01 | specified |
 | ECO-09 | Fields with manual reseed | M | ECO-05, BLD-01 | specified |
 | PROD-01 | Production queue | M | BLD-01, ECO-06 | specified |

@@ -62,6 +62,7 @@ class UnitTreeTransitionsTest {
         final List<OrderFinished> finished = new ArrayList<>();
         int node;
         int dropsite;
+        int site;
 
         Unit(StateId from, boolean worker) {
             handle = spawn(h, worker ? TemplateSet.WORKER : TemplateSet.INFANTRY, 0, new Vec2d(4, 8));
@@ -84,6 +85,8 @@ class UnitTreeTransitionsTest {
                     || from.equals(UnitAi.GATHERING)
                     || from.equals(UnitAi.GATHER_RETURNING)) {
                 GatherTransitionRows.start(this, from);
+            } else if (from.equals(UnitAi.BUILD_APPROACHING) || from.equals(UnitAi.BUILDING)) {
+                BuildTransitionRows.start(this, from);
             } else if (!from.equals(UnitAi.IDLE)) {
                 double ex = from.equals(UnitAi.ATTACKING) ? 5.2 : 10; // in reach (a 0.5 gap), or 6 blocks off
                 place(enemy, ex, 8);
@@ -232,7 +235,8 @@ class UnitTreeTransitionsTest {
     }
 
     static Stream<Arguments> unitRows() {
-        return Stream.concat(rows(), GatherTransitionRows.rows());
+        return Stream.of(rows(), GatherTransitionRows.rows(), BuildTransitionRows.rows())
+                .flatMap(r -> r);
     }
 
     private static Stream<Arguments> rows() {

@@ -24,7 +24,8 @@ import org.junit.jupiter.params.provider.Arguments;
 
 /**
  * UNIT-02.1 for gathering (ECO-05): the GATHER states' rows of the unit tree, run by {@link UnitTreeTransitionsTest}.
- * The unit is a worker at (4, 8) beside an oak of five logs at (12, 8), the faction's civic centre in the north-east.
+ * The unit is a worker at (4, 8) beside an oak of five logs at (12, 8), the faction's civic centre in the north-east
+ * and a house's foundation in the south-east ({@link BuildTransitionRows}).
  */
 final class GatherTransitionRows {
     static final TemplateId CIVIC_CENTRE = new TemplateId("strategos:building/civic_centre");
@@ -54,6 +55,7 @@ final class GatherTransitionRows {
         int template = Objects.requireNonNull(s.templates().byId(CIVIC_CENTRE)).netIndex();
         Blueprint b = Objects.requireNonNull(s.templates().blueprint(template));
         u.dropsite = s.placeComplete(template, 0, Footprint.of(b, 20, 0, 0), 1);
+        BuildTransitionRows.setUp(u);
     }
 
     /** The unit in {@code from}, as a save restores it: its gather order, its slot, and for the way home its load. */

@@ -439,7 +439,7 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   4. Goldens for valid and invalid previews (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** BLD-01, CAM-04 · **Size:** M ·
   **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 #### BLD-03 · Progressive construction
 - **Value:** Buildings rise block by block, and more builders finish faster, with diminishing
@@ -461,7 +461,8 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   6. With three constructions at once, the writer never exceeds 64 placements per tick, and each
      site flushes at most every 4 ticks (L3).
 - **Tests:** L0, L1, L3, L5 · **Depends on:** BLD-02, UNIT-04, BLD-15 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-24 — M3 T12: 1, 2, 5 and 10 builders take exactly ceil(T ÷ n^0.7) ticks (1); a finished house equals its blueprint (2) and no unit stands on its committed columns (3); saved mid-build it resumes at the same block (4); writer budgets 64 and 8 give the same hashes (5); three sites stay within 64 placements a tick, each in bursts at most every 4 ticks (6); its L5 soak is M3's whole-match soak (spec §1.6 rows 48–49)
 
 #### ECO-06 · Population and housing
 - **Value:** Houses raise the population cap, and running out of room is obvious (P4).

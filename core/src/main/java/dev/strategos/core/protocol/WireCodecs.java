@@ -217,6 +217,12 @@ public final class WireCodecs {
                             case INVALID_ARGUMENT -> 8;
                             case QUEUE_FULL -> 9;
                             case NOT_ENOUGH_RESOURCES -> 10;
+                            case BLOCKED -> 11;
+                            case NOT_ON_LAND -> 12;
+                            case NOT_EXPLORED -> 13;
+                            case NOT_FLAT -> 14;
+                            case TOO_CLOSE -> 15;
+                            case OUT_OF_REACH -> 16;
                         });
     }
 
@@ -234,6 +240,12 @@ public final class WireCodecs {
             case 8 -> RejectReason.INVALID_ARGUMENT;
             case 9 -> RejectReason.QUEUE_FULL;
             case 10 -> RejectReason.NOT_ENOUGH_RESOURCES;
+            case 11 -> RejectReason.BLOCKED;
+            case 12 -> RejectReason.NOT_ON_LAND;
+            case 13 -> RejectReason.NOT_EXPLORED;
+            case 14 -> RejectReason.NOT_FLAT;
+            case 15 -> RejectReason.TOO_CLOSE;
+            case 16 -> RejectReason.OUT_OF_REACH;
             default -> throw new WireException("unknown reject reason " + code);
         };
     }

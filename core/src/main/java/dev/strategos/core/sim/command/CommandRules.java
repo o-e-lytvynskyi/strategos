@@ -24,7 +24,8 @@ public final class CommandRules {
                 .register(new FollowRule())
                 .register(new GrantRule())
                 .register(new SpawnBuildingRule())
-                .register(new GatherRule());
+                .register(new GatherRule())
+                .register(new PlaceBuildingRule());
     }
 
     /** A second rule for a kind throws. */

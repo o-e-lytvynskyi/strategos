@@ -44,6 +44,13 @@ public final class BuildingStore {
     private int[] state = new int[8];
     private long[] progress = new long[8];
     private double[] damage = new double[8];
+    private long[] work = new long[8];
+    private int[] placed = new int[8];
+    private int[][] slots = new int[8][];
+    private int[][] claims = new int[8][];
+    // a step's scratch, neither hashed nor saved: the builders at work this tick and their rates
+    private int[] tickBuilders = new int[8];
+    private double[] tickRates = new double[8];
 
     /** Whether {@code handle} names a building's slot, alive or not. */
     public static boolean isBuilding(int handle) {
@@ -73,6 +80,10 @@ public final class BuildingStore {
         this.state[k] = state;
         this.progress[k] = progress;
         this.damage[k] = 0;
+        this.work[k] = 0;
+        this.placed[k] = 0;
+        this.slots[k] = new int[0];
+        this.claims[k] = new int[0];
         return Handle.of(BASE + k, generation[k]);
     }
 
@@ -88,6 +99,130 @@ public final class BuildingStore {
         state = Arrays.copyOf(state, n);
         progress = Arrays.copyOf(progress, n);
         damage = Arrays.copyOf(damage, n);
+        work = Arrays.copyOf(work, n);
+        placed = Arrays.copyOf(placed, n);
+        slots = Arrays.copyOf(slots, n);
+        claims = Arrays.copyOf(claims, n);
+        tickBuilders = Arrays.copyOf(tickBuilders, n);
+        tickRates = Arrays.copyOf(tickRates, n);
+    }
+
+    /** A builder at work on building {@code handle} this tick, at {@code rate} (BLD-03). */
+    public void contribute(int handle, double rate) {
+        int k = at(handle);
+        tickBuilders[k]++;
+        tickRates[k] += rate;
+    }
+
+    /** The builders at work on building {@code handle} this tick. */
+    public int tickBuilders(int handle) {
+        return tickBuilders[at(handle)];
+    }
+
+    /** The sum of their rates. */
+    public double tickRates(int handle) {
+        return tickRates[at(handle)];
+    }
+
+    /** Forgets this tick's builders, ready for the next. */
+    public void clearTick(int handle) {
+        int k = at(handle);
+        tickBuilders[k] = 0;
+        tickRates[k] = 0;
+    }
+
+    /** The builders' work so far on building {@code handle}, in millionths of a tick at one builder's rate (BLD-03). */
+    public long work(int handle) {
+        return work[at(handle)];
+    }
+
+    public void setWork(int handle, long value) {
+        work[at(handle)] = value;
+    }
+
+    /** How many of its blueprint's blocks, in build order, the core has asked the writer for. */
+    public int placed(int handle) {
+        return placed[at(handle)];
+    }
+
+    public void setPlaced(int handle, int value) {
+        placed[at(handle)] = value;
+    }
+
+    /** Building {@code handle}'s builder slots: the cells round its footprint, each {@code x << 16 | z}, ascending. */
+    public void setSlots(int handle, int[] cells) {
+        int k = at(handle);
+        slots[k] = cells.clone();
+        claims[k] = new int[cells.length];
+    }
+
+    public int slotCount(int handle) {
+        return slots[at(handle)].length;
+    }
+
+    public int slot(int handle, int slot) {
+        return slots[at(handle)][slot];
+    }
+
+    /** The unit holding builder slot {@code slot}, 0 when free. */
+    public int claim(int handle, int slot) {
+        return claims[at(handle)][slot];
+    }
+
+    /**
+     * Unit {@code unit} takes the free builder slot nearest (x, z) whose cell {@code standable} accepts, the lowest on a
+     * tie, or keeps the one it holds; its index, or -1 when none is free.
+     */
+    public int claimNearest(int handle, int unit, double x, double z, java.util.function.IntPredicate standable) {
+        int k = at(handle);
+        int best = -1;
+        double bestD = Double.POSITIVE_INFINITY;
+        for (int s = 0; s < slots[k].length; s++) {
+            if (claims[k][s] == unit) {
+                return s;
+            }
+            if (claims[k][s] != 0 || !standable.test(slots[k][s])) {
+                continue;
+            }
+            double dx = (slots[k][s] >>> 16) + 0.5 - x;
+            double dz = (slots[k][s] & 0xFFFF) + 0.5 - z;
+            double d = dx * dx + dz * dz;
+            if (d < bestD) {
+                bestD = d;
+                best = s;
+            }
+        }
+        if (best >= 0) {
+            claims[k][best] = unit;
+        }
+        return best;
+    }
+
+    /** Unit {@code unit} gives up any builder slot it holds on building {@code handle}. */
+    public void release(int handle, int unit) {
+        if (!alive(handle)) {
+            return;
+        }
+        int[] c = claims[at(handle)];
+        for (int s = 0; s < c.length; s++) {
+            if (c[s] == unit) {
+                c[s] = 0;
+            }
+        }
+    }
+
+    /** The live building whose builder slot unit {@code unit} holds, 0 for none: a restored unit's claim. */
+    public int claimedBy(int unit) {
+        for (int k = 0; k < high; k++) {
+            if (alive[k]) {
+                for (int c : claims[k]) {
+                    if (c == unit) {
+                        return Handle.of(BASE + k, generation[k]);
+                    }
+                }
+            }
+        }
+        return 0;
     }
 
     /** Whether {@code handle} is a building that stands now. */
@@ -201,6 +336,13 @@ public final class BuildingStore {
                 x = Hasher.mix(x, state[k]);
                 x = Hasher.mix(x, progress[k]);
                 x = Hasher.mix(x, Double.doubleToLongBits(damage[k]));
+                if (state[k] != COMPLETE) { // only a foundation or a site (BLD-03), so finished ones hash as before
+                    x = Hasher.mix(x, work[k]);
+                    x = Hasher.mix(x, placed[k]);
+                    for (int c : claims[k]) {
+                        x = Hasher.mix(x, c);
+                    }
+                }
             }
         }
         return x;
@@ -218,7 +360,16 @@ public final class BuildingStore {
             int baseY,
             int state,
             long progress,
-            double damage) {}
+            double damage,
+            long work,
+            int placed,
+            List<Integer> slots,
+            List<Integer> claims) {
+        public Saved {
+            slots = List.copyOf(slots);
+            claims = List.copyOf(claims);
+        }
+    }
 
     public List<Saved> save() {
         List<Saved> out = new ArrayList<>(high);
@@ -234,7 +385,15 @@ public final class BuildingStore {
                     baseY[k],
                     state[k],
                     progress[k],
-                    damage[k]));
+                    damage[k],
+                    work[k],
+                    placed[k],
+                    Arrays.stream(slots[k] == null ? new int[0] : slots[k])
+                            .boxed()
+                            .toList(),
+                    Arrays.stream(claims[k] == null ? new int[0] : claims[k])
+                            .boxed()
+                            .toList()));
         }
         return out;
     }
@@ -258,6 +417,13 @@ public final class BuildingStore {
             state[k] = s.state();
             progress[k] = s.progress();
             damage[k] = s.damage();
+            work[k] = s.work();
+            placed[k] = s.placed();
+            slots[k] = s.slots().stream().mapToInt(Integer::intValue).toArray();
+            claims[k] = new int[slots[k].length];
+            for (int i = 0; i < claims[k].length && i < s.claims().size(); i++) {
+                claims[k][i] = s.claims().get(i);
+            }
         }
     }
 }

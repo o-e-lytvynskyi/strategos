@@ -8,8 +8,8 @@ import java.util.Arrays;
 
 /**
  * P7, WORLD: each unit's gear (ECO-05), its task's tool and its load, posted as {@link UnitGear} when it changes. A
- * unit at work on a tree, on its way to one or back from one holds an axe; at a bush nothing; any unit carrying a load
- * shows it. The last gear posted is the view's, not the match's: it is neither hashed nor saved, so a restored core
+ * unit at work on a tree, on its way to one or back from one holds an axe; at a bush nothing; a builder on its way to
+ * a site or at work there the builder's tool (BLD-03); any unit carrying a load shows it. The last gear posted is the view's, not the match's: it is neither hashed nor saved, so a restored core
  * posts every unit's gear that is not plain once.
  */
 final class GearSystem implements MatchSystem {
@@ -49,12 +49,16 @@ final class GearSystem implements MatchSystem {
         }
     }
 
-    /** The tool of unit {@code i}'s task: an axe for a tree it works or walks to or from. */
+    /** The tool of unit {@code i}'s task: an axe for a tree it works or walks to or from; the builder's at a site. */
     private static int tool(MatchState s, int i) {
+        int leaf = s.ai().code(i);
+        if (s.orders().kind(i) == OrderKind.BUILD
+                && (leaf == UnitAi.BUILD_APPROACHING.code() || leaf == UnitAi.BUILDING.code())) {
+            return UnitGear.BUILDING;
+        }
         if (s.orders().kind(i) != OrderKind.GATHER) {
             return UnitGear.NONE;
         }
-        int leaf = s.ai().code(i);
         if (leaf != UnitAi.GATHER_APPROACHING.code()
                 && leaf != UnitAi.GATHERING.code()
                 && leaf != UnitAi.GATHER_RETURNING.code()) {

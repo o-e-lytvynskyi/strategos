@@ -70,6 +70,7 @@ final class BuiltinTemplates {
               "Health": { "max": 50 },
               "Behaviour": { "flee": 8 },
               "Cost": { "resources": { "food": 60 }, "population": 1, "time": 10 },
+              "Builder": { "rate": 1 },
               "ResourceGatherer": {
                 "rates": { "food": { "fruit": 1 }, "wood": { "tree": 0.6 } },
                 "capacities": { "food": 10, "wood": 10 }
@@ -83,6 +84,7 @@ final class BuiltinTemplates {
               "abstract": true,
               "Identity": { "classes": "Structure" },
               "Building": { "material": "stone" },
+              "Placement": { "civicReach": 48 },
               "Health": { "max": 500 }
             }
             """;
@@ -91,6 +93,7 @@ final class BuiltinTemplates {
               "parent": "strategos:template/building_base",
               "Identity": { "name": "strategos.building.civic_centre", "classes": "+CivicCentre" },
               "Building": { "blueprint": "strategos:civic_centre" },
+              "Placement": { "civicReach": 0, "spacing": 64 },
               "Health": { "max": 2000 },
               "Cost": { "resources": { "wood": 300, "stone": 200 }, "time": 150 },
               "Dropsite": { "resources": "food wood stone iron" },

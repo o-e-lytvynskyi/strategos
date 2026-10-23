@@ -25,7 +25,8 @@ class CommandKindsTest {
                         "strategos:follow",
                         "strategos:grant",
                         "strategos:spawn_building",
-                        "strategos:gather");
+                        "strategos:gather",
+                        "strategos:place_building");
     }
 
     @Test

@@ -31,7 +31,11 @@ public enum Action {
     ORDER_HERE(false),
     /** In first person: the selection follows the player (CAM-07). */
     FOLLOW_ME(false),
-    CANCEL(false);
+    CANCEL(false),
+    /** Placement mode (BLD-02): the next building template to place, after the last none, until the command card. */
+    BUILD(false),
+    /** Placement mode: the ghost turns a quarter. */
+    ROTATE(false);
 
     private final boolean held;
 

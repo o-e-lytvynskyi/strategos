@@ -6,8 +6,7 @@ import org.jspecify.annotations.Nullable;
  * What an order asks a unit to do, as the code its queue stores and the name a save uses. M1 has moves; M2 adds the
  * player's attack on a unit and attack-move to a place (ORD-04), the engagement a unit takes up itself: on an enemy it
  * noticed idle or walking and fighting, or on one that hit it (CMB-02), and following a commander in first person
- * (CAM-07); M3 adds fleeing from a blow (UNIT-04) and gathering at a resource node (ECO-05). BUILD follows with its
- * card.
+ * (CAM-07); M3 adds fleeing from a blow (UNIT-04), gathering at a resource node (ECO-05) and building (BLD-03).
  */
 public final class OrderKind {
     /** No order: an empty queue's current kind. */
@@ -26,6 +25,8 @@ public final class OrderKind {
     public static final int FLEE = 6;
     /** Gathering at a resource node (ECO-05), whose id the queue holds as the target: carried back, then gathered again. */
     public static final int GATHER = 7;
+    /** Building a foundation or a site (BLD-03), whose handle the queue holds as the target. */
+    public static final int BUILD = 8;
 
     private OrderKind() {}
 
@@ -39,6 +40,7 @@ public final class OrderKind {
             case FOLLOW -> "follow";
             case FLEE -> "flee";
             case GATHER -> "gather";
+            case BUILD -> "build";
             default -> throw new IllegalArgumentException("no order kind " + kind);
         };
     }
@@ -53,6 +55,7 @@ public final class OrderKind {
             case "follow" -> FOLLOW;
             case "flee" -> FLEE;
             case "gather" -> GATHER;
+            case "build" -> BUILD;
             default -> null;
         };
     }
@@ -63,10 +66,10 @@ public final class OrderKind {
     }
 
     /**
-     * Whether an order of {@code kind} holds a target: the unit it attacks, the player slot it follows, or the node it
-     * gathers at.
+     * Whether an order of {@code kind} holds a target: the unit it attacks, the player slot it follows, the node it
+     * gathers at, or the building it builds.
      */
     public static boolean targets(int kind) {
-        return attacks(kind) || kind == FOLLOW || kind == GATHER;
+        return attacks(kind) || kind == FOLLOW || kind == GATHER || kind == BUILD;
     }
 }
