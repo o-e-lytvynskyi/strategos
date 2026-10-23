@@ -45,7 +45,14 @@ public final class TickDriver {
             Runnable work = rt.lifecycle() == MatchLifecycle.RUNNING
                     ? () -> {
                         rt.tick(level);
-                        rt.pages().tick(level, rt.tick(), server.blockClasses(), server.jobs());
+                        rt.pages()
+                                .tick(
+                                        level,
+                                        rt.tick(),
+                                        server.blockClasses(),
+                                        server.jobs(),
+                                        server.writer(),
+                                        rt.id().value());
                     }
                     : () -> rt.materialiseOnly(level);
             server.faults().run(rt, "tick", work);

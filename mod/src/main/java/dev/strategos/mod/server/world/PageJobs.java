@@ -10,8 +10,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.block.state.BlockState;
 
 /**
  * Keeps a match's terrain pages in step with its level (04 §9.2, PATH-15). A block change marks its page dirty; after
@@ -69,18 +71,23 @@ public final class PageJobs {
         lastChange[page] = tick;
     }
 
-    /** After the step of tick {@code tick}: captures the pages that are due, at most {@link #PER_TICK}, oldest first. */
-    public void tick(ServerLevel level, long tick, BlockClassTable table, JobExecutor jobs) {
+    /**
+     * After the step of tick {@code tick}: captures the pages that are due, at most {@link #PER_TICK}, oldest first,
+     * each with the writes match {@code match} still waits to make there laid over it, sampled at {@code tick}.
+     */
+    public void tick(
+            ServerLevel level, long tick, BlockClassTable table, JobExecutor jobs, BlockWriter writer, int match) {
         long start = System.nanoTime();
         lastCaptured = 0;
         try {
-            captureDue(level, tick, table, jobs);
+            captureDue(level, tick, table, jobs, writer, match);
         } finally {
             lastCaptureNanos = System.nanoTime() - start;
         }
     }
 
-    private void captureDue(ServerLevel level, long tick, BlockClassTable table, JobExecutor jobs) {
+    private void captureDue(
+            ServerLevel level, long tick, BlockClassTable table, JobExecutor jobs, BlockWriter writer, int match) {
         for (int n = 0; n < PER_TICK && dirty > 0; n++) {
             int page = -1;
             for (int i = 0; i < firstDirty.length; i++) {
@@ -97,11 +104,24 @@ public final class PageJobs {
             lastChange[page] = CLEAN;
             dirty--;
             lastCaptured++;
-            submit(level, page, tick + delay, table, jobs);
+            PageCoord coord = new PageCoord(page % pagesX, page / pagesX);
+            int x0 = space.origin().getX() + coord.x() * VoxelSlice.SIDE;
+            int z0 = space.origin().getZ() + coord.z() * VoxelSlice.SIDE;
+            Map<BlockPos, BlockState> pending = writer.pendingIn(
+                    level,
+                    match,
+                    new BlockPos(x0, space.minY(), z0),
+                    new BlockPos(x0 + VoxelSlice.SIDE - 1, space.maxY(), z0 + VoxelSlice.SIDE - 1));
+            inFlight.add(new InFlight(
+                    page, tick + delay, jobs.submit(SliceCapture.capture(level, space, coord, table, pending, tick))));
+            captured++;
         }
     }
 
-    /** Every page, captured now and due at {@code due}: a new match's terrain, or a resumed one's. */
+    /**
+     * Every page, captured now and due at {@code due}: a new match's terrain, or a resumed one's. Their sample tick is
+     * unknown, so every edit the core keeps still applies over them: a restart may have lost writes that were waiting.
+     */
     public void prewarm(ServerLevel level, long due, BlockClassTable table, JobExecutor jobs) {
         for (int page = 0; page < pagesX * pagesZ; page++) {
             submit(level, page, due, table, jobs);

@@ -57,7 +57,8 @@ final class Snapshots {
                 s.pageRefs(),
                 s.paths().queue(),
                 s.nextGroup(),
-                treasury(s));
+                treasury(s),
+                s.terrainEdits().save());
     }
 
     /** The treasury's counters, or none while it is empty, so a match without an economy saves as before. */
@@ -125,6 +126,7 @@ final class Snapshots {
             state.health().setDamage(index, unit.damage());
         }
         state.pendingCommands().addAll(snapshot.pendingCommands());
+        state.terrainEdits().restore(snapshot.terrainEdits()); // before the pages, whose publication applies them
         int missing = 0;
         List<TerrainPage> pages = new ArrayList<>();
         for (PageRef ref : snapshot.pages()) {

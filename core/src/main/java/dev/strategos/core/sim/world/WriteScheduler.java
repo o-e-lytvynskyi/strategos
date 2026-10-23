@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -79,6 +80,21 @@ public final class WriteScheduler<W> {
             if (entry.getKey().match() == match) {
                 pending -= entry.getValue().size;
                 it.remove();
+            }
+        }
+    }
+
+    /**
+     * Every write match {@code match}'s sites still wait to make, site by site in {@link WriteSite} order, then by
+     * priority, oldest first: for a capture that must show the world as these writes will leave it (M3 spec §1.6 row 5).
+     */
+    public void forEachPending(int match, Consumer<W> out) {
+        for (Map.Entry<WriteSite, Site<W>> entry : sites.entrySet()) {
+            if (entry.getKey().match() != match) {
+                continue;
+            }
+            for (ArrayDeque<W> queue : entry.getValue().queues) {
+                queue.forEach(out);
             }
         }
     }

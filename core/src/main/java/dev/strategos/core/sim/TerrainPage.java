@@ -17,25 +17,49 @@ import java.util.Arrays;
  */
 @CoreApi
 public final class TerrainPage implements InputEvent {
+    /** A capture's sample tick when it is not known: every edit of the core still applies over it. */
+    public static final long UNKNOWN = -1;
+
     private final SurfacePage page;
     private final byte[] slice;
     private final long sliceHash;
+    private final long sampleTick;
 
     public TerrainPage(SurfacePage page, byte[] slice, long sliceHash) {
+        this(page, slice, sliceHash, UNKNOWN);
+    }
+
+    /**
+     * A page captured after the step of match tick {@code sampleTick}, with the writes the core had asked for up to then
+     * (written or waiting in the block writer) in its slice (M3 spec §1.6 row 5); {@link #UNKNOWN} for a page built
+     * without the writer, as at prepare or in a test.
+     */
+    public TerrainPage(SurfacePage page, byte[] slice, long sliceHash, long sampleTick) {
         this.page = page;
         this.slice = slice.clone();
         this.sliceHash = sliceHash;
+        this.sampleTick = sampleTick;
     }
 
     /** The page built from {@code slice}, as a page job does. */
     public static TerrainPage build(PageCoord coord, VoxelSlice slice, PageBuilder builder) {
-        return new TerrainPage(builder.build(slice, NavOverlay.EMPTY, coord), slice.encode(), slice.hash());
+        return build(coord, slice, builder, UNKNOWN);
+    }
+
+    /** The page built from {@code slice}, sampled after the step of {@code sampleTick}. */
+    public static TerrainPage build(PageCoord coord, VoxelSlice slice, PageBuilder builder, long sampleTick) {
+        return new TerrainPage(builder.build(slice, NavOverlay.EMPTY, coord), slice.encode(), slice.hash(), sampleTick);
     }
 
     /** The page rebuilt from an encoded slice, as a replay does: infantry, no overlay. */
     public static TerrainPage rebuild(PageCoord coord, byte[] slice) {
+        return rebuild(coord, slice, UNKNOWN);
+    }
+
+    /** As {@link #rebuild(PageCoord, byte[])}, with the capture's sample tick. */
+    public static TerrainPage rebuild(PageCoord coord, byte[] slice, long sampleTick) {
         VoxelSlice decoded = VoxelSlice.decode(slice);
-        return build(coord, decoded, new PageBuilder(MobilityClass.INFANTRY));
+        return build(coord, decoded, new PageBuilder(MobilityClass.INFANTRY), sampleTick);
     }
 
     public SurfacePage page() {
@@ -55,10 +79,16 @@ public final class TerrainPage implements InputEvent {
         return sliceHash;
     }
 
+    /** The tick whose step the capture followed, or {@link #UNKNOWN}. */
+    public long sampleTick() {
+        return sampleTick;
+    }
+
     @Override
     public boolean equals(Object o) {
         return o instanceof TerrainPage other
                 && other.sliceHash == sliceHash
+                && other.sampleTick == sampleTick
                 && other.page.equals(page)
                 && Arrays.equals(other.slice, slice);
     }

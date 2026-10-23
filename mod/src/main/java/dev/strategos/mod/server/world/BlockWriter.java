@@ -193,6 +193,30 @@ public final class BlockWriter {
         return writesOf(level).protectedBlocks;
     }
 
+    /**
+     * The states match {@code match}'s waiting writes will leave in the box from {@code min} to {@code max}
+     * (inclusive), the last write of a position winning: what a page capture lays over the blocks it copies.
+     */
+    public Map<BlockPos, BlockState> pendingIn(ServerLevel level, int match, BlockPos min, BlockPos max) {
+        Map<BlockPos, BlockState> out = new HashMap<>();
+        LevelWrites writes = levels.get(level.dimension());
+        if (writes == null || writes.scheduler.pending() == 0) {
+            return out;
+        }
+        writes.scheduler.forEachPending(match, w -> {
+            BlockPos p = w.pos();
+            if (p.getX() >= min.getX()
+                    && p.getX() <= max.getX()
+                    && p.getY() >= min.getY()
+                    && p.getY() <= max.getY()
+                    && p.getZ() >= min.getZ()
+                    && p.getZ() <= max.getZ()) {
+                out.put(p, w.state());
+            }
+        });
+        return out;
+    }
+
     /** Writes waiting at one site of {@code level}. */
     public int pending(ServerLevel level, WriteSite site) {
         LevelWrites writes = levels.get(level.dimension());

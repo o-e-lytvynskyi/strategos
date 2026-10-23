@@ -273,7 +273,11 @@ public final class MatchSnapshotCodec {
                     Codec.INT
                             .optionalFieldOf("nextGroup", MatchState.FIRST_GROUP)
                             .forGetter(MatchSnapshot::nextGroup),
-                    Codec.LONG.listOf().optionalFieldOf("treasury", List.of()).forGetter(MatchSnapshot::treasury))
+                    Codec.LONG.listOf().optionalFieldOf("treasury", List.of()).forGetter(MatchSnapshot::treasury),
+                    Codec.LONG
+                            .listOf()
+                            .optionalFieldOf("terrainEdits", List.of())
+                            .forGetter(MatchSnapshot::terrainEdits))
             .apply(i, MatchSnapshot::new));
 
     private MatchSnapshotCodec() {}

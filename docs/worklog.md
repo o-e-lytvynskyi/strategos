@@ -9,7 +9,14 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-23 (evening) — M3 spec, T1, T2, T3, T4
+## 2026-10-23 (evening) — M3 spec, T1, T2, T3, T4, T5
+
+- **M3 T5 · the core's own terrain edits** (for ECO-03 and BLD-01). The core records the voxels it
+  changes and the footprint columns it blocks, and rebuilds those pages itself from their last
+  slices every `pageK` ticks; a capture from the adapter lays the writer's waiting writes over the
+  world and names its tick, so edits it already holds are forgotten and the rest stay applied.
+  Measured: a rebuild costs 0.31 ms, most of it the grid's publication, hence one publication every
+  4 ticks. `jmhCompare` is red, mostly from this Mac's state (STATE item 11). Next: T6, nodes.
 
 - **M3 T4 · ECO-01, resources and the treasury.** Resources are match rules copied from
   `strategos/resources/*.json` when a match is created; amounts in thousandths; each faction's

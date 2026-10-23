@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 
@@ -186,17 +185,28 @@ final class Derivations {
         return s.scale() < 0 ? s.setScale(0) : s;
     }
 
-    /** Every marker's path under {@code json}, objects only, in key order. */
+    /** Every marker's path under {@code json}, objects only, in the JSON's own key order; paths built only for them. */
     private static void markers(JsonObject json, String prefix, List<String> out) {
-        for (String key : new TreeSet<>(json.keySet())) {
-            JsonElement e = json.get(key);
-            String path = prefix.isEmpty() ? key : prefix + "/" + key;
+        for (Map.Entry<String, JsonElement> entry : json.entrySet()) {
+            JsonElement e = entry.getValue();
+            if (!e.isJsonObject()) {
+                continue;
+            }
             if (MergeOps.derived(e) || MergeOps.overridden(e)) {
-                out.add(path);
-            } else if (e.isJsonObject()) {
-                markers(e.getAsJsonObject(), path, out);
+                out.add(prefix.isEmpty() ? entry.getKey() : prefix + "/" + entry.getKey());
+            } else if (hasObject(e.getAsJsonObject())) {
+                markers(e.getAsJsonObject(), prefix.isEmpty() ? entry.getKey() : prefix + "/" + entry.getKey(), out);
             }
         }
+    }
+
+    private static boolean hasObject(JsonObject json) {
+        for (Map.Entry<String, JsonElement> entry : json.entrySet()) {
+            if (entry.getValue().isJsonObject()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** The element at a slash-separated path of object keys, or null. */

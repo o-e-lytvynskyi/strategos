@@ -162,6 +162,8 @@ Rows written while specifying; tasks append theirs.
 | 24 | T3: the worker | `unit/worker`: `+Worker +Gatherer +Builder +Organic`, 50 hit points, `Behaviour/flee` 8 (a new core path, 0 to 32, default 0), 60 food, one population, 10 s; the spearman now costs the worker's food (derived), 40 wood and 1.5 × the worker's time (derived, 15 s). Who gathers and builds is `StatService#canGather` and `#canBuild`: the `Gatherer` and `Builder` tokens as modifiers leave them, so a faction modifier that adds `Gatherer` to its spearmen makes them gather (D-02's citizen-soldiers as data). Fleeing: a unit with no melee attack and a flee distance, hit while idle, takes up `OrderKind.FLEE` (code 6, saved as `flee`) before its orders, to the point that far from it straight away from the attacker, walked as a move; there, it goes back to its next order or stands. The gathering and building states take it up the same way (T9, T12). The worker draws as the others do, the placeholder Steve, until ART-01. The new ids sort after M2's, so their net indices stay (0, 1) and the worker is 2; the set's SHA changed (`TemplateSetTest`), the golden journals did not, since they carry their own sets. Building ids sort before `unit/`: T7 pins the indices (§9 R10). Tests: `WorkerModelTest` (3; UNIT-04.1, .2 and the flight), `contenttests.spawned_worker_and_spearman_read_their_stats` (UNIT-04.3) |
 | 25 | T4: resources are match rules | A match's resources are part of its `MatchRules` (`economy`: id, subtypes, starting amount, in order; at most 16), copied at creation from the data packs' `strategos/resources/<id>.json` (`order`, `subtypes`; display names `strategos.resource.<id>`), so a reload changes later matches only, and older rules decode with D-10's four at 0. Amounts are thousandths (`Amount`). The `Treasury` keeps, per faction and resource, the stock and what was granted (starting resources, the admin `Grant`, wire id 7), gathered, spent and refunded; a payment covers every resource or changes nothing. Its invariant, granted + gathered + refunded = stock + spent with no stock below 0, is checked by the core itself in FINAL every step, so every harness run, GameTest and server checks it; carried loads and node remainders join it with ECO-05. It hashes and saves only once non-empty (`treasury`, an optional field of schema 2 until the close bumps the schema), so older states and saves are unchanged. Costs are `Cost/resources/<id>` through the faction's modifiers (`Costs`). A refusal for want of resources is `NOT_ENOUGH_RESOURCES` with the missing amounts in thousandths in the result and in `feedback`. `faction_state` goes to each seated player of the faction, looked at every 5 ticks and sent when it changed (so a player who joins gets it at the next look); population and workers are 0 until ECO-06 and ECO-05. ECO-01.2 holds for the result itself here; the first paying commands, `PlaceBuilding` (T11) and `Train` (T14), assert it, and the card is done then |
 | 26 | T4: tests | `TreasuryTest` (3), `TreasuryInvariantTest` (200 seeds of 100 steps: grants through the command path, and payments, refunds and deliveries as later systems make them, each stock equal to a model every step; ECO-01.1), `PaymentTest` (3: the grant is the administrator's and names a resource the match has; a refusal names the missing amounts; the treasury survives a snapshot and an economy-less match saves none), `WireCodecSizeTest` (+3: `faction_state` within its cap, about 30 bytes for an opening's state, ECO-01.4; `feedback` with 16 missing amounts; the grant), `replicationtests.faction_state_reaches_its_own_faction_only` (ECO-01.3) |
+| 27 | T5: the core's own edits | `MatchState#editVoxel` records an edit (a cell: column and band level, so the slice's height decides its index when applied) with its tick in `TerrainEdits`; `blockColumn` and `releaseColumn` set a footprint in `FootprintOverlay`. The state keeps each published page's slice bytes; a page with edits or footprints is rebuilt from them, in the WORLD phase (`TerrainSystem`) every `pageK` ticks, all edited pages in one publication, and whenever a capture of it is published. A capture carries its sample tick (`TerrainPage#sampleTick`, journaled under a new record tag only when known, so older journals read and write as before): the mod captures after the step and lays the match's waiting writes over the copied blocks (`BlockWriter#pendingIn`, `WriteScheduler#forEachPending`), so the edits up to the sample tick are in the slice and are forgotten. A prewarm's tick is unknown (a restart may have lost waiting writes), so every edit stays applied over it. Edits hash and save (`terrainEdits`) only once there are any. They are never compacted: a felled forest keeps tens of thousands, a few hundred kilobytes in a save (§9 R11) |
+| 28 | T5: tests and the rebuild's cost | `TerrainEditsTest` (3: a pillar edited away rebuilds its page at the next multiple of `pageK` and no other; a capture before the edits' writes keeps them applied, one of unknown tick too, one after drops them, and a later capture with the pillar back shows it; edits survive a snapshot and a restore from slices with the same hash, and an unedited match saves none), `writertests.a_capture_holds_the_writers_waiting_writes` (a stone waiting in the writer is solid in the capture while the level is still air; the capture names its tick). `TerrainEditBench.rebuildOnePage`: 307 µs for one page of a 4 × 4 grid against `PageBuilderBench.build`'s 37 µs: the publication, which joins the grid's components again, is most of it, as it is for every page the adapter publishes; hence one publication every `pageK` ticks (§5) |
 
 ### 1.7 Consent plan
 
@@ -378,7 +380,9 @@ Rows written while specifying; tasks append theirs.
 No spike gates M3. Two numbers are measured where they first appear and decide their task's shape:
 - **The core's page rebuild** (T5): the cost of one page job from slice, edits and overlay, and the
   rebuilds a tick a forest of 30 workers causes; if a tick's rebuilds exceed 0.5 ms at p95, edits
-  coalesce per page over `pageK` ticks.
+  coalesce per page over `pageK` ticks. Measured: 0.31 ms a rebuild, most of it the publication, so
+  edits coalesce every `pageK` ticks into one publication (§1.6 row 28); the soak (T29) reports the
+  WORLD phase's share.
 - **Discovery** (T6): the proving ground indexed in prepare under 2 s (ECO-02.5), else discovery
   becomes a job per page cluster.
 
@@ -428,9 +432,9 @@ report lists placement, writer and `fx` times.
   missing amounts in `CommandResult` and `feedback` (§1.6 rows 25–26). **Verification:** `verify`.
 
 #### T5 · The core's own terrain edits — for ECO-03 and BLD-01
-- **Files:** `core.sim.nav.TerrainEdits`, the core's page jobs, the mutable overlay; `SliceCapture`'s
-  pending-writes rule and sample tick (§1.6 row 5); the rebuild measurement (§5).
-  **Verification:** `verify`; L1: an edit, a later capture and a replay agree on every page.
+- **Files:** `TerrainEdits`, `FootprintOverlay`, `TerrainSystem`, `MatchState#editVoxel`; `TerrainPage`'s sample
+  tick; `SliceCapture`'s waiting writes; `TerrainEditBench` (§1.6 rows 27–28).
+  **Verification:** `verify`; `TerrainEditsTest`; `writertests`.
 
 #### T6 · Resource nodes — ECO-02
 - **Files:** `resource_yield` data map (registration, defaults, inventory entry in ADR-0020's
@@ -503,7 +507,7 @@ report lists placement, writer and `fx` times.
 
 ### 7.3 Progress
 
-- [x] T1 (2026-10-23) · [x] T2 (2026-10-23) · [x] T3 (2026-10-23) · [x] T4 (2026-10-23) · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11
+- [x] T1 (2026-10-23) · [x] T2 (2026-10-23) · [x] T3 (2026-10-23) · [x] T4 (2026-10-23) · [x] T5 (2026-10-23) · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11
 - [ ] T12 · [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17 · [ ] T18 · [ ] T19 · [ ] T20 · [ ] T21
 - [ ] T22 · [ ] T23 · [ ] T24 · [ ] T25 · [ ] T26 · [ ] T27 · [ ] T28 · [ ] T29 · [ ] T30 · [ ] T31
 
@@ -541,6 +545,7 @@ The roadmap's Done gate, then the owner's acceptance.
 | R8 | A golden journal's hash changes with the economy | `GoldenJournalTest` | Empty stores hash as before (§0.3); else re-record with a reason |
 | R9 | Client tasks cannot be checked without a window | CI's Linux route fails to show it | The view-model's L1 test and the scenario on CI; the rest waits for T30, and the owner is told |
 | R10 | New template ids shift the net indices saves and the built-in set rely on (`building/` sorts before `unit/`) | `TemplateSetTest`, the released fixtures | The built-in set and a session's table start from a pinned order (M2's ids first), new ids appended (T7) |
+| R11 | The core's terrain edits grow without bound on pages never captured again | a save's size, budget G | Bake a page's edits into a slice the snapshot carries, when a page holds more than a few hundred |
 
 ---
 

@@ -35,6 +35,8 @@ final class InputCodec {
     private static final int AGENT_UPDATE = 5;
     private static final int EXTERNAL_DAMAGE = 6;
     private static final int LEADER_UPDATE = 7;
+    /** A terrain page with its capture's sample tick (M3): written only when the tick is known. */
+    private static final int TERRAIN_PAGE_SAMPLED = 8;
 
     private InputCodec() {}
 
@@ -45,10 +47,13 @@ final class InputCodec {
                 CommandEnvelope.WIRE.write(out, envelope);
             }
             case TerrainPage page -> {
-                out.writeByte(TERRAIN_PAGE);
+                out.writeByte(page.sampleTick() == TerrainPage.UNKNOWN ? TERRAIN_PAGE : TERRAIN_PAGE_SAMPLED);
                 out.writeVarInt(page.coord().x());
                 out.writeVarInt(page.coord().z());
                 out.writeLong(page.sliceHash());
+                if (page.sampleTick() != TerrainPage.UNKNOWN) {
+                    out.writeVarLong(page.sampleTick());
+                }
             }
             case AgentUpdate update -> {
                 out.writeByte(AGENT_UPDATE);
@@ -97,15 +102,16 @@ final class InputCodec {
         int kind = in.readUnsignedByte();
         return switch (kind) {
             case COMMAND -> CommandEnvelope.WIRE.read(in);
-            case TERRAIN_PAGE -> {
+            case TERRAIN_PAGE, TERRAIN_PAGE_SAMPLED -> {
                 PageCoord coord = new PageCoord(in.readVarInt(), in.readVarInt());
                 long hash = in.readLong();
+                long sampleTick = kind == TERRAIN_PAGE_SAMPLED ? in.readVarLong() : TerrainPage.UNKNOWN;
                 byte[] slice = slices.slice(hash);
                 if (slice == null) {
                     throw new WireException("terrain page " + coord + " names slice " + Long.toHexString(hash)
                             + ", which no 'L' record of its segment holds");
                 }
-                TerrainPage page = TerrainPage.rebuild(coord, slice);
+                TerrainPage page = TerrainPage.rebuild(coord, slice, sampleTick);
                 if (page.sliceHash() != hash) {
                     throw new WireException(
                             "the slice of terrain page " + coord + " does not hash to " + Long.toHexString(hash));

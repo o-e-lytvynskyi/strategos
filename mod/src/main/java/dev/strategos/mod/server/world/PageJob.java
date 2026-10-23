@@ -33,6 +33,7 @@ final class PageJob implements PureJob<TerrainPage> {
     private final int[] overrideIndices;
     private final short[] overrideClasses;
     private final BlockClassTable table;
+    private final long sampleTick;
 
     PageJob(
             PageCoord coord,
@@ -48,7 +49,8 @@ final class PageJob implements PureJob<TerrainPage> {
             List<@Nullable PalettedContainer<BlockState>> copies,
             int[] overrideIndices,
             short[] overrideClasses,
-            BlockClassTable table) {
+            BlockClassTable table,
+            long sampleTick) {
         this.coord = coord;
         this.x0 = x0;
         this.z0 = z0;
@@ -63,6 +65,7 @@ final class PageJob implements PureJob<TerrainPage> {
         this.overrideIndices = overrideIndices;
         this.overrideClasses = overrideClasses;
         this.table = table;
+        this.sampleTick = sampleTick;
     }
 
     @Override
@@ -85,6 +88,6 @@ final class PageJob implements PureJob<TerrainPage> {
             voxels[overrideIndices[i]] = overrideClasses[i];
         }
         PageBuilder builder = scratch.get(PageBuilder.class, () -> new PageBuilder(MobilityClass.INFANTRY));
-        return TerrainPage.build(coord, new VoxelSlice(height, voxels), builder);
+        return TerrainPage.build(coord, new VoxelSlice(height, voxels), builder, sampleTick);
     }
 }

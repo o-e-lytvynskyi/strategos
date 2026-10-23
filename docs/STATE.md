@@ -65,6 +65,11 @@ Answer in chat or here; the next session applies the answers.
    - the card refinements made after the approval
      ([design/roadmap-changes.md §8](design/roadmap-changes.md));
    - the promo draft ([promo/roadmap-announcement.md](promo/roadmap-announcement.md)).
+11. **For your information: `jmhCompare` is red since M3 T4, mostly from this Mac's state.** Three benchmarks
+   read 16–26 % over this morning's baseline; `MatchBusBench`, whose code no M3 task touched, reads 14.4 µs at the
+   commit before M3's code against the baseline's 12.0. The one real growth is M3 T2's relationships in template
+   compilation: 6.36 ms against 5.86 at that commit (+8.6 %). No new baseline is proposed now; the next full run at
+   a quiet moment decides, and a proposal follows if the growth stays.
 
 ## Since your last visit
 
@@ -366,8 +371,8 @@ Answer in chat or here; the next session applies the answers.
 - **Milestone:** M3 First loop, started 2026-10-23 at your word, without windows; spec:
   [milestones/M3-first-loop.md](milestones/M3-first-loop.md) (31 tasks, every card `specified`).
   M1 and M2 are Done (2026-10-23).
-- **In progress:** M3 T5, the core's own terrain edits.
-- **Last finished task:** M3 T4 (2026-10-23), resources and the treasury; the balance sheet is [balance/sheet.md](balance/sheet.md).
+- **In progress:** M3 T6, resource nodes (ECO-02).
+- **Last finished task:** M3 T5 (2026-10-23), the core's own terrain edits; the balance sheet is [balance/sheet.md](balance/sheet.md).
 - **Next task:** M3's tasks in the spec's order (§7.1), headless; anything needing a window goes to
   item 6.
 - **WIP branch:** none.

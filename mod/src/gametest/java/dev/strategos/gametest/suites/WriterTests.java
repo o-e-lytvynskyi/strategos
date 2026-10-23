@@ -1,5 +1,10 @@
 package dev.strategos.gametest.suites;
 
+import dev.strategos.core.port.JobExecutor;
+import dev.strategos.core.sim.TerrainPage;
+import dev.strategos.core.sim.nav.BlockClass;
+import dev.strategos.core.sim.nav.PageCoord;
+import dev.strategos.core.sim.nav.VoxelSlice;
 import dev.strategos.core.sim.world.WritePriority;
 import dev.strategos.core.sim.world.WriteScheduler;
 import dev.strategos.core.sim.world.WriteSite;
@@ -9,6 +14,7 @@ import dev.strategos.gametest.StrategosTest;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.server.match.MatchRuntime;
 import dev.strategos.mod.server.world.BlockWriter;
+import dev.strategos.mod.server.world.SliceCapture;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -31,6 +37,56 @@ public final class WriterTests {
 
     /** What a site asked for: the writes in order. */
     private record Asked(WriteSite site, BlockPos pos, BlockState state, int owner) {}
+
+    /**
+     * M3 T5 (spec §1.6 row 5): a capture taken while the core's writes still wait in the writer shows them, so a page the
+     * adapter rebuilds never brings back a block the core has removed or hides one it has placed; the capture names the
+     * tick it followed. The control: the same column in the level itself is still air.
+     */
+    @StrategosTest(batch = "writer_capture", timeoutTicks = 100, solo = true)
+    public static void aCaptureHoldsTheWritersWaitingWrites(GameTestHelper h) {
+        ServerLevel level = h.getLevel();
+        BlockWriter writer = StrategosServer.get().writer();
+        MatchRuntime rt = MatchFixture.create(h, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
+        BlockPos at = rt.space().origin().offset(3, 2, 3);
+        PageCoord page = new PageCoord(0, 0);
+        int x0 = rt.space().origin().getX();
+        int z0 = rt.space().origin().getZ();
+        h.startSequence()
+                .thenExecute(() -> {
+                    Units.check(level.getBlockState(at).isAir(), "the column is not air to start with");
+                    writer.enqueue(
+                            level,
+                            new WriteSite(rt.id().value(), 1),
+                            WritePriority.CONSTRUCTION,
+                            at,
+                            Blocks.STONE.defaultBlockState(),
+                            0);
+                    var pending = writer.pendingIn(
+                            level,
+                            rt.id().value(),
+                            new BlockPos(x0, rt.space().minY(), z0),
+                            new BlockPos(x0 + 15, rt.space().maxY(), z0 + 15));
+                    Units.check(pending.size() == 1, "waiting writes in the page: " + pending);
+                    TerrainPage captured = JobExecutor.inline()
+                            .submit(SliceCapture.capture(
+                                    level,
+                                    rt.space(),
+                                    page,
+                                    StrategosServer.get().blockClasses(),
+                                    pending,
+                                    rt.tick()))
+                            .join();
+                    VoxelSlice slice = VoxelSlice.decode(captured.slice());
+                    short cls = slice.get(3, at.getY() - rt.space().minY(), 3);
+                    Units.check(
+                            BlockClass.top(cls) == 16 && BlockClass.is(cls, BlockClass.STANDABLE),
+                            "the voxel is " + cls);
+                    Units.check(captured.sampleTick() == rt.tick(), "sampled at " + captured.sampleTick());
+                    Units.check(level.getBlockState(at).isAir(), "the write was made before the capture");
+                })
+                .thenSucceed();
+    }
 
     /**
      * BLD-15.1 and .3: saturated queues in two matches, two sites each. At most 64 writes a tick, each site at most

@@ -10,11 +10,15 @@ import dev.strategos.core.sim.econ.Amount;
 import dev.strategos.core.sim.econ.Costs;
 import dev.strategos.core.sim.econ.EconomyRules;
 import dev.strategos.core.sim.econ.Treasury;
+import dev.strategos.core.sim.nav.FootprintOverlay;
 import dev.strategos.core.sim.nav.MobilityClass;
+import dev.strategos.core.sim.nav.PageBuilder;
 import dev.strategos.core.sim.nav.PageCoord;
 import dev.strategos.core.sim.nav.PathStore;
 import dev.strategos.core.sim.nav.SurfaceGrid;
 import dev.strategos.core.sim.nav.SurfacePage;
+import dev.strategos.core.sim.nav.TerrainEdits;
+import dev.strategos.core.sim.nav.VoxelSlice;
 import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.core.sim.spatial.SpatialQueries;
 import dev.strategos.core.sim.stats.StatService;
@@ -65,6 +69,12 @@ public final class MatchState {
     /** Pages whose slice is known: published, or named by a restored snapshot whose slice was missing. */
     private final BitSet known;
 
+    private final byte[][] sliceBytes; // each published page's last captured slice, for the core's own rebuilds
+    private final TerrainEdits terrainEdits;
+    private final FootprintOverlay footprints;
+    private final BitSet rebuild;
+    private final PageBuilder rebuilder = new PageBuilder(MobilityClass.INFANTRY);
+
     private int[] changed = new int[4];
     private int changedCount;
 
@@ -93,6 +103,10 @@ public final class MatchState {
         this.pageSlices = new long[surfaces.pagesX() * surfaces.pagesZ()];
         this.published = new BitSet(pageSlices.length);
         this.known = new BitSet(pageSlices.length);
+        this.sliceBytes = new byte[pageSlices.length][];
+        this.terrainEdits = new TerrainEdits(pageSlices.length);
+        this.footprints = new FootprintOverlay(surfaces.pagesX(), surfaces.pagesZ());
+        this.rebuild = new BitSet(pageSlices.length);
         ensureCapacity(entities.highWater());
     }
 
@@ -103,7 +117,9 @@ public final class MatchState {
 
     /**
      * Publishes a rebuilt page; a page outside the match's grid is refused. A page whose slice differs from the one
-     * last known there counts as changed this tick: routes across it are asked for again (PATH-15).
+     * last known there counts as changed this tick: routes across it are asked for again (PATH-15). The core's own
+     * edits and footprints are laid over the slice (M3 spec §1.6 row 5): those up to the capture's sample tick are in
+     * it already and are forgotten, the rest are applied by rebuilding the page here.
      */
     public void publish(TerrainPage page) {
         publishAll(List.of(page));
@@ -128,9 +144,82 @@ public final class MatchState {
                 changed[changedCount++] = index;
                 paths.pageChanged(tick);
             }
-            built.add(page.page());
+            sliceBytes[index] = page.slice();
+            if (page.sampleTick() >= 0) {
+                terrainEdits.dropUpTo(index, page.sampleTick());
+            }
+            if (terrainEdits.count(index) > 0 || footprints.any(index)) {
+                built.add(rebuilt(index, page.coord()));
+                rebuild.clear(index);
+            } else {
+                built.add(page.page());
+            }
         }
         surfaces = surfaces.publishAll(built);
+    }
+
+    /** Page {@code index}'s surfaces from its last slice, the core's edits and its footprints. */
+    private SurfacePage rebuilt(int index, PageCoord coord) {
+        VoxelSlice slice = terrainEdits.applyTo(index, VoxelSlice.decode(sliceBytes[index]));
+        return rebuilder.build(slice, footprints.of(coord), coord);
+    }
+
+    /**
+     * The core sets a voxel itself, at match-local column (x, z) and absolute height y: a log it removed, a footprint
+     * it cleared. Its page is rebuilt in this tick's WORLD phase; the writer makes the block follow.
+     */
+    public void editVoxel(int x, int y, int z, short cls) {
+        MatchBounds b = config.bounds();
+        int band = y - b.minY();
+        if (x < 0 || z < 0 || x >= b.sizeX() || z >= b.sizeZ() || band < 0 || band >= VoxelSlice.MAX_HEIGHT) {
+            throw new IllegalArgumentException("voxel (" + x + ", " + y + ", " + z + ") outside the match space");
+        }
+        int index = pageIndex(PageCoord.of(x, z));
+        terrainEdits.add(index, TerrainEdits.cell(x & 15, band, z & 15), cls, tick);
+        rebuild.set(index);
+    }
+
+    /** Blocks a footprint column (BLD-01); its page is rebuilt in this tick's WORLD phase. */
+    public void blockColumn(int x, int z) {
+        footprints.block(x, z);
+        rebuild.set(footprints.pageOf(x, z));
+    }
+
+    /** Releases a footprint column; its page is rebuilt in this tick's WORLD phase. */
+    public void releaseColumn(int x, int z) {
+        footprints.release(x, z);
+        rebuild.set(footprints.pageOf(x, z));
+    }
+
+    /**
+     * WORLD: rebuilds every page the core edited this tick, from its last slice, and publishes them as changed. A page
+     * not captured yet gets its edits when it is first published.
+     */
+    public void rebuildEdited() {
+        if (rebuild.isEmpty()) {
+            return;
+        }
+        List<SurfacePage> built = new ArrayList<>();
+        for (int i = rebuild.nextSetBit(0); i >= 0; i = rebuild.nextSetBit(i + 1)) {
+            if (sliceBytes[i] == null) {
+                continue;
+            }
+            built.add(rebuilt(i, new PageCoord(i % surfaces.pagesX(), i / surfaces.pagesX())));
+            if (changedCount == changed.length) {
+                changed = Arrays.copyOf(changed, changedCount * 2);
+            }
+            changed[changedCount++] = i;
+            paths.pageChanged(tick);
+        }
+        rebuild.clear();
+        if (!built.isEmpty()) {
+            surfaces = surfaces.publishAll(built);
+        }
+    }
+
+    /** The core's own terrain edits (M3 spec §1.6 row 5). */
+    public TerrainEdits terrainEdits() {
+        return terrainEdits;
     }
 
     /**

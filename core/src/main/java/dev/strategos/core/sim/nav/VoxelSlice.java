@@ -45,8 +45,18 @@ public final class VoxelSlice {
         return voxels[index(x, y, z, height)];
     }
 
-    static int index(int x, int y, int z, int height) {
+    /** The voxel at column (x, z), 0–15 each, and band level y: the index {@link TerrainEdits} names. */
+    public static int index(int x, int y, int z, int height) {
         return (x * SIDE + z) * height + y;
+    }
+
+    /** This slice with voxel {@code indices[k]} set to {@code classes[k]}, in order, so a later one wins. */
+    public VoxelSlice edited(int[] indices, short[] classes) {
+        short[] copy = voxels.clone();
+        for (int k = 0; k < indices.length; k++) {
+            copy[indices[k]] = classes[k];
+        }
+        return new VoxelSlice(height, copy);
     }
 
     /** Per column: the number of runs, then each run's class and length, as varints. */

@@ -15,7 +15,8 @@ import java.util.ArrayDeque;
  * and, once it has touched terrain, its velocity, floor, step, stuck monitor and arrival latch, and, once hurt, the
  * damage it has taken;
  * then, once any path was requested, the next request id, the last tick a page changed and each request in flight (id, unit, due tick); then,
- * once a faction holds or spent anything, every treasury counter (ECO-01); then every pending command. A match that never asks for a path, such as one without terrain, hashes as in M0. The match id is
+ * once a faction holds or spent anything, every treasury counter (ECO-01), and once the core edited its terrain, every
+ * edit; then every pending command. A match that never asks for a path, such as one without terrain, hashes as in M0. The match id is
  * left out, so the L1 twin of a GameTest match agrees; so are the terrain grid, which the twin rebuilds from the same
  * pages, and the results in flight, which a job may not have computed yet. The unit loop mixes a plain {@code long},
  * so a hash without pending commands or path requests in flight allocates nothing.
@@ -108,6 +109,9 @@ public final class StateHasher {
 
         if (!s.treasury().empty()) { // only once a faction holds or spent something, so older states keep their hashes
             h = s.treasury().mix(h);
+        }
+        if (!s.terrainEdits().empty()) { // only once the core edited its terrain (M3)
+            h = s.terrainEdits().mix(h);
         }
 
         ArrayDeque<CommandEnvelope> pending = s.pendingCommands();

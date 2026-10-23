@@ -20,12 +20,40 @@ public record MatchSnapshot(
         List<PageRef> pages,
         PathStore.Queue paths,
         int nextGroup,
-        List<Long> treasury) {
+        List<Long> treasury,
+        List<Long> terrainEdits) {
     public MatchSnapshot {
         units = List.copyOf(units);
         treasury = List.copyOf(treasury);
+        terrainEdits = List.copyOf(terrainEdits);
         pendingCommands = List.copyOf(pendingCommands);
         pages = List.copyOf(pages);
+    }
+
+    /** A snapshot from before the core edited terrain (M3 T5). */
+    public MatchSnapshot(
+            MatchConfig config,
+            long tick,
+            long templateSetHash,
+            EntitySlots slots,
+            List<UnitRecord> units,
+            List<CommandEnvelope> pendingCommands,
+            List<PageRef> pages,
+            PathStore.Queue paths,
+            int nextGroup,
+            List<Long> treasury) {
+        this(
+                config,
+                tick,
+                templateSetHash,
+                slots,
+                units,
+                pendingCommands,
+                pages,
+                paths,
+                nextGroup,
+                treasury,
+                List.of());
     }
 
     /** A snapshot from before the economy (ECO-01): no treasury. */

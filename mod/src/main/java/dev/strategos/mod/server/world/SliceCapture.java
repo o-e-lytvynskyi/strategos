@@ -1,10 +1,12 @@
 package dev.strategos.mod.server.world;
 
+import dev.strategos.core.sim.TerrainPage;
 import dev.strategos.core.sim.nav.PageCoord;
 import dev.strategos.core.sim.nav.VoxelSlice;
 import dev.strategos.mod.server.match.MatchSpace;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.state.BlockState;
@@ -17,12 +19,28 @@ import org.jspecify.annotations.Nullable;
  * Captures a page on the main thread (04 §9.2, PATH-15): copies of the sections under its 16 x 16 columns over the
  * match's band ({@code PalettedContainer#copy}, PalettedContainer.java:290; pages align to the match's origin, so one
  * may span four chunks), and, for the rare sections holding a state whose shape depends on its position, those voxels'
- * classes taken there with their real position. The {@link PageJob} it returns does the rest anywhere.
+ * classes taken there with their real position; then the match's waiting writes, which win. The {@link PageJob} it
+ * returns does the rest anywhere.
  */
 public final class SliceCapture {
     private SliceCapture() {}
 
     public static PageJob capture(ServerLevel level, MatchSpace space, PageCoord coord, BlockClassTable table) {
+        return capture(level, space, coord, table, Map.of(), TerrainPage.UNKNOWN);
+    }
+
+    /**
+     * A capture after the step of match tick {@code sampleTick}, with {@code pending}, the writes the match's sites still
+     * wait to make there, laid over the copied blocks, so the page is the world as the core has asked for it up to that
+     * tick (M3 spec §1.6 row 5).
+     */
+    public static PageJob capture(
+            ServerLevel level,
+            MatchSpace space,
+            PageCoord coord,
+            BlockClassTable table,
+            Map<BlockPos, BlockState> pending,
+            long sampleTick) {
         int x0 = space.origin().getX() + coord.x() * VoxelSlice.SIDE;
         int z0 = space.origin().getZ() + coord.z() * VoxelSlice.SIDE;
         int minY = space.minY();
@@ -69,6 +87,17 @@ public final class SliceCapture {
                 }
             }
         }
+        for (Map.Entry<BlockPos, BlockState> w : pending.entrySet()) {
+            BlockPos at = w.getKey();
+            int px = at.getX() - x0;
+            int pz = at.getZ() - z0;
+            int py = at.getY() - minY;
+            if (px >= 0 && pz >= 0 && px < VoxelSlice.SIDE && pz < VoxelSlice.SIDE && py >= 0 && py < height) {
+                short cls = table.classOf(w.getValue());
+                indices.add((px * VoxelSlice.SIDE + pz) * height + py);
+                classes.add(BlockClassTable.needsPosition(cls) ? table.classAt(w.getValue(), level, at) : cls);
+            }
+        }
         int[] overrideIndices = new int[indices.size()];
         short[] overrideClasses = new short[classes.size()];
         for (int i = 0; i < overrideIndices.length; i++) {
@@ -89,7 +118,8 @@ public final class SliceCapture {
                 copies,
                 overrideIndices,
                 overrideClasses,
-                table);
+                table,
+                sampleTick);
     }
 
     /** The page's voxels of one section whose class needs the real position, classified there. */
