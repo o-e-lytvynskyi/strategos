@@ -7,6 +7,7 @@ import dev.strategos.mod.registry.ModTickets;
 import dev.strategos.mod.server.body.BodyEvents;
 import dev.strategos.mod.server.command.DebugCommands;
 import dev.strategos.mod.server.command.StrategosCommands;
+import dev.strategos.mod.server.commander.ObserverRules;
 import dev.strategos.mod.server.content.TemplateReloadListener;
 import dev.strategos.mod.server.content.TemplateSync;
 import dev.strategos.mod.server.tick.TickDriver;
@@ -23,7 +24,10 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.TagsUpdatedEvent;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
+import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.level.ChunkWatchEvent;
 import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
@@ -68,6 +72,11 @@ public final class Strategos {
                 AddReloadListenerEvent.class, event -> reloadListeners().forEach(event::addListener));
         game.addListener(OnDatapackSyncEvent.class, TemplateSync::onDatapackSync);
         game.addListener(ChunkWatchEvent.Sent.class, StrategosServer::onChunkSent);
+        game.addListener(LivingIncomingDamageEvent.class, ObserverRules::onIncomingDamage);
+        game.addListener(AttackEntityEvent.class, ObserverRules::onAttack);
+        game.addListener(PlayerInteractEvent.RightClickBlock.class, ObserverRules::onRightClickBlock);
+        game.addListener(PlayerInteractEvent.LeftClickBlock.class, ObserverRules::onLeftClickBlock);
+        game.addListener(PlayerInteractEvent.EntityInteract.class, ObserverRules::onEntityInteract);
     }
 
     /** The listeners every data pack reload gets, made fresh for each; the engine-surface inventory reads them (B12). */

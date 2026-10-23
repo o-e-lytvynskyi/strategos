@@ -27,6 +27,8 @@ public enum Action {
     CONTROL_GROUP_CENTRE(false),
     TOGGLE_FIRST_PERSON(false),
     TOGGLE_RTS(false),
+    /** In first person: the selection moves to where the player looks (CAM-05). */
+    ORDER_HERE(false),
     CANCEL(false);
 
     private final boolean held;

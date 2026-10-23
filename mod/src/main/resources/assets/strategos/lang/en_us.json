@@ -17,5 +17,6 @@
   "key.strategos.attack_move": "Attack-move",
   "key.strategos.stop": "Stop",
   "key.strategos.toggle_first_person": "First person",
-  "key.strategos.toggle_rts": "RTS mode"
+  "key.strategos.toggle_rts": "RTS mode",
+  "key.strategos.order_here": "Order the selection here"
 }

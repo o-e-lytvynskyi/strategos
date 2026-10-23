@@ -318,9 +318,9 @@ Cards: [roadmap/M2-command.md](roadmap/M2-command.md#cards). 20 cards, at most 6
 | CAM-03 | Commander body, jumps and the chunk-sent re-pair | M | CAM-01, CORE-03, NET-01, QA-19 | done |
 | NET-08 | Tier-2 replication: summaries, far markers and details | M | NET-01, UNIT-03 | specified |
 | UI-03 | Selection | M | CAM-04, UI-02, UNIT-03 | done |
-| UI-04 | Control groups | S | UI-03 | in_progress |
+| UI-04 | Control groups | S | UI-03 | done |
 | UI-05 | Order feedback and destination preview | M | ORD-03, UI-02, CAM-04 | done |
-| CAM-05 | First person and back, with observer rules | M | CAM-03, D-08 | specified |
+| CAM-05 | First person and back, with observer rules | M | CAM-03, D-08 | done |
 | CAM-07 | First-person orders: follow me, attack what I look at, inspect | M | CAM-05, ORD-04, NET-08 | specified |
 | CMB-01 | Damage model in the core | M | DATA-02, UNIT-02 | specified |
 | CMB-02 | Melee combat with a default aggressive behaviour | M | CMB-01, PATH-06 | specified |

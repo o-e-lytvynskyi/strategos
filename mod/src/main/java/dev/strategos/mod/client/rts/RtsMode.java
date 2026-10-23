@@ -16,6 +16,7 @@ import dev.strategos.core.client.select.Selection;
 import dev.strategos.core.protocol.CameraJump;
 import dev.strategos.core.protocol.CommandBatch;
 import dev.strategos.core.protocol.MatchJoin;
+import dev.strategos.core.protocol.ModeSwitch;
 import dev.strategos.core.protocol.Move;
 import dev.strategos.mod.client.StrategosClient;
 import dev.strategos.mod.client.StrategosClientConfig;
@@ -24,6 +25,7 @@ import dev.strategos.mod.entity.UnitEntity;
 import dev.strategos.mod.entity.UnitSpawnData;
 import dev.strategos.mod.server.net.payload.CameraJumpPayload;
 import dev.strategos.mod.server.net.payload.CommandsPayload;
+import dev.strategos.mod.server.net.payload.ModeSwitchPayload;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.Minecraft;
@@ -32,6 +34,7 @@ import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -84,6 +87,10 @@ public final class RtsMode {
     private int ordersSent;
     private final List<double[]> markers = new ArrayList<>(); // world x, y, z, ticks left
     private double @Nullable [] cursor;
+    /** Stepped down into first person (CAM-05): the RTS view comes back when the server makes this a spectator again. */
+    private boolean firstPerson;
+
+    private @Nullable GameType lastMode;
 
     /** What the last pick hit: a body's entity id, or a block, and where. */
     public record Pick(int entityId, double x, double y, double z) {}
@@ -371,9 +378,23 @@ public final class RtsMode {
             }
             return;
         }
+        GameType mode = mc.gameMode == null ? null : mc.gameMode.getPlayerMode();
+        if (mode != lastMode) {
+            lastMode = mode;
+            modeChanged(mode);
+        }
         if (rig == null) {
             while (keys.mapping(Action.TOGGLE_RTS).consumeClick()) {
-                enter();
+                if (firstPerson) {
+                    ClientPayloads.toServer(new ModeSwitchPayload(ModeSwitch.BACK));
+                } else {
+                    enter();
+                }
+            }
+            while (keys.mapping(Action.ORDER_HERE).consumeClick()) {
+                if (firstPerson) {
+                    orderHere(mc);
+                }
             }
             MatchJoin join = StrategosClient.match();
             if (join != null && join.matchId() != autoEntered && mc.player.isSpectator()) {
@@ -388,6 +409,56 @@ public final class RtsMode {
         showMarkers(mc);
         if (mc.screen == null) { // chat, the pause menu or anything else closed over it: the RTS screen comes back
             mc.setScreen(new RtsScreen(this));
+        }
+    }
+
+    /**
+     * The server switched this player's game mode: out of spectator mode while in RTS mode is the step down into first
+     * person (the selection and groups stay), and spectator mode again after it is the way back.
+     */
+    private void modeChanged(@Nullable GameType mode) {
+        if (rig != null && mode != null && mode != GameType.SPECTATOR) {
+            leave();
+            firstPerson = true;
+        } else if (rig == null && firstPerson && mode == GameType.SPECTATOR) {
+            firstPerson = false;
+            enter();
+        }
+    }
+
+    /** Asks the server for first person where the camera looks (CAM-05); it answers by switching the game mode. */
+    void toFirstPerson() {
+        CameraRig r = rig;
+        if (r != null && StrategosClient.match() != null) {
+            ClientPayloads.toServer(new ModeSwitchPayload(new ModeSwitch(true, r.focusX(), r.focusZ())));
+        }
+    }
+
+    /** Whether this player stepped down into first person and has not come back. */
+    public boolean firstPerson() {
+        return firstPerson;
+    }
+
+    /** In first person: the selection moves to the block the player looks at, up to 128 blocks away (CAM-05). */
+    private void orderHere(Minecraft mc) {
+        LocalPlayer player = mc.player;
+        MatchJoin join = StrategosClient.match();
+        if (player == null || mc.level == null || join == null) {
+            return;
+        }
+        Vec3 eye = player.getEyePosition();
+        Vec3 far = eye.add(player.getViewVector(1).scale(128));
+        BlockHitResult hit =
+                mc.level.clip(new ClipContext(eye, far, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, player));
+        if (hit.getType() != HitResult.Type.BLOCK) {
+            return;
+        }
+        double wx = hit.getBlockPos().getX() + 0.5;
+        double wz = hit.getBlockPos().getZ() + 0.5;
+        Move move = OrderIntents.move(selection().handles(), wx - join.originX(), wz - join.originZ(), false);
+        if (move != null
+                && ClientPayloads.toServer(new CommandsPayload(new CommandBatch(clientSeq++, List.of(move)), ""))) {
+            ordersSent++;
         }
     }
 

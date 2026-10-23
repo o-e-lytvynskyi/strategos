@@ -326,6 +326,15 @@ class WireCodecSizeTest {
         assertThat(roundTrip(DebugFeedMsg.WIRE, widest)).isEqualTo(widest);
     }
 
+    /** CAM-05: a mode switch round-trips at its fixed size. */
+    @Test
+    void aModeSwitchRoundTripsAtItsSize() {
+        ModeSwitch down = new ModeSwitch(true, -120.5, 3_000.25);
+        assertThat(size(ModeSwitch.WIRE, down)).isEqualTo(ModeSwitch.WIRE.maxSize());
+        assertThat(roundTrip(ModeSwitch.WIRE, down)).isEqualTo(down);
+        assertThat(roundTrip(ModeSwitch.WIRE, ModeSwitch.BACK)).isEqualTo(ModeSwitch.BACK);
+    }
+
     private static <T> int size(WireCodec<T> codec, T value) {
         return WireCodec.encode(codec, value).length;
     }

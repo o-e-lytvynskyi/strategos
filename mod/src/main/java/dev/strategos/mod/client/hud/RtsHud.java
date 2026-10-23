@@ -175,7 +175,7 @@ public final class RtsHud {
     private void drawSelection(GuiGraphics g, DeltaTracker delta) {
         drawing = System.nanoTime();
         SelectionSummary s = summary;
-        if (!mode.active() || (s.total() == 0 && s.inspected() == null)) {
+        if (!shown() || (s.total() == 0 && s.inspected() == null)) {
             return;
         }
         Font font = Minecraft.getInstance().font;
@@ -201,7 +201,7 @@ public final class RtsHud {
 
     private void drawGroups(GuiGraphics g, DeltaTracker delta) {
         GroupBar b = bar;
-        if (mode.active() && !b.slots().isEmpty()) {
+        if (shown() && !b.slots().isEmpty()) {
             Font font = Minecraft.getInstance().font;
             HudRect r = layout().groupBar();
             int x = r.x();
@@ -227,7 +227,7 @@ public final class RtsHud {
     private void drawTooltip(GuiGraphics g, DeltaTracker delta) {
         Tooltip t = tooltip;
         Minecraft mc = Minecraft.getInstance();
-        if (mode.active() && t != null) {
+        if (shown() && t != null) {
             Font font = mc.font;
             int pad = theme.padding();
             int swatch = font.lineHeight - 2;
@@ -251,6 +251,11 @@ public final class RtsHud {
             g.drawString(font, t.name(), r.x() + pad + swatch + 3, r.y() + pad + 1, theme.text(), false);
         }
         drawNanos = System.nanoTime() - drawing;
+    }
+
+    /** In RTS mode with the GUI shown: F1 hides the HUD as it hides vanilla's. */
+    private boolean shown() {
+        return mode.active() && !Minecraft.getInstance().options.hideGui;
     }
 
     private void panel(GuiGraphics g, HudRect r) {

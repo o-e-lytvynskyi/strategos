@@ -5,6 +5,7 @@ import dev.strategos.mod.server.match.MatchRegistry;
 import dev.strategos.mod.server.net.payload.CameraJumpPayload;
 import dev.strategos.mod.server.net.payload.CommandsPayload;
 import dev.strategos.mod.server.net.payload.DebugSubscribePayload;
+import dev.strategos.mod.server.net.payload.ModeSwitchPayload;
 import dev.strategos.mod.server.net.payload.TemplateAckPayload;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
@@ -73,6 +74,23 @@ public final class C2sHandlers {
         if (seat != null) {
             server.commanders()
                     .jump(player, seat.match(), payload.jump(), server.server().getTickCount());
+        }
+    }
+
+    /** A seated player's switch to first person or back (CAM-05), checked and applied by the commanders. */
+    public static void modeSwitch(ModeSwitchPayload payload, IPayloadContext context) {
+        StrategosServer server = StrategosServer.getOrNull();
+        if (server == null || !(context.player() instanceof ServerPlayer player)) {
+            return;
+        }
+        MatchRegistry.Seat seat = server.matches().seatOf(player.getUUID());
+        if (seat != null) {
+            server.commanders()
+                    .switchMode(
+                            player,
+                            seat.match(),
+                            payload.request(),
+                            server.server().getTickCount());
         }
     }
 

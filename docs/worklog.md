@@ -9,7 +9,20 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24, T16, T26; M2 spec, M2 T1, T3, T5, T11, T13, T9, T21, T8, T6
+## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24, T16, T26; M2 spec, M2 T1, T3, T5, T11, T13, T9, T21, T8, T6, T19
+
+- **M2 T19 · First person and back** — CAM-05 done; UI-04 done (T12).
+  - **Results:** core `ModeSwitch`, the payload `mode_switch`, `CommanderService#switchMode` (rate,
+    cooldown, drop point, applied at the tick's start, the observer kept inside the space),
+    `ObserverRules`, the client's switch (V, F6, G and its game mode watched), `firstpersontests`
+    (3), the scenario `rts_first_person`; the HUD now hides with F1.
+  - **Measured:** a column of ten through a one-block gap: 113 ticks with the observer in it, 116
+    without; on screen to first person in a tick and back in 2 ticks, selection and group 1 kept.
+  - **Problems:** a heightmap put every column's top above a GameTest arena's barrier roof, so the
+    drop point scans the space's band; the batch's tests share the service's counters, so refusals
+    are counted per player; in the full run the test's body came later than alone; the engine
+    inventory test asked for the new payload, key and events in 04 §2.5.
+  - **Next:** CI's frames for the overlay again; then T20 (CAM-07) or the headless tasks.
 
 - **M2 T6 · HUD framework** — UI-02 done.
   - **Results:** `core.client.hud` (`HudLayout`, `HudRect`, `HudTheme`, `SelectionSummary`,

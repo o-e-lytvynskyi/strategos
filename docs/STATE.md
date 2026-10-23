@@ -313,6 +313,11 @@ Answer in chat or here; the next session applies the answers.
   shows your control groups, and hovering a unit names it with its faction's colour. The layout
   holds every window size and GUI scale tested, and the HUD costs well under a tenth of a
   millisecond a frame on this Mac. Card UI-02 is done.
+- 2026-10-23 · **M2 T19 First person:** press V in the RTS view and you stand where the camera
+  looked, in adventure mode, as an observer: nothing hurts you, you cannot hit units or use blocks,
+  and units walk through you, so you can never wall a gate. G sends your selection to where you
+  look; F6 takes you back to the RTS view in a tenth of a second, selection and control groups as
+  they were. Cards CAM-05 and UI-04 are done.
 - 2026-10-23 · **Three items of M2's consent batch, early, with today's Mac:** the network byte
   counter that the headless tests use matches a real client's own measurement to 0.006 % (M1's
   QA-19.4); the movement overlay has its pictures too (M1's PATH-10.3); and the RTS scenarios pass
@@ -324,7 +329,7 @@ Answer in chat or here; the next session applies the answers.
 - **In progress:** none.
 - **Last finished task:** M1 T26 (2026-10-23). The agents' branches `wip/m1-t17-unitai-hfsm` and
   `wip/m1-t25-debug-overlay` are merged and kept on GitHub for the record.
-- **Last M2 task:** T6, the HUD (2026-10-23); T1, T3, T5, T6, T8, T9, T11, T13, T21 done; T4, T7, T12 open for parts that need later tasks; three consent-batch items (T22) done early.
+- **Last M2 task:** T19, first person (2026-10-23); T1, T3, T5, T6, T8, T9, T11, T12, T13, T19, T21 done; T4, T7 open for parts that need later tasks; three consent-batch items (T22) done early.
 - **Next task:** while the Mac's windows are mine today, the window work that is ready (M2's L4
   items as their tasks land); M1 T27 (M1 close, headless); then M2's tasks in the spec's order.
 - **WIP branch:** none.

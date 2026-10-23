@@ -373,8 +373,8 @@ perspective only.
   3. Groups survive the first-person round trip in the client model (L1).
   4. The same round trip on screen keeps the groups (L4, consent).
 - **Tests:** L0, L1, L4 (consent) · **Depends on:** UI-03 · **Size:** S · **Tier:** T0
-- **Progress:** 2026-10-23 — M2 T12: `ControlGroupsTest` (1–3); `rts_select`: Ctrl+1 then 1 recalls 150; centring pans at the cap until CAM-03 (spec §1.6 row 19). Open: the first-person round trip on screen (4, with CAM-05)
-- **Status:** in_progress
+- **Done:** 2026-10-23 — M2 T12: `ControlGroupsTest` (1–3); `rts_select`: Ctrl+1 then 1 recalls 150, a double tap centres through `camera_jump`; `rts_first_person`: group 1 and the selection survive first person and back on screen (4; spec §1.6 rows 19, 46)
+- **Status:** done
 
 #### UI-05 · Order feedback and destination preview
 - **Value:** Before releasing the click you see exactly where each unit will stand; after it,
@@ -420,7 +420,8 @@ perspective only.
      acceptance).
 - **Tests:** L0, L1, L3, L4 (consent), L7 · **Depends on:** CAM-03, D-08 · **Size:** M ·
   **Tier:** T0
-- **Status:** specified
+- **Done:** 2026-10-23 — M2 T19: `firstpersontests.to_first_person_and_back` (1, 5: no observer is an avoidance agent, so it is no vision source by itself either); `firstpersontests.drop_points_and_cooldown` (2); the selection and groups through the round trip in the client model and on screen, `rts_first_person` (3); `firstpersontests.observer_in_a_gap_delays_little`, 113 ticks with the observer in the gap against 116 without (4); the way back 0.1 s on this Mac, the owner's two minutes among units waiting for the acceptance (6); M2 spec §1.6 rows 44–46
+- **Status:** done
 
 #### CAM-07 · First-person orders: follow me, attack what I look at, inspect
 - **Value:** First person has a purpose: lead the selection, point at a target and inspect what

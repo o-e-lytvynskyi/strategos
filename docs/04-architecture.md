@@ -446,8 +446,8 @@ narrow mixin with a compatibility test ([01-feasibility.md §7](01-feasibility.m
 | Ticket controller | `strategos:match`, with a `LoadingValidationCallback` | Force-loading arenas (§3.4) | M1 |
 | `SavedData` | `strategos_registry` (overworld), `strategos_match_<id>` (hosting level) | Persistence (§5.6) | M0 |
 | Reload listener | `TemplateReloadListener`, named `strategos:templates` | Templates, maps, blueprints, AI scripts (§8.4) | M1 |
-| Payloads | `strategos:commands`, `strategos:match_join`, `strategos:match_state`, `strategos:feedback`, `strategos:template_set`, `strategos:template_ack`, `strategos:camera_jump` (M2), and the optional dev payloads `strategos:debug_subscribe` and `strategos:debug_feed` (M1); the whole catalogue in §12.2 | Networking | M1 onward |
-| Key mappings, GUI layers | The movement overlay's key `key.strategos.overlay` (F8) and panel `strategos:debug_panel` (M1); the RTS keys `key.strategos.camera_pan_forward`, `key.strategos.camera_pan_back`, `key.strategos.camera_pan_left`, `key.strategos.camera_pan_right`, `key.strategos.camera_rotate_left`, `key.strategos.camera_rotate_right`, `key.strategos.camera_zoom_in`, `key.strategos.camera_zoom_out`, `key.strategos.camera_centre_on_selection`, `key.strategos.attack_move`, `key.strategos.stop`, `key.strategos.toggle_first_person`, `key.strategos.toggle_rts` (M2, UI-01); resource bar, selection panel, command card, minimap, notices | Client (§13) | M1–M6 |
+| Payloads | `strategos:commands`, `strategos:match_join`, `strategos:match_state`, `strategos:feedback`, `strategos:template_set`, `strategos:template_ack`, `strategos:camera_jump` and `strategos:mode_switch` (M2), and the optional dev payloads `strategos:debug_subscribe` and `strategos:debug_feed` (M1); the whole catalogue in §12.2 | Networking | M1 onward |
+| Key mappings, GUI layers | The movement overlay's key `key.strategos.overlay` (F8) and panel `strategos:debug_panel` (M1); the RTS keys `key.strategos.camera_pan_forward`, `key.strategos.camera_pan_back`, `key.strategos.camera_pan_left`, `key.strategos.camera_pan_right`, `key.strategos.camera_rotate_left`, `key.strategos.camera_rotate_right`, `key.strategos.camera_zoom_in`, `key.strategos.camera_zoom_out`, `key.strategos.camera_centre_on_selection`, `key.strategos.attack_move`, `key.strategos.stop`, `key.strategos.toggle_first_person`, `key.strategos.toggle_rts` (M2, UI-01), `key.strategos.order_here` (M2, CAM-05); the HUD's layers `strategos:rts_selection`, `strategos:rts_groups`, `strategos:rts_tooltip` (M2, UI-02); resource bar, selection panel, command card, minimap, notices | Client (§13) | M1–M6 |
 | Commands | `/strategos` (server), `/strategos-client` (client) | Tooling (§15.3) | M0, M1 |
 | Config | `strategos-server.toml`, `strategos-client.toml` (`ModConfigSpec`) | Technical tunables (§15.4) | M1 |
 | Gamerules | None registered | Per-match settings are `MatchRules`; world policy is config | – |
@@ -458,7 +458,8 @@ Main events used: `LevelTickEvent.Pre/Post`, `ServerAboutToStartEvent`, `ServerS
 `EntityAttributeCreationEvent`, `AddReloadListenerEvent`, `OnDatapackSyncEvent`,
 `EntityLeaveLevelEvent`, `PlayerEvent.PlayerLoggedInEvent/PlayerLoggedOutEvent`,
 `ChunkWatchEvent.Sent` (M2), `PlayerTickEvent.Post` (M7), `AttackEntityEvent` (M2),
-`LivingIncomingDamageEvent` (deferred with CMB-08), the protection events of §11.9 (M4),
+`LivingIncomingDamageEvent` and `PlayerInteractEvent.RightClickBlock`, `LeftClickBlock` and `EntityInteract`
+(M2, the first-person observer), the protection events of §11.9 (M4),
 `PlayLevelSoundEvent.AtEntity` as a backstop (M8) and `RegisterGameTestsEvent` (gametest source
 set).
 
@@ -2338,6 +2339,10 @@ stateDiagram-v2
     ways through the core.
 - **Continuity.** Selection and control groups survive the round trip, and units keep their
   orders.
+- **As built (M2).** V sends the switch with the camera's focus as the drop column, F6 the way back,
+  G orders the selection to the block in view. The server finds the drop point by scanning the
+  space's height band from the top, applies a switch at the next tick's start, and keeps the
+  observer flag in the commander's saved state. The client follows its game mode, polled each tick.
 
 ---
 

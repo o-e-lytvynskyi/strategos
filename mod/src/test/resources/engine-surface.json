@@ -13,6 +13,7 @@
     "strategos:feedback",
     "strategos:match_join",
     "strategos:match_state",
+    "strategos:mode_switch",
     "strategos:template_ack",
     "strategos:template_set"
   ],
@@ -39,7 +40,8 @@
     "key.strategos.attack_move",
     "key.strategos.stop",
     "key.strategos.toggle_first_person",
-    "key.strategos.toggle_rts"
+    "key.strategos.toggle_rts",
+    "key.strategos.order_here"
   ],
   "guiLayers": ["strategos:debug_panel"],
   "clientCommands": ["strategos-client"]
