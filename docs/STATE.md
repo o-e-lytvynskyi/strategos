@@ -433,3 +433,8 @@ Details are in [worklog.md](worklog.md).
 - Budget F is measured for bare humanoids only; ART-01 (M3) runs the armoured pass.
 - Modifiers are not yet saved or hashed: the first real source (TECH-01's research or an AI
   handicap) brings their input, snapshot field and hashing ([M1 spec §1.6 D row 66](milestones/M1-movement.md)).
+- The server smoke failed once on CI (run 40037838166, M3 T17's commit): a debug walker of the group-move phase
+  stood idle 3.1 blocks from its place (the check allows 1.5 plus the latch). The same code passed locally and on
+  CI at T20's commit, so it is a rare flake of the arrival latch with eight walkers; watch for a second one before
+  changing the reach.
+- ECO-03's leaf rule amended ADR-0021 through ADR-0024 (M3 T8); the line above about it is kept for history.
