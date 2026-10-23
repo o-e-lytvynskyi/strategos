@@ -14,6 +14,12 @@ import org.jspecify.annotations.Nullable;
 /** Read-only questions about a match at its last completed tick. */
 @CoreApi
 public interface MatchQueries {
+    /** A live unit's hit points now (CMB-01): its most less the damage it took; NaN for no live unit. */
+    double hitPoints(int handle);
+
+    /** A live unit's most hit points, as modifiers leave them; NaN for no live unit. */
+    double maxHitPoints(int handle);
+
     long tick();
 
     MatchConfig config();

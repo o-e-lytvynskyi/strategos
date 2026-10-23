@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import org.jspecify.annotations.Nullable;
 
@@ -40,6 +41,7 @@ public final class BodyRegistry {
     private final IntRBTreeSet parked = new IntRBTreeSet();
     private final IntRBTreeSet reported = new IntRBTreeSet();
     private final List<UnitEntity> stale = new ArrayList<>();
+    private final List<UnitEntity> dying = new ArrayList<>();
 
     public BodyRegistry(MatchId id, MatchSpace space) {
         this.id = id;
@@ -137,6 +139,36 @@ public final class BodyRegistry {
         wanted.add(handle);
     }
 
+    /**
+     * The unit died (CMB-01): its body leaves the registry and plays vanilla's death, health 0 and {@code die}, which
+     * sends the death event and pose to its trackers; {@link #tickDying} runs its death ticks until vanilla removes it.
+     */
+    public void die(int handle, DamageSource source) {
+        wanted.remove(handle);
+        parked.remove(handle);
+        UnitEntity body = bodies.remove(handle);
+        if (body != null) {
+            body.markRemovedByRegistry();
+            body.dieAsUnit(source);
+            dying.add(body);
+        }
+    }
+
+    /** One death tick for each dying body; vanilla removes one at its twentieth. */
+    public void tickDying() {
+        dying.removeIf(body -> {
+            if (!body.isRemoved()) {
+                body.driveDeath();
+            }
+            return body.isRemoved();
+        });
+    }
+
+    /** Bodies still playing their death, for tests. */
+    public int dyingCount() {
+        return dying.size();
+    }
+
     /** Discards every body, marked so their leave events are ignored, and forgets every wish. */
     public void discardAll() {
         for (UnitEntity body : new ArrayList<>(bodies.values())) {
@@ -144,6 +176,10 @@ public final class BodyRegistry {
             body.discard();
         }
         bodies.clear();
+        for (UnitEntity body : dying) {
+            body.discard();
+        }
+        dying.clear();
         discardStale();
         wanted.clear();
         parked.clear();

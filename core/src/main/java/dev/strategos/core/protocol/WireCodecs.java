@@ -243,6 +243,7 @@ public final class WireCodecs {
                     switch (value) {
                         case ORDER_FAILED -> 0;
                         case STUCK -> 1;
+                        case UNIT_LOST -> 2;
                     });
         }
 
@@ -252,6 +253,7 @@ public final class WireCodecs {
             return switch (code) {
                 case 0 -> NoticeKind.ORDER_FAILED;
                 case 1 -> NoticeKind.STUCK;
+                case 2 -> NoticeKind.UNIT_LOST;
                 default -> throw new WireException("unknown notice kind " + code);
             };
         }

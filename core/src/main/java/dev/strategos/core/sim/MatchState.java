@@ -3,6 +3,9 @@ package dev.strategos.core.sim;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.diag.MatchLog;
+import dev.strategos.core.shared.Handle;
+import dev.strategos.core.sim.combat.Damage;
+import dev.strategos.core.sim.combat.HealthStore;
 import dev.strategos.core.sim.nav.MobilityClass;
 import dev.strategos.core.sim.nav.PageCoord;
 import dev.strategos.core.sim.nav.PathStore;
@@ -34,6 +37,8 @@ public final class MatchState {
     private final OrderQueues orders = new OrderQueues();
     private final AiStateStore ai = new AiStateStore();
     private final PathStore paths = new PathStore();
+    private final HealthStore health = new HealthStore();
+    private final List<Damage> damage = new ArrayList<>();
     private final MatchBus bus = new MatchBus();
     private final StatService stats;
     private final SpatialQueries spatial;
@@ -170,6 +175,36 @@ public final class MatchState {
         orders.ensureCapacity(size);
         ai.ensureCapacity(size);
         paths.ensureCapacity(size);
+        health.ensureCapacity(size);
+    }
+
+    /** The damage each unit has taken (CMB-01). */
+    public HealthStore health() {
+        return health;
+    }
+
+    /** A damage packet for this tick's COMBAT phase, after those already queued. */
+    public void queueDamage(Damage packet) {
+        damage.add(packet);
+    }
+
+    /** This tick's damage packets, in their order; the queue is empty after. */
+    public List<Damage> takeDamage() {
+        if (damage.isEmpty()) {
+            return List.of();
+        }
+        List<Damage> taken = List.copyOf(damage);
+        damage.clear();
+        return taken;
+    }
+
+    /**
+     * Takes a dead unit out of the match: its index is freed with a new generation, so its handle is stale everywhere
+     * (path results and waiting requests for it are dropped on arrival); a unit spawned there later resets every store.
+     */
+    public void removeUnit(int handle) {
+        health.reset(Handle.index(handle));
+        entities.destroy(handle);
     }
 
     public long tick() {

@@ -175,6 +175,16 @@ class InvariantsTest {
         }
 
         @Override
+        public double hitPoints(int handle) {
+            return Double.NaN;
+        }
+
+        @Override
+        public double maxHitPoints(int handle) {
+            return Double.NaN;
+        }
+
+        @Override
         public long tick() {
             return 0;
         }

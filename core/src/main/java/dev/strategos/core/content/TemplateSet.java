@@ -69,7 +69,7 @@ public final class TemplateSet {
         this.templates = List.copyOf(templates);
         List<JsonObject> copies = new ArrayList<>();
         JsonObject canonical = new JsonObject();
-        List<String> paths = new ArrayList<>(List.of(CorePaths.WALK_SPEED, CorePaths.TURN_RATE));
+        List<String> paths = new ArrayList<>(CorePaths.all());
         List<String> lists = new ArrayList<>();
         for (int i = 0; i < flattened.size(); i++) {
             JsonObject json = flattened.get(i).deepCopy();
@@ -247,6 +247,8 @@ public final class TemplateSet {
         return switch (path) {
             case CorePaths.WALK_SPEED -> t.walkSpeed();
             case CorePaths.TURN_RATE -> t.turnRate();
+            case CorePaths.HEALTH -> CorePaths.DEFAULT_HEALTH;
+            case CorePaths.RESIST_HACK, CorePaths.RESIST_PIERCE, CorePaths.RESIST_CRUSH -> 0;
             default -> Double.NaN;
         };
     }

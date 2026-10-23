@@ -11,7 +11,8 @@ import java.util.ArrayDeque;
  * mark, its generation and liveness, and for live units the template index, faction, x, y, z, yaw, the code of its
  * machine's leaf (IDLE and WALKING keep M0's codes) and, once either is set, its two data words, then its order,
  * and, once the unit has asked for a path, the path (request, last request, repath flag, status, cursor, waypoints),
- * and, once it has touched terrain, its velocity, floor, step, stuck monitor and arrival latch;
+ * and, once it has touched terrain, its velocity, floor, step, stuck monitor and arrival latch, and, once hurt, the
+ * damage it has taken;
  * then, once any path was requested, the next request id, the last tick a page changed and each request in flight (id, unit, due tick); then every
  * pending command. A match that never asks for a path, such as one without terrain, hashes as in M0. The match id is
  * left out, so the L1 twin of a GameTest match agrees; so are the terrain grid, which the twin rebuilds from the same
@@ -69,6 +70,9 @@ public final class StateHasher {
                 }
                 if (orders.size(i) > 1 || orders.group(i) != 0 || orders.slot(i) != 0) {
                     h = mixQueue(h, orders, i); // only once a unit queues or groups, so older states keep their hashes
+                }
+                if (s.health().damage(i) != 0) { // only once a unit is hurt, so older states keep their hashes
+                    h = Hasher.mix(h, Double.doubleToLongBits(s.health().damage(i)));
                 }
             }
         }

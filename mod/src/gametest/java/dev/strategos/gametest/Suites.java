@@ -5,6 +5,7 @@ import dev.strategos.gametest.suites.AvoidTests;
 import dev.strategos.gametest.suites.BodyTests;
 import dev.strategos.gametest.suites.BuildTests;
 import dev.strategos.gametest.suites.CameraTests;
+import dev.strategos.gametest.suites.CombatTests;
 import dev.strategos.gametest.suites.CommandTests;
 import dev.strategos.gametest.suites.ContentTests;
 import dev.strategos.gametest.suites.DebugTests;
@@ -47,6 +48,7 @@ public final class Suites {
                         BuildTests.class,
                         BodyTests.class,
                         CameraTests.class,
+                        CombatTests.class,
                         FirstPersonTests.class,
                         MatchTests.class,
                         CommandTests.class,

@@ -4,6 +4,7 @@ import static dev.strategos.gametest.suites.Units.assertOnCorePose;
 import static dev.strategos.gametest.suites.Units.bodiesOf;
 import static dev.strategos.gametest.suites.Units.body;
 import static dev.strategos.gametest.suites.Units.check;
+import static dev.strategos.gametest.suites.Units.core;
 import static dev.strategos.gametest.suites.Units.handles;
 import static dev.strategos.gametest.suites.Units.match;
 import static dev.strategos.gametest.suites.Units.move;
@@ -416,28 +417,29 @@ public final class BodyTests {
                 .thenSucceed();
     }
 
-    /** CORE-06.4: /kill and vanilla damage leave M0 units and their bodies untouched (spec 1.5). */
+    /**
+     * CORE-06.4 as CMB-01 left it: vanilla never removes a body itself. In the tick of a {@code /kill} the body stays,
+     * its vanilla health full; the kill reaches the core as lethal damage, and only the core's death takes the body.
+     */
     @StrategosTest
-    public static void vanillaKillIgnored(GameTestHelper h) {
+    public static void vanillaKillGoesThroughTheCore(GameTestHelper h) {
         MatchRuntime rt = match(h);
         spawn(rt, 16, 16, 1, 0);
         var state = new Object() {
             UnitEntity body;
+            int handle;
         };
         h.startSequence()
                 .thenWaitUntil(() -> body(rt, onlyUnit(rt)))
                 .thenExecute(() -> {
-                    state.body = body(rt, onlyUnit(rt));
+                    state.handle = onlyUnit(rt);
+                    state.body = body(rt, state.handle);
+                    float health = state.body.getHealth();
                     state.body.kill();
+                    check(!state.body.isRemoved() && state.body.getHealth() == health, "vanilla took the body");
                 })
-                .thenExecuteAfter(1, () -> {
-                    int handle = onlyUnit(rt);
-                    check(
-                            !state.body.isRemoved()
-                                    && state.body.equals(rt.bodies().get(handle)),
-                            "the killed body is gone");
-                    check(unit(rt, handle).state() == UnitState.IDLE, "the unit changed");
-                })
+                .thenWaitUntil(() -> check(core(rt).queries().unit(state.handle) == null, "the unit lives"))
+                .thenExecute(() -> check(state.body.isDeadOrDying(), "the body does not play its death"))
                 .thenSucceed();
     }
 

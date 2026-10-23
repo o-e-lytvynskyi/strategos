@@ -1,5 +1,8 @@
 package dev.strategos.core.sim;
 
+import dev.strategos.core.shared.Handle;
+import dev.strategos.core.sim.combat.Damage;
+import dev.strategos.core.sim.combat.DamageType;
 import dev.strategos.core.sim.command.CommandSystem;
 import dev.strategos.core.sim.journal.JournalWriter;
 import java.util.ArrayList;
@@ -48,12 +51,22 @@ final class IngestSystem implements MatchSystem {
                 case TerrainPage page -> pages.add(page);
                 case CommandEnvelope envelope -> commands.enqueue(envelope);
                 case AgentUpdate update -> state.addAgents(update.agents());
-                case ExternalDamage damage -> {} // journaled above; CMB-01 applies it
+                case ExternalDamage damage -> state.queueDamage(packet(damage));
                 case JobDelivery delivery -> state.addDelivery(delivery);
                 case ContentSwap swap -> state.swapTemplates(swap.set());
             }
         }
         state.publishAll(pages);
+    }
+
+    /** A vanilla blow as the core's damage packet, from no unit (CMB-01): hack, pierce or crush, or lethal. */
+    private static Damage packet(ExternalDamage d) {
+        return switch (d.kind()) {
+            case HACK -> Damage.of(d.handle(), Handle.NONE, DamageType.HACK, d.amount());
+            case PIERCE -> Damage.of(d.handle(), Handle.NONE, DamageType.PIERCE, d.amount());
+            case CRUSH -> Damage.of(d.handle(), Handle.NONE, DamageType.CRUSH, d.amount());
+            case LETHAL -> Damage.lethal(d.handle(), Handle.NONE);
+        };
     }
 
     private static int canonical(InputEvent a, InputEvent b) {

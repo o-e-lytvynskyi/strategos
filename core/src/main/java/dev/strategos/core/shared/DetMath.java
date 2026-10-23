@@ -19,6 +19,11 @@ public final class DetMath {
         return StrictMath.atan2(y, x);
     }
 
+    /** {@code a} to the power {@code b}, as StrictMath computes it: a resistance's 0.9 to its level. */
+    public static double pow(double a, double b) {
+        return StrictMath.pow(a, b);
+    }
+
     public static double sqrt(double v) {
         return Math.sqrt(v);
     }

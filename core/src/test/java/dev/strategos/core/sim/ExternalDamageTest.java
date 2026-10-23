@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * UNIT-09.2 in L1 (04 §6.7): damage a body took enters the tick's inputs after the commands, in the order it came, is
- * journaled and read back from the binary file, and changes no state until CMB-01 applies it.
+ * journaled and read back from the binary file, and, since CMB-01, takes its amount off the unit.
  */
 class ExternalDamageTest {
     @Test
@@ -39,9 +39,18 @@ class ExternalDamageTest {
                 .isTrue();
     }
 
+    /** CMB-01: the two blows take their amounts off the first unit, which no resistance of the walker lessens. */
     @Test
-    void changesNoStateYet() {
-        assertThat(run(true).stateHash()).isEqualTo(run(false).stateHash());
+    void appliesAsTheCoresDamage() {
+        SimHarness hurt = run(true);
+        SimHarness whole = run(false);
+        int[] units = hurt.queries().unitHandles();
+        assertThat(hurt.queries().hitPoints(units[0]))
+                .isEqualTo(hurt.queries().maxHitPoints(units[0])
+                        - arrow(units[0]).amount()
+                        - blow(units[0]).amount());
+        assertThat(hurt.queries().hitPoints(units[1])).isEqualTo(hurt.queries().maxHitPoints(units[1]));
+        assertThat(hurt.stateHash()).isNotEqualTo(whole.stateHash());
     }
 
     @Test

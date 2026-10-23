@@ -153,6 +153,20 @@ public final class UnitEntity extends LivingEntity implements IEntityWithComplex
     @Override
     public void knockback(double strength, double x, double z) {}
 
+    /**
+     * The unit died in the core (CMB-01): vanilla health, full until now, drops to 0 and {@code die} sends the death
+     * event and the dying pose to the trackers, which play the fall; no loot drops ({@link #shouldDropLoot}).
+     */
+    public void dieAsUnit(DamageSource source) {
+        setHealth(0);
+        die(source);
+    }
+
+    /** One tick of vanilla's death, which the server's body never runs itself; at the twentieth it is removed. */
+    public void driveDeath() {
+        tickDeath();
+    }
+
     /** The fog gate (NET-01): another match's member is never paired with this body; an unbound body with no one. */
     @Override
     public boolean broadcastToPlayer(ServerPlayer player) {

@@ -55,7 +55,12 @@ public final class StatService {
     private List<List<@Nullable List<String>>> baseTokens = List.of();
     private double[] min = new double[0];
     private double[] max = new double[0];
+    private static final String IDENTITY_CLASSES = "Identity/classes";
+
     private int walkSpeed;
+    private int health;
+    private int[] resistance = new int[3];
+    private int classesPath;
     private int turnRate;
     private StatBlock[] blocks = new StatBlock[0];
     private final long[] versions;
@@ -136,6 +141,10 @@ public final class StatService {
         }
         this.walkSpeed = path(CorePaths.WALK_SPEED);
         this.turnRate = path(CorePaths.TURN_RATE);
+        this.health = path(CorePaths.HEALTH);
+        this.resistance =
+                new int[] {path(CorePaths.RESIST_HACK), path(CorePaths.RESIST_PIERCE), path(CorePaths.RESIST_CRUSH)};
+        this.classesPath = tokenPath(IDENTITY_CLASSES);
         this.blocks = new StatBlock[count * factions];
         for (int k = 0; k < blocks.length; k++) {
             blocks[k] = new StatBlock(numbers, lists);
@@ -168,6 +177,22 @@ public final class StatService {
     /** Unit {@code index}'s turn rate in degrees per tick. */
     public double turnRate(int index) {
         return read(index, turnRate);
+    }
+
+    /** Unit {@code index}'s most hit points (CMB-01). */
+    public double maxHealth(int index) {
+        return read(index, health);
+    }
+
+    /** Unit {@code index}'s resistance level against damage type {@code type}: 0 hack, 1 pierce, 2 crush. */
+    public double resistance(int index, int type) {
+        return read(index, resistance[type]);
+    }
+
+    /** Unit {@code index}'s class tokens, as modifiers leave them; empty for a template without classes. */
+    public List<String> classes(int index) {
+        List<String> tokens = classesPath < 0 ? null : tokens(index, classesPath);
+        return tokens == null ? List.of() : tokens;
     }
 
     /** Unit {@code index}'s value at value path {@code path}. */

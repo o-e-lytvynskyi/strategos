@@ -7,10 +7,13 @@ import dev.strategos.core.sim.Notice;
 import dev.strategos.core.sim.OutputEvent;
 import dev.strategos.core.sim.TickOutputs;
 import dev.strategos.core.sim.UnitCreated;
+import dev.strategos.core.sim.UnitDied;
+import dev.strategos.core.sim.UnitHurt;
 import dev.strategos.core.sim.UnitStateChanged;
 import dev.strategos.core.sim.WorldEffect;
 import dev.strategos.core.sim.world.WriteSite;
 import dev.strategos.mod.StrategosServer;
+import dev.strategos.mod.entity.UnitEntity;
 import dev.strategos.mod.server.body.KinematicDriver;
 import dev.strategos.mod.server.match.MatchRuntime;
 import dev.strategos.mod.server.net.Audience;
@@ -37,6 +40,14 @@ public final class OutputAppliers {
                     }
                 }
                 case UnitCreated created -> rt.bodies().want(created.handle());
+                case UnitHurt hurt -> {
+                    UnitEntity body = rt.bodies().get(hurt.handle());
+                    if (body != null) { // the red flash, for those who track the body
+                        level.broadcastDamageEvent(body, level.damageSources().generic());
+                    }
+                }
+                case UnitDied died ->
+                    rt.bodies().die(died.handle(), level.damageSources().generic());
                 case WorldEffect effect -> {
                     BlockWriter writer = StrategosServer.get().writer();
                     BlockPos origin = rt.space().origin();
@@ -66,10 +77,18 @@ public final class OutputAppliers {
             }
         }
         KinematicDriver.apply(level, rt.space(), rt.bodies(), out.bodies());
+        rt.bodies().tickDying();
     }
 
     /** The leaf output types {@link #apply} handles; L2 checks they are all of them. */
     public static List<Class<? extends OutputEvent>> handledTypes() {
-        return List.of(CommandResult.class, UnitCreated.class, UnitStateChanged.class, WorldEffect.class, Notice.class);
+        return List.of(
+                CommandResult.class,
+                UnitCreated.class,
+                UnitStateChanged.class,
+                UnitHurt.class,
+                UnitDied.class,
+                WorldEffect.class,
+                Notice.class);
     }
 }

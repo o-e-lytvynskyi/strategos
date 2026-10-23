@@ -26,6 +26,18 @@ final class QueriesImpl implements MatchQueries {
     }
 
     @Override
+    public double hitPoints(int handle) {
+        return state.entities().isAlive(handle)
+                ? state.stats().maxHealth(Handle.index(handle)) - state.health().damage(Handle.index(handle))
+                : Double.NaN;
+    }
+
+    @Override
+    public double maxHitPoints(int handle) {
+        return state.entities().isAlive(handle) ? state.stats().maxHealth(Handle.index(handle)) : Double.NaN;
+    }
+
+    @Override
     public long tick() {
         return state.tick();
     }

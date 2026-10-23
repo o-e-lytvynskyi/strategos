@@ -227,11 +227,25 @@ public final class MatchSnapshotCodec {
                     Vec2d.CODEC.optionalFieldOf("target").forGetter(u -> Optional.ofNullable(u.target())),
                     UNIT_PATH.optionalFieldOf("path", PathStore.UnitPath.NONE).forGetter(UnitRecord::path),
                     MOTION.optionalFieldOf("motion", MotionStore.Extra.NONE).forGetter(UnitRecord::motion),
-                    ORDERS.forGetter(UnitRecord::orders))
+                    ORDERS.forGetter(UnitRecord::orders),
+                    Codec.DOUBLE.optionalFieldOf("damage", 0.0).forGetter(UnitRecord::damage))
             .apply(
                     i,
-                    (handle, template, faction, x, y, z, yaw, ai, target, path, motion, orders) -> new UnitRecord(
-                            handle, template, faction, x, y, z, yaw, ai, target.orElse(null), path, motion, orders)));
+                    (handle, template, faction, x, y, z, yaw, ai, target, path, motion, orders, damage) ->
+                            new UnitRecord(
+                                    handle,
+                                    template,
+                                    faction,
+                                    x,
+                                    y,
+                                    z,
+                                    yaw,
+                                    ai,
+                                    target.orElse(null),
+                                    path,
+                                    motion,
+                                    orders,
+                                    damage)));
 
     private static final Codec<PageRef> PAGE = RecordCodecBuilder.create(i -> i.group(
                     Codec.INT.fieldOf("x").forGetter(PageRef::x),

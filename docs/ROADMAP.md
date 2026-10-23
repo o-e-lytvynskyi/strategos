@@ -322,7 +322,7 @@ Cards: [roadmap/M2-command.md](roadmap/M2-command.md#cards). 20 cards, at most 6
 | UI-05 | Order feedback and destination preview | M | ORD-03, UI-02, CAM-04 | done |
 | CAM-05 | First person and back, with observer rules | M | CAM-03, D-08 | done |
 | CAM-07 | First-person orders: follow me, attack what I look at, inspect | M | CAM-05, ORD-04, NET-08 | specified |
-| CMB-01 | Damage model in the core | M | DATA-02, UNIT-02 | specified |
+| CMB-01 | Damage model in the core | M | DATA-02, UNIT-02 | in_progress |
 | CMB-02 | Melee combat with a default aggressive behaviour | M | CMB-01, PATH-06 | specified |
 | ORD-04 | Attack and attack-move | M | ORD-02, CMB-02, UI-05 | specified |
 | CMB-06 | Health bars, hit flash and death | S | CMB-01, UI-02, NET-08 | specified |

@@ -1131,6 +1131,10 @@ flowchart TD
     client-side `Entity#playSound` with no player plays nothing (ClientLevel.java:521–539).
   - The adapter then drives `tickDeath()` from the kinematic tick until removal.
   - No vanilla loot drops; loot and experience are core rule data.
+- **As built (M2, CMB-01).** A unit keeps the damage it has taken, 0 until hurt, so states without
+  combat hash and save as before. Packets queue during the tick and `CombatSystem` applies them in
+  COMBAT; the dead leave at the phase's end, each a `UnitDied` and a `UNIT_LOST` notice to the
+  faction, the core's first removal of a unit.
 - **Units are silent on the server.** A server-side `Entity#playSound` broadcasts to everyone in
   range regardless of fog (Entity.java:1138; ServerLevel.java:989–1035). Units never reach it: they
   never call `super.hurt` and never `move`. Unit sounds are `fx` events played client-side with

@@ -44,7 +44,8 @@ final class Snapshots {
                     orders.kind(i) == OrderKind.MOVE ? new Vec2d(orders.targetX(i), orders.targetZ(i)) : null,
                     s.paths().unitPath(i),
                     motion.extra(i),
-                    orders.saved(i)));
+                    orders.saved(i),
+                    s.health().damage(i)));
         }
         return new MatchSnapshot(
                 s.config(),
@@ -96,6 +97,7 @@ final class Snapshots {
             }
             state.paths().set(index, unit.path());
             state.motion().setExtra(index, unit.motion());
+            state.health().setDamage(index, unit.damage());
         }
         state.pendingCommands().addAll(snapshot.pendingCommands());
         int missing = 0;

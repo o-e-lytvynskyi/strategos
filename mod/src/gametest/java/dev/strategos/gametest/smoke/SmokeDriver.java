@@ -89,8 +89,11 @@ public final class SmokeDriver {
     private static final Vec2d BACK = new Vec2d(4.5, 8.5);
     private static final int CHECK_AT = 100;
 
-    /** How far from its place a unit of a group order may stand once arrived: 1.5 blocks of arrival, 1.0 of latch. */
-    private static final double PLACE_REACH = 2.5;
+    /**
+     * How far from its place a unit of a group order may stand once arrived: 1.5 blocks of arrival and 1.0 of latch,
+     * and half a block more, since an arrived member steps aside for one still walking (M2 spec §1.6 row 49).
+     */
+    private static final double PLACE_REACH = 3.0;
 
     private static final int SAVE_AFTER = 20;
     private static final int REPLAY_AFTER = 60;
@@ -433,8 +436,8 @@ public final class SmokeDriver {
 
     /**
      * The first unit ordered with seven others that has not arrived, null when every one has: arrived is idle within
-     * {@value #PLACE_REACH} blocks of its own place, the reach of a group member's arrival (1.5 blocks, spec §1.6 D row
-     * 135) and of the arrival latch (1.0) that holds it after.
+     * {@value #PLACE_REACH} blocks of its own place: the reach of a group member's arrival (1.5 blocks, M1 spec §1.6 D
+     * row 135), the arrival latch (1.0) that holds it after, and the step aside for a walker.
      */
     private static @Nullable String notAtPlaces(MatchCore core, int[] units, Vec2d @Nullable [] places) {
         if (places == null) {

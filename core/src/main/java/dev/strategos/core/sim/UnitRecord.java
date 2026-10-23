@@ -14,7 +14,8 @@ import org.jspecify.annotations.Nullable;
  * PathStore.UnitPath#NONE} for a unit that never asked for one, and {@code motion} {@link MotionStore.Extra#NONE} for
  * one that never touched terrain: so is every unit of an M0 save. {@code target} is the current order's, and {@code
  * orders} the rest of the queue (ORD-02): the current order's group and slot and the orders after it, {@link
- * OrderQueues.Saved#NONE} for M0's single order.
+ * OrderQueues.Saved#NONE} for M0's single order. {@code damage} is what it has taken (CMB-01), 0 for a unit never hurt,
+ * so every older save.
  */
 @CoreApi
 public record UnitRecord(
@@ -29,7 +30,25 @@ public record UnitRecord(
         @Nullable Vec2d target,
         PathStore.UnitPath path,
         MotionStore.Extra motion,
-        OrderQueues.Saved orders) {
+        OrderQueues.Saved orders,
+        double damage) {
+    /** A unit never hurt. */
+    public UnitRecord(
+            int handle,
+            TemplateId template,
+            FactionSlot faction,
+            double x,
+            double y,
+            double z,
+            float yaw,
+            AiStateStore.Saved ai,
+            @Nullable Vec2d target,
+            PathStore.UnitPath path,
+            MotionStore.Extra motion,
+            OrderQueues.Saved orders) {
+        this(handle, template, faction, x, y, z, yaw, ai, target, path, motion, orders, 0);
+    }
+
     /** A unit with M0's single order. */
     public UnitRecord(
             int handle,

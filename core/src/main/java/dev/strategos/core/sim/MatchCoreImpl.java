@@ -5,6 +5,7 @@ import dev.strategos.core.diag.MatchLog;
 import dev.strategos.core.diag.PhaseTimers;
 import dev.strategos.core.port.MetricsSink;
 import dev.strategos.core.protocol.CommandKinds;
+import dev.strategos.core.sim.combat.CombatSystem;
 import dev.strategos.core.sim.command.CommandRules;
 import dev.strategos.core.sim.command.CommandSystem;
 import dev.strategos.core.sim.journal.Journal;
@@ -45,6 +46,7 @@ final class MatchCoreImpl implements MatchCore {
         scheduler.register(paths.requests());
         scheduler.register(new MotionSystem(state));
         scheduler.register(state.spatial()); // the grid's rebuild ends MOVEMENT
+        scheduler.register(new CombatSystem());
         this.finalSystem = new FinalSystem(metrics, timers, journal, ports.journal());
         scheduler.register(finalSystem);
         this.queries = new QueriesImpl(state, paths);

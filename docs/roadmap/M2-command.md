@@ -466,7 +466,8 @@ perspective only.
   5. A dead unit runs `die()` and `tickDeath()`, its record and body are gone, and its owner is
      notified within one tick (L3).
 - **Tests:** L0, L1, L3, L5 · **Depends on:** DATA-02, UNIT-02 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Progress:** 2026-10-23 — M2 T14: `sim.combat` (`Damage`, `DamageFormula`, `HealthStore`, `CombatSystem`), `UnitHurt` and `UnitDied`, the body's flash and death; `DamageFormulaTest` (1), `CombatSystemTest` (2, 5's core side), `combattests.vanilla_blows_become_core_damage` (4, and 3's vanilla health), `combattests.a_dead_units_body_dies_and_goes` (5); spec §1.6 rows 50–53. Open: 3's unit-on-unit hits, with CMB-02's melee
+- **Status:** in_progress
 
 #### CMB-02 · Melee combat with a default aggressive behaviour
 - **Value:** Soldiers close in, strike on a steady rhythm, chase a fleeing target and defend

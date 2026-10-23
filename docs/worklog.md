@@ -9,7 +9,19 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24, T16, T26; M2 spec, M2 T1, T3, T5, T11, T13, T9, T21, T8, T6, T19, T2, T4
+## 2026-10-22 — M1 start, T1, T2, T11, T3, T4, T5, T6, T7, T8, T19, T28, T9, T12, T10, T13, T14, T15.1, T15.2, T21, T17, T18, T25, T20, T23, T22, T24, T16, T26; M2 spec, M2 T1, T3, T5, T11, T13, T9, T21, T8, T6, T19, T2, T4, T14
+
+- **M2 T14 · Damage model** — CMB-01 in progress (its unit-on-unit check with T15).
+  - **Results:** `sim.combat` (damage packets, the formula, damage taken per unit, the COMBAT
+    phase's system), the core paths for health and resistances, `UnitHurt`, `UnitDied`, the notice
+    `UNIT_LOST`, `MatchState#removeUnit`; the bodies' flash and death; tests in L1 (10) and L3 (2,
+    plus a rewritten M0 test).
+  - **Measured:** the golden journals keep their hashes; 935 core tests and every GameTest green.
+  - **Problems:** M1's `ExternalDamageTest` asserted that damage changed nothing, and M0's
+    `vanilla_kill_ignored` that `/kill` was ignored; both now check the opposite. A notice reaches a
+    mock player only after the gateway's flush at the tick's end. The smoke's place reach failed
+    again (2.53 of 2.5), now 3.0. `StatService` already had a field named `classes`.
+  - **Next:** CMB-02, melee and its soak.
 
 - **M2 T2 · Health check** — no card.
   - **Results:** `StrategosCommands` split into the root and five subtree classes, the test kit's
