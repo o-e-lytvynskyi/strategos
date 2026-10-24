@@ -66,7 +66,7 @@ final class OverlayGoldensScenario implements Scenario {
                 mc.getWindow().getScreenWidth() / 2.0,
                 mc.getWindow().getScreenHeight() / 2.0);
         if (tick == 1) {
-            mc.options.renderDistance().set(12);
+            ScenarioWorld.renderDistance(mc, 12);
         }
         if (tick == 20) {
             rts.enter();

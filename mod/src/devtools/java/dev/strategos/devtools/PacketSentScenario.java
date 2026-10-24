@@ -22,7 +22,7 @@ final class PacketSentScenario implements Scenario {
 
     @Override
     public void joined(Minecraft mc, ScenarioContext ctx) {
-        mc.options.renderDistance().set(10); // the mock viewer's distance; the harness's options say 5
+        ScenarioWorld.renderDistance(mc, 10); // the mock viewer's distance; the harness's options say 5
         mc.options.broadcastOptions();
     }
 

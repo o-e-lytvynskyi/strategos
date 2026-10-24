@@ -85,7 +85,7 @@ final class S9CameraScenario implements Scenario {
         joinedWorld = true;
         mc.options.hideGui = true;
         mc.options.guiScale().set(2);
-        mc.options.renderDistance().set(10); // a player's usual distance; the harness's options say 5
+        ScenarioWorld.renderDistance(mc, 10); // a player's usual distance; the harness's options say 5
         mc.options.broadcastOptions();
         mc.resizeDisplay();
         floor = mc.level == null ? 0 : mc.level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, 0, 0);

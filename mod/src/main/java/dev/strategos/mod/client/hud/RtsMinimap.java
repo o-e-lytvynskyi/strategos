@@ -24,7 +24,7 @@ final class RtsMinimap {
     static final ResourceLocation TEXTURE = Ids.id("minimap");
 
     /** Chunks rebuilt a client tick. */
-    private static final int PER_TICK = 12;
+    private static final int PER_TICK = 4;
 
     private @Nullable DynamicTexture texture;
     private int matchId = -1;

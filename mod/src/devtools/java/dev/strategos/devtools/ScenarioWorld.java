@@ -77,6 +77,16 @@ final class ScenarioWorld {
         run(server, String.format(Locale.ROOT, "tp %s %.3f %.3f %.3f %.1f %.1f", name, x, y, z, yaw, pitch));
     }
 
+    /**
+     * The client's render distance, sent to the server too: the server loads and sends chunks by the player's requested
+     * view distance, which only the client-information packet carries, and setting the option alone sends none, so the
+     * server kept the harness's 5 (M3 T30).
+     */
+    static void renderDistance(net.minecraft.client.Minecraft mc, int chunks) {
+        mc.options.renderDistance().set(chunks);
+        mc.options.broadcastOptions();
+    }
+
     static void run(IntegratedServer server, String command) {
         server.getCommands()
                 .performPrefixedCommand(server.createCommandSourceStack().withSuppressedOutput(), command);

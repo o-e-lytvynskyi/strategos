@@ -86,7 +86,7 @@ final class UnitsFrameTimeScenario implements Scenario {
     @Override
     public boolean tick(Minecraft mc, ScenarioContext ctx, int tick) {
         if (tick == 1) {
-            mc.options.renderDistance().set(renderDistance);
+            ScenarioWorld.renderDistance(mc, renderDistance);
             mc.options.framerateLimit().set(260); // unlimited, so the interval measures the frame, not the cap
         }
         IntegratedServer s = server;

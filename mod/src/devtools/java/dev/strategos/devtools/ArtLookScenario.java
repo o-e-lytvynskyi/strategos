@@ -82,6 +82,9 @@ final class ArtLookScenario implements Scenario {
                 mc.getWindow().getWindow(),
                 mc.getWindow().getScreenWidth() / 2.0,
                 mc.getWindow().getScreenHeight() / 2.0);
+        if (tick == 1) {
+            ScenarioWorld.renderDistance(mc, 12); // the top pose sees ground to the window's corners
+        }
         if (tick == 20 && !rts.active()) {
             rts.enter();
         }
@@ -102,6 +105,10 @@ final class ArtLookScenario implements Scenario {
         switch (phase) {
             case 0 -> {
                 mc.options.hideGui = true;
+                IntegratedServer server = mc.getSingleplayerServer();
+                if (server != null) { // frozen and pinned, so a frame draws every body in one pose (QA-18)
+                    server.execute(() -> ScenarioWorld.run(server, "tick freeze"));
+                }
                 wait = SETTLE;
             }
             case 1 -> {
@@ -121,15 +128,23 @@ final class ArtLookScenario implements Scenario {
                 check(armed == 2 * EACH, armed + " spearmen armed of " + 2 * EACH);
                 ctx.result.addProperty("dressed", dressed);
                 ctx.result.addProperty("spearmen", armed);
+                RtsGoldensScenario.pinBodies(mc);
                 ctx.capture("look_24");
             }
             case 2 -> {
                 screen.mouseScrolled(screen.width / 2.0, screen.height / 2.0, 0, -20); // out, to the top
                 wait = SETTLE;
             }
-            case 3 -> ctx.capture("look_64");
+            case 3 -> {
+                RtsGoldensScenario.pinBodies(mc);
+                ctx.capture("look_64");
+            }
             default -> {
                 mc.options.hideGui = false;
+                IntegratedServer server = mc.getSingleplayerServer();
+                if (server != null) {
+                    server.execute(() -> ScenarioWorld.run(server, "tick unfreeze"));
+                }
                 return finish(ctx);
             }
         }

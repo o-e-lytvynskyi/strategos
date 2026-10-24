@@ -43,7 +43,10 @@ final class RtsGoldensScenario implements Scenario {
     static final int ENEMIES = 8;
     /** Ticks for a pose to settle: the rig eases 35 % of the way a tick. */
     private static final int SETTLE = 50;
-    /** Far enough that the top pose (64 blocks up) sees ground to the window's corners. */
+    /**
+     * Far enough that the top pose (64 blocks up) sees ground to the window's corners, once the server is told too
+     * ({@link ScenarioWorld#renderDistance}): M2's {@code pose_high} showed the edge of the 5 chunks it kept sending.
+     */
     private static final int RENDER_DISTANCE = 12;
 
     private final StringBuilder failures = new StringBuilder();
@@ -142,7 +145,7 @@ final class RtsGoldensScenario implements Scenario {
                 mc.getWindow().getScreenWidth() / 2.0,
                 mc.getWindow().getScreenHeight() / 2.0);
         if (tick == 1) {
-            mc.options.renderDistance().set(RENDER_DISTANCE);
+            ScenarioWorld.renderDistance(mc, RENDER_DISTANCE);
         }
         if (tick == 20) {
             rts.enter();

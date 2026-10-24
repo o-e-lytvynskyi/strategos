@@ -279,7 +279,7 @@ final class M3GoldensScenario implements Scenario {
             mouseAt(mc, at[0], at[1]);
         }
         if (tick == 1) {
-            mc.options.renderDistance().set(12);
+            ScenarioWorld.renderDistance(mc, 12);
         }
         if (tick == 20) {
             rts.enter();

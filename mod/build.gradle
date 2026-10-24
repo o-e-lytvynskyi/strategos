@@ -187,6 +187,8 @@ neoForge {
             systemProperty 'strategos.scenario.server', providers.gradleProperty('scenario.server').getOrElse('localhost:25598')
             systemProperty 'strategos.s4.count', providers.gradleProperty('s4.count').getOrElse('200')
             systemProperty 'strategos.s4.renderDistance', providers.gradleProperty('s4.renderDistance').getOrElse('16')
+            // [M3 T30] -Pframe.units=<unit template path>: rts_frame's armies (ART-01.5 runs infantry)
+            systemProperty 'strategos.frame.units', providers.gradleProperty('frame.units').getOrElse('debug_walker')
             // [M2 T21] -Pscenario.jfr=<settings: profile, or a .jfc file> records the run into build/scenario/scenario.jfr
             if (providers.gradleProperty('scenario.jfr').isPresent()) {
                 jvmArgument("-XX:StartFlightRecording=filename=${file('build/scenario/scenario.jfr').absolutePath},settings=${providers.gradleProperty('scenario.jfr').get()},dumponexit=true")

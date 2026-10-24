@@ -4,7 +4,6 @@ import com.google.gson.JsonObject;
 import com.mojang.blaze3d.platform.GlUtil;
 import dev.strategos.core.client.pick.Picking;
 import dev.strategos.core.client.pick.View;
-import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.port.MetricsSink;
 import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.QueueMode;
@@ -12,6 +11,7 @@ import dev.strategos.core.protocol.SpawnUnits;
 import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
+import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.client.StrategosClient;
@@ -47,6 +47,13 @@ import org.lwjgl.glfw.GLFW;
  */
 final class RtsFrameScenario implements Scenario {
     private static final int PER_SIDE = 100;
+    /**
+     * The armies' template, {@code -Pframe.units}: the bare debug walker by default, PERF-14's baseline; the spearman
+     * for ART-01.5's pass, dressed in armour with a trident and a shield (M3 T20).
+     */
+    private static final TemplateId UNITS =
+            new TemplateId("strategos:unit/" + System.getProperty("strategos.frame.units", "debug_walker"));
+
     private static final int WINDOW = 160;
     private static final int SETTLE = 40;
     /** After the render distance grows to 16, the server and the chunk builders settle for this long before timing. */
@@ -202,7 +209,7 @@ final class RtsFrameScenario implements Scenario {
     public boolean tick(Minecraft mc, ScenarioContext ctx, int tick) {
         RtsMode rts = StrategosClient.rts();
         if (tick == 1) {
-            mc.options.renderDistance().set(RENDER_DISTANCE);
+            ScenarioWorld.renderDistance(mc, RENDER_DISTANCE);
             mc.options.framerateLimit().set(UNLIMITED);
             mc.options.particles().set(ParticleStatus.ALL); // a player's default
         }
@@ -353,12 +360,9 @@ final class RtsFrameScenario implements Scenario {
             return;
         }
         server.execute(() -> {
+            rt.submit(PlayerSlot.ADMIN, new SpawnUnits(UNITS, new FactionSlot(0), new Vec2d(128, OWN_Z), PER_SIDE, 6));
             rt.submit(
-                    PlayerSlot.ADMIN,
-                    new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(0), new Vec2d(128, OWN_Z), PER_SIDE, 6));
-            rt.submit(
-                    PlayerSlot.ADMIN,
-                    new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(1), new Vec2d(128, ENEMY_Z), PER_SIDE, 6));
+                    PlayerSlot.ADMIN, new SpawnUnits(UNITS, new FactionSlot(1), new Vec2d(128, ENEMY_Z), PER_SIDE, 6));
         });
     }
 
@@ -485,6 +489,7 @@ final class RtsFrameScenario implements Scenario {
         ctx.result.addProperty("barsP99Ms", rts.bars.ms(0.99));
         ctx.result.addProperty("barsDrawn", StrategosClient.healthBars().drawn());
         ctx.result.addProperty("units", 2 * PER_SIDE);
+        ctx.result.addProperty("template", UNITS.toString());
         ctx.result.addProperty("renderDistance", RENDER_DISTANCE);
         ctx.result.addProperty("sodium", ModList.get().isLoaded("sodium"));
         ctx.result.addProperty("iris", ModList.get().isLoaded("iris"));
