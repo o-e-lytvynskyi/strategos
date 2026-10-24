@@ -19,16 +19,35 @@ treated as evidence of performance or rendering on that target.
 | JVM | Project defaults: 2 GiB daemon heap, Parallel GC, UTF-8 |
 | Game / loader | Minecraft 1.21.1 / NeoForge 21.1.264 |
 | Initial revision | `37051181d12eac45e25e2ec2114870b86bf75459` |
-| Dependency cache | Project-local `build/gradle-home`, initially empty |
+| Dependency cache | Initially project-local; actual test runs use `%TEMP%/strategos-m5-gradle` |
 
 Commands run from the repository root in PowerShell with `JAVA_HOME` pointing to
-`build/toolchains/jdk-21.0.12.1+1` and `GRADLE_USER_HOME` to `build/gradle-home`.
+`build/toolchains/jdk-21.0.12.1+1` and `GRADLE_USER_HOME` to `%TEMP%/strategos-m5-gradle`.
+On 2026-10-25 an unused `S:` drive was temporarily mapped to the repository using
+Windows `subst`, so Java sees ASCII paths throughout. Files stay in the owner's
+original folder. Builds on that mapping use `--no-configuration-cache` to avoid
+reusing paths captured before the mapping.
 Python documentation checks use `python -X utf8`.
 
 ## Results
 
-Bootstrap `verifyFast` is in progress. Results will be recorded here as the commands finish;
-an attempted or pending run is not a pass.
+- `python -X utf8 tools/test_roadmap.py`: **3 tests passed**, including UTF-8 parsing
+  under a simulated Windows CP1251 default and rejection of an empty roadmap.
+- `python -X utf8 tools/roadmap.py check`: **245 cards, 0 problems**.
+- `gradlew.bat :core:test :mod:checkScenarioDiffSelftest --no-configuration-cache
+  --console=plain --max-workers=2` through `S:`: **passed in 1m 46s**. All **1,298 core
+  tests passed**, with zero failures, errors or skips. The scene-diff selftest passed,
+  including identical images with a failed/missing scene verdict and no platform goldens.
+- Bootstrap `verifyFast`: **environment failure**, before meaningful test execution.
+  A project-local cache under the Cyrillic directory failed to load `GradleWorkerMain`.
+  A short 8.3 path did not help because Gradle canonicalised it. Moving the dependency
+  cache to an ASCII temporary path allowed compilation (core, fixtures and tests,
+  plus Minecraft/NeoForge artifacts), but the test JVM still could not load classes
+  from the Cyrillic project path. Its report is a test-executor failure, not passed
+  tests or evidence of a gameplay defect. The ASCII drive mapping addresses the
+  remaining project path; the successful run above verifies it. Full `verify verifySlow`
+  **passed in 18m 32s** on 2026-10-25: 1298 core, 3 slow core, 200 determinism soak, 73 journal replay, 95 Minecraft unit, 12 architecture, 211 GameTest, 13 slow GameTest. No gameplay card is done;
+  this closes the T1 health check only.
 
 ## Checks required on the MacBook M5
 

@@ -9,6 +9,24 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
+## 2026-10-25 — M5 T1, Windows test environment
+
+- **M5 started:** the owner's go-ahead, isolated in `codex/m5-combat`; the target is a
+  MacBook M5. `main` stays unchanged.
+- **T1:** split resource discovery/loss reconciliation, card presentation and perf soak
+  bodies out of the three oversized classes, preserving their public entry points. Failed
+  scene checks now fail `scenarioDiff`, including matching pixels or missing goldens.
+  Explicit UTF-8 and an empty-input guard prevent the roadmap checker falsely passing
+  with zero cards on Windows; three regression tests pass, 245 cards check cleanly.
+- **Verification:** `verify verifySlow` passed in 18m 32s: 1298 core, 3 slow core, 200 determinism soak, 73 journal replay, 95 Minecraft unit, 12 architecture, 211 GameTest, 13 slow GameTest.
+- **Environment:** [Windows x64](testing/M5-windows-x64.md), Temurin 21.0.12.1+1, Gradle
+  9.2.1. Java launchers failed on Cyrillic paths before meaningful test execution; an
+  ASCII dependency cache plus a temporary `S:` mapping fixed both launches. Cold setup
+  compiled Minecraft/NeoForge and downloaded its assets. Windows timings do not replace
+  Mac performance evidence; the MacBook checks remain explicit in that report. No
+  thresholds, baselines or images changed; Linux goldens were not re-recorded.
+- **Next:** M5 T2, large mobility, footprints and class-specific navigation.
+
 ## 2026-10-24 (evening) — the watched demo
 
 - **What:** a `demo` scene in the L4 harness, `mod/src/devtools/java/dev/strategos/devtools/demo/`: one class per

@@ -12,6 +12,11 @@ cards and the architecture; every other Minecraft or NeoForge name is checked in
 task that first uses it, and recorded in §1.6 when it differs. Clean-room as before: the 0 A.D. figures
 below are the research notes' behavioural numbers, never its code or data.*
 
+**Implementation started 2026-10-24**, on the owner's explicit go-ahead, in the isolated
+`codex/m5-combat` branch. The owner's target is a MacBook M5; this session's Windows x64
+environment, reproducible commands, results and remaining macOS checks are recorded in
+[M5-windows-x64.md](../testing/M5-windows-x64.md). The original planning text above is historical.
+
 ---
 
 ## 0. Read this first
@@ -319,7 +324,7 @@ battle scenario) → T17 (the consent batch) → T18 (close). T16 is reserved fo
 
 ### 7.3 Progress
 
-- [ ] T1 · [ ] T2 · [ ] T3 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11
+- [x] T1 (2026-10-25) · [ ] T2 · [ ] T3 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11
 - [ ] T12 · [ ] T13 · [ ] T14 · [ ] T15 · [ ] T17 · [ ] T18
 
 ---
@@ -355,6 +360,21 @@ battle scenario) → T17 (the consent batch) → T18 (close). T16 is reserved fo
 
 | Input | When | Blocks |
 |---|---|---|
-| «начинай M5» | now | M5's start |
+| «начинай M5» | received 2026-10-24 | Settled; implementation authorised in `codex/m5-combat` |
 | The goldens and the looks | T17 | Accepted |
 | The battle playtest and the questionnaire | after the demo | Accepted |
+
+## 11. Implementation results
+
+### T1 — health check (2026-10-25)
+
+Split the three oversized classes along their existing seams: resource discovery and
+external resource losses (`MatchResourceDiscovery`), card presentation (`HudCardPresentation`),
+and long perf scenes (`PerfSoaks`). The annotated perf entry points and test names stay
+unchanged. `scenarioDiff` now rejects a failed scene verdict even when its pixels agree
+or its platform has no goldens, proved by its extended selftest. The roadmap reader
+now uses UTF-8 explicitly and rejects empty input; three Python regression tests pass.
+
+`verify verifySlow` passed in 18m 32s on the documented Windows x64 environment:
+1298 core, 3 slow core, 200 determinism soak, 73 journal replay, 95 Minecraft unit, 12 architecture, 211 GameTest, 13 slow GameTest; no failures. No baselines, thresholds or images were changed. Linux goldens
+remain to be reviewed when its scenario job next runs; this session did not re-record them.

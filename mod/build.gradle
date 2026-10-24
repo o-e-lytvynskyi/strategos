@@ -706,6 +706,20 @@ tasks.register('checkScenarioDiffSelftest') {
                 throw new GradleException("scenarioDiff ${fails ? 'passed' : 'failed'} the '${run}' run: ${report}")
             }
         }
+        // M5 T1: identical pixels must not hide a failed scene assertion.
+        [[ok: true], [ok: false, failures: ['selection did not change']], [:]].eachWithIndex { Map result, int i ->
+            def scene = new File(work, "scene-${i}")
+            scene.mkdirs()
+            new File(fixtures, 'same').listFiles().each { File frame ->
+                java.nio.file.Files.copy(frame.toPath(), new File(scene, frame.name).toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+            }
+            new File(scene, 'result.json').text = groovy.json.JsonOutput.toJson(result)
+            [golden, new File(work, 'no-goldens')].each { File expected ->
+                def report = ScenarioDiff.compare(scene, expected, new File(work, "scene-diff-${i}-${expected.name}"))
+                boolean failed = !report.problems.isEmpty()
+                if (failed != (i != 0)) throw new GradleException("scenarioDiff accepted an invalid scene result: ${result}")
+            }
+        }
     }
 }
 
@@ -813,6 +827,9 @@ tasks.register('generateArenas') {
 // the masks, 0 for the same picture and 1 for black against white. goldens.json beside the goldens may
 // set a threshold for all frames and, per frame, a threshold and masks, [x0, y0, x1, y1] in golden pixels.
 class ScenarioDiff {
+    static List<String> resultProblems(Map result) {
+        result.ok == true ? [] : ["scene checks failed: ${result.failures ?: 'result.ok is not true'}".toString()]
+    }
     static final int WIDTH = 640
     /** 17 times the Mac's run-to-run noise in rts_goldens, a thirteenth of its outlines' whole signal (M2 §1.6). */
     static final double THRESHOLD = 1.0e-5
@@ -880,7 +897,9 @@ class ScenarioDiff {
             javax.imageio.ImageIO.write(shrink(javax.imageio.ImageIO.read(f)), 'png', new File(candidates, f.name))
         }
         def frames = []
-        def problems = []
+        def resultFile = new File(out, 'result.json')
+        def problems = resultFile.isFile()
+                ? resultProblems((Map) new groovy.json.JsonSlurper().parse(resultFile)) : []
         if (!goldens.isDirectory()) {
             return [goldens: goldens.path, frames: frames, problems: problems]
         }

@@ -3,7 +3,7 @@
 Where the project stands right now. The session log is in [worklog.md](worklog.md); the work
 procedure is the `strategos-dev` skill (`.claude/skills/strategos-dev/SKILL.md`).
 
-**Last update:** 2026-10-24 · **Owner last seen:** 2026-10-24 · **Current:** M5 Combat started 2026-10-24 on the owner's go-ahead, in `codex/m5-combat`; M1–M4 Done
+**Last update:** 2026-10-25 · **Owner last seen:** 2026-10-25 · **Current:** M5 Combat started 2026-10-24 on the owner's go-ahead, in `codex/m5-combat`; M1–M4 Done
 
 ## For the owner
 
@@ -158,13 +158,13 @@ Answer in chat or here; the next session applies the answers.
 
 ## Since your last visit
 
-Nothing yet: the owner was here on 2026-10-24.
+M5 T1 finished: the health check and the Windows test environment, with `verify verifySlow` green. `main` is unchanged.
 
 ## Now
 
-- **Milestone:** M5 Combat, started 2026-10-24 (owner's go-ahead); [spec](milestones/M5-combat.md); 0 of 17 tasks done.
-- **In progress:** M5 T1 since 2026-10-24, bootstrap and health check.
-- **Last finished task:** M4 T28 (2026-10-24), before this branch.
+- **Milestone:** M5 Combat, started 2026-10-24 (owner's go-ahead); [spec](milestones/M5-combat.md); 1 of 17 tasks done.
+- **In progress:** none; M5 T1 verified and ready to commit.
+- **Last finished task:** M5 T1 (2026-10-25), health check; `verify verifySlow` passed on Windows x64 (see the environment report).
 - **Next task:** M5 T2 · Mobility classes and footprints.
 - **WIP branch:** `codex/m5-combat` (owner-requested isolation; no changes to `main`).
 - **CI:** latest `main` verify succeeded at `3705118` (run 40119258187); branch not yet pushed; monthly usage last recorded about 1,575 of 2,000 minutes.
