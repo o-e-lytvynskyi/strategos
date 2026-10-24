@@ -17,6 +17,7 @@ import dev.strategos.core.sim.econ.CarryStore;
 import dev.strategos.core.sim.econ.Costs;
 import dev.strategos.core.sim.econ.EconomyChecks;
 import dev.strategos.core.sim.econ.EconomyRules;
+import dev.strategos.core.sim.econ.EconomyTimes;
 import dev.strategos.core.sim.econ.Forage;
 import dev.strategos.core.sim.econ.GatherRates;
 import dev.strategos.core.sim.econ.Ledger;
@@ -107,6 +108,7 @@ public final class MatchState {
     private final Alerts alerts = new Alerts(); // UI-12's live alerts, saved (MATCH-04)
     private final java.util.TreeMap<String, int[]> damageRanks = new java.util.TreeMap<>(); // by blueprint id
     private @Nullable NodeIndex nodeIndex;
+    private final EconomyTimes economyTimes = new EconomyTimes();
 
     private int[] changed = new int[4];
     private int changedCount;
@@ -311,12 +313,19 @@ public final class MatchState {
         return id;
     }
 
+    /** PERF-07.4's times of the node index and the dropsite queries; measured, never saved or hashed. */
+    public EconomyTimes economyTimes() {
+        return economyTimes;
+    }
+
     /** Where the nodes are, built on first use after discovery or a restore. */
     public NodeIndex nodeIndex() {
         NodeIndex index = nodeIndex;
         if (index == null) {
+            long start = economyTimes.start();
             index = new NodeIndex(nodes, config.rules().economy(), surfaces.pagesX(), surfaces.pagesZ());
             nodeIndex = index;
+            economyTimes.built(start);
         }
         return index;
     }

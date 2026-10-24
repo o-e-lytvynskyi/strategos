@@ -4,7 +4,9 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.sun.management.OperatingSystemMXBean;
+import dev.strategos.core.sim.econ.EconomyTimes;
 import dev.strategos.core.testkit.BudgetCheck;
+import dev.strategos.core.testkit.EconomyScene;
 import dev.strategos.core.testkit.Percentiles;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -34,7 +36,16 @@ final class PerfVerdicts {
 
     static final double M1_B_PER_UNIT = 4.5e6 / 600;
 
-    /** PERF-06.2: a unit-driven bucket's p95 per unit grows at most 15 % over M1's. */
+    /**
+     * M3's first-loop soak per unit on the M4 Pro ({@code perf/first-loop-m4pro.json}), the base PERF-07.2 compares the
+     * economy soak with: budget A's p95 and budget B's p95 a unit, re-taken in M4 T21 with its workers gathering (the
+     * first run's had all of them idle on the server).
+     */
+    static final double M3_A_PER_UNIT = 5_728;
+
+    static final double M3_B_PER_UNIT = 9_207;
+
+    /** PERF-06.2 and PERF-07.2: a unit-driven bucket's p95 per unit grows at most 15 % over its base's. */
     static final double PER_UNIT_GROWTH = 1.15;
 
     private PerfVerdicts() {}
@@ -121,7 +132,9 @@ final class PerfVerdicts {
         json.addProperty("foreignCpu", foreign);
         SoakCosts costs = r.costs();
         if (costs != null) {
-            json.add("firstLoop", firstLoop(r, costs, b, broken, !stress && !fast));
+            json.add(
+                    r.config().scene() instanceof EconomyScene.Config ? "economy" : "firstLoop",
+                    firstLoop(r, costs, b, broken, !stress && !fast));
         }
         if (melee) {
             json.addProperty("waves", r.fights()[0]);
@@ -152,9 +165,11 @@ final class PerfVerdicts {
     }
 
     /**
-     * The first loop's report (PERF-06.2 and .4): the placements' commands phase, the writer's and the fx's time a tick,
-     * the scene's counts, the blob's save in the window (budget G, at most 100 ms), and A's and B's p95 per unit against
-     * M1's; with {@code gates}, A per unit gates under {@code a} and the save under {@code g}.
+     * A scene's report, the first loop's (PERF-06.2 and .4) or the economy's (PERF-07.2 and .4): the placements'
+     * commands phase, the writer's and the fx's time a tick, the scene's counts, the node index's and the dropsite
+     * queries' times, the blob's save in the window (budget G, at most 100 ms), and A's and B's p95 per unit against
+     * M1's crowd soak or, for the economy, M3's first loop; with {@code gates}, A per unit gates under {@code a} and the
+     * save under {@code g}.
      */
     private static JsonObject firstLoop(SoakResult r, SoakCosts costs, long[] b, List<String> broken, boolean gates) {
         JsonObject json = new JsonObject();
@@ -166,28 +181,41 @@ final class PerfVerdicts {
         json.addProperty("waves", costs.waves());
         json.addProperty("buildingsAtEnd", costs.buildings());
         json.addProperty("saveNanos", costs.saveNanos());
+        EconomyTimes.Stats e = costs.economy();
+        JsonObject economy = new JsonObject(); // PERF-07.4
+        economy.addProperty("nodeIndexSearches", e.searches());
+        economy.addProperty("nodeIndexSearchNsMean", e.searches() == 0 ? 0 : e.searchNanos() / e.searches());
+        economy.addProperty("nodeIndexBuilds", e.builds());
+        economy.addProperty("nodeIndexBuildNsMean", e.builds() == 0 ? 0 : e.buildNanos() / e.builds());
+        economy.addProperty("dropsiteQueries", e.dropsites());
+        economy.addProperty("dropsiteQueryNsMean", e.dropsites() == 0 ? 0 : e.dropsiteNanos() / e.dropsites());
+        json.add("economyTimes", economy);
         if (gates && gated("g") && costs.saveNanos() > scaled(100 * MS)) {
             broken.add("budget G: the save took " + costs.saveNanos() + " ns, above " + scaled(100 * MS));
         }
+        boolean m4 = r.config().scene() instanceof EconomyScene.Config; // PERF-07 against M3, PERF-06 against M1
+        double aBase = m4 ? M3_A_PER_UNIT : M1_A_PER_UNIT;
+        double bBase = m4 ? M3_B_PER_UNIT : M1_B_PER_UNIT;
         int units = 2 * r.config().perFaction();
         double aPerUnit = (double) Percentiles.percentile(r.core(), 0.95) / units;
         double bPerUnit = (double) Percentiles.percentile(b, 0.95) / units;
         JsonObject perUnit = new JsonObject();
         perUnit.addProperty("units", units);
+        perUnit.addProperty("base", m4 ? "M3 first-loop soak" : "M1 crowd soak");
         perUnit.addProperty("aP95PerUnitNs", aPerUnit);
-        perUnit.addProperty("aM1PerUnitNs", M1_A_PER_UNIT);
-        perUnit.addProperty("aGrowth", aPerUnit / M1_A_PER_UNIT);
+        perUnit.addProperty("aBasePerUnitNs", aBase);
+        perUnit.addProperty("aGrowth", aPerUnit / aBase);
         perUnit.addProperty("bP95PerUnitNs", bPerUnit);
-        perUnit.addProperty("bM1PerUnitNs", M1_B_PER_UNIT);
-        perUnit.addProperty("bGrowth", bPerUnit / M1_B_PER_UNIT);
+        perUnit.addProperty("bBasePerUnitNs", bBase);
+        perUnit.addProperty("bGrowth", bPerUnit / bBase);
         perUnit.addProperty(
                 "note",
                 "A gates; B is reported: below 600 units the tick's fixed work, not the units, makes most of B's p95");
         json.add("perUnit", perUnit);
-        if (gates && gated("a") && aPerUnit > M1_A_PER_UNIT * PER_UNIT_GROWTH * ciFactor()) {
+        if (gates && gated("a") && aPerUnit > aBase * PER_UNIT_GROWTH * ciFactor()) {
             broken.add(String.format(
-                    "budget A per unit: p95 %.0f ns a unit, over %.0f (M1's %.0f + 15 %%)",
-                    aPerUnit, M1_A_PER_UNIT * PER_UNIT_GROWTH, M1_A_PER_UNIT));
+                    "budget A per unit: p95 %.0f ns a unit, over %.0f (%s's %.0f + 15 %%)",
+                    aPerUnit, aBase * PER_UNIT_GROWTH, m4 ? "M3" : "M1", aBase));
         }
         return json;
     }

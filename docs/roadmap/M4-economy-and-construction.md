@@ -398,4 +398,5 @@ reseed). What happens when one runs out?
   3. The stress pass holds C p95 ≤ 50 ms (L6).
   4. The report lists the economy and construction times (R).
 - **Tests:** L6, R · **Depends on:** BLD-08, UNIT-05, PERF-06 · **Size:** S · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-24 — M4 T21: `perftests.economy_soak`, 316 units, 15 minutes at 20 ticks a second, holds A–E and G (A p50 0.81 ms, C p95 5.9 ms, the save 10 ms) (1); A's p95 per unit 4,919 ns against M3's first loop's 5,728, re-taken with its workers gathering (2); `perftests.economy_stress` holds C p95 at 7.9 ms (3); the report lists the placements', the writer's, the node index's and the dropsite queries' times (4) (spec §1.6 row 25, `perf/economy-m4pro.json`)

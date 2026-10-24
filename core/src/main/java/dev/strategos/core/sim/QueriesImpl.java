@@ -356,4 +356,9 @@ final class QueriesImpl implements MatchQueries {
     public boolean footprintAt(int x, int z) {
         return state.footprintAt(x, z);
     }
+
+    @Override
+    public dev.strategos.core.sim.econ.EconomyTimes.Stats economyTimes() {
+        return state.economyTimes().stats();
+    }
 }

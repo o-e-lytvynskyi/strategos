@@ -386,7 +386,7 @@ Cards: [roadmap/M4-economy-and-construction.md](roadmap/M4-economy-and-construct
 | MATCH-04 | Save and resume | M | CORE-07, CORE-11, CORE-12, BLD-05, ECO-08 | done |
 | AI-02 | AI economy and base building | L | AI-17, BLD-08, ECO-08, ECO-09, ECO-16 | done |
 | ART-02 | Resource and deposit visuals | M | ECO-08, ECO-09, ECO-16, D-04 | in_progress |
-| PERF-07 | Economy and construction perf gate | S | BLD-08, UNIT-05, PERF-06 | specified |
+| PERF-07 | Economy and construction perf gate | S | BLD-08, UNIT-05, PERF-06 | done |
 
 ### M5 · Combat
 

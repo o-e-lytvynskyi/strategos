@@ -34,7 +34,7 @@ class FirstLoopSceneTest {
         h.publishAll(ground.voxels());
         h.step();
         FirstLoopScene scene = new FirstLoopScene(FirstLoopScene.Config.SOAK, ground.startSlots());
-        for (FirstLoopScene.Issue i : scene.setup(TemplateSet.builtin())) {
+        for (SoakScene.Issue i : scene.setup(TemplateSet.builtin())) {
             h.submit(i.issuer(), i.command());
         }
         long deaths = 0;
@@ -75,7 +75,7 @@ class FirstLoopSceneTest {
                     }
                 }
             }
-            for (FirstLoopScene.Issue i : scene.next(q)) {
+            for (SoakScene.Issue i : scene.next(q)) {
                 h.submit(i.issuer(), i.command());
             }
         }

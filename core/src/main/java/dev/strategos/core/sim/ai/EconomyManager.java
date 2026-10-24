@@ -252,7 +252,7 @@ final class EconomyManager implements AiModule {
                     || (n.kind() == MaterialKind.CARCASS && !script.livestock()) // M3's bot leaves the animals
                     || n.amount() <= 0
                     || n.ripening() > 0
-                    || n.topY() < 0
+                    || !n.hasBlock()
                     || n.freeSlots() + free.getOrDefault(n.id(), 0) <= 0) {
                 continue;
             }

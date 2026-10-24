@@ -9,7 +9,7 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-24 (later) — M4 T1–T20
+## 2026-10-24 (later) — M4 T1–T21
 
 - **M4 T1 · the health check from M3's close.** The four classes over 800 lines split along their seams, with
   every golden frame identical after the HUD's split (`RtsHud`, `MatchState`, `NetTests`, `CrowdSoak`);
@@ -82,6 +82,12 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
   works it there under `/tick sprint` (deposits at four quarters and spent, outcrops whole and half mined, fields
   ripening, full, half and bare, three animals and a carcass), freezes and frames each group from 60 blocks, then the
   selected mine with its ring and "750 / 1000"; its first run on this Mac passed, the frames wait for T27.
+- **M4 T21 · PERF-07 done.** The economy soak (`EconomyScene`: 150 workers at trees, quarries, mines, fields and sheep,
+  150 spearmen in waves, towns of 28 laid out by the placement rules, five constructions and two repairs running)
+  holds every budget for 15 minutes at 20 ticks a second (C p95 5.9 ms; stress, 632 units, 7.9 ms) and reports the node
+  index's and dropsite queries' times. It found that in the arena, below height 0, every scene's workers and the
+  economy AI took a node's negative height for "nothing left" and gathered nothing; fixed, M3's per-unit base was
+  re-taken (5,728 ns, STATE item 17) and the economy reads 4,919.
 
 ## 2026-10-24 — M3 T9–T31, M3 Done; M4 spec
 

@@ -1,20 +1,21 @@
 {
   "what": "M3's first-loop soak on the M4 Pro (PERF-06, M3 spec §6): the per-unit p95 of the unit-driven buckets that M4's perf gate (PERF-07) compares with, and the budgets it held",
   "date": "2026-10-24",
+  "retaken": "M4 T21 (2026-10-24): the first run (perUnitP95Ns a 2966, b 5795) had every worker idle on the server, the scene taking a node's negative height in the arena for 'no block left'; this run, on the M4 T21 commit, has them gathering. The stress and fast entries are still the first run's.",
   "test": "perftests.first_loop_soak",
   "units": 200,
   "ticks": 18000,
   "budgetsNs": {
-    "aP50": 272709,
-    "aP99": 841709,
-    "bP95": 1159084,
-    "cP95": 4243333,
-    "dP99": 39501
+    "aP50": 569959,
+    "aP99": 5096750,
+    "bP95": 1841416,
+    "cP95": 4885667,
+    "dP99": 91209
   },
   "perUnitP95Ns": {
-    "a": 2966,
-    "b": 5795
+    "a": 5728,
+    "b": 9207
   },
-  "stress": {"test": "perftests.first_loop_stress", "units": 400, "cP95Ns": 5272125},
-  "fast": {"test": "perftests.first_loop_fast", "speed": 1.5, "cP95Ns": 4232084}
+  "stress": {"test": "perftests.first_loop_stress", "units": 400, "cP95Ns": 5272125, "idleWorkers": true},
+  "fast": {"test": "perftests.first_loop_fast", "speed": 1.5, "cP95Ns": 4232084, "idleWorkers": true}
 }

@@ -262,6 +262,7 @@ final class Gathering {
         if (spent != 0) {
             NodeStore nodes = s.nodes();
             int handle = ctx.handle();
+            long start = s.economyTimes().start();
             found = s.nodeIndex()
                     .nearest(
                             nodes,
@@ -271,6 +272,7 @@ final class Gathering {
                             nodes.anchorZ(spent),
                             RETARGET,
                             id -> id != spent && usable(s, i, handle, id));
+            s.economyTimes().searched(start);
         }
         OrderQueues orders = s.orders();
         if (found != 0) {

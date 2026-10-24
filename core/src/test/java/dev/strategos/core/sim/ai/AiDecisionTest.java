@@ -20,7 +20,9 @@ import dev.strategos.core.sim.MatchRules;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.econ.EconomyRules;
 import dev.strategos.core.testkit.SimHarness;
+import dev.strategos.core.testkit.TreeFixtures;
 import dev.strategos.core.testkit.VoxelFixtures;
+import dev.strategos.core.testkit.VoxelWorld;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -88,6 +90,25 @@ class AiDecisionTest {
         List<Command> sent = think(h, AiBudget.CAP, new int[1]);
         assertThat(sent).filteredOn(Train.class::isInstance).hasSize(1);
         assertThat(sent).as("a flat match has no node: nothing to gather").noneMatch(Gather.class::isInstance);
+    }
+
+    /**
+     * M4 T21: a match below the world's height 0, an arena's: the next block of a node has a negative height, and an
+     * idle worker is still sent to the oak (the player had taken a negative height for "no block left").
+     */
+    @Test
+    void belowHeightZeroIdleWorkersStillGather() throws Exception {
+        VoxelWorld world = VoxelFixtures.flat(64, 64, 32, 1);
+        TreeFixtures.draw(world, TreeFixtures.Species.OAK, 30, 1, 30);
+        SimHarness h = SimHarness.builder().size(64, 64).yBand(-64, -33, -63).build();
+        h.publishAll(world);
+        h.submit(PlayerSlot.ADMIN, new SpawnBuilding(CENTRE, new FactionSlot(0), 8, 8, 0));
+        h.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.WORKER, new FactionSlot(0), new Vec2d(24, 24), 2, 1));
+        h.step();
+        h.step();
+        assertThat(h.core().queries().nodes()).allMatch(n -> n.topY() < 0, "the oak's blocks below 0");
+        List<Command> sent = think(h, AiBudget.CAP, new int[1]);
+        assertThat(sent).filteredOn(Gather.class::isInstance).isNotEmpty();
     }
 
     /** M3 T31: a placement's REPLACE took the nearest workers off the site they were building, which then stood. */

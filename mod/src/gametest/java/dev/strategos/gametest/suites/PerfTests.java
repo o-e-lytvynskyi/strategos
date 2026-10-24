@@ -23,6 +23,7 @@ import dev.strategos.core.sim.MatchRules;
 import dev.strategos.core.sim.world.WritePriority;
 import dev.strategos.core.sim.world.WriteSite;
 import dev.strategos.core.testkit.BudgetCheck;
+import dev.strategos.core.testkit.EconomyScene;
 import dev.strategos.core.testkit.FirstLoopScene;
 import dev.strategos.core.testkit.Percentiles;
 import dev.strategos.core.testkit.SimHarness;
@@ -80,6 +81,9 @@ public final class PerfTests {
     private static final int FIRST_LOOP_LANE = 4;
     private static final int FIRST_LOOP_STRESS_LANE = 5;
     private static final int FIRST_LOOP_FAST_LANE = 6;
+    private static final int ECONOMY_TICKS = Integer.getInteger("strategos.economy.ticks", 18_000);
+    private static final int ECONOMY_LANE = 7;
+    private static final int ECONOMY_STRESS_LANE = 8;
 
     private PerfTests() {}
 
@@ -685,6 +689,43 @@ public final class PerfTests {
                         FIRST_LOOP_SHORT_TICKS,
                         FIRST_LOOP_STRESS_LANE,
                         1),
+                r -> judgeSoak(h, r, window, true),
+                window::start,
+                window::sampleForeignLoad);
+    }
+
+    /**
+     * PERF-07.1, .2 and .4 (M4 spec §6): the economy on the proving ground for {@code strategos.economy.ticks} ticks
+     * (18,000, 15 game minutes, paced at 20 a second): two factions of 75 workers at trees, quarries, mines, fields and
+     * sheep, 75 spearmen in waves across the fords, towns of 28 buildings with five constructions and two repairs
+     * running ({@link EconomyScene}), two seated viewers at the centre. Budgets A–E gate as in the crowd soak, G on nav
+     * and on one save of the blob in the window, and A's p95 per unit at most 15 % over M3's first loop; the report adds
+     * the placements', the writer's, the fx's, the node index's and the dropsite queries' times. Writes
+     * {@code economy_soak.json} and the match's journal.
+     */
+    @StrategosTest(batch = "perf_economy", arena = "arena_flat_48", timeoutTicks = 40_000)
+    public static void economySoak(GameTestHelper h) {
+        Window window = new Window();
+        CrowdSoak.start(
+                h,
+                CrowdSoak.Config.firstLoop("economy_soak", EconomyScene.Config.SOAK, ECONOMY_TICKS, ECONOMY_LANE, 1),
+                r -> judgeSoak(h, r, window, false),
+                window::start,
+                window::sampleForeignLoad);
+    }
+
+    /**
+     * PERF-07.3: the economy at twice its scale, 600 workers and soldiers, ten constructions and four repairs, for
+     * {@value #FIRST_LOOP_SHORT_TICKS} ticks: budget C's p95 at most 50 ms gates, the rest is reported. Writes {@code
+     * economy_stress.json}.
+     */
+    @StrategosTest(batch = "perf_economy_stress", arena = "arena_flat_48", timeoutTicks = 20_000)
+    public static void economyStress(GameTestHelper h) {
+        Window window = new Window();
+        CrowdSoak.start(
+                h,
+                CrowdSoak.Config.firstLoop(
+                        "economy_stress", EconomyScene.Config.STRESS, FIRST_LOOP_SHORT_TICKS, ECONOMY_STRESS_LANE, 1),
                 r -> judgeSoak(h, r, window, true),
                 window::start,
                 window::sampleForeignLoad);

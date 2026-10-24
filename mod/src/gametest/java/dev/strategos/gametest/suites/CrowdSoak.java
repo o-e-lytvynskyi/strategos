@@ -16,6 +16,7 @@ import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.Vec2d;
+import dev.strategos.core.sim.ExternalDamage;
 import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.core.sim.MatchQueries;
 import dev.strategos.core.sim.MotionStore;
@@ -23,12 +24,13 @@ import dev.strategos.core.sim.OutputEvent;
 import dev.strategos.core.sim.UnitDied;
 import dev.strategos.core.sim.UnitHurt;
 import dev.strategos.core.sim.UnitView;
+import dev.strategos.core.sim.econ.EconomyTimes;
 import dev.strategos.core.sim.journal.JournalExport;
-import dev.strategos.core.testkit.FirstLoopScene;
 import dev.strategos.core.testkit.JournalFiles;
 import dev.strategos.core.testkit.ProvingGround;
 import dev.strategos.core.testkit.Seeds;
 import dev.strategos.core.testkit.SoakOrders;
+import dev.strategos.core.testkit.SoakScene;
 import dev.strategos.gametest.TickPacer;
 import dev.strategos.gametest.net.MockViewer;
 import dev.strategos.mod.StrategosServer;
@@ -87,7 +89,7 @@ final class CrowdSoak {
             int viewers,
             int lane,
             boolean melee,
-            FirstLoopScene.@Nullable Config scene,
+            SoakScene.@Nullable Spec scene,
             double speed) {
         Config(String name, int seedLine, int perFaction, int ticks, boolean budgets, int viewers, int lane) {
             this(name, seedLine, perFaction, ticks, budgets, viewers, lane, false);
@@ -106,7 +108,7 @@ final class CrowdSoak {
         }
 
         /** The first loop's soak of {@code scene}, two viewers, at {@code speed} times 20 ticks a second. */
-        static Config firstLoop(String name, FirstLoopScene.Config scene, int ticks, int lane, double speed) {
+        static Config firstLoop(String name, SoakScene.Spec scene, int ticks, int lane, double speed) {
             return new Config(name, 0, scene.units() / 2, ticks, true, 2, lane, false, scene, speed);
         }
 
@@ -164,7 +166,8 @@ final class CrowdSoak {
     private boolean sendWave;
     private long hits;
     private long deaths;
-    private final @Nullable FirstLoopScene scene;
+    private final @Nullable SoakScene scene;
+    private EconomyTimes.Stats economyBefore = new EconomyTimes.Stats(0, 0, 0, 0, 0, 0);
     private final long[] writer;
     private final long[] fx;
     private final List<Long> placement = new ArrayList<>();
@@ -189,8 +192,8 @@ final class CrowdSoak {
         this.tick = new long[samples];
         this.between = new long[samples];
         this.paths = new long[samples];
-        FirstLoopScene.Config sc = config.scene();
-        this.scene = sc == null ? null : new FirstLoopScene(sc, manifest.startSlots());
+        SoakScene.Spec sc = config.scene();
+        this.scene = sc == null ? null : sc.create(manifest.startSlots());
         this.writer = new long[sc == null ? 0 : samples];
         this.fx = new long[sc == null ? 0 : samples];
     }
@@ -256,10 +259,9 @@ final class CrowdSoak {
                 }
             }
             case SPAWNING -> {
-                FirstLoopScene.Config sc = config.scene();
-                int units = sc == null
-                        ? 2 * config.perFaction()
-                        : 2 * sc.workers(); // the scene's soldiers come with its waves
+                SoakScene.Spec sc = config.scene();
+                int units =
+                        sc == null ? 2 * config.perFaction() : sc.unitsAtStart(); // its soldiers come with its waves
                 check(refusedSpawn == null, "a spawn was refused: " + refusedSpawn);
                 check(
                         System.nanoTime() - spawnedAt < SPAWN_NANOS,
@@ -288,6 +290,7 @@ final class CrowdSoak {
         }
         if (t == WARM_UP) {
             viewers.forEach(v -> v.bytes().clear());
+            economyBefore = q.economyTimes();
             windowStarts.run();
         }
         if (t >= WARM_UP) {
@@ -344,7 +347,7 @@ final class CrowdSoak {
             writerBefore = StrategosServer.get().writer().writeNanos();
             fxBefore = rt.fxNanos();
             placing = false;
-            for (FirstLoopScene.Issue issue : scene.next(q)) {
+            for (SoakScene.Issue issue : scene.next(q)) {
                 boolean place = issue.command() instanceof PlaceBuilding;
                 placing |= place;
                 rt.submit(issue.issuer(), issue.command(), result -> {
@@ -354,6 +357,9 @@ final class CrowdSoak {
                         refused++;
                     }
                 });
+            }
+            for (ExternalDamage d : scene.damage(q)) { // a repair's blow (PERF-07)
+                rt.damage(d);
             }
             return;
         }
@@ -409,10 +415,11 @@ final class CrowdSoak {
     }
 
     private @Nullable SoakCosts costs(MatchQueries q) {
-        FirstLoopScene sc = scene;
+        SoakScene sc = scene;
         if (sc == null) {
             return null;
         }
+        EconomyTimes.Stats now = q.economyTimes();
         return new SoakCosts(
                 writer,
                 fx,
@@ -421,7 +428,14 @@ final class CrowdSoak {
                 sc.refusedPlacements(),
                 sc.waves(),
                 q.buildings().size(),
-                saveNanos);
+                saveNanos,
+                new EconomyTimes.Stats(
+                        now.searches() - economyBefore.searches(),
+                        now.searchNanos() - economyBefore.searchNanos(),
+                        now.builds() - economyBefore.builds(),
+                        now.buildNanos() - economyBefore.buildNanos(),
+                        now.dropsites() - economyBefore.dropsites(),
+                        now.dropsiteNanos() - economyBefore.dropsiteNanos()));
     }
 
     /** Budget G in the window: one save of the match's blob, as an autosave would make it. */
@@ -531,7 +545,7 @@ final class CrowdSoak {
     /** Each faction's units round its start slot, in spawns of at most {@value #PER_SPAWN} a block of rows apart. */
     private void spawn() {
         if (scene != null) {
-            for (FirstLoopScene.Issue issue : scene.setup(core(rt).queries().templates())) {
+            for (SoakScene.Issue issue : scene.setup(core(rt).queries().templates())) {
                 rt.submit(issue.issuer(), issue.command(), result -> {
                     if (result.outcome() != CommandOutcome.ACCEPTED) {
                         refusedSpawn = String.valueOf(result);

@@ -5,7 +5,6 @@ import dev.strategos.core.content.Footprint;
 import dev.strategos.core.content.StartSlot;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.UnitTemplate;
-import dev.strategos.core.protocol.AttackMove;
 import dev.strategos.core.protocol.Command;
 import dev.strategos.core.protocol.Gather;
 import dev.strategos.core.protocol.Grant;
@@ -39,26 +38,34 @@ import org.jspecify.annotations.Nullable;
  * {@value #WAVE_TICKS} ticks, when both are filled up again. The same match gets the same commands, so the server's soak
  * and an L1 run play alike.
  */
-public final class FirstLoopScene {
+public final class FirstLoopScene implements SoakScene {
     public static final int EVERY = 20;
-    public static final int WAVE_TICKS = 600;
+    public static final int WAVE_TICKS = SoakWaves.WAVE_TICKS;
     public static final TemplateId CIVIC_CENTRE = new TemplateId("strategos:building/civic_centre");
     public static final TemplateId BARRACKS = new TemplateId("strategos:building/barracks");
     public static final TemplateId HOUSE = new TemplateId("strategos:building/house");
     public static final TemplateId FIELD = new TemplateId("strategos:building/field");
 
     /** The soak's scale and the stress pass's, twice it (M3 spec §6). */
-    public record Config(int workers, int soldiers, int constructions) {
+    public record Config(int workers, int soldiers, int constructions) implements SoakScene.Spec {
         public static final Config SOAK = new Config(60, 40, 3);
         public static final Config STRESS = new Config(120, 80, 6);
 
+        @Override
         public int units() {
             return 2 * (workers + soldiers);
         }
-    }
 
-    /** A command and who sends it: the admin, or a faction's seat for a placement. */
-    public record Issue(PlayerSlot issuer, Command command) {}
+        @Override
+        public int unitsAtStart() {
+            return 2 * workers; // the soldiers come with the waves
+        }
+
+        @Override
+        public SoakScene create(List<StartSlot> starts) {
+            return new FirstLoopScene(this, starts);
+        }
+    }
 
     /** The first loop's own building sites round a start, east of it as for the west start (the AI's first nine, two moved a block or two so no footprints touch). */
     private static final int[][] TOWN = {
@@ -74,8 +81,6 @@ public final class FirstLoopScene {
     private static final int SITE_NEAR = 22;
     private static final int SITE_FAR = 52;
 
-    private static final double[] FORD_Z = {143.5, 239.5};
-    private static final double BANK = 20.5;
     private static final double OWN_FIELD = 30;
     private static final double YARD = 26;
 
@@ -83,15 +88,14 @@ public final class FirstLoopScene {
     private final List<StartSlot> starts;
     private final List<List<int[]>> sites = new ArrayList<>();
     private final int[] nextSite = new int[2];
+    private final SoakWaves waves;
     private long placed;
     private long refused;
-    private int waves;
-    private int waveTicks;
-    private boolean sendWave;
 
     public FirstLoopScene(Config config, List<StartSlot> starts) {
         this.config = config;
         this.starts = starts;
+        this.waves = new SoakWaves(config.soldiers());
         for (int f = 0; f < 2; f++) {
             List<int[]> ring = new ArrayList<>();
             for (int dx = -SITE_FAR; dx <= SITE_FAR; dx += SITE_STEP) {
@@ -109,6 +113,7 @@ public final class FirstLoopScene {
     }
 
     /** The first tick's commands: the resources, the 20 buildings, and the workers by their centres. */
+    @Override
     public List<Issue> setup(TemplateSet templates) {
         List<Issue> out = new ArrayList<>();
         for (int f = 0; f < 2; f++) {
@@ -133,10 +138,10 @@ public final class FirstLoopScene {
         return out;
     }
 
-    /** The commands after the step of {@code q.tick()}, for the next. */
+    @Override
     public List<Issue> next(MatchQueries q) {
         List<Issue> out = new ArrayList<>();
-        wave(q, out);
+        waves.next(q, out);
         for (int f = 0; f < 2; f++) {
             construct(q, f, out); // each tick, so a refused site costs one
         }
@@ -173,7 +178,7 @@ public final class FirstLoopScene {
         return out;
     }
 
-    /** Placements accepted and refused so far, as the caller reported them. */
+    @Override
     public void placementResult(boolean accepted) {
         if (accepted) {
             placed++;
@@ -182,16 +187,19 @@ public final class FirstLoopScene {
         }
     }
 
+    @Override
     public long placed() {
         return placed;
     }
 
+    @Override
     public long refusedPlacements() {
         return refused;
     }
 
+    @Override
     public int waves() {
-        return waves;
+        return waves.waves();
     }
 
     /** Faction {@code f}'s share of the constructions: the first takes the odd one. */
@@ -235,67 +243,10 @@ public final class FirstLoopScene {
                         QueueMode.REPLACE)));
     }
 
-    /** The waves: both sides filled up to {@code soldiers} at their bank's fords, then sent across to the other's. */
-    private void wave(MatchQueries q, List<Issue> out) {
-        int[][] sides = new int[2][];
-        for (int f = 0; f < 2; f++) {
-            List<Integer> soldiers = new ArrayList<>();
-            for (int handle : q.unitHandlesOf(new FactionSlot(f))) {
-                UnitView u = q.unit(handle);
-                if (u != null && u.template().equals(TemplateSet.INFANTRY)) {
-                    soldiers.add(handle);
-                }
-            }
-            sides[f] = soldiers.stream().mapToInt(Integer::intValue).toArray();
-        }
-        if (sendWave) {
-            sendWave = false;
-            waves++;
-            waveTicks = 0;
-            for (int f = 0; f < 2; f++) {
-                for (int k = 0; k < 2; k++) {
-                    List<Integer> here = new ArrayList<>();
-                    for (int unit : sides[f]) {
-                        UnitView u = q.unit(unit);
-                        if (u != null && (u.z() < 191.5) == (k == 0)) {
-                            here.add(unit);
-                        }
-                    }
-                    if (!here.isEmpty()) {
-                        out.add(admin(AttackMove.replace(
-                                UnitSet.of(here.stream()
-                                        .mapToInt(Integer::intValue)
-                                        .toArray()),
-                                new Vec2d(bank(1 - f), FORD_Z[k]))));
-                    }
-                }
-            }
-            return;
-        }
-        if (++waveTicks < WAVE_TICKS && sides[0].length > 0 && sides[1].length > 0 && waves > 0) {
-            return;
-        }
-        for (int f = 0; f < 2; f++) {
-            int count = config.soldiers() - sides[f].length;
-            for (int k = 0; k < 2 && count > 0; k++) {
-                int here = k == 0 ? (count + 1) / 2 : count / 2;
-                if (here > 0) {
-                    out.add(admin(new SpawnUnits(
-                            TemplateSet.INFANTRY, new FactionSlot(f), new Vec2d(bank(f), FORD_Z[k]), here, 5)));
-                }
-            }
-        }
-        sendWave = true; // the tick after, when the new units are in the match
-    }
-
     /** Where workers come in: open ground 26 blocks north of the west start, beyond its town, south of the east one. */
     private Vec2d yard(int f) {
         StartSlot s = starts.get(f);
         return new Vec2d(s.x() + 0.5, s.z() + 0.5 - mirror(f) * YARD);
-    }
-
-    private static double bank(int f) {
-        return f == 0 ? ProvingGround.RIVER_X - BANK : ProvingGround.RIVER_X + BANK;
     }
 
     /** +1 for the west start, -1 for the east one, whose sites turn round. */
@@ -322,7 +273,7 @@ public final class FirstLoopScene {
             if (!n.resource().equals(resource)
                     || n.amount() <= 0
                     || n.ripening() > 0
-                    || n.topY() < 0
+                    || !n.hasBlock()
                     || n.freeSlots() - taken.getOrDefault(n.id(), 0) <= 0) {
                 continue;
             }

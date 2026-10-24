@@ -4,6 +4,7 @@ import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.sim.build.BuildingView;
+import dev.strategos.core.sim.econ.EconomyTimes;
 import dev.strategos.core.sim.econ.FactionTreasury;
 import dev.strategos.core.sim.econ.NodeView;
 import dev.strategos.core.sim.nav.PathService;
@@ -129,5 +130,10 @@ public interface MatchQueries {
     /** Whether a building's footprint blocks match-local column ({@code x}, {@code z}). */
     default boolean footprintAt(int x, int z) {
         return false;
+    }
+
+    /** PERF-07.4's node index and dropsite query times so far. */
+    default EconomyTimes.Stats economyTimes() {
+        return new EconomyTimes.Stats(0, 0, 0, 0, 0, 0);
     }
 }

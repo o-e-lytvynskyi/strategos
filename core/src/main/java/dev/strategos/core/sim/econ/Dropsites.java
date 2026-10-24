@@ -26,6 +26,13 @@ public final class Dropsites {
 
     /** Faction {@code faction}'s dropsite nearest (x, z) that takes resource {@code resource}, or 0. */
     public static int nearest(MatchState s, int faction, int resource, double x, double z) {
+        long start = s.economyTimes().start();
+        int found = search(s, faction, resource, x, z);
+        s.economyTimes().dropsite(start);
+        return found;
+    }
+
+    private static int search(MatchState s, int faction, int resource, double x, double z) {
         BuildingStore b = s.buildings();
         if (b.empty()) {
             return 0;

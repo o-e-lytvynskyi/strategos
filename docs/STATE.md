@@ -114,6 +114,15 @@ Answer in chat or here; the next session applies the answers.
    map's hash, so the golden journals and the frames that show a start are re-recorded with it, in T27's consent
    batch.
 
+17. **Taken under your word of 2026-10-24: M3's per-unit perf base re-taken** (M4 T21). The economy soak found that
+   in the arena every soak's workers had stood idle: the arena lies below height 0, and the scenes, like the economy
+   AI, took a node's negative height for "nothing left to gather". So M3's base (2,966 ns a unit for budget A) was
+   measured without gathering. Fixed, the first loop on the same commit reads 5,728 ns a unit (+2 % over M1), and
+   M4's economy soak, 316 units with five constructions and two repairs, 4,919: inside 15 % of it, every budget
+   held ([perf/economy-m4pro.json](../perf/economy-m4pro.json)). **One thing to know for the M3 demo:** in an
+   arena world the computer player gathered nothing before this fix, so a skirmish there showed idle workers; it
+   works now.
+
 ## Since your last visit
 
 - 2026-10-22 · **M1 T1 Binary journal:** every match's input journal is now a compact binary file in
@@ -414,10 +423,9 @@ Answer in chat or here; the next session applies the answers.
 - **Milestone:** M4 Economy and construction, started 2026-10-24 at your word; spec:
   [milestones/M4-economy-and-construction.md](milestones/M4-economy-and-construction.md) (24 tasks, every card
   `specified`). M3 is Done (2026-10-24, [§8.1](milestones/M3-first-loop.md)); M1 and M2 Done (2026-10-23).
-- **In progress:** M4 T21, the economy perf gate (PERF-07).
-- **Last finished task:** M4 T20 (2026-10-24), the resource scenes (ART-02 built: the `m4_goldens` frames of every
-  node and stage and a selected deposit's ring, recorded in T27); before it T19, the AI economy (AI-02 done; item 16
-  for the map's wood).
+- **In progress:** M4 T22, QA-11 on M4: the economy's 30-minute matches, with map v3's woods (item 16).
+- **Last finished task:** M4 T21 (2026-10-24), the economy perf gate (PERF-07 done; item 17: M3's base re-taken, the
+  arena's idle workers fixed); before it T20, the resource scenes.
 - **Next task:** M4's tasks in the spec's order (§7.1).
 - **WIP branch:** none.
 - **CI:** minutes used this month about 1,475 of 2,000 (74 %, summed from the runs' times; billing needs a scope
