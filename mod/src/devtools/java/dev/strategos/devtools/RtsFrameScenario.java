@@ -292,7 +292,10 @@ final class RtsFrameScenario implements Scenario {
                     screen.mouseReleased(screen.width - 2, screen.height - 2, 0);
                     int selected = rts.selection().handles().size();
                     ctx.result.addProperty("selected", selected);
-                    check(selected == PER_SIDE, "the drag selected " + selected);
+                    int own =
+                            ownOnScreen(mc, rts); // the spearmen stand wider than the walkers: some walk off the window
+                    ctx.result.addProperty("ownOnScreen", own);
+                    check(selected == own, "the drag selected " + selected + " of the " + own + " own on screen");
                     View v = rts.view();
                     double[] w = v == null ? null : Picking.project(v, 0.5, floorY(mc), 16);
                     if (w != null) {
@@ -451,6 +454,25 @@ final class RtsFrameScenario implements Scenario {
                 double[] feet = Picking.project(v, e.getX(), e.getY(), e.getZ());
                 double[] head = Picking.project(v, e.getX(), e.getBoundingBox().maxY, e.getZ());
                 if (inside(v, feet) && inside(v, head)) {
+                    n++;
+                }
+            }
+        }
+        return n;
+    }
+
+    /** The own bodies whose middle projects inside the window: what a whole-window drag selects. */
+    private static int ownOnScreen(Minecraft mc, RtsMode rts) {
+        View v = rts.view();
+        int n = 0;
+        if (v == null || mc.level == null) {
+            return 0;
+        }
+        for (Entity e : mc.level.entitiesForRendering()) {
+            if (e instanceof UnitEntity body
+                    && body.spawnData() != null
+                    && body.spawnData().faction() == 0) {
+                if (inside(v, Picking.project(v, e.getX(), e.getY() + e.getBbHeight() / 2, e.getZ()))) {
                     n++;
                 }
             }

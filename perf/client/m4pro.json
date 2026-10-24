@@ -20,6 +20,71 @@
   "results": [
     {
       "date": "2026-10-24",
+      "tree": "M4 T3, after 524b315",
+      "template": "strategos:unit/infantry",
+      "note": "ART-01.5 again with vanilla's level of detail (UnitLod): without Sodium, past the first 50 bodies drawn a frame or beyond 128 blocks a body draws without armour and items, and a selection outline is the body's alone. Every budget holds on vanilla: units 3.6-3.8 ms of 6, our drawing well under 3, the client tick at 120 fps under 1 ms",
+      "profiles": {
+        "vanilla": {
+          "mods": "NeoForge 21.1.264 and Strategos",
+          "median": {
+            "frameP50Ms": 4.912,
+            "frameP99Ms": 9.629,
+            "unitsMs": 3.8,
+            "oursMs": 0.49,
+            "clientTickP50Ms": 0.927,
+            "clientTickP99Ms": 1.272,
+            "hudDrawP50Ms": 0.494,
+            "hudDrawP99Ms": 0.601,
+            "hudBuildP50Ms": 0.12,
+            "barsP50Ms": 0.027,
+            "barsP99Ms": 0.041
+          },
+          "runs": [
+            {
+              "frameP50Ms": 4.912,
+              "frameP99Ms": 9.629,
+              "unitsMs": 3.87,
+              "oursMs": 0.377,
+              "clientTickP50Ms": 0.957,
+              "clientTickP99Ms": 1.28,
+              "hudDrawP50Ms": 0.494,
+              "hudDrawP99Ms": 0.605,
+              "hudBuildP50Ms": 0.127,
+              "barsP50Ms": 0.028,
+              "barsP99Ms": 0.041
+            },
+            {
+              "frameP50Ms": 5.073,
+              "frameP99Ms": 9.578,
+              "unitsMs": 3.8,
+              "oursMs": 0.618,
+              "clientTickP50Ms": 0.927,
+              "clientTickP99Ms": 1.272,
+              "hudDrawP50Ms": 0.49,
+              "hudDrawP99Ms": 0.597,
+              "hudBuildP50Ms": 0.12,
+              "barsP50Ms": 0.026,
+              "barsP99Ms": 0.04
+            },
+            {
+              "frameP50Ms": 4.852,
+              "frameP99Ms": 10.032,
+              "unitsMs": 3.703,
+              "oursMs": 0.49,
+              "clientTickP50Ms": 0.91,
+              "clientTickP99Ms": 1.187,
+              "hudDrawP50Ms": 0.497,
+              "hudDrawP99Ms": 0.601,
+              "hudBuildP50Ms": 0.113,
+              "barsP50Ms": 0.027,
+              "barsP99Ms": 0.041
+            }
+          ]
+        }
+      }
+    },
+    {
+      "date": "2026-10-24",
       "tree": "M3 T30, after 64a2f61",
       "note": "M3's HUD (resource bar, minimap at four chunks a tick, command card) over the debug walkers; the server now sends the 16 chunks the scene asks for (ScenarioWorld.renderDistance): the results before this one were taken with the server sending 5, the client set to 16",
       "profiles": {

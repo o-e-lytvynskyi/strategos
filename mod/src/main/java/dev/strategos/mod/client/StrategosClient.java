@@ -27,6 +27,7 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.RenderFrameEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import org.jspecify.annotations.Nullable;
 
@@ -43,6 +44,7 @@ public final class StrategosClient {
     private static final FarMarkers FAR = new FarMarkers(MODEL);
     private static final HealthBarOverlay BARS = new HealthBarOverlay(MODEL, RTS);
     private static final FxPlayer SOUNDS = new FxPlayer(RTS);
+    private static final UnitLod LOD = new UnitLod();
     private static volatile @Nullable MatchJoin match;
     private static volatile List<String> resources = List.of();
     private static volatile @Nullable MatchStateMsg state;
@@ -65,7 +67,13 @@ public final class StrategosClient {
         RTS.register(modBus);
         HUD.register(modBus); // after RTS mode: its tick builds from the tick RTS mode just ran
         FAR.register();
+        NeoForge.EVENT_BUS.addListener(RenderFrameEvent.Pre.class, e -> LOD.frame());
         BARS.register();
+    }
+
+    /** The bodies' level of detail on this client (M4 T3). */
+    public static UnitLod unitLod() {
+        return LOD;
     }
 
     /** What replication told this client of its match (NET-08); the client thread's only. */

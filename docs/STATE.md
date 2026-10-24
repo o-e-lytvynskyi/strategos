@@ -99,8 +99,10 @@ Answer in chat or here; the next session applies the answers.
    - PERF-14's results again, with M3's HUD and the 16 chunks really sent ([perf/client/m4pro.json](../perf/client/m4pro.json));
    - the JMH baseline's `MatchBusBench` entry re-taken (14.1 µs; its code is M1's and M2's tree read the same, so the
      Mac moved, item 11), the rest of the baseline kept, M3's new `TerrainEditBench` added;
-   - ART-01.5: armoured crowds hold with Sodium; on vanilla, 100 selected armoured spearmen draw at about 21 fps,
-     so M4 T3 gives vanilla a level of detail (the outline without armour and items; layers off far away).
+   - ART-01.5: armoured crowds hold with Sodium; on vanilla, 100 selected armoured spearmen drew at about 21 fps,
+     so M4 T3 gave vanilla a level of detail: an outline is the body alone, and past 50 bodies a frame or 128 blocks
+     the armour and items are left out. Vanilla now draws that scene in 4.9 ms; two `m3_goldens` frames re-recorded
+     (the selected worker's item is no longer outlined).
 
 ## Since your last visit
 
@@ -402,8 +404,8 @@ Answer in chat or here; the next session applies the answers.
 - **Milestone:** M4 Economy and construction, started 2026-10-24 at your word; spec:
   [milestones/M4-economy-and-construction.md](milestones/M4-economy-and-construction.md) (24 tasks, every card
   `specified`). M3 is Done (2026-10-24, [§8.1](milestones/M3-first-loop.md)); M1 and M2 Done (2026-10-23).
-- **In progress:** M4 T3, vanilla's level of detail for armoured crowds.
-- **Last finished task:** M4 T2 (2026-10-24), the `Build` command: workers sent to an own foundation help build it; before it T1, the health check.
+- **In progress:** M4 T4, activity tiers (UNIT-05).
+- **Last finished task:** M4 T3 (2026-10-24), vanilla's level of detail for armoured crowds; before it T2, the `Build` command.
 - **Next task:** M4's tasks in the spec's order (§7.1).
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 960 of 2,000 (48 %), as of 2026-10-23.

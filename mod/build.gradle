@@ -643,6 +643,8 @@ tasks.register('scenarioDiff') {
     onlyIf { new File(out, 'result.json').isFile() }
     doLast {
         def result = new groovy.json.JsonSlurper().parse(new File(out, 'result.json'))
+        // [M4 T3] the candidates are the last run's, whatever -Pscenario says: refuse another scenario's
+        if (result.scenario != name.get()) throw new GradleException("The last run was ${result.scenario}, not ${name.get()}: run it first")
         def goldens = new File(root, "${result.platform}/${name.get()}")
         def report = ScenarioDiff.compare(out, goldens, diff)
         new File(diff, 'report.json').text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(report)) + '\n'
