@@ -1,6 +1,7 @@
 package dev.strategos.devtools;
 
 import dev.strategos.core.client.camera.CameraRig;
+import dev.strategos.core.client.input.KeyCode;
 import dev.strategos.core.client.pick.Picking;
 import dev.strategos.core.client.pick.View;
 import dev.strategos.core.content.TemplateSet;
@@ -18,6 +19,7 @@ import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
+import dev.strategos.core.sim.BlockCracked;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchEnded;
 import dev.strategos.core.sim.MatchQueries;
@@ -45,6 +47,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.Heightmap;
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 
 /**
@@ -53,9 +56,9 @@ import org.lwjgl.glfw.GLFW;
  * condition picks, so every run frames the same state. Frozen, the client selects, arms placement and presses keys,
  * which change nothing on the server. Frames: the centre selected with its rally point ({@code select_civic_centre},
  * UI-06, PROD-03.3), the house's ghost on free ground and over the centre ({@code placement_valid}, {@code
- * placement_invalid}, BLD-02.4), the idle worker taken by its key ({@code idle_worker}, UI-10), the woodcutter on its
- * way home with its axe and log ({@code worker_tool_and_load}, ECO-05.9) and selected ({@code select_worker}), the
- * oak's crack close up ({@code log_crack}, AUD-04.3), the alert of an enemy's blow ({@code attack_alert}, UI-11 and
+ * placement_invalid}, BLD-02.4), the idle worker taken by its key ({@code idle_worker}, UI-10), the oak's crack close
+ * up ({@code log_crack}, AUD-04.3), the woodcutter on its way home with its axe and log ({@code worker_tool_and_load},
+ * ECO-05.9) and selected ({@code select_worker}), the alert of an enemy's blow ({@code attack_alert}, UI-11 and
  * UI-12) and the end screen ({@code end_screen}, MATCH-01.6). Every frame shows the resource bar (UI-07) and the
  * minimap.
  */
@@ -70,6 +73,15 @@ final class M3GoldensScenario implements Scenario {
     private static final long ORDERS_AT = 20;
 
     private static final long FIRST_FREEZE = 40;
+    /** The crack stage the oak's log is framed at. */
+    private static final int CRACK = 3;
+    /** How far from the oak the woodcutter with its first load is framed. */
+    private static final double AWAY = 3;
+    /** Ticks of a held turn key for a quarter turn: 4.5° a tick. */
+    private static final int QUARTER = 20;
+
+    private static final double TREE_X = 7.5;
+    private static final double TREE_Z = 16.5;
 
     private final StringBuilder failures = new StringBuilder();
     private int floor;
@@ -77,6 +89,9 @@ final class M3GoldensScenario implements Scenario {
     private final AtomicInteger serverStage = new AtomicInteger();
 
     private volatile long frozenAt = -1;
+    /** Where the cursor rests, in window pixels; the window's middle when null. */
+    private double @Nullable [] cursor;
+
     private int clientStage = 1;
     private int phase;
     private int inPhase;
@@ -97,22 +112,10 @@ final class M3GoldensScenario implements Scenario {
         ScenarioWorld.run(server, "gamerule doWeatherCycle false");
         ScenarioWorld.run(server, "time set 6000");
         ScenarioWorld.run(server, "weather clear");
-        for (int y = 0; y < 4; y++) { // an oak, before the match captures its pages
+        for (int y = 0;
+                y < 4;
+                y++) { // a bare oak trunk, before the match captures its pages; leaves would hide its crack
             level.setBlockAndUpdate(new BlockPos(7, floor + y, 16), Blocks.OAK_LOG.defaultBlockState());
-        }
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dz = -1; dz <= 1; dz++) {
-                for (int y = 3; y <= 4; y++) {
-                    BlockPos at = new BlockPos(7 + dx, floor + y, 16 + dz);
-                    if (level.getBlockState(at).isAir()) {
-                        level.setBlockAndUpdate(
-                                at,
-                                Blocks.OAK_LEAVES
-                                        .defaultBlockState()
-                                        .setValue(net.minecraft.world.level.block.LeavesBlock.PERSISTENT, true));
-                    }
-                }
-            }
         }
         MatchRuntime rt = StrategosServer.get()
                 .matches()
@@ -179,11 +182,25 @@ final class M3GoldensScenario implements Scenario {
                 }
             }
             case 2 -> {
-                if (own.length > 0 && q.carriedAmount(own[0]) >= 10) { // the first load, on its way home
-                    freeze(server, tick);
+                for (OutputEvent e : out.events()) {
+                    if (e instanceof BlockCracked c && c.stage() >= CRACK) { // the oak's log, a third chopped
+                        freeze(server, tick);
+                        break;
+                    }
                 }
             }
             case 4 -> {
+                UnitView cutter = own.length > 0 ? q.unit(own[0]) : null;
+                if (cutter != null
+                        && q.carriedAmount(own[0]) >= 10
+                        && Math.hypot(
+                                        cutter.x() - rt.space().localX(TREE_X),
+                                        cutter.z() - rt.space().localZ(TREE_Z))
+                                > AWAY) {
+                    freeze(server, tick); // the first load, on its way home
+                }
+            }
+            case 6 -> {
                 if (frozenAt >= 0 && tick == frozenAt + 1 && own.length > 1) {
                     UnitView worker = q.unit(own[1]);
                     if (worker != null) {
@@ -209,7 +226,7 @@ final class M3GoldensScenario implements Scenario {
                     }
                 }
             }
-            case 6 -> {
+            case 8 -> {
                 if (frozenAt >= 0 && tick == frozenAt + 1) {
                     int[] enemies = q.unitHandlesOf(new FactionSlot(1));
                     if (enemies.length > 0) {
@@ -252,10 +269,15 @@ final class M3GoldensScenario implements Scenario {
     @Override
     public boolean tick(Minecraft mc, ScenarioContext ctx, int tick) {
         RtsMode rts = StrategosClient.rts();
-        GLFW.glfwSetCursorPos(
-                mc.getWindow().getWindow(),
-                mc.getWindow().getScreenWidth() / 2.0,
-                mc.getWindow().getScreenHeight() / 2.0);
+        double[] at = cursor;
+        if (at == null) { // mid-window: at an edge it would pan the camera
+            GLFW.glfwSetCursorPos(
+                    mc.getWindow().getWindow(),
+                    mc.getWindow().getScreenWidth() / 2.0,
+                    mc.getWindow().getScreenHeight() / 2.0);
+        } else { // only the handler's fields: a GLFW move would come back as a move event to the middle
+            mouseAt(mc, at[0], at[1]);
+        }
         if (tick == 1) {
             mc.options.renderDistance().set(12);
         }
@@ -276,9 +298,10 @@ final class M3GoldensScenario implements Scenario {
         try {
             return switch (clientStage) {
                 case 1 -> first(mc, ctx, rts, screen);
-                case 3 -> woodcutter(mc, ctx, rts, screen);
-                case 5 -> alert(mc, ctx);
-                case 7 -> end(mc, ctx);
+                case 3 -> crack(mc, ctx, rts, screen);
+                case 5 -> woodcutter(mc, ctx, rts, screen);
+                case 7 -> alert(mc, ctx);
+                case 9 -> end(mc, ctx);
                 default -> fail(ctx, "client stage " + clientStage);
             };
         } catch (IllegalStateException e) {
@@ -310,6 +333,7 @@ final class M3GoldensScenario implements Scenario {
             }
             case 1 -> {
                 if (inPhase >= 3) {
+                    check(rts.rallyShown() != null, "no rally marker for the selected centre");
                     ctx.capture("select_civic_centre");
                     next();
                 }
@@ -319,15 +343,13 @@ final class M3GoldensScenario implements Scenario {
                 rts.armPlacement(
                         Objects.requireNonNull(StrategosClient.templates().byId(HOUSE))
                                 .netIndex());
-                double[] at = gui(screen, rts, 2.5, floor, 4.5);
-                screen.mouseMoved(at[0], at[1]);
+                point(mc, screen, gui(screen, rts, 2.5, floor, 20)); // free ground between the oak and the centre
                 next();
             }
             case 3 -> {
                 if (inPhase >= 25) { // the ghost's verdict, recomputed on a move
                     ctx.capture("placement_valid");
-                    double[] at = gui(screen, rts, -8, floor + 1, 27);
-                    screen.mouseMoved(at[0], at[1]);
+                    point(mc, screen, gui(screen, rts, -8, floor + 1, 27));
                     next();
                 }
             }
@@ -340,8 +362,11 @@ final class M3GoldensScenario implements Scenario {
             case 5 -> {
                 screen.keyPressed(GLFW.GLFW_KEY_ESCAPE, 0, 0);
                 check(rts.placementTemplate() == -1, "Escape left placement armed");
-                double[] middle = gui(screen, rts, 0.5, floor, 18);
-                screen.mouseMoved(middle[0], middle[1]);
+                cursor = null;
+                mouseAt(
+                        mc,
+                        mc.getWindow().getScreenWidth() / 2.0,
+                        mc.getWindow().getScreenHeight() / 2.0);
                 screen.keyPressed(GLFW.GLFW_KEY_I, 0, 0);
                 check(
                         rts.selection().handles().size() == 1,
@@ -349,7 +374,7 @@ final class M3GoldensScenario implements Scenario {
                 next();
             }
             case 6 -> {
-                if (inPhase >= 3) {
+                if (inPhase >= SETTLE) { // the key centres the camera on the worker
                     ctx.capture("idle_worker");
                     next();
                 }
@@ -362,7 +387,76 @@ final class M3GoldensScenario implements Scenario {
         return false;
     }
 
-    /** Frozen with the first load: the woodcutter on its way home, selected, and the oak's crack close up. */
+    /** Frozen at the oak's crack: the camera on the oak, a quarter turn round and close in, then back. */
+    private boolean crack(Minecraft mc, ScenarioContext ctx, RtsMode rts, Screen screen) {
+        switch (phase) {
+            case 0 -> {
+                if (inPhase >= ARRIVE) {
+                    RtsGoldensScenario.pinBodies(mc);
+                    rts.centreOn(TREE_X, TREE_Z);
+                    screen.keyPressed(KeyCode.PERIOD, 0, 0);
+                    next();
+                }
+            }
+            case 1 -> {
+                if (inPhase >= QUARTER) {
+                    screen.keyReleased(KeyCode.PERIOD, 0, 0);
+                    screen.mouseScrolled(screen.width / 2.0, screen.height / 2.0, 0, 6); // in
+                    next();
+                }
+            }
+            case 2 -> {
+                if (inPhase >= SETTLE && mc.levelRenderer.hasRenderedAllSections()) {
+                    ctx.capture("log_crack");
+                    next();
+                }
+            }
+            case 3 -> {
+                screen.keyPressed(KeyCode.COMMA, 0, 0);
+                next();
+            }
+            case 4 -> {
+                if (inPhase >= QUARTER) {
+                    screen.keyReleased(KeyCode.COMMA, 0, 0);
+                    screen.mouseScrolled(screen.width / 2.0, screen.height / 2.0, 0, -6);
+                    rts.centreOn(0.5, 18);
+                    next();
+                }
+            }
+            default -> {
+                if (inPhase >= SETTLE) {
+                    resume(mc);
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Where vanilla's mouse handler thinks the cursor is, which placement's ghost follows: moving the GLFW cursor from
+     * code raises no move event, so its fields are set as {@code MouseHandler#onMove} would.
+     */
+    private static void mouseAt(Minecraft mc, double x, double y) {
+        try {
+            var xpos = net.minecraft.client.MouseHandler.class.getDeclaredField("xpos");
+            var ypos = net.minecraft.client.MouseHandler.class.getDeclaredField("ypos");
+            xpos.setAccessible(true);
+            ypos.setAccessible(true);
+            xpos.setDouble(mc.mouseHandler, x);
+            ypos.setDouble(mc.mouseHandler, y);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("cannot move the mouse handler's cursor", e);
+        }
+    }
+
+    /** Points the cursor at {@code gui}, GUI pixels, for the next ticks, and tells the screen it moved there. */
+    private void point(Minecraft mc, Screen screen, double[] gui) {
+        double scale = mc.getWindow().getScreenWidth() / (double) screen.width;
+        cursor = new double[] {gui[0] * scale, gui[1] * scale};
+        screen.mouseMoved(gui[0], gui[1]);
+    }
+
+    /** Frozen once the first load is on its way home: the woodcutter, then selected. */
     private boolean woodcutter(Minecraft mc, ScenarioContext ctx, RtsMode rts, Screen screen) {
         switch (phase) {
             case 0 -> {
@@ -389,26 +483,10 @@ final class M3GoldensScenario implements Scenario {
                     next();
                 }
             }
-            case 3 -> {
-                rts.selection().clear();
-                screen.mouseScrolled(screen.width / 2.0, screen.height / 2.0, 0, 6); // in, toward the oak
-                next();
-            }
-            case 4 -> {
-                if (inPhase >= SETTLE && mc.levelRenderer.hasRenderedAllSections()) {
-                    ctx.capture("log_crack");
-                    next();
-                }
-            }
-            case 5 -> {
-                screen.mouseScrolled(screen.width / 2.0, screen.height / 2.0, 0, -6);
-                next();
-            }
             default -> {
-                if (inPhase >= SETTLE) {
-                    ctx.result.addProperty("woodcutter", woodcutter);
-                    resume(mc);
-                }
+                rts.selection().clear();
+                ctx.result.addProperty("woodcutter", woodcutter);
+                resume(mc);
             }
         }
         return false;

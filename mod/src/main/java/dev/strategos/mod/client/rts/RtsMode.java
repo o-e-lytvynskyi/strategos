@@ -69,6 +69,7 @@ public final class RtsMode {
     private final ControlGroups groups = new ControlGroups();
     private final RtsOrders orders = new RtsOrders(this);
     private final RtsPlacement placement = new RtsPlacement(this);
+    private final RallyMarker rally = new RallyMarker(this);
     private final IdleWorkers idle = new IdleWorkers();
     /** The idle worker the key took whose body has not arrived yet, its index; -1 for none, and ticks left to wait. */
     private int pendingIdle = -1;
@@ -102,6 +103,7 @@ public final class RtsMode {
         NeoForge.EVENT_BUS.addListener(ViewportEvent.ComputeFov.class, this::onFov);
         NeoForge.EVENT_BUS.addListener(RenderLevelStageEvent.class, this::onStage);
         NeoForge.EVENT_BUS.addListener(RenderLevelStageEvent.class, placement::render);
+        NeoForge.EVENT_BUS.addListener(RenderLevelStageEvent.class, rally::render);
     }
 
     public boolean active() {
@@ -190,6 +192,11 @@ public final class RtsMode {
         if (--pendingIdleTicks <= 0) {
             pendingIdle = -1;
         }
+    }
+
+    /** Where the selected building's rally marker stands this frame (PROD-03.3): world x, ground y, z; null if none. */
+    public double @Nullable [] rallyShown() {
+        return rally.shown();
     }
 
     /** The building template placement mode is armed with, its net index; -1 when it is not armed. For scenarios. */
