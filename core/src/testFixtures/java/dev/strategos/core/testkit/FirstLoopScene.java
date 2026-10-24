@@ -117,6 +117,7 @@ public final class FirstLoopScene {
             int m = mirror(f);
             out.add(admin(new Grant(faction, "wood", 1_000_000)));
             out.add(admin(new Grant(faction, "food", 1_000_000)));
+            out.add(admin(new Grant(faction, "stone", 1_000_000))); // the barracks' stone (M4 T5)
             out.add(admin(spawn(templates, CIVIC_CENTRE, faction, s.x() + 0.5, s.z() + 0.5)));
             for (int k = 0; k < TOWN.length; k++) {
                 out.add(admin(spawn(

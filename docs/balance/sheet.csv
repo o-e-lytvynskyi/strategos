@@ -1,4 +1,5 @@
 template,path,value,source,provenance
+strategos:building/barracks,Cost/resources/stone,100,"set in strategos:building/barracks","A hundred stone: soldiers need the quarry, so stone matters from the first barracks; the first loop's starts bring a hundred (ECO-07, BLD-08)"
 strategos:building/barracks,Cost/resources/wood,200,"set in strategos:building/barracks","Two hundred wood: the barracks by 4:00 (the timing target) after a house and steady chopping"
 strategos:building/barracks,Cost/time,60,"set in strategos:building/barracks","A minute for one builder"
 strategos:building/barracks,Health/max,1200,"set in strategos:building/barracks","Twelve hundred: between a house and the centre"
@@ -78,9 +79,11 @@ strategos:unit/worker,Cost/resources/food,60,"set in strategos:unit/worker","Six
 strategos:unit/worker,Cost/time,10,"set in strategos:unit/worker","Ten seconds: a civic centre with a full queue adds a worker every ten seconds, the pace the first house's timing target (1:30) assumes"
 strategos:unit/worker,Health/max,50,"set in strategos:unit/worker","Half a spearman's: a raid on workers costs their owner dearly, so workers are worth guarding"
 strategos:unit/worker,ResourceGatherer/capacities/food,10,"set in strategos:unit/worker","Ten food a trip: short trips, so a bush near the centre keeps food coming steadily"
+strategos:unit/worker,ResourceGatherer/capacities/stone,10,"set in strategos:unit/worker","Ten stone a trip, two blocks: twenty trips pay a civic centre's two hundred"
 strategos:unit/worker,ResourceGatherer/capacities/wood,10,"set in strategos:unit/worker","Ten wood a trip, half a log: eight trips pay for the first house (the timing target, 1:30)"
 strategos:unit/worker,ResourceGatherer/rates/food/fruit,1,"set in strategos:unit/worker","A berry a second: a bush's sixty food in a minute, so the first worker pays back its own cost quickly"
 strategos:unit/worker,ResourceGatherer/rates/food/grain,0.5,"set in strategos:unit/worker","Half a berry picker's: a field's farmers are its steady food, five of them about two a second together (ECO-09)"
+strategos:unit/worker,ResourceGatherer/rates/stone/rock,0.4,"set in strategos:unit/worker","Slower than chopping: a block's five stone in about twelve seconds, so a rock outcrop is a lasting job and stone stays dearer than wood (ECO-07)"
 strategos:unit/worker,ResourceGatherer/rates/wood/tree,0.6,"set in strategos:unit/worker","Slower than picking: a log's twenty wood in about half a minute, so an oak keeps a worker busy for a few minutes"
 strategos:unit/worker,UnitMotion/turnRate,45,"set in strategos:template/unit_base","Degrees a tick: a full turn in eight ticks, quick enough for orders to feel immediate, slow enough to see the turn"
 strategos:unit/worker,UnitMotion/walkSpeed,0.1875,"set in strategos:template/unit_base","3.75 blocks a second, a little under a walking player's 4.3, so a crowd reads as marching; M1's movement baselines are measured at it (D-11)"

@@ -46,8 +46,10 @@
     "ResourceGatherer/rates/food/fruit": "A berry a second: a bush's sixty food in a minute, so the first worker pays back its own cost quickly",
     "ResourceGatherer/rates/food/grain": "Half a berry picker's: a field's farmers are its steady food, five of them about two a second together (ECO-09)",
     "ResourceGatherer/rates/wood/tree": "Slower than picking: a log's twenty wood in about half a minute, so an oak keeps a worker busy for a few minutes",
+    "ResourceGatherer/rates/stone/rock": "Slower than chopping: a block's five stone in about twelve seconds, so a rock outcrop is a lasting job and stone stays dearer than wood (ECO-07)",
     "ResourceGatherer/capacities/food": "Ten food a trip: short trips, so a bush near the centre keeps food coming steadily",
-    "ResourceGatherer/capacities/wood": "Ten wood a trip, half a log: eight trips pay for the first house (the timing target, 1:30)"
+    "ResourceGatherer/capacities/wood": "Ten wood a trip, half a log: eight trips pay for the first house (the timing target, 1:30)",
+    "ResourceGatherer/capacities/stone": "Ten stone a trip, two blocks: twenty trips pay a civic centre's two hundred"
   },
   "resource_yield": {
     "#minecraft:logs": "Twenty wood a log: an oak of four or five logs holds about ninety, a few minutes of one worker's chopping",
@@ -90,6 +92,7 @@
   "strategos:building/barracks": {
     "Health/max": "Twelve hundred: between a house and the centre",
     "Cost/resources/wood": "Two hundred wood: the barracks by 4:00 (the timing target) after a house and steady chopping",
+    "Cost/resources/stone": "A hundred stone: soldiers need the quarry, so stone matters from the first barracks; the first loop's starts bring a hundred (ECO-07, BLD-08)",
     "Cost/time": "A minute for one builder",
     "Resistance/fire": "Timber and thatch: fire's whole blow lands, twice as fast per hit point as stone (CMB-03)"
   }

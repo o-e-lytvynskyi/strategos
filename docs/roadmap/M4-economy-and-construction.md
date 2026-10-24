@@ -98,7 +98,8 @@ reseed). What happens when one runs out?
   4. A worker mines an outcrop in a GameTest with no page rebuild (L3).
 - **Tests:** L0, L1, L3 · **Fixtures:** outcrop fixtures · **Depends on:** ECO-05, PATH-15 ·
   **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-24 — M4 T5: a mined outcrop leaves its floor (1); the gather rate is the sheet's (2); no unit ends below the floor (3); a worker mines an outcrop in a GameTest with no page job (4) (spec §1.6 row 8)
 
 #### ECO-08 · Mines and quarries
 - **Value:** Large quarries and iron mines are lasting, contested deposits with a visible amount

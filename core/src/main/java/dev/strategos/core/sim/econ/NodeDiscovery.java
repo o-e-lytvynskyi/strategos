@@ -1,6 +1,7 @@
 package dev.strategos.core.sim.econ;
 
 import dev.strategos.core.shared.CoreApi;
+import dev.strategos.core.sim.nav.BlockClass;
 import dev.strategos.core.sim.nav.Material;
 import dev.strategos.core.sim.nav.MaterialKind;
 import dev.strategos.core.sim.nav.SliceMaterials;
@@ -13,8 +14,8 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * Finds a match's resource nodes in its slices' materials (ECO-02, 04 §11.3): every cluster of logs joined through
- * logs, diagonals included, is a tree (2 × 2 trunks, acacia and fancy oak too); every forage block is a node of its own.
- * Rock and ore wait for ECO-07 and ECO-08, leaves stay terrain (the canopy is the slice's, ECO-03), and a material whose
+ * logs, diagonals included, is a tree (2 × 2 trunks, acacia and fancy oak too); every forage block is a node of its own;
+ * every rock outcrop above its surrounding ground is one (ECO-07). Ore waits for ECO-08's deposits, leaves stay terrain (the canopy is the slice's, ECO-03), and a material whose
  * resource or subtype the match lacks is no node. Deterministic: pages in page order, voxels in index order, trees by
  * their lowest log, then forage by position.
  */
@@ -94,7 +95,179 @@ public final class NodeDiscovery {
                     ring(new int[] {NodeStore.cell(f.x(), f.z())}));
             store.setRegrow(id, f.regrow());
         }
+        outcrops(store, economy, pagesX, pagesZ, minY, slices);
         store.markDiscovered();
+    }
+
+    /**
+     * ECO-07, 04 §11.2: every group of columns, side by side, whose top block is rock is an outcrop, its floor the
+     * lowest top of the columns round it; its node is the rock above that floor, ordered top-down and then outside-in
+     * from the group's middle, so mining lowers a hill and never digs below the ground round it. A group with no rock
+     * above its floor (flat rock ground) is no node. Deterministic: columns in x then z order.
+     */
+    private static void outcrops(
+            NodeStore store,
+            EconomyRules economy,
+            int pagesX,
+            int pagesZ,
+            int minY,
+            IntFunction<@Nullable VoxelSlice> slices) {
+        int sizeX = pagesX * VoxelSlice.SIDE;
+        int sizeZ = pagesZ * VoxelSlice.SIDE;
+        int[] top = new int[sizeX * sizeZ]; // each column's top solid band, -1 for none
+        boolean[] rock = new boolean[top.length];
+        VoxelSlice[] bySide = new VoxelSlice[pagesX * pagesZ];
+        Arrays.fill(top, -1);
+        boolean any = false;
+        for (int pz = 0; pz < pagesZ; pz++) {
+            for (int px = 0; px < pagesX; px++) {
+                VoxelSlice slice = slices.apply(pz * pagesX + px);
+                bySide[pz * pagesX + px] = slice;
+                if (slice == null) {
+                    continue;
+                }
+                for (int cx = 0; cx < VoxelSlice.SIDE; cx++) {
+                    for (int cz = 0; cz < VoxelSlice.SIDE; cz++) {
+                        int band = slice.height() - 1;
+                        while (band >= 0 && BlockClass.is(slice.get(cx, band, cz), BlockClass.PASSABLE)) {
+                            band--;
+                        }
+                        int column = (px * VoxelSlice.SIDE + cx) * sizeZ + pz * VoxelSlice.SIDE + cz;
+                        top[column] = band;
+                        if (band >= 0) {
+                            Material m = slice.materials().at(VoxelSlice.index(cx, band, cz, slice.height()));
+                            rock[column] = m != null && m.kind() == MaterialKind.STONE;
+                            any |= rock[column];
+                        }
+                    }
+                }
+            }
+        }
+        if (!any) {
+            return;
+        }
+        boolean[] seen = new boolean[top.length];
+        int[] queue = new int[top.length];
+        for (int start = 0; start < top.length; start++) {
+            if (!rock[start] || seen[start]) {
+                continue;
+            }
+            int head = 0;
+            int tail = 0;
+            queue[tail++] = start;
+            seen[start] = true;
+            int floor = Integer.MAX_VALUE;
+            while (head < tail) {
+                int c = queue[head++];
+                int x = c / sizeZ;
+                int z = c % sizeZ;
+                int[][] sides = {{x + 1, z}, {x - 1, z}, {x, z + 1}, {x, z - 1}};
+                for (int[] n : sides) {
+                    if (n[0] < 0 || n[1] < 0 || n[0] >= sizeX || n[1] >= sizeZ) {
+                        continue;
+                    }
+                    int nc = n[0] * sizeZ + n[1];
+                    if (rock[nc]) {
+                        if (!seen[nc]) {
+                            seen[nc] = true;
+                            queue[tail++] = nc;
+                        }
+                    } else if (top[nc] >= 0) {
+                        floor = Math.min(floor, top[nc]);
+                    }
+                }
+            }
+            if (floor != Integer.MAX_VALUE) {
+                outcrop(store, economy, Arrays.copyOf(queue, tail), floor, sizeZ, pagesX, minY, top, bySide);
+            }
+        }
+    }
+
+    /** The node of the rock columns {@code columns} above band {@code floor}, if there is any rock above it. */
+    private static void outcrop(
+            NodeStore store,
+            EconomyRules economy,
+            int[] columns,
+            int floor,
+            int sizeZ,
+            int pagesX,
+            int minY,
+            int[] top,
+            @Nullable VoxelSlice[] bySide) {
+        List<Found> rock = new ArrayList<>();
+        double cx = 0;
+        double cz = 0;
+        for (int c : columns) {
+            int x = c / sizeZ; // a column's x and z, whole blocks
+            int z = c % sizeZ;
+            cx += x + 0.5;
+            cz += z + 0.5;
+        }
+        cx /= columns.length;
+        cz /= columns.length;
+        for (int c : columns) {
+            int x = c / sizeZ;
+            int z = c % sizeZ;
+            VoxelSlice slice = bySide[(z / VoxelSlice.SIDE) * pagesX + x / VoxelSlice.SIDE];
+            if (slice == null) {
+                continue;
+            }
+            for (int band = floor + 1; band <= top[c]; band++) {
+                Material m = slice.materials()
+                        .at(VoxelSlice.index(x % VoxelSlice.SIDE, band, z % VoxelSlice.SIDE, slice.height()));
+                if (m == null || m.kind() != MaterialKind.STONE) {
+                    continue;
+                }
+                int resource = economy.indexOf(m.resource());
+                int subtype = resource < 0
+                        ? -1
+                        : economy.resources().get(resource).subtypes().indexOf(m.subtype());
+                if (subtype >= 0) {
+                    rock.add(new Found(key(x, band, z), x, minY + band, z, resource, subtype, m.amount(), 0));
+                }
+            }
+        }
+        if (rock.isEmpty()) {
+            return;
+        }
+        double mx = cx;
+        double mz = cz;
+        rock.sort((a, b) -> {
+            if (a.y() != b.y()) {
+                return Integer.compare(b.y(), a.y()); // top-down
+            }
+            double da = (a.x() + 0.5 - mx) * (a.x() + 0.5 - mx) + (a.z() + 0.5 - mz) * (a.z() + 0.5 - mz);
+            double db = (b.x() + 0.5 - mx) * (b.x() + 0.5 - mx) + (b.z() + 0.5 - mz) * (b.z() + 0.5 - mz);
+            if (da != db) {
+                return Double.compare(db, da); // outside-in
+            }
+            return a.x() != b.x() ? Integer.compare(a.x(), b.x()) : Integer.compare(a.z(), b.z());
+        });
+        long amount = 0;
+        long[] blocks = new long[rock.size()];
+        int lowest = Integer.MAX_VALUE;
+        for (int i = 0; i < blocks.length; i++) {
+            Found f = rock.get(i);
+            amount += f.amount();
+            blocks[i] = NodeStore.pack(f.x(), f.y(), f.z());
+            lowest = Math.min(lowest, f.y());
+        }
+        int[] cells = new int[columns.length];
+        for (int i = 0; i < columns.length; i++) {
+            cells[i] = NodeStore.cell(columns[i] / sizeZ, columns[i] % sizeZ);
+        }
+        Found first = rock.get(0);
+        store.add(
+                MaterialKind.STONE,
+                first.resource(),
+                first.subtype(),
+                first.amount(),
+                amount,
+                cx,
+                cz,
+                lowest,
+                blocks,
+                ring(cells));
     }
 
     /** The cluster of logs joined to log {@code first}, as one tree. */

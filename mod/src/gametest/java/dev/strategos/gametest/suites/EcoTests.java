@@ -425,6 +425,55 @@ public final class EcoTests {
                 .thenSucceed();
     }
 
+    /**
+     * ECO-07.4: three workers mine a 3 × 3 rock hill two blocks high to nothing; every block of it is air in the
+     * world, the arena's floor under it stays, and no page job is captured after the mining started: the core made
+     * the cells passable itself.
+     */
+    @StrategosTest(batch = "eco_gather", timeoutTicks = 6_000)
+    public static void aWorkerMinesAnOutcropWithNoPageJob(GameTestHelper h) {
+        for (int x = 10; x <= 12; x++) {
+            for (int z = 10; z <= 12; z++) {
+                for (int y = 2; y <= 3; y++) {
+                    h.setBlock(new BlockPos(x, y, z), Blocks.STONE);
+                }
+            }
+        }
+        MatchRuntime rt = MatchFixture.create(h, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
+        rt.submit(PlayerSlot.ADMIN, new SpawnBuilding(CIVIC_CENTRE, new FactionSlot(0), 18, 18, 0));
+        workers(rt, 6, 11, 3);
+        var state = new Object() {
+            long captured;
+        };
+        int top = h.absolutePos(new BlockPos(11, 3, 11)).getY();
+        h.startSequence()
+                .thenWaitUntil(() -> check(handles(rt).length == 3 && nodeAt(rt, 11.5, 11.5) != null, "not ready yet"))
+                .thenExecute(() -> {
+                    state.captured = rt.pages().captured();
+                    rt.submit(PlayerSlot.ADMIN, Gather.replace(UnitSet.of(handles(rt)), 11, top, 11));
+                })
+                .thenWaitUntil(() -> {
+                    NodeView rock = nodeAt(rt, 11.5, 11.5);
+                    check(rock != null && rock.amount() == 0, "the hill still stands: " + rock);
+                })
+                .thenExecuteAfter(20, () -> {
+                    for (int x = 10; x <= 12; x++) {
+                        for (int z = 10; z <= 12; z++) {
+                            for (int y = 2; y <= 3; y++) {
+                                check(
+                                        h.getBlockState(new BlockPos(x, y, z)).isAir(),
+                                        "rock left at " + x + ", " + y + ", " + z);
+                            }
+                            check(!h.getBlockState(new BlockPos(x, 1, z)).isAir(), "the floor under it went");
+                        }
+                    }
+                    check(
+                            rt.pages().captured() == state.captured,
+                            (rt.pages().captured() - state.captured) + " pages captured after the mining started");
+                })
+                .thenSucceed();
+    }
+
     static final TemplateId FIELD = new TemplateId("strategos:building/field");
 
     private static int cropAge(GameTestHelper h, BlockPos relative) {

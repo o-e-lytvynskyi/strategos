@@ -369,7 +369,7 @@ Cards: [roadmap/M4-economy-and-construction.md](roadmap/M4-economy-and-construct
 
 | ID | Feature | Size | Depends on | Status |
 |---|---|---|---|---|
-| ECO-07 | Stone from real rock | M | ECO-05, PATH-15 | specified |
+| ECO-07 | Stone from real rock | M | ECO-05, PATH-15 | done |
 | ECO-08 | Mines and quarries | M | ECO-05 | specified |
 | ECO-16 | Livestock at the start | M | ECO-05, UNIT-03 | specified |
 | ECO-17 | Field auto-reseed at the farmstead | S | ECO-09, BLD-08, D-14 | specified |

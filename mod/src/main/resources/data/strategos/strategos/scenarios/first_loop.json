@@ -4,7 +4,7 @@
   "slots": [
     {
       "player": "human",
-      "resources": { "food": 300 },
+      "resources": { "food": 300, "stone": 100 },
       "entities": [
         { "template": "strategos:building/civic_centre" },
         { "template": "strategos:unit/worker", "dz": 9, "count": 5, "spread": 2 }
@@ -12,7 +12,7 @@
     },
     {
       "player": "ai:first_loop",
-      "resources": { "food": 300 },
+      "resources": { "food": 300, "stone": 100 },
       "entities": [
         { "template": "strategos:building/civic_centre" },
         { "template": "strategos:unit/worker", "dz": -9, "count": 5, "spread": 2 }

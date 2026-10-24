@@ -73,8 +73,8 @@ final class BuiltinTemplates {
               "Cost": { "resources": { "food": 60 }, "population": 1, "time": 10 },
               "Builder": { "rate": 1 },
               "ResourceGatherer": {
-                "rates": { "food": { "fruit": 1, "grain": 0.5 }, "wood": { "tree": 0.6 } },
-                "capacities": { "food": 10, "wood": 10 }
+                "rates": { "food": { "fruit": 1, "grain": 0.5 }, "wood": { "tree": 0.6 }, "stone": { "rock": 0.4 } },
+                "capacities": { "food": 10, "wood": 10, "stone": 10 }
               },
               "Body": { "skin": "strategos:units/worker" }
             }
@@ -133,7 +133,7 @@ final class BuiltinTemplates {
               "Building": { "blueprint": "strategos:barracks", "material": "wood" },
               "Resistance": { "fire": 0 },
               "Health": { "max": 1200 },
-              "Cost": { "resources": { "wood": 200 }, "time": 60 },
+              "Cost": { "resources": { "wood": 200, "stone": 100 }, "time": 60 },
               "Trainer": { "units": "strategos:unit/infantry" }
             }
             """;

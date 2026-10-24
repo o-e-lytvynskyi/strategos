@@ -17,6 +17,7 @@ import dev.strategos.core.sim.econ.Fields;
 import dev.strategos.core.sim.econ.Forage;
 import dev.strategos.core.sim.econ.GatherRates;
 import dev.strategos.core.sim.econ.NodeStore;
+import dev.strategos.core.sim.econ.Quarrying;
 import dev.strategos.core.sim.nav.MaterialKind;
 import dev.strategos.core.sim.nav.Surface;
 import dev.strategos.core.sim.nav.SurfaceGrid;
@@ -156,6 +157,7 @@ final class Gathering {
         if (want > 0) {
             long taken = switch (nodes.kind(node)) {
                 case LOG -> Felling.take(s, node, want);
+                case STONE -> Quarrying.take(s, node, want);
                 case CROP -> Fields.take(s, node, want);
                 default -> Forage.take(s, node, want);
             };

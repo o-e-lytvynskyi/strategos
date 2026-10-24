@@ -67,6 +67,19 @@ final class EconScene {
         return this;
     }
 
+    /** A rock outcrop of stone, x0..x1 by z0..z1, {@code height} blocks above the floor, each block 5 stone (ECO-07). */
+    EconScene rock(int x0, int z0, int x1, int z1, int height) {
+        for (int x = x0; x <= x1; x++) {
+            for (int z = z0; z <= z1; z++) {
+                for (int y = 1; y <= height; y++) {
+                    world.set(x, y, z, VoxelFixtures.SOLID);
+                    world.material(x, y, z, new Material(MaterialKind.STONE, "stone", "rock", Amount.of(5)));
+                }
+            }
+        }
+        return this;
+    }
+
     /** Builds the match with the built-in templates, publishes every page and steps once: the nodes are found. */
     EconScene build() {
         return build(TemplateSet.builtin(), SimHarness.DEFAULT_SEED);
