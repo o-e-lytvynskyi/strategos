@@ -174,7 +174,7 @@ public final class Production {
                     return;
                 }
                 double[] edge = Dropsites.dropPoint(
-                        s.footprintOf(target), s.motion().x(i), s.motion().z(i));
+                        s, target, s.motion().x(i), s.motion().z(i));
                 MatchBounds bounds = s.config().bounds();
                 s.orders()
                         .replace(

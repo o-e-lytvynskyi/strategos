@@ -362,13 +362,13 @@ public final class SimHarness implements ScenarioContext {
             return this;
         }
 
-        /** Where path and page jobs run: inline at their join unless told otherwise. */
         /** Where the journal goes and how much of it is kept (MATCH-04's ring); the last hour in memory by default. */
         public Builder journal(JournalSink journal) {
             this.journal = journal;
             return this;
         }
 
+        /** Where path and page jobs run: inline at their join unless told otherwise. */
         public Builder jobs(JobExecutor jobs) {
             this.jobs = jobs;
             return this;

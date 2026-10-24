@@ -8,6 +8,7 @@ import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.build.BuildingView;
 import dev.strategos.core.sim.econ.EconomyRules;
 import dev.strategos.core.sim.econ.FactionTreasury;
+import dev.strategos.core.sim.econ.GatherSlots;
 import dev.strategos.core.sim.econ.NodeStore;
 import dev.strategos.core.sim.econ.NodeView;
 import dev.strategos.core.sim.econ.ResourceDef;
@@ -91,7 +92,7 @@ final class QueriesImpl implements MatchQueries {
                     n.blocks(id).length,
                     n.gone(id),
                     n.slotCount(id),
-                    n.freeSlots(id),
+                    n.freeSlots(id, GatherSlots.standable(state, id)),
                     n.most(id),
                     n.ripening(id),
                     n.gone(id) < n.blocks(id).length ? NodeStore.x(n.blocks(id)[n.gone(id)]) : -1,
@@ -324,5 +325,35 @@ final class QueriesImpl implements MatchQueries {
     @Override
     public List<WorldEffect> worldClaims() {
         return WorldClaims.of(state);
+    }
+
+    @Override
+    public @org.jspecify.annotations.Nullable String placementRefusal(int template, int x, int z, int faction) {
+        var b = state.templates().blueprint(template);
+        if (b == null) {
+            return "UNSUPPORTED";
+        }
+        var at = dev.strategos.core.content.Footprint.of(b, x, z, 0);
+        var failed = dev.strategos.core.content.PlacementRules.check(
+                        dev.strategos.core.sim.build.Placing.world(state),
+                        b,
+                        at,
+                        faction,
+                        dev.strategos.core.sim.build.Placing.params(state, template, faction))
+                .failed();
+        return failed == null || failed == dev.strategos.core.content.PlacementRules.Rule.AFFORDABLE
+                ? null
+                : failed.name();
+    }
+
+    @Override
+    public double floorAt(int x, int z) {
+        return dev.strategos.core.sim.build.Placing.floor(
+                state.surfaces(), state.config().bounds(), x, z);
+    }
+
+    @Override
+    public boolean footprintAt(int x, int z) {
+        return state.footprintAt(x, z);
     }
 }

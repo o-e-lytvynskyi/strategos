@@ -8,17 +8,20 @@ import dev.strategos.core.sim.build.BuildingView;
 
 /**
  * Keeps the queues full within the stock (04 §14's ProductionManager): its civic centre trains workers until the
- * script's number, counting those queued; every building that trains its soldiers keeps a few queued, always; a field
- * reaped empty is sown again.
+ * script's number, counting those queued; every building that trains its soldiers keeps a few queued, and under AI-02's
+ * {@code reserve} only while the stock also covers the building the build order waits on; a field reaped empty is
+ * sown again.
  */
 final class ProductionManager implements AiModule {
     /** What a field's reseed costs in M3, in thousandths; the server's refusal stands if it costs more. */
     static final long RESEED_WOOD = 40_000;
 
     private final StrategyScript script;
+    private final AiMemory memory;
 
-    ProductionManager(StrategyScript script) {
+    ProductionManager(StrategyScript script, AiMemory memory) {
         this.script = script;
+        this.memory = memory;
     }
 
     @Override
@@ -41,6 +44,7 @@ final class ProductionManager implements AiModule {
                 }
             }
         }
+        TemplateId due = BuildManager.due(view, script, memory);
         for (BuildingView b : view.buildings()) {
             if (budget.exhausted()) {
                 return;
@@ -62,10 +66,21 @@ final class ProductionManager implements AiModule {
                 sink.send(new Train(b.handle(), worker));
             } else if (view.trains(b.template(), soldier)
                     && b.queue().size() < script.soldierQueue()
-                    && view.affords(soldier)) {
+                    && view.affords(soldier)
+                    && (due == null || affordsBoth(view, soldier, due))) { // AI-02: the build order first
                 budget.spend(10);
                 sink.send(new Train(b.handle(), soldier));
             }
         }
+    }
+
+    /** Whether the stock covers {@code a}'s cost and {@code b}'s together. */
+    private static boolean affordsBoth(AiView view, TemplateId a, TemplateId b) {
+        for (String r : view.resources()) {
+            if (view.stock(r) < view.cost(a, r) + view.cost(b, r)) {
+                return false;
+            }
+        }
+        return true;
     }
 }

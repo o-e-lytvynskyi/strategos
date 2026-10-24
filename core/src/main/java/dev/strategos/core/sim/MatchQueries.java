@@ -111,4 +111,23 @@ public interface MatchQueries {
     default List<WorldEffect> worldClaims() {
         return List.of();
     }
+
+    /**
+     * Why faction {@code faction}'s building of template {@code template} with its corner at ({@code x}, {@code z}),
+     * unturned, breaks a placement rule of the ground (BLD-02's, as the server judges them), or null; cost aside. For a
+     * computer player's site search (AI-02).
+     */
+    default @Nullable String placementRefusal(int template, int x, int z, int faction) {
+        return null;
+    }
+
+    /** The standing height of match-local column ({@code x}, {@code z}), NaN for none: for reachability (AI-02). */
+    default double floorAt(int x, int z) {
+        return Double.NaN;
+    }
+
+    /** Whether a building's footprint blocks match-local column ({@code x}, {@code z}). */
+    default boolean footprintAt(int x, int z) {
+        return false;
+    }
 }

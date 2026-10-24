@@ -121,33 +121,55 @@ public final class Construction {
     private static void evict(MatchState s, Footprint at) {
         EntityStore entities = s.entities();
         MotionStore motion = s.motion();
-        MatchBounds bounds = s.config().bounds();
         for (int i = 0; i < entities.highWater(); i++) {
             if (!entities.aliveAt(i)) {
                 continue;
             }
             int cx = (int) Math.floor(motion.x(i));
             int cz = (int) Math.floor(motion.z(i));
-            if (!inside(at, cx, cz)) {
-                continue;
+            if (inside(at, cx, cz)) {
+                putOut(s, i, nearestFree(s, at, cx, cz));
             }
-            int[] cell = nearestFree(s, at, cx, cz);
-            if (cell == null) {
-                continue;
-            }
-            double x = cell[0] + 0.5;
-            double z = cell[1] + 0.5;
-            double floor = Placing.floor(s.surfaces(), bounds, cell[0], cell[1]);
-            double y = Double.isNaN(floor) ? motion.y(i) : floor;
-            motion.set(i, x, y, z, motion.yaw(i));
-            s.frame().add(entities.handleAt(i), x, y, z, motion.yaw(i), (byte) 0);
-            s.paths().setRepath(i, true);
         }
     }
 
     /**
-     * The free cell outside footprint {@code at} nearest (cx, cz), ring by ring, the lower distance first: ground with
-     * no footprint on it. Null when none lies within the footprint's size and 8 more.
+     * WORLD, every tick: a unit standing on a footprint's column, one that walked in between a commit and its page's
+     * rebuild ({@code pageK} ticks at most), goes to the nearest free ground. Inside a footprint it stands on no
+     * surface, so no path could take it out.
+     */
+    public static void evictBlocked(MatchState s) {
+        EntityStore entities = s.entities();
+        MotionStore motion = s.motion();
+        for (int i = 0; i < entities.highWater(); i++) {
+            if (!entities.aliveAt(i)) {
+                continue;
+            }
+            int cx = (int) Math.floor(motion.x(i));
+            int cz = (int) Math.floor(motion.z(i));
+            if (s.footprintAt(cx, cz)) {
+                putOut(s, i, nearestFree(s, new Footprint(cx, cz, 0, 1, 1), cx, cz));
+            }
+        }
+    }
+
+    private static void putOut(MatchState s, int i, int @Nullable [] cell) {
+        if (cell == null) {
+            return;
+        }
+        MotionStore motion = s.motion();
+        double x = cell[0] + 0.5;
+        double z = cell[1] + 0.5;
+        double floor = Placing.standFloor(s.surfaces(), s.config().bounds(), cell[0], cell[1]);
+        double y = Double.isNaN(floor) ? motion.y(i) : floor;
+        motion.set(i, x, y, z, motion.yaw(i));
+        s.frame().add(s.entities().handleAt(i), x, y, z, motion.yaw(i), (byte) 0);
+        s.paths().setRepath(i, true);
+    }
+
+    /**
+     * The free cell outside footprint {@code at} nearest (cx, cz), ring by ring, the lower distance first: ground a unit
+     * can stand on with no footprint on it. Null when none lies within the footprint's size and 8 more.
      */
     public static int @Nullable [] nearestFree(MatchState s, Footprint at, int cx, int cz) {
         MatchBounds bounds = s.config().bounds();
@@ -163,7 +185,7 @@ public final class Construction {
                             || z >= bounds.sizeZ()
                             || inside(at, x, z)
                             || s.footprintAt(x, z)
-                            || Double.isNaN(Placing.floor(s.surfaces(), bounds, x, z))) {
+                            || Double.isNaN(Placing.standFloor(s.surfaces(), bounds, x, z))) {
                         continue;
                     }
                     double d = (x - cx) * (double) (x - cx) + (z - cz) * (double) (z - cz);

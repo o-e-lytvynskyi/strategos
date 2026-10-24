@@ -130,7 +130,10 @@ final class Constructing {
                 && s.stats().canBuild(i);
     }
 
-    /** A slot cell a builder can stand on: a floor within {@value #SLOT_RISE} blocks of the site's, no building there. */
+    /**
+     * A slot cell a builder can stand on: a floor it may enter within {@value #SLOT_RISE} blocks of the site's, no
+     * building there.
+     */
     static IntPredicate standable(MatchState s, int site) {
         SurfaceGrid grid = s.surfaces();
         MatchBounds bounds = s.config().bounds();
@@ -141,7 +144,7 @@ final class Constructing {
             if (s.footprintAt(x, z)) {
                 return false;
             }
-            double floor = Placing.floor(grid, bounds, x, z);
+            double floor = Placing.standFloor(grid, bounds, x, z);
             return !Double.isNaN(floor) && Math.abs(floor - base) <= SLOT_RISE;
         };
     }

@@ -60,8 +60,8 @@ public class NodeDiscoveryBench {
     public int provingGround() {
         NodeStore store = new NodeStore();
         NodeDiscovery.discover(store, EconomyRules.DEFAULTS, pages, pages, 0, p -> VoxelSlice.decode(slices[p]));
-        if (store.count() != 60) {
-            throw new IllegalStateException(store.count() + " nodes, not the forest's 60 oaks");
+        if (store.count() != 100) { // map v2 (M3 T9): the forest's 60 oaks, the groves' 24 and 16 berry bushes
+            throw new IllegalStateException(store.count() + " nodes, not the proving ground's 100");
         }
         return store.count();
     }

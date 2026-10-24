@@ -44,6 +44,14 @@ record Base(
         return new Base(own, x, z, enemy, mirror);
     }
 
+    /** How near the enemy's centre a node is its, not to be gathered or built by (AI-02). */
+    static final double ENEMY_HOME = 64;
+
+    /** Whether (x, z) lies within {@value #ENEMY_HOME} blocks of the enemy's centre. */
+    boolean enemyHome(double x, double z) {
+        return enemy != null && DetMath.length(x - enemyX(), z - enemyZ()) < ENEMY_HOME;
+    }
+
     double enemyX() {
         BuildingView e = enemy;
         return e == null ? x : e.footprint().anchorX() + e.footprint().spanX() / 2.0;

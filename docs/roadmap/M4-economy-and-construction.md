@@ -369,7 +369,8 @@ reseed). What happens when one runs out?
   5. An L3 sample of one seed reaches the hash of its L1 run (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** AI-17, BLD-08, ECO-08, ECO-09, ECO-16 · **Size:** L ·
   **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-24 — M4 T19: in ten seeded 15-minute L1 matches both players complete the build order with no site left a minute without progress or builder (1); no worker idles over 30 s and every share, a minute's mean, stays within 10 % of the ratio after minute 3 (2); no own unit or base node is walled off (3); no think spends over the budget (4); a seed of the script in a GameTest replays to its hash (5) (spec §1.6 row 23)
 
 #### ART-02 · Resource and deposit visuals
 - **Value:** Every resource reads well from the camera: what it is and how much is left (P2).

@@ -29,8 +29,9 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 
 /**
- * The computer players in a real level (AI-17, QA-11): two seeds of bot against bot, whose journals replay in-process
- * to the live hash; and an announced wave that reaches the other faction's player.
+ * The computer players in a real level (AI-17, QA-11, AI-02): two seeds of bot against bot and one of the economy
+ * script, whose journals replay in-process to the live hash; and an announced wave that reaches the other faction's
+ * player.
  */
 public final class AiTests {
     static final TemplateId CENTRE = new TemplateId("strategos:building/civic_centre");
@@ -77,6 +78,45 @@ public final class AiTests {
                         "at tick " + core(rt).queries().tick()))
                 .thenExecute(() -> {
                     check(commands[0] > 0 && commands[1] > 0, "commands judged: " + commands[0] + ", " + commands[1]);
+                    var core = core(rt);
+                    ReplayResult replay =
+                            ReplayDriver.replay(core.journal(), core.queries().templates());
+                    check(replay.matches(), "the replay diverged: " + replay);
+                    check(replay.finalHash() == core.stateHash(), "the replay ends at another hash");
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * AI-02.5: a seed of the economy script on both sides, with wood and stone to build: each places a building on a site it
+     * found in the real level's ground, and the match's journal replays to its hash; the journal's L1 replay is the
+     * replay suite's.
+     */
+    @StrategosTest(arena = "arena_flat_48", batch = "ai_economy", solo = true, timeoutTicks = 1_600)
+    public static void economySeedReplaysToItsHash(GameTestHelper h) {
+        MatchRuntime rt = town(h, 3);
+        String script = Objects.requireNonNull(Scenarios.script(h.getLevel().getServer(), "economy"));
+        for (int f = 0; f < 2; f++) {
+            rt.submit(PlayerSlot.ADMIN, new Grant(new FactionSlot(f), "wood", 400));
+            rt.submit(PlayerSlot.ADMIN, new Grant(new FactionSlot(f), "stone", 200));
+            rt.submit(PlayerSlot.ADMIN, new SetAi(new FactionSlot(f), "economy", script));
+        }
+        int[] placed = new int[2];
+        rt.addListener(out -> out.events().forEach(e -> {
+            if (e instanceof CommandResult r
+                    && !r.issuer().isAdmin()
+                    && r.issuer().value() < 2
+                    && r.kind().equals("strategos:place_building")
+                    && r.accepted() > 0) {
+                placed[r.issuer().value()]++;
+            }
+        }));
+        h.startSequence()
+                .thenWaitUntil(() -> check(
+                        core(rt).queries().tick() >= 1_200,
+                        "at tick " + core(rt).queries().tick()))
+                .thenExecute(() -> {
+                    check(placed[0] > 0 && placed[1] > 0, "buildings placed: " + placed[0] + ", " + placed[1]);
                     var core = core(rt);
                     ReplayResult replay =
                             ReplayDriver.replay(core.journal(), core.queries().templates());

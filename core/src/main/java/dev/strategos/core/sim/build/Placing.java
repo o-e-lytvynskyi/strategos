@@ -118,6 +118,18 @@ public final class Placing {
         return bounds.minY() + Surface.floor(top) / 16.0;
     }
 
+    /**
+     * As {@link #floor}, but no land where a unit cannot stand: a top surface it never enters, such as a berry bush's
+     * or lava's, is ground to the placement rules and none to walk on.
+     */
+    public static double standFloor(SurfaceGrid grid, MatchBounds bounds, int x, int z) {
+        double f = floor(grid, bounds, x, z);
+        if (Double.isNaN(f) || grid.version() == 0 || Surface.passable(grid.surface(x, z, grid.count(x, z) - 1))) {
+            return f;
+        }
+        return PlacementRules.NO_LAND;
+    }
+
     /** What template {@code template} asks of a placement for {@code faction}, its cost against the treasury. */
     public static PlacementRules.Params params(MatchState s, int template, int faction) {
         UnitTemplate t = s.templates().byIndex(template);

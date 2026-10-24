@@ -36,8 +36,13 @@ public final class HeadlessMatches {
 
     /** Runs {@code seeds} up to {@code limit} ticks each into {@code dir}; the summaries. */
     static List<HeadlessMatch.Summary> run(List<Long> seeds, long limit, Path dir) throws IOException {
+        return run(seeds, limit, dir, "first_loop");
+    }
+
+    /** As {@link #run(List, long, Path)}, both slots playing {@code ai/<name>.json}. */
+    static List<HeadlessMatch.Summary> run(List<Long> seeds, long limit, Path dir, String name) throws IOException {
         Files.createDirectories(dir);
-        String script = HeadlessMatch.read("ai/first_loop.json");
+        String script = HeadlessMatch.read("ai/" + name + ".json");
         List<HeadlessMatch.Summary> out = new ArrayList<>();
         for (long seed : seeds) {
             HeadlessMatch.Result r = HeadlessMatch.run(seed, limit, script, tick -> {});
@@ -55,7 +60,8 @@ public final class HeadlessMatches {
     public static void main(String[] args) throws IOException {
         List<Long> seeds = seeds(args.length > 0 ? args[0] : "1..10");
         Path dir = Path.of(args.length > 1 ? args[1] : "build/reports/headless");
-        List<HeadlessMatch.Summary> all = run(seeds, HeadlessMatch.LIMIT, dir);
+        String name = args.length > 2 ? args[2] : "first_loop";
+        List<HeadlessMatch.Summary> all = run(seeds, HeadlessMatch.LIMIT, dir, name);
         int failed = 0;
         for (HeadlessMatch.Summary s : all) {
             System.out.println("seed " + s.seed() + ": "

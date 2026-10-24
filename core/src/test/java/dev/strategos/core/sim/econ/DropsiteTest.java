@@ -8,9 +8,11 @@ import dev.strategos.core.protocol.NoticeKind;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.Notice;
 import dev.strategos.core.sim.UnitState;
+import dev.strategos.core.sim.build.Placing;
 import dev.strategos.core.sim.unitai.UnitAi;
 import dev.strategos.core.testkit.SimHarness;
 import dev.strategos.core.testkit.TreeFixtures.Species;
+import dev.strategos.core.testkit.VoxelFixtures;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -65,6 +67,30 @@ class DropsiteTest {
                 .isEqualTo(far);
         assertThat(e.gathered(1, EconScene.FOOD)).as("nothing for the enemy").isZero();
         assertThat(enemy).isNotEqualTo(far);
+    }
+
+    /**
+     * The cell beside the footprint facing the worker can be walled off, here the whole west side by a wall three
+     * high: the load goes to the nearest cell beside it a unit can stand on, within the reach, and is delivered.
+     */
+    @Test
+    void aWallBesideTheDropsiteMovesItsDropPoint() {
+        EconScene e = EconScene.flat(64, 64).tree(Species.OAK, 26, 35);
+        e.world.fill(34, 1, 31, 35, 3, 39, VoxelFixtures.SOLID);
+        e.build(woodHouses(), SimHarness.DEFAULT_SEED);
+        e.civicCentre(0, 50, 5);
+        int house = e.building(EconScene.HOUSE, 0, 36, 33);
+        int[] woodcutter = e.workers(0, new Vec2d(29.5, 35.5), 1, 0);
+        e.gather(woodcutter, 26, 2, 35);
+        double[] at = Dropsites.dropPoint(e.s, house, 29.5, 35.5);
+        assertThat(Placing.standFloor(e.s.surfaces(), e.s.config().bounds(), (int) at[0], (int) at[1]))
+                .as("a cell on the ground beside the house")
+                .isEqualTo(1.0);
+        assertThat(Dropsites.distance(e.s.footprintOf(house), at[0], at[1])).isLessThanOrEqualTo(Dropsites.REACH);
+        assertThat(e.h.runUntil(() -> e.gathered(0, EconScene.WOOD) > 0, 3_000))
+                .as("delivered")
+                .isTrue();
+        assertThat(e.h.invariantViolations()).isEmpty();
     }
 
     @Test

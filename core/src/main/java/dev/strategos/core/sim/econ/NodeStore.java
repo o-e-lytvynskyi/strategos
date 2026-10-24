@@ -265,6 +265,18 @@ public final class NodeStore {
         amount[at(id)] = Math.max(0, value);
     }
 
+    /** Node {@code id}'s free slots that pass {@code standable} ({@link GatherSlots#standable}). */
+    public int freeSlots(int id, IntPredicate standable) {
+        int k = at(id);
+        int free = 0;
+        for (int s = 0; s < slots[k].length; s++) {
+            if (claims[k][s] == 0 && standable.test(slots[k][s])) {
+                free++;
+            }
+        }
+        return free;
+    }
+
     /** The free slots. */
     public int freeSlots(int id) {
         int free = 0;

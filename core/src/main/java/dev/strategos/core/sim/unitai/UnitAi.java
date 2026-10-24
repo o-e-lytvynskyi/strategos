@@ -341,10 +341,14 @@ public final class UnitAi {
 
     /**
      * A new current order: the unit enters the state of its kind, or carries on in it; an attack or a follow always
-     * starts afresh, from a place round its own target or behind its own leader.
+     * starts afresh, from a place round its own target or behind its own leader. An order that ended before the news
+     * came, a queued build its state found cancelled on entry say, leaves nothing to start.
      */
     private static void startOrder(Context<MatchState> ctx) {
         int kind = ctx.host().orders().kind(ctx.unit());
+        if (kind == OrderKind.NONE) {
+            return;
+        }
         StateId target = stateFor(kind);
         if (!ctx.in(target) || OrderKind.targets(kind)) {
             ctx.go(target);

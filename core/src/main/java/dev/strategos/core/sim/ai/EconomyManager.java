@@ -1,10 +1,13 @@
 package dev.strategos.core.sim.ai;
 
 import dev.strategos.core.protocol.Gather;
+import dev.strategos.core.protocol.SetAutoReseed;
 import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.DetMath;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.UnitView;
+import dev.strategos.core.sim.build.BuildingStore;
+import dev.strategos.core.sim.build.BuildingView;
 import dev.strategos.core.sim.econ.NodeView;
 import dev.strategos.core.sim.nav.MaterialKind;
 import java.util.List;
@@ -16,7 +19,9 @@ import org.jspecify.annotations.Nullable;
  * Sends idle workers to gather (04 §14's EconomyManager): each to the resource furthest under its share of the
  * script's ratio (weighed by the stock: doubled while it runs low, halved while it piles up) that has a node left, at
  * the nearest node of it with a free slot, from one central count, so no queue overshoots. A field
- * is gathered only near its own base; animals are left alone (AI-02 brings livestock in).
+ * is gathered only near its own base; animals only under AI-02's {@code livestock}, and AI-02's {@code balance} keeps the
+ * shares of the ratio, leaves the nodes of the enemy's home ({@link Base#enemyHome}) and holds the fields' auto-reseed
+ * while the reserve keeps the stock for the build order.
  */
 final class EconomyManager implements AiModule {
     /** How far from its centre a field is its own. */
@@ -31,10 +36,12 @@ final class EconomyManager implements AiModule {
     static final int MOVED = 2;
 
     private final StrategyScript script;
+    private final AiMemory memory;
     private final Map<String, Long> stocks = new TreeMap<>(); // this think's, by resource
 
-    EconomyManager(StrategyScript script) {
+    EconomyManager(StrategyScript script, AiMemory memory) {
         this.script = script;
+        this.memory = memory;
     }
 
     @Override
@@ -72,7 +79,100 @@ final class EconomyManager implements AiModule {
             budget.spend(10);
             sink.send(Gather.replace(UnitSet.of(u.handle()), target.topX(), target.topY(), target.topZ()));
         }
-        rebalance(view, budget, sink, nodes, base);
+        if (script.balance()) {
+            balance(view, budget, sink, nodes, base, gatherers);
+            reseeding(view, budget, sink);
+        } else {
+            rebalance(view, budget, sink, nodes, base);
+        }
+    }
+
+    /**
+     * AI-02's balance: while one resource has a gatherer more than its share of the ratio and another one fewer, up to
+     * {@value #MOVED} of the first's gatherers are sent to the second each think, so the shares hold.
+     */
+    private void balance(
+            AiView view,
+            AiBudget budget,
+            CommandSink sink,
+            List<NodeView> nodes,
+            @Nullable Base base,
+            int[] gatherers) {
+        List<String> resources = view.resources();
+        double weights = 0;
+        int all = 0;
+        for (int r = 0; r < resources.size(); r++) {
+            int w = script.ratio().getOrDefault(resources.get(r), 0);
+            if (w > 0) {
+                weights += w;
+                all += gatherers[r];
+            }
+        }
+        if (weights == 0 || all == 0) {
+            return;
+        }
+        int over = -1;
+        int under = -1;
+        double most = 0;
+        double least = 0;
+        for (int r = 0; r < resources.size(); r++) {
+            int w = script.ratio().getOrDefault(resources.get(r), 0);
+            if (w <= 0) {
+                continue;
+            }
+            double off = gatherers[r] - all * w / weights;
+            if (off >= 1 && off > most) {
+                most = off;
+                over = r;
+            }
+            if (off <= -1 && off < least) {
+                least = off;
+                under = r;
+            }
+        }
+        if (over < 0 || under < 0) {
+            return;
+        }
+        String rich = resources.get(over);
+        String poor = resources.get(under);
+        int moved = 0;
+        Map<Integer, Integer> free = new TreeMap<>();
+        for (UnitView u : view.units()) {
+            if (moved == MOVED || moved >= most || budget.exhausted()) {
+                return;
+            }
+            if (u.state() == UnitState.GATHERING && rich.equals(view.gathering(u))) {
+                NodeView target = nearest(nodes, poor, u, base, free);
+                if (target == null) {
+                    return;
+                }
+                free.merge(target.id(), -1, Integer::sum);
+                moved++;
+                budget.spend(10);
+                sink.send(Gather.replace(UnitSet.of(u.handle()), target.topX(), target.topY(), target.topZ()));
+            }
+        }
+    }
+
+    /**
+     * AI-02's fields: a reseeder's auto-reseed (ECO-17) is off while the reserve keeps the stock for the build order's
+     * next building ({@link BuildManager#stepDue}, a minute at most), so the fields do not spend the wood meant for it,
+     * and on otherwise: held longer, they would run out and send their gatherers off the ratio.
+     */
+    private void reseeding(AiView view, AiBudget budget, CommandSink sink) {
+        boolean keep = BuildManager.stepDue(view, script, memory) != null;
+        for (BuildingView b : view.buildings()) {
+            if (budget.exhausted()) {
+                return;
+            }
+            if (b.state() != BuildingStore.COMPLETE || !view.is(b.template(), "Farmstead")) {
+                continue;
+            }
+            if (b.autoReseed() == keep) {
+                budget.spend(10);
+                sink.send(new SetAutoReseed(b.handle(), !b.autoReseed()));
+            }
+        }
     }
 
     /** The resources the script gathers, the furthest under its share of the ratio first. */
@@ -92,9 +192,15 @@ final class EconomyManager implements AiModule {
         return out;
     }
 
-    /** The ratio's weight of {@code resource}, doubled while its stock runs low and halved while it piles up. */
+    /**
+     * The ratio's weight of {@code resource}, doubled while its stock runs low and halved while it piles up; under
+     * AI-02's balance the ratio's own, so the shares hold.
+     */
     private double weight(String resource) {
         double w = script.ratio().getOrDefault(resource, 1);
+        if (script.balance()) {
+            return w;
+        }
         long stock = stocks.getOrDefault(resource, 0L);
         return stock < LOW ? w * 2 : stock > HIGH ? w / 2 : w;
     }
@@ -137,13 +243,13 @@ final class EconomyManager implements AiModule {
         }
     }
 
-    private static @Nullable NodeView nearest(
+    private @Nullable NodeView nearest(
             List<NodeView> nodes, String resource, UnitView u, @Nullable Base base, Map<Integer, Integer> free) {
         NodeView best = null;
         double bestD = Double.POSITIVE_INFINITY;
         for (NodeView n : nodes) {
             if (!n.resource().equals(resource)
-                    || n.kind() == MaterialKind.CARCASS // livestock is AI-02's (M4 T19): M3's bot leaves it
+                    || (n.kind() == MaterialKind.CARCASS && !script.livestock()) // M3's bot leaves the animals
                     || n.amount() <= 0
                     || n.ripening() > 0
                     || n.topY() < 0
@@ -153,6 +259,9 @@ final class EconomyManager implements AiModule {
             if (n.kind() == MaterialKind.CROP
                     && (base == null || DetMath.length(n.anchorX() - base.x(), n.anchorZ() - base.z()) > OWN_FIELD)) {
                 continue;
+            }
+            if (script.balance() && base != null && base.enemyHome(n.anchorX(), n.anchorZ())) {
+                continue; // AI-02 leaves the enemy's home alone
             }
             double d = DetMath.length(n.anchorX() - u.x(), n.anchorZ() - u.z());
             if (d < bestD) {

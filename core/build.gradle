@@ -59,7 +59,8 @@ tasks.register('headlessMatches', JavaExec) {
     classpath = sourceSets.test.runtimeClasspath
     mainClass = 'dev.strategos.core.sim.ai.HeadlessMatches'
     workingDir = projectDir
-    args(providers.gradleProperty('seeds').getOrElse('1..10'), layout.buildDirectory.dir('reports/headless').get().asFile.absolutePath)
+    args(providers.gradleProperty('seeds').getOrElse('1..10'), layout.buildDirectory.dir('reports/headless').get().asFile.absolutePath,
+            providers.gradleProperty('script').getOrElse('first_loop'))
 }
 
 // [T6b] long seeded determinism runs; part of verify and of verifySoak, not verifyFast.

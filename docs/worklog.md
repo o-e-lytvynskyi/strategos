@@ -9,7 +9,7 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-24 (later) — M4 T1–T18
+## 2026-10-24 (later) — M4 T1–T19
 
 - **M4 T1 · the health check from M3's close.** The four classes over 800 lines split along their seams, with
   every golden frame identical after the HUD's split (`RtsHud`, `MatchState`, `NetTests`, `CrowdSoak`);
@@ -67,6 +67,16 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
   woke again. After a crash between saves the match's own blocks are put back before it resumes; the journal keeps the
   last ten minutes (configurable); the client keeps each match's camera and control groups.
   Next: T19, the AI economy (AI-02).
+- **M4 T19 · AI-02 done.** The economy script (`ai/economy.json`) plays both sides of ten seeded 15-minute matches in
+  `EconomyBotTest`: each finds its own sites (40 blocks round its centre, two clear of other buildings, by what a step
+  wants, and never walling off a node or unit), completes its build order, keeps every worker busy (longest idle under
+  30 s), holds the ratio within 10 % (a minute's mean), slaughters the animals, gathers all four resources, puts a
+  storehouse by a resource running out, holds the fields' reseeding while it saves for the next building, and stays
+  within its budget; a GameTest seed replays to its hash. The matches found four core faults, each fixed with a
+  test: a worker pushed out of a foundation onto a berry bush, a unit that walked onto a foundation's columns before
+  the grid had them, a drop point behind a trunk, and a queued order ended on entry that crashed the unit's machine.
+  `NodeDiscoveryBench` had failed since M3 T9 (the map's groves and bushes) unseen, being in no baseline; it runs
+  again. The proving ground's wood runs out by minute 8 (STATE item 16).
 
 ## 2026-10-24 — M3 T9–T31, M3 Done; M4 spec
 

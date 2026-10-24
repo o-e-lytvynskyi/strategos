@@ -139,6 +139,23 @@ public final class AiView {
         return nodes;
     }
 
+    /** Why a building of {@code id} at corner ({@code x}, {@code z}) breaks a rule of the ground, or null (AI-02). */
+    public @Nullable String placementRefusal(TemplateId id, int x, int z) {
+        UnitTemplate t = q.templates().byId(id);
+        budget.spend(1);
+        return t == null ? "UNKNOWN_TEMPLATE" : q.placementRefusal(t.netIndex(), x, z, faction);
+    }
+
+    /** Column ({@code x}, {@code z})'s standing height, NaN for none. */
+    public double floorAt(int x, int z) {
+        return q.floorAt(x, z);
+    }
+
+    /** Whether a footprint blocks column ({@code x}, {@code z}). */
+    public boolean footprintAt(int x, int z) {
+        return q.footprintAt(x, z);
+    }
+
     /** Whether template {@code id} carries class {@code token}. */
     public boolean is(TemplateId id, String token) {
         UnitTemplate t = q.templates().byId(id);

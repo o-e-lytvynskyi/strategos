@@ -2428,6 +2428,15 @@ stateDiagram-v2
   production, build and military ones; the rebuild manager and defence come with AI-02 and AI-05.
   Observers sit in the admin's slot of the roster: they replicate as no faction (everything shown)
   and the gateway drops their command batches.
+- **As built in M4 (T19, AI-02).** No site map at match start: `SiteFinder` searches each time a
+  building is placed, reading the match as it is (the base changes the ground as it grows), round the
+  centre and nearest what the step wants, two blocks clear of other footprints, through the player's
+  placement rules (`MatchQueries.placementRefusal`), and only where a walk of the region's floors from
+  the centre still reaches every node and own unit it reached; at most 48 sites a search, each on the
+  budget. The script's AI-02 options (`livestock`, `balance`, `reserve`, `dropsite`) are off by default,
+  so M3's `first_loop` plays as before; `economy.json` turns them on. The free slots a computer sees are
+  those a unit can stand on (`GatherSlots`). Its 15-minute L1 matches judge the economy, not the
+  watchdog: a player saving for its next soldier may be silent two minutes.
 - **Growing into a planner (M11).** Every manager implements
   `AiModule.think(AiView, AiBudget, CommandSink)`. Planner modules (headquarters, bases, attack
   plans, defence armies) replace scripted ones one at a time, with no change to the core API.

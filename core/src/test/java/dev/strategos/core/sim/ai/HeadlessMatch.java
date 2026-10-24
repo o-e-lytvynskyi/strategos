@@ -110,7 +110,12 @@ final class HeadlessMatch {
 
     /** The match of {@code seed}, both slots the computer's, run to its end or {@code limit} ticks. */
     static Summary play(long seed, long limit) {
-        return run(seed, limit, read("ai/first_loop.json"), tick -> {}).summary();
+        return play(seed, limit, "first_loop");
+    }
+
+    /** As {@link #play(long, long)}, both slots playing script {@code ai/<script>.json} (AI-02's {@code economy}). */
+    static Summary play(long seed, long limit, String script) {
+        return run(seed, limit, read("ai/" + script + ".json"), tick -> {}).summary();
     }
 
     /** A run: its summary and its journal, for a failing seed's replay. */
@@ -121,6 +126,21 @@ final class HeadlessMatch {
      * there to see an exception fail the run).
      */
     static Result run(long seed, long limit, String script, java.util.function.LongConsumer onTick) {
+        return run(seed, limit, script, (h, out) -> onTick.accept(out.tick()), true);
+    }
+
+    /** What a test watches of a run: the match after each tick's step, and that tick's outputs. */
+    interface Watcher {
+        void tick(SimHarness h, TickOutputs out);
+    }
+
+    /**
+     * As {@link #run(long, long, String, java.util.function.LongConsumer)}, {@code watcher} shown the match each tick;
+     * {@code decided}: whether the match is held to QA-11's ending, a winner by the limit and no player silent
+     * {@value #STALL} ticks. AI-02's 15-minute matches judge the economy instead, and a player saving for its next
+     * soldier may well be silent that long.
+     */
+    static Result run(long seed, long limit, String script, Watcher watcher, boolean decided) {
         ProvingGround ground = ProvingGround.generate();
         SimHarness h = SimHarness.builder()
                 .size(ProvingGround.SIZE, ProvingGround.SIZE)
@@ -163,7 +183,7 @@ final class HeadlessMatch {
         try {
             while (h.tick() < limit && winner == -2) {
                 TickOutputs out = h.step();
-                onTick.accept(out.tick());
+                watcher.tick(h, out);
                 for (OutputEvent e : out.events()) {
                     switch (e) {
                         case UnitCreated created
@@ -256,7 +276,7 @@ final class HeadlessMatch {
                             left.add(out.tick()); // its attack order went out in this tick's think
                         }
                     }
-                    if (!s.outcome().defeated(f) && out.tick() - Math.max(p.lastCommand(), 1) > STALL) {
+                    if (decided && !s.outcome().defeated(f) && out.tick() - Math.max(p.lastCommand(), 1) > STALL) {
                         failure = "faction " + f + " stalled: no command since tick " + p.lastCommand();
                     }
                 }
@@ -264,11 +284,11 @@ final class HeadlessMatch {
                     break;
                 }
             }
-            if (failure.isEmpty() && winner == -2) {
+            if (failure.isEmpty() && winner == -2 && decided) {
                 failure = "no winner by tick " + limit;
             }
 
-        } catch (RuntimeException e) {
+        } catch (RuntimeException | AssertionError e) {
             failure = "exception at tick " + h.tick() + ": " + e;
         }
         List<Long> commands = new ArrayList<>();

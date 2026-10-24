@@ -3,8 +3,10 @@ package dev.strategos.core.sim.econ;
 import dev.strategos.core.content.Footprint;
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.DetMath;
+import dev.strategos.core.sim.MatchBounds;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.build.BuildingStore;
+import dev.strategos.core.sim.build.Placing;
 import java.util.List;
 
 /**
@@ -98,6 +100,52 @@ public final class Dropsites {
             cz = z1 + 1;
         }
         return new double[] {cx + 0.5, cz + 0.5};
+    }
+
+    /** How far from a building's floor the floor of a cell beside it may be for a unit to deliver from it, in blocks. */
+    static final double RISE = 2;
+
+    /**
+     * As {@link #dropPoint(Footprint, double, double)} for building {@code building}, on ground a unit can stand on:
+     * when that cell holds a trunk, a bush, a wall or another footprint, the nearest cell beside the footprint, corners
+     * too, with a floor a unit enters within {@value #RISE} blocks of the building's, by distance to (x, z), the lower X
+     * and then Z on a tie; the plain point when none has one.
+     */
+    public static double[] dropPoint(MatchState s, int building, double x, double z) {
+        Footprint at = s.footprintOf(building);
+        double base = s.buildings().baseY(building) + 1;
+        double[] plain = dropPoint(at, x, z);
+        if (standable(s, (int) Math.floor(plain[0]), (int) Math.floor(plain[1]), base)) {
+            return plain;
+        }
+        double[] best = plain;
+        double bestD = Double.POSITIVE_INFINITY;
+        for (int cx = at.anchorX() - 1; cx <= at.anchorX() + at.spanX(); cx++) {
+            for (int cz = at.anchorZ() - 1; cz <= at.anchorZ() + at.spanZ(); cz++) {
+                boolean ring = cx < at.anchorX()
+                        || cz < at.anchorZ()
+                        || cx >= at.anchorX() + at.spanX()
+                        || cz >= at.anchorZ() + at.spanZ();
+                if (!ring || !standable(s, cx, cz, base)) {
+                    continue;
+                }
+                double d = DetMath.length(cx + 0.5 - x, cz + 0.5 - z);
+                if (d < bestD) {
+                    bestD = d;
+                    best = new double[] {cx + 0.5, cz + 0.5};
+                }
+            }
+        }
+        return best;
+    }
+
+    private static boolean standable(MatchState s, int x, int z, double base) {
+        MatchBounds bounds = s.config().bounds();
+        if (x < 0 || z < 0 || x >= bounds.sizeX() || z >= bounds.sizeZ() || s.footprintAt(x, z)) {
+            return false;
+        }
+        double floor = Placing.standFloor(s.surfaces(), bounds, x, z);
+        return !Double.isNaN(floor) && Math.abs(floor - base) <= RISE;
     }
 
     private static int clamp(int v, int lo, int hi) {

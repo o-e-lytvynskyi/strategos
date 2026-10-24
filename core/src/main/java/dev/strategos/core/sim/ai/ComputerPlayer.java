@@ -22,8 +22,8 @@ public final class ComputerPlayer {
         this.script = script;
         StrategyScript s = StrategyScript.parse(script);
         this.modules = List.of(
-                new EconomyManager(s),
-                new ProductionManager(s),
+                new EconomyManager(s, memory),
+                new ProductionManager(s, memory),
                 new BuildManager(s, memory),
                 new MilitaryManager(s, memory));
     }

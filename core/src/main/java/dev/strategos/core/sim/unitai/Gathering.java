@@ -17,12 +17,11 @@ import dev.strategos.core.sim.econ.Felling;
 import dev.strategos.core.sim.econ.Fields;
 import dev.strategos.core.sim.econ.Forage;
 import dev.strategos.core.sim.econ.GatherRates;
+import dev.strategos.core.sim.econ.GatherSlots;
 import dev.strategos.core.sim.econ.Livestock;
 import dev.strategos.core.sim.econ.NodeStore;
 import dev.strategos.core.sim.econ.Quarrying;
 import dev.strategos.core.sim.nav.MaterialKind;
-import dev.strategos.core.sim.nav.Surface;
-import dev.strategos.core.sim.nav.SurfaceGrid;
 import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.core.sim.unitai.Hfsm.Context;
 import java.util.function.IntPredicate;
@@ -40,8 +39,6 @@ final class Gathering {
     static final double RETARGET = 24;
     /** How far from its slot's centre an arrived unit may stand and still work, in blocks. */
     static final double WORK_REACH = 1.5;
-    /** How far from its node's height a slot's floor may be, in blocks. */
-    static final double SLOT_RISE = 2;
 
     private static final long TICKS_PER_SECOND = 20;
 
@@ -201,7 +198,7 @@ final class Gathering {
             return;
         }
         ctx.setData(drop, 0);
-        double[] at = Dropsites.dropPoint(s.footprintOf(drop), m.x(i), m.z(i));
+        double[] at = Dropsites.dropPoint(s, drop, m.x(i), m.z(i));
         MatchBounds b = s.config().bounds();
         s.orders().setPlace(i, clamp(at[0], b.sizeX()), clamp(at[1], b.sizeZ()));
         s.bus().publish(new PlaceMoved(ctx.handle()));
@@ -313,31 +310,9 @@ final class Gathering {
                 && nodes.hasRoom(node, handle, standable(s, node));
     }
 
-    /**
-     * A slot cell a unit can stand on: in the match, with a passable floor within {@value #SLOT_RISE} blocks of the
-     * node's base, and no building there. A match without terrain stands everywhere.
-     */
+    /** A slot cell a unit can stand on ({@link GatherSlots#standable}). */
     static IntPredicate standable(MatchState s, int node) {
-        SurfaceGrid grid = s.surfaces();
-        if (grid.version() == 0) {
-            return cell -> true;
-        }
-        double base = s.nodes().baseY(node);
-        int minY = s.config().bounds().minY();
-        return cell -> {
-            int x = cell >>> 16;
-            int z = cell & 0xFFFF;
-            if (!grid.inside(x, z) || s.footprintAt(x, z)) {
-                return false;
-            }
-            for (int layer = 0; layer < grid.count(x, z); layer++) {
-                int surface = grid.surface(x, z, layer);
-                if (Surface.passable(surface) && Math.abs(minY + Surface.floor(surface) / 16.0 - base) <= SLOT_RISE) {
-                    return true;
-                }
-            }
-            return false;
-        };
+        return GatherSlots.standable(s, node);
     }
 
     private static double clamp(double v, int size) {
