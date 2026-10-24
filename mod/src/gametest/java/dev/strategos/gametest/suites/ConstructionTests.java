@@ -691,4 +691,59 @@ public final class ConstructionTests {
                         "the cap " + core(rt).queries().populationCap(new FactionSlot(0)) + ", was " + state.cap))
                 .thenSucceed();
     }
+
+    /**
+     * UI-09.2: two houses placed with Shift for the same two workers, as Shift keeps placement armed: the first is
+     * finished before the second is begun, and then the second too.
+     */
+    @StrategosTest(batch = "construction", arena = "arena_flat_48", timeoutTicks = 3_000)
+    public static void shiftPlacedFoundationsAreBuiltInOrder(GameTestHelper h) {
+        MatchRuntime rt = Units.match(h);
+        town(rt, 2);
+        var state = new Object() {
+            int first;
+            int second;
+        };
+        h.onEachTick(() -> {
+            if (state.second == 0) {
+                return;
+            }
+            BuildingView first = byHandle(rt, state.first);
+            BuildingView second = byHandle(rt, state.second);
+            if (first != null && second != null && first.state() != BuildingStore.COMPLETE && second.progress() > 0) {
+                h.fail("the second house began at " + second.progress() + " before the first was done");
+            }
+        });
+        h.startSequence()
+                .thenWaitUntil(() -> check(handles(rt).length == 2, "no workers yet"))
+                .thenExecute(() -> {
+                    rt.submit(P0, new PlaceBuilding(HOUSE, 20, 20, 0, UnitSet.of(handles(rt)), QueueMode.QUEUE));
+                    rt.submit(P0, new PlaceBuilding(HOUSE, 28, 20, 0, UnitSet.of(handles(rt)), QueueMode.QUEUE));
+                })
+                .thenWaitUntil(() -> {
+                    check(houses(rt).size() == 2, "two foundations not laid");
+                    state.first = houses(rt).stream()
+                            .filter(b -> b.footprint().anchorX() == 20)
+                            .findFirst()
+                            .orElseThrow()
+                            .handle();
+                    state.second = houses(rt).stream()
+                            .filter(b -> b.footprint().anchorX() == 28)
+                            .findFirst()
+                            .orElseThrow()
+                            .handle();
+                })
+                .thenWaitUntil(() -> check(
+                        houses(rt).stream().allMatch(b -> b.state() == BuildingStore.COMPLETE), "not both finished"))
+                .thenSucceed();
+    }
+
+    private static @org.jspecify.annotations.Nullable BuildingView byHandle(MatchRuntime rt, int handle) {
+        for (BuildingView b : core(rt).queries().buildings()) {
+            if (b.handle() == handle) {
+                return b;
+            }
+        }
+        return null;
+    }
 }

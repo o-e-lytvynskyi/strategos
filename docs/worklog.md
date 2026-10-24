@@ -9,7 +9,7 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-24 (later) — M4 T1–T16
+## 2026-10-24 (later) — M4 T1–T17
 
 - **M4 T1 · the health check from M3's close.** The four classes over 800 lines split along their seams, with
   every golden frame identical after the HUD's split (`RtsHud`, `MatchState`, `NetTests`, `CrowdSoak`);
@@ -59,7 +59,9 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
 - **M4 T16 · UI-08 built, its goldens left for T27.** The card's cells answer Alt and the grid's keys (the bare grid
   would take the camera's W, A, S, D); a disabled button says why; the tooltip shows the unit's numbers; a site can be
   cancelled and a building demolished, with a second click to confirm; a batch shows its ×5.
-  Next: T17, the build menu and placement (UI-09).
+- **M4 T17 · UI-09 built, its goldens left for T27.** Shift places several foundations for the same builders, taken in
+  order; each own site shows an amber progress bar over it.
+  Next: T18, save and resume (MATCH-04).
 
 ## 2026-10-24 — M3 T9–T31, M3 Done; M4 spec
 

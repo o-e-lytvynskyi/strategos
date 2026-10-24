@@ -324,7 +324,8 @@ reseed). What happens when one runs out?
   2. Shift places several foundations, and the builders take them in order (L3).
   3. Goldens (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** UI-08, BLD-04 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
+- **Progress:** M4 T17 (2026-10-24): checks 1 and 2 pass (spec §1.6 row 21); 3, the goldens, waits for T27's consent batch
 
 #### MATCH-04 · Save and resume
 - **Value:** Stop at any time and continue later exactly where you were, even after a crash between

@@ -382,7 +382,7 @@ Cards: [roadmap/M4-economy-and-construction.md](roadmap/M4-economy-and-construct
 | BLD-09 | Cancel and demolish | S | BLD-03 | done |
 | PROD-02 | Batch training | S | PROD-01 | done |
 | UI-08 | Command card complete | M | UI-06, DATA-02 | in_progress |
-| UI-09 | Build menu and placement UX | M | UI-08, BLD-04 | specified |
+| UI-09 | Build menu and placement UX | M | UI-08, BLD-04 | in_progress |
 | MATCH-04 | Save and resume | M | CORE-07, CORE-11, CORE-12, BLD-05, ECO-08 | specified |
 | AI-02 | AI economy and base building | L | AI-17, BLD-08, ECO-08, ECO-09, ECO-16 | specified |
 | ART-02 | Resource and deposit visuals | M | ECO-08, ECO-09, ECO-16, D-04 | specified |

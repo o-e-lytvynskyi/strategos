@@ -84,7 +84,8 @@ public final class HealthBarOverlay {
                 }
             }
         }
-        List<HealthBars.Bar> bars = HealthBars.extract(units);
+        List<HealthBars.Bar> bars = new ArrayList<>(HealthBars.extract(units));
+        bars.addAll(HealthBars.sites(model.buildings(), StrategosClient.templates(), join.originX(), join.originZ()));
         drawn = bars.size();
         if (!bars.isEmpty()) {
             draw(event, bars);

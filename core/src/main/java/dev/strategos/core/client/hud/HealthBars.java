@@ -21,6 +21,37 @@ public final class HealthBars {
     /** A bar centred at ({@code x}, {@code y}, {@code z}), {@code width} wide, {@code fill} of it filled in {@code argb}. */
     public record Bar(double x, double y, double z, double width, double fill, int argb) {}
 
+    /** A site's bar colour: the progress, amber. */
+    public static final int SITE = 0xFFF5B942;
+
+    /**
+     * A progress bar over each of the player's own foundations and sites (UI-09): over its footprint's middle, half a
+     * block above its blueprint's top, as wide as its shorter side up to four blocks, filled to its progress. World
+     * coordinates from the match's origin ({@code originX}, {@code originZ}).
+     */
+    public static List<Bar> sites(
+            List<dev.strategos.core.protocol.BuildingState.Entry> buildings,
+            dev.strategos.core.content.TemplateSet templates,
+            int originX,
+            int originZ) {
+        List<Bar> out = new ArrayList<>();
+        for (var e : buildings) {
+            var bp = e.own() && e.state() != CommandCard.COMPLETE ? templates.blueprint(e.template()) : null;
+            if (bp == null) {
+                continue;
+            }
+            var at = dev.strategos.core.content.Footprint.of(bp, e.x(), e.z(), e.rotation());
+            out.add(new Bar(
+                    originX + at.anchorX() + at.spanX() / 2.0,
+                    e.baseY() + bp.sizeY() + 0.5,
+                    originZ + at.anchorZ() + at.spanZ() / 2.0,
+                    Math.min(4, Math.min(at.spanX(), at.spanZ())),
+                    Math.max(0, Math.min(1, e.progress() / 1000.0)),
+                    SITE));
+        }
+        return out;
+    }
+
     public static List<Bar> extract(List<Unit> units) {
         List<Bar> bars = new ArrayList<>();
         for (Unit u : units) {
