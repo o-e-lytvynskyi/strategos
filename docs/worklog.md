@@ -9,7 +9,7 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-24 (later) — M4 T1–T22
+## 2026-10-24 (later) — M4 T1–T27
 
 - **M4 T1 · the health check from M3's close.** The four classes over 800 lines split along their seams, with
   every golden frame identical after the HUD's split (`RtsHud`, `MatchState`, `NetTests`, `CrowdSoak`);
@@ -94,6 +94,10 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
   map caught a restore fault: a resumed match's deposits blocked nothing, so units walked through them after a load. The
   soaks re-run on v3 put the first loop at 11,648 ns a unit, twice M1's walkers, mostly the server's surroundings (the
   L1 replay of the same match: 0.37 ms at p95); it is now both soaks' base, and the report splits budget A by phase.
+- **M4 T27 · the consent batch; every M4 card done.** `m4_goldens` recorded on macOS and with Sodium, repeatable once
+  the last ticks before its freeze run at the normal pace (a sprinted crush left its dust frozen in the frames). The
+  older scenes re-recorded where M4 changed them; `rts_goldens` had failed a check since M3 that no pixel diff could
+  see, its "empty" click landing under the selection panel. PERF-14 holds every budget with M4's HUD.
 
 ## 2026-10-24 — M3 T9–T31, M3 Done; M4 spec
 

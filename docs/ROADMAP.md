@@ -371,7 +371,7 @@ Cards: [roadmap/M4-economy-and-construction.md](roadmap/M4-economy-and-construct
 |---|---|---|---|---|
 | ECO-07 | Stone from real rock | M | ECO-05, PATH-15 | done |
 | ECO-08 | Mines and quarries | M | ECO-05 | done |
-| ECO-16 | Livestock at the start | M | ECO-05, UNIT-03 | in_progress |
+| ECO-16 | Livestock at the start | M | ECO-05, UNIT-03 | done |
 | ECO-17 | Field auto-reseed at the farmstead | S | ECO-09, BLD-08, D-14 | done |
 | UNIT-05 | Level of detail by activity | M | CORE-02, PERF-02 | done |
 | BLD-04 | Foundations on uneven ground | M | BLD-03 | done |
@@ -381,11 +381,11 @@ Cards: [roadmap/M4-economy-and-construction.md](roadmap/M4-economy-and-construct
 | BLD-08 | Starting building set, with resource sinks | M | BLD-04, BLD-05, ECO-08, PROD-01 | done |
 | BLD-09 | Cancel and demolish | S | BLD-03 | done |
 | PROD-02 | Batch training | S | PROD-01 | done |
-| UI-08 | Command card complete | M | UI-06, DATA-02 | in_progress |
-| UI-09 | Build menu and placement UX | M | UI-08, BLD-04 | in_progress |
+| UI-08 | Command card complete | M | UI-06, DATA-02 | done |
+| UI-09 | Build menu and placement UX | M | UI-08, BLD-04 | done |
 | MATCH-04 | Save and resume | M | CORE-07, CORE-11, CORE-12, BLD-05, ECO-08 | done |
 | AI-02 | AI economy and base building | L | AI-17, BLD-08, ECO-08, ECO-09, ECO-16 | done |
-| ART-02 | Resource and deposit visuals | M | ECO-08, ECO-09, ECO-16, D-04 | in_progress |
+| ART-02 | Resource and deposit visuals | M | ECO-08, ECO-09, ECO-16, D-04 | done |
 | PERF-07 | Economy and construction perf gate | S | BLD-08, UNIT-05, PERF-06 | done |
 
 ### M5 · Combat

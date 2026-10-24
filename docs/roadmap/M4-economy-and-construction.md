@@ -137,8 +137,8 @@ reseed). What happens when one runs out?
   5. Each animal renders with its vanilla-derived model at 60 blocks (L4, consent).
 - **Tests:** L0, L1, L2, L3, L4 (consent), L5 · **Depends on:** ECO-05, UNIT-03 · **Size:** M ·
   **Tier:** T1 (pulled into the MVP)
-- **Status:** in_progress
-- **Progress:** M4 T7 (2026-10-24): checks 1–4 pass (spec §1.6 row 12); 5, the `livestock` goldens, waits for T27's consent batch
+- **Status:** done
+- **Done:** 2026-10-24 — M4 T7, T27: checks 1–4 (spec §1.6 row 12); `m4_goldens` `livestock`, a sheep, a pig, a chicken and a carcass at 60 blocks, on macOS and with Sodium, identical over two runs (5) (row 27)
 
 #### ECO-17 · Field auto-reseed at the farmstead
 - **Value:** Farms keep running without micromanagement, at a price (P4).
@@ -310,8 +310,8 @@ reseed). What happens when one runs out?
   3. Tooltip numbers equal the server's breakdown (L1).
   4. Goldens for the civic centre and barracks cards (L4, consent).
 - **Tests:** L0, L1, L4 (consent) · **Depends on:** UI-06, DATA-02 · **Size:** M · **Tier:** T0
-- **Status:** in_progress
-- **Progress:** M4 T16 (2026-10-24): checks 1–3 pass (spec §1.6 row 20); 4, the card goldens, waits for T27's consent batch
+- **Status:** done
+- **Done:** 2026-10-24 — M4 T16, T27: checks 1–3 (spec §1.6 row 20); `m4_goldens` `card_civic_centre` and `card_barracks`, on macOS and with Sodium (4) (row 27)
 
 #### UI-09 · Build menu and placement UX
 - **Value:** Build quickly: a clear build menu, hotkeys, and Shift to place several buildings in a
@@ -324,8 +324,8 @@ reseed). What happens when one runs out?
   2. Shift places several foundations, and the builders take them in order (L3).
   3. Goldens (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** UI-08, BLD-04 · **Size:** M · **Tier:** T0
-- **Status:** in_progress
-- **Progress:** M4 T17 (2026-10-24): checks 1 and 2 pass (spec §1.6 row 21); 3, the goldens, waits for T27's consent batch
+- **Status:** done
+- **Done:** 2026-10-24 — M4 T17, T27: checks 1 and 2 (spec §1.6 row 21); `m4_goldens` `build_page` and `sites_in_order`, three houses placed in order for one builder with their bars, on macOS and with Sodium (3) (row 27)
 
 #### MATCH-04 · Save and resume
 - **Value:** Stop at any time and continue later exactly where you were, even after a crash between
@@ -382,8 +382,8 @@ reseed). What happens when one runs out?
   2. The owner approves the look and recognises each node and stage (L7, acceptance).
 - **Tests:** L4 (consent), L7 · **Depends on:** ECO-08, ECO-09, ECO-16, D-04 · **Size:** M ·
   **Tier:** T0
-- **Status:** in_progress
-- **Progress:** M4 T20 (2026-10-24): `m4_goldens` frames every node type and stage from 60 blocks (deposits at four quarters and spent, outcrops whole and half mined, fields ripening, full, half and bare, livestock and a carcass) and a selected deposit with its ring, the node's selection marker (spec §1.6 row 24); 1, the goldens with and without Sodium, and 2, your look, wait for T27's consent batch
+- **Status:** done
+- **Done:** 2026-10-24 — M4 T20, T27: `m4_goldens` frames every node type and stage from 60 blocks and a selected deposit with its ring, on macOS and with Sodium, identical over two runs (1) (spec §1.6 rows 24, 27); the owner's look (2) is the demo's
 
 #### PERF-07 · Economy and construction perf gate
 - **Value:** A busy town never lags.

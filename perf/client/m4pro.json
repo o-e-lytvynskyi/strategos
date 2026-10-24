@@ -20,6 +20,72 @@
   "results": [
     {
       "date": "2026-10-24",
+      "tree": "M4 T27, after 3ef35ad",
+      "template": "strategos:unit/infantry",
+      "note": "M4's consent batch: the client with M4's HUD (the complete card, the sites' bars, the node ring), one run each. Every budget holds: vanilla's frame p50 5.2 ms and units 4.1 ms of 6, a little over T3's 4.9 and 3.8; with Sodium 2.9 ms and 2.2; the client tick at 120 fps 0.93 and 0.83 ms",
+      "profiles": {
+        "vanilla": {
+          "mods": "NeoForge 21.1.264 and Strategos",
+          "median": {
+            "frameP50Ms": 5.236,
+            "frameP99Ms": 9.729,
+            "unitsMs": 4.05,
+            "clientTickP50Ms": 0.928,
+            "clientTickP99Ms": 1.966,
+            "hudDrawP50Ms": 0.501,
+            "hudDrawP99Ms": 0.616,
+            "hudBuildP50Ms": 0.162,
+            "barsP50Ms": 0.026,
+            "barsP99Ms": 0.042
+          },
+          "runs": [
+            {
+              "frameP50Ms": 5.236,
+              "frameP99Ms": 9.729,
+              "unitsMs": 4.05,
+              "clientTickP50Ms": 0.928,
+              "clientTickP99Ms": 1.966,
+              "hudDrawP50Ms": 0.501,
+              "hudDrawP99Ms": 0.616,
+              "hudBuildP50Ms": 0.162,
+              "barsP50Ms": 0.026,
+              "barsP99Ms": 0.042
+            }
+          ]
+        },
+        "sodium": {
+          "mods": "NeoForge 21.1.264, Strategos and the compat set (Sodium and others)",
+          "median": {
+            "frameP50Ms": 2.894,
+            "frameP99Ms": 6.257,
+            "unitsMs": 2.23,
+            "clientTickP50Ms": 0.828,
+            "clientTickP99Ms": 1.072,
+            "hudDrawP50Ms": 0.117,
+            "hudDrawP99Ms": 0.23,
+            "hudBuildP50Ms": 0.194,
+            "barsP50Ms": 0.014,
+            "barsP99Ms": 0.033
+          },
+          "runs": [
+            {
+              "frameP50Ms": 2.894,
+              "frameP99Ms": 6.257,
+              "unitsMs": 2.23,
+              "clientTickP50Ms": 0.828,
+              "clientTickP99Ms": 1.072,
+              "hudDrawP50Ms": 0.117,
+              "hudDrawP99Ms": 0.23,
+              "hudBuildP50Ms": 0.194,
+              "barsP50Ms": 0.014,
+              "barsP99Ms": 0.033
+            }
+          ]
+        }
+      }
+    },
+    {
+      "date": "2026-10-24",
       "tree": "M4 T3, after 524b315",
       "template": "strategos:unit/infantry",
       "note": "ART-01.5 again with vanilla's level of detail (UnitLod): without Sodium, past the first 50 bodies drawn a frame or beyond 128 blocks a body draws without armour and items, and a selection outline is the body's alone. Every budget holds on vanilla: units 3.6-3.8 ms of 6, our drawing well under 3, the client tick at 120 fps under 1 ms",

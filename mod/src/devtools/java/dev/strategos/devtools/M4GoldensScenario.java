@@ -8,6 +8,8 @@ import dev.strategos.core.port.MetricsSink;
 import dev.strategos.core.protocol.DepositState;
 import dev.strategos.core.protocol.Gather;
 import dev.strategos.core.protocol.Grant;
+import dev.strategos.core.protocol.PlaceBuilding;
+import dev.strategos.core.protocol.QueueMode;
 import dev.strategos.core.protocol.SpawnBuilding;
 import dev.strategos.core.protocol.SpawnDeposit;
 import dev.strategos.core.protocol.SpawnUnits;
@@ -17,11 +19,13 @@ import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
+import dev.strategos.core.sim.ExternalDamage;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchQueries;
 import dev.strategos.core.sim.OutputEvent;
 import dev.strategos.core.sim.TickOutputs;
 import dev.strategos.core.sim.UnitCreated;
+import dev.strategos.core.sim.build.BuildingView;
 import dev.strategos.core.sim.econ.NodeView;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.client.StrategosClient;
@@ -52,8 +56,11 @@ import org.lwjgl.glfw.GLFW;
  * reaped bare and ripening; a sheep, a pig and a chicken standing and a sheep's carcass half gathered. Each job's
  * workers stop at its amount, so the frozen state is the same every run. Frames: {@code deposit_stages},
  * {@code outcrop_stages}, {@code field_stages}, {@code livestock} and {@code deposit_selected}, the mine at three
- * quarters selected with its ring (the node's selection marker) and its "750 / 1000" line. Run with {@code -Pcompat}
- * for the Sodium set.
+ * quarters selected with its ring (the node's selection marker) and its "750 / 1000" line; then the town's: the civic
+ * centre's and the barracks' cards ({@code card_civic_centre}, {@code card_barracks}, UI-08), the idle worker's build
+ * page ({@code build_page}, UI-09), three houses placed in order for one builder with their progress bars ({@code
+ * sites_in_order}, UI-09) and a house crushed past its three damage stages ({@code damage_stages}, BLD-05). Run with
+ * {@code -Pcompat} for the Sodium set.
  */
 final class M4GoldensScenario implements Scenario {
     private static final TemplateId CIVIC_CENTRE = new TemplateId("strategos:building/civic_centre");
@@ -64,6 +71,16 @@ final class M4GoldensScenario implements Scenario {
     private static final TemplateId SHEEP = new TemplateId("strategos:unit/sheep");
     private static final TemplateId PIG = new TemplateId("strategos:unit/pig");
     private static final TemplateId CHICKEN = new TemplateId("strategos:unit/chicken");
+    private static final TemplateId BARRACKS = new TemplateId("strategos:building/barracks");
+    private static final TemplateId HOUSE = new TemplateId("strategos:building/house");
+    /** The town's row, world Z: the barracks, three houses placed in order, a house crushed to its stages. */
+    private static final int TOWN_Z = -24;
+
+    private static final int[] ROW_X = {2, 9, 16};
+    private static final int CRUSHED_X = 24;
+    /** How much of the crushed house's hit points the blow takes: past its three stages (85, 65 and 35 %). */
+    private static final double CRUSH = 0.7;
+
     private static final FactionSlot OWN = new FactionSlot(0);
     /** The slot after the two players': Gaia's, the animals'. */
     private static final FactionSlot GAIA = new FactionSlot(2);
@@ -76,6 +93,11 @@ final class M4GoldensScenario implements Scenario {
     private static final long JOBS_AT = 40;
     /** How long the last field has ripened when the scene freezes: half its 30 s. */
     private static final long RIPENING = 300;
+    /**
+     * The last ticks before the freeze run at the normal pace: under the sprint the client has no time to live out the
+     * dust of the crushed house's blocks, and the freeze would keep it on the frames at random places.
+     */
+    private static final long SETTLE_PACE = 80;
     /** The camera's height for a view from 60 blocks at the default pitch. */
     private static final double SIXTY = 60 * Math.sin(Math.toRadians(CameraRig.DEFAULT_PITCH));
 
@@ -160,6 +182,13 @@ final class M4GoldensScenario implements Scenario {
                 PlayerSlot.ADMIN,
                 new SpawnBuilding(STOREHOUSE, OWN, (int) space.localX(-24), (int) space.localZ(2), 0));
         rt.submit(PlayerSlot.ADMIN, new Grant(OWN, "food", 1_000));
+        rt.submit(PlayerSlot.ADMIN, new Grant(OWN, "wood", 1_000));
+        rt.submit(
+                PlayerSlot.ADMIN,
+                new SpawnBuilding(BARRACKS, OWN, (int) space.localX(-10), (int) space.localZ(TOWN_Z), 0));
+        rt.submit(
+                PlayerSlot.ADMIN,
+                new SpawnBuilding(HOUSE, OWN, (int) space.localX(CRUSHED_X), (int) space.localZ(TOWN_Z), 0));
         for (int k = 0; k < DEPOSIT_X.length; k++) {
             rt.submit(PlayerSlot.ADMIN, new SpawnDeposit(IRON_MINE, (int) space.localX(DEPOSIT_X[k]), (int)
                     space.localZ(0)));
@@ -185,7 +214,7 @@ final class M4GoldensScenario implements Scenario {
             animal++;
         }
         jobs.add(new Job(-0.5, 34.5, 50_000, 1)); // the last sheep, slaughtered and half gathered
-        int workers = jobs.stream().mapToInt(j -> j.workers).sum();
+        int workers = jobs.stream().mapToInt(j -> j.workers).sum() + 2; // a builder for the row and one left idle
         rt.submit(
                 PlayerSlot.ADMIN,
                 new SpawnUnits(TemplateSet.WORKER, OWN, new Vec2d(space.localX(-18.5), space.localZ(6.5)), workers, 3));
@@ -249,6 +278,10 @@ final class M4GoldensScenario implements Scenario {
             rt.submit(
                     PlayerSlot.ADMIN,
                     new SpawnBuilding(FIELD, OWN, (int) space.localX(FIELD_X[3]), (int) space.localZ(FIELD_Z), 0));
+            town(rt, q);
+        }
+        if (sownAt >= 0 && tick == sownAt + RIPENING - SETTLE_PACE) {
+            ScenarioWorld.run(server, "tick sprint stop");
         }
         if (sownAt >= 0 && tick == sownAt + RIPENING) {
             StringBuilder amounts = new StringBuilder();
@@ -260,10 +293,37 @@ final class M4GoldensScenario implements Scenario {
             NodeView last = nodeAt(q, space.localX(FIELD_X[3] + 2.5), space.localZ(FIELD_Z + 2.5));
             amounts.append("sown ").append(last == null ? "none" : last.ripening() + " ticks to ripen");
             this.amounts = amounts.toString();
-            ScenarioWorld.run(server, "tick sprint stop");
             ScenarioWorld.run(server, "tick freeze");
             frozenAt = tick;
             serverStage.incrementAndGet();
+        }
+    }
+
+    /** The row of houses placed in order for one builder (UI-09's Shift), and the blow that crushes the last house. */
+    private void town(MatchRuntime rt, MatchQueries q) {
+        var space = rt.space();
+        if (!spawned.isEmpty()) {
+            int builder = spawned.get(0);
+            for (int k = 0; k < ROW_X.length; k++) {
+                rt.submit(
+                        new PlayerSlot(0),
+                        new PlaceBuilding(
+                                HOUSE,
+                                (int) space.localX(ROW_X[k]),
+                                (int) space.localZ(TOWN_Z),
+                                0,
+                                UnitSet.of(builder),
+                                k == 0 ? QueueMode.REPLACE : QueueMode.QUEUE));
+            }
+        }
+        for (BuildingView b : q.buildings()) {
+            if (b.template().equals(HOUSE) && b.footprint().anchorX() == (int) space.localX(CRUSHED_X)) {
+                rt.damage(new ExternalDamage(
+                        b.handle(),
+                        ExternalDamage.Kind.CRUSH,
+                        (float) (CRUSH * b.maxHitPoints()),
+                        ExternalDamage.SourceKind.NONE));
+            }
         }
     }
 
@@ -354,6 +414,51 @@ final class M4GoldensScenario implements Scenario {
                 }
             }
             case 7 -> {
+                rts.selection().clear();
+                look(rts, rig, -16, -14);
+            }
+            case 8 -> {
+                if (inPhase >= SETTLE) {
+                    click(screen, gui(screen, rts, -26.5, floor + 7, -10.5));
+                    check(rts.selection().building() != null, "the click selected no civic centre");
+                    next();
+                }
+            }
+            case 9 -> {
+                if (inPhase >= 15) { // its building_state, and the card
+                    ctx.capture("card_civic_centre");
+                    click(screen, gui(screen, rts, -5.5, floor + 6, TOWN_Z + 3.5));
+                    check(rts.selection().building() != null, "the click selected no barracks");
+                    next();
+                }
+            }
+            case 10 -> {
+                if (inPhase >= 15) {
+                    ctx.capture("card_barracks");
+                    rts.selection().clear();
+                    screen.keyPressed(GLFW.GLFW_KEY_I, 0, 0); // the idle worker, the one left without a job
+                    check(
+                            rts.selection().handles().size() == 1,
+                            "the idle key took " + rts.selection().handles());
+                    next();
+                }
+            }
+            case 11 -> {
+                if (inPhase >= SETTLE) { // the key centres the camera on it
+                    check(StrategosClient.hud().pressCard(0), "no build page button");
+                    next();
+                }
+            }
+            case 12 -> {
+                if (inPhase >= 5) {
+                    ctx.capture("build_page");
+                    rts.selection().clear();
+                    look(rts, rig, 10.5, TOWN_Z + 2.5);
+                }
+            }
+            case 13 -> shot(mc, ctx, "sites_in_order", () -> look(rts, rig, CRUSHED_X + 2.5, TOWN_Z + 2.5));
+            case 14 -> shot(mc, ctx, "damage_stages", this::next);
+            case 15 -> {
                 rts.selection().clear();
                 IntegratedServer server = mc.getSingleplayerServer();
                 if (server != null) {

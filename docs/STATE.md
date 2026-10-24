@@ -121,6 +121,13 @@ Answer in chat or here; the next session applies the answers.
    economy soak (316 units, five constructions, two repairs) reads 0.59 of it, every budget held
    ([perf/economy-m4pro.json](../perf/economy-m4pro.json), [perf/first-loop-m4pro.json](../perf/first-loop-m4pro.json)).
 
+19. **Taken under your word of 2026-10-24: M4's consent batch** (M4 T27). The new goldens, `m4_goldens` on macOS
+   and with Sodium in `mod/src/devtools/goldens/`: every resource node at its stages from 60 blocks, a selected
+   deposit with its ring, the civic centre's and barracks' cards, the build page, foundations placed in order, a
+   house past its damage stages, the animals. Re-recorded for M4's HUD: `m3_goldens`, `overlay_goldens` and
+   `rts_goldens` (whose "empty" click had fallen under the selection panel since M3). PERF-14 again, every budget
+   held. Each can be undone.
+
 ## Since your last visit
 
 - 2026-10-22 · **M1 T1 Binary journal:** every match's input journal is now a compact binary file in
@@ -421,9 +428,9 @@ Answer in chat or here; the next session applies the answers.
 - **Milestone:** M4 Economy and construction, started 2026-10-24 at your word; spec:
   [milestones/M4-economy-and-construction.md](milestones/M4-economy-and-construction.md) (24 tasks, every card
   `specified`). M3 is Done (2026-10-24, [§8.1](milestones/M3-first-loop.md)); M1 and M2 Done (2026-10-23).
-- **In progress:** M4 T27, the consent batch (the goldens of M4 and the ART-02 frames, with and without Sodium).
-- **Last finished task:** M4 T22 (2026-10-24), QA-11 on M4: the economy's ten 30-minute matches all decided on map v3
-  (item 16), and a restored match's deposits block their columns again; before it T21, the economy perf gate.
+- **In progress:** M4 T28, M4's close.
+- **Last finished task:** M4 T27 (2026-10-24), the consent batch (item 19; every M4 card done); before it T22, QA-11
+  on M4 with map v3 (item 16).
 - **Next task:** M4's tasks in the spec's order (§7.1).
 - **WIP branch:** none.
 - **CI:** minutes used this month about 1,475 of 2,000 (74 %, summed from the runs' times; billing needs a scope

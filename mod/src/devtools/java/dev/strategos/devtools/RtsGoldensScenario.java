@@ -217,12 +217,14 @@ final class RtsGoldensScenario implements Scenario {
                 }
             }
             case 7 -> {
-                double[] empty = gui(screen, rts, 0.5, floor, 4.5);
+                double[] empty = {screen.width * 0.15, screen.height * 0.2}; // open grass: low middle is the HUD's
                 screen.mouseClicked(empty[0], empty[1], 0);
                 screen.mouseReleased(empty[0], empty[1], 0);
                 check(
                         rts.selection().handles().isEmpty(),
-                        "an empty click left " + rts.selection().handles().size());
+                        "an empty click at " + Math.round(empty[0]) + ", " + Math.round(empty[1]) + " of "
+                                + screen.width + " x " + screen.height + " left "
+                                + rts.selection().handles().size());
                 screen.keyPressed(KeyCode.PERIOD, 0, 0); // a quarter turn right: 20 ticks at 4.5° a tick
                 next();
             }
