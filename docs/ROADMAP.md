@@ -7,7 +7,7 @@ below, and mirror the statuses here. Revised on 2026-10-21 from the
 [draft](design/roadmap-draft.md) and its three reviews; every change request and its outcome is in
 [design/roadmap-changes.md](design/roadmap-changes.md).
 
-**Owner approval (2026-10-21).** Every M0–M6 card is approved: M0's 26 cards are already `specified`, because its implementation spec is written, and CMB-08 is deferred, because D-08 chose the observer avatar. Every decision needed by M6 is taken as recommended; D-03, D-06, D-07, D-20 and D-21 stay open until their milestones. M0 started 2026-10-21 on the owner's go-ahead and was accepted on 2026-10-22; M1 started 2026-10-22.
+**Owner approval (2026-10-21).** Every M0–M6 card is approved: M0's 26 cards are already `specified`, because its implementation spec is written, and CMB-08 is deferred, because D-08 chose the observer avatar. Every decision needed by M6 is taken as recommended; D-03, D-06, D-07, D-20 and D-21 stay open until their milestones. M0 started 2026-10-21 on the owner's go-ahead and was accepted on 2026-10-22; M1 started 2026-10-22. M5 started 2026-10-24 on the owner's go-ahead in `codex/m5-combat`.
 
 ## Legend
 

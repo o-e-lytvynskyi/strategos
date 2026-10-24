@@ -11,8 +11,9 @@ data or art from those games.
 
 ## Status
 
-Design complete; M0 "Foundation" was accepted on 2026-10-22, and M1 "Movement" is in progress
-since 2026-10-22. The roadmap is approved up to the first playable version (M0–M6). See [docs/STATE.md](docs/STATE.md).
+M0 "Foundation" was accepted on 2026-10-22; M1–M4 are Done. M5 "Combat" started on
+2026-10-24 in `codex/m5-combat`, on the owner's go-ahead. The roadmap is approved up to the
+first playable version (M0–M6). See [docs/STATE.md](docs/STATE.md).
 
 ## Documentation
 
