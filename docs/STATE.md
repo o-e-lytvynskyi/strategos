@@ -404,8 +404,8 @@ Answer in chat or here; the next session applies the answers.
 - **Milestone:** M4 Economy and construction, started 2026-10-24 at your word; spec:
   [milestones/M4-economy-and-construction.md](milestones/M4-economy-and-construction.md) (24 tasks, every card
   `specified`). M3 is Done (2026-10-24, [§8.1](milestones/M3-first-loop.md)); M1 and M2 Done (2026-10-23).
-- **In progress:** M4 T4, activity tiers (UNIT-05).
-- **Last finished task:** M4 T3 (2026-10-24), vanilla's level of detail for armoured crowds; before it T2, the `Build` command.
+- **In progress:** M4 T5, stone outcrops (ECO-07).
+- **Last finished task:** M4 T4 (2026-10-24), activity tiers (UNIT-05 done); before it T3, vanilla's crowd level of detail.
 - **Next task:** M4's tasks in the spec's order (§7.1).
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 960 of 2,000 (48 %), as of 2026-10-23.

@@ -38,6 +38,7 @@ import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.core.sim.prod.Population;
 import dev.strategos.core.sim.spatial.SpatialQueries;
 import dev.strategos.core.sim.stats.StatService;
+import dev.strategos.core.sim.unitai.ActivityTiers;
 import dev.strategos.core.sim.unitai.UnitAi;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -86,6 +87,7 @@ public final class MatchState {
     private final long[] rungs = new long[Stuck.GIVE_UP + 1]; // the stuck ladder's rungs reached in this run, by rung
     private final List<Agent> agents = new ArrayList<>();
     private final Leaders leaders = new Leaders();
+    private final ActivityTiers tiers = new ActivityTiers();
     private final List<JobDelivery> deliveries = new ArrayList<>();
     private SurfaceGrid surfaces;
     private final long[] pageSlices;
@@ -732,6 +734,11 @@ public final class MatchState {
 
     void addAgents(List<Agent> more) {
         agents.addAll(more);
+    }
+
+    /** When each unit was last ordered, for its activity tier (UNIT-05): a statistic, not state. */
+    public ActivityTiers tiers() {
+        return tiers;
     }
 
     /** This tick's commanders in first person (CAM-07). */

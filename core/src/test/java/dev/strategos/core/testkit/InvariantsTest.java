@@ -294,6 +294,16 @@ class InvariantsTest {
         }
 
         @Override
+        public dev.strategos.core.sim.unitai.ActivityTier tier(int handle) {
+            return dev.strategos.core.sim.unitai.ActivityTier.IDLE;
+        }
+
+        @Override
+        public int[] tierCounts() {
+            return new int[4];
+        }
+
+        @Override
         public int[] finishedPathJobs(long tick) {
             return new int[0];
         }

@@ -128,7 +128,7 @@ public record DebugFeedMsg(DebugLayer layer, long tick, DebugFeedMsg.Payload pay
     }
 
     /**
-     * One unit's marker: its handle, where it stands, its activity tier (0 idle, 1 moving: M1's two), its ticks without
+     * One unit's marker: its handle, where it stands, its activity tier (UNIT-05's code: 0 idle, 1 moving, 2 working, 3 active), its ticks without
      * progress, and the rung of the stuck ladder it is on (0 none).
      */
     public record Mark(int handle, Point at, int tier, int stuck, int rung) {

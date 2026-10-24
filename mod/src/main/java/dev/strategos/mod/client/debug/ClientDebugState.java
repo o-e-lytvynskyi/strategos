@@ -152,6 +152,12 @@ public final class ClientDebugState {
             timings.append(' ').append(t.name()).append(' ').append(millis(t.p95()));
         }
         lines.add(timings.toString());
+        int[] tiers = new int[4];
+        for (DebugFeedMsg.Mark m : marks.items()) {
+            tiers[Math.min(m.tier(), 3)]++;
+        }
+        lines.add("tiers in view: " + tiers[3] + " active, " + tiers[1] + " moving, " + tiers[2] + " working, "
+                + tiers[0] + " idle"); // UNIT-05
         return lines;
     }
 

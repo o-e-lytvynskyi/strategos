@@ -170,7 +170,8 @@ reseed). What happens when one runs out?
   4. The same seeded match with and without a connected viewer gives identical hashes (L3).
   5. 300 idle units cost at most 30 % of 300 moving units (L6).
 - **Tests:** L0, L1, L3, L6 · **Depends on:** CORE-02, PERF-02 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-24 — M4 T4: the tier table and the order's 40 ticks (1); a long idle unit answers an order and a blow within a tick (2); hits land on the same ticks asleep and awake (3); a watched match's hash equals an unwatched one's (4); 300 standing units cost 0.19 of 300 walking (5) (spec §1.6 rows 6–7)
 
 #### BLD-04 · Foundations on uneven ground
 - **Value:** Build where the map allows, not only on perfectly flat ground (P1).

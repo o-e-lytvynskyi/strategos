@@ -103,7 +103,7 @@ final class MovementOverlay implements DebugOverlayHost.WorldOverlay {
             float x = at(o.x(), mark.at().x(), camera.x);
             float y = at(o.y(), mark.at().y(), camera.y);
             float z = at(o.z(), mark.at().z(), camera.z);
-            line(lines, p, x, y + 2.1F, z, x, y + 2.6F, z, mark.tier() > 0 ? 0xFF55FFFF : 0xFF888888);
+            line(lines, p, x, y + 2.1F, z, x, y + 2.6F, z, tierColour(mark.tier()));
             int stuck = stuckColor(mark);
             if (stuck != 0) {
                 LevelRenderer.renderLineBox(
@@ -199,6 +199,16 @@ final class MovementOverlay implements DebugOverlayHost.WorldOverlay {
             case 3 -> 0xFFFF8040;
             case 4 -> 0xFFFF4040;
             default -> 0xFFC00000;
+        };
+    }
+
+    /** By activity tier code: idle grey, moving cyan, working yellow, active red (UNIT-05). */
+    private static int tierColour(int tier) {
+        return switch (tier) {
+            case 0 -> 0xFF888888;
+            case 1 -> 0xFF55FFFF;
+            case 2 -> 0xFFFFDD55;
+            default -> 0xFFFF5555;
         };
     }
 }

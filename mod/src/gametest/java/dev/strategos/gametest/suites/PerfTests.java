@@ -83,6 +83,86 @@ public final class PerfTests {
 
     private PerfTests() {}
 
+    /**
+     * UNIT-05.5: 300 standing units cost at most 30 % of the same 300 walking, budget A's p50 each over {@value
+     * #SAMPLES} ticks after {@value #WARM_UP} of warm-up: first standing, then sent across and back every {@value
+     * #REORDER_EVERY} ticks. Gated under {@code a}; writes {@code idle_300.json}.
+     */
+    @StrategosTest(batch = "perf_idle", arena = "arena_flat_48", timeoutTicks = 3_000)
+    public static void idle300CostsAThird(GameTestHelper h) {
+        MatchRuntime rt = MatchFixture.create(h, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
+        rt.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(0), WEST, 150, 6));
+        rt.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(1), EAST, 150, 6));
+        Window window = new Window();
+        var state = new Object() {
+            long from = -1;
+            long orderedAt = -1;
+            boolean toEast = true;
+            int idleSamples;
+            int movingSamples;
+            final long[] idle = new long[SAMPLES];
+            final long[] moving = new long[SAMPLES];
+        };
+        h.startSequence()
+                .thenWaitUntil(() -> check(
+                        core(rt).queries().unitCount() == 300 && rt.bodies().count() == 300,
+                        "the 300 units and bodies are not there yet"))
+                .thenWaitUntil(() -> {
+                    long tick = core(rt).queries().tick();
+                    if (state.from < 0) {
+                        state.from = tick;
+                        window.start();
+                    }
+                    if (tick - state.from >= WARM_UP) {
+                        state.idle[state.idleSamples++] = core(rt).timers().lastTotalNanos();
+                        if (state.idleSamples % 20 == 0) {
+                            window.sampleForeignLoad();
+                        }
+                    }
+                    check(state.idleSamples >= SAMPLES, "standing: " + state.idleSamples);
+                })
+                .thenWaitUntil(() -> {
+                    long tick = core(rt).queries().tick();
+                    if (state.orderedAt < 0 || tick - state.orderedAt >= REORDER_EVERY) {
+                        if (state.orderedAt < 0) {
+                            state.from = tick;
+                        }
+                        reorder(rt, state.toEast);
+                        state.toEast = !state.toEast;
+                        state.orderedAt = tick;
+                    }
+                    if (tick - state.from >= WARM_UP) {
+                        state.moving[state.movingSamples++] = core(rt).timers().lastTotalNanos();
+                        if (state.movingSamples % 20 == 0) {
+                            window.sampleForeignLoad();
+                        }
+                    }
+                    check(state.movingSamples >= SAMPLES, "walking: " + state.movingSamples);
+                })
+                .thenExecute(() -> {
+                    long idle = Percentiles.percentile(state.idle, 0.50);
+                    long walking = Percentiles.percentile(state.moving, 0.50);
+                    double ratio = (double) idle / walking;
+                    double foreign = window.meanForeignLoad();
+                    boolean over = ratio > 0.30;
+                    String verdict = foreign > INVALID_FOREIGN_LOAD
+                            ? "invalid"
+                            : !gated("a") ? "report-only" : over ? "fail" : "pass";
+                    JsonObject json = new JsonObject();
+                    json.addProperty("test", "idle_300");
+                    json.addProperty("gate", "a");
+                    json.addProperty("idleP50", idle);
+                    json.addProperty("movingP50", walking);
+                    json.addProperty("ratio", ratio);
+                    json.addProperty("limit", 0.30);
+                    json.addProperty("foreignCpu", foreign);
+                    json.addProperty("verdict", verdict);
+                    write("idle_300", json);
+                    check(!verdict.equals("fail"), "300 standing units cost " + ratio + " of 300 walking, over 0.30");
+                })
+                .thenSucceed();
+    }
+
     /** Budget A (PERF-01.1, QA-07.2): one match's tick with 600 walking units, p50 <= 5 ms and p99 <= 10 ms. */
     @StrategosTest(batch = "perf_walk", arena = "arena_flat_48", timeoutTicks = 1_200)
     public static void walk600BudgetA(GameTestHelper h) {

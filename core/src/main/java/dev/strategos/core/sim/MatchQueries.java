@@ -11,6 +11,7 @@ import dev.strategos.core.sim.nav.PathStore;
 import dev.strategos.core.sim.nav.SurfaceGrid;
 import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.core.sim.stats.StatBreakdown;
+import dev.strategos.core.sim.unitai.ActivityTier;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
@@ -81,6 +82,12 @@ public interface MatchQueries {
 
     /** How often each rung of the stuck ladder (1 to 5) was reached in this run, by rung; not saved (PATH-07). */
     long[] ladderRungs();
+
+    /** Unit {@code handle}'s activity tier (UNIT-05), IDLE for a dead one. */
+    ActivityTier tier(int handle);
+
+    /** How many live units are in each activity tier, by {@link ActivityTier#code()}. */
+    int[] tierCounts();
 
     /**
      * For an {@code ADAPTIVE} adapter about to step tick {@code tick}: the path requests in flight due by then whose jobs

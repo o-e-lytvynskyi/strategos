@@ -97,7 +97,9 @@ class DebugFramesTest {
                 .singleElement()
                 .satisfies(m -> assertThat(m.marks()).singleElement().satisfies(mark -> {
                     assertThat(mark.handle()).isEqualTo(walker);
-                    assertThat(mark.tier()).as("moving").isOne();
+                    assertThat(mark.tier())
+                            .as("ordered three ticks ago: active (UNIT-05)")
+                            .isEqualTo(dev.strategos.core.sim.unitai.ActivityTier.ACTIVE.code());
                     assertThat(mark.rung()).as("no ladder before T23").isZero();
                     assertThat(mark.at().y()).as("on the ground").isEqualTo(16);
                 }));

@@ -264,6 +264,46 @@ public final class NetTests {
     }
 
     /**
+     * UNIT-05.4: two matches of one seed, the same units and the same orders at the same ticks, one with a seated
+     * viewer standing over its units and one with nobody: their state hashes agree at every check, so no tier, think
+     * or step depends on who watches.
+     */
+    @StrategosTest(timeoutTicks = 600)
+    public static void aViewerChangesNoHash(GameTestHelper h) {
+        MatchRuntime watched = MatchFixture.create(h, 0, 0, 14, 32, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
+        MatchRuntime alone = MatchFixture.create(h, 18, 0, 14, 32, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
+        spawn(watched, 4.5, 8.5, 6, 1);
+        spawn(alone, 4.5, 8.5, 6, 1);
+        Vec3 at = h.absoluteVec(new Vec3(7.5, 2, 16.5));
+        MockViewer viewer = MockViewer.join(h.getLevel(), "strategos-watch", at.x, at.y, at.z, 4);
+        NetFixtures.seat(watched, viewer, 0);
+        var state = new Object() {
+            int checks;
+        };
+        h.onEachTick(() -> {
+            viewer.poll();
+            long t = core(watched).queries().tick();
+            if (t != core(alone).queries().tick()) {
+                return; // the second match came a tick later: compare once their ticks agree
+            }
+            if (t == 40) {
+                for (MatchRuntime rt : new MatchRuntime[] {watched, alone}) {
+                    rt.submit(PlayerSlot.ADMIN, Move.replace(UnitSet.of(handles(rt)), new Vec2d(10.5, 24.5)));
+                }
+            }
+            if (t > 40 && t % 20 == 0) {
+                check(
+                        core(watched).stateHash() == core(alone).stateHash(),
+                        "the watched match's hash differs at tick " + t);
+                if (++state.checks >= 10) {
+                    viewer.close();
+                    h.succeed();
+                }
+            }
+        });
+    }
+
+    /**
      * NET-01.5: a member of another match standing beside this match's units is never paired with their bodies and
      * gets none of this match's payloads, while a player in no match beside it is paired with them.
      */

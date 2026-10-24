@@ -17,6 +17,7 @@ import dev.strategos.core.sim.nav.SurfaceGrid;
 import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.core.sim.stats.StatBreakdown;
+import dev.strategos.core.sim.unitai.ActivityTier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -240,6 +241,29 @@ final class QueriesImpl implements MatchQueries {
     @Override
     public long[] ladderRungs() {
         return state.rungs();
+    }
+
+    @Override
+    public ActivityTier tier(int handle) {
+        if (!state.entities().isAlive(handle)) {
+            return ActivityTier.IDLE;
+        }
+        int i = Handle.index(handle);
+        return ActivityTier.of(state.ai().state(i), state.tiers().recent(i, state.tick()));
+    }
+
+    @Override
+    public int[] tierCounts() {
+        int[] counts = new int[ActivityTier.values().length];
+        EntityStore entities = state.entities();
+        for (int i = 0; i < entities.highWater(); i++) {
+            if (entities.aliveAt(i)) {
+                counts[
+                        ActivityTier.of(state.ai().state(i), state.tiers().recent(i, state.tick()))
+                                .code()]++;
+            }
+        }
+        return counts;
     }
 
     @Override

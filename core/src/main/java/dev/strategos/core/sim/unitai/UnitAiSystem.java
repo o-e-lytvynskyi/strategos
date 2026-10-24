@@ -1,5 +1,6 @@
 package dev.strategos.core.sim.unitai;
 
+import dev.strategos.core.shared.Handle;
 import dev.strategos.core.sim.Arrived;
 import dev.strategos.core.sim.Attacked;
 import dev.strategos.core.sim.BusMessage;
@@ -51,6 +52,7 @@ public final class UnitAiSystem implements MatchSystem {
             }
         }
         this.machine = tree.machine(state, state.ai());
+        state.bus().subscribe(OrderReceived.class, m -> state.tiers().ordered(Handle.index(m.handle()), state.tick()));
         for (Route<?> route : routes) {
             if (tree.handles(route.type())) {
                 subscribe(state, route);

@@ -373,7 +373,7 @@ Cards: [roadmap/M4-economy-and-construction.md](roadmap/M4-economy-and-construct
 | ECO-08 | Mines and quarries | M | ECO-05 | specified |
 | ECO-16 | Livestock at the start | M | ECO-05, UNIT-03 | specified |
 | ECO-17 | Field auto-reseed at the farmstead | S | ECO-09, BLD-08, D-14 | specified |
-| UNIT-05 | Level of detail by activity | M | CORE-02, PERF-02 | specified |
+| UNIT-05 | Level of detail by activity | M | CORE-02, PERF-02 | done |
 | BLD-04 | Foundations on uneven ground | M | BLD-03 | specified |
 | BLD-05 | Abstract HP and damage stages | M | BLD-03, CMB-03 | specified |
 | BLD-06 | Repair | S | BLD-05, D-15 | specified |
