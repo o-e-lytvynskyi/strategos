@@ -23,6 +23,8 @@ public final class ClientMatchModel {
     private @Nullable FactionState faction;
     private @Nullable BuildingState buildings;
     private @Nullable MatchNews end;
+    private @Nullable MatchNews alert;
+    private int alerts;
     private long defeatedMask;
 
     private int matchId = -1;
@@ -72,13 +74,16 @@ public final class ClientMatchModel {
         }
     }
 
-    /** Takes match news (MATCH-01): the joined match's defeats and its end. */
+    /** Takes match news (MATCH-01, UI-12): the joined match's defeats, its end and its alerts. */
     public void accept(MatchNews news, int joinedMatch) {
         if (news.matchId() != joinedMatch) {
             return;
         }
         if (news.kind() == MatchNews.ENDED) {
             end = news;
+        } else if (news.kind() == MatchNews.ALERT) {
+            alert = news;
+            alerts++;
         } else if (news.faction() >= 0 && news.faction() < 64) {
             defeatedMask |= 1L << news.faction();
         }
@@ -87,6 +92,16 @@ public final class ClientMatchModel {
     /** The match's end, once it came; null while it goes on. */
     public @Nullable MatchNews end() {
         return end;
+    }
+
+    /** The latest under-attack alert (UI-12), or null before any. */
+    public @Nullable MatchNews alert() {
+        return alert;
+    }
+
+    /** How many alerts came, for a new one to be noticed. */
+    public int alerts() {
+        return alerts;
     }
 
     /** Whether faction {@code faction} was defeated. */
@@ -144,6 +159,8 @@ public final class ClientMatchModel {
     /** Forgets the match: the player left it. */
     public void clear() {
         end = null;
+        alert = null;
+        alerts = 0;
         defeatedMask = 0;
         matchId = -1;
         tick = -1;

@@ -31,5 +31,6 @@
   "key.strategos.follow_me": "Selection follows me",
   "key.strategos.build": "Place a building",
   "key.strategos.rotate": "Turn the building",
-  "key.strategos.next_idle_worker": "Next idle worker"
+  "key.strategos.next_idle_worker": "Next idle worker",
+  "key.strategos.jump_to_alert": "Jump to the latest alert"
 }

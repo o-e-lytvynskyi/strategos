@@ -37,7 +37,9 @@ public enum Action {
     /** Placement mode: the ghost turns a quarter. */
     ROTATE(false),
     /** The next idle worker, in a stable order: selected, the camera on it (UI-10). */
-    NEXT_IDLE_WORKER(false);
+    NEXT_IDLE_WORKER(false),
+    /** The camera to the latest under-attack alert (UI-12). */
+    JUMP_TO_ALERT(false);
 
     private final boolean held;
 

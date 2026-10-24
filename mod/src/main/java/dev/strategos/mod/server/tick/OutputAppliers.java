@@ -13,6 +13,7 @@ import dev.strategos.core.sim.MatchEnded;
 import dev.strategos.core.sim.Notice;
 import dev.strategos.core.sim.OutputEvent;
 import dev.strategos.core.sim.TickOutputs;
+import dev.strategos.core.sim.UnderAttack;
 import dev.strategos.core.sim.UnitCreated;
 import dev.strategos.core.sim.UnitDied;
 import dev.strategos.core.sim.UnitGear;
@@ -83,6 +84,19 @@ public final class OutputAppliers {
                                             MatchNews.DEFEATED,
                                             defeated.faction().value(),
                                             out.tick())));
+                case UnderAttack attacked ->
+                    StrategosServer.get()
+                            .net()
+                            .send(
+                                    new Audience.Faction(rt.id(), attacked.faction()),
+                                    new MatchEventPayload(new MatchNews(
+                                            rt.id().value(),
+                                            out.tick(),
+                                            MatchNews.ALERT,
+                                            attacked.faction().value(),
+                                            0,
+                                            (float) attacked.x(),
+                                            (float) attacked.z())));
                 case MatchEnded ended -> {
                     StrategosServer.get()
                             .net()
@@ -164,6 +178,7 @@ public final class OutputAppliers {
                 FlameShown.class,
                 FactionDefeated.class,
                 MatchEnded.class,
+                UnderAttack.class,
                 UnitGear.class,
                 WorldEffect.class,
                 Notice.class);

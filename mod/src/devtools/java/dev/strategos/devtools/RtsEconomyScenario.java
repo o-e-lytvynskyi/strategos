@@ -180,6 +180,11 @@ final class RtsEconomyScenario implements Scenario {
                         "after the worker's 60 food and its reserved place, the bar " + bar);
                 ctx.result.addProperty("foodAfterTrain", bar.resources().get(0).stock());
                 ctx.capture("resource_bar");
+                int pixel = hud.minimapPixel(128, 148); // the civic centre's roof
+                check(
+                        (pixel >>> 24) == 0xFF && (pixel & 0xFFFFFF) != 0,
+                        "the minimap shows nothing there: " + Integer.toHexString(pixel));
+                ctx.result.addProperty("minimapPixel", Integer.toHexString(pixel));
                 double[] ground = gui(screen, rts, 12.5, floor, 6.5);
                 screen.mouseClicked(ground[0], ground[1], 1);
                 screen.mouseReleased(ground[0], ground[1], 1);

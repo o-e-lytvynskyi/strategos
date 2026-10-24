@@ -50,6 +50,7 @@ final class MatchCoreImpl implements MatchCore {
         scheduler.register(new EconomySystem());
         scheduler.register(new TerrainSystem());
         scheduler.register(new GearSystem());
+        scheduler.register(new AlertSystem());
         this.finalSystem = new FinalSystem(metrics, timers, journal, ports.journal());
         scheduler.register(finalSystem);
         this.queries = new QueriesImpl(state, paths);

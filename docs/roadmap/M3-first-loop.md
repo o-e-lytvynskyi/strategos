@@ -667,7 +667,8 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   4. A golden confirms the drawing (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** UI-02, CAM-03, NET-08, D-16 · **Size:** M ·
   **Tier:** T1 (pulled into the MVP by D-16)
-- **Status:** specified
+- **Status:** in_progress
+- **Progress:** 2026-10-24 — M3 T23: the proving ground's image hashes as stored (1); the mapping is exact (2); a click's jump is answered by the next tick (3) (spec §1.6 rows 66–67); the golden (4) waits for T30's batch
 
 #### UI-12 · Under-attack alert with jump key
 - **Value:** You notice an attack in time, wherever the camera is (P3, P5).
@@ -681,7 +682,8 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   3. A golden of the alert (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** UI-10, MATCH-01 · **Size:** S ·
   **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
+- **Progress:** 2026-10-24 — M3 T24: a sustained attack raises one alert (1); the jump to it is answered (2) (spec §1.6 rows 66–67); the golden (3) waits for T30's batch
 
 #### MATCH-05 · Pause and game speed
 - **Value:** Pause a solo game to think, and play slower or faster.

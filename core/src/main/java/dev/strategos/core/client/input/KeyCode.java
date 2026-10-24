@@ -22,6 +22,7 @@ public record KeyCode(Kind kind, int code) {
     public static final int G = 71;
     public static final int H = 72;
     public static final int I = 73;
+    public static final int J = 74;
     public static final int R = 82;
     public static final int S = 83;
     public static final int V = 86;

@@ -220,6 +220,7 @@ public final class RtsScreen extends Screen {
                 case TOGGLE_FIRST_PERSON -> mode.toFirstPerson();
                 case STOP -> mode.stop();
                 case NEXT_IDLE_WORKER -> mode.nextIdleWorker();
+                case JUMP_TO_ALERT -> StrategosClient.hud().jumpToAlert();
                 default -> {}
             }
         }

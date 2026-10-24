@@ -280,6 +280,107 @@ public final class CameraTests {
     }
 
     /**
+     * UI-11.3: a click on the minimap's pixel of a column, mapped back by the minimap's own geometry, sends a
+     * {@code camera_jump} there that the server answers by the next tick.
+     */
+    @StrategosTest(timeoutTicks = 100)
+    public static void aMinimapClickJumps(GameTestHelper h) {
+        MatchRuntime rt = match(h);
+        MockViewer viewer = commander(h, rt, "strategos-mmap");
+        MatchSpace s = rt.space();
+        var minimap = new dev.strategos.core.client.hud.Minimap(
+                dev.strategos.core.client.hud.HudLayout.compute(1920, 1080, 3).minimap(), s.sizeX(), s.sizeZ());
+        double[] pixel = minimap.toMap(21.5, 13.5);
+        double[] at = minimap.toWorld(pixel[0], pixel[1]);
+        double x = s.origin().getX() + at[0];
+        double z = s.origin().getZ() + at[1];
+        h.startSequence()
+                .thenExecute(() -> {
+                    accept(viewer);
+                    viewer.send(jump(x, s.origin().getY() + 20, z));
+                })
+                .thenExecuteAfter(1, () -> {
+                    var p = viewer.player();
+                    check(
+                            Math.abs(p.getX() - (s.origin().getX() + 21.5)) < 1e-6
+                                    && Math.abs(p.getZ() - (s.origin().getZ() + 13.5)) < 1e-6,
+                            "the body is at " + p.position());
+                    viewer.close();
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * UI-12.2: an enemy spearman burns the commander's house; the commander hears one alert in {@code match_event} and
+     * its jump to the alert's place is answered by the next tick.
+     */
+    @StrategosTest(timeoutTicks = 400)
+    public static void theAlertKeyJumps(GameTestHelper h) {
+        MatchRuntime rt = match(h);
+        MockViewer viewer = commander(h, rt, "strategos-alert");
+        StrategosServer.get().net().joined(rt, viewer.player(), new PlayerSlot(0));
+        MatchSpace s = rt.space();
+        rt.submit(
+                PlayerSlot.ADMIN,
+                new dev.strategos.core.protocol.SpawnBuilding(
+                        new dev.strategos.core.shared.TemplateId("strategos:building/house"),
+                        new dev.strategos.core.shared.FactionSlot(0),
+                        20,
+                        20,
+                        0));
+        rt.submit(
+                PlayerSlot.ADMIN,
+                new dev.strategos.core.protocol.SpawnUnits(
+                        dev.strategos.core.content.TemplateSet.INFANTRY,
+                        new dev.strategos.core.shared.FactionSlot(1),
+                        new dev.strategos.core.shared.Vec2d(22, 28),
+                        1,
+                        0));
+        var state = new Object() {
+            dev.strategos.core.protocol.MatchNews alert;
+        };
+        h.startSequence()
+                .thenWaitUntil(() -> check(
+                        !core(rt).queries().buildings().isEmpty()
+                                && core(rt).queries().unitHandles().length == 1,
+                        "not ready"))
+                .thenExecute(() -> rt.submit(
+                        new PlayerSlot(1),
+                        dev.strategos.core.protocol.Attack.replace(
+                                dev.strategos.core.protocol.UnitSet.of(
+                                        core(rt).queries().unitHandles()),
+                                core(rt).queries().buildings().get(0).handle())))
+                .thenWaitUntil(() -> {
+                    viewer.poll();
+                    for (var p : viewer.capture()
+                            .of(net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket.class)) {
+                        if (p.payload() instanceof dev.strategos.mod.server.net.payload.MatchEventPayload m
+                                && m.news().kind() == dev.strategos.core.protocol.MatchNews.ALERT) {
+                            state.alert = m.news();
+                        }
+                    }
+                    check(state.alert != null, "no alert yet");
+                })
+                .thenExecute(() -> {
+                    accept(viewer);
+                    viewer.send(jump(
+                            s.origin().getX() + state.alert.x(),
+                            s.origin().getY() + 20,
+                            s.origin().getZ() + state.alert.z()));
+                })
+                .thenExecuteAfter(1, () -> {
+                    var p = viewer.player();
+                    check(
+                            Math.abs(p.getX() - (s.origin().getX() + 22.5)) <= 1 // the commander's limits may
+                                    && Math.abs(p.getZ() - (s.origin().getZ() + 22.5)) <= 1, // nudge the eye
+                            "the body is " + (p.getX() - s.origin().getX()) + ", "
+                                    + (p.getZ() - s.origin().getZ()) + " into the space for the alert " + state.alert);
+                    viewer.close();
+                })
+                .thenSucceed();
+    }
+
+    /**
      * A space {@code east} blocks east of the test's corner, larger than its structure: batches put their structures at
      * the same place, and a commander panning there with its view loaded the chunks a later batch's test needs unloaded
      * (bodytests.bodies_follow_entity_ticking_chunks), so the camera tests go far off, as the map tests do.

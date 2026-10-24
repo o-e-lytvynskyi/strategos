@@ -1,5 +1,6 @@
 package dev.strategos.mod.client.hud;
 
+import dev.strategos.core.client.camera.CameraRig;
 import dev.strategos.core.client.hud.CardController;
 import dev.strategos.core.client.hud.CommandCard;
 import dev.strategos.core.client.hud.EconomyNotices;
@@ -8,10 +9,12 @@ import dev.strategos.core.client.hud.HudLayout;
 import dev.strategos.core.client.hud.HudRect;
 import dev.strategos.core.client.hud.HudTheme;
 import dev.strategos.core.client.hud.Income;
+import dev.strategos.core.client.hud.Minimap;
 import dev.strategos.core.client.hud.ResourceBar;
 import dev.strategos.core.client.hud.SelectionPanel;
 import dev.strategos.core.client.hud.SelectionSummary;
 import dev.strategos.core.client.pick.Picking;
+import dev.strategos.core.client.pick.View;
 import dev.strategos.core.client.select.Selection;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.BuildingState;
@@ -66,6 +69,7 @@ public final class RtsHud {
     public static final ResourceLocation RESOURCES = Ids.id("rts_resources");
     public static final ResourceLocation NOTICES = Ids.id("rts_notices");
     public static final ResourceLocation END = Ids.id("rts_match_end");
+    public static final ResourceLocation MINIMAP = Ids.id("rts_minimap");
     public static final ResourceLocation GROUPS = Ids.id("rts_groups");
     public static final ResourceLocation TOOLTIP = Ids.id("rts_tooltip");
     public static final ResourceLocation INSPECT = Ids.id("first_person_inspect");
@@ -112,6 +116,9 @@ public final class RtsHud {
     private final EconomyNotices notices = new EconomyNotices();
     private List<EconomyNotices.Shown> shownNotices = List.of();
     private long clientTicks;
+    private final RtsMinimap minimap = new RtsMinimap();
+    private int alertsHeard;
+    private long alertAt = -1_000_000;
 
     /** One part of the resource bar: where it is, its icon (null for none), its text and colour, and its tooltip. */
     record Segment(HudRect at, @Nullable String icon, String text, int colour, String tooltip) {}
@@ -137,6 +144,7 @@ public final class RtsHud {
             e.registerAboveAll(RESOURCES, this::drawResources);
             e.registerAboveAll(NOTICES, this::drawNotices);
             e.registerAboveAll(END, this::drawEnd);
+            e.registerAboveAll(MINIMAP, this::drawMinimap);
             e.registerAboveAll(GROUPS, this::drawGroups);
             e.registerAboveAll(TOOLTIP, this::drawTooltip);
             e.registerAboveAll(INSPECT, this::drawInspect);
@@ -179,6 +187,15 @@ public final class RtsHud {
         }
         HudLayout l = layout();
         int pad = theme.padding();
+        MatchJoin join = StrategosClient.match();
+        if (join != null && minimap.ready() && l.minimap().contains(x, y)) {
+            Minimap m = new Minimap(l.minimap(), join.sizeX(), join.sizeZ());
+            if (button == 0 && m.contains(x, y)) { // UI-11: the camera to the clicked column
+                double[] at = m.toWorld(x, y);
+                mode.centreOn(join.originX() + at[0], join.originZ() + at[1]);
+            }
+            return true;
+        }
         List<Segment> parts = segments;
         if (!parts.isEmpty() && l.resourceBar().contains(x, y)) {
             if (button == 0 && parts.get(parts.size() - 1).at().contains(x, y)) {
@@ -249,6 +266,16 @@ public final class RtsHud {
     private void build() {
         long start = System.nanoTime();
         clientTicks++;
+        Minecraft client = Minecraft.getInstance();
+        minimap.tick(client);
+        int heard = StrategosClient.model().alerts();
+        if (heard > alertsHeard) { // UI-12: a new alert sounds once, here only
+            alertsHeard = heard;
+            alertAt = clientTicks;
+            client.getSoundManager()
+                    .play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
+                            net.minecraft.sounds.SoundEvents.BELL_BLOCK, 1.0F, 0.8F));
+        }
         Minecraft mc = Minecraft.getInstance();
         if (!mode.active() || mc.level == null) {
             summary = SelectionSummary.EMPTY;
@@ -401,12 +428,21 @@ public final class RtsHud {
     /** The newest notices, right-aligned in the notices' strip, the newest nearest the corner. */
     private void drawNotices(GuiGraphics g, DeltaTracker delta) {
         List<EconomyNotices.Shown> shown = shownNotices;
-        if (!shown() || shown.isEmpty()) {
+        boolean alerted = clientTicks - alertAt < 100;
+        if (!shown() || (shown.isEmpty() && !alerted)) {
             return;
         }
         Font font = Minecraft.getInstance().font;
         HudRect r = layout().notices();
         int x = r.right();
+        if (alerted) { // UI-12: the newest alert first, in red
+            String text = "Under attack! (J)";
+            int w = font.width(text) + 2 * theme.padding();
+            x -= w;
+            panel(g, new HudRect(x, r.y(), w, r.height()));
+            g.drawString(font, text, x + theme.padding(), r.y() + 2, 0xFFFF4040, false);
+            x -= 2;
+        }
         for (EconomyNotices.Shown s : shown) {
             String text = switch (s.cause()) {
                 case NOT_ENOUGH_RESOURCES -> "Not enough " + s.detail();
@@ -469,6 +505,91 @@ public final class RtsHud {
         }
         g.drawString(font, winner, x + (w - font.width(winner)) / 2, line, theme.text(), false);
         g.drawString(font, time, x + (w - font.width(time)) / 2, line + font.lineHeight + 2, theme.dimText(), false);
+    }
+
+    /** The minimap's pixel of match-local column ({@code x}, {@code z}), ARGB, for scenarios; 0 for none. */
+    public int minimapPixel(int x, int z) {
+        return minimap.pixel(x, z);
+    }
+
+    /** The camera to the latest alert (UI-12's jump key); whether there was one. */
+    public boolean jumpToAlert() {
+        MatchNews alert = StrategosClient.model().alert();
+        MatchJoin join = StrategosClient.match();
+        if (alert == null || join == null) {
+            return false;
+        }
+        mode.centreOn(join.originX() + alert.x(), join.originZ() + alert.z());
+        return true;
+    }
+
+    /**
+     * The minimap (UI-11): the terrain image scaled into the HUD's square, buildings and units as dots in their
+     * factions' colours, the latest alert as a red ring for its first seconds, and the camera's frame.
+     */
+    private void drawMinimap(GuiGraphics g, DeltaTracker delta) {
+        MatchJoin join = StrategosClient.match();
+        if (!shown() || join == null || !minimap.ready()) {
+            return;
+        }
+        HudRect r = layout().minimap();
+        panel(g, r);
+        g.flush(); // the panel's fill is batched: drawn later, it would cover the image
+        Minimap m = new Minimap(r, join.sizeX(), join.sizeZ());
+        double[] o = m.origin();
+        double s = m.scale();
+        g.blit(
+                RtsMinimap.TEXTURE,
+                (int) Math.round(o[0]),
+                (int) Math.round(o[1]),
+                (int) Math.round(join.sizeX() * s),
+                (int) Math.round(join.sizeZ() * s),
+                0,
+                0,
+                join.sizeX(),
+                join.sizeZ(),
+                join.sizeX(),
+                join.sizeZ());
+        for (Minimap.Dot d : m.dots(
+                StrategosClient.model().units(), StrategosClient.model().buildings(), StrategosClient.templates())) {
+            int x0 = (int) Math.floor(d.x());
+            int y0 = (int) Math.floor(d.y());
+            g.fill(
+                    x0,
+                    y0,
+                    x0 + Math.max(1, (int) Math.round(d.w())),
+                    y0 + Math.max(1, (int) Math.round(d.h())),
+                    theme.faction(d.faction()));
+        }
+        MatchNews alert = StrategosClient.model().alert();
+        if (alert != null && clientTicks - alertAt < 200 && (clientTicks / 5) % 2 == 0) {
+            double[] p = m.toMap(alert.x(), alert.z());
+            g.renderOutline((int) p[0] - 4, (int) p[1] - 4, 9, 9, 0xFFFF3030);
+        }
+        CameraRig rig = mode.rig();
+        View view = mode.view();
+        if (rig != null && view != null) {
+            double[] f = Minimap.frame(view, rig.pose().y() - rig.height(), join.originX(), join.originZ());
+            double minX = Double.MAX_VALUE;
+            double minY = Double.MAX_VALUE;
+            double maxX = -Double.MAX_VALUE;
+            double maxY = -Double.MAX_VALUE;
+            for (int k = 0; k < 4; k++) {
+                double[] p = m.toMap(
+                        Math.max(0, Math.min(join.sizeX(), f[2 * k])),
+                        Math.max(0, Math.min(join.sizeZ(), f[2 * k + 1])));
+                minX = Math.min(minX, p[0]);
+                minY = Math.min(minY, p[1]);
+                maxX = Math.max(maxX, p[0]);
+                maxY = Math.max(maxY, p[1]);
+            }
+            g.renderOutline(
+                    (int) minX,
+                    (int) minY,
+                    Math.max(2, (int) (maxX - minX)),
+                    Math.max(2, (int) (maxY - minY)),
+                    0xFFFFFFFF);
+        }
     }
 
     /** An item at half size, 8 pixels, its corner at ({@code x}, {@code y}). */

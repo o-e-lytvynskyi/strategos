@@ -9,7 +9,7 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-24 — M3 T9–T22
+## 2026-10-24 — M3 T9–T24
 
 - **The owner, past midnight:** «можешь любые тесты проводить и как закончишь м3 - начинай м4, все решения
   принимай сам, которые рекомендуешь» (STATE item 6).
@@ -77,7 +77,13 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
   the match hears it and sees a Victory or Defeat screen with the winner and the time. Rules change only by a
   journaled command (`/strategos match config`), so replays agree. Scenarios live in data: `first_loop` gives each
   side a civic centre, five workers and 300 food (`/strategos match scenario`). No monster spawns inside a match.
-  Resigning is a command rather than a control message, so it is journaled too. Next: T23, the minimap.
+  Resigning is a command rather than a control message, so it is journaled too.
+- **M3 T23–T24 · UI-11 and UI-12, the minimap and the under-attack alert.** Bottom left, the map as vanilla's maps
+  colour it, with every unit and building in its faction's colour and the camera's frame; a click there takes the
+  camera to the spot. When something of yours is struck, one alert per attack (not per blow): a bell, "Under
+  attack! (J)" and a blinking ring on the minimap; J goes there. Two `Long.MIN_VALUE` "long ago" stamps overflowed in
+  `now - then` and hid the image and showed a false alert; caught in a window run and fixed. Next: T25, pause and game
+  speed.
 
 ## 2026-10-23 (evening) — M3 spec, T1–T8
 
