@@ -8,6 +8,7 @@ import dev.strategos.core.protocol.RejectReason;
 import dev.strategos.core.protocol.Reseed;
 import dev.strategos.core.protocol.SetRally;
 import dev.strategos.core.protocol.Train;
+import dev.strategos.core.protocol.TrainBatch;
 import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.MatchState;
@@ -17,8 +18,8 @@ import dev.strategos.core.sim.prod.Production;
 import org.jspecify.annotations.Nullable;
 
 /**
- * The production commands (PROD-01, PROD-03): Train joins an entry to a finished building's queue that trains the
- * template, paying its cost, or is refused (a full queue as {@code QUEUE_FULL}, a lack with the missing amounts);
+ * The production commands (PROD-01, PROD-02, PROD-03): Train joins an entry to a finished building's queue that trains
+ * the template, paying its cost, TrainBatch an entry of up to five, or is refused (a full queue as {@code QUEUE_FULL}, a lack with the missing amounts);
  * CancelTrain refunds an entry; SetRally points buildings' new units at the ground, a node or a building; Reseed sows an
  * empty field again (ECO-09). Each building must be the issuer's faction's.
  */
@@ -69,6 +70,52 @@ final class TrainRules {
             }
             state.treasury().pay(faction, cost);
             b.enqueue(train.building(), template.netIndex());
+            return Tally.acceptAll(envelope, kind(), 1);
+        }
+    }
+
+    /**
+     * TrainBatch (PROD-02): as Train, for {@code count} units of one template in a single entry, paying {@code count}
+     * times the cost; a count outside 1 to 5 is an invalid argument.
+     */
+    static final class TrainBatchRule implements CommandRule<TrainBatch> {
+        @Override
+        public CommandKind<TrainBatch> kind() {
+            return CommandKinds.TRAIN_BATCH;
+        }
+
+        @Override
+        public CommandResult apply(CommandEnvelope envelope, TrainBatch train, MatchState state) {
+            RejectReason reason = own(envelope, train.building(), state);
+            if (reason != null) {
+                return Tally.rejectAll(envelope, kind(), 1, reason);
+            }
+            if (train.count() < 1 || train.count() > TrainBatch.MOST) {
+                return Tally.rejectAll(envelope, kind(), 1, RejectReason.INVALID_ARGUMENT);
+            }
+            BuildingStore b = state.buildings();
+            UnitTemplate template = state.templates().byId(train.template());
+            if (template == null) {
+                return Tally.rejectAll(envelope, kind(), 1, RejectReason.UNKNOWN_TEMPLATE);
+            }
+            if (b.state(train.building()) != BuildingStore.COMPLETE
+                    || !Production.trains(state, train.building(), template.netIndex())) {
+                return Tally.rejectAll(envelope, kind(), 1, RejectReason.UNSUPPORTED);
+            }
+            if (b.queueSize(train.building()) >= BuildingStore.QUEUE_MAX) {
+                return Tally.rejectAll(envelope, kind(), 1, RejectReason.QUEUE_FULL);
+            }
+            int faction = b.faction(train.building());
+            long[] cost = state.costs().of(state.stats(), template.netIndex(), faction);
+            for (int r = 0; r < cost.length; r++) {
+                cost[r] = Math.multiplyExact(cost[r], train.count());
+            }
+            long[] missing = state.treasury().missing(faction, cost);
+            if (missing != null) {
+                return Tally.unaffordable(envelope, kind(), 1, missing);
+            }
+            state.treasury().pay(faction, cost);
+            b.enqueue(train.building(), template.netIndex(), train.count());
             return Tally.acceptAll(envelope, kind(), 1);
         }
     }

@@ -104,7 +104,8 @@ final class QueriesImpl implements MatchQueries {
         if (b.queueSize(handle) == 0) {
             return 0;
         }
-        long ticks = dev.strategos.core.sim.prod.Production.ticks(state, b.queue(handle)[0], b.faction(handle));
+        long ticks =
+                dev.strategos.core.sim.prod.Production.ticks(state, handle, b.queue(handle)[0], b.batch(handle, 0));
         return Math.min(BuildingStore.FULL, b.trained(handle) * BuildingStore.FULL / ticks);
     }
 

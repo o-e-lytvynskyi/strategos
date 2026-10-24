@@ -49,6 +49,8 @@ public final class CommandKinds {
             "strategos:cancel_building", 20, CancelBuilding.class, CancelBuilding.CODEC, CancelBuilding.WIRE, false);
     public static final CommandKind<Demolish> DEMOLISH =
             new CommandKind<>("strategos:demolish", 21, Demolish.class, Demolish.CODEC, Demolish.WIRE, false);
+    public static final CommandKind<TrainBatch> TRAIN_BATCH =
+            new CommandKind<>("strategos:train_batch", 23, TrainBatch.class, TrainBatch.CODEC, TrainBatch.WIRE, false);
     public static final CommandKind<SpawnDeposit> SPAWN_DEPOSIT = new CommandKind<>(
             "strategos:spawn_deposit", 24, SpawnDeposit.class, SpawnDeposit.CODEC, SpawnDeposit.WIRE, true);
     public static final CommandKinds DEFAULT = new CommandKinds(List.of(
@@ -73,6 +75,7 @@ public final class CommandKinds {
             BUILD,
             CANCEL_BUILDING,
             DEMOLISH,
+            TRAIN_BATCH,
             SPAWN_DEPOSIT));
 
     private final List<CommandKind<?>> kinds;

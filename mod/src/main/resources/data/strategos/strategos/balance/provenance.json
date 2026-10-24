@@ -72,7 +72,8 @@
     "Placement/civicReach": "None: a civic centre stands where its spacing allows, not near another",
     "Placement/spacing": "Sixty-four blocks between centres: a second centre claims new ground, not a corner of the first's",
     "Cost/resources/iron": "A hundred iron: a second centre's tools and fittings, a late investment (ECO-08)",
-    "Limit/count": "One civic centre a faction until phases (Town) allow more, as in the classics (BLD-08)"
+    "Limit/count": "One civic centre a faction until phases (Town) allow more, as in the classics (BLD-08)",
+    "Trainer/batchExponent": "Five in 5^0.8 ≈ 3.6 units' time: a batch saves 28 %, worth tying the money up for (PROD-02, as the classics)"
   },
   "strategos:template/building_base": {
     "Placement/civicReach": "Within 48 blocks of an own centre's footprint: a town grows round its centre, the stand-in for territory until TERR-02",
@@ -105,7 +106,8 @@
     "Cost/resources/stone": "A hundred stone: soldiers need the quarry, so stone matters from the first barracks; the first loop's starts bring a hundred (ECO-07, BLD-08)",
     "Cost/time": "A minute for one builder",
     "Resistance/fire": "Timber and thatch: fire's whole blow lands, twice as fast per hit point as stone (CMB-03)",
-    "Cost/resources/iron": "Fifty iron: the spear points and helmets of the barracks' armoury; the first loop's starts bring a hundred (ECO-08)"
+    "Cost/resources/iron": "Fifty iron: the spear points and helmets of the barracks' armoury; the first loop's starts bring a hundred (ECO-08)",
+    "Trainer/batchExponent": "As the civic centre's: one rule for every trainer until a technology changes it (TECH-05)"
   },
   "strategos:building/quarry": {
     "Deposit/amount": "A thousand stone, two hundred quarried blocks' worth: a small quarry pays a civic centre five times over and lasts a match's opening (ECO-08)",

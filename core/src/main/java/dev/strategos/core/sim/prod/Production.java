@@ -4,6 +4,7 @@ import dev.strategos.core.content.Blueprint;
 import dev.strategos.core.content.Footprint;
 import dev.strategos.core.protocol.NoticeKind;
 import dev.strategos.core.shared.CoreApi;
+import dev.strategos.core.shared.DetMath;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.sim.MatchBounds;
@@ -23,7 +24,9 @@ import org.jspecify.annotations.Nullable;
  * Training (PROD-01, ECO-06, PROD-03, 04 §11.5): a finished building's queue trains its head entry, which takes its
  * population when it starts, or waits with a "housing needed" notice, told once, keeping its progress; trained for its
  * {@code Cost/time}, the unit appears at the cell outside the footprint nearest the blueprint's door and takes the
- * building's rally orders. A building's housing counts while it stands finished.
+ * building's rally orders. A batch (PROD-02) is one entry of up to five: their population taken together, trained for
+ * the unit's time × count^e (e the building's {@code Trainer/batchExponent}, 0.8 by default), rounded to ticks once,
+ * all of them appearing together. A building's housing counts while it stands finished.
  */
 @CoreApi
 public final class Production {
@@ -41,11 +44,43 @@ public final class Production {
                 && units.contains(s.templates().byIndex(template).id().value());
     }
 
+    /** The path of a building's batch exponent (PROD-02). */
+    public static final String BATCH_EXPONENT = "Trainer/batchExponent";
+
+    /** The default batch exponent: five train in 5^0.8, about 3.6, units' time. */
+    public static final double DEFAULT_BATCH_EXPONENT = 0.8;
+
     /** The ticks an entry of {@code template} trains for: its {@code Cost/time} seconds, at least one tick. */
     public static long ticks(MatchState s, int template, int faction) {
         int path = s.stats().path(Construction.TIME);
         double seconds = path < 0 ? Double.NaN : s.stats().blockValue(template, faction, path);
         return Double.isFinite(seconds) && seconds > 0 ? Math.max(1, Math.round(seconds * 20)) : 1;
+    }
+
+    /**
+     * The ticks building {@code handle}'s entry of {@code count} of {@code template} trains for (PROD-02): the unit's
+     * seconds × 20 × count^e, rounded once; a single entry's are {@link #ticks}.
+     */
+    public static long ticks(MatchState s, int handle, int template, int count) {
+        BuildingStore b = s.buildings();
+        int faction = b.faction(handle);
+        if (count <= 1) {
+            return ticks(s, template, faction);
+        }
+        int path = s.stats().path(Construction.TIME);
+        double seconds = path < 0 ? Double.NaN : s.stats().blockValue(template, faction, path);
+        if (!(Double.isFinite(seconds) && seconds > 0)) {
+            return 1;
+        }
+        return Math.max(1, Math.round(seconds * 20 * DetMath.pow(count, exponent(s, handle))));
+    }
+
+    /** Building {@code handle}'s batch exponent: its {@code Trainer/batchExponent}, else {@value #DEFAULT_BATCH_EXPONENT}. */
+    static double exponent(MatchState s, int handle) {
+        BuildingStore b = s.buildings();
+        int path = s.stats().path(BATCH_EXPONENT);
+        double v = path < 0 ? Double.NaN : s.stats().blockValue(b.template(handle), b.faction(handle), path);
+        return Double.isFinite(v) && v > 0 && v <= 1 ? v : DEFAULT_BATCH_EXPONENT;
     }
 
     /** What building {@code handle} houses: its {@code Housing/capacity}, 0 for none. */
@@ -64,9 +99,10 @@ public final class Production {
         }
         int faction = b.faction(handle);
         int template = b.queue(handle)[0];
+        int count = b.batch(handle, 0);
         Population pop = s.population();
         if (!b.reserved(handle)) {
-            int need = s.templatePopulation(template, faction);
+            int need = s.templatePopulation(template, faction) * count;
             if (!pop.fits(faction, need)) {
                 if (!b.waiting(handle)) {
                     b.setWaiting(handle, true);
@@ -80,19 +116,21 @@ public final class Production {
         }
         long done = b.trained(handle) + 1;
         b.setTrained(handle, done);
-        if (done < ticks(s, template, faction)) {
+        if (done < ticks(s, handle, template, count)) {
             return;
         }
         int[] door = door(s, handle);
         if (door == null) {
             return; // walled in: it waits at the door for ground to free
         }
-        pop.remove(faction, s.templatePopulation(template, faction)); // the reservation becomes the unit's own
+        pop.remove(faction, s.templatePopulation(template, faction) * count); // the reservation becomes the units' own
         b.dequeue(handle, 0);
         double floor = Placing.floor(s.surfaces(), s.config().bounds(), door[0], door[1]);
         double y = Double.isNaN(floor) ? s.config().bounds().flatFloorY() : floor;
-        int unit = s.spawnUnit(template, faction, door[0] + 0.5, y, door[1] + 0.5, 0f);
-        rally(s, handle, unit);
+        for (int n = 0; n < count; n++) { // a batch steps out together, the crowd spreading it
+            int unit = s.spawnUnit(template, faction, door[0] + 0.5, y, door[1] + 0.5, 0f);
+            rally(s, handle, unit);
+        }
     }
 
     /** The free cell outside the footprint nearest the blueprint's door, or its middle without one; null for none. */
@@ -182,11 +220,16 @@ public final class Production {
     public static void cancel(MatchState s, int handle, int index) {
         BuildingStore b = s.buildings();
         int faction = b.faction(handle);
+        int count = b.batch(handle, index);
         if (index == 0 && b.reserved(handle)) {
-            s.population().remove(faction, s.templatePopulation(b.queue(handle)[0], faction));
+            s.population().remove(faction, s.templatePopulation(b.queue(handle)[0], faction) * count);
         }
         int template = b.dequeue(handle, index);
-        s.treasury().refund(faction, s.costs().of(s.stats(), template, faction));
+        long[] cost = s.costs().of(s.stats(), template, faction);
+        for (int r = 0; r < cost.length; r++) {
+            cost[r] = Math.multiplyExact(cost[r], count);
+        }
+        s.treasury().refund(faction, cost);
     }
 
     /** Counts every faction's population afresh from the state: a restored match's counters. */
@@ -204,7 +247,9 @@ public final class Production {
                 pop.house(b.faction(handle), housing(s, handle));
             }
             if (b.queueSize(handle) > 0 && b.reserved(handle)) {
-                pop.add(b.faction(handle), s.templatePopulation(b.queue(handle)[0], b.faction(handle)));
+                pop.add(
+                        b.faction(handle),
+                        s.templatePopulation(b.queue(handle)[0], b.faction(handle)) * b.batch(handle, 0));
             }
         }
     }

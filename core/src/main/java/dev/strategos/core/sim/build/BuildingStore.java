@@ -49,6 +49,7 @@ public final class BuildingStore {
     private int[][] slots = new int[8][];
     private int[][] claims = new int[8][];
     private int[][] queue = new int[8][]; // per building its entries' template net indices, the head first
+    private int[][] batch = new int[8][]; // per entry the units it trains at once (PROD-02), 1 for a single one
     private long[] trained = new long[8]; // the head's ticks of training
     private boolean[] reserved = new boolean[8]; // whether the head holds its population
     private boolean[] waiting = new boolean[8]; // whether the head waits for housing, told once
@@ -95,6 +96,7 @@ public final class BuildingStore {
         this.slots[k] = new int[0];
         this.claims[k] = new int[0];
         this.queue[k] = new int[0];
+        this.batch[k] = new int[0];
         this.trained[k] = 0;
         this.reserved[k] = false;
         this.waiting[k] = false;
@@ -126,6 +128,7 @@ public final class BuildingStore {
         tickBuilders = Arrays.copyOf(tickBuilders, n);
         tickRates = Arrays.copyOf(tickRates, n);
         queue = Arrays.copyOf(queue, n);
+        batch = Arrays.copyOf(batch, n);
         trained = Arrays.copyOf(trained, n);
         reserved = Arrays.copyOf(reserved, n);
         waiting = Arrays.copyOf(waiting, n);
@@ -176,13 +179,26 @@ public final class BuildingStore {
 
     /** Adds an entry of {@code template} at the queue's end; false when it is full. */
     public boolean enqueue(int handle, int template) {
+        return enqueue(handle, template, 1);
+    }
+
+    /** Adds an entry of {@code count} units of {@code template} at the queue's end (PROD-02); false when it is full. */
+    public boolean enqueue(int handle, int template, int count) {
         int k = at(handle);
         if (queue[k].length >= QUEUE_MAX) {
             return false;
         }
         queue[k] = Arrays.copyOf(queue[k], queue[k].length + 1);
         queue[k][queue[k].length - 1] = template;
+        batch[k] = Arrays.copyOf(batch[k], queue[k].length);
+        batch[k][queue[k].length - 1] = Math.max(1, count);
         return true;
+    }
+
+    /** How many units entry {@code index} trains at once (PROD-02): 1 for a single one. */
+    public int batch(int handle, int index) {
+        int[] b = batch[at(handle)];
+        return index < b.length ? Math.max(1, b[index]) : 1;
     }
 
     /** Takes entry {@code index} out of the queue; its template. The head's training starts afresh. */
@@ -194,6 +210,11 @@ public final class BuildingStore {
         System.arraycopy(q, 0, out, 0, index);
         System.arraycopy(q, index + 1, out, index, q.length - index - 1);
         queue[k] = out;
+        int[] counts = Arrays.copyOf(batch[k], q.length);
+        int[] left = new int[out.length];
+        System.arraycopy(counts, 0, left, 0, index);
+        System.arraycopy(counts, index + 1, left, index, q.length - index - 1);
+        batch[k] = left;
         if (index == 0) {
             trained[k] = 0;
             reserved[k] = false;
@@ -500,6 +521,11 @@ public final class BuildingStore {
                     for (int t : queue[k]) {
                         x = Hasher.mix(x, t);
                     }
+                    for (int c : batch[k]) {
+                        if (c > 1) { // only batches (PROD-02), so single entries hash as before
+                            x = Hasher.mix(x, c);
+                        }
+                    }
                     x = Hasher.mix(x, trained[k]);
                     x = Hasher.mix(x, reserved[k] ? 1 : 0);
                     x = Hasher.mix(x, waiting[k] ? 1 : 0);
@@ -513,6 +539,15 @@ public final class BuildingStore {
         return x;
     }
 
+    private boolean batched(int k) {
+        for (int c : batch[k] == null ? new int[0] : batch[k]) {
+            if (c > 1) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /** A site's construction as a snapshot keeps it (BLD-03). */
     public record Site(long work, int placed, List<Integer> slots, List<Integer> claims) {
         public static final Site NONE = new Site(0, 0, List.of(), List.of());
@@ -524,11 +559,18 @@ public final class BuildingStore {
     }
 
     /** A queue as a snapshot keeps it (PROD-01): its entries, the head's ticks, its reservation and its wait. */
-    public record Production(List<Integer> queue, long trained, boolean reserved, boolean waiting) {
-        public static final Production NONE = new Production(List.of(), 0, false, false);
+    public record Production(
+            List<Integer> queue, long trained, boolean reserved, boolean waiting, List<Integer> batches) {
+        public static final Production NONE = new Production(List.of(), 0, false, false, List.of());
+
+        /** A queue of single entries, as before batches (PROD-02). */
+        public Production(List<Integer> queue, long trained, boolean reserved, boolean waiting) {
+            this(queue, trained, reserved, waiting, List.of());
+        }
 
         public Production {
             queue = List.copyOf(queue);
+            batches = List.copyOf(batches);
         }
     }
 
@@ -574,7 +616,10 @@ public final class BuildingStore {
                             .toList(),
                     trained[k],
                     reserved[k],
-                    waiting[k]);
+                    waiting[k],
+                    batched(k)
+                            ? Arrays.stream(batch[k]).boxed().toList()
+                            : List.of()); // single entries save as before batches
             out.add(new Saved(
                     generation[k],
                     alive[k],
@@ -624,6 +669,12 @@ public final class BuildingStore {
             }
             queue[k] =
                     s.production().queue().stream().mapToInt(Integer::intValue).toArray();
+            batch[k] = new int[queue[k].length];
+            for (int e = 0; e < queue[k].length; e++) {
+                batch[k][e] = e < s.production().batches().size()
+                        ? Math.max(1, s.production().batches().get(e))
+                        : 1;
+            }
             trained[k] = s.production().trained();
             reserved[k] = s.production().reserved();
             waiting[k] = s.production().waiting();

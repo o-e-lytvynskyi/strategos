@@ -7,7 +7,9 @@ import dev.strategos.core.protocol.Command;
 import dev.strategos.core.protocol.Reseed;
 import dev.strategos.core.protocol.Stop;
 import dev.strategos.core.protocol.Train;
+import dev.strategos.core.protocol.TrainBatch;
 import dev.strategos.core.protocol.UnitSet;
+import dev.strategos.core.shared.TemplateId;
 import java.util.List;
 import java.util.function.Consumer;
 import org.jspecify.annotations.Nullable;
@@ -59,6 +61,17 @@ public final class CardController {
             BuildingState.@Nullable Entry building,
             TemplateSet templates,
             Consumer<Command> send) {
+        return click(button, units, building, templates, send, false);
+    }
+
+    /** As {@link #click}; with Shift held ({@code batch}), a train button queues a batch of five (PROD-02). */
+    public Click click(
+            CommandCard.@Nullable Button button,
+            List<Integer> units,
+            BuildingState.@Nullable Entry building,
+            TemplateSet templates,
+            Consumer<Command> send,
+            boolean batch) {
         if (button == null) {
             return Click.NONE;
         }
@@ -67,8 +80,11 @@ public final class CardController {
                 if (building == null || !templates.has(button.template())) {
                     yield Click.NONE;
                 }
-                send.accept(new Train(
-                        building.handle(), templates.byIndex(button.template()).id()));
+                TemplateId id = templates.byIndex(button.template()).id();
+                send.accept(
+                        batch
+                                ? new TrainBatch(building.handle(), id, TrainBatch.MOST)
+                                : new Train(building.handle(), id));
                 yield new Click(Effect.SENT, button.template());
             }
             case RESEED -> {

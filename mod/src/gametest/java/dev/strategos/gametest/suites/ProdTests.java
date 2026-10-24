@@ -163,4 +163,40 @@ public final class ProdTests {
                 })
                 .thenSucceed();
     }
+
+    /** PROD-02.2: a batch of five workers steps out on one tick, and all five walk to the centre's rally point. */
+    @StrategosTest(batch = "production", timeoutTicks = 1_600)
+    public static void aBatchStepsOutTogetherAndRallies(GameTestHelper h) {
+        MatchRuntime rt = Units.match(h);
+        town(rt);
+        int y = h.absolutePos(new BlockPos(0, 1, 0)).getY();
+        var state = new Object() {
+            long firstSeen = -1;
+        };
+        h.onEachTick(() -> {
+            if (state.firstSeen < 0 && handles(rt).length > 0) {
+                state.firstSeen = h.getTick();
+                check(handles(rt).length == 5, handles(rt).length + " of the batch stepped out first");
+            }
+        });
+        h.startSequence()
+                .thenWaitUntil(() -> check(!core(rt).queries().buildings().isEmpty(), "no centre yet"))
+                .thenExecute(() -> {
+                    rt.submit(P0, new SetRally(UnitSet.of(centre(rt).handle()), 24, y, 24));
+                    rt.submit(
+                            P0,
+                            new dev.strategos.core.protocol.TrainBatch(
+                                    centre(rt).handle(), TemplateSet.WORKER, 5));
+                })
+                .thenWaitUntil(() -> {
+                    check(handles(rt).length == 5, "not trained yet");
+                    for (int handle : handles(rt)) {
+                        var u = unit(rt, handle);
+                        check(
+                                Math.hypot(u.x() - 24.5, u.z() - 24.5) < 3,
+                                "not at the rally point: " + u.x() + ", " + u.z());
+                    }
+                })
+                .thenSucceed();
+    }
 }

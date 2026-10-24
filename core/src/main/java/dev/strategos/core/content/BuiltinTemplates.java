@@ -139,7 +139,7 @@ final class BuiltinTemplates {
               "Cost": { "resources": { "wood": 300, "stone": 200, "iron": 100 }, "time": 150 },
               "Dropsite": { "resources": "food wood stone iron" },
               "Housing": { "capacity": 20 },
-              "Trainer": { "units": "strategos:unit/worker" },
+              "Trainer": { "units": "strategos:unit/worker", "batchExponent": 0.8 },
               "Limit": { "count": 1 }
             }
             """;
@@ -174,7 +174,7 @@ final class BuiltinTemplates {
               "Resistance": { "fire": 0 },
               "Health": { "max": 1200 },
               "Cost": { "resources": { "wood": 200, "stone": 100, "iron": 50 }, "time": 60 },
-              "Trainer": { "units": "strategos:unit/infantry" }
+              "Trainer": { "units": "strategos:unit/infantry", "batchExponent": 0.8 }
             }
             """;
 

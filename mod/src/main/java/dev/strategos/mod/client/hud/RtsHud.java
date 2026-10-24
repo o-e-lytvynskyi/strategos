@@ -206,7 +206,8 @@ public final class RtsHud {
                         mode.selection().handles(),
                         ownBuilding(),
                         StrategosClient.templates(),
-                        mode::send);
+                        mode::send,
+                        net.minecraft.client.gui.screens.Screen.hasShiftDown()); // a batch of five (PROD-02)
                 if (c.effect() == CardController.Effect.ARM) {
                     mode.armPlacement(c.template());
                 }

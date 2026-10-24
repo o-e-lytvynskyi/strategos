@@ -380,7 +380,7 @@ Cards: [roadmap/M4-economy-and-construction.md](roadmap/M4-economy-and-construct
 | BLD-07 | Building protection | M | BLD-01, BLD-15 | done |
 | BLD-08 | Starting building set, with resource sinks | M | BLD-04, BLD-05, ECO-08, PROD-01 | done |
 | BLD-09 | Cancel and demolish | S | BLD-03 | done |
-| PROD-02 | Batch training | S | PROD-01 | specified |
+| PROD-02 | Batch training | S | PROD-01 | done |
 | UI-08 | Command card complete | M | UI-06, DATA-02 | specified |
 | UI-09 | Build menu and placement UX | M | UI-08, BLD-04 | specified |
 | MATCH-04 | Save and resume | M | CORE-07, CORE-11, CORE-12, BLD-05, ECO-08 | specified |

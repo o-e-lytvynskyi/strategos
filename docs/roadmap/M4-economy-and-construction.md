@@ -292,7 +292,8 @@ reseed). What happens when one runs out?
   1. A batch of 5 completes in exactly unit time × 5^0.8, in ticks (L1).
   2. All five spawn and walk to the rally point (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** PROD-01 · **Size:** S · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-24 — M4 T14: a batch of 5 in exactly round(unit ticks × 5^0.8) (1); all five step out together and walk to the rally point (2) (spec §1.6 row 18)
 
 ### Interface, persistence and the opponent
 

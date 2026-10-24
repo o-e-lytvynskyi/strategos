@@ -9,7 +9,7 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-24 (later) — M4 T1–T13
+## 2026-10-24 (later) — M4 T1–T14
 
 - **M4 T1 · the health check from M3's close.** The four classes over 800 lines split along their seams, with
   every golden frame identical after the HUD's split (`RtsHud`, `MatchState`, `NetTests`, `CrowdSoak`);
@@ -52,7 +52,9 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
   a faction. The built-in templates' indices are now pinned in full, so a new template never moves an old one's.
 - **M4 T13 · BLD-09 done.** A foundation or site can be cancelled, its cost back but for the share built; a
   finished building demolished, for nothing, its housing gone with it. Buttons come with the command card (T16).
-  Next: T14, batch training (PROD-02).
+- **M4 T14 · PROD-02 done.** Shift on a train button queues five at once, paid together, in 5^0.8 of a unit's time,
+  stepping out together to the rally point.
+  Next: T15, field auto-reseed (ECO-17).
 
 ## 2026-10-24 — M3 T9–T31, M3 Done; M4 spec
 

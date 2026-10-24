@@ -343,7 +343,11 @@ public final class MatchSnapshotCodec {
                     Codec.INT.listOf().optionalFieldOf("queue", List.of()).forGetter(BuildingStore.Production::queue),
                     Codec.LONG.optionalFieldOf("trained", 0L).forGetter(BuildingStore.Production::trained),
                     Codec.BOOL.optionalFieldOf("reserved", false).forGetter(BuildingStore.Production::reserved),
-                    Codec.BOOL.optionalFieldOf("waiting", false).forGetter(BuildingStore.Production::waiting))
+                    Codec.BOOL.optionalFieldOf("waiting", false).forGetter(BuildingStore.Production::waiting),
+                    Codec.INT
+                            .listOf()
+                            .optionalFieldOf("batches", List.of())
+                            .forGetter(BuildingStore.Production::batches))
             .apply(i, BuildingStore.Production::new));
 
     private static final Codec<BuildingStore.Rally> RALLY = RecordCodecBuilder.create(i -> i.group(
