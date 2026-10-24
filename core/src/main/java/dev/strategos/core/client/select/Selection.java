@@ -11,7 +11,8 @@ import org.jspecify.annotations.Nullable;
  * own unit or inspects an enemy without selecting it; Shift with a click adds or removes it; a box takes the own
  * units whose feet or head project inside it, Shift adding to what is selected; a double click takes every own unit
  * of that template on screen. An empty click or box clears, unless Shift is held. A click on a building (UI-06) selects
- * an own one alone, or inspects another faction's; taking units drops it.
+ * an own one alone, or inspects another faction's; a click on a deposit (ECO-08) shows it alone; taking units drops
+ * either.
  */
 public final class Selection {
     public static final int MOST = 300;
@@ -21,6 +22,7 @@ public final class Selection {
     private @Nullable Integer inspected;
     private @Nullable Integer building;
     private boolean ownBuilding;
+    private @Nullable Integer deposit;
 
     /** A selection for the player who commands {@code faction}. */
     public Selection(int faction) {
@@ -39,6 +41,7 @@ public final class Selection {
             return;
         }
         building = null;
+        deposit = null;
         if (unit.faction() != faction) {
             inspected = unit.handle();
             if (!shift) {
@@ -61,8 +64,15 @@ public final class Selection {
     public void clickBuilding(int handle, int faction) {
         selected.clear();
         inspected = null;
+        deposit = null;
         building = handle;
         ownBuilding = faction == this.faction;
+    }
+
+    /** A click on deposit {@code node}: shown alone, as an inspected building is. */
+    public void clickDeposit(int node) {
+        clear();
+        deposit = node;
     }
 
     public void box(List<Seen> seen, double x0, double y0, double x1, double y1, boolean shift) {
@@ -95,6 +105,7 @@ public final class Selection {
         selected.clear();
         inspected = null;
         building = null;
+        deposit = null;
         for (int h : handles) {
             if (selected.size() < MOST) {
                 selected.add(h);
@@ -105,6 +116,7 @@ public final class Selection {
     public void add(List<Integer> handles) {
         if (!handles.isEmpty()) {
             building = null;
+            deposit = null;
         }
         for (int h : handles) {
             if (selected.size() < MOST) {
@@ -132,6 +144,7 @@ public final class Selection {
         selected.clear();
         inspected = null;
         building = null;
+        deposit = null;
     }
 
     /** The selected handles, ascending. */
@@ -153,6 +166,11 @@ public final class Selection {
         return building;
     }
 
+    /** The deposit shown in the panel, by its node; null when none. */
+    public @Nullable Integer deposit() {
+        return deposit;
+    }
+
     /** The enemy last clicked, shown but never commanded; null when none. */
     public @Nullable Integer inspected() {
         return inspected;
@@ -165,6 +183,7 @@ public final class Selection {
         inspected = null;
         if (!shift || !units.isEmpty()) {
             building = null;
+            deposit = null;
         }
         units.sort((a, b) -> Integer.compare(a.handle(), b.handle()));
         for (Seen s : units) {

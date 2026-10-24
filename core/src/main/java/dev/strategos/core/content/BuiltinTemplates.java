@@ -73,8 +73,8 @@ final class BuiltinTemplates {
               "Cost": { "resources": { "food": 60 }, "population": 1, "time": 10 },
               "Builder": { "rate": 1 },
               "ResourceGatherer": {
-                "rates": { "food": { "fruit": 1, "grain": 0.5 }, "wood": { "tree": 0.6 }, "stone": { "rock": 0.4 } },
-                "capacities": { "food": 10, "wood": 10, "stone": 10 }
+                "rates": { "food": { "fruit": 1, "grain": 0.5 }, "wood": { "tree": 0.6 }, "stone": { "rock": 0.4 }, "iron": { "ore": 0.35 } },
+                "capacities": { "food": 10, "wood": 10, "stone": 10, "iron": 10 }
               },
               "Body": { "skin": "strategos:units/worker" }
             }
@@ -97,7 +97,7 @@ final class BuiltinTemplates {
               "Building": { "blueprint": "strategos:civic_centre" },
               "Placement": { "civicReach": 0, "spacing": 64 },
               "Health": { "max": 2000 },
-              "Cost": { "resources": { "wood": 300, "stone": 200 }, "time": 150 },
+              "Cost": { "resources": { "wood": 300, "stone": 200, "iron": 100 }, "time": 150 },
               "Dropsite": { "resources": "food wood stone iron" },
               "Housing": { "capacity": 20 },
               "Trainer": { "units": "strategos:unit/worker" }
@@ -133,7 +133,7 @@ final class BuiltinTemplates {
               "Building": { "blueprint": "strategos:barracks", "material": "wood" },
               "Resistance": { "fire": 0 },
               "Health": { "max": 1200 },
-              "Cost": { "resources": { "wood": 200, "stone": 100 }, "time": 60 },
+              "Cost": { "resources": { "wood": 200, "stone": 100, "iron": 50 }, "time": 60 },
               "Trainer": { "units": "strategos:unit/infantry" }
             }
             """;
@@ -142,6 +142,40 @@ final class BuiltinTemplates {
      * The net indices the built-in set gives, in the order its templates arrived: M2's units first, so their indices
      * stay 0 and 1 whatever ids later templates sort under (M3 spec §9 R10); a new id is appended.
      */
+    static final String QUARRY = """
+            {
+              "parent": "strategos:template/building_base",
+              "Identity": { "name": "strategos.building.quarry", "icon": "minecraft:stone", "classes": "+Deposit" },
+              "Building": { "blueprint": "strategos:quarry" },
+              "Deposit": { "resource": "stone", "subtype": "rock", "amount": 1000, "slots": 3, "depleted": "minecraft:gravel" }
+            }
+            """;
+
+    static final String QUARRY_LARGE = """
+            {
+              "parent": "strategos:template/building_base",
+              "Identity": { "name": "strategos.building.quarry_large", "icon": "minecraft:stone", "classes": "+Deposit" },
+              "Building": { "blueprint": "strategos:quarry_large" },
+              "Deposit": { "resource": "stone", "subtype": "rock", "amount": 5000, "slots": 6, "depleted": "minecraft:gravel" }
+            }
+            """;
+    static final String IRON_MINE = """
+            {
+              "parent": "strategos:template/building_base",
+              "Identity": { "name": "strategos.building.iron_mine", "icon": "minecraft:iron_ore", "classes": "+Deposit" },
+              "Building": { "blueprint": "strategos:iron_mine" },
+              "Deposit": { "resource": "iron", "subtype": "ore", "amount": 1000, "slots": 3, "depleted": "minecraft:stone" }
+            }
+            """;
+    static final String IRON_MINE_LARGE = """
+            {
+              "parent": "strategos:template/building_base",
+              "Identity": { "name": "strategos.building.iron_mine_large", "icon": "minecraft:iron_ore", "classes": "+Deposit" },
+              "Building": { "blueprint": "strategos:iron_mine_large" },
+              "Deposit": { "resource": "iron", "subtype": "ore", "amount": 5000, "slots": 6, "depleted": "minecraft:stone" }
+            }
+            """;
+
     private static final TemplateIdTable PINNED = new TemplateIdTable(List.of(
             new TemplateId("strategos:unit/debug_walker"),
             new TemplateId("strategos:unit/infantry"),
@@ -161,7 +195,11 @@ final class BuiltinTemplates {
                         raw("strategos:building/civic_centre", CIVIC_CENTRE),
                         raw("strategos:building/field", FIELD),
                         raw("strategos:building/house", HOUSE),
-                        raw("strategos:building/barracks", BARRACKS)),
+                        raw("strategos:building/barracks", BARRACKS),
+                        raw("strategos:building/quarry", QUARRY),
+                        raw("strategos:building/quarry_large", QUARRY_LARGE),
+                        raw("strategos:building/iron_mine", IRON_MINE),
+                        raw("strategos:building/iron_mine_large", IRON_MINE_LARGE)),
                 PINNED);
         if (!result.ok()) {
             throw new IllegalStateException("the builtin templates do not compile: " + result.problems());

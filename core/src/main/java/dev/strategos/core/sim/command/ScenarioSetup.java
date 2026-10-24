@@ -11,10 +11,12 @@ import dev.strategos.core.protocol.Grant;
 import dev.strategos.core.protocol.RuleChange;
 import dev.strategos.core.protocol.SetAi;
 import dev.strategos.core.protocol.SpawnBuilding;
+import dev.strategos.core.protocol.SpawnDeposit;
 import dev.strategos.core.protocol.SpawnUnits;
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Vec2d;
+import dev.strategos.core.sim.econ.Deposits;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
@@ -30,7 +32,8 @@ public final class ScenarioSetup {
 
     /**
      * The commands that set {@code scenario} up, slot {@code k} as faction {@code k} at {@code starts.get(k)}: the
-     * victory rule first, then each slot's resources (by id, in order), buildings and units. A template that is not in
+     * victory rule first, then each slot's resources (by id, in order), buildings, deposits (spawned near it, owned by
+     * nobody) and units. A template that is not in
      * {@code templates}, a building without a blueprint, or too few start slots throws.
      */
     public static List<Command> commands(Scenario scenario, List<StartSlot> starts, TemplateSet templates) {
@@ -80,6 +83,13 @@ public final class ScenarioSetup {
                         throw new IllegalArgumentException(e.template().value() + " has no blueprint");
                     }
                     Footprint probe = Footprint.of(bp, 0, 0, e.rotation());
+                    if (Deposits.isDeposit(templates, t.netIndex())) { // a mine or a quarry, owned by nobody (ECO-08)
+                        out.add(new SpawnDeposit(
+                                e.template(),
+                                at.x() + e.dx() - probe.spanX() / 2,
+                                at.z() + e.dz() - probe.spanZ() / 2));
+                        continue;
+                    }
                     out.add(new SpawnBuilding(
                             e.template(),
                             faction,

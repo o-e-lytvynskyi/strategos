@@ -1,7 +1,10 @@
 package dev.strategos.core.sim.replicate;
 
+import dev.strategos.core.content.Blueprint;
 import dev.strategos.core.content.CorePaths;
+import dev.strategos.core.content.Footprint;
 import dev.strategos.core.protocol.BuildingState;
+import dev.strategos.core.protocol.DepositState;
 import dev.strategos.core.protocol.FactionState;
 import dev.strategos.core.protocol.UiQuery;
 import dev.strategos.core.protocol.UnitDetail;
@@ -15,7 +18,10 @@ import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.UnitView;
 import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.build.BuildingView;
+import dev.strategos.core.sim.econ.Deposits;
 import dev.strategos.core.sim.econ.FactionTreasury;
+import dev.strategos.core.sim.econ.NodeView;
+import dev.strategos.core.sim.nav.MaterialKind;
 import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.core.sim.stats.StatBreakdown;
 import java.util.ArrayList;
@@ -90,6 +96,31 @@ public final class ReplicationService {
                     own && b.fieldAmount() >= 0 ? (int) Math.min(Integer.MAX_VALUE, b.fieldRipening()) : 0));
         }
         return new BuildingState(matchId, q.tick(), out);
+    }
+
+    /**
+     * The match's deposits (ECO-08), the same for every viewer: each one's corner, resource and what it has left of its
+     * most, in whole units rounded up.
+     */
+    public static DepositState depositState(MatchQueries q, int matchId) {
+        List<DepositState.Entry> out = new ArrayList<>();
+        for (NodeView n : q.nodes()) {
+            Blueprint b = n.template() < 0 ? null : q.templates().blueprint(n.template());
+            if (n.kind() != MaterialKind.DEPOSIT || b == null || out.size() == DepositState.MAX_DEPOSITS) {
+                continue;
+            }
+            Footprint at = Deposits.footprint(b, n.anchorX(), n.anchorZ());
+            int most = (int) Math.min(Integer.MAX_VALUE, (n.most() + 999) / 1000);
+            out.add(new DepositState.Entry(
+                    n.id(),
+                    n.template(),
+                    at.anchorX(),
+                    at.anchorZ(),
+                    Math.max(0, q.config().rules().economy().indexOf(n.resource())),
+                    (int) Math.min(most, (n.amount() + 999) / 1000),
+                    most));
+        }
+        return new DepositState(matchId, q.tick(), out);
     }
 
     /**

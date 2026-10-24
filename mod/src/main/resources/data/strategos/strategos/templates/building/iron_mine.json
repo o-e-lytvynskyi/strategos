@@ -1,0 +1,6 @@
+{
+  "parent": "strategos:template/building_base",
+  "Identity": { "name": "strategos.building.iron_mine", "icon": "minecraft:iron_ore", "classes": "+Deposit" },
+  "Building": { "blueprint": "strategos:iron_mine" },
+  "Deposit": { "resource": "iron", "subtype": "ore", "amount": 1000, "slots": 3, "depleted": "minecraft:stone" }
+}

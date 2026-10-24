@@ -16,6 +16,7 @@ import dev.strategos.core.client.pick.Picking;
 import dev.strategos.core.client.select.Selection;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.BuildingState;
+import dev.strategos.core.protocol.DepositState;
 import dev.strategos.core.protocol.FactionState;
 import dev.strategos.core.protocol.FeedbackMsg;
 import dev.strategos.core.protocol.MatchJoin;
@@ -230,6 +231,18 @@ public final class RtsHud {
         return handle == null ? null : entry(handle);
     }
 
+    private static DepositState.@Nullable Entry deposit(@Nullable Integer node) {
+        if (node == null) {
+            return null;
+        }
+        for (DepositState.Entry e : StrategosClient.model().deposits()) {
+            if (e.node() == node) {
+                return e;
+            }
+        }
+        return null;
+    }
+
     private static BuildingState.@Nullable Entry entry(@Nullable Integer handle) {
         if (handle == null) {
             return null;
@@ -316,7 +329,7 @@ public final class RtsHud {
                 inspectedData == null ? null : name(templates, inspectedData.templateIndex()));
         selection.pruneBuilding(h -> entry(h) != null);
         BuildingState.Entry shown = entry(selection.shownBuilding());
-        panel = SelectionPanel.of(summary, unit(selection, bodies), shown);
+        panel = SelectionPanel.of(summary, unit(selection, bodies), shown, deposit(selection.deposit()));
         controller.selected(selection.handles(), selection.building());
         List<Integer> unitTemplates = new ArrayList<>();
         for (int h : selection.handles()) {
@@ -569,6 +582,20 @@ public final class RtsHud {
                 }
             }
             case BUILDING -> drawBuilding(g, font, templates, r, pad, java.util.Objects.requireNonNull(p.building()));
+            case DEPOSIT -> {
+                DepositState.Entry d = java.util.Objects.requireNonNull(p.deposit());
+                List<String> resources = StrategosClient.resources();
+                icon(g, font, templates, d.template(), SelectionPanel.icon(r, pad));
+                paint.text(g, font, r, 0, name(templates, d.template()), theme.text());
+                paint.text(
+                        g,
+                        font,
+                        r,
+                        1,
+                        SelectionPanel.depositLine(
+                                d, d.resource() < resources.size() ? resources.get(d.resource()) : "?"),
+                        theme.text());
+            }
             default -> {}
         }
     }

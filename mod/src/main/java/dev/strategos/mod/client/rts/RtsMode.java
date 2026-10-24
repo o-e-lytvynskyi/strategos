@@ -15,6 +15,7 @@ import dev.strategos.core.client.select.Selection;
 import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.CameraJump;
 import dev.strategos.core.protocol.Command;
+import dev.strategos.core.protocol.DepositState;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.ModeSwitch;
 import dev.strategos.core.protocol.UnitSummary;
@@ -220,6 +221,19 @@ public final class RtsMode {
         }
         return StrategosClient.model()
                 .buildingAt(
+                        StrategosClient.templates(),
+                        (int) Math.floor(pick.x()) - join.originX(),
+                        (int) Math.floor(pick.z()) - join.originZ());
+    }
+
+    /** The deposit the pick at window points stands in, by its blueprint's columns, or null (ECO-08). */
+    DepositState.@Nullable Entry depositAt(@Nullable Pick pick) {
+        MatchJoin join = StrategosClient.match();
+        if (pick == null || pick.entityId() >= 0 || join == null) {
+            return null;
+        }
+        return StrategosClient.model()
+                .depositAt(
                         StrategosClient.templates(),
                         (int) Math.floor(pick.x()) - join.originX(),
                         (int) Math.floor(pick.z()) - join.originZ());

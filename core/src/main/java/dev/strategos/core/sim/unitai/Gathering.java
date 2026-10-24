@@ -11,6 +11,7 @@ import dev.strategos.core.sim.MotionStore;
 import dev.strategos.core.sim.Notice;
 import dev.strategos.core.sim.PlaceMoved;
 import dev.strategos.core.sim.econ.CarryStore;
+import dev.strategos.core.sim.econ.Deposits;
 import dev.strategos.core.sim.econ.Dropsites;
 import dev.strategos.core.sim.econ.Felling;
 import dev.strategos.core.sim.econ.Fields;
@@ -158,6 +159,7 @@ final class Gathering {
             long taken = switch (nodes.kind(node)) {
                 case LOG -> Felling.take(s, node, want);
                 case STONE -> Quarrying.take(s, node, want);
+                case DEPOSIT -> Deposits.take(s, node, want);
                 case CROP -> Fields.take(s, node, want);
                 default -> Forage.take(s, node, want);
             };

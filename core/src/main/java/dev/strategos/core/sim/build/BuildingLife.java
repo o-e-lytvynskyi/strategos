@@ -47,7 +47,45 @@ public final class BuildingLife {
                 s.blockColumn(cell >>> 16, cell & 0xFFFF);
             }
         }
+        writeBlueprint(s, Handle.index(handle), handle, b, at, baseY);
+        Production.finished(s, handle); // its housing counts (ECO-06)
+        return handle;
+    }
+
+    /**
+     * Building {@code handle} falls (BLD-01: 0 hit points): its blocks above its floor layer go, the floor stays as a
+     * foundation; its columns are released, and the core's terrain gets the air the writer will leave.
+     */
+    public static void destroy(MatchState s, int handle) {
+        Production.lost(s, handle); // its housing and its queue (ECO-06, PROD-01)
+        Blueprint b = s.blueprintOf(handle);
+        Footprint at = s.footprintOf(handle);
+        int baseY = s.buildings().baseY(handle);
         int site = Handle.index(handle);
+        for (int k = b.count() - 1; k >= 0; k--) { // top-down, the reverse of the build order
+            if (b.y(k) == 0) {
+                continue;
+            }
+            int x = at.worldX(b.x(k), b.z(k));
+            int z = at.worldZ(b.x(k), b.z(k));
+            s.outputs()
+                    .add(new WorldEffect(site, WritePriority.DAMAGE_STAGE, x, baseY + b.y(k), z, WorldEffect.AIR, 0));
+            s.editVoxel(x, baseY + b.y(k), z, BlockClass.AIR);
+        }
+        if (Placing.obstructs(s, s.buildings().template(handle), s.buildings().faction(handle))) {
+            for (int cell : at.columns(b)) {
+                s.releaseColumn(cell >>> 16, cell & 0xFFFF);
+            }
+        }
+        s.buildings().remove(handle);
+    }
+
+    /**
+     * Asks the writer for a finished blueprint at {@code at}, its lowest layer at {@code baseY}: the box's empty cells
+     * cleared, then its blocks in build order, under write site {@code site}, owned by {@code owner} (a building's
+     * handle, or 0 for none).
+     */
+    public static void writeBlueprint(MatchState s, int site, int owner, Blueprint b, Footprint at, int baseY) {
         boolean[] filled = new boolean[b.sizeX() * b.sizeY() * b.sizeZ()];
         for (int k = 0; k < b.count(); k++) {
             filled[(b.x(k) * b.sizeY() + b.y(k)) * b.sizeZ() + b.z(k)] = true;
@@ -81,37 +119,7 @@ public final class BuildingLife {
                             baseY + b.y(k),
                             at.worldZ(b.x(k), b.z(k)),
                             b.palette().get(b.state(k)),
-                            handle));
+                            owner));
         }
-        Production.finished(s, handle); // its housing counts (ECO-06)
-        return handle;
-    }
-
-    /**
-     * Building {@code handle} falls (BLD-01: 0 hit points): its blocks above its floor layer go, the floor stays as a
-     * foundation; its columns are released, and the core's terrain gets the air the writer will leave.
-     */
-    public static void destroy(MatchState s, int handle) {
-        Production.lost(s, handle); // its housing and its queue (ECO-06, PROD-01)
-        Blueprint b = s.blueprintOf(handle);
-        Footprint at = s.footprintOf(handle);
-        int baseY = s.buildings().baseY(handle);
-        int site = Handle.index(handle);
-        for (int k = b.count() - 1; k >= 0; k--) { // top-down, the reverse of the build order
-            if (b.y(k) == 0) {
-                continue;
-            }
-            int x = at.worldX(b.x(k), b.z(k));
-            int z = at.worldZ(b.x(k), b.z(k));
-            s.outputs()
-                    .add(new WorldEffect(site, WritePriority.DAMAGE_STAGE, x, baseY + b.y(k), z, WorldEffect.AIR, 0));
-            s.editVoxel(x, baseY + b.y(k), z, BlockClass.AIR);
-        }
-        if (Placing.obstructs(s, s.buildings().template(handle), s.buildings().faction(handle))) {
-            for (int cell : at.columns(b)) {
-                s.releaseColumn(cell >>> 16, cell & 0xFFFF);
-            }
-        }
-        s.buildings().remove(handle);
     }
 }

@@ -19,7 +19,8 @@ class StyleGuideRangesTest {
             new Range("Field", 4, 8, 1, 2, 16, 128),
             new Range("House", 4, 7, 4, 7, 60, 200),
             new Range("Barracks", 7, 11, 5, 9, 150, 400),
-            new Range("CivicCentre", 9, 15, 6, 10, 300, 800));
+            new Range("CivicCentre", 9, 15, 6, 10, 300, 800),
+            new Range("Deposit", 3, 6, 2, 4, 18, 90));
 
     static final double RISE_MIN = 1.5;
     static final double RISE_MAX = 6;
@@ -46,10 +47,12 @@ class StyleGuideRangesTest {
             assertThat(side).as(what).isBetween(r.sideMin(), r.sideMax());
             assertThat(b.sizeY()).as(what).isBetween(r.heightMin(), r.heightMax());
             assertThat(b.count()).as(what).isBetween(r.blocksMin(), r.blocksMax());
-            double rise = b.count() / t.value(u.netIndex(), time.id());
-            assertThat(rise).as(what + " blocks a second").isBetween(RISE_MIN, RISE_MAX);
+            if (!u.classes().contains("Deposit")) { // a deposit is spawned, never built
+                double rise = b.count() / t.value(u.netIndex(), time.id());
+                assertThat(rise).as(what + " blocks a second").isBetween(RISE_MIN, RISE_MAX);
+            }
             checked++;
         }
-        assertThat(checked).isEqualTo(4);
+        assertThat(checked).isEqualTo(8);
     }
 }

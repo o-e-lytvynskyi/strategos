@@ -279,7 +279,8 @@ public final class MatchSnapshotCodec {
                     Codec.INT.listOf().fieldOf("claims").forGetter(NodeStore.Saved::claims),
                     Codec.LONG.optionalFieldOf("most", 0L).forGetter(NodeStore.Saved::most),
                     Codec.LONG.optionalFieldOf("regrow", 0L).forGetter(NodeStore.Saved::regrow),
-                    Codec.INT.optionalFieldOf("growth", 0).forGetter(NodeStore.Saved::growth))
+                    Codec.INT.optionalFieldOf("growth", 0).forGetter(NodeStore.Saved::growth),
+                    Codec.STRING.optionalFieldOf("template", "").forGetter(NodeStore.Saved::template))
             .apply(i, NodeStore.Saved::new));
 
     private static final Codec<CarryStore.Saved> CARRY = RecordCodecBuilder.create(i -> i.group(

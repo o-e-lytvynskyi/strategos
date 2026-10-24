@@ -49,7 +49,9 @@
     "ResourceGatherer/rates/stone/rock": "Slower than chopping: a block's five stone in about twelve seconds, so a rock outcrop is a lasting job and stone stays dearer than wood (ECO-07)",
     "ResourceGatherer/capacities/food": "Ten food a trip: short trips, so a bush near the centre keeps food coming steadily",
     "ResourceGatherer/capacities/wood": "Ten wood a trip, half a log: eight trips pay for the first house (the timing target, 1:30)",
-    "ResourceGatherer/capacities/stone": "Ten stone a trip, two blocks: twenty trips pay a civic centre's two hundred"
+    "ResourceGatherer/capacities/stone": "Ten stone a trip, two blocks: twenty trips pay a civic centre's two hundred",
+    "ResourceGatherer/rates/iron/ore": "A little slower than stone: a mine's iron is the scarcest resource, so iron sets the pace of an army (ECO-08)",
+    "ResourceGatherer/capacities/iron": "Ten iron a trip, as stone"
   },
   "resource_yield": {
     "#minecraft:logs": "Twenty wood a log: an oak of four or five logs holds about ninety, a few minutes of one worker's chopping",
@@ -66,11 +68,13 @@
     "Cost/time": "Two and a half minutes: the largest build of the first loop",
     "Housing/capacity": "Twenty: the five starting workers and fifteen more before the first house is needed",
     "Placement/civicReach": "None: a civic centre stands where its spacing allows, not near another",
-    "Placement/spacing": "Sixty-four blocks between centres: a second centre claims new ground, not a corner of the first's"
+    "Placement/spacing": "Sixty-four blocks between centres: a second centre claims new ground, not a corner of the first's",
+    "Cost/resources/iron": "A hundred iron: a second centre's tools and fittings, a late investment (ECO-08)"
   },
   "strategos:template/building_base": {
     "Placement/civicReach": "Within 48 blocks of an own centre's footprint: a town grows round its centre, the stand-in for territory until TERR-02",
-    "Resistance/fire": "Stone: 0.9^7 lets 48 % of a torch's fire through, so wood burns more than twice as fast per hit point (CMB-03)"
+    "Resistance/fire": "Stone: 0.9^7 lets 48 % of a torch's fire through, so wood burns more than twice as fast per hit point (CMB-03)",
+    "Health/max": "Five hundred: what a structure without its own figure holds; a deposit has it too, though nothing in M4 attacks one"
   },
   "strategos:building/house": {
     "Health/max": "Four hundred: a house burns in well under a minute to a squad (CMB-03)",
@@ -94,6 +98,23 @@
     "Cost/resources/wood": "Two hundred wood: the barracks by 4:00 (the timing target) after a house and steady chopping",
     "Cost/resources/stone": "A hundred stone: soldiers need the quarry, so stone matters from the first barracks; the first loop's starts bring a hundred (ECO-07, BLD-08)",
     "Cost/time": "A minute for one builder",
-    "Resistance/fire": "Timber and thatch: fire's whole blow lands, twice as fast per hit point as stone (CMB-03)"
+    "Resistance/fire": "Timber and thatch: fire's whole blow lands, twice as fast per hit point as stone (CMB-03)",
+    "Cost/resources/iron": "Fifty iron: the spear points and helmets of the barracks' armoury; the first loop's starts bring a hundred (ECO-08)"
+  },
+  "strategos:building/quarry": {
+    "Deposit/amount": "A thousand stone, two hundred quarried blocks' worth: a small quarry pays a civic centre five times over and lasts a match's opening (ECO-08)",
+    "Deposit/slots": "Three workers at a small quarry: a third of a field's, so stone comes slower than food"
+  },
+  "strategos:building/quarry_large": {
+    "Deposit/amount": "Five thousand stone: the contested deposit a town grows towards (ECO-08)",
+    "Deposit/slots": "Six workers at a large quarry, twice a small one's"
+  },
+  "strategos:building/iron_mine": {
+    "Deposit/amount": "A thousand iron: a small mine pays for twenty spearmen's iron and a centre's (ECO-08)",
+    "Deposit/slots": "Three workers at a small mine, as at a small quarry"
+  },
+  "strategos:building/iron_mine_large": {
+    "Deposit/amount": "Five thousand iron: the contested mine of the middle game (ECO-08)",
+    "Deposit/slots": "Six workers at a large mine, twice a small one's"
   }
 }

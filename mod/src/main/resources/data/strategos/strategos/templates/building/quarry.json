@@ -1,0 +1,6 @@
+{
+  "parent": "strategos:template/building_base",
+  "Identity": { "name": "strategos.building.quarry", "icon": "minecraft:stone", "classes": "+Deposit" },
+  "Building": { "blueprint": "strategos:quarry" },
+  "Deposit": { "resource": "stone", "subtype": "rock", "amount": 1000, "slots": 3, "depleted": "minecraft:gravel" }
+}

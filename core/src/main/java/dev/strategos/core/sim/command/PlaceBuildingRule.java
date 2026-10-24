@@ -14,6 +14,7 @@ import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.build.Placing;
+import dev.strategos.core.sim.econ.Deposits;
 
 /**
  * PlaceBuilding (BLD-02): a seated player's faction places a building template where {@link PlacementRules} allow, as
@@ -40,8 +41,8 @@ final class PlaceBuildingRule implements CommandRule<PlaceBuilding> {
             return Tally.rejectAll(envelope, kind(), builders.size(), RejectReason.UNKNOWN_TEMPLATE);
         }
         Blueprint b = state.templates().blueprint(template.netIndex());
-        if (!template.isBuilding() || b == null) {
-            return Tally.rejectAll(envelope, kind(), builders.size(), RejectReason.UNSUPPORTED);
+        if (!template.isBuilding() || b == null || Deposits.isDeposit(state.templates(), template.netIndex())) {
+            return Tally.rejectAll(envelope, kind(), builders.size(), RejectReason.UNSUPPORTED); // a deposit is spawned
         }
         if (place.rotation() < 0 || place.rotation() > 3) {
             return Tally.rejectAll(envelope, kind(), builders.size(), RejectReason.INVALID_ARGUMENT);

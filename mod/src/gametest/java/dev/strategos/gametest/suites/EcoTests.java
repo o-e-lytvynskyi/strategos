@@ -474,6 +474,61 @@ public final class EcoTests {
                 .thenSucceed();
     }
 
+    /**
+     * ECO-08.3: an iron mine spawned in the arena, its 18 blocks iron ore, worked by three workers: in the world, a
+     * quarter of its blocks has turned to stone once 75 % is left, half at 50 %, three quarters at 25 % and all of
+     * them when it is empty.
+     */
+    @StrategosTest(batch = "eco_gather", timeoutTicks = 24_000)
+    public static void aDepositChangesLookAtItsStages(GameTestHelper h) {
+        MatchRuntime rt = MatchFixture.create(h, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
+        rt.submit(PlayerSlot.ADMIN, new SpawnBuilding(CIVIC_CENTRE, new FactionSlot(0), 18, 18, 0));
+        rt.submit(
+                PlayerSlot.ADMIN,
+                new dev.strategos.core.protocol.SpawnDeposit(new TemplateId("strategos:building/iron_mine"), 10, 10));
+        workers(rt, 6, 11, 3);
+        var state = new Object() {
+            int stage;
+        };
+        int top = h.absolutePos(new BlockPos(11, 2, 11)).getY();
+        h.startSequence()
+                .thenWaitUntil(() -> check(handles(rt).length == 3 && nodeAt(rt, 11.5, 11.5) != null, "not ready yet"))
+                .thenWaitUntil(() -> check(stone(h) == 0 && ore(h) == 18, "the mine's blocks: " + ore(h) + " ore"))
+                .thenExecute(() -> rt.submit(PlayerSlot.ADMIN, Gather.replace(UnitSet.of(handles(rt)), 11, top, 11)))
+                .thenWaitUntil(() -> {
+                    NodeView mine = nodeAt(rt, 11.5, 11.5);
+                    check(mine != null, "the mine is gone");
+                    int shown = 4 - (int) ((mine.amount() * 4 + mine.most() - 1) / mine.most());
+                    if (shown > state.stage) {
+                        state.stage = shown; // the writer turns them by the next tick
+                        return;
+                    }
+                    check(stone(h) == state.stage * 18 / 4, "stage " + state.stage + " shows " + stone(h) + " stone");
+                    check(state.stage == 4, "at stage " + state.stage);
+                })
+                .thenSucceed();
+    }
+
+    private static int stone(GameTestHelper h) {
+        return count(h, Blocks.STONE);
+    }
+
+    private static int ore(GameTestHelper h) {
+        return count(h, Blocks.IRON_ORE) + count(h, Blocks.DEEPSLATE_IRON_ORE);
+    }
+
+    private static int count(GameTestHelper h, net.minecraft.world.level.block.Block block) {
+        int n = 0;
+        for (int x = 10; x <= 12; x++) {
+            for (int z = 10; z <= 12; z++) {
+                for (int y = 1; y <= 2; y++) { // its lowest layer took the arena floor's place
+                    n += h.getBlockState(new BlockPos(x, y, z)).is(block) ? 1 : 0;
+                }
+            }
+        }
+        return n;
+    }
+
     static final TemplateId FIELD = new TemplateId("strategos:building/field");
 
     private static int cropAge(GameTestHelper h, BlockPos relative) {

@@ -4,18 +4,22 @@
   "slots": [
     {
       "player": "human",
-      "resources": { "food": 300, "stone": 100 },
+      "resources": { "food": 300, "stone": 100, "iron": 100 },
       "entities": [
         { "template": "strategos:building/civic_centre" },
-        { "template": "strategos:unit/worker", "dz": 9, "count": 5, "spread": 2 }
+        { "template": "strategos:unit/worker", "dz": 9, "count": 5, "spread": 2 },
+        { "template": "strategos:building/quarry", "dx": -14, "dz": -22 },
+        { "template": "strategos:building/iron_mine", "dx": 6, "dz": -26 }
       ]
     },
     {
       "player": "ai:first_loop",
-      "resources": { "food": 300, "stone": 100 },
+      "resources": { "food": 300, "stone": 100, "iron": 100 },
       "entities": [
         { "template": "strategos:building/civic_centre" },
-        { "template": "strategos:unit/worker", "dz": -9, "count": 5, "spread": 2 }
+        { "template": "strategos:unit/worker", "dz": -9, "count": 5, "spread": 2 },
+        { "template": "strategos:building/quarry", "dx": 14, "dz": 22 },
+        { "template": "strategos:building/iron_mine", "dx": -6, "dz": 26 }
       ]
     }
   ]

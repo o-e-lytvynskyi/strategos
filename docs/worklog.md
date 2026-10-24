@@ -9,7 +9,7 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-24 (later) — M4 T1–T5
+## 2026-10-24 (later) — M4 T1–T6
 
 - **M4 T1 · the health check from M3's close.** The four classes over 800 lines split along their seams, with
   every golden frame identical after the HUD's split (`RtsHud`, `MatchState`, `NetTests`, `CrowdSoak`);
@@ -26,7 +26,13 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
 - **M4 T5 · ECO-07 done.** Rock outcrops above the ground round them are nodes, mined top-down and outside-in, so a
   hill lowers and no pit opens; workers gather stone. Stone needed a second sink, so the barracks now costs 100
   stone and the first loop's starts bring 100 (BLD-08's, early).
-  Next: T6, deposits (ECO-08).
+- **M4 T6 · ECO-08 done.** Quarries and iron mines, small (1,000, 3 slots) and large (5,000, 6 slots), are spawned
+  building templates nobody owns; each quarter mined turns a quarter of their blocks to stone, and empty they free
+  their slots. The first loop puts a quarry and an iron mine by each start, through the scenario rather than the map
+  (one path for scenarios, tests and maps; the proving ground stays v2). Iron is now spent: civic centre 100, barracks
+  50. A click on a deposit shows what it has left (`deposit_state`, a new payload). The ten headless seeds still end
+  with a winner; faction 0 wins all ten, as it did before T6 (for AI-02, T19).
+  Next: T7, livestock and Gaia (ECO-16).
 
 ## 2026-10-24 — M3 T9–T31, M3 Done; M4 spec
 

@@ -34,7 +34,8 @@ public final class CommandRules {
                 .register(new MatchRulesRules.RuleChangeRule())
                 .register(new AiRules.AnnounceWaveRule())
                 .register(new AiRules.SetAiRule())
-                .register(new BuildRule());
+                .register(new BuildRule())
+                .register(new SpawnDepositRule());
     }
 
     /** A second rule for a kind throws. */

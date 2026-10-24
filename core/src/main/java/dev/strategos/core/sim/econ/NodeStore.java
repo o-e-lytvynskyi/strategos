@@ -38,6 +38,7 @@ public final class NodeStore {
     private long[] most = new long[16];
     private long[] regrow = new long[16];
     private int[] growth = new int[16];
+    private int[] template = new int[16]; // a deposit's template net index (ECO-08); -1 for none
 
     /** A position packed as nodes store it: match-local x and z, absolute y. */
     public static long pack(int x, int y, int z) {
@@ -91,6 +92,7 @@ public final class NodeStore {
             this.most = Arrays.copyOf(this.most, n);
             this.regrow = Arrays.copyOf(this.regrow, n);
             this.growth = Arrays.copyOf(this.growth, n);
+            this.template = Arrays.copyOf(this.template, n);
         }
         int k = count++;
         this.kind[k] = kind;
@@ -107,11 +109,21 @@ public final class NodeStore {
         this.most[k] = amount;
         this.regrow[k] = 0;
         this.growth[k] = 0;
+        this.template[k] = -1;
         return k + 1;
     }
 
     public int count() {
         return count;
+    }
+
+    /** A deposit's template net index (ECO-08), or -1 for a node that is no deposit. */
+    public int template(int id) {
+        return template[at(id)];
+    }
+
+    public void setTemplate(int id, int netIndex) {
+        template[at(id)] = netIndex;
     }
 
     /** Whether discovery ran: it runs once, when every page of the match space is first published. */
@@ -426,6 +438,10 @@ public final class NodeStore {
                 x = Hasher.mix(x, growth[k]);
                 x = Hasher.mix(x, most[k]);
             }
+            if (template[k] >= 0) { // a deposit's: older saves, which hold none, keep their hashes
+                x = Hasher.mix(x, template[k]);
+                x = Hasher.mix(x, most[k]);
+            }
         }
         return x;
     }
@@ -446,7 +462,8 @@ public final class NodeStore {
             List<Integer> claims,
             long most,
             long regrow,
-            int growth) {
+            int growth,
+            String template) {
         public Saved {
             blocks = List.copyOf(blocks);
             slots = List.copyOf(slots);
@@ -454,7 +471,8 @@ public final class NodeStore {
         }
     }
 
-    public List<Saved> save() {
+    /** The nodes as a snapshot keeps them, a deposit's template by id ({@code ids} gives a net index's). */
+    public List<Saved> save(java.util.function.IntFunction<String> ids) {
         List<Saved> out = new ArrayList<>(count);
         for (int k = 0; k < count; k++) {
             List<Long> b = new ArrayList<>(blocks[k].length);
@@ -482,13 +500,14 @@ public final class NodeStore {
                     c,
                     most[k],
                     regrow[k],
-                    growth[k]));
+                    growth[k],
+                    template[k] < 0 ? "" : ids.apply(template[k])));
         }
         return out;
     }
 
-    /** Restores a snapshot's nodes into this empty store, discovered. */
-    public void restore(List<Saved> saved) {
+    /** Restores a snapshot's nodes into this empty store, discovered; {@code indices} gives a template id's index. */
+    public void restore(List<Saved> saved, java.util.function.ToIntFunction<String> indices) {
         if (count != 0) {
             throw new IllegalStateException("restoring nodes into a store that holds " + count);
         }
@@ -517,6 +536,7 @@ public final class NodeStore {
             most[k] = n.most() > 0 ? n.most() : n.amount(); // a save from before regrowth: its amount
             regrow[k] = n.regrow();
             growth[k] = n.growth();
+            template[k] = n.template().isEmpty() ? -1 : indices.applyAsInt(n.template());
             for (int i = 0; i < s.length && i < n.claims().size(); i++) {
                 claims[k][i] = n.claims().get(i);
             }

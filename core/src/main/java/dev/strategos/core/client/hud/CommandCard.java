@@ -149,11 +149,13 @@ public record CommandCard(Page page, List<Button> buttons) {
         return icon == null || icon.isBlank() ? null : icon.trim();
     }
 
-    /** The building templates with a blueprint, by net index. */
+    /** The building templates with a blueprint a worker can place, by net index: deposits are spawned, not built. */
     public static List<Integer> buildings(TemplateSet templates) {
         List<Integer> out = new ArrayList<>();
         for (UnitTemplate t : templates.all()) {
-            if (t.isBuilding() && templates.blueprint(t.netIndex()) != null) {
+            if (t.isBuilding()
+                    && templates.blueprint(t.netIndex()) != null
+                    && !t.classes().contains("Deposit")) {
                 out.add(t.netIndex());
             }
         }

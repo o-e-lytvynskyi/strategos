@@ -7,6 +7,7 @@ import static dev.strategos.gametest.suites.Units.match;
 import static dev.strategos.gametest.suites.Units.unit;
 
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.protocol.DepositState;
 import dev.strategos.core.protocol.FactionState;
 import dev.strategos.core.protocol.Gather;
 import dev.strategos.core.protocol.Grant;
@@ -21,6 +22,7 @@ import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.ExternalDamage;
+import dev.strategos.core.sim.replicate.ReplicationService;
 import dev.strategos.core.sim.replicate.Visibility;
 import dev.strategos.core.testkit.SimHarness;
 import dev.strategos.gametest.MatchFixture;
@@ -29,6 +31,7 @@ import dev.strategos.gametest.net.MockViewer;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.server.match.MatchRuntime;
 import dev.strategos.mod.server.net.Replication;
+import dev.strategos.mod.server.net.payload.DepositStatePayload;
 import dev.strategos.mod.server.net.payload.FactionStatePayload;
 import dev.strategos.mod.server.net.payload.UiQueryPayload;
 import dev.strategos.mod.server.net.payload.UnitDetailPayload;
@@ -387,5 +390,62 @@ public final class ReplicationTests {
                     owner.close();
                 })
                 .thenSucceed();
+    }
+
+    /**
+     * ECO-08 on the wire: two seated mock players, one per faction, both get the iron mine's {@code deposit_state},
+     * each one the server's at its tick, what it has left falling as three workers mine it.
+     */
+    @StrategosTest(batch = "eco_gather", timeoutTicks = 1_200)
+    public static void depositsReachEveryPlayerAsTheyFall(GameTestHelper h) {
+        MatchRuntime rt = MatchFixture.create(h, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
+        rt.submit(PlayerSlot.ADMIN, new SpawnBuilding(ProdTests.CIVIC_CENTRE, new FactionSlot(0), 18, 18, 0));
+        rt.submit(
+                PlayerSlot.ADMIN,
+                new dev.strategos.core.protocol.SpawnDeposit(
+                        new dev.strategos.core.shared.TemplateId("strategos:building/iron_mine"), 10, 10));
+        EcoTests.workers(rt, 6, 11, 3);
+        java.util.Map<Long, DepositState> server = new java.util.HashMap<>();
+        rt.addListener(out -> server.put(
+                core(rt).queries().tick(),
+                ReplicationService.depositState(core(rt).queries(), rt.id().value())));
+        MockViewer own = BuildingTests.seated(h, rt, "strategos-dep0", 0);
+        MockViewer other = BuildingTests.seated(h, rt, "strategos-dep1", 1);
+        int top = h.absolutePos(new BlockPos(11, 2, 11)).getY();
+        h.startSequence()
+                .thenWaitUntil(() ->
+                        check(handles(rt).length == 3 && EcoTests.nodeAt(rt, 11.5, 11.5) != null, "not ready yet"))
+                .thenExecute(() -> rt.submit(PlayerSlot.ADMIN, Gather.replace(UnitSet.of(handles(rt)), 11, top, 11)))
+                .thenExecuteAfter(800, () -> {
+                    for (MockViewer v : List.of(own, other)) {
+                        List<DepositState> got = deposits(v, rt);
+                        check(got.size() >= 3, "only " + got.size() + " deposit states");
+                        int last = Integer.MAX_VALUE;
+                        for (DepositState state : got) {
+                            DepositState expected = server.get(state.tick());
+                            check(
+                                    expected == null || state.sameAs(expected),
+                                    "at tick " + state.tick() + " got " + state + ", the server held " + expected);
+                            int left = state.deposits().get(0).left();
+                            check(left <= last, "what is left grew: " + last + " to " + left);
+                            last = left;
+                        }
+                        check(last < 1_000, "nothing mined: " + last);
+                        v.close();
+                    }
+                })
+                .thenSucceed();
+    }
+
+    private static List<DepositState> deposits(MockViewer viewer, MatchRuntime rt) {
+        viewer.poll();
+        List<DepositState> out = new ArrayList<>();
+        for (ClientboundCustomPayloadPacket p : viewer.capture().of(ClientboundCustomPayloadPacket.class)) {
+            if (p.payload() instanceof DepositStatePayload d
+                    && d.state().matchId() == rt.id().value()) {
+                out.add(d.state());
+            }
+        }
+        return out;
     }
 }

@@ -337,6 +337,8 @@ tasks.named('test', Test) {
     maxParallelForks = 1                    // each fork would bootstrap the game again
     timeout = Duration.ofMinutes(5)
     systemProperty 'strategos.repoRoot', rootDir.absolutePath
+    // [M4 T6] -Pblueprints.update=true rewrites the committed placeholder blueprints (BlueprintFilesTest)
+    systemProperty 'strategos.blueprints.update', providers.gradleProperty('blueprints.update').getOrElse('false')
 }
 
 def generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {

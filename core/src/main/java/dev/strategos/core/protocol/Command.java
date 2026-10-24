@@ -25,4 +25,5 @@ public sealed interface Command extends Hashable
                 RuleChange,
                 AnnounceWave,
                 SetAi,
-                Build {}
+                Build,
+                SpawnDeposit {}

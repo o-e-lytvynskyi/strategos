@@ -10,6 +10,7 @@ import dev.strategos.core.client.pick.Picking;
 import dev.strategos.core.client.select.Seen;
 import dev.strategos.core.client.select.Selection;
 import dev.strategos.core.protocol.BuildingState;
+import dev.strategos.core.protocol.DepositState;
 import dev.strategos.core.protocol.MatchControl;
 import dev.strategos.core.protocol.MatchStateMsg;
 import dev.strategos.mod.client.StrategosClient;
@@ -192,8 +193,12 @@ public final class RtsScreen extends Screen {
                         RtsMode.Pick pick = pickAt(e.x(), e.y());
                         Seen unit = mode.seenAt(pick);
                         BuildingState.Entry building = unit == null ? mode.buildingAt(pick) : null;
+                        DepositState.Entry deposit =
+                                unit == null && building == null && !shift ? mode.depositAt(pick) : null;
                         if (building != null) {
                             selection.clickBuilding(building.handle(), building.faction());
+                        } else if (deposit != null) {
+                            selection.clickDeposit(deposit.node());
                         } else {
                             selection.click(unit, shift);
                         }

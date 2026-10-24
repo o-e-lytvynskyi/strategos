@@ -4,7 +4,7 @@
   "Building": { "blueprint": "strategos:civic_centre" },
   "Placement": { "civicReach": 0, "spacing": 64 },
   "Health": { "max": 2000 },
-  "Cost": { "resources": { "wood": 300, "stone": 200 }, "time": 150 },
+  "Cost": { "resources": { "wood": 300, "stone": 200, "iron": 100 }, "time": 150 },
   "Dropsite": { "resources": "food wood stone iron" },
   "Housing": { "capacity": 20 },
   "Trainer": { "units": "strategos:unit/worker" }

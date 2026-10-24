@@ -61,6 +61,7 @@ blueprints may replace them later (an owner task); they keep the same ranges.
 | House | 4–7 | 4–7 | 60–200 | 5 × 5 × 5, 96 blocks |
 | Barracks (production) | 7–11 | 5–9 | 150–400 | 9 × 6 × 7, 217 blocks |
 | Civic centre | 9–15 | 6–10 | 300–800 | 11 × 7 × 11, 442 blocks |
+| Deposit (quarry, iron mine) | 3–6 | 2–4 | 18–90 | 3 × 2 × 3, 18 blocks; 5 × 3 × 5, 59 blocks (ECO-08: spawned, never built) |
 
 - **They read at camera heights of 24–64 blocks**: a house is at least 4 blocks high, so its
   silhouette stands out from the ground at the top height; a civic centre is the largest thing in

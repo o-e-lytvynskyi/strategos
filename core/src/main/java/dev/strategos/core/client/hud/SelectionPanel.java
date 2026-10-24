@@ -1,6 +1,7 @@
 package dev.strategos.core.client.hud;
 
 import dev.strategos.core.protocol.BuildingState;
+import dev.strategos.core.protocol.DepositState;
 import dev.strategos.core.protocol.UnitDetail;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
@@ -9,11 +10,15 @@ import org.jspecify.annotations.Nullable;
  * The selection panel's view-model (UI-06): several units as an icon per type with its count, the largest group
  * first; one unit's details (template, faction, hit points and their most, state, and the load it carries) from
  * {@code unit_detail}; or one building's entry from {@code building_state}, its queue as a row of icons, the head's
- * progress over it, that a click cancels. Its layout puts a 16-pixel icon at the top left with two lines of text beside
+ * progress over it, that a click cancels; or one deposit's amount left (ECO-08). Its layout puts a 16-pixel icon at the top left with two lines of text beside
  * it and the queue's row, or a third line, at the bottom; drawing and clicks use the same cells.
  */
 public record SelectionPanel(
-        Kind kind, SelectionSummary summary, @Nullable Unit unit, BuildingState.@Nullable Entry building) {
+        Kind kind,
+        SelectionSummary summary,
+        @Nullable Unit unit,
+        BuildingState.@Nullable Entry building,
+        DepositState.@Nullable Entry deposit) {
     /** An item icon's side, in GUI pixels. */
     public static final int ICON = 16;
 
@@ -23,14 +28,15 @@ public record SelectionPanel(
     /** The rows of text beside the icon and below it, and the height of one. */
     public static final int LINE = 10;
 
-    public static final SelectionPanel EMPTY = new SelectionPanel(Kind.EMPTY, SelectionSummary.EMPTY, null, null);
+    public static final SelectionPanel EMPTY = new SelectionPanel(Kind.EMPTY, SelectionSummary.EMPTY, null, null, null);
 
     /** What the panel shows. */
     public enum Kind {
         EMPTY,
         TYPES,
         UNIT,
-        BUILDING
+        BUILDING,
+        DEPOSIT
     }
 
     /** One unit's details; {@code carried} is the resource's index, -1 for none, {@code load} in thousandths. */
@@ -59,22 +65,39 @@ public record SelectionPanel(
         }
     }
 
-    /**
-     * From what is selected: a building shown alone; else one unit's details when one is selected or inspected and
-     * known; else the types.
-     */
+    /** From what is selected, no deposit among it. */
     public static SelectionPanel of(
             SelectionSummary summary, @Nullable Unit unit, BuildingState.@Nullable Entry building) {
+        return of(summary, unit, building, null);
+    }
+
+    /**
+     * From what is selected: a deposit or a building shown alone; else one unit's details when one is selected or
+     * inspected and known; else the types.
+     */
+    public static SelectionPanel of(
+            SelectionSummary summary,
+            @Nullable Unit unit,
+            BuildingState.@Nullable Entry building,
+            DepositState.@Nullable Entry deposit) {
+        if (deposit != null) {
+            return new SelectionPanel(Kind.DEPOSIT, summary, null, null, deposit);
+        }
         if (building != null) {
-            return new SelectionPanel(Kind.BUILDING, summary, null, building);
+            return new SelectionPanel(Kind.BUILDING, summary, null, building, null);
         }
         if (unit != null && summary.total() <= 1) {
-            return new SelectionPanel(Kind.UNIT, summary, unit, null);
+            return new SelectionPanel(Kind.UNIT, summary, unit, null, null);
         }
         if (summary.total() == 0) {
             return EMPTY;
         }
-        return new SelectionPanel(Kind.TYPES, summary, null, null);
+        return new SelectionPanel(Kind.TYPES, summary, null, null, null);
+    }
+
+    /** A deposit's amount line: what it has left of its most, or that it is empty. */
+    public static String depositLine(DepositState.Entry d, String resource) {
+        return d.left() == 0 ? "Exhausted" : d.left() + " / " + d.most() + " " + resource + " left";
     }
 
     /** The icon at the top left of panel {@code panel}. */

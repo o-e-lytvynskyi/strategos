@@ -4,6 +4,7 @@ import dev.strategos.core.content.Blueprint;
 import dev.strategos.core.content.Footprint;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.BuildingState;
+import dev.strategos.core.protocol.DepositState;
 import dev.strategos.core.protocol.FactionState;
 import dev.strategos.core.protocol.MatchNews;
 import dev.strategos.core.protocol.UnitDetail;
@@ -22,6 +23,7 @@ import org.jspecify.annotations.Nullable;
 public final class ClientMatchModel {
     private @Nullable FactionState faction;
     private @Nullable BuildingState buildings;
+    private @Nullable DepositState deposits;
     private @Nullable MatchNews end;
     private @Nullable MatchNews alert;
     private @Nullable MatchNews wave;
@@ -73,6 +75,15 @@ public final class ClientMatchModel {
         if (state.matchId() == joinedMatch
                 && (last == null || last.matchId() != joinedMatch || state.tick() >= last.tick())) {
             buildings = state;
+        }
+    }
+
+    /** Takes the match's deposits: the joined match's, newer ticks only (ECO-08). */
+    public void accept(DepositState state, int joinedMatch) {
+        DepositState last = deposits;
+        if (state.matchId() == joinedMatch
+                && (last == null || last.matchId() != joinedMatch || state.tick() >= last.tick())) {
+            deposits = state;
         }
     }
 
@@ -140,14 +151,37 @@ public final class ClientMatchModel {
             if (bp == null) {
                 continue;
             }
-            Footprint at = Footprint.of(bp, e.x(), e.z(), e.rotation());
-            for (int cell : at.columns(bp)) {
-                if ((cell >>> 16) == x && (cell & 0xFFFF) == z) {
-                    return e;
-                }
+            if (holds(Footprint.of(bp, e.x(), e.z(), e.rotation()).columns(bp), x, z)) {
+                return e;
             }
         }
         return null;
+    }
+
+    /** The match's deposits; empty before the first state. */
+    public List<DepositState.Entry> deposits() {
+        DepositState d = deposits;
+        return d == null ? List.of() : d.deposits();
+    }
+
+    /** The deposit whose footprint holds match-local column ({@code x}, {@code z}), or null (ECO-08). */
+    public DepositState.@Nullable Entry depositAt(TemplateSet templates, int x, int z) {
+        for (DepositState.Entry e : deposits()) {
+            Blueprint bp = templates.blueprint(e.template());
+            if (bp != null && holds(Footprint.of(bp, e.x(), e.z(), 0).columns(bp), x, z)) {
+                return e;
+            }
+        }
+        return null;
+    }
+
+    private static boolean holds(int[] columns, int x, int z) {
+        for (int cell : columns) {
+            if ((cell >>> 16) == x && (cell & 0xFFFF) == z) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** The last faction state of the joined match, or null before the first. */

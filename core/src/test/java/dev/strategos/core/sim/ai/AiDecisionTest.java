@@ -95,7 +95,8 @@ class AiDecisionTest {
     void theNextPlacementLeavesBuildersOnTheirSite() throws Exception {
         SimHarness h = match(10, 9);
         h.submit(PlayerSlot.ADMIN, new Grant(new FactionSlot(0), "wood", 600));
-        h.submit(PlayerSlot.ADMIN, new Grant(new FactionSlot(0), "stone", 100)); // the barracks' (M4 T5)
+        h.submit(PlayerSlot.ADMIN, new Grant(new FactionSlot(0), "stone", 100)); // the barracks' (M4 T5, T6)
+        h.submit(PlayerSlot.ADMIN, new Grant(new FactionSlot(0), "iron", 100));
         h.step();
         PlaceBuilding first = placement(think(h, AiBudget.CAP, new int[1]));
         h.submit(new PlayerSlot(0), first);

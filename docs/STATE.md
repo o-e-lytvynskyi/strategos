@@ -404,8 +404,8 @@ Answer in chat or here; the next session applies the answers.
 - **Milestone:** M4 Economy and construction, started 2026-10-24 at your word; spec:
   [milestones/M4-economy-and-construction.md](milestones/M4-economy-and-construction.md) (24 tasks, every card
   `specified`). M3 is Done (2026-10-24, [§8.1](milestones/M3-first-loop.md)); M1 and M2 Done (2026-10-23).
-- **In progress:** M4 T6, deposits (ECO-08): planned in the spec's §1.6 row 9, not started in code.
-- **Last finished task:** M4 T5 (2026-10-24), stone from rock outcrops (ECO-07 done; the barracks now costs 100 stone); before it T4, activity tiers.
+- **In progress:** M4 T7, livestock and Gaia (ECO-16).
+- **Last finished task:** M4 T6 (2026-10-24), quarries and iron mines (ECO-08 done; iron now costs: civic centre 100, barracks 50; a new `deposit_state` payload); before it T5, stone from rock outcrops.
 - **Next task:** M4's tasks in the spec's order (§7.1).
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 960 of 2,000 (48 %), as of 2026-10-23.

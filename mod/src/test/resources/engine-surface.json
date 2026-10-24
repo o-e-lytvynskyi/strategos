@@ -12,6 +12,7 @@
     "strategos:debug_feed",
     "strategos:faction_state",
     "strategos:debug_subscribe",
+    "strategos:deposit_state",
     "strategos:feedback",
     "strategos:fx",
     "strategos:match_control",

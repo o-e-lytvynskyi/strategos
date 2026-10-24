@@ -5,6 +5,7 @@ import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.diag.MatchLog;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
+import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.econ.CarryStore;
 import dev.strategos.core.sim.nav.PageCoord;
@@ -61,7 +62,9 @@ final class Snapshots {
                 s.nextGroup(),
                 treasury(s),
                 s.terrainEdits().save(),
-                s.nodes().count() > 0 ? s.nodes().save() : List.of(),
+                s.nodes().count() > 0
+                        ? s.nodes().save(i -> s.templates().byIndex(i).id().value())
+                        : List.of(),
                 s.buildings().empty() ? List.of() : s.buildings().save(),
                 ledger(s),
                 s.carry().empty() ? List.of() : s.carry().save(entities.highWater(), entities::handleAt),
@@ -166,7 +169,11 @@ final class Snapshots {
         state.pendingCommands().addAll(snapshot.pendingCommands());
         state.terrainEdits().restore(snapshot.terrainEdits()); // before the pages, whose publication applies them
         if (!snapshot.nodes().isEmpty()) {
-            state.nodes().restore(snapshot.nodes()); // before the pages, so their publication finds none again
+            state.nodes()
+                    .restore(
+                            snapshot.nodes(),
+                            id -> templateIndex(
+                                    templates, id)); // before the pages, so their publication finds none again
         }
         if (!snapshot.buildings().isEmpty()) {
             state.restoreBuildings(snapshot.buildings()); // before the pages, so their footprints are laid over them
@@ -217,5 +224,14 @@ final class Snapshots {
                     Long.toHexString(templates.hash()));
         }
         return state;
+    }
+
+    /** A deposit's template by id in {@code templates}: its net index; a template the set lacks fails the restore. */
+    private static int templateIndex(TemplateSet templates, String id) {
+        UnitTemplate t = templates.byId(new TemplateId(id));
+        if (t == null) {
+            throw new IllegalArgumentException("a deposit's template " + id + " is not in the set");
+        }
+        return t.netIndex();
     }
 }

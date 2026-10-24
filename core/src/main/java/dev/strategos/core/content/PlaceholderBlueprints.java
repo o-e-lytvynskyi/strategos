@@ -17,12 +17,24 @@ public final class PlaceholderBlueprints {
     public static final String HOUSE = "strategos:house";
     public static final String BARRACKS = "strategos:barracks";
     public static final String FIELD = "strategos:field";
+    public static final String QUARRY = "strategos:quarry";
+    public static final String QUARRY_LARGE = "strategos:quarry_large";
+    public static final String IRON_MINE = "strategos:iron_mine";
+    public static final String IRON_MINE_LARGE = "strategos:iron_mine_large";
 
     private PlaceholderBlueprints() {}
 
     /** Every placeholder. */
     public static List<Blueprint> all() {
-        return List.of(civicCentre(), house(), barracks(), field());
+        return List.of(
+                civicCentre(),
+                house(),
+                barracks(),
+                field(),
+                deposit(QUARRY, 3, "minecraft:stone", "minecraft:andesite"),
+                deposit(QUARRY_LARGE, 5, "minecraft:stone", "minecraft:andesite"),
+                deposit(IRON_MINE, 3, "minecraft:iron_ore", "minecraft:deepslate_iron_ore"),
+                deposit(IRON_MINE_LARGE, 5, "minecraft:iron_ore", "minecraft:deepslate_iron_ore"));
     }
 
     /** Every placeholder, by id, in id order. */
@@ -61,6 +73,26 @@ public final class PlaceholderBlueprints {
         g.fill(0, 0, 0, 4, 0, 4, 0);
         g.fill(0, 1, 0, 4, 1, 4, 1);
         return g.blueprint(FIELD, 2, 0, 0); // markers inside its two layers
+    }
+
+    /**
+     * A deposit (ECO-08): a {@code side} × {@code side} mound, two layers of {@code main} with {@code vein} in a
+     * checker and a smaller cap of {@code main}; its door marker on the south edge's middle, for the lint, though
+     * nobody enters it.
+     */
+    public static Blueprint deposit(String id, int side, String main, String vein) {
+        int sy = side == 3 ? 2 : 3;
+        Grid g = new Grid(side, sy, side, List.of(main, vein));
+        for (int x = 0; x < side; x++) {
+            for (int z = 0; z < side; z++) {
+                g.set(x, 0, z, (x + z) % 2 == 0 ? 0 : 1);
+                g.set(x, 1, z, (x + z) % 2 == 0 ? 1 : 0);
+            }
+        }
+        if (sy == 3) {
+            g.fill(1, 2, 1, side - 2, 2, side - 2, 0);
+        }
+        return g.blueprint(id, side / 2, 0, 0);
     }
 
     /** 5 x 5 x 5: packed-mud walls on a cobblestone floor, crimson-plank corner posts and roof (crimson wood never burns). */

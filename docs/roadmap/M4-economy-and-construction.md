@@ -113,7 +113,8 @@ reseed). What happens when one runs out?
   2. Slot counts follow the size and the balance sheet (L1).
   3. The look changes at 75, 50, 25 and 0 % (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** ECO-05 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-24 — M4 T6: an iron mine of 1,000 yields 1,000, then is exhausted and frees its slots (1); 3 slots small, 6 large, as the sheet (2); in the world a quarter of its blocks turns to stone at each stage (3); the amount left reaches every player and shows on a click (spec §1.6 row 10)
 
 #### ECO-16 · Livestock at the start
 - **Value:** The classic opening food: sheep, pigs and chickens by the civic centre, the most

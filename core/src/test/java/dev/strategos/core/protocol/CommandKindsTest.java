@@ -35,7 +35,8 @@ class CommandKindsTest {
                         "strategos:rule_change",
                         "strategos:announce_wave",
                         "strategos:set_ai",
-                        "strategos:build");
+                        "strategos:build",
+                        "strategos:spawn_deposit");
     }
 
     @Test
@@ -68,7 +69,8 @@ class CommandKindsTest {
                         CommandKinds.GRANT,
                         CommandKinds.SPAWN_BUILDING,
                         CommandKinds.RULE_CHANGE,
-                        CommandKinds.SET_AI);
+                        CommandKinds.SET_AI,
+                        CommandKinds.SPAWN_DEPOSIT);
     }
 
     @Test
