@@ -192,6 +192,12 @@ neoForge {
             systemProperty 'strategos.s4.renderDistance', providers.gradleProperty('s4.renderDistance').getOrElse('16')
             // [M3 T30] -Pframe.units=<unit template path>: rts_frame's armies (ART-01.5 runs infantry)
             systemProperty 'strategos.frame.units', providers.gradleProperty('frame.units').getOrElse('debug_walker')
+            // the demo (devtools/demo): -Pdemo=all|new|list|<ids and groups>, -Pdemo.skip=<ids and groups>; the seen
+            // file is the viewer's, ~/.strategos/demo-seen unless -Pdemo.seen names another
+            systemProperty 'strategos.demo', providers.gradleProperty('demo').getOrElse('all')
+            systemProperty 'strategos.demo.skip', providers.gradleProperty('demo.skip').getOrElse('')
+            systemProperty 'strategos.demo.seen', providers.gradleProperty('demo.seen').getOrElse('')
+            systemProperty 'strategos.demo.shots', providers.gradleProperty('demo.shots').isPresent().toString()
             // [M2 T21] -Pscenario.jfr=<settings: profile, or a .jfc file> records the run into build/scenario/scenario.jfr
             if (providers.gradleProperty('scenario.jfr').isPresent()) {
                 jvmArgument("-XX:StartFlightRecording=filename=${file('build/scenario/scenario.jfr').absolutePath},settings=${providers.gradleProperty('scenario.jfr').get()},dumponexit=true")
@@ -300,6 +306,7 @@ dependencies {
     testImplementation libs.junit.jupiter
     testImplementation libs.assertj
     testRuntimeOnly libs.junit.platform.launcher
+    testImplementation sourceSets.devtools.output   // the demo's catalog (DemoCatalogTest)
 
     gametestImplementation sourceSets.main.output
     gametestImplementation core

@@ -99,6 +99,7 @@ public final class ScenarioRunner {
             case "rts_first_person" -> new RtsFirstPersonScenario();
             case "overlay_goldens" -> new OverlayGoldensScenario();
             case "qa19" -> new PacketSentScenario();
+            case "demo" -> new DemoScenario();
             default -> null;
         };
     }

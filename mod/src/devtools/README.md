@@ -15,6 +15,15 @@ without one (`.github/workflows/scenario.yml`).
 - `-Pcompat` adds the client set most players run (Sodium, Iris and others) to the run's `mods`.
 - `-Pscenario.jfr=profile` (or a `.jfc` file) records the run into `mod/build/scenario/scenario.jfr`.
 
+## The demo
+
+`-Pscenario=demo` shows the mechanics for a person to watch, a chapter per mechanic, in RTS mode
+(`java/dev/strategos/devtools/demo/`). `-Pdemo=all|new|list|<ids and groups>`, `-Pdemo.skip=<ids and groups>`,
+`-Pdemo.seen=<file>` (default `~/.strategos/demo-seen`), `-Pdemo.shots` for a frame two seconds after each line;
+give it `-Pscenario.timeoutSeconds=3600`. A new chapter is a `DemoChapter` and a line in `DemoCatalog.CHAPTERS`; a
+changed scene bumps its version. Its steps: `run`, `say` (55 characters at most), `look`, `pause`, `until` and
+`fast` (the same wait, the server sprinting).
+
 ## Goldens (QA-18)
 
 Every run ends with `:mod:scenarioDiff`, which compares the run's frames with the goldens of its

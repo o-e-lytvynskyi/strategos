@@ -9,6 +9,21 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
+## 2026-10-24 (evening) — the watched demo
+
+- **What:** a `demo` scene in the L4 harness, `mod/src/devtools/java/dev/strategos/devtools/demo/`: one class per
+  mechanic (`DemoChapter`: id, title, version, groups, a script of steps), each on a plot of its own with its own
+  match, shown one after another in RTS mode with a title and short lines on the screen; the log's `DEMO start`,
+  `DEMO say` and `DEMO end` lines are for a narrator in the chat. A failed chapter is listed and the show goes on.
+  Selection by id, group, `new` (a seen file outside the repository) and skip. Twelve chapters for M1–M4; the
+  skill's §7a says how to show it and when to add to it (a milestone's close, not each task).
+- **Results:** all twelve pass in one run of 6 min 27 s; `DemoCatalogTest` (L1, five tests) checks the catalog,
+  the selection, the seen file and that every line fits the screen; `verify` green.
+- **Problems:** a plot away from the player read its floor from an unloaded chunk, whose heightmap says the
+  world's bottom (−64 for a floor at −60): every node and order there missed by four blocks and the workers stood
+  idle without an error (knowledge base). `PlaceBuilding` takes a faction's seat, never the admin's.
+- **Next:** the owner's queue, items 18, 20, 21 and 22.
+
 ## 2026-10-24 (later) — M4 T1–T28, M4 Done; M5 spec
 
 - **M4 T1 · the health check from M3's close.** The four classes over 800 lines split along their seams, with

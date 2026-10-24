@@ -301,13 +301,34 @@ Do this after each task, before committing.
    Fixes become the first tasks of the next milestone.
 3. Write "Results" in the spec: the numbers, the deviations, the follow-ups.
 4. Update STATE.md: the milestone is Done. In "For the owner", add:
-   - the demo with exact commands, for example `scripts/playtest.sh`, then the steps;
+   - the demo with exact commands, for example `scripts/playtest.sh`, then the steps, and the
+     new demo chapters (§7a) as `-Pdemo=m<x>`;
    - the consent batch;
    - baselines and goldens to approve;
    - «начинай M(x+1)», if its spec is ready.
 5. Record planned against actual effort. After M0, re-estimate docs/01-feasibility.md.
 6. Cards become `accepted` only on the owner's word: after the demo, or when the owner accepts the
    milestone without it, which the spec's Results record. Tags and releases are the owner's call.
+
+## 7a. Show the demo (the owner asks to see the mechanics)
+
+The demo is a scene of the L4 harness, `demo`, one chapter per mechanic
+(`mod/src/devtools/java/dev/strategos/devtools/demo/`); it opens a game window, and the owner's
+asking to see it is the consent.
+
+1. **Pick:** `-Pdemo=all`, `new` (what the owner has not seen at its version), ids or groups
+   (`m4`, `economy`, `crowd,melee`); `-Pdemo.skip=` takes ids or groups out. The chapter list:
+   `DemoCatalog.CHAPTERS`, or a run with `-Pdemo=list`.
+2. **Run** in the background, one Gradle build at a time:
+   `./gradlew :mod:runScenario -Pscenario=demo -Pdemo=<pick> -Pscenario.timeoutSeconds=3600 > <scratchpad>/demo.log 2>&1`.
+3. **Narrate:** follow the log's `DEMO start`, `DEMO say` and `DEMO end` lines with Monitor and
+   tell the owner each in a line of Russian: what the chapter shows and what to look at. Not every
+   line, only the ones that change what is on the screen.
+4. **After:** `build/scenario/out/result.json` lists the chapters shown and failed. A failed
+   chapter is a bug in the chapter or in the mod: say which, and fix it like any other.
+5. **Keep it current:** a milestone's close adds a chapter for each new visible mechanic (a
+   class implementing `DemoChapter`, a line in `DemoCatalog.CHAPTERS`) and bumps the version of
+   a chapter whose scene changed. Tasks between closes do not touch the demo.
 
 ## 8. Stop conditions
 

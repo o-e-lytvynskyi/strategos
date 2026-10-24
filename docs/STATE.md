@@ -148,6 +148,15 @@ Answer in chat or here; the next session applies the answers.
    the bot fighting by the same rules, and "Battle at the ford" as the demo. The starting balance numbers are in
    its §2.7, tuned against the duel matrix in T7. Nothing in it needs a decision from you.
 
+22. **A watched demo of every mechanic, whenever you like (no setup):** ask «покажи демо» (or «покажи новое», or
+   name the mechanics) and the session opens the game window and narrates in the chat. Or run it yourself:
+   `./gradlew :mod:runScenario -Pscenario=demo -Pdemo=all -Pscenario.timeoutSeconds=3600`. Twelve chapters, about
+   six minutes in all: crowd round a wall, attack-move and melee, wood and berries, livestock, mines and quarries,
+   fields and reseeding, one builder against five, a barracks on a slope, damage and repair, TNT and a piston, a
+   batch to a rally point, the computer building its base. `-Pdemo=new` shows only what you have not seen at its
+   current version (kept in `~/.strategos/demo-seen`); `-Pdemo=m4` or `-Pdemo=crowd,melee` picks, `-Pdemo.skip=`
+   leaves out; `-Pdemo=list` lists them. It does not replace the L7 demos above, which are play, not watching.
+
 ## Since your last visit
 
 - 2026-10-22 · **M1 T1 Binary journal:** every match's input journal is now a compact binary file in
