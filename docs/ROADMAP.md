@@ -357,7 +357,7 @@ Cards: [roadmap/M3-first-loop.md](roadmap/M3-first-loop.md#cards). 27 cards, at 
 | MATCH-01 | Scenarios, match rules and a first victory | M | CORE-01, DATA-03, MAP-01 | in_progress |
 | UI-11 | Basic minimap | M | UI-02, CAM-03, NET-08, D-16 | in_progress |
 | UI-12 | Under-attack alert with jump key | S | UI-10, MATCH-01 | in_progress |
-| MATCH-05 | Pause and game speed | S | CORE-01, CORE-03, D-18 | specified |
+| MATCH-05 | Pause and game speed | S | CORE-01, CORE-03, D-18 | in_progress |
 | AI-01 | AI player framework | M | CORE-03 | specified |
 | AI-17 | Scripted bot with announced waves | M | AI-01, ORD-04, PROD-01, ECO-03, ECO-05, ECO-09, BLD-03 | specified |
 | QA-11 | Headless match runner | M | AI-17, MATCH-01 | specified |

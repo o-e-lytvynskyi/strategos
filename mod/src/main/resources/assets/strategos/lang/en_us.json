@@ -32,5 +32,8 @@
   "key.strategos.build": "Place a building",
   "key.strategos.rotate": "Turn the building",
   "key.strategos.next_idle_worker": "Next idle worker",
-  "key.strategos.jump_to_alert": "Jump to the latest alert"
+  "key.strategos.jump_to_alert": "Jump to the latest alert",
+  "key.strategos.pause_match": "Pause or resume",
+  "key.strategos.slower": "Slower",
+  "key.strategos.faster": "Faster"
 }

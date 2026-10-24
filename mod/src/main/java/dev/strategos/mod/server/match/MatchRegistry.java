@@ -358,6 +358,14 @@ public final class MatchRegistry {
         if (rt.lifecycle().canTransitionTo(MatchLifecycle.ENDED)) {
             rt.transition(MatchLifecycle.ENDED);
         }
+        normalPace();
+    }
+
+    /** In singleplayer, a match's game speed (MATCH-05) is the server's tick rate: once it is over, back to 20. */
+    private void normalPace() {
+        if (server.isSingleplayer() && server.tickRateManager().tickrate() != 20) {
+            server.tickRateManager().setTickRate(20);
+        }
     }
 
     /**
@@ -374,6 +382,7 @@ public final class MatchRegistry {
         }
         rt.importer(null);
         rt.transition(MatchLifecycle.DISPOSED);
+        normalPace();
         drop(rt);
         if (rt.persistent()) {
             forget(rt);

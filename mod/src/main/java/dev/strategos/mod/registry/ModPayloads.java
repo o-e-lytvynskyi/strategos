@@ -10,6 +10,7 @@ import dev.strategos.mod.server.net.payload.DebugSubscribePayload;
 import dev.strategos.mod.server.net.payload.FactionStatePayload;
 import dev.strategos.mod.server.net.payload.FeedbackPayload;
 import dev.strategos.mod.server.net.payload.FxPayload;
+import dev.strategos.mod.server.net.payload.MatchControlPayload;
 import dev.strategos.mod.server.net.payload.MatchEventPayload;
 import dev.strategos.mod.server.net.payload.MatchJoinPayload;
 import dev.strategos.mod.server.net.payload.MatchStatePayload;
@@ -67,6 +68,10 @@ public final class ModPayloads {
                 CameraJumpPayload.TYPE, CameraJumpPayload.STREAM_CODEC, C2sHandlers.timed(C2sHandlers::cameraJump));
         registrar.playToServer(
                 ModeSwitchPayload.TYPE, ModeSwitchPayload.STREAM_CODEC, C2sHandlers.timed(C2sHandlers::modeSwitch));
+        registrar.playToServer(
+                MatchControlPayload.TYPE,
+                MatchControlPayload.STREAM_CODEC,
+                C2sHandlers.timed(C2sHandlers::matchControl));
         // The dev payloads (PATH-10): a client or server without them still connects.
         PayloadRegistrar optional = registrar.optional();
         optional.playToServer(
@@ -95,6 +100,7 @@ public final class ModPayloads {
                 TemplateAckPayload.SPEC,
                 CameraJumpPayload.SPEC,
                 ModeSwitchPayload.SPEC,
+                MatchControlPayload.SPEC,
                 DebugSubscribePayload.SPEC,
                 DebugFeedPayload.SPEC);
     }

@@ -276,4 +276,45 @@ public final class MatchTests {
                                 "an ended match stepped on"))
                 .thenSucceed();
     }
+
+    /**
+     * MATCH-05.3: two matches in one level; one paused steps no more while the other steps on, an order given to it
+     * while paused is taken, and it moves its units once resumed.
+     */
+    @StrategosTest(arena = "arena_flat_48", timeoutTicks = 300)
+    public static void pausingOneMatchLeavesAnotherStepping(GameTestHelper h) {
+        MatchRuntime a = MatchFixture.create(h, 0, 0, 20, 48, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
+        MatchRuntime b = MatchFixture.create(h, 26, 0, 20, 48, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
+        spawn(a, 6, 6, 3, 1);
+        var registry = StrategosServer.get().matches();
+        long[] at = new long[2];
+        h.startSequence()
+                .thenWaitUntil(() -> check(handles(a).length == 3, "no units yet"))
+                .thenExecute(() -> {
+                    registry.pause(a.id());
+                    at[0] = core(a).queries().tick();
+                    at[1] = core(b).queries().tick();
+                    a.submit(
+                            dev.strategos.core.shared.PlayerSlot.ADMIN,
+                            dev.strategos.core.protocol.Move.replace(
+                                    dev.strategos.core.protocol.UnitSet.of(handles(a)),
+                                    new dev.strategos.core.shared.Vec2d(14, 30)));
+                })
+                .thenExecuteAfter(20, () -> {
+                    check(
+                            core(a).queries().tick() == at[0],
+                            "the paused match stepped to " + core(a).queries().tick());
+                    check(
+                            core(b).queries().tick() >= at[1] + 19,
+                            "the other stood at " + core(b).queries().tick());
+                    registry.resume(a.id());
+                })
+                .thenExecuteAfter(10, () -> {
+                    check(core(a).queries().tick() > at[0], "resumed, it does not step");
+                    check(
+                            unit(a, handles(a)[0]).state() == UnitState.WALKING,
+                            "the order given in the pause is not walked");
+                })
+                .thenSucceed();
+    }
 }

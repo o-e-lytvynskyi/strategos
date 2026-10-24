@@ -1,10 +1,14 @@
 package dev.strategos.mod.server.net;
 
+import dev.strategos.core.protocol.MatchControl;
+import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.server.match.MatchRegistry;
+import dev.strategos.mod.server.match.MatchRuntime;
 import dev.strategos.mod.server.net.payload.CameraJumpPayload;
 import dev.strategos.mod.server.net.payload.CommandsPayload;
 import dev.strategos.mod.server.net.payload.DebugSubscribePayload;
+import dev.strategos.mod.server.net.payload.MatchControlPayload;
 import dev.strategos.mod.server.net.payload.ModeSwitchPayload;
 import dev.strategos.mod.server.net.payload.TemplateAckPayload;
 import dev.strategos.mod.server.net.payload.UiQueryPayload;
@@ -88,6 +92,44 @@ public final class C2sHandlers {
         if (seat != null) {
             server.replication()
                     .query(player, seat, payload.query(), server.server().getTickCount());
+        }
+    }
+
+    /**
+     * A seated player's pause, resume or game speed (MATCH-05), in singleplayer only: a pause stops its match's steps
+     * while commands keep coming in, a resume steps it again, and a speed offered sets the server's tick rate, which
+     * in singleplayer is this match's alone. A match that is neither running nor paused, or a speed not offered, is
+     * ignored.
+     */
+    public static void matchControl(MatchControlPayload payload, IPayloadContext context) {
+        StrategosServer server = StrategosServer.getOrNull();
+        if (server == null
+                || !(context.player() instanceof ServerPlayer player)
+                || !server.server().isSingleplayer()) {
+            return;
+        }
+        MatchRegistry.Seat seat = server.matches().seatOf(player.getUUID());
+        MatchRuntime rt = seat == null ? null : seat.match();
+        if (rt == null) {
+            return;
+        }
+        MatchControl c = payload.control();
+        switch (c.action()) {
+            case MatchControl.PAUSE -> {
+                if (rt.lifecycle() == MatchLifecycle.RUNNING) {
+                    server.matches().pause(rt.id());
+                }
+            }
+            case MatchControl.RESUME -> {
+                if (rt.lifecycle() == MatchLifecycle.PAUSED) {
+                    server.matches().resume(rt.id());
+                }
+            }
+            default -> {
+                if (MatchControl.offered(c.speed())) {
+                    server.server().tickRateManager().setTickRate(20 * c.speed());
+                }
+            }
         }
     }
 

@@ -23,6 +23,8 @@ public record KeyCode(Kind kind, int code) {
     public static final int H = 72;
     public static final int I = 73;
     public static final int J = 74;
+    public static final int LEFT_BRACKET = 91;
+    public static final int RIGHT_BRACKET = 93;
     public static final int R = 82;
     public static final int S = 83;
     public static final int V = 86;
@@ -34,6 +36,7 @@ public record KeyCode(Kind kind, int code) {
     public static final int F3 = 292;
     public static final int F6 = 295;
     public static final int F8 = 297;
+    public static final int F9 = 298;
     public static final int F11 = 300;
     public static final int MOUSE_LEFT = 0;
     public static final int MOUSE_RIGHT = 1;

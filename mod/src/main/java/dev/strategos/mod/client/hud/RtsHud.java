@@ -20,8 +20,10 @@ import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.FactionState;
 import dev.strategos.core.protocol.FeedbackMsg;
+import dev.strategos.core.protocol.MatchControl;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.MatchNews;
+import dev.strategos.core.protocol.MatchStateMsg;
 import dev.strategos.core.protocol.UiQuery;
 import dev.strategos.core.protocol.UnitDetail;
 import dev.strategos.core.protocol.UnitHud;
@@ -474,6 +476,9 @@ public final class RtsHud {
         MatchNews end = StrategosClient.model().end();
         MatchJoin join = StrategosClient.match();
         Minecraft mc = Minecraft.getInstance();
+        if (join != null && end == null && !mc.options.hideGui) {
+            drawPace(g, mc);
+        }
         if (end == null || join == null || mc.options.hideGui) {
             return;
         }
@@ -510,6 +515,35 @@ public final class RtsHud {
     /** The minimap's pixel of match-local column ({@code x}, {@code z}), ARGB, for scenarios; 0 for none. */
     public int minimapPixel(int x, int z) {
         return minimap.pixel(x, z);
+    }
+
+    /** Paused, a banner at the top; another speed than normal, it beside the notices (MATCH-05). */
+    private void drawPace(GuiGraphics g, Minecraft mc) {
+        Font font = mc.font;
+        MatchStateMsg state = StrategosClient.state();
+        int w = mc.getWindow().getGuiScaledWidth();
+        if (state != null && state.lifecycle() == MatchStateMsg.Lifecycle.PAUSED) {
+            String text = "Paused (F9)";
+            int tw = font.width(text) * 2;
+            int y = layout().resourceBar().bottom() + 8;
+            panel(g, new HudRect((w - tw) / 2 - 6, y - 4, tw + 12, font.lineHeight * 2 + 6));
+            g.pose().pushPose();
+            g.pose().translate(w / 2.0, y, 0);
+            g.pose().scale(2, 2, 1);
+            g.drawString(font, text, -font.width(text) / 2, 0, theme.accent(), true);
+            g.pose().popPose();
+        }
+        float rate = mc.level == null ? 20 : mc.level.tickRateManager().tickrate();
+        if (rate != 20) {
+            String text = "Speed ×"
+                    + (rate / 20 == MatchControl.SLOW
+                            ? "0.5"
+                            : rate / 20 == MatchControl.FAST ? "1.5" : String.valueOf(rate / 20));
+            HudRect r = layout().notices();
+            int tw = font.width(text) + 2 * theme.padding();
+            panel(g, new HudRect(r.right() - tw, r.bottom() + 2, tw, r.height()));
+            g.drawString(font, text, r.right() - tw + theme.padding(), r.bottom() + 4, theme.text(), false);
+        }
     }
 
     /** The camera to the latest alert (UI-12's jump key); whether there was one. */

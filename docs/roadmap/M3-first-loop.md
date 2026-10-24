@@ -702,7 +702,8 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
      re-asserts it at MVP scale.
 - **Tests:** L0, L1, L2, L3, L6 · **Depends on:** CORE-01, CORE-03, D-18 · **Size:** S ·
   **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
+- **Progress:** 2026-10-24 — M3 T25: a paused run reaches the same hash (1); orders given in a pause apply on resume (2); pausing one match leaves another stepping (3) (spec §1.6 rows 68–69); the C p95 at 1.5× (4) waits for T29's soak
 
 ### Slice 3.4 · The opponent
 

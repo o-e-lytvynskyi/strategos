@@ -9,7 +9,7 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-24 — M3 T9–T24
+## 2026-10-24 — M3 T9–T25
 
 - **The owner, past midnight:** «можешь любые тесты проводить и как закончишь м3 - начинай м4, все решения
   принимай сам, которые рекомендуешь» (STATE item 6).
@@ -82,8 +82,10 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
   colour it, with every unit and building in its faction's colour and the camera's frame; a click there takes the
   camera to the spot. When something of yours is struck, one alert per attack (not per blow): a bell, "Under
   attack! (J)" and a blinking ring on the minimap; J goes there. Two `Long.MIN_VALUE` "long ago" stamps overflowed in
-  `now - then` and hid the image and showed a false alert; caught in a window run and fixed. Next: T25, pause and game
-  speed.
+  `now - then` and hid the image and showed a false alert; caught in a window run and fixed.
+- **M3 T25 · MATCH-05, pause and game speed.** In singleplayer, F9 pauses the match (camera, selection and orders
+  still work; the orders apply on resume) and `[` / `]` play it at half or one and a half speed through the server's
+  tick rate, put back to normal when the match ends. Next: T26, the AI framework.
 
 ## 2026-10-23 (evening) — M3 spec, T1–T8
 

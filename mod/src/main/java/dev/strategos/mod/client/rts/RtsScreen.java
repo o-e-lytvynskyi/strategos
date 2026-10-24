@@ -10,7 +10,11 @@ import dev.strategos.core.client.pick.Picking;
 import dev.strategos.core.client.select.Seen;
 import dev.strategos.core.client.select.Selection;
 import dev.strategos.core.protocol.BuildingState;
+import dev.strategos.core.protocol.MatchControl;
+import dev.strategos.core.protocol.MatchStateMsg;
 import dev.strategos.mod.client.StrategosClient;
+import dev.strategos.mod.client.net.ClientPayloads;
+import dev.strategos.mod.server.net.payload.MatchControlPayload;
 import java.util.List;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
@@ -221,6 +225,21 @@ public final class RtsScreen extends Screen {
                 case STOP -> mode.stop();
                 case NEXT_IDLE_WORKER -> mode.nextIdleWorker();
                 case JUMP_TO_ALERT -> StrategosClient.hud().jumpToAlert();
+                case PAUSE_MATCH -> {
+                    MatchStateMsg state = StrategosClient.state();
+                    boolean paused = state != null && state.lifecycle() == MatchStateMsg.Lifecycle.PAUSED;
+                    ClientPayloads.toServer(
+                            new MatchControlPayload(paused ? MatchControl.RESUME_NOW : MatchControl.PAUSE_NOW));
+                }
+                case SLOWER, FASTER -> {
+                    float now = Minecraft.getInstance().level == null
+                            ? MatchControl.NORMAL
+                            : Minecraft.getInstance().level.tickRateManager().tickrate() / 20;
+                    float next = e.action() == Action.FASTER
+                            ? (now < MatchControl.NORMAL ? MatchControl.NORMAL : MatchControl.FAST)
+                            : (now > MatchControl.NORMAL ? MatchControl.NORMAL : MatchControl.SLOW);
+                    ClientPayloads.toServer(new MatchControlPayload(new MatchControl(MatchControl.SPEED, next)));
+                }
                 default -> {}
             }
         }
