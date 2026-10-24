@@ -5,15 +5,14 @@ import dev.strategos.core.shared.DetMath;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.sim.build.BuildingStore;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
  * P7, WORLD: under-attack alerts (UI-12). Each of the tick's blows by one faction on another's unit or building is an
  * attack at the target; an attack within {@value #RADIUS} blocks of an alert of the same faction whose last blow is
  * less than {@value #QUIET} ticks old sustains that alert, any other raises a new one ({@link UnderAttack}). The alerts
- * are the view's, as {@link GearSystem}'s gear is: neither hashed nor saved, so a restored core may raise an alert once
- * more.
+ * live in the state's {@link Alerts}, saved but not hashed: a new one wakes its computer player, so a restored core
+ * must remember them (MATCH-04).
  */
 final class AlertSystem implements MatchSystem {
     /** How far apart two attacks are still one. */
@@ -21,11 +20,6 @@ final class AlertSystem implements MatchSystem {
 
     /** How long an alert lasts without a blow: 30 seconds. */
     static final long QUIET = 600;
-
-    /** A live alert: its faction, where it was raised, its last blow. */
-    private record Alert(int faction, double x, double z, long last) {}
-
-    private final List<Alert> alerts = new ArrayList<>();
 
     @Override
     public Phase phase() {
@@ -35,6 +29,7 @@ final class AlertSystem implements MatchSystem {
     @Override
     public void run(MatchState s) {
         long tick = s.tick();
+        List<Alerts.Alert> alerts = s.alerts().list;
         alerts.removeIf(a -> tick - a.last() >= QUIET);
         List<OutputEvent> outputs = s.outputs();
         int n = outputs.size(); // the alerts this adds are not attacks
@@ -83,14 +78,15 @@ final class AlertSystem implements MatchSystem {
     }
 
     private void attacked(MatchState s, int faction, double x, double z, long tick) {
+        List<Alerts.Alert> alerts = s.alerts().list;
         for (int k = 0; k < alerts.size(); k++) {
-            Alert a = alerts.get(k);
+            Alerts.Alert a = alerts.get(k);
             if (a.faction() == faction && DetMath.length(a.x() - x, a.z() - z) <= RADIUS) {
-                alerts.set(k, new Alert(faction, a.x(), a.z(), tick));
+                alerts.set(k, new Alerts.Alert(faction, a.x(), a.z(), tick));
                 return;
             }
         }
-        alerts.add(new Alert(faction, x, z, tick));
+        alerts.add(new Alerts.Alert(faction, x, z, tick));
         s.outputs().add(new UnderAttack(new FactionSlot(faction), x, z));
         s.aiSlots().wake(faction); // a computer player under attack thinks at once (AI-01)
     }

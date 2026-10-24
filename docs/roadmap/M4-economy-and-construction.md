@@ -348,7 +348,8 @@ reseed). What happens when one runs out?
   5. Camera pose and control groups survive a resume in the client model (L1).
 - **Tests:** L0, L1, L3, L5 · **Fixtures:** crash-between-saves fixture (append-only) ·
   **Depends on:** CORE-07, CORE-11, CORE-12, BLD-05, ECO-08 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-24 — M4 T18: a reload at minute 10 has the uninterrupted hash at 15, in L1 at the minutes and in L3 as ticks (1); the restart round trip with a house and a tree (2); the reconciler converges a crash between saves (3); a saved ring replays to its hash (4); camera and groups survive a resume (5) (spec §1.6 row 22)
 
 #### AI-02 · AI economy and base building
 - **Value:** The AI builds a real economy and lays out its own base, so its armies come from its

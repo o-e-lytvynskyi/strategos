@@ -34,17 +34,20 @@ public final class DiskJournal implements JournalSink {
     };
 
     private final Path file;
+    private final int keepTicks;
 
-    private DiskJournal(Path file) {
+    private DiskJournal(Path file, int keepTicks) {
         this.file = file;
+        this.keepTicks = keepTicks;
     }
 
-    /** The sink of match {@code id} under {@code mode}. */
-    public static JournalSink sink(StrategosConfig.Journal mode, MinecraftServer server, MatchId id) {
+    /** The sink of match {@code id} under {@code mode}, keeping the last {@code ringMinutes} (MATCH-04's ring). */
+    public static JournalSink sink(StrategosConfig.Journal mode, MinecraftServer server, MatchId id, int ringMinutes) {
+        int keep = Math.max(1, ringMinutes) * 1_200;
         return switch (mode) {
             case OFF -> ONE_SEGMENT;
-            case MEMORY -> JournalSink.MEMORY;
-            case DISK -> new DiskJournal(file(server, id));
+            case MEMORY -> JournalSink.ring(keep);
+            case DISK -> new DiskJournal(file(server, id), keep);
         };
     }
 
@@ -57,11 +60,16 @@ public final class DiskJournal implements JournalSink {
 
     /** Writes the match's kept journal now, as a segment's end does: at dispose and at save. */
     public static void writeNow(MinecraftServer server, MatchId id, MatchCore core) {
-        new DiskJournal(file(server, id))
+        new DiskJournal(file(server, id), JournalSink.HOUR)
                 .write(
                         core.queries().tick(),
                         JournalFormat.encode(
                                 new JournalExport(core.journal(), core.queries().tick(), core.stateHash())));
+    }
+
+    @Override
+    public int keepTicks() {
+        return keepTicks;
     }
 
     @Override

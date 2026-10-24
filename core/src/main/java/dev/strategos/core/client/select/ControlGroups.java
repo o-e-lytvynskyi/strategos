@@ -38,6 +38,25 @@ public final class ControlGroups {
         return List.copyOf(groups.get(group));
     }
 
+    /** Every group's handles, 0 to 9 (MATCH-04: kept per match across a resume). */
+    public List<List<Integer>> snapshot() {
+        List<List<Integer>> out = new ArrayList<>(groups.size());
+        for (TreeSet<Integer> g : groups) {
+            out.add(List.copyOf(g));
+        }
+        return out;
+    }
+
+    /** The groups as {@code saved} held them; groups it lacks are empty. */
+    public void restore(List<List<Integer>> saved) {
+        for (int k = 0; k < groups.size(); k++) {
+            groups.get(k).clear();
+            if (k < saved.size()) {
+                groups.get(k).addAll(saved.get(k));
+            }
+        }
+    }
+
     /** Drops the handles {@code alive} no longer holds from every group. */
     public void prune(IntPredicate alive) {
         for (TreeSet<Integer> g : groups) {

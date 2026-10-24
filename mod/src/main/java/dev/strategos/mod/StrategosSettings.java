@@ -19,7 +19,8 @@ public record StrategosSettings(
         int writerBudget,
         int importBudget,
         StrategosConfig.Journal journal,
-        int pathThreads) {
+        int pathThreads,
+        int journalRingMinutes) {
     public static final int SPAWNS_PER_TICK = 64;
 
     /** From the system properties and the server config, which NeoForge has loaded by {@code ServerAboutToStartEvent}. */
@@ -33,6 +34,7 @@ public record StrategosSettings(
                 config.writerBudget.getAsInt(),
                 config.importBudget.getAsInt(),
                 config.journal.get(),
-                config.pathThreads.getAsInt());
+                config.pathThreads.getAsInt(),
+                config.journalRingMinutes.getAsInt());
     }
 }

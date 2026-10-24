@@ -33,6 +33,7 @@ public final class StrategosConfig {
 
     public final ModConfigSpec.IntValue pathThreads;
     public final ModConfigSpec.EnumValue<Journal> journal;
+    public final ModConfigSpec.IntValue journalRingMinutes;
     public final ModConfigSpec.IntValue writerBudget;
     public final ModConfigSpec.IntValue importBudget;
     public final ModConfigSpec.IntValue commandRate;
@@ -47,6 +48,9 @@ public final class StrategosConfig {
                 .defineInRange("pathThreads", -1, -1, 4);
         journal = b.comment("A match's input journal: off, kept in memory, or also written to the world's folder.")
                 .defineEnum("journal", Journal.MEMORY);
+        journalRingMinutes = b.comment(
+                        "Minutes of a match's journal kept, the last ones; '/strategos journal save' writes them (MATCH-04).")
+                .defineInRange("journalRingMinutes", 10, 1, 60);
         writerBudget = b.comment("Blocks Strategos writes per tick across all matches.")
                 .defineInRange("writerBudget", 64, 1, 4_096);
         importBudget = b.comment("Blocks a map import writes per tick while no match in its level runs.")

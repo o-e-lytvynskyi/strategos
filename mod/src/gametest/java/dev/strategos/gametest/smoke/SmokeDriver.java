@@ -75,14 +75,16 @@ import org.slf4j.LoggerFactory;
  *       ticks later, with nobody online, all 8 have bodies and stand at their places round the target (idle within 2.5
  *       blocks of each one's own); then QA-11.4: the first-loop scenario, both slots played by the computer, runs 600
  *       ticks, each computer player having commands judged and the match still running; the match is disposed;
- *   <li>a saved 16 x 16 match around the world spawn; 8 units around local (4, 8), ordered to (12.5, 8.5);
+ *   <li>a saved 16 x 16 match around the world spawn, with a house standing at local (0, 0) and a three-log oak at
+ *       (14, 2) (MATCH-04.2: buildings and nodes make the round trip too); 8 units around local (4, 8), ordered to
+ *       (12.5, 8.5);
  *   <li>100 server ticks later: every unit at its place round the target, 8 bodies, the match RUNNING; then ordered back
  *       to (4.5, 8.5);
  *   <li>20 ticks later, the units still walking: the marker with the numbers, the live journal in
  *       {@code journal-run1.strj}, and {@code halt}; the stop saves the match. A 600-tick deadline fails the run.
  * </ol>
  *
- * <p>Run 2: the match is back PAUSED with run 1's tick and hash; resumed, the level holds exactly one body per unit;
+ * <p>Run 2: the match is back PAUSED with run 1's tick and hash, its house and its tree's node with it; resumed, the level holds exactly one body per unit;
  * 60 ticks later the live hash equals one uninterrupted replay of run 1's journal and run 2's. Both runs add
  * {@code holderClearedOnStop} to their marker when the server has stopped.
  */
@@ -225,12 +227,22 @@ public final class SmokeDriver {
         BlockPos spawn = overworld.getSharedSpawnPos();
         int floor = overworld.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, spawn.getX(), spawn.getZ());
         BlockPos feet = new BlockPos(spawn.getX(), floor, spawn.getZ());
-        MatchRuntime match = StrategosServer.get()
-                .matches()
-                .create(
-                        overworld,
-                        StrategosCommands.spaceAround(overworld, feet, 16, 16),
-                        MatchOptions.generated(floor));
+        var space = StrategosCommands.spaceAround(overworld, feet, 16, 16);
+        BlockPos tree =
+                new BlockPos(space.origin().getX() + 14, floor, space.origin().getZ() + 2);
+        for (int y = 0; y < 3; y++) { // a node for the round trip, found when the match captures its terrain
+            overworld.setBlockAndUpdate(
+                    tree.above(y), net.minecraft.world.level.block.Blocks.OAK_LOG.defaultBlockState());
+        }
+        MatchRuntime match = StrategosServer.get().matches().create(overworld, space, MatchOptions.generated(floor));
+        match.submit(
+                PlayerSlot.ADMIN,
+                new dev.strategos.core.protocol.SpawnBuilding(
+                        new dev.strategos.core.shared.TemplateId("strategos:building/house"),
+                        new FactionSlot(0),
+                        0,
+                        0,
+                        0));
         match.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(0), START, UNITS, 2));
         run = new Run(server, match, false);
     }
@@ -264,6 +276,14 @@ public final class SmokeDriver {
                     server,
                     "the saved match is back at tick " + core.queries().tick() + " with hash "
                             + Hex64.format(core.stateHash()) + ", run 1 stopped at tick " + tick + " with " + hash,
+                    null);
+            return;
+        }
+        if (core.queries().buildings().size() != 1 || core.queries().nodes().isEmpty()) {
+            finish(
+                    server,
+                    "the saved match is back with " + core.queries().buildings().size() + " buildings and "
+                            + core.queries().nodes().size() + " nodes, not its house and its tree",
                     null);
             return;
         }

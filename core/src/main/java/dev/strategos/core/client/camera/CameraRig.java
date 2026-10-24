@@ -166,6 +166,16 @@ public final class CameraRig {
         return height;
     }
 
+    public double yaw() {
+        return yaw;
+    }
+
+    /** The zoom a resumed match had (MATCH-04): its height, at once, within the rig's range. */
+    public void zoomTo(double height) {
+        this.height = clamp(height, MIN_HEIGHT, MAX_HEIGHT);
+        this.heightTarget = this.height;
+    }
+
     private CameraPose eye() {
         return eye(new double[] {focusX, focusZ, yaw, height, ground});
     }

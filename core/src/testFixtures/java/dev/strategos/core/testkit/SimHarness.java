@@ -308,6 +308,7 @@ public final class SimHarness implements ScenarioContext {
         private MetricsSink metrics = MetricsSink.none();
         private JobExecutor jobs = JobExecutor.inline();
         private MatchId id = new MatchId(1);
+        private JournalSink journal = JournalSink.MEMORY;
 
         private Builder() {}
 
@@ -362,6 +363,12 @@ public final class SimHarness implements ScenarioContext {
         }
 
         /** Where path and page jobs run: inline at their join unless told otherwise. */
+        /** Where the journal goes and how much of it is kept (MATCH-04's ring); the last hour in memory by default. */
+        public Builder journal(JournalSink journal) {
+            this.journal = journal;
+            return this;
+        }
+
         public Builder jobs(JobExecutor jobs) {
             this.jobs = jobs;
             return this;
@@ -369,8 +376,7 @@ public final class SimHarness implements ScenarioContext {
 
         public SimHarness build() {
             MatchConfig config = new MatchConfig(id, seed, bounds, factions, rules);
-            return new SimHarness(
-                    MatchCore.create(config, templates, new CorePorts(metrics, clock, jobs, JournalSink.MEMORY)));
+            return new SimHarness(MatchCore.create(config, templates, new CorePorts(metrics, clock, jobs, journal)));
         }
     }
 }

@@ -243,7 +243,7 @@ public final class Production {
         Population pop = s.population();
         pop.reset();
         for (int i = 0; i < s.entities().highWater(); i++) {
-            if (s.entities().aliveAt(i)) {
+            if (s.entities().aliveAt(i) && s.identity().faction(i) != s.gaia()) { // Gaia has no population (ECO-16)
                 pop.add(s.identity().faction(i), s.unitPopulation(i));
             }
         }

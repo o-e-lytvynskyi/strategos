@@ -58,6 +58,7 @@ public final class StrategosClient {
         });
         NeoForge.EVENT_BUS.addListener(PayloadArrived.class, ClientPayloads::onPayload);
         NeoForge.EVENT_BUS.addListener(ClientPlayerNetworkEvent.LoggingOut.class, e -> {
+            RTS.remember(); // the match's camera and groups, for a return (MATCH-04)
             match = null;
             resources = List.of();
             state = null;

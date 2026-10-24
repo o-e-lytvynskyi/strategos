@@ -320,4 +320,9 @@ final class QueriesImpl implements MatchQueries {
         Arrays.sort(result);
         return result;
     }
+
+    @Override
+    public List<WorldEffect> worldClaims() {
+        return WorldClaims.of(state);
+    }
 }

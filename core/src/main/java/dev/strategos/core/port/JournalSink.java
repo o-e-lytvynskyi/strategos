@@ -15,6 +15,16 @@ public interface JournalSink {
     /** Memory only, the last hour ({@code journal = memory}, and every test). */
     JournalSink MEMORY = new JournalSink() {};
 
+    /** Memory only, the last {@code ticks} (MATCH-04's ring, {@code journalRingMinutes}); whole segments of 1,200. */
+    static JournalSink ring(int ticks) {
+        return new JournalSink() {
+            @Override
+            public int keepTicks() {
+                return ticks;
+            }
+        };
+    }
+
     /** Ticks of journal the core keeps; whole segments of 1,200 ticks. */
     default int keepTicks() {
         return HOUR;

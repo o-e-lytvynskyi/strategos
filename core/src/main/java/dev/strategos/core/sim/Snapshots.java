@@ -69,7 +69,10 @@ final class Snapshots {
                 ledger(s),
                 s.carry().empty() ? List.of() : s.carry().save(entities.highWater(), entities::handleAt),
                 new MatchSnapshot.Play(
-                        s.outcome().save(), s.aiSlots().save(), s.aiSlots().wakeMask()));
+                        s.outcome().save(),
+                        s.aiSlots().save(),
+                        s.aiSlots().wakeMask(),
+                        s.alerts().save()));
     }
 
     /** The economy ledger's counters, or none while nothing was found or taken (ECO-05). */
@@ -180,6 +183,7 @@ final class Snapshots {
         }
         state.outcome().restore(snapshot.play().outcome());
         state.aiSlots().restore(snapshot.play().ai(), snapshot.play().aiWake());
+        state.alerts().restore(snapshot.play().alerts());
         for (CarryStore.Saved load : snapshot.carried()) {
             if (!state.entities().isAlive(load.handle())) {
                 throw new IllegalArgumentException(

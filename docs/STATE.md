@@ -404,8 +404,8 @@ Answer in chat or here; the next session applies the answers.
 - **Milestone:** M4 Economy and construction, started 2026-10-24 at your word; spec:
   [milestones/M4-economy-and-construction.md](milestones/M4-economy-and-construction.md) (24 tasks, every card
   `specified`). M3 is Done (2026-10-24, [§8.1](milestones/M3-first-loop.md)); M1 and M2 Done (2026-10-23).
-- **In progress:** M4 T18, save and resume for players (MATCH-04).
-- **Last finished task:** M4 T17 (2026-10-24), the build menu and placement (UI-09 in progress: its goldens wait for T27); before it T16, the command card.
+- **In progress:** M4 T19, the AI economy and base building (AI-02).
+- **Last finished task:** M4 T18 (2026-10-24), save and resume (MATCH-04 done: three restore bugs found and fixed); before it T17, the build menu.
 - **Next task:** M4's tasks in the spec's order (§7.1).
 - **WIP branch:** none.
 - **CI:** minutes used this month about 1,475 of 2,000 (74 %, summed from the runs' times; billing needs a scope

@@ -106,4 +106,9 @@ public interface MatchQueries {
 
     /** The path service's counts since the match started. */
     PathService.Stats pathStats();
+
+    /** The blocks the core owns, as they must stand (MATCH-04): what a resumed match's reconciler puts back. */
+    default List<WorldEffect> worldClaims() {
+        return List.of();
+    }
 }

@@ -41,6 +41,7 @@ import org.slf4j.LoggerFactory;
  * server thread touches it; only the match registry makes one.
  */
 public final class MatchRuntime {
+    private dev.strategos.mod.server.world.WorldReconciler.@org.jspecify.annotations.Nullable Result reconciled;
     private @Nullable ContentSwap swap; // a reload's set, for the next step
     private final MatchId id;
     private final MatchSpace space;
@@ -207,6 +208,15 @@ public final class MatchRuntime {
         int seq = nextClientSeq++;
         inbox.add(new CommandEnvelope(issuer, seq, requireCore().queries().tick(), command));
         return seq;
+    }
+
+    /** What the reconciler did when this match was restored (MATCH-04); none for a match made fresh. */
+    public dev.strategos.mod.server.world.WorldReconciler.@org.jspecify.annotations.Nullable Result reconciled() {
+        return reconciled;
+    }
+
+    public void reconciled(dev.strategos.mod.server.world.WorldReconciler.Result result) {
+        this.reconciled = result;
     }
 
     /** Damage one of the match's bodies took, for the next step's inputs, after the commands. */

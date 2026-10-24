@@ -7,6 +7,7 @@ import dev.strategos.core.client.camera.CameraRig;
 import dev.strategos.core.client.hud.IdleWorkers;
 import dev.strategos.core.client.input.Action;
 import dev.strategos.core.client.input.InputState;
+import dev.strategos.core.client.model.ClientResume;
 import dev.strategos.core.client.pick.Picking;
 import dev.strategos.core.client.pick.View;
 import dev.strategos.core.client.select.ControlGroups;
@@ -68,6 +69,8 @@ public final class RtsMode {
 
     private final RtsKeys keys = new RtsKeys();
     private final ControlGroups groups = new ControlGroups();
+    private final ClientResume resume = new ClientResume(); // MATCH-04: each match's camera and groups, as left
+    private int groupsMatch = -1; // the match the groups are of
     private final RtsOrders orders = new RtsOrders(this);
     private final RtsPlacement placement = new RtsPlacement(this);
     private final RallyMarker rally = new RallyMarker(this);
@@ -370,6 +373,18 @@ public final class RtsMode {
         return lastPick;
     }
 
+    /** Keeps the joined match's camera and groups for a later return to it (MATCH-04). */
+    public void remember() {
+        MatchJoin join = StrategosClient.match();
+        CameraRig r = rig;
+        if (join != null && r != null) {
+            resume.save(
+                    join.matchId(),
+                    new ClientResume.Pose(r.focusX(), r.focusZ(), r.yaw(), r.height()),
+                    groups.snapshot());
+        }
+    }
+
     /** Turns RTS mode on above the player, a spectator, or says why not. */
     public void enter() {
         Minecraft mc = Minecraft.getInstance();
@@ -386,11 +401,24 @@ public final class RtsMode {
         double fx = player.getX() - Math.sin(Math.toRadians(yaw)) * back;
         double fz = player.getZ() + Math.cos(Math.toRadians(yaw)) * back;
         rig = new CameraRig(limits(player), fx, fz, ground(fx, fz, player.getY()), yaw);
+        MatchJoin join = StrategosClient.match();
+        ClientResume.Saved saved = join == null ? null : resume.of(join.matchId());
+        if (saved != null) { // back in a match left before: the camera where it was, the groups as they were
+            ClientResume.Pose p = saved.pose();
+            rig = new CameraRig(
+                    limits(player), p.focusX(), p.focusZ(), ground(p.focusX(), p.focusZ(), player.getY()), p.yaw());
+            rig.zoomTo(p.height());
+        }
+        if (join != null && join.matchId() != groupsMatch) {
+            groups.restore(saved == null ? java.util.List.of() : saved.groups());
+            groupsMatch = join.matchId();
+        }
         input = new InputState(keys.current());
         mc.setScreen(new RtsScreen(this));
     }
 
     public void leave() {
+        remember();
         rig = null;
         input = null;
         outlines(Minecraft.getInstance());

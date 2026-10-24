@@ -31,7 +31,7 @@ public final class DamageStages {
     private DamageStages() {}
 
     /** Threshold {@code k} (1 to 3) of building {@code handle}, as a fraction of its most. */
-    static double threshold(MatchState s, int handle, int k) {
+    public static double threshold(MatchState s, int handle, int k) {
         String path = switch (k) {
             case 1 -> FIRST;
             case 2 -> SECOND;

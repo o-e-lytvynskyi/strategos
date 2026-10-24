@@ -30,6 +30,7 @@ import dev.strategos.mod.server.world.ArenaWorld;
 import dev.strategos.mod.server.world.BlockClassTable;
 import dev.strategos.mod.server.world.BlockWriter;
 import dev.strategos.mod.server.world.MaterialTable;
+import dev.strategos.mod.server.world.WorldReconciler;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -463,6 +464,16 @@ public final class MatchRegistry {
             log.error(-1, "restored FAULTED: " + reason, new IllegalStateException(reason));
         } else {
             rt.transition(MatchLifecycle.PREPARING);
+            WorldReconciler.Result reconciled =
+                    WorldReconciler.reconcile(writer, level, rt, core); // before the capture
+            if (reconciled.rewritten() > 0) {
+                log.warn(
+                        core.queries().tick(),
+                        "{} of its blocks differed from the core's and were put back; {} protected",
+                        reconciled.rewritten(),
+                        reconciled.protectedBlocks());
+            }
+            rt.reconciled(reconciled);
             prewarm(level, rt);
             rt.transition(MatchLifecycle.READY);
             rt.transition(MatchLifecycle.RUNNING);
@@ -598,7 +609,11 @@ public final class MatchRegistry {
 
     /** The core's ports: the server's clock and path jobs, and the journal setting's sink. */
     private CorePorts ports(MetricsSink metrics, MatchId id) {
-        return new CorePorts(metrics, System::nanoTime, jobs, DiskJournal.sink(settings.journal(), server, id));
+        return new CorePorts(
+                metrics,
+                System::nanoTime,
+                jobs,
+                DiskJournal.sink(settings.journal(), server, id, settings.journalRingMinutes()));
     }
 
     /** With {@code journal = disk}, the match's journal is written once more when it is disposed or saved. */

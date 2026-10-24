@@ -104,6 +104,7 @@ public final class MatchState {
     private final PageBuilder rebuilder = new PageBuilder(MobilityClass.INFANTRY);
     private final NodeStore nodes = new NodeStore();
     private final BuildingStore buildings = new BuildingStore();
+    private final Alerts alerts = new Alerts(); // UI-12's live alerts, saved (MATCH-04)
     private final java.util.TreeMap<String, int[]> damageRanks = new java.util.TreeMap<>(); // by blueprint id
     private @Nullable NodeIndex nodeIndex;
 
@@ -253,6 +254,11 @@ public final class MatchState {
                 templates.blueprint(buildings.template(handle)), "a building template without a blueprint");
     }
 
+    /** The live under-attack alerts (UI-12). */
+    Alerts alerts() {
+        return alerts;
+    }
+
     /** Blueprint {@code b}'s damage ranks (BLD-05), worked out once a match: derived, neither hashed nor saved. */
     public int[] damageRanks(Blueprint b) {
         return damageRanks.computeIfAbsent(b.id(), id -> DamageRanks.of(b));
@@ -372,7 +378,9 @@ public final class MatchState {
     void restoreBuildings(List<BuildingStore.Saved> saved) {
         buildings.restore(saved);
         for (int handle : buildings.handles()) {
-            if (buildings.state(handle) != BuildingStore.FOUNDATION) {
+            if (buildings.state(handle) != BuildingStore.FOUNDATION
+                    && dev.strategos.core.sim.build.Placing.obstructs(
+                            this, buildings.template(handle), buildings.faction(handle))) { // a field's are walked on
                 for (int cell : footprintOf(handle).columns(blueprintOf(handle))) {
                     footprints.block(cell >>> 16, cell & 0xFFFF);
                 }

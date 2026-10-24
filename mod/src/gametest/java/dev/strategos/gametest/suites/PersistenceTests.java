@@ -220,4 +220,164 @@ public final class PersistenceTests {
             throw new UncheckedIOException(e);
         }
     }
+
+    private static final dev.strategos.core.shared.TemplateId HOUSE =
+            new dev.strategos.core.shared.TemplateId("strategos:building/house");
+    private static final dev.strategos.core.shared.TemplateId CIVIC_CENTRE =
+            new dev.strategos.core.shared.TemplateId("strategos:building/civic_centre");
+
+    /**
+     * MATCH-04.3: a crash between saves, as a fixture: the match's blob saved, the match unloaded, and then the world
+     * changed, a wall of its house taken away and a stone set on open ground. Restored, the wall stands again and is
+     * protected before any tick, and the stone comes in with the first tick's capture, its page changed in the core (the
+     * house's page changes too: the writer's own blocks reach the core's pages only through such a capture).
+     */
+    @StrategosTest(timeoutTicks = 600)
+    public static void theReconcilerConvergesACrashBetweenSaves(GameTestHelper h) {
+        MatchRegistry registry = StrategosServer.get().matches();
+        MatchRuntime rt = MatchFixture.create(
+                h, MatchFixture.options(SimHarness.DEFAULT_SEED, h).withPersistent(true));
+        rt.submit(
+                PlayerSlot.ADMIN,
+                new dev.strategos.core.protocol.SpawnBuilding(
+                        HOUSE, new dev.strategos.core.shared.FactionSlot(0), 4, 4, 0));
+        var state = new Object() {
+            MatchRuntime back;
+            net.minecraft.core.BlockPos wall;
+            net.minecraft.world.level.block.state.BlockState was;
+            java.util.List<dev.strategos.core.sim.PageRef> before;
+        };
+        net.minecraft.core.BlockPos stone = h.absolutePos(new net.minecraft.core.BlockPos(24, 2, 24));
+        h.startSequence()
+                .thenWaitUntil(() -> {
+                    check(core(rt).queries().buildings().size() == 1, "no house yet");
+                    var house = core(rt).queries().buildings().get(0);
+                    state.wall = new net.minecraft.core.BlockPos(
+                            rt.space().origin().getX() + house.footprint().anchorX(),
+                            house.baseY() + 1,
+                            rt.space().origin().getZ() + house.footprint().anchorZ());
+                    check(
+                            StrategosServer.get()
+                                            .writer()
+                                            .protectedBlocks(h.getLevel())
+                                            .owner(state.wall)
+                                    != 0,
+                            "the house is not up yet");
+                })
+                .thenExecuteAfter(5, () -> {
+                    state.was = h.getLevel().getBlockState(state.wall);
+                    state.before = core(rt).snapshot().pages();
+                    MatchData data = rt.data();
+                    MatchRecord record = registry.record(rt.id());
+                    check(data != null && record != null, "no blob or record");
+                    CompoundTag tag = data.save(new CompoundTag(), h.getLevel().registryAccess());
+                    registry.unload(rt.id()); // the crash: what follows reaches the world, not the blob
+                    h.getLevel()
+                            .setBlockAndUpdate(
+                                    state.wall, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
+                    h.getLevel()
+                            .setBlockAndUpdate(stone, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState());
+                    state.back = registry.restore(h.getLevel(), record, MatchData.load(rt.id(), tag));
+                    check(h.getLevel().getBlockState(state.wall).equals(state.was), "the wall is not back");
+                    check(
+                            StrategosServer.get()
+                                            .writer()
+                                            .protectedBlocks(h.getLevel())
+                                            .owner(state.wall)
+                                    != 0,
+                            "the wall is not protected again");
+                    var done = state.back.reconciled();
+                    check(
+                            done != null && done.rewritten() == 1,
+                            "rewrote " + (done == null ? "none" : done.rewritten()));
+                    registry.resume(state.back.id());
+                })
+                .thenExecuteAfter(3, () -> {
+                    java.util.List<dev.strategos.core.sim.PageRef> after =
+                            core(state.back).snapshot().pages();
+                    int changed = 0;
+                    for (int k = 0; k < after.size(); k++) {
+                        changed += after.get(k).slice() != state.before.get(k).slice() ? 1 : 0;
+                    }
+                    int sx = (stone.getX() - state.back.space().origin().getX()) / 16;
+                    int sz = (stone.getZ() - state.back.space().origin().getZ()) / 16;
+                    boolean stonePage = false;
+                    for (int k = 0; k < after.size(); k++) {
+                        stonePage |= after.get(k).x() == sx
+                                && after.get(k).z() == sz
+                                && after.get(k).slice() != state.before.get(k).slice();
+                    }
+                    check(stonePage, "the stone's page came in unchanged, of " + changed + " changed");
+                    // and the house's page holds its wall: the capture after the reconcile saw it standing
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * MATCH-04.1 at L3, its minutes made ticks: a match with a centre training and workers walking, its blob saved at
+     * tick 200 while it ran on to 400; then restored from that blob in the same space and run to 400 again, it has the
+     * hash it had there. (L1's {@code ResumeTest} takes the first loop from minute 10 to 15.)
+     */
+    @StrategosTest(timeoutTicks = 1_200)
+    public static void reloadAtTenEqualsFifteenUninterrupted(GameTestHelper h) {
+        MatchRegistry registry = StrategosServer.get().matches();
+        MatchRuntime rt = MatchFixture.create(
+                h, MatchFixture.options(SimHarness.DEFAULT_SEED, h).withPersistent(true));
+        rt.submit(
+                PlayerSlot.ADMIN,
+                new dev.strategos.core.protocol.SpawnBuilding(
+                        CIVIC_CENTRE, new dev.strategos.core.shared.FactionSlot(0), 2, 2, 0));
+        rt.submit(
+                PlayerSlot.ADMIN,
+                new dev.strategos.core.protocol.Grant(new dev.strategos.core.shared.FactionSlot(0), "food", 500));
+        spawn(rt, 24, 24, 4, 2);
+        var state = new Object() {
+            long saveAt = -1;
+            CompoundTag tag;
+            MatchRecord record;
+            long hashAt;
+            long hash;
+            MatchRuntime back;
+        };
+        h.startSequence()
+                .thenWaitUntil(() -> check(
+                        handles(rt).length == 4
+                                && !core(rt).queries().buildings().isEmpty(),
+                        "not ready"))
+                .thenExecute(() -> {
+                    int centre = core(rt).queries().buildings().get(0).handle();
+                    for (int k = 0; k < 3; k++) {
+                        rt.submit(
+                                new PlayerSlot(0),
+                                new dev.strategos.core.protocol.Train(
+                                        centre, dev.strategos.core.content.TemplateSet.WORKER));
+                    }
+                    rt.submit(PlayerSlot.ADMIN, Move.replace(UnitSet.of(handles(rt)), new Vec2d(8.5, 26.5)));
+                })
+                .thenExecuteAfter(40, () -> {
+                    MatchData data = rt.data();
+                    state.record = registry.record(rt.id());
+                    check(data != null && state.record != null, "no blob or record");
+                    state.saveAt = core(rt).queries().tick();
+                    state.tag = data.save(new CompoundTag(), h.getLevel().registryAccess());
+                    state.hashAt = state.saveAt + 200;
+                })
+                .thenWaitUntil(() -> check(core(rt).queries().tick() >= state.hashAt, "not at the second mark"))
+                .thenExecute(() -> {
+                    check(
+                            core(rt).queries().tick() == state.hashAt,
+                            "passed the mark: " + core(rt).queries().tick());
+                    state.hash = core(rt).stateHash();
+                    registry.unload(rt.id());
+                    state.back = registry.restore(h.getLevel(), state.record, MatchData.load(rt.id(), state.tag));
+                    check(core(state.back).queries().tick() == state.saveAt, "restored at another tick");
+                    registry.resume(state.back.id());
+                })
+                .thenWaitUntil(() -> check(core(state.back).queries().tick() >= state.hashAt, "not at the mark again"))
+                .thenExecute(() -> {
+                    check(core(state.back).queries().tick() == state.hashAt, "passed the mark again");
+                    check(core(state.back).stateHash() == state.hash, "another hash at tick " + state.hashAt);
+                })
+                .thenSucceed();
+    }
 }

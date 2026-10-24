@@ -35,12 +35,18 @@ public record MatchSnapshot(
      * which of them think early.
      */
     @CoreApi
-    public record Play(List<Long> outcome, List<AiSlots.Saved> ai, long aiWake) {
-        public static final Play EMPTY = new Play(List.of(), List.of(), 0);
+    public record Play(List<Long> outcome, List<AiSlots.Saved> ai, long aiWake, List<Long> alerts) {
+        public static final Play EMPTY = new Play(List.of(), List.of(), 0, List.of());
+
+        /** A play with no live alert, as before MATCH-04 saved them. */
+        public Play(List<Long> outcome, List<AiSlots.Saved> ai, long aiWake) {
+            this(outcome, ai, aiWake, List.of());
+        }
 
         public Play {
             outcome = List.copyOf(outcome);
             ai = List.copyOf(ai);
+            alerts = List.copyOf(alerts);
         }
     }
 
