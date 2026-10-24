@@ -10,6 +10,7 @@ import dev.strategos.core.content.Blueprint;
 import dev.strategos.core.content.Footprint;
 import dev.strategos.core.content.PlacementRules;
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.protocol.Build;
 import dev.strategos.core.protocol.CommandOutcome;
 import dev.strategos.core.protocol.Grant;
 import dev.strategos.core.protocol.PlaceBuilding;
@@ -208,6 +209,30 @@ public final class ConstructionTests {
                             !houses(rt).isEmpty() && houses(rt).get(0).state() != BuildingStore.FOUNDATION,
                             "not committed");
                     state.committed = true;
+                })
+                .thenWaitUntil(() -> check(houses(rt).get(0).state() == BuildingStore.COMPLETE, "not finished"))
+                .thenExecuteAfter(20, () -> equalsBlueprint(h, rt, houses(rt).get(0)))
+                .thenSucceed();
+    }
+
+    /**
+     * M4 §1.6 row 1: a foundation laid with no builder, then two workers sent to it with {@code Build}, as a right
+     * click on it sends: they finish it, and it equals its blueprint.
+     */
+    @StrategosTest(batch = "construction", timeoutTicks = 1_500)
+    public static void workersSentToAFoundationFinishIt(GameTestHelper h) {
+        MatchRuntime rt = Units.match(h);
+        town(rt, 2);
+        h.startSequence()
+                .thenWaitUntil(() -> check(handles(rt).length == 2, "not spawned yet"))
+                .thenExecute(() -> rt.submit(P0, new PlaceBuilding(HOUSE, 20, 20, 0, UnitSet.of(), QueueMode.REPLACE)))
+                .thenWaitUntil(() -> check(!houses(rt).isEmpty(), "no foundation yet"))
+                .thenExecuteAfter(20, () -> {
+                    check(houses(rt).get(0).state() == BuildingStore.FOUNDATION, "a foundation nobody builds rose");
+                    rt.submit(
+                            P0,
+                            Build.replace(
+                                    UnitSet.of(handles(rt)), houses(rt).get(0).handle()));
                 })
                 .thenWaitUntil(() -> check(houses(rt).get(0).state() == BuildingStore.COMPLETE, "not finished"))
                 .thenExecuteAfter(20, () -> equalsBlueprint(h, rt, houses(rt).get(0)))

@@ -1,14 +1,17 @@
 package dev.strategos.mod.client.rts;
 
+import dev.strategos.core.client.hud.CommandCard;
 import dev.strategos.core.client.input.Action;
 import dev.strategos.core.client.order.OrderIntents;
 import dev.strategos.core.client.order.SlotPreview;
 import dev.strategos.core.client.pick.CrosshairPick;
 import dev.strategos.core.client.pick.Picking;
+import dev.strategos.core.protocol.Build;
 import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.Command;
 import dev.strategos.core.protocol.CommandBatch;
 import dev.strategos.core.protocol.MatchJoin;
+import dev.strategos.core.protocol.QueueMode;
 import dev.strategos.core.protocol.SetRally;
 import dev.strategos.core.protocol.Stop;
 import dev.strategos.core.protocol.UnitSet;
@@ -106,8 +109,8 @@ final class RtsOrders {
 
     /**
      * The context order for the selection to what the cursor at window points picks (UI-05, ORD-04): an Attack on an
-     * enemy's body or building, else a Move to the block or unit there, or with attack-move armed an AttackMove there, match-local,
-     * queued with Shift; one command per click. Attack-move disarms with the click.
+     * enemy's body or building, a Build on an own unfinished building, else a Move to the block or unit there, or with
+     * attack-move armed an AttackMove there, match-local, queued with Shift; one command per click. Attack-move disarms with the click.
      */
     void order(double x, double y, boolean shift) {
         previewing = false;
@@ -146,22 +149,42 @@ final class RtsOrders {
             enemy = struck.handle(); // an enemy's building: an attack, which torches carry out (CMB-03)
         }
         boolean resource = !armed && enemy == 0 && pick.entityId() < 0 && yieldsResource(mc, pick);
-        Command command = resource
-                ? OrderIntents.gather(
-                        mode.selection().handles(),
-                        (int) Math.floor(pick.x()) - join.originX(),
-                        (int) Math.floor(pick.y()),
-                        (int) Math.floor(pick.z()) - join.originZ(),
-                        shift)
-                : OrderIntents.context(
-                        mode.selection().handles(), enemy, wx - join.originX(), wz - join.originZ(), shift, armed);
+        BuildingState.Entry site = !armed
+                        && enemy == 0
+                        && struck != null
+                        && struck.faction() == join.slot().value()
+                        && struck.state() != CommandCard.COMPLETE
+                ? struck // an own foundation: the builders help (M4 T2)
+                : null;
+        boolean help = site != null;
+        Command command = site != null
+                ? new Build(
+                        UnitSet.of(mode.selection().handles().stream()
+                                .mapToInt(Integer::intValue)
+                                .toArray()),
+                        site.handle(),
+                        shift ? QueueMode.QUEUE : QueueMode.REPLACE)
+                : resource
+                        ? OrderIntents.gather(
+                                mode.selection().handles(),
+                                (int) Math.floor(pick.x()) - join.originX(),
+                                (int) Math.floor(pick.y()),
+                                (int) Math.floor(pick.z()) - join.originZ(),
+                                shift)
+                        : OrderIntents.context(
+                                mode.selection().handles(),
+                                enemy,
+                                wx - join.originX(),
+                                wz - join.originZ(),
+                                shift,
+                                armed);
         if (command == null) {
             return;
         }
         if (ClientPayloads.toServer(new CommandsPayload(new CommandBatch(clientSeq++, List.of(command)), ""))) {
             ordersSent++;
             lastCommand = command;
-            int kind = armed ? 2 : enemy != 0 ? 1 : resource ? 3 : 0;
+            int kind = armed ? 2 : enemy != 0 ? 1 : resource || help ? 3 : 0;
             double my = pick.entityId() < 0 ? pick.y() + 1 : pick.y() + (enemy != 0 ? 2.2 : 0); // over a target's head
             markers.add(new double[] {wx, my, wz, shift ? 200 : 40, kind});
         }

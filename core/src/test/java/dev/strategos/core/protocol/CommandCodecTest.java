@@ -38,7 +38,8 @@ class CommandCodecTest {
                 new Resign(new FactionSlot(1)),
                 new RuleChange("victory", "civic_centre"),
                 new AnnounceWave(40, -12, 600),
-                new SetAi(new FactionSlot(1), "first_loop", "{}"));
+                new SetAi(new FactionSlot(1), "first_loop", "{}"),
+                Build.replace(UnitSet.of(1, 2), 524_289));
     }
 
     @Test

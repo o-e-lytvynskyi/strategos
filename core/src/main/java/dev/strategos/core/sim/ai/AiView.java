@@ -178,6 +178,14 @@ public final class AiView {
         return false;
     }
 
+    /** The building {@code u}'s current order builds, or 0 when it builds none. */
+    public int buildingSite(UnitView u) {
+        List<OrderQueues.Order> orders = q.orders(u.handle());
+        return orders.isEmpty() || orders.get(0).kind() != OrderKind.BUILD
+                ? 0
+                : orders.get(0).target();
+    }
+
     /** Whether {@code u}'s current order is to build: a builder on its way or at work. */
     public boolean building(UnitView u) {
         List<OrderQueues.Order> orders = q.orders(u.handle());

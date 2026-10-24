@@ -43,6 +43,8 @@ public final class CommandKinds {
             "strategos:announce_wave", 17, AnnounceWave.class, AnnounceWave.CODEC, AnnounceWave.WIRE, false);
     public static final CommandKind<SetAi> SET_AI =
             new CommandKind<>("strategos:set_ai", 18, SetAi.class, SetAi.CODEC, SetAi.WIRE, true);
+    public static final CommandKind<Build> BUILD =
+            new CommandKind<>("strategos:build", 19, Build.class, Build.CODEC, Build.WIRE, false);
     public static final CommandKinds DEFAULT = new CommandKinds(List.of(
             MOVE,
             STOP,
@@ -61,7 +63,8 @@ public final class CommandKinds {
             RESIGN,
             RULE_CHANGE,
             ANNOUNCE_WAVE,
-            SET_AI));
+            SET_AI,
+            BUILD));
 
     private final List<CommandKind<?>> kinds;
     private final Codec<Command> codec;

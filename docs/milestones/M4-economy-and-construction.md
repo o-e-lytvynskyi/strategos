@@ -124,6 +124,7 @@ Nothing moves out at specification.
 | 1 | Builders after placement (M3) | M3 had no way to send workers to an existing foundation: `PlaceBuilding`'s builders were the only ones, and a later order took them off for good (M3's bot lost its barracks that way, M3 §1.6). UI-09's builders taking Shift-placed foundations in order, AI-02's "no abandoned foundations" and BLD-06's repair order all need it: `Build` (wire 19, the issuer's units, a building handle, queue mode) gives each unit `OrderKind.BUILD` on an own foundation, or `REPAIR` on an own damaged finished building; a right click on one with workers selected sends it |
 | 2 | The vanilla crowd (M3 §1.6 row 77) | 200 armoured spearmen cost 8.9 ms of units and 37 ms of outline on vanilla; Sodium needs nothing. T3: the selection outline draws the body alone, without the armour and item layers, and bodies beyond 48 blocks, or past a hundred on screen, skip those layers; measured again in `rts_frame -Pframe.units=infantry` |
 | 4 | T1's splits | `RtsHud` 1,099 → 789 lines: `HudPaint` (panels, items, text), `HudBanners` (notices, end screen, pace, the group bar), `ResourceBarSegments`, the minimap's drawing in `RtsMinimap`; every golden frame identical after it. `MatchState` 956 → 788: `BuildingLife` (hit points, instant placement, the fall), `TerrainMaterials`, `EconomyChecks` (claims on restore, the books), `Leaders`; it keeps its calls. `NetTests` 914 → 720: helpers to `NetFixtures`, the two economy replication tests to `ReplicationTests` (now `replicationtests.the_queue_reaches_its_owner_as_the_server_has_it` and `replicationtests.faction_state_equals_the_server`). `CrowdSoak` 876 → 616: `SoakResult`, `SoakCosts`. `cameratests.chunk_sent_repair` gets 4,000 ticks |
+| 5 | T2 as built | `Build` (wire 19) and `BuildRule`: an unknown handle, another's building or a finished one is refused for every unit (`UNKNOWN_TARGET`, `NOT_OWNER`, `UNSUPPORTED` until BLD-06's repair); the units' orders come from `Builders.assign`, which `PlaceBuildingRule` now shares. The right click on an own unfinished building with units selected sends it (green marker); a spearman in the selection is refused as unsupported. M3's bot sends the nearest free worker to any own unfinished building nobody is on, each think. Checks: `BuildCommandTest` (2), `constructiontests.workers_sent_to_a_foundation_finish_it`; the ten headless seeds unchanged |
 | 3 | M3's bot and §8.4 | The scripted bot keeps its training fed within 60 s in nine seeds of ten (M3 §1.6); AI-02's economy owns the criterion from M4 on: its L1 run gates it |
 
 ### 1.7 Consent plan
@@ -387,7 +388,7 @@ T10 (BLD-06) → T11 (BLD-07) → T12 (BLD-08) → T13 (BLD-09) → T14 (PROD-02
 
 ### 7.3 Progress
 
-- [x] T1 (2026-10-24) · [ ] T2 · [ ] T3 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11
+- [x] T1 (2026-10-24) · [x] T2 (2026-10-24) · [ ] T3 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11
 - [ ] T12 · [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17 · [ ] T18 · [ ] T19 · [ ] T20 · [ ] T21 · [ ] T22
 - [ ] T27 · [ ] T28
 

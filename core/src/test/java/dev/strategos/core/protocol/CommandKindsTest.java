@@ -34,7 +34,8 @@ class CommandKindsTest {
                         "strategos:resign",
                         "strategos:rule_change",
                         "strategos:announce_wave",
-                        "strategos:set_ai");
+                        "strategos:set_ai",
+                        "strategos:build");
     }
 
     @Test

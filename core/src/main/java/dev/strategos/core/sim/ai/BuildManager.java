@@ -3,12 +3,14 @@ package dev.strategos.core.sim.ai;
 import dev.strategos.core.content.Blueprint;
 import dev.strategos.core.content.Footprint;
 import dev.strategos.core.content.UnitTemplate;
+import dev.strategos.core.protocol.Build;
 import dev.strategos.core.protocol.PlaceBuilding;
 import dev.strategos.core.protocol.QueueMode;
 import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.DetMath;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.sim.UnitView;
+import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.build.BuildingView;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,7 +21,7 @@ import java.util.List;
  * civic centre (mirrored for the second start slot); a placement the server refused leaves no new building, so after
  * {@value #RETRY} ticks the next site is tried. The step is done once one more of its building stands, in any state.
  * Before that, a house goes up whenever the free population falls to the margin and none is being built: no room to
- * grow comes first.
+ * grow comes first. An own building left unfinished with nobody on it gets the nearest free worker back (M4 T2).
  */
 final class BuildManager implements AiModule {
     static final TemplateId HOUSE = new TemplateId("strategos:building/house");
@@ -41,6 +43,7 @@ final class BuildManager implements AiModule {
         if (base == null || budget.exhausted()) {
             return;
         }
+        staff(view, budget, sink);
         long tick = view.tick();
         boolean waited = memory.get(Slots.PLACED) == 0 || tick - (memory.get(Slots.PLACED) - 1) >= RETRY;
         if (waited
@@ -62,6 +65,29 @@ final class BuildManager implements AiModule {
                 memory.set(Slots.STEP_BASE, 0);
             } else if (waited && view.populationUsed() >= s.population() && view.affords(s.building())) {
                 place(view, budget, sink, base, s.building());
+            }
+        }
+    }
+
+    /** Every own unfinished building with no worker on its site gets the nearest one not building elsewhere. */
+    private static void staff(AiView view, AiBudget budget, CommandSink sink) {
+        for (BuildingView b : view.buildings()) {
+            if (b.state() == BuildingStore.COMPLETE || budget.exhausted()) {
+                continue;
+            }
+            boolean staffed = false;
+            for (UnitView u : view.units()) {
+                staffed |= view.buildingSite(u) == b.handle();
+            }
+            if (staffed) {
+                continue;
+            }
+            Footprint f = b.footprint();
+            List<Integer> builders =
+                    nearestWorkers(view, f.anchorX() + f.spanX() / 2.0, f.anchorZ() + f.spanZ() / 2.0, 1);
+            if (!builders.isEmpty()) {
+                budget.spend(10);
+                sink.send(Build.replace(UnitSet.of(builders.get(0)), b.handle()));
             }
         }
     }

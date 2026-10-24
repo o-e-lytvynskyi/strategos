@@ -33,7 +33,8 @@ public final class CommandRules {
                 .register(new MatchRulesRules.ResignRule())
                 .register(new MatchRulesRules.RuleChangeRule())
                 .register(new AiRules.AnnounceWaveRule())
-                .register(new AiRules.SetAiRule());
+                .register(new AiRules.SetAiRule())
+                .register(new BuildRule());
     }
 
     /** A second rule for a kind throws. */

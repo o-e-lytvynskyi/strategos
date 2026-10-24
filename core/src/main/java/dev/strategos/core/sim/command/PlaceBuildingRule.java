@@ -7,18 +7,13 @@ import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.protocol.CommandKind;
 import dev.strategos.core.protocol.CommandKinds;
 import dev.strategos.core.protocol.PlaceBuilding;
-import dev.strategos.core.protocol.QueueMode;
 import dev.strategos.core.protocol.RejectReason;
 import dev.strategos.core.protocol.UnitSet;
-import dev.strategos.core.shared.Handle;
 import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.MatchState;
-import dev.strategos.core.sim.OrderReceived;
 import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.build.Placing;
-import dev.strategos.core.sim.order.OrderKind;
-import dev.strategos.core.sim.order.OrderQueues;
 
 /**
  * PlaceBuilding (BLD-02): a seated player's faction places a building template where {@link PlacementRules} allow, as
@@ -67,40 +62,7 @@ final class PlaceBuildingRule implements CommandRule<PlaceBuilding> {
         int handle = state.buildings()
                 .create(template.netIndex(), faction, at, Placing.baseY(state, b, at), BuildingStore.FOUNDATION, 0);
         state.buildings().setSlots(handle, Placing.slots(state, at));
-        OrderQueues orders = state.orders();
-        Tally tally = new Tally();
-        for (int k = 0; k < builders.size(); k++) {
-            int unit = builders.get(k);
-            RejectReason reason = Ownership.check(envelope.issuer(), unit, state);
-            if (reason != null) {
-                tally.reject(reason);
-                continue;
-            }
-            int i = Handle.index(unit);
-            if (!state.stats().canBuild(i)) {
-                tally.reject(RejectReason.UNSUPPORTED);
-                continue;
-            }
-            double x = at.anchorX() + at.spanX() / 2.0;
-            double z = at.anchorZ() + at.spanZ() / 2.0;
-            int before = orders.size(i);
-            boolean joined = switch (place.mode()) {
-                case REPLACE -> {
-                    orders.replace(i, OrderKind.BUILD, x, z, 0, 0, handle);
-                    yield true;
-                }
-                case QUEUE -> orders.queue(i, OrderKind.BUILD, x, z, 0, 0, handle);
-                case PUSH_FRONT -> orders.pushFront(i, OrderKind.BUILD, x, z, 0, 0, handle);
-            };
-            if (!joined) {
-                tally.reject(RejectReason.QUEUE_FULL);
-                continue;
-            }
-            if (place.mode() != QueueMode.QUEUE || before == 0) {
-                state.bus().publish(new OrderReceived(unit));
-            }
-            tally.accept();
-        }
+        Tally tally = Builders.assign(envelope, state, builders, handle, at, place.mode());
         if (builders.size() == 0) {
             return Tally.acceptAll(envelope, kind(), 0); // a foundation for later, with no builder yet
         }
