@@ -4,6 +4,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import dev.strategos.core.content.MapManifest;
+import dev.strategos.core.content.Scenario;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.SpawnUnits;
@@ -13,10 +14,12 @@ import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.Hex64;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.Vec2d;
+import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.UnitView;
+import dev.strategos.core.sim.command.ScenarioSetup;
 import dev.strategos.core.sim.journal.JournalExport;
 import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.core.testkit.JournalFiles;
@@ -27,6 +30,7 @@ import dev.strategos.mod.entity.UnitEntity;
 import dev.strategos.mod.platform.Ids;
 import dev.strategos.mod.server.command.StrategosCommands;
 import dev.strategos.mod.server.content.MapPackageLoader;
+import dev.strategos.mod.server.content.Scenarios;
 import dev.strategos.mod.server.match.MatchOptions;
 import dev.strategos.mod.server.match.MatchRuntime;
 import dev.strategos.mod.server.match.MatchSpace;
@@ -35,6 +39,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import net.minecraft.core.BlockPos;
@@ -68,7 +73,8 @@ import org.slf4j.LoggerFactory;
  *   <li>MAP-01.4: an unsaved match on the proving ground, 4,096 blocks from the spawn so that only its own tickets hold
  *       the area, imports while the server sprints (its terrain hash checked); 8 units walk from the west start, and 160
  *       ticks later, with nobody online, all 8 have bodies and stand at their places round the target (idle within 2.5
- *       blocks of each one's own); the match is disposed;
+ *       blocks of each one's own); then QA-11.4: the first-loop scenario, both slots played by the computer, runs 600
+ *       ticks, each computer player having commands judged and the match still running; the match is disposed;
  *   <li>a saved 16 x 16 match around the world spawn; 8 units around local (4, 8), ordered to (12.5, 8.5);
  *   <li>100 server ticks later: every unit at its place round the target, 8 bodies, the match RUNNING; then ordered back
  *       to (4.5, 8.5);
@@ -102,7 +108,10 @@ public final class SmokeDriver {
     /** The 16-block walk takes 64 ticks; the crowd then settles round the target (PATH-06's crowd arrival). */
     private static final int MAP_TICKS = 160;
 
-    private static final long MAP_DEADLINE_NANOS = 120_000_000_000L;
+    private static final long MAP_DEADLINE_NANOS = 180_000_000_000L;
+
+    /** QA-11.4: ticks of AI versus AI on the proving ground. */
+    private static final int AI_TICKS = 600;
 
     /** The running smoke; gametest code, so static state is fine. Server thread only. */
     private static @Nullable Run run;
@@ -121,6 +130,10 @@ public final class SmokeDriver {
         final long startNanos = System.nanoTime();
         int runningTicks = -1;
         Vec2d @Nullable [] places;
+        /** The AI phase's ticks, -1 before it; and the commands each faction's computer player had judged. */
+        int aiTicks = -1;
+
+        final int[] aiCommands = new int[2];
 
         MapStep(MinecraftServer server, MatchRuntime match) {
             this.server = server;
@@ -321,9 +334,13 @@ public final class SmokeDriver {
     }
 
     private static void tickMapStep(MapStep m) {
+        if (m.aiTicks >= 0) {
+            tickAi(m);
+            return;
+        }
         if (System.nanoTime() - m.startNanos > MAP_DEADLINE_NANOS) {
             mapStep = null;
-            finish(m.server, "the map step took over 2 minutes: the match is " + m.match.lifecycle(), null);
+            finish(m.server, "the map step took over 3 minutes: the match is " + m.match.lifecycle(), null);
             return;
         }
         if (m.match.lifecycle() == MatchLifecycle.PREPARING) {
@@ -361,15 +378,65 @@ public final class SmokeDriver {
             } else {
                 problem = notAtPlaces(core, units, m.places);
             }
-            StrategosServer.get().matches().dispose(m.match.id());
-            mapStep = null;
             if (problem != null) {
+                StrategosServer.get().matches().dispose(m.match.id());
+                mapStep = null;
                 finish(m.server, problem, null);
                 return;
             }
             LOG.info("Server smoke: the proving ground imported in {} ms", m.match.importMillis());
-            startRun1(m.server);
+            startAi(m, core);
         }
+    }
+
+    /** QA-11.4: the first-loop scenario on the proving ground, both slots the computer's, for {@value #AI_TICKS} ticks. */
+    private static void startAi(MapStep m, MatchCore core) {
+        Scenario scenario = Scenarios.load(m.server, Ids.id("first_loop"));
+        List<Scenario.Slot> computers = new ArrayList<>();
+        for (Scenario.Slot slot : scenario.slots()) {
+            computers.add(new Scenario.Slot(ScenarioSetup.AI + "first_loop", slot.resources(), slot.entities()));
+        }
+        m.match.addListener(out -> out.events().forEach(e -> {
+            if (e instanceof CommandResult r
+                    && !r.issuer().isAdmin()
+                    && r.issuer().value() < 2) {
+                m.aiCommands[r.issuer().value()]++;
+            }
+        }));
+        Scenarios.apply(
+                m.server,
+                m.match,
+                new Scenario(scenario.map(), scenario.victory(), computers),
+                MapPackageLoader.load(m.server, Ids.id("proving_ground"))
+                        .manifest()
+                        .startSlots(),
+                core.queries().templates());
+        m.aiTicks = 0;
+    }
+
+    private static void tickAi(MapStep m) {
+        if (++m.aiTicks < AI_TICKS) {
+            return;
+        }
+        String problem = null;
+        if (m.match.lifecycle() != MatchLifecycle.RUNNING) {
+            problem = "the AI match is " + m.match.lifecycle() + ": " + m.match.faultMessage();
+        } else if (m.aiCommands[0] == 0 || m.aiCommands[1] == 0) {
+            problem = "a computer player sent nothing in " + AI_TICKS + " ticks: " + m.aiCommands[0] + " and "
+                    + m.aiCommands[1] + " commands";
+        }
+        StrategosServer.get().matches().dispose(m.match.id());
+        mapStep = null;
+        if (problem != null) {
+            finish(m.server, problem, null);
+            return;
+        }
+        LOG.info(
+                "Server smoke: AI versus AI for {} ticks, {} and {} commands",
+                AI_TICKS,
+                m.aiCommands[0],
+                m.aiCommands[1]);
+        startRun1(m.server);
     }
 
     private static void tickRestart(Run r, MatchCore core) {

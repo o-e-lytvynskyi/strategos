@@ -9,6 +9,7 @@ import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.protocol.Command;
 import dev.strategos.core.protocol.Grant;
 import dev.strategos.core.protocol.RuleChange;
+import dev.strategos.core.protocol.SetAi;
 import dev.strategos.core.protocol.SpawnBuilding;
 import dev.strategos.core.protocol.SpawnUnits;
 import dev.strategos.core.shared.CoreApi;
@@ -16,10 +17,15 @@ import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Vec2d;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
+import org.jspecify.annotations.Nullable;
 
 /** A scenario's setup (MATCH-01): the admin commands that make a match what {@link Scenario} describes. */
 @CoreApi
 public final class ScenarioSetup {
+    /** A slot's player that the computer plays: {@code ai:<profile>}. */
+    public static final String AI = "ai:";
+
     private ScenarioSetup() {}
 
     /**
@@ -28,6 +34,18 @@ public final class ScenarioSetup {
      * {@code templates}, a building without a blueprint, or too few start slots throws.
      */
     public static List<Command> commands(Scenario scenario, List<StartSlot> starts, TemplateSet templates) {
+        return commands(scenario, starts, templates, profile -> null);
+    }
+
+    /**
+     * As {@link #commands(Scenario, List, TemplateSet)}, and a slot played by {@code ai:<profile>} handed to the
+     * computer with the strategy {@code scripts} gives that profile; a profile it has none for stays a human's slot.
+     */
+    public static List<Command> commands(
+            Scenario scenario,
+            List<StartSlot> starts,
+            TemplateSet templates,
+            Function<String, @Nullable String> scripts) {
         List<Scenario.Slot> slots = scenario.slots();
         if (starts.size() < slots.size()) {
             throw new IllegalArgumentException(slots.size() + " slots but " + starts.size() + " start slots");
@@ -38,6 +56,13 @@ public final class ScenarioSetup {
             Scenario.Slot slot = slots.get(k);
             StartSlot at = starts.get(k);
             FactionSlot faction = new FactionSlot(k);
+            if (slot.player().startsWith(AI)) {
+                String profile = slot.player().substring(AI.length());
+                String script = scripts.apply(profile);
+                if (script != null) {
+                    out.add(new SetAi(faction, profile, script));
+                }
+            }
             slot.resources().forEach((id, amount) -> { // sorted by id
                 if (amount > 0) {
                     out.add(new Grant(faction, id, amount));

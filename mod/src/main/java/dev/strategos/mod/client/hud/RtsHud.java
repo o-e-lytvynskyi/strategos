@@ -120,6 +120,7 @@ public final class RtsHud {
     private long clientTicks;
     private final RtsMinimap minimap = new RtsMinimap();
     private int alertsHeard;
+    private int wavesHeard;
     private long alertAt = -1_000_000;
 
     /** One part of the resource bar: where it is, its icon (null for none), its text and colour, and its tooltip. */
@@ -270,6 +271,19 @@ public final class RtsHud {
         clientTicks++;
         Minecraft client = Minecraft.getInstance();
         minimap.tick(client);
+        int announced = StrategosClient.model().waves();
+        MatchNews wave = StrategosClient.model().wave();
+        MatchJoin joined = StrategosClient.match();
+        if (announced > wavesHeard) { // AI-17: an enemy's wave, a horn for those it comes for
+            wavesHeard = announced;
+            if (wave != null
+                    && joined != null
+                    && wave.faction() != joined.slot().value()) {
+                client.getSoundManager()
+                        .play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
+                                net.minecraft.sounds.SoundEvents.RAID_HORN.value(), 1.0F, 1.0F));
+            }
+        }
         int heard = StrategosClient.model().alerts();
         if (heard > alertsHeard) { // UI-12: a new alert sounds once, here only
             alertsHeard = heard;
@@ -431,12 +445,26 @@ public final class RtsHud {
     private void drawNotices(GuiGraphics g, DeltaTracker delta) {
         List<EconomyNotices.Shown> shown = shownNotices;
         boolean alerted = clientTicks - alertAt < 100;
-        if (!shown() || (shown.isEmpty() && !alerted)) {
+        MatchNews coming = StrategosClient.model().wave();
+        boolean waveOn =
+                coming != null && coming.ticks() > StrategosClient.model().tick();
+        if (!shown() || (shown.isEmpty() && !alerted && !waveOn)) {
             return;
         }
         Font font = Minecraft.getInstance().font;
         HudRect r = layout().notices();
         int x = r.right();
+        MatchNews wave = StrategosClient.model().wave();
+        MatchJoin joined = StrategosClient.match();
+        long matchTick = StrategosClient.model().tick();
+        if (wave != null && joined != null && wave.faction() != joined.slot().value() && wave.ticks() > matchTick) {
+            String text = "Attack coming: " + (wave.ticks() - matchTick + 19) / 20 + " s"; // AI-17's countdown
+            int w = font.width(text) + 2 * theme.padding();
+            x -= w;
+            panel(g, new HudRect(x, r.y(), w, r.height()));
+            g.drawString(font, text, x + theme.padding(), r.y() + 2, 0xFFFFB040, false);
+            x -= 2;
+        }
         if (alerted) { // UI-12: the newest alert first, in red
             String text = "Under attack! (J)";
             int w = font.width(text) + 2 * theme.padding();

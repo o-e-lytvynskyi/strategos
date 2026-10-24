@@ -14,8 +14,8 @@ import net.minecraft.nbt.CompoundTag;
 import org.junit.jupiter.api.Test;
 
 /**
- * NET-01's roster (spec §2.7): a slot holds one player and the administrator's none; a player's slot controls the
- * faction of its number; the roster is saved with the match's blob and read back, and a match nobody sits in keeps
+ * NET-01's roster (spec §2.7): a slot holds one player and the administrator's any number of observers, who control
+ * no faction; a player's slot controls the faction of its number; the roster is saved with the match's blob and read back, and a match nobody sits in keeps
  * M0's blob.
  */
 class MatchRosterTest {
@@ -32,13 +32,24 @@ class MatchRosterTest {
         assertThatThrownBy(() -> roster.seat(BOB, new PlayerSlot(1)))
                 .isInstanceOf(MatchRefusedException.class)
                 .hasMessageContaining("taken");
-        assertThatThrownBy(() -> roster.seat(BOB, PlayerSlot.ADMIN)).isInstanceOf(MatchRefusedException.class);
         roster.seat(BOB, new PlayerSlot(0));
         assertThat(roster.of(new FactionSlot(1))).containsExactly(ANN);
         assertThat(roster.of(new FactionSlot(0))).containsExactly(BOB);
         roster.unseat(ANN);
         assertThat(roster.slotOf(ANN)).isNull();
         assertThat(roster.members()).containsExactly(BOB);
+    }
+
+    @Test
+    void theAdministratorsSlotSeatsObservers() {
+        MatchRoster roster = new MatchRoster();
+        roster.seat(ANN, PlayerSlot.ADMIN);
+        roster.seat(BOB, PlayerSlot.ADMIN);
+
+        assertThat(roster.members()).containsExactly(ANN, BOB);
+        assertThat(roster.slotOf(BOB)).isEqualTo(PlayerSlot.ADMIN);
+        assertThat(roster.of(new FactionSlot(0))).isEmpty();
+        assertThat(MatchRoster.load(roster.save()).slotOf(ANN)).isEqualTo(PlayerSlot.ADMIN);
     }
 
     @Test

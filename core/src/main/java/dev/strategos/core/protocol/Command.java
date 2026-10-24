@@ -22,4 +22,6 @@ public sealed interface Command extends Hashable
                 SetRally,
                 Reseed,
                 Resign,
-                RuleChange {}
+                RuleChange,
+                AnnounceWave,
+                SetAi {}

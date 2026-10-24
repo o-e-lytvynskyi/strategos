@@ -10,6 +10,7 @@ import dev.strategos.core.sim.MatchBounds;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.MotionStore;
 import dev.strategos.core.sim.WorldEffect;
+import dev.strategos.core.sim.prod.Production;
 import dev.strategos.core.sim.world.WritePriority;
 import org.jspecify.annotations.Nullable;
 
@@ -215,9 +216,13 @@ public final class Construction {
         }
         buildings.setPlaced(handle, Math.max(buildings.placed(handle), target));
         long progress = Math.min(BuildingStore.FULL, done * BuildingStore.FULL / need);
+        boolean finished = done >= need && buildings.state(handle) != BuildingStore.COMPLETE;
         buildings.setState(
                 handle,
                 done >= need ? BuildingStore.COMPLETE : BuildingStore.CONSTRUCTING,
                 done >= need ? BuildingStore.FULL : progress);
+        if (finished) {
+            Production.finished(s, handle); // its housing counts and a field ripens, as an instant building's do
+        }
     }
 }

@@ -208,7 +208,7 @@ public final class StrategosGameTests {
 
     /** The batches of {@code runGameTestSlow}: {@code slow} and the map batches ({@code map_…}), which only it runs. */
     private static boolean slow(String batch) {
-        return batch.equals(SLOW) || batch.startsWith("map_");
+        return batch.equals(SLOW) || batch.startsWith("map_") || batch.startsWith("ai_"); // QA-11's sample is slow too
     }
 
     private static void afterBatch(ServerLevel level, String batch) {

@@ -5,7 +5,8 @@ import dev.strategos.core.sim.nav.MaterialKind;
 
 /**
  * A copy of one resource node for cold readers (ECO-02): GameTests, debug commands, the overlay; with what it was found
- * with and, for a field, its ticks left to ripen (ECO-09).
+ * with and, for a field, its ticks left to ripen (ECO-09); and the block gathered next, match-local, which a gather order
+ * names (all -1 once none is left).
  */
 @CoreApi
 public record NodeView(
@@ -21,4 +22,7 @@ public record NodeView(
         int slots,
         int freeSlots,
         long most,
-        long ripening) {}
+        long ripening,
+        int topX,
+        int topY,
+        int topZ) {}

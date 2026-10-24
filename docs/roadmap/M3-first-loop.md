@@ -722,7 +722,8 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   3. A think never exceeds its evaluation-unit cap (L1).
   4. AI commands pass the same validators as human commands (L1).
 - **Tests:** L0, L1 · **Depends on:** CORE-03 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-24 — M3 T26: `aiNeverWritesState` (1); `AiDecisionTest`'s house at 300 wood and 9 of 10 and its worker (2); a think within 5,000 units (3); its commands through the same validators as a human's (4) (spec §1.6 rows 70, 73)
 
 #### AI-17 · Scripted bot with announced waves
 - **Value:** A first opponent that builds, trains and attacks, and always announces its attacks, so
@@ -742,7 +743,8 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   4. Each think stays within the `AiBudget` (L1).
 - **Tests:** L0, L1, L3 · **Depends on:** AI-01, ORD-04, PROD-01, ECO-03, ECO-05, ECO-09, BLD-03 ·
   **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-24 — M3 T27: `ScriptedBotTest`: the build order done and the first wave announced at 7:30 and leaving 30 s later (1), every wave announced 30 s ahead (2), every think within its budget (4); `aitests.the_wave_announcement_reaches_the_opponents` (3) (spec §1.6 rows 71, 73)
 
 #### QA-11 · Headless match runner
 - **Value:** Every build plays full matches unattended, so crashes, stalls and absurd balance are
@@ -764,7 +766,8 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   5. The observe command creates the match with an observer bound to it (L3).
 - **Tests:** L0, L1, L3, L5 · **Fixtures:** seed sets for headless matches · **Depends on:**
   AI-17, MATCH-01 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-24 — M3 T28: `:core:headlessMatches` over ten seeds writes one summary with the telemetry (1); `HeadlessMatchesTest.anExceptionAStallOrNoWinnerFails` (2); `aitests.seed_one_replays_to_its_hash` and `seed_two_…` (3); the smoke's 600 ticks of AI versus AI (4); `maptests.skirmish_observe_seats_the_observer` (5) (spec §1.6 rows 72–73)
 
 #### PERF-06 · First-loop perf gate
 - **Value:** The first playable build already holds its budgets, so performance never becomes a

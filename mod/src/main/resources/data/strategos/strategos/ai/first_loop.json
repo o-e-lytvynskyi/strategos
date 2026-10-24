@@ -1,0 +1,116 @@
+{
+  "maxWorkers": 20,
+  "ratio": {
+    "food": 3,
+    "wood": 2
+  },
+  "build": [
+    {
+      "building": "strategos:building/barracks",
+      "population": 8
+    },
+    {
+      "building": "strategos:building/field",
+      "population": 9
+    },
+    {
+      "building": "strategos:building/field",
+      "population": 11
+    },
+    {
+      "building": "strategos:building/house",
+      "population": 12
+    },
+    {
+      "building": "strategos:building/field",
+      "population": 13
+    },
+    {
+      "building": "strategos:building/field",
+      "population": 15
+    },
+    {
+      "building": "strategos:building/house",
+      "population": 17
+    },
+    {
+      "building": "strategos:building/field",
+      "population": 19
+    }
+  ],
+  "housingMargin": 3,
+  "soldierQueue": 2,
+  "attack": {
+    "first": 450,
+    "every": 180,
+    "min": 1,
+    "muster": 24,
+    "announce": 30
+  },
+  "sites": [
+    [
+      0,
+      15
+    ],
+    [
+      11,
+      15
+    ],
+    [
+      -11,
+      15
+    ],
+    [
+      15,
+      0
+    ],
+    [
+      15,
+      11
+    ],
+    [
+      -15,
+      0
+    ],
+    [
+      0,
+      -15
+    ],
+    [
+      15,
+      -11
+    ],
+    [
+      -15,
+      11
+    ],
+    [
+      -15,
+      -11
+    ],
+    [
+      11,
+      -15
+    ],
+    [
+      -11,
+      -15
+    ],
+    [
+      24,
+      0
+    ],
+    [
+      0,
+      24
+    ],
+    [
+      24,
+      13
+    ],
+    [
+      13,
+      24
+    ]
+  ]
+}

@@ -197,11 +197,8 @@ public final class Replication {
                 if (seat == null || seat.match() != rt || online == null) {
                     continue;
                 }
-                FactionSlot viewer = seat.slot().isAdmin()
-                        ? null
-                        : new FactionSlot(seat.slot().value());
                 BuildingState now =
-                        ReplicationService.buildingState(core.queries(), rt.id().value(), viewer);
+                        ReplicationService.buildingState(core.queries(), rt.id().value(), viewer(seat));
                 BuildingState last = buildings.get(player);
                 if ((last == null && !now.buildings().isEmpty()) || (last != null && !last.sameAs(now))) {
                     buildings.put(player, now);
@@ -222,9 +219,8 @@ public final class Replication {
                 if (seat == null || seat.match() != rt) {
                     continue;
                 }
-                FactionSlot faction = new FactionSlot(seat.slot().value());
                 UnitHud changed = huds.computeIfAbsent(player, k -> new HudMemory())
-                        .changes(core.queries(), rt.id().value(), faction, visibility(rt));
+                        .changes(core.queries(), rt.id().value(), viewer(seat), visibility(rt));
                 ServerPlayer online = server.getPlayerList().getPlayer(player);
                 if (!changed.units().isEmpty() && online != null) {
                     net.send(new Audience.Player(online), new UnitHudPayload(changed));
@@ -242,16 +238,18 @@ public final class Replication {
             if (player == null || seat == null || core == null || sub.handles.isEmpty()) {
                 continue;
             }
-            UnitDetail detail = ReplicationService.detail(
-                    core.queries(),
-                    seat.match().id().value(),
-                    new FactionSlot(seat.slot().value()),
-                    sub.handles);
+            UnitDetail detail =
+                    ReplicationService.detail(core.queries(), seat.match().id().value(), viewer(seat), sub.handles);
             UnitDetail last = sub.sent;
             if (last == null || !last.units().equals(detail.units())) {
                 sub.sent = detail;
                 net.send(new Audience.Player(player), new UnitDetailPayload(detail));
             }
         }
+    }
+
+    /** The faction a seat views as; none for an observer (the admin's slot), who sees every faction. */
+    private static @Nullable FactionSlot viewer(MatchRegistry.Seat seat) {
+        return seat.slot().isAdmin() ? null : new FactionSlot(seat.slot().value());
     }
 }

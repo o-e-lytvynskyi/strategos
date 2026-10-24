@@ -53,6 +53,7 @@ public final class StrategosCommands {
         dispatcher.register(Commands.literal("strategos")
                 .requires(source -> source.hasPermission(2))
                 .then(MatchCommands.match())
+                .then(MatchCommands.skirmish())
                 .then(MapCommands.map())
                 .then(UnitCommands.spawn())
                 .then(BuildCommands.build())

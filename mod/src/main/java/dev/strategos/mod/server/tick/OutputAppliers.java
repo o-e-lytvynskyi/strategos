@@ -20,6 +20,7 @@ import dev.strategos.core.sim.UnitGear;
 import dev.strategos.core.sim.UnitHurt;
 import dev.strategos.core.sim.UnitStateChanged;
 import dev.strategos.core.sim.UnitStruck;
+import dev.strategos.core.sim.WaveAnnounced;
 import dev.strategos.core.sim.WorldEffect;
 import dev.strategos.core.sim.world.WriteSite;
 import dev.strategos.mod.StrategosServer;
@@ -97,6 +98,19 @@ public final class OutputAppliers {
                                             0,
                                             (float) attacked.x(),
                                             (float) attacked.z())));
+                case WaveAnnounced wave ->
+                    StrategosServer.get()
+                            .net()
+                            .send(
+                                    new Audience.Match(rt.id()),
+                                    new MatchEventPayload(new MatchNews(
+                                            rt.id().value(),
+                                            out.tick(),
+                                            MatchNews.WAVE,
+                                            wave.faction().value(),
+                                            wave.leaves(),
+                                            wave.x(),
+                                            wave.z())));
                 case MatchEnded ended -> {
                     StrategosServer.get()
                             .net()
@@ -179,6 +193,7 @@ public final class OutputAppliers {
                 FactionDefeated.class,
                 MatchEnded.class,
                 UnderAttack.class,
+                WaveAnnounced.class,
                 UnitGear.class,
                 WorldEffect.class,
                 Notice.class);

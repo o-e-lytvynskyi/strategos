@@ -31,7 +31,9 @@ public final class CommandRules {
                 .register(new TrainRules.RallyRule())
                 .register(new TrainRules.ReseedRule())
                 .register(new MatchRulesRules.ResignRule())
-                .register(new MatchRulesRules.RuleChangeRule());
+                .register(new MatchRulesRules.RuleChangeRule())
+                .register(new AiRules.AnnounceWaveRule())
+                .register(new AiRules.SetAiRule());
     }
 
     /** A second rule for a kind throws. */

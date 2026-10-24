@@ -9,21 +9,23 @@ import dev.strategos.core.sim.UnitView;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.jspecify.annotations.Nullable;
 
 /**
  * One player's {@code unit_hud} memory (NET-08, CMB-06): the hit points it was last sent for each unit index, whole for
  * an index never sent. {@link #changes} lists the units it sees whose hit points differ from that, and remembers them;
- * a unit that left the frame keeps its value, so it is resent only once it changes.
+ * a unit that left the frame keeps its value, so it is resent only once it changes. An observer (no viewer) sees every
+ * unit.
  */
 @CoreApi
 public final class HudMemory {
     private int[] sent = new int[0];
 
-    public UnitHud changes(MatchQueries q, int matchId, FactionSlot viewer, Visibility visibility) {
+    public UnitHud changes(MatchQueries q, int matchId, @Nullable FactionSlot viewer, Visibility visibility) {
         List<UnitHud.Entry> changed = new ArrayList<>();
         for (int handle : q.unitHandles()) {
             UnitView unit = q.unit(handle);
-            if (unit == null || (!unit.faction().equals(viewer) && !visibility.sees(viewer, unit))) {
+            if (unit == null || (viewer != null && !unit.faction().equals(viewer) && !visibility.sees(viewer, unit))) {
                 continue;
             }
             int index = Handle.index(handle);

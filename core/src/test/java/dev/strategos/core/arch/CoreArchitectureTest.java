@@ -95,6 +95,21 @@ class CoreArchitectureTest {
             .allowEmptyShould(true)
             .because("client prediction never reaches into the simulation (B3)");
 
+    static final ArchRule AI_NEVER_WRITES_STATE = noClasses()
+            .that()
+            .resideInAPackage("dev.strategos.core.sim.ai..")
+            .should()
+            .dependOnClassesThat(JavaClass.Predicates.simpleNameEndingWith("Store")
+                    .or(JavaClass.Predicates.simpleNameEndingWith("Rules")
+                            .and(JavaClass.Predicates.resideInAPackage("..sim.command..")))
+                    .or(com.tngtech.archunit.core.domain.properties.HasName.Predicates.name(
+                            "dev.strategos.core.sim.MatchState"))
+                    .or(com.tngtech.archunit.core.domain.properties.HasName.Predicates.name(
+                            "dev.strategos.core.sim.MatchCoreImpl"))
+                    .or(com.tngtech.archunit.core.domain.properties.HasName.Predicates.name(
+                            "dev.strategos.core.sim.KernelAccess")))
+            .because("a computer player reads through its view and acts only by commands (AI-01.1)");
+
     static final ArchRule LOWER_LAYERS_DO_NOT_DEPEND_ON_SIM = noClasses()
             .that()
             .resideInAnyPackage(
@@ -268,6 +283,12 @@ class CoreArchitectureTest {
         CLIENT_DOES_NOT_DEPEND_ON_SIM.check(CORE);
         assertBites(SIM_DOES_NOT_DEPEND_ON_CLIENT, ClientReferenceFixture.class);
         assertBites(CLIENT_DOES_NOT_DEPEND_ON_SIM, dev.strategos.core.client.archfixture.SimReferenceFixture.class);
+    }
+
+    @Test
+    void aiNeverWritesState() {
+        AI_NEVER_WRITES_STATE.check(CORE);
+        assertBites(AI_NEVER_WRITES_STATE, dev.strategos.core.sim.ai.archfixture.StateWriterFixture.class);
     }
 
     @Test

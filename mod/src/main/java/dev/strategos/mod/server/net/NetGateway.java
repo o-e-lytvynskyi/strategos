@@ -231,6 +231,11 @@ public final class NetGateway {
             refuse(player, tick, "unseated");
             return;
         }
+        if (seat.slot().isAdmin()) {
+            // the admin's slot seats watchers, whose commands would rule every faction: dropped, not a fault
+            counters.violation(player.getGameProfile().getName(), "observer");
+            return;
+        }
         MatchRuntime rt = seat.match();
         if (rt.lifecycle() != MatchLifecycle.RUNNING && rt.lifecycle() != MatchLifecycle.PAUSED) {
             counters.violation(player.getGameProfile().getName(), "match " + rt.lifecycle()); // dropped, not a fault

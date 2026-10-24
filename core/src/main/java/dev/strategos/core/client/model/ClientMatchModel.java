@@ -24,6 +24,8 @@ public final class ClientMatchModel {
     private @Nullable BuildingState buildings;
     private @Nullable MatchNews end;
     private @Nullable MatchNews alert;
+    private @Nullable MatchNews wave;
+    private int waves;
     private int alerts;
     private long defeatedMask;
 
@@ -81,6 +83,9 @@ public final class ClientMatchModel {
         }
         if (news.kind() == MatchNews.ENDED) {
             end = news;
+        } else if (news.kind() == MatchNews.WAVE) {
+            wave = news;
+            waves++;
         } else if (news.kind() == MatchNews.ALERT) {
             alert = news;
             alerts++;
@@ -97,6 +102,16 @@ public final class ClientMatchModel {
     /** The latest under-attack alert (UI-12), or null before any. */
     public @Nullable MatchNews alert() {
         return alert;
+    }
+
+    /** The latest announced wave (AI-17), or null before any. */
+    public @Nullable MatchNews wave() {
+        return wave;
+    }
+
+    /** How many waves were announced, for a new one to be noticed. */
+    public int waves() {
+        return waves;
     }
 
     /** How many alerts came, for a new one to be noticed. */
@@ -161,6 +176,8 @@ public final class ClientMatchModel {
         end = null;
         alert = null;
         alerts = 0;
+        wave = null;
+        waves = 0;
         defeatedMask = 0;
         matchId = -1;
         tick = -1;

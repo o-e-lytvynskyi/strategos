@@ -9,7 +9,7 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-24 — M3 T9–T25
+## 2026-10-24 — M3 T9–T28
 
 - **The owner, past midnight:** «можешь любые тесты проводить и как закончишь м3 - начинай м4, все решения
   принимай сам, которые рекомендуешь» (STATE item 6).
@@ -85,7 +85,21 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
   `now - then` and hid the image and showed a false alert; caught in a window run and fixed.
 - **M3 T25 · MATCH-05, pause and game speed.** In singleplayer, F9 pauses the match (camera, selection and orders
   still work; the orders apply on resume) and `[` / `]` play it at half or one and a half speed through the server's
-  tick rate, put back to normal when the match ends. Next: T26, the AI framework.
+  tick rate, put back to normal when the match ends.
+- **M3 T26–T28 · AI-01, AI-17 and QA-11, the computer opponent; all three done.** A computer player thinks inside
+  the core step every second, reads the match through a read-only view and acts only through ordinary commands,
+  which the same validators check and the journal records; a think costs at most 5,000 evaluation units (the largest
+  seen: 235). The first bot follows `ai/first_loop.json`: workers to 20 on a 3:2 food-to-wood ratio, barracks,
+  fields and houses on a build order, spearmen two at a time, and a wave every 3 minutes from 7:30, mustered in view
+  and announced 30 s ahead with a raid horn and a countdown for its opponents. Ten seeded bot-versus-bot matches
+  run headless in about 10 s from `:core:headlessMatches` and all end with a winner at 15:19–15:34; two of them replay
+  in the server to the same hash; the server smoke plays 600 ticks of it; `/strategos skirmish <map> observe
+  seed=<n>` opens one to watch, the watcher seated as an observer who sees every faction and commands none.
+  Problems met: built houses gave no room and built fields never ripened (completion never called production's
+  hook; fixed with a regression test), workers sent to a resource with no nodes left stood idle, the bot ran short
+  of wood without a stock-weighted ratio, Brigadier's `word()` refuses `seed=3`, the roster refused observers and
+  replication built a faction from the observer's slot -1 (both crashed the test server). Faction 0 wins every seed:
+  the west wave arrives sooner and the bot does not defend (STATE item 12). Next: T29, the first-loop perf gate.
 
 ## 2026-10-23 (evening) — M3 spec, T1–T8
 

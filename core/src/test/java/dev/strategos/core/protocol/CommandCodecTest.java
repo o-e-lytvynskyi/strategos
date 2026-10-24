@@ -36,7 +36,9 @@ class CommandCodecTest {
                 new SetRally(UnitSet.of(0x80003, 0x80004), 30, 70, -2),
                 new Reseed(0x80003),
                 new Resign(new FactionSlot(1)),
-                new RuleChange("victory", "civic_centre"));
+                new RuleChange("victory", "civic_centre"),
+                new AnnounceWave(40, -12, 600),
+                new SetAi(new FactionSlot(1), "first_loop", "{}"));
     }
 
     @Test

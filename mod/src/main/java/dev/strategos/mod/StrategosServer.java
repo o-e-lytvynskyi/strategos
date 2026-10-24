@@ -21,6 +21,7 @@ import dev.strategos.mod.server.fog.InterestSets;
 import dev.strategos.mod.server.jobs.PathThreads;
 import dev.strategos.mod.server.match.MapImports;
 import dev.strategos.mod.server.match.MatchRegistry;
+import dev.strategos.mod.server.match.Skirmishes;
 import dev.strategos.mod.server.net.NetGateway;
 import dev.strategos.mod.server.net.Replication;
 import dev.strategos.mod.server.tick.BetweenTicks;
@@ -72,6 +73,7 @@ public final class StrategosServer {
     private final ServerTemplates templates = new ServerTemplates();
     private final TemplateSync templateSync = new TemplateSync();
     private final CommanderService commanders = new CommanderService();
+    private final Skirmishes skirmishes = new Skirmishes();
     private final NetGateway net;
     private final InterestSets interest = new InterestSets();
     private final DebugFeed debug;
@@ -153,6 +155,11 @@ public final class StrategosServer {
     /** The server's template set, its id table and the last load's problems (DATA-03). */
     public ServerTemplates templates() {
         return templates;
+    }
+
+    /** The skirmishes waiting for their import to be set up (QA-11.5). */
+    public Skirmishes skirmishes() {
+        return skirmishes;
     }
 
     /** The seated players' RTS bodies, jumps and re-pairs (CAM-03). */

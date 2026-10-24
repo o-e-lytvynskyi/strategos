@@ -82,6 +82,7 @@ public final class CombatSystem implements MatchSystem {
         for (int handle : falling) {
             FactionSlot faction = new FactionSlot(s.buildings().faction(handle));
             s.outputs().add(new BuildingDestroyed(handle, faction));
+            s.aiSlots().wake(faction.value()); // a computer player that lost a building thinks at once
             s.outputs().add(new Notice(faction, NoticeKind.UNIT_LOST, handle, "destroyed"));
             s.destroyBuilding(handle);
         }

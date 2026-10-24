@@ -51,6 +51,17 @@ tasks.register('balanceSheet', JavaExec) {
     args(rootProject.file('mod/src/main/resources/data').absolutePath, rootProject.file('docs/balance').absolutePath)
 }
 
+// [M3 T28] QA-11: bot-versus-bot matches in the core, -Pseeds=1..10 (the default); writes
+// build/reports/headless/summary.json and each failing seed's journal, and fails if any match failed.
+tasks.register('headlessMatches', JavaExec) {
+    group = 'verification'
+    description = 'Plays seeded bot-versus-bot matches headless and writes their telemetry.'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'dev.strategos.core.sim.ai.HeadlessMatches'
+    workingDir = projectDir
+    args(providers.gradleProperty('seeds').getOrElse('1..10'), layout.buildDirectory.dir('reports/headless').get().asFile.absolutePath)
+}
+
 // [T6b] long seeded determinism runs; part of verify and of verifySoak, not verifyFast.
 tasks.register('soak', Test) {
     group = 'verification'

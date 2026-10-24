@@ -82,6 +82,7 @@ public final class MapTests {
     private static final int CROWD_LANE = 7;
     private static final int CROWD = 200;
     private static final int SOAK_LANE = 8;
+    private static final int SKIRMISH_LANE = 9;
 
     private MapTests() {}
 
@@ -561,6 +562,78 @@ public final class MapTests {
                 },
                 () -> {},
                 () -> {});
+    }
+
+    /**
+     * QA-11.5: {@code /strategos skirmish strategos:proving_ground observe seed=3} makes the match with seed 3; once it
+     * has imported, the first-loop scenario runs bot against bot and the player is seated as its observer.
+     */
+    @StrategosTest(batch = "map_skirmish", solo = true, timeoutTicks = 40_000)
+    public static void skirmishObserveSeatsTheObserver(GameTestHelper h) {
+        BlockPos corner = h.absolutePos(BlockPos.ZERO);
+        double x = corner.getX() + SKIRMISH_LANE * FAR;
+        double z = corner.getZ() + 192;
+        dev.strategos.gametest.net.MockViewer viewer = dev.strategos.gametest.net.MockViewer.join(
+                h.getLevel(), "strategos-skirm", x, corner.getY() + 16, z, 2);
+        var server = h.getLevel().getServer();
+        server.getCommands()
+                .performPrefixedCommand(
+                        viewer.player()
+                                .createCommandSourceStack()
+                                .withPermission(4)
+                                .withPosition(new net.minecraft.world.phys.Vec3(x, corner.getY() + 16, z)),
+                        "strategos skirmish strategos:proving_ground observe seed=3");
+        var registry = StrategosServer.get().matches();
+        var state = new Object() {
+            MatchRuntime match;
+            int ai;
+        };
+        h.startSequence()
+                .thenWaitUntil(() -> {
+                    var seat = registry.seatOf(viewer.player().getUUID());
+                    if (seat == null) {
+                        viewer.poll();
+                        StringBuilder said = new StringBuilder();
+                        for (var p : viewer.capture()
+                                .of(net.minecraft.network.protocol.game.ClientboundSystemChatPacket.class)) {
+                            said.append(p.content().getString()).append("; ");
+                        }
+                        check(
+                                false,
+                                "not seated yet; the command said: " + said
+                                        + registry.all().size() + " matches");
+                    }
+                    state.match = seat.match();
+                    check(seat.slot().isAdmin(), "seated in slot " + seat.slot() + ", not as the observer");
+                    check(state.match.core().queries().config().seed() == 3, "the seed is not 3");
+                    state.match.addListener(out -> out.events().forEach(e -> {
+                        if (e instanceof dev.strategos.core.sim.CommandResult r
+                                && !r.issuer().isAdmin()) {
+                            state.ai++;
+                        }
+                    }));
+                })
+                .thenWaitUntil(() -> check(state.ai > 0, "no computer player commanded yet"))
+                .thenExecute(() -> {
+                    check(core(state.match).queries().buildings().size() == 2, "the scenario's two centres");
+                    var counters = StrategosServer.get().net().counters();
+                    int before = counters.violations("strategos-skirm");
+                    int[] units = core(state.match).queries().unitHandles();
+                    viewer.send(dev.strategos.mod.server.net.payload.CommandsPayload.of(
+                            new dev.strategos.core.protocol.CommandBatch(
+                                    1,
+                                    java.util.List.of(new dev.strategos.core.protocol.Move(
+                                            dev.strategos.core.protocol.UnitSet.of(units[0]),
+                                            new dev.strategos.core.shared.Vec2d(8.5, 8.5),
+                                            dev.strategos.core.protocol.QueueMode.REPLACE,
+                                            0)))));
+                    check(
+                            counters.violations("strategos-skirm") == before + 1 && !viewer.disconnected(),
+                            "the observer's command was not dropped as one violation");
+                    viewer.close();
+                    registry.dispose(state.match.id());
+                })
+                .thenSucceed();
     }
 
     /** A proving-ground match in the test's lane east of it, {@code dz} blocks along Z, its band from the test's floor. */

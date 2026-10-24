@@ -29,9 +29,22 @@ public record MatchSnapshot(
         List<BuildingStore.Saved> buildings,
         List<Long> ledger,
         List<CarryStore.Saved> carried,
-        List<Long> outcome) {
+        Play play) {
+    /**
+     * How the match is played (MATCH-01, AI-01): the outcome as {@code Outcome} saves it, the computer players, and
+     * which of them think early.
+     */
+    @CoreApi
+    public record Play(List<Long> outcome, List<AiSlots.Saved> ai, long aiWake) {
+        public static final Play EMPTY = new Play(List.of(), List.of(), 0);
+
+        public Play {
+            outcome = List.copyOf(outcome);
+            ai = List.copyOf(ai);
+        }
+    }
+
     public MatchSnapshot {
-        outcome = List.copyOf(outcome);
         buildings = List.copyOf(buildings);
         ledger = List.copyOf(ledger);
         carried = List.copyOf(carried);
@@ -43,7 +56,7 @@ public record MatchSnapshot(
         pages = List.copyOf(pages);
     }
 
-    /** A snapshot from before victory (MATCH-01): no outcome. */
+    /** A snapshot from before victory and computer players (MATCH-01, AI-01). */
     public MatchSnapshot(
             MatchConfig config,
             long tick,
@@ -76,7 +89,7 @@ public record MatchSnapshot(
                 buildings,
                 ledger,
                 carried,
-                List.of());
+                Play.EMPTY);
     }
 
     /** A snapshot from before gathering (ECO-05): no ledger, no loads. */

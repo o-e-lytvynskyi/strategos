@@ -119,13 +119,15 @@ public final class ReplicationService {
 
     /**
      * The details a {@code ui_query} asked for (NET-08.4): the viewer's own live units among {@code handles}, in their
-     * order; another faction's unit, or a dead one, is left out.
+     * order; another faction's unit, or a dead one, is left out. An observer (no viewer) gets any faction's.
      */
-    public static UnitDetail detail(MatchQueries q, int matchId, FactionSlot viewer, List<Integer> handles) {
+    public static UnitDetail detail(MatchQueries q, int matchId, @Nullable FactionSlot viewer, List<Integer> handles) {
         List<UnitDetail.Unit> units = new ArrayList<>();
         for (int handle : handles) {
             UnitView unit = q.unit(handle);
-            if (unit == null || !unit.faction().equals(viewer) || units.size() == UiQuery.MAX_HANDLES) {
+            if (unit == null
+                    || (viewer != null && !unit.faction().equals(viewer))
+                    || units.size() == UiQuery.MAX_HANDLES) {
                 continue;
             }
             List<UnitDetail.Order> orders = new ArrayList<>();

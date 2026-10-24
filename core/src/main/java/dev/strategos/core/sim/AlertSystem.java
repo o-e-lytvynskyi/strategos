@@ -92,5 +92,6 @@ final class AlertSystem implements MatchSystem {
         }
         alerts.add(new Alert(faction, x, z, tick));
         s.outputs().add(new UnderAttack(new FactionSlot(faction), x, z));
+        s.aiSlots().wake(faction); // a computer player under attack thinks at once (AI-01)
     }
 }

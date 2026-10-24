@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.TreeSet;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The data packs' scenarios (MATCH-01): {@code data/<namespace>/strategos/scenarios/<path>.json}, read when one is
@@ -53,10 +54,38 @@ public final class Scenarios {
         }
     }
 
-    /** Sets {@code scenario} up in {@code rt}, slot k as faction k at {@code starts.get(k)}; the commands it sent. */
+    /** The data packs' computer strategies: {@code data/<ns>/strategos/ai/<profile>.json}. */
+    public static final String AI_DIR = "strategos/ai";
+
+    /**
+     * Strategy {@code profile}'s JSON, compact, so the command carrying it stays small; a profile without a namespace is
+     * Strategos's. Null when no data pack has it.
+     */
+    public static @Nullable String script(MinecraftServer server, String profile) {
+        ResourceLocation id = profile.contains(":")
+                ? ResourceLocation.parse(profile)
+                : ResourceLocation.fromNamespaceAndPath("strategos", profile);
+        ResourceLocation file =
+                ResourceLocation.fromNamespaceAndPath(id.getNamespace(), AI_DIR + "/" + id.getPath() + ".json");
+        var resource = server.getResourceManager().getResource(file);
+        if (resource.isEmpty()) {
+            return null;
+        }
+        try (Reader reader = resource.get().openAsReader()) {
+            return JsonParser.parseReader(reader).toString();
+        } catch (IOException e) {
+            throw new IllegalArgumentException("strategy " + profile + ": " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Sets {@code scenario} up in {@code rt}, slot k as faction k at {@code starts.get(k)}, its {@code ai:} slots
+     * played by their strategies from the data packs; the commands it sent.
+     */
     public static List<Command> apply(
-            MatchRuntime rt, Scenario scenario, List<StartSlot> starts, TemplateSet templates) {
-        List<Command> commands = ScenarioSetup.commands(scenario, starts, templates);
+            MinecraftServer server, MatchRuntime rt, Scenario scenario, List<StartSlot> starts, TemplateSet templates) {
+        List<Command> commands =
+                ScenarioSetup.commands(scenario, starts, templates, profile -> script(server, profile));
         for (Command c : commands) {
             rt.submit(PlayerSlot.ADMIN, c);
         }

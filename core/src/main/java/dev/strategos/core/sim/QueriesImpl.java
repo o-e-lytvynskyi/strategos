@@ -88,7 +88,10 @@ final class QueriesImpl implements MatchQueries {
                     n.slotCount(id),
                     n.freeSlots(id),
                     n.most(id),
-                    n.ripening(id)));
+                    n.ripening(id),
+                    n.gone(id) < n.blocks(id).length ? NodeStore.x(n.blocks(id)[n.gone(id)]) : -1,
+                    n.gone(id) < n.blocks(id).length ? NodeStore.y(n.blocks(id)[n.gone(id)]) : -1,
+                    n.gone(id) < n.blocks(id).length ? NodeStore.z(n.blocks(id)[n.gone(id)]) : -1));
         }
         return out;
     }

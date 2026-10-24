@@ -269,6 +269,7 @@ public final class MatchRuntime {
             PlayerSlot slot = roster.slotOf(member);
             ServerPlayer player = level.getServer().getPlayerList().getPlayer(member);
             if (slot == null
+                    || slot.isAdmin()
                     || slot.value() >= LeaderUpdate.SLOTS
                     || player == null
                     || !player.level().dimension().equals(level.dimension())

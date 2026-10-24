@@ -117,6 +117,40 @@ class ConstructionTest {
     }
 
     @Test
+    void aBuiltHouseHousesAndABuiltFieldRipens() {
+        SimHarness h = match();
+        MatchState s = KernelAccess.state(h.core());
+        assertThat(s.population().cap(0)).as("the centre's 20").isEqualTo(20);
+        int[] builders = buildersOnSlots(h, 3);
+        h.submit(P0, new PlaceBuilding(HOUSE, 30, 30, 0, UnitSet.of(builders), QueueMode.REPLACE));
+        h.runUntil(
+                () -> s.buildings().handles().length > 1
+                        && s.buildings().state(s.buildings().handles()[1]) == BuildingStore.COMPLETE,
+                2_000);
+        assertThat(s.population().cap(0))
+                .as("built, not spawned, the house houses five")
+                .isEqualTo(25);
+        h.submit(
+                P0,
+                new PlaceBuilding(
+                        new TemplateId("strategos:building/field"),
+                        40,
+                        10,
+                        0,
+                        UnitSet.of(builders),
+                        QueueMode.REPLACE));
+        h.runUntil(
+                () -> s.buildings().handles().length > 2
+                        && s.buildings().state(s.buildings().handles()[2]) == BuildingStore.COMPLETE,
+                2_000);
+        int field = s.buildings().handles()[2];
+        assertThat(s.buildings().field(field))
+                .as("built, the field is a crop that ripens")
+                .isPositive();
+        assertThat(s.nodes().ripening(s.buildings().field(field))).isPositive();
+    }
+
+    @Test
     void theWriterIsAskedForEveryBlockOnceInBuildOrder() {
         SimHarness h = match();
         MatchState s = KernelAccess.state(h.core());

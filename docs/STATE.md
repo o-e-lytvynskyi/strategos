@@ -75,6 +75,12 @@ Answer in chat or here; the next session applies the answers.
    compilation: 6.36 ms against 5.86 at that commit (+8.6 %). No new baseline is proposed now; the next full run at
    a quiet moment decides, and a proposal follows if the growth stays. At T9 (2026-10-24, past midnight) the gate
    names only `MatchBusBench` (14.3 µs against 12.0), still untouched; the rest are within 15 %.
+12. **For your information: the bot against itself always lets the west start win.** Ten seeded bot-versus-bot
+   matches on the proving ground (M3 T28) all end with a winner at 15:19–15:34, and all ten go to faction 0: its
+   wave reaches the enemy centre about 22 s sooner and burns it first, while faction 1's wave dies on the way. The
+   first bot defends nothing (that is AI-05, M6), so the shorter way decides. Nothing to do now; M6's defence or
+   evener start positions settle it ([M3 spec §1.8](milestones/M3-first-loop.md)). To watch one:
+   `/strategos skirmish strategos:proving_ground observe seed=3`.
 
 ## Since your last visit
 
@@ -376,8 +382,8 @@ Answer in chat or here; the next session applies the answers.
 - **Milestone:** M3 First loop, started 2026-10-23 at your word, without windows; spec:
   [milestones/M3-first-loop.md](milestones/M3-first-loop.md) (31 tasks, every card `specified`).
   M1 and M2 are Done (2026-10-23).
-- **In progress:** M3 T26, the AI player framework (AI-01).
-- **Last finished task:** M3 T25 (2026-10-24), pause and game speed; before it T23–T24, the minimap and alerts. The balance sheet is [balance/sheet.md](balance/sheet.md).
+- **In progress:** M3 T29, the first-loop perf gate (PERF-06).
+- **Last finished task:** M3 T26–T28 (2026-10-24): the AI framework, the scripted bot with announced waves, the headless match runner; before them T25, pause and game speed. The balance sheet is [balance/sheet.md](balance/sheet.md).
 - **Next task:** M3's tasks in the spec's order (§7.1); its window tests in T30; then M4.
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 960 of 2,000 (48 %), as of 2026-10-23.
@@ -394,7 +400,7 @@ Nothing.
 | M0 Foundation | Accepted 2026-10-22 | Started 2026-10-21; tripwire met on day 2; 25 of 26 cards accepted, UNIT-01 closes with NET-01 (M1); the L7 demo waived by the owner |
 | M1 Movement | Done 2026-10-23 | Started 2026-10-22 on the owner's go-ahead; 29 tasks (T28, PATH-08, joined by its R3 trigger in T8; T29 by the owner's word); Accepted waits for the L7 demo |
 | M2 Command | Done 2026-10-23 | Started 2026-10-23 at the owner's word; 23 tasks; Accepted waits for `pose_high` (a window) and the L7 demo |
-| M3 First loop | In progress | Started 2026-10-23 at the owner's word; spec written the same day, 31 tasks; T1–T25 done by 2026-10-24 |
+| M3 First loop | In progress | Started 2026-10-23 at the owner's word; spec written the same day, 31 tasks; T1–T28 done by 2026-10-24 |
 | M4–M6 (MVP) | approved | Specs are written by the assistant when each milestone starts; M4 follows M3 at once (the owner, 2026-10-24) |
 | M7–M15 | proposed | Approved by the owner closer to their time |
 

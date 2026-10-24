@@ -48,6 +48,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.storage.LevelResource;
+import org.jspecify.annotations.Nullable;
 
 /** The {@code /strategos match} and {@code journal} subtrees: creating, listing, pausing, seating and journals. */
 final class MatchCommands {
@@ -205,9 +206,60 @@ final class MatchCommands {
         if (core == null) {
             throw new MatchRefusedException(rt.id() + " has no core yet");
         }
-        int sent = Scenarios.apply(rt, scenario, starts, core.queries().templates())
+        int sent = Scenarios.apply(
+                        source.getServer(), rt, scenario, starts, core.queries().templates())
                 .size();
         return rt.id() + " set up as " + id + ": " + sent + " commands";
+    }
+
+    /**
+     * {@code skirmish <map> observe [seed=<n>]} (QA-11.5): a match on the map, as {@code match create map} makes one,
+     * with seed {@code n}; once imported it plays the map's first scenario bot against bot and the source watches it
+     * as its observer.
+     */
+    static LiteralArgumentBuilder<CommandSourceStack> skirmish() {
+        return Commands.literal("skirmish")
+                .then(Commands.argument("map", ResourceLocationArgument.id())
+                        .suggests((ctx, builder) -> SharedSuggestionProvider.suggestResource(
+                                MapPackageLoader.list(ctx.getSource().getServer()), builder))
+                        .then(Commands.literal("observe")
+                                .executes(ctx ->
+                                        skirmish(ctx.getSource(), ResourceLocationArgument.getId(ctx, "map"), "seed=1"))
+                                .then(Commands.argument("seed", StringArgumentType.greedyString())
+                                        .executes(ctx -> skirmish(
+                                                ctx.getSource(),
+                                                ResourceLocationArgument.getId(ctx, "map"),
+                                                StringArgumentType.getString(ctx, "seed"))))));
+    }
+
+    private static int skirmish(CommandSourceStack source, ResourceLocation map, String seedArg) {
+        return run(source, () -> {
+            ServerPlayer player = source.getPlayer();
+            if (player == null) {
+                throw new MatchRefusedException("a skirmish is watched by a player");
+            }
+            String digits = seedArg.startsWith("seed=") ? seedArg.substring(5) : seedArg;
+            long seed;
+            try {
+                seed = Long.parseLong(digits);
+            } catch (NumberFormatException e) {
+                throw new MatchRefusedException("the seed is a number, as in seed=5: " + seedArg);
+            }
+            ResourceLocation scenario = null;
+            for (ResourceLocation id : Scenarios.list(source.getServer())) {
+                if (Scenarios.load(source.getServer(), id).map().equals(map.toString())) {
+                    scenario = id;
+                    break;
+                }
+            }
+            if (scenario == null) {
+                throw new MatchRefusedException("no scenario is made for " + map);
+            }
+            MatchRuntime rt = mapMatch(source, map, seed);
+            StrategosServer.get().skirmishes().observe(rt, player.getUUID(), scenario);
+            return rt.id() + " created on " + map + " with seed " + seed + ", " + scenario
+                    + " bot against bot once imported; you watch it";
+        });
     }
 
     /**
@@ -215,31 +267,33 @@ final class MatchCommands {
      * and its band from 16 blocks under the source's feet. It stays PREPARING while the map imports.
      */
     private static int createOnMap(CommandSourceStack source, ResourceLocation map) {
+        return run(source, () -> {
+            MatchRuntime rt = mapMatch(source, map, null);
+            return rt.id() + " created on " + map + " at " + rt.space().origin().toShortString() + "; importing";
+        });
+    }
+
+    /** The match on {@code map}, its seed {@code seed} or the registry's own for null. */
+    private static MatchRuntime mapMatch(CommandSourceStack source, ResourceLocation map, @Nullable Long seed) {
         if (ArenaWorld.isArena(source.getServer())) {
-            return run(source, () -> {
-                MatchRuntime rt = registry().createInArena(map, MatchOptions.generated(ArenaPolicy.FLOOR_Y));
-                return rt.id() + " created on " + map + " in the arena slot at "
-                        + rt.space().origin().toShortString() + "; importing";
-            });
+            MatchOptions options = MatchOptions.generated(ArenaPolicy.FLOOR_Y);
+            return registry().createInArena(map, seed == null ? options : options.withSeed(seed));
         }
         ServerLevel level = source.getLevel();
         BlockPos feet = BlockPos.containing(source.getPosition());
-        return run(source, () -> {
-            MapManifest m;
-            try {
-                m = MapPackageLoader.load(source.getServer(), map).manifest();
-            } catch (IllegalArgumentException e) {
-                throw new MatchRefusedException(String.valueOf(e.getMessage()));
-            }
-            BlockPos origin = new BlockPos(feet.getX() + 8, feet.getY() - 16, feet.getZ() - m.sizeZ() / 2);
-            MatchSpace space = new MatchSpace(
-                    level.dimension(), origin, m.sizeX(), m.sizeZ(), origin.getY(), origin.getY() + m.height() - 1);
-            double floor = origin.getY()
-                    + (m.startSlots().isEmpty() ? 0 : m.startSlots().get(0).y());
-            MatchRuntime rt = registry()
-                    .create(level, space, MatchOptions.generated(feet.getY()).withMap(map, floor));
-            return rt.id() + " created on " + map + " at " + origin.toShortString() + "; importing";
-        });
+        MapManifest m;
+        try {
+            m = MapPackageLoader.load(source.getServer(), map).manifest();
+        } catch (IllegalArgumentException e) {
+            throw new MatchRefusedException(String.valueOf(e.getMessage()));
+        }
+        BlockPos origin = new BlockPos(feet.getX() + 8, feet.getY() - 16, feet.getZ() - m.sizeZ() / 2);
+        MatchSpace space = new MatchSpace(
+                level.dimension(), origin, m.sizeX(), m.sizeZ(), origin.getY(), origin.getY() + m.height() - 1);
+        double floor = origin.getY()
+                + (m.startSlots().isEmpty() ? 0 : m.startSlots().get(0).y());
+        MatchOptions options = MatchOptions.generated(feet.getY()).withMap(map, floor);
+        return registry().create(level, space, seed == null ? options : options.withSeed(seed));
     }
 
     private static int list(CommandSourceStack source) {

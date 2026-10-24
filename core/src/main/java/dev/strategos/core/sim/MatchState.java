@@ -62,6 +62,7 @@ public final class MatchState {
     private long tick;
     private MatchConfig config;
     private final Outcome outcome = new Outcome();
+    private final AiSlots aiSlots = new AiSlots();
     private TemplateSet templates;
     private final EntityStore entities;
     private final IdentityStore identity = new IdentityStore();
@@ -768,6 +769,11 @@ public final class MatchState {
     public void setRules(MatchRules rules) {
         config = new MatchConfig(config.id(), config.seed(), config.bounds(), config.factions(), rules);
         population.setMax(rules.economy().populationMax());
+    }
+
+    /** The factions the computer plays (AI-01). */
+    public AiSlots aiSlots() {
+        return aiSlots;
     }
 
     /** Who has lost and whether the match is over (MATCH-01). */

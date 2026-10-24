@@ -123,6 +123,7 @@ public final class MatchTests {
         var scenario = dev.strategos.mod.server.content.Scenarios.load(
                 server, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("strategos", "first_loop"));
         dev.strategos.mod.server.content.Scenarios.apply(
+                server,
                 rt,
                 scenario,
                 java.util.List.of(

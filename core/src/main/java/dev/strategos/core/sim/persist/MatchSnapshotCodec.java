@@ -11,6 +11,7 @@ import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Hex64;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
+import dev.strategos.core.sim.AiSlots;
 import dev.strategos.core.sim.AiStateStore;
 import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.EntitySlots;
@@ -329,6 +330,19 @@ public final class MatchSnapshotCodec {
                     Codec.INT.optionalFieldOf("field", 0).forGetter(BuildingStore.Saved::field))
             .apply(i, BuildingStore.Saved::new));
 
+    static final Codec<AiSlots.Saved> COMPUTER = RecordCodecBuilder.create(i -> i.group(
+                    Codec.INT.fieldOf("faction").forGetter(AiSlots.Saved::faction),
+                    Codec.STRING.fieldOf("profile").forGetter(AiSlots.Saved::profile),
+                    Codec.STRING.fieldOf("script").forGetter(AiSlots.Saved::script),
+                    Codec.LONG.listOf().fieldOf("memory").forGetter(AiSlots.Saved::memory))
+            .apply(i, AiSlots.Saved::new));
+
+    static final Codec<MatchSnapshot.Play> PLAY = RecordCodecBuilder.create(i -> i.group(
+                    Codec.LONG.listOf().optionalFieldOf("outcome", List.of()).forGetter(MatchSnapshot.Play::outcome),
+                    COMPUTER.listOf().optionalFieldOf("ai", List.of()).forGetter(MatchSnapshot.Play::ai),
+                    Codec.LONG.optionalFieldOf("aiWake", 0L).forGetter(MatchSnapshot.Play::aiWake))
+            .apply(i, MatchSnapshot.Play::new));
+
     /** The fields, without {@code "v"}. */
     public static final Codec<MatchSnapshot> CODEC = RecordCodecBuilder.create(i -> i.group(
                     MatchConfig.CODEC.fieldOf("config").forGetter(MatchSnapshot::config),
@@ -351,7 +365,7 @@ public final class MatchSnapshotCodec {
                     BUILDING.listOf().optionalFieldOf("buildings", List.of()).forGetter(MatchSnapshot::buildings),
                     Codec.LONG.listOf().optionalFieldOf("ledger", List.of()).forGetter(MatchSnapshot::ledger),
                     CARRY.listOf().optionalFieldOf("carried", List.of()).forGetter(MatchSnapshot::carried),
-                    Codec.LONG.listOf().optionalFieldOf("outcome", List.of()).forGetter(MatchSnapshot::outcome))
+                    PLAY.optionalFieldOf("play", MatchSnapshot.Play.EMPTY).forGetter(MatchSnapshot::play))
             .apply(i, MatchSnapshot::new));
 
     private MatchSnapshotCodec() {}

@@ -16,7 +16,8 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * Who sits in a match (NET-01, spec §2.7): players by UUID, each in a player slot, which controls the faction of the
- * same number; a slot holds one player. A command's issuer is the slot bound to its sender's UUID, never a name or a
+ * same number; a slot holds one player. The administrator's slot seats observers, any number of them, who see every
+ * faction and issue nothing (the gateway refuses their commands). A command's issuer is the slot bound to its sender's UUID, never a name or a
  * payload field. Saved with the match's blob; the registry keeps a player in one match at a time.
  */
 public final class MatchRoster {
@@ -26,10 +27,11 @@ public final class MatchRoster {
         return seats.get(player);
     }
 
-    /** Seats {@code player} in {@code slot}, a player's (0 to 15), which no one else holds. */
+    /** Seats {@code player} in {@code slot}: a player's (0 to 15) which no one else holds, or the observers'. */
     void seat(UUID player, PlayerSlot slot) {
         if (slot.isAdmin()) {
-            throw new MatchRefusedException("the administrator's slot seats no player");
+            seats.put(player, slot);
+            return;
         }
         for (Map.Entry<UUID, PlayerSlot> e : seats.entrySet()) {
             if (e.getValue().equals(slot) && !e.getKey().equals(player)) {

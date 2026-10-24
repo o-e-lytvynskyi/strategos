@@ -32,7 +32,9 @@ class CommandKindsTest {
                         "strategos:set_rally",
                         "strategos:reseed",
                         "strategos:resign",
-                        "strategos:rule_change");
+                        "strategos:rule_change",
+                        "strategos:announce_wave",
+                        "strategos:set_ai");
     }
 
     @Test
@@ -64,7 +66,8 @@ class CommandKindsTest {
                         CommandKinds.SPAWN_UNITS,
                         CommandKinds.GRANT,
                         CommandKinds.SPAWN_BUILDING,
-                        CommandKinds.RULE_CHANGE);
+                        CommandKinds.RULE_CHANGE,
+                        CommandKinds.SET_AI);
     }
 
     @Test

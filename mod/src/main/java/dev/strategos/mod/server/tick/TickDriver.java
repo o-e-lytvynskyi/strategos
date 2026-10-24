@@ -30,6 +30,7 @@ public final class TickDriver {
                 server.faults().run(rt, "import", () -> server.matches().stepPreparing(rt));
             }
             server.mapImports().tick();
+            server.skirmishes().tick(server);
         }
     }
 

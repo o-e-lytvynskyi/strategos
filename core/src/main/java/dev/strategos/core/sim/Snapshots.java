@@ -65,7 +65,8 @@ final class Snapshots {
                 s.buildings().empty() ? List.of() : s.buildings().save(),
                 ledger(s),
                 s.carry().empty() ? List.of() : s.carry().save(entities.highWater(), entities::handleAt),
-                s.outcome().save());
+                new MatchSnapshot.Play(
+                        s.outcome().save(), s.aiSlots().save(), s.aiSlots().wakeMask()));
     }
 
     /** The economy ledger's counters, or none while nothing was found or taken (ECO-05). */
@@ -170,7 +171,8 @@ final class Snapshots {
         if (!snapshot.buildings().isEmpty()) {
             state.restoreBuildings(snapshot.buildings()); // before the pages, so their footprints are laid over them
         }
-        state.outcome().restore(snapshot.outcome());
+        state.outcome().restore(snapshot.play().outcome());
+        state.aiSlots().restore(snapshot.play().ai(), snapshot.play().aiWake());
         for (CarryStore.Saved load : snapshot.carried()) {
             if (!state.entities().isAlive(load.handle())) {
                 throw new IllegalArgumentException(

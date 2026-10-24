@@ -2418,6 +2418,14 @@ stateDiagram-v2
       minimap ping and a countdown, defends, and retreats at thresholds;
     - `RebuildManager` rebuilds what was lost.
   - Difficulty levels come from handicap modifiers, reaction delays and commands per think.
+- **As built in M3 (T26–T28).** `AiSystem` runs in the AI phase after the commands; a slot's
+  computer (`AiSlots`, saved in the snapshot with its 16-long memory) thinks at `20k + 7 × ((faction
+  + seed) mod factions)` or early through `AiSlots.wake`, and its commands join the next tick's
+  pending commands under its `PlayerSlot`. `SetAi` (admin, wire 18) seats one; `AnnounceWave`
+  (wire 17) is the telegraph, `match_event` WAVE its notice. M3's managers are the economy,
+  production, build and military ones; the rebuild manager and defence come with AI-02 and AI-05.
+  Observers sit in the admin's slot of the roster: they replicate as no faction (everything shown)
+  and the gateway drops their command batches.
 - **Growing into a planner (M11).** Every manager implements
   `AiModule.think(AiView, AiBudget, CommandSink)`. Planner modules (headquarters, bases, attack
   plans, defence armies) replace scripted ones one at a time, with no change to the core API.

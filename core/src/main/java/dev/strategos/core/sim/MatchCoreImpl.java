@@ -42,6 +42,8 @@ final class MatchCoreImpl implements MatchCore {
         scheduler.register(new IngestSystem(commands, journal));
         scheduler.register(paths.delivery());
         scheduler.register(commands);
+        this.queries = new QueriesImpl(state, paths);
+        scheduler.register(new AiSystem(queries)); // computer players, after the commands
         scheduler.register(new UnitAiSystem(state));
         scheduler.register(paths.requests());
         scheduler.register(new MotionSystem(state));
@@ -53,7 +55,6 @@ final class MatchCoreImpl implements MatchCore {
         scheduler.register(new AlertSystem());
         this.finalSystem = new FinalSystem(metrics, timers, journal, ports.journal());
         scheduler.register(finalSystem);
-        this.queries = new QueriesImpl(state, paths);
     }
 
     static MatchCoreImpl create(
