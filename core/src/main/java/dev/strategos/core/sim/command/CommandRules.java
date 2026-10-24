@@ -28,6 +28,7 @@ public final class CommandRules {
                 .register(new PlaceBuildingRule())
                 .register(new TrainRules.TrainRule())
                 .register(new TrainRules.TrainBatchRule())
+                .register(new TrainRules.SetAutoReseedRule())
                 .register(new TrainRules.CancelRule())
                 .register(new TrainRules.RallyRule())
                 .register(new TrainRules.ReseedRule())

@@ -5,6 +5,7 @@ import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.CancelTrain;
 import dev.strategos.core.protocol.Command;
 import dev.strategos.core.protocol.Reseed;
+import dev.strategos.core.protocol.SetAutoReseed;
 import dev.strategos.core.protocol.Stop;
 import dev.strategos.core.protocol.Train;
 import dev.strategos.core.protocol.TrainBatch;
@@ -92,6 +93,13 @@ public final class CardController {
                     yield Click.NONE;
                 }
                 send.accept(new Reseed(building.handle()));
+                yield new Click(Effect.SENT, button.template());
+            }
+            case AUTO_RESEED -> {
+                if (building == null) {
+                    yield Click.NONE;
+                }
+                send.accept(new SetAutoReseed(building.handle(), !building.autoReseed()));
                 yield new Click(Effect.SENT, button.template());
             }
             case STOP -> {

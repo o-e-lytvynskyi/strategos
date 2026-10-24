@@ -31,6 +31,7 @@ strategos:building/farmstead,DamageStages/second,65,"set in strategos:template/b
 strategos:building/farmstead,DamageStages/third,35,"set in strategos:template/building_base","A third left: most of it down but its walls' foot, a ruin still standing until its last hit points"
 strategos:building/farmstead,Health/max,600,"set in strategos:building/farmstead","A house's and a half: a farm building of mud and brick"
 strategos:building/farmstead,Placement/civicReach,48,"set in strategos:template/building_base","Within 48 blocks of an own centre's footprint: a town grows round its centre, the stand-in for territory until TERR-02"
+strategos:building/farmstead,Reseeder/reach,24,"set in strategos:building/farmstead","Twenty-four blocks: a ring of fields round the farmstead, as the classics' farm by the mill (ECO-17, D-14)"
 strategos:building/farmstead,Resistance/fire,7,"set in strategos:template/building_base","Stone: 0.9^7 lets 48 % of a torch's fire through, so wood burns more than twice as fast per hit point (CMB-03)"
 strategos:building/field,Cost/resources/wood,60,"set in strategos:building/field","Sixty wood: a worker's first two trips to a tree, after the berries run low"
 strategos:building/field,Cost/time,20,"set in strategos:building/field","Twenty seconds: a field goes in faster than a house"

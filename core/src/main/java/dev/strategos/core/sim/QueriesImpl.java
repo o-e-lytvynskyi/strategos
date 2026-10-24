@@ -64,7 +64,8 @@ final class QueriesImpl implements MatchQueries {
                     b.rallyX(handle),
                     b.rallyZ(handle),
                     b.field(handle) == 0 ? -1 : state.nodes().amount(b.field(handle)),
-                    b.field(handle) == 0 ? 0 : state.nodes().ripening(b.field(handle))));
+                    b.field(handle) == 0 ? 0 : state.nodes().ripening(b.field(handle)),
+                    b.autoReseed(handle)));
         }
         return out;
     }

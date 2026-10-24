@@ -59,6 +59,7 @@ public final class BuildingStore {
     private int[] rallyTarget = new int[8];
     private int[] field = new int[8]; // a field's crop node, 0 for none (ECO-09)
     private int[] stage = new int[8]; // a finished building's damage stage, 0 whole (BLD-05)
+    private boolean[] autoReseed = new boolean[8]; // a farmstead's toggle: it sows its reach's empty fields (ECO-17)
     // a step's scratch, neither hashed nor saved: the builders at work this tick and their rates
     private int[] tickBuilders = new int[8];
     private double[] tickRates = new double[8];
@@ -106,6 +107,7 @@ public final class BuildingStore {
         this.rallyTarget[k] = 0;
         this.field[k] = 0;
         this.stage[k] = 0;
+        this.autoReseed[k] = false;
         return Handle.of(BASE + k, generation[k]);
     }
 
@@ -138,6 +140,16 @@ public final class BuildingStore {
         rallyTarget = Arrays.copyOf(rallyTarget, n);
         field = Arrays.copyOf(field, n);
         stage = Arrays.copyOf(stage, n);
+        autoReseed = Arrays.copyOf(autoReseed, n);
+    }
+
+    /** Whether building {@code handle} sows the empty fields in its reach by itself (ECO-17, a farmstead's toggle). */
+    public boolean autoReseed(int handle) {
+        return autoReseed[at(handle)];
+    }
+
+    public void setAutoReseed(int handle, boolean on) {
+        autoReseed[at(handle)] = on;
     }
 
     /** A finished building's damage stage (BLD-05): 0 whole, up to {@link DamageStages#STAGES}. */
@@ -508,6 +520,9 @@ public final class BuildingStore {
                 if (stage[k] != 0) { // only once damaged past a threshold (BLD-05)
                     x = Hasher.mix(x, stage[k]);
                 }
+                if (autoReseed[k]) { // only a farmstead's (ECO-17)
+                    x = Hasher.mix(x, 1);
+                }
                 if (state[k] != COMPLETE) { // only a foundation or a site (BLD-03), so finished ones hash as before
                     x = Hasher.mix(x, work[k]);
                     x = Hasher.mix(x, placed[k]);
@@ -560,12 +575,17 @@ public final class BuildingStore {
 
     /** A queue as a snapshot keeps it (PROD-01): its entries, the head's ticks, its reservation and its wait. */
     public record Production(
-            List<Integer> queue, long trained, boolean reserved, boolean waiting, List<Integer> batches) {
-        public static final Production NONE = new Production(List.of(), 0, false, false, List.of());
+            List<Integer> queue,
+            long trained,
+            boolean reserved,
+            boolean waiting,
+            List<Integer> batches,
+            boolean autoReseed) {
+        public static final Production NONE = new Production(List.of(), 0, false, false, List.of(), false);
 
         /** A queue of single entries, as before batches (PROD-02). */
         public Production(List<Integer> queue, long trained, boolean reserved, boolean waiting) {
-            this(queue, trained, reserved, waiting, List.of());
+            this(queue, trained, reserved, waiting, List.of(), false);
         }
 
         public Production {
@@ -619,7 +639,8 @@ public final class BuildingStore {
                     waiting[k],
                     batched(k)
                             ? Arrays.stream(batch[k]).boxed().toList()
-                            : List.of()); // single entries save as before batches
+                            : List.of(), // single entries save as before batches
+                    autoReseed[k]);
             out.add(new Saved(
                     generation[k],
                     alive[k],
@@ -678,6 +699,7 @@ public final class BuildingStore {
             trained[k] = s.production().trained();
             reserved[k] = s.production().reserved();
             waiting[k] = s.production().waiting();
+            autoReseed[k] = s.production().autoReseed();
             rallyKind[k] = s.rally().kind();
             rallyX[k] = s.rally().x();
             rallyZ[k] = s.rally().z();

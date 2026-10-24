@@ -347,7 +347,8 @@ public final class MatchSnapshotCodec {
                     Codec.INT
                             .listOf()
                             .optionalFieldOf("batches", List.of())
-                            .forGetter(BuildingStore.Production::batches))
+                            .forGetter(BuildingStore.Production::batches),
+                    Codec.BOOL.optionalFieldOf("autoReseed", false).forGetter(BuildingStore.Production::autoReseed))
             .apply(i, BuildingStore.Production::new));
 
     private static final Codec<BuildingStore.Rally> RALLY = RecordCodecBuilder.create(i -> i.group(

@@ -46,13 +46,20 @@ public record CommandCard(Page page, List<Button> buttons) {
         BUILD_PAGE,
         BUILD,
         BACK,
-        STOP
+        STOP,
+        /** A farmstead's auto-reseed toggle (ECO-17): {@link Button#on} says how it stands. */
+        AUTO_RESEED
     }
 
     /** One button in cell {@code slot}; {@code template} is a net index, -1 for none. */
-    public record Button(Kind kind, int slot, int template, List<Long> cost, boolean affordable) {
+    public record Button(Kind kind, int slot, int template, List<Long> cost, boolean affordable, boolean on) {
         public Button {
             cost = List.copyOf(cost);
+        }
+
+        /** A button with no state to show. */
+        public Button(Kind kind, int slot, int template, List<Long> cost, boolean affordable) {
+            this(kind, slot, template, cost, affordable, false);
         }
     }
 
@@ -120,6 +127,11 @@ public record CommandCard(Page page, List<Button> buttons) {
         if (b.fieldLeft() == 0 && b.fieldRipening() == 0) {
             out.add(button(
                     in, Kind.RESEED, Math.min(slot, SLOTS - 1), b.template(), cost(in, b.template(), "Field/reseed/")));
+        }
+        ValuePath reach = in.templates().valuePaths().byPath("Reseeder/reach");
+        if (reach != null && in.templates().value(b.template(), reach.id()) > 0) {
+            out.add(new Button(
+                    Kind.AUTO_RESEED, Math.min(slot, SLOTS - 1), b.template(), List.of(), true, b.autoReseed()));
         }
         return out;
     }

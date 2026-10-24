@@ -38,6 +38,7 @@ class CommandKindsTest {
                         "strategos:build",
                         "strategos:cancel_building",
                         "strategos:demolish",
+                        "strategos:set_auto_reseed",
                         "strategos:train_batch",
                         "strategos:spawn_deposit");
     }

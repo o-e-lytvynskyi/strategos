@@ -192,9 +192,15 @@ public final class Production {
         s.bus().publish(new OrderReceived(unit));
     }
 
-    /** Building {@code handle} now stands finished: its housing counts, and a field starts to ripen. */
+    /**
+     * Building {@code handle} now stands finished: its housing counts, a field starts to ripen, and a farmstead sows its
+     * reach by itself until its owner turns that off (ECO-17).
+     */
     public static void finished(MatchState s, int handle) {
         s.population().house(s.buildings().faction(handle), housing(s, handle));
+        if (Fields.reach(s, handle) > 0) {
+            s.buildings().setAutoReseed(handle, true);
+        }
         if (Fields.isField(s, s.buildings().template(handle), s.buildings().faction(handle))) {
             Fields.create(s, handle); // a field's crop starts to ripen (ECO-09)
         }

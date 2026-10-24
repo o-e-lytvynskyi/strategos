@@ -9,7 +9,7 @@ import java.util.List;
  * with where it stands, its state, progress and hit points (in 255ths of its most); its own faction's also carry what
  * only the owner sees: the production queue's template indices, the head's progress in thousandths and the rally
  * point, and for a field (ECO-09) the food its crop holds, in thousandths (-1 for no field), and the ticks it still
- * ripens. Until fog (M6) every building is
+ * ripens; and for a farmstead its auto-reseed toggle (ECO-17). Until fog (M6) every building is
  * known. Sent to each seated player when it changes.
  */
 @CoreApi
@@ -37,13 +37,62 @@ public record BuildingState(int matchId, long tick, List<Entry> buildings) {
             int rallyZ,
             int trained,
             int fieldLeft,
-            int fieldRipening) {
+            int fieldRipening,
+            boolean autoReseed) {
+        /** An entry with its auto-reseed off: every building but a farmstead's own. */
+        public Entry(
+                int handle,
+                int template,
+                int faction,
+                int x,
+                int z,
+                int rotation,
+                int baseY,
+                int state,
+                int progress,
+                int health,
+                boolean own,
+                List<Integer> queue,
+                boolean rally,
+                int rallyX,
+                int rallyZ,
+                int trained,
+                int fieldLeft,
+                int fieldRipening) {
+            this(
+                    handle,
+                    template,
+                    faction,
+                    x,
+                    z,
+                    rotation,
+                    baseY,
+                    state,
+                    progress,
+                    health,
+                    own,
+                    queue,
+                    rally,
+                    rallyX,
+                    rallyZ,
+                    trained,
+                    fieldLeft,
+                    fieldRipening,
+                    false);
+        }
+
         public Entry {
             queue = List.copyOf(queue);
             if (queue.size() > MAX_QUEUE || health < 0 || health > UnitHud.WHOLE || rotation < 0 || rotation > 3) {
                 throw new IllegalArgumentException("a building entry out of range: " + handle);
             }
-            if (!own && (!queue.isEmpty() || rally || trained != 0 || fieldLeft != -1 || fieldRipening != 0)) {
+            if (!own
+                    && (!queue.isEmpty()
+                            || rally
+                            || trained != 0
+                            || fieldLeft != -1
+                            || fieldRipening != 0
+                            || autoReseed)) {
                 throw new IllegalArgumentException("a building of another faction carries owner fields: " + handle);
             }
         }
@@ -94,6 +143,7 @@ public record BuildingState(int matchId, long tick, List<Entry> buildings) {
                     if (e.fieldLeft() >= 0) {
                         out.writeVarInt(e.fieldRipening());
                     }
+                    out.writeByte(e.autoReseed() ? 1 : 0);
                 }
             }
         }
@@ -122,6 +172,7 @@ public record BuildingState(int matchId, long tick, List<Entry> buildings) {
                 int trained = 0;
                 int fieldLeft = -1;
                 int ripening = 0;
+                boolean autoReseed = false;
                 if (own) {
                     int q = in.readVarInt(MAX_QUEUE);
                     for (int i = 0; i < q; i++) {
@@ -139,6 +190,7 @@ public record BuildingState(int matchId, long tick, List<Entry> buildings) {
                     if (fieldLeft >= 0) {
                         ripening = in.readVarInt();
                     }
+                    autoReseed = in.readUnsignedByte() == 1;
                 }
                 out.add(new Entry(
                         handle,
@@ -158,7 +210,8 @@ public record BuildingState(int matchId, long tick, List<Entry> buildings) {
                         rz,
                         trained,
                         fieldLeft,
-                        ripening));
+                        ripening,
+                        autoReseed));
             }
             return new BuildingState(matchId, tick, out);
         }
@@ -168,7 +221,8 @@ public record BuildingState(int matchId, long tick, List<Entry> buildings) {
             return 5
                     + 10
                     + 2
-                    + MAX_BUILDINGS * (5 + 5 + 5 + 5 + 5 + 1 + 5 + 5 + 1 + 1 + 1 + MAX_QUEUE * 5 + 1 + 10 + 5 + 5 + 5);
+                    + MAX_BUILDINGS
+                            * (5 + 5 + 5 + 5 + 5 + 1 + 5 + 5 + 1 + 1 + 1 + MAX_QUEUE * 5 + 1 + 10 + 5 + 5 + 5 + 1);
         }
     };
 }

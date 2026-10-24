@@ -170,6 +170,56 @@ public final class Fields {
         }
     }
 
+    /** The path of a building's reseeding reach (ECO-17): a farmstead sows the empty fields this near it. */
+    public static final String REACH = "Reseeder/reach";
+
+    /** Building {@code handle}'s reseeding reach, in blocks, 0 for a building that sows none. */
+    public static double reach(MatchState s, int handle) {
+        BuildingStore b = s.buildings();
+        double v = value(s, b.template(handle), b.faction(handle), REACH);
+        return Double.isFinite(v) && v > 0 ? v : 0;
+    }
+
+    /**
+     * Auto-reseed (ECO-17, D-14): each empty own field whose middle lies within the reach of a finished own building
+     * with its toggle on is sown again this tick, its reseed paid; one the faction cannot pay waits for the next tick.
+     */
+    public static void autoReseed(MatchState s) {
+        BuildingStore b = s.buildings();
+        int[] handles = b.handles();
+        for (int field : handles) {
+            if (b.field(field) == 0 || !empty(s, field) || !sownBy(s, field, handles)) {
+                continue;
+            }
+            int faction = b.faction(field);
+            long[] cost = reseedCost(s, field);
+            if (s.treasury().missing(faction, cost) == null) {
+                s.treasury().pay(faction, cost);
+                reseed(s, field);
+            }
+        }
+    }
+
+    /** Whether one of {@code handles}, finished, its toggle on and its faction's, has field {@code field} in reach. */
+    private static boolean sownBy(MatchState s, int field, int[] handles) {
+        BuildingStore b = s.buildings();
+        var at = s.footprintOf(field);
+        double fx = at.anchorX() + at.spanX() / 2.0;
+        double fz = at.anchorZ() + at.spanZ() / 2.0;
+        for (int h : handles) {
+            if (!b.autoReseed(h) || b.state(h) != BuildingStore.COMPLETE || b.faction(h) != b.faction(field)) {
+                continue;
+            }
+            var by = s.footprintOf(h);
+            double d = dev.strategos.core.shared.DetMath.length(
+                    by.anchorX() + by.spanX() / 2.0 - fx, by.anchorZ() + by.spanZ() / 2.0 - fz);
+            if (d <= reach(s, h)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /** Whether field {@code handle} may be reseeded now: reaped empty and not ripening. */
     public static boolean empty(MatchState s, int handle) {
         int node = s.buildings().field(handle);

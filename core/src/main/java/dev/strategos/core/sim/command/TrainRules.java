@@ -6,6 +6,7 @@ import dev.strategos.core.protocol.CommandKind;
 import dev.strategos.core.protocol.CommandKinds;
 import dev.strategos.core.protocol.RejectReason;
 import dev.strategos.core.protocol.Reseed;
+import dev.strategos.core.protocol.SetAutoReseed;
 import dev.strategos.core.protocol.SetRally;
 import dev.strategos.core.protocol.Train;
 import dev.strategos.core.protocol.TrainBatch;
@@ -116,6 +117,27 @@ final class TrainRules {
             }
             state.treasury().pay(faction, cost);
             b.enqueue(train.building(), template.netIndex(), train.count());
+            return Tally.acceptAll(envelope, kind(), 1);
+        }
+    }
+
+    /** SetAutoReseed (ECO-17): an own building that sows fields turns its toggle on or off; any other is unsupported. */
+    static final class SetAutoReseedRule implements CommandRule<SetAutoReseed> {
+        @Override
+        public CommandKind<SetAutoReseed> kind() {
+            return CommandKinds.SET_AUTO_RESEED;
+        }
+
+        @Override
+        public CommandResult apply(CommandEnvelope envelope, SetAutoReseed set, MatchState state) {
+            RejectReason reason = own(envelope, set.building(), state);
+            if (reason != null) {
+                return Tally.rejectAll(envelope, kind(), 1, reason);
+            }
+            if (Fields.reach(state, set.building()) <= 0) {
+                return Tally.rejectAll(envelope, kind(), 1, RejectReason.UNSUPPORTED);
+            }
+            state.buildings().setAutoReseed(set.building(), set.on());
             return Tally.acceptAll(envelope, kind(), 1);
         }
     }

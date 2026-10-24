@@ -42,6 +42,7 @@ class CommandCodecTest {
                 Build.replace(UnitSet.of(1, 2), 524_289),
                 new CancelBuilding(524_290),
                 new Demolish(524_291),
+                new SetAutoReseed(524_293, true),
                 new TrainBatch(524_292, new TemplateId("strategos:unit/infantry"), 5),
                 new SpawnDeposit(new TemplateId("strategos:building/iron_mine"), 10, 12));
     }

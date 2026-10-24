@@ -372,7 +372,7 @@ Cards: [roadmap/M4-economy-and-construction.md](roadmap/M4-economy-and-construct
 | ECO-07 | Stone from real rock | M | ECO-05, PATH-15 | done |
 | ECO-08 | Mines and quarries | M | ECO-05 | done |
 | ECO-16 | Livestock at the start | M | ECO-05, UNIT-03 | in_progress |
-| ECO-17 | Field auto-reseed at the farmstead | S | ECO-09, BLD-08, D-14 | specified |
+| ECO-17 | Field auto-reseed at the farmstead | S | ECO-09, BLD-08, D-14 | done |
 | UNIT-05 | Level of detail by activity | M | CORE-02, PERF-02 | done |
 | BLD-04 | Foundations on uneven ground | M | BLD-03 | done |
 | BLD-05 | Abstract HP and damage stages | M | BLD-03, CMB-03 | done |

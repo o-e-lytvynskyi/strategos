@@ -152,7 +152,8 @@ reseed). What happens when one runs out?
   2. Manual reseed still works with the toggle off (L1).
   3. The toggle state reaches its owner only (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** ECO-09, BLD-08, D-14 · **Size:** S · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-24 — M4 T15: reseeds when paid, else waits (1); manual reseed with the toggle off (2); the toggle reaches its owner only (3) (spec §1.6 row 19)
 
 ### Units and the town
 

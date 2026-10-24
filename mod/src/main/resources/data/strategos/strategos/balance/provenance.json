@@ -161,6 +161,7 @@
   "strategos:building/farmstead": {
     "Health/max": "A house's and a half: a farm building of mud and brick",
     "Cost/resources/wood": "As a storehouse: the food side's dropsite costs what the other side's does, less its stone",
-    "Cost/time": "Thirty-five seconds, 2.5 blocks a second for its 88"
+    "Cost/time": "Thirty-five seconds, 2.5 blocks a second for its 88",
+    "Reseeder/reach": "Twenty-four blocks: a ring of fields round the farmstead, as the classics' farm by the mill (ECO-17, D-14)"
   }
 }

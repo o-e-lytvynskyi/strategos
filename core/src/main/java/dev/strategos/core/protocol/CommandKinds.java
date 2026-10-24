@@ -49,6 +49,8 @@ public final class CommandKinds {
             "strategos:cancel_building", 20, CancelBuilding.class, CancelBuilding.CODEC, CancelBuilding.WIRE, false);
     public static final CommandKind<Demolish> DEMOLISH =
             new CommandKind<>("strategos:demolish", 21, Demolish.class, Demolish.CODEC, Demolish.WIRE, false);
+    public static final CommandKind<SetAutoReseed> SET_AUTO_RESEED = new CommandKind<>(
+            "strategos:set_auto_reseed", 22, SetAutoReseed.class, SetAutoReseed.CODEC, SetAutoReseed.WIRE, false);
     public static final CommandKind<TrainBatch> TRAIN_BATCH =
             new CommandKind<>("strategos:train_batch", 23, TrainBatch.class, TrainBatch.CODEC, TrainBatch.WIRE, false);
     public static final CommandKind<SpawnDeposit> SPAWN_DEPOSIT = new CommandKind<>(
@@ -75,6 +77,7 @@ public final class CommandKinds {
             BUILD,
             CANCEL_BUILDING,
             DEMOLISH,
+            SET_AUTO_RESEED,
             TRAIN_BATCH,
             SPAWN_DEPOSIT));
 

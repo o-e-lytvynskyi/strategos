@@ -28,5 +28,6 @@ public sealed interface Command extends Hashable
                 Build,
                 CancelBuilding,
                 Demolish,
+                SetAutoReseed,
                 TrainBatch,
                 SpawnDeposit {}

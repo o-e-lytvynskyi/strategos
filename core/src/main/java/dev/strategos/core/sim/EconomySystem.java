@@ -24,6 +24,7 @@ final class EconomySystem implements MatchSystem {
         BuildingStore buildings = state.buildings();
         if (!buildings.empty()) {
             Fields.ripen(state);
+            Fields.autoReseed(state);
             for (int handle : buildings.handles()) {
                 if (buildings.state(handle) == BuildingStore.CONSTRUCTING) {
                     Construction.step(state, handle);

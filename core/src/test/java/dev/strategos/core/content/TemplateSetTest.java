@@ -103,8 +103,8 @@ class TemplateSetTest {
         assertThatThrownBy(() -> TemplateSet.builtin().byIndex(16)).isInstanceOf(IllegalArgumentException.class);
     }
 
-    // M4: the batch exponents (PROD-02)
-    private static final String BUILTIN_VERSION = "2a2f4ef9206994b31ab797cd5090c943d461e4651a037b0d34f29740a2fca353";
+    // M4: the farmstead's reach (ECO-17)
+    private static final String BUILTIN_VERSION = "b4dc5f372084f6e585991b46f0a5dd964000c22e094206ad5f375e00ac042c1c";
 
     private static TemplateSet set(UnitTemplate template) {
         return new TemplateSet(List.of(template));

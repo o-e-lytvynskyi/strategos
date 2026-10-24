@@ -655,6 +655,12 @@ public final class RtsHud {
                 case BUILD_PAGE -> paint.item(g, "minecraft:bricks", cell);
                 case BACK -> paint.item(g, "minecraft:arrow", cell);
                 case STOP -> paint.item(g, "minecraft:barrier", cell);
+                case AUTO_RESEED -> {
+                    paint.item(g, "minecraft:hay_block", cell);
+                    if (!b.on()) { // off: dimmed
+                        g.fill(cell.x(), cell.y(), cell.right(), cell.bottom(), 0x80202020);
+                    }
+                }
             }
             if (!b.affordable()) {
                 g.fill(cell.x(), cell.y(), cell.right(), cell.bottom(), 0x90400000);
@@ -671,6 +677,7 @@ public final class RtsHud {
             case BUILD_PAGE -> "Build";
             case BACK -> "Back";
             case STOP -> "Stop";
+            case AUTO_RESEED -> b.on() ? "Auto-reseed: on (click to turn off)" : "Auto-reseed: off (click to turn on)";
         };
         List<String> resources = StrategosClient.resources();
         StringBuilder text = new StringBuilder(what);

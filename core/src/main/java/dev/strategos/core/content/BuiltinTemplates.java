@@ -200,7 +200,8 @@ final class BuiltinTemplates {
               "Building": { "blueprint": "strategos:farmstead" },
               "Health": { "max": 600 },
               "Cost": { "resources": { "wood": 100 }, "time": 35 },
-              "Dropsite": { "resources": "food" }
+              "Dropsite": { "resources": "food" },
+              "Reseeder": { "reach": 24 }
             }
             """;
     static final String QUARRY = """

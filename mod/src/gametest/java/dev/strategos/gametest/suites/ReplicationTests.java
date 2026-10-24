@@ -448,4 +448,56 @@ public final class ReplicationTests {
         }
         return out;
     }
+
+    /**
+     * ECO-17.3: a farmstead's auto-reseed toggle reaches its owner in {@code building_state}, on from the start, then off
+     * once turned off; the other faction's player sees the farmstead without it.
+     */
+    @StrategosTest(batch = "eco_gather", timeoutTicks = 400)
+    public static void theToggleReachesItsOwnerOnly(GameTestHelper h) {
+        MatchRuntime rt = MatchFixture.create(h, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
+        rt.submit(
+                PlayerSlot.ADMIN,
+                new SpawnBuilding(
+                        new dev.strategos.core.shared.TemplateId("strategos:building/farmstead"),
+                        new FactionSlot(0),
+                        12,
+                        12,
+                        0));
+        MockViewer own = BuildingTests.seated(h, rt, "strategos-tgl0", 0);
+        MockViewer other = BuildingTests.seated(h, rt, "strategos-tgl1", 1);
+        h.startSequence()
+                .thenWaitUntil(() -> {
+                    var states = BuildingTests.states(own, rt);
+                    check(
+                            !states.isEmpty()
+                                    && !states.get(states.size() - 1)
+                                            .buildings()
+                                            .isEmpty(),
+                            "no state yet");
+                    check(states.get(states.size() - 1).buildings().get(0).autoReseed(), "the owner sees it off");
+                })
+                .thenExecute(() -> {
+                    var seen = BuildingTests.states(other, rt);
+                    check(!seen.isEmpty(), "the other player has no state");
+                    for (var state : seen) {
+                        for (var e : state.buildings()) {
+                            check(!e.own() && !e.autoReseed(), "the other player sees the toggle: " + e);
+                        }
+                    }
+                    rt.submit(
+                            new PlayerSlot(0),
+                            new dev.strategos.core.protocol.SetAutoReseed(
+                                    core(rt).queries().buildings().get(0).handle(), false));
+                })
+                .thenWaitUntil(() -> {
+                    var states = BuildingTests.states(own, rt);
+                    check(!states.get(states.size() - 1).buildings().get(0).autoReseed(), "still on for the owner");
+                })
+                .thenExecute(() -> {
+                    own.close();
+                    other.close();
+                })
+                .thenSucceed();
+    }
 }

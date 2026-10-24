@@ -31,7 +31,8 @@ public record BuildingView(
         double rallyX,
         double rallyZ,
         long fieldAmount,
-        long fieldRipening) {
+        long fieldRipening,
+        boolean autoReseed) {
     public BuildingView {
         dropsite = List.copyOf(dropsite);
         queue = List.copyOf(queue);
