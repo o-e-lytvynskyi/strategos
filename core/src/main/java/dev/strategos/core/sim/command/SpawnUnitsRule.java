@@ -13,6 +13,7 @@ import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.MatchBounds;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.Streams;
+import dev.strategos.core.sim.econ.Livestock;
 
 /**
  * SpawnUnits, admin only: creates units around a centre. Unit i stands at angle {@code 2π·u(2i)} and radius
@@ -41,11 +42,14 @@ final class SpawnUnitsRule implements CommandRule<SpawnUnits> {
         if (template.isBuilding()) {
             return Tally.rejectAll(envelope, kind(), requested, RejectReason.UNSUPPORTED); // buildings are placed
         }
-        // The faction must be seated in this match, besides the spec's count and spread ranges.
+        // The faction must be seated in this match, or be Gaia for an animal (ECO-16), besides the spec's count and
+        // spread ranges.
+        boolean fauna = Livestock.isFauna(state.templates(), template.netIndex());
         if (spawn.count() < 1
                 || spawn.count() > MAX_COUNT
                 || !(spawn.spread() >= 0 && spawn.spread() <= MAX_SPREAD)
-                || spawn.faction().value() >= state.config().factions()) {
+                || spawn.faction().value() > state.gaia()
+                || (spawn.faction().value() == state.gaia()) != fauna) {
             return Tally.rejectAll(envelope, kind(), requested, RejectReason.INVALID_ARGUMENT);
         }
         MatchBounds bounds = state.config().bounds();
@@ -69,7 +73,10 @@ final class SpawnUnitsRule implements CommandRule<SpawnUnits> {
                             spawn.center().x() + r * DetMath.cos(angle),
                             spawn.center().z() + r * DetMath.sin(angle)),
                     0.5);
-            state.spawnUnit(template.netIndex(), spawn.faction().value(), p.x(), floorY, p.z(), 0f);
+            int handle = state.spawnUnit(template.netIndex(), spawn.faction().value(), p.x(), floorY, p.z(), 0f);
+            if (fauna) {
+                Livestock.spawn(state, handle);
+            }
         }
         return Tally.acceptAll(envelope, kind(), spawn.count());
     }

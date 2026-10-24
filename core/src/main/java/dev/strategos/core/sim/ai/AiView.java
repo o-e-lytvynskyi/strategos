@@ -83,13 +83,17 @@ public final class AiView {
         if (units == null) {
             List<UnitView> own = new ArrayList<>();
             List<UnitView> others = new ArrayList<>();
+            int read = 0;
             for (int h : q.unitHandles()) {
                 UnitView u = q.unit(h);
-                if (u != null) {
-                    (u.faction().value() == faction ? own : others).add(u);
+                read += u == null ? 0 : 1;
+                if (u != null && u.faction().value() == faction) {
+                    own.add(u);
+                } else if (u != null && u.faction().value() < q.config().factions()) { // Gaia's animals are no enemy
+                    others.add(u);
                 }
             }
-            budget.spend(own.size() + others.size());
+            budget.spend(read);
             units = own;
             enemies = others;
         }

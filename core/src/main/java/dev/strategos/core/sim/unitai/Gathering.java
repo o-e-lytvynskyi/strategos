@@ -17,6 +17,7 @@ import dev.strategos.core.sim.econ.Felling;
 import dev.strategos.core.sim.econ.Fields;
 import dev.strategos.core.sim.econ.Forage;
 import dev.strategos.core.sim.econ.GatherRates;
+import dev.strategos.core.sim.econ.Livestock;
 import dev.strategos.core.sim.econ.NodeStore;
 import dev.strategos.core.sim.econ.Quarrying;
 import dev.strategos.core.sim.nav.MaterialKind;
@@ -147,6 +148,10 @@ final class Gathering {
             ctx.go(UnitAi.GATHER_RETURNING);
             return;
         }
+        if (nodes.kind(node) == MaterialKind.CARCASS && Livestock.alive(s, node)) { // slaughtered first (ECO-16)
+            ctx.setData(ctx.data0(), Livestock.strike(s, i, ctx.handle(), node, ctx.data1()));
+            return;
+        }
         long rate = rates.rate(s.stats(), i, resource, subtype);
         if (nodes.kind(node) == MaterialKind.CROP) { // a field's farmers share in diminishing returns (ECO-09)
             rate = Math.round(rate * Fields.share(Fields.farmers(nodes, node)));
@@ -160,6 +165,7 @@ final class Gathering {
                 case LOG -> Felling.take(s, node, want);
                 case STONE -> Quarrying.take(s, node, want);
                 case DEPOSIT -> Deposits.take(s, node, want);
+                case CARCASS -> Livestock.take(s, node, want);
                 case CROP -> Fields.take(s, node, want);
                 default -> Forage.take(s, node, want);
             };

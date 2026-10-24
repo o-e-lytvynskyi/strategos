@@ -18,6 +18,8 @@ public sealed interface MatchEvent extends OutputEvent
                 UnitGear,
                 BlockCracked,
                 FlameShown,
+                CarcassLeft,
+                CarcassGone,
                 FactionDefeated,
                 MatchEnded,
                 UnderAttack,

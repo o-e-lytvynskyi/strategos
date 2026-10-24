@@ -1,0 +1,7 @@
+{
+  "parent": "strategos:template/unit_fauna",
+  "Identity": { "name": "strategos.unit.chicken", "icon": "minecraft:feather" },
+  "Health": { "max": 4 },
+  "Fauna": { "meat": 40, "slots": 2 },
+  "Body": { "model": "chicken", "width": 0.4, "height": 0.7, "radius": 0.25 }
+}

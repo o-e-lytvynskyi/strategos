@@ -72,11 +72,11 @@ public final class ConstructionTests {
                 .toList();
     }
 
-    /** The level's blocks over house {@code b}'s blueprint equal it, block for block, and its air is air. */
+    /** The level's blocks over building {@code house}'s blueprint equal it, block for block, and its air is air. */
     static void equalsBlueprint(GameTestHelper h, MatchRuntime rt, BuildingView house) {
         MatchCore core = core(rt);
-        int index =
-                Objects.requireNonNull(core.queries().templates().byId(HOUSE)).netIndex();
+        int index = Objects.requireNonNull(core.queries().templates().byId(house.template()))
+                .netIndex();
         Blueprint b = Objects.requireNonNull(core.queries().templates().blueprint(index));
         Footprint at = house.footprint();
         BlockWriter writer = StrategosServer.get().writer();
@@ -394,6 +394,131 @@ public final class ConstructionTests {
                         }
                         equalsBlueprint(h, rt, house);
                     }
+                })
+                .thenSucceed();
+    }
+
+    static final TemplateId BARRACKS = new TemplateId("strategos:building/barracks");
+
+    /**
+     * Two hillsides in the arena, raised before the match captures it: at (26..34, 20..26) the ground steps up by one
+     * at x = 29 and by two at x = 32, a spread of 2; at (20..28, 34..40) by one, two and three, at x = 23, 25 and 27.
+     */
+    private static void slopes(GameTestHelper h) {
+        for (int z = 20; z <= 26; z++) {
+            for (int x = 26; x <= 34; x++) {
+                for (int y = 2; y < 2 + (x >= 32 ? 2 : x >= 29 ? 1 : 0); y++) {
+                    h.setBlock(new BlockPos(x, y, z), Blocks.DIRT);
+                }
+            }
+        }
+        for (int z = 34; z <= 40; z++) {
+            for (int x = 20; x <= 28; x++) {
+                for (int y = 2; y < 2 + (x >= 27 ? 3 : x >= 25 ? 2 : x >= 23 ? 1 : 0); y++) {
+                    h.setBlock(new BlockPos(x, y, z), Blocks.DIRT);
+                }
+            }
+        }
+    }
+
+    private static List<BuildingView> barracks(MatchRuntime rt) {
+        return core(rt).queries().buildings().stream()
+                .filter(b -> b.template().equals(BARRACKS))
+                .toList();
+    }
+
+    /** Faction 0's town with the barracks' stone and iron besides its wood, and four workers. */
+    private static void barracksTown(MatchRuntime rt) {
+        town(rt, 4);
+        rt.submit(PlayerSlot.ADMIN, new Grant(new FactionSlot(0), "stone", 100));
+        rt.submit(PlayerSlot.ADMIN, new Grant(new FactionSlot(0), "iron", 50));
+    }
+
+    /**
+     * BLD-04.1 and .2: a barracks on a three-block slope is refused as not flat; on the two-block slope its foundation
+     * stands at the highest ground, every column below it is filled down to the ground, and finished it equals its
+     * blueprint.
+     */
+    @StrategosTest(batch = "construction", arena = "arena_flat_48", timeoutTicks = 3_000)
+    public static void aBarracksOnASlopeIsPreparedAndCompleted(GameTestHelper h) {
+        slopes(h);
+        MatchRuntime rt = Units.match(h);
+        barracksTown(rt);
+        var state = new Object() {
+            CommandResult steep;
+        };
+        h.startSequence()
+                .thenWaitUntil(() -> check(handles(rt).length == 4, "no workers yet"))
+                .thenExecute(() -> rt.submit(
+                        P0,
+                        new PlaceBuilding(BARRACKS, 20, 34, 0, UnitSet.of(handles(rt)), QueueMode.REPLACE),
+                        result -> state.steep = result))
+                .thenWaitUntil(() -> check(state.steep != null, "no reply yet"))
+                .thenExecute(() -> {
+                    check(state.steep.firstReason() == RejectReason.NOT_FLAT, "the steep site: " + state.steep);
+                    rt.submit(P0, new PlaceBuilding(BARRACKS, 26, 20, 0, UnitSet.of(handles(rt)), QueueMode.REPLACE));
+                })
+                .thenWaitUntil(() -> check(!barracks(rt).isEmpty(), "no foundation"))
+                .thenExecute(() -> check(
+                        barracks(rt).get(0).baseY()
+                                == h.absolutePos(new BlockPos(0, 3, 0)).getY(),
+                        "its floor layer at " + barracks(rt).get(0).baseY() + ", not on the highest ground"))
+                .thenWaitUntil(() -> check(barracks(rt).get(0).state() == BuildingStore.COMPLETE, "not finished"))
+                .thenExecuteAfter(20, () -> {
+                    BuildingView b = barracks(rt).get(0);
+                    equalsBlueprint(h, rt, b);
+                    int base = b.baseY() - h.absolutePos(BlockPos.ZERO).getY();
+                    for (int x = 26; x <= 34; x++) {
+                        for (int z = 20; z <= 26; z++) {
+                            for (int y = 1; y < base; y++) {
+                                BlockPos pos = new BlockPos(x, y, z);
+                                check(!h.getBlockState(pos).isAir(), "a gap under the barracks at " + pos);
+                            }
+                        }
+                    }
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * BLD-04.3: with the writer's budget cut to 8 a tick, the slope's preparation never takes more than that in a tick,
+     * and the site's ground is all written before its first layer. A batch of its own: the writer's budget and
+     * observer are the server's.
+     */
+    @StrategosTest(batch = "construction_prep", arena = "arena_flat_48", timeoutTicks = 4_000, solo = true)
+    public static void preparationWithinTheWriterBudget(GameTestHelper h) {
+        slopes(h);
+        MatchRuntime rt = Units.match(h);
+        barracksTown(rt);
+        BlockWriter writer = StrategosServer.get().writer();
+        int budget = writer.budget();
+        writer.budget(8);
+        Map<Long, Integer> perTick = new HashMap<>();
+        List<String> order = new ArrayList<>();
+        writer.observe((level, tick, site, pos, written) -> {
+            if (site.match() == rt.id().value()) {
+                perTick.merge(tick, 1, Integer::sum);
+                order.add(written.getBlock() == Blocks.DIRT ? "fill" : written.isAir() ? "clear" : "layer");
+            }
+        });
+        h.startSequence()
+                .thenWaitUntil(() -> check(handles(rt).length == 4, "no workers yet"))
+                .thenExecute(() -> rt.submit(
+                        P0, new PlaceBuilding(BARRACKS, 26, 20, 0, UnitSet.of(handles(rt)), QueueMode.REPLACE)))
+                .thenWaitUntil(() -> check(
+                        !barracks(rt).isEmpty() && barracks(rt).get(0).state() == BuildingStore.COMPLETE,
+                        "not finished"))
+                .thenExecuteAfter(40, () -> {
+                    writer.observe(null);
+                    writer.budget(budget);
+                    int most = perTick.values().stream()
+                            .mapToInt(Integer::intValue)
+                            .max()
+                            .orElse(0);
+                    check(most <= 8, most + " placements in one tick");
+                    check(order.contains("fill"), "nothing filled: " + order.size() + " writes");
+                    check(order.lastIndexOf("fill") < order.indexOf("layer"), "a layer before the ground was filled");
+                    equalsBlueprint(h, rt, barracks(rt).get(0));
                 })
                 .thenSucceed();
     }

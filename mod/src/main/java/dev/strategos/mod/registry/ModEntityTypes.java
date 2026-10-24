@@ -33,7 +33,30 @@ public final class ModEntityTypes {
                     .setShouldReceiveVelocityUpdates(false)
                     .build("strategos:unit_humanoid"));
 
+    /**
+     * The animals' bodies (ECO-16): as a unit's, sized for the largest of them, a sheep; the renderer draws each by its
+     * template's {@code Body/model}.
+     */
+    public static final DeferredHolder<EntityType<?>, EntityType<UnitEntity>> UNIT_FAUNA = ENTITY_TYPES.register(
+            "unit_fauna",
+            () -> EntityType.Builder.<UnitEntity>of(UnitEntity::new, MobCategory.MISC)
+                    .sized(0.9F, 1.3F)
+                    .noSummon()
+                    .noSave()
+                    .fireImmune()
+                    .clientTrackingRange(10)
+                    .updateInterval(3)
+                    .setShouldReceiveVelocityUpdates(false)
+                    .build("strategos:unit_fauna"));
+
     private ModEntityTypes() {}
+
+    /** The body type template {@code netIndex} names in {@code Body/entityType}; a humanoid's by default. */
+    public static EntityType<UnitEntity> forTemplate(dev.strategos.core.content.TemplateSet templates, int netIndex) {
+        var path = templates.tokenPaths().byPath("Body/entityType");
+        String type = path == null || !templates.has(netIndex) ? null : templates.text(netIndex, path.id());
+        return "strategos:unit_fauna".equals(type) ? UNIT_FAUNA.get() : UNIT_HUMANOID.get();
+    }
 
     public static void register(IEventBus modBus) {
         ENTITY_TYPES.register(modBus);
@@ -43,5 +66,6 @@ public final class ModEntityTypes {
     /** {@code DefaultAttributes.validate()} skips MISC types, so a missing entry would only crash on creation. */
     static void onAttributes(EntityAttributeCreationEvent event) {
         event.put(UNIT_HUMANOID.get(), LivingEntity.createLivingAttributes().build());
+        event.put(UNIT_FAUNA.get(), LivingEntity.createLivingAttributes().build());
     }
 }

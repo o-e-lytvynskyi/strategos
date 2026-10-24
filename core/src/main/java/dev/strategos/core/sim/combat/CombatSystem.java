@@ -15,6 +15,7 @@ import dev.strategos.core.sim.Phase;
 import dev.strategos.core.sim.UnitDied;
 import dev.strategos.core.sim.UnitHurt;
 import dev.strategos.core.sim.build.BuildingStore;
+import dev.strategos.core.sim.econ.Livestock;
 import dev.strategos.core.sim.stats.StatService;
 import java.util.ArrayList;
 import java.util.List;
@@ -91,7 +92,11 @@ public final class CombatSystem implements MatchSystem {
             int handle = dead[0];
             FactionSlot faction = new FactionSlot(s.identity().faction(Handle.index(handle)));
             s.outputs().add(new UnitDied(handle, faction, dead[1]));
-            s.outputs().add(new Notice(faction, NoticeKind.UNIT_LOST, handle, "died"));
+            if (faction.value() == s.gaia()) {
+                Livestock.died(s, handle); // an animal leaves its carcass (ECO-16)
+            } else {
+                s.outputs().add(new Notice(faction, NoticeKind.UNIT_LOST, handle, "died"));
+            }
             s.removeUnit(handle);
         }
     }

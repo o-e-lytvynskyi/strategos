@@ -73,10 +73,48 @@ final class BuiltinTemplates {
               "Cost": { "resources": { "food": 60 }, "population": 1, "time": 10 },
               "Builder": { "rate": 1 },
               "ResourceGatherer": {
-                "rates": { "food": { "fruit": 1, "grain": 0.5 }, "wood": { "tree": 0.6 }, "stone": { "rock": 0.4 }, "iron": { "ore": 0.35 } },
-                "capacities": { "food": 10, "wood": 10, "stone": 10, "iron": 10 }
+                "rates": { "food": { "fruit": 1, "grain": 0.5, "meat": 1 }, "wood": { "tree": 0.6 }, "stone": { "rock": 0.4 }, "iron": { "ore": 0.35 } },
+                "capacities": { "food": 10, "wood": 10, "stone": 10, "iron": 10 },
+                "slaughter": 2
               },
               "Body": { "skin": "strategos:units/worker" }
+            }
+            """;
+
+    static final String UNIT_FAUNA = """
+            {
+              "abstract": true,
+              "parent": "strategos:template/unit_base",
+              "Identity": { "classes": "+Fauna +Organic" },
+              "UnitMotion": { "walkSpeed": 0.1 },
+              "Body": { "entityType": "strategos:unit_fauna" }
+            }
+            """;
+    static final String SHEEP = """
+            {
+              "parent": "strategos:template/unit_fauna",
+              "Identity": { "name": "strategos.unit.sheep", "icon": "minecraft:white_wool" },
+              "Health": { "max": 8 },
+              "Fauna": { "meat": 100, "slots": 3 },
+              "Body": { "model": "sheep", "width": 0.9, "height": 1.3, "radius": 0.45 }
+            }
+            """;
+    static final String PIG = """
+            {
+              "parent": "strategos:template/unit_fauna",
+              "Identity": { "name": "strategos.unit.pig", "icon": "minecraft:porkchop" },
+              "Health": { "max": 10 },
+              "Fauna": { "meat": 150, "slots": 3 },
+              "Body": { "model": "pig", "width": 0.9, "height": 0.9, "radius": 0.45 }
+            }
+            """;
+    static final String CHICKEN = """
+            {
+              "parent": "strategos:template/unit_fauna",
+              "Identity": { "name": "strategos.unit.chicken", "icon": "minecraft:feather" },
+              "Health": { "max": 4 },
+              "Fauna": { "meat": 40, "slots": 2 },
+              "Body": { "model": "chicken", "width": 0.4, "height": 0.7, "radius": 0.25 }
             }
             """;
 
@@ -188,10 +226,14 @@ final class BuiltinTemplates {
                 List.of(
                         raw("strategos:template/unit_base", UNIT_BASE),
                         raw("strategos:template/unit_infantry", UNIT_INFANTRY),
+                        raw("strategos:template/unit_fauna", UNIT_FAUNA),
                         raw("strategos:template/building_base", BUILDING_BASE),
                         raw("strategos:unit/debug_walker", DEBUG_WALKER),
                         raw("strategos:unit/infantry", INFANTRY),
                         raw("strategos:unit/worker", WORKER),
+                        raw("strategos:unit/sheep", SHEEP),
+                        raw("strategos:unit/pig", PIG),
+                        raw("strategos:unit/chicken", CHICKEN),
                         raw("strategos:building/civic_centre", CIVIC_CENTRE),
                         raw("strategos:building/field", FIELD),
                         raw("strategos:building/house", HOUSE),

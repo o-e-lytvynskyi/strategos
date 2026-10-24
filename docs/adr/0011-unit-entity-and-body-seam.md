@@ -6,6 +6,15 @@ Date: 2026-10-21
 
 Accepted - 2026-10-23, by S1 and S10 with PATH-06's avoidance check (M1 T21)
 
+**Amended 2026-10-24** by M4 T7 (ECO-16, [M4 spec §1.6 row 11](../milestones/M4-economy-and-construction.md)):
+animals are a fourth body type, `strategos:unit_fauna` (0.9 × 1.3, a sheep's), chosen by the template's
+`Body/entityType`. Its renderer draws each body by `Body/model`: vanilla's `PigModel` and
+`ChickenModel`, generic over any entity, as they are; the sheep and its wool through vanilla's baked
+`ModelLayers.SHEEP` and `SHEEP_FUR` in our own `QuadrupedModel` subclass, since `SheepModel` is bound
+to `Sheep`, so no mesh is copied. An animal's carcass keeps its body after the unit died: the server
+puts it in the dying pose, alive to vanilla, so it plays no death and is not removed, and discards it
+when the carcass is empty.
+
 **S10 completed 2026-10-23** by `avoidtests.walk_around_mock_player`: a kinematic unit walks round a
 first-person player, the player arriving in the core as a journaled `AgentUpdate`, never nearer
 than their two radii; a member of the match, the D-08 observer, is passed through. Every exit

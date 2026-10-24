@@ -509,6 +509,77 @@ public final class EcoTests {
                 .thenSucceed();
     }
 
+    /**
+     * ECO-16.3: two workers sent to a sheep slaughter it; its body stays in the world, lying, while its carcass is
+     * gathered, and goes when the carcass is empty, with the template's 100 food at home or carried.
+     */
+    @StrategosTest(batch = "eco_gather", timeoutTicks = 4_000)
+    public static void aCarcassDepletesAndItsBodyGoes(GameTestHelper h) {
+        MatchRuntime rt = MatchFixture.create(h, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
+        rt.submit(PlayerSlot.ADMIN, new SpawnBuilding(CIVIC_CENTRE, new FactionSlot(0), 18, 18, 0));
+        rt.submit(
+                PlayerSlot.ADMIN,
+                new SpawnUnits(new TemplateId("strategos:unit/sheep"), new FactionSlot(2), new Vec2d(8.5, 8.5), 1, 0));
+        workers(rt, 12, 12, 2);
+        var state = new Object() {
+            int sheep;
+
+            @Nullable UnitEntity body;
+        };
+        h.startSequence()
+                .thenWaitUntil(() -> {
+                    check(handles(rt).length == 3, "not spawned yet");
+                    for (int handle : handles(rt)) {
+                        check(rt.bodies().get(handle) != null, "no bodies yet");
+                    }
+                })
+                .thenExecute(() -> {
+                    List<Integer> workers = new ArrayList<>();
+                    for (int handle : handles(rt)) {
+                        if (unit(rt, handle).faction().value() == 2) {
+                            state.sheep = handle;
+                        } else {
+                            workers.add(handle);
+                        }
+                    }
+                    state.body = body(rt, state.sheep);
+                    rt.submit(
+                            PlayerSlot.ADMIN,
+                            dev.strategos.core.protocol.Attack.replace(
+                                    UnitSet.of(workers.stream()
+                                            .mapToInt(Integer::intValue)
+                                            .toArray()),
+                                    state.sheep));
+                })
+                .thenWaitUntil(() -> check(core(rt).queries().unit(state.sheep) == null, "the sheep lives"))
+                .thenExecute(() -> {
+                    UnitEntity body = state.body;
+                    check(body != null && !body.isRemoved(), "the carcass's body went at the death");
+                    check(body.hasPose(net.minecraft.world.entity.Pose.DYING), "the carcass does not lie");
+                    check(
+                            rt.bodies().carcassCount() == 1,
+                            "carcasses kept: " + rt.bodies().carcassCount());
+                })
+                .thenWaitUntil(() -> check(rt.bodies().carcassCount() == 0, "the carcass is still gathered"))
+                .thenExecute(() -> {
+                    UnitEntity body = state.body;
+                    check(body != null && body.isRemoved(), "the empty carcass's body stays");
+                })
+                .thenWaitUntil(() -> {
+                    FactionTreasury t = core(rt).queries().treasury(new FactionSlot(0));
+                    long carried = 0;
+                    for (int handle : handles(rt)) {
+                        carried += core(rt).queries().carriedResource(handle) == 0
+                                ? core(rt).queries().carriedAmount(handle)
+                                : 0;
+                    }
+                    check(
+                            t.gathered().get(0) + carried == 100_000,
+                            "food: " + t.gathered().get(0) + " + " + carried);
+                })
+                .thenSucceed();
+    }
+
     private static int stone(GameTestHelper h) {
         return count(h, Blocks.STONE);
     }

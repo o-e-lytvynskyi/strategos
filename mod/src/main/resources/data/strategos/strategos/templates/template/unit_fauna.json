@@ -1,0 +1,7 @@
+{
+  "abstract": true,
+  "parent": "strategos:template/unit_base",
+  "Identity": { "classes": "+Fauna +Organic" },
+  "UnitMotion": { "walkSpeed": 0.1 },
+  "Body": { "entityType": "strategos:unit_fauna" }
+}

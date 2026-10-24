@@ -6,6 +6,8 @@ import dev.strategos.core.shared.Handle;
 import dev.strategos.core.sim.BlockCracked;
 import dev.strategos.core.sim.BuildingDestroyed;
 import dev.strategos.core.sim.BuildingHurt;
+import dev.strategos.core.sim.CarcassGone;
+import dev.strategos.core.sim.CarcassLeft;
 import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.FactionDefeated;
 import dev.strategos.core.sim.FlameShown;
@@ -69,8 +71,16 @@ public final class OutputAppliers {
                         level.broadcastDamageEvent(body, level.damageSources().generic());
                     }
                 }
-                case UnitDied died ->
-                    rt.bodies().die(died.handle(), level.damageSources().generic());
+                case UnitDied died -> {
+                    int carcass = carcassOf(out, died.handle());
+                    if (carcass != 0) {
+                        rt.bodies().carcass(died.handle(), carcass); // an animal's body stays (ECO-16)
+                    } else {
+                        rt.bodies().die(died.handle(), level.damageSources().generic());
+                    }
+                }
+                case CarcassLeft left -> {} // its UnitDied kept the body
+                case CarcassGone gone -> rt.bodies().carcassGone(gone.node());
                 case BlockCracked cracked -> {} // FxSender sent it before the outputs applied
                 case FlameShown flame -> {} // as a crack: FxSender sent it
                 case BuildingHurt hurt -> {} // the under-attack alert's (UI-12)
@@ -177,6 +187,16 @@ public final class OutputAppliers {
         rt.bodies().tickDying();
     }
 
+    /** The carcass node animal {@code handle} left this step, or 0. */
+    private static int carcassOf(TickOutputs out, int handle) {
+        for (OutputEvent e : out.events()) {
+            if (e instanceof CarcassLeft left && left.handle() == handle) {
+                return left.node();
+            }
+        }
+        return 0;
+    }
+
     /** The leaf output types {@link #apply} handles; L2 checks they are all of them. */
     public static List<Class<? extends OutputEvent>> handledTypes() {
         return List.of(
@@ -190,6 +210,8 @@ public final class OutputAppliers {
                 BuildingHurt.class,
                 BlockCracked.class,
                 FlameShown.class,
+                CarcassLeft.class,
+                CarcassGone.class,
                 FactionDefeated.class,
                 MatchEnded.class,
                 UnderAttack.class,

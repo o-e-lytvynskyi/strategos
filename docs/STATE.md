@@ -404,8 +404,8 @@ Answer in chat or here; the next session applies the answers.
 - **Milestone:** M4 Economy and construction, started 2026-10-24 at your word; spec:
   [milestones/M4-economy-and-construction.md](milestones/M4-economy-and-construction.md) (24 tasks, every card
   `specified`). M3 is Done (2026-10-24, [§8.1](milestones/M3-first-loop.md)); M1 and M2 Done (2026-10-23).
-- **In progress:** M4 T7, livestock and Gaia (ECO-16).
-- **Last finished task:** M4 T6 (2026-10-24), quarries and iron mines (ECO-08 done; iron now costs: civic centre 100, barracks 50; a new `deposit_state` payload); before it T5, stone from rock outcrops.
+- **In progress:** M4 T9, abstract hit points and damage stages (BLD-05).
+- **Last finished task:** M4 T8 (2026-10-24), foundations on uneven ground (BLD-04 done: M3's preparation proved on a slope); before it T7, livestock and Gaia (ECO-16 in progress: its goldens wait for T27).
 - **Next task:** M4's tasks in the spec's order (§7.1).
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 960 of 2,000 (48 %), as of 2026-10-23.
@@ -455,8 +455,12 @@ Details are in [worklog.md](worklog.md).
 - [01-feasibility.md](01-feasibility.md) §3 predates the architecture in places; its precedence
   note says the architecture and the ADRs win. §6.5 was re-estimated after M0 (2026-10-22).
 - ADRs owed by future cards:
-  - ECO-03's leaf rule, which amends ADR-0021;
-  - ECO-16's fauna archetype, which amends ADR-0011.
+  - ECO-03's leaf rule, which amends ADR-0021 (ECO-16's amendment of ADR-0011 is written, M4 T7).
+- Faction 0 wins all ten headless seeds, before M4 T6 as after it: the second slot's start, or its mirror, is worse
+  for M3's bot. AI-02 (T19) owns it with the food wait.
+- T27's consent batch: the `livestock` goldens (ECO-16.5), and `m3_goldens` frames that show a start now show its
+  animals and may need re-recording. A carcass's body is not kept across a save: after a restore its meat is still
+  gathered, with no body.
 - ADR-0022 waits for its confirmation at the first L7 session the owner plays.
 - Budget F is measured for bare humanoids only; ART-01 (M3) runs the armoured pass.
 - Modifiers are not yet saved or hashed: the first real source (TECH-01's research or an AI

@@ -44,6 +44,7 @@ public final class BodyRegistry {
     private final IntRBTreeSet reported = new IntRBTreeSet();
     private final List<UnitEntity> stale = new ArrayList<>();
     private final List<UnitEntity> dying = new ArrayList<>();
+    private final Int2ObjectRBTreeMap<UnitEntity> carcasses = new Int2ObjectRBTreeMap<>(); // by meat node
     private final Int2ObjectRBTreeMap<ItemStack[]> gear = new Int2ObjectRBTreeMap<>();
 
     public BodyRegistry(MatchId id, MatchSpace space) {
@@ -95,7 +96,7 @@ public final class BodyRegistry {
             if (!budget.tryTake()) {
                 return;
             }
-            UnitEntity body = spawn(level, handle, unit);
+            UnitEntity body = spawn(level, handle, unit, q.templates());
             if (body != null) {
                 bodies.put(handle, body);
                 wantedHandles.remove();
@@ -159,6 +160,36 @@ public final class BodyRegistry {
     }
 
     /**
+     * Animal {@code handle} died and left carcass {@code node} (ECO-16): its body leaves the registry but stays, lying
+     * on its side (the dying pose, which the renderer draws so), alive to vanilla, so it plays no death and is not
+     * removed, until {@link #carcassGone}.
+     */
+    public void carcass(int handle, int node) {
+        wanted.remove(handle);
+        parked.remove(handle);
+        gear.remove(handle);
+        UnitEntity body = bodies.remove(handle);
+        if (body != null) {
+            body.markRemovedByRegistry();
+            body.setPose(net.minecraft.world.entity.Pose.DYING);
+            carcasses.put(node, body);
+        }
+    }
+
+    /** Carcass {@code node} is empty: its body goes. */
+    public void carcassGone(int node) {
+        UnitEntity body = carcasses.remove(node);
+        if (body != null) {
+            body.discard();
+        }
+    }
+
+    /** The bodies kept as carcasses, for tests. */
+    public int carcassCount() {
+        return carcasses.size();
+    }
+
+    /**
      * Unit {@code handle} holds {@code tool} and {@code load} (ECO-05): its body now, and every body made for it later,
      * until the gear changes or the unit dies.
      */
@@ -200,6 +231,10 @@ public final class BodyRegistry {
             body.discard();
         }
         dying.clear();
+        for (UnitEntity body : carcasses.values()) {
+            body.discard();
+        }
+        carcasses.clear();
         discardStale();
         wanted.clear();
         parked.clear();
@@ -216,8 +251,10 @@ public final class BodyRegistry {
         stale.clear();
     }
 
-    private @Nullable UnitEntity spawn(ServerLevel level, int handle, UnitView unit) {
-        UnitEntity body = ModEntityTypes.UNIT_HUMANOID.get().create(level);
+    private @Nullable UnitEntity spawn(
+            ServerLevel level, int handle, UnitView unit, dev.strategos.core.content.TemplateSet templates) {
+        UnitEntity body =
+                ModEntityTypes.forTemplate(templates, unit.templateIndex()).create(level);
         if (body == null) {
             return null; // the type is disabled in this level
         }

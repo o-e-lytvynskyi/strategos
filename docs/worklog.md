@@ -9,7 +9,7 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-24 (later) — M4 T1–T6
+## 2026-10-24 (later) — M4 T1–T8
 
 - **M4 T1 · the health check from M3's close.** The four classes over 800 lines split along their seams, with
   every golden frame identical after the HUD's split (`RtsHud`, `MatchState`, `NetTests`, `CrowdSoak`);
@@ -32,7 +32,16 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
   (one path for scenarios, tests and maps; the proving ground stays v2). Iron is now spent: civic centre 100, barracks
   50. A click on a deposit shows what it has left (`deposit_state`, a new payload). The ten headless seeds still end
   with a winner; faction 0 wins all ten, as it did before T6 (for AI-02, T19).
-  Next: T7, livestock and Gaia (ECO-16).
+- **M4 T7 · ECO-16 built, its goldens left for T27.** Gaia is the slot after the players'. Sheep, pigs and chickens
+  stand by each start, never flee and cost no population; each has its meat node from its spawn, so a worker sent to
+  one (the right click, an attack for a unit that cannot fight) slaughters it and gathers the carcass, whose body lies
+  where it fell until it is empty. A new body type, `strategos:unit_fauna`, draws vanilla's pig, chicken and sheep
+  models. M3's bot leaves animals alone: their 820 food a side unbalanced its economy (its build order slipped from
+  6:00 to past the first wave), so livestock waits for AI-02.
+- **M4 T8 · BLD-04 done.** M3's sites already stood on the highest ground with their lower columns filled; two
+  GameTests prove it on a hillside (a barracks refused on a 3-block step, raised on a 2-block one with no gap, its
+  preparation within a writer budget of 8 and before its first layer).
+  Next: T9, damage stages (BLD-05).
 
 ## 2026-10-24 — M3 T9–T31, M3 Done; M4 spec
 

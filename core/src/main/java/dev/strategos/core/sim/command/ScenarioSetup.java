@@ -17,6 +17,7 @@ import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.econ.Deposits;
+import dev.strategos.core.sim.econ.Livestock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
@@ -33,7 +34,7 @@ public final class ScenarioSetup {
     /**
      * The commands that set {@code scenario} up, slot {@code k} as faction {@code k} at {@code starts.get(k)}: the
      * victory rule first, then each slot's resources (by id, in order), buildings, deposits (spawned near it, owned by
-     * nobody) and units. A template that is not in
+     * nobody), units and animals (Gaia's, the slot after the scenario's). A template that is not in
      * {@code templates}, a building without a blueprint, or too few start slots throws.
      */
     public static List<Command> commands(Scenario scenario, List<StartSlot> starts, TemplateSet templates) {
@@ -99,7 +100,7 @@ public final class ScenarioSetup {
                 } else {
                     out.add(new SpawnUnits(
                             e.template(),
-                            faction,
+                            Livestock.isFauna(templates, t.netIndex()) ? new FactionSlot(slots.size()) : faction,
                             new Vec2d(at.x() + e.dx() + 0.5, at.z() + e.dz() + 0.5),
                             e.count(),
                             e.spread()));

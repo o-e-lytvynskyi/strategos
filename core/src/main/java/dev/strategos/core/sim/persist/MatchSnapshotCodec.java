@@ -264,6 +264,14 @@ public final class MatchSnapshotCodec {
                     Hex64.CODEC.fieldOf("slice").forGetter(PageRef::slice))
             .apply(i, PageRef::new));
 
+    /** A node's deposit or animal (ECO-08, -16), as two flat optional fields: a builder takes at most sixteen. */
+    private record NodeLink(String template, int unit) {}
+
+    private static final MapCodec<NodeLink> NODE_LINK = RecordCodecBuilder.mapCodec(i -> i.group(
+                    Codec.STRING.optionalFieldOf("template", "").forGetter(NodeLink::template),
+                    Codec.INT.optionalFieldOf("unit", 0).forGetter(NodeLink::unit))
+            .apply(i, NodeLink::new));
+
     private static final Codec<NodeStore.Saved> NODE = RecordCodecBuilder.create(i -> i.group(
                     Codec.INT.fieldOf("kind").forGetter(NodeStore.Saved::kind),
                     Codec.INT.fieldOf("resource").forGetter(NodeStore.Saved::resource),
@@ -280,8 +288,42 @@ public final class MatchSnapshotCodec {
                     Codec.LONG.optionalFieldOf("most", 0L).forGetter(NodeStore.Saved::most),
                     Codec.LONG.optionalFieldOf("regrow", 0L).forGetter(NodeStore.Saved::regrow),
                     Codec.INT.optionalFieldOf("growth", 0).forGetter(NodeStore.Saved::growth),
-                    Codec.STRING.optionalFieldOf("template", "").forGetter(NodeStore.Saved::template))
-            .apply(i, NodeStore.Saved::new));
+                    NODE_LINK.forGetter(n -> new NodeLink(n.template(), n.unit())))
+            .apply(
+                    i,
+                    (kind,
+                            resource,
+                            subtype,
+                            perBlock,
+                            amount,
+                            anchorX,
+                            anchorZ,
+                            baseY,
+                            blocks,
+                            gone,
+                            slots,
+                            claims,
+                            most,
+                            regrow,
+                            growth,
+                            link) -> new NodeStore.Saved(
+                            kind,
+                            resource,
+                            subtype,
+                            perBlock,
+                            amount,
+                            anchorX,
+                            anchorZ,
+                            baseY,
+                            blocks,
+                            gone,
+                            slots,
+                            claims,
+                            most,
+                            regrow,
+                            growth,
+                            link.template(),
+                            link.unit())));
 
     private static final Codec<CarryStore.Saved> CARRY = RecordCodecBuilder.create(i -> i.group(
                     Codec.INT.fieldOf("handle").forGetter(CarryStore.Saved::handle),

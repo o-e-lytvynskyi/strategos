@@ -6,8 +6,9 @@
   "Cost": { "resources": { "food": 60 }, "population": 1, "time": 10 },
   "Builder": { "rate": 1 },
   "ResourceGatherer": {
-    "rates": { "food": { "fruit": 1, "grain": 0.5 }, "wood": { "tree": 0.6 }, "stone": { "rock": 0.4 }, "iron": { "ore": 0.35 } },
-    "capacities": { "food": 10, "wood": 10, "stone": 10, "iron": 10 }
+    "rates": { "food": { "fruit": 1, "grain": 0.5, "meat": 1 }, "wood": { "tree": 0.6 }, "stone": { "rock": 0.4 }, "iron": { "ore": 0.35 } },
+    "capacities": { "food": 10, "wood": 10, "stone": 10, "iron": 10 },
+    "slaughter": 2
   },
   "Body": { "skin": "strategos:units/worker" }
 }

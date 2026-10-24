@@ -1,0 +1,7 @@
+{
+  "parent": "strategos:template/unit_fauna",
+  "Identity": { "name": "strategos.unit.pig", "icon": "minecraft:porkchop" },
+  "Health": { "max": 10 },
+  "Fauna": { "meat": 150, "slots": 3 },
+  "Body": { "model": "pig", "width": 0.9, "height": 0.9, "radius": 0.45 }
+}

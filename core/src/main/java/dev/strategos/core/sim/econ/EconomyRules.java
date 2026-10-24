@@ -11,7 +11,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * A match's economy rules (ECO-01), copied in when it is created: its resources in their order, at most {@link #MAX},
  * and the most population a faction may reach (ECO-06; D-01's 150 by default, 50 to 200 in setup). The default is
- * D-10's four, food (fruit, grain), wood (tree), stone (rock) and iron (ore), starting at 0; a match decoded from M1's
+ * D-10's four, food (fruit, grain, meat), wood (tree), stone (rock) and iron (ore), starting at 0; a match decoded from M1's
  * or M2's rules gets it.
  */
 @CoreApi
@@ -22,7 +22,7 @@ public record EconomyRules(List<ResourceDef> resources, int populationMax) {
     public static final int POPULATION_MAX = 150;
 
     public static final EconomyRules DEFAULTS = new EconomyRules(List.of(
-            new ResourceDef("food", List.of("fruit", "grain"), 0),
+            new ResourceDef("food", List.of("fruit", "grain", "meat"), 0),
             new ResourceDef("wood", List.of("tree"), 0),
             new ResourceDef("stone", List.of("rock"), 0),
             new ResourceDef("iron", List.of("ore"), 0)));

@@ -75,7 +75,7 @@ final class AlertSystem implements MatchSystem {
                 x = s.motion().x(i);
                 z = s.motion().z(i);
             }
-            if (faction == by) {
+            if (faction == by || faction >= s.config().factions()) { // Gaia is never alerted
                 continue;
             }
             attacked(s, faction, x, z, tick);

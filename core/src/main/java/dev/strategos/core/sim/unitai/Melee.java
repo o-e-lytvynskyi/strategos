@@ -51,7 +51,7 @@ final class Melee {
                         x,
                         z,
                         s.stats().vision(i),
-                        UnitFilter.allBut(s.identity().faction(i)),
+                        UnitFilter.enemiesOf(s.identity().faction(i), s.config().factions()),
                         j -> {
                             if (s.entities()
                                     .aliveAt(

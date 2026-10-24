@@ -51,7 +51,9 @@
     "ResourceGatherer/capacities/wood": "Ten wood a trip, half a log: eight trips pay for the first house (the timing target, 1:30)",
     "ResourceGatherer/capacities/stone": "Ten stone a trip, two blocks: twenty trips pay a civic centre's two hundred",
     "ResourceGatherer/rates/iron/ore": "A little slower than stone: a mine's iron is the scarcest resource, so iron sets the pace of an army (ECO-08)",
-    "ResourceGatherer/capacities/iron": "Ten iron a trip, as stone"
+    "ResourceGatherer/capacities/iron": "Ten iron a trip, as stone",
+    "ResourceGatherer/rates/food/meat": "As fruit's: a carcass is the quickest food once killed, which pays for the walk to the herd",
+    "ResourceGatherer/slaughter": "Hit points a blow, one a second: a sheep in four, a chicken in two"
   },
   "resource_yield": {
     "#minecraft:logs": "Twenty wood a log: an oak of four or five logs holds about ninety, a few minutes of one worker's chopping",
@@ -116,5 +118,32 @@
   "strategos:building/iron_mine_large": {
     "Deposit/amount": "Five thousand iron: the contested mine of the middle game (ECO-08)",
     "Deposit/slots": "Six workers at a large mine, twice a small one's"
+  },
+  "strategos:template/unit_fauna": {
+    "UnitMotion/walkSpeed": "Two blocks a second, an animal's amble; they stand where they are put until they wander (spec §1.6 row 11)"
+  },
+  "strategos:unit/sheep": {
+    "Health/max": "Four of a worker's blows, so a slaughter takes four seconds, about a farm trip's walk",
+    "Fauna/meat": "The classic opening sheep: ten worker trips of food, a hundred, as much as a berry bush holds",
+    "Fauna/slots": "Three workers round one animal, as round a bush: more crowd it",
+    "Body/width": "Vanilla's sheep, 0.9 blocks wide, so its model fits",
+    "Body/height": "Vanilla's sheep, 1.3 blocks tall",
+    "Body/radius": "Half its width: it keeps others off its body"
+  },
+  "strategos:unit/pig": {
+    "Health/max": "Five blows: the bigger animal takes a moment longer",
+    "Fauna/meat": "Half again a sheep's, as a heavier animal",
+    "Fauna/slots": "As a sheep's",
+    "Body/width": "Vanilla's pig, 0.9 blocks wide",
+    "Body/height": "Vanilla's pig, 0.9 blocks tall",
+    "Body/radius": "Half its width"
+  },
+  "strategos:unit/chicken": {
+    "Health/max": "Two blows: a small bird",
+    "Fauna/meat": "Four worker trips: a snack that starts the first minutes",
+    "Fauna/slots": "Two: a small carcass",
+    "Body/width": "Vanilla's chicken, 0.4 blocks wide",
+    "Body/height": "Vanilla's chicken, 0.7 blocks tall",
+    "Body/radius": "Its half width rounded up, so its body stays clear"
   }
 }

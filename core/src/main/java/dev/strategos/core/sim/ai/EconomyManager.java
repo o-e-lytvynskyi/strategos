@@ -16,7 +16,7 @@ import org.jspecify.annotations.Nullable;
  * Sends idle workers to gather (04 §14's EconomyManager): each to the resource furthest under its share of the
  * script's ratio (weighed by the stock: doubled while it runs low, halved while it piles up) that has a node left, at
  * the nearest node of it with a free slot, from one central count, so no queue overshoots. A field
- * is gathered only near its own base.
+ * is gathered only near its own base; animals are left alone (AI-02 brings livestock in).
  */
 final class EconomyManager implements AiModule {
     /** How far from its centre a field is its own. */
@@ -143,6 +143,7 @@ final class EconomyManager implements AiModule {
         double bestD = Double.POSITIVE_INFINITY;
         for (NodeView n : nodes) {
             if (!n.resource().equals(resource)
+                    || n.kind() == MaterialKind.CARCASS // livestock is AI-02's (M4 T19): M3's bot leaves it
                     || n.amount() <= 0
                     || n.ripening() > 0
                     || n.topY() < 0

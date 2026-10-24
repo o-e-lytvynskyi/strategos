@@ -14,6 +14,8 @@ import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.OrderReceived;
 import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.combat.CombatSystem;
+import dev.strategos.core.sim.econ.Livestock;
+import dev.strategos.core.sim.econ.NodeStore;
 import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.order.OrderQueues;
 
@@ -21,7 +23,9 @@ import dev.strategos.core.sim.order.OrderQueues;
  * Attack (ORD-04): each owned unit with a melee attack gets the player's attack on the target, joined to its queue by
  * the command's mode, and chases it until it dies or the order ends. A target that is not a live unit is refused as
  * unknown, as a hidden one will be (04 §7.3); one of the issuer's own faction as an invalid argument; a unit with no
- * melee attack as unsupported. A building as the target is burned by the units with a torch (CMB-03).
+ * melee attack as unsupported, unless the target is an animal and it gathers meat: then it gets a gather order on the
+ * animal's meat, which slaughters it first (ECO-16). A building as the target is burned by the units with a torch
+ * (CMB-03).
  */
 final class AttackRule implements CommandRule<Attack> {
     @Override
@@ -46,6 +50,8 @@ final class AttackRule implements CommandRule<Attack> {
         double x = state.motion().x(t);
         double z = state.motion().z(t);
         int targetFaction = state.identity().faction(t);
+        int meat = targetFaction == state.gaia() ? Livestock.nodeOf(state, target) : 0; // an animal (ECO-16)
+        NodeStore nodes = state.nodes();
         OrderQueues orders = state.orders();
         Tally tally = new Tally();
         for (int k = 0; k < units.size(); k++) {
@@ -60,18 +66,26 @@ final class AttackRule implements CommandRule<Attack> {
                 tally.reject(RejectReason.INVALID_ARGUMENT);
                 continue;
             }
-            if (!state.stats().canMelee(i)) {
+            boolean slaughter = !state.stats().canMelee(i)
+                    && meat != 0
+                    && state.gatherRates().gathers(state.stats(), i, nodes.resource(meat), nodes.subtype(meat));
+            if (!state.stats().canMelee(i) && !slaughter) {
                 tally.reject(RejectReason.UNSUPPORTED);
                 continue;
             }
+            // a gatherer that cannot fight is sent to the animal's meat: it slaughters it, then gathers it
+            int kind = slaughter ? OrderKind.GATHER : OrderKind.ATTACK;
+            int to = slaughter ? meat : target;
+            double ox = slaughter ? nodes.anchorX(meat) : x;
+            double oz = slaughter ? nodes.anchorZ(meat) : z;
             int before = orders.size(i);
             boolean joined = switch (attack.mode()) {
                 case REPLACE -> {
-                    orders.replace(i, OrderKind.ATTACK, x, z, 0, 0, target);
+                    orders.replace(i, kind, ox, oz, 0, 0, to);
                     yield true;
                 }
-                case QUEUE -> orders.queue(i, OrderKind.ATTACK, x, z, 0, 0, target);
-                case PUSH_FRONT -> orders.pushFront(i, OrderKind.ATTACK, x, z, 0, 0, target);
+                case QUEUE -> orders.queue(i, kind, ox, oz, 0, 0, to);
+                case PUSH_FRONT -> orders.pushFront(i, kind, ox, oz, 0, 0, to);
             };
             if (!joined) {
                 tally.reject(RejectReason.QUEUE_FULL);

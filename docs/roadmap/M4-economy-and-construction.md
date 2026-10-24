@@ -137,7 +137,8 @@ reseed). What happens when one runs out?
   5. Each animal renders with its vanilla-derived model at 60 blocks (L4, consent).
 - **Tests:** L0, L1, L2, L3, L4 (consent), L5 · **Depends on:** ECO-05, UNIT-03 · **Size:** M ·
   **Tier:** T1 (pulled into the MVP)
-- **Status:** specified
+- **Status:** in_progress
+- **Progress:** M4 T7 (2026-10-24): checks 1–4 pass (spec §1.6 row 12); 5, the `livestock` goldens, waits for T27's consent batch
 
 #### ECO-17 · Field auto-reseed at the farmstead
 - **Value:** Farms keep running without micromanagement, at a price (P4).
@@ -187,7 +188,8 @@ reseed). What happens when one runs out?
   2. A barracks on a 2-block slope is prepared and completed on a flat, supported footprint (L3).
   3. Preparation stays within the writer budget (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** BLD-03 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-24 — M4 T8: a spread above 2 refused with its reason, `NOT_FLAT` (1); a barracks on a 2-block slope prepared, gapless and equal to its blueprint (2); its preparation within a writer budget of 8 and before its first layer (3) (spec §1.6 row 13)
 
 #### BLD-05 · Abstract HP and damage stages
 - **Value:** Damaged buildings visibly crumble, with blocks falling away at damage thresholds, and

@@ -18,16 +18,16 @@ import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * What a compiled set may only learn on the server (spec §6.6): each body's entity type registered, its model one M1
- * draws, and its skin one M1 ships (fixed lists until UNIT-09's assets grow). The core compiler has already checked
+ * What a compiled set may only learn on the server (spec §6.6): each body's entity type registered, its model one its
+ * type's renderer draws, and its skin one M1 ships (fixed lists until UNIT-09's assets grow). The core compiler has already checked
  * the keys and types; M1's templates name no items, blocks or productions yet.
  */
 public final class TemplateLint {
     private TemplateLint() {}
 
-    /** The models M1's renderer draws. */
-    static List<String> models() {
-        return List.of("humanoid");
+    /** The models the renderer of body type {@code type} draws: the humanoid, or the animals' (ECO-16). */
+    static List<String> models(String type) {
+        return "strategos:unit_fauna".equals(type) ? List.of("chicken", "pig", "sheep") : List.of("humanoid");
     }
 
     /** The skins M1 ships, and none. */
@@ -53,9 +53,11 @@ public final class TemplateLint {
                 problems.add(
                         TemplateProblem.error(file, "/Body/entityType", "unknown entity type '" + t.bodyType() + "'"));
             }
-            if (!models().contains(t.model())) {
+            if (!models(t.bodyType()).contains(t.model())) {
                 problems.add(TemplateProblem.error(
-                        file, "/Body/model", "unknown model '" + t.model() + "'; M1 draws " + models()));
+                        file,
+                        "/Body/model",
+                        "unknown model '" + t.model() + "'; " + t.bodyType() + " draws " + models(t.bodyType())));
             }
             if (!skins().contains(t.skin())) {
                 problems.add(TemplateProblem.error(file, "/Body/skin", "unknown skin '" + t.skin() + "'"));

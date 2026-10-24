@@ -52,9 +52,10 @@ public final class StrategosClient {
 
     public StrategosClient(IEventBus modBus, ModContainer container) {
         container.registerConfig(ModConfig.Type.CLIENT, StrategosClientConfig.SPEC, StrategosClientConfig.FILE);
-        modBus.addListener(
-                EntityRenderersEvent.RegisterRenderers.class,
-                e -> e.registerEntityRenderer(ModEntityTypes.UNIT_HUMANOID.get(), UnitRenderer::new));
+        modBus.addListener(EntityRenderersEvent.RegisterRenderers.class, e -> {
+            e.registerEntityRenderer(ModEntityTypes.UNIT_HUMANOID.get(), UnitRenderer::new);
+            e.registerEntityRenderer(ModEntityTypes.UNIT_FAUNA.get(), FaunaRenderer::new);
+        });
         NeoForge.EVENT_BUS.addListener(PayloadArrived.class, ClientPayloads::onPayload);
         NeoForge.EVENT_BUS.addListener(ClientPlayerNetworkEvent.LoggingOut.class, e -> {
             match = null;

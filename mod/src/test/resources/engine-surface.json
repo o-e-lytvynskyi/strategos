@@ -1,6 +1,6 @@
 {
   "milestone": "M1",
-  "entityTypes": ["strategos:unit_humanoid"],
+  "entityTypes": ["strategos:unit_fauna", "strategos:unit_humanoid"],
   "savedData": ["strategos_registry", "strategos_match_<id>"],
   "commands": ["strategos"],
   "mixinConfigs": ["strategos.mixins.json"],

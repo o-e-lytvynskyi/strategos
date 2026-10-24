@@ -16,6 +16,7 @@ import dev.strategos.core.sim.Notice;
 import dev.strategos.core.sim.OutputEvent;
 import dev.strategos.core.sim.TickOutputs;
 import dev.strategos.core.sim.UnderAttack;
+import dev.strategos.core.sim.UnitCreated;
 import dev.strategos.core.sim.UnitDied;
 import dev.strategos.core.sim.UnitHurt;
 import dev.strategos.core.sim.UnitState;
@@ -148,6 +149,7 @@ final class HeadlessMatch {
         long[] attackedAt = {-1_000_000, -1_000_000};
         List<List<Long>> banked = new ArrayList<>();
         int[] lost = new int[factions];
+        java.util.Set<Integer> animals = new java.util.HashSet<>();
         int[] stuck = new int[factions];
         List<Long> announced = new ArrayList<>();
         List<Long> leaves = new ArrayList<>();
@@ -164,12 +166,19 @@ final class HeadlessMatch {
                 onTick.accept(out.tick());
                 for (OutputEvent e : out.events()) {
                     switch (e) {
+                        case UnitCreated created
+                        when created.faction().value() >= factions ->
+                            animals.add(created.handle()); // Gaia's: their slaughter is no contact (ECO-16)
                         case UnitHurt hurt -> {
-                            if (firstContact < 0 && hurt.attacker() != Handle.NONE) {
+                            if (firstContact < 0
+                                    && hurt.attacker() != Handle.NONE
+                                    && !animals.contains(hurt.handle())) {
                                 firstContact = out.tick();
                             }
                         }
-                        case UnitDied died -> lost[died.faction().value()]++;
+                        case UnitDied died
+                        when died.faction().value() < factions ->
+                            lost[died.faction().value()]++;
                         case Notice n
                         when n.kind() == NoticeKind.STUCK -> stuck[n.faction().value()]++;
                         case WaveAnnounced w -> {

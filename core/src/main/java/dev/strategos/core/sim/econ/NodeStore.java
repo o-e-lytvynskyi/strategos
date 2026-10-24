@@ -38,7 +38,8 @@ public final class NodeStore {
     private long[] most = new long[16];
     private long[] regrow = new long[16];
     private int[] growth = new int[16];
-    private int[] template = new int[16]; // a deposit's template net index (ECO-08); -1 for none
+    private int[] template = new int[16]; // a deposit's or an animal's template net index (ECO-08, -16); -1 for none
+    private int[] unit = new int[16]; // the live animal a meat node belongs to (ECO-16); 0 for none
 
     /** A position packed as nodes store it: match-local x and z, absolute y. */
     public static long pack(int x, int y, int z) {
@@ -93,6 +94,7 @@ public final class NodeStore {
             this.regrow = Arrays.copyOf(this.regrow, n);
             this.growth = Arrays.copyOf(this.growth, n);
             this.template = Arrays.copyOf(this.template, n);
+            this.unit = Arrays.copyOf(this.unit, n);
         }
         int k = count++;
         this.kind[k] = kind;
@@ -110,6 +112,7 @@ public final class NodeStore {
         this.regrow[k] = 0;
         this.growth[k] = 0;
         this.template[k] = -1;
+        this.unit[k] = 0;
         return k + 1;
     }
 
@@ -117,13 +120,22 @@ public final class NodeStore {
         return count;
     }
 
-    /** A deposit's template net index (ECO-08), or -1 for a node that is no deposit. */
+    /** A deposit's or an animal's template net index (ECO-08, ECO-16), or -1 for any other node. */
     public int template(int id) {
         return template[at(id)];
     }
 
     public void setTemplate(int id, int netIndex) {
         template[at(id)] = netIndex;
+    }
+
+    /** The animal a meat node belongs to (ECO-16), its handle, or 0: stale once it died. */
+    public int unit(int id) {
+        return unit[at(id)];
+    }
+
+    public void setUnit(int id, int handle) {
+        unit[at(id)] = handle;
     }
 
     /** Whether discovery ran: it runs once, when every page of the match space is first published. */
@@ -438,9 +450,12 @@ public final class NodeStore {
                 x = Hasher.mix(x, growth[k]);
                 x = Hasher.mix(x, most[k]);
             }
-            if (template[k] >= 0) { // a deposit's: older saves, which hold none, keep their hashes
+            if (template[k] >= 0) { // a deposit's or an animal's: older saves, which hold none, keep their hashes
                 x = Hasher.mix(x, template[k]);
                 x = Hasher.mix(x, most[k]);
+            }
+            if (unit[k] != 0) {
+                x = Hasher.mix(x, unit[k]);
             }
         }
         return x;
@@ -463,7 +478,8 @@ public final class NodeStore {
             long most,
             long regrow,
             int growth,
-            String template) {
+            String template,
+            int unit) {
         public Saved {
             blocks = List.copyOf(blocks);
             slots = List.copyOf(slots);
@@ -471,7 +487,7 @@ public final class NodeStore {
         }
     }
 
-    /** The nodes as a snapshot keeps them, a deposit's template by id ({@code ids} gives a net index's). */
+    /** The nodes as a snapshot keeps them, a deposit's or an animal's template by id ({@code ids} gives a net index's). */
     public List<Saved> save(java.util.function.IntFunction<String> ids) {
         List<Saved> out = new ArrayList<>(count);
         for (int k = 0; k < count; k++) {
@@ -501,7 +517,8 @@ public final class NodeStore {
                     most[k],
                     regrow[k],
                     growth[k],
-                    template[k] < 0 ? "" : ids.apply(template[k])));
+                    template[k] < 0 ? "" : ids.apply(template[k]),
+                    unit[k]));
         }
         return out;
     }
@@ -537,6 +554,7 @@ public final class NodeStore {
             regrow[k] = n.regrow();
             growth[k] = n.growth();
             template[k] = n.template().isEmpty() ? -1 : indices.applyAsInt(n.template());
+            unit[k] = n.unit();
             for (int i = 0; i < s.length && i < n.claims().size(); i++) {
                 claims[k][i] = n.claims().get(i);
             }

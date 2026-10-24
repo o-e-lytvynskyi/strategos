@@ -113,7 +113,7 @@ public final class MatchState {
         this.templates = templates;
         this.entities = entities;
         this.log = log;
-        this.stats = new StatService(templates, config.factions(), identity, bus);
+        this.stats = new StatService(templates, config.factions() + 1, identity, bus); // the players' and Gaia's
         EconomyRules economy = config.rules().economy();
         this.treasury = new Treasury(config.factions(), economy.size());
         for (int f = 0; f < config.factions(); f++) {
@@ -514,7 +514,9 @@ public final class MatchState {
      */
     public void removeUnit(int handle) {
         int i = Handle.index(handle);
-        population.remove(identity.faction(i), unitPopulation(i));
+        if (identity.faction(i) < config.factions()) { // Gaia has no population
+            population.remove(identity.faction(i), unitPopulation(i));
+        }
         health.reset(i);
         releaseClaim(i, handle);
         dropLoad(i);
@@ -537,9 +539,19 @@ public final class MatchState {
         stats.clearPersonal(index);
         health.reset(index);
         ai.reset(index, UnitAi.IDLE);
-        population.add(faction, unitPopulation(index));
+        if (faction < config.factions()) {
+            population.add(faction, unitPopulation(index));
+        }
         outputs.add(new UnitCreated(handle, template, new FactionSlot(faction), x, y, z, yaw));
         return handle;
+    }
+
+    /**
+     * Gaia's slot (ECO-16): the one after the players', seated by nobody, whose units are the match's animals. It has
+     * stats but no treasury, population, computer player or victory.
+     */
+    public int gaia() {
+        return config.factions();
     }
 
     /** What unit {@code i} takes of its faction's population: its {@code Cost/population}, 0 for none (ECO-06). */

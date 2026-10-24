@@ -18,6 +18,11 @@ public record UnitFilter(int factions, long classes) {
         return new UnitFilter(~(1 << faction), 0);
     }
 
+    /** The units of the match's {@code players} factions but {@code faction}: never Gaia's animals (ECO-16). */
+    public static UnitFilter enemiesOf(int faction, int players) {
+        return new UnitFilter(((1 << players) - 1) & ~(1 << faction), 0);
+    }
+
     /** This filter, keeping only units that also have every class in {@code classes}. */
     public UnitFilter withClasses(long classes) {
         return new UnitFilter(factions, this.classes | classes);

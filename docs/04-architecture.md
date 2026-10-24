@@ -439,7 +439,7 @@ narrow mixin with a compatibility test ([01-feasibility.md §7](01-feasibility.m
 | Mixin | `ServerPlayerMixin`: HEAD of `ServerPlayer#broadcastToPlayer(ServerPlayer)` (ServerPlayer.java:957) and HEAD of `ServerPlayer#attack(Entity)` (1767) | Hides enemy commanders always and enemy first-person bodies in fog (spectators see spectators, 957–962); a commander can never spectate a unit by attacking it (1767–1769) | M7 |
 | Mixin | `ServerGamePacketListenerImplMixin`: HEAD of `handleTeleportToEntityPacket` (ServerGamePacketListenerImpl.java:1204) | Drops spectator teleports to any entity for match members; no NeoForge event covers this path | M7 |
 | Access transformer | `public net.minecraft.server.level.ChunkMap entityMap` (ChunkMap.java:150) and `public net.minecraft.server.level.ChunkMap$TrackedEntity` (1278) | Targeted `TrackedEntity#updatePlayer` (1327) for flipped pairs and chunk-sent re-pairs | M8 |
-| Entity types | `strategos:unit_humanoid` (M0), `strategos:unit_mount` (M5), `strategos:unit_large` (M6); reserve: `*_streamed` variants | Unit bodies (§6.1) | M0–M6 |
+| Entity types | `strategos:unit_humanoid` (M0), `strategos:unit_fauna` (M4, ECO-16's animals), `strategos:unit_mount` (M5), `strategos:unit_large` (M6); reserve: `*_streamed` variants | Unit bodies (§6.1) | M0–M6 |
 | Damage types (data) | `strategos:unit_hack`, `unit_pierce`, `unit_crush`, tagged `minecraft:bypasses_cooldown` | Units hitting players and vanilla mobs (§6.7) | Deferred with CMB-08 (D-08 chose the observer avatar) |
 | Data maps on `minecraft:block` | `strategos:nav_class`, `strategos:resource_yield` | Navigation overrides; resource yield, including other mods' blocks | M1, M3 |
 | World generation data | World preset `strategos:arena` in `#minecraft:normal`; biome `strategos:arena` | The arena world (§3.2) | M1 |
@@ -948,11 +948,12 @@ DimensionDataStorage.java:43):
 
 One class carries every ground unit: `UnitEntity extends LivingEntity implements
 IEntityWithComplexSpawn`. An `EntityType`, with its tracking range, update interval and renderer,
-is fixed at startup (fact 23), so units map onto three types by body size.
+is fixed at startup (fact 23), so units map onto a few types by body size and kind.
 
 | `EntityType` | Default size | `clientTrackingRange` | `updateInterval` | Used by | Lands in |
 |---|---|---|---|---|---|
 | `strategos:unit_humanoid` | 0.6 × 1.8 | 10 chunks | 3 | workers, infantry, archers | M0 |
+| `strategos:unit_fauna` | 0.9 × 1.3 | 10 chunks | 3 | Gaia's animals: sheep, pigs, chickens, each drawn by its `Body/model` (ADR-0011 amended) | M4 |
 | `strategos:unit_mount` | 1.4 × 2.0 | 10 chunks | 3 | cavalry (horse and rider in one entity) | M5 |
 | `strategos:unit_large` | 2.0 × 2.0 | 12 chunks | 3 | rams, siege | M6 |
 
