@@ -35,6 +35,10 @@ public final class CommandKinds {
             new CommandKind<>("strategos:set_rally", 13, SetRally.class, SetRally.CODEC, SetRally.WIRE, false);
     public static final CommandKind<Reseed> RESEED =
             new CommandKind<>("strategos:reseed", 14, Reseed.class, Reseed.CODEC, Reseed.WIRE, false);
+    public static final CommandKind<Resign> RESIGN =
+            new CommandKind<>("strategos:resign", 15, Resign.class, Resign.CODEC, Resign.WIRE, false);
+    public static final CommandKind<RuleChange> RULE_CHANGE =
+            new CommandKind<>("strategos:rule_change", 16, RuleChange.class, RuleChange.CODEC, RuleChange.WIRE, true);
     public static final CommandKinds DEFAULT = new CommandKinds(List.of(
             MOVE,
             STOP,
@@ -49,7 +53,9 @@ public final class CommandKinds {
             TRAIN,
             CANCEL_TRAIN,
             SET_RALLY,
-            RESEED));
+            RESEED,
+            RESIGN,
+            RULE_CHANGE));
 
     private final List<CommandKind<?>> kinds;
     private final Codec<Command> codec;

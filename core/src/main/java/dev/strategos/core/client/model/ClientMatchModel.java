@@ -5,6 +5,7 @@ import dev.strategos.core.content.Footprint;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.FactionState;
+import dev.strategos.core.protocol.MatchNews;
 import dev.strategos.core.protocol.UnitDetail;
 import dev.strategos.core.protocol.UnitHud;
 import dev.strategos.core.protocol.UnitSummary;
@@ -21,6 +22,8 @@ import org.jspecify.annotations.Nullable;
 public final class ClientMatchModel {
     private @Nullable FactionState faction;
     private @Nullable BuildingState buildings;
+    private @Nullable MatchNews end;
+    private long defeatedMask;
 
     private int matchId = -1;
     private long tick = -1;
@@ -67,6 +70,28 @@ public final class ClientMatchModel {
                 && (last == null || last.matchId() != joinedMatch || state.tick() >= last.tick())) {
             buildings = state;
         }
+    }
+
+    /** Takes match news (MATCH-01): the joined match's defeats and its end. */
+    public void accept(MatchNews news, int joinedMatch) {
+        if (news.matchId() != joinedMatch) {
+            return;
+        }
+        if (news.kind() == MatchNews.ENDED) {
+            end = news;
+        } else if (news.faction() >= 0 && news.faction() < 64) {
+            defeatedMask |= 1L << news.faction();
+        }
+    }
+
+    /** The match's end, once it came; null while it goes on. */
+    public @Nullable MatchNews end() {
+        return end;
+    }
+
+    /** Whether faction {@code faction} was defeated. */
+    public boolean defeated(int faction) {
+        return faction >= 0 && faction < 64 && (defeatedMask & (1L << faction)) != 0;
     }
 
     /** The buildings the player knows of; empty before the first state. */
@@ -118,6 +143,8 @@ public final class ClientMatchModel {
 
     /** Forgets the match: the player left it. */
     public void clear() {
+        end = null;
+        defeatedMask = 0;
         matchId = -1;
         tick = -1;
         units = List.of();

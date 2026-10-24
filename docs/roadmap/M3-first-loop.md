@@ -649,7 +649,8 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   6. The end screen shows them (L4, consent).
 - **Tests:** L0, L1, L2, L3, L4 (consent) · **Depends on:** CORE-01, DATA-03, MAP-01 · **Size:** M ·
   **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
+- **Progress:** 2026-10-24 — M3 T22: a scenario loads exactly its entities (1); the last centre's fall ends the match the same tick (2); a rule change replays to the same hash (3); no hostile mob spawns inside a match while one outside is left to vanilla (4); `match_event` reaches every participant (5) (spec §1.6 rows 64–65); the end screen's golden (6) waits for T30's batch
 
 #### UI-11 · Basic minimap
 - **Value:** Find the enemy base and see an attack coming on a 384-block map (P2, P3).

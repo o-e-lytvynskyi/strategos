@@ -30,7 +30,9 @@ class CommandKindsTest {
                         "strategos:train",
                         "strategos:cancel_train",
                         "strategos:set_rally",
-                        "strategos:reseed");
+                        "strategos:reseed",
+                        "strategos:resign",
+                        "strategos:rule_change");
     }
 
     @Test
@@ -58,7 +60,11 @@ class CommandKindsTest {
     void onlyTheAdministratorsCommandsAreAdminOnly() {
         assertThat(CommandKinds.DEFAULT.all())
                 .filteredOn(CommandKind::adminOnly)
-                .containsExactly(CommandKinds.SPAWN_UNITS, CommandKinds.GRANT, CommandKinds.SPAWN_BUILDING);
+                .containsExactly(
+                        CommandKinds.SPAWN_UNITS,
+                        CommandKinds.GRANT,
+                        CommandKinds.SPAWN_BUILDING,
+                        CommandKinds.RULE_CHANGE);
     }
 
     @Test

@@ -10,6 +10,7 @@ import dev.strategos.mod.server.net.payload.DebugFeedPayload;
 import dev.strategos.mod.server.net.payload.FactionStatePayload;
 import dev.strategos.mod.server.net.payload.FeedbackPayload;
 import dev.strategos.mod.server.net.payload.FxPayload;
+import dev.strategos.mod.server.net.payload.MatchEventPayload;
 import dev.strategos.mod.server.net.payload.MatchJoinPayload;
 import dev.strategos.mod.server.net.payload.MatchStatePayload;
 import dev.strategos.mod.server.net.payload.PayloadArrived;
@@ -63,6 +64,12 @@ public final class ClientPayloads {
                 MatchJoin join = StrategosClient.match();
                 if (join != null) {
                     StrategosClient.model().accept(p.hud(), join.matchId());
+                }
+            }
+            case MatchEventPayload p -> {
+                MatchJoin join = StrategosClient.match();
+                if (join != null) {
+                    StrategosClient.model().accept(p.news(), join.matchId());
                 }
             }
             case BuildingStatePayload p -> {

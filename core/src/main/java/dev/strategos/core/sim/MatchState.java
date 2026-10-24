@@ -60,7 +60,8 @@ public final class MatchState {
     public static final int FIRST_GROUP = 1;
 
     private long tick;
-    private final MatchConfig config;
+    private MatchConfig config;
+    private final Outcome outcome = new Outcome();
     private TemplateSet templates;
     private final EntityStore entities;
     private final IdentityStore identity = new IdentityStore();
@@ -761,6 +762,17 @@ public final class MatchState {
 
     public MatchConfig config() {
         return config;
+    }
+
+    /** A journaled rule change's rules (MATCH-01): the config carries them, and the population takes its maximum. */
+    public void setRules(MatchRules rules) {
+        config = new MatchConfig(config.id(), config.seed(), config.bounds(), config.factions(), rules);
+        population.setMax(rules.economy().populationMax());
+    }
+
+    /** Who has lost and whether the match is over (MATCH-01). */
+    public Outcome outcome() {
+        return outcome;
     }
 
     public TemplateSet templates() {

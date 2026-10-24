@@ -13,6 +13,10 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import dev.strategos.core.content.MapManifest;
+import dev.strategos.core.content.Scenario;
+import dev.strategos.core.content.StartSlot;
+import dev.strategos.core.protocol.Resign;
+import dev.strategos.core.protocol.RuleChange;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.sim.MatchCore;
@@ -20,6 +24,7 @@ import dev.strategos.core.sim.journal.JournalExport;
 import dev.strategos.core.sim.journal.JournalFormat;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.server.content.MapPackageLoader;
+import dev.strategos.mod.server.content.Scenarios;
 import dev.strategos.mod.server.match.MatchOptions;
 import dev.strategos.mod.server.match.MatchRefusedException;
 import dev.strategos.mod.server.match.MatchRegistry;
@@ -70,6 +75,40 @@ final class MatchCommands {
                                                 IntegerArgumentType.getInteger(ctx, "sizeX"),
                                                 IntegerArgumentType.getInteger(ctx, "sizeZ"))))))
                 .then(Commands.literal("list").executes(ctx -> list(ctx.getSource())))
+                .then(Commands.literal("scenario")
+                        .then(Commands.argument("scenario", ResourceLocationArgument.id())
+                                .suggests((ctx, builder) -> SharedSuggestionProvider.suggestResource(
+                                        Scenarios.list(ctx.getSource().getServer()), builder))
+                                .executes(ctx -> withMatchAtSource(
+                                        ctx.getSource(),
+                                        rt -> scenario(
+                                                ctx.getSource(),
+                                                rt,
+                                                ResourceLocationArgument.getId(ctx, "scenario"))))))
+                .then(Commands.literal("config")
+                        .then(Commands.argument("key", StringArgumentType.word())
+                                .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(
+                                        List.of("populationMax", "victory", "revealMap", "aiVision"), builder))
+                                .then(Commands.argument("value", StringArgumentType.word())
+                                        .executes(ctx -> withMatchAtSource(ctx.getSource(), rt -> {
+                                            StrategosCommands.send(
+                                                    ctx.getSource(),
+                                                    rt,
+                                                    new RuleChange(
+                                                            StringArgumentType.getString(ctx, "key"),
+                                                            StringArgumentType.getString(ctx, "value")));
+                                            return null;
+                                        })))))
+                .then(Commands.literal("resign")
+                        .then(Commands.argument("faction", IntegerArgumentType.integer(0, FactionSlot.MAX))
+                                .executes(ctx -> withMatchAtSource(ctx.getSource(), rt -> {
+                                    StrategosCommands.send(
+                                            ctx.getSource(),
+                                            rt,
+                                            new Resign(
+                                                    new FactionSlot(IntegerArgumentType.getInteger(ctx, "faction"))));
+                                    return null;
+                                }))))
                 .then(withMatch("pause", (source, rt) -> {
                     registry().pause(rt.id());
                     return rt.id() + " paused";
@@ -143,6 +182,32 @@ final class MatchCommands {
             MatchRuntime rt = registry().create(level, spaceAround(level, feet, sizeX, sizeZ), options);
             return rt.id() + " created, " + sizeX + " x " + sizeZ + " around " + feet.toShortString();
         });
+    }
+
+    /** The scenario set up in {@code rt} from its map's start slots (MATCH-01). */
+    private static String scenario(CommandSourceStack source, MatchRuntime rt, ResourceLocation id) {
+        ResourceLocation map = rt.map();
+        if (map == null) {
+            throw new MatchRefusedException(rt.id() + " was made on no map: a scenario needs its start slots");
+        }
+        Scenario scenario;
+        List<StartSlot> starts;
+        try {
+            scenario = Scenarios.load(source.getServer(), id);
+            starts = MapPackageLoader.load(source.getServer(), map).manifest().startSlots();
+        } catch (IllegalArgumentException e) {
+            throw new MatchRefusedException(String.valueOf(e.getMessage()));
+        }
+        if (!scenario.map().equals(map.toString())) {
+            throw new MatchRefusedException(id + " is made for " + scenario.map() + ", not " + map);
+        }
+        var core = rt.core();
+        if (core == null) {
+            throw new MatchRefusedException(rt.id() + " has no core yet");
+        }
+        int sent = Scenarios.apply(rt, scenario, starts, core.queries().templates())
+                .size();
+        return rt.id() + " set up as " + id + ": " + sent + " commands";
     }
 
     /**

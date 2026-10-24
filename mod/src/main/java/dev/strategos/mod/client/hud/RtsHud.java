@@ -18,6 +18,7 @@ import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.FactionState;
 import dev.strategos.core.protocol.FeedbackMsg;
 import dev.strategos.core.protocol.MatchJoin;
+import dev.strategos.core.protocol.MatchNews;
 import dev.strategos.core.protocol.UiQuery;
 import dev.strategos.core.protocol.UnitDetail;
 import dev.strategos.core.protocol.UnitHud;
@@ -64,6 +65,7 @@ public final class RtsHud {
     public static final ResourceLocation CARD = Ids.id("rts_command_card");
     public static final ResourceLocation RESOURCES = Ids.id("rts_resources");
     public static final ResourceLocation NOTICES = Ids.id("rts_notices");
+    public static final ResourceLocation END = Ids.id("rts_match_end");
     public static final ResourceLocation GROUPS = Ids.id("rts_groups");
     public static final ResourceLocation TOOLTIP = Ids.id("rts_tooltip");
     public static final ResourceLocation INSPECT = Ids.id("first_person_inspect");
@@ -134,6 +136,7 @@ public final class RtsHud {
             e.registerAboveAll(CARD, this::drawCard);
             e.registerAboveAll(RESOURCES, this::drawResources);
             e.registerAboveAll(NOTICES, this::drawNotices);
+            e.registerAboveAll(END, this::drawEnd);
             e.registerAboveAll(GROUPS, this::drawGroups);
             e.registerAboveAll(TOOLTIP, this::drawTooltip);
             e.registerAboveAll(INSPECT, this::drawInspect);
@@ -425,6 +428,47 @@ public final class RtsHud {
                     false);
             x -= 2;
         }
+    }
+
+    /**
+     * The end screen (MATCH-01): once the match is over, a panel in the middle of the window says whether the
+     * player's faction won, who did, and how long the match lasted. It stays until the player leaves the match.
+     */
+    private void drawEnd(GuiGraphics g, DeltaTracker delta) {
+        MatchNews end = StrategosClient.model().end();
+        MatchJoin join = StrategosClient.match();
+        Minecraft mc = Minecraft.getInstance();
+        if (end == null || join == null || mc.options.hideGui) {
+            return;
+        }
+        Font font = mc.font;
+        int own = join.slot().value();
+        String title = end.faction() == own ? "Victory" : end.faction() < 0 ? "The match is over" : "Defeat";
+        String winner = end.faction() < 0 ? "Nobody won" : "Faction " + (end.faction() + 1) + " wins";
+        long seconds = end.ticks() / 20;
+        String time = "After " + seconds / 60 + ":" + String.format(java.util.Locale.ROOT, "%02d", seconds % 60);
+        int w = Math.max(font.width(winner), font.width(time)) + 40;
+        int h = 3 * font.lineHeight + 24;
+        int x = (mc.getWindow().getGuiScaledWidth() - w) / 2;
+        int y = (mc.getWindow().getGuiScaledHeight() - h) / 3;
+        panel(g, new HudRect(x, y, w, h));
+        g.pose().pushPose();
+        g.pose().translate(x + w / 2.0, y + 6, 0);
+        g.pose().scale(2, 2, 1);
+        g.drawString(
+                font, title, -font.width(title) / 2, 0, end.faction() == own ? theme.accent() : theme.text(), true);
+        g.pose().popPose();
+        int line = y + 8 + 2 * font.lineHeight;
+        if (end.faction() >= 0) {
+            g.fill(
+                    x + (w - font.width(winner)) / 2 - 10,
+                    line,
+                    x + (w - font.width(winner)) / 2 - 3,
+                    line + 7,
+                    theme.faction(end.faction()));
+        }
+        g.drawString(font, winner, x + (w - font.width(winner)) / 2, line, theme.text(), false);
+        g.drawString(font, time, x + (w - font.width(time)) / 2, line + font.lineHeight + 2, theme.dimText(), false);
     }
 
     /** An item at half size, 8 pixels, its corner at ({@code x}, {@code y}). */

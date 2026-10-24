@@ -19,7 +19,7 @@ public final class Population {
     /** The civilisation's base housing, before any building: none until civilisations (CIV-01). */
     public static final int BASE = 0;
 
-    private final int max;
+    private int max;
     private final int[] used;
     private final int[] housing;
 
@@ -35,6 +35,11 @@ public final class Population {
 
     public int housing(int faction) {
         return housing[faction];
+    }
+
+    /** A rule change's new maximum (MATCH-01). */
+    public void setMax(int max) {
+        this.max = max;
     }
 
     /** The most population the faction may use now. */

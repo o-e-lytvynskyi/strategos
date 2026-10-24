@@ -2,6 +2,7 @@ package dev.strategos.core.sim;
 
 import dev.strategos.core.shared.Hasher;
 import dev.strategos.core.shared.HotPath;
+import dev.strategos.core.sim.econ.EconomyRules;
 import dev.strategos.core.sim.nav.PathStore;
 import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.order.OrderQueues;
@@ -121,6 +122,15 @@ public final class StateHasher {
         }
         if (!s.carry().empty()) { // only while a unit carries something (ECO-05)
             h = s.carry().mix(h, s.entities().highWater());
+        }
+        h = s.outcome().mix(h); // only once a centre stood or someone lost (MATCH-01)
+        MatchRules rules = config.rules();
+        if (!rules.play().equals(PlayRules.DEFAULTS)
+                || rules.economy().populationMax() != EconomyRules.POPULATION_MAX) { // rules a scenario or a change set
+            h = Hasher.mix(h, rules.play().victory() == PlayRules.Victory.CIVIC_CENTRE ? 2 : 1);
+            h = Hasher.mix(h, rules.play().revealMap() ? 1 : 0);
+            h = Hasher.mix(h, rules.play().aiVision() ? 1 : 0);
+            h = Hasher.mix(h, rules.economy().populationMax());
         }
 
         ArrayDeque<CommandEnvelope> pending = s.pendingCommands();

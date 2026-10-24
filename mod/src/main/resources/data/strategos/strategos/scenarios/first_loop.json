@@ -1,0 +1,22 @@
+{
+  "map": "strategos:proving_ground",
+  "victory": "civic_centre",
+  "slots": [
+    {
+      "player": "human",
+      "resources": { "food": 300 },
+      "entities": [
+        { "template": "strategos:building/civic_centre" },
+        { "template": "strategos:unit/worker", "dz": 9, "count": 5, "spread": 2 }
+      ]
+    },
+    {
+      "player": "ai:first_loop",
+      "resources": { "food": 300 },
+      "entities": [
+        { "template": "strategos:building/civic_centre" },
+        { "template": "strategos:unit/worker", "dz": -9, "count": 5, "spread": 2 }
+      ]
+    }
+  ]
+}

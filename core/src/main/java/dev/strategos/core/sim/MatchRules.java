@@ -12,8 +12,8 @@ import java.util.function.Function;
  * §2.6): when results are delivered and {@code pathK} ticks after their request, {@code pageK} ticks for a page
  * rebuild, the admission window W in expansions per tick, the requests that may wait before {@code BUSY}, the ticks a
  * busy unit waits, the expansion caps of a search and a group join, the length of a move decided at once, and the
- * smallest group that shares a path; and the economy (ECO-01: the resources and what each faction starts with). Each has
- * its default in the codec, so M0's, M1's and M2's rules still decode.
+ * smallest group that shares a path; the economy (ECO-01: the resources and what each faction starts with); and how
+ * the match is played and won (MATCH-01). Each has its default in the codec, so M0's, M1's and M2's rules still decode.
  */
 @CoreApi
 public record MatchRules(
@@ -29,7 +29,8 @@ public record MatchRules(
         int joinCap,
         int shortMove,
         int groupMin,
-        EconomyRules economy) {
+        EconomyRules economy,
+        PlayRules play) {
     /**
      * The admission window W's default, in expansion caps a tick: 80 searches at the 20,000 cap. Spike S7 set it (M1
      * T22): behind 200 requests a 100-unit order's results arrive within 4 ticks at p95, with the main thread's path work
@@ -58,7 +59,8 @@ public record MatchRules(
                     positive("groupMin", 8, MatchRules::groupMin),
                     EconomyRules.CODEC
                             .optionalFieldOf("economy", EconomyRules.DEFAULTS)
-                            .forGetter(MatchRules::economy))
+                            .forGetter(MatchRules::economy),
+                    PlayRules.CODEC.optionalFieldOf("play", PlayRules.DEFAULTS).forGetter(MatchRules::play))
             .apply(i, MatchRules::new));
 
     public MatchRules {
@@ -117,6 +119,57 @@ public record MatchRules(
                 EconomyRules.DEFAULTS);
     }
 
+    /** M3's rules before the play rules (MATCH-01): no victory, nothing revealed. */
+    public MatchRules(
+            int commandsPerTick,
+            int unitCap,
+            DeliveryMode delivery,
+            int pathK,
+            int pageK,
+            int admissionW,
+            int maxOutstanding,
+            int busyRetry,
+            int searchCap,
+            int joinCap,
+            int shortMove,
+            int groupMin,
+            EconomyRules economy) {
+        this(
+                commandsPerTick,
+                unitCap,
+                delivery,
+                pathK,
+                pageK,
+                admissionW,
+                maxOutstanding,
+                busyRetry,
+                searchCap,
+                joinCap,
+                shortMove,
+                groupMin,
+                economy,
+                PlayRules.DEFAULTS);
+    }
+
+    /** These rules with other play rules (MATCH-01). */
+    public MatchRules withPlay(PlayRules rules) {
+        return new MatchRules(
+                commandsPerTick,
+                unitCap,
+                delivery,
+                pathK,
+                pageK,
+                admissionW,
+                maxOutstanding,
+                busyRetry,
+                searchCap,
+                joinCap,
+                shortMove,
+                groupMin,
+                economy,
+                rules);
+    }
+
     /** These rules with another economy (ECO-01). */
     public MatchRules withEconomy(EconomyRules rules) {
         return new MatchRules(
@@ -132,7 +185,8 @@ public record MatchRules(
                 joinCap,
                 shortMove,
                 groupMin,
-                rules);
+                rules,
+                play);
     }
 
     /** These rules with another expansion cap per search. */
@@ -150,7 +204,8 @@ public record MatchRules(
                 joinCap,
                 shortMove,
                 groupMin,
-                economy);
+                economy,
+                play);
     }
 
     private static <O> RecordCodecBuilder<O, Integer> positive(String name, int fallback, Function<O, Integer> getter) {

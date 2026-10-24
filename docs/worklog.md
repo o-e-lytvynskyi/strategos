@@ -9,7 +9,7 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-24 — M3 T9–T21
+## 2026-10-24 — M3 T9–T22
 
 - **The owner, past midnight:** «можешь любые тесты проводить и как закончишь м3 - начинай м4, все решения
   принимай сам, которые рекомендуешь» (STATE item 6).
@@ -71,8 +71,13 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
   place round it, lights a torch and strikes once a second; wood takes every blow whole, stone about half, so ten
   spearmen burn a house in 13.5 s and a civic centre in about two and a half minutes (the balance sheet's new burn
   table). Flames and smoke show on the walls, and never a fire block: with fire tick on, nothing in the match catches
-  while a control fire outside spreads. A burnt house leaves the match and its blocks go. Next: T22, scenarios, rules
-  and victory.
+  while a control fire outside spreads. A burnt house leaves the match and its blocks go.
+- **M3 T22 · MATCH-01, scenarios, rules and a first victory.** A match can now be won: under the civic-centre rule a
+  faction whose last centre falls, or who resigns, loses, and the last one standing wins the same tick; everyone in
+  the match hears it and sees a Victory or Defeat screen with the winner and the time. Rules change only by a
+  journaled command (`/strategos match config`), so replays agree. Scenarios live in data: `first_loop` gives each
+  side a civic centre, five workers and 300 food (`/strategos match scenario`). No monster spawns inside a match.
+  Resigning is a command rather than a control message, so it is journaled too. Next: T23, the minimap.
 
 ## 2026-10-23 (evening) — M3 spec, T1–T8
 

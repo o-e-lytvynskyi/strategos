@@ -1,12 +1,15 @@
 package dev.strategos.mod.server.tick;
 
+import dev.strategos.core.protocol.MatchNews;
 import dev.strategos.core.protocol.NoticeMsg;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.sim.BlockCracked;
 import dev.strategos.core.sim.BuildingDestroyed;
 import dev.strategos.core.sim.BuildingHurt;
 import dev.strategos.core.sim.CommandResult;
+import dev.strategos.core.sim.FactionDefeated;
 import dev.strategos.core.sim.FlameShown;
+import dev.strategos.core.sim.MatchEnded;
 import dev.strategos.core.sim.Notice;
 import dev.strategos.core.sim.OutputEvent;
 import dev.strategos.core.sim.TickOutputs;
@@ -26,6 +29,7 @@ import dev.strategos.mod.server.match.MatchRuntime;
 import dev.strategos.mod.server.net.Audience;
 import dev.strategos.mod.server.net.FxSender;
 import dev.strategos.mod.server.net.payload.FeedbackPayload;
+import dev.strategos.mod.server.net.payload.MatchEventPayload;
 import dev.strategos.mod.server.world.BlockWriter;
 import java.util.List;
 import java.util.function.Consumer;
@@ -68,6 +72,30 @@ public final class OutputAppliers {
                 case BlockCracked cracked -> {} // FxSender sent it before the outputs applied
                 case FlameShown flame -> {} // as a crack: FxSender sent it
                 case BuildingHurt hurt -> {} // the under-attack alert's (UI-12)
+                case FactionDefeated defeated ->
+                    StrategosServer.get()
+                            .net()
+                            .send(
+                                    new Audience.Match(rt.id()),
+                                    new MatchEventPayload(new MatchNews(
+                                            rt.id().value(),
+                                            out.tick(),
+                                            MatchNews.DEFEATED,
+                                            defeated.faction().value(),
+                                            out.tick())));
+                case MatchEnded ended -> {
+                    StrategosServer.get()
+                            .net()
+                            .send(
+                                    new Audience.Match(rt.id()),
+                                    new MatchEventPayload(new MatchNews(
+                                            rt.id().value(),
+                                            out.tick(),
+                                            MatchNews.ENDED,
+                                            ended.winner(),
+                                            ended.ticks())));
+                    StrategosServer.get().matches().end(rt.id());
+                }
                 case BuildingDestroyed destroyed ->
                     rt.log().info(out.tick(), "building {} fell", destroyed.handle()); // its blocks are effects
                 case WorldEffect effect -> {
@@ -134,6 +162,8 @@ public final class OutputAppliers {
                 BuildingHurt.class,
                 BlockCracked.class,
                 FlameShown.class,
+                FactionDefeated.class,
+                MatchEnded.class,
                 UnitGear.class,
                 WorldEffect.class,
                 Notice.class);

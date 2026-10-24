@@ -350,7 +350,8 @@ public final class MatchSnapshotCodec {
                     NODE.listOf().optionalFieldOf("nodes", List.of()).forGetter(MatchSnapshot::nodes),
                     BUILDING.listOf().optionalFieldOf("buildings", List.of()).forGetter(MatchSnapshot::buildings),
                     Codec.LONG.listOf().optionalFieldOf("ledger", List.of()).forGetter(MatchSnapshot::ledger),
-                    CARRY.listOf().optionalFieldOf("carried", List.of()).forGetter(MatchSnapshot::carried))
+                    CARRY.listOf().optionalFieldOf("carried", List.of()).forGetter(MatchSnapshot::carried),
+                    Codec.LONG.listOf().optionalFieldOf("outcome", List.of()).forGetter(MatchSnapshot::outcome))
             .apply(i, MatchSnapshot::new));
 
     private MatchSnapshotCodec() {}

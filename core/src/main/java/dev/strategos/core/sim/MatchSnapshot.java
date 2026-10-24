@@ -28,8 +28,10 @@ public record MatchSnapshot(
         List<NodeStore.Saved> nodes,
         List<BuildingStore.Saved> buildings,
         List<Long> ledger,
-        List<CarryStore.Saved> carried) {
+        List<CarryStore.Saved> carried,
+        List<Long> outcome) {
     public MatchSnapshot {
+        outcome = List.copyOf(outcome);
         buildings = List.copyOf(buildings);
         ledger = List.copyOf(ledger);
         carried = List.copyOf(carried);
@@ -39,6 +41,42 @@ public record MatchSnapshot(
         nodes = List.copyOf(nodes);
         pendingCommands = List.copyOf(pendingCommands);
         pages = List.copyOf(pages);
+    }
+
+    /** A snapshot from before victory (MATCH-01): no outcome. */
+    public MatchSnapshot(
+            MatchConfig config,
+            long tick,
+            long templateSetHash,
+            EntitySlots slots,
+            List<UnitRecord> units,
+            List<CommandEnvelope> pendingCommands,
+            List<PageRef> pages,
+            PathStore.Queue paths,
+            int nextGroup,
+            List<Long> treasury,
+            List<Long> terrainEdits,
+            List<NodeStore.Saved> nodes,
+            List<BuildingStore.Saved> buildings,
+            List<Long> ledger,
+            List<CarryStore.Saved> carried) {
+        this(
+                config,
+                tick,
+                templateSetHash,
+                slots,
+                units,
+                pendingCommands,
+                pages,
+                paths,
+                nextGroup,
+                treasury,
+                terrainEdits,
+                nodes,
+                buildings,
+                ledger,
+                carried,
+                List.of());
     }
 
     /** A snapshot from before gathering (ECO-05): no ledger, no loads. */

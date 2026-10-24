@@ -12,6 +12,7 @@ import dev.strategos.mod.server.content.TemplateReloadListener;
 import dev.strategos.mod.server.content.TemplateSync;
 import dev.strategos.mod.server.tick.TickDriver;
 import dev.strategos.mod.server.world.MatchGrowth;
+import dev.strategos.mod.server.world.MatchSpawns;
 import java.util.List;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.neoforged.bus.api.IEventBus;
@@ -26,6 +27,7 @@ import net.neoforged.neoforge.event.TagsUpdatedEvent;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import net.neoforged.neoforge.event.entity.living.MobSpawnEvent;
 import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
@@ -80,6 +82,7 @@ public final class Strategos {
         game.addListener(PlayerInteractEvent.LeftClickBlock.class, ObserverRules::onLeftClickBlock);
         game.addListener(PlayerInteractEvent.EntityInteract.class, ObserverRules::onEntityInteract);
         game.addListener(CropGrowEvent.Pre.class, MatchGrowth::onCropGrowPre);
+        game.addListener(MobSpawnEvent.PositionCheck.class, MatchSpawns::onPositionCheck);
     }
 
     /** The listeners every data pack reload gets, made fresh for each; the engine-surface inventory reads them (B12). */

@@ -29,7 +29,9 @@ public final class CommandRules {
                 .register(new TrainRules.TrainRule())
                 .register(new TrainRules.CancelRule())
                 .register(new TrainRules.RallyRule())
-                .register(new TrainRules.ReseedRule());
+                .register(new TrainRules.ReseedRule())
+                .register(new MatchRulesRules.ResignRule())
+                .register(new MatchRulesRules.RuleChangeRule());
     }
 
     /** A second rule for a kind throws. */

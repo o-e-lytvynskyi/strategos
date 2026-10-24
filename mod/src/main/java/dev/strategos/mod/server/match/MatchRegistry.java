@@ -352,6 +352,14 @@ public final class MatchRegistry {
         require(id).transition(MatchLifecycle.RUNNING);
     }
 
+    /** The match is over (MATCH-01): it steps no more and takes no commands; its world stays until it is disposed. */
+    public void end(MatchId id) {
+        MatchRuntime rt = require(id);
+        if (rt.lifecycle().canTransitionTo(MatchLifecycle.ENDED)) {
+            rt.transition(MatchLifecycle.ENDED);
+        }
+    }
+
     /**
      * Ends the match for good: its bodies are discarded, its region freed, its waiting block writes dropped and its
      * blocks unprotected, its chunk tickets released, its record and blob file removed.

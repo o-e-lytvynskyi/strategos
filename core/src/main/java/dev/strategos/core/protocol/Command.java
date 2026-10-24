@@ -20,4 +20,6 @@ public sealed interface Command extends Hashable
                 Train,
                 CancelTrain,
                 SetRally,
-                Reseed {}
+                Reseed,
+                Resign,
+                RuleChange {}

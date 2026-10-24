@@ -354,7 +354,7 @@ Cards: [roadmap/M3-first-loop.md](roadmap/M3-first-loop.md#cards). 27 cards, at 
 | UI-10 | Idle-worker key and economy notifications | S | UI-07, ECO-05 | in_progress |
 | ART-01 | Placeholder look and the style guide | M | UNIT-03, BLD-01, D-04 | in_progress |
 | CMB-03 | Attacking buildings with torches | M | CMB-02, BLD-01, D-12 | done |
-| MATCH-01 | Scenarios, match rules and a first victory | M | CORE-01, DATA-03, MAP-01 | specified |
+| MATCH-01 | Scenarios, match rules and a first victory | M | CORE-01, DATA-03, MAP-01 | in_progress |
 | UI-11 | Basic minimap | M | UI-02, CAM-03, NET-08, D-16 | specified |
 | UI-12 | Under-attack alert with jump key | S | UI-10, MATCH-01 | specified |
 | MATCH-05 | Pause and game speed | S | CORE-01, CORE-03, D-18 | specified |

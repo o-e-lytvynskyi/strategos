@@ -11,6 +11,8 @@ import dev.strategos.core.client.pick.View;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.port.MetricsSink;
 import dev.strategos.core.protocol.Grant;
+import dev.strategos.core.protocol.Resign;
+import dev.strategos.core.protocol.RuleChange;
 import dev.strategos.core.protocol.SetRally;
 import dev.strategos.core.protocol.SpawnBuilding;
 import dev.strategos.core.protocol.SpawnUnits;
@@ -46,7 +48,8 @@ import org.lwjgl.glfw.GLFW;
  * one Train, which the server queues; a right click on the ground sets the centre's rally point. A click on a worker
  * shows its details in the panel; the card's build page opens and its house button arms placement, which Escape
  * disarms; the idle-worker key then takes each idle worker in turn (UI-10). The resource bar shows the stock and the population before and after the worker's cost (UI-07).
- * Screenshots of the centre's and the worker's selection and of the bar, for UI-06.4's and UI-07.4's goldens (T30).
+ * Last, faction 1 resigns and the end screen shows the victory (MATCH-01). Screenshots of the centre's and the worker's
+ * selection, the bar, the idle worker and the end screen, for T30's goldens.
  */
 final class RtsEconomyScenario implements Scenario {
     private static final TemplateId CIVIC_CENTRE = new TemplateId("strategos:building/civic_centre");
@@ -240,6 +243,24 @@ final class RtsEconomyScenario implements Scenario {
             }
             case 9 -> {
                 ctx.capture("idle_worker");
+                MatchRuntime rt = match;
+                IntegratedServer server = mc.getSingleplayerServer();
+                if (rt != null && server != null) { // MATCH-01: faction 1 resigns, faction 0 wins
+                    server.execute(() -> {
+                        rt.submit(PlayerSlot.ADMIN, new RuleChange("victory", "civic_centre"));
+                        rt.submit(PlayerSlot.ADMIN, new Resign(new FactionSlot(1)));
+                    });
+                }
+                wait = 15;
+            }
+            case 10 -> {
+                var end = StrategosClient.model().end();
+                check(end != null && end.faction() == 0, "the end the client heard: " + end);
+                ctx.result.addProperty("won", end != null && end.faction() == 0);
+                ctx.capture("end_screen");
+                wait = 2; // the frame is taken after this tick
+            }
+            case 11 -> {
                 return finish(ctx);
             }
             default -> {
