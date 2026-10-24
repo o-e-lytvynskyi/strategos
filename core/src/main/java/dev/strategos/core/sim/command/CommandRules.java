@@ -35,6 +35,8 @@ public final class CommandRules {
                 .register(new AiRules.AnnounceWaveRule())
                 .register(new AiRules.SetAiRule())
                 .register(new BuildRule())
+                .register(new CancelBuildingRule())
+                .register(new DemolishRule())
                 .register(new SpawnDepositRule());
     }
 

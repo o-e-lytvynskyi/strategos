@@ -45,6 +45,10 @@ public final class CommandKinds {
             new CommandKind<>("strategos:set_ai", 18, SetAi.class, SetAi.CODEC, SetAi.WIRE, true);
     public static final CommandKind<Build> BUILD =
             new CommandKind<>("strategos:build", 19, Build.class, Build.CODEC, Build.WIRE, false);
+    public static final CommandKind<CancelBuilding> CANCEL_BUILDING = new CommandKind<>(
+            "strategos:cancel_building", 20, CancelBuilding.class, CancelBuilding.CODEC, CancelBuilding.WIRE, false);
+    public static final CommandKind<Demolish> DEMOLISH =
+            new CommandKind<>("strategos:demolish", 21, Demolish.class, Demolish.CODEC, Demolish.WIRE, false);
     public static final CommandKind<SpawnDeposit> SPAWN_DEPOSIT = new CommandKind<>(
             "strategos:spawn_deposit", 24, SpawnDeposit.class, SpawnDeposit.CODEC, SpawnDeposit.WIRE, true);
     public static final CommandKinds DEFAULT = new CommandKinds(List.of(
@@ -67,6 +71,8 @@ public final class CommandKinds {
             ANNOUNCE_WAVE,
             SET_AI,
             BUILD,
+            CANCEL_BUILDING,
+            DEMOLISH,
             SPAWN_DEPOSIT));
 
     private final List<CommandKind<?>> kinds;

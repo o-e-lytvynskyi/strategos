@@ -81,6 +81,19 @@ public final class BuildingLife {
     }
 
     /**
+     * What a building {@code progress} thousandths built gives back of its {@code cost} when cancelled (BLD-09): {@code
+     * cost × (1000 − progress) ÷ 1000} per resource, rounded down to the thousandth (the balance sheet's rule).
+     */
+    public static long[] refund(long[] cost, long progress) {
+        long left = BuildingStore.FULL - Math.max(0, Math.min(BuildingStore.FULL, progress));
+        long[] out = new long[cost.length];
+        for (int r = 0; r < cost.length; r++) {
+            out[r] = Math.multiplyExact(cost[r], left) / BuildingStore.FULL;
+        }
+        return out;
+    }
+
+    /**
      * Asks the writer for a finished blueprint at {@code at}, its lowest layer at {@code baseY}: the box's empty cells
      * cleared, then its blocks in build order, under write site {@code site}, owned by {@code owner} (a building's
      * handle, or 0 for none).

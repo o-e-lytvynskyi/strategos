@@ -280,7 +280,8 @@ reseed). What happens when one runs out?
   1. Cancelling at x % progress refunds exactly the documented amount (L1).
   2. Demolishing removes every block and effect, and the population cap is recalculated (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** BLD-03 · **Size:** S · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-24 — M4 T13: a cancel refunds the documented share at any progress (1); a demolish removes every block and effect, the cap recalculated (2) (spec §1.6 row 17)
 
 #### PROD-02 · Batch training
 - **Value:** Train five at a time for less total time (P4).

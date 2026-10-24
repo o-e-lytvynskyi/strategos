@@ -9,7 +9,7 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-24 (later) — M4 T1–T12
+## 2026-10-24 (later) — M4 T1–T13
 
 - **M4 T1 · the health check from M3's close.** The four classes over 800 lines split along their seams, with
   every golden frame identical after the HUD's split (`RtsHud`, `MatchState`, `NetTests`, `CrowdSoak`);
@@ -50,7 +50,9 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
   of the tick. Nine GameTests, each with its control.
 - **M4 T12 · BLD-08 done.** A storehouse (wood, stone, iron) and a farmstead (food) join the village; one civic centre
   a faction. The built-in templates' indices are now pinned in full, so a new template never moves an old one's.
-  Next: T13, cancel and demolish (BLD-09).
+- **M4 T13 · BLD-09 done.** A foundation or site can be cancelled, its cost back but for the share built; a
+  finished building demolished, for nothing, its housing gone with it. Buttons come with the command card (T16).
+  Next: T14, batch training (PROD-02).
 
 ## 2026-10-24 — M3 T9–T31, M3 Done; M4 spec
 

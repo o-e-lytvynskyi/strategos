@@ -428,6 +428,11 @@ public final class BalanceSheet {
                         .append(" |\n");
             }
         }
+        sb.append("\n## Cancelling and demolishing\n\n");
+        sb.append(
+                "A foundation or a site cancelled gives back its cost but for the share built, cost × (1000 − progress) ÷"
+                        + " 1000 per resource, its progress in thousandths, rounded down to the thousandth; a finished building"
+                        + " demolished gives nothing back (BLD-09). Repairing is free, at half the build speed (D-15).\n");
         sb.append("\n## Resource sinks\n\n");
         TreeSet<String> resources = new TreeSet<>(gatherers.keySet());
         resources.addAll(spenders.keySet());

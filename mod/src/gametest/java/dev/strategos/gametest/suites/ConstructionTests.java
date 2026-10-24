@@ -632,4 +632,63 @@ public final class ConstructionTests {
                 })
                 .thenSucceed();
     }
+
+    /**
+     * BLD-09.2: a whole house demolished by its owner: every block above its floor is air in the level, none of them
+     * protected any more, the building gone from the core and its five of housing from the cap.
+     */
+    @StrategosTest(batch = "construction", timeoutTicks = 600)
+    public static void demolishRemovesEveryBlockAndEffect(GameTestHelper h) {
+        MatchRuntime rt = Units.match(h);
+        town(rt, 0);
+        rt.submit(PlayerSlot.ADMIN, new SpawnBuilding(HOUSE, new FactionSlot(0), 20, 20, 0));
+        var state = new Object() {
+            int cap;
+            List<BlockPos> blocks = List.of();
+        };
+        h.startSequence()
+                .thenWaitUntil(() -> {
+                    check(houses(rt).size() == 1, "no house yet");
+                    equalsBlueprint(h, rt, houses(rt).get(0)); // its blocks all up
+                })
+                .thenExecute(() -> {
+                    BuildingView house = houses(rt).get(0);
+                    Blueprint bp = Objects.requireNonNull(core(rt).queries()
+                            .templates()
+                            .blueprint(Objects.requireNonNull(
+                                            core(rt).queries().templates().byId(HOUSE))
+                                    .netIndex()));
+                    List<BlockPos> blocks = new ArrayList<>();
+                    for (int k = 0; k < bp.count(); k++) {
+                        if (bp.y(k) > 0) {
+                            blocks.add(new BlockPos(
+                                    rt.space().origin().getX()
+                                            + house.footprint().worldX(bp.x(k), bp.z(k)),
+                                    house.baseY() + bp.y(k),
+                                    rt.space().origin().getZ()
+                                            + house.footprint().worldZ(bp.x(k), bp.z(k))));
+                        }
+                    }
+                    state.blocks = blocks;
+                    state.cap = core(rt).queries().populationCap(new FactionSlot(0));
+                    rt.submit(P0, new dev.strategos.core.protocol.Demolish(house.handle()));
+                })
+                .thenWaitUntil(() -> {
+                    check(houses(rt).isEmpty(), "the house stands");
+                    for (BlockPos pos : state.blocks) {
+                        check(h.getLevel().getBlockState(pos).isAir(), pos + " still stands");
+                        check(
+                                StrategosServer.get()
+                                                .writer()
+                                                .protectedBlocks(h.getLevel())
+                                                .owner(pos)
+                                        == 0,
+                                pos + " still protected");
+                    }
+                })
+                .thenExecute(() -> check(
+                        core(rt).queries().populationCap(new FactionSlot(0)) == state.cap - 5,
+                        "the cap " + core(rt).queries().populationCap(new FactionSlot(0)) + ", was " + state.cap))
+                .thenSucceed();
+    }
 }

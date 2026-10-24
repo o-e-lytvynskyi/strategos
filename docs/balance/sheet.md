@@ -371,6 +371,10 @@ A torch's fire times 0.9 to the building's fire resistance a blow; ten bearers s
 | strategos:unit/infantry | strategos:building/quarry_large | 1.435 | 349 | 34.5 s (690 ticks) |
 | strategos:unit/infantry | strategos:building/storehouse | 1.435 | 558 | 55.5 s (1110 ticks) |
 
+## Cancelling and demolishing
+
+A foundation or a site cancelled gives back its cost but for the share built, cost × (1000 − progress) ÷ 1000 per resource, its progress in thousandths, rounded down to the thousandth; a finished building demolished gives nothing back (BLD-09). Repairing is free, at half the build speed (D-15).
+
 ## Resource sinks
 
 | Resource | Gathered by | Spent by |

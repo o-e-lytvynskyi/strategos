@@ -36,6 +36,8 @@ class CommandKindsTest {
                         "strategos:announce_wave",
                         "strategos:set_ai",
                         "strategos:build",
+                        "strategos:cancel_building",
+                        "strategos:demolish",
                         "strategos:spawn_deposit");
     }
 

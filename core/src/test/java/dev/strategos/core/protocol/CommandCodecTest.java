@@ -40,6 +40,8 @@ class CommandCodecTest {
                 new AnnounceWave(40, -12, 600),
                 new SetAi(new FactionSlot(1), "first_loop", "{}"),
                 Build.replace(UnitSet.of(1, 2), 524_289),
+                new CancelBuilding(524_290),
+                new Demolish(524_291),
                 new SpawnDeposit(new TemplateId("strategos:building/iron_mine"), 10, 12));
     }
 
