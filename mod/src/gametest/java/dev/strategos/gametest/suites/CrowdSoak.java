@@ -413,7 +413,7 @@ final class CrowdSoak {
                 histogram,
                 mostStuck,
                 worst,
-                q.surfaces().bytes(),
+                q.navigationBytes(),
                 q.unitCount(),
                 exportJournal(),
                 fights(),

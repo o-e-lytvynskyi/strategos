@@ -236,6 +236,11 @@ final class QueriesImpl implements MatchQueries {
     }
 
     @Override
+    public long navigationBytes() {
+        return state.navigationBytes();
+    }
+
+    @Override
     public List<PageRef> pageRefs() {
         return state.pageRefs();
     }

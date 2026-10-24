@@ -128,7 +128,7 @@ public final class Construction {
             int cx = (int) Math.floor(motion.x(i));
             int cz = (int) Math.floor(motion.z(i));
             if (inside(at, cx, cz)) {
-                putOut(s, i, nearestFree(s, at, cx, cz));
+                putOut(s, i, nearestFree(s, at, cx, cz, s.mobility(i)));
             }
         }
     }
@@ -148,7 +148,7 @@ public final class Construction {
             int cx = (int) Math.floor(motion.x(i));
             int cz = (int) Math.floor(motion.z(i));
             if (s.footprintAt(cx, cz)) {
-                putOut(s, i, nearestFree(s, new Footprint(cx, cz, 0, 1, 1), cx, cz));
+                putOut(s, i, nearestFree(s, new Footprint(cx, cz, 0, 1, 1), cx, cz, s.mobility(i)));
             }
         }
     }
@@ -160,7 +160,7 @@ public final class Construction {
         MotionStore motion = s.motion();
         double x = cell[0] + 0.5;
         double z = cell[1] + 0.5;
-        double floor = Placing.standFloor(s.surfaces(), s.config().bounds(), cell[0], cell[1]);
+        double floor = Placing.standFloor(s.surfacesFor(i), s.config().bounds(), cell[0], cell[1]);
         double y = Double.isNaN(floor) ? motion.y(i) : floor;
         motion.set(i, x, y, z, motion.yaw(i));
         s.frame().add(s.entities().handleAt(i), x, y, z, motion.yaw(i), (byte) 0);
@@ -172,6 +172,11 @@ public final class Construction {
      * can stand on with no footprint on it. Null when none lies within the footprint's size and 8 more.
      */
     public static int @Nullable [] nearestFree(MatchState s, Footprint at, int cx, int cz) {
+        return nearestFree(s, at, cx, cz, dev.strategos.core.sim.nav.MobilityClass.INFANTRY);
+    }
+
+    public static int @Nullable [] nearestFree(
+            MatchState s, Footprint at, int cx, int cz, dev.strategos.core.sim.nav.MobilityClass mobility) {
         MatchBounds bounds = s.config().bounds();
         for (int r = 1; r <= Math.max(at.spanX(), at.spanZ()) + 8; r++) {
             int[] best = null;
@@ -185,7 +190,9 @@ public final class Construction {
                             || z >= bounds.sizeZ()
                             || inside(at, x, z)
                             || s.footprintAt(x, z)
-                            || Double.isNaN(Placing.standFloor(s.surfaces(), bounds, x, z))) {
+                            || (mobility == dev.strategos.core.sim.nav.MobilityClass.LARGE
+                                    && !largeFootprintFits(s, x, z))
+                            || Double.isNaN(Placing.standFloor(s.surfaces(mobility), bounds, x, z))) {
                         continue;
                     }
                     double d = (x - cx) * (double) (x - cx) + (z - cz) * (double) (z - cz);
@@ -200,6 +207,18 @@ public final class Construction {
             }
         }
         return null;
+    }
+
+    /** A newly committed footprint is authoritative even before its page's WORLD rebuild. */
+    private static boolean largeFootprintFits(MatchState s, int x, int z) {
+        if (x == 0
+                || z == 0
+                || x + 1 >= s.config().bounds().sizeX()
+                || z + 1 >= s.config().bounds().sizeZ()) return false;
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) if (s.footprintAt(x + dx, z + dz)) return false;
+        }
+        return true;
     }
 
     private static boolean inside(Footprint at, int x, int z) {

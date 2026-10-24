@@ -167,7 +167,7 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
   2. Reachability per class equals a flood fill (L1).
   3. 30 horsemen cross the proving ground with no ladder rung above repath (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** PATH-06, PATH-09 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 #### UNIT-06 · Mounted units
 - **Value:** Cavalry looks and moves like riders on horses, yet costs about as much as one foot

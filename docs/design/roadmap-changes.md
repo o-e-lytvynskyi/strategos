@@ -477,3 +477,9 @@ a criterion testable; none adds scope, and no status changed. The owner may veto
 | FOW-01, FOW-07, UI-16, AI-18, MATCH-07; M8 goal | "Conditional on D-24 (c)" removed | The owner took D-24 (c) |
 | CMB-08 | Deferred; nothing in M5 depends on it | D-08 chose the observer avatar |
 
+### 2026-10-25, M5 mobility implementation
+
+| Card | Change | Why |
+|---|---|---|
+| PATH-11 | Its L3 thirty-horsemen crossing runs in M5 T6, after UNIT-06 supplies the actual mounted body. T2 verifies the class grids, real large-unit motion, mixed groups and exact save/resume in L1 and reruns the existing L3 movement gates. PATH-11 remains in progress until the T6 crossing passes. | T2 precedes creation of the mounted entity; a large humanoid test double would not verify the approved mounted integration. The criterion, level and milestone scope stay unchanged. |
+

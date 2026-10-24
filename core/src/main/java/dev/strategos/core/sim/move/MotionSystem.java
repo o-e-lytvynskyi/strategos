@@ -584,7 +584,7 @@ public final class MotionSystem implements MatchSystem {
      */
     private static boolean ground(MatchState s, int i) {
         MotionStore motion = s.motion();
-        SurfaceGrid grid = s.surfaces();
+        SurfaceGrid grid = s.surfacesFor(i);
         int cx = (int) Math.floor(motion.x(i));
         int cz = (int) Math.floor(motion.z(i));
         int floor = motion.floor(i);
@@ -649,7 +649,7 @@ public final class MotionSystem implements MatchSystem {
         if (nx == x && nz == z) {
             return false;
         }
-        SurfaceGrid grid = s.surfaces();
+        SurfaceGrid grid = s.surfacesFor(i);
         int cx = (int) Math.floor(x);
         int cz = (int) Math.floor(z);
         int ncx = (int) Math.floor(nx);
@@ -725,7 +725,7 @@ public final class MotionSystem implements MatchSystem {
         if (motion.floor(i) == MotionStore.NO_FLOOR) {
             return 1;
         }
-        SurfaceGrid grid = s.surfaces();
+        SurfaceGrid grid = s.surfacesFor(i);
         int cx = (int) Math.floor(motion.x(i));
         int cz = (int) Math.floor(motion.z(i));
         int layer = layerOf(grid, cx, cz, motion.floor(i));
@@ -742,7 +742,7 @@ public final class MotionSystem implements MatchSystem {
     /** Whether unit {@code i} can walk straight from where it stands to (tx, tz). */
     private static boolean inLine(MatchState s, int i, double tx, double tz) {
         MotionStore motion = s.motion();
-        SurfaceGrid grid = s.surfaces();
+        SurfaceGrid grid = s.surfacesFor(i);
         int cx = (int) Math.floor(motion.x(i));
         int cz = (int) Math.floor(motion.z(i));
         int layer = motion.floor(i) == MotionStore.NO_FLOOR ? -1 : layerOf(grid, cx, cz, motion.floor(i));

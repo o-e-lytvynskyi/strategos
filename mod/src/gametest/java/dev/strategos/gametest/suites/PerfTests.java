@@ -471,7 +471,7 @@ public final class PerfTests {
                 .thenWaitUntil(() -> check(core(rt).queries().pageRefs().size() == 1_024, "prewarm"))
                 .thenExecute(() -> {
                     long millis = (System.nanoTime() - start) / MS;
-                    long bytes = core(rt).queries().surfaces().bytes();
+                    long bytes = core(rt).queries().navigationBytes();
                     JsonObject json = new JsonObject();
                     json.addProperty("test", "prewarm_512_generated");
                     json.addProperty("prewarm_ms", millis);

@@ -1,0 +1,60 @@
+{
+  "task": "M5 T2",
+  "date": "2026-10-25",
+  "environment": "../M5-windows-x64.md",
+  "command": "verify verifySlow verifySoak --no-configuration-cache --console=plain --max-workers=2",
+  "wallTime": "15m 44s",
+  "status": "pass",
+  "jmhApprovedMachine": "windows-i5-9400f",
+  "jmhCompare": "pass after explicit owner approval, 2026-10-25",
+  "suites": {
+    "core/build/test-results/test": {
+      "tests": 1315,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "core/build/test-results/slowTest": {
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "core/build/test-results/soak": {
+      "tests": 200,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "core/build/test-results/replayJournals": {
+      "tests": 73,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "mod/build/test-results/test": {
+      "tests": 95,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "mod/build/test-results/archTest": {
+      "tests": 12,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "mod/build/test-results/gametest": {
+      "tests": 211,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "mod/build/test-results/gametest-slow": {
+      "tests": 13,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  }
+}

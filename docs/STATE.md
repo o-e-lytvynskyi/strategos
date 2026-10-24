@@ -156,23 +156,36 @@ Answer in chat or here; the next session applies the answers.
    current version (kept in `~/.strategos/demo-seen`); `-Pdemo=m4` or `-Pdemo=crowd,melee` picks, `-Pdemo.skip=`
    leaves out; `-Pdemo=list` lists them. It does not replace the L7 demos above, which are play, not watching.
 
+23. **Approved by the owner on 2026-10-25: the Windows M5 T2 performance base.** On the same Windows i5-9400F host,
+    full JMH at T1 `a13850b` versus T2 measures terrain-edit rebuilds at
+    **739.15 → 1,848.21 µs (+150.04%)**. T2 maintains the additional large-body grid
+    and its eight-neighbour clearance halo, as spec §2.1 anticipates. Every other common
+    benchmark and hot-kernel allocation check passes, but the unchanged 15% JMH gate is
+    red against T1. The [comparison](testing/data/M5-T2-jmh-comparison-windows-x64.json) and
+    [approved Windows baseline](../perf/baseline-windows-i5-9400f.json) retain that cost
+    explicitly. The owner chose to approve this base and continue M5, keeping the old
+    thresholds and the required MacBook M5 checks. No Mac baseline changed. This host uses
+    `-Pperf.machine=windows-i5-9400f`. Full functional movement gates and the comparison
+    with this approved base pass. T2 is complete; PATH-11 awaits T6's mounted L3 crossing.
+
 ## Since your last visit
 
-M5 T1 finished: the health check and the Windows test environment, with `verify verifySlow` green. `main` is unchanged.
+M5 T2 finished after the owner approved the Windows T2 base: mobility classes,
+full movement gates green, original terrain-rebuild cost retained in the report.
 
 ## Now
 
-- **Milestone:** M5 Combat, started 2026-10-24 (owner's go-ahead); [spec](milestones/M5-combat.md); 1 of 17 tasks done.
-- **In progress:** none; M5 T1 verified and ready to commit.
-- **Last finished task:** M5 T1 (2026-10-25), health check; `verify verifySlow` passed on Windows x64 (see the environment report).
-- **Next task:** M5 T2 · Mobility classes and footprints.
+- **Milestone:** M5 Combat, started 2026-10-24 (owner's go-ahead); [spec](milestones/M5-combat.md); 2 of 17 tasks done.
+- **In progress:** none.
+- **Last finished task:** M5 T2 (2026-10-25), mobility classes and footprints, this commit; full functional gates and approved Windows JMH comparison passed.
+- **Next task:** M5 T3 · Ranged combat and analytic projectiles.
 - **WIP branch:** `codex/m5-combat` (owner-requested isolation; no changes to `main`).
-- **CI:** latest `main` verify succeeded at `3705118` (run 40119258187); branch not yet pushed; monthly usage last recorded about 1,575 of 2,000 minutes.
+- **CI:** last checked `main` verify succeeded at `3705118` (run 40119258187); M5 T1 is pushed on this branch, T2 awaits its gates; monthly usage last recorded about 1,575 of 2,000 minutes.
 - **Overview:** `python3 tools/roadmap.py summary`.
 
 ## Blocked
 
-Nothing.
+Nothing. The owner approved item 23 on 2026-10-25 and T2's remaining checks passed.
 
 ## Milestones
 

@@ -9,6 +9,25 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
+## 2026-10-25 — M5 T2, mobility classes
+
+- **T2 · PATH-11 in progress:** separate infantry/large grids, components and group paths;
+  class-aware slots, movement, production and recovery; diagonal clearance and immutable
+  halo updates. The card's mounted L3 crossing remains in T6, when UNIT-06 supplies the body.
+- **Verification:** `verify verifySlow verifySoak` passed in 15m 44s: 1315 core, 4 slow core,
+  200 soak, 73 journal replay, 95 Minecraft unit, 12 architecture, 211 GameTest and 13 slow
+  GameTest. No failures, errors or skips. Populated 512² navigation, both classes and a
+  bridge: 10,049,008 bytes (<32 MiB). Native path D p99 0.9465 / 1.0524 ms (<2 ms).
+- **Performance:** sequential full same-host JMH at T1 and T2; page builders together
+  255.51 µs. Terrain rebuild 739.15 → 1,848.21 µs (+150.04%); every other common benchmark
+  and hot-kernel allocation check passed. The owner explicitly approved this Windows T2
+  baseline on 2026-10-25 and instructed M5 to continue; its `jmhCompare` passed. Mac bases,
+  goldens and thresholds are unchanged. [Environment and raw reports](testing/M5-windows-x64.md).
+- **Problems met:** tests-first diagonal cases exposed actual narrow-gap body penetration;
+  all eight neighbouring columns and pages are now checked. Quote dotted PowerShell
+  Gradle parameters to avoid a configuration failure before the task runs.
+- **Next:** T3 analytic shots and ranged attacks, including save/resume and launch/impact FX.
+
 ## 2026-10-25 — M5 T1, Windows test environment
 
 - **M5 started:** the owner's go-ahead, isolated in `codex/m5-combat`; the target is a

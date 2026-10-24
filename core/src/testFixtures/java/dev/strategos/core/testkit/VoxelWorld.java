@@ -136,10 +136,21 @@ public final class VoxelWorld {
         SurfaceGrid grid = SurfaceGrid.empty(sizeX, sizeZ, mobility);
         PageBuilder builder = new PageBuilder(mobility);
         List<SurfacePage> pages = new ArrayList<>();
+        VoxelSlice[] slices = new VoxelSlice[grid.pagesX() * grid.pagesZ()];
+        for (int pz = 0; pz < grid.pagesZ(); pz++) {
+            for (int px = 0; px < grid.pagesX(); px++) {
+                slices[pz * grid.pagesX() + px] = slice(new PageCoord(px, pz));
+            }
+        }
+        PageBuilder.Columns columns = (x, z, floor, clearance) ->
+                !grid.inside(x, z) || overlay.blocked(PageCoord.of(x, z), x % 16 * 16 + z % 16)
+                        ? -1
+                        : PageBuilder.supportingFloor(
+                                slices[(z >> 4) * grid.pagesX() + (x >> 4)], x & 15, z & 15, floor, clearance);
         for (int pz = 0; pz < grid.pagesZ(); pz++) {
             for (int px = 0; px < grid.pagesX(); px++) {
                 PageCoord page = new PageCoord(px, pz);
-                pages.add(builder.build(slice(page), overlay, page));
+                pages.add(builder.build(slices[pz * grid.pagesX() + px], overlay, page, columns));
             }
         }
         return grid.publishAll(pages);

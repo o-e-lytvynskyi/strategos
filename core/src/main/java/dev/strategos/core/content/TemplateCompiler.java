@@ -375,16 +375,25 @@ public final class TemplateCompiler {
         double turnRate =
                 motion == null ? 0 : f.positive(motion, "/UnitMotion", "turnRate", UnitTemplate.DEFAULT_TURN_RATE);
         String mobility = motion == null ? "" : f.string(motion, "/UnitMotion", "mobility", "infantry");
-        if (motion != null && !mobility.equals("infantry")) {
+        if (motion != null && !mobility.equals("infantry") && !mobility.equals("large")) {
             problems.add(TemplateProblem.error(
-                    file, "/UnitMotion/mobility", "unknown mobility '" + mobility + "'; M1 has infantry"));
+                    file, "/UnitMotion/mobility", "unknown mobility '" + mobility + "'; expected infantry or large"));
         }
         String entityType = body == null ? "" : f.string(body, "/Body", "entityType", null);
         String model = body == null ? "" : f.string(body, "/Body", "model", "humanoid");
         String skin = body == null ? "" : f.string(body, "/Body", "skin", "");
         double width = body == null ? 0 : f.positive(body, "/Body", "width", null);
         double height = body == null ? 0 : f.positive(body, "/Body", "height", null);
-        double radius = body == null ? 0 : f.positive(body, "/Body", "radius", UnitTemplate.DEFAULT_RADIUS);
+        double radius = body == null
+                ? 0
+                : f.positive(
+                        body,
+                        "/Body",
+                        "radius",
+                        mobility.equals("large") ? UnitTemplate.DEFAULT_LARGE_RADIUS : UnitTemplate.DEFAULT_RADIUS);
+        if (mobility.equals("large") && radius < UnitTemplate.DEFAULT_LARGE_RADIUS) {
+            problems.add(TemplateProblem.error(file, "/Body/radius", "large mobility needs a radius of at least 0.7"));
+        }
         if (problems.size() > before) {
             return null;
         }

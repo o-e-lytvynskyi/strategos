@@ -225,7 +225,8 @@ final class Avoidance {
         if (floor == MotionStore.NO_FLOOR) {
             return;
         }
-        SurfaceGrid grid = s.surfaces();
+        SurfaceGrid grid = s.surfacesFor(i);
+        double edgeRadius = s.mobility(i) == dev.strategos.core.sim.nav.MobilityClass.LARGE ? 0 : radius;
         int cx = (int) Math.floor(selfX);
         int cz = (int) Math.floor(selfZ);
         int layer = MotionSystem.layerOf(grid, cx, cz, floor);
@@ -242,7 +243,7 @@ final class Avoidance {
             while (distance < EDGE_RANGE) {
                 int next = grid.neighbour(x, z, l, dir);
                 if (next < 0) {
-                    double limit = Math.max((distance - radius) / EDGE_TICKS, prefX * dx + prefZ * dz);
+                    double limit = Math.max((distance - edgeRadius) / EDGE_TICKS, prefX * dx + prefZ * dz);
                     orca.addLimit(dx, dz, limit);
                     break;
                 }

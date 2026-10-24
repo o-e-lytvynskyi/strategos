@@ -119,13 +119,15 @@ public final class Production {
         if (done < ticks(s, handle, template, count)) {
             return;
         }
-        int[] door = door(s, handle);
+        var mobility = dev.strategos.core.sim.nav.MobilityClass.of(
+                s.templates().byIndex(template).mobility());
+        int[] door = door(s, handle, mobility);
         if (door == null) {
             return; // walled in: it waits at the door for ground to free
         }
         pop.remove(faction, s.templatePopulation(template, faction) * count); // the reservation becomes the units' own
         b.dequeue(handle, 0);
-        double floor = Placing.floor(s.surfaces(), s.config().bounds(), door[0], door[1]);
+        double floor = Placing.floor(s.surfaces(mobility), s.config().bounds(), door[0], door[1]);
         double y = Double.isNaN(floor) ? s.config().bounds().flatFloorY() : floor;
         for (int n = 0; n < count; n++) { // a batch steps out together, the crowd spreading it
             int unit = s.spawnUnit(template, faction, door[0] + 0.5, y, door[1] + 0.5, 0f);
@@ -135,6 +137,10 @@ public final class Production {
 
     /** The free cell outside the footprint nearest the blueprint's door, or its middle without one; null for none. */
     static int @Nullable [] door(MatchState s, int handle) {
+        return door(s, handle, dev.strategos.core.sim.nav.MobilityClass.INFANTRY);
+    }
+
+    private static int @Nullable [] door(MatchState s, int handle, dev.strategos.core.sim.nav.MobilityClass mobility) {
         Blueprint bp = s.blueprintOf(handle);
         Footprint at = s.footprintOf(handle);
         Blueprint.Marker m = bp.marker("door");
@@ -143,7 +149,7 @@ public final class Production {
         }
         int cx = m == null ? at.anchorX() + at.spanX() / 2 : at.worldX(m.x(), m.z());
         int cz = m == null ? at.anchorZ() + at.spanZ() / 2 : at.worldZ(m.x(), m.z());
-        return Construction.nearestFree(s, at, cx, cz);
+        return Construction.nearestFree(s, at, cx, cz, mobility);
     }
 
     /** New unit {@code unit} takes building {@code handle}'s rally orders: walk there, gather there, or go to it. */

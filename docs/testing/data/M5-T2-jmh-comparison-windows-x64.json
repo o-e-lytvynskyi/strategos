@@ -1,0 +1,212 @@
+{
+  "task": "M5 T2",
+  "date": "2026-10-25",
+  "environment": "../M5-windows-x64.md",
+  "controlCommit": "a13850b",
+  "branch": "codex/m5-combat",
+  "changedSourceSha256": "4144e4b67bc890f0d5a7d6af3dd61c523c605813f89345408059b0bfcea1e400",
+  "changedSourceFiles": [
+    "core/src/jmh/java/dev/strategos/core/bench/PageBuilderBench.java",
+    "core/src/main/java/dev/strategos/core/content/TemplateCompiler.java",
+    "core/src/main/java/dev/strategos/core/content/UnitTemplate.java",
+    "core/src/main/java/dev/strategos/core/sim/LargeNavigation.java",
+    "core/src/main/java/dev/strategos/core/sim/MatchQueries.java",
+    "core/src/main/java/dev/strategos/core/sim/MatchState.java",
+    "core/src/main/java/dev/strategos/core/sim/MatchTerrain.java",
+    "core/src/main/java/dev/strategos/core/sim/QueriesImpl.java",
+    "core/src/main/java/dev/strategos/core/sim/build/Construction.java",
+    "core/src/main/java/dev/strategos/core/sim/move/Avoidance.java",
+    "core/src/main/java/dev/strategos/core/sim/move/MotionSystem.java",
+    "core/src/main/java/dev/strategos/core/sim/move/StuckLadder.java",
+    "core/src/main/java/dev/strategos/core/sim/nav/MobilityClass.java",
+    "core/src/main/java/dev/strategos/core/sim/nav/PageBuilder.java",
+    "core/src/main/java/dev/strategos/core/sim/nav/PathService.java",
+    "core/src/main/java/dev/strategos/core/sim/order/SlotPlanner.java",
+    "core/src/main/java/dev/strategos/core/sim/prod/Production.java",
+    "core/src/test/java/dev/strategos/core/content/LargeTemplateTest.java",
+    "core/src/test/java/dev/strategos/core/sim/nav/LargeMovementTest.java",
+    "core/src/test/java/dev/strategos/core/sim/nav/MobilityTest.java",
+    "core/src/testFixtures/java/dev/strategos/core/testkit/VoxelWorld.java",
+    "mod/src/gametest/java/dev/strategos/gametest/suites/CrowdSoak.java",
+    "mod/src/gametest/java/dev/strategos/gametest/suites/PerfTests.java"
+  ],
+  "description": "Sequential full JMH runs on the same Windows host. The current tree includes eight-neighbour large-body clearance. This is diagnostic data, not an approved replacement for the Mac M4 Pro baseline.",
+  "controlRaw": "M5-T1-control-windows-x64.json",
+  "currentRaw": "../../../perf/baseline-windows-i5-9400f.json",
+  "gate": "FAIL: TerrainEditBench.rebuildOnePage exceeds the unchanged 15% regression limit. All other common benchmarks and the hot-kernel allocation checks pass.",
+  "results": [
+    {
+      "benchmark": "dev.strategos.core.bench.HealthBarBench.bars300",
+      "params": {},
+      "unit": "us/op",
+      "control": 4.869464628980122,
+      "current": 4.823849888946785,
+      "changePercent": -0.9367506185765428
+    },
+    {
+      "benchmark": "dev.strategos.core.bench.HudBench.hudFrame200",
+      "params": {},
+      "unit": "us/op",
+      "control": 2.9231402305147123,
+      "current": 3.332137605591465,
+      "changePercent": 13.99171243333528
+    },
+    {
+      "benchmark": "dev.strategos.core.bench.MatchBusBench.publish1000",
+      "params": {},
+      "unit": "us/op",
+      "control": 32.484007339553415,
+      "current": 31.77384990292984,
+      "changePercent": -2.1861755823422313
+    },
+    {
+      "benchmark": "dev.strategos.core.bench.MovementBench.step600",
+      "params": {},
+      "unit": "us/op",
+      "control": 68.9028859878751,
+      "current": 70.65857114752251,
+      "changePercent": 2.5480575080067958
+    },
+    {
+      "benchmark": "dev.strategos.core.bench.NodeDiscoveryBench.provingGround",
+      "params": {},
+      "unit": "ms/op",
+      "control": 91.26614871212121,
+      "current": 91.3510135,
+      "changePercent": 0.09298605131951021
+    },
+    {
+      "benchmark": "dev.strategos.core.bench.PageBuilderBench.build",
+      "params": {},
+      "unit": "us/op",
+      "control": 99.06776038391524,
+      "current": 99.97340025317513,
+      "changePercent": 0.9141620500456193
+    },
+    {
+      "benchmark": "dev.strategos.core.bench.PageBuilderBench.buildBothMobilityClasses",
+      "params": {},
+      "unit": "us/op",
+      "control": null,
+      "current": 255.50769472062188,
+      "changePercent": null
+    },
+    {
+      "benchmark": "dev.strategos.core.bench.PhaseTimersBench.overhead",
+      "params": {},
+      "unit": "us/op",
+      "control": 0.31986654902900324,
+      "current": 0.3187352198717702,
+      "changePercent": -0.353687861599572
+    },
+    {
+      "benchmark": "dev.strategos.core.bench.SnapshotCodecBench.encode500",
+      "params": {},
+      "unit": "us/op",
+      "control": 739.4398708543706,
+      "current": 685.4674045171457,
+      "changePercent": -7.299101450245504
+    },
+    {
+      "benchmark": "dev.strategos.core.bench.SpatialBench.query1000",
+      "params": {},
+      "unit": "us/op",
+      "control": 981.7462620964354,
+      "current": 973.2489356070698,
+      "changePercent": -0.8655318402965184
+    },
+    {
+      "benchmark": "dev.strategos.core.bench.SpatialBench.rebuild1000",
+      "params": {},
+      "unit": "us/op",
+      "control": 10.392516896919421,
+      "current": 10.058558014394658,
+      "changePercent": -3.2134552759183532
+    },
+    {
+      "benchmark": "dev.strategos.core.bench.StatReadBench.cachedRead",
+      "params": {},
+      "unit": "ns/op",
+      "control": 4.281334503201233,
+      "current": 4.102031585015689,
+      "changePercent": -4.188014696153164
+    },
+    {
+      "benchmark": "dev.strategos.core.bench.StateHashBench.hash600",
+      "params": {},
+      "unit": "us/op",
+      "control": 28.26316033084647,
+      "current": 27.364790067723646,
+      "changePercent": -3.1785909735732587
+    },
+    {
+      "benchmark": "dev.strategos.core.bench.TemplateCompileBench.compile500",
+      "params": {},
+      "unit": "ms/op",
+      "control": 17.227992561532155,
+      "current": 14.660369606596186,
+      "changePercent": -14.903784905672257
+    },
+    {
+      "benchmark": "dev.strategos.core.sim.MotionBench.step600",
+      "params": {},
+      "unit": "us/op",
+      "control": 589.0121054793195,
+      "current": 582.3867191233962,
+      "changePercent": -1.1248302529422105
+    },
+    {
+      "benchmark": "dev.strategos.core.sim.OrcaBench.step600",
+      "params": {},
+      "unit": "us/op",
+      "control": 945.564258786575,
+      "current": 940.926961696109,
+      "changePercent": -0.49042643557795085
+    },
+    {
+      "benchmark": "dev.strategos.core.sim.TerrainEditBench.rebuildOnePage",
+      "params": {},
+      "unit": "us/op",
+      "control": 739.1540058537771,
+      "current": 1848.2086464149693,
+      "changePercent": 150.04378407990262
+    },
+    {
+      "benchmark": "dev.strategos.core.bench.CrossingBench.cross384",
+      "params": {},
+      "unit": "ms/op",
+      "control": 0.9547548810289391,
+      "current": 0.9409032169450406,
+      "changePercent": -1.4508084073862504
+    },
+    {
+      "benchmark": "dev.strategos.core.bench.CrossingBench.cross512",
+      "params": {},
+      "unit": "ms/op",
+      "control": 1.0789024825077573,
+      "current": 1.0786312558936986,
+      "changePercent": -0.025139122252115786
+    },
+    {
+      "benchmark": "dev.strategos.core.bench.CrossingBench.flat384",
+      "params": {},
+      "unit": "ms/op",
+      "control": 8.484325776658267,
+      "current": 8.270148866721179,
+      "changePercent": -2.5243833814859173
+    },
+    {
+      "benchmark": "dev.strategos.core.bench.CrossingBench.flat512",
+      "params": {},
+      "unit": "ms/op",
+      "control": 8.604265540034072,
+      "current": 8.135993872888173,
+      "changePercent": -5.442320032629356
+    }
+  ],
+  "ownerDecision": {
+    "date": "2026-10-25",
+    "decision": "Approved the Windows T2 baseline and continued M5; thresholds and required MacBook M5 validation unchanged.",
+    "machine": "windows-i5-9400f"
+  }
+}

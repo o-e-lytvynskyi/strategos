@@ -23,17 +23,12 @@ import dev.strategos.core.sim.econ.Ledger;
 import dev.strategos.core.sim.econ.NodeIndex;
 import dev.strategos.core.sim.econ.NodeStore;
 import dev.strategos.core.sim.econ.Treasury;
-import dev.strategos.core.sim.nav.FootprintOverlay;
 import dev.strategos.core.sim.nav.Material;
 import dev.strategos.core.sim.nav.MaterialKind;
 import dev.strategos.core.sim.nav.MobilityClass;
-import dev.strategos.core.sim.nav.PageBuilder;
-import dev.strategos.core.sim.nav.PageCoord;
 import dev.strategos.core.sim.nav.PathStore;
 import dev.strategos.core.sim.nav.SurfaceGrid;
-import dev.strategos.core.sim.nav.SurfacePage;
 import dev.strategos.core.sim.nav.TerrainEdits;
-import dev.strategos.core.sim.nav.VoxelSlice;
 import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.core.sim.prod.Population;
 import dev.strategos.core.sim.spatial.SpatialQueries;
@@ -42,8 +37,6 @@ import dev.strategos.core.sim.unitai.ActivityTiers;
 import dev.strategos.core.sim.unitai.UnitAi;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.BitSet;
 import java.util.List;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
@@ -89,27 +82,13 @@ public final class MatchState {
     private final Leaders leaders = new Leaders();
     private final ActivityTiers tiers = new ActivityTiers();
     private final List<JobDelivery> deliveries = new ArrayList<>();
-    private SurfaceGrid surfaces;
-    private final long[] pageSlices;
-    private final BitSet published;
-    /** Pages whose slice is known: published, or named by a restored snapshot whose slice was missing. */
-    private final BitSet known;
-
-    private final byte[][] sliceBytes; // each published page's last captured slice, for the core's own rebuilds
-    private final TerrainEdits terrainEdits;
-    private final FootprintOverlay footprints;
-    private final BitSet rebuild;
-    private final TerrainMaterials materials;
-    private final PageBuilder rebuilder = new PageBuilder(MobilityClass.INFANTRY);
+    private final MatchTerrain terrain;
     private final NodeStore nodes = new NodeStore();
     private final BuildingStore buildings = new BuildingStore();
     private final Alerts alerts = new Alerts(); // UI-12's live alerts, saved (MATCH-04)
     private final java.util.TreeMap<String, int[]> damageRanks = new java.util.TreeMap<>(); // by blueprint id
     private @Nullable NodeIndex nodeIndex;
     private final EconomyTimes economyTimes = new EconomyTimes();
-
-    private int[] changed = new int[4];
-    private int changedCount;
 
     MatchState(MatchConfig config, TemplateSet templates, EntityStore entities, MatchLog log) {
         this.config = config;
@@ -135,23 +114,38 @@ public final class MatchState {
         this.population = new Population(config.factions(), economy.populationMax());
         this.spatial = new SpatialQueries(config.bounds(), templates);
         this.input = TickInputs.empty(0);
-        this.surfaces =
-                SurfaceGrid.empty(config.bounds().sizeX(), config.bounds().sizeZ(), MobilityClass.INFANTRY);
-        this.pageSlices = new long[surfaces.pagesX() * surfaces.pagesZ()];
-        this.published = new BitSet(pageSlices.length);
-        this.known = new BitSet(pageSlices.length);
-        this.sliceBytes = new byte[pageSlices.length][];
-        this.terrainEdits = new TerrainEdits(pageSlices.length);
-        this.footprints = new FootprintOverlay(surfaces.pagesX(), surfaces.pagesZ());
-        this.rebuild = new BitSet(pageSlices.length);
-        this.materials =
-                new TerrainMaterials(config.bounds(), surfaces.pagesX(), surfaces.pagesZ(), sliceBytes, terrainEdits);
+        this.terrain = new MatchTerrain(this);
         ensureCapacity(entities.highWater());
     }
 
     /** The published terrain: a copy-on-write grid, so a job keeps the one it captured. */
     public SurfaceGrid surfaces() {
-        return surfaces;
+        return terrain.surfaces();
+    }
+
+    /** The derived grid whose clearance fits this unit, including the large class's page halo. */
+    public SurfaceGrid surfacesFor(int index) {
+        return terrain.surfaces(mobility(index));
+    }
+
+    public MobilityClass mobility(int index) {
+        return MobilityClass.of(templates.byIndex(identity.templateIndex(index)).mobility());
+    }
+
+    public SurfaceGrid surfaces(MobilityClass mobility) {
+        return terrain.surfaces(mobility);
+    }
+
+    public long navigationBytes() {
+        return surfaces().bytes() + surfaces(MobilityClass.LARGE).bytes();
+    }
+
+    public int changedPageCount(MobilityClass mobility) {
+        return terrain.changedPageCount(mobility);
+    }
+
+    public int changedPage(int k, MobilityClass mobility) {
+        return terrain.changedPage(k, mobility);
     }
 
     /**
@@ -161,48 +155,16 @@ public final class MatchState {
      * it already and are forgotten, the rest are applied by rebuilding the page here.
      */
     public void publish(TerrainPage page) {
-        publishAll(List.of(page));
+        terrain.publish(page);
     }
 
     /** Publishes a tick's rebuilt pages at once, in their order, so the grid's components are joined once. */
     public void publishAll(List<TerrainPage> pages) {
-        if (pages.isEmpty()) {
-            return;
-        }
-        List<SurfacePage> built = new ArrayList<>(pages.size());
-        for (TerrainPage page : pages) {
-            int index = pageIndex(page.coord());
-            boolean changes = !known.get(index) || pageSlices[index] != page.sliceHash();
-            pageSlices[index] = page.sliceHash();
-            published.set(index);
-            known.set(index);
-            if (changes) {
-                if (changedCount == changed.length) {
-                    changed = Arrays.copyOf(changed, changedCount * 2);
-                }
-                changed[changedCount++] = index;
-                paths.pageChanged(tick);
-            }
-            sliceBytes[index] = page.slice();
-            if (page.sampleTick() >= 0) {
-                terrainEdits.dropUpTo(index, page.sampleTick());
-                losses(index, page.coord());
-            }
-            if (terrainEdits.count(index) > 0 || footprints.any(index)) {
-                built.add(rebuilt(index, page.coord()));
-                rebuild.clear(index);
-            } else {
-                built.add(page.page());
-            }
-        }
-        surfaces = surfaces.publishAll(built);
-        if (!nodes.discovered() && published.cardinality() == pageSlices.length) {
-            discoverNodes();
-        }
+        terrain.publishAll(pages);
     }
 
     /** Discover the resource model once all terrain slices have arrived. */
-    private void discoverNodes() {
+    void discoverNodes(byte[][] sliceBytes) {
         nodeIndex = null;
         MatchResourceDiscovery.discover(this, sliceBytes);
     }
@@ -213,7 +175,7 @@ public final class MatchState {
      * {@link NodeStore#pack}; the result is in position order.
      */
     public List<long[]> materialsIn(int x0, int y0, int z0, int x1, int y1, int z1, MaterialKind kind) {
-        return materials.in(x0, y0, z0, x1, y1, z1, kind);
+        return terrain.materials().in(x0, y0, z0, x1, y1, z1, kind);
     }
 
     /**
@@ -221,7 +183,7 @@ public final class MatchState {
      * the core has taken away.
      */
     public @Nullable Material materialAt(int x, int y, int z) {
-        return materials.at(x, y, z);
+        return terrain.materials().at(x, y, z);
     }
 
     /** The match's resource nodes (ECO-02). */
@@ -307,22 +269,15 @@ public final class MatchState {
         NodeIndex index = nodeIndex;
         if (index == null) {
             long start = economyTimes.start();
-            index = new NodeIndex(nodes, config.rules().economy(), surfaces.pagesX(), surfaces.pagesZ());
+            index = new NodeIndex(
+                    nodes,
+                    config.rules().economy(),
+                    surfaces().pagesX(),
+                    surfaces().pagesZ());
             nodeIndex = index;
             economyTimes.built(start);
         }
         return index;
-    }
-
-    /** Reconcile resource blocks changed outside the core. */
-    private void losses(int page, PageCoord coord) {
-        MatchResourceDiscovery.losses(this, sliceBytes, terrainEdits, page, coord);
-    }
-
-    /** Page {@code index}'s surfaces from its last slice, the core's edits and its footprints. */
-    private SurfacePage rebuilt(int index, PageCoord coord) {
-        VoxelSlice slice = terrainEdits.applyTo(index, VoxelSlice.decode(sliceBytes[index]));
-        return rebuilder.build(slice, footprints.of(coord), coord);
     }
 
     /**
@@ -330,14 +285,7 @@ public final class MatchState {
      * it cleared. Its page is rebuilt in this tick's WORLD phase; the writer makes the block follow.
      */
     public void editVoxel(int x, int y, int z, short cls) {
-        MatchBounds b = config.bounds();
-        int band = y - b.minY();
-        if (x < 0 || z < 0 || x >= b.sizeX() || z >= b.sizeZ() || band < 0 || band >= VoxelSlice.MAX_HEIGHT) {
-            throw new IllegalArgumentException("voxel (" + x + ", " + y + ", " + z + ") outside the match space");
-        }
-        int index = pageIndex(PageCoord.of(x, z));
-        terrainEdits.add(index, TerrainEdits.cell(x & 15, band, z & 15), cls, tick);
-        rebuild.set(index);
+        terrain.editVoxel(x, y, z, cls);
     }
 
     /** A snapshot's buildings, their footprints blocked again (the writer's blocks are the world's already). */
@@ -348,7 +296,7 @@ public final class MatchState {
                     && dev.strategos.core.sim.build.Placing.obstructs(
                             this, buildings.template(handle), buildings.faction(handle))) { // a field's are walked on
                 for (int cell : footprintOf(handle).columns(blueprintOf(handle))) {
-                    footprints.block(cell >>> 16, cell & 0xFFFF);
+                    restoreColumn(cell >>> 16, cell & 0xFFFF);
                 }
             }
         }
@@ -356,24 +304,22 @@ public final class MatchState {
 
     /** Whether a building's footprint blocks match-local column (x, z). */
     public boolean footprintAt(int x, int z) {
-        return footprints.blocked(x, z);
+        return terrain.footprintAt(x, z);
     }
 
     /** Blocks a footprint column (BLD-01); its page is rebuilt in this tick's WORLD phase. */
     public void blockColumn(int x, int z) {
-        footprints.block(x, z);
-        rebuild.set(footprints.pageOf(x, z));
+        terrain.blockColumn(x, z);
     }
 
     /** Blocks a restored footprint's column, before the pages are published: no rebuild follows. */
     public void restoreColumn(int x, int z) {
-        footprints.block(x, z);
+        terrain.restoreColumn(x, z);
     }
 
     /** Releases a footprint column; its page is rebuilt in this tick's WORLD phase. */
     public void releaseColumn(int x, int z) {
-        footprints.release(x, z);
-        rebuild.set(footprints.pageOf(x, z));
+        terrain.releaseColumn(x, z);
     }
 
     /**
@@ -381,30 +327,12 @@ public final class MatchState {
      * not captured yet gets its edits when it is first published.
      */
     public void rebuildEdited() {
-        if (rebuild.isEmpty()) {
-            return;
-        }
-        List<SurfacePage> built = new ArrayList<>();
-        for (int i = rebuild.nextSetBit(0); i >= 0; i = rebuild.nextSetBit(i + 1)) {
-            if (sliceBytes[i] == null) {
-                continue;
-            }
-            built.add(rebuilt(i, new PageCoord(i % surfaces.pagesX(), i / surfaces.pagesX())));
-            if (changedCount == changed.length) {
-                changed = Arrays.copyOf(changed, changedCount * 2);
-            }
-            changed[changedCount++] = i;
-            paths.pageChanged(tick);
-        }
-        rebuild.clear();
-        if (!built.isEmpty()) {
-            surfaces = surfaces.publishAll(built);
-        }
+        terrain.rebuildEdited();
     }
 
     /** The core's own terrain edits (M3 spec §1.6 row 5). */
     public TerrainEdits terrainEdits() {
-        return terrainEdits;
+        return terrain.terrainEdits();
     }
 
     /**
@@ -412,39 +340,22 @@ public final class MatchState {
      * published again (a restart's prewarm) does not count as a change.
      */
     void expect(PageRef ref) {
-        int index = pageIndex(new PageCoord(ref.x(), ref.z()));
-        pageSlices[index] = ref.slice();
-        known.set(index);
-    }
-
-    private int pageIndex(PageCoord c) {
-        if (c.x() >= surfaces.pagesX() || c.z() >= surfaces.pagesZ()) {
-            throw new IllegalArgumentException(
-                    "page " + c + " outside the match's " + surfaces.pagesX() + " x " + surfaces.pagesZ() + " pages");
-        }
-        return c.z() * surfaces.pagesX() + c.x();
+        terrain.expect(ref);
     }
 
     /** How many pages changed this tick. */
     public int changedPageCount() {
-        return changedCount;
+        return terrain.changedPageCount();
     }
 
     /** This tick's {@code k}th changed page, by index {@code z * pagesX + x}, in publication order. */
     public int changedPage(int k) {
-        if (k >= changedCount) {
-            throw new IndexOutOfBoundsException("changed page " + k + " of " + changedCount);
-        }
-        return changed[k];
+        return terrain.changedPage(k);
     }
 
     /** The published pages, in page order, by the hash of the slice each was built from. */
     public List<PageRef> pageRefs() {
-        List<PageRef> refs = new ArrayList<>(published.cardinality());
-        for (int i = published.nextSetBit(0); i >= 0; i = published.nextSetBit(i + 1)) {
-            refs.add(new PageRef(i % surfaces.pagesX(), i / surfaces.pagesX(), pageSlices[i]));
-        }
-        return refs;
+        return terrain.pageRefs();
     }
 
     /** Starts a tick: its number and inputs, a cleared output list and a new body frame. */
@@ -452,7 +363,7 @@ public final class MatchState {
         tick = in.tick();
         input = in;
         outputs.clear();
-        changedCount = 0;
+        terrain.beginTick();
         frame = BodyFrame.builder(entities.aliveCount());
         agents.clear();
         leaders.clear();

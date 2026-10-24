@@ -86,7 +86,7 @@ grow with the garrison), and an AI that fights by the same rules (the roadmap's 
 
 | Card | Task | Checks (level) |
 |---|---|---|
-| PATH-11 | T2 | 1 `MobilityTest.aOneBlockGapIsOpenToInfantryAndClosedToLarge` (L1) · 2 `MobilityTest.reachabilityPerClassIsAFloodFill` (L1) · 3 `pathtests.thirty_horsemen_cross` (L3) |
+| PATH-11 | T2, T6 | 1 `MobilityTest.aOneBlockGapIsOpenToInfantryAndClosedToLarge` (L1) · 2 `MobilityTest.reachabilityPerClassIsAFloodFill` (L1) · 3 `pathtests.thirty_horsemen_cross` (L3, T6 when the mounted entity exists) |
 | CMB-04 | T3 | 1 `ShotTest.fixedSeedsReproduceTheGoldenResults` (L1) · 2 `ShotTest.theHitRateStaysInTheBinomialBound` (L1) · 3 `ShotTest.movingTargetsAreHitLessAtLongRange` (L1) · 4 `combattests.a_volley_damages_as_l1_predicts` (L3) · 5 `perftests.battle_soak`'s budget E (L6, T14) |
 | CMB-16 | T4 | 1 `HighGroundTest.rangeAndDamageFollowTheFormula` (L1) · 2 `DuelTest.archersOnAHillWin` (L1, slow) · 3 `HighGroundTest.theBonusIsInTheBreakdown` (L1) · 4 `combattests.a_hill_reaches_further` (L3) |
 | CMB-05 | T5 | 1 `StanceTest.theTable` (L1) · 2 `StanceTest.targetPreferences` (L1) · 3 `StanceTest.aChaseEndsOutOfVision` (L1) · 4 `combattests.stance_*` per family (L3) |
@@ -112,6 +112,9 @@ grow with the garrison), and an AI that fights by the same rules (the roadmap's 
 |---|---|---|
 | 1 | Spread and focus in one command | `Attack` stays focus (every attacker on the target, M2's meaning); `AttackSpread` (30) splits a group over the enemies within its first target's vision, the nearest first, one per target round the even split; Ctrl and Alt on the right click choose (UI rows in 04 §2.5) |
 | 2 | Shots in the save | A shot in flight is core state: its store is saved and hashed, so a save mid-volley resumes with the same hits (MATCH-04's rule) |
+| 3 | PATH-11's mounted crossing precedes UNIT-06 in the original order | T2 tests large footprints, real movement, mixed groups and save/resume in L1, and reruns the existing L3 movement gates. The thirty mounted units cross in T6, which first provides their entity and renderer. PATH-11 stays in progress until that check passes; its scope and test level are unchanged. |
+| 4 | Footprints at page borders and on steps | Large clearance reads all eight neighbouring columns, including diagonal corners, from the same journaled voxel slices. A changed border rebuilds the surrounding large pages, including the diagonal page; a neighbouring step may raise the body's support floor by at most one block, with headroom above the raised body checked in every column. Infantry keeps its existing grid and journal hashes. |
+| 5 | Navigation accounting with two classes | Memory reports include both derived grids. Static avoidance uses the already-expanded large grid without subtracting the body radius a second time; body-to-body avoidance still uses the template radius. Large templates default to radius 0.7 and refuse smaller footprints. |
 
 ### 1.7 Consent plan
 
@@ -282,7 +285,9 @@ battle scenario) → T17 (the consent batch) → T18 (close). T16 is reserved fo
 - **Verification:** `verify verifySlow`.
 
 #### T2 · PATH-11
-- §2.1. **Verification:** the card's checks; `PageBuilderBench` within its gate.
+- §2.1. **Verification:** checks 1–2, `LargeMovementTest` (step, gap, page halo, mixed groups,
+  exact save/resume), the existing L3 movement gates; `PageBuilderBench` within its gate.
+  Check 3 runs in T6 with the actual mounted body (§1.6 row 3).
 
 #### T3 · CMB-04
 - §2.2; the archer template ahead of T7 for the tests. **Verification:** the card's checks 1–4.
@@ -294,7 +299,8 @@ battle scenario) → T17 (the consent batch) → T18 (close). T16 is reserved fo
 - §2.4; `SetStance` (25). **Verification:** the card's checks.
 
 #### T6 · UNIT-06
-- §2.6. **Verification:** checks 1–3; 4 in T17.
+- §2.6. **Verification:** checks 1–3 and PATH-11's thirty mounted units crossing (T2's final
+  L3 check); 4 in T17.
 
 #### T7 · UNIT-07
 - §2.7; the duel harness (L1, slow) and its GameTest smoke. **Verification:** checks 1–3; the sheet.
@@ -324,7 +330,7 @@ battle scenario) → T17 (the consent batch) → T18 (close). T16 is reserved fo
 
 ### 7.3 Progress
 
-- [x] T1 (2026-10-25) · [ ] T2 · [ ] T3 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11
+- [x] T1 (2026-10-25) · [x] T2 (2026-10-25) · [ ] T3 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11
 - [ ] T12 · [ ] T13 · [ ] T14 · [ ] T15 · [ ] T17 · [ ] T18
 
 ---
@@ -378,3 +384,25 @@ now uses UTF-8 explicitly and rejects empty input; three Python regression tests
 `verify verifySlow` passed in 18m 32s on the documented Windows x64 environment:
 1298 core, 3 slow core, 200 determinism soak, 73 journal replay, 95 Minecraft unit, 12 architecture, 211 GameTest, 13 slow GameTest; no failures. No baselines, thresholds or images were changed. Linux goldens
 remain to be reviewed when its scenario job next runs; this session did not re-record them.
+
+### T2 — mobility classes and footprints (2026-10-25)
+
+Infantry and large units now use separate immutable grids, components, shared paths,
+slot checks and stuck recovery. Large clearance includes diagonal body-box corners and
+neighbouring pages, with headroom above a step checked for the whole body. Physical
+footing retains the underlying infantry surfaces. Terrain and construction changes rebuild
+the large clearance halo; navigation memory counts both grids. Old journals and saves
+still pass. PATH-11 remains in progress until T6's actual mounted L3 crossing.
+
+`verify verifySlow verifySoak` passed in **15m 44s**: 1315 core, 4 slow core, 200 soak,
+73 journal replay, 95 Minecraft unit, 12 architecture, 211 GameTest and 13 slow GameTest,
+with no failures, errors or skips. Both grids on the populated 512² bridge fixture use
+**10,049,008 bytes**, below 32 MiB. Native D p99 is 0.9465 ms for ordinary paths and
+1.0524 ms for group paths (limit 2 ms). Both page builders together take 255.51 µs.
+
+The same-host JMH comparison exposed terrain rebuild growth from 739.15 to 1,848.21 µs;
+every other common benchmark and hot-kernel allocation check passed. The owner explicitly
+approved the Windows T2 base on 2026-10-25, preserving thresholds and the required MacBook
+M5 checks. `:core:jmhCompare -Pperf.machine=windows-i5-9400f` then passed. The original
+cost and raw results remain in the [environment report](../testing/M5-windows-x64.md);
+the Mac M4 Pro base and all goldens are unchanged.

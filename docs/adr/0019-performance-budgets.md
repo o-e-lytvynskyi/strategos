@@ -122,6 +122,21 @@ the proposal on 2026-10-22, so the table above stands as it is.
   system that will spend the budgets arrives after M0. A tighter budget now would only fail later
   for reasons M0 cannot see; the per-unit check below 600 units already catches regressions.
 
+## Windows M5 T2 measurement base (approved by the owner 2026-10-25)
+
+The owner's target is a MacBook M5; this session has a Windows x64 i5-9400F host
+([environment](../testing/M5-windows-x64.md)). Sequential full JMH runs at T1 `a13850b`
+and T2 isolate the cost of PATH-11's second mobility grid and clearance halo:
+`TerrainEditBench.rebuildOnePage` grows from 739.15 to 1,848.21 µs (+150.04%). The
+other common benchmarks and hot-kernel allocation checks pass. The two-class page
+builder takes 255.51 µs, within its 500 µs target. This does not waive the red JMH gate.
+
+The owner explicitly approved the [host baseline](../../perf/baseline-windows-i5-9400f.json)
+on 2026-10-25 and instructed work on M5 to continue (STATE item 23). This host selects it
+with `-Pperf.machine=windows-i5-9400f`. This approval does not change the 15% threshold,
+budgets A–G, the approved M4 Pro baseline, or the requirement to test the target Mac.
+[Raw comparison and source fingerprint](../testing/data/M5-T2-jmh-comparison-windows-x64.json).
+
 ## Consequences
 
 - Every phase has a target (§4.4 of [04-architecture.md](../04-architecture.md)), and budget
