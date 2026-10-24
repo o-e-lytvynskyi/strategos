@@ -702,8 +702,8 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
      re-asserts it at MVP scale.
 - **Tests:** L0, L1, L2, L3, L6 · **Depends on:** CORE-01, CORE-03, D-18 · **Size:** S ·
   **Tier:** T0
-- **Status:** in_progress
-- **Progress:** 2026-10-24 — M3 T25: a paused run reaches the same hash (1); orders given in a pause apply on resume (2); pausing one match leaves another stepping (3) (spec §1.6 rows 68–69); the C p95 at 1.5× (4) waits for T29's soak
+- **Status:** done
+- **Done:** 2026-10-24 — M3 T25, T29: a paused run reaches the same hash (1); orders given in a pause apply on resume (2); pausing one match leaves another stepping (3) (spec §1.6 rows 68–69); `perftests.first_loop_fast` at 1.5×: C p95 4.2 ms against 15.3 (4) (row 74)
 
 ### Slice 3.4 · The opponent
 
@@ -783,4 +783,5 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   3. The stress pass holds C p95 ≤ 50 ms (L6).
   4. The report lists placement, writer and `fx` times (R).
 - **Tests:** L6, R · **Depends on:** BLD-03, ECO-05, PERF-05 · **Size:** S · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-24 — M3 T29: `perftests.first_loop_soak`, 15 game minutes of 200 units, 20 buildings and three constructions, holds A–E and G (1); A's p95 per unit is 3.0 µs, 47 % under M1's (2); `first_loop_stress` at 400 units C p95 5.3 ms against 50 (3); the report lists placement, writer and `fx` times (4) (spec §1.6 rows 74–75; [perf/first-loop-m4pro.json](../../perf/first-loop-m4pro.json))

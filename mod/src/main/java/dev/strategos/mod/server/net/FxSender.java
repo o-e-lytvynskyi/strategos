@@ -31,6 +31,12 @@ public final class FxSender {
     private FxSender() {}
 
     public static void send(MatchRuntime rt, TickOutputs out, NetGateway net) {
+        long start = System.nanoTime();
+        step(rt, out, net);
+        rt.fxTook(System.nanoTime() - start);
+    }
+
+    private static void step(MatchRuntime rt, TickOutputs out, NetGateway net) {
         Map<Integer, FxKind> units = new LinkedHashMap<>();
         for (OutputEvent event : out.events()) {
             if (event instanceof UnitHurt hurt) {
@@ -68,6 +74,12 @@ public final class FxSender {
 
     /** The blocks the writer broke and placed in {@code rt}'s space this tick, after its flush. */
     public static void sendWritten(MatchRuntime rt, List<BlockWriter.Written> written, NetGateway net) {
+        long start = System.nanoTime();
+        written(rt, written, net);
+        rt.fxTook(System.nanoTime() - start);
+    }
+
+    private static void written(MatchRuntime rt, List<BlockWriter.Written> written, NetGateway net) {
         BlockPos origin = rt.space().origin();
         List<Fx.Event> events = new ArrayList<>(written.size());
         for (BlockWriter.Written w : written) {

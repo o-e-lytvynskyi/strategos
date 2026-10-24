@@ -12,6 +12,7 @@ import static dev.strategos.gametest.suites.Units.core;
 
 import com.google.gson.JsonObject;
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.protocol.MatchControl;
 import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.SpawnUnits;
 import dev.strategos.core.protocol.UnitSet;
@@ -22,6 +23,7 @@ import dev.strategos.core.sim.MatchRules;
 import dev.strategos.core.sim.world.WritePriority;
 import dev.strategos.core.sim.world.WriteSite;
 import dev.strategos.core.testkit.BudgetCheck;
+import dev.strategos.core.testkit.FirstLoopScene;
 import dev.strategos.core.testkit.Percentiles;
 import dev.strategos.core.testkit.SimHarness;
 import dev.strategos.gametest.MatchFixture;
@@ -73,6 +75,11 @@ public final class PerfTests {
     private static final int STRESS_LANE = 2;
     private static final int MELEE_LANE = 3;
     private static final int MELEE_TICKS = 6_000;
+    private static final int FIRST_LOOP_TICKS = Integer.getInteger("strategos.firstLoop.ticks", 18_000);
+    private static final int FIRST_LOOP_SHORT_TICKS = 6_000;
+    private static final int FIRST_LOOP_LANE = 4;
+    private static final int FIRST_LOOP_STRESS_LANE = 5;
+    private static final int FIRST_LOOP_FAST_LANE = 6;
 
     private PerfTests() {}
 
@@ -557,6 +564,68 @@ public final class PerfTests {
         CrowdSoak.start(
                 h,
                 new CrowdSoak.Config("melee_soak_200", 0, 100, MELEE_TICKS, true, 2, MELEE_LANE, true),
+                r -> judgeSoak(h, r, window, false),
+                window::start,
+                window::sampleForeignLoad);
+    }
+
+    /**
+     * PERF-06.1, .2 and .4 (M3 spec §6): the first loop on the proving ground for {@code strategos.firstLoop.ticks}
+     * ticks (18,000, 15 game minutes, paced at 20 a second): two factions of 60 workers gathering and 40 spearmen in
+     * waves across the fords, 20 buildings and three constructions running ({@link FirstLoopScene}), two seated viewers
+     * at the centre. Budgets A–E gate as in the crowd soak, G on nav and on one save of the blob in the window, and A's
+     * p95 per unit at most 15 % over M1's; the report adds the placements', the writer's and the fx's times. Writes
+     * {@code first_loop_soak.json} and the match's journal.
+     */
+    @StrategosTest(batch = "perf_first_loop", arena = "arena_flat_48", timeoutTicks = 40_000)
+    public static void firstLoopSoak(GameTestHelper h) {
+        Window window = new Window();
+        CrowdSoak.start(
+                h,
+                CrowdSoak.Config.firstLoop(
+                        "first_loop_soak", FirstLoopScene.Config.SOAK, FIRST_LOOP_TICKS, FIRST_LOOP_LANE, 1),
+                r -> judgeSoak(h, r, window, false),
+                window::start,
+                window::sampleForeignLoad);
+    }
+
+    /**
+     * PERF-06.3: the first loop at twice its scale, 400 units and six constructions, for {@value
+     * #FIRST_LOOP_SHORT_TICKS} ticks: budget C's p95 at most 50 ms gates, the rest is reported. Writes {@code
+     * first_loop_stress.json}.
+     */
+    @StrategosTest(batch = "perf_first_loop_stress", arena = "arena_flat_48", timeoutTicks = 20_000)
+    public static void firstLoopStress(GameTestHelper h) {
+        Window window = new Window();
+        CrowdSoak.start(
+                h,
+                CrowdSoak.Config.firstLoop(
+                        "first_loop_stress",
+                        FirstLoopScene.Config.STRESS,
+                        FIRST_LOOP_SHORT_TICKS,
+                        FIRST_LOOP_STRESS_LANE,
+                        1),
+                r -> judgeSoak(h, r, window, true),
+                window::start,
+                window::sampleForeignLoad);
+    }
+
+    /**
+     * MATCH-05.4: the first loop played at 1.5 times its speed, 30 ticks a second, for {@value #FIRST_LOOP_SHORT_TICKS}
+     * ticks: budget C's p95 at most 15.3 ms, so a tick still fits a 20-a-second budget's share, gates under {@code c};
+     * the rest is reported. Writes {@code first_loop_fast.json}.
+     */
+    @StrategosTest(batch = "perf_first_loop_fast", arena = "arena_flat_48", timeoutTicks = 20_000)
+    public static void firstLoopFast(GameTestHelper h) {
+        Window window = new Window();
+        CrowdSoak.start(
+                h,
+                CrowdSoak.Config.firstLoop(
+                        "first_loop_fast",
+                        FirstLoopScene.Config.SOAK,
+                        FIRST_LOOP_SHORT_TICKS,
+                        FIRST_LOOP_FAST_LANE,
+                        MatchControl.FAST),
                 r -> judgeSoak(h, r, window, false),
                 window::start,
                 window::sampleForeignLoad);

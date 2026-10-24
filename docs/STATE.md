@@ -81,6 +81,9 @@ Answer in chat or here; the next session applies the answers.
    first bot defends nothing (that is AI-05, M6), so the shorter way decides. Nothing to do now; M6's defence or
    evener start positions settle it ([M3 spec §1.8](milestones/M3-first-loop.md)). To watch one:
    `/strategos skirmish strategos:proving_ground observe seed=3`.
+13. **Taken under your word of 2026-10-24: M3's per-unit perf baseline.** The first-loop soak's figures
+   ([perf/first-loop-m4pro.json](../perf/first-loop-m4pro.json)) are what M4's perf gate compares with, as M1's
+   crowd soak was for M3. They are well inside every budget: the tick's own work (C) 4.2 ms at p95 of 23.
 
 ## Since your last visit
 
@@ -382,8 +385,8 @@ Answer in chat or here; the next session applies the answers.
 - **Milestone:** M3 First loop, started 2026-10-23 at your word, without windows; spec:
   [milestones/M3-first-loop.md](milestones/M3-first-loop.md) (31 tasks, every card `specified`).
   M1 and M2 are Done (2026-10-23).
-- **In progress:** M3 T29, the first-loop perf gate (PERF-06).
-- **Last finished task:** M3 T26–T28 (2026-10-24): the AI framework, the scripted bot with announced waves, the headless match runner; before them T25, pause and game speed. The balance sheet is [balance/sheet.md](balance/sheet.md).
+- **In progress:** M3 T30, the consent batch: M3's goldens on this Mac (scenario `m3_goldens`), PERF-14 with the M3 HUD, ART-01.5's armoured frame pass, M2's `pose_high`.
+- **Last finished task:** M3 T29 (2026-10-24), the first-loop perf gate: every budget holds with room (C p95 4.2 ms of 23); before it T26–T28, the computer opponent. The balance sheet is [balance/sheet.md](balance/sheet.md).
 - **Next task:** M3's tasks in the spec's order (§7.1); its window tests in T30; then M4.
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 960 of 2,000 (48 %), as of 2026-10-23.
@@ -400,7 +403,7 @@ Nothing.
 | M0 Foundation | Accepted 2026-10-22 | Started 2026-10-21; tripwire met on day 2; 25 of 26 cards accepted, UNIT-01 closes with NET-01 (M1); the L7 demo waived by the owner |
 | M1 Movement | Done 2026-10-23 | Started 2026-10-22 on the owner's go-ahead; 29 tasks (T28, PATH-08, joined by its R3 trigger in T8; T29 by the owner's word); Accepted waits for the L7 demo |
 | M2 Command | Done 2026-10-23 | Started 2026-10-23 at the owner's word; 23 tasks; Accepted waits for `pose_high` (a window) and the L7 demo |
-| M3 First loop | In progress | Started 2026-10-23 at the owner's word; spec written the same day, 31 tasks; T1–T28 done by 2026-10-24 |
+| M3 First loop | In progress | Started 2026-10-23 at the owner's word; spec written the same day, 31 tasks; T1–T29 done by 2026-10-24 |
 | M4–M6 (MVP) | approved | Specs are written by the assistant when each milestone starts; M4 follows M3 at once (the owner, 2026-10-24) |
 | M7–M15 | proposed | Approved by the owner closer to their time |
 

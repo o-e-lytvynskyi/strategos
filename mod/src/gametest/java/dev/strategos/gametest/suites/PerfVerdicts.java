@@ -26,14 +26,28 @@ final class PerfVerdicts {
     static final long MS = 1_000_000L;
     static final double INVALID_FOREIGN_LOAD = 0.25;
 
+    /**
+     * M1's crowd soak per unit (M1 spec §8.5, its close's five runs), the base PERF-06.2 compares with: budget A's p99,
+     * 3.37 ms, for 600 units, an upper bound on its p95, which M1 did not record; and budget B's p95, 4.5 ms.
+     */
+    static final double M1_A_PER_UNIT = 3.37e6 / 600;
+
+    static final double M1_B_PER_UNIT = 4.5e6 / 600;
+
+    /** PERF-06.2: a unit-driven bucket's p95 per unit grows at most 15 % over M1's. */
+    static final double PER_UNIT_GROWTH = 1.15;
+
     private PerfVerdicts() {}
 
     /**
-     * The soak's verdicts: its own failures always (the melee soak's only reported), each budget as its gate says; an
-     * invalid run asserts nothing.
+     * The soak's verdicts: its own failures always (the melee soak's and the first loop's only reported: fighting units
+     * stand by design), each budget as its gate says; an invalid run asserts nothing. A soak paced faster than 20 ticks
+     * a second gates only budget C, its p95 at most 23 ms over the speed (MATCH-05.4: 15.3 ms at 1.5).
      */
     static void judgeSoak(GameTestHelper h, CrowdSoak.Result r, Window window, boolean stress) {
         boolean melee = r.config().melee();
+        boolean loose = melee || r.config().firstLoop();
+        boolean fast = r.config().speed() > 1;
         double foreign = window.meanForeignLoad();
         long without = Percentiles.percentile(r.baseline(), 0.50);
         long[] b = Arrays.stream(r.tick()).map(t -> Math.max(0, t - without)).toArray();
@@ -44,7 +58,12 @@ final class PerfVerdicts {
         double seconds = r.tick().length / 20.0;
         List<String> broken = new ArrayList<>();
         JsonObject budgets = new JsonObject();
-        if (stress) {
+        if (fast) {
+            long limit = scaled(Math.round(23 * MS / r.config().speed()));
+            budgets.add(
+                    "c", budget("c", "budget C at " + r.config().speed() + "x", c, 0.95, limit, broken, gated("c")));
+            budgets.add("a", budget("a", "budget A", r.core(), 0.99, Long.MAX_VALUE, broken, false));
+        } else if (stress) {
             budgets.add("c", budget("c", "budget C, stress", c, 0.95, scaled(50 * MS), broken, true));
             budgets.add("a", budget("a", "budget A", r.core(), 0.99, Long.MAX_VALUE, broken, false));
             budgets.add("d", budget("d", "budget D", r.paths(), 0.99, Long.MAX_VALUE, broken, false));
@@ -100,6 +119,10 @@ final class PerfVerdicts {
         json.addProperty("worst", r.worst());
         json.addProperty("journal", String.valueOf(r.journal()));
         json.addProperty("foreignCpu", foreign);
+        CrowdSoak.Costs costs = r.costs();
+        if (costs != null) {
+            json.add("firstLoop", firstLoop(r, costs, b, broken, !stress && !fast));
+        }
         if (melee) {
             json.addProperty("waves", r.fights()[0]);
             json.addProperty("hits", r.fights()[1]);
@@ -108,7 +131,12 @@ final class PerfVerdicts {
             r.failures().forEach(notes::add); // the crowd soak's own checks: fighting units stand by design
             json.add("crowdChecks", notes);
         }
-        List<String> failures = melee ? List.of() : r.failures();
+        if (loose && !melee) {
+            JsonArray notes = new JsonArray();
+            r.failures().forEach(notes::add);
+            json.add("crowdChecks", notes);
+        }
+        List<String> failures = loose ? List.of() : r.failures();
         JsonArray failed = new JsonArray();
         failures.forEach(failed::add);
         broken.forEach(failed::add);
@@ -121,6 +149,61 @@ final class PerfVerdicts {
         } else {
             h.succeed();
         }
+    }
+
+    /**
+     * The first loop's report (PERF-06.2 and .4): the placements' commands phase, the writer's and the fx's time a tick,
+     * the scene's counts, the blob's save in the window (budget G, at most 100 ms), and A's and B's p95 per unit against
+     * M1's; with {@code gates}, A per unit gates under {@code a} and the save under {@code g}.
+     */
+    private static JsonObject firstLoop(
+            CrowdSoak.Result r, CrowdSoak.Costs costs, long[] b, List<String> broken, boolean gates) {
+        JsonObject json = new JsonObject();
+        json.add("placement", spread(costs.placement()));
+        json.add("writer", spread(costs.writer()));
+        json.add("fx", spread(costs.fx()));
+        json.addProperty("placed", costs.placed());
+        json.addProperty("placementsRefused", costs.refused());
+        json.addProperty("waves", costs.waves());
+        json.addProperty("buildingsAtEnd", costs.buildings());
+        json.addProperty("saveNanos", costs.saveNanos());
+        if (gates && gated("g") && costs.saveNanos() > scaled(100 * MS)) {
+            broken.add("budget G: the save took " + costs.saveNanos() + " ns, above " + scaled(100 * MS));
+        }
+        int units = 2 * r.config().perFaction();
+        double aPerUnit = (double) Percentiles.percentile(r.core(), 0.95) / units;
+        double bPerUnit = (double) Percentiles.percentile(b, 0.95) / units;
+        JsonObject perUnit = new JsonObject();
+        perUnit.addProperty("units", units);
+        perUnit.addProperty("aP95PerUnitNs", aPerUnit);
+        perUnit.addProperty("aM1PerUnitNs", M1_A_PER_UNIT);
+        perUnit.addProperty("aGrowth", aPerUnit / M1_A_PER_UNIT);
+        perUnit.addProperty("bP95PerUnitNs", bPerUnit);
+        perUnit.addProperty("bM1PerUnitNs", M1_B_PER_UNIT);
+        perUnit.addProperty("bGrowth", bPerUnit / M1_B_PER_UNIT);
+        perUnit.addProperty(
+                "note",
+                "A gates; B is reported: below 600 units the tick's fixed work, not the units, makes most of B's p95");
+        json.add("perUnit", perUnit);
+        if (gates && gated("a") && aPerUnit > M1_A_PER_UNIT * PER_UNIT_GROWTH * ciFactor()) {
+            broken.add(String.format(
+                    "budget A per unit: p95 %.0f ns a unit, over %.0f (M1's %.0f + 15 %%)",
+                    aPerUnit, M1_A_PER_UNIT * PER_UNIT_GROWTH, M1_A_PER_UNIT));
+        }
+        return json;
+    }
+
+    /** A sample's count, p50, p99 and largest, in nanoseconds. */
+    private static JsonObject spread(long[] samples) {
+        JsonObject json = new JsonObject();
+        json.addProperty("samples", samples.length);
+        if (samples.length == 0) {
+            return json;
+        }
+        json.addProperty("p50", Percentiles.percentile(samples, 0.50));
+        json.addProperty("p99", Percentiles.percentile(samples, 0.99));
+        json.addProperty("max", Arrays.stream(samples).max().orElse(0));
+        return json;
     }
 
     /** One budget's figure as JSON; a breach of a gated one joins {@code broken}. */
@@ -150,7 +233,11 @@ final class PerfVerdicts {
     }
 
     static long scaled(long limit) {
-        return Math.round(limit * Double.parseDouble(System.getProperty("strategos.perf.ciFactor", "1")));
+        return Math.round(limit * ciFactor());
+    }
+
+    static double ciFactor() {
+        return Double.parseDouble(System.getProperty("strategos.perf.ciFactor", "1"));
     }
 
     /** Writes the result and fails a listed gate on a breach; an invalid run asserts nothing. */

@@ -9,6 +9,7 @@ import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.AttackMove;
 import dev.strategos.core.protocol.CommandOutcome;
 import dev.strategos.core.protocol.Move;
+import dev.strategos.core.protocol.PlaceBuilding;
 import dev.strategos.core.protocol.SpawnUnits;
 import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.FactionSlot;
@@ -24,6 +25,7 @@ import dev.strategos.core.sim.UnitDied;
 import dev.strategos.core.sim.UnitHurt;
 import dev.strategos.core.sim.UnitView;
 import dev.strategos.core.sim.journal.JournalExport;
+import dev.strategos.core.testkit.FirstLoopScene;
 import dev.strategos.core.testkit.JournalFiles;
 import dev.strategos.core.testkit.ProvingGround;
 import dev.strategos.core.testkit.Seeds;
@@ -32,6 +34,7 @@ import dev.strategos.gametest.TickPacer;
 import dev.strategos.gametest.net.MockViewer;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.server.match.MatchRuntime;
+import dev.strategos.mod.server.persist.MatchData;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -42,6 +45,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.MinecraftServer;
 import org.jspecify.annotations.Nullable;
 
@@ -65,11 +69,15 @@ final class CrowdSoak {
     /** Bodies wait for their chunks' entities to load, on the IO worker, so their deadline is wall time. */
     private static final long SPAWN_NANOS = 60_000_000_000L;
 
+    /** The commands phase's place in the core's timers, where a placement is checked and paid. */
+    private static final int COMMANDS = dev.strategos.core.sim.Phase.names().indexOf("COMMANDS");
+
     private static final int[] RUNG_TICKS = {0, 40, 100, 200, 400, 600};
 
     /**
      * One soak: its seed set line, units per faction, soak ticks, whether it measures budgets, how many viewers, its
-     * lane, and whether it is the melee soak's waves (CMB-02.6) rather than the crowd's seeded moves.
+     * lane, whether it is the melee soak's waves (CMB-02.6) rather than the crowd's seeded moves, the first loop's
+     * scene (PERF-06) if it is that, and the tick rate it is paced at.
      */
     record Config(
             String name,
@@ -79,9 +87,100 @@ final class CrowdSoak {
             boolean budgets,
             int viewers,
             int lane,
-            boolean melee) {
+            boolean melee,
+            FirstLoopScene.@Nullable Config scene,
+            double speed) {
         Config(String name, int seedLine, int perFaction, int ticks, boolean budgets, int viewers, int lane) {
             this(name, seedLine, perFaction, ticks, budgets, viewers, lane, false);
+        }
+
+        Config(
+                String name,
+                int seedLine,
+                int perFaction,
+                int ticks,
+                boolean budgets,
+                int viewers,
+                int lane,
+                boolean melee) {
+            this(name, seedLine, perFaction, ticks, budgets, viewers, lane, melee, null, 1);
+        }
+
+        /** The first loop's soak of {@code scene}, two viewers, at {@code speed} times 20 ticks a second. */
+        static Config firstLoop(String name, FirstLoopScene.Config scene, int ticks, int lane, double speed) {
+            return new Config(name, 0, scene.units() / 2, ticks, true, 2, lane, false, scene, speed);
+        }
+
+        boolean firstLoop() {
+            return scene != null;
+        }
+    }
+
+    /**
+     * What the first loop's soak adds (PERF-06.4), per sampled tick in nanoseconds: the block writer's {@code setBlock}
+     * time, the fx sent for the match, and the commands phase of each tick that applied a placement; the placements
+     * accepted and refused, the waves, the buildings at the end, and one save of the match's blob in the window
+     * (budget G), -1 if it has none.
+     */
+    static final class Costs {
+        private final long[] writer;
+        private final long[] fx;
+        private final long[] placement;
+        private final long placed;
+        private final long refused;
+        private final int waves;
+        private final int buildings;
+        private final long saveNanos;
+
+        Costs(
+                long[] writer,
+                long[] fx,
+                long[] placement,
+                long placed,
+                long refused,
+                int waves,
+                int buildings,
+                long saveNanos) {
+            this.writer = writer;
+            this.fx = fx;
+            this.placement = placement;
+            this.placed = placed;
+            this.refused = refused;
+            this.waves = waves;
+            this.buildings = buildings;
+            this.saveNanos = saveNanos;
+        }
+
+        long[] writer() {
+            return writer;
+        }
+
+        long[] fx() {
+            return fx;
+        }
+
+        long[] placement() {
+            return placement;
+        }
+
+        long placed() {
+            return placed;
+        }
+
+        long refused() {
+            return refused;
+        }
+
+        int waves() {
+            return waves;
+        }
+
+        int buildings() {
+            return buildings;
+        }
+
+        long saveNanos() {
+            return saveNanos;
         }
     }
 
@@ -121,6 +220,7 @@ final class CrowdSoak {
         private final int units;
         private final @Nullable Path journal;
         private final long[] fights;
+        private final @Nullable Costs costs;
 
         Result(
                 Config config,
@@ -143,7 +243,8 @@ final class CrowdSoak {
                 long navBytes,
                 int units,
                 @Nullable Path journal,
-                long[] fights) {
+                long[] fights,
+                @Nullable Costs costs) {
             this.config = config;
             this.seed = seed;
             this.core = core;
@@ -165,6 +266,12 @@ final class CrowdSoak {
             this.units = units;
             this.journal = journal;
             this.fights = fights;
+            this.costs = costs;
+        }
+
+        /** The first loop's costs; null for the other soaks. */
+        @Nullable Costs costs() {
+            return costs;
         }
 
         /** The melee soak's waves sent, hits and deaths; zeros for the crowd's. */
@@ -317,13 +424,21 @@ final class CrowdSoak {
     private boolean sendWave;
     private long hits;
     private long deaths;
+    private final @Nullable FirstLoopScene scene;
+    private final long[] writer;
+    private final long[] fx;
+    private final List<Long> placement = new ArrayList<>();
+    private long writerBefore;
+    private long fxBefore;
+    private boolean placing;
+    private long saveNanos = -1;
 
     private CrowdSoak(
             GameTestHelper h, Config config, Consumer<Result> done, Runnable windowStarts, Runnable everySecond) {
         this.h = h;
         this.config = config;
         this.seed = Seeds.set("soak").skip(config.seedLine()).findFirst().orElseThrow();
-        this.rt = MapTests.provingGround(h, config.lane(), 0);
+        this.rt = MapTests.provingGround(h, config.lane(), 0, config.firstLoop());
         this.manifest = MapTests.manifest(h);
         this.orders = new SoakOrders(seed, ProvingGround.generate());
         this.done = done;
@@ -334,6 +449,10 @@ final class CrowdSoak {
         this.tick = new long[samples];
         this.between = new long[samples];
         this.paths = new long[samples];
+        FirstLoopScene.Config sc = config.scene();
+        this.scene = sc == null ? null : new FirstLoopScene(sc, manifest.startSlots());
+        this.writer = new long[sc == null ? 0 : samples];
+        this.fx = new long[sc == null ? 0 : samples];
     }
 
     /**
@@ -376,7 +495,7 @@ final class CrowdSoak {
                     "the match is " + rt.lifecycle() + ": " + rt.faultMessage());
             if (config.budgets()) {
                 seatViewers();
-                TickPacer.pace(true);
+                TickPacer.pace(true, config.speed());
                 next(Phase.SETTLE);
             } else {
                 spawn();
@@ -397,7 +516,10 @@ final class CrowdSoak {
                 }
             }
             case SPAWNING -> {
-                int units = 2 * config.perFaction();
+                FirstLoopScene.Config sc = config.scene();
+                int units = sc == null
+                        ? 2 * config.perFaction()
+                        : 2 * sc.workers(); // the scene's soldiers come with its waves
                 check(refusedSpawn == null, "a spawn was refused: " + refusedSpawn);
                 check(
                         System.nanoTime() - spawnedAt < SPAWN_NANOS,
@@ -434,6 +556,17 @@ final class CrowdSoak {
             tick[i] = lastServerTick();
             between[i] = StrategosServer.get().betweenTicks().last();
             paths[i] = q.pathStats().lastWork();
+            if (scene != null) {
+                long w = StrategosServer.get().writer().writeNanos();
+                writer[i] = w - writerBefore;
+                fx[i] = rt.fxNanos() - fxBefore;
+                if (placing) {
+                    placement.add(core(rt).timers().lastPhaseNanos()[COMMANDS]);
+                }
+                if (i == samples / 2) {
+                    save();
+                }
+            }
             sampled++;
             if (sampled % 20 == 0) {
                 everySecond.run();
@@ -451,7 +584,10 @@ final class CrowdSoak {
         for (int handle : q.unitHandles()) {
             MotionStore.Extra motion = q.motion(handle);
             int index = Handle.index(handle);
-            if (motion != null && index < longest.length && motion.stuck() > longest[index]) {
+            if (index >= longest.length) { // a unit come since the soak began: the first loop's waves, its new workers
+                longest = Arrays.copyOf(longest, Math.max(index + 1, longest.length * 2));
+            }
+            if (motion != null && motion.stuck() > longest[index]) {
                 longest[index] = motion.stuck();
                 if (motion.stuck() > mostStuck) {
                     mostStuck = motion.stuck();
@@ -463,6 +599,23 @@ final class CrowdSoak {
                                             + q.tick());
                 }
             }
+        }
+        if (scene != null) {
+            writerBefore = StrategosServer.get().writer().writeNanos();
+            fxBefore = rt.fxNanos();
+            placing = false;
+            for (FirstLoopScene.Issue issue : scene.next(q)) {
+                boolean place = issue.command() instanceof PlaceBuilding;
+                placing |= place;
+                rt.submit(issue.issuer(), issue.command(), result -> {
+                    if (place) {
+                        scene.placementResult(result.outcome() == CommandOutcome.ACCEPTED);
+                    } else if (result.outcome() != CommandOutcome.ACCEPTED) {
+                        refused++;
+                    }
+                });
+            }
+            return;
         }
         if (config.melee()) {
             wave(q);
@@ -511,7 +664,36 @@ final class CrowdSoak {
                 q.surfaces().bytes(),
                 q.unitCount(),
                 exportJournal(),
-                fights()));
+                fights(),
+                costs(q)));
+    }
+
+    private @Nullable Costs costs(MatchQueries q) {
+        FirstLoopScene sc = scene;
+        if (sc == null) {
+            return null;
+        }
+        return new Costs(
+                writer,
+                fx,
+                placement.stream().mapToLong(Long::longValue).toArray(),
+                sc.placed(),
+                sc.refusedPlacements(),
+                sc.waves(),
+                q.buildings().size(),
+                saveNanos);
+    }
+
+    /** Budget G in the window: one save of the match's blob, as an autosave would make it. */
+    private void save() {
+        MatchData data = rt.data();
+        if (data == null) {
+            return;
+        }
+        long start = System.nanoTime();
+        CompoundTag tag = data.save(new CompoundTag(), h.getLevel().registryAccess());
+        saveNanos = System.nanoTime() - start;
+        check(tag.contains("snapshot"), "the blob saved no snapshot");
     }
 
     /** {@code <out>/<name>.strj} for a replay, when the run names an output directory. */
@@ -608,6 +790,18 @@ final class CrowdSoak {
 
     /** Each faction's units round its start slot, in spawns of at most {@value #PER_SPAWN} a block of rows apart. */
     private void spawn() {
+        if (scene != null) {
+            for (FirstLoopScene.Issue issue : scene.setup(core(rt).queries().templates())) {
+                rt.submit(issue.issuer(), issue.command(), result -> {
+                    if (result.outcome() != CommandOutcome.ACCEPTED) {
+                        refusedSpawn = String.valueOf(result);
+                    }
+                });
+            }
+            spawnedAt = System.nanoTime();
+            next(Phase.SPAWNING);
+            return;
+        }
         if (config.melee()) {
             meleeSpawn(0, config.perFaction());
             meleeSpawn(1, config.perFaction());

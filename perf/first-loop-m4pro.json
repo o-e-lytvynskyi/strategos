@@ -1,0 +1,20 @@
+{
+  "what": "M3's first-loop soak on the M4 Pro (PERF-06, M3 spec §6): the per-unit p95 of the unit-driven buckets that M4's perf gate (PERF-07) compares with, and the budgets it held",
+  "date": "2026-10-24",
+  "test": "perftests.first_loop_soak",
+  "units": 200,
+  "ticks": 18000,
+  "budgetsNs": {
+    "aP50": 272709,
+    "aP99": 841709,
+    "bP95": 1159084,
+    "cP95": 4243333,
+    "dP99": 39501
+  },
+  "perUnitP95Ns": {
+    "a": 2966,
+    "b": 5795
+  },
+  "stress": {"test": "perftests.first_loop_stress", "units": 400, "cP95Ns": 5272125},
+  "fast": {"test": "perftests.first_loop_fast", "speed": 1.5, "cP95Ns": 4232084}
+}

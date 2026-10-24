@@ -574,6 +574,16 @@ public final class RtsHud {
         }
     }
 
+    /** The HUD's ticks so far: what its blinking and fading count in, for a scenario that frames them. */
+    public long clientTicks() {
+        return clientTicks;
+    }
+
+    /** The HUD's ticks since the latest alert was heard; large when there was none. */
+    public long alertAge() {
+        return clientTicks - alertAt;
+    }
+
     /** The camera to the latest alert (UI-12's jump key); whether there was one. */
     public boolean jumpToAlert() {
         MatchNews alert = StrategosClient.model().alert();

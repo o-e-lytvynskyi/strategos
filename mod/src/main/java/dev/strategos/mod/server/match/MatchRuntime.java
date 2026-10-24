@@ -67,6 +67,7 @@ public final class MatchRuntime {
     private @Nullable MapImporter importer;
     private @Nullable String importedHash;
     private long importMillis = -1;
+    private long fxNanos;
 
     MatchRuntime(
             MatchId id,
@@ -122,6 +123,15 @@ public final class MatchRuntime {
     /** The terrain hash the finished import read back, or null before (or without a map). */
     public @Nullable String importedHash() {
         return importedHash;
+    }
+
+    /** The time sending this match's world and unit fx has taken since it was made (PERF-06.4). */
+    public long fxNanos() {
+        return fxNanos;
+    }
+
+    public void fxTook(long nanos) {
+        fxNanos += nanos;
     }
 
     /** How long the import took, or -1. */

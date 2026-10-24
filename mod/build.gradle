@@ -460,8 +460,9 @@ gameTestGuard('runGameTestPerf', file('build/test-results/gametest-perf/TEST-gam
 // stop the build, so the message starts with INVALID, distinct from a budget failure (§1.6 row 32).
 def perfOut = file('build/reports/perf')
 tasks.matching { it.name == 'runGameTestPerf' }.configureEach {
-    // [M1 T26] the crowd soak runs 12,000 ticks paced at 50 ms, ten minutes of wall time, and the stress pass two
-    timeout = Duration.ofMinutes(40)
+    // [M1 T26] the crowd soak runs 12,000 ticks paced at 50 ms, ten minutes of wall time, and the stress pass two;
+    // [M3 T29] the first loop's soak 15 more, its stress pass five and its 1.5x pass three and a half
+    timeout = Duration.ofMinutes(75)
     // The server exits with the number of failed tests; the guard's report check names the budget instead.
     ignoreExitValue = true
     // org.gradle.parallel would otherwise run the perf batch beside JMH and spoil both measurements.

@@ -90,6 +90,7 @@ public final class ScenarioRunner {
             case "rts_basics" -> new RtsBasicsScenario();
             case "rts_select" -> new RtsSelectScenario();
             case "rts_economy" -> new RtsEconomyScenario();
+            case "m3_goldens" -> new M3GoldensScenario();
             case "art_look" -> new ArtLookScenario();
             case "rts_frame" -> new RtsFrameScenario();
             case "rts_goldens" -> new RtsGoldensScenario();

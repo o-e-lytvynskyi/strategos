@@ -9,7 +9,7 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-24 — M3 T9–T28
+## 2026-10-24 — M3 T9–T29
 
 - **The owner, past midnight:** «можешь любые тесты проводить и как закончишь м3 - начинай м4, все решения
   принимай сам, которые рекомендуешь» (STATE item 6).
@@ -99,7 +99,15 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
   hook; fixed with a regression test), workers sent to a resource with no nodes left stood idle, the bot ran short
   of wood without a stock-weighted ratio, Brigadier's `word()` refuses `seed=3`, the roster refused observers and
   replication built a faction from the observer's slot -1 (both crashed the test server). Faction 0 wins every seed:
-  the west wave arrives sooner and the bot does not defend (STATE item 12). Next: T29, the first-loop perf gate.
+  the west wave arrives sooner and the bot does not defend (STATE item 12).
+- **M3 T29 · PERF-06, the first-loop perf gate; PERF-06 and MATCH-05 done.** The first loop as one scene, the
+  same in the core and on the server: 20 buildings, 120 workers gathering, 80 spearmen in waves at the fords, three
+  barracks always going up. Fifteen paced game minutes on this Mac: A p50 0.27 ms (5), C p95 4.2 ms (23), D p99
+  0.04 ms (2), E 3.9 KB/s (100), the save 5 ms (100); the core's cost per unit is half of M1's. Twice the scale holds C
+  at 5.3 ms (50), and at 1.5× speed C stays at 4.2 ms (15.3). Placement checks cost about 1 ms a placing tick, the
+  writer 0.07 ms a tick at p99, fx 0.04. Problems met: the soak's stuck histogram was sized for the units at its start
+  and broke when the waves added more; a construction ring 10 blocks apart ran out of sites by minute 10.
+  Next: T30, the consent batch.
 
 ## 2026-10-23 (evening) — M3 spec, T1–T8
 

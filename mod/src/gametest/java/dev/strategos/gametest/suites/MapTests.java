@@ -638,13 +638,19 @@ public final class MapTests {
 
     /** A proving-ground match in the test's lane east of it, {@code dz} blocks along Z, its band from the test's floor. */
     static MatchRuntime provingGround(GameTestHelper h, int lane, int dz) {
+        return provingGround(h, lane, dz, false);
+    }
+
+    /** As {@link #provingGround(GameTestHelper, int, int)}, with a saved blob if {@code persistent}. */
+    static MatchRuntime provingGround(GameTestHelper h, int lane, int dz, boolean persistent) {
         MapManifest m = manifest(h);
         BlockPos corner = h.absolutePos(BlockPos.ZERO);
         BlockPos origin = new BlockPos(corner.getX() + lane * FAR, corner.getY(), corner.getZ() + dz);
         MatchSpace space = new MatchSpace(
                 h.getLevel().dimension(), origin, m.sizeX(), m.sizeZ(), origin.getY(), origin.getY() + m.height() - 1);
         MatchOptions options = MatchFixture.options(SimHarness.DEFAULT_SEED, h)
-                .withMap(PROVING_GROUND, origin.getY() + m.startSlots().get(0).y());
+                .withMap(PROVING_GROUND, origin.getY() + m.startSlots().get(0).y())
+                .withPersistent(persistent);
         return MatchFixture.create(h, space, options);
     }
 

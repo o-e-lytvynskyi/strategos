@@ -176,6 +176,21 @@ public final class StrategosGameTests {
         afterBatch(level, "perf_stress");
     }
 
+    @AfterBatch(batch = "perf_first_loop")
+    public static void afterPerfFirstLoop(ServerLevel level) {
+        afterBatch(level, "perf_first_loop");
+    }
+
+    @AfterBatch(batch = "perf_first_loop_stress")
+    public static void afterPerfFirstLoopStress(ServerLevel level) {
+        afterBatch(level, "perf_first_loop_stress");
+    }
+
+    @AfterBatch(batch = "perf_first_loop_fast")
+    public static void afterPerfFirstLoopFast(ServerLevel level) {
+        afterBatch(level, "perf_first_loop_fast");
+    }
+
     @AfterBatch(batch = "writer")
     public static void afterWriter(ServerLevel level) {
         afterBatch(level, "writer");
