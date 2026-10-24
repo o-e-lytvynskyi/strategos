@@ -51,7 +51,22 @@
     "key.strategos.stop",
     "key.strategos.toggle_first_person",
     "key.strategos.toggle_rts",
-    "key.strategos.order_here"
+    "key.strategos.order_here",
+    "key.strategos.card_1",
+    "key.strategos.card_2",
+    "key.strategos.card_3",
+    "key.strategos.card_4",
+    "key.strategos.card_5",
+    "key.strategos.card_6",
+    "key.strategos.card_7",
+    "key.strategos.card_8",
+    "key.strategos.card_9",
+    "key.strategos.card_10",
+    "key.strategos.card_11",
+    "key.strategos.card_12",
+    "key.strategos.card_13",
+    "key.strategos.card_14",
+    "key.strategos.card_15"
   ],
   "guiLayers": ["strategos:debug_panel"],
   "clientCommands": ["strategos-client"]

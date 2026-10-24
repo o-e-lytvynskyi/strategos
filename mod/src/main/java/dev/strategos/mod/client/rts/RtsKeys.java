@@ -7,6 +7,7 @@ import dev.strategos.core.client.input.ActionMap;
 import dev.strategos.core.client.input.Binding;
 import dev.strategos.core.client.input.DefaultBindings;
 import dev.strategos.core.client.input.KeyCode;
+import dev.strategos.core.client.input.Modifiers;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.KeyMapping;
@@ -14,6 +15,7 @@ import net.minecraft.client.Minecraft;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.settings.IKeyConflictContext;
 import net.neoforged.neoforge.client.settings.KeyConflictContext;
+import net.neoforged.neoforge.client.settings.KeyModifier;
 
 /**
  * The rebindable default bindings as vanilla key mappings (UI-01, 04 §13.3), so players rebind them in the Controls
@@ -52,12 +54,38 @@ public final class RtsKeys {
             InputConstants.Type type =
                     b.key().kind() == KeyCode.Kind.MOUSE ? InputConstants.Type.MOUSE : InputConstants.Type.KEYSYM;
             bindings.add(b);
-            mappings.add(new KeyMapping(b.mappingName(), context, type, b.key().code(), CATEGORY));
+            mappings.add(new KeyMapping(
+                    b.mappingName(),
+                    context,
+                    modifier(b.modifiers()),
+                    type,
+                    b.key().code(),
+                    CATEGORY));
         }
     }
 
     void register(RegisterKeyMappingsEvent event) {
         mappings.forEach(event::register);
+    }
+
+    /** NeoForge's modifier for a binding's (UI-08's card cells take Alt); none for a plain key. */
+    private static KeyModifier modifier(int mods) {
+        if ((mods & Modifiers.ALT) != 0) {
+            return KeyModifier.ALT;
+        }
+        if ((mods & Modifiers.CTRL) != 0) {
+            return KeyModifier.CONTROL;
+        }
+        return (mods & Modifiers.SHIFT) != 0 ? KeyModifier.SHIFT : KeyModifier.NONE;
+    }
+
+    private static int modifiers(KeyModifier mod) {
+        return switch (mod) {
+            case ALT -> Modifiers.ALT;
+            case CONTROL -> Modifiers.CTRL;
+            case SHIFT -> Modifiers.SHIFT;
+            case NONE -> Modifiers.NONE;
+        };
     }
 
     /** The mapping of a rebindable binding's action in its context. */
@@ -79,7 +107,8 @@ public final class RtsKeys {
             KeyCode code = key.getType() == InputConstants.Type.MOUSE
                     ? KeyCode.mouse(key.getValue())
                     : KeyCode.key(key.getValue());
-            map = map.rebind(b.context(), b.action(), code);
+            map = map.rebind(
+                    b.context(), b.action(), code, modifiers(mappings.get(k).getKeyModifier()));
         }
         return map;
     }

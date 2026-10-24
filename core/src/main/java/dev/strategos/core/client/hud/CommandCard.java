@@ -48,18 +48,37 @@ public record CommandCard(Page page, List<Button> buttons) {
         BACK,
         STOP,
         /** A farmstead's auto-reseed toggle (ECO-17): {@link Button#on} says how it stands. */
-        AUTO_RESEED
+        AUTO_RESEED,
+        /** Cancel an own foundation or site (BLD-09). */
+        CANCEL_BUILDING,
+        /** Demolish an own finished building (BLD-09): {@link Button#on} once a first click asked to confirm. */
+        DEMOLISH
     }
 
-    /** One button in cell {@code slot}; {@code template} is a net index, -1 for none. */
-    public record Button(Kind kind, int slot, int template, List<Long> cost, boolean affordable, boolean on) {
+    /**
+     * One button in cell {@code slot}; {@code template} is a net index, -1 for none; {@code affordable} whether it can
+     * be used now, and when not, {@code reason} says why (UI-08): the missing amounts, housing, the limit, a full queue.
+     */
+    public record Button(
+            Kind kind,
+            int slot,
+            int template,
+            List<Long> cost,
+            boolean affordable,
+            boolean on,
+            @Nullable String reason) {
         public Button {
             cost = List.copyOf(cost);
         }
 
         /** A button with no state to show. */
         public Button(Kind kind, int slot, int template, List<Long> cost, boolean affordable) {
-            this(kind, slot, template, cost, affordable, false);
+            this(kind, slot, template, cost, affordable, false, null);
+        }
+
+        /** A button with a state to show and nothing against it. */
+        public Button(Kind kind, int slot, int template, List<Long> cost, boolean affordable, boolean on) {
+            this(kind, slot, template, cost, affordable, on, null);
         }
     }
 
@@ -72,11 +91,29 @@ public record CommandCard(Page page, List<Button> buttons) {
             List<String> resources,
             @Nullable FactionState faction,
             List<Integer> unitTemplates,
-            boolean buildPage) {
+            boolean buildPage,
+            List<BuildingState.Entry> buildings,
+            boolean demolishAsked) {
         public Input {
             resources = List.copyOf(resources);
             unitTemplates = List.copyOf(unitTemplates);
+            buildings = List.copyOf(buildings);
         }
+
+        /** An input that knows no buildings and asked nothing: the card before UI-08's reasons. */
+        public Input(
+                TemplateSet templates,
+                List<String> resources,
+                @Nullable FactionState faction,
+                List<Integer> unitTemplates,
+                boolean buildPage) {
+            this(templates, resources, faction, unitTemplates, buildPage, List.of(), false);
+        }
+    }
+
+    /** The default key of cell {@code slot} (UI-08), pressed with Alt: the classics' grid in reading order. */
+    public static char hotkey(int slot) {
+        return dev.strategos.core.client.input.DefaultBindings.GRID.charAt(slot);
     }
 
     /** The building state code of a finished building (BuildingStore.COMPLETE). */
@@ -100,7 +137,8 @@ public record CommandCard(Page page, List<Button> buttons) {
                 if (slot == SLOTS - 1) {
                     break;
                 }
-                out.add(button(in, Kind.BUILD, slot++, t, cost(in, t, "Cost/resources/")));
+                Button build = button(in, Kind.BUILD, slot++, t, cost(in, t, "Cost/resources/"));
+                out.add(atLimit(in, t) ? disabled(build, "Limit reached") : build);
             }
             out.add(new Button(Kind.BACK, SLOTS - 1, -1, List.of(), true));
             return new CommandCard(Page.BUILD, out);
@@ -114,15 +152,25 @@ public record CommandCard(Page page, List<Button> buttons) {
 
     private static List<Button> buildingButtons(Input in, BuildingState.Entry b) {
         List<Button> out = new ArrayList<>();
-        if (!b.own() || b.state() != COMPLETE || !in.templates().has(b.template())) {
+        if (!b.own() || !in.templates().has(b.template())) {
+            return out;
+        }
+        if (b.state() != COMPLETE) {
+            out.add(new Button(Kind.CANCEL_BUILDING, SLOTS - 1, b.template(), List.of(), true));
             return out;
         }
         int slot = 0;
         for (int t : trains(in.templates(), b.template())) {
-            if (slot == SLOTS) {
+            if (slot == SLOTS - 1) {
                 break;
             }
-            out.add(button(in, Kind.TRAIN, slot++, t, cost(in, t, "Cost/resources/")));
+            Button train = button(in, Kind.TRAIN, slot++, t, cost(in, t, "Cost/resources/"));
+            if (train.reason() == null && b.queue().size() >= QUEUE_MAX) {
+                train = disabled(train, "Queue full");
+            } else if (train.reason() == null && !houses(in, t)) {
+                train = disabled(train, "Needs housing");
+            }
+            out.add(train);
         }
         if (b.fieldLeft() == 0 && b.fieldRipening() == 0) {
             out.add(button(
@@ -131,9 +179,40 @@ public record CommandCard(Page page, List<Button> buttons) {
         ValuePath reach = in.templates().valuePaths().byPath("Reseeder/reach");
         if (reach != null && in.templates().value(b.template(), reach.id()) > 0) {
             out.add(new Button(
-                    Kind.AUTO_RESEED, Math.min(slot, SLOTS - 1), b.template(), List.of(), true, b.autoReseed()));
+                    Kind.AUTO_RESEED, Math.min(slot, SLOTS - 2), b.template(), List.of(), true, b.autoReseed()));
         }
+        out.add(new Button(Kind.DEMOLISH, SLOTS - 1, b.template(), List.of(), true, in.demolishAsked()));
         return out;
+    }
+
+    /** The most entries a queue holds (BuildingStore.QUEUE_MAX). */
+    public static final int QUEUE_MAX = 8;
+
+    /** {@code b} unusable for {@code reason}. */
+    private static Button disabled(Button b, String reason) {
+        return new Button(b.kind(), b.slot(), b.template(), b.cost(), false, b.on(), reason);
+    }
+
+    /** Whether the faction's free population holds a unit of {@code template}: its {@code Cost/population}. */
+    private static boolean houses(Input in, int template) {
+        FactionState f = in.faction();
+        ValuePath path = in.templates().valuePaths().byPath("Cost/population");
+        double need = path == null ? Double.NaN : in.templates().value(template, path.id());
+        return f == null || !(need > 0) || f.populationUsed() + need <= f.populationCap();
+    }
+
+    /** Whether the faction has as many buildings of {@code template} as its {@code Limit/count} allows (BLD-08). */
+    private static boolean atLimit(Input in, int template) {
+        ValuePath path = in.templates().valuePaths().byPath("Limit/count");
+        double limit = path == null ? Double.NaN : in.templates().value(template, path.id());
+        if (!(limit > 0)) {
+            return false;
+        }
+        int own = 0;
+        for (BuildingState.Entry e : in.buildings()) {
+            own += e.own() && e.template() == template ? 1 : 0;
+        }
+        return own >= limit;
     }
 
     /** The templates building template {@code building} trains, by its {@code Trainer/units}, in their order there. */
@@ -188,12 +267,52 @@ public record CommandCard(Page page, List<Button> buttons) {
 
     private static Button button(Input in, Kind kind, int slot, int template, List<Long> cost) {
         FactionState f = in.faction();
-        boolean affordable = true;
+        StringBuilder missing = new StringBuilder();
         for (int r = 0; r < cost.size(); r++) {
             long have = f == null || r >= f.stock().size() ? 0 : f.stock().get(r);
-            affordable &= cost.get(r) <= have;
+            if (cost.get(r) > have) {
+                missing.append(missing.isEmpty() ? "Needs " : ", ")
+                        .append((cost.get(r) - have + 999) / 1000)
+                        .append(' ')
+                        .append(r < in.resources().size() ? in.resources().get(r) : "?");
+            }
         }
-        return new Button(kind, slot, template, cost, affordable);
+        String reason = missing.isEmpty() ? null : missing.toString();
+        return new Button(kind, slot, template, cost, reason == null, false, reason);
+    }
+
+    /** One line of a template's breakdown (DATA-02): its label, the value path read, the value in the set. */
+    public record Line(String label, String path, double value) {}
+
+    /**
+     * Template {@code template}'s breakdown for a tooltip (UI-08, DATA-02): the values a player weighs, read from the
+     * set as the server's {@code StatService} reads a faction's template with no modifier: hit points, the melee blow by
+     * damage type, the armour, the walk speed in blocks a second, the build or training time, population and housing.
+     * Values the template has not are left out.
+     */
+    public static List<Line> breakdown(TemplateSet templates, int template) {
+        List<Line> out = new ArrayList<>();
+        line(out, templates, template, "Health", "Health/max", 1);
+        line(out, templates, template, "Hack", "Attack/Melee/hack", 1);
+        line(out, templates, template, "Pierce", "Attack/Melee/pierce", 1);
+        line(out, templates, template, "Crush", "Attack/Melee/crush", 1);
+        line(out, templates, template, "Armour, hack", "Resistance/hack", 1);
+        line(out, templates, template, "Armour, pierce", "Resistance/pierce", 1);
+        line(out, templates, template, "Armour, crush", "Resistance/crush", 1);
+        line(out, templates, template, "Speed, blocks a second", "UnitMotion/walkSpeed", 20);
+        line(out, templates, template, "Time, seconds", "Cost/time", 1);
+        line(out, templates, template, "Population", "Cost/population", 1);
+        line(out, templates, template, "Houses", "Housing/capacity", 1);
+        return out;
+    }
+
+    private static void line(
+            List<Line> out, TemplateSet templates, int template, String label, String path, double unit) {
+        ValuePath p = templates.valuePaths().byPath(path);
+        double v = p == null || !templates.has(template) ? Double.NaN : templates.value(template, p.id());
+        if (Double.isFinite(v) && v != 0) {
+            out.add(new Line(label, path, v * unit));
+        }
     }
 
     /** The side of a square cell in card {@code card}: as large as the grid allows, at least {@value #CELL_MIN}. */

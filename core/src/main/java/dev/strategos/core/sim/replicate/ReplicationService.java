@@ -94,7 +94,8 @@ public final class ReplicationService {
                     own && !b.queue().isEmpty() ? (int) b.trained() : 0,
                     own && b.fieldAmount() >= 0 ? (int) Math.min(Integer.MAX_VALUE - 1, b.fieldAmount()) : -1,
                     own && b.fieldAmount() >= 0 ? (int) Math.min(Integer.MAX_VALUE, b.fieldRipening()) : 0,
-                    own && b.autoReseed()));
+                    own && b.autoReseed(),
+                    own ? b.batches() : List.of()));
         }
         return new BuildingState(matchId, q.tick(), out);
     }

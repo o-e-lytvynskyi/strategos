@@ -207,6 +207,16 @@ public final class BuildingStore {
         return true;
     }
 
+    /** Every entry's batch count, the head first (PROD-02). */
+    public List<Integer> batches(int handle) {
+        int k = at(handle);
+        List<Integer> out = new ArrayList<>(queue[k].length);
+        for (int e = 0; e < queue[k].length; e++) {
+            out.add(batch(handle, e));
+        }
+        return out;
+    }
+
     /** How many units entry {@code index} trains at once (PROD-02): 1 for a single one. */
     public int batch(int handle, int index) {
         int[] b = batch[at(handle)];

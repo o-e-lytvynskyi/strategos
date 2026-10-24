@@ -32,9 +32,11 @@ public record BuildingView(
         double rallyZ,
         long fieldAmount,
         long fieldRipening,
-        boolean autoReseed) {
+        boolean autoReseed,
+        List<Integer> batches) {
     public BuildingView {
         dropsite = List.copyOf(dropsite);
         queue = List.copyOf(queue);
+        batches = List.copyOf(batches);
     }
 }

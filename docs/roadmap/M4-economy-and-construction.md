@@ -310,7 +310,8 @@ reseed). What happens when one runs out?
   3. Tooltip numbers equal the server's breakdown (L1).
   4. Goldens for the civic centre and barracks cards (L4, consent).
 - **Tests:** L0, L1, L4 (consent) · **Depends on:** UI-06, DATA-02 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
+- **Progress:** M4 T16 (2026-10-24): checks 1–3 pass (spec §1.6 row 20); 4, the card goldens, waits for T27's consent batch
 
 #### UI-09 · Build menu and placement UX
 - **Value:** Build quickly: a clear build menu, hotkeys, and Shift to place several buildings in a

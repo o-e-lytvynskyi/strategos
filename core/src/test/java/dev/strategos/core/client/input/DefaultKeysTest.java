@@ -25,8 +25,10 @@ class DefaultKeysTest {
     void noDefaultConflictsWithVanilla() throws IOException {
         List<String> conflicts = new ArrayList<>();
         for (Binding ours : DefaultBindings.all()) {
-            if (!ours.rebindable()) {
-                continue; // read by the RTS screen itself, never a KeyMapping
+            if (!ours.rebindable() || ours.modifiers() != Modifiers.NONE) {
+                continue; // read by the RTS screen itself, never a KeyMapping; or held with Alt (UI-08's card cells),
+                // which
+                // no vanilla default is, in a screen where vanilla's gameplay keys never act
             }
             for (Vanilla v : vanilla()) {
                 if (v.key().equals(ours.key()) && ours.context().conflictsWithVanilla(v.context())) {

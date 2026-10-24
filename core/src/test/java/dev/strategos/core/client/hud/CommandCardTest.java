@@ -100,9 +100,11 @@ class CommandCardTest {
         CommandCard card = card(model, List.of(), b, false);
         assertThat(card.page()).isEqualTo(CommandCard.Page.BUILDING);
         assertThat(card.buttons())
-                .as("the centre trains workers, at the worker's 60 food, which 100 covers")
+                .as("the centre trains workers, at the worker's 60 food, which 100 covers; it can be demolished")
                 .containsExactly(
-                        new CommandCard.Button(CommandCard.Kind.TRAIN, 0, WORKER, List.of(60_000L, 0L, 0L, 0L), true));
+                        new CommandCard.Button(CommandCard.Kind.TRAIN, 0, WORKER, List.of(60_000L, 0L, 0L, 0L), true),
+                        new CommandCard.Button(
+                                CommandCard.Kind.DEMOLISH, CommandCard.SLOTS - 1, CENTRE, List.of(), true));
 
         CardController controller = new CardController();
         List<Command> sent = new ArrayList<>();
@@ -245,14 +247,18 @@ class CommandCardTest {
                 0,
                 300);
         ClientMatchModel model = model(faction(0, 50_000), ripe, empty, ripening);
+        CommandCard.Button demolish =
+                new CommandCard.Button(CommandCard.Kind.DEMOLISH, CommandCard.SLOTS - 1, FIELD, List.of(), true);
         assertThat(card(model, List.of(), model.buildings().get(0), false).buttons())
-                .isEmpty();
+                .as("a ripe field: only its demolish")
+                .containsExactly(demolish);
         assertThat(card(model, List.of(), model.buildings().get(2), false).buttons())
-                .isEmpty();
+                .containsExactly(demolish);
         CommandCard card = card(model, List.of(), model.buildings().get(1), false);
         assertThat(card.buttons())
                 .containsExactly(
-                        new CommandCard.Button(CommandCard.Kind.RESEED, 0, FIELD, List.of(0L, 40_000L, 0L, 0L), true));
+                        new CommandCard.Button(CommandCard.Kind.RESEED, 0, FIELD, List.of(0L, 40_000L, 0L, 0L), true),
+                        demolish);
         List<Command> sent = new ArrayList<>();
         new CardController()
                 .click(card.buttons().get(0), List.of(), model.buildings().get(1), T, sent::add);
@@ -296,5 +302,107 @@ class CommandCardTest {
         assertThat(selection.shownBuilding()).isEqualTo(theirs.handle());
         assertThat(card(model, List.of(), model.buildings().get(0), false).buttons())
                 .isEmpty();
+    }
+
+    /** UI-08.1: the fifteen cells take Alt and the classics' grid in reading order, and the card lays them out so. */
+    @Test
+    void theGridHotkeysAndTheLayout() {
+        assertThat(CommandCard.SLOTS).isEqualTo(15);
+        StringBuilder keys = new StringBuilder();
+        for (int slot = 0; slot < CommandCard.SLOTS; slot++) {
+            keys.append(CommandCard.hotkey(slot));
+        }
+        assertThat(keys).hasToString("QWERTASDFGZXCVB");
+        for (dev.strategos.core.client.input.Action a : dev.strategos.core.client.input.Action.values()) {
+            if (a.cardSlot() < 0) {
+                continue;
+            }
+            var map = dev.strategos.core.client.input.ActionMap.defaults();
+            var key = dev.strategos.core.client.input.KeyCode.key(CommandCard.hotkey(a.cardSlot()));
+            assertThat(map.resolve(
+                            dev.strategos.core.client.input.ActionContext.RTS,
+                            key,
+                            dev.strategos.core.client.input.Modifiers.ALT))
+                    .as("Alt + %s", CommandCard.hotkey(a.cardSlot()))
+                    .isEqualTo(a);
+        }
+        var map = dev.strategos.core.client.input.ActionMap.defaults();
+        assertThat(map.resolve(
+                        dev.strategos.core.client.input.ActionContext.RTS,
+                        dev.strategos.core.client.input.KeyCode.key('W'),
+                        dev.strategos.core.client.input.Modifiers.NONE))
+                .as("W alone still pans")
+                .isEqualTo(dev.strategos.core.client.input.Action.CAMERA_PAN_FORWARD);
+        HudRect first = CommandCard.cell(CARD, PAD, 0);
+        HudRect sixth = CommandCard.cell(CARD, PAD, 5);
+        HudRect last = CommandCard.cell(CARD, PAD, 14);
+        assertThat(sixth.x()).as("A under Q").isEqualTo(first.x());
+        assertThat(sixth.y()).isGreaterThan(first.y());
+        assertThat(last.x()).as("B at the bottom right").isGreaterThan(first.x());
+        assertThat(last.y()).isGreaterThan(sixth.y());
+    }
+
+    /** UI-08.2: a disabled button names what is missing exactly: the amounts, housing, the limit, a full queue. */
+    @Test
+    void aDisabledButtonNamesItsReason() {
+        ClientMatchModel poor = model(faction(20_000, 0), centre(List.of(), 0));
+        CommandCard.Button train =
+                card(poor, List.of(), poor.buildings().get(0), false).buttons().get(0);
+        assertThat(train.affordable()).isFalse();
+        assertThat(train.reason()).isEqualTo("Needs 40 food");
+
+        FactionState full = new FactionState(
+                MATCH,
+                0,
+                10,
+                List.of(1_000_000L, 0L, 0L, 0L),
+                List.of(0L, 0L, 0L, 0L),
+                List.of(0L, 0L, 0L, 0L),
+                20,
+                20,
+                0,
+                List.of(0, 0, 0, 0));
+        ClientMatchModel housed = model(full, centre(List.of(), 0));
+        assertThat(card(housed, List.of(), housed.buildings().get(0), false)
+                        .buttons()
+                        .get(0)
+                        .reason())
+                .isEqualTo("Needs housing");
+
+        List<Integer> eight = List.of(WORKER, WORKER, WORKER, WORKER, WORKER, WORKER, WORKER, WORKER);
+        ClientMatchModel queued = model(faction(1_000_000, 0), centre(eight, 0));
+        assertThat(card(queued, List.of(), queued.buildings().get(0), false)
+                        .buttons()
+                        .get(0)
+                        .reason())
+                .isEqualTo("Queue full");
+
+        ClientMatchModel one = model(faction(10_000_000, 10_000_000), centre(List.of(), 0));
+        CommandCard page = CommandCard.of(
+                new CommandCard.Input(T, RESOURCES, one.faction(), List.of(WORKER), true, one.buildings(), false),
+                null);
+        CommandCard.Button centre = page.buttons().stream()
+                .filter(b -> b.kind() == CommandCard.Kind.BUILD && b.template() == CENTRE)
+                .findFirst()
+                .orElseThrow();
+        assertThat(centre.reason()).as("one centre a faction").isEqualTo("Limit reached");
+    }
+
+    /** UI-08.3: the tooltip's numbers are the server's: each line equals the stat service's value for the template. */
+    @Test
+    void theTooltipNumbersAreTheServersBreakdown() {
+        var server = new dev.strategos.core.sim.stats.StatService(
+                T, 1, new dev.strategos.core.sim.IdentityStore(), new dev.strategos.core.sim.MatchBus());
+        for (int template : List.of(WORKER, index("strategos:unit/infantry"), CENTRE)) {
+            List<CommandCard.Line> lines = CommandCard.breakdown(T, template);
+            assertThat(lines).isNotEmpty();
+            for (CommandCard.Line line : lines) {
+                int path = server.path(line.path());
+                double unit = line.path().equals("UnitMotion/walkSpeed") ? 20 : 1;
+                assertThat(line.value())
+                        .as("%s of %s", line.path(), T.byIndex(template).id().value())
+                        .isEqualTo(server.blockValue(template, 0, path) * unit);
+            }
+        }
     }
 }

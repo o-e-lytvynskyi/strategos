@@ -8,7 +8,9 @@ import java.util.List;
  * ("<" and ">") and zooms on "=" and "-" and the wheel, because vanilla's Q and E bind drop and inventory in every
  * context. Attack-move is Z, beside A, where the classics put attack; stop is H (halt); first person is V (view);
  * Space centres on the selection; B arms placement and cycles its buildings, R turns the ghost. Outside the screen, F6
- * enters RTS mode. Fixed, not rebindable: the mouse (left
+ * enters RTS mode. The command card's fifteen cells (UI-08) are Alt and the classics' grid, Q W E R T / A S D F G /
+ * Z X C V B: the grid alone would take the camera's and the actions' keys, so the card's bindings come first and a
+ * held Alt sends them there. Fixed, not rebindable: the mouse (left
  * selects, a drag boxes, a double click takes all of a type, right orders, middle drags to rotate), Escape (cancel,
  * else pause) and the control groups on the digits (Ctrl sets, Shift adds, the digit selects, a double tap centres),
  * whose keys vanilla binds to the hotbar in every context (spec M2 §1.6). No default uses Ctrl + click, which macOS
@@ -17,7 +19,21 @@ import java.util.List;
 public final class DefaultBindings {
     private DefaultBindings() {}
 
+    /** The grid's keys in reading order, the card cell each presses with Alt. */
+    public static final String GRID = "QWERTASDFGZXCVB";
+
     public static List<Binding> all() {
+        List<Binding> out = new java.util.ArrayList<>();
+        for (Action a : Action.values()) {
+            if (a.cardSlot() >= 0) { // first: a binding with Alt wins over the same key's plain one
+                out.add(new Binding(a, ActionContext.RTS, KeyCode.key(GRID.charAt(a.cardSlot())), Modifiers.ALT, true));
+            }
+        }
+        out.addAll(plain());
+        return List.copyOf(out);
+    }
+
+    private static List<Binding> plain() {
         return List.of(
                 rts(Action.CAMERA_PAN_FORWARD, KeyCode.W),
                 rts(Action.CAMERA_PAN_BACK, KeyCode.S),

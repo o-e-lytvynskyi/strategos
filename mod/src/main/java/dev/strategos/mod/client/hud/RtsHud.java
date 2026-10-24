@@ -201,17 +201,7 @@ public final class RtsHud {
         }
         if (!card.buttons().isEmpty() && l.commandCard().contains(x, y)) {
             if (button == 0) {
-                CardController.Click c = controller.click(
-                        card.at(l.commandCard(), pad, x, y),
-                        mode.selection().handles(),
-                        ownBuilding(),
-                        StrategosClient.templates(),
-                        mode::send,
-                        net.minecraft.client.gui.screens.Screen.hasShiftDown()); // a batch of five (PROD-02)
-                if (c.effect() == CardController.Effect.ARM) {
-                    mode.armPlacement(c.template());
-                }
-                build();
+                press(card.at(l.commandCard(), pad, x, y));
             }
             return true;
         }
@@ -224,6 +214,37 @@ public final class RtsHud {
             return true;
         }
         return false;
+    }
+
+    /**
+     * The card's cell {@code slot} pressed by its key (UI-08): as a click on its button, if it shows one; whether it
+     * did.
+     */
+    public boolean pressCard(int slot) {
+        for (CommandCard.Button b : card.buttons()) {
+            if (b.slot() == slot) {
+                press(b);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void press(CommandCard.@Nullable Button b) {
+        if (b != null && !b.affordable()) {
+            return; // its reason is in the tooltip; the server would refuse it the same way
+        }
+        CardController.Click c = controller.click(
+                b,
+                mode.selection().handles(),
+                ownBuilding(),
+                StrategosClient.templates(),
+                mode::send,
+                net.minecraft.client.gui.screens.Screen.hasShiftDown()); // a batch of five (PROD-02)
+        if (c.effect() == CardController.Effect.ARM) {
+            mode.armPlacement(c.template());
+        }
+        build();
     }
 
     /** The selected own building's entry, or null. */
@@ -346,7 +367,9 @@ public final class RtsHud {
                         StrategosClient.resources(),
                         StrategosClient.model().faction(),
                         unitTemplates,
-                        controller.buildPage()),
+                        controller.buildPage(),
+                        StrategosClient.model().buildings(),
+                        own != null && controller.demolishAsked(own.handle())),
                 own);
         double[] gui = cursorGui(mc);
         hovered = card.at(layout().commandCard(), theme.padding(), gui[0], gui[1]);
@@ -623,6 +646,11 @@ public final class RtsHud {
             HudRect cell = SelectionPanel.queueCell(r, pad, k);
             g.fill(cell.x(), cell.y(), cell.right(), cell.bottom(), theme.border());
             icon(g, font, templates, b.queue().get(k), cell);
+            if (b.batch(k) > 1) { // a batch (PROD-02): its count in the corner
+                String n = "×" + b.batch(k);
+                g.drawString(
+                        font, n, cell.right() - font.width(n), cell.bottom() - font.lineHeight + 1, theme.text(), true);
+            }
             if (k == 0) {
                 int w = (int) Math.round(cell.width() * Math.min(1000, b.trained()) / 1000.0);
                 g.fill(cell.x(), cell.bottom() - 2, cell.x() + w, cell.bottom(), theme.accent());
@@ -661,7 +689,21 @@ public final class RtsHud {
                         g.fill(cell.x(), cell.y(), cell.right(), cell.bottom(), 0x80202020);
                     }
                 }
+                case CANCEL_BUILDING -> paint.item(g, "minecraft:barrier", cell);
+                case DEMOLISH -> {
+                    paint.item(g, "minecraft:tnt", cell);
+                    if (b.on()) { // asked: one more click demolishes
+                        g.fill(cell.x(), cell.y(), cell.right(), cell.bottom(), 0x60FF0000);
+                    }
+                }
             }
+            g.drawString(
+                    font,
+                    String.valueOf(CommandCard.hotkey(b.slot())),
+                    cell.x() + 1,
+                    cell.y() + 1,
+                    theme.dimText(),
+                    true); // its key, with Alt (UI-08)
             if (!b.affordable()) {
                 g.fill(cell.x(), cell.y(), cell.right(), cell.bottom(), 0x90400000);
             }
@@ -678,6 +720,8 @@ public final class RtsHud {
             case BACK -> "Back";
             case STOP -> "Stop";
             case AUTO_RESEED -> b.on() ? "Auto-reseed: on (click to turn off)" : "Auto-reseed: off (click to turn on)";
+            case CANCEL_BUILDING -> "Cancel: the share not yet built comes back";
+            case DEMOLISH -> b.on() ? "Click again to demolish, for nothing back" : "Demolish";
         };
         List<String> resources = StrategosClient.resources();
         StringBuilder text = new StringBuilder(what);
@@ -689,7 +733,21 @@ public final class RtsHud {
                         .append(k < resources.size() ? resources.get(k) : "?");
             }
         }
+        if (b.kind() == CommandCard.Kind.TRAIN || b.kind() == CommandCard.Kind.BUILD) {
+            for (CommandCard.Line line : CommandCard.breakdown(templates, b.template())) {
+                text.append(" · ").append(line.label()).append(' ').append(plain(line.value()));
+            }
+        }
+        String reason = b.reason();
+        if (reason != null) {
+            text.append(" — ").append(reason);
+        }
         return text.toString();
+    }
+
+    /** A number as a player reads it: a whole one bare, else to one decimal. */
+    private static String plain(double v) {
+        return v == Math.rint(v) ? String.valueOf((long) v) : String.format(java.util.Locale.ROOT, "%.1f", v);
     }
 
     /** Template {@code template}'s icon centred in {@code cell}, or its name's first letter when it has none. */

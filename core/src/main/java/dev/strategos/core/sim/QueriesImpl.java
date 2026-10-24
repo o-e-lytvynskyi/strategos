@@ -65,7 +65,10 @@ final class QueriesImpl implements MatchQueries {
                     b.rallyZ(handle),
                     b.field(handle) == 0 ? -1 : state.nodes().amount(b.field(handle)),
                     b.field(handle) == 0 ? 0 : state.nodes().ripening(b.field(handle)),
-                    b.autoReseed(handle)));
+                    b.autoReseed(handle),
+                    java.util.stream.IntStream.range(0, b.queueSize(handle))
+                            .mapToObj(k -> b.batch(handle, k))
+                            .toList()));
         }
         return out;
     }

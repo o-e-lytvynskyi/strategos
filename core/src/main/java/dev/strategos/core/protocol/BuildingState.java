@@ -38,7 +38,52 @@ public record BuildingState(int matchId, long tick, List<Entry> buildings) {
             int trained,
             int fieldLeft,
             int fieldRipening,
-            boolean autoReseed) {
+            boolean autoReseed,
+            List<Integer> batches) {
+        /** An entry whose queue holds single units (PROD-02's batches aside). */
+        public Entry(
+                int handle,
+                int template,
+                int faction,
+                int x,
+                int z,
+                int rotation,
+                int baseY,
+                int state,
+                int progress,
+                int health,
+                boolean own,
+                List<Integer> queue,
+                boolean rally,
+                int rallyX,
+                int rallyZ,
+                int trained,
+                int fieldLeft,
+                int fieldRipening,
+                boolean autoReseed) {
+            this(
+                    handle,
+                    template,
+                    faction,
+                    x,
+                    z,
+                    rotation,
+                    baseY,
+                    state,
+                    progress,
+                    health,
+                    own,
+                    queue,
+                    rally,
+                    rallyX,
+                    rallyZ,
+                    trained,
+                    fieldLeft,
+                    fieldRipening,
+                    autoReseed,
+                    List.of());
+        }
+
         /** An entry with its auto-reseed off: every building but a farmstead's own. */
         public Entry(
                 int handle,
@@ -78,11 +123,18 @@ public record BuildingState(int matchId, long tick, List<Entry> buildings) {
                     trained,
                     fieldLeft,
                     fieldRipening,
-                    false);
+                    false,
+                    List.of());
+        }
+
+        /** Entry {@code index}'s batch: how many it trains at once, 1 for a single one. */
+        public int batch(int index) {
+            return index < batches.size() ? Math.max(1, batches.get(index)) : 1;
         }
 
         public Entry {
             queue = List.copyOf(queue);
+            batches = batches.stream().anyMatch(n -> n > 1) ? List.copyOf(batches) : List.of(); // single ones: none
             if (queue.size() > MAX_QUEUE || health < 0 || health > UnitHud.WHOLE || rotation < 0 || rotation > 3) {
                 throw new IllegalArgumentException("a building entry out of range: " + handle);
             }
@@ -92,7 +144,8 @@ public record BuildingState(int matchId, long tick, List<Entry> buildings) {
                             || trained != 0
                             || fieldLeft != -1
                             || fieldRipening != 0
-                            || autoReseed)) {
+                            || autoReseed
+                            || !batches.isEmpty())) {
                 throw new IllegalArgumentException("a building of another faction carries owner fields: " + handle);
             }
         }
@@ -138,6 +191,9 @@ public record BuildingState(int matchId, long tick, List<Entry> buildings) {
                     }
                     if (!e.queue().isEmpty()) {
                         out.writeVarInt(e.trained());
+                        for (int k = 0; k < e.queue().size(); k++) {
+                            out.writeVarInt(e.batch(k));
+                        }
                     }
                     out.writeVarInt(e.fieldLeft() + 1);
                     if (e.fieldLeft() >= 0) {
@@ -173,6 +229,7 @@ public record BuildingState(int matchId, long tick, List<Entry> buildings) {
                 int fieldLeft = -1;
                 int ripening = 0;
                 boolean autoReseed = false;
+                List<Integer> batches = new ArrayList<>();
                 if (own) {
                     int q = in.readVarInt(MAX_QUEUE);
                     for (int i = 0; i < q; i++) {
@@ -185,6 +242,9 @@ public record BuildingState(int matchId, long tick, List<Entry> buildings) {
                     }
                     if (q > 0) {
                         trained = in.readVarInt();
+                        for (int e = 0; e < q; e++) {
+                            batches.add(in.readVarInt(TrainBatch.MOST));
+                        }
                     }
                     fieldLeft = in.readVarInt() - 1;
                     if (fieldLeft >= 0) {
@@ -211,7 +271,8 @@ public record BuildingState(int matchId, long tick, List<Entry> buildings) {
                         trained,
                         fieldLeft,
                         ripening,
-                        autoReseed));
+                        autoReseed,
+                        batches));
             }
             return new BuildingState(matchId, tick, out);
         }
@@ -222,7 +283,25 @@ public record BuildingState(int matchId, long tick, List<Entry> buildings) {
                     + 10
                     + 2
                     + MAX_BUILDINGS
-                            * (5 + 5 + 5 + 5 + 5 + 1 + 5 + 5 + 1 + 1 + 1 + MAX_QUEUE * 5 + 1 + 10 + 5 + 5 + 5 + 1);
+                            * (5
+                                    + 5
+                                    + 5
+                                    + 5
+                                    + 5
+                                    + 1
+                                    + 5
+                                    + 5
+                                    + 1
+                                    + 1
+                                    + 1
+                                    + MAX_QUEUE * 5
+                                    + 1
+                                    + 10
+                                    + 5
+                                    + 5
+                                    + 5
+                                    + 1
+                                    + MAX_QUEUE);
         }
     };
 }

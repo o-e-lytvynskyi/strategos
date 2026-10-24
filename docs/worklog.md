@@ -9,7 +9,7 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-24 (later) — M4 T1–T15
+## 2026-10-24 (later) — M4 T1–T16
 
 - **M4 T1 · the health check from M3's close.** The four classes over 800 lines split along their seams, with
   every golden frame identical after the HUD's split (`RtsHud`, `MatchState`, `NetTests`, `CrowdSoak`);
@@ -56,7 +56,10 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
   stepping out together to the rally point.
 - **M4 T15 · ECO-17 done.** A farmstead sows the empty fields round it (24 blocks) as soon as their wood can be paid;
   its toggle on the card turns that off, and the manual reseed stays.
-  Next: T16, the command card complete (UI-08).
+- **M4 T16 · UI-08 built, its goldens left for T27.** The card's cells answer Alt and the grid's keys (the bare grid
+  would take the camera's W, A, S, D); a disabled button says why; the tooltip shows the unit's numbers; a site can be
+  cancelled and a building demolished, with a second click to confirm; a batch shows its ×5.
+  Next: T17, the build menu and placement (UI-09).
 
 ## 2026-10-24 — M3 T9–T31, M3 Done; M4 spec
 

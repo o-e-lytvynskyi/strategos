@@ -228,6 +228,21 @@ public final class RtsScreen extends Screen {
                 case CAMERA_CENTRE_ON_SELECTION -> mode.centreOn(selection.handles());
                 case TOGGLE_FIRST_PERSON -> mode.toFirstPerson();
                 case STOP -> mode.stop();
+                case CARD_1,
+                        CARD_2,
+                        CARD_3,
+                        CARD_4,
+                        CARD_5,
+                        CARD_6,
+                        CARD_7,
+                        CARD_8,
+                        CARD_9,
+                        CARD_10,
+                        CARD_11,
+                        CARD_12,
+                        CARD_13,
+                        CARD_14,
+                        CARD_15 -> StrategosClient.hud().pressCard(e.action().cardSlot());
                 case NEXT_IDLE_WORKER -> mode.nextIdleWorker();
                 case JUMP_TO_ALERT -> StrategosClient.hud().jumpToAlert();
                 case PAUSE_MATCH -> {

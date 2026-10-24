@@ -54,6 +54,16 @@ public final class ActionMap {
         return new ActionMap(next);
     }
 
+    /** As {@link #rebind(ActionContext, Action, KeyCode)}, the binding's modifiers moved to {@code modifiers} too. */
+    public ActionMap rebind(ActionContext context, Action action, KeyCode key, int modifiers) {
+        List<Binding> next = bindings.stream()
+                .map(b -> b.context() == context && b.action() == action
+                        ? new Binding(b.action(), b.context(), key, modifiers, b.rebindable())
+                        : b)
+                .toList();
+        return new ActionMap(next);
+    }
+
     public List<Binding> bindings() {
         return bindings;
     }
