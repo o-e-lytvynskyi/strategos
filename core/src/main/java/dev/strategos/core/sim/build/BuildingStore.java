@@ -57,6 +57,7 @@ public final class BuildingStore {
     private double[] rallyZ = new double[8];
     private int[] rallyTarget = new int[8];
     private int[] field = new int[8]; // a field's crop node, 0 for none (ECO-09)
+    private int[] stage = new int[8]; // a finished building's damage stage, 0 whole (BLD-05)
     // a step's scratch, neither hashed nor saved: the builders at work this tick and their rates
     private int[] tickBuilders = new int[8];
     private double[] tickRates = new double[8];
@@ -102,6 +103,7 @@ public final class BuildingStore {
         this.rallyZ[k] = 0;
         this.rallyTarget[k] = 0;
         this.field[k] = 0;
+        this.stage[k] = 0;
         return Handle.of(BASE + k, generation[k]);
     }
 
@@ -132,6 +134,16 @@ public final class BuildingStore {
         rallyZ = Arrays.copyOf(rallyZ, n);
         rallyTarget = Arrays.copyOf(rallyTarget, n);
         field = Arrays.copyOf(field, n);
+        stage = Arrays.copyOf(stage, n);
+    }
+
+    /** A finished building's damage stage (BLD-05): 0 whole, up to {@link DamageStages#STAGES}. */
+    public int stage(int handle) {
+        return stage[at(handle)];
+    }
+
+    public void setStage(int handle, int value) {
+        stage[at(handle)] = value;
     }
 
     /** A field's crop node, 0 for none or for a building that is no field (ECO-09). */
@@ -472,6 +484,9 @@ public final class BuildingStore {
                 x = Hasher.mix(x, state[k]);
                 x = Hasher.mix(x, progress[k]);
                 x = Hasher.mix(x, Double.doubleToLongBits(damage[k]));
+                if (stage[k] != 0) { // only once damaged past a threshold (BLD-05)
+                    x = Hasher.mix(x, stage[k]);
+                }
                 if (state[k] != COMPLETE) { // only a foundation or a site (BLD-03), so finished ones hash as before
                     x = Hasher.mix(x, work[k]);
                     x = Hasher.mix(x, placed[k]);
@@ -538,7 +553,8 @@ public final class BuildingStore {
             Site site,
             Production production,
             Rally rally,
-            int field) {}
+            int field,
+            int stage) {}
 
     public List<Saved> save() {
         List<Saved> out = new ArrayList<>(high);
@@ -574,7 +590,8 @@ public final class BuildingStore {
                     site,
                     production,
                     new Rally(rallyKind[k], rallyX[k], rallyZ[k], rallyTarget[k]),
-                    field[k]));
+                    field[k],
+                    stage[k]));
         }
         return out;
     }
@@ -615,6 +632,7 @@ public final class BuildingStore {
             rallyZ[k] = s.rally().z();
             rallyTarget[k] = s.rally().target();
             field[k] = s.field();
+            stage[k] = s.stage();
         }
     }
 }

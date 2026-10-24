@@ -375,10 +375,10 @@ Cards: [roadmap/M4-economy-and-construction.md](roadmap/M4-economy-and-construct
 | ECO-17 | Field auto-reseed at the farmstead | S | ECO-09, BLD-08, D-14 | specified |
 | UNIT-05 | Level of detail by activity | M | CORE-02, PERF-02 | done |
 | BLD-04 | Foundations on uneven ground | M | BLD-03 | done |
-| BLD-05 | Abstract HP and damage stages | M | BLD-03, CMB-03 | specified |
-| BLD-06 | Repair | S | BLD-05, D-15 | specified |
-| BLD-07 | Building protection | M | BLD-01, BLD-15 | specified |
-| BLD-08 | Starting building set, with resource sinks | M | BLD-04, BLD-05, ECO-08, PROD-01 | specified |
+| BLD-05 | Abstract HP and damage stages | M | BLD-03, CMB-03 | done |
+| BLD-06 | Repair | S | BLD-05, D-15 | done |
+| BLD-07 | Building protection | M | BLD-01, BLD-15 | done |
+| BLD-08 | Starting building set, with resource sinks | M | BLD-04, BLD-05, ECO-08, PROD-01 | done |
 | BLD-09 | Cancel and demolish | S | BLD-03 | specified |
 | PROD-02 | Batch training | S | PROD-01 | specified |
 | UI-08 | Command card complete | M | UI-06, DATA-02 | specified |

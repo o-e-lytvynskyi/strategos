@@ -27,6 +27,9 @@ final class EconomySystem implements MatchSystem {
             for (int handle : buildings.handles()) {
                 if (buildings.state(handle) == BuildingStore.CONSTRUCTING) {
                     Construction.step(state, handle);
+                } else if (buildings.state(handle) == BuildingStore.COMPLETE && buildings.damage(handle) > 0) {
+                    Construction.repair(state, handle);
+                    Production.step(state, handle);
                 } else {
                     buildings.clearTick(handle);
                     Production.step(state, handle);

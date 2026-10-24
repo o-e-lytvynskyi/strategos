@@ -149,4 +149,99 @@ public final class BuildingTests {
         }
         return out;
     }
+
+    /**
+     * BLD-08.1: a storehouse takes wood, stone and iron, a farmstead food: a worker cutting a tree by the storehouse
+     * brings its first load there, far from the civic centre, and one picking berries by the farmstead brings its load
+     * to the farmstead.
+     */
+    @StrategosTest(batch = "eco_gather", arena = "arena_flat_48", timeoutTicks = 2_400)
+    public static void everyRoleEndToEnd(GameTestHelper h) {
+        for (int y = 2; y <= 4; y++) {
+            h.setBlock(new BlockPos(32, y, 41), Blocks.OAK_LOG);
+        }
+        BlockPos bush = new BlockPos(31, 2, 13);
+        h.setBlock(bush.below(), Blocks.DIRT);
+        h.setBlock(bush, Blocks.SWEET_BERRY_BUSH);
+        MatchRuntime rt = match(h);
+        rt.submit(PlayerSlot.ADMIN, new SpawnBuilding(CIVIC_CENTRE, new FactionSlot(0), 2, 2, 0));
+        rt.submit(PlayerSlot.ADMIN, new SpawnBuilding(STOREHOUSE, new FactionSlot(0), 34, 34, 0));
+        rt.submit(PlayerSlot.ADMIN, new SpawnBuilding(FARMSTEAD, new FactionSlot(0), 34, 10, 0));
+        EcoTests.workers(rt, 30, 26, 2);
+        var state = new Object() {
+            int cutter;
+            int picker;
+            boolean wood;
+            boolean food;
+        };
+        int y = h.absolutePos(bush).getY();
+        h.onEachTick(() -> {
+            if (state.cutter == 0) {
+                return;
+            }
+            var t = core(rt).queries().treasury(new FactionSlot(0));
+            if (!state.wood && t.gathered().get(1) > 0) {
+                state.wood = true;
+                check(near(rt, state.cutter, STOREHOUSE), "the first wood went elsewhere than the storehouse");
+            }
+            if (!state.food && t.gathered().get(0) > 0) {
+                state.food = true;
+                check(near(rt, state.picker, FARMSTEAD), "the first food went elsewhere than the farmstead");
+            }
+        });
+        h.startSequence()
+                .thenWaitUntil(() -> check(
+                        handles(rt).length == 2
+                                && core(rt).queries().buildings().size() == 3
+                                && EcoTests.nodeAt(rt, 32.5, 41.5) != null,
+                        "not ready yet"))
+                .thenExecute(() -> {
+                    for (BuildingView b : core(rt).queries().buildings()) {
+                        if (b.template().equals(STOREHOUSE)) {
+                            check(
+                                    b.dropsite().equals(List.of("wood", "stone", "iron")),
+                                    "the storehouse takes " + b.dropsite());
+                        } else if (b.template().equals(FARMSTEAD)) {
+                            check(b.dropsite().equals(List.of("food")), "the farmstead takes " + b.dropsite());
+                        }
+                    }
+                    int[] w = handles(rt);
+                    state.cutter = w[0];
+                    state.picker = w[1];
+                    rt.submit(
+                            PlayerSlot.ADMIN,
+                            dev.strategos.core.protocol.Gather.replace(
+                                    dev.strategos.core.protocol.UnitSet.of(state.cutter),
+                                    32,
+                                    h.absolutePos(new BlockPos(0, 3, 0)).getY(),
+                                    41));
+                    rt.submit(
+                            PlayerSlot.ADMIN,
+                            dev.strategos.core.protocol.Gather.replace(
+                                    dev.strategos.core.protocol.UnitSet.of(state.picker), 31, y, 13));
+                })
+                .thenWaitUntil(() -> check(
+                        state.wood && state.food, "loads not home yet: wood " + state.wood + ", food " + state.food))
+                .thenSucceed();
+    }
+
+    private static final TemplateId STOREHOUSE = new TemplateId("strategos:building/storehouse");
+    private static final TemplateId FARMSTEAD = new TemplateId("strategos:building/farmstead");
+
+    /** Whether unit {@code handle} stands within three blocks of the footprint of the building of {@code template}. */
+    private static boolean near(MatchRuntime rt, int handle, TemplateId template) {
+        var u = core(rt).queries().unit(handle);
+        if (u == null) {
+            return false;
+        }
+        for (BuildingView b : core(rt).queries().buildings()) {
+            if (b.template().equals(template)) {
+                var at = b.footprint();
+                double dx = Math.max(0, Math.max(at.anchorX() - u.x(), u.x() - (at.anchorX() + at.spanX())));
+                double dz = Math.max(0, Math.max(at.anchorZ() - u.z(), u.z() - (at.anchorZ() + at.spanZ())));
+                return Math.hypot(dx, dz) <= 3;
+            }
+        }
+        return false;
+    }
 }

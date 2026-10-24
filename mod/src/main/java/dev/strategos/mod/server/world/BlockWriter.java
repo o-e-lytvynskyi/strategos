@@ -280,6 +280,14 @@ public final class BlockWriter {
         return ownWrite;
     }
 
+    /**
+     * Puts back a protected block something changed behind the writer's back (BLD-07's backstop): at once, outside the
+     * budget, with the writer's flag set so the change router ignores it.
+     */
+    public void restore(ServerLevel level, BlockPos pos, BlockState state) {
+        ownWrite.around(() -> level.setBlock(pos, state, FLAGS));
+    }
+
     public ProtectedBlockIndex protectedBlocks(ServerLevel level) {
         return writesOf(level).protectedBlocks;
     }

@@ -118,12 +118,15 @@ final class Constructing {
         ctx.host().releaseClaim(ctx.unit(), ctx.handle());
     }
 
-    /** Whether unit {@code i} can still build {@code site}: its faction's, standing, not yet finished, and it builds. */
+    /**
+     * Whether unit {@code i} can still build {@code site}: its faction's, standing, not yet finished or damaged (a
+     * repair, BLD-06), and it builds.
+     */
     static boolean workable(MatchState s, int i, int site) {
         BuildingStore b = s.buildings();
         return b.alive(site)
                 && b.faction(site) == s.identity().faction(i)
-                && b.state(site) != BuildingStore.COMPLETE
+                && (b.state(site) != BuildingStore.COMPLETE || b.damage(site) > 0)
                 && s.stats().canBuild(i);
     }
 

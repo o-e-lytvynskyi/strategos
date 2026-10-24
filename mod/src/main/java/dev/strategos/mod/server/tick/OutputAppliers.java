@@ -4,6 +4,7 @@ import dev.strategos.core.protocol.MatchNews;
 import dev.strategos.core.protocol.NoticeMsg;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.sim.BlockCracked;
+import dev.strategos.core.sim.BlockFell;
 import dev.strategos.core.sim.BuildingDestroyed;
 import dev.strategos.core.sim.BuildingHurt;
 import dev.strategos.core.sim.CarcassGone;
@@ -40,6 +41,7 @@ import java.util.function.Consumer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.level.block.LevelEvent;
 import net.minecraft.world.level.block.state.BlockState;
 
 /** Applies a step's outputs to the world: fx, replies, body requests, block writes for the writer, then the poses. */
@@ -79,6 +81,15 @@ public final class OutputAppliers {
                         rt.bodies().die(died.handle(), level.damageSources().generic());
                     }
                 }
+                case BlockFell fell ->
+                    level.levelEvent(
+                            LevelEvent.PARTICLES_DESTROY_BLOCK,
+                            new net.minecraft.core.BlockPos(
+                                    rt.space().origin().getX() + fell.x(),
+                                    fell.y(),
+                                    rt.space().origin().getZ() + fell.z()),
+                            net.minecraft.world.level.block.Block.getId(
+                                    StrategosServer.get().writer().state(fell.state())));
                 case CarcassLeft left -> {} // its UnitDied kept the body
                 case CarcassGone gone -> rt.bodies().carcassGone(gone.node());
                 case BlockCracked cracked -> {} // FxSender sent it before the outputs applied
@@ -210,6 +221,7 @@ public final class OutputAppliers {
                 BuildingHurt.class,
                 BlockCracked.class,
                 FlameShown.class,
+                BlockFell.class,
                 CarcassLeft.class,
                 CarcassGone.class,
                 FactionDefeated.class,

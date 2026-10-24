@@ -1,0 +1,8 @@
+{
+  "parent": "strategos:template/building_base",
+  "Identity": { "name": "strategos.building.farmstead", "icon": "minecraft:hay_block", "classes": "+Farmstead" },
+  "Building": { "blueprint": "strategos:farmstead" },
+  "Health": { "max": 600 },
+  "Cost": { "resources": { "wood": 100 }, "time": 35 },
+  "Dropsite": { "resources": "food" }
+}

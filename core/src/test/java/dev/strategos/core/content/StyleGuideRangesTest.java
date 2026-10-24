@@ -19,6 +19,8 @@ class StyleGuideRangesTest {
             new Range("Field", 4, 8, 1, 2, 16, 128),
             new Range("House", 4, 7, 4, 7, 60, 200),
             new Range("Barracks", 7, 11, 5, 9, 150, 400),
+            new Range("Storehouse", 5, 8, 4, 6, 80, 200),
+            new Range("Farmstead", 5, 8, 3, 6, 60, 160),
             new Range("CivicCentre", 9, 15, 6, 10, 300, 800),
             new Range("Deposit", 3, 6, 2, 4, 18, 90));
 
@@ -53,6 +55,6 @@ class StyleGuideRangesTest {
             }
             checked++;
         }
-        assertThat(checked).isEqualTo(8);
+        assertThat(checked).isEqualTo(10);
     }
 }

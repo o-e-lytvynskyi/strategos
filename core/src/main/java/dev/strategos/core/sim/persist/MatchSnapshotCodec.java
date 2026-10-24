@@ -370,7 +370,8 @@ public final class MatchSnapshotCodec {
                             .optionalFieldOf("production", BuildingStore.Production.NONE)
                             .forGetter(BuildingStore.Saved::production),
                     RALLY.optionalFieldOf("rally", BuildingStore.Rally.NONE).forGetter(BuildingStore.Saved::rally),
-                    Codec.INT.optionalFieldOf("field", 0).forGetter(BuildingStore.Saved::field))
+                    Codec.INT.optionalFieldOf("field", 0).forGetter(BuildingStore.Saved::field),
+                    Codec.INT.optionalFieldOf("stage", 0).forGetter(BuildingStore.Saved::stage))
             .apply(i, BuildingStore.Saved::new));
 
     static final Codec<AiSlots.Saved> COMPUTER = RecordCodecBuilder.create(i -> i.group(

@@ -57,6 +57,11 @@ public final class StrategosGameTests {
         afterBatch(level, "construction_prep");
     }
 
+    @AfterBatch(batch = "protection")
+    public static void afterProtection(ServerLevel level) {
+        afterBatch(level, "protection");
+    }
+
     @AfterBatch(batch = "eco_growth")
     public static void afterEcoGrowth(ServerLevel level) {
         dev.strategos.gametest.suites.EcoTests.restoreRandomTicks(level);

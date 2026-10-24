@@ -14,6 +14,7 @@ import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.QueueMode;
 import dev.strategos.core.protocol.SetRally;
 import dev.strategos.core.protocol.Stop;
+import dev.strategos.core.protocol.UnitHud;
 import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.mod.client.StrategosClient;
 import dev.strategos.mod.client.net.ClientPayloads;
@@ -153,8 +154,8 @@ final class RtsOrders {
                         && enemy == 0
                         && struck != null
                         && struck.faction() == join.slot().value()
-                        && struck.state() != CommandCard.COMPLETE
-                ? struck // an own foundation: the builders help (M4 T2)
+                        && (struck.state() != CommandCard.COMPLETE || struck.health() < UnitHud.WHOLE)
+                ? struck // an own foundation: the builders help (M4 T2); a damaged building: they repair it (BLD-06)
                 : null;
         boolean help = site != null;
         Command command = site != null

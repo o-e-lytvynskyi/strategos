@@ -9,6 +9,7 @@ import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.sim.build.BuildingLife;
 import dev.strategos.core.sim.build.BuildingStore;
+import dev.strategos.core.sim.build.DamageRanks;
 import dev.strategos.core.sim.combat.Damage;
 import dev.strategos.core.sim.combat.HealthStore;
 import dev.strategos.core.sim.econ.Amount;
@@ -103,6 +104,7 @@ public final class MatchState {
     private final PageBuilder rebuilder = new PageBuilder(MobilityClass.INFANTRY);
     private final NodeStore nodes = new NodeStore();
     private final BuildingStore buildings = new BuildingStore();
+    private final java.util.TreeMap<String, int[]> damageRanks = new java.util.TreeMap<>(); // by blueprint id
     private @Nullable NodeIndex nodeIndex;
 
     private int[] changed = new int[4];
@@ -249,6 +251,11 @@ public final class MatchState {
     public Blueprint blueprintOf(int handle) {
         return Objects.requireNonNull(
                 templates.blueprint(buildings.template(handle)), "a building template without a blueprint");
+    }
+
+    /** Blueprint {@code b}'s damage ranks (BLD-05), worked out once a match: derived, neither hashed nor saved. */
+    public int[] damageRanks(Blueprint b) {
+        return damageRanks.computeIfAbsent(b.id(), id -> DamageRanks.of(b));
     }
 
     /** Where building {@code handle} stands. */

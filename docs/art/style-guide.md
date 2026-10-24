@@ -60,6 +60,8 @@ blueprints may replace them later (an owner task); they keep the same ranges.
 | Field | 4–8 | 1–2 | 16–128 | 5 × 2 × 5, 50 blocks |
 | House | 4–7 | 4–7 | 60–200 | 5 × 5 × 5, 96 blocks |
 | Barracks (production) | 7–11 | 5–9 | 150–400 | 9 × 6 × 7, 217 blocks |
+| Storehouse (wood, stone, iron) | 5–8 | 4–6 | 80–200 | 6 × 5 × 6, 128 blocks (BLD-08) |
+| Farmstead (food) | 5–8 | 3–6 | 60–160 | 6 × 4 × 5, 88 blocks (BLD-08) |
 | Civic centre | 9–15 | 6–10 | 300–800 | 11 × 7 × 11, 442 blocks |
 | Deposit (quarry, iron mine) | 3–6 | 2–4 | 18–90 | 3 × 2 × 3, 18 blocks; 5 × 3 × 5, 59 blocks (ECO-08: spawned, never built) |
 

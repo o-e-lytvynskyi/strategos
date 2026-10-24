@@ -42,6 +42,7 @@ public final class BlockChangeRouter {
         if (rt == null) {
             return;
         }
+        s.protection().changed(s, level, pos, previous, state, rt); // a protected block comes back (BLD-07)
         BlockClassTable table = s.blockClasses();
         if (table.classOf(previous) != table.classOf(state)) {
             rt.pages().changed(pos, rt.tick());

@@ -71,12 +71,16 @@
     "Housing/capacity": "Twenty: the five starting workers and fifteen more before the first house is needed",
     "Placement/civicReach": "None: a civic centre stands where its spacing allows, not near another",
     "Placement/spacing": "Sixty-four blocks between centres: a second centre claims new ground, not a corner of the first's",
-    "Cost/resources/iron": "A hundred iron: a second centre's tools and fittings, a late investment (ECO-08)"
+    "Cost/resources/iron": "A hundred iron: a second centre's tools and fittings, a late investment (ECO-08)",
+    "Limit/count": "One civic centre a faction until phases (Town) allow more, as in the classics (BLD-08)"
   },
   "strategos:template/building_base": {
     "Placement/civicReach": "Within 48 blocks of an own centre's footprint: a town grows round its centre, the stand-in for territory until TERR-02",
     "Resistance/fire": "Stone: 0.9^7 lets 48 % of a torch's fire through, so wood burns more than twice as fast per hit point (CMB-03)",
-    "Health/max": "Five hundred: what a structure without its own figure holds; a deposit has it too, though nothing in M4 attacks one"
+    "Health/max": "Five hundred: what a structure without its own figure holds; a deposit has it too, though nothing in M4 attacks one",
+    "DamageStages/first": "The first blocks fall once a seventh of the building is gone, early enough to show an attack is working (BLD-05, 04 §11.8)",
+    "DamageStages/second": "Two thirds of its hit points left: a third of its blocks down, the building plainly hurt",
+    "DamageStages/third": "A third left: most of it down but its walls' foot, a ruin still standing until its last hit points"
   },
   "strategos:building/house": {
     "Health/max": "Four hundred: a house burns in well under a minute to a squad (CMB-03)",
@@ -145,5 +149,16 @@
     "Body/width": "Vanilla's chicken, 0.4 blocks wide",
     "Body/height": "Vanilla's chicken, 0.7 blocks tall",
     "Body/radius": "Its half width rounded up, so its body stays clear"
+  },
+  "strategos:building/storehouse": {
+    "Health/max": "Between a house and a barracks: a stone store, worth raiding",
+    "Cost/resources/wood": "A house's and a fifth: the first building a growing economy adds by its woods and rocks",
+    "Cost/resources/stone": "Half a barracks' stone: stone's third buyer, so a quarry pays for itself early",
+    "Cost/time": "Forty seconds, 3.2 blocks a second for its 128 (the style guide's 1.5–6)"
+  },
+  "strategos:building/farmstead": {
+    "Health/max": "A house's and a half: a farm building of mud and brick",
+    "Cost/resources/wood": "As a storehouse: the food side's dropsite costs what the other side's does, less its stone",
+    "Cost/time": "Thirty-five seconds, 2.5 blocks a second for its 88"
   }
 }

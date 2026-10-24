@@ -28,5 +28,7 @@ public enum RejectReason {
     /** A civic centre nearer another than their spacing (BLD-02). */
     TOO_CLOSE,
     /** A building beyond its reach of its faction's civic centres (BLD-02). */
-    OUT_OF_REACH
+    OUT_OF_REACH,
+    /** A building its faction has as many of as its {@code Limit/count} allows (BLD-08). */
+    LIMIT
 }

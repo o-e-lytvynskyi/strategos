@@ -33,7 +33,7 @@ class TemplateSetTest {
                 .as("ids sort the worker after the infantry: M2's indices stay")
                 .isEqualTo(2);
         assertThat(worker.classes()).containsExactly("Builder", "Gatherer", "Organic", "Unit", "Worker");
-        assertThat(set.all()).hasSize(14);
+        assertThat(set.all()).hasSize(16);
         assertThat(set.all().subList(0, 3)).containsExactly(walker, infantry, worker);
         assertThat(set.all().subList(3, 7))
                 .as("the buildings, appended after M2's pinned units, in id order")
@@ -100,11 +100,11 @@ class TemplateSetTest {
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> set(new UnitTemplate(walker.id(), 0, walker.bodyType(), 0, 0.6f, 1.8f)))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> TemplateSet.builtin().byIndex(14)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> TemplateSet.builtin().byIndex(16)).isInstanceOf(IllegalArgumentException.class);
     }
 
-    // M4: the livestock (ECO-16)
-    private static final String BUILTIN_VERSION = "7c909f772de7ca5bcdc406d327f7095b30788aab76e14f35ee5a936ba8611eea";
+    // M4: the storehouse and the farmstead (BLD-08)
+    private static final String BUILTIN_VERSION = "8a536dbc9aa79688e053aa684e40880e867fec742f6b4060f323b46c6ea68448";
 
     private static TemplateSet set(UnitTemplate template) {
         return new TemplateSet(List.of(template));

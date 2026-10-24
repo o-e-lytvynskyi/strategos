@@ -9,6 +9,7 @@ import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.build.BuildingStore;
+import dev.strategos.core.sim.build.Placing;
 
 /**
  * Build (M4 §1.6 row 1): the issuer's builders take a build order on an own foundation or construction, as
@@ -32,7 +33,12 @@ final class BuildRule implements CommandRule<Build> {
             return Tally.rejectAll(envelope, kind(), build.units().size(), RejectReason.NOT_OWNER);
         }
         if (buildings.state(handle) == BuildingStore.COMPLETE) {
-            return Tally.rejectAll(envelope, kind(), build.units().size(), RejectReason.UNSUPPORTED);
+            if (buildings.damage(handle) <= 0) {
+                return Tally.rejectAll(envelope, kind(), build.units().size(), RejectReason.UNSUPPORTED);
+            }
+            if (buildings.slotCount(handle) == 0) { // placed whole by a scenario: its builder slots, for the repair
+                buildings.setSlots(handle, Placing.slots(state, state.footprintOf(handle)));
+            }
         }
         return Builders.assign(envelope, state, build.units(), handle, state.footprintOf(handle), build.mode())
                 .result(envelope, kind());

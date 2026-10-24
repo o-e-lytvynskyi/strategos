@@ -15,6 +15,7 @@ import dev.strategos.core.sim.Phase;
 import dev.strategos.core.sim.UnitDied;
 import dev.strategos.core.sim.UnitHurt;
 import dev.strategos.core.sim.build.BuildingStore;
+import dev.strategos.core.sim.build.DamageStages;
 import dev.strategos.core.sim.econ.Livestock;
 import dev.strategos.core.sim.stats.StatService;
 import java.util.ArrayList;
@@ -117,6 +118,8 @@ public final class CombatSystem implements MatchSystem {
         s.buildings().setDamage(target, Math.min(max, taken + dealt));
         if (taken + dealt >= max) {
             falling.add(target);
+        } else {
+            DamageStages.update(s, target); // its blocks fall at each threshold (BLD-05)
         }
         s.outputs().add(new BuildingHurt(target, d.attacker(), (float) dealt));
     }

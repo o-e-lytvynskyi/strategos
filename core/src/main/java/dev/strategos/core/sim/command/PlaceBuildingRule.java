@@ -47,6 +47,10 @@ final class PlaceBuildingRule implements CommandRule<PlaceBuilding> {
         if (place.rotation() < 0 || place.rotation() > 3) {
             return Tally.rejectAll(envelope, kind(), builders.size(), RejectReason.INVALID_ARGUMENT);
         }
+        int limit = Placing.limit(state, template.netIndex(), faction);
+        if (limit > 0 && Placing.owned(state, template.netIndex(), faction) >= limit) {
+            return Tally.rejectAll(envelope, kind(), builders.size(), RejectReason.LIMIT);
+        }
         Footprint at = Footprint.of(b, place.x(), place.z(), place.rotation());
         PlacementRules.Verdict verdict = PlacementRules.check(
                 Placing.world(state), b, at, faction, Placing.params(state, template.netIndex(), faction));

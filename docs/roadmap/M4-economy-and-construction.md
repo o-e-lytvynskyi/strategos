@@ -208,7 +208,8 @@ reseed). What happens when one runs out?
   4. No block of the two lowest outer-ring layers is ever removed (L1).
   5. Damage stages and repair round-trip through save and load in a GameTest (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** BLD-03, CMB-03 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-24 — M4 T9: each threshold's ranked blocks, in one order every match (1); 30 % and back (2); 2 % hysteresis (3); the bottom ring stays (4); stages and repair through save and load (5) (spec §1.6 row 14)
 
 #### BLD-06 · Repair
 - **Value:** Builders restore damaged buildings and their lost blocks (P4).
@@ -222,7 +223,8 @@ reseed). What happens when one runs out?
   3. Repair never exceeds maximum HP (L1).
   4. A GameTest repair restores the removed blocks (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** BLD-05, D-15 · **Size:** S · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-24 — M4 T10: repair time exact for k builders (1); free, D-15 (2); never past the most (3); a GameTest repair restores the blocks (4) (spec §1.6 row 14)
 
 #### BLD-07 · Building protection
 - **Value:** Buildings and nodes change only through the game's rules: no explosion, piston, mob,
@@ -245,7 +247,8 @@ reseed). What happens when one runs out?
   3. Blocks placed by builders are recognised, and foreign blocks in a footprint are rejected (L3).
   4. A lookup costs O(1) per event (L1).
 - **Tests:** L0, L1, L3, L5 · **Depends on:** BLD-01, BLD-15 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-24 — M4 T11: one GameTest per source with its control (1); a direct chunk write undone by the tick's end (2); builders' blocks indexed, foreign ones refused (3); a lookup O(1) (4) (spec §1.6 row 15)
 
 #### BLD-08 · Starting building set, with resource sinks
 - **Value:** A complete village (civic centre, houses, storehouse, farmstead, fields, barracks) in
@@ -264,7 +267,8 @@ reseed). What happens when one runs out?
   4. Stone and iron each appear in the cost of at least two M4 items (L1).
 - **Tests:** L0, L1, L2, L3 · **Depends on:** BLD-04, BLD-05, ECO-08, PROD-01 · **Size:** M ·
   **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-24 — M4 T12: dropsites end to end with the storehouse and the farmstead, population and training as M3's (1); one civic centre a faction (2); every template in the sheet (3); stone in three costs, iron in two (4) (spec §1.6 row 16)
 
 #### BLD-09 · Cancel and demolish
 - **Value:** Undo a misplaced foundation, and clear space when the town needs it.

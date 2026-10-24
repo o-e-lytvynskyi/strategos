@@ -404,8 +404,8 @@ Answer in chat or here; the next session applies the answers.
 - **Milestone:** M4 Economy and construction, started 2026-10-24 at your word; spec:
   [milestones/M4-economy-and-construction.md](milestones/M4-economy-and-construction.md) (24 tasks, every card
   `specified`). M3 is Done (2026-10-24, [§8.1](milestones/M3-first-loop.md)); M1 and M2 Done (2026-10-23).
-- **In progress:** M4 T9, abstract hit points and damage stages (BLD-05).
-- **Last finished task:** M4 T8 (2026-10-24), foundations on uneven ground (BLD-04 done: M3's preparation proved on a slope); before it T7, livestock and Gaia (ECO-16 in progress: its goldens wait for T27).
+- **In progress:** M4 T13, cancel and demolish (BLD-09).
+- **Last finished task:** M4 T11 and T12 (2026-10-24), building protection and the starting building set (BLD-07, BLD-08 done); before them T9 and T10, damage stages and repair.
 - **Next task:** M4's tasks in the spec's order (§7.1).
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 960 of 2,000 (48 %), as of 2026-10-23.

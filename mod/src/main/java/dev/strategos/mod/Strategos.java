@@ -13,6 +13,7 @@ import dev.strategos.mod.server.content.TemplateSync;
 import dev.strategos.mod.server.tick.TickDriver;
 import dev.strategos.mod.server.world.MatchGrowth;
 import dev.strategos.mod.server.world.MatchSpawns;
+import dev.strategos.mod.server.world.Protection;
 import java.util.List;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.neoforged.bus.api.IEventBus;
@@ -26,12 +27,17 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.TagsUpdatedEvent;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
+import net.neoforged.neoforge.event.entity.EntityMobGriefingEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDestroyBlockEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.MobSpawnEvent;
 import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.level.ChunkWatchEvent;
+import net.neoforged.neoforge.event.level.ExplosionEvent;
+import net.neoforged.neoforge.event.level.PistonEvent;
 import net.neoforged.neoforge.event.level.block.CropGrowEvent;
 import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
@@ -83,6 +89,13 @@ public final class Strategos {
         game.addListener(PlayerInteractEvent.EntityInteract.class, ObserverRules::onEntityInteract);
         game.addListener(CropGrowEvent.Pre.class, MatchGrowth::onCropGrowPre);
         game.addListener(MobSpawnEvent.PositionCheck.class, MatchSpawns::onPositionCheck);
+        game.addListener(BlockEvent.BreakEvent.class, Protection::onBreak);
+        game.addListener(BlockEvent.EntityPlaceEvent.class, Protection::onPlace);
+        game.addListener(BlockEvent.FluidPlaceBlockEvent.class, Protection::onFluidPlace);
+        game.addListener(ExplosionEvent.Detonate.class, Protection::onDetonate);
+        game.addListener(PistonEvent.Pre.class, Protection::onPiston);
+        game.addListener(EntityMobGriefingEvent.class, Protection::onMobGriefing);
+        game.addListener(LivingDestroyBlockEvent.class, Protection::onLivingDestroy);
     }
 
     /** The listeners every data pack reload gets, made fresh for each; the engine-surface inventory reads them (B12). */

@@ -125,7 +125,8 @@ final class BuiltinTemplates {
               "Building": { "material": "stone" },
               "Placement": { "civicReach": 48 },
               "Health": { "max": 500 },
-              "Resistance": { "fire": 7 }
+              "Resistance": { "fire": 7 },
+              "DamageStages": { "first": 85, "second": 65, "third": 35 }
             }
             """;
     static final String CIVIC_CENTRE = """
@@ -138,7 +139,8 @@ final class BuiltinTemplates {
               "Cost": { "resources": { "wood": 300, "stone": 200, "iron": 100 }, "time": 150 },
               "Dropsite": { "resources": "food wood stone iron" },
               "Housing": { "capacity": 20 },
-              "Trainer": { "units": "strategos:unit/worker" }
+              "Trainer": { "units": "strategos:unit/worker" },
+              "Limit": { "count": 1 }
             }
             """;
     static final String FIELD = """
@@ -180,6 +182,27 @@ final class BuiltinTemplates {
      * The net indices the built-in set gives, in the order its templates arrived: M2's units first, so their indices
      * stay 0 and 1 whatever ids later templates sort under (M3 spec §9 R10); a new id is appended.
      */
+    static final String STOREHOUSE = """
+            {
+              "parent": "strategos:template/building_base",
+              "Identity": { "name": "strategos.building.storehouse", "icon": "minecraft:barrel", "classes": "+Storehouse" },
+              "Building": { "blueprint": "strategos:storehouse" },
+              "Health": { "max": 800 },
+              "Cost": { "resources": { "wood": 100, "stone": 50 }, "time": 40 },
+              "Dropsite": { "resources": "wood stone iron" }
+            }
+            """;
+
+    static final String FARMSTEAD = """
+            {
+              "parent": "strategos:template/building_base",
+              "Identity": { "name": "strategos.building.farmstead", "icon": "minecraft:hay_block", "classes": "+Farmstead" },
+              "Building": { "blueprint": "strategos:farmstead" },
+              "Health": { "max": 600 },
+              "Cost": { "resources": { "wood": 100 }, "time": 35 },
+              "Dropsite": { "resources": "food" }
+            }
+            """;
     static final String QUARRY = """
             {
               "parent": "strategos:template/building_base",
@@ -214,10 +237,25 @@ final class BuiltinTemplates {
             }
             """;
 
+    /**
+     * The indices the built-in set gave before, kept (ADR-0012's append-only table, across versions as within a
+     * session): a template added later takes the next index, in id order, so a saved or hashed index never moves.
+     */
     private static final TemplateIdTable PINNED = new TemplateIdTable(List.of(
             new TemplateId("strategos:unit/debug_walker"),
             new TemplateId("strategos:unit/infantry"),
-            new TemplateId("strategos:unit/worker")));
+            new TemplateId("strategos:unit/worker"),
+            new TemplateId("strategos:building/barracks"), // M3
+            new TemplateId("strategos:building/civic_centre"),
+            new TemplateId("strategos:building/field"),
+            new TemplateId("strategos:building/house"),
+            new TemplateId("strategos:building/iron_mine"), // M4 T6
+            new TemplateId("strategos:building/iron_mine_large"),
+            new TemplateId("strategos:building/quarry"),
+            new TemplateId("strategos:building/quarry_large"),
+            new TemplateId("strategos:unit/chicken"), // M4 T7
+            new TemplateId("strategos:unit/pig"),
+            new TemplateId("strategos:unit/sheep")));
 
     private BuiltinTemplates() {}
 
@@ -238,6 +276,8 @@ final class BuiltinTemplates {
                         raw("strategos:building/field", FIELD),
                         raw("strategos:building/house", HOUSE),
                         raw("strategos:building/barracks", BARRACKS),
+                        raw("strategos:building/storehouse", STOREHOUSE),
+                        raw("strategos:building/farmstead", FARMSTEAD),
                         raw("strategos:building/quarry", QUARRY),
                         raw("strategos:building/quarry_large", QUARRY_LARGE),
                         raw("strategos:building/iron_mine", IRON_MINE),

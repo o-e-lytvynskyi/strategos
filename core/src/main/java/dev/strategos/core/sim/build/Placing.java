@@ -135,6 +135,23 @@ public final class Placing {
         return Double.isFinite(v) ? Math.max(0, v) : 0;
     }
 
+    /** The most buildings of {@code template} faction {@code faction} may have, its {@code Limit/count}; 0 for no limit. */
+    public static int limit(MatchState s, int template, int faction) {
+        int p = s.stats().path("Limit/count");
+        double v = p < 0 ? Double.NaN : s.stats().blockValue(template, faction, p);
+        return Double.isFinite(v) && v > 0 ? (int) Math.round(v) : 0;
+    }
+
+    /** How many buildings of {@code template} faction {@code faction} has, foundations and sites among them. */
+    public static int owned(MatchState s, int template, int faction) {
+        BuildingStore b = s.buildings();
+        int n = 0;
+        for (int handle : b.handles()) {
+            n += b.template(handle) == template && b.faction(handle) == faction ? 1 : 0;
+        }
+        return n;
+    }
+
     /**
      * The height of a building's floor layer at {@code at}: it replaces the ground's top block, at the highest
      * standing height under its columns, or the flat floor's in a match without terrain.

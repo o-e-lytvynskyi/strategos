@@ -498,7 +498,7 @@ public final class ConstructionTests {
         writer.observe((level, tick, site, pos, written) -> {
             if (site.match() == rt.id().value()) {
                 perTick.merge(tick, 1, Integer::sum);
-                order.add(written.getBlock() == Blocks.DIRT ? "fill" : written.isAir() ? "clear" : "layer");
+                order.add(written.is(Blocks.DIRT) ? "fill" : written.isAir() ? "clear" : "layer");
             }
         });
         h.startSequence()
@@ -519,6 +519,116 @@ public final class ConstructionTests {
                     check(order.contains("fill"), "nothing filled: " + order.size() + " writes");
                     check(order.lastIndexOf("fill") < order.indexOf("layer"), "a layer before the ground was filled");
                     equalsBlueprint(h, rt, barracks(rt).get(0));
+                })
+                .thenSucceed();
+    }
+
+    /** The level's blocks at the first {@code n} of house {@code b}'s damage ranks: how many are air. */
+    private static int fallenInWorld(GameTestHelper h, MatchRuntime rt, BuildingView b, int n) {
+        Blueprint bp = Objects.requireNonNull(core(rt).queries()
+                .templates()
+                .blueprint(Objects.requireNonNull(core(rt).queries().templates().byId(b.template()))
+                        .netIndex()));
+        int[] ranks = dev.strategos.core.sim.build.DamageRanks.of(bp);
+        Footprint at = b.footprint();
+        BlockPos origin = rt.space().origin();
+        int air = 0;
+        for (int r = 0; r < n; r++) {
+            int k = ranks[r];
+            BlockPos pos = new BlockPos(
+                    origin.getX() + at.worldX(bp.x(k), bp.z(k)),
+                    b.baseY() + bp.y(k),
+                    origin.getZ() + at.worldZ(bp.x(k), bp.z(k)));
+            air += h.getLevel().getBlockState(pos).isAir() ? 1 : 0;
+        }
+        return air;
+    }
+
+    /**
+     * BLD-05.5 and BLD-06.4: eight enemy torches bring a house to its third stage, whose ranked blocks are air in the
+     * world (the raiders then die, so they never turn on the workers); saved and restored, it keeps its stage and its hash; then two workers repair it, and it equals its
+     * blueprint again.
+     */
+    @StrategosTest(batch = "construction", timeoutTicks = 6_000)
+    public static void stagesAndRepairSurviveSave(GameTestHelper h) {
+        MatchRegistry registry = StrategosServer.get().matches();
+        MatchRuntime rt = MatchFixture.create(
+                h, MatchFixture.options(SimHarness.DEFAULT_SEED, h).withPersistent(true));
+        town(rt, 2);
+        rt.submit(PlayerSlot.ADMIN, new SpawnBuilding(HOUSE, new FactionSlot(0), 20, 20, 0));
+        rt.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.INFANTRY, new FactionSlot(1), new Vec2d(22, 28), 8, 2));
+        var state = new Object() {
+            MatchRuntime back = rt;
+            int[] raiders = new int[0];
+            int fallen;
+        };
+        h.startSequence()
+                .thenWaitUntil(
+                        () -> check(handles(rt).length == 10 && houses(rt).size() == 1, "not ready"))
+                .thenExecute(() -> {
+                    state.raiders = java.util.Arrays.stream(handles(rt))
+                            .filter(u -> unit(rt, u).faction().value() == 1)
+                            .toArray();
+                    rt.submit(
+                            new PlayerSlot(1),
+                            dev.strategos.core.protocol.Attack.replace(
+                                    UnitSet.of(state.raiders), houses(rt).get(0).handle()));
+                })
+                .thenWaitUntil(() -> {
+                    BuildingView house = houses(rt).get(0);
+                    check(house.hitPoints() < 0.34 * house.maxHitPoints(), "at " + house.hitPoints());
+                })
+                .thenExecute(() -> {
+                    for (int raider : state.raiders) { // gone, so they never turn on the workers
+                        rt.damage(new dev.strategos.core.sim.ExternalDamage(
+                                raider,
+                                dev.strategos.core.sim.ExternalDamage.Kind.LETHAL,
+                                0,
+                                dev.strategos.core.sim.ExternalDamage.SourceKind.NONE));
+                    }
+                })
+                .thenExecuteAfter(60, () -> {
+                    BuildingView house = houses(rt).get(0);
+                    Blueprint bp = Objects.requireNonNull(core(rt).queries()
+                            .templates()
+                            .blueprint(Objects.requireNonNull(
+                                            core(rt).queries().templates().byId(HOUSE))
+                                    .netIndex()));
+                    state.fallen = dev.strategos.core.sim.build.DamageStages.fallen(
+                            3, dev.strategos.core.sim.build.DamageRanks.of(bp).length, 0.85, 0.65, 0.35);
+                    check(state.fallen > 0, "a house with nothing to fall");
+                    int air = fallenInWorld(h, rt, house, state.fallen);
+                    check(air == state.fallen, air + " of the third stage's " + state.fallen + " blocks are air");
+                    MatchCore live = core(rt);
+                    long tick = live.queries().tick();
+                    long hash = live.stateHash();
+                    MatchData data = rt.data();
+                    MatchRecord record = registry.record(rt.id());
+                    check(data != null && record != null, "no blob or record");
+                    CompoundTag tag = data.save(new CompoundTag(), h.getLevel().registryAccess());
+                    registry.unload(rt.id());
+                    state.back = registry.restore(h.getLevel(), record, MatchData.load(rt.id(), tag));
+                    check(core(state.back).queries().tick() == tick, "restored at another tick");
+                    check(core(state.back).stateHash() == hash, "restored with another hash");
+                    registry.resume(state.back.id());
+                    int[] workers = java.util.Arrays.stream(handles(state.back))
+                            .filter(u -> unit(state.back, u).faction().value() == 0)
+                            .toArray();
+                    state.back.submit(
+                            P0,
+                            Build.replace(
+                                    UnitSet.of(workers),
+                                    houses(state.back).get(0).handle()));
+                })
+                .thenWaitUntil(() -> {
+                    BuildingView house = houses(state.back).get(0);
+                    check(house.hitPoints() >= house.maxHitPoints(), "repairing: " + house.hitPoints());
+                })
+                .thenExecuteAfter(60, () -> {
+                    check(
+                            fallenInWorld(h, state.back, houses(state.back).get(0), state.fallen) == 0,
+                            "blocks still gone");
+                    equalsBlueprint(h, state.back, houses(state.back).get(0));
                 })
                 .thenSucceed();
     }

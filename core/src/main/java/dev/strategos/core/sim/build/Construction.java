@@ -185,6 +185,24 @@ public final class Construction {
     }
 
     /**
+     * One tick of repairing finished building {@code handle} (BLD-06, D-15): free, at half the build speed under the
+     * builder rule, its hit points rising {@code max × work ÷ (2 × T)} a tick, never past the most; its damage stages
+     * come back as they pass their thresholds.
+     */
+    public static void repair(MatchState s, int handle) {
+        BuildingStore buildings = s.buildings();
+        long add = work(buildings.tickBuilders(handle), buildings.tickRates(handle));
+        buildings.clearTick(handle);
+        if (add == 0) {
+            return;
+        }
+        double max = s.buildingMaxHp(handle);
+        double gain = max * add / (2.0 * needed(s, handle));
+        buildings.setDamage(handle, Math.max(0, buildings.damage(handle) - gain));
+        DamageStages.update(s, handle);
+    }
+
+    /**
      * One tick of building {@code handle}: this tick's builders' work is added, the writer is asked for the blocks the
      * work now covers, in build order, and a site whose work is done stands finished.
      */

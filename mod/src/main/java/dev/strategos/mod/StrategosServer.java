@@ -30,6 +30,7 @@ import dev.strategos.mod.server.world.ArenaWorld;
 import dev.strategos.mod.server.world.BlockClassTable;
 import dev.strategos.mod.server.world.BlockWriter;
 import dev.strategos.mod.server.world.MaterialTable;
+import dev.strategos.mod.server.world.Protection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -66,6 +67,7 @@ public final class StrategosServer {
     private final SpawnBudget spawnBudget = new SpawnBudget();
     private final BetweenTicks betweenTicks = new BetweenTicks();
     private final FaultBarrier faults;
+    private final Protection protection = new Protection();
     private final MatchRegistry matches;
     private final BlockWriter writer;
     private final MapImports mapImports = new MapImports();
@@ -288,6 +290,11 @@ public final class StrategosServer {
         return perf;
     }
 
+    /** The guard of match blocks (BLD-07). */
+    public Protection protection() {
+        return protection;
+    }
+
     public FaultBarrier faults() {
         return faults;
     }
@@ -341,6 +348,7 @@ public final class StrategosServer {
         StrategosServer s = current;
         if (s != null) {
             long start = System.nanoTime();
+            s.protection.restoreAll(s); // the backstop: protected blocks changed behind the writer (BLD-07)
             s.perf.tick();
             s.debug.tick();
             s.replication.tick();

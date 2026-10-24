@@ -9,7 +9,7 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-24 (later) — M4 T1–T8
+## 2026-10-24 (later) — M4 T1–T12
 
 - **M4 T1 · the health check from M3's close.** The four classes over 800 lines split along their seams, with
   every golden frame identical after the HUD's split (`RtsHud`, `MatchState`, `NetTests`, `CrowdSoak`);
@@ -41,7 +41,16 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
 - **M4 T8 · BLD-04 done.** M3's sites already stood on the highest ground with their lower columns filled; two
   GameTests prove it on a hillside (a barracks refused on a 3-block step, raised on a 2-block one with no gap, its
   preparation within a writer budget of 8 and before its first layer).
-  Next: T9, damage stages (BLD-05).
+- **M4 T9, T10 · BLD-05 and BLD-06 done.** A building's blocks fall at 85, 65 and 35 % of its hit points, in an order
+  of its own that never leaves a block in the air nor touches the foot of its walls, with a block's dust; they come
+  back as it is repaired, only 2 % over a threshold. Workers repair an own damaged building (the right click, or
+  `Build`), free, at half the build speed; stages survive a save.
+- **M4 T11 · BLD-07 done.** No player, entity, explosion, piston, mob or fluid changes a building's block; an
+  explosion crushes the building instead; anything else that changes one behind the writer's back is undone by the end
+  of the tick. Nine GameTests, each with its control.
+- **M4 T12 · BLD-08 done.** A storehouse (wood, stone, iron) and a farmstead (food) join the village; one civic centre
+  a faction. The built-in templates' indices are now pinned in full, so a new template never moves an old one's.
+  Next: T13, cancel and demolish (BLD-09).
 
 ## 2026-10-24 — M3 T9–T31, M3 Done; M4 spec
 

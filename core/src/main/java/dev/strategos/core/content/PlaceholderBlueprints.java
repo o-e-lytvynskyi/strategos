@@ -17,6 +17,8 @@ public final class PlaceholderBlueprints {
     public static final String HOUSE = "strategos:house";
     public static final String BARRACKS = "strategos:barracks";
     public static final String FIELD = "strategos:field";
+    public static final String STOREHOUSE = "strategos:storehouse";
+    public static final String FARMSTEAD = "strategos:farmstead";
     public static final String QUARRY = "strategos:quarry";
     public static final String QUARRY_LARGE = "strategos:quarry_large";
     public static final String IRON_MINE = "strategos:iron_mine";
@@ -31,6 +33,8 @@ public final class PlaceholderBlueprints {
                 house(),
                 barracks(),
                 field(),
+                storehouse(),
+                farmstead(),
                 deposit(QUARRY, 3, "minecraft:stone", "minecraft:andesite"),
                 deposit(QUARRY_LARGE, 5, "minecraft:stone", "minecraft:andesite"),
                 deposit(IRON_MINE, 3, "minecraft:iron_ore", "minecraft:deepslate_iron_ore"),
@@ -117,6 +121,44 @@ public final class PlaceholderBlueprints {
         g.clear(2, 1, 0, 2, 2, 0); // the doorway
         g.fill(0, 4, 0, 4, 4, 4, 2);
         return g.blueprint(HOUSE, 2, 1, 0);
+    }
+
+    /** 6 x 5 x 6 (BLD-08): a storehouse of stone bricks on cobblestone, wide doors, under a smooth-stone roof. */
+    public static Blueprint storehouse() {
+        Grid g = new Grid(
+                6,
+                5,
+                6,
+                List.of(
+                        "minecraft:cobblestone",
+                        "minecraft:stone_bricks",
+                        "minecraft:smooth_stone",
+                        "minecraft:polished_andesite"));
+        g.fill(0, 0, 0, 5, 0, 5, 0);
+        for (int y = 1; y <= 3; y++) {
+            g.ring(0, y, 0, 5, 5, y == 3 ? 3 : 1);
+        }
+        g.clear(2, 1, 0, 3, 2, 0); // the doors, two wide for the carts
+        g.fill(0, 4, 0, 5, 4, 5, 2);
+        return g.blueprint(STOREHOUSE, 2, 1, 0);
+    }
+
+    /** 6 x 4 x 5 (BLD-08): a farmstead of packed mud and bricks, an open front, under a brick roof. */
+    public static Blueprint farmstead() {
+        Grid g = new Grid(
+                6,
+                4,
+                5,
+                List.of("minecraft:packed_mud", "minecraft:mud_bricks", "minecraft:bricks", "minecraft:terracotta"));
+        g.fill(0, 0, 0, 5, 0, 4, 0);
+        for (int y = 1; y <= 2; y++) {
+            g.ring(0, y, 0, 5, 4, 1);
+            g.set(0, y, 0, 3);
+            g.set(5, y, 0, 3);
+        }
+        g.clear(1, 1, 0, 4, 2, 0); // the open front
+        g.fill(0, 3, 0, 5, 3, 4, 2);
+        return g.blueprint(FARMSTEAD, 2, 1, 0);
     }
 
     /** 9 x 6 x 7: mud-brick walls on cobblestone, a crimson-plank roof and a ridge. */

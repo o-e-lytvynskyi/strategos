@@ -223,6 +223,7 @@ public final class WireCodecs {
                             case NOT_FLAT -> 14;
                             case TOO_CLOSE -> 15;
                             case OUT_OF_REACH -> 16;
+                            case LIMIT -> 17;
                         });
     }
 
@@ -246,6 +247,7 @@ public final class WireCodecs {
             case 14 -> RejectReason.NOT_FLAT;
             case 15 -> RejectReason.TOO_CLOSE;
             case 16 -> RejectReason.OUT_OF_REACH;
+            case 17 -> RejectReason.LIMIT;
             default -> throw new WireException("unknown reject reason " + code);
         };
     }
