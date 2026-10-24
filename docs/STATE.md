@@ -408,7 +408,10 @@ Answer in chat or here; the next session applies the answers.
 - **Last finished task:** M4 T11 and T12 (2026-10-24), building protection and the starting building set (BLD-07, BLD-08 done); before them T9 and T10, damage stages and repair.
 - **Next task:** M4's tasks in the spec's order (§7.1).
 - **WIP branch:** none.
-- **CI:** green; minutes used this month about 960 of 2,000 (48 %), as of 2026-10-23.
+- **CI:** minutes used this month about 1,475 of 2,000 (74 %, summed from the runs' times; billing needs a scope
+  `gh` lacks), as of 2026-10-24. Two runs had hit the 20-minute limit as M4 grew, so since M4 T12 a push runs `verify`
+  only (25 minutes allowed), the slow batch and the soak run nightly (`nightly.yml`) and perf weekly (it too had run
+  past its 30); every task still runs all of them locally.
 - **Overview:** `python3 tools/roadmap.py summary`.
 
 ## Blocked

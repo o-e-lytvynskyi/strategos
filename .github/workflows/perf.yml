@@ -1,11 +1,11 @@
 # L6 on Linux (M0 T12 and T18, QA-08): JMH and the CI-to-M4 Pro speed ratio, then the perf GameTests at
-# 3x the budgets. Nightly and by hand, in its own concurrency group, so pushes neither pay for it nor
-# cancel it. Actions are pinned to the commit of the tag in the comment.
+# 3x the budgets. Weekly and by hand (M4 T12: nightly ran past its 30 minutes and spent the month's minutes), in its
+# own concurrency group, so pushes neither pay for it nor cancel it. Actions are pinned to the commit of the tag in the comment.
 name: perf
 
 on:
   schedule:
-    - cron: '17 3 * * *'
+    - cron: '17 3 * * 0'
   workflow_dispatch:
 
 concurrency:
@@ -18,7 +18,7 @@ permissions:
 jobs:
   perf:
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0

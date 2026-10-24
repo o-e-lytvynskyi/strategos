@@ -1,0 +1,54 @@
+# The slow GameTest batch and the determinism soak on Linux, nightly (M4 T12: moved out of the commit gate, which
+# had grown past its 20 minutes). Actions are pinned to the commit of the tag in the comment.
+name: nightly
+
+on:
+  schedule:
+    - cron: '47 2 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: nightly-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  checks: write
+
+jobs:
+  nightly:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          cache-provider: basic
+      # Two workers: the runner has 2 cores and 7 GB, and every GameTest or smoke run is a server JVM.
+      - name: slow and soak
+        run: ./gradlew --console=plain --max-workers=2 verifySlow verifySoak
+      - name: Test results (L1, L2, L3, L5)
+        if: always()
+        uses: mikepenz/action-junit-report@6ef3fdcfcd5f0b5d14df3e659ef19b8c6820f93d # v6.6.1
+        with:
+          report_paths: '**/build/test-results/**/TEST-*.xml'
+          check_name: 'nightly: test results'
+          require_tests: true
+      - name: Reports and logs
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: nightly-reports
+          retention-days: 7
+          if-no-files-found: ignore
+          path: |
+            **/build/test-results/
+            **/build/reports/
+            mod/build/gametest/logs/
+            mod/build/server-smoke/logs/
+            mod/build/server-smoke/crash-reports/
+            mod/build/harness/*/logs/

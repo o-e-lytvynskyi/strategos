@@ -41,7 +41,9 @@ Aggregate tasks:
 - `./gradlew verifyClient` = L4 (`:mod:runScenario`), with consent;
 - `./gradlew verifyPerf` = L6 (`:core:jmh`, `:core:jmhCompare` against the owner-approved
   `perf/baseline-m4pro.json`, `:mod:runGameTestPerf`); 96 s in M0, about 27 minutes at M1's close. CI runs JMH, `:core:jmhSpeedRatio` and
-  the perf GameTests at three times the budgets nightly (`.github/workflows/perf.yml`).
+  the perf GameTests at three times the budgets weekly (`.github/workflows/perf.yml`). Since M4 T12 a push runs
+  `verify` only (`verify.yml`); `verifySlow` and `verifySoak` run nightly (`nightly.yml`), and every task still runs
+  both locally before its commit.
 
 Measured in M0: `verify` 39 s from clean without the build cache and 31 s warm (budget 5
 minutes), `verifyHarness` 12 s, `verifySlow` 6 s, `verifySoak` 9 s; CI runs `verify verifySlow

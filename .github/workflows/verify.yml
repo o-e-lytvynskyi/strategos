@@ -21,7 +21,8 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    # M4 grew verify past 20 minutes with the slow batch and the soak in it; those run nightly now (nightly.yml)
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
@@ -33,7 +34,7 @@ jobs:
           cache-provider: basic
       # Two workers: the runner has 2 cores and 7 GB, and every GameTest or smoke run is a server JVM.
       - name: verify
-        run: ./gradlew --console=plain --max-workers=2 verify verifySlow verifySoak
+        run: ./gradlew --console=plain --max-workers=2 verify
       - name: Test results (L1, L2, L3, L5)
         if: always()
         uses: mikepenz/action-junit-report@6ef3fdcfcd5f0b5d14df3e659ef19b8c6820f93d # v6.6.1

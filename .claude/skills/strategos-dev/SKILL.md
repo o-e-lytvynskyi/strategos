@@ -128,7 +128,8 @@ approved roadmap; ideas go to "For the owner" as proposals.
    - `./gradlew verifyFast` after each edit batch;
    - the task's verification command at the end;
    - `./gradlew verify` before every commit to `main`, once it exists (M0 T3);
-   - `./gradlew verify verifySlow verifySoak`, what CI runs, before pushing a change that touches
+   - `./gradlew verify verifySlow verifySoak`, what CI runs (`verify` on each push, the other two nightly), before
+     pushing a change that touches
      movement, pathing, orders or the tick, since the slow map tests (`maptests.*` on the proving
      ground) and the soak are not in `verify`: M1 T21's avoidance passed `verify` and failed
      `maptests.fifty_units_one_by_one` on CI;
