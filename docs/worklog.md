@@ -9,6 +9,25 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
+## 2026-10-24 (later) — M4 T1–T5
+
+- **M4 T1 · the health check from M3's close.** The four classes over 800 lines split along their seams, with
+  every golden frame identical after the HUD's split (`RtsHud`, `MatchState`, `NetTests`, `CrowdSoak`);
+  `cameratests.chunk_sent_repair` gets twice the ticks after one CI timeout under load.
+- **M4 T2 · `Build`.** Workers sent to an own foundation help build it (right click, or the bot for any site left
+  without builders). M3 had no way to send anyone back to a foundation, which is how its bot lost a barracks.
+- **M4 T3 · vanilla's crowd level of detail.** 200 armoured spearmen on vanilla: frame 47 → 4.9 ms. A selection
+  outline is the body's alone (the outline pass had redrawn every armour piece and item as a batch of its own), and
+  without Sodium only the first 50 bodies a frame, within 128 blocks, draw armour and items. Two `m3_goldens`
+  frames re-recorded; `approveGoldens` now refuses another scenario's candidates (it had copied `art_look`'s).
+- **M4 T4 · UNIT-05 done.** Measured first: standing units already cost a fifth of walking ones, and a message
+  wakes a unit at once, so the tiers became explicit (state plus a recent order) for the queries and the overlay,
+  with no behaviour change; a watched match's hash equals an unwatched one's.
+- **M4 T5 · ECO-07 done.** Rock outcrops above the ground round them are nodes, mined top-down and outside-in, so a
+  hill lowers and no pit opens; workers gather stone. Stone needed a second sink, so the barracks now costs 100
+  stone and the first loop's starts bring 100 (BLD-08's, early).
+  Next: T6, deposits (ECO-08).
+
 ## 2026-10-24 — M3 T9–T31, M3 Done; M4 spec
 
 - **The owner, past midnight:** «можешь любые тесты проводить и как закончишь м3 - начинай м4, все решения
