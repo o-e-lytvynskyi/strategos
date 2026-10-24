@@ -3,7 +3,7 @@
 Where the project stands right now. The session log is in [worklog.md](worklog.md); the work
 procedure is the `strategos-dev` skill (`.claude/skills/strategos-dev/SKILL.md`).
 
-**Last update:** 2026-10-24 · **Owner last seen:** 2026-10-24 · **Current:** M4 Done (2026-10-24); M5 waits for its spec and your word; M1, M2 and M3 Done
+**Last update:** 2026-10-24 · **Owner last seen:** 2026-10-24 · **Current:** M4 Done (2026-10-24); M5 specified, waiting for your word; M1, M2 and M3 Done
 
 ## For the owner
 
@@ -140,6 +140,13 @@ Answer in chat or here; the next session applies the answers.
    piston against a wall (nothing changes); save and quit mid-match and reload (it resumes paused, as it was); then
    the questionnaire in `docs/testing/playtest.md`. The map has no rock outcrop: outcrops are tested on their own
    (ECO-07). M4 is Done; only this makes it Accepted.
+
+21. **M5's spec is ready: say «начинай M5» to start it.** [milestones/M5-combat.md](milestones/M5-combat.md):
+   17 tasks, the 13 approved cards (CMB-08 stays deferred, as D-08 kept the observer). Archers with analytic shots
+   and high ground, stances and focus fire, horsemen on horses with the counter matrix (spearmen > horsemen >
+   archers > spearmen, 170 of 200 seeded duels each), the town bell with garrison and the civic centre's arrows,
+   the bot fighting by the same rules, and "Battle at the ford" as the demo. The starting balance numbers are in
+   its §2.7, tuned against the duel matrix in T7. Nothing in it needs a decision from you.
 
 ## Since your last visit
 
@@ -440,10 +447,11 @@ Answer in chat or here; the next session applies the answers.
 
 - **Milestone:** M4 Economy and construction is **Done** (2026-10-24, [§8.1](milestones/M4-economy-and-construction.md));
   M3 Done (2026-10-24), M1 and M2 Done (2026-10-23). Accepted waits for each one's demo (items 8, 9, 14, 20).
-- **In progress:** nothing; M5's spec is next.
+- **In progress:** nothing: M5's spec is written ([milestones/M5-combat.md](milestones/M5-combat.md)) and waits for
+  your «начинай M5» (item 21).
 - **Last finished task:** M4 T28 (2026-10-24), M4's close: Results written, the health check's follow-ups are M5's
   first tasks.
-- **Next task:** M5's spec (its cards are approved), then M5 on your word («начинай M5»).
+- **Next task:** M5 T1, the health check from M4's close, on your word.
 - **WIP branch:** none.
 - **CI:** minutes used this month about 1,575 of 2,000 (79 %, summed from the runs' times; billing needs a scope
   `gh` lacks), as of 2026-10-24, a week left. Since M4 T12 a push runs `verify` only (25 minutes allowed), the slow
@@ -465,7 +473,8 @@ Nothing.
 | M2 Command | Done 2026-10-23 | Started 2026-10-23 at the owner's word; 23 tasks; `pose_high` settled in M3 T30; Accepted waits for the L7 demo |
 | M3 First loop | Done 2026-10-24 | Started 2026-10-23 at the owner's word; 31 tasks; Accepted waits for the L7 demo (item 14) |
 | M4 Economy and construction | Done 2026-10-24 | Started 2026-10-24 as M3 closed; 24 tasks; Accepted waits for the L7 demo (item 20); item 18 asks your word on the perf base |
-| M5–M6 (MVP) | approved | Specs are written by the assistant when each milestone starts |
+| M5 Combat | Specified 2026-10-24 | Spec written as M4 closed, 17 tasks; starts on your word (item 21) |
+| M6 (MVP) | approved | Its spec is written when M5 closes |
 | M7–M15 | proposed | Approved by the owner closer to their time |
 
 ## History

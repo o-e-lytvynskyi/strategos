@@ -394,20 +394,20 @@ Cards: [roadmap/M5-combat.md](roadmap/M5-combat.md#cards). 14 cards, at most 41 
 
 | ID | Feature | Size | Depends on | Status |
 |---|---|---|---|---|
-| CMB-04 | Ranged combat and analytic projectiles | L | CMB-01, NET-01 | approved |
-| CMB-05 | Stances, targeting, chase and flee | M | CMB-02, CMB-04, CORE-08 | approved |
-| CMB-07 | Civic centre arrows | M | CMB-04, BLD-08 | approved |
+| CMB-04 | Ranged combat and analytic projectiles | L | CMB-01, NET-01 | specified |
+| CMB-05 | Stances, targeting, chase and flee | M | CMB-02, CMB-04, CORE-08 | specified |
+| CMB-07 | Civic centre arrows | M | CMB-04, BLD-08 | specified |
 | CMB-08 | First-person combat (if D-08 chooses it) | M | CAM-05, CMB-01, D-08 | deferred |
-| CMB-16 | High ground | S | CMB-04, DATA-02 | approved |
-| CMB-17 | Combat readability: attack lines and the under-attack flash | S | CMB-06, UI-02 | approved |
-| ORD-05 | Focus fire and force attack | M | ORD-04, CMB-05 | approved |
-| PATH-11 | Mobility classes and footprints | M | PATH-06, PATH-09 | approved |
-| UNIT-06 | Mounted units | M | UNIT-03, PATH-11 | approved |
-| UNIT-07 | Combat roster and counters | M | CMB-04, CMB-05, UNIT-06, DATA-04 | approved |
-| BLD-16 | Garrison and the town bell | M | BLD-08, CORE-06, ORD-02 | approved |
-| BLD-11 | Arrows per garrisoned unit | S | BLD-16, CMB-07 | approved |
-| AI-03 | AI battle tactics | M | AI-02, UNIT-07, ORD-05 | approved |
-| PERF-08 | Battle perf gate | S | UNIT-07, CMB-07, PERF-07 | approved |
+| CMB-16 | High ground | S | CMB-04, DATA-02 | specified |
+| CMB-17 | Combat readability: attack lines and the under-attack flash | S | CMB-06, UI-02 | specified |
+| ORD-05 | Focus fire and force attack | M | ORD-04, CMB-05 | specified |
+| PATH-11 | Mobility classes and footprints | M | PATH-06, PATH-09 | specified |
+| UNIT-06 | Mounted units | M | UNIT-03, PATH-11 | specified |
+| UNIT-07 | Combat roster and counters | M | CMB-04, CMB-05, UNIT-06, DATA-04 | specified |
+| BLD-16 | Garrison and the town bell | M | BLD-08, CORE-06, ORD-02 | specified |
+| BLD-11 | Arrows per garrisoned unit | S | BLD-16, CMB-07 | specified |
+| AI-03 | AI battle tactics | M | AI-02, UNIT-07, ORD-05 | specified |
+| PERF-08 | Battle perf gate | S | UNIT-07, CMB-07, PERF-07 | specified |
 
 > Owner, CMB-08: deferred — D-08 chose the observer avatar; revisit after the M2 playtest.
 

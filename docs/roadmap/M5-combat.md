@@ -59,7 +59,7 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
   4. A volley in a GameTest damages its target as the L1 run predicts (L3).
   5. Launch and impact `fx` with 300 units fighting fit budget E (L6).
 - **Tests:** L0, L1, L3, L6 · **Depends on:** CMB-01, NET-01 · **Size:** L · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### CMB-05 · Stances, targeting, chase and flee
 - **Value:** Units fight on their own the way you told them: hold the line, defend an area or
@@ -77,7 +77,7 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
   3. A chase stops when the target leaves vision, even under an explicit order (L1).
   4. One GameTest per stance family confirms its L1 behaviour (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** CMB-02, CMB-04, CORE-08 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### CMB-07 · Civic centre arrows
 - **Value:** Your civic centre defends itself, so an early raid is not instantly fatal (P4).
@@ -90,7 +90,7 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
   2. Only enemies are targeted (L1).
   3. The civic centre breaks a small raid in a GameTest as the L1 run predicts (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** CMB-04, BLD-08 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### CMB-08 · First-person combat (if D-08 chooses it)
 - **Value:** In first person you can fight beside your soldiers (P2).
@@ -126,7 +126,7 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
   4. A GameTest on a hill shows the longer reach (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** CMB-04, DATA-02 · **Size:** S · **Tier:** T2 (pulled
   into the MVP)
-- **Status:** approved
+- **Status:** specified
 
 #### CMB-17 · Combat readability: attack lines and the under-attack flash
 - **Value:** You always see who attacks whom (P2).
@@ -139,7 +139,7 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
      scene confirms budget F.
   3. Goldens (L4, consent).
 - **Tests:** L0, L1, L4 (consent), L6 · **Depends on:** CMB-06, UI-02 · **Size:** S · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### ORD-05 · Focus fire and force attack
 - **Value:** Fine control of a fight: focus one target, spread fire, or attack anything on command
@@ -152,7 +152,7 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
   2. A spread order splits attackers within one per target of the even split (L1).
   3. Force attack works on an own building (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** ORD-04, CMB-05 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 ### Units
 
@@ -167,7 +167,7 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
   2. Reachability per class equals a flood fill (L1).
   3. 30 horsemen cross the proving ground with no ladder rung above repath (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** PATH-06, PATH-09 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### UNIT-06 · Mounted units
 - **Value:** Cavalry looks and moves like riders on horses, yet costs about as much as one foot
@@ -184,7 +184,7 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
   4. Rider and horse render together at every camera height (L4, consent).
 - **Tests:** L0, L2, L3, L4 (consent), L5, L6 · **Depends on:** UNIT-03, PATH-11 · **Size:** M ·
   **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### UNIT-07 · Combat roster and counters
 - **Value:** Three soldiers with clear roles and counters: spearmen stop horsemen, horsemen run down
@@ -201,7 +201,7 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
   4. The owner recognises each role from its silhouette at 60 blocks (L7, acceptance).
 - **Tests:** L0, L1, L3, L7 · **Fixtures:** duel seed sets · **Depends on:** CMB-04, CMB-05,
   UNIT-06, DATA-04 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 ### Defence
 
@@ -228,7 +228,7 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
   6. A first-person mock player using the bell block rings the bell (L3).
 - **Tests:** L0, L1, L3, L5 · **Depends on:** BLD-08, CORE-06, ORD-02 · **Size:** M · **Tier:** T1
   (pulled into the MVP)
-- **Status:** approved
+- **Status:** specified
 
 #### BLD-11 · Arrows per garrisoned unit
 - **Value:** Garrisoning turns the civic centre into a real defence (P4).
@@ -241,7 +241,7 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
   3. A garrisoned civic centre breaks a horseman raid in a GameTest (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** BLD-16, CMB-07 · **Size:** S · **Tier:** T1 (pulled
   into the MVP)
-- **Status:** approved
+- **Status:** specified
 
 ### The opponent and the gate
 
@@ -258,7 +258,7 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
   3. Tactics stay within the `AiBudget` (L1).
   4. An L3 battle sample reaches the hash of its L1 run (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** AI-02, UNIT-07, ORD-05 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### PERF-08 · Battle perf gate
 - **Value:** Big battles stay smooth on the server, the network and the screen.
@@ -273,4 +273,4 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
   3. The stress pass holds C p95 ≤ 50 ms (L6).
   4. The report lists the cost per combat system (R).
 - **Tests:** L6, R · **Depends on:** UNIT-07, CMB-07, PERF-07 · **Size:** S · **Tier:** T0
-- **Status:** approved
+- **Status:** specified

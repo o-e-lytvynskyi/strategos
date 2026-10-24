@@ -9,7 +9,7 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-24 (later) — M4 T1–T28, M4 Done
+## 2026-10-24 (later) — M4 T1–T28, M4 Done; M5 spec
 
 - **M4 T1 · the health check from M3's close.** The four classes over 800 lines split along their seams, with
   every golden frame identical after the HUD's split (`RtsHud`, `MatchState`, `NetTests`, `CrowdSoak`);
@@ -104,6 +104,9 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
   classes over 800 lines, a scenario's failed check that should fail its run, the server's tick p95 against the L1
   replay, Linux CI's goldens. The perf GameTests' task got 110 minutes for the two new soaks; CI's weekly run shortens
   the scene soaks to three minutes. `economy_loop` is the skirmish's scenario: the economy bot on both sides.
+- **M5's spec.** [milestones/M5-combat.md](milestones/M5-combat.md): 17 tasks over the 13 approved cards, from the
+  research's behavioural notes (analytic shots, stances, garrison and town arrows) and M4's code; starting balance
+  numbers for the archer and the horseman, tuned against the duel matrix in T7. It waits for «начинай M5».
 
 ## 2026-10-24 — M3 T9–T31, M3 Done; M4 spec
 
