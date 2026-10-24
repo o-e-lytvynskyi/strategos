@@ -18,6 +18,7 @@ import dev.strategos.core.sim.order.OrderKind;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -26,6 +27,7 @@ import org.junit.jupiter.api.Test;
  * constructions run in at least 95 % of the seconds after the first half minute and the two repairs in at least 90 %;
  * workers are at trees, fields, quarries, mines and carcasses all along; the waves fight and die.
  */
+@Tag("slow")
 class EconomySceneTest {
     private static final int TICKS = 18_000;
 

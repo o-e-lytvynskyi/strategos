@@ -147,8 +147,8 @@ tasks.register('verify') {
 // QA-02), map-scale GameTests and PERF-05's crowd soak (M1) and QA-11's L3 sample (M3) join it.
 tasks.register('verifySlow') {
     group = 'verification'
-    description = 'The GameTest batch slow, in a run of its own.'
-    dependsOn ':mod:runGameTestSlow'
+    description = 'The GameTest batch slow, in a run of its own, and the L1 tests tagged slow.'
+    dependsOn ':mod:runGameTestSlow', ':core:slowTest'
 }
 
 // [T6b] The soak runs, at the milestone exit and on CI; no budget, the time is reported per run. M0's

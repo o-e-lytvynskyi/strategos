@@ -53,7 +53,8 @@ verifySoak` in 6 to 10 minutes. At M1's close (with M2's first tasks): `verify` 
 `verifySlow` exists from M0 for the GameTest batch `slow` (`:mod:runGameTestSlow`); from M1 the
 same run also takes the map batches (`map_import`, `map_twice`, `map_roundtrip`: each test alone,
 importing the proving ground 2,048 blocks or more from its structure; 45 s with the slow batch),
-and `@Tag("slow")` L1 runs and the crowd soak join it. `verifySoak` runs
+and `@Tag("slow")` L1 runs (`:core:slowTest`, from M4 T28: the economy's seeded matches, which pushed
+`:core:test` past its five minutes on CI's two cores) and the crowd soak join it. `verifySoak` runs
 `:core:soak` from M0 (it is also inside `verify`); the L3 samples of QA-12 (M6) and QA-16 (M10)
 join it later. The roadmap's
 [test aggregates](roadmap/M0-foundation.md#test-aggregates-and-wall-time-budgets) give the

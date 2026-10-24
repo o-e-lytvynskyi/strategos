@@ -414,7 +414,7 @@ T10 (BLD-06) → T11 (BLD-07) → T12 (BLD-08) → T13 (BLD-09) → T14 (PROD-02
 
 - [x] T1 (2026-10-24) · [x] T2 (2026-10-24) · [x] T3 (2026-10-24) · [x] T4 (2026-10-24) · [x] T5 (2026-10-24) · [x] T6 (2026-10-24) · [x] T7 (2026-10-24) · [x] T8 (2026-10-24) · [x] T9 (2026-10-24) · [x] T10 (2026-10-24) · [x] T11 (2026-10-24)
 - [x] T12 (2026-10-24) · [x] T13 (2026-10-24) · [x] T14 (2026-10-24) · [x] T15 (2026-10-24) · [x] T16 (2026-10-24) · [x] T17 (2026-10-24) · [x] T18 (2026-10-24) · [x] T19 (2026-10-24) · [x] T20 (2026-10-24) · [x] T21 (2026-10-24) · [x] T22 (2026-10-24)
-- [ ] T27 · [ ] T28
+- [x] T27 (2026-10-24) · [x] T28 (2026-10-24)
 
 ---
 
@@ -431,6 +431,32 @@ T10 (BLD-06) → T11 (BLD-07) → T12 (BLD-08) → T13 (BLD-09) → T14 (PROD-02
 | 7 | The consent batch: the M4 goldens | T27 |
 | 8 | M1's to M3's gates still pass; `verify`, `verifySlow`, `verifySoak`, `verifyPerf` green; CI green | the runs |
 | 9 | L7: the owner's playtest with the questionnaire; no score of 2 or less; no P0 or P1 bug open | the owner's note |
+
+### 8.1 Results (T28, 2026-10-24)
+
+| # | Result | Evidence |
+|---|---|---|
+| 1 | Every acceptance criterion of the 18 cards passes at its level but the owner's (ART-02.2: the demo); all 18 done | §1.4, §1.6 rows 1–27 |
+| 2 | Pass | the L1 suites (`GatherTimingTest`, `FieldTest`, `AutoReseedTest`, `DepositTest`, `DamageStagesTest`, `BatchTest`, `TreasuryInvariantTest`), `BalanceSheetTest` |
+| 3 | Pass | `ecotests`, `constructiontests`, `protectiontests`, `prodtests`, `persistencetests`, `nettests` |
+| 4 | Ten seeds of the economy script on map v3 end with a winner within 30 minutes (3 west, 7 east; 14:28–27:22), no worker idle over 30 s, animals and all four resources gathered, no food wait; the L3 sample replays to its hash | `EconomyBotTest` (both tests), `aitests.economy_seed_replays_to_its_hash`, §1.6 rows 23, 26 |
+| 5 | Every budget held over two runs (A p50 0.81–0.82 ms, C p95 6.3–6.6 ms, the save 10–16 ms); per-unit A 0.59–0.61 of the first loop's base, re-taken on map v3 with its workers gathering (STATE item 18 asks the owner's word on that base); the 2× pass C p95 8.1 ms | `perftests.economy_soak`, `economy_stress`, §1.6 rows 25–26 |
+| 6 | Pass | `runServerSmoke`'s restart round trip |
+| 7 | Done under the owner's word: `m4_goldens` on macOS and with Sodium, the older scenes re-recorded where M4 changed them, PERF-14 with M4's HUD | §1.6 row 27 |
+| 8 | `verify`, `verifySlow`, `verifySoak` green; `verifyPerf`: JMH within its gate, every perf GameTest passing (its task's timeout raised for the two new soaks); CI red on three pushes, `:core:test` past its five minutes once the economy's matches joined it, now in `:core:slowTest` | the runs, STATE.md |
+| 9 | The owner's | STATE.md |
+
+**Deviations.** The site map at match start became a search each placement (row 23). The proving ground
+got its version 3 in T22, not T6: its woods, not its deposits (rows 10, 26). Four core faults the AI's
+matches found (row 23), one each from the economy soak (row 25: the arena's negative heights) and map
+v3 (row 26: deposits after a restore). PERF-06.2's base moved from M1's crowd to the first loop (rows
+25–26). `rts_goldens` had failed a check since M3 that its pixel diff could not see (row 27).
+
+**Follow-ups** (M5's first tasks): `RtsHud` (882 lines), `PerfTests` (856) and `MatchState` (836) over
+800 lines; the server's tick p95 against the L1 replay of the same match (row 26); a scenario's
+failed check should fail its run, not only its pixels; Linux CI's goldens re-recorded with M4's scenes.
+
+**Status.** **M4 is Done** (2026-10-24): rows 1–8 pass as recorded; row 9 is the owner's and blocks Accepted, not Done.
 
 ---
 

@@ -18,7 +18,7 @@ permissions:
 jobs:
   perf:
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 55
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
@@ -30,9 +30,10 @@ jobs:
           cache-provider: basic
       # Shared runners are slower and noisier than the M4 Pro: no jmhCompare here, only the speed ratio,
       # and the perf GameTests at three times the budgets. The crowd soak is paced at 20 ticks a second, so
-      # here it runs its first 2,400 ticks, two minutes; the full ten run locally in verifyPerf (M1 T26).
+      # here it runs its first 2,400 ticks, two minutes; the full ten run locally in verifyPerf (M1 T26). The first
+      # loop's and the economy's soaks run three minutes each here, fifteen locally (M4 T28).
       - name: perf
-        run: ./gradlew --console=plain --max-workers=2 :core:jmh :core:jmhSpeedRatio :mod:runGameTestPerf -Pperf.ciFactor=3 -Psoak.ticks=2400
+        run: ./gradlew --console=plain --max-workers=2 :core:jmh :core:jmhSpeedRatio :mod:runGameTestPerf -Pperf.ciFactor=3 -Psoak.ticks=2400 -Ploop.ticks=3600
       - name: Reports
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

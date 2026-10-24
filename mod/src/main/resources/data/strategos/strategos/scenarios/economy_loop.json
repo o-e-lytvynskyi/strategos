@@ -1,0 +1,32 @@
+{
+  "map": "strategos:proving_ground",
+  "victory": "civic_centre",
+  "slots": [
+    {
+      "player": "human",
+      "resources": { "food": 300, "stone": 100, "iron": 100 },
+      "entities": [
+        { "template": "strategos:building/civic_centre" },
+        { "template": "strategos:unit/worker", "dz": 9, "count": 5, "spread": 2 },
+        { "template": "strategos:building/quarry", "dx": -14, "dz": -22 },
+        { "template": "strategos:building/iron_mine", "dx": 6, "dz": -26 },
+        { "template": "strategos:unit/sheep", "dx": 9, "dz": 3, "count": 4, "spread": 2 },
+        { "template": "strategos:unit/pig", "dx": -9, "dz": 3, "count": 2, "spread": 1.5 },
+        { "template": "strategos:unit/chicken", "dx": 5, "dz": 11, "count": 3, "spread": 1.5 }
+      ]
+    },
+    {
+      "player": "ai:economy",
+      "resources": { "food": 300, "stone": 100, "iron": 100 },
+      "entities": [
+        { "template": "strategos:building/civic_centre" },
+        { "template": "strategos:unit/worker", "dz": -9, "count": 5, "spread": 2 },
+        { "template": "strategos:building/quarry", "dx": 14, "dz": 22 },
+        { "template": "strategos:building/iron_mine", "dx": -6, "dz": 26 },
+        { "template": "strategos:unit/sheep", "dx": -9, "dz": -3, "count": 4, "spread": 2 },
+        { "template": "strategos:unit/pig", "dx": 9, "dz": -3, "count": 2, "spread": 1.5 },
+        { "template": "strategos:unit/chicken", "dx": -5, "dz": -11, "count": 3, "spread": 1.5 }
+      ]
+    }
+  ]
+}

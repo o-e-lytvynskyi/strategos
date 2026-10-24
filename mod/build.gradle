@@ -153,6 +153,9 @@ neoForge {
             systemProperty 'strategos.perf.ciFactor', providers.gradleProperty('perf.ciFactor').getOrElse('1')
             // [M1 T26] the crowd soak's length; CI's nightly run shortens it to fit its job
             systemProperty 'strategos.soak.ticks', providers.gradleProperty('soak.ticks').getOrElse('12000')
+            // [M4 T28] the first loop's and the economy's soaks' length, which CI's weekly run shortens the same way
+            systemProperty 'strategos.firstLoop.ticks', providers.gradleProperty('loop.ticks').getOrElse('18000')
+            systemProperty 'strategos.economy.ticks', providers.gradleProperty('loop.ticks').getOrElse('18000')
             // gates that fail on a breach; the others only report (QA-07: enabled after 5 stable runs)
             systemProperty 'strategos.perf.gates', providers.gradleProperty('perf.gates').getOrElse('a,c,d,e,g') // d from M1 T27 (QA-07: 4.7 % over five runs); c and e by the owner, 2026-10-23
             // dev only: replaces the measured foreign CPU load, for the invalid-run check (QA-07.3)
@@ -465,8 +468,9 @@ gameTestGuard('runGameTestPerf', file('build/test-results/gametest-perf/TEST-gam
 def perfOut = file('build/reports/perf')
 tasks.matching { it.name == 'runGameTestPerf' }.configureEach {
     // [M1 T26] the crowd soak runs 12,000 ticks paced at 50 ms, ten minutes of wall time, and the stress pass two;
-    // [M3 T29] the first loop's soak 15 more, its stress pass five and its 1.5x pass three and a half
-    timeout = Duration.ofMinutes(75)
+    // [M3 T29] the first loop's soak 15 more, its stress pass five and its 1.5x pass three and a half;
+    // [M4 T28] the economy's soak 15 more and its stress pass six
+    timeout = Duration.ofMinutes(110)
     // The server exits with the number of failed tests; the guard's report check names the budget instead.
     ignoreExitValue = true
     // org.gradle.parallel would otherwise run the perf batch beside JMH and spoil both measurements.

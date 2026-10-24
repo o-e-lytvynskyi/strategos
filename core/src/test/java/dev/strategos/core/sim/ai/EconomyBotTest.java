@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.Test;
  * base's nodes; both send gatherers to animals and gather all four resources; and no think spends more than the budget.
  * And QA-11 on M4: the same script's 30-minute matches end with a winner.
  */
+@Tag("slow")
 class EconomyBotTest {
     static final long MINUTES_15 = 18_000;
 

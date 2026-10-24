@@ -30,7 +30,7 @@ dependencies {
 }
 
 tasks.named('test', Test) {
-    useJUnitPlatform { excludeTags 'soak', 'replay' }
+    useJUnitPlatform { excludeTags 'soak', 'replay', 'slow' }
     timeout = java.time.Duration.ofMinutes(5)
     // [M1 T6] ProvingGroundTest compares the generator with the committed map package of the mod's devtools.
     systemProperty 'strategos.repoRoot', rootDir.absolutePath
@@ -39,6 +39,18 @@ tasks.named('test', Test) {
     // [M3 T2] DATA-04.2: BalanceSheetTest compares the sheet built from the mod's data with docs/balance.
     inputs.files(rootProject.fileTree('mod/src/main/resources/data')).withPropertyName('modData')
     inputs.files(rootProject.fileTree('docs/balance')).withPropertyName('balanceSheet')
+}
+
+// [M4 T28] QA-02's slow L1 tests: M4's economy matches (AI-02's and QA-11's on M4, PERF-07's scene), minutes on CI's
+// two cores, past the commit gate's five; they run in verifySlow, nightly, and with every task locally.
+tasks.register('slowTest', Test) {
+    group = 'verification'
+    description = 'The L1 tests tagged slow: long seeded matches.'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform { includeTags 'slow' }
+    timeout = java.time.Duration.ofMinutes(20)
+    inputs.files(rootProject.fileTree('mod/src/main/resources/data')).withPropertyName('modData')
 }
 
 // [M3 T2] DATA-04: writes docs/balance/sheet.md and sheet.csv from the mod's templates and balance data; fails on a

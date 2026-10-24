@@ -3,7 +3,7 @@
 Where the project stands right now. The session log is in [worklog.md](worklog.md); the work
 procedure is the `strategos-dev` skill (`.claude/skills/strategos-dev/SKILL.md`).
 
-**Last update:** 2026-10-24 · **Owner last seen:** 2026-10-24 · **Current:** M4 — started 2026-10-24 at the owner's word as M3 closed; M1, M2 and M3 Done
+**Last update:** 2026-10-24 · **Owner last seen:** 2026-10-24 · **Current:** M4 Done (2026-10-24); M5 waits for its spec and your word; M1, M2 and M3 Done
 
 ## For the owner
 
@@ -114,19 +114,32 @@ Answer in chat or here; the next session applies the answers.
    below height 0, and the economy AI, like the soaks' scenes, took a node's negative height for "nothing left to
    gather". In an arena world a skirmish showed idle workers; it works now. M3's perf base had been measured that
    way, with every worker idle.
-18. **Taken under your word of 2026-10-24: the first-loop soak is the per-unit perf base** (M4 T21–T22). With the
-   workers gathering and on map v3, the first loop costs 11,648 ns a unit at budget A's p95, twice M1's crowd soak of
-   600 walkers that PERF-06.2 compared it with; a replay of the same match in L1 has the core's step at 0.37 ms at p95,
-   so the server's figure is mostly its surroundings. Both soaks now compare with the first loop's own base, and M4's
-   economy soak (316 units, five constructions, two repairs) reads 0.59 of it, every budget held
-   ([perf/economy-m4pro.json](../perf/economy-m4pro.json), [perf/first-loop-m4pro.json](../perf/first-loop-m4pro.json)).
-
+18. **Needs your word: the per-unit perf base** (M4 T21–T22). With the workers gathering and on map v3, the first loop
+   costs 11,648 ns a unit at budget A's p95, twice M1's crowd soak of 600 walkers that PERF-06.2 compared it with; a
+   replay of the same match in L1 has the core's step at 0.37 ms at p95, so the server's figure is mostly its
+   surroundings. I made the first loop's own run both soaks' base, and M4's economy soak (316 units, five
+   constructions, two repairs) reads 0.59 of it, every other budget held ([perf/economy-m4pro.json](../perf/economy-m4pro.json),
+   [perf/first-loop-m4pro.json](../perf/first-loop-m4pro.json)). That changes a gate's base, which the work rules
+   leave to you: say «оставь» to keep it, or «верни M1» to compare with M1 again, which leaves PERF-06.2 red until
+   the first loop is made cheaper on the server.
 19. **Taken under your word of 2026-10-24: M4's consent batch** (M4 T27). The new goldens, `m4_goldens` on macOS
    and with Sodium in `mod/src/devtools/goldens/`: every resource node at its stages from 60 blocks, a selected
    deposit with its ring, the civic centre's and barracks' cards, the build page, foundations placed in order, a
    house past its damage stages, the animals. Re-recorded for M4's HUD: `m3_goldens`, `overlay_goldens` and
    `rts_goldens` (whose "empty" click had fallen under the selection panel since M3). PERF-14 again, every budget
    held. Each can be undone.
+
+20. **The M4 demo, when you have forty minutes (L7):** [milestones/M4-economy-and-construction.md §1.3](milestones/M4-economy-and-construction.md).
+   `scripts/playtest.sh`, then `/strategos skirmish strategos:proving_ground observe seed=3` to watch two economy
+   bots lay out their towns (the skirmish now plays `economy_loop`), or `/strategos match create map strategos:proving_ground`,
+   `/strategos match join 1 0` and `/strategos match scenario strategos:economy_loop` to play slot 0 against it. Then:
+   two workers to the iron mine (its look changes at 75 %) and two to the quarry; slaughter a sheep and gather it;
+   build a farmstead and toggle its auto-reseed; a barracks on the slope by the river; three houses Shift-placed for
+   the same builders, the third cancelled half built (its refund); a batch of five spearmen (Shift on the button);
+   when the bot's wave burns a house, right-click it with workers to repair it; `/summon tnt` beside the town and a
+   piston against a wall (nothing changes); save and quit mid-match and reload (it resumes paused, as it was); then
+   the questionnaire in `docs/testing/playtest.md`. The map has no rock outcrop: outcrops are tested on their own
+   (ECO-07). M4 is Done; only this makes it Accepted.
 
 ## Since your last visit
 
@@ -425,18 +438,18 @@ Answer in chat or here; the next session applies the answers.
 
 ## Now
 
-- **Milestone:** M4 Economy and construction, started 2026-10-24 at your word; spec:
-  [milestones/M4-economy-and-construction.md](milestones/M4-economy-and-construction.md) (24 tasks, every card
-  `specified`). M3 is Done (2026-10-24, [§8.1](milestones/M3-first-loop.md)); M1 and M2 Done (2026-10-23).
-- **In progress:** M4 T28, M4's close.
-- **Last finished task:** M4 T27 (2026-10-24), the consent batch (item 19; every M4 card done); before it T22, QA-11
-  on M4 with map v3 (item 16).
-- **Next task:** M4's tasks in the spec's order (§7.1).
+- **Milestone:** M4 Economy and construction is **Done** (2026-10-24, [§8.1](milestones/M4-economy-and-construction.md));
+  M3 Done (2026-10-24), M1 and M2 Done (2026-10-23). Accepted waits for each one's demo (items 8, 9, 14, 20).
+- **In progress:** nothing; M5's spec is next.
+- **Last finished task:** M4 T28 (2026-10-24), M4's close: Results written, the health check's follow-ups are M5's
+  first tasks.
+- **Next task:** M5's spec (its cards are approved), then M5 on your word («начинай M5»).
 - **WIP branch:** none.
-- **CI:** minutes used this month about 1,475 of 2,000 (74 %, summed from the runs' times; billing needs a scope
-  `gh` lacks), as of 2026-10-24. Two runs had hit the 20-minute limit as M4 grew, so since M4 T12 a push runs `verify`
-  only (25 minutes allowed), the slow batch and the soak run nightly (`nightly.yml`) and perf weekly (it too had run
-  past its 30); every task still runs all of them locally.
+- **CI:** minutes used this month about 1,575 of 2,000 (79 %, summed from the runs' times; billing needs a scope
+  `gh` lacks), as of 2026-10-24, a week left. Since M4 T12 a push runs `verify` only (25 minutes allowed), the slow
+  batch and the soak run nightly (`nightly.yml`) and perf weekly; since M4 T28 the economy's long L1 matches run
+  nightly too (`:core:slowTest`), after three pushes went red on `:core:test`'s five minutes. At 80 % the skill moves
+  CI to nightly: pushes are batched until the month turns. Every task still runs all of it locally.
 - **Overview:** `python3 tools/roadmap.py summary`.
 
 ## Blocked
@@ -451,7 +464,7 @@ Nothing.
 | M1 Movement | Done 2026-10-23 | Started 2026-10-22 on the owner's go-ahead; 29 tasks (T28, PATH-08, joined by its R3 trigger in T8; T29 by the owner's word); Accepted waits for the L7 demo |
 | M2 Command | Done 2026-10-23 | Started 2026-10-23 at the owner's word; 23 tasks; `pose_high` settled in M3 T30; Accepted waits for the L7 demo |
 | M3 First loop | Done 2026-10-24 | Started 2026-10-23 at the owner's word; 31 tasks; Accepted waits for the L7 demo (item 14) |
-| M4 Economy and construction | In progress | Started 2026-10-24 as M3 closed; spec written the same day, 24 tasks |
+| M4 Economy and construction | Done 2026-10-24 | Started 2026-10-24 as M3 closed; 24 tasks; Accepted waits for the L7 demo (item 20); item 18 asks your word on the perf base |
 | M5–M6 (MVP) | approved | Specs are written by the assistant when each milestone starts |
 | M7–M15 | proposed | Approved by the owner closer to their time |
 
