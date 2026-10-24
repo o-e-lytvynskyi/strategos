@@ -1,20 +1,20 @@
 package dev.strategos.core.sim;
 
 import dev.strategos.core.content.Blueprint;
-import dev.strategos.core.content.CorePaths;
 import dev.strategos.core.content.Footprint;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.diag.MatchLog;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
+import dev.strategos.core.sim.build.BuildingLife;
 import dev.strategos.core.sim.build.BuildingStore;
-import dev.strategos.core.sim.build.Placing;
 import dev.strategos.core.sim.combat.Damage;
 import dev.strategos.core.sim.combat.HealthStore;
 import dev.strategos.core.sim.econ.Amount;
 import dev.strategos.core.sim.econ.CarryStore;
 import dev.strategos.core.sim.econ.Costs;
+import dev.strategos.core.sim.econ.EconomyChecks;
 import dev.strategos.core.sim.econ.EconomyRules;
 import dev.strategos.core.sim.econ.Forage;
 import dev.strategos.core.sim.econ.GatherRates;
@@ -23,7 +23,6 @@ import dev.strategos.core.sim.econ.NodeDiscovery;
 import dev.strategos.core.sim.econ.NodeIndex;
 import dev.strategos.core.sim.econ.NodeStore;
 import dev.strategos.core.sim.econ.Treasury;
-import dev.strategos.core.sim.nav.BlockClass;
 import dev.strategos.core.sim.nav.FootprintOverlay;
 import dev.strategos.core.sim.nav.Material;
 import dev.strategos.core.sim.nav.MaterialKind;
@@ -31,18 +30,15 @@ import dev.strategos.core.sim.nav.MobilityClass;
 import dev.strategos.core.sim.nav.PageBuilder;
 import dev.strategos.core.sim.nav.PageCoord;
 import dev.strategos.core.sim.nav.PathStore;
-import dev.strategos.core.sim.nav.SliceMaterials;
 import dev.strategos.core.sim.nav.SurfaceGrid;
 import dev.strategos.core.sim.nav.SurfacePage;
 import dev.strategos.core.sim.nav.TerrainEdits;
 import dev.strategos.core.sim.nav.VoxelSlice;
 import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.core.sim.prod.Population;
-import dev.strategos.core.sim.prod.Production;
 import dev.strategos.core.sim.spatial.SpatialQueries;
 import dev.strategos.core.sim.stats.StatService;
 import dev.strategos.core.sim.unitai.UnitAi;
-import dev.strategos.core.sim.world.WritePriority;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -89,8 +85,7 @@ public final class MatchState {
     private int nextGroup = FIRST_GROUP;
     private final long[] rungs = new long[Stuck.GIVE_UP + 1]; // the stuck ladder's rungs reached in this run, by rung
     private final List<Agent> agents = new ArrayList<>();
-    private final float[] leaders = new float[LeaderUpdate.SLOTS * 3]; // per slot x, z, yaw
-    private final boolean[] leading = new boolean[LeaderUpdate.SLOTS];
+    private final Leaders leaders = new Leaders();
     private final List<JobDelivery> deliveries = new ArrayList<>();
     private SurfaceGrid surfaces;
     private final long[] pageSlices;
@@ -102,6 +97,7 @@ public final class MatchState {
     private final TerrainEdits terrainEdits;
     private final FootprintOverlay footprints;
     private final BitSet rebuild;
+    private final TerrainMaterials materials;
     private final PageBuilder rebuilder = new PageBuilder(MobilityClass.INFANTRY);
     private final NodeStore nodes = new NodeStore();
     private final BuildingStore buildings = new BuildingStore();
@@ -143,6 +139,8 @@ public final class MatchState {
         this.terrainEdits = new TerrainEdits(pageSlices.length);
         this.footprints = new FootprintOverlay(surfaces.pagesX(), surfaces.pagesZ());
         this.rebuild = new BitSet(pageSlices.length);
+        this.materials =
+                new TerrainMaterials(config.bounds(), surfaces.pagesX(), surfaces.pagesZ(), sliceBytes, terrainEdits);
         ensureCapacity(entities.highWater());
     }
 
@@ -224,39 +222,7 @@ public final class MatchState {
      * {@link NodeStore#pack}; the result is in position order.
      */
     public List<long[]> materialsIn(int x0, int y0, int z0, int x1, int y1, int z1, MaterialKind kind) {
-        List<long[]> out = new ArrayList<>(); // packed position, material amount
-        MatchBounds b = config.bounds();
-        for (int pz = Math.max(0, z0 >> 4); pz <= Math.min(surfaces.pagesZ() - 1, z1 >> 4); pz++) {
-            for (int px = Math.max(0, x0 >> 4); px <= Math.min(surfaces.pagesX() - 1, x1 >> 4); px++) {
-                int page = pz * surfaces.pagesX() + px;
-                if (sliceBytes[page] == null) {
-                    continue;
-                }
-                VoxelSlice slice = VoxelSlice.decode(sliceBytes[page]);
-                SliceMaterials m = slice.materials();
-                int height = slice.height();
-                for (int k = 0; k < m.size(); k++) {
-                    if (m.material(k).kind() != kind) {
-                        continue;
-                    }
-                    int column = m.voxel(k) / height;
-                    int band = m.voxel(k) % height;
-                    int x = px * 16 + column / 16;
-                    int z = pz * 16 + column % 16;
-                    int y = b.minY() + band;
-                    if (x < x0 || x > x1 || z < z0 || z > z1 || y < y0 || y > y1) {
-                        continue;
-                    }
-                    int edited = terrainEdits.classAt(page, TerrainEdits.cell(column / 16, band, column % 16));
-                    if (edited >= 0 && BlockClass.is((short) edited, BlockClass.PASSABLE)) {
-                        continue; // the core took it away
-                    }
-                    out.add(new long[] {NodeStore.pack(x, y, z), m.material(k).amount()});
-                }
-            }
-        }
-        out.sort((a, c) -> Long.compare(a[0], c[0]));
-        return out;
+        return materials.in(x0, y0, z0, x1, y1, z1, kind);
     }
 
     /**
@@ -264,24 +230,7 @@ public final class MatchState {
      * the core has taken away.
      */
     public @Nullable Material materialAt(int x, int y, int z) {
-        MatchBounds b = config.bounds();
-        if (x < 0 || z < 0 || x >= b.sizeX() || z >= b.sizeZ()) {
-            return null;
-        }
-        int page = (z >> 4) * surfaces.pagesX() + (x >> 4);
-        if (sliceBytes[page] == null) {
-            return null;
-        }
-        VoxelSlice slice = VoxelSlice.decode(sliceBytes[page]);
-        int band = y - b.minY();
-        if (band < 0 || band >= slice.height()) {
-            return null;
-        }
-        int edited = terrainEdits.classAt(page, TerrainEdits.cell(x & 15, band, z & 15));
-        if (edited >= 0 && BlockClass.is((short) edited, BlockClass.PASSABLE)) {
-            return null;
-        }
-        return slice.materials().at(((x & 15) * 16 + (z & 15)) * slice.height() + band);
+        return materials.at(x, y, z);
     }
 
     /** The match's resource nodes (ECO-02). */
@@ -311,14 +260,7 @@ public final class MatchState {
      * construction from a thousandth of it at the foundation (BLD-03).
      */
     public double buildingMaxHp(int handle) {
-        int path = stats.path(CorePaths.HEALTH);
-        double v =
-                path < 0 ? Double.NaN : stats.blockValue(buildings.template(handle), buildings.faction(handle), path);
-        double full = Double.isFinite(v) && v > 0 ? v : CorePaths.DEFAULT_HEALTH;
-        if (buildings.state(handle) == BuildingStore.COMPLETE) {
-            return full;
-        }
-        return full * Math.max(1, buildings.progress(handle)) / BuildingStore.FULL;
+        return BuildingLife.maxHp(this, handle);
     }
 
     /**
@@ -326,49 +268,7 @@ public final class MatchState {
      * blocked for units, and the writer is asked to clear its volume and place its blocks in build order. Its handle.
      */
     public int placeComplete(int template, int faction, Footprint at, int baseY) {
-        int handle = buildings.create(template, faction, at, baseY, BuildingStore.COMPLETE, BuildingStore.FULL);
-        Blueprint b = blueprintOf(handle);
-        if (Placing.obstructs(this, template, faction)) { // a field does not (ECO-09)
-            for (int cell : at.columns(b)) {
-                blockColumn(cell >>> 16, cell & 0xFFFF);
-            }
-        }
-        int site = Handle.index(handle);
-        boolean[] filled = new boolean[b.sizeX() * b.sizeY() * b.sizeZ()];
-        for (int k = 0; k < b.count(); k++) {
-            filled[(b.x(k) * b.sizeY() + b.y(k)) * b.sizeZ() + b.z(k)] = true;
-        }
-        for (int x = 0; x < b.sizeX(); x++) {
-            for (int z = 0; z < b.sizeZ(); z++) {
-                if (!b.covers(x, z)) {
-                    continue;
-                }
-                for (int y = 0; y < b.sizeY(); y++) {
-                    if (!filled[(x * b.sizeY() + y) * b.sizeZ() + z]) {
-                        outputs.add(new WorldEffect(
-                                site,
-                                WritePriority.CONSTRUCTION,
-                                at.worldX(x, z),
-                                baseY + y,
-                                at.worldZ(x, z),
-                                WorldEffect.AIR,
-                                0));
-                    }
-                }
-            }
-        }
-        for (int k = 0; k < b.count(); k++) {
-            outputs.add(new WorldEffect(
-                    site,
-                    WritePriority.CONSTRUCTION,
-                    at.worldX(b.x(k), b.z(k)),
-                    baseY + b.y(k),
-                    at.worldZ(b.x(k), b.z(k)),
-                    b.palette().get(b.state(k)),
-                    handle));
-        }
-        Production.finished(this, handle); // its housing counts (ECO-06)
-        return handle;
+        return BuildingLife.placeComplete(this, template, faction, at, baseY);
     }
 
     /**
@@ -376,26 +276,7 @@ public final class MatchState {
      * foundation; its columns are released, and the core's terrain gets the air the writer will leave.
      */
     public void destroyBuilding(int handle) {
-        Production.lost(this, handle); // its housing and its queue (ECO-06, PROD-01)
-        Blueprint b = blueprintOf(handle);
-        Footprint at = footprintOf(handle);
-        int baseY = buildings.baseY(handle);
-        int site = Handle.index(handle);
-        for (int k = b.count() - 1; k >= 0; k--) { // top-down, the reverse of the build order
-            if (b.y(k) == 0) {
-                continue;
-            }
-            int x = at.worldX(b.x(k), b.z(k));
-            int z = at.worldZ(b.x(k), b.z(k));
-            outputs.add(new WorldEffect(site, WritePriority.DAMAGE_STAGE, x, baseY + b.y(k), z, WorldEffect.AIR, 0));
-            editVoxel(x, baseY + b.y(k), z, BlockClass.AIR);
-        }
-        if (Placing.obstructs(this, buildings.template(handle), buildings.faction(handle))) {
-            for (int cell : at.columns(b)) {
-                releaseColumn(cell >>> 16, cell & 0xFFFF);
-            }
-        }
-        buildings.remove(handle);
+        BuildingLife.destroy(this, handle);
     }
 
     /** A node added after discovery, a field's (ECO-09): its id; the index is built again on its next use. */
@@ -586,7 +467,7 @@ public final class MatchState {
         changedCount = 0;
         frame = BodyFrame.builder(entities.aliveCount());
         agents.clear();
-        Arrays.fill(leading, false);
+        leaders.clear();
         deliveries.clear();
     }
 
@@ -703,22 +584,7 @@ public final class MatchState {
 
     /** The claims a restored match's nodes and buildings hold, put back on their units (ECO-05, BLD-03). */
     void restoreClaims() {
-        for (int handle : buildings.handles()) {
-            for (int slot = 0; slot < buildings.slotCount(handle); slot++) {
-                int unit = buildings.claim(handle, slot);
-                if (unit != 0 && entities.isAlive(unit)) {
-                    carry.setSite(Handle.index(unit), handle);
-                }
-            }
-        }
-        for (int id = 1; id <= nodes.count(); id++) {
-            for (int slot = 0; slot < nodes.slotCount(id); slot++) {
-                int handle = nodes.claim(id, slot);
-                if (handle != 0 && entities.isAlive(handle)) {
-                    carry.setClaimed(Handle.index(handle), id);
-                }
-            }
-        }
+        EconomyChecks.restoreClaims(this);
     }
 
     /** What each unit carries and the slot it holds (ECO-05). */
@@ -741,20 +607,7 @@ public final class MatchState {
      * treasury's beside it.
      */
     public @Nullable String economyBroken() {
-        if (ledger.empty() && carry.empty()) {
-            return null;
-        }
-        for (int r = 0; r < ledger.resources(); r++) {
-            long gathered = 0;
-            for (int f = 0; f < treasury.factions(); f++) {
-                gathered += treasury.gathered(f, r);
-            }
-            String broken = ledger.broken(r, nodes.remaining(r), carry.total(r, entities.highWater()), gathered);
-            if (broken != null) {
-                return broken;
-            }
-        }
-        return null;
+        return EconomyChecks.broken(this);
     }
 
     public long tick() {
@@ -881,30 +734,9 @@ public final class MatchState {
         agents.addAll(more);
     }
 
-    void setLeader(LeaderUpdate leader) {
-        int at = leader.slot() * 3;
-        leaders[at] = leader.x();
-        leaders[at + 1] = leader.z();
-        leaders[at + 2] = leader.yaw();
-        leading[leader.slot()] = true;
-    }
-
-    /** Whether the commander of player slot {@code slot} stands in first person this tick (CAM-07). */
-    public boolean leads(int slot) {
-        return slot >= 0 && slot < LeaderUpdate.SLOTS && leading[slot];
-    }
-
-    /** This tick's X of the commander of {@code slot}, when it {@link #leads}. */
-    public double leaderX(int slot) {
-        return leaders[slot * 3];
-    }
-
-    public double leaderZ(int slot) {
-        return leaders[slot * 3 + 1];
-    }
-
-    public double leaderYaw(int slot) {
-        return leaders[slot * 3 + 2];
+    /** This tick's commanders in first person (CAM-07). */
+    public Leaders leaders() {
+        return leaders;
     }
 
     /**

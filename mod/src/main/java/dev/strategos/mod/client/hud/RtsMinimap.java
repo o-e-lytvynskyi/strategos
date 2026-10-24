@@ -1,12 +1,19 @@
 package dev.strategos.mod.client.hud;
 
 import com.mojang.blaze3d.platform.NativeImage;
+import dev.strategos.core.client.camera.CameraRig;
+import dev.strategos.core.client.hud.HudRect;
+import dev.strategos.core.client.hud.Minimap;
 import dev.strategos.core.client.hud.MinimapImage;
+import dev.strategos.core.client.pick.View;
 import dev.strategos.core.protocol.MatchJoin;
+import dev.strategos.core.protocol.MatchNews;
 import dev.strategos.mod.client.StrategosClient;
+import dev.strategos.mod.client.rts.RtsMode;
 import dev.strategos.mod.platform.Ids;
 import java.util.Arrays;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.core.BlockPos;
@@ -157,6 +164,75 @@ final class RtsMinimap {
                 return 0;
             }
             return level.getHeight(Heightmap.Types.WORLD_SURFACE, wx, wz) - 1;
+        }
+    }
+
+    /**
+     * The minimap (UI-11): the terrain image scaled into the HUD's square, buildings and units as dots in their
+     * factions' colours, the latest alert as a red ring for its first seconds, and the camera's frame.
+     */
+    void draw(GuiGraphics g, RtsMode mode, HudPaint paint, long clientTicks, long alertAt) {
+        MatchJoin join = StrategosClient.match();
+        if (join == null || !ready()) {
+            return;
+        }
+        HudRect r = RtsHud.layout().minimap();
+        paint.panel(g, r);
+        g.flush(); // the panel's fill is batched: drawn later, it would cover the image
+        Minimap m = new Minimap(r, join.sizeX(), join.sizeZ());
+        double[] o = m.origin();
+        double s = m.scale();
+        g.blit(
+                RtsMinimap.TEXTURE,
+                (int) Math.round(o[0]),
+                (int) Math.round(o[1]),
+                (int) Math.round(join.sizeX() * s),
+                (int) Math.round(join.sizeZ() * s),
+                0,
+                0,
+                join.sizeX(),
+                join.sizeZ(),
+                join.sizeX(),
+                join.sizeZ());
+        for (Minimap.Dot d : m.dots(
+                StrategosClient.model().units(), StrategosClient.model().buildings(), StrategosClient.templates())) {
+            int x0 = (int) Math.floor(d.x());
+            int y0 = (int) Math.floor(d.y());
+            g.fill(
+                    x0,
+                    y0,
+                    x0 + Math.max(1, (int) Math.round(d.w())),
+                    y0 + Math.max(1, (int) Math.round(d.h())),
+                    paint.theme.faction(d.faction()));
+        }
+        MatchNews alert = StrategosClient.model().alert();
+        if (alert != null && clientTicks - alertAt < 200 && (clientTicks / 5) % 2 == 0) {
+            double[] p = m.toMap(alert.x(), alert.z());
+            g.renderOutline((int) p[0] - 4, (int) p[1] - 4, 9, 9, 0xFFFF3030);
+        }
+        CameraRig rig = mode.rig();
+        View view = mode.view();
+        if (rig != null && view != null) {
+            double[] f = Minimap.frame(view, rig.pose().y() - rig.height(), join.originX(), join.originZ());
+            double minX = Double.MAX_VALUE;
+            double minY = Double.MAX_VALUE;
+            double maxX = -Double.MAX_VALUE;
+            double maxY = -Double.MAX_VALUE;
+            for (int k = 0; k < 4; k++) {
+                double[] p = m.toMap(
+                        Math.max(0, Math.min(join.sizeX(), f[2 * k])),
+                        Math.max(0, Math.min(join.sizeZ(), f[2 * k + 1])));
+                minX = Math.min(minX, p[0]);
+                minY = Math.min(minY, p[1]);
+                maxX = Math.max(maxX, p[0]);
+                maxY = Math.max(maxY, p[1]);
+            }
+            g.renderOutline(
+                    (int) minX,
+                    (int) minY,
+                    Math.max(2, (int) (maxX - minX)),
+                    Math.max(2, (int) (maxY - minY)),
+                    0xFFFFFFFF);
         }
     }
 }

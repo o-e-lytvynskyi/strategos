@@ -44,7 +44,7 @@ final class PerfVerdicts {
      * stand by design), each budget as its gate says; an invalid run asserts nothing. A soak paced faster than 20 ticks
      * a second gates only budget C, its p95 at most 23 ms over the speed (MATCH-05.4: 15.3 ms at 1.5).
      */
-    static void judgeSoak(GameTestHelper h, CrowdSoak.Result r, Window window, boolean stress) {
+    static void judgeSoak(GameTestHelper h, SoakResult r, Window window, boolean stress) {
         boolean melee = r.config().melee();
         boolean loose = melee || r.config().firstLoop();
         boolean fast = r.config().speed() > 1;
@@ -119,7 +119,7 @@ final class PerfVerdicts {
         json.addProperty("worst", r.worst());
         json.addProperty("journal", String.valueOf(r.journal()));
         json.addProperty("foreignCpu", foreign);
-        CrowdSoak.Costs costs = r.costs();
+        SoakCosts costs = r.costs();
         if (costs != null) {
             json.add("firstLoop", firstLoop(r, costs, b, broken, !stress && !fast));
         }
@@ -156,8 +156,7 @@ final class PerfVerdicts {
      * the scene's counts, the blob's save in the window (budget G, at most 100 ms), and A's and B's p95 per unit against
      * M1's; with {@code gates}, A per unit gates under {@code a} and the save under {@code g}.
      */
-    private static JsonObject firstLoop(
-            CrowdSoak.Result r, CrowdSoak.Costs costs, long[] b, List<String> broken, boolean gates) {
+    private static JsonObject firstLoop(SoakResult r, SoakCosts costs, long[] b, List<String> broken, boolean gates) {
         JsonObject json = new JsonObject();
         json.add("placement", spread(costs.placement()));
         json.add("writer", spread(costs.writer()));

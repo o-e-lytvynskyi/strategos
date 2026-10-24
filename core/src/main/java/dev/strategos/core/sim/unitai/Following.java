@@ -29,7 +29,7 @@ final class Following {
         int i = ctx.unit();
         OrderQueues orders = s.orders();
         int leader = orders.target(i);
-        if (!s.leads(leader)) {
+        if (!s.leaders().leads(leader)) {
             return;
         }
         int group = orders.group(i);
@@ -45,15 +45,15 @@ final class Following {
                 }
             }
         }
-        double yaw = Math.toRadians(s.leaderYaw(leader));
+        double yaw = Math.toRadians(s.leaders().yaw(leader));
         double fx = -DetMath.sin(yaw);
         double fz = DetMath.cos(yaw);
         double spacing = SlotLayout.spacing(Engagement.radius(s, i));
         int width = SlotLayout.width(n);
         int rows = (n + width - 1) / width;
         double back = BEHIND + (rows - 1) * spacing / 2;
-        double cx = s.leaderX(leader) - fx * back;
-        double cz = s.leaderZ(leader) - fz * back;
+        double cx = s.leaders().x(leader) - fx * back;
+        double cz = s.leaders().z(leader) - fz * back;
         int k = Math.min(orders.slot(i), n - 1);
         double px = SlotLayout.x(k, n, width, spacing, cx, fx, fz);
         double pz = SlotLayout.z(k, n, width, spacing, cz, fx, fz);

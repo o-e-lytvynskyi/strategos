@@ -20,7 +20,6 @@ import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.core.sim.MatchQueries;
 import dev.strategos.core.sim.MotionStore;
 import dev.strategos.core.sim.OutputEvent;
-import dev.strategos.core.sim.Stuck;
 import dev.strategos.core.sim.UnitDied;
 import dev.strategos.core.sim.UnitHurt;
 import dev.strategos.core.sim.UnitView;
@@ -116,271 +115,12 @@ final class CrowdSoak {
         }
     }
 
-    /**
-     * What the first loop's soak adds (PERF-06.4), per sampled tick in nanoseconds: the block writer's {@code setBlock}
-     * time, the fx sent for the match, and the commands phase of each tick that applied a placement; the placements
-     * accepted and refused, the waves, the buildings at the end, and one save of the match's blob in the window
-     * (budget G), -1 if it has none.
-     */
-    static final class Costs {
-        private final long[] writer;
-        private final long[] fx;
-        private final long[] placement;
-        private final long placed;
-        private final long refused;
-        private final int waves;
-        private final int buildings;
-        private final long saveNanos;
-
-        Costs(
-                long[] writer,
-                long[] fx,
-                long[] placement,
-                long placed,
-                long refused,
-                int waves,
-                int buildings,
-                long saveNanos) {
-            this.writer = writer;
-            this.fx = fx;
-            this.placement = placement;
-            this.placed = placed;
-            this.refused = refused;
-            this.waves = waves;
-            this.buildings = buildings;
-            this.saveNanos = saveNanos;
-        }
-
-        long[] writer() {
-            return writer;
-        }
-
-        long[] fx() {
-            return fx;
-        }
-
-        long[] placement() {
-            return placement;
-        }
-
-        long placed() {
-            return placed;
-        }
-
-        long refused() {
-            return refused;
-        }
-
-        int waves() {
-            return waves;
-        }
-
-        int buildings() {
-            return buildings;
-        }
-
-        long saveNanos() {
-            return saveNanos;
-        }
-    }
-
     /** The melee soak's spawns: each faction on its bank of the river, half at each ford (Z 140–146 and 236–242). */
     static final double[] BANK_X = {ProvingGround.RIVER_X - 20.5, ProvingGround.RIVER_X + 20.5};
 
     static final double[] FORD_Z = {143.5, 239.5};
     /** A melee wave ends when a side is gone or after this many ticks; then both sides are filled up again. */
     static final int WAVE_TICKS = 600;
-
-    /**
-     * What a soak saw. Samples are per soak tick after the warm-up, in nanoseconds: {@code core} the core's step with our
-     * appliers, {@code tick} the server's tick, {@code between} our handlers' time before it, {@code paths} the main
-     * thread's path work; {@code baseline} the arena's ticks without units. {@code viewerBytes} each viewer's bytes over
-     * the sampled window. {@code stuck} counts units by their longest run without progress, by the stuck ladder's rungs
-     * (under 40 ticks, 40, 100, 200, 400 and 600 or more).
-     */
-    static final class Result {
-        private final Config config;
-        private final long seed;
-        private final long[] core;
-        private final long[] tick;
-        private final long[] between;
-        private final long[] paths;
-        private final long[] baseline;
-        private final long[] viewerBytes;
-        private final double viewerUnits;
-        private final int viewerUnitsMost;
-        private final long groupOrders;
-        private final long unitOrders;
-        private final long refused;
-        private final long[] rungs;
-        private final int[] stuck;
-        private final int mostStuck;
-        private final String worst;
-        private final long navBytes;
-        private final int units;
-        private final @Nullable Path journal;
-        private final long[] fights;
-        private final @Nullable Costs costs;
-
-        Result(
-                Config config,
-                long seed,
-                long[] core,
-                long[] tick,
-                long[] between,
-                long[] paths,
-                long[] baseline,
-                long[] viewerBytes,
-                double viewerUnits,
-                int viewerUnitsMost,
-                long groupOrders,
-                long unitOrders,
-                long refused,
-                long[] rungs,
-                int[] stuck,
-                int mostStuck,
-                String worst,
-                long navBytes,
-                int units,
-                @Nullable Path journal,
-                long[] fights,
-                @Nullable Costs costs) {
-            this.config = config;
-            this.seed = seed;
-            this.core = core;
-            this.tick = tick;
-            this.between = between;
-            this.paths = paths;
-            this.baseline = baseline;
-            this.viewerBytes = viewerBytes;
-            this.viewerUnits = viewerUnits;
-            this.viewerUnitsMost = viewerUnitsMost;
-            this.groupOrders = groupOrders;
-            this.unitOrders = unitOrders;
-            this.refused = refused;
-            this.rungs = rungs;
-            this.stuck = stuck;
-            this.mostStuck = mostStuck;
-            this.worst = worst;
-            this.navBytes = navBytes;
-            this.units = units;
-            this.journal = journal;
-            this.fights = fights;
-            this.costs = costs;
-        }
-
-        /** The first loop's costs; null for the other soaks. */
-        @Nullable Costs costs() {
-            return costs;
-        }
-
-        /** The melee soak's waves sent, hits and deaths; zeros for the crowd's. */
-        long[] fights() {
-            return fights;
-        }
-
-        Config config() {
-            return config;
-        }
-
-        long seed() {
-            return seed;
-        }
-
-        long[] core() {
-            return core;
-        }
-
-        long[] tick() {
-            return tick;
-        }
-
-        long[] between() {
-            return between;
-        }
-
-        long[] paths() {
-            return paths;
-        }
-
-        long[] baseline() {
-            return baseline;
-        }
-
-        long[] viewerBytes() {
-            return viewerBytes;
-        }
-
-        /** The bodies a viewer was paired with, on average over the window's seconds. */
-        double viewerUnits() {
-            return viewerUnits;
-        }
-
-        /** The most bodies a viewer was paired with at once. */
-        int viewerUnitsMost() {
-            return viewerUnitsMost;
-        }
-
-        long groupOrders() {
-            return groupOrders;
-        }
-
-        long unitOrders() {
-            return unitOrders;
-        }
-
-        long[] rungs() {
-            return rungs;
-        }
-
-        int[] stuck() {
-            return stuck;
-        }
-
-        int mostStuck() {
-            return mostStuck;
-        }
-
-        String worst() {
-            return worst;
-        }
-
-        long navBytes() {
-            return navBytes;
-        }
-
-        int units() {
-            return units;
-        }
-
-        @Nullable Path journal() {
-            return journal;
-        }
-
-        long failedOrders() {
-            return refused + rungs[Stuck.GIVE_UP];
-        }
-
-        long nudges() {
-            return rungs[4];
-        }
-
-        /** The soak's own failures (PERF-05.2), budgets aside. */
-        List<String> failures() {
-            List<String> failures = new ArrayList<>();
-            if (failedOrders() > 0) {
-                failures.add(failedOrders() + " failed orders (" + refused + " refused, " + rungs[Stuck.GIVE_UP]
-                        + " given up)");
-            }
-            if (nudges() * 1_000 > unitOrders) {
-                failures.add(nudges() + " nudges for " + unitOrders + " unit orders, over 1 per 1,000");
-            }
-            if (mostStuck > MOST_STUCK) {
-                failures.add("a unit " + mostStuck + " ticks without progress, over " + MOST_STUCK + ": " + worst);
-            }
-            return failures;
-        }
-    }
 
     private enum Phase {
         PREPARING,
@@ -397,7 +137,7 @@ final class CrowdSoak {
     private final MatchRuntime rt;
     private final MapManifest manifest;
     private final SoakOrders orders;
-    private final Consumer<Result> done;
+    private final Consumer<SoakResult> done;
     private final Runnable windowStarts;
     private final Runnable everySecond;
     private final List<MockViewer> viewers = new ArrayList<>();
@@ -434,7 +174,7 @@ final class CrowdSoak {
     private long saveNanos = -1;
 
     private CrowdSoak(
-            GameTestHelper h, Config config, Consumer<Result> done, Runnable windowStarts, Runnable everySecond) {
+            GameTestHelper h, Config config, Consumer<SoakResult> done, Runnable windowStarts, Runnable everySecond) {
         this.h = h;
         this.config = config;
         this.seed = Seeds.set("soak").skip(config.seedLine()).findFirst().orElseThrow();
@@ -460,7 +200,7 @@ final class CrowdSoak {
      * and {@code everySecond} mark the sampled window for the caller's foreign-load samples.
      */
     static void start(
-            GameTestHelper h, Config config, Consumer<Result> done, Runnable windowStarts, Runnable everySecond) {
+            GameTestHelper h, Config config, Consumer<SoakResult> done, Runnable windowStarts, Runnable everySecond) {
         CrowdSoak soak = new CrowdSoak(h, config, done, windowStarts, everySecond);
         if (config.melee()) {
             soak.rt.addListener(out -> {
@@ -643,7 +383,7 @@ final class CrowdSoak {
         }
         long[] bytes = viewers.stream().mapToLong(v -> v.bytes().bytes()).toArray();
         viewers.forEach(MockViewer::close);
-        done.accept(new Result(
+        done.accept(new SoakResult(
                 config,
                 seed,
                 core,
@@ -668,12 +408,12 @@ final class CrowdSoak {
                 costs(q)));
     }
 
-    private @Nullable Costs costs(MatchQueries q) {
+    private @Nullable SoakCosts costs(MatchQueries q) {
         FirstLoopScene sc = scene;
         if (sc == null) {
             return null;
         }
-        return new Costs(
+        return new SoakCosts(
                 writer,
                 fx,
                 placement.stream().mapToLong(Long::longValue).toArray(),

@@ -31,10 +31,7 @@ import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.ExternalDamage;
-import dev.strategos.core.sim.InputEvent;
-import dev.strategos.core.sim.TickInputs;
 import dev.strategos.core.sim.UnitState;
-import dev.strategos.core.sim.journal.Journal;
 import dev.strategos.core.testkit.SimHarness;
 import dev.strategos.gametest.MatchFixture;
 import dev.strategos.gametest.StrategosTest;
@@ -53,30 +50,24 @@ import dev.strategos.mod.server.net.payload.MatchJoinPayload;
 import dev.strategos.mod.server.net.payload.MatchStatePayload;
 import dev.strategos.mod.server.net.payload.TemplateAckPayload;
 import dev.strategos.mod.server.net.payload.TemplateSetPayload;
-import io.netty.buffer.Unpooled;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.network.protocol.common.ClientboundDisconnectPacket;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.network.protocol.game.ClientboundMoveEntityPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
 import net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket;
 import net.minecraft.network.protocol.game.VecDeltaCodec;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.connection.ConnectionType;
-import org.jspecify.annotations.Nullable;
 
 /**
  * The network test kit and the payload layer in a real server (QA-19, NET-01): viewers that see what a client would,
@@ -128,9 +119,9 @@ public final class NetTests {
                 .writeVarInt(0)
                 .writeVarInt(Limits.BATCH_COMMANDS + 1)
                 .toByteArray();
-        viewer.send(read(h, new byte[Limits.BATCH_BYTES + 1]));
+        viewer.send(NetFixtures.read(h, new byte[Limits.BATCH_BYTES + 1]));
         for (int k = 0; k < RateLimiter.VIOLATIONS_PER_MINUTE - 1; k++) {
-            viewer.send(read(h, malformed));
+            viewer.send(NetFixtures.read(h, malformed));
         }
         h.startSequence()
                 .thenExecuteAfter(1, () -> {
@@ -138,7 +129,7 @@ public final class NetTests {
                             counters.violations(name) - before == RateLimiter.VIOLATIONS_PER_MINUTE,
                             "violations " + (counters.violations(name) - before));
                     check(!viewer.disconnected(), "disconnected at the 100th violation");
-                    viewer.send(read(h, malformed));
+                    viewer.send(NetFixtures.read(h, malformed));
                 })
                 .thenExecuteAfter(1, () -> {
                     viewer.poll();
@@ -187,7 +178,7 @@ public final class NetTests {
                 } else if (packet instanceof ClientboundMoveEntityPacket move
                         && state.id >= 0
                         && body != null
-                        && isBody(move.getEntity(h.getLevel()), body)
+                        && NetFixtures.isBody(move.getEntity(h.getLevel()), body)
                         && move.hasPosition()) {
                     Vec3 sent = state.codec.decode(move.getXa(), move.getYa(), move.getZa());
                     state.codec.setBase(sent);
@@ -225,22 +216,22 @@ public final class NetTests {
         spawn(rt, 16.5, 16.5, 3, 1);
         Vec3 at = h.absoluteVec(new Vec3(16.5, 2, 8.5));
         MockViewer viewer = MockViewer.join(h.getLevel(), "strategos-same", at.x, at.y, at.z, 4);
-        seat(rt, viewer, 0);
+        NetFixtures.seat(rt, viewer, 0);
         h.onEachTick(() -> {
             viewer.poll();
-            Set<Integer> bodies = bodyIds(rt);
-            if (bodies.size() == 3 && added(viewer).containsAll(bodies)) {
+            Set<Integer> bodies = NetFixtures.bodyIds(rt);
+            if (bodies.size() == 3 && NetFixtures.added(viewer).containsAll(bodies)) {
                 List<Integer> paired = StrategosServer.get()
                         .interest()
                         .handles(viewer.player().getUUID(), rt.id().value());
                 check(paired.size() == 3, "paired with " + paired);
                 check(
-                        payloads(viewer, MatchJoinPayload.class).stream()
+                        NetFixtures.payloads(viewer, MatchJoinPayload.class).stream()
                                 .anyMatch(p -> p.join().matchId() == rt.id().value()
                                         && p.join().slot().value() == 0),
                         "no match_join");
                 check(
-                        payloads(viewer, MatchStatePayload.class).stream()
+                        NetFixtures.payloads(viewer, MatchStatePayload.class).stream()
                                 .anyMatch(p -> p.state().matchId() == rt.id().value()
                                         && p.state().lifecycle() == MatchStateMsg.Lifecycle.RUNNING),
                         "no match_state");
@@ -260,10 +251,10 @@ public final class NetTests {
         MockViewer viewer = MockViewer.join(h.getLevel(), name, at.x, at.y, at.z, 2);
         h.onEachTick(() -> {
             viewer.poll();
-            boolean joined = payloads(viewer, MatchJoinPayload.class).stream()
+            boolean joined = NetFixtures.payloads(viewer, MatchJoinPayload.class).stream()
                     .anyMatch(p -> p.join().matchId() == rt.id().value()
                             && p.join().slot().value() == 1);
-            boolean state = payloads(viewer, MatchStatePayload.class).stream()
+            boolean state = NetFixtures.payloads(viewer, MatchStatePayload.class).stream()
                     .anyMatch(p -> p.state().matchId() == rt.id().value());
             if (joined && state) {
                 viewer.close();
@@ -284,18 +275,18 @@ public final class NetTests {
         Vec3 at = h.absoluteVec(new Vec3(9.5, 2, 12.5));
         MockViewer member = MockViewer.join(h.getLevel(), "strategos-other", at.x, at.y, at.z, 4);
         MockViewer outsider = MockViewer.join(h.getLevel(), "strategos-none", at.x, at.y, at.z, 4);
-        seat(b, member, 0);
+        NetFixtures.seat(b, member, 0);
         var state = new Object() {
             int ticks;
         };
         h.onEachTick(() -> {
             member.poll();
             outsider.poll();
-            Set<Integer> bodies = bodyIds(a);
-            if (bodies.size() != 3 || !added(outsider).containsAll(bodies)) {
+            Set<Integer> bodies = NetFixtures.bodyIds(a);
+            if (bodies.size() != 3 || !NetFixtures.added(outsider).containsAll(bodies)) {
                 return; // the outsider sees them first: they are there to be seen
             }
-            for (int id : added(member)) {
+            for (int id : NetFixtures.added(member)) {
                 check(!bodies.contains(id), "the other match's member was sent body " + id);
             }
             check(
@@ -304,12 +295,12 @@ public final class NetTests {
                             .handles(member.player().getUUID(), a.id().value())
                             .isEmpty(),
                     "the other match's member is paired with A's bodies");
-            for (MatchStatePayload p : payloads(member, MatchStatePayload.class)) {
+            for (MatchStatePayload p : NetFixtures.payloads(member, MatchStatePayload.class)) {
                 check(p.state().matchId() != a.id().value(), "the other match's member got A's state");
             }
             if (++state.ticks >= 20) {
                 check(
-                        payloads(member, MatchStatePayload.class).stream()
+                        NetFixtures.payloads(member, MatchStatePayload.class).stream()
                                 .anyMatch(p -> p.state().matchId() == b.id().value()),
                         "B's member never got B's state");
                 member.close();
@@ -333,7 +324,7 @@ public final class NetTests {
         spawn(rt, 8.5, 8.5, 1, 0);
         Vec3 at = h.absoluteVec(new Vec3(16.5, 2, 8.5));
         MockViewer viewer = MockViewer.join(h.getLevel(), "strategos-slot", at.x, at.y, at.z, 2);
-        seat(rt, viewer, 1);
+        NetFixtures.seat(rt, viewer, 1);
         var state = new Object() {
             boolean sent;
         };
@@ -354,7 +345,7 @@ public final class NetTests {
                 return;
             }
             List<Feedback> results = new ArrayList<>();
-            for (FeedbackPayload p : payloads(viewer, FeedbackPayload.class)) {
+            for (FeedbackPayload p : NetFixtures.payloads(viewer, FeedbackPayload.class)) {
                 if (p.message() instanceof Feedback f) {
                     results.add(f);
                 }
@@ -368,7 +359,7 @@ public final class NetTests {
             check(
                     results.contains(new Feedback(8, CommandOutcome.REJECTED, RejectReason.NOT_OWNER, 0, 1)),
                     "the other faction's move's feedback: " + results);
-            List<CommandEnvelope> sent = envelopes(rt, 1);
+            List<CommandEnvelope> sent = NetFixtures.envelopes(rt, 1);
             check(
                     sent.size() == 2
                             && sent.get(0).clientSeq() == 7
@@ -414,8 +405,8 @@ public final class NetTests {
             for (int unit : units) {
                 check(unit(rt, unit).state() == UnitState.IDLE, "a unit moved for an unseated player");
             }
-            check(envelopes(rt, 0).isEmpty(), "a command of a player slot reached the core");
-            check(payloads(viewer, FeedbackPayload.class).isEmpty(), "feedback for an unseated player");
+            check(NetFixtures.envelopes(rt, 0).isEmpty(), "a command of a player slot reached the core");
+            check(NetFixtures.payloads(viewer, FeedbackPayload.class).isEmpty(), "feedback for an unseated player");
             check(counters.violations(name) == state.before + 1, "violations " + counters.violations(name));
             viewer.close();
             h.succeed();
@@ -433,24 +424,26 @@ public final class NetTests {
         Vec3 at = h.absoluteVec(new Vec3(16.5, 2, 16.5));
         MockViewer[] viewer = new MockViewer[1];
         h.startSequence()
-                .thenWaitUntil(() ->
-                        check(bodyIds(rt).size() == 4, "bodies " + bodyIds(rt).size()))
+                .thenWaitUntil(() -> check(
+                        NetFixtures.bodyIds(rt).size() == 4,
+                        "bodies " + NetFixtures.bodyIds(rt).size()))
                 .thenExecute(() -> {
                     viewer[0] = MockViewer.join(h.getLevel(), "strategos-tset", at.x, at.y, at.z, 4);
-                    seat(rt, viewer[0], 1);
+                    NetFixtures.seat(rt, viewer[0], 1);
                 })
                 .thenWaitUntil(() -> {
                     viewer[0].moved();
                     viewer[0].poll();
                     check(
-                            added(viewer[0]).containsAll(bodyIds(rt)),
-                            "the viewer sees " + added(viewer[0]) + " of " + bodyIds(rt) + "; chunks "
+                            NetFixtures.added(viewer[0]).containsAll(NetFixtures.bodyIds(rt)),
+                            "the viewer sees " + NetFixtures.added(viewer[0]) + " of " + NetFixtures.bodyIds(rt)
+                                    + "; chunks "
                                     + viewer[0].chunks().size() + "; "
                                     + viewer[0].capture().counts());
                 })
                 .thenExecute(() -> {
                     List<Packet<?>> all = viewer[0].capture().all();
-                    Set<Integer> bodies = bodyIds(rt);
+                    Set<Integer> bodies = NetFixtures.bodyIds(rt);
                     int set = -1;
                     int body = -1;
                     for (int k = 0; k < all.size(); k++) {
@@ -467,8 +460,9 @@ public final class NetTests {
                     check(set >= 0, "no template set: " + viewer[0].capture().counts());
                     check(set < body, "the template set came at packet " + set + ", the first body at " + body);
                     ServerTemplates server = StrategosServer.get().templates();
-                    TemplateSetView view =
-                            payloads(viewer[0], TemplateSetPayload.class).get(0).view();
+                    TemplateSetView view = NetFixtures.payloads(viewer[0], TemplateSetPayload.class)
+                            .get(0)
+                            .view();
                     check(
                             view.toSet().version().equals(server.set().version()),
                             "the viewer got " + view.version() + ", the server runs "
@@ -493,20 +487,26 @@ public final class NetTests {
         h.startSequence()
                 .thenExecute(() -> {
                     viewer.poll();
-                    sets[0] = payloads(viewer, TemplateSetPayload.class).size();
+                    sets[0] = NetFixtures.payloads(viewer, TemplateSetPayload.class)
+                            .size();
                     check(sets[0] == 1, "the join sent " + sets[0] + " template sets");
                     viewer.send(new TemplateAckPayload(new TemplateAck(
                             StrategosServer.get().templates().set().sha())));
                 })
                 .thenExecuteAfter(1, () -> {
                     viewer.poll();
-                    check(payloads(viewer, TemplateSetPayload.class).size() == 1, "a matching ack got a resend");
+                    check(
+                            NetFixtures.payloads(viewer, TemplateSetPayload.class)
+                                            .size()
+                                    == 1,
+                            "a matching ack got a resend");
                     viewer.send(new TemplateAckPayload(new TemplateAck(new byte[TemplateAck.SHA_BYTES])));
                     viewer.send(new TemplateAckPayload(new TemplateAck(new byte[TemplateAck.SHA_BYTES])));
                 })
                 .thenExecuteAfter(1, () -> {
                     viewer.poll();
-                    int now = payloads(viewer, TemplateSetPayload.class).size();
+                    int now = NetFixtures.payloads(viewer, TemplateSetPayload.class)
+                            .size();
                     check(now == 2, "two mismatched acks within a second got " + (now - 1) + " resends");
                     check(sync.resent() - resent == 1, "resends counted " + (sync.resent() - resent));
                     viewer.close();
@@ -526,8 +526,8 @@ public final class NetTests {
         Vec3 at = h.absoluteVec(new Vec3(12.5, 2, 12.5));
         MockViewer near = MockViewer.join(h.getLevel(), "strategos-fxnear", at.x, at.y, at.z, 4);
         MockViewer far = MockViewer.join(h.getLevel(), "strategos-fxfar", at.x + 240, at.y, at.z, 2);
-        seat(rt, near, 0);
-        seat(rt, far, 1);
+        NetFixtures.seat(rt, near, 0);
+        NetFixtures.seat(rt, far, 1);
         var state = new Object() {
             int unit = -1;
             int step;
@@ -541,7 +541,7 @@ public final class NetTests {
                 case 0 -> { // the near player tracks the body before anything happens to it
                     int[] units = handles(rt);
                     UnitEntity body = units.length == 1 ? rt.bodies().get(units[0]) : null;
-                    if (body != null && added(near).contains(body.getId())) {
+                    if (body != null && NetFixtures.added(near).contains(body.getId())) {
                         state.unit = units[0];
                         near.capture().clear();
                         rt.damage(new ExternalDamage(
@@ -551,7 +551,7 @@ public final class NetTests {
                     }
                 }
                 case 1, 2 -> {
-                    List<Fx.Event> got = fxOf(near, rt);
+                    List<Fx.Event> got = NetFixtures.fxOf(near, rt);
                     if (got.isEmpty()) {
                         check(
                                 state.ticks < 10,
@@ -583,10 +583,10 @@ public final class NetTests {
                         return;
                     }
                     check(
-                            payloads(far, FxPayload.class).isEmpty(),
-                            "the far player got fx: " + payloads(far, FxPayload.class));
+                            NetFixtures.payloads(far, FxPayload.class).isEmpty(),
+                            "the far player got fx: " + NetFixtures.payloads(far, FxPayload.class));
                     check(
-                            payloads(far, MatchStatePayload.class).stream()
+                            NetFixtures.payloads(far, MatchStatePayload.class).stream()
                                     .anyMatch(
                                             p -> p.state().matchId() == rt.id().value()),
                             "the far player never got the match's state: it hears nothing");
@@ -612,7 +612,7 @@ public final class NetTests {
         Vec3 at = h.absoluteVec(new Vec3(10.5, 2, 10.5));
         MockViewer member = MockViewer.join(h.getLevel(), "strategos-wfxin", at.x, at.y, at.z, 4);
         MockViewer outsider = MockViewer.join(h.getLevel(), "strategos-wfxout", at.x + 1, at.y, at.z, 4);
-        seat(rt, member, 0);
+        NetFixtures.seat(rt, member, 0);
         rt.submit(
                 PlayerSlot.ADMIN,
                 new SpawnBuilding(new TemplateId("strategos:building/civic_centre"), new FactionSlot(0), 14, 14, 0));
@@ -632,7 +632,7 @@ public final class NetTests {
         });
         h.startSequence()
                 .thenWaitUntil(() -> {
-                    List<Fx.Event> got = fxOf(member, rt);
+                    List<Fx.Event> got = NetFixtures.fxOf(member, rt);
                     long places = got.stream()
                             .filter(e -> e.kind() == FxKind.BLOCK_PLACE)
                             .count();
@@ -658,85 +658,11 @@ public final class NetTests {
                             "the break is at " + log);
                 })
                 .thenExecute(() -> {
-                    check(payloads(outsider, FxPayload.class).isEmpty(), "the outsider got fx");
+                    check(NetFixtures.payloads(outsider, FxPayload.class).isEmpty(), "the outsider got fx");
                     member.close();
                     outsider.close();
                 })
                 .thenSucceed();
-    }
-
-    /** The {@code fx} events of {@code rt} the viewer was sent since its capture was last cleared. */
-    private static List<Fx.Event> fxOf(MockViewer viewer, MatchRuntime rt) {
-        List<Fx.Event> events = new ArrayList<>();
-        for (FxPayload p : payloads(viewer, FxPayload.class)) {
-            if (p.fx().matchId() == rt.id().value()) {
-                events.addAll(p.fx().events());
-            }
-        }
-        return events;
-    }
-
-    private static void seat(MatchRuntime rt, MockViewer viewer, int slot) {
-        StrategosServer.get().matches().join(rt, viewer.player().getUUID(), new PlayerSlot(slot));
-        StrategosServer.get().net().joined(rt, viewer.player(), new PlayerSlot(slot));
-    }
-
-    private static Set<Integer> bodyIds(MatchRuntime rt) {
-        Set<Integer> ids = new HashSet<>();
-        for (int handle : handles(rt)) {
-            UnitEntity body = rt.bodies().get(handle);
-            if (body != null) {
-                ids.add(body.getId());
-            }
-        }
-        return ids;
-    }
-
-    private static Set<Integer> added(MockViewer viewer) {
-        Set<Integer> ids = new HashSet<>();
-        for (ClientboundAddEntityPacket p : viewer.capture().of(ClientboundAddEntityPacket.class)) {
-            ids.add(p.getId());
-        }
-        return ids;
-    }
-
-    private static <P extends CustomPacketPayload> List<P> payloads(MockViewer viewer, Class<P> type) {
-        List<P> out = new ArrayList<>();
-        for (ClientboundCustomPayloadPacket p : viewer.capture().of(ClientboundCustomPayloadPacket.class)) {
-            if (type.isInstance(p.payload())) {
-                out.add(type.cast(p.payload()));
-            }
-        }
-        return out;
-    }
-
-    /** The commands the match's journal holds from player slots at or above {@code minSlot}, in order. */
-    private static List<CommandEnvelope> envelopes(MatchRuntime rt, int minSlot) {
-        List<CommandEnvelope> out = new ArrayList<>();
-        for (Journal.Segment segment : core(rt).journal().segments()) {
-            for (TickInputs tick : segment.nonEmptyTicks()) {
-                for (InputEvent event : tick.events()) {
-                    if (event instanceof CommandEnvelope e && e.issuer().value() >= minSlot) {
-                        out.add(e);
-                    }
-                }
-            }
-        }
-        return out;
-    }
-
-    private static boolean isBody(@Nullable Entity entity, UnitEntity body) {
-        return entity != null && entity.getId() == body.getId();
-    }
-
-    private static CommandsPayload read(GameTestHelper h, byte[] bytes) {
-        RegistryFriendlyByteBuf buf = new RegistryFriendlyByteBuf(
-                Unpooled.wrappedBuffer(bytes), h.getLevel().registryAccess(), ConnectionType.NEOFORGE);
-        try {
-            return CommandsPayload.STREAM_CODEC.decode(buf);
-        } finally {
-            buf.release();
-        }
     }
 
     /**
@@ -790,125 +716,5 @@ public final class NetTests {
                 h.succeed();
             }
         });
-    }
-
-    /**
-     * UI-06.3: the queue a seated mock player receives is the server's: at the tick of each {@code building_state}, the
-     * centre's queue and its head's progress equal what the core held then.
-     */
-    @StrategosTest(timeoutTicks = 600)
-    public static void theQueueReachesItsOwnerAsTheServerHasIt(GameTestHelper h) {
-        MatchRuntime rt = match(h);
-        ProdTests.town(rt);
-        MockViewer owner = BuildingTests.seated(h, rt, "strategos-queue", 0);
-        java.util.Map<Long, String> server = new java.util.HashMap<>();
-        rt.addListener(out -> {
-            var q = core(rt).queries();
-            for (var b : q.buildings()) {
-                server.put(q.tick(), b.queue() + " " + b.trained());
-            }
-        });
-        h.startSequence()
-                .thenWaitUntil(() -> check(!core(rt).queries().buildings().isEmpty(), "no centre yet"))
-                .thenExecute(() -> {
-                    int centre = ProdTests.centre(rt).handle();
-                    for (int k = 0; k < 3; k++) {
-                        rt.submit(ProdTests.P0, new dev.strategos.core.protocol.Train(centre, TemplateSet.WORKER));
-                    }
-                })
-                .thenExecuteAfter(160, () -> {
-                    List<dev.strategos.core.protocol.BuildingState> got = BuildingTests.states(owner, rt);
-                    int matched = 0;
-                    boolean midway = false;
-                    for (var state : got) {
-                        var e = state.buildings().get(0);
-                        String expected = server.get(state.tick());
-                        if (expected == null || e.queue().isEmpty()) {
-                            continue;
-                        }
-                        check(
-                                (e.queue() + " " + e.trained()).equals(expected),
-                                "at tick " + state.tick() + " the owner got " + e.queue() + " " + e.trained()
-                                        + ", the server held " + expected);
-                        matched++;
-                        midway |= e.queue().size() >= 2 && e.trained() > 0 && e.trained() < 1000;
-                    }
-                    check(matched >= 3, "only " + matched + " states with a queue matched, of " + got.size());
-                    check(midway, "no state caught a head in training with more behind it");
-                    owner.close();
-                })
-                .thenSucceed();
-    }
-
-    /**
-     * UI-07.3: each {@code faction_state} a seated mock player receives is the server's at its tick, the workers per
-     * resource and the idle ones included: one worker on an oak, one on a bush, one idle.
-     */
-    @StrategosTest(batch = "eco_gather", timeoutTicks = 1_200)
-    public static void factionStateEqualsTheServer(GameTestHelper h) {
-        for (int y = 2; y <= 4; y++) {
-            h.setBlock(new BlockPos(6, y, 6), net.minecraft.world.level.block.Blocks.OAK_LOG);
-        }
-        BlockPos bush = new BlockPos(6, 2, 26);
-        h.setBlock(bush.below(), net.minecraft.world.level.block.Blocks.DIRT);
-        h.setBlock(bush, net.minecraft.world.level.block.Blocks.SWEET_BERRY_BUSH);
-        MatchRuntime rt = MatchFixture.create(h, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
-        rt.submit(PlayerSlot.ADMIN, new SpawnBuilding(ProdTests.CIVIC_CENTRE, new FactionSlot(0), 14, 10, 0));
-        EcoTests.workers(rt, 10, 16, 3);
-        java.util.Map<Long, dev.strategos.core.protocol.FactionState> server = new java.util.HashMap<>();
-        rt.addListener(out -> {
-            var q = core(rt).queries();
-            server.put(
-                    q.tick(),
-                    dev.strategos.core.sim.replicate.ReplicationService.factionState(
-                            q, rt.id().value(), new FactionSlot(0)));
-        });
-        // the seat's first state goes out at once, before any tick: recorded as the core stands now
-        server.put(
-                core(rt).queries().tick(),
-                dev.strategos.core.sim.replicate.ReplicationService.factionState(
-                        core(rt).queries(), rt.id().value(), new FactionSlot(0)));
-        MockViewer owner = BuildingTests.seated(h, rt, "strategos-fstate", 0);
-        int y = h.absolutePos(bush).getY();
-        h.startSequence()
-                .thenWaitUntil(
-                        () -> check(handles(rt).length == 3 && EcoTests.nodeAt(rt, 6.5, 6.5) != null, "not ready yet"))
-                .thenExecute(() -> {
-                    int[] units = handles(rt);
-                    rt.submit(PlayerSlot.ADMIN, Gather.replace(UnitSet.of(units[0]), 6, y + 1, 6));
-                    rt.submit(PlayerSlot.ADMIN, Gather.replace(UnitSet.of(units[1]), 6, y, 26));
-                })
-                .thenExecuteAfter(700, () -> {
-                    owner.poll();
-                    List<dev.strategos.core.protocol.FactionState> got = new ArrayList<>();
-                    for (var p : owner.capture()
-                            .of(net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket.class)) {
-                        if (p.payload() instanceof dev.strategos.mod.server.net.payload.FactionStatePayload f
-                                && f.state().matchId() == rt.id().value()) {
-                            got.add(f.state());
-                        }
-                    }
-                    int split = 0;
-                    for (var state : got) {
-                        var expected = server.get(state.tick());
-                        check(expected != null, "no server state at tick " + state.tick());
-                        check(
-                                state.sameAs(expected) && state.tick() == expected.tick(),
-                                "at tick " + state.tick() + " the owner got " + state + ", the server held "
-                                        + expected);
-                        if (state.workers().get(0) == 1 && state.workers().get(1) == 1 && state.idleWorkers() == 1) {
-                            split++;
-                        }
-                    }
-                    check(
-                            got.size() >= 3,
-                            "only " + got.size() + " faction states"); // sent when they change: on deliveries
-                    check(
-                            split > 0,
-                            "no state counted one on wood, one on food and one idle: " + got.get(got.size() - 1));
-                    check(got.get(got.size() - 1).gathered().get(1) > 0, "no wood came home");
-                    owner.close();
-                })
-                .thenSucceed();
     }
 }

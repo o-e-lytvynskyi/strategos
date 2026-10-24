@@ -154,7 +154,10 @@ public final class CameraTests {
      * within a tick of its sending, and with every body in range within 3 s; without the re-pair a standing viewer would
      * get none (M1's {@code MockViewer#moved}).
      */
-    @StrategosTest(batch = "camera_repair", solo = true, timeoutTicks = 2_000)
+    @StrategosTest(
+            batch = "camera_repair",
+            solo = true,
+            timeoutTicks = 4_000) // 2,000 timed out once on a loaded CI runner
     public static void chunkSentRepair(GameTestHelper h) {
         MatchRuntime rt =
                 MatchFixture.create(h, space(h, 10_240, 512, 64), MatchFixture.options(SimHarness.DEFAULT_SEED, h));

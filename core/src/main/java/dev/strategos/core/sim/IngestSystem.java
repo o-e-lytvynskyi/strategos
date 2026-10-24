@@ -55,7 +55,7 @@ final class IngestSystem implements MatchSystem {
                 case ExternalDamage damage -> state.queueDamage(packet(damage));
                 case JobDelivery delivery -> state.addDelivery(delivery);
                 case ContentSwap swap -> state.swapTemplates(swap.set());
-                case LeaderUpdate leader -> state.setLeader(leader);
+                case LeaderUpdate leader -> state.leaders().set(leader);
             }
         }
         state.publishAll(pages);

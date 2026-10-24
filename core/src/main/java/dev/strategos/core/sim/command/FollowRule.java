@@ -51,10 +51,12 @@ final class FollowRule implements CommandRule<Follow> {
         for (int k = 0; k < n; k++) {
             int handle = taking[k];
             int i = Handle.index(handle);
-            double x =
-                    state.leads(leader) ? state.leaderX(leader) : state.motion().x(i);
-            double z =
-                    state.leads(leader) ? state.leaderZ(leader) : state.motion().z(i);
+            double x = state.leaders().leads(leader)
+                    ? state.leaders().x(leader)
+                    : state.motion().x(i);
+            double z = state.leaders().leads(leader)
+                    ? state.leaders().z(leader)
+                    : state.motion().z(i);
             int before = orders.size(i);
             boolean joined = switch (follow.mode()) {
                 case REPLACE -> {

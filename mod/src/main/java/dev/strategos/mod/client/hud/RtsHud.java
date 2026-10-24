@@ -1,6 +1,5 @@
 package dev.strategos.mod.client.hud;
 
-import dev.strategos.core.client.camera.CameraRig;
 import dev.strategos.core.client.hud.CardController;
 import dev.strategos.core.client.hud.CommandCard;
 import dev.strategos.core.client.hud.EconomyNotices;
@@ -14,16 +13,13 @@ import dev.strategos.core.client.hud.ResourceBar;
 import dev.strategos.core.client.hud.SelectionPanel;
 import dev.strategos.core.client.hud.SelectionSummary;
 import dev.strategos.core.client.pick.Picking;
-import dev.strategos.core.client.pick.View;
 import dev.strategos.core.client.select.Selection;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.FactionState;
 import dev.strategos.core.protocol.FeedbackMsg;
-import dev.strategos.core.protocol.MatchControl;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.MatchNews;
-import dev.strategos.core.protocol.MatchStateMsg;
 import dev.strategos.core.protocol.UiQuery;
 import dev.strategos.core.protocol.UnitDetail;
 import dev.strategos.core.protocol.UnitHud;
@@ -45,11 +41,9 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
@@ -103,17 +97,18 @@ public final class RtsHud {
 
     private final RtsMode mode;
     private final HudTheme theme = HudTheme.DEFAULT;
+    private final HudPaint paint = new HudPaint();
+    private final HudBanners banners = new HudBanners(paint);
     private SelectionSummary summary = SelectionSummary.EMPTY;
     private SelectionPanel panel = SelectionPanel.EMPTY;
     private CommandCard card = CommandCard.EMPTY;
     private final CardController controller = new CardController();
     private CommandCard.@Nullable Button hovered;
-    private final Map<String, ItemStack> icons = new HashMap<>();
     private GroupBar bar = new GroupBar(List.of());
     private @Nullable Tooltip tooltip;
     private final Income income = new Income();
     private ResourceBar resources = ResourceBar.EMPTY;
-    private List<Segment> segments = List.of();
+    private List<ResourceBarSegments.Segment> segments = List.of();
     private @Nullable String barHover;
     private final EconomyNotices notices = new EconomyNotices();
     private List<EconomyNotices.Shown> shownNotices = List.of();
@@ -122,9 +117,6 @@ public final class RtsHud {
     private int alertsHeard;
     private int wavesHeard;
     private long alertAt = -1_000_000;
-
-    /** One part of the resource bar: where it is, its icon (null for none), its text and colour, and its tooltip. */
-    record Segment(HudRect at, @Nullable String icon, String text, int colour, String tooltip) {}
 
     private @Nullable Inspect inspect;
     private long buildNanos;
@@ -199,7 +191,7 @@ public final class RtsHud {
             }
             return true;
         }
-        List<Segment> parts = segments;
+        List<ResourceBarSegments.Segment> parts = segments;
         if (!parts.isEmpty() && l.resourceBar().contains(x, y)) {
             if (button == 0 && parts.get(parts.size() - 1).at().contains(x, y)) {
                 mode.nextIdleWorker(); // the idle count is the idle-worker button
@@ -352,9 +344,9 @@ public final class RtsHud {
         }
         shownNotices = notices.shown(clientTicks);
         resources = ResourceBar.of(faction, StrategosClient.resources(), income);
-        segments = segments(mc.font, layout().resourceBar(), resources);
+        segments = ResourceBarSegments.of(mc.font, layout().resourceBar(), resources);
         barHover = null;
-        for (Segment s : segments) {
+        for (ResourceBarSegments.Segment s : segments) {
             if (s.at().contains(gui[0], gui[1])) {
                 barHover = s.tooltip();
             }
@@ -369,209 +361,24 @@ public final class RtsHud {
         return resources;
     }
 
-    /**
-     * The bar's parts, left to right: each resource's icon and stock, with its income a minute where all of them fit,
-     * the population (red at its cap) and the idle workers.
-     */
-    private static List<Segment> segments(Font font, HudRect bar, ResourceBar b) {
-        for (boolean incomes : new boolean[] {true, false}) {
-            List<Segment> out = new ArrayList<>();
-            int x = bar.x() + 3;
-            for (ResourceBar.Entry e : b.resources()) {
-                String text =
-                        incomes && e.perMinute() > 0 ? e.stock() + " +" + e.perMinute() : String.valueOf(e.stock());
-                int w = 10 + font.width(text);
-                out.add(new Segment(
-                        new HudRect(x, bar.y(), w, bar.height()),
-                        resourceIcon(e.id()),
-                        text,
-                        HudTheme.DEFAULT.text(),
-                        e.id() + ": " + e.stock() + " · " + e.perMinute() + " a minute · " + e.workers()
-                                + " gathering"));
-                x += w + 6;
-            }
-            String pop = b.populationUsed() + "/" + b.populationCap();
-            int pw = 10 + font.width(pop);
-            out.add(new Segment(
-                    new HudRect(x, bar.y(), pw, bar.height()),
-                    "minecraft:player_head",
-                    pop,
-                    b.capped() ? 0xFFFF6060 : HudTheme.DEFAULT.text(),
-                    b.capped() ? "Population " + pop + ": build houses to train more" : "Population " + pop));
-            x += pw + 6;
-            String idle = String.valueOf(b.idleWorkers());
-            int iw = 10 + font.width(idle);
-            out.add(new Segment(
-                    new HudRect(x, bar.y(), iw, bar.height()),
-                    "minecraft:wooden_axe",
-                    idle,
-                    b.idleWorkers() > 0 ? HudTheme.DEFAULT.accent() : HudTheme.DEFAULT.dimText(),
-                    b.idleWorkers() + " idle workers"));
-            x += iw;
-            if (x <= bar.right() || !incomes) {
-                return out;
-            }
-        }
-        return List.of();
-    }
-
-    /** A resource's icon, by its id: the item a player knows it by. */
-    private static String resourceIcon(String id) {
-        return switch (id) {
-            case "food" -> "minecraft:apple";
-            case "wood" -> "minecraft:oak_log";
-            case "stone" -> "minecraft:cobblestone";
-            case "iron" -> "minecraft:iron_ingot";
-            default -> "minecraft:paper";
-        };
-    }
-
     private void drawResources(GuiGraphics g, DeltaTracker delta) {
-        List<Segment> parts = segments;
+        List<ResourceBarSegments.Segment> parts = segments;
         if (!shown() || parts.isEmpty() || resources.resources().isEmpty()) {
             return;
         }
         Font font = Minecraft.getInstance().font;
-        panel(g, layout().resourceBar());
-        for (Segment s : parts) {
+        paint.panel(g, layout().resourceBar());
+        for (ResourceBarSegments.Segment s : parts) {
             if (s.icon() != null) {
-                small(g, s.icon(), s.at().x(), s.at().y() + 2);
+                paint.small(g, s.icon(), s.at().x(), s.at().y() + 2);
             }
             g.drawString(font, s.text(), s.at().x() + 10, s.at().y() + 2, s.colour(), false);
         }
     }
 
-    /** The newest notices, right-aligned in the notices' strip, the newest nearest the corner. */
-    private void drawNotices(GuiGraphics g, DeltaTracker delta) {
-        List<EconomyNotices.Shown> shown = shownNotices;
-        boolean alerted = clientTicks - alertAt < 100;
-        MatchNews coming = StrategosClient.model().wave();
-        boolean waveOn =
-                coming != null && coming.ticks() > StrategosClient.model().tick();
-        if (!shown() || (shown.isEmpty() && !alerted && !waveOn)) {
-            return;
-        }
-        Font font = Minecraft.getInstance().font;
-        HudRect r = layout().notices();
-        int x = r.right();
-        MatchNews wave = StrategosClient.model().wave();
-        MatchJoin joined = StrategosClient.match();
-        long matchTick = StrategosClient.model().tick();
-        if (wave != null && joined != null && wave.faction() != joined.slot().value() && wave.ticks() > matchTick) {
-            String text = "Attack coming: " + (wave.ticks() - matchTick + 19) / 20 + " s"; // AI-17's countdown
-            int w = font.width(text) + 2 * theme.padding();
-            x -= w;
-            panel(g, new HudRect(x, r.y(), w, r.height()));
-            g.drawString(font, text, x + theme.padding(), r.y() + 2, 0xFFFFB040, false);
-            x -= 2;
-        }
-        if (alerted) { // UI-12: the newest alert first, in red
-            String text = "Under attack! (J)";
-            int w = font.width(text) + 2 * theme.padding();
-            x -= w;
-            panel(g, new HudRect(x, r.y(), w, r.height()));
-            g.drawString(font, text, x + theme.padding(), r.y() + 2, 0xFFFF4040, false);
-            x -= 2;
-        }
-        for (EconomyNotices.Shown s : shown) {
-            String text = switch (s.cause()) {
-                case NOT_ENOUGH_RESOURCES -> "Not enough " + s.detail();
-                case POPULATION_CAPPED -> "Population capped: build houses";
-                case DEPOSIT_EXHAUSTED -> s.count() > 1 ? "Workers idle (" + s.count() + ")" : "A worker is idle";
-            };
-            int w = font.width(text) + 2 * theme.padding();
-            if (x - w < r.x()) {
-                break;
-            }
-            x -= w;
-            panel(g, new HudRect(x, r.y(), w, r.height()));
-            g.drawString(
-                    font,
-                    text,
-                    x + theme.padding(),
-                    r.y() + 2,
-                    s.cause() == EconomyNotices.Cause.DEPOSIT_EXHAUSTED ? theme.text() : 0xFFFF9060,
-                    false);
-            x -= 2;
-        }
-    }
-
-    /**
-     * The end screen (MATCH-01): once the match is over, a panel in the middle of the window says whether the
-     * player's faction won, who did, and how long the match lasted. It stays until the player leaves the match.
-     */
-    private void drawEnd(GuiGraphics g, DeltaTracker delta) {
-        MatchNews end = StrategosClient.model().end();
-        MatchJoin join = StrategosClient.match();
-        Minecraft mc = Minecraft.getInstance();
-        if (join != null && end == null && !mc.options.hideGui) {
-            drawPace(g, mc);
-        }
-        if (end == null || join == null || mc.options.hideGui) {
-            return;
-        }
-        Font font = mc.font;
-        int own = join.slot().value();
-        String title = end.faction() == own ? "Victory" : end.faction() < 0 ? "The match is over" : "Defeat";
-        String winner = end.faction() < 0 ? "Nobody won" : "Faction " + (end.faction() + 1) + " wins";
-        long seconds = end.ticks() / 20;
-        String time = "After " + seconds / 60 + ":" + String.format(java.util.Locale.ROOT, "%02d", seconds % 60);
-        int w = Math.max(font.width(winner), font.width(time)) + 40;
-        int h = 3 * font.lineHeight + 24;
-        int x = (mc.getWindow().getGuiScaledWidth() - w) / 2;
-        int y = (mc.getWindow().getGuiScaledHeight() - h) / 3;
-        panel(g, new HudRect(x, y, w, h));
-        g.pose().pushPose();
-        g.pose().translate(x + w / 2.0, y + 6, 0);
-        g.pose().scale(2, 2, 1);
-        g.drawString(
-                font, title, -font.width(title) / 2, 0, end.faction() == own ? theme.accent() : theme.text(), true);
-        g.pose().popPose();
-        int line = y + 8 + 2 * font.lineHeight;
-        if (end.faction() >= 0) {
-            g.fill(
-                    x + (w - font.width(winner)) / 2 - 10,
-                    line,
-                    x + (w - font.width(winner)) / 2 - 3,
-                    line + 7,
-                    theme.faction(end.faction()));
-        }
-        g.drawString(font, winner, x + (w - font.width(winner)) / 2, line, theme.text(), false);
-        g.drawString(font, time, x + (w - font.width(time)) / 2, line + font.lineHeight + 2, theme.dimText(), false);
-    }
-
     /** The minimap's pixel of match-local column ({@code x}, {@code z}), ARGB, for scenarios; 0 for none. */
     public int minimapPixel(int x, int z) {
         return minimap.pixel(x, z);
-    }
-
-    /** Paused, a banner at the top; another speed than normal, it beside the notices (MATCH-05). */
-    private void drawPace(GuiGraphics g, Minecraft mc) {
-        Font font = mc.font;
-        MatchStateMsg state = StrategosClient.state();
-        int w = mc.getWindow().getGuiScaledWidth();
-        if (state != null && state.lifecycle() == MatchStateMsg.Lifecycle.PAUSED) {
-            String text = "Paused (F9)";
-            int tw = font.width(text) * 2;
-            int y = layout().resourceBar().bottom() + 8;
-            panel(g, new HudRect((w - tw) / 2 - 6, y - 4, tw + 12, font.lineHeight * 2 + 6));
-            g.pose().pushPose();
-            g.pose().translate(w / 2.0, y, 0);
-            g.pose().scale(2, 2, 1);
-            g.drawString(font, text, -font.width(text) / 2, 0, theme.accent(), true);
-            g.pose().popPose();
-        }
-        float rate = mc.level == null ? 20 : mc.level.tickRateManager().tickrate();
-        if (rate != 20) {
-            String text = "Speed ×"
-                    + (rate / 20 == MatchControl.SLOW
-                            ? "0.5"
-                            : rate / 20 == MatchControl.FAST ? "1.5" : String.valueOf(rate / 20));
-            HudRect r = layout().notices();
-            int tw = font.width(text) + 2 * theme.padding();
-            panel(g, new HudRect(r.right() - tw, r.bottom() + 2, tw, r.height()));
-            g.drawString(font, text, r.right() - tw + theme.padding(), r.bottom() + 4, theme.text(), false);
-        }
     }
 
     /** The HUD's ticks so far: what its blinking and fading count in, for a scenario that frames them. */
@@ -593,88 +400,6 @@ public final class RtsHud {
         }
         mode.centreOn(join.originX() + alert.x(), join.originZ() + alert.z());
         return true;
-    }
-
-    /**
-     * The minimap (UI-11): the terrain image scaled into the HUD's square, buildings and units as dots in their
-     * factions' colours, the latest alert as a red ring for its first seconds, and the camera's frame.
-     */
-    private void drawMinimap(GuiGraphics g, DeltaTracker delta) {
-        MatchJoin join = StrategosClient.match();
-        if (!shown() || join == null || !minimap.ready()) {
-            return;
-        }
-        HudRect r = layout().minimap();
-        panel(g, r);
-        g.flush(); // the panel's fill is batched: drawn later, it would cover the image
-        Minimap m = new Minimap(r, join.sizeX(), join.sizeZ());
-        double[] o = m.origin();
-        double s = m.scale();
-        g.blit(
-                RtsMinimap.TEXTURE,
-                (int) Math.round(o[0]),
-                (int) Math.round(o[1]),
-                (int) Math.round(join.sizeX() * s),
-                (int) Math.round(join.sizeZ() * s),
-                0,
-                0,
-                join.sizeX(),
-                join.sizeZ(),
-                join.sizeX(),
-                join.sizeZ());
-        for (Minimap.Dot d : m.dots(
-                StrategosClient.model().units(), StrategosClient.model().buildings(), StrategosClient.templates())) {
-            int x0 = (int) Math.floor(d.x());
-            int y0 = (int) Math.floor(d.y());
-            g.fill(
-                    x0,
-                    y0,
-                    x0 + Math.max(1, (int) Math.round(d.w())),
-                    y0 + Math.max(1, (int) Math.round(d.h())),
-                    theme.faction(d.faction()));
-        }
-        MatchNews alert = StrategosClient.model().alert();
-        if (alert != null && clientTicks - alertAt < 200 && (clientTicks / 5) % 2 == 0) {
-            double[] p = m.toMap(alert.x(), alert.z());
-            g.renderOutline((int) p[0] - 4, (int) p[1] - 4, 9, 9, 0xFFFF3030);
-        }
-        CameraRig rig = mode.rig();
-        View view = mode.view();
-        if (rig != null && view != null) {
-            double[] f = Minimap.frame(view, rig.pose().y() - rig.height(), join.originX(), join.originZ());
-            double minX = Double.MAX_VALUE;
-            double minY = Double.MAX_VALUE;
-            double maxX = -Double.MAX_VALUE;
-            double maxY = -Double.MAX_VALUE;
-            for (int k = 0; k < 4; k++) {
-                double[] p = m.toMap(
-                        Math.max(0, Math.min(join.sizeX(), f[2 * k])),
-                        Math.max(0, Math.min(join.sizeZ(), f[2 * k + 1])));
-                minX = Math.min(minX, p[0]);
-                minY = Math.min(minY, p[1]);
-                maxX = Math.max(maxX, p[0]);
-                maxY = Math.max(maxY, p[1]);
-            }
-            g.renderOutline(
-                    (int) minX,
-                    (int) minY,
-                    Math.max(2, (int) (maxX - minX)),
-                    Math.max(2, (int) (maxY - minY)),
-                    0xFFFFFFFF);
-        }
-    }
-
-    /** An item at half size, 8 pixels, its corner at ({@code x}, {@code y}). */
-    private void small(GuiGraphics g, String id, int x, int y) {
-        ItemStack stack = stack(id);
-        if (stack.isEmpty()) {
-            return;
-        }
-        g.pose().pushPose();
-        g.pose().translate(x, y, 0);
-        g.pose().scale(0.5f, 0.5f, 1);
-        g.renderItem(stack, 0, 0);
-        g.pose().popPose();
     }
 
     /** One unit's details: the one own unit selected, from its {@code unit_detail}, or the enemy inspected. */
@@ -797,7 +522,7 @@ public final class RtsHud {
         TemplateSet templates = StrategosClient.templates();
         HudRect r = layout().selectionPanel();
         int pad = theme.padding();
-        panel(g, r);
+        paint.panel(g, r);
         switch (p.kind()) {
             case TYPES -> {
                 int capacity = SelectionPanel.typeCapacity(r, pad);
@@ -823,8 +548,8 @@ public final class RtsHud {
             case UNIT -> {
                 SelectionPanel.Unit u = java.util.Objects.requireNonNull(p.unit());
                 icon(g, font, templates, u.template(), SelectionPanel.icon(r, pad));
-                text(g, font, r, 0, name(templates, u.template()), theme.faction(u.faction()));
-                text(
+                paint.text(g, font, r, 0, name(templates, u.template()), theme.faction(u.faction()));
+                paint.text(
                         g,
                         font,
                         r,
@@ -840,7 +565,7 @@ public final class RtsHud {
                         state += " · " + u.load() / 1000 + " "
                                 + (u.carried() < resources.size() ? resources.get(u.carried()) : "?");
                     }
-                    text(g, font, r, 2, state, theme.dimText());
+                    paint.text(g, font, r, 2, state, theme.dimText());
                 }
             }
             case BUILDING -> drawBuilding(g, font, templates, r, pad, java.util.Objects.requireNonNull(p.building()));
@@ -852,18 +577,18 @@ public final class RtsHud {
     private void drawBuilding(
             GuiGraphics g, Font font, TemplateSet templates, HudRect r, int pad, BuildingState.Entry b) {
         icon(g, font, templates, b.template(), SelectionPanel.icon(r, pad));
-        text(g, font, r, 0, name(templates, b.template()), theme.faction(b.faction()));
+        paint.text(g, font, r, 0, name(templates, b.template()), theme.faction(b.faction()));
         String state = switch (b.state()) {
             case 0 -> "Foundation";
             case 1 -> "Building " + b.progress() / 10 + " %";
             default -> Math.round(100.0 * b.health() / UnitHud.WHOLE) + " % HP";
         };
-        text(g, font, r, 1, b.rally() ? state + " · rally set" : state, theme.text());
+        paint.text(g, font, r, 1, b.rally() ? state + " · rally set" : state, theme.text());
         if (b.fieldLeft() >= 0) {
             String crop = b.fieldRipening() > 0
                     ? "Ripening, " + (b.fieldRipening() + 19) / 20 + " s"
                     : b.fieldLeft() > 0 ? b.fieldLeft() / 1000 + " food left" : "Empty: reseed it";
-            text(g, font, r, 2, crop, theme.dimText());
+            paint.text(g, font, r, 2, crop, theme.dimText());
             return;
         }
         for (int k = 0; k < b.queue().size(); k++) {
@@ -887,7 +612,7 @@ public final class RtsHud {
         TemplateSet templates = StrategosClient.templates();
         HudRect r = layout().commandCard();
         int pad = theme.padding();
-        panel(g, r);
+        paint.panel(g, r);
         for (CommandCard.Button b : c.buttons()) {
             HudRect cell = CommandCard.cell(r, pad, b.slot());
             g.fill(
@@ -898,10 +623,10 @@ public final class RtsHud {
                     b.equals(hovered) ? theme.accent() & 0x60FFFFFF : 0x40FFFFFF);
             switch (b.kind()) {
                 case TRAIN, BUILD -> icon(g, font, templates, b.template(), cell);
-                case RESEED -> item(g, "minecraft:wheat_seeds", cell);
-                case BUILD_PAGE -> item(g, "minecraft:bricks", cell);
-                case BACK -> item(g, "minecraft:arrow", cell);
-                case STOP -> item(g, "minecraft:barrier", cell);
+                case RESEED -> paint.item(g, "minecraft:wheat_seeds", cell);
+                case BUILD_PAGE -> paint.item(g, "minecraft:bricks", cell);
+                case BACK -> paint.item(g, "minecraft:arrow", cell);
+                case STOP -> paint.item(g, "minecraft:barrier", cell);
             }
             if (!b.affordable()) {
                 g.fill(cell.x(), cell.y(), cell.right(), cell.bottom(), 0x90400000);
@@ -932,17 +657,11 @@ public final class RtsHud {
         return text.toString();
     }
 
-    private void text(GuiGraphics g, Font font, HudRect r, int line, String text, int colour) {
-        int[] at = SelectionPanel.line(r, theme.padding(), line);
-        String fitted = font.plainSubstrByWidth(text, r.right() - theme.padding() - at[0]);
-        g.drawString(font, fitted, at[0], at[1], colour, false);
-    }
-
     /** Template {@code template}'s icon centred in {@code cell}, or its name's first letter when it has none. */
     private void icon(GuiGraphics g, Font font, TemplateSet templates, int template, HudRect cell) {
         String id = CommandCard.icon(templates, template);
         if (id != null) {
-            item(g, id, cell);
+            paint.item(g, id, cell);
         } else {
             String letter = name(templates, template).substring(0, 1);
             g.drawString(
@@ -953,27 +672,6 @@ public final class RtsHud {
                     theme.text(),
                     false);
         }
-    }
-
-    private void item(GuiGraphics g, String id, HudRect cell) {
-        ItemStack stack = stack(id);
-        if (stack.isEmpty()) {
-            return;
-        }
-        int scale = Math.max(1, (Math.min(cell.width(), cell.height()) - 2) / 16); // whole multiples stay crisp
-        int size = 16 * scale;
-        g.pose().pushPose();
-        g.pose().translate(cell.x() + (cell.width() - size) / 2.0, cell.y() + (cell.height() - size) / 2.0, 0);
-        g.pose().scale(scale, scale, 1);
-        g.renderItem(stack, 0, 0);
-        g.pose().popPose();
-    }
-
-    private ItemStack stack(String id) {
-        return icons.computeIfAbsent(id, k -> {
-            ResourceLocation rl = ResourceLocation.tryParse(k);
-            return rl == null ? ItemStack.EMPTY : new ItemStack(BuiltInRegistries.ITEM.get(rl));
-        });
     }
 
     /** The cursor in GUI pixels, as Minecraft turns window points into a screen's mouse position. */
@@ -989,27 +687,8 @@ public final class RtsHud {
     }
 
     private void drawGroups(GuiGraphics g, DeltaTracker delta) {
-        GroupBar b = bar;
-        if (shown() && !b.slots().isEmpty()) {
-            Font font = Minecraft.getInstance().font;
-            HudRect r = layout().groupBar();
-            int x = r.x();
-            for (GroupBar.Slot slot : b.slots()) {
-                String text = slot.digit() + ": " + slot.count();
-                int w = font.width(text) + 2 * theme.padding();
-                if (x + w > r.right()) {
-                    break;
-                }
-                panel(g, new HudRect(x, r.y(), w, r.height()));
-                g.drawString(
-                        font,
-                        text,
-                        x + theme.padding(),
-                        r.y() + (r.height() - font.lineHeight) / 2 + 1,
-                        theme.text(),
-                        false);
-                x += w + 2;
-            }
+        if (shown()) {
+            banners.groups(g, bar);
         }
     }
 
@@ -1023,7 +702,7 @@ public final class RtsHud {
             int pad = theme.padding();
             double[] gui = cursorGui(mc);
             HudRect r = layout().tooltip(font.width(bar) + 2 * pad, font.lineHeight + 2 * pad, gui[0], gui[1]);
-            panel(g, r);
+            paint.panel(g, r);
             g.drawString(font, bar, r.x() + pad, r.y() + pad + 1, theme.text(), false);
         }
         if (shown() && b != null) {
@@ -1032,7 +711,7 @@ public final class RtsHud {
             int pad = theme.padding();
             double[] gui = cursorGui(mc);
             HudRect r = layout().tooltip(font.width(text) + 2 * pad, font.lineHeight + 2 * pad, gui[0], gui[1]);
-            panel(g, r);
+            paint.panel(g, r);
             g.drawString(font, text, r.x() + pad, r.y() + pad + 1, b.affordable() ? theme.text() : 0xFFFF8080, false);
         }
         if (shown() && t != null) {
@@ -1049,7 +728,7 @@ public final class RtsHud {
                     * mc.getWindow().getGuiScaledHeight()
                     / mc.getWindow().getScreenHeight();
             HudRect r = layout().tooltip(w, h, x, y);
-            panel(g, r);
+            paint.panel(g, r);
             g.fill(
                     r.x() + pad,
                     r.y() + pad + 1,
@@ -1076,7 +755,7 @@ public final class RtsHud {
         int x = mc.getWindow().getGuiScaledWidth() / 2 + 8;
         int y = mc.getWindow().getGuiScaledHeight() / 2 + 8;
         HudRect r = new HudRect(x, y, w, h);
-        panel(g, r);
+        paint.panel(g, r);
         g.fill(
                 r.x() + pad,
                 r.y() + pad + 1,
@@ -1092,8 +771,19 @@ public final class RtsHud {
         return mode.active() && !Minecraft.getInstance().options.hideGui;
     }
 
-    private void panel(GuiGraphics g, HudRect r) {
-        g.fill(r.x(), r.y(), r.right(), r.bottom(), theme.panel());
-        g.renderOutline(r.x(), r.y(), r.width(), r.height(), theme.border());
+    private void drawNotices(GuiGraphics g, DeltaTracker delta) {
+        if (shown()) {
+            banners.notices(g, shownNotices, clientTicks - alertAt < 100);
+        }
+    }
+
+    private void drawEnd(GuiGraphics g, DeltaTracker delta) {
+        banners.end(g);
+    }
+
+    private void drawMinimap(GuiGraphics g, DeltaTracker delta) {
+        if (shown()) {
+            minimap.draw(g, mode, paint, clientTicks, alertAt);
+        }
     }
 }
