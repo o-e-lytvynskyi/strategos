@@ -382,7 +382,8 @@ reseed). What happens when one runs out?
   2. The owner approves the look and recognises each node and stage (L7, acceptance).
 - **Tests:** L4 (consent), L7 · **Depends on:** ECO-08, ECO-09, ECO-16, D-04 · **Size:** M ·
   **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
+- **Progress:** M4 T20 (2026-10-24): `m4_goldens` frames every node type and stage from 60 blocks (deposits at four quarters and spent, outcrops whole and half mined, fields ripening, full, half and bare, livestock and a carcass) and a selected deposit with its ring, the node's selection marker (spec §1.6 row 24); 1, the goldens with and without Sodium, and 2, your look, wait for T27's consent batch
 
 #### PERF-07 · Economy and construction perf gate
 - **Value:** A busy town never lags.

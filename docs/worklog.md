@@ -9,7 +9,7 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-24 (later) — M4 T1–T19
+## 2026-10-24 (later) — M4 T1–T20
 
 - **M4 T1 · the health check from M3's close.** The four classes over 800 lines split along their seams, with
   every golden frame identical after the HUD's split (`RtsHud`, `MatchState`, `NetTests`, `CrowdSoak`);
@@ -77,6 +77,11 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
   the grid had them, a drop point behind a trunk, and a queued order ended on entry that crashed the unit's machine.
   `NodeDiscoveryBench` had failed since M3 T9 (the map's groves and bushes) unseen, being in no baseline; it runs
   again. The proving ground's wood runs out by minute 8 (STATE item 16).
+- **M4 T20 · ART-02 built, its goldens left for T27.** A selected deposit now has a ring round it on the ground, a
+  quarter-block band in the HUD's accent following the slope. `m4_goldens` lays out every node at its stages and
+  works it there under `/tick sprint` (deposits at four quarters and spent, outcrops whole and half mined, fields
+  ripening, full, half and bare, three animals and a carcass), freezes and frames each group from 60 blocks, then the
+  selected mine with its ring and "750 / 1000"; its first run on this Mac passed, the frames wait for T27.
 
 ## 2026-10-24 — M3 T9–T31, M3 Done; M4 spec
 

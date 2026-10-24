@@ -74,6 +74,7 @@ public final class RtsMode {
     private final RtsOrders orders = new RtsOrders(this);
     private final RtsPlacement placement = new RtsPlacement(this);
     private final RallyMarker rally = new RallyMarker(this);
+    private final NodeMarker nodeMarker = new NodeMarker(this);
     private final IdleWorkers idle = new IdleWorkers();
     /** The idle worker the key took whose body has not arrived yet, its index; -1 for none, and ticks left to wait. */
     private int pendingIdle = -1;
@@ -108,6 +109,7 @@ public final class RtsMode {
         NeoForge.EVENT_BUS.addListener(RenderLevelStageEvent.class, this::onStage);
         NeoForge.EVENT_BUS.addListener(RenderLevelStageEvent.class, placement::render);
         NeoForge.EVENT_BUS.addListener(RenderLevelStageEvent.class, rally::render);
+        NeoForge.EVENT_BUS.addListener(RenderLevelStageEvent.class, nodeMarker::render);
     }
 
     public boolean active() {
@@ -196,6 +198,11 @@ public final class RtsMode {
         if (--pendingIdleTicks <= 0) {
             pendingIdle = -1;
         }
+    }
+
+    /** The selected deposit's marker this frame (ART-02): its band's pieces, match-local; empty if none. */
+    public java.util.List<dev.strategos.core.client.select.NodeRing.Piece> nodeMarkerShown() {
+        return nodeMarker.shown();
     }
 
     /** Where the selected building's rally marker stands this frame (PROD-03.3): world x, ground y, z; null if none. */
