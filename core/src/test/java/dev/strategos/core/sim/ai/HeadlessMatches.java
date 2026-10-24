@@ -66,6 +66,12 @@ public final class HeadlessMatches {
             if (s.failed()) {
                 failed++;
             }
+            for (int f = 0; f < s.foodWaitSeconds().size(); f++) {
+                long wait = s.foodWaitSeconds().get(f);
+                if (wait > HeadlessMatch.FOOD_WAIT_MOST) { // M3 §8.4, reported: AI-02's to meet
+                    System.out.println("  faction " + f + "'s training waited " + wait + " s for food after minute 5");
+                }
+            }
         }
         System.out.println(all.size() - failed + " of " + all.size() + " matches ended with a winner; "
                 + dir.resolve("summary.json"));

@@ -90,6 +90,34 @@ class AiDecisionTest {
         assertThat(sent).as("a flat match has no node: nothing to gather").noneMatch(Gather.class::isInstance);
     }
 
+    /** M3 T31: a placement's REPLACE took the nearest workers off the site they were building, which then stood. */
+    @Test
+    void theNextPlacementLeavesBuildersOnTheirSite() throws Exception {
+        SimHarness h = match(10, 9);
+        h.submit(PlayerSlot.ADMIN, new Grant(new FactionSlot(0), "wood", 600));
+        h.step();
+        PlaceBuilding first = placement(think(h, AiBudget.CAP, new int[1]));
+        h.submit(new PlayerSlot(0), first);
+        h.step();
+        h.step();
+        PlaceBuilding second = placement(think(h, AiBudget.CAP, new int[1])); // a fresh player: the house again
+        assertThat(boxed(second.builders().toArray()))
+                .as("the first site's builders, %s", first.builders())
+                .doesNotContainAnyElementsOf(boxed(first.builders().toArray()));
+    }
+
+    private static PlaceBuilding placement(List<Command> sent) {
+        return sent.stream()
+                .filter(PlaceBuilding.class::isInstance)
+                .map(PlaceBuilding.class::cast)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("no placement in " + sent));
+    }
+
+    private static List<Integer> boxed(int[] handles) {
+        return java.util.Arrays.stream(handles).boxed().toList();
+    }
+
     @Test
     void aThinkNeverExceedsItsCap() throws Exception {
         SimHarness h = match(150, 40);

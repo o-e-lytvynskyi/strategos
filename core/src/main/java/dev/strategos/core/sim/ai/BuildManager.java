@@ -98,7 +98,7 @@ final class BuildManager implements AiModule {
     private static List<Integer> nearestWorkers(AiView view, double x, double z, int n) {
         List<UnitView> workers = new ArrayList<>();
         for (UnitView u : view.units()) {
-            if (view.is(u.template(), "Builder")) {
+            if (view.is(u.template(), "Builder") && !view.building(u)) { // a REPLACE would abandon its site
                 workers.add(u);
             }
         }

@@ -1,7 +1,7 @@
 {
   "card": "PERF-14",
   "scene": "rts_frame: the RTS view (rig height 24, pitch 55) over 2 x 100 debug walkers at render distance 16, window 1280x720 points; windows of 160 ticks with the frame limit off (base, idle, moving, rts) and one at 120 fps for the client tick (rtsCapped)",
-  "command": "./gradlew :mod:runScenario -Pscenario=rts_frame [-Pcompat]",
+  "command": "./gradlew :mod:runScenario -Pscenario=rts_frame [-Pcompat] [-Pframe.units=infantry]",
   "budgets": {
     "frameP50Ms": 16.7,
     "frameP99Ms": 25,
@@ -18,6 +18,249 @@
     "display": "built-in Retina, framebuffer 2560x1440 for the window"
   },
   "results": [
+    {
+      "date": "2026-10-24",
+      "tree": "M3 T30, after 64a2f61",
+      "note": "M3's HUD (resource bar, minimap at four chunks a tick, command card) over the debug walkers; the server now sends the 16 chunks the scene asks for (ScenarioWorld.renderDistance): the results before this one were taken with the server sending 5, the client set to 16",
+      "profiles": {
+        "vanilla": {
+          "mods": "NeoForge 21.1.264 and Strategos",
+          "median": {
+            "frameP50Ms": 3.375,
+            "frameP99Ms": 7.057,
+            "unitsMs": 2.063,
+            "oursMs": 0.649,
+            "clientTickP50Ms": 0.873,
+            "clientTickP99Ms": 1.178,
+            "hudDrawP50Ms": 0.493,
+            "hudDrawP99Ms": 0.6,
+            "hudBuildP50Ms": 0.103,
+            "barsP50Ms": 0.023,
+            "barsP99Ms": 0.04
+          },
+          "runs": [
+            {
+              "frameP50Ms": 3.375,
+              "frameP99Ms": 7.081,
+              "unitsMs": 2.058,
+              "oursMs": 0.649,
+              "clientTickP50Ms": 0.848,
+              "clientTickP99Ms": 1.178,
+              "hudDrawP50Ms": 0.493,
+              "hudDrawP99Ms": 0.6,
+              "hudBuildP50Ms": 0.096,
+              "barsP50Ms": 0.023,
+              "barsP99Ms": 0.04
+            },
+            {
+              "frameP50Ms": 3.344,
+              "frameP99Ms": 6.872,
+              "unitsMs": 2.067,
+              "oursMs": 0.626,
+              "clientTickP50Ms": 0.873,
+              "clientTickP99Ms": 1.111,
+              "hudDrawP50Ms": 0.492,
+              "hudDrawP99Ms": 0.588,
+              "hudBuildP50Ms": 0.103,
+              "barsP50Ms": 0.022,
+              "barsP99Ms": 0.036
+            },
+            {
+              "frameP50Ms": 3.41,
+              "frameP99Ms": 7.057,
+              "unitsMs": 2.063,
+              "oursMs": 0.699,
+              "clientTickP50Ms": 0.894,
+              "clientTickP99Ms": 1.22,
+              "hudDrawP50Ms": 0.504,
+              "hudDrawP99Ms": 0.623,
+              "hudBuildP50Ms": 0.103,
+              "barsP50Ms": 0.023,
+              "barsP99Ms": 0.041
+            }
+          ]
+        },
+        "sodium": {
+          "mods": "NeoForge 21.1.264, Strategos and the -Pcompat set (Sodium, Iris)",
+          "median": {
+            "frameP50Ms": 1.893,
+            "frameP99Ms": 4.424,
+            "unitsMs": 0.407,
+            "oursMs": 0.85,
+            "clientTickP50Ms": 0.954,
+            "clientTickP99Ms": 1.207,
+            "hudDrawP50Ms": 0.08,
+            "hudDrawP99Ms": 0.161,
+            "hudBuildP50Ms": 0.144,
+            "barsP50Ms": 0.011,
+            "barsP99Ms": 0.022
+          },
+          "runs": [
+            {
+              "frameP50Ms": 1.893,
+              "frameP99Ms": 4.424,
+              "unitsMs": 0.394,
+              "oursMs": 0.85,
+              "clientTickP50Ms": 0.955,
+              "clientTickP99Ms": 1.207,
+              "hudDrawP50Ms": 0.078,
+              "hudDrawP99Ms": 0.161,
+              "hudBuildP50Ms": 0.144,
+              "barsP50Ms": 0.011,
+              "barsP99Ms": 0.022
+            },
+            {
+              "frameP50Ms": 1.831,
+              "frameP99Ms": 4.102,
+              "unitsMs": 0.407,
+              "oursMs": 0.778,
+              "clientTickP50Ms": 0.948,
+              "clientTickP99Ms": 1.224,
+              "hudDrawP50Ms": 0.08,
+              "hudDrawP99Ms": 0.153,
+              "hudBuildP50Ms": 0.147,
+              "barsP50Ms": 0.011,
+              "barsP99Ms": 0.022
+            },
+            {
+              "frameP50Ms": 1.913,
+              "frameP99Ms": 4.569,
+              "unitsMs": 0.41,
+              "oursMs": 0.862,
+              "clientTickP50Ms": 0.954,
+              "clientTickP99Ms": 1.161,
+              "hudDrawP50Ms": 0.08,
+              "hudDrawP99Ms": 0.162,
+              "hudBuildP50Ms": 0.142,
+              "barsP50Ms": 0.011,
+              "barsP99Ms": 0.025
+            }
+          ]
+        }
+      }
+    },
+    {
+      "date": "2026-10-24",
+      "tree": "M3 T30, after 64a2f61",
+      "template": "strategos:unit/infantry",
+      "note": "ART-01.5: the same scene with 2 x 100 spearmen, dressed in armour with a trident and a shield (-Pframe.units=infantry). With Sodium every budget holds (units 1.6 ms of 6). Vanilla does not: units 8.9 ms and the outlined hundred 37 ms of our drawing, held items' translucent quads sorted at each batch end and the outline pass drawing armour and items again; the level of detail it needs is named in the M3 spec. The drag selects 88-89 of the hundred: the spearmen stand wider than the walkers the drag was sized for",
+      "profiles": {
+        "vanilla": {
+          "mods": "NeoForge 21.1.264 and Strategos",
+          "median": {
+            "frameP50Ms": 46.903,
+            "frameP99Ms": 50.401,
+            "unitsMs": 8.937,
+            "oursMs": 37.265,
+            "clientTickP50Ms": 2.68,
+            "clientTickP99Ms": 3.723,
+            "hudDrawP50Ms": 0.586,
+            "hudDrawP99Ms": 0.74,
+            "hudBuildP50Ms": 0.117,
+            "barsP50Ms": 0.037,
+            "barsP99Ms": 0.065
+          },
+          "runs": [
+            {
+              "frameP50Ms": 46.903,
+              "frameP99Ms": 50.401,
+              "unitsMs": 9.011,
+              "oursMs": 37.24,
+              "clientTickP50Ms": 3.472,
+              "clientTickP99Ms": 3.761,
+              "hudDrawP50Ms": 0.586,
+              "hudDrawP99Ms": 0.74,
+              "hudBuildP50Ms": 0.115,
+              "barsP50Ms": 0.036,
+              "barsP99Ms": 0.066
+            },
+            {
+              "frameP50Ms": 46.573,
+              "frameP99Ms": 50.343,
+              "unitsMs": 8.658,
+              "oursMs": 37.265,
+              "clientTickP50Ms": 2.68,
+              "clientTickP99Ms": 3.713,
+              "hudDrawP50Ms": 0.592,
+              "hudDrawP99Ms": 0.744,
+              "hudBuildP50Ms": 0.117,
+              "barsP50Ms": 0.037,
+              "barsP99Ms": 0.047
+            },
+            {
+              "frameP50Ms": 46.995,
+              "frameP99Ms": 50.718,
+              "unitsMs": 8.937,
+              "oursMs": 37.406,
+              "clientTickP50Ms": 2.61,
+              "clientTickP99Ms": 3.723,
+              "hudDrawP50Ms": 0.569,
+              "hudDrawP99Ms": 0.697,
+              "hudBuildP50Ms": 0.119,
+              "barsP50Ms": 0.04,
+              "barsP99Ms": 0.065
+            }
+          ]
+        },
+        "sodium": {
+          "mods": "NeoForge 21.1.264, Strategos and the -Pcompat set (Sodium, Iris)",
+          "median": {
+            "frameP50Ms": 3.238,
+            "frameP99Ms": 5.816,
+            "unitsMs": 1.615,
+            "oursMs": 0.998,
+            "clientTickP50Ms": 0.821,
+            "clientTickP99Ms": 1.109,
+            "hudDrawP50Ms": 0.09,
+            "hudDrawP99Ms": 0.185,
+            "hudBuildP50Ms": 0.122,
+            "barsP50Ms": 0.012,
+            "barsP99Ms": 0.029
+          },
+          "runs": [
+            {
+              "frameP50Ms": 3.309,
+              "frameP99Ms": 5.816,
+              "unitsMs": 1.665,
+              "oursMs": 0.998,
+              "clientTickP50Ms": 0.821,
+              "clientTickP99Ms": 1.112,
+              "hudDrawP50Ms": 0.09,
+              "hudDrawP99Ms": 0.191,
+              "hudBuildP50Ms": 0.122,
+              "barsP50Ms": 0.013,
+              "barsP99Ms": 0.029
+            },
+            {
+              "frameP50Ms": 3.238,
+              "frameP99Ms": 5.752,
+              "unitsMs": 1.615,
+              "oursMs": 0.976,
+              "clientTickP50Ms": 0.824,
+              "clientTickP99Ms": 1.109,
+              "hudDrawP50Ms": 0.092,
+              "hudDrawP99Ms": 0.185,
+              "hudBuildP50Ms": 0.121,
+              "barsP50Ms": 0.012,
+              "barsP99Ms": 0.031
+            },
+            {
+              "frameP50Ms": 3.134,
+              "frameP99Ms": 6.177,
+              "unitsMs": 1.473,
+              "oursMs": 1.016,
+              "clientTickP50Ms": 0.81,
+              "clientTickP99Ms": 0.959,
+              "hudDrawP50Ms": 0.089,
+              "hudDrawP99Ms": 0.159,
+              "hudBuildP50Ms": 0.13,
+              "barsP50Ms": 0.012,
+              "barsP99Ms": 0.023
+            }
+          ]
+        }
+      }
+    },
     {
       "date": "2026-10-23",
       "tree": "M2 T17 (health bars), on 857a334",

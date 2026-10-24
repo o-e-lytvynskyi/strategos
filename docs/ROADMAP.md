@@ -339,24 +339,24 @@ Cards: [roadmap/M3-first-loop.md](roadmap/M3-first-loop.md#cards). 27 cards, at 
 | ECO-01 | Resources and treasury | M | CORE-03, NET-01, D-10 | done |
 | ECO-02 | Resource nodes: discovery and index | M | CORE-08, PATH-04, MAP-01 | done |
 | ECO-03 | Woodcutting on real trees, with natural canopy thinning | L | ECO-02, BLD-15, PATH-15 | done |
-| ECO-05 | Gathering, dropsites and berry bushes | L | ECO-01, ECO-02, UNIT-04, BLD-01 | in_progress |
+| ECO-05 | Gathering, dropsites and berry bushes | L | ECO-01, ECO-02, UNIT-04, BLD-01 | done |
 | UNIT-04 | Starting units and the worker model | S | UNIT-02, DATA-04, D-02 | done |
 | BLD-01 | Building records and blueprints | M | CORE-06, DATA-03, PATH-15 | done |
-| AUD-04 | World-edit feedback: cracks, particles and sounds | M | ECO-03, BLD-15, NET-01 | in_progress |
-| BLD-02 | Placement mode and validators | M | BLD-01, CAM-04 | in_progress |
+| AUD-04 | World-edit feedback: cracks, particles and sounds | M | ECO-03, BLD-15, NET-01 | done |
+| BLD-02 | Placement mode and validators | M | BLD-01, CAM-04 | done |
 | BLD-03 | Progressive construction | M | BLD-02, UNIT-04, BLD-15 | done |
 | ECO-06 | Population and housing | S | ECO-01, BLD-01, D-01 | done |
 | ECO-09 | Fields with manual reseed | M | ECO-05, BLD-01 | done |
 | PROD-01 | Production queue | M | BLD-01, ECO-06 | done |
-| PROD-03 | Rally points | S | PROD-01, ECO-05 | in_progress |
-| UI-06 | Selection panel and command card | M | UI-03, PROD-01, BLD-02 | in_progress |
-| UI-07 | Resource bar, population and workers per resource | M | ECO-01, ECO-06, UI-02 | in_progress |
-| UI-10 | Idle-worker key and economy notifications | S | UI-07, ECO-05 | in_progress |
-| ART-01 | Placeholder look and the style guide | M | UNIT-03, BLD-01, D-04 | in_progress |
+| PROD-03 | Rally points | S | PROD-01, ECO-05 | done |
+| UI-06 | Selection panel and command card | M | UI-03, PROD-01, BLD-02 | done |
+| UI-07 | Resource bar, population and workers per resource | M | ECO-01, ECO-06, UI-02 | done |
+| UI-10 | Idle-worker key and economy notifications | S | UI-07, ECO-05 | done |
+| ART-01 | Placeholder look and the style guide | M | UNIT-03, BLD-01, D-04 | done |
 | CMB-03 | Attacking buildings with torches | M | CMB-02, BLD-01, D-12 | done |
-| MATCH-01 | Scenarios, match rules and a first victory | M | CORE-01, DATA-03, MAP-01 | in_progress |
-| UI-11 | Basic minimap | M | UI-02, CAM-03, NET-08, D-16 | in_progress |
-| UI-12 | Under-attack alert with jump key | S | UI-10, MATCH-01 | in_progress |
+| MATCH-01 | Scenarios, match rules and a first victory | M | CORE-01, DATA-03, MAP-01 | done |
+| UI-11 | Basic minimap | M | UI-02, CAM-03, NET-08, D-16 | done |
+| UI-12 | Under-attack alert with jump key | S | UI-10, MATCH-01 | done |
 | MATCH-05 | Pause and game speed | S | CORE-01, CORE-03, D-18 | done |
 | AI-01 | AI player framework | M | CORE-03 | done |
 | AI-17 | Scripted bot with announced waves | M | AI-01, ORD-04, PROD-01, ECO-03, ECO-05, ECO-09, BLD-03 | done |

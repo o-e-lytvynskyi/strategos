@@ -356,7 +356,8 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   10. The owner confirms that tool and load read at that distance (L7, acceptance).
 - **Tests:** L0, L1, L3, L4 (consent), L5, L7 · **Depends on:** ECO-01, ECO-02, UNIT-04, BLD-01 ·
   **Size:** L · **Tier:** T0
-- **Status:** in_progress
+- **Status:** done
+- **Done:** M3 T9, T30: gathering, retargeting, dropsites, thirty workers at one forest, a spearman by data, forage, bushes through the core only, gather and deliver across a save (1–8, spec §1.6 rows 42–44); 2026-10-24 — M3 T30, `m3_goldens` on macOS, identical over two repeats (spec §1.6 row 76): `worker_tool_and_load` (9); the owner's look (10) is the demo's
 
 #### UNIT-04 · Starting units and the worker model
 - **Value:** Workers gather and build, spearmen fight, and who else may gather follows the worker
@@ -417,7 +418,8 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   4. The owner's checklist for chopping, mining and building passes (L7, acceptance).
 - **Tests:** L0, L1, L3, L4 (consent), L7 · **Depends on:** ECO-03, BLD-15, NET-01 · **Size:** M ·
   **Tier:** T0
-- **Status:** in_progress
+- **Status:** done
+- **Done:** M3 T10, T30: world fx reach who sees the cell (1), a 64-placement tick fits the cap (2) (spec §1.6 rows 45–46); 2026-10-24 — M3 T30, `m3_goldens` on macOS, identical over two repeats (spec §1.6 row 76): `log_crack` (3); the owner's checklist (4) is the demo's
 
 ### Slice 3.2 · Building and training
 
@@ -440,7 +442,8 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   4. Goldens for valid and invalid previews (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** BLD-01, CAM-04 · **Size:** M ·
   **Tier:** T0
-- **Status:** in_progress
+- **Status:** done
+- **Done:** M3 T11, T30: the rules and their limits (1), client and server agree (2), a refused placement has its reason (3) (spec §1.6 rows 47–48); 2026-10-24 — M3 T30, `m3_goldens` on macOS, identical over two repeats (spec §1.6 row 76): `placement_valid` and `placement_invalid` (4)
 
 #### BLD-03 · Progressive construction
 - **Value:** Buildings rise block by block, and more builders finish faster, with diminishing
@@ -529,7 +532,8 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   3. The marker shows for the selected building (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** PROD-01, ECO-05 · **Size:** S ·
   **Tier:** T0
-- **Status:** in_progress
+- **Status:** done
+- **Done:** M3 T15, T30: rallied workers gather on arrival (1), the rally point survives save (2) (spec §1.6 rows 50–51); the marker, a flag where `building_state` puts the point, shown for the selected building (`RallyMarker`), 2026-10-24 — M3 T30, `m3_goldens` on macOS, identical over two repeats (spec §1.6 row 76): `select_civic_centre` (3)
 
 #### UI-06 · Selection panel and command card
 - **Value:** See what you selected and act on it: train, build and stop buttons with costs.
@@ -547,8 +551,8 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   4. Goldens for a worker, a civic centre and a barracks selection (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** UI-03, PROD-01, BLD-02 · **Size:** M ·
   **Tier:** T0
-- **Status:** in_progress
-- **Progress:** 2026-10-24 — M3 T17: layouts at every window and scale (1), one click one command and the view-models equal the model (2), the queue a mock player receives is the server's (3) (spec §1.6 rows 54–55); the goldens (4) wait for T30's batch
+- **Status:** done
+- **Done:** M3 T17, T30: layouts at every window and scale (1), one click one command and the view-models equal the model (2), the queue a mock player receives is the server's (3) (spec §1.6 rows 54–55); 2026-10-24 — M3 T30, `m3_goldens` on macOS, identical over two repeats (spec §1.6 row 76): `select_civic_centre`, `select_worker` (4)
 
 #### UI-07 · Resource bar, population and workers per resource
 - **Value:** Know your economy at a glance, the way modern AoE shows it (P2).
@@ -564,8 +568,8 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   4. Goldens (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** ECO-01, ECO-06, UI-02 · **Size:** M ·
   **Tier:** T0
-- **Status:** in_progress
-- **Progress:** 2026-10-24 — M3 T18: income per minute equals a seeded gathered minute (1), the bar equals the model after every state (2), the state a mock player receives is the server's, workers included (3) (spec §1.6 rows 56–57); the goldens (4) wait for T30's batch
+- **Status:** done
+- **Done:** M3 T18, T30: income per minute equals a seeded gathered minute (1), the bar equals the model after every state (2), the state a mock player receives is the server's (3) (spec §1.6 rows 56–57); 2026-10-24 — M3 T30, `m3_goldens` on macOS, identical over two repeats (spec §1.6 row 76): the bar in every frame (4)
 
 #### UI-10 · Idle-worker key and economy notifications
 - **Value:** Never lose track of an idle worker on a big map, or wonder why training stopped (P3).
@@ -578,8 +582,8 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   2. Each notification fires once per cause, not once per tick (L1).
   3. Goldens (L4, consent).
 - **Tests:** L0, L1, L4 (consent) · **Depends on:** UI-07, ECO-05 · **Size:** S · **Tier:** T0
-- **Status:** in_progress
-- **Progress:** 2026-10-24 — M3 T19: the key visits every idle worker in a stable order (1), each notice fires once per cause (2) (spec §1.6 rows 58–59); the goldens (3) wait for T30's batch
+- **Status:** done
+- **Done:** M3 T19, T30: the key visits every idle worker in a stable order (1), each notice fires once per cause (2) (spec §1.6 rows 58–59); 2026-10-24 — M3 T30, `m3_goldens` on macOS, identical over two repeats (spec §1.6 row 76): `idle_worker` (3)
 
 #### ART-01 · Placeholder look and the style guide
 - **Value:** Units and buildings look like Minecraft and show owner and role at a glance, so the
@@ -604,8 +608,8 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
      the numbers feed D-01 and ADR-0019's budget F (L6 client, consent; M3's consent batch).
 - **Tests:** L3, L4 (consent), L6 (client, consent), L7, D · **Depends on:** UNIT-03, BLD-01,
   D-04 · **Size:** M · **Tier:** T0
-- **Status:** in_progress
-- **Progress:** 2026-10-24 — M3 T20: the placeholder blueprints pass the lint and the construction GameTests (1); the style guide with the per-class ranges, checked by `StyleGuideRangesTest` (2); bodies dressed by faction and role (spec §1.6 rows 60–61); the goldens (3) and the armoured frame pass (5) wait for T30's batch, the owner's look (4) for the demo
+- **Status:** done
+- **Done:** M3 T20, T30: the placeholder blueprints pass the lint and the construction GameTests (1); the style guide with the per-class ranges (2) (spec §1.6 rows 60–61); `art_look` on macOS and macOS with Sodium, frozen, identical over two repeats (3); 200 armoured spearmen cost 1.6 ms with Sodium and the client tick 0.82 ms, while vanilla needs the level of detail the spec names (5) (row 77, [perf/client/m4pro.json](../../perf/client/m4pro.json)); the owner's look (4) is the demo's
 
 ### Slice 3.3 · Buildings fall, victory and orientation
 
@@ -649,8 +653,8 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   6. The end screen shows them (L4, consent).
 - **Tests:** L0, L1, L2, L3, L4 (consent) · **Depends on:** CORE-01, DATA-03, MAP-01 · **Size:** M ·
   **Tier:** T0
-- **Status:** in_progress
-- **Progress:** 2026-10-24 — M3 T22: a scenario loads exactly its entities (1); the last centre's fall ends the match the same tick (2); a rule change replays to the same hash (3); no hostile mob spawns inside a match while one outside is left to vanilla (4); `match_event` reaches every participant (5) (spec §1.6 rows 64–65); the end screen's golden (6) waits for T30's batch
+- **Status:** done
+- **Done:** M3 T22, T30: a scenario loads exactly its entities (1); the last centre's fall ends the match the same tick (2); a rule change replays to the same hash (3); no hostile spawns inside a match (4); `match_event` reaches every participant (5) (spec §1.6 rows 64–65); 2026-10-24 — M3 T30, `m3_goldens` on macOS, identical over two repeats (spec §1.6 row 76): `end_screen` (6)
 
 #### UI-11 · Basic minimap
 - **Value:** Find the enemy base and see an attack coming on a 384-block map (P2, P3).
@@ -667,8 +671,8 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   4. A golden confirms the drawing (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** UI-02, CAM-03, NET-08, D-16 · **Size:** M ·
   **Tier:** T1 (pulled into the MVP by D-16)
-- **Status:** in_progress
-- **Progress:** 2026-10-24 — M3 T23: the proving ground's image hashes as stored (1); the mapping is exact (2); a click's jump is answered by the next tick (3) (spec §1.6 rows 66–67); the golden (4) waits for T30's batch
+- **Status:** done
+- **Done:** M3 T23, T30: the proving ground's image hashes as stored (1); the mapping is exact (2); a click's jump is answered by the next tick (3) (spec §1.6 rows 66–67); 2026-10-24 — M3 T30, `m3_goldens` on macOS, identical over two repeats (spec §1.6 row 76): the minimap in every frame (4)
 
 #### UI-12 · Under-attack alert with jump key
 - **Value:** You notice an attack in time, wherever the camera is (P3, P5).
@@ -682,8 +686,8 @@ state serves it). **Needed by:** M3 (MATCH-05). **Affects:** MATCH-05, PERF-09.
   3. A golden of the alert (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** UI-10, MATCH-01 · **Size:** S ·
   **Tier:** T0
-- **Status:** in_progress
-- **Progress:** 2026-10-24 — M3 T24: a sustained attack raises one alert (1); the jump to it is answered (2) (spec §1.6 rows 66–67); the golden (3) waits for T30's batch
+- **Status:** done
+- **Done:** M3 T24, T30: a sustained attack raises one alert (1); the jump to it is answered (2) (spec §1.6 rows 66–67); 2026-10-24 — M3 T30, `m3_goldens` on macOS, identical over two repeats (spec §1.6 row 76): `attack_alert` (3)
 
 #### MATCH-05 · Pause and game speed
 - **Value:** Pause a solo game to think, and play slower or faster.

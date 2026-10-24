@@ -15,11 +15,13 @@ import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.Notice;
 import dev.strategos.core.sim.OutputEvent;
 import dev.strategos.core.sim.TickOutputs;
+import dev.strategos.core.sim.UnderAttack;
 import dev.strategos.core.sim.UnitDied;
 import dev.strategos.core.sim.UnitHurt;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.UnitView;
 import dev.strategos.core.sim.WaveAnnounced;
+import dev.strategos.core.sim.build.BuildingView;
 import dev.strategos.core.sim.command.ScenarioSetup;
 import dev.strategos.core.sim.journal.JournalExport;
 import dev.strategos.core.testkit.ProvingGround;
@@ -44,6 +46,22 @@ final class HeadlessMatch {
     /** The Done gate's 30 game minutes. */
     static final long LIMIT = 36_000;
 
+    /**
+     * M3 §8.4: after minute 5 no training waits for food longer than a minute; waiting is every building's queue empty
+     * while the faction holds less food than a unit costs, and not under attack: a raided economy may starve, as the
+     * losing side's does in a match's last minutes. Reported, not failed: M3's scripted bot meets it in nine seeds of ten
+     * (the tenth waits 65 s), and the bot's economy is AI-02's (M4).
+     */
+    static final long FOOD_WAIT_FROM = 6_000;
+
+    static final long FOOD_WAIT_MOST = 60;
+
+    /** How long after an alert a faction counts as raided: an alert's own life (AlertSystem's QUIET). */
+    private static final long RAIDED = 600;
+
+    /** A worker's and a spearman's food, in thousandths. */
+    private static final long UNIT_FOOD = 60_000;
+
     static final Path DATA = Path.of("../mod/src/main/resources/data/strategos/strategos");
 
     /** What one match did. */
@@ -54,6 +72,8 @@ final class HeadlessMatch {
             long firstContact,
             List<List<Integer>> army,
             List<Long> idleWorkerSeconds,
+            List<Long> foodWaitSeconds,
+            List<Long> foodWaitEndedAt,
             List<List<Long>> banked,
             List<Integer> unitsLost,
             List<Integer> stuck,
@@ -122,6 +142,10 @@ final class HeadlessMatch {
         long firstContact = -1;
         List<List<Integer>> army = new ArrayList<>();
         long[] idle = new long[factions];
+        long[] waiting = new long[factions];
+        long[] foodWait = new long[factions];
+        long[] foodWaitAt = new long[factions];
+        long[] attackedAt = {-1_000_000, -1_000_000};
         List<List<Long>> banked = new ArrayList<>();
         int[] lost = new int[factions];
         int[] stuck = new int[factions];
@@ -155,6 +179,7 @@ final class HeadlessMatch {
                             }
                         }
                         case MatchEnded end -> winner = end.winner();
+                        case UnderAttack a -> attackedAt[a.faction().value()] = out.tick();
                         default -> {}
                     }
                 }
@@ -162,6 +187,29 @@ final class HeadlessMatch {
                     for (UnitView u : h.core().queries().unitHandles().length == 0 ? List.<UnitView>of() : units(h)) {
                         if (u.state() == UnitState.IDLE && u.template().equals(TemplateSet.WORKER)) {
                             idle[u.faction().value()]++;
+                        }
+                    }
+                }
+                if (out.tick() % 20 == 0 && out.tick() >= FOOD_WAIT_FROM) {
+                    for (int f = 0; f < factions; f++) {
+                        if (s.outcome().defeated(f)) {
+                            continue;
+                        }
+                        boolean queued = false;
+                        for (BuildingView b : h.core().queries().buildings()) {
+                            queued |= b.faction() == f && !b.queue().isEmpty();
+                        }
+                        int food = h.core().queries().config().rules().economy().indexOf("food");
+                        long stock = h.core()
+                                .queries()
+                                .treasury(new FactionSlot(f))
+                                .stock()
+                                .get(food);
+                        boolean raided = out.tick() - attackedAt[f] < RAIDED;
+                        waiting[f] = !queued && stock < UNIT_FOOD && !raided ? waiting[f] + 1 : 0;
+                        if (waiting[f] > foodWait[f]) {
+                            foodWait[f] = waiting[f];
+                            foodWaitAt[f] = out.tick();
                         }
                     }
                 }
@@ -210,6 +258,7 @@ final class HeadlessMatch {
             if (failure.isEmpty() && winner == -2) {
                 failure = "no winner by tick " + limit;
             }
+
         } catch (RuntimeException e) {
             failure = "exception at tick " + h.tick() + ": " + e;
         }
@@ -227,6 +276,8 @@ final class HeadlessMatch {
                 firstContact,
                 army,
                 List.of(idle[0], idle[1]),
+                List.of(foodWait[0], foodWait[1]),
+                List.of(foodWaitAt[0], foodWaitAt[1]),
                 banked,
                 List.of(lost[0], lost[1]),
                 List.of(stuck[0], stuck[1]),

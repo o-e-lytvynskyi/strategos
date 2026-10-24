@@ -178,6 +178,12 @@ public final class AiView {
         return false;
     }
 
+    /** Whether {@code u}'s current order is to build: a builder on its way or at work. */
+    public boolean building(UnitView u) {
+        List<OrderQueues.Order> orders = q.orders(u.handle());
+        return !orders.isEmpty() && orders.get(0).kind() == OrderKind.BUILD;
+    }
+
     /** The resource unit {@code u} is set to gather, by its current order, or null when it gathers nothing. */
     public @Nullable String gathering(UnitView u) {
         List<OrderQueues.Order> orders = q.orders(u.handle());
