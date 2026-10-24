@@ -26,7 +26,11 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
 - **Problems met:** tests-first diagonal cases exposed actual narrow-gap body penetration;
   all eight neighbouring columns and pages are now checked. Quote dotted PowerShell
   Gradle parameters to avoid a configuration failure before the task runs.
-- **Next:** T3 analytic shots and ranged attacks, including save/resume and launch/impact FX.
+- **Stop requested:** the owner asked to finish T2 and stop, leaving T3 for the next morning
+  session. T2 is committed as `a545902`. T3 was split into bounded implementation steps in
+  `e8cf0c2`, but no T3 code or tests were written; CMB-04 remains specified.
+- **Next:** T3 analytic shots and ranged attacks, including save/resume and launch/impact FX,
+  on the owner's next instruction. The approved Windows baseline remains valid.
 
 ## 2026-10-25 — M5 T1, Windows test environment
 

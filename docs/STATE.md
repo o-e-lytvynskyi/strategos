@@ -3,7 +3,7 @@
 Where the project stands right now. The session log is in [worklog.md](worklog.md); the work
 procedure is the `strategos-dev` skill (`.claude/skills/strategos-dev/SKILL.md`).
 
-**Last update:** 2026-10-25 · **Owner last seen:** 2026-10-25 · **Current:** M5 Combat started 2026-10-24 on the owner's go-ahead, in `codex/m5-combat`; M1–M4 Done
+**Last update:** 2026-10-25 · **Owner last seen:** 2026-10-25 · **Current:** M5 Combat started 2026-10-24 on the owner's go-ahead, in `codex/m5-combat`; paused after T2 at the owner's request; M1–M4 Done
 
 ## For the owner
 
@@ -170,15 +170,15 @@ Answer in chat or here; the next session applies the answers.
 
 ## Since your last visit
 
-M5 T2 finished after the owner approved the Windows T2 base: mobility classes,
-full movement gates green, original terrain-rebuild cost retained in the report.
+Nothing yet: the owner was here on 2026-10-25 and requested a stop after the completed
+T2. T3 is reserved for the next morning session; no T3 implementation was written.
 
 ## Now
 
 - **Milestone:** M5 Combat, started 2026-10-24 (owner's go-ahead); [spec](milestones/M5-combat.md); 2 of 19 tasks done (T3 split into three bounded steps).
-- **In progress:** M5 T3a since 2026-10-25, analytic shot lifecycle.
+- **In progress:** none; stopped after T2 at the owner's explicit request.
 - **Last finished task:** M5 T2 (2026-10-25), mobility classes and footprints, commit `a545902`; full functional gates and approved Windows JMH comparison passed.
-- **Next task:** M5 T3a · Analytic shot lifecycle.
+- **Next task:** M5 T3a · Analytic shot lifecycle, in the next morning session on the owner's word. Only its implementation split is planned; no T3 code exists yet.
 - **WIP branch:** `codex/m5-combat` (owner-requested isolation; no changes to `main`).
 - **CI:** last checked `main` verify succeeded at `3705118` (run 40119258187); M5 T1–T2 pushed on this branch; monthly usage last recorded about 1,575 of 2,000 minutes.
 - **Overview:** `python3 tools/roadmap.py summary`.
@@ -186,6 +186,7 @@ full movement gates green, original terrain-rebuild cost retained in the report.
 ## Blocked
 
 Nothing. The owner approved item 23 on 2026-10-25 and T2's remaining checks passed.
+Work is paused by the owner's later instruction, not by a failed gate or an open decision.
 
 ## Milestones
 

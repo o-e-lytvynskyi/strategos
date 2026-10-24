@@ -59,7 +59,7 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
   4. A volley in a GameTest damages its target as the L1 run predicts (L3).
   5. Launch and impact `fx` with 300 units fighting fit budget E (L6).
 - **Tests:** L0, L1, L3, L6 · **Depends on:** CMB-01, NET-01 · **Size:** L · **Tier:** T0
-- **Status:** in_progress
+- **Status:** specified
 
 #### CMB-05 · Stances, targeting, chase and flee
 - **Value:** Units fight on their own the way you told them: hold the line, defend an area or
