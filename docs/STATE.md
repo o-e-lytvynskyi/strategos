@@ -175,12 +175,12 @@ full movement gates green, original terrain-rebuild cost retained in the report.
 
 ## Now
 
-- **Milestone:** M5 Combat, started 2026-10-24 (owner's go-ahead); [spec](milestones/M5-combat.md); 2 of 17 tasks done.
-- **In progress:** none.
-- **Last finished task:** M5 T2 (2026-10-25), mobility classes and footprints, this commit; full functional gates and approved Windows JMH comparison passed.
-- **Next task:** M5 T3 · Ranged combat and analytic projectiles.
+- **Milestone:** M5 Combat, started 2026-10-24 (owner's go-ahead); [spec](milestones/M5-combat.md); 2 of 19 tasks done (T3 split into three bounded steps).
+- **In progress:** M5 T3a since 2026-10-25, analytic shot lifecycle.
+- **Last finished task:** M5 T2 (2026-10-25), mobility classes and footprints, commit `a545902`; full functional gates and approved Windows JMH comparison passed.
+- **Next task:** M5 T3a · Analytic shot lifecycle.
 - **WIP branch:** `codex/m5-combat` (owner-requested isolation; no changes to `main`).
-- **CI:** last checked `main` verify succeeded at `3705118` (run 40119258187); M5 T1 is pushed on this branch, T2 awaits its gates; monthly usage last recorded about 1,575 of 2,000 minutes.
+- **CI:** last checked `main` verify succeeded at `3705118` (run 40119258187); M5 T1–T2 pushed on this branch; monthly usage last recorded about 1,575 of 2,000 minutes.
 - **Overview:** `python3 tools/roadmap.py summary`.
 
 ## Blocked
@@ -196,7 +196,7 @@ Nothing. The owner approved item 23 on 2026-10-25 and T2's remaining checks pass
 | M2 Command | Done 2026-10-23 | Started 2026-10-23 at the owner's word; 23 tasks; `pose_high` settled in M3 T30; Accepted waits for the L7 demo |
 | M3 First loop | Done 2026-10-24 | Started 2026-10-23 at the owner's word; 31 tasks; Accepted waits for the L7 demo (item 14) |
 | M4 Economy and construction | Done 2026-10-24 | Started 2026-10-24 as M3 closed; 24 tasks; Accepted waits for the L7 demo (item 20); item 18 asks your word on the perf base |
-| M5 Combat | In progress 2026-10-24 | 17 tasks, on the owner's go-ahead; isolated in `codex/m5-combat` |
+| M5 Combat | In progress 2026-10-24 | 19 tasks after splitting T3; on the owner's go-ahead; isolated in `codex/m5-combat` |
 | M6 (MVP) | approved | Its spec is written when M5 closes |
 | M7–M15 | proposed | Approved by the owner closer to their time |
 

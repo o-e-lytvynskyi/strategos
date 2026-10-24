@@ -273,7 +273,7 @@ M4's scenes are.
 
 ### 7.1 Order
 
-T1 → T2 (PATH-11) → T3 (CMB-04) → T4 (CMB-16) → T5 (CMB-05) → T6 (UNIT-06) → T7 (UNIT-07) → T8 (ORD-05)
+T1 → T2 (PATH-11) → T3a → T3b → T3c (CMB-04) → T4 (CMB-16) → T5 (CMB-05) → T6 (UNIT-06) → T7 (UNIT-07) → T8 (ORD-05)
 → T9 (CMB-07) → T10 (BLD-16) → T11 (BLD-11) → T12 (CMB-17) → T13 (AI-03) → T14 (PERF-08) → T15 (the
 battle scenario) → T17 (the consent batch) → T18 (close). T16 is reserved for a row a task adds.
 
@@ -290,7 +290,20 @@ battle scenario) → T17 (the consent batch) → T18 (close). T16 is reserved fo
   Check 3 runs in T6 with the actual mounted body (§1.6 row 3).
 
 #### T3 · CMB-04
-- §2.2; the archer template ahead of T7 for the tests. **Verification:** the card's checks 1–4.
+- §2.2; split before implementation on 2026-10-25 because shots, persistence, ranged AI,
+  data, networking and client effects together would exceed the 1,500-line task target.
+  These three consecutive steps keep the same scope and acceptance criteria:
+  - **T3a · Analytic shot lifecycle:** deterministic lead/spread, landing damage, shot ids,
+    snapshot/restore and hashing. L1 fixed-seed results, the stationary binomial model,
+    impact/lifecycle tests and exact save/resume, including a quiescent used shot store.
+  - **T3b · Ranged orders and archer data:** ranged approach/wind-up/period without melee
+    rings, the archer template ahead of T7, balance provenance/sheet, moving-target L1
+    checks (straight-motion positive control and changes of direction), and the L3 volley.
+  - **T3c · Launch/impact presentation:** batched audience-filtered FX, wire compatibility
+    and size checks, client arrows and bow sounds. L1 audience and L2 wire tests, full
+    verification; images in T17 and the 300-unit network budget in T14 as already planned.
+- Each step runs its required full gates and JMH when it changes the core's tick or codecs.
+  CMB-04 stays in progress until all of its criteria pass, including T14's budget E.
 
 #### T4 · CMB-16
 - §2.3. **Verification:** checks 1, 3, 4 (2 with T7's duel harness).
@@ -330,7 +343,7 @@ battle scenario) → T17 (the consent batch) → T18 (close). T16 is reserved fo
 
 ### 7.3 Progress
 
-- [x] T1 (2026-10-25) · [x] T2 (2026-10-25) · [ ] T3 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11
+- [x] T1 (2026-10-25) · [x] T2 (2026-10-25) · [ ] T3a · [ ] T3b · [ ] T3c · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11
 - [ ] T12 · [ ] T13 · [ ] T14 · [ ] T15 · [ ] T17 · [ ] T18
 
 ---
