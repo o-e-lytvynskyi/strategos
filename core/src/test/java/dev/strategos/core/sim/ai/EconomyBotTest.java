@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
  * order with no site left waiting a minute with nobody on it; no worker idles longer than 30 s; after minute 3 no
  * resource's share of the gatherers strays more than 10 % from the ratio; neither walls off its own units or the
  * base's nodes; both send gatherers to animals and gather all four resources; and no think spends more than the budget.
+ * And QA-11 on M4: the same script's 30-minute matches end with a winner.
  */
 class EconomyBotTest {
     static final long MINUTES_15 = 18_000;
@@ -61,6 +62,43 @@ class EconomyBotTest {
             }
             if (m.maxSpent() > AiBudget.CAP) {
                 problems.add(at + "a think spent " + m.maxSpent());
+            }
+        }
+        assertThat(problems).isEmpty();
+    }
+
+    /**
+     * QA-11 on M4 (T22): ten seeded matches of the economy script held to QA-11's ending, a winner within 30 minutes
+     * and no player silent two minutes, on map v3; no worker idles longer than 30 s, animals and all four resources
+     * are gathered, and after minute 5 no training waits for food longer than a minute outside a raid (M3 §8.4).
+     */
+    @Test
+    void tenSeededMatchesEndWithAWinnerWithinThirtyMinutes() {
+        String json = HeadlessMatch.read("ai/economy.json");
+        StrategyScript script = StrategyScript.parse(json);
+        List<String> problems = new ArrayList<>();
+        for (long seed = 1; seed <= 10; seed++) {
+            EconomyWatch w = new EconomyWatch(script);
+            HeadlessMatch.Summary m =
+                    HeadlessMatch.run(seed, HeadlessMatch.LIMIT, json, w, true).summary();
+            String at = "seed " + seed + ": ";
+            if (m.failed()) {
+                problems.add(at + m.failure());
+            }
+            for (int f = 0; f < 2; f++) {
+                String who = at + "faction " + f + " ";
+                if (w.longestIdle[f] > IDLE_MOST) {
+                    problems.add(who + "left a worker idle " + w.longestIdle[f] / 20 + " s " + w.worstIdle[f]);
+                }
+                if (!w.livestock[f]) {
+                    problems.add(who + "never gathered from an animal");
+                }
+                if (w.gathered.get(f).stream().anyMatch(g -> g <= 0)) {
+                    problems.add(who + "gathered " + w.gathered.get(f));
+                }
+                if (m.foodWaitSeconds().get(f) > HeadlessMatch.FOOD_WAIT_MOST) {
+                    problems.add(who + "waited " + m.foodWaitSeconds().get(f) + " s for food");
+                }
             }
         }
         assertThat(problems).isEmpty();

@@ -36,8 +36,8 @@
       "z": 260
     }
   },
-  "version": 2,
-  "terrainHash": "e8cf0e6ecd4ee4d6cf5870169b83695702a4692b769e966d4ac8d7af3cbbaa6f",
+  "version": 3,
+  "terrainHash": "914532f492c2e158addc34d0d709b9a756a87414dd08b01eef6aeb1e57b6da54",
   "tileSize": 32,
   "palette": [
     "minecraft:air",

@@ -104,24 +104,22 @@ Answer in chat or here; the next session applies the answers.
      the armour and items are left out. Vanilla now draws that scene in 4.9 ms; two `m3_goldens` frames re-recorded
      (the selected worker's item is no longer outlined).
 
-16. **For your information: the proving ground runs short of wood for M4's economy** (M4 T19, nothing to do now).
-   Each start has its grove of 1,080 wood; the only other wood is the forest of 5,440, about 180 blocks from both
-   centres and outside any territory (a building must stand within 48 blocks of its civic centre), and nearer the
-   east start. The economy AI cuts its grove by minute 8; after that its woodcutters walk to the forest, wood comes
-   in at a fifth of a block a second and a soldier's 40 wood takes over two minutes. AI-02's acceptance holds over
-   ten 15-minute matches, and over 30 minutes the east wins every decided match (8 of 9). My recommendation, for T22
-   (QA-11's 30-minute gate) or M5: a third map version with a forest inside each territory, mirrored. It changes the
-   map's hash, so the golden journals and the frames that show a start are re-recorded with it, in T27's consent
-   batch.
-
-17. **Taken under your word of 2026-10-24: M3's per-unit perf base re-taken** (M4 T21). The economy soak found that
-   in the arena every soak's workers had stood idle: the arena lies below height 0, and the scenes, like the economy
-   AI, took a node's negative height for "nothing left to gather". So M3's base (2,966 ns a unit for budget A) was
-   measured without gathering. Fixed, the first loop on the same commit reads 5,728 ns a unit (+2 % over M1), and
-   M4's economy soak, 316 units with five constructions and two repairs, 4,919: inside 15 % of it, every budget
-   held ([perf/economy-m4pro.json](../perf/economy-m4pro.json)). **One thing to know for the M3 demo:** in an
-   arena world the computer player gathered nothing before this fix, so a skirmish there showed idle workers; it
-   works now.
+16. **Taken under your word of 2026-10-24: the proving ground's version 3** (M4 T22). Version 2 ran short of wood for
+   M4's economy: each start had its grove of 1,080, the only other wood a forest 180 blocks off, outside any territory
+   and nearer the east start, so after minute 8 the economy AI starved and over 30 minutes the east won every decided
+   match. Version 3 adds a wood of thirty oaks north of each start; now all ten 30-minute matches are decided, 3 to
+   the west and 7 to the east. It changes the map's hash; the frames that show the proving ground come up again in
+   T27's consent batch.
+17. **For your information: the arena's computer players gathered nothing** (found in M4 T21, fixed). The arena lies
+   below height 0, and the economy AI, like the soaks' scenes, took a node's negative height for "nothing left to
+   gather". In an arena world a skirmish showed idle workers; it works now. M3's perf base had been measured that
+   way, with every worker idle.
+18. **Taken under your word of 2026-10-24: the first-loop soak is the per-unit perf base** (M4 T21–T22). With the
+   workers gathering and on map v3, the first loop costs 11,648 ns a unit at budget A's p95, twice M1's crowd soak of
+   600 walkers that PERF-06.2 compared it with; a replay of the same match in L1 has the core's step at 0.37 ms at p95,
+   so the server's figure is mostly its surroundings. Both soaks now compare with the first loop's own base, and M4's
+   economy soak (316 units, five constructions, two repairs) reads 0.59 of it, every budget held
+   ([perf/economy-m4pro.json](../perf/economy-m4pro.json), [perf/first-loop-m4pro.json](../perf/first-loop-m4pro.json)).
 
 ## Since your last visit
 
@@ -423,9 +421,9 @@ Answer in chat or here; the next session applies the answers.
 - **Milestone:** M4 Economy and construction, started 2026-10-24 at your word; spec:
   [milestones/M4-economy-and-construction.md](milestones/M4-economy-and-construction.md) (24 tasks, every card
   `specified`). M3 is Done (2026-10-24, [§8.1](milestones/M3-first-loop.md)); M1 and M2 Done (2026-10-23).
-- **In progress:** M4 T22, QA-11 on M4: the economy's 30-minute matches, with map v3's woods (item 16).
-- **Last finished task:** M4 T21 (2026-10-24), the economy perf gate (PERF-07 done; item 17: M3's base re-taken, the
-  arena's idle workers fixed); before it T20, the resource scenes.
+- **In progress:** M4 T27, the consent batch (the goldens of M4 and the ART-02 frames, with and without Sodium).
+- **Last finished task:** M4 T22 (2026-10-24), QA-11 on M4: the economy's ten 30-minute matches all decided on map v3
+  (item 16), and a restored match's deposits block their columns again; before it T21, the economy perf gate.
 - **Next task:** M4's tasks in the spec's order (§7.1).
 - **WIP branch:** none.
 - **CI:** minutes used this month about 1,475 of 2,000 (74 %, summed from the runs' times; billing needs a scope
@@ -480,8 +478,8 @@ Details are in [worklog.md](worklog.md).
 - ADRs owed by future cards:
   - ECO-03's leaf rule, which amends ADR-0021 (ECO-16's amendment of ADR-0011 is written, M4 T7).
 - Faction 0 wins all ten headless seeds of M3's bot, before M4 T6 as after it: the second slot's start, or its
-  mirror, is worse for it. With AI-02's economy script (T19) it turns round: the east wins 8 of the 9 decided
-  30-minute matches, the forest being nearer it (item 16). T22, QA-11 on M4, owns it with the food wait.
+  mirror, is worse for it. With AI-02's economy script on map v3 the split is 3 to the west, 7 to the east (M4 T22):
+  no longer all one way, still the east's lean; AI-05's defence (M6) is where it gets looked at.
 - T27's consent batch: the `livestock` goldens (ECO-16.5), and `m3_goldens` frames that show a start now show its
   animals and may need re-recording. A carcass's body is not kept across a save: after a restore its meat is still
   gathered, with no body.

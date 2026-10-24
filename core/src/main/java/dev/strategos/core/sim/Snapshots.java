@@ -178,6 +178,7 @@ final class Snapshots {
                             id -> templateIndex(
                                     templates, id)); // before the pages, so their publication finds none again
         }
+        dev.strategos.core.sim.econ.Deposits.restoreFootprints(state); // before the pages too (ECO-08)
         if (!snapshot.buildings().isEmpty()) {
             state.restoreBuildings(snapshot.buildings()); // before the pages, so their footprints are laid over them
         }

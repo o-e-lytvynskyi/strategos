@@ -31,8 +31,8 @@ class MinimapImageTest {
         0x007C00 // a berry bush: PLANT
     };
 
-    /** The hash the proving ground v2's minimap image is pinned to; a terrain change updates it with the map. */
-    static final long STORED = 0x973a70bdd225deb3L;
+    /** The hash the proving ground v3's minimap image is pinned to; a terrain change updates it with the map. */
+    static final long STORED = 0x53d0da6b41cfd317L;
 
     static MinimapImage.Columns columns(ProvingGround pg) {
         return new MinimapImage.Columns() {

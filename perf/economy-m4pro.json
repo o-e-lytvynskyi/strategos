@@ -1,32 +1,32 @@
 {
-  "what": "M4's economy soak on the M4 Pro (PERF-07, M4 spec §6): the budgets it held and its per-unit p95, the base M5's gate compares with",
+  "what": "M4's economy soak on the M4 Pro (PERF-07, M4 spec §6), map v3: the budgets it held and its per-unit p95, the base M5's gate compares with",
   "date": "2026-10-24",
   "test": "perftests.economy_soak",
   "units": 316,
   "ticks": 18000,
   "budgetsNs": {
-    "aP50": 808875,
-    "aP99": 4996000,
-    "bP95": 2694417,
-    "cP95": 5889666,
-    "dP99": 112625
+    "aP50": 823750,
+    "aP99": 5783292,
+    "bP95": 3194459,
+    "cP95": 6332959,
+    "dP99": 119416
   },
   "perUnitP95Ns": {
-    "a": 4919,
-    "b": 8527
+    "a": 6878,
+    "b": 10109
   },
   "economyTimes": {
-    "nodeIndexSearches": 669,
-    "nodeIndexSearchNsMean": 54788,
-    "nodeIndexBuilds": 18,
-    "nodeIndexBuildNsMean": 1463282,
-    "dropsiteQueries": 2677,
-    "dropsiteQueryNsMean": 8060
+    "nodeIndexSearches": 968,
+    "nodeIndexSearchNsMean": 54466,
+    "nodeIndexBuilds": 19,
+    "nodeIndexBuildNsMean": 2173618,
+    "dropsiteQueries": 2839,
+    "dropsiteQueryNsMean": 12157
   },
-  "saveNs": 10281458,
+  "saveNs": 10047209,
   "stress": {
     "test": "perftests.economy_stress",
     "units": 632,
-    "cP95Ns": 7935624
+    "cP95Ns": 8098583
   }
 }

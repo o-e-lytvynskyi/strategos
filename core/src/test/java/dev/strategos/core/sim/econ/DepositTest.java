@@ -94,4 +94,27 @@ class DepositTest {
         assertThat(Deposits.stage(1, 1_000)).isEqualTo(3);
         assertThat(Deposits.stage(0, 1_000)).isEqualTo(4);
     }
+
+    /** MATCH-04 with ECO-08: a restored match's deposit blocks its columns again, as the live one's does. */
+    @Test
+    void aRestoredDepositStillBlocksItsColumns() {
+        EconScene e = EconScene.flat(48, 48).build();
+        spawn(e, IRON_MINE, 20, 20);
+        e.h.runTicks(4); // the page with the footprint rebuilt
+        assertThat(e.s.footprintAt(21, 21)).as("live").isTrue();
+        var back = dev.strategos.core.testkit.SimHarness.restore(
+                e.h.core().snapshot(),
+                dev.strategos.core.content.TemplateSet.builtin(),
+                e.h.core().journal().segments().get(0)::slice);
+        var restored = dev.strategos.core.sim.KernelAccess.state(back.core());
+        assertThat(restored.footprintAt(21, 21)).as("restored").isTrue();
+        assertThat(back.stateHash()).isEqualTo(e.h.stateHash());
+        for (int t = 0; t < 40; t++) {
+            e.h.step();
+            back.step();
+        }
+        assertThat(back.core().queries().surfaces().count(21, 21))
+                .isEqualTo(e.h.core().queries().surfaces().count(21, 21));
+        assertThat(back.stateHash()).isEqualTo(e.h.stateHash());
+    }
 }

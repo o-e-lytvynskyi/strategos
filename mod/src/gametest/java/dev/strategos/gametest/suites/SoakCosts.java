@@ -11,6 +11,9 @@ import dev.strategos.core.sim.econ.EconomyTimes;
 final class SoakCosts {
     private final long[] writer;
     private final long[] fx;
+    private final long[] adapter;
+    private final long[][] phases;
+    private final java.util.List<String> phaseNames;
     private final long[] placement;
     private final long placed;
     private final long refused;
@@ -22,6 +25,9 @@ final class SoakCosts {
     SoakCosts(
             long[] writer,
             long[] fx,
+            long[] adapter,
+            long[][] phases,
+            java.util.List<String> phaseNames,
             long[] placement,
             long placed,
             long refused,
@@ -31,6 +37,9 @@ final class SoakCosts {
             EconomyTimes.Stats economy) {
         this.writer = writer;
         this.fx = fx;
+        this.adapter = adapter;
+        this.phases = phases;
+        this.phaseNames = phaseNames;
         this.placement = placement;
         this.placed = placed;
         this.refused = refused;
@@ -46,6 +55,20 @@ final class SoakCosts {
 
     long[] fx() {
         return fx;
+    }
+
+    /** The core's phases each sampled tick, by {@link #phaseNames}. */
+    long[][] phases() {
+        return phases;
+    }
+
+    java.util.List<String> phaseNames() {
+        return phaseNames;
+    }
+
+    /** The mod's part of budget A each sampled tick: applying the outputs and materialising bodies. */
+    long[] adapter() {
+        return adapter;
     }
 
     long[] placement() {

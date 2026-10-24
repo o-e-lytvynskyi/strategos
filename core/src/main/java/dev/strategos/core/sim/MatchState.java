@@ -408,6 +408,11 @@ public final class MatchState {
         rebuild.set(footprints.pageOf(x, z));
     }
 
+    /** Blocks a restored footprint's column, before the pages are published: no rebuild follows. */
+    public void restoreColumn(int x, int z) {
+        footprints.block(x, z);
+    }
+
     /** Releases a footprint column; its page is rebuilt in this tick's WORLD phase. */
     public void releaseColumn(int x, int z) {
         footprints.release(x, z);

@@ -9,7 +9,7 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-24 (later) — M4 T1–T21
+## 2026-10-24 (later) — M4 T1–T22
 
 - **M4 T1 · the health check from M3's close.** The four classes over 800 lines split along their seams, with
   every golden frame identical after the HUD's split (`RtsHud`, `MatchState`, `NetTests`, `CrowdSoak`);
@@ -87,7 +87,13 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
   holds every budget for 15 minutes at 20 ticks a second (C p95 5.9 ms; stress, 632 units, 7.9 ms) and reports the node
   index's and dropsite queries' times. It found that in the arena, below height 0, every scene's workers and the
   economy AI took a node's negative height for "nothing left" and gathered nothing; fixed, M3's per-unit base was
-  re-taken (5,728 ns, STATE item 17) and the economy reads 4,919.
+  re-taken (5,728 ns on map v2; on v3 in T22 11,648, STATE items 17–18) and the economy reads 0.59 of it.
+- **M4 T22 · QA-11 on M4.** The proving ground's version 3 gives each start a wood of thirty oaks north of it (two
+  first places failed: one jammed a crowd at a ford, one stood in the east's yard). The economy script's ten
+  30-minute matches now all end with a winner (3 west, 7 east), with no worker idle over 30 s and no food wait. The new
+  map caught a restore fault: a resumed match's deposits blocked nothing, so units walked through them after a load. The
+  soaks re-run on v3 put the first loop at 11,648 ns a unit, twice M1's walkers, mostly the server's surroundings (the
+  L1 replay of the same match: 0.37 ms at p95); it is now both soaks' base, and the report splits budget A by phase.
 
 ## 2026-10-24 — M3 T9–T31, M3 Done; M4 spec
 

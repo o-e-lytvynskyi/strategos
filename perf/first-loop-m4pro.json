@@ -1,21 +1,33 @@
 {
-  "what": "M3's first-loop soak on the M4 Pro (PERF-06, M3 spec §6): the per-unit p95 of the unit-driven buckets that M4's perf gate (PERF-07) compares with, and the budgets it held",
+  "what": "M3's first-loop soak on the M4 Pro (PERF-06, M3 spec §6): the per-unit p95 of the unit-driven buckets that both soaks' gates compare with (PERF-06.2 and PERF-07.2), and the budgets it held",
   "date": "2026-10-24",
-  "retaken": "M4 T21 (2026-10-24): the first run (perUnitP95Ns a 2966, b 5795) had every worker idle on the server, the scene taking a node's negative height in the arena for 'no block left'; this run, on the M4 T21 commit, has them gathering. The stress and fast entries are still the first run's.",
+  "retaken": "M4 T22 (2026-10-24), on map v3 with the workers gathering: M3's first run (a 2,966 ns a unit) had every worker idle in the arena, and M4 T21's (a 5,728) was on map v2. Three v3 runs read 11,568, 11,618 and 11,737; the L1 replay of the same match has the step's p95 at 0.37 ms, so the server's p95 is mostly its surroundings. M1's crowd soak, 600 walkers, is no longer the base: the first loop's own run is (STATE item 18).",
   "test": "perftests.first_loop_soak",
   "units": 200,
   "ticks": 18000,
   "budgetsNs": {
-    "aP50": 569959,
-    "aP99": 5096750,
-    "bP95": 1841416,
-    "cP95": 4885667,
-    "dP99": 91209
+    "aP50": 602208,
+    "aP99": 5668000,
+    "bP95": 2525959,
+    "cP95": 6073750,
+    "dP99": 169625
   },
   "perUnitP95Ns": {
-    "a": 5728,
-    "b": 9207
+    "a": 11648,
+    "b": 12630
   },
-  "stress": {"test": "perftests.first_loop_stress", "units": 400, "cP95Ns": 5272125, "idleWorkers": true},
-  "fast": {"test": "perftests.first_loop_fast", "speed": 1.5, "cP95Ns": 4232084, "idleWorkers": true}
+  "stress": {
+    "test": "perftests.first_loop_stress",
+    "units": 400,
+    "cP95Ns": 5272125,
+    "idleWorkers": true,
+    "mapVersion": 2
+  },
+  "fast": {
+    "test": "perftests.first_loop_fast",
+    "speed": 1.5,
+    "cP95Ns": 4232084,
+    "idleWorkers": true,
+    "mapVersion": 2
+  }
 }

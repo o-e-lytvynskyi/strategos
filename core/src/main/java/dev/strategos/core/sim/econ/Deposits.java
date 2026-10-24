@@ -82,7 +82,11 @@ public final class Deposits {
         return id;
     }
 
-    /** A restored match's deposits block their footprints again, as its buildings do (the world has their blocks). */
+    /**
+     * A restored match's deposits block their footprints again, as its buildings do (the world has their blocks), laid
+     * over the pages before they are published, so no rebuild follows; a deposit blocks its columns for good, spent or
+     * not.
+     */
     public static void restoreFootprints(MatchState s) {
         NodeStore nodes = s.nodes();
         for (int id = 1; id <= nodes.count(); id++) {
@@ -93,7 +97,7 @@ public final class Deposits {
             }
             Footprint at = footprint(nodes, id, b);
             for (int cell : at.columns(b)) {
-                s.blockColumn(cell >>> 16, cell & 0xFFFF);
+                s.restoreColumn(cell >>> 16, cell & 0xFFFF);
             }
         }
     }

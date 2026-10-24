@@ -170,6 +170,8 @@ final class CrowdSoak {
     private EconomyTimes.Stats economyBefore = new EconomyTimes.Stats(0, 0, 0, 0, 0, 0);
     private final long[] writer;
     private final long[] fx;
+    private final long[] adapter;
+    private final long[][] phases;
     private final List<Long> placement = new ArrayList<>();
     private long writerBefore;
     private long fxBefore;
@@ -196,6 +198,8 @@ final class CrowdSoak {
         this.scene = sc == null ? null : sc.create(manifest.startSlots());
         this.writer = new long[sc == null ? 0 : samples];
         this.fx = new long[sc == null ? 0 : samples];
+        this.adapter = new long[sc == null ? 0 : samples];
+        this.phases = new long[sc == null ? 0 : samples][];
     }
 
     /**
@@ -303,6 +307,8 @@ final class CrowdSoak {
                 long w = StrategosServer.get().writer().writeNanos();
                 writer[i] = w - writerBefore;
                 fx[i] = rt.fxNanos() - fxBefore;
+                adapter[i] = core(rt).timers().lastAdapterNanos();
+                phases[i] = core(rt).timers().lastPhaseNanos().clone();
                 if (placing) {
                     placement.add(core(rt).timers().lastPhaseNanos()[COMMANDS]);
                 }
@@ -423,6 +429,9 @@ final class CrowdSoak {
         return new SoakCosts(
                 writer,
                 fx,
+                adapter,
+                phases,
+                core(rt).timers().phaseNames(),
                 placement.stream().mapToLong(Long::longValue).toArray(),
                 sc.placed(),
                 sc.refusedPlacements(),

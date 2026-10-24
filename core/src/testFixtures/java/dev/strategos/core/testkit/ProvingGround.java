@@ -18,7 +18,9 @@ import org.jspecify.annotations.Nullable;
  * blocks deep with two fords one block deep, a plank bridge with railings and a stone arch, a forest, a 3-block-wide
  * pass between cliffs, and a walled yard with a gate and wall walkways; start slots near the west and east edges.
  * Version 2 (M3 T9, ECO-05) adds for the first loop a grove of twelve oaks near each start slot and eight berry bushes
- * behind it, the east's the west's turned half round the map's centre, so the two starts are alike.
+ * behind it, the east's the west's turned half round the map's centre, so the two starts are alike. Version 3 (M4
+ * T22, AI-02) adds a wood of thirty oaks north of each start, its near edge inside the territory, so an economy outlasts
+ * its grove without walking to the forest, which lies nearer the east start.
  *
  * <p>It is the source of truth: {@code MapgenDriver} writes the map package from it, the manifest stores its terrain
  * hash, and L1 builds the same terrain from it ({@link #voxels()}). Heights are combined with min and max of functions
@@ -67,8 +69,8 @@ public final class ProvingGround {
     public static final byte COBBLESTONE = 14;
     public static final byte BUSH = 15;
 
-    /** The map's version: 2 since the groves and bushes of M3 T9. */
-    public static final int VERSION = 2;
+    /** The map's version: 3 since the woods of M4 T22; 2 since the groves and bushes of M3 T9. */
+    public static final int VERSION = 3;
 
     /** What a log, a leaf and a bush are to the economy, as the mod's {@code strategos:resource_yield} entries say. */
     public static final Material LOG_MATERIAL = new Material(MaterialKind.LOG, "wood", "tree", 20_000);
@@ -112,6 +114,9 @@ public final class ProvingGround {
         yard();
         forest();
         groves();
+        if (!Boolean.getBoolean("pg.v2")) {
+            woods();
+        } // TEMP A/B
         noGrassUnderBlocks();
         for (int x = 0; x < size; x++) {
             for (int z = 0; z < size; z++) {
@@ -443,6 +448,22 @@ public final class ProvingGround {
             for (int z : new int[] {184, 187, 197, 200}) {
                 bush(x, z);
                 bush(size - 1 - x, size - 1 - z);
+            }
+        }
+    }
+
+    /**
+     * Version 3: north of each start thirty oaks in a 5 x 6 grid 7 apart over Z 120–155, the west's over X 8–36 and the
+     * east's over X 347–375, turned round the X axis only: turned half round the centre it would stand in the east's
+     * yard. The nearest is about 38 blocks from its start, clear of the workers' yard 26 blocks north of the west one
+     * and of the crowds' way along the starts' row (a wood nearer it sent a crossing's crowd round and jammed a ford).
+     */
+    private void woods() {
+        for (int cx = 0; cx < 5; cx++) {
+            for (int cz = 0; cz < 6; cz++) {
+                int trunk = 4 + (cx + cz) % 2;
+                oak(8 + cx * 7, 120 + cz * 7, trunk);
+                oak(size - 1 - (8 + cx * 7), 120 + cz * 7, trunk);
             }
         }
     }
