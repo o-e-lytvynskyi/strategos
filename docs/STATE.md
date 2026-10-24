@@ -3,7 +3,7 @@
 Where the project stands right now. The session log is in [worklog.md](worklog.md); the work
 procedure is the `strategos-dev` skill (`.claude/skills/strategos-dev/SKILL.md`).
 
-**Last update:** 2026-10-24 · **Owner last seen:** 2026-10-24 · **Current:** M3 — started 2026-10-23 at the owner's word; M1 and M2 Done; M4 follows M3 straight on
+**Last update:** 2026-10-24 · **Owner last seen:** 2026-10-24 · **Current:** M4 — started 2026-10-24 at the owner's word as M3 closed; M1, M2 and M3 Done
 
 ## For the owner
 
@@ -45,7 +45,8 @@ Answer in chat or here; the next session applies the answers.
    принимай сам, которые рекомендуешь». Any test may run, client windows included; once M3 is done its successor's
    spec is written and M4 starts without waiting; the recommended decisions are taken and recorded here. M3's
    window tests (its goldens) run together in its consent batch, T30, so they take the screen once.
-   **Needs a window, when one is open anyway (the work does not wait for it):** `pose_high`, the camera at its top height,
+   **Settled in M3 T30:** the edge `pose_high` showed was the server sending 5 chunks (item 15). What follows is the
+   earlier guess, kept for the record. `pose_high`, the camera at its top height,
    shows the world's edge. The tilt I suggested would also hide the far markers, which need the view to reach
    160 blocks; the edge is more likely the scene's own: a fresh flat world still generating chunks when the camera
    has just risen. The fix is probably for the scene to wait for the ground, then a new `pose_high` on this Mac
@@ -74,7 +75,8 @@ Answer in chat or here; the next session applies the answers.
    commit before M3's code against the baseline's 12.0. The one real growth is M3 T2's relationships in template
    compilation: 6.36 ms against 5.86 at that commit (+8.6 %). No new baseline is proposed now; the next full run at
    a quiet moment decides, and a proposal follows if the growth stays. At T9 (2026-10-24, past midnight) the gate
-   names only `MatchBusBench` (14.3 µs against 12.0), still untouched; the rest are within 15 %.
+   names only `MatchBusBench` (14.3 µs against 12.0), still untouched; the rest are within 15 %. **Settled at M3's
+   close (item 15):** the full run of 2026-10-24 read it at 14.1 µs again, so its entry was re-taken.
 12. **For your information: the bot against itself always lets the west start win.** Ten seeded bot-versus-bot
    matches on the proving ground (M3 T28) all end with a winner at 15:19–15:34, and all ten go to faction 0: its
    wave reaches the enemy centre about 22 s sooner and burns it first, while faction 1's wave dies on the way. The
@@ -84,6 +86,21 @@ Answer in chat or here; the next session applies the answers.
 13. **Taken under your word of 2026-10-24: M3's per-unit perf baseline.** The first-loop soak's figures
    ([perf/first-loop-m4pro.json](../perf/first-loop-m4pro.json)) are what M4's perf gate compares with, as M1's
    crowd soak was for M3. They are well inside every budget: the tick's own work (C) 4.2 ms at p95 of 23.
+14. **The M3 demo, when you have half an hour (decision gate 3, L7):** [milestones/M3-first-loop.md §1.3](milestones/M3-first-loop.md):
+   `scripts/playtest.sh`, then `/strategos skirmish strategos:proving_ground observe seed=3` to watch two bots,
+   or `/strategos match create map strategos:proving_ground`, `/strategos match join 1 0` and
+   `/strategos match scenario strategos:first_loop` to play slot 0 against the bot (its slot is `ai:first_loop`);
+   then the questionnaire in `docs/testing/playtest.md` with **"would I play another?" and its reason**. A "no",
+   or any score of 2 or less, sends pacing and readability back for tuning. M3 is Done; only this makes it Accepted.
+15. **Taken under your word of 2026-10-24, to look at when you like** (each can be undone):
+   - the M3 goldens: nine frames of `m3_goldens`, `art_look` with and without Sodium, `rts_goldens` and
+     `overlay_goldens` re-recorded for M3's HUD, and M2's `pose_high` (its edge was the server sending 5 chunks:
+     scenes set their render distance without telling it). They are in `mod/src/devtools/goldens/`;
+   - PERF-14's results again, with M3's HUD and the 16 chunks really sent ([perf/client/m4pro.json](../perf/client/m4pro.json));
+   - the JMH baseline's `MatchBusBench` entry re-taken (14.1 µs; its code is M1's and M2's tree read the same, so the
+     Mac moved, item 11), the rest of the baseline kept, M3's new `TerrainEditBench` added;
+   - ART-01.5: armoured crowds hold with Sodium; on vanilla, 100 selected armoured spearmen draw at about 21 fps,
+     so M4 T3 gives vanilla a level of detail (the outline without armour and items; layers off far away).
 
 ## Since your last visit
 
@@ -382,12 +399,12 @@ Answer in chat or here; the next session applies the answers.
 
 ## Now
 
-- **Milestone:** M3 First loop, started 2026-10-23 at your word, without windows; spec:
-  [milestones/M3-first-loop.md](milestones/M3-first-loop.md) (31 tasks, every card `specified`).
-  M1 and M2 are Done (2026-10-23).
-- **In progress:** M3 T30, the consent batch: M3's goldens on this Mac (scenario `m3_goldens`), PERF-14 with the M3 HUD, ART-01.5's armoured frame pass, M2's `pose_high`.
-- **Last finished task:** M3 T29 (2026-10-24), the first-loop perf gate: every budget holds with room (C p95 4.2 ms of 23); before it T26–T28, the computer opponent. The balance sheet is [balance/sheet.md](balance/sheet.md).
-- **Next task:** M3's tasks in the spec's order (§7.1); its window tests in T30; then M4.
+- **Milestone:** M4 Economy and construction, started 2026-10-24 at your word; spec:
+  [milestones/M4-economy-and-construction.md](milestones/M4-economy-and-construction.md) (24 tasks, every card
+  `specified`). M3 is Done (2026-10-24, [§8.1](milestones/M3-first-loop.md)); M1 and M2 Done (2026-10-23).
+- **In progress:** M4 T1, the health check from M3's close.
+- **Last finished task:** M3 T31 (2026-10-24), M3's close; before it T30, the consent batch.
+- **Next task:** M4's tasks in the spec's order (§7.1).
 - **WIP branch:** none.
 - **CI:** green; minutes used this month about 960 of 2,000 (48 %), as of 2026-10-23.
 - **Overview:** `python3 tools/roadmap.py summary`.
@@ -402,9 +419,10 @@ Nothing.
 |---|---|---|
 | M0 Foundation | Accepted 2026-10-22 | Started 2026-10-21; tripwire met on day 2; 25 of 26 cards accepted, UNIT-01 closes with NET-01 (M1); the L7 demo waived by the owner |
 | M1 Movement | Done 2026-10-23 | Started 2026-10-22 on the owner's go-ahead; 29 tasks (T28, PATH-08, joined by its R3 trigger in T8; T29 by the owner's word); Accepted waits for the L7 demo |
-| M2 Command | Done 2026-10-23 | Started 2026-10-23 at the owner's word; 23 tasks; Accepted waits for `pose_high` (a window) and the L7 demo |
-| M3 First loop | In progress | Started 2026-10-23 at the owner's word; spec written the same day, 31 tasks; T1–T29 done by 2026-10-24 |
-| M4–M6 (MVP) | approved | Specs are written by the assistant when each milestone starts; M4 follows M3 at once (the owner, 2026-10-24) |
+| M2 Command | Done 2026-10-23 | Started 2026-10-23 at the owner's word; 23 tasks; `pose_high` settled in M3 T30; Accepted waits for the L7 demo |
+| M3 First loop | Done 2026-10-24 | Started 2026-10-23 at the owner's word; 31 tasks; Accepted waits for the L7 demo (item 14) |
+| M4 Economy and construction | In progress | Started 2026-10-24 as M3 closed; spec written the same day, 24 tasks |
+| M5–M6 (MVP) | approved | Specs are written by the assistant when each milestone starts |
 | M7–M15 | proposed | Approved by the owner closer to their time |
 
 ## History

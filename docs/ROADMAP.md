@@ -369,24 +369,24 @@ Cards: [roadmap/M4-economy-and-construction.md](roadmap/M4-economy-and-construct
 
 | ID | Feature | Size | Depends on | Status |
 |---|---|---|---|---|
-| ECO-07 | Stone from real rock | M | ECO-05, PATH-15 | approved |
-| ECO-08 | Mines and quarries | M | ECO-05 | approved |
-| ECO-16 | Livestock at the start | M | ECO-05, UNIT-03 | approved |
-| ECO-17 | Field auto-reseed at the farmstead | S | ECO-09, BLD-08, D-14 | approved |
-| UNIT-05 | Level of detail by activity | M | CORE-02, PERF-02 | approved |
-| BLD-04 | Foundations on uneven ground | M | BLD-03 | approved |
-| BLD-05 | Abstract HP and damage stages | M | BLD-03, CMB-03 | approved |
-| BLD-06 | Repair | S | BLD-05, D-15 | approved |
-| BLD-07 | Building protection | M | BLD-01, BLD-15 | approved |
-| BLD-08 | Starting building set, with resource sinks | M | BLD-04, BLD-05, ECO-08, PROD-01 | approved |
-| BLD-09 | Cancel and demolish | S | BLD-03 | approved |
-| PROD-02 | Batch training | S | PROD-01 | approved |
-| UI-08 | Command card complete | M | UI-06, DATA-02 | approved |
-| UI-09 | Build menu and placement UX | M | UI-08, BLD-04 | approved |
-| MATCH-04 | Save and resume | M | CORE-07, CORE-11, CORE-12, BLD-05, ECO-08 | approved |
-| AI-02 | AI economy and base building | L | AI-17, BLD-08, ECO-08, ECO-09, ECO-16 | approved |
-| ART-02 | Resource and deposit visuals | M | ECO-08, ECO-09, ECO-16, D-04 | approved |
-| PERF-07 | Economy and construction perf gate | S | BLD-08, UNIT-05, PERF-06 | approved |
+| ECO-07 | Stone from real rock | M | ECO-05, PATH-15 | specified |
+| ECO-08 | Mines and quarries | M | ECO-05 | specified |
+| ECO-16 | Livestock at the start | M | ECO-05, UNIT-03 | specified |
+| ECO-17 | Field auto-reseed at the farmstead | S | ECO-09, BLD-08, D-14 | specified |
+| UNIT-05 | Level of detail by activity | M | CORE-02, PERF-02 | specified |
+| BLD-04 | Foundations on uneven ground | M | BLD-03 | specified |
+| BLD-05 | Abstract HP and damage stages | M | BLD-03, CMB-03 | specified |
+| BLD-06 | Repair | S | BLD-05, D-15 | specified |
+| BLD-07 | Building protection | M | BLD-01, BLD-15 | specified |
+| BLD-08 | Starting building set, with resource sinks | M | BLD-04, BLD-05, ECO-08, PROD-01 | specified |
+| BLD-09 | Cancel and demolish | S | BLD-03 | specified |
+| PROD-02 | Batch training | S | PROD-01 | specified |
+| UI-08 | Command card complete | M | UI-06, DATA-02 | specified |
+| UI-09 | Build menu and placement UX | M | UI-08, BLD-04 | specified |
+| MATCH-04 | Save and resume | M | CORE-07, CORE-11, CORE-12, BLD-05, ECO-08 | specified |
+| AI-02 | AI economy and base building | L | AI-17, BLD-08, ECO-08, ECO-09, ECO-16 | specified |
+| ART-02 | Resource and deposit visuals | M | ECO-08, ECO-09, ECO-16, D-04 | specified |
+| PERF-07 | Economy and construction perf gate | S | BLD-08, UNIT-05, PERF-06 | specified |
 
 ### M5 · Combat
 

@@ -5,7 +5,7 @@
 (cited as "04 §n"), the ADRs in [adr/](../adr/README.md), chiefly
 [ADR-0021](../adr/0021-economy-and-construction-model.md), and M1's and M2's specs and code
 ([M1-movement.md](M1-movement.md), [M2-command.md](M2-command.md), cited as "M1 §n", "M2 §n").
-Status: **specified**. The decisions M3 needs were taken as recommended on 2026-10-21: D-25 (a),
+Status: **Done** (2026-10-24, §8.1). The decisions M3 needs were taken as recommended on 2026-10-21: D-25 (a),
 D-02 (villagers), D-04, D-05, D-10 (food, wood, stone, iron), D-11, D-12 (torches, the ram in M6),
 D-16 and D-18; D-03 stays open until M7, so M3's placeholders keep a neutral palette. Engine names
 cited here come from the cards and the architecture, which verified them; every other Minecraft or
@@ -570,7 +570,7 @@ report lists placement, writer and `fx` times.
 
 - [x] T1 (2026-10-23) · [x] T2 (2026-10-23) · [x] T3 (2026-10-23) · [x] T4 (2026-10-23) · [x] T5 (2026-10-23) · [x] T6 (2026-10-23) · [x] T7 (2026-10-23) · [x] T8 (2026-10-23) · [x] T9 (2026-10-24) · [x] T10 (2026-10-24) · [x] T11 (2026-10-24)
 - [x] T12 (2026-10-24) · [x] T13 (2026-10-24) · [x] T14 (2026-10-24) · [x] T15 (2026-10-24) · [x] T16 (2026-10-24) · [x] T17 (2026-10-24) · [x] T18 (2026-10-24) · [x] T19 (2026-10-24) · [x] T20 (2026-10-24) · [x] T21 (2026-10-24)
-- [x] T22 (2026-10-24) · [x] T23 (2026-10-24) · [x] T24 (2026-10-24) · [x] T25 (2026-10-24) · [x] T26 (2026-10-24) · [x] T27 (2026-10-24) · [x] T28 (2026-10-24) · [x] T29 (2026-10-24) · [x] T30 (2026-10-24) · [ ] T31
+- [x] T22 (2026-10-24) · [x] T23 (2026-10-24) · [x] T24 (2026-10-24) · [x] T25 (2026-10-24) · [x] T26 (2026-10-24) · [x] T27 (2026-10-24) · [x] T28 (2026-10-24) · [x] T29 (2026-10-24) · [x] T30 (2026-10-24) · [x] T31 (2026-10-24)
 
 ---
 
@@ -589,6 +589,32 @@ The roadmap's Done gate, then the owner's acceptance.
 | 7 | The consent batch: the M3 goldens, PERF-14 re-run, ART-01's armour and held-item pass | T30 |
 | 8 | M1's and M2's gates still pass; `verify`, `verifySlow`, `verifySoak`, `verifyPerf` green; CI green | the runs |
 | 9 | L7 (decision gate 3): the owner plays a full match against the bot; "would I play another?" in STATE.md with its reason; a "no" or any score ≤ 2 sends pacing and readability back for tuning | the owner's note |
+
+
+### 8.1 Results (T31, 2026-10-24)
+
+| # | Result | Evidence |
+|---|---|---|
+| 1 | Every acceptance criterion of the 27 cards passes at its level but the owner's (ECO-05.10, AUD-04.4, ART-01.4: the demo); all 27 done | §1.4, §1.6 rows 1–77 |
+| 2 | Pass | `GatherTimingTest`, `ConstructionTest`, `ProductionTest`, `TreasuryInvariantTest`, `AiDecisionTest` |
+| 3 | Pass | `ecotests`, `constructiontests`, `prodtests`, `combattests` |
+| 4 | Ten seeds and the L3 sample of two end with a winner at 15:09–15:29, no exception, no stall, the telemetry in every report. The food criterion holds in nine seeds of ten: seed 5's faction 1 waits 65 s once after minute 5 (outside a raid, which a losing economy needs excluded); AI-02 owns it from M4 (M4 §1.6 row 3) | `headlessMatches`, `aitests`, §1.6 row 73 |
+| 5 | A p50 0.27 ms, C p95 4.24 ms, per-unit A 0.53× M1's; the 2× pass C p95 5.27 ms; the 1.5× pass 4.23 ms | `perftests.first_loop_soak`, §1.6 rows 74–75 |
+| 6 | Pass: 600 ticks of AI versus AI, three commands a side | `runServerSmoke` |
+| 7 | Done on 2026-10-24 under the owner's word: nine `m3_goldens` frames, the looks with and without Sodium, `rts_goldens` and `overlay_goldens` again with M2's `pose_high`, PERF-14 with M3's HUD, ART-01.5 (holds with Sodium; vanilla's level of detail named) | §1.6 rows 76–77 |
+| 8 | `verify`, `verifySlow`, `verifySoak` green; `verifyPerf`'s JMH gate named `MatchBusBench` alone (+17.7 %, code untouched since M1, M2's tree reads the same), whose baseline was re-taken under the owner's word, the rest within 6 %; the perf GameTests green; CI green but for one timeout of `cameratests.chunk_sent_repair` under load (M4 T1) | the runs, STATE.md |
+| 9 | The owner's | STATE.md |
+
+**Deviations.** The rally marker existed only as a text line until T30 (row 76). Scenes never told the
+server their render distance, so every client scene since M1 drew 5 chunks of terrain whatever it set,
+PERF-14's first baselines included (row 77). The scripted bot lost a barracks when the next placement
+took its builders, which no command could send back (row 73; M4's `Build`). The first loop favours the
+west start (§1.8).
+
+**Follow-ups** (M4 §1.6 and T1): `RtsHud` (1,099 lines), `MatchState` (956), `NetTests` (914) and
+`CrowdSoak` (876) split; vanilla's crowd level of detail; the `Build` command; the CI timeout.
+
+**Status.** **M3 is Done** (2026-10-24): rows 1–8 pass as recorded; row 9 is the owner's and blocks Accepted, not Done.
 
 ---
 

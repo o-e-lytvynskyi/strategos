@@ -98,7 +98,7 @@ reseed). What happens when one runs out?
   4. A worker mines an outcrop in a GameTest with no page rebuild (L3).
 - **Tests:** L0, L1, L3 · **Fixtures:** outcrop fixtures · **Depends on:** ECO-05, PATH-15 ·
   **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### ECO-08 · Mines and quarries
 - **Value:** Large quarries and iron mines are lasting, contested deposits with a visible amount
@@ -112,7 +112,7 @@ reseed). What happens when one runs out?
   2. Slot counts follow the size and the balance sheet (L1).
   3. The look changes at 75, 50, 25 and 0 % (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** ECO-05 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### ECO-16 · Livestock at the start
 - **Value:** The classic opening food: sheep, pigs and chickens by the civic centre, the most
@@ -135,7 +135,7 @@ reseed). What happens when one runs out?
   5. Each animal renders with its vanilla-derived model at 60 blocks (L4, consent).
 - **Tests:** L0, L1, L2, L3, L4 (consent), L5 · **Depends on:** ECO-05, UNIT-03 · **Size:** M ·
   **Tier:** T1 (pulled into the MVP)
-- **Status:** approved
+- **Status:** specified
 
 #### ECO-17 · Field auto-reseed at the farmstead
 - **Value:** Farms keep running without micromanagement, at a price (P4).
@@ -149,7 +149,7 @@ reseed). What happens when one runs out?
   2. Manual reseed still works with the toggle off (L1).
   3. The toggle state reaches its owner only (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** ECO-09, BLD-08, D-14 · **Size:** S · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 ### Units and the town
 
@@ -170,7 +170,7 @@ reseed). What happens when one runs out?
   4. The same seeded match with and without a connected viewer gives identical hashes (L3).
   5. 300 idle units cost at most 30 % of 300 moving units (L6).
 - **Tests:** L0, L1, L3, L6 · **Depends on:** CORE-02, PERF-02 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### BLD-04 · Foundations on uneven ground
 - **Value:** Build where the map allows, not only on perfectly flat ground (P1).
@@ -184,7 +184,7 @@ reseed). What happens when one runs out?
   2. A barracks on a 2-block slope is prepared and completed on a flat, supported footprint (L3).
   3. Preparation stays within the writer budget (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** BLD-03 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### BLD-05 · Abstract HP and damage stages
 - **Value:** Damaged buildings visibly crumble, with blocks falling away at damage thresholds, and
@@ -203,7 +203,7 @@ reseed). What happens when one runs out?
   4. No block of the two lowest outer-ring layers is ever removed (L1).
   5. Damage stages and repair round-trip through save and load in a GameTest (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** BLD-03, CMB-03 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### BLD-06 · Repair
 - **Value:** Builders restore damaged buildings and their lost blocks (P4).
@@ -217,7 +217,7 @@ reseed). What happens when one runs out?
   3. Repair never exceeds maximum HP (L1).
   4. A GameTest repair restores the removed blocks (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** BLD-05, D-15 · **Size:** S · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### BLD-07 · Building protection
 - **Value:** Buildings and nodes change only through the game's rules: no explosion, piston, mob,
@@ -240,7 +240,7 @@ reseed). What happens when one runs out?
   3. Blocks placed by builders are recognised, and foreign blocks in a footprint are rejected (L3).
   4. A lookup costs O(1) per event (L1).
 - **Tests:** L0, L1, L3, L5 · **Depends on:** BLD-01, BLD-15 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### BLD-08 · Starting building set, with resource sinks
 - **Value:** A complete village (civic centre, houses, storehouse, farmstead, fields, barracks) in
@@ -259,7 +259,7 @@ reseed). What happens when one runs out?
   4. Stone and iron each appear in the cost of at least two M4 items (L1).
 - **Tests:** L0, L1, L2, L3 · **Depends on:** BLD-04, BLD-05, ECO-08, PROD-01 · **Size:** M ·
   **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### BLD-09 · Cancel and demolish
 - **Value:** Undo a misplaced foundation, and clear space when the town needs it.
@@ -271,7 +271,7 @@ reseed). What happens when one runs out?
   1. Cancelling at x % progress refunds exactly the documented amount (L1).
   2. Demolishing removes every block and effect, and the population cap is recalculated (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** BLD-03 · **Size:** S · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### PROD-02 · Batch training
 - **Value:** Train five at a time for less total time (P4).
@@ -282,7 +282,7 @@ reseed). What happens when one runs out?
   1. A batch of 5 completes in exactly unit time × 5^0.8, in ticks (L1).
   2. All five spawn and walk to the rally point (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** PROD-01 · **Size:** S · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 ### Interface, persistence and the opponent
 
@@ -298,7 +298,7 @@ reseed). What happens when one runs out?
   3. Tooltip numbers equal the server's breakdown (L1).
   4. Goldens for the civic centre and barracks cards (L4, consent).
 - **Tests:** L0, L1, L4 (consent) · **Depends on:** UI-06, DATA-02 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### UI-09 · Build menu and placement UX
 - **Value:** Build quickly: a clear build menu, hotkeys, and Shift to place several buildings in a
@@ -311,7 +311,7 @@ reseed). What happens when one runs out?
   2. Shift places several foundations, and the builders take them in order (L3).
   3. Goldens (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** UI-08, BLD-04 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### MATCH-04 · Save and resume
 - **Value:** Stop at any time and continue later exactly where you were, even after a crash between
@@ -334,7 +334,7 @@ reseed). What happens when one runs out?
   5. Camera pose and control groups survive a resume in the client model (L1).
 - **Tests:** L0, L1, L3, L5 · **Fixtures:** crash-between-saves fixture (append-only) ·
   **Depends on:** CORE-07, CORE-11, CORE-12, BLD-05, ECO-08 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### AI-02 · AI economy and base building
 - **Value:** The AI builds a real economy and lays out its own base, so its armies come from its
@@ -354,7 +354,7 @@ reseed). What happens when one runs out?
   5. An L3 sample of one seed reaches the hash of its L1 run (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** AI-17, BLD-08, ECO-08, ECO-09, ECO-16 · **Size:** L ·
   **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### ART-02 · Resource and deposit visuals
 - **Value:** Every resource reads well from the camera: what it is and how much is left (P2).
@@ -366,7 +366,7 @@ reseed). What happens when one runs out?
   2. The owner approves the look and recognises each node and stage (L7, acceptance).
 - **Tests:** L4 (consent), L7 · **Depends on:** ECO-08, ECO-09, ECO-16, D-04 · **Size:** M ·
   **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### PERF-07 · Economy and construction perf gate
 - **Value:** A busy town never lags.
@@ -381,4 +381,4 @@ reseed). What happens when one runs out?
   3. The stress pass holds C p95 ≤ 50 ms (L6).
   4. The report lists the economy and construction times (R).
 - **Tests:** L6, R · **Depends on:** BLD-08, UNIT-05, PERF-06 · **Size:** S · **Tier:** T0
-- **Status:** approved
+- **Status:** specified

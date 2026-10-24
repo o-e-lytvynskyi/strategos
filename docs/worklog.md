@@ -9,7 +9,7 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
-## 2026-10-24 — M3 T9–T29
+## 2026-10-24 — M3 T9–T31, M3 Done; M4 spec
 
 - **The owner, past midnight:** «можешь любые тесты проводить и как закончишь м3 - начинай м4, все решения
   принимай сам, которые рекомендуешь» (STATE item 6).
@@ -107,7 +107,25 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
   at 5.3 ms (50), and at 1.5× speed C stays at 4.2 ms (15.3). Placement checks cost about 1 ms a placing tick, the
   writer 0.07 ms a tick at p99, fx 0.04. Problems met: the soak's stuck histogram was sized for the units at its start
   and broke when the waves added more; a construction ring 10 blocks apart ran out of sites by minute 10.
-  Next: T30, the consent batch.
+- **M3 T30 · the consent batch, under the owner's word of the day.** One pinned scene, `m3_goldens`: its world
+  changes only through commands the server sends at fixed core ticks and freezes at the first tick a condition
+  holds (the first crack, the first load on its way home, the first blow, the end), so its nine frames are
+  identical run after run. Making it found three things: the rally marker was never drawn (now a flag in the
+  owner's colour), placement's ghost follows vanilla's mouse handler, which a scene must set itself, and no scene
+  ever told the server its render distance, so the server sent 5 chunks whatever the client drew: that was M2's
+  open `pose_high`, and PERF-14's earlier numbers came from a small world. Goldens re-recorded for M3's HUD,
+  `art_look` frozen, with and without Sodium. PERF-14 again: everything within budget once the minimap rebuilds
+  four chunks a tick. ART-01.5: 200 armoured spearmen cost 1.6 ms with Sodium; on vanilla 8.9 ms, and outlining a
+  selected hundred 37 ms more, so vanilla needs a level of detail (M4 T3). Seven cards done on their goldens.
+- **M3 T31 · M3's close; M3 Done.** The food criterion of §8.4 measured: nine seeds of ten keep the bot's
+  training fed within a minute; on the way the bot's worst bug showed, a placement taking builders off the site
+  they were on (fixed, with a test; M4 adds the missing `Build` command). `verify`, `verifySlow`, `verifySoak`
+  green; JMH named only `MatchBusBench`, whose untouched code reads 17.7 % slower on this Mac than in M1, so its
+  baseline entry was re-taken; the perf GameTests ran again. Health check: four classes over 800 lines (M4 T1).
+- **M4's spec**, written as M3 closed (24 tasks, every card specified): resources first (activity tiers, stone,
+  deposits, livestock), then the town (slopes, damage stages, repair, protection, the building set, cancel and
+  demolish, batches, auto-reseed), the full command card and build menu, save and resume, and the bot's economy.
+  Next: M4 T1.
 
 ## 2026-10-23 (evening) — M3 spec, T1–T8
 
