@@ -1,64 +1,17 @@
-# Strategos — instructions for the assistant
+# Strategos — Claude Code
 
-A Minecraft 1.21.1 NeoForge mod that recreates the RTS mechanics of 0 A.D. and Age of
-Empires, basics first. Professional bar: clean architecture, best practices, performance,
-and automated tests of every intermediate result.
+The project's rules are tool-neutral and live in AGENTS.md, imported here:
 
-## Start here
+@AGENTS.md
 
-Every work session follows the **`strategos-dev` skill**
-(`.claude/skills/strategos-dev/SKILL.md`): orient, pick the next ready task, build it test-first,
-verify, record progress, commit and push, and repeat until a stop condition; then report. The
-owner visits rarely and expects the repository itself to say what happened.
+## Claude Code specifics
 
-1. Read [docs/STATE.md](docs/STATE.md) — the owner's queue, the current task, blockers — and the
-   newest entry of [docs/worklog.md](docs/worklog.md).
-2. Run `python3 tools/roadmap.py check` and `summary`.
-3. Read only the docs the task needs:
-
-| Question | Where |
-|---|---|
-| Features, milestones, what the owner approved | [docs/ROADMAP.md](docs/ROADMAP.md), cards in `docs/roadmap/` |
-| How the mod is built (authority, tick, units, content, pathing, network, client) | [docs/04-architecture.md](docs/04-architecture.md), decisions in [docs/adr/](docs/adr/README.md) |
-| Versions, libraries, dependency policy | [docs/02-tooling.md](docs/02-tooling.md) |
-| Test levels, commands, Definition of Done | [docs/05-testing.md](docs/05-testing.md) |
-| Roles, feature lifecycle, statuses and evidence, autonomous sessions | [docs/03-design-process.md](docs/03-design-process.md) |
-| What is realistic, risks, MVP | [docs/01-feasibility.md](docs/01-feasibility.md) |
-| Evidence: engine facts, prior art, mechanics | [docs/research/README.md](docs/research/README.md) |
-| The current milestone's implementation spec | `docs/milestones/` |
-
-## Hard rules
-
-- **Clean-room.** Never open GPL or all-rights-reserved sources: Reign of Nether, MineColonies,
-  Structurize, BlockUI, Ancient Warfare 2, Villager Recruits and family, 0 A.D. code or data —
-  not even on the web. Use the behavioural notes in `docs/research/`. MIT/Apache-2.0 code may be
-  adapted with its notice in `NOTICE` ([ADR-0005](docs/adr/0005-clean-room-and-licensing.md)).
-- **Verify engine APIs before relying on them.** Grep the decompiled Minecraft 1.21.1 + NeoForge
-  sources (`neoforge-<ver>-sources.jar` from `createMinecraftArtifacts`); FML, the event bus and
-  ModDevGradle are not in that jar, so check them with `javap` on the cached jars (skill §3.3).
-  Never trust memory for class, method or event names.
-- **Rules in `core`, Minecraft in `mod`.** `core` never imports Minecraft; game state is owned by
-  the core ([ADR-0008](docs/adr/0008-authority-and-state-model.md)).
-- **Runs.** Only run tasks that end on their own (builds, `:core:test`, `:mod:test`,
-  `runGameTestServer`, `runServerSmoke`, perf batches). The owner starts interactive `runClient`
-  and `runServer` sessions. **A client window (scenario harness, spikes S3/S4/S9) opens only
-  after asking the owner**: it can take keyboard focus.
-- **Permissions.** Unattended sessions run in auto mode. The project allowlist
-  (`.claude/settings.json`, activated by the owner on 2026-10-21) lets the work loop's commands
-  through and denies force pushes and discarding the working tree. Never edit
-  `.claude/settings.json`; propose changes in "For the owner".
-- **Owner approvals:** roadmap features, golden images, performance baselines and thresholds, new
-  runtime dependencies, anything that changes the product.
-- **Git:** commit and push to the private GitHub repository (`o-e-lytvynskyi/strategos`, over SSH)
-  without asking, after each green task; English messages, no assistant traces. Making anything
-  public stays the owner's decision.
-- **Language:** everything in the repository is English; chat with the owner is Russian.
-
-## Definition of Done
-
-Tested at the lowest level that can express it; every level its change type requires passes
-([ADR-0006](docs/adr/0006-test-levels-and-definition-of-done.md), amended by
-[ADR-0022](docs/adr/0022-definition-of-done-amendments.md); summary in
-[05-testing.md](docs/05-testing.md#definition-of-done)); no new ErrorProne/NullAway
-findings; STATE.md, roadmap statuses and the affected docs or ADRs updated; new pitfalls written
-to the pet-projects knowledge base in the same session.
+- **The procedure** is the `strategos-dev` skill (`.claude/skills/strategos-dev/SKILL.md`).
+- **The main session is the orchestrator** and runs on Opus (`claude --model opus`, or `/model
+  opus`). Workers are in `.claude/agents/`: `implementer` and `reviewer` (Sonnet), `runner`,
+  `api-lookup` and `recorder` (Haiku). The rules are in [docs/agents.md](docs/agents.md); a new
+  role follows the `new-agent` skill.
+- **Workflows** (multi-agent scripts) stay rare: they burn the owner's quota. A single reviewer
+  agent covers most risky changes.
+- **Long runs** go to the background (`run_in_background`), and a run's end is awaited with
+  Monitor, never a sleep loop.

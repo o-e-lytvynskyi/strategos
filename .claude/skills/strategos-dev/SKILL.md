@@ -12,8 +12,10 @@ the owner — can pick up from the repository alone:
 - every finished step is committed and pushed.
 
 Paths below are relative to the repository root. The conventions (roles, statuses, evidence)
-are in docs/03-design-process.md, "Autonomous development". The hard rules are in CLAUDE.md.
-This skill is the procedure.
+are in docs/03-design-process.md, "Autonomous development". The hard rules, the autonomy
+defaults and the client-window rules are in AGENTS.md; delegation is in docs/agents.md. This
+skill is the procedure, for every tool: an agent without skills reads this file directly. On a
+developer branch (`dev/*`), §12 overrides the steps it names.
 
 Commands below are spelled the way the project allowlist (`.claude/settings.json`) expects.
 Spelled differently — an absolute path instead of `~`, a `cd` in front — they may stop an
@@ -31,7 +33,8 @@ unattended session at a prompt.
    - if `main` is ahead of `origin`, push first: an earlier commit never reached GitHub;
    - `git branch -a`: a `wip/*` branch goes to §9.
 3. **Read:**
-   - docs/STATE.md: "For the owner", "Since your last visit", "Now", "Blocked";
+   - docs/STATE.md: "For the owner", "Since your last visit", "Now", "Standing restrictions",
+     "Decisions taken", "Assignments", "Blocked" — by heading (`grep -n '^## '`), not the whole file;
    - the newest docs/worklog.md entry. Its date is the last session.
 4. **Owner input:**
    - **The owner's commits.** Every assistant commit starts with `Mx Tn:`, `Mx:` or `Docs:`
@@ -86,8 +89,10 @@ Then take the first that applies:
    - its cards are `approved`, `approved-foundation`, `specified` or `in_progress` — never
      `proposed`, `changed`, `deferred` or `rejected`;
    - it waits for no open owner decision;
-   - it needs no client window. A task that does goes to the consent batch in "For the owner",
-     and you take the next task.
+   - it is not in STATE "Assignments" (another developer's work);
+   - a client window is no obstacle unless "Standing restrictions" forbids windows: then the
+     window part goes to the consent batch in "For the owner", and you take the next task. Window
+     runs follow AGENTS.md "Client windows": batched at the task's end, one at a time.
 
    A card's "Depends on" orders the plan. Inside a specified milestone, the spec's task
    dependencies decide what is ready: M0 T1 starts CORE-06 before CORE-01.
@@ -168,9 +173,20 @@ approved roadmap; ideas go to "For the owner" as proposals.
    spec first (`T5b` → `T5b.1`, `T5b.2`), commit the split, then do the first part.
 8. **Clean-room.** If a search result or a link leads into GPL or all-rights-reserved mod code
    (Reign of Nether, MineColonies, Recruits, 0 A.D.), close it without reading it.
-9. **Workflows sparingly.** Multi-agent workflows burn the owner's usage quota; limits have cut
-   several short. Work inline. Use a small review workflow only for risky changes: an
-   architecture change, a spike conclusion, a milestone close.
+9. **Delegate the routine** (docs/agents.md). The orchestrator keeps steps 2, 6 and 7 and the
+   design; it sends:
+   - engine-name checks of step 3 to `api-lookup`, several names in one request;
+   - code a brief can describe completely to `implementer` (the brief format is in
+     docs/agents.md); small edits stay inline;
+   - every Gradle run of step 5 whose full log is not needed to `runner`, in the background
+     when long;
+   - the bookkeeping of §5 to `recorder`, with every fact listed;
+   - risky changes (architecture, `@HotPath`, payloads, over ~500 lines) to `reviewer` before
+     the commit.
+
+   Read every worker's diff before committing it. Multi-agent workflows stay rare: they burn the
+   owner's usage quota; one `reviewer` covers most risky changes. A standing «без субагентов»
+   means all of this is done inline.
 
 ## 4. Write a milestone spec
 
@@ -203,7 +219,8 @@ approved roadmap; ideas go to "For the owner" as proposals.
 
 ## 5. Record progress
 
-Do this after each task, before committing.
+Do this after each task, before committing; `recorder` may type it from the facts you give it.
+On a developer branch, STATE and the worklog are replaced by the branch file (§12).
 
 1. **Spec.** Tick the task in "Progress": `[x] T3 (2026-11-02)`. When M0 T1 starts, record the
    tripwire in "Now".
@@ -341,8 +358,9 @@ Stop the current line of work, record it in STATE "Blocked" and the worklog, and
   the next task;
 - **the work would break a hard rule:**
   - clean-room, or a threshold raised to get green;
-  - scope beyond approved cards, or a new runtime dependency;
-  - a client window without consent;
+  - scope beyond approved cards, or a runtime dependency whose licence is not MIT/Apache-2.0
+    compatible;
+  - a client window while "Standing restrictions" forbids it;
   - anything public.
 
   Stop that line, ask in "For the owner", and take other ready work;
@@ -380,15 +398,16 @@ Stop the current line of work, record it in STATE "Blocked" and the worklog, and
 
 Number each item. Each says what is needed, why, the options with your recommendation, and what
 is blocked until the owner answers. Work that does not depend on an item continues. Never decide
-an open owner decision yourself.
+an open owner decision yourself. Choices that have a recommended option are not queued: take
+them and add a line to STATE "Decisions taken" (AGENTS.md "Autonomy by default").
 
 | Kind | Content |
 |---|---|
 | Go-ahead | «начинай Mx» for a specified milestone |
 | Decision | Options and a recommendation |
-| Consent batch | The client-window runs, their duration, and the phrase «запускай консент-батч» (the owner then steps away from the keyboard); a static scene is repeated two or three times, never more (D-22) |
+| Consent batch | Only while "Standing restrictions" forbids windows: the client-window runs, their duration, and the phrase «запускай консент-батч»; a static scene is repeated two or three times, never more (D-22) |
 | Demo | Exact commands and steps; the owner's verdict goes into the milestone's Acceptance |
-| Approval | Performance baselines, goldens, ADR thresholds, `changed` cards |
+| Approval | `changed` cards and anything AGENTS.md keeps for the owner; goldens and baselines you checked are "Decisions taken" instead |
 | Proposal | Ideas that would add scope |
 
 ## 11. Report (end of session, in Russian)
@@ -402,3 +421,63 @@ First delete the lock (`rm -f .session.lock`): nothing runs after the final mess
   - `https://github.com/o-e-lytvynskyi/strategos/blob/main/docs/STATE.md`;
   - `https://github.com/o-e-lytvynskyi/strategos/blob/main/docs/worklog.md`;
   - `https://github.com/o-e-lytvynskyi/strategos/commit/<hash>` for each commit.
+
+## 12. Parallel developers and branches
+
+Another developer (a person with their own agent, possibly another tool) may own a milestone or
+some tasks on a branch. AGENTS.md "Parallel developers" has the rules; this is the procedure.
+
+### 12.1 Handing work over (on `main`, on the owner's word)
+
+1. Add the row to STATE "Assignments": work, branch `dev/<developer>/<milestone>`, developer,
+   date, branch file `docs/branches/<developer>-<milestone>.md`.
+2. Create the branch file from the template in docs/branches/README.md, with "Now" filled from
+   STATE.
+3. Commit `Docs: assign <work> to <developer>`, push, then create and push the branch from that
+   commit. If the milestone has not started, the owner's hand-over is its go-ahead: apply §2's
+   start steps on `main` in the same commit.
+
+### 12.2 Working on a branch (the other developer's sessions)
+
+Every section above applies, with these overrides:
+- **§1:** the lock is the working copy's; read the branch file instead of STATE "Now" and the
+  worklog; `git fetch` and merge `origin/main` into the branch when `main` moved (never rebase a
+  pushed branch: force pushes are denied).
+- **§2:** pick only the assigned work. The milestone's go-ahead is the assignment.
+- **§5:** spec "Progress" and the assigned cards as usual; STATE "Now", "Since your last visit",
+  "Decisions taken" and the worklog entry go into the branch file's sections of the same names.
+  New pitfalls go into its "Pitfalls" when the pet-projects knowledge base is not on disk.
+- **§6:** push the branch after each green task; never push `main`.
+- **§7:** the milestone close happens on the branch; the merge is the owner's.
+- **§11:** the report links the branch file and the branch's commits.
+
+### 12.3 Validating a branch («провалидируй <branch>», on `main`'s side)
+
+1. `git fetch`; `git log --oneline main..origin/<branch>`; `git diff --stat main...origin/<branch>`.
+2. Check the branch out in its own worktree (`git worktree add ../strategos-review
+   origin/<branch>`), so `main`'s working copy stays untouched.
+3. In that worktree, through `runner`: `./gradlew verify verifySlow verifySoak`, and
+   `:core:jmh :core:jmhCompare` when the core's step, codecs or a `@HotPath` kernel changed.
+4. `reviewer` on `main...origin/<branch>` with the spec, the cards and the branch file's
+   "Decisions taken" as input. For a large milestone, one reviewer per area (core rules,
+   adapters, client), at most three.
+5. Check the bookkeeping: `tools/roadmap.py check`, Progress against the commits, every `done`
+   card's evidence exists.
+6. Write the verdict into the branch file's "Review" section and a numbered "For the owner"
+   item on `main`: findings by severity, gate results with numbers, a recommendation (merge /
+   merge after fixes / back to the developer).
+7. **Fixes.** On the owner's «с правками»: fix on the branch in the review worktree, commit
+   `Mx Tn: review fix — <what>`, push the branch. Without it, findings go back to the developer
+   in the branch file.
+
+### 12.4 Merging (only on the owner's word: «влей <branch>»)
+
+1. Merge `origin/main` into the branch if `main` moved; the gate of 12.3 step 3 passes again.
+2. Fold the branch file into `main`'s records, in the merge itself: its log entries into
+   docs/worklog.md (dated, in order), "Decisions taken" and the outcome into STATE, the "Now" of
+   STATE from its "Now"; its "Pitfalls" into the knowledge base (§5.6). Delete the row in
+   "Assignments"; keep the branch file as the record, with "Merged <date>" at its top.
+3. `git checkout main && git merge --no-ff origin/<branch> -m "Mx: merge <branch> after review"`,
+   `./gradlew verify`, push. Delete the review worktree (`git worktree remove`); the branch is
+   kept on `origin` until the owner deletes it.
+

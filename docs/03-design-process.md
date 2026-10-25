@@ -11,7 +11,7 @@ to something playable and tested.
 | Product | Decides product questions; approves, rejects or changes roadmap features; accepts milestone demos | Proposes features, options and recommendations |
 | Design | Approves decisions that change the product or add runtime dependencies | Writes specs, ADRs and the architecture; runs spikes and reports numbers |
 | Code | Reviews when they want to | Implements, tests and documents |
-| Tests | Approves new golden images and performance baselines; plays milestone demos and multiplayer sessions | Runs every automated level that ends on its own (L0–L3, L5, L6). A client window (L4) opens only with the owner's consent, because it can take keyboard focus |
+| Tests | Approves new golden images and performance baselines; plays milestone demos and multiplayer sessions | Runs every automated level that ends on its own (L0–L3, L5, L6), and client windows (L4) under AGENTS.md "Client windows" unless a standing restriction forbids them (owner, 2026-10-25) |
 | Runs | Starts interactive `runClient` / `runServer` sessions themselves, to watch the logs | Never starts interactive or long-running sessions |
 | Git | Decides on tags, releases and anything public; the repository stays private unless the owner decides otherwise | Commits and pushes to the private repository without asking (owner, 2026-10-21), in English, with no assistant traces |
 
@@ -68,7 +68,7 @@ stateDiagram-v2
 2. **Build.** Task by task. Every task ends green on its own verification command. L0 and
    L1 run continuously; every gameplay change gets a GameTest (L3).
 3. **Verify.** The full `verify` run; performance against the baseline (L6); client
-   scenarios (L4) with the owner's consent.
+   scenarios (L4), batched (AGENTS.md "Client windows").
 4. **Demo.** The owner starts a dedicated server and two clients with QA-09's one launch
    command, follows the demo script from the milestone spec, and their feedback becomes roadmap
    changes.
@@ -161,9 +161,20 @@ windows, demos to play, baselines and goldens to approve, proposals that add sco
 numbered item in STATE.md "For the owner", with options and a recommendation. Work that does
 not depend on it continues; the assistant never waits idle on one item while other work is ready.
 
-**Consent batches.** Runs that open a game window are queued, not run. When the owner says
-«запускай консент-батч», the assistant runs the whole batch in one go while the owner is away from
-the keyboard, and records the results.
+**Client windows and decisions (owner, 2026-10-25).** Runs that open a game window are allowed by
+default and batched (AGENTS.md "Client windows"); choices with a recommended option are taken and
+listed in STATE.md "Decisions taken" for the owner to veto (AGENTS.md "Autonomy by default"). While
+STATE.md "Standing restrictions" forbids windows, they are queued as a consent batch instead: when
+the owner says «запускай консент-батч», the assistant runs the whole batch in one go while the
+owner is away from the keyboard, and records the results.
+
+**Delegation (2026-10-25).** The main session orchestrates on the strongest model and hands
+routine work to smaller ones ([agents.md](agents.md)); the rules for every tool are in
+[AGENTS.md](../AGENTS.md).
+
+**Parallel developers (2026-10-25).** A milestone may be assigned to another developer on a
+`dev/<developer>/<milestone>` branch, recorded in STATE.md "Assignments"; its records live in
+[branches/](branches/README.md) until the owner validates and merges it (skill §12).
 
 **When the owner visits** (five minutes):
 1. Read STATE.md: "For the owner", "Since your last visit" and "Now".
@@ -176,7 +187,8 @@ the keyboard, and records the results.
 
 - The mod follows semantic versioning, `0.x` until the MVP. The version lives in
   `gradle.properties`.
-- Trunk-based on `main`; short-lived branches only when a change needs isolation.
+- Trunk-based on `main`; short-lived branches only when a change needs isolation, and
+  developer branches for assigned work (skill §12), merged `--no-ff` after the owner's review.
 - Commit messages are English, imperative, with no assistant traces. The assistant commits and
   pushes to the private GitHub repository without asking (owner, 2026-10-21).
 

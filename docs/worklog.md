@@ -9,6 +9,19 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
+## 2026-10-25 — Docs: orchestration, autonomy defaults, parallel developers
+
+- **Rules made tool-neutral** — AGENTS.md is the single source (CLAUDE.md imports it); Codex reads it as is.
+  New defaults by the owner's word: client windows allowed and batched, the recommended decisions taken and listed in
+  STATE "Decisions taken", no pauses for reports; restrictions go to "Standing restrictions".
+- **Delegation** — docs/agents.md (tiers A/B/C, roster, brief, gates); five workers in `.claude/agents/`:
+  `implementer`, `reviewer` (Sonnet), `runner`, `api-lookup`, `recorder` (Haiku); the `new-agent` skill for new roles.
+  Not yet trialled on a real task: M5 T1 is their first use.
+- **Parallel developers** — skill §12 (hand-over, branch work, validation, merge), docs/branches/ with the branch-file
+  template, STATE "Assignments"; docs/codex-setup.md specifies the Codex side for a colleague.
+- STATE's "Since your last visit" reset (the owner was here); its history is in this log.
+- **Next:** M5 on the owner's word, here or on a colleague's branch.
+
 ## 2026-10-24 (evening) — the watched demo
 
 - **What:** a `demo` scene in the L4 harness, `mod/src/devtools/java/dev/strategos/devtools/demo/`: one class per
