@@ -24,3 +24,4 @@ before any development starts, so two developers can never hold the same work (A
 
 | Work | Developer | Branch | Status | Since | Note |
 |---|---|---|---|---|---|
+| M6 spec | dyadik | dev/dyadik/m6-spec | assigned | 2026-10-25 | planning |
