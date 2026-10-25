@@ -97,7 +97,7 @@ only its own vision at every level except that labelled top level.
   3. A technology cannot be researched twice or in two buildings at once (L1).
   4. A research completes and applies in a GameTest (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** DATA-02, PROD-01 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### TECH-02 · Phases: Village to Town
 - **Value:** Advancing to Town is a real decision, boom or rush, and a moment that unlocks new
@@ -114,7 +114,7 @@ only its own vision at every level except that labelled top level.
   3. The Town cost includes stone or iron (L1).
   4. Every player gets the phase notice (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** TECH-01, BLD-08, D-05 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### TECH-03 · Starting technologies and visible equipment tiers
 - **Value:** Early research choices, a faster economy now or a stronger army later, and upgrades
@@ -134,7 +134,7 @@ only its own vision at every level except that labelled top level.
   4. A golden shows a unit before and after the tier change (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** TECH-01, UNIT-07 · **Size:** M ·
   **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### CMB-09 · Siege ram and the arsenal
 - **Value:** The decisive answer to buildings: slow and tough, devastating to structures, helpless
@@ -151,7 +151,7 @@ only its own vision at every level except that labelled top level.
   4. Rams pass only gaps that fit their footprint (L3).
 - **Tests:** L0, L1, L2, L3, L5 · **Depends on:** CMB-03, UNIT-06, PATH-11, TECH-02, D-12 ·
   **Size:** M · **Tier:** T1 (pulled into the MVP by D-12)
-- **Status:** approved
+- **Status:** specified
 
 #### BLD-17 · Defence tower
 - **Value:** A defensive path to Town (boom behind towers) and another way to spend stone (P4).
@@ -164,7 +164,7 @@ only its own vision at every level except that labelled top level.
   3. Only enemies are targeted (L1).
   4. Its blueprint passes the lint and the construction and damage-stage GameTests (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** CMB-07, TECH-02 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 ### The match
 
@@ -179,7 +179,7 @@ only its own vision at every level except that labelled top level.
      and the arena rules applied once (L4, consent).
   2. The report states how MATCH-02 creates and reuses the world (R).
 - **Tests:** L4 (consent), R · **Depends on:** MAP-07 · **Size:** S · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### MATCH-02 · Skirmish setup and launch
 - **Value:** Start a skirmish from the main menu in a few clicks (P3).
@@ -197,7 +197,7 @@ only its own vision at every level except that labelled top level.
   4. Setup-screen goldens (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** MATCH-14, MAP-01, MATCH-01, UI-02 ·
   **Size:** L · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### MATCH-03 · Conquest, defeat and statistics
 - **Value:** A clear ending: destroy everything the enemy has, or make them resign, then see how
@@ -215,7 +215,7 @@ only its own vision at every level except that labelled top level.
   5. End-screen golden (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** MATCH-01, BLD-08 · **Size:** M ·
   **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### MAP-02 · First skirmish map
 - **Value:** A balanced 1 v 1 map whose terrain creates decisions, not only paths (P1, P4).
@@ -235,7 +235,7 @@ only its own vision at every level except that labelled top level.
   5. The package imports with its terrain hash (L3).
 - **Tests:** L0, L1, L3 · **Fixtures:** the skirmish map package with a terrain hash ·
   **Depends on:** MAP-01, ECO-02, ECO-16, D-17 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 ### The opponent
 
@@ -261,7 +261,7 @@ only its own vision at every level except that labelled top level.
   6. A golden of the raid bar (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** AI-03, MAP-02, BLD-16 · **Size:** L ·
   **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### AI-05 · AI phases, research and difficulty levels
 - **Value:** An AI that advances and researches, with three levels that feel different and never
@@ -275,7 +275,7 @@ only its own vision at every level except that labelled top level.
   2. Hard beats Normal, and Normal beats Easy, in at least 124 of 200 seeded L1 matches (L1).
   3. No level below the labelled top receives a bonus, and every handicap is listed in setup (L1).
 - **Tests:** L0, L1 · **Depends on:** AI-04, TECH-02, D-19 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 ### Interface
 
@@ -293,7 +293,7 @@ only its own vision at every level except that labelled top level.
   5. A golden with a ping (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent), L6 · **Depends on:** UI-11, UI-12 · **Size:** M ·
   **Tier:** T1 (pulled into the MVP by D-16)
-- **Status:** approved
+- **Status:** specified
 
 #### UI-21 · Notification feed and alert audio
 - **Value:** Never miss what matters (an attack, a finished research, a new phase) and hear it
@@ -309,7 +309,7 @@ only its own vision at every level except that labelled top level.
   3. Feed golden (L4, consent).
   4. The owner's audio checklist passes (L7, acceptance).
 - **Tests:** L0, L1, L4 (consent), L7 · **Depends on:** UI-12, TECH-01 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### UI-13 · Research and phase UI
 - **Value:** Plan your phase-up: see what Town needs and what each technology does (P4).
@@ -321,7 +321,7 @@ only its own vision at every level except that labelled top level.
   2. Research progress survives save and load (L3).
   3. Goldens (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** UI-08, TECH-02 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### UI-14 · First-match hints and controls help
 - **Value:** A new player learns the controls by playing, without a manual.
@@ -336,7 +336,7 @@ only its own vision at every level except that labelled top level.
   4. A friend playtester new to the game gets through the first 5 minutes with the hints alone
      (L7, acceptance).
 - **Tests:** L0, L1, L4 (consent), L7 · **Depends on:** UI-21 · **Size:** M · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 ### Solo fog (D-24 (c))
 
@@ -362,7 +362,7 @@ only its own vision at every level except that labelled top level.
      hidden case of CORE-03 AC4, which M0 cannot test without fog).
 - **Tests:** L0, L1, L6 · **Depends on:** CORE-08 · **Size:** M · **Tier:** T1 (pulled into the MVP
   by D-24)
-- **Status:** approved
+- **Status:** specified
 
 #### FOW-07 · Explored state, the shroud and solo fog gating
 - **Value:** A match starts in the dark: scouting matters, explored land stays dim, and hidden
@@ -388,7 +388,7 @@ only its own vision at every level except that labelled top level.
      shader pack (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent), L5, L6 · **Depends on:** FOW-01, NET-08 · **Size:** M ·
   **Tier:** T1 (pulled into the MVP by D-24)
-- **Status:** approved
+- **Status:** specified
 
 #### UI-16 · Minimap fog and explored areas
 - **Value:** The minimap shows what you know, and no more (P5).
@@ -402,7 +402,7 @@ only its own vision at every level except that labelled top level.
   3. Golden (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** UI-11, FOW-07 · **Size:** S · **Tier:** T1
   (pulled into the MVP by D-24)
-- **Status:** approved
+- **Status:** specified
 
 #### AI-18 · The AI reads only its own vision
 - **Value:** The AI plays with the information you have (P5).
@@ -416,7 +416,7 @@ only its own vision at every level except that labelled top level.
   3. Fogged AI-versus-AI matches still end within 45 game minutes (L1).
 - **Tests:** L0, L1 · **Depends on:** AI-01, FOW-01 · **Size:** S · **Tier:** T1 (pulled into the
   MVP by D-24)
-- **Status:** approved
+- **Status:** specified
 
 #### MATCH-07 · Visibility options
 - **Value:** Choose how much of the map you know at the start.
@@ -428,7 +428,7 @@ only its own vision at every level except that labelled top level.
   2. A revealed map makes `FogGate` answer "visible" for every participant (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** FOW-07, MATCH-02 · **Size:** S · **Tier:** T1 (pulled
   into the MVP by D-24)
-- **Status:** approved
+- **Status:** specified
 
 ### The MVP gate
 
@@ -449,7 +449,7 @@ only its own vision at every level except that labelled top level.
   4. The L3 sample completes, and its journals replay to the same hash (L3).
 - **Tests:** L1, L3 · **Fixtures:** soak seed sets · **Depends on:** QA-11, AI-05, MATCH-03 ·
   **Size:** S · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### QA-13 · MVP release-candidate gate
 - **Value:** The MVP the owner plays is complete, stable and honest about its origins.
@@ -471,7 +471,7 @@ only its own vision at every level except that labelled top level.
   7. The owner signs off the checklist (L7, acceptance).
 - **Tests:** L0, L2, L3, L4 (consent), L5, L7, D · **Depends on:** QA-12, QA-09, PERF-09 ·
   **Size:** S · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
 
 #### PERF-09 · MVP perf gate
 - **Value:** The MVP plays smoothly from the first minute to the last.
@@ -485,4 +485,4 @@ only its own vision at every level except that labelled top level.
   3. The stress pass holds C p95 ≤ 50 ms (L6).
   4. The report is archived as the MVP baseline (R).
 - **Tests:** L6, R · **Depends on:** PERF-08, QA-12 · **Size:** S · **Tier:** T0
-- **Status:** approved
+- **Status:** specified
