@@ -5,18 +5,25 @@
 ## Now
 
 - **Milestone:** M5 Combat. Main records 0 of 17 tasks; the preserved legacy branch records T1-T2 complete and a planned T3 split (2 of 19), pending import and validation under the new process.
-- **In progress:** none; registration #12 is merged, this assignment is pending, and the operator stopped feature work after T2.
+- **In progress:** none; registration #12 and assignment #15 are merged, but the operator explicitly requested no implementation work now.
 - **Last finished task:** legacy T2, commit a545902 on `codex/m5-combat`; this is not a claim delivery or a merge into main.
-- **Next task:** after registration and assignment merge, reconcile the legacy work with current main, migrate its progress to this branch file, validate the updated toolchain and sanitise published measurement paths. Resume T3 only on the operator's next instruction and after the red main perf investigation is resolved.
-- **Merged from main last:** 2d58bdf (2026-10-25); the later changes are records and procedure updates, with no build or product-code changes.
+- **Next task:** wait for the operator's next instruction. Later, T1 and T2 must be transferred to the new repository the operator designates, or reimplemented there. The destination and transfer-versus-reimplementation choice are not settled yet. Do not begin either option or T3 now; retain the legacy source and evidence for that future decision.
+- **Merged from main last:** cb18b94 (2026-10-25); the accepted M5 and fix-main assignments change records only, with no product-code fix.
 
 ## Depends on unfinished work
 
 - M0-M4 are already on main; M5's implementation has no dependency on an unfinished external milestone. The M6 spec belongs to dyadik and is outside this claim.
 - The preserved T1-T2 implementation is part of this same M5 work, not a merged dependency. Import it only after assignment; do not rebase or rewrite its pushed history.
-- Registration [#12](https://github.com/o-e-lytvynskyi/strategos/pull/12) is merged. The separate [main perf investigation #13](https://github.com/o-e-lytvynskyi/strategos/pull/13) has priority over further feature implementation; record-only reconciliation can be prepared independently.
+- Registration [#12](https://github.com/o-e-lytvynskyi/strategos/pull/12), M5 assignment [#15](https://github.com/o-e-lytvynskyi/strategos/pull/15) and the separate [main perf investigation #13](https://github.com/o-e-lytvynskyi/strategos/pull/13) are merged. The two perf failures have not been fixed by those record-only pull requests. The operator's explicit pause remains in force.
 
 ## Log
+
+### 2026-10-25 — record future T1-T2 migration and confirm accepted assignments
+
+- The operator requested a record only: later transfer T1 and T2 into a new repository, or reimplement them there. No target repository has been supplied and no method has been selected. Keep the existing implementation and test evidence on `codex/m5-combat` unchanged until the operator authorises that work.
+- Confirmed that PR #13 was merged as cb18b94. It assigns the perf investigation and contains only `docs/claims.md` and its branch file; it does not implement a fix. PR #15, the M5 assignment, is merged as well.
+- Fast-forwarded this branch to the accepted main records, then updated only this branch file. No transfer, rewrite, perf repair, T3 implementation or test run was started.
+- **Next:** remain paused; choose the destination and implementation approach when the operator resumes the work.
 
 ### 2026-10-25 — adopt the new developer process
 
@@ -31,7 +38,7 @@
 
 ## For the owner
 
-1. Registration #12 is already merged. Review and merge [M5 assignment #15](https://github.com/o-e-lytvynskyi/strategos/pull/15). No new development starts before assignment is merged. This claim includes only its registry row and this branch file.
+1. Registration #12 and M5 assignment #15 are merged. The operator requested that T1-T2 transfer or reimplementation be recorded for later, with no work now. The target repository and preferred approach will be identified when the operator resumes; no answer is requested during this pause.
 2. The old M5 artifacts contain absolute JVM paths. Sanitise them in the future import without changing measured numbers; do not rewrite older history. Main's central STATE and worklog remain the maintainer's records.
 
 ## Decisions taken
