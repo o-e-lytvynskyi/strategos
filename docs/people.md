@@ -24,6 +24,7 @@ built.
 | Handle | Who | GitHub | Tool and orchestrator model | Since |
 |---|---|---|---|---|
 | `claude-owner` | Oleksandr Lytvynskyi's Claude Code sessions | [@o-e-lytvynskyi](https://github.com/o-e-lytvynskyi) | Claude Code, Opus | 2026-10-21 |
+| `dyadik9616` | dyadik9616 | [@dyadik9616](https://github.com/dyadik9616) | to be filled in by the developer | 2026-10-26 |
 
 A new developer: a row here (handle, who, GitHub, tool), collaborator access on GitHub, then
 [onboarding.md](onboarding.md).
