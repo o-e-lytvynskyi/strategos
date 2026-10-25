@@ -5,16 +5,16 @@
 ## Now
 
 - **Milestone:** M5 Combat. Main records 0 of 17 tasks; the preserved legacy branch records T1-T2 complete and a planned T3 split (2 of 19), pending import and validation under the new process.
-- **In progress:** none; registration and assignment are pending, and the operator stopped feature work after T2.
+- **In progress:** none; registration #12 is merged, this assignment is pending, and the operator stopped feature work after T2.
 - **Last finished task:** legacy T2, commit a545902 on `codex/m5-combat`; this is not a claim delivery or a merge into main.
 - **Next task:** after registration and assignment merge, reconcile the legacy work with current main, migrate its progress to this branch file, validate the updated toolchain and sanitise published measurement paths. Resume T3 only on the operator's next instruction and after the red main perf investigation is resolved.
-- **Merged from main last:** f723161 (2026-10-25).
+- **Merged from main last:** 2d58bdf (2026-10-25); the later changes are records and procedure updates, with no build or product-code changes.
 
 ## Depends on unfinished work
 
 - M0-M4 are already on main; M5's implementation has no dependency on an unfinished external milestone. The M6 spec belongs to dyadik and is outside this claim.
 - The preserved T1-T2 implementation is part of this same M5 work, not a merged dependency. Import it only after assignment; do not rebase or rewrite its pushed history.
-- Registration [#12](https://github.com/o-e-lytvynskyi/strategos/pull/12) precedes this claim. The separate [main perf investigation #13](https://github.com/o-e-lytvynskyi/strategos/pull/13) has priority over further feature implementation; record-only reconciliation can be prepared independently.
+- Registration [#12](https://github.com/o-e-lytvynskyi/strategos/pull/12) is merged. The separate [main perf investigation #13](https://github.com/o-e-lytvynskyi/strategos/pull/13) has priority over further feature implementation; record-only reconciliation can be prepared independently.
 
 ## Log
 
@@ -26,11 +26,12 @@
 - Historical T2 navigation: 10,049,008 bytes on the populated 512-square bridge fixture; path D p99 0.9465 / 1.0524 ms. Same-host terrain rebuild cost grew from 739.15 to 1848.21 microseconds; the operator approved the Windows comparison base in this chat. Keep the original cost visible and preserve the owner's Mac base and all thresholds.
 - Updated main f723161 passes local `verifyFast` in 5m 26s on Windows x64, Java 21, Gradle 9.8.2, ErrorProne 2.51.0 and Gson 2.14.0. Nine Python tool tests pass; roadmap check reads 245 cards with zero problems. This is a fast check of current main, not revalidation of the unmerged T2 implementation against the new toolchain.
 - Main's older perf run 40176248614 has two real failed checks. They are recorded separately in claim #13; the successful local fast check does not erase them.
+- A human merged registration #12 during this session. Merged subsequent main 2d58bdf into this branch without rewriting history; read its additional GitHub-login and automatic branch-deletion rules. The records CI for both claim requests passes; no heavy CI was requested.
 - **Next:** wait for the human-reviewed registration and assignment. No product code or legacy history is changed by this claim.
 
 ## For the owner
 
-1. Merge developer registration #12, then review and merge this M5 assignment. No new development starts before assignment is merged. This claim includes only its registry row and this branch file.
+1. Registration #12 is already merged. Review and merge [M5 assignment #15](https://github.com/o-e-lytvynskyi/strategos/pull/15). No new development starts before assignment is merged. This claim includes only its registry row and this branch file.
 2. The old M5 artifacts contain absolute JVM paths. Sanitise them in the future import without changing measured numbers; do not rewrite older history. Main's central STATE and worklog remain the maintainer's records.
 
 ## Decisions taken
