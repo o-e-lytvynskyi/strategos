@@ -2,6 +2,7 @@ package dev.strategos.mod.server.content;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import dev.strategos.core.content.Blueprint;
+import dev.strategos.core.content.TechDef;
 import dev.strategos.core.content.TemplateProblem;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.UnitTemplate;
@@ -37,6 +38,25 @@ public final class TemplateLint {
 
     /** The problems of {@code set} against the server's registries; {@code files} gives each template's file. */
     public static List<TemplateProblem> check(TemplateSet set, RegistryAccess registries, FileOf files) {
+        return check(set, registries, files, tech -> tech.id().value());
+    }
+
+    /** As above, and each tech's icon an item of the registry; {@code techFiles} gives each tech's file (TECH-01). */
+    public static List<TemplateProblem> check(
+            TemplateSet set, RegistryAccess registries, FileOf files, TechFileOf techFiles) {
+        List<TemplateProblem> problems = new ArrayList<>(templates(set, registries, files));
+        var items = registries.registryOrThrow(Registries.ITEM);
+        for (TechDef tech : set.techs()) {
+            ResourceLocation icon = ResourceLocation.tryParse(tech.icon());
+            if (icon == null || !items.containsKey(icon)) {
+                problems.add(TemplateProblem.error(
+                        techFiles.of(tech), "/icon", "unknown item '" + tech.icon() + "' for an icon"));
+            }
+        }
+        return problems;
+    }
+
+    private static List<TemplateProblem> templates(TemplateSet set, RegistryAccess registries, FileOf files) {
         List<TemplateProblem> problems = new ArrayList<>();
         var entities = registries.registryOrThrow(Registries.ENTITY_TYPE);
         for (UnitTemplate t : set.all()) {
@@ -91,6 +111,12 @@ public final class TemplateLint {
             }
         }
         return problems;
+    }
+
+    /** The file a tech came from, for its problems. */
+    @FunctionalInterface
+    public interface TechFileOf {
+        String of(TechDef tech);
     }
 
     /** The file a template came from, for its problems. */

@@ -4,10 +4,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import dev.strategos.core.content.PlaceholderBlueprints;
+import dev.strategos.core.content.RawTech;
 import dev.strategos.core.content.RawTemplate;
+import dev.strategos.core.content.TechIdTable;
 import dev.strategos.core.content.TemplateCompiler;
+import dev.strategos.core.content.TemplateIdTable;
 import dev.strategos.core.content.TemplateProblem;
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.shared.TechId;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.testkit.BalanceData;
 import java.io.IOException;
@@ -159,6 +164,37 @@ class BalanceSheetTest {
                 BalanceData.read(REPO.resolve("mod/src/main/resources/data")).sheet();
         assertThat(mod.problems()).isEmpty();
         assertThat(mod.rows()).allSatisfy(row -> assertThat(row.provenance()).isNotBlank());
+    }
+
+    @Test
+    void aTechsNumbersNeedProvenanceNotesAndAStaleTechKeyFails() {
+        List<RawTemplate> raws = chain("1.5");
+        RawTech tech = new RawTech(
+                new TechId("t:axes"), "axes.json", JsonParser.parseString("""
+                        { "icon": "i", "cost": { "food": 10 }, "time": 5,
+                          "requires": { "all": [ { "buildings": { "filter": "House", "count": 2 } } ] },
+                          "effects": [ { "path": "Cost/resources/food", "op": "mul", "value": 0.9 } ] }""").getAsJsonObject());
+        TemplateCompiler.Result r = TemplateCompiler.compile(
+                raws, List.of(tech), TemplateIdTable.EMPTY, TechIdTable.EMPTY, PlaceholderBlueprints.byId());
+        assertThat(r.problems()).isEmpty();
+
+        assertThat(BalanceSheet.of(r, raws, Map.of(), List.of()).problems())
+                .contains(
+                        "tech t:axes cost/food: no provenance note",
+                        "tech t:axes time: no provenance note",
+                        "tech t:axes requires/all/0/buildings/count: no provenance note",
+                        "tech t:axes effects/0/value: no provenance note");
+
+        Map<String, String> notes = new java.util.TreeMap<>(Map.of(
+                "cost/food", "n",
+                "time", "n",
+                "requires/all/0/buildings/count", "n",
+                "effects/0/value", "n"));
+        assertThat(BalanceSheet.of(r, raws, Map.of("t:axes", notes), List.of()).problems())
+                .noneMatch(p -> p.startsWith("tech t:axes"));
+        notes.put("cost/wood", "stale");
+        assertThat(BalanceSheet.of(r, raws, Map.of("t:axes", notes), List.of()).problems())
+                .contains("provenance names t:axes cost/wood, which sets no number there");
     }
 
     @Test

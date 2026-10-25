@@ -7,6 +7,7 @@ import com.mojang.serialization.JsonOps;
 import dev.strategos.core.content.Blueprint;
 import dev.strategos.core.content.RawTech;
 import dev.strategos.core.content.RawTemplate;
+import dev.strategos.core.content.TechDef;
 import dev.strategos.core.content.TechIdTable;
 import dev.strategos.core.content.TemplateCompiler;
 import dev.strategos.core.content.TemplateIdTable;
@@ -164,6 +165,55 @@ class BundledTemplatesTest {
                 .isZero();
     }
 
+    private static String techFile(List<RawTech> techs, TechDef tech) {
+        return techs.stream()
+                .filter(raw -> raw.id().equals(tech.id()))
+                .findFirst()
+                .orElseThrow()
+                .file();
+    }
+
+    @Test
+    void aTechIconThatIsNoItemIsALintErrorAtTheTechsFile(@TempDir Path pack) throws IOException {
+        Path tech = pack.resolve("data/test/strategos/techs/forge/anvils.json");
+        Files.createDirectories(tech.getParent());
+        Files.writeString(tech, "{ \"icon\": \"minecraft:no_such_item\", \"time\": 10 }");
+
+        Loaded loaded = load(pack);
+
+        assertThat(loaded.problems)
+                .extracting(TemplateProblem::file, TemplateProblem::pointer)
+                .containsExactly(Tuple.tuple("data/test/strategos/techs/forge/anvils.json", "/icon"));
+        assertThat(load(resourceRoot()).problems)
+                .as("the bundled icon is an item")
+                .isEmpty();
+    }
+
+    @Test
+    void aRefusedReloadLeavesTheTechTableAndTheSetUnchanged() {
+        Loaded bundled = load(resourceRoot());
+        ServerTemplates server = new ServerTemplates();
+        var tableBefore = server.techTable();
+        var setBefore = server.set();
+        RawTech badIcon = new RawTech(
+                new TechId("aaa:early"),
+                "aaa/early.json",
+                JsonParser.parseString("{\"icon\":\"minecraft:no_such_item\",\"time\":1}")
+                        .getAsJsonObject());
+        List<RawTech> techs = new ArrayList<>(bundled.techs());
+        techs.add(badIcon);
+
+        ServerTemplates.Outcome outcome =
+                server.load(bundled.raws(), techs, List.of(), REGISTRIES, List.of(), bundled.blueprints());
+
+        assertThat(outcome.accepted()).isFalse();
+        assertThat(outcome.problems())
+                .extracting(TemplateProblem::file, TemplateProblem::pointer)
+                .contains(Tuple.tuple("aaa/early.json", "/icon"));
+        assertThat(server.techTable()).isEqualTo(tableBefore);
+        assertThat(server.set()).isSameAs(setBefore);
+    }
+
     /** What the listener's prepare and apply make of a pack at {@code root}, linted as the server lints. */
     private static Loaded load(Path root) {
         PathPackResources pack = new PathPackResources(
@@ -177,7 +227,7 @@ class BundledTemplatesTest {
             TemplateCompiler.Result result =
                     TemplateCompiler.compile(raws, techs, TemplateIdTable.EMPTY, TechIdTable.EMPTY, blueprints);
             problems.addAll(result.problems());
-            problems.addAll(TemplateLint.check(result.set(), REGISTRIES, t -> t.id().value()));
+            problems.addAll(TemplateLint.check(result.set(), REGISTRIES, t -> t.id().value(), t -> techFile(techs, t)));
             return new Loaded(raws, techs, blueprints, result, problems);
         }
     }

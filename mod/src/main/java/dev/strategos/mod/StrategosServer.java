@@ -179,7 +179,10 @@ public final class StrategosServer {
      * running match; the outcome is logged, and told to the operators online.
      */
     public ServerTemplates.Outcome loadTemplates(List<RawTemplate> raws, List<TemplateProblem> problems) {
-        return loadTemplates(raws, packTechs(problems), problems, packBlueprints(problems));
+        TemplateFiles.Read read = TemplateFiles.read(server.getResourceManager());
+        addNew(problems, read.problems());
+        List<RawTech> techs = TemplateFiles.rawTechs(read, conditionalOps(), problems);
+        return loadTemplates(raws, techs, problems, TemplateFiles.blueprints(read, problems));
     }
 
     /** As {@link #loadTemplates(List, List)}, with the blueprints and the technologies the reload read (BLD-01, TECH-01). */
@@ -244,18 +247,28 @@ public final class StrategosServer {
     /** The templates of the data packs the server started with, read here: no server was up when they applied. */
     private void loadTemplatesAtStart() {
         List<TemplateProblem> problems = new ArrayList<>();
+        TemplateFiles.Read read = TemplateFiles.read(server.getResourceManager());
+        problems.addAll(read.problems());
+        List<RawTemplate> raws = TemplateFiles.raws(read, conditionalOps(), problems);
+        List<RawTech> techs = TemplateFiles.rawTechs(read, conditionalOps(), problems);
         report(templates.load(
-                packTemplates(problems),
-                packTechs(problems),
-                problems,
-                server.registryAccess(),
-                List.of(),
-                packBlueprints(problems)));
+                raws, techs, problems, server.registryAccess(), List.of(), TemplateFiles.blueprints(read, problems)));
     }
 
-    /** The technologies of the loaded data packs, read now on this thread. */
+    /** The technologies of the loaded data packs, read now on this thread; the files' problems go to {@code problems}. */
     public List<RawTech> packTechs(List<TemplateProblem> problems) {
-        return TemplateFiles.rawTechs(TemplateFiles.read(server.getResourceManager()), conditionalOps(), problems);
+        TemplateFiles.Read read = TemplateFiles.read(server.getResourceManager());
+        addNew(problems, read.problems());
+        return TemplateFiles.rawTechs(read, conditionalOps(), problems);
+    }
+
+    /** {@code more} added to {@code problems} but for those already there: callers read the same files twice. */
+    private static void addNew(List<TemplateProblem> problems, List<TemplateProblem> more) {
+        for (TemplateProblem p : more) {
+            if (!problems.contains(p)) {
+                problems.add(p);
+            }
+        }
     }
 
     /** The templates of the loaded data packs, read now on this thread; the problems of the files go to {@code problems}. */

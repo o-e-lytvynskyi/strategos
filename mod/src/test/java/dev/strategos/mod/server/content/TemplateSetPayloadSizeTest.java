@@ -36,7 +36,7 @@ class TemplateSetPayloadSizeTest {
             json.getAsJsonObject("Identity").addProperty("name", "strategos.unit.mvp_unit_number_" + k);
             flats.add(new TemplateCompiler.Flat(new TemplateId("strategos:unit/mvp_" + k), k, json));
         }
-        TemplateCompiler.Result result = TemplateCompiler.fromFlattened(flats);
+        TemplateCompiler.Result result = TemplateCompiler.fromFlattened(flats, List.of());
         TemplateSetView view = TemplateSetView.of(result.set(), result.table());
 
         int size = WireCodec.encode(TemplateSetView.WIRE, view).length;
@@ -50,5 +50,22 @@ class TemplateSetPayloadSizeTest {
                 + WireCodec.encode(TemplateSetView.WIRE, TemplateSetView.of(bundled, TemplateIdTable.EMPTY)).length);
         assertThat(back.view()).isEqualTo(view);
         assertThat(back.view().toSet().version()).isEqualTo(result.set().version());
+    }
+
+    @Test
+    void aSetWithTechsRoundTripsThroughThePayloadAndFitsTheBound() {
+        TemplateSet bundled = TemplateSet.builtin();
+        TemplateSetView view = TemplateSetView.of(bundled, TemplateIdTable.EMPTY);
+        assertThat(view.techs()).isNotEmpty();
+
+        RegistryFriendlyByteBuf buf = new RegistryFriendlyByteBuf(
+                Unpooled.buffer(), RegistryAccess.fromRegistryOfRegistries(BuiltInRegistries.REGISTRY));
+        TemplateSetPayload.STREAM_CODEC.encode(buf, new TemplateSetPayload(view));
+        TemplateSetPayload back = TemplateSetPayload.STREAM_CODEC.decode(buf);
+
+        assertThat(WireCodec.encode(TemplateSetView.WIRE, view).length).isLessThan(TemplateSetView.MAX_BYTES);
+        assertThat(back.view()).isEqualTo(view);
+        assertThat(back.view().toSet().version()).isEqualTo(bundled.version());
+        assertThat(back.view().toSet().techs()).isEqualTo(bundled.techs());
     }
 }

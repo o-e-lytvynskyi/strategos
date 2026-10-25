@@ -275,6 +275,15 @@ final class BuiltinTemplates {
     private BuiltinTemplates() {}
 
     static TemplateSet compile() {
+        return compile(true);
+    }
+
+    /** The set with the sample tech and the storehouse's {@code Researcher}, or as it was before TECH-01 without them. */
+    static TemplateSet compile(boolean withTechs) {
+        JsonObject storehouse = JsonParser.parseString(STOREHOUSE).getAsJsonObject();
+        if (!withTechs) {
+            storehouse.remove("Researcher");
+        }
         TemplateCompiler.Result result = TemplateCompiler.compile(
                 List.of(
                         raw("strategos:template/unit_base", UNIT_BASE),
@@ -291,16 +300,21 @@ final class BuiltinTemplates {
                         raw("strategos:building/field", FIELD),
                         raw("strategos:building/house", HOUSE),
                         raw("strategos:building/barracks", BARRACKS),
-                        raw("strategos:building/storehouse", STOREHOUSE),
+                        new RawTemplate(
+                                new TemplateId("strategos:building/storehouse"),
+                                "builtin/building/storehouse.json",
+                                storehouse),
                         raw("strategos:building/farmstead", FARMSTEAD),
                         raw("strategos:building/quarry", QUARRY),
                         raw("strategos:building/quarry_large", QUARRY_LARGE),
                         raw("strategos:building/iron_mine", IRON_MINE),
                         raw("strategos:building/iron_mine_large", IRON_MINE_LARGE)),
-                List.of(new RawTech(
-                        new TechId("strategos:gather_wood_1"),
-                        "builtin/techs/gather_wood_1.json",
-                        JsonParser.parseString(GATHER_WOOD_1).getAsJsonObject())),
+                withTechs
+                        ? List.of(new RawTech(
+                                new TechId("strategos:gather_wood_1"),
+                                "builtin/techs/gather_wood_1.json",
+                                JsonParser.parseString(GATHER_WOOD_1).getAsJsonObject()))
+                        : List.of(),
                 PINNED,
                 TechIdTable.EMPTY,
                 PlaceholderBlueprints.byId());

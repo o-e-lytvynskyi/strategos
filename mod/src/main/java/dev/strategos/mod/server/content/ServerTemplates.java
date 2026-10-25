@@ -75,16 +75,6 @@ public final class ServerTemplates {
      */
     public Outcome load(
             List<RawTemplate> raws,
-            List<TemplateProblem> readProblems,
-            RegistryAccess registries,
-            Collection<MatchRuntime> matches,
-            Map<String, Blueprint> blueprints) {
-        return load(raws, List.of(), readProblems, registries, matches, blueprints);
-    }
-
-    /** As above, with the technologies of the packs (TECH-01). */
-    public Outcome load(
-            List<RawTemplate> raws,
             List<RawTech> techs,
             List<TemplateProblem> readProblems,
             RegistryAccess registries,
@@ -94,7 +84,7 @@ public final class ServerTemplates {
         TemplateCompiler.Result result = TemplateCompiler.compile(raws, techs, table, techTable, blueprints);
         List<TemplateProblem> found = new ArrayList<>(readProblems);
         found.addAll(result.problems());
-        found.addAll(TemplateLint.check(result.set(), registries, t -> fileOf(raws, t)));
+        found.addAll(TemplateLint.check(result.set(), registries, t -> fileOf(raws, t), t -> techFileOf(techs, t)));
         long errors = found.stream()
                 .filter(p -> p.severity() == TemplateProblem.Severity.ERROR)
                 .count();
@@ -139,6 +129,15 @@ public final class ServerTemplates {
             }
         }
         return null;
+    }
+
+    private static String techFileOf(List<RawTech> techs, TechDef t) {
+        for (RawTech raw : techs) {
+            if (raw.id().equals(t.id())) {
+                return raw.file();
+            }
+        }
+        return t.id().value();
     }
 
     private static String fileOf(List<RawTemplate> raws, UnitTemplate t) {

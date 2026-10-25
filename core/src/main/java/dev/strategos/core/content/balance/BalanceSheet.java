@@ -202,11 +202,12 @@ public final class BalanceSheet {
         return sheet;
     }
 
-    /** The paths of a tech's numbers: {@code cost/<resource>}, {@code time} and {@code effects/<n>/value}. */
+    /** The paths of a tech's numbers: {@code cost/<resource>}, {@code time}, the building counts of {@code requires} at their JSON pointers, and {@code effects/<n>/value}. */
     private static List<String> techNumbers(TechDef tech) {
         List<String> paths = new ArrayList<>();
         new TreeMap<>(tech.cost()).keySet().forEach(r -> paths.add("cost/" + r));
         paths.add("time");
+        tech.requires().buildingCounts("requires", (b, pointer) -> paths.add(pointer));
         for (int i = 0; i < tech.effects().size(); i++) {
             if (tech.effects().get(i).op() != TechEffect.Op.TOKENS) {
                 paths.add("effects/" + i + "/value");

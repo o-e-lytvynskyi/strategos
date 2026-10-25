@@ -14,6 +14,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -57,7 +59,12 @@ public final class TemplateCompiler {
     public record Flat(TemplateId id, int netIndex, JsonObject json) {}
 
     /** A technology as a journal's or a client's copy holds it: its net index and its JSON. */
-    public record TechFlat(TechId id, int netIndex, JsonObject json) {}
+    public record TechFlat(TechId id, int netIndex, JsonObject json) {
+        /** {@code tech} as a copy holds it. */
+        public static TechFlat of(TechDef tech) {
+            return new TechFlat(tech.id(), tech.netIndex(), tech.toJson());
+        }
+    }
 
     /** Compiles with a fresh id table: net indices in id order. */
     public static Result compile(List<RawTemplate> raws) {
@@ -145,6 +152,11 @@ public final class TemplateCompiler {
                 unitJson.add(json);
             }
         }
+        TemplateIdTable next = table.with(units.stream().map(UnitTemplate::id).toList());
+        List<Flat> flats = new ArrayList<>();
+        for (int k = 0; k < units.size(); k++) {
+            flats.add(new Flat(units.get(k).id(), next.indexOf(units.get(k).id()), unitJson.get(k)));
+        }
         List<TechDef> drafts = new ArrayList<>();
         Map<String, RawTech> techById = new TreeMap<>();
         for (RawTech raw : rawTechs) {
@@ -160,31 +172,23 @@ public final class TemplateCompiler {
                 drafts.add(def);
             }
         }
-        drafts = checkTechRefs(
+        drafts = checkTechs(
                 drafts,
                 techById.keySet(),
                 id -> Objects.requireNonNull(techById.get(id.value())).file(),
+                flats,
+                id -> Objects.requireNonNull(byId.get(id.value())).file(),
                 problems);
         TechIdTable techNext = techTable.with(drafts.stream().map(TechDef::id).toList());
         List<TechDef> techs = placed(drafts, techNext);
-        TemplateIdTable next = table.with(units.stream().map(UnitTemplate::id).toList());
-        List<Flat> flats = new ArrayList<>();
-        for (int k = 0; k < units.size(); k++) {
-            flats.add(new Flat(units.get(k).id(), next.indexOf(units.get(k).id()), unitJson.get(k)));
-        }
         return new Result(
                 set(flats, units, techs), flattened, List.copyOf(problems), next, List.copyOf(derivations), techNext);
     }
 
     /**
-     * A set from flattened templates at their net indices, decoded as {@link #compile} decodes them: a journal's or a
-     * client's copy. The problems name each template by its id.
+     * A set from flattened templates and technologies at their net indices, decoded as {@link #compile} decodes them: a
+     * journal's or a client's copy, so the set has the sha it had. The problems name each template by its id.
      */
-    public static Result fromFlattened(List<Flat> flats) {
-        return fromFlattened(flats, List.of());
-    }
-
-    /** As above, with the technologies of the copy (TECH-01), so the set has the sha it had. */
     public static Result fromFlattened(List<Flat> flats, List<TechFlat> techFlats) {
         List<TemplateProblem> problems = new ArrayList<>();
         List<UnitTemplate> units = new ArrayList<>();
@@ -217,7 +221,7 @@ public final class TemplateCompiler {
                 drafts.add(def);
             }
         }
-        drafts = checkTechRefs(drafts, declared.keySet(), id -> id.value(), problems);
+        drafts = checkTechs(drafts, declared.keySet(), id -> id.value(), kept, id -> id.value(), problems);
         drafts.sort((a, b) -> Integer.compare(a.netIndex(), b.netIndex()));
         int techTop = drafts.stream().mapToInt(TechDef::netIndex).max().orElse(-1);
         List<TechId> techIds = new ArrayList<>();
@@ -238,26 +242,158 @@ public final class TemplateCompiler {
                 new TechIdTable(techIds));
     }
 
-    /** The techs whose {@code requires} and {@code supersedes} name techs that exist; the others are errors. */
-    private static List<TechDef> checkTechRefs(
+    /**
+     * The techs that stand (TECH-01): each error is reported once and leaves its tech out, then every tech that needs a
+     * tech left out. A {@code requires} or {@code supersedes} names a declared tech; those edges hold no cycle; an
+     * effect's path is a number path of the templates (a token path for {@code TOKENS}); and a template's {@code
+     * Researcher/techs} names techs of the set.
+     */
+    private static List<TechDef> checkTechs(
             List<TechDef> techs,
             Set<String> declared,
-            java.util.function.Function<TechId, String> files,
+            Function<TechId, String> techFiles,
+            List<Flat> templates,
+            Function<TemplateId, String> templateFiles,
             List<TemplateProblem> problems) {
         List<TechDef> kept = new ArrayList<>();
         for (TechDef t : techs) {
-            String file = files.apply(t.id());
+            String file = techFiles.apply(t.id());
             int before = problems.size();
-            t.requires().techLeaves("/requires", (ref, pointer) -> {
-                if (!declared.contains(ref.value())) {
-                    problems.add(TemplateProblem.error(file, pointer, "unknown tech '" + ref + "'"));
+            for (TechEdge e : edges(t)) {
+                if (!declared.contains(e.target().value())) {
+                    problems.add(TemplateProblem.error(file, e.pointer(), "unknown tech '" + e.target() + "'"));
                 }
-            });
-            if (t.supersedes() != null && !declared.contains(t.supersedes().value())) {
-                problems.add(TemplateProblem.error(file, "/supersedes", "unknown tech '" + t.supersedes() + "'"));
             }
             if (problems.size() == before) {
                 kept.add(t);
+            }
+        }
+        kept = withoutCycles(kept, techFiles, problems);
+        List<String> numbers = new ArrayList<>(CorePaths.all());
+        List<String> strings = new ArrayList<>();
+        for (Flat f : templates) {
+            TemplateSet.leafPaths(f.json(), "", numbers, strings);
+        }
+        List<TechDef> withPaths = new ArrayList<>();
+        for (TechDef t : kept) {
+            int before = problems.size();
+            for (int i = 0; i < t.effects().size(); i++) {
+                TechEffect e = t.effects().get(i);
+                boolean tokens = e.op() == TechEffect.Op.TOKENS;
+                if (!(tokens ? strings : numbers).contains(e.path())) {
+                    problems.add(TemplateProblem.error(
+                            techFiles.apply(t.id()),
+                            "/effects/" + i + "/path",
+                            "no template has " + (tokens ? "a token list" : "a number") + " at '" + e.path() + "'"));
+                }
+            }
+            if (problems.size() == before) {
+                withPaths.add(t);
+            }
+        }
+        kept = withoutDependents(withPaths, techFiles, problems);
+        List<String> ids = kept.stream().map(t -> t.id().value()).toList();
+        for (Flat f : templates) {
+            JsonElement list = leafOf(f.json(), "Researcher", "techs");
+            if (list != null
+                    && list.isJsonPrimitive()
+                    && list.getAsJsonPrimitive().isString()) {
+                for (String token : MergeOps.tokens(list.getAsString())) {
+                    if (!ids.contains(token)) {
+                        problems.add(TemplateProblem.error(
+                                templateFiles.apply(f.id()), "/Researcher/techs", "unknown tech '" + token + "'"));
+                    }
+                }
+            }
+        }
+        return kept;
+    }
+
+    private static @Nullable JsonElement leafOf(JsonObject json, String component, String key) {
+        JsonElement c = json.get(component);
+        return c != null && c.isJsonObject() ? c.getAsJsonObject().get(key) : null;
+    }
+
+    /** An edge of the tech graph: the tech a {@code requires} leaf or {@code supersedes} names, and where. */
+    private record TechEdge(TechId target, String pointer) {}
+
+    private static List<TechEdge> edges(TechDef t) {
+        List<TechEdge> edges = new ArrayList<>();
+        t.requires().techLeaves("/requires", (ref, pointer) -> edges.add(new TechEdge(ref, pointer)));
+        if (t.supersedes() != null) {
+            edges.add(new TechEdge(t.supersedes(), "/supersedes"));
+        }
+        return edges;
+    }
+
+    /** Reports each cycle once, at the edge that closes it, and leaves its members out. */
+    private static List<TechDef> withoutCycles(
+            List<TechDef> techs, Function<TechId, String> files, List<TemplateProblem> problems) {
+        Map<String, TechDef> byId = new TreeMap<>();
+        techs.forEach(t -> byId.put(t.id().value(), t));
+        Map<String, Boolean> onStack = new TreeMap<>(); // present: visited; true: still on the stack
+        Set<String> inCycle = new TreeSet<>();
+        for (String id : byId.keySet()) {
+            if (!onStack.containsKey(id)) {
+                visit(id, byId, onStack, new ArrayList<>(), inCycle, files, problems);
+            }
+        }
+        return techs.stream().filter(t -> !inCycle.contains(t.id().value())).collect(Collectors.toList());
+    }
+
+    private static void visit(
+            String id,
+            Map<String, TechDef> byId,
+            Map<String, Boolean> onStack,
+            List<String> stack,
+            Set<String> inCycle,
+            Function<TechId, String> files,
+            List<TemplateProblem> problems) {
+        onStack.put(id, true);
+        stack.add(id);
+        TechDef t = Objects.requireNonNull(byId.get(id));
+        for (TechEdge e : edges(t)) {
+            String to = e.target().value();
+            if (!byId.containsKey(to)) {
+                continue;
+            }
+            Boolean state = onStack.get(to);
+            if (state == null) {
+                visit(to, byId, onStack, stack, inCycle, files, problems);
+            } else if (state) {
+                List<String> cycle = new ArrayList<>(stack.subList(stack.indexOf(to), stack.size()));
+                inCycle.addAll(cycle);
+                cycle.add(to);
+                problems.add(TemplateProblem.error(
+                        files.apply(t.id()), e.pointer(), "tech cycle " + String.join(" → ", cycle)));
+            }
+        }
+        stack.remove(stack.size() - 1);
+        onStack.put(id, false);
+    }
+
+    /** Drops, with an error, each tech that names a tech not in the list, until none does. */
+    private static List<TechDef> withoutDependents(
+            List<TechDef> techs, Function<TechId, String> files, List<TemplateProblem> problems) {
+        List<TechDef> kept = new ArrayList<>(techs);
+        boolean changed = true;
+        while (changed) {
+            changed = false;
+            Set<String> ids = new TreeSet<>();
+            kept.forEach(t -> ids.add(t.id().value()));
+            for (TechDef t : kept) {
+                for (TechEdge e : edges(t)) {
+                    if (!ids.contains(e.target().value())) {
+                        problems.add(TemplateProblem.error(
+                                files.apply(t.id()), e.pointer(), "its tech '" + e.target() + "' does not compile"));
+                        kept.remove(t);
+                        changed = true;
+                        break;
+                    }
+                }
+                if (changed) {
+                    break;
+                }
             }
         }
         return kept;

@@ -16,7 +16,8 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * An immutable set of unit templates in net-index order, with their flattened JSON (04 §8.3): its version is the
- * SHA-256 of the canonical JSON of every template keyed by id, so two servers with equal content have equal versions.
+ * SHA-256 of the canonical JSON of every template keyed by id and, when the set has techs, of the techs under the key
+ * {@code $techs}, so two servers with equal content have equal versions.
  * Net indices come from the session's {@link TemplateIdTable}, so a set after a reload may leave a retired one out.
  * {@link TemplateCompiler} builds sets from data; the constructor builds one from code, as tests and M0 did.
  */
@@ -279,7 +280,7 @@ public final class TemplateSet {
     }
 
     /** Every numeric leaf's path, such as {@code UnitMotion/walkSpeed}, and every string leaf's. */
-    private static void leafPaths(JsonObject json, String prefix, List<String> numbers, List<String> strings) {
+    static void leafPaths(JsonObject json, String prefix, List<String> numbers, List<String> strings) {
         Map<String, JsonElement> sorted = new TreeMap<>(json.asMap());
         for (Map.Entry<String, JsonElement> e : sorted.entrySet()) {
             String path = prefix.isEmpty() ? e.getKey() : prefix + "/" + e.getKey();

@@ -31,6 +31,28 @@ class ContentSwapReplayTest {
     private static final FactionSlot F0 = new FactionSlot(0);
 
     @Test
+    void aSwapCarryingTechsSurvivesTheJournalFormat() {
+        SimHarness h = harness();
+        TemplateSet withTechs = withWalkerSpeed(0.5);
+        assertThat(withTechs.techs()).as("the swap carries the builtin tech").hasSize(1);
+        h.schedule(h.tick() + 1, new ContentSwap(withTechs));
+        h.runTicks(3);
+
+        JournalExport read = JournalFormat.decode(
+                JournalFormat.encode(new JournalExport(h.core().journal(), h.tick(), h.stateHash())));
+
+        List<TemplateSet> swapped = new ArrayList<>();
+        read.journal()
+                .nonEmptyTicks()
+                .forEach(tick -> tick.events().stream()
+                        .filter(ContentSwap.class::isInstance)
+                        .forEach(e -> swapped.add(((ContentSwap) e).set())));
+        assertThat(swapped).hasSize(1);
+        assertThat(swapped.get(0).version()).isEqualTo(withTechs.version());
+        assertThat(swapped.get(0).techs()).isEqualTo(withTechs.techs());
+    }
+
+    @Test
     void aSwapAppliesFromItsTickAndReplays() {
         SimHarness h = harness();
         int unit = h.spawn(F0, new Vec2d(4.5, 16.5), 1, 0)[0];
@@ -86,7 +108,11 @@ class ContentSwapReplayTest {
             }
             flats.add(new TemplateCompiler.Flat(t.id(), t.netIndex(), json));
         }
-        TemplateCompiler.Result result = TemplateCompiler.fromFlattened(flats);
+        TemplateCompiler.Result result = TemplateCompiler.fromFlattened(
+                flats,
+                TemplateSet.builtin().techs().stream()
+                        .map(TemplateCompiler.TechFlat::of)
+                        .toList());
         assertThat(result.ok()).isTrue();
         return result.set();
     }
@@ -96,7 +122,7 @@ class ContentSwapReplayTest {
         assertThat(t).isNotNull();
         JsonObject json = TemplateSet.builtin().flattened(id);
         assertThat(json).isNotNull();
-        return TemplateCompiler.fromFlattened(List.of(new TemplateCompiler.Flat(id, t.netIndex(), json)))
+        return TemplateCompiler.fromFlattened(List.of(new TemplateCompiler.Flat(id, t.netIndex(), json)), List.of())
                 .set();
     }
 

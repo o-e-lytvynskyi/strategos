@@ -5,9 +5,9 @@
 ## Now
 
 - **Milestone:** M6 MVP: First skirmish, 2 of 28 tasks done (T2 split into T2.1 and T2.2); spec [M6-first-skirmish.md](../milestones/M6-first-skirmish.md).
-- **In progress:** the T2.1 review fixes, then M6 T3.
+- **In progress:** M6 T3 since 2026-10-25.
 - **Last finished task:** M6 T2.2 (2026-10-25), the commit `M6 T2.2: research in building queues`.
-- **Next task:** M6 T2.1 review fixes (13 findings), then M6 T3 · TECH-02, phases.
+- **Next task:** M6 T3 · TECH-02, phases.
 - **Merged from main last:** 0a7cc3b (2026-10-25).
 
 ## Depends on unfinished work
@@ -24,13 +24,14 @@ Newest first; one entry per session in the worklog's shape.
 
 ### 2026-10-25 — M6 T2–T17 claim
 
+- **M6 T2.1 · review fix** — the 11 open findings of T2.1's review: the lint checks a tech's icon against the item registry; cycles in `requires` and `supersedes` are compile errors at the closing edge, and a tech needing a dropped tech is dropped too; effect paths and `Researcher/techs` tokens are checked against the set (in `fromFlattened` too, so test sets built from the built-in templates now carry its techs); requirement counts need provenance; a ContentSwap with techs goes through `JournalFormat`; the built-in set without techs equals the real pre-TECH-01 pin b4dc5f37; the payload-size test has techs; the `+t` mark is guarded both ways; bad JSON in a view is an IAE; the packs are read once per load; the overloads that dropped techs are gone; javadoc, messages, the provenance note (mechanics.md §1.3) and the lang key's place. 17 new tests, each name checked in the tree. `verify` green in 1 min 39 s (212 GameTests).
 - **M6 T2.2 · TECH-01, research** — TECH-01 `done` (all four criteria). `Research` (31) and `REQUIREMENTS` (wire 18); `ResearchRules`; tech entries `-1 - netIndex` in the building queue (`QueueEntry`), saved by id; completion, cancel and refund in `Production` and `Techs`; `Progress` in `Play` (tech ids, hashed only when non-empty); stats rebuilt by one helper at completion, restore and swap (spec §1.6 rows 18, 20, 25–28); `TechResearched`; `/strategos stats` names tech sources; the tech table seeded from the built-in set. New: `ResearchTest` (20 tests), `ResearchWireTest` (6, two of them written by the orchestrator: the worker reported them but had not written them), `techtests.a_research_completes_and_applies`, the tech-table test. A review before the commit found 7 should-fix and 6 nits, all applied (supersede chains, phase names, source ids colliding with handles, a pending tech saved by index, an invalid saved id, restore order, Gaia). JMH: red against the M4 Pro baseline on this M1 Pro (load ~12), green against its own base on the same machine (20 benchmarks, median ratio 0.994, `StatReadBench.cachedRead` 3.77 → 3.75 ns, `StateHashBench.hash600` 33.1 → 31.8 µs); a kb entry. `verify` green in 2 min 28 s (212 GameTests).
 - **M6 T2.1, its review** — T2.1 (1,706 lines, a payload change) was committed before the reviewer docs/agents.md asks for; the review afterwards found no blocker, 6 should-fix and 7 nits (the lint's icon check, `requires`/`supersedes` cycles, unchecked effect paths and `Researcher/techs` tokens, the tech table's seed, requirement counts without provenance, journal tests with techs). The seed is fixed in T2.2; the rest is the next commit.
 - **M6 T2.1 · TECH-01, the content** — TECH-01 `in_progress`. `TechDef`, `TechEffect`, `Requirement` with `Requirements` and `FactionView`, `TechId`, the append-only `TechIdTable`; `strategos/techs/` loaded beside the templates; the techs in the set's hash under `$techs` only when present (a set without techs keeps its sha, pinned); `TemplateSetView` carries them (spec §1.6 row 24); the sample `strategos:gather_wood_1` (wood ×1.2 for workers, 100 food 50 wood, 30 s) at the storehouse, with provenance. New: `RequirementTest`, `TechDefTest` (15 malformed cases), `TemplateSetViewTest`; the built-in set's pin moved to 3f019e66. `verify` green in 1 min 50 s (211 GameTests).
 - **Claim merged** — #17 (0a7cc3b), merged by the owner; its body asked for «open M6 for claims», and STATE's "Open for claims" is not yet updated (the maintainer's record). ADR-0025 is still Proposed: it blocks only T6's move rule.
 - **T2 split** into T2.1 (the content) and T2.2 (research) before work, from the implementation map: the spec's §1.6 rows 18–23 record what the code showed (queue entries, Village without a tech, stable tech ids, techs in the set's hash, modifiers at restore, the card's token lists).
 - **Claim** — M6 T2–T17, the part of M6 that needs nothing from M5, claimed after the M6 spec merged (#16). M6 is not yet in STATE "Open for claims": the claim asks the owner to open it. The developer's restriction for this session: no client windows; L4 runs go to the consent batch (T27).
-- **Next:** the T2.1 review fixes, then T3.
+- **Next:** T3.
 
 ## For the owner
 
@@ -48,6 +49,7 @@ Newest first; one entry per session in the worklog's shape.
 - 2026-10-25 · `phase` requirements name bare lower-case phases, checked at compile (row 27) — a free string could fault a match on an ordinary command — accept `phase_` prefixes.
 - 2026-10-25 · JMH judged by an A/B against the base commit on this machine, not by the M4 Pro baseline — the baseline is another machine's — run `jmhCompare` on the owner's Mac at the hand-in.
 - 2026-10-25 · trial implementer (general-purpose on Sonnet) on T2.2: fail on one point — green, and a reviewer's 13 findings applied in one round, but its report named two wire tests it had not written (the orchestrator wrote them); it also wrote the second round's tests after the code and said so. Read every worker's tests against its report.
+- 2026-10-25 · trial implementer on T2.1's review fixes: pass — 11 findings in one round, every reported test present in the tree; it wrote most tests after the code and said so.
 - 2026-10-25 · trial reviewer (general-purpose, read-only): pass, twice — T2.1 after its commit (13 findings) and T2.2 before (13), each checked against the code.
 - 2026-10-25 · trial implementer (general-purpose on Sonnet, the role file): pass — T2.1 green on its first run; one deviation (copied syntax checks) found in the diff and folded into one source; it reported the tests were written with the code, not before.
 - 2026-10-25 · The claim takes T2–T17 and leaves T1 and T18–T28 — they use M5's classes, and work that can only follow M5 is not claimed yet (AGENTS.md) — widen it by a new claim once M5 lands.

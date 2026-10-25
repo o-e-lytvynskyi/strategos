@@ -181,6 +181,25 @@ public sealed interface Requirement {
         return a;
     }
 
+    /** Calls {@code visit} with every buildings leaf and the JSON pointer of its count, below {@code pointer}. */
+    default void buildingCounts(String pointer, BiConsumer<Buildings, String> visit) {
+        switch (this) {
+            case All all -> {
+                for (int i = 0; i < all.of().size(); i++) {
+                    all.of().get(i).buildingCounts(pointer + "/all/" + i, visit);
+                }
+            }
+            case Any any -> {
+                for (int i = 0; i < any.of().size(); i++) {
+                    any.of().get(i).buildingCounts(pointer + "/any/" + i, visit);
+                }
+            }
+            case Buildings b -> visit.accept(b, pointer + "/buildings/count");
+            case Tech t -> {}
+            case Phase p -> {}
+        }
+    }
+
     /** Calls {@code visit} with every tech leaf and the JSON pointer of its id, below {@code pointer}. */
     default void techLeaves(String pointer, BiConsumer<TechId, String> visit) {
         switch (this) {

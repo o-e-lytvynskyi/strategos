@@ -9,9 +9,9 @@ import java.util.TreeSet;
 import org.jspecify.annotations.Nullable;
 
 /**
- * The templates' network indices for a server's session (DATA-03, ADR-0012): append-only, so a reload keeps every index
- * it gave, gives a new template the next free one, new ids in id order, and retires the index of a template that is
- * gone. Clients get it with the set and check it by its hash, the SHA-256 of the ids in index order.
+ * The technologies' indices for a server's session (TECH-01, spec row 20): append-only, so a reload keeps every index
+ * it gave, gives a new tech the next free one, new ids in id order, and retires the index of a tech that is gone. What
+ * is saved or sent names a tech by its index, so an index never moves.
  */
 @CoreApi
 public final class TechIdTable {
@@ -22,7 +22,7 @@ public final class TechIdTable {
     /** The table that gives {@code ids.get(k)} index {@code k}; ids are distinct. */
     public TechIdTable(List<TechId> ids) {
         if (new TreeSet<>(ids.stream().map(TechId::value).toList()).size() != ids.size()) {
-            throw new IllegalArgumentException("a template id twice in " + ids);
+            throw new IllegalArgumentException("a tech id twice in " + ids);
         }
         this.ids = List.copyOf(ids);
     }

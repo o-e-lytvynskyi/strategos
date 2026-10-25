@@ -64,11 +64,11 @@ class TemplateSetTest {
     }
 
     @Test
-    void aSetWithoutTechsKeepsItsVersion() {
-        UnitTemplate walker = TemplateSet.builtin().byIndex(0);
-        assertThat(new TemplateSet(List.of(walker)).version())
-                .as("no $techs key without techs: pinned before TECH-01")
-                .isEqualTo(WALKER_ONLY_VERSION);
+    void theBuiltinTemplatesWithoutTechsHaveTheVersionTheyHadBeforeTech01() {
+        assertThat(BuiltinTemplates.compile(false).version())
+                .as("no sample tech and no Researcher: the pin of 064ac8a^, no $techs key")
+                .isEqualTo(BUILTIN_VERSION_BEFORE_TECH_01);
+        assertThat(BuiltinTemplates.compile(false).techs()).isEmpty();
     }
 
     @Test
@@ -168,8 +168,6 @@ class TemplateSetTest {
 
     private static final String BUILTIN_VERSION_BEFORE_TECH_01 =
             "b4dc5f372084f6e585991b46f0a5dd964000c22e094206ad5f375e00ac042c1c";
-    private static final String WALKER_ONLY_VERSION =
-            "cfc4f608c6cf312b24f35c8ab6595a3bcb624646d479a3796a67281f600c7f53";
 
     // M4: the farmstead's reach (ECO-17); M6 T2.1: the storehouse's Researcher and the tech gather_wood_1 (TECH-01)
     private static final String BUILTIN_VERSION = "3f019e6660e60db502c566312c1d7850af933c7c1ba35f1bb2070a9c82d25c71";

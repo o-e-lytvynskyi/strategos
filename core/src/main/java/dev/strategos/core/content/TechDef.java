@@ -102,7 +102,7 @@ public record TechDef(
         }
         String name = string(json, "name", id.value(), file, problems);
         String icon = string(json, "icon", null, file, problems);
-        if (json.has("icon") && icon.isEmpty()) {
+        if (json.get("icon") instanceof JsonPrimitive p && p.isString() && icon.isEmpty()) {
             problems.add(TemplateProblem.error(file, "/icon", "an icon is not empty"));
         }
         List<String> classes = new ArrayList<>();
@@ -217,7 +217,9 @@ public record TechDef(
                 }
             }
         }
-        if (parsed == null) {
+        if (opJson == null) {
+            problems.add(TemplateProblem.error(file, at + "/op", "missing op; known: replace, mul, add, tokens"));
+        } else if (parsed == null) {
             problems.add(TemplateProblem.error(
                     file, at + "/op", "unknown op " + opJson + "; known: replace, mul, add, tokens"));
         } else {

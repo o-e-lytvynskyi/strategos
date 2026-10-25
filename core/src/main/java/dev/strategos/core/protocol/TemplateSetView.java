@@ -1,6 +1,7 @@
 package dev.strategos.core.protocol;
 
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import dev.strategos.core.content.CanonicalJson;
 import dev.strategos.core.content.TechDef;
@@ -71,14 +72,19 @@ public record TemplateSetView(
     /** The set this view describes, decoded as the server's compiler decodes; its version is checked by the caller. */
     public TemplateSet toSet() {
         List<TemplateCompiler.Flat> flats = new ArrayList<>();
-        for (Template t : templates) {
-            flats.add(new TemplateCompiler.Flat(
-                    t.id(), t.netIndex(), JsonParser.parseString(t.json()).getAsJsonObject()));
-        }
         List<TemplateCompiler.TechFlat> techFlats = new ArrayList<>();
-        for (Tech t : techs) {
-            techFlats.add(new TemplateCompiler.TechFlat(
-                    t.id(), t.netIndex(), JsonParser.parseString(t.json()).getAsJsonObject()));
+        try {
+            for (Template t : templates) {
+                flats.add(new TemplateCompiler.Flat(
+                        t.id(), t.netIndex(), JsonParser.parseString(t.json()).getAsJsonObject()));
+            }
+            for (Tech t : techs) {
+                techFlats.add(new TemplateCompiler.TechFlat(
+                        t.id(), t.netIndex(), JsonParser.parseString(t.json()).getAsJsonObject()));
+            }
+        } catch (JsonParseException | IllegalStateException e) {
+            throw new IllegalArgumentException(
+                    "a template set view holds JSON that does not parse: " + e.getMessage(), e);
         }
         TemplateCompiler.Result result = TemplateCompiler.fromFlattened(flats, techFlats);
         if (!result.ok()) {
@@ -92,6 +98,9 @@ public record TemplateSetView(
         public void write(WireWriter out, TemplateSetView view) {
             // Streams are read back to back (a journal's inputs), so the bytes left cannot tell a trailing section:
             // a view with techs marks its version, which as hex never ends in TECHS_MARK.
+            if (view.techs().isEmpty() && view.version().endsWith(TECHS_MARK)) {
+                throw new IllegalArgumentException("a version ending in '" + TECHS_MARK + "' needs techs");
+            }
             out.writeString(view.techs().isEmpty() ? view.version() : view.version() + TECHS_MARK, 64 + 2);
             out.writeVarInt(view.table().size());
             for (TemplateId id : view.table()) {
@@ -133,6 +142,9 @@ public record TemplateSetView(
             List<Tech> techs = new ArrayList<>();
             if (withTechs) {
                 int n = in.readVarInt(MAX_TEMPLATES);
+                if (n == 0) {
+                    throw new WireException("a template set marked with techs holds none");
+                }
                 for (int k = 0; k < n; k++) {
                     int index = in.readVarInt(MAX_TEMPLATES);
                     TechId id = techId(in.readString(MAX_ID));

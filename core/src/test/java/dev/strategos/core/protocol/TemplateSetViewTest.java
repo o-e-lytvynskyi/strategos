@@ -1,10 +1,13 @@
 package dev.strategos.core.protocol;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import dev.strategos.core.content.TemplateIdTable;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.UnitTemplate;
+import dev.strategos.core.shared.TechId;
+import dev.strategos.core.shared.TemplateId;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -66,5 +69,43 @@ class TemplateSetViewTest {
         assertThat(TemplateSetView.WIRE.read(in)).isEqualTo(with);
         assertThat(TemplateSetView.WIRE.read(in)).isEqualTo(without);
         in.expectEnd();
+    }
+
+    @Test
+    void aViewWithoutTechsRefusesToWriteAVersionThatLooksMarked() {
+        TemplateSetView marked = new TemplateSetView("abc+t", List.of(), List.of());
+
+        assertThatThrownBy(() -> WireCodec.encode(TemplateSetView.WIRE, marked))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void aMarkedViewWithNoTechsDoesNotRead() {
+        WireWriter out = new WireWriter();
+        out.writeString("abc+t", 66);
+        out.writeVarInt(0);
+        out.writeVarInt(0);
+        out.writeVarInt(0);
+
+        assertThatThrownBy(() -> WireCodec.decode(TemplateSetView.WIRE, out.toByteArray()))
+                .isInstanceOf(WireException.class);
+    }
+
+    @Test
+    void jsonThatDoesNotParseOrIsNoObjectIsAnIllegalArgument() {
+        TemplateSetView torn = new TemplateSetView(
+                "v",
+                List.of(),
+                List.of(new TemplateSetView.Template(0, new TemplateId("t:unit/a"), "{ \"Identity\": ")));
+        TemplateSetView notObject = new TemplateSetView(
+                "v", List.of(), List.of(new TemplateSetView.Template(0, new TemplateId("t:unit/a"), "[1]")));
+        TemplateSetView tornTech = new TemplateSetView(
+                "v", List.of(), List.of(), List.of(new TemplateSetView.Tech(0, new TechId("t:a"), "{")));
+        TemplateSetView techNotObject = new TemplateSetView(
+                "v", List.of(), List.of(), List.of(new TemplateSetView.Tech(0, new TechId("t:a"), "7")));
+
+        for (TemplateSetView view : List.of(torn, notObject, tornTech, techNotObject)) {
+            assertThatThrownBy(view::toSet).isInstanceOf(IllegalArgumentException.class);
+        }
     }
 }

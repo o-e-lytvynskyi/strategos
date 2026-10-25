@@ -165,8 +165,8 @@
     "Reseeder/reach": "Twenty-four blocks: a ring of fields round the farmstead, as the classics' farm by the mill (ECO-17, D-14)"
   },
   "strategos:gather_wood_1": {
-    "cost/food": "100 food: a little under two workers' food, since the first economy tech costs about a couple of workers (docs/research/mechanics.md, economy techs); our own starting value, tuned against QA-12 in M6 T23",
-    "cost/wood": "50 wood: half the food, so the tech is paid from both sides of the economy; our own starting value, tuned against QA-12 in M6 T23",
+    "cost/food": "100 food: what the classic first wood-gathering tech costs, 100 food and 50 wood (docs/research/mechanics.md §1.3, the Double-Bit Axe row)",
+    "cost/wood": "50 wood: the same row of the table, 100 food and 50 wood, so the tech is paid from both sides of the economy (docs/research/mechanics.md §1.3)",
     "time": "Thirty seconds, three workers' training: the classics' first wood tech takes about forty (docs/research/mechanics.md, economy techs); our own starting value, tuned against QA-12 in M6 T23",
     "effects/0/value": "A fifth faster felling: the classics' first wood tech gives a quarter (docs/research/mechanics.md, economy techs); ours is a smaller first step, our own starting value, tuned against QA-12 in M6 T23"
   }

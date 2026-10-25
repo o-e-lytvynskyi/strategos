@@ -151,7 +151,8 @@ class TechDefTest {
                                 "t:axes",
                                 "{\"icon\":\"i\",\"time\":5,\"requires\":{\"any\":[{\"tech\":\"t:ghost\"}]},"
                                         + "\"supersedes\":\"t:phantom\"}"),
-                        tech("t:plough", "{\"icon\":\"i\",\"time\":5,\"requires\":{\"tech\":\"t:axes\"}}")),
+                        tech("t:plough", "{\"icon\":\"i\",\"time\":5,\"requires\":{\"tech\":\"t:bows\"}}"),
+                        tech("t:bows", "{\"icon\":\"i\",\"time\":5}")),
                 TemplateIdTable.EMPTY,
                 TechIdTable.EMPTY,
                 PlaceholderBlueprints.byId());
@@ -164,7 +165,7 @@ class TechDefTest {
         assertThat(result.set().techs())
                 .as("the tech with a bad reference is left out")
                 .extracting(t -> t.id().value())
-                .containsExactly("t:plough");
+                .containsExactly("t:bows", "t:plough");
     }
 
     @Test
@@ -216,5 +217,127 @@ class TechDefTest {
             assertThat(ModifierOp.valueOf(op.name()).name()).isEqualTo(op.name());
         }
         assertThat(TechEffect.Op.values()).hasSameSizeAs(ModifierOp.values());
+    }
+
+    private static RawTech plain(String id, String extra) {
+        return tech(id, "{\"icon\":\"i\",\"time\":5" + extra + "}");
+    }
+
+    private static RawTech requiring(String id, String other) {
+        return plain(id, ",\"requires\":{\"tech\":\"" + other + "\"}");
+    }
+
+    private static RawTech superseding(String id, String other) {
+        return plain(id, ",\"supersedes\":\"" + other + "\"");
+    }
+
+    private static TemplateCompiler.Result techs(RawTech... raws) {
+        return TemplateCompiler.compile(
+                List.of(), List.of(raws), TemplateIdTable.EMPTY, TechIdTable.EMPTY, PlaceholderBlueprints.byId());
+    }
+
+    private static List<String> where(TemplateCompiler.Result r) {
+        return r.problems().stream()
+                .map(p -> p.file().substring(p.file().lastIndexOf('/') + 1) + p.pointer())
+                .toList();
+    }
+
+    @Test
+    void aTechRequiringItselfIsACycle() {
+        TemplateCompiler.Result r = techs(requiring("t:a", "t:a"), plain("t:ok", ""));
+        assertThat(where(r)).containsExactly("a.json/requires/tech");
+        assertThat(r.problems().get(0).message()).contains("t:a → t:a");
+        assertThat(r.set().techs()).extracting(t -> t.id().value()).containsExactly("t:ok");
+    }
+
+    @Test
+    void aRequiresLoopIsReportedOnceAtTheClosingEdgeAndLeavesBothOut() {
+        TemplateCompiler.Result r = techs(requiring("t:a", "t:b"), requiring("t:b", "t:a"));
+        assertThat(where(r)).containsExactly("b.json/requires/tech");
+        assertThat(r.set().techs()).isEmpty();
+    }
+
+    @Test
+    void aTechSupersedingItselfIsACycle() {
+        TemplateCompiler.Result r = techs(superseding("t:a", "t:a"));
+        assertThat(where(r)).containsExactly("a.json/supersedes");
+        assertThat(r.set().techs()).isEmpty();
+    }
+
+    @Test
+    void aSupersedesLoopIsReportedOnce() {
+        TemplateCompiler.Result r =
+                techs(superseding("t:a", "t:b"), superseding("t:b", "t:c"), superseding("t:c", "t:a"));
+        assertThat(where(r)).containsExactly("c.json/supersedes");
+        assertThat(r.set().techs()).isEmpty();
+    }
+
+    @Test
+    void aMixedLoopAndATechThatNeedsItLeaveTogether() {
+        TemplateCompiler.Result r =
+                techs(requiring("t:a", "t:b"), superseding("t:b", "t:a"), requiring("t:c", "t:a"), plain("t:ok", ""));
+        assertThat(where(r)).containsExactly("b.json/supersedes", "c.json/requires/tech");
+        assertThat(r.problems().get(1).message()).contains("does not compile");
+        assertThat(r.set().techs()).extracting(t -> t.id().value()).containsExactly("t:ok");
+    }
+
+    private static final String WORKER = """
+            { "Identity": { "name": "w", "classes": "+Worker" },
+              "UnitMotion": { "walkSpeed": 0.2 },
+              "Body": { "entityType": "x", "width": 0.6, "height": 1.8 },
+              "Rates": { "wood": 0.6 } %s }
+            """;
+
+    private static TemplateCompiler.Result withWorker(String extra, RawTech... raws) {
+        RawTemplate worker = new RawTemplate(
+                new dev.strategos.core.shared.TemplateId("t:unit/worker"),
+                "data/t/strategos/templates/unit/worker.json",
+                obj(WORKER.formatted(extra)));
+        return TemplateCompiler.compile(
+                List.of(worker), List.of(raws), TemplateIdTable.EMPTY, TechIdTable.EMPTY, PlaceholderBlueprints.byId());
+    }
+
+    @Test
+    void anEffectPathMustBeANumberPathOfTheSetOrATokenPathForTokens() {
+        String ok = "{\"icon\":\"i\",\"time\":5,\"effects\":[%s]}";
+        String num = "{\"path\":\"Rates/wood\",\"op\":\"mul\",\"value\":2}";
+        String badNum = "{\"path\":\"Rates/stone\",\"op\":\"mul\",\"value\":2}";
+        String tok = "{\"path\":\"Identity/classes\",\"op\":\"tokens\",\"tokens\":\"+Axed\"}";
+        String badTok = "{\"path\":\"Rates/wood\",\"op\":\"tokens\",\"tokens\":\"+Axed\"}";
+        String numOnToken = "{\"path\":\"Identity/classes\",\"op\":\"mul\",\"value\":2}";
+
+        assertThat(withWorker("", tech("t:good", ok.formatted(num + "," + tok))).problems())
+                .isEmpty();
+        TemplateCompiler.Result r = withWorker(
+                "",
+                tech("t:a", ok.formatted(num + "," + badNum)),
+                tech("t:b", ok.formatted(badTok)),
+                tech("t:c", ok.formatted(numOnToken)));
+        assertThat(where(r)).containsExactly("a.json/effects/1/path", "b.json/effects/0/path", "c.json/effects/0/path");
+        assertThat(r.set().techs()).isEmpty();
+    }
+
+    @Test
+    void everyTokenOfAResearcherListMustNameATechOfTheSet() {
+        RawTech axes = plain("t:axes", "");
+        TemplateCompiler.Result r = withWorker(", \"Researcher\": { \"techs\": \"t:axes t:ghost\" }", axes);
+
+        assertThat(where(r)).containsExactly("worker.json/Researcher/techs");
+        assertThat(r.problems().get(0).file()).isEqualTo("data/t/strategos/templates/unit/worker.json");
+        assertThat(r.problems().get(0).message()).contains("t:ghost");
+        assertThat(withWorker(", \"Researcher\": { \"techs\": \"t:axes\" }", axes)
+                        .problems())
+                .isEmpty();
+    }
+
+    @Test
+    void aNonStringIconIsOneErrorAndAMissingOpSaysSo() {
+        assertThat(problemsOf("{\"icon\": 5, \"time\": 5}"))
+                .extracting(TemplateProblem::pointer)
+                .containsExactly("/icon");
+        List<TemplateProblem> missing =
+                problemsOf("{\"icon\":\"i\",\"time\":5,\"effects\":[{\"path\":\"a/b\",\"value\":2}]}");
+        assertThat(missing).hasSize(1);
+        assertThat(missing.get(0).message()).startsWith("missing op");
     }
 }
