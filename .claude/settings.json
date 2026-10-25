@@ -45,6 +45,8 @@
       "Bash(gh pr comment *)",
       "Bash(gh pr review *)",
       "Bash(gh pr close *)",
+      "Bash(gh pr merge *)",
+      "Bash(gh label list *)",
       "mcp__github__pull_request_read",
       "mcp__github__get_commit",
       "mcp__github__list_commits"
