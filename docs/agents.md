@@ -68,6 +68,9 @@ so the worker does not rediscover it.
   (`strategos-maintain` §3), from a session that did not build the branch.
 - Every gate of the Definition of Done runs as before; delegation changes who reads the log, not
   what must pass.
+- The maintainer's review is delegated the same way — runners for gates, the diff map and the
+  records, reviewers per area, the orchestrator for the verdict — with its own cost rules
+  (`strategos-maintain` §4).
 
 ## Role status
 

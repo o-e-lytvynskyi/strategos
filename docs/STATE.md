@@ -3,7 +3,7 @@
 Where the project stands right now. The session log is in [worklog.md](worklog.md); the work
 procedure is the `strategos-dev` skill (`.claude/skills/strategos-dev/SKILL.md`).
 
-**Last update:** 2026-10-25 · **Owner last seen:** 2026-10-25 · **Current:** M4 Done (2026-10-24); M5 specified, waiting for your word; M1, M2 and M3 Done
+**Last update:** 2026-10-25 · **Owner last seen:** 2026-10-25 · **Current:** M4 Done (2026-10-24); M5 open for claims (2026-10-25); M1, M2 and M3 Done
 
 ## For the owner
 
@@ -141,14 +141,7 @@ Answer in chat or here; the next session applies the answers.
    the questionnaire in `docs/testing/playtest.md`. The map has no rock outcrop: outcrops are tested on their own
    (ECO-07). M4 is Done; only this makes it Accepted.
 
-21. **M5's spec is ready: say «открой M5» (anyone may claim it) or «отдай M5 <кому>» (reserved).** [milestones/M5-combat.md](milestones/M5-combat.md):
-   17 tasks, the 13 approved cards (CMB-08 stays deferred, as D-08 kept the observer). Archers with analytic shots
-   and high ground, stances and focus fire, horsemen on horses with the counter matrix (spearmen > horsemen >
-   archers > spearmen, 170 of 200 seeded duels each), the town bell with garrison and the civic centre's arrows,
-   the bot fighting by the same rules, and "Battle at the ford" as the demo. The starting balance numbers are in
-   its §2.7, tuned against the duel matrix in T7. Nothing in it needs a decision from you.
-
-22. **A watched demo of every mechanic, whenever you like (no setup):** ask «покажи демо» (or «покажи новое», or
+21. **A watched demo of every mechanic, whenever you like (no setup):** ask «покажи демо» (or «покажи новое», or
    name the mechanics) and the session opens the game window and narrates in the chat. Or run it yourself:
    `./gradlew :mod:runScenario -Pscenario=demo -Pdemo=all -Pscenario.timeoutSeconds=3600`. Twelve chapters, about
    six minutes in all: crowd round a wall, attack-move and melee, wood and berries, livestock, mines and quarries,
@@ -157,24 +150,22 @@ Answer in chat or here; the next session applies the answers.
    current version (kept in `~/.strategos/demo-seen`); `-Pdemo=m4` or `-Pdemo=crowd,melee` picks, `-Pdemo.skip=`
    leaves out; `-Pdemo=list` lists them. It does not replace the L7 demos above, which are play, not watching.
 
-23. **For your information: the new way of working (your word of 2026-10-25).**
+22. **For your information: the new way of working (your word of 2026-10-25).**
    - Rules are tool-neutral in [AGENTS.md](../AGENTS.md) (CLAUDE.md imports it; Codex reads it as is) and bind every
-     developer equally. Every developer is external, my own sessions too: work is claimed by pushing a
-     `dev/<developer>/<work>` branch with its branch file ([branches/](branches/README.md),
-     `python3 tools/claims.py list`), built there, handed in as a pull request, validated by another session
-     (`strategos-maintain`) and merged on your «влей». Only merges and record commits reach `main`.
+     developer equally; every developer is external, my own sessions too. Joining: [onboarding.md](onboarding.md).
+   - **Assignment first, by pull request:** a claim pull request adds the developer's row to
+     [claims.md](claims.md) and their branch file, and is merged before any development (`tools/claims.py check`
+     refuses overlaps and takeovers without the holder's approval). Work is then built on `dev/<developer>/<work>`,
+     handed in as a pull request with the milestone report, reviewed by another session with delegated workers
+     (`strategos-maintain` §4) and merged on your «влей». Claim and release pull requests are records and are
+     accepted by any maintainer session without your word («прими клеймы»).
    - The main session orchestrates on Opus and delegates to Sonnet and Haiku workers — a **demo** roster
-     ([agents.md](agents.md), `.claude/agents/`), to be reworked as trials show; new roles follow `new-agent`.
-   - Windows, recommended decisions, subagents, any test, no pauses: allowed by default; your restrictions go to
-     "Standing restrictions". Context economy is a rule, not advice.
-   - The Minecraft and RTS knowledge base moved here from your private notes, translated:
-     [kb/](kb/README.md). Setup for any developer (Claude Code or Codex): [developer-setup.md](developer-setup.md).
-   - **To hand M5 out:** «открой M5» opens it to whoever claims first; «отдай M5 <кому>» reserves it for them.
-24. **The allowlist, for the new way of working** (`.claude/settings.json`, yours to edit). Add:
-   `Bash(python3 tools/claims.py *)`, `Bash(git worktree *)`, `Bash(gh pr create *)`, `Bash(gh pr view *)`,
-   `Bash(gh pr list *)`, `Bash(gh pr checks *)`, `Bash(gh pr comment *)`. Remove the nine `~/work/pet_projects`
-   entries: the knowledge base is in the repository now. Optional: `"model": "opus"` so sessions start as the
-   orchestrator. Until then, an unattended developer session may stop at a prompt on claims or pull requests.
+     ([agents.md](agents.md)); roles change by pull request, and leave demo on trial evidence.
+   - Windows, recommended decisions, subagents, any test, no pauses: allowed by default; reports after every
+     milestone. Context economy is a rule. The Minecraft and RTS knowledge base is here now: [kb/](kb/README.md).
+23. **The allowlist** (`.claude/settings.json`, yours to edit): the exact change is in the chat of 2026-10-25 and in
+   the worklog's entry of that evening; until it is applied, an unattended session may stop at a prompt on claims or
+   pull requests.
 
 ## Since your last visit
 
@@ -184,11 +175,11 @@ Nothing yet: the owner was here on 2026-10-25.
 
 - **Milestone:** M4 Economy and construction is **Done** (2026-10-24, [§8.1](milestones/M4-economy-and-construction.md));
   M3 Done (2026-10-24), M1 and M2 Done (2026-10-23). Accepted waits for each one's demo (items 8, 9, 14, 20).
-- **In progress:** nothing: M5's spec is written ([milestones/M5-combat.md](milestones/M5-combat.md)) and waits for
-  your «начинай M5» (item 21).
+- **In progress:** nothing on `main`: M5 ([milestones/M5-combat.md](milestones/M5-combat.md)) is open for claims;
+  the colleague claims it by pull request ([claims.md](claims.md)).
 - **Last finished task:** M4 T28 (2026-10-24), M4's close: Results written, the health check's follow-ups are M5's
   first tasks.
-- **Next task:** M5 T1, the health check from M4's close, on your word.
+- **Next task:** M5 T1, the health check from M4's close, once M5's claim is merged.
 - **WIP branch:** none.
 - **CI:** minutes used this month about 1,575 of 2,000 (79 %, summed from the runs' times; billing needs a scope
   `gh` lacks), as of 2026-10-24, a week left. Since M4 T12 a push runs `verify` only (25 minutes allowed), the slow
@@ -208,7 +199,8 @@ goes here with its date and its end («до вечера», «до конца M5
 Milestones whose tasks any developer may claim (AGENTS.md "Developers and claims"), opened on the owner's word.
 Planning work (the next milestone's spec) is always claimable.
 
-- None yet: M5 is specified and waits for your word (item 21).
+- **M5 Combat** — opened 2026-10-25 on the owner's word («разраб сам заасайнится на нее»): the colleague claims
+  it by pull request. The owner's own agent sessions do not claim M5 unless the owner asks.
 
 ## Decisions taken
 
@@ -217,15 +209,6 @@ branch), and the maintainer's own: what, why, how to undo. The owner vetoes by a
 `fix-…` claim. The list is cleared once the owner has seen it.
 
 - None yet.
-
-## Assignments
-
-Work the owner reserved for a developer; only they may claim it. The claims themselves are the `dev/*` branches:
-`python3 tools/claims.py --fetch list`.
-
-| Work | Developer | Since | Note |
-|---|---|---|---|
-| — | — | — | — |
 
 ## Blocked
 
@@ -240,7 +223,7 @@ Nothing.
 | M2 Command | Done 2026-10-23 | Started 2026-10-23 at the owner's word; 23 tasks; `pose_high` settled in M3 T30; Accepted waits for the L7 demo |
 | M3 First loop | Done 2026-10-24 | Started 2026-10-23 at the owner's word; 31 tasks; Accepted waits for the L7 demo (item 14) |
 | M4 Economy and construction | Done 2026-10-24 | Started 2026-10-24 as M3 closed; 24 tasks; Accepted waits for the L7 demo (item 20); item 18 asks your word on the perf base |
-| M5 Combat | Specified 2026-10-24 | Spec written as M4 closed, 17 tasks; starts on your word (item 21) |
+| M5 Combat | Open for claims 2026-10-25 | Spec written as M4 closed, 17 tasks; the colleague claims it by pull request |
 | M6 (MVP) | approved | Its spec is written when M5 closes |
 | M7–M15 | proposed | Approved by the owner closer to their time |
 

@@ -1,8 +1,9 @@
 # Developer branches
 
 One file per developer branch (AGENTS.md "Developers and claims"). Named
-`<developer>-<work>.md`, created by the branch's first commit: that commit is the claim, and
-`python3 tools/claims.py list` shows every claim on `origin`. On the branch the file replaces
+`<developer>-<work>.md`, added by the claim pull request together with the developer's row in
+[../claims.md](../claims.md) (the procedure's §2a); `python3 tools/claims.py list` shows the
+claims. On the branch the file replaces
 STATE.md "Now", "For the owner", "Decisions taken" and the worklog; on merge the maintainer folds
 it into them and keeps it here as the record.
 

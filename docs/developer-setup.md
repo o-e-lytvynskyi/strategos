@@ -77,13 +77,14 @@ with a profile):
 
 Equivalent to `.claude/settings.json`: the work loop's commands run without prompts (`./gradlew`,
 `python3 tools/roadmap.py`, `python3 tools/claims.py`, `git` add/commit/push/fetch/merge/switch,
-`gh pr create|view`, `gh run list|view`, `javap`, reads of `~/.gradle/caches`), and these are
+`gh pr create|view|list|diff|checks|comment`, `gh run list|view`, `javap`, reads of `~/.gradle/caches`), and these are
 refused: force push, push to `main`, `git reset --hard`, `git clean`, discarding the working
 tree, deleting branches. Network access is needed for Gradle and `git push`.
 
 ### R4 — Branch discipline
 
-Exactly the procedure: claims, `dev/<developer>/<work>` branches, the branch file as the only
+Exactly the procedure: a claim pull request merged before any development,
+`dev/<developer>/<work>` branches, the branch file as the only
 record, `origin/main` merged in and never rebased, commits prefixed `Mx Tn:` and free of tool
 traces, hand-in by pull request.
 

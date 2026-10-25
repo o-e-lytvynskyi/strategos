@@ -130,9 +130,11 @@ step is committed and pushed to the developer's branch.
 
 **Claims and gates.** Implementing a milestone's tasks needs the milestone in STATE.md "Open for
 claims", written on the owner's word; planning work (the next milestone's spec) needs none.
-Developers claim work themselves by pushing a `dev/<developer>/<work>` branch with its branch
-file ([branches/](branches/README.md)); `tools/claims.py` lists the claims, and STATE.md
-"Assignments" holds the owner's reservations. One session per working copy (a lock,
+Developers claim work themselves, before developing it, by a pull request that adds their row to
+[claims.md](claims.md) and their branch file ([branches/](branches/README.md)); a maintainer merges
+it after `tools/claims.py check`, so the same work is never held twice, and assigned work changes
+hands only with its holder's explicit approval. The owner's reservations are `reserved` rows
+there. One session per working copy (a lock,
 `.session.lock`, which git ignores).
 
 **Statuses and evidence.** ROADMAP.md is the source of truth; card files mirror it, and

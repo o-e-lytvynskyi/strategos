@@ -34,11 +34,12 @@ every claim (`claude-owner`, `alex`, …).
    - Rewrite it after every commit. Delete it (`rm -f .session.lock`) before the final report.
 2. **Git:**
    - `git status`: a dirty tree goes to §9;
-   - `python3 tools/claims.py --fetch list`: your open claims, and everyone else's;
+   - `python3 tools/claims.py --fetch list`: the registry docs/claims.md on `main` — yours and
+     everyone else's — and `gh pr list --author @me` for your open pull requests;
    - on your branch: if `origin/main` moved since your last merge of it, `git merge origin/main`
      and re-run `./gradlew verifyFast`; if the branch is ahead of `origin`, push first.
 3. **Read, by heading** (`grep -n '^## '`, then a range — never the whole file):
-   - docs/STATE.md: "Open for claims", "Standing restrictions", "Assignments", "Blocked", and the
+   - docs/STATE.md: "Open for claims", "Standing restrictions", "Blocked", and the
      "For the owner" items that name your branch (answers to your questions land there);
    - your branch file: "Now", "For the owner", the newest log entry.
 4. **The owner's input** for you: answers in STATE or your branch file, notes on cards in
@@ -76,20 +77,29 @@ Take the first that applies:
 If nothing is ready, stop and report what is blocked and on whom. Never invent work outside the
 approved roadmap; ideas go to "For the owner" as proposals.
 
-## 2a. Claim work
+## 2a. Claim work (before any development, by pull request)
 
-1. `python3 tools/claims.py --fetch list`: no open claim (`claimed`, `in progress`, `ready for
-   review`) covers it, and STATE "Assignments" does not reserve it for someone else. A
-   reservation that names you is yours to claim.
-2. **The base:** `origin/main`, or your own unmerged branch if the work depends on it (say so in
-   the header's `Base`).
+1. `python3 tools/claims.py --fetch list` and `gh pr list --search claims.md`: no `assigned` row and
+   no open claim pull request covers the work, and no `reserved` row keeps it for someone else (a
+   reservation in your name is yours to claim). Work `assigned` to someone else is never taken
+   without their explicit approval (AGENTS.md "Developers and claims").
+2. **The base:** `origin/main`, or your own branch if the work depends on it (the header's
+   `Base`).
 3. `git switch -c dev/<developer>/<work> <base>`; `<work>` is short: `m5`, `m5-t1-t6`, `m6-spec`,
    `fix-main`.
-4. Create your branch file from the template in docs/branches/README.md: the header (`Status:
-   claimed`), "Now" filled in.
-5. Commit `Mx: claim <work>` (or `Docs: claim fix-main`), push with `git push -u origin
-   dev/<developer>/<work>`. Re-run `claims.py --fetch list`: if an overlapping claim was pushed
-   before yours, release yours (§12 item 3) and pick again.
+4. The claim commit, and nothing else in it: your row in docs/claims.md (`assigned`, today, your
+   branch; or your `reserved` row turned `assigned`), your branch file from the template in
+   docs/branches/README.md (`Status: claimed`, "Now" filled in). `python3 tools/claims.py check
+   --base origin/main` passes. Commit `Mx: claim <work>` (or `Docs: claim <work>`), push with `git
+   push -u origin dev/<developer>/<work>`.
+5. Open the claim pull request: `gh pr create --base main --head dev/<developer>/<work> --title
+   "Claim: <work>" --body "<what, the base, the tasks>"`.
+6. **Wait for the merge before developing.** Meanwhile go back to §2 for other work you already
+   hold, or prepare without code (read the spec, list the APIs to verify). If nothing else is
+   yours, stop (§8: nothing ready) and say the claim waits for a maintainer.
+7. Merged: `git merge origin/main` into your branch, `Status: in progress` at the first task, go
+   to §3. Rejected (an overlap merged first): delete nothing, set your branch file to `released`,
+   and pick again.
 
 ## 3. Do the task
 
@@ -364,5 +374,8 @@ briefly:
    - then go back to §2 and claim the next work; stack it on this branch if it depends on it.
 2. **Review findings** arrive in the branch file's "Review" and in the pull request: fix them on
    the branch (`Mx Tn: review fix — <what>`), push, and say so in the pull request.
-3. **Release** a claim you stop: `Status: released <date>`, a line in the log on why, push. The
-   work becomes claimable again.
+3. **Release** a claim you stop: `Status: released <date>` and a log line on why in your branch
+   file, push; then a pull request to `main` turning your docs/claims.md row to `released` (title
+   `Release: <work>`). Approving someone's takeover of your work is the same release, or a
+   comment on their claim pull request saying so.
+4. **The `done` row** is written by the maintainer at the merge.

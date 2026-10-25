@@ -9,6 +9,25 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
+## 2026-10-25 (night) — Docs: assignment by pull request, the delegated review
+
+- **Assignment before development** — docs/claims.md is the registry; a claim is a pull request adding the
+  developer's row and branch file, merged before any code. `tools/claims.py check` refuses unknown statuses, two
+  active rows over the same work (a milestone covers its spec's tasks; ranges follow the spec) and, against the
+  pull request's base, a takeover whose note lacks the holder's approval. `tools/test_claims.py`: 9 tests; tried by
+  hand on an overlap, a bad status and a takeover with and without the note. STATE "Assignments" folded into it.
+- **M5 opened for claims** on the owner's word; the colleague claims it; the owner's own sessions do not.
+- **The maintainer's review** — strategos-maintain §3 (claim and release pull requests, accepted without the
+  owner's word) and §4 (review delegated: runners for gates, diff map and records; reviewers per area; the
+  orchestrator for the verdict; sized to the diff, no re-runs of what CI ran on the same commit).
+- **The allowlist change for the owner** (`.claude/settings.json`), item 23:
+  add to `allow` `Bash(python3 tools/claims.py *)`, `Bash(python3 -m unittest *)`, `Bash(git worktree *)`,
+  `Bash(gh pr create *)`, `Bash(gh pr list *)`, `Bash(gh pr view *)`, `Bash(gh pr diff *)`, `Bash(gh pr checks *)`,
+  `Bash(gh pr comment *)`, `Bash(gh pr review *)`, `Bash(gh pr close *)`; remove the nine `~/work/pet_projects`
+  entries (seven `git -C ~/work/pet_projects …`, the `Read` and the `Edit` of the old knowledge base);
+  optionally `"model": "opus"` at the top level.
+- **Next:** the colleague's claim of M5; a maintainer session accepts it («прими клеймы»).
+
 ## 2026-10-25 (evening) — Docs: onboarding, the roster by pull request, reports per milestone
 
 - **Onboarding** — docs/onboarding.md for any developer, whatever AI tool or none: the project, tools and everyday
