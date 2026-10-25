@@ -23,7 +23,7 @@ built.
 
 | Handle | Who | GitHub | Tool and orchestrator model | Since |
 |---|---|---|---|---|
-| `claude-owner` | Oleksandr Lytvynskyi's Claude Code sessions | [@o-e-lytvynskyi](https://github.com/o-e-lytvynskyi) | Claude Code, Opus | 2026-10-21 |
+| `o-e-lytvynskyi` | Oleksandr Lytvynskyi, with Claude Code sessions | [@o-e-lytvynskyi](https://github.com/o-e-lytvynskyi) | Claude Code, Opus | 2026-10-21 |
 | `dyadik` | Artem Diadyk's Claude Code sessions | [@dyadik9616](https://github.com/dyadik9616) | Claude Code, Opus | 2026-10-25 |
 | `lev1pes` | lev1pes's development sessions | [@lev1pes](https://github.com/lev1pes) | Codex, GPT-6 family | 2026-10-25 |
 

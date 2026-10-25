@@ -144,7 +144,8 @@ Every change reaches `main` through its pull request (branch protection may enfo
 3. `gh pr merge <n> --merge` — the permission prompt is the owner's approval, or the owner merges on
    GitHub (a merge commit; squash and rebase are off, so task commits stay findable). Never
    `gh pr review --approve`: agents comment, people approve. Then `git switch main && git pull --ff-only`, and `./gradlew verify` on `main`.
-4. `git worktree remove ../strategos-review`. The branch stays until the owner deletes it.
+4. `git worktree remove ../strategos-review`. GitHub deletes the merged branch on `origin`; its
+   history and branch file stay in `main`.
 5. Stacked claims based on the merged branch: tell their developers, in their pull requests, to
    merge `origin/main`.
 
