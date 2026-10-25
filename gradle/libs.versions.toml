@@ -8,7 +8,7 @@ parchment-mappings = "2024.11.17"
 # Libraries Minecraft 1.21.1 ships; core compiles against exactly these.
 fastutil = "8.5.12"
 dfu = "8.0.16"
-gson = "2.10.1"
+gson = "2.14.0"
 slf4j = "2.0.9"
 jspecify = "1.0.1"
 # Quality gates.
