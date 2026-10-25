@@ -27,3 +27,4 @@ before any development starts, so two developers can never hold the same work (A
 | M6 spec | dyadik | dev/dyadik/m6-spec | assigned | 2026-10-25 | planning |
 | fix-main | lev1pes | dev/lev1pes/fix-main | assigned | 2026-10-25 | investigate the two perf failures in run 40176248614; registration PR #12 first |
 | M5 | lev1pes | dev/lev1pes/m5 | assigned | 2026-10-25 | registration PR #12 first; preserve and reconcile pre-process T1-T2 from codex/m5-combat after assignment |
+| M6 T2–T17 | dyadik | dev/dyadik/m6-t2-t17 | assigned | 2026-10-25 | needs nothing from M5 (spec §7.1); waits for «open M6 for claims» |
