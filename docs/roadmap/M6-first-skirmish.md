@@ -115,7 +115,8 @@ only its own vision at every level except that labelled top level.
   3. The Town cost includes stone or iron (L1).
   4. Every player gets the phase notice (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** TECH-01, BLD-08, D-05 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-26 — 1 `PhaseTest.requirementsTable`; 2 `PhaseTest.townUnlocksExactlyItsList` (the shipped Town and a test set); 3 `PhaseTest.townCostsStoneOrIron`; 4 `techtests.every_player_gets_the_phase_notice` (M6 T3)
 
 #### TECH-03 · Starting technologies and visible equipment tiers
 - **Value:** Early research choices, a faster economy now or a stronger army later, and upgrades

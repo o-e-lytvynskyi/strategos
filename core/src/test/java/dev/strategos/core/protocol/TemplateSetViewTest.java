@@ -17,7 +17,7 @@ class TemplateSetViewTest {
         TemplateSet set = TemplateSet.builtin();
         TemplateSetView view = TemplateSetView.of(set, TemplateIdTable.EMPTY);
 
-        assertThat(view.techs()).hasSize(1);
+        assertThat(view.techs()).hasSize(3);
         assertThat(view.techs().get(0).id().value()).isEqualTo("strategos:gather_wood_1");
         TemplateSet back = view.toSet();
         assertThat(back.version()).isEqualTo(set.version());

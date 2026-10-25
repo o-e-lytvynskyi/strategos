@@ -101,6 +101,19 @@ class TechDefTest {
         record Bad(String json, String pointer) {}
         List<Bad> cases = List.of(
                 new Bad("{" + ok + ", \"colour\": 1}", "/colour"),
+                new Bad("{" + ok + ", \"ordinal\": 1}", "/ordinal"), // an ordinal without the class Phase
+                new Bad("{" + ok + ", \"classes\": [\"Phase\"]}", "/ordinal"), // the class Phase without an ordinal
+                new Bad("{" + ok + ", \"classes\": [\"Phase\"], \"ordinal\": -1}", "/ordinal"),
+                new Bad("{" + ok + ", \"classes\": [\"Phase\"], \"ordinal\": 1.5}", "/ordinal"),
+                new Bad(
+                        "{" + ok
+                                + ", \"effects\": [ { \"path\": \"Trainer/units\", \"op\": \"tokens\", \"tokens\": \"+t:ram\" } ] }",
+                        "/unlocks"), // a token it adds, unlisted
+                new Bad("{" + ok + ", \"unlocks\": [\"t:ram\"]}", "/unlocks"), // a listed unlock nothing adds
+                new Bad(
+                        "{" + ok
+                                + ", \"unlocks\": [\"t:ram\"], \"effects\": [ { \"path\": \"Trainer/units\", \"op\": \"tokens\", \"tokens\": \"+t:tower -t:ram\" } ] }",
+                        "/unlocks"),
                 new Bad(
                         "{" + ok + ", \"effects\": [ { \"path\": \"a/b\", \"op\": \"scale\", \"value\": 2 } ] }",
                         "/effects/0/op"),
@@ -140,6 +153,28 @@ class TechDefTest {
                 assertThat(p.severity()).isEqualTo(TemplateProblem.Severity.ERROR);
             });
         }
+    }
+
+    @Test
+    void aPhaseTechHasAnOrdinalAndItsUnlocksAreTheTokensItsEffectsAdd() {
+        List<TemplateProblem> problems = new ArrayList<>();
+        TechDef town = TechDef.fromJson(new TechId("t:town"), 0, obj("""
+                        {"icon":"i","time":60,"classes":["Phase"],"ordinal":1,
+                         "unlocks":["t:ram","t:tower"],
+                         "effects":[{"path":"Trainer/units","op":"tokens","tokens":"+t:ram","filter":"CivicCentre"},
+                                    {"path":"Researcher/techs","op":"tokens","tokens":"+t:tower -t:old"}]}
+                        """), FILE, problems);
+        assertThat(problems).isEmpty();
+        assertThat(town.ordinal()).isEqualTo(1);
+        assertThat(town.unlocks()).containsExactly("t:ram", "t:tower");
+        assertThat(TechDef.fromJson(new TechId("t:town"), 0, town.toJson(), FILE, problems))
+                .as("the canonical JSON reads back")
+                .isEqualTo(town);
+        TechDef plain = TechDef.fromJson(AXES, 0, obj("{\"icon\":\"i\",\"time\":5}"), FILE, problems);
+        assertThat(plain.ordinal()).isEqualTo(TechDef.NO_ORDINAL);
+        assertThat(plain.toJson().has("ordinal") || plain.toJson().has("unlocks"))
+                .as("a plain tech's canonical JSON is as before phases")
+                .isFalse();
     }
 
     @Test
@@ -328,6 +363,68 @@ class TechDefTest {
         assertThat(withWorker(", \"Researcher\": { \"techs\": \"t:axes\" }", axes)
                         .problems())
                 .isEmpty();
+    }
+
+    @Test
+    void everyUnlockMustNameATemplateOrATechOfTheSet() {
+        String lists = ", \"Trainer\": { \"units\": \"t:unit/worker\" }, \"Researcher\": { \"techs\": \"t:plain\" }";
+        String units = "{\"path\":\"Trainer/units\",\"op\":\"tokens\",\"tokens\":\"+%s\"}";
+        String techs = "{\"path\":\"Researcher/techs\",\"op\":\"tokens\",\"tokens\":\"+%s\"}";
+        String body = "{\"icon\":\"i\",\"time\":5,\"unlocks\":[\"%s\",\"%s\"],\"effects\":[%s,%s]}";
+        RawTech plain = plain("t:plain", "");
+
+        assertThat(withWorker(
+                                lists,
+                                plain,
+                                tech(
+                                        "t:ok",
+                                        body.formatted(
+                                                "t:unit/worker",
+                                                "t:plain",
+                                                units.formatted("t:unit/worker"),
+                                                techs.formatted("t:plain"))))
+                        .problems())
+                .isEmpty();
+        TemplateCompiler.Result r = withWorker(
+                lists,
+                plain,
+                tech(
+                        "t:bad",
+                        body.formatted(
+                                "t:unit/ghost",
+                                "t:ghost",
+                                units.formatted("t:unit/ghost"),
+                                techs.formatted("t:ghost"))));
+        assertThat(where(r)).containsExactly("bad.json/unlocks/0", "bad.json/unlocks/1");
+        assertThat(r.set().techs()).extracting(t -> t.id().value()).containsExactly("t:plain");
+    }
+
+    @Test
+    void aTechHasTheClassPhaseIfItsIdIsAPhaseId() {
+        assertThat(techs(plain("t:phase_x", ",\"classes\":[\"Phase\"],\"ordinal\":0"))
+                        .problems())
+                .isEmpty();
+        TemplateCompiler.Result r =
+                techs(plain("t:phase_y", ""), plain("t:axes", ",\"classes\":[\"Phase\"],\"ordinal\":1"));
+        assertThat(where(r)).containsExactly("axes.json/classes", "phase_y.json/classes");
+        assertThat(r.set().techs()).isEmpty();
+    }
+
+    @Test
+    void phaseOrdinalsAreDistinctAndFitAByte() {
+        String phase = ",\"classes\":[\"Phase\"],\"ordinal\":%s";
+        TemplateCompiler.Result twice = techs(
+                plain("t:phase_a", phase.formatted("1")),
+                plain("t:phase_b", phase.formatted("1")),
+                plain("t:phase_c", phase.formatted("2")));
+        assertThat(where(twice)).containsExactly("phase_b.json/ordinal");
+        assertThat(twice.set().techs()).extracting(t -> t.id().value()).containsExactly("t:phase_a", "t:phase_c");
+        assertThat(techs(plain("t:phase_a", phase.formatted("255"))).problems()).isEmpty();
+        for (String bad : List.of("256", "1e400", "1e9", "-1", "1.5")) {
+            assertThat(where(techs(plain("t:phase_a", phase.formatted(bad)))))
+                    .as(bad)
+                    .containsExactly("phase_a.json/ordinal");
+        }
     }
 
     @Test

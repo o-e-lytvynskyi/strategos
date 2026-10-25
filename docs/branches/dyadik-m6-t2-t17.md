@@ -4,10 +4,10 @@
 
 ## Now
 
-- **Milestone:** M6 MVP: First skirmish, 2 of 28 tasks done (T2 split into T2.1 and T2.2); spec [M6-first-skirmish.md](../milestones/M6-first-skirmish.md).
-- **In progress:** M6 T3 since 2026-10-25.
-- **Last finished task:** M6 T2.2 (2026-10-25), the commit `M6 T2.2: research in building queues`.
-- **Next task:** M6 T3 · TECH-02, phases.
+- **Milestone:** M6 MVP: First skirmish, 3 of 28 tasks done (T2 split into T2.1 and T2.2); spec [M6-first-skirmish.md](../milestones/M6-first-skirmish.md).
+- **In progress:** M6 T4 since 2026-10-26.
+- **Last finished task:** M6 T3 (2026-10-26), the commit `M6 T3: phases, Village to Town`.
+- **Next task:** M6 T4 · MATCH-03, conquest, defeat and statistics.
 - **Merged from main last:** 0a7cc3b (2026-10-25).
 
 ## Depends on unfinished work
@@ -21,6 +21,12 @@ From the assessment before the claim (procedure §2a step 0); kept current.
 ## Log
 
 Newest first; one entry per session in the worklog's shape.
+
+### 2026-10-26 — M6 T3
+
+- **M6 T3 · TECH-02, phases** — TECH-02 `done` (all four criteria). `phase_village` (ordinal 0, never researched) and `phase_town` (ordinal 1, at the civic centre: 500 food, 500 wood, 300 stone, 200 iron, 60 s; five complete `Village` buildings; buildings but fields +10 % max HP and +2 vision); `TechDef` gains `ordinal` and `unlocks`; compile checks for phase ids, ordinals and unlock ids; `Techs.phase`; damage stages follow a new max HP; the `PHASE` notice to every participant (`MatchNews` 4) and the client's defeat bug it uncovered; techs in the balance sheet; 04 §12.2's `match_event` row (spec §1.6 rows 29–35). New: `PhaseTest` (8), `MatchNewsTest` (3), `TechDefTest` and `BalanceSheetTest` cases, `techtests.every_player_gets_the_phase_notice` (now through a content swap with Town at 1 s, 400 ticks). A review before the commit found 5 should-fix and 7 nits, all applied. `verify` green, 213 GameTests, in 33 min 12 s under a load average that reached 80 (other processes on the machine; the same gate took 1 min 39 s at the T2.1 review fix).
+- **`ProtectedBlockIndexTest.aLookupCostsTheSameAtAnySize`** (M4) failed once in `verify` under a load average of 27 (55.9 ns at 64 sections against 16.9 at 4, ratio 3.3 over its 3) and passed alone: a timing test measuring the two sizes one after the other. It now alternates them and compares each size's fastest of seven runs; the threshold is unchanged (its own commit).
+- **Process slip** — the orchestrator ran a Gradle test while a worker's Gradle run was going in the same directory, which broke one of the worker's runs (AGENTS.md: one build at a time).
 
 ### 2026-10-25 — M6 T2–T17 claim
 
@@ -40,6 +46,11 @@ Newest first; one entry per session in the worklog's shape.
 
 ## Decisions taken
 
+- 2026-10-26 · `ProtectedBlockIndexTest` measures the two sizes alternately and compares their fastest runs, the 3× threshold unchanged — load from other processes only adds time, and the sequential median failed under load — the sequential median.
+- 2026-10-26 · Only additions to `Trainer/units` and `Researcher/techs` count as unlocks (spec row 29) — a class edit makes nothing available — any `TOKENS` addition.
+- 2026-10-26 · The phase notice carries its ordinal in `MatchNews.ticks` (row 30) — the record's fields are generic and the kind says how to read them — a field of its own.
+- 2026-10-26 · TECH-02's criterion 2 is shown on the shipped Town (empty today) and on a test set with real unlocks (row 29) — the arsenal, the ram, the tower and the Town techs arrive with T18–T20 — wait for them.
+- 2026-10-26 · Techs get balance-sheet rows in T3 rather than T18 (row 35) — §2.2 makes Town's numbers sheet rows — leave them to T18.
 - 2026-10-25 · A view with techs marks its version `+t` on the wire (spec row 24) — journals are unframed, and old streams must read unchanged — a framed view with a format byte, at the cost of every committed journal.
 - 2026-10-25 · The syntax of class filters and token edits lives once, in `content.StatSyntax`; `ClassFilter.check` and `TokenEdit.valid` call it — the content layer may not import `sim` (ArchUnit B3), and the worker's first cut copied the checks — copy them back into `sim.stats`.
 - 2026-10-25 · A tech's `name` is a lang key (`strategos.tech.gather_wood_1`, in `en_us.json`), as templates' are — the client translates it — a literal name.

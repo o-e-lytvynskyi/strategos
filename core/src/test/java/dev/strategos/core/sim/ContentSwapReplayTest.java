@@ -34,7 +34,7 @@ class ContentSwapReplayTest {
     void aSwapCarryingTechsSurvivesTheJournalFormat() {
         SimHarness h = harness();
         TemplateSet withTechs = withWalkerSpeed(0.5);
-        assertThat(withTechs.techs()).as("the swap carries the builtin tech").hasSize(1);
+        assertThat(withTechs.techs()).as("the swap carries the builtin techs").hasSize(3);
         h.schedule(h.tick() + 1, new ContentSwap(withTechs));
         h.runTicks(3);
 

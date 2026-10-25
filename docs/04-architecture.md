@@ -2052,7 +2052,7 @@ placing; the events are the second line of defence.
 | `strategos:building_state` | Footprint, progress, HP, stage; queue and rally for the owner | Own faction in full; others last-seen once explored | On change, coalesced | M3 |
 | `strategos:deposit_state` | Each mine and quarry: node, template, corner, resource, amount left of its most | Everyone (nobody owns a deposit) | On change | M4 |
 | `strategos:fx` | Swings, projectile launches and impacts, gather, build and death sounds, particles | Spatial audiences (§10.5) | Per tick, batched | M2 |
-| `strategos:match_event` | Alerts, end of match | Match or faction | Event | M3 |
+| `strategos:match_event` | Alerts (faction), a defeat and the end of the match, a wave's notice (M3), a phase reached (`PHASE`, its ordinal in `ticks`, M6) | Match or faction | Event | M3 |
 | `strategos:vision_delta` | Visible and explored cells, run-length encoded | Own faction and vision-sharing allies | 2 Hz | M6; allies from M8 |
 | `strategos:motion` | Reserve tier 4: quantised motion deltas for streamed types | Per player | 10 Hz near the focus, 5 Hz beyond 64 blocks | Reserve |
 | `strategos:debug_feed` | Overlay data | Subscribed operators | 2–10 Hz | M1 |

@@ -4,8 +4,13 @@ import static dev.strategos.gametest.suites.Units.check;
 import static dev.strategos.gametest.suites.Units.core;
 import static dev.strategos.gametest.suites.Units.handles;
 
+import com.google.gson.JsonObject;
+import dev.strategos.core.content.TechDef;
+import dev.strategos.core.content.TemplateCompiler;
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.protocol.Grant;
+import dev.strategos.core.protocol.MatchNews;
 import dev.strategos.core.protocol.Research;
 import dev.strategos.core.protocol.SpawnBuilding;
 import dev.strategos.core.protocol.SpawnUnits;
@@ -14,14 +19,17 @@ import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.TechId;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
+import dev.strategos.core.sim.ContentSwap;
 import dev.strategos.core.sim.TechResearched;
 import dev.strategos.core.sim.build.BuildingView;
 import dev.strategos.core.sim.stats.StatBreakdown;
 import dev.strategos.gametest.StrategosTest;
 import dev.strategos.mod.server.match.MatchRuntime;
+import dev.strategos.mod.server.net.payload.MatchEventPayload;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 
 /** Research in a real level (TECH-01, acceptance 4): queued at a building, completed in its time, applied to the stats. */
 public final class TechTests {
@@ -83,5 +91,88 @@ public final class TechTests {
                     check(storehouse(rt).queue().isEmpty(), "the entry stayed in the queue");
                 })
                 .thenSucceed();
+    }
+
+    /**
+     * TECH-02.4: when a faction reaches Town, every participant of the match, its own and the other's, hears the PHASE
+     * news with the advancing faction and the phase's ordinal.
+     */
+    @StrategosTest(batch = "tech", arena = "arena_flat_48", timeoutTicks = 400)
+    public static void everyPlayerGetsThePhaseNotice(GameTestHelper h) {
+        MatchRuntime rt = Units.match(h);
+        TechId town = new TechId("strategos:phase_town");
+        TemplateId house = new TemplateId("strategos:building/house");
+        TemplateId centre = new TemplateId("strategos:building/civic_centre");
+        rt.submit(PlayerSlot.ADMIN, new SpawnBuilding(centre, new FactionSlot(0), 4, 4, 0));
+        rt.submit(PlayerSlot.ADMIN, new SpawnBuilding(centre, new FactionSlot(1), 30, 30, 0));
+        for (int k = 0; k < 5; k++) {
+            rt.submit(PlayerSlot.ADMIN, new SpawnBuilding(house, new FactionSlot(0), 4 + 8 * k, 18, 0));
+        }
+        for (String resource : List.of("food", "wood", "stone", "iron")) {
+            rt.submit(PlayerSlot.ADMIN, new Grant(new FactionSlot(0), resource, 1_000));
+        }
+        rt.queueSwap(new ContentSwap(withTownIn(1))); // the notice depends only on the Phase class, not on the 60 s
+        var a = BuildingTests.seated(h, rt, "strat-phase-a", 0);
+        var b = BuildingTests.seated(h, rt, "strat-phase-b", 1);
+        h.startSequence()
+                .thenWaitUntil(() -> check(
+                        core(rt).queries().buildings().size() == 7,
+                        "the buildings are not up: "
+                                + core(rt).queries().buildings().size()))
+                .thenExecute(() -> rt.submit(
+                        P0,
+                        new Research(
+                                core(rt).queries().buildings().stream()
+                                        .filter(v -> v.template().equals(centre) && v.faction() == 0)
+                                        .findFirst()
+                                        .orElseThrow()
+                                        .handle(),
+                                town)))
+                .thenWaitUntil(() -> check(
+                        core(rt).queries().buildings().stream()
+                                .anyMatch(v -> !v.queue().isEmpty()),
+                        "not queued"))
+                .thenWaitUntil(() -> check(
+                        core(rt).queries().buildings().stream()
+                                .noneMatch(v -> !v.queue().isEmpty()),
+                        "Town is not researched yet"))
+                .thenExecuteAfter(3, () -> {
+                    for (var viewer : List.of(a, b)) {
+                        viewer.poll();
+                        List<MatchNews> news = new ArrayList<>();
+                        for (var p : viewer.capture().of(ClientboundCustomPayloadPacket.class)) {
+                            if (p.payload() instanceof MatchEventPayload m
+                                    && m.news().matchId() == rt.id().value()
+                                    && m.news().kind() == MatchNews.PHASE) {
+                                news.add(m.news());
+                            }
+                        }
+                        String who = viewer.player().getName().getString();
+                        check(news.size() == 1, who + " heard " + news);
+                        check(news.get(0).faction() == 0 && news.get(0).ticks() == 1, who + " heard " + news.get(0));
+                    }
+                    a.close();
+                    b.close();
+                })
+                .thenSucceed();
+    }
+
+    /** The built-in set with {@code phase_town} researched in {@code seconds}. */
+    private static TemplateSet withTownIn(double seconds) {
+        TemplateSet b = TemplateSet.builtin();
+        List<TemplateCompiler.Flat> flats = new ArrayList<>();
+        for (UnitTemplate t : b.all()) {
+            flats.add(new TemplateCompiler.Flat(
+                    t.id(), t.netIndex(), b.flattened(t.id()).deepCopy()));
+        }
+        List<TemplateCompiler.TechFlat> techs = new ArrayList<>();
+        for (TechDef t : b.techs()) {
+            JsonObject json = t.toJson();
+            if (t.id().value().equals("strategos:phase_town")) {
+                json.addProperty("time", seconds);
+            }
+            techs.add(new TemplateCompiler.TechFlat(t.id(), t.netIndex(), json));
+        }
+        return TemplateCompiler.fromFlattened(flats, techs).set();
     }
 }

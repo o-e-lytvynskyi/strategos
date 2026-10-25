@@ -1,6 +1,6 @@
 {
   "parent": "strategos:template/building_base",
-  "Identity": { "name": "strategos.building.storehouse", "icon": "minecraft:barrel", "classes": "+Storehouse" },
+  "Identity": { "name": "strategos.building.storehouse", "icon": "minecraft:barrel", "classes": "+Storehouse +Village" },
   "Building": { "blueprint": "strategos:storehouse" },
   "Health": { "max": 800 },
   "Cost": { "resources": { "wood": 100, "stone": 50 }, "time": 40 },

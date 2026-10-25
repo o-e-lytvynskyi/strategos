@@ -171,6 +171,13 @@ None. The `strategos:ping` payload stays with multiplayer pings (UI-15, M7); UI-
 | 26 | Tech source ids (T2.2) | A tech's modifiers carry `-1 - netIndex`: entity handles, the other source ids, are positive and at least 2²⁰. `/strategos stats` names a tech source by its id |
 | 27 | Phase names (T2.2) | A `phase` requirement names a bare lower-case phase (`town`), checked when the content compiles; the phase is the tech `strategos:phase_<name>`, and `village` is always reached (row 19) |
 | 28 | Tech costs (T2.2) | A tech's cost is its data's, not modified: no M6 tech or bonus changes another tech's cost |
+| 29 | Unlocks (T3) | A tech's `unlocks` must equal the tokens its `TOKENS` effects add to the lists that make things available, `Trainer/units` and `Researcher/techs`; an edit of another list (`Identity/classes`) unlocks nothing. Each id must name a template or a tech of the set. No list gates buildings yet: the worker's build page lists every building, so T19 (the arsenal) adds a build list and joins it to the check. `phase_town`'s `unlocks` are empty in T3; T18–T20 each add their items to it, and `PhaseTest` compares the shipped Town's token diff with them |
+| 30 | The phase notice (T3) | `match_event`'s `MatchNews` gains `PHASE` (4): `faction` advanced, `ticks` carries the phase's ordinal, no place; to the Match audience. The client counted every kind it did not know as a defeat; it now counts `DEFEATED` only |
+| 31 | `phase_village`'s time (T3) | The compiler needs a positive time, so the never-researched `phase_village` has 1 s, with a provenance note that it never runs |
+| 32 | The civic centre's limit (T3) | M4 §2.9 says "one civic centre until Town"; no M6 card lifts it, so Town keeps the limit at one |
+| 33 | Phase techs (T3) | A tech has the class `Phase` exactly when its id's path starts with `phase_`; phase ordinals are distinct whole numbers 0–255. Town's bonuses filter `Structure+!Field`: fields keep their numbers (in a filter a space separates alternatives, `+` joins terms) |
+| 34 | Damage stages at Town (T3) | Damage is stored as hit points lost, so a higher max HP moves a damaged building's stage: completing a tech updates the stage of each of the faction's complete buildings; a restore keeps the saved stage |
+| 35 | Techs in the balance sheet (T3) | The sheet gains a technologies section (cost per resource, time, requirement counts, each effect's value with its path, op and filter), ahead of TECH-03's check 2 (T18) |
 
 ### 1.7 Consent plan
 
@@ -697,7 +704,7 @@ kernel adds `:core:jmh :core:jmhCompare`.
 
 ### 7.3 Progress
 
-- [x] T2.1 (2026-10-25) · [x] T2.2 (2026-10-25) · [ ] T3 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11 · [ ] T12
+- [x] T2.1 (2026-10-25) · [x] T2.2 (2026-10-25) · [x] T3 (2026-10-26) · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11 · [ ] T12
 - [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17 · [ ] T1 · [ ] T18 · [ ] T19 · [ ] T20 · [ ] T21
 - [ ] T22 · [ ] T23 · [ ] T24 · [ ] T25 · [ ] T27 · [ ] T28
 

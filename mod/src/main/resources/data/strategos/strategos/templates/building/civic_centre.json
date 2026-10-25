@@ -8,5 +8,6 @@
   "Dropsite": { "resources": "food wood stone iron" },
   "Housing": { "capacity": 20 },
   "Trainer": { "units": "strategos:unit/worker", "batchExponent": 0.8 },
-  "Limit": { "count": 1 }
+  "Limit": { "count": 1 },
+  "Researcher": { "techs": "strategos:phase_town" }
 }

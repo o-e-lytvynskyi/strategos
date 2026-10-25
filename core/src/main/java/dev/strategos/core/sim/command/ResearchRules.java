@@ -43,6 +43,9 @@ final class ResearchRules {
             if (tech == null) {
                 return Tally.rejectAll(envelope, kind(), 1, RejectReason.UNKNOWN_TEMPLATE);
             }
+            if (tech.isPhase() && tech.ordinal() == 0) { // Village is the phase of a faction with none (row 19)
+                return Tally.rejectAll(envelope, kind(), 1, RejectReason.UNSUPPORTED);
+            }
             if (b.state(research.building()) != BuildingStore.COMPLETE
                     || !Techs.researches(state, research.building(), tech)) {
                 return Tally.rejectAll(envelope, kind(), 1, RejectReason.UNSUPPORTED);

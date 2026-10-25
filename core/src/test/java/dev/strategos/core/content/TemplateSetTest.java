@@ -77,7 +77,9 @@ class TemplateSetTest {
         TechDef tech = set.tech(new TechId("strategos:gather_wood_1"));
 
         assertThat(tech).isNotNull();
-        assertThat(set.techs()).containsExactly(tech);
+        assertThat(set.techs())
+                .extracting(t -> t.id().value())
+                .containsExactly("strategos:gather_wood_1", "strategos:phase_town", "strategos:phase_village");
         assertThat(set.techByIndex(0)).isSameAs(tech);
         assertThat(tech.cost()).isEqualTo(java.util.Map.of("food", 100.0, "wood", 50.0));
         assertThat(tech.ticks()).isEqualTo(600);
@@ -169,8 +171,9 @@ class TemplateSetTest {
     private static final String BUILTIN_VERSION_BEFORE_TECH_01 =
             "b4dc5f372084f6e585991b46f0a5dd964000c22e094206ad5f375e00ac042c1c";
 
-    // M4: the farmstead's reach (ECO-17); M6 T2.1: the storehouse's Researcher and the tech gather_wood_1 (TECH-01)
-    private static final String BUILTIN_VERSION = "3f019e6660e60db502c566312c1d7850af933c7c1ba35f1bb2070a9c82d25c71";
+    // M4: the farmstead's reach (ECO-17); M6 T2.1: the storehouse's Researcher and the tech gather_wood_1 (TECH-01); M6
+    // T3: the phases, the class Village, the civic centre's Researcher
+    private static final String BUILTIN_VERSION = "8e8b218edabd360c98d5da38a0c72c9e07430cfd98e4f66450e68bd7d381bf76";
 
     private static TemplateSet set(UnitTemplate template) {
         return new TemplateSet(List.of(template));

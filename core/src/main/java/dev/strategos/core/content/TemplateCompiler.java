@@ -268,6 +268,7 @@ public final class TemplateCompiler {
                 kept.add(t);
             }
         }
+        kept = withPhaseRules(kept, techFiles, problems);
         kept = withoutCycles(kept, techFiles, problems);
         List<String> numbers = new ArrayList<>(CorePaths.all());
         List<String> strings = new ArrayList<>();
@@ -292,6 +293,8 @@ public final class TemplateCompiler {
             }
         }
         kept = withoutDependents(withPaths, techFiles, problems);
+        kept = withResolvedUnlocks(kept, templates, techFiles, problems);
+        kept = withoutDependents(kept, techFiles, problems);
         List<String> ids = kept.stream().map(t -> t.id().value()).toList();
         for (Flat f : templates) {
             JsonElement list = leafOf(f.json(), "Researcher", "techs");
@@ -304,6 +307,78 @@ public final class TemplateCompiler {
                                 templateFiles.apply(f.id()), "/Researcher/techs", "unknown tech '" + token + "'"));
                     }
                 }
+            }
+        }
+        return kept;
+    }
+
+    /**
+     * A tech has the class {@code Phase} if and only if its id's path starts with {@code phase_}, and phase ordinals
+     * are distinct (TECH-02): the later id of two alike is left out.
+     */
+    private static List<TechDef> withPhaseRules(
+            List<TechDef> techs, Function<TechId, String> techFiles, List<TemplateProblem> problems) {
+        List<TechDef> kept = new ArrayList<>();
+        Map<Integer, String> byOrdinal = new TreeMap<>();
+        for (TechDef t : techs.stream()
+                .sorted((a, b) -> a.id().value().compareTo(b.id().value()))
+                .toList()) {
+            String file = techFiles.apply(t.id());
+            String path = t.id().value().substring(t.id().value().indexOf(':') + 1);
+            boolean phaseId = path.startsWith("phase_");
+            if (phaseId != t.isPhase()) {
+                problems.add(TemplateProblem.error(
+                        file,
+                        "/classes",
+                        phaseId
+                                ? "tech " + t.id() + " is a phase by its id and needs the class Phase and an ordinal"
+                                : "tech " + t.id() + " has the class Phase, so its id's path starts with 'phase_'"));
+                continue;
+            }
+            if (t.isPhase()) {
+                String other = byOrdinal.putIfAbsent(t.ordinal(), t.id().value());
+                if (other != null) {
+                    problems.add(TemplateProblem.error(
+                            file, "/ordinal", "ordinal " + t.ordinal() + " is also " + other + "'s"));
+                    continue;
+                }
+            }
+            kept.add(t);
+        }
+        return techs.stream().filter(kept::contains).toList();
+    }
+
+    /**
+     * Each unlock names what it unlocks: a {@code Trainer/units} addition a template of the set, a {@code
+     * Researcher/techs} addition a tech that stands. The error is at the unlock.
+     */
+    private static List<TechDef> withResolvedUnlocks(
+            List<TechDef> techs,
+            List<Flat> templates,
+            Function<TechId, String> techFiles,
+            List<TemplateProblem> problems) {
+        List<String> templateIds = templates.stream().map(f -> f.id().value()).toList();
+        List<String> techIds = techs.stream().map(t -> t.id().value()).toList();
+        List<TechDef> kept = new ArrayList<>();
+        for (TechDef t : techs) {
+            int before = problems.size();
+            for (TechEffect e : t.effects()) {
+                if (e.op() != TechEffect.Op.TOKENS || e.tokens() == null || !TechDef.unlocking(e.path())) {
+                    continue;
+                }
+                boolean units = e.path().equals("Trainer/units");
+                for (String item : MergeOps.tokens(e.tokens())) {
+                    String id = item.substring(1);
+                    if (item.startsWith("+") && !(units ? templateIds : techIds).contains(id)) {
+                        problems.add(TemplateProblem.error(
+                                techFiles.apply(t.id()),
+                                "/unlocks/" + t.unlocks().indexOf(id),
+                                "unlocks " + (units ? "template '" : "tech '") + id + "', which the set lacks"));
+                    }
+                }
+            }
+            if (problems.size() == before) {
+                kept.add(t);
             }
         }
         return kept;

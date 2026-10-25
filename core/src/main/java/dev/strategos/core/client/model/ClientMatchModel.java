@@ -87,7 +87,10 @@ public final class ClientMatchModel {
         }
     }
 
-    /** Takes match news (MATCH-01, UI-12): the joined match's defeats, its end and its alerts. */
+    /**
+     * Takes match news (MATCH-01, UI-12): the joined match's defeats, its end and its alerts. A phase notice (TECH-02)
+     * changes nothing here; the feed shows it from T14.
+     */
     public void accept(MatchNews news, int joinedMatch) {
         if (news.matchId() != joinedMatch) {
             return;
@@ -100,7 +103,7 @@ public final class ClientMatchModel {
         } else if (news.kind() == MatchNews.ALERT) {
             alert = news;
             alerts++;
-        } else if (news.faction() >= 0 && news.faction() < 64) {
+        } else if (news.kind() == MatchNews.DEFEATED && news.faction() >= 0 && news.faction() < 64) {
             defeatedMask |= 1L << news.faction();
         }
     }

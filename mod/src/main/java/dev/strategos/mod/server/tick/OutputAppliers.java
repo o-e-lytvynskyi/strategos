@@ -1,5 +1,6 @@
 package dev.strategos.mod.server.tick;
 
+import dev.strategos.core.content.TechDef;
 import dev.strategos.core.protocol.MatchNews;
 import dev.strategos.core.protocol.NoticeMsg;
 import dev.strategos.core.shared.Handle;
@@ -133,14 +134,30 @@ public final class OutputAppliers {
                                             wave.leaves(),
                                             wave.x(),
                                             wave.z())));
-                case TechResearched researched ->
+                case TechResearched researched -> {
                     rt.log()
                             .debug(
                                     out.tick(),
                                     "faction {} researched {}",
                                     researched.faction().value(),
                                     researched.tech());
-                // no visible effect yet: the feed shows it from T14 (UI-21)
+                    var core = rt.core(); // outputs come from a step, so the core is there
+                    TechDef tech =
+                            core == null ? null : core.queries().templates().tech(researched.tech());
+                    if (tech != null && tech.isPhase()) { // a phase notice goes to every participant (TECH-02)
+                        StrategosServer.get()
+                                .net()
+                                .send(
+                                        new Audience.Match(rt.id()),
+                                        new MatchEventPayload(new MatchNews(
+                                                rt.id().value(),
+                                                out.tick(),
+                                                MatchNews.PHASE,
+                                                researched.faction().value(),
+                                                tech.ordinal())));
+                    }
+                    // any other tech has no visible effect yet: the feed shows it from T14 (UI-21)
+                }
                 case MatchEnded ended -> {
                     StrategosServer.get()
                             .net()

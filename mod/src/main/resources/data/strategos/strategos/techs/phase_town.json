@@ -1,0 +1,13 @@
+{
+  "name": "strategos.tech.phase_town",
+  "icon": "minecraft:bell",
+  "classes": ["Phase"],
+  "ordinal": 1,
+  "cost": { "food": 500, "wood": 500, "stone": 300, "iron": 200 },
+  "time": 60,
+  "requires": { "buildings": { "filter": "Village", "count": 5 } },
+  "effects": [
+    { "path": "Health/max", "op": "mul", "value": 1.1, "filter": "Structure+!Field" },
+    { "path": "Vision/range", "op": "add", "value": 2, "filter": "Structure+!Field" }
+  ]
+}

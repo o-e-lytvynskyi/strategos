@@ -141,7 +141,8 @@ final class BuiltinTemplates {
               "Dropsite": { "resources": "food wood stone iron" },
               "Housing": { "capacity": 20 },
               "Trainer": { "units": "strategos:unit/worker", "batchExponent": 0.8 },
-              "Limit": { "count": 1 }
+              "Limit": { "count": 1 },
+              "Researcher": { "techs": "strategos:phase_town" }
             }
             """;
     static final String FIELD = """
@@ -159,7 +160,7 @@ final class BuiltinTemplates {
     static final String HOUSE = """
             {
               "parent": "strategos:template/building_base",
-              "Identity": { "name": "strategos.building.house", "icon": "minecraft:oak_door", "classes": "+House" },
+              "Identity": { "name": "strategos.building.house", "icon": "minecraft:oak_door", "classes": "+House +Village" },
               "Building": { "blueprint": "strategos:house", "material": "wood" },
               "Resistance": { "fire": 0 },
               "Health": { "max": 400 },
@@ -170,7 +171,7 @@ final class BuiltinTemplates {
     static final String BARRACKS = """
             {
               "parent": "strategos:template/building_base",
-              "Identity": { "name": "strategos.building.barracks", "icon": "minecraft:shield", "classes": "+Barracks" },
+              "Identity": { "name": "strategos.building.barracks", "icon": "minecraft:shield", "classes": "+Barracks +Village" },
               "Building": { "blueprint": "strategos:barracks", "material": "wood" },
               "Resistance": { "fire": 0 },
               "Health": { "max": 1200 },
@@ -186,7 +187,7 @@ final class BuiltinTemplates {
     static final String STOREHOUSE = """
             {
               "parent": "strategos:template/building_base",
-              "Identity": { "name": "strategos.building.storehouse", "icon": "minecraft:barrel", "classes": "+Storehouse" },
+              "Identity": { "name": "strategos.building.storehouse", "icon": "minecraft:barrel", "classes": "+Storehouse +Village" },
               "Building": { "blueprint": "strategos:storehouse" },
               "Health": { "max": 800 },
               "Cost": { "resources": { "wood": 100, "stone": 50 }, "time": 40 },
@@ -207,10 +208,36 @@ final class BuiltinTemplates {
             }
             """;
 
+    static final String PHASE_VILLAGE = """
+            {
+              "name": "strategos.tech.phase_village",
+              "icon": "minecraft:hay_block",
+              "classes": ["Phase"],
+              "ordinal": 0,
+              "time": 1
+            }
+            """;
+
+    static final String PHASE_TOWN = """
+            {
+              "name": "strategos.tech.phase_town",
+              "icon": "minecraft:bell",
+              "classes": ["Phase"],
+              "ordinal": 1,
+              "cost": { "food": 500, "wood": 500, "stone": 300, "iron": 200 },
+              "time": 60,
+              "requires": { "buildings": { "filter": "Village", "count": 5 } },
+              "effects": [
+                { "path": "Health/max", "op": "mul", "value": 1.1, "filter": "Structure+!Field" },
+                { "path": "Vision/range", "op": "add", "value": 2, "filter": "Structure+!Field" }
+              ]
+            }
+            """;
+
     static final String FARMSTEAD = """
             {
               "parent": "strategos:template/building_base",
-              "Identity": { "name": "strategos.building.farmstead", "icon": "minecraft:hay_block", "classes": "+Farmstead" },
+              "Identity": { "name": "strategos.building.farmstead", "icon": "minecraft:hay_block", "classes": "+Farmstead +Village" },
               "Building": { "blueprint": "strategos:farmstead" },
               "Health": { "max": 600 },
               "Cost": { "resources": { "wood": 100 }, "time": 35 },
@@ -272,18 +299,23 @@ final class BuiltinTemplates {
             new TemplateId("strategos:unit/pig"),
             new TemplateId("strategos:unit/sheep")));
 
+    /** The indices the built-in techs were given, kept as {@link #PINNED} keeps the templates' (row 20). */
+    private static final TechIdTable PINNED_TECHS = new TechIdTable(List.of(
+            new TechId("strategos:gather_wood_1"),
+            new TechId("strategos:phase_town"), // M6 T3
+            new TechId("strategos:phase_village")));
+
     private BuiltinTemplates() {}
 
     static TemplateSet compile() {
         return compile(true);
     }
 
-    /** The set with the sample tech and the storehouse's {@code Researcher}, or as it was before TECH-01 without them. */
+    /**
+     * The set with its techs (the wood tech and the phases Village and Town), the class {@code Village} and the
+     * {@code Researcher} of the storehouse and the civic centre, or without all of them, as it was before TECH-01.
+     */
     static TemplateSet compile(boolean withTechs) {
-        JsonObject storehouse = JsonParser.parseString(STOREHOUSE).getAsJsonObject();
-        if (!withTechs) {
-            storehouse.remove("Researcher");
-        }
         TemplateCompiler.Result result = TemplateCompiler.compile(
                 List.of(
                         raw("strategos:template/unit_base", UNIT_BASE),
@@ -296,32 +328,52 @@ final class BuiltinTemplates {
                         raw("strategos:unit/sheep", SHEEP),
                         raw("strategos:unit/pig", PIG),
                         raw("strategos:unit/chicken", CHICKEN),
-                        raw("strategos:building/civic_centre", CIVIC_CENTRE),
+                        raw("strategos:building/civic_centre", CIVIC_CENTRE, withTechs),
                         raw("strategos:building/field", FIELD),
-                        raw("strategos:building/house", HOUSE),
-                        raw("strategos:building/barracks", BARRACKS),
-                        new RawTemplate(
-                                new TemplateId("strategos:building/storehouse"),
-                                "builtin/building/storehouse.json",
-                                storehouse),
-                        raw("strategos:building/farmstead", FARMSTEAD),
+                        raw("strategos:building/house", HOUSE, withTechs),
+                        raw("strategos:building/barracks", BARRACKS, withTechs),
+                        raw("strategos:building/storehouse", STOREHOUSE, withTechs),
+                        raw("strategos:building/farmstead", FARMSTEAD, withTechs),
                         raw("strategos:building/quarry", QUARRY),
                         raw("strategos:building/quarry_large", QUARRY_LARGE),
                         raw("strategos:building/iron_mine", IRON_MINE),
                         raw("strategos:building/iron_mine_large", IRON_MINE_LARGE)),
                 withTechs
-                        ? List.of(new RawTech(
-                                new TechId("strategos:gather_wood_1"),
-                                "builtin/techs/gather_wood_1.json",
-                                JsonParser.parseString(GATHER_WOOD_1).getAsJsonObject()))
+                        ? List.of(
+                                tech("strategos:gather_wood_1", GATHER_WOOD_1),
+                                tech("strategos:phase_town", PHASE_TOWN),
+                                tech("strategos:phase_village", PHASE_VILLAGE))
                         : List.of(),
                 PINNED,
-                TechIdTable.EMPTY,
+                PINNED_TECHS,
                 PlaceholderBlueprints.byId());
         if (!result.ok()) {
             throw new IllegalStateException("the builtin templates do not compile: " + result.problems());
         }
         return result.set();
+    }
+
+    private static RawTech tech(String id, String json) {
+        return new RawTech(
+                new TechId(id),
+                "builtin/techs/" + id.substring(id.indexOf(':') + 1) + ".json",
+                JsonParser.parseString(json).getAsJsonObject());
+    }
+
+    /**
+     * A building as the set had it before TECH-01 without {@code withTechs}: no {@code Researcher}, and none of the
+     * class {@code Village} (TECH-02), so that set keeps its version.
+     */
+    private static RawTemplate raw(String id, String json, boolean withTechs) {
+        JsonObject object = JsonParser.parseString(json).getAsJsonObject();
+        if (!withTechs) {
+            object.remove("Researcher");
+            JsonObject identity = object.getAsJsonObject("Identity");
+            identity.addProperty(
+                    "classes", identity.get("classes").getAsString().replace(" +Village", ""));
+        }
+        String path = id.substring(id.indexOf(':') + 1);
+        return new RawTemplate(new TemplateId(id), "builtin/" + path + ".json", object);
     }
 
     private static RawTemplate raw(String id, String json) {

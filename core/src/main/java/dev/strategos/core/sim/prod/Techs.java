@@ -11,6 +11,7 @@ import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.Progress;
 import dev.strategos.core.sim.TechResearched;
 import dev.strategos.core.sim.build.BuildingStore;
+import dev.strategos.core.sim.build.DamageStages;
 import dev.strategos.core.sim.stats.Modifier;
 import dev.strategos.core.sim.stats.ModifierOp;
 import java.util.ArrayList;
@@ -34,6 +35,21 @@ public final class Techs {
         int path = s.stats().tokenPath(RESEARCHER);
         List<String> techs = path < 0 ? null : s.stats().blockTokens(b.template(handle), b.faction(handle), path);
         return techs != null && techs.contains(tech.id().value());
+    }
+
+    /**
+     * {@code faction}'s phase: the highest ordinal among the phase techs it has researched, 0 (Village) for none (spec
+     * row 19: Village is never researched, so a match without research keeps its hash).
+     */
+    public static int phase(MatchState s, int faction) {
+        int phase = 0;
+        for (TechId id : s.progress().of(faction)) {
+            TechDef t = s.templates().tech(id);
+            if (t != null && t.isPhase()) {
+                phase = Math.max(phase, t.ordinal());
+            }
+        }
+        return phase;
     }
 
     /** Whether any building of {@code faction} holds {@code tech} in its queue. */
@@ -65,6 +81,11 @@ public final class Techs {
     static void complete(MatchState s, int faction, TechDef tech) {
         s.progress().complete(faction, tech.id());
         rebuild(s, faction, null);
+        for (int handle : s.buildings().handles()) { // a change of most hit points can move a building's stage
+            if (s.buildings().faction(handle) == faction && s.buildings().state(handle) == BuildingStore.COMPLETE) {
+                DamageStages.update(s, handle);
+            }
+        }
         s.outputs().add(new TechResearched(new FactionSlot(faction), tech.id()));
     }
 

@@ -17,6 +17,8 @@
   "strategos.building.iron_mine": "Iron mine",
   "strategos.building.iron_mine_large": "Large iron mine",
   "strategos.tech.gather_wood_1": "Felling axes",
+  "strategos.tech.phase_village": "Village",
+  "strategos.tech.phase_town": "Town",
   "strategos.resource.food": "Food",
   "strategos.resource.wood": "Wood",
   "strategos.resource.stone": "Stone",

@@ -19,7 +19,9 @@ import org.jspecify.annotations.Nullable;
  * A technology as data (TECH-01, spec §2.1): {@code data/<ns>/strategos/techs/<path>.json}. {@code cost} is resource
  * name to units, as a template's {@code Cost/resources}; {@code time} is seconds, rounded once to ticks like a
  * template's {@code Cost/time}; {@code requires} is a requirement tree; {@code supersedes} names the tech this one
- * replaces; {@code effects} are modifiers research hands to the stat service.
+ * replaces; {@code effects} are modifiers research hands to the stat service. A tech of the class {@code Phase} has an
+ * {@code ordinal} (TECH-02: 0 Village, 1 Town), and no other does; {@code unlocks} lists the templates and techs its
+ * {@code TOKENS} effects make available, which the compiler checks against the effects.
  */
 @CoreApi
 public record TechDef(
@@ -32,14 +34,47 @@ public record TechDef(
         double time,
         Requirement requires,
         @Nullable TechId supersedes,
-        List<TechEffect> effects) {
-    private static final String KEYS = "name, icon, classes, cost, time, requires, supersedes, effects";
+        List<TechEffect> effects,
+        int ordinal,
+        List<String> unlocks) {
+    /** The ordinal of a tech that is no phase. */
+    public static final int NO_ORDINAL = -1;
+
+    /** The most an ordinal can be (TECH-02): a phase fits a byte. */
+    public static final int MAX_ORDINAL = 255;
+
+    /** The class of a phase (TECH-02): such a tech, and only such a tech, has an ordinal. */
+    public static final String PHASE_CLASS = "Phase";
+
+    private static final String KEYS =
+            "name, icon, classes, cost, time, requires, supersedes, effects, ordinal, unlocks";
     private static final String EFFECT_KEYS = "path, op, value, tokens, filter, stage, priority";
 
     public TechDef {
         classes = List.copyOf(classes);
         cost = Collections.unmodifiableMap(new TreeMap<>(cost));
         effects = List.copyOf(effects);
+        unlocks = List.copyOf(unlocks);
+    }
+
+    /** A tech that is no phase and unlocks nothing: the form before TECH-02. */
+    public TechDef(
+            TechId id,
+            int netIndex,
+            String name,
+            String icon,
+            List<String> classes,
+            Map<String, Double> cost,
+            double time,
+            Requirement requires,
+            @Nullable TechId supersedes,
+            List<TechEffect> effects) {
+        this(id, netIndex, name, icon, classes, cost, time, requires, supersedes, effects, NO_ORDINAL, List.of());
+    }
+
+    /** Whether this tech is a phase (class {@link #PHASE_CLASS}). */
+    public boolean isPhase() {
+        return ordinal != NO_ORDINAL;
     }
 
     /** The research time in ticks: seconds × 20 rounded once, at least one, as a template's {@code Cost/time}. */
@@ -48,7 +83,7 @@ public record TechDef(
     }
 
     public TechDef atIndex(int index) {
-        return new TechDef(id, index, name, icon, classes, cost, time, requires, supersedes, effects);
+        return new TechDef(id, index, name, icon, classes, cost, time, requires, supersedes, effects, ordinal, unlocks);
     }
 
     /** The canonical JSON the set hashes and ships: defaults written out, the id and index left to the key. */
@@ -85,6 +120,14 @@ public record TechDef(
             list.add(fx);
         }
         o.add("effects", list);
+        if (ordinal != NO_ORDINAL) {
+            o.addProperty("ordinal", ordinal);
+        }
+        if (!unlocks.isEmpty()) {
+            JsonArray names = new JsonArray();
+            unlocks.forEach(names::add);
+            o.add("unlocks", names);
+        }
         return o;
     }
 
@@ -180,10 +223,73 @@ public record TechDef(
                 }
             }
         }
+        int ordinal = NO_ORDINAL;
+        JsonElement ord = json.get("ordinal");
+        if (ord != null) {
+            double d = isNumber(ord) ? ord.getAsDouble() : Double.NaN;
+            if (!(d == Math.rint(d)) || d < 0 || d > MAX_ORDINAL) { // NaN, 1.5, -1, 1e400 and 256 all fail here
+                problems.add(TemplateProblem.error(
+                        file, "/ordinal", "expected a whole number from 0 to " + MAX_ORDINAL + ", got " + ord));
+            } else {
+                ordinal = ord.getAsInt();
+            }
+        }
+        if (classes.contains(PHASE_CLASS) && ord == null) {
+            problems.add(TemplateProblem.error(file, "/ordinal", "a tech of the class Phase needs an ordinal"));
+        } else if (!classes.contains(PHASE_CLASS) && ord != null) {
+            problems.add(TemplateProblem.error(file, "/ordinal", "only a tech of the class Phase has an ordinal"));
+        }
+        List<String> unlocks = unlocks(json, effects, file, problems);
         if (problems.size() > before) {
             return null;
         }
-        return new TechDef(id, netIndex, name, icon, classes, cost, time, requires, supersedes, effects);
+        return new TechDef(
+                id, netIndex, name, icon, classes, cost, time, requires, supersedes, effects, ordinal, unlocks);
+    }
+
+    /**
+     * The {@code unlocks} list, which must be the tokens the effects' {@code TOKENS} edits add to the lists that make
+     * things available ({@link #unlocking}: what a building trains and researches): each added token listed, each
+     * listed token added. An edit of any other list, such as {@code Identity/classes}, unlocks nothing.
+     */
+    private static List<String> unlocks(
+            JsonObject json, List<TechEffect> effects, String file, List<TemplateProblem> problems) {
+        List<String> listed = new ArrayList<>();
+        JsonElement raw = json.get("unlocks");
+        if (raw != null) {
+            if (!raw.isJsonArray()) {
+                problems.add(TemplateProblem.error(file, "/unlocks", "expected an array of ids"));
+                return listed;
+            }
+            for (int i = 0; i < raw.getAsJsonArray().size(); i++) {
+                JsonElement e = raw.getAsJsonArray().get(i);
+                if (isString(e) && !e.getAsString().isBlank()) {
+                    listed.add(e.getAsString());
+                } else {
+                    problems.add(TemplateProblem.error(file, "/unlocks/" + i, "expected an id string"));
+                }
+            }
+        }
+        TreeSet<String> added = new TreeSet<>();
+        for (TechEffect e : effects) {
+            if (e.op() == TechEffect.Op.TOKENS && e.tokens() != null && unlocking(e.path())) {
+                for (String item : MergeOps.tokens(e.tokens())) {
+                    if (item.startsWith("+")) {
+                        added.add(item.substring(1));
+                    }
+                }
+            }
+        }
+        if (!new TreeSet<>(listed).equals(added) || new TreeSet<>(listed).size() != listed.size()) {
+            problems.add(TemplateProblem.error(
+                    file, "/unlocks", "unlocks " + listed + " must list exactly the tokens the effects add, " + added));
+        }
+        return listed;
+    }
+
+    /** Whether additions to token list {@code path} are unlocks; a build list joins when buildings are gated (M6 T19). */
+    static boolean unlocking(String path) {
+        return path.equals("Trainer/units") || path.equals("Researcher/techs");
     }
 
     private static @Nullable TechEffect effect(
