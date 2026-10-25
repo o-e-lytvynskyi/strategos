@@ -116,4 +116,4 @@ Working without an agent is fine: follow the same procedure by hand.
 - [ ] Access and clone; `./gradlew verifyFast` green.
 - [ ] Read AGENTS.md, this page, the procedure's §1–§3, [05-testing.md](05-testing.md) "Levels".
 - [ ] Set up your tool ([developer-setup.md](developer-setup.md)).
-- [ ] Pick a handle; claim a small piece of ready work; take it through §5 once.
+- [ ] Pick a handle and add yourself to [people.md](people.md) by pull request; claim a small piece of ready work; take it through §5 once.

@@ -163,10 +163,6 @@ Answer in chat or here; the next session applies the answers.
      ([agents.md](agents.md)); roles change by pull request, and leave demo on trial evidence.
    - Windows, recommended decisions, subagents, any test, no pauses: allowed by default; reports after every
      milestone. Context economy is a rule. The Minecraft and RTS knowledge base is here now: [kb/](kb/README.md).
-23. **The allowlist** (`.claude/settings.json`, yours to edit): the exact change is in the chat of 2026-10-25 and in
-   the worklog's entry of that evening; until it is applied, an unattended session may stop at a prompt on claims or
-   pull requests.
-
 ## Since your last visit
 
 Nothing yet: the owner was here on 2026-10-25.
