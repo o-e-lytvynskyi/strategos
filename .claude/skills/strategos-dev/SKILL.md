@@ -24,7 +24,7 @@ session at a prompt.
 
 "Your branch" is `dev/<developer>/<work>`; "your branch file" is
 `docs/branches/<developer>-<work>.md`. `<developer>` is a short lowercase handle, the same on
-every claim (`claude-owner`, `alex`, …).
+every claim — your GitHub login (`o-e-lytvynskyi`, `lev1pes`, …), as in docs/people.md.
 
 ## 1. Orient (start of every session)
 
@@ -110,8 +110,9 @@ approved roadmap; ideas go to "For the owner" as proposals.
 6. **Wait for the merge before developing.** Meanwhile go back to §2 for other work you already
    hold, or prepare without code (read the spec, list the APIs to verify). If nothing else is
    yours, stop (§8: nothing ready) and say the claim waits for a maintainer.
-7. Merged: `git merge origin/main` into your branch, `Status: in progress` at the first task, go
-   to §3. Rejected (an overlap merged first): delete nothing, set your branch file to `released`,
+7. Merged: GitHub deletes the merged branch on `origin` (the repository deletes head branches on
+   merge); keep your local one, `git merge origin/main` into it, push it again with `git push -u
+   origin <branch>`, `Status: in progress` at the first task, go to §3. Rejected (an overlap merged first): delete nothing, set your branch file to `released`,
    and pick again.
 
 ## 3. Do the task
