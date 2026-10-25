@@ -1,13 +1,13 @@
 # m6-spec on dev/dyadik/m6-spec
 
-**Developer:** dyadik (Claude Code, Opus) · **Branch:** dev/dyadik/m6-spec · **Work:** M6 spec · **Base:** main @ 046f021 · **Claimed:** 2026-10-25 · **Status:** in progress
+**Developer:** dyadik (Claude Code, Opus) · **Branch:** dev/dyadik/m6-spec · **Work:** M6 spec · **Base:** main @ 046f021 · **Claimed:** 2026-10-25 · **Status:** ready for review
 
 ## Now
 
 - **Milestone:** M6 MVP: First skirmish, the implementation spec (planning): [M6-first-skirmish.md](../milestones/M6-first-skirmish.md), 27 tasks; the 23 cards `specified`.
-- **In progress:** M6 spec since 2026-10-25.
-- **Last finished task:** none.
-- **Next task:** hand in the M6 spec (§12).
+- **In progress:** none.
+- **Last finished task:** M6 spec (2026-10-25), commit badf78e.
+- **Next task:** none in this claim: handed in for review.
 - **Merged from main last:** cb18b94 (2026-10-25).
 
 ## Depends on unfinished work
@@ -16,7 +16,7 @@ From the assessment before the claim (procedure §2a step 0); kept current.
 
 | Milestone | What this work needs from it | Plan: independent / against a contract / after | `AFTER-M<n>` markers |
 |---|---|---|---|
-| M5 Combat (specified, not started) | UNIT-06 and PATH-11 for CMB-09 (the ram, T19) and MAP-02's large-class reachability and horseman scout (T12); CMB-07 for BLD-17 (T20); UNIT-07 for TECH-03's roster tiers (T18) and the counters in the MVP regression suite; AI-03 and BLD-16 for AI-04 (T21); PERF-08's battle base for PERF-09 (T24); M5's close follow-ups for T1 | against a contract: the spec designs on M5's spec (§0.1); T2–T13 need nothing from M5 and may start before it (§7.1) | the spec's `AFTER-M5` lines (§0.1, §2.10, §2.16–§2.19, §2.22, §7.2 T1, §8 row 7): check each against M5's code and Results when M5 lands, and write T1 from M5's close |
+| M5 Combat (specified, not started) | UNIT-06 and PATH-11 for CMB-09 (the ram, T19) and MAP-02's large-class reachability and horseman scout (T12); CMB-07 for BLD-17 (T20); UNIT-07 for TECH-03's roster tiers (T18) and the counters in the MVP regression suite; AI-03 and BLD-16 for AI-04 (T21); PERF-08's battle base for PERF-09 (T24); M5's close follow-ups for T1 | against a contract: the spec designs on M5's spec (§0.1); T2–T17 need nothing from M5 and may start before it (§7.1) | the spec's `AFTER-M5` lines (§0.1, §2.10, §2.16–§2.19, §2.22, §7.2 T1, §8 row 7): check each against M5's code and Results when M5 lands, and write T1 from M5's close |
 
 ## Log
 
@@ -28,11 +28,12 @@ Newest first; one entry per session in the worklog's shape.
 
 - **Claim merged** — PR #11 (f723161); `origin/main` merged at cb18b94.
 - **Claim** — M6 spec claimed as a collaborator; dependencies on M5 assessed above. The developer's restriction for this session: no client windows; window runs go into the spec's consent batch.
-- **Next:** write docs/milestones/M6-first-skirmish.md.
+- **Handed in** for review.
+- **Next:** none in this claim.
 
 ## For the owner
 
-1. **Opening.** M6 is specified: «open M6 for claims». T2–T13 need nothing from M5 (§7.1), so M6 may open before M5 closes; T1 waits for M5's close.
+1. **Opening.** M6 is specified: «open M6 for claims». T2–T17 need nothing from M5 (§7.1), so M6 may open before M5 closes; T1 waits for M5's close.
 2. **Approval: [ADR-0025](../adr/0025-commands-into-unexplored-cells.md)** (Proposed). Solo fog needs moves into unexplored cells for scouting, which ADR-0014 and 04 §7.3 forbid; the ADR keeps the explored check for placement, node targets and the observer. Options: accept (recommended); keep ADR-0014 as it is, so scouting moves only to the edge of explored land. Blocks M6 T6's move rule, nothing before it.
 3. **Owner inputs for later** (spec §10): the first map's hand-finishing with a date (after T12); the MVP perf baseline on the M4 Pro (T24); the goldens (T27); the MVP playtests.
 
