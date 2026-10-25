@@ -30,18 +30,45 @@ class ProtectedBlockIndexTest {
 
     @Test
     void aLookupCostsTheSameAtAnySize() {
-        double small = nanosPerLookup(4);
-        double large = nanosPerLookup(64);
-        assertThat(large / small)
-                .as("%.1f ns at 64 sections, %.1f at 4", large, small)
+        Probe small = probe(4);
+        Probe large = probe(64);
+        long[] smallRuns = new long[7];
+        long[] largeRuns = new long[7];
+        for (int r = 0; r < smallRuns.length + 3; r++) { // three to warm up; the sizes alternate, so load hits both
+            long s = small.run();
+            long l = large.run();
+            if (r >= 3) {
+                smallRuns[r - 3] = s;
+                largeRuns[r - 3] = l;
+            }
+        }
+        // the fastest run: load from other processes only ever adds time, so it is the closest to the lookup's own cost
+        double smallNs = Arrays.stream(smallRuns).min().orElseThrow() / 1e6;
+        double largeNs = Arrays.stream(largeRuns).min().orElseThrow() / 1e6;
+        assertThat(largeNs / smallNs)
+                .as("%.1f ns at 64 sections, %.1f at 4", largeNs, smallNs)
                 .isLessThan(3);
     }
 
-    /** The median time of a lookup in an index of {@code sections} full sections, over a million lookups, seven times. */
-    private static double nanosPerLookup(int sections) {
+    /** An index of {@code sections} full sections and probes spread over every section. */
+    private record Probe(ProtectedBlockIndex index, BlockPos[] probes) {
+        /** The nanoseconds of a million lookups. */
+        long run() {
+            long sink = 0;
+            long start = System.nanoTime();
+            for (int k = 0; k < 1_000_000; k++) {
+                sink += index.owner(probes[(k * 40503) & (probes.length - 1)]);
+            }
+            long took = System.nanoTime() - start;
+            assertThat(sink).isPositive();
+            return took;
+        }
+    }
+
+    private static Probe probe(int sections) {
         ProtectedBlockIndex index = new ProtectedBlockIndex();
         BlockPos[] probes = new BlockPos[1 << 16];
-        int stride = Math.max(1, sections * 4096 / probes.length); // probes spread over every section
+        int stride = Math.max(1, sections * 4096 / probes.length);
         int seen = 0;
         int n = 0;
         for (int s = 0; s < sections; s++) {
@@ -60,19 +87,6 @@ class ProtectedBlockIndexTest {
         for (int k = n; k < probes.length; k++) {
             probes[k] = probes[(k * 7919) % n];
         }
-        long[] runs = new long[7];
-        long sink = 0;
-        for (int r = 0; r < runs.length + 3; r++) { // three to warm up
-            long start = System.nanoTime();
-            for (int k = 0; k < 1_000_000; k++) {
-                sink += index.owner(probes[(k * 40503) & (probes.length - 1)]);
-            }
-            if (r >= 3) {
-                runs[r - 3] = System.nanoTime() - start;
-            }
-        }
-        assertThat(sink).isPositive();
-        Arrays.sort(runs);
-        return runs[runs.length / 2] / 1e6;
+        return new Probe(index, probes);
     }
 }
