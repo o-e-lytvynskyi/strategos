@@ -10,10 +10,10 @@ to something playable and tested.
 |---|---|---|
 | Product | Decides product questions; approves, rejects or changes roadmap features; accepts milestone demos | Proposes features, options and recommendations |
 | Design | Approves decisions that change the product or add runtime dependencies | Writes specs, ADRs and the architecture; runs spikes and reports numbers |
-| Code | Reviews when they want to | Implements, tests and documents |
+| Code | Merges into `main` after a maintainer's validation; reviews when they want to | Developers implement, test and document on their branches; a maintainer session validates |
 | Tests | Approves new golden images and performance baselines; plays milestone demos and multiplayer sessions | Runs every automated level that ends on its own (L0–L3, L5, L6), and client windows (L4) under AGENTS.md "Client windows" unless a standing restriction forbids them (owner, 2026-10-25) |
 | Runs | Starts interactive `runClient` / `runServer` sessions themselves, to watch the logs | Never starts interactive or long-running sessions |
-| Git | Decides on tags, releases and anything public; the repository stays private unless the owner decides otherwise | Commits and pushes to the private repository without asking (owner, 2026-10-21), in English, with no assistant traces |
+| Git | Decides on tags, releases, merges into `main` and anything public; the repository stays private unless the owner decides otherwise | Developers commit and push their own `dev/*` branches without asking, in English, with no traces of the agent; only the maintainer writes `main` |
 
 ## Where things live
 
@@ -112,22 +112,28 @@ A change is done when:
 
 ## Autonomous development
 
-The assistant develops the project in sessions the owner starts and rarely watches. The
-procedure is the `strategos-dev` skill; this section fixes the conventions it follows.
+Development runs in agent sessions that are rarely watched. The roles are the owner, the
+maintainer and developers ([AGENTS.md](../AGENTS.md) "Roles"); every developer is external, the
+owner's own agent sessions included (owner, 2026-10-25), so every change reaches `main` the same
+way: claimed, built on its own branch, reviewed by another session, merged on the owner's word.
+The procedures are the `strategos-dev` skill (a developer) and the `strategos-maintain` skill
+(the maintainer); this section fixes the conventions they follow.
 
-**Starting work.** The owner opens Claude Code in the repository (`minecraft/strategos`, so that
-the project settings load) and says «продолжай» (or uses `/loop` for a self-paced run).
-Unattended sessions run in auto mode. The project allowlist (`.claude/settings.json`, activated
-by the owner on 2026-10-21) lets the work loop's commands
-through without prompts and denies force pushes and discarding the working tree; the assistant
-never edits it and proposes changes in "For the owner". The assistant works through ready tasks
+**Starting work.** A developer opens their agent in the repository (Claude Code in
+`minecraft/strategos`, so that the project settings load; Codex reads AGENTS.md) and says
+«продолжай» / "continue". Unattended sessions run without prompts under the project allowlist
+(`.claude/settings.json`, activated by the owner on 2026-10-21), which denies force pushes and
+discarding the working tree; nobody edits it but the owner. A session works through ready tasks
 until a stop condition: nothing is ready, a task failed three times, a budget is red, a hard
-rule would be broken, or usage is running low. Sessions can end at any moment, so every finished step is committed and
-pushed, and an unfinished task lives on a `wip/Mx-Tn` branch named in STATE.md.
+rule would be broken, or usage is running low. Sessions can end at any moment, so every finished
+step is committed and pushed to the developer's branch.
 
-**Gates.** Implementing a milestone starts only after the owner's go-ahead for it («начинай Mx»),
-recorded in STATE.md; planning work (writing the next milestone's spec) needs none. One session
-works at a time (a lock, `.session.lock` in the repository root, which git ignores).
+**Claims and gates.** Implementing a milestone's tasks needs the milestone in STATE.md "Open for
+claims", written on the owner's word; planning work (the next milestone's spec) needs none.
+Developers claim work themselves by pushing a `dev/<developer>/<work>` branch with its branch
+file ([branches/](branches/README.md)); `tools/claims.py` lists the claims, and STATE.md
+"Assignments" holds the owner's reservations. One session per working copy (a lock,
+`.session.lock`, which git ignores).
 
 **Statuses and evidence.** ROADMAP.md is the source of truth; card files mirror it, and
 `tools/roadmap.py check` must pass after every change.
@@ -169,28 +175,32 @@ the owner says «запускай консент-батч», the assistant runs 
 owner is away from the keyboard, and records the results.
 
 **Delegation (2026-10-25).** The main session orchestrates on the strongest model and hands
-routine work to smaller ones ([agents.md](agents.md)); the rules for every tool are in
-[AGENTS.md](../AGENTS.md).
+routine work to smaller ones ([agents.md](agents.md), a demo roster for now); the rules bind
+every tool and every developer.
 
-**Parallel developers (2026-10-25).** A milestone may be assigned to another developer on a
-`dev/<developer>/<milestone>` branch, recorded in STATE.md "Assignments"; its records live in
-[branches/](branches/README.md) until the owner validates and merges it (skill §12).
+**Review and merge.** A finished claim is handed in as a pull request. A maintainer session that
+did not build it validates it (the full gate, a reviewer, the records), fixes it on the owner's
+«с правками» or returns it, and merges it `--no-ff` on the owner's «влей»; the merge folds the
+branch file into STATE.md and worklog.md.
 
 **When the owner visits** (five minutes):
 1. Read STATE.md: "For the owner", "Since your last visit" and "Now".
 2. Skim worklog.md since the last visit; optionally run `python3 tools/roadmap.py summary` or
    look at the commits and CI on GitHub.
 3. Answer the queue: decisions, consent, approvals; play the demo when a milestone is Done.
-4. Say «продолжай».
+4. Optionally: `python3 tools/claims.py owner` for the developers' questions, open pull requests
+   for review («провалидируй <branch>»), «влей <branch>».
+5. Say «продолжай» to a developer session.
 
 ## Versions and git
 
 - The mod follows semantic versioning, `0.x` until the MVP. The version lives in
   `gradle.properties`.
-- Trunk-based on `main`; short-lived branches only when a change needs isolation, and
-  developer branches for assigned work (skill §12), merged `--no-ff` after the owner's review.
-- Commit messages are English, imperative, with no assistant traces. The assistant commits and
-  pushes to the private GitHub repository without asking (owner, 2026-10-21).
+- `main` is written only by the maintainer: merges of reviewed developer branches (`--no-ff`) and
+  `Docs:` record or process commits on the owner's word. All other work is on
+  `dev/<developer>/<work>` branches (from 2026-10-25; the `wip/*` branches are older).
+- Commit messages are English, imperative, with no traces of the agent or its tool. Developers
+  commit and push their own branches without asking.
 
 ## Communication
 

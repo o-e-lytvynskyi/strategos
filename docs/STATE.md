@@ -141,7 +141,7 @@ Answer in chat or here; the next session applies the answers.
    the questionnaire in `docs/testing/playtest.md`. The map has no rock outcrop: outcrops are tested on their own
    (ECO-07). M4 is Done; only this makes it Accepted.
 
-21. **M5's spec is ready: say «начинай M5» to start it.** [milestones/M5-combat.md](milestones/M5-combat.md):
+21. **M5's spec is ready: say «открой M5» (anyone may claim it) or «отдай M5 <кому>» (reserved).** [milestones/M5-combat.md](milestones/M5-combat.md):
    17 tasks, the 13 approved cards (CMB-08 stays deferred, as D-08 kept the observer). Archers with analytic shots
    and high ground, stances and focus fire, horsemen on horses with the counter matrix (spearmen > horsemen >
    archers > spearmen, 170 of 200 seeded duels each), the town bell with garrison and the civic centre's arrows,
@@ -157,14 +157,24 @@ Answer in chat or here; the next session applies the answers.
    current version (kept in `~/.strategos/demo-seen`); `-Pdemo=m4` or `-Pdemo=crowd,melee` picks, `-Pdemo.skip=`
    leaves out; `-Pdemo=list` lists them. It does not replace the L7 demos above, which are play, not watching.
 
-23. **For your information: the new way of working (your word of 2026-10-25).** The rules are now tool-neutral in
-   [AGENTS.md](../AGENTS.md) (CLAUDE.md imports it; Codex reads it as is). The main session orchestrates on Opus
-   and delegates routine work to Sonnet and Haiku workers ([agents.md](agents.md), `.claude/agents/`); a new role
-   follows the `new-agent` skill. Client windows, the recommended decisions and work without pauses are the
-   default (AGENTS.md "Autonomy by default", "Client windows"); a restriction you give goes to "Standing
-   restrictions" below. Another developer can take a milestone on a branch (AGENTS.md "Parallel developers",
-   procedure §12); the Codex side of it is specified in [codex-setup.md](codex-setup.md). **To hand M5 to a
-   colleague,** say who and the branch name, and the row goes into "Assignments".
+23. **For your information: the new way of working (your word of 2026-10-25).**
+   - Rules are tool-neutral in [AGENTS.md](../AGENTS.md) (CLAUDE.md imports it; Codex reads it as is) and bind every
+     developer equally. Every developer is external, my own sessions too: work is claimed by pushing a
+     `dev/<developer>/<work>` branch with its branch file ([branches/](branches/README.md),
+     `python3 tools/claims.py list`), built there, handed in as a pull request, validated by another session
+     (`strategos-maintain`) and merged on your «влей». Only merges and record commits reach `main`.
+   - The main session orchestrates on Opus and delegates to Sonnet and Haiku workers — a **demo** roster
+     ([agents.md](agents.md), `.claude/agents/`), to be reworked as trials show; new roles follow `new-agent`.
+   - Windows, recommended decisions, subagents, any test, no pauses: allowed by default; your restrictions go to
+     "Standing restrictions". Context economy is a rule, not advice.
+   - The Minecraft and RTS knowledge base moved here from your private notes, translated:
+     [kb/](kb/README.md). Setup for any developer (Claude Code or Codex): [developer-setup.md](developer-setup.md).
+   - **To hand M5 out:** «открой M5» opens it to whoever claims first; «отдай M5 <кому>» reserves it for them.
+24. **The allowlist, for the new way of working** (`.claude/settings.json`, yours to edit). Add:
+   `Bash(python3 tools/claims.py *)`, `Bash(git worktree *)`, `Bash(gh pr create *)`, `Bash(gh pr view *)`,
+   `Bash(gh pr list *)`, `Bash(gh pr checks *)`, `Bash(gh pr comment *)`. Remove the nine `~/work/pet_projects`
+   entries: the knowledge base is in the repository now. Optional: `"model": "opus"` so sessions start as the
+   orchestrator. Until then, an unattended developer session may stop at a prompt on claims or pull requests.
 
 ## Since your last visit
 
@@ -189,24 +199,33 @@ Nothing yet: the owner was here on 2026-10-25.
 
 ## Standing restrictions
 
-None. The defaults of AGENTS.md "Autonomy by default" apply: client windows allowed, the recommended decisions
-taken and recorded below, no pauses for reports. A restriction the owner gives («без окон», «без субагентов»)
+None. The defaults of AGENTS.md "Autonomy by default" apply: everything a developer session needs is allowed —
+client windows, the recommended decisions, subagents, any test, no pauses for reports. A restriction the owner gives («без окон», «без субагентов»)
 goes here with its date and its end («до вечера», «до конца M5»), and is deleted when it ends.
+
+## Open for claims
+
+Milestones whose tasks any developer may claim (AGENTS.md "Developers and claims"), opened on the owner's word.
+Planning work (the next milestone's spec) is always claimable.
+
+- None yet: M5 is specified and waits for your word (item 21).
 
 ## Decisions taken
 
-Decisions the agent took on its own recommendation since the owner's last visit: what, why, how to undo. The owner
-vetoes by answering here; the next session undoes it. The list is cleared once the owner has seen it.
+Decisions taken on a recommendation and merged into `main` (from the branch files at each merge, marked with the
+branch), and the maintainer's own: what, why, how to undo. The owner vetoes by answering here; a veto becomes a
+`fix-…` claim. The list is cleared once the owner has seen it.
 
 - None yet.
 
 ## Assignments
 
-Work handed to another developer on a branch (AGENTS.md "Parallel developers"). Sessions on `main` do not pick it.
+Work the owner reserved for a developer; only they may claim it. The claims themselves are the `dev/*` branches:
+`python3 tools/claims.py --fetch list`.
 
-| Work | Branch | Developer | Since | Branch file |
-|---|---|---|---|---|
-| — | — | — | — | — |
+| Work | Developer | Since | Note |
+|---|---|---|---|
+| — | — | — | — |
 
 ## Blocked
 

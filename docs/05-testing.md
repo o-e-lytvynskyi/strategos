@@ -163,7 +163,7 @@ broken inputs in `gradle/selftest/fixtures/`.
 ## Client checks and the owner's keyboard
 
 A client window on the owner's Mac can take keyboard focus. That already happened with a
-demo window that swallowed the owner's typing (recorded in the pet-projects knowledge base).
+demo window that swallowed the owner's typing (recorded in [kb/minecraft-mod-client.md](kb/minecraft-mod-client.md)).
 Therefore:
 - Client logic is pure code in `core.client`, so L1 covers the camera rig maths, HUD layout,
   picking, selection and view-models. L4 only confirms the drawing.

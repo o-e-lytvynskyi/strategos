@@ -5,7 +5,9 @@ description: Create, change or retire a delegated worker agent for Strategos (.c
 
 # Making a new worker agent
 
-The roster and its rules are in `docs/agents.md`; read it first. This skill adds to it.
+The roster and its rules are in `docs/agents.md`; read it first. The roster is a demo: improving
+or reworking a role on evidence is as expected as adding one. Any developer may propose a role;
+it lands on `main` through their branch's review like any other change.
 
 ## 1. Is a new agent justified?
 
@@ -71,7 +73,7 @@ Workers never spawn agents (`Agent` is always in `disallowedTools`).
 ## 5. Record it
 
 - `docs/agents.md` "The roster": a row (role, tier, use, returns).
-- `docs/codex-setup.md`: the same role in the Codex spec's roster table, so the other tool keeps
+- `docs/developer-setup.md`: the same role in the Codex roster table (R2), so the other tool keeps
   parity.
 - The commit: `Docs: add the <name> agent`, with the trial's outcome in the message body.
 - If it changes how a session works (a new step in the loop), update the `strategos-dev` skill.
@@ -80,4 +82,4 @@ Workers never spawn agents (`Agent` is always in `disallowedTools`).
 
 Same evidence bar: a change follows a trial that showed the problem; an agent unused for a whole
 milestone, or always overridden by its brief, is removed from `.claude/agents/`, `docs/agents.md`
-and `docs/codex-setup.md` in one commit.
+and `docs/developer-setup.md` in one commit.

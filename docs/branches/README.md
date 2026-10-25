@@ -1,15 +1,20 @@
 # Developer branches
 
-One file per branch that another developer works on (AGENTS.md "Parallel developers",
-procedure §12). Named `<developer>-<milestone>.md`. On the branch it replaces STATE.md "Now"
-and the worklog; on merge it is folded into them and kept here as the record.
+One file per developer branch (AGENTS.md "Developers and claims"). Named
+`<developer>-<work>.md`, created by the branch's first commit: that commit is the claim, and
+`python3 tools/claims.py list` shows every claim on `origin`. On the branch the file replaces
+STATE.md "Now", "For the owner", "Decisions taken" and the worklog; on merge the maintainer folds
+it into them and keeps it here as the record.
+
+The header's fields are read by `tools/claims.py`; keep their spelling. `Status` is one of
+`claimed`, `in progress`, `ready for review`, `merged <date>`, `released <date>`.
 
 ## Template
 
 ```markdown
-# <milestone> on dev/<developer>/<milestone>
+# <work> on dev/<developer>/<work>
 
-**Developer:** <name> · **Assigned:** <date> · **Base:** <commit on main> · **Status:** in progress | ready for review | merged <date>
+**Developer:** <name> (<tool and model, e.g. Claude Code, Opus>) · **Branch:** dev/<developer>/<work> · **Work:** <M5 | M5 T1–T6 | M6 spec> · **Base:** <main @ commit | dev/... @ commit> · **Claimed:** <date> · **Status:** claimed
 
 ## Now
 
@@ -28,15 +33,19 @@ Newest first; one entry per session in the worklog's shape.
 - **<task> · <title>** — <cards>; <results with numbers>; <problems met>.
 - **Next:** …
 
+## For the owner
+
+Numbered; what is needed, the options with a recommendation, what is blocked. `- None.` when empty.
+
 ## Decisions taken
 
 - <date> · <what> — <why> — <how to undo>.
 
 ## Pitfalls
 
-General Minecraft/NeoForge pitfalls for the pet-projects knowledge base, carried over at merge.
+New pitfalls go straight into `docs/kb/` on the branch; list here which entries were added.
 
 ## Review
 
-Written by the validation (procedure §12.3): gate results, findings, recommendation.
+Written by the validation (`strategos-maintain` §3): gate results, findings, recommendation.
 ```

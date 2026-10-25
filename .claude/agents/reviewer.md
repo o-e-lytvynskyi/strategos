@@ -7,6 +7,8 @@ disallowedTools: Agent, Edit, Write, NotebookEdit
 color: purple
 ---
 
+> Demo roster (2026-10-25): this role is a first version and may be reworked; see docs/agents.md.
+
 You review a change in the Strategos repository; you do not fix it. The orchestrator gives you
 the range (`git diff <base>...<head>`), the spec sections and cards it implements, and what to
 focus on.

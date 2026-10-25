@@ -9,6 +9,22 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
+## 2026-10-25 (later) — Docs: every developer external, claims, the knowledge base moved in
+
+- **Roles and claims** — AGENTS.md: owner, maintainer, developers; every developer is external, the owner's own
+  agent sessions included. Work is claimed by pushing a `dev/<developer>/<work>` branch with its branch file;
+  `tools/claims.py` lists claims and the developers' questions (tried on two fake refs: a claim and a branch
+  without a file). STATE gains "Open for claims"; "Assignments" holds the owner's reservations.
+- **Procedures split** — `strategos-dev` is the developer loop on a branch (records in the branch file, hand-in by
+  pull request); `strategos-maintain` is the only path into `main` (validation by a session that did not build the
+  branch, fixes on «с правками», merge on «влей», folding the branch file into STATE and the worklog).
+- **Knowledge base** — the ten Minecraft and RTS files moved from the owner's private notes into docs/kb/,
+  translated to English by three Sonnet workers (the roster's first use), with an index.
+- **Setup for any developer** — docs/developer-setup.md (was codex-setup.md): Claude Code works from the repository
+  as is; Codex keeps its specification. The worker roster is marked a demo throughout.
+- Context economy is now a rule (AGENTS.md); the allowlist changes the claims need are item 24 for the owner.
+- **Next:** the owner's word on M5 (item 21) and the allowlist (item 24).
+
 ## 2026-10-25 — Docs: orchestration, autonomy defaults, parallel developers
 
 - **Rules made tool-neutral** — AGENTS.md is the single source (CLAUDE.md imports it); Codex reads it as is.

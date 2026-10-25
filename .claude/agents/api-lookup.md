@@ -7,6 +7,8 @@ omitClaudeMd: true
 color: cyan
 ---
 
+> Demo roster (2026-10-25): this role is a first version and may be reworked; see docs/agents.md.
+
 You answer "does this engine API exist, and exactly how" for a Minecraft 1.21.1 NeoForge mod.
 You never answer from memory: every name you return was found in a file just now.
 

@@ -1,15 +1,20 @@
 # Delegation: the orchestrator and its workers
 
 How a session splits its work between models so that tokens go where judgement is needed.
-The rules are tool-neutral; each tool has its own roster files (Claude Code:
-`.claude/agents/*.md`; Codex: see [codex-setup.md](codex-setup.md)). Adopted 2026-10-25.
+The rules are tool-neutral and bind every developer; each tool has its own roster files
+(Claude Code: `.claude/agents/*.md`; Codex: see [developer-setup.md](developer-setup.md)).
+Adopted 2026-10-25.
+
+> **Status: demo.** The roster below is a first version, written before any trial. Roles,
+> models, contracts and the split itself are expected to be improved, reworked or replaced as
+> real tasks show what works; changes follow the `new-agent` skill and are recorded here.
 
 ## Tiers
 
 | Tier | Model class | Does | Never does |
 |---|---|---|---|
 | **A — orchestrator** | the strongest (Claude Opus; Codex's top model at high reasoning) | orients, picks the task, reads the spec and ADRs, makes design calls and spec deviations, writes briefs, reads every worker diff, runs the final gate, records decisions, commits, pushes, talks to the owner | read whole build logs, grep sources jars, type bookkeeping by hand when a brief would do |
-| **B — worker** | mid-size (Claude Sonnet; Codex's standard coding model) | implements a brief test-first, reviews a diff | commit, push, edit STATE / ROADMAP / worklog, change the spec, spawn agents |
+| **B — worker** | mid-size (Claude Sonnet; Codex's standard coding model) | implements a brief test-first, reviews a diff | commit, push, edit records (branch file, STATE, ROADMAP, worklog), change the spec, spawn agents |
 | **C — runner** | small (Claude Haiku; Codex's mini model) | runs commands and summarises them, looks up engine APIs, applies bookkeeping edits whose content the orchestrator gave | judge design, edit code, decide anything |
 
 ## The roster
@@ -20,7 +25,7 @@ The rules are tool-neutral; each tool has its own roster files (Claude Code:
 | `reviewer` | B (high reasoning) | a diff against its spec, the ADRs and the hard rules: risky changes, a milestone close, another developer's branch | findings ranked by severity with `file:line`, or "no findings" |
 | `runner` | C | any Gradle task, `roadmap.py`, a CI run's log, `jmhCompare` | ≤ 30 lines: verdict, failing tests and the first error of each, timings, numbers asked for |
 | `api-lookup` | C | "does `X.y()` exist in 1.21.1, what is its signature, who calls it" — sources jar grep, `javap` | signatures with `file:line`, or "not found" plus the nearest names |
-| `recorder` | C | the procedure's §5 bookkeeping from facts the orchestrator lists: spec checkbox, card statuses, worklog entry, STATE "Now" / branch file, `roadmap.py check` | the files edited and the check's result |
+| `recorder` | C | the procedure's §5 records from facts the orchestrator lists: spec checkbox, card statuses, the branch file (STATE and the worklog only in a maintainer session), `roadmap.py check` | the files edited and the check's result |
 
 A role that keeps being improvised inline is a candidate for a new one: the `new-agent` skill
 (`.claude/skills/new-agent/SKILL.md`) is the procedure.
@@ -58,7 +63,7 @@ so the worker does not rediscover it.
 
 - The orchestrator reads `git diff` of every worker change before committing it.
 - The `reviewer` runs before committing: an architecture change, a `@HotPath` kernel, a network
-  payload, a change over ~500 lines, a milestone close, and every branch merge (§12 of the
-  procedure).
+  payload, a change over ~500 lines, a milestone close; and in every branch validation
+  (`strategos-maintain` §3), from a session that did not build the branch.
 - Every gate of the Definition of Done runs as before; delegation changes who reads the log, not
   what must pass.
