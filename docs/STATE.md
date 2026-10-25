@@ -10,45 +10,38 @@ log is in [worklog.md](worklog.md); the work procedure is the `strategos-dev` sk
 
 Answer in chat or here; the next session applies the answers.
 
-1. **Going public: one click left, yours.** Done on 2026-10-26 on your word («я все одобряю»): PR #3 merged; labels
-   `full-ci`, `perf`, `bug`, `platform`; workflow token read-only and unable to approve pull requests; merge commits
-   only (squash and rebase off); Dependabot alerts and security updates on. **The visibility switch was refused to the
-   agent** (an outward, irreversible action needs you): Settings → General → Danger Zone → Change visibility → Public.
-   Then say «продолжай публикацию», and the rest of [security.md](security.md) §5 follows: secret scanning and push
-   protection, private vulnerability reporting, approval for outside contributors' workflow runs, the `main` ruleset
-   (pull requests only, Code Owners' review, no force pushes or deletion, you as the bypass by pull request).
-2. **For your information: the licence is decided (D-07, 2026-10-25).** PolyForm Noncommercial 1.0.0
+1. **For your information: the licence is decided (D-07, 2026-10-25).** PolyForm Noncommercial 1.0.0
    ([LICENSE](../LICENSE)): all rights stay yours; personal and other non-commercial use is allowed; contributions are
    voluntary and licensed to you under [CONTRIBUTING.md](../CONTRIBUTING.md) so the terms can change at the full
    release. "Strategos" stays the working title (D-21 open).
-3. **The M0 demo, whenever you want it.** You accepted M0 on 2026-10-22 without playing it, so nothing is waiting. The
+2. **The M0 demo, whenever you want it.** You accepted M0 on 2026-10-22 without playing it, so nothing is waiting. The
    demo stays ready: `scripts/playtest.sh`, then the steps in [testing/playtest.md](testing/playtest.md). Its first
    use confirms ADR-0022, the one thing your acceptance left open.
-4. **Open decisions,** none urgent:
+3. **Open decisions,** none urgent:
    - D-03 civilisation themes (M7);
    - D-20 multiplayer hosting (M7);
    - D-21 public release and name (first public release);
    - D-06 map generation (M12).
-5. **The M2 demo, when you have an hour (T22's last part, L7):** [milestones/M2-command.md §1.3](milestones/M2-command.md):
+4. **The M2 demo, when you have an hour (T22's last part, L7):** [milestones/M2-command.md §1.3](milestones/M2-command.md):
    `scripts/playtest.sh`, `/strategos match create map strategos:proving_ground`, `/strategos match join 1 0`,
    `/strategos spawn strategos:unit/infantry 30 0` and `... 30 1`, then box-select, Ctrl+1, attack-move with Z and a
    right click, V into first person, R (follow), G on an enemy, V back; the questionnaire in
    `docs/testing/playtest.md`.
-6. **The M1 demo, whenever you like (L7):** [milestones/M1-movement.md §1.3](milestones/M1-movement.md): an Arena
+5. **The M1 demo, whenever you like (L7):** [milestones/M1-movement.md §1.3](milestones/M1-movement.md): an Arena
    world, `/strategos match create map=strategos:proving_ground`, `/strategos spawn strategos:unit/infantry 200`,
    F8 for the movement overlay, `/strategos order move @units waypoint=far_side`, then the questionnaire. (The
    infantry are spearmen since M2; 200 of one faction do not fight.) That session confirms ADR-0022.
-7. **Optional reviews:**
+6. **Optional reviews:**
    - the card refinements made after the approval
      ([design/roadmap-changes.md §8](design/roadmap-changes.md));
    - the promo draft ([promo/roadmap-announcement.md](promo/roadmap-announcement.md)).
-8. **The M3 demo, when you have half an hour (decision gate 3, L7):** [milestones/M3-first-loop.md §1.3](milestones/M3-first-loop.md):
+7. **The M3 demo, when you have half an hour (decision gate 3, L7):** [milestones/M3-first-loop.md §1.3](milestones/M3-first-loop.md):
    `scripts/playtest.sh`, then `/strategos skirmish strategos:proving_ground observe seed=3` to watch two bots,
    or `/strategos match create map strategos:proving_ground`, `/strategos match join 1 0` and
    `/strategos match scenario strategos:first_loop` to play slot 0 against the bot (its slot is `ai:first_loop`);
    then the questionnaire in `docs/testing/playtest.md` with **"would I play another?" and its reason**. A "no",
    or any score of 2 or less, sends pacing and readability back for tuning. M3 is Done; only this makes it Accepted.
-9. **Needs your word: the per-unit perf base** (M4 T21–T22). With the workers gathering and on map v3, the first loop
+8. **Needs your word: the per-unit perf base** (M4 T21–T22). With the workers gathering and on map v3, the first loop
    costs 11,648 ns a unit at budget A's p95, twice M1's crowd soak of 600 walkers that PERF-06.2 compared it with; a
    replay of the same match in L1 has the core's step at 0.37 ms at p95, so the server's figure is mostly its
    surroundings. I made the first loop's own run both soaks' base, and M4's economy soak (316 units, five
@@ -56,7 +49,7 @@ Answer in chat or here; the next session applies the answers.
    [perf/first-loop-m4pro.json](../perf/first-loop-m4pro.json)). That changes a gate's base, which the work rules
    leave to you: say «оставь» to keep it, or «верни M1» to compare with M1 again, which leaves PERF-06.2 red until
    the first loop is made cheaper on the server.
-10. **The M4 demo, when you have forty minutes (L7):** [milestones/M4-economy-and-construction.md §1.3](milestones/M4-economy-and-construction.md).
+9. **The M4 demo, when you have forty minutes (L7):** [milestones/M4-economy-and-construction.md §1.3](milestones/M4-economy-and-construction.md).
    `scripts/playtest.sh`, then `/strategos skirmish strategos:proving_ground observe seed=3` to watch two economy
    bots lay out their towns (the skirmish now plays `economy_loop`), or `/strategos match create map strategos:proving_ground`,
    `/strategos match join 1 0` and `/strategos match scenario strategos:economy_loop` to play slot 0 against it. Then:
@@ -67,7 +60,7 @@ Answer in chat or here; the next session applies the answers.
    piston against a wall (nothing changes); save and quit mid-match and reload (it resumes paused, as it was); then
    the questionnaire in `docs/testing/playtest.md`. The map has no rock outcrop: outcrops are tested on their own
    (ECO-07). M4 is Done; only this makes it Accepted.
-11. **A watched demo of every mechanic, whenever you like (no setup):** ask «покажи демо» (or «покажи новое», or
+10. **A watched demo of every mechanic, whenever you like (no setup):** ask «покажи демо» (or «покажи новое», or
    name the mechanics) and the session opens the game window and narrates in the chat. Or run it yourself:
    `./gradlew :mod:runScenario -Pscenario=demo -Pdemo=all -Pscenario.timeoutSeconds=3600`. Twelve chapters, about
    six minutes in all: crowd round a wall, attack-move and melee, wood and berries, livestock, mines and quarries,
@@ -78,17 +71,21 @@ Answer in chat or here; the next session applies the answers.
 
 ## Since the owner's last visit
 
-Nothing yet: the owner was here on 2026-10-25.
+- 2026-10-26 · **The repository is public.** The owner switched the visibility; on the owner's word the agent set up
+  the rest of [security.md](security.md) §5: secret scanning and push protection, private vulnerability reporting,
+  approval for every outside contributor's workflow run, a read-only workflow token, merge commits only, Dependabot
+  alerts and updates, the labels, and the `main` ruleset (pull requests only, one Code Owner approval, stale
+  approvals dismissed, no force pushes or deletion; repository admins may bypass through a pull request only).
 
 ## Milestones
 
 | Milestone | Status | Held by | Spec | Notes |
 |---|---|---|---|---|
-| M0 Foundation | Accepted 2026-10-22 | the owner's sessions (`claude-owner`) | [M0](milestones/M0-foundation.md) | Started 2026-10-21; tripwire met on day 2; 25 of 26 cards accepted, UNIT-01 closes with NET-01 (M1); the L7 demo waived by the owner (item 3) |
-| M1 Movement | Done 2026-10-23 | the owner's sessions (`claude-owner`) | [M1](milestones/M1-movement.md) | Started 2026-10-22 on the owner's go-ahead; 29 tasks (T28, PATH-08, joined by its R3 trigger in T8; T29 by the owner's word); Accepted waits for the L7 demo (item 6) |
-| M2 Command | Done 2026-10-23 | the owner's sessions (`claude-owner`) | [M2](milestones/M2-command.md) | Started 2026-10-23 at the owner's word; 23 tasks; `pose_high` settled in M3 T30; Accepted waits for the L7 demo (item 5) |
-| M3 First loop | Done 2026-10-24 | the owner's sessions (`claude-owner`) | [M3](milestones/M3-first-loop.md) | Started 2026-10-23 at the owner's word; 31 tasks; Accepted waits for the L7 demo (item 8) |
-| M4 Economy and construction | Done 2026-10-24 | the owner's sessions (`claude-owner`) | [M4](milestones/M4-economy-and-construction.md) | Started 2026-10-24 as M3 closed; 24 tasks, closed by T28 (2026-10-24: Results written, [§8.1](milestones/M4-economy-and-construction.md); the health check's follow-ups are M5's first tasks); Accepted waits for the L7 demo (item 10); item 9 asks your word on the perf base |
+| M0 Foundation | Accepted 2026-10-22 | the owner's sessions (`claude-owner`) | [M0](milestones/M0-foundation.md) | Started 2026-10-21; tripwire met on day 2; 25 of 26 cards accepted, UNIT-01 closes with NET-01 (M1); the L7 demo waived by the owner (item 2) |
+| M1 Movement | Done 2026-10-23 | the owner's sessions (`claude-owner`) | [M1](milestones/M1-movement.md) | Started 2026-10-22 on the owner's go-ahead; 29 tasks (T28, PATH-08, joined by its R3 trigger in T8; T29 by the owner's word); Accepted waits for the L7 demo (item 5) |
+| M2 Command | Done 2026-10-23 | the owner's sessions (`claude-owner`) | [M2](milestones/M2-command.md) | Started 2026-10-23 at the owner's word; 23 tasks; `pose_high` settled in M3 T30; Accepted waits for the L7 demo (item 4) |
+| M3 First loop | Done 2026-10-24 | the owner's sessions (`claude-owner`) | [M3](milestones/M3-first-loop.md) | Started 2026-10-23 at the owner's word; 31 tasks; Accepted waits for the L7 demo (item 7) |
+| M4 Economy and construction | Done 2026-10-24 | the owner's sessions (`claude-owner`) | [M4](milestones/M4-economy-and-construction.md) | Started 2026-10-24 as M3 closed; 24 tasks, closed by T28 (2026-10-24: Results written, [§8.1](milestones/M4-economy-and-construction.md); the health check's follow-ups are M5's first tasks); Accepted waits for the L7 demo (item 9); item 8 asks your word on the perf base |
 | M5 Combat | Open for claims 2026-10-25 | open for claims | [M5](milestones/M5-combat.md) | Spec written as M4 closed, 17 tasks; nothing on `main` is in progress; the colleague claims it by pull request ([claims.md](claims.md)); first task M5 T1, the health check from M4's close, once the claim is merged |
 | M6 (MVP) | approved | — | — | Its spec is written when M5 closes |
 | M7–M15 | proposed | — | — | Approved by the owner closer to their time |
@@ -165,7 +162,7 @@ Nothing.
     baseline is the full run of 2026-10-23 (18 benchmarks, [perf/baseline-m4pro.json](../perf/baseline-m4pro.json));
     QA-07.4 allows a kernel's events their messages (`OrcaBench` may spend 16 B a step on the stuck ladder's; an
     allocation-free bus stays a known follow-up); gates `c` and `e` join `a`, `d` and `g`; S10's footprint rule joins M1
-    as T29; the five far-off decisions (D-03, D-06, D-07, D-20, D-21) stayed open (D-07 since decided, see item 2);
+    as T29; the five far-off decisions (D-03, D-06, D-07, D-20, D-21) stayed open (D-07 since decided, see item 1);
   - 2026-10-24, word «можешь любые тесты проводить и как закончишь м3 - начинай м4, все решения принимай сам, которые
     рекомендуешь»: any test, windows included; M4 started when M3 was done; recommended decisions taken and recorded;
     M3's window tests run together in its consent batch, T30. The earlier guess about `pose_high` (the scene's own
@@ -188,7 +185,7 @@ Nothing.
     `/strategos skirmish strategos:proving_ground observe seed=3`;
   - taken under the word of 2026-10-24, M3's per-unit perf baseline: the first-loop soak's figures
     ([perf/first-loop-m4pro.json](../perf/first-loop-m4pro.json)) are what M4's perf gate compares with, as M1's crowd
-    soak was for M3; well inside every budget, the tick's own work (C) 4.2 ms at p95 of 23 (item 9 revisits the base);
+    soak was for M3; well inside every budget, the tick's own work (C) 4.2 ms at p95 of 23 (item 8 revisits the base);
   - taken under the same word, each can be undone: the M3 goldens (nine frames of `m3_goldens`, `art_look` with and
     without Sodium, `rts_goldens` and `overlay_goldens` re-recorded for M3's HUD, M2's `pose_high`; in
     `mod/src/devtools/goldens/`); PERF-14's results again with M3's HUD and the 16 chunks really sent
