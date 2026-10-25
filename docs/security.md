@@ -87,5 +87,5 @@ Before the visibility switch:
    protection on; private vulnerability reporting on (SECURITY.md relies on it).
 4. **Labels:** `full-ci` and `perf` (they start those workflows on a hand-in pull request; only
    people with triage rights can set them), `bug`, `platform`.
-5. **General:** disable the wiki if unused; "Automatically delete head branches" off (branch
-   files and history stay readable).
+5. **General:** disable the wiki if unused; "Automatically delete head branches" on (the owner,
+   2026-10-26): a merged branch is gone from `origin`, its commits and branch file stay in `main`.

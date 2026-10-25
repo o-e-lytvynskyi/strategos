@@ -81,11 +81,11 @@ Answer in chat or here; the next session applies the answers.
 
 | Milestone | Status | Held by | Spec | Notes |
 |---|---|---|---|---|
-| M0 Foundation | Accepted 2026-10-22 | the owner's sessions (`claude-owner`) | [M0](milestones/M0-foundation.md) | Started 2026-10-21; tripwire met on day 2; 25 of 26 cards accepted, UNIT-01 closes with NET-01 (M1); the L7 demo waived by the owner (item 2) |
-| M1 Movement | Done 2026-10-23 | the owner's sessions (`claude-owner`) | [M1](milestones/M1-movement.md) | Started 2026-10-22 on the owner's go-ahead; 29 tasks (T28, PATH-08, joined by its R3 trigger in T8; T29 by the owner's word); Accepted waits for the L7 demo (item 5) |
-| M2 Command | Done 2026-10-23 | the owner's sessions (`claude-owner`) | [M2](milestones/M2-command.md) | Started 2026-10-23 at the owner's word; 23 tasks; `pose_high` settled in M3 T30; Accepted waits for the L7 demo (item 4) |
-| M3 First loop | Done 2026-10-24 | the owner's sessions (`claude-owner`) | [M3](milestones/M3-first-loop.md) | Started 2026-10-23 at the owner's word; 31 tasks; Accepted waits for the L7 demo (item 7) |
-| M4 Economy and construction | Done 2026-10-24 | the owner's sessions (`claude-owner`) | [M4](milestones/M4-economy-and-construction.md) | Started 2026-10-24 as M3 closed; 24 tasks, closed by T28 (2026-10-24: Results written, [§8.1](milestones/M4-economy-and-construction.md); the health check's follow-ups are M5's first tasks); Accepted waits for the L7 demo (item 9); item 8 asks your word on the perf base |
+| M0 Foundation | Accepted 2026-10-22 | the owner's sessions (`o-e-lytvynskyi`) | [M0](milestones/M0-foundation.md) | Started 2026-10-21; tripwire met on day 2; 25 of 26 cards accepted, UNIT-01 closes with NET-01 (M1); the L7 demo waived by the owner (item 2) |
+| M1 Movement | Done 2026-10-23 | the owner's sessions (`o-e-lytvynskyi`) | [M1](milestones/M1-movement.md) | Started 2026-10-22 on the owner's go-ahead; 29 tasks (T28, PATH-08, joined by its R3 trigger in T8; T29 by the owner's word); Accepted waits for the L7 demo (item 5) |
+| M2 Command | Done 2026-10-23 | the owner's sessions (`o-e-lytvynskyi`) | [M2](milestones/M2-command.md) | Started 2026-10-23 at the owner's word; 23 tasks; `pose_high` settled in M3 T30; Accepted waits for the L7 demo (item 4) |
+| M3 First loop | Done 2026-10-24 | the owner's sessions (`o-e-lytvynskyi`) | [M3](milestones/M3-first-loop.md) | Started 2026-10-23 at the owner's word; 31 tasks; Accepted waits for the L7 demo (item 7) |
+| M4 Economy and construction | Done 2026-10-24 | the owner's sessions (`o-e-lytvynskyi`) | [M4](milestones/M4-economy-and-construction.md) | Started 2026-10-24 as M3 closed; 24 tasks, closed by T28 (2026-10-24: Results written, [§8.1](milestones/M4-economy-and-construction.md); the health check's follow-ups are M5's first tasks); Accepted waits for the L7 demo (item 9); item 8 asks your word on the perf base |
 | M5 Combat | Open for claims 2026-10-25 | open for claims | [M5](milestones/M5-combat.md) | Spec written as M4 closed, 17 tasks; nothing on `main` is in progress; the colleague claims it by pull request ([claims.md](claims.md)); first task M5 T1, the health check from M4's close, once the claim is merged |
 | M6 (MVP) | approved | — | — | Its spec is written when M5 closes |
 | M7–M15 | proposed | — | — | Approved by the owner closer to their time |
