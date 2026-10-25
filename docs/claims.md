@@ -25,3 +25,4 @@ before any development starts, so two developers can never hold the same work (A
 | Work | Developer | Branch | Status | Since | Note |
 |---|---|---|---|---|---|
 | M6 spec | dyadik | dev/dyadik/m6-spec | assigned | 2026-10-25 | planning |
+| M5 | lev1pes | dev/lev1pes/m5 | assigned | 2026-10-25 | registration PR #12 first; preserve and reconcile pre-process T1-T2 from codex/m5-combat after assignment |
