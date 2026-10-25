@@ -202,7 +202,7 @@ In a short spike, build both variants for about 20 templates with two levels of 
 - how clear decode errors are (do they name the file and field?);
 - datagen effort.
 
-Read NeoForge 26.3's NewDatapackRegistryEvent#reloadableRegistry, saved at /private/tmp/claude-501/-Users-oleksandrlytvynskyi-work-pet-projects-minecraft/ee58a1af-b4f8-4282-b3ae-c341fb060cea/scratchpad/gap-6/dl-nf/263-NewDatapackRegistryEvent.java, to see which variant ports with the least change.
+Read NeoForge 26.3's NewDatapackRegistryEvent#reloadableRegistry, saved at <scratchpad>/gap-6/dl-nf/263-NewDatapackRegistryEvent.java, to see which variant ports with the least change.
 
 ## G7. What a match is in world terms; match lifecycle
 
@@ -236,7 +236,7 @@ So match state held per level, RoN-style (RoN's bugs came from static global sta
 
 Check whether NeoForge 21.1, or a maintained library such as Infiniverse, can create dimensions at runtime. Note how RoN ships maps (as world saves) and how MineColonies keeps several colonies in one world.
 
-Measure force-load cost with a time-boxed, self-terminating run of the NeoForge 21.1.264 dedicated server already installed at /private/tmp/claude-501/-Users-oleksandrlytvynskyi-work-pet-projects-minecraft/ee58a1af-b4f8-4282-b3ae-c341fb060cea/scratchpad/gap-1/server:
+Measure force-load cost with a time-boxed, self-terminating run of the NeoForge 21.1.264 dedicated server already installed at <scratchpad>/gap-1/server:
 - Vanilla /forceload, in 256-chunk batches, places the same level-31 ticket without forceTicks as TicketController with ticking=false.
 - Pregenerate areas of 384², 512² and 1,024² blocks.
 - With no players online, record /tick query, heap and autosave time.

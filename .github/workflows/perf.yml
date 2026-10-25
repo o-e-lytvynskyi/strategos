@@ -1,11 +1,13 @@
 # L6 on Linux (M0 T12 and T18, QA-08): JMH and the CI-to-M4 Pro speed ratio, then the perf GameTests at
-# 3x the budgets. Weekly and by hand (M4 T12: nightly ran past its 30 minutes and spent the month's minutes), in its
-# own concurrency group, so pushes neither pay for it nor cancel it. Actions are pinned to the commit of the tag in the comment.
+# 3x the budgets. Since 2026-10-25 by hand or on a hand-in pull request labelled `perf` by a maintainer (no schedule):
+# it costs about 50 minutes, so it runs when a milestone touching the hot paths is reviewed. Actions are pinned to the
+# commit of the tag in the comment.
 name: perf
 
 on:
-  schedule:
-    - cron: '17 3 * * 0'
+  pull_request:
+    branches: [main]
+    types: [labeled]
   workflow_dispatch:
 
 concurrency:
@@ -17,6 +19,7 @@ permissions:
 
 jobs:
   perf:
+    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.draft == false && github.event.label.name == 'perf')
     runs-on: ubuntu-24.04
     timeout-minutes: 55
     steps:

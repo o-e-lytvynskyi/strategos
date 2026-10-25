@@ -13,7 +13,7 @@ setup is in [developer-setup.md](developer-setup.md); the binding rules are in
 - **How it is built:** the game rules live in `core` (plain Java, no Minecraft, deterministic and
   seed-stable); `mod` adapts them to Minecraft. Read
   [04-architecture.md](04-architecture.md) by section, and the ADRs it cites.
-- **Where it stands:** [STATE.md](STATE.md) — "Open for claims", "Now"; who works on what:
+- **Where it stands:** [STATE.md](STATE.md) — "Milestones", "Open for claims"; who works on what:
   [claims.md](claims.md).
 
 | Directory | Contents |
@@ -92,6 +92,8 @@ Working without an agent is fine: follow the same procedure by hand.
    `Claim: <work>` to `main`. Start developing once a maintainer has merged it. Work assigned to
    someone else is never taken without their explicit approval.
 4. **Build it** task by task: tests, code, gates, records, one commit per task, push your branch.
+   **All tests are local until the milestone is done:** CI runs only on the hand-in pull request.
+   From a fork, everything is the same at a lower priority (CONTRIBUTING.md).
    Merge `origin/main` into it when `main` moves; never rebase or force-push.
 5. **Hand it in** when the claim is done: the milestone gates, `Status: ready for review`, a pull
    request whose body is the milestone report (§6).

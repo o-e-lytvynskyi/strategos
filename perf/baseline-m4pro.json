@@ -5,7 +5,7 @@
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
-        "jvm" : "/Users/oleksandrlytvynskyi/.gradle/jdks/eclipse_adoptium-21-aarch64-os_x.2/jdk-21.0.12.1+1/Contents/Home/bin/java",
+        "jvm" : "~/.gradle/jdks/eclipse_adoptium-21-aarch64-os_x.2/jdk-21.0.12.1+1/Contents/Home/bin/java",
         "jvmArgs" : [
             "-Dfile.encoding=UTF-8",
             "-Duser.country=US",
@@ -218,7 +218,7 @@
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
-        "jvm" : "/Users/oleksandrlytvynskyi/.gradle/jdks/eclipse_adoptium-21-aarch64-os_x.2/jdk-21.0.12.1+1/Contents/Home/bin/java",
+        "jvm" : "~/.gradle/jdks/eclipse_adoptium-21-aarch64-os_x.2/jdk-21.0.12.1+1/Contents/Home/bin/java",
         "jvmArgs" : [
             "-Dfile.encoding=UTF-8",
             "-Duser.country=US",
@@ -431,7 +431,7 @@
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
-        "jvm" : "/Users/oleksandrlytvynskyi/.gradle/jdks/eclipse_adoptium-21-aarch64-os_x.2/jdk-21.0.12.1+1/Contents/Home/bin/java",
+        "jvm" : "~/.gradle/jdks/eclipse_adoptium-21-aarch64-os_x.2/jdk-21.0.12.1+1/Contents/Home/bin/java",
         "jvmArgs" : [
             "-Dfile.encoding=UTF-8",
             "-Duser.country=US",
@@ -607,7 +607,7 @@
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
-        "jvm" : "/Users/oleksandrlytvynskyi/.gradle/jdks/eclipse_adoptium-21-aarch64-os_x.2/jdk-21.0.12.1+1/Contents/Home/bin/java",
+        "jvm" : "~/.gradle/jdks/eclipse_adoptium-21-aarch64-os_x.2/jdk-21.0.12.1+1/Contents/Home/bin/java",
         "jvmArgs" : [
             "-Dfile.encoding=UTF-8",
             "-Duser.country=US",
@@ -820,7 +820,7 @@
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
-        "jvm" : "/Users/oleksandrlytvynskyi/.gradle/jdks/eclipse_adoptium-21-aarch64-os_x.2/jdk-21.0.12.1+1/Contents/Home/bin/java",
+        "jvm" : "~/.gradle/jdks/eclipse_adoptium-21-aarch64-os_x.2/jdk-21.0.12.1+1/Contents/Home/bin/java",
         "jvmArgs" : [
             "-Dfile.encoding=UTF-8",
             "-Duser.country=US",
@@ -1031,7 +1031,7 @@
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
-        "jvm" : "/Users/oleksandrlytvynskyi/.gradle/jdks/eclipse_adoptium-21-aarch64-os_x.2/jdk-21.0.12.1+1/Contents/Home/bin/java",
+        "jvm" : "~/.gradle/jdks/eclipse_adoptium-21-aarch64-os_x.2/jdk-21.0.12.1+1/Contents/Home/bin/java",
         "jvmArgs" : [
             "-Dfile.encoding=UTF-8",
             "-Duser.country=US",
@@ -1207,7 +1207,7 @@
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
-        "jvm" : "/Users/oleksandrlytvynskyi/.gradle/jdks/eclipse_adoptium-21-aarch64-os_x.2/jdk-21.0.12.1+1/Contents/Home/bin/java",
+        "jvm" : "~/.gradle/jdks/eclipse_adoptium-21-aarch64-os_x.2/jdk-21.0.12.1+1/Contents/Home/bin/java",
         "jvmArgs" : [
             "-Dfile.encoding=UTF-8",
             "-Duser.country=US",
@@ -1420,7 +1420,7 @@
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
-        "jvm" : "/Users/oleksandrlytvynskyi/.gradle/jdks/eclipse_adoptium-21-aarch64-os_x.2/jdk-21.0.12.1+1/Contents/Home/bin/java",
+        "jvm" : "~/.gradle/jdks/eclipse_adoptium-21-aarch64-os_x.2/jdk-21.0.12.1+1/Contents/Home/bin/java",
         "jvmArgs" : [
             "-Dfile.encoding=UTF-8",
             "-Duser.country=US",
@@ -1596,7 +1596,7 @@
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
-        "jvm" : "/Users/oleksandrlytvynskyi/.gradle/jdks/eclipse_adoptium-21-aarch64-os_x.2/jdk-21.0.12.1+1/Contents/Home/bin/java",
+        "jvm" : "~/.gradle/jdks/eclipse_adoptium-21-aarch64-os_x.2/jdk-21.0.12.1+1/Contents/Home/bin/java",
         "jvmArgs" : [
             "-Dfile.encoding=UTF-8",
             "-Duser.country=US",
@@ -1772,7 +1772,7 @@
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
-        "jvm" : "/Users/oleksandrlytvynskyi/.gradle/jdks/eclipse_adoptium-21-aarch64-os_x.2/jdk-21.0.12.1+1/Contents/Home/bin/java",
+        "jvm" : "~/.gradle/jdks/eclipse_adoptium-21-aarch64-os_x.2/jdk-21.0.12.1+1/Contents/Home/bin/java",
         "jvmArgs" : [
             "-Dfile.encoding=UTF-8",
             "-Duser.country=US",
@@ -1948,7 +1948,7 @@
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
-        "jvm" : "/Users/oleksandrlytvynskyi/.gradle/jdks/eclipse_adoptium-21-aarch64-os_x.2/jdk-21.0.12.1+1/Contents/Home/bin/java",
+        "jvm" : "~/.gradle/jdks/eclipse_adoptium-21-aarch64-os_x.2/jdk-21.0.12.1+1/Contents/Home/bin/java",
         "jvmArgs" : [
             "-Dfile.encoding=UTF-8",
             "-Duser.country=US",
@@ -2124,7 +2124,7 @@
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
-        "jvm" : "/Users/oleksandrlytvynskyi/.gradle/jdks/eclipse_adoptium-21-aarch64-os_x.2/jdk-21.0.12.1+1/Contents/Home/bin/java",
+        "jvm" : "~/.gradle/jdks/eclipse_adoptium-21-aarch64-os_x.2/jdk-21.0.12.1+1/Contents/Home/bin/java",
         "jvmArgs" : [
             "-Dfile.encoding=UTF-8",
             "-Duser.country=US",
@@ -2337,7 +2337,7 @@
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
-        "jvm" : "/Users/oleksandrlytvynskyi/.gradle/jdks/eclipse_adoptium-21-aarch64-os_x.2/jdk-21.0.12.1+1/Contents/Home/bin/java",
+        "jvm" : "~/.gradle/jdks/eclipse_adoptium-21-aarch64-os_x.2/jdk-21.0.12.1+1/Contents/Home/bin/java",
         "jvmArgs" : [
             "-Dfile.encoding=UTF-8",
             "-Duser.country=US",
@@ -2513,7 +2513,7 @@
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
-        "jvm" : "/Users/oleksandrlytvynskyi/.gradle/jdks/eclipse_adoptium-21-aarch64-os_x.2/jdk-21.0.12.1+1/Contents/Home/bin/java",
+        "jvm" : "~/.gradle/jdks/eclipse_adoptium-21-aarch64-os_x.2/jdk-21.0.12.1+1/Contents/Home/bin/java",
         "jvmArgs" : [
             "-Dfile.encoding=UTF-8",
             "-Duser.country=US",
@@ -2689,7 +2689,7 @@
         "mode" : "sample",
         "threads" : 1,
         "forks" : 2,
-        "jvm" : "/Users/oleksandrlytvynskyi/.gradle/jdks/eclipse_adoptium-21-aarch64-os_x.2/jdk-21.0.12.1+1/Contents/Home/bin/java",
+        "jvm" : "~/.gradle/jdks/eclipse_adoptium-21-aarch64-os_x.2/jdk-21.0.12.1+1/Contents/Home/bin/java",
         "jvmArgs" : [
             "-Dfile.encoding=UTF-8",
             "-Duser.country=US",
@@ -4911,7 +4911,7 @@
         "mode" : "sample",
         "threads" : 1,
         "forks" : 2,
-        "jvm" : "/Users/oleksandrlytvynskyi/.gradle/jdks/eclipse_adoptium-21-aarch64-os_x.2/jdk-21.0.12.1+1/Contents/Home/bin/java",
+        "jvm" : "~/.gradle/jdks/eclipse_adoptium-21-aarch64-os_x.2/jdk-21.0.12.1+1/Contents/Home/bin/java",
         "jvmArgs" : [
             "-Dfile.encoding=UTF-8",
             "-Duser.country=US",
@@ -7093,7 +7093,7 @@
         "mode" : "sample",
         "threads" : 1,
         "forks" : 2,
-        "jvm" : "/Users/oleksandrlytvynskyi/.gradle/jdks/eclipse_adoptium-21-aarch64-os_x.2/jdk-21.0.12.1+1/Contents/Home/bin/java",
+        "jvm" : "~/.gradle/jdks/eclipse_adoptium-21-aarch64-os_x.2/jdk-21.0.12.1+1/Contents/Home/bin/java",
         "jvmArgs" : [
             "-Dfile.encoding=UTF-8",
             "-Duser.country=US",
@@ -8055,7 +8055,7 @@
         "mode" : "sample",
         "threads" : 1,
         "forks" : 2,
-        "jvm" : "/Users/oleksandrlytvynskyi/.gradle/jdks/eclipse_adoptium-21-aarch64-os_x.2/jdk-21.0.12.1+1/Contents/Home/bin/java",
+        "jvm" : "~/.gradle/jdks/eclipse_adoptium-21-aarch64-os_x.2/jdk-21.0.12.1+1/Contents/Home/bin/java",
         "jvmArgs" : [
             "-Dfile.encoding=UTF-8",
             "-Duser.country=US",
@@ -8987,7 +8987,7 @@
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
-        "jvm" : "/Users/oleksandrlytvynskyi/.gradle/jdks/eclipse_adoptium-21-aarch64-os_x.2/jdk-21.0.12.1+1/Contents/Home/bin/java",
+        "jvm" : "~/.gradle/jdks/eclipse_adoptium-21-aarch64-os_x.2/jdk-21.0.12.1+1/Contents/Home/bin/java",
         "jvmArgs" : [
             "-Dfile.encoding=UTF-8",
             "-Duser.country=US",

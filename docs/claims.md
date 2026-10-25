@@ -15,6 +15,10 @@ before any development starts, so two developers can never hold the same work (A
   release it in their own pull request, or approve yours in a comment; your row's note says
   `handed over by <developer>, <link>`. A claim with no commit for 7 days is stale: the owner may
   release it.
+- **Forks** claim the same way, from a fork; the Branch column names it
+  `<login>/strategos:dev/<handle>/<work>`. They rank below collaborators: when a fork's claim and a
+  collaborator's compete for the same work, the collaborator's is accepted first, whatever their
+  order; the owner accepts outside claims by hand.
 - Live progress is in each branch file, not here; this table changes only at a claim, a release
   and a merge.
 

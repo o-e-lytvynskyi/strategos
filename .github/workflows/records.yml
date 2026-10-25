@@ -1,0 +1,32 @@
+# The records gate on pull requests (2026-10-25): claims, roadmap statuses and the tools that check them. Cheap (no
+# Gradle), so it also runs on claim and release pull requests, which change docs only and skip verify.
+# Actions are pinned to the commit of the tag in the comment.
+name: records
+
+on:
+  pull_request:
+    branches: [main]
+    paths: ['docs/claims.md', 'docs/branches/**', 'docs/ROADMAP.md', 'docs/roadmap/**', 'docs/milestones/**', 'tools/**']
+  workflow_dispatch:
+
+concurrency:
+  group: records-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  records:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: tools' tests
+        run: python3 -m unittest discover -s tools -p 'test_*.py'
+      - name: roadmap
+        run: python3 tools/roadmap.py check
+      - name: claims against main
+        run: python3 tools/claims.py check --base origin/main

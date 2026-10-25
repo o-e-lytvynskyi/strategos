@@ -53,6 +53,13 @@ modpacks, or CC BY-NC-SA 4.0 if the owner wants remixing. The clean-room rule ke
 open, and the RVO2 notice goes into `NOTICE` either way. The repository stays private until the
 owner decides. **Needed by:** the first public release. **Affects:** QA-13, `NOTICE`, README.
 
+**Owner (2026-10-25):** all rights stay with the owner; personal and other non-commercial use is
+allowed, commercial use is not, for now — the terms may change after the full release. Applied as
+the PolyForm Noncommercial License 1.0.0 ([LICENSE](../../LICENSE)) for code and assets alike;
+contributions are voluntary and licensed to the owner with the right to relicense
+([CONTRIBUTING.md](../../CONTRIBUTING.md)). The adapted RVO2 code keeps its Apache-2.0 notice in
+`NOTICE`.
+
 ### D-21 · Public release and name
 
 | Option | For | Against |

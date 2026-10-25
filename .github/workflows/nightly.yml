@@ -1,14 +1,17 @@
-# The slow GameTest batch and the determinism soak on Linux, nightly (M4 T12: moved out of the commit gate, which
-# had grown past its 20 minutes). Actions are pinned to the commit of the tag in the comment.
-name: nightly
+# The slow GameTest batch and the determinism soak on Linux (M4 T12: moved out of the commit gate, which had grown
+# past its 20 minutes). Since 2026-10-25 it no longer runs nightly: a maintainer starts it on a hand-in pull request
+# by adding the label `full-ci` (or by hand), so it runs once per reviewed milestone. The file keeps its old name.
+# Actions are pinned to the commit of the tag in the comment.
+name: full-ci
 
 on:
-  schedule:
-    - cron: '47 2 * * *'
+  pull_request:
+    branches: [main]
+    types: [labeled, synchronize]
   workflow_dispatch:
 
 concurrency:
-  group: nightly-${{ github.ref }}
+  group: full-ci-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -17,6 +20,7 @@ permissions:
 
 jobs:
   nightly:
+    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.draft == false && contains(github.event.pull_request.labels.*.name, 'full-ci'))
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:

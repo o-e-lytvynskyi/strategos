@@ -9,6 +9,25 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
+## 2026-10-26 — Docs: ready to go public (branch dev/claude-owner/public-readiness)
+
+- **Licence (D-07, the owner's word):** PolyForm Noncommercial 1.0.0 in LICENSE (the official text) with the
+  owner's Required Notice; `mod_license` set; CONTRIBUTING.md licenses contributions to the owner with the right to
+  relicense; ROADMAP, the M8 card and ADR-0005 record the decision. "Strategos" stays a working title.
+- **Security:** docs/security.md — untrusted input is data (prompt injection), outsiders' code built on CI first and
+  locally only after the owner read its build surface, dependencies, privacy, the GitHub settings for the owner;
+  AGENTS.md hard rules; CODEOWNERS on instruction and build files; SECURITY.md, CODE_OF_CONDUCT.md.
+- **Dependencies:** Dependabot (monthly, capped; NeoForge by hand), dependency review on dependency and workflow
+  changes (public only); verification metadata, SonarQube Cloud and CodeQL listed for later.
+- **CI on pull requests only:** `verify` on hand-ins (no pushes, no drafts), `full-ci` (was nightly) and `perf` by
+  label, a new `records` workflow for claims and roadmap checks. Tests are local until a milestone is done.
+- **Forks** equal developer branches at a lower priority (claims, reviews, outside claims accepted by the owner).
+- **STATE.md** rebuilt around milestones for parallel work (a Sonnet worker; spot-checked): "Now" folded into
+  "Milestones" and "CI and budgets"; settled items moved to History.
+- **README** rewritten; CONTRIBUTING.md; issue and pull request templates; Windows untested and the one-Mac baselines
+  stated in README, CONTRIBUTING and STATE. Personal paths scrubbed from the tree; a privacy rule for the future.
+- **Next:** the owner's GitHub settings (STATE item 1), then the visibility switch.
+
 ## 2026-10-25 (night) — Docs: assignment by pull request, the delegated review
 
 - **Assignment before development** — docs/claims.md is the registry; a claim is a pull request adding the

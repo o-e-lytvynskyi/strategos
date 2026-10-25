@@ -228,7 +228,7 @@ singleplayer; no pause in multiplayer at first. **Owner:** as recommended (2026-
 | D-24 Exploration in the MVP | M6 | (c) solo-grade fog: five cards, +9 card-days (with D-08) | [M2](roadmap/M2-command.md#d-24--exploration-in-the-mvp) | as recommended (2026-10-21) |
 | D-03 Civilisation themes | M7 (ART-03) | Antiquity if its art bill is accepted, else biome cultures (theme bundle) | [M3](roadmap/M3-first-loop.md#theme-bundle-d-03-d-04-d-05-d-10) | pending |
 | D-20 Multiplayer hosting | M7 | Dedicated servers first, Open to LAN supported | [M7](roadmap/M7-multiplayer.md#d-20--multiplayer-hosting) | pending |
-| D-07 Licence | first public release | MPL-2.0 for code; assets all rights reserved with modpack permission | [M8](roadmap/M8-fog-of-war.md#d-07--licence) | pending |
+| D-07 Licence | first public release | MPL-2.0 for code; assets all rights reserved with modpack permission | [M8](roadmap/M8-fog-of-war.md#d-07--licence) | decided by the owner (2026-10-25): PolyForm Noncommercial 1.0.0 until the full release |
 | D-21 Public release and name | first public release | Friends from M6; public alpha after M8; keep "Strategos" after the checks | [M8](roadmap/M8-fog-of-war.md#d-21--public-release-and-name) | pending |
 | D-06 Map generation | M12 | Seeded packages now; our own generator in M12 | [M12](roadmap/M12-maps-and-setup.md#d-06--map-generation-approach) | pending |
 

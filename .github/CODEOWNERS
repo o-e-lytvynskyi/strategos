@@ -1,0 +1,15 @@
+# Changes here need the owner's review (2026-10-25). Most of these paths are instructions or code that agents and CI
+# run with privileges: rules, procedures, worker roles, permissions, build scripts and workflows.
+*                       @o-e-lytvynskyi
+/AGENTS.md              @o-e-lytvynskyi
+/CLAUDE.md              @o-e-lytvynskyi
+/.claude/               @o-e-lytvynskyi
+/.github/               @o-e-lytvynskyi
+/build-logic/           @o-e-lytvynskyi
+/gradle/                @o-e-lytvynskyi
+/*.gradle               @o-e-lytvynskyi
+/gradle.properties      @o-e-lytvynskyi
+/tools/                 @o-e-lytvynskyi
+/LICENSE                @o-e-lytvynskyi
+/CONTRIBUTING.md        @o-e-lytvynskyi
+/docs/people.md         @o-e-lytvynskyi

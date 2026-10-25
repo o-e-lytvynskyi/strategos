@@ -15,7 +15,7 @@ The header's fields are read by `tools/claims.py`; keep their spelling. `Status`
 ```markdown
 # <work> on dev/<developer>/<work>
 
-**Developer:** <name> (<tool and model, e.g. Claude Code, Opus>) · **Branch:** dev/<developer>/<work> · **Work:** <M5 | M5 T1–T6 | M6 spec> · **Base:** <main @ commit | dev/... @ commit> · **Claimed:** <date> · **Status:** claimed
+**Developer:** <handle> (<tool and model, e.g. Claude Code, Opus>) · **Branch:** dev/<developer>/<work> (a fork: <login>/strategos:dev/<developer>/<work>) · **Work:** <M5 | M5 T1–T6 | M6 spec> · **Base:** <main @ commit | dev/... @ commit> · **Claimed:** <date> · **Status:** claimed
 
 ## Now
 
