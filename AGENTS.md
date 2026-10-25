@@ -15,7 +15,8 @@ Codex or another agent; `CLAUDE.md` imports it).
 | **Maintainer** | the owner, or a session the owner starts for it — never the session that did the work | accepts claim and release pull requests, reviews developer branches with delegated workers, keeps `main`'s records (STATE.md, worklog.md, claims.md), merges code on the owner's word ([strategos-maintain](.claude/skills/strategos-maintain/SKILL.md)) |
 | **Developer** | anyone with access: a person, or an agent session (Claude Code, Codex, other) — the owner's own agent sessions included | claims work, builds it on their own branch, hands it in for review ([strategos-dev](.claude/skills/strategos-dev/SKILL.md)) |
 
-Every developer is external, the owner's own agents too: the same claims, the same branch rules,
+Who holds each role: [docs/people.md](docs/people.md). Every developer is external, the owner's
+own agents too: the same claims, the same branch rules,
 the same review. That keeps the history transparent and the review objective.
 
 ## Start here (a developer session)

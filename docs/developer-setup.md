@@ -10,7 +10,7 @@ first. Every developer is external, the owner's own agent sessions included: the
 1. **Access:** the owner adds you as a collaborator on `o-e-lytvynskyi/strategos` (private); clone
    over SSH.
 2. **A handle:** a short lowercase name for your branches and branch files (`alex`; the owner's
-   Claude sessions use `claude-owner`).
+   Claude sessions use `claude-owner`), recorded in [people.md](people.md).
 3. **Toolchain:** JDK 21 (Gradle's toolchain resolver fetches it), Python 3, `gh` logged in for
    pull requests and CI reads. `./gradlew verifyFast` must pass on a fresh clone.
 4. **Read:** AGENTS.md, then the procedure `.claude/skills/strategos-dev/SKILL.md` (plain
@@ -30,7 +30,8 @@ Works out of the box: the repository carries everything.
 - **Model:** start the main session on Opus (`claude --model opus`, or `/model opus`); it is the
   orchestrator. The workers pick their own models (Sonnet, Haiku).
 - **Permissions:** the shared allowlist `.claude/settings.json` lets the work loop run in auto mode
-  and denies force pushes and discarding the working tree. Personal additions go to
+  (builds, `tools/*.py`, git, worktrees, `gh pr` and `gh run`) and denies force pushes and
+  discarding the working tree; it also starts sessions on Opus. Personal additions go to
   `.claude/settings.local.json` (ignored by git); never edit the shared file — propose changes in
   your branch file's "For the owner".
 - **Unattended runs:** say «продолжай» / "continue" (or `/loop` for a self-paced run); the skill
