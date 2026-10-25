@@ -51,9 +51,9 @@ claims and releases go through §3, code only through §4 and §5.
 
 ## 3. Claim and release pull requests («прими клеймы», or at every maintainer session)
 
-Records only, so the maintainer merges them without waiting for the owner's word (unless "Standing
-restrictions" says otherwise). Delegated whole to `runner`; the orchestrator reads its verdict and
-merges.
+Records only: the checks are delegated whole to `runner`, and the orchestrator prepares the
+verdict. The merge is still a human's: `gh pr merge` is an `ask` permission, so the person at the
+session approves each one, or merges it on GitHub (docs/security.md §1.5).
 
 1. `gh pr list --state open --search 'Claim: OR Release: in:title'`; collaborators' first, then
    forks', each oldest first — the first claim merged wins, and a collaborator's claim beats a
@@ -66,8 +66,8 @@ merges.
    request, or their comment on this one); a milestone claim's branch file has its "Depends on
    unfinished work" filled; a release comes from the holder, or carries the owner's
    word for a stale claim.
-4. All pass: a collaborator's claim is merged with `gh pr merge <n> --merge`; a fork's or an
-   outsider's (not in docs/people.md) only after the owner approves it on GitHub. Its `records`
+4. All pass: `gh pr merge <n> --merge`, which asks the person at the session; a fork's or an
+   outsider's claim (not in docs/people.md) only after the owner has looked at it on GitHub. Its `records`
    CI run must be green. Then tell the developer in the pull request to merge
    `origin/main` and start (`gh pr comment`).
 5. Any fails: a pull request comment with the reason (`gh pr comment <n> --body …`), no merge. An
@@ -141,8 +141,9 @@ Every change reaches `main` through its pull request (branch protection may enfo
    - STATE "For the owner": the items it raised — still open ones stay, answered ones go;
    - the branch file's header `Status: merged <date>`; the docs/claims.md row `done`, today.
    - Cards become `accepted` only on the owner's word after the demo, here or later.
-3. `gh pr merge <n> --merge` (a merge commit; never squash or rebase, so task commits stay
-   findable). Then `git switch main && git pull --ff-only`, and `./gradlew verify` on `main`.
+3. `gh pr merge <n> --merge` — the permission prompt is the owner's approval, or the owner merges on
+   GitHub (a merge commit; squash and rebase are off, so task commits stay findable). Never
+   `gh pr review --approve`: agents comment, people approve. Then `git switch main && git pull --ff-only`, and `./gradlew verify` on `main`.
 4. `git worktree remove ../strategos-review`. The branch stays until the owner deletes it.
 5. Stacked claims based on the merged branch: tell their developers, in their pull requests, to
    merge `origin/main`.

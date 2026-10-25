@@ -12,7 +12,7 @@ Codex or another agent; `CLAUDE.md` imports it).
 | Role | Who | Does |
 |---|---|---|
 | **Owner** | the repository's owner | product decisions, roadmap approvals, opening milestones for claims, the decisions kept for the owner below, and every merge into `main` |
-| **Maintainer** | the owner, or a session the owner starts for it — never the session that did the work | accepts claim and release pull requests, reviews developer branches with delegated workers, keeps `main`'s records (STATE.md, worklog.md, claims.md), merges code on the owner's word ([strategos-maintain](.claude/skills/strategos-maintain/SKILL.md)) |
+| **Maintainer** | the owner, or a session the owner starts for it — never the session that did the work | checks claim and release pull requests, reviews developer branches with delegated workers, keeps `main`'s records (STATE.md, worklog.md, claims.md), and prepares merges; **every merge and approval is a human's** (an `ask` permission, or on GitHub) ([strategos-maintain](.claude/skills/strategos-maintain/SKILL.md)) |
 | **Developer** | anyone with access: a person, or an agent session (Claude Code, Codex, other) — the owner's own agent sessions included | claims work, builds it on their own branch, hands it in for review ([strategos-dev](.claude/skills/strategos-dev/SKILL.md)) |
 
 Who holds each role: [docs/people.md](docs/people.md). Every developer is external, the owner's

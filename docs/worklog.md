@@ -9,6 +9,17 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
+## 2026-10-26 (later) — Docs: merges and approvals are a human's
+
+- **The owner caught it:** PR #4 had pre-allowed `gh pr merge`, `gh pr review` and `gh pr close`. An agent's `gh` is
+  logged in as its developer, so GitHub cannot tell their approval from the agent's: an unattended session could have
+  approved and merged in the owner's name, past the ruleset's owner bypass.
+- **Fixed in `.claude/settings.json`:** merge, close, edit, ready and the GitHub tools' merge, review and update moved
+  to `ask`; `gh pr review --approve`, the `gh api` reviews and merge endpoints, and pushes to `main` denied; review
+  comments stay allowed. security.md §1.5, strategos-maintain §3 and §5, AGENTS.md "Roles" and developer-setup R3
+  say it: agents comment, people approve and merge.
+- **Next:** the owner merges this pull request on GitHub, then switches the visibility.
+
 ## 2026-10-26 — Docs: ready to go public (branch dev/claude-owner/public-readiness)
 
 - **Licence (D-07, the owner's word):** PolyForm Noncommercial 1.0.0 in LICENSE (the official text) with the

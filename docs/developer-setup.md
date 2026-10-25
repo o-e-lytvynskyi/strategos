@@ -79,8 +79,9 @@ with a profile):
 
 Equivalent to `.claude/settings.json`: the work loop's commands run without prompts (`./gradlew`,
 `python3 tools/roadmap.py`, `python3 tools/claims.py`, `git` add/commit/push/fetch/merge/switch,
-`gh pr create|view|list|diff|checks|comment`, `gh run list|view`, `javap`, reads of `~/.gradle/caches`), and these are
-refused: force push, push to `main`, `git reset --hard`, `git clean`, discarding the working
+`gh pr create|view|list|diff|checks|comment`, `gh run list|view`, `javap`, reads of `~/.gradle/caches`), merging, closing, editing and marking pull requests ready ask a human each time; approving a
+pull request (`gh pr review --approve`, or the API) is refused for agents, since they act under
+the developer's GitHub identity; and these are refused too: force push, push to `main`, `git reset --hard`, `git clean`, discarding the working
 tree, deleting branches. Network access is needed for Gradle and `git push`.
 
 ### R4 — Branch discipline
