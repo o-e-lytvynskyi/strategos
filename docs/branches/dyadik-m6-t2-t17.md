@@ -1,14 +1,14 @@
 # m6-t2-t17 on dev/dyadik/m6-t2-t17
 
-**Developer:** dyadik (Claude Code, Opus) · **Branch:** dev/dyadik/m6-t2-t17 · **Work:** M6 T2–T17 · **Base:** main @ 1dae9fa · **Claimed:** 2026-10-25 · **Status:** claimed
+**Developer:** dyadik (Claude Code, Opus) · **Branch:** dev/dyadik/m6-t2-t17 · **Work:** M6 T2–T17 · **Base:** main @ 1dae9fa · **Claimed:** 2026-10-25 · **Status:** in progress
 
 ## Now
 
-- **Milestone:** M6 MVP: First skirmish, 0 of 27 tasks done; spec [M6-first-skirmish.md](../milestones/M6-first-skirmish.md).
-- **In progress:** none (the claim waits for «open M6 for claims» and a maintainer's merge).
+- **Milestone:** M6 MVP: First skirmish, 0 of 28 tasks done (T2 split into T2.1 and T2.2); spec [M6-first-skirmish.md](../milestones/M6-first-skirmish.md).
+- **In progress:** M6 T2.1 since 2026-10-25.
 - **Last finished task:** none.
-- **Next task:** M6 T2 · TECH-01, the research system.
-- **Merged from main last:** 1dae9fa (2026-10-25).
+- **Next task:** M6 T2.1 · TECH-01, the content.
+- **Merged from main last:** 0a7cc3b (2026-10-25).
 
 ## Depends on unfinished work
 
@@ -24,8 +24,10 @@ Newest first; one entry per session in the worklog's shape.
 
 ### 2026-10-25 — M6 T2–T17 claim
 
+- **Claim merged** — #17 (0a7cc3b), merged by the owner; its body asked for «open M6 for claims», and STATE's "Open for claims" is not yet updated (the maintainer's record). ADR-0025 is still Proposed: it blocks only T6's move rule.
+- **T2 split** into T2.1 (the content) and T2.2 (research) before work, from the implementation map: the spec's §1.6 rows 18–23 record what the code showed (queue entries, Village without a tech, stable tech ids, techs in the set's hash, modifiers at restore, the card's token lists).
 - **Claim** — M6 T2–T17, the part of M6 that needs nothing from M5, claimed after the M6 spec merged (#16). M6 is not yet in STATE "Open for claims": the claim asks the owner to open it. The developer's restriction for this session: no client windows; L4 runs go to the consent batch (T27).
-- **Next:** after the opening and the merge, T2.
+- **Next:** T2.1.
 
 ## For the owner
 

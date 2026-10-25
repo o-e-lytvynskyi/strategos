@@ -110,7 +110,7 @@ L0 (`verifyFast`: formatting, ErrorProne, NullAway, ArchUnit) holds for every ca
 
 | Card | Task | Checks (level) |
 |---|---|---|
-| TECH-01 | T2 | 1 `RequirementTest.theTable` (L1) · 2 `ResearchTest.aCompletedTechChangesStatsAtOnce`, `ResearchTest.theBreakdownNamesTheTech` (L1) · 3 `ResearchTest.onceAndInOneBuildingAtATime` (L1) · 4 `techtests.a_research_completes_and_applies` (L3) |
+| TECH-01 | T2.1, T2.2 | 1 `RequirementTest.theTable` (L1) · 2 `ResearchTest.aCompletedTechChangesStatsAtOnce`, `ResearchTest.theBreakdownNamesTheTech` (L1) · 3 `ResearchTest.onceAndInOneBuildingAtATime` (L1) · 4 `techtests.a_research_completes_and_applies` (L3) |
 | TECH-02 | T3 | 1 `PhaseTest.requirementsTable` (L1) · 2 `PhaseTest.townUnlocksExactlyItsList` (L1) · 3 `PhaseTest.townCostsStoneOrIron` (L1) · 4 `techtests.every_player_gets_the_phase_notice` (L3) |
 | TECH-03 | T18 | 1 `TechEffectTest.eachEffectEqualsItsModifier` (L1) · 2 `BalanceSheetTest` lists every technology and tier (L1) · 3 `techtests.a_tier_reaches_every_viewer_within_a_second` (L3) · 4 `m6_goldens` a spearman before and after (L4, T27) |
 | CMB-09 | T19 | 1 `SiegeTest.twoRamsRazeACentreInTheSheetTime`, `SiegeTest.torchesTakeFiveMinutesOnStone` (L1, row 14) · 2 `SiegeTest.ramsNeverAttackUnits` (L1) · 3 the engine-surface inventory lists `unit_large` with ADR-0011's settings (L2) · 4 `pathtests.rams_pass_only_gaps_that_fit` (L3) · L5: `runServerSmoke` spawns, saves and restores a ram |
@@ -143,7 +143,7 @@ None. The `strategos:ping` payload stays with multiplayer pings (UI-15, M7); UI-
 
 | # | Topic | Resolution |
 |---|---|---|
-| 1 | Phases | The architecture names no phase concept. A phase is a technology with the class `Phase` and an ordinal; a faction's phase is the highest phase researched; `phase_village` is researched by every faction at tick 0 (TECH-02's "phases as technologies") |
+| 1 | Phases | The architecture names no phase concept. A phase is a technology with the class `Phase` and an ordinal; a faction's phase is the highest phase researched, and `phase_village` is the phase of a faction that has researched none (row 19) |
 | 2 | Moves into the dark | 04 §7.3 and ADR-0014 ask positions "in explored area" for every command; scouting needs moves into the shroud. [ADR-0025](../adr/0025-commands-into-unexplored-cells.md) (Proposed) keeps the explored check for placement (`Placing`, `ClientPlacement`), node targets (`NOT_EXPLORED`) and the observer's footing (`CommanderService`, ADR-0023), and lets move, attack-move and rally points lie anywhere in the match space. T6 wires all of them and amends 04 §7.3 |
 | 3 | Pings | 04 §12.2 lists `ping` (C2S) for M7. UI-20's alert pings are drawn by the client from `match_event` alerts, so M6 adds no payload; UI-15 keeps `ping` |
 | 4 | AI think offset | 04 §4.5 says `(5 × i) mod 20`; the code (M3) wakes at `20k + 7 × ((faction + seed) mod factions)`. The code stands, and the think period becomes a per-level script value (§2.20); T22 corrects 04 §4.5 |
@@ -160,6 +160,12 @@ None. The `strategos:ping` payload stays with multiplayer pings (UI-15, M7); UI-
 | 15 | A player in no match | `FogGate.decide` shows every body to a player in no match (M1 spec §1.6 row 8: an operator watching the arena), unlike 04 §10.4's default. M6 keeps it: solo play has no such viewer, and the rule for non-participants comes with multiplayer (M7, M8). The no-holder fallback (`BodyEvents.canSee` → `decide(match, 0)`) keeps today's answer |
 | 16 | The victory cadence | `VictoryCheck` runs every tick in FINAL (M3), not every 20 ticks as 04 §4.5 has it; `CIVIC_CENTRE` keeps that. `CONQUEST`'s recount runs every 20 ticks at offset 13, clear of the AI's offsets 0 and 7 with two factions |
 | 17 | The WAVE notice | Stays as M3 sends it, to every participant of the match; the raid bar draws from it, and a viewer in another match gets none (AI-04.5) |
+| 18 | Tech entries in the queue (T2.2) | `BuildingStore`'s queue holds unit template net indices, and about ten readers (`Production`, `QueriesImpl`, `ReplicationService` and `BuildingState`, `ProductionManager`, the client's `SelectionPanel`, `RtsHud`, `CardController`) take an entry for a unit. A tech entry is a new entry kind in the nested `BuildingStore.Production` record (the `BUILDING` codec is at 16 fields too); every reader branches on it, and `building_state` carries the kind in one bit |
+| 19 | Village without a tech (T2.2, T3) | Researching `phase_village` at tick 0 would make `Progress` non-empty in every match and change every saved hash and journal. Village is the phase of a faction with no phase researched; `phase_village` stays a data entry for its name and icon, never queued |
+| 20 | Stable tech ids (T2.1) | A bitset over tech indices breaks when a reload reorders the techs. Techs get an append-only id table, as templates have (`ServerTemplates`), and `Progress` stores those ids |
+| 21 | Techs in the template set (T2.1) | Techs join the set's canonical JSON under the key `$techs`, which no template id can take, only when there are any, so sets without techs keep their hash; they travel in `TemplateSetView`, or a client would never ack the set and a journal with a `ContentSwap` would stop decoding |
+| 22 | Modifiers at restore (T2.2) | Nothing rebuilds `StatService` at restore today: `MatchState` starts it empty. T2.2 re-adds the researched techs' effects in `Snapshots`' restore before `Production.recount` (housing reads modified values) and in `MatchState.swapTemplates` after `stats.swap` |
+| 23 | The card's token lists (T15) | `CommandCard` reads a building's `Trainer/units` as raw template text, so a `TOKENS` unlock never shows on the card; T15 reads the effective lists. `CommandCard.QUEUE_MAX` (8) disagrees with `BuildingStore.QUEUE_MAX` (5); T15 makes them one |
 
 ### 1.7 Consent plan
 
@@ -187,7 +193,7 @@ While "Standing restrictions" forbids windows, T27 goes to the branch file's "Fo
 - **Data.** `strategos/techs/<id>.json`, loaded by `TemplateReloadListener` beside the templates (04 §8.4)
   into `TechDef` (`core.content`): `name`, `icon`, `classes`, `cost` (resources), `time` (seconds, rounded
   once to ticks), `requires` (a requirement tree), `supersedes` (a tech id), `effects` (DATA-02 modifiers,
-  `TOKENS` included). The `TemplateSet` hash covers the techs.
+  `TOKENS` included). The `TemplateSet` hash covers the techs (row 21); their ids are stable (row 20).
 - **Requirements.** `Requirement` is a sealed tree: `all[…]`, `any[…]`, `tech: <id>`, `phase: <name>`,
   `buildings: {filter: <classes>, count: n}` (own COMPLETE buildings matching a class filter). The pure
   `Requirements.evaluate(req, FactionView)` and `Requirements.checklist(req, FactionView)` (each leaf with
@@ -197,18 +203,18 @@ While "Standing restrictions" forbids windows, T27 goes to the branch file's "Fo
   faction; requirements met; the queue below `BuildingStore.QUEUE_MAX` (5); the cost paid at queue time.
   Reasons: `UNKNOWN_TEMPLATE` (no such tech), `LIMIT` (researched or pending), `REQUIREMENTS` (new, the last
   `RejectReason`), `QUEUE_FULL`, `NOT_ENOUGH_RESOURCES`. Unit batches and techs share the queue; the entry
-  kind is new in the queue's record and saved with it.
+  kind is new (row 18).
 - **Completion.** In ECONOMY, as a unit batch completes today (`Production`): the tech joins the faction's
   researched set, its effects join `StatService` with the tech as `sourceId`, a superseded tech's effects
   leave, `TechResearched(faction, tech)` is posted (the feed, the statistics). `StatsChanged` already updates
   every cached block and the breakdown names the source.
-- **Store.** `Progress` in `Play`: per faction a bitset over tech indices and the phase ordinal. At restore,
-  `StatService` is rebuilt from it (§0.3). A cancel (`CancelTrain` on a tech entry) refunds the cost and
+- **Store.** `Progress` in `Play`: per faction the researched techs by their stable ids (row 20). At restore,
+  `StatService` is rebuilt from it (§0.3, row 22). A cancel (`CancelTrain` on a tech entry) refunds the cost and
   clears the pending mark.
 
 ### 2.2 Phases (TECH-02, D-05)
 
-- `phase_village` (class `Phase`, ordinal 0): researched by every faction at tick 0, free. `phase_town`
+- `phase_village` (class `Phase`, ordinal 0) is the phase of a faction with no phase researched (row 19). `phase_town`
   (ordinal 1) at the civic centre: starting cost 500 food, 500 wood, 300 stone, 200 iron, 60 s; requires
   `buildings: {filter: Village, count: 5}`, with the class `Village` added to the M4 set's houses,
   storehouse, farmstead and barracks. The numbers are sheet rows; T23 tunes them against QA-12.
@@ -545,7 +551,7 @@ population (R8).
 
 ### 7.1 Order
 
-T1 → T2 (TECH-01) → T3 (TECH-02) → T4 (MATCH-03) → T5 (FOW-01) → T6 (FOW-07 server) → T7 (FOW-07 client) → T8
+T1 → T2.1, T2.2 (TECH-01) → T3 (TECH-02) → T4 (MATCH-03) → T5 (FOW-01) → T6 (FOW-07 server) → T7 (FOW-07 client) → T8
 (UI-16) → T9 (AI-18) → T10 (MATCH-07) → T11 (MATCH-14) → T12 (MAP-02) → T13 (MATCH-02) → T14 (UI-21) → T15
 (UI-13) → T16 (UI-20) → T17 (UI-14) → T18 (TECH-03) → T19 (CMB-09) → T20 (BLD-17) → T21 (AI-04) → T22 (AI-05)
 → T23 (QA-12) → T24 (PERF-09) → T25 (the demo and the playtest) → T27 (the consent batch) → T28 (QA-13 and the
@@ -565,13 +571,21 @@ kernel adds `:core:jmh :core:jmhCompare`.
 - **AFTER-M5:** M5's close lists its follow-ups (procedure §7.2); they become this task's content, split if
   over L. **Depends:** M5 closed. **Size:** set from M5's close. **Verification:** `verify verifySlow`.
 
-#### T2 · TECH-01
-- §2.1; `Research` (31), `REQUIREMENTS`; the `Progress` store; one sample tech for the tests.
-  **Depends:** — . **Size:** L. **Verification:** the card's checks; `:core:jmhCompare` (`StatService`'s
-  cached lookup stays under 50 ns).
+#### T2.1 · TECH-01, the content
+- §2.1's data: `TechDef`, `Requirement`, `Requirements` (`core.content`); `strategos/techs/` loaded beside the
+  templates; the techs in the set's hash and in `TemplateSetView` (row 21); the stable id table (row 20); one
+  sample tech (`gather_wood_1` at the storehouse) in `BuiltinTemplates` and the data pack, with its provenance;
+  the lint's icon check. Split from T2 (procedure §3.7). **Depends:** — . **Size:** M. **Verification:**
+  check 1 (`RequirementTest`); `BundledTemplatesTest`, `BalanceSheetTest`, `TemplateSetPayloadSizeTest`.
+
+#### T2.2 · TECH-01, research
+- §2.1's rules: `Research` (31), `REQUIREMENTS`; the tech entry kind and its readers (row 18); completion,
+  cancel and refund; `Progress` in `Play`, saved and hashed; `StatService` re-derived at restore and at a
+  swap (row 22); `TechResearched` and its applier. **Depends:** T2.1. **Size:** L. **Verification:** checks
+  2–4; `:core:jmh :core:jmhCompare` (`StatService`'s cached lookup under 50 ns).
 
 #### T3 · TECH-02
-- §2.2; the `Village` class on the M4 set; the PHASE event. **Depends:** T2. **Size:** M. **Verification:**
+- §2.2; the `Village` class on the M4 set; the PHASE event. **Depends:** T2.2. **Size:** M. **Verification:**
   the card's checks; `:core:balanceSheet`.
 
 #### T4 · MATCH-03
@@ -678,7 +692,7 @@ kernel adds `:core:jmh :core:jmhCompare`.
 
 ### 7.3 Progress
 
-- [ ] T2 · [ ] T3 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11 · [ ] T12
+- [ ] T2.1 · [ ] T2.2 · [ ] T3 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11 · [ ] T12
 - [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17 · [ ] T1 · [ ] T18 · [ ] T19 · [ ] T20 · [ ] T21
 - [ ] T22 · [ ] T23 · [ ] T24 · [ ] T25 · [ ] T27 · [ ] T28
 
