@@ -62,7 +62,7 @@ only our documents and the decompiled vanilla and NeoForge sources were read.*
   verification command is green, `./gradlew spotlessApply` leaves no diff, no ErrorProne or
   NullAway findings, the task checkbox in §9 is ticked, STATE.md says where M0 stands, and any
   new pitfall is written to
-  `/Users/oleksandrlytvynskyi/work/pet_projects/.claude/kb/minecraft-mod.md` in the same session.
+  `~/work/pet_projects/.claude/kb/minecraft-mod.md` in the same session.
 
 ### 0.3 Code conventions
 

@@ -1,0 +1,18 @@
+# Dependency updates (2026-10-25). Monthly and capped, so its pull requests do not crowd the review queue or the
+# runner minutes; every update is a pull request reviewed like any other. Minecraft, NeoForge and ModDevGradle are
+# pinned on purpose (docs/02-tooling.md) and are not bumped automatically.
+version: 2
+updates:
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+    ignore:
+      - dependency-name: "net.neoforged*"
+      - dependency-name: "net.neoforged:*"
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 2

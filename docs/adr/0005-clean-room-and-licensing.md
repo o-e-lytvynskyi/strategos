@@ -19,9 +19,10 @@ Accepted
   problematic ([research/mechanics.md §3](../research/mechanics.md)).
 - **Some prior art may be read.** i113w Camera Lib, Freecam, Better Mine Team, MineFortress and
   PathWeaver are MIT, and RVO2 is Apache-2.0.
-- **Strategos's own licence is the owner's decision D-07** (the recommendation is MPL-2.0 for
-  code, assets all rights reserved with permission for modpacks). The repository stays private
-  until then.
+- **Strategos's own licence is the owner's decision D-07** (the recommendation was MPL-2.0 for
+  code, assets all rights reserved with permission for modpacks). **Decided 2026-10-25:** the
+  PolyForm Noncommercial License 1.0.0 ([LICENSE](../../LICENSE)) until the full release; the
+  clean-room rule is unchanged and keeps every later option open.
 
 ## Decision
 

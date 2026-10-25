@@ -48,7 +48,7 @@ Research date: 2026-10-20. An independent fact-check ran the same day; see "Veri
   - Maven metadata from NeoForge, Maven Central, the Gradle Plugin Portal, maven.createmod.net, maven.gegy.dev and Cloudsmith;
   - GitHub, for repository licences, activity and releases.
 - **API claims** come from two kinds of source:
-  - The decompiled Minecraft 1.21.1 + NeoForge 21.1.262 reference sources at `/private/tmp/claude-501/-Users-oleksandrlytvynskyi-work-pet-projects-minecraft/ee58a1af-b4f8-4282-b3ae-c341fb060cea/scratchpad/mc-src-1.21.1`, read-only.
+  - The decompiled Minecraft 1.21.1 + NeoForge 21.1.262 reference sources at `<scratchpad>/mc-src-1.21.1`, read-only.
   - Upstream source at the 1.21.1 tag or branch for:
     - [Sodium](https://github.com/CaffeineMC/sodium/releases/tag/mc1.21.1-0.8.13) (`mc1.21.1-0.8.13`);
     - [Iris](https://github.com/IrisShaders/Iris/tree/1.21.1) (`1.21.1`);

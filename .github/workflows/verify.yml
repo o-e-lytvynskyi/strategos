@@ -1,17 +1,18 @@
-# The commit gate on Linux (M0 T18, QA-08). Actions are pinned to the commit of the tag in the comment.
+# The hand-in gate on Linux (M0 T18, QA-08). Since 2026-10-25 CI runs on pull requests to main only, never on
+# pushes: tests during a milestone are local, and a hand-in pull request (not a draft) is where CI checks the work, so
+# no contributor's branch pushes spend the runner minutes. Actions are pinned to the commit of the tag in the comment.
 name: verify
 
 on:
-  push:
-    branches: [main]
-    paths-ignore: ['docs/**', '**/*.md', '.claude/**', 'tools/**']
   pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
     paths-ignore: ['docs/**', '**/*.md', '.claude/**', 'tools/**']
   workflow_dispatch:
 
-# GitHub Free gives a private repository 2,000 Linux minutes a month: a newer push cancels the older run.
+# A newer push to the same pull request cancels the older run.
 concurrency:
-  group: verify-${{ github.ref }}
+  group: verify-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -20,6 +21,7 @@ permissions:
 
 jobs:
   verify:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.draft == false
     runs-on: ubuntu-24.04
     # M4 grew verify past 20 minutes with the slow batch and the soak in it; those run nightly now (nightly.yml)
     timeout-minutes: 25
@@ -37,6 +39,8 @@ jobs:
         run: ./gradlew --console=plain --max-workers=2 verify
       - name: Test results (L1, L2, L3, L5)
         if: always()
+        # A fork's token cannot write checks; the artifact below still carries the reports.
+        continue-on-error: ${{ github.event.pull_request.head.repo.fork == true }}
         uses: mikepenz/action-junit-report@6ef3fdcfcd5f0b5d14df3e659ef19b8c6820f93d # v6.6.1
         with:
           report_paths: '**/build/test-results/**/TEST-*.xml'

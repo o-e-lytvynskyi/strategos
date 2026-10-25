@@ -7,8 +7,9 @@ first. Every developer is external, the owner's own agent sessions included: the
 
 ## 1. Everyone
 
-1. **Access:** the owner adds you as a collaborator on `o-e-lytvynskyi/strategos` (private); clone
-   over SSH.
+1. **Access:** fork the repository on GitHub and clone your fork; or, if the owner made you a
+   collaborator, clone `o-e-lytvynskyi/strategos` directly. Forks follow the same procedure at a
+   lower priority ([CONTRIBUTING.md](../CONTRIBUTING.md) "Collaborators and forks").
 2. **A handle:** a short lowercase name for your branches and branch files (`alex`; the owner's
    Claude sessions use `claude-owner`), recorded in [people.md](people.md).
 3. **Toolchain:** JDK 21 (Gradle's toolchain resolver fetches it), Python 3, `gh` logged in for
