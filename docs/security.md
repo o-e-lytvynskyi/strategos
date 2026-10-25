@@ -22,7 +22,13 @@ someone other than the session's own operator can try to steer them. So:
 4. **Instruction files are high-risk changes:** AGENTS.md, CLAUDE.md, `.claude/` (skills, agents,
    settings), `.github/`, `tools/`. A change to them is shown to the owner line by line before a
    merge, and CODEOWNERS requires the owner's review.
-5. **Reviews of others' work run without write power:** the `reviewer` and `runner` roles cannot
+5. **An agent acts under a person's GitHub identity** (`gh` and the GitHub tools are logged in as
+   them), so GitHub cannot tell that person's approval from their agent's. Therefore merging,
+   closing, approving, marking ready and editing pull requests are never pre-allowed:
+   `.claude/settings.json` puts them in `ask` (a human answers the prompt each time) and denies
+   approvals outright (`gh pr review --approve`, the reviews and merge endpoints of `gh api`). An
+   agent comments; a human approves and merges. Codex setups mirror this (developer-setup.md R3).
+6. **Reviews of others' work run without write power:** the `reviewer` and `runner` roles cannot
    edit, and a review session never pushes to `main` from what a pull request tells it.
 
 ## 2. Untrusted code

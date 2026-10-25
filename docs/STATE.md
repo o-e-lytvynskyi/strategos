@@ -217,7 +217,7 @@ Nothing.
     (`tools/claims.py check` refuses overlaps and takeovers without the holder's approval), work is built on
     `dev/<developer>/<work>` and handed in as a pull request with the milestone report, reviewed by another session
     with delegated workers (`strategos-maintain` §4) and merged on the owner's «влей»; claim and release pull requests
-    are records accepted by any maintainer session without the owner's word («прими клеймы»); the main session
+    are records a maintainer session checks («прими клеймы»; since 2026-10-26 a human still approves each merge); the main session
     orchestrates on Opus and delegates to Sonnet and Haiku workers, a **demo** roster ([agents.md](agents.md)), roles
     change by pull request and leave demo on trial evidence; windows, recommended decisions, subagents, any test and no
     pauses are allowed by default, with reports after every milestone; context economy is a rule; the Minecraft and
