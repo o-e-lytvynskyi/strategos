@@ -1,0 +1,9 @@
+{
+  "name": "strategos.tech.gather_wood_1",
+  "icon": "minecraft:iron_axe",
+  "cost": { "food": 100, "wood": 50 },
+  "time": 30,
+  "effects": [
+    { "path": "ResourceGatherer/rates/wood/tree", "op": "mul", "value": 1.2, "filter": "Worker" }
+  ]
+}

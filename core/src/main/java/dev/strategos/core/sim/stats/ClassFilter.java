@@ -1,6 +1,7 @@
 package dev.strategos.core.sim.stats;
 
 import dev.strategos.core.content.ClassTokens;
+import dev.strategos.core.content.StatSyntax;
 import java.util.Arrays;
 
 /**
@@ -57,16 +58,8 @@ public final class ClassFilter {
 
     /** Throws on a malformed filter: an empty term, as in {@code "A++B"} or {@code "+A"}, or a bare {@code "!"}. */
     static void check(String filter) {
-        if (filter.isBlank()) {
-            return;
-        }
-        for (String clause : filter.trim().split("\\s+", -1)) {
-            for (String term : clause.split("\\+", -1)) {
-                String token = term.startsWith("!") ? term.substring(1) : term;
-                if (token.isEmpty() || token.startsWith("!")) {
-                    throw new IllegalArgumentException("malformed class filter '" + filter + "'");
-                }
-            }
+        if (!StatSyntax.validFilter(filter)) {
+            throw new IllegalArgumentException("malformed class filter '" + filter + "'");
         }
     }
 

@@ -4,5 +4,6 @@
   "Building": { "blueprint": "strategos:storehouse" },
   "Health": { "max": 800 },
   "Cost": { "resources": { "wood": 100, "stone": 50 }, "time": 40 },
-  "Dropsite": { "resources": "wood stone iron" }
+  "Dropsite": { "resources": "wood stone iron" },
+  "Researcher": { "techs": "strategos:gather_wood_1" }
 }

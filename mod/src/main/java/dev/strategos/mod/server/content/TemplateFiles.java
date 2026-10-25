@@ -6,8 +6,10 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.mojang.serialization.DynamicOps;
 import dev.strategos.core.content.Blueprint;
+import dev.strategos.core.content.RawTech;
 import dev.strategos.core.content.RawTemplate;
 import dev.strategos.core.content.TemplateProblem;
+import dev.strategos.core.shared.TechId;
 import dev.strategos.core.shared.TemplateId;
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,6 +35,9 @@ import net.neoforged.neoforge.common.conditions.ICondition;
  */
 public final class TemplateFiles {
     public static final String DIRECTORY = "strategos/templates";
+    /** The technologies (TECH-01): {@code data/<namespace>/strategos/techs/**.json}, id {@code <namespace>:<path>}. */
+    public static final String TECHS = "strategos/techs";
+
     private static final String SUFFIX = ".json";
 
     private TemplateFiles() {}
@@ -46,11 +51,13 @@ public final class TemplateFiles {
      */
     public record Read(
             Map<ResourceLocation, JsonElement> files,
+            Map<ResourceLocation, JsonElement> techs,
             Map<String, CompoundTag> blueprints,
             List<TemplateProblem> problems) {}
 
     public static Read read(ResourceManager resources) {
         Map<ResourceLocation, JsonElement> files = new TreeMap<>();
+        Map<ResourceLocation, JsonElement> techs = new TreeMap<>();
         Map<String, CompoundTag> blueprints = new TreeMap<>();
         List<TemplateProblem> problems = new ArrayList<>();
         for (Map.Entry<ResourceLocation, Resource> e : resources
@@ -75,7 +82,17 @@ public final class TemplateFiles {
                 problems.add(TemplateProblem.error(file(at), "", "does not parse: " + ex.getMessage()));
             }
         }
-        return new Read(files, blueprints, problems);
+        for (Map.Entry<ResourceLocation, Resource> e : resources
+                .listResources(TECHS, at -> at.getPath().endsWith(SUFFIX))
+                .entrySet()) {
+            ResourceLocation at = e.getKey();
+            try (Reader reader = e.getValue().openAsReader()) {
+                techs.put(at, JsonParser.parseReader(reader));
+            } catch (IOException | JsonParseException ex) {
+                problems.add(TemplateProblem.error(file(at), "", "does not parse: " + ex.getMessage()));
+            }
+        }
+        return new Read(files, techs, blueprints, problems);
     }
 
     /** The blueprints of {@code read}; one that does not parse is a problem naming its file. */
@@ -118,6 +135,34 @@ public final class TemplateFiles {
                 continue;
             }
             raws.add(new RawTemplate(id, file(at), json));
+        }
+        return raws;
+    }
+
+    /** The technologies of {@code read} whose conditions hold, as {@link #raws} keeps templates. */
+    public static List<RawTech> rawTechs(Read read, DynamicOps<JsonElement> ops, List<TemplateProblem> problems) {
+        List<RawTech> raws = new ArrayList<>();
+        for (Map.Entry<ResourceLocation, JsonElement> e : read.techs().entrySet()) {
+            ResourceLocation at = e.getKey();
+            if (!e.getValue().isJsonObject()) {
+                problems.add(TemplateProblem.error(file(at), "", "a tech is a JSON object"));
+                continue;
+            }
+            JsonObject json = e.getValue().getAsJsonObject().deepCopy();
+            if (!ICondition.conditionsMatched(ops, json)) {
+                continue;
+            }
+            json.remove(ConditionalOps.DEFAULT_CONDITIONS_KEY);
+            String path =
+                    at.getPath().substring(TECHS.length() + 1, at.getPath().length() - SUFFIX.length());
+            TechId id;
+            try {
+                id = new TechId(at.getNamespace() + ":" + path);
+            } catch (IllegalArgumentException ex) {
+                problems.add(TemplateProblem.error(file(at), "", String.valueOf(ex.getMessage())));
+                continue;
+            }
+            raws.add(new RawTech(id, file(at), json));
         }
         return raws;
     }

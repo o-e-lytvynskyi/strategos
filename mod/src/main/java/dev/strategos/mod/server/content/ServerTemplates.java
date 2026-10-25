@@ -1,7 +1,9 @@
 package dev.strategos.mod.server.content;
 
 import dev.strategos.core.content.Blueprint;
+import dev.strategos.core.content.RawTech;
 import dev.strategos.core.content.RawTemplate;
+import dev.strategos.core.content.TechIdTable;
 import dev.strategos.core.content.TemplateCompiler;
 import dev.strategos.core.content.TemplateIdTable;
 import dev.strategos.core.content.TemplateProblem;
@@ -27,6 +29,7 @@ import org.jspecify.annotations.Nullable;
  */
 public final class ServerTemplates {
     private TemplateSet set = TemplateSet.builtin();
+    private TechIdTable techTable = TechIdTable.EMPTY;
     private TemplateIdTable table = new TemplateIdTable(
             TemplateSet.builtin().all().stream().map(UnitTemplate::id).toList());
     private List<TemplateProblem> problems = List.of();
@@ -42,6 +45,11 @@ public final class ServerTemplates {
 
     public TemplateIdTable table() {
         return table;
+    }
+
+    /** The session's append-only tech ids (row 20), kept across reloads as {@link #table()} is. */
+    public TechIdTable techTable() {
+        return techTable;
     }
 
     /** The last load's problems: its errors when it was refused, its warnings when not. */
@@ -69,8 +77,19 @@ public final class ServerTemplates {
             RegistryAccess registries,
             Collection<MatchRuntime> matches,
             Map<String, Blueprint> blueprints) {
+        return load(raws, List.of(), readProblems, registries, matches, blueprints);
+    }
+
+    /** As above, with the technologies of the packs (TECH-01). */
+    public Outcome load(
+            List<RawTemplate> raws,
+            List<RawTech> techs,
+            List<TemplateProblem> readProblems,
+            RegistryAccess registries,
+            Collection<MatchRuntime> matches,
+            Map<String, Blueprint> blueprints) {
         loads++;
-        TemplateCompiler.Result result = TemplateCompiler.compile(raws, table, blueprints);
+        TemplateCompiler.Result result = TemplateCompiler.compile(raws, techs, table, techTable, blueprints);
         List<TemplateProblem> found = new ArrayList<>(readProblems);
         found.addAll(result.problems());
         found.addAll(TemplateLint.check(result.set(), registries, t -> fileOf(raws, t)));
@@ -87,6 +106,7 @@ public final class ServerTemplates {
         }
         set = result.set();
         table = result.table();
+        techTable = result.techTable();
         problems = List.copyOf(found);
         outcome = "loaded " + set + " from " + raws.size() + " files";
         for (MatchRuntime rt : matches) {

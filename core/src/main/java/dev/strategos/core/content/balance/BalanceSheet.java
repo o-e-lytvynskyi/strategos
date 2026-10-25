@@ -5,6 +5,8 @@ import com.google.gson.JsonObject;
 import dev.strategos.core.content.CorePaths;
 import dev.strategos.core.content.Derivation;
 import dev.strategos.core.content.RawTemplate;
+import dev.strategos.core.content.TechDef;
+import dev.strategos.core.content.TechEffect;
 import dev.strategos.core.content.TemplateCompiler;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.UnitTemplate;
@@ -173,6 +175,18 @@ public final class BalanceSheet {
             sheet.yields.add(y);
             sheet.yieldNotes.add(note == null ? "" : note);
         }
+        for (TechDef tech :
+                result.set().techs()) { // a tech's numbers need notes, keyed by its id; the sheet has no rows for them
+            for (String path : techNumbers(tech)) {
+                String note = provenance
+                        .getOrDefault(tech.id().value(), Collections.emptyMap())
+                        .get(path);
+                used.computeIfAbsent(tech.id().value(), a -> new TreeSet<>()).add(path);
+                if (note == null || note.isBlank()) {
+                    sheet.problems.add("tech " + tech.id() + " " + path + ": no provenance note");
+                }
+            }
+        }
         provenance.forEach((template, notes) -> notes.keySet().forEach(key -> {
             if (!used.getOrDefault(template, new TreeSet<>()).contains(key)) {
                 sheet.problems.add("provenance names " + template + " " + key + ", which sets no number there");
@@ -186,6 +200,19 @@ public final class BalanceSheet {
             }
         });
         return sheet;
+    }
+
+    /** The paths of a tech's numbers: {@code cost/<resource>}, {@code time} and {@code effects/<n>/value}. */
+    private static List<String> techNumbers(TechDef tech) {
+        List<String> paths = new ArrayList<>();
+        new TreeMap<>(tech.cost()).keySet().forEach(r -> paths.add("cost/" + r));
+        paths.add("time");
+        for (int i = 0; i < tech.effects().size(); i++) {
+            if (tech.effects().get(i).op() != TechEffect.Op.TOKENS) {
+                paths.add("effects/" + i + "/value");
+            }
+        }
+        return paths;
     }
 
     public List<Row> rows() {

@@ -4,6 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import dev.strategos.core.shared.TechId;
 import dev.strategos.core.shared.TemplateId;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -36,7 +37,17 @@ public final class TemplateCompiler {
             Map<TemplateId, JsonObject> flattened,
             List<TemplateProblem> problems,
             TemplateIdTable table,
-            List<Derivation> derivations) {
+            List<Derivation> derivations,
+            TechIdTable techTable) {
+        public Result(
+                TemplateSet set,
+                Map<TemplateId, JsonObject> flattened,
+                List<TemplateProblem> problems,
+                TemplateIdTable table,
+                List<Derivation> derivations) {
+            this(set, flattened, problems, table, derivations, TechIdTable.EMPTY);
+        }
+
         public boolean ok() {
             return problems.stream().noneMatch(p -> p.severity() == TemplateProblem.Severity.ERROR);
         }
@@ -44,6 +55,9 @@ public final class TemplateCompiler {
 
     /** A flattened template with its net index: a journal's or a client's copy of a set. */
     public record Flat(TemplateId id, int netIndex, JsonObject json) {}
+
+    /** A technology as a journal's or a client's copy holds it: its net index and its JSON. */
+    public record TechFlat(TechId id, int netIndex, JsonObject json) {}
 
     /** Compiles with a fresh id table: net indices in id order. */
     public static Result compile(List<RawTemplate> raws) {
@@ -61,6 +75,19 @@ public final class TemplateCompiler {
      * {@code blueprints} supplies it, and its JSON joins the flattened template under {@code Blueprint} (BLD-01).
      */
     public static Result compile(List<RawTemplate> raws, TemplateIdTable table, Map<String, Blueprint> blueprints) {
+        return compile(raws, List.of(), table, TechIdTable.EMPTY, blueprints);
+    }
+
+    /**
+     * As above, with the technologies (TECH-01): each holds its index in {@code techTable}, a new one is appended (row
+     * 20), and a tech whose {@code requires} or {@code supersedes} names a tech that does not exist is an error.
+     */
+    public static Result compile(
+            List<RawTemplate> raws,
+            List<RawTech> rawTechs,
+            TemplateIdTable table,
+            TechIdTable techTable,
+            Map<String, Blueprint> blueprints) {
         List<TemplateProblem> problems = new ArrayList<>();
         Map<String, RawTemplate> byId = new TreeMap<>();
         for (RawTemplate raw : raws) {
@@ -118,12 +145,35 @@ public final class TemplateCompiler {
                 unitJson.add(json);
             }
         }
+        List<TechDef> drafts = new ArrayList<>();
+        Map<String, RawTech> techById = new TreeMap<>();
+        for (RawTech raw : rawTechs) {
+            RawTech previous = techById.put(raw.id().value(), raw);
+            if (previous != null) {
+                problems.add(TemplateProblem.error(
+                        raw.file(), "", "tech " + raw.id() + " is also defined in " + previous.file()));
+            }
+        }
+        for (RawTech raw : techById.values()) {
+            TechDef def = TechDef.fromJson(raw.id(), 0, raw.json(), raw.file(), problems);
+            if (def != null) {
+                drafts.add(def);
+            }
+        }
+        drafts = checkTechRefs(
+                drafts,
+                techById.keySet(),
+                id -> Objects.requireNonNull(techById.get(id.value())).file(),
+                problems);
+        TechIdTable techNext = techTable.with(drafts.stream().map(TechDef::id).toList());
+        List<TechDef> techs = placed(drafts, techNext);
         TemplateIdTable next = table.with(units.stream().map(UnitTemplate::id).toList());
         List<Flat> flats = new ArrayList<>();
         for (int k = 0; k < units.size(); k++) {
             flats.add(new Flat(units.get(k).id(), next.indexOf(units.get(k).id()), unitJson.get(k)));
         }
-        return new Result(set(flats, units), flattened, List.copyOf(problems), next, List.copyOf(derivations));
+        return new Result(
+                set(flats, units, techs), flattened, List.copyOf(problems), next, List.copyOf(derivations), techNext);
     }
 
     /**
@@ -131,6 +181,11 @@ public final class TemplateCompiler {
      * client's copy. The problems name each template by its id.
      */
     public static Result fromFlattened(List<Flat> flats) {
+        return fromFlattened(flats, List.of());
+    }
+
+    /** As above, with the technologies of the copy (TECH-01), so the set has the sha it had. */
+    public static Result fromFlattened(List<Flat> flats, List<TechFlat> techFlats) {
         List<TemplateProblem> problems = new ArrayList<>();
         List<UnitTemplate> units = new ArrayList<>();
         List<Flat> kept = new ArrayList<>();
@@ -153,11 +208,73 @@ public final class TemplateCompiler {
                     .findFirst()
                     .orElse(new TemplateId("strategos:retired/" + k)));
         }
-        return new Result(set(kept, units), flattened, List.copyOf(problems), new TemplateIdTable(ids), List.of());
+        List<TechDef> drafts = new ArrayList<>();
+        Map<String, TechFlat> declared = new TreeMap<>();
+        for (TechFlat f : techFlats) {
+            declared.put(f.id().value(), f);
+            TechDef def = TechDef.fromJson(f.id(), f.netIndex(), f.json(), f.id().value(), problems);
+            if (def != null) {
+                drafts.add(def);
+            }
+        }
+        drafts = checkTechRefs(drafts, declared.keySet(), id -> id.value(), problems);
+        drafts.sort((a, b) -> Integer.compare(a.netIndex(), b.netIndex()));
+        int techTop = drafts.stream().mapToInt(TechDef::netIndex).max().orElse(-1);
+        List<TechId> techIds = new ArrayList<>();
+        for (int k = 0; k <= techTop; k++) {
+            int index = k;
+            techIds.add(drafts.stream()
+                    .filter(d -> d.netIndex() == index)
+                    .map(TechDef::id)
+                    .findFirst()
+                    .orElse(new TechId("strategos:retired/" + k)));
+        }
+        return new Result(
+                set(kept, units, drafts),
+                flattened,
+                List.copyOf(problems),
+                new TemplateIdTable(ids),
+                List.of(),
+                new TechIdTable(techIds));
+    }
+
+    /** The techs whose {@code requires} and {@code supersedes} name techs that exist; the others are errors. */
+    private static List<TechDef> checkTechRefs(
+            List<TechDef> techs,
+            Set<String> declared,
+            java.util.function.Function<TechId, String> files,
+            List<TemplateProblem> problems) {
+        List<TechDef> kept = new ArrayList<>();
+        for (TechDef t : techs) {
+            String file = files.apply(t.id());
+            int before = problems.size();
+            t.requires().techLeaves("/requires", (ref, pointer) -> {
+                if (!declared.contains(ref.value())) {
+                    problems.add(TemplateProblem.error(file, pointer, "unknown tech '" + ref + "'"));
+                }
+            });
+            if (t.supersedes() != null && !declared.contains(t.supersedes().value())) {
+                problems.add(TemplateProblem.error(file, "/supersedes", "unknown tech '" + t.supersedes() + "'"));
+            }
+            if (problems.size() == before) {
+                kept.add(t);
+            }
+        }
+        return kept;
+    }
+
+    /** The techs at their indices in {@code table}, ascending. */
+    private static List<TechDef> placed(List<TechDef> drafts, TechIdTable table) {
+        List<TechDef> out = new ArrayList<>();
+        for (TechDef d : drafts) {
+            out.add(d.atIndex(table.indexOf(d.id())));
+        }
+        out.sort((a, b) -> Integer.compare(a.netIndex(), b.netIndex()));
+        return out;
     }
 
     /** The decoded units at their flats' net indices, ascending. */
-    private static TemplateSet set(List<Flat> flats, List<UnitTemplate> units) {
+    private static TemplateSet set(List<Flat> flats, List<UnitTemplate> units, List<TechDef> techs) {
         List<Integer> order = new ArrayList<>();
         for (int k = 0; k < flats.size(); k++) {
             order.add(k);
@@ -170,7 +287,7 @@ public final class TemplateCompiler {
             placed.add(units.get(k).atIndex(flats.get(k).netIndex()));
             json.add(flats.get(k).json());
         }
-        return new TemplateSet(placed, json);
+        return new TemplateSet(placed, json, techs);
     }
 
     /** The ids some template lists as a mixin: they are overlays, never compiled on their own. */

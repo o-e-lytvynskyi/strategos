@@ -3,6 +3,7 @@ package dev.strategos.mod;
 import com.google.gson.JsonElement;
 import com.mojang.serialization.JsonOps;
 import dev.strategos.core.content.Blueprint;
+import dev.strategos.core.content.RawTech;
 import dev.strategos.core.content.RawTemplate;
 import dev.strategos.core.content.TemplateProblem;
 import dev.strategos.core.port.JobExecutor;
@@ -178,13 +179,16 @@ public final class StrategosServer {
      * running match; the outcome is logged, and told to the operators online.
      */
     public ServerTemplates.Outcome loadTemplates(List<RawTemplate> raws, List<TemplateProblem> problems) {
-        return loadTemplates(raws, problems, packBlueprints(problems));
+        return loadTemplates(raws, packTechs(problems), problems, packBlueprints(problems));
     }
 
-    /** As {@link #loadTemplates(List, List)}, with the blueprints the reload read (BLD-01). */
+    /** As {@link #loadTemplates(List, List)}, with the blueprints and the technologies the reload read (BLD-01, TECH-01). */
     public ServerTemplates.Outcome loadTemplates(
-            List<RawTemplate> raws, List<TemplateProblem> problems, Map<String, Blueprint> blueprints) {
-        return report(templates.load(raws, problems, server.registryAccess(), matches.all(), blueprints));
+            List<RawTemplate> raws,
+            List<RawTech> techs,
+            List<TemplateProblem> problems,
+            Map<String, Blueprint> blueprints) {
+        return report(templates.load(raws, techs, problems, server.registryAccess(), matches.all(), blueprints));
     }
 
     /** The blueprints of the loaded data packs, read now on this thread. */
@@ -241,7 +245,17 @@ public final class StrategosServer {
     private void loadTemplatesAtStart() {
         List<TemplateProblem> problems = new ArrayList<>();
         report(templates.load(
-                packTemplates(problems), problems, server.registryAccess(), List.of(), packBlueprints(problems)));
+                packTemplates(problems),
+                packTechs(problems),
+                problems,
+                server.registryAccess(),
+                List.of(),
+                packBlueprints(problems)));
+    }
+
+    /** The technologies of the loaded data packs, read now on this thread. */
+    public List<RawTech> packTechs(List<TemplateProblem> problems) {
+        return TemplateFiles.rawTechs(TemplateFiles.read(server.getResourceManager()), conditionalOps(), problems);
     }
 
     /** The templates of the loaded data packs, read now on this thread; the problems of the files go to {@code problems}. */

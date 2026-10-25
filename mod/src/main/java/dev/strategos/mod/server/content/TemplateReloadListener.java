@@ -1,5 +1,6 @@
 package dev.strategos.mod.server.content;
 
+import dev.strategos.core.content.RawTech;
 import dev.strategos.core.content.RawTemplate;
 import dev.strategos.core.content.TemplateProblem;
 import dev.strategos.mod.StrategosServer;
@@ -38,6 +39,7 @@ public final class TemplateReloadListener extends SimplePreparableReloadListener
         }
         List<TemplateProblem> problems = new ArrayList<>(read.problems());
         List<RawTemplate> raws = TemplateFiles.raws(read, makeConditionalOps(), problems);
-        server.loadTemplates(raws, problems, TemplateFiles.blueprints(read, problems));
+        List<RawTech> techs = TemplateFiles.rawTechs(read, makeConditionalOps(), problems);
+        server.loadTemplates(raws, techs, problems, TemplateFiles.blueprints(read, problems));
     }
 }

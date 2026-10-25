@@ -166,6 +166,7 @@ None. The `strategos:ping` payload stays with multiplayer pings (UI-15, M7); UI-
 | 21 | Techs in the template set (T2.1) | Techs join the set's canonical JSON under the key `$techs`, which no template id can take, only when there are any, so sets without techs keep their hash; they travel in `TemplateSetView`, or a client would never ack the set and a journal with a `ContentSwap` would stop decoding |
 | 22 | Modifiers at restore (T2.2) | Nothing rebuilds `StatService` at restore today: `MatchState` starts it empty. T2.2 re-adds the researched techs' effects in `Snapshots`' restore before `Production.recount` (housing reads modified values) and in `MatchState.swapTemplates` after `stats.swap` |
 | 23 | The card's token lists (T15) | `CommandCard` reads a building's `Trainer/units` as raw template text, so a `TOKENS` unlock never shows on the card; T15 reads the effective lists. `CommandCard.QUEUE_MAX` (8) disagrees with `BuildingStore.QUEUE_MAX` (5); T15 makes them one |
+| 24 | A view's techs on the wire (T2.1) | A journal's inputs are read back to back with no framing, so `TemplateSetView` cannot tell a trailing tech section by the bytes left. A view with techs writes its version with the suffix `+t`, which a hex version never has, then the techs; a view without them writes the old bytes exactly, so every journal and client of M0–M5 reads as before |
 
 ### 1.7 Consent plan
 
@@ -692,7 +693,7 @@ kernel adds `:core:jmh :core:jmhCompare`.
 
 ### 7.3 Progress
 
-- [ ] T2.1 · [ ] T2.2 · [ ] T3 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11 · [ ] T12
+- [x] T2.1 (2026-10-25) · [ ] T2.2 · [ ] T3 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11 · [ ] T12
 - [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17 · [ ] T1 · [ ] T18 · [ ] T19 · [ ] T20 · [ ] T21
 - [ ] T22 · [ ] T23 · [ ] T24 · [ ] T25 · [ ] T27 · [ ] T28
 

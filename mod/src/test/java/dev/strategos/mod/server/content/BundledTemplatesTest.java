@@ -3,11 +3,14 @@ package dev.strategos.mod.server.content;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.mojang.serialization.JsonOps;
+import dev.strategos.core.content.RawTech;
 import dev.strategos.core.content.RawTemplate;
+import dev.strategos.core.content.TechIdTable;
 import dev.strategos.core.content.TemplateCompiler;
 import dev.strategos.core.content.TemplateIdTable;
 import dev.strategos.core.content.TemplateProblem;
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.shared.TechId;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -93,6 +96,28 @@ class BundledTemplatesTest {
 
     private record Loaded(List<RawTemplate> raws, TemplateCompiler.Result result, List<TemplateProblem> problems) {}
 
+    @Test
+    void theBundledTechsAreReadFromTheTechsDirectoryAndAnUnknownRequirementIsReported(@TempDir Path pack)
+            throws IOException {
+        Loaded bundled = load(resourceRoot());
+        assertThat(bundled.result.set().techs())
+                .extracting(t -> t.id().value())
+                .containsExactly("strategos:gather_wood_1");
+
+        Path tech = pack.resolve("data/test/strategos/techs/forge/anvils.json");
+        Files.createDirectories(tech.getParent());
+        Files.writeString(
+                tech, "{ \"icon\": \"minecraft:anvil\", \"time\": 10, \"requires\": { \"tech\": \"test:nothing\" } }");
+
+        Loaded loaded = load(pack);
+
+        assertThat(loaded.result.set().tech(new TechId("test:forge/anvils"))).isNull();
+        assertThat(loaded.problems)
+                .extracting(TemplateProblem::file, TemplateProblem::pointer)
+                .contains(org.assertj.core.groups.Tuple.tuple(
+                        "data/test/strategos/techs/forge/anvils.json", "/requires/tech"));
+    }
+
     /** What the listener's prepare and apply make of a pack at {@code root}, linted as the server lints. */
     private static Loaded load(Path root) {
         PathPackResources pack = new PathPackResources(
@@ -101,8 +126,9 @@ class BundledTemplatesTest {
             TemplateFiles.Read read = new TemplateReloadListener().prepare(resources, null);
             List<TemplateProblem> problems = new ArrayList<>(read.problems());
             List<RawTemplate> raws = TemplateFiles.raws(read, JsonOps.INSTANCE, problems);
-            TemplateCompiler.Result result =
-                    TemplateCompiler.compile(raws, TemplateIdTable.EMPTY, TemplateFiles.blueprints(read, problems));
+            List<RawTech> techs = TemplateFiles.rawTechs(read, JsonOps.INSTANCE, problems);
+            TemplateCompiler.Result result = TemplateCompiler.compile(
+                    raws, techs, TemplateIdTable.EMPTY, TechIdTable.EMPTY, TemplateFiles.blueprints(read, problems));
             problems.addAll(result.problems());
             problems.addAll(TemplateLint.check(result.set(), REGISTRIES, t -> t.id().value()));
             return new Loaded(raws, result, problems);

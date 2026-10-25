@@ -2,6 +2,7 @@ package dev.strategos.core.content;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import dev.strategos.core.shared.TechId;
 import dev.strategos.core.shared.TemplateId;
 import java.util.List;
 
@@ -189,7 +190,20 @@ final class BuiltinTemplates {
               "Building": { "blueprint": "strategos:storehouse" },
               "Health": { "max": 800 },
               "Cost": { "resources": { "wood": 100, "stone": 50 }, "time": 40 },
-              "Dropsite": { "resources": "wood stone iron" }
+              "Dropsite": { "resources": "wood stone iron" },
+              "Researcher": { "techs": "strategos:gather_wood_1" }
+            }
+            """;
+
+    static final String GATHER_WOOD_1 = """
+            {
+              "name": "strategos.tech.gather_wood_1",
+              "icon": "minecraft:iron_axe",
+              "cost": { "food": 100, "wood": 50 },
+              "time": 30,
+              "effects": [
+                { "path": "ResourceGatherer/rates/wood/tree", "op": "mul", "value": 1.2, "filter": "Worker" }
+              ]
             }
             """;
 
@@ -283,7 +297,13 @@ final class BuiltinTemplates {
                         raw("strategos:building/quarry_large", QUARRY_LARGE),
                         raw("strategos:building/iron_mine", IRON_MINE),
                         raw("strategos:building/iron_mine_large", IRON_MINE_LARGE)),
-                PINNED);
+                List.of(new RawTech(
+                        new TechId("strategos:gather_wood_1"),
+                        "builtin/techs/gather_wood_1.json",
+                        JsonParser.parseString(GATHER_WOOD_1).getAsJsonObject())),
+                PINNED,
+                TechIdTable.EMPTY,
+                PlaceholderBlueprints.byId());
         if (!result.ok()) {
             throw new IllegalStateException("the builtin templates do not compile: " + result.problems());
         }

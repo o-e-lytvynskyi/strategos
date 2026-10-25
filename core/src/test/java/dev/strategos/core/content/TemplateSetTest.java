@@ -3,6 +3,9 @@ package dev.strategos.core.content;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import dev.strategos.core.shared.TechId;
 import dev.strategos.core.shared.TemplateId;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -61,6 +64,66 @@ class TemplateSetTest {
     }
 
     @Test
+    void aSetWithoutTechsKeepsItsVersion() {
+        UnitTemplate walker = TemplateSet.builtin().byIndex(0);
+        assertThat(new TemplateSet(List.of(walker)).version())
+                .as("no $techs key without techs: pinned before TECH-01")
+                .isEqualTo(WALKER_ONLY_VERSION);
+    }
+
+    @Test
+    void theBuiltinSetCarriesTheSampleTechAndTheStorehouseResearchesIt() {
+        TemplateSet set = TemplateSet.builtin();
+        TechDef tech = set.tech(new TechId("strategos:gather_wood_1"));
+
+        assertThat(tech).isNotNull();
+        assertThat(set.techs()).containsExactly(tech);
+        assertThat(set.techByIndex(0)).isSameAs(tech);
+        assertThat(tech.cost()).isEqualTo(java.util.Map.of("food", 100.0, "wood", 50.0));
+        assertThat(tech.ticks()).isEqualTo(600);
+        JsonObject storehouse = set.flattened(new TemplateId("strategos:building/storehouse"));
+        assertThat(storehouse.getAsJsonObject("Researcher").get("techs").getAsString())
+                .isEqualTo("strategos:gather_wood_1");
+        double rate = set.value(
+                set.byId(TemplateSet.WORKER).netIndex(),
+                set.valuePaths().byPath("ResourceGatherer/rates/wood/tree").id());
+        assertThat(rate).as("the path the tech's effect names exists").isEqualTo(0.6);
+    }
+
+    @Test
+    void techsChangeTheShaOnlyWhenThereAreAny() {
+        UnitTemplate walker = TemplateSet.builtin().byIndex(0);
+        TemplateSet plain = new TemplateSet(List.of(walker));
+        assertThat(TemplateCompiler.compile(List.of()).set().version())
+                .as("no techs, no $techs key: the same version as a set from code with no templates")
+                .isEqualTo(new TemplateSet(List.of()).version());
+        assertThat(plain.techs()).isEmpty();
+        TemplateSet one = oneTech("{\"icon\":\"i\",\"time\":5}");
+        TemplateSet other = oneTech("{\"icon\":\"i\",\"time\":6}");
+        assertThat(one.version()).isNotEqualTo(TemplateSet.builtin().version());
+        assertThat(one.version()).isNotEqualTo(other.version());
+        assertThat(oneTech("{\"icon\":\"i\",\"time\":5}").version()).isEqualTo(one.version());
+        assertThat(TemplateSet.builtin().version())
+                .as("the builtin set has the sample tech")
+                .isNotEqualTo(BUILTIN_VERSION_BEFORE_TECH_01);
+    }
+
+    private static TemplateSet oneTech(String json) {
+        TemplateSet builtin = TemplateSet.builtin();
+        List<TemplateCompiler.Flat> flats = new java.util.ArrayList<>();
+        for (UnitTemplate t : builtin.all()) {
+            flats.add(new TemplateCompiler.Flat(t.id(), t.netIndex(), builtin.flattened(t.id())));
+        }
+        return TemplateCompiler.fromFlattened(
+                        flats,
+                        List.of(new TemplateCompiler.TechFlat(
+                                new TechId("t:axes"),
+                                0,
+                                JsonParser.parseString(json).getAsJsonObject())))
+                .set();
+    }
+
+    @Test
     void everyFieldChangesTheHash() {
         long base = set(new UnitTemplate(TemplateSet.DEBUG_WALKER, 0, "strategos:unit_humanoid", 0.25, 0.6f, 1.8f))
                 .hash();
@@ -103,8 +166,13 @@ class TemplateSetTest {
         assertThatThrownBy(() -> TemplateSet.builtin().byIndex(16)).isInstanceOf(IllegalArgumentException.class);
     }
 
-    // M4: the farmstead's reach (ECO-17)
-    private static final String BUILTIN_VERSION = "b4dc5f372084f6e585991b46f0a5dd964000c22e094206ad5f375e00ac042c1c";
+    private static final String BUILTIN_VERSION_BEFORE_TECH_01 =
+            "b4dc5f372084f6e585991b46f0a5dd964000c22e094206ad5f375e00ac042c1c";
+    private static final String WALKER_ONLY_VERSION =
+            "cfc4f608c6cf312b24f35c8ab6595a3bcb624646d479a3796a67281f600c7f53";
+
+    // M4: the farmstead's reach (ECO-17); M6 T2.1: the storehouse's Researcher and the tech gather_wood_1 (TECH-01)
+    private static final String BUILTIN_VERSION = "3f019e6660e60db502c566312c1d7850af933c7c1ba35f1bb2070a9c82d25c71";
 
     private static TemplateSet set(UnitTemplate template) {
         return new TemplateSet(List.of(template));
