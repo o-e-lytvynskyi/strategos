@@ -1,14 +1,14 @@
 # m6-spec on dev/dyadik/m6-spec
 
-**Developer:** dyadik (Claude Code, Opus) · **Branch:** dev/dyadik/m6-spec · **Work:** M6 spec · **Base:** main @ 046f021 · **Claimed:** 2026-10-25 · **Status:** claimed
+**Developer:** dyadik (Claude Code, Opus) · **Branch:** dev/dyadik/m6-spec · **Work:** M6 spec · **Base:** main @ 046f021 · **Claimed:** 2026-10-25 · **Status:** in progress
 
 ## Now
 
 - **Milestone:** M6 MVP: First skirmish, the implementation spec (planning); 23 approved cards, no spec yet; target docs/milestones/M6-first-skirmish.md.
-- **In progress:** none (the claim waits for a maintainer's merge).
+- **In progress:** M6 spec since 2026-10-25.
 - **Last finished task:** none.
 - **Next task:** M6 spec · write docs/milestones/M6-first-skirmish.md from the cards in docs/roadmap/M6-first-skirmish.md, the M5 spec and the architecture.
-- **Merged from main last:** 046f021 (2026-10-25).
+- **Merged from main last:** cb18b94 (2026-10-25).
 
 ## Depends on unfinished work
 
@@ -24,8 +24,9 @@ Newest first; one entry per session in the worklog's shape.
 
 ### 2026-10-25 — M6 spec claim
 
+- **Claim merged** — PR #11 (f723161); `origin/main` merged at cb18b94.
 - **Claim** — M6 spec claimed as a collaborator; dependencies on M5 assessed above. The developer's restriction for this session: no client windows; window runs go into the spec's consent batch.
-- **Next:** after the merge, merge `origin/main`, set `Status: in progress`, write the spec.
+- **Next:** write docs/milestones/M6-first-skirmish.md.
 
 ## For the owner
 
@@ -33,7 +34,7 @@ Newest first; one entry per session in the worklog's shape.
 
 ## Decisions taken
 
-- 2026-10-25 · Handle `dyadik` for GitHub @dyadik9616 — short, lowercase, used on every claim — rename the handle in people.md, claims.md and this file before the merge.
+- 2026-10-25 · Handle `dyadik` for GitHub @dyadik9616, kept after the procedure moved to handles equal to GitHub logins (6c4db24) — the owner merged the claim and people.md with `dyadik`, and a rename means a new branch and a new claim — rename on the next claim if the owner asks.
 
 ## Pitfalls
 
