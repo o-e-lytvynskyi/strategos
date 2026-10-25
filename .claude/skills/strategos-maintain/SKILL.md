@@ -59,21 +59,24 @@ code reaches `main` only through §4.
 5. Check the records: `tools/roadmap.py check`; spec "Progress" against the commits; every `done`
    card's evidence exists; the branch file's log matches the commits; new kb entries are general
    facts, not project decisions.
-6. Check the hard rules a reviewer may miss: new runtime dependencies (`gradle/libs.versions.toml`,
+6. **Agent roster changes** in the branch (`.claude/agents/`, docs/agents.md): each new or
+   changed role cites its trial; a role set to `stable` has the trials docs/agents.md "Role
+   status" requires, in the branch files; developer-setup.md R2 matches.
+7. Check the hard rules a reviewer may miss: new runtime dependencies (`gradle/libs.versions.toml`,
    `NOTICE`), `.claude/settings.json` untouched, no tool traces in commit messages (`git log
    --format=%B main..origin/<branch> | grep -i -E 'co-authored|generated with|claude|codex'`).
-7. Write the verdict into the branch file's "Review" (on the branch, commit `Mx: review <date>`)
+8. Write the verdict into the branch file's "Review" (on the branch, commit `Mx: review <date>`)
    and as a pull request comment, and a numbered "For the owner" item on `main`: findings by
    severity, gate results with numbers, the "Decisions taken" the owner may want to veto, a
    recommendation — merge / merge after fixes / back to the developer.
-8. **Fixes.** On the owner's «с правками»: fix on the branch in the review worktree, commit
+9. **Fixes.** On the owner's «с правками»: fix on the branch in the review worktree, commit
    `Mx Tn: review fix — <what>`, push the branch, note it in the pull request. Without it, the
    findings go back to the developer.
 
 ## 4. Merge («влей <branch>», only on the owner's word)
 
 1. If `main` moved since the validation, merge `origin/main` into the branch in the review
-   worktree, re-run step 3.3's gate, push the branch.
+   worktree, re-run §3 step 3's gate, push the branch.
 2. On `main`: `git merge --no-ff origin/<branch> -m "Mx: merge <branch> after review"`.
 3. In the same merge, before committing it (`git merge --no-commit` first), fold the branch file
    into `main`'s records:

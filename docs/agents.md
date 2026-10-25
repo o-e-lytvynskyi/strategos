@@ -7,7 +7,8 @@ Adopted 2026-10-25.
 
 > **Status: demo.** The roster below is a first version, written before any trial. Roles,
 > models, contracts and the split itself are expected to be improved, reworked or replaced as
-> real tasks show what works; changes follow the `new-agent` skill and are recorded here.
+> real tasks show what works. Each role's status is in "Role status" below; changes go by pull
+> request ("Changing the roster").
 
 ## Tiers
 
@@ -67,3 +68,38 @@ so the worker does not rediscover it.
   (`strategos-maintain` §3), from a session that did not build the branch.
 - Every gate of the Definition of Done runs as before; delegation changes who reads the log, not
   what must pass.
+
+## Role status
+
+| Role | Status | Trials passed | Since |
+|---|---|---|---|
+| `implementer` | demo | 0 of 3 | 2026-10-25 |
+| `reviewer` | demo | 0 of 3 | 2026-10-25 |
+| `runner` | demo | 0 of 3 | 2026-10-25 |
+| `api-lookup` | demo | 0 of 3 | 2026-10-25 |
+| `recorder` | demo | 0 of 3 | 2026-10-25 |
+
+A trial is one real use on claimed work, logged in the branch file's "Decisions taken" as
+`trial <role>: pass | fail — <why>`. It passes when the worker stayed in its brief's scope, its
+return kept its format and limit, the orchestrator could act on the return without re-reading
+what the worker read, and the result was right (the orchestrator re-ran or read it).
+
+## Changing the roster
+
+Any developer may add a role, change one, or take one out of demo — always by pull request on
+their own branch (a claim such as `dev/<you>/agents-<role>`), reviewed and merged like code. The
+procedure is the `new-agent` skill.
+
+- **A new or changed role:** the role file in `.claude/agents/`, its row in "The roster" and in
+  "Role status" (a changed contract resets its trials), its row in
+  [developer-setup.md](developer-setup.md) R2; the trial that justified it, in the pull request.
+- **Out of demo — decided by the developer's agent itself:** when a role has passed three trials
+  in a row on at least two different tasks with no fail since its last contract change, the agent
+  may set it to `stable` without asking: the "Role status" row, the demo line removed from the
+  role file, the trials cited, a "Decisions taken" line. It lands through the pull request; the
+  review checks the cited trials.
+- **Back to demo or retired:** a failed trial on a `stable` role sets it back to `demo` with the
+  fix; a role unused for a whole milestone, or always overridden by its brief, is removed.
+- A Codex-only role follows the same path; Claude's roster gets the matching file so both tools
+  keep parity.
+

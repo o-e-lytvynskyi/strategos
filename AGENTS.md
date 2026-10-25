@@ -39,7 +39,8 @@ push your branch, repeat until a stop condition; then report.
 | Roles, feature lifecycle, statuses and evidence, autonomous sessions | [docs/03-design-process.md](docs/03-design-process.md) |
 | Engine, toolchain and simulation pitfalls already paid for | [docs/kb/README.md](docs/kb/README.md) |
 | Delegating to smaller models: roles, briefs, the roster | [docs/agents.md](docs/agents.md) |
-| Setting up as a developer (Claude Code, Codex) | [docs/developer-setup.md](docs/developer-setup.md) |
+| Joining the project: tools, approach, claim to merge, reports — for any AI tool or none | [docs/onboarding.md](docs/onboarding.md) |
+| Setting up your tool (Claude Code, Codex) | [docs/developer-setup.md](docs/developer-setup.md) |
 | What is realistic, risks, MVP | [docs/01-feasibility.md](docs/01-feasibility.md) |
 | Evidence: engine facts, prior art, mechanics | [docs/research/README.md](docs/research/README.md) |
 | The current milestone's implementation spec | `docs/milestones/` |
@@ -89,8 +90,10 @@ section until lifted.
 - **Still the owner's:** anything public (licence, release, repository visibility), money,
   roadmap scope beyond the approved cards (a proposal in "For the owner"), opening a milestone for
   claims, merging into `main`, and the open product decisions listed in STATE.md.
-- **No pauses for reports.** Report only when a stop condition of the procedure holds. Progress
-  lives in the repository (branch file, commits), not in chat.
+- **Reports: after every milestone, not after every task.** A milestone (epic) ends with a
+  mandatory report — the hand-in pull request's body, also posted in chat — and work goes on
+  without waiting. Tasks (T) are documented in the repository (spec, cards, branch file), never
+  reported one by one. A session that stops says why. No other pauses.
 - **No questions with a sensible default.** Ask only what blocks all remaining ready work.
 
 ## Client windows (a real Minecraft client)
@@ -131,7 +134,9 @@ The strongest model orchestrates; routine work goes to smaller ones. The roles, 
 what never to delegate and the roster per tool are in [docs/agents.md](docs/agents.md). Workers
 never commit, push, or edit records; the orchestrator reads every worker's diff before it is
 committed. **The current roster is a demo** (2026-10-25): expect it to be improved, reworked or
-replaced as trials show what works.
+replaced as trials show what works. Any developer may add, change or retire a role, and their
+agent may take a role out of demo on its own when the role meets the criteria in docs/agents.md —
+always on their branch, landing by pull request like code.
 
 ## Developers and claims
 

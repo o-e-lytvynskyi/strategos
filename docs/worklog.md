@@ -9,6 +9,18 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
+## 2026-10-25 (evening) — Docs: onboarding, the roster by pull request, reports per milestone
+
+- **Onboarding** — docs/onboarding.md for any developer, whatever AI tool or none: the project, tools and everyday
+  commands, the approach, working with an agent, claim to merge, reports, a first-day list. developer-setup.md keeps
+  the tool-specific part; README and AGENTS.md link both.
+- **The roster by pull request** — docs/agents.md "Role status" (all five `demo`, 0 of 3 trials) and "Changing the
+  roster": any developer adds or changes roles on their branch; their agent may take a role out of demo itself after
+  three passed trials on two tasks, through the pull request; the maintainer's validation checks the trials.
+- **Reports** — a mandatory milestone report at every hand-in (the pull request's body, also in chat, no pause);
+  tasks are documented, never reported one by one (AGENTS.md, procedure §11).
+- **Next:** the owner's word on M5 (item 21) and the allowlist (item 24).
+
 ## 2026-10-25 (later) — Docs: every developer external, claims, the knowledge base moved in
 
 - **Roles and claims** — AGENTS.md: owner, maintainer, developers; every developer is external, the owner's own

@@ -166,8 +166,11 @@ approved roadmap; ideas go to "For the owner" as proposals.
    - risky changes (architecture, `@HotPath`, payloads, over ~500 lines) to `reviewer` before
      the commit.
 
-   Read every worker's diff before committing it. Multi-agent workflows stay rare: they burn
-   the usage quota. A standing «без субагентов» means all of this is done inline.
+   Read every worker's diff before committing it. Log each use as a trial in your branch file's
+   "Decisions taken" (`trial <role>: pass | fail — <why>`, criteria in docs/agents.md "Role
+   status"); improving a role, adding one or taking one out of demo follows the `new-agent`
+   skill, on your branch, by pull request. Multi-agent workflows stay rare: they burn the usage
+   quota. A standing «без субагентов» means all of this is done inline.
 
 ## 4. Write a milestone spec (a `<m>-spec` claim)
 
@@ -230,7 +233,8 @@ edit STATE.md or worklog.md: the maintainer folds your branch file into them at 
 - **Never commit a red task:** the gate of §3.5 passes first.
 - **Unfinished work** (the session must end mid-task): commit it as `WIP Mx Tn: <state>`, push,
   and say so in "Now". The next session finishes it and the task's own commit follows.
-- **Then go back to §2.** Report (§11) only when a stop condition (§8) holds.
+- **Then go back to §2.** Tasks are documented (§5), not reported; reports follow §11: after
+  every milestone, and when a stop condition (§8) holds.
 
 ## 7. Close a milestone (on your branch)
 
@@ -247,7 +251,7 @@ edit STATE.md or worklog.md: the maintainer folds your branch file into them at 
    the steps, and the new demo chapters as `-Pdemo=m<x>`, §7a); the consent batch, if windows
    were restricted; baselines and goldens you took as "Decisions taken"; «open M(x+1)», if its
    spec is ready.
-5. Hand in (§12).
+5. Hand in (§12), with the milestone report (§11.1) as the pull request's body.
 
 ## 7a. Show the demo (someone asks to see the mechanics)
 
@@ -318,10 +322,26 @@ maintainer lifts open items into STATE.md, where the answers land.
 | Approval | `changed` cards and anything AGENTS.md keeps for the owner |
 | Proposal | Ideas that would add scope |
 
-## 11. Report (end of session)
+## 11. Reports
+
+Reports go in the language of whoever runs the session. There are exactly two kinds; a finished
+task (T) is documented in the repository (§5) and never reported on its own.
+
+### 11.1 The milestone report (mandatory, after every milestone or other claim handed in)
+
+Written at the hand-in (§12) as the pull request's body, copied into the branch file's log, and
+posted in chat; then work continues with the next claim — no pause, no waiting for an answer:
+- **Built:** the milestone, its cards and their statuses;
+- **Gates:** `verify`, `verifySlow`, `verifySoak`, `jmhCompare`, L4 — results with numbers and times;
+- **Deviations:** spec findings, refinements, cut or deferred scope;
+- **Decisions taken:** each with how to undo it, and the agent trials;
+- **For the owner:** the numbered items, the demo with exact steps;
+- **Links:** the pull request, the branch file, the spec's "Results".
+
+### 11.2 The stop report (when a stop condition holds)
 
 First delete the lock (`rm -f .session.lock`): nothing runs after the final message. Then report
-briefly, in the language of whoever runs the session:
+briefly:
 - **Done:** tasks and cards, with numbers.
 - **The state of your branch:** green or red; handed in or not; the pull request.
 - **What is next.**
@@ -339,8 +359,8 @@ briefly, in the language of whoever runs the session:
    - the branch file's header `Status: ready for review`, "Now" final, commit `Mx: hand in
      <work>`, push;
    - open a pull request to `main`: `gh pr create --base main --head <branch> --title "<work>:
-     <summary>" --body-file <scratchpad file>` (or the web UI), the body summarising the branch
-     file: what was built, gates with numbers, "Decisions taken", "For the owner". CI runs on it;
+     <summary>" --body-file <scratchpad file>` (or the web UI); the body is the milestone report
+     (§11.1), also posted in chat. CI runs on it;
    - then go back to §2 and claim the next work; stack it on this branch if it depends on it.
 2. **Review findings** arrive in the branch file's "Review" and in the pull request: fix them on
    the branch (`Mx Tn: review fix — <what>`), push, and say so in the pull request.

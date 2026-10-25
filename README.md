@@ -25,6 +25,9 @@ since 2026-10-22. The roadmap is approved up to the first playable version (M0â€
 | [docs/03-design-process.md](docs/03-design-process.md) | How the project is designed and built |
 | [docs/04-architecture.md](docs/04-architecture.md) | Architecture; decisions in [docs/adr/](docs/adr/README.md) |
 | [docs/05-testing.md](docs/05-testing.md) | Test levels, commands, Definition of Done |
+| [docs/onboarding.md](docs/onboarding.md) | Joining as a developer: tools, approach, claim to merge, reports |
+| [docs/developer-setup.md](docs/developer-setup.md) | Setting up Claude Code or Codex for the project |
+| [AGENTS.md](AGENTS.md) | The rules every developer and coding agent follows |
 | [docs/research/](docs/research/README.md) | The research behind the decisions |
 
 ## Platform

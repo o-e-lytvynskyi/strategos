@@ -1,8 +1,9 @@
 # Developer setup
 
-How a developer — a person with Claude Code, Codex or another agent — joins Strategos. Every
-developer is external, the owner's own agent sessions included: the same rules (AGENTS.md), the
-same claims, the same review. Written 2026-10-25.
+Tool-specific setup for a developer with Claude Code, Codex or another agent. The tool-neutral
+part — tools, approach, claim to merge, reports — is [onboarding.md](onboarding.md); read it
+first. Every developer is external, the owner's own agent sessions included: the same rules
+(AGENTS.md), the same claims, the same review. Written 2026-10-25.
 
 ## 1. Everyone
 
@@ -61,6 +62,8 @@ with a profile):
 | `recorder` | C | the smallest model | low | spec Progress, cards, the branch file | `.claude/agents/recorder.md` |
 
 - The roster is a demo (docs/agents.md): expect roles to change; the table here follows them.
+  A Codex developer may propose new roles or changes, and take a role out of demo on the
+  criteria there — by pull request, like any developer.
 - Each role's instructions are the **body** of its Claude file (below the frontmatter), copied or
   referenced verbatim, so both tools share one contract. The frontmatter maps to Codex settings:
   `model` → the tier's model, `effort` → reasoning effort, `disallowedTools` → the role's sandbox

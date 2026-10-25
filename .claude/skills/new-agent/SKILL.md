@@ -75,7 +75,10 @@ Workers never spawn agents (`Agent` is always in `disallowedTools`).
 - `docs/agents.md` "The roster": a row (role, tier, use, returns).
 - `docs/developer-setup.md`: the same role in the Codex roster table (R2), so the other tool keeps
   parity.
-- The commit: `Docs: add the <name> agent`, with the trial's outcome in the message body.
+- `docs/agents.md` "Role status": a `demo` row with the trial counted.
+- The commit: `Docs: add the <name> agent`, with the trial's outcome in the message body — on
+  your own branch, never on `main`: roster changes reach `main` only by pull request
+  (docs/agents.md "Changing the roster").
 - If it changes how a session works (a new step in the loop), update the `strategos-dev` skill.
 
 ## Changing or retiring an agent
@@ -83,3 +86,12 @@ Workers never spawn agents (`Agent` is always in `disallowedTools`).
 Same evidence bar: a change follows a trial that showed the problem; an agent unused for a whole
 milestone, or always overridden by its brief, is removed from `.claude/agents/`, `docs/agents.md`
 and `docs/developer-setup.md` in one commit.
+
+## Taking a role out of demo
+
+You may decide this yourself, without asking, when docs/agents.md "Role status" shows three
+passed trials in a row on at least two different tasks and no fail since the role's last contract
+change. Then, on your branch: set the row to `stable`, remove the "Demo roster" line from the role
+file, add a "Decisions taken" line citing the trials, and let it go in with the branch's pull
+request. A failed trial later sets it back to `demo`.
+
