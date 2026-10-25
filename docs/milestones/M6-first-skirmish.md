@@ -160,13 +160,17 @@ None. The `strategos:ping` payload stays with multiplayer pings (UI-15, M7); UI-
 | 15 | A player in no match | `FogGate.decide` shows every body to a player in no match (M1 spec §1.6 row 8: an operator watching the arena), unlike 04 §10.4's default. M6 keeps it: solo play has no such viewer, and the rule for non-participants comes with multiplayer (M7, M8). The no-holder fallback (`BodyEvents.canSee` → `decide(match, 0)`) keeps today's answer |
 | 16 | The victory cadence | `VictoryCheck` runs every tick in FINAL (M3), not every 20 ticks as 04 §4.5 has it; `CIVIC_CENTRE` keeps that. `CONQUEST`'s recount runs every 20 ticks at offset 13, clear of the AI's offsets 0 and 7 with two factions |
 | 17 | The WAVE notice | Stays as M3 sends it, to every participant of the match; the raid bar draws from it, and a viewer in another match gets none (AI-04.5) |
-| 18 | Tech entries in the queue (T2.2) | `BuildingStore`'s queue holds unit template net indices, and about ten readers (`Production`, `QueriesImpl`, `ReplicationService` and `BuildingState`, `ProductionManager`, the client's `SelectionPanel`, `RtsHud`, `CardController`) take an entry for a unit. A tech entry is a new entry kind in the nested `BuildingStore.Production` record (the `BUILDING` codec is at 16 fields too); every reader branches on it, and `building_state` carries the kind in one bit |
+| 18 | Tech entries in the queue (T2.2) | `BuildingStore`'s queue holds unit template net indices, and about ten readers (`Production`, `QueriesImpl`, `ReplicationService` and `BuildingState`, `ProductionManager`, the client's `SelectionPanel`, `RtsHud`, `CardController`) take an entry for a unit. As built: a tech entry is `-1 - netIndex` in the same int queue (`core.shared.QueueEntry`), so queues and hashes without techs are unchanged; every reader branches on it; a save writes it by id (row 20); `building_state` marks a queue holding techs with `0x10` on its size and a mask byte, and writes the old bytes otherwise |
 | 19 | Village without a tech (T2.2, T3) | Researching `phase_village` at tick 0 would make `Progress` non-empty in every match and change every saved hash and journal. Village is the phase of a faction with no phase researched; `phase_village` stays a data entry for its name and icon, never queued |
-| 20 | Stable tech ids (T2.1) | A bitset over tech indices breaks when a reload reorders the techs. Techs get an append-only id table, as templates have (`ServerTemplates`), and `Progress` stores those ids |
+| 20 | Stable tech ids (T2.1, T2.2) | A bitset over tech indices breaks when a reload reorders the techs. Techs get an append-only id table, as templates have (`ServerTemplates`, seeded from the built-in set), but the table lives for a server's session only: saves hold tech ids, never indices (ADR-0018). `Progress` saves the researched ids; a queued tech is saved as `-1 - k` against its building's `techs` id list, and a tech the current set lacks leaves the queue unrefunded at restore or at a swap |
 | 21 | Techs in the template set (T2.1) | Techs join the set's canonical JSON under the key `$techs`, which no template id can take, only when there are any, so sets without techs keep their hash; they travel in `TemplateSetView`, or a client would never ack the set and a journal with a `ContentSwap` would stop decoding |
 | 22 | Modifiers at restore (T2.2) | Nothing rebuilds `StatService` at restore today: `MatchState` starts it empty. T2.2 re-adds the researched techs' effects in `Snapshots`' restore before `Production.recount` (housing reads modified values) and in `MatchState.swapTemplates` after `stats.swap` |
 | 23 | The card's token lists (T15) | `CommandCard` reads a building's `Trainer/units` as raw template text, so a `TOKENS` unlock never shows on the card; T15 reads the effective lists. `CommandCard.QUEUE_MAX` (8) disagrees with `BuildingStore.QUEUE_MAX` (5); T15 makes them one |
 | 24 | A view's techs on the wire (T2.1) | A journal's inputs are read back to back with no framing, so `TemplateSetView` cannot tell a trailing tech section by the bytes left. A view with techs writes its version with the suffix `+t`, which a hex version never has, then the techs; a view without them writes the old bytes exactly, so every journal and client of M0–M5 reads as before |
+| 25 | Superseded techs (T2.2) | Completing a tech, a restore and a swap derive a faction's tech sources the same way: every researched tech that no researched tech supersedes. A tech superseded by a researched or pending one is refused with `LIMIT` |
+| 26 | Tech source ids (T2.2) | A tech's modifiers carry `-1 - netIndex`: entity handles, the other source ids, are positive and at least 2²⁰. `/strategos stats` names a tech source by its id |
+| 27 | Phase names (T2.2) | A `phase` requirement names a bare lower-case phase (`town`), checked when the content compiles; the phase is the tech `strategos:phase_<name>`, and `village` is always reached (row 19) |
+| 28 | Tech costs (T2.2) | A tech's cost is its data's, not modified: no M6 tech or bonus changes another tech's cost |
 
 ### 1.7 Consent plan
 
@@ -693,7 +697,7 @@ kernel adds `:core:jmh :core:jmhCompare`.
 
 ### 7.3 Progress
 
-- [x] T2.1 (2026-10-25) · [ ] T2.2 · [ ] T3 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11 · [ ] T12
+- [x] T2.1 (2026-10-25) · [x] T2.2 (2026-10-25) · [ ] T3 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11 · [ ] T12
 - [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17 · [ ] T1 · [ ] T18 · [ ] T19 · [ ] T20 · [ ] T21
 - [ ] T22 · [ ] T23 · [ ] T24 · [ ] T25 · [ ] T27 · [ ] T28
 

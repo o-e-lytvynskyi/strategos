@@ -14,7 +14,7 @@ class RequirementTest {
 
     private static final Requirement HAS_AXES = new Requirement.Tech(AXES);
     private static final Requirement HAS_PLOUGH = new Requirement.Tech(PLOUGH);
-    private static final Requirement TOWN = new Requirement.Phase("phase_town");
+    private static final Requirement TOWN = new Requirement.Phase("town");
     private static final Requirement FIVE_HOUSES = new Requirement.Buildings("House", 5);
 
     /** Researched techs, reached phases and complete buildings by filter. */
@@ -46,7 +46,7 @@ class RequirementTest {
         Fake none = faction(Set.of(), Set.of(), 0);
         Fake axes = faction(Set.of(AXES), Set.of(), 0);
         Fake both = faction(Set.of(AXES, PLOUGH), Set.of(), 0);
-        Fake town = faction(Set.of(), Set.of("phase_town"), 0);
+        Fake town = faction(Set.of(), Set.of("town"), 0);
         Fake four = faction(Set.of(), Set.of(), 4);
         Fake five = faction(Set.of(), Set.of(), 5);
         Fake six = faction(Set.of(), Set.of(), 6);

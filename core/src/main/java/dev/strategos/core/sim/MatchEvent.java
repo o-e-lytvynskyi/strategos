@@ -24,4 +24,5 @@ public sealed interface MatchEvent extends OutputEvent
                 FactionDefeated,
                 MatchEnded,
                 UnderAttack,
-                WaveAnnounced {}
+                WaveAnnounced,
+                TechResearched {}

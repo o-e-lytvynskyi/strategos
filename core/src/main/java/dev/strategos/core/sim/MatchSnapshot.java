@@ -35,18 +35,25 @@ public record MatchSnapshot(
      * which of them think early.
      */
     @CoreApi
-    public record Play(List<Long> outcome, List<AiSlots.Saved> ai, long aiWake, List<Long> alerts) {
-        public static final Play EMPTY = new Play(List.of(), List.of(), 0, List.of());
+    public record Play(
+            List<Long> outcome, List<AiSlots.Saved> ai, long aiWake, List<Long> alerts, List<List<String>> progress) {
+        public static final Play EMPTY = new Play(List.of(), List.of(), 0, List.of(), List.of());
 
         /** A play with no live alert, as before MATCH-04 saved them. */
         public Play(List<Long> outcome, List<AiSlots.Saved> ai, long aiWake) {
-            this(outcome, ai, aiWake, List.of());
+            this(outcome, ai, aiWake, List.of(), List.of());
+        }
+
+        /** A play with nothing researched, as before TECH-01 saved the techs. */
+        public Play(List<Long> outcome, List<AiSlots.Saved> ai, long aiWake, List<Long> alerts) {
+            this(outcome, ai, aiWake, alerts, List.of());
         }
 
         public Play {
             outcome = List.copyOf(outcome);
             ai = List.copyOf(ai);
             alerts = List.copyOf(alerts);
+            progress = progress.stream().<List<String>>map(List::copyOf).toList();
         }
     }
 

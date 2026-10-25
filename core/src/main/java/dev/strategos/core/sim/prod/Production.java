@@ -2,11 +2,13 @@ package dev.strategos.core.sim.prod;
 
 import dev.strategos.core.content.Blueprint;
 import dev.strategos.core.content.Footprint;
+import dev.strategos.core.content.TechDef;
 import dev.strategos.core.protocol.NoticeKind;
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.DetMath;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
+import dev.strategos.core.shared.QueueEntry;
 import dev.strategos.core.sim.MatchBounds;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.Notice;
@@ -62,6 +64,10 @@ public final class Production {
      * seconds × 20 × count^e, rounded once; a single entry's are {@link #ticks}.
      */
     public static long ticks(MatchState s, int handle, int template, int count) {
+        if (QueueEntry.isTech(template)) { // a tech entry (TECH-01): the tech's own time
+            TechDef tech = Techs.of(s, template);
+            return tech == null ? 1 : tech.ticks();
+        }
         BuildingStore b = s.buildings();
         int faction = b.faction(handle);
         if (count <= 1) {
@@ -99,6 +105,10 @@ public final class Production {
         }
         int faction = b.faction(handle);
         int template = b.queue(handle)[0];
+        if (QueueEntry.isTech(template)) {
+            stepTech(s, handle, template);
+            return;
+        }
         int count = b.batch(handle, 0);
         Population pop = s.population();
         if (!b.reserved(handle)) {
@@ -131,6 +141,23 @@ public final class Production {
             int unit = s.spawnUnit(template, faction, door[0] + 0.5, y, door[1] + 0.5, 0f);
             rally(s, handle, unit);
         }
+    }
+
+    /** A tech at the head (TECH-01) needs no population and no door: it takes its time, then the faction has it. */
+    private static void stepTech(MatchState s, int handle, int entry) {
+        BuildingStore b = s.buildings();
+        TechDef tech = Techs.of(s, entry);
+        if (tech == null) { // a content change retired it: the entry goes, the cost is unknown
+            b.dequeue(handle, 0);
+            return;
+        }
+        long done = b.trained(handle) + 1;
+        b.setTrained(handle, done);
+        if (done < tech.ticks()) {
+            return;
+        }
+        b.dequeue(handle, 0);
+        Techs.complete(s, b.faction(handle), tech);
     }
 
     /** The free cell outside the footprint nearest the blueprint's door, or its middle without one; null for none. */
@@ -227,6 +254,13 @@ public final class Production {
         BuildingStore b = s.buildings();
         int faction = b.faction(handle);
         int count = b.batch(handle, index);
+        if (QueueEntry.isTech(b.queue(handle)[index])) { // a tech entry (TECH-01): its cost back, no population
+            TechDef tech = Techs.of(s, b.dequeue(handle, index));
+            if (tech != null) {
+                s.treasury().refund(faction, s.costs().ofTech(tech));
+            }
+            return;
+        }
         if (index == 0 && b.reserved(handle)) {
             s.population().remove(faction, s.templatePopulation(b.queue(handle)[0], faction) * count);
         }
@@ -252,7 +286,7 @@ public final class Production {
             if (b.state(handle) == BuildingStore.COMPLETE) {
                 pop.house(b.faction(handle), housing(s, handle));
             }
-            if (b.queueSize(handle) > 0 && b.reserved(handle)) {
+            if (b.queueSize(handle) > 0 && b.reserved(handle) && !QueueEntry.isTech(b.queue(handle)[0])) {
                 pop.add(
                         b.faction(handle),
                         s.templatePopulation(b.queue(handle)[0], b.faction(handle)) * b.batch(handle, 0));

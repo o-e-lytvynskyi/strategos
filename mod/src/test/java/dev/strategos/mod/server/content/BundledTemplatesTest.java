@@ -2,7 +2,9 @@ package dev.strategos.mod.server.content;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.google.gson.JsonParser;
 import com.mojang.serialization.JsonOps;
+import dev.strategos.core.content.Blueprint;
 import dev.strategos.core.content.RawTech;
 import dev.strategos.core.content.RawTemplate;
 import dev.strategos.core.content.TechIdTable;
@@ -18,6 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -27,6 +30,7 @@ import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.PathPackResources;
 import net.minecraft.server.packs.repository.PackSource;
 import net.minecraft.server.packs.resources.MultiPackResourceManager;
+import org.assertj.core.groups.Tuple;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -71,9 +75,8 @@ class BundledTemplatesTest {
         assertThat(loaded.problems)
                 .extracting(TemplateProblem::file, TemplateProblem::pointer)
                 .contains(
-                        org.assertj.core.groups.Tuple.tuple(
-                                "data/test/strategos/templates/unit/scout.json", "/UnitMotion/walkSpeed"),
-                        org.assertj.core.groups.Tuple.tuple("data/test/strategos/templates/unit/torn.json", ""));
+                        Tuple.tuple("data/test/strategos/templates/unit/scout.json", "/UnitMotion/walkSpeed"),
+                        Tuple.tuple("data/test/strategos/templates/unit/torn.json", ""));
     }
 
     /** The mod's resources as the test runtime has them: the root holding {@code data/}. */
@@ -94,7 +97,12 @@ class BundledTemplatesTest {
         }
     }
 
-    private record Loaded(List<RawTemplate> raws, TemplateCompiler.Result result, List<TemplateProblem> problems) {}
+    private record Loaded(
+            List<RawTemplate> raws,
+            List<RawTech> techs,
+            Map<String, Blueprint> blueprints,
+            TemplateCompiler.Result result,
+            List<TemplateProblem> problems) {}
 
     @Test
     void theBundledTechsAreReadFromTheTechsDirectoryAndAnUnknownRequirementIsReported(@TempDir Path pack)
@@ -114,8 +122,46 @@ class BundledTemplatesTest {
         assertThat(loaded.result.set().tech(new TechId("test:forge/anvils"))).isNull();
         assertThat(loaded.problems)
                 .extracting(TemplateProblem::file, TemplateProblem::pointer)
-                .contains(org.assertj.core.groups.Tuple.tuple(
-                        "data/test/strategos/techs/forge/anvils.json", "/requires/tech"));
+                .contains(Tuple.tuple("data/test/strategos/techs/forge/anvils.json", "/requires/tech"));
+    }
+
+    /**
+     * The session's tech table starts as the builtin set's (row 20): a refused first load changes nothing, and a reload
+     * that adds a tech sorting before {@code gather_wood_1} gives it the next index, not index 0.
+     */
+    @Test
+    void theTechTableStartsFromTheBuiltinSetAndKeepsIndicesAcrossARefusedLoad() {
+        Loaded bundled = load(resourceRoot());
+        ServerTemplates server = new ServerTemplates();
+        assertThat(server.techTable().indexOf(new TechId("strategos:gather_wood_1")))
+                .as("seeded from the starting set")
+                .isZero();
+        RawTech broken = new RawTech(
+                new TechId("aaa:broken"),
+                "aaa/broken.json",
+                JsonParser.parseString(
+                                "{\"icon\":\"minecraft:anvil\",\"time\":1,\"requires\":{\"tech\":\"aaa:nothing\"}}")
+                        .getAsJsonObject());
+        List<RawTech> withBroken = new ArrayList<>(bundled.techs());
+        withBroken.add(broken);
+        assertThat(server.load(bundled.raws(), withBroken, List.of(), REGISTRIES, List.of(), bundled.blueprints())
+                        .accepted())
+                .isFalse();
+        RawTech fine = new RawTech(
+                new TechId("aaa:early"),
+                "aaa/early.json",
+                JsonParser.parseString("{\"icon\":\"minecraft:anvil\",\"time\":1}")
+                        .getAsJsonObject());
+        List<RawTech> withFine = new ArrayList<>(bundled.techs());
+        withFine.add(fine);
+        assertThat(server.load(bundled.raws(), withFine, List.of(), REGISTRIES, List.of(), bundled.blueprints())
+                        .accepted())
+                .isTrue();
+        assertThat(server.techTable().indexOf(new TechId("strategos:gather_wood_1")))
+                .isZero();
+        assertThat(server.techTable().indexOf(new TechId("aaa:early"))).isEqualTo(1);
+        assertThat(server.set().tech(new TechId("strategos:gather_wood_1")).netIndex())
+                .isZero();
     }
 
     /** What the listener's prepare and apply make of a pack at {@code root}, linted as the server lints. */
@@ -127,11 +173,12 @@ class BundledTemplatesTest {
             List<TemplateProblem> problems = new ArrayList<>(read.problems());
             List<RawTemplate> raws = TemplateFiles.raws(read, JsonOps.INSTANCE, problems);
             List<RawTech> techs = TemplateFiles.rawTechs(read, JsonOps.INSTANCE, problems);
-            TemplateCompiler.Result result = TemplateCompiler.compile(
-                    raws, techs, TemplateIdTable.EMPTY, TechIdTable.EMPTY, TemplateFiles.blueprints(read, problems));
+            var blueprints = TemplateFiles.blueprints(read, problems);
+            TemplateCompiler.Result result =
+                    TemplateCompiler.compile(raws, techs, TemplateIdTable.EMPTY, TechIdTable.EMPTY, blueprints);
             problems.addAll(result.problems());
             problems.addAll(TemplateLint.check(result.set(), REGISTRIES, t -> t.id().value()));
-            return new Loaded(raws, result, problems);
+            return new Loaded(raws, techs, blueprints, result, problems);
         }
     }
 }

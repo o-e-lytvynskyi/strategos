@@ -14,6 +14,7 @@ import dev.strategos.core.client.hud.SelectionPanel;
 import dev.strategos.core.client.hud.SelectionSummary;
 import dev.strategos.core.client.pick.Picking;
 import dev.strategos.core.client.select.Selection;
+import dev.strategos.core.content.TechDef;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.DepositState;
@@ -25,6 +26,7 @@ import dev.strategos.core.protocol.UiQuery;
 import dev.strategos.core.protocol.UnitDetail;
 import dev.strategos.core.protocol.UnitHud;
 import dev.strategos.core.shared.Handle;
+import dev.strategos.core.shared.QueueEntry;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.mod.client.StrategosClient;
 import dev.strategos.mod.client.net.ClientPayloads;
@@ -645,7 +647,7 @@ public final class RtsHud {
         for (int k = 0; k < b.queue().size(); k++) {
             HudRect cell = SelectionPanel.queueCell(r, pad, k);
             g.fill(cell.x(), cell.y(), cell.right(), cell.bottom(), theme.border());
-            icon(g, font, templates, b.queue().get(k), cell);
+            entryIcon(g, font, templates, b.queue().get(k), cell);
             if (b.batch(k) > 1) { // a batch (PROD-02): its count in the corner
                 String n = "×" + b.batch(k);
                 g.drawString(
@@ -748,6 +750,16 @@ public final class RtsHud {
     /** A number as a player reads it: a whole one bare, else to one decimal. */
     private static String plain(double v) {
         return v == Math.rint(v) ? String.valueOf((long) v) : String.format(java.util.Locale.ROOT, "%.1f", v);
+    }
+
+    /** A queue entry's icon: a unit's, or for a technology (TECH-01) its own item. */
+    private void entryIcon(GuiGraphics g, Font font, TemplateSet templates, int entry, HudRect cell) {
+        if (!QueueEntry.isTech(entry)) {
+            icon(g, font, templates, entry, cell);
+            return;
+        }
+        TechDef tech = templates.techByIndex(QueueEntry.techIndex(entry));
+        paint.item(g, tech == null ? "minecraft:barrier" : tech.icon(), cell);
     }
 
     /** Template {@code template}'s icon centred in {@code cell}, or its name's first letter when it has none. */

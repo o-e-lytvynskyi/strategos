@@ -3,6 +3,7 @@ package dev.strategos.mod.server.content;
 import dev.strategos.core.content.Blueprint;
 import dev.strategos.core.content.RawTech;
 import dev.strategos.core.content.RawTemplate;
+import dev.strategos.core.content.TechDef;
 import dev.strategos.core.content.TechIdTable;
 import dev.strategos.core.content.TemplateCompiler;
 import dev.strategos.core.content.TemplateIdTable;
@@ -29,7 +30,8 @@ import org.jspecify.annotations.Nullable;
  */
 public final class ServerTemplates {
     private TemplateSet set = TemplateSet.builtin();
-    private TechIdTable techTable = TechIdTable.EMPTY;
+    private TechIdTable techTable = new TechIdTable(
+            TemplateSet.builtin().techs().stream().map(TechDef::id).toList());
     private TemplateIdTable table = new TemplateIdTable(
             TemplateSet.builtin().all().stream().map(UnitTemplate::id).toList());
     private List<TemplateProblem> problems = List.of();

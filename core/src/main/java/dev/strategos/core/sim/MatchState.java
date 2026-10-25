@@ -2,11 +2,13 @@ package dev.strategos.core.sim;
 
 import dev.strategos.core.content.Blueprint;
 import dev.strategos.core.content.Footprint;
+import dev.strategos.core.content.TechDef;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.diag.MatchLog;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
+import dev.strategos.core.shared.TechId;
 import dev.strategos.core.sim.build.BuildingLife;
 import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.build.DamageRanks;
@@ -38,6 +40,7 @@ import dev.strategos.core.sim.nav.TerrainEdits;
 import dev.strategos.core.sim.nav.VoxelSlice;
 import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.core.sim.prod.Population;
+import dev.strategos.core.sim.prod.Techs;
 import dev.strategos.core.sim.spatial.SpatialQueries;
 import dev.strategos.core.sim.stats.StatService;
 import dev.strategos.core.sim.unitai.ActivityTiers;
@@ -62,6 +65,7 @@ public final class MatchState {
     private MatchConfig config;
     private final Outcome outcome = new Outcome();
     private final AiSlots aiSlots = new AiSlots();
+    private final Progress progress; // the techs each faction has researched (TECH-01)
     private TemplateSet templates;
     private final EntityStore entities;
     private final IdentityStore identity = new IdentityStore();
@@ -119,6 +123,7 @@ public final class MatchState {
         this.entities = entities;
         this.log = log;
         this.stats = new StatService(templates, config.factions() + 1, identity, bus); // the players' and Gaia's
+        this.progress = new Progress(templates, config.factions());
         EconomyRules economy = config.rules().economy();
         this.treasury = new Treasury(config.factions(), economy.size());
         for (int f = 0; f < config.factions(); f++) {
@@ -385,7 +390,10 @@ public final class MatchState {
 
     /** A snapshot's buildings, their footprints blocked again (the writer's blocks are the world's already). */
     void restoreBuildings(List<BuildingStore.Saved> saved) {
-        buildings.restore(saved);
+        buildings.restore(saved, id -> {
+            TechDef tech = templates.tech(new TechId(id));
+            return tech == null ? -1 : tech.netIndex();
+        });
         for (int handle : buildings.handles()) {
             if (buildings.state(handle) != BuildingStore.FOUNDATION
                     && dev.strategos.core.sim.build.Placing.obstructs(
@@ -667,6 +675,11 @@ public final class MatchState {
         population.setMax(rules.economy().populationMax());
     }
 
+    /** What each faction has researched (TECH-01). */
+    public Progress progress() {
+        return progress;
+    }
+
     /** The factions the computer plays (AI-01). */
     public AiSlots aiSlots() {
         return aiSlots;
@@ -804,8 +817,12 @@ public final class MatchState {
                 return;
             }
         }
+        TemplateSet old = templates;
         templates = set;
         stats.swap(set);
+        progress.swap(set);
+        Techs.reapply(this, old); // the researched techs' effects, from the new set (spec row 22)
+        Techs.dropRetired(this, old);
         costs.swap(stats);
         gatherRates.swap(stats);
         spatial.swap(set);

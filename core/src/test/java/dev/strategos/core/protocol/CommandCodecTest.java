@@ -9,6 +9,7 @@ import com.mojang.serialization.DataResult;
 import com.mojang.serialization.JsonOps;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.shared.FactionSlot;
+import dev.strategos.core.shared.TechId;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
 import java.util.List;
@@ -44,7 +45,8 @@ class CommandCodecTest {
                 new Demolish(524_291),
                 new SetAutoReseed(524_293, true),
                 new TrainBatch(524_292, new TemplateId("strategos:unit/infantry"), 5),
-                new SpawnDeposit(new TemplateId("strategos:building/iron_mine"), 10, 12));
+                new SpawnDeposit(new TemplateId("strategos:building/iron_mine"), 10, 12),
+                new Research(524_294, new TechId("strategos:gather_wood_1")));
     }
 
     @Test

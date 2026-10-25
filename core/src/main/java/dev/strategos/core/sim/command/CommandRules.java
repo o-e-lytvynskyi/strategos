@@ -39,7 +39,8 @@ public final class CommandRules {
                 .register(new BuildRule())
                 .register(new CancelBuildingRule())
                 .register(new DemolishRule())
-                .register(new SpawnDepositRule());
+                .register(new SpawnDepositRule())
+                .register(new ResearchRules.ResearchRule());
     }
 
     /** A second rule for a kind throws. */

@@ -2,6 +2,7 @@ package dev.strategos.core.protocol;
 
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
+import dev.strategos.core.shared.TechId;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
 import org.jspecify.annotations.Nullable;
@@ -105,6 +106,28 @@ public final class WireCodecs {
         @Override
         public int maxSize() {
             return 1;
+        }
+    };
+
+    public static final WireCodec<TechId> TECH_ID = new WireCodec<>() {
+        @Override
+        public void write(WireWriter out, TechId value) {
+            out.writeString(value.value(), Limits.ID_BYTES);
+        }
+
+        @Override
+        public TechId read(WireReader in) {
+            String id = in.readString(Limits.ID_BYTES);
+            try {
+                return new TechId(id);
+            } catch (IllegalArgumentException e) {
+                throw new WireException(String.valueOf(e.getMessage()));
+            }
+        }
+
+        @Override
+        public int maxSize() {
+            return 2 + Limits.ID_BYTES;
         }
     };
 
@@ -224,6 +247,7 @@ public final class WireCodecs {
                             case TOO_CLOSE -> 15;
                             case OUT_OF_REACH -> 16;
                             case LIMIT -> 17;
+                            case REQUIREMENTS -> 18;
                         });
     }
 
@@ -248,6 +272,7 @@ public final class WireCodecs {
             case 15 -> RejectReason.TOO_CLOSE;
             case 16 -> RejectReason.OUT_OF_REACH;
             case 17 -> RejectReason.LIMIT;
+            case 18 -> RejectReason.REQUIREMENTS;
             default -> throw new WireException("unknown reject reason " + code);
         };
     }

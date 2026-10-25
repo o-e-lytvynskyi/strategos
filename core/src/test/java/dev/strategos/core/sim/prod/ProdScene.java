@@ -40,7 +40,17 @@ final class ProdScene {
     }
 
     static ProdScene of(long food, long wood, MatchRules rules, VoxelWorld world, long seed) {
+        return of(food, wood, rules, world, seed, TemplateSet.builtin());
+    }
+
+    static ProdScene of(long food, long wood, TemplateSet templates) {
+        return of(
+                food, wood, MatchRules.DEFAULTS, VoxelFixtures.flat(64, 64, 32, 1), SimHarness.DEFAULT_SEED, templates);
+    }
+
+    static ProdScene of(long food, long wood, MatchRules rules, VoxelWorld world, long seed, TemplateSet templates) {
         SimHarness h = SimHarness.builder()
+                .templates(templates)
                 .size(64, 64)
                 .yBand(0, 31, 1)
                 .rules(rules)

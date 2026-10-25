@@ -40,7 +40,8 @@ class CommandKindsTest {
                         "strategos:demolish",
                         "strategos:set_auto_reseed",
                         "strategos:train_batch",
-                        "strategos:spawn_deposit");
+                        "strategos:spawn_deposit",
+                        "strategos:research");
     }
 
     @Test

@@ -97,7 +97,8 @@ only its own vision at every level except that labelled top level.
   3. A technology cannot be researched twice or in two buildings at once (L1).
   4. A research completes and applies in a GameTest (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** DATA-02, PROD-01 · **Size:** M · **Tier:** T0
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-10-25 — 1 `RequirementTest.theTable`; 2 `ResearchTest.aCompletedTechChangesStatsAtOnce`, `ResearchTest.theBreakdownNamesTheTech`; 3 `ResearchTest.onceAndInOneBuildingAtATime`; 4 `techtests.a_research_completes_and_applies` (M6 T2.1, T2.2)
 
 #### TECH-02 · Phases: Village to Town
 - **Value:** Advancing to Town is a real decision, boom or rush, and a moment that unlocks new

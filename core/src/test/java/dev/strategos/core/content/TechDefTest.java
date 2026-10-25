@@ -24,7 +24,7 @@ class TechDefTest {
               "classes": ["Economy"],
               "cost": { "food": 100, "wood": 50 },
               "time": 30,
-              "requires": { "all": [ { "phase": "phase_village" }, { "buildings": { "filter": "House", "count": 2 } } ] },
+              "requires": { "all": [ { "phase": "village" }, { "buildings": { "filter": "House", "count": 2 } } ] },
               "supersedes": "t:old_axes",
               "effects": [
                 { "path": "ResourceGatherer/rates/wood/tree", "op": "mul", "value": 1.2, "filter": "Worker" },
@@ -65,7 +65,7 @@ class TechDefTest {
         assertThat(def.supersedes()).isEqualTo(new TechId("t:old_axes"));
         assertThat(def.requires())
                 .isEqualTo(new Requirement.All(
-                        List.of(new Requirement.Phase("phase_village"), new Requirement.Buildings("House", 2))));
+                        List.of(new Requirement.Phase("village"), new Requirement.Buildings("House", 2))));
         assertThat(def.effects())
                 .containsExactly(
                         new TechEffect(
@@ -117,6 +117,8 @@ class TechDefTest {
                                 + ", \"effects\": [ { \"path\": \"a/b\", \"op\": \"mul\", \"value\": 2, \"extra\": 1 } ] }",
                         "/effects/0/extra"),
                 new Bad("{" + ok + ", \"requires\": { \"tech\": \"t:a\", \"phase\": \"p\" } }", "/requires"),
+                new Bad("{" + ok + ", \"requires\": { \"phase\": \"phase_town\" } }", "/requires/phase"),
+                new Bad("{" + ok + ", \"requires\": { \"phase\": \"Town\" } }", "/requires/phase"),
                 new Bad(
                         "{" + ok + ", \"requires\": { \"all\": [ { \"tech\": \"t:a\", \"phase\": \"p\" } ] } }",
                         "/requires/all/0"),

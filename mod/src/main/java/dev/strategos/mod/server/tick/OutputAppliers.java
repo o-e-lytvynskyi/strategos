@@ -15,6 +15,7 @@ import dev.strategos.core.sim.FlameShown;
 import dev.strategos.core.sim.MatchEnded;
 import dev.strategos.core.sim.Notice;
 import dev.strategos.core.sim.OutputEvent;
+import dev.strategos.core.sim.TechResearched;
 import dev.strategos.core.sim.TickOutputs;
 import dev.strategos.core.sim.UnderAttack;
 import dev.strategos.core.sim.UnitCreated;
@@ -132,6 +133,14 @@ public final class OutputAppliers {
                                             wave.leaves(),
                                             wave.x(),
                                             wave.z())));
+                case TechResearched researched ->
+                    rt.log()
+                            .debug(
+                                    out.tick(),
+                                    "faction {} researched {}",
+                                    researched.faction().value(),
+                                    researched.tech());
+                // no visible effect yet: the feed shows it from T14 (UI-21)
                 case MatchEnded ended -> {
                     StrategosServer.get()
                             .net()
@@ -228,6 +237,7 @@ public final class OutputAppliers {
                 MatchEnded.class,
                 UnderAttack.class,
                 WaveAnnounced.class,
+                TechResearched.class,
                 UnitGear.class,
                 WorldEffect.class,
                 Notice.class);

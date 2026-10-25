@@ -3,6 +3,7 @@ package dev.strategos.core.sim;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.FactionSlot;
+import dev.strategos.core.shared.TechId;
 import dev.strategos.core.sim.build.BuildingView;
 import dev.strategos.core.sim.econ.EconomyTimes;
 import dev.strategos.core.sim.econ.FactionTreasury;
@@ -104,6 +105,11 @@ public interface MatchQueries {
      * a path the set lacks.
      */
     @Nullable StatBreakdown stats(int handle, String path);
+
+    /** The technology whose modifiers carry {@code sourceId} (TECH-01), or null for any other source. */
+    default @Nullable TechId techOf(int sourceId) {
+        return null;
+    }
 
     /** The path service's counts since the match started. */
     PathService.Stats pathStats();

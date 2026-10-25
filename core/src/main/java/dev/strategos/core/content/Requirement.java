@@ -35,6 +35,9 @@ public sealed interface Requirement {
 
     record Phase(String name) implements Requirement {}
 
+    /** A phase name: bare and lower case, the tail of its tech id {@code strategos:phase_<name>}. */
+    java.util.regex.Pattern PHASE_NAME = java.util.regex.Pattern.compile("[a-z][a-z0-9_]*");
+
     record Buildings(String filter, int count) implements Requirement {}
 
     /** What a missing {@code requires} means. */
@@ -87,6 +90,15 @@ public sealed interface Requirement {
             case "phase" -> {
                 if (!isString(value) || value.getAsString().isBlank()) {
                     problems.add(TemplateProblem.error(file, at, "expected a phase name string, got " + value));
+                    return null;
+                }
+                if (!PHASE_NAME.matcher(value.getAsString()).matches()
+                        || value.getAsString().startsWith("phase_")) {
+                    problems.add(TemplateProblem.error(
+                            file,
+                            at,
+                            "a phase is named bare, lower case, as 'town' (not 'phase_town'), got '"
+                                    + value.getAsString() + "'"));
                     return null;
                 }
                 return new Phase(value.getAsString());

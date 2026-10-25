@@ -3,6 +3,7 @@ package dev.strategos.core.sim;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
+import dev.strategos.core.shared.TechId;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.build.BuildingView;
@@ -72,6 +73,11 @@ final class QueriesImpl implements MatchQueries {
                             .toList()));
         }
         return out;
+    }
+
+    @Override
+    public @Nullable TechId techOf(int sourceId) {
+        return state.progress().techOf(sourceId);
     }
 
     @Override

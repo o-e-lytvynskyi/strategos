@@ -1,5 +1,6 @@
 package dev.strategos.core.sim;
 
+import dev.strategos.core.content.TechDef;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.diag.MatchLog;
@@ -12,6 +13,7 @@ import dev.strategos.core.sim.nav.PageCoord;
 import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.core.sim.prod.Production;
+import dev.strategos.core.sim.prod.Techs;
 import dev.strategos.core.sim.unitai.StateId;
 import dev.strategos.core.sim.unitai.UnitAi;
 import java.util.ArrayList;
@@ -65,14 +67,20 @@ final class Snapshots {
                 s.nodes().count() > 0
                         ? s.nodes().save(i -> s.templates().byIndex(i).id().value())
                         : List.of(),
-                s.buildings().empty() ? List.of() : s.buildings().save(),
+                s.buildings().empty()
+                        ? List.of()
+                        : s.buildings().save(i -> {
+                            TechDef tech = s.templates().techByIndex(i);
+                            return tech == null ? null : tech.id().value();
+                        }),
                 ledger(s),
                 s.carry().empty() ? List.of() : s.carry().save(entities.highWater(), entities::handleAt),
                 new MatchSnapshot.Play(
                         s.outcome().save(),
                         s.aiSlots().save(),
                         s.aiSlots().wakeMask(),
-                        s.alerts().save()));
+                        s.alerts().save(),
+                        s.progress().save()));
     }
 
     /** The economy ledger's counters, or none while nothing was found or taken (ECO-05). */
@@ -132,6 +140,8 @@ final class Snapshots {
         MatchState state = new MatchState(snapshot.config(), templates, entities, log);
         state.setTick(snapshot.tick());
         state.setNextGroup(snapshot.nextGroup());
+        state.progress().restore(snapshot.play().progress());
+        Techs.reapply(state, null); // the stats start empty: the researched techs' effects, before anything reads them
         long[] counters =
                 new long[state.treasury().factions() * state.treasury().resources() * 5];
         if (!snapshot.treasury().isEmpty() && snapshot.treasury().size() != counters.length) {

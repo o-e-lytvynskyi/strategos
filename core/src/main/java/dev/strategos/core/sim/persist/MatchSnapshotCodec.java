@@ -9,6 +9,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Hex64;
+import dev.strategos.core.shared.TechId;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.AiSlots;
@@ -339,6 +340,13 @@ public final class MatchSnapshotCodec {
                     Codec.INT.listOf().optionalFieldOf("claims", List.of()).forGetter(BuildingStore.Site::claims))
             .apply(i, BuildingStore.Site::new));
 
+    /** Tech ids as strings, each checked as a {@link TechId} when read: a malformed one fails the decode. */
+    private static final Codec<List<String>> TECH_IDS = TechId.CODEC
+            .listOf()
+            .xmap(
+                    ids -> ids.stream().map(TechId::value).toList(),
+                    ids -> ids.stream().map(TechId::new).toList());
+
     private static final Codec<BuildingStore.Production> PRODUCTION = RecordCodecBuilder.create(i -> i.group(
                     Codec.INT.listOf().optionalFieldOf("queue", List.of()).forGetter(BuildingStore.Production::queue),
                     Codec.LONG.optionalFieldOf("trained", 0L).forGetter(BuildingStore.Production::trained),
@@ -348,7 +356,8 @@ public final class MatchSnapshotCodec {
                             .listOf()
                             .optionalFieldOf("batches", List.of())
                             .forGetter(BuildingStore.Production::batches),
-                    Codec.BOOL.optionalFieldOf("autoReseed", false).forGetter(BuildingStore.Production::autoReseed))
+                    Codec.BOOL.optionalFieldOf("autoReseed", false).forGetter(BuildingStore.Production::autoReseed),
+                    TECH_IDS.optionalFieldOf("techs", List.of()).forGetter(BuildingStore.Production::techs))
             .apply(i, BuildingStore.Production::new));
 
     private static final Codec<BuildingStore.Rally> RALLY = RecordCodecBuilder.create(i -> i.group(
@@ -390,7 +399,8 @@ public final class MatchSnapshotCodec {
                     Codec.LONG.listOf().optionalFieldOf("outcome", List.of()).forGetter(MatchSnapshot.Play::outcome),
                     COMPUTER.listOf().optionalFieldOf("ai", List.of()).forGetter(MatchSnapshot.Play::ai),
                     Codec.LONG.optionalFieldOf("aiWake", 0L).forGetter(MatchSnapshot.Play::aiWake),
-                    Codec.LONG.listOf().optionalFieldOf("alerts", List.of()).forGetter(MatchSnapshot.Play::alerts))
+                    Codec.LONG.listOf().optionalFieldOf("alerts", List.of()).forGetter(MatchSnapshot.Play::alerts),
+                    TECH_IDS.listOf().optionalFieldOf("progress", List.of()).forGetter(MatchSnapshot.Play::progress))
             .apply(i, MatchSnapshot.Play::new));
 
     /** The fields, without {@code "v"}. */

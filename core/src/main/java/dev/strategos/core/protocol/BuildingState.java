@@ -1,6 +1,7 @@
 package dev.strategos.core.protocol;
 
 import dev.strategos.core.shared.CoreApi;
+import dev.strategos.core.shared.QueueEntry;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,6 +17,13 @@ import java.util.List;
 public record BuildingState(int matchId, long tick, List<Entry> buildings) {
     public static final int MAX_BUILDINGS = 512;
     public static final int MAX_QUEUE = 8;
+
+    /**
+     * A queue with a tech entry (TECH-01) writes its size with this bit set, then a byte with one bit per entry, set
+     * for a tech; sizes are at most {@value #MAX_QUEUE}, so the bit never meets an old size. A tech entry is
+     * {@code -1 - index} in {@link Entry#queue()} (the store's own encoding) and its index on the wire.
+     */
+    static final int TECH_FLAG = 0x10;
 
     /** One building; {@code own} entries carry the owner's fields, the others leave them empty. */
     @CoreApi
@@ -181,9 +189,17 @@ public record BuildingState(int matchId, long tick, List<Entry> buildings) {
                         .writeByte(e.health())
                         .writeByte(e.own() ? 1 : 0);
                 if (e.own()) {
-                    out.writeVarInt(e.queue().size());
+                    int techs = 0; // one bit per entry that is a tech (TECH-01), the store's -1 - index
+                    for (int k = 0; k < e.queue().size(); k++) {
+                        techs |= (QueueEntry.isTech(e.queue().get(k)) ? 1 : 0) << k;
+                    }
+                    if (techs == 0) {
+                        out.writeVarInt(e.queue().size()); // a queue of units: the bytes of before techs
+                    } else {
+                        out.writeVarInt(TECH_FLAG | e.queue().size()).writeByte(techs);
+                    }
                     for (int t : e.queue()) {
-                        out.writeVarInt(t);
+                        out.writeVarInt(QueueEntry.isTech(t) ? QueueEntry.techIndex(t) : t);
                     }
                     out.writeByte(e.rally() ? 1 : 0);
                     if (e.rally()) {
@@ -231,9 +247,19 @@ public record BuildingState(int matchId, long tick, List<Entry> buildings) {
                 boolean autoReseed = false;
                 List<Integer> batches = new ArrayList<>();
                 if (own) {
-                    int q = in.readVarInt(MAX_QUEUE);
+                    int head = in.readVarInt(TECH_FLAG | MAX_QUEUE);
+                    boolean hasTechs = head >= TECH_FLAG;
+                    int q = head & ~TECH_FLAG;
+                    if (q > MAX_QUEUE) {
+                        throw new WireException("a queue of " + q + " entries");
+                    }
+                    int techs = hasTechs ? in.readUnsignedByte() : 0;
+                    if (hasTechs && (techs == 0 || techs >>> q != 0)) { // only the one way to write it reads
+                        throw new WireException("a tech mask " + techs + " for a queue of " + q);
+                    }
                     for (int i = 0; i < q; i++) {
-                        queue.add(in.readVarInt());
+                        int t = in.readVarInt();
+                        queue.add((techs >> i & 1) != 0 ? QueueEntry.techEntry(t) : t);
                     }
                     rally = in.readUnsignedByte() == 1;
                     if (rally) {
@@ -295,7 +321,7 @@ public record BuildingState(int matchId, long tick, List<Entry> buildings) {
                                     + 1
                                     + 1
                                     + MAX_QUEUE * 5
-                                    + 1
+                                    + 2
                                     + 10
                                     + 5
                                     + 5
