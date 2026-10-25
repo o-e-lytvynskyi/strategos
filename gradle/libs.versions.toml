@@ -15,7 +15,7 @@ jspecify = "1.0.1"
 spotless = "8.10.4"
 palantir = "2.102.0"
 errorprone-gradle = "5.1.1"
-error-prone = "2.50.0"
+error-prone = "2.51.0"
 nullaway = "0.14.2"
 archunit = "1.5.1"
 # Tests.
