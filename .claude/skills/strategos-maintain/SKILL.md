@@ -60,7 +60,8 @@ merges.
    request's head, `python3 tools/claims.py check --base origin/main`.
 3. Also check: the work is open (STATE "Open for claims") or planning; a `reserved` row is claimed
    only by its developer; a takeover's note links the holder's approval (their release pull
-   request, or their comment on this one); a release comes from the holder, or carries the owner's
+   request, or their comment on this one); a milestone claim's branch file has its "Depends on
+   unfinished work" filled; a release comes from the holder, or carries the owner's
    word for a stale claim.
 4. All pass: `git merge --no-ff origin/<branch> -m "Docs: accept claim <work> (#<n>)"` on `main`,
    push; the pull request closes as merged. Then tell the developer in the pull request to merge
@@ -99,14 +100,18 @@ Steps:
 4. **Agent roster changes** in the branch (`.claude/agents/`, docs/agents.md): each new or changed
    role cites its trial; a role set to `stable` has the trials docs/agents.md "Role status"
    requires, in the branch files; developer-setup.md R2 matches.
-5. **Hard rules a reviewer may miss:** new runtime dependencies (`gradle/libs.versions.toml`,
+5. **Unfinished dependencies:** `python3 tools/claims.py after` in the worktree; every marker is in
+   the branch file's "Depends on unfinished work"; none waits for a milestone already merged; the
+   marked parts are seams or fakes, not hidden behaviour. A claim pull request for a milestone
+   carries the assessment in its branch file (§3 checks it is there).
+6. **Hard rules a reviewer may miss:** new runtime dependencies (`gradle/libs.versions.toml`,
    `NOTICE`), `.claude/settings.json` untouched, no tool traces in commit messages.
-6. **The verdict**, written by the orchestrator into the branch file's "Review" (on the branch,
+7. **The verdict**, written by the orchestrator into the branch file's "Review" (on the branch,
    commit `Mx: review <date>`), as a pull request review (`gh pr review <n> --comment
    --body-file …`), and as a numbered "For the owner" item on `main`: findings by severity, gate
    results with numbers, the "Decisions taken" the owner may want to veto, a recommendation —
    merge / merge after fixes / back to the developer.
-7. **Fixes.** On the owner's «с правками»: small fixes inline, larger ones by an `implementer`
+8. **Fixes.** On the owner's «с правками»: small fixes inline, larger ones by an `implementer`
    brief, in the review worktree; commit `Mx Tn: review fix — <what>`, push the branch, note it in
    the pull request. Without it, the findings go back to the developer.
 

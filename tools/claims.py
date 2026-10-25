@@ -7,6 +7,7 @@
                                                  request's base), work taken from another developer names their
                                                  hand-over in its note
     python3 tools/claims.py [--fetch] owner      the "For the owner" sections of the active claims' branch files
+    python3 tools/claims.py after [M<n>]         the AFTER-M<n> markers in the working tree, by the milestone they wait for
 
 A claim is a row of docs/claims.md that reached main by a pull request (AGENTS.md "Developers and claims").
 Work is written `M5` (every task of its spec), `M5 T1–T6` or `M5 T1, T3, T7` (tasks), `M6 spec`, or a free name
@@ -161,6 +162,22 @@ def cmd_owner():
         print("No active claim asks the owner anything.")
 
 
+def cmd_after(only):
+    """AFTER-M<n> markers: spots built against a milestone not yet merged when they were written."""
+    out = subprocess.run(["git", "grep", "-n", "-E", r"AFTER-M[0-9]+", "--", ".", ":!tools/claims.py",
+                          ":!docs/branches/README.md"], capture_output=True, text=True, cwd=ROOT).stdout
+    by_milestone = {}
+    for line in out.splitlines():
+        m = re.search(r"AFTER-(M[0-9]+)", line)
+        if m and (only is None or m.group(1) == only):
+            by_milestone.setdefault(m.group(1), []).append(line)
+    for milestone in sorted(by_milestone, key=lambda k: int(k[1:])):
+        print(f"## {milestone} ({len(by_milestone[milestone])})")
+        print("\n".join(by_milestone[milestone]))
+    if not by_milestone:
+        print("No AFTER-M markers.")
+
+
 def main(argv):
     if "--fetch" in argv:
         git("fetch", "--prune", "origin")
@@ -169,7 +186,9 @@ def main(argv):
     if command == "check":
         base = args[args.index("--base") + 1] if "--base" in args else None
         return check(base)
-    if command == "list":
+    if command == "after":
+        cmd_after(args[1] if len(args) > 1 else None)
+    elif command == "list":
         cmd_list()
     elif command == "owner":
         cmd_owner()

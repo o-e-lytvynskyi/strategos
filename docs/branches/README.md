@@ -25,6 +25,13 @@ The header's fields are read by `tools/claims.py`; keep their spelling. `Status`
 - **Next task:** <task> · <title>.
 - **Merged from main last:** <commit> (<date>).
 
+## Depends on unfinished work
+
+From the assessment before the claim (procedure §2a step 0); kept current. `- None.` when empty.
+
+| Milestone | What this work needs from it | Plan: independent / against a contract / after | `AFTER-M<n>` markers |
+|---|---|---|---|
+
 ## Log
 
 Newest first; one entry per session in the worklog's shape.

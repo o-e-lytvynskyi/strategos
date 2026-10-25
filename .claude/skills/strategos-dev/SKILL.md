@@ -79,6 +79,15 @@ approved roadmap; ideas go to "For the owner" as proposals.
 
 ## 2a. Claim work (before any development, by pull request)
 
+0. **Assess what the work needs from unfinished milestones** — before claiming a milestone or
+   tasks. For each card and task: its "Depends on", and the classes, data and behaviour the spec's
+   design uses. Anything delivered by a milestone that is not yet merged into `main` (in progress,
+   handed in, or not started) is a dependency on unfinished work. Write the result into the branch
+   file's "Depends on unfinished work": per item, the milestone, what is needed, and the plan —
+   *independent* (build it without the dependency), *against a contract* (code to an interface or
+   a core seam the other milestone will fill; a fake in the tests), or *after* (cannot start until
+   that milestone lands). Order the claimed tasks so independent work comes first; claim only what
+   has a plan. Work whose plan is *after* is not claimed yet.
 1. `python3 tools/claims.py --fetch list` and `gh pr list --search claims.md`: no `assigned` row and
    no open claim pull request covers the work, and no `reserved` row keeps it for someone else (a
    reservation in your name is yours to claim). Work `assigned` to someone else is never taken
@@ -163,9 +172,16 @@ approved roadmap; ideas go to "For the owner" as proposals.
      next. Never retry until green, never mark it flaky, never raise a threshold.
 7. **Oversized tasks.** The spec targets 300–1,500 lines of change. Split a larger task in the
    spec first (`T5b` → `T5b.1`, `T5b.2`), commit the split, then do the first part.
-8. **Clean-room.** If a search result or a link leads into GPL or all-rights-reserved mod code
+8. **Unfinished dependencies in code.** Where a task builds against something an unfinished
+   milestone will deliver, mark the spot with `AFTER-M<n>: <what to finish or validate once M<n>
+   lands>` in a comment (code) or a line (docs, tests). It is not a `TODO`: it names the milestone
+   it waits for, `python3 tools/claims.py after` lists them, and each one is also a line in the
+   branch file's "Depends on unfinished work". Keep the marked part small: a seam, a fake, a
+   disabled assertion with its reason — never a hidden behaviour change. Prefer independent
+   functionality wherever the design allows it.
+9. **Clean-room.** If a search result or a link leads into GPL or all-rights-reserved mod code
    (Reign of Nether, MineColonies, Recruits, 0 A.D.), close it without reading it.
-9. **Delegate the routine** (docs/agents.md; the roster is a demo and may change). The
+10. **Delegate the routine** (docs/agents.md; the roster is a demo and may change). The
    orchestrator keeps steps 2, 6 and 7 and the design; it sends:
    - engine-name checks of step 3 to `api-lookup`, several names in one request;
    - code a brief can describe completely to `implementer` (the brief format is in
@@ -251,7 +267,10 @@ edit STATE.md or worklog.md: the maintainer folds your branch file into them at 
 1. **Exit conditions:** every task is ticked; every card is `done`, except cards whose open
    criteria the spec says never block Done (consent and CI items), which stay `in_progress` and
    are named in "For the owner"; the Done gate passes. Gates are cumulative: earlier milestones'
-   automated gates must still pass.
+   automated gates must still pass. `AFTER-M<n>` markers: those whose milestone is merged by now
+   are resolved first (merge `origin/main`, finish or validate, remove the marker); the rest are
+   listed in the milestone report and stay in the branch file, so the hand-in says exactly what
+   waits for which milestone.
 2. **Health check:** classes over 800 lines; ArchUnit exceptions; TODOs; code that disagrees with
    the architecture or the ADRs; growth in `verify` time. Fixes become the first tasks of the
    next milestone's spec.

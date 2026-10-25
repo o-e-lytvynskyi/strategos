@@ -84,17 +84,20 @@ Working without an agent is fine: follow the same procedure by hand.
 
 1. **Find work:** STATE "Open for claims"; `python3 tools/claims.py --fetch list` for what is taken
    ([claims.md](claims.md); a `reserved` row in your name is yours).
-2. **Claim it before writing code:** branch `dev/<you>/<work>`, a commit with only your
+2. **Assess its dependencies:** what it needs from milestones not yet merged; plan independent
+   work first, contracts and fakes where possible, `AFTER-M<n>: …` markers where something must be
+   finished or validated later (procedure §2a step 0).
+3. **Claim it before writing code:** branch `dev/<you>/<work>`, a commit with only your
    claims.md row and your branch file ([branches/README.md](branches/README.md)), a pull request
    `Claim: <work>` to `main`. Start developing once a maintainer has merged it. Work assigned to
    someone else is never taken without their explicit approval.
-3. **Build it** task by task: tests, code, gates, records, one commit per task, push your branch.
+4. **Build it** task by task: tests, code, gates, records, one commit per task, push your branch.
    Merge `origin/main` into it when `main` moves; never rebase or force-push.
-4. **Hand it in** when the claim is done: the milestone gates, `Status: ready for review`, a pull
+5. **Hand it in** when the claim is done: the milestone gates, `Status: ready for review`, a pull
    request whose body is the milestone report (§6).
-5. **Review:** a maintainer session that did not build it validates it; findings come back in the
+6. **Review:** a maintainer session that did not build it validates it; findings come back in the
    pull request and your branch file's "Review"; fix them on the branch.
-6. **Merge:** on the owner's word, by the maintainer. Meanwhile you have claimed the next work —
+7. **Merge:** on the owner's word, by the maintainer. Meanwhile you have claimed the next work —
    stacked on your branch if it depends on it.
 
 ## 6. Reports

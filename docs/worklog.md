@@ -26,6 +26,11 @@ things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` fi
   `Bash(gh pr comment *)`, `Bash(gh pr review *)`, `Bash(gh pr close *)`; remove the nine `~/work/pet_projects`
   entries (seven `git -C ~/work/pet_projects …`, the `Read` and the `Edit` of the old knowledge base);
   optionally `"model": "opus"` at the top level.
+- **Dependencies on unfinished milestones** — before claiming, the developer assesses what the work needs from
+  milestones not yet merged (procedure §2a step 0, the branch file's "Depends on unfinished work"): independent work
+  first, contracts and fakes where possible, `AFTER-M<n>: …` markers where something must be finished or validated
+  later; `tools/claims.py after` lists them; a milestone cannot close with markers for a merged milestone; the review
+  checks them.
 - **Next:** the colleague's claim of M5; a maintainer session accepts it («прими клеймы»).
 
 ## 2026-10-25 (evening) — Docs: onboarding, the roster by pull request, reports per milestone

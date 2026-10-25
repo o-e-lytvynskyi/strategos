@@ -145,6 +145,11 @@ always on their branch, landing by pull request like code.
   milestone or a run of tasks whose dependencies are met), and planning work — the next
   milestone's spec — at any time. A `reserved` row in [docs/claims.md](docs/claims.md) may be
   claimed only by the developer it names.
+- **Assess before claiming:** what the work needs from milestones not yet merged into `main`; build
+  independent functionality first, code against a contract where possible, and mark each spot
+  that must be finished or validated later with `AFTER-M<n>: …` (listed by `tools/claims.py
+  after` and in the branch file's "Depends on unfinished work"). Work that can only follow
+  another milestone is not claimed yet.
 - **Assignment comes first, by pull request to `main`.** The claim pull request adds your row to
   [docs/claims.md](docs/claims.md) (`assigned`) and your branch file, nothing else;
   `python3 tools/claims.py check --base origin/main` must pass on it. A maintainer merges it
