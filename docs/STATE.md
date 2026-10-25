@@ -10,9 +10,13 @@ log is in [worklog.md](worklog.md); the work procedure is the `strategos-dev` sk
 
 Answer in chat or here; the next session applies the answers.
 
-1. **Before the repository goes public: GitHub settings only you can change.** The list is in
-   [security.md](security.md) "Repository settings": branch protection on `main`, approval for outside contributors'
-   workflow runs, read-only fork tokens, Dependabot alerts. Then the visibility switch.
+1. **Going public: one click left, yours.** Done on 2026-10-26 on your word («я все одобряю»): PR #3 merged; labels
+   `full-ci`, `perf`, `bug`, `platform`; workflow token read-only and unable to approve pull requests; merge commits
+   only (squash and rebase off); Dependabot alerts and security updates on. **The visibility switch was refused to the
+   agent** (an outward, irreversible action needs you): Settings → General → Danger Zone → Change visibility → Public.
+   Then say «продолжай публикацию», and the rest of [security.md](security.md) §5 follows: secret scanning and push
+   protection, private vulnerability reporting, approval for outside contributors' workflow runs, the `main` ruleset
+   (pull requests only, Code Owners' review, no force pushes or deletion, you as the bypass by pull request).
 2. **For your information: the licence is decided (D-07, 2026-10-25).** PolyForm Noncommercial 1.0.0
    ([LICENSE](../LICENSE)): all rights stay yours; personal and other non-commercial use is allowed; contributions are
    voluntary and licensed to you under [CONTRIBUTING.md](../CONTRIBUTING.md) so the terms can change at the full
