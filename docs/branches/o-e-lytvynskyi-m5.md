@@ -4,10 +4,10 @@
 
 ## Now
 
-- **Milestone:** M5 Combat; this branch has 3 of 18 tasks complete after splitting T2 into recovery and measured performance work. Legacy work records T1-T2 complete and splits T3 into T3a-T3c (19 tasks total).
-- **In progress:** none; T2a–T2b recovery and performance are green and accepted atomically on this branch.
-- **Last finished task:** T2a–T2b recovered and optimized (2026-10-26), based on legacy a545902; the current commit includes their verified implementation and evidence.
-- **Next task:** restore the legacy T3a–T3c planning split, then start analytic shot lifecycle T3a. Current branch perf is green; the historical main CI investigation remains separate and unresolved.
+- **Milestone:** M5 Combat; this branch has 3 of 20 tasks complete after the T2 and T3 splits. Legacy work records T1-T2 complete and splits T3 into T3a-T3c (19 tasks total).
+- **In progress:** M5 T3a analytic shot lifecycle since 2026-10-26; bounded design/tests are next, before implementation.
+- **Last finished task:** T2a–T2b recovered and optimized (2026-10-26), commit 40491df.
+- **Next task:** T3a deterministic analytic shots, impact damage and persistent/hash-stable lifecycle; T3b orders/data and T3c presentation follow. Current performance is green; the historical main CI investigation remains separate.
 - **Merged from main last:** b207e50 (2026-10-26), including assignment #19.
 
 ## Depends on unfinished work
@@ -17,6 +17,12 @@
 - Preserve codex/m5-combat and dev/lev1pes/m5. Import code and task-specific evidence selectively after assignment; do not copy old central STATE/worklog records over current main.
 
 ## Log
+
+### 2026-10-26 — restore bounded T3 planning and start T3a
+
+- Restored the legacy e8cf0c2 split into shot lifecycle, ranged orders/data and presentation before implementation. CMB-04 enters in_progress; no criterion or approved scope changes. T2a–T2b is pushed as 40491df; all its gates are green.
+- Normalized trailing whitespace in the two baseline artifacts without changing parsed JSON; the new proposal inherited an extra EOF blank line from the old baseline. No source or numeric result changes.
+- **Next:** inspect existing combat, RNG, snapshot and hash contracts; write T3a behavior tests first and implement the smallest lifecycle slice.
 
 ### 2026-10-26 — accept recovered T2a–T2b after full validation
 

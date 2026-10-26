@@ -82,7 +82,7 @@ grow with the garrison), and an AI that fights by the same rules (the roadmap's 
 | Card | Task | Checks (level) |
 |---|---|---|
 | PATH-11 | T2a–T2b, T6 | 1 `MobilityTest.aOneBlockGapIsOpenToInfantryAndClosedToLarge` (L1) · 2 `MobilityTest.reachabilityPerClassIsAFloodFill` (L1) · 3 `pathtests.thirty_horsemen_cross` (L3) |
-| CMB-04 | T3 | 1 `ShotTest.fixedSeedsReproduceTheGoldenResults` (L1) · 2 `ShotTest.theHitRateStaysInTheBinomialBound` (L1) · 3 `ShotTest.movingTargetsAreHitLessAtLongRange` (L1) · 4 `combattests.a_volley_damages_as_l1_predicts` (L3) · 5 `perftests.battle_soak`'s budget E (L6, T14) |
+| CMB-04 | T3a–T3c, T14 | 1 `ShotTest.fixedSeedsReproduceTheGoldenResults` (L1) · 2 `ShotTest.theHitRateStaysInTheBinomialBound` (L1) · 3 `ShotTest.movingTargetsAreHitLessAtLongRange` (L1) · 4 `combattests.a_volley_damages_as_l1_predicts` (L3) · 5 `perftests.battle_soak`'s budget E (L6, T14) |
 | CMB-16 | T4 | 1 `HighGroundTest.rangeAndDamageFollowTheFormula` (L1) · 2 `DuelTest.archersOnAHillWin` (L1, slow) · 3 `HighGroundTest.theBonusIsInTheBreakdown` (L1) · 4 `combattests.a_hill_reaches_further` (L3) |
 | CMB-05 | T5 | 1 `StanceTest.theTable` (L1) · 2 `StanceTest.targetPreferences` (L1) · 3 `StanceTest.aChaseEndsOutOfVision` (L1) · 4 `combattests.stance_*` per family (L3) |
 | ORD-05 | T8 | 1 `FocusTest.aFocusMakesEveryArcherInRangeShootIt` (L1) · 2 `FocusTest.aSpreadIsWithinOneOfEven` (L1) · 3 `combattests.force_attack_on_an_own_building` (L3) |
@@ -268,7 +268,7 @@ M4's scenes are.
 
 ### 7.1 Order
 
-T1 → T2a → T2b (PATH-11) → T3 (CMB-04) → T4 (CMB-16) → T5 (CMB-05) → T6 (UNIT-06) → T7 (UNIT-07) → T8 (ORD-05)
+T1 → T2a → T2b (PATH-11) → T3a → T3b → T3c (CMB-04) → T4 (CMB-16) → T5 (CMB-05) → T6 (UNIT-06) → T7 (UNIT-07) → T8 (ORD-05)
 → T9 (CMB-07) → T10 (BLD-16) → T11 (BLD-11) → T12 (CMB-17) → T13 (AI-03) → T14 (PERF-08) → T15 (the
 battle scenario) → T17 (the consent batch) → T18 (close). T16 is reserved for a row a task adds.
 
@@ -294,8 +294,20 @@ battle scenario) → T17 (the consent batch) → T18 (close). T16 is reserved fo
   passes the original gates; no intermediate red code is committed. Their shared recovery is
   delivered atomically because the measured regressions cross the original T2 source changes.
 
-#### T3 · CMB-04
-- §2.2; the archer template ahead of T7 for the tests. **Verification:** the card's checks 1–4.
+#### T3 · CMB-04 (bounded steps restored from legacy e8cf0c2)
+
+- **T3a · Analytic shot lifecycle:** deterministic lead/spread, landing damage, stable shot ids,
+  snapshot/restore and hashing. L1 fixed-seed golden results, stationary binomial model,
+  impact/lifecycle checks and exact save/resume, including a quiescent previously used store.
+- **T3b · Ranged orders and archer data:** ranged approach/wind-up/period without melee rings,
+  the archer template ahead of T7, balance provenance/sheet, moving-target L1 checks
+  (straight-motion positive control and changes of direction), and the L3 volley.
+- **T3c · Launch/impact presentation:** batched audience-filtered FX, wire compatibility and
+  size checks, client arrows and bow sounds. L1 audience and L2 wire tests; images stay in
+  T17 and the 300-unit network budget stays in T14.
+- Same approved scope and criteria as T3. Each step runs its required full gates and JMH
+  when it changes the core tick/codecs. CMB-04 remains in progress until all its criteria pass,
+  including T14 budget E. Target 300–1,500 changed lines per step; split further before expansion.
 
 #### T4 · CMB-16
 - §2.3. **Verification:** checks 1, 3, 4 (2 with T7's duel harness).
@@ -334,7 +346,7 @@ battle scenario) → T17 (the consent batch) → T18 (close). T16 is reserved fo
 
 ### 7.3 Progress
 
-- [x] T1 (2026-10-26) · [x] T2a (2026-10-26) · [x] T2b (2026-10-26) · [ ] T3 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11
+- [x] T1 (2026-10-26) · [x] T2a (2026-10-26) · [x] T2b (2026-10-26) · [ ] T3a · [ ] T3b · [ ] T3c · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11
 - [ ] T12 · [ ] T13 · [ ] T14 · [ ] T15 · [ ] T17 · [ ] T18
 
 ---
