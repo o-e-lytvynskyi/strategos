@@ -334,7 +334,7 @@ battle scenario) → T17 (the consent batch) → T18 (close). T16 is reserved fo
 
 ### 7.3 Progress
 
-- [x] T1 (2026-10-26) · [ ] T2a · [ ] T2b · [ ] T3 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11
+- [x] T1 (2026-10-26) · [x] T2a (2026-10-26) · [x] T2b (2026-10-26) · [ ] T3 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11
 - [ ] T12 · [ ] T13 · [ ] T14 · [ ] T15 · [ ] T17 · [ ] T18
 
 ---
@@ -391,3 +391,27 @@ combined verify verifySlow verifySoak 4m39s, 1,908 deduplicated tests, no failur
 skips. The combined run includes the scene-diff selftest. No baseline, threshold or image
 was changed. Visual checks remain in T17's batch; Linux golden refresh remains outstanding
 for the next scenario workflow, as T1 specifies.
+
+### T2a–T2b — recovered mobility and measured performance (2026-10-26)
+
+Recovered legacy a545902 selectively, retaining historical Windows evidence in its branch.
+LARGE has 2.5-block headroom, eight-column clearance across page boundaries, its own grid,
+reachability and paths; mixed groups share a request only within a mobility class. Memory
+queries include both grids and the new border-signature storage. Exact save/resume and old
+journals pass. PATH-11 remains in progress until T6's actual thirty-mounted-unit crossing.
+
+Six integration cases reproduced and fixed adjacent/diagonal construction eviction and
+mixed-class place trading. Further tests protect sparse template mobility caching, accepted
+and refused reloads, footprint lifecycle and incremental/full-grid equivalence over border,
+ceiling, duplicate-capture and footprint edits. Ordered changed-page reads are O(1); effective
+slices are shared within a publication and unchanged neighbouring pages are not rebuilt.
+
+Final verify verifySlow verifySoak passes in 4m24s: 1,939 tests, no failures/errors/skips;
+two separately run perf assertions also pass. Populated 512x512 navigation uses 10,114,672
+bytes (32 MiB cap). Final full JMH and comparison pass in 5m56s, 21 measured configurations:
+MovementBench.step600 24.904 us/op; TerrainEditBench.rebuildOnePage 515.312 us/op against
+the documented conservative two-grid profile 481.023; both-class PageBuilder 112.663 us/op.
+The 15% limit and every other existing score/budget remain unchanged (ADR-0019).
+Absolute D is 0.427499 ms p99 / 2 ms; idle ratio 0.218951 / 0.30, valid foreign load.
+See testing/data/M5-T2-recovery-m4pro.json for control, initial regression and final evidence.
+These local results do not declare the separate historical Linux CI investigation closed.

@@ -72,6 +72,11 @@ public interface MatchQueries {
     /** The published terrain pages: an immutable grid, replaced when a page is published. */
     SurfaceGrid surfaces();
 
+    /** Derived navigation memory across every mobility class; fake views may expose a single grid. */
+    default long navigationBytes() {
+        return surfaces().bytes();
+    }
+
     /** The published pages by the hash of their slices, in page order. */
     List<PageRef> pageRefs();
 

@@ -477,3 +477,9 @@ a criterion testable; none adds scope, and no status changed. The owner may veto
 | FOW-01, FOW-07, UI-16, AI-18, MATCH-07; M8 goal | "Conditional on D-24 (c)" removed | The owner took D-24 (c) |
 | CMB-08 | Deferred; nothing in M5 depends on it | D-08 chose the observer avatar |
 
+
+### 2026-10-26, recovered M5 mobility implementation
+
+| Card | Change | Why |
+|---|---|---|
+| PATH-11 | Keep the legacy refinement: run the L3 thirty-horsemen crossing in T6, after UNIT-06 supplies the mounted body. T2 verifies class grids, large motion, mixed groups and save/resume in L1 and reruns existing L3 movement gates; the card remains in progress until T6. | T2 precedes the real mounted entity. A humanoid test double cannot verify that integration; scope, criterion and level are unchanged. |

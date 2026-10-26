@@ -4,19 +4,32 @@
 
 ## Now
 
-- **Milestone:** M5 Combat; this branch has 1 of 18 tasks complete after splitting T2 into recovery and measured performance work. Legacy work records T1-T2 complete and splits T3 into T3a-T3c (19 tasks total).
-- **In progress:** M5 T2a–T2b since 2026-10-26; functional gates pass, but JMH is red and performance work is the only implementation priority.
-- **Last finished task:** recovered T1 (2026-10-26); legacy source a13850b. T2 source is a545902; T3 planning is e8cf0c2; legacy tip bde875d.
-- **Next task:** recover T2, fix review findings with regressions, then run full movement gates and JMH. Resolve the separate red perf dependency before new features (T3a).
+- **Milestone:** M5 Combat; this branch has 3 of 18 tasks complete after splitting T2 into recovery and measured performance work. Legacy work records T1-T2 complete and splits T3 into T3a-T3c (19 tasks total).
+- **In progress:** none; T2a–T2b recovery and performance are green and accepted atomically on this branch.
+- **Last finished task:** T2a–T2b recovered and optimized (2026-10-26), based on legacy a545902; the current commit includes their verified implementation and evidence.
+- **Next task:** restore the legacy T3a–T3c planning split, then start analytic shot lifecycle T3a. Current branch perf is green; the historical main CI investigation remains separate and unresolved.
 - **Merged from main last:** b207e50 (2026-10-26), including assignment #19.
 
 ## Depends on unfinished work
 
 - M0-M4 are merged. No unfinished milestone implementation is required by M5.
-- The separate fix-main claim remains assigned to lev1pes. Main perf run 40176248614 failed idle_300_costs_a_third (0.3255060777 versus 0.30) and path_budget_d (p99 50.288387 ms versus 6 ms). No fixes were delivered by its assignment PR. Resolve this dependency before new M5 feature work; this release does not transfer fix-main.
+- The separate fix-main claim remains assigned to lev1pes. Historical main run 40176248614 failed idle_300_costs_a_third (0.3255060777 / 0.30) and path_budget_d (p99 50.288387 ms / 6 ms). It is not closed by local M5 evidence. Current M5 budgets and both targeted counterexamples now pass, so ready M5 work continues without taking over that separate claim.
 - Preserve codex/m5-combat and dev/lev1pes/m5. Import code and task-specific evidence selectively after assignment; do not copy old central STATE/worklog records over current main.
 
 ## Log
+
+### 2026-10-26 — accept recovered T2a–T2b after full validation
+
+- **M5 T2a–T2b · Mobility and performance** — six integration regressions, nine further cache/publication cases, verifyFast 49s, final verify verifySlow verifySoak 4m24s (1,939 tests), plus two targeted perf tests in 18s; no failures/errors/skips. Navigation on populated 512x512 with bridge is 10,114,672 bytes / 32 MiB.
+- Full JMH and comparison pass in 5m56s: 21 measured configurations, no regression/missing/allocation failures. Movement 24.904 us/op; terrain 515.312 us/op against conservative documented two-grid profile 481.023; both-class page building 112.663 us/op gets its first tracked profile. Metadata-only comparison then passes (21 measured / 20 tracked, 445ms). NodeDiscovery remains informational as before.
+- Absolute path p99 0.427499 ms / 2 ms; idle ratio 0.218951 / 0.30; both have valid low foreign load. Independent final source review has no findings. Preserve all historical branches and original control numbers in the new sanitized evidence report; no old central records or Windows baselines are imported.
+- **Next:** restore the planned T3 split and continue T3a. The local red-budget stop is resolved; the separately assigned historical main investigation remains open and is not claimed as repaired by these Mac results.
+
+### 2026-10-26 — isolate recovery performance cost
+
+- Same-host T1 control (152ca9d), unchanged JMH settings and Temurin 21.0.12.1: MovementBench.step600 23.249 ± 0.462 us/op; TerrainEditBench.rebuildOnePage 290.034 ± 6.111 us/op. The focused diagnostic ran once in 36s; it is not a replacement for the full comparison gate.
+- The original terrain benchmark edits page (0,0), but the recovery rebuilt four large pages on every operation. MovementBench uses the flat-world fallback, yet WORLD eviction reclassified all units every tick even with no footprints. Target those avoidable costs, retaining full clearance semantics and the existing workloads.
+- **Next:** validate mobility reload/sparse-index caching, footprint presence and incremental-versus-full terrain publication, then repeat full gates and unchanged-baseline JMH.
 
 ### 2026-10-26 — split recovery after measured regressions
 
@@ -57,9 +70,16 @@
 ## For the owner
 
 1. Release #18 and successor assignment #19 are merged. No assignment approval remains outstanding for M5.
-2. The separate fix-main claim remains with lev1pes and blocks new M5 feature implementation until resolved. Coordinate its completion or explicitly transfer that claim separately.
+2. The historical fix-main investigation remains with lev1pes. Release proposal [#20](https://github.com/o-e-lytvynskyi/strategos/pull/20) remains a human decision; no implementation under that claim starts without successor assignment. Current M5 performance is now green, so this proposal no longer pauses ready M5 tasks. Historical Linux CI is not declared repaired.
 
 ## Decisions taken
+
+- 2026-10-26 · Continue ready M5 tasks once this branch's full functional and performance gates are green, including both historical failure counterexamples. Keep the separate Linux main investigation assigned and unresolved; its release proposal is optional coordination, not a reason to idle validated M5 work. Undo by pausing features until that separate claim is delivered.
+- 2026-10-26 · trial implementer: pass — integration and performance briefs stayed within named source/test files, preserved old query/reload behavior, demonstrated meaningful regression cases and differential terrain checks, and returned focused/full-fast evidence without commits or records edits.
+- 2026-10-26 · trial reviewer: pass — found and then verified fixes for eviction, mixed slots and quadratic page access; final cache/signature review has no findings, with the orchestrator reading source/test diffs.
+- 2026-10-26 · trial runner: pass — final full gates, isolated controls/diagnostics, targeted perf and full JMH ran serially with bounded summaries; no unrequested retries or baseline edits. Corrected corpus counts distinguish 1,939 functional tests from two extra perf tests.
+
+- 2026-10-26 · Establish TerrainEditBench's two-grid Mac profile at 481.023 us/op after reducing the initial recovery cost from 1027.918, confirming a 290.034 us/op same-host T1 control and passing absolute D (0.427499 ms p99 / 2 ms) and idle ratio (0.218951 / 0.30). This is the new class's measured cost within the planned roughly twofold rebuild; owner delegated recommended baseline decisions under AGENTS.md. Keep the 15% limit and every other existing score/budget unchanged. ADR-0019 and a retained proposal record it; undo by restoring only this benchmark's prior row from 5437a1f. Final full comparison is still required.
 
 - 2026-10-26 · Split mobility recovery and measured performance work; keep acceptance and code delivery atomic so no red intermediate implementation is committed. Undo by collapsing the two progress entries; the gates and feature scope remain unchanged.
 
@@ -71,6 +91,8 @@
 - 2026-10-26 · Prefer selective reuse of legacy T1-T2 over reimplementation, subject to review and current verification. Keep Windows evidence labeled and sanitize personal paths without changing numbers; discard the import if validation reveals an unsuitable design.
 
 ## Pitfalls
+
+- Added docs/kb/rts-sim-large.md: expanded-clearance eviction, class-safe stuck recovery, ordered page notifications, template-cache reloads and complete effective-border signatures.
 
 - Added Python UTF-8 document parsing and empty-discovery validation to docs/kb/minecraft-mod-build.md.
 

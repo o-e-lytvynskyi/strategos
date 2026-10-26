@@ -13,6 +13,7 @@ public final class FootprintOverlay {
     private final int pagesX;
     private final long[][] masks;
     private final int[] blockedCounts;
+    private int activePages;
 
     public FootprintOverlay(int pagesX, int pagesZ) {
         this.pagesX = pagesX;
@@ -30,7 +31,7 @@ public final class FootprintOverlay {
         int page = pageOf(x, z);
         int column = SurfacePage.column(x & 15, z & 15);
         masks[page][column >> 6] |= 1L << (column & 63);
-        blockedCounts[page]++;
+        if (blockedCounts[page]++ == 0) activePages++;
     }
 
     /** Releases match-local column (x, z). */
@@ -40,6 +41,7 @@ public final class FootprintOverlay {
             return;
         }
         if (--blockedCounts[page] == 0) {
+            activePages--;
             Arrays.fill(masks[page], 0); // the last footprint on the page is gone
             return;
         }
@@ -52,6 +54,11 @@ public final class FootprintOverlay {
         int page = pageOf(x, z);
         int column = SurfacePage.column(x & 15, z & 15);
         return blockedCounts[page] > 0 && (masks[page][column >> 6] & (1L << (column & 63))) != 0;
+    }
+
+    /** Whether any footprint is present, including restored columns. */
+    public boolean any() {
+        return activePages > 0;
     }
 
     /** Whether page {@code page} has a blocked column. */
