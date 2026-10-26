@@ -348,7 +348,7 @@ battle scenario) → T17 (the consent batch) → T18 (close). T16 is reserved fo
 
 ### 7.3 Progress
 
-- [x] T1 (2026-10-26) · [x] T2a (2026-10-26) · [x] T2b (2026-10-26) · [ ] T3a · [ ] T3b · [ ] T3c · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11
+- [x] T1 (2026-10-26) · [x] T2a (2026-10-26) · [x] T2b (2026-10-26) · [x] T3a (2026-10-26) · [ ] T3b · [ ] T3c · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11
 - [ ] T12 · [ ] T13 · [ ] T14 · [ ] T15 · [ ] T17 · [ ] T18
 
 ---
@@ -450,3 +450,19 @@ no failures/errors/skips. The session stops on the implementation worker's usage
 pushing this green step. Next: state/scheduler, optional nested-Play codec and non-pristine
 hash integration, in-flight/used-empty continuation canaries and final JMH. T3b must build
 release positions after MOVEMENT to keep constant-velocity lead aligned with COMBAT impact.
+
+### T3a — integrated analytic lifecycle (2026-10-26)
+
+The owned store runs in COMBAT after MOVEMENT and before damage application. Nested Play
+stores optional immutable shot data and allocator history, preserving the outer 16-field codec,
+schema 2, old constructors, pristine JSON and released journal hashes. Used-empty relaunch,
+in-flight continuation and restored dead-shooter impacts have real pipeline tests.
+Non-pristine hashing mixes every frozen field and bonus token with primitive loops.
+
+Final verify verifySlow verifySoak passes in 4m 39s: 1,958 cases, no failures/errors/skips.
+Full JMH passes in 7m 02s with all 25 configurations present. Active 300-shot hashing is 32.394 us
+(0.223 B/op profiler background, within the existing allocation gate); a 60-shot impact+damage
+volley among 300 fighting infantry takes 5.348 us preferred, 6.270 us collateral, 0.827 us miss.
+The four new cases receive first profiles; all 20 existing metrics and thresholds are unchanged.
+Evidence: testing/data/M5-T3a-analytic-shots-m4pro.json. CMB-04 remains in progress for
+T3b orders/data, T3c presentation and T14's network-budget criterion.

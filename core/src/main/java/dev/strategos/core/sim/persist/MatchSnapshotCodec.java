@@ -22,6 +22,8 @@ import dev.strategos.core.sim.MotionStore;
 import dev.strategos.core.sim.PageRef;
 import dev.strategos.core.sim.UnitRecord;
 import dev.strategos.core.sim.build.BuildingStore;
+import dev.strategos.core.sim.combat.Damage;
+import dev.strategos.core.sim.combat.ShotStore;
 import dev.strategos.core.sim.econ.CarryStore;
 import dev.strategos.core.sim.econ.NodeStore;
 import dev.strategos.core.sim.nav.MemberPath;
@@ -386,11 +388,44 @@ public final class MatchSnapshotCodec {
                     Codec.LONG.listOf().fieldOf("memory").forGetter(AiSlots.Saved::memory))
             .apply(i, AiSlots.Saved::new));
 
+    private static final Codec<Damage.Bonus> SHOT_BONUS = RecordCodecBuilder.create(i -> i.group(
+                    Codec.STRING.fieldOf("token").forGetter(Damage.Bonus::token),
+                    Codec.FLOAT.fieldOf("multiplier").forGetter(Damage.Bonus::multiplier))
+            .apply(i, Damage.Bonus::new));
+
+    private static final Codec<Damage> SHOT_DAMAGE = RecordCodecBuilder.create(i -> i.group(
+                    Codec.INT.fieldOf("target").forGetter(Damage::target),
+                    Codec.INT.fieldOf("attacker").forGetter(Damage::attacker),
+                    Codec.FLOAT.fieldOf("hack").forGetter(Damage::hack),
+                    Codec.FLOAT.fieldOf("pierce").forGetter(Damage::pierce),
+                    Codec.FLOAT.fieldOf("crush").forGetter(Damage::crush),
+                    Codec.FLOAT.fieldOf("fire").forGetter(Damage::fire),
+                    SHOT_BONUS.listOf().fieldOf("bonuses").forGetter(Damage::bonuses),
+                    Codec.BOOL.fieldOf("lethal").forGetter(Damage::lethal))
+            .apply(i, Damage::new));
+
+    private static final Codec<ShotStore.Shot> SHOT = RecordCodecBuilder.create(i -> i.group(
+                    Codec.LONG.fieldOf("id").forGetter(ShotStore.Shot::id),
+                    Codec.INT.fieldOf("shooter").forGetter(ShotStore.Shot::shooter),
+                    Codec.INT.fieldOf("target").forGetter(ShotStore.Shot::target),
+                    Codec.LONG.fieldOf("landTick").forGetter(ShotStore.Shot::landTick),
+                    Codec.DOUBLE.fieldOf("landingX").forGetter(ShotStore.Shot::landingX),
+                    Codec.DOUBLE.fieldOf("landingY").forGetter(ShotStore.Shot::landingY),
+                    Codec.DOUBLE.fieldOf("landingZ").forGetter(ShotStore.Shot::landingZ),
+                    SHOT_DAMAGE.fieldOf("damage").forGetter(ShotStore.Shot::damage))
+            .apply(i, ShotStore.Shot::new));
+
+    private static final Codec<ShotStore.Snapshot> SHOTS = RecordCodecBuilder.create(i -> i.group(
+                    Codec.LONG.fieldOf("nextId").forGetter(ShotStore.Snapshot::nextId),
+                    SHOT.listOf().fieldOf("rows").forGetter(ShotStore.Snapshot::rows))
+            .apply(i, ShotStore.Snapshot::new));
+
     static final Codec<MatchSnapshot.Play> PLAY = RecordCodecBuilder.create(i -> i.group(
                     Codec.LONG.listOf().optionalFieldOf("outcome", List.of()).forGetter(MatchSnapshot.Play::outcome),
                     COMPUTER.listOf().optionalFieldOf("ai", List.of()).forGetter(MatchSnapshot.Play::ai),
                     Codec.LONG.optionalFieldOf("aiWake", 0L).forGetter(MatchSnapshot.Play::aiWake),
-                    Codec.LONG.listOf().optionalFieldOf("alerts", List.of()).forGetter(MatchSnapshot.Play::alerts))
+                    Codec.LONG.listOf().optionalFieldOf("alerts", List.of()).forGetter(MatchSnapshot.Play::alerts),
+                    SHOTS.optionalFieldOf("shots", ShotStore.Snapshot.EMPTY).forGetter(MatchSnapshot.Play::shots))
             .apply(i, MatchSnapshot.Play::new));
 
     /** The fields, without {@code "v"}. */

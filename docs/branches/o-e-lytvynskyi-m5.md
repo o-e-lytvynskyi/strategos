@@ -4,9 +4,9 @@
 
 ## Now
 
-- **Milestone:** M5 Combat; this branch has 3 of 20 tasks complete after the T2 and T3 splits. Legacy work records T1-T2 complete and splits T3 into T3a-T3c (19 tasks total).
-- **In progress:** M5 T3a since 2026-10-26. Pure model/impact slice is green and committed at this checkpoint; scheduler, snapshot codec and hash wiring remain. Session stops under developer procedure §8 after the implementation worker returned usage limit; T3a remains unchecked.
-- **Last finished task:** T2a–T2b recovered and optimized (2026-10-26), commit 40491df.
+- **Milestone:** M5 Combat; this branch has 4 of 20 tasks complete after the T2 and T3 splits. Legacy work records T1-T2 complete and splits T3 into T3a-T3c (19 tasks total).
+- **In progress:** none; T3a lifecycle, persistence and hash integration is fully verified. Next is T3b ranged orders/data.
+- **Last finished task:** T3a analytic lifecycle (2026-10-26), with the model checkpoint 08da21c and integration in the current commit.
 - **Next task:** finish T3a wiring: add ShotStore to MatchState, register ShotSystem before CombatSystem, persist optional Snapshot under Play with legacy constructor defaults, hash non-pristine rows plus nextId without allocation, and test in-flight/used-empty save and replay. Then full gates and JMH; T3b/T3c follow.
 - **Merged from main last:** b207e50 (2026-10-26), including assignment #19.
 
@@ -17,6 +17,19 @@
 - Preserve codex/m5-combat and dev/lev1pes/m5. Import code and task-specific evidence selectively after assignment; do not copy old central STATE/worklog records over current main.
 
 ## Log
+
+### 2026-10-26 — complete T3a integration
+
+- **T3a** — owned shot store registered before CombatSystem; optional nested Play snapshot state, pristine omission, used-empty allocator persistence, dead-shooter restoration, full frozen-packet codec and allocation-free hash loops. Six pipeline/persistence tests pass, including real used-empty relaunch; independent review has no remaining findings.
+- verifyFast 49s; final verify verifySlow verifySoak 4m 39s, 1,958 cases, no failures/errors/skips. Full JMH 7m 02s, 25 configurations present, no regression/missing/allocation failures. Hash 300 active shots 32.394 us,0.223 B/op profiler background within unchanged gate; volley60 among 300 fighting infantry 5.348 us preferred, 6.270 us collateral, 0.827 us miss.
+- First profiles for four new shot cases; all 20 prior primary metrics, 15% limit and allocation criteria unchanged. Added the active-shot hash gate. Benchmark uses direct package access rather than reflection and trial assertions prevent empty/depleted workloads. Evidence saved without personal paths.
+- **Next:** T3b core ranged behavior and archer data, then T3c presentation. CMB-04 stays in_progress until all criteria including T14 budget E pass.
+
+### 2026-10-26 — resume the remaining M5 work
+
+- The owner requested completion of all M5 work. Claim remains assigned, no standing restrictions and no main changes since b207e50; the existing gradlew.bat checkout difference remains excluded. Reoriented from 08da21c and refreshed the worktree session lock.
+- Initial verifyFast passes in 654ms; roadmap checks 245 cards and the current claims registry is valid. Resume T3a integration before T3b/T3c and the remaining approved tasks.
+- **Next:** test in-flight and used-empty saved continuations, connect optional nested Play shot state without changing released snapshot/journal semantics, then run full gates and JMH.
 
 ### 2026-10-26 — verified T3a model checkpoint; stop on usage limit
 
@@ -87,6 +100,9 @@
 2. The historical fix-main investigation remains with lev1pes. Release proposal [#20](https://github.com/o-e-lytvynskyi/strategos/pull/20) remains a human decision; no implementation under that claim starts without successor assignment. Current M5 performance is now green, so this proposal no longer pauses ready M5 tasks. Historical Linux CI is not declared repaired.
 
 ## Decisions taken
+
+- 2026-10-26 · Establish first Mac profiles for active-shot hashing and preferred/collateral/miss volley60 cases from the full measured run. All existing profile scores and limits remain unchanged; remove only these four rows to undo. Keep T2's proposed baseline as its historical decision artifact.
+- 2026-10-26 · Use available standard worker gpt-6-sol for the unchanged tier-B contract after the earlier model's usage limit; runner and independent reviewer remained available. Trial implementer/reviewer/runner pass: scoped integration, actual continuation tests, representative combat fixture, bounded summaries and unchanged gates verified by the orchestrator.
 
 - 2026-10-26 · Accept the shot golden only after an independent SplitMix64/Box-Muller calculation matched 126/500 hits, first 32 outcomes and exact damage 126/256. The nearest circle-boundary margin is 0.000171829 in squared distance, well above floating-point rounding differences. Undo by replacing the test golden through a reviewed behavior change; statistical bounds and seed stay fixed.
 - 2026-10-26 · Use circular body-radius footprints with a body-height check and frozen aim Y to avoid cross-layer hits; preferred full target handle precedes ascending any-faction collateral. This refines the approved landing-point model. Undo by revising the collision policy and its explicit circle/bridge/friendly-collateral tests.

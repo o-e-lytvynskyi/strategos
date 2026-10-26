@@ -12,6 +12,7 @@ import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.build.DamageRanks;
 import dev.strategos.core.sim.combat.Damage;
 import dev.strategos.core.sim.combat.HealthStore;
+import dev.strategos.core.sim.combat.ShotStore;
 import dev.strategos.core.sim.econ.Amount;
 import dev.strategos.core.sim.econ.CarryStore;
 import dev.strategos.core.sim.econ.Costs;
@@ -61,6 +62,7 @@ public final class MatchState {
     private final AiStateStore ai = new AiStateStore();
     private final PathStore paths = new PathStore();
     private final HealthStore health = new HealthStore();
+    private final ShotStore shots = new ShotStore();
     private final Treasury treasury;
     private final Costs costs;
     private final GatherRates gatherRates;
@@ -418,6 +420,10 @@ public final class MatchState {
     /** The damage each unit has taken (CMB-01). */
     public HealthStore health() {
         return health;
+    }
+
+    public ShotStore shots() {
+        return shots;
     }
 
     /** A damage packet for this tick's COMBAT phase, after those already queued. */

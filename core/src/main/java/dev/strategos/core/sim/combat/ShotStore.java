@@ -59,6 +59,8 @@ public final class ShotStore {
 
     @CoreApi
     public record Snapshot(long nextId, List<Shot> rows) {
+        public static final Snapshot EMPTY = new Snapshot(1, List.of());
+
         public Snapshot {
             if (nextId < 1) throw new IllegalArgumentException("invalid next shot id");
             rows = List.copyOf(rows);
@@ -107,6 +109,7 @@ public final class ShotStore {
     }
 
     public Snapshot save() {
+        if (pristine()) return Snapshot.EMPTY;
         return new Snapshot(nextId, rows);
     }
 
