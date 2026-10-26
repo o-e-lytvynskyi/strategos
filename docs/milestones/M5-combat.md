@@ -81,7 +81,7 @@ grow with the garrison), and an AI that fights by the same rules (the roadmap's 
 
 | Card | Task | Checks (level) |
 |---|---|---|
-| PATH-11 | T2 | 1 `MobilityTest.aOneBlockGapIsOpenToInfantryAndClosedToLarge` (L1) · 2 `MobilityTest.reachabilityPerClassIsAFloodFill` (L1) · 3 `pathtests.thirty_horsemen_cross` (L3) |
+| PATH-11 | T2a–T2b, T6 | 1 `MobilityTest.aOneBlockGapIsOpenToInfantryAndClosedToLarge` (L1) · 2 `MobilityTest.reachabilityPerClassIsAFloodFill` (L1) · 3 `pathtests.thirty_horsemen_cross` (L3) |
 | CMB-04 | T3 | 1 `ShotTest.fixedSeedsReproduceTheGoldenResults` (L1) · 2 `ShotTest.theHitRateStaysInTheBinomialBound` (L1) · 3 `ShotTest.movingTargetsAreHitLessAtLongRange` (L1) · 4 `combattests.a_volley_damages_as_l1_predicts` (L3) · 5 `perftests.battle_soak`'s budget E (L6, T14) |
 | CMB-16 | T4 | 1 `HighGroundTest.rangeAndDamageFollowTheFormula` (L1) · 2 `DuelTest.archersOnAHillWin` (L1, slow) · 3 `HighGroundTest.theBonusIsInTheBreakdown` (L1) · 4 `combattests.a_hill_reaches_further` (L3) |
 | CMB-05 | T5 | 1 `StanceTest.theTable` (L1) · 2 `StanceTest.targetPreferences` (L1) · 3 `StanceTest.aChaseEndsOutOfVision` (L1) · 4 `combattests.stance_*` per family (L3) |
@@ -107,6 +107,9 @@ grow with the garrison), and an AI that fights by the same rules (the roadmap's 
 |---|---|---|
 | 1 | Spread and focus in one command | `Attack` stays focus (every attacker on the target, M2's meaning); `AttackSpread` (30) splits a group over the enemies within its first target's vision, the nearest first, one per target round the even split; Ctrl and Alt on the right click choose (UI rows in 04 §2.5) |
 | 2 | Shots in the save | A shot in flight is core state: its store is saved and hashed, so a save mid-volley resumes with the same hits (MATCH-04's rule) |
+| 3 | PATH-11 mounted crossing and task order | T2 verifies class grids, large motion, mixed groups and save/resume in L1, plus existing L3 movement gates. The thirty mounted units cross in T6, which supplies the actual body; PATH-11 stays in progress until then. Its criterion and test level are unchanged. |
+| 4 | Footprints at page borders and steps | Large clearance reads all eight adjacent columns, including diagonal page neighbours. A border change rebuilds the surrounding large pages; an adjacent step may raise the body by at most one block, with raised headroom checked throughout. Infantry retains its grid and legacy journal hashes. |
+| 5 | Navigation accounting and body radius | Memory reports include both derived grids. Static avoidance uses the expanded large grid without subtracting body radius twice; body-to-body avoidance still uses template radius. Large templates default to 0.7 and reject smaller radii. |
 
 ### 1.7 Consent plan
 
@@ -265,7 +268,7 @@ M4's scenes are.
 
 ### 7.1 Order
 
-T1 → T2 (PATH-11) → T3 (CMB-04) → T4 (CMB-16) → T5 (CMB-05) → T6 (UNIT-06) → T7 (UNIT-07) → T8 (ORD-05)
+T1 → T2a → T2b (PATH-11) → T3 (CMB-04) → T4 (CMB-16) → T5 (CMB-05) → T6 (UNIT-06) → T7 (UNIT-07) → T8 (ORD-05)
 → T9 (CMB-07) → T10 (BLD-16) → T11 (BLD-11) → T12 (CMB-17) → T13 (AI-03) → T14 (PERF-08) → T15 (the
 battle scenario) → T17 (the consent batch) → T18 (close). T16 is reserved for a row a task adds.
 
@@ -276,8 +279,20 @@ battle scenario) → T17 (the consent batch) → T18 (close). T16 is reserved fo
   failed check fails its run; Linux CI's goldens re-recorded when the scenario job next runs by hand.
 - **Verification:** `verify verifySlow`.
 
-#### T2 · PATH-11
-- §2.1. **Verification:** the card's checks; `PageBuilderBench` within its gate.
+#### T2 · PATH-11 (split during recovery, 2026-10-26)
+
+- **T2a · Recover mobility and integration** (about 1,400 lines): §2.1, class grids, halos,
+  mixed movement, template validation, construction eviction and same-class formation recovery.
+  Checks 1–2 run in `MobilityTest`, `LargeMovementTest` and `LargeIntegrationTest`; check 3
+  remains in T6 with the actual mounted body (§1.6 row 3).
+- **T2b · Eliminate measured recovery overhead** (about 200–600 lines): cache template mobility
+  with correct accepted/rejected reload behavior; avoid impossible eviction work; avoid unchanged
+  halo rebuilding and duplicate effective-slice decoding. Differential terrain tests retain the
+  complete voxel-based clearance model, including headroom, diagonals and footprint removal.
+- **Verification for both steps:** `verify verifySlow verifySoak`, `:core:jmh :core:jmhCompare`
+  and the path-budget check. T2a and T2b remain unchecked until the combined implementation
+  passes the original gates; no intermediate red code is committed. Their shared recovery is
+  delivered atomically because the measured regressions cross the original T2 source changes.
 
 #### T3 · CMB-04
 - §2.2; the archer template ahead of T7 for the tests. **Verification:** the card's checks 1–4.
@@ -319,7 +334,7 @@ battle scenario) → T17 (the consent batch) → T18 (close). T16 is reserved fo
 
 ### 7.3 Progress
 
-- [x] T1 (2026-10-26) · [ ] T2 · [ ] T3 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11
+- [x] T1 (2026-10-26) · [ ] T2a · [ ] T2b · [ ] T3 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11
 - [ ] T12 · [ ] T13 · [ ] T14 · [ ] T15 · [ ] T17 · [ ] T18
 
 ---

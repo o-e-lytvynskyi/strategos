@@ -4,10 +4,10 @@
 
 ## Now
 
-- **Milestone:** M5 Combat; this branch has 1 of 17 tasks complete. Legacy work records T1-T2 complete and splits T3 into T3a-T3c (19 tasks total).
-- **In progress:** none; T1 recovery is verified and ready to commit.
+- **Milestone:** M5 Combat; this branch has 1 of 18 tasks complete after splitting T2 into recovery and measured performance work. Legacy work records T1-T2 complete and splits T3 into T3a-T3c (19 tasks total).
+- **In progress:** M5 T2a–T2b since 2026-10-26; functional gates pass, but JMH is red and performance work is the only implementation priority.
 - **Last finished task:** recovered T1 (2026-10-26); legacy source a13850b. T2 source is a545902; T3 planning is e8cf0c2; legacy tip bde875d.
-- **Next task:** after a human merges this assignment, reconcile legacy T1-T2 with current main and validate the import on the current toolchain. Resolve the separate red perf dependency before starting new M5 features (T3a).
+- **Next task:** recover T2, fix review findings with regressions, then run full movement gates and JMH. Resolve the separate red perf dependency before new features (T3a).
 - **Merged from main last:** b207e50 (2026-10-26), including assignment #19.
 
 ## Depends on unfinished work
@@ -17,6 +17,13 @@
 - Preserve codex/m5-combat and dev/lev1pes/m5. Import code and task-specific evidence selectively after assignment; do not copy old central STATE/worklog records over current main.
 
 ## Log
+
+### 2026-10-26 — split recovery after measured regressions
+
+- T2 integration regressions first reproduced the defects, then all six cases passed; verifyFast 55s and verify verifySlow verifySoak 4m27s pass (1,930 deduplicated tests; no failures/errors/skips). Independent final review has no findings.
+- JMH on the current M4 Pro / macOS 27.0.1 / Temurin 21.0.12.1 failed in 5m59s: MovementBench.step600 22.003 to 27.479 us/op (+24.9%); TerrainEditBench.rebuildOnePage 291.665 to 1027.918 us/op (+252.4%). No missing benchmarks or allocation findings. Baselines and thresholds are unchanged.
+- Split T2a–T2b before expanding the recovery beyond its size target. Preserve all original gates and accept the two code steps atomically only after performance is green. The planning commit contains no product code; current recovery source remains uncommitted.
+- **Next:** measure the T1 control, then remove repeated mobility classification, empty-footprint scans, unnecessary halo builds and duplicate decoding. No new features before resolving the measured regressions.
 
 ### 2026-10-26 — recover and verify T1
 
@@ -53,6 +60,8 @@
 2. The separate fix-main claim remains with lev1pes and blocks new M5 feature implementation until resolved. Coordinate its completion or explicitly transfer that claim separately.
 
 ## Decisions taken
+
+- 2026-10-26 · Split mobility recovery and measured performance work; keep acceptance and code delivery atomic so no red intermediate implementation is committed. Undo by collapsing the two progress entries; the gates and feature scope remain unchanged.
 
 - 2026-10-26 · Recover reviewed T1 source and tests selectively; keep historical Windows artifacts in the preserved branch and require fresh current-host evidence. Undo by reverting this recovery commit; no pushed history is rewritten.
 - 2026-10-26 · trial runner: pass — baseline, deliberate red tests and final gates ran sequentially with compact verdicts, timings and no unrequested retries; the negative checks failed before the fixes and passed afterwards.
