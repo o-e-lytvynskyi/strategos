@@ -1,14 +1,14 @@
-# M5 takeover preparation on dev/o-e-lytvynskyi/m5
+# M5 on dev/o-e-lytvynskyi/m5
 
-**Developer:** o-e-lytvynskyi · **Branch:** dev/o-e-lytvynskyi/m5 · **Work:** M5 takeover preparation · **Base:** main @ 0a7cc3b · **Claimed:** not assigned · **Status:** claimed
+**Developer:** o-e-lytvynskyi · **Branch:** dev/o-e-lytvynskyi/m5 · **Work:** M5 · **Base:** main @ cb4044b · **Claimed:** 2026-10-26 · **Status:** claimed
 
 ## Now
 
 - **Milestone:** M5 Combat; main has 0 of 17 tasks complete. Legacy work records T1-T2 complete and splits T3 into T3a-T3c (19 tasks total).
-- **In progress:** owner-authorized release and takeover preparation only; no M5 development is assigned to this branch yet.
+- **In progress:** assignment request only; release PR #18 is merged. No product development before this assignment is merged.
 - **Last finished task:** no task delivered by this session. Legacy T1 is a13850b; T2 is a545902; T3 planning is e8cf0c2; the legacy tip is bde875d.
-- **Next task:** a human merges the release PR; then submit and obtain a merged assignment PR for M5 before changing product code. Reconcile legacy T1-T2 and revalidate on the current toolchain before starting T3a.
-- **Merged from main last:** based on 0a7cc3b (2026-10-26).
+- **Next task:** after a human merges this assignment, reconcile legacy T1-T2 with current main and validate the import on the current toolchain. Resolve the separate red perf dependency before starting new M5 features (T3a).
+- **Merged from main last:** cb4044b (2026-10-26), including the approved release in #18.
 
 ## Depends on unfinished work
 
@@ -17,6 +17,13 @@
 - Preserve codex/m5-combat and dev/lev1pes/m5. Import code and task-specific evidence selectively after assignment; do not copy old central STATE/worklog records over current main.
 
 ## Log
+
+### 2026-10-26 — request the successor M5 assignment
+
+- The owner merged release PR #18 as cb4044b and requested adoption to continue. Fast-forwarded this branch to the merged main without rewriting history.
+- Added the M5 assignment request for o-e-lytvynskyi. The released lev1pes row and both historical branches are preserved. No code, build surface, thresholds or measurement baselines are changed.
+- Assignment assessment: M0-M4 are merged, the legacy T1-T2 are recoverable within M5, and M6 is outside this claim. The separate fix-main investigation still belongs to lev1pes; reconciliation can precede new feature work, which remains blocked by its unresolved perf failures.
+- **Next:** obtain a human merge of this assignment, then review and selectively import T1-T2 with current records and fresh verification. No product implementation started while assignment is pending.
 
 ### 2026-10-26 — inspect M5 and prepare owner-directed takeover
 
@@ -29,7 +36,7 @@
 
 ## For the owner
 
-1. Review and merge the release PR. The registry checker requires holder handover text for a direct reassignment; use separate release and assignment PRs rather than invent holder consent or weaken the checker. This preparatory branch record does not grant an assignment.
+1. Release PR #18 is merged. Review and merge this successor assignment PR; development starts only after it is merged. No further holder approval is required following the owner-authorized release.
 2. The separate fix-main claim remains with lev1pes and blocks new M5 feature implementation until resolved. Coordinate its completion or explicitly transfer that claim separately.
 
 ## Decisions taken
