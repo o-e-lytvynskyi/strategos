@@ -112,6 +112,7 @@ grow with the garrison), and an AI that fights by the same rules (the roadmap's 
 | 5 | Navigation accounting and body radius | Memory reports include both derived grids. Static avoidance uses the expanded large grid without subtracting body radius twice; body-to-body avoidance still uses template radius. Large templates default to 0.7 and reject smaller radii. |
 | 6 | Shot point, collision and impact ordering | Freeze the target body-center Y and predict X/Z with the current horizontal velocity; spread is horizontal Gaussian. Resolve a circular Body.radius footprint within the current body-height interval, preferring the complete live target handle, then ascending live spatial candidates of any faction, as "whatever unit" specifies. Simultaneous impacts follow stable shot IDs; a dead shooter does not cancel its frozen packet. |
 | 7 | Shot persistence extension | The outer snapshot codec already has 16 fields. Add optional shot state under nested Play, preserving pristine old bytes/hashes and the allocator of used-empty stores. The pure model is implemented first; scheduler, codec and hash wiring remains part of T3a before its checkbox is complete. |
+| 8 | Release phase and ranged defaults | UNIT_AI queues an internal firing intent; COMBAT constructs its frozen launch from post-MOVEMENT positions and velocity before resolving impacts. This preserves the approved lead formula and a constant-velocity control. Starting archer projectile speed is 4 blocks/tick, spread 2.25 blocks at 100 and sight 32; these project defaults receive provenance with the archer content and are tuned with the roster. |
 
 ### 1.7 Consent plan
 
@@ -270,7 +271,7 @@ M4's scenes are.
 
 ### 7.1 Order
 
-T1 → T2a → T2b (PATH-11) → T3a → T3b → T3c (CMB-04) → T4 (CMB-16) → T5 (CMB-05) → T6 (UNIT-06) → T7 (UNIT-07) → T8 (ORD-05)
+T1 → T2a → T2b (PATH-11) → T3a → T3b.1 → T3b.2 → T3c (CMB-04) → T4 (CMB-16) → T5 (CMB-05) → T6 (UNIT-06) → T7 (UNIT-07) → T8 (ORD-05)
 → T9 (CMB-07) → T10 (BLD-16) → T11 (BLD-11) → T12 (CMB-17) → T13 (AI-03) → T14 (PERF-08) → T15 (the
 battle scenario) → T17 (the consent batch) → T18 (close). T16 is reserved for a row a task adds.
 
@@ -301,9 +302,13 @@ battle scenario) → T17 (the consent batch) → T18 (close). T16 is reserved fo
 - **T3a · Analytic shot lifecycle:** deterministic lead/spread, landing damage, stable shot ids,
   snapshot/restore and hashing. L1 fixed-seed golden results, stationary binomial model,
   impact/lifecycle checks and exact save/resume, including a quiescent previously used store.
-- **T3b · Ranged orders and archer data:** ranged approach/wind-up/period without melee rings,
-  the archer template ahead of T7, balance provenance/sheet, moving-target L1 checks
-  (straight-motion positive control and changes of direction), and the L3 volley.
+- **T3b.1 · Ranged behavior** (estimated 900–1,300 source/test lines): typed ranged stats,
+  approach/wind-up/period without melee rings, internal firing intents released after MOVEMENT,
+  moving-target L1 checks with a constant-velocity positive control and direction changes.
+- **T3b.2 · Archer content and engine integration** (estimated 300–600 lines plus generated
+  balance evidence): the archer template ahead of T7, append-only template indices, provenance,
+  balance sheet, language label and the L3 volley. Keep the existing template index prefix,
+  including the previously implicit farmstead/storehouse entries, before appending the archer.
 - **T3c · Launch/impact presentation:** batched audience-filtered FX, wire compatibility and
   size checks, client arrows and bow sounds. L1 audience and L2 wire tests; images stay in
   T17 and the 300-unit network budget stays in T14.
@@ -348,7 +353,7 @@ battle scenario) → T17 (the consent batch) → T18 (close). T16 is reserved fo
 
 ### 7.3 Progress
 
-- [x] T1 (2026-10-26) · [x] T2a (2026-10-26) · [x] T2b (2026-10-26) · [x] T3a (2026-10-26) · [ ] T3b · [ ] T3c · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11
+- [x] T1 (2026-10-26) · [x] T2a (2026-10-26) · [x] T2b (2026-10-26) · [x] T3a (2026-10-26) · [ ] T3b.1 · [ ] T3b.2 · [ ] T3c · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11
 - [ ] T12 · [ ] T13 · [ ] T14 · [ ] T15 · [ ] T17 · [ ] T18
 
 ---

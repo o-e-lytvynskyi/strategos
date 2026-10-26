@@ -4,10 +4,10 @@
 
 ## Now
 
-- **Milestone:** M5 Combat; this branch has 4 of 20 tasks complete after the T2 and T3 splits. Legacy work records T1-T2 complete and splits T3 into T3a-T3c (19 tasks total).
-- **In progress:** none; T3a lifecycle, persistence and hash integration is fully verified. Next is T3b ranged orders/data.
-- **Last finished task:** T3a analytic lifecycle (2026-10-26), with the model checkpoint 08da21c and integration in the current commit.
-- **Next task:** finish T3a wiring: add ShotStore to MatchState, register ShotSystem before CombatSystem, persist optional Snapshot under Play with legacy constructor defaults, hash non-pristine rows plus nextId without allocation, and test in-flight/used-empty save and replay. Then full gates and JMH; T3b/T3c follow.
+- **Milestone:** M5 Combat; this branch has 4 of 21 tasks complete after the T2 and T3 splits. Legacy work records T1-T2 complete and splits T3 into T3a-T3c (19 tasks total).
+- **In progress:** M5 T3b.1 ranged behavior since 2026-10-26; first establish typed ranged stats, then post-movement release and archer content with provenance.
+- **Last finished task:** T3a analytic lifecycle (2026-10-26), commits 08da21c and 449924f.
+- **Next task:** T3b ranged approach, wind-up/repeat and queued release after MOVEMENT; archer data, balance provenance, moving-target controls and the L3 volley. Then T3c FX.
 - **Merged from main last:** b207e50 (2026-10-26), including assignment #19.
 
 ## Depends on unfinished work
@@ -17,6 +17,12 @@
 - Preserve codex/m5-combat and dev/lev1pes/m5. Import code and task-specific evidence selectively after assignment; do not copy old central STATE/worklog records over current main.
 
 ## Log
+
+### 2026-10-26 — split ranged behavior and archer integration before expansion
+
+- Split T3b into T3b.1 typed stats/AI/release timing and T3b.2 content/provenance/L3 integration before adding the controller. Their combined estimate exceeds the per-task source/test target. Every original gate and acceptance criterion remains required; CMB-04 stays in_progress.
+- Preserve all existing builtin network indices: the current explicit pinned prefix is followed by implicit farmstead/storehouse indices, which must be made explicit before appending the archer. No old fixture is rewritten to hide renumbering.
+- **Next:** finish typed ranged stats, implement range-based approach and post-MOVEMENT firing, then validate full gates/JMH before the archer integration task.
 
 ### 2026-10-26 — complete T3a integration
 
