@@ -110,6 +110,8 @@ grow with the garrison), and an AI that fights by the same rules (the roadmap's 
 | 3 | PATH-11 mounted crossing and task order | T2 verifies class grids, large motion, mixed groups and save/resume in L1, plus existing L3 movement gates. The thirty mounted units cross in T6, which supplies the actual body; PATH-11 stays in progress until then. Its criterion and test level are unchanged. |
 | 4 | Footprints at page borders and steps | Large clearance reads all eight adjacent columns, including diagonal page neighbours. A border change rebuilds the surrounding large pages; an adjacent step may raise the body by at most one block, with raised headroom checked throughout. Infantry retains its grid and legacy journal hashes. |
 | 5 | Navigation accounting and body radius | Memory reports include both derived grids. Static avoidance uses the expanded large grid without subtracting body radius twice; body-to-body avoidance still uses template radius. Large templates default to 0.7 and reject smaller radii. |
+| 6 | Shot point, collision and impact ordering | Freeze the target body-center Y and predict X/Z with the current horizontal velocity; spread is horizontal Gaussian. Resolve a circular Body.radius footprint within the current body-height interval, preferring the complete live target handle, then ascending live spatial candidates of any faction, as "whatever unit" specifies. Simultaneous impacts follow stable shot IDs; a dead shooter does not cancel its frozen packet. |
+| 7 | Shot persistence extension | The outer snapshot codec already has 16 fields. Add optional shot state under nested Play, preserving pristine old bytes/hashes and the allocator of used-empty stores. The pure model is implemented first; scheduler, codec and hash wiring remains part of T3a before its checkbox is complete. |
 
 ### 1.7 Consent plan
 
@@ -427,3 +429,24 @@ The 15% limit and every other existing score/budget remain unchanged (ADR-0019).
 Absolute D is 0.427499 ms p99 / 2 ms; idle ratio 0.218951 / 0.30, valid foreign load.
 See testing/data/M5-T2-recovery-m4pro.json for control, initial regression and final evidence.
 These local results do not declare the separate historical Linux CI investigation closed.
+
+### T3a — model slice checkpoint (2026-10-26, task not complete)
+
+ShotAim, ShotStore and standalone ShotSystem are implemented with deterministic lead and
+Gaussian spread, complete handles, frozen damage, body-circle/height collision, ordered
+single-use impacts and immutable store snapshots including allocator history. Empty and
+in-flight-only due checks avoid unnecessary temporary collections. The model is not yet
+registered in MatchCore or included in MatchSnapshot/codec/StateHasher; T3a remains unchecked.
+
+The exact 500-shot binomial test uses committed canary seed 7, shooter 1048576, launch tick 2,
+IDs 1–500, distance 20, spread 2.25 and radius 0.35. The preselected alpha 0.001 interval is
+99–164; an independent SplitMix64/Box-Muller calculation confirms 126 hits and the first
+32 outcomes MHMMMMMMMHMMMMMMHMMMMHMMMMHMMMMH. Exactly representable pierce 1/256 yields
+0.4921875 health damage in the golden regression; target survival and full packet preservation
+are tested. No bounds or seeds were adjusted to match observed results.
+
+The model slice's final verify verifySlow verifySoak passes in 4m26s with 1,952 cases,
+no failures/errors/skips. The session stops on the implementation worker's usage limit after
+pushing this green step. Next: state/scheduler, optional nested-Play codec and non-pristine
+hash integration, in-flight/used-empty continuation canaries and final JMH. T3b must build
+release positions after MOVEMENT to keep constant-velocity lead aligned with COMBAT impact.

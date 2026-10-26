@@ -5,9 +5,9 @@
 ## Now
 
 - **Milestone:** M5 Combat; this branch has 3 of 20 tasks complete after the T2 and T3 splits. Legacy work records T1-T2 complete and splits T3 into T3a-T3c (19 tasks total).
-- **In progress:** M5 T3a analytic shot lifecycle since 2026-10-26; bounded design/tests are next, before implementation.
+- **In progress:** M5 T3a since 2026-10-26. Pure model/impact slice is green and committed at this checkpoint; scheduler, snapshot codec and hash wiring remain. Session stops under developer procedure §8 after the implementation worker returned usage limit; T3a remains unchecked.
 - **Last finished task:** T2a–T2b recovered and optimized (2026-10-26), commit 40491df.
-- **Next task:** T3a deterministic analytic shots, impact damage and persistent/hash-stable lifecycle; T3b orders/data and T3c presentation follow. Current performance is green; the historical main CI investigation remains separate.
+- **Next task:** finish T3a wiring: add ShotStore to MatchState, register ShotSystem before CombatSystem, persist optional Snapshot under Play with legacy constructor defaults, hash non-pristine rows plus nextId without allocation, and test in-flight/used-empty save and replay. Then full gates and JMH; T3b/T3c follow.
 - **Merged from main last:** b207e50 (2026-10-26), including assignment #19.
 
 ## Depends on unfinished work
@@ -17,6 +17,14 @@
 - Preserve codex/m5-combat and dev/lev1pes/m5. Import code and task-specific evidence selectively after assignment; do not copy old central STATE/worklog records over current main.
 
 ## Log
+
+### 2026-10-26 — verified T3a model checkpoint; stop on usage limit
+
+- **T3a model slice** — ShotAim, ShotStore and standalone ShotSystem, SHOT stream 2 and deterministic log helper; 13 new tests. Exact independently verified 126/500 hits and 0.4921875 damage, immutable snapshots, due compaction, exhaustion/failed-launch atomicity, full packet preservation, shooter death and recycled handles are covered. No in-game firing path is registered yet.
+- Independent source review found no defects. Orchestrator then removed empty/in-flight-only due-list allocations; final verify verifySlow verifySoak passes in 4m26s: 1,952 functional cases, 0 failures/errors/skips. Roadmap 245 cards and claims check pass. The current slice changes neither the running core step nor snapshot codecs, so integration/JMH remains in the unfinished T3a step, not claimed complete here.
+- Implementation worker returned usage limit on the follow-up. Finish and push the green model step, then stop under strategos-dev §8. No source edits remain uncommitted except the pre-existing gradlew.bat normalization difference.
+- Added analytic-combat KB notes, including post-MOVEMENT release construction for T3b's constant-velocity control. No new owner permission is required to resume the approved work when execution capacity is available.
+- **Next:** T3a state/scheduler/optional-Play persistence and allocation-free hash integration, legacy save/replay canaries, in-flight and used-empty continuation tests, then required full gates/JMH. T3b orders/data and T3c FX remain untouched. Historical main CI stays a separate unresolved claim.
 
 ### 2026-10-26 — restore bounded T3 planning and start T3a
 
@@ -80,6 +88,9 @@
 
 ## Decisions taken
 
+- 2026-10-26 · Accept the shot golden only after an independent SplitMix64/Box-Muller calculation matched 126/500 hits, first 32 outcomes and exact damage 126/256. The nearest circle-boundary margin is 0.000171829 in squared distance, well above floating-point rounding differences. Undo by replacing the test golden through a reviewed behavior change; statistical bounds and seed stay fixed.
+- 2026-10-26 · Use circular body-radius footprints with a body-height check and frozen aim Y to avoid cross-layer hits; preferred full target handle precedes ascending any-faction collateral. This refines the approved landing-point model. Undo by revising the collision policy and its explicit circle/bridge/friendly-collateral tests.
+
 - 2026-10-26 · Continue ready M5 tasks once this branch's full functional and performance gates are green, including both historical failure counterexamples. Keep the separate Linux main investigation assigned and unresolved; its release proposal is optional coordination, not a reason to idle validated M5 work. Undo by pausing features until that separate claim is delivered.
 - 2026-10-26 · trial implementer: pass — integration and performance briefs stayed within named source/test files, preserved old query/reload behavior, demonstrated meaningful regression cases and differential terrain checks, and returned focused/full-fast evidence without commits or records edits.
 - 2026-10-26 · trial reviewer: pass — found and then verified fixes for eviction, mixed slots and quadratic page access; final cache/signature review has no findings, with the orchestrator reading source/test diffs.
@@ -97,6 +108,8 @@
 - 2026-10-26 · Prefer selective reuse of legacy T1-T2 over reimplementation, subject to review and current verification. Keep Windows evidence labeled and sanitize personal paths without changing numbers; discard the import if validation reveals an unsuitable design.
 
 ## Pitfalls
+
+- Added docs/kb/rts-sim-combat.md: used-empty allocator history, release/movement timing and body/layer impact checks.
 
 - Added docs/kb/rts-sim-large.md: expanded-clearance eviction, class-safe stuck recovery, ordered page notifications, template-cache reloads and complete effective-border signatures.
 
