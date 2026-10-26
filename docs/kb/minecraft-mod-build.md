@@ -101,3 +101,12 @@ profile may not work for years. Write `add('localRuntime', libs.x)`.
 - ErrorProne `ArrayRecordComponent`: an array as a record component is an error under `-Werror`;
   replace a record with an array by a plain immutable class with `equals` through
   `Arrays.equals`.
+
+## Python document checks: pin UTF-8 and reject empty discoveries
+
+`Path.read_text()` uses the host's default encoding. On a Windows host using cp1251,
+UTF-8 roadmap headings can decode without an exception yet no longer match the parser.
+A validator that only loops over discovered cards then reports success for zero cards.
+Read repository documents with `encoding="utf-8"` and explicitly reject an empty discovery.
+`tools/test_roadmap.py` reproduces the host-default mismatch and empty-document false pass;
+both tests fail against the pre-M5 reader and pass with the explicit encoding and guard.

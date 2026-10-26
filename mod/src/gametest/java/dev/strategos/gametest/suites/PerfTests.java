@@ -3,7 +3,6 @@ package dev.strategos.gametest.suites;
 import static dev.strategos.gametest.suites.PerfVerdicts.INVALID_FOREIGN_LOAD;
 import static dev.strategos.gametest.suites.PerfVerdicts.MS;
 import static dev.strategos.gametest.suites.PerfVerdicts.gated;
-import static dev.strategos.gametest.suites.PerfVerdicts.judgeSoak;
 import static dev.strategos.gametest.suites.PerfVerdicts.scaled;
 import static dev.strategos.gametest.suites.PerfVerdicts.verdict;
 import static dev.strategos.gametest.suites.PerfVerdicts.write;
@@ -12,7 +11,6 @@ import static dev.strategos.gametest.suites.Units.core;
 
 import com.google.gson.JsonObject;
 import dev.strategos.core.content.TemplateSet;
-import dev.strategos.core.protocol.MatchControl;
 import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.SpawnUnits;
 import dev.strategos.core.protocol.UnitSet;
@@ -70,20 +68,6 @@ public final class PerfTests {
     private static final int GROUP_RESULTS_TICKS = 5;
     private static final int PATH_WARM_UP = 2;
     private static final int PATH_RUNS = 10;
-    private static final int SOAK_TICKS = Integer.getInteger("strategos.soak.ticks", 12_000);
-    private static final int STRESS_TICKS = 2_400;
-    private static final int SOAK_LANE = 1;
-    private static final int STRESS_LANE = 2;
-    private static final int MELEE_LANE = 3;
-    private static final int MELEE_TICKS = 6_000;
-    private static final int FIRST_LOOP_TICKS = Integer.getInteger("strategos.firstLoop.ticks", 18_000);
-    private static final int FIRST_LOOP_SHORT_TICKS = 6_000;
-    private static final int FIRST_LOOP_LANE = 4;
-    private static final int FIRST_LOOP_STRESS_LANE = 5;
-    private static final int FIRST_LOOP_FAST_LANE = 6;
-    private static final int ECONOMY_TICKS = Integer.getInteger("strategos.economy.ticks", 18_000);
-    private static final int ECONOMY_LANE = 7;
-    private static final int ECONOMY_STRESS_LANE = 8;
 
     private PerfTests() {}
 
@@ -611,28 +595,16 @@ public final class PerfTests {
      */
     @StrategosTest(batch = "perf_soak", arena = "arena_flat_48", timeoutTicks = 80_000)
     public static void crowdSoak600(GameTestHelper h) {
-        Window window = new Window();
-        CrowdSoak.start(
-                h,
-                new CrowdSoak.Config("crowd_soak_600", 0, 300, SOAK_TICKS, true, 2, SOAK_LANE),
-                r -> judgeSoak(h, r, window, false),
-                window::start,
-                window::sampleForeignLoad);
+        PerfSoaks.crowdSoak600(h);
     }
 
     /**
-     * PERF-05.3: the stress pass, 1,200 units under {@value #STRESS_TICKS} ticks of seeded orders: only budget C, p95 at
+     * PERF-05.3: the stress pass, 1,200 units under 2,400 ticks of seeded orders: only budget C, p95 at
      * most 50 ms, gates; the rest is reported. Writes {@code stress_1200.json}.
      */
     @StrategosTest(batch = "perf_stress", arena = "arena_flat_48", timeoutTicks = 80_000)
     public static void stress1200(GameTestHelper h) {
-        Window window = new Window();
-        CrowdSoak.start(
-                h,
-                new CrowdSoak.Config("stress_1200", 1, 600, STRESS_TICKS, true, 0, STRESS_LANE),
-                r -> judgeSoak(h, r, window, true),
-                window::start,
-                window::sampleForeignLoad);
+        PerfSoaks.stress1200(h);
     }
 
     /**
@@ -644,13 +616,7 @@ public final class PerfTests {
      */
     @StrategosTest(batch = "perf_melee", arena = "arena_flat_48", timeoutTicks = 40_000)
     public static void meleeSoak200(GameTestHelper h) {
-        Window window = new Window();
-        CrowdSoak.start(
-                h,
-                new CrowdSoak.Config("melee_soak_200", 0, 100, MELEE_TICKS, true, 2, MELEE_LANE, true),
-                r -> judgeSoak(h, r, window, false),
-                window::start,
-                window::sampleForeignLoad);
+        PerfSoaks.meleeSoak200(h);
     }
 
     /**
@@ -663,35 +629,16 @@ public final class PerfTests {
      */
     @StrategosTest(batch = "perf_first_loop", arena = "arena_flat_48", timeoutTicks = 40_000)
     public static void firstLoopSoak(GameTestHelper h) {
-        Window window = new Window();
-        CrowdSoak.start(
-                h,
-                CrowdSoak.Config.firstLoop(
-                        "first_loop_soak", FirstLoopScene.Config.SOAK, FIRST_LOOP_TICKS, FIRST_LOOP_LANE, 1),
-                r -> judgeSoak(h, r, window, false),
-                window::start,
-                window::sampleForeignLoad);
+        PerfSoaks.firstLoopSoak(h);
     }
 
     /**
-     * PERF-06.3: the first loop at twice its scale, 400 units and six constructions, for {@value
-     * #FIRST_LOOP_SHORT_TICKS} ticks: budget C's p95 at most 50 ms gates, the rest is reported. Writes {@code
+     * PERF-06.3: the first loop at twice its scale, 400 units and six constructions, for 6,000 ticks: budget C's p95 at most 50 ms gates, the rest is reported. Writes {@code
      * first_loop_stress.json}.
      */
     @StrategosTest(batch = "perf_first_loop_stress", arena = "arena_flat_48", timeoutTicks = 20_000)
     public static void firstLoopStress(GameTestHelper h) {
-        Window window = new Window();
-        CrowdSoak.start(
-                h,
-                CrowdSoak.Config.firstLoop(
-                        "first_loop_stress",
-                        FirstLoopScene.Config.STRESS,
-                        FIRST_LOOP_SHORT_TICKS,
-                        FIRST_LOOP_STRESS_LANE,
-                        1),
-                r -> judgeSoak(h, r, window, true),
-                window::start,
-                window::sampleForeignLoad);
+        PerfSoaks.firstLoopStress(h);
     }
 
     /**
@@ -705,51 +652,27 @@ public final class PerfTests {
      */
     @StrategosTest(batch = "perf_economy", arena = "arena_flat_48", timeoutTicks = 40_000)
     public static void economySoak(GameTestHelper h) {
-        Window window = new Window();
-        CrowdSoak.start(
-                h,
-                CrowdSoak.Config.firstLoop("economy_soak", EconomyScene.Config.SOAK, ECONOMY_TICKS, ECONOMY_LANE, 1),
-                r -> judgeSoak(h, r, window, false),
-                window::start,
-                window::sampleForeignLoad);
+        PerfSoaks.economySoak(h);
     }
 
     /**
      * PERF-07.3: the economy at twice its scale, 600 workers and soldiers, ten constructions and four repairs, for
-     * {@value #FIRST_LOOP_SHORT_TICKS} ticks: budget C's p95 at most 50 ms gates, the rest is reported. Writes {@code
+     * 6,000 ticks: budget C's p95 at most 50 ms gates, the rest is reported. Writes {@code
      * economy_stress.json}.
      */
     @StrategosTest(batch = "perf_economy_stress", arena = "arena_flat_48", timeoutTicks = 20_000)
     public static void economyStress(GameTestHelper h) {
-        Window window = new Window();
-        CrowdSoak.start(
-                h,
-                CrowdSoak.Config.firstLoop(
-                        "economy_stress", EconomyScene.Config.STRESS, FIRST_LOOP_SHORT_TICKS, ECONOMY_STRESS_LANE, 1),
-                r -> judgeSoak(h, r, window, true),
-                window::start,
-                window::sampleForeignLoad);
+        PerfSoaks.economyStress(h);
     }
 
     /**
-     * MATCH-05.4: the first loop played at 1.5 times its speed, 30 ticks a second, for {@value #FIRST_LOOP_SHORT_TICKS}
+     * MATCH-05.4: the first loop played at 1.5 times its speed, 30 ticks a second, for 6,000
      * ticks: budget C's p95 at most 15.3 ms, so a tick still fits a 20-a-second budget's share, gates under {@code c};
      * the rest is reported. Writes {@code first_loop_fast.json}.
      */
     @StrategosTest(batch = "perf_first_loop_fast", arena = "arena_flat_48", timeoutTicks = 20_000)
     public static void firstLoopFast(GameTestHelper h) {
-        Window window = new Window();
-        CrowdSoak.start(
-                h,
-                CrowdSoak.Config.firstLoop(
-                        "first_loop_fast",
-                        FirstLoopScene.Config.SOAK,
-                        FIRST_LOOP_SHORT_TICKS,
-                        FIRST_LOOP_FAST_LANE,
-                        MatchControl.FAST),
-                r -> judgeSoak(h, r, window, false),
-                window::start,
-                window::sampleForeignLoad);
+        PerfSoaks.firstLoopFast(h);
     }
 
     /**

@@ -1,14 +1,14 @@
 # M5 on dev/o-e-lytvynskyi/m5
 
-**Developer:** o-e-lytvynskyi · **Branch:** dev/o-e-lytvynskyi/m5 · **Work:** M5 · **Base:** main @ cb4044b · **Claimed:** 2026-10-26 · **Status:** claimed
+**Developer:** o-e-lytvynskyi · **Branch:** dev/o-e-lytvynskyi/m5 · **Work:** M5 · **Base:** main @ cb4044b · **Claimed:** 2026-10-26 · **Status:** in progress
 
 ## Now
 
-- **Milestone:** M5 Combat; main has 0 of 17 tasks complete. Legacy work records T1-T2 complete and splits T3 into T3a-T3c (19 tasks total).
-- **In progress:** assignment request only; release PR #18 is merged. No product development before this assignment is merged.
-- **Last finished task:** no task delivered by this session. Legacy T1 is a13850b; T2 is a545902; T3 planning is e8cf0c2; the legacy tip is bde875d.
+- **Milestone:** M5 Combat; this branch has 1 of 17 tasks complete. Legacy work records T1-T2 complete and splits T3 into T3a-T3c (19 tasks total).
+- **In progress:** none; T1 recovery is verified and ready to commit.
+- **Last finished task:** recovered T1 (2026-10-26); legacy source a13850b. T2 source is a545902; T3 planning is e8cf0c2; legacy tip bde875d.
 - **Next task:** after a human merges this assignment, reconcile legacy T1-T2 with current main and validate the import on the current toolchain. Resolve the separate red perf dependency before starting new M5 features (T3a).
-- **Merged from main last:** cb4044b (2026-10-26), including the approved release in #18.
+- **Merged from main last:** b207e50 (2026-10-26), including assignment #19.
 
 ## Depends on unfinished work
 
@@ -17,6 +17,19 @@
 - Preserve codex/m5-combat and dev/lev1pes/m5. Import code and task-specific evidence selectively after assignment; do not copy old central STATE/worklog records over current main.
 
 ## Log
+
+### 2026-10-26 — recover and verify T1
+
+- **M5 T1 · Health check** — selectively imported nine reviewed source/test files from a13850b. Reproduced the scene-verdict failure and two roadmap failures before fixing them. Initial verifyFast 1m20s; recovered verifyFast 47s; verify verifySlow verifySoak 4m39s, 1,908 deduplicated tests, no failures/errors/skips. All 12 Python tool tests pass. No central records, baselines, thresholds or images were imported or changed.
+- Added the UTF-8/empty-discovery pitfall to minecraft-mod-build.md. Confirmed extracted HUD calls in the exact NeoForge 21.1.264 Minecraft sources; no new engine API is introduced.
+- Independent T2 review found adjacent-footprint eviction, mixed-class slot trading and repeated changed-page traversal gaps; reproduce and fix these during recovery before accepting T2.
+- **Next:** recover T2 with regression tests and review fixes; validate full movement gates and JMH. The separate main perf claim is unresolved; no new feature work starts yet.
+
+### 2026-10-26 — resume assigned M5 recovery
+
+- The owner merged assignment #19 and authorized autonomous development and recommended decisions. Merged main b207e50 without rewriting history. Main merges remain human actions.
+- Started T1 recovery with a current-main verifyFast runner and an independent read-only review of legacy T1. Product source on main matches the parent of legacy T1; selectively reuse reviewed changes rather than replaying old central records.
+- **Next:** import and verify T1, then review and recover T2; preserve the unresolved separate perf dependency before new feature work.
 
 ### 2026-10-26 — request the successor M5 assignment
 
@@ -36,15 +49,21 @@
 
 ## For the owner
 
-1. Release PR #18 is merged. Review and merge this successor assignment PR; development starts only after it is merged. No further holder approval is required following the owner-authorized release.
+1. Release #18 and successor assignment #19 are merged. No assignment approval remains outstanding for M5.
 2. The separate fix-main claim remains with lev1pes and blocks new M5 feature implementation until resolved. Coordinate its completion or explicitly transfer that claim separately.
 
 ## Decisions taken
+
+- 2026-10-26 · Recover reviewed T1 source and tests selectively; keep historical Windows artifacts in the preserved branch and require fresh current-host evidence. Undo by reverting this recovery commit; no pushed history is rewritten.
+- 2026-10-26 · trial runner: pass — baseline, deliberate red tests and final gates ran sequentially with compact verdicts, timings and no unrequested retries; the negative checks failed before the fixes and passed afterwards.
+- 2026-10-26 · trial reviewer: pass — reviewed immutable T1 source without edits/builds, verified semantic preservation and scene guard behavior; T2 findings are being validated separately.
 
 - 2026-10-26 · Follow the owner's explicit takeover authorization through a release PR followed by an assignment PR; retain all historical branches and evidence. Undo by rejecting the release or assigning M5 back by PR.
 - 2026-10-26 · Prefer selective reuse of legacy T1-T2 over reimplementation, subject to review and current verification. Keep Windows evidence labeled and sanitize personal paths without changing numbers; discard the import if validation reveals an unsuitable design.
 
 ## Pitfalls
+
+- Added Python UTF-8 document parsing and empty-discovery validation to docs/kb/minecraft-mod-build.md.
 
 - Existing Windows wrapper line-ending normalization is recorded on the previous fix-main branch; no wrapper or shared settings change is included here.
 

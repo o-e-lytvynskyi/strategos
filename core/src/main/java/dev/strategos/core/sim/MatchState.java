@@ -18,10 +18,8 @@ import dev.strategos.core.sim.econ.Costs;
 import dev.strategos.core.sim.econ.EconomyChecks;
 import dev.strategos.core.sim.econ.EconomyRules;
 import dev.strategos.core.sim.econ.EconomyTimes;
-import dev.strategos.core.sim.econ.Forage;
 import dev.strategos.core.sim.econ.GatherRates;
 import dev.strategos.core.sim.econ.Ledger;
-import dev.strategos.core.sim.econ.NodeDiscovery;
 import dev.strategos.core.sim.econ.NodeIndex;
 import dev.strategos.core.sim.econ.NodeStore;
 import dev.strategos.core.sim.econ.Treasury;
@@ -203,24 +201,10 @@ public final class MatchState {
         }
     }
 
-    /**
-     * ECO-02: the match's nodes, found once every page of its space is published, from the slices' materials (M3 spec
-     * §1.6 rows 1–2); restored ones are kept.
-     */
+    /** Discover the resource model once all terrain slices have arrived. */
     private void discoverNodes() {
-        MatchBounds b = config.bounds();
-        NodeDiscovery.discover(
-                nodes,
-                config.rules().economy(),
-                surfaces.pagesX(),
-                surfaces.pagesZ(),
-                b.minY(),
-                i -> sliceBytes[i] == null ? null : VoxelSlice.decode(sliceBytes[i]));
         nodeIndex = null;
-        for (int id = 1; id <= nodes.count(); id++) {
-            ledger.found(nodes.resource(id), nodes.amount(id));
-        }
-        Forage.showAll(this);
+        MatchResourceDiscovery.discover(this, sliceBytes);
     }
 
     /**
@@ -330,36 +314,9 @@ public final class MatchState {
         return index;
     }
 
-    /**
-     * A capture after an edit someone else made (04 §11.4): a node block it no longer shows, that the core still counts
-     * and did not take itself, went without the core, and the node loses it, crediting nobody.
-     */
+    /** Reconcile resource blocks changed outside the core. */
     private void losses(int page, PageCoord coord) {
-        if (!nodes.discovered() || nodes.count() == 0) {
-            return;
-        }
-        VoxelSlice slice = VoxelSlice.decode(sliceBytes[page]);
-        int minY = config.bounds().minY();
-        for (int id = 1; id <= nodes.count(); id++) {
-            long[] blocks = nodes.blocks(id);
-            for (int k = nodes.gone(id); k < blocks.length; k++) {
-                int x = NodeStore.x(blocks[k]);
-                int z = NodeStore.z(blocks[k]);
-                int band = NodeStore.y(blocks[k]) - minY;
-                if (x >> 4 != coord.x() || z >> 4 != coord.z() || band < 0 || band >= slice.height()) {
-                    continue;
-                }
-                int column = (x & 15) * 16 + (z & 15);
-                boolean shown = slice.materials().at(column * slice.height() + band) != null;
-                boolean ours = terrainEdits.classAt(page, TerrainEdits.cell(x & 15, band, z & 15)) >= 0;
-                if (!shown && !ours) {
-                    long lost = nodes.lose(id, blocks[k]);
-                    if (lost > 0) {
-                        ledger.lost(nodes.resource(id), lost);
-                    }
-                }
-            }
-        }
+        MatchResourceDiscovery.losses(this, sliceBytes, terrainEdits, page, coord);
     }
 
     /** Page {@code index}'s surfaces from its last slice, the core's edits and its footprints. */

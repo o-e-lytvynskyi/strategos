@@ -319,7 +319,7 @@ battle scenario) → T17 (the consent batch) → T18 (close). T16 is reserved fo
 
 ### 7.3 Progress
 
-- [ ] T1 · [ ] T2 · [ ] T3 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11
+- [x] T1 (2026-10-26) · [ ] T2 · [ ] T3 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11
 - [ ] T12 · [ ] T13 · [ ] T14 · [ ] T15 · [ ] T17 · [ ] T18
 
 ---
@@ -355,6 +355,24 @@ battle scenario) → T17 (the consent batch) → T18 (close). T16 is reserved fo
 
 | Input | When | Blocks |
 |---|---|---|
-| «начинай M5» | now | M5's start |
+| «начинай M5» | received; successor assignment #19 merged 2026-10-26 | Settled; recovery continues on dev/o-e-lytvynskyi/m5 |
 | The goldens and the looks | T17 | Accepted |
 | The battle playtest and the questionnaire | after the demo | Accepted |
+
+## 11. Implementation results
+
+### T1 — recovered and revalidated (2026-10-26)
+
+Recovered the source and regression tests from legacy a13850b after independent review,
+without importing its central records or historical measurement files. Resource discovery,
+HUD card presentation and long perf scenes now have separate classes; MatchState, RtsHud
+and PerfTests are 793, 788 and 779 lines respectively. Annotated perf entry points are unchanged.
+The scene-verdict selftest first reproduced the ignored failure with matching pixels, then
+passed after the fix, including platforms without goldens. The UTF-8/empty-input roadmap
+regressions also failed before their fixes; all 12 Python tool tests now pass.
+
+Current macOS validation: initial main verifyFast 1m20s; recovered T1 verifyFast 47s;
+combined verify verifySlow verifySoak 4m39s, 1,908 deduplicated tests, no failures, errors or
+skips. The combined run includes the scene-diff selftest. No baseline, threshold or image
+was changed. Visual checks remain in T17's batch; Linux golden refresh remains outstanding
+for the next scenario workflow, as T1 specifies.
