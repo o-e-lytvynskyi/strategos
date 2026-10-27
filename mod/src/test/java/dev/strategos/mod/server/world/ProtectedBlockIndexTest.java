@@ -58,7 +58,10 @@ class ProtectedBlockIndexTest {
             }
         }
         for (int k = n; k < probes.length; k++) {
-            probes[k] = probes[(k * 7919) % n];
+            // Equal probe-object working sets: reusing references here gave the small index only
+            // 16K position objects while the large one dereferenced 64K distinct objects.
+            BlockPos pos = probes[(k * 7919) % n];
+            probes[k] = new BlockPos(pos.getX(), pos.getY(), pos.getZ());
         }
         long[] runs = new long[7];
         long sink = 0;
