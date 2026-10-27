@@ -4,6 +4,8 @@
 
 ## Now
 
+- **Hand-in:** [PR #21](https://github.com/o-e-lytvynskyi/strategos/pull/21), implementation commit f25e2c9; ready for human review.
+
 - **Milestone:** repair the two historical main perf failures; claim #13 is human-merged.
 - **Last finished task:** frozen candidate passes all local functional gates (1,918 tests), 21 JMH benchmarks/comparator, short navigation, separate fast-loop and the complete 18-case existing CI perf profile (38m 59s).
 - **Next task:** human review and independent maintainer CI/Mac validation. This session stops after hand-in; M5 is untouched.
