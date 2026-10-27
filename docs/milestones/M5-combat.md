@@ -89,7 +89,7 @@ grow with the garrison), and an AI that fights by the same rules (the roadmap's 
 | UNIT-06 | T6 | 1 `bodytests.a_horseman_is_one_entity` (L3) · 2 the engine-surface inventory lists `unit_mount` with ADR-0011's settings (L2) · 3 `perftests.mounted_cost` within 20 % of a foot unit (L6) · 4 `m5_goldens` riders at every camera height (L4, T17) |
 | UNIT-07 | T7 | 1 `DuelTest.eachCounterWins` (L1, slow) · 2 `DuelTest.everyUnitWinsOneAndLosesOne` (L1, slow) · 3 `combattests.duels_*` 20 seeds each, smoke (L3, slow batch) · 4 the owner's silhouettes (L7) |
 | CMB-07 | T9 | 1 `TownArrowsTest.countAndDpsAreTheSheets` (L1) · 2 `TownArrowsTest.onlyEnemies` (L1) · 3 `combattests.the_centre_breaks_a_small_raid` (L3) |
-| BLD-16 | T10 | 1 `GarrisonTest.capacityAndClasses` (L1) · 2 `GarrisonTest.handleHpAndOrdersSurvive` (L1) · 3 `garrisontests.the_bell_brings_them_in` (L3) · 4 `garrisontests.all_clear_returns_them` (L3) · 5 `garrisontests.garrisoned_units_have_no_body` (L3) · 6 `garrisontests.the_bell_block_rings` (L3) |
+| BLD-16 | T10a, T10b | 1 `GarrisonTest.capacityAndClasses` (L1) · 2 `GarrisonTest.handleHpAndOrdersSurvive` (L1) · 3 `garrisontests.the_bell_brings_them_in` (L3) · 4 `garrisontests.all_clear_returns_them` (L3) · 5 `garrisontests.garrisoned_units_have_no_body` (L3) · 6 `garrisontests.the_bell_block_rings` (L3) |
 | BLD-11 | T11 | 1 `TownArrowsTest.basePlusGarrisoned` (L1) · 2 `TownArrowsTest.dpsWithAGarrison` (L1) · 3 `garrisontests.a_garrisoned_centre_breaks_a_horse_raid` (L3) |
 | CMB-17 | T12 | 1 `AttackLinesTest.onlyWhatTheViewerMayReceive` (L1) · 2 `AttackLinesBench` under 0.3 ms for 300 units (L6) and PERF-14's battle scene (T17) · 3 `m5_goldens` lines and flashes (L4, T17) |
 | AI-03 | T13 | 1 `BattleBotTest.focusesAndRetreats` (L1, slow) · 2 `BattleBotTest.shiftsToSpearmenAgainstHorse` (L1, slow) · 3 `BattleBotTest.withinTheBudget` (L1) · 4 `aitests.battle_seed_replays_to_its_hash` (L3) |
@@ -281,7 +281,7 @@ M4's scenes are.
 ### 7.1 Order
 
 T1 → T2a → T2b (PATH-11) → T3a → T3b.1 → T3b.2 → T3c.1 → T3c.2 (CMB-04) → T4 (CMB-16) → T5a → T5b (CMB-05) → T6 (UNIT-06) → T7 (UNIT-07) → T8 (ORD-05)
-→ T9 (CMB-07) → T10 (BLD-16) → T11 (BLD-11) → T12 (CMB-17) → T13 (AI-03) → T14 (PERF-08) → T15 (the
+→ T9 (CMB-07) → T10a → T10b (BLD-16) → T11 (BLD-11) → T12 (CMB-17) → T13 (AI-03) → T14 (PERF-08) → T15 (the
 battle scenario) → T17 (the consent batch) → T18 (close). T16 is reserved for a row a task adds.
 
 ### 7.2 Tasks
@@ -357,6 +357,12 @@ battle scenario) → T17 (the consent batch) → T18 (close). T16 is reserved fo
 #### T9 · CMB-07 · T10 · BLD-16 · T11 · BLD-11
 - §2.8, §2.9; `Garrison` (26), `Ungarrison` (27), `RingBell` (28), `AllClear` (29). **Verification:**
   the cards' checks.
+- T10 split before implementation (2026-10-27): **T10a · Garrison in the core** (estimated 800–1,200
+  lines): `GarrisonHolder` data, `Garrison` (26) and `Ungarrison` (27), the walk to the door, the
+  GARRISONED state with its handle, HP and orders kept, out of the spatial index, persisted and hashed;
+  BLD-16 checks 1–2 (L1). **T10b · The bell and the bodies** (estimated 600–900 lines): `RingBell` (28),
+  `AllClear` (29), the bell `fx`, the card buttons, no body while garrisoned (`BodyMode.NONE`), the
+  first-person bell block; checks 3–6 (L3).
 
 #### T12 · CMB-17
 - §2.10; `AttackLinesBench`. **Verification:** checks 1–2; 3 in T17.
@@ -376,7 +382,7 @@ battle scenario) → T17 (the consent batch) → T18 (close). T16 is reserved fo
 
 ### 7.3 Progress
 
-- [x] T1 (2026-10-26) · [x] T2a (2026-10-26) · [x] T2b (2026-10-26) · [x] T3a (2026-10-26) · [x] T3b.1 (2026-10-27) · [x] T3b.2 (2026-10-27) · [x] T3c.1 (2026-10-27) · [x] T3c.2 (2026-10-27) · [x] T4 (2026-10-27) · [x] T5a (2026-10-27) · [x] T5b (2026-10-27) · [x] T6 (2026-10-27) · [x] T7 (2026-10-27) · [x] T8 (2026-10-27) · [x] T9 (2026-10-27) · [ ] T10 · [ ] T11
+- [x] T1 (2026-10-26) · [x] T2a (2026-10-26) · [x] T2b (2026-10-26) · [x] T3a (2026-10-26) · [x] T3b.1 (2026-10-27) · [x] T3b.2 (2026-10-27) · [x] T3c.1 (2026-10-27) · [x] T3c.2 (2026-10-27) · [x] T4 (2026-10-27) · [x] T5a (2026-10-27) · [x] T5b (2026-10-27) · [x] T6 (2026-10-27) · [x] T7 (2026-10-27) · [x] T8 (2026-10-27) · [x] T9 (2026-10-27) · [ ] T10a · [ ] T10b · [ ] T11
 - [ ] T12 · [ ] T13 · [ ] T14 · [ ] T15 · [ ] T17 · [ ] T18
 
 ---
