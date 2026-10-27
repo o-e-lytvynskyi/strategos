@@ -7,9 +7,9 @@
 ## Now
 
 - **Milestone:** bounded follow-up fixes for three independently reproduced bugs in existing main: [#23](https://github.com/o-e-lytvynskyi/strategos/issues/23), [#24](https://github.com/o-e-lytvynskyi/strategos/issues/24), [#25](https://github.com/o-e-lytvynskyi/strategos/issues/25).
-- **In progress:** WIP checkpoint: all three fixes implemented; functional gates green; performance verification unresolved after three failed comparisons. Assignment merged by PR #26.
-- **Last finished task:** implementation and 1,936-test functional verification for #23, #24 and #25; schema-3 JSON/NBT fixtures pinned.
-- **Next task:** finish the owner-requested cloud validation: inspect standard perf run 40594606609 and one paired same-runner JMH run against pinned bb800d0. Keep this claim assigned; do not hand in until the performance gate is resolved.
+- **In progress:** all three fixes implemented; 1,936 functional tests and independent cloud same-runner JMH green. Standard cloud server perf is still running. Assignment merged by PR #26.
+- **Last finished task:** cloud paired JMH run 40595834693: 21/21 comparable benchmarks, maximum slowdown 9.554% against the unchanged 15% gate; allocation checks pass.
+- **Next task:** finish inspecting standard perf run 40594606609, then hand in only if all required verification is resolved. Keep this claim assigned.
 - **Merged from main last:** bb800d0 (2026-10-27), including the assignment merge (#26), fix-main (#21) and owner answers (#27).
 
 ## Depends on unfinished work
@@ -56,10 +56,11 @@
 - Workflow validation: YAML parse, all pinned action hashes, read-only token permissions, Bash syntax of every run block, embedded Python syntax and roadmap checks pass. Production/test sources and benchmark settings are unchanged, so the completed 1,936-test functional evidence is retained. No new local Gradle run is started.
 - No new approved baseline, raised limit or skipped gate. Cloud outcome and artifacts must be inspected before declaring this claim ready.
 - First paired workflow run 40595484377 stopped before measurement because the preparation step used jmhJar, which this plugin-free harness does not define. Inspect the actual source-set convention and replace that preparation with jmhClasses; no benchmark result was produced or discarded. Preserve the failed run and logs. This is a workflow repair, not another unchanged performance retry.
+- Corrected paired run [40595834693](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40595834693) passed. Pin pristine bb800d0 and candidate 8e98d8b on the same Ubuntu four-vCPU EPYC 9V74 runner, Temurin 21.0.12.1+1. Both full JMH measurements took 6m 16s; all 21 configurations match, the unchanged jmhCompare gate and allocation checks pass. Maximum ratio 1.095538; SnapshotCodec 1.006691. All raw scores, hashes, CPU context and prior failures are in [performance evidence](lev1pes-main-save-reload-perf.md). Standard perf remains pending.
 
 ## For the owner
 
-1. Cloud verification requested in the owner's session on 2026-10-28: standard [perf run 40594606609](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40594606609) is running. A manual paired-JMH mode runs pristine bb800d0 and this branch sequentially on one runner with the existing 15% and allocation gates; results remain pending. This is supplemental same-host evidence, not promotion of an approved baseline. Retain [all local failures](lev1pes-main-save-reload-perf.md).
+1. Cloud verification requested in the owner's session on 2026-10-28: standard [perf run 40594606609](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40594606609) is running. Independent [paired JMH 40595834693](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40595834693) passed its unchanged 15% and allocation gates on one runner. This is same-host regression evidence, not promotion of an approved baseline or Mac native-budget validation. Retain [all local failures](lev1pes-main-save-reload-perf.md).
 2. Review the serial Windows `verify` duration (about 9m 10s versus the documented 5-minute budget): accept the platform time or decide separately which run moves to `verifySlow`. No run or gate was moved here.
 3. Assignment merged by PR #26. This WIP branch is not ready for hand-in; independent maintainer review and human merge follow resolved verification.
 
@@ -79,4 +80,4 @@
 
 ## Review
 
-Assignment merged by PR #26. WIP: performance gate unresolved; no hand-in PR, self-approval or merge. Independent verification is required before hand-in.
+Assignment merged by PR #26. Functional gates and independent cloud paired JMH pass; standard cloud server perf is pending. No hand-in PR, self-approval or merge yet.
