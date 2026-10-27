@@ -1,8 +1,8 @@
-# main-save-reload — local JMH evidence
+# main-save-reload — performance evidence
 
 ## Verdict
 
-Performance validation remains unresolved; this is a WIP checkpoint, not a hand-in. The unchanged 15% gate failed in three comparisons. No threshold or approved baseline was changed, and no application was paused or terminated.
+The independent cloud same-runner JMH gate passed on 2026-10-28: all 21 benchmarks, maximum candidate/control 1.095538, and every existing allocation check passed. Standard cloud server perf remains pending; this is not yet a hand-in. The three local failures below remain part of the evidence. No threshold or approved baseline was changed, and no application was paused or terminated.
 
 - First candidate versus historical accepted same-host control: six breaches, maximum ratio 1.238304; full run 6m 51s.
 - Same first candidate versus one fresh pristine bb800d0 control: six breaches, maximum ratio 1.330130; control run 6m 41s.
@@ -12,7 +12,7 @@ Performance validation remains unresolved; this is a WIP checkpoint, not a hand-
 
 All four results contain the same 21 benchmark keys and parameters. JVM version, executable, arguments, forks, warm-up and measurement configuration match. Runtime, benchmark and build sources of historical control f25e2c9 and pristine main bb800d0 differ only in docs. Every JMH class and all 54 navigation classes are byte-identical between candidate and fresh control; shared fixture classes differ only in the schema-3 fixture helper. Crossing setup markers also match: 384 uses 2,781 expansions / four waypoints; 512 uses 3,010 / seven; both flat searches reach the same 20,000 cap.
 
-These facts and the observed variability warrant investigating measurement context. They do not establish a specific environmental cause or turn a red performance gate green. Native-budget / independent quiet-host or maintainer CI validation is still required.
+These facts and the observed variability warranted investigating measurement context. They do not establish a specific environmental cause or invalidate a local failure. The independent same-runner cloud comparison below subsequently passed. It does not claim validation against native Mac budgets or replace an approved machine baseline.
 
 ## Same-window CPU context
 
@@ -64,3 +64,46 @@ Raw output remains under ignored build paths; hashes pin the retained measuremen
 ## Functional verification
 
 `verify verifySlow verifySoak` passed in 19m 16s with one Gradle worker: 1,936 tests, zero failures/errors/skips. No production or test source changed after that run. Windows verify alone took approximately 9m 10s; its budget exception is recorded for the owner.
+
+## Cloud same-runner JMH — 2026-10-28
+
+[Run 40595834693](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40595834693) passed. Control: pristine main `bb800d0e526bf4d05d5bf2bcc3b71797e52e1d6b`; candidate: `8e98d8b755f819bf042ff6b80309c243ac970d00`. The candidate's core, mod and build-logic trees are identical to the functionally verified f9f9846; intervening commits change only the workflow and branch record.
+
+Ubuntu 24.04, four vCPUs, AMD EPYC 9V74, Temurin 21.0.12.1+1. Compile both benchmark sets first, then run control and candidate sequentially on the same runner. Each full measurement took 6m 16s. All 21 keys, parameters, JVM arguments, heap/GC, forks, warm-up and measurement settings and score units match. The existing `:core:jmhCompare` task passed with its unchanged 1.15 limit and allocation checks, using the raw control report as an explicit one-run comparison input. No approved baseline was written or promoted.
+
+Maximum ratio: 1.095538 (MatchBusBench.publish1000, 9.554%). Snapshot encoding: 1.006691. Both formerly failing Crossing cases pass here: cross384 1.012270; flat512 0.993781. This is a fresh independent cloud comparison, not a retry of the local candidate under unchanged conditions. It does not establish why the local failures occurred, and those results remain above.
+
+vmstat context: 376 one-second samples per measurement after excluding the first cumulative sample. Mean idle: control 68.245%, candidate 68.162%; mean and peak steal 0% for both. These are system-level context, not measurements of foreign-process CPU. Existing FirstLoopScene and SpatialBench compiler warnings occur in both control and candidate; no new warning is introduced by the repair.
+
+| Benchmark | Unit | Control | Candidate | Candidate/control |
+|---|---|---:|---:|---:|
+| bench.CrossingBench.cross384 | ms/op | 0.739882 | 0.74896 | 1.012270 |
+| bench.CrossingBench.cross512 | ms/op | 0.847476 | 0.845015 | 0.997096 |
+| bench.CrossingBench.flat384 | ms/op | 6.69652 | 6.67663 | 0.997031 |
+| bench.CrossingBench.flat512 | ms/op | 6.69793 | 6.65627 | 0.993781 |
+| bench.HealthBarBench.bars300 | us/op | 1.97797 | 1.98343 | 1.002758 |
+| bench.HudBench.hudFrame200 | us/op | 2.06792 | 2.06602 | 0.999080 |
+| bench.MatchBusBench.publish1000 | us/op | 21.5557 | 23.615 | 1.095538 |
+| bench.MovementBench.step600 | us/op | 43.0933 | 42.4114 | 0.984176 |
+| bench.NodeDiscoveryBench.provingGround | ms/op | 78.1093 | 79.4073 | 1.016617 |
+| bench.PageBuilderBench.build | us/op | 73.9215 | 73.8627 | 0.999205 |
+| bench.PhaseTimersBench.overhead | us/op | 0.304994 | 0.305308 | 1.001032 |
+| bench.SnapshotCodecBench.encode500 | us/op | 464.581 | 467.69 | 1.006691 |
+| bench.SpatialBench.query1000 | us/op | 831.359 | 836.271 | 1.005908 |
+| bench.SpatialBench.rebuild1000 | us/op | 7.21744 | 7.34818 | 1.018115 |
+| bench.StatReadBench.cachedRead | ns/op | 3.67154 | 3.66397 | 0.997938 |
+| bench.StateHashBench.hash600 | us/op | 28.4927 | 28.6824 | 1.006659 |
+| bench.TemplateCompileBench.compile500 | ms/op | 8.69133 | 8.62095 | 0.991902 |
+| sim.IdleBench.step300 | us/op | 44.9348 | 45.4272 | 1.010959 |
+| sim.MotionBench.step600 | us/op | 477.198 | 484.797 | 1.015924 |
+| sim.OrcaBench.step600 | us/op | 774.641 | 768.979 | 0.992692 |
+| sim.TerrainEditBench.rebuildOnePage | us/op | 545.864 | 542.204 | 0.993295 |
+
+Raw JSON SHA-256:
+
+- candidate: `c3d480bbcee0aa762cbf2a082133965917d000266524707263ebc9d1659cf9c3`.
+- control: `d9dd0e98e73db5ca00519520ad890de6aebab45e7fbb2a268c71c9eb66a0231e`.
+
+Artifact: `paired-jmh-reports` (id 12776902393), including both raw JSON reports, pinned commits, JDK/CPU metadata and vmstat. Artifacts have seven-day retention; copies and downloaded logs remain in ignored `build/audit-tools/cloud-save-reload/40595834693/` in the original checkout. No personal paths or raw machine metadata are committed.
+
+Preparation-only run [40595484377](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40595484377) failed before measurement because jmhJar does not exist in this plugin-free build. Replace that step with the actual source-set jmhClasses task. Preserve the failed run/log; it produced no benchmark scores.
