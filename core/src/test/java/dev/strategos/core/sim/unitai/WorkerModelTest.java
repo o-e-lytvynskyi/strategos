@@ -93,8 +93,8 @@ class WorkerModelTest {
         }
         assertThat(fled).as("the worker took up a flight after the first blow").isTrue();
         assertThat(s.orders().targetX(w))
-                .as("east, away from the raider to its west")
-                .isGreaterThan(start.x() + 7);
+                .as("east, eight blocks from the raider to its west")
+                .isGreaterThan(s.motion().x(Handle.index(raider)) + 7);
 
         for (int t = 0; t < 200 && s.orders().kind(w) == OrderKind.FLEE; t++) {
             h.step();

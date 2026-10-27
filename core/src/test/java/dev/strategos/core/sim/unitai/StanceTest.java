@@ -191,7 +191,9 @@ class StanceTest {
         state(h).bus().publish(new Attacked(unit, enemy));
         assertThat(orderKind(h, unit)).isEqualTo(OrderKind.FLEE);
         h.runTicks(160);
-        assertThat(distance(h, unit, X, Z)).as("twelve blocks from the blow").isBetween(11.0, 13.0);
+        assertThat(distance(h, unit, X + 2, Z))
+                .as("twelve blocks from the attacker")
+                .isBetween(12.0, 14.0);
         assertThat(state(h).stances().explicit(Handle.index(unit))).isEqualTo(Stance.PASSIVE);
     }
 
@@ -403,6 +405,8 @@ class StanceTest {
         state(h).bus().publish(new Attacked(worker, enemy));
         assertThat(orderKind(h, worker)).isEqualTo(OrderKind.FLEE);
         h.runTicks(120);
-        assertThat(distance(h, worker, X, Z)).isBetween(7.0, 9.0);
+        assertThat(distance(h, worker, X + 2, Z))
+                .as("eight blocks from the attacker")
+                .isBetween(8.0, 10.0);
     }
 }

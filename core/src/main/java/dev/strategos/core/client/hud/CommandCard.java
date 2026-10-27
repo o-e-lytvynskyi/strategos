@@ -6,6 +6,7 @@ import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.content.ValuePath;
 import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.FactionState;
+import dev.strategos.core.shared.Stance;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -15,7 +16,7 @@ import org.jspecify.annotations.Nullable;
  * The command card's view-model (UI-06, 04 §13.5): up to {@value #SLOTS} buttons in a {@value #COLUMNS} ×
  * {@value #ROWS} grid of square cells inside the card's rectangle, from what is selected. An own finished building
  * shows a button for each unit its {@code Trainer/units} names, and a field reaped empty its reseed; units show the
- * build page, when a builder is among them, and stop; the build page shows each building with a blueprint, and back.
+ * build page, when a builder is among them, the five stances (CMB-05) and stop; the build page shows each building with a blueprint, and back.
  * Each button carries its template, its cost per resource of the match in thousandths and whether the faction's stock
  * covers it. Drawing and clicks use the same cells.
  */
@@ -53,7 +54,9 @@ public record CommandCard(Page page, List<Button> buttons) {
         /** Cancel an own foundation or site (BLD-09). */
         CANCEL_BUILDING,
         /** Demolish an own finished building (BLD-09): {@link Button#on} once a first click asked to confirm. */
-        DEMOLISH
+        DEMOLISH,
+        /** A stance of the selected units (CMB-05): {@link Button#stance} names it, {@link Button#on} that they share it. */
+        STANCE
     }
 
     /**
@@ -67,25 +70,44 @@ public record CommandCard(Page page, List<Button> buttons) {
             List<Long> cost,
             boolean affordable,
             boolean on,
-            @Nullable String reason) {
+            @Nullable String reason,
+            @Nullable Stance stance) {
         public Button {
             cost = List.copyOf(cost);
         }
 
+        /** A button with a reason it cannot be used, or none. */
+        public Button(
+                Kind kind,
+                int slot,
+                int template,
+                List<Long> cost,
+                boolean affordable,
+                boolean on,
+                @Nullable String reason) {
+            this(kind, slot, template, cost, affordable, on, reason, null);
+        }
+
         /** A button with no state to show. */
         public Button(Kind kind, int slot, int template, List<Long> cost, boolean affordable) {
-            this(kind, slot, template, cost, affordable, false, null);
+            this(kind, slot, template, cost, affordable, false, null, null);
         }
 
         /** A button with a state to show and nothing against it. */
         public Button(Kind kind, int slot, int template, List<Long> cost, boolean affordable, boolean on) {
-            this(kind, slot, template, cost, affordable, on, null);
+            this(kind, slot, template, cost, affordable, on, null, null);
+        }
+
+        /** The stance button for {@code stance} in cell {@code slot}; {@code on} when the selection shares it. */
+        static Button stance(int slot, Stance stance, boolean on) {
+            return new Button(Kind.STANCE, slot, -1, List.of(), true, on, null, stance);
         }
     }
 
     /**
      * What the card is built from: the templates, the match's resources in order, the faction's last state (null
-     * before the first), the selected units' templates and whether the build page is open.
+     * before the first), the selected units' templates, whether the build page is open, and the stance the whole
+     * selection shares as far as the client knows (null for none: a mixed selection).
      */
     public record Input(
             TemplateSet templates,
@@ -94,7 +116,8 @@ public record CommandCard(Page page, List<Button> buttons) {
             List<Integer> unitTemplates,
             boolean buildPage,
             List<BuildingState.Entry> buildings,
-            boolean demolishAsked) {
+            boolean demolishAsked,
+            @Nullable Stance stance) {
         public Input {
             resources = List.copyOf(resources);
             unitTemplates = List.copyOf(unitTemplates);
@@ -108,7 +131,19 @@ public record CommandCard(Page page, List<Button> buttons) {
                 @Nullable FactionState faction,
                 List<Integer> unitTemplates,
                 boolean buildPage) {
-            this(templates, resources, faction, unitTemplates, buildPage, List.of(), false);
+            this(templates, resources, faction, unitTemplates, buildPage, List.of(), false, null);
+        }
+
+        /** An input whose selection's shared stance is not known. */
+        public Input(
+                TemplateSet templates,
+                List<String> resources,
+                @Nullable FactionState faction,
+                List<Integer> unitTemplates,
+                boolean buildPage,
+                List<BuildingState.Entry> buildings,
+                boolean demolishAsked) {
+            this(templates, resources, faction, unitTemplates, buildPage, buildings, demolishAsked, null);
         }
     }
 
@@ -147,8 +182,24 @@ public record CommandCard(Page page, List<Button> buttons) {
         if (builders) {
             out.add(new Button(Kind.BUILD_PAGE, 0, -1, List.of(), true));
         }
+        List<Stance> stances = stances();
+        for (int k = 0; k < stances.size(); k++) {
+            out.add(Button.stance(STANCE_ROW + k, stances.get(k), stances.get(k) == in.stance()));
+        }
         out.add(new Button(Kind.STOP, SLOTS - 1, -1, List.of(), true));
         return new CommandCard(Page.UNITS, out);
+    }
+
+    /** The stance buttons' order (CMB-05, M5 §2.4's table), and the first slot of their row. */
+    public static List<Stance> stances() {
+        return List.of(Stance.VIOLENT, Stance.AGGRESSIVE, Stance.DEFENSIVE, Stance.STAND_GROUND, Stance.PASSIVE);
+    }
+
+    private static final int STANCE_ROW = COLUMNS;
+
+    /** The language key of {@code stance}'s label. */
+    public static String stanceKey(Stance stance) {
+        return "strategos.stance." + stance.id();
     }
 
     private static List<Button> buildingButtons(Input in, BuildingState.Entry b) {

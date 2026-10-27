@@ -29,6 +29,8 @@ import org.jspecify.annotations.Nullable;
  *   IDLE               every 10  think: an enemy in sight is engaged; Attacked: hit back, or flee
  *   WALKING            every 5   Arrived: the order is done; Stuck at its last rung: the order failed
  *                                PathInvalidated: ask for a path again once allowed
+ *   FLEEING              every 5   think and Arrived: over once far enough from the attacker (or it is gone), else the point
+ *                                is planned again; Attacked: run from the new attacker
  *   WALKING_AND_FIGHTING every 5 as WALKING, and think: an enemy in sight is engaged; Attacked: hit back
  *   COMBAT                       Stuck at its last rung: the attack failed; PathInvalidated: as WALKING
  *     APPROACHING      every 5   enter: a place round the target; think and Arrived: strike in reach, walk on
@@ -62,7 +64,7 @@ import org.jspecify.annotations.Nullable;
  * engagement the unit takes up itself goes before its orders ({@link OrderKind#ENGAGE}), so when it ends the unit goes
  * back to what it was doing: walking and fighting on, or standing idle. Approaching and chasing report WALKING, for the
  * movement systems walk them; striking reports COMBAT. Units without a melee attack never engage; hit while idle, one
- * with a flee distance runs that far from the blow ({@link OrderKind#FLEE}, walked as a move, before its orders). A message
+ * with a flee distance, and a passive one, runs from the blow ({@link OrderKind#FLEE} in {@link #FLEEING}, before its orders). A message
  * no state handles, such as an arrival while idle, is dropped. GATHER, BUILD and BURN (M3) add their subtrees under
  * INDIVIDUAL, each entered through {@link #stateFor} from its order kind; gathering's approach and way home report
  * WALKING, its work GATHERING.
@@ -89,6 +91,7 @@ public final class UnitAi {
     public static final StateId BURN = new StateId(18, "burn", null);
     public static final StateId BURN_APPROACHING = new StateId(19, "burn.approaching", UnitState.WALKING);
     public static final StateId BURNING = new StateId(20, "burn.burning", UnitState.COMBAT);
+    public static final StateId FLEEING = new StateId(21, "fleeing", UnitState.WALKING);
 
     private UnitAi() {}
 
@@ -123,6 +126,15 @@ public final class UnitAi {
                                 .on(Stuck.class, UnitAi::giveUp)
                                 .on(PathInvalidated.class, UnitAi::repath)
                                 .on(Attacked.class, (ctx, m) -> CombatActions.retaliate(ctx, m.attacker()))
+                                .transitions(next())
+                                .build(),
+                        StateDef.<MatchState>child(FLEEING, INDIVIDUAL)
+                                .thinkEvery(5)
+                                .think(Fleeing::think)
+                                .on(Arrived.class, (ctx, m) -> Fleeing.arrived(ctx))
+                                .on(Attacked.class, (ctx, m) -> Fleeing.away(ctx, m.attacker()))
+                                .on(Stuck.class, UnitAi::giveUp)
+                                .on(PathInvalidated.class, UnitAi::repath)
                                 .transitions(next())
                                 .build(),
                         StateDef.<MatchState>child(COMBAT, INDIVIDUAL)
@@ -254,8 +266,8 @@ public final class UnitAi {
      * {@code more}.
      */
     private static StateId[] next(StateId... more) {
-        List<StateId> all =
-                new ArrayList<>(List.of(IDLE, WALKING, COMBAT, WALKING_AND_FIGHTING, FOLLOW, GATHER, BUILD, BURN));
+        List<StateId> all = new ArrayList<>(
+                List.of(IDLE, WALKING, FLEEING, COMBAT, WALKING_AND_FIGHTING, FOLLOW, GATHER, BUILD, BURN));
         all.addAll(List.of(more));
         return all.toArray(StateId[]::new);
     }
@@ -293,6 +305,7 @@ public final class UnitAi {
                 IDLE,
                 WALKING,
                 WALKING_AND_FIGHTING,
+                FLEEING,
                 APPROACHING,
                 ATTACKING,
                 CHASING,
@@ -330,7 +343,8 @@ public final class UnitAi {
     /** The state that carries out an order of {@code kind} ({@link OrderKind}). */
     static StateId stateFor(int kind) {
         return switch (kind) {
-            case OrderKind.MOVE, OrderKind.FLEE -> WALKING;
+            case OrderKind.MOVE -> WALKING;
+            case OrderKind.FLEE -> FLEEING;
             case OrderKind.ATTACK, OrderKind.ENGAGE -> COMBAT;
             case OrderKind.ATTACK_MOVE -> WALKING_AND_FIGHTING;
             case OrderKind.FOLLOW -> FOLLOW;

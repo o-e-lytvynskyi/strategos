@@ -4,10 +4,10 @@
 
 ## Now
 
-- **Milestone:** M5 Combat; 10 of 23 tasks complete (T1–T5a).
-- **In progress:** M5 T5b FLEEING, the stance buttons and the stance GameTests since 2026-10-27.
-- **Last finished task:** T5a stances in the core (2026-10-27).
-- **Next task:** T5b, then T6 mounted units (UNIT-06).
+- **Milestone:** M5 Combat; 11 of 23 tasks complete (T1–T5b).
+- **In progress:** M5 T6 mounted units (UNIT-06) since 2026-10-27.
+- **Last finished task:** T5b FLEEING, stance buttons and GameTests (2026-10-27).
+- **Next task:** T6, then T7 the roster (UNIT-07).
 - **Merged from main last:** a10a8fd (2026-10-27), PR #21 fix-main.
 
 ## Depends on unfinished work
@@ -19,6 +19,12 @@
 - Preserve codex/m5-combat and dev/lev1pes/m5. Import code and task-specific evidence selectively after assignment; do not copy old central STATE/worklog records over current main.
 
 ## Log
+
+### 2026-10-27 — M5 T5b
+
+- **T5b · FLEEING, the card and the GameTests** — CMB-05 done. FLEEING (state 21, think 5) holds its attacker in the FLEE order's target (saved and hashed), re-plans its point from the attacker's current place each think, ends at the flee distance from the attacker or on its death, turns on a new attacker; the card's five stance buttons (slots 5–9, active when the whole selection shares a stance) send one `SetStance`; `strategos.stance.*` labels. Tests: `FleeingTest` (6), `FleeTransitionRows` (23), four `CommandCardTest` cases, `combattests.stance_aggressive/defensive/stand_ground/passive`. No golden changed.
+- Gates: `verify verifySlow verifySoak` 4m 37s green. JMH: `SpatialBench.rebuild1000` again read one fork at 7.39 us and one at 4.81 (6.10 averaged, +27 %), as on T3b.1's first run; the single rerun gave 4.69/4.73 and the whole gate passed. Second occurrence: For the owner 5.
+- **Next:** T6 mounted units.
 
 ### 2026-10-27 — M5 T5 split, T5a
 
@@ -156,9 +162,14 @@
 2. fix-main is done (lev1pes, PR #21, merged here at a10a8fd); release proposal #20 is moot.
 3. Commit 287bf54 on this branch contains the home-directory JVM path in one re-taken perf/baseline-m4pro.json row; cc04642 removes it. The history is pushed and is not rewritten (AGENTS.md); the repository is private. Nothing needed unless the history should be scrubbed before any visibility change.
 4. Obsolete: `dev/o-e-lytvynskyi/fix-main` (one docs commit 526dc72 proposing a release of lev1pes's fix-main, made moot by PR #21) and the local worktrees `strategos-fix-main`, `strategos-m5-content` (its T3b.2 draft is now in 95484c3) and `strategos-m5-control`. Recommend deleting them; left in place until you say so.
+5. `SpatialBench.rebuild1000` is bimodal across JMH forks on this Mac: twice today one fork read 7.4–7.7 us while the other read 4.8 (baseline 4.79), failing the 15 % gate on the average; each single rerun passed with both forks at 4.7–4.9. No code touched the spatial index. Options: (a) leave it — a red run is rerun once by the rule (current); (b) give that benchmark more forks so one outlier fork cannot carry the average (a measurement change, your call); (c) investigate the bimodality (memory layout of the grid arrays). Recommend (b) with 5 forks for this benchmark only.
+6. Proposal (scope): replicate each unit's stance to its owner so the card's active stance is always right (now it shows the stance the player's own card last sent, else the template's). A small protocol addition; not in the approved cards' wording, so it waits for you.
 
 ## Decisions taken
 
+- 2026-10-27 · A flight's point and its end are measured from the attacker (§2.4: "back to the order when it is 12 blocks off"), not from where the unit stood; StanceTest's passive case and WorkerModelTest now assert that. Undo by planning from the unit.
+- 2026-10-27 · The card's active stance is what the client knows (the stance its card last sent, else the template's); stances are not replicated. Proposal in For the owner 6. Undo n/a.
+- 2026-10-27 · trial implementer: pass — T5b in one round, reported the gate's one red row honestly instead of retrying.
 - 2026-10-27 · Spec finding 12 (stance details the table leaves open) and the template SHA re-pinned for the worker's passive stance (8bb9790c…); RangedOrdersTest's receding dummy moved inside sight (22 → 11 blocks) because the out-of-vision rule now ends that chase as specified. Undo with finding 12.
 - 2026-10-27 · trial reviewer: pass — found a real livelock and three determinism/cost defects in T5a, each with a scenario; read-only, no Gradle while JMH ran.
 - 2026-10-27 · trial implementer: pass — T5a plus its review round; it found the compiler's repeated path split behind the JMH regression instead of proposing a baseline.

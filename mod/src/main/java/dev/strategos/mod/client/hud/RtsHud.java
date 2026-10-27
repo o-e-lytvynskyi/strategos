@@ -25,6 +25,7 @@ import dev.strategos.core.protocol.UiQuery;
 import dev.strategos.core.protocol.UnitDetail;
 import dev.strategos.core.protocol.UnitHud;
 import dev.strategos.core.shared.Handle;
+import dev.strategos.core.shared.Stance;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.mod.client.StrategosClient;
 import dev.strategos.mod.client.net.ClientPayloads;
@@ -331,10 +332,12 @@ public final class RtsHud {
                 summary, unit(selection, bodies), shown, HudCardPresentation.deposit(selection.deposit()));
         controller.selected(selection.handles(), selection.building());
         List<Integer> unitTemplates = new ArrayList<>();
+        List<Stance> stances = new ArrayList<>();
         for (int h : selection.handles()) {
             UnitSpawnData d = bodies.get(h);
             if (d != null) {
                 unitTemplates.add(d.templateIndex());
+                stances.add(controller.stanceOf(h, templates, d.templateIndex()));
             }
         }
         BuildingState.Entry own = selection.building() == null ? null : shown;
@@ -346,7 +349,8 @@ public final class RtsHud {
                         unitTemplates,
                         controller.buildPage(),
                         StrategosClient.model().buildings(),
-                        own != null && controller.demolishAsked(own.handle())),
+                        own != null && controller.demolishAsked(own.handle()),
+                        CardController.shared(stances)),
                 own);
         double[] gui = HudCardPresentation.cursorGui(mc);
         hovered = card.at(layout().commandCard(), theme.padding(), gui[0], gui[1]);
@@ -661,6 +665,13 @@ public final class RtsHud {
                     paint.item(g, "minecraft:hay_block", cell);
                     if (!b.on()) { // off: dimmed
                         g.fill(cell.x(), cell.y(), cell.right(), cell.bottom(), 0x80202020);
+                    }
+                }
+                case STANCE -> {
+                    paint.item(g, HudCardPresentation.stanceItem(b.stance()), cell);
+                    if (b.on()) { // the whole selection holds it: framed
+                        int edge = theme.accent();
+                        g.renderOutline(cell.x(), cell.y(), cell.width(), cell.height(), edge);
                     }
                 }
                 case CANCEL_BUILDING -> paint.item(g, "minecraft:barrier", cell);

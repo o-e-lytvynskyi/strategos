@@ -6,6 +6,7 @@ import dev.strategos.core.client.hud.HudTheme;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.DepositState;
+import dev.strategos.core.shared.Stance;
 import dev.strategos.mod.client.StrategosClient;
 import java.util.List;
 import net.minecraft.client.Minecraft;
@@ -41,6 +42,7 @@ final class HudCardPresentation {
             case STOP -> "Stop";
             case AUTO_RESEED -> b.on() ? "Auto-reseed: on (click to turn off)" : "Auto-reseed: off (click to turn on)";
             case CANCEL_BUILDING -> "Cancel: the share not yet built comes back";
+            case STANCE -> stanceLabel(b);
             case DEMOLISH -> b.on() ? "Click again to demolish, for nothing back" : "Demolish";
         };
         List<String> resources = StrategosClient.resources();
@@ -63,6 +65,26 @@ final class HudCardPresentation {
             text.append(" — ").append(reason);
         }
         return text.toString();
+    }
+
+    /** A stance button's tooltip: its translated name, and that the selection holds it. */
+    private static String stanceLabel(CommandCard.Button b) {
+        Stance stance = b.stance();
+        String name = stance == null
+                ? "?"
+                : Component.translatable(CommandCard.stanceKey(stance)).getString();
+        return b.on() ? name + " (current)" : name;
+    }
+
+    /** The item a stance button is drawn with. */
+    static String stanceItem(@Nullable Stance stance) {
+        return switch (stance == null ? Stance.AGGRESSIVE : stance) {
+            case VIOLENT -> "minecraft:iron_axe";
+            case AGGRESSIVE -> "minecraft:iron_sword";
+            case DEFENSIVE -> "minecraft:shield";
+            case STAND_GROUND -> "minecraft:iron_boots";
+            case PASSIVE -> "minecraft:white_banner";
+        };
     }
 
     /** A number as a player reads it: a whole one bare, else to one decimal. */

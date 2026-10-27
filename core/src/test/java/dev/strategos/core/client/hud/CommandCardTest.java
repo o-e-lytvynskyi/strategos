@@ -10,10 +10,12 @@ import dev.strategos.core.protocol.CancelTrain;
 import dev.strategos.core.protocol.Command;
 import dev.strategos.core.protocol.FactionState;
 import dev.strategos.core.protocol.Reseed;
+import dev.strategos.core.protocol.SetStance;
 import dev.strategos.core.protocol.Stop;
 import dev.strategos.core.protocol.Train;
 import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.protocol.WireCodec;
+import dev.strategos.core.shared.Stance;
 import dev.strategos.core.shared.TemplateId;
 import java.util.ArrayList;
 import java.util.List;
@@ -153,6 +155,7 @@ class CommandCardTest {
         CommandCard main = card(model, List.of(WORKER), null, controller.buildPage());
         assertThat(main.buttons())
                 .extracting(CommandCard.Button::kind)
+                .filteredOn(k -> k != CommandCard.Kind.STANCE)
                 .containsExactly(CommandCard.Kind.BUILD_PAGE, CommandCard.Kind.STOP);
         List<Command> sent = new ArrayList<>();
         assertThat(controller
@@ -174,7 +177,7 @@ class CommandCardTest {
         CardController.Click arm = controller.click(house, units, null, T, sent::add);
         assertThat(arm).isEqualTo(new CardController.Click(CardController.Effect.ARM, house.template()));
         assertThat(controller.buildPage()).as("placing closes the page").isFalse();
-        controller.click(main.buttons().get(1), units, null, T, sent::add);
+        controller.click(button(main, CommandCard.Kind.STOP), units, null, T, sent::add);
         assertThat(sent).as("only stop sent anything").containsExactly(new Stop(UnitSet.of(5, 6)));
 
         controller.click(main.buttons().get(0), units, null, T, sent::add);
@@ -184,7 +187,99 @@ class CommandCardTest {
                         .buttons())
                 .extracting(CommandCard.Button::kind)
                 .as("a spearman builds nothing")
+                .filteredOn(k -> k != CommandCard.Kind.STANCE)
                 .containsExactly(CommandCard.Kind.STOP);
+    }
+
+    private static CommandCard.Button button(CommandCard card, CommandCard.Kind kind) {
+        return card.buttons().stream().filter(b -> b.kind() == kind).findFirst().orElseThrow();
+    }
+
+    @Test
+    void unitsShowTheFiveStancesInOrderAndABuildingNone() {
+        ClientMatchModel model = model(faction(0, 0), centre(List.of(), 0));
+        int spearman = index("strategos:unit/infantry");
+        CommandCard card = card(model, List.of(spearman), null, false);
+        List<CommandCard.Button> stances = card.buttons().stream()
+                .filter(b -> b.kind() == CommandCard.Kind.STANCE)
+                .toList();
+        assertThat(stances)
+                .extracting(CommandCard.Button::stance)
+                .containsExactly(
+                        Stance.VIOLENT, Stance.AGGRESSIVE, Stance.DEFENSIVE, Stance.STAND_GROUND, Stance.PASSIVE);
+        assertThat(stances).extracting(CommandCard.Button::on).containsOnly(false);
+        assertThat(stances).extracting(CommandCard.Button::slot).doesNotHaveDuplicates();
+        assertThat(card.buttons())
+                .extracting(CommandCard.Button::slot)
+                .as("no two buttons share a cell")
+                .doesNotHaveDuplicates();
+        assertThat(CommandCard.stanceKey(Stance.STAND_GROUND)).isEqualTo("strategos.stance.stand_ground");
+        BuildingState.Entry centre = model.buildings().get(0);
+        assertThat(card(model, List.of(), centre, false).buttons())
+                .extracting(CommandCard.Button::kind)
+                .doesNotContain(CommandCard.Kind.STANCE);
+    }
+
+    @Test
+    void theStanceTheWholeSelectionSharesIsShownActive() {
+        ClientMatchModel model = model(faction(0, 0));
+        int spearman = index("strategos:unit/infantry");
+        CardController controller = new CardController();
+        assertThat(controller.stanceOf(5, T, spearman)).as("its template's").isEqualTo(Stance.AGGRESSIVE);
+        assertThat(controller.stanceOf(6, T, WORKER))
+                .as("a worker's template says passive")
+                .isEqualTo(Stance.PASSIVE);
+        CommandCard card = CommandCard.of(
+                new CommandCard.Input(
+                        T, RESOURCES, model.faction(), List.of(spearman), false, List.of(), false, Stance.AGGRESSIVE),
+                null);
+        assertThat(card.buttons())
+                .filteredOn(CommandCard.Button::on)
+                .extracting(CommandCard.Button::stance)
+                .containsExactly(Stance.AGGRESSIVE);
+        assertThat(CardController.shared(List.of(Stance.PASSIVE, Stance.PASSIVE)))
+                .isEqualTo(Stance.PASSIVE);
+        assertThat(CardController.shared(List.of(Stance.PASSIVE, Stance.VIOLENT)))
+                .as("a mix")
+                .isNull();
+        assertThat(CardController.shared(List.of())).isNull();
+        CommandCard mixed = CommandCard.of(
+                new CommandCard.Input(
+                        T,
+                        RESOURCES,
+                        model.faction(),
+                        List.of(spearman, WORKER),
+                        false,
+                        List.of(),
+                        false,
+                        CardController.shared(List.of(Stance.AGGRESSIVE, Stance.PASSIVE))),
+                null);
+        assertThat(mixed.buttons()).extracting(CommandCard.Button::on).containsOnly(false);
+    }
+
+    @Test
+    void aStanceClickSendsOneSetStanceForTheSelectionAndIsRemembered() {
+        ClientMatchModel model = model(faction(0, 0));
+        int spearman = index("strategos:unit/infantry");
+        CardController controller = new CardController();
+        List<Integer> units = List.of(5, 6);
+        CommandCard card = card(model, List.of(spearman, spearman), null, false);
+        CommandCard.Button defensive = card.buttons().stream()
+                .filter(b -> b.stance() == Stance.DEFENSIVE)
+                .findFirst()
+                .orElseThrow();
+        List<Command> sent = new ArrayList<>();
+        CardController.Click click = controller.click(defensive, units, null, T, sent::add);
+        assertThat(click.effect()).isEqualTo(CardController.Effect.SENT);
+        assertThat(sent).containsExactly(new SetStance(UnitSet.of(5, 6), Stance.DEFENSIVE));
+        assertThat(controller.stanceOf(5, T, spearman)).isEqualTo(Stance.DEFENSIVE);
+        assertThat(controller.stanceOf(7, T, spearman))
+                .as("an unselected unit is unchanged")
+                .isEqualTo(Stance.AGGRESSIVE);
+        assertThat(controller.click(defensive, List.of(), null, T, sent::add).effect())
+                .as("nothing selected, nothing sent")
+                .isEqualTo(CardController.Effect.NONE);
+        assertThat(sent).hasSize(1);
     }
 
     @Test

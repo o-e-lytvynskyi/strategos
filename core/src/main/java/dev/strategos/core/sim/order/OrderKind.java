@@ -70,10 +70,10 @@ public final class OrderKind {
     }
 
     /**
-     * Whether an order of {@code kind} holds a target: the unit it attacks, the player slot it follows, the node it
-     * gathers at, or the building it builds or burns.
+     * Whether an order of {@code kind} holds a target: the unit it attacks, the player slot it follows, the unit it
+     * flees from, the node it gathers at, or the building it builds or burns.
      */
     public static boolean targets(int kind) {
-        return attacks(kind) || kind == FOLLOW || kind == GATHER || kind == BUILD || kind == BURN;
+        return attacks(kind) || kind == FOLLOW || kind == FLEE || kind == GATHER || kind == BUILD || kind == BURN;
     }
 }

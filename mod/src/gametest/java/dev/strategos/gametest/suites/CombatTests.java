@@ -15,10 +15,13 @@ import dev.strategos.core.protocol.AttackMove;
 import dev.strategos.core.protocol.FxKind;
 import dev.strategos.core.protocol.NoticeKind;
 import dev.strategos.core.protocol.NoticeMsg;
+import dev.strategos.core.protocol.SetStance;
 import dev.strategos.core.protocol.SpawnUnits;
+import dev.strategos.core.protocol.Stop;
 import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
+import dev.strategos.core.shared.Stance;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.ExternalDamage;
@@ -28,6 +31,7 @@ import dev.strategos.core.sim.TickInputs;
 import dev.strategos.core.sim.UnitView;
 import dev.strategos.core.sim.journal.ReplayDriver;
 import dev.strategos.core.sim.journal.ReplayResult;
+import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.testkit.SimHarness;
 import dev.strategos.gametest.MatchFixture;
 import dev.strategos.gametest.StrategosTest;
@@ -60,6 +64,7 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.common.util.FakePlayer;
 import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.event.PlayLevelSoundEvent;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The damage model on real bodies (CMB-01): vanilla's blows reach the core as its own damage, the body's vanilla health
@@ -503,6 +508,230 @@ public final class CombatTests {
             ReplayResult replay = ReplayDriver.replay(core.journal(), TemplateSet.builtin());
             check(replay.matches(), "the journal does not replay: " + replay);
             check(replay.finalHash() == core.stateHash(), "the replay ends on another hash: " + replay);
+            h.succeed();
+        });
+    }
+
+    // ---- Stances (CMB-05, check 4): one test per stance family, each confirming its L1 behaviour in a real match.
+
+    /** A unit of {@code template} for {@code faction} at match-local (x, z); it exists after the next step. */
+    private static void put(MatchRuntime rt, TemplateId template, int faction, double x, double z) {
+        rt.submit(PlayerSlot.ADMIN, new SpawnUnits(template, new FactionSlot(faction), new Vec2d(x, z), 1, 0));
+    }
+
+    /** The handles of faction 0's and faction 1's only units, or null while either is yet to appear. */
+    private static int @Nullable [] pair(MatchRuntime rt) {
+        int[] a = core(rt).queries().unitHandlesOf(new FactionSlot(0));
+        int[] b = core(rt).queries().unitHandlesOf(new FactionSlot(1));
+        return a.length == 1 && b.length == 1 ? new int[] {a[0], b[0]} : null;
+    }
+
+    private static double distanceBetween(MatchRuntime rt, int a, int b) {
+        var from = Units.unit(rt, a);
+        var to = Units.unit(rt, b);
+        return Math.hypot(from.x() - to.x(), from.z() - to.z());
+    }
+
+    private static boolean engaged(MatchRuntime rt, int unit) {
+        return !core(rt).queries().orders(unit).isEmpty();
+    }
+
+    /**
+     * CMB-05.4, aggressive and violent: a spearman in its default stance stands still while an enemy is out of its
+     * sight (12 blocks), notices it as it walks in, goes to it and hurts it. Violent is covered here too: M5 finding 12
+     * makes the two engage and retaliate alike (they differ only in chasing beyond sight, L1's StanceTest).
+     */
+    @StrategosTest(timeoutTicks = 900)
+    public static void stanceAggressive(GameTestHelper h) {
+        MatchRuntime rt = match(h);
+        put(rt, TemplateSet.INFANTRY, 0, 6, 16);
+        put(rt, TemplateSet.DEBUG_WALKER, 1, 25, 16);
+        var state = new Object() {
+            boolean walking;
+            boolean seen;
+            int ticks;
+        };
+        h.onEachTick(() -> {
+            MatchCore core = core(rt);
+            if (!state.walking && pair(rt) == null) {
+                return;
+            }
+            int spearman = core.queries().unitHandlesOf(new FactionSlot(0))[0];
+            int walker = core.queries().unitHandlesOf(new FactionSlot(1))[0];
+            if (!state.walking) {
+                Units.move(rt, walker, 14, 16); // walks in from beyond sight
+                state.walking = true;
+                return;
+            }
+            double apart = distanceBetween(rt, spearman, walker);
+            if (!state.seen && !engaged(rt, spearman)) {
+                check(Math.abs(Units.unit(rt, spearman).x() - 6) < 0.3, "it left its place before it saw anything");
+                check(apart > 11 || state.ticks++ < 400, "it saw the enemy in range and did nothing");
+                return;
+            }
+            if (!state.seen) {
+                check(apart <= 12.5, "it engaged an enemy " + apart + " blocks off, beyond its sight");
+                state.seen = true;
+            }
+            if (core.queries().hitPoints(walker) >= core.queries().maxHitPoints(walker)
+                    && core.queries().isAlive(walker)) {
+                return; // on its way to strike
+            }
+            h.succeed();
+        });
+    }
+
+    /**
+     * CMB-05.4, defensive: a guard engages an enemy near its spot (within reach + half its sight), ignores one
+     * standing beyond that radius though in sight, and walks back to its spot when the fight is over.
+     */
+    @StrategosTest(timeoutTicks = 1_500)
+    public static void stanceDefensive(GameTestHelper h) {
+        MatchRuntime rt = match(h);
+        put(rt, TemplateSet.INFANTRY, 0, 8, 16);
+        put(rt, TemplateSet.DEBUG_WALKER, 1, 25, 16);
+        var state = new Object() {
+            int phase; // 0 set up, 1 the enemy stands in sight beyond the radius, 2 it comes near, 3 it is dealt with
+            int wait;
+            boolean fought;
+            int guard;
+            int walker;
+        };
+        h.onEachTick(() -> {
+            MatchCore core = core(rt);
+            if (state.guard == 0) {
+                int[] both = pair(rt);
+                if (both == null) {
+                    return;
+                }
+                state.guard = both[0];
+                state.walker = both[1];
+            }
+            int guard = state.guard;
+            int walker = state.walker;
+            double x = Units.unit(rt, guard).x();
+            switch (state.phase) {
+                case 0 -> {
+                    rt.submit(new PlayerSlot(0), new SetStance(UnitSet.of(guard), Stance.DEFENSIVE));
+                    Units.move(rt, walker, 18, 16); // 10 blocks from the spot: in sight, outside 1.2 + 6
+                    state.phase = 1;
+                }
+                case 1 -> {
+                    check(!engaged(rt, guard), "the guard went for an enemy outside its radius");
+                    check(Math.abs(x - 8) < 0.5, "the guard left its spot at " + x);
+                    if (state.wait++ == 150) {
+                        Units.move(rt, walker, 13, 16); // 5 blocks from the spot
+                        state.phase = 2;
+                    }
+                }
+                case 2 -> {
+                    state.fought |= engaged(rt, guard);
+                    if (state.fought && !core.queries().isAlive(walker)) {
+                        state.phase = 3;
+                        state.wait = 0;
+                    }
+                }
+                default -> {
+                    check(state.wait++ < 400, "the guard has not walked back, it is at " + x);
+                    if (!engaged(rt, guard) && Math.abs(x - 8) < 1.5) {
+                        h.succeed();
+                    }
+                }
+            }
+        });
+    }
+
+    /**
+     * CMB-05.4, stand ground: a unit strikes what comes within its reach, and never takes a step for what is in sight
+     * beyond it.
+     */
+    @StrategosTest(timeoutTicks = 900)
+    public static void stanceStandGround(GameTestHelper h) {
+        MatchRuntime rt = match(h);
+        put(rt, TemplateSet.INFANTRY, 0, 16, 16);
+        put(rt, TemplateSet.DEBUG_WALKER, 1, 16, 27);
+        var state = new Object() {
+            int phase;
+            int wait;
+        };
+        h.onEachTick(() -> {
+            MatchCore core = core(rt);
+            int[] both = pair(rt);
+            if (both == null) {
+                return;
+            }
+            int guard = both[0];
+            int walker = both[1];
+            check(
+                    Math.abs(Units.unit(rt, guard).x() - 16) < 0.6
+                            && Math.abs(Units.unit(rt, guard).z() - 16) < 0.6,
+                    "the unit moved from its ground");
+            switch (state.phase) {
+                case 0 -> {
+                    rt.submit(new PlayerSlot(0), new SetStance(UnitSet.of(guard), Stance.STAND_GROUND));
+                    Units.move(rt, walker, 16, 22); // 6 blocks off: in sight, out of reach
+                    state.phase = 1;
+                }
+                case 1 -> {
+                    check(!engaged(rt, guard), "it reached for an enemy beyond its reach");
+                    if (state.wait++ == 150) {
+                        Units.move(rt, walker, 16, 17.4); // right beside it
+                        state.phase = 2;
+                    }
+                }
+                default -> {
+                    if (core.queries().hitPoints(walker) < core.queries().maxHitPoints(walker)
+                            || !core.queries().isAlive(walker)) {
+                        h.succeed();
+                    }
+                }
+            }
+        });
+    }
+
+    /**
+     * CMB-05.4 and UNIT-04, passive: a worker (flee distance 8) hit by a spearman runs, in FLEEING, from the blow, and
+     * is idle once 8 blocks off. The spearman is passive and stopped as soon as the flight starts, so it neither
+     * chases nor takes the worker up again.
+     */
+    @StrategosTest(timeoutTicks = 900)
+    public static void stancePassive(GameTestHelper h) {
+        MatchRuntime rt = match(h);
+        put(rt, TemplateSet.WORKER, 0, 18, 16);
+        put(rt, TemplateSet.INFANTRY, 1, 12, 16);
+        var state = new Object() {
+            boolean ordered;
+            boolean fled;
+        };
+        h.onEachTick(() -> {
+            MatchCore core = core(rt);
+            int[] both = pair(rt);
+            if (both == null) {
+                return;
+            }
+            int worker = both[0];
+            int spearman = both[1];
+            if (!state.ordered) {
+                rt.submit(new PlayerSlot(1), new SetStance(UnitSet.of(spearman), Stance.PASSIVE));
+                rt.submit(new PlayerSlot(1), Attack.replace(UnitSet.of(spearman), worker));
+                state.ordered = true;
+                return;
+            }
+            var orders = core.queries().orders(worker);
+            if (!state.fled) {
+                if (!orders.isEmpty() && orders.get(0).kind() == OrderKind.FLEE) {
+                    state.fled = true;
+                    check(orders.get(0).target() == spearman, "the flight is not from the spearman");
+                    rt.submit(new PlayerSlot(1), new Stop(UnitSet.of(spearman)));
+                }
+                return;
+            }
+            if (!orders.isEmpty()) {
+                return; // still running
+            }
+            check(core.queries().hitPoints(worker) < core.queries().maxHitPoints(worker), "the worker was never hit");
+            double apart = distanceBetween(rt, worker, spearman);
+            check(apart >= 7.5 && apart <= 11, "the worker stopped " + apart + " blocks from the spearman, not 8");
             h.succeed();
         });
     }

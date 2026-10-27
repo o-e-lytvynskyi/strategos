@@ -60,5 +60,10 @@
   "key.strategos.jump_to_alert": "Jump to the latest alert",
   "key.strategos.pause_match": "Pause or resume",
   "key.strategos.slower": "Slower",
-  "key.strategos.faster": "Faster"
+  "key.strategos.faster": "Faster",
+  "strategos.stance.violent": "Violent: attacks anything in sight, always hits back",
+  "strategos.stance.aggressive": "Aggressive: attacks enemies it sees",
+  "strategos.stance.defensive": "Defensive: guards its spot and returns to it",
+  "strategos.stance.stand_ground": "Stand ground: strikes only what comes in reach, never moves",
+  "strategos.stance.passive": "Passive: never fights, runs from a blow"
 }
