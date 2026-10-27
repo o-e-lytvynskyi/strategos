@@ -18,10 +18,19 @@ public enum FxKind {
     /** A block placed: its datum the state's id, for its place sound. */
     BLOCK_PLACE,
     /** A torch's flames at a building's block: particles and a crackle, never a fire block (CMB-03). */
-    FLAME;
+    FLAME,
+    /** A ranged shot leaving its shooter (CMB-04): at the release point, with the landing point and flight time. */
+    SHOT_LAUNCH,
+    /** A ranged shot coming down, hit or miss: at the landing point, with the release point and flight time. */
+    SHOT_IMPACT;
 
     /** Whether events of this kind carry a datum on the wire; the unit kinds do not, so they encode as in M2. */
     public boolean carriesData() {
         return this == BLOCK_CRACK || this == BLOCK_BREAK || this == BLOCK_PLACE;
+    }
+
+    /** Whether events of this kind carry a second point and a flight time (the shot arc), never a datum. */
+    public boolean carriesPath() {
+        return this == SHOT_LAUNCH || this == SHOT_IMPACT;
     }
 }

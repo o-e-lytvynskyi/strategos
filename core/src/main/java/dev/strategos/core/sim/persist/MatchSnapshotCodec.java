@@ -404,6 +404,13 @@ public final class MatchSnapshotCodec {
                     Codec.BOOL.fieldOf("lethal").forGetter(Damage::lethal))
             .apply(i, Damage::new));
 
+    private static final Codec<ShotStore.Release> RELEASE = RecordCodecBuilder.create(i -> i.group(
+                    Codec.DOUBLE.fieldOf("x").forGetter(ShotStore.Release::x),
+                    Codec.DOUBLE.fieldOf("y").forGetter(ShotStore.Release::y),
+                    Codec.DOUBLE.fieldOf("z").forGetter(ShotStore.Release::z),
+                    Codec.LONG.fieldOf("tick").forGetter(ShotStore.Release::tick))
+            .apply(i, ShotStore.Release::new));
+
     private static final Codec<ShotStore.Shot> SHOT = RecordCodecBuilder.create(i -> i.group(
                     Codec.LONG.fieldOf("id").forGetter(ShotStore.Shot::id),
                     Codec.INT.fieldOf("shooter").forGetter(ShotStore.Shot::shooter),
@@ -412,8 +419,12 @@ public final class MatchSnapshotCodec {
                     Codec.DOUBLE.fieldOf("landingX").forGetter(ShotStore.Shot::landingX),
                     Codec.DOUBLE.fieldOf("landingY").forGetter(ShotStore.Shot::landingY),
                     Codec.DOUBLE.fieldOf("landingZ").forGetter(ShotStore.Shot::landingZ),
-                    SHOT_DAMAGE.fieldOf("damage").forGetter(ShotStore.Shot::damage))
-            .apply(i, ShotStore.Shot::new));
+                    SHOT_DAMAGE.fieldOf("damage").forGetter(ShotStore.Shot::damage),
+                    RELEASE.optionalFieldOf("release").forGetter(shot -> Optional.ofNullable(shot.release())))
+            .apply(
+                    i,
+                    (id, shooter, target, landTick, x, y, z, damage, release) ->
+                            new ShotStore.Shot(id, shooter, target, landTick, x, y, z, damage, release.orElse(null))));
 
     private static final Codec<ShotStore.Snapshot> SHOTS = RecordCodecBuilder.create(i -> i.group(
                     Codec.LONG.fieldOf("nextId").forGetter(ShotStore.Snapshot::nextId),

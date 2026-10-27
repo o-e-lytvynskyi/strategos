@@ -5,6 +5,8 @@ import dev.strategos.core.shared.Handle;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.MatchSystem;
 import dev.strategos.core.sim.Phase;
+import dev.strategos.core.sim.ShotFired;
+import dev.strategos.core.sim.ShotLanded;
 import dev.strategos.core.sim.ShotRequested;
 import dev.strategos.core.sim.UnitStruck;
 import dev.strategos.core.sim.spatial.UnitFilter;
@@ -66,6 +68,16 @@ public final class ShotSystem implements MatchSystem {
                 queryShot = shot;
                 state.spatial().forEachInRadius(shot.landingX(), shot.landingZ(), radius, UnitFilter.ANY, candidate);
             }
+            state.outputs()
+                    .add(new ShotLanded(
+                            shot.shooter(),
+                            shot.target(),
+                            selected,
+                            shot.release(),
+                            shot.landingX(),
+                            shot.landingY(),
+                            shot.landingZ(),
+                            state.tick()));
             if (selected != Handle.NONE) {
                 Damage d = shot.damage();
                 state.queueDamage(new Damage(
@@ -95,11 +107,14 @@ public final class ShotSystem implements MatchSystem {
                     ? state.motion().z(target) - row.targetZ()
                     : state.motion().vz(target);
             UnitTemplate body = state.templates().byIndex(state.identity().templateIndex(target));
-            store.launch(
+            UnitTemplate shooterBody =
+                    state.templates().byIndex(state.identity().templateIndex(shooter));
+            ShotStore.Shot shot = store.launch(
                     state.config().seed(),
                     state.tick(),
                     new ShotStore.Launch(
                             state.motion().x(shooter),
+                            state.motion().y(shooter) + shooterBody.height() * 0.75,
                             state.motion().z(shooter),
                             state.motion().x(target),
                             state.motion().y(target) + body.height() / 2,
@@ -109,6 +124,19 @@ public final class ShotSystem implements MatchSystem {
                             request.speed(),
                             request.spread(),
                             request.damage()));
+            ShotStore.Release from = Objects.requireNonNull(shot.release());
+            state.outputs()
+                    .add(new ShotFired(
+                            shot.shooter(),
+                            shot.target(),
+                            from.x(),
+                            from.y(),
+                            from.z(),
+                            shot.landingX(),
+                            shot.landingY(),
+                            shot.landingZ(),
+                            from.tick(),
+                            shot.landTick()));
             state.outputs().add(new UnitStruck(request.shooter(), request.target()));
         }
         pending.clear(); // every intent belongs to this tick; FINAL sees none

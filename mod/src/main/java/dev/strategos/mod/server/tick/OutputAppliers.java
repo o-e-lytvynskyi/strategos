@@ -15,6 +15,8 @@ import dev.strategos.core.sim.FlameShown;
 import dev.strategos.core.sim.MatchEnded;
 import dev.strategos.core.sim.Notice;
 import dev.strategos.core.sim.OutputEvent;
+import dev.strategos.core.sim.ShotFired;
+import dev.strategos.core.sim.ShotLanded;
 import dev.strategos.core.sim.TickOutputs;
 import dev.strategos.core.sim.UnderAttack;
 import dev.strategos.core.sim.UnitCreated;
@@ -67,6 +69,8 @@ public final class OutputAppliers {
                         body.swing(InteractionHand.MAIN_HAND);
                     }
                 }
+                case ShotFired fired -> {} // FxSender's, from T3c.2
+                case ShotLanded landed -> {} // as ShotFired
                 case UnitHurt hurt -> {
                     UnitEntity body = rt.bodies().get(hurt.handle());
                     if (body != null) { // the red flash, for those who track the body
@@ -215,6 +219,8 @@ public final class OutputAppliers {
                 UnitCreated.class,
                 UnitStateChanged.class,
                 UnitStruck.class,
+                ShotFired.class,
+                ShotLanded.class,
                 UnitHurt.class,
                 UnitDied.class,
                 BuildingDestroyed.class,

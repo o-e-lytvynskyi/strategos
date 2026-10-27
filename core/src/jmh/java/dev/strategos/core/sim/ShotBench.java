@@ -123,12 +123,12 @@ public class ShotBench {
             reset();
             if (state.shots().count() != 60) throw new IllegalStateException("not 60 active shots");
             int expected = mode.equals("miss") ? 0 : 60;
-            if (resolve() != expected || state.entities().aliveCount() != 300) {
+            if (resolveHits() != expected || state.entities().aliveCount() != 300) {
                 throw new IllegalStateException("volley fixture expected " + expected + " nonlethal hits");
             }
             reset();
             if (state.shots().count() != 60
-                    || resolve() != expected
+                    || resolveHits() != expected
                     || state.entities().aliveCount() != 300) {
                 throw new IllegalStateException("volley fixture did not repeat the same workload");
             }
@@ -156,6 +156,16 @@ public class ShotBench {
             shots.run(state);
             combat.run(state);
             return state.outputs().size();
+        }
+
+        /** The fixture's workload: the hits, since every impact also reports a ShotLanded (T3c.1). */
+        private int resolveHits() {
+            resolve();
+            int hurt = 0;
+            for (int i = 0; i < state.outputs().size(); i++) {
+                if (state.outputs().get(i) instanceof UnitHurt) hurt++;
+            }
+            return hurt;
         }
     }
 

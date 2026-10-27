@@ -177,6 +177,11 @@ class JmhGate {
         problems
     }
 
+    // What jmhCompare reports: regressions, allocations and missing results (jmhSelftest checks this very call).
+    static List<String> all(File result, File baseline, List<String> kernels) {
+        problems(result, baseline, kernels) + missing(result, baseline, kernels)
+    }
+
     // A benchmark whose set-up throws is skipped and the run still succeeds, so a missing result is a failure of its
     // own: MotionBench and OrcaBench were missing from M1 T22 to M1's close unnoticed.
     static List<String> missing(File result, File baseline, List<String> kernels) {
@@ -211,8 +216,7 @@ tasks.register('jmhCompare') {
             throw new GradleException("No approved JMH baseline at ${jmhBaselineFile}. Show ${jmhResultFile} to the owner; copy it there only after approval.")
         }
         if (!jmhResultFile.isFile()) throw new GradleException("No JMH result at ${jmhResultFile}; run :core:jmh first.")
-        def problems = JmhGate.problems(jmhResultFile, jmhBaselineFile, hotPathKernels)
-                + JmhGate.missing(jmhResultFile, jmhBaselineFile, hotPathKernels)
+        def problems = JmhGate.all(jmhResultFile, jmhBaselineFile, hotPathKernels)
         if (problems) throw new GradleException('JMH gate:\n  ' + problems.join('\n  '))
     }
 }
@@ -233,7 +237,7 @@ tasks.register('jmhSelftest') {
         if (!slow.any { it.contains('regression') }) throw new GradleException('The JMH gate no longer catches a 30 % slowdown')
         if (alloc.count { it.contains('allocates') } != 2) throw new GradleException('The JMH gate no longer catches an allocating @HotPath kernel, short and long: ' + alloc)
         if (!background.isEmpty()) throw new GradleException('The JMH gate takes JMH\'s own background for a kernel\'s allocation: ' + background)
-        def missing = JmhGate.missing(new File(jmhSelftestDir, 'slow-result.json'), baseline, ['Selftest.kernel'])
+        def missing = JmhGate.all(new File(jmhSelftestDir, 'slow-result.json'), baseline, ['Selftest.kernel'])
         if (!missing.any { it.contains('Selftest.kernel') }) throw new GradleException('The JMH gate no longer catches a benchmark missing from the result: ' + missing)
     }
 }

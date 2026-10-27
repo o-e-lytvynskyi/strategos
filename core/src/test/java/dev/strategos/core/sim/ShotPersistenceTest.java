@@ -151,6 +151,51 @@ class ShotPersistenceTest {
     }
 
     @Test
+    void aReleaseRoundTripsAndAReleaseLessShotKeepsTheOldJsonAndHash() {
+        SimHarness h = SimHarness.builder().build();
+        int[] units = h.spawn(new FactionSlot(0), new Vec2d(10.5, 10.5), 2, 0);
+        MatchState state = KernelAccess.state(h.core());
+        ShotStore.Shot plain = shot(1, units[0], units[1], 5);
+        state.shots().restore(new ShotStore.Snapshot(2, List.of(plain)));
+        long plainHash = h.stateHash();
+        JsonObject json =
+                MatchSnapshotCodec.encode(JsonOps.INSTANCE, h.core().snapshot()).getAsJsonObject();
+        JsonObject row = json.getAsJsonObject("play")
+                .getAsJsonObject("shots")
+                .getAsJsonArray("rows")
+                .get(0)
+                .getAsJsonObject();
+        assertThat(row.has("release")).isFalse();
+        assertThat(roundTrip(h.core().snapshot()).play().shots().rows().get(0).release())
+                .isNull();
+
+        ShotStore.Release release = new ShotStore.Release(1.5, 2.25, 3.5, 4);
+        ShotStore.Shot framed = new ShotStore.Shot(1, units[0], units[1], 5, 10.5, 1.9, 10.5, plain.damage(), release);
+        state.shots().restore(new ShotStore.Snapshot(2, List.of(framed)));
+        long framedHash = h.stateHash();
+        assertThat(framedHash).isNotEqualTo(plainHash);
+        assertThat(roundTrip(h.core().snapshot()).play().shots().rows().get(0).release())
+                .isEqualTo(release);
+        state.shots()
+                .restore(new ShotStore.Snapshot(
+                        2,
+                        List.of(new ShotStore.Shot(
+                                1,
+                                units[0],
+                                units[1],
+                                5,
+                                10.5,
+                                1.9,
+                                10.5,
+                                plain.damage(),
+                                new ShotStore.Release(1.5, 2.25, 3.5, 5)))));
+        assertThat(h.stateHash()).isNotEqualTo(framedHash);
+        MatchCore resumed =
+                MatchCore.restore(roundTrip(h.core().snapshot()), TemplateSet.builtin(), CorePorts.of(() -> 0L));
+        assertThat(resumed.stateHash()).isEqualTo(h.stateHash());
+    }
+
+    @Test
     void malformedRowsDecodeAsErrors() {
         SimHarness h = SimHarness.builder().build();
         int[] units = h.spawn(new FactionSlot(0), new Vec2d(10.5, 10.5), 2, 0);

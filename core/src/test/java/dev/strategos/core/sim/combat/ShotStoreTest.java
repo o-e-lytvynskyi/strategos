@@ -98,4 +98,17 @@ class ShotStoreTest {
         assertThatThrownBy(() -> new ShotStore.Shot(1, d.attacker(), 0, 0, 1, 2, 3, d))
                 .isInstanceOf(IllegalArgumentException.class);
     }
+
+    @Test
+    void aLaunchFreezesItsReleaseAndRejectsABadOne() {
+        Damage d = Damage.of(2, 1, DamageType.PIERCE, 1);
+        ShotStore store = new ShotStore();
+        var shot = store.launch(1, 7, new ShotStore.Launch(1, 2, 3, 10, 1, 0, 0, 0, 1, 0, d));
+        assertThat(shot.release()).isEqualTo(new ShotStore.Release(1, 2, 3, 7));
+        var legacy = store.launch(1, 7, new ShotStore.Launch(1, 3, 10, 1.5, 0, 0, 0, 1, 0, d));
+        assertThat(legacy.release().y()).isEqualTo(1.5);
+        assertThatThrownBy(() -> new ShotStore.Release(Double.NaN, 0, 0, 0))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new ShotStore.Release(0, 0, 0, -1)).isInstanceOf(IllegalArgumentException.class);
+    }
 }

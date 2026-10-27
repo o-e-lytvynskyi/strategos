@@ -4,10 +4,10 @@
 
 ## Now
 
-- **Milestone:** M5 Combat; 6 of 22 tasks complete (T1, T2a, T2b, T3a, T3b.1, T3b.2).
-- **In progress:** M5 T3c.1 shot FX state and wire since 2026-10-27.
-- **Last finished task:** T3b.2 archer content and engine integration (2026-10-27).
-- **Next task:** T3c.1, then T3c.2 delivery and client, then T4 high ground.
+- **Milestone:** M5 Combat; 7 of 22 tasks complete (T1, T2a, T2b, T3a, T3b.1, T3b.2, T3c.1).
+- **In progress:** M5 T3c.2 shot FX delivery and client since 2026-10-27.
+- **Last finished task:** T3c.1 shot FX state and wire (2026-10-27).
+- **Next task:** T3c.2, then T4 high ground.
 - **Merged from main last:** a10a8fd (2026-10-27), PR #21 fix-main.
 
 ## Depends on unfinished work
@@ -17,6 +17,12 @@
 - Preserve codex/m5-combat and dev/lev1pes/m5. Import code and task-specific evidence selectively after assignment; do not copy old central STATE/worklog records over current main.
 
 ## Log
+
+### 2026-10-27 — M5 T3c.1
+
+- **T3c.1 · Shot FX state and wire** — CMB-04 in progress. `ShotStore.Release` (origin and tick) frozen at launch, persisted as an optional `release` key and hashed only when present (release-less shots keep their bytes and hash); `ShotFired` per launch and `ShotLanded` per impact, misses (`Handle.NONE`) and dead shooters included; `FxKind.SHOT_LAUNCH`/`SHOT_IMPACT` (codes 6, 7) with a path (other end, flight ≤ 16,383 ticks), old kinds' bytes unchanged, `Fx` max size 6 + 64 × 21; bow and arrow-hit cues. Tests: `ShotFeedbackTest` (4), `ShotStoreTest`, `ShotPersistenceTest`, `WireCodecSizeTest` (2), `FxMappingTest`.
+- Gates: `verify verifySlow verifySoak` 4m 24s green. JMH found three things: (1) `jmhCompare` never reported missing benchmarks — a Groovy line starting with `+` was a separate statement — and died once `ShotBench.volley60` went missing; fixed through `JmhGate.all`, which `jmhSelftest` now exercises (kb entry). (2) The volley fixture counted all outputs and threw on the new `ShotLanded`; it now counts hits, the measured path unchanged. (3) `volley60{miss}` 0.827 → 1.085 us (+31 %, both forks 1.05/1.13): 60 `ShotLanded` records, +3,840 B/op, the required miss feedback; baseline row re-taken (Decisions). preferred +3.5 %, collateral +8 %. Watch: `TemplateCompileBench.compile500` +14.2 % (T3b.1's nine ranged default paths per template, +5.9 % B/op) and `MovementBench.step600` +13 % sit under the 15 % limit.
+- **Next:** T3c.2 delivery to viewers of either endpoint, client arcs and sounds.
 
 ### 2026-10-27 — M5 T3b.2
 
@@ -126,6 +132,9 @@
 
 ## Decisions taken
 
+- 2026-10-27 · Re-take only the `ShotBench.volley60{mode=miss}` row of perf/baseline-m4pro.json (0.827 → 1.085 us/op): the growth is the 60 `ShotLanded` records the spec requires for misses, confirmed in two runs; limits unchanged. Undo by restoring the row from 95484c3.
+- 2026-10-27 · Fix `jmhCompare` to report missing benchmarks (it never did); a stricter gate, not a weaker one. Undo is not recommended.
+- 2026-10-27 · trial implementer: pass — T3c.1 matched the brief with no deviations, kept old constructors and bytes, named its one test-assertion change; the orchestrator read the core diff.
 - 2026-10-27 · Spec traceability for CMB-04 check 4 names the existing GameTest `combattests.archer_volley_replays_as_the_core_predicts` (M2's "as the core predicts" convention: the headless replay is the L1 prediction) instead of the planned `a_volley_damages_as_l1_predicts`. Undo by renaming the test and the row.
 - 2026-10-27 · Re-pin the builtin template set's SHA (e4624330…) and size 17 for the archer; the canonical form changed only by the appended template. Undo with the archer.
 - 2026-10-27 · trial runner: pass — three bounded gate/JMH runs with exact failing tests, pinned values and per-fork evidence; no retries or edits.

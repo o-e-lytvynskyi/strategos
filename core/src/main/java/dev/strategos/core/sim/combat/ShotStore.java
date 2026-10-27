@@ -4,15 +4,27 @@ import dev.strategos.core.shared.CoreApi;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import org.jspecify.annotations.Nullable;
 
 /** Immutable in-flight shots in launch-id order; allocator history survives even an empty store (MATCH-04). */
 public final class ShotStore {
     private long nextId = 1;
     private final ArrayList<Shot> rows = new ArrayList<>();
 
+    /** Where and when a shot left its shooter, frozen with the shot so its impact feedback keeps both ends (CMB-04). */
+    @CoreApi
+    public record Release(double x, double y, double z, long tick) {
+        public Release {
+            if (!Double.isFinite(x) || !Double.isFinite(y) || !Double.isFinite(z) || tick < 0) {
+                throw new IllegalArgumentException("invalid shot release");
+            }
+        }
+    }
+
     @CoreApi
     public record Launch(
             double fromX,
+            double fromY,
             double fromZ,
             double targetX,
             double targetY,
@@ -24,11 +36,26 @@ public final class ShotStore {
             Damage damage) {
         public Launch {
             for (double value :
-                    new double[] {fromX, fromZ, targetX, targetY, targetZ, targetVx, targetVz, speed, spread}) {
+                    new double[] {fromX, fromY, fromZ, targetX, targetY, targetZ, targetVx, targetVz, speed, spread}) {
                 if (!Double.isFinite(value)) throw new IllegalArgumentException("nonfinite shot launch");
             }
             if (speed <= 0 || spread < 0) throw new IllegalArgumentException("invalid shot speed or spread");
             Objects.requireNonNull(damage);
+        }
+
+        /** A launch whose release height is the target's. */
+        public Launch(
+                double fromX,
+                double fromZ,
+                double targetX,
+                double targetY,
+                double targetZ,
+                double targetVx,
+                double targetVz,
+                double speed,
+                double spread,
+                Damage damage) {
+            this(fromX, targetY, fromZ, targetX, targetY, targetZ, targetVx, targetVz, speed, spread, damage);
         }
     }
 
@@ -41,7 +68,8 @@ public final class ShotStore {
             double landingX,
             double landingY,
             double landingZ,
-            Damage damage) {
+            Damage damage,
+            @Nullable Release release) {
         public Shot {
             Objects.requireNonNull(damage);
             if (id <= 0
@@ -54,6 +82,19 @@ public final class ShotStore {
             if (shooter != damage.attacker() || target != damage.target()) {
                 throw new IllegalArgumentException("shot handles differ from its frozen damage");
             }
+        }
+
+        /** A shot without a frozen release (saved before releases existed). */
+        public Shot(
+                long id,
+                int shooter,
+                int target,
+                long landTick,
+                double landingX,
+                double landingY,
+                double landingZ,
+                Damage damage) {
+            this(id, shooter, target, landTick, landingX, landingY, landingZ, damage, null);
         }
     }
 
@@ -86,7 +127,8 @@ public final class ShotStore {
                 aim.landingX(),
                 aim.landingY(),
                 aim.landingZ(),
-                damage);
+                damage,
+                new Release(launch.fromX(), launch.fromY(), launch.fromZ(), tick));
         rows.add(shot);
         nextId++;
         return shot;

@@ -157,6 +157,14 @@ public final class StateHasher {
                     h = Hasher.mix(h, Float.floatToIntBits(bonus.multiplier()));
                 }
                 h = Hasher.mix(h, damage.lethal() ? 1 : 0);
+                ShotStore.Release release = shot.release();
+                if (release != null) { // a release-less shot hashes as before
+                    h = Hasher.mix(h, 1);
+                    h = Hasher.mix(h, Double.doubleToLongBits(release.x()));
+                    h = Hasher.mix(h, Double.doubleToLongBits(release.y()));
+                    h = Hasher.mix(h, Double.doubleToLongBits(release.z()));
+                    h = Hasher.mix(h, release.tick());
+                }
             }
         }
         MatchRules rules = config.rules();

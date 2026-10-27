@@ -237,7 +237,7 @@ class RangedOrdersTest {
                 .orElseThrow();
     }
 
-    private static TemplateSet templates(double range, int prepare, int repeat, double spread) {
+    static TemplateSet templates(double range, int prepare, int repeat, double spread) {
         String body = """
                 {"Identity":{},"UnitMotion":{"walkSpeed":0.25},
                  "Body":{"entityType":"strategos:unit_humanoid","width":0.6,"height":1.8}}

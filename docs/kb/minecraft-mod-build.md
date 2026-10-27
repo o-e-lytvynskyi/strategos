@@ -118,3 +118,12 @@ is not UTF-8. Roadmap headings contain Unicode punctuation; decoding them with a
 page can silently match zero headings and print `0 cards checked, 0 problems`. Check that the
 reported card count is plausible, not just the exit code. In PowerShell set
 `$env:PYTHONUTF8='1'` before invoking the tools; this does not change repository data.
+
+## Groovy: a line that starts with an operator is a new statement
+
+In a Gradle Groovy script, `def x = a()` followed by a line `+ b()` is two statements: the
+second is unary plus on `b()`'s result, and `x` holds only `a()`. `jmhCompare` concatenated
+`JmhGate.problems(...)` and `JmhGate.missing(...)` this way from M0 to M5 T3c.1, so a benchmark
+missing from the result was never reported; once one was missing, the gate died with
+`No signature of method: java.lang.String.positive()` instead of naming it. Keep the operator at
+the end of the first line (`a() +` then `b()`), and give a new gate check a case that must fail.
