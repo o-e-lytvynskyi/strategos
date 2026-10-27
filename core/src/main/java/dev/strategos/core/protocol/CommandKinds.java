@@ -55,6 +55,8 @@ public final class CommandKinds {
             new CommandKind<>("strategos:train_batch", 23, TrainBatch.class, TrainBatch.CODEC, TrainBatch.WIRE, false);
     public static final CommandKind<SpawnDeposit> SPAWN_DEPOSIT = new CommandKind<>(
             "strategos:spawn_deposit", 24, SpawnDeposit.class, SpawnDeposit.CODEC, SpawnDeposit.WIRE, true);
+    public static final CommandKind<SetStance> SET_STANCE =
+            new CommandKind<>("strategos:set_stance", 25, SetStance.class, SetStance.CODEC, SetStance.WIRE, false);
     public static final CommandKinds DEFAULT = new CommandKinds(List.of(
             MOVE,
             STOP,
@@ -79,7 +81,8 @@ public final class CommandKinds {
             DEMOLISH,
             SET_AUTO_RESEED,
             TRAIN_BATCH,
-            SPAWN_DEPOSIT));
+            SPAWN_DEPOSIT,
+            SET_STANCE));
 
     private final List<CommandKind<?>> kinds;
     private final Codec<Command> codec;

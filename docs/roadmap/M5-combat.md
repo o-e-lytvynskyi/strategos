@@ -77,7 +77,7 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
   3. A chase stops when the target leaves vision, even under an explicit order (L1).
   4. One GameTest per stance family confirms its L1 behaviour (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** CMB-02, CMB-04, CORE-08 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 #### CMB-07 · Civic centre arrows
 - **Value:** Your civic centre defends itself, so an early raid is not instantly fatal (P4).

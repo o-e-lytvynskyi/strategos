@@ -21,9 +21,13 @@ final class Fleeing {
 
     /** Unit {@code ctx} runs from {@code attacker}, a handle, if it flees and the attacker lives; else nothing. */
     static void away(Context<MatchState> ctx, int attacker) {
+        away(ctx, attacker, ctx.host().stats().fleeDistance(ctx.unit()));
+    }
+
+    /** Unit {@code ctx} runs {@code distance} blocks from {@code attacker} if that is above 0 and the attacker lives. */
+    static void away(Context<MatchState> ctx, int attacker, double distance) {
         MatchState s = ctx.host();
         int i = ctx.unit();
-        double distance = s.stats().fleeDistance(i);
         if (distance <= 0 || !s.entities().isAlive(attacker)) {
             return;
         }

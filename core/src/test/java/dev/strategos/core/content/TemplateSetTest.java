@@ -104,7 +104,7 @@ class TemplateSetTest {
     }
 
     // M5: the archer (UNIT-07, CMB-04)
-    private static final String BUILTIN_VERSION = "e4624330e709b3b209b0bc56b7eacdb6356e6b7a850b359d529f4672f0d8b762";
+    private static final String BUILTIN_VERSION = "8bb9790c35022c2d22a4c537048e864c39d66f4b87919060bbd868257685dd1a";
 
     private static TemplateSet set(UnitTemplate template) {
         return new TemplateSet(List.of(template));

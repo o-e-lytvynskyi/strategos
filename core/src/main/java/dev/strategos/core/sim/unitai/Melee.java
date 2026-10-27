@@ -18,7 +18,8 @@ import java.util.List;
  * What the COMBAT states and the aggressive behaviour do (CMB-02, 04 §6.7): take up an engagement, walk to a place
  * round the target, strike on the wind-up and then every period, chase a target that steps out of reach, and find the
  * next one. An engagement the unit took up itself ({@link OrderKind#ENGAGE}) ends when its target leaves the unit's
- * sight; the player's attack ({@link OrderKind#ATTACK}) only when the target dies or the order is replaced.
+ * sight; the player's attack ({@link OrderKind#ATTACK}) when the target dies or the order is replaced, or when the target
+ * leaves its sight while the unit chases it.
  */
 final class Melee {
     /** How far past its reach a target may step before the attacker chases it, so a shuffle does not break a fight. */
@@ -59,12 +60,11 @@ final class Melee {
             return;
         }
         int t = Handle.index(target);
-        double gap = Engagement.gap(s, i, t);
         if (inReach(s, i, t)) {
             ctx.go(UnitAi.ATTACKING);
             return;
         }
-        if (orders.kind(i) == OrderKind.ENGAGE && gap > s.stats().vision(i)) {
+        if (CombatActions.pursuitOver(ctx, t, chasing)) {
             UnitAi.finishOrder(ctx, false);
             return;
         }
@@ -117,7 +117,11 @@ final class Melee {
         int t = Handle.index(target);
         StatService stats = s.stats();
         if (Engagement.gap(s, i, t) > stats.meleeReach(i) + LEAVE) {
-            ctx.go(UnitAi.CHASING);
+            if (CombatActions.holding(ctx)) {
+                UnitAi.finishOrder(ctx, false); // standing its ground, it lets the target go
+            } else {
+                ctx.go(UnitAi.CHASING);
+            }
             return;
         }
         int tick = (int) s.tick();

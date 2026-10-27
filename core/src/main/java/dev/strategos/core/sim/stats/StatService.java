@@ -6,6 +6,7 @@ import dev.strategos.core.content.ValuePath;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.HotPath;
+import dev.strategos.core.shared.Stance;
 import dev.strategos.core.sim.IdentityStore;
 import dev.strategos.core.sim.MatchBus;
 import dev.strategos.core.sim.StatsChanged;
@@ -81,6 +82,9 @@ public final class StatService {
     private int highMax;
     private int vision;
     private int flee;
+    private int stance;
+    private int meleePreferred;
+    private int rangedPreferred;
     private int classesPath;
     private int turnRate;
     private StatBlock[] blocks = new StatBlock[0];
@@ -185,6 +189,9 @@ public final class StatService {
         this.highMax = path(CorePaths.HIGH_MAX);
         this.vision = path(CorePaths.VISION);
         this.flee = path(CorePaths.FLEE);
+        this.stance = path(CorePaths.STANCE);
+        this.meleePreferred = tokenPath(CorePaths.MELEE_PREFERRED);
+        this.rangedPreferred = tokenPath(CorePaths.RANGED_PREFERRED);
         this.classesPath = tokenPath(IDENTITY_CLASSES);
         this.blocks = new StatBlock[count * factions];
         for (int k = 0; k < blocks.length; k++) {
@@ -329,6 +336,20 @@ public final class StatService {
     /** How far unit {@code index} runs from a blow when it cannot hit back, in blocks; 0 for none (UNIT-04). */
     public double fleeDistance(int index) {
         return read(index, flee);
+    }
+
+    /** Unit {@code index}'s stance as its template says (CMB-05); a player's choice is the stance store's. */
+    public Stance stance(int index) {
+        double value = read(index, stance);
+        Stance of = Double.isNaN(value) ? null : Stance.of((int) Math.round(value));
+        return of == null ? Stance.AGGRESSIVE : of;
+    }
+
+    /** The class tokens unit {@code index}'s melee or ranged attack picks its targets from first, in order (CMB-05). */
+    public List<String> preferredClasses(int index, boolean ranged) {
+        int path = ranged ? rangedPreferred : meleePreferred;
+        List<String> tokens = path < 0 ? null : tokens(index, path);
+        return tokens == null ? List.of() : tokens;
     }
 
     /** Whether unit {@code index} gathers: its classes hold {@value #GATHERER} (D-02, UNIT-04). */

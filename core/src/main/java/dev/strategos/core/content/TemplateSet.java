@@ -3,6 +3,7 @@ package dev.strategos.core.content;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import dev.strategos.core.shared.Hex64;
+import dev.strategos.core.shared.Stance;
 import dev.strategos.core.shared.TemplateId;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -76,6 +77,7 @@ public final class TemplateSet {
         List<String> lists = new ArrayList<>();
         for (int i = 0; i < flattened.size(); i++) {
             JsonObject json = flattened.get(i).deepCopy();
+            stanceAsCode(json);
             copies.add(json);
             canonical.add(templates.get(i).id().value(), json.deepCopy());
             leafPaths(json, "", paths, lists);
@@ -94,6 +96,8 @@ public final class TemplateSet {
                         bp.getAsJsonObject(), templates.get(k).id().value(), problems);
             }
         }
+        String[][] valueKeys = keys(valuePaths); // split once, not once a template
+        String[][] tokenKeys = keys(tokenPaths);
         this.values = new double[indices][valuePaths.size()];
         this.texts = new String[indices][tokenPaths.size()];
         for (double[] row : values) {
@@ -103,7 +107,7 @@ public final class TemplateSet {
             int i = templates.get(k).netIndex();
             JsonObject json = copies.get(k);
             for (ValuePath p : valuePaths.all()) {
-                JsonElement leaf = leaf(json, p.path());
+                JsonElement leaf = leaf(json, valueKeys[p.id()]);
                 values[i][p.id()] = leaf != null
                                 && leaf.isJsonPrimitive()
                                 && leaf.getAsJsonPrimitive().isNumber()
@@ -111,7 +115,7 @@ public final class TemplateSet {
                         : typed(templates.get(k), p.path());
             }
             for (ValuePath p : tokenPaths.all()) {
-                JsonElement leaf = leaf(json, p.path());
+                JsonElement leaf = leaf(json, tokenKeys[p.id()]);
                 texts[i][p.id()] = leaf != null
                                 && leaf.isJsonPrimitive()
                                 && leaf.getAsJsonPrimitive().isString()
@@ -245,9 +249,34 @@ public final class TemplateSet {
         }
     }
 
-    private static @Nullable JsonElement leaf(JsonObject json, String path) {
+    /** A stance written by name ({@code Behaviour/stance}) becomes its code, the number the path carries. */
+    private static void stanceAsCode(JsonObject json) {
+        JsonElement behaviour = json.get("Behaviour");
+        if (behaviour == null || !behaviour.isJsonObject()) {
+            return;
+        }
+        JsonElement stance = behaviour.getAsJsonObject().get("stance");
+        if (stance != null
+                && stance.isJsonPrimitive()
+                && stance.getAsJsonPrimitive().isString()) {
+            Stance named = Stance.byId(stance.getAsString());
+            if (named != null) {
+                behaviour.getAsJsonObject().addProperty("stance", named.code());
+            }
+        }
+    }
+
+    private static String[][] keys(ValuePaths paths) {
+        String[][] keys = new String[paths.size()][];
+        for (ValuePath p : paths.all()) {
+            keys[p.id()] = p.path().split("/", -1);
+        }
+        return keys;
+    }
+
+    private static @Nullable JsonElement leaf(JsonObject json, String[] path) {
         JsonElement at = json;
-        for (String key : path.split("/", -1)) {
+        for (String key : path) {
             if (!at.isJsonObject()) {
                 return null;
             }
@@ -277,6 +306,7 @@ public final class TemplateSet {
                     CorePaths.RANGED_FIRE,
                     CorePaths.RANGED_RANGE,
                     CorePaths.FLEE -> 0;
+            case CorePaths.STANCE -> CorePaths.DEFAULT_STANCE;
             case CorePaths.MELEE_REACH -> CorePaths.DEFAULT_REACH;
             case CorePaths.MELEE_PREPARE -> CorePaths.DEFAULT_PREPARE;
             case CorePaths.MELEE_REPEAT -> CorePaths.DEFAULT_REPEAT;

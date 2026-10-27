@@ -18,6 +18,7 @@ public final class CommandRules {
         return new CommandRules()
                 .register(new MoveRule())
                 .register(new StopRule())
+                .register(new StanceRules.SetStanceRule())
                 .register(new SpawnUnitsRule())
                 .register(new AttackRule())
                 .register(new AttackMoveRule())

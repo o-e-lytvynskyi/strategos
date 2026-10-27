@@ -33,6 +33,7 @@ import dev.strategos.core.sim.nav.PathStatus;
 import dev.strategos.core.sim.nav.PathStore;
 import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.order.OrderQueues;
+import dev.strategos.core.sim.order.StanceStore;
 import dev.strategos.core.sim.unitai.StateId;
 import dev.strategos.core.sim.unitai.UnitAi;
 import java.util.Arrays;
@@ -431,12 +432,20 @@ public final class MatchSnapshotCodec {
                     SHOT.listOf().fieldOf("rows").forGetter(ShotStore.Snapshot::rows))
             .apply(i, ShotStore.Snapshot::new));
 
+    private static final Codec<StanceStore.Saved> STANCE = RecordCodecBuilder.create(i -> i.group(
+                    Codec.INT.fieldOf("unit").forGetter(StanceStore.Saved::handle),
+                    Codec.INT.fieldOf("stance").forGetter(StanceStore.Saved::stance),
+                    Codec.DOUBLE.fieldOf("x").forGetter(StanceStore.Saved::x),
+                    Codec.DOUBLE.fieldOf("z").forGetter(StanceStore.Saved::z))
+            .apply(i, StanceStore.Saved::new));
+
     static final Codec<MatchSnapshot.Play> PLAY = RecordCodecBuilder.create(i -> i.group(
                     Codec.LONG.listOf().optionalFieldOf("outcome", List.of()).forGetter(MatchSnapshot.Play::outcome),
                     COMPUTER.listOf().optionalFieldOf("ai", List.of()).forGetter(MatchSnapshot.Play::ai),
                     Codec.LONG.optionalFieldOf("aiWake", 0L).forGetter(MatchSnapshot.Play::aiWake),
                     Codec.LONG.listOf().optionalFieldOf("alerts", List.of()).forGetter(MatchSnapshot.Play::alerts),
-                    SHOTS.optionalFieldOf("shots", ShotStore.Snapshot.EMPTY).forGetter(MatchSnapshot.Play::shots))
+                    SHOTS.optionalFieldOf("shots", ShotStore.Snapshot.EMPTY).forGetter(MatchSnapshot.Play::shots),
+                    STANCE.listOf().optionalFieldOf("stances", List.of()).forGetter(MatchSnapshot.Play::stances))
             .apply(i, MatchSnapshot.Play::new));
 
     /** The fields, without {@code "v"}. */

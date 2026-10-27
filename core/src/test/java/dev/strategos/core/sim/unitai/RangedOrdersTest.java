@@ -68,7 +68,7 @@ class RangedOrdersTest {
         h.submit(new PlayerSlot(0), Attack.replace(UnitSet.of(ranger), dummy));
         h.runTicks(3);
         assertThat(UnitAi.leaf(s.ai().code(Handle.index(ranger)))).isEqualTo(UnitAi.ATTACKING);
-        s.motion().set(Handle.index(dummy), 27.5, 1, 10.5, 0);
+        s.motion().set(Handle.index(dummy), 16.5, 1, 10.5, 0); // out of range, still in sight (a chase ends beyond it)
         h.runTicks(6);
         assertThat(s.orders().slot(Handle.index(ranger))).isEqualTo(-1);
         assertThat(s.motion().x(Handle.index(ranger))).isGreaterThan(5.5);

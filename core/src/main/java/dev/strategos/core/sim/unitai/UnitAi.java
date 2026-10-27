@@ -1,5 +1,7 @@
 package dev.strategos.core.sim.unitai;
 
+import dev.strategos.core.shared.Handle;
+import dev.strategos.core.shared.Stance;
 import dev.strategos.core.sim.Arrived;
 import dev.strategos.core.sim.Attacked;
 import dev.strategos.core.sim.MatchState;
@@ -268,7 +270,7 @@ public final class UnitAi {
 
     /** Hit by {@code attacker} (a handle): a unit that can fight hits back, one that cannot runs, if it ever does. */
     static void hit(Context<MatchState> ctx, int attacker) {
-        if (ctx.host().stats().canAttack(ctx.unit())) {
+        if (ctx.host().stats().canAttack(ctx.unit()) || Stances.of(ctx.host(), ctx.unit()) == Stance.PASSIVE) {
             CombatActions.retaliate(ctx, attacker);
         } else {
             Fleeing.away(ctx, attacker);
@@ -364,8 +366,12 @@ public final class UnitAi {
     static void finishOrder(Context<MatchState> ctx, boolean failed) {
         MatchState state = ctx.host();
         int i = ctx.unit();
+        int finished = state.orders().kind(i);
         state.orders().pop(i);
         state.bus().publish(new OrderFinished(ctx.handle(), failed));
+        if (state.orders().size(i) == 0 && finished == OrderKind.ENGAGE) {
+            Stances.returnHome(state, i); // a defensive unit walks back to its spot
+        }
         if (state.orders().size(i) == 0) {
             ctx.go(IDLE);
             return;
@@ -380,6 +386,9 @@ public final class UnitAi {
 
     /** A transition between top-level states is the trace event ORD-01.3 asks for; one inside a top-level state is not. */
     private static void changed(MatchState state, int handle, StateId from, StateId to) {
+        if (to.equals(IDLE)) {
+            Stances.idled(state, Handle.index(handle));
+        }
         UnitState was = from.activity();
         UnitState now = to.activity();
         if (was != null && now != null && was != now) {

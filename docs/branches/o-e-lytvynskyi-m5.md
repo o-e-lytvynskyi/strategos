@@ -4,10 +4,10 @@
 
 ## Now
 
-- **Milestone:** M5 Combat; 9 of 22 tasks complete (T1–T4).
-- **In progress:** M5 T5 stances (CMB-05) since 2026-10-27.
-- **Last finished task:** T4 high ground (2026-10-27).
-- **Next task:** T5, then T6 mounted units (UNIT-06).
+- **Milestone:** M5 Combat; 10 of 23 tasks complete (T1–T5a).
+- **In progress:** M5 T5b FLEEING, the stance buttons and the stance GameTests since 2026-10-27.
+- **Last finished task:** T5a stances in the core (2026-10-27).
+- **Next task:** T5b, then T6 mounted units (UNIT-06).
 - **Merged from main last:** a10a8fd (2026-10-27), PR #21 fix-main.
 
 ## Depends on unfinished work
@@ -19,6 +19,15 @@
 - Preserve codex/m5-combat and dev/lev1pes/m5. Import code and task-specific evidence selectively after assignment; do not copy old central STATE/worklog records over current main.
 
 ## Log
+
+### 2026-10-27 — M5 T5 split, T5a
+
+- Split T5 into T5a (core stances) and T5b (FLEEING, card, GameTests) before implementing: the estimate passed 1,500 lines. Spec finding 11 (a passive unit flees its template's `Behaviour/flee`, else 12; the worker keeps M4's 8) and 12 (where §2.4's table is silent).
+- **T5a · Stances in the core** — CMB-05 in_progress (checks 1–3 pass at L1; 4 in T5b). `Stance` (5, wire codes 0–4), `Behaviour/stance` by name (worker passive), `StanceStore` (explicit stance and spot, cleared on spawn and removal, saved and hashed only for live rows), `SetStance` (25) with its rule, stance-aware notice, retaliation, leash and return, the out-of-vision end of a chase, `preferred` classes before distance. Tests: `StanceTest` (`theTable` per stance, `targetPreferences`, `aChaseEndsOutOfVision`, archer defensive/stand-ground, no chain kills past the leash, passive worker flees 8, handle wrap), `StancePersistenceTest`, `SetStanceRuleTest`, `SetStanceTest`, `StanceDataTest`. No golden changed; a stance-free match saves and hashes as before.
+- Review (reviewer): a defensive archer's notice radius (35.5) passed its vision (32) and looped engage/finish every think; per-call `values()` clone; next-target search off the leash; dead rows reviving after 4,095 reuses. All fixed with tests.
+- JMH: `TemplateCompileBench.compile500` read 6.48 ms (+17.8 %): the compiler split every value path's string once a template; splitting once a set brings it to 5.36 ms, under the baseline. Gate green, no baseline touched.
+- Gates: `verify verifySlow verifySoak` 4m 14s green; `jmhCompare` green.
+- **Next:** T5b.
 
 ### 2026-10-27 — M5 T4
 
@@ -150,6 +159,9 @@
 
 ## Decisions taken
 
+- 2026-10-27 · Spec finding 12 (stance details the table leaves open) and the template SHA re-pinned for the worker's passive stance (8bb9790c…); RangedOrdersTest's receding dummy moved inside sight (22 → 11 blocks) because the out-of-vision rule now ends that chase as specified. Undo with finding 12.
+- 2026-10-27 · trial reviewer: pass — found a real livelock and three determinism/cost defects in T5a, each with a scenario; read-only, no Gradle while JMH ran.
+- 2026-10-27 · trial implementer: pass — T5a plus its review round; it found the compiler's repeated path split behind the JMH regression instead of proposing a baseline.
 - 2026-10-27 · High ground uses the units' motion Y (the floor on terrain) and applies only to ranged attacks, as §2.3 states; the card's breakdown is the template tooltip (per-template knobs), the situational bonus is shown there as rates. Undo with the card's data knobs.
 - 2026-10-27 · Fix the reconciler GameTest's race (wait for the match's queued writes) rather than retry or mark it flaky. Undo is not recommended.
 - 2026-10-27 · trial implementer: pass — T4 met the brief, found the floor-Y convention and reported a GameTest failure it could not pin; the orchestrator traced it to a pre-existing race.

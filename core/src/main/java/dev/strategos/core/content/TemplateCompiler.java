@@ -4,6 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import dev.strategos.core.shared.Stance;
 import dev.strategos.core.shared.TemplateId;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -385,7 +386,9 @@ public final class TemplateCompiler {
                         "repeat",
                         "speed",
                         "spread",
-                        "highGround");
+                        "highGround",
+                        "preferred");
+                f.preferred(ranged, "/Attack/Ranged");
                 JsonObject high = f.object(ranged, "/Attack/Ranged", "highGround", false);
                 if (high != null) {
                     f.known(high, "/Attack/Ranged/highGround", "rangePerBlock", "damagePerBlock", "maxBlocks");
@@ -406,6 +409,16 @@ public final class TemplateCompiler {
                     f.rangedNumber(ranged, path);
                 }
             }
+        }
+        if (attack != null) {
+            JsonObject melee = f.object(attack, "/Attack", "Melee", false);
+            if (melee != null) {
+                f.preferred(melee, "/Attack/Melee");
+            }
+        }
+        JsonObject behaviour = f.object(json, "", "Behaviour", false);
+        if (behaviour != null) {
+            f.stance(behaviour);
         }
         String name = identity == null ? id.value() : f.string(identity, "/Identity", "name", id.value());
         String classes = identity == null ? "" : f.string(identity, "/Identity", "classes", "");
@@ -549,6 +562,34 @@ public final class TemplateCompiler {
                 return 0;
             }
             return v;
+        }
+
+        /** An attack's preferred classes, if it has any: a string of class tokens (CMB-05). */
+        void preferred(JsonObject attack, String pointer) {
+            if (attack.has("preferred")) {
+                string(attack, pointer, "preferred", "");
+            }
+        }
+
+        /** A stance by name, or by the code of one (CMB-05). */
+        void stance(JsonObject behaviour) {
+            JsonElement e = behaviour.get("stance");
+            if (e == null) return;
+            String pointer = "/Behaviour/stance";
+            if (e instanceof JsonPrimitive p && p.isString()) {
+                if (Stance.byId(p.getAsString()) == null) {
+                    problems.add(TemplateProblem.error(
+                            file,
+                            pointer,
+                            "unknown stance '" + p.getAsString()
+                                    + "'; expected violent, aggressive, defensive, stand_ground or passive"));
+                }
+            } else if (!(e instanceof JsonPrimitive n
+                    && n.isNumber()
+                    && Stance.of(n.getAsInt()) != null
+                    && n.getAsDouble() == n.getAsInt())) {
+                problems.add(TemplateProblem.error(file, pointer, "expected a stance name, got " + e));
+            }
         }
 
         void rangedNumber(JsonObject ranged, String path) {

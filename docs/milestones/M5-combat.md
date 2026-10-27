@@ -116,6 +116,7 @@ grow with the garrison), and an AI that fights by the same rules (the roadmap's 
 | 9 | Flat-world velocity and numeric damage safety | Flat matches deliberately persist only poses, preserving released journal hashes. A transient firing intent captures the target position before MOVEMENT; COMBAT derives its displacement for the lead. Terrain matches use the existing motion velocity. Ranged damage is bounded to finite float-safe values before packet conversion, including after modifiers. |
 | 10 | Shot feedback continuity and viewers | Freeze release coordinates and tick with every new shot so impact feedback retains both endpoints after shooter death or restore. Restore preserves future impact feedback; replaying past launch FX to reconstruct client arcs is outside the event contract. Deliver shot FX once to the union of viewers of either endpoint, batched by endpoint pages. Client arcs clear when the match changes. |
 | 11 | A passive unit's flee distance | §2.4 says 12 blocks; M4 approved the worker's `Behaviour/flee` of 8 with its provenance. A passive unit flees its template's `Behaviour/flee` when that is set and 12 blocks otherwise, so the worker keeps its approved 8. |
+| 12 | Stances: where the table is silent | `Stance` lives in `core.shared` (content and protocol both use it; ArchUnit forbids the cycle). Violent behaves as aggressive: with "a chase ends out of vision" for every order, "chases beyond vision" has no room, and no neutral or harmless targets exist yet to tell them apart. The out-of-vision rule ends an explicit attack only once it is chasing, so a far target ordered from afar is still walked to. A defensive unit's spot is set by `SetStance`, by going idle over 2 blocks from it, and by an engagement taken over other orders; it walks back after an engagement ends with an empty queue. Notice radii are capped at vision so the notice and the leash agree. Stand ground's reach is the melee reach or the ranged range less the 0.5 approach margin. |
 
 ### 1.7 Consent plan
 
@@ -370,7 +371,7 @@ battle scenario) → T17 (the consent batch) → T18 (close). T16 is reserved fo
 
 ### 7.3 Progress
 
-- [x] T1 (2026-10-26) · [x] T2a (2026-10-26) · [x] T2b (2026-10-26) · [x] T3a (2026-10-26) · [x] T3b.1 (2026-10-27) · [x] T3b.2 (2026-10-27) · [x] T3c.1 (2026-10-27) · [x] T3c.2 (2026-10-27) · [x] T4 (2026-10-27) · [ ] T5a · [ ] T5b · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11
+- [x] T1 (2026-10-26) · [x] T2a (2026-10-26) · [x] T2b (2026-10-26) · [x] T3a (2026-10-26) · [x] T3b.1 (2026-10-27) · [x] T3b.2 (2026-10-27) · [x] T3c.1 (2026-10-27) · [x] T3c.2 (2026-10-27) · [x] T4 (2026-10-27) · [x] T5a (2026-10-27) · [ ] T5b · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11
 - [ ] T12 · [ ] T13 · [ ] T14 · [ ] T15 · [ ] T17 · [ ] T18
 
 ---

@@ -40,6 +40,15 @@ public final class CorePaths {
     public static final String VISION = "Vision/range";
     /** How far a unit without a melee attack runs from a blow, in blocks; 0 stands (UNIT-04). */
     public static final String FLEE = "Behaviour/flee";
+    /**
+     * How a unit fights on its own (CMB-05): the code of a {@code Stance}, written in templates by its name
+     * ({@code "passive"}); aggressive, 1, where a template says nothing.
+     */
+    public static final String STANCE = "Behaviour/stance";
+    /** The class tokens an attack picks its targets from first (CMB-05): a list, empty for the nearest enemy. */
+    public static final String MELEE_PREFERRED = "Attack/Melee/preferred";
+
+    public static final String RANGED_PREFERRED = "Attack/Ranged/preferred";
 
     public static final double DEFAULT_HEALTH = 100;
     public static final double MAX_RESISTANCE = 20;
@@ -54,6 +63,7 @@ public final class CorePaths {
     public static final double DEFAULT_HIGH_DAMAGE = 0.04;
     public static final double DEFAULT_HIGH_MAX = 8;
     public static final double DEFAULT_VISION = 12;
+    public static final double DEFAULT_STANCE = 1;
 
     /** Every path the core reads, which every set carries. */
     public static java.util.List<String> all() {
@@ -83,7 +93,8 @@ public final class CorePaths {
                 HIGH_DAMAGE,
                 HIGH_MAX,
                 VISION,
-                FLEE);
+                FLEE,
+                STANCE);
     }
 
     private CorePaths() {}
@@ -108,7 +119,8 @@ public final class CorePaths {
                     HIGH_DAMAGE,
                     HIGH_MAX,
                     VISION,
-                    FLEE -> 0;
+                    FLEE,
+                    STANCE -> 0;
             case HEALTH, MELEE_REPEAT, RANGED_REPEAT -> 1;
             case RANGED_SPEED -> 0.01;
             case RESIST_HACK, RESIST_PIERCE, RESIST_CRUSH -> -MAX_RESISTANCE;
@@ -131,6 +143,7 @@ public final class CorePaths {
             case RANGED_HACK, RANGED_PIERCE, RANGED_CRUSH, RANGED_FIRE -> Float.MAX_VALUE;
             case VISION -> 64;
             case FLEE -> 32;
+            case STANCE -> 4;
             case RESIST_HACK, RESIST_PIERCE, RESIST_CRUSH -> MAX_RESISTANCE;
             default -> Double.POSITIVE_INFINITY;
         };

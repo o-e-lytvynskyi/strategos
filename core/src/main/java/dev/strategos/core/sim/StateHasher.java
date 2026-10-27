@@ -127,6 +127,9 @@ public final class StateHasher {
         }
         h = s.outcome().mix(h); // only once a centre stood or someone lost (MATCH-01)
         h = s.aiSlots().mix(h); // only once the computer plays a faction (AI-01)
+        if (!s.stances().empty()) { // only once a stance was set or a defensive unit holds a spot (CMB-05)
+            h = s.stances().mix(h);
+        }
         ShotStore shots = s.shots();
         if (!shots.pristine()) {
             h = Hasher.mix(h, 0x53484f5453L);

@@ -31,6 +31,7 @@ import dev.strategos.core.sim.nav.PathStore;
 import dev.strategos.core.sim.nav.SurfaceGrid;
 import dev.strategos.core.sim.nav.TerrainEdits;
 import dev.strategos.core.sim.order.OrderQueues;
+import dev.strategos.core.sim.order.StanceStore;
 import dev.strategos.core.sim.prod.Population;
 import dev.strategos.core.sim.spatial.SpatialQueries;
 import dev.strategos.core.sim.stats.StatService;
@@ -59,6 +60,7 @@ public final class MatchState {
     private final IdentityStore identity = new IdentityStore();
     private final MotionStore motion = new MotionStore();
     private final OrderQueues orders = new OrderQueues();
+    private final StanceStore stances;
     private final AiStateStore ai = new AiStateStore();
     private final PathStore paths = new PathStore();
     private final HealthStore health = new HealthStore();
@@ -99,6 +101,7 @@ public final class MatchState {
         this.templates = templates;
         cacheMobility();
         this.entities = entities;
+        this.stances = new StanceStore(entities::handleAt);
         this.log = log;
         this.stats = new StatService(templates, config.factions() + 1, identity, bus); // the players' and Gaia's
         EconomyRules economy = config.rules().economy();
@@ -422,6 +425,11 @@ public final class MatchState {
         return health;
     }
 
+    /** What stances need beyond the templates: the ones players set, and the spots of defensive units (CMB-05). */
+    public StanceStore stances() {
+        return stances;
+    }
+
     public ShotStore shots() {
         return shots;
     }
@@ -451,6 +459,7 @@ public final class MatchState {
             population.remove(identity.faction(i), unitPopulation(i));
         }
         health.reset(i);
+        stances.clear(i);
         releaseClaim(i, handle);
         dropLoad(i);
         entities.destroy(handle);
@@ -471,6 +480,7 @@ public final class MatchState {
         motion.setExtra(index, MotionStore.Extra.NONE);
         stats.clearPersonal(index);
         health.reset(index);
+        stances.clear(index);
         ai.reset(index, UnitAi.IDLE);
         if (faction < config.factions()) {
             population.add(faction, unitPopulation(index));

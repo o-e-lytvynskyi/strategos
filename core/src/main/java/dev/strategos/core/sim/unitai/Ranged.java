@@ -9,7 +9,6 @@ import dev.strategos.core.sim.ShotRequested;
 import dev.strategos.core.sim.combat.Damage;
 import dev.strategos.core.sim.combat.Engagement;
 import dev.strategos.core.sim.combat.HighGround;
-import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.core.sim.stats.StatService;
 import dev.strategos.core.sim.unitai.Hfsm.Context;
@@ -32,10 +31,10 @@ final class Ranged {
         int target = s.orders().target(ctx.unit());
         if (!s.entities().isAlive(target)) return;
         s.orders().retarget(ctx.unit(), target, -1);
-        close(ctx);
+        close(ctx, false);
     }
 
-    static void close(Context<MatchState> ctx) {
+    static void close(Context<MatchState> ctx, boolean chasing) {
         MatchState s = ctx.host();
         int i = ctx.unit();
         OrderQueues orders = s.orders();
@@ -46,7 +45,7 @@ final class Ranged {
         }
         int t = Handle.index(target);
         double gap = Engagement.gap(s, i, t);
-        if (orders.kind(i) == OrderKind.ENGAGE && gap > s.stats().vision(i)) {
+        if (CombatActions.pursuitOver(ctx, t, chasing)) {
             UnitAi.finishOrder(ctx, false);
             return;
         }
@@ -87,14 +86,18 @@ final class Ranged {
         }
         int t = Handle.index(target);
         StatService stats = s.stats();
-        if (s.orders().kind(i) == OrderKind.ENGAGE && Engagement.gap(s, i, t) > stats.vision(i)) {
+        if (CombatActions.pursuitOver(ctx, t, false)) {
             UnitAi.finishOrder(ctx, false);
             return;
         }
         double blocks = HighGround.advantage(s, i, t);
         double range = stats.rangedRange(i) * HighGround.rangeFactor(s, i, blocks);
         if (Engagement.gap(s, i, t) > range) {
-            ctx.go(UnitAi.CHASING);
+            if (CombatActions.holding(ctx)) {
+                UnitAi.finishOrder(ctx, false); // standing its ground, it lets the target go
+            } else {
+                ctx.go(UnitAi.CHASING);
+            }
             return;
         }
         int tick = (int) s.tick();

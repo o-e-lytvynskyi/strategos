@@ -23,7 +23,8 @@
     "Attack/Ranged/highGround/damagePerBlock": "4 % more damage a block above the target: AoE II's damage from above (M5, CMB-16)",
     "Attack/Ranged/highGround/maxBlocks": "Eight blocks of height count at most, so a tower of rock does not make an untouchable archer (M5, CMB-16)",
     "Vision/range": "Twelve blocks: an enemy at the edge of the default camera's view is noticed (CMB-02)",
-    "Behaviour/flee": "Units stand their ground unless their template says they run"
+    "Behaviour/flee": "Units stand their ground unless their template says they run",
+    "Behaviour/stance": "Aggressive, 1: a unit fights what it sees unless its template says otherwise (M5, CMB-05, 0 A.D.'s default)"
   },
   "strategos:template/unit_base": {
     "UnitMotion/walkSpeed": "3.75 blocks a second, a little under a walking player's 4.3, so a crowd reads as marching; M1's movement baselines are measured at it (D-11)",
@@ -69,6 +70,7 @@
   "strategos:unit/worker": {
     "Health/max": "Half a spearman's: a raid on workers costs their owner dearly, so workers are worth guarding",
     "Behaviour/flee": "Eight blocks from a blow: out of a spearman's reach, near enough to go back to work",
+    "Behaviour/stance": "Passive: a worker never fights; hit, it runs from the blow (M5, CMB-05)",
     "Cost/resources/food": "Sixty food: the civic centre's first worker pays back its cost in about a minute of berry picking",
     "Cost/population": "One house's room for one worker",
     "Cost/time": "Ten seconds: a civic centre with a full queue adds a worker every ten seconds, the pace the first house's timing target (1:30) assumes",
