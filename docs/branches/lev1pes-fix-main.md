@@ -268,6 +268,13 @@ See [branch record](https://github.com/o-e-lytvynskyi/strategos/blob/dev/lev1pes
 
 **Related:** release proposal #20 is superseded by this hand-in; close it if the owner agrees.
 
+### 2026-10-27 - operator-requested review of GitHub #21-#26
+
+- Read all six descriptions and published issue comments. PR #21 has no published review or inline comments; its performance implementation remains pending human review.
+- [#22](https://github.com/o-e-lytvynskyi/strategos/issues/22) proposes stricter environment validity and causal before/after evidence. Its CPU limits are unapproved calibration proposals, not current gates. Preserve the current thresholds and historical verdicts. Existing combined harness/runtime results do not establish that every runtime optimization was necessary; acceptance under the current foreign-load guard does not establish absence of contention. Any follow-up attribution needs a comparable unchanged-runtime control and a declared repetition protocol.
+- [#23](https://github.com/o-e-lytvynskyi/strategos/issues/23) concerns terminal ENDED matches restoring as PAUSED; [#24](https://github.com/o-e-lytvynskyi/strategos/issues/24) concerns unsafe removal of live building templates during reload; [#25](https://github.com/o-e-lytvynskyi/strategos/issues/25) concerns saved buildings changing identity when session-local template indices shift. These are separate persistence/content defects, not changes to this performance claim.
+- [PR #26](https://github.com/o-e-lytvynskyi/strategos/pull/26) requests the dedicated main-save-reload assignment for #23-#25 and is still open. No production or regression-test changes for that work before its human merge. The reported probes do not replace a real modified-pack reload or a two-process restart check; keep those validation limits explicit.
+
 ## Current implementation findings
 
 - The path fixture ran its first measured tick immediately after admitting the scattered order. STRICT K=2 therefore received only one 50 ms interval before delivery. StepPacer restores both intervals without changing jobs, W, K or tick latency. Fake-clock regression tests cover the boundary, early wakeups and slow ticks.
