@@ -234,7 +234,39 @@ See [branch record](https://github.com/o-e-lytvynskyi/strategos/blob/dev/lev1pes
 
 ## Review
 
-Pending a maintainer's review. This session neither approves nor merges its own work.
+2026-10-27, maintainer review of bf1ac161 (base main @ b207e50). Delegated: two reviewers (core simulation; measurement and test fixtures), one runner for the gates.
+
+**Recommendation: merge.** No blocker or major finding; no check was weakened.
+
+**Gates** (Apple M4 Pro, the baseline machine):
+- PR CI `verify` and `records`: green on bf1ac161.
+- `verifySlow verifySoak`: green, 4 min 17 s.
+- `verifyPerf`: green, 1 h 22 min.
+  - `jmhCompare` against `perf/baseline-m4pro.json`: 19 benchmarks compared, the highest ratio 1.109 (OrcaBench.step600), no allocation failure. `IdleBench.step300` is new and has no baseline (31.02).
+  - Perf GameTests at the Mac budgets: idle_300 ratio 0.285 / 0.30; path_budget_d p99 0.295 ms / 2 ms, join p99 13.6 µs; group_paths_budget_d p99 0.296 ms / 2 ms. Every other case passes, none INVALID, foreign CPU at most 0.18.
+- Records: `roadmap.py check` (245 cards) and `claims.py check` clean; no new `AFTER-M` markers; no changes to the build surface, `NOTICE` or `.claude/`; commit messages carry no agent traces.
+
+**Is any check weaker?** No.
+- No limit, sample count, warm-up, `INVALID` threshold or workflow changed.
+- **StepPacer** restores the real interval before the first STRICT K=2 deadline. The old fixture ran the first tick at once, which explains the 50 ms join p99.
+- **Voxel world** is built once instead of 576 times, outside the measured spans.
+- **Idle test** now runs paced at 20 TPS, which is stricter. Idle and walking get symmetric preconditioning.
+- **Windows foreign CPU** is measured over one shared window, unbiased; the macOS and Linux paths are unchanged.
+- The fixture alone on the old runtime still read 0.3038 (a diagnostic run), so the pass rests on the core optimisation, not on the fixture.
+
+**Core change:** the zero-velocity shortcut in Avoidance is a provable subset of the cases where ORCA returns zero, checked against the real solver on 10,000 samples. The RestingGround caches are pure functions of every input (`SurfaceGrid.version()` rises with every publish). The caches are derived and not saved, so a cold cache after a reload gives the same result. Core has no Minecraft imports and no new allocation on the hot path.
+
+**Findings (minor; follow-ups, not merge conditions):**
+1. No differential test runs a dense settled scenario with the shortcut on and off and compares state hashes. `AvoidanceTest.conservativeRestBoundAgreesWithTheFullOrcaSolver` covers only one neighbour.
+2. `RestingGround` relies on `SurfaceGrid.version()` rising strictly with every change, unstated and untested. It is keyed by unit index, and slot reuse after a unit's removal has no test.
+3. `IdleBench` does not assert that its units have settled. At this density many go down the crowd path, where the shortcut never applies.
+4. UNIT-05 (`docs/design/roadmap-changes.md`) and the idle300 javadoc (`PerfTests.java` ~91) do not mention the 20 TPS pacing or the 2×200 unmeasured preconditioning ticks. The "scope-neutral" label needs the owner's acknowledgement.
+5. `ProtectedBlockIndexTest`: the large/small ratio before and after the probe change is not recorded.
+6. Nits: the `Avoidance` class Javadoc does not describe the new rest rule; `plan()` reassigns the `maxSpeed` parameter; `RestingGround.ensure` drops the cache on growth.
+
+**Decisions the owner may veto:** UNIT-05 (paired preconditioning and pacing of the idle gate); the derived runtime caches (undone by removing RestingGround and the shortcut).
+
+**Related:** release proposal #20 is superseded by this hand-in; close it if the owner agrees.
 
 ## Current implementation findings
 
