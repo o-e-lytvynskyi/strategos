@@ -792,23 +792,58 @@ public final class MatchState {
      * set, when a live unit's template is missing from it or holds another net index there.
      */
     void swapTemplates(TemplateSet set) {
-        for (int i = 0; i < entities.highWater(); i++) {
-            if (!entities.aliveAt(i)) {
-                continue;
-            }
-            int index = identity.templateIndex(i);
-            UnitTemplate now = templates.byIndex(index);
-            UnitTemplate next = set.byId(now.id());
-            if (next == null || next.netIndex() != index) {
-                log.warn(tick, "template set {} refused: unit {} uses {}, which it lacks", set, i, now.id());
-                return;
-            }
+        String problem = templateSwapProblem(set);
+        if (problem != null) {
+            log.warn(tick, "template set {} refused: {}", set, problem);
+            return;
         }
         templates = set;
         stats.swap(set);
         costs.swap(stats);
         gatherRates.swap(stats);
         spatial.swap(set);
+    }
+
+    /** One guard for both the server reload and INGEST, before any template-dependent state changes. */
+    public @Nullable String templateSwapProblem(TemplateSet next) {
+        for (int i = 0; i < entities.highWater(); i++) {
+            if (entities.aliveAt(i)) {
+                String problem = referenceProblem(next, identity.templateIndex(i));
+                if (problem != null) {
+                    return problem;
+                }
+            }
+        }
+        for (int handle : buildings.handles()) {
+            String problem = referenceProblem(next, buildings.template(handle));
+            if (problem != null) {
+                return problem;
+            }
+            for (int queued : buildings.queue(handle)) {
+                problem = referenceProblem(next, queued);
+                if (problem != null) {
+                    return problem;
+                }
+            }
+        }
+        for (int id = 1; id <= nodes.count(); id++) {
+            int template = nodes.template(id);
+            if (template >= 0) {
+                String problem = referenceProblem(next, template);
+                if (problem != null) {
+                    return problem;
+                }
+            }
+        }
+        return null;
+    }
+
+    private @Nullable String referenceProblem(TemplateSet next, int index) {
+        UnitTemplate now = templates.byIndex(index);
+        UnitTemplate replacement = next.byId(now.id());
+        return replacement == null || replacement.netIndex() != index || replacement.isBuilding() != now.isBuilding()
+                ? "template " + now.id() + " is in use and must keep its index and kind"
+                : null;
     }
 
     /** Whether this tick's {@link JobDelivery} inputs list path request {@code id}; none on a tick without one. */

@@ -111,4 +111,51 @@ class ContentSwapReplayTest {
         h.publishAll(VoxelFixtures.flat(64, 32, 16, 1));
         return h;
     }
+
+    @Test
+    void reloadKeepsLiveBuildingTemplate() {
+        SimHarness h = harness();
+        var house = new dev.strategos.core.shared.TemplateId("strategos:building/house");
+        h.submit(PlayerSlot.ADMIN, new dev.strategos.core.protocol.SpawnBuilding(house, F0, 10, 10, 0));
+        h.step();
+        assertThat(h.queries().buildings()).hasSize(1);
+        var before = h.queries().templates();
+        h.schedule(h.tick() + 1, new ContentSwap(only(TemplateSet.DEBUG_WALKER)));
+        h.step();
+        assertThat(h.queries().templates().hash())
+                .as("reject reload dropping a live building")
+                .isEqualTo(before.hash());
+        assertThat(h.queries().buildings()).hasSize(1);
+    }
+
+    @Test
+    void customBuildingIdentitySurvivesNewSessionIndices() {
+        TemplateSet builtin = TemplateSet.builtin();
+        var house = new dev.strategos.core.shared.TemplateId("strategos:building/house");
+        var existing = new dev.strategos.core.shared.TemplateId("test:z_house");
+        var added = new dev.strategos.core.shared.TemplateId("test:a_house");
+        List<TemplateCompiler.Flat> original = new ArrayList<>();
+        for (UnitTemplate t : builtin.all()) {
+            original.add(new TemplateCompiler.Flat(t.id(), t.netIndex(), builtin.flattened(t.id())));
+        }
+        int next = builtin.all().stream().mapToInt(UnitTemplate::netIndex).max().orElseThrow() + 1;
+        List<TemplateCompiler.Flat> oldFlats = new ArrayList<>(original);
+        oldFlats.add(new TemplateCompiler.Flat(existing, next, builtin.flattened(house)));
+        TemplateCompiler.Result oldSet = TemplateCompiler.fromFlattened(oldFlats);
+        assertThat(oldSet.ok()).isTrue();
+        SimHarness h = SimHarness.builder().size(64, 32).templates(oldSet.set()).build();
+        h.publishAll(VoxelFixtures.flat(64, 32, 16, 1));
+        h.submit(PlayerSlot.ADMIN, new dev.strategos.core.protocol.SpawnBuilding(existing, F0, 10, 10, 0));
+        h.step();
+        assertThat(h.queries().buildings().getFirst().template()).isEqualTo(existing);
+        List<TemplateCompiler.Flat> newFlats = new ArrayList<>(original);
+        newFlats.add(new TemplateCompiler.Flat(added, next, builtin.flattened(house)));
+        newFlats.add(new TemplateCompiler.Flat(existing, next + 1, builtin.flattened(house)));
+        TemplateCompiler.Result newSet = TemplateCompiler.fromFlattened(newFlats);
+        assertThat(newSet.ok()).isTrue();
+        SimHarness restored = SimHarness.restore(h.core().snapshot(), newSet.set());
+        assertThat(restored.queries().buildings().getFirst().template())
+                .as("saved building identity across fresh session index assignment")
+                .isEqualTo(existing);
+    }
 }

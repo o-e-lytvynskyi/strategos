@@ -89,3 +89,14 @@ registries, a reload listener, or registries for ids plus reload data? Verified 
 | Registries for stable ids plus reload-listener balance data | Two sources of truth for one template, and no feature needs the `Holder`s |
 | Templates as Java classes | Contradicts "content is data" (design rule 4) |
 | Vanilla `StructureTemplate` palettes for blueprints | Private; parsing ourselves gives an immutable core `BlueprintShape` |
+
+## 2026-10-27 — save/reload reference validation (#24, #25)
+
+Server reload and core INGEST use the same guard before changing the set: every live unit,
+building, queued product and template-backed resource node must retain its stable id, index
+and unit/building kind. A refusal preserves the server set/table and all match state.
+Snapshots with building slots also persist the session's index-to-id bindings. Restore remaps
+live buildings and every queued product by stable id; missing ids or wrong kinds fault the
+load with a named reason. Legacy custom indices without bindings cannot be reconstructed
+safely and are refused; fixed built-in indices still load. Content hashes exclude index
+assignment and therefore cannot authenticate a legacy session table.

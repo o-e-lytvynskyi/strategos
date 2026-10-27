@@ -34,6 +34,18 @@ class MigrationsTest {
     }
 
     @Test
+    void schemaThreeBlocksOldReadersWithoutInventingLegacyBindings() {
+        Dynamic<JsonElement> old = json("{\"v\":2,\"buildings\":[{\"template\":31}]}");
+        var migrated =
+                Migrations.production().migrate(old, SchemaVersion.CURRENT).getOrThrow();
+        assertThat(migrated.get("v").asInt(0)).isEqualTo(3);
+        assertThat(migrated.get("buildings").get().getOrThrow())
+                .isEqualTo(old.get("buildings").get().getOrThrow());
+        assertThat(migrated.get("templateBindings").result()).isEmpty();
+        assertThat(Migrations.production().migrate(migrated, 2).error()).isPresent();
+    }
+
+    @Test
     void aMissingVersionFails() {
         DataResult<Dynamic<JsonElement>> result = Migrations.production().migrate(json("{\"tick\":1}"), 1);
         assertThat(result.error()).isPresent();

@@ -19,6 +19,9 @@ import org.jspecify.annotations.Nullable;
 /** Read-only questions about a match at its last completed tick. */
 @CoreApi
 public interface MatchQueries {
+    /** Why a template swap would be unsafe, or null when every live reference remains valid. */
+    @Nullable String templateSwapProblem(TemplateSet next);
+
     /** The match's standing buildings, by slot (BLD-01). */
     List<BuildingView> buildings();
 

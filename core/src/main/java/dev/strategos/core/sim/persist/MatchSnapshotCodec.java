@@ -393,6 +393,20 @@ public final class MatchSnapshotCodec {
                     Codec.LONG.listOf().optionalFieldOf("alerts", List.of()).forGetter(MatchSnapshot.Play::alerts))
             .apply(i, MatchSnapshot.Play::new));
 
+    private static final Codec<MatchSnapshot.TemplateBinding> BINDING = RecordCodecBuilder.create(i -> i.group(
+                    Codec.INT.fieldOf("index").forGetter(MatchSnapshot.TemplateBinding::index),
+                    TemplateId.CODEC.fieldOf("id").forGetter(MatchSnapshot.TemplateBinding::id))
+            .apply(i, MatchSnapshot.TemplateBinding::new));
+
+    private record Tail(MatchSnapshot.Play play, List<MatchSnapshot.TemplateBinding> bindings) {}
+
+    private static final MapCodec<Tail> TAIL = RecordCodecBuilder.mapCodec(i -> i.group(
+                    PLAY.optionalFieldOf("play", MatchSnapshot.Play.EMPTY).forGetter(Tail::play),
+                    BINDING.listOf()
+                            .optionalFieldOf("templateBindings", List.of())
+                            .forGetter(Tail::bindings))
+            .apply(i, Tail::new));
+
     /** The fields, without {@code "v"}. */
     public static final Codec<MatchSnapshot> CODEC = RecordCodecBuilder.create(i -> i.group(
                     MatchConfig.CODEC.fieldOf("config").forGetter(MatchSnapshot::config),
@@ -415,8 +429,42 @@ public final class MatchSnapshotCodec {
                     BUILDING.listOf().optionalFieldOf("buildings", List.of()).forGetter(MatchSnapshot::buildings),
                     Codec.LONG.listOf().optionalFieldOf("ledger", List.of()).forGetter(MatchSnapshot::ledger),
                     CARRY.listOf().optionalFieldOf("carried", List.of()).forGetter(MatchSnapshot::carried),
-                    PLAY.optionalFieldOf("play", MatchSnapshot.Play.EMPTY).forGetter(MatchSnapshot::play))
-            .apply(i, MatchSnapshot::new));
+                    TAIL.forGetter(s -> new Tail(s.play(), s.templateBindings())))
+            .apply(
+                    i,
+                    (config,
+                            tick,
+                            hash,
+                            slots,
+                            units,
+                            commands,
+                            pages,
+                            paths,
+                            group,
+                            treasury,
+                            edits,
+                            nodes,
+                            buildings,
+                            ledger,
+                            carried,
+                            tail) -> new MatchSnapshot(
+                            config,
+                            tick,
+                            hash,
+                            slots,
+                            units,
+                            commands,
+                            pages,
+                            paths,
+                            group,
+                            treasury,
+                            edits,
+                            nodes,
+                            buildings,
+                            ledger,
+                            carried,
+                            tail.play(),
+                            tail.bindings())));
 
     private MatchSnapshotCodec() {}
 

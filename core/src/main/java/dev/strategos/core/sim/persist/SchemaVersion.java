@@ -6,10 +6,11 @@ import dev.strategos.core.shared.CoreApi;
 @CoreApi
 public final class SchemaVersion {
     /**
-     * 2 from M1: terrain pages (T7) and the fields M1 and M2 added, each with a default; released at M1's close (T27),
-     * pinned by the {@code match_v2} fixtures. A field that changes what an older save means needs version 3.
+     * 3 persists stable template bindings for building slots and production queues (#25). Older
+     * builds must refuse these saves rather than silently interpreting the session indices.
+     * Versions 1 and 2 migrate without inventing identities; legacy custom indices fail explicitly.
      */
-    public static final int CURRENT = 2;
+    public static final int CURRENT = 3;
 
     private SchemaVersion() {}
 }

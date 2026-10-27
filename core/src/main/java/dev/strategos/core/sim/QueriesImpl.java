@@ -35,6 +35,11 @@ final class QueriesImpl implements MatchQueries {
     }
 
     @Override
+    public @Nullable String templateSwapProblem(TemplateSet next) {
+        return state.templateSwapProblem(next);
+    }
+
+    @Override
     public List<BuildingView> buildings() {
         BuildingStore b = state.buildings();
         List<BuildingView> out = new ArrayList<>();
