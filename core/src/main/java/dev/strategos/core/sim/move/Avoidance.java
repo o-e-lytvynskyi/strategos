@@ -100,6 +100,15 @@ final class Avoidance {
      * {@link #z()}.
      */
     void plan(MatchState s, int i, double prefX, double prefZ, double maxSpeed, boolean walking) {
+        plan(s, i, prefX, prefZ, maxSpeed, walking, false);
+    }
+
+    /** Idle speed is needed only if the zero-velocity plan is not feasible already. */
+    void planIdle(MatchState s, int i) {
+        plan(s, i, 0, 0, 0, false, true);
+    }
+
+    private void plan(MatchState s, int i, double prefX, double prefZ, double maxSpeed, boolean walking, boolean idle) {
         self = i;
         selfX = motion.x(i);
         selfY = motion.y(i);
@@ -116,10 +125,18 @@ final class Avoidance {
             }
         }
         if (crowd > CROWD) {
-            separate(agents, prefX, prefZ, maxSpeed);
+            separate(agents, prefX, prefZ, idle ? MotionSystem.idleSpeed(s, i) : maxSpeed);
             return;
         }
         double radius = radius(s, i);
+        if (!walking && prefX == 0 && prefZ == 0 && canRest(s, agents, radius)) {
+            planX = 0;
+            planZ = 0;
+            return;
+        }
+        if (idle) {
+            maxSpeed = MotionSystem.idleSpeed(s, i);
+        }
         orca.clear();
         limits(s, i, radius, prefX, prefZ);
         double vx = motion.vx(i);
@@ -170,12 +187,43 @@ final class Avoidance {
         planZ = orca.z();
     }
 
+    /** Zero velocity is feasible already; preserve the full solver for every interaction or overlap. */
+    private boolean canRest(MatchState s, List<Agent> agents, double radius) {
+        if (motion.vx(self) != 0 || motion.vz(self) != 0) {
+            return false;
+        }
+        for (int k = 0; k < nearCount; k++) {
+            int j = near[k];
+            double reach = Math.min(radius + radius(s, j), REST_GAP) + 1e-9;
+            if (s.ai().state(j) == UnitState.WALKING
+                    || !clearForHorizon(nearDistSq[k], reach, motion.vx(j), motion.vz(j))) {
+                return false;
+            }
+        }
+        for (int k = 0; k < agents.size(); k++) {
+            Agent agent = agents.get(k);
+            if (sameLayer(agent.y()) && distSq(agent.x(), agent.z()) <= NEIGHBOUR_RANGE * NEIGHBOUR_RANGE) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     double x() {
         return planX;
     }
 
     double z() {
         return planZ;
+    }
+
+    /**
+     * A sufficient no-collision bound for a stationary self. L1 speed bounds Euclidean speed,
+     * so the neighbour cannot close this gap during the full ORCA horizon, in any direction.
+     */
+    static boolean clearForHorizon(double distanceSq, double reach, double otherVx, double otherVz) {
+        double exclusion = reach + HORIZON * (Math.abs(otherVx) + Math.abs(otherVz));
+        return distanceSq > exclusion * exclusion;
     }
 
     private void separate(List<Agent> agents, double prefX, double prefZ, double maxSpeed) {

@@ -110,3 +110,11 @@ A validator that only loops over discovered cards then reports success for zero 
 Read repository documents with `encoding="utf-8"` and explicitly reject an empty discovery.
 `tools/test_roadmap.py` reproduces the host-default mismatch and empty-document false pass;
 both tests fail against the pre-M5 reader and pass with the explicit encoding and guard.
+
+## Python bookkeeping on Windows needs UTF-8 mode
+
+Run the roadmap and claims tools with `PYTHONUTF8=1` on a Windows host whose default code page
+is not UTF-8. Roadmap headings contain Unicode punctuation; decoding them with a legacy code
+page can silently match zero headings and print `0 cards checked, 0 problems`. Check that the
+reported card count is plausible, not just the exit code. In PowerShell set
+`$env:PYTHONUTF8='1'` before invoking the tools; this does not change repository data.

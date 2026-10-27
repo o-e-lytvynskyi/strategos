@@ -28,6 +28,7 @@ import dev.strategos.core.testkit.SimHarness;
 import dev.strategos.gametest.MatchFixture;
 import dev.strategos.gametest.PathLoad;
 import dev.strategos.gametest.StrategosTest;
+import dev.strategos.gametest.TickPacer;
 import dev.strategos.gametest.net.MockViewer;
 import dev.strategos.gametest.suites.PerfVerdicts.Window;
 import dev.strategos.mod.StrategosServer;
@@ -83,6 +84,10 @@ public final class PerfTests {
         rt.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(1), EAST, 150, 6));
         Window window = new Window();
         var state = new Object() {
+            MatchRuntime measured = rt;
+            long warmingFrom = -1;
+            long warmOrderedAt = -1;
+            boolean warmToEast = true;
             long from = -1;
             long orderedAt = -1;
             boolean toEast = true;
@@ -90,19 +95,60 @@ public final class PerfTests {
             int movingSamples;
             final long[] idle = new long[SAMPLES];
             final long[] moving = new long[SAMPLES];
+            final long[] idleAdapter = new long[SAMPLES];
+            final long[] movingAdapter = new long[SAMPLES];
+            final long[][] idlePhases = new long[dev.strategos.core.sim.Phase.values().length][SAMPLES];
+            final long[][] movingPhases = new long[dev.strategos.core.sim.Phase.values().length][SAMPLES];
         };
         h.startSequence()
                 .thenWaitUntil(() -> check(
                         core(rt).queries().unitCount() == 300 && rt.bodies().count() == 300,
                         "the 300 units and bodies are not there yet"))
+                .thenExecute(() -> TickPacer.pace(true))
+                // Warm both activity branches before either measurement, then restore the original workload
+                // with a fresh match. Otherwise the later walking mode sees a differently compiled JVM.
+                .thenExecute(() -> state.warmingFrom = core(rt).queries().tick())
+                .thenWaitUntil(
+                        () -> check(core(rt).queries().tick() - state.warmingFrom >= WARM_UP, "preconditioning idle"))
+                .thenExecute(() -> state.warmingFrom = core(rt).queries().tick())
                 .thenWaitUntil(() -> {
                     long tick = core(rt).queries().tick();
+                    if (state.warmOrderedAt < 0 || tick - state.warmOrderedAt >= REORDER_EVERY) {
+                        reorder(rt, state.warmToEast);
+                        state.warmToEast = !state.warmToEast;
+                        state.warmOrderedAt = tick;
+                    }
+                    check(tick - state.warmingFrom >= WARM_UP, "preconditioning walking");
+                })
+                .thenExecute(() -> {
+                    StrategosServer.get().matches().dispose(rt.id());
+                    state.measured = MatchFixture.create(h, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
+                    state.measured.submit(
+                            PlayerSlot.ADMIN,
+                            new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(0), WEST, 150, 6));
+                    state.measured.submit(
+                            PlayerSlot.ADMIN,
+                            new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(1), EAST, 150, 6));
+                })
+                .thenWaitUntil(() -> check(
+                        core(state.measured).queries().unitCount() == 300
+                                && state.measured.bodies().count() == 300,
+                        "the measured 300 units and bodies are not there yet"))
+                .thenWaitUntil(() -> {
+                    long tick = core(state.measured).queries().tick();
                     if (state.from < 0) {
                         state.from = tick;
                         window.start();
                     }
                     if (tick - state.from >= WARM_UP) {
-                        state.idle[state.idleSamples++] = core(rt).timers().lastTotalNanos();
+                        int sample = state.idleSamples++;
+                        state.idle[sample] = core(state.measured).timers().lastTotalNanos();
+                        state.idleAdapter[sample] =
+                                core(state.measured).timers().lastAdapterNanos();
+                        samplePhases(
+                                state.idlePhases,
+                                sample,
+                                core(state.measured).timers().lastPhaseNanos());
                         if (state.idleSamples % 20 == 0) {
                             window.sampleForeignLoad();
                         }
@@ -110,17 +156,24 @@ public final class PerfTests {
                     check(state.idleSamples >= SAMPLES, "standing: " + state.idleSamples);
                 })
                 .thenWaitUntil(() -> {
-                    long tick = core(rt).queries().tick();
+                    long tick = core(state.measured).queries().tick();
                     if (state.orderedAt < 0 || tick - state.orderedAt >= REORDER_EVERY) {
                         if (state.orderedAt < 0) {
                             state.from = tick;
                         }
-                        reorder(rt, state.toEast);
+                        reorder(state.measured, state.toEast);
                         state.toEast = !state.toEast;
                         state.orderedAt = tick;
                     }
                     if (tick - state.from >= WARM_UP) {
-                        state.moving[state.movingSamples++] = core(rt).timers().lastTotalNanos();
+                        int sample = state.movingSamples++;
+                        state.moving[sample] = core(state.measured).timers().lastTotalNanos();
+                        state.movingAdapter[sample] =
+                                core(state.measured).timers().lastAdapterNanos();
+                        samplePhases(
+                                state.movingPhases,
+                                sample,
+                                core(state.measured).timers().lastPhaseNanos());
                         if (state.movingSamples % 20 == 0) {
                             window.sampleForeignLoad();
                         }
@@ -128,6 +181,7 @@ public final class PerfTests {
                     check(state.movingSamples >= SAMPLES, "walking: " + state.movingSamples);
                 })
                 .thenExecute(() -> {
+                    TickPacer.pace(false);
                     long idle = Percentiles.percentile(state.idle, 0.50);
                     long walking = Percentiles.percentile(state.moving, 0.50);
                     double ratio = (double) idle / walking;
@@ -143,12 +197,37 @@ public final class PerfTests {
                     json.addProperty("movingP50", walking);
                     json.addProperty("ratio", ratio);
                     json.addProperty("limit", 0.30);
+                    json.addProperty("preconditionTicksPerMode", WARM_UP);
+                    json.addProperty("warmUpTicksPerMode", WARM_UP);
+                    json.addProperty("samplesPerMode", SAMPLES);
+                    json.addProperty("idleAdapterP50", Percentiles.percentile(state.idleAdapter, 0.5));
+                    json.addProperty("movingAdapterP50", Percentiles.percentile(state.movingAdapter, 0.5));
+                    json.add(
+                            "idlePhaseP50Ns",
+                            phaseMedians(core(state.measured).timers().phaseNames(), state.idlePhases));
+                    json.add(
+                            "movingPhaseP50Ns",
+                            phaseMedians(core(state.measured).timers().phaseNames(), state.movingPhases));
                     json.addProperty("foreignCpu", foreign);
                     json.addProperty("verdict", verdict);
                     write("idle_300", json);
                     check(!verdict.equals("fail"), "300 standing units cost " + ratio + " of 300 walking, over 0.30");
                 })
                 .thenSucceed();
+    }
+
+    private static void samplePhases(long[][] samples, int at, long[] phases) {
+        for (int p = 0; p < phases.length; p++) {
+            samples[p][at] = phases[p];
+        }
+    }
+
+    private static JsonObject phaseMedians(List<String> names, long[][] samples) {
+        JsonObject json = new JsonObject();
+        for (int p = 0; p < names.size(); p++) {
+            json.addProperty(names.get(p), Percentiles.percentile(samples[p], 0.5));
+        }
+        return json;
     }
 
     /** Budget A (PERF-01.1, QA-07.2): one match's tick with 600 walking units, p50 <= 5 ms and p99 <= 10 ms. */

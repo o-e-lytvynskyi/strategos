@@ -9,6 +9,28 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
+## 2026-10-27 (later) — Docs: the owner's answers after fix-main
+
+- **The owner («согласен, да»):** the Windows host cost of lev1pes's full gates (17 min 38 s) is accepted, no
+  test-placement proposal; both fix-main decisions (`RestingGround` with the rest shortcut, UNIT-05's paced and
+  preconditioned idle gate) stand, no veto; the review's minor findings stay in STATE "Known follow-ups" for
+  whoever next works in that code, no separate claim.
+
+## 2026-10-27 — fix-main merged (lev1pes, PR #21)
+
+- **Done:** the two perf failures of CI run 40176248614 (idle_300_costs_a_third 0.3255 / 0.30, path_budget_d p99
+  50.3 ms / 6 ms) are repaired. Measurement: `StepPacer` restores the real interval before the first STRICT K=2
+  deadline; the idle gate runs paced at 20 TPS with symmetric preconditioning (UNIT-05); Windows foreign CPU is
+  measured over one shared window; one proving-ground voxel world instead of 576. Core: `RestingGround` caches and
+  a conservative zero-velocity shortcut in `Avoidance`. No limit, sample count or baseline changed.
+- **Results:** lev1pes (Windows 10, i5-9400F): 1,918 tests green; the 18-case CI perf profile passes, idle 0.284,
+  D p99 0.60 ms. Maintainer on the M4 Pro: `verifySlow verifySoak` green (4 min 17 s); `verifyPerf` green
+  (1 h 22 min): JMH max ratio 1.109, idle_300 0.285 / 0.30, path_budget_d p99 0.295 ms / 2 ms, join p99 13.6 µs,
+  no INVALID run.
+- **Problems:** the fixture alone still read 0.3038; the pass rests on the core change. The review's minor findings
+  are in STATE "Known follow-ups"; the branch file has the full history ([branches/lev1pes-fix-main.md](branches/lev1pes-fix-main.md)).
+- **Next:** M5 recovery on `dev/o-e-lytvynskyi/m5`; PR #26 (save/reload defects #23–#25) waits for a maintainer.
+
 ## 2026-10-26 (later) — Docs: merges and approvals are a human's
 
 - **The owner caught it:** PR #4 had pre-allowed `gh pr merge`, `gh pr review` and `gh pr close`. An agent's `gh` is

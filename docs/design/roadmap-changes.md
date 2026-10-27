@@ -483,3 +483,9 @@ a criterion testable; none adds scope, and no status changed. The owner may veto
 | Card | Change | Why |
 |---|---|---|
 | PATH-11 | Keep the legacy refinement: run the L3 thirty-horsemen crossing in T6, after UNIT-06 supplies the mounted body. T2 verifies class grids, large motion, mixed groups and save/resume in L1 and reruns existing L3 movement gates; the card remains in progress until T6. | T2 precedes the real mounted entity. A humanoid test double cannot verify that integration; scope, criterion and level are unchanged. |
+
+### 2026-10-27 — fix-main performance measurement
+
+| Card | Change | Why |
+|---|---|---|
+| UNIT-05 | Precondition idle and walking branches on a disposable match before measuring either mode on a fresh match; retain 300 units, 200 warm-up ticks and 600 samples per measured mode, the same orders and 30% limit | Sequential cold/warm branch profiles biased the comparison. Existing JFR shows walking-triggered deoptimizations and C2 compilation after idle was measured. The fresh measured match preserves the original initial workload; Windows CPU invalidation and platform boundaries remain in force. |
