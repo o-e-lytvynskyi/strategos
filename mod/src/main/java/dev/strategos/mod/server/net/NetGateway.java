@@ -3,6 +3,7 @@ package dev.strategos.mod.server.net;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.JsonOps;
 import dev.strategos.core.content.CanonicalJson;
+import dev.strategos.core.protocol.AllClear;
 import dev.strategos.core.protocol.Attack;
 import dev.strategos.core.protocol.AttackMove;
 import dev.strategos.core.protocol.AttackSpread;
@@ -17,6 +18,7 @@ import dev.strategos.core.protocol.Garrison;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.MatchStateMsg;
 import dev.strategos.core.protocol.Move;
+import dev.strategos.core.protocol.RingBell;
 import dev.strategos.core.protocol.SetStance;
 import dev.strategos.core.protocol.Stop;
 import dev.strategos.core.protocol.Ungarrison;
@@ -74,7 +76,10 @@ public final class NetGateway {
 
     /** Ticks between two {@code match_state}s of a match whose lifecycle did not change: the clock sync. */
     private static final int STATE_EVERY = 100;
-    /** What an Ungarrison naming no unit (everyone inside) counts: the civic centre's capacity, the largest holder. */
+    /**
+     * What an Ungarrison naming no unit (everyone inside), a bell or an all clear counts: the civic centre's capacity,
+     * the largest holder.
+     */
     static final int EVERYONE_INSIDE = 20;
 
     private final MinecraftServer server;
@@ -347,6 +352,8 @@ public final class NetGateway {
                 ungarrison.units().size() == 0
                         ? EVERYONE_INSIDE
                         : ungarrison.units().size();
+            case RingBell bell -> EVERYONE_INSIDE; // every worker within reach, as many as a holder takes
+            case AllClear clear -> EVERYONE_INSIDE;
             default -> 0;
         };
     }

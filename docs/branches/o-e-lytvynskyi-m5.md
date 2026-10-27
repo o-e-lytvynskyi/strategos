@@ -4,10 +4,10 @@
 
 ## Now
 
-- **Milestone:** M5 Combat; 16 of 24 tasks complete (T1–T10a).
-- **In progress:** M5 T10b the bell and the bodies (BLD-16) since 2026-10-27.
-- **Last finished task:** T10a garrison in the core (2026-10-27).
-- **Next task:** T10b, then T11 (BLD-11), T12 (CMB-17).
+- **Milestone:** M5 Combat; 17 of 24 tasks complete (T1–T10b).
+- **In progress:** M5 T11 garrisoned arrows (BLD-11) since 2026-10-27.
+- **Last finished task:** T10b the bell and the bodies (2026-10-27).
+- **Next task:** T11, then T12 attack lines (CMB-17), T13 battle AI (AI-03).
 - **Merged from main last:** a10a8fd (2026-10-27), PR #21 fix-main.
 
 ## Depends on unfinished work
@@ -18,6 +18,12 @@
 - Preserve codex/m5-combat and dev/lev1pes/m5. Import code and task-specific evidence selectively after assignment; do not copy old central STATE/worklog records over current main.
 
 ## Log
+
+### 2026-10-27 — M5 T10b
+
+- **T10b · The bell and the bodies** — BLD-16 done. `RingBell` (28) pushes a bell-marked GARRISON order (slot 1) to the front of every own worker's queue within 64 blocks, to the nearest holder with room; `AllClear` (29) drops the faction's bell orders and releases those the bell called in (a saved, hashed-when-used bell flag), so plain garrisons stay; `FxKind.BELL` (8, `block.bell.use`); card buttons; a garrisoned unit's body is removed and recreated on release, none materialised on restore; a seated player's right click on the civic centre's bell block (added to its placeholder blueprint, .nbt regenerated) rings it, with a one-second cooldown per player. Tests: `BellTest`, persistence and command pins, `CommandCardTest`, `BlueprintFilesTest`, `CommandHandlesTest`, `garrisontests` (4).
+- Gates: `verify verifySlow verifySoak` 4m 54s green; `jmhCompare` green (MovementBench.step600 23.5, rebuild1000 4.79 in both forks).
+- **Next:** T11.
 
 ### 2026-10-27 — M5 T10 split, T10a
 
@@ -205,6 +211,8 @@
 
 ## Decisions taken
 
+- 2026-10-27 · The bell: AllClear is faction-wide (it ends every bell order of the faction and releases every unit any bell called in); a ring with no worker in reach is accepted and still sounds; the first-person ring cancels vanilla's bell and the `BELL` fx sounds it; `TemplateLint` admits the bell's block entity (still refuses others); "no body" lives in BodyRegistry since `BodyMode` was only a design name. Undo per point in Bell / TownBell / TemplateLint.
+- 2026-10-27 · trial implementer: pass with a note — T10b complete, but it handed back before its own long gate run finished; the orchestrator awaited it and ran JMH.
 - 2026-10-27 · Garrison details §2.9 leaves open: any of the holder's classes admits (archers and spearmen as Infantry, horsemen refused); a full building fails the order on the way, not at command time; Garrison replaces orders, those queued behind it stay and run on release; orders given to a unit inside wait until release (attacks on an inside unit are refused); walking in ignores blows; non-lethal damage to an inside unit is ignored, lethal still kills; an empty Ungarrison counts as 20 at the rate limiter. Undo per rule in GarrisonRules / Garrisoning.
 - 2026-10-27 · trial reviewer: pass — two major and five minor findings on T10a, each with a scenario; one (the latch) turned out covered already, which the implementer showed with a test.
 - 2026-10-27 · trial implementer: pass — T10a and its review round, with a self-found JMH regression fixed before reporting.

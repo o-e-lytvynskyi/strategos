@@ -442,7 +442,8 @@ public final class MatchSnapshotCodec {
 
     private static final Codec<GarrisonStore.Saved> GARRISON = RecordCodecBuilder.create(i -> i.group(
                     Codec.INT.fieldOf("unit").forGetter(GarrisonStore.Saved::unit),
-                    Codec.INT.fieldOf("building").forGetter(GarrisonStore.Saved::building))
+                    Codec.INT.fieldOf("building").forGetter(GarrisonStore.Saved::building),
+                    Codec.BOOL.optionalFieldOf("bell", false).forGetter(GarrisonStore.Saved::bell))
             .apply(i, GarrisonStore.Saved::new));
 
     static final Codec<MatchSnapshot.Play> PLAY = RecordCodecBuilder.create(i -> i.group(

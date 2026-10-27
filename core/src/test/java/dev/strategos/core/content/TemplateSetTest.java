@@ -103,8 +103,8 @@ class TemplateSetTest {
         assertThatThrownBy(() -> TemplateSet.builtin().byIndex(18)).isInstanceOf(IllegalArgumentException.class);
     }
 
-    // M5: the horseman (UNIT-06, UNIT-07)
-    private static final String BUILTIN_VERSION = "b7f03fa2aa6a774de7089ea8cbcf114d5fcdfbcfeade02ddc1850d2f661824d7";
+    // M5: the town bell block in the civic centre's blueprint (BLD-16), on the horseman's set (UNIT-06, UNIT-07)
+    private static final String BUILTIN_VERSION = "f5a4a10edae5f5f9c7d0ceeeba241215746d6cdebffc094f967fca78d9075702";
 
     private static TemplateSet set(UnitTemplate template) {
         return new TemplateSet(List.of(template));

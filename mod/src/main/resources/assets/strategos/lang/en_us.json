@@ -67,5 +67,7 @@
   "strategos.stance.aggressive": "Aggressive: attacks enemies it sees",
   "strategos.stance.defensive": "Defensive: guards its spot and returns to it",
   "strategos.stance.stand_ground": "Stand ground: strikes only what comes in reach, never moves",
-  "strategos.stance.passive": "Passive: never fights, runs from a blow"
+  "strategos.stance.passive": "Passive: never fights, runs from a blow",
+  "strategos.card.ring_bell": "Ring the bell: every worker within 64 blocks goes into the nearest building with room",
+  "strategos.card.all_clear": "All clear: the workers come out and go back to what they were doing"
 }

@@ -22,7 +22,7 @@ final class GarrisonRules {
     private GarrisonRules() {}
 
     /** The refusal that stops a command naming building {@code handle} for every unit, or null: it is the issuer's own. */
-    private static @Nullable RejectReason building(CommandEnvelope envelope, MatchState state, int handle) {
+    static @Nullable RejectReason building(CommandEnvelope envelope, MatchState state, int handle) {
         BuildingStore buildings = state.buildings();
         if (!BuildingStore.isBuilding(handle) || !buildings.alive(handle)) {
             return RejectReason.UNKNOWN_TARGET;

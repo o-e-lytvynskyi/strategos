@@ -61,6 +61,10 @@ public final class CommandKinds {
             new CommandKind<>("strategos:garrison", 26, Garrison.class, Garrison.CODEC, Garrison.WIRE, false);
     public static final CommandKind<Ungarrison> UNGARRISON =
             new CommandKind<>("strategos:ungarrison", 27, Ungarrison.class, Ungarrison.CODEC, Ungarrison.WIRE, false);
+    public static final CommandKind<RingBell> RING_BELL =
+            new CommandKind<>("strategos:ring_bell", 28, RingBell.class, RingBell.CODEC, RingBell.WIRE, false);
+    public static final CommandKind<AllClear> ALL_CLEAR =
+            new CommandKind<>("strategos:all_clear", 29, AllClear.class, AllClear.CODEC, AllClear.WIRE, false);
     public static final CommandKind<AttackSpread> ATTACK_SPREAD = new CommandKind<>(
             "strategos:attack_spread", 30, AttackSpread.class, AttackSpread.CODEC, AttackSpread.WIRE, false);
     public static final CommandKinds DEFAULT = new CommandKinds(List.of(
@@ -91,6 +95,8 @@ public final class CommandKinds {
             SET_STANCE,
             GARRISON,
             UNGARRISON,
+            RING_BELL,
+            ALL_CLEAR,
             ATTACK_SPREAD));
 
     private final List<CommandKind<?>> kinds;

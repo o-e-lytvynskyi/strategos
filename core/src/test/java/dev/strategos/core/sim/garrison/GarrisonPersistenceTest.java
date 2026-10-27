@@ -8,9 +8,11 @@ import com.google.gson.JsonObject;
 import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.JsonOps;
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.protocol.AllClear;
 import dev.strategos.core.protocol.Garrison;
 import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.QueueMode;
+import dev.strategos.core.protocol.RingBell;
 import dev.strategos.core.protocol.SpawnBuilding;
 import dev.strategos.core.protocol.SpawnUnits;
 import dev.strategos.core.protocol.Ungarrison;
@@ -228,5 +230,59 @@ class GarrisonPersistenceTest {
             back.step();
             assertThat(back.stateHash()).isEqualTo(h.stateHash());
         }
+    }
+
+    @Test
+    void theBellsMarkIsSavedAndHashedOnlyOnceTheBellCalledSomeoneIn() {
+        int centre = centre();
+        int[] workers = workers(3);
+        h.submit(new PlayerSlot(0), new Garrison(UnitSet.of(workers[0]), centre));
+        assertThat(h.runUntil(() -> s.garrison().count(centre) == 1, 400)).isTrue();
+        long plain = h.stateHash();
+        JsonObject json =
+                MatchSnapshotCodec.encode(JsonOps.INSTANCE, h.core().snapshot()).getAsJsonObject();
+        assertThat(json.getAsJsonObject("play")
+                        .getAsJsonArray("garrisons")
+                        .get(0)
+                        .getAsJsonObject()
+                        .has("bell"))
+                .as("a unit that went in on its own order has no mark in the save")
+                .isFalse();
+
+        h.submit(new PlayerSlot(0), new RingBell(centre));
+        assertThat(h.runUntil(() -> s.garrison().count(centre) == 3, 400)).isTrue();
+        h.runTicks(3);
+        MatchSnapshot saved = roundTrip(h.core().snapshot());
+        assertThat(saved.play().garrisons())
+                .extracting(GarrisonStore.Saved::bell)
+                .containsExactly(false, true, true);
+        SimHarness back = SimHarness.restore(saved, TemplateSet.builtin());
+        assertThat(back.stateHash()).isEqualTo(h.stateHash());
+        assertThat(KernelAccess.state(back.core()).garrison().belled(Handle.index(workers[1])))
+                .isTrue();
+
+        back.publishAll(VoxelFixtures.flat(96, 64, 32, 1)); // the adapter publishes the terrain again
+        AllClear clear = new AllClear(centre);
+        h.submit(new PlayerSlot(0), clear);
+        back.submit(new PlayerSlot(0), clear);
+        h.step();
+        back.step();
+        assertThat(back.stateHash()).isEqualTo(h.stateHash());
+        assertThat(s.garrison().occupants(centre)).containsExactly(workers[0]);
+        assertThat(h.stateHash()).isNotEqualTo(plain); // the others are out and walking: another state
+    }
+
+    @Test
+    void aMarkOnAPlainRowIsTheSameAsNoneUntilSet() {
+        int centre = centre();
+        int worker = workers(1)[0];
+        h.submit(new PlayerSlot(0), new Garrison(UnitSet.of(worker), centre));
+        assertThat(h.runUntil(() -> s.garrison().count(centre) == 1, 400)).isTrue();
+        h.runTicks(2);
+        long plain = h.stateHash();
+        assertThat(s.garrison().belled(Handle.index(worker))).isFalse();
+        s.garrison().remove(Handle.index(worker));
+        s.garrison().add(Handle.index(worker), worker, centre, true);
+        assertThat(h.stateHash()).as("the mark is part of the state").isNotEqualTo(plain);
     }
 }

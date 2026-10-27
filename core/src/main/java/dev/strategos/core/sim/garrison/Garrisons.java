@@ -26,6 +26,9 @@ public final class Garrisons {
     /** How far above or below the door's floor a unit may stand and still go in, in blocks. */
     public static final double RISE = 2;
 
+    /** The slot of a garrison order the town bell gave: the all clear finds its orders, and the units inside, by it. */
+    public static final int BELL_SLOT = 1;
+
     private Garrisons() {}
 
     /** Building {@code handle}'s capacity: its {@code GarrisonHolder/capacity}, 0 for a building that holds none. */
@@ -147,7 +150,7 @@ public final class Garrisons {
             if (full(s, row.building())) {
                 throw new IllegalArgumentException(what + " exceeds the building's capacity");
             }
-            s.garrison().add(index, row.unit(), row.building());
+            s.garrison().add(index, row.unit(), row.building(), row.bell());
         }
         for (int i = 0; i < s.entities().highWater(); i++) {
             if (s.entities().aliveAt(i) && s.garrisoned(i) && !s.garrison().inside(i)) {

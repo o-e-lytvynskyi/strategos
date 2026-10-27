@@ -98,7 +98,7 @@ class WireCodecSizeTest {
                         "strategos:move=1,strategos:stop=2,strategos:spawn_units=3,"
                                 + "strategos:attack=4,strategos:attack_move=5,strategos:follow=6,strategos:grant=7,"
                                 + "strategos:spawn_building=8,strategos:gather=9,strategos:place_building=10,strategos:train=11,"
-                                + "strategos:cancel_train=12,strategos:set_rally=13,strategos:reseed=14,strategos:resign=15,strategos:rule_change=16,strategos:announce_wave=17,strategos:set_ai=18,strategos:build=19,strategos:cancel_building=20,strategos:demolish=21,strategos:set_auto_reseed=22,strategos:train_batch=23,strategos:spawn_deposit=24,strategos:set_stance=25,strategos:garrison=26,strategos:ungarrison=27,strategos:attack_spread=30");
+                                + "strategos:cancel_train=12,strategos:set_rally=13,strategos:reseed=14,strategos:resign=15,strategos:rule_change=16,strategos:announce_wave=17,strategos:set_ai=18,strategos:build=19,strategos:cancel_building=20,strategos:demolish=21,strategos:set_auto_reseed=22,strategos:train_batch=23,strategos:spawn_deposit=24,strategos:set_stance=25,strategos:garrison=26,strategos:ungarrison=27,strategos:ring_bell=28,strategos:all_clear=29,strategos:attack_spread=30");
         assertThat(CommandKinds.DEFAULT.reads("strategos:move=1,strategos:stop=2,strategos:spawn_units=3"))
                 .as("M1's journals read")
                 .isTrue();
@@ -484,12 +484,14 @@ class WireCodecSizeTest {
         assertThatThrownBy(() -> WireCodec.decode(Fx.WIRE, bad)).isInstanceOf(RuntimeException.class);
         assertThat(WireCodec.encode(WireCodecs.FX_KIND, FxKind.SHOT_LAUNCH)).containsExactly(6);
         assertThat(WireCodec.encode(WireCodecs.FX_KIND, FxKind.SHOT_IMPACT)).containsExactly(7);
+        assertThat(WireCodec.encode(WireCodecs.FX_KIND, FxKind.BELL)).containsExactly(8);
+        assertThat(FxKind.BELL.carriesData() || FxKind.BELL.carriesPath()).isFalse();
         for (FxKind kind : FxKind.values()) {
             assertThat(roundTrip(WireCodecs.FX_KIND, kind)).isEqualTo(kind);
             assertThat(kind.carriesPath()).isEqualTo(kind == FxKind.SHOT_LAUNCH || kind == FxKind.SHOT_IMPACT);
             assertThat(kind.carriesPath() && kind.carriesData()).isFalse();
         }
-        assertThatThrownBy(() -> WireCodec.decode(WireCodecs.FX_KIND, new byte[] {8}))
+        assertThatThrownBy(() -> WireCodec.decode(WireCodecs.FX_KIND, new byte[] {9}))
                 .isInstanceOf(RuntimeException.class);
     }
 

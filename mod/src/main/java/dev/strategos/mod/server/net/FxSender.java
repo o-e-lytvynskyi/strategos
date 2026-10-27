@@ -2,6 +2,7 @@ package dev.strategos.mod.server.net;
 
 import dev.strategos.core.protocol.Fx;
 import dev.strategos.core.protocol.FxKind;
+import dev.strategos.core.sim.BellRung;
 import dev.strategos.core.sim.BlockCracked;
 import dev.strategos.core.sim.FlameShown;
 import dev.strategos.core.sim.OutputEvent;
@@ -55,6 +56,9 @@ public final class FxSender {
             } else if (event instanceof FlameShown f) {
                 cracks.add(Fx.Event.at(
                         FxKind.FLAME, f.x(), f.y() - rt.space().origin().getY(), f.z()));
+            } else if (event instanceof BellRung bell) {
+                cracks.add(Fx.Event.at(
+                        FxKind.BELL, bell.x(), bell.y() - rt.space().origin().getY(), bell.z()));
             }
         }
         sendWorld(rt, cracks, net);

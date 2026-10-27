@@ -20,6 +20,7 @@ public sealed interface MatchEvent extends OutputEvent
                 UnitGear,
                 BlockCracked,
                 FlameShown,
+                BellRung,
                 BlockFell,
                 CarcassLeft,
                 CarcassGone,

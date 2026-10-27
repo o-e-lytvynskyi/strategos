@@ -49,6 +49,8 @@ class CommandCodecTest {
                 new SetStance(UnitSet.of(3, 4), Stance.STAND_GROUND),
                 new Garrison(UnitSet.of(3, 4), 0x80003),
                 new Ungarrison(0x80003, UnitSet.of(3, 4)),
+                new RingBell(0x80003),
+                new AllClear(0x80003),
                 new AttackSpread(UnitSet.of(3, 4), 0x300007, QueueMode.QUEUE));
     }
 

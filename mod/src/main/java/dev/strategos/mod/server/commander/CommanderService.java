@@ -45,6 +45,7 @@ public final class CommanderService {
     static final int REACH = 32;
     static final int SWITCH_EVERY_TICKS = 20;
     static final int COOLDOWN_TICKS = 100;
+    static final int BELL_EVERY_TICKS = 20;
     private static final String SAVED = "strategos.commander";
     private static final String OBSERVER = "observer";
 
@@ -54,6 +55,7 @@ public final class CommanderService {
     private final Map<UUID, Switch> dueSwitches = new HashMap<>();
     private final Map<UUID, Long> lastRequest = new HashMap<>();
     private final Map<UUID, Long> lastSwitch = new HashMap<>();
+    private final Map<UUID, Long> lastBell = new HashMap<>();
     private final Map<UUID, double[]> lastInside = new HashMap<>();
     private final Map<UUID, MatchSpace> observing = new HashMap<>();
     private final Map<UUID, Integer> refusedOf = new HashMap<>();
@@ -171,6 +173,19 @@ public final class CommanderService {
         }
         lastSwitch.put(id, tick);
         observing.put(id, rt.space());
+        return true;
+    }
+
+    /**
+     * Whether {@code player} may ring a town bell at {@code tick} (BLD-16): at most once in {@value #BELL_EVERY_TICKS}
+     * ticks, and an allowed ring is recorded.
+     */
+    boolean mayRing(ServerPlayer player, long tick) {
+        Long last = lastBell.get(player.getUUID());
+        if (last != null && tick >= last && tick - last < BELL_EVERY_TICKS) {
+            return false;
+        }
+        lastBell.put(player.getUUID(), tick);
         return true;
     }
 
@@ -298,6 +313,7 @@ public final class CommanderService {
         dueSwitches.remove(player.getUUID());
         lastRequest.remove(player.getUUID());
         lastSwitch.remove(player.getUUID());
+        lastBell.remove(player.getUUID());
         lastInside.remove(player.getUUID());
         observing.remove(player.getUUID());
         refusedOf.remove(player.getUUID());

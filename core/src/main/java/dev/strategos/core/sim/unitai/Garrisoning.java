@@ -71,7 +71,7 @@ final class Garrisoning {
             UnitAi.finishOrder(ctx, true); // the last place went to another
             return;
         }
-        s.garrison().add(i, ctx.handle(), building);
+        s.garrison().add(i, ctx.handle(), building, s.orders().slot(i) == Garrisons.BELL_SLOT);
         s.releaseClaim(i, ctx.handle());
         s.paths().clear(i);
         s.motion().setVelocity(i, 0, 0);

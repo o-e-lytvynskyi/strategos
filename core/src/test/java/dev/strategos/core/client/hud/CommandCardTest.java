@@ -5,11 +5,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import dev.strategos.core.client.model.ClientMatchModel;
 import dev.strategos.core.client.select.Selection;
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.protocol.AllClear;
 import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.CancelTrain;
 import dev.strategos.core.protocol.Command;
 import dev.strategos.core.protocol.FactionState;
 import dev.strategos.core.protocol.Reseed;
+import dev.strategos.core.protocol.RingBell;
 import dev.strategos.core.protocol.SetStance;
 import dev.strategos.core.protocol.Stop;
 import dev.strategos.core.protocol.Train;
@@ -102,9 +104,14 @@ class CommandCardTest {
         CommandCard card = card(model, List.of(), b, false);
         assertThat(card.page()).isEqualTo(CommandCard.Page.BUILDING);
         assertThat(card.buttons())
-                .as("the centre trains workers, at the worker's 60 food, which 100 covers; it can be demolished")
+                .as(
+                        "the centre trains workers, at the worker's 60 food, which 100 covers; it rings its bell and can be demolished")
                 .containsExactly(
                         new CommandCard.Button(CommandCard.Kind.TRAIN, 0, WORKER, List.of(60_000L, 0L, 0L, 0L), true),
+                        new CommandCard.Button(
+                                CommandCard.Kind.RING_BELL, CommandCard.SLOTS - 3, CENTRE, List.of(), true),
+                        new CommandCard.Button(
+                                CommandCard.Kind.ALL_CLEAR, CommandCard.SLOTS - 2, CENTRE, List.of(), true),
                         new CommandCard.Button(
                                 CommandCard.Kind.DEMOLISH, CommandCard.SLOTS - 1, CENTRE, List.of(), true));
 
@@ -255,6 +262,62 @@ class CommandCardTest {
                         CardController.shared(List.of(Stance.AGGRESSIVE, Stance.PASSIVE))),
                 null);
         assertThat(mixed.buttons()).extracting(CommandCard.Button::on).containsOnly(false);
+    }
+
+    @Test
+    void theCentreRingsItsBellAndSoundsTheAllClearAndAFieldHasNeitherButton() {
+        ClientMatchModel model = model(faction(0, 0), centre(List.of(), 0));
+        BuildingState.Entry b = model.buildings().get(0);
+        CommandCard card = card(model, List.of(), b, false);
+        CardController controller = new CardController();
+        List<Command> sent = new ArrayList<>();
+        for (CommandCard.Kind kind : List.of(CommandCard.Kind.RING_BELL, CommandCard.Kind.ALL_CLEAR)) {
+            CommandCard.Button button = card.buttons().stream()
+                    .filter(x -> x.kind() == kind)
+                    .findFirst()
+                    .orElseThrow();
+            double[] at = centreOf(CommandCard.cell(CARD, PAD, button.slot()));
+            assertThat(controller
+                            .click(card.at(CARD, PAD, at[0], at[1]), List.of(), b, T, sent::add)
+                            .effect())
+                    .isEqualTo(CardController.Effect.SENT);
+        }
+        assertThat(sent).containsExactly(new RingBell(1 << 20), new AllClear(1 << 20));
+        assertThat(controller
+                        .click(
+                                new CommandCard.Button(CommandCard.Kind.RING_BELL, 12, CENTRE, List.of(), true),
+                                List.of(),
+                                null,
+                                T,
+                                sent::add)
+                        .effect())
+                .as("no building, nothing sent")
+                .isEqualTo(CardController.Effect.NONE);
+        assertThat(sent).hasSize(2);
+
+        BuildingState.Entry field = new BuildingState.Entry(
+                (1 << 20) + 1,
+                FIELD,
+                0,
+                0,
+                0,
+                0,
+                1,
+                CommandCard.COMPLETE,
+                100,
+                100,
+                true,
+                List.of(),
+                false,
+                0,
+                0,
+                0,
+                -1,
+                0);
+        assertThat(CommandCard.of(new CommandCard.Input(T, RESOURCES, null, List.of(), false), field)
+                        .buttons())
+                .extracting(CommandCard.Button::kind)
+                .doesNotContain(CommandCard.Kind.RING_BELL, CommandCard.Kind.ALL_CLEAR);
     }
 
     @Test

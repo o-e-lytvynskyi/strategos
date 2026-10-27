@@ -3,6 +3,7 @@ package dev.strategos.mod.server.tick;
 import dev.strategos.core.protocol.MatchNews;
 import dev.strategos.core.protocol.NoticeMsg;
 import dev.strategos.core.shared.Handle;
+import dev.strategos.core.sim.BellRung;
 import dev.strategos.core.sim.BlockCracked;
 import dev.strategos.core.sim.BlockFell;
 import dev.strategos.core.sim.BuildingDestroyed;
@@ -23,6 +24,7 @@ import dev.strategos.core.sim.UnitCreated;
 import dev.strategos.core.sim.UnitDied;
 import dev.strategos.core.sim.UnitGear;
 import dev.strategos.core.sim.UnitHurt;
+import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.UnitStateChanged;
 import dev.strategos.core.sim.UnitStruck;
 import dev.strategos.core.sim.WaveAnnounced;
@@ -98,6 +100,7 @@ public final class OutputAppliers {
                 case CarcassGone gone -> rt.bodies().carcassGone(gone.node());
                 case BlockCracked cracked -> {} // FxSender sent it before the outputs applied
                 case FlameShown flame -> {} // as a crack: FxSender sent it
+                case BellRung bell -> {} // as a crack: FxSender sent it
                 case BuildingHurt hurt -> {} // the under-attack alert's (UI-12)
                 case FactionDefeated defeated ->
                     StrategosServer.get()
@@ -188,7 +191,12 @@ public final class OutputAppliers {
                                     new Audience.Faction(rt.id(), notice.faction()),
                                     new FeedbackPayload(
                                             new NoticeMsg(notice.kind(), notice.handle(), notice.detail())));
-                case UnitStateChanged changed ->
+                case UnitStateChanged changed -> {
+                    if (changed.to() == UnitState.GARRISONED) {
+                        rt.bodies().shelter(changed.handle()); // inside a building: no body (BLD-16)
+                    } else if (changed.from() == UnitState.GARRISONED) {
+                        rt.bodies().want(changed.handle()); // out at the door: a body again
+                    }
                     rt.log()
                             .debug(
                                     out.tick(),
@@ -196,6 +204,7 @@ public final class OutputAppliers {
                                     Handle.toString(changed.handle()),
                                     changed.from(),
                                     changed.to());
+                }
             }
         }
         KinematicDriver.apply(level, rt.space(), rt.bodies(), out.bodies());
@@ -227,6 +236,7 @@ public final class OutputAppliers {
                 BuildingHurt.class,
                 BlockCracked.class,
                 FlameShown.class,
+                BellRung.class,
                 BlockFell.class,
                 CarcassLeft.class,
                 CarcassGone.class,

@@ -43,6 +43,8 @@ final class HudCardPresentation {
             case AUTO_RESEED -> b.on() ? "Auto-reseed: on (click to turn off)" : "Auto-reseed: off (click to turn on)";
             case CANCEL_BUILDING -> "Cancel: the share not yet built comes back";
             case STANCE -> stanceLabel(b);
+            case RING_BELL -> Component.translatable("strategos.card.ring_bell").getString();
+            case ALL_CLEAR -> Component.translatable("strategos.card.all_clear").getString();
             case DEMOLISH -> b.on() ? "Click again to demolish, for nothing back" : "Demolish";
         };
         List<String> resources = StrategosClient.resources();

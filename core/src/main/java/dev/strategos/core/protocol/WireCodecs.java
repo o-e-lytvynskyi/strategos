@@ -297,6 +297,7 @@ public final class WireCodecs {
                         case FLAME -> 5;
                         case SHOT_LAUNCH -> 6;
                         case SHOT_IMPACT -> 7;
+                        case BELL -> 8;
                     });
         }
 
@@ -312,6 +313,7 @@ public final class WireCodecs {
                 case 5 -> FxKind.FLAME;
                 case 6 -> FxKind.SHOT_LAUNCH;
                 case 7 -> FxKind.SHOT_IMPACT;
+                case 8 -> FxKind.BELL;
                 default -> throw new WireException("unknown fx kind " + code);
             };
         }

@@ -233,7 +233,8 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
   6. A first-person mock player using the bell block rings the bell (L3).
 - **Tests:** L0, L1, L3, L5 · **Depends on:** BLD-08, CORE-06, ORD-02 · **Size:** M · **Tier:** T1
   (pulled into the MVP)
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-10-27 — M5 T10a: `GarrisonTest.capacityAndClasses` (1, L1), `GarrisonTest.handleHpAndOrdersSurvive` (2, L1), `GarrisonPersistenceTest`; M5 T10b: `garrisontests.the_bell_brings_them_in` (all inside 82 ticks after the ring, limit 200) (3), `garrisontests.all_clear_returns_them` (back on the node 93 ticks after, limit 100) (4), `garrisontests.garrisoned_units_have_no_body` (5), `garrisontests.the_bell_block_rings` (6), all L3; `BellTest`
 
 #### BLD-11 · Arrows per garrisoned unit
 - **Value:** Garrisoning turns the civic centre into a real defence (P4).

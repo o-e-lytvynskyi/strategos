@@ -44,6 +44,8 @@ class CommandKindsTest {
                         "strategos:set_stance",
                         "strategos:garrison",
                         "strategos:ungarrison",
+                        "strategos:ring_bell",
+                        "strategos:all_clear",
                         "strategos:attack_spread");
     }
 

@@ -2,9 +2,11 @@ package dev.strategos.mod.server.net;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import dev.strategos.core.protocol.AllClear;
 import dev.strategos.core.protocol.AttackSpread;
 import dev.strategos.core.protocol.Garrison;
 import dev.strategos.core.protocol.QueueMode;
+import dev.strategos.core.protocol.RingBell;
 import dev.strategos.core.protocol.SetStance;
 import dev.strategos.core.protocol.Ungarrison;
 import dev.strategos.core.protocol.UnitSet;
@@ -24,5 +26,9 @@ class CommandHandlesTest {
         assertThat(NetGateway.handles(new Ungarrison(0x80001, UnitSet.of())))
                 .as("everyone inside counts as a full centre")
                 .isEqualTo(20);
+        assertThat(NetGateway.handles(new RingBell(0x80001)))
+                .as("a bell calls up to a full centre of workers")
+                .isEqualTo(20);
+        assertThat(NetGateway.handles(new AllClear(0x80001))).isEqualTo(20);
     }
 }

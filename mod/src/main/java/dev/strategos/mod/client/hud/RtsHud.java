@@ -675,6 +675,8 @@ public final class RtsHud {
                     }
                 }
                 case CANCEL_BUILDING -> paint.item(g, "minecraft:barrier", cell);
+                case RING_BELL -> paint.item(g, "minecraft:bell", cell);
+                case ALL_CLEAR -> paint.item(g, "minecraft:lime_banner", cell);
                 case DEMOLISH -> {
                     paint.item(g, "minecraft:tnt", cell);
                     if (b.on()) { // asked: one more click demolishes

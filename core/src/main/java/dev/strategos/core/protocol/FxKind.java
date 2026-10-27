@@ -22,7 +22,9 @@ public enum FxKind {
     /** A ranged shot leaving its shooter (CMB-04): at the release point, with the landing point and flight time. */
     SHOT_LAUNCH,
     /** A ranged shot coming down, hit or miss: at the landing point, with the release point and flight time. */
-    SHOT_IMPACT;
+    SHOT_IMPACT,
+    /** The town bell rung (BLD-16): at the building, a bell's strike for everyone who sees its cell. */
+    BELL;
 
     /** Whether events of this kind carry a datum on the wire; the unit kinds do not, so they encode as in M2. */
     public boolean carriesData() {

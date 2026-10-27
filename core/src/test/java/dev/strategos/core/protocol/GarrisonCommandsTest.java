@@ -74,4 +74,41 @@ class GarrisonCommandsTest {
         new Ungarrison(BUILDING, UnitSet.of(5)).hashInto(b);
         assertThat(a.finish()).isNotEqualTo(b.finish());
     }
+
+    @Test
+    void theBellCommandsRoundTripAtTheirPinnedSizesAndNameTheirKinds() {
+        RingBell ring = new RingBell(BUILDING);
+        AllClear clear = new AllClear(BUILDING);
+        WireWriter out = new WireWriter();
+        RingBell.WIRE.write(out, ring);
+        assertThat(out.toByteArray()).as("a three-byte building").hasSize(3);
+        assertThat(RingBell.WIRE.read(new WireReader(out.toByteArray()))).isEqualTo(ring);
+        out = new WireWriter();
+        AllClear.WIRE.write(out, clear);
+        assertThat(out.toByteArray()).hasSize(3);
+        assertThat(AllClear.WIRE.read(new WireReader(out.toByteArray()))).isEqualTo(clear);
+        out = new WireWriter();
+        RingBell.WIRE.write(out, new RingBell(Integer.MAX_VALUE));
+        assertThat(out.toByteArray().length).isLessThanOrEqualTo(RingBell.WIRE.maxSize());
+        out = new WireWriter();
+        AllClear.WIRE.write(out, new AllClear(Integer.MAX_VALUE));
+        assertThat(out.toByteArray().length).isLessThanOrEqualTo(AllClear.WIRE.maxSize());
+
+        assertThat(CommandKinds.DEFAULT.of(ring).wireId()).isEqualTo(28);
+        assertThat(CommandKinds.DEFAULT.of(clear).wireId()).isEqualTo(29);
+        assertThat(CommandKinds.DEFAULT.of(ring).id()).isEqualTo("strategos:ring_bell");
+        assertThat(CommandKinds.DEFAULT.of(clear).id()).isEqualTo("strategos:all_clear");
+        JsonObject json = CommandKinds.DEFAULT
+                .codec()
+                .encodeStart(JsonOps.INSTANCE, ring)
+                .getOrThrow()
+                .getAsJsonObject();
+        assertThat(CommandKinds.DEFAULT.codec().parse(JsonOps.INSTANCE, json).getOrThrow())
+                .isEqualTo(ring);
+        Hasher a = new Hasher(0);
+        ring.hashInto(a);
+        Hasher b = new Hasher(0);
+        clear.hashInto(b);
+        assertThat(a.finish()).isNotEqualTo(b.finish());
+    }
 }

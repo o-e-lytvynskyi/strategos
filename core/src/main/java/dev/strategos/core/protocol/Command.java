@@ -34,4 +34,6 @@ public sealed interface Command extends Hashable
                 SetStance,
                 Garrison,
                 Ungarrison,
+                RingBell,
+                AllClear,
                 AttackSpread {}

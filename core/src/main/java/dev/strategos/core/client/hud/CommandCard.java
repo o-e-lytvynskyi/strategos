@@ -56,7 +56,11 @@ public record CommandCard(Page page, List<Button> buttons) {
         /** Demolish an own finished building (BLD-09): {@link Button#on} once a first click asked to confirm. */
         DEMOLISH,
         /** A stance of the selected units (CMB-05): {@link Button#stance} names it, {@link Button#on} that they share it. */
-        STANCE
+        STANCE,
+        /** Ring the town bell of an own finished garrison holder (BLD-16): its workers go in. */
+        RING_BELL,
+        /** Sound the all clear at an own finished garrison holder (BLD-16): they come out and go back to work. */
+        ALL_CLEAR
     }
 
     /**
@@ -232,6 +236,11 @@ public record CommandCard(Page page, List<Button> buttons) {
         if (reach != null && in.templates().value(b.template(), reach.id()) > 0) {
             out.add(new Button(
                     Kind.AUTO_RESEED, Math.min(slot, SLOTS - 2), b.template(), List.of(), true, b.autoReseed()));
+        }
+        ValuePath capacity = in.templates().valuePaths().byPath(CorePaths.GARRISON_CAPACITY);
+        if (capacity != null && in.templates().value(b.template(), capacity.id()) > 0) {
+            out.add(new Button(Kind.RING_BELL, SLOTS - 3, b.template(), List.of(), true));
+            out.add(new Button(Kind.ALL_CLEAR, SLOTS - 2, b.template(), List.of(), true));
         }
         out.add(new Button(Kind.DEMOLISH, SLOTS - 1, b.template(), List.of(), true, in.demolishAsked()));
         return out;
