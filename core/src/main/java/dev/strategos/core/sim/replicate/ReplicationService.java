@@ -22,6 +22,7 @@ import dev.strategos.core.sim.econ.Deposits;
 import dev.strategos.core.sim.econ.FactionTreasury;
 import dev.strategos.core.sim.econ.NodeView;
 import dev.strategos.core.sim.nav.MaterialKind;
+import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.core.sim.stats.StatBreakdown;
 import java.util.ArrayList;
@@ -155,6 +156,16 @@ public final class ReplicationService {
      * order; another faction's unit, or a dead one, is left out. An observer (no viewer) gets any faction's.
      */
     public static UnitDetail detail(MatchQueries q, int matchId, @Nullable FactionSlot viewer, List<Integer> handles) {
+        return detail(q, matchId, viewer, handles, Visibility.ALL);
+    }
+
+    /**
+     * As {@link #detail(MatchQueries, int, FactionSlot, List)}, with each unit's current attack target (CMB-17): the
+     * index of the unit its current order attacks, left out when that unit is dead or {@code visibility} hides it from
+     * {@code viewer}.
+     */
+    public static UnitDetail detail(
+            MatchQueries q, int matchId, @Nullable FactionSlot viewer, List<Integer> handles, Visibility visibility) {
         List<UnitDetail.Unit> units = new ArrayList<>();
         for (int handle : handles) {
             UnitView unit = q.unit(handle);
@@ -164,7 +175,17 @@ public final class ReplicationService {
                 continue;
             }
             List<UnitDetail.Order> orders = new ArrayList<>();
+            int target = UnitDetail.NO_TARGET;
             for (OrderQueues.Order o : q.orders(handle)) {
+                if (orders.isEmpty() && o.target() != 0 && OrderKind.attacks(o.kind())) {
+                    UnitView attacked = q.unit(o.target());
+                    if (attacked != null
+                            && (viewer == null
+                                    || attacked.faction().equals(viewer)
+                                    || visibility.sees(viewer, attacked))) {
+                        target = Handle.index(o.target());
+                    }
+                }
                 orders.add(new UnitDetail.Order(o.kind(), (float) o.x(), (float) o.z()));
             }
             StatBreakdown speed = q.stats(handle, CorePaths.WALK_SPEED);
@@ -177,7 +198,8 @@ public final class ReplicationService {
                     speed == null ? 0 : (float) speed.result(),
                     orders,
                     q.carriedResource(handle),
-                    q.carriedAmount(handle)));
+                    q.carriedAmount(handle),
+                    target));
         }
         return new UnitDetail(matchId, q.tick(), units);
     }

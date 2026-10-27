@@ -399,7 +399,7 @@ Cards: [roadmap/M5-combat.md](roadmap/M5-combat.md#cards). 14 cards, at most 41 
 | CMB-07 | Civic centre arrows | M | CMB-04, BLD-08 | done |
 | CMB-08 | First-person combat (if D-08 chooses it) | M | CAM-05, CMB-01, D-08 | deferred |
 | CMB-16 | High ground | S | CMB-04, DATA-02 | done |
-| CMB-17 | Combat readability: attack lines and the under-attack flash | S | CMB-06, UI-02 | specified |
+| CMB-17 | Combat readability: attack lines and the under-attack flash | S | CMB-06, UI-02 | in_progress |
 | ORD-05 | Focus fire and force attack | M | ORD-04, CMB-05 | done |
 | PATH-11 | Mobility classes and footprints | M | PATH-06, PATH-09 | done |
 | UNIT-06 | Mounted units | M | UNIT-03, PATH-11 | in_progress |

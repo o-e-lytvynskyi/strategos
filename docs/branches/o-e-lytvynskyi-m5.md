@@ -4,10 +4,10 @@
 
 ## Now
 
-- **Milestone:** M5 Combat; 18 of 24 tasks complete (T1–T11).
-- **In progress:** M5 T12 attack lines and the flash (CMB-17) since 2026-10-27.
-- **Last finished task:** T11 garrisoned arrows (2026-10-27).
-- **Next task:** T12, then T13 battle AI (AI-03), T14 the battle soak (PERF-08).
+- **Milestone:** M5 Combat; 19 of 24 tasks complete (T1–T12).
+- **In progress:** M5 T13 battle tactics (AI-03) since 2026-10-27.
+- **Last finished task:** T12 attack lines and the flash (2026-10-27).
+- **Next task:** T13, then T14 the battle soak (PERF-08), T15 the battle scenario, T17 the consent batch, T18 the close.
 - **Merged from main last:** a10a8fd (2026-10-27), PR #21 fix-main.
 
 ## Depends on unfinished work
@@ -18,6 +18,12 @@
 - Preserve codex/m5-combat and dev/lev1pes/m5. Import code and task-specific evidence selectively after assignment; do not copy old central STATE/worklog records over current main.
 
 ## Log
+
+### 2026-10-27 — M5 T12
+
+- **T12 · CMB-17 Attack lines and the flash** — CMB-17 in_progress (1 passes at L1, 2's bench passes; 2's battle scene and 3's goldens in T17). `unit_detail` carries each unit's attack target as an append-only trailer, only for a live unit the viewer owns or sees; `AttackLines` and `Flashes` (@HotPath, reusable buffers) extract the selection's lines and own units' recent hits from received data; `HealthBarOverlay` draws red ground lines and a 400 ms glow. Tests: `AttackLinesTest` (4: `onlyWhatTheViewerMayReceive`, the server's audience, wire compatibility, the flash). `AttackLinesBench.extract300`: 0.430 us/op, 0.003 B/op (budget 300 us); its first profile added to the baseline. Spec finding 13.
+- Gates: `verify verifySlow verifySoak` green after the allocation fix; `jmhCompare` green.
+- **Next:** T13.
 
 ### 2026-10-27 — M5 T11
 
@@ -219,6 +225,8 @@
 
 ## Decisions taken
 
+- 2026-10-27 · Spec finding 13 (the flash derived from received health, the target trailer); the first profile of `AttackLinesBench.extract300` added to perf/baseline-m4pro.json (home path rewritten). Undo by removing that row.
+- 2026-10-27 · trial implementer: pass — T12; it found and removed a boxing allocation the 0 B/op gate would have caught, and added the kernel to the gate's list.
 - 2026-10-27 · trial implementer: pass — T11 measured the raid sizes in L1 before choosing the L3 one, and reported the horsemen's zero building damage instead of tuning it.
 - 2026-10-27 · The bell: AllClear is faction-wide (it ends every bell order of the faction and releases every unit any bell called in); a ring with no worker in reach is accepted and still sounds; the first-person ring cancels vanilla's bell and the `BELL` fx sounds it; `TemplateLint` admits the bell's block entity (still refuses others); "no body" lives in BodyRegistry since `BodyMode` was only a design name. Undo per point in Bell / TownBell / TemplateLint.
 - 2026-10-27 · trial implementer: pass with a note — T10b complete, but it handed back before its own long gate run finished; the orchestrator awaited it and ran JMH.

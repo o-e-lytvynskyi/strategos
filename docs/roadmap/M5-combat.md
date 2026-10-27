@@ -142,7 +142,7 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
      scene confirms budget F.
   3. Goldens (L4, consent).
 - **Tests:** L0, L1, L4 (consent), L6 · **Depends on:** CMB-06, UI-02 · **Size:** S · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 #### ORD-05 · Focus fire and force attack
 - **Value:** Fine control of a fight: focus one target, spread fire, or attack anything on command
