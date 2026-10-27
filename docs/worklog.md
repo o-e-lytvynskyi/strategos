@@ -9,6 +9,13 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
+## 2026-10-27 (later) — Docs: the owner's answers after fix-main
+
+- **The owner («согласен, да»):** the Windows host cost of lev1pes's full gates (17 min 38 s) is accepted, no
+  test-placement proposal; both fix-main decisions (`RestingGround` with the rest shortcut, UNIT-05's paced and
+  preconditioned idle gate) stand, no veto; the review's minor findings stay in STATE "Known follow-ups" for
+  whoever next works in that code, no separate claim.
+
 ## 2026-10-27 — fix-main merged (lev1pes, PR #21)
 
 - **Done:** the two perf failures of CI run 40176248614 (idle_300_costs_a_third 0.3255 / 0.30, path_budget_d p99
