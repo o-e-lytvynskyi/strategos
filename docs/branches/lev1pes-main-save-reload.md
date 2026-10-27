@@ -9,7 +9,7 @@
 - **Milestone:** bounded follow-up fixes for three independently reproduced bugs in existing main: [#23](https://github.com/o-e-lytvynskyi/strategos/issues/23), [#24](https://github.com/o-e-lytvynskyi/strategos/issues/24), [#25](https://github.com/o-e-lytvynskyi/strategos/issues/25).
 - **In progress:** WIP checkpoint: all three fixes implemented; functional gates green; performance verification unresolved after three failed comparisons. Assignment merged by PR #26.
 - **Last finished task:** implementation and 1,936-test functional verification for #23, #24 and #25; schema-3 JSON/NBT fixtures pinned.
-- **Next task:** independently validate performance on a quiet host or maintainer-controlled CI. Keep this claim assigned; do not hand in until the performance gate is resolved.
+- **Next task:** finish the owner-requested cloud validation: inspect standard perf run 40594606609 and one paired same-runner JMH run against pinned bb800d0. Keep this claim assigned; do not hand in until the performance gate is resolved.
 - **Merged from main last:** bb800d0 (2026-10-27), including the assignment merge (#26), fix-main (#21) and owner answers (#27).
 
 ## Depends on unfinished work
@@ -49,13 +49,22 @@
 - Stop under strategos-dev section 8 after three failed verification comparisons. No more perf retries in this session; no threshold or approved baseline changes; no applications paused/closed. The code is saved as WIP and no hand-in PR is opened.
 - Full score table, controls, binary/workload checks, CPU context and raw hashes: [local JMH evidence](lev1pes-main-save-reload-perf.md).
 
+### 2026-10-28 — cloud verification requested
+
+- The owner requested cloud tests and continuation of the assigned work. Standard perf run 40594606609 targets f9f9846 and is still running. It checks JMH speed ratios and server budgets, but deliberately does not run jmhCompare.
+- Add an opt-in paired-JMH mode to the existing workflow_dispatch route, without opening an unfinished hand-in PR. The control is the trusted pre-repair main bb800d0; both versions run on one Ubuntu runner with the same JDK, heap, forks and iterations. All 21 benchmark keys and configurations must match before the existing comparison runs.
+- Workflow validation: YAML parse, all pinned action hashes, read-only token permissions, Bash syntax of every run block, embedded Python syntax and roadmap checks pass. Production/test sources and benchmark settings are unchanged, so the completed 1,936-test functional evidence is retained. No new local Gradle run is started.
+- No new approved baseline, raised limit or skipped gate. Cloud outcome and artifacts must be inspected before declaring this claim ready.
+
 ## For the owner
 
-1. Arrange independent quiet-host or maintainer CI performance verification. The strict JMH gate remains red; inspect [the retained evidence](lev1pes-main-save-reload-perf.md), including unchanged navigation bytecode and high foreign-CPU windows. Do not change thresholds or promote a diagnostic baseline.
+1. Cloud verification requested in the owner's session on 2026-10-28: standard [perf run 40594606609](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40594606609) is running. A manual paired-JMH mode runs pristine bb800d0 and this branch sequentially on one runner with the existing 15% and allocation gates; results remain pending. This is supplemental same-host evidence, not promotion of an approved baseline. Retain [all local failures](lev1pes-main-save-reload-perf.md).
 2. Review the serial Windows `verify` duration (about 9m 10s versus the documented 5-minute budget): accept the platform time or decide separately which run moves to `verifySlow`. No run or gate was moved here.
 3. Assignment merged by PR #26. This WIP branch is not ready for hand-in; independent maintainer review and human merge follow resolved verification.
 
 ## Decisions taken
+
+- 2026-10-28 · On the owner's explicit cloud-validation request, add opt-in paired JMH to the existing manual perf workflow. Pin the control to pristine bb800d0; compile both jars before measuring; use one runner, sequential measurements, identical configurations and the unchanged jmhCompare gate. Capture vmstat context and both raw reports. The standard perf mode remains the default and its budgets are unchanged. Separate concurrency groups keep this diagnostic from cancelling standard perf. No automatic retries, baseline writes or local heavy tests. Undo by reverting this workflow-only addition.
 
 - 2026-10-27 · Keep these related save/reload repairs in a dedicated claim — avoid overlap with the completed performance work in PR #21 and active M6 work — split the claim if review finds a dependency or ownership conflict.
 - 2026-10-27 · Use one agent and an isolated main checkout with temporary diagnostic probes; no client windows or production-code edits.
