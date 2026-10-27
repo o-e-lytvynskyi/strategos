@@ -265,7 +265,8 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
   3. Tactics stay within the `AiBudget` (L1).
   4. An L3 battle sample reaches the hash of its L1 run (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** AI-02, UNIT-07, ORD-05 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-28 — M5 T13: `BattleBotTest.focusesAndRetreats` (10 v 6 share one most-wounded target; 6 v 14 retreat at contact and end within 12 blocks of base) (1, L1, slow; the battle scenario of T15 reuses the bot), `BattleBotTest.shiftsToSpearmenAgainstHorse` on the shipped templates (12 spearmen and no others in the two minutes after 20 horsemen appear) (2, L1, slow), `BattleBotTest.withinTheBudget` (326 of 5,000 at 80 v 80) (3, L1), `aitests.battle_seed_replays_to_its_hash` (4, L3); `battle.json`
 
 #### PERF-08 · Battle perf gate
 - **Value:** Big battles stay smooth on the server, the network and the screen.

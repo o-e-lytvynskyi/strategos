@@ -4,10 +4,10 @@
 
 ## Now
 
-- **Milestone:** M5 Combat; 19 of 24 tasks complete (T1–T12).
-- **In progress:** M5 T13 battle tactics (AI-03) since 2026-10-27.
-- **Last finished task:** T12 attack lines and the flash (2026-10-27).
-- **Next task:** T13, then T14 the battle soak (PERF-08), T15 the battle scenario, T17 the consent batch, T18 the close.
+- **Milestone:** M5 Combat; 20 of 24 tasks complete (T1–T13).
+- **In progress:** M5 T14 the battle soak (PERF-08) since 2026-10-28.
+- **Last finished task:** T13 battle tactics (2026-10-28).
+- **Next task:** T14, then T15 the battle scenario, T17 the consent batch (client windows), T18 the close.
 - **Merged from main last:** a10a8fd (2026-10-27), PR #21 fix-main.
 
 ## Depends on unfinished work
@@ -18,6 +18,12 @@
 - Preserve codex/m5-combat and dev/lev1pes/m5. Import code and task-specific evidence selectively after assignment; do not copy old central STATE/worklog records over current main.
 
 ## Log
+
+### 2026-10-28 — M5 T13
+
+- **T13 · AI-03 Battle tactics** — AI-03 done. `battle.json` (economy.json plus a `battle` block: focus wounded, archers 4 blocks behind, retreat 0.6, re-plan 1,200 ticks, reach 28, defence 600, launch 0.6; every knob off by default so economy.json behaves as in M4); `Tactics` (one shared most-wounded focus in reach, re-issued only on change; archers moved behind the melee centroid; retreat when strength = Σ cost × HP fraction falls below 0.6 × the enemy's in reach plus the defence near its centre; a wave launches only at 0.6 × enemy army plus defence) and `Composition` (counter shares each minute). The barracks now trains spearman, archer and horseman (template SHA re-pinned); the economy bot still trains only spearmen. Tests: `BattleBotTest` (5), `aitests.battle_seed_replays_to_its_hash`. EconomyBotTest unchanged and green.
+- Gates: `verify verifySlow verifySoak` 4m 53s green; `jmhCompare` green (7m 37s) before the data-only barracks change.
+- **Next:** T14.
 
 ### 2026-10-27 — M5 T12
 
@@ -220,11 +226,14 @@
 5. `SpatialBench.rebuild1000` is bimodal across JMH forks on this Mac: twice today one fork read 7.4–7.7 us while the other read 4.8 (baseline 4.79), failing the 15 % gate on the average; each single rerun passed with both forks at 4.7–4.9. No code touched the spatial index. Options: (a) leave it — a red run is rerun once by the rule (current); (b) give that benchmark more forks so one outlier fork cannot carry the average (a measurement change, your call); (c) investigate the bimodality (memory layout of the grid arrays). Recommend (b) with 5 forks for this benchmark only.
 6. Proposal (scope): replicate each unit's stance to its owner so the card's active stance is always right (now it shows the stance the player's own card last sent, else the template's). A small protocol addition; not in the approved cards' wording, so it waits for you.
 7. Follow-up candidate (no scope change): in duels a horseman sometimes stands ~80 ticks beside the back-rank archer it is focused on before striking. Probably a melee chase/ring-slot detail for the large class; to look at with T13's battle AI unless you want it earlier.
-8. For T13 (battle AI), found while fixing the bot against arrows: its late economy starves of wood (24 workers, food, stone and iron in the thousands); its waves should weigh army strength against the target's defence instead of a fixed minimum, and pull back a doomed wave. T13 will take these unless you say otherwise.
+8. From T9: the battle bot (T13) now weighs strength against defence and pulls back a doomed wave; the economy bot's wood-starved late economy (24 workers, other stocks in the thousands) remains — a candidate for AI-02's next tuning, not M5 scope.
 9. Horsemen cannot damage buildings (no `Attack/Structure` torch; only spearmen burn buildings, CMB-03). Recommend keeping it: the horseman is the raider of workers and archers, the spearman takes buildings. Say if cavalry should carry torches too.
 
 ## Decisions taken
 
+- 2026-10-28 · The barracks trains the whole roster (the cards made archer and horseman templates but named no trainer; 0 A.D.'s barracks trains infantry and cavalry). Undo in barracks.json.
+- 2026-10-28 · Battle-bot details: strength = Σ template cost × HP fraction; defence 600 and launch 0.6 untuned starting values; new soldiers do not join a wave already out; difficulty levels are separate script files (only battle.json ships). Undo in battle.json / Tactics.
+- 2026-10-28 · trial implementer: pass — T13, with the barracks gap raised as a question rather than worked around in shipped data.
 - 2026-10-27 · Spec finding 13 (the flash derived from received health, the target trailer); the first profile of `AttackLinesBench.extract300` added to perf/baseline-m4pro.json (home path rewritten). Undo by removing that row.
 - 2026-10-27 · trial implementer: pass — T12; it found and removed a boxing allocation the 0 B/op gate would have caught, and added the kernel to the gate's list.
 - 2026-10-27 · trial implementer: pass — T11 measured the raid sizes in L1 before choosing the L3 one, and reported the horsemen's zero building damage instead of tuning it.

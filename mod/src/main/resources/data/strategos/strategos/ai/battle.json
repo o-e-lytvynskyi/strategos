@@ -1,0 +1,43 @@
+{
+  "maxWorkers": 24,
+  "ratio": {
+    "food": 5,
+    "wood": 5,
+    "stone": 1,
+    "iron": 1
+  },
+  "livestock": true,
+  "balance": true,
+  "reserve": true,
+  "dropsite": "strategos:building/storehouse",
+  "build": [
+    { "building": "strategos:building/storehouse", "population": 6, "near": "wood" },
+    { "building": "strategos:building/house", "population": 8 },
+    { "building": "strategos:building/farmstead", "population": 9, "near": "food" },
+    { "building": "strategos:building/field", "population": 10, "near": "strategos:building/farmstead" },
+    { "building": "strategos:building/field", "population": 12, "near": "strategos:building/farmstead" },
+    { "building": "strategos:building/barracks", "population": 14 },
+    { "building": "strategos:building/storehouse", "population": 15, "near": "stone" },
+    { "building": "strategos:building/field", "population": 16, "near": "strategos:building/farmstead" },
+    { "building": "strategos:building/field", "population": 18, "near": "strategos:building/farmstead" }
+  ],
+  "housingMargin": 3,
+  "soldierQueue": 2,
+  "attack": {
+    "first": 450,
+    "every": 180,
+    "min": 14,
+    "muster": 24,
+    "announce": 30
+  },
+  "sites": [],
+  "battle": {
+    "focus": "wounded",
+    "behind": 4,
+    "retreat": 0.6,
+    "replan": 1200,
+    "reach": 28,
+    "defence": 600,
+    "launch": 0.6
+  }
+}

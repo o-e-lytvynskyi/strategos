@@ -22,6 +22,8 @@ import java.util.TreeMap;
  * the ratio to one below it, {@code reserve} keeps the stock for the build order's next building before soldiers,
  * {@code dropsite} names the building put up by a resource's nearest node once every own dropsite of it lies far from
  * there; a step's {@code near} puts its building by the nearest node of a resource or by an own building of a template.
+ * AI-03's {@code battle} block holds the tactics' knobs, all off by default ({@link Battle}); a difficulty is a script
+ * with other knobs.
  */
 public record StrategyScript(
         String worker,
@@ -36,7 +38,8 @@ public record StrategyScript(
         boolean livestock,
         boolean balance,
         boolean reserve,
-        String dropsite) {
+        String dropsite,
+        Battle battle) {
     /**
      * A build order step: the building, once the population reaches {@code population}, by {@code near} when it names
      * one: a resource's nearest node, or an own building of that template id; "" for no preference.
@@ -62,6 +65,49 @@ public record StrategyScript(
                         Codec.INT.optionalFieldOf("muster", 24).forGetter(Attack::muster),
                         Codec.intRange(30, 600).optionalFieldOf("announce", 30).forGetter(Attack::announce))
                 .apply(i, Attack::new));
+    }
+
+    /**
+     * The battle tactics' knobs (AI-03, M5 §2.11); each is off at its zero. {@code focus}: whom its soldiers pick
+     * ("off", "wounded": the lowest health fraction, or "value": the dearest to train); {@code behind}: how many blocks
+     * behind the melee line the archers hold; {@code retreat}: the wave goes home when its strength falls below this
+     * fraction of the enemy's near it; {@code replan}: ticks between re-plans of what it trains from what the enemy
+     * fields; {@code reach}: blocks round the wave that count as the fight; {@code defence}: the strength (in cost units)
+     * credited to an enemy civic centre's arrows when the wave is within reach of it; {@code launch}: a wave leaves only
+     * when its strength is at least this fraction of the enemy's army and defence together.
+     */
+    public record Battle(String focus, int behind, double retreat, int replan, int reach, int defence, double launch) {
+        public static final String OFF = "off";
+        public static final String WOUNDED = "wounded";
+        public static final String VALUE = "value";
+
+        /** Every knob off: M4's military manager. */
+        public static final Battle NONE = new Battle(OFF, 0, 0, 0, 28, 0, 0);
+
+        private static final Codec<String> FOCUS =
+                Codec.STRING.validate(f -> f.equals(OFF) || f.equals(WOUNDED) || f.equals(VALUE)
+                        ? com.mojang.serialization.DataResult.success(f)
+                        : com.mojang.serialization.DataResult.error(() -> "no focus '" + f + "'"));
+
+        static final Codec<Battle> CODEC = RecordCodecBuilder.create(i -> i.group(
+                        FOCUS.optionalFieldOf("focus", OFF).forGetter(Battle::focus),
+                        Codec.intRange(0, 16).optionalFieldOf("behind", 0).forGetter(Battle::behind),
+                        Codec.doubleRange(0, 1).optionalFieldOf("retreat", 0.0).forGetter(Battle::retreat),
+                        Codec.intRange(0, 72_000).optionalFieldOf("replan", 0).forGetter(Battle::replan),
+                        Codec.intRange(8, 64).optionalFieldOf("reach", 28).forGetter(Battle::reach),
+                        Codec.intRange(0, 100_000).optionalFieldOf("defence", 0).forGetter(Battle::defence),
+                        Codec.doubleRange(0, 10).optionalFieldOf("launch", 0.0).forGetter(Battle::launch))
+                .apply(i, Battle::new));
+
+        /** Whether any knob of the fight itself is on. */
+        public boolean fights() {
+            return !focus.equals(OFF) || behind > 0 || retreat > 0;
+        }
+
+        /** Whether any knob is on. */
+        public boolean enabled() {
+            return fights() || replan > 0 || launch > 0;
+        }
     }
 
     public StrategyScript {
@@ -91,7 +137,8 @@ public record StrategyScript(
                     Codec.BOOL.optionalFieldOf("livestock", false).forGetter(StrategyScript::livestock),
                     Codec.BOOL.optionalFieldOf("balance", false).forGetter(StrategyScript::balance),
                     Codec.BOOL.optionalFieldOf("reserve", false).forGetter(StrategyScript::reserve),
-                    Codec.STRING.optionalFieldOf("dropsite", "").forGetter(StrategyScript::dropsite))
+                    Codec.STRING.optionalFieldOf("dropsite", "").forGetter(StrategyScript::dropsite),
+                    Battle.CODEC.optionalFieldOf("battle", Battle.NONE).forGetter(StrategyScript::battle))
             .apply(i, StrategyScript::new));
 
     /** The script in {@code json}; a malformed one throws {@link IllegalArgumentException}. */

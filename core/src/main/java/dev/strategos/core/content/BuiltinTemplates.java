@@ -210,7 +210,7 @@ final class BuiltinTemplates {
               "Resistance": { "fire": 0 },
               "Health": { "max": 1200 },
               "Cost": { "resources": { "wood": 200, "stone": 100, "iron": 50 }, "time": 60 },
-              "Trainer": { "units": "strategos:unit/infantry", "batchExponent": 0.8 }
+              "Trainer": { "units": "strategos:unit/infantry strategos:unit/archer strategos:unit/horseman", "batchExponent": 0.8 }
             }
             """;
 

@@ -25,5 +25,16 @@ final class Slots {
     /** One more than the tick a dropsite by a far node came due unaffordable (AI-02's reserve); 0 while none. */
     static final int EXPAND_SINCE = 10;
 
+    /** One more than the handle of the enemy the wave focuses (AI-03); 0 while none. */
+    static final int FOCUS = 11;
+    /** The wave's state (AI-03): 0 none out, 1 out, 2 going home. */
+    static final int FIGHT = 12;
+    /** One more than the tick the composition was last planned; 0 before. */
+    static final int PLAN_AT = 13;
+    /** What the plan wants trained, in permille: spearmen, archers << 16, horsemen << 32. */
+    static final int WANT = 14;
+    /** The retreats ordered so far. */
+    static final int RETREATS = 15;
+
     private Slots() {}
 }

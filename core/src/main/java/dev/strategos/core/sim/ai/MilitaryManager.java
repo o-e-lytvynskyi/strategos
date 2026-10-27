@@ -34,17 +34,25 @@ final class MilitaryManager implements AiModule {
         }
         StrategyScript.Attack a = script.attack();
         long tick = view.tick();
+        StrategyScript.Battle battle = script.battle();
         List<Integer> army = new ArrayList<>();
+        List<UnitView> soldiers = new ArrayList<>();
         for (UnitView u : view.units()) {
-            if (u.state() != UnitState.GARRISONED && view.is(u.template(), "Infantry")) { // those inside cannot muster
+            // those inside cannot muster; with battle tactics on, the horsemen march too (AI-03)
+            if (u.state() != UnitState.GARRISONED
+                    && (battle.enabled() ? view.role(u) != AiView.ROLE_NONE : view.is(u.template(), "Infantry"))) {
                 army.add(u.handle());
+                soldiers.add(u);
             }
+        }
+        if (memory.get(Slots.FIGHT) != 0 && Tactics.fight(view, budget, sink, memory, base, script, soldiers)) {
+            return; // a wave is out: its fight is this think's work
         }
         int[] handles = army.stream().mapToInt(Integer::intValue).toArray();
         long mustered = memory.get(Slots.MUSTER);
         if (mustered == 0) {
             long due = 20L * (a.first() + memory.get(Slots.WAVE) * a.every());
-            if (tick < due || army.size() < a.min()) {
+            if (tick < due || army.size() < a.min() || !strongEnough(view, battle, soldiers)) {
                 return;
             }
             double dx = base.enemyX() - base.x();
@@ -65,6 +73,31 @@ final class MilitaryManager implements AiModule {
                     java.util.Objects.requireNonNull(base.enemy()).handle()));
             memory.set(Slots.WAVE, memory.get(Slots.WAVE) + 1);
             memory.set(Slots.MUSTER, 0);
+            if (battle.fights()) {
+                memory.set(Slots.FIGHT, 1);
+                memory.set(Slots.FOCUS, 0);
+            }
         }
+    }
+
+    /**
+     * AI-03's launch gate: the wave leaves when its strength is at least {@code launch} times the enemy army's and its
+     * civic centre's defence together; a script without the knob always passes.
+     */
+    private static boolean strongEnough(AiView view, StrategyScript.Battle battle, List<UnitView> own) {
+        if (battle.launch() <= 0) {
+            return true;
+        }
+        double mine = 0;
+        for (UnitView u : own) {
+            mine += view.worth(u) * view.health(u);
+        }
+        double theirs = battle.defence();
+        for (UnitView e : view.enemyUnits()) {
+            if (view.role(e) != AiView.ROLE_NONE && e.state() != UnitState.GARRISONED) {
+                theirs += view.worth(e) * view.health(e);
+            }
+        }
+        return mine >= battle.launch() * theirs;
     }
 }
