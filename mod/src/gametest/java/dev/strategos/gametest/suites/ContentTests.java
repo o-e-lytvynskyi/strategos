@@ -116,6 +116,37 @@ public final class ContentTests {
                 .thenSucceed();
     }
 
+    /** A building reference alone must prevent an otherwise valid reload from retiring its template (#24). */
+    @StrategosTest(batch = "content_used_building", solo = true)
+    public static void reloadMissingBuildingKeepsSetAndTable(GameTestHelper h) {
+        StrategosServer server = StrategosServer.get();
+        MatchRuntime rt = match(h);
+        TemplateId house = new TemplateId("strategos:building/house");
+        rt.submit(PlayerSlot.ADMIN, new dev.strategos.core.protocol.SpawnBuilding(house, new FactionSlot(0), 8, 8, 0));
+        var before = server.templates().set();
+        var table = server.templates().table();
+        h.startSequence()
+                .thenWaitUntil(() -> check(core(rt).queries().buildings().size() == 1, "no building yet"))
+                .thenExecute(() -> {
+                    List<TemplateProblem> problems = new ArrayList<>();
+                    List<RawTemplate> raws = bundled(server, problems);
+                    raws.removeIf(raw -> raw.id().equals(house));
+                    var outcome = server.loadTemplates(raws, problems);
+                    check(!outcome.accepted(), "reload dropped an occupied building template");
+                    check(
+                            outcome.message().contains(house.value())
+                                    && outcome.message().contains("in use"),
+                            outcome.message());
+                    check(server.templates().set() == before, "server set changed after refusal");
+                    check(server.templates().table().equals(table), "server id table changed after refusal");
+                })
+                .thenExecuteAfter(2, () -> {
+                    check(core(rt).queries().templates() == before, "match swapped after refusal");
+                    check(core(rt).queries().buildings().getFirst().template().equals(house), "building changed");
+                })
+                .thenSucceed();
+    }
+
     /**
      * DATA-03.4: a walking unit's step is the bundled walk speed until a reload raises it, and the new speed from the
      * next tick on; the bundled set loads back at the end, at the same version.

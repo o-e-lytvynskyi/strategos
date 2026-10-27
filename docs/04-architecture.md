@@ -612,7 +612,7 @@ stateDiagram-v2
 | Prepare | 1. Place the tickets. 2. Import the map package under budget. 3. Capture terrain slices for every page; workers classify them and build pages; the core publishes the surface grid. 4. Discover resource nodes. 5. Create start buildings and units from the manifest. A progress bar is shown | Budgeted over many ticks; classification and page building on workers |
 | Start | Bind human commanders by UUID and AI slots to factions; tick 0 | One tick |
 | Save | The match blob serialises a core snapshot at autosave (every 6,000 ticks) and on `ServerStoppingEvent` (fact 24) | Main thread; NeoForge writes the file on an IO worker (SavedData.java:36–55) |
-| Resume | The registry loads; tickets are revalidated; the blob is decoded under the quarantine rules; terrain is re-sliced and compared with stored page hashes; `WorldReconciler` converges differences (§5.6); bodies are re-materialised. Singleplayer matches resume `PAUSED` | Budgeted |
+| Resume | The registry loads; tickets are revalidated; the blob is decoded under the quarantine rules; terrain is re-sliced and compared with stored page hashes; `WorldReconciler` converges differences (§5.6); bodies are re-materialised. Active matches resume `PAUSED`; a terminal record or saved victory outcome restores `ENDED` | Budgeted |
 | End | Victory freezes the simulation, sends results and keeps the world for inspection | One tick |
 | Dispose | Remove tickets, bodies, the region index entry and the match blob; mark the slot retired | One tick |
 | Play again | A new match from the same package in the next free slot. Retired slots stay on disk until `/strategos arena prune` (deferred) deletes their region files at server start | – |
@@ -895,7 +895,13 @@ DimensionDataStorage.java:43):
 - **Codecs.**
   - Every persisted record has a DFU `Codec` defined in core. The mod converts with `NbtOps`, and
     L1 round-trips through `JsonOps`.
-  - Templates are saved by string id, never by network index.
+  - Template identities are persisted by string id. Building slots and production queues retain their
+    numeric layout together with `templateBindings` (saved index → stable id); restore resolves every
+    live reference against the current set before rebuilding footprints or production counts.
+    Legacy snapshots without bindings may resolve only the fixed built-in indices; custom numeric
+    references fail explicitly because neither a content hash nor the current table proves their identity.
+    Schema 3 prevents old builds from silently loading new numeric references without resolving
+    their bindings. Versions 1 and 2 migrate conservatively; released fixtures are unchanged.
   - On 1.21.5+ the same codecs plug into `SavedDataType` and `ValueInput`/`ValueOutput` (§18.1).
 - **Versions and migrations.** Each blob carries `"v"`. On load, `Migrations` walks `v → v+1`
   steps on a DFU `Dynamic<?>` before decoding, so the same migration code runs on NBT and JSON. It

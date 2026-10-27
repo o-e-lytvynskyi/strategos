@@ -399,4 +399,82 @@ public final class PersistenceTests {
                 })
                 .thenSucceed();
     }
+
+    @StrategosTest
+    public static void endedMatchStaysEndedAfterRestore(GameTestHelper h) {
+        MatchRegistry registry = StrategosServer.get().matches();
+        MatchRuntime rt = MatchFixture.create(
+                h, MatchFixture.options(SimHarness.DEFAULT_SEED, h).withPersistent(true));
+        spawn(rt, 8, 16, 1, 0);
+        h.startSequence()
+                .thenWaitUntil(() -> check(handles(rt).length == 1, "not spawned"))
+                .thenExecute(() -> {
+                    registry.end(rt.id());
+                    check(rt.lifecycle() == MatchLifecycle.ENDED, "not ended before save");
+                    MatchRecord record = registry.record(rt.id());
+                    check(record != null && record.lifecycle() == MatchLifecycle.ENDED, "record not ended");
+                    CompoundTag tag =
+                            rt.data().save(new CompoundTag(), h.getLevel().registryAccess());
+                    registry.unload(rt.id());
+                    MatchRuntime back = registry.restore(h.getLevel(), record, MatchData.load(rt.id(), tag));
+                    check(back.lifecycle() == MatchLifecycle.ENDED, "ended match restored as " + back.lifecycle());
+                    long tick = core(back).queries().tick();
+                    boolean refused = false;
+                    try {
+                        registry.resume(back.id());
+                    } catch (IllegalStateException expected) {
+                        refused = true;
+                    }
+                    check(refused, "ended match accepted resume");
+                    refused = false;
+                    try {
+                        back.submit(PlayerSlot.ADMIN, Move.replace(UnitSet.of(handles(back)), new Vec2d(12.5, 12.5)));
+                    } catch (dev.strategos.mod.server.match.MatchRefusedException expected) {
+                        refused = true;
+                    }
+                    check(refused, "ended match accepted commands");
+                    check(core(back).queries().tick() == tick, "ended match advanced");
+                })
+                .thenSucceed();
+    }
+    /** A newer terminal blob cannot be revived by an older PAUSED registry record (#23). */
+    @StrategosTest
+    public static void terminalOutcomeOverridesPausedRecord(GameTestHelper h) {
+        MatchRegistry registry = StrategosServer.get().matches();
+        MatchRuntime rt = MatchFixture.create(
+                h, MatchFixture.options(SimHarness.DEFAULT_SEED, h).withPersistent(true));
+        registry.pause(rt.id());
+        var saved = core(rt).snapshot();
+        var finished = new dev.strategos.core.sim.MatchSnapshot(
+                saved.config(),
+                saved.tick(),
+                saved.templateSetHash(),
+                saved.slots(),
+                saved.units(),
+                saved.pendingCommands(),
+                saved.pages(),
+                saved.paths(),
+                saved.nextGroup(),
+                saved.treasury(),
+                saved.terrainEdits(),
+                saved.nodes(),
+                saved.buildings(),
+                saved.ledger(),
+                saved.carried(),
+                new dev.strategos.core.sim.MatchSnapshot.Play(
+                        java.util.List.of(1L, 0L, 1L, 0L, saved.tick()),
+                        saved.play().ai(),
+                        saved.play().aiWake(),
+                        saved.play().alerts()),
+                saved.templateBindings());
+        MatchRecord record = registry.record(rt.id());
+        check(record != null && record.lifecycle() == MatchLifecycle.PAUSED, "no paused record");
+        MatchData data = MatchData.live(rt.id(), () -> finished, record::lastEpoch);
+        CompoundTag tag = data.save(new CompoundTag(), h.getLevel().registryAccess());
+        registry.unload(rt.id());
+        MatchRuntime back = registry.restore(h.getLevel(), record, MatchData.load(rt.id(), tag));
+        check(back.lifecycle() == MatchLifecycle.ENDED, "terminal outcome restored as " + back.lifecycle());
+        check(core(back).snapshot().play().ended(), "terminal outcome lost");
+        h.succeed();
+    }
 }

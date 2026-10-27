@@ -24,9 +24,9 @@ public final class Migrations {
         this.steps = List.copyOf(steps);
     }
 
-    /** The shipped chain: 1 to 2 adds the terrain pages, none in an M0 snapshot. */
+    /** 1 to 2 adds terrain pages; 2 to 3 preserves legacy numeric references for guarded resolution. */
     public static Migrations production() {
-        return new Migrations(List.of(new AddTerrainPages()));
+        return new Migrations(List.of(new AddTerrainPages(), new StableTemplateReferences()));
     }
 
     /** Schema 1 to 2: M0's snapshots had no terrain, so their page list is empty. */
@@ -39,6 +39,19 @@ public final class Migrations {
         @Override
         public <T> Dynamic<T> apply(Dynamic<T> input) {
             return input.set("pages", input.emptyList());
+        }
+    }
+
+    /** Legacy session tables cannot be inferred from content hashes; restore validates every reference. */
+    private static final class StableTemplateReferences implements MigrationStep {
+        @Override
+        public int from() {
+            return 2;
+        }
+
+        @Override
+        public <T> Dynamic<T> apply(Dynamic<T> input) {
+            return input;
         }
     }
 

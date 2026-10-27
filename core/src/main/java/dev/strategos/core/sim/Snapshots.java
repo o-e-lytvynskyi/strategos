@@ -76,7 +76,12 @@ final class Snapshots {
                         s.alerts().save(),
                         s.shots().save(),
                         s.stances().save(),
-                        s.garrison().save()));
+                        s.garrison().save()),
+                s.buildings().empty()
+                        ? List.of()
+                        : s.templates().all().stream()
+                                .map(t -> new MatchSnapshot.TemplateBinding(t.netIndex(), t.id()))
+                                .toList());
     }
 
     /** The economy ledger's counters, or none while nothing was found or taken (ECO-05). */
@@ -184,7 +189,8 @@ final class Snapshots {
         }
         dev.strategos.core.sim.econ.Deposits.restoreFootprints(state); // before the pages too (ECO-08)
         if (!snapshot.buildings().isEmpty()) {
-            state.restoreBuildings(snapshot.buildings()); // before the pages, so their footprints are laid over them
+            state.restoreBuildings(SavedTemplates.buildings(
+                    snapshot, templates)); // before the pages, so their footprints are laid over them
         }
         state.outcome().restore(snapshot.play().outcome());
         state.aiSlots().restore(snapshot.play().ai(), snapshot.play().aiWake());
