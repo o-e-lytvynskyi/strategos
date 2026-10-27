@@ -84,7 +84,7 @@ grow with the garrison), and an AI that fights by the same rules (the roadmap's 
 | PATH-11 | T2a–T2b, T6 | 1 `MobilityTest.aOneBlockGapIsOpenToInfantryAndClosedToLarge` (L1) · 2 `MobilityTest.reachabilityPerClassIsAFloodFill` (L1) · 3 `pathtests.thirty_horsemen_cross` (L3) |
 | CMB-04 | T3a–T3c, T14 | 1 `ShotTest.fixedSeedsReproduceTheGoldenResults` (L1) · 2 `ShotTest.theHitRateStaysInTheBinomialBound` (L1) · 3 `ShotTest.movingTargetsAreHitLessAtLongRange` (L1) · 4 `combattests.archer_volley_replays_as_the_core_predicts` (L3) · 5 `perftests.battle_soak`'s budget E (L6, T14) |
 | CMB-16 | T4 | 1 `HighGroundTest.rangeAndDamageFollowTheFormula` (L1) · 2 `DuelTest.archersOnAHillWin` (L1, slow) · 3 `HighGroundTest.theBonusIsInTheBreakdown` (L1) · 4 `combattests.a_hill_reaches_further` (L3) |
-| CMB-05 | T5 | 1 `StanceTest.theTable` (L1) · 2 `StanceTest.targetPreferences` (L1) · 3 `StanceTest.aChaseEndsOutOfVision` (L1) · 4 `combattests.stance_*` per family (L3) |
+| CMB-05 | T5a, T5b | 1 `StanceTest.theTable` (L1) · 2 `StanceTest.targetPreferences` (L1) · 3 `StanceTest.aChaseEndsOutOfVision` (L1) · 4 `combattests.stance_*` per family (L3) |
 | ORD-05 | T8 | 1 `FocusTest.aFocusMakesEveryArcherInRangeShootIt` (L1) · 2 `FocusTest.aSpreadIsWithinOneOfEven` (L1) · 3 `combattests.force_attack_on_an_own_building` (L3) |
 | UNIT-06 | T6 | 1 `bodytests.a_horseman_is_one_entity` (L3) · 2 the engine-surface inventory lists `unit_mount` with ADR-0011's settings (L2) · 3 `perftests.mounted_cost` within 20 % of a foot unit (L6) · 4 `m5_goldens` riders at every camera height (L4, T17) |
 | UNIT-07 | T7 | 1 `DuelTest.eachCounterWins` (L1, slow) · 2 `DuelTest.everyUnitWinsOneAndLosesOne` (L1, slow) · 3 `combattests.duels_*` 20 seeds each, smoke (L3, slow batch) · 4 the owner's silhouettes (L7) |
@@ -115,6 +115,7 @@ grow with the garrison), and an AI that fights by the same rules (the roadmap's 
 | 8 | Release phase and ranged defaults | UNIT_AI queues an internal firing intent; COMBAT constructs its frozen launch from post-MOVEMENT positions and velocity before resolving impacts. This preserves the approved lead formula and a constant-velocity control. Starting archer projectile speed is 4 blocks/tick, spread 2.25 blocks at 100 and sight 32; these project defaults receive provenance with the archer content and are tuned with the roster. |
 | 9 | Flat-world velocity and numeric damage safety | Flat matches deliberately persist only poses, preserving released journal hashes. A transient firing intent captures the target position before MOVEMENT; COMBAT derives its displacement for the lead. Terrain matches use the existing motion velocity. Ranged damage is bounded to finite float-safe values before packet conversion, including after modifiers. |
 | 10 | Shot feedback continuity and viewers | Freeze release coordinates and tick with every new shot so impact feedback retains both endpoints after shooter death or restore. Restore preserves future impact feedback; replaying past launch FX to reconstruct client arcs is outside the event contract. Deliver shot FX once to the union of viewers of either endpoint, batched by endpoint pages. Client arcs clear when the match changes. |
+| 11 | A passive unit's flee distance | §2.4 says 12 blocks; M4 approved the worker's `Behaviour/flee` of 8 with its provenance. A passive unit flees its template's `Behaviour/flee` when that is set and 12 blocks otherwise, so the worker keeps its approved 8. |
 
 ### 1.7 Consent plan
 
@@ -273,7 +274,7 @@ M4's scenes are.
 
 ### 7.1 Order
 
-T1 → T2a → T2b (PATH-11) → T3a → T3b.1 → T3b.2 → T3c.1 → T3c.2 (CMB-04) → T4 (CMB-16) → T5 (CMB-05) → T6 (UNIT-06) → T7 (UNIT-07) → T8 (ORD-05)
+T1 → T2a → T2b (PATH-11) → T3a → T3b.1 → T3b.2 → T3c.1 → T3c.2 (CMB-04) → T4 (CMB-16) → T5a → T5b (CMB-05) → T6 (UNIT-06) → T7 (UNIT-07) → T8 (ORD-05)
 → T9 (CMB-07) → T10 (BLD-16) → T11 (BLD-11) → T12 (CMB-17) → T13 (AI-03) → T14 (PERF-08) → T15 (the
 battle scenario) → T17 (the consent batch) → T18 (close). T16 is reserved for a row a task adds.
 
@@ -326,8 +327,17 @@ battle scenario) → T17 (the consent batch) → T18 (close). T16 is reserved fo
 #### T4 · CMB-16
 - §2.3. **Verification:** checks 1, 3, 4 (2 with T7's duel harness).
 
-#### T5 · CMB-05
-- §2.4; `SetStance` (25). **Verification:** the card's checks.
+#### T5 · CMB-05 (split before implementation, 2026-10-27)
+- **T5a · Stances in the core** (estimated 900–1,300 source/test lines): the five stances as data
+  (`Behaviour/stance`, workers passive), a per-unit stance and spot, persisted and hashed only when
+  set; `SetStance` (25) with its rule; engagement, retaliation, chase, leash and return per §2.4's
+  table; a chase ends when the target leaves vision under any order; targeting by the attack's
+  `preferred` classes, then the nearest. L1 checks 1–3.
+- **T5b · FLEEING, the card and the GameTests** (estimated 500–800 lines): FLEEING as a state
+  re-planned each think until 12 blocks off or the attacker is gone; the card's five stance
+  buttons; one GameTest per stance family (check 4).
+- **Verification:** the card's checks, split as above; `verify verifySlow verifySoak` and JMH
+  for each step (the unit AI is in the tick).
 
 #### T6 · UNIT-06
 - §2.6. **Verification:** checks 1–3; 4 in T17.
@@ -360,7 +370,7 @@ battle scenario) → T17 (the consent batch) → T18 (close). T16 is reserved fo
 
 ### 7.3 Progress
 
-- [x] T1 (2026-10-26) · [x] T2a (2026-10-26) · [x] T2b (2026-10-26) · [x] T3a (2026-10-26) · [x] T3b.1 (2026-10-27) · [x] T3b.2 (2026-10-27) · [x] T3c.1 (2026-10-27) · [x] T3c.2 (2026-10-27) · [x] T4 (2026-10-27) · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11
+- [x] T1 (2026-10-26) · [x] T2a (2026-10-26) · [x] T2b (2026-10-26) · [x] T3a (2026-10-26) · [x] T3b.1 (2026-10-27) · [x] T3b.2 (2026-10-27) · [x] T3c.1 (2026-10-27) · [x] T3c.2 (2026-10-27) · [x] T4 (2026-10-27) · [ ] T5a · [ ] T5b · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11
 - [ ] T12 · [ ] T13 · [ ] T14 · [ ] T15 · [ ] T17 · [ ] T18
 
 ---
