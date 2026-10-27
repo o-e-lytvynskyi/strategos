@@ -26,8 +26,8 @@ class HorsemanTemplateTest {
 
     @Test
     void horsemanHasTheApprovedStartingValues() {
-        assertValue("Health/max", 120);
-        assertValue("Attack/Melee/hack", 5);
+        assertValue("Health/max", 200);
+        assertValue("Attack/Melee/hack", 10);
         assertValue("Attack/Melee/reach", 1.5);
         assertValue("Attack/Melee/prepare", 8);
         assertValue("Attack/Melee/repeat", 18);

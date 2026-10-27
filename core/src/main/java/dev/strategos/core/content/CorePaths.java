@@ -50,6 +50,12 @@ public final class CorePaths {
 
     public static final String RANGED_PREFERRED = "Attack/Ranged/preferred";
 
+    /**
+     * A melee attack's bonus against a class (UNIT-07): a template's {@code Attack/Melee/bonus/<Class>} is the
+     * multiplier its blows deal to a target of that class, as {@code Attack/Melee/bonus/Cavalry} 2.5; no leaf, no bonus.
+     */
+    public static final String MELEE_BONUS_PREFIX = "Attack/Melee/bonus/";
+
     public static final double DEFAULT_HEALTH = 100;
     public static final double MAX_RESISTANCE = 20;
     public static final double DEFAULT_REACH = 1;

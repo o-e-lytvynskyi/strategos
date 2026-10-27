@@ -32,6 +32,9 @@ import dev.strategos.core.sim.UnitView;
 import dev.strategos.core.sim.journal.ReplayDriver;
 import dev.strategos.core.sim.journal.ReplayResult;
 import dev.strategos.core.sim.order.OrderKind;
+import dev.strategos.core.testkit.DuelLayout;
+import dev.strategos.core.testkit.DuelLayout.Kind;
+import dev.strategos.core.testkit.Seeds;
 import dev.strategos.core.testkit.SimHarness;
 import dev.strategos.gametest.MatchFixture;
 import dev.strategos.gametest.StrategosTest;
@@ -65,6 +68,8 @@ import net.neoforged.neoforge.common.util.FakePlayer;
 import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.event.PlayLevelSoundEvent;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The damage model on real bodies (CMB-01): vanilla's blows reach the core as its own damage, the body's vanilla health
@@ -903,5 +908,125 @@ public final class CombatTests {
                     }
                 })
                 .thenSucceed();
+    }
+
+    // ---- The roster's duels (UNIT-07, check 3): the L1 matrix's smoke on real bodies, no threshold on the wins.
+
+    private static final Logger LOG = LoggerFactory.getLogger(CombatTests.class);
+    private static final int DUELS = 20;
+    private static final int DUEL_TICKS = 1_500; // L1's longest duel is under 600
+    private static final double DUEL_CENTER = 24;
+
+    /**
+     * Spearmen against horsemen, equal in cost, over the first twenty seeds of the committed set, one duel after
+     * another on the arena floor; each must end with one side gone within {@value #DUEL_TICKS} ticks. The wins are
+     * logged, not asserted: the counters' threshold is L1's {@code DuelTest}.
+     */
+    @StrategosTest(batch = "slow", arena = "arena_flat_48", timeoutTicks = DUELS * (DUEL_TICKS + 40))
+    public static void duelsSpearmenHorsemen(GameTestHelper h) {
+        duels(h, Kind.SPEARMAN, Kind.HORSEMAN);
+    }
+
+    /** As {@link #duelsSpearmenHorsemen}, horsemen against archers. */
+    @StrategosTest(batch = "slow", arena = "arena_flat_48", timeoutTicks = DUELS * (DUEL_TICKS + 40))
+    public static void duelsHorsemenArchers(GameTestHelper h) {
+        duels(h, Kind.HORSEMAN, Kind.ARCHER);
+    }
+
+    /** As {@link #duelsSpearmenHorsemen}, archers against spearmen starting at range. */
+    @StrategosTest(batch = "slow", arena = "arena_flat_48", timeoutTicks = DUELS * (DUEL_TICKS + 40))
+    public static void duelsArchersSpearmen(GameTestHelper h) {
+        duels(h, Kind.ARCHER, Kind.SPEARMAN);
+    }
+
+    /**
+     * {@link #DUELS} duels in one match, each seed in turn: spawn both groups at {@link DuelLayout}'s places, order
+     * each to attack the other, wait for one side to be gone (the wait is the work, never a fixed delay), clear the
+     * survivors with lethal damage, wait until the field is empty, then the next seed. Waits count ticks only to fail
+     * a duel that never ends.
+     */
+    private static void duels(GameTestHelper h, Kind first, Kind second) {
+        MatchRuntime rt = match(h);
+        long[] seeds = Seeds.set("m0-200").limit(DUELS).toArray();
+        int[] counts = DuelLayout.counts(first, second);
+        double gap = DuelLayout.gap(first, second);
+        var state = new Object() {
+            int duel;
+            int phase; // 0 spawn, 1 wait for the bodies, 2 fight, 3 clear
+            int fighting;
+            int wins;
+            int ties;
+        };
+        FactionSlot f0 = new FactionSlot(0);
+        FactionSlot f1 = new FactionSlot(1);
+        h.onEachTick(() -> {
+            MatchCore core = core(rt);
+            int[] a = core.queries().unitHandlesOf(f0);
+            int[] b = core.queries().unitHandlesOf(f1);
+            switch (state.phase) {
+                case 0 -> {
+                    long seed = seeds[state.duel];
+                    int west = DuelLayout.firstWest(seed) ? -1 : 1;
+                    for (int g = 0; g < 2; g++) {
+                        for (int k = 0; k < counts[g]; k++) {
+                            DuelLayout.Spot spot = DuelLayout.place(
+                                    seed, g, k, counts[g], g == 0 ? west : -west, gap, DUEL_CENTER, DUEL_CENTER);
+                            rt.submit(
+                                    PlayerSlot.ADMIN,
+                                    new SpawnUnits(
+                                            (g == 0 ? first : second).id(),
+                                            g == 0 ? f0 : f1,
+                                            new Vec2d(spot.x(), spot.z()),
+                                            1,
+                                            0));
+                        }
+                    }
+                    state.phase = 1;
+                }
+                case 1 -> {
+                    if (a.length == counts[0] && b.length == counts[1]) {
+                        long seed = seeds[state.duel];
+                        rt.submit(
+                                new PlayerSlot(0),
+                                Attack.replace(UnitSet.of(a), b[DuelLayout.target(seed, 0, b.length)]));
+                        rt.submit(
+                                new PlayerSlot(1),
+                                Attack.replace(UnitSet.of(b), a[DuelLayout.target(seed, 1, a.length)]));
+                        state.fighting = 0;
+                        state.phase = 2;
+                    }
+                }
+                case 2 -> {
+                    if (a.length > 0 && b.length > 0) {
+                        check(
+                                ++state.fighting <= DUEL_TICKS,
+                                "duel " + state.duel + " of " + first + " and " + second + " (seed " + seeds[state.duel]
+                                        + ") did not end in " + DUEL_TICKS + " ticks");
+                        return;
+                    }
+                    if (a.length > 0) {
+                        state.wins++;
+                    } else if (b.length == 0) {
+                        state.ties++;
+                    }
+                    for (int survivor : a.length > 0 ? a : b) {
+                        rt.damage(new ExternalDamage(
+                                survivor, ExternalDamage.Kind.LETHAL, 0, ExternalDamage.SourceKind.NONE));
+                    }
+                    state.phase = 3;
+                }
+                default -> {
+                    if (a.length > 0 || b.length > 0) {
+                        return;
+                    }
+                    if (++state.duel < DUELS) {
+                        state.phase = 0;
+                        return;
+                    }
+                    LOG.info("duels {} over {}: {} of {} (ties {})", first, second, state.wins, DUELS, state.ties);
+                    h.succeed();
+                }
+            }
+        });
     }
 }

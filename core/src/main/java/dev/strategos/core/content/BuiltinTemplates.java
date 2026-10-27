@@ -44,7 +44,8 @@ final class BuiltinTemplates {
                   "pierce": { "$derive": { "from": "self", "path": "Attack/Melee/hack" }, "note": "A spear thrusts as hard as it cuts" },
                   "reach": 1.2,
                   "prepare": 10,
-                  "repeat": 20
+                  "repeat": 20,
+                  "bonus": { "Cavalry": 2.5 }
                 },
                 "Structure": { "fire": 3, "prepare": 10, "repeat": 20 }
               },
@@ -68,9 +69,9 @@ final class BuiltinTemplates {
             {
               "parent": "strategos:template/unit_infantry",
               "Identity": { "name": "strategos.unit.archer", "icon": "minecraft:bow", "classes": "+Archer" },
-              "Health": { "max": 50 },
+              "Health": { "max": 70 },
               "UnitMotion": { "walkSpeed": 0.2 },
-              "Attack": { "Ranged": { "pierce": 6, "range": 20, "prepare": 16, "repeat": 25, "speed": 4, "spread": 2.25 } },
+              "Attack": { "Ranged": { "pierce": 16, "range": 20, "prepare": 16, "repeat": 20, "speed": 4, "spread": 2.25 } },
               "Vision": { "range": 32 },
               "Resistance": { "hack": 1, "pierce": 1, "crush": 1 },
               "Cost": {
@@ -85,9 +86,9 @@ final class BuiltinTemplates {
             {
               "parent": "strategos:template/unit_base",
               "Identity": { "name": "strategos.unit.horseman", "icon": "minecraft:saddle", "classes": "+Cavalry +Melee +Organic" },
-              "Health": { "max": 120 },
+              "Health": { "max": 200 },
               "UnitMotion": { "walkSpeed": 0.34, "mobility": "large" },
-              "Attack": { "Melee": { "hack": 5, "reach": 1.5, "prepare": 8, "repeat": 18 } },
+              "Attack": { "Melee": { "hack": 10, "reach": 1.5, "prepare": 8, "repeat": 18 } },
               "Resistance": { "hack": 3, "pierce": 2, "crush": 2 },
               "Cost": {
                 "resources": { "food": 80, "wood": 40, "iron": 30 },

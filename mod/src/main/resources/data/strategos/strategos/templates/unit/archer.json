@@ -1,9 +1,9 @@
 {
   "parent": "strategos:template/unit_infantry",
   "Identity": { "name": "strategos.unit.archer", "icon": "minecraft:bow", "classes": "+Archer" },
-  "Health": { "max": 50 },
+  "Health": { "max": 70 },
   "UnitMotion": { "walkSpeed": 0.2 },
-  "Attack": { "Ranged": { "pierce": 6, "range": 20, "prepare": 16, "repeat": 25, "speed": 4, "spread": 2.25 } },
+  "Attack": { "Ranged": { "pierce": 16, "range": 20, "prepare": 16, "repeat": 20, "speed": 4, "spread": 2.25 } },
   "Vision": { "range": 32 },
   "Resistance": { "hack": 1, "pierce": 1, "crush": 1 },
   "Cost": {

@@ -85,6 +85,8 @@ public final class StatService {
     private int stance;
     private int meleePreferred;
     private int rangedPreferred;
+    private int[] meleeBonusPaths = new int[0];
+    private String[] meleeBonusTokens = new String[0];
     private int classesPath;
     private int turnRate;
     private StatBlock[] blocks = new StatBlock[0];
@@ -192,6 +194,18 @@ public final class StatService {
         this.stance = path(CorePaths.STANCE);
         this.meleePreferred = tokenPath(CorePaths.MELEE_PREFERRED);
         this.rangedPreferred = tokenPath(CorePaths.RANGED_PREFERRED);
+        List<ValuePath> bonuses = new ArrayList<>();
+        for (ValuePath p : set.valuePaths().all()) {
+            if (p.path().startsWith(CorePaths.MELEE_BONUS_PREFIX)) {
+                bonuses.add(p);
+            }
+        }
+        this.meleeBonusPaths = new int[bonuses.size()];
+        this.meleeBonusTokens = new String[bonuses.size()];
+        for (int k = 0; k < bonuses.size(); k++) {
+            meleeBonusPaths[k] = bonuses.get(k).id();
+            meleeBonusTokens[k] = bonuses.get(k).path().substring(CorePaths.MELEE_BONUS_PREFIX.length());
+        }
         this.classesPath = tokenPath(IDENTITY_CLASSES);
         this.blocks = new StatBlock[count * factions];
         for (int k = 0; k < blocks.length; k++) {
@@ -240,6 +254,22 @@ public final class StatService {
     /** Unit {@code index}'s melee damage of type {@code type} (0 hack, 1 pierce, 2 crush) per hit (CMB-02). */
     public double meleeDamage(int index, int type) {
         return read(index, melee[type]);
+    }
+
+    /** How many classes some template's melee attack has a bonus against (UNIT-07); 0 for most sets' units. */
+    public int meleeBonusCount() {
+        return meleeBonusPaths.length;
+    }
+
+    /** The class token of melee bonus {@code k}, in path order. */
+    public String meleeBonusToken(int k) {
+        return meleeBonusTokens[k];
+    }
+
+    /** Unit {@code index}'s multiplier for melee bonus {@code k}; 0 when its template has none against that class. */
+    public double meleeBonus(int index, int k) {
+        double value = read(index, meleeBonusPaths[k]);
+        return Double.isNaN(value) ? 0 : value;
     }
 
     /** Whether unit {@code index} has a melee attack: some damage per hit. */

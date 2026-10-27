@@ -12,6 +12,7 @@ import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.core.sim.stats.StatService;
 import dev.strategos.core.sim.unitai.Hfsm.Context;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -136,10 +137,29 @@ final class Melee {
                 (float) stats.meleeDamage(i, 1),
                 (float) stats.meleeDamage(i, 2),
                 0,
-                List.of(),
+                bonuses(stats, i),
                 false));
         s.outputs().add(new UnitStruck(ctx.handle(), target));
         ctx.setData(tick + stats.meleeRepeat(i), 0);
+    }
+
+    /** The multipliers unit {@code i}'s blows carry against classes (UNIT-07); none for most units. */
+    private static List<Damage.Bonus> bonuses(StatService stats, int i) {
+        int count = stats.meleeBonusCount();
+        if (count == 0) {
+            return List.of();
+        }
+        List<Damage.Bonus> out = null;
+        for (int k = 0; k < count; k++) {
+            double multiplier = stats.meleeBonus(i, k);
+            if (multiplier > 0) {
+                if (out == null) {
+                    out = new ArrayList<>(2);
+                }
+                out.add(new Damage.Bonus(stats.meleeBonusToken(k), (float) multiplier));
+            }
+        }
+        return out == null ? List.of() : out;
     }
 
     /** Whether unit {@code t} stands within unit {@code i}'s reach, give or take rounding. */

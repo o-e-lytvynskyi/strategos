@@ -127,7 +127,8 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
   4. A GameTest on a hill shows the longer reach (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** CMB-04, DATA-02 · **Size:** S · **Tier:** T2 (pulled
   into the MVP)
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-10-27 — M5 T4: `HighGroundTest` (1, L1), `CommandCardTest.theArcherBreakdownNamesTheHighGroundSource` (3, L1), `combattests.high_ground_reaches_farther` (4, L3); M5 T7: `DuelTest.archersOnAHillBeatArchersBelow` 188 of 200 on a six-block plateau, flat control 90 (2, L1)
 
 #### CMB-17 · Combat readability: attack lines and the under-attack flash
 - **Value:** You always see who attacks whom (P2).
@@ -203,7 +204,7 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
   4. The owner recognises each role from its silhouette at 60 blocks (L7, acceptance).
 - **Tests:** L0, L1, L3, L7 · **Fixtures:** duel seed sets · **Depends on:** CMB-04, CMB-05,
   UNIT-06, DATA-04 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 ### Defence
 

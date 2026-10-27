@@ -13,11 +13,11 @@ class ArcherTemplateTest {
         UnitTemplate archer = Objects.requireNonNull(set.byId(new TemplateId("strategos:unit/archer")));
         assertThat(archer.walkSpeed()).isEqualTo(0.2);
         assertThat(archer.classes()).contains("Archer", "Infantry", "Organic");
-        assertValue(set, archer, "Health/max", 50);
-        assertValue(set, archer, "Attack/Ranged/pierce", 6);
+        assertValue(set, archer, "Health/max", 70);
+        assertValue(set, archer, "Attack/Ranged/pierce", 16);
         assertValue(set, archer, "Attack/Ranged/range", 20);
         assertValue(set, archer, "Attack/Ranged/prepare", 16);
-        assertValue(set, archer, "Attack/Ranged/repeat", 25);
+        assertValue(set, archer, "Attack/Ranged/repeat", 20);
         assertValue(set, archer, "Attack/Ranged/speed", 4);
         assertValue(set, archer, "Attack/Ranged/spread", 2.25);
         assertValue(set, archer, "Vision/range", 32);

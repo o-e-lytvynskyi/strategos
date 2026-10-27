@@ -4,21 +4,28 @@
 
 ## Now
 
-- **Milestone:** M5 Combat; 12 of 23 tasks complete (T1–T6).
-- **In progress:** M5 T7 the roster (UNIT-07) since 2026-10-27.
-- **Last finished task:** T6 mounted units (2026-10-27).
-- **Next task:** T7 (the duel harness; also CMB-16 check 2), then T8 ORD-05.
+- **Milestone:** M5 Combat; 13 of 23 tasks complete (T1–T7).
+- **In progress:** M5 T8 focus, spread, force attack (ORD-05) since 2026-10-27.
+- **Last finished task:** T7 the roster and duels (2026-10-27).
+- **Next task:** T8, then T9 civic centre arrows (CMB-07).
 - **Merged from main last:** a10a8fd (2026-10-27), PR #21 fix-main.
 
 ## Depends on unfinished work
 
-- Within M5: CMB-16 check 2 (archers on a 6-block hill win ≥ 170 of 200 seeded duels) runs on T7's duel harness; the card stays in_progress until then.
 - M8 fog of war: `Audience.SeesEither` (shot FX) goes to every match member, as `SeesCell` does; `AFTER-M8` in NetGateway marks the union of the two cells' viewers.
 - M0-M4 are merged. No unfinished milestone implementation is required by M5.
 - fix-main (lev1pes) is done and merged into main by PR #21; it no longer bears on M5.
 - Preserve codex/m5-combat and dev/lev1pes/m5. Import code and task-specific evidence selectively after assignment; do not copy old central STATE/worklog records over current main.
 
 ## Log
+
+### 2026-10-27 — M5 T7
+
+- **T7 · UNIT-07 the roster** — UNIT-07 in_progress (1–3 pass; 4, the owner's silhouettes, at L7); CMB-16 done (its duel check 2). The spearman's ×2.5 against Cavalry through a new template leaf `Attack/Melee/bonus/<Class>` carried into the damage packet; silhouettes (archer bow, horseman sword and shield, spearman spear) in `UnitLook`. Duel harness `DuelLayout` (Rng stream 1002, equal cost food+wood+iron: 6 spearmen vs 4 horsemen, 6 vs 5 archers, 4 horsemen vs 5 archers) and `Duel` on a published floor. `DuelTest` (slow, ~1.5 s): spearmen over horsemen 200, horsemen over archers 193, archers over spearmen 200 of 200; every unit wins one and loses one; hill 188 of 200 (flat 90). L3 smoke 20 seeds: 20, 18, 20. `MeleeBonusTest`.
+- Tuning (template numbers only, each with a provenance row): archer pierce 6 → 16, repeat 25 → 20, HP 50 → 70; horseman HP 120 → 200, hack 5 → 10. The starting numbers lost both counters (archers over spearmen 0 of 200). §2.7's table updated.
+- L1 first said 199 of 200 for horsemen over archers while L3 said 7 of 20: the L1 duel had no terrain published, so its fight differed from the server's. The harness now publishes a floor; L1 and L3 agree. Observed in both: a horse sometimes idles ~80 ticks beside the back-rank archer it focuses (For the owner 7).
+- Gates: `verify verifySlow verifySoak` 4m 37s green; `jmhCompare` green.
+- **Next:** T8.
 
 ### 2026-10-27 — M5 T6
 
@@ -171,9 +178,13 @@
 4. Obsolete: `dev/o-e-lytvynskyi/fix-main` (one docs commit 526dc72 proposing a release of lev1pes's fix-main, made moot by PR #21) and the local worktrees `strategos-fix-main`, `strategos-m5-content` (its T3b.2 draft is now in 95484c3) and `strategos-m5-control`. Recommend deleting them; left in place until you say so.
 5. `SpatialBench.rebuild1000` is bimodal across JMH forks on this Mac: twice today one fork read 7.4–7.7 us while the other read 4.8 (baseline 4.79), failing the 15 % gate on the average; each single rerun passed with both forks at 4.7–4.9. No code touched the spatial index. Options: (a) leave it — a red run is rerun once by the rule (current); (b) give that benchmark more forks so one outlier fork cannot carry the average (a measurement change, your call); (c) investigate the bimodality (memory layout of the grid arrays). Recommend (b) with 5 forks for this benchmark only.
 6. Proposal (scope): replicate each unit's stance to its owner so the card's active stance is always right (now it shows the stance the player's own card last sent, else the template's). A small protocol addition; not in the approved cards' wording, so it waits for you.
+7. Follow-up candidate (no scope change): in duels a horseman sometimes stands ~80 ticks beside the back-rank archer it is focused on before striking. Probably a melee chase/ring-slot detail for the large class; to look at with T13's battle AI unless you want it earlier.
 
 ## Decisions taken
 
+- 2026-10-27 · Tuned the §2.7 roster (above) to satisfy the 170-of-200 counters at equal cost; cost counted as food + wood + iron. Undo by reverting the provenance rows and rerunning DuelTest.
+- 2026-10-27 · Melee bonuses as numeric template leaves `Attack/Melee/bonus/<Class>` (the spec named "a template bonus" with no mechanism). Undo with the leaf.
+- 2026-10-27 · trial implementer: pass — T7, and on review it traced the L1/L3 gap to its own harness and fixed the harness rather than the threshold.
 - 2026-10-27 · The mounted rider is the unit renderer's own humanoid in a forced seated pose (armour, items, faction colours and LOD carry over); seat height 0.62 and the untinted horse wait for T17's images. The card's "inventory entry" is the engine-surface entity list: units have no spawn egg (noSummon). Undo in MountRenderer.
 - 2026-10-27 · PATH-11 check 3 reads "no ladder rung above repath" as rungs 2–5 at zero plus the existing stuck-under-100-ticks measure. Undo by a stricter reading in MapTests.
 - 2026-10-27 · trial implementer: pass — T6 with two follow-up rounds; it found the body-budget race when asked to fix rather than rename.

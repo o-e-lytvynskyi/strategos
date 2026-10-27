@@ -41,6 +41,7 @@
     "Attack/Melee/reach": "A spear reaches a little past an arm's length",
     "Attack/Melee/prepare": "Half a second's wind-up before the first thrust, so a charge reads",
     "Attack/Melee/repeat": "A thrust a second",
+    "Attack/Melee/bonus/Cavalry": "2.5 times the damage against cavalry: a braced spear stops a charge, so spearmen beat horsemen at equal cost (M5 UNIT-07)",
     "Resistance/hack": "0.9^5 lets 59 % through: shield and padding make a fight between two spearmen last tens of seconds",
     "Resistance/crush": "Padding does little against blunt blows; crush belongs to cavalry and siege later",
     "Cost/resources/wood": "Forty wood: the shaft and the shield; wood gathered early goes to both houses and soldiers",
@@ -50,12 +51,12 @@
     "Attack/Structure/repeat": "A blow of fire a second, the spear's rhythm"
   },
   "strategos:unit/archer": {
-    "Health/max": "Fifty hit points: half a spearman's, making the archer vulnerable at close range (M5 UNIT-07)",
+    "Health/max": "Seventy hit points, tuned up from fifty (duel matrix, M5 UNIT-07): archers must outlast the spearmen's approach and a hill duel must run long enough for height to tell, yet stay under a spearman's hundred",
     "UnitMotion/walkSpeed": "0.2 blocks a tick: slightly faster than infantry, allowing ranged positioning (M5 UNIT-07)",
-    "Attack/Ranged/pierce": "Six pierce per arrow: the starting ranged damage for the counter roster (M5 UNIT-07)",
+    "Attack/Ranged/pierce": "Sixteen pierce per arrow, tuned up from six (duel matrix, M5 UNIT-07): a spearman's resistance 5 lets only 59 % through, and archers of equal cost must break the spearmen before and after contact",
     "Attack/Ranged/range": "Twenty blocks: the archer can engage well before melee contact (M5 UNIT-07)",
     "Attack/Ranged/prepare": "Sixteen ticks to draw the first shot, making the wind-up readable (M5 UNIT-07)",
-    "Attack/Ranged/repeat": "Twenty-five ticks between arrows, pacing a sustained volley (M5 UNIT-07)",
+    "Attack/Ranged/repeat": "Twenty ticks between arrows, tuned down from twenty-five (duel matrix, M5 UNIT-07): a volley a second, the spearman's own rhythm",
     "Attack/Ranged/speed": "Four blocks per tick: the starting projectile speed for analytic lead (M5 CMB-04)",
     "Attack/Ranged/spread": "2.25 blocks at 100 blocks: starting Gaussian spread for analytic shots (M5 CMB-04)",
     "Vision/range": "Thirty-two blocks: enough to acquire targets beyond the twenty-block firing range (M5 CMB-04)",
@@ -68,9 +69,9 @@
     "Cost/population": "One house's room for one archer, as for other infantry"
   },
   "strategos:unit/horseman": {
-    "Health/max": "A hundred and twenty hit points: a fifth more than a spearman, the price of being hard to catch (M5 UNIT-07)",
+    "Health/max": "Two hundred hit points, tuned up from a hundred and twenty (duel matrix, M5 UNIT-07): twice a spearman, the price of being hard to catch, enough to live through the archers' fire to the melee",
     "UnitMotion/walkSpeed": "0.34 blocks a tick: nearly twice the spearman, so cavalry can run archers down (M5 UNIT-07)",
-    "Attack/Melee/hack": "Five hack per sword stroke: more than a spearman's three, so the counter over archers is quick (M5 UNIT-07)",
+    "Attack/Melee/hack": "Ten hack per sword stroke, tuned up from five (duel matrix on the real terrain, M5 UNIT-07): over three times a spearman's three, so the counter over archers is quick",
     "Attack/Melee/reach": "A block and a half: a sword from the saddle reaches a little past a spear's thrust",
     "Attack/Melee/prepare": "Eight ticks of wind-up: a rider strikes while still at the gallop",
     "Attack/Melee/repeat": "A stroke every eighteen ticks, a little faster than the spearman's thrust a second",

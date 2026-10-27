@@ -83,7 +83,7 @@ grow with the garrison), and an AI that fights by the same rules (the roadmap's 
 |---|---|---|
 | PATH-11 | T2a–T2b, T6 | 1 `MobilityTest.aOneBlockGapIsOpenToInfantryAndClosedToLarge` (L1) · 2 `MobilityTest.reachabilityPerClassIsAFloodFill` (L1) · 3 `pathtests.thirty_horsemen_cross` (L3) |
 | CMB-04 | T3a–T3c, T14 | 1 `ShotTest.fixedSeedsReproduceTheGoldenResults` (L1) · 2 `ShotTest.theHitRateStaysInTheBinomialBound` (L1) · 3 `ShotTest.movingTargetsAreHitLessAtLongRange` (L1) · 4 `combattests.archer_volley_replays_as_the_core_predicts` (L3) · 5 `perftests.battle_soak`'s budget E (L6, T14) |
-| CMB-16 | T4 | 1 `HighGroundTest.rangeAndDamageFollowTheFormula` (L1) · 2 `DuelTest.archersOnAHillWin` (L1, slow) · 3 `HighGroundTest.theBonusIsInTheBreakdown` (L1) · 4 `combattests.a_hill_reaches_further` (L3) |
+| CMB-16 | T4 | 1 `HighGroundTest.rangeAndDamageFollowTheFormula` (L1) · 2 `DuelTest.archersOnAHillBeatArchersBelow` (L1, slow) · 3 `HighGroundTest.theBonusIsInTheBreakdown` (L1) · 4 `combattests.a_hill_reaches_further` (L3) |
 | CMB-05 | T5a, T5b | 1 `StanceTest.theTable` (L1) · 2 `StanceTest.targetPreferences` (L1) · 3 `StanceTest.aChaseEndsOutOfVision` (L1) · 4 `combattests.stance_*` per family (L3) |
 | ORD-05 | T8 | 1 `FocusTest.aFocusMakesEveryArcherInRangeShootIt` (L1) · 2 `FocusTest.aSpreadIsWithinOneOfEven` (L1) · 3 `combattests.force_attack_on_an_own_building` (L3) |
 | UNIT-06 | T6 | 1 `bodytests.a_horseman_is_one_entity` (L3) · 2 the engine-surface inventory lists `unit_mount` with ADR-0011's settings (L2) · 3 `perftests.mounted_cost` within 20 % of a foot unit (L6) · 4 `m5_goldens` riders at every camera height (L4, T17) |
@@ -198,9 +198,14 @@ Starting values, ticks and blocks (worker speed 0.1875 a tick), each with its pr
 | Unit | Cost | HP | Attack | Range | Prepare / repeat | Speed | Resistance h/p/c |
 |---|---|---|---|---|---|---|---|
 | Spearman (M2) | 60F 40W | 100 | 3 hack + 3 pierce, ×2.5 vs Cavalry | 1.2 | 10 / 20 | 0.1875 | 5/5/2 |
-| Archer | 60F 40W 20I | 50 | 6 pierce | 20 | 16 / 25 | 0.2 | 1/1/1 |
-| Horseman | 80F 40W 30I | 120 | 5 hack | 1.5 | 8 / 18 | 0.34 | 3/2/2 |
+| Archer | 60F 40W 20I | 70 | 16 pierce | 20 | 16 / 20 | 0.2 | 1/1/1 |
+| Horseman | 80F 40W 30I | 200 | 10 hack | 1.5 | 8 / 18 | 0.34 | 3/2/2 |
 
+- Tuned in T7 (2026-10-27) from the starting archer 50 HP, 6 pierce, repeat 25 and horseman 120 HP,
+  5 hack, which lost both counters (archers over spearmen 0 of 200); each change is a provenance and
+  sheet row with its reason. The duel matrix at the tuned numbers, on a published floor as on the server: spearmen
+  over horsemen 200, horsemen over archers 193, archers over spearmen 200 of 200; archers on a
+  six-block plateau beat archers below 188 of 200 (flat control 90).
 - The duel matrix (T7): equal cost, 200 seeds of placement and spread, each counter at least 170 wins:
   spearmen over horsemen, horsemen over archers, archers over spearmen starting at range. Tuning moves
   only the table's numbers, each change a sheet row with its reason.
@@ -371,7 +376,7 @@ battle scenario) → T17 (the consent batch) → T18 (close). T16 is reserved fo
 
 ### 7.3 Progress
 
-- [x] T1 (2026-10-26) · [x] T2a (2026-10-26) · [x] T2b (2026-10-26) · [x] T3a (2026-10-26) · [x] T3b.1 (2026-10-27) · [x] T3b.2 (2026-10-27) · [x] T3c.1 (2026-10-27) · [x] T3c.2 (2026-10-27) · [x] T4 (2026-10-27) · [x] T5a (2026-10-27) · [x] T5b (2026-10-27) · [x] T6 (2026-10-27) · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11
+- [x] T1 (2026-10-26) · [x] T2a (2026-10-26) · [x] T2b (2026-10-26) · [x] T3a (2026-10-26) · [x] T3b.1 (2026-10-27) · [x] T3b.2 (2026-10-27) · [x] T3c.1 (2026-10-27) · [x] T3c.2 (2026-10-27) · [x] T4 (2026-10-27) · [x] T5a (2026-10-27) · [x] T5b (2026-10-27) · [x] T6 (2026-10-27) · [x] T7 (2026-10-27) · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11
 - [ ] T12 · [ ] T13 · [ ] T14 · [ ] T15 · [ ] T17 · [ ] T18
 
 ---

@@ -508,7 +508,7 @@ class CommandCardTest {
         assertThat(archer)
                 .extracting(CommandCard.Line::label, CommandCard.Line::value)
                 .contains(
-                        org.assertj.core.groups.Tuple.tuple("Pierce, ranged", 6.0),
+                        org.assertj.core.groups.Tuple.tuple("Pierce, ranged", 16.0),
                         org.assertj.core.groups.Tuple.tuple("Range, blocks", 20.0),
                         org.assertj.core.groups.Tuple.tuple("High ground, % range a block", 5.0),
                         org.assertj.core.groups.Tuple.tuple("High ground, % damage a block", 4.0),
