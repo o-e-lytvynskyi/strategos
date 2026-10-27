@@ -160,6 +160,7 @@ final class CombatActions {
     }
 
     static void findNext(Context<MatchState> ctx) {
+        if (spreadNext(ctx)) return;
         int next = nearestEnemy(ctx);
         if (next < 0) {
             UnitAi.finishOrder(ctx, false);
@@ -180,6 +181,26 @@ final class CombatActions {
                         s.entities().handleAt(next));
         s.bus().publish(new PlaceMoved(ctx.handle()));
         ctx.go(UnitAi.APPROACHING);
+    }
+
+    /**
+     * A spread attacker (ORD-05) whose target is gone takes the nearest target of the others on its spread, keeping
+     * the group; true when it did.
+     */
+    private static boolean spreadNext(Context<MatchState> ctx) {
+        MatchState s = ctx.host();
+        int i = ctx.unit();
+        int group = s.orders().group(i);
+        if (group == 0 || s.orders().kind(i) != OrderKind.ATTACK) return false;
+        int next = Spreading.repick(s, i, group);
+        if (next == 0) return false;
+        int t = Handle.index(next);
+        s.orders().pop(i);
+        s.bus().publish(new OrderFinished(ctx.handle(), false));
+        s.orders().pushFront(i, OrderKind.ATTACK, s.motion().x(t), s.motion().z(t), group, 0, next);
+        s.bus().publish(new PlaceMoved(ctx.handle()));
+        ctx.go(UnitAi.APPROACHING);
+        return true;
     }
 
     private static boolean ranged(Context<MatchState> ctx) {

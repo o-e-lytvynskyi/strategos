@@ -12,9 +12,11 @@ import dev.strategos.core.client.audio.Sounds;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.Attack;
 import dev.strategos.core.protocol.AttackMove;
+import dev.strategos.core.protocol.CommandOutcome;
 import dev.strategos.core.protocol.FxKind;
 import dev.strategos.core.protocol.NoticeKind;
 import dev.strategos.core.protocol.NoticeMsg;
+import dev.strategos.core.protocol.QueueMode;
 import dev.strategos.core.protocol.SetStance;
 import dev.strategos.core.protocol.SpawnUnits;
 import dev.strategos.core.protocol.Stop;
@@ -48,6 +50,7 @@ import dev.strategos.mod.server.net.payload.FeedbackPayload;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -906,6 +909,55 @@ public final class CombatTests {
                                 h.getLevel().getBlockState(pos).isAir(),
                                 pos + " still stands: " + h.getLevel().getBlockState(pos));
                     }
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * ORD-05.3: the player's own spearmen are refused an Attack on their own house, and once it is forced they torch it:
+     * its hit points fall.
+     */
+    @StrategosTest(timeoutTicks = 1_200)
+    public static void forceAttackOnAnOwnBuilding(GameTestHelper h) {
+        MatchRuntime rt = match(h);
+        rt.submit(PlayerSlot.ADMIN, new dev.strategos.core.protocol.SpawnBuilding(HOUSE, new FactionSlot(0), 6, 10, 0));
+        rt.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.INFANTRY, new FactionSlot(0), new Vec2d(8, 22), 4, 1.5));
+        AtomicReference<CommandOutcome> plain = new AtomicReference<>();
+        AtomicReference<CommandOutcome> forced = new AtomicReference<>();
+        var state = new Object() {
+            int house;
+            UnitSet units;
+        };
+        h.startSequence()
+                .thenWaitUntil(() -> check(
+                        core(rt).queries().unitHandles().length == 4
+                                && !core(rt).queries().buildings().isEmpty(),
+                        "not ready"))
+                .thenExecute(() -> {
+                    state.house = core(rt).queries().buildings().get(0).handle();
+                    state.units = UnitSet.of(core(rt).queries().unitHandles());
+                    rt.submit(
+                            new PlayerSlot(0),
+                            new Attack(state.units, state.house, QueueMode.REPLACE, false),
+                            result -> plain.set(result.outcome()));
+                })
+                .thenWaitUntil(() -> check(plain.get() != null, "no answer to the plain attack"))
+                .thenExecute(() -> {
+                    check(
+                            plain.get() == CommandOutcome.REJECTED,
+                            "the plain attack on an own house was " + plain.get());
+                    rt.submit(
+                            new PlayerSlot(0),
+                            new Attack(state.units, state.house, QueueMode.REPLACE, true),
+                            result -> forced.set(result.outcome()));
+                })
+                .thenWaitUntil(() -> check(forced.get() != null, "no answer to the forced attack"))
+                .thenExecute(() -> check(
+                        forced.get() == CommandOutcome.ACCEPTED,
+                        "the forced attack on an own house was " + forced.get()))
+                .thenWaitUntil(() -> {
+                    var house = core(rt).queries().buildings().get(0);
+                    check(house.hitPoints() < house.maxHitPoints(), "the house is whole: " + house.hitPoints());
                 })
                 .thenSucceed();
     }

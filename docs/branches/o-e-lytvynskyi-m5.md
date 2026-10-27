@@ -4,10 +4,10 @@
 
 ## Now
 
-- **Milestone:** M5 Combat; 13 of 23 tasks complete (T1–T7).
-- **In progress:** M5 T8 focus, spread, force attack (ORD-05) since 2026-10-27.
-- **Last finished task:** T7 the roster and duels (2026-10-27).
-- **Next task:** T8, then T9 civic centre arrows (CMB-07).
+- **Milestone:** M5 Combat; 14 of 23 tasks complete (T1–T8).
+- **In progress:** M5 T9 civic centre arrows (CMB-07) since 2026-10-27.
+- **Last finished task:** T8 focus, spread and force attack (2026-10-27).
+- **Next task:** T9, then T10 garrison and the bell (BLD-16), T11 (BLD-11).
 - **Merged from main last:** a10a8fd (2026-10-27), PR #21 fix-main.
 
 ## Depends on unfinished work
@@ -18,6 +18,13 @@
 - Preserve codex/m5-combat and dev/lev1pes/m5. Import code and task-specific evidence selectively after assignment; do not copy old central STATE/worklog records over current main.
 
 ## Log
+
+### 2026-10-27 — M5 T8
+
+- **T8 · ORD-05 Focus, spread, force attack** — ORD-05 done. `Attack` gains `force` (bit 0x10 of its queue byte; old journals, bytes and hashes unchanged); `AttackSpread` (30; 26–29 stay for T9–T10) assigns the group round-robin over the enemies in the target's vision by distance, each attacker re-picking among its spread's living targets; forced attacks may hit own units and buildings, never Gaia's animals; Ctrl + right click forces, Alt + right click spreads; a red focus ring on the selection's shared target. Tests: `FocusTest` (4), `ForceAttackTest` (4), `FocusTargetsTest` (5), `OrderIntentTest`, codec pins, `combattests.force_attack_on_an_own_building`.
+- The orchestrator added `AttackSpread` and `SetStance` (T5a) to the rate limiter's unit count (`NetGateway.handles`, which counted them as 0) with `CommandHandlesTest`.
+- Gates: `verify verifySlow verifySoak` green; `jmhCompare` green (7m 22s); `verify` again after the limiter fix.
+- **Next:** T9.
 
 ### 2026-10-27 — M5 T7
 
@@ -182,6 +189,8 @@
 
 ## Decisions taken
 
+- 2026-10-27 · A spread attacker re-picks among the current targets of its spread's other attackers (the order's group id), not a saved original set, so nothing new is persisted; with none left it falls back to its stance's nearest enemy. A grouped ATTACK may now finish by the crowd-arrival rule when stuck, as grouped moves do. Undo with a persisted spread set.
+- 2026-10-27 · trial implementer: pass — T8 complete with a backward-compatible force flag; it flagged the limiter's default branch instead of editing an unnamed file.
 - 2026-10-27 · Tuned the §2.7 roster (above) to satisfy the 170-of-200 counters at equal cost; cost counted as food + wood + iron. Undo by reverting the provenance rows and rerunning DuelTest.
 - 2026-10-27 · Melee bonuses as numeric template leaves `Attack/Melee/bonus/<Class>` (the spec named "a template bonus" with no mechanism). Undo with the leaf.
 - 2026-10-27 · trial implementer: pass — T7, and on review it traced the L1/L3 gap to its own harness and fixed the harness rather than the threshold.

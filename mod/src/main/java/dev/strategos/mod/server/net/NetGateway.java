@@ -5,6 +5,7 @@ import com.mojang.serialization.JsonOps;
 import dev.strategos.core.content.CanonicalJson;
 import dev.strategos.core.protocol.Attack;
 import dev.strategos.core.protocol.AttackMove;
+import dev.strategos.core.protocol.AttackSpread;
 import dev.strategos.core.protocol.Command;
 import dev.strategos.core.protocol.CommandBatch;
 import dev.strategos.core.protocol.DebugFeedMsg;
@@ -15,6 +16,7 @@ import dev.strategos.core.protocol.Fx;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.MatchStateMsg;
 import dev.strategos.core.protocol.Move;
+import dev.strategos.core.protocol.SetStance;
 import dev.strategos.core.protocol.Stop;
 import dev.strategos.core.protocol.WireCodec;
 import dev.strategos.core.shared.MatchId;
@@ -326,13 +328,16 @@ public final class NetGateway {
         }
     }
 
-    private static int handles(Command command) {
+    /** The units a command names, which the rate limiter counts (security.md): every unit-set command counts. */
+    static int handles(Command command) {
         return switch (command) {
             case Move move -> move.units().size();
             case Stop stop -> stop.units().size();
             case Attack attack -> attack.units().size();
             case AttackMove move -> move.units().size();
             case Follow follow -> follow.units().size();
+            case AttackSpread spread -> spread.units().size();
+            case SetStance stance -> stance.units().size();
             default -> 0;
         };
     }

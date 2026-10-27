@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.strategos.core.protocol.Attack;
 import dev.strategos.core.protocol.AttackMove;
+import dev.strategos.core.protocol.AttackSpread;
 import dev.strategos.core.protocol.Follow;
 import dev.strategos.core.protocol.Gather;
 import dev.strategos.core.protocol.Move;
@@ -42,6 +43,20 @@ class OrderIntentTest {
                 .isEqualTo(new AttackMove(UnitSet.of(3, 7), new Vec2d(4, 5), QueueMode.REPLACE));
         assertThat(OrderIntents.context(List.of(), 0x100005, 4, 5, false, false))
                 .isNull();
+    }
+
+    /** ORD-05: Ctrl forces the attack, Alt spreads it, Shift queues either; none without a selection. */
+    @Test
+    void aModifiedClickForcesOrSpreadsTheAttack() {
+        List<Integer> selection = List.of(7, 3);
+        assertThat(OrderIntents.attack(selection, 9, false, true, false))
+                .isEqualTo(new Attack(UnitSet.of(3, 7), 9, QueueMode.REPLACE, true));
+        assertThat(OrderIntents.attack(selection, 9, true, false, true))
+                .isEqualTo(new AttackSpread(UnitSet.of(3, 7), 9, QueueMode.QUEUE));
+        assertThat(OrderIntents.attack(selection, 9, false, true, true))
+                .as("spread wins")
+                .isEqualTo(new AttackSpread(UnitSet.of(3, 7), 9, QueueMode.REPLACE));
+        assertThat(OrderIntents.attack(List.of(), 9, false, true, false)).isNull();
     }
 
     /** ECO-05: a right click on a resource block gathers there, queued with Shift; none without a selection. */

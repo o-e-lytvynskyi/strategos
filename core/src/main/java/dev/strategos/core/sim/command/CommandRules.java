@@ -21,6 +21,7 @@ public final class CommandRules {
                 .register(new StanceRules.SetStanceRule())
                 .register(new SpawnUnitsRule())
                 .register(new AttackRule())
+                .register(new AttackSpreadRule())
                 .register(new AttackMoveRule())
                 .register(new FollowRule())
                 .register(new GrantRule())

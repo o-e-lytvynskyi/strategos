@@ -216,7 +216,8 @@ public final class RtsScreen extends Screen {
                     if (mode.placement().armed()) {
                         mode.placement().cancel(); // a right click while placing disarms, as in the classics
                     } else {
-                        mode.order(x(e.x()), y(e.y()), shift);
+                        mode.order(
+                                x(e.x()), y(e.y()), shift, Modifiers.ctrl(e.modifiers()), Modifiers.alt(e.modifiers()));
                     }
                 }
                 case BUILD -> mode.placement().cycle();

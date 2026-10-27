@@ -46,7 +46,8 @@ class CommandCodecTest {
                 new SetAutoReseed(524_293, true),
                 new TrainBatch(524_292, new TemplateId("strategos:unit/infantry"), 5),
                 new SpawnDeposit(new TemplateId("strategos:building/iron_mine"), 10, 12),
-                new SetStance(UnitSet.of(3, 4), Stance.STAND_GROUND));
+                new SetStance(UnitSet.of(3, 4), Stance.STAND_GROUND),
+                new AttackSpread(UnitSet.of(3, 4), 0x300007, QueueMode.QUEUE));
     }
 
     @Test
@@ -68,6 +69,30 @@ class CommandCodecTest {
                 "{\"kind\":\"strategos:move\",\"units\":[2,1],\"target\":{\"x\":1.5,\"z\":2.0},\"mode\":\"replace\",\"formation\":0}");
         assertThat(CODEC.parse(JsonOps.INSTANCE, json).getOrThrow())
                 .isEqualTo(Move.replace(UnitSet.of(1, 2), new Vec2d(1.5, 2.0)));
+    }
+
+    /** ORD-05: an attack written before the force flag reads as not forced, in JSON and on the wire, and hashes the same. */
+    @Test
+    void anAttackWithoutTheForceFlagReadsAsNotForced() {
+        JsonElement json =
+                JsonParser.parseString("{\"kind\":\"strategos:attack\",\"units\":[1],\"target\":7,\"mode\":\"queue\"}");
+        assertThat(CODEC.parse(JsonOps.INSTANCE, json).getOrThrow())
+                .isEqualTo(new Attack(UnitSet.of(1), 7, QueueMode.QUEUE));
+        Attack plain = new Attack(UnitSet.of(1), 7, QueueMode.QUEUE);
+        Attack forced = new Attack(UnitSet.of(1), 7, QueueMode.QUEUE, true);
+        byte[] bytes = WireCodec.encode(CommandKinds.DEFAULT.wireCodec(), plain);
+        byte[] bytesForced = WireCodec.encode(CommandKinds.DEFAULT.wireCodec(), forced);
+        assertThat(bytesForced).hasSameSizeAs(bytes);
+        assertThat(bytes[bytes.length - 1]).as("the mode byte as before").isEqualTo((byte) 1);
+        assertThat(WireCodec.decode(CommandKinds.DEFAULT.wireCodec(), bytesForced))
+                .isEqualTo(forced);
+        assertThat(WireCodec.decode(CommandKinds.DEFAULT.wireCodec(), bytes)).isEqualTo(plain);
+        assertThat(CODEC.encodeStart(JsonOps.INSTANCE, forced)
+                        .getOrThrow()
+                        .getAsJsonObject()
+                        .get("force"))
+                .isNotNull();
+        assertThat(forced).isNotEqualTo(plain);
     }
 
     @Test

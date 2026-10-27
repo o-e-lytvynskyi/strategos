@@ -31,4 +31,5 @@ public sealed interface Command extends Hashable
                 SetAutoReseed,
                 TrainBatch,
                 SpawnDeposit,
-                SetStance {}
+                SetStance,
+                AttackSpread {}

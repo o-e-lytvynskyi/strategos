@@ -154,7 +154,8 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
   2. A spread order splits attackers within one per target of the even split (L1).
   3. Force attack works on an own building (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** ORD-04, CMB-05 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-27 — M5 T8: `FocusTest.aFocusMakesEveryArcherInRangeShootIt` (1, L1), `FocusTest.aSpreadIsWithinOneOfEven` (7 n, k pairs) and the re-pick test (2, L1), `combattests.force_attack_on_an_own_building` (3, L3); `ForceAttackTest`, `FocusTargetsTest`, the focus ring; Ctrl forces, Alt spreads
 
 ### Units
 

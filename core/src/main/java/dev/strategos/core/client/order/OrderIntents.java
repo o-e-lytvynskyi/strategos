@@ -2,6 +2,7 @@ package dev.strategos.core.client.order;
 
 import dev.strategos.core.protocol.Attack;
 import dev.strategos.core.protocol.AttackMove;
+import dev.strategos.core.protocol.AttackSpread;
 import dev.strategos.core.protocol.Command;
 import dev.strategos.core.protocol.Follow;
 import dev.strategos.core.protocol.Gather;
@@ -40,6 +41,22 @@ public final class OrderIntents {
             return new Attack(units, enemy, mode);
         }
         return new Move(units, new Vec2d(localX, localZ), mode, 0);
+    }
+
+    /**
+     * The right click on a unit or building with a modifier (ORD-05): with {@code spread} (Alt) the selection's attack
+     * is shared over the enemies round the target; with {@code force} (Ctrl) it may be on one's own unit or building.
+     * Spread wins over force; none without a selection.
+     */
+    public static @Nullable Command attack(
+            List<Integer> selection, int target, boolean shift, boolean force, boolean spread) {
+        if (selection.isEmpty()) {
+            return null;
+        }
+        UnitSet units =
+                UnitSet.of(selection.stream().mapToInt(Integer::intValue).toArray());
+        QueueMode mode = shift ? QueueMode.QUEUE : QueueMode.REPLACE;
+        return spread ? new AttackSpread(units, target, mode) : new Attack(units, target, mode, force);
     }
 
     /**
