@@ -4,7 +4,7 @@ The project-wide picture, kept by the maintainer and updated at merges. Who work
 (`python3 tools/claims.py list`); live progress is in each developer's branch file ([branches/](branches/)). The session
 log is in [worklog.md](worklog.md); the work procedure is the `strategos-dev` skill (`.claude/skills/strategos-dev/SKILL.md`).
 
-**Last update:** 2026-10-25 · **Owner last seen:** 2026-10-25 · **Milestones done:** M0–M4 (M0 accepted) · **Open for claims:** M5
+**Last update:** 2026-10-27 · **Owner last seen:** 2026-10-27 · **Milestones done:** M0–M4 (M0 accepted) · **Open for claims:** M5
 
 ## For the owner
 
@@ -68,14 +68,13 @@ Answer in chat or here; the next session applies the answers.
    batch to a rally point, the computer building its base. `-Pdemo=new` shows only what you have not seen at its
    current version (kept in `~/.strategos/demo-seen`); `-Pdemo=m4` or `-Pdemo=crowd,melee` picks, `-Pdemo.skip=`
    leaves out; `-Pdemo=list` lists them. It does not replace the L7 demos above, which are play, not watching.
+11. **fix-main is merged (PR #21, 2026-10-27); one choice is yours, none urgent:** lev1pes's full Windows
+   `verify verifySlow verifySoak` took 17 min 38 s (an ordinary `verify` about 5 min 48 s, serial). Accept that
+   host cost, or ask for a test-placement proposal; no check moves. The two decisions above are open to your veto.
 
 ## Since the owner's last visit
 
-- 2026-10-26 · **The repository is public.** The owner switched the visibility; on the owner's word the agent set up
-  the rest of [security.md](security.md) §5: secret scanning and push protection, private vulnerability reporting,
-  approval for every outside contributor's workflow run, a read-only workflow token, merge commits only, Dependabot
-  alerts and updates, the labels, and the `main` ruleset (pull requests only, one Code Owner approval, stale
-  approvals dismissed, no force pushes or deletion; repository admins may bypass through a pull request only).
+Nothing yet: the owner was here on 2026-10-27.
 
 ## Milestones
 
@@ -112,7 +111,12 @@ Decisions taken on a recommendation and merged into `main` (from the branch file
 branch), and the maintainer's own: what, why, how to undo. The owner vetoes by answering here; a veto becomes a
 `fix-…` claim. The list is cleared once the owner has seen it.
 
-- None yet.
+- 2026-10-26 · (dev/lev1pes/fix-main) Idle movement reuses proven resting ground geometry (`RestingGround`) and skips
+  the avoidance solver only when zero velocity is conservatively feasible; separation, avoidance cadence and height
+  easing are unchanged, the caches are derived and never saved. Undo: remove `RestingGround` and the shortcut.
+- 2026-10-27 · (dev/lev1pes/fix-main) UNIT-05: the idle gate runs paced at 20 TPS with 2×200 unmeasured
+  preconditioning ticks, the same for idle and walking; limits, samples and warm-up unchanged
+  ([design/roadmap-changes.md](design/roadmap-changes.md)). Undo: revert the idle300 fixture in `PerfTests`.
 
 ## Blocked
 
@@ -224,6 +228,11 @@ Details are in [worklog.md](worklog.md).
 
 ## Known follow-ups (not blocking)
 
+- fix-main review (2026-10-27, minor): a differential test of the rest shortcut (state hashes with it on and off in a
+  dense settled scene); `RestingGround`'s reliance on `SurfaceGrid.version()` rising with every change, unstated and
+  untested, and its slot reuse after a unit's removal; `IdleBench` does not assert its units settled; UNIT-05 and the
+  idle300 javadoc should name the pacing and the preconditioning; the `ProtectedBlockIndexTest` ratio before and
+  after its probe change is not recorded.
 - [01-feasibility.md](01-feasibility.md) §3 predates the architecture in places; its precedence
   note says the architecture and the ADRs win. §6.5 was re-estimated after M0 (2026-10-22).
 - ADRs owed by future cards:
