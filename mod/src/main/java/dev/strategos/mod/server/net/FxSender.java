@@ -25,7 +25,8 @@ import net.minecraft.core.BlockPos;
  * track the body, a death in place of the tick's hits; it runs before the outputs apply, while the dead still have
  * bodies. The world's edits go to those who see their cells: the core's cracks and a torch's flames with the step, the blocks the writer
  * broke and placed after its flush. A page's events of a tick travel together, at most {@value Fx#MAX_EVENTS} to a
- * payload; until fog (M8) every member sees every cell.
+ * payload; until fog (M8) every member sees every cell. A shot's launch and impact go once to those who see either end
+ * ({@link ShotFx}).
  */
 public final class FxSender {
     private FxSender() {}
@@ -57,6 +58,7 @@ public final class FxSender {
             }
         }
         sendWorld(rt, cracks, net);
+        sendShots(rt, out, net);
         units.forEach((handle, kind) -> {
             UnitEntity body = rt.bodies().get(handle);
             if (body != null) {
@@ -70,6 +72,16 @@ public final class FxSender {
                         new FxPayload(new Fx(rt.id().value(), List.of(at))));
             }
         });
+    }
+
+    /** A tick's shots, each event once to those who see either end of its arc, 64 to a payload. */
+    private static void sendShots(MatchRuntime rt, TickOutputs out, NetGateway net) {
+        List<Fx.Event> events = ShotFx.events(out.events(), rt.space().origin().getY());
+        for (ShotFx.Group g : ShotFx.group(events)) {
+            net.send(
+                    new Audience.SeesEither(rt.id(), g.cellAx(), g.cellAz(), g.cellBx(), g.cellBz()),
+                    new FxPayload(new Fx(rt.id().value(), g.events())));
+        }
     }
 
     /** The blocks the writer broke and placed in {@code rt}'s space this tick, after its flush. */

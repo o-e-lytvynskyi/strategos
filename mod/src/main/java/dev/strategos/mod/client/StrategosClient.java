@@ -12,6 +12,8 @@ import dev.strategos.mod.Strategos;
 import dev.strategos.mod.client.audio.FxPlayer;
 import dev.strategos.mod.client.debug.ClientDebugState;
 import dev.strategos.mod.client.debug.DebugOverlayHost;
+import dev.strategos.mod.client.fx.ShotArcRenderer;
+import dev.strategos.mod.client.fx.ShotArcs;
 import dev.strategos.mod.client.hud.RtsHud;
 import dev.strategos.mod.client.net.ClientPayloads;
 import dev.strategos.mod.client.overlay.FarMarkers;
@@ -28,6 +30,7 @@ import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RenderFrameEvent;
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import org.jspecify.annotations.Nullable;
 
@@ -43,7 +46,8 @@ public final class StrategosClient {
     private static final ClientMatchModel MODEL = new ClientMatchModel();
     private static final FarMarkers FAR = new FarMarkers(MODEL);
     private static final HealthBarOverlay BARS = new HealthBarOverlay(MODEL, RTS);
-    private static final FxPlayer SOUNDS = new FxPlayer(RTS);
+    private static final ShotArcs ARCS = new ShotArcs();
+    private static final FxPlayer SOUNDS = new FxPlayer(RTS, ARCS);
     private static final UnitLod LOD = new UnitLod();
     private static volatile @Nullable MatchJoin match;
     private static volatile List<String> resources = List.of();
@@ -64,7 +68,9 @@ public final class StrategosClient {
             state = null;
             DEBUG.reset();
             MODEL.clear();
+            ARCS.clear();
         });
+        NeoForge.EVENT_BUS.addListener(RenderLevelStageEvent.class, new ShotArcRenderer(ARCS)::render);
         new DebugOverlayHost(modBus, DEBUG);
         RTS.register(modBus);
         HUD.register(modBus); // after RTS mode: its tick builds from the tick RTS mode just ran
@@ -119,6 +125,7 @@ public final class StrategosClient {
 
     public static void match(MatchJoin join) {
         match = join;
+        ARCS.joined(join.matchId());
         resources = resources(join);
     }
 
@@ -144,6 +151,9 @@ public final class StrategosClient {
 
     public static void state(MatchStateMsg update) {
         state = update;
+        if (update.lifecycle() == MatchStateMsg.Lifecycle.ENDED) {
+            ARCS.clear();
+        }
     }
 
     /** The server's template set as this client decoded it (DATA-03); the bundled one before the first arrives. */

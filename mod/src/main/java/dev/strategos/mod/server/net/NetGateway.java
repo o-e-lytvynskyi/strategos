@@ -98,6 +98,9 @@ public final class NetGateway {
                 }
             }
             case Audience.SeesCell c -> toMembers(c.match(), payload); // every member sees every cell until fog (M8)
+            case Audience.SeesEither
+                    e -> // AFTER-M8: deliver to the union of the two cells' viewers once fog of war exists
+                toMembers(e.match(), payload);
             case Audience.Match m -> toMembers(m.match(), payload);
         }
     }

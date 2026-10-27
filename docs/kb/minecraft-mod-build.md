@@ -127,3 +127,10 @@ second is unary plus on `b()`'s result, and `x` holds only `a()`. `jmhCompare` c
 missing from the result was never reported; once one was missing, the gate died with
 `No signature of method: java.lang.String.positive()` instead of naming it. Keep the operator at
 the end of the first line (`a() +` then `b()`), and give a new gate check a case that must fail.
+
+## JMH results carry the JVM's absolute path
+
+Every row of `core/build/reports/jmh/result.json` names its `"jvm"` by absolute path, the home
+directory included. A row copied into `perf/baseline-*.json` must have it rewritten to
+`~/.gradle/…` before the commit (security.md §4); `grep -rn '/Users/\|/home/' perf/` is the check.
+M5 T3c.1 pushed one such row (287bf54) and fixed it in the next commit.

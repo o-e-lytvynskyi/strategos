@@ -4,19 +4,27 @@
 
 ## Now
 
-- **Milestone:** M5 Combat; 7 of 22 tasks complete (T1, T2a, T2b, T3a, T3b.1, T3b.2, T3c.1).
-- **In progress:** M5 T3c.2 shot FX delivery and client since 2026-10-27.
-- **Last finished task:** T3c.1 shot FX state and wire (2026-10-27).
-- **Next task:** T3c.2, then T4 high ground.
+- **Milestone:** M5 Combat; 8 of 22 tasks complete (T1–T3c.2).
+- **In progress:** M5 T4 high ground (CMB-16) since 2026-10-27.
+- **Last finished task:** T3c.2 shot FX delivery and client (2026-10-27).
+- **Next task:** T4, then T5 stances (CMB-05).
 - **Merged from main last:** a10a8fd (2026-10-27), PR #21 fix-main.
 
 ## Depends on unfinished work
 
+- M8 fog of war: `Audience.SeesEither` (shot FX) goes to every match member, as `SeesCell` does; `AFTER-M8` in NetGateway marks the union of the two cells' viewers.
 - M0-M4 are merged. No unfinished milestone implementation is required by M5.
 - fix-main (lev1pes) is done and merged into main by PR #21; it no longer bears on M5.
 - Preserve codex/m5-combat and dev/lev1pes/m5. Import code and task-specific evidence selectively after assignment; do not copy old central STATE/worklog records over current main.
 
 ## Log
+
+### 2026-10-27 — M5 T3c.2
+
+- **T3c.2 · Shot FX delivery and client** — CMB-04 in progress (criteria 1–4 pass; 5 waits for T14's budget E). `ShotFx` turns `ShotFired`/`ShotLanded` into path events (core Y made origin-relative like FLAME) grouped by the pages of both ends, 64 to a payload, sent once to the new `Audience.SeesEither`; client `ShotArcs` (cap 512, dropped at landing, on the matching impact, on match change) drawn as the vanilla arrow texture on crossed quads at AFTER_ENTITIES; bow cue at the launch, arrow-hit cue at the landing point. Tests: `ShotArcTest` (4, L1), `ShotArcsTest`, `ShotFxTest`, `PayloadRoundTripTest.aShotFxPayloadRoundTripsWithinItsCap` (L2), `nettests.shot_fx_audience` (member gets 3 launches and 1 impact, outsider none).
+- Engine names checked in the 1.21.1 sources: `TippableArrowRenderer.NORMAL_ARROW_LOCATION`, `RenderType.entityCutoutNoCull`, ArrowRenderer's UVs, `LightTexture.FULL_BRIGHT`, `OverlayTexture.NO_OVERLAY`, `RenderLevelStageEvent.Stage.AFTER_ENTITIES`. The arc's look is unseen until T17's window batch.
+- `verify` green (about 71 s); no core tick change, so no slow gates or JMH.
+- **Next:** T4 high ground.
 
 ### 2026-10-27 — M5 T3c.1
 
@@ -128,10 +136,14 @@
 ## For the owner
 
 1. Release #18 and successor assignment #19 are merged. No assignment approval remains outstanding for M5.
-2. The historical fix-main investigation remains with lev1pes. Release proposal [#20](https://github.com/o-e-lytvynskyi/strategos/pull/20) remains a human decision; no implementation under that claim starts without successor assignment. Current M5 performance is now green, so this proposal no longer pauses ready M5 tasks. Historical Linux CI is not declared repaired.
+2. fix-main is done (lev1pes, PR #21, merged here at a10a8fd); release proposal #20 is moot.
+3. Commit 287bf54 on this branch contains the home-directory JVM path in one re-taken perf/baseline-m4pro.json row; cc04642 removes it. The history is pushed and is not rewritten (AGENTS.md); the repository is private. Nothing needed unless the history should be scrubbed before any visibility change.
+4. Obsolete: `dev/o-e-lytvynskyi/fix-main` (one docs commit 526dc72 proposing a release of lev1pes's fix-main, made moot by PR #21) and the local worktrees `strategos-fix-main`, `strategos-m5-content` (its T3b.2 draft is now in 95484c3) and `strategos-m5-control`. Recommend deleting them; left in place until you say so.
 
 ## Decisions taken
 
+- 2026-10-27 · Shot arcs render at AFTER_ENTITIES (the entity cutout render type fits there) and in any camera mode; size and orientation are checked in T17's images. Undo by moving the stage.
+- 2026-10-27 · trial implementer: pass — T3c.2 verified every engine name in the sources with file:line, reported the coordinate convention it found, and stayed inside its files.
 - 2026-10-27 · Re-take only the `ShotBench.volley60{mode=miss}` row of perf/baseline-m4pro.json (0.827 → 1.085 us/op): the growth is the 60 `ShotLanded` records the spec requires for misses, confirmed in two runs; limits unchanged. Undo by restoring the row from 95484c3.
 - 2026-10-27 · Fix `jmhCompare` to report missing benchmarks (it never did); a stricter gate, not a weaker one. Undo is not recommended.
 - 2026-10-27 · trial implementer: pass — T3c.1 matched the brief with no deviations, kept old constructors and bytes, named its one test-assertion change; the orchestrator read the core diff.
