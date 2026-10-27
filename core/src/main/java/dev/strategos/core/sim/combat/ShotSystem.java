@@ -1,5 +1,6 @@
 package dev.strategos.core.sim.combat;
 
+import dev.strategos.core.content.Footprint;
 import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.sim.MatchState;
@@ -9,6 +10,7 @@ import dev.strategos.core.sim.ShotFired;
 import dev.strategos.core.sim.ShotLanded;
 import dev.strategos.core.sim.ShotRequested;
 import dev.strategos.core.sim.UnitStruck;
+import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.spatial.UnitFilter;
 import java.util.ArrayList;
 import java.util.List;
@@ -96,13 +98,16 @@ public final class ShotSystem implements MatchSystem {
         for (int i = 0; i < pending.size(); i++) {
             Pending row = pending.get(i);
             ShotRequested request = row.request();
-            if (!state.entities().isAlive(request.shooter())
+            boolean town = BuildingStore.isBuilding(request.shooter()); // CMB-07: a building's arrow
+            if (!(town
+                            ? state.buildings().alive(request.shooter())
+                            : state.entities().isAlive(request.shooter()))
                     || !state.entities().isAlive(request.target())) {
                 continue;
             }
             int shooter = Handle.index(request.shooter());
             int target = Handle.index(request.target());
-            if (Engagement.gap(state, shooter, target) > request.range()) continue;
+            if (!town && Engagement.gap(state, shooter, target) > request.range()) continue;
             double vx = state.surfaces().version() == 0
                     ? state.motion().x(target) - row.targetX()
                     : state.motion().vx(target);
@@ -110,15 +115,29 @@ public final class ShotSystem implements MatchSystem {
                     ? state.motion().z(target) - row.targetZ()
                     : state.motion().vz(target);
             UnitTemplate body = state.templates().byIndex(state.identity().templateIndex(target));
-            UnitTemplate shooterBody =
-                    state.templates().byIndex(state.identity().templateIndex(shooter));
+            double fromX;
+            double fromY;
+            double fromZ;
+            if (town) {
+                Footprint at = state.footprintOf(request.shooter());
+                fromX = at.anchorX() + at.spanX() / 2.0;
+                fromY = state.buildings().baseY(request.shooter())
+                        + state.blueprintOf(request.shooter()).sizeY();
+                fromZ = at.anchorZ() + at.spanZ() / 2.0;
+            } else {
+                UnitTemplate shooterBody =
+                        state.templates().byIndex(state.identity().templateIndex(shooter));
+                fromX = state.motion().x(shooter);
+                fromY = state.motion().y(shooter) + shooterBody.height() * 0.75;
+                fromZ = state.motion().z(shooter);
+            }
             ShotStore.Shot shot = store.launch(
                     state.config().seed(),
                     state.tick(),
                     new ShotStore.Launch(
-                            state.motion().x(shooter),
-                            state.motion().y(shooter) + shooterBody.height() * 0.75,
-                            state.motion().z(shooter),
+                            fromX,
+                            fromY,
+                            fromZ,
                             state.motion().x(target),
                             state.motion().y(target) + body.height() / 2,
                             state.motion().z(target),
@@ -140,7 +159,7 @@ public final class ShotSystem implements MatchSystem {
                             shot.landingZ(),
                             from.tick(),
                             shot.landTick()));
-            state.outputs().add(new UnitStruck(request.shooter(), request.target()));
+            if (!town) state.outputs().add(new UnitStruck(request.shooter(), request.target()));
         }
         pending.clear(); // every intent belongs to this tick; FINAL sees none
     }

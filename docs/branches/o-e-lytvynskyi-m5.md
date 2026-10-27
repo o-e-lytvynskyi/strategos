@@ -4,10 +4,10 @@
 
 ## Now
 
-- **Milestone:** M5 Combat; 14 of 23 tasks complete (T1–T8).
-- **In progress:** M5 T9 civic centre arrows (CMB-07) since 2026-10-27.
-- **Last finished task:** T8 focus, spread and force attack (2026-10-27).
-- **Next task:** T9, then T10 garrison and the bell (BLD-16), T11 (BLD-11).
+- **Milestone:** M5 Combat; 15 of 23 tasks complete (T1–T9).
+- **In progress:** M5 T10 garrison and the bell (BLD-16) since 2026-10-27.
+- **Last finished task:** T9 civic centre arrows (2026-10-27).
+- **Next task:** T10, then T11 (BLD-11).
 - **Merged from main last:** a10a8fd (2026-10-27), PR #21 fix-main.
 
 ## Depends on unfinished work
@@ -18,6 +18,13 @@
 - Preserve codex/m5-combat and dev/lev1pes/m5. Import code and task-specific evidence selectively after assignment; do not copy old central STATE/worklog records over current main.
 
 ## Log
+
+### 2026-10-27 — M5 T9
+
+- **T9 · CMB-07 Civic centre arrows** — CMB-07 done. `Attack/Building` (arrows 3, perGarrisoned 1, interval 80, pierce 8, range 24) on the civic centre with validation and provenance; `TownArrows` (UNIT_AI) picks enemies in range by preference then distance, arrow k on enemy k mod n, and requests CMB-04 shots from the footprint's middle at its top; the volley phase is derived ((tick + slot) % interval), no new state; the garrison seam returns 0 until T10. Tests: `TownArrowsTest` (4), `combattests.the_centre_breaks_a_small_raid`.
+- The arrows broke M4's `EconomyBotTest.tenSeededMatchesEndWithAWinnerWithinThirtyMinutes` (seeds 3, 5 no winner; 4, 6, 7, 9, 10 stalled): the bot sent waves of any size, the arrows shot them down, and wood-starved replacement left it silent past the stall check. Fixed in the bot's data (`ai/economy.json` attack.min 1 → 14), the test unchanged: all ten seeds win, at 18.9k–19.6k ticks (before arrows seven took 26k–33k). `DefendedCentreWaveTest`. Bot follow-ups for T13 in For the owner 8.
+- Gates: `verify verifySlow verifySoak` green; `jmhCompare` green (rebuild1000 once bimodal 4.85/7.70, then 4.82/4.82 twice).
+- **Next:** T10.
 
 ### 2026-10-27 — M5 T8
 
@@ -186,9 +193,13 @@
 5. `SpatialBench.rebuild1000` is bimodal across JMH forks on this Mac: twice today one fork read 7.4–7.7 us while the other read 4.8 (baseline 4.79), failing the 15 % gate on the average; each single rerun passed with both forks at 4.7–4.9. No code touched the spatial index. Options: (a) leave it — a red run is rerun once by the rule (current); (b) give that benchmark more forks so one outlier fork cannot carry the average (a measurement change, your call); (c) investigate the bimodality (memory layout of the grid arrays). Recommend (b) with 5 forks for this benchmark only.
 6. Proposal (scope): replicate each unit's stance to its owner so the card's active stance is always right (now it shows the stance the player's own card last sent, else the template's). A small protocol addition; not in the approved cards' wording, so it waits for you.
 7. Follow-up candidate (no scope change): in duels a horseman sometimes stands ~80 ticks beside the back-rank archer it is focused on before striking. Probably a melee chase/ring-slot detail for the large class; to look at with T13's battle AI unless you want it earlier.
+8. For T13 (battle AI), found while fixing the bot against arrows: its late economy starves of wood (24 workers, food, stone and iron in the thousands); its waves should weigh army strength against the target's defence instead of a fixed minimum, and pull back a doomed wave. T13 will take these unless you say otherwise.
 
 ## Decisions taken
 
+- 2026-10-27 · The economy bot's minimum wave raised to 14 spearmen (data only) so it overcomes the centre's arrows; neither the arrows nor the test moved. Undo in ai/economy.json.
+- 2026-10-27 · A town volley's range is checked at selection, not again at release (a target a block past the edge still takes the arrow). Undo by a release-time check for building shooters.
+- 2026-10-27 · trial implementer: pass — T9, and it reported the bot regression with its cause instead of relaxing the test.
 - 2026-10-27 · A spread attacker re-picks among the current targets of its spread's other attackers (the order's group id), not a saved original set, so nothing new is persisted; with none left it falls back to its stance's nearest enemy. A grouped ATTACK may now finish by the crowd-arrival rule when stuck, as grouped moves do. Undo with a persisted spread set.
 - 2026-10-27 · trial implementer: pass — T8 complete with a backward-compatible force flag; it flagged the limiter's default branch instead of editing an unnamed file.
 - 2026-10-27 · Tuned the §2.7 roster (above) to satisfy the 170-of-200 counters at equal cost; cost counted as food + wood + iron. Undo by reverting the provenance rows and rerunning DuelTest.

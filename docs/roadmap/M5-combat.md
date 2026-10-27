@@ -91,7 +91,8 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
   2. Only enemies are targeted (L1).
   3. The civic centre breaks a small raid in a GameTest as the L1 run predicts (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** CMB-04, BLD-08 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-27 — M5 T9: `TownArrowsTest.countAndDpsAreTheSheets` (3 arrows every 80 ticks, damage = landed arrows × the sheet's 8 pierce after resistance) (1, L1), `TownArrowsTest.onlyEnemies` (2, L1), `combattests.the_centre_breaks_a_small_raid` with its headless replay (3, L3)
 
 #### CMB-08 · First-person combat (if D-08 chooses it)
 - **Value:** In first person you can fight beside your soldiers (P2).

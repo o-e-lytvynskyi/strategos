@@ -396,7 +396,7 @@ Cards: [roadmap/M5-combat.md](roadmap/M5-combat.md#cards). 14 cards, at most 41 
 |---|---|---|---|---|
 | CMB-04 | Ranged combat and analytic projectiles | L | CMB-01, NET-01 | in_progress |
 | CMB-05 | Stances, targeting, chase and flee | M | CMB-02, CMB-04, CORE-08 | done |
-| CMB-07 | Civic centre arrows | M | CMB-04, BLD-08 | specified |
+| CMB-07 | Civic centre arrows | M | CMB-04, BLD-08 | done |
 | CMB-08 | First-person combat (if D-08 chooses it) | M | CAM-05, CMB-01, D-08 | deferred |
 | CMB-16 | High ground | S | CMB-04, DATA-02 | done |
 | CMB-17 | Combat readability: attack lines and the under-attack flash | S | CMB-06, UI-02 | specified |

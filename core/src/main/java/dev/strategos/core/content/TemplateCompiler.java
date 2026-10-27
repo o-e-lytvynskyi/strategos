@@ -475,6 +475,7 @@ public final class TemplateCompiler {
         JsonObject identity = f.object(json, "", "Identity", true);
         String name = identity == null ? id.value() : f.string(identity, "/Identity", "name", id.value());
         String classes = identity == null ? "" : f.string(identity, "/Identity", "classes", "");
+        f.buildingAttack(json);
         JsonElement shape = json.get("Blueprint");
         if (shape == null || !shape.isJsonObject()) {
             problems.add(TemplateProblem.error(file, "/Building/blueprint", "a building needs its blueprint"));
@@ -568,6 +569,53 @@ public final class TemplateCompiler {
         void preferred(JsonObject attack, String pointer) {
             if (attack.has("preferred")) {
                 string(attack, pointer, "preferred", "");
+            }
+        }
+
+        /**
+         * A building's town arrows (CMB-07), if it has any: known keys, each number within its range, the counts whole,
+         * and arrows that can fly (a pierce, a range and a period).
+         */
+        void buildingAttack(JsonObject building) {
+            JsonObject attack = object(building, "", "Attack", false);
+            JsonObject arrows = attack == null ? null : object(attack, "/Attack", "Building", false);
+            if (arrows == null) return;
+            known(
+                    arrows,
+                    "/Attack/Building",
+                    "arrows",
+                    "perGarrisoned",
+                    "interval",
+                    "pierce",
+                    "range",
+                    "speed",
+                    "spread",
+                    "preferred");
+            preferred(arrows, "/Attack/Building");
+            for (String path : CorePaths.buildingAttack()) {
+                rangedNumber(arrows, path);
+            }
+            for (String path : List.of(
+                    CorePaths.BUILDING_ARROWS, CorePaths.BUILDING_PER_GARRISONED, CorePaths.BUILDING_INTERVAL)) {
+                String key = path.substring(path.lastIndexOf('/') + 1);
+                if (arrows.get(key) instanceof JsonPrimitive p && p.isNumber() && p.getAsDouble() % 1 != 0) {
+                    problems.add(TemplateProblem.error(file, "/" + path, "expected a whole number, got " + p));
+                }
+            }
+            if (arrows.has("arrows")
+                    && arrows.get("arrows") instanceof JsonPrimitive n
+                    && n.isNumber()
+                    && n.getAsDouble() > 0) {
+                for (String path : List.of(CorePaths.BUILDING_PIERCE, CorePaths.BUILDING_RANGE)) {
+                    String key = path.substring(path.lastIndexOf('/') + 1);
+                    if (!(arrows.get(key) instanceof JsonPrimitive p) || !p.isNumber() || !(p.getAsDouble() > 0)) {
+                        problems.add(TemplateProblem.error(file, "/" + path, "arrows need a positive " + key));
+                    }
+                }
+                if (!arrows.has("interval")) {
+                    problems.add(
+                            TemplateProblem.error(file, "/" + CorePaths.BUILDING_INTERVAL, "arrows need an interval"));
+                }
             }
         }
 

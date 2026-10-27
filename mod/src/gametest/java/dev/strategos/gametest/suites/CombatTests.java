@@ -962,6 +962,46 @@ public final class CombatTests {
                 .thenSucceed();
     }
 
+    /**
+     * CMB-07.3: faction 1's civic centre stands at (4, 4) and two of faction 0's spearmen are sent to burn it from the
+     * far corner, inside its 24-block range. Its arrows kill them before the centre falls; the match's journal, replayed
+     * in L1 from its start, ends on the live match's hash, so the L1 run of the same layout fights the same fight.
+     */
+    @StrategosTest(timeoutTicks = 3_000)
+    public static void theCentreBreaksASmallRaid(GameTestHelper h) {
+        MatchRuntime rt = match(h);
+        rt.submit(
+                PlayerSlot.ADMIN,
+                new dev.strategos.core.protocol.SpawnBuilding(
+                        new TemplateId("strategos:building/civic_centre"), new FactionSlot(1), 4, 4, 0));
+        rt.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.INFANTRY, new FactionSlot(0), new Vec2d(26, 26), 2, 1));
+        var state = new Object() {
+            int centre;
+            boolean ordered;
+        };
+        h.onEachTick(() -> {
+            MatchCore core = core(rt);
+            if (!state.ordered) {
+                int[] raiders = core.queries().unitHandlesOf(new FactionSlot(0));
+                if (raiders.length != 2 || core.queries().buildings().isEmpty()) {
+                    return;
+                }
+                state.centre = core.queries().buildings().get(0).handle();
+                rt.submit(new PlayerSlot(0), Attack.replace(UnitSet.of(raiders), state.centre));
+                state.ordered = true;
+                return;
+            }
+            check(!core.queries().buildings().isEmpty(), "the raid burnt the centre down");
+            if (core.queries().unitHandlesOf(new FactionSlot(0)).length > 0) {
+                return;
+            }
+            ReplayResult replay = ReplayDriver.replay(core.journal(), TemplateSet.builtin());
+            check(replay.matches(), "the journal does not replay: " + replay);
+            check(replay.finalHash() == core.stateHash(), "the replay ends on another hash: " + replay);
+            h.succeed();
+        });
+    }
+
     // ---- The roster's duels (UNIT-07, check 3): the L1 matrix's smoke on real bodies, no threshold on the wins.
 
     private static final Logger LOG = LoggerFactory.getLogger(CombatTests.class);

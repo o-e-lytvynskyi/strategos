@@ -7,6 +7,7 @@ import dev.strategos.core.port.MetricsSink;
 import dev.strategos.core.protocol.CommandKinds;
 import dev.strategos.core.sim.combat.CombatSystem;
 import dev.strategos.core.sim.combat.ShotSystem;
+import dev.strategos.core.sim.combat.TownArrows;
 import dev.strategos.core.sim.command.CommandRules;
 import dev.strategos.core.sim.command.CommandSystem;
 import dev.strategos.core.sim.journal.Journal;
@@ -47,6 +48,7 @@ final class MatchCoreImpl implements MatchCore {
         this.queries = new QueriesImpl(state, paths);
         scheduler.register(new AiSystem(queries)); // computer players, after the commands
         scheduler.register(new UnitAiSystem(state));
+        scheduler.register(new TownArrows()); // a centre's volley is an intent like a unit's, after the units'
         scheduler.register(paths.requests());
         scheduler.register(new MotionSystem(state));
         scheduler.register(state.spatial()); // the grid's rebuild ends MOVEMENT

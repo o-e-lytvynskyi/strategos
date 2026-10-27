@@ -56,6 +56,34 @@ public final class CorePaths {
      */
     public static final String MELEE_BONUS_PREFIX = "Attack/Melee/bonus/";
 
+    /**
+     * A building's town arrows (CMB-07): a volley of {@code arrows} plus {@code perGarrisoned} for each unit inside,
+     * every {@code interval} ticks, each arrow {@code pierce} at up to {@code range} blocks from the footprint's middle;
+     * {@code preferred} picks the targets' classes first, {@code speed} and {@code spread} default to the archer's. No
+     * leaf, no arrows. Optional, so they stay out of {@link #all()}.
+     */
+    public static final String BUILDING_ARROWS = "Attack/Building/arrows";
+
+    public static final String BUILDING_PER_GARRISONED = "Attack/Building/perGarrisoned";
+    public static final String BUILDING_INTERVAL = "Attack/Building/interval";
+    public static final String BUILDING_PIERCE = "Attack/Building/pierce";
+    public static final String BUILDING_RANGE = "Attack/Building/range";
+    public static final String BUILDING_SPEED = "Attack/Building/speed";
+    public static final String BUILDING_SPREAD = "Attack/Building/spread";
+    public static final String BUILDING_PREFERRED = "Attack/Building/preferred";
+
+    /** The numbers of {@code Attack/Building}, in the order a template lists them. */
+    public static java.util.List<String> buildingAttack() {
+        return java.util.List.of(
+                BUILDING_ARROWS,
+                BUILDING_PER_GARRISONED,
+                BUILDING_INTERVAL,
+                BUILDING_PIERCE,
+                BUILDING_RANGE,
+                BUILDING_SPEED,
+                BUILDING_SPREAD);
+    }
+
     public static final double DEFAULT_HEALTH = 100;
     public static final double MAX_RESISTANCE = 20;
     public static final double DEFAULT_REACH = 1;
@@ -126,9 +154,14 @@ public final class CorePaths {
                     HIGH_MAX,
                     VISION,
                     FLEE,
-                    STANCE -> 0;
-            case HEALTH, MELEE_REPEAT, RANGED_REPEAT -> 1;
-            case RANGED_SPEED -> 0.01;
+                    STANCE,
+                    BUILDING_ARROWS,
+                    BUILDING_PER_GARRISONED,
+                    BUILDING_PIERCE,
+                    BUILDING_RANGE,
+                    BUILDING_SPREAD -> 0;
+            case HEALTH, MELEE_REPEAT, RANGED_REPEAT, BUILDING_INTERVAL -> 1;
+            case RANGED_SPEED, BUILDING_SPEED -> 0.01;
             case RESIST_HACK, RESIST_PIERCE, RESIST_CRUSH -> -MAX_RESISTANCE;
             default -> Double.NEGATIVE_INFINITY;
         };
@@ -140,10 +173,13 @@ public final class CorePaths {
             case TURN_RATE -> 180;
             case MELEE_REACH -> 8;
             case MELEE_PREPARE, MELEE_REPEAT -> 200;
-            case RANGED_RANGE -> 128;
+            case RANGED_RANGE, BUILDING_RANGE -> 128;
+            case BUILDING_ARROWS, BUILDING_PER_GARRISONED -> 32;
+            case BUILDING_INTERVAL -> 1_200;
+            case BUILDING_PIERCE -> Float.MAX_VALUE;
             case RANGED_PREPARE, RANGED_REPEAT -> 200;
-            case RANGED_SPEED -> 64;
-            case RANGED_SPREAD -> 100;
+            case RANGED_SPEED, BUILDING_SPEED -> 64;
+            case RANGED_SPREAD, BUILDING_SPREAD -> 100;
             case HIGH_RANGE, HIGH_DAMAGE -> 1;
             case HIGH_MAX -> 64;
             case RANGED_HACK, RANGED_PIERCE, RANGED_CRUSH, RANGED_FIRE -> Float.MAX_VALUE;
