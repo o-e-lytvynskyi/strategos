@@ -29,3 +29,4 @@ before any development starts, so two developers can never hold the same work (A
 | M5 | lev1pes | dev/lev1pes/m5 | released | 2026-10-25 | owner-authorized release on 2026-10-26 for takeover by o-e-lytvynskyi; holder approval is not claimed; preserve legacy T1-T2 and both original branches |
 | M6 T2–T17 | dyadik | dev/dyadik/m6-t2-t17 | assigned | 2026-10-25 | needs nothing from M5 (spec §7.1); waits for «open M6 for claims» |
 | M5 | o-e-lytvynskyi | dev/o-e-lytvynskyi/m5 | assigned | 2026-10-26 | owner-authorized takeover after release PR #18; preserve and reconcile legacy T1-T2 from codex/m5-combat; fix-main remains a separate claim |
+| main-save-reload | lev1pes | dev/lev1pes/main-save-reload | assigned | 2026-10-27 | follow-up bug fixes #23, #24, #25 found on main b207e50; excludes performance fix-main/PR #21 and new M5 scope |
