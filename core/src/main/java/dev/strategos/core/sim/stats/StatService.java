@@ -70,6 +70,12 @@ public final class StatService {
     private int reach;
     private int prepare;
     private int repeat;
+    private int[] ranged = new int[4];
+    private int rangedRange;
+    private int rangedPrepare;
+    private int rangedRepeat;
+    private int rangedSpeed;
+    private int rangedSpread;
     private int vision;
     private int flee;
     private int classesPath;
@@ -160,6 +166,17 @@ public final class StatService {
         this.reach = path(CorePaths.MELEE_REACH);
         this.prepare = path(CorePaths.MELEE_PREPARE);
         this.repeat = path(CorePaths.MELEE_REPEAT);
+        this.ranged = new int[] {
+            path(CorePaths.RANGED_HACK),
+            path(CorePaths.RANGED_PIERCE),
+            path(CorePaths.RANGED_CRUSH),
+            path(CorePaths.RANGED_FIRE)
+        };
+        this.rangedRange = path(CorePaths.RANGED_RANGE);
+        this.rangedPrepare = path(CorePaths.RANGED_PREPARE);
+        this.rangedRepeat = path(CorePaths.RANGED_REPEAT);
+        this.rangedSpeed = path(CorePaths.RANGED_SPEED);
+        this.rangedSpread = path(CorePaths.RANGED_SPREAD);
         this.vision = path(CorePaths.VISION);
         this.flee = path(CorePaths.FLEE);
         this.classesPath = tokenPath(IDENTITY_CLASSES);
@@ -215,6 +232,54 @@ public final class StatService {
     /** Whether unit {@code index} has a melee attack: some damage per hit. */
     public boolean canMelee(int index) {
         return meleeDamage(index, 0) > 0 || meleeDamage(index, 1) > 0 || meleeDamage(index, 2) > 0;
+    }
+
+    /** Ranged damage of type 0 hack, 1 pierce, 2 crush or 3 fire, after modifiers. */
+    public double rangedDamage(int index, int type) {
+        double value = read(index, ranged[type]);
+        return Double.isNaN(value) ? 0 : value;
+    }
+
+    /** Whether the unit has a ranged weapon with positive range and damage. */
+    public boolean canRanged(int index) {
+        return rangedRange(index) > 0
+                && (rangedDamage(index, 0) > 0
+                        || rangedDamage(index, 1) > 0
+                        || rangedDamage(index, 2) > 0
+                        || rangedDamage(index, 3) > 0);
+    }
+
+    /** Whether the unit can attack by either supported weapon. */
+    public boolean canAttack(int index) {
+        return canMelee(index) || canRanged(index);
+    }
+
+    /** Ranged reach in blocks. Zero disables a ranged weapon. */
+    public double rangedRange(int index) {
+        double value = read(index, rangedRange);
+        return Double.isNaN(value) ? 0 : value;
+    }
+
+    /** Ticks from starting a ranged attack to its first shot. */
+    public int rangedPrepare(int index) {
+        return (int) Math.round(read(index, rangedPrepare));
+    }
+
+    /** Ticks between ranged shots. */
+    public int rangedRepeat(int index) {
+        return (int) Math.max(1, Math.round(read(index, rangedRepeat)));
+    }
+
+    /** Projectile speed in blocks per tick. */
+    public double rangedSpeed(int index) {
+        double value = read(index, rangedSpeed);
+        return Double.isNaN(value) ? CorePaths.min(CorePaths.RANGED_SPEED) : value;
+    }
+
+    /** Horizontal shot spread, in percent of distance. */
+    public double rangedSpread(int index) {
+        double value = read(index, rangedSpread);
+        return Double.isNaN(value) ? 0 : value;
     }
 
     /** Unit {@code index}'s melee reach, in blocks between its edge and its target's. */

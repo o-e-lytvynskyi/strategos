@@ -369,6 +369,36 @@ public final class TemplateCompiler {
         if (body != null) {
             f.known(body, "/Body", "entityType", "model", "skin", "width", "height", "radius");
         }
+        JsonObject attack = f.object(json, "", "Attack", false);
+        if (attack != null) {
+            JsonObject ranged = f.object(attack, "/Attack", "Ranged", false);
+            if (ranged != null) {
+                f.known(
+                        ranged,
+                        "/Attack/Ranged",
+                        "hack",
+                        "pierce",
+                        "crush",
+                        "fire",
+                        "range",
+                        "prepare",
+                        "repeat",
+                        "speed",
+                        "spread");
+                for (String path : List.of(
+                        CorePaths.RANGED_HACK,
+                        CorePaths.RANGED_PIERCE,
+                        CorePaths.RANGED_CRUSH,
+                        CorePaths.RANGED_FIRE,
+                        CorePaths.RANGED_RANGE,
+                        CorePaths.RANGED_PREPARE,
+                        CorePaths.RANGED_REPEAT,
+                        CorePaths.RANGED_SPEED,
+                        CorePaths.RANGED_SPREAD)) {
+                    f.rangedNumber(ranged, path);
+                }
+            }
+        }
         String name = identity == null ? id.value() : f.string(identity, "/Identity", "name", id.value());
         String classes = identity == null ? "" : f.string(identity, "/Identity", "classes", "");
         double walkSpeed = motion == null ? 0 : f.positive(motion, "/UnitMotion", "walkSpeed", null);
@@ -511,6 +541,21 @@ public final class TemplateCompiler {
                 return 0;
             }
             return v;
+        }
+
+        void rangedNumber(JsonObject ranged, String path) {
+            String key = path.substring("Attack/Ranged/".length());
+            JsonElement e = ranged.get(key);
+            if (e == null) return;
+            String pointer = "/Attack/Ranged/" + key;
+            if (!(e instanceof JsonPrimitive p) || !p.isNumber()) {
+                problems.add(TemplateProblem.error(file, pointer, "expected a number, got " + e));
+                return;
+            }
+            double value = p.getAsDouble();
+            if (!Double.isFinite(value) || value < CorePaths.min(path) || value > CorePaths.max(path)) {
+                problems.add(TemplateProblem.error(file, pointer, "number outside its allowed range: " + e));
+            }
         }
     }
 }

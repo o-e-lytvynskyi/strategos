@@ -120,7 +120,7 @@ public final class UnitAi {
                                 .on(Arrived.class, (ctx, m) -> finishOrder(ctx, false))
                                 .on(Stuck.class, UnitAi::giveUp)
                                 .on(PathInvalidated.class, UnitAi::repath)
-                                .on(Attacked.class, (ctx, m) -> Melee.retaliate(ctx, m.attacker()))
+                                .on(Attacked.class, (ctx, m) -> CombatActions.retaliate(ctx, m.attacker()))
                                 .transitions(next())
                                 .build(),
                         StateDef.<MatchState>child(COMBAT, INDIVIDUAL)
@@ -132,21 +132,21 @@ public final class UnitAi {
                                 .build(),
                         StateDef.<MatchState>child(APPROACHING, COMBAT)
                                 .thinkEvery(5)
-                                .enter(ctx -> Melee.takePlace(ctx, engagement))
-                                .think(ctx -> Melee.close(ctx, false, engagement))
-                                .on(Arrived.class, (ctx, m) -> Melee.arrived(ctx, engagement))
+                                .enter(ctx -> CombatActions.takePlace(ctx, engagement))
+                                .think(ctx -> CombatActions.close(ctx, false, engagement))
+                                .on(Arrived.class, (ctx, m) -> CombatActions.arrived(ctx, engagement))
                                 .transitions(next(ATTACKING, APPROACHING))
                                 .build(),
                         StateDef.<MatchState>child(ATTACKING, COMBAT)
                                 .thinkEvery(1)
-                                .enter(Melee::windUp)
-                                .think(Melee::strike)
+                                .enter(CombatActions::windUp)
+                                .think(CombatActions::strike)
                                 .transitions(next(CHASING, APPROACHING))
                                 .build(),
                         StateDef.<MatchState>child(CHASING, COMBAT)
                                 .thinkEvery(5)
-                                .think(ctx -> Melee.close(ctx, true, engagement))
-                                .on(Arrived.class, (ctx, m) -> Melee.close(ctx, true, engagement))
+                                .think(ctx -> CombatActions.close(ctx, true, engagement))
+                                .on(Arrived.class, (ctx, m) -> CombatActions.close(ctx, true, engagement))
                                 .transitions(next(ATTACKING, APPROACHING))
                                 .build(),
                         StateDef.<MatchState>child(FOLLOW, INDIVIDUAL)
@@ -260,16 +260,16 @@ public final class UnitAi {
 
     /** IDLE's and WALKING_AND_FIGHTING's think: the nearest enemy in sight is engaged. */
     private static void engageNearest(Context<MatchState> ctx) {
-        int enemy = Melee.nearestEnemy(ctx);
+        int enemy = CombatActions.nearestEnemy(ctx);
         if (enemy >= 0) {
-            Melee.engage(ctx, enemy);
+            CombatActions.engage(ctx, enemy);
         }
     }
 
     /** Hit by {@code attacker} (a handle): a unit that can fight hits back, one that cannot runs, if it ever does. */
     static void hit(Context<MatchState> ctx, int attacker) {
-        if (ctx.host().stats().canMelee(ctx.unit())) {
-            Melee.retaliate(ctx, attacker);
+        if (ctx.host().stats().canAttack(ctx.unit())) {
+            CombatActions.retaliate(ctx, attacker);
         } else {
             Fleeing.away(ctx, attacker);
         }

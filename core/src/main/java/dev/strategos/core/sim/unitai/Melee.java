@@ -4,15 +4,12 @@ import dev.strategos.core.shared.DetMath;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.MotionStore;
-import dev.strategos.core.sim.OrderFinished;
-import dev.strategos.core.sim.OrderReceived;
 import dev.strategos.core.sim.PlaceMoved;
 import dev.strategos.core.sim.UnitStruck;
 import dev.strategos.core.sim.combat.Damage;
 import dev.strategos.core.sim.combat.Engagement;
 import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.order.OrderQueues;
-import dev.strategos.core.sim.spatial.UnitFilter;
 import dev.strategos.core.sim.stats.StatService;
 import dev.strategos.core.sim.unitai.Hfsm.Context;
 import java.util.List;
@@ -30,68 +27,6 @@ final class Melee {
     static final double REGOAL = 1.0;
 
     private Melee() {}
-
-    /**
-     * Unit {@code ctx}'s nearest enemy within its sight, by index, or -1; a unit with no melee attack notices none. The
-     * grid is the last movement's.
-     */
-    static int nearestEnemy(Context<MatchState> ctx) {
-        MatchState s = ctx.host();
-        int i = ctx.unit();
-        if (!s.stats().canMelee(i)) {
-            return -1;
-        }
-        MotionStore motion = s.motion();
-        double x = motion.x(i);
-        double z = motion.z(i);
-        double[] best = {Double.POSITIVE_INFINITY};
-        int[] found = {-1};
-        s.spatial()
-                .forEachInRadius(
-                        x,
-                        z,
-                        s.stats().vision(i),
-                        UnitFilter.enemiesOf(s.identity().faction(i), s.config().factions()),
-                        j -> {
-                            if (s.entities()
-                                    .aliveAt(
-                                            j)) { // the grid is the last movement's: a unit killed since is still in it
-                                double d = DetMath.length(motion.x(j) - x, motion.z(j) - z);
-                                if (d < best[0]) { // ascending indices: the lower on a tie
-                                    best[0] = d;
-                                    found[0] = j;
-                                }
-                            }
-                        });
-        return found[0];
-    }
-
-    /** The unit takes up an engagement with unit {@code target} (an index) before its orders; false if its queue is full. */
-    static boolean engage(Context<MatchState> ctx, int target) {
-        MatchState s = ctx.host();
-        int handle = s.entities().handleAt(target);
-        if (!s.orders()
-                .pushFront(
-                        ctx.unit(),
-                        OrderKind.ENGAGE,
-                        s.motion().x(target),
-                        s.motion().z(target),
-                        0,
-                        0,
-                        handle)) {
-            return false;
-        }
-        s.bus().publish(new OrderReceived(ctx.handle())); // its machine goes into COMBAT, and it asks for a path
-        return true;
-    }
-
-    /** Hit back at {@code attacker}, if this unit can fight and it still lives. */
-    static void retaliate(Context<MatchState> ctx, int attacker) {
-        MatchState s = ctx.host();
-        if (s.stats().canMelee(ctx.unit()) && s.entities().isAlive(attacker)) {
-            engage(ctx, Handle.index(attacker));
-        }
-    }
 
     /**
      * Entering APPROACHING: the unit takes a place round its target, unless the target is gone, and strikes at once if
@@ -120,7 +55,7 @@ final class Melee {
         OrderQueues orders = s.orders();
         int target = orders.target(i);
         if (!s.entities().isAlive(target)) {
-            findNext(ctx);
+            CombatActions.findNext(ctx);
             return;
         }
         int t = Handle.index(target);
@@ -176,7 +111,7 @@ final class Melee {
         int i = ctx.unit();
         int target = s.orders().target(i);
         if (!s.entities().isAlive(target)) {
-            findNext(ctx);
+            CombatActions.findNext(ctx);
             return;
         }
         int t = Handle.index(target);
@@ -203,39 +138,12 @@ final class Melee {
         ctx.setData(tick + stats.meleeRepeat(i), 0);
     }
 
-    /**
-     * The attack's target is dead: the unit drops that order and takes up the nearest enemy in its sight from a new
-     * place, if any, or else goes on with its next order.
-     */
-    static void findNext(Context<MatchState> ctx) {
-        int next = nearestEnemy(ctx);
-        if (next < 0) {
-            UnitAi.finishOrder(ctx, false);
-            return;
-        }
-        MatchState s = ctx.host();
-        int i = ctx.unit();
-        s.orders().pop(i);
-        s.bus().publish(new OrderFinished(ctx.handle(), false));
-        s.orders()
-                .pushFront(
-                        i,
-                        OrderKind.ENGAGE,
-                        s.motion().x(next),
-                        s.motion().z(next),
-                        0,
-                        0,
-                        s.entities().handleAt(next));
-        s.bus().publish(new PlaceMoved(ctx.handle()));
-        ctx.go(UnitAi.APPROACHING);
-    }
-
     /** Whether unit {@code t} stands within unit {@code i}'s reach, give or take rounding. */
     static boolean inReach(MatchState s, int i, int t) {
         return Engagement.gap(s, i, t) <= s.stats().meleeReach(i) + 1e-9;
     }
 
-    private static void face(MatchState s, int i, int handle, int t) {
+    static void face(MatchState s, int i, int handle, int t) {
         MotionStore motion = s.motion();
         double dx = motion.x(t) - motion.x(i);
         double dz = motion.z(t) - motion.z(i);

@@ -5,7 +5,10 @@ import dev.strategos.core.shared.Handle;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.MatchSystem;
 import dev.strategos.core.sim.Phase;
+import dev.strategos.core.sim.ShotRequested;
+import dev.strategos.core.sim.UnitStruck;
 import dev.strategos.core.sim.spatial.UnitFilter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.IntConsumer;
@@ -14,6 +17,10 @@ import org.jspecify.annotations.Nullable;
 /** Landing-point impacts: preferred full target handle first, otherwise the lowest-index live footprint. */
 public final class ShotSystem implements MatchSystem {
     private final ShotStore store;
+    /** Pre-MOVEMENT target position is transient: flat matches keep pose-only persisted motion and legacy hashes. */
+    private record Pending(ShotRequested request, double targetX, double targetZ) {}
+
+    private final ArrayList<Pending> pending = new ArrayList<>();
     private final IntConsumer candidate = this::candidate;
     private @Nullable MatchState queryState;
     private ShotStore.@Nullable Shot queryShot;
@@ -23,6 +30,19 @@ public final class ShotSystem implements MatchSystem {
         this.store = store;
     }
 
+    /** The match kernel's shot system listens to UNIT_AI intents and freezes them in COMBAT. */
+    public ShotSystem(MatchState state) {
+        this(state.shots());
+        state.bus().subscribe(ShotRequested.class, request -> {
+            int target = request.target();
+            int index = Handle.index(target);
+            pending.add(new Pending(
+                    request,
+                    state.entities().isAlive(target) ? state.motion().x(index) : 0,
+                    state.entities().isAlive(target) ? state.motion().z(index) : 0));
+        });
+    }
+
     @Override
     public Phase phase() {
         return Phase.COMBAT;
@@ -30,6 +50,7 @@ public final class ShotSystem implements MatchSystem {
 
     @Override
     public void run(MatchState state) {
+        release(state);
         List<ShotStore.Shot> due = store.takeDue(state.tick());
         if (due.isEmpty()) return;
         double radius = 0;
@@ -53,6 +74,44 @@ public final class ShotSystem implements MatchSystem {
         }
         queryShot = null;
         queryState = null;
+    }
+
+    private void release(MatchState state) {
+        if (pending.isEmpty()) return;
+        for (int i = 0; i < pending.size(); i++) {
+            Pending row = pending.get(i);
+            ShotRequested request = row.request();
+            if (!state.entities().isAlive(request.shooter())
+                    || !state.entities().isAlive(request.target())) {
+                continue;
+            }
+            int shooter = Handle.index(request.shooter());
+            int target = Handle.index(request.target());
+            if (Engagement.gap(state, shooter, target) > request.range()) continue;
+            double vx = state.surfaces().version() == 0
+                    ? state.motion().x(target) - row.targetX()
+                    : state.motion().vx(target);
+            double vz = state.surfaces().version() == 0
+                    ? state.motion().z(target) - row.targetZ()
+                    : state.motion().vz(target);
+            UnitTemplate body = state.templates().byIndex(state.identity().templateIndex(target));
+            store.launch(
+                    state.config().seed(),
+                    state.tick(),
+                    new ShotStore.Launch(
+                            state.motion().x(shooter),
+                            state.motion().z(shooter),
+                            state.motion().x(target),
+                            state.motion().y(target) + body.height() / 2,
+                            state.motion().z(target),
+                            vx,
+                            vz,
+                            request.speed(),
+                            request.spread(),
+                            request.damage()));
+            state.outputs().add(new UnitStruck(request.shooter(), request.target()));
+        }
+        pending.clear(); // every intent belongs to this tick; FINAL sees none
     }
 
     private void candidate(int index) {

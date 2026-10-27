@@ -66,10 +66,10 @@ final class AttackRule implements CommandRule<Attack> {
                 tally.reject(RejectReason.INVALID_ARGUMENT);
                 continue;
             }
-            boolean slaughter = !state.stats().canMelee(i)
+            boolean slaughter = !state.stats().canAttack(i)
                     && meat != 0
                     && state.gatherRates().gathers(state.stats(), i, nodes.resource(meat), nodes.subtype(meat));
-            if (!state.stats().canMelee(i) && !slaughter) {
+            if (!state.stats().canAttack(i) && !slaughter) {
                 tally.reject(RejectReason.UNSUPPORTED);
                 continue;
             }

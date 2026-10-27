@@ -4,19 +4,31 @@
 
 ## Now
 
-- **Milestone:** M5 Combat; this branch has 4 of 21 tasks complete after the T2 and T3 splits. Legacy work records T1-T2 complete and splits T3 into T3a-T3c (19 tasks total).
-- **In progress:** M5 T3b.1 ranged behavior since 2026-10-26; first establish typed ranged stats, then post-movement release and archer content with provenance.
-- **Last finished task:** T3a analytic lifecycle (2026-10-26), commits 08da21c and 449924f.
-- **Next task:** T3b ranged approach, wind-up/repeat and queued release after MOVEMENT; archer data, balance provenance, moving-target controls and the L3 volley. Then T3c FX.
+- **Milestone:** M5 Combat; 5 of 22 tasks complete (T1, T2a, T2b, T3a, T3b.1).
+- **In progress:** M5 T3b.2 archer content and engine integration since 2026-10-27.
+- **Last finished task:** T3b.1 ranged behavior (2026-10-27).
+- **Next task:** T3b.2, then T3c.1 shot FX state and wire, T3c.2 delivery and client.
 - **Merged from main last:** b207e50 (2026-10-26), including assignment #19.
 
 ## Depends on unfinished work
 
 - M0-M4 are merged. No unfinished milestone implementation is required by M5.
-- The separate fix-main claim remains assigned to lev1pes. Historical main run 40176248614 failed idle_300_costs_a_third (0.3255060777 / 0.30) and path_budget_d (p99 50.288387 ms / 6 ms). It is not closed by local M5 evidence. Current M5 budgets and both targeted counterexamples now pass, so ready M5 work continues without taking over that separate claim.
+- fix-main (lev1pes) is done and merged into main by PR #21; it no longer bears on M5.
 - Preserve codex/m5-combat and dev/lev1pes/m5. Import code and task-specific evidence selectively after assignment; do not copy old central STATE/worklog records over current main.
 
 ## Log
+
+### 2026-10-27 — M5 T3b.1 (session moved from Codex to Claude Code)
+
+- **T3b.1 · Ranged behavior** — CMB-04 in progress. Typed `Attack/Ranged` stats with validated ranges, `Ranged` approach without a melee ring, wind-up/repeat on M2's timer, `ShotRequested` intents released in COMBAT after MOVEMENT with flat-world lead from transient displacement; `CombatActions` dispatches melee/ranged. Tests: `RangedStatsTest`, `RangedValidationTest`, `RangedOrdersTest`, `MovingShotTest` (constant-velocity positive control, direction changes).
+- Gates: `verify verifySlow verifySoak` green in about 4.5 min, 1,985 tests, 0 failures/errors/skips; roadmap 245 cards, claims 5 rows. JMH: first run flagged `SpatialBench.rebuild1000` 6.28 us vs 4.79 (one fork 7.7 us, the other 4.87 us; spatial code untouched); the single confirming rerun passed the whole gate in 7m 03s with rebuild1000 at 4.88 us in both forks. Recorded as a one-fork outlier of the benchmark, not of T3b.1; a repeat would make it a gate-noise item for the owner.
+- The uncommitted Codex worktree state was adopted as is after reading its diff; the T3b.2 draft from a second worktree is kept as a patch and applied next.
+- **Next:** T3b.2 archer template, provenance, balance sheet and the L3 volley; merge origin/main (PR #21) first.
+
+### 2026-10-27 — bounded presentation tasks and ranged review
+
+- Split T3c into core FX state/wire and server/client presentation before implementation: the combined estimate exceeds 1,500 source/test lines. Same approved launch/impact, visibility, images and byte-budget criteria remain required.
+- Ranged review found and fixed automatic sight loss, sub-block chase stalling, stale weapon wind-ups and disabled-weapon fallback. Tests pin the initial prepare deadline and weapon changes. Full functional and performance gates remain pending before completing T3b.1.
 
 ### 2026-10-26 — split ranged behavior and archer integration before expansion
 
@@ -106,6 +118,10 @@
 2. The historical fix-main investigation remains with lev1pes. Release proposal [#20](https://github.com/o-e-lytvynskyi/strategos/pull/20) remains a human decision; no implementation under that claim starts without successor assignment. Current M5 performance is now green, so this proposal no longer pauses ready M5 tasks. Historical Linux CI is not declared repaired.
 
 ## Decisions taken
+
+- 2026-10-27 · Persist optional shot release origin/tick for future impact feedback across death/restore; preserve old snapshot and FX bytes when the extension is absent. Deliver once to viewers of either endpoint and clear client arcs on match changes; no past-launch resync is added. Undo through a reviewed feedback contract change.
+
+- 2026-10-27 · Derive flat-world target velocity from transient pre-/post-MOVEMENT positions at release. Preserve the existing pose-only flat snapshot/hash contract; terrain still uses MotionStore velocity. Undo by a reviewed motion-state version change. Bound ranged damage to finite float-safe values so accepted templates and modifiers cannot fail when converted to a damage packet.
 
 - 2026-10-26 · Establish first Mac profiles for active-shot hashing and preferred/collateral/miss volley60 cases from the full measured run. All existing profile scores and limits remain unchanged; remove only these four rows to undo. Keep T2's proposed baseline as its historical decision artifact.
 - 2026-10-26 · Use available standard worker gpt-6-sol for the unchanged tier-B contract after the earlier model's usage limit; runner and independent reviewer remained available. Trial implementer/reviewer/runner pass: scoped integration, actual continuation tests, representative combat fixture, bounded summaries and unchanged gates verified by the orchestrator.

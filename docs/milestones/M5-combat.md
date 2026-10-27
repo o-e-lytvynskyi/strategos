@@ -113,6 +113,8 @@ grow with the garrison), and an AI that fights by the same rules (the roadmap's 
 | 6 | Shot point, collision and impact ordering | Freeze the target body-center Y and predict X/Z with the current horizontal velocity; spread is horizontal Gaussian. Resolve a circular Body.radius footprint within the current body-height interval, preferring the complete live target handle, then ascending live spatial candidates of any faction, as "whatever unit" specifies. Simultaneous impacts follow stable shot IDs; a dead shooter does not cancel its frozen packet. |
 | 7 | Shot persistence extension | The outer snapshot codec already has 16 fields. Add optional shot state under nested Play, preserving pristine old bytes/hashes and the allocator of used-empty stores. The pure model is implemented first; scheduler, codec and hash wiring remains part of T3a before its checkbox is complete. |
 | 8 | Release phase and ranged defaults | UNIT_AI queues an internal firing intent; COMBAT constructs its frozen launch from post-MOVEMENT positions and velocity before resolving impacts. This preserves the approved lead formula and a constant-velocity control. Starting archer projectile speed is 4 blocks/tick, spread 2.25 blocks at 100 and sight 32; these project defaults receive provenance with the archer content and are tuned with the roster. |
+| 9 | Flat-world velocity and numeric damage safety | Flat matches deliberately persist only poses, preserving released journal hashes. A transient firing intent captures the target position before MOVEMENT; COMBAT derives its displacement for the lead. Terrain matches use the existing motion velocity. Ranged damage is bounded to finite float-safe values before packet conversion, including after modifiers. |
+| 10 | Shot feedback continuity and viewers | Freeze release coordinates and tick with every new shot so impact feedback retains both endpoints after shooter death or restore. Restore preserves future impact feedback; replaying past launch FX to reconstruct client arcs is outside the event contract. Deliver shot FX once to the union of viewers of either endpoint, batched by endpoint pages. Client arcs clear when the match changes. |
 
 ### 1.7 Consent plan
 
@@ -271,7 +273,7 @@ M4's scenes are.
 
 ### 7.1 Order
 
-T1 → T2a → T2b (PATH-11) → T3a → T3b.1 → T3b.2 → T3c (CMB-04) → T4 (CMB-16) → T5 (CMB-05) → T6 (UNIT-06) → T7 (UNIT-07) → T8 (ORD-05)
+T1 → T2a → T2b (PATH-11) → T3a → T3b.1 → T3b.2 → T3c.1 → T3c.2 (CMB-04) → T4 (CMB-16) → T5 (CMB-05) → T6 (UNIT-06) → T7 (UNIT-07) → T8 (ORD-05)
 → T9 (CMB-07) → T10 (BLD-16) → T11 (BLD-11) → T12 (CMB-17) → T13 (AI-03) → T14 (PERF-08) → T15 (the
 battle scenario) → T17 (the consent batch) → T18 (close). T16 is reserved for a row a task adds.
 
@@ -309,9 +311,14 @@ battle scenario) → T17 (the consent batch) → T18 (close). T16 is reserved fo
   balance evidence): the archer template ahead of T7, append-only template indices, provenance,
   balance sheet, language label and the L3 volley. Keep the existing template index prefix,
   including the previously implicit farmstead/storehouse entries, before appending the archer.
-- **T3c · Launch/impact presentation:** batched audience-filtered FX, wire compatibility and
-  size checks, client arrows and bow sounds. L1 audience and L2 wire tests; images stay in
-  T17 and the 300-unit network budget stays in T14.
+- **T3c.1 · Shot FX state and wire** (estimated 700–1,000 source/test lines): optional frozen
+  release origin and tick, launch/impact outputs including misses, persistence/hash coverage,
+  append-only FX codes and bounded trajectory encoding. Preserve all old FX bytes and the
+  existing placement-byte cap; test new worst-case payloads separately.
+- **T3c.2 · Shot FX delivery and client** (estimated 550–850 source/test lines): bounded
+  batches to the union of viewers of either endpoint, client arrow arcs without entities and
+  bow/impact sounds. L1 audience and L2 wire tests; images stay in T17 and the 300-unit
+  network budget stays in T14.
 - Same approved scope and criteria as T3. Each step runs its required full gates and JMH
   when it changes the core tick/codecs. CMB-04 remains in progress until all its criteria pass,
   including T14 budget E. Target 300–1,500 changed lines per step; split further before expansion.
@@ -353,7 +360,7 @@ battle scenario) → T17 (the consent batch) → T18 (close). T16 is reserved fo
 
 ### 7.3 Progress
 
-- [x] T1 (2026-10-26) · [x] T2a (2026-10-26) · [x] T2b (2026-10-26) · [x] T3a (2026-10-26) · [ ] T3b.1 · [ ] T3b.2 · [ ] T3c · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11
+- [x] T1 (2026-10-26) · [x] T2a (2026-10-26) · [x] T2b (2026-10-26) · [x] T3a (2026-10-26) · [x] T3b.1 (2026-10-27) · [ ] T3b.2 · [ ] T3c.1 · [ ] T3c.2 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11
 - [ ] T12 · [ ] T13 · [ ] T14 · [ ] T15 · [ ] T17 · [ ] T18
 
 ---

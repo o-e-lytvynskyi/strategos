@@ -271,10 +271,19 @@ public final class TemplateSet {
                     CorePaths.MELEE_HACK,
                     CorePaths.MELEE_PIERCE,
                     CorePaths.MELEE_CRUSH,
+                    CorePaths.RANGED_HACK,
+                    CorePaths.RANGED_PIERCE,
+                    CorePaths.RANGED_CRUSH,
+                    CorePaths.RANGED_FIRE,
+                    CorePaths.RANGED_RANGE,
                     CorePaths.FLEE -> 0;
             case CorePaths.MELEE_REACH -> CorePaths.DEFAULT_REACH;
             case CorePaths.MELEE_PREPARE -> CorePaths.DEFAULT_PREPARE;
             case CorePaths.MELEE_REPEAT -> CorePaths.DEFAULT_REPEAT;
+            case CorePaths.RANGED_PREPARE -> CorePaths.DEFAULT_RANGED_PREPARE;
+            case CorePaths.RANGED_REPEAT -> CorePaths.DEFAULT_RANGED_REPEAT;
+            case CorePaths.RANGED_SPEED -> CorePaths.DEFAULT_RANGED_SPEED;
+            case CorePaths.RANGED_SPREAD -> CorePaths.DEFAULT_RANGED_SPREAD;
             case CorePaths.VISION -> CorePaths.DEFAULT_VISION;
             default -> Double.NaN;
         };
