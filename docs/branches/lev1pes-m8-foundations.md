@@ -1,16 +1,16 @@
 # M8 T1–T6 on dev/lev1pes/m8-foundations
 
-**Developer:** lev1pes · **Branch:** dev/lev1pes/m8-foundations · **Work:** M8 T1–T6 · **Base:** main @ bb800d0e526bf4d05d5bf2bcc3b71797e52e1d6b · **Claimed:** 2026-10-28 · **Status:** claimed
+**Developer:** lev1pes · **Branch:** dev/lev1pes/m8-foundations · **Work:** M8 T1–T6 · **Base:** main @ bb800d0e526bf4d05d5bf2bcc3b71797e52e1d6b · **Claimed:** 2026-10-28 · **Status:** in progress
 
 **Note:** owner requested M8 independent work in the operator session; assignment merged in [PR #31](https://github.com/o-e-lytvynskyi/strategos/pull/31), not an implementation delivery; specification and contract-tested foundations only; runtime M6/M7 integration and final M8 gates excluded until prerequisites merge
 
 ## Now
 
-- **Milestone:** M8 Fog of war; independent foundation phase, zero implementation tasks complete. The owner requested taking M8 and implementing what can work without preceding unfinished milestones in the operator session on 2026-10-28.
-- **In progress:** assignment request only; no development before its merge.
-- **Last finished task:** pre-claim dependency assessment against main, the five M8 cards, ADR-0016 and the merged M6 specification.
-- **Next task:** after assignment merge, T1 specifies the full M8 plan and formalizes the independent T1–T6 below. Existing M8 cards are proposed; record the owner's authorization for this independent phase in the specification and keep incomplete integration criteria explicit.
-- **Merged from main last:** bb800d0 (2026-10-28).
+- **Milestone:** M8 Fog of war; only independent T1–T6 are assigned. Claim merged in PR #31. No implementation tasks are complete.
+- **In progress:** none. Stopped after completed T1 at the owner's request on 2026-10-28; continue remaining work the next day only after the owner resumes.
+- **Last finished task:** T1 specification and acceptance/dependency matrix in [M8-fog-of-war.md](../milestones/M8-fog-of-war.md); all checks pass as recorded below.
+- **Next task:** T2 shared visibility policy, only after the owner resumes. Full runtime integration remains unassigned T7–T12.
+- **Merged from main last:** 3c1f430 (2026-10-28).
 
 ## Scope and intended task split
 
@@ -47,20 +47,32 @@ Full FOW-02 targeted tracking, FOW-03 live save/minimap ghosts, FOW-05 all-chann
 - Existing usable seams: core sim.replicate.Visibility, ReplicationService and the single NetGateway/Audience sender. M6 specifies sim.vision.VisionGrid and VisibilityIndex, so this phase uses contracts rather than a competing solo-fog implementation.
 - Claim changes only docs/claims.md and this branch file. No production, test, workflow, owner record or roadmap status edits before assignment merge.
 
+### 2026-10-28 — implementation session
+
+- Claim PR #31 merged; fast-forwarded the dedicated worktree to main 3c1f430. New specification preserves every card criterion and separates assigned T1–T6 from future T7–T12 integration. No runtime wiring or prerequisite implementation is claimed.
+- Initial sandboxed Gradle startup could not open the global wrapper lock; rerun with the required cache access. This was environment setup, not a failed test.
+- T1 complete: all five cards specified; full T1–T12 plan and acceptance/dependency matrix; only T1–T6 assigned. No production or test source changes. Owner requested stopping after T1 and resuming with T2 the next day; no hand-in PR for unfinished foundations.
+- Verification: verifyFast 2m 49s; roadmap 245/0 problems; claims 7/0; full serial verify 6m 8s, 1,310 core + 95 mod + 212 GameTests, zero failures/errors/skips. Smoke, restart and both arena markers ok. git diff --check clean.
+- Initial default parallel verify failed in 3m 12s at existing ProtectedBlockIndexTest.aLookupCostsTheSameAtAnySize: 269.1ns versus 54.1ns, ratio 4.977 against <3. Saved the original XML as build/m8-t1-first-protected-block.xml. One isolated diagnostic passed in 18s; full verify --max-workers=1 then passed. Preserve both outcomes: variability is established, its cause is not. No test, threshold or baseline changed.
+- Local logs: build/m8-baseline.log, build/m8-t1-verify.log, build/m8-t1-protected-confirm.log and build/m8-t1-serial-verify.log. These are ignored evidence, not repository artifacts.
+
 ## For the owner
 
-1. Independent maintainer review/merge of this claim is required before development. Record the owner's M8 independent-phase opening in main's records in the maintainer role; this developer session does not write STATE.md or merge its own claim.
-2. M6/M7 runtime delivery remains a prerequisite for integrated M8 acceptance. Recommend the bounded T1–T6 foundation phase above; do not declare multiplayer fog, leak freedom or performance complete from unit contracts.
+1. Claim #31 is merged. Maintainer records may reflect the bounded M8 opening; this developer session does not write STATE.md or merge its own work. No new permission is needed to resume assigned T2–T6.
+2. M6/M7 runtime delivery remains a prerequisite for integrated M8 acceptance. The specification preserves all full-card criteria; specified does not mean implemented or accepted.
+
+3. Serial Windows verify took 6m 8s against the five-minute target. Owner may accept the platform duration or authorize a separate gate redesign; no task was moved or weakened. The existing timing-test variability above is not fixed by this documentation task.
 
 ## Decisions taken
 
 - 2026-10-28 · Use a dedicated main-based branch and one agent. Keep prior bug-fix and records PRs separate. Scope the assignment to specification and independent/contract-based foundations; undo by releasing this assignment, without touching others' work.
 - 2026-10-28 · Test vision, building memory and audience decisions over explicit inputs rather than importing or rebuilding M6/M7 internals. Actual adapters and end-to-end acceptance remain AFTER-M dependencies. Refine these boundaries in T1 before production edits.
+- 2026-10-28 · Specify the full T1–T12 acceptance path while implementing only assigned T1–T6. Keep all five cards specified until implementation starts, never done from isolated contracts. Undo by revising the spec/task mapping without dropping card criteria.
 
 ## Pitfalls
 
-- Proposed M8 cards and a foundation implementation are not completed integrated fog. Source-set contracts must not leak hidden live state into remembered building/AI records.
+- Specified M8 cards and a foundation implementation are not completed integrated fog. Source-set contracts must not leak hidden live state into remembered building/AI records.
 
 ## Review
 
-Claim request only; awaiting independent maintainer review and human merge.
+Assignment merged in #31; no hand-in PR yet because T2–T6 are unfinished. T1 is documentation only; runtime behavior is unchanged.

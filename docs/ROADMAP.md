@@ -470,11 +470,11 @@ Cards: [roadmap/M8-fog-of-war.md](roadmap/M8-fog-of-war.md#cards). 5 cards, at m
 
 | ID | Feature | Size | Depends on | Status |
 |---|---|---|---|---|
-| FOW-02 | Team vision and targeted re-tracking | L | FOW-07, NET-03, MATCH-06 | proposed |
-| FOW-03 | Mirages and shared explored state | M | FOW-02 | proposed |
-| FOW-05 | Leak audit and guards | M | FOW-02, NET-09 | proposed |
-| AI-07 | Fog-fair AI scouting and memory | M | AI-18, FOW-03, D-19 | proposed |
-| PERF-15 | Fog perf gate | S | FOW-02, PERF-10 | proposed |
+| FOW-02 | Team vision and targeted re-tracking | L | FOW-07, NET-03, MATCH-06 | specified |
+| FOW-03 | Mirages and shared explored state | M | FOW-02 | specified |
+| FOW-05 | Leak audit and guards | M | FOW-02, NET-09 | specified |
+| AI-07 | Fog-fair AI scouting and memory | M | AI-18, FOW-03, D-19 | specified |
+| PERF-15 | Fog perf gate | S | FOW-02, PERF-10 | specified |
 
 ### M9 · Territory, capture and defence
 

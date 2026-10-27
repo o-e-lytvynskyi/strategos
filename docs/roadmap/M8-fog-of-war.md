@@ -76,6 +76,10 @@ tags; the README credits them as inspiration only. **Needed by:** the first publ
 
 ---
 
+Specification: [M8-fog-of-war.md](../milestones/M8-fog-of-war.md). The owner's
+2026-10-28 opening and merged claim #31 authorize only independent T1–T6; the
+full runtime acceptance below still waits for M6/M7.
+
 ## Cards
 
 #### FOW-02 · Team vision and targeted re-tracking
@@ -99,7 +103,7 @@ tags; the README credits them as inspiration only. **Needed by:** the first publ
   5. Re-tracking at 4 × 150 fits budget A (L6).
 - **Tests:** L0, L2, L3, L5, L6 · **Depends on:** FOW-07, NET-03, MATCH-06 · **Size:** L ·
   **Tier:** T1
-- **Status:** proposed
+- **Status:** specified
 
 #### FOW-03 · Mirages and shared explored state
 - **Value:** You remember what you scouted: explored terrain stays dimly visible, and enemy
@@ -115,7 +119,7 @@ tags; the README credits them as inspiration only. **Needed by:** the first publ
   3. Mirages and shared explored state survive save and load (L3).
   4. Ghost icons on the minimap (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** FOW-02 · **Size:** M · **Tier:** T1
-- **Status:** proposed
+- **Status:** specified
 
 #### FOW-05 · Leak audit and guards
 - **Value:** Fog can't be cheated through sounds, particles, health bars or pings (P5).
@@ -132,7 +136,7 @@ tags; the README credits them as inspiration only. **Needed by:** the first publ
   2. A new payload type without declared audiences fails the audience test (L2).
   3. The audit table is in the docs, with the accepted leaks stated (D).
 - **Tests:** L0, L2, L3, D · **Depends on:** FOW-02, NET-09 · **Size:** M · **Tier:** T1
-- **Status:** proposed
+- **Status:** specified
 
 #### AI-07 · Fog-fair AI scouting and memory
 - **Value:** The AI plays by the same information you have, and it scouts for it (P5).
@@ -145,7 +149,7 @@ tags; the README credits them as inspiration only. **Needed by:** the first publ
   2. The AI scouts every start within the first 5 minutes (L1).
   3. Fog-fair Normal still beats Easy in at least 124 of 200 seeded matches (L1).
 - **Tests:** L0, L1, L3 · **Depends on:** AI-18, FOW-03, D-19 · **Size:** M · **Tier:** T1
-- **Status:** proposed
+- **Status:** specified
 
 #### PERF-15 · Fog perf gate
 - **Value:** Fog costs no tick rate.
@@ -157,4 +161,4 @@ tags; the README credits them as inspiration only. **Needed by:** the first publ
   2. The stress pass holds C p95 ≤ 50 ms (L6).
   3. The report lists vision, re-tracking and pairing costs (R).
 - **Tests:** L6, R · **Depends on:** FOW-02, PERF-10 · **Size:** S · **Tier:** T1
-- **Status:** proposed
+- **Status:** specified
