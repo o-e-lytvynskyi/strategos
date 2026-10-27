@@ -4,10 +4,10 @@
 
 ## Now
 
-- **Milestone:** M5 Combat; 17 of 24 tasks complete (T1–T10b).
-- **In progress:** M5 T11 garrisoned arrows (BLD-11) since 2026-10-27.
-- **Last finished task:** T10b the bell and the bodies (2026-10-27).
-- **Next task:** T11, then T12 attack lines (CMB-17), T13 battle AI (AI-03).
+- **Milestone:** M5 Combat; 18 of 24 tasks complete (T1–T11).
+- **In progress:** M5 T12 attack lines and the flash (CMB-17) since 2026-10-27.
+- **Last finished task:** T11 garrisoned arrows (2026-10-27).
+- **Next task:** T12, then T13 battle AI (AI-03), T14 the battle soak (PERF-08).
 - **Merged from main last:** a10a8fd (2026-10-27), PR #21 fix-main.
 
 ## Depends on unfinished work
@@ -18,6 +18,13 @@
 - Preserve codex/m5-combat and dev/lev1pes/m5. Import code and task-specific evidence selectively after assignment; do not copy old central STATE/worklog records over current main.
 
 ## Log
+
+### 2026-10-27 — M5 T11
+
+- **T11 · BLD-11 Garrisoned arrows** — BLD-11 done, tests only (T9 and T10a built the mechanism). `TownArrowsTest.basePlusGarrisoned`, `dpsWithAGarrison`, `aGarrisonBreaksTheRaidTheBareCentreCannot` (L1: from three horsemen up the bare centre leaves raiders alive at 3,000 ticks while ten inside break them; six: bare leaves 5, garrisoned 1,483 ticks), `garrisontests.a_garrisoned_centre_breaks_a_horse_raid` (L3, with the replay check).
+- Seen: horsemen never damage the centre (2,000 of 2,000 throughout): buildings burn only from `Attack/Structure` torches (CMB-03), which the horseman, a raider of units, does not carry. Left as designed (For the owner 9).
+- Gates: `verify verifySlow verifySoak` 4m 54s green; no main code changed.
+- **Next:** T12.
 
 ### 2026-10-27 — M5 T10b
 
@@ -208,9 +215,11 @@
 6. Proposal (scope): replicate each unit's stance to its owner so the card's active stance is always right (now it shows the stance the player's own card last sent, else the template's). A small protocol addition; not in the approved cards' wording, so it waits for you.
 7. Follow-up candidate (no scope change): in duels a horseman sometimes stands ~80 ticks beside the back-rank archer it is focused on before striking. Probably a melee chase/ring-slot detail for the large class; to look at with T13's battle AI unless you want it earlier.
 8. For T13 (battle AI), found while fixing the bot against arrows: its late economy starves of wood (24 workers, food, stone and iron in the thousands); its waves should weigh army strength against the target's defence instead of a fixed minimum, and pull back a doomed wave. T13 will take these unless you say otherwise.
+9. Horsemen cannot damage buildings (no `Attack/Structure` torch; only spearmen burn buildings, CMB-03). Recommend keeping it: the horseman is the raider of workers and archers, the spearman takes buildings. Say if cavalry should carry torches too.
 
 ## Decisions taken
 
+- 2026-10-27 · trial implementer: pass — T11 measured the raid sizes in L1 before choosing the L3 one, and reported the horsemen's zero building damage instead of tuning it.
 - 2026-10-27 · The bell: AllClear is faction-wide (it ends every bell order of the faction and releases every unit any bell called in); a ring with no worker in reach is accepted and still sounds; the first-person ring cancels vanilla's bell and the `BELL` fx sounds it; `TemplateLint` admits the bell's block entity (still refuses others); "no body" lives in BodyRegistry since `BodyMode` was only a design name. Undo per point in Bell / TownBell / TemplateLint.
 - 2026-10-27 · trial implementer: pass with a note — T10b complete, but it handed back before its own long gate run finished; the orchestrator awaited it and ran JMH.
 - 2026-10-27 · Garrison details §2.9 leaves open: any of the holder's classes admits (archers and spearmen as Infantry, horsemen refused); a full building fails the order on the way, not at command time; Garrison replaces orders, those queued behind it stay and run on release; orders given to a unit inside wait until release (attacks on an inside unit are refused); walking in ignores blows; non-lethal damage to an inside unit is ignored, lethal still kills; an empty Ungarrison counts as 20 at the rate limiter. Undo per rule in GarrisonRules / Garrisoning.

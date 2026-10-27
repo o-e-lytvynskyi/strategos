@@ -247,7 +247,8 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
   3. A garrisoned civic centre breaks a horseman raid in a GameTest (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** BLD-16, CMB-07 · **Size:** S · **Tier:** T1 (pulled
   into the MVP)
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-27 — M5 T11: `TownArrowsTest.basePlusGarrisoned` (0/1/5/20 inside → 3/4/8/23 arrows) (1, L1), `TownArrowsTest.dpsWithAGarrison` (2, L1), `garrisontests.a_garrisoned_centre_breaks_a_horse_raid` (6 horsemen; L1: the bare centre leaves 5 alive, ten inside break it in 1,483 ticks) (3, L3)
 
 ### The opponent and the gate
 

@@ -4,8 +4,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.UnitTemplate;
+import dev.strategos.core.protocol.Attack;
+import dev.strategos.core.protocol.Garrison;
 import dev.strategos.core.protocol.SpawnBuilding;
 import dev.strategos.core.protocol.SpawnUnits;
+import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.PlayerSlot;
@@ -18,6 +21,7 @@ import dev.strategos.core.sim.ShotLanded;
 import dev.strategos.core.sim.UnitCreated;
 import dev.strategos.core.sim.UnitHurt;
 import dev.strategos.core.sim.build.BuildingStore;
+import dev.strategos.core.sim.garrison.Garrisons;
 import dev.strategos.core.testkit.SimHarness;
 import dev.strategos.core.testkit.VoxelFixtures;
 import java.util.List;
@@ -193,5 +197,137 @@ class TownArrowsTest {
         s.destroyBuilding(growing);
         run(2 * INTERVAL);
         assertThat(volleys(growing)).hasSize(ARROWS);
+    }
+
+    // ---- BLD-11: each unit inside adds an arrow to every volley.
+
+    static final TemplateId HORSEMAN = new TemplateId("strategos:unit/horseman");
+    /** The raid of the L3 test, sized by {@link #aGarrisonBreaksTheRaidTheBareCentreCannot}. */
+    static final int RAID = 6;
+
+    static final int RAID_GARRISON = 10;
+    static final int RAID_TICKS = 3_000;
+
+    /** {@code count} workers of the centre's faction sent inside, run until all are in. */
+    void garrison(int centre, int count) {
+        if (count == 0) return;
+        int[] door = Garrisons.door(s, centre);
+        h.submit(
+                PlayerSlot.ADMIN,
+                new SpawnUnits(
+                        TemplateSet.WORKER, new FactionSlot(1), new Vec2d(door[0] + 0.5, door[1] + 9.5), count, 1.5));
+        int[] workers = h.step().events().stream()
+                .filter(UnitCreated.class::isInstance)
+                .mapToInt(e -> ((UnitCreated) e).handle())
+                .toArray();
+        h.submit(new PlayerSlot(1), new Garrison(UnitSet.of(workers), centre));
+        assertThat(h.runUntil(() -> s.garrison().count(centre) == count, 600)).isTrue();
+    }
+
+    @Test
+    void basePlusGarrisoned() {
+        int[] garrisoned = {0, 1, 5, 20};
+        int[] expected = {3, 4, 8, 23};
+        for (int k = 0; k < garrisoned.length; k++) {
+            TownArrowsTest t = new TownArrowsTest();
+            int centre = t.building(CENTRE, 1, 40, 30);
+            t.garrison(centre, garrisoned[k]);
+            assertThat(TownArrowsAccess.garrisoned(t.s, centre)).isEqualTo(garrisoned[k]);
+            t.unit(TemplateSet.INFANTRY, 0, 54.5, 35.5);
+            t.run(3 * INTERVAL);
+            Map<Long, Integer> perVolley = new TreeMap<>();
+            for (ShotFired e : t.volleys(centre)) perVolley.merge(e.launchTick(), 1, Integer::sum);
+            assertThat(perVolley).as("%d garrisoned: volleys", garrisoned[k]).hasSize(3);
+            assertThat(perVolley.values())
+                    .as("%d garrisoned: arrows a volley", garrisoned[k])
+                    .containsOnly(expected[k]);
+        }
+    }
+
+    @Test
+    void dpsWithAGarrison() {
+        for (int n : new int[] {0, 5, 20}) {
+            TownArrowsTest t = new TownArrowsTest();
+            int centre = t.building(CENTRE, 1, 40, 30);
+            t.garrison(centre, n);
+            int target = t.unit(TemplateSet.INFANTRY, 0, 54.5, 35.5);
+            double[] resistance = new double[3];
+            for (int type = 0; type < 3; type++) {
+                resistance[type] = t.s.stats().resistance(Handle.index(target), type);
+            }
+            double perArrow = DamageFormula.dealt(
+                    Damage.of(target, centre, DamageType.PIERCE, (float) PIERCE),
+                    resistance,
+                    t.s.stats().classes(Handle.index(target)));
+            int volleys = 10;
+            t.run(volleys * INTERVAL);
+            int fired = t.volleys(centre).size();
+            assertThat(fired).as("%d garrisoned: arrows fired", n).isEqualTo((ARROWS + n) * volleys);
+            long landed = t.h.events(ShotLanded.class).stream()
+                    .filter(e -> e.shooter() == centre && e.hit() == target)
+                    .count();
+            assertThat(landed)
+                    .as("%d garrisoned: most arrows hit a stationary target (spread)", n)
+                    .isGreaterThanOrEqualTo(fired * 2L / 3);
+            double dealt = t.h.events(UnitHurt.class).stream()
+                    .filter(e -> e.attacker() == centre && e.handle() == target)
+                    .mapToDouble(UnitHurt::amount)
+                    .sum();
+            assertThat(dealt).isCloseTo(landed * perArrow, org.assertj.core.data.Offset.offset(1e-3));
+            double sheet = (ARROWS + n) * perArrow / (INTERVAL / 20.0);
+            double dps = dealt / (volleys * INTERVAL / 20.0);
+            assertThat(dps)
+                    .as(
+                            "%d garrisoned: damage a second is the sheet's (3 + n) arrows x damage over 4 s, less misses",
+                            n)
+                    .isCloseTo(landed / (double) fired * sheet, org.assertj.core.data.Offset.offset(1e-3))
+                    .isLessThanOrEqualTo(sheet);
+        }
+    }
+
+    /** What a raid of {@code horsemen} on a centre holding {@code garrison} workers came to after {@value #RAID_TICKS} ticks. */
+    record Raid(int alive, boolean centreStands, long ticks) {}
+
+    Raid raid(int horsemen, int garrison) {
+        int centre = building(CENTRE, 1, 40, 30);
+        garrison(centre, garrison);
+        h.submit(PlayerSlot.ADMIN, new SpawnUnits(HORSEMAN, new FactionSlot(0), new Vec2d(62, 30), horsemen, 2));
+        int[] raiders = h.step().events().stream()
+                .filter(UnitCreated.class::isInstance)
+                .mapToInt(e -> ((UnitCreated) e).handle())
+                .toArray();
+        h.submit(PlayerSlot.ADMIN, Attack.replace(UnitSet.of(raiders), centre));
+        h.step();
+        long start = s.tick();
+        h.runUntil(
+                () -> alive(raiders) == 0
+                        || !h.core().queries().buildings().stream().anyMatch(b -> b.handle() == centre),
+                RAID_TICKS);
+        return new Raid(
+                alive(raiders),
+                h.core().queries().buildings().stream().anyMatch(b -> b.handle() == centre),
+                s.tick() - start);
+    }
+
+    private int alive(int[] units) {
+        int n = 0;
+        for (int u : units) if (s.entities().aliveAt(Handle.index(u))) n++;
+        return n;
+    }
+
+    /**
+     * The L3 raid's layout in L1: {@value #RAID} horsemen from 22 blocks off against a centre of faction 1. Bare, the
+     * centre's three arrows leave the raid alive after {@value #RAID_TICKS} ticks; with {@value #RAID_GARRISON} workers
+     * inside, thirteen arrows kill every horseman, and either way the centre stands.
+     */
+    @Test
+    void aGarrisonBreaksTheRaidTheBareCentreCannot() {
+        Raid bare = raid(RAID, 0);
+        Raid held = new TownArrowsTest().raid(RAID, RAID_GARRISON);
+        assertThat(bare.alive()).as("the bare centre does not break the raid").isPositive();
+        assertThat(bare.centreStands()).isTrue();
+        assertThat(held.alive()).as("the garrisoned centre breaks it").isZero();
+        assertThat(held.centreStands()).isTrue();
+        assertThat(held.ticks()).isLessThan(RAID_TICKS);
     }
 }

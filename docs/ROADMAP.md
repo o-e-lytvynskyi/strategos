@@ -405,7 +405,7 @@ Cards: [roadmap/M5-combat.md](roadmap/M5-combat.md#cards). 14 cards, at most 41 
 | UNIT-06 | Mounted units | M | UNIT-03, PATH-11 | in_progress |
 | UNIT-07 | Combat roster and counters | M | CMB-04, CMB-05, UNIT-06, DATA-04 | in_progress |
 | BLD-16 | Garrison and the town bell | M | BLD-08, CORE-06, ORD-02 | done |
-| BLD-11 | Arrows per garrisoned unit | S | BLD-16, CMB-07 | specified |
+| BLD-11 | Arrows per garrisoned unit | S | BLD-16, CMB-07 | done |
 | AI-03 | AI battle tactics | M | AI-02, UNIT-07, ORD-05 | specified |
 | PERF-08 | Battle perf gate | S | UNIT-07, CMB-07, PERF-07 | specified |
 

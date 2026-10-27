@@ -8,6 +8,8 @@ import static dev.strategos.gametest.suites.Units.unit;
 
 import dev.strategos.core.content.PlaceholderBlueprints;
 import dev.strategos.core.protocol.AllClear;
+import dev.strategos.core.protocol.Attack;
+import dev.strategos.core.protocol.Garrison;
 import dev.strategos.core.protocol.Gather;
 import dev.strategos.core.protocol.ModeSwitch;
 import dev.strategos.core.protocol.RingBell;
@@ -21,6 +23,8 @@ import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.build.BuildingView;
+import dev.strategos.core.sim.journal.ReplayDriver;
+import dev.strategos.core.sim.journal.ReplayResult;
 import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.core.testkit.SimHarness;
@@ -307,5 +311,75 @@ public final class GarrisonTests {
                 })
                 .thenExecute(viewer::close)
                 .thenSucceed();
+    }
+
+    private static final TemplateId HORSEMAN = new TemplateId("strategos:unit/horseman");
+    private static final FactionSlot F1 = new FactionSlot(1);
+    /** BLD-11: TownArrowsTest sizes the raid; 6 horsemen leave the bare centre's raid alive, 10 inside break it. */
+    private static final int RAIDERS = 6;
+
+    private static final int GARRISONED = 10;
+
+    /**
+     * BLD-11.3: a civic centre with {@value #GARRISONED} workers inside (thirteen arrows a volley) breaks a raid of
+     * {@value #RAIDERS} horsemen that three arrows would not, and stands. The raiders are sent only when every worker is
+     * inside; the match's journal, replayed in L1 from its start, ends on the live match's hash. TownArrowsTest runs the
+     * same layout in the core, the bare centre as well.
+     */
+    @StrategosTest(timeoutTicks = 6_000)
+    public static void a_garrisoned_centre_breaks_a_horse_raid(GameTestHelper h) {
+        MatchRuntime rt = MatchFixture.create(h, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
+        rt.submit(PlayerSlot.ADMIN, new SpawnBuilding(CENTRE, F0, 6, 10, 0));
+        rt.submit(
+                PlayerSlot.ADMIN,
+                new SpawnUnits(dev.strategos.core.content.TemplateSet.WORKER, F0, new Vec2d(8, 22), GARRISONED, 1.5));
+        var state = new Object() {
+            boolean sent;
+            boolean raided;
+            boolean ordered;
+            int centre;
+        };
+        h.onEachTick(() -> {
+            var core = core(rt);
+            if (!state.sent) {
+                int[] workers = handles(rt);
+                var buildings = core.queries().buildings();
+                if (workers.length != GARRISONED
+                        || buildings.size() != 1
+                        || buildings.get(0).state() != dev.strategos.core.sim.build.BuildingStore.COMPLETE) {
+                    return;
+                }
+                state.centre = buildings.get(0).handle();
+                rt.submit(P0, new Garrison(UnitSet.of(workers), state.centre));
+                state.sent = true;
+                return;
+            }
+            if (!state.raided) {
+                if (!allIn(rt)) {
+                    return;
+                }
+                rt.submit(PlayerSlot.ADMIN, new SpawnUnits(HORSEMAN, F1, new Vec2d(28, 10), RAIDERS, 2));
+                state.raided = true;
+                return;
+            }
+            int[] raiders = core.queries().unitHandlesOf(F1);
+            if (!state.ordered) {
+                if (raiders.length != RAIDERS) {
+                    return;
+                }
+                rt.submit(PlayerSlot.ADMIN, Attack.replace(UnitSet.of(raiders), state.centre));
+                state.ordered = true;
+                return;
+            }
+            check(core.queries().buildings().size() == 1, "the raid burnt the centre down");
+            if (raiders.length > 0) {
+                return;
+            }
+            check(core.queries().buildings().get(0).hitPoints() > 0, "the centre is down");
+            ReplayResult replay = ReplayDriver.replay(core.journal(), dev.strategos.core.content.TemplateSet.builtin());
+            check(replay.matches(), "the journal does not replay: " + replay);
+            check(replay.finalHash() == core.stateHash(), "the replay ends on another hash: " + replay);
+            h.succeed();
+        });
     }
 }
