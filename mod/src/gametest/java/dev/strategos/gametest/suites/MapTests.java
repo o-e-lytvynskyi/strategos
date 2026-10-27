@@ -11,8 +11,11 @@ import dev.strategos.core.content.MapManifest;
 import dev.strategos.core.content.StartSlot;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.Move;
+import dev.strategos.core.protocol.SpawnUnits;
 import dev.strategos.core.protocol.UnitSet;
+import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
+import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchLifecycle;
@@ -81,6 +84,8 @@ public final class MapTests {
     private static final int FIFTY = 50;
     private static final int CROWD_LANE = 7;
     private static final int CROWD = 200;
+    private static final int HORSEMEN_LANE = 10;
+    private static final int HORSEMEN = 30;
     private static final int SOAK_LANE = 8;
     private static final int SKIRMISH_LANE = 9;
 
@@ -499,6 +504,95 @@ public final class MapTests {
                         paths.groupRequests(),
                         Arrays.toString(core.queries().ladderRungs()));
                 check(paths.groupRequests() == 1, "the group asked " + paths.groupRequests() + " times");
+                h.succeed();
+            }
+        });
+    }
+
+    /**
+     * PATH-11.3 (spec §1.6 C row 3): 30 horsemen spawned round the west start, ordered as one group to the east start,
+     * all arrive at their places over the proving ground's hills, steps, ramps and river with no ladder rung above
+     * the repath (no rung 2 to 5 reached, no horseman 100 ticks without progress); each is one mounted body.
+     */
+    @StrategosTest(batch = "map_horsemen", solo = true, timeoutTicks = 60_000)
+    public static void thirtyHorsemenCross(GameTestHelper h) {
+        MatchRuntime rt = provingGround(h, HORSEMEN_LANE, 0);
+        MapManifest m = manifest(h);
+        StartSlot west = m.startSlots().get(0);
+        StartSlot east = m.startSlots().get(1);
+        var state = new Object() {
+            boolean spawned;
+            int[] units;
+            boolean[] in;
+            int arrived;
+            int mostStuck;
+            String worst = "";
+            long orderedAt;
+        };
+        h.onEachTick(() -> {
+            if (rt.lifecycle() == MatchLifecycle.PREPARING) {
+                return;
+            }
+            check(rt.lifecycle() == MatchLifecycle.RUNNING, "the match is " + rt.lifecycle());
+            MatchCore core = core(rt);
+            if (!state.spawned) {
+                state.spawned = true;
+                rt.submit(
+                        PlayerSlot.ADMIN,
+                        new SpawnUnits(
+                                new TemplateId("strategos:unit/horseman"),
+                                new FactionSlot(0),
+                                new Vec2d(west.x() + 0.5, west.z() + 0.5),
+                                HORSEMEN,
+                                6));
+                return;
+            }
+            if (state.units == null) {
+                int[] handles = core.queries().unitHandles();
+                if (handles.length < HORSEMEN) {
+                    return;
+                }
+                state.units = handles;
+                state.in = new boolean[HORSEMEN];
+                state.orderedAt = core.queries().tick();
+                rt.submit(
+                        PlayerSlot.ADMIN, Move.replace(UnitSet.of(handles), new Vec2d(east.x() + 0.5, east.z() + 0.5)));
+                return;
+            }
+            long tick = core.queries().tick();
+            for (int k = 0; k < HORSEMEN; k++) {
+                if (state.in[k]) {
+                    continue;
+                }
+                MotionStore.Extra motion = core.queries().motion(state.units[k]);
+                if (motion != null && motion.stuck() > state.mostStuck) {
+                    state.mostStuck = motion.stuck();
+                    UnitView stuck = unit(rt, state.units[k]);
+                    state.worst = "horseman " + k + " at " + stuck.x() + ", " + stuck.y() + ", " + stuck.z();
+                }
+                UnitView u = unit(rt, state.units[k]);
+                if (u.state() == UnitState.IDLE && u.target() == null && tick > state.orderedAt + 2) {
+                    state.in[k] = true;
+                    state.arrived++;
+                }
+            }
+            check(
+                    state.mostStuck < 100,
+                    "a horseman went " + state.mostStuck + " ticks without progress: " + state.worst);
+            long[] rungs = core.queries().ladderRungs();
+            for (int rung = 2; rung < rungs.length; rung++) {
+                check(rungs[rung] == 0, "the stuck ladder reached rung " + rung + ": " + Arrays.toString(rungs));
+            }
+            if (state.arrived == HORSEMEN) {
+                LOG.info(
+                        "thirty_horsemen_cross: all arrived in {} ticks; at most {} ticks without progress; rungs {}",
+                        tick - state.orderedAt,
+                        state.mostStuck,
+                        Arrays.toString(rungs));
+                for (int handle : state.units) {
+                    UnitEntity body = rt.bodies().get(handle);
+                    check(body != null && body.getPassengers().isEmpty(), "a horseman has no single mounted body");
+                }
                 h.succeed();
             }
         });

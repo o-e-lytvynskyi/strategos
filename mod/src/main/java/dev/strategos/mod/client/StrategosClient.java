@@ -59,7 +59,11 @@ public final class StrategosClient {
         modBus.addListener(EntityRenderersEvent.RegisterRenderers.class, e -> {
             e.registerEntityRenderer(ModEntityTypes.UNIT_HUMANOID.get(), UnitRenderer::new);
             e.registerEntityRenderer(ModEntityTypes.UNIT_FAUNA.get(), FaunaRenderer::new);
+            e.registerEntityRenderer(ModEntityTypes.UNIT_MOUNT.get(), MountRenderer::new);
         });
+        modBus.addListener(
+                EntityRenderersEvent.RegisterLayerDefinitions.class,
+                e -> e.registerLayerDefinition(MountModel.LAYER, MountModel::layer));
         NeoForge.EVENT_BUS.addListener(PayloadArrived.class, ClientPayloads::onPayload);
         NeoForge.EVENT_BUS.addListener(ClientPlayerNetworkEvent.LoggingOut.class, e -> {
             RTS.remember(); // the match's camera and groups, for a return (MATCH-04)

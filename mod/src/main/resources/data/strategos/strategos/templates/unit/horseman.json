@@ -1,0 +1,14 @@
+{
+  "parent": "strategos:template/unit_base",
+  "Identity": { "name": "strategos.unit.horseman", "icon": "minecraft:saddle", "classes": "+Cavalry +Melee +Organic" },
+  "Health": { "max": 120 },
+  "UnitMotion": { "walkSpeed": 0.34, "mobility": "large" },
+  "Attack": { "Melee": { "hack": 5, "reach": 1.5, "prepare": 8, "repeat": 18 } },
+  "Resistance": { "hack": 3, "pierce": 2, "crush": 2 },
+  "Cost": {
+    "resources": { "food": 80, "wood": 40, "iron": 30 },
+    "population": 1,
+    "time": { "$derive": { "from": "strategos:unit/worker", "path": "Cost/time", "factor": 1.5 }, "note": "Training a horseman takes as long as drilling a spearman" }
+  },
+  "Body": { "entityType": "strategos:unit_mount", "width": 1.4, "height": 2.0, "radius": 0.7, "skin": "strategos:units/infantry" }
+}

@@ -401,8 +401,8 @@ Cards: [roadmap/M5-combat.md](roadmap/M5-combat.md#cards). 14 cards, at most 41 
 | CMB-16 | High ground | S | CMB-04, DATA-02 | in_progress |
 | CMB-17 | Combat readability: attack lines and the under-attack flash | S | CMB-06, UI-02 | specified |
 | ORD-05 | Focus fire and force attack | M | ORD-04, CMB-05 | specified |
-| PATH-11 | Mobility classes and footprints | M | PATH-06, PATH-09 | in_progress |
-| UNIT-06 | Mounted units | M | UNIT-03, PATH-11 | specified |
+| PATH-11 | Mobility classes and footprints | M | PATH-06, PATH-09 | done |
+| UNIT-06 | Mounted units | M | UNIT-03, PATH-11 | in_progress |
 | UNIT-07 | Combat roster and counters | M | CMB-04, CMB-05, UNIT-06, DATA-04 | specified |
 | BLD-16 | Garrison and the town bell | M | BLD-08, CORE-06, ORD-02 | specified |
 | BLD-11 | Arrows per garrisoned unit | S | BLD-16, CMB-07 | specified |

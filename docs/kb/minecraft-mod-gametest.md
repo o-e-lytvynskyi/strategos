@@ -140,10 +140,12 @@ intervals (every 20 ticks), not back to back.
   report broken down into the core step, its phases and the mod part, otherwise there is nothing
   to attach growth to.
 
-## One protected block is not a whole building
+## Shared per-tick budgets: wait for the work, never a fixed delay
 
-The writer's 64 placements a tick are shared by every match of the batch, so a building's blocks
-arrive over several ticks, more of them as the batch grows. A test that saves once one wall block
-is protected may save a half-written house: `the_reconciler_converges_a_crash_between_saves` then
-rewrote 62 instead of 1 (6 runs in 7 after M5 T4 joined the batch). Wait for
-`BlockWriter.pendingIn(level, match, min, max)` to be empty before acting on a finished build.
+Two server-wide budgets serve every match of a batch in turn: the writer's 64 placements
+(`BlockWriter`) and the 64 body creations (`SpawnBudget`). A test late in the batch's order
+gets its blocks or bodies ticks later, and the order shifts whenever a test is added (names
+sort). M5 T4: the reconciler test saved a half-written house ("rewrote 62"); wait for
+`BlockWriter.pendingIn(level, match, min, max)` to be empty. M5 T6:
+`materialises_one_body_per_unit` asserted after `runAfterDelay(2)` and saw "0 bodies"; wait
+until `rt.bodies().count()` reaches the count, then assert.

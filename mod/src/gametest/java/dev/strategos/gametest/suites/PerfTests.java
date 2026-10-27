@@ -16,6 +16,7 @@ import dev.strategos.core.protocol.SpawnUnits;
 import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
+import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.MatchRules;
 import dev.strategos.core.sim.world.WritePriority;
@@ -51,6 +52,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The L6 perf GameTests (spec 7.6), one per batch, in their own run ({@code runGameTestPerf}). Each samples the foreign
@@ -64,6 +66,7 @@ public final class PerfTests {
     private static final int WARM_UP = 200;
     private static final int SAMPLES = 600;
     private static final int REORDER_EVERY = 120;
+    private static final int MOUNTED = 200;
     private static final int WRITER_WARM_UP = 100;
     private static final int WRITES_PER_TICK = 64;
     private static final int GROUP_RESULTS_TICKS = 5;
@@ -286,6 +289,118 @@ public final class PerfTests {
                             extra);
                 })
                 .thenSucceed();
+    }
+
+    /**
+     * UNIT-06.3: a mounted unit costs the server at most 20 % more than a foot unit. {@value #MOUNTED} spearmen walk
+     * across the arena as in budget A (reordered every {@value #REORDER_EVERY} ticks), then the same number of
+     * horsemen; each run's p50 of the core step plus the body adapter over {@value #SAMPLES} ticks follows {@value
+     * #WARM_UP} of warm-up. Gated under {@code a}; writes {@code mounted_cost.json}.
+     */
+    @StrategosTest(batch = "perf_mounted", arena = "arena_flat_48", timeoutTicks = 4_000)
+    public static void mountedCost(GameTestHelper h) {
+        Window window = new Window();
+        var foot = new Walkers(h, TemplateSet.INFANTRY);
+        var mounted = new Walkers(h, new TemplateId("strategos:unit/horseman"));
+        h.startSequence()
+                .thenExecute(() -> TickPacer.pace(true))
+                .thenExecute(foot::spawn)
+                .thenWaitUntil(() -> foot.walk(window))
+                .thenExecute(foot::dispose)
+                .thenExecute(mounted::spawn)
+                .thenWaitUntil(() -> mounted.walk(window))
+                .thenExecute(() -> {
+                    TickPacer.pace(false);
+                    mounted.dispose();
+                    long footP50 = Percentiles.percentile(foot.total, 0.50);
+                    long mountedP50 = Percentiles.percentile(mounted.total, 0.50);
+                    double ratio = (double) mountedP50 / footP50;
+                    double foreign = window.meanForeignLoad();
+                    boolean over = ratio > 1.20;
+                    String verdict = foreign > INVALID_FOREIGN_LOAD
+                            ? "invalid"
+                            : !gated("a") ? "report-only" : over ? "fail" : "pass";
+                    JsonObject json = new JsonObject();
+                    json.addProperty("test", "mounted_cost");
+                    json.addProperty("gate", "a");
+                    json.addProperty("units", MOUNTED);
+                    json.addProperty("footP50", footP50);
+                    json.addProperty("mountedP50", mountedP50);
+                    json.addProperty("footAdapterP50", Percentiles.percentile(foot.adapter, 0.50));
+                    json.addProperty("mountedAdapterP50", Percentiles.percentile(mounted.adapter, 0.50));
+                    json.addProperty("ratio", ratio);
+                    json.addProperty("limit", 1.20);
+                    json.addProperty("warmUpTicks", WARM_UP);
+                    json.addProperty("samples", SAMPLES);
+                    json.addProperty("foreignCpu", foreign);
+                    json.addProperty("verdict", verdict);
+                    write("mounted_cost", json);
+                    check(!verdict.equals("fail"), "mounted units cost " + ratio + " of foot units, over 1.20");
+                })
+                .thenSucceed();
+    }
+
+    /** One run of {@value #MOUNTED} walkers of a template, two factions crossing the arena and back. */
+    private static final class Walkers {
+        private final GameTestHelper h;
+        private final TemplateId template;
+        private final long[] total = new long[SAMPLES];
+        private final long[] adapter = new long[SAMPLES];
+        private @Nullable MatchRuntime rt;
+        private long firstOrderAt = -1;
+        private long orderedAt = -1;
+        private boolean toEast = true;
+        private int samples;
+
+        Walkers(GameTestHelper h, TemplateId template) {
+            this.h = h;
+            this.template = template;
+        }
+
+        void spawn() {
+            MatchRuntime match = MatchFixture.create(h, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
+            match.submit(PlayerSlot.ADMIN, new SpawnUnits(template, new FactionSlot(0), WEST, MOUNTED / 2, 8));
+            match.submit(PlayerSlot.ADMIN, new SpawnUnits(template, new FactionSlot(1), EAST, MOUNTED / 2, 8));
+            rt = match;
+        }
+
+        void dispose() {
+            if (rt != null) {
+                StrategosServer.get().matches().dispose(rt.id());
+            }
+        }
+
+        /** One tick of the run: place, order, warm up, then sample; throws until {@value #SAMPLES} are in. */
+        void walk(Window window) {
+            MatchRuntime match = java.util.Objects.requireNonNull(rt);
+            if (samples == 0 && firstOrderAt < 0) {
+                check(
+                        core(match).queries().unitCount() == MOUNTED
+                                && match.bodies().count() == MOUNTED,
+                        "the " + MOUNTED + " units and bodies are not there yet");
+            }
+            long tick = core(match).queries().tick();
+            if (orderedAt < 0 || tick - orderedAt >= REORDER_EVERY) {
+                reorder(match, toEast);
+                toEast = !toEast;
+                orderedAt = tick;
+                if (firstOrderAt < 0) {
+                    firstOrderAt = tick;
+                }
+            }
+            if (tick - firstOrderAt >= WARM_UP && samples < SAMPLES) {
+                if (samples == 0) {
+                    window.start();
+                }
+                total[samples] = core(match).timers().lastTotalNanos();
+                adapter[samples] = core(match).timers().lastAdapterNanos();
+                samples++;
+                if (samples % 20 == 0) {
+                    window.sampleForeignLoad();
+                }
+            }
+            check(samples >= SAMPLES, template.value() + " sampling: " + samples + " of " + SAMPLES);
+        }
     }
 
     /**

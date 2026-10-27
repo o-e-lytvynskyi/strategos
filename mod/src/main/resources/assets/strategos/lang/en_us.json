@@ -1,8 +1,10 @@
 {
   "entity.strategos.unit_humanoid": "Unit",
+  "entity.strategos.unit_mount": "Mounted unit",
   "strategos.unit.debug_walker": "Debug walker",
   "strategos.unit.infantry": "Infantry",
   "strategos.unit.archer": "Archer",
+  "strategos.unit.horseman": "Horseman",
   "strategos.unit.worker": "Worker",
   "strategos.unit.sheep": "Sheep",
   "strategos.unit.pig": "Pig",

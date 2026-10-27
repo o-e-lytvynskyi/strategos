@@ -4,10 +4,10 @@
 
 ## Now
 
-- **Milestone:** M5 Combat; 11 of 23 tasks complete (T1–T5b).
-- **In progress:** M5 T6 mounted units (UNIT-06) since 2026-10-27.
-- **Last finished task:** T5b FLEEING, stance buttons and GameTests (2026-10-27).
-- **Next task:** T6, then T7 the roster (UNIT-07).
+- **Milestone:** M5 Combat; 12 of 23 tasks complete (T1–T6).
+- **In progress:** M5 T7 the roster (UNIT-07) since 2026-10-27.
+- **Last finished task:** T6 mounted units (2026-10-27).
+- **Next task:** T7 (the duel harness; also CMB-16 check 2), then T8 ORD-05.
 - **Merged from main last:** a10a8fd (2026-10-27), PR #21 fix-main.
 
 ## Depends on unfinished work
@@ -19,6 +19,13 @@
 - Preserve codex/m5-combat and dev/lev1pes/m5. Import code and task-specific evidence selectively after assignment; do not copy old central STATE/worklog records over current main.
 
 ## Log
+
+### 2026-10-27 — M5 T6
+
+- **T6 · UNIT-06 Mounted units** — UNIT-06 in_progress (1–3 pass; 4, the L4 look, in T17); PATH-11 done. `strategos:unit_mount` (1.4 × 2.0, tracking 10, interval 3) and `MountModel`/`MountRenderer`: vanilla `HorseModel.createBodyMesh` in our own layer plus the existing unit renderer's seated rider; `MountPose` (gallop from speed, strike pose) in core; the horseman template (§2.7 numbers, LARGE, index 17) with provenance and label. Tests: `UnitMountTypeTest` (L2), `bodytests.a_horseman_is_one_entity` (12 horsemen, 12 entities, no passengers, no vanilla horse), `maptests.thirty_horsemen_cross` (rungs [0,16,0,0,0,0]), `perftests.mounted_cost` (200 walking, p50 foot 1.011 ms vs mounted 1.175 ms, 1.162 ≤ 1.20), `MountPoseTest`, `HorsemanTemplateTest`, two `ShotSystemTest` collateral cases.
+- Found on the way: (1) `bodytests.materialises_one_body_per_unit` asserted after a fixed two ticks while the server-wide body budget (64 a tick) serves the batch's matches in turn; a test sorting before it made it fail. It now waits for the count (kb: shared per-tick budgets). (2) One large template made every default match run the large-body eviction scan each tick; it now depends on live large units. (3) `ShotBench.volley60{miss}` doubled (1.08 → 2.00 us) because the collateral query took the largest template radius (the horseman's); it counts large templates only while one lives (1.04 us now).
+- Gates: `verify verifySlow verifySoak` 4m 35s green; `jmhCompare` green (7m 19s, rebuild1000 4.76 in both forks).
+- **Next:** T7 roster and duels.
 
 ### 2026-10-27 — M5 T5b
 
@@ -167,6 +174,9 @@
 
 ## Decisions taken
 
+- 2026-10-27 · The mounted rider is the unit renderer's own humanoid in a forced seated pose (armour, items, faction colours and LOD carry over); seat height 0.62 and the untinted horse wait for T17's images. The card's "inventory entry" is the engine-surface entity list: units have no spawn egg (noSummon). Undo in MountRenderer.
+- 2026-10-27 · PATH-11 check 3 reads "no ladder rung above repath" as rungs 2–5 at zero plus the existing stuck-under-100-ticks measure. Undo by a stricter reading in MapTests.
+- 2026-10-27 · trial implementer: pass — T6 with two follow-up rounds; it found the body-budget race when asked to fix rather than rename.
 - 2026-10-27 · A flight's point and its end are measured from the attacker (§2.4: "back to the order when it is 12 blocks off"), not from where the unit stood; StanceTest's passive case and WorkerModelTest now assert that. Undo by planning from the unit.
 - 2026-10-27 · The card's active stance is what the client knows (the stance its card last sent, else the template's); stances are not replicated. Proposal in For the owner 6. Undo n/a.
 - 2026-10-27 · trial implementer: pass — T5b in one round, reported the gate's one red row honestly instead of retrying.

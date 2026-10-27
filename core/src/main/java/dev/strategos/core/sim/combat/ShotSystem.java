@@ -56,8 +56,11 @@ public final class ShotSystem implements MatchSystem {
         List<ShotStore.Shot> due = store.takeDue(state.tick());
         if (due.isEmpty()) return;
         double radius = 0;
+        boolean large = state.hasLiveLargeUnits(); // a horseman's wider body widens the query only while one lives
         for (UnitTemplate template : state.templates().all()) {
-            if (!template.isBuilding()) radius = Math.max(radius, template.radius());
+            if (!template.isBuilding() && (large || !template.mobility().equals("large"))) {
+                radius = Math.max(radius, template.radius());
+            }
         }
         queryState = state;
         for (ShotStore.Shot shot : due) {

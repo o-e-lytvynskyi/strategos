@@ -32,7 +32,7 @@ class ArcherTemplateTest {
     }
 
     @Test
-    void existingTemplateIndicesStayFixedWhenTheArcherIsAppended() {
+    void existingTemplateIndicesStayFixedWhenLaterUnitsAreAppended() {
         assertThat(TemplateSet.builtin().all())
                 .extracting(t -> t.id().value())
                 .containsExactly(
@@ -52,7 +52,8 @@ class ArcherTemplateTest {
                         "strategos:unit/sheep",
                         "strategos:building/farmstead",
                         "strategos:building/storehouse",
-                        "strategos:unit/archer");
+                        "strategos:unit/archer",
+                        "strategos:unit/horseman");
     }
 
     private static void assertValue(TemplateSet set, UnitTemplate template, String path, double expected) {

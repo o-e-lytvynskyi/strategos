@@ -141,7 +141,7 @@ public final class Construction {
      * surface, so no path could take it out.
      */
     public static void evictBlocked(MatchState s) {
-        if (!s.hasFootprints() && !s.hasLargeMobility()) return;
+        if (!s.hasFootprints() && !s.hasLiveLargeUnits()) return;
         EntityStore entities = s.entities();
         MotionStore motion = s.motion();
         for (int i = 0; i < entities.highWater(); i++) {

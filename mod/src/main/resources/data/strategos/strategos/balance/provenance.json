@@ -67,6 +67,24 @@
     "Cost/resources/iron": "Twenty iron: arrowheads add an iron cost to ranged troops (M5 UNIT-07)",
     "Cost/population": "One house's room for one archer, as for other infantry"
   },
+  "strategos:unit/horseman": {
+    "Health/max": "A hundred and twenty hit points: a fifth more than a spearman, the price of being hard to catch (M5 UNIT-07)",
+    "UnitMotion/walkSpeed": "0.34 blocks a tick: nearly twice the spearman, so cavalry can run archers down (M5 UNIT-07)",
+    "Attack/Melee/hack": "Five hack per sword stroke: more than a spearman's three, so the counter over archers is quick (M5 UNIT-07)",
+    "Attack/Melee/reach": "A block and a half: a sword from the saddle reaches a little past a spear's thrust",
+    "Attack/Melee/prepare": "Eight ticks of wind-up: a rider strikes while still at the gallop",
+    "Attack/Melee/repeat": "A stroke every eighteen ticks, a little faster than the spearman's thrust a second",
+    "Resistance/hack": "Three armour: a shield and a padded jerkin, lighter than the spearman's five (M5 UNIT-07)",
+    "Resistance/pierce": "Two armour: spears are meant to counter cavalry, so pierce gets through (M5 UNIT-07)",
+    "Resistance/crush": "Two armour: padding does little against blunt blows, as for the spearman",
+    "Cost/resources/food": "Eighty food: a rider and a horse eat more than a foot soldier (M5 UNIT-07)",
+    "Cost/resources/wood": "Forty wood: the shield and the saddle, as much as a spearman's shaft and shield",
+    "Cost/resources/iron": "Thirty iron: a sword and horseshoes, the dearest of the three soldiers in iron (M5 UNIT-07)",
+    "Cost/population": "One house's room for one rider, as for a foot soldier; the horse needs none (UNIT-06)",
+    "Body/width": "A horse's hit box, 1.4 blocks, the mounted body's size (ADR-0011, UNIT-06)",
+    "Body/height": "Two blocks: a horse and the rider above its saddle (ADR-0011, UNIT-06)",
+    "Body/radius": "The large class's avoidance radius, 0.7: half the body's width (PATH-11)"
+  },
   "strategos:unit/worker": {
     "Health/max": "Half a spearman's: a raid on workers costs their owner dearly, so workers are worth guarding",
     "Behaviour/flee": "Eight blocks from a blow: out of a spearman's reach, near enough to go back to work",

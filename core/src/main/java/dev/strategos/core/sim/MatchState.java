@@ -89,6 +89,8 @@ public final class MatchState {
     private final MatchTerrain terrain;
     private @Nullable MobilityClass[] mobilityByTemplate = new MobilityClass[0];
     private boolean hasLargeMobility;
+    private int liveLarge; // live units of the large class; valid unless liveLargeStale
+    private boolean liveLargeStale = true; // after a build, restore or template swap: recounted on demand
     private final NodeStore nodes = new NodeStore();
     private final BuildingStore buildings = new BuildingStore();
     private final Alerts alerts = new Alerts(); // UI-12's live alerts, saved (MATCH-04)
@@ -149,9 +151,31 @@ public final class MatchState {
         return hasLargeMobility;
     }
 
+    /**
+     * Whether any live unit is of the large class: what the per-tick work for large bodies (UNIT-06) depends on, so a
+     * match without horsemen pays nothing though the template set holds one. Kept by {@link #spawnUnit} and {@link
+     * #removeUnit}; recounted once after a template swap or a build over restored units.
+     */
+    public boolean hasLiveLargeUnits() {
+        if (!hasLargeMobility) {
+            return false;
+        }
+        if (liveLargeStale) {
+            liveLarge = 0;
+            for (int i = 0; i < entities.highWater(); i++) {
+                if (entities.aliveAt(i) && mobility(i) == MobilityClass.LARGE) {
+                    liveLarge++;
+                }
+            }
+            liveLargeStale = false;
+        }
+        return liveLarge > 0;
+    }
+
     private void cacheMobility() {
         mobilityByTemplate = new MobilityClass[templates.indexCount()];
         hasLargeMobility = false;
+        liveLargeStale = true;
         for (UnitTemplate template : templates.all()) {
             MobilityClass mobility = switch (template.mobility()) {
                 case "infantry" -> MobilityClass.INFANTRY;
@@ -462,6 +486,9 @@ public final class MatchState {
         stances.clear(i);
         releaseClaim(i, handle);
         dropLoad(i);
+        if (!liveLargeStale && mobility(i) == MobilityClass.LARGE) {
+            liveLarge--;
+        }
         entities.destroy(handle);
     }
 
@@ -474,6 +501,9 @@ public final class MatchState {
         int index = Handle.index(handle);
         ensureCapacity(index + 1);
         identity.set(index, template, faction);
+        if (!liveLargeStale && mobility(index) == MobilityClass.LARGE) {
+            liveLarge++;
+        }
         motion.set(index, x, y, z, yaw);
         orders.clear(index);
         paths.reset(index);

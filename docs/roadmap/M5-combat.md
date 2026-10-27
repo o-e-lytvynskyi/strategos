@@ -168,7 +168,8 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
   2. Reachability per class equals a flood fill (L1).
   3. 30 horsemen cross the proving ground with no ladder rung above repath (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** PATH-06, PATH-09 · **Size:** M · **Tier:** T0
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-10-27 — M5 T2a–T2b: `MobilityTest`, `LargeMovementTest`, `LargeIntegrationTest` (1–2, L1); M5 T6: `maptests.thirty_horsemen_cross` — 30 horsemen arrive, ladder rungs [0,16,0,0,0,0] (repath only), longest stuck 50 ticks, 1,254 ticks (3, L3); spec §1.6 row 3
 
 #### UNIT-06 · Mounted units
 - **Value:** Cavalry looks and moves like riders on horses, yet costs about as much as one foot
@@ -185,7 +186,7 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
   4. Rider and horse render together at every camera height (L4, consent).
 - **Tests:** L0, L2, L3, L4 (consent), L5, L6 · **Depends on:** UNIT-03, PATH-11 · **Size:** M ·
   **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 #### UNIT-07 · Combat roster and counters
 - **Value:** Three soldiers with clear roles and counters: spearmen stop horsemen, horsemen run down

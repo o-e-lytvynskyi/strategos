@@ -12,6 +12,10 @@ import static dev.strategos.gametest.suites.Units.onlyUnit;
 import static dev.strategos.gametest.suites.Units.spawn;
 import static dev.strategos.gametest.suites.Units.unit;
 
+import dev.strategos.core.protocol.SpawnUnits;
+import dev.strategos.core.shared.PlayerSlot;
+import dev.strategos.core.shared.TemplateId;
+import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.UnitView;
 import dev.strategos.core.testkit.SimHarness;
@@ -35,6 +39,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.animal.Pig;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SculkSensorBlock;
@@ -74,25 +79,65 @@ public final class BodyTests {
     public static void materialisesOneBodyPerUnit(GameTestHelper h) {
         MatchRuntime rt = match(h);
         spawn(rt, 16, 16, 10, 6);
-        h.runAfterDelay(2, () -> {
-            int[] units = handles(rt);
-            check(units.length == 10, units.length + " units, not 10");
-            List<UnitEntity> bodies = bodiesOf(h.getLevel(), rt);
-            check(
-                    bodies.size() == 10 && rt.bodies().count() == 10,
-                    bodies.size() + " bodies in the level and " + rt.bodies().count() + " registered, not 10");
-            Set<Integer> shown = new TreeSet<>();
-            for (UnitEntity body : bodies) {
-                shown.add(body.spawnData().handle());
-            }
-            check(shown.size() == 10, "two bodies show the same unit: " + shown);
-            for (int handle : units) {
-                UnitEntity body = body(rt, handle);
-                check(body.isBound() && shown.contains(handle), "unit " + handle + " has no bound body in the level");
-                assertOnCorePose(rt, body, handle, 1e-9);
-            }
-            h.succeed();
-        });
+        // Not a fixed delay: the 64 bodies a server tick may create are shared by every match of the batch, so a match
+        // late in the order waits more than two ticks for its turn when the batch grows (UNIT-06 added one).
+        h.startSequence()
+                .thenWaitUntil(() -> check(rt.bodies().count() == 10, "waiting for the 10 bodies"))
+                .thenExecute(() -> {
+                    int[] units = handles(rt);
+                    check(units.length == 10, units.length + " units, not 10");
+                    List<UnitEntity> bodies = bodiesOf(h.getLevel(), rt);
+                    check(
+                            bodies.size() == 10 && rt.bodies().count() == 10,
+                            bodies.size() + " bodies in the level and "
+                                    + rt.bodies().count() + " registered, not 10");
+                    Set<Integer> shown = new TreeSet<>();
+                    for (UnitEntity body : bodies) {
+                        shown.add(body.spawnData().handle());
+                    }
+                    check(shown.size() == 10, "two bodies show the same unit: " + shown);
+                    for (int handle : units) {
+                        UnitEntity body = body(rt, handle);
+                        check(
+                                body.isBound() && shown.contains(handle),
+                                "unit " + handle + " has no bound body in the level");
+                        assertOnCorePose(rt, body, handle, 1e-9);
+                    }
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * UNIT-06.1: a horseman is one entity: its body is a {@code unit_mount}, there is exactly one body per unit, it
+     * carries no passenger and rides nothing, and no vanilla horse or other entity stands in the arena beside them.
+     */
+    @StrategosTest
+    public static void aHorsemanIsOneEntity(GameTestHelper h) {
+        MatchRuntime rt = match(h);
+        rt.submit(
+                PlayerSlot.ADMIN,
+                new SpawnUnits(new TemplateId("strategos:unit/horseman"), Units.FACTION, new Vec2d(16, 16), 12, 6));
+        h.startSequence()
+                .thenWaitUntil(() -> check(rt.bodies().count() == 12, "waiting for the 12 bodies"))
+                .thenExecute(() -> {
+                    int[] units = handles(rt);
+                    check(units.length == 12, units.length + " horsemen, not 12");
+                    for (int handle : units) {
+                        List<UnitEntity> shown = bodiesOf(h.getLevel(), rt, handle);
+                        check(shown.size() == 1, shown.size() + " bodies show horseman " + handle);
+                        UnitEntity body = shown.get(0);
+                        check(
+                                body.getType() == ModEntityTypes.UNIT_MOUNT.get(),
+                                "horseman " + handle + " is a " + body.getType());
+                        check(
+                                body.getPassengers().isEmpty() && !body.isPassenger(),
+                                "horseman " + handle + " has a rider entity");
+                    }
+                    List<Entity> everything = h.getLevel()
+                            .getEntities((Entity) null, h.getBounds().inflate(8), e -> !(e instanceof Player));
+                    check(everything.size() == 12, everything.size() + " entities in the arena, not the 12 bodies");
+                })
+                .thenSucceed();
     }
 
     @StrategosTest

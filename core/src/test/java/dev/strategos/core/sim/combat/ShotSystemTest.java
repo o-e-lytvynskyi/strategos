@@ -2,12 +2,16 @@ package dev.strategos.core.sim.combat;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import dev.strategos.core.protocol.SpawnUnits;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
+import dev.strategos.core.shared.PlayerSlot;
+import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.KernelAccess;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.Phase;
+import dev.strategos.core.sim.UnitCreated;
 import dev.strategos.core.sim.UnitHurt;
 import dev.strategos.core.testkit.Seeds;
 import dev.strategos.core.testkit.SimHarness;
@@ -15,6 +19,8 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class ShotSystemTest {
+    private static final TemplateId HORSEMAN = new TemplateId("strategos:unit/horseman");
+
     @Test
     void preferredLiveTargetWinsThenLowestIndexFriendlyCollateral() {
         SimHarness h = SimHarness.builder().build();
@@ -126,6 +132,42 @@ class ShotSystemTest {
                     assertThat(hit.attacker()).isEqualTo(1048576);
                     assertThat(hit.amount()).isEqualTo(1f / 256);
                 });
+    }
+
+    @Test
+    void aShotLandingInAHorsemansWiderBodyHitsItWhereInfantryWouldBeMissed() {
+        SimHarness h = SimHarness.builder().build();
+        int shooter = h.spawn(new FactionSlot(0), new Vec2d(5.5, 10.5), 1, 0)[0];
+        int gone = h.spawn(new FactionSlot(0), new Vec2d(6.5, 10.5), 1, 0)[0];
+        h.submit(PlayerSlot.ADMIN, new SpawnUnits(HORSEMAN, new FactionSlot(0), new Vec2d(20.5, 10.5), 1, 0));
+        int horseman = h.step().events().stream()
+                .filter(UnitCreated.class::isInstance)
+                .map(UnitCreated.class::cast)
+                .findFirst()
+                .orElseThrow()
+                .handle();
+        MatchState s = KernelAccess.state(h.core());
+        s.removeUnit(gone);
+        s.motion().set(Handle.index(horseman), 20.5, 1, 10.5, 0);
+        s.spatial().rebuild(s);
+        Damage d = Damage.of(gone, shooter, DamageType.PIERCE, 1);
+        new ShotSystem(rows(shot(1, s.tick(), 21.1, 1.9, 10.5, d))).run(s);
+        assertThat(s.takeDamage()).extracting(Damage::target).containsExactly(horseman);
+    }
+
+    @Test
+    void withoutALiveHorsemanTheSameLandingBesideAnInfantryMissesAsBefore() {
+        SimHarness h = SimHarness.builder().build();
+        int shooter = h.spawn(new FactionSlot(0), new Vec2d(5.5, 10.5), 1, 0)[0];
+        int gone = h.spawn(new FactionSlot(0), new Vec2d(6.5, 10.5), 1, 0)[0];
+        int foot = h.spawn(new FactionSlot(0), new Vec2d(20.5, 10.5), 1, 0)[0];
+        MatchState s = KernelAccess.state(h.core());
+        s.removeUnit(gone);
+        s.motion().set(Handle.index(foot), 20.5, 1, 10.5, 0);
+        s.spatial().rebuild(s);
+        Damage d = Damage.of(gone, shooter, DamageType.PIERCE, 1);
+        new ShotSystem(rows(shot(1, s.tick(), 21.1, 1.9, 10.5, d))).run(s);
+        assertThat(s.takeDamage()).isEmpty();
     }
 
     private static MatchState volley(float amount) {
