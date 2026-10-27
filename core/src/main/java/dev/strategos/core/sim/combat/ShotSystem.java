@@ -67,7 +67,9 @@ public final class ShotSystem implements MatchSystem {
         queryState = state;
         for (ShotStore.Shot shot : due) {
             selected = Handle.NONE;
-            if (state.entities().isAlive(shot.target()) && contains(state, Handle.index(shot.target()), shot)) {
+            if (state.entities().isAlive(shot.target())
+                    && !state.garrisoned(Handle.index(shot.target()))
+                    && contains(state, Handle.index(shot.target()), shot)) {
                 selected = shot.target();
             } else {
                 queryShot = shot;
@@ -102,7 +104,8 @@ public final class ShotSystem implements MatchSystem {
             if (!(town
                             ? state.buildings().alive(request.shooter())
                             : state.entities().isAlive(request.shooter()))
-                    || !state.entities().isAlive(request.target())) {
+                    || !state.entities().isAlive(request.target())
+                    || state.garrisoned(Handle.index(request.target()))) {
                 continue;
             }
             int shooter = Handle.index(request.shooter());
@@ -168,6 +171,7 @@ public final class ShotSystem implements MatchSystem {
         MatchState state = Objects.requireNonNull(queryState);
         if (selected == Handle.NONE
                 && state.entities().aliveAt(index)
+                && !state.garrisoned(index)
                 && contains(state, index, Objects.requireNonNull(queryShot))) {
             selected = state.entities().handleAt(index);
         }

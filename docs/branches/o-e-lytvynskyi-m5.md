@@ -4,10 +4,10 @@
 
 ## Now
 
-- **Milestone:** M5 Combat; 15 of 23 tasks complete (T1–T9).
-- **In progress:** M5 T10 garrison and the bell (BLD-16) since 2026-10-27.
-- **Last finished task:** T9 civic centre arrows (2026-10-27).
-- **Next task:** T10, then T11 (BLD-11).
+- **Milestone:** M5 Combat; 16 of 24 tasks complete (T1–T10a).
+- **In progress:** M5 T10b the bell and the bodies (BLD-16) since 2026-10-27.
+- **Last finished task:** T10a garrison in the core (2026-10-27).
+- **Next task:** T10b, then T11 (BLD-11), T12 (CMB-17).
 - **Merged from main last:** a10a8fd (2026-10-27), PR #21 fix-main.
 
 ## Depends on unfinished work
@@ -18,6 +18,14 @@
 - Preserve codex/m5-combat and dev/lev1pes/m5. Import code and task-specific evidence selectively after assignment; do not copy old central STATE/worklog records over current main.
 
 ## Log
+
+### 2026-10-27 — M5 T10 split, T10a
+
+- Split T10 into T10a (garrison in the core) and T10b (the bell, bodies, first person) before implementing: the estimate passed 1,500 lines.
+- **T10a · Garrison in the core** — BLD-16 in_progress (checks 1–2 pass at L1). `GarrisonHolder` (civic centre: 20, Worker or Infantry), `Garrison` (26) and `Ungarrison` (27) with their rules and limiter counts, GARRISON/GARRISON_APPROACHING/GARRISONED states, `GarrisonStore` (optional, validated on restore both ways, hashed only when used), GARRISONED units out of the grid, motion, targeting, shots and town arrows; ejection ring by ring when the building falls; the town arrows' garrison seam filled. Tests: `GarrisonTest` (`capacityAndClasses`, `handleHpAndOrdersSurvive`, untargetable, ejection, walk interrupted, no free ground, release stays put), `GarrisonPersistenceTest` (7 restore rejections, resume mid-walk and across a falling centre), `GarrisonTransitionRows` (37), data and command pins.
+- Review (reviewer): restore accepted any row; ejection after the grid rebuild could split a live and a resumed run; an empty Ungarrison cost nothing at the limiter; the bot mustered garrisoned infantry; the door check ignored Y. All fixed with tests; the reported latch return was already cleared by `OrderReceived`, now also explicitly.
+- JMH: the first grid exclusion slowed `SpatialBench.rebuild1000` (7.7 us in both forks) and `MovementBench.step600` (+17.5 %); excluding in a separate pass only when someone is inside brought them to 4.87/4.82 and 23.9 (+8.6 %). Gates: `verify verifySlow verifySoak` and `jmhCompare` green.
+- **Next:** T10b.
 
 ### 2026-10-27 — M5 T9
 
@@ -197,6 +205,9 @@
 
 ## Decisions taken
 
+- 2026-10-27 · Garrison details §2.9 leaves open: any of the holder's classes admits (archers and spearmen as Infantry, horsemen refused); a full building fails the order on the way, not at command time; Garrison replaces orders, those queued behind it stay and run on release; orders given to a unit inside wait until release (attacks on an inside unit are refused); walking in ignores blows; non-lethal damage to an inside unit is ignored, lethal still kills; an empty Ungarrison counts as 20 at the rate limiter. Undo per rule in GarrisonRules / Garrisoning.
+- 2026-10-27 · trial reviewer: pass — two major and five minor findings on T10a, each with a scenario; one (the latch) turned out covered already, which the implementer showed with a test.
+- 2026-10-27 · trial implementer: pass — T10a and its review round, with a self-found JMH regression fixed before reporting.
 - 2026-10-27 · The economy bot's minimum wave raised to 14 spearmen (data only) so it overcomes the centre's arrows; neither the arrows nor the test moved. Undo in ai/economy.json.
 - 2026-10-27 · A town volley's range is checked at selection, not again at release (a target a block past the edge still takes the arrow). Undo by a release-time check for building shooters.
 - 2026-10-27 · trial implementer: pass — T9, and it reported the bot regression with its cause instead of relaxing the test.

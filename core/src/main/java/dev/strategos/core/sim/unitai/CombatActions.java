@@ -53,8 +53,8 @@ final class CombatActions {
                         qr,
                         UnitFilter.enemiesOf(s.identity().faction(i), s.config().factions()),
                         j -> {
-                            if (!s.entities().aliveAt(j))
-                                return; // the grid may still hold a unit killed since its rebuild
+                            if (!s.entities().aliveAt(j) || s.garrisoned(j))
+                                return; // the grid may still hold a unit killed or garrisoned since its rebuild
                             if (stand && Engagement.gap(s, i, j) > radius + 1e-9) return;
                             double d = DetMath.length(motion.x(j) - x, motion.z(j) - z);
                             int r = preferred.isEmpty() ? 0 : rankOf(s, j, preferred);

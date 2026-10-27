@@ -38,7 +38,7 @@ final class Melee {
         MatchState s = ctx.host();
         int i = ctx.unit();
         int target = s.orders().target(i);
-        if (!s.entities().isAlive(target)) {
+        if (Engagement.gone(s, target)) {
             return; // its think finds the next
         }
         s.orders().retarget(i, target, engagement.choose(s, i, target));
@@ -56,7 +56,7 @@ final class Melee {
         int i = ctx.unit();
         OrderQueues orders = s.orders();
         int target = orders.target(i);
-        if (!s.entities().isAlive(target)) {
+        if (Engagement.gone(s, target)) {
             CombatActions.findNext(ctx);
             return;
         }
@@ -111,7 +111,7 @@ final class Melee {
         MatchState s = ctx.host();
         int i = ctx.unit();
         int target = s.orders().target(i);
-        if (!s.entities().isAlive(target)) {
+        if (Engagement.gone(s, target)) {
             CombatActions.findNext(ctx);
             return;
         }

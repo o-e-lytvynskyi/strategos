@@ -57,6 +57,9 @@ public final class CombatSystem implements MatchSystem {
                 continue;
             }
             int i = Handle.index(target);
+            if (s.garrisoned(i) && !d.lethal()) {
+                continue; // inside a building nothing reaches it (BLD-16)
+            }
             double max = stats.maxHealth(i);
             double taken = health.damage(i);
             double left = max - taken;

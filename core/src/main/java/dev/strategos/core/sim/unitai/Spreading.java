@@ -3,6 +3,7 @@ package dev.strategos.core.sim.unitai;
 import dev.strategos.core.shared.DetMath;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.sim.MatchState;
+import dev.strategos.core.sim.combat.Engagement;
 import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.order.OrderQueues;
 
@@ -24,11 +25,15 @@ final class Spreading {
         int best = 0;
         double bestD = Double.POSITIVE_INFINITY;
         for (int j = 0; j < s.entities().highWater(); j++) {
-            if (j == i || !s.entities().aliveAt(j) || orders.kind(j) != OrderKind.ATTACK || orders.group(j) != group) {
+            if (j == i
+                    || !s.entities().aliveAt(j)
+                    || s.garrisoned(j)
+                    || orders.kind(j) != OrderKind.ATTACK
+                    || orders.group(j) != group) {
                 continue;
             }
             int target = orders.target(j);
-            if (!s.entities().isAlive(target)) {
+            if (Engagement.gone(s, target)) {
                 continue;
             }
             int t = Handle.index(target);

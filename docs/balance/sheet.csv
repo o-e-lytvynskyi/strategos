@@ -22,6 +22,7 @@ strategos:building/civic_centre,Cost/time,150,"set in strategos:building/civic_c
 strategos:building/civic_centre,DamageStages/first,85,"set in strategos:template/building_base","The first blocks fall once a seventh of the building is gone, early enough to show an attack is working (BLD-05, 04 §11.8)"
 strategos:building/civic_centre,DamageStages/second,65,"set in strategos:template/building_base","Two thirds of its hit points left: a third of its blocks down, the building plainly hurt"
 strategos:building/civic_centre,DamageStages/third,35,"set in strategos:template/building_base","A third left: most of it down but its walls' foot, a ruin still standing until its last hit points"
+strategos:building/civic_centre,GarrisonHolder/capacity,20,"set in strategos:building/civic_centre","Twenty inside, workers and foot soldiers only (Worker and Infantry; horsemen stay out): every worker of an early town fits, and the arrows they add (one each) are the centre's answer to a raid (BLD-16, BLD-11)"
 strategos:building/civic_centre,Health/max,2000,"set in strategos:building/civic_centre","Two thousand: ten spearmen with torches take minutes, so a raid alone does not end a match (CMB-03)"
 strategos:building/civic_centre,Housing/capacity,20,"set in strategos:building/civic_centre","Twenty: the five starting workers and fifteen more before the first house is needed"
 strategos:building/civic_centre,Limit/count,1,"set in strategos:building/civic_centre","One civic centre a faction until phases (Town) allow more, as in the classics (BLD-08)"

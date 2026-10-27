@@ -84,6 +84,14 @@ public final class CorePaths {
                 BUILDING_SPREAD);
     }
 
+    /**
+     * A building's garrison (BLD-16): how many units it holds and the class tokens a unit needs one of to go in. A
+     * building without {@code capacity} holds none. Optional, so they stay out of {@link #all()}.
+     */
+    public static final String GARRISON_CAPACITY = "GarrisonHolder/capacity";
+
+    public static final String GARRISON_CLASSES = "GarrisonHolder/classes";
+
     public static final double DEFAULT_HEALTH = 100;
     public static final double MAX_RESISTANCE = 20;
     public static final double DEFAULT_REACH = 1;
@@ -159,7 +167,8 @@ public final class CorePaths {
                     BUILDING_PER_GARRISONED,
                     BUILDING_PIERCE,
                     BUILDING_RANGE,
-                    BUILDING_SPREAD -> 0;
+                    BUILDING_SPREAD,
+                    GARRISON_CAPACITY -> 0;
             case HEALTH, MELEE_REPEAT, RANGED_REPEAT, BUILDING_INTERVAL -> 1;
             case RANGED_SPEED, BUILDING_SPEED -> 0.01;
             case RESIST_HACK, RESIST_PIERCE, RESIST_CRUSH -> -MAX_RESISTANCE;
@@ -175,6 +184,7 @@ public final class CorePaths {
             case MELEE_PREPARE, MELEE_REPEAT -> 200;
             case RANGED_RANGE, BUILDING_RANGE -> 128;
             case BUILDING_ARROWS, BUILDING_PER_GARRISONED -> 32;
+            case GARRISON_CAPACITY -> 200;
             case BUILDING_INTERVAL -> 1_200;
             case BUILDING_PIERCE -> Float.MAX_VALUE;
             case RANGED_PREPARE, RANGED_REPEAT -> 200;

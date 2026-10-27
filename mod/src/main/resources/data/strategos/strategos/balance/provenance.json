@@ -119,6 +119,7 @@
     "Attack/Building/perGarrisoned": "One more arrow for each unit inside, so sheltering workers makes the centre deadlier (BLD-11, from T10)",
     "Attack/Building/interval": "Eighty ticks (four seconds) between volleys: slow enough that soldiers, not the centre, decide a fight (CMB-07)",
     "Attack/Building/pierce": "Eight pierce an arrow, half an archer's sixteen: the centre is a deterrent for early raids, not a tower (CMB-07)",
+    "GarrisonHolder/capacity": "Twenty inside, workers and foot soldiers only (Worker and Infantry; horsemen stay out): every worker of an early town fits, and the arrows they add (one each) are the centre's answer to a raid (BLD-16, BLD-11)",
     "Attack/Building/range": "Twenty-four blocks, four more than an archer: the centre covers its fields and its workers' walk (CMB-07)",
     "Health/max": "Two thousand: ten spearmen with torches take minutes, so a raid alone does not end a match (CMB-03)",
     "Cost/resources/wood": "Three hundred wood: a second centre is a late, deliberate expansion, not an opening move",

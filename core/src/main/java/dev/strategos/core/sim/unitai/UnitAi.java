@@ -92,6 +92,9 @@ public final class UnitAi {
     public static final StateId BURN_APPROACHING = new StateId(19, "burn.approaching", UnitState.WALKING);
     public static final StateId BURNING = new StateId(20, "burn.burning", UnitState.COMBAT);
     public static final StateId FLEEING = new StateId(21, "fleeing", UnitState.WALKING);
+    public static final StateId GARRISON = new StateId(22, "garrison", null);
+    public static final StateId GARRISON_APPROACHING = new StateId(23, "garrison.approaching", UnitState.WALKING);
+    public static final StateId GARRISONED = new StateId(24, "garrisoned", UnitState.GARRISONED);
 
     private UnitAi() {}
 
@@ -257,6 +260,24 @@ public final class UnitAi {
                                 .enter(Burning::begin)
                                 .think(Burning::work)
                                 .transitions(next())
+                                .build(),
+                        StateDef.<MatchState>child(GARRISON, INDIVIDUAL)
+                                .initial(GARRISON_APPROACHING)
+                                .on(Stuck.class, UnitAi::giveUp)
+                                .on(PathInvalidated.class, UnitAi::repath)
+                                .transitions(next(GARRISONED))
+                                .build(),
+                        StateDef.<MatchState>child(GARRISON_APPROACHING, GARRISON)
+                                .thinkEvery(5)
+                                .enter(Garrisoning::approach)
+                                .think(Garrisoning::keepApproaching)
+                                .on(Arrived.class, Garrisoning::arrived)
+                                .transitions(next(GARRISONED))
+                                .build(),
+                        StateDef.<MatchState>child(GARRISONED, INDIVIDUAL)
+                                .on(OrderReceived.class, Garrisoning::orderReceived)
+                                .on(StopOrdered.class, (ctx, m) -> {}) // inside: the queue is cleared, nothing to stop
+                                .transitions(next())
                                 .build()),
                 UnitAi::changed);
     }
@@ -267,7 +288,7 @@ public final class UnitAi {
      */
     private static StateId[] next(StateId... more) {
         List<StateId> all = new ArrayList<>(
-                List.of(IDLE, WALKING, FLEEING, COMBAT, WALKING_AND_FIGHTING, FOLLOW, GATHER, BUILD, BURN));
+                List.of(IDLE, WALKING, FLEEING, COMBAT, WALKING_AND_FIGHTING, FOLLOW, GATHER, BUILD, BURN, GARRISON));
         all.addAll(List.of(more));
         return all.toArray(StateId[]::new);
     }
@@ -317,7 +338,9 @@ public final class UnitAi {
                 BUILD_APPROACHING,
                 BUILDING,
                 BURN_APPROACHING,
-                BURNING);
+                BURNING,
+                GARRISON_APPROACHING,
+                GARRISONED);
     }
 
     /** The leaf saved as {@code name}, or null for any other name. */
@@ -351,6 +374,7 @@ public final class UnitAi {
             case OrderKind.GATHER -> GATHER;
             case OrderKind.BUILD -> BUILD;
             case OrderKind.BURN -> BURN;
+            case OrderKind.GARRISON -> GARRISON;
             default -> throw new IllegalStateException("no unit state carries out order kind " + kind);
         };
     }
@@ -360,7 +384,7 @@ public final class UnitAi {
      * starts afresh, from a place round its own target or behind its own leader. An order that ended before the news
      * came, a queued build its state found cancelled on entry say, leaves nothing to start.
      */
-    private static void startOrder(Context<MatchState> ctx) {
+    static void startOrder(Context<MatchState> ctx) {
         int kind = ctx.host().orders().kind(ctx.unit());
         if (kind == OrderKind.NONE) {
             return;

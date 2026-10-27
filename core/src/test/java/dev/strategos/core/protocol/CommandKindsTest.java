@@ -42,6 +42,8 @@ class CommandKindsTest {
                         "strategos:train_batch",
                         "strategos:spawn_deposit",
                         "strategos:set_stance",
+                        "strategos:garrison",
+                        "strategos:ungarrison",
                         "strategos:attack_spread");
     }
 

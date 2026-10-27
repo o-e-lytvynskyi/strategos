@@ -106,9 +106,9 @@ public final class TownArrows implements MatchSystem {
         state = null;
     }
 
-    /** The units inside building {@code handle}; none until garrisons exist (BLD-16, M5 T10). */
+    /** The units inside building {@code handle} (BLD-16): each adds {@code perGarrisoned} arrows. */
     static int garrisoned(MatchState s, int handle) {
-        return 0;
+        return s.garrison().count(handle);
     }
 
     private static double value(MatchState s, int template, int faction, int path) {
@@ -119,7 +119,7 @@ public final class TownArrows implements MatchSystem {
     /** Keeps the best {@code capacity} enemies in order of preferred class, then distance, then index. */
     private void candidate(int index) {
         MatchState s = state;
-        if (s == null || !s.entities().aliveAt(index)) return;
+        if (s == null || !s.entities().aliveAt(index) || s.garrisoned(index)) return; // the grid may be a step old
         double d = DetMath.length(s.motion().x(index) - centreX, s.motion().z(index) - centreZ);
         if (d > range) return;
         int rank = 0;

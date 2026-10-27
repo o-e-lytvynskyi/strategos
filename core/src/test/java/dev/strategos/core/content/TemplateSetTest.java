@@ -104,7 +104,7 @@ class TemplateSetTest {
     }
 
     // M5: the horseman (UNIT-06, UNIT-07)
-    private static final String BUILTIN_VERSION = "a4b0e32ef4b0207851e15a3424e4ddb22b5e28be4f4a425e2bb4859728254f7c";
+    private static final String BUILTIN_VERSION = "b7f03fa2aa6a774de7089ea8cbcf114d5fcdfbcfeade02ddc1850d2f661824d7";
 
     private static TemplateSet set(UnitTemplate template) {
         return new TemplateSet(List.of(template));

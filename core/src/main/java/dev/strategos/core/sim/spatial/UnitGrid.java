@@ -6,8 +6,10 @@ import dev.strategos.core.shared.HotPath;
 import dev.strategos.core.sim.EntityStore;
 import dev.strategos.core.sim.IdentityStore;
 import dev.strategos.core.sim.MotionStore;
+import dev.strategos.core.sim.garrison.GarrisonStore;
 import java.util.Arrays;
 import java.util.function.IntConsumer;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Live units in a uniform grid of {@value #CELL}-block cells over the match space (04 §10.1), rebuilt whole at the end
@@ -57,6 +59,12 @@ public final class UnitGrid {
 
     /** Every live unit, by cell; allocates only when the match has more unit slots than ever before. */
     public void rebuild(EntityStore entities, MotionStore motion, IdentityStore identity) {
+        rebuild(entities, motion, identity, null);
+    }
+
+    /** As {@link #rebuild(EntityStore, MotionStore, IdentityStore)}, but the units inside a building (BLD-16) are left out. */
+    public void rebuild(
+            EntityStore entities, MotionStore motion, IdentityStore identity, @Nullable GarrisonStore garrison) {
         int highWater = entities.highWater();
         if (highWater > cellOf.length) {
             grow(highWater);
@@ -72,6 +80,15 @@ public final class UnitGrid {
                 n++;
             } else {
                 cellOf[i] = -1;
+            }
+        }
+        if (garrison != null && !garrison.empty()) { // units inside a building are in no cell (BLD-16)
+            for (int i = 0; i < highWater; i++) {
+                if (cellOf[i] >= 0 && garrison.inside(i)) {
+                    start[cellOf[i] + 1]--;
+                    cellOf[i] = -1;
+                    n--;
+                }
             }
         }
         int cells = cellsX * cellsZ;

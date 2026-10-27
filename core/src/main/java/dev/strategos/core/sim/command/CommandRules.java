@@ -19,6 +19,8 @@ public final class CommandRules {
                 .register(new MoveRule())
                 .register(new StopRule())
                 .register(new StanceRules.SetStanceRule())
+                .register(new GarrisonRules.GarrisonRule())
+                .register(new GarrisonRules.UngarrisonRule())
                 .register(new SpawnUnitsRule())
                 .register(new AttackRule())
                 .register(new AttackSpreadRule())

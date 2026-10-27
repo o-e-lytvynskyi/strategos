@@ -32,4 +32,6 @@ public sealed interface Command extends Hashable
                 TrainBatch,
                 SpawnDeposit,
                 SetStance,
+                Garrison,
+                Ungarrison,
                 AttackSpread {}

@@ -47,6 +47,8 @@ class CommandCodecTest {
                 new TrainBatch(524_292, new TemplateId("strategos:unit/infantry"), 5),
                 new SpawnDeposit(new TemplateId("strategos:building/iron_mine"), 10, 12),
                 new SetStance(UnitSet.of(3, 4), Stance.STAND_GROUND),
+                new Garrison(UnitSet.of(3, 4), 0x80003),
+                new Ungarrison(0x80003, UnitSet.of(3, 4)),
                 new AttackSpread(UnitSet.of(3, 4), 0x300007, QueueMode.QUEUE));
     }
 

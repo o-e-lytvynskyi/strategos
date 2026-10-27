@@ -56,6 +56,7 @@ final class Burning {
         for (int j = 0; j < s.entities().highWater(); j++) {
             if (j != i
                     && s.entities().aliveAt(j)
+                    && !s.garrisoned(j)
                     && orders.kind(j) == OrderKind.BURN
                     && orders.target(j) == target
                     && orders.slot(j) > 0

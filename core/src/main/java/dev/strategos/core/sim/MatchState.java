@@ -24,6 +24,7 @@ import dev.strategos.core.sim.econ.Ledger;
 import dev.strategos.core.sim.econ.NodeIndex;
 import dev.strategos.core.sim.econ.NodeStore;
 import dev.strategos.core.sim.econ.Treasury;
+import dev.strategos.core.sim.garrison.GarrisonStore;
 import dev.strategos.core.sim.nav.Material;
 import dev.strategos.core.sim.nav.MaterialKind;
 import dev.strategos.core.sim.nav.MobilityClass;
@@ -61,6 +62,7 @@ public final class MatchState {
     private final MotionStore motion = new MotionStore();
     private final OrderQueues orders = new OrderQueues();
     private final StanceStore stances;
+    private final GarrisonStore garrison = new GarrisonStore();
     private final AiStateStore ai = new AiStateStore();
     private final PathStore paths = new PathStore();
     private final HealthStore health = new HealthStore();
@@ -442,6 +444,7 @@ public final class MatchState {
         paths.ensureCapacity(size);
         health.ensureCapacity(size);
         carry.ensureCapacity(size);
+        garrison.ensureCapacity(size);
     }
 
     /** The damage each unit has taken (CMB-01). */
@@ -452,6 +455,19 @@ public final class MatchState {
     /** What stances need beyond the templates: the ones players set, and the spots of defensive units (CMB-05). */
     public StanceStore stances() {
         return stances;
+    }
+
+    /** Who is inside which building (BLD-16). */
+    public GarrisonStore garrison() {
+        return garrison;
+    }
+
+    /**
+     * Whether unit {@code index} is inside a building (BLD-16): it keeps its handle, hit points and orders but has no
+     * place in the world, so the systems that move, target, hit or count bodies pass it by.
+     */
+    public boolean garrisoned(int index) {
+        return ai.garrisoned(index);
     }
 
     public ShotStore shots() {
@@ -484,6 +500,7 @@ public final class MatchState {
         }
         health.reset(i);
         stances.clear(i);
+        garrison.remove(i);
         releaseClaim(i, handle);
         dropLoad(i);
         if (!liveLargeStale && mobility(i) == MobilityClass.LARGE) {
@@ -511,6 +528,7 @@ public final class MatchState {
         stats.clearPersonal(index);
         health.reset(index);
         stances.clear(index);
+        garrison.remove(index);
         ai.reset(index, UnitAi.IDLE);
         if (faction < config.factions()) {
             population.add(faction, unitPopulation(index));

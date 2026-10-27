@@ -130,6 +130,9 @@ public final class StateHasher {
         if (!s.stances().empty()) { // only once a stance was set or a defensive unit holds a spot (CMB-05)
             h = s.stances().mix(h);
         }
+        if (!s.garrison().empty()) { // only once a unit is inside a building (BLD-16)
+            h = s.garrison().mix(h);
+        }
         ShotStore shots = s.shots();
         if (!shots.pristine()) {
             h = Hasher.mix(h, 0x53484f5453L);

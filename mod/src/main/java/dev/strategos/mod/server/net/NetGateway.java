@@ -13,11 +13,13 @@ import dev.strategos.core.protocol.Feedback;
 import dev.strategos.core.protocol.FeedbackMsg;
 import dev.strategos.core.protocol.Follow;
 import dev.strategos.core.protocol.Fx;
+import dev.strategos.core.protocol.Garrison;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.MatchStateMsg;
 import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.SetStance;
 import dev.strategos.core.protocol.Stop;
+import dev.strategos.core.protocol.Ungarrison;
 import dev.strategos.core.protocol.WireCodec;
 import dev.strategos.core.shared.MatchId;
 import dev.strategos.core.shared.PlayerSlot;
@@ -72,6 +74,8 @@ public final class NetGateway {
 
     /** Ticks between two {@code match_state}s of a match whose lifecycle did not change: the clock sync. */
     private static final int STATE_EVERY = 100;
+    /** What an Ungarrison naming no unit (everyone inside) counts: the civic centre's capacity, the largest holder. */
+    static final int EVERYONE_INSIDE = 20;
 
     private final MinecraftServer server;
     private final Supplier<MatchRegistry> matches;
@@ -338,6 +342,11 @@ public final class NetGateway {
             case Follow follow -> follow.units().size();
             case AttackSpread spread -> spread.units().size();
             case SetStance stance -> stance.units().size();
+            case Garrison garrison -> garrison.units().size();
+            case Ungarrison ungarrison ->
+                ungarrison.units().size() == 0
+                        ? EVERYONE_INSIDE
+                        : ungarrison.units().size();
             default -> 0;
         };
     }

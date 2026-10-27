@@ -13,6 +13,7 @@ import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.OrderReceived;
 import dev.strategos.core.sim.build.BuildingStore;
+import dev.strategos.core.sim.combat.Engagement;
 import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.core.sim.spatial.UnitFilter;
@@ -46,7 +47,7 @@ final class AttackSpreadRule implements CommandRule<AttackSpread> {
             return Tally.rejectAll(envelope, kind(), units.size(), RejectReason.INVALID_ARGUMENT);
         }
         int target = spread.target();
-        if (!state.entities().isAlive(target)) {
+        if (Engagement.gone(state, target)) {
             return Tally.rejectAll(envelope, kind(), units.size(), RejectReason.UNKNOWN_TARGET);
         }
         int t = Handle.index(target);

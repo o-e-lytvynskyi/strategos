@@ -29,7 +29,7 @@ final class Ranged {
     static void takePlace(Context<MatchState> ctx) {
         MatchState s = ctx.host();
         int target = s.orders().target(ctx.unit());
-        if (!s.entities().isAlive(target)) return;
+        if (Engagement.gone(s, target)) return;
         s.orders().retarget(ctx.unit(), target, -1);
         close(ctx, false);
     }
@@ -39,7 +39,7 @@ final class Ranged {
         int i = ctx.unit();
         OrderQueues orders = s.orders();
         int target = orders.target(i);
-        if (!s.entities().isAlive(target)) {
+        if (Engagement.gone(s, target)) {
             CombatActions.findNext(ctx);
             return;
         }
@@ -80,7 +80,7 @@ final class Ranged {
         MatchState s = ctx.host();
         int i = ctx.unit();
         int target = s.orders().target(i);
-        if (!s.entities().isAlive(target)) {
+        if (Engagement.gone(s, target)) {
             CombatActions.findNext(ctx);
             return;
         }

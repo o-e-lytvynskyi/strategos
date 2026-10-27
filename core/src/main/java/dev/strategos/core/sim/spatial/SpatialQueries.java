@@ -9,7 +9,7 @@ import java.util.function.IntConsumer;
 
 /**
  * A match's spatial index (CORE-08, 04 §10.1): its units' grid, rebuilt as the last step of {@code MOVEMENT} and when
- * a snapshot is restored, so every query between two movements sees where the units stood after the first, and its
+ * a snapshot is restored, without the units inside a building (BLD-16), so every query between two movements sees where the units stood after the first, and its
  * static entities by page. Derived from the state, so neither saved nor hashed. Queries report unit indices.
  */
 public final class SpatialQueries implements MatchSystem {
@@ -37,7 +37,7 @@ public final class SpatialQueries implements MatchSystem {
     }
 
     public void rebuild(MatchState state) {
-        units.rebuild(state.entities(), state.motion(), state.identity());
+        units.rebuild(state.entities(), state.motion(), state.identity(), state.garrison());
     }
 
     public UnitGrid units() {

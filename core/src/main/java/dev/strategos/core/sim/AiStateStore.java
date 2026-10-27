@@ -10,6 +10,8 @@ import java.util.Arrays;
  * leaf keeps. A unit whose words are both 0 hashes and saves as in M0.
  */
 public final class AiStateStore {
+    private static final byte GARRISONED = (byte) UnitState.GARRISONED.code();
+
     private short[] state = new short[0];
     private byte[] activity = new byte[0];
     private int[] data0 = new int[0];
@@ -37,6 +39,11 @@ public final class AiStateStore {
     /** The unit's top-level state: the activity its leaf reports. */
     public UnitState state(int i) {
         return UnitState.ofCode(activity[i]);
+    }
+
+    /** Whether the unit is inside a building (BLD-16). */
+    public boolean garrisoned(int i) {
+        return activity[i] == GARRISONED;
     }
 
     /** The code of the leaf the unit is in. */

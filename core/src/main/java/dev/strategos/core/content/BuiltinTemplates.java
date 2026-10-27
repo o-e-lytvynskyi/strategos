@@ -174,6 +174,7 @@ final class BuiltinTemplates {
               "Cost": { "resources": { "wood": 300, "stone": 200, "iron": 100 }, "time": 150 },
               "Dropsite": { "resources": "food wood stone iron" },
               "Housing": { "capacity": 20 },
+              "GarrisonHolder": { "capacity": 20, "classes": "Worker Infantry" },
               "Trainer": { "units": "strategos:unit/worker", "batchExponent": 0.8 },
               "Limit": { "count": 1 }
             }

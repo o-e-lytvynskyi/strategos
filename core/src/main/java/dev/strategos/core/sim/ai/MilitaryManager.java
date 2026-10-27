@@ -6,6 +6,7 @@ import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.DetMath;
 import dev.strategos.core.shared.Vec2d;
+import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.UnitView;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,7 +36,7 @@ final class MilitaryManager implements AiModule {
         long tick = view.tick();
         List<Integer> army = new ArrayList<>();
         for (UnitView u : view.units()) {
-            if (view.is(u.template(), "Infantry")) {
+            if (u.state() != UnitState.GARRISONED && view.is(u.template(), "Infantry")) { // those inside cannot muster
                 army.add(u.handle());
             }
         }

@@ -8,6 +8,7 @@ import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.econ.CarryStore;
+import dev.strategos.core.sim.garrison.Garrisons;
 import dev.strategos.core.sim.nav.PageCoord;
 import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.order.OrderQueues;
@@ -74,7 +75,8 @@ final class Snapshots {
                         s.aiSlots().wakeMask(),
                         s.alerts().save(),
                         s.shots().save(),
-                        s.stances().save()));
+                        s.stances().save(),
+                        s.garrison().save()));
     }
 
     /** The economy ledger's counters, or none while nothing was found or taken (ECO-05). */
@@ -189,6 +191,7 @@ final class Snapshots {
         state.alerts().restore(snapshot.play().alerts());
         state.shots().restore(snapshot.play().shots());
         state.stances().restore(snapshot.play().stances(), Handle::index);
+        Garrisons.restore(state, snapshot.play().garrisons());
         for (CarryStore.Saved load : snapshot.carried()) {
             if (!state.entities().isAlive(load.handle())) {
                 throw new IllegalArgumentException(

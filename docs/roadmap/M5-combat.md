@@ -233,7 +233,7 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
   6. A first-person mock player using the bell block rings the bell (L3).
 - **Tests:** L0, L1, L3, L5 · **Depends on:** BLD-08, CORE-06, ORD-02 · **Size:** M · **Tier:** T1
   (pulled into the MVP)
-- **Status:** specified
+- **Status:** in_progress
 
 #### BLD-11 · Arrows per garrisoned unit
 - **Value:** Garrisoning turns the civic centre into a real defence (P4).

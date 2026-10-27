@@ -26,6 +26,7 @@ import dev.strategos.core.sim.combat.Damage;
 import dev.strategos.core.sim.combat.ShotStore;
 import dev.strategos.core.sim.econ.CarryStore;
 import dev.strategos.core.sim.econ.NodeStore;
+import dev.strategos.core.sim.garrison.GarrisonStore;
 import dev.strategos.core.sim.nav.MemberPath;
 import dev.strategos.core.sim.nav.PathRequest;
 import dev.strategos.core.sim.nav.PathResult;
@@ -439,13 +440,19 @@ public final class MatchSnapshotCodec {
                     Codec.DOUBLE.fieldOf("z").forGetter(StanceStore.Saved::z))
             .apply(i, StanceStore.Saved::new));
 
+    private static final Codec<GarrisonStore.Saved> GARRISON = RecordCodecBuilder.create(i -> i.group(
+                    Codec.INT.fieldOf("unit").forGetter(GarrisonStore.Saved::unit),
+                    Codec.INT.fieldOf("building").forGetter(GarrisonStore.Saved::building))
+            .apply(i, GarrisonStore.Saved::new));
+
     static final Codec<MatchSnapshot.Play> PLAY = RecordCodecBuilder.create(i -> i.group(
                     Codec.LONG.listOf().optionalFieldOf("outcome", List.of()).forGetter(MatchSnapshot.Play::outcome),
                     COMPUTER.listOf().optionalFieldOf("ai", List.of()).forGetter(MatchSnapshot.Play::ai),
                     Codec.LONG.optionalFieldOf("aiWake", 0L).forGetter(MatchSnapshot.Play::aiWake),
                     Codec.LONG.listOf().optionalFieldOf("alerts", List.of()).forGetter(MatchSnapshot.Play::alerts),
                     SHOTS.optionalFieldOf("shots", ShotStore.Snapshot.EMPTY).forGetter(MatchSnapshot.Play::shots),
-                    STANCE.listOf().optionalFieldOf("stances", List.of()).forGetter(MatchSnapshot.Play::stances))
+                    STANCE.listOf().optionalFieldOf("stances", List.of()).forGetter(MatchSnapshot.Play::stances),
+                    GARRISON.listOf().optionalFieldOf("garrisons", List.of()).forGetter(MatchSnapshot.Play::garrisons))
             .apply(i, MatchSnapshot.Play::new));
 
     /** The fields, without {@code "v"}. */

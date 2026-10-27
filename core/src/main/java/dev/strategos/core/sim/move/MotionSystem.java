@@ -102,6 +102,7 @@ public final class MotionSystem implements MatchSystem {
     private static final byte SETTLING = 0;
     private static final byte WALKING = 1;
     private static final byte SPENT = 2; // walking, with no waypoint and no request: nowhere to go this tick
+    private static final byte HIDDEN = 3; // garrisoned: neither walking nor settling, passed by every pass
 
     private static final byte LANDS = 1;
     private static final byte FOLLOWING = 2;
@@ -162,13 +163,15 @@ public final class MotionSystem implements MatchSystem {
             }
             if (s.ai().state(i) == UnitState.WALKING && orders.kind(i) != OrderKind.NONE) {
                 steer(s, i);
+            } else if (s.garrisoned(i)) {
+                mode[i] = HIDDEN; // inside a building: no step, no push, nothing to plan (BLD-16)
             } else {
                 mode[i] = SETTLING;
             }
         }
         avoidance.intents(mode, endX, endZ, WALKING);
         for (int i = 0; i < highWater; i++) { // plan, round the others' places and the walkers' steps
-            if (!entities.aliveAt(i)) {
+            if (!entities.aliveAt(i) || mode[i] == HIDDEN) {
                 continue;
             }
             if (mode[i] == WALKING && s.motion().ghostTicks(i) > 0) {
@@ -184,7 +187,7 @@ public final class MotionSystem implements MatchSystem {
             }
         }
         for (int i = 0; i < highWater; i++) { // move
-            if (!entities.aliveAt(i)) {
+            if (!entities.aliveAt(i) || mode[i] == HIDDEN) {
                 continue;
             }
             switch (mode[i]) {

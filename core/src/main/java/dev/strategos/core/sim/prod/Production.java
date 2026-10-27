@@ -136,7 +136,7 @@ public final class Production {
     }
 
     /** The free cell outside the footprint nearest the blueprint's door, or its middle without one; null for none. */
-    static int @Nullable [] door(MatchState s, int handle) {
+    public static int @Nullable [] door(MatchState s, int handle) {
         return door(s, handle, dev.strategos.core.sim.nav.MobilityClass.INFANTRY);
     }
 

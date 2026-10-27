@@ -90,7 +90,11 @@ public final class Engagement {
         double tz = s.motion().z(t);
         OrderQueues orders = s.orders();
         for (int j = 0; j < s.entities().highWater(); j++) { // attackers still on their way count too
-            if (j != i && s.entities().aliveAt(j) && OrderKind.attacks(orders.kind(j)) && orders.target(j) == target) {
+            if (j != i
+                    && s.entities().aliveAt(j)
+                    && !s.garrisoned(j)
+                    && OrderKind.attacks(orders.kind(j))
+                    && orders.target(j) == target) {
                 int place = orders.slot(j);
                 if (place >= 0 && place < total) {
                     taken[place] = true;
@@ -120,6 +124,14 @@ public final class Engagement {
             first += n;
         }
         return 0; // every place is taken: the first ring's first, behind the others
+    }
+
+    /**
+     * Whether unit handle {@code target} is no longer there to fight: dead, or inside a building (BLD-16), where it
+     * cannot be reached.
+     */
+    public static boolean gone(MatchState s, int target) {
+        return !s.entities().isAlive(target) || s.garrisoned(Handle.index(target));
     }
 
     /** The radius of unit {@code i}'s body. */

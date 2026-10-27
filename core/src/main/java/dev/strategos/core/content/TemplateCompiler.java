@@ -476,6 +476,7 @@ public final class TemplateCompiler {
         String name = identity == null ? id.value() : f.string(identity, "/Identity", "name", id.value());
         String classes = identity == null ? "" : f.string(identity, "/Identity", "classes", "");
         f.buildingAttack(json);
+        f.garrisonHolder(json);
         JsonElement shape = json.get("Blueprint");
         if (shape == null || !shape.isJsonObject()) {
             problems.add(TemplateProblem.error(file, "/Building/blueprint", "a building needs its blueprint"));
@@ -616,6 +617,27 @@ public final class TemplateCompiler {
                     problems.add(
                             TemplateProblem.error(file, "/" + CorePaths.BUILDING_INTERVAL, "arrows need an interval"));
                 }
+            }
+        }
+
+        /** A building's garrison (BLD-16), if it has one: known keys, a whole capacity of at least 1 and class tokens. */
+        void garrisonHolder(JsonObject building) {
+            JsonObject holder = object(building, "", "GarrisonHolder", false);
+            if (holder == null) return;
+            known(holder, "/GarrisonHolder", "capacity", "classes");
+            rangedNumber(holder, CorePaths.GARRISON_CAPACITY);
+            if (!(holder.get("capacity") instanceof JsonPrimitive n)
+                    || !n.isNumber()
+                    || n.getAsDouble() < 1
+                    || n.getAsDouble() % 1 != 0) {
+                problems.add(TemplateProblem.error(
+                        file, "/" + CorePaths.GARRISON_CAPACITY, "a garrison needs a whole capacity of at least 1"));
+            }
+            if (!(holder.get("classes") instanceof JsonPrimitive c)
+                    || !c.isString()
+                    || c.getAsString().isBlank()) {
+                problems.add(TemplateProblem.error(
+                        file, "/" + CorePaths.GARRISON_CLASSES, "a garrison needs the class tokens it admits"));
             }
         }
 
