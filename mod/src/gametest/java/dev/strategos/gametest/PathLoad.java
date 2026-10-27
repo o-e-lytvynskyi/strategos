@@ -21,6 +21,7 @@ import dev.strategos.core.sim.nav.PathStore;
 import dev.strategos.core.testkit.Percentiles;
 import dev.strategos.core.testkit.ProvingGround;
 import dev.strategos.core.testkit.SimHarness;
+import dev.strategos.core.testkit.StepPacer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -132,11 +133,12 @@ public final class PathLoad {
 
     public PathLoad() {
         PageBuilder builder = new PageBuilder(MobilityClass.INFANTRY);
+        var voxels = ground.voxels();
         int side = ProvingGround.SIZE / 16;
         for (int pz = 0; pz < side; pz++) {
             for (int px = 0; px < side; px++) {
                 PageCoord coord = new PageCoord(px, pz);
-                pages.add(TerrainPage.build(coord, ground.voxels().slice(coord), builder));
+                pages.add(TerrainPage.build(coord, voxels.slice(coord), builder));
             }
         }
     }
@@ -196,6 +198,7 @@ public final class PathLoad {
         for (int k = 0; k < scattered.size(); k++) {
             h.submit(PlayerSlot.ADMIN, Move.replace(UnitSet.of(scattered.get(k)), goals.get(k)));
         }
+        StepPacer pacer = new StepPacer(TICK_NANOS);
         h.step();
         long scatteredAt = h.tick();
         h.submit(
@@ -210,10 +213,8 @@ public final class PathLoad {
         int ticks = 0;
         int answered = 0;
         long groupAt = -1;
-        long next = System.nanoTime();
         while (answered < all.length && ticks < MAX_TICKS) {
-            pace(next);
-            next = System.nanoTime() + TICK_NANOS;
+            pacer.awaitTick();
             h.step();
             if (groupAt < 0) {
                 groupAt = h.tick();
@@ -245,19 +246,6 @@ public final class PathLoad {
                 Arrays.copyOfRange(all, scattered.size(), all.length),
                 all,
                 h.queries().pathStats());
-    }
-
-    /** Waits for {@code until}, as a server waits for its next tick. */
-    private static void pace(long until) {
-        long left;
-        while ((left = until - System.nanoTime()) > 0) {
-            try {
-                Thread.sleep(left / 1_000_000, (int) (left % 1_000_000));
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return;
-            }
-        }
     }
 
     /**
@@ -304,10 +292,9 @@ public final class PathLoad {
         int ticks = 0;
         int after = -1;
         long orderedAt = h.tick() + 1;
-        long next = System.nanoTime();
+        StepPacer pacer = new StepPacer(TICK_NANOS);
         while (after < AFTER && ticks < MAX_TICKS) {
-            pace(next);
-            next = System.nanoTime() + TICK_NANOS;
+            pacer.awaitTick();
             h.step();
             PathService.Stats stats = h.queries().pathStats();
             work[ticks] = stats.lastWork();

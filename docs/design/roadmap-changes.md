@@ -477,3 +477,9 @@ a criterion testable; none adds scope, and no status changed. The owner may veto
 | FOW-01, FOW-07, UI-16, AI-18, MATCH-07; M8 goal | "Conditional on D-24 (c)" removed | The owner took D-24 (c) |
 | CMB-08 | Deferred; nothing in M5 depends on it | D-08 chose the observer avatar |
 
+
+### 2026-10-27 — fix-main performance measurement
+
+| Card | Change | Why |
+|---|---|---|
+| UNIT-05 | Precondition idle and walking branches on a disposable match before measuring either mode on a fresh match; retain 300 units, 200 warm-up ticks and 600 samples per measured mode, the same orders and 30% limit | Sequential cold/warm branch profiles biased the comparison. Existing JFR shows walking-triggered deoptimizations and C2 compilation after idle was measured. The fresh measured match preserves the original initial workload; Windows CPU invalidation and platform boundaries remain in force. |

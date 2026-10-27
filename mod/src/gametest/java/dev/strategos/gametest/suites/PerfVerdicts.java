@@ -3,9 +3,11 @@ package dev.strategos.gametest.suites;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.sun.jna.Platform;
 import com.sun.management.OperatingSystemMXBean;
 import dev.strategos.core.sim.econ.EconomyTimes;
 import dev.strategos.core.testkit.BudgetCheck;
+import dev.strategos.core.testkit.CpuTimes;
 import dev.strategos.core.testkit.EconomyScene;
 import dev.strategos.core.testkit.Percentiles;
 import java.io.IOException;
@@ -322,6 +324,13 @@ final class PerfVerdicts {
     }
 
     static void write(String name, JsonObject json) {
+        if (json.has("foreignCpu")) {
+            json.addProperty(
+                    "foreignCpuSource",
+                    !System.getProperty("strategos.perf.fakeForeignLoad", "").isBlank()
+                            ? "self-test override"
+                            : Platform.isWindows() ? "Win32 cumulative counters" : "MXBean recent load");
+        }
         Path dir = Path.of(System.getProperty("strategos.perf.out", "build/reports/perf"));
         try {
             Files.createDirectories(dir);
@@ -335,14 +344,25 @@ final class PerfVerdicts {
     }
 
     /**
-     * The foreign CPU load over a measured window: the machine's load minus this process's, floored at 0, from
-     * {@code com.sun.management.OperatingSystemMXBean}; {@code strategos.perf.fakeForeignLoad} replaces it (QA-07.3).
+     * The foreign CPU load over a measured window. Windows subtracts cumulative process time from cumulative busy
+     * system time over the same interval; other platforms retain their MXBean recent-load sampling. The explicit
+     * {@code strategos.perf.fakeForeignLoad} self-test override is identified in every report (QA-07.3).
      */
     static final class Window {
         private final List<Double> loads = new ArrayList<>();
+        private CpuTimes first = new CpuTimes(0, 0, 0);
+        private CpuTimes last = first;
+        private boolean started;
 
         /** The window opens: a first reading, discarded, so the first sample covers the window and not the time before. */
         void start() {
+            started = true;
+            if (Platform.isWindows()
+                    && System.getProperty("strategos.perf.fakeForeignLoad", "").isBlank()) {
+                first = WindowsCpuTimes.read();
+                last = first;
+                return;
+            }
             OperatingSystemMXBean os = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
             os.getCpuLoad();
             os.getProcessCpuLoad();
@@ -354,6 +374,10 @@ final class PerfVerdicts {
                 loads.add(Double.parseDouble(fake));
                 return;
             }
+            if (Platform.isWindows()) {
+                last = WindowsCpuTimes.read();
+                return;
+            }
             OperatingSystemMXBean os = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
             double machine = os.getCpuLoad();
             double process = os.getProcessCpuLoad();
@@ -361,6 +385,13 @@ final class PerfVerdicts {
         }
 
         double meanForeignLoad() {
+            if (Platform.isWindows()
+                    && System.getProperty("strategos.perf.fakeForeignLoad", "").isBlank()) {
+                if (!started) {
+                    throw new IllegalStateException("CPU measurement window was not started");
+                }
+                return first.foreignUntil(last);
+            }
             return loads.stream().mapToDouble(Double::doubleValue).average().orElse(0);
         }
     }
