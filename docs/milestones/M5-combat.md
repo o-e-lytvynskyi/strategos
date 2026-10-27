@@ -82,7 +82,7 @@ grow with the garrison), and an AI that fights by the same rules (the roadmap's 
 | Card | Task | Checks (level) |
 |---|---|---|
 | PATH-11 | T2a–T2b, T6 | 1 `MobilityTest.aOneBlockGapIsOpenToInfantryAndClosedToLarge` (L1) · 2 `MobilityTest.reachabilityPerClassIsAFloodFill` (L1) · 3 `pathtests.thirty_horsemen_cross` (L3) |
-| CMB-04 | T3a–T3c, T14 | 1 `ShotTest.fixedSeedsReproduceTheGoldenResults` (L1) · 2 `ShotTest.theHitRateStaysInTheBinomialBound` (L1) · 3 `ShotTest.movingTargetsAreHitLessAtLongRange` (L1) · 4 `combattests.a_volley_damages_as_l1_predicts` (L3) · 5 `perftests.battle_soak`'s budget E (L6, T14) |
+| CMB-04 | T3a–T3c, T14 | 1 `ShotTest.fixedSeedsReproduceTheGoldenResults` (L1) · 2 `ShotTest.theHitRateStaysInTheBinomialBound` (L1) · 3 `ShotTest.movingTargetsAreHitLessAtLongRange` (L1) · 4 `combattests.archer_volley_replays_as_the_core_predicts` (L3) · 5 `perftests.battle_soak`'s budget E (L6, T14) |
 | CMB-16 | T4 | 1 `HighGroundTest.rangeAndDamageFollowTheFormula` (L1) · 2 `DuelTest.archersOnAHillWin` (L1, slow) · 3 `HighGroundTest.theBonusIsInTheBreakdown` (L1) · 4 `combattests.a_hill_reaches_further` (L3) |
 | CMB-05 | T5 | 1 `StanceTest.theTable` (L1) · 2 `StanceTest.targetPreferences` (L1) · 3 `StanceTest.aChaseEndsOutOfVision` (L1) · 4 `combattests.stance_*` per family (L3) |
 | ORD-05 | T8 | 1 `FocusTest.aFocusMakesEveryArcherInRangeShootIt` (L1) · 2 `FocusTest.aSpreadIsWithinOneOfEven` (L1) · 3 `combattests.force_attack_on_an_own_building` (L3) |
@@ -360,7 +360,7 @@ battle scenario) → T17 (the consent batch) → T18 (close). T16 is reserved fo
 
 ### 7.3 Progress
 
-- [x] T1 (2026-10-26) · [x] T2a (2026-10-26) · [x] T2b (2026-10-26) · [x] T3a (2026-10-26) · [x] T3b.1 (2026-10-27) · [ ] T3b.2 · [ ] T3c.1 · [ ] T3c.2 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11
+- [x] T1 (2026-10-26) · [x] T2a (2026-10-26) · [x] T2b (2026-10-26) · [x] T3a (2026-10-26) · [x] T3b.1 (2026-10-27) · [x] T3b.2 (2026-10-27) · [ ] T3c.1 · [ ] T3c.2 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11
 - [ ] T12 · [ ] T13 · [ ] T14 · [ ] T15 · [ ] T17 · [ ] T18
 
 ---

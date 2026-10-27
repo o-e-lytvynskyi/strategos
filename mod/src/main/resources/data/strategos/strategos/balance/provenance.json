@@ -45,6 +45,24 @@
     "Attack/Structure/prepare": "Half a second to light the torch and reach the wall, as the spear's wind-up",
     "Attack/Structure/repeat": "A blow of fire a second, the spear's rhythm"
   },
+  "strategos:unit/archer": {
+    "Health/max": "Fifty hit points: half a spearman's, making the archer vulnerable at close range (M5 UNIT-07)",
+    "UnitMotion/walkSpeed": "0.2 blocks a tick: slightly faster than infantry, allowing ranged positioning (M5 UNIT-07)",
+    "Attack/Ranged/pierce": "Six pierce per arrow: the starting ranged damage for the counter roster (M5 UNIT-07)",
+    "Attack/Ranged/range": "Twenty blocks: the archer can engage well before melee contact (M5 UNIT-07)",
+    "Attack/Ranged/prepare": "Sixteen ticks to draw the first shot, making the wind-up readable (M5 UNIT-07)",
+    "Attack/Ranged/repeat": "Twenty-five ticks between arrows, pacing a sustained volley (M5 UNIT-07)",
+    "Attack/Ranged/speed": "Four blocks per tick: the starting projectile speed for analytic lead (M5 CMB-04)",
+    "Attack/Ranged/spread": "2.25 blocks at 100 blocks: starting Gaussian spread for analytic shots (M5 CMB-04)",
+    "Vision/range": "Thirty-two blocks: enough to acquire targets beyond the twenty-block firing range (M5 CMB-04)",
+    "Resistance/hack": "One armour: light protection makes close combat dangerous (M5 UNIT-07)",
+    "Resistance/pierce": "One armour: the archer has light protection from arrows (M5 UNIT-07)",
+    "Resistance/crush": "One armour: the archer has light protection from blunt blows (M5 UNIT-07)",
+    "Cost/resources/food": "Sixty food: the same provision as a worker or spearman (M5 UNIT-07)",
+    "Cost/resources/wood": "Forty wood: the bow and its ammunition, as much wood as a spearman (M5 UNIT-07)",
+    "Cost/resources/iron": "Twenty iron: arrowheads add an iron cost to ranged troops (M5 UNIT-07)",
+    "Cost/population": "One house's room for one archer, as for other infantry"
+  },
   "strategos:unit/worker": {
     "Health/max": "Half a spearman's: a raid on workers costs their owner dearly, so workers are worth guarding",
     "Behaviour/flee": "Eight blocks from a blow: out of a spearman's reach, near enough to go back to work",

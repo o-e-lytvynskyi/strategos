@@ -64,6 +64,23 @@ final class BuiltinTemplates {
               "Body": { "skin": "strategos:units/infantry" }
             }
             """;
+    static final String ARCHER = """
+            {
+              "parent": "strategos:template/unit_infantry",
+              "Identity": { "name": "strategos.unit.archer", "icon": "minecraft:bow", "classes": "+Archer" },
+              "Health": { "max": 50 },
+              "UnitMotion": { "walkSpeed": 0.2 },
+              "Attack": { "Ranged": { "pierce": 6, "range": 20, "prepare": 16, "repeat": 25, "speed": 4, "spread": 2.25 } },
+              "Vision": { "range": 32 },
+              "Resistance": { "hack": 1, "pierce": 1, "crush": 1 },
+              "Cost": {
+                "resources": { "food": 60, "wood": 40, "iron": 20 },
+                "population": 1,
+                "time": { "$derive": { "from": "strategos:unit/worker", "path": "Cost/time", "factor": 1.5 }, "note": "Training an archer takes as long as drilling a spearman" }
+              },
+              "Body": { "skin": "strategos:units/infantry" }
+            }
+            """;
     static final String WORKER = """
             {
               "parent": "strategos:template/unit_base",
@@ -256,7 +273,10 @@ final class BuiltinTemplates {
             new TemplateId("strategos:building/quarry_large"),
             new TemplateId("strategos:unit/chicken"), // M4 T7
             new TemplateId("strategos:unit/pig"),
-            new TemplateId("strategos:unit/sheep")));
+            new TemplateId("strategos:unit/sheep"),
+            new TemplateId("strategos:building/farmstead"), // M4, previously appended implicitly
+            new TemplateId("strategos:building/storehouse"),
+            new TemplateId("strategos:unit/archer"))); // M5
 
     private BuiltinTemplates() {}
 
@@ -269,6 +289,7 @@ final class BuiltinTemplates {
                         raw("strategos:template/building_base", BUILDING_BASE),
                         raw("strategos:unit/debug_walker", DEBUG_WALKER),
                         raw("strategos:unit/infantry", INFANTRY),
+                        raw("strategos:unit/archer", ARCHER),
                         raw("strategos:unit/worker", WORKER),
                         raw("strategos:unit/sheep", SHEEP),
                         raw("strategos:unit/pig", PIG),

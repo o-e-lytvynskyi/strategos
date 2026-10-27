@@ -4,11 +4,11 @@
 
 ## Now
 
-- **Milestone:** M5 Combat; 5 of 22 tasks complete (T1, T2a, T2b, T3a, T3b.1).
-- **In progress:** M5 T3b.2 archer content and engine integration since 2026-10-27.
-- **Last finished task:** T3b.1 ranged behavior (2026-10-27).
-- **Next task:** T3b.2, then T3c.1 shot FX state and wire, T3c.2 delivery and client.
-- **Merged from main last:** b207e50 (2026-10-26), including assignment #19.
+- **Milestone:** M5 Combat; 6 of 22 tasks complete (T1, T2a, T2b, T3a, T3b.1, T3b.2).
+- **In progress:** M5 T3c.1 shot FX state and wire since 2026-10-27.
+- **Last finished task:** T3b.2 archer content and engine integration (2026-10-27).
+- **Next task:** T3c.1, then T3c.2 delivery and client, then T4 high ground.
+- **Merged from main last:** a10a8fd (2026-10-27), PR #21 fix-main.
 
 ## Depends on unfinished work
 
@@ -17,6 +17,13 @@
 - Preserve codex/m5-combat and dev/lev1pes/m5. Import code and task-specific evidence selectively after assignment; do not copy old central STATE/worklog records over current main.
 
 ## Log
+
+### 2026-10-27 — M5 T3b.2
+
+- **T3b.2 · Archer content and engine integration** — CMB-04 in progress, UNIT-07 stays specified until T7's duel matrix. The archer template with the §2.7 numbers (builtin and datapack copy), every number's provenance row, regenerated balance sheet, `strategos.unit.archer` label; builtin indices made explicit for farmstead/storehouse before the archer (index 16). `ArcherTemplateTest` (values, unchanged index prefix); `combattests.archer_volley_replays_as_the_core_predicts` (L3, 1.15 s): five archers damage core units, living bodies' vanilla health stays full, the journal replays to the same hash.
+- Merged origin/main a10a8fd (fix-main PR #21); two docs conflicts kept both sides.
+- Gates: `verify verifySlow verifySoak` 4m 52s, 1,987 tests (core 1,662, mod 325), 0 failures/errors/skips. The first run failed only on TemplateSetTest pins (17 templates, new SHA) and formatting, both expected from the archer. JMH not rerun: no hot path or codec changed since T3b.1's green run.
+- **Next:** T3c.1 shot FX state and wire.
 
 ### 2026-10-27 — M5 T3b.1 (session moved from Codex to Claude Code)
 
@@ -119,6 +126,9 @@
 
 ## Decisions taken
 
+- 2026-10-27 · Spec traceability for CMB-04 check 4 names the existing GameTest `combattests.archer_volley_replays_as_the_core_predicts` (M2's "as the core predicts" convention: the headless replay is the L1 prediction) instead of the planned `a_volley_damages_as_l1_predicts`. Undo by renaming the test and the row.
+- 2026-10-27 · Re-pin the builtin template set's SHA (e4624330…) and size 17 for the archer; the canonical form changed only by the appended template. Undo with the archer.
+- 2026-10-27 · trial runner: pass — three bounded gate/JMH runs with exact failing tests, pinned values and per-fork evidence; no retries or edits.
 - 2026-10-27 · Persist optional shot release origin/tick for future impact feedback across death/restore; preserve old snapshot and FX bytes when the extension is absent. Deliver once to viewers of either endpoint and clear client arcs on match changes; no past-launch resync is added. Undo through a reviewed feedback contract change.
 
 - 2026-10-27 · Derive flat-world target velocity from transient pre-/post-MOVEMENT positions at release. Preserve the existing pose-only flat snapshot/hash contract; terrain still uses MotionStore velocity. Undo by a reviewed motion-state version change. Bound ranged damage to finite float-safe values so accepted templates and modifiers cannot fail when converted to a damage packet.

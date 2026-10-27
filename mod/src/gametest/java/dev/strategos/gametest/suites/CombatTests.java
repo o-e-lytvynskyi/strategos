@@ -10,6 +10,7 @@ import static dev.strategos.gametest.suites.Units.spawn;
 import com.mojang.authlib.GameProfile;
 import dev.strategos.core.client.audio.Sounds;
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.protocol.Attack;
 import dev.strategos.core.protocol.AttackMove;
 import dev.strategos.core.protocol.FxKind;
 import dev.strategos.core.protocol.NoticeKind;
@@ -18,6 +19,7 @@ import dev.strategos.core.protocol.SpawnUnits;
 import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
+import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.ExternalDamage;
 import dev.strategos.core.sim.InputEvent;
@@ -299,6 +301,58 @@ public final class CombatTests {
             check(replay.matches(), "the journal does not replay: " + replay);
             check(replay.finalHash() == core.stateHash(), "the replay ends on another hash: " + replay);
             check(west.length + east.length > 0, "both sides died to the last unit");
+            h.succeed();
+        });
+    }
+
+    /** CMB-04: a ranged volley damages core units, preserves living bodies' health, and replays exactly. */
+    @StrategosTest(timeoutTicks = 600)
+    public static void archerVolleyReplaysAsTheCorePredicts(GameTestHelper h) {
+        MatchRuntime rt = match(h);
+        rt.submit(
+                PlayerSlot.ADMIN,
+                new SpawnUnits(new TemplateId("strategos:unit/archer"), new FactionSlot(0), new Vec2d(8, 16), 5, 2));
+        rt.submit(
+                PlayerSlot.ADMIN,
+                new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(1), new Vec2d(24, 16), 5, 2));
+        var state = new Object() {
+            boolean ordered;
+            int elapsed;
+            int hurtBodies;
+        };
+        h.onEachTick(() -> {
+            MatchCore core = core(rt);
+            if (!state.ordered) {
+                int[] archers = core.queries().unitHandlesOf(new FactionSlot(0));
+                int[] targets = core.queries().unitHandlesOf(new FactionSlot(1));
+                if (archers.length != 5
+                        || targets.length != 5
+                        || Units.bodiesOf(h.getLevel(), rt).size() != 10) {
+                    return;
+                }
+                rt.submit(new PlayerSlot(0), Attack.replace(UnitSet.of(archers), targets[0]));
+                state.ordered = true;
+                return;
+            }
+            for (UnitEntity body : Units.bodiesOf(h.getLevel(), rt)) {
+                if (!body.isDeadOrDying()) {
+                    UnitSpawnData data = body.spawnData();
+                    check(body.getHealth() == body.getMaxHealth(), "a living body's vanilla health fell");
+                    if (data != null
+                            && core.queries().unit(data.handle()) != null
+                            && core.queries().hitPoints(data.handle())
+                                    < core.queries().maxHitPoints(data.handle())) {
+                        state.hurtBodies++;
+                    }
+                }
+            }
+            if (++state.elapsed < 120) {
+                return;
+            }
+            check(state.hurtBodies > 0, "the archer volley did no core damage");
+            ReplayResult replay = ReplayDriver.replay(core.journal(), TemplateSet.builtin());
+            check(replay.matches(), "the journal does not replay: " + replay);
+            check(replay.finalHash() == core.stateHash(), "the replay ends on another hash: " + replay);
             h.succeed();
         });
     }
