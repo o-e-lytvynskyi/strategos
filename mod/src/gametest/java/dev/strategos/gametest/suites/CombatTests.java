@@ -25,19 +25,24 @@ import dev.strategos.core.sim.ExternalDamage;
 import dev.strategos.core.sim.InputEvent;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.TickInputs;
+import dev.strategos.core.sim.UnitView;
 import dev.strategos.core.sim.journal.ReplayDriver;
 import dev.strategos.core.sim.journal.ReplayResult;
+import dev.strategos.core.testkit.SimHarness;
+import dev.strategos.gametest.MatchFixture;
 import dev.strategos.gametest.StrategosTest;
 import dev.strategos.gametest.net.MockViewer;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.entity.UnitEntity;
 import dev.strategos.mod.entity.UnitSpawnData;
 import dev.strategos.mod.server.match.MatchRuntime;
+import dev.strategos.mod.server.match.MatchSpace;
 import dev.strategos.mod.server.net.payload.FeedbackPayload;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
@@ -49,6 +54,7 @@ import net.minecraft.world.entity.projectile.Arrow;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.common.util.FakePlayer;
@@ -353,6 +359,103 @@ public final class CombatTests {
             ReplayResult replay = ReplayDriver.replay(core.journal(), TemplateSet.builtin());
             check(replay.matches(), "the journal does not replay: " + replay);
             check(replay.finalHash() == core.stateHash(), "the replay ends on another hash: " + replay);
+            h.succeed();
+        });
+    }
+
+    /**
+     * CMB-16.4: six archers stand on a six-block stone platform and six on the floor, each with a walker 25.4 blocks
+     * away on the floor: past the archer's range of 20, inside the 26 of six blocks up. The raised archers hurt a walker
+     * in the core without moving, while their twins on the floor, the same distance from their walkers, have to walk
+     * to get in range. Every block stays inside the eight-block-high arena, so GameTest clears it for the next test.
+     */
+    @StrategosTest(arena = "arena_flat_48_high", timeoutTicks = 300, skyAccess = true)
+    public static void highGroundReachesFarther(GameTestHelper h) {
+        for (int x = 0; x < 12; x++) {
+            for (int z = 2; z < 18; z++) {
+                for (int y = 2; y <= 7; y++) {
+                    h.setBlock(new BlockPos(x, y, z), Blocks.STONE); // six blocks over the floor at helper y 1
+                }
+            }
+        }
+        // A raised body reaches past the arena's top: the match's band is taller, with nothing placed above the arena
+        net.minecraft.world.phys.AABB box = h.getBounds();
+        MatchSpace space = new MatchSpace(
+                h.getLevel().dimension(),
+                new BlockPos((int) Math.floor(box.minX), (int) Math.floor(box.minY), (int) Math.floor(box.minZ)),
+                48,
+                48,
+                (int) Math.floor(box.minY),
+                (int) Math.floor(box.minY) + 12);
+        MatchRuntime rt = MatchFixture.create(h, space, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
+        double[] highZ = {3.5, 5.5, 7.5, 9.5, 11.5, 13.5};
+        double[] lowZ = {28.5, 30.5, 32.5, 34.5, 36.5, 38.5};
+        TemplateId archer = new TemplateId("strategos:unit/archer");
+        for (double[] row : new double[][] {highZ, lowZ}) {
+            for (double z : row) {
+                rt.submit(PlayerSlot.ADMIN, new SpawnUnits(archer, new FactionSlot(0), new Vec2d(6.5, z), 1, 0));
+                rt.submit(
+                        PlayerSlot.ADMIN,
+                        new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(1), new Vec2d(32.1, z), 1, 0));
+            }
+        }
+        var state = new Object() {
+            boolean ordered;
+        };
+        h.onEachTick(() -> {
+            MatchCore core = core(rt);
+            int[] archers = core.queries().unitHandlesOf(new FactionSlot(0));
+            int[] walkers = core.queries().unitHandlesOf(new FactionSlot(1));
+            if (archers.length != 12 || walkers.length != 12) {
+                return;
+            }
+            if (!state.ordered) {
+                for (int a : archers) {
+                    for (int w : walkers) {
+                        if (Math.abs(Units.unit(rt, a).z() - Units.unit(rt, w).z()) < 0.5) {
+                            rt.submit(new PlayerSlot(0), Attack.replace(UnitSet.of(a), w));
+                        }
+                    }
+                }
+                for (int a : archers) {
+                    for (int b : archers) {
+                        double over = Units.unit(rt, a).y() - Units.unit(rt, b).y();
+                        if (Units.unit(rt, a).z() < 22 && Units.unit(rt, b).z() > 22) {
+                            check(
+                                    over > 5.5 && over < 6.5,
+                                    "a raised archer stands " + over + " blocks over the floor");
+                        }
+                    }
+                }
+                state.ordered = true;
+                return;
+            }
+            for (int a : archers) {
+                UnitView u = Units.unit(rt, a);
+                if (u.z() < 22) {
+                    check(u.x() == 6.5, "a raised archer walked to " + u.x());
+                }
+            }
+            int hurtHigh = 0;
+            for (int w : walkers) {
+                if (Units.unit(rt, w).z() < 22
+                        && core.queries().hitPoints(w) < core.queries().maxHitPoints(w)) {
+                    hurtHigh++;
+                }
+            }
+            if (hurtHigh == 0) {
+                return;
+            }
+            // Only the raised archers can have hurt these walkers; they did it from where they stood, while their
+            // ground twins, 25.4 blocks from theirs, had to walk to get in range
+            int walked = 0;
+            for (int a : archers) {
+                UnitView u = Units.unit(rt, a);
+                if (u.z() > 22 && u.x() > 6.5) {
+                    walked++;
+                }
+            }
+            check(walked == 6, "only " + walked + " ground archers walked");
             h.succeed();
         });
     }

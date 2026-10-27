@@ -405,4 +405,21 @@ class CommandCardTest {
             }
         }
     }
+
+    /** CMB-16.3: the archer's tooltip names the high-ground source and its knobs; a melee unit has none of it. */
+    @Test
+    void theArcherBreakdownNamesTheHighGroundSource() {
+        List<CommandCard.Line> archer = CommandCard.breakdown(T, index("strategos:unit/archer"));
+        assertThat(archer)
+                .extracting(CommandCard.Line::label, CommandCard.Line::value)
+                .contains(
+                        org.assertj.core.groups.Tuple.tuple("Pierce, ranged", 6.0),
+                        org.assertj.core.groups.Tuple.tuple("Range, blocks", 20.0),
+                        org.assertj.core.groups.Tuple.tuple("High ground, % range a block", 5.0),
+                        org.assertj.core.groups.Tuple.tuple("High ground, % damage a block", 4.0),
+                        org.assertj.core.groups.Tuple.tuple("High ground, up to blocks", 8.0));
+        assertThat(CommandCard.breakdown(T, index("strategos:unit/infantry")))
+                .extracting(CommandCard.Line::label)
+                .noneMatch(l -> l.startsWith("High ground") || l.endsWith("ranged") || l.startsWith("Range"));
+    }
 }

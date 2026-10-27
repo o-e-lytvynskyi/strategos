@@ -19,6 +19,9 @@
     "Attack/Ranged/repeat": "Twenty-five ticks between shots, the M5 starting archer rhythm",
     "Attack/Ranged/speed": "Four blocks per tick: a twenty-block arrow flight takes five ticks (M5 implementation finding 8)",
     "Attack/Ranged/spread": "A horizontal Gaussian standard deviation of 2.25 blocks at 100 blocks, scaled linearly with distance (M5, CMB-04; implementation finding 8)",
+    "Attack/Ranged/highGround/rangePerBlock": "5 % more range a block above the target: 0 A.D.'s reach by height (M5, CMB-16)",
+    "Attack/Ranged/highGround/damagePerBlock": "4 % more damage a block above the target: AoE II's damage from above (M5, CMB-16)",
+    "Attack/Ranged/highGround/maxBlocks": "Eight blocks of height count at most, so a tower of rock does not make an untouchable archer (M5, CMB-16)",
     "Vision/range": "Twelve blocks: an enemy at the edge of the default camera's view is noticed (CMB-02)",
     "Behaviour/flee": "Units stand their ground unless their template says they run"
   },

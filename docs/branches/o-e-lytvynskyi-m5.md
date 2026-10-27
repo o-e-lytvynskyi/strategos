@@ -4,20 +4,28 @@
 
 ## Now
 
-- **Milestone:** M5 Combat; 8 of 22 tasks complete (T1–T3c.2).
-- **In progress:** M5 T4 high ground (CMB-16) since 2026-10-27.
-- **Last finished task:** T3c.2 shot FX delivery and client (2026-10-27).
-- **Next task:** T4, then T5 stances (CMB-05).
+- **Milestone:** M5 Combat; 9 of 22 tasks complete (T1–T4).
+- **In progress:** M5 T5 stances (CMB-05) since 2026-10-27.
+- **Last finished task:** T4 high ground (2026-10-27).
+- **Next task:** T5, then T6 mounted units (UNIT-06).
 - **Merged from main last:** a10a8fd (2026-10-27), PR #21 fix-main.
 
 ## Depends on unfinished work
 
+- Within M5: CMB-16 check 2 (archers on a 6-block hill win ≥ 170 of 200 seeded duels) runs on T7's duel harness; the card stays in_progress until then.
 - M8 fog of war: `Audience.SeesEither` (shot FX) goes to every match member, as `SeesCell` does; `AFTER-M8` in NetGateway marks the union of the two cells' viewers.
 - M0-M4 are merged. No unfinished milestone implementation is required by M5.
 - fix-main (lev1pes) is done and merged into main by PR #21; it no longer bears on M5.
 - Preserve codex/m5-combat and dev/lev1pes/m5. Import code and task-specific evidence selectively after assignment; do not copy old central STATE/worklog records over current main.
 
 ## Log
+
+### 2026-10-27 — M5 T4
+
+- **T4 · CMB-16 High ground** — in_progress (checks 1, 3, 4 pass; 2 in T7). `Attack/Ranged/highGround/{rangePerBlock 0.05, damagePerBlock 0.04, maxBlocks 8}` core defaults with provenance and template validation; `HighGround` (height = the difference of the units' floor Ys, capped, 0 on flat ground) grows the range of `Ranged`'s approach, chase and the shot intent and its damage; the command card's breakdown shows the ranged weapon and three "High ground" lines. Tests: `HighGroundTest` (5: 0/3/6/10/−4 blocks, 1.3 × range and 1.24 × pierce at six, template override, engagement at 25 vs 27 blocks), `RangedValidationTest`, `CommandCardTest`, `combattests.high_ground_reaches_farther` (raised archers fire unmoved at 25.4 blocks; the ground twins walk).
+- A GameTest failed 6 runs in 7 once T4 joined the batch: `persistencetests.the_reconciler_converges_a_crash_between_saves` ("rewrote 62"). Cause: the test saved once one wall block was protected, while the shared writer budget (64 a tick for the batch) still had the house queued. It now waits for `BlockWriter.pendingIn` of its match to empty; two full runs 215/215. The new test's first platform also stood above its 4-block arena (blocks GameTest never clears); it moved into `arena_flat_48_high`. Both in docs/kb.
+- Gates: `verify verifySlow verifySoak` 4m 09s green; JMH not rerun (no benchmark has a ranged unit; ShotBench drives ShotSystem directly).
+- **Next:** T5 stances.
 
 ### 2026-10-27 — M5 T3c.2
 
@@ -142,6 +150,9 @@
 
 ## Decisions taken
 
+- 2026-10-27 · High ground uses the units' motion Y (the floor on terrain) and applies only to ranged attacks, as §2.3 states; the card's breakdown is the template tooltip (per-template knobs), the situational bonus is shown there as rates. Undo with the card's data knobs.
+- 2026-10-27 · Fix the reconciler GameTest's race (wait for the match's queued writes) rather than retry or mark it flaky. Undo is not recommended.
+- 2026-10-27 · trial implementer: pass — T4 met the brief, found the floor-Y convention and reported a GameTest failure it could not pin; the orchestrator traced it to a pre-existing race.
 - 2026-10-27 · Shot arcs render at AFTER_ENTITIES (the entity cutout render type fits there) and in any camera mode; size and orientation are checked in T17's images. Undo by moving the stage.
 - 2026-10-27 · trial implementer: pass — T3c.2 verified every engine name in the sources with file:line, reported the coordinate convention it found, and stayed inside its files.
 - 2026-10-27 · Re-take only the `ShotBench.volley60{mode=miss}` row of perf/baseline-m4pro.json (0.827 → 1.085 us/op): the growth is the 60 `ShotLanded` records the spec requires for misses, confirmed in two runs; limits unchanged. Undo by restoring the row from 95484c3.

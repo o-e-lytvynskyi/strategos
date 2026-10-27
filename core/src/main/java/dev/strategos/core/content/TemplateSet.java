@@ -284,6 +284,9 @@ public final class TemplateSet {
             case CorePaths.RANGED_REPEAT -> CorePaths.DEFAULT_RANGED_REPEAT;
             case CorePaths.RANGED_SPEED -> CorePaths.DEFAULT_RANGED_SPEED;
             case CorePaths.RANGED_SPREAD -> CorePaths.DEFAULT_RANGED_SPREAD;
+            case CorePaths.HIGH_RANGE -> CorePaths.DEFAULT_HIGH_RANGE;
+            case CorePaths.HIGH_DAMAGE -> CorePaths.DEFAULT_HIGH_DAMAGE;
+            case CorePaths.HIGH_MAX -> CorePaths.DEFAULT_HIGH_MAX;
             case CorePaths.VISION -> CorePaths.DEFAULT_VISION;
             default -> Double.NaN;
         };

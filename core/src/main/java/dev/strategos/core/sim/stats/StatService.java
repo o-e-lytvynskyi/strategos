@@ -76,6 +76,9 @@ public final class StatService {
     private int rangedRepeat;
     private int rangedSpeed;
     private int rangedSpread;
+    private int highRange;
+    private int highDamage;
+    private int highMax;
     private int vision;
     private int flee;
     private int classesPath;
@@ -177,6 +180,9 @@ public final class StatService {
         this.rangedRepeat = path(CorePaths.RANGED_REPEAT);
         this.rangedSpeed = path(CorePaths.RANGED_SPEED);
         this.rangedSpread = path(CorePaths.RANGED_SPREAD);
+        this.highRange = path(CorePaths.HIGH_RANGE);
+        this.highDamage = path(CorePaths.HIGH_DAMAGE);
+        this.highMax = path(CorePaths.HIGH_MAX);
         this.vision = path(CorePaths.VISION);
         this.flee = path(CorePaths.FLEE);
         this.classesPath = tokenPath(IDENTITY_CLASSES);
@@ -279,6 +285,24 @@ public final class StatService {
     /** Horizontal shot spread, in percent of distance. */
     public double rangedSpread(int index) {
         double value = read(index, rangedSpread);
+        return Double.isNaN(value) ? 0 : value;
+    }
+
+    /** Share of ranged reach a block of height over the target adds (CMB-16). */
+    public double highGroundRange(int index) {
+        double value = read(index, highRange);
+        return Double.isNaN(value) ? 0 : value;
+    }
+
+    /** Share of ranged damage a block of height over the target adds (CMB-16). */
+    public double highGroundDamage(int index) {
+        double value = read(index, highDamage);
+        return Double.isNaN(value) ? 0 : value;
+    }
+
+    /** The most blocks of height over the target that count (CMB-16). */
+    public double highGroundMax(int index) {
+        double value = read(index, highMax);
         return Double.isNaN(value) ? 0 : value;
     }
 

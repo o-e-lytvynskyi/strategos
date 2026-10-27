@@ -126,7 +126,7 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
   4. A GameTest on a hill shows the longer reach (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** CMB-04, DATA-02 · **Size:** S · **Tier:** T2 (pulled
   into the MVP)
-- **Status:** specified
+- **Status:** in_progress
 
 #### CMB-17 · Combat readability: attack lines and the under-attack flash
 - **Value:** You always see who attacks whom (P2).

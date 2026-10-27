@@ -139,3 +139,11 @@ intervals (every 20 ticks), not back to back.
 - So compare a per-unit budget only with the baseline of the same scene on the same map. Keep the
   report broken down into the core step, its phases and the mod part, otherwise there is nothing
   to attach growth to.
+
+## One protected block is not a whole building
+
+The writer's 64 placements a tick are shared by every match of the batch, so a building's blocks
+arrive over several ticks, more of them as the batch grows. A test that saves once one wall block
+is protected may save a half-written house: `the_reconciler_converges_a_crash_between_saves` then
+rewrote 62 instead of 1 (6 runs in 7 after M5 T4 joined the batch). Wait for
+`BlockWriter.pendingIn(level, match, min, max)` to be empty before acting on a finished build.

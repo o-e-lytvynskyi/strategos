@@ -1,5 +1,6 @@
 package dev.strategos.core.client.hud;
 
+import dev.strategos.core.content.CorePaths;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.content.ValuePath;
@@ -296,6 +297,16 @@ public record CommandCard(Page page, List<Button> buttons) {
         line(out, templates, template, "Hack", "Attack/Melee/hack", 1);
         line(out, templates, template, "Pierce", "Attack/Melee/pierce", 1);
         line(out, templates, template, "Crush", "Attack/Melee/crush", 1);
+        if (hasRanged(templates, template)) {
+            line(out, templates, template, "Hack, ranged", CorePaths.RANGED_HACK, 1);
+            line(out, templates, template, "Pierce, ranged", CorePaths.RANGED_PIERCE, 1);
+            line(out, templates, template, "Crush, ranged", CorePaths.RANGED_CRUSH, 1);
+            line(out, templates, template, "Fire, ranged", CorePaths.RANGED_FIRE, 1);
+            line(out, templates, template, "Range, blocks", CorePaths.RANGED_RANGE, 1);
+            line(out, templates, template, "High ground, % range a block", CorePaths.HIGH_RANGE, 100);
+            line(out, templates, template, "High ground, % damage a block", CorePaths.HIGH_DAMAGE, 100);
+            line(out, templates, template, "High ground, up to blocks", CorePaths.HIGH_MAX, 1);
+        }
         line(out, templates, template, "Armour, hack", "Resistance/hack", 1);
         line(out, templates, template, "Armour, pierce", "Resistance/pierce", 1);
         line(out, templates, template, "Armour, crush", "Resistance/crush", 1);
@@ -304,6 +315,20 @@ public record CommandCard(Page page, List<Button> buttons) {
         line(out, templates, template, "Population", "Cost/population", 1);
         line(out, templates, template, "Houses", "Housing/capacity", 1);
         return out;
+    }
+
+    /** Whether the template has a ranged weapon: a positive range and some ranged damage. */
+    private static boolean hasRanged(TemplateSet templates, int template) {
+        if (!(value(templates, template, CorePaths.RANGED_RANGE) > 0)) return false;
+        return value(templates, template, CorePaths.RANGED_HACK) > 0
+                || value(templates, template, CorePaths.RANGED_PIERCE) > 0
+                || value(templates, template, CorePaths.RANGED_CRUSH) > 0
+                || value(templates, template, CorePaths.RANGED_FIRE) > 0;
+    }
+
+    private static double value(TemplateSet templates, int template, String path) {
+        ValuePath p = templates.valuePaths().byPath(path);
+        return p == null || !templates.has(template) ? Double.NaN : templates.value(template, p.id());
     }
 
     private static void line(

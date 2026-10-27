@@ -32,6 +32,11 @@ public final class CorePaths {
     public static final String RANGED_REPEAT = "Attack/Ranged/repeat";
     public static final String RANGED_SPEED = "Attack/Ranged/speed";
     public static final String RANGED_SPREAD = "Attack/Ranged/spread";
+    /** High ground (CMB-16): the share of range and of damage a block of height over the target adds, and its cap. */
+    public static final String HIGH_RANGE = "Attack/Ranged/highGround/rangePerBlock";
+
+    public static final String HIGH_DAMAGE = "Attack/Ranged/highGround/damagePerBlock";
+    public static final String HIGH_MAX = "Attack/Ranged/highGround/maxBlocks";
     public static final String VISION = "Vision/range";
     /** How far a unit without a melee attack runs from a blow, in blocks; 0 stands (UNIT-04). */
     public static final String FLEE = "Behaviour/flee";
@@ -45,6 +50,9 @@ public final class CorePaths {
     public static final double DEFAULT_RANGED_REPEAT = 25;
     public static final double DEFAULT_RANGED_SPEED = 4;
     public static final double DEFAULT_RANGED_SPREAD = 2.25;
+    public static final double DEFAULT_HIGH_RANGE = 0.05;
+    public static final double DEFAULT_HIGH_DAMAGE = 0.04;
+    public static final double DEFAULT_HIGH_MAX = 8;
     public static final double DEFAULT_VISION = 12;
 
     /** Every path the core reads, which every set carries. */
@@ -71,6 +79,9 @@ public final class CorePaths {
                 RANGED_REPEAT,
                 RANGED_SPEED,
                 RANGED_SPREAD,
+                HIGH_RANGE,
+                HIGH_DAMAGE,
+                HIGH_MAX,
                 VISION,
                 FLEE);
     }
@@ -93,6 +104,9 @@ public final class CorePaths {
                     RANGED_RANGE,
                     RANGED_PREPARE,
                     RANGED_SPREAD,
+                    HIGH_RANGE,
+                    HIGH_DAMAGE,
+                    HIGH_MAX,
                     VISION,
                     FLEE -> 0;
             case HEALTH, MELEE_REPEAT, RANGED_REPEAT -> 1;
@@ -112,6 +126,8 @@ public final class CorePaths {
             case RANGED_PREPARE, RANGED_REPEAT -> 200;
             case RANGED_SPEED -> 64;
             case RANGED_SPREAD -> 100;
+            case HIGH_RANGE, HIGH_DAMAGE -> 1;
+            case HIGH_MAX -> 64;
             case RANGED_HACK, RANGED_PIERCE, RANGED_CRUSH, RANGED_FIRE -> Float.MAX_VALUE;
             case VISION -> 64;
             case FLEE -> 32;

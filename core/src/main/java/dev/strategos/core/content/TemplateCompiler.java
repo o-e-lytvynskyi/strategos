@@ -384,7 +384,15 @@ public final class TemplateCompiler {
                         "prepare",
                         "repeat",
                         "speed",
-                        "spread");
+                        "spread",
+                        "highGround");
+                JsonObject high = f.object(ranged, "/Attack/Ranged", "highGround", false);
+                if (high != null) {
+                    f.known(high, "/Attack/Ranged/highGround", "rangePerBlock", "damagePerBlock", "maxBlocks");
+                    for (String path : List.of(CorePaths.HIGH_RANGE, CorePaths.HIGH_DAMAGE, CorePaths.HIGH_MAX)) {
+                        f.rangedNumber(high, path);
+                    }
+                }
                 for (String path : List.of(
                         CorePaths.RANGED_HACK,
                         CorePaths.RANGED_PIERCE,
@@ -544,10 +552,10 @@ public final class TemplateCompiler {
         }
 
         void rangedNumber(JsonObject ranged, String path) {
-            String key = path.substring("Attack/Ranged/".length());
+            String key = path.substring(path.lastIndexOf('/') + 1);
             JsonElement e = ranged.get(key);
             if (e == null) return;
-            String pointer = "/Attack/Ranged/" + key;
+            String pointer = "/" + path.substring(0, path.lastIndexOf('/') + 1) + key;
             if (!(e instanceof JsonPrimitive p) || !p.isNumber()) {
                 problems.add(TemplateProblem.error(file, pointer, "expected a number, got " + e));
                 return;

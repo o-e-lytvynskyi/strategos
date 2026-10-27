@@ -37,6 +37,33 @@ class RangedValidationTest {
         assertThat(compile(ranged).ok()).isTrue();
     }
 
+    @Test
+    void highGroundKnobsAreValidatedAtTheirPointers() {
+        Object[][] invalid = {
+            {"rangePerBlock", -0.1},
+            {"rangePerBlock", 1.5},
+            {"damagePerBlock", -1},
+            {"damagePerBlock", 2},
+            {"maxBlocks", -1},
+            {"maxBlocks", 65}
+        };
+        for (Object[] row : invalid) {
+            JsonObject high = new JsonObject();
+            high.addProperty((String) row[0], (Number) row[1]);
+            JsonObject ranged = new JsonObject();
+            ranged.add("highGround", high);
+            TemplateCompiler.Result result = compile(ranged);
+            assertThat(result.ok()).as(row[0] + "=" + row[1]).isFalse();
+            assertThat(result.problems())
+                    .extracting(TemplateProblem::pointer)
+                    .contains("/Attack/Ranged/highGround/" + row[0]);
+        }
+        JsonObject ok = JsonParser.parseString(
+                        "{\"highGround\":{\"rangePerBlock\":0,\"damagePerBlock\":1,\"maxBlocks\":64}}")
+                .getAsJsonObject();
+        assertThat(compile(ok).ok()).isTrue();
+    }
+
     private static TemplateCompiler.Result compile(JsonObject ranged) {
         JsonObject json = JsonParser.parseString("""
                 {"Identity":{},"UnitMotion":{"walkSpeed":0.25},
