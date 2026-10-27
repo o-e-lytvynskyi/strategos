@@ -48,6 +48,12 @@ public final class TownArrows implements MatchSystem {
 
     @Override
     public void run(MatchState s) {
+        long start = s.combatTimes().start();
+        volleys(s);
+        s.combatTimes().volleys(start);
+    }
+
+    private void volleys(MatchState s) {
         if (s.buildings().empty()) return;
         int arrowsPath = s.stats().path(CorePaths.BUILDING_ARROWS);
         int intervalPath = s.stats().path(CorePaths.BUILDING_INTERVAL);

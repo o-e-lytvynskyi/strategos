@@ -23,6 +23,13 @@ final class CombatActions {
      * attack's preferred classes that any belongs to, then the nearest, the lower index on a tie (CMB-05).
      */
     static int nearestEnemy(Context<MatchState> ctx) {
+        long start = ctx.host().combatTimes().start();
+        int found = search(ctx);
+        ctx.host().combatTimes().targeted(start);
+        return found;
+    }
+
+    private static int search(Context<MatchState> ctx) {
         MatchState s = ctx.host();
         int i = ctx.unit();
         if (!s.stats().canAttack(i)) return -1;

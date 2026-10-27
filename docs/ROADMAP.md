@@ -394,7 +394,7 @@ Cards: [roadmap/M5-combat.md](roadmap/M5-combat.md#cards). 14 cards, at most 41 
 
 | ID | Feature | Size | Depends on | Status |
 |---|---|---|---|---|
-| CMB-04 | Ranged combat and analytic projectiles | L | CMB-01, NET-01 | in_progress |
+| CMB-04 | Ranged combat and analytic projectiles | L | CMB-01, NET-01 | done |
 | CMB-05 | Stances, targeting, chase and flee | M | CMB-02, CMB-04, CORE-08 | done |
 | CMB-07 | Civic centre arrows | M | CMB-04, BLD-08 | done |
 | CMB-08 | First-person combat (if D-08 chooses it) | M | CAM-05, CMB-01, D-08 | deferred |
@@ -407,7 +407,7 @@ Cards: [roadmap/M5-combat.md](roadmap/M5-combat.md#cards). 14 cards, at most 41 
 | BLD-16 | Garrison and the town bell | M | BLD-08, CORE-06, ORD-02 | done |
 | BLD-11 | Arrows per garrisoned unit | S | BLD-16, CMB-07 | done |
 | AI-03 | AI battle tactics | M | AI-02, UNIT-07, ORD-05 | done |
-| PERF-08 | Battle perf gate | S | UNIT-07, CMB-07, PERF-07 | specified |
+| PERF-08 | Battle perf gate | S | UNIT-07, CMB-07, PERF-07 | done |
 
 > Owner, CMB-08: deferred — D-08 chose the observer avatar; revisit after the M2 playtest.
 

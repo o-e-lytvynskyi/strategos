@@ -37,6 +37,12 @@ public final class CombatSystem implements MatchSystem {
 
     @Override
     public void run(MatchState s) {
+        long start = s.combatTimes().start();
+        apply(s);
+        s.combatTimes().damage(start);
+    }
+
+    private static void apply(MatchState s) {
         List<Damage> packets = s.takeDamage();
         if (packets.isEmpty()) {
             return;

@@ -137,6 +137,11 @@ public interface MatchQueries {
         return false;
     }
 
+    /** PERF-08's combat systems' times so far. */
+    default dev.strategos.core.sim.combat.CombatTimes.Stats combatTimes() {
+        return new dev.strategos.core.sim.combat.CombatTimes.Stats(0, 0, 0, 0, 0);
+    }
+
     /** PERF-07.4's node index and dropsite query times so far. */
     default EconomyTimes.Stats economyTimes() {
         return new EconomyTimes.Stats(0, 0, 0, 0, 0, 0);

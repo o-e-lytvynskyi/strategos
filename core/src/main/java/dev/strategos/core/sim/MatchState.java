@@ -99,6 +99,8 @@ public final class MatchState {
     private final java.util.TreeMap<String, int[]> damageRanks = new java.util.TreeMap<>(); // by blueprint id
     private @Nullable NodeIndex nodeIndex;
     private final EconomyTimes economyTimes = new EconomyTimes();
+    private final dev.strategos.core.sim.combat.CombatTimes combatTimes =
+            new dev.strategos.core.sim.combat.CombatTimes();
 
     MatchState(MatchConfig config, TemplateSet templates, EntityStore entities, MatchLog log) {
         this.config = config;
@@ -323,6 +325,11 @@ public final class MatchState {
     /** PERF-07.4's times of the node index and the dropsite queries; measured, never saved or hashed. */
     public EconomyTimes economyTimes() {
         return economyTimes;
+    }
+
+    /** PERF-08's times of the combat systems; measured, never saved or hashed. */
+    public dev.strategos.core.sim.combat.CombatTimes combatTimes() {
+        return combatTimes;
     }
 
     /** Where the nodes are, built on first use after discovery or a restore. */

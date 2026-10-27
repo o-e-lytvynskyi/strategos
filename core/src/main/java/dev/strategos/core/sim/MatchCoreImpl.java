@@ -41,6 +41,7 @@ final class MatchCoreImpl implements MatchCore {
         this.journal = new JournalWriter(Snapshots.take(state), slices, checkpointEvery, maxJournalTicks);
         this.paths = new PathService(state, ports.jobs(), ports.clock());
         state.economyTimes().clock(ports.clock());
+        state.combatTimes().clock(ports.clock());
         CommandSystem commands = new CommandSystem(state, rules);
         scheduler.register(new IngestSystem(commands, journal));
         scheduler.register(paths.delivery());

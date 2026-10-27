@@ -54,6 +54,12 @@ public final class ShotSystem implements MatchSystem {
 
     @Override
     public void run(MatchState state) {
+        long start = state.combatTimes().start();
+        step(state);
+        state.combatTimes().shots(start);
+    }
+
+    private void step(MatchState state) {
         release(state);
         List<ShotStore.Shot> due = store.takeDue(state.tick());
         if (due.isEmpty()) return;

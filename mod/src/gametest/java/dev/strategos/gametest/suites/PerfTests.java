@@ -21,6 +21,7 @@ import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.MatchRules;
 import dev.strategos.core.sim.world.WritePriority;
 import dev.strategos.core.sim.world.WriteSite;
+import dev.strategos.core.testkit.BattleScene;
 import dev.strategos.core.testkit.BudgetCheck;
 import dev.strategos.core.testkit.EconomyScene;
 import dev.strategos.core.testkit.FirstLoopScene;
@@ -857,6 +858,28 @@ public final class PerfTests {
     @StrategosTest(batch = "perf_economy_stress", arena = "arena_flat_48", timeoutTicks = 20_000)
     public static void economyStress(GameTestHelper h) {
         PerfSoaks.economyStress(h);
+    }
+
+    /**
+     * PERF-08 (M5 spec §6): the battle on the proving ground for {@code strategos.battle.ticks} ticks (6,000, 5 game
+     * minutes, paced at 20 a second): two factions of 150 spearmen, archers and horsemen in waves across the fords to
+     * the other's civic centre, the centres' arrows firing and ten workers garrisoned in each ({@link BattleScene}), two
+     * seated viewers at the centre. Budgets A–E gate as in the economy soak, E being CMB-04's check 5, and A's p95 per
+     * unit at most 15 % over M4's economy soak; the report adds the targeting's, the volleys', the shots' and the
+     * damage's time a tick. Writes {@code battle_soak.json} and the match's journal.
+     */
+    @StrategosTest(batch = "perf_battle", arena = "arena_flat_48", timeoutTicks = 20_000)
+    public static void battleSoak(GameTestHelper h) {
+        PerfSoaks.battleSoak(h);
+    }
+
+    /**
+     * PERF-08: the battle at twice its scale, 600 fighters, for 6,000 ticks: budget C's p95 at most 50 ms gates, the
+     * rest is reported. Writes {@code battle_stress.json}.
+     */
+    @StrategosTest(batch = "perf_battle_stress", arena = "arena_flat_48", timeoutTicks = 20_000)
+    public static void battleStress(GameTestHelper h) {
+        PerfSoaks.battleStress(h);
     }
 
     /**

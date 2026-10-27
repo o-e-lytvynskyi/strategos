@@ -3,6 +3,7 @@ package dev.strategos.gametest.suites;
 import static dev.strategos.gametest.suites.PerfVerdicts.judgeSoak;
 
 import dev.strategos.core.protocol.MatchControl;
+import dev.strategos.core.testkit.BattleScene;
 import dev.strategos.core.testkit.EconomyScene;
 import dev.strategos.core.testkit.FirstLoopScene;
 import dev.strategos.gametest.suites.PerfVerdicts.Window;
@@ -24,6 +25,9 @@ final class PerfSoaks {
     private static final int ECONOMY_TICKS = Integer.getInteger("strategos.economy.ticks", 18_000);
     private static final int ECONOMY_LANE = 7;
     private static final int ECONOMY_STRESS_LANE = 8;
+    private static final int BATTLE_TICKS = Integer.getInteger("strategos.battle.ticks", 6_000);
+    private static final int BATTLE_LANE = 9;
+    private static final int BATTLE_STRESS_LANE = 10;
 
     private PerfSoaks() {}
 
@@ -99,6 +103,27 @@ final class PerfSoaks {
                 h,
                 CrowdSoak.Config.firstLoop(
                         "economy_stress", EconomyScene.Config.STRESS, FIRST_LOOP_SHORT_TICKS, ECONOMY_STRESS_LANE, 1),
+                r -> judgeSoak(h, r, window, true),
+                window::start,
+                window::sampleForeignLoad);
+    }
+
+    static void battleSoak(GameTestHelper h) {
+        Window window = new Window();
+        CrowdSoak.start(
+                h,
+                CrowdSoak.Config.firstLoop("battle_soak", BattleScene.Config.SOAK, BATTLE_TICKS, BATTLE_LANE, 1),
+                r -> judgeSoak(h, r, window, false),
+                window::start,
+                window::sampleForeignLoad);
+    }
+
+    static void battleStress(GameTestHelper h) {
+        Window window = new Window();
+        CrowdSoak.start(
+                h,
+                CrowdSoak.Config.firstLoop(
+                        "battle_stress", BattleScene.Config.STRESS, FIRST_LOOP_SHORT_TICKS, BATTLE_STRESS_LANE, 1),
                 r -> judgeSoak(h, r, window, true),
                 window::start,
                 window::sampleForeignLoad);

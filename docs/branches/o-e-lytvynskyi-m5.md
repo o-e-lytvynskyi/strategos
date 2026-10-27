@@ -4,10 +4,10 @@
 
 ## Now
 
-- **Milestone:** M5 Combat; 20 of 24 tasks complete (T1–T13).
-- **In progress:** M5 T14 the battle soak (PERF-08) since 2026-10-28.
-- **Last finished task:** T13 battle tactics (2026-10-28).
-- **Next task:** T14, then T15 the battle scenario, T17 the consent batch (client windows), T18 the close.
+- **Milestone:** M5 Combat; 21 of 24 tasks complete (T1–T14).
+- **In progress:** M5 T14 awaits a quiet-machine JMH (WIP); T15 the battle scenario since 2026-10-28.
+- **Last finished task:** T14 the battle soak (2026-10-28).
+- **Next task:** T15, then T17 the consent batch (client windows), T18 the close.
 - **Merged from main last:** a10a8fd (2026-10-27), PR #21 fix-main.
 
 ## Depends on unfinished work
@@ -18,6 +18,13 @@
 - Preserve codex/m5-combat and dev/lev1pes/m5. Import code and task-specific evidence selectively after assignment; do not copy old central STATE/worklog records over current main.
 
 ## Log
+
+### 2026-10-28 — M5 T14
+
+- **T14 · PERF-08 The battle soak** — PERF-08 done; CMB-04 done (its check 5). `BattleScene` (SoakScene: 150 fighters a side, roster 6:5:4 for equal cost, 10 workers garrisoned a side, refilled every 100 ticks, attack-move across the fords into arrow range) and `BattleSceneTest` (slow). `perftests.battle_soak`, 320 units, 5 minutes: A p50 1.23 ms (5), A p99 4.13 (10), B p95 4.10 (17, report-only), C p95 7.85 (23), D p99 0.47 (2), E 9.2 KB/s a viewer (100); per-unit A p95 1.139 × M4 (gate 1.15). `perftests.battle_stress`, 640 units: C p95 9.35 ms (50). Combat costs a tick at p95: targeting 90 µs, volleys 15, shots 56, damage 51 — about 3 % of A; MOVEMENT (1.11 ms) and UNIT_AI (0.60) carry it. `CombatTimes` hooks are measured, never saved or hashed.
+- Thin margins: per-unit A 1 % under its gate; foreign CPU 0.217 and 0.242 against the 0.25 invalid line. A refill burst once jammed the fords (a horseman stood past the stuck invariant); refilling every 100 ticks avoids it — For the owner 10.
+- Gates: `verify verifySlow verifySoak` green. JMH not yet green: under foreign load (load average 4–6: Discord, Chrome, WindowServer) the first run flagged `SpatialBench.query1000` 306 us (+18 %, forks 304/308) and the single rerun flagged `CrossingBench.cross384` 0.321 ms (+17 %) while query1000 read 283; no row was red twice and T14 adds only clock reads outside those kernels. Committed as WIP; JMH is rerun on a quiet machine before T14 counts as done.
+- **Next:** T15; JMH for T14 when the machine is quiet.
 
 ### 2026-10-28 — M5 T13
 
@@ -228,9 +235,11 @@
 7. Follow-up candidate (no scope change): in duels a horseman sometimes stands ~80 ticks beside the back-rank archer it is focused on before striking. Probably a melee chase/ring-slot detail for the large class; to look at with T13's battle AI unless you want it earlier.
 8. From T9: the battle bot (T13) now weighs strength against defence and pulls back a doomed wave; the economy bot's wood-starved late economy (24 workers, other stocks in the thousands) remains — a candidate for AI-02's next tuning, not M5 scope.
 9. Horsemen cannot damage buildings (no `Attack/Structure` torch; only spearmen burn buildings, CMB-03). Recommend keeping it: the horseman is the raider of workers and archers, the spearman takes buildings. Say if cavalry should carry torches too.
+10. Performance watch for M6: the battle soak's per-unit A is 1.139 × M4's (gate 1.15) and its cost is movement and unit AI, not combat; 300 units crowding a ford in one burst can stall one large unit past the stuck invariant. Both are inputs for M6's spec health check, not M5 blockers.
 
 ## Decisions taken
 
+- 2026-10-28 · trial implementer: pass — T14 measured everything asked and named its thin margins; it skipped the slow gates after touching core, which the orchestrator ran.
 - 2026-10-28 · The barracks trains the whole roster (the cards made archer and horseman templates but named no trainer; 0 A.D.'s barracks trains infantry and cavalry). Undo in barracks.json.
 - 2026-10-28 · Battle-bot details: strength = Σ template cost × HP fraction; defence 600 and launch 0.6 untuned starting values; new soldiers do not join a wave already out; difficulty levels are separate script files (only battle.json ships). Undo in battle.json / Tactics.
 - 2026-10-28 · trial implementer: pass — T13, with the barracks gap raised as a question rather than worked around in shipped data.

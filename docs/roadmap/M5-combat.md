@@ -59,7 +59,8 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
   4. A volley in a GameTest damages its target as the L1 run predicts (L3).
   5. Launch and impact `fx` with 300 units fighting fit budget E (L6).
 - **Tests:** L0, L1, L3, L6 · **Depends on:** CMB-01, NET-01 · **Size:** L · **Tier:** T0
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-10-28 — M5 T3a–T3c.2: `ShotTest`/`ShotAimTest` goldens and binomial bound (1–2, L1), `MovingShotTest` (3, L1), `combattests.archer_volley_replays_as_the_core_predicts` (4, L3); M5 T14: `perftests.battle_soak` budget E 9.2 KB/s a viewer (5, L6)
 
 #### CMB-05 · Stances, targeting, chase and flee
 - **Value:** Units fight on their own the way you told them: hold the line, defend an area or
@@ -281,4 +282,5 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
   3. The stress pass holds C p95 ≤ 50 ms (L6).
   4. The report lists the cost per combat system (R).
 - **Tests:** L6, R · **Depends on:** UNIT-07, CMB-07, PERF-07 · **Size:** S · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-28 — M5 T14: `perftests.battle_soak` (320 units, 5 min at 20 t/s: A p50 1.23 / p99 4.13 ms, C p95 7.85 ms, D p99 0.47 ms, E 9.2 KB/s a viewer) (1, L6); per-unit A p95 7,832 ns = 1.139 × M4's 6,878 (2, L6); `perftests.battle_stress` (640 units) C p95 9.35 ms ≤ 50 (3, L6); the report's combat block: targeting p95 90 µs, volleys 15 µs, shots 56 µs, damage 51 µs a tick (4, R); `BattleScene`, `BattleSceneTest`

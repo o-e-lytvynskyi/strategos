@@ -363,6 +363,11 @@ final class QueriesImpl implements MatchQueries {
     }
 
     @Override
+    public dev.strategos.core.sim.combat.CombatTimes.Stats combatTimes() {
+        return state.combatTimes().stats();
+    }
+
+    @Override
     public dev.strategos.core.sim.econ.EconomyTimes.Stats economyTimes() {
         return state.economyTimes().stats();
     }
