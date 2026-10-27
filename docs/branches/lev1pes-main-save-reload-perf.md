@@ -2,7 +2,7 @@
 
 ## Verdict
 
-The independent cloud same-runner JMH gate passed on 2026-10-28: all 21 benchmarks, maximum candidate/control 1.095538, and every existing allocation check passed. Standard cloud server perf remains pending; this is not yet a hand-in. The three local failures below remain part of the evidence. No threshold or approved baseline was changed, and no application was paused or terminated.
+The independent cloud same-runner JMH gate passed on 2026-10-28: all 21 benchmarks, maximum candidate/control 1.095538, and every existing allocation check passed. Standard cloud server perf also passed all 18 required GameTests (details below). The three local failures below remain part of the evidence. No threshold or approved baseline was changed, and no application was paused or terminated.
 
 - First candidate versus historical accepted same-host control: six breaches, maximum ratio 1.238304; full run 6m 51s.
 - Same first candidate versus one fresh pristine bb800d0 control: six breaches, maximum ratio 1.330130; control run 6m 41s.
@@ -107,3 +107,34 @@ Raw JSON SHA-256:
 Artifact: `paired-jmh-reports` (id 12776902393), including both raw JSON reports, pinned commits, JDK/CPU metadata and vmstat. Artifacts have seven-day retention; copies and downloaded logs remain in ignored `build/audit-tools/cloud-save-reload/40595834693/` in the original checkout. No personal paths or raw machine metadata are committed.
 
 Preparation-only run [40595484377](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40595484377) failed before measurement because jmhJar does not exist in this plugin-free build. Replace that step with the actual source-set jmhClasses task. Preserve the failed run/log; it produced no benchmark scores.
+
+## Standard cloud server perf — 2026-10-28
+
+[Run 40594606609](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40594606609), candidate f9f9846, passed in 45m 59s. The server log confirms all 18 required GameTests passed in 37.67 minutes. Standard workflow arguments were unchanged: `-Pperf.ciFactor=3 -Psoak.ticks=2400 -Ploop.ticks=3600`; cloud budgets and shortened soak windows are not native Mac-budget validation. JMH produced all 21 results and the speed-ratio report; this standard workflow deliberately does not compare JMH against the Mac baseline.
+
+All 18 server report files were inspected, including their configured report-only metrics. There is no failed/invalid top-level verdict. The maximum reported foreignCpu fraction among these reports is 0.060370 (6.037%), below the unchanged 0.25 invalidation rule; these report aggregates are not instantaneous CPU peaks.
+
+| Report | Top-level result | Reported foreign CPU |
+|---|---|---:|
+| block_writer_cost.json | pass | 1.111% |
+| commander_pan_move_cost.json | pass | 1.149% |
+| crowd_soak_600.json | pass | 0.271% |
+| economy_soak.json | pass | 0.238% |
+| economy_stress.json | pass | 0.265% |
+| first_loop_fast.json | pass | 0.349% |
+| first_loop_soak.json | pass | 0.262% |
+| first_loop_stress.json | pass | 0.225% |
+| group_paths_budget_d.json | pass | 0.196% |
+| idle_300.json | pass | 0.230% |
+| melee_soak_200.json | pass | 0.249% |
+| page_capture_and_publication.json | report-only | 6.037% |
+| path_budget_d.json | pass | 0.276% |
+| prewarm_512_generated.json | checked by GameTest | not recorded |
+| snapshot_500.json | pass | 4.935% |
+| stress_1200.json | pass | 0.227% |
+| viewer_bytes_600.json | report-only | not recorded |
+| walk_600.json | pass | 3.473% |
+
+Artifact: `perf-reports` (id 12777882458), 6,661,061 bytes, seven-day retention. Raw reports and full logs were downloaded to ignored `build/audit-tools/cloud-save-reload/40594606609/` in the original checkout. Copies remain local beyond GitHub artifact retention.
+
+The opt-in paired workflow was temporary validation scaffolding, preserved at 8e98d8b and in its successful run. After inspecting both successful runs, restore perf.yml byte-for-byte from bb800d0 before hand-in. The final bug-fix diff does not add a permanently pinned one-off CI mode. Production, benchmark and test sources remain identical to those already verified.
