@@ -1,15 +1,15 @@
 # main-save-reload on dev/lev1pes/main-save-reload
 
-**Developer:** lev1pes · **Branch:** dev/lev1pes/main-save-reload · **Work:** main-save-reload · **Base:** main @ b207e509a85a3303f515a716b04a87bc90ee2cb8 · **Claimed:** 2026-10-27 · **Status:** in progress
+**Developer:** lev1pes · **Branch:** dev/lev1pes/main-save-reload · **Work:** main-save-reload · **Base:** main @ b207e509a85a3303f515a716b04a87bc90ee2cb8 · **Claimed:** 2026-10-27 · **Status:** ready for review
 
 **Note:** assignment merged in [PR #26](https://github.com/o-e-lytvynskyi/strategos/pull/26), not an implementation delivery; fixes #23, #24, #25; excludes fix-main and new M5 scope
 
 ## Now
 
 - **Milestone:** bounded follow-up fixes for three independently reproduced bugs in existing main: [#23](https://github.com/o-e-lytvynskyi/strategos/issues/23), [#24](https://github.com/o-e-lytvynskyi/strategos/issues/24), [#25](https://github.com/o-e-lytvynskyi/strategos/issues/25).
-- **In progress:** all three fixes implemented; 1,936 functional tests and independent cloud same-runner JMH green. Standard cloud server perf is still running. Assignment merged by PR #26.
-- **Last finished task:** cloud paired JMH run 40595834693: 21/21 comparable benchmarks, maximum slowdown 9.554% against the unchanged 15% gate; allocation checks pass.
-- **Next task:** finish inspecting standard perf run 40594606609, then hand in only if all required verification is resolved. Keep this claim assigned.
+- **State:** all three fixes implemented and verified; ready for independent maintainer review. Assignment merged by PR #26.
+- **Last finished task:** cloud paired JMH: 21/21 comparable benchmarks, maximum slowdown 9.554% against the unchanged 15% gate; allocation checks pass. Standard cloud perf: all 18 required server GameTests pass. Functional verification: 1,936 tests pass.
+- **Next task:** hand in, inspect PR checks, then independent maintainer review and human merge. Keep this claim assigned until the maintainer closes it.
 - **Merged from main last:** bb800d0 (2026-10-27), including the assignment merge (#26), fix-main (#21) and owner answers (#27).
 
 ## Depends on unfinished work
@@ -58,13 +58,24 @@
 - First paired workflow run 40595484377 stopped before measurement because the preparation step used jmhJar, which this plugin-free harness does not define. Inspect the actual source-set convention and replace that preparation with jmhClasses; no benchmark result was produced or discarded. Preserve the failed run and logs. This is a workflow repair, not another unchanged performance retry.
 - Corrected paired run [40595834693](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40595834693) passed. Pin pristine bb800d0 and candidate 8e98d8b on the same Ubuntu four-vCPU EPYC 9V74 runner, Temurin 21.0.12.1+1. Both full JMH measurements took 6m 16s; all 21 configurations match, the unchanged jmhCompare gate and allocation checks pass. Maximum ratio 1.095538; SnapshotCodec 1.006691. All raw scores, hashes, CPU context and prior failures are in [performance evidence](lev1pes-main-save-reload-perf.md). Standard perf remains pending.
 
+### 2026-10-28 — hand-in report
+
+- **Built:** #23 keeps ENDED across restore and rejects resume/commands; #24 shares complete in-use template validation before server publication/core swap; #25 resolves saved building/production references by stable IDs across session index changes.
+- **Gates:** verifyFast 2m 18s; verify/slow/soak 19m 16s, 1,936 tests with no failures/errors/skips. Independent cloud paired JMH [40595834693](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40595834693): all 21 configurations and unchanged 15%/allocation gates pass, maximum ratio 1.095538; each measurement 6m 16s. Standard cloud [40594606609](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40594606609): all 18 required GameTests pass in 37.67m, whole build 45m 59s. All raw reports and verdicts inspected. This is Linux CI evidence, not native Mac-budget validation. L4 is not required for these persistence/reload fixes.
+- **Deviations:** schema 3 protects against silent downgrade; legacy fixed built-ins remain supported, ambiguous custom indices explicitly fail. Released fixtures unchanged; new JSON/NBT fixtures pin buildings, queued products, progress and bindings.
+- **Decisions taken:** share the reload seam and conservatively remap before reading templates. Reverting implementation removes the repairs/schema-3 support. Use trusted pristine bb800d0 as the same-runner comparison input, without promoting a baseline; retain every earlier failure. Remove the one-off paired workflow from the final diff after successful validation; its exact version remains at 8e98d8b.
+- **For the owner:** independent maintainer review/human merge and the serial Windows verify-duration decision below. No gate or limit is weakened.
+- **Links:** this branch record, [performance evidence](lev1pes-main-save-reload-perf.md), and the hand-in pull request on GitHub. Main was freshly fetched and remains bb800d0, already merged here; core/mod/build-logic trees are identical to the verified candidate.
+
 ## For the owner
 
-1. Cloud verification requested in the owner's session on 2026-10-28: standard [perf run 40594606609](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40594606609) is running. Independent [paired JMH 40595834693](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40595834693) passed its unchanged 15% and allocation gates on one runner. This is same-host regression evidence, not promotion of an approved baseline or Mac native-budget validation. Retain [all local failures](lev1pes-main-save-reload-perf.md).
+1. Independent maintainer review and human merge. Both owner-requested cloud runs passed: [standard perf](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40594606609) and [paired JMH](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40595834693). This is same-host regression/Linux CI evidence, not promotion of an approved baseline or native Mac-budget validation. Retain [all local failures](lev1pes-main-save-reload-perf.md).
 2. Review the serial Windows `verify` duration (about 9m 10s versus the documented 5-minute budget): accept the platform time or decide separately which run moves to `verifySlow`. No run or gate was moved here.
-3. Assignment merged by PR #26. This WIP branch is not ready for hand-in; independent maintainer review and human merge follow resolved verification.
+3. Assignment merged by PR #26. The claim is ready for review and remains assigned until the maintainer merges the hand-in and closes it. No M5/M6 work is included.
 
 ## Decisions taken
+
+- 2026-10-28 · After both cloud runs pass, restore perf.yml exactly from bb800d0 so a permanently pinned task-specific mode is not added to the final bug-fix diff. Its validated workflow and run remain at 8e98d8b/40595834693; restore that workflow commit if the same diagnostic must be investigated again.
 
 - 2026-10-28 · On the owner's explicit cloud-validation request, add opt-in paired JMH to the existing manual perf workflow. Pin the control to pristine bb800d0; compile both jars before measuring; use one runner, sequential measurements, identical configurations and the unchanged jmhCompare gate. Capture vmstat context and both raw reports. The standard perf mode remains the default and its budgets are unchanged. Separate concurrency groups keep this diagnostic from cancelling standard perf. No automatic retries, baseline writes or local heavy tests. Undo by reverting this workflow-only addition.
 
@@ -80,4 +91,4 @@
 
 ## Review
 
-Assignment merged by PR #26. Functional gates and independent cloud paired JMH pass; standard cloud server perf is pending. No hand-in PR, self-approval or merge yet.
+Assignment merged by PR #26. Functional gates, independent cloud paired JMH and standard cloud server perf pass. Ready for independent maintainer review; every approval and merge remains human.
