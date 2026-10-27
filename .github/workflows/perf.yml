@@ -83,10 +83,10 @@ jobs:
           git -C candidate rev-parse HEAD > evidence/candidate-commit.txt
           lscpu > evidence/cpu.txt
           java -version 2> evidence/java.txt
-      - name: Build both benchmark jars before measuring
+      - name: Compile both benchmark sets before measuring
         run: |
-          ./control/gradlew -p control --no-daemon --console=plain --max-workers=2 :core:jmhJar
-          ./candidate/gradlew -p candidate --no-daemon --console=plain --max-workers=2 :core:jmhJar
+          ./control/gradlew -p control --no-daemon --console=plain --max-workers=2 :core:jmhClasses
+          ./candidate/gradlew -p candidate --no-daemon --console=plain --max-workers=2 :core:jmhClasses
       - name: Control JMH
         run: |
           vmstat -w 1 > evidence/control-vmstat.txt &

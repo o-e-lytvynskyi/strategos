@@ -53,6 +53,7 @@
 - Add an opt-in paired-JMH mode to the existing workflow_dispatch route, without opening an unfinished hand-in PR. The control is the trusted pre-repair main bb800d0; both versions run on one Ubuntu runner with the same JDK, heap, forks and iterations. All 21 benchmark keys and configurations must match before the existing comparison runs.
 - Workflow validation: YAML parse, all pinned action hashes, read-only token permissions, Bash syntax of every run block, embedded Python syntax and roadmap checks pass. Production/test sources and benchmark settings are unchanged, so the completed 1,936-test functional evidence is retained. No new local Gradle run is started.
 - No new approved baseline, raised limit or skipped gate. Cloud outcome and artifacts must be inspected before declaring this claim ready.
+- First paired workflow run 40595484377 stopped before measurement because the preparation step used jmhJar, which this plugin-free harness does not define. Inspect the actual source-set convention and replace that preparation with jmhClasses; no benchmark result was produced or discarded. Preserve the failed run and logs. This is a workflow repair, not another unchanged performance retry.
 
 ## For the owner
 
