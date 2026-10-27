@@ -7,7 +7,7 @@
 - **Milestone:** bounded follow-up fixes for three independently reproduced bugs in existing main: [#23](https://github.com/o-e-lytvynskyi/strategos/issues/23), [#24](https://github.com/o-e-lytvynskyi/strategos/issues/24), [#25](https://github.com/o-e-lytvynskyi/strategos/issues/25).
 - **State:** all three fixes implemented and verified; ready for independent maintainer review. Assignment merged by PR #26.
 - **Last finished task:** cloud paired JMH: 21/21 comparable benchmarks, maximum slowdown 9.554% against the unchanged 15% gate; allocation checks pass. Standard cloud perf: all 18 required server GameTests pass. Functional verification: 1,936 tests pass.
-- **Next task:** hand in, inspect PR checks, then independent maintainer review and human merge. Keep this claim assigned until the maintainer closes it.
+- **Next task:** inspect checks on hand-in [PR #30](https://github.com/o-e-lytvynskyi/strategos/pull/30), then independent maintainer review and human merge. Keep this claim assigned until the maintainer closes it.
 - **Merged from main last:** bb800d0 (2026-10-27), including the assignment merge (#26), fix-main (#21) and owner answers (#27).
 
 ## Depends on unfinished work
@@ -63,7 +63,7 @@
 - **Deviations:** schema 3 protects against silent downgrade; legacy fixed built-ins remain supported, ambiguous custom indices explicitly fail. Released fixtures unchanged; new JSON/NBT fixtures pin buildings, queued products, progress and bindings.
 - **Decisions taken:** share the reload seam and conservatively remap before reading templates. Reverting implementation removes the repairs/schema-3 support. Use trusted pristine bb800d0 as the same-runner comparison input, without promoting a baseline; retain every earlier failure. Remove the one-off paired workflow from the final diff after successful validation; its exact version remains at 8e98d8b.
 - **For the owner:** independent maintainer review/human merge and the serial Windows verify-duration decision below. No gate or limit is weakened.
-- **Links:** this branch record, [performance evidence](lev1pes-main-save-reload-perf.md), and the hand-in pull request on GitHub. Main was freshly fetched and remains bb800d0, already merged here; core/mod/build-logic trees are identical to the verified candidate.
+- **Links:** [hand-in PR #30](https://github.com/o-e-lytvynskyi/strategos/pull/30), this branch record and [performance evidence](lev1pes-main-save-reload-perf.md). Main was freshly fetched and remains bb800d0, already merged here; core/mod/build-logic trees are identical to the verified candidate.
 
 ## For the owner
 
@@ -89,4 +89,4 @@
 
 ## Review
 
-Assignment merged by PR #26. Functional gates, independent cloud paired JMH and standard cloud server perf pass. Ready for independent maintainer review; every approval and merge remains human.
+Assignment merged by PR #26; hand-in [PR #30](https://github.com/o-e-lytvynskyi/strategos/pull/30) is open. Functional gates, independent cloud paired JMH and standard cloud server perf pass. Ready for independent maintainer review; every approval and merge remains human.
