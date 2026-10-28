@@ -1,6 +1,6 @@
 # M5 on dev/o-e-lytvynskyi/m5
 
-**Developer:** o-e-lytvynskyi · **Branch:** dev/o-e-lytvynskyi/m5 · **Work:** M5 · **Base:** main @ cb4044b · **Claimed:** 2026-10-26 · **Status:** ready for review
+**Developer:** o-e-lytvynskyi · **Branch:** dev/o-e-lytvynskyi/m5 · **Work:** M5 · **Base:** main @ cb4044b · **Claimed:** 2026-10-26 · **Status:** merged 2026-10-28
 
 ## Now
 
@@ -384,4 +384,4 @@
 
 ## Review
 
-Pending independent review. No product code changed and no legacy implementation was built in this preparation.
+Merged by the owner 2026-10-28 in [PR #33](https://github.com/o-e-lytvynskyi/strategos/pull/33) without a separate maintainer review; records folded into main 2026-10-29 by PR #29; the owner recorded M5 as closed on 2026-10-29.
