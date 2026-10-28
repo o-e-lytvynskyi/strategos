@@ -7,9 +7,9 @@
 ## Now
 
 - **Milestone:** M8 Fog of war; only independent T1–T6 are assigned. Claim merged in PR #31. T2–T4 are complete; T5–T6 remain.
-- **In progress:** none; T4 complete, continuing assigned work.
+- **In progress:** T5 implementation and fast checks complete; full gate blocked by the unchanged ProtectedBlockIndexTest timing assertion. T6 review/KB preparation is complete but final verification/handoff is not.
 - **Last finished task:** T4 audience decisions and outbound audit; fast/L2/full verify and existing L4 smoke passed.
-- **Next task:** T5 observed AI knowledge, then T6 review and handoff. Full runtime integration remains unassigned T7–T12.
+- **Next task:** owner scope decision for the existing timing-test defect; preserve the failed gate, do not retry until green or hand in unfinished work. Full runtime integration remains unassigned T7–T12.
 - **Merged from main last:** 3c1f430 (2026-10-28).
 
 ## Scope and intended task split
@@ -84,8 +84,23 @@ Full FOW-02 targeted tracking, FOW-03 live save/minimap ghosts, FOW-05 all-chann
 
 - T4 final serial verify passes in 7m 1s: 1,325 core + 96 mod + 212 GameTests, zero failures/errors/skips. Supporting test metadata adds only the audit input file; no task, threshold, timeout or sender is weakened.
 
+### 2026-10-28 — T5 observed AI/scouting input
+
+- Four L1 tests, initially two expected failures against an unfiltered/non-expiring capture (14s). Filter own/allied/hidden candidates using explicit enemy and visibility queries; retain only public Target fields, never UnitView.target/private orders. Targets expire outside their captured tick.
+- Keep immutable building memory separate from current unit targets and public starts in map order. Defensive copies, duplicate-handle and nonfinite-start checks, future-memory rejection and private-order noninterference are pinned. This is knowledge preparation, not a new controller or evidence of five-minute scouting/200-match balance acceptance.
+- AFTER-M6/M7 in ScoutKnowledge: authoritative AI-18 observations, ordinary validated commands, diplomacy and viewer-scoped building memories. AI-07 remains in_progress until T10 integration.
+
+### 2026-10-28 — T5 verification blocker and T6 preparation
+
+- T5 verifyFast passes in 1m 47s; all 19 new L1 tests are green, as is the new L2 audit. Full serial verify failed in 7m 21s: ProtectedBlockIndexTest.aLookupCostsTheSameAtAnySize measured 88.6ns/27.5ns = 3.219218 against unchanged <3. Other 1,329 core, 95 remaining mod and 212 GameTests pass. Original XML retained as build/m8-t5-protected-failure.xml; full log build/m8-t5-verify.log.
+- The protected-index production and test sources are byte-for-byte unchanged from main (git diff is empty). One unchanged isolated diagnostic passes in 19s; this confirms variability, not a repair. CPU context collected over that later 20.05s window: six logical CPUs, system busy 0.7196, Java CPU fractions total about 0.4497; remaining work includes the profiler and other processes. This is not the missing original failure window and does not retroactively invalidate it. Preserve build/m8-t5-protected-confirm.log and build/m8-t5-protected-context.json.
+- Read-only fastutil 8.5.12 probe audit: stride-4 probes cover z modulo 4 == 0 only. That subset averages 1.26855 key probes versus 1.29028 across all keys, so this asymmetry does not explain the high large/small timing ratio. Diagnostic source stays in ignored build/IndexProbeAudit.java. No gate or fixture was changed.
+- Prepared T6 API/KB notes, reviewed all four production classes (87/134/70/91 lines; no new Minecraft imports, TODOs, suppressions or mutable static collections). Runtime fog/AI, MatchSnapshot, hashes, tracking and network senders remain untouched. Fresh origin/main is still 3c1f430. All AFTER dependencies remain explicit.
+- T5/T6 are not marked done and no hand-in PR is opened while the full gate is red. This is a WIP checkpoint; investigate/fix the pre-existing test only after the owner clarifies assignment scope, keeping the limit and workload intact.
+
 ## For the owner
 
+0. Blocking: choose a separate assigned claim for the protected-index measurement defect, or explicitly extend this M8 claim to its bounded correction. The isolated pass is not acceptance evidence for the failed full run; no threshold, retry policy or skipped gate is proposed.
 1. Claim #31 is merged. Maintainer records may reflect the bounded M8 opening; this developer session does not write STATE.md or merge its own work. No new permission is needed to resume assigned T2–T6.
 2. M6/M7 runtime delivery remains a prerequisite for integrated M8 acceptance. The specification preserves all full-card criteria; specified does not mean implemented or accepted.
 
@@ -103,4 +118,4 @@ Full FOW-02 targeted tracking, FOW-03 live save/minimap ghosts, FOW-05 all-chann
 
 ## Review
 
-Assignment merged in #31; no hand-in PR yet because T2–T6 are unfinished. T1 is documentation only; runtime behavior is unchanged.
+Assignment merged in #31. T2–T4 are green and pushed; T5 fast checks are green, full verification is blocked by the existing timing test. T6 review/KB prepared; no hand-in PR or ready-for-review claim while the gate is red. Runtime behavior is unchanged.

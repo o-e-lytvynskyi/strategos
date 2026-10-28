@@ -41,6 +41,7 @@ Only T1–T6 are assigned here; T7–T12 need future claims and merged prerequis
 | Building handles | Handle uses generation bits; valid signed-negative building handles must round-trip. Reject generation zero/unit indices, not the sign bit | T3 pins signed handles and full generations; T8 integrates actual saved identity |
 | Memory event order | Persist a global observation watermark so old events cannot resurrect cleared sites | T3 stale-event regression and snapshot round-trip |
 | Audit test input | Track the Markdown inventory as a Gradle test input so doc-only changes invalidate L2 results | Existing L4 smoke also validates the supporting build metadata; no golden promotion |
+| AI public projection | UnitView includes a private order target even for a visible enemy; copy only whitelisted public target fields and expire targets by tick | T5 noninterference/stale-target regressions; actual AI-18 routing remains T10 |
 | AI | Knowledge input is separate from the currently omniscient AiView | T10 supplies it from AI-18; no scouting/balance claim from a contract |
 
 No card criterion, timing target, threshold or baseline is removed or weakened.
@@ -107,7 +108,10 @@ test proves decisions only; it cannot prove packet emission or vanilla backstops
 
 `sim.ai.ScoutKnowledge` accepts visible enemy observations, immutable building
 memory and public map start positions. It exposes attack candidates only from
-currently visible units; a remembered building is a scouting destination, never
+currently visible units through a public Target projection (handle, faction,
+stable template and position); UnitView.target/private enemy orders are excluded.
+Targets are available only for the captured tick; future thinks must recapture.
+A remembered building is a scouting destination, never
 an attackable handle. No MatchQueries/BuildingView/world reference is accepted.
 Visited starts are derived from observations at the start, not the enemy's current
 position. Deterministic map ordering and immutable copies prevent hidden mutation.
@@ -219,3 +223,10 @@ T4 completed: exhaustive entity-channel decisions, 13-type S2C/vanilla audit and
 L2 registry-to-audit coverage. verifyFast + targeted L2 3m 8s; full serial verify
 7m 1s. Existing L4 smoke 49s, three frames inspected; Windows/NVIDIA has no
 approved goldens, so only candidates were produced. No runtime senders changed.
+
+T5 implementation passes verifyFast (1m 47s), including all four new AI cases.
+Full verify failed at the unchanged ProtectedBlockIndexTest timing limit: ratio
+3.219218, required <3. One isolated diagnostic passed, establishing variability
+but no root cause or repair. Original reports are preserved in the branch log.
+T5/T6 remain unchecked; T6 API/KB review is prepared, but final gate and handoff
+await an owner scope decision for the existing measurement defect.

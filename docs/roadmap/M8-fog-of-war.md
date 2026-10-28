@@ -149,7 +149,7 @@ full runtime acceptance below still waits for M6/M7.
   2. The AI scouts every start within the first 5 minutes (L1).
   3. Fog-fair Normal still beats Easy in at least 124 of 200 seeded matches (L1).
 - **Tests:** L0, L1, L3 · **Depends on:** AI-18, FOW-03, D-19 · **Size:** M · **Tier:** T1
-- **Status:** specified
+- **Status:** in_progress
 
 #### PERF-15 · Fog perf gate
 - **Value:** Fog costs no tick rate.
