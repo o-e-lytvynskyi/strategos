@@ -1,13 +1,13 @@
 # M7 spec on dev/lev1pes/m7-spec
 
-**Developer:** lev1pes · **Branch:** dev/lev1pes/m7-spec · **Work:** M7 spec · **Base:** main @ 3c1f4300bd457788374c74fe4ddbfc2679f17ec4 · **Claimed:** 2026-10-28 · **Status:** claimed
+**Developer:** lev1pes · **Branch:** dev/lev1pes/m7-spec · **Work:** M7 spec · **Base:** main @ 3c1f4300bd457788374c74fe4ddbfc2679f17ec4 · **Claimed:** 2026-10-28 · **Status:** ready for review
 
 ## Now
 
 - **Milestone:** M7 Multiplayer specification only; no implementation tasks claimed.
-- **In progress:** cloud validation of the completed specification; the owner explicitly instructed this session to finish the specification before sending the delivery PR, overriding the wait for assignment merge for this planning claim only.
-- **Last finished task:** [M7 planning specification](../milestones/M7-multiplayer.md): 25 future tasks, all 13 cards traced, contracts, dependencies, tests and owner inputs.
-- **Next task:** complete GitHub Actions verification, then update PR #32 from assignment-only to the planning delivery. No M7 runtime implementation is claimed or opened.
+- **In progress:** none; planning delivery complete, awaiting independent review.
+- **Last finished task:** [M7 planning specification](../milestones/M7-multiplayer.md): 25 future tasks, all 13 cards traced; cloud verify passed on ea45a9c with 1,906 test cases and no failures, errors or skips.
+- **Next task:** independent review of [PR #32](https://github.com/o-e-lytvynskyi/strategos/pull/32), owner scope/decision review and human merge. No M7 runtime implementation is claimed or opened.
 - **Merged from main last:** 3c1f430 (2026-10-28), branch creation base.
 
 ## Depends on unfinished work
@@ -21,6 +21,12 @@
 Existing main contracts cover the earlier match, core, replication and test infrastructure. The M7 specification will trace every card dependency, separate independent work from integration work, and retain all acceptance criteria. Actual integration and runtime verification belong to later implementation claims.
 
 ## Log
+
+### 2026-10-28 — cloud verification and handoff
+
+- [GitHub Actions verify](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40773257776) passed on ea45a9c: `BUILD SUCCESSFUL in 6m 25s`, 84 executed tasks. The canonical XML reports contain 1,906 test cases (including 212 GameTests), zero failures, zero errors and zero skips; L3 wall time 72.958 s against the unchanged 180 s limit. Harness self-tests also passed through `verify`.
+- `records`, test-results reporting and the repository security check passed. The final follow-up commit changes only this branch's status/evidence record; implementation plan and runtime sources are unchanged from the cloud-verified commit.
+- PR #32 now presents the combined assignment and completed planning specification, with the owner's pre-merge planning instruction disclosed. The planning claim is ready for independent review; the 25 implementation checkboxes remain unchecked.
 
 ### 2026-10-28 — planning specification
 
@@ -50,8 +56,8 @@ Existing main contracts cover the earlier match, core, replication and test infr
 
 ## Pitfalls
 
-- None added; this is an assignment-only change.
+- No new KB entry: the UTF-8 bookkeeping requirement is already documented in `docs/kb/minecraft-mod-build.md` and was followed for final checks.
 
 ## Review
 
-Awaiting independent maintainer review and human assignment merge.
+Cloud validation passed as recorded above. Awaiting independent maintainer review and human merge of the planning delivery.
