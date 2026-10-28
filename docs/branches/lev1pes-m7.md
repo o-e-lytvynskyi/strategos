@@ -34,6 +34,12 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Log
 
+### 2026-10-29 — T2a test-first and implementation checkpoint
+
+- Added 16 L1 contract tests before publishing production classes. [Cloud red checkpoint](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40788100711), commit 4817ee5, failed at core test compilation because DiplomacyState/DiplomacyView were absent, as intended; it ran zero test cases and is not runtime failure evidence.
+- Added immutable state/view, explicit legacy identity setup, primary-faction bindings, locked teams, faction-owned non-transitive grants, stale-authority revocation, validated detached snapshot reconstruction and canonical hash contribution. No MatchState, command, save codec, network or step/hash kernel is wired by this foundation.
+- **Next:** full cloud verify on the implementation; do not mark T2a complete until its XML reports and gate results pass.
+
 ### 2026-10-29 — T1 readiness and task split complete
 
 - **T1** — imported our planning spec, reconciled M5 delivery and pending M6/persistence decisions, split T2a/T2b before implementation. [Cloud verify](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40787146879) on 40e770d passed in 6m 46s with 2,237 canonical XML cases, zero failures/errors/skips. Negative harness inputs were rejected as intended; no runtime defect is inferred from their expected log failures. Records check also passed.
@@ -62,6 +68,9 @@ or replication privacy; those retain their own integration tests and dependencie
 3. Later two-client measurement and acceptance require the owner's clients and the completed hardening prerequisites. No platform-port decision, public release or performance baseline change is included.
 
 ## Decisions taken
+
+- 2026-10-29 · Make the standalone diplomacy state immutable and use it as the read view — old query/snapshot references cannot observe later mutation; canonical snapshots and a hash contribution are tested separately from match-schema integration — replace the representation behind DiplomacyView if measured setup costs justify it.
+- 2026-10-29 · Grants are faction-owned, primary-only and non-transitive; rebind/team changes revoke stale authority — prevents a reused seat or alliance change from retaining old control — change the explicit policy and regression tests together if the product model changes. Disconnect does not unbind.
 
 - 2026-10-29 · Keep whole-milestone ownership as requested, with per-task readiness gates — prevents competing claims without pretending missing dependencies are delivered — release or narrow the assignment through the normal registry PR if ownership changes.
 - 2026-10-29 · Start with independent core identity/diplomacy/grant foundations after readiness reconciliation — they can be tested without unmerged M6 runtime code — revisit the order when prerequisites merge.

@@ -58,6 +58,15 @@ one faction, one in commander mode and one in the existing first-person observer
 both players' command authority without adding an avatar attack or vision source. Record outcomes, questionnaire, P0/P1
 issues, JFR counters for S11, and ART-03 silhouette/look approval. People start interactive clients.
 
+### 1.4 Implementation findings
+
+| ID | Finding / decision | Scope and follow-up |
+|---|---|---|
+| D-01 | M5 delivery is already on the implementation base (PR #33); M6 runtime is not | Replace the stale planning assumption at each concrete adapter, not by importing another developer's unfinished branch |
+| D-02 | T2 mixes independent rules with live authority/persistence changes | Split T2a pure contract from T2b installation; no numeric authority check is replaced by the standalone foundation |
+| D-03 | T2a state itself implements the immutable view; every update returns a new state | Fixed slot arrays stay private, snapshots copy lists, and hash/reconstruction use canonical slot order; T2b owns match snapshot versioning and journal installation |
+| D-04 | Explicit grants belong to the granting faction, but can be issued only from a player's primary faction | Reject grant chains and absent/enemy participants; rebind drops incoming grants, removing the last primary controller drops outgoing grants, and team changes revoke incompatible grants. Disconnect alone never unbinds a seat |
+
 ## 2. Baseline and dependencies
 
 ### 2.1 Inspected baseline
