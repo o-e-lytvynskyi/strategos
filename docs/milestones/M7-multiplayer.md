@@ -99,6 +99,8 @@ are ready, or an explicitly bounded contract-only scope. Do not claim blocked ad
 - No new engine call is needed by T2a. Recheck the planning hook signatures against the then-current engine artifacts when T13 becomes ready; no current hardening implementation is certified here.
 - Cloud verification requested by the operator: the initial local baseline `verifyFast` was interrupted and is not a pass. Dispatch existing verify workflow on pushed WIP checkpoints, inspect canonical XML/reports, then record a green task commit. T2a adds failing L1 tests first and must pass V before completion.
 
+T1 verification: [cloud verify 40787146879](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40787146879), commit `40e770d`: BUILD SUCCESSFUL in 6m 46s; 2,237 canonical XML test cases, zero failures/errors/skips. Expected negative harness failures were caught by their self-test gates.
+
 ## 3. Design
 
 ### 3.1 Identity, teams and control
@@ -348,7 +350,7 @@ and `python -X utf8` (see [toolchain KB](../kb/minecraft-mod-build.md)).
 |---|---|---|---|---|
 | T1 | Reconcile merged predecessors, decisions, hook signatures, schema and scope; record readiness | Owner opens approved M7 scope; applicable M5/M6 close results | S | F; `python -X utf8 tools/roadmap.py check`; `python -X utf8 tools/claims.py check --base origin/main` |
 | T2a | Independent identity/diplomacy/grant state, detached immutable view and deterministic snapshot/hash contracts; MATCH-06 | T1; CORE-01 | M | `:core:test` exact permission matrix, invalid participants, grant revocation, detached views and deterministic reconstruction; V; no running tick/order path changes |
-| T2b | Install T2a in match authority/configuration and journaled setup; preserve legacy defaults | T2a; coordinated persistence boundary with T5 and PR #30 | M | `:core:test`, legacy match/replay/snapshot tests; V, S; J if step/hash kernel changes |
+| T2b | Install T2a in match authority/configuration and journaled setup; preserve legacy defaults | T2a; PR #30 persistence/schema boundary reconciled | M | `:core:test`, legacy match/replay/snapshot tests; V, S; J if step/hash kernel changes |
 | T3 | Server lobby/start intents and private lobby snapshots; NET-02 | T2b; MATCH-02 delivered; D-20 | L | `:mod:test :mod:runGameTestServer`, four-player start ≤10 s and outsider rejection |
 | T4 | Lobby screen/readiness/error rendering; NET-02 | T3 | M | `:mod:runScenario -Pscenario=m7-lobby -Pscenario.timeoutSeconds=180` (new scenario) |
 | T5 | Slot bindings, grants, roster and deadline migration/restore | T2a, T3; CORE-07; integrated save/reload schema | M | `:core:test :mod:test :mod:runGameTestServer`, old/new fixtures and malformed saves |
@@ -399,7 +401,7 @@ reviewed implementation task between T17 and T18, keeping the acceptance depende
 
 ### 5.3 Progress
 
-- [ ] T1 · Reconcile prerequisites and implementation readiness (bounded foundations; see §2.3).
+- [x] T1 (2026-10-29) · Reconcile prerequisites and implementation readiness (bounded foundations; see §2.3).
 - [ ] T2a · Independent identity, diplomacy, grants and immutable snapshot contract.
 - [ ] T2b · Match authority/configuration installation and journaled setup.
 - [ ] T3 · Server lobby and start.

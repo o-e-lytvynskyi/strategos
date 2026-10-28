@@ -4,9 +4,9 @@
 
 ## Now
 
-- **Milestone:** M7 Multiplayer; 0 of 26 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md), based on planning PR #32.
-- **In progress:** T1 readiness reconciliation since 2026-10-29; explicit operator exception permits pre-merge development.
-- **Last finished task:** none.
+- **Milestone:** M7 Multiplayer; 1 of 26 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md), based on planning PR #32.
+- **In progress:** T2a independent identity/diplomacy/grant foundations since 2026-10-29; explicit operator exception permits pre-merge development.
+- **Last finished task:** T1 readiness reconciliation (2026-10-29), cloud-verified checkpoint 40e770d.
 - **Next task:** T2a independent core identity/diplomacy/grant foundations; T2b installs authority with coordinated persistence.
 - **Merged from main last:** 267da40 (2026-10-29).
 
@@ -33,6 +33,11 @@ before implementing them. T2 does not certify friendly-fire, allied victory, com
 or replication privacy; those retain their own integration tests and dependencies.
 
 ## Log
+
+### 2026-10-29 — T1 readiness and task split complete
+
+- **T1** — imported our planning spec, reconciled M5 delivery and pending M6/persistence decisions, split T2a/T2b before implementation. [Cloud verify](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40787146879) on 40e770d passed in 6m 46s with 2,237 canonical XML cases, zero failures/errors/skips. Negative harness inputs were rejected as intended; no runtime defect is inferred from their expected log failures. Records check also passed.
+- **Next:** T2a test-first cloud checkpoint, followed by implementation and full cloud verify.
 
 ### 2026-10-29 — pre-merge development authorized
 
