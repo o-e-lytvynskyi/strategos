@@ -4,7 +4,7 @@ The project-wide picture, kept by the maintainer and updated at merges. Who work
 (`python3 tools/claims.py list`); live progress is in each developer's branch file ([branches/](branches/)). The session
 log is in [worklog.md](worklog.md); the work procedure is the `strategos-dev` skill (`.claude/skills/strategos-dev/SKILL.md`).
 
-**Last update:** 2026-10-27 · **Owner last seen:** 2026-10-27 · **Milestones done:** M0–M4 (M0 accepted) · **Open for claims:** M5
+**Last update:** 2026-10-27 · **Owner last seen:** 2026-10-29 · **Milestones done:** M0–M4 (M0 accepted) · **Open for claims:** M5
 
 ## For the owner
 
@@ -71,7 +71,7 @@ Answer in chat or here; the next session applies the answers.
 
 ## Since the owner's last visit
 
-Nothing yet: the owner was here on 2026-10-27.
+Nothing yet: the owner was here on 2026-10-29.
 
 ## Milestones
 

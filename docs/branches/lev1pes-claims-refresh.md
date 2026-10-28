@@ -1,6 +1,6 @@
 # Claims refresh on dev/lev1pes/claims-refresh
 
-**Developer:** lev1pes · **Branch:** dev/lev1pes/claims-refresh · **Work:** owner-requested records correction · **Base:** main @ bb800d0 · **Status:** ready for review
+**Developer:** lev1pes · **Branch:** dev/lev1pes/claims-refresh · **Work:** owner-requested records correction · **Base:** main @ bb800d0 · **Status:** merged 2026-10-29
 
 ## Now
 
@@ -20,3 +20,11 @@
 ## Decisions taken
 
 - 2026-10-27 · Preserve assignment dates and historical released rows. Use PR links as evidence and active branch links for progress; a merged assignment is not proof of delivered work.
+
+## Review
+
+2026-10-29 · maintainer review, fixes on the owner's word («можем пофиксить этот МР»); the owner confirmed the request in the maintainer session.
+
+- Facts checked against GitHub: #16 delivered the M6 spec; #17, #19, #26 and #31 are assignment-only; #18 released M5; #21 delivered fix-main.
+- Fixed: merged `origin/main` (conflict in docs/claims.md: kept the M8 T1–T6 row from #31); M5 (o-e-lytvynskyi) turned `done` — delivered by #33 on 2026-10-28, after this branch was cut; dropped the "branch progress" links (GitHub deletes merged branches, the links would break) and the "Last reconciled" date (it goes stale at the next merge).
+- Follow-up outside this branch: #33 was merged without the rest of its records (STATE "Milestones", header, worklog, the M5 branch file's status) — the same gap issue #28 reports.
