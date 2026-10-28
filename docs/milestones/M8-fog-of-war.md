@@ -40,6 +40,7 @@ Only T1–T6 are assigned here; T7–T12 need future claims and merged prerequis
 | Audience guards | Pure decisions are not installed in the gateway yet | T9 wires every sender and proves real packets with mock players |
 | Building handles | Handle uses generation bits; valid signed-negative building handles must round-trip. Reject generation zero/unit indices, not the sign bit | T3 pins signed handles and full generations; T8 integrates actual saved identity |
 | Memory event order | Persist a global observation watermark so old events cannot resurrect cleared sites | T3 stale-event regression and snapshot round-trip |
+| Audit test input | Track the Markdown inventory as a Gradle test input so doc-only changes invalidate L2 results | Existing L4 smoke also validates the supporting build metadata; no golden promotion |
 | AI | Knowledge input is separate from the currently omniscient AiView | T10 supplies it from AI-18; no scouting/balance claim from a contract |
 
 No card criterion, timing target, threshold or baseline is removed or weakened.
@@ -88,7 +89,7 @@ hidden live building to refresh remembered health/owner.
 ### 2.3 Channel guard contract (T4)
 
 `sim.replicate.FogAudience` declares semantic channels and explicit recipient
-evidence: member of this match, observer, owner, sees source, sees destination.
+evidence: member of this match, observer, owner, direct sharing, source/destination sight and remembered state.
 Unknown channel IDs deny. Nonmembers deny even if other flags are true. Observers
 are authorized only through explicit recipient classification. Hidden commanders
 deny for enemies even when visible. Projectiles require either end visible.
@@ -96,7 +97,9 @@ Remembered building data uses its own last-seen channel and evidence; current
 selection/HP channels cannot use that evidence. Known terrain/entity-ID side
 channels are documented, not misrepresented as protected payloads.
 
-The planned `docs/design/m8-outbound-channels.md` inventory is mandatory T4 output.
+The [outbound inventory](../design/m8-outbound-channels.md) lists every registered S2C type and vanilla route.
+L2 compares the table to ModPayloads; its Markdown file is an explicit Gradle test input.
+An exhaustive semantic-policy switch forces any new channel to acquire a decision.
 Existing `PayloadAudienceTest` remains the L2 declaration gate. A pure channel
 test proves decisions only; it cannot prove packet emission or vanilla backstops.
 
@@ -127,8 +130,9 @@ T10 routes ordinary AI commands through observed data and the normal validators.
 
 Foundations: failing L1 tests first; `verifyFast` after edit batches, `verify` before
 task commits. Codec behavior gets JSON round-trip and malformed-input L1 tests;
-live NBT/save integration is T8 L2/L3. No new engine surface in T1–T6, no client
-window, no hot kernel, tick, order, movement or existing persistence codec edit.
+live NBT/save integration is T8 L2/L3. No new engine surface, hot kernel, tick,
+order, movement or existing persistence codec edit. One existing bounded L4 smoke
+validates T4's supporting Gradle test-input metadata; no visual features or goldens change.
 If scope touches one, add its slow/soak/JMH gates before committing. Existing
 L0–L5 in verify still run; never infer success from a zero exit without reports.
 
@@ -171,7 +175,7 @@ implementation if it exceeds 1,500 lines. It is not assigned by this document.
 - [x] T1 Specification and scope matrix
 - [x] T2 Shared visibility policy
 - [x] T3 Last-seen building memory
-- [ ] T4 Channel inventory and audience decisions
+- [x] T4 Channel inventory and audience decisions
 - [ ] T5 Observed AI/scouting knowledge
 - [ ] T6 Foundation verification and handoff
 - [ ] T7 Team fog and targeted tracking integration
@@ -210,3 +214,8 @@ T3 completed: immutable last-seen records, stable-ID bounded standalone codec an
 persisted event watermark. Six L1 tests include stale events, signed generations,
 malformed data, defensive copies and deterministic snapshots. verifyFast 2m 26s;
 serial verify 8m 58s. Live match save/hash/minimap integration still waits.
+
+T4 completed: exhaustive entity-channel decisions, 13-type S2C/vanilla audit and
+L2 registry-to-audit coverage. verifyFast + targeted L2 3m 8s; full serial verify
+7m 1s. Existing L4 smoke 49s, three frames inspected; Windows/NVIDIA has no
+approved goldens, so only candidates were produced. No runtime senders changed.

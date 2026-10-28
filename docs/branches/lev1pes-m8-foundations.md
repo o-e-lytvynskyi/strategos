@@ -6,10 +6,10 @@
 
 ## Now
 
-- **Milestone:** M8 Fog of war; only independent T1–T6 are assigned. Claim merged in PR #31. T2–T3 are complete; T4–T6 remain.
-- **In progress:** none; T3 complete, continuing assigned work.
-- **Last finished task:** T3 last-seen building memory; verifyFast and full verify passed.
-- **Next task:** T4 channel audit and audience decisions, then T5–T6. Full runtime integration remains unassigned T7–T12.
+- **Milestone:** M8 Fog of war; only independent T1–T6 are assigned. Claim merged in PR #31. T2–T4 are complete; T5–T6 remain.
+- **In progress:** none; T4 complete, continuing assigned work.
+- **Last finished task:** T4 audience decisions and outbound audit; fast/L2/full verify and existing L4 smoke passed.
+- **Next task:** T5 observed AI knowledge, then T6 review and handoff. Full runtime integration remains unassigned T7–T12.
 - **Merged from main last:** 3c1f430 (2026-10-28).
 
 ## Scope and intended task split
@@ -72,6 +72,17 @@ Full FOW-02 targeted tracking, FOW-03 live save/minimap ghosts, FOW-05 all-chann
 - AFTER-M6/M7 in BuildingMemory: match/viewer-scoped save/hash adapters, recipient authorization and positive remembered-footprint emptiness. Full FOW-03 remains in_progress.
 
 - T3 final gates: verifyFast 2m 26s; full serial verify 8m 58s; 1,320 core + 95 mod + 212 GameTests, zero failures/errors/skips. No new compiler findings or existing codec/threshold/baseline changes.
+
+### 2026-10-28 — T4 channel decisions and audit
+
+- Five L1 tests, initially four expected failures against the denying stub (18s). Outside-match recipients and unknown/null channels deny; observers/owners have explicit controls; enemy commanders stay hidden; allied bodies use direct sharing; destination sight permits only projectile FX and memory permits only mirages. Scoreboard membership is always forbidden. Exhaustive switch has no default permission for future channels.
+- Audited 13 registered S2C payloads, all seven C2S exclusions and vanilla/semantic routes. Current SeesCell broadcasts, live building/deposit frames, page-batched FX and operator debug particles need real guards after M6/M7. Public WAVE telegraph is intentional under merged M6 spec §1.6 row 17.
+- New L2 FogChannelInventoryTest compares real ModPayloads with unique documented rows; existing PayloadAudienceTest still checks unknown-type refusal and declared audiences. Add the audit file as a test input so documentation edits invalidate the Gradle test result. No sender, transport or runtime guard changes.
+- AFTER-M5/M6/M7 remain in FogAudience and the audit. Full FOW-05 is in_progress; packet controls wait for integration.
+
+- T4 verifyFast + targeted L2 audience/inventory tests pass in 3m 8s (five new L1 cases, four targeted L2 tests). Existing L4 smoke passes in 49s with ok=true; inspected smoke-20/40/60 PNGs: normal scene and all five units. No Windows/NVIDIA goldens exist, so comparison produced candidates only; no golden changed. Initial invocation failed before opening a window because PowerShell split the unquoted dotted -P argument; corrected by quoting it, preserving both logs.
+
+- T4 final serial verify passes in 7m 1s: 1,325 core + 96 mod + 212 GameTests, zero failures/errors/skips. Supporting test metadata adds only the audit input file; no task, threshold, timeout or sender is weakened.
 
 ## For the owner
 

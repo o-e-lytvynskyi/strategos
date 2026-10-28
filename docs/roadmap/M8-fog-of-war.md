@@ -136,7 +136,7 @@ full runtime acceptance below still waits for M6/M7.
   2. A new payload type without declared audiences fails the audience test (L2).
   3. The audit table is in the docs, with the accepted leaks stated (D).
 - **Tests:** L0, L2, L3, D · **Depends on:** FOW-02, NET-09 · **Size:** M · **Tier:** T1
-- **Status:** specified
+- **Status:** in_progress
 
 #### AI-07 · Fog-fair AI scouting and memory
 - **Value:** The AI plays by the same information you have, and it scouts for it (P5).
