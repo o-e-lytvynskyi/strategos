@@ -454,7 +454,7 @@ Cards: [roadmap/M7-multiplayer.md](roadmap/M7-multiplayer.md#cards). 13 cards, a
 | NET-05 | Reconnect and rejoin | M | NET-02, CORE-07 | proposed |
 | NET-06 | Command validation hardening and fuzzing | M | CORE-03, NET-02 | proposed |
 | NET-09 | Commander hardening against modified clients | M | NET-02, QA-15 | proposed |
-| MATCH-06 | Teams, diplomacy and shared control | M | MATCH-03, CORE-01 | proposed |
+| MATCH-06 | Teams, diplomacy and shared control | M | MATCH-03, CORE-01 | in_progress |
 | UI-15 | Multiplayer HUD and pings | M | UI-20, NET-02 | proposed |
 | AI-06 | AI in team games | M | AI-05, MATCH-06 | proposed |
 | QA-15 | Multiplayer test kit | M | QA-19, NET-02 | proposed |

@@ -1,21 +1,20 @@
 # M7 on dev/lev1pes/m7
 
-**Developer:** lev1pes · **Branch:** dev/lev1pes/m7 · **Work:** M7 · **Base:** main @ 267da40 · **Claimed:** 2026-10-29 · **Status:** claimed
+**Developer:** lev1pes · **Branch:** dev/lev1pes/m7 · **Work:** M7 · **Base:** main @ 267da40 · **Claimed:** 2026-10-29 · **Status:** in progress
 
 ## Now
 
-- **Milestone:** M7 Multiplayer; 0 of 25 implementation tasks complete. Planning specification: [PR #32](https://github.com/o-e-lytvynskyi/strategos/pull/32).
-- **In progress:** none; assignment merge pending.
+- **Milestone:** M7 Multiplayer; 0 of 26 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md), based on planning PR #32.
+- **In progress:** T1 readiness reconciliation since 2026-10-29; explicit operator exception permits pre-merge development.
 - **Last finished task:** none.
-- **Next task:** after independent assignment review and human merge, T1 readiness reconciliation, then T2 independent core identity, diplomacy, locked teams and explicit control grants.
+- **Next task:** T2a independent core identity/diplomacy/grant foundations; T2b installs authority with coordinated persistence.
 - **Merged from main last:** 267da40 (2026-10-29).
 
 The operator requested ownership of the whole M7 and work on what is currently possible on
 2026-10-29. This assignment intentionally includes responsibility for later blocked tasks;
 it does not declare them ready, waive their dependencies or accept any product decision.
-Only ready work or explicitly bounded contract foundations may start after assignment merge.
-Reconcile the planning delivery in PR #32 before runtime edits; do not silently import its
-unmerged claim or treat its planning checks as implementation evidence.
+The operator subsequently explicitly instructed development without waiting for approval/merge. That instruction overrides the assignment wait for this session; independent review and human merge are still required.
+The planning specification from our own PR #32 is incorporated and reconciled in this branch; its registry row and completion status are not imported. Its checks are not runtime implementation evidence.
 
 ## Depends on unfinished work
 
@@ -35,6 +34,14 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Log
 
+### 2026-10-29 — pre-merge development authorized
+
+- The operator explicitly instructed development without waiting for claim approval. This is a procedural exception for this session, not an independent review, merge, missing prerequisite or product-decision waiver.
+- Incorporated our M7 planning specification, reconciled M5 delivery and pending M6/persistence contracts, and split T2 into independent foundations (T2a) and authority/persistence installation (T2b) before runtime changes.
+- MATCH-06 enters in progress for those bounded foundations; no card acceptance is complete.
+- The operator requested cloud tests. The initial local baseline verifyFast was interrupted on that instruction; it is not passing evidence. Use the existing workflow_dispatch route without changing gates. Publish a WIP checkpoint for cloud verification, then record green task completion only after reading the reports.
+- **Next:** cloud T1 gates, then failing L1 tests for T2a.
+
 ### 2026-10-29 — whole-milestone assignment request
 
 - The operator requested M7 ownership and available work. Fetched main at 267da40 includes M5 delivery PR #33. The main registry has no M7 implementation holder or reservation; the open PR list contains planning PR #32, save/reload PR #30 and records PR #29, with no competing M7 implementation claim.
@@ -45,8 +52,8 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## For the owner
 
-1. Independently review and merge the assignment PR. Project procedure requires assignment on main before development; this session does not approve or merge its own work.
-2. Planning PR #32 is still open. Reconcile its scope/status on review; this request authorizes available M7 work, but does not resolve D-20 hosting, D-03 themes, deferred first-person fighting/scouting, the MVP fun verdict or art acceptance. Continue independent foundations while these gates remain open.
+1. Independently review and merge the assignment PR. The operator explicitly waived the development wait in this session; independent review and human merge remain required.
+2. Planning PR #32 is still open. Its specification is incorporated and updated here; reconcile duplicate planning delivery on review; this request authorizes available M7 work, but does not resolve D-20 hosting, D-03 themes, deferred first-person fighting/scouting, the MVP fun verdict or art acceptance. Continue independent foundations while these gates remain open.
 3. Later two-client measurement and acceptance require the owner's clients and the completed hardening prerequisites. No platform-port decision, public release or performance baseline change is included.
 
 ## Decisions taken

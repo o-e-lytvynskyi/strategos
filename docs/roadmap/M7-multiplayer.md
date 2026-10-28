@@ -190,7 +190,7 @@ it). **Needed by:** M7 (NET-02). **Affects:** NET-02, NET-05, QA-15, MATCH-16.
   3. Two mock players controlling one faction both have their commands accepted (L3).
   4. No unit is ever added to a scoreboard team, while player names are coloured (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** MATCH-03, CORE-01 · **Size:** M · **Tier:** T1
-- **Status:** proposed
+- **Status:** in_progress
 
 #### UI-15 · Multiplayer HUD and pings
 - **Value:** Coordinate with allies: see who is playing and point at places on the map.
