@@ -7,6 +7,7 @@ import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.MatchId;
+import dev.strategos.core.shared.Stance;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.MatchBounds;
 import dev.strategos.core.sim.MatchConfig;
@@ -178,6 +179,11 @@ class InvariantsTest {
         @Override
         public int[] workers(FactionSlot faction) {
             throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public @Nullable Stance explicitStance(int handle) {
+            return null;
         }
 
         @Override

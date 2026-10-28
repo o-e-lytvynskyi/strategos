@@ -59,9 +59,13 @@ public final class Skirmishes {
         ResourceLocation map = p.match().map();
         Scenario scenario = Scenarios.load(server.server(), p.scenario());
         List<Scenario.Slot> computers = new ArrayList<>();
+        // a human slot is played by the battle bot when the scenario's computer slot is one (the battle scenarios),
+        // else by first_loop
+        String human = scenario.slots().stream().anyMatch(sl -> sl.player().equals(ScenarioSetup.AI + "battle"))
+                ? ScenarioSetup.AI + "battle"
+                : ScenarioSetup.AI + "first_loop";
         for (Scenario.Slot slot : scenario.slots()) {
-            String player =
-                    slot.player().startsWith(ScenarioSetup.AI) ? slot.player() : ScenarioSetup.AI + "first_loop";
+            String player = slot.player().startsWith(ScenarioSetup.AI) ? slot.player() : human;
             computers.add(new Scenario.Slot(player, slot.resources(), slot.entities()));
         }
         Scenarios.apply(

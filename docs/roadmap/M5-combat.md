@@ -59,7 +59,8 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
   4. A volley in a GameTest damages its target as the L1 run predicts (L3).
   5. Launch and impact `fx` with 300 units fighting fit budget E (L6).
 - **Tests:** L0, L1, L3, L6 · **Depends on:** CMB-01, NET-01 · **Size:** L · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-28 — M5 T3a–T3c.2: `ShotTest`/`ShotAimTest` goldens and binomial bound (1–2, L1), `MovingShotTest` (3, L1), `combattests.archer_volley_replays_as_the_core_predicts` (4, L3); M5 T14: `perftests.battle_soak` budget E 9.2 KB/s a viewer (5, L6)
 
 #### CMB-05 · Stances, targeting, chase and flee
 - **Value:** Units fight on their own the way you told them: hold the line, defend an area or
@@ -77,7 +78,8 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
   3. A chase stops when the target leaves vision, even under an explicit order (L1).
   4. One GameTest per stance family confirms its L1 behaviour (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** CMB-02, CMB-04, CORE-08 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-27 — M5 T5a–T5b: `StanceTest.theTable` (per stance), `StanceTest.targetPreferences`, `StanceTest.aChaseEndsOutOfVision` (1–3, L1); `combattests.stance_aggressive`, `stance_defensive`, `stance_stand_ground`, `stance_passive` (4, L3; violent equals aggressive, spec §1.6 row 12); `FleeingTest`, `SetStanceRuleTest`, `StancePersistenceTest`, `CommandCardTest` stance buttons; spec §1.6 rows 11–12
 
 #### CMB-07 · Civic centre arrows
 - **Value:** Your civic centre defends itself, so an early raid is not instantly fatal (P4).
@@ -90,7 +92,8 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
   2. Only enemies are targeted (L1).
   3. The civic centre breaks a small raid in a GameTest as the L1 run predicts (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** CMB-04, BLD-08 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-27 — M5 T9: `TownArrowsTest.countAndDpsAreTheSheets` (3 arrows every 80 ticks, damage = landed arrows × the sheet's 8 pierce after resistance) (1, L1), `TownArrowsTest.onlyEnemies` (2, L1), `combattests.the_centre_breaks_a_small_raid` with its headless replay (3, L3)
 
 #### CMB-08 · First-person combat (if D-08 chooses it)
 - **Value:** In first person you can fight beside your soldiers (P2).
@@ -126,7 +129,8 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
   4. A GameTest on a hill shows the longer reach (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** CMB-04, DATA-02 · **Size:** S · **Tier:** T2 (pulled
   into the MVP)
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-27 — M5 T4: `HighGroundTest` (1, L1), `CommandCardTest.theArcherBreakdownNamesTheHighGroundSource` (3, L1), `combattests.high_ground_reaches_farther` (4, L3); M5 T7: `DuelTest.archersOnAHillBeatArchersBelow` 188 of 200 on a six-block plateau, flat control 90 (2, L1)
 
 #### CMB-17 · Combat readability: attack lines and the under-attack flash
 - **Value:** You always see who attacks whom (P2).
@@ -139,7 +143,8 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
      scene confirms budget F.
   3. Goldens (L4, consent).
 - **Tests:** L0, L1, L4 (consent), L6 · **Depends on:** CMB-06, UI-02 · **Size:** S · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-28 — M5 T12: `AttackLinesTest.onlyWhatTheViewerMayReceive` (1, L1), `AttackLinesBench.extract300` 0.43 µs (2, L6); M5 T17: PERF-14's battle scene `rts_frame_battle`, 202 on screen: frame p50 5.03 / p99 10.56 ms, units 3.55, ours 0.06, client tick p50 0.96 (Sodium 4.04 / 8.90, 3.18, 0.05, 0.82) (2, L6); `m5_goldens` attack_lines (3, L4)
 
 #### ORD-05 · Focus fire and force attack
 - **Value:** Fine control of a fight: focus one target, spread fire, or attack anything on command
@@ -152,7 +157,8 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
   2. A spread order splits attackers within one per target of the even split (L1).
   3. Force attack works on an own building (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** ORD-04, CMB-05 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-27 — M5 T8: `FocusTest.aFocusMakesEveryArcherInRangeShootIt` (1, L1), `FocusTest.aSpreadIsWithinOneOfEven` (7 n, k pairs) and the re-pick test (2, L1), `combattests.force_attack_on_an_own_building` (3, L3); `ForceAttackTest`, `FocusTargetsTest`, the focus ring; Ctrl forces, Alt spreads
 
 ### Units
 
@@ -167,7 +173,8 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
   2. Reachability per class equals a flood fill (L1).
   3. 30 horsemen cross the proving ground with no ladder rung above repath (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** PATH-06, PATH-09 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-27 — M5 T2a–T2b: `MobilityTest`, `LargeMovementTest`, `LargeIntegrationTest` (1–2, L1); M5 T6: `maptests.thirty_horsemen_cross` — 30 horsemen arrive, ladder rungs [0,16,0,0,0,0] (repath only), longest stuck 50 ticks, 1,254 ticks (3, L3); spec §1.6 row 3
 
 #### UNIT-06 · Mounted units
 - **Value:** Cavalry looks and moves like riders on horses, yet costs about as much as one foot
@@ -184,7 +191,8 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
   4. Rider and horse render together at every camera height (L4, consent).
 - **Tests:** L0, L2, L3, L4 (consent), L5, L6 · **Depends on:** UNIT-03, PATH-11 · **Size:** M ·
   **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-28 — M5 T6: `bodytests.a_horseman_is_one_entity` (1, L3), `UnitMountTypeTest` (2, L2), `perftests.mounted_cost` 1.162 ≤ 1.20 (3, L6); M5 T17: `m5_goldens` rider_low, rider_default, rider_high on macos and macos-sodium (4, L4)
 
 #### UNIT-07 · Combat roster and counters
 - **Value:** Three soldiers with clear roles and counters: spearmen stop horsemen, horsemen run down
@@ -201,7 +209,7 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
   4. The owner recognises each role from its silhouette at 60 blocks (L7, acceptance).
 - **Tests:** L0, L1, L3, L7 · **Fixtures:** duel seed sets · **Depends on:** CMB-04, CMB-05,
   UNIT-06, DATA-04 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 ### Defence
 
@@ -228,7 +236,8 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
   6. A first-person mock player using the bell block rings the bell (L3).
 - **Tests:** L0, L1, L3, L5 · **Depends on:** BLD-08, CORE-06, ORD-02 · **Size:** M · **Tier:** T1
   (pulled into the MVP)
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-27 — M5 T10a: `GarrisonTest.capacityAndClasses` (1, L1), `GarrisonTest.handleHpAndOrdersSurvive` (2, L1), `GarrisonPersistenceTest`; M5 T10b: `garrisontests.the_bell_brings_them_in` (all inside 82 ticks after the ring, limit 200) (3), `garrisontests.all_clear_returns_them` (back on the node 93 ticks after, limit 100) (4), `garrisontests.garrisoned_units_have_no_body` (5), `garrisontests.the_bell_block_rings` (6), all L3; `BellTest`
 
 #### BLD-11 · Arrows per garrisoned unit
 - **Value:** Garrisoning turns the civic centre into a real defence (P4).
@@ -241,7 +250,8 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
   3. A garrisoned civic centre breaks a horseman raid in a GameTest (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** BLD-16, CMB-07 · **Size:** S · **Tier:** T1 (pulled
   into the MVP)
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-27 — M5 T11: `TownArrowsTest.basePlusGarrisoned` (0/1/5/20 inside → 3/4/8/23 arrows) (1, L1), `TownArrowsTest.dpsWithAGarrison` (2, L1), `garrisontests.a_garrisoned_centre_breaks_a_horse_raid` (6 horsemen; L1: the bare centre leaves 5 alive, ten inside break it in 1,483 ticks) (3, L3)
 
 ### The opponent and the gate
 
@@ -258,7 +268,8 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
   3. Tactics stay within the `AiBudget` (L1).
   4. An L3 battle sample reaches the hash of its L1 run (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** AI-02, UNIT-07, ORD-05 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-28 — M5 T13: `BattleBotTest.focusesAndRetreats` (10 v 6 share one most-wounded target; 6 v 14 retreat at contact and end within 12 blocks of base) (1, L1, slow; the battle scenario of T15 reuses the bot), `BattleBotTest.shiftsToSpearmenAgainstHorse` on the shipped templates (12 spearmen and no others in the two minutes after 20 horsemen appear) (2, L1, slow), `BattleBotTest.withinTheBudget` (326 of 5,000 at 80 v 80) (3, L1), `aitests.battle_seed_replays_to_its_hash` (4, L3); `battle.json`
 
 #### PERF-08 · Battle perf gate
 - **Value:** Big battles stay smooth on the server, the network and the screen.
@@ -273,4 +284,5 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
   3. The stress pass holds C p95 ≤ 50 ms (L6).
   4. The report lists the cost per combat system (R).
 - **Tests:** L6, R · **Depends on:** UNIT-07, CMB-07, PERF-07 · **Size:** S · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-28 — M5 T14: `perftests.battle_soak` (320 units, 5 min at 20 t/s: A p50 1.23 / p99 4.13 ms, C p95 7.85 ms, D p99 0.47 ms, E 9.2 KB/s a viewer) (1, L6); per-unit A p95 7,832 ns = 1.139 × M4's 6,878 (2, L6); `perftests.battle_stress` (640 units) C p95 9.35 ms ≤ 50 (3, L6); the report's combat block: targeting p95 90 µs, volleys 15 µs, shots 56 µs, damage 51 µs a tick (4, R); `BattleScene`, `BattleSceneTest`

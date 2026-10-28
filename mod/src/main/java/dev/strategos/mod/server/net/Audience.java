@@ -11,6 +11,7 @@ public sealed interface Audience {
         FACTION,
         TRACKERS_OF,
         SEES_CELL,
+        SEES_EITHER,
         MATCH
     }
 
@@ -45,6 +46,14 @@ public sealed interface Audience {
         @Override
         public Kind kind() {
             return Kind.SEES_CELL;
+        }
+    }
+
+    /** The players who see either of two vision cells of a match: a shot's two ends; its members until fog (M8). */
+    record SeesEither(MatchId match, int cellAx, int cellAz, int cellBx, int cellBz) implements Audience {
+        @Override
+        public Kind kind() {
+            return Kind.SEES_EITHER;
         }
     }
 

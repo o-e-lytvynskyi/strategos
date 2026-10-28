@@ -98,7 +98,7 @@ class WireCodecSizeTest {
                         "strategos:move=1,strategos:stop=2,strategos:spawn_units=3,"
                                 + "strategos:attack=4,strategos:attack_move=5,strategos:follow=6,strategos:grant=7,"
                                 + "strategos:spawn_building=8,strategos:gather=9,strategos:place_building=10,strategos:train=11,"
-                                + "strategos:cancel_train=12,strategos:set_rally=13,strategos:reseed=14,strategos:resign=15,strategos:rule_change=16,strategos:announce_wave=17,strategos:set_ai=18,strategos:build=19,strategos:cancel_building=20,strategos:demolish=21,strategos:set_auto_reseed=22,strategos:train_batch=23,strategos:spawn_deposit=24");
+                                + "strategos:cancel_train=12,strategos:set_rally=13,strategos:reseed=14,strategos:resign=15,strategos:rule_change=16,strategos:announce_wave=17,strategos:set_ai=18,strategos:build=19,strategos:cancel_building=20,strategos:demolish=21,strategos:set_auto_reseed=22,strategos:train_batch=23,strategos:spawn_deposit=24,strategos:set_stance=25,strategos:garrison=26,strategos:ungarrison=27,strategos:ring_bell=28,strategos:all_clear=29,strategos:attack_spread=30");
         assertThat(CommandKinds.DEFAULT.reads("strategos:move=1,strategos:stop=2,strategos:spawn_units=3"))
                 .as("M1's journals read")
                 .isTrue();
@@ -425,7 +425,7 @@ class WireCodecSizeTest {
         Fx.Event widest =
                 new Fx.Event(FxKind.BLOCK_BREAK, Fx.MAX_EIGHTHS, Integer.MIN_VALUE, Fx.MAX_EIGHTHS, Integer.MIN_VALUE);
         Fx full = new Fx(Integer.MAX_VALUE, java.util.Collections.nCopies(Fx.MAX_EVENTS, widest));
-        assertThat(size(Fx.WIRE, full)).isEqualTo(Fx.WIRE.maxSize());
+        assertThat(size(Fx.WIRE, full)).isEqualTo(5 + 1 + Fx.MAX_EVENTS * 15); // the widest old event
         assertThat(roundTrip(Fx.WIRE, full)).isEqualTo(full);
         assertThatThrownBy(() -> new Fx(1, java.util.Collections.nCopies(Fx.MAX_EVENTS + 1, widest)))
                 .isInstanceOf(IllegalArgumentException.class);
@@ -433,6 +433,66 @@ class WireCodecSizeTest {
         assertThatThrownBy(() -> new Fx.Event(FxKind.UNIT_HIT, 0, 0, 0, 3))
                 .as("a unit's event carries no datum")
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    /** CMB-04: a shot event carries its arc's other end and flight time; the worst case is its own payload. */
+    @Test
+    void aShotEventRoundTripsAndTheWorstSixtyFourFitTheMaxSize() {
+        Fx.Event shot = Fx.Event.shot(FxKind.SHOT_LAUNCH, 12.5, 66.25, 200, 30.125, 64, 210.5, 7);
+        Fx one = new Fx(7, List.of(shot));
+        assertThat(roundTrip(Fx.WIRE, one)).isEqualTo(one);
+        assertThat(size(Fx.WIRE, one)).isEqualTo(1 + 1 + 1 + 2 + 2 + 2 + 2 + 2 + 2 + 1); // both ys are two-byte zigzags
+        Fx.Event widest = new Fx.Event(
+                FxKind.SHOT_IMPACT,
+                Fx.MAX_EIGHTHS,
+                Integer.MIN_VALUE,
+                Fx.MAX_EIGHTHS,
+                0,
+                Fx.MAX_EIGHTHS,
+                Integer.MIN_VALUE,
+                Fx.MAX_EIGHTHS,
+                Fx.MAX_FLIGHT_TICKS);
+        Fx full = new Fx(Integer.MAX_VALUE, java.util.Collections.nCopies(Fx.MAX_EVENTS, widest));
+        assertThat(size(Fx.WIRE, full)).isEqualTo(Fx.WIRE.maxSize()).isEqualTo(5 + 1 + Fx.MAX_EVENTS * 21);
+        assertThat(roundTrip(Fx.WIRE, full)).isEqualTo(full);
+        assertThat(Fx.Event.shot(FxKind.SHOT_IMPACT, -3, 0, 99999, 0, 0, 0, 1))
+                .extracting(Fx.Event::x8, Fx.Event::z8)
+                .containsExactly(0, Fx.MAX_EIGHTHS);
+    }
+
+    @Test
+    void shotEventsRejectBadFlightsAndOldKindsRejectPaths() {
+        assertThatThrownBy(() -> Fx.Event.shot(FxKind.SHOT_LAUNCH, 1, 1, 1, 2, 2, 2, 0))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> Fx.Event.shot(FxKind.SHOT_LAUNCH, 1, 1, 1, 2, 2, 2, Fx.MAX_FLIGHT_TICKS + 1))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThat(Fx.Event.shot(FxKind.SHOT_LAUNCH, 1, 1, 1, 2, 2, 2, Fx.MAX_FLIGHT_TICKS)
+                        .flightTicks())
+                .isEqualTo(16_383);
+        assertThatThrownBy(() -> new Fx.Event(FxKind.UNIT_HIT, 0, 0, 0, 0, 1, 0, 0, 0))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new Fx.Event(FxKind.BLOCK_BREAK, 0, 0, 0, 5, 0, 0, 0, 3))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new Fx.Event(FxKind.SHOT_IMPACT, 0, 0, 0, 1, 0, 0, 0, 3))
+                .as("a shot carries no datum")
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new Fx.Event(FxKind.SHOT_IMPACT, 0, 0, 0, 0, Fx.MAX_EIGHTHS + 1, 0, 0, 3))
+                .isInstanceOf(IllegalArgumentException.class);
+        byte[] bad =
+                WireCodec.encode(Fx.WIRE, new Fx(1, List.of(Fx.Event.shot(FxKind.SHOT_LAUNCH, 1, 1, 1, 2, 2, 2, 1))));
+        bad[bad.length - 1] = 0; // flight 0
+        assertThatThrownBy(() -> WireCodec.decode(Fx.WIRE, bad)).isInstanceOf(RuntimeException.class);
+        assertThat(WireCodec.encode(WireCodecs.FX_KIND, FxKind.SHOT_LAUNCH)).containsExactly(6);
+        assertThat(WireCodec.encode(WireCodecs.FX_KIND, FxKind.SHOT_IMPACT)).containsExactly(7);
+        assertThat(WireCodec.encode(WireCodecs.FX_KIND, FxKind.BELL)).containsExactly(8);
+        assertThat(FxKind.BELL.carriesData() || FxKind.BELL.carriesPath()).isFalse();
+        for (FxKind kind : FxKind.values()) {
+            assertThat(roundTrip(WireCodecs.FX_KIND, kind)).isEqualTo(kind);
+            assertThat(kind.carriesPath()).isEqualTo(kind == FxKind.SHOT_LAUNCH || kind == FxKind.SHOT_IMPACT);
+            assertThat(kind.carriesPath() && kind.carriesData()).isFalse();
+        }
+        assertThatThrownBy(() -> WireCodec.decode(WireCodecs.FX_KIND, new byte[] {9}))
+                .isInstanceOf(RuntimeException.class);
     }
 
     /**

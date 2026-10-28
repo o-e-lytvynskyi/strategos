@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
@@ -24,6 +25,7 @@ import org.openjdk.jmh.annotations.State;
  * edit laid over it and the page built and published, in a 64-block band of rolling ground with trees. The edit is
  * then forgotten, as a capture after its write would, so every op rebuilds with one edit. It allocates its page.
  */
+@Fork(2)
 @State(Scope.Thread)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)

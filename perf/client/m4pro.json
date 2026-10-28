@@ -19,6 +19,58 @@
   },
   "results": [
     {
+      "date": "2026-10-28",
+      "tree": "M5 T17, on dev/o-e-lytvynskyi/m5 after 6fa9efc",
+      "template": "the M5 roster",
+      "scene": "rts_frame_battle: the RTS view at height 64 over the north ford of strategos:battle_at_the_ford on proving_ground, render distance 16, 202 units on screen (270 bodies), one run each",
+      "command": "./gradlew :mod:runScenario -Pscenario=rts_frame_battle [-Pcompat]",
+      "note": "M5's consent batch (CMB-17.2): every PERF-14 budget holds in the battle; client tick p50 0.96 ms is close to its 1 ms budget in vanilla. Not yet approved as a baseline.",
+      "profiles": {
+        "vanilla": {
+          "mods": "NeoForge 21.1.264 and Strategos",
+          "median": {
+            "frameP50Ms": 5.029,
+            "frameP99Ms": 10.561,
+            "unitsMs": 3.553,
+            "oursMs": 0.063,
+            "clientTickP50Ms": 0.958,
+            "clientTickP99Ms": 2.272
+          },
+          "runs": [
+            {
+              "frameP50Ms": 5.029,
+              "frameP99Ms": 10.561,
+              "unitsMs": 3.553,
+              "oursMs": 0.063,
+              "clientTickP50Ms": 0.958,
+              "clientTickP99Ms": 2.272
+            }
+          ]
+        },
+        "sodium": {
+          "mods": "NeoForge 21.1.264, Sodium, Iris and Strategos",
+          "median": {
+            "frameP50Ms": 4.043,
+            "frameP99Ms": 8.902,
+            "unitsMs": 3.18,
+            "oursMs": 0.047,
+            "clientTickP50Ms": 0.823,
+            "clientTickP99Ms": 1.141
+          },
+          "runs": [
+            {
+              "frameP50Ms": 4.043,
+              "frameP99Ms": 8.902,
+              "unitsMs": 3.18,
+              "oursMs": 0.047,
+              "clientTickP50Ms": 0.823,
+              "clientTickP99Ms": 1.141
+            }
+          ]
+        }
+      }
+    },
+    {
       "date": "2026-10-24",
       "tree": "M4 T27, after 3ef35ad",
       "template": "strategos:unit/infantry",

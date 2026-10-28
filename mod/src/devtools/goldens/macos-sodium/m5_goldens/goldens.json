@@ -1,0 +1,7 @@
+{
+  "frames": {
+    "rider_high": { "masks": [[0, 0, 24, 24], [606, 0, 640, 24]] },
+    "volley_impact": { "masks": [[48, 330, 70, 358]] },
+    "ford_battle": { "threshold": 0.01 }
+  }
+}

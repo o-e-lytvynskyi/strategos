@@ -75,6 +75,7 @@ public final class RtsMode {
     private final RtsPlacement placement = new RtsPlacement(this);
     private final RallyMarker rally = new RallyMarker(this);
     private final NodeMarker nodeMarker = new NodeMarker(this);
+    private final FocusMarker focusMarker = new FocusMarker(this);
     private final IdleWorkers idle = new IdleWorkers();
     /** The idle worker the key took whose body has not arrived yet, its index; -1 for none, and ticks left to wait. */
     private int pendingIdle = -1;
@@ -110,6 +111,7 @@ public final class RtsMode {
         NeoForge.EVENT_BUS.addListener(RenderLevelStageEvent.class, placement::render);
         NeoForge.EVENT_BUS.addListener(RenderLevelStageEvent.class, rally::render);
         NeoForge.EVENT_BUS.addListener(RenderLevelStageEvent.class, nodeMarker::render);
+        NeoForge.EVENT_BUS.addListener(RenderLevelStageEvent.class, focusMarker::render);
     }
 
     public boolean active() {
@@ -260,7 +262,17 @@ public final class RtsMode {
 
     /** The context order for the selection to what the cursor at window points picks; see {@link RtsOrders#order}. */
     public void order(double x, double y, boolean shift) {
-        orders.order(x, y, shift);
+        orders.order(x, y, shift, false, false);
+    }
+
+    /** As {@link #order(double, double, boolean)}, Ctrl forcing an attack on an own target and Alt spreading it (ORD-05). */
+    public void order(double x, double y, boolean shift, boolean force, boolean spread) {
+        orders.order(x, y, shift, force, spread);
+    }
+
+    /** The focus the selected units share, for the ring and for scenarios; null for none. */
+    public @Nullable Integer focusedTarget() {
+        return orders.focusedTarget();
     }
 
     /** In first person: the match's body under the crosshair (CAM-07.2); null for none. */

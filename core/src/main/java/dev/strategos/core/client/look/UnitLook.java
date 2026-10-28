@@ -8,7 +8,7 @@ import java.util.List;
  * its faction's colour, the outline's colour, so the owner reads at a glance; the role reads from what it wears and
  * holds. A worker wears the tunic alone and holds the tools and loads its work gives it; a spearman wears an iron
  * helmet and dyed leggings too, holds a trident, the nearest vanilla spear, and a shield whose banner is its faction's
- * dye. Item ids are vanilla's; an empty id is nothing. {@code dye} is the leather's RGB, {@code shieldDye} the name of
+ * dye. An archer holds a bow and no shield, a horseman a sword with a shield in the off hand (UNIT-07). Item ids are vanilla's; an empty id is nothing. {@code dye} is the leather's RGB, {@code shieldDye} the name of
  * the dye colour nearest the faction's. A body of no {@code Organic} class, the debug walker, is a test body and wears
  * nothing, so the goldens of M1 and M2 keep their look.
  */
@@ -23,6 +23,13 @@ public record UnitLook(
         String shieldDye = dyeName(faction);
         if (!classes.contains("Organic")) {
             return new UnitLook("", "", "", "", "", "", dye, shieldDye);
+        }
+        if (classes.contains("Archer")) {
+            return new UnitLook("", TUNIC, LEGGINGS, "", "minecraft:bow", "", dye, shieldDye);
+        }
+        if (classes.contains("Cavalry")) {
+            return new UnitLook(
+                    "minecraft:iron_helmet", TUNIC, "", "", "minecraft:iron_sword", "minecraft:shield", dye, shieldDye);
         }
         if (classes.contains("Spearman") || classes.contains("Infantry")) {
             return new UnitLook(

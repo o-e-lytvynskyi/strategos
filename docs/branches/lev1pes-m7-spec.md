@@ -8,7 +8,7 @@
 - **In progress:** none; planning delivery complete, awaiting independent review.
 - **Last finished task:** [M7 planning specification](../milestones/M7-multiplayer.md): 25 future tasks, all 13 cards traced; cloud verify passed on ea45a9c with 1,906 test cases and no failures, errors or skips.
 - **Next task:** independent review of [PR #32](https://github.com/o-e-lytvynskyi/strategos/pull/32), owner scope/decision review and human merge. No M7 runtime implementation is claimed or opened.
-- **Merged from main last:** 3c1f430 (2026-10-28), branch creation base.
+- **Merged from main last:** dcb5013 (2026-10-29), conflict resolution for PR #32.
 
 ## Depends on unfinished work
 
@@ -21,6 +21,12 @@
 Existing main contracts cover the earlier match, core, replication and test infrastructure. The M7 specification will trace every card dependency, separate independent work from integration work, and retain all acceptance criteria. Actual integration and runtime verification belong to later implementation claims.
 
 ## Log
+
+### 2026-10-29 — resolve PR #32 merge conflict
+
+- Merged current main dcb5013 into the planning delivery. The only conflict was the claims table: retained all current main statuses and historical PR references, then preserved this branch's planning-only M7 specification assignment. No implementation assignment or milestone opening was added.
+- Runtime sources merged automatically; the conflict resolution changes documentation only. The resulting PR diff against main remains limited to five documentation files.
+- Verification: 12 bookkeeping-tool tests passed; claims check against origin/main passed (8 rows); roadmap check passed (245 cards); git diff --check passed. The sandbox blocked temporary test directories, so the identical tool suite was run outside it and passed. Full Gradle verification was not repeated for this documentation-only resolution; prior cloud evidence remains recorded below.
 
 ### 2026-10-28 — cloud verification and handoff
 
