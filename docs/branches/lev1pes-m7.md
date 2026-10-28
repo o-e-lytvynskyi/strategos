@@ -4,10 +4,10 @@
 
 ## Now
 
-- **Milestone:** M7 Multiplayer; 1 of 26 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md), based on planning PR #32.
-- **In progress:** T2a independent identity/diplomacy/grant foundations since 2026-10-29; explicit operator exception permits pre-merge development.
-- **Last finished task:** T1 readiness reconciliation (2026-10-29), cloud-verified checkpoint 40e770d.
-- **Next task:** T2a independent core identity/diplomacy/grant foundations; T2b installs authority with coordinated persistence.
+- **Milestone:** M7 Multiplayer; 2 of 26 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md), based on planning PR #32.
+- **In progress:** main reconciliation requested by the operator; T2a foundation is complete.
+- **Last finished task:** T2a independent diplomacy foundation (2026-10-29), cloud-verified implementation e8438cd.
+- **Next task:** merge current origin/main and cloud-verify; then reassess T2b authority/journal/persistence installation against the merged prerequisites.
 - **Merged from main last:** 267da40 (2026-10-29).
 
 The operator requested ownership of the whole M7 and work on what is currently possible on
@@ -33,6 +33,12 @@ before implementing them. T2 does not certify friendly-fire, allied victory, com
 or replication privacy; those retain their own integration tests and dependencies.
 
 ## Log
+
+### 2026-10-29 — T2a complete
+
+- **T2a** — [cloud verify](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40788528341) on e8438cd passed in 7m 20s. Canonical XML reports contain 2,253 test cases, zero failures/errors/skips, including all 16 new DiplomacyStateTest cases. Existing static/architecture, adapter, GameTest, server-smoke and negative harness gates pass. No running tick, order or hash kernel changes; no slow/soak/JMH gate is waived. MATCH-06 remains in progress; no card acceptance is claimed.
+- A read-only merge-tree assessment against our own save/reload PR #30 found one conflict in Snapshots.java with M5; no prerequisite merge or conflict resolution was applied during T2a. Reassess after fetching current main.
+- **Next:** operator-requested main merge, cloud gates, then T2b readiness.
 
 ### 2026-10-29 — T2a test-first and implementation checkpoint
 
@@ -66,6 +72,8 @@ or replication privacy; those retain their own integration tests and dependencie
 1. Independently review and merge the assignment PR. The operator explicitly waived the development wait in this session; independent review and human merge remain required.
 2. Planning PR #32 is still open. Its specification is incorporated and updated here; reconcile duplicate planning delivery on review; this request authorizes available M7 work, but does not resolve D-20 hosting, D-03 themes, deferred first-person fighting/scouting, the MVP fun verdict or art acceptance. Continue independent foundations while these gates remain open.
 3. Later two-client measurement and acceptance require the owner's clients and the completed hardening prerequisites. No platform-port decision, public release or performance baseline change is included.
+
+4. Cloud verify takes 6m 46s on the readiness baseline and 7m 20s with the foundation, beyond the procedure's 5-minute target. Keep all existing gates; recommend accepting the cloud duration. Moving checks or changing a Done gate requires an explicit owner decision.
 
 ## Decisions taken
 

@@ -411,7 +411,7 @@ reviewed implementation task between T17 and T18, keeping the acceptance depende
 ### 5.3 Progress
 
 - [x] T1 (2026-10-29) · Reconcile prerequisites and implementation readiness (bounded foundations; see §2.3).
-- [ ] T2a · Independent identity, diplomacy, grants and immutable snapshot contract.
+- [x] T2a (2026-10-29) · Independent identity, diplomacy, grants and immutable snapshot contract.
 - [ ] T2b · Match authority/configuration installation and journaled setup.
 - [ ] T3 · Server lobby and start.
 - [ ] T4 · Lobby UI.
@@ -484,3 +484,7 @@ reviewed implementation task between T17 and T18, keeping the acceptance depende
   hook inventory, S11/PERF-10 reports, inspected screenshots, owner verdicts and remaining M8
   integration contracts. Report M7 runtime completion separately from owner acceptance and the
   floating QA-14 platform decision. Public release and every merge remain the owner's actions.
+
+### Foundation verification, 2026-10-29
+
+T2a: [cloud verify 40788528341](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40788528341), implementation checkpoint `e8438cd`, passed in 7m 20s: 2,253 canonical XML test cases, zero failures/errors/skips; all 16 DiplomacyStateTest cases executed. Core architecture/static checks, adapter tests, GameTests, server smoke and negative harness self-tests passed through verify. Running tick/order/hash paths are unchanged, so this bounded task does not require slow/soak or JMH. T2b still owns installation, journal and versioned persistence; no live co-op or privacy criterion is declared complete.
