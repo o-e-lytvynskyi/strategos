@@ -22,6 +22,7 @@
 ### 2026-10-28 — M5 T18: `verifyPerf` red
 
 - The milestone's first `verifyPerf` in this session (99 min, foreign CPU 0.11, valid) fails three tests: `perftests.first_loop_soak` per-unit A p95 16,349 ns (gate 13,395 = M1's 11,648 + 15 %), `perftests.idle_300_costs_a_third` 0.3325 (0.30), `perftests.mounted_cost` 1.286 (1.20; T6 measured 1.162–1.179). `verify verifySlow verifySoak` (294 s) and `jmhCompare` are green. A performance budget is a stop condition: no further work until the cause is found and fixed. Bisecting across the branch's commits (one perf run each).
+- Bisection (one `runGameTestPerf` per commit, foreign CPU 0.11–0.13 unless noted): `first_loop_soak` per-unit A p95 fails at every M5 commit from 16a7e8b to b1eba24 (14,273–15,960 ns) and at ed7e0cd before the fix-main merge (14,883), but passes on main a10a8fd — the regression predates this session's tasks and lies in T1–T3a (being narrowed). `idle_300_costs_a_third` fails on main too (0.3077) and passes only on a quiet machine (ed7e0cd at foreign CPU 0.004: 0.155): a background-load sensitivity of the test on this Mac, not an M5 regression (For the owner 12). `mounted_cost` is noisy run to run (1.03–1.29; HEAD 1.107 passes).
 
 ### 2026-10-28 — M5 T18 (in progress): the demo chapters
 
@@ -261,6 +262,7 @@
 9. Horsemen cannot damage buildings (no `Attack/Structure` torch; only spearmen burn buildings, CMB-03). Recommend keeping it: the horseman is the raider of workers and archers, the spearman takes buildings. Say if cavalry should carry torches too.
 10. Performance watch for M6: the battle soak's per-unit A is 1.139 × M4's (gate 1.15) and its cost is movement and unit AI, not combat; 300 units crowding a ford in one burst can stall one large unit past the stuck invariant. Both are inputs for M6's spec health check, not M5 blockers.
 11. The battle bot cannot finish a match against itself: after the first waves annihilate each other only archers remain, which cannot burn a centre, and the bot's wood no longer buys spearmen. Options: (a) leave it (the scenario is player against bot, which ends); (b) keep a spearman reserve for buildings and train spearmen late (a small T13-scope change). Recommend (b) in M6's first tasks, together with item 8's wood starvation.
+12. `perftests.idle_300_costs_a_third` fails on main itself on this Mac whenever other apps load the CPU (0.31–0.35 at foreign CPU 0.11–0.13; 0.155 at 0.004), though its foreign-CPU guard only invalidates above 0.25. Options: (a) run perf only on a quiet machine (as now); (b) lower the guard's invalid line for this ratio test, or measure idle and walking interleaved in one run so both halves see the same load (a measurement change: yours). Recommend (b), interleaved.
 
 ## Decisions taken
 
