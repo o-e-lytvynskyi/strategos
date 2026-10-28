@@ -50,6 +50,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import net.minecraft.core.BlockPos;
@@ -88,6 +89,7 @@ public final class MapTests {
     private static final int HORSEMEN = 30;
     private static final int SOAK_LANE = 8;
     private static final int SKIRMISH_LANE = 9;
+    private static final int BATTLE_LANE = 11;
 
     private MapTests() {}
 
@@ -709,7 +711,12 @@ public final class MapTests {
                 })
                 .thenWaitUntil(() -> check(state.ai > 0, "no computer player commanded yet"))
                 .thenExecute(() -> {
-                    check(core(state.match).queries().buildings().size() == 2, "the scenario's two centres");
+                    check(
+                            core(state.match).queries().buildings().stream()
+                                            .filter(b -> b.template().value().equals("strategos:building/civic_centre"))
+                                            .count()
+                                    == 2,
+                            "the scenario's two centres");
                     var counters = StrategosServer.get().net().counters();
                     int before = counters.violations("strategos-skirm");
                     int[] units = core(state.match).queries().unitHandles();
@@ -727,6 +734,85 @@ public final class MapTests {
                     viewer.close();
                     registry.dispose(state.match.id());
                 })
+                .thenSucceed();
+    }
+
+    /**
+     * M5 T15: {@code strategos:battle_at_the_ford} set up on the proving ground leaves each faction its centre, barracks
+     * and five workers, 24 spearmen, 20 archers and 16 horsemen (60 soldiers), the second faction seated with the battle
+     * bot, which commands within 300 ticks.
+     */
+    @StrategosTest(batch = "map_battle", solo = true, timeoutTicks = 40_000)
+    public static void battleAtTheFordLoads(GameTestHelper h) {
+        MatchRuntime rt = provingGround(h, BATTLE_LANE, 0);
+        MapManifest m = manifest(h);
+        var state = new Object() {
+            boolean applied;
+            boolean botSeated;
+            int botCommands;
+        };
+        rt.addListener(out -> out.events().forEach(e -> {
+            if (e instanceof dev.strategos.core.sim.CommandResult r
+                    && !r.issuer().isAdmin()
+                    && r.issuer().value() == 1) {
+                state.botCommands++;
+            }
+        }));
+        h.onEachTick(() -> {
+            if (rt.lifecycle() == MatchLifecycle.PREPARING || state.applied) {
+                return;
+            }
+            check(rt.lifecycle() == MatchLifecycle.RUNNING, "the match is " + rt.lifecycle());
+            state.applied = true;
+            var server = h.getLevel().getServer();
+            var id = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("strategos", "battle_at_the_ford");
+            check(
+                    dev.strategos.mod.server.content.Scenarios.list(server).contains(id),
+                    "the scenario is not listed for /strategos match scenario");
+            state.botSeated = dev.strategos.mod.server.content.Scenarios.apply(
+                            server,
+                            rt,
+                            dev.strategos.mod.server.content.Scenarios.load(server, id),
+                            m.startSlots(),
+                            core(rt).queries().templates())
+                    .stream()
+                    .anyMatch(c -> c instanceof dev.strategos.core.protocol.SetAi ai
+                            && ai.faction().value() == 1
+                            && ai.profile().equals("battle"));
+        });
+        h.startSequence()
+                .thenWaitUntil(() -> check(state.applied, "the scenario is not applied yet"))
+                .thenExecuteAfter(10, () -> {
+                    var q = core(rt).queries();
+                    check(state.botSeated, "the battle bot is not seated in slot 1");
+                    for (int f = 0; f < 2; f++) {
+                        int faction = f;
+                        java.util.Map<String, Integer> census = new java.util.TreeMap<>();
+                        for (int handle : q.unitHandlesOf(new FactionSlot(faction))) {
+                            census.merge(
+                                    Objects.requireNonNull(q.unit(handle))
+                                            .template()
+                                            .value(),
+                                    1,
+                                    Integer::sum);
+                        }
+                        check(
+                                census.equals(java.util.Map.of(
+                                        "strategos:unit/infantry", 24,
+                                        "strategos:unit/archer", 20,
+                                        "strategos:unit/horseman", 16,
+                                        "strategos:unit/worker", 5)),
+                                "faction " + f + " holds " + census);
+                        check(
+                                q.buildings().stream()
+                                                .filter(b -> b.faction() == faction)
+                                                .count()
+                                        == 2,
+                                "faction " + f + " has no centre and barracks");
+                    }
+                })
+                .thenWaitUntil(() -> check(state.botCommands > 0, "the bot has commanded nothing yet"))
+                .thenExecute(() -> StrategosServer.get().matches().dispose(rt.id()))
                 .thenSucceed();
     }
 

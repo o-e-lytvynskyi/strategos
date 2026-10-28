@@ -155,7 +155,7 @@ public final class AiTests {
             if (e instanceof CommandResult r
                     && !r.issuer().isAdmin()
                     && r.issuer().value() < 2
-                    && r.kind().equals("strategos:attack")
+                    && r.kind().startsWith("strategos:attack")
                     && r.accepted() > 0) {
                 attacks[r.issuer().value()]++;
             }

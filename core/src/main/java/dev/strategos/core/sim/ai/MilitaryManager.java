@@ -2,6 +2,7 @@ package dev.strategos.core.sim.ai;
 
 import dev.strategos.core.protocol.AnnounceWave;
 import dev.strategos.core.protocol.Attack;
+import dev.strategos.core.protocol.AttackMove;
 import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.DetMath;
@@ -68,9 +69,13 @@ final class MilitaryManager implements AiModule {
         }
         if (tick - (mustered - 1) >= 20L * a.announce() && handles.length > 0) {
             budget.spend(10);
-            sink.send(Attack.replace(
-                    UnitSet.of(handles),
-                    java.util.Objects.requireNonNull(base.enemy()).handle()));
+            if (battle.fights()) { // AI-03: attack-move, so every kind engages the units on the way
+                sink.send(AttackMove.replace(UnitSet.of(handles), Tactics.front(base)));
+            } else {
+                sink.send(Attack.replace(
+                        UnitSet.of(handles),
+                        java.util.Objects.requireNonNull(base.enemy()).handle()));
+            }
             memory.set(Slots.WAVE, memory.get(Slots.WAVE) + 1);
             memory.set(Slots.MUSTER, 0);
             if (battle.fights()) {

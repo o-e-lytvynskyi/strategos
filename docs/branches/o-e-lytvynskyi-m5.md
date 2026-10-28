@@ -4,10 +4,10 @@
 
 ## Now
 
-- **Milestone:** M5 Combat; 21 of 24 tasks complete (T1–T14).
-- **In progress:** M5 T14 awaits a quiet-machine JMH (WIP); T15 the battle scenario since 2026-10-28.
-- **Last finished task:** T14 the battle soak (2026-10-28).
-- **Next task:** T15, then T17 the consent batch (client windows), T18 the close.
+- **Milestone:** M5 Combat; 21 of 24 tasks complete (T1–T13, T15; T14 awaits its JMH).
+- **In progress:** T14's quiet-machine JMH (WIP); T17 the consent batch since 2026-10-28.
+- **Last finished task:** T15 the battle scenario (2026-10-28).
+- **Next task:** T17 (client windows: goldens, the L4 checks), T18 the close and hand-in.
 - **Merged from main last:** a10a8fd (2026-10-27), PR #21 fix-main.
 
 ## Depends on unfinished work
@@ -18,6 +18,13 @@
 - Preserve codex/m5-combat and dev/lev1pes/m5. Import code and task-specific evidence selectively after assignment; do not copy old central STATE/worklog records over current main.
 
 ## Log
+
+### 2026-10-28 — M5 T15
+
+- **T15 · The battle scenario** — `battle_at_the_ford.json` on the proving ground: a centre, a barracks, 5 workers on nodes and 60 soldiers a side (24 spearmen, 20 archers, 16 horsemen) at their banks of both fords, 8 of the player's archers at the foot of the mesa's south ramp, the battle bot in slot 1. `BattleAtTheFordTest` (setup, counts; slow: the bot against a scripted player side ends with a winner — seed 1 the bot at 13,831, seed 2 at 13,884, cap 20,000, repeatable); `maptests.battle_at_the_ford_loads`. The skirmish now picks it first for the proving ground (scenarios list alphabetically) and seats `ai:battle` in a human slot of a battle scenario.
+- T13 fix found here: the battle bot's wave attacked the enemy centre directly, which only spearmen accept, so archers and horsemen idled; it now attack-moves to 16 blocks in front of the centre and sends the spearmen at the building once no enemy soldier is in reach. Bot against bot still stalls once both armies are spent (archers cannot burn; wood runs short): For the owner 11.
+- Gates: `verify` (without the JMH self-test while the machine is loaded) `verifySlow verifySoak` green.
+- **Next:** T14's JMH, T17.
 
 ### 2026-10-28 — M5 T14
 
@@ -236,9 +243,12 @@
 8. From T9: the battle bot (T13) now weighs strength against defence and pulls back a doomed wave; the economy bot's wood-starved late economy (24 workers, other stocks in the thousands) remains — a candidate for AI-02's next tuning, not M5 scope.
 9. Horsemen cannot damage buildings (no `Attack/Structure` torch; only spearmen burn buildings, CMB-03). Recommend keeping it: the horseman is the raider of workers and archers, the spearman takes buildings. Say if cavalry should carry torches too.
 10. Performance watch for M6: the battle soak's per-unit A is 1.139 × M4's (gate 1.15) and its cost is movement and unit AI, not combat; 300 units crowding a ford in one burst can stall one large unit past the stuck invariant. Both are inputs for M6's spec health check, not M5 blockers.
+11. The battle bot cannot finish a match against itself: after the first waves annihilate each other only archers remain, which cannot burn a centre, and the bot's wood no longer buys spearmen. Options: (a) leave it (the scenario is player against bot, which ends); (b) keep a spearman reserve for buildings and train spearmen late (a small T13-scope change). Recommend (b) in M6's first tasks, together with item 8's wood starvation.
 
 ## Decisions taken
 
+- 2026-10-28 · The battle scenario's L1 winner check plays the player's side with a small scripted general (attack-move, then spearmen at the centre) against the shipped bot; a bot-only match stalls (For the owner 11). The skirmish seats `ai:battle` in human slots of scenarios that use it. Undo in BattleAtTheFordTest / Skirmishes.
+- 2026-10-28 · trial implementer: pass — T15 and the bot fix; it kept the scripted side honestly when bot v bot would not end, and reported it.
 - 2026-10-28 · trial implementer: pass — T14 measured everything asked and named its thin margins; it skipped the slow gates after touching core, which the orchestrator ran.
 - 2026-10-28 · The barracks trains the whole roster (the cards made archer and horseman templates but named no trainer; 0 A.D.'s barracks trains infantry and cavalry). Undo in barracks.json.
 - 2026-10-28 · Battle-bot details: strength = Σ template cost × HP fraction; defence 600 and launch 0.6 untuned starting values; new soldiers do not join a wave already out; difficulty levels are separate script files (only battle.json ships). Undo in battle.json / Tactics.

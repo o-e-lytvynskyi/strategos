@@ -1,6 +1,7 @@
 package dev.strategos.core.sim.ai;
 
 import dev.strategos.core.protocol.Attack;
+import dev.strategos.core.protocol.AttackMove;
 import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.DetMath;
@@ -44,6 +45,8 @@ final class Tactics {
      * Thinks the wave's fight; false when no wave is out (the fight is over, the caller schedules the next wave), true
      * when the tactics took this think.
      */
+    private static final double ARROWS_FRONT = 16;
+
     static boolean fight(
             AiView view,
             AiBudget budget,
@@ -162,20 +165,35 @@ final class Tactics {
         memory.set(Slots.FOCUS, target == 0 ? 0 : target + 1L);
         // the melee line: one target, or back to the march when none stands in reach
         List<Integer> orders = new ArrayList<>();
+        List<Integer> marching = new ArrayList<>();
+        BuildingView centre = base.enemy();
+        Vec2d front = front(base);
         for (UnitView u : melee) {
             int t = view.attackTarget(u);
-            if (target != 0 ? t != target : t == 0) {
-                orders.add(u.handle());
+            if (target != 0) {
+                if (t != target) {
+                    orders.add(u.handle());
+                }
+            } else if (near.isEmpty() && view.is(u.template(), "Infantry")) {
+                if (t == 0) { // the way is clear: those that can burn a building go for the centre
+                    orders.add(u.handle());
+                }
+            } else if (t == 0 && !arrived(u, front)) { // the others attack-move to its front and hold there
+                marching.add(u.handle());
             }
         }
         if (!orders.isEmpty()) {
-            BuildingView centre = base.enemy();
             int goal = target != 0 ? target : centre == null ? 0 : centre.handle();
             if (goal != 0) {
                 budget.spend(10);
                 sink.send(Attack.replace(
                         UnitSet.of(orders.stream().mapToInt(Integer::intValue).toArray()), goal));
             }
+        }
+        if (!marching.isEmpty()) {
+            budget.spend(10);
+            sink.send(AttackMove.replace(
+                    UnitSet.of(marching.stream().mapToInt(Integer::intValue).toArray()), front));
         }
         if (ranged.isEmpty()) {
             return;
@@ -212,6 +230,18 @@ final class Tactics {
             sink.send(Attack.replace(
                     UnitSet.of(shoot.stream().mapToInt(Integer::intValue).toArray()), target));
         }
+    }
+
+    /** Where a wave attack-moves to: {@value #ARROWS_FRONT} blocks from the enemy centre, toward our own. */
+    static Vec2d front(Base base) {
+        double dx = base.x() - base.enemyX();
+        double dz = base.z() - base.enemyZ();
+        double d = Math.max(1, DetMath.length(dx, dz));
+        return new Vec2d(base.enemyX() + dx / d * ARROWS_FRONT, base.enemyZ() + dz / d * ARROWS_FRONT);
+    }
+
+    private static boolean arrived(UnitView u, Vec2d front) {
+        return DetMath.length(u.x() - front.x(), u.z() - front.z()) <= 2 * ARROWS_FRONT;
     }
 
     /** The target kept from the last think if it still stands in reach, else the policy's pick among {@code near}. */
