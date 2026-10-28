@@ -6,10 +6,10 @@
 
 ## Now
 
-- **Milestone:** M8 Fog of war; only independent T1–T6 are assigned. Claim merged in PR #31. T2 is complete; T3–T6 remain.
-- **In progress:** none; T2 complete, continuing assigned work.
-- **Last finished task:** T2 shared-visibility policy; verifyFast and full verify passed.
-- **Next task:** T3 last-seen building memory, then T4–T6. Full runtime integration remains unassigned T7–T12.
+- **Milestone:** M8 Fog of war; only independent T1–T6 are assigned. Claim merged in PR #31. T2–T3 are complete; T4–T6 remain.
+- **In progress:** none; T3 complete, continuing assigned work.
+- **Last finished task:** T3 last-seen building memory; verifyFast and full verify passed.
+- **Next task:** T4 channel audit and audience decisions, then T5–T6. Full runtime integration remains unassigned T7–T12.
 - **Merged from main last:** 3c1f430 (2026-10-28).
 
 ## Scope and intended task split
@@ -64,12 +64,21 @@ Full FOW-02 targeted tracking, FOW-03 live save/minimap ghosts, FOW-05 all-chann
 
 - T2 final gates: verifyFast 2m 5s; full serial verify 7m 37s; 1,314 core + 95 mod + 212 GameTests, zero failures/errors/skips. No new compiler findings. Existing threshold/baseline files unchanged.
 
+### 2026-10-28 — T3 building memory
+
+- Six L1 tests, initially three expected failures against the incomplete empty-site implementation (14s). Immutable snapshots hold stable TemplateId, full generation-bearing building handle, observed owner/placement/health and time; absent hidden buildings do not update memory.
+- Source inspection found valid negative signed handles (Handle uses 20 index + 12 generation bits). Correct the specification's sign restriction: validate generation and building index instead. Pin a generation-2048 round trip and independent reused-generation identity.
+- Persist a monotonic event watermark, including removal and unknown empty-site events, so old queued observations cannot resurrect a cleared mirage after save/load. No MatchSnapshot/schema change or live persistence integration.
+- AFTER-M6/M7 in BuildingMemory: match/viewer-scoped save/hash adapters, recipient authorization and positive remembered-footprint emptiness. Full FOW-03 remains in_progress.
+
+- T3 final gates: verifyFast 2m 26s; full serial verify 8m 58s; 1,320 core + 95 mod + 212 GameTests, zero failures/errors/skips. No new compiler findings or existing codec/threshold/baseline changes.
+
 ## For the owner
 
 1. Claim #31 is merged. Maintainer records may reflect the bounded M8 opening; this developer session does not write STATE.md or merge its own work. No new permission is needed to resume assigned T2–T6.
 2. M6/M7 runtime delivery remains a prerequisite for integrated M8 acceptance. The specification preserves all full-card criteria; specified does not mean implemented or accepted.
 
-3. Serial Windows verify took 6m 8s against the five-minute target. Owner may accept the platform duration or authorize a separate gate redesign; no task was moved or weakened. The existing timing-test variability above is not fixed by this documentation task.
+3. Serial Windows verify took 6m 8s for T1, 7m 37s for T2 and 8m 58s for T3 against the five-minute target. Owner may accept the platform duration or authorize a separate gate redesign; no task was moved or weakened. The existing timing-test variability above is not fixed by this documentation task.
 
 ## Decisions taken
 

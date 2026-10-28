@@ -38,6 +38,8 @@ Only T1–T6 are assigned here; T7–T12 need future claims and merged prerequis
 | Solo fog | M8 card prose assumes M6 already exists; it does not on this base | Consume merged M6, never replace its grid/hysteresis |
 | Memory persistence | Standalone codec over immutable observed records only, not MatchSnapshot edits | T8 wires save/hash/schema migration against actual merged persistence version |
 | Audience guards | Pure decisions are not installed in the gateway yet | T9 wires every sender and proves real packets with mock players |
+| Building handles | Handle uses generation bits; valid signed-negative building handles must round-trip. Reject generation zero/unit indices, not the sign bit | T3 pins signed handles and full generations; T8 integrates actual saved identity |
+| Memory event order | Persist a global observation watermark so old events cannot resurrect cleared sites | T3 stale-event regression and snapshot round-trip |
 | AI | Knowledge input is separate from the currently omniscient AiView | T10 supplies it from AI-18; no scouting/balance claim from a contract |
 
 No card criterion, timing target, threshold or baseline is removed or weakened.
@@ -66,7 +68,7 @@ explored state before diplomacy changes. The contract itself is a stateless quer
 ### 2.2 Building memory (T3)
 
 `sim.replicate.BuildingMemory` is an immutable, deterministically handle-sorted
-snapshot. Nested `Seen` stores only handle, stable `TemplateId`, observed owner,
+snapshot with a persisted monotonic event watermark (including empty-site events). Nested `Seen` stores only handle, stable `TemplateId`, observed owner,
 anchor/baseY/rotation, health fraction and observation tick. No queue, live
 BuildingView, current enemy statistics or hidden state reference is retained.
 Explicit `observe` replaces a record, while `scoutedEmpty` removes it only after
@@ -75,7 +77,7 @@ building list is not evidence of an empty site. Hidden damage, capture, template
 changes and destruction do not create observations. No last-seen units.
 
 The standalone codec round-trips the observed records with stable template IDs,
-not session-local net indices. Reject negative ticks/handles, invalid owner,
+not session-local net indices. Reject negative ticks, invalid building handles, invalid owner,
 rotation/health, duplicates and oversized collections. Capture snapshots by value.
 T8 must scope memory by match and viewer, validate site emptiness against the
 remembered footprint, handle replacement/generation identity, materialize shared
@@ -168,7 +170,7 @@ implementation if it exceeds 1,500 lines. It is not assigned by this document.
 
 - [x] T1 Specification and scope matrix
 - [x] T2 Shared visibility policy
-- [ ] T3 Last-seen building memory
+- [x] T3 Last-seen building memory
 - [ ] T4 Channel inventory and audience decisions
 - [ ] T5 Observed AI/scouting knowledge
 - [ ] T6 Foundation verification and handoff
@@ -183,7 +185,7 @@ implementation if it exceeds 1,500 lines. It is not assigned by this document.
 
 T1 completed on 2026-10-28: full plan, all five cards mapped to final acceptance,
 assigned T1–T6 and future unassigned T7–T12 separated, and all five card statuses
-set to specified. No production or test source changed. Owner requested stopping
+set to specified. No production or test source changed in T1. Owner requested stopping
 after T1 and resuming with T2 the next day; this is not a foundation hand-in.
 
 Validation: verifyFast 2m 49s; roadmap 245 cards/0 problems; claims 7/0 problems;
@@ -203,3 +205,8 @@ at the future hand-in.
 T2 completed: direct directional TeamVision with four L1 tests, including real
 ReplicationService filtering. verifyFast 2m 5s; serial verify 7m 37s. No runtime
 wiring, tracking loop, grid or existing codec changed. AFTER-M6/M7 stay explicit.
+
+T3 completed: immutable last-seen records, stable-ID bounded standalone codec and
+persisted event watermark. Six L1 tests include stale events, signed generations,
+malformed data, defensive copies and deterministic snapshots. verifyFast 2m 26s;
+serial verify 8m 58s. Live match save/hash/minimap integration still waits.

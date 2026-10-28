@@ -119,7 +119,7 @@ full runtime acceptance below still waits for M6/M7.
   3. Mirages and shared explored state survive save and load (L3).
   4. Ghost icons on the minimap (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** FOW-02 · **Size:** M · **Tier:** T1
-- **Status:** specified
+- **Status:** in_progress
 
 #### FOW-05 · Leak audit and guards
 - **Value:** Fog can't be cheated through sounds, particles, health bars or pings (P5).
