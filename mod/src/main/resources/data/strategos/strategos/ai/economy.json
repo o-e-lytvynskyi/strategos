@@ -1,8 +1,8 @@
 {
   "maxWorkers": 24,
   "ratio": {
-    "food": 5,
-    "wood": 5,
+    "food": 7,
+    "wood": 11,
     "stone": 1,
     "iron": 1
   },

@@ -8,15 +8,12 @@ import org.jspecify.annotations.Nullable;
  * What a computer player trains against what the enemy fields (AI-03, M5 §2.11): the counters of the roster, spearmen
  * against horsemen, archers against spearmen, horsemen against archers. Each {@code replan} ticks it counts the
  * enemy's soldiers by role (all it may see: until fog, everything) and wants the counter of each in that share, a
- * quarter of the whole always spearmen, the line the archers stand behind. A building then trains, among the units it
+ * share ({@code line}, a quarter by default) always spearmen, the line the archers stand behind. A building then trains, among the units it
  * can train and the stock pays for, the one furthest below its wanted share.
  */
 final class Composition {
     static final TemplateId ARCHER = new TemplateId("strategos:unit/archer");
     static final TemplateId HORSEMAN = new TemplateId("strategos:unit/horseman");
-
-    /** The share of spearmen the plan keeps whatever the enemy fields, in permille. */
-    static final int LINE = 250;
 
     private static final int MASK = 0xFFFF;
 
@@ -37,7 +34,7 @@ final class Composition {
         long archer = 0;
         long horse = 0;
         if (total > 0) {
-            long share = 1000 - LINE;
+            long share = 1000L - battle.line();
             archer = share * seen[AiView.ROLE_SPEAR] / total;
             horse = share * seen[AiView.ROLE_ARCHER] / total;
             spear = 1000 - archer - horse; // the line and the counter to horsemen take the rest
@@ -61,12 +58,19 @@ final class Composition {
 
     /**
      * The soldier building {@code building} should train next, or null when it trains none the stock pays for. {@code
-     * have} counts own soldiers by role, queued ones included; the caller adds the one picked.
+     * have} counts own soldiers by role, queued ones included; the caller adds the one picked. Under a reserve of spearmen
+     * ({@code battle.spears()}) a spearman below the line's share is waited for when the stock cannot pay for him yet:
+     * only spearmen burn buildings, and another kind bought meanwhile would keep the wood from him.
      */
     static @Nullable TemplateId pick(
             AiView view, StrategyScript script, AiMemory memory, TemplateId building, int[] have) {
         TemplateId[] units = {new TemplateId(script.soldier()), ARCHER, HORSEMAN};
         int total = have[AiView.ROLE_SPEAR] + have[AiView.ROLE_ARCHER] + have[AiView.ROLE_HORSE];
+        if (script.battle().spears() > 0
+                && view.trains(building, units[0])
+                && have[AiView.ROLE_SPEAR] < script.battle().line() / 1000.0 * (total + 1.0)) {
+            return view.affords(units[0]) ? units[0] : null;
+        }
         TemplateId best = null;
         double deficit = Double.NEGATIVE_INFINITY;
         for (int k = 0; k < units.length; k++) {

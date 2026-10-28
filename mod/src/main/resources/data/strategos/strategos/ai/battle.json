@@ -1,8 +1,8 @@
 {
   "maxWorkers": 24,
   "ratio": {
-    "food": 5,
-    "wood": 5,
+    "food": 7,
+    "wood": 11,
     "stone": 1,
     "iron": 1
   },
@@ -38,6 +38,8 @@
     "replan": 1200,
     "reach": 28,
     "defence": 600,
-    "launch": 0.6
+    "launch": 0.6,
+    "spears": 6,
+    "line": 400
   }
 }

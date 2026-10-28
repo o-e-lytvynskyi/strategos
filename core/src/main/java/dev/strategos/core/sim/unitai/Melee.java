@@ -70,9 +70,10 @@ final class Melee {
             return;
         }
         MotionStore motion = s.motion();
-        double radii = Engagement.radius(s, i) + Engagement.radius(s, t);
-        double px = motion.x(t) + (chasing ? 0 : Engagement.offsetX(orders.slot(i), radii));
-        double pz = motion.z(t) + (chasing ? 0 : Engagement.offsetZ(orders.slot(i), radii));
+        double body = Engagement.radius(s, i);
+        double radii = body + Engagement.radius(s, t);
+        double px = motion.x(t) + (chasing ? 0 : Engagement.offsetX(orders.slot(i), radii, body));
+        double pz = motion.z(t) + (chasing ? 0 : Engagement.offsetZ(orders.slot(i), radii, body));
         double moved = DetMath.length(px - orders.targetX(i), pz - orders.targetZ(i));
         double away = DetMath.length(px - motion.x(i), pz - motion.z(i));
         if (moved > Math.max(REGOAL, away / 4)) {

@@ -31,6 +31,9 @@ final class Tactics {
     /** Farther than this from the target an archer holding the line does not take it up. */
     static final double SHOT = 18;
 
+    /** Within this many blocks of its base a reserved spearman counts as home. */
+    static final double HOME_RESERVE = 30;
+
     private static final double SLACK = 1.5;
     private static final double SETTLED = 2.5;
 
@@ -70,6 +73,7 @@ final class Tactics {
         if (wave.isEmpty()) {
             memory.set(Slots.FIGHT, 0);
             memory.set(Slots.FOCUS, 0);
+            memory.set(Slots.CLEAR, 0);
             return false;
         }
         cx /= wave.size();
@@ -87,7 +91,8 @@ final class Tactics {
             }
         }
         budget.spend(near.size());
-        if (base.enemy() != null && DetMath.length(base.enemyX() - cx, base.enemyZ() - cz) <= ARROWS) {
+        boolean arrived = base.enemy() != null && DetMath.length(base.enemyX() - cx, base.enemyZ() - cz) <= ARROWS;
+        if (arrived) {
             enemy += battle.defence();
         }
         double own = 0;
@@ -95,6 +100,7 @@ final class Tactics {
             own += view.worth(u) * view.health(u);
         }
         long state = memory.get(Slots.FIGHT);
+        memory.set(Slots.CLEAR, state != 2 && arrived && near.isEmpty() ? 1 : 0);
         if (state == 2 || (battle.retreat() > 0 && enemy > 0 && own < battle.retreat() * enemy)) {
             retreat(budget, sink, memory, base, wave, state != 2);
             return true;
@@ -196,6 +202,22 @@ final class Tactics {
                     UnitSet.of(marching.stream().mapToInt(Integer::intValue).toArray()), front));
         }
         if (ranged.isEmpty()) {
+            return;
+        }
+        if (near.isEmpty()) { // nothing to stand behind a line from: the archers march on to the front with the rest
+            List<Integer> marchers = new ArrayList<>();
+            for (UnitView u : ranged) {
+                Vec2d t = u.target();
+                if (!arrived(u, front)
+                        && (t == null || DetMath.length(t.x() - front.x(), t.z() - front.z()) > SETTLED)) {
+                    marchers.add(u.handle());
+                }
+            }
+            if (!marchers.isEmpty()) {
+                budget.spend(10);
+                sink.send(AttackMove.replace(
+                        UnitSet.of(marchers.stream().mapToInt(Integer::intValue).toArray()), front));
+            }
             return;
         }
         // the archers: a step behind the line, taking the target up when it is in their range

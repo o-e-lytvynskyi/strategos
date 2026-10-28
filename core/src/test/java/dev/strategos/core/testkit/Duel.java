@@ -13,6 +13,7 @@ import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.UnitCreated;
 import dev.strategos.core.testkit.DuelLayout.Kind;
 import dev.strategos.core.testkit.DuelLayout.Spot;
+import java.util.function.Consumer;
 import java.util.function.IntPredicate;
 
 /**
@@ -44,6 +45,11 @@ public final class Duel {
 
     /** As {@link #run(Kind, Kind, long)}, the first group standing {@code hill} blocks above the second. */
     public static Result run(Kind first, Kind second, long seed, double hill) {
+        return run(first, second, seed, hill, h -> {});
+    }
+
+    /** As {@link #run(Kind, Kind, long, double)}, with {@code watch} called after every tick (a test's probe). */
+    public static Result run(Kind first, Kind second, long seed, double hill, Consumer<SimHarness> watch) {
         int[] counts = DuelLayout.counts(first, second);
         var h = SimHarness.builder()
                 .size(MAP_X, MAP_Z)
@@ -60,7 +66,12 @@ public final class Duel {
         h.submit(PlayerSlot.ADMIN, Attack.replace(UnitSet.of(a), b[DuelLayout.target(seed, 0, b.length)]));
         h.submit(PlayerSlot.ADMIN, Attack.replace(UnitSet.of(b), a[DuelLayout.target(seed, 1, a.length)]));
         IntPredicate alive = handle -> s.entities().isAlive(handle);
-        h.runUntil(() -> count(a, alive) == 0 || count(b, alive) == 0, TICK_CAP);
+        h.runUntil(
+                () -> {
+                    watch.accept(h);
+                    return count(a, alive) == 0 || count(b, alive) == 0;
+                },
+                TICK_CAP);
         int aliveA = count(a, alive);
         int aliveB = count(b, alive);
         int winner = aliveA > 0 && aliveB == 0 ? 0 : aliveB > 0 && aliveA == 0 ? 1 : -1;

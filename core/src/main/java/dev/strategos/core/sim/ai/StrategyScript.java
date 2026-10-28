@@ -74,15 +74,27 @@ public record StrategyScript(
      * fraction of the enemy's near it; {@code replan}: ticks between re-plans of what it trains from what the enemy
      * fields; {@code reach}: blocks round the wave that count as the fight; {@code defence}: the strength (in cost units)
      * credited to an enemy civic centre's arrows when the wave is within reach of it; {@code launch}: a wave leaves only
-     * when its strength is at least this fraction of the enemy's army and defence together.
+     * when its strength is at least this fraction of the enemy's army and defence together; {@code spears}: spearmen
+     * (the only soldiers that burn a building) kept home out of the field fight until the enemy fields no army, then
+     * sent at its civic centre; {@code line}: the share of spearmen, in permille, the training plan never falls below
+     * (a spearman short of it is waited for, not replaced by another kind).
      */
-    public record Battle(String focus, int behind, double retreat, int replan, int reach, int defence, double launch) {
+    public record Battle(
+            String focus,
+            int behind,
+            double retreat,
+            int replan,
+            int reach,
+            int defence,
+            double launch,
+            int spears,
+            int line) {
         public static final String OFF = "off";
         public static final String WOUNDED = "wounded";
         public static final String VALUE = "value";
 
         /** Every knob off: M4's military manager. */
-        public static final Battle NONE = new Battle(OFF, 0, 0, 0, 28, 0, 0);
+        public static final Battle NONE = new Battle(OFF, 0, 0, 0, 28, 0, 0, 0, 250);
 
         private static final Codec<String> FOCUS =
                 Codec.STRING.validate(f -> f.equals(OFF) || f.equals(WOUNDED) || f.equals(VALUE)
@@ -96,7 +108,9 @@ public record StrategyScript(
                         Codec.intRange(0, 72_000).optionalFieldOf("replan", 0).forGetter(Battle::replan),
                         Codec.intRange(8, 64).optionalFieldOf("reach", 28).forGetter(Battle::reach),
                         Codec.intRange(0, 100_000).optionalFieldOf("defence", 0).forGetter(Battle::defence),
-                        Codec.doubleRange(0, 10).optionalFieldOf("launch", 0.0).forGetter(Battle::launch))
+                        Codec.doubleRange(0, 10).optionalFieldOf("launch", 0.0).forGetter(Battle::launch),
+                        Codec.intRange(0, 64).optionalFieldOf("spears", 0).forGetter(Battle::spears),
+                        Codec.intRange(0, 1000).optionalFieldOf("line", 250).forGetter(Battle::line))
                 .apply(i, Battle::new));
 
         /** Whether any knob of the fight itself is on. */
@@ -106,7 +120,7 @@ public record StrategyScript(
 
         /** Whether any knob is on. */
         public boolean enabled() {
-            return fights() || replan > 0 || launch > 0;
+            return fights() || replan > 0 || launch > 0 || spears > 0;
         }
     }
 

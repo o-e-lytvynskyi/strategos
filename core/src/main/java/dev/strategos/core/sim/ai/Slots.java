@@ -36,5 +36,8 @@ final class Slots {
     /** The retreats ordered so far. */
     static final int RETREATS = 15;
 
+    /** 1 when the last think of the wave's fight stood at the enemy centre and saw no enemy soldier near it (the way is clear), else 0. */
+    static final int CLEAR = 16;
+
     private Slots() {}
 }

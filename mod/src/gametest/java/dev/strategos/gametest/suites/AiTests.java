@@ -138,7 +138,8 @@ public final class AiTests {
                 .replace("\"first\":450", "\"first\":1")
                 .replace("\"min\":14", "\"min\":4")
                 .replace("\"muster\":24", "\"muster\":12")
-                .replace("\"launch\":0.6", "\"launch\":0.4"); // six spearmen against six and a centre
+                .replace("\"launch\":0.6", "\"launch\":0.4") // six spearmen against six and a centre
+                .replace("\"spears\":6", "\"spears\":0"); // the shipped reserve of six would be the whole army
         for (int f = 0; f < 2; f++) {
             rt.submit(
                     PlayerSlot.ADMIN,

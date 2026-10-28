@@ -301,6 +301,90 @@ class BattleBotTest {
                 .isGreaterThan(others);
     }
 
+    static final String RESERVE = "{\"focus\":\"wounded\",\"behind\":4,\"retreat\":0.6,\"replan\":1200,\"reach\":28,"
+            + "\"defence\":600,\"launch\":0,\"spears\":3,\"line\":600}";
+
+    /**
+     * AI-03's spearman reserve (M5 For the owner 11): with {@code spears} 3 the three oldest spearmen stay home while
+     * the enemy fields soldiers, and once none stands near the wave they go at the enemy's civic centre; with {@code
+     * line} 600 the plan never trains spearmen below 60 % of the army, though the enemy fields archers alone.
+     */
+    @Test
+    @Tag("slow")
+    void keepsASpearmanReserveForTheCentre() {
+        SimHarness h = ground(TemplateSet.builtin());
+        spawn(h, SPEAR, 0, 30, 30, 9);
+        spawn(h, ARCHER, 0, 28, 28, 4);
+        spawn(h, SPEAR, 1, 62, 62, 4);
+        h.submit(PlayerSlot.ADMIN, new SetAi(new FactionSlot(0), "battle", script(4, 0, RESERVE)));
+        List<Integer> reserve = new ArrayList<>();
+        for (UnitView u : units(h, 0)) {
+            if (u.template().equals(SPEAR)) {
+                reserve.add(u.handle());
+            }
+        }
+        reserve.sort(Integer::compare);
+        reserve = reserve.subList(0, 3);
+        int centre = h.core().queries().buildings().stream()
+                .filter(b -> b.faction() == 1 && b.template().equals(CENTRE))
+                .findFirst()
+                .orElseThrow()
+                .handle();
+        double farthest = 0;
+        long released = -1;
+        while (h.tick() < 6_000 && released < 0) {
+            h.step();
+            boolean armyAlive = !units(h, 1).isEmpty();
+            for (int handle : reserve) {
+                UnitView u = h.core().queries().unit(handle);
+                if (u == null) {
+                    continue;
+                }
+                if (armyAlive) {
+                    farthest = Math.max(farthest, DetMath.length(u.x() - 10, u.z() - 10));
+                } else if (!h.core().queries().orders(handle).isEmpty()
+                        && h.core().queries().orders(handle).get(0).target() == centre) { // an attack or a burn
+                    released = h.tick();
+                }
+            }
+        }
+        assertThat(farthest)
+                .as("the reserve stays near the base while the enemy fields soldiers")
+                .isLessThan(40);
+        assertThat(released).as("the tick the reserve went at the centre").isPositive();
+    }
+
+    @Test
+    @Tag("slow")
+    void keepsAFloorOfSpearmenWhateverTheEnemyFields() {
+        TemplateSet set = TemplateSet.builtin();
+        SimHarness h = ground(set);
+        for (int k = 0; k < 2; k++) {
+            h.submit(PlayerSlot.ADMIN, new SpawnBuilding(BARRACKS, new FactionSlot(0), 24 + 12 * k, 8, 0));
+        }
+        for (int k = 0; k < 14; k++) {
+            h.submit(
+                    PlayerSlot.ADMIN,
+                    new SpawnBuilding(
+                            new TemplateId("strategos:building/house"),
+                            new FactionSlot(0),
+                            8 + 8 * (k % 7),
+                            40 + 8 * (k / 7),
+                            0));
+        }
+        for (String r : new String[] {"food", "wood", "iron", "stone"}) {
+            h.submit(PlayerSlot.ADMIN, new Grant(new FactionSlot(0), r, 20_000));
+        }
+        spawn(h, ARCHER, 1, 70, 70, 12); // a plan against archers wants horsemen and a quarter spearmen
+        h.submit(PlayerSlot.ADMIN, new SetAi(new FactionSlot(0), "battle", script(1_000, 2, RESERVE)));
+        h.runTicks(2_400);
+        int[] have = roles(h, set);
+        assertThat(have[0] + have[1] + have[2]).as("soldiers trained").isGreaterThanOrEqualTo(10);
+        assertThat(have[0] * 10)
+                .as("spearmen in %s", java.util.Arrays.toString(have))
+                .isGreaterThanOrEqualTo(5 * (have[0] + have[1] + have[2]));
+    }
+
     /** AI-03.3: with a big armies' fight on, no think spends past the budget; the spend is reported. */
     @Test
     void withinTheBudget() {

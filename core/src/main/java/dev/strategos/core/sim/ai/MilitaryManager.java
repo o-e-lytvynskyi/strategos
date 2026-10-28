@@ -46,6 +46,9 @@ final class MilitaryManager implements AiModule {
                 soldiers.add(u);
             }
         }
+        if (battle.spears() > 0 && reserve(view, budget, sink, memory, base, battle, army, soldiers)) {
+            return; // the way is clear: the spearmen are at its centre
+        }
         if (memory.get(Slots.FIGHT) != 0 && Tactics.fight(view, budget, sink, memory, base, script, soldiers)) {
             return; // a wave is out: its fight is this think's work
         }
@@ -83,6 +86,75 @@ final class MilitaryManager implements AiModule {
                 memory.set(Slots.FOCUS, 0);
             }
         }
+    }
+
+    /**
+     * The reserve of spearmen (AI-03's {@code spears}): the {@code spears} oldest stay home out of {@code army} and
+     * {@code soldiers}, so no wave takes them. Once the way is clear (the wave's last fight think saw it at the enemy centre with no enemy soldier
+     * near it, or the enemy fields no army that is not garrisoned), every spearman
+     * without a target is sent at the enemy's civic centre, the reserve with them; true when it was, and the think is
+     * done.
+     */
+    private static boolean reserve(
+            AiView view,
+            AiBudget budget,
+            CommandSink sink,
+            AiMemory memory,
+            Base base,
+            StrategyScript.Battle battle,
+            List<Integer> army,
+            List<UnitView> soldiers) {
+        boolean clear = memory.get(Slots.CLEAR) != 0;
+        if (!clear) { // or the enemy fields no army at all
+            clear = true;
+            for (UnitView e : view.enemyUnits()) {
+                if (view.role(e) != AiView.ROLE_NONE && e.state() != UnitState.GARRISONED) {
+                    clear = false;
+                    break;
+                }
+            }
+        }
+        List<UnitView> spears = new ArrayList<>();
+        for (UnitView u : soldiers) {
+            if (view.role(u) == AiView.ROLE_SPEAR) {
+                spears.add(u);
+            }
+        }
+        if (clear) {
+            List<Integer> going = new ArrayList<>();
+            for (UnitView u : spears) {
+                if (view.attackTarget(u) == 0) {
+                    going.add(u.handle());
+                }
+            }
+            if (going.isEmpty() || base.enemy() == null) {
+                return false;
+            }
+            budget.spend(10);
+            sink.send(Attack.replace(
+                    UnitSet.of(going.stream().mapToInt(Integer::intValue).toArray()),
+                    base.enemy().handle()));
+            return true;
+        }
+        spears.sort(java.util.Comparator.comparingInt(UnitView::handle));
+        List<Integer> home = new ArrayList<>();
+        Vec2d centre = new Vec2d(base.x(), base.z());
+        for (UnitView u : spears.subList(0, Math.min(battle.spears(), spears.size()))) {
+            army.remove(Integer.valueOf(u.handle()));
+            soldiers.remove(u);
+            Vec2d t = u.target();
+            if (t == null
+                    ? DetMath.length(u.x() - centre.x(), u.z() - centre.z()) > Tactics.HOME_RESERVE
+                    : DetMath.length(t.x() - centre.x(), t.z() - centre.z()) > Tactics.HOME_RESERVE) {
+                home.add(u.handle());
+            }
+        }
+        if (!home.isEmpty()) {
+            budget.spend(10);
+            sink.send(Move.replace(
+                    UnitSet.of(home.stream().mapToInt(Integer::intValue).toArray()), centre));
+        }
+        return false;
     }
 
     /**
