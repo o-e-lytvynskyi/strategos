@@ -8,7 +8,7 @@ import java.util.List;
  * site, the wave). The match saves and hashes it with the player, so a restored match thinks on as the live one.
  */
 public final class AiMemory {
-    public static final int SIZE = 16;
+    public static final int SIZE = 17;
 
     private final long[] values = new long[SIZE];
 

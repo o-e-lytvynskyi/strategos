@@ -2,6 +2,8 @@ package dev.strategos.core.sim;
 
 import dev.strategos.core.shared.Hasher;
 import dev.strategos.core.shared.HotPath;
+import dev.strategos.core.sim.combat.Damage;
+import dev.strategos.core.sim.combat.ShotStore;
 import dev.strategos.core.sim.econ.EconomyRules;
 import dev.strategos.core.sim.nav.PathStore;
 import dev.strategos.core.sim.order.OrderKind;
@@ -125,6 +127,52 @@ public final class StateHasher {
         }
         h = s.outcome().mix(h); // only once a centre stood or someone lost (MATCH-01)
         h = s.aiSlots().mix(h); // only once the computer plays a faction (AI-01)
+        if (!s.stances().empty()) { // only once a stance was set or a defensive unit holds a spot (CMB-05)
+            h = s.stances().mix(h);
+        }
+        if (!s.garrison().empty()) { // only once a unit is inside a building (BLD-16)
+            h = s.garrison().mix(h);
+        }
+        ShotStore shots = s.shots();
+        if (!shots.pristine()) {
+            h = Hasher.mix(h, 0x53484f5453L);
+            h = Hasher.mix(h, shots.nextId());
+            h = Hasher.mix(h, shots.count());
+            for (int i = 0; i < shots.count(); i++) {
+                ShotStore.Shot shot = shots.shot(i);
+                h = Hasher.mix(h, shot.id());
+                h = Hasher.mix(h, shot.shooter());
+                h = Hasher.mix(h, shot.target());
+                h = Hasher.mix(h, shot.landTick());
+                h = Hasher.mix(h, Double.doubleToLongBits(shot.landingX()));
+                h = Hasher.mix(h, Double.doubleToLongBits(shot.landingY()));
+                h = Hasher.mix(h, Double.doubleToLongBits(shot.landingZ()));
+                Damage damage = shot.damage();
+                h = Hasher.mix(h, damage.target());
+                h = Hasher.mix(h, damage.attacker());
+                h = Hasher.mix(h, Float.floatToIntBits(damage.hack()));
+                h = Hasher.mix(h, Float.floatToIntBits(damage.pierce()));
+                h = Hasher.mix(h, Float.floatToIntBits(damage.crush()));
+                h = Hasher.mix(h, Float.floatToIntBits(damage.fire()));
+                h = Hasher.mix(h, damage.bonuses().size());
+                for (int j = 0; j < damage.bonuses().size(); j++) {
+                    Damage.Bonus bonus = damage.bonuses().get(j);
+                    String token = bonus.token();
+                    h = Hasher.mix(h, token.length());
+                    for (int k = 0; k < token.length(); k++) h = Hasher.mix(h, token.charAt(k));
+                    h = Hasher.mix(h, Float.floatToIntBits(bonus.multiplier()));
+                }
+                h = Hasher.mix(h, damage.lethal() ? 1 : 0);
+                ShotStore.Release release = shot.release();
+                if (release != null) { // a release-less shot hashes as before
+                    h = Hasher.mix(h, 1);
+                    h = Hasher.mix(h, Double.doubleToLongBits(release.x()));
+                    h = Hasher.mix(h, Double.doubleToLongBits(release.y()));
+                    h = Hasher.mix(h, Double.doubleToLongBits(release.z()));
+                    h = Hasher.mix(h, release.tick());
+                }
+            }
+        }
         MatchRules rules = config.rules();
         if (!rules.play().equals(PlayRules.DEFAULTS)
                 || rules.economy().populationMax() != EconomyRules.POPULATION_MAX) { // rules a scenario or a change set

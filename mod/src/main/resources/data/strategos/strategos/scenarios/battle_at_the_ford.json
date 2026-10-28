@@ -1,0 +1,41 @@
+{
+  "map": "strategos:proving_ground",
+  "victory": "civic_centre",
+  "slots": [
+    {
+      "player": "human",
+      "resources": { "food": 400, "wood": 200, "stone": 100, "iron": 100 },
+      "entities": [
+        { "template": "strategos:building/civic_centre" },
+        { "template": "strategos:building/barracks", "dx": 18, "dz": 0 },
+        { "template": "strategos:unit/worker", "dz": 9, "count": 5, "spread": 2 },
+        { "template": "strategos:building/quarry", "dx": -14, "dz": -22 },
+        { "template": "strategos:building/iron_mine", "dx": 6, "dz": -26 },
+        { "template": "strategos:unit/infantry", "dx": 147, "dz": -49, "count": 12, "spread": 3 },
+        { "template": "strategos:unit/infantry", "dx": 147, "dz": 47, "count": 12, "spread": 3 },
+        { "template": "strategos:unit/archer", "dx": 31, "dz": -92, "count": 8, "spread": 3 },
+        { "template": "strategos:unit/archer", "dx": 147, "dz": -49, "count": 2, "spread": 3 },
+        { "template": "strategos:unit/archer", "dx": 147, "dz": 47, "count": 10, "spread": 3 },
+        { "template": "strategos:unit/horseman", "dx": 147, "dz": -49, "count": 8, "spread": 4 },
+        { "template": "strategos:unit/horseman", "dx": 147, "dz": 47, "count": 8, "spread": 4 }
+      ]
+    },
+    {
+      "player": "ai:battle",
+      "resources": { "food": 400, "wood": 200, "stone": 100, "iron": 100 },
+      "entities": [
+        { "template": "strategos:building/civic_centre" },
+        { "template": "strategos:building/barracks", "dx": -18, "dz": 0 },
+        { "template": "strategos:unit/worker", "dz": -9, "count": 5, "spread": 2 },
+        { "template": "strategos:building/quarry", "dx": 14, "dz": 22 },
+        { "template": "strategos:building/iron_mine", "dx": -6, "dz": 26 },
+        { "template": "strategos:unit/infantry", "dx": -148, "dz": -49, "count": 12, "spread": 3 },
+        { "template": "strategos:unit/infantry", "dx": -148, "dz": 47, "count": 12, "spread": 3 },
+        { "template": "strategos:unit/archer", "dx": -148, "dz": -49, "count": 10, "spread": 3 },
+        { "template": "strategos:unit/archer", "dx": -148, "dz": 47, "count": 10, "spread": 3 },
+        { "template": "strategos:unit/horseman", "dx": -148, "dz": -49, "count": 8, "spread": 4 },
+        { "template": "strategos:unit/horseman", "dx": -148, "dz": 47, "count": 8, "spread": 4 }
+      ]
+    }
+  ]
+}

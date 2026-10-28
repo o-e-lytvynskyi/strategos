@@ -102,6 +102,7 @@ public final class MotionSystem implements MatchSystem {
     private static final byte SETTLING = 0;
     private static final byte WALKING = 1;
     private static final byte SPENT = 2; // walking, with no waypoint and no request: nowhere to go this tick
+    private static final byte HIDDEN = 3; // garrisoned: neither walking nor settling, passed by every pass
 
     private static final byte LANDS = 1;
     private static final byte FOLLOWING = 2;
@@ -162,13 +163,15 @@ public final class MotionSystem implements MatchSystem {
             }
             if (s.ai().state(i) == UnitState.WALKING && orders.kind(i) != OrderKind.NONE) {
                 steer(s, i);
+            } else if (s.garrisoned(i)) {
+                mode[i] = HIDDEN; // inside a building: no step, no push, nothing to plan (BLD-16)
             } else {
                 mode[i] = SETTLING;
             }
         }
         avoidance.intents(mode, endX, endZ, WALKING);
         for (int i = 0; i < highWater; i++) { // plan, round the others' places and the walkers' steps
-            if (!entities.aliveAt(i)) {
+            if (!entities.aliveAt(i) || mode[i] == HIDDEN) {
                 continue;
             }
             if (mode[i] == WALKING && s.motion().ghostTicks(i) > 0) {
@@ -184,7 +187,7 @@ public final class MotionSystem implements MatchSystem {
             }
         }
         for (int i = 0; i < highWater; i++) { // move
-            if (!entities.aliveAt(i)) {
+            if (!entities.aliveAt(i) || mode[i] == HIDDEN) {
                 continue;
             }
             switch (mode[i]) {
@@ -550,6 +553,7 @@ public final class MotionSystem implements MatchSystem {
         for (int j = 0; j < s.entities().highWater(); j++) {
             if (j == i
                     || !s.entities().aliveAt(j)
+                    || s.mobility(j) != s.mobility(i)
                     || orders.group(j) != group
                     || orders.kind(j) != orders.kind(i)
                     || s.ai().state(j) != UnitState.WALKING) {
@@ -586,7 +590,7 @@ public final class MotionSystem implements MatchSystem {
      */
     static boolean ground(MatchState s, int i) {
         MotionStore motion = s.motion();
-        SurfaceGrid grid = s.surfaces();
+        SurfaceGrid grid = s.surfacesFor(i);
         int cx = (int) Math.floor(motion.x(i));
         int cz = (int) Math.floor(motion.z(i));
         int floor = motion.floor(i);
@@ -655,7 +659,7 @@ public final class MotionSystem implements MatchSystem {
         if (nx == x && nz == z) {
             return false;
         }
-        SurfaceGrid grid = s.surfaces();
+        SurfaceGrid grid = s.surfacesFor(i);
         int cx = (int) Math.floor(x);
         int cz = (int) Math.floor(z);
         int ncx = (int) Math.floor(nx);
@@ -735,7 +739,7 @@ public final class MotionSystem implements MatchSystem {
         if (motion.floor(i) == MotionStore.NO_FLOOR) {
             return 1;
         }
-        SurfaceGrid grid = s.surfaces();
+        SurfaceGrid grid = s.surfacesFor(i);
         int cx = (int) Math.floor(motion.x(i));
         int cz = (int) Math.floor(motion.z(i));
         int layer = layerOf(grid, cx, cz, motion.floor(i));
@@ -752,7 +756,7 @@ public final class MotionSystem implements MatchSystem {
     /** Whether unit {@code i} can walk straight from where it stands to (tx, tz). */
     private static boolean inLine(MatchState s, int i, double tx, double tz) {
         MotionStore motion = s.motion();
-        SurfaceGrid grid = s.surfaces();
+        SurfaceGrid grid = s.surfacesFor(i);
         int cx = (int) Math.floor(motion.x(i));
         int cz = (int) Math.floor(motion.z(i));
         int layer = motion.floor(i) == MotionStore.NO_FLOOR ? -1 : layerOf(grid, cx, cz, motion.floor(i));

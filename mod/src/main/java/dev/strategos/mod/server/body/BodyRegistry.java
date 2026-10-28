@@ -2,6 +2,7 @@ package dev.strategos.mod.server.body;
 
 import dev.strategos.core.shared.MatchId;
 import dev.strategos.core.sim.MatchQueries;
+import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.UnitView;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.entity.UnitEntity;
@@ -86,8 +87,8 @@ public final class BodyRegistry {
         while (wantedHandles.hasNext()) {
             int handle = wantedHandles.nextInt();
             UnitView unit = q.unit(handle);
-            if (unit == null || bodies.containsKey(handle)) {
-                wantedHandles.remove();
+            if (unit == null || bodies.containsKey(handle) || unit.state() == UnitState.GARRISONED) {
+                wantedHandles.remove(); // a unit inside a building has no body; it wants one again when it comes out
                 continue;
             }
             if (!level.isPositionEntityTicking(blockOf(unit))) {
@@ -131,6 +132,21 @@ public final class BodyRegistry {
         }
         wanted.add(handle);
         return reported.add(handle);
+    }
+
+    /**
+     * The unit went inside a building (BLD-16): its body goes quietly, and the unit does not want another until it
+     * comes out. Nothing ticks for it meanwhile.
+     */
+    public void shelter(int handle) {
+        wanted.remove(handle);
+        parked.remove(handle);
+        gear.remove(handle);
+        UnitEntity body = bodies.remove(handle);
+        if (body != null) {
+            body.markRemovedByRegistry();
+            body.discard();
+        }
     }
 
     /** The unit's next pose leaves where entities tick: its body goes quietly, and the unit wants one again. */

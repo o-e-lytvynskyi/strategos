@@ -185,6 +185,38 @@ class AvoidanceTest {
         assertThat(crowdCrossing()).isEqualTo(crowdCrossing());
     }
 
+    /**
+     * A crowd standing on the 32-block floor, as the L1 floor under the L6 comparison of standing and walking units: its
+     * hash after 300 ticks was taken before the crowd was told from the units within the separation range alone, and
+     * before the neighbours were read in the grid's own order. A pose set from outside between two movements leaves the
+     * grid behind, and the plan then looks at the whole neighbourhood, as it always did.
+     */
+    @Test
+    void aStandingCrowdKeepsItsHistory() {
+        assertThat(standingCrowd(false, false)).isEqualTo(-3768017173266802458L);
+        assertThat(standingCrowd(true, false))
+                .as("one unit displaced from outside")
+                .isEqualTo(2536433895209204293L);
+        assertThat(standingCrowd(false, true)).as("an agent beside it").isEqualTo(-7976379457236708123L);
+    }
+
+    private static long standingCrowd(boolean displace, boolean agent) {
+        SimHarness h = harness(VoxelFixtures.flat(32, 32, 8, 1));
+        int[] crowd = h.spawn(F0, new Vec2d(16.5, 16.5), 60, 4);
+        h.spawn(F1, new Vec2d(8.5, 8.5), 6, 1);
+        if (agent) {
+            h.agents(tick -> tick % 5 == 0 ? List.of(new Agent(1, 17.5f, 1, 16.5f, 0.1f, 0, 0.3f)) : List.of());
+        }
+        h.runTicks(40);
+        if (displace) {
+            var motion = KernelAccess.state(h.core()).motion();
+            int i = Handle.index(crowd[7]);
+            motion.set(i, motion.x(i) + 1.2, motion.y(i), motion.z(i) - 0.7, motion.yaw(i));
+        }
+        h.runTicks(260);
+        return h.stateHash();
+    }
+
     /** Two groups of eight walk through each other; the state hash at the end. */
     private static long crowdCrossing() {
         SimHarness h = harness(VoxelFixtures.flat(48, 24, 8, 1));

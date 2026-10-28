@@ -6,6 +6,7 @@ import dev.strategos.core.content.Footprint;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.WorldEffect;
+import dev.strategos.core.sim.garrison.Garrisons;
 import dev.strategos.core.sim.nav.BlockClass;
 import dev.strategos.core.sim.prod.Production;
 import dev.strategos.core.sim.world.WritePriority;
@@ -57,6 +58,9 @@ public final class BuildingLife {
      * foundation; its columns are released, and the core's terrain gets the air the writer will leave.
      */
     public static void destroy(MatchState s, int handle) {
+        if (!s.garrison().empty()) {
+            Garrisons.ejectAll(s, handle); // the units inside come out alive at the door (BLD-16)
+        }
         Production.lost(s, handle); // its housing and its queue (ECO-06, PROD-01)
         Blueprint b = s.blueprintOf(handle);
         Footprint at = s.footprintOf(handle);

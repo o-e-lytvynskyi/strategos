@@ -3,7 +3,6 @@ package dev.strategos.gametest.suites;
 import static dev.strategos.gametest.suites.PerfVerdicts.INVALID_FOREIGN_LOAD;
 import static dev.strategos.gametest.suites.PerfVerdicts.MS;
 import static dev.strategos.gametest.suites.PerfVerdicts.gated;
-import static dev.strategos.gametest.suites.PerfVerdicts.judgeSoak;
 import static dev.strategos.gametest.suites.PerfVerdicts.scaled;
 import static dev.strategos.gametest.suites.PerfVerdicts.verdict;
 import static dev.strategos.gametest.suites.PerfVerdicts.write;
@@ -12,16 +11,17 @@ import static dev.strategos.gametest.suites.Units.core;
 
 import com.google.gson.JsonObject;
 import dev.strategos.core.content.TemplateSet;
-import dev.strategos.core.protocol.MatchControl;
 import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.SpawnUnits;
 import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
+import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.MatchRules;
 import dev.strategos.core.sim.world.WritePriority;
 import dev.strategos.core.sim.world.WriteSite;
+import dev.strategos.core.testkit.BattleScene;
 import dev.strategos.core.testkit.BudgetCheck;
 import dev.strategos.core.testkit.EconomyScene;
 import dev.strategos.core.testkit.FirstLoopScene;
@@ -53,6 +53,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The L6 perf GameTests (spec 7.6), one per batch, in their own run ({@code runGameTestPerf}). Each samples the foreign
@@ -65,142 +66,80 @@ public final class PerfTests {
     private static final Vec2d EAST = new Vec2d(39.5, 39.5);
     private static final int WARM_UP = 200;
     private static final int SAMPLES = 600;
+    private static final int NEIGHBOUR_OFFSET = 52;
     private static final int REORDER_EVERY = 120;
+    private static final int MOUNTED = 200;
     private static final int WRITER_WARM_UP = 100;
     private static final int WRITES_PER_TICK = 64;
     private static final int GROUP_RESULTS_TICKS = 5;
     private static final int PATH_WARM_UP = 2;
     private static final int PATH_RUNS = 10;
-    private static final int SOAK_TICKS = Integer.getInteger("strategos.soak.ticks", 12_000);
-    private static final int STRESS_TICKS = 2_400;
-    private static final int SOAK_LANE = 1;
-    private static final int STRESS_LANE = 2;
-    private static final int MELEE_LANE = 3;
-    private static final int MELEE_TICKS = 6_000;
-    private static final int FIRST_LOOP_TICKS = Integer.getInteger("strategos.firstLoop.ticks", 18_000);
-    private static final int FIRST_LOOP_SHORT_TICKS = 6_000;
-    private static final int FIRST_LOOP_LANE = 4;
-    private static final int FIRST_LOOP_STRESS_LANE = 5;
-    private static final int FIRST_LOOP_FAST_LANE = 6;
-    private static final int ECONOMY_TICKS = Integer.getInteger("strategos.economy.ticks", 18_000);
-    private static final int ECONOMY_LANE = 7;
-    private static final int ECONOMY_STRESS_LANE = 8;
 
     private PerfTests() {}
 
     /**
      * UNIT-05.5: 300 standing units cost at most 30 % of the same 300 walking, budget A's p50 each over {@value
-     * #SAMPLES} ticks after {@value #WARM_UP} of warm-up: first standing, then sent across and back every {@value
-     * #REORDER_EVERY} ticks. Gated under {@code a}; writes {@code idle_300.json}.
+     * #SAMPLES} ticks after {@value #WARM_UP} of warm-up. A standing and a walking match live side by side (the second
+     * on a copy of the arena) and every server tick steps both, so the two modes share the JVM's profile and the
+     * machine's background load. The match stepped first in a tick pays for the caches the rest of the tick left cold,
+     * so two rounds swap the order, each contributing half the samples of each mode. The walking match is sent across
+     * and back every {@value #REORDER_EVERY} ticks. Gated under {@code a}; writes {@code idle_300.json}.
      */
     @StrategosTest(batch = "perf_idle", arena = "arena_flat_48", timeoutTicks = 3_000)
     public static void idle300CostsAThird(GameTestHelper h) {
-        MatchRuntime rt = MatchFixture.create(h, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
-        rt.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(0), WEST, 150, 6));
-        rt.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(1), EAST, 150, 6));
         Window window = new Window();
         var state = new Object() {
-            MatchRuntime measured = rt;
-            long warmingFrom = -1;
-            long warmOrderedAt = -1;
-            boolean warmToEast = true;
-            long from = -1;
-            long orderedAt = -1;
-            boolean toEast = true;
-            int idleSamples;
-            int movingSamples;
+            final Pair[] pair = new Pair[1];
             final long[] idle = new long[SAMPLES];
             final long[] moving = new long[SAMPLES];
             final long[] idleAdapter = new long[SAMPLES];
             final long[] movingAdapter = new long[SAMPLES];
             final long[][] idlePhases = new long[dev.strategos.core.sim.Phase.values().length][SAMPLES];
             final long[][] movingPhases = new long[dev.strategos.core.sim.Phase.values().length][SAMPLES];
+            List<String> phaseNames = List.of();
         };
-        h.startSequence()
-                .thenWaitUntil(() -> check(
-                        core(rt).queries().unitCount() == 300 && rt.bodies().count() == 300,
-                        "the 300 units and bodies are not there yet"))
-                .thenExecute(() -> TickPacer.pace(true))
-                // Warm both activity branches before either measurement, then restore the original workload
-                // with a fresh match. Otherwise the later walking mode sees a differently compiled JVM.
-                .thenExecute(() -> state.warmingFrom = core(rt).queries().tick())
-                .thenWaitUntil(
-                        () -> check(core(rt).queries().tick() - state.warmingFrom >= WARM_UP, "preconditioning idle"))
-                .thenExecute(() -> state.warmingFrom = core(rt).queries().tick())
-                .thenWaitUntil(() -> {
-                    long tick = core(rt).queries().tick();
-                    if (state.warmOrderedAt < 0 || tick - state.warmOrderedAt >= REORDER_EVERY) {
-                        reorder(rt, state.warmToEast);
-                        state.warmToEast = !state.warmToEast;
-                        state.warmOrderedAt = tick;
-                    }
-                    check(tick - state.warmingFrom >= WARM_UP, "preconditioning walking");
-                })
-                .thenExecute(() -> {
-                    StrategosServer.get().matches().dispose(rt.id());
-                    state.measured = MatchFixture.create(h, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
-                    state.measured.submit(
-                            PlayerSlot.ADMIN,
-                            new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(0), WEST, 150, 6));
-                    state.measured.submit(
-                            PlayerSlot.ADMIN,
-                            new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(1), EAST, 150, 6));
-                })
-                .thenWaitUntil(() -> check(
-                        core(state.measured).queries().unitCount() == 300
-                                && state.measured.bodies().count() == 300,
-                        "the measured 300 units and bodies are not there yet"))
-                .thenWaitUntil(() -> {
-                    long tick = core(state.measured).queries().tick();
-                    if (state.from < 0) {
-                        state.from = tick;
-                        window.start();
-                    }
-                    if (tick - state.from >= WARM_UP) {
-                        int sample = state.idleSamples++;
-                        state.idle[sample] = core(state.measured).timers().lastTotalNanos();
-                        state.idleAdapter[sample] =
-                                core(state.measured).timers().lastAdapterNanos();
-                        samplePhases(
-                                state.idlePhases,
-                                sample,
-                                core(state.measured).timers().lastPhaseNanos());
-                        if (state.idleSamples % 20 == 0) {
-                            window.sampleForeignLoad();
+        var sequence = h.startSequence().thenExecute(() -> TickPacer.pace(true));
+        for (int round = 0; round < 2; round++) {
+            boolean standingFirst = round == 0;
+            int offset = round * (SAMPLES / 2);
+            sequence = sequence.thenExecute(() -> state.pair[0] = Pair.spawn(h, standingFirst))
+                    .thenWaitUntil(() -> check(state.pair[0].ready(), "the 600 units and bodies are not there yet"))
+                    .thenWaitUntil(() -> {
+                        Pair p = state.pair[0];
+                        long tick = core(p.walking).queries().tick();
+                        if (p.orderedAt < 0 || tick - p.orderedAt >= REORDER_EVERY) {
+                            if (p.orderedAt < 0) {
+                                p.from = tick;
+                                window.start();
+                            }
+                            reorder(p.walking, p.toEast);
+                            p.toEast = !p.toEast;
+                            p.orderedAt = tick;
                         }
-                    }
-                    check(state.idleSamples >= SAMPLES, "standing: " + state.idleSamples);
-                })
-                .thenWaitUntil(() -> {
-                    long tick = core(state.measured).queries().tick();
-                    if (state.orderedAt < 0 || tick - state.orderedAt >= REORDER_EVERY) {
-                        if (state.orderedAt < 0) {
-                            state.from = tick;
+                        if (tick - p.from >= WARM_UP) {
+                            int at = offset + p.samples++;
+                            var standingTimers = core(p.standing).timers();
+                            var walkingTimers = core(p.walking).timers();
+                            state.idle[at] = standingTimers.lastTotalNanos();
+                            state.moving[at] = walkingTimers.lastTotalNanos();
+                            state.idleAdapter[at] = standingTimers.lastAdapterNanos();
+                            state.movingAdapter[at] = walkingTimers.lastAdapterNanos();
+                            samplePhases(state.idlePhases, at, standingTimers.lastPhaseNanos());
+                            samplePhases(state.movingPhases, at, walkingTimers.lastPhaseNanos());
+                            state.phaseNames = walkingTimers.phaseNames();
+                            if (p.samples % 20 == 0) {
+                                window.sampleForeignLoad();
+                            }
                         }
-                        reorder(state.measured, state.toEast);
-                        state.toEast = !state.toEast;
-                        state.orderedAt = tick;
-                    }
-                    if (tick - state.from >= WARM_UP) {
-                        int sample = state.movingSamples++;
-                        state.moving[sample] = core(state.measured).timers().lastTotalNanos();
-                        state.movingAdapter[sample] =
-                                core(state.measured).timers().lastAdapterNanos();
-                        samplePhases(
-                                state.movingPhases,
-                                sample,
-                                core(state.measured).timers().lastPhaseNanos());
-                        if (state.movingSamples % 20 == 0) {
-                            window.sampleForeignLoad();
-                        }
-                    }
-                    check(state.movingSamples >= SAMPLES, "walking: " + state.movingSamples);
-                })
-                .thenExecute(() -> {
+                        check(p.samples >= SAMPLES / 2, "sampling: " + p.samples + " of " + SAMPLES / 2);
+                    })
+                    .thenExecute(() -> state.pair[0].dispose(h));
+        }
+        sequence.thenExecute(() -> {
                     TickPacer.pace(false);
                     long idle = Percentiles.percentile(state.idle, 0.50);
-                    long walking = Percentiles.percentile(state.moving, 0.50);
-                    double ratio = (double) idle / walking;
+                    long moving = Percentiles.percentile(state.moving, 0.50);
+                    double ratio = (double) idle / moving;
                     double foreign = window.meanForeignLoad();
                     boolean over = ratio > 0.30;
                     String verdict = foreign > INVALID_FOREIGN_LOAD
@@ -210,26 +149,98 @@ public final class PerfTests {
                     json.addProperty("test", "idle_300");
                     json.addProperty("gate", "a");
                     json.addProperty("idleP50", idle);
-                    json.addProperty("movingP50", walking);
+                    json.addProperty("movingP50", moving);
                     json.addProperty("ratio", ratio);
                     json.addProperty("limit", 0.30);
-                    json.addProperty("preconditionTicksPerMode", WARM_UP);
+                    json.addProperty("interleaved", true);
                     json.addProperty("warmUpTicksPerMode", WARM_UP);
                     json.addProperty("samplesPerMode", SAMPLES);
                     json.addProperty("idleAdapterP50", Percentiles.percentile(state.idleAdapter, 0.5));
                     json.addProperty("movingAdapterP50", Percentiles.percentile(state.movingAdapter, 0.5));
-                    json.add(
-                            "idlePhaseP50Ns",
-                            phaseMedians(core(state.measured).timers().phaseNames(), state.idlePhases));
-                    json.add(
-                            "movingPhaseP50Ns",
-                            phaseMedians(core(state.measured).timers().phaseNames(), state.movingPhases));
+                    json.add("idlePhaseP50Ns", phaseMedians(state.phaseNames, state.idlePhases));
+                    json.add("movingPhaseP50Ns", phaseMedians(state.phaseNames, state.movingPhases));
                     json.addProperty("foreignCpu", foreign);
                     json.addProperty("verdict", verdict);
                     write("idle_300", json);
                     check(!verdict.equals("fail"), "300 standing units cost " + ratio + " of 300 walking, over 0.30");
                 })
                 .thenSucceed();
+    }
+
+    /** A standing and a walking match of one round of {@link #idle300CostsAThird}. */
+    private static final class Pair {
+        final MatchRuntime standing;
+        final MatchRuntime walking;
+        long from = -1;
+        long orderedAt = -1;
+        boolean toEast = true;
+        int samples;
+
+        private Pair(MatchRuntime standing, MatchRuntime walking) {
+            this.standing = standing;
+            this.walking = walking;
+        }
+
+        /** Creates both matches, the one stepped first in each tick first. */
+        static Pair spawn(GameTestHelper h, boolean standingFirst) {
+            if (standingFirst) {
+                MatchRuntime standing = spawnArena(h, 0);
+                return new Pair(standing, spawnArena(h, NEIGHBOUR_OFFSET));
+            }
+            MatchRuntime walking = spawnArena(h, NEIGHBOUR_OFFSET);
+            return new Pair(spawnArena(h, 0), walking);
+        }
+
+        boolean ready() {
+            return core(standing).queries().unitCount() == 300
+                    && standing.bodies().count() == 300
+                    && core(walking).queries().unitCount() == 300
+                    && walking.bodies().count() == 300;
+        }
+
+        void dispose(GameTestHelper h) {
+            StrategosServer.get().matches().dispose(standing.id());
+            StrategosServer.get().matches().dispose(walking.id());
+            unforceNeighbour(h, walking.space());
+        }
+    }
+
+    /**
+     * A match over a copy of the arena {@code offsetX} blocks east of it (floor and air laid, chunks kept loaded), 150
+     * walkers in each corner as in the single-match test.
+     */
+    private static MatchRuntime spawnArena(GameTestHelper h, int offsetX) {
+        BlockPos corner = h.absolutePos(BlockPos.ZERO);
+        MatchSpace space = new MatchSpace(
+                h.getLevel().dimension(), corner.offset(offsetX, 0, 0), 48, 48, corner.getY(), corner.getY() + 3);
+        if (offsetX > 0) {
+            for (int cx = space.minChunk().x; cx <= space.maxChunk().x; cx++) {
+                for (int cz = space.minChunk().z; cz <= space.maxChunk().z; cz++) {
+                    h.getLevel().setChunkForced(cx, cz, true);
+                }
+            }
+            for (int x = 0; x < 48; x++) {
+                for (int z = 0; z < 48; z++) {
+                    BlockPos at = space.origin().offset(x, 0, z);
+                    h.getLevel().setBlock(at, Blocks.SMOOTH_STONE.defaultBlockState(), 2);
+                    for (int y = 1; y < 4; y++) {
+                        h.getLevel().setBlock(at.above(y), Blocks.AIR.defaultBlockState(), 2);
+                    }
+                }
+            }
+        }
+        MatchRuntime rt = MatchFixture.create(h, space, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
+        rt.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(0), WEST, 150, 6));
+        rt.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(1), EAST, 150, 6));
+        return rt;
+    }
+
+    private static void unforceNeighbour(GameTestHelper h, MatchSpace space) {
+        for (int cx = space.minChunk().x; cx <= space.maxChunk().x; cx++) {
+            for (int cz = space.minChunk().z; cz <= space.maxChunk().z; cz++) {
+                h.getLevel().setChunkForced(cx, cz, false);
+            }
+        }
     }
 
     private static void samplePhases(long[][] samples, int at, long[] phases) {
@@ -302,6 +313,118 @@ public final class PerfTests {
                             extra);
                 })
                 .thenSucceed();
+    }
+
+    /**
+     * UNIT-06.3: a mounted unit costs the server at most 20 % more than a foot unit. {@value #MOUNTED} spearmen walk
+     * across the arena as in budget A (reordered every {@value #REORDER_EVERY} ticks), then the same number of
+     * horsemen; each run's p50 of the core step plus the body adapter over {@value #SAMPLES} ticks follows {@value
+     * #WARM_UP} of warm-up. Gated under {@code a}; writes {@code mounted_cost.json}.
+     */
+    @StrategosTest(batch = "perf_mounted", arena = "arena_flat_48", timeoutTicks = 4_000)
+    public static void mountedCost(GameTestHelper h) {
+        Window window = new Window();
+        var foot = new Walkers(h, TemplateSet.INFANTRY);
+        var mounted = new Walkers(h, new TemplateId("strategos:unit/horseman"));
+        h.startSequence()
+                .thenExecute(() -> TickPacer.pace(true))
+                .thenExecute(foot::spawn)
+                .thenWaitUntil(() -> foot.walk(window))
+                .thenExecute(foot::dispose)
+                .thenExecute(mounted::spawn)
+                .thenWaitUntil(() -> mounted.walk(window))
+                .thenExecute(() -> {
+                    TickPacer.pace(false);
+                    mounted.dispose();
+                    long footP50 = Percentiles.percentile(foot.total, 0.50);
+                    long mountedP50 = Percentiles.percentile(mounted.total, 0.50);
+                    double ratio = (double) mountedP50 / footP50;
+                    double foreign = window.meanForeignLoad();
+                    boolean over = ratio > 1.20;
+                    String verdict = foreign > INVALID_FOREIGN_LOAD
+                            ? "invalid"
+                            : !gated("a") ? "report-only" : over ? "fail" : "pass";
+                    JsonObject json = new JsonObject();
+                    json.addProperty("test", "mounted_cost");
+                    json.addProperty("gate", "a");
+                    json.addProperty("units", MOUNTED);
+                    json.addProperty("footP50", footP50);
+                    json.addProperty("mountedP50", mountedP50);
+                    json.addProperty("footAdapterP50", Percentiles.percentile(foot.adapter, 0.50));
+                    json.addProperty("mountedAdapterP50", Percentiles.percentile(mounted.adapter, 0.50));
+                    json.addProperty("ratio", ratio);
+                    json.addProperty("limit", 1.20);
+                    json.addProperty("warmUpTicks", WARM_UP);
+                    json.addProperty("samples", SAMPLES);
+                    json.addProperty("foreignCpu", foreign);
+                    json.addProperty("verdict", verdict);
+                    write("mounted_cost", json);
+                    check(!verdict.equals("fail"), "mounted units cost " + ratio + " of foot units, over 1.20");
+                })
+                .thenSucceed();
+    }
+
+    /** One run of {@value #MOUNTED} walkers of a template, two factions crossing the arena and back. */
+    private static final class Walkers {
+        private final GameTestHelper h;
+        private final TemplateId template;
+        private final long[] total = new long[SAMPLES];
+        private final long[] adapter = new long[SAMPLES];
+        private @Nullable MatchRuntime rt;
+        private long firstOrderAt = -1;
+        private long orderedAt = -1;
+        private boolean toEast = true;
+        private int samples;
+
+        Walkers(GameTestHelper h, TemplateId template) {
+            this.h = h;
+            this.template = template;
+        }
+
+        void spawn() {
+            MatchRuntime match = MatchFixture.create(h, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
+            match.submit(PlayerSlot.ADMIN, new SpawnUnits(template, new FactionSlot(0), WEST, MOUNTED / 2, 8));
+            match.submit(PlayerSlot.ADMIN, new SpawnUnits(template, new FactionSlot(1), EAST, MOUNTED / 2, 8));
+            rt = match;
+        }
+
+        void dispose() {
+            if (rt != null) {
+                StrategosServer.get().matches().dispose(rt.id());
+            }
+        }
+
+        /** One tick of the run: place, order, warm up, then sample; throws until {@value #SAMPLES} are in. */
+        void walk(Window window) {
+            MatchRuntime match = java.util.Objects.requireNonNull(rt);
+            if (samples == 0 && firstOrderAt < 0) {
+                check(
+                        core(match).queries().unitCount() == MOUNTED
+                                && match.bodies().count() == MOUNTED,
+                        "the " + MOUNTED + " units and bodies are not there yet");
+            }
+            long tick = core(match).queries().tick();
+            if (orderedAt < 0 || tick - orderedAt >= REORDER_EVERY) {
+                reorder(match, toEast);
+                toEast = !toEast;
+                orderedAt = tick;
+                if (firstOrderAt < 0) {
+                    firstOrderAt = tick;
+                }
+            }
+            if (tick - firstOrderAt >= WARM_UP && samples < SAMPLES) {
+                if (samples == 0) {
+                    window.start();
+                }
+                total[samples] = core(match).timers().lastTotalNanos();
+                adapter[samples] = core(match).timers().lastAdapterNanos();
+                samples++;
+                if (samples % 20 == 0) {
+                    window.sampleForeignLoad();
+                }
+            }
+            check(samples >= SAMPLES, template.value() + " sampling: " + samples + " of " + SAMPLES);
+        }
     }
 
     /**
@@ -566,7 +689,7 @@ public final class PerfTests {
                 .thenWaitUntil(() -> check(core(rt).queries().pageRefs().size() == 1_024, "prewarm"))
                 .thenExecute(() -> {
                     long millis = (System.nanoTime() - start) / MS;
-                    long bytes = core(rt).queries().surfaces().bytes();
+                    long bytes = core(rt).queries().navigationBytes();
                     JsonObject json = new JsonObject();
                     json.addProperty("test", "prewarm_512_generated");
                     json.addProperty("prewarm_ms", millis);
@@ -690,28 +813,16 @@ public final class PerfTests {
      */
     @StrategosTest(batch = "perf_soak", arena = "arena_flat_48", timeoutTicks = 80_000)
     public static void crowdSoak600(GameTestHelper h) {
-        Window window = new Window();
-        CrowdSoak.start(
-                h,
-                new CrowdSoak.Config("crowd_soak_600", 0, 300, SOAK_TICKS, true, 2, SOAK_LANE),
-                r -> judgeSoak(h, r, window, false),
-                window::start,
-                window::sampleForeignLoad);
+        PerfSoaks.crowdSoak600(h);
     }
 
     /**
-     * PERF-05.3: the stress pass, 1,200 units under {@value #STRESS_TICKS} ticks of seeded orders: only budget C, p95 at
+     * PERF-05.3: the stress pass, 1,200 units under 2,400 ticks of seeded orders: only budget C, p95 at
      * most 50 ms, gates; the rest is reported. Writes {@code stress_1200.json}.
      */
     @StrategosTest(batch = "perf_stress", arena = "arena_flat_48", timeoutTicks = 80_000)
     public static void stress1200(GameTestHelper h) {
-        Window window = new Window();
-        CrowdSoak.start(
-                h,
-                new CrowdSoak.Config("stress_1200", 1, 600, STRESS_TICKS, true, 0, STRESS_LANE),
-                r -> judgeSoak(h, r, window, true),
-                window::start,
-                window::sampleForeignLoad);
+        PerfSoaks.stress1200(h);
     }
 
     /**
@@ -723,13 +834,7 @@ public final class PerfTests {
      */
     @StrategosTest(batch = "perf_melee", arena = "arena_flat_48", timeoutTicks = 40_000)
     public static void meleeSoak200(GameTestHelper h) {
-        Window window = new Window();
-        CrowdSoak.start(
-                h,
-                new CrowdSoak.Config("melee_soak_200", 0, 100, MELEE_TICKS, true, 2, MELEE_LANE, true),
-                r -> judgeSoak(h, r, window, false),
-                window::start,
-                window::sampleForeignLoad);
+        PerfSoaks.meleeSoak200(h);
     }
 
     /**
@@ -742,35 +847,16 @@ public final class PerfTests {
      */
     @StrategosTest(batch = "perf_first_loop", arena = "arena_flat_48", timeoutTicks = 40_000)
     public static void firstLoopSoak(GameTestHelper h) {
-        Window window = new Window();
-        CrowdSoak.start(
-                h,
-                CrowdSoak.Config.firstLoop(
-                        "first_loop_soak", FirstLoopScene.Config.SOAK, FIRST_LOOP_TICKS, FIRST_LOOP_LANE, 1),
-                r -> judgeSoak(h, r, window, false),
-                window::start,
-                window::sampleForeignLoad);
+        PerfSoaks.firstLoopSoak(h);
     }
 
     /**
-     * PERF-06.3: the first loop at twice its scale, 400 units and six constructions, for {@value
-     * #FIRST_LOOP_SHORT_TICKS} ticks: budget C's p95 at most 50 ms gates, the rest is reported. Writes {@code
+     * PERF-06.3: the first loop at twice its scale, 400 units and six constructions, for 6,000 ticks: budget C's p95 at most 50 ms gates, the rest is reported. Writes {@code
      * first_loop_stress.json}.
      */
     @StrategosTest(batch = "perf_first_loop_stress", arena = "arena_flat_48", timeoutTicks = 20_000)
     public static void firstLoopStress(GameTestHelper h) {
-        Window window = new Window();
-        CrowdSoak.start(
-                h,
-                CrowdSoak.Config.firstLoop(
-                        "first_loop_stress",
-                        FirstLoopScene.Config.STRESS,
-                        FIRST_LOOP_SHORT_TICKS,
-                        FIRST_LOOP_STRESS_LANE,
-                        1),
-                r -> judgeSoak(h, r, window, true),
-                window::start,
-                window::sampleForeignLoad);
+        PerfSoaks.firstLoopStress(h);
     }
 
     /**
@@ -784,51 +870,49 @@ public final class PerfTests {
      */
     @StrategosTest(batch = "perf_economy", arena = "arena_flat_48", timeoutTicks = 40_000)
     public static void economySoak(GameTestHelper h) {
-        Window window = new Window();
-        CrowdSoak.start(
-                h,
-                CrowdSoak.Config.firstLoop("economy_soak", EconomyScene.Config.SOAK, ECONOMY_TICKS, ECONOMY_LANE, 1),
-                r -> judgeSoak(h, r, window, false),
-                window::start,
-                window::sampleForeignLoad);
+        PerfSoaks.economySoak(h);
     }
 
     /**
      * PERF-07.3: the economy at twice its scale, 600 workers and soldiers, ten constructions and four repairs, for
-     * {@value #FIRST_LOOP_SHORT_TICKS} ticks: budget C's p95 at most 50 ms gates, the rest is reported. Writes {@code
+     * 6,000 ticks: budget C's p95 at most 50 ms gates, the rest is reported. Writes {@code
      * economy_stress.json}.
      */
     @StrategosTest(batch = "perf_economy_stress", arena = "arena_flat_48", timeoutTicks = 20_000)
     public static void economyStress(GameTestHelper h) {
-        Window window = new Window();
-        CrowdSoak.start(
-                h,
-                CrowdSoak.Config.firstLoop(
-                        "economy_stress", EconomyScene.Config.STRESS, FIRST_LOOP_SHORT_TICKS, ECONOMY_STRESS_LANE, 1),
-                r -> judgeSoak(h, r, window, true),
-                window::start,
-                window::sampleForeignLoad);
+        PerfSoaks.economyStress(h);
     }
 
     /**
-     * MATCH-05.4: the first loop played at 1.5 times its speed, 30 ticks a second, for {@value #FIRST_LOOP_SHORT_TICKS}
+     * PERF-08 (M5 spec §6): the battle on the proving ground for {@code strategos.battle.ticks} ticks (6,000, 5 game
+     * minutes, paced at 20 a second): two factions of 150 spearmen, archers and horsemen in waves across the fords to
+     * the other's civic centre, the centres' arrows firing and ten workers garrisoned in each ({@link BattleScene}), two
+     * seated viewers at the centre. Budgets A–E gate as in the economy soak, E being CMB-04's check 5, and A's p95 per
+     * unit at most 15 % over M4's economy soak; the report adds the targeting's, the volleys', the shots' and the
+     * damage's time a tick. Writes {@code battle_soak.json} and the match's journal.
+     */
+    @StrategosTest(batch = "perf_battle", arena = "arena_flat_48", timeoutTicks = 20_000)
+    public static void battleSoak(GameTestHelper h) {
+        PerfSoaks.battleSoak(h);
+    }
+
+    /**
+     * PERF-08: the battle at twice its scale, 600 fighters, for 6,000 ticks: budget C's p95 at most 50 ms gates, the
+     * rest is reported. Writes {@code battle_stress.json}.
+     */
+    @StrategosTest(batch = "perf_battle_stress", arena = "arena_flat_48", timeoutTicks = 20_000)
+    public static void battleStress(GameTestHelper h) {
+        PerfSoaks.battleStress(h);
+    }
+
+    /**
+     * MATCH-05.4: the first loop played at 1.5 times its speed, 30 ticks a second, for 6,000
      * ticks: budget C's p95 at most 15.3 ms, so a tick still fits a 20-a-second budget's share, gates under {@code c};
      * the rest is reported. Writes {@code first_loop_fast.json}.
      */
     @StrategosTest(batch = "perf_first_loop_fast", arena = "arena_flat_48", timeoutTicks = 20_000)
     public static void firstLoopFast(GameTestHelper h) {
-        Window window = new Window();
-        CrowdSoak.start(
-                h,
-                CrowdSoak.Config.firstLoop(
-                        "first_loop_fast",
-                        FirstLoopScene.Config.SOAK,
-                        FIRST_LOOP_SHORT_TICKS,
-                        FIRST_LOOP_FAST_LANE,
-                        MatchControl.FAST),
-                r -> judgeSoak(h, r, window, false),
-                window::start,
-                window::sampleForeignLoad);
+        PerfSoaks.firstLoopFast(h);
     }
 
     /**

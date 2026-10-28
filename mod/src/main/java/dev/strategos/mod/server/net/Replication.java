@@ -267,8 +267,8 @@ public final class Replication {
             if (player == null || seat == null || core == null || sub.handles.isEmpty()) {
                 continue;
             }
-            UnitDetail detail =
-                    ReplicationService.detail(core.queries(), seat.match().id().value(), viewer(seat), sub.handles);
+            UnitDetail detail = ReplicationService.detail(
+                    core.queries(), seat.match().id().value(), viewer(seat), sub.handles, visibility(seat.match()));
             UnitDetail last = sub.sent;
             if (last == null || !last.units().equals(detail.units())) {
                 sub.sent = detail;

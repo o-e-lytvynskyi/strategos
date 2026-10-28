@@ -102,6 +102,15 @@ profile may not work for years. Write `add('localRuntime', libs.x)`.
   replace a record with an array by a plain immutable class with `equals` through
   `Arrays.equals`.
 
+## Python document checks: pin UTF-8 and reject empty discoveries
+
+`Path.read_text()` uses the host's default encoding. On a Windows host using cp1251,
+UTF-8 roadmap headings can decode without an exception yet no longer match the parser.
+A validator that only loops over discovered cards then reports success for zero cards.
+Read repository documents with `encoding="utf-8"` and explicitly reject an empty discovery.
+`tools/test_roadmap.py` reproduces the host-default mismatch and empty-document false pass;
+both tests fail against the pre-M5 reader and pass with the explicit encoding and guard.
+
 ## Python bookkeeping on Windows needs UTF-8 mode
 
 Run the roadmap and claims tools with `PYTHONUTF8=1` on a Windows host whose default code page
@@ -109,3 +118,19 @@ is not UTF-8. Roadmap headings contain Unicode punctuation; decoding them with a
 page can silently match zero headings and print `0 cards checked, 0 problems`. Check that the
 reported card count is plausible, not just the exit code. In PowerShell set
 `$env:PYTHONUTF8='1'` before invoking the tools; this does not change repository data.
+
+## Groovy: a line that starts with an operator is a new statement
+
+In a Gradle Groovy script, `def x = a()` followed by a line `+ b()` is two statements: the
+second is unary plus on `b()`'s result, and `x` holds only `a()`. `jmhCompare` concatenated
+`JmhGate.problems(...)` and `JmhGate.missing(...)` this way from M0 to M5 T3c.1, so a benchmark
+missing from the result was never reported; once one was missing, the gate died with
+`No signature of method: java.lang.String.positive()` instead of naming it. Keep the operator at
+the end of the first line (`a() +` then `b()`), and give a new gate check a case that must fail.
+
+## JMH results carry the JVM's absolute path
+
+Every row of `core/build/reports/jmh/result.json` names its `"jvm"` by absolute path, the home
+directory included. A row copied into `perf/baseline-*.json` must have it rewritten to
+`~/.gradle/…` before the commit (security.md §4); `grep -rn '/Users/\|/home/' perf/` is the check.
+M5 T3c.1 pushed one such row (287bf54) and fixed it in the next commit.

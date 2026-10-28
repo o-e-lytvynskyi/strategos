@@ -1,7 +1,10 @@
 {
   "entity.strategos.unit_humanoid": "Unit",
+  "entity.strategos.unit_mount": "Mounted unit",
   "strategos.unit.debug_walker": "Debug walker",
   "strategos.unit.infantry": "Infantry",
+  "strategos.unit.archer": "Archer",
+  "strategos.unit.horseman": "Horseman",
   "strategos.unit.worker": "Worker",
   "strategos.unit.sheep": "Sheep",
   "strategos.unit.pig": "Pig",
@@ -59,5 +62,12 @@
   "key.strategos.jump_to_alert": "Jump to the latest alert",
   "key.strategos.pause_match": "Pause or resume",
   "key.strategos.slower": "Slower",
-  "key.strategos.faster": "Faster"
+  "key.strategos.faster": "Faster",
+  "strategos.stance.violent": "Violent: attacks anything in sight, always hits back",
+  "strategos.stance.aggressive": "Aggressive: attacks enemies it sees",
+  "strategos.stance.defensive": "Defensive: guards its spot and returns to it",
+  "strategos.stance.stand_ground": "Stand ground: strikes only what comes in reach, never moves",
+  "strategos.stance.passive": "Passive: never fights, runs from a blow",
+  "strategos.card.ring_bell": "Ring the bell: every worker within 64 blocks goes into the nearest building with room",
+  "strategos.card.all_clear": "All clear: the workers come out and go back to what they were doing"
 }

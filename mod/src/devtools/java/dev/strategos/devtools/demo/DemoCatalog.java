@@ -32,7 +32,14 @@ public final class DemoCatalog {
             new RepairChapter(),
             new ProtectionChapter(),
             new RallyChapter(),
-            new BotChapter());
+            new BotChapter(),
+            new ArchersChapter(),
+            new HighGroundChapter(),
+            new StancesChapter(),
+            new HorsemenChapter(),
+            new FocusSpreadChapter(),
+            new GarrisonChapter(),
+            new AttackLinesChapter());
 
     private DemoCatalog() {}
 

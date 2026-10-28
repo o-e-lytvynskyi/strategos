@@ -14,6 +14,7 @@ import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.OrderReceived;
 import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.combat.CombatSystem;
+import dev.strategos.core.sim.combat.Engagement;
 import dev.strategos.core.sim.econ.Livestock;
 import dev.strategos.core.sim.econ.NodeStore;
 import dev.strategos.core.sim.order.OrderKind;
@@ -25,7 +26,8 @@ import dev.strategos.core.sim.order.OrderQueues;
  * unknown, as a hidden one will be (04 §7.3); one of the issuer's own faction as an invalid argument; a unit with no
  * melee attack as unsupported, unless the target is an animal and it gathers meat: then it gets a gather order on the
  * animal's meat, which slaughters it first (ECO-16). A building as the target is burned by the units with a torch
- * (CMB-03).
+ * (CMB-03). A forced attack (ORD-05) may also target the issuer's own units and buildings, never Gaia's animals, which
+ * are gathered; without the flag an own target is an invalid argument.
  */
 final class AttackRule implements CommandRule<Attack> {
     @Override
@@ -43,10 +45,13 @@ final class AttackRule implements CommandRule<Attack> {
         if (BuildingStore.isBuilding(target)) {
             return burn(envelope, attack, state);
         }
-        if (!state.entities().isAlive(target)) {
+        if (Engagement.gone(state, target)) {
             return Tally.rejectAll(envelope, kind(), units.size(), RejectReason.UNKNOWN_TARGET);
         }
         int t = Handle.index(target);
+        if (attack.force() && state.identity().faction(t) == state.gaia()) {
+            return Tally.rejectAll(envelope, kind(), units.size(), RejectReason.INVALID_ARGUMENT);
+        }
         double x = state.motion().x(t);
         double z = state.motion().z(t);
         int targetFaction = state.identity().faction(t);
@@ -62,14 +67,14 @@ final class AttackRule implements CommandRule<Attack> {
                 continue;
             }
             int i = Handle.index(handle);
-            if (state.identity().faction(i) == targetFaction) {
+            if (i == t || (state.identity().faction(i) == targetFaction && !attack.force())) {
                 tally.reject(RejectReason.INVALID_ARGUMENT);
                 continue;
             }
-            boolean slaughter = !state.stats().canMelee(i)
+            boolean slaughter = !state.stats().canAttack(i)
                     && meat != 0
                     && state.gatherRates().gathers(state.stats(), i, nodes.resource(meat), nodes.subtype(meat));
-            if (!state.stats().canMelee(i) && !slaughter) {
+            if (!state.stats().canAttack(i) && !slaughter) {
                 tally.reject(RejectReason.UNSUPPORTED);
                 continue;
             }
@@ -101,7 +106,7 @@ final class AttackRule implements CommandRule<Attack> {
 
     /**
      * An attack on a building (CMB-03): each owned unit with a torch burns it ({@link OrderKind#BURN}), from a place
-     * round its footprint; a unit without one is unsupported, the issuer's own building an invalid argument.
+     * round its footprint; a unit without one is unsupported, the issuer's own building an invalid argument unless forced.
      */
     private CommandResult burn(CommandEnvelope envelope, Attack attack, MatchState state) {
         UnitSet units = attack.units();
@@ -123,7 +128,7 @@ final class AttackRule implements CommandRule<Attack> {
                 continue;
             }
             int i = Handle.index(handle);
-            if (state.identity().faction(i) == buildings.faction(target)) {
+            if (state.identity().faction(i) == buildings.faction(target) && !attack.force()) {
                 tally.reject(RejectReason.INVALID_ARGUMENT);
                 continue;
             }

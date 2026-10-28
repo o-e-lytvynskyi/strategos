@@ -44,7 +44,8 @@ final class BuiltinTemplates {
                   "pierce": { "$derive": { "from": "self", "path": "Attack/Melee/hack" }, "note": "A spear thrusts as hard as it cuts" },
                   "reach": 1.2,
                   "prepare": 10,
-                  "repeat": 20
+                  "repeat": 20,
+                  "bonus": { "Cavalry": 2.5 }
                 },
                 "Structure": { "fire": 3, "prepare": 10, "repeat": 20 }
               },
@@ -64,12 +65,45 @@ final class BuiltinTemplates {
               "Body": { "skin": "strategos:units/infantry" }
             }
             """;
+    static final String ARCHER = """
+            {
+              "parent": "strategos:template/unit_infantry",
+              "Identity": { "name": "strategos.unit.archer", "icon": "minecraft:bow", "classes": "+Archer" },
+              "Health": { "max": 70 },
+              "UnitMotion": { "walkSpeed": 0.2 },
+              "Attack": { "Ranged": { "pierce": 16, "range": 20, "prepare": 16, "repeat": 20, "speed": 4, "spread": 2.25 } },
+              "Vision": { "range": 32 },
+              "Resistance": { "hack": 1, "pierce": 1, "crush": 1 },
+              "Cost": {
+                "resources": { "food": 60, "wood": 40, "iron": 20 },
+                "population": 1,
+                "time": { "$derive": { "from": "strategos:unit/worker", "path": "Cost/time", "factor": 1.5 }, "note": "Training an archer takes as long as drilling a spearman" }
+              },
+              "Body": { "skin": "strategos:units/infantry" }
+            }
+            """;
+    static final String HORSEMAN = """
+            {
+              "parent": "strategos:template/unit_base",
+              "Identity": { "name": "strategos.unit.horseman", "icon": "minecraft:saddle", "classes": "+Cavalry +Melee +Organic" },
+              "Health": { "max": 200 },
+              "UnitMotion": { "walkSpeed": 0.34, "mobility": "large" },
+              "Attack": { "Melee": { "hack": 10, "reach": 1.5, "prepare": 8, "repeat": 18 } },
+              "Resistance": { "hack": 3, "pierce": 2, "crush": 2 },
+              "Cost": {
+                "resources": { "food": 80, "wood": 40, "iron": 30 },
+                "population": 1,
+                "time": { "$derive": { "from": "strategos:unit/worker", "path": "Cost/time", "factor": 1.5 }, "note": "Training a horseman takes as long as drilling a spearman" }
+              },
+              "Body": { "entityType": "strategos:unit_mount", "width": 1.4, "height": 2.0, "radius": 0.7, "skin": "strategos:units/infantry" }
+            }
+            """;
     static final String WORKER = """
             {
               "parent": "strategos:template/unit_base",
               "Identity": { "name": "strategos.unit.worker", "icon": "minecraft:wooden_axe", "classes": "+Worker +Gatherer +Builder +Organic" },
               "Health": { "max": 50 },
-              "Behaviour": { "flee": 8 },
+              "Behaviour": { "flee": 8, "stance": "passive" },
               "Cost": { "resources": { "food": 60 }, "population": 1, "time": 10 },
               "Builder": { "rate": 1 },
               "ResourceGatherer": {
@@ -136,9 +170,11 @@ final class BuiltinTemplates {
               "Building": { "blueprint": "strategos:civic_centre" },
               "Placement": { "civicReach": 0, "spacing": 64 },
               "Health": { "max": 2000 },
+              "Attack": { "Building": { "arrows": 3, "perGarrisoned": 1, "interval": 80, "pierce": 8, "range": 24 } },
               "Cost": { "resources": { "wood": 300, "stone": 200, "iron": 100 }, "time": 150 },
               "Dropsite": { "resources": "food wood stone iron" },
               "Housing": { "capacity": 20 },
+              "GarrisonHolder": { "capacity": 20, "classes": "Worker Infantry" },
               "Trainer": { "units": "strategos:unit/worker", "batchExponent": 0.8 },
               "Limit": { "count": 1 }
             }
@@ -174,7 +210,7 @@ final class BuiltinTemplates {
               "Resistance": { "fire": 0 },
               "Health": { "max": 1200 },
               "Cost": { "resources": { "wood": 200, "stone": 100, "iron": 50 }, "time": 60 },
-              "Trainer": { "units": "strategos:unit/infantry", "batchExponent": 0.8 }
+              "Trainer": { "units": "strategos:unit/infantry strategos:unit/archer strategos:unit/horseman", "batchExponent": 0.8 }
             }
             """;
 
@@ -256,7 +292,11 @@ final class BuiltinTemplates {
             new TemplateId("strategos:building/quarry_large"),
             new TemplateId("strategos:unit/chicken"), // M4 T7
             new TemplateId("strategos:unit/pig"),
-            new TemplateId("strategos:unit/sheep")));
+            new TemplateId("strategos:unit/sheep"),
+            new TemplateId("strategos:building/farmstead"), // M4, previously appended implicitly
+            new TemplateId("strategos:building/storehouse"),
+            new TemplateId("strategos:unit/archer"), // M5
+            new TemplateId("strategos:unit/horseman")));
 
     private BuiltinTemplates() {}
 
@@ -269,6 +309,8 @@ final class BuiltinTemplates {
                         raw("strategos:template/building_base", BUILDING_BASE),
                         raw("strategos:unit/debug_walker", DEBUG_WALKER),
                         raw("strategos:unit/infantry", INFANTRY),
+                        raw("strategos:unit/archer", ARCHER),
+                        raw("strategos:unit/horseman", HORSEMAN),
                         raw("strategos:unit/worker", WORKER),
                         raw("strategos:unit/sheep", SHEEP),
                         raw("strategos:unit/pig", PIG),
