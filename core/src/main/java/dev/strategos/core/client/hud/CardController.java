@@ -19,9 +19,7 @@ import dev.strategos.core.protocol.TrainBatch;
 import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.Stance;
 import dev.strategos.core.shared.TemplateId;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 import org.jspecify.annotations.Nullable;
 
@@ -49,8 +47,6 @@ public final class CardController {
     private List<Integer> lastUnits = List.of();
     private @Nullable Integer lastBuilding;
     private @Nullable Integer demolishAsked;
-    /** The stance each unit was last given from this card: what the client knows, the server not telling. */
-    private final Map<Integer, Stance> chosen = new HashMap<>();
 
     /** Whether the build page is open. */
     public boolean buildPage() {
@@ -165,9 +161,6 @@ public final class CardController {
                 }
                 send.accept(new SetStance(
                         UnitSet.of(units.stream().mapToInt(Integer::intValue).toArray()), stance));
-                for (int unit : units) {
-                    chosen.put(unit, stance);
-                }
                 yield new Click(Effect.SENT, -1);
             }
             case BUILD_PAGE -> {
@@ -186,13 +179,12 @@ public final class CardController {
     }
 
     /**
-     * The stance unit {@code handle} of template {@code template} is known to have: the last this card gave it, else
-     * its template's ({@code Behaviour/stance}), else aggressive.
+     * The stance a unit of template {@code template} has: the one the server sent for it ({@code received}, a unit the
+     * viewer gave one), else its template's ({@code Behaviour/stance}), else aggressive.
      */
-    public Stance stanceOf(int handle, TemplateSet templates, int template) {
-        Stance given = chosen.get(handle);
-        if (given != null) {
-            return given;
+    public static Stance stanceOf(TemplateSet templates, int template, @Nullable Stance received) {
+        if (received != null) {
+            return received;
         }
         ValuePath path = templates.valuePaths().byPath(CorePaths.STANCE);
         double code = path == null || !templates.has(template) ? Double.NaN : templates.value(template, path.id());

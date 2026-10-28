@@ -13,6 +13,7 @@ import dev.strategos.core.protocol.UnitSummary;
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
+import dev.strategos.core.shared.Stance;
 import dev.strategos.core.sim.MatchQueries;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.UnitView;
@@ -189,6 +190,7 @@ public final class ReplicationService {
                 orders.add(new UnitDetail.Order(o.kind(), (float) o.x(), (float) o.z()));
             }
             StatBreakdown speed = q.stats(handle, CorePaths.WALK_SPEED);
+            Stance stance = q.explicitStance(handle);
             units.add(new UnitDetail.Unit(
                     handle,
                     unit.templateIndex(),
@@ -199,7 +201,8 @@ public final class ReplicationService {
                     orders,
                     q.carriedResource(handle),
                     q.carriedAmount(handle),
-                    target));
+                    target,
+                    stance == null ? UnitDetail.NO_STANCE : stance.code()));
         }
         return new UnitDetail(matchId, q.tick(), units);
     }

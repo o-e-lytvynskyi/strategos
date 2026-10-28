@@ -489,3 +489,10 @@ a criterion testable; none adds scope, and no status changed. The owner may veto
 | Card | Change | Why |
 |---|---|---|
 | UNIT-05 | Precondition idle and walking branches on a disposable match before measuring either mode on a fresh match; retain 300 units, 200 warm-up ticks and 600 samples per measured mode, the same orders and 30% limit | Sequential cold/warm branch profiles biased the comparison. Existing JFR shows walking-triggered deoptimizations and C2 compilation after idle was measured. The fresh measured match preserves the original initial workload; Windows CPU invalidation and platform boundaries remain in force. |
+
+### 2026-10-28 — M5: the idle measurement interleaved (the owner's choice)
+
+| Card | Change | Why |
+|---|---|---|
+| UNIT-05 | `perftests.idle_300_costs_a_third` steps the standing and the walking match together, tick by tick, in two rounds that swap which match steps first (200 warm-up ticks and 300 samples per mode a round, 600 a mode in all); the walking match stands in a copy of the arena 52 blocks east. Replaces 2026-10-27's sequential measurement after a disposable precondition. The 300 units, the orders and the 30 % limit are unchanged | Measured one after the other, the two modes saw different background load on a desktop Mac and the ratio failed on main itself (0.31–0.35 at foreign CPU 0.11–0.13, 0.155 on a quiet machine); stepped together both see the same load. The first-stepped match pays the cold caches, hence the swap. Interleaved: 0.297 and 0.294 under foreign CPU 0.11–0.18 |
+

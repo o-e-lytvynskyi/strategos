@@ -66,6 +66,7 @@ public final class PerfTests {
     private static final Vec2d EAST = new Vec2d(39.5, 39.5);
     private static final int WARM_UP = 200;
     private static final int SAMPLES = 600;
+    private static final int NEIGHBOUR_OFFSET = 52;
     private static final int REORDER_EVERY = 120;
     private static final int MOUNTED = 200;
     private static final int WRITER_WARM_UP = 100;
@@ -78,117 +79,67 @@ public final class PerfTests {
 
     /**
      * UNIT-05.5: 300 standing units cost at most 30 % of the same 300 walking, budget A's p50 each over {@value
-     * #SAMPLES} ticks after {@value #WARM_UP} of warm-up: first standing, then sent across and back every {@value
-     * #REORDER_EVERY} ticks. Gated under {@code a}; writes {@code idle_300.json}.
+     * #SAMPLES} ticks after {@value #WARM_UP} of warm-up. A standing and a walking match live side by side (the second
+     * on a copy of the arena) and every server tick steps both, so the two modes share the JVM's profile and the
+     * machine's background load. The match stepped first in a tick pays for the caches the rest of the tick left cold,
+     * so two rounds swap the order, each contributing half the samples of each mode. The walking match is sent across
+     * and back every {@value #REORDER_EVERY} ticks. Gated under {@code a}; writes {@code idle_300.json}.
      */
     @StrategosTest(batch = "perf_idle", arena = "arena_flat_48", timeoutTicks = 3_000)
     public static void idle300CostsAThird(GameTestHelper h) {
-        MatchRuntime rt = MatchFixture.create(h, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
-        rt.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(0), WEST, 150, 6));
-        rt.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(1), EAST, 150, 6));
         Window window = new Window();
         var state = new Object() {
-            MatchRuntime measured = rt;
-            long warmingFrom = -1;
-            long warmOrderedAt = -1;
-            boolean warmToEast = true;
-            long from = -1;
-            long orderedAt = -1;
-            boolean toEast = true;
-            int idleSamples;
-            int movingSamples;
+            final Pair[] pair = new Pair[1];
             final long[] idle = new long[SAMPLES];
             final long[] moving = new long[SAMPLES];
             final long[] idleAdapter = new long[SAMPLES];
             final long[] movingAdapter = new long[SAMPLES];
             final long[][] idlePhases = new long[dev.strategos.core.sim.Phase.values().length][SAMPLES];
             final long[][] movingPhases = new long[dev.strategos.core.sim.Phase.values().length][SAMPLES];
+            List<String> phaseNames = List.of();
         };
-        h.startSequence()
-                .thenWaitUntil(() -> check(
-                        core(rt).queries().unitCount() == 300 && rt.bodies().count() == 300,
-                        "the 300 units and bodies are not there yet"))
-                .thenExecute(() -> TickPacer.pace(true))
-                // Warm both activity branches before either measurement, then restore the original workload
-                // with a fresh match. Otherwise the later walking mode sees a differently compiled JVM.
-                .thenExecute(() -> state.warmingFrom = core(rt).queries().tick())
-                .thenWaitUntil(
-                        () -> check(core(rt).queries().tick() - state.warmingFrom >= WARM_UP, "preconditioning idle"))
-                .thenExecute(() -> state.warmingFrom = core(rt).queries().tick())
-                .thenWaitUntil(() -> {
-                    long tick = core(rt).queries().tick();
-                    if (state.warmOrderedAt < 0 || tick - state.warmOrderedAt >= REORDER_EVERY) {
-                        reorder(rt, state.warmToEast);
-                        state.warmToEast = !state.warmToEast;
-                        state.warmOrderedAt = tick;
-                    }
-                    check(tick - state.warmingFrom >= WARM_UP, "preconditioning walking");
-                })
-                .thenExecute(() -> {
-                    StrategosServer.get().matches().dispose(rt.id());
-                    state.measured = MatchFixture.create(h, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
-                    state.measured.submit(
-                            PlayerSlot.ADMIN,
-                            new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(0), WEST, 150, 6));
-                    state.measured.submit(
-                            PlayerSlot.ADMIN,
-                            new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(1), EAST, 150, 6));
-                })
-                .thenWaitUntil(() -> check(
-                        core(state.measured).queries().unitCount() == 300
-                                && state.measured.bodies().count() == 300,
-                        "the measured 300 units and bodies are not there yet"))
-                .thenWaitUntil(() -> {
-                    long tick = core(state.measured).queries().tick();
-                    if (state.from < 0) {
-                        state.from = tick;
-                        window.start();
-                    }
-                    if (tick - state.from >= WARM_UP) {
-                        int sample = state.idleSamples++;
-                        state.idle[sample] = core(state.measured).timers().lastTotalNanos();
-                        state.idleAdapter[sample] =
-                                core(state.measured).timers().lastAdapterNanos();
-                        samplePhases(
-                                state.idlePhases,
-                                sample,
-                                core(state.measured).timers().lastPhaseNanos());
-                        if (state.idleSamples % 20 == 0) {
-                            window.sampleForeignLoad();
+        var sequence = h.startSequence().thenExecute(() -> TickPacer.pace(true));
+        for (int round = 0; round < 2; round++) {
+            boolean standingFirst = round == 0;
+            int offset = round * (SAMPLES / 2);
+            sequence = sequence.thenExecute(() -> state.pair[0] = Pair.spawn(h, standingFirst))
+                    .thenWaitUntil(() -> check(state.pair[0].ready(), "the 600 units and bodies are not there yet"))
+                    .thenWaitUntil(() -> {
+                        Pair p = state.pair[0];
+                        long tick = core(p.walking).queries().tick();
+                        if (p.orderedAt < 0 || tick - p.orderedAt >= REORDER_EVERY) {
+                            if (p.orderedAt < 0) {
+                                p.from = tick;
+                                window.start();
+                            }
+                            reorder(p.walking, p.toEast);
+                            p.toEast = !p.toEast;
+                            p.orderedAt = tick;
                         }
-                    }
-                    check(state.idleSamples >= SAMPLES, "standing: " + state.idleSamples);
-                })
-                .thenWaitUntil(() -> {
-                    long tick = core(state.measured).queries().tick();
-                    if (state.orderedAt < 0 || tick - state.orderedAt >= REORDER_EVERY) {
-                        if (state.orderedAt < 0) {
-                            state.from = tick;
+                        if (tick - p.from >= WARM_UP) {
+                            int at = offset + p.samples++;
+                            var standingTimers = core(p.standing).timers();
+                            var walkingTimers = core(p.walking).timers();
+                            state.idle[at] = standingTimers.lastTotalNanos();
+                            state.moving[at] = walkingTimers.lastTotalNanos();
+                            state.idleAdapter[at] = standingTimers.lastAdapterNanos();
+                            state.movingAdapter[at] = walkingTimers.lastAdapterNanos();
+                            samplePhases(state.idlePhases, at, standingTimers.lastPhaseNanos());
+                            samplePhases(state.movingPhases, at, walkingTimers.lastPhaseNanos());
+                            state.phaseNames = walkingTimers.phaseNames();
+                            if (p.samples % 20 == 0) {
+                                window.sampleForeignLoad();
+                            }
                         }
-                        reorder(state.measured, state.toEast);
-                        state.toEast = !state.toEast;
-                        state.orderedAt = tick;
-                    }
-                    if (tick - state.from >= WARM_UP) {
-                        int sample = state.movingSamples++;
-                        state.moving[sample] = core(state.measured).timers().lastTotalNanos();
-                        state.movingAdapter[sample] =
-                                core(state.measured).timers().lastAdapterNanos();
-                        samplePhases(
-                                state.movingPhases,
-                                sample,
-                                core(state.measured).timers().lastPhaseNanos());
-                        if (state.movingSamples % 20 == 0) {
-                            window.sampleForeignLoad();
-                        }
-                    }
-                    check(state.movingSamples >= SAMPLES, "walking: " + state.movingSamples);
-                })
-                .thenExecute(() -> {
+                        check(p.samples >= SAMPLES / 2, "sampling: " + p.samples + " of " + SAMPLES / 2);
+                    })
+                    .thenExecute(() -> state.pair[0].dispose(h));
+        }
+        sequence.thenExecute(() -> {
                     TickPacer.pace(false);
                     long idle = Percentiles.percentile(state.idle, 0.50);
-                    long walking = Percentiles.percentile(state.moving, 0.50);
-                    double ratio = (double) idle / walking;
+                    long moving = Percentiles.percentile(state.moving, 0.50);
+                    double ratio = (double) idle / moving;
                     double foreign = window.meanForeignLoad();
                     boolean over = ratio > 0.30;
                     String verdict = foreign > INVALID_FOREIGN_LOAD
@@ -198,26 +149,98 @@ public final class PerfTests {
                     json.addProperty("test", "idle_300");
                     json.addProperty("gate", "a");
                     json.addProperty("idleP50", idle);
-                    json.addProperty("movingP50", walking);
+                    json.addProperty("movingP50", moving);
                     json.addProperty("ratio", ratio);
                     json.addProperty("limit", 0.30);
-                    json.addProperty("preconditionTicksPerMode", WARM_UP);
+                    json.addProperty("interleaved", true);
                     json.addProperty("warmUpTicksPerMode", WARM_UP);
                     json.addProperty("samplesPerMode", SAMPLES);
                     json.addProperty("idleAdapterP50", Percentiles.percentile(state.idleAdapter, 0.5));
                     json.addProperty("movingAdapterP50", Percentiles.percentile(state.movingAdapter, 0.5));
-                    json.add(
-                            "idlePhaseP50Ns",
-                            phaseMedians(core(state.measured).timers().phaseNames(), state.idlePhases));
-                    json.add(
-                            "movingPhaseP50Ns",
-                            phaseMedians(core(state.measured).timers().phaseNames(), state.movingPhases));
+                    json.add("idlePhaseP50Ns", phaseMedians(state.phaseNames, state.idlePhases));
+                    json.add("movingPhaseP50Ns", phaseMedians(state.phaseNames, state.movingPhases));
                     json.addProperty("foreignCpu", foreign);
                     json.addProperty("verdict", verdict);
                     write("idle_300", json);
                     check(!verdict.equals("fail"), "300 standing units cost " + ratio + " of 300 walking, over 0.30");
                 })
                 .thenSucceed();
+    }
+
+    /** A standing and a walking match of one round of {@link #idle300CostsAThird}. */
+    private static final class Pair {
+        final MatchRuntime standing;
+        final MatchRuntime walking;
+        long from = -1;
+        long orderedAt = -1;
+        boolean toEast = true;
+        int samples;
+
+        private Pair(MatchRuntime standing, MatchRuntime walking) {
+            this.standing = standing;
+            this.walking = walking;
+        }
+
+        /** Creates both matches, the one stepped first in each tick first. */
+        static Pair spawn(GameTestHelper h, boolean standingFirst) {
+            if (standingFirst) {
+                MatchRuntime standing = spawnArena(h, 0);
+                return new Pair(standing, spawnArena(h, NEIGHBOUR_OFFSET));
+            }
+            MatchRuntime walking = spawnArena(h, NEIGHBOUR_OFFSET);
+            return new Pair(spawnArena(h, 0), walking);
+        }
+
+        boolean ready() {
+            return core(standing).queries().unitCount() == 300
+                    && standing.bodies().count() == 300
+                    && core(walking).queries().unitCount() == 300
+                    && walking.bodies().count() == 300;
+        }
+
+        void dispose(GameTestHelper h) {
+            StrategosServer.get().matches().dispose(standing.id());
+            StrategosServer.get().matches().dispose(walking.id());
+            unforceNeighbour(h, walking.space());
+        }
+    }
+
+    /**
+     * A match over a copy of the arena {@code offsetX} blocks east of it (floor and air laid, chunks kept loaded), 150
+     * walkers in each corner as in the single-match test.
+     */
+    private static MatchRuntime spawnArena(GameTestHelper h, int offsetX) {
+        BlockPos corner = h.absolutePos(BlockPos.ZERO);
+        MatchSpace space = new MatchSpace(
+                h.getLevel().dimension(), corner.offset(offsetX, 0, 0), 48, 48, corner.getY(), corner.getY() + 3);
+        if (offsetX > 0) {
+            for (int cx = space.minChunk().x; cx <= space.maxChunk().x; cx++) {
+                for (int cz = space.minChunk().z; cz <= space.maxChunk().z; cz++) {
+                    h.getLevel().setChunkForced(cx, cz, true);
+                }
+            }
+            for (int x = 0; x < 48; x++) {
+                for (int z = 0; z < 48; z++) {
+                    BlockPos at = space.origin().offset(x, 0, z);
+                    h.getLevel().setBlock(at, Blocks.SMOOTH_STONE.defaultBlockState(), 2);
+                    for (int y = 1; y < 4; y++) {
+                        h.getLevel().setBlock(at.above(y), Blocks.AIR.defaultBlockState(), 2);
+                    }
+                }
+            }
+        }
+        MatchRuntime rt = MatchFixture.create(h, space, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
+        rt.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(0), WEST, 150, 6));
+        rt.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(1), EAST, 150, 6));
+        return rt;
+    }
+
+    private static void unforceNeighbour(GameTestHelper h, MatchSpace space) {
+        for (int cx = space.minChunk().x; cx <= space.maxChunk().x; cx++) {
+            for (int cz = space.minChunk().z; cz <= space.maxChunk().z; cz++) {
+                h.getLevel().setChunkForced(cx, cz, false);
+            }
+        }
     }
 
     private static void samplePhases(long[][] samples, int at, long[] phases) {

@@ -333,11 +333,18 @@ public final class RtsHud {
         controller.selected(selection.handles(), selection.building());
         List<Integer> unitTemplates = new ArrayList<>();
         List<Stance> stances = new ArrayList<>();
+        Map<Integer, Stance> received = new HashMap<>();
+        for (UnitDetail.Unit u : StrategosClient.model().details()) {
+            Stance sent = u.stance() == UnitDetail.NO_STANCE ? null : Stance.of(u.stance());
+            if (sent != null) {
+                received.put(u.handle(), sent);
+            }
+        }
         for (int h : selection.handles()) {
             UnitSpawnData d = bodies.get(h);
             if (d != null) {
                 unitTemplates.add(d.templateIndex());
-                stances.add(controller.stanceOf(h, templates, d.templateIndex()));
+                stances.add(CardController.stanceOf(templates, d.templateIndex(), received.get(h)));
             }
         }
         BuildingState.Entry own = selection.building() == null ? null : shown;

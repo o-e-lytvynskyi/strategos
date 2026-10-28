@@ -3,6 +3,7 @@ package dev.strategos.core.sim;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.FactionSlot;
+import dev.strategos.core.shared.Stance;
 import dev.strategos.core.sim.build.BuildingView;
 import dev.strategos.core.sim.econ.EconomyTimes;
 import dev.strategos.core.sim.econ.FactionTreasury;
@@ -39,6 +40,9 @@ public interface MatchQueries {
      * it, and last the idle ones.
      */
     int[] workers(FactionSlot faction);
+
+    /** The stance a player gave a live unit (CMB-05), or null when it fights as its template says or is dead. */
+    @Nullable Stance explicitStance(int handle);
 
     /** The resource a live unit carries, its index in the economy, or -1 when it carries none or is dead (ECO-05). */
     int carriedResource(int handle);

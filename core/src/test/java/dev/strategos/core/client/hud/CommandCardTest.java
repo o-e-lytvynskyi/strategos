@@ -232,8 +232,10 @@ class CommandCardTest {
         ClientMatchModel model = model(faction(0, 0));
         int spearman = index("strategos:unit/infantry");
         CardController controller = new CardController();
-        assertThat(controller.stanceOf(5, T, spearman)).as("its template's").isEqualTo(Stance.AGGRESSIVE);
-        assertThat(controller.stanceOf(6, T, WORKER))
+        assertThat(CardController.stanceOf(T, spearman, null))
+                .as("its template's")
+                .isEqualTo(Stance.AGGRESSIVE);
+        assertThat(CardController.stanceOf(T, WORKER, null))
                 .as("a worker's template says passive")
                 .isEqualTo(Stance.PASSIVE);
         CommandCard card = CommandCard.of(
@@ -262,6 +264,37 @@ class CommandCardTest {
                         CardController.shared(List.of(Stance.AGGRESSIVE, Stance.PASSIVE))),
                 null);
         assertThat(mixed.buttons()).extracting(CommandCard.Button::on).containsOnly(false);
+    }
+
+    @Test
+    void theActiveStanceComesFromTheReceivedDataWhoeverSetIt() {
+        int spearman = index("strategos:unit/infantry");
+        assertThat(CardController.stanceOf(T, spearman, Stance.STAND_GROUND))
+                .as("a stance the server sent beats the template's")
+                .isEqualTo(Stance.STAND_GROUND);
+        assertThat(CardController.stanceOf(T, spearman, null))
+                .as("absent: the template's")
+                .isEqualTo(Stance.AGGRESSIVE);
+        ClientMatchModel model = model(faction(0, 0));
+        // another client's SetStance, seen only as the detail the server pushed
+        List<Stance> stances = List.of(
+                CardController.stanceOf(T, spearman, Stance.PASSIVE),
+                CardController.stanceOf(T, spearman, Stance.PASSIVE));
+        CommandCard card = CommandCard.of(
+                new CommandCard.Input(
+                        T,
+                        RESOURCES,
+                        model.faction(),
+                        List.of(spearman, spearman),
+                        false,
+                        List.of(),
+                        false,
+                        CardController.shared(stances)),
+                null);
+        assertThat(card.buttons())
+                .filteredOn(CommandCard.Button::on)
+                .extracting(CommandCard.Button::stance)
+                .containsExactly(Stance.PASSIVE);
     }
 
     @Test
@@ -321,7 +354,7 @@ class CommandCardTest {
     }
 
     @Test
-    void aStanceClickSendsOneSetStanceForTheSelectionAndIsRemembered() {
+    void aStanceClickSendsOneSetStanceForTheSelection() {
         ClientMatchModel model = model(faction(0, 0));
         int spearman = index("strategos:unit/infantry");
         CardController controller = new CardController();
@@ -335,9 +368,8 @@ class CommandCardTest {
         CardController.Click click = controller.click(defensive, units, null, T, sent::add);
         assertThat(click.effect()).isEqualTo(CardController.Effect.SENT);
         assertThat(sent).containsExactly(new SetStance(UnitSet.of(5, 6), Stance.DEFENSIVE));
-        assertThat(controller.stanceOf(5, T, spearman)).isEqualTo(Stance.DEFENSIVE);
-        assertThat(controller.stanceOf(7, T, spearman))
-                .as("an unselected unit is unchanged")
+        assertThat(CardController.stanceOf(T, spearman, null))
+                .as("the card remembers nothing: only what the server sent counts")
                 .isEqualTo(Stance.AGGRESSIVE);
         assertThat(controller.click(defensive, List.of(), null, T, sent::add).effect())
                 .as("nothing selected, nothing sent")

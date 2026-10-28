@@ -3,6 +3,7 @@ package dev.strategos.core.sim;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
+import dev.strategos.core.shared.Stance;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.build.BuildingView;
@@ -149,6 +150,11 @@ final class QueriesImpl implements MatchQueries {
     @Override
     public FactionTreasury treasury(FactionSlot faction) {
         return state.treasury().view(faction.value());
+    }
+
+    @Override
+    public @Nullable Stance explicitStance(int handle) {
+        return state.entities().isAlive(handle) ? state.stances().explicit(Handle.index(handle)) : null;
     }
 
     @Override
