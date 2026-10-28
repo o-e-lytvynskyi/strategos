@@ -5,9 +5,9 @@
 ## Now
 
 - **Milestone:** M7 Multiplayer specification only; no implementation tasks claimed.
-- **In progress:** none; assignment-only PR awaits human merge before specification work.
-- **Last finished task:** claim availability and preliminary dependency assessment.
-- **Next task:** after assignment merge, write the M7 implementation specification with card-to-task coverage, dependency ordering, contracts, acceptance evidence and required test gates.
+- **In progress:** cloud validation of the completed specification; the owner explicitly instructed this session to finish the specification before sending the delivery PR, overriding the wait for assignment merge for this planning claim only.
+- **Last finished task:** [M7 planning specification](../milestones/M7-multiplayer.md): 25 future tasks, all 13 cards traced, contracts, dependencies, tests and owner inputs.
+- **Next task:** complete GitHub Actions verification, then update PR #32 from assignment-only to the planning delivery. No M7 runtime implementation is claimed or opened.
 - **Merged from main last:** 3c1f430 (2026-10-28), branch creation base.
 
 ## Depends on unfinished work
@@ -22,6 +22,16 @@ Existing main contracts cover the earlier match, core, replication and test infr
 
 ## Log
 
+### 2026-10-28 — planning specification
+
+- Following the owner's explicit instruction to do the work and then send the PR, prepared the specification before assignment merge. PR #32 will become the combined assignment and planning delivery; the procedural exception does not authorize a merge or runtime implementation.
+- Designed separate player/faction identity, co-op control, diplomacy/victory, lobby, recipient privacy, reconnect, fuzzing, commander hardening, team UI/AI and S11/PERF-10. Every card has task and acceptance traceability; QA-14 remains floating and ART-03 retains its MVP/theme gates.
+- Inspected current roster/ownership/replication/gateway/test seams and checked commander hook signatures in cached Minecraft 1.21.1 + NeoForge 21.1.264 sources. No Minecraft API or runtime implementation was added.
+- Card statuses remain proposed; the roadmap/card pages link the planning specification. No STATE, worklog, accepted ADR or product decision changed.
+- Reconciled the co-op demo's fighting/scouting prose with D-08: the existing first-person observer remains the baseline; fighting/scouting requires an owner scope decision because CMB-08 is deferred.
+- Local bookkeeping: UTF-8 roadmap check covers 245 cards with zero problems; claim check covers eight rows with zero problems. Additional document checks cover all 13 cards, 25 tasks with matching progress entries, acyclic explicit task dependencies and resolving local links. `git diff --check` passed.
+- Local `verifyFast verify` was interrupted at the owner's request to run checks in the cloud; it is not a passing full-gate result. GitHub Actions `verify.yml` will validate the pushed specification commit via workflow dispatch; no workflow or threshold change is needed.
+
 ### 2026-10-28 — assignment request
 
 - The owner requested the M7 spec claim. The fetched main registry has no M7 assignment or reservation; the open PR list has no competing M7 claim.
@@ -30,12 +40,13 @@ Existing main contracts cover the earlier match, core, replication and test infr
 
 ## For the owner
 
-1. Merge the assignment-only PR to register this planning claim. Specification work waits for that merge.
-2. D-20 hosting and D-03 civilisation theme remain owner decisions. The specification can document recommended options and their blocked implementation tasks; this claim does not decide them or open M7 implementation.
+1. Review the combined assignment/planning delivery in PR #32. The M7 implementation plan is specified; approve scope and explicitly open ready tasks for claims when appropriate. Card statuses remain proposed until then.
+2. D-20 hosting and D-03 civilisation theme remain owner decisions; confirm the applicable D-04 style direction and name owner asset tasks before ART-03. The specification documents recommendations and blocked implementation tasks without deciding them.
 
 ## Decisions taken
 
 - 2026-10-28 · Claim planning only on a separate branch from main — keeps ownership bounded and independent of existing deliveries — change scope only through a reviewed claim update.
+- 2026-10-28 · Complete planning before assignment merge on the owner's explicit session instruction — deliver a combined assignment/specification PR — the owner may return it to assignment-only by deferring the specification commit.
 
 ## Pitfalls
 

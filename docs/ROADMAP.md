@@ -445,6 +445,9 @@ Cards: [roadmap/M6-first-skirmish.md](roadmap/M6-first-skirmish.md#cards). 23 ca
 
 Cards: [roadmap/M7-multiplayer.md](roadmap/M7-multiplayer.md#cards). 13 cards, at most 51 card-days.
 
+Planning spec: [M7 Multiplayer](milestones/M7-multiplayer.md). Tasks and contracts are specified
+for review; the cards below remain `proposed` until owner approval and opening for claims.
+
 | ID | Feature | Size | Depends on | Status |
 |---|---|---|---|---|
 | QA-14 | 26.x platform decision gate (floating: 2027-Q2 or the MVP gate) | M | — | proposed |
