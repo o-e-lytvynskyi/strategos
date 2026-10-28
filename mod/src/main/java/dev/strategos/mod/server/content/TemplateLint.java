@@ -15,6 +15,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.EmptyBlockGetter;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
@@ -68,7 +69,8 @@ public final class TemplateLint {
 
     /**
      * A blueprint's palette (BLD-01.2): every state parses, and none burns, since fire would remove a building's blocks
-     * behind the core's back (04 §11.9); nor may a state carry a block entity, which M3's buildings never need.
+     * behind the core's back (04 §11.9); nor may a state carry a block entity, which M3's buildings never need, but the town bell (BLD-16): its entity holds
+     * nothing the core keeps and the world creates it with the block.
      */
     static List<TemplateProblem> palette(Blueprint bp, String file) {
         List<TemplateProblem> problems = new ArrayList<>();
@@ -85,7 +87,7 @@ public final class TemplateLint {
                 problems.add(TemplateProblem.error(
                         file, "/Blueprint/palette", bp.id() + " holds " + text + ", which burns"));
             }
-            if (state.hasBlockEntity()) {
+            if (state.hasBlockEntity() && !state.is(Blocks.BELL)) {
                 problems.add(TemplateProblem.error(
                         file, "/Blueprint/palette", bp.id() + " holds " + text + ", a block entity"));
             }

@@ -33,7 +33,7 @@ tasks.register('jmh', JavaExec) {
     classpath = sourceSets.jmh.runtimeClasspath
     mainClass = 'org.openjdk.jmh.Main'
     args providers.gradleProperty('jmh.include').getOrElse('.*'),
-         '-f', '2', '-wi', '3', '-w', '1s', '-i', '5', '-r', '1s',
+         '-wi', '3', '-w', '1s', '-i', '5', '-r', '1s',     // forks per class: @Fork(2); five for SpatialBench.rebuild1000
          '-prof', 'gc',                                    // gc.alloc.rate.norm for the @HotPath check (QA-07.4)
          '-jvmArgsAppend', '-Xms1g -Xmx1g -XX:+UseG1GC',   // heap and GC pinned in every fork (QA-07)
          '-rf', 'json', '-rff', jmhResult.absolutePath

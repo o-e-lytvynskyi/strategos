@@ -10,6 +10,7 @@ import dev.strategos.core.protocol.MatchNews;
 import dev.strategos.core.protocol.UnitDetail;
 import dev.strategos.core.protocol.UnitHud;
 import dev.strategos.core.protocol.UnitSummary;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +36,8 @@ public final class ClientMatchModel {
     private long tick = -1;
     private List<UnitSummary.Entry> units = List.of();
     private final Map<Integer, Integer> health = new HashMap<>();
+    private int[] slotOfIndex = new int[0]; // a unit's place in {@code units} by index, -1 for none
+    private long[] hitAt = new long[0]; // when a unit's hit points last fell, by index, in milliseconds
     private List<UnitDetail.Unit> details = List.of();
 
     /** Takes a frame: the joined match's, newer than the last; a new match's replaces everything. */
@@ -48,16 +51,50 @@ public final class ClientMatchModel {
         matchId = frame.matchId();
         tick = frame.tick();
         units = frame.units();
+        int most = -1;
+        for (int k = 0; k < units.size(); k++) {
+            most = Math.max(most, units.get(k).index());
+        }
+        if (slotOfIndex.length <= most) {
+            slotOfIndex = new int[Math.max(most + 1, slotOfIndex.length * 2)];
+        }
+        Arrays.fill(slotOfIndex, -1);
+        for (int k = 0; k < units.size(); k++) {
+            slotOfIndex[units.get(k).index()] = k;
+        }
     }
 
     /** Takes hit points that changed: the joined match's. */
     public void accept(UnitHud hud, int joinedMatch) {
+        accept(hud, joinedMatch, System.currentTimeMillis());
+    }
+
+    /** As {@link #accept(UnitHud, int)}, at {@code nowMillis}: a unit whose hit points fell was hit then (CMB-17). */
+    public void accept(UnitHud hud, int joinedMatch, long nowMillis) {
         if (hud.matchId() != joinedMatch) {
             return;
         }
         for (UnitHud.Entry e : hud.units()) {
+            int before = health(e.index());
             health.put(e.index(), e.health());
+            if (e.health() < before) {
+                if (hitAt.length <= e.index()) {
+                    hitAt = Arrays.copyOf(hitAt, Math.max(e.index() + 1, hitAt.length * 2));
+                }
+                hitAt[e.index()] = nowMillis;
+            }
         }
+    }
+
+    /** The unit of index {@code index} in the last frame, or null when the frame holds none (CMB-17). */
+    public UnitSummary.@Nullable Entry unit(int index) {
+        int slot = index >= 0 && index < slotOfIndex.length ? slotOfIndex[index] : -1;
+        return slot < 0 ? null : units.get(slot);
+    }
+
+    /** When unit {@code index}'s hit points last fell, in milliseconds; {@link Long#MIN_VALUE} when never (CMB-17). */
+    public long hitAt(int index) {
+        return index < hitAt.length && hitAt[index] != 0 ? hitAt[index] : Long.MIN_VALUE;
     }
 
     /** Takes the player's faction's state: the joined match's, newer ticks only (ECO-01). */
@@ -217,6 +254,8 @@ public final class ClientMatchModel {
         tick = -1;
         units = List.of();
         health.clear();
+        Arrays.fill(slotOfIndex, -1);
+        Arrays.fill(hitAt, 0);
         details = List.of();
     }
 

@@ -4,6 +4,8 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import dev.strategos.core.client.hud.HealthBars;
 import dev.strategos.core.client.model.ClientMatchModel;
+import dev.strategos.core.client.select.AttackLines;
+import dev.strategos.core.client.select.Flashes;
 import dev.strategos.core.client.select.Selection;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.shared.Handle;
@@ -17,7 +19,9 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.core.SectionPos;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.common.NeoForge;
@@ -27,10 +31,21 @@ import org.joml.Vector3f;
  * Health bars over the bodies (CMB-06, 04 §13.6): each frame the bodies of the joined match, interpolated to the
  * frame, and their hit points from {@code unit_hud} become {@link HealthBars}' frame data, then one batch of quads
  * facing the camera, a dark back and the fill, at {@code AFTER_PARTICLES}. Hidden with the GUI (F1). It times its work.
+ * CMB-17 joins it: the selection's attack lines, thin red quads on the ground from each unit to its target, and the
+ * under-attack flash, a red glow behind the bar of an own unit just hit, both from {@link AttackLines} and
+ * {@link Flashes} buffers extracted once a frame.
  */
 public final class HealthBarOverlay {
     private static final float THICK = 0.12F;
     private static final int BACK = 0xC0101418;
+    private static final int LINE = 0xFFE03020;
+    private static final float LINE_HALF = 0.05F;
+    private static final float LINE_LIFT = 0.08F;
+    private static final int FLASH_RGB = 0xFF3020;
+
+    private final AttackLines.Buffer lines = new AttackLines.Buffer();
+    private final Flashes.Buffer flashes = new Flashes.Buffer();
+    private int[] selected = new int[0];
 
     private final ClientMatchModel model;
     private final RtsMode rts;
@@ -68,11 +83,32 @@ public final class HealthBarOverlay {
         float partial = event.getPartialTick().getGameTimeDeltaPartialTick(false);
         Selection selection = rts.selection();
         List<HealthBars.Unit> units = new ArrayList<>();
+        List<HealthBars.Bar> glows = new ArrayList<>();
+        List<Integer> chosen = selection.handles();
+        if (chosen.size() > selected.length) {
+            selected = new int[chosen.size()];
+        }
+        for (int k = 0; k < chosen.size(); k++) {
+            selected[k] = chosen.get(k);
+        }
+        AttackLines.extract(model, selected, chosen.size(), lines);
+        Flashes.extract(model, selection.faction(), System.currentTimeMillis(), flashes);
         for (Entity e : mc.level.entitiesForRendering()) {
             if (e instanceof UnitEntity body && !body.isDeadOrDying()) {
                 UnitSpawnData data = body.spawnData();
                 if (data != null && data.matchId() == join.matchId()) {
                     Vec3 at = body.getPosition(partial);
+                    float glow = flashes.strengthOf(Handle.index(data.handle()));
+                    if (glow > 0) {
+                        double width = Math.max(HealthBars.MIN_WIDTH, body.getBbWidth() * 1.5) + 0.3;
+                        glows.add(new HealthBars.Bar(
+                                at.x,
+                                at.y + body.getBbHeight() + HealthBars.ABOVE,
+                                at.z,
+                                width,
+                                1,
+                                (int) (glow * 0xC0) << 24 | FLASH_RGB));
+                    }
                     units.add(new HealthBars.Unit(
                             at.x,
                             at.y,
@@ -87,13 +123,49 @@ public final class HealthBarOverlay {
         List<HealthBars.Bar> bars = new ArrayList<>(HealthBars.extract(units));
         bars.addAll(HealthBars.sites(model.buildings(), StrategosClient.templates(), join.originX(), join.originZ()));
         drawn = bars.size();
-        if (!bars.isEmpty()) {
-            draw(event, bars);
+        if (!bars.isEmpty() || !glows.isEmpty()) {
+            draw(event, glows, bars);
+        }
+        if (lines.count() > 0) {
+            drawLines(event, join, mc);
         }
         nanos = System.nanoTime() - start;
     }
 
-    private static void draw(RenderLevelStageEvent event, List<HealthBars.Bar> bars) {
+    /** Each line as a flat quad on the ground between its ends, {@link #LINE_HALF} either side of it. */
+    private void drawLines(RenderLevelStageEvent event, MatchJoin join, Minecraft mc) {
+        MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
+        VertexConsumer quads = buffers.getBuffer(RenderType.debugQuads());
+        PoseStack.Pose p = event.getPoseStack().last();
+        Vec3 c = event.getCamera().getPosition();
+        for (int k = 0; k < lines.count(); k++) {
+            double x0 = join.originX() + lines.fromX(k);
+            double z0 = join.originZ() + lines.fromZ(k);
+            double x1 = join.originX() + lines.toX(k);
+            double z1 = join.originZ() + lines.toZ(k);
+            double length = Math.hypot(x1 - x0, z1 - z0);
+            int bx = (int) Math.floor(x0);
+            int bz = (int) Math.floor(z0);
+            if (length < 1e-3
+                    || !mc.level.hasChunk(SectionPos.blockToSectionCoord(bx), SectionPos.blockToSectionCoord(bz))) {
+                continue;
+            }
+            float y = (float) (mc.level.getHeight(Heightmap.Types.MOTION_BLOCKING, bx, bz) - c.y) + LINE_LIFT;
+            float nx = (float) (-(z1 - z0) / length) * LINE_HALF;
+            float nz = (float) ((x1 - x0) / length) * LINE_HALF;
+            float ax = (float) (x0 - c.x);
+            float az = (float) (z0 - c.z);
+            float bxs = (float) (x1 - c.x);
+            float bzs = (float) (z1 - c.z);
+            quads.addVertex(p, ax - nx, y, az - nz).setColor(LINE);
+            quads.addVertex(p, bxs - nx, y, bzs - nz).setColor(LINE);
+            quads.addVertex(p, bxs + nx, y, bzs + nz).setColor(LINE);
+            quads.addVertex(p, ax + nx, y, az + nz).setColor(LINE);
+        }
+        buffers.endBatch(RenderType.debugQuads());
+    }
+
+    private static void draw(RenderLevelStageEvent event, List<HealthBars.Bar> glows, List<HealthBars.Bar> bars) {
         MultiBufferSource.BufferSource buffers =
                 Minecraft.getInstance().renderBuffers().bufferSource();
         VertexConsumer quads = buffers.getBuffer(RenderType.debugQuads());
@@ -103,6 +175,22 @@ public final class HealthBarOverlay {
         Vector3f left = camera.getLeftVector();
         Vector3f up = camera.getUpVector();
         Vector3f look = camera.getLookVector();
+        for (HealthBars.Bar b : glows) {
+            float half = (float) b.width() / 2;
+            quad(
+                    quads,
+                    p,
+                    (float) (b.x() - c.x),
+                    (float) (b.y() - c.y),
+                    (float) (b.z() - c.z),
+                    left,
+                    up,
+                    look,
+                    -half,
+                    half,
+                    b.argb(),
+                    -0.01F);
+        }
         for (HealthBars.Bar b : bars) {
             float x = (float) (b.x() - c.x);
             float y = (float) (b.y() - c.y);

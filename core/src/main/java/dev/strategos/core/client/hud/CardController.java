@@ -1,17 +1,23 @@
 package dev.strategos.core.client.hud;
 
+import dev.strategos.core.content.CorePaths;
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.content.ValuePath;
+import dev.strategos.core.protocol.AllClear;
 import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.CancelBuilding;
 import dev.strategos.core.protocol.CancelTrain;
 import dev.strategos.core.protocol.Command;
 import dev.strategos.core.protocol.Demolish;
 import dev.strategos.core.protocol.Reseed;
+import dev.strategos.core.protocol.RingBell;
 import dev.strategos.core.protocol.SetAutoReseed;
+import dev.strategos.core.protocol.SetStance;
 import dev.strategos.core.protocol.Stop;
 import dev.strategos.core.protocol.Train;
 import dev.strategos.core.protocol.TrainBatch;
 import dev.strategos.core.protocol.UnitSet;
+import dev.strategos.core.shared.Stance;
 import dev.strategos.core.shared.TemplateId;
 import java.util.List;
 import java.util.function.Consumer;
@@ -134,6 +140,29 @@ public final class CardController {
                         UnitSet.of(units.stream().mapToInt(Integer::intValue).toArray())));
                 yield new Click(Effect.SENT, -1);
             }
+            case RING_BELL -> {
+                if (building == null) {
+                    yield Click.NONE;
+                }
+                send.accept(new RingBell(building.handle()));
+                yield new Click(Effect.SENT, button.template());
+            }
+            case ALL_CLEAR -> {
+                if (building == null) {
+                    yield Click.NONE;
+                }
+                send.accept(new AllClear(building.handle()));
+                yield new Click(Effect.SENT, button.template());
+            }
+            case STANCE -> {
+                Stance stance = button.stance();
+                if (units.isEmpty() || stance == null) {
+                    yield Click.NONE;
+                }
+                send.accept(new SetStance(
+                        UnitSet.of(units.stream().mapToInt(Integer::intValue).toArray()), stance));
+                yield new Click(Effect.SENT, -1);
+            }
             case BUILD_PAGE -> {
                 buildPage = true;
                 yield new Click(Effect.PAGE, -1);
@@ -147,6 +176,31 @@ public final class CardController {
                 yield new Click(Effect.ARM, button.template());
             }
         };
+    }
+
+    /**
+     * The stance a unit of template {@code template} has: the one the server sent for it ({@code received}, a unit the
+     * viewer gave one), else its template's ({@code Behaviour/stance}), else aggressive.
+     */
+    public static Stance stanceOf(TemplateSet templates, int template, @Nullable Stance received) {
+        if (received != null) {
+            return received;
+        }
+        ValuePath path = templates.valuePaths().byPath(CorePaths.STANCE);
+        double code = path == null || !templates.has(template) ? Double.NaN : templates.value(template, path.id());
+        Stance own = Double.isFinite(code) ? Stance.of((int) code) : null;
+        return own != null ? own : Stance.AGGRESSIVE;
+    }
+
+    /** The stance all of {@code stances} are, or null for none or a mix. */
+    public static @Nullable Stance shared(List<Stance> stances) {
+        Stance first = stances.isEmpty() ? null : stances.get(0);
+        for (Stance s : stances) {
+            if (s != first) {
+                return null;
+            }
+        }
+        return first;
     }
 
     /** Whether a demolish of building {@code handle} waits for its confirming click. */

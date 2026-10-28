@@ -37,6 +37,12 @@ public final class CombatSystem implements MatchSystem {
 
     @Override
     public void run(MatchState s) {
+        long start = s.combatTimes().start();
+        apply(s);
+        s.combatTimes().damage(start);
+    }
+
+    private static void apply(MatchState s) {
         List<Damage> packets = s.takeDamage();
         if (packets.isEmpty()) {
             return;
@@ -57,6 +63,9 @@ public final class CombatSystem implements MatchSystem {
                 continue;
             }
             int i = Handle.index(target);
+            if (s.garrisoned(i) && !d.lethal()) {
+                continue; // inside a building nothing reaches it (BLD-16)
+            }
             double max = stats.maxHealth(i);
             double taken = health.damage(i);
             double left = max - taken;

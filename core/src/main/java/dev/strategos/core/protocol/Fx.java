@@ -14,13 +14,16 @@ public record Fx(int matchId, List<Event> events) {
     public static final int MAX_EVENTS = 64;
     /** The farthest an event's X or Z may be from the origin, in eighths: 8,191 blocks. */
     public static final int MAX_EIGHTHS = 65_535;
+    /** The longest shot flight an event may carry, in ticks. */
+    public static final int MAX_FLIGHT_TICKS = 16_383;
 
     /**
      * One event: its kind and where, X and Z within the space and Y from the origin's height, in eighths, and its datum
-     * (0 for a kind that carries none).
+     * (0 for a kind that carries none). A path kind ({@link FxKind#carriesPath}) also carries the arc's other end
+     * ({@code toX8}, {@code toY8}, {@code toZ8}, in the same units) and its flight time; the other kinds carry zeros.
      */
     @CoreApi
-    public record Event(FxKind kind, int x8, int y8, int z8, int data) {
+    public record Event(FxKind kind, int x8, int y8, int z8, int data, int toX8, int toY8, int toZ8, int flightTicks) {
         public Event {
             if (x8 < 0 || x8 > MAX_EIGHTHS || z8 < 0 || z8 > MAX_EIGHTHS) {
                 throw new IllegalArgumentException("an fx event outside its space: " + x8 + ", " + z8);
@@ -28,6 +31,43 @@ public record Fx(int matchId, List<Event> events) {
             if (!kind.carriesData() && data != 0) {
                 throw new IllegalArgumentException(kind + " carries no datum, not " + data);
             }
+            if (kind.carriesPath()) {
+                if (toX8 < 0 || toX8 > MAX_EIGHTHS || toZ8 < 0 || toZ8 > MAX_EIGHTHS) {
+                    throw new IllegalArgumentException("an fx path ends outside its space: " + toX8 + ", " + toZ8);
+                }
+                if (flightTicks < 1 || flightTicks > MAX_FLIGHT_TICKS) {
+                    throw new IllegalArgumentException("an fx flight of " + flightTicks + " ticks");
+                }
+            } else if (toX8 != 0 || toY8 != 0 || toZ8 != 0 || flightTicks != 0) {
+                throw new IllegalArgumentException(kind + " carries no path");
+            }
+        }
+
+        /** An event with a datum and no path. */
+        public Event(FxKind kind, int x8, int y8, int z8, int data) {
+            this(kind, x8, y8, z8, data, 0, 0, 0, 0);
+        }
+
+        /** A shot's event: {@code kind} at (from) with the arc's other end (to) and the flight time, in match-local blocks. */
+        public static Event shot(
+                FxKind kind,
+                double fromX,
+                double fromY,
+                double fromZ,
+                double toX,
+                double toY,
+                double toZ,
+                int flightTicks) {
+            return new Event(
+                    kind,
+                    eighths(fromX),
+                    (int) Math.round(fromY * 8),
+                    eighths(fromZ),
+                    0,
+                    eighths(toX),
+                    (int) Math.round(toY * 8),
+                    eighths(toZ),
+                    flightTicks);
         }
 
         /** An event without a datum. */
@@ -70,6 +110,10 @@ public record Fx(int matchId, List<Event> events) {
                 if (e.kind().carriesData()) {
                     out.writeZigZag(e.data());
                 }
+                if (e.kind().carriesPath()) {
+                    out.writeShort(e.toX8()).writeZigZag(e.toY8()).writeShort(e.toZ8());
+                    out.writeVarInt(e.flightTicks());
+                }
             }
         }
 
@@ -83,14 +127,24 @@ public record Fx(int matchId, List<Event> events) {
                 int x8 = in.readUnsignedShort();
                 int y8 = in.readZigZagInt();
                 int z8 = in.readUnsignedShort();
-                events[k] = new Event(kind, x8, y8, z8, kind.carriesData() ? in.readZigZagInt() : 0);
+                int data = kind.carriesData() ? in.readZigZagInt() : 0;
+                if (kind.carriesPath()) {
+                    int toX8 = in.readUnsignedShort();
+                    int toY8 = in.readZigZagInt();
+                    int toZ8 = in.readUnsignedShort();
+                    events[k] = new Event(kind, x8, y8, z8, data, toX8, toY8, toZ8, in.readVarInt(MAX_FLIGHT_TICKS));
+                } else {
+                    events[k] = new Event(kind, x8, y8, z8, data);
+                }
             }
             return new Fx(matchId, List.of(events));
         }
 
         @Override
         public int maxSize() {
-            return 5 + 1 + MAX_EVENTS * (1 + 2 + 5 + 2 + 5); // the count, at most 64, is one byte
+            int block = 1 + 2 + 5 + 2 + 5;
+            int shot = 1 + 2 + 5 + 2 + 2 + 5 + 2 + 2; // a flight of at most 16,383 ticks is two bytes
+            return 5 + 1 + MAX_EVENTS * Math.max(block, shot); // the count, at most 64, is one byte
         }
     };
 }

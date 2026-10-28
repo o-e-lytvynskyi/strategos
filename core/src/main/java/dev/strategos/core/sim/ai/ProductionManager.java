@@ -28,11 +28,18 @@ final class ProductionManager implements AiModule {
     public void think(AiView view, AiBudget budget, CommandSink sink) {
         TemplateId worker = new TemplateId(script.worker());
         TemplateId soldier = new TemplateId(script.soldier());
+        StrategyScript.Battle battle = script.battle();
+        boolean compose = battle.replan() > 0;
+        int[] have = new int[4]; // own soldiers by role, queued ones too (AI-03)
         int workers = 0;
         for (UnitView u : view.units()) {
             if (u.template().equals(worker)) {
                 workers++;
             }
+            have[view.role(u)]++;
+        }
+        if (compose) {
+            Composition.replan(view, battle, memory);
         }
         for (BuildingView b : view.buildings()) {
             if (b.state() != 2) {
@@ -42,6 +49,7 @@ final class ProductionManager implements AiModule {
                 if (view.templates().has(t) && view.templates().byIndex(t).id().equals(worker)) {
                     workers++;
                 }
+                have[view.roleOf(t)]++;
             }
         }
         TemplateId due = BuildManager.due(view, script, memory);
@@ -64,12 +72,19 @@ final class ProductionManager implements AiModule {
                 budget.spend(10);
                 workers++;
                 sink.send(new Train(b.handle(), worker));
-            } else if (view.trains(b.template(), soldier)
-                    && b.queue().size() < script.soldierQueue()
-                    && view.affords(soldier)
-                    && (due == null || affordsBoth(view, soldier, due))) { // AI-02: the build order first
-                budget.spend(10);
-                sink.send(new Train(b.handle(), soldier));
+            } else if (b.queue().size() < script.soldierQueue()) {
+                TemplateId unit = compose ? Composition.pick(view, script, memory, b.template(), have) : soldier;
+                if (unit != null
+                        && view.trains(b.template(), unit)
+                        && view.affords(unit)
+                        && (due == null || affordsBoth(view, unit, due))) { // AI-02: the build order first
+                    budget.spend(10);
+                    have[
+                            view.roleOf(java.util.Objects.requireNonNull(
+                                            view.templates().byId(unit))
+                                    .netIndex())]++;
+                    sink.send(new Train(b.handle(), unit));
+                }
             }
         }
     }

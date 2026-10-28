@@ -30,4 +30,10 @@ public sealed interface Command extends Hashable
                 Demolish,
                 SetAutoReseed,
                 TrainBatch,
-                SpawnDeposit {}
+                SpawnDeposit,
+                SetStance,
+                Garrison,
+                Ungarrison,
+                RingBell,
+                AllClear,
+                AttackSpread {}

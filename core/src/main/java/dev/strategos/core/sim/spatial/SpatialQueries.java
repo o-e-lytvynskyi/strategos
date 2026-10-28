@@ -4,12 +4,13 @@ import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.sim.MatchBounds;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.MatchSystem;
+import dev.strategos.core.sim.MotionStore;
 import dev.strategos.core.sim.Phase;
 import java.util.function.IntConsumer;
 
 /**
  * A match's spatial index (CORE-08, 04 §10.1): its units' grid, rebuilt as the last step of {@code MOVEMENT} and when
- * a snapshot is restored, so every query between two movements sees where the units stood after the first, and its
+ * a snapshot is restored, without the units inside a building (BLD-16), so every query between two movements sees where the units stood after the first, and its
  * static entities by page. Derived from the state, so neither saved nor hashed. Queries report unit indices.
  */
 public final class SpatialQueries implements MatchSystem {
@@ -37,7 +38,12 @@ public final class SpatialQueries implements MatchSystem {
     }
 
     public void rebuild(MatchState state) {
-        units.rebuild(state.entities(), state.motion(), state.identity());
+        units.rebuild(state.entities(), state.motion(), state.identity(), state.garrison());
+    }
+
+    /** Whether the grid still holds every unit where it stands ({@link UnitGrid#matches}). */
+    public boolean gridMatches(MotionStore motion) {
+        return units.matches(motion);
     }
 
     public UnitGrid units() {
@@ -50,6 +56,11 @@ public final class SpatialQueries implements MatchSystem {
 
     public void forEachInRadius(double x, double z, double r, UnitFilter filter, IntConsumer consumer) {
         units.forEachInRadius(x, z, r, filter, consumer);
+    }
+
+    /** As {@link #forEachInRadius}, in no particular order: for a consumer that does not depend on it. */
+    public void forEachInRadiusAnyOrder(double x, double z, double r, UnitFilter filter, IntConsumer consumer) {
+        units.forEachInRadiusAnyOrder(x, z, r, filter, consumer);
     }
 
     public int nearest(double x, double z, UnitFilter filter) {

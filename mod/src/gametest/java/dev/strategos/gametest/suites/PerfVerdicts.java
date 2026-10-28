@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import com.sun.jna.Platform;
 import com.sun.management.OperatingSystemMXBean;
 import dev.strategos.core.sim.econ.EconomyTimes;
+import dev.strategos.core.testkit.BattleScene;
 import dev.strategos.core.testkit.BudgetCheck;
 import dev.strategos.core.testkit.CpuTimes;
 import dev.strategos.core.testkit.EconomyScene;
@@ -39,6 +40,14 @@ final class PerfVerdicts {
     static final double M3_A_PER_UNIT = 11_648;
 
     static final double M3_B_PER_UNIT = 12_630;
+
+    /**
+     * The economy soak per unit on the M4 Pro ({@code perf/economy-m4pro.json}, {@code perUnitP95Ns}), the base the
+     * battle soak compares with (PERF-08): budget A's p95 a unit with 316 units alive.
+     */
+    static final double M4_A_PER_UNIT = 6_878;
+
+    static final double M4_B_PER_UNIT = 10_109;
 
     /** PERF-06.2 and PERF-07.2: a unit-driven bucket's p95 per unit grows at most 15 % over its base's. */
     static final double PER_UNIT_GROWTH = 1.15;
@@ -128,7 +137,9 @@ final class PerfVerdicts {
         SoakCosts costs = r.costs();
         if (costs != null) {
             json.add(
-                    r.config().scene() instanceof EconomyScene.Config ? "economy" : "firstLoop",
+                    r.config().scene() instanceof BattleScene.Config
+                            ? "battle"
+                            : r.config().scene() instanceof EconomyScene.Config ? "economy" : "firstLoop",
                     firstLoop(r, costs, b, broken, !stress && !fast));
         }
         if (melee) {
@@ -203,15 +214,17 @@ final class PerfVerdicts {
         if (gates && gated("g") && costs.saveNanos() > scaled(100 * MS)) {
             broken.add("budget G: the save took " + costs.saveNanos() + " ns, above " + scaled(100 * MS));
         }
-        boolean m4 = r.config().scene() instanceof EconomyScene.Config; // both against the first loop's own base
-        double aBase = M3_A_PER_UNIT;
-        double bBase = M3_B_PER_UNIT;
+        boolean battle = r.config().scene() instanceof BattleScene.Config; // against M4's economy soak
+        boolean m4 = battle || r.config().scene() instanceof EconomyScene.Config;
+        double aBase = battle ? M4_A_PER_UNIT : M3_A_PER_UNIT;
+        double bBase = battle ? M4_B_PER_UNIT : M3_B_PER_UNIT;
         int units = 2 * r.config().perFaction();
         double aPerUnit = (double) Percentiles.percentile(r.core(), 0.95) / units;
         double bPerUnit = (double) Percentiles.percentile(b, 0.95) / units;
         JsonObject perUnit = new JsonObject();
         perUnit.addProperty("units", units);
-        perUnit.addProperty("base", "the first-loop soak, map v3 (M4 T22)");
+        perUnit.addProperty(
+                "base", battle ? "the economy soak, map v3 (M4 T28)" : "the first-loop soak, map v3 (M4 T22)");
         perUnit.addProperty("aP95PerUnitNs", aPerUnit);
         perUnit.addProperty("aBasePerUnitNs", aBase);
         perUnit.addProperty("aGrowth", aPerUnit / aBase);
@@ -225,8 +238,38 @@ final class PerfVerdicts {
         if (gates && gated("a") && aPerUnit > aBase * PER_UNIT_GROWTH * ciFactor()) {
             broken.add(String.format(
                     "budget A per unit: p95 %.0f ns a unit, over %.0f (the %s's base %.0f + 15 %%)",
-                    aPerUnit, aBase * PER_UNIT_GROWTH, m4 ? "economy" : "first loop", aBase));
+                    aPerUnit, aBase * PER_UNIT_GROWTH, battle || m4 ? "economy" : "first loop", aBase));
         }
+        SoakCosts.Combat combat = costs.combat();
+        if (combat != null) {
+            json.add("combat", combat(combat, r.core().length));
+        }
+        return json;
+    }
+
+    /**
+     * PERF-08: what the combat systems cost a tick (nanoseconds, over the sampled window): the units' targeting, the
+     * centres' volleys, the shot system, the damage system and their sum, and the window's searches, shots fired,
+     * hits and deaths with the means per tick.
+     */
+    private static JsonObject combat(SoakCosts.Combat c, int ticks) {
+        JsonObject json = new JsonObject();
+        json.add("targetingPerTick", spread(c.targeting()));
+        json.add("volleysPerTick", spread(c.volleys()));
+        json.add("shotsPerTick", spread(c.shots()));
+        json.add("damagePerTick", spread(c.damage()));
+        long[] sum = new long[c.targeting().length];
+        for (int i = 0; i < sum.length; i++) {
+            sum[i] = c.targeting()[i] + c.volleys()[i] + c.shots()[i] + c.damage()[i];
+        }
+        json.add("combatPerTick", spread(sum));
+        json.addProperty("targetingSearches", c.searches());
+        json.addProperty("targetingSearchesPerTick", ticks == 0 ? 0 : (double) c.searches() / ticks);
+        json.addProperty("shotsFired", c.shotsFired());
+        json.addProperty("shotsFiredPerTick", ticks == 0 ? 0 : (double) c.shotsFired() / ticks);
+        json.addProperty("hits", c.hits());
+        json.addProperty("hitsPerTick", ticks == 0 ? 0 : (double) c.hits() / ticks);
+        json.addProperty("deaths", c.deaths());
         return json;
     }
 

@@ -29,6 +29,20 @@ public final class TerrainEdits {
         this.counts = new int[pages];
     }
 
+    /** An independent copy of the edits held now. */
+    public TerrainEdits copy() {
+        TerrainEdits copy = new TerrainEdits(pages);
+        for (int page = 0; page < pages; page++) {
+            if (voxels[page] != null) {
+                copy.voxels[page] = voxels[page].clone();
+                copy.classes[page] = classes[page].clone();
+                copy.ticks[page] = ticks[page].clone();
+                copy.counts[page] = counts[page];
+            }
+        }
+        return copy;
+    }
+
     /** The cell of column (x, z), 0–15 each, at band level {@code y}: what an edit names, whatever the slice's height. */
     public static int cell(int x, int y, int z) {
         if (x < 0 || x > 15 || z < 0 || z > 15 || y < 0 || y >= VoxelSlice.MAX_HEIGHT) {

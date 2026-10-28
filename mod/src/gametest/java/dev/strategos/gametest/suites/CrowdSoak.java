@@ -21,11 +21,14 @@ import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.core.sim.MatchQueries;
 import dev.strategos.core.sim.MotionStore;
 import dev.strategos.core.sim.OutputEvent;
+import dev.strategos.core.sim.ShotFired;
 import dev.strategos.core.sim.UnitDied;
 import dev.strategos.core.sim.UnitHurt;
 import dev.strategos.core.sim.UnitView;
+import dev.strategos.core.sim.combat.CombatTimes;
 import dev.strategos.core.sim.econ.EconomyTimes;
 import dev.strategos.core.sim.journal.JournalExport;
+import dev.strategos.core.testkit.BattleScene;
 import dev.strategos.core.testkit.JournalFiles;
 import dev.strategos.core.testkit.ProvingGround;
 import dev.strategos.core.testkit.Seeds;
@@ -166,7 +169,15 @@ final class CrowdSoak {
     private boolean sendWave;
     private long hits;
     private long deaths;
+    private long shots;
     private final @Nullable SoakScene scene;
+    private final boolean battle;
+    private final long[][] combat;
+    private CombatTimes.Stats combatLast = new CombatTimes.Stats(0, 0, 0, 0, 0);
+    private CombatTimes.Stats combatBefore = new CombatTimes.Stats(0, 0, 0, 0, 0);
+    private long shotsBefore;
+    private long hitsBefore;
+    private long deathsBefore;
     private EconomyTimes.Stats economyBefore = new EconomyTimes.Stats(0, 0, 0, 0, 0, 0);
     private final long[] writer;
     private final long[] fx;
@@ -196,6 +207,8 @@ final class CrowdSoak {
         this.paths = new long[samples];
         SoakScene.Spec sc = config.scene();
         this.scene = sc == null ? null : sc.create(manifest.startSlots());
+        this.battle = scene instanceof BattleScene;
+        this.combat = new long[4][battle ? samples : 0];
         this.writer = new long[sc == null ? 0 : samples];
         this.fx = new long[sc == null ? 0 : samples];
         this.adapter = new long[sc == null ? 0 : samples];
@@ -209,10 +222,12 @@ final class CrowdSoak {
     static void start(
             GameTestHelper h, Config config, Consumer<SoakResult> done, Runnable windowStarts, Runnable everySecond) {
         CrowdSoak soak = new CrowdSoak(h, config, done, windowStarts, everySecond);
-        if (config.melee()) {
+        if (config.melee() || soak.battle) {
             soak.rt.addListener(out -> {
                 for (OutputEvent e : out.events()) {
-                    if (e instanceof UnitHurt) {
+                    if (e instanceof ShotFired) {
+                        soak.shots++;
+                    } else if (e instanceof UnitHurt) {
                         soak.hits++;
                     } else if (e instanceof UnitDied) {
                         soak.deaths++;
@@ -295,6 +310,11 @@ final class CrowdSoak {
         if (t == WARM_UP) {
             viewers.forEach(v -> v.bytes().clear());
             economyBefore = q.economyTimes();
+            combatBefore = q.combatTimes();
+            combatLast = combatBefore;
+            shotsBefore = shots;
+            hitsBefore = hits;
+            deathsBefore = deaths;
             windowStarts.run();
         }
         if (t >= WARM_UP) {
@@ -309,6 +329,14 @@ final class CrowdSoak {
                 fx[i] = rt.fxNanos() - fxBefore;
                 adapter[i] = core(rt).timers().lastAdapterNanos();
                 phases[i] = core(rt).timers().lastPhaseNanos().clone();
+                if (battle) {
+                    CombatTimes.Stats now = q.combatTimes(); // this tick's share of the running totals
+                    combat[0][i] = now.targetingNanos() - combatLast.targetingNanos();
+                    combat[1][i] = now.volleyNanos() - combatLast.volleyNanos();
+                    combat[2][i] = now.shotNanos() - combatLast.shotNanos();
+                    combat[3][i] = now.damageNanos() - combatLast.damageNanos();
+                    combatLast = now;
+                }
                 if (placing) {
                     placement.add(core(rt).timers().lastPhaseNanos()[COMMANDS]);
                 }
@@ -413,7 +441,7 @@ final class CrowdSoak {
                 histogram,
                 mostStuck,
                 worst,
-                q.surfaces().bytes(),
+                q.navigationBytes(),
                 q.unitCount(),
                 exportJournal(),
                 fights(),
@@ -444,7 +472,18 @@ final class CrowdSoak {
                         now.builds() - economyBefore.builds(),
                         now.buildNanos() - economyBefore.buildNanos(),
                         now.dropsites() - economyBefore.dropsites(),
-                        now.dropsiteNanos() - economyBefore.dropsiteNanos()));
+                        now.dropsiteNanos() - economyBefore.dropsiteNanos()),
+                battle
+                        ? new SoakCosts.Combat(
+                                combat[0],
+                                combat[1],
+                                combat[2],
+                                combat[3],
+                                q.combatTimes().targetings() - combatBefore.targetings(),
+                                shots - shotsBefore,
+                                hits - hitsBefore,
+                                deaths - deathsBefore)
+                        : null);
     }
 
     /** Budget G in the window: one save of the match's blob, as an autosave would make it. */

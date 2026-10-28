@@ -10,6 +10,7 @@ import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
@@ -21,6 +22,7 @@ import org.openjdk.jmh.annotations.State;
  * Compiling 500 templates (DATA-01.5: under 200 ms): 10 abstract bases, 40 abstract middles, 20 mixins and 430 units,
  * each unit with a parent, two mixins and {@code $op}s, as a large content set would be.
  */
+@Fork(2)
 @State(Scope.Thread)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)

@@ -26,10 +26,10 @@ public final class Engagement {
     private final boolean[] taken = new boolean[MAX_PLACES];
 
     /** The ring place {@code place} lies on, for attacker and target radii summing to {@code radii}. */
-    public static int ring(int place, double radii) {
+    public static int ring(int place, double radii, double body) {
         int first = 0;
         for (int k = 0; k < RINGS; k++) {
-            int n = places(k, radii);
+            int n = places(k, radii, body);
             if (place < first + n) {
                 return k;
             }
@@ -38,42 +38,42 @@ public final class Engagement {
         return RINGS - 1;
     }
 
-    /** How many places ring {@code k} holds. */
-    public static int places(int k, double radii) {
+    /** How many places ring {@code k} holds, for an attacker of radius {@code body}. */
+    public static int places(int k, double radii, double body) {
         double r = radii + GAP + k * RING_STEP;
-        return Math.max(4, (int) Math.floor(2 * Math.PI * r / SPACING));
+        return Math.max(4, (int) Math.floor(2 * Math.PI * r / Math.max(SPACING, 2 * body)));
     }
 
     /** The places of all rings. */
-    public static int total(double radii) {
+    public static int total(double radii, double body) {
         int n = 0;
         for (int k = 0; k < RINGS; k++) {
-            n += places(k, radii);
+            n += places(k, radii, body);
         }
         return Math.min(n, MAX_PLACES);
     }
 
     /** The X offset of place {@code place} from its target's centre. */
-    public static double offsetX(int place, double radii) {
-        return radius(place, radii) * DetMath.cos(angle(place, radii));
+    public static double offsetX(int place, double radii, double body) {
+        return radius(place, radii, body) * DetMath.cos(angle(place, radii, body));
     }
 
     /** The Z offset of place {@code place} from its target's centre. */
-    public static double offsetZ(int place, double radii) {
-        return radius(place, radii) * DetMath.sin(angle(place, radii));
+    public static double offsetZ(int place, double radii, double body) {
+        return radius(place, radii, body) * DetMath.sin(angle(place, radii, body));
     }
 
-    private static double radius(int place, double radii) {
-        return radii + GAP + ring(place, radii) * RING_STEP;
+    private static double radius(int place, double radii, double body) {
+        return radii + GAP + ring(place, radii, body) * RING_STEP;
     }
 
-    private static double angle(int place, double radii) {
-        int k = ring(place, radii);
+    private static double angle(int place, double radii, double body) {
+        int k = ring(place, radii, body);
         int first = 0;
         for (int j = 0; j < k; j++) {
-            first += places(j, radii);
+            first += places(j, radii, body);
         }
-        int n = places(k, radii);
+        int n = places(k, radii, body);
         return 2 * Math.PI * ((place - first) + (k % 2) * 0.5) / n;
     }
 
@@ -83,14 +83,19 @@ public final class Engagement {
      */
     public int choose(MatchState s, int i, int target) {
         int t = Handle.index(target);
-        double radii = radius(s, i) + radius(s, t);
-        int total = total(radii);
+        double body = radius(s, i);
+        double radii = body + radius(s, t);
+        int total = total(radii, body);
         Arrays.fill(taken, 0, total, false);
         double tx = s.motion().x(t);
         double tz = s.motion().z(t);
         OrderQueues orders = s.orders();
         for (int j = 0; j < s.entities().highWater(); j++) { // attackers still on their way count too
-            if (j != i && s.entities().aliveAt(j) && OrderKind.attacks(orders.kind(j)) && orders.target(j) == target) {
+            if (j != i
+                    && s.entities().aliveAt(j)
+                    && !s.garrisoned(j)
+                    && OrderKind.attacks(orders.kind(j))
+                    && orders.target(j) == target) {
                 int place = orders.slot(j);
                 if (place >= 0 && place < total) {
                     taken[place] = true;
@@ -99,27 +104,54 @@ public final class Engagement {
         }
         double x = s.motion().x(i);
         double z = s.motion().z(i);
+        // the innermost ring within the unit's reach that has a free place, the nearest there; a place further out
+        // is beyond its reach (it would never strike from there), so it is the last resort
+        double reach = s.stats().meleeReach(i);
         int first = 0;
+        int best = -1;
+        double bestCost = Double.POSITIVE_INFINITY;
         for (int k = 0; k < RINGS; k++) {
-            int n = places(k, radii);
-            int best = -1;
-            double bestD = Double.POSITIVE_INFINITY;
+            int n = places(k, radii, body);
+            if (k > 0 && GAP + k * RING_STEP > reach) {
+                break; // a place that far out is beyond the unit's reach: it would never strike from there
+            }
             for (int p = first; p < Math.min(first + n, total); p++) {
                 if (taken[p]) {
                     continue;
                 }
-                double d = DetMath.length(tx + offsetX(p, radii) - x, tz + offsetZ(p, radii) - z);
-                if (d < bestD) {
+                double d = DetMath.length(tx + offsetX(p, radii, body) - x, tz + offsetZ(p, radii, body) - z);
+                if (d < bestCost) {
                     best = p;
-                    bestD = d;
+                    bestCost = d;
                 }
             }
+            first += n;
             if (best >= 0) {
-                return best;
+                break;
+            }
+        }
+        if (best >= 0) {
+            return best;
+        }
+        first = 0;
+        for (int k = 0; k < RINGS; k++) { // none within reach is free: the first free place further out
+            int n = places(k, radii, body);
+            for (int p = first; p < Math.min(first + n, total); p++) {
+                if (!taken[p]) {
+                    return p;
+                }
             }
             first += n;
         }
         return 0; // every place is taken: the first ring's first, behind the others
+    }
+
+    /**
+     * Whether unit handle {@code target} is no longer there to fight: dead, or inside a building (BLD-16), where it
+     * cannot be reached.
+     */
+    public static boolean gone(MatchState s, int target) {
+        return !s.entities().isAlive(target) || s.garrisoned(Handle.index(target));
     }
 
     /** The radius of unit {@code i}'s body. */
