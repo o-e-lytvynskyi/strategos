@@ -4,11 +4,11 @@
 
 ## Now
 
-- **Milestone:** M5 Combat; 23 of 24 tasks complete (T1–T17).
-- **In progress:** M5 T18 the close since 2026-10-28.
+- **Milestone:** M5 Combat; 23 of 24 tasks complete (T1–T17); T18 blocked by a red `verifyPerf`.
+- **In progress:** M5 T18 since 2026-10-28 — stopped on a performance budget (procedure §8): bisecting the cause before any further work.
 - **Last finished task:** T17 the consent batch (2026-10-28).
-- **Next task:** T18: §8 walked into results, the health check, the demo chapters, hand-in.
-- **Merged from main last:** a10a8fd (2026-10-27), PR #21 fix-main.
+- **Next task:** fix the perf regression, then T18's results and the hand-in.
+- **Merged from main last:** 3c1f430 (2026-10-28), PR #31 M8 foundations.
 
 ## Depends on unfinished work
 
@@ -18,6 +18,10 @@
 - Preserve codex/m5-combat and dev/lev1pes/m5. Import code and task-specific evidence selectively after assignment; do not copy old central STATE/worklog records over current main.
 
 ## Log
+
+### 2026-10-28 — M5 T18: `verifyPerf` red
+
+- The milestone's first `verifyPerf` in this session (99 min, foreign CPU 0.11, valid) fails three tests: `perftests.first_loop_soak` per-unit A p95 16,349 ns (gate 13,395 = M1's 11,648 + 15 %), `perftests.idle_300_costs_a_third` 0.3325 (0.30), `perftests.mounted_cost` 1.286 (1.20; T6 measured 1.162–1.179). `verify verifySlow verifySoak` (294 s) and `jmhCompare` are green. A performance budget is a stop condition: no further work until the cause is found and fixed. Bisecting across the branch's commits (one perf run each).
 
 ### 2026-10-28 — M5 T18 (in progress): the demo chapters
 
