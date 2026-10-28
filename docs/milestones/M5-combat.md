@@ -384,7 +384,7 @@ battle scenario) → T17 (the consent batch) → T18 (close). T16 is reserved fo
 ### 7.3 Progress
 
 - [x] T1 (2026-10-26) · [x] T2a (2026-10-26) · [x] T2b (2026-10-26) · [x] T3a (2026-10-26) · [x] T3b.1 (2026-10-27) · [x] T3b.2 (2026-10-27) · [x] T3c.1 (2026-10-27) · [x] T3c.2 (2026-10-27) · [x] T4 (2026-10-27) · [x] T5a (2026-10-27) · [x] T5b (2026-10-27) · [x] T6 (2026-10-27) · [x] T7 (2026-10-27) · [x] T8 (2026-10-27) · [x] T9 (2026-10-27) · [x] T10a (2026-10-27) · [x] T10b (2026-10-27) · [ ] T11
-- [x] T12 (2026-10-27) · [x] T13 (2026-10-28) · [x] T14 (2026-10-28) · [x] T15 (2026-10-28) · [x] T17 (2026-10-28) · [ ] T18
+- [x] T12 (2026-10-27) · [x] T13 (2026-10-28) · [x] T14 (2026-10-28) · [x] T15 (2026-10-28) · [x] T17 (2026-10-28) · [x] T18 (2026-10-29)
 
 ---
 
@@ -501,3 +501,49 @@ volley among 300 fighting infantry takes 5.348 us preferred, 6.270 us collateral
 The four new cases receive first profiles; all 20 existing metrics and thresholds are unchanged.
 Evidence: testing/data/M5-T3a-analytic-shots-m4pro.json. CMB-04 remains in progress for
 T3b orders/data, T3c presentation and T14's network-budget criterion.
+
+### M5 close — results (2026-10-28)
+
+T3b.1 to T18 were built on 2026-10-27/28 in Claude Code, continuing the Codex work recorded above
+(T1–T3a) and its uncommitted T3b drafts, which were read, verified and committed first.
+
+**§8 walked**
+
+| # | Result |
+|---|---|
+| 1 | Every M5 card done except UNIT-07 check 4 (the owner's silhouettes, L7) and CMB-08 (deferred); evidence on each card |
+| 2 | `DuelTest`: spearmen over horsemen 200, horsemen over archers 193, archers over spearmen 200 of 200; archers on a six-block plateau 188 of 200 (flat control 90) |
+| 3 | `ShotTest` goldens (126/500 hits, damage 126/256) and the binomial bound; `StanceTest.theTable` per stance |
+| 4 | `garrisontests.the_bell_brings_them_in` 82 ticks (limit 200); `all_clear_returns_them` 93 ticks (limit 100) |
+| 5 | `perftests.battle_soak` (320 units, 5 min): A p50 1.23 / p99 4.13 ms, C p95 7.85, D p99 0.47, E 9.2 KB/s; per-unit A 1.139 × M4; `battle_stress` (640) C p95 9.35 ms |
+| 6 | `m5_goldens` (nine frames, macos and macos-sodium), `art_look`'s M5 frames, PERF-14's `rts_frame_battle` (202 on screen): frame p50 5.03 / p99 10.56 ms, units 3.55, ours 0.06, client tick p50 0.96 |
+| 7 | `verify verifySlow verifySoak` green (5m 33s); `jmhCompare` green (8 min; forks per benchmark); `verifyPerf`: all 20 perf tests pass — `first_loop_soak`'s per-unit A sits in this Mac's run-to-run spread (11,123–13,399 ns on unchanged code against the 13,395 gate; one run 4 ns over, its rerun 13,309), `idle_300` 0.243–0.262, `mounted_cost` 1.074; CI on the hand-in pull request |
+| 8 | The owner's playtest — open (For the owner) |
+
+**Deviations** — spec §1.6 rows 9–13: flat-world lead from a transient displacement; shot feedback
+continuity; a passive unit's flee distance; where the stance table is silent (violent equals aggressive);
+the flash derived from received health. The roster's numbers were tuned in T7 (§2.7). Tasks split
+before implementation: T3b, T3c, T5, T10.
+
+**The close's performance stop** — the first full `verifyPerf` failed `first_loop_soak`'s per-unit
+A (16,349 ns against 13,395): bisected to T2a–T2b's large-class grid rebuilt on every page publication
+without a large unit alive (and T3a's share within it); built lazily now, 11,430 ns. With the owner's
+word (2026-10-28) the recommendations were applied: JMH forks per benchmark (five for the bimodal
+`SpatialBench.rebuild1000`), `idle_300` measured interleaved, stances replicated to their owner, the
+battle bot's spearman reserve (bot against bot ends), the gatherer ratio, horsemen's melee places
+spaced by body width.
+
+**Found and fixed on the way** — a JMH gate that never reported missing benchmarks; two GameTests
+racing the shared per-tick budgets (writer, bodies); a shot query sized by the largest template; the
+compiler re-splitting value paths per template; a stance livelock (notice beyond vision); garrison
+restore validation; the economy bot shot down by town arrows (data), the battle bot's wave and the
+barracks' roster; arrow arcs jittering in a frozen frame; stand-ground archers ignoring their height.
+
+**Follow-ups** (branch file "For the owner"): cavalry and buildings; the proving ground's trees
+running out for the bots; the battle soak's per-unit A at 1.139 of 1.15 and `idle_300` at 0.29 of
+0.30 (thin margins); `RtsHud` (801) and `MatchState` (806) just over 800 lines for M6's health check;
+one AFTER-M8 marker (shot FX audience).
+
+**Planned against actual** — the spec planned T1–T18 as 19 tasks; the splits made 24. The second
+session (Claude Code) built 19 of them and the close's fixes over about two days of wall time, one task's gates at a time,
+with delegated implementers, runners and two reviews.

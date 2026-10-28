@@ -1,13 +1,13 @@
 # M5 on dev/o-e-lytvynskyi/m5
 
-**Developer:** o-e-lytvynskyi · **Branch:** dev/o-e-lytvynskyi/m5 · **Work:** M5 · **Base:** main @ cb4044b · **Claimed:** 2026-10-26 · **Status:** in progress
+**Developer:** o-e-lytvynskyi · **Branch:** dev/o-e-lytvynskyi/m5 · **Work:** M5 · **Base:** main @ cb4044b · **Claimed:** 2026-10-26 · **Status:** ready for review
 
 ## Now
 
-- **Milestone:** M5 Combat; 23 of 24 tasks complete (T1–T17); T18 resumed.
-- **In progress:** M5 T18 since 2026-10-28: the owner's recommended follow-ups (2026-10-28), then `verifyPerf` and the hand-in.
-- **Last finished task:** T17 the consent batch (2026-10-28); the perf regression fixed.
-- **Next task:** idle_300 interleaved measurement, stance replication, the bots' spearman reserve and wood, the idle horseman; then `verifyPerf`, results, hand-in.
+- **Milestone:** M5 Combat; 24 of 24 tasks complete; handed in 2026-10-29.
+- **In progress:** none.
+- **Last finished task:** T18 the close (2026-10-29).
+- **Next task:** the review's findings; the owner's playtest (L7) and silhouettes (UNIT-07 check 4).
 - **Merged from main last:** 3c1f430 (2026-10-28), PR #31 M8 foundations.
 
 ## Depends on unfinished work
@@ -18,6 +18,12 @@
 - Preserve codex/m5-combat and dev/lev1pes/m5. Import code and task-specific evidence selectively after assignment; do not copy old central STATE/worklog records over current main.
 
 ## Log
+
+### 2026-10-29 — M5 T18: the close, hand-in
+
+- `first_loop_soak` margin: a comparison of HEAD and b53c960 (alternating runs) found no growth — the core step is equal headless (833 vs 850 µs mean), and unchanged code spreads 11,123–12,368 ns per unit across runs (phase p50s by 40 %); HEAD 12,744 and 12,910. The one red run (13,399, 4 ns over) is this machine's spread: For the owner 13.
+- `navtests.own_writes_never_dirty` failed once ("No sequences finished"): it waited for the whole level's writer queue, which the batch's other matches keep busy; it waits for its own match's writes now (kb entry extended).
+- Results written into the spec (§11 "M5 close"); T18 ticked; Status ready for review; the hand-in pull request carries the milestone report.
 
 ### 2026-10-28 — M5 T18: standing units cheaper
 
@@ -288,6 +294,8 @@
 10. Performance watch for M6: the battle soak's per-unit A is 1.139 × M4's (gate 1.15) and its cost is movement and unit AI, not combat; 300 units crowding a ford in one burst can stall one large unit past the stuck invariant. Both are inputs for M6's spec health check, not M5 blockers.
 11. Done 2026-10-28 (b): the battle bot could not finish a match against itself: after the first waves annihilate each other only archers remain, which cannot burn a centre, and the bot's wood no longer buys spearmen. Options: (a) leave it (the scenario is player against bot, which ends); (b) keep a spearman reserve for buildings and train spearmen late (a small T13-scope change). Recommend (b) in M6's first tasks, together with item 8's wood starvation.
 12. Done 2026-10-28 (b, interleaved; 0.294–0.297 of 0.30): `perftests.idle_300_costs_a_third` fails on main itself on this Mac whenever other apps load the CPU (0.31–0.35 at foreign CPU 0.11–0.13; 0.155 at 0.004), though its foreign-CPU guard only invalidates above 0.25. Options: (a) run perf only on a quiet machine (as now); (b) lower the guard's invalid line for this ratio test, or measure idle and walking interleaved in one run so both halves see the same load (a measurement change: yours). Recommend (b), interleaved.
+13. `perftests.first_loop_soak`'s per-unit A gate (base 11,648 + 15 %) lies inside this Mac's run-to-run spread on unchanged code (11,123–13,399 ns, foreign CPU 0.10–0.14), so it will fail now and then without a code change. Options: (a) keep it and rerun once on a red as the rule allows; (b) re-measure the base as the median of several runs on a quiet machine (a baseline decision: yours). Recommend (b) before M6's first perf gate.
+14. Demo for your playtest: `scripts/playtest.sh`, then `/strategos match create map strategos:proving_ground`, `/strategos match join 1 0`, `/strategos match scenario strategos:battle_at_the_ford` (spec §1.3); the M5 chapters alone: `./gradlew :mod:runScenario -Pscenario=demo -Pdemo=m5 -Pscenario.timeoutSeconds=1200`. Your verdict (win once, lose once, the questionnaire, the silhouettes at 60 blocks for UNIT-07 check 4) goes into the spec's Acceptance.
 
 ## Decisions taken
 

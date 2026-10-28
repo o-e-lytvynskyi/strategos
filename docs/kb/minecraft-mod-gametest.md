@@ -148,4 +148,6 @@ gets its blocks or bodies ticks later, and the order shifts whenever a test is a
 sort). M5 T4: the reconciler test saved a half-written house ("rewrote 62"); wait for
 `BlockWriter.pendingIn(level, match, min, max)` to be empty. M5 T6:
 `materialises_one_body_per_unit` asserted after `runAfterDelay(2)` and saw "0 bodies"; wait
-until `rt.bodies().count()` reaches the count, then assert.
+until `rt.bodies().count()` reaches the count, then assert. M5 T18: `navtests.own_writes_never_dirty`
+waited for the whole level's writer queue to empty, which other matches keep busy; it waits for its
+own match's `pendingIn` now.
