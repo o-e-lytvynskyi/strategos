@@ -19,6 +19,11 @@
 
 ## Log
 
+### 2026-10-28 — M5 T18 (in progress): the demo chapters
+
+- Seven demo chapters, group `m5`: archers, high-ground, stances, horsemen, focus-spread, garrison, attack-lines (`./gradlew :mod:runScenario -Pscenario=demo -Pdemo=m5 -Pscenario.timeoutSeconds=1200`); all seven pass in a window. The first run failed two: the garrison chapter ordered horsemen to attack a building (they carry no torch; now they attack-move into the town), and the high-ground chapter exposed a core defect — a stand-ground or defensive ranged unit noticed targets by its flat reach, so archers on a rise never took the targets their height lets them hit. Notice now widens by the largest height bonus and each candidate is held to its own effective reach (`Stances.reachTo`); `StanceTest.aStandGroundArcherOnHighGroundTakesATargetBeyondItsFlatReachAndNeverMoves`. Gates: `verify verifySlow verifySoak` green, `jmhCompare` green.
+- Health check: two classes just over 800 lines (`RtsHud` 801, `MatchState` 806); no ArchUnit change; no TODO added; one AFTER-M8 marker (NetGateway, shot FX audience); `verify` 1m 12s warm.
+
 ### 2026-10-28 — M5 T14 done, T17
 
 - **T14** — the JMH confirmation passed on a quieter machine (load about 3): `jmhCompare` green with T14's and T15's code; T14 ticked.

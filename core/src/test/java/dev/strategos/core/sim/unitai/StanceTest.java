@@ -377,6 +377,27 @@ class StanceTest {
     }
 
     @Test
+    void aStandGroundArcherOnHighGroundTakesATargetBeyondItsFlatReachAndNeverMoves() {
+        SimHarness h = SimHarness.builder().size(128, 64).templates(bowmen()).build();
+        int archer = spawn(h, BOWMAN, F0, X, Z);
+        h.submit(P0, new SetStance(UnitSet.of(archer), Stance.STAND_GROUND));
+        int target = spawn(h, PIKE, F1, X + 24, Z);
+        assertThat(engagementsStarted(h, archer, 60))
+                .as("flat: 24 is past its reach")
+                .isZero();
+        int i = Handle.index(archer);
+        state(h).motion().set(i, X, 6, Z, 0); // six blocks up: the range is 26
+        assertThat(h.runUntil(() -> engaged(h, archer), 30))
+                .as("from the rise it reaches")
+                .isTrue();
+        h.runTicks(40);
+        assertThat(distance(h, archer, X, Z)).as("it never moved").isLessThan(0.01);
+        put(h, target, X + 30, Z); // past even the rise's reach
+        assertThat(h.runUntil(() -> state(h).orders().size(i) == 0, 20)).isTrue();
+        assertThat(engagementsStarted(h, archer, 80)).isZero();
+    }
+
+    @Test
     void aDefensiveUnitDoesNotChainKillsPastItsLeash() {
         SimHarness h = SimHarness.builder().size(96, 32).build();
         int unit = spearman(h, Stance.DEFENSIVE);

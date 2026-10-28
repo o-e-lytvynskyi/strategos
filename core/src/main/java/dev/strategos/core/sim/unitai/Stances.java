@@ -4,6 +4,7 @@ import dev.strategos.core.shared.DetMath;
 import dev.strategos.core.shared.Stance;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.combat.Engagement;
+import dev.strategos.core.sim.combat.HighGround;
 import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.stats.StatService;
 
@@ -33,10 +34,24 @@ final class Stances {
         return set != null ? set : s.stats().stance(i);
     }
 
-    /** The reach of unit {@code i}'s weapon, edge to edge, as it takes its place to fire or strike. */
-    static double reach(MatchState s, int i) {
+    /** The reach of unit {@code i}'s weapon against unit {@code t}: a ranged one grows with the height over it (CMB-16). */
+    static double reachTo(MatchState s, int i, int t) {
         StatService stats = s.stats();
-        return stats.canRanged(i) ? Math.max(0, stats.rangedRange(i) - MARGIN) : stats.meleeReach(i);
+        if (!stats.canRanged(i)) {
+            return stats.meleeReach(i);
+        }
+        double range = stats.rangedRange(i) * HighGround.rangeFactor(s, i, HighGround.advantage(s, i, t));
+        return Math.max(0, range - MARGIN);
+    }
+
+    /** The farthest unit {@code i}'s weapon can reach any target, from the highest ground it counts. */
+    static double maxReach(MatchState s, int i) {
+        StatService stats = s.stats();
+        if (!stats.canRanged(i)) {
+            return stats.meleeReach(i);
+        }
+        double range = stats.rangedRange(i) * HighGround.rangeFactor(s, i, stats.highGroundMax(i));
+        return Math.max(0, range - MARGIN);
     }
 
     /** How far from its anchor unit {@code i} notices enemies in stance {@code stance}, centre to centre. */
@@ -45,8 +60,8 @@ final class Stances {
         return switch (stance) { // never past sight: a chase ends there, so a wider notice would engage and drop
             // forever
             case VIOLENT, AGGRESSIVE -> vision;
-            case DEFENSIVE -> Math.min(vision, reach(s, i) + vision / 2);
-            case STAND_GROUND -> Math.min(vision, reach(s, i));
+            case DEFENSIVE -> Math.min(vision, maxReach(s, i) + vision / 2);
+            case STAND_GROUND -> Math.min(vision, maxReach(s, i)); // each target is filtered by its own reach
             case PASSIVE -> 0;
         };
     }

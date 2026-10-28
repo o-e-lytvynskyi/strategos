@@ -62,7 +62,8 @@ final class CombatActions {
                         j -> {
                             if (!s.entities().aliveAt(j) || s.garrisoned(j))
                                 return; // the grid may still hold a unit killed or garrisoned since its rebuild
-                            if (stand && Engagement.gap(s, i, j) > radius + 1e-9) return;
+                            if (stand && Engagement.gap(s, i, j) > Math.min(radius, Stances.reachTo(s, i, j)) + 1e-9)
+                                return;
                             double d = DetMath.length(motion.x(j) - x, motion.z(j) - z);
                             int r = preferred.isEmpty() ? 0 : rankOf(s, j, preferred);
                             if (r < rank[0] || (r == rank[0] && d < best[0])) { // ascending indices: the lower on a tie
@@ -116,7 +117,8 @@ final class CombatActions {
         MatchState s = ctx.host();
         int target = s.orders().target(ctx.unit());
         if (!s.entities().isAlive(target)
-                || Engagement.gap(s, ctx.unit(), Handle.index(target)) <= Stances.reach(s, ctx.unit()) + 1e-9) {
+                || Engagement.gap(s, ctx.unit(), Handle.index(target))
+                        <= Stances.reachTo(s, ctx.unit(), Handle.index(target)) + 1e-9) {
             return false;
         }
         UnitAi.finishOrder(ctx, false);
@@ -155,7 +157,7 @@ final class CombatActions {
         if (!s.stats().canAttack(i)) return;
         int a = Handle.index(attacker);
         boolean near = switch (stance) {
-            case STAND_GROUND -> Engagement.gap(s, i, a) <= Stances.reach(s, i) + 1e-9;
+            case STAND_GROUND -> Engagement.gap(s, i, a) <= Stances.reachTo(s, i, a) + 1e-9;
             case DEFENSIVE ->
                 DetMath.length(
                                 s.motion().x(a) - Stances.anchorX(s, i),
