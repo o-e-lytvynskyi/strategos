@@ -9,6 +9,7 @@ import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.nav.Dir;
 import dev.strategos.core.sim.nav.SurfaceGrid;
 import dev.strategos.core.sim.spatial.UnitFilter;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.IntConsumer;
 
@@ -65,6 +66,9 @@ final class Avoidance {
     private final int[] near = new int[MAX_NEIGHBOURS];
     private final double[] nearDistSq = new double[MAX_NEIGHBOURS];
     private final IntConsumer collector = this::collect;
+    private int[] candidate = new int[64];
+    private double[] candidateDistSq = new double[64];
+    private int candidates;
     private final MotionStore motion;
     private byte[] intentMode = new byte[0];
     private double[] intentX = new double[0];
@@ -114,16 +118,24 @@ final class Avoidance {
         selfY = motion.y(i);
         selfZ = motion.z(i);
         nearCount = 0;
-        crowd = 0;
-        s.spatial().forEachInRadius(selfX, selfZ, NEIGHBOUR_RANGE, UnitFilter.ANY, collector);
         List<Agent> agents = s.agents();
         double range = Separation.RANGE * Separation.RANGE;
+        int agentCrowd = 0;
         for (int k = 0; k < agents.size(); k++) {
             Agent agent = agents.get(k);
             if (sameLayer(agent.y()) && distSq(agent.x(), agent.z()) < range) {
-                crowd++;
+                agentCrowd++;
             }
         }
+        // A crowd is told by the units within Separation.RANGE alone, which a grid that holds the units where they
+        // stand answers from a third of the area; the rest of the neighbourhood is looked at only when there is none.
+        boolean grid = s.spatial().gridMatches(motion);
+        scan(s, grid ? Separation.RANGE : NEIGHBOUR_RANGE);
+        if (grid && crowd + agentCrowd <= CROWD) {
+            scan(s, NEIGHBOUR_RANGE);
+        }
+        crowd += agentCrowd;
+        select(crowd > CROWD ? range : Double.POSITIVE_INFINITY);
         if (crowd > CROWD) {
             separate(agents, prefX, prefZ, idle ? MotionSystem.idleSpeed(s, i) : maxSpeed);
             return;
@@ -242,7 +254,13 @@ final class Avoidance {
         planZ = separation.z();
     }
 
-    /** The grid's consumer: unit {@code j} within range, kept among the nearest by (distance, index). */
+    private void scan(MatchState s, double radius) {
+        crowd = 0;
+        candidates = 0;
+        s.spatial().forEachInRadiusAnyOrder(selfX, selfZ, radius, UnitFilter.ANY, collector);
+    }
+
+    /** The grid's consumer: unit {@code j} within range and on the layer, noted with its distance and counted. */
     private void collect(int j) {
         if (j == self || !sameLayer(motion.y(j))) {
             return;
@@ -251,17 +269,42 @@ final class Avoidance {
         if (d2 < Separation.RANGE * Separation.RANGE) {
             crowd++;
         }
-        if (nearCount == MAX_NEIGHBOURS && d2 >= nearDistSq[MAX_NEIGHBOURS - 1]) {
-            return; // the grid reports by index, so a tie keeps the lower one
+        if (candidates == candidate.length) {
+            candidate = Arrays.copyOf(candidate, candidates * 2);
+            candidateDistSq = Arrays.copyOf(candidateDistSq, candidates * 2);
         }
-        int k = nearCount < MAX_NEIGHBOURS ? nearCount++ : MAX_NEIGHBOURS - 1;
-        while (k > 0 && d2 < nearDistSq[k - 1]) {
-            near[k] = near[k - 1];
-            nearDistSq[k] = nearDistSq[k - 1];
-            k--;
+        candidate[candidates] = j;
+        candidateDistSq[candidates++] = d2;
+    }
+
+    /**
+     * Keeps the nearest {@value #MAX_NEIGHBOURS} of the noted units closer than {@code below} (squared), by (distance,
+     * index), which is a total order: the grid reports in no order, and the result is the same as in index order. A
+     * unit in a crowd steers by {@link Separation}, which ignores the units at {@value Separation#RANGE} blocks or
+     * more, so for it only those within that range are kept.
+     */
+    private void select(double below) {
+        for (int c = 0; c < candidates; c++) {
+            double d2 = candidateDistSq[c];
+            if (d2 >= below) {
+                continue;
+            }
+            int j = candidate[c];
+            if (nearCount == MAX_NEIGHBOURS) {
+                double worst = nearDistSq[MAX_NEIGHBOURS - 1];
+                if (d2 > worst || (d2 == worst && j > near[MAX_NEIGHBOURS - 1])) {
+                    continue;
+                }
+            }
+            int k = nearCount < MAX_NEIGHBOURS ? nearCount++ : MAX_NEIGHBOURS - 1;
+            while (k > 0 && (d2 < nearDistSq[k - 1] || (d2 == nearDistSq[k - 1] && j < near[k - 1]))) {
+                near[k] = near[k - 1];
+                nearDistSq[k] = nearDistSq[k - 1];
+                k--;
+            }
+            near[k] = j;
+            nearDistSq[k] = d2;
         }
-        near[k] = j;
-        nearDistSq[k] = d2;
     }
 
     /**

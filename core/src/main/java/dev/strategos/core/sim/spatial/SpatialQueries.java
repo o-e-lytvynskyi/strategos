@@ -4,6 +4,7 @@ import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.sim.MatchBounds;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.MatchSystem;
+import dev.strategos.core.sim.MotionStore;
 import dev.strategos.core.sim.Phase;
 import java.util.function.IntConsumer;
 
@@ -40,6 +41,11 @@ public final class SpatialQueries implements MatchSystem {
         units.rebuild(state.entities(), state.motion(), state.identity(), state.garrison());
     }
 
+    /** Whether the grid still holds every unit where it stands ({@link UnitGrid#matches}). */
+    public boolean gridMatches(MotionStore motion) {
+        return units.matches(motion);
+    }
+
     public UnitGrid units() {
         return units;
     }
@@ -50,6 +56,11 @@ public final class SpatialQueries implements MatchSystem {
 
     public void forEachInRadius(double x, double z, double r, UnitFilter filter, IntConsumer consumer) {
         units.forEachInRadius(x, z, r, filter, consumer);
+    }
+
+    /** As {@link #forEachInRadius}, in no particular order: for a consumer that does not depend on it. */
+    public void forEachInRadiusAnyOrder(double x, double z, double r, UnitFilter filter, IntConsumer consumer) {
+        units.forEachInRadiusAnyOrder(x, z, r, filter, consumer);
     }
 
     public int nearest(double x, double z, UnitFilter filter) {

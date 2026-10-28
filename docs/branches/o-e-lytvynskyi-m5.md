@@ -19,6 +19,12 @@
 
 ## Log
 
+### 2026-10-28 — M5 T18: standing units cheaper
+
+- `idle_300` read 0.304 in the next full `verifyPerf` (the only red of 20). In the game a paced tick makes short bursts about twelve times slower than a warm loop, so the standing side pays dearly for every instruction; MOVEMENT is 87 % of it and the idle avoidance neighbour query about 45 %. `Avoidance` now reads its neighbours unordered (the top ten picked by distance², then index — the same set) and decides the crowd from a 1.5-block query first (separation ignores anything farther), falling back to the old full query whenever a pose was set since the grid's rebuild (`MotionStore.writes`). State hashes identical (pinned in `AvoidanceTest.aStandingCrowdKeepsItsHistory`); `SpatialOrderTest` +2. `idle_300` 0.261, 0.259, 0.243 (foreign CPU 0.10); paced MOVEMENT of the standing scene −37 %; `IdleBench.step300` 23.4 µs.
+- The grid's new rebuild bookkeeping moved `SpatialBench.rebuild1000` to 7.7–7.9 µs in all five forks (a different compiled shape of the kernel, not noise); the kernel now sits in its own method with the bookkeeping outside it: all forks 4.8 again.
+- Gates: `verify verifySlow verifySoak` 5m 33s green; `jmhCompare` green.
+
 ### 2026-10-28 — M5 T18: the bots and the idle horseman
 
 - Battle bot against itself now ends (For the owner 11): a reserve of `spears` (6) oldest spearmen held out of field waves and sent at the enemy centre once the wave stands within arrow range of it with no enemy soldier near (`CLEAR`, a new AI memory slot, 16 → 17 values; older saves restore the first 16), a spearman floor `line` (400 ‰), and archers marching to the front when nothing is in reach (both bots' waves used to stall at the hold line forever). `BattleAtTheFordTest` plays bot against bot: seed 1 ends at 17,011, seed 2 at 60,224 (cap 72,000; a chaotic match length); the scripted general is gone. `BattleBotTest` +2. `aitests.battle_seed_replays_to_its_hash` sets `spears` 0 in its test script (its six spearmen would all be reserve; the assertion is unchanged).
