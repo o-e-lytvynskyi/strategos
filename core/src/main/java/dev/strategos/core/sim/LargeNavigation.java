@@ -14,8 +14,25 @@ import java.util.BitSet;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
-/** PATH-11's second derived grid; a changed border also rebuilds its neighbouring page's footprint clearance. */
+/**
+ * PATH-11's second derived grid; a changed border also rebuilds its neighbouring page's footprint clearance. Only a
+ * match with a live large unit reads it, so while none lives (and the core has no change waiting for its rebuild) a
+ * publication is skipped: its pages are remembered and the grid is marked stale. The next read, or the next kept
+ * publication, rebuilds those pages from the slices, edits and footprints, which is what the skipped publications would
+ * have added up to.
+ */
 final class LargeNavigation {
+    /** The infantry-side state the large grid derives from; read when it is rebuilt. */
+    interface Inputs {
+        SurfaceGrid infantry();
+
+        byte[][] slices();
+
+        TerrainEdits edits();
+
+        FootprintOverlay footprints();
+    }
+
     private SurfaceGrid grid;
     private final PageBuilder builder = new PageBuilder(MobilityClass.LARGE);
     private final BitSet changed = new BitSet();
@@ -23,18 +40,32 @@ final class LargeNavigation {
     private final IntArrayList changedPages = new IntArrayList();
     private final long[] borderSignatures;
     private final BitSet signatureKnown;
+    private final Inputs inputs;
+    private boolean stale;
+    /** The pages of the skipped publications, to build when the grid is next needed. */
+    private final BitSet skipped = new BitSet();
+    /** Whether the core has changed a footprint or an edit since the last skipped publication. */
+    private boolean changesSince;
+    /** What those looked like before the first such change; null for none held at all. */
+    private @Nullable FootprintOverlay syncedFootprints;
 
-    LargeNavigation(MatchBounds bounds) {
+    private @Nullable TerrainEdits syncedEdits;
+
+    LargeNavigation(MatchBounds bounds, Inputs inputs) {
+        this.inputs = inputs;
         grid = SurfaceGrid.empty(bounds.sizeX(), bounds.sizeZ(), MobilityClass.LARGE);
         int pages = grid.pagesX() * grid.pagesZ();
         borderSignatures = new long[pages * 8];
         signatureKnown = new BitSet(pages);
     }
 
+    /** The grid as the large units need it: brought up to date first if publications were skipped. */
     SurfaceGrid grid() {
+        refresh();
         return grid;
     }
 
+    /** The grid as it stands, stale or not: a query for a size must not trigger a rebuild. */
     long bytes() {
         return grid.bytes() + Long.BYTES * (long) borderSignatures.length + signatureKnown.size() / Byte.SIZE;
     }
@@ -45,6 +76,7 @@ final class LargeNavigation {
     }
 
     int changedCount() {
+        refresh();
         return changedPages.size();
     }
 
@@ -52,18 +84,71 @@ final class LargeNavigation {
         return changedPages.getInt(k);
     }
 
-    void publish(
-            SurfaceGrid infantry,
-            List<SurfacePage> pages,
-            byte[][] slices,
-            TerrainEdits edits,
-            FootprintOverlay footprints,
-            @Nullable VoxelSlice[] decoded) {
-        BitSet dirty = new BitSet(slices.length);
+    /**
+     * Skips a publication while no large unit lives; the grid is rebuilt when one needs it. What the rebuild sees is
+     * the state this publication left: edits the core makes after it are laid over the grid by the WORLD phase's own
+     * publication, as they would have been had every publication been kept. The caller keeps publications while such
+     * a change is still waiting for its rebuild.
+     */
+    void skip(List<SurfacePage> pages) {
+        stale = true;
         for (SurfacePage page : pages) {
-            int x = page.coord().x();
-            int z = page.coord().z();
-            int index = z * grid.pagesX() + x;
+            skipped.set(page.coord().z() * grid.pagesX() + page.coord().x());
+        }
+        changesSince = false;
+        syncedFootprints = null;
+        syncedEdits = null;
+    }
+
+    /** Called before the core changes a footprint or an edit: keeps the state a pending rebuild must still see. */
+    void beforeChange() {
+        if (stale && !changesSince) {
+            changesSince = true;
+            syncedFootprints = inputs.footprints().any() ? inputs.footprints().copy() : null;
+            syncedEdits = inputs.edits().empty() ? null : inputs.edits().copy();
+        }
+    }
+
+    private void refresh() {
+        if (!stale) {
+            return;
+        }
+        stale = false;
+        FootprintOverlay footprints = inputs.footprints();
+        TerrainEdits edits = inputs.edits();
+        if (changesSince) {
+            footprints =
+                    syncedFootprints != null ? syncedFootprints : new FootprintOverlay(grid.pagesX(), grid.pagesZ());
+            edits = syncedEdits != null ? syncedEdits : new TerrainEdits(inputs.slices().length);
+        }
+        changesSince = false;
+        syncedFootprints = null;
+        syncedEdits = null;
+        BitSet pages = (BitSet) skipped.clone();
+        skipped.clear();
+        publish(pages, new VoxelSlice[inputs.slices().length], footprints, edits);
+        // No large unit lived while publications were skipped, so no route on this grid is there to be invalidated.
+        changed.clear();
+        changedPages.clear();
+    }
+
+    void publish(List<SurfacePage> pages, @Nullable VoxelSlice[] decoded) {
+        BitSet indices = new BitSet(inputs.slices().length);
+        for (SurfacePage page : pages) {
+            indices.set(page.coord().z() * grid.pagesX() + page.coord().x());
+        }
+        refresh();
+        publish(indices, decoded, inputs.footprints(), inputs.edits());
+    }
+
+    private void publish(
+            BitSet pageIndices, @Nullable VoxelSlice[] decoded, FootprintOverlay footprints, TerrainEdits edits) {
+        SurfaceGrid infantry = inputs.infantry();
+        byte[][] slices = inputs.slices();
+        BitSet dirty = new BitSet(slices.length);
+        for (int index = pageIndices.nextSetBit(0); index >= 0; index = pageIndices.nextSetBit(index + 1)) {
+            int x = index % grid.pagesX();
+            int z = index / grid.pagesX();
             mark(dirty, x, z);
             VoxelSlice slice = slice(index, slices, edits, decoded);
             int direction = 0;

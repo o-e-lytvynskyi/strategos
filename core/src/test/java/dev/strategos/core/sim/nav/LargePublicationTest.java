@@ -2,6 +2,11 @@ package dev.strategos.core.sim.nav;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import dev.strategos.core.protocol.SpawnUnits;
+import dev.strategos.core.shared.FactionSlot;
+import dev.strategos.core.shared.PlayerSlot;
+import dev.strategos.core.shared.TemplateId;
+import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.KernelAccess;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.TerrainPage;
@@ -9,10 +14,19 @@ import dev.strategos.core.testkit.SimHarness;
 import dev.strategos.core.testkit.VoxelFixtures;
 import dev.strategos.core.testkit.VoxelWorld;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class LargePublicationTest {
-    @Test
-    void incrementalInteriorBordersCornersAndCeilingsMatchFreshGeometry() {
+    private static final TemplateId HORSEMAN = new TemplateId("strategos:unit/horseman");
+
+    /** Whether the harnesses hold a live horseman from the start; without one, the large grid is built on demand. */
+    private boolean horseman;
+
+    @ParameterizedTest(name = "live horseman: {0}")
+    @ValueSource(booleans = {false, true})
+    void incrementalInteriorBordersCornersAndCeilingsMatchFreshGeometry(boolean withHorseman) {
+        horseman = withHorseman;
         VoxelWorld world = VoxelFixtures.flat(48, 48, 12, 1);
         SimHarness h = harness(world);
         for (int[] edit : new int[][] {
@@ -39,8 +53,10 @@ class LargePublicationTest {
         }
     }
 
-    @Test
-    void footprintBordersAndDuplicateCapturesMatchFreshGeometry() {
+    @ParameterizedTest(name = "live horseman: {0}")
+    @ValueSource(booleans = {false, true})
+    void footprintBordersAndDuplicateCapturesMatchFreshGeometry(boolean withHorseman) {
+        horseman = withHorseman;
         VoxelWorld world = VoxelFixtures.flat(48, 48, 12, 1);
         SimHarness h = harness(world);
         MatchState s = KernelAccess.state(h.core());
@@ -63,10 +79,12 @@ class LargePublicationTest {
         sameGeometry(h, harnessWithFootprint(world, 8, 8));
     }
 
-    @Test
-    void unpublishedNeighboursBecomeAvailableConservatively() {
+    @ParameterizedTest(name = "live horseman: {0}")
+    @ValueSource(booleans = {false, true})
+    void unpublishedNeighboursBecomeAvailableConservatively(boolean withHorseman) {
+        horseman = withHorseman;
         VoxelWorld world = VoxelFixtures.flat(48, 48, 12, 1);
-        SimHarness h = SimHarness.builder().size(48, 48).yBand(0, 12, 1).build();
+        SimHarness h = newHarness();
         for (int z = 0; z < 3; z++) {
             for (int x = 0; x < 3; x++) {
                 PageCoord coord = new PageCoord(x, z);
@@ -77,12 +95,165 @@ class LargePublicationTest {
         sameGeometry(h, harness(world));
     }
 
-    private static SimHarness harness(VoxelWorld world) {
+    @Test
+    void aHorsemanArrivingLaterFindsTheGridCurrentAndKeepsItSo() {
+        VoxelWorld world = VoxelFixtures.flat(48, 48, 12, 1);
+        horseman = false;
+        SimHarness h = harness(world);
+        MatchState s = KernelAccess.state(h.core());
+        s.blockColumn(15, 8);
+        world.fill(31, 1, 31, 31, 3, 31, VoxelFixtures.SOLID);
+        PageCoord page = PageCoord.of(31, 31);
+        h.publish(TerrainPage.build(page, world.slice(page), new PageBuilder(MobilityClass.INFANTRY)));
+        h.runTicks(s.config().rules().pageK());
+        h.submit(PlayerSlot.ADMIN, new SpawnUnits(HORSEMAN, new FactionSlot(0), new Vec2d(40.5, 40.5), 1, 0));
+        h.step();
+        horseman = true;
+        SimHarness fresh = harnessWithFootprint(world, 15, 8);
+        sameGeometry(h, fresh);
+        s.releaseColumn(15, 8);
+        s.blockColumn(16, 16);
+        h.runTicks(s.config().rules().pageK());
+        sameGeometry(h, harnessWithFootprint(world, 16, 16));
+    }
+
+    @Test
+    void aCaptureBeforeTheRebuildBoundaryKeepsAPendingFootprintAwayFromAHorsemanSpawnedLater() {
+        VoxelWorld world = VoxelFixtures.flat(48, 48, 12, 1);
+        horseman = false;
+        SimHarness lazy = harness(world);
+        horseman = true;
+        SimHarness live = harness(world);
+        int k = KernelAccess.state(lazy.core()).config().rules().pageK();
+        for (SimHarness h : new SimHarness[] {lazy, live}) {
+            while (h.tick() % k != 1) h.step();
+            KernelAccess.state(h.core()).blockColumn(15, 8);
+            PageCoord other = new PageCoord(2, 2);
+            h.publish(TerrainPage.build(other, world.slice(other), new PageBuilder(MobilityClass.INFANTRY)));
+            h.step();
+        }
+        assertThat(KernelAccess.state(lazy.core()).surfaces().page(0, 0).hash())
+                .as("the footprint is not rebuilt yet")
+                .isEqualTo(KernelAccess.state(harness(world).core())
+                        .surfaces()
+                        .page(0, 0)
+                        .hash());
+        spawnHorseman(lazy);
+        sameGeometry(lazy, live);
+        lazy.runTicks(k);
+        live.runTicks(k);
+        sameGeometry(lazy, live);
+        sameGeometry(lazy, harnessWithFootprint(world, 15, 8));
+    }
+
+    @Test
+    void aHorsemanSpawnedInATickWithPageChangesFindsNoChangedLargePages() {
+        VoxelWorld world = VoxelFixtures.flat(48, 48, 12, 1);
+        horseman = false;
+        SimHarness h = harness(world);
+        world.fill(40, 1, 40, 40, 3, 40, VoxelFixtures.SOLID);
+        PageCoord page = PageCoord.of(40, 40);
+        h.publish(TerrainPage.build(page, world.slice(page), new PageBuilder(MobilityClass.INFANTRY)));
+        h.submit(PlayerSlot.ADMIN, new SpawnUnits(HORSEMAN, new FactionSlot(0), new Vec2d(10.5, 10.5), 1, 0));
+        h.step();
+        MatchState s = KernelAccess.state(h.core());
+        assertThat(s.changedPageCount()).as("the infantry grid did change").isPositive();
+        assertThat(s.changedPageCount(MobilityClass.LARGE)).isZero();
+    }
+
+    @Test
+    void aHorsemanAfterTheLastOneDiedFindsTheGridAsIfItHadLived() {
+        VoxelWorld world = VoxelFixtures.flat(48, 48, 12, 1);
+        horseman = false;
+        SimHarness lazy = harness(world);
+        spawnHorseman(lazy);
+        MatchState s = KernelAccess.state(lazy.core());
+        s.surfaces(MobilityClass.LARGE);
+        int[] handles = lazy.queries().unitHandlesOf(new FactionSlot(0));
+        for (int handle : handles) s.removeUnit(handle);
+        int k = s.config().rules().pageK();
+        s.blockColumn(15, 8);
+        lazy.runTicks(k);
+        world.fill(40, 1, 40, 40, 3, 40, VoxelFixtures.SOLID);
+        PageCoord page = PageCoord.of(40, 40);
+        lazy.publish(TerrainPage.build(page, world.slice(page), new PageBuilder(MobilityClass.INFANTRY)));
+        lazy.runTicks(k);
+        spawnHorseman(lazy);
+        horseman = true;
+        SimHarness live = harness(world);
+        KernelAccess.state(live.core()).blockColumn(15, 8);
+        live.runTicks(k);
+        live.runTicks(k);
+        sameGeometry(lazy, live);
+    }
+
+    @Test
+    void changesAcrossTicksAndAnEditWhileNoHorsemanLivesMatchAHorsemanThatLivedThrough() {
+        VoxelWorld world = VoxelFixtures.flat(48, 48, 12, 1);
+        horseman = false;
+        SimHarness lazy = harness(world);
+        horseman = true;
+        SimHarness live = harness(world);
+        int k = KernelAccess.state(lazy.core()).config().rules().pageK();
+        for (SimHarness h : new SimHarness[] {lazy, live}) {
+            MatchState s = KernelAccess.state(h.core());
+            while (h.tick() % k != 1) h.step(); // the same place in the rebuild cycle
+            s.blockColumn(15, 8);
+            h.step();
+            s.editVoxel(20, 1, 20, VoxelFixtures.SOLID);
+            h.step();
+            s.blockColumn(16, 16);
+            s.releaseColumn(15, 8);
+            h.runTicks(k);
+            s.editVoxel(33, 2, 3, VoxelFixtures.SOLID);
+            s.blockColumn(31, 31);
+            h.step();
+        }
+        spawnHorseman(lazy);
+        sameGeometry(lazy, live);
+        lazy.runTicks(k);
+        live.runTicks(k);
+        sameGeometry(lazy, live);
+    }
+
+    @Test
+    void aFootprintPlacedThisTickReachesTheGridInTheWorldPhaseWhetherOrNotAHorsemanLives() {
+        VoxelWorld world = VoxelFixtures.flat(48, 48, 12, 1);
+        horseman = false;
+        SimHarness lazy = harness(world);
+        horseman = true;
+        SimHarness live = harness(world);
+        KernelAccess.state(lazy.core()).blockColumn(15, 8);
+        KernelAccess.state(live.core()).blockColumn(15, 8);
+        sameGeometry(lazy, live); // neither sees it before the WORLD phase
+        sameGeometry(lazy, harness(world));
+        int k = KernelAccess.state(lazy.core()).config().rules().pageK();
+        lazy.runTicks(k);
+        live.runTicks(k);
+        sameGeometry(lazy, live);
+        sameGeometry(lazy, harnessWithFootprint(world, 15, 8));
+    }
+
+    private static void spawnHorseman(SimHarness h) {
+        h.submit(PlayerSlot.ADMIN, new SpawnUnits(HORSEMAN, new FactionSlot(0), new Vec2d(40.5, 44.5), 1, 0));
+        h.step();
+    }
+
+    private SimHarness newHarness() {
+        SimHarness h = SimHarness.builder().size(48, 48).yBand(0, 12, 1).build();
+        if (horseman) {
+            h.submit(PlayerSlot.ADMIN, new SpawnUnits(HORSEMAN, new FactionSlot(0), new Vec2d(40.5, 40.5), 1, 0));
+            h.step();
+        }
+        return h;
+    }
+
+    private SimHarness harness(VoxelWorld world) {
         return harnessWithFootprint(world, -1, -1);
     }
 
-    private static SimHarness harnessWithFootprint(VoxelWorld world, int x, int z) {
-        SimHarness h = SimHarness.builder().size(48, 48).yBand(0, 12, 1).build();
+    private SimHarness harnessWithFootprint(VoxelWorld world, int x, int z) {
+        SimHarness h = newHarness();
         if (x >= 0) KernelAccess.state(h.core()).restoreColumn(x, z);
         h.publishAll(world);
         h.step();

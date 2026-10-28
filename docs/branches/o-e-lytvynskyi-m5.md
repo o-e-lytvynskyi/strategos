@@ -4,10 +4,10 @@
 
 ## Now
 
-- **Milestone:** M5 Combat; 23 of 24 tasks complete (T1–T17); T18 stopped on a red `verifyPerf`.
-- **In progress:** none — session stopped 2026-10-28 (perf budget red, procedure §8; long session).
-- **Last finished task:** T17 the consent batch (2026-10-28); T18's demo chapters are committed (ccddf44).
-- **Next task:** the perf fix (first): `perftests.first_loop_soak` per-unit A regressed in T2a–T2b (40491df, 11,644 → 14,449 ns) and again in T3a (08da21c, 16,313); profile MOVEMENT/UNIT_AI and the shot step on the first-loop scene, fix, rerun `verifyPerf` on a quiet machine; then T18's results (draft ready) and the hand-in.
+- **Milestone:** M5 Combat; 23 of 24 tasks complete (T1–T17); T18 resumed.
+- **In progress:** M5 T18 since 2026-10-28: the owner's recommended follow-ups (2026-10-28), then `verifyPerf` and the hand-in.
+- **Last finished task:** T17 the consent batch (2026-10-28); the perf regression fixed.
+- **Next task:** idle_300 interleaved measurement, stance replication, the bots' spearman reserve and wood, the idle horseman; then `verifyPerf`, results, hand-in.
 - **Merged from main last:** 3c1f430 (2026-10-28), PR #31 M8 foundations.
 
 ## Depends on unfinished work
@@ -18,6 +18,12 @@
 - Preserve codex/m5-combat and dev/lev1pes/m5. Import code and task-specific evidence selectively after assignment; do not copy old central STATE/worklog records over current main.
 
 ## Log
+
+### 2026-10-28 — M5 T18: the perf regression fixed
+
+- The owner asked to follow every recommendation and fix the regression here. Cause (headless first-loop harness with phase timers and JFR, against 152ca9d): T2a–T2b's `LargeNavigation.publish` rebuilt the large-class grid (up to nine pages with halo, border signatures, slice decode) on every page publication and every footprint or edit rebuild, even with no large unit alive — WORLD mean 29 → 80–89 µs, p99 0.73 → 2.3 ms. The grid is now built lazily: skipped while no large unit lives and no footprint/edit change awaits its rebuild, rebuilt on first read from the pages skipped, with the overlay/edits snapshot of the last publication so a same-tick placement and horseman see what the eager grid saw; a refresh reports no changed pages. `perftests.first_loop_soak` per-unit A p95 11,430 ns (gate 13,395; 0.98 of M1's base). `LargePublicationTest` (6, two of which failed before the review fixes), `LargeMovementTest` adjusted to a live large unit. Review (reviewer): two divergences from the eager grid (a capture inside the rebuild window dropping the snapshot; refresh reporting every page changed) and the snapshot's garbage — all fixed with tests.
+- JMH forks: per class now (`@Fork(2)` on every benchmark class, `@Fork(5)` on `SpatialBench.rebuild1000`; the jmh task no longer passes `-f`), the owner's choice (b) of For the owner 5. First run: rebuild1000's forks 4.83, 7.75, 4.87, 4.83, 4.84 — one slow fork, mean 5.43, the gate holds.
+- Gates: `verify verifySlow verifySoak` green, `jmhCompare` green.
 
 ### 2026-10-28 — M5 T18: `verifyPerf` red
 
@@ -256,7 +262,7 @@
 2. fix-main is done (lev1pes, PR #21, merged here at a10a8fd); release proposal #20 is moot.
 3. Commit 287bf54 on this branch contains the home-directory JVM path in one re-taken perf/baseline-m4pro.json row; cc04642 removes it. The history is pushed and is not rewritten (AGENTS.md); the repository is private. Nothing needed unless the history should be scrubbed before any visibility change.
 4. Obsolete: `dev/o-e-lytvynskyi/fix-main` (one docs commit 526dc72 proposing a release of lev1pes's fix-main, made moot by PR #21) and the local worktrees `strategos-fix-main`, `strategos-m5-content` (its T3b.2 draft is now in 95484c3) and `strategos-m5-control`. Recommend deleting them; left in place until you say so.
-5. `SpatialBench.rebuild1000` is bimodal across JMH forks on this Mac: twice today one fork read 7.4–7.7 us while the other read 4.8 (baseline 4.79), failing the 15 % gate on the average; each single rerun passed with both forks at 4.7–4.9. No code touched the spatial index. Options: (a) leave it — a red run is rerun once by the rule (current); (b) give that benchmark more forks so one outlier fork cannot carry the average (a measurement change, your call); (c) investigate the bimodality (memory layout of the grid arrays). Recommend (b) with 5 forks for this benchmark only.
+5. Done 2026-10-28 (b): `SpatialBench.rebuild1000` is bimodal across JMH forks on this Mac: twice today one fork read 7.4–7.7 us while the other read 4.8 (baseline 4.79), failing the 15 % gate on the average; each single rerun passed with both forks at 4.7–4.9. No code touched the spatial index. Options: (a) leave it — a red run is rerun once by the rule (current); (b) give that benchmark more forks so one outlier fork cannot carry the average (a measurement change, your call); (c) investigate the bimodality (memory layout of the grid arrays). Recommend (b) with 5 forks for this benchmark only.
 6. Proposal (scope): replicate each unit's stance to its owner so the card's active stance is always right (now it shows the stance the player's own card last sent, else the template's). A small protocol addition; not in the approved cards' wording, so it waits for you.
 7. Follow-up candidate (no scope change): in duels a horseman sometimes stands ~80 ticks beside the back-rank archer it is focused on before striking. Probably a melee chase/ring-slot detail for the large class; to look at with T13's battle AI unless you want it earlier.
 8. From T9: the battle bot (T13) now weighs strength against defence and pulls back a doomed wave; the economy bot's wood-starved late economy (24 workers, other stocks in the thousands) remains — a candidate for AI-02's next tuning, not M5 scope.
@@ -267,6 +273,8 @@
 
 ## Decisions taken
 
+- 2026-10-28 · The large-class grid is built lazily (see the log); behaviour-neutral by test against an eager grid. Undo by publishing eagerly in MatchTerrain.publishAll.
+- 2026-10-28 · JMH forks per benchmark class (owner's choice, For the owner 5 (b)). Undo by restoring `-f 2` in build-logic's jmh task.
 - 2026-10-28 · Golden images taken after looking at each frame (AGENTS.md "a golden image you checked"): `m5_goldens` (macos, macos-sodium) and `art_look`'s `look_m5_24`/`look_m5_64`, with masks on `rider_high`'s two horizon corners and one spot of `volley_impact`, and a 0.01 threshold on `ford_battle` (a live bot battle). Undo by deleting mod/src/devtools/goldens/*/m5_goldens and the two look_m5 frames, or tightening goldens.json.
 - 2026-10-28 · PERF-14's "ours" in the observer battle scene is bars p50 plus HUD p50 (nothing is selected, so the rts-minus-moving split has no counterpart). Undo by adding a selection step to the scene.
 - 2026-10-28 · trial implementer: pass — the L4 scenes written without a window, every risk named in advance (the arrow jitter among them); two framing rounds after the orchestrator's runs.

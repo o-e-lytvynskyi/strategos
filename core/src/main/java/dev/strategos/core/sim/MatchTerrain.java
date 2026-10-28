@@ -47,7 +47,27 @@ final class MatchTerrain {
         this.rebuild = new BitSet(pageSlices.length);
         this.materials = new TerrainMaterials(
                 state.config().bounds(), surfaces.pagesX(), surfaces.pagesZ(), sliceBytes, terrainEdits);
-        this.large = new LargeNavigation(state.config().bounds());
+        this.large = new LargeNavigation(state.config().bounds(), new LargeNavigation.Inputs() {
+            @Override
+            public SurfaceGrid infantry() {
+                return surfaces;
+            }
+
+            @Override
+            public byte[][] slices() {
+                return sliceBytes;
+            }
+
+            @Override
+            public TerrainEdits edits() {
+                return terrainEdits;
+            }
+
+            @Override
+            public FootprintOverlay footprints() {
+                return footprints;
+            }
+        });
     }
 
     void beginTick() {
@@ -128,7 +148,12 @@ final class MatchTerrain {
             }
         }
         surfaces = surfaces.publishAll(built);
-        large.publish(surfaces, built, sliceBytes, terrainEdits, footprints, decoded);
+        // Changes still waiting for their rebuild show on the large grid as they do on the others: keep publishing.
+        if (state.hasLiveLargeUnits() || !rebuild.isEmpty()) {
+            large.publish(built, decoded);
+        } else {
+            large.skip(built);
+        }
         if (!state.nodes().discovered() && published.cardinality() == pageSlices.length) {
             state.discoverNodes(sliceBytes);
         }
@@ -155,6 +180,7 @@ final class MatchTerrain {
             throw new IllegalArgumentException("voxel (" + x + ", " + y + ", " + z + ") outside the match space");
         }
         int index = pageIndex(PageCoord.of(x, z));
+        large.beforeChange();
         terrainEdits.add(index, TerrainEdits.cell(x & 15, band, z & 15), cls, state.tick());
         rebuild.set(index);
     }
@@ -166,6 +192,7 @@ final class MatchTerrain {
 
     /** Blocks a footprint column (BLD-01); its page is rebuilt in this tick's WORLD phase. */
     public void blockColumn(int x, int z) {
+        large.beforeChange();
         footprints.block(x, z);
         rebuild.set(footprints.pageOf(x, z));
     }
@@ -177,6 +204,7 @@ final class MatchTerrain {
 
     /** Releases a footprint column; its page is rebuilt in this tick's WORLD phase. */
     public void releaseColumn(int x, int z) {
+        large.beforeChange();
         footprints.release(x, z);
         rebuild.set(footprints.pageOf(x, z));
     }
@@ -205,7 +233,11 @@ final class MatchTerrain {
         rebuild.clear();
         if (!built.isEmpty()) {
             surfaces = surfaces.publishAll(built);
-            large.publish(surfaces, built, sliceBytes, terrainEdits, footprints, decoded);
+            if (state.hasLiveLargeUnits()) {
+                large.publish(built, decoded);
+            } else {
+                large.skip(built);
+            }
         }
     }
 

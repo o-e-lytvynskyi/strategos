@@ -122,6 +122,7 @@ class LargeMovementTest {
         VoxelWorld world = VoxelFixtures.flat(32, 32, 8, 1);
         world.fill(16, 1, 0, 16, 4, 31, VoxelFixtures.SOLID);
         SimHarness h = harness(world);
+        large(h, new Vec2d(2.5, 2.5), 1, 0); // a live large unit keeps the large grid maintained
         MatchState state = KernelAccess.state(h.core());
         SurfaceGrid before = state.surfaces(MobilityClass.LARGE);
         assertThat(floorAt(before, 15, 17, 16)).isFalse();
@@ -149,6 +150,7 @@ class LargeMovementTest {
         VoxelWorld world = VoxelFixtures.flat(32, 32, 8, 1);
         world.fill(16, 1, 16, 16, 4, 16, VoxelFixtures.SOLID);
         SimHarness h = harness(world);
+        large(h, new Vec2d(2.5, 2.5), 1, 0); // a live large unit keeps the large grid maintained
         MatchState state = KernelAccess.state(h.core());
         assertThat(floorAt(state.surfaces(MobilityClass.LARGE), 15, 15, 16)).isFalse();
         world.fill(16, 1, 16, 16, 4, 16, VoxelFixtures.AIR);

@@ -10,6 +10,7 @@ import dev.strategos.core.sim.nav.VoxelSlice;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
@@ -22,6 +23,7 @@ import org.openjdk.jmh.infra.Blackhole;
  * One page built from a hilly slice in a 64-block band, with trees, a pond and a bridge (PATH-02.4, S8's third exit
  * number: ≤ 0.5 ms). A build allocates its page, so it is not a zero-allocation kernel.
  */
+@Fork(2)
 @State(Scope.Thread)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)

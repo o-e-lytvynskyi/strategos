@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
@@ -25,6 +26,7 @@ import org.openjdk.jmh.annotations.State;
  * CMB-17.2: one frame's attack lines and under-attack flashes for 300 units, all selected, a query's most of them with
  * a target and a third hit (budget: 0.3 ms; a {@code @HotPath} kernel: no allocation), into reused buffers.
  */
+@Fork(2)
 @State(Scope.Thread)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
