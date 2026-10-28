@@ -4,10 +4,10 @@
 
 ## Now
 
-- **Milestone:** M5 Combat; 21 of 24 tasks complete (T1–T13, T15; T14 awaits its JMH).
-- **In progress:** T14's quiet-machine JMH (WIP); T17 the consent batch since 2026-10-28.
-- **Last finished task:** T15 the battle scenario (2026-10-28).
-- **Next task:** T17 (client windows: goldens, the L4 checks), T18 the close and hand-in.
+- **Milestone:** M5 Combat; 23 of 24 tasks complete (T1–T17).
+- **In progress:** M5 T18 the close since 2026-10-28.
+- **Last finished task:** T17 the consent batch (2026-10-28).
+- **Next task:** T18: §8 walked into results, the health check, the demo chapters, hand-in.
 - **Merged from main last:** a10a8fd (2026-10-27), PR #21 fix-main.
 
 ## Depends on unfinished work
@@ -18,6 +18,14 @@
 - Preserve codex/m5-combat and dev/lev1pes/m5. Import code and task-specific evidence selectively after assignment; do not copy old central STATE/worklog records over current main.
 
 ## Log
+
+### 2026-10-28 — M5 T14 done, T17
+
+- **T14** — the JMH confirmation passed on a quieter machine (load about 3): `jmhCompare` green with T14's and T15's code; T14 ticked.
+- **T17 · The consent batch** — client windows on this Mac, one at a time, each closing itself: `m5_goldens` (new, nine frames: riders at three heights, a volley's launch and impact, attack lines, the bell's walk and the empty town, the battle at the ford) five times on macos and twice with Sodium; `art_look` with the M5 roster (two new frames each platform); PERF-14's new battle scene `rts_frame_battle` (202 units on screen at render distance 16): vanilla frame p50 5.03 / p99 10.56 ms, units 3.55, ours 0.06, client tick p50 0.96 (budget 1); Sodium 4.04 / 8.90, 3.18, 0.05, 0.82 — every budget holds, archived in perf/client/m4pro.json (not yet approved as a baseline). UNIT-06 and CMB-17 done.
+- Found and fixed in the batch: arrow arcs used the running partial tick (`getGameTimeDeltaPartialTick(true)`), so a frozen frame jittered; they now freeze with the world like the level renderer (`false`). The battle scene first spawned across both fords (only 104 of 200 on screen at the camera's 64-block ceiling); it now gathers at the north ford.
+- Goldens: post-fix runs agree within 1e-5 except masked corners (`rider_high`), one spot (`volley_impact`) and the live battle frame (`ford_battle`, threshold 0.01: a bot battle frozen within a tick of its target). Copies of three frames in docs/media/m5/.
+- **Next:** T18.
 
 ### 2026-10-28 — M5 T15
 
@@ -247,6 +255,9 @@
 
 ## Decisions taken
 
+- 2026-10-28 · Golden images taken after looking at each frame (AGENTS.md "a golden image you checked"): `m5_goldens` (macos, macos-sodium) and `art_look`'s `look_m5_24`/`look_m5_64`, with masks on `rider_high`'s two horizon corners and one spot of `volley_impact`, and a 0.01 threshold on `ford_battle` (a live bot battle). Undo by deleting mod/src/devtools/goldens/*/m5_goldens and the two look_m5 frames, or tightening goldens.json.
+- 2026-10-28 · PERF-14's "ours" in the observer battle scene is bars p50 plus HUD p50 (nothing is selected, so the rts-minus-moving split has no counterpart). Undo by adding a selection step to the scene.
+- 2026-10-28 · trial implementer: pass — the L4 scenes written without a window, every risk named in advance (the arrow jitter among them); two framing rounds after the orchestrator's runs.
 - 2026-10-28 · The battle scenario's L1 winner check plays the player's side with a small scripted general (attack-move, then spearmen at the centre) against the shipped bot; a bot-only match stalls (For the owner 11). The skirmish seats `ai:battle` in human slots of scenarios that use it. Undo in BattleAtTheFordTest / Skirmishes.
 - 2026-10-28 · trial implementer: pass — T15 and the bot fix; it kept the scripted side honestly when bot v bot would not end, and reported it.
 - 2026-10-28 · trial implementer: pass — T14 measured everything asked and named its thin margins; it skipped the slow gates after touching core, which the orchestrator ran.

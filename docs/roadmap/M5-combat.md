@@ -143,7 +143,8 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
      scene confirms budget F.
   3. Goldens (L4, consent).
 - **Tests:** L0, L1, L4 (consent), L6 · **Depends on:** CMB-06, UI-02 · **Size:** S · **Tier:** T0
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-10-28 — M5 T12: `AttackLinesTest.onlyWhatTheViewerMayReceive` (1, L1), `AttackLinesBench.extract300` 0.43 µs (2, L6); M5 T17: PERF-14's battle scene `rts_frame_battle`, 202 on screen: frame p50 5.03 / p99 10.56 ms, units 3.55, ours 0.06, client tick p50 0.96 (Sodium 4.04 / 8.90, 3.18, 0.05, 0.82) (2, L6); `m5_goldens` attack_lines (3, L4)
 
 #### ORD-05 · Focus fire and force attack
 - **Value:** Fine control of a fight: focus one target, spread fire, or attack anything on command
@@ -190,7 +191,8 @@ included; no card depends on it. Critical path: CMB-04 → CMB-05 → UNIT-07 �
   4. Rider and horse render together at every camera height (L4, consent).
 - **Tests:** L0, L2, L3, L4 (consent), L5, L6 · **Depends on:** UNIT-03, PATH-11 · **Size:** M ·
   **Tier:** T0
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-10-28 — M5 T6: `bodytests.a_horseman_is_one_entity` (1, L3), `UnitMountTypeTest` (2, L2), `perftests.mounted_cost` 1.162 ≤ 1.20 (3, L6); M5 T17: `m5_goldens` rider_low, rider_default, rider_high on macos and macos-sodium (4, L4)
 
 #### UNIT-07 · Combat roster and counters
 - **Value:** Three soldiers with clear roles and counters: spearmen stop horsemen, horsemen run down

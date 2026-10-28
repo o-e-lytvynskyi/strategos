@@ -94,6 +94,8 @@ public final class ScenarioRunner {
             case "m4_goldens" -> new M4GoldensScenario();
             case "art_look" -> new ArtLookScenario();
             case "rts_frame" -> new RtsFrameScenario();
+            case "rts_frame_battle" -> new BattleFrameScenario();
+            case "m5_goldens" -> new M5GoldensScenario();
             case "rts_goldens" -> new RtsGoldensScenario();
             case "far_markers" -> new FarMarkersScenario();
             case "rts_first_person" -> new RtsFirstPersonScenario();

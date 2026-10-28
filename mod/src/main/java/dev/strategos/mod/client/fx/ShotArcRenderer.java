@@ -42,7 +42,7 @@ public final class ShotArcRenderer {
         if (flights.isEmpty()) {
             return;
         }
-        double time = now + event.getPartialTick().getGameTimeDeltaPartialTick(true);
+        double time = now + event.getPartialTick().getGameTimeDeltaPartialTick(false);
         MultiBufferSource.BufferSource buffers =
                 Minecraft.getInstance().renderBuffers().bufferSource();
         RenderType type = RenderType.entityCutoutNoCull(TippableArrowRenderer.NORMAL_ARROW_LOCATION);
