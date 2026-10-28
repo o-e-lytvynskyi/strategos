@@ -4,10 +4,10 @@
 
 ## Now
 
-- **Milestone:** M5 Combat; 23 of 24 tasks complete (T1–T17); T18 blocked by a red `verifyPerf`.
-- **In progress:** M5 T18 since 2026-10-28 — stopped on a performance budget (procedure §8): bisecting the cause before any further work.
-- **Last finished task:** T17 the consent batch (2026-10-28).
-- **Next task:** fix the perf regression, then T18's results and the hand-in.
+- **Milestone:** M5 Combat; 23 of 24 tasks complete (T1–T17); T18 stopped on a red `verifyPerf`.
+- **In progress:** none — session stopped 2026-10-28 (perf budget red, procedure §8; long session).
+- **Last finished task:** T17 the consent batch (2026-10-28); T18's demo chapters are committed (ccddf44).
+- **Next task:** the perf fix (first): `perftests.first_loop_soak` per-unit A regressed in T2a–T2b (40491df, 11,644 → 14,449 ns) and again in T3a (08da21c, 16,313); profile MOVEMENT/UNIT_AI and the shot step on the first-loop scene, fix, rerun `verifyPerf` on a quiet machine; then T18's results (draft ready) and the hand-in.
 - **Merged from main last:** 3c1f430 (2026-10-28), PR #31 M8 foundations.
 
 ## Depends on unfinished work
@@ -22,6 +22,7 @@
 ### 2026-10-28 — M5 T18: `verifyPerf` red
 
 - The milestone's first `verifyPerf` in this session (99 min, foreign CPU 0.11, valid) fails three tests: `perftests.first_loop_soak` per-unit A p95 16,349 ns (gate 13,395 = M1's 11,648 + 15 %), `perftests.idle_300_costs_a_third` 0.3325 (0.30), `perftests.mounted_cost` 1.286 (1.20; T6 measured 1.162–1.179). `verify verifySlow verifySoak` (294 s) and `jmhCompare` are green. A performance budget is a stop condition: no further work until the cause is found and fixed. Bisecting across the branch's commits (one perf run each).
+- **Cause narrowed:** `first_loop_soak` per-unit A p95 — main a10a8fd and M5 T1 152ca9d pass (11,644 computed); M5 T2a–T2b 40491df fails at 14,449 (+24 %); M5 T3a 08da21c 16,313; every later commit 14,273–15,960 (this session's tasks add nothing measurable beyond run-to-run noise). The fix is the next task: profile the first-loop scene's MOVEMENT/UNIT_AI and the per-tick shot/combat step against 152ca9d.
 - Bisection (one `runGameTestPerf` per commit, foreign CPU 0.11–0.13 unless noted): `first_loop_soak` per-unit A p95 fails at every M5 commit from 16a7e8b to b1eba24 (14,273–15,960 ns) and at ed7e0cd before the fix-main merge (14,883), but passes on main a10a8fd — the regression predates this session's tasks and lies in T1–T3a (being narrowed). `idle_300_costs_a_third` fails on main too (0.3077) and passes only on a quiet machine (ed7e0cd at foreign CPU 0.004: 0.155): a background-load sensitivity of the test on this Mac, not an M5 regression (For the owner 12). `mounted_cost` is noisy run to run (1.03–1.29; HEAD 1.107 passes).
 
 ### 2026-10-28 — M5 T18 (in progress): the demo chapters
