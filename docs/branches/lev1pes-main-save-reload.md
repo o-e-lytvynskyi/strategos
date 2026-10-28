@@ -92,3 +92,26 @@
 ## Review
 
 Assignment merged by PR #26; hand-in [PR #30](https://github.com/o-e-lytvynskyi/strategos/pull/30) is open. Functional gates, independent cloud paired JMH and standard cloud server perf pass. Ready for independent maintainer review; every approval and merge remains human.
+
+### Maintainer review 2026-10-29 (head a91996f)
+
+**Recommendation: merge after fixes.** No blockers in the repairs themselves; one major issue appears when the branch meets M5 (merged into `main` as #33), and the branch conflicts with `main`.
+
+**Gates.** PR CI on a91996f: `records`, `verify` (5m41s) green. Local trial merge of `origin/main` 267da40 (macOS, not pushed; the only conflict, `Snapshots.java`, resolved by keeping M5's `shots/stances/garrison` and this branch's bindings): `verify verifySlow verifySoak` green in 5m47s, 2,286 tests, 0 failures/errors/skips. `jmhCompare` not repeated: nothing new runs per tick (reviewed), and the paired cloud JMH passed 21/21. Records: `roadmap.py check` 245 cards / 0 problems, `claims.py check` 0 problems; no build-surface, `.claude/settings.json`, dependency or `NOTICE` changes in the final diff; released fixtures append-only; no tool traces or personal data. The temporary paired-JMH workflow in d33aa0b–f1ce9f8 used pinned actions and no secrets, and is gone from the final diff.
+
+**Must fix before merge**
+1. **Merge `origin/main`** (M5) into the branch; the `Snapshots.take` conflict resolves by keeping both sides (M5's three `Play` fields, then the bindings argument).
+2. **[major] Legacy indices silently remap after M5.** `SavedTemplates.resolve` (`core/.../sim/SavedTemplates.java:62-68`) treats any legacy (schema 1/2) index inside `TemplateSet.builtin()` as built-in. M5 appended `building/farmstead`, `building/storehouse`, `unit/archer`, `unit/horseman` to the pinned built-in table, so a pre-M5 save whose custom template sat at the old first free index now resolves to `archer`/`horseman` with a matching kind — exactly the silent remap this work set out to prevent; "ambiguous custom references fail explicitly" does not hold on `main`. Either reject legacy indices that are ambiguous (e.g. when the saved template-set hash differs from the built-in one and the index is in the range appended after the save's era), or, if that cannot be decided, state the limitation in `docs/kb/save-reload-identities.md` and the ADR note, and log a warning on such loads. A test that pins the chosen behaviour.
+
+**Should fix (your call; record in "Decisions taken" if declined)**
+3. `SavedTemplates.java:27`: a schema-3 snapshot with live buildings but no bindings is treated as legacy. Make legacy explicit (from the decoded version) or throw for v3 without bindings.
+4. `templateSwapProblem` also checks ENDED matches, which never step, so a finished match can block every reload that drops a template it used. Skip ENDED/FAULTED, or record the rule in the ADR.
+5. Server publishes the new set at load, each match swaps at its next tick; a Train/SpawnBuilding in between can create a reference the new set drops, and the core refusal is only a `log.warn`, leaving server and match sets diverged. Pre-existing, widened here: fault the match or re-queue, or raise it in "For the owner".
+6. Tests: no core test for the node-template branch or the kind-change branch of `templateSwapProblem`; the terminal-outcome GameTest hand-rolls `List.of(1L,0L,1L,0L,tick)` — build it with `Outcome.save()`.
+7. The schema-3 / bindings / legacy policy is a persistence-format decision; it rewrites `04-architecture.md` ("saved by string id, never by network index") and is appended to ADR-0012 (content pipeline). Prefer a short new ADR for save identities, with ADR-0012 pointing to it.
+
+**Nits.** `MatchSnapshotSchema3NbtFixtureTest` comment says "for schema 2, released with M1 (T27)"; `FixtureMatches.schema3()` lacks the blank line before its javadoc and `SCHEMA_3_TICK` a javadoc; `MatchSnapshot` class javadoc exceeds 120 columns. The `match_v3` fixtures pin only the pre-M5 built-in table at tick 9 with no units; fine as a format pin, custom/shifted indices stay covered by `SavedTemplatesTest`.
+
+**Decisions taken the owner may want to see:** the schema bump to 3 (older readers reject rather than ignore bindings); legacy custom references fail instead of loading; reload validation shared by server publication and core INGEST.
+
+**Answered checks.** Every numeric template reference persisted (`BuildingStore.Saved.template`, `Production.queue`) is bound; units, nodes, pending commands, garrisons, stances and shots are saved by id or handle. Binding order is deterministic (`TemplateSet.all()`). Reload refusals change nothing. ENDED restore: submit, resume and ticking all refuse. No per-tick cost.
