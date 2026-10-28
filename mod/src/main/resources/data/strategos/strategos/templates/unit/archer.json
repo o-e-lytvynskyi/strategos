@@ -1,0 +1,15 @@
+{
+  "parent": "strategos:template/unit_infantry",
+  "Identity": { "name": "strategos.unit.archer", "icon": "minecraft:bow", "classes": "+Archer" },
+  "Health": { "max": 70 },
+  "UnitMotion": { "walkSpeed": 0.2 },
+  "Attack": { "Ranged": { "pierce": 16, "range": 20, "prepare": 16, "repeat": 20, "speed": 4, "spread": 2.25 } },
+  "Vision": { "range": 32 },
+  "Resistance": { "hack": 1, "pierce": 1, "crush": 1 },
+  "Cost": {
+    "resources": { "food": 60, "wood": 40, "iron": 20 },
+    "population": 1,
+    "time": { "$derive": { "from": "strategos:unit/worker", "path": "Cost/time", "factor": 1.5 }, "note": "Training an archer takes as long as drilling a spearman" }
+  },
+  "Body": { "skin": "strategos:units/infantry" }
+}

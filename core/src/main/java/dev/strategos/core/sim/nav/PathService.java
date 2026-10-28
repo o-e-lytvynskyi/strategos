@@ -319,7 +319,7 @@ public final class PathService {
         long tick = s.tick();
         boolean changed = s.changedPageCount() > 0;
         int highWater = entities.highWater();
-        Map<Integer, IntList> groups = grouped(s);
+        Map<Long, IntList> groups = grouped(s);
         for (int i = 0; i < highWater; i++) {
             if (!entities.aliveAt(i)) {
                 continue;
@@ -329,7 +329,7 @@ public final class PathService {
                 continue;
             }
             if (wanted) {
-                IntList group = groups.get(orders.group(i));
+                IntList group = groups.get(groupKey(s, i));
                 if (group == null || !group.contains(i)) {
                     request(s, i, false);
                 }
@@ -358,8 +358,8 @@ public final class PathService {
                 request(s, i, true);
             }
         }
-        for (Map.Entry<Integer, IntList> group : groups.entrySet()) {
-            groupRequest(s, group.getKey(), group.getValue());
+        for (Map.Entry<Long, IntList> group : groups.entrySet()) {
+            groupRequest(s, orders.group(group.getValue().getInt(0)), group.getValue());
         }
     }
 
@@ -368,8 +368,8 @@ public final class PathService {
      * group order whose own target lies beyond {@code shortMove}, when they are {@code groupMin} or more; by group id,
      * each with its members in index order.
      */
-    private Map<Integer, IntList> grouped(MatchState s) {
-        Map<Integer, IntList> groups = new TreeMap<>();
+    private Map<Long, IntList> grouped(MatchState s) {
+        Map<Long, IntList> groups = new TreeMap<>();
         if (s.surfaces().version() == 0) {
             return groups;
         }
@@ -386,11 +386,16 @@ public final class PathService {
             double dx = orders.targetX(i) - motion.x(i);
             double dz = orders.targetZ(i) - motion.z(i);
             if (dx * dx + dz * dz > shortMoveSquared) {
-                groups.computeIfAbsent(orders.group(i), g -> new IntArrayList()).add(i);
+                groups.computeIfAbsent(groupKey(s, i), g -> new IntArrayList()).add(i);
             }
         }
         groups.values().removeIf(members -> members.size() < rules.groupMin());
         return groups;
+    }
+
+    /** A mixed selection shares paths only among members with the same clearance. */
+    private static long groupKey(MatchState s, int i) {
+        return ((long) s.orders().group(i) << 1) | s.mobility(i).code();
     }
 
     /** One request for a group's members: they drop their paths and wait for its id, as one in the queue. */
@@ -425,7 +430,7 @@ public final class PathService {
         long tick = s.tick();
         double gx = s.orders().targetX(i);
         double gz = s.orders().targetZ(i);
-        SurfaceGrid grid = s.surfaces();
+        SurfaceGrid grid = s.surfacesFor(i);
         if (grid.version() == 0) {
             return; // no terrain yet: M0's straight line, and no path state, so such a match hashes as in M0
         }
@@ -524,7 +529,7 @@ public final class PathService {
     private void submitGroup(MatchState s, PathStore.Waiting w, IntList members, int joins) {
         MotionStore motion = s.motion();
         OrderQueues orders = s.orders();
-        SurfaceGrid grid = s.surfaces();
+        SurfaceGrid grid = s.surfacesFor(members.getInt(0));
         int minY = s.config().bounds().minY();
         List<GroupPaths.Member> standing = new ArrayList<>(members.size());
         double cx = 0;
@@ -597,7 +602,7 @@ public final class PathService {
     private void submit(MatchState s, int i, PathStore.Waiting w) {
         PathStore paths = s.paths();
         MotionStore motion = s.motion();
-        SurfaceGrid grid = s.surfaces();
+        SurfaceGrid grid = s.surfacesFor(i);
         long tick = s.tick();
         double x = motion.x(i);
         double z = motion.z(i);
@@ -685,7 +690,7 @@ public final class PathService {
         if (w.count() == 0 || Double.isNaN(fromX)) {
             return w;
         }
-        SurfaceGrid grid = s.surfaces();
+        SurfaceGrid grid = s.surfacesFor(i);
         double x = s.motion().x(i);
         double z = s.motion().z(i);
         int node = startNode(grid, x, s.motion().y(i), z, s.config().bounds().minY());
@@ -710,7 +715,7 @@ public final class PathService {
 
     /** Whether unit {@code i}'s path can still be walked on the current grid, from where it stands. */
     private static boolean walkable(MatchState s, int i) {
-        SurfaceGrid grid = s.surfaces();
+        SurfaceGrid grid = s.surfacesFor(i);
         PathStore.Waypoints w = s.paths().path(i);
         double x = s.motion().x(i);
         double z = s.motion().z(i);
@@ -730,24 +735,24 @@ public final class PathService {
         double x = s.motion().x(i);
         double z = s.motion().z(i);
         for (int k = paths.cursor(i); k < w.count(); k++) {
-            if (crosses(s, x, z, w.x(k), w.z(k))) {
+            if (crosses(s, i, x, z, w.x(k), w.z(k))) {
                 return true;
             }
             x = w.x(k);
             z = w.z(k);
         }
         boolean beyond = paths.cursor(i) >= w.count() || w.truncated() || paths.status(i) == PathStatus.PARTIAL;
-        return beyond && crosses(s, x, z, s.orders().targetX(i), s.orders().targetZ(i));
+        return beyond && crosses(s, i, x, z, s.orders().targetX(i), s.orders().targetZ(i));
     }
 
-    private static boolean crosses(MatchState s, double x0, double z0, double x1, double z1) {
+    private static boolean crosses(MatchState s, int i, double x0, double z0, double x1, double z1) {
         int pagesX = s.surfaces().pagesX();
         int minX = (int) Math.floor(Math.min(x0, x1)) >> 4;
         int maxX = (int) Math.floor(Math.max(x0, x1)) >> 4;
         int minZ = (int) Math.floor(Math.min(z0, z1)) >> 4;
         int maxZ = (int) Math.floor(Math.max(z0, z1)) >> 4;
-        for (int k = 0; k < s.changedPageCount(); k++) {
-            int page = s.changedPage(k);
+        for (int k = 0; k < s.changedPageCount(s.mobility(i)); k++) {
+            int page = s.changedPage(k, s.mobility(i));
             int px = page % pagesX;
             int pz = page / pagesX;
             if (px >= minX && px <= maxX && pz >= minZ && pz <= maxZ) {

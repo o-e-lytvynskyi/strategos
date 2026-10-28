@@ -4,6 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import dev.strategos.core.shared.Stance;
 import dev.strategos.core.shared.TemplateId;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -369,22 +370,81 @@ public final class TemplateCompiler {
         if (body != null) {
             f.known(body, "/Body", "entityType", "model", "skin", "width", "height", "radius");
         }
+        JsonObject attack = f.object(json, "", "Attack", false);
+        if (attack != null) {
+            JsonObject ranged = f.object(attack, "/Attack", "Ranged", false);
+            if (ranged != null) {
+                f.known(
+                        ranged,
+                        "/Attack/Ranged",
+                        "hack",
+                        "pierce",
+                        "crush",
+                        "fire",
+                        "range",
+                        "prepare",
+                        "repeat",
+                        "speed",
+                        "spread",
+                        "highGround",
+                        "preferred");
+                f.preferred(ranged, "/Attack/Ranged");
+                JsonObject high = f.object(ranged, "/Attack/Ranged", "highGround", false);
+                if (high != null) {
+                    f.known(high, "/Attack/Ranged/highGround", "rangePerBlock", "damagePerBlock", "maxBlocks");
+                    for (String path : List.of(CorePaths.HIGH_RANGE, CorePaths.HIGH_DAMAGE, CorePaths.HIGH_MAX)) {
+                        f.rangedNumber(high, path);
+                    }
+                }
+                for (String path : List.of(
+                        CorePaths.RANGED_HACK,
+                        CorePaths.RANGED_PIERCE,
+                        CorePaths.RANGED_CRUSH,
+                        CorePaths.RANGED_FIRE,
+                        CorePaths.RANGED_RANGE,
+                        CorePaths.RANGED_PREPARE,
+                        CorePaths.RANGED_REPEAT,
+                        CorePaths.RANGED_SPEED,
+                        CorePaths.RANGED_SPREAD)) {
+                    f.rangedNumber(ranged, path);
+                }
+            }
+        }
+        if (attack != null) {
+            JsonObject melee = f.object(attack, "/Attack", "Melee", false);
+            if (melee != null) {
+                f.preferred(melee, "/Attack/Melee");
+            }
+        }
+        JsonObject behaviour = f.object(json, "", "Behaviour", false);
+        if (behaviour != null) {
+            f.stance(behaviour);
+        }
         String name = identity == null ? id.value() : f.string(identity, "/Identity", "name", id.value());
         String classes = identity == null ? "" : f.string(identity, "/Identity", "classes", "");
         double walkSpeed = motion == null ? 0 : f.positive(motion, "/UnitMotion", "walkSpeed", null);
         double turnRate =
                 motion == null ? 0 : f.positive(motion, "/UnitMotion", "turnRate", UnitTemplate.DEFAULT_TURN_RATE);
         String mobility = motion == null ? "" : f.string(motion, "/UnitMotion", "mobility", "infantry");
-        if (motion != null && !mobility.equals("infantry")) {
+        if (motion != null && !mobility.equals("infantry") && !mobility.equals("large")) {
             problems.add(TemplateProblem.error(
-                    file, "/UnitMotion/mobility", "unknown mobility '" + mobility + "'; M1 has infantry"));
+                    file, "/UnitMotion/mobility", "unknown mobility '" + mobility + "'; expected infantry or large"));
         }
         String entityType = body == null ? "" : f.string(body, "/Body", "entityType", null);
         String model = body == null ? "" : f.string(body, "/Body", "model", "humanoid");
         String skin = body == null ? "" : f.string(body, "/Body", "skin", "");
         double width = body == null ? 0 : f.positive(body, "/Body", "width", null);
         double height = body == null ? 0 : f.positive(body, "/Body", "height", null);
-        double radius = body == null ? 0 : f.positive(body, "/Body", "radius", UnitTemplate.DEFAULT_RADIUS);
+        double radius = body == null
+                ? 0
+                : f.positive(
+                        body,
+                        "/Body",
+                        "radius",
+                        mobility.equals("large") ? UnitTemplate.DEFAULT_LARGE_RADIUS : UnitTemplate.DEFAULT_RADIUS);
+        if (mobility.equals("large") && radius < UnitTemplate.DEFAULT_LARGE_RADIUS) {
+            problems.add(TemplateProblem.error(file, "/Body/radius", "large mobility needs a radius of at least 0.7"));
+        }
         if (problems.size() > before) {
             return null;
         }
@@ -415,6 +475,8 @@ public final class TemplateCompiler {
         JsonObject identity = f.object(json, "", "Identity", true);
         String name = identity == null ? id.value() : f.string(identity, "/Identity", "name", id.value());
         String classes = identity == null ? "" : f.string(identity, "/Identity", "classes", "");
+        f.buildingAttack(json);
+        f.garrisonHolder(json);
         JsonElement shape = json.get("Blueprint");
         if (shape == null || !shape.isJsonObject()) {
             problems.add(TemplateProblem.error(file, "/Building/blueprint", "a building needs its blueprint"));
@@ -502,6 +564,117 @@ public final class TemplateCompiler {
                 return 0;
             }
             return v;
+        }
+
+        /** An attack's preferred classes, if it has any: a string of class tokens (CMB-05). */
+        void preferred(JsonObject attack, String pointer) {
+            if (attack.has("preferred")) {
+                string(attack, pointer, "preferred", "");
+            }
+        }
+
+        /**
+         * A building's town arrows (CMB-07), if it has any: known keys, each number within its range, the counts whole,
+         * and arrows that can fly (a pierce, a range and a period).
+         */
+        void buildingAttack(JsonObject building) {
+            JsonObject attack = object(building, "", "Attack", false);
+            JsonObject arrows = attack == null ? null : object(attack, "/Attack", "Building", false);
+            if (arrows == null) return;
+            known(
+                    arrows,
+                    "/Attack/Building",
+                    "arrows",
+                    "perGarrisoned",
+                    "interval",
+                    "pierce",
+                    "range",
+                    "speed",
+                    "spread",
+                    "preferred");
+            preferred(arrows, "/Attack/Building");
+            for (String path : CorePaths.buildingAttack()) {
+                rangedNumber(arrows, path);
+            }
+            for (String path : List.of(
+                    CorePaths.BUILDING_ARROWS, CorePaths.BUILDING_PER_GARRISONED, CorePaths.BUILDING_INTERVAL)) {
+                String key = path.substring(path.lastIndexOf('/') + 1);
+                if (arrows.get(key) instanceof JsonPrimitive p && p.isNumber() && p.getAsDouble() % 1 != 0) {
+                    problems.add(TemplateProblem.error(file, "/" + path, "expected a whole number, got " + p));
+                }
+            }
+            if (arrows.has("arrows")
+                    && arrows.get("arrows") instanceof JsonPrimitive n
+                    && n.isNumber()
+                    && n.getAsDouble() > 0) {
+                for (String path : List.of(CorePaths.BUILDING_PIERCE, CorePaths.BUILDING_RANGE)) {
+                    String key = path.substring(path.lastIndexOf('/') + 1);
+                    if (!(arrows.get(key) instanceof JsonPrimitive p) || !p.isNumber() || !(p.getAsDouble() > 0)) {
+                        problems.add(TemplateProblem.error(file, "/" + path, "arrows need a positive " + key));
+                    }
+                }
+                if (!arrows.has("interval")) {
+                    problems.add(
+                            TemplateProblem.error(file, "/" + CorePaths.BUILDING_INTERVAL, "arrows need an interval"));
+                }
+            }
+        }
+
+        /** A building's garrison (BLD-16), if it has one: known keys, a whole capacity of at least 1 and class tokens. */
+        void garrisonHolder(JsonObject building) {
+            JsonObject holder = object(building, "", "GarrisonHolder", false);
+            if (holder == null) return;
+            known(holder, "/GarrisonHolder", "capacity", "classes");
+            rangedNumber(holder, CorePaths.GARRISON_CAPACITY);
+            if (!(holder.get("capacity") instanceof JsonPrimitive n)
+                    || !n.isNumber()
+                    || n.getAsDouble() < 1
+                    || n.getAsDouble() % 1 != 0) {
+                problems.add(TemplateProblem.error(
+                        file, "/" + CorePaths.GARRISON_CAPACITY, "a garrison needs a whole capacity of at least 1"));
+            }
+            if (!(holder.get("classes") instanceof JsonPrimitive c)
+                    || !c.isString()
+                    || c.getAsString().isBlank()) {
+                problems.add(TemplateProblem.error(
+                        file, "/" + CorePaths.GARRISON_CLASSES, "a garrison needs the class tokens it admits"));
+            }
+        }
+
+        /** A stance by name, or by the code of one (CMB-05). */
+        void stance(JsonObject behaviour) {
+            JsonElement e = behaviour.get("stance");
+            if (e == null) return;
+            String pointer = "/Behaviour/stance";
+            if (e instanceof JsonPrimitive p && p.isString()) {
+                if (Stance.byId(p.getAsString()) == null) {
+                    problems.add(TemplateProblem.error(
+                            file,
+                            pointer,
+                            "unknown stance '" + p.getAsString()
+                                    + "'; expected violent, aggressive, defensive, stand_ground or passive"));
+                }
+            } else if (!(e instanceof JsonPrimitive n
+                    && n.isNumber()
+                    && Stance.of(n.getAsInt()) != null
+                    && n.getAsDouble() == n.getAsInt())) {
+                problems.add(TemplateProblem.error(file, pointer, "expected a stance name, got " + e));
+            }
+        }
+
+        void rangedNumber(JsonObject ranged, String path) {
+            String key = path.substring(path.lastIndexOf('/') + 1);
+            JsonElement e = ranged.get(key);
+            if (e == null) return;
+            String pointer = "/" + path.substring(0, path.lastIndexOf('/') + 1) + key;
+            if (!(e instanceof JsonPrimitive p) || !p.isNumber()) {
+                problems.add(TemplateProblem.error(file, pointer, "expected a number, got " + e));
+                return;
+            }
+            double value = p.getAsDouble();
+            if (!Double.isFinite(value) || value < CorePaths.min(path) || value > CorePaths.max(path)) {
+                problems.add(TemplateProblem.error(file, pointer, "number outside its allowed range: " + e));
+            }
         }
     }
 }

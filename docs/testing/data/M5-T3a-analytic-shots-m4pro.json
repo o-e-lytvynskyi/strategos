@@ -1,0 +1,70 @@
+{
+  "date": "2026-10-26",
+  "source_base": "08da21c",
+  "changed_source_sha256": "3abd8ec358be5ebf54014408cffbeb2e691fd4a5b0e3d8e25e70d6ea39cc40b8",
+  "source_files": [
+    "core/build.gradle",
+    "core/src/jmh/java/dev/strategos/core/sim/ShotBench.java",
+    "core/src/main/java/dev/strategos/core/sim/MatchCoreImpl.java",
+    "core/src/main/java/dev/strategos/core/sim/MatchSnapshot.java",
+    "core/src/main/java/dev/strategos/core/sim/MatchState.java",
+    "core/src/main/java/dev/strategos/core/sim/Snapshots.java",
+    "core/src/main/java/dev/strategos/core/sim/StateHasher.java",
+    "core/src/main/java/dev/strategos/core/sim/combat/ShotStore.java",
+    "core/src/main/java/dev/strategos/core/sim/persist/MatchSnapshotCodec.java",
+    "core/src/test/java/dev/strategos/core/sim/ShotPersistenceTest.java"
+  ],
+  "functional_gates": {
+    "command": "./gradlew verify verifySlow verifySoak",
+    "seconds": 279,
+    "tests": 1958,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0
+  },
+  "jmh": {
+    "seconds": 422,
+    "configurations": 25,
+    "verdict": "pass",
+    "required_new_configurations": 4,
+    "source_jvm": "Temurin21.0.12.1",
+    "old_profiles_unchanged": true,
+    "new_first_profiles": [
+      {
+        "benchmark": "dev.strategos.core.sim.ShotBench.hashActive300",
+        "params": {},
+        "score": 32.3942673021151,
+        "unit": "us/op",
+        "gc_alloc_bytes_per_op": 0.22281053007371493
+      },
+      {
+        "benchmark": "dev.strategos.core.sim.ShotBench.volley60",
+        "params": {
+          "mode": "preferred"
+        },
+        "score": 5.347669146919531,
+        "unit": "us/op",
+        "gc_alloc_bytes_per_op": 11888.03772973267
+      },
+      {
+        "benchmark": "dev.strategos.core.sim.ShotBench.volley60",
+        "params": {
+          "mode": "collateral"
+        },
+        "score": 6.2695453305189215,
+        "unit": "us/op",
+        "gc_alloc_bytes_per_op": 11888.04394162713
+      },
+      {
+        "benchmark": "dev.strategos.core.sim.ShotBench.volley60",
+        "params": {
+          "mode": "miss"
+        },
+        "score": 0.8274117034943915,
+        "unit": "us/op",
+        "gc_alloc_bytes_per_op": 1736.0062873783615
+      }
+    ]
+  },
+  "baseline_decision": "Establish first profiles for the four new shot cases; retain all20 prior primary metrics and15percent/allocation limits. T2 proposal remains historical, unchanged."
+}

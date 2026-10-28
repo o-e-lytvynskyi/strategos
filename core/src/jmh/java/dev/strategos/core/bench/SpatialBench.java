@@ -12,6 +12,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.IntConsumer;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
@@ -24,6 +25,7 @@ import org.openjdk.jmh.annotations.State;
  * {@code rebuild1000} rebuilds it (a {@code @HotPath} kernel: no allocation); {@code query1000} asks, for each unit,
  * for the enemies within 16 blocks of it (budget: 1 ms for the 1,000).
  */
+@Fork(2)
 @State(Scope.Thread)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
@@ -59,6 +61,7 @@ public class SpatialBench {
     }
 
     @Benchmark
+    @Fork(5) // bimodal across forks on the M4 Pro: five keep one slow fork from deciding the mean
     public int rebuild1000() {
         grid.rebuild(entities, motion, identity);
         return grid.count();

@@ -50,7 +50,20 @@ public final class PlaceholderBlueprints {
         return out;
     }
 
-    /** 11 x 7 x 11: stone-brick walls with a three-wide doorway, a flat roof and a smaller cap. */
+    /** Where the civic centre's town bell stands, in blueprint coordinates: on the floor just inside the doorway (BLD-16). */
+    public static final int CENTRE_BELL_X = 5;
+
+    public static final int CENTRE_BELL_Y = 1;
+
+    public static final int CENTRE_BELL_Z = 2;
+
+    /** The bell block's state in the civic centre's palette. */
+    public static final String BELL_BLOCK = "minecraft:bell[attachment=floor,facing=north,powered=false]";
+
+    /**
+     * 11 x 7 x 11: stone-brick walls with a three-wide doorway, a flat roof and a smaller cap, and the town bell
+     * ({@link #CENTRE_BELL_X} and so on) on the floor inside the doorway (BLD-16).
+     */
     public static Blueprint civicCentre() {
         Grid g = new Grid(
                 11,
@@ -60,7 +73,8 @@ public final class PlaceholderBlueprints {
                         "minecraft:stone_bricks",
                         "minecraft:cobblestone",
                         "minecraft:polished_andesite",
-                        "minecraft:chiseled_stone_bricks"));
+                        "minecraft:chiseled_stone_bricks",
+                        BELL_BLOCK));
         g.fill(0, 0, 0, 10, 0, 10, 1);
         for (int y = 1; y <= 4; y++) {
             g.ring(0, y, 0, 10, 10, y == 4 ? 3 : 0);
@@ -68,6 +82,7 @@ public final class PlaceholderBlueprints {
         g.clear(4, 1, 0, 6, 3, 0); // the doorway
         g.fill(0, 5, 0, 10, 5, 10, 0);
         g.fill(2, 6, 2, 8, 6, 8, 2);
+        g.set(CENTRE_BELL_X, CENTRE_BELL_Y, CENTRE_BELL_Z, 4);
         return g.blueprint(CIVIC_CENTRE, 5, 1, 0);
     }
 

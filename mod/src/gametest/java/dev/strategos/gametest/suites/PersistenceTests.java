@@ -263,6 +263,25 @@ public final class PersistenceTests {
                                             .owner(state.wall)
                                     != 0,
                             "the house is not up yet");
+                    // the whole house written: the writer's budget is shared with the batch's other matches, and a
+                    // block still queued at the save would be one more for the reconciler to rewrite
+                    var space = rt.space();
+                    check(
+                            StrategosServer.get()
+                                    .writer()
+                                    .pendingIn(
+                                            h.getLevel(),
+                                            rt.id().value(),
+                                            new net.minecraft.core.BlockPos(
+                                                    space.origin().getX(),
+                                                    space.minY(),
+                                                    space.origin().getZ()),
+                                            new net.minecraft.core.BlockPos(
+                                                    space.origin().getX() + space.sizeX() - 1,
+                                                    space.maxY(),
+                                                    space.origin().getZ() + space.sizeZ() - 1))
+                                    .isEmpty(),
+                            "the house is still being written");
                 })
                 .thenExecuteAfter(5, () -> {
                     state.was = h.getLevel().getBlockState(state.wall);

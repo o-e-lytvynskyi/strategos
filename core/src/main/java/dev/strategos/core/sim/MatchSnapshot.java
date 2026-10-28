@@ -3,9 +3,12 @@ package dev.strategos.core.sim;
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.sim.build.BuildingStore;
+import dev.strategos.core.sim.combat.ShotStore;
 import dev.strategos.core.sim.econ.CarryStore;
 import dev.strategos.core.sim.econ.NodeStore;
+import dev.strategos.core.sim.garrison.GarrisonStore;
 import dev.strategos.core.sim.nav.PathStore;
+import dev.strategos.core.sim.order.StanceStore;
 import java.util.List;
 
 /**
@@ -37,12 +40,41 @@ public record MatchSnapshot(
      * which of them think early.
      */
     @CoreApi
-    public record Play(List<Long> outcome, List<AiSlots.Saved> ai, long aiWake, List<Long> alerts) {
-        public static final Play EMPTY = new Play(List.of(), List.of(), 0, List.of());
+    public record Play(
+            List<Long> outcome,
+            List<AiSlots.Saved> ai,
+            long aiWake,
+            List<Long> alerts,
+            ShotStore.Snapshot shots,
+            List<StanceStore.Saved> stances,
+            List<GarrisonStore.Saved> garrisons) {
+        public static final Play EMPTY =
+                new Play(List.of(), List.of(), 0, List.of(), ShotStore.Snapshot.EMPTY, List.of(), List.of());
+
+        /** A play without garrisons, as before BLD-16 saved them. */
+        public Play(
+                List<Long> outcome,
+                List<AiSlots.Saved> ai,
+                long aiWake,
+                List<Long> alerts,
+                ShotStore.Snapshot shots,
+                List<StanceStore.Saved> stances) {
+            this(outcome, ai, aiWake, alerts, shots, stances, List.of());
+        }
+
+        /** A play without stances, as before CMB-05 saved them. */
+        public Play(
+                List<Long> outcome, List<AiSlots.Saved> ai, long aiWake, List<Long> alerts, ShotStore.Snapshot shots) {
+            this(outcome, ai, aiWake, alerts, shots, List.of(), List.of());
+        }
+
+        public Play(List<Long> outcome, List<AiSlots.Saved> ai, long aiWake, List<Long> alerts) {
+            this(outcome, ai, aiWake, alerts, ShotStore.Snapshot.EMPTY, List.of(), List.of());
+        }
 
         /** A play with no live alert, as before MATCH-04 saved them. */
         public Play(List<Long> outcome, List<AiSlots.Saved> ai, long aiWake) {
-            this(outcome, ai, aiWake, List.of());
+            this(outcome, ai, aiWake, List.of(), ShotStore.Snapshot.EMPTY, List.of(), List.of());
         }
 
         /** Whether the persisted victory outcome is terminal, even if the registry record is older. */
@@ -56,6 +88,8 @@ public record MatchSnapshot(
             outcome = List.copyOf(outcome);
             ai = List.copyOf(ai);
             alerts = List.copyOf(alerts);
+            stances = List.copyOf(stances);
+            garrisons = List.copyOf(garrisons);
         }
     }
 

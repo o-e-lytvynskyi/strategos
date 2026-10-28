@@ -3,6 +3,7 @@ package dev.strategos.core.sim;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.FactionSlot;
+import dev.strategos.core.shared.Stance;
 import dev.strategos.core.sim.build.BuildingView;
 import dev.strategos.core.sim.econ.EconomyTimes;
 import dev.strategos.core.sim.econ.FactionTreasury;
@@ -43,6 +44,9 @@ public interface MatchQueries {
      */
     int[] workers(FactionSlot faction);
 
+    /** The stance a player gave a live unit (CMB-05), or null when it fights as its template says or is dead. */
+    @Nullable Stance explicitStance(int handle);
+
     /** The resource a live unit carries, its index in the economy, or -1 when it carries none or is dead (ECO-05). */
     int carriedResource(int handle);
 
@@ -74,6 +78,11 @@ public interface MatchQueries {
 
     /** The published terrain pages: an immutable grid, replaced when a page is published. */
     SurfaceGrid surfaces();
+
+    /** Derived navigation memory across every mobility class; fake views may expose a single grid. */
+    default long navigationBytes() {
+        return surfaces().bytes();
+    }
 
     /** The published pages by the hash of their slices, in page order. */
     List<PageRef> pageRefs();
@@ -133,6 +142,11 @@ public interface MatchQueries {
     /** Whether a building's footprint blocks match-local column ({@code x}, {@code z}). */
     default boolean footprintAt(int x, int z) {
         return false;
+    }
+
+    /** PERF-08's combat systems' times so far. */
+    default dev.strategos.core.sim.combat.CombatTimes.Stats combatTimes() {
+        return new dev.strategos.core.sim.combat.CombatTimes.Stats(0, 0, 0, 0, 0);
     }
 
     /** PERF-07.4's node index and dropsite query times so far. */

@@ -1,14 +1,14 @@
 # main-save-reload on dev/lev1pes/main-save-reload
 
-**Developer:** lev1pes · **Branch:** dev/lev1pes/main-save-reload · **Work:** main-save-reload · **Base:** main @ b207e509a85a3303f515a716b04a87bc90ee2cb8 · **Claimed:** 2026-10-27 · **Status:** ready for review
+**Developer:** lev1pes · **Branch:** dev/lev1pes/main-save-reload · **Work:** main-save-reload · **Base:** main @ b207e509a85a3303f515a716b04a87bc90ee2cb8 · **Claimed:** 2026-10-27 · **Status:** in progress
 
 ## Now
 
 - **Milestone:** bounded follow-up fixes for three independently reproduced bugs in existing main: [#23](https://github.com/o-e-lytvynskyi/strategos/issues/23), [#24](https://github.com/o-e-lytvynskyi/strategos/issues/24), [#25](https://github.com/o-e-lytvynskyi/strategos/issues/25).
-- **State:** all three fixes implemented and verified; ready for independent maintainer review. Assignment merged by PR #26.
+- **State:** original fixes implemented and verified before M5; maintainer review received at c9dd148. Branch refreshed to M5; review corrections remain before merge. Assignment merged by PR #26.
 - **Last finished task:** cloud paired JMH: 21/21 comparable benchmarks, maximum slowdown 9.554% against the unchanged 15% gate; allocation checks pass. Standard cloud perf: all 18 required server GameTests pass. Functional verification: 1,936 tests pass.
-- **Next task:** inspect checks on hand-in [PR #30](https://github.com/o-e-lytvynskyi/strategos/pull/30), then independent maintainer review and human merge. Keep this claim assigned until the maintainer closes it.
-- **Merged from main last:** bb800d0 (2026-10-27), including the assignment merge (#26), fix-main (#21) and owner answers (#27).
+- **Next task:** address the maintainer's legacy-index ambiguity finding and remaining review items below, then revalidate and request independent review of [PR #30](https://github.com/o-e-lytvynskyi/strategos/pull/30). Keep this claim assigned until the maintainer closes it.
+- **Merged from main last:** dcb5013 (2026-10-29), including M5 delivery (#33) and reconciled claims (#29). Snapshots.take retains M5 shots/stances/garrisons and stable template bindings.
 
 ## Depends on unfinished work
 
@@ -66,6 +66,24 @@
 - **Links:** [hand-in PR #30](https://github.com/o-e-lytvynskyi/strategos/pull/30), this branch record and [performance evidence](lev1pes-main-save-reload-perf.md). Main was freshly fetched and remains bb800d0, already merged here; core/mod/build-logic trees are identical to the verified candidate.
 
 ## For the owner
+
+### 2026-10-29 synchronization evidence
+
+- Fast-forwarded the local worktree to the maintainer review c9dd148, then merged
+  origin/main dcb5013. The only source conflict was Snapshots.take; retained M5's
+  shots, stances and garrisons together with this branch's template bindings.
+- verifyFast passes in 5m 48s; 1,621 core tests, zero failures/errors/skips. Roadmap
+  checks 245 cards and claims checks 7 rows with no problems; diff whitespace check
+  passes. No full verify, slow/soak or performance rerun is claimed for this refresh.
+- Synchronization is complete; implementation of the maintainer's remaining review
+  findings is a separate next step on this assigned branch. No release or merge
+  into main was performed.
+
+0. Current status after the 2026-10-29 branch refresh: the maintainer's review below
+   supersedes the earlier ready-for-review report. Main dcb5013 is integrated, with
+   both snapshot changes preserved. Legacy-index ambiguity and review items 3–7
+   remain open; the old cloud results validate the pre-M5 candidate, not this merge.
+   This synchronization does not claim that those corrections are implemented.
 
 1. Independent maintainer review and human merge. Both owner-requested cloud runs passed: [standard perf](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40594606609) and [paired JMH](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40595834693). This is same-host regression/Linux CI evidence, not promotion of an approved baseline or native Mac-budget validation. Retain [all local failures](lev1pes-main-save-reload-perf.md).
 2. Review the serial Windows `verify` duration (about 9m 10s versus the documented 5-minute budget): accept the platform time or decide separately which run moves to `verifySlow`. No run or gate was moved here.
