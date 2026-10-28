@@ -1,5 +1,8 @@
 # Claims
 
+**Current registry:** [claims on main](https://github.com/o-e-lytvynskyi/strategos/blob/main/docs/claims.md).
+A copy on a development branch is a snapshot; it does not update when `main` changes.
+
 Who works on what. A row here is an assignment: it reaches `main` only by a pull request,
 before any development starts, so two developers can never hold the same work (AGENTS.md
 "Developers and claims"; `python3 tools/claims.py check` guards it).
@@ -20,15 +23,16 @@ before any development starts, so two developers can never hold the same work (A
   collaborator's compete for the same work, the collaborator's is accepted first, whatever their
   order; the owner accepts outside claims by hand.
 - Live progress is in each branch file, not here; this table changes only at a claim, a release
-  and a merge.
+  and a merge. An assignment-only merge leaves the work `assigned`; merge of the delivered
+  work changes it to `done`. Maintainers update the row in the delivery merge.
 
 | Work | Developer | Branch | Status | Since | Note |
 |---|---|---|---|---|---|
-| M6 spec | dyadik | dev/dyadik/m6-spec | assigned | 2026-10-25 | planning |
-| fix-main | lev1pes | dev/lev1pes/fix-main | done | 2026-10-27 | merged by PR #21; investigate the two perf failures in run 40176248614; registration PR #12 first |
-| M5 | lev1pes | dev/lev1pes/m5 | released | 2026-10-25 | owner-authorized release on 2026-10-26 for takeover by o-e-lytvynskyi; holder approval is not claimed; preserve legacy T1-T2 and both original branches |
-| M6 T2–T17 | dyadik | dev/dyadik/m6-t2-t17 | assigned | 2026-10-25 | needs nothing from M5 (spec §7.1); waits for «open M6 for claims» |
-| M5 | o-e-lytvynskyi | dev/o-e-lytvynskyi/m5 | assigned | 2026-10-26 | owner-authorized takeover after release PR #18; preserve and reconcile legacy T1-T2 from codex/m5-combat; fix-main remains a separate claim |
-| main-save-reload | lev1pes | dev/lev1pes/main-save-reload | assigned | 2026-10-27 | follow-up bug fixes #23, #24, #25 found on main b207e50; excludes performance fix-main/PR #21 and new M5 scope |
-| M8 T1–T6 | lev1pes | dev/lev1pes/m8-foundations | assigned | 2026-10-28 | owner requested M8 independent work in the operator session; specification and contract-tested foundations only; runtime M6/M7 integration and final M8 gates excluded until prerequisites merge |
+| M6 spec | dyadik | dev/dyadik/m6-spec | done | 2026-10-25 | specification merged 2026-10-25 in [PR #16](https://github.com/o-e-lytvynskyi/strategos/pull/16); implementation is a separate claim |
+| fix-main | lev1pes | dev/lev1pes/fix-main | done | 2026-10-27 | performance repair merged 2026-10-27 in [PR #21](https://github.com/o-e-lytvynskyi/strategos/pull/21); historical run 40176248614 |
+| M5 | lev1pes | dev/lev1pes/m5 | released | 2026-10-25 | released 2026-10-26 in [PR #18](https://github.com/o-e-lytvynskyi/strategos/pull/18) for owner-authorized takeover; holder approval is not claimed; preserve legacy T1-T2 and both original branches |
+| M6 T2–T17 | dyadik | dev/dyadik/m6-t2-t17 | assigned | 2026-10-25 | assignment merged in [PR #17](https://github.com/o-e-lytvynskyi/strategos/pull/17); implementation not merged; opening M6 remains an owner decision |
+| M5 | o-e-lytvynskyi | dev/o-e-lytvynskyi/m5 | done | 2026-10-28 | takeover assignment merged in [PR #19](https://github.com/o-e-lytvynskyi/strategos/pull/19); combat delivered 2026-10-28 in [PR #33](https://github.com/o-e-lytvynskyi/strategos/pull/33) |
+| main-save-reload | lev1pes | dev/lev1pes/main-save-reload | assigned | 2026-10-27 | assignment merged in [PR #26](https://github.com/o-e-lytvynskyi/strategos/pull/26), not an implementation delivery; fixes #23, #24, #25; excludes fix-main and new M5 scope |
+| M8 T1–T6 | lev1pes | dev/lev1pes/m8-foundations | assigned | 2026-10-28 | owner requested M8 independent work in the operator session; assignment merged in [PR #31](https://github.com/o-e-lytvynskyi/strategos/pull/31), not an implementation delivery; specification and contract-tested foundations only; runtime M6/M7 integration and final M8 gates excluded until prerequisites merge |
 | M7 | lev1pes | dev/lev1pes/m7 | assigned | 2026-10-29 | owner requested the whole milestone in the operator session; operator explicitly authorized pre-merge development of ready or bounded contract work; blocked M6 integration, product decisions, art and acceptance remain gated; planning delivery is PR #32 |

@@ -8,7 +8,7 @@
 - **In progress:** main reconciliation requested by the operator; T2a foundation is complete.
 - **Last finished task:** T2a independent diplomacy foundation (2026-10-29), cloud-verified implementation e8438cd.
 - **Next task:** merge current origin/main and cloud-verify; then reassess T2b authority/journal/persistence installation against the merged prerequisites.
-- **Merged from main last:** 267da40 (2026-10-29).
+- **Merged from main last:** dcb5013 (2026-10-29); merged checkpoint awaiting cloud verification.
 
 The operator requested ownership of the whole M7 and work on what is currently possible on
 2026-10-29. This assignment intentionally includes responsibility for later blocked tasks;
@@ -33,6 +33,12 @@ before implementing them. T2 does not certify friendly-fire, allied victory, com
 or replication privacy; those retain their own integration tests and dependencies.
 
 ## Log
+
+### 2026-10-29 — requested main synchronization
+
+- Fetched main from 267da40 to dcb5013 (five commits). Merged current central records and M5 delivery status; resolved the claims.md conflict by keeping all main rows and appending our M7 assignment, without rolling back M6/M5 status fixes.
+- The Windows wrapper delta is checked separately for executable changes; no history is rewritten. T2a runtime sources and tests are retained.
+- **Next:** cloud verify on the merge checkpoint, then record its result.
 
 ### 2026-10-29 — T2a complete
 
