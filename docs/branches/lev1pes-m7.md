@@ -5,10 +5,10 @@
 ## Now
 
 - **Milestone:** M7 Multiplayer; 2 of 26 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md), based on planning PR #32.
-- **In progress:** main reconciliation requested by the operator; T2a foundation is complete.
+- **In progress:** none. Operator stop for 2026-10-29 after T2a and main synchronization; do not start T2b in this session.
 - **Last finished task:** T2a independent diplomacy foundation (2026-10-29), cloud-verified implementation e8438cd.
-- **Next task:** merge current origin/main and cloud-verify; then reassess T2b authority/journal/persistence installation against the merged prerequisites.
-- **Merged from main last:** dcb5013 (2026-10-29); merged checkpoint awaiting cloud verification.
+- **Next task:** only after the operator resumes work, reassess T2b authority/journal/persistence installation and its PR #30 prerequisite. T2b is unstarted.
+- **Merged from main last:** dcb5013 (2026-10-29), merge 4e1ff97; cloud verify passed, zero commits behind main at the final fetch.
 
 The operator requested ownership of the whole M7 and work on what is currently possible on
 2026-10-29. This assignment intentionally includes responsibility for later blocked tasks;
@@ -25,19 +25,27 @@ The planning specification from our own PR #32 is incorporated and reconciled in
 | M6 AI-05 / AI-18 / UI-20 / solo fog | Observed AI inputs, difficulty, minimap and authoritative visibility | Against a contract only where fakes prove independent behavior; after for runtime AI, HUD and hidden-body integration | AFTER-M6: AI, HUD and visibility adapters when introduced |
 | M6 QA-13 / PERF-09 | MVP fun verdict and accepted performance reference | After: ART-03 start and final PERF-10 acceptance; do not substitute provisional results | AFTER-M6: art and final performance prerequisites |
 | M8 foundations | Shared-vision and recipient policy contracts | Independent M7 identity/grant rules; reconcile contracts without importing or changing the separate M8 branch | AFTER-M8: shared-vision reconciliation when introduced |
-| Save/reload PR #30 | Stable template references and terminal-state restoration fixes | Independent core foundation first; after merge, reconcile persistence against the delivered schema rather than fork it | List unresolved integration in T1/T5 |
+| Save/reload PR #30 | Stable template references and terminal-state restoration fixes | T2a independent foundation complete; T2b/T5 require a verified resolution of M5 snapshot composition and the open legacy-index review finding before schema installation, on a merged or explicitly stacked prerequisite | List unresolved integration in T2b/T5 |
 
-Initial order: T1 readiness, T2 pure core foundations, then reassess T3/T5/T6 and later tasks
+Initial order: T1 readiness, T2a pure core foundations, T2b authority/persistence installation, then reassess T3/T5/T6 and later tasks
 against merged prerequisites. Split oversized or partially ready tasks in the specification
 before implementing them. T2 does not certify friendly-fire, allied victory, command adapters
 or replication privacy; those retain their own integration tests and dependencies.
 
 ## Log
 
+### 2026-10-29 — verified main merge and operator stop
+
+- **Main synchronization** — [cloud verify](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40789677322) on merge 4e1ff97 passed in 6m 2s: 2,253 canonical XML test cases, zero failures/errors/skips; all 16 diplomacy cases executed. Expected negative harness failures were caught by their gates.
+- Final fetch retains main dcb5013; main is an ancestor, zero commits behind. No main push, rebase or force-push. Claim and roadmap checks cover 8 rows and 245 cards with zero problems.
+- **Stop:** the operator explicitly requested stopping for today once T2a and the main merge were finished. Both are complete. T2b and all later tasks remain unstarted; no continuation or new test run is scheduled. PR #34 stays draft because the whole milestone is not complete.
+- **Next on resume:** verify the persistence prerequisite fixes before authority/schema integration; missing M6 runtime and owner/product acceptance gates remain explicit.
+
 ### 2026-10-29 — requested main synchronization
 
 - Fetched main from 267da40 to dcb5013 (five commits). Merged current central records and M5 delivery status; resolved the claims.md conflict by keeping all main rows and appending our M7 assignment, without rolling back M6/M5 status fixes.
-- The Windows wrapper delta is checked separately for executable changes; no history is rewritten. T2a runtime sources and tests are retained.
+- The Windows wrapper delta has no executable changes when line endings are ignored; no history is rewritten. T2a runtime sources and tests are retained.
+- Reassessed PR #30 at c9dd148: the new commit is a maintainer review record, not a persistence repair. Its open major finding concerns legacy indices reinterpreted against the expanded M5 built-in table; SavedTemplates.resolve still uses the current built-in index table for legacy references. This is a reported unresolved compatibility risk, not a new locally reproduced test failure. T2b/T5 need the verified migration policy and M5 snapshot composition before installation; waiting for claim approval is not the blocker.
 - **Next:** cloud verify on the merge checkpoint, then record its result.
 
 ### 2026-10-29 — T2a complete

@@ -102,6 +102,7 @@ are ready, or an explicitly bounded contract-only scope. Do not claim blocked ad
 - Operator exception: proceed before claim PR #34 approval/merge. No self-approval or merge is authorized.
 - M5 is delivered on main by PR #33; use its current damage/projectile paths at T7, not the old planning assumption that M5 is missing.
 - M6 runtime remains unmerged. Its setup/outcome, observed AI, minimap, solo-visibility and perf contracts are not production implementations. T3/T7/T13/T14/T15/T20 retain integration gates.
+- Main was synchronized to dcb5013 on 2026-10-29. PR #30 at c9dd148 still has an unresolved M5 snapshot conflict and a maintainer-reported legacy-index compatibility risk: its legacy resolver uses the expanded current built-in table. T2b/T5 need that policy corrected and verified before a versioned diplomacy installation, whether the prerequisite is merged or explicitly stacked.
 - PR #30 persistence fixes and planning PR #32 remain open. Import only this reviewed planning document from our own planning branch; do not import its registry row or branch status. T5 coordinates schema numbers after persistence delivery.
 - T2 is split before code into T2a bounded pure state/view/snapshot foundations and T2b installation. T2a does not replace numeric authority checks, modify running matches or claim co-op/privacy acceptance. T2b must land together with the appropriate persistence/journal integration so authority is never lost on restore.
 - D-20 hosting, D-03 art, the MVP fun verdict and deferred fighting/scouting remain unresolved. They do not prevent T2a.
@@ -488,3 +489,5 @@ reviewed implementation task between T17 and T18, keeping the acceptance depende
 ### Foundation verification, 2026-10-29
 
 T2a: [cloud verify 40788528341](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40788528341), implementation checkpoint `e8438cd`, passed in 7m 20s: 2,253 canonical XML test cases, zero failures/errors/skips; all 16 DiplomacyStateTest cases executed. Core architecture/static checks, adapter tests, GameTests, server smoke and negative harness self-tests passed through verify. Running tick/order/hash paths are unchanged, so this bounded task does not require slow/soak or JMH. T2b still owns installation, journal and versioned persistence; no live co-op or privacy criterion is declared complete.
+
+Main synchronization: merge `4e1ff97` includes `origin/main` at `dcb5013`. [Cloud verify 40789677322](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40789677322) passed in 6m 2s: 2,253 canonical XML cases, zero failures/errors/skips, all 16 diplomacy cases executed. Final fetch showed zero commits behind main. The operator requested a stop for 2026-10-29 after T2a and this merge; T2b is unstarted.
