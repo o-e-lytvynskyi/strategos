@@ -167,7 +167,7 @@ implementation if it exceeds 1,500 lines. It is not assigned by this document.
 ### 4.1 Progress
 
 - [x] T1 Specification and scope matrix
-- [ ] T2 Shared visibility policy
+- [x] T2 Shared visibility policy
 - [ ] T3 Last-seen building memory
 - [ ] T4 Channel inventory and audience decisions
 - [ ] T5 Observed AI/scouting knowledge
@@ -199,3 +199,7 @@ records this for owner review. No check was moved, skipped or weakened. T1–T6
 completion will mean foundations delivered only. Full M8 cards cannot be done
 until their remaining criteria above pass. Record APIs and every AFTER marker
 at the future hand-in.
+
+T2 completed: direct directional TeamVision with four L1 tests, including real
+ReplicationService filtering. verifyFast 2m 5s; serial verify 7m 37s. No runtime
+wiring, tracking loop, grid or existing codec changed. AFTER-M6/M7 stay explicit.

@@ -6,10 +6,10 @@
 
 ## Now
 
-- **Milestone:** M8 Fog of war; only independent T1–T6 are assigned. Claim merged in PR #31. No implementation tasks are complete.
-- **In progress:** none. Stopped after completed T1 at the owner's request on 2026-10-28; continue remaining work the next day only after the owner resumes.
-- **Last finished task:** T1 specification and acceptance/dependency matrix in [M8-fog-of-war.md](../milestones/M8-fog-of-war.md); all checks pass as recorded below.
-- **Next task:** T2 shared visibility policy, only after the owner resumes. Full runtime integration remains unassigned T7–T12.
+- **Milestone:** M8 Fog of war; only independent T1–T6 are assigned. Claim merged in PR #31. T2 is complete; T3–T6 remain.
+- **In progress:** none; T2 complete, continuing assigned work.
+- **Last finished task:** T2 shared-visibility policy; verifyFast and full verify passed.
+- **Next task:** T3 last-seen building memory, then T4–T6. Full runtime integration remains unassigned T7–T12.
 - **Merged from main last:** 3c1f430 (2026-10-28).
 
 ## Scope and intended task split
@@ -55,6 +55,14 @@ Full FOW-02 targeted tracking, FOW-03 live save/minimap ghosts, FOW-05 all-chann
 - Verification: verifyFast 2m 49s; roadmap 245/0 problems; claims 7/0; full serial verify 6m 8s, 1,310 core + 95 mod + 212 GameTests, zero failures/errors/skips. Smoke, restart and both arena markers ok. git diff --check clean.
 - Initial default parallel verify failed in 3m 12s at existing ProtectedBlockIndexTest.aLookupCostsTheSameAtAnySize: 269.1ns versus 54.1ns, ratio 4.977 against <3. Saved the original XML as build/m8-t1-first-protected-block.xml. One isolated diagnostic passed in 18s; full verify --max-workers=1 then passed. Preserve both outcomes: variability is established, its cause is not. No test, threshold or baseline changed.
 - Local logs: build/m8-baseline.log, build/m8-t1-verify.log, build/m8-t1-protected-confirm.log and build/m8-t1-serial-verify.log. These are ignored evidence, not repository artifacts.
+
+### 2026-10-28 — resumed T2
+
+- Owner resumed assigned T2–T6. Fresh main remains 3c1f430; registry still assigns this phase to lev1pes, no competing M8 PR. Latest main workflow list includes the historical perf failure 40176248614 already repaired by merged #21; no new failure is inferred.
+- Baseline verifyFast passes in 31s. New TeamVisionTest first failed all four behavior tests against the deliberately denying implementation (14s); implementation unions direct authorized views and the existing ReplicationService now exercises the contract in L1.
+- AFTER-M6 in TeamVision: adapt VisibilityIndex/cell queries. AFTER-M7: frozen diplomacy, persistent received exploration and materialized O(1) tracking views. The runtime is unchanged; FOW-02 is in_progress, not complete.
+
+- T2 final gates: verifyFast 2m 5s; full serial verify 7m 37s; 1,314 core + 95 mod + 212 GameTests, zero failures/errors/skips. No new compiler findings. Existing threshold/baseline files unchanged.
 
 ## For the owner
 

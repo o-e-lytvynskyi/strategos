@@ -103,7 +103,7 @@ full runtime acceptance below still waits for M6/M7.
   5. Re-tracking at 4 × 150 fits budget A (L6).
 - **Tests:** L0, L2, L3, L5, L6 · **Depends on:** FOW-07, NET-03, MATCH-06 · **Size:** L ·
   **Tier:** T1
-- **Status:** specified
+- **Status:** in_progress
 
 #### FOW-03 · Mirages and shared explored state
 - **Value:** You remember what you scouted: explored terrain stays dimly visible, and enemy
