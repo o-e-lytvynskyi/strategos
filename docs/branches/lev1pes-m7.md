@@ -7,10 +7,10 @@
 ## Now
 
 - **Milestone:** M7 Multiplayer; 2 of 27 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md), based on planning PR #32.
-- **In progress:** T2b.2 persisted-authority contract tests against the functionally verified T2b.1 composition; their final L6 acceptance remains shared and pending.
+- **In progress:** T2b.2 authority/setup, schema-4 migration, hashing and journal integration are installed and functionally verified; final slow and standard L6 acceptance remains shared with T2b.1 and pending.
 - **Last finished task:** T2a independent diplomacy foundation (2026-10-29), cloud-verified implementation e8438cd.
-- **Next task:** accept combined prerequisite cloud gates, then T2b.2 core authority/setup, schema-4 migration, hashing and journal integration.
-- **Merged from main last:** 134271f (2026-10-30); runtime identical to functional green checkpoint 82ee012; merged-head gates pending.
+- **Next task:** complete the isolated slow/soak and standard performance gates, then reassess dependency-ready M7 work.
+- **Merged from main last:** 134271f (2026-10-30); merged-head verify and paired JMH passed; slow and standard L6 pending.
 
 The operator requested ownership of the whole M7 and work on what is currently possible on
 2026-10-29. This assignment intentionally includes responsibility for later blocked tasks;
@@ -35,6 +35,12 @@ before implementing them. T2 does not certify friendly-fire, allied victory, com
 or replication privacy; those retain their own integration tests and dependencies.
 
 ## Log
+
+### 2026-10-30 — paired JMH accepted, diagnostic workflow removed
+
+- [Paired JMH 40972202260](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40972202260) passed on 33ecb12 against pinned prerequisite 0debda5 on the same runner. Both sides contain 27 matching configurations with equal measurement/JVM settings; the unchanged 15% and allocation comparator passed.
+- Maximum candidate/control time ratio was 1.050607 (`CrossingBench.cross384`); codec encode ratio 1.013487. Each JMH took about 8m 42s. vmstat retained 522 control and 521 candidate intervals, zero observed CPU steal on either side, mean idle 67.33%/67.19%. These are supplemental Linux results, not native Mac baseline acceptance or a baseline promotion.
+- Removed the temporary opt-in paired job/input and its mode-specific concurrency after collecting its complete evidence. Standard perf keeps its original command/measurements and the documented 90-minute aggregate resource limit. Isolated slow/soak run 40974064459 and standard perf 40972197958 remain pending; T2b steps stay unchecked.
 
 ### 2026-10-30 — slow gate timeout and isolated scheduling
 

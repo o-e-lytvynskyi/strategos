@@ -9,14 +9,9 @@ on:
     branches: [main]
     types: [labeled]
   workflow_dispatch:
-    inputs:
-      paired_jmh:
-        description: 'M7 same-host comparison against the pinned prerequisite composition (15% gate)'
-        type: boolean
-        default: false
 
 concurrency:
-  group: perf-${{ github.ref }}-${{ inputs.paired_jmh && 'paired-jmh' || 'standard' }}
+  group: perf-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -24,7 +19,7 @@ permissions:
 
 jobs:
   perf:
-    if: (github.event_name == 'workflow_dispatch' && !inputs.paired_jmh) || (github.event.pull_request.draft == false && github.event.label.name == 'perf')
+    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.draft == false && github.event.label.name == 'perf')
     runs-on: ubuntu-24.04
     # 22 serial scenes exceeded 55 minutes after M5; measurement gates and scene lengths are unchanged.
     timeout-minutes: 90
@@ -55,87 +50,3 @@ jobs:
             core/build/reports/perf/
             mod/build/reports/perf/
             mod/build/gametest-perf/logs/
-
-  paired-jmh:
-    # Supplemental same-host evidence for M7 T2b authority/persistence, not a replacement for the approved Mac baseline.
-    # Both checkouts are trusted repository commits; the control is pinned to the verified M7 prerequisite composition.
-    if: github.event_name == 'workflow_dispatch' && inputs.paired_jmh
-    runs-on: ubuntu-24.04
-    timeout-minutes: 35
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          path: candidate
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: 0debda5c2a18e60733a5382bfe2452c9e76cbff2
-          path: control
-      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
-        with:
-          distribution: temurin
-          java-version: '21'
-      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
-        with:
-          cache-provider: basic
-      - name: Record commits and runner
-        run: |
-          mkdir -p evidence
-          git -C control rev-parse HEAD > evidence/control-commit.txt
-          git -C candidate rev-parse HEAD > evidence/candidate-commit.txt
-          lscpu > evidence/cpu.txt
-          java -version 2> evidence/java.txt
-      - name: Build both benchmark jars before measuring
-        run: |
-          ./control/gradlew -p control --no-daemon --console=plain --max-workers=2 :core:compileJmhJava
-          ./candidate/gradlew -p candidate --no-daemon --console=plain --max-workers=2 :core:compileJmhJava
-      - name: Control JMH
-        run: |
-          vmstat -w 1 > evidence/control-vmstat.txt &
-          monitor=$!
-          trap 'kill "$monitor" 2>/dev/null || true' EXIT
-          ./control/gradlew -p control --no-daemon --console=plain --max-workers=2 :core:jmh
-      - name: Candidate JMH
-        run: |
-          vmstat -w 1 > evidence/candidate-vmstat.txt &
-          monitor=$!
-          trap 'kill "$monitor" 2>/dev/null || true' EXIT
-          ./candidate/gradlew -p candidate --no-daemon --console=plain --max-workers=2 :core:jmh
-      - name: Require comparable complete results
-        run: |
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-
-          def results(checkout):
-              rows = json.loads(Path(checkout, 'core/build/reports/jmh/result.json').read_text())
-              keyed = {(r['benchmark'], tuple(sorted(r.get('params', {}).items()))): r for r in rows}
-              assert len(keyed) == len(rows) == 27, 'Missing or duplicate benchmarks'
-              return keyed
-
-          control, candidate = results('control'), results('candidate')
-          assert control.keys() == candidate.keys(), 'Benchmark sets differ'
-          fields = ('mode', 'threads', 'forks', 'jvm', 'jvmArgs', 'jdkVersion', 'jmhVersion',
-                    'warmupIterations', 'warmupTime', 'warmupBatchSize',
-                    'measurementIterations', 'measurementTime', 'measurementBatchSize')
-          for key, before in control.items():
-              after = candidate[key]
-              for field in fields:
-                  assert before[field] == after[field], (key, field)
-              assert before['primaryMetric']['scoreUnit'] == after['primaryMetric']['scoreUnit'], key
-          print(f'{len(control)} matching benchmark configurations')
-          PY
-      - name: Existing 15 percent and allocation gates
-        run: >-
-          ./candidate/gradlew -p candidate --no-daemon --console=plain --max-workers=2 :core:jmhCompare
-          -Pjmh.baseline=../control/core/build/reports/jmh/result.json
-      - name: Paired reports
-        if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: paired-jmh-reports
-          retention-days: 7
-          if-no-files-found: warn
-          path: |
-            evidence/
-            control/core/build/reports/jmh/
-            candidate/core/build/reports/jmh/
