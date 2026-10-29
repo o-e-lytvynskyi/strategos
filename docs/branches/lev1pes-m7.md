@@ -2,13 +2,15 @@
 
 **Developer:** lev1pes · **Branch:** dev/lev1pes/m7 · **Work:** M7 · **Base:** main @ 267da40 · **Claimed:** 2026-10-29 · **Status:** in progress
 
+**Note:** whole M7 requested by the operator on 2026-10-29; draft [PR #34](https://github.com/o-e-lytvynskyi/strategos/pull/34); explicit pre-merge development authorization persists on resume. Assignment is represented by this branch file after main removed the shared registry.
+
 ## Now
 
 - **Milestone:** M7 Multiplayer; 2 of 26 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md), based on planning PR #32.
-- **In progress:** none. Operator stop for 2026-10-29 after T2a and main synchronization; do not start T2b in this session.
+- **In progress:** resumed by the operator on 2026-10-29; main synchronization and T2b prerequisite assessment.
 - **Last finished task:** T2a independent diplomacy foundation (2026-10-29), cloud-verified implementation e8438cd.
-- **Next task:** only after the operator resumes work, reassess T2b authority/journal/persistence installation and its PR #30 prerequisite. T2b is unstarted.
-- **Merged from main last:** dcb5013 (2026-10-29), merge 4e1ff97; cloud verify passed, zero commits behind main at the final fetch.
+- **Next task:** cloud-verify the fresh main merge, then reassess T2b against the corrected PR #30 persistence contract and its outstanding gates.
+- **Merged from main last:** b893a0d (2026-10-29); resumed synchronization checkpoint awaiting cloud verify.
 
 The operator requested ownership of the whole M7 and work on what is currently possible on
 2026-10-29. This assignment intentionally includes responsibility for later blocked tasks;
@@ -33,6 +35,14 @@ before implementing them. T2 does not certify friendly-fire, allied victory, com
 or replication privacy; those retain their own integration tests and dependencies.
 
 ## Log
+
+### 2026-10-29 — resumed, main synchronization and claims migration
+
+- The operator resumed work, lifting the earlier session stop. Cloud-only testing and pre-merge development authorization remain in effect.
+- Merged main through b893a0d: the shared claims registry is removed, claims live in branch headers, the M7 planning delivery is on main, and performance-validity instrumentation/ProtectedBlockIndex structural tests are included. Preserved the implementation specification because the planning document on main is identical to our original planning baseline; retained all T1/T2a implementation changes.
+- Removed the obsolete registry conflict and represented M7 ownership in this file; no other claim is changed locally.
+- PR #30 now records implemented review fixes and a resolved M5 composition conflict, with verify/soak passing, but full slow/L6 gates are unaccepted. Reassess the corrected contract and actual cloud evidence before installation; do not carry forward stale claims that review fixes are missing.
+- **Next:** cloud merge gate and T2b readiness assessment.
 
 ### 2026-10-29 — verified main merge and operator stop
 

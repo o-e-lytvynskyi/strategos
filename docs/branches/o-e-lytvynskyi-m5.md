@@ -2,6 +2,8 @@
 
 **Developer:** o-e-lytvynskyi · **Branch:** dev/o-e-lytvynskyi/m5 · **Work:** M5 · **Base:** main @ cb4044b · **Claimed:** 2026-10-26 · **Status:** merged 2026-10-28
 
+**Note:** takeover assignment merged in [PR #19](https://github.com/o-e-lytvynskyi/strategos/pull/19); combat delivered 2026-10-28 in [PR #33](https://github.com/o-e-lytvynskyi/strategos/pull/33)
+
 ## Now
 
 - **Milestone:** M5 Combat; 24 of 24 tasks complete; handed in 2026-10-29.

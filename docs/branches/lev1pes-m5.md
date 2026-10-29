@@ -1,6 +1,8 @@
 # M5 on dev/lev1pes/m5
 
-**Developer:** lev1pes (Codex, GPT-6 family) · **Branch:** dev/lev1pes/m5 · **Work:** M5 · **Base:** main @ f723161 · **Claimed:** 2026-10-25 · **Status:** claimed
+**Developer:** lev1pes (Codex, GPT-6 family) · **Branch:** dev/lev1pes/m5 · **Work:** M5 · **Base:** main @ f723161 · **Claimed:** 2026-10-25 · **Status:** released 2026-10-26
+
+**Note:** released 2026-10-26 in [PR #18](https://github.com/o-e-lytvynskyi/strategos/pull/18) for owner-authorized takeover; holder approval is not claimed; preserve legacy T1-T2 and both original branches
 
 ## Now
 

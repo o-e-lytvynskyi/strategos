@@ -1,31 +1,38 @@
 #!/usr/bin/env python3
-"""Who works on what: the claims registry docs/claims.md and the developer branches.
+"""Who works on what: the claims, one branch file each in docs/branches/.
 
-    python3 tools/claims.py [--fetch] list       the registry on origin/main, with each branch's last commit
-    python3 tools/claims.py check [--base <ref>] the registry in the working tree is valid: known statuses, no two
-                                                 active rows covering the same work; against <ref> (a claim pull
-                                                 request's base), work taken from another developer names their
-                                                 hand-over in its note
+    python3 tools/claims.py [--fetch] list       the claims on origin/main, with each branch's last commit
+    python3 tools/claims.py check [--base <ref>] [--head <branch>]
+                                                 the branch files in the working tree are valid claims: header fields
+                                                 present, known statuses, no two active claims covering the same
+                                                 work, and only <branch> (the pull request's head; default
+                                                 $GITHUB_HEAD_REF or the checked-out branch) may be "ready for
+                                                 review"; against <ref> (a claim pull request's base), work taken
+                                                 from another developer names their hand-over in its file
     python3 tools/claims.py [--fetch] owner      the "For the owner" sections of the active claims' branch files
     python3 tools/claims.py after [M<n>]         the AFTER-M<n> markers in the working tree, by the milestone they wait for
 
-A claim is a row of docs/claims.md that reached main by a pull request (AGENTS.md "Developers and claims").
-Work is written `M5` (every task of its spec), `M5 T1–T6` or `M5 T1, T3, T7` (tasks), `M6 spec`, or a free name
-(`fix-main`, `agents-runner`). Standard library only. Exit code 1 when `check` finds a problem.
+A claim is a branch file that reached main by a pull request (AGENTS.md "Developers and claims"; the rules are in
+docs/branches/README.md). Work is written `M5` (every task of its spec), `M5 T1–T6` or `M5 T1, T3, T7` (tasks),
+`M6 spec`, or a free name (`fix-main`, `agents-runner`). Standard library only. Exit code 1 when `check` finds a
+problem.
 """
 
 import datetime
+import os
 import re
 import subprocess
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-REGISTRY = "docs/claims.md"
-STATUSES = ("reserved", "assigned", "done", "released")
-ACTIVE = ("reserved", "assigned")
+BRANCHES = "docs/branches"
+STATUSES = ("reserved", "claimed", "in progress", "ready for review", "merged", "released")
+ACTIVE = ("reserved", "claimed", "in progress", "ready for review")
+DATED = ("merged", "released")
+REQUIRED = ("Developer", "Branch", "Work", "Status")
 STALE_DAYS = 7
-ROW = re.compile(r"^\| (?!Work |---)(.+?) \| (.+?) \| (.+?) \| (.+?) \| (.+?) \| (.*?) \|\s*$")
+FIELD = re.compile(r"\*\*([A-Z][a-z]+):\*\* (.*?)(?= · \*\*|\s*$)")
 TASK = re.compile(r"\[[ x]\] (T[0-9]+[0-9a-z.]*)")
 RANGE = re.compile(r"^(M\d+)\s+(T[0-9a-z.]+)\s*[–-]\s*(T[0-9a-z.]+)$")
 LIST = re.compile(r"^(M\d+)\s+(T[0-9a-z.]+(?:\s*,\s*T[0-9a-z.]+)*)$")
@@ -35,16 +42,34 @@ def git(*args):
     return subprocess.run(["git", *args], check=True, capture_output=True, text=True, cwd=ROOT).stdout
 
 
-def rows(text):
-    """The registry's rows as dicts, in order."""
-    out = []
-    for line in text.splitlines():
-        m = ROW.match(line)
-        if m:
-            work, dev, branch, status, since, note = (g.strip().strip("`") for g in m.groups())
-            out.append({"work": work, "developer": dev, "branch": branch, "status": status,
-                        "since": since, "note": note, "line": line})
-    return out
+def parse(name, text):
+    """A branch file's claim: its header fields, the status without its date, and the text for hand-over notes."""
+    header = next((line for line in text.splitlines() if line.startswith("**Developer:**")), "")
+    fields = {k: v.strip().strip("`") for k, v in FIELD.findall(header)}
+    raw = fields.get("Status", "")
+    status = next((s for s in STATUSES if raw == s or (s in DATED and raw.startswith(s + " "))), raw)
+    note = re.search(r"^\*\*Note:\*\* (.*)$", text, re.M)
+    return {"file": name, "fields": fields, "developer": fields.get("Developer", "").split(" ")[0],
+            "branch": fields.get("Branch", "").split(" ")[0].strip("`"), "work": fields.get("Work", ""),
+            "since": fields.get("Claimed", ""), "status": status, "raw_status": raw,
+            "note": note.group(1).strip() if note else "", "text": text}
+
+
+def claims_in(files):
+    """The claims of {file name: text}, the README skipped, in file-name order."""
+    return [parse(name, text) for name, text in sorted(files.items()) if name != "README.md"]
+
+
+def files_in_worktree():
+    return {p.name: p.read_text() for p in (ROOT / BRANCHES).glob("*.md")}
+
+
+def files_at(ref):
+    try:
+        names = git("ls-tree", "--name-only", f"{ref}:{BRANCHES}").split()
+    except subprocess.CalledProcessError:
+        sys.exit(f"{ref} has no {BRANCHES}/ (an unknown ref, or one older than the branch files)")
+    return {n: git("show", f"{ref}:{BRANCHES}/{n}") for n in names if n.endswith(".md")}
 
 
 def spec_tasks(milestone, read):
@@ -92,25 +117,54 @@ def read_worktree(path):
     return (ROOT / path).read_text()
 
 
-def check(base):
+def same_branch(branch, head):
+    """A fork's claim names `<login>/strategos:dev/...`; its pull request's head is the `dev/...` part."""
+    return head is not None and (branch == head or branch.endswith(f":{head}"))
+
+
+def problems_of(current, before, head, read):
+    """What is wrong with the claims `current`; `before` are the claims on the pull request's base, or None."""
     problems = []
-    current = rows(read_worktree(REGISTRY))
-    for r in current:
-        if r["status"] not in STATUSES:
-            problems.append(f"{r['work']}: unknown status '{r['status']}' (one of {', '.join(STATUSES)})")
-    active = [r for r in current if r["status"] in ACTIVE]
+    ready_before = {o["file"] for o in before or [] if o["status"] == "ready for review"}
+    for c in current:
+        where = f"{BRANCHES}/{c['file']}"
+        missing = [f for f in REQUIRED if not c["fields"].get(f)]
+        if missing:
+            problems.append(f"{where}: header lacks {', '.join(missing)}")
+            continue
+        if c["status"] not in STATUSES:
+            problems.append(f"{where}: unknown Status '{c['raw_status']}' (one of {', '.join(STATUSES)})")
+        elif c["status"] in DATED and not re.fullmatch(rf"{c['status']} \d{{4}}-\d\d-\d\d", c["raw_status"]):
+            problems.append(f"{where}: Status '{c['raw_status']}' needs its date ('{c['status']} <yyyy-mm-dd>')")
+        elif c["status"] == "ready for review" and not same_branch(c["branch"], head) \
+                and (before is None or c["file"] in ready_before):
+            # Ready on the base too: its delivery was merged without the records. A stacked branch carries the
+            # earlier branch's ready file; that is fine while the base does not have it ready.
+            problems.append(f"{where} is 'ready for review' on a branch other than the pull request's: its delivery "
+                            f"was merged without the records (Status 'merged <date>')")
+    active = [c for c in current if c["status"] in ACTIVE]
     for i, a in enumerate(active):
         for b in active[i + 1:]:
-            if overlaps(a["work"], b["work"], read_worktree):
-                problems.append(f"'{a['work']}' ({a['developer']}) and '{b['work']}' ({b['developer']}) overlap")
-    if base:
-        before = [r for r in rows(git("show", f"{base}:{REGISTRY}")) if r["status"] in ACTIVE]
-        for r in active:
-            for old in before:
-                if old["developer"] != r["developer"] and overlaps(old["work"], r["work"], read_worktree) \
-                        and f"handed over by {old['developer']}" not in r["note"]:
-                    problems.append(f"'{r['work']}' takes work active for {old['developer']} on {base}: its note must "
-                                    f"say 'handed over by {old['developer']}' with a link to their approval")
+            if overlaps(a["work"], b["work"], read):
+                problems.append(f"'{a['work']}' ({a['developer']}, {a['file']}) and '{b['work']}' "
+                                f"({b['developer']}, {b['file']}) overlap")
+    for c in active:
+        for old in (o for o in before or [] if o["status"] in ACTIVE):
+            if old["developer"] != c["developer"] and overlaps(old["work"], c["work"], read) \
+                    and not re.search(rf"handed over by {re.escape(old['developer'])}\b", c["note"]):
+                problems.append(f"'{c['work']}' ({c['file']}) takes work active for {old['developer']} on the base: "
+                                f"its **Note:** must say 'handed over by {old['developer']}' with a link to their approval")
+    return problems
+
+
+def current_branch():
+    return os.environ.get("GITHUB_HEAD_REF") or git("rev-parse", "--abbrev-ref", "HEAD").strip()
+
+
+def check(base, head=None):
+    current = claims_in(files_in_worktree())
+    before = claims_in(files_at(base)) if base else None
+    problems = problems_of(current, before, head, read_worktree)
     for p in problems:
         print(p)
     print(f"{len(current)} claims checked, {len(problems)} problem(s)")
@@ -122,42 +176,43 @@ def last_commit(branch):
     return out or None
 
 
-def registry_on_main():
-    return rows(git("show", f"origin/main:{REGISTRY}"))
+def claims_on_main():
+    return claims_in(files_at("origin/main"))
 
 
 def cmd_list():
-    for r in registry_on_main():
-        if r["status"] not in ACTIVE and r["since"] < str(datetime.date.today() - datetime.timedelta(days=30)):
+    old = str(datetime.date.today() - datetime.timedelta(days=30))
+    for c in claims_on_main():
+        done = c["raw_status"].split(" ")[-1] if c["status"] in DATED else ""
+        if c["status"] in DATED and done < old:
             continue
-        date = last_commit(r["branch"]) if r["branch"] not in ("—", "-") else None
+        date = last_commit(c["branch"]) if c["status"] in ACTIVE else None
         stale = ""
-        if r["status"] == "assigned" and date:
+        if c["status"] != "reserved" and c["status"] in ACTIVE and date:
             age = (datetime.date.today() - datetime.date.fromisoformat(date)).days
             stale = f" (stale: {age} days)" if age > STALE_DAYS else ""
-        print(f"{r['work']} · {r['developer']} · {r['status']}{stale} · since {r['since']}"
-              f" · {r['branch']}" + (f", last commit {date}" if date else "")
-              + (f" · {r['note']}" if r["note"] else ""))
-    print("\nPending claims are open pull requests to main touching docs/claims.md: gh pr list --search claims.md")
+        print(f"{c['work']} · {c['developer']} · {c['raw_status']}{stale}"
+              + (f" · since {c['since']}" if c["since"] else "")
+              + f" · {c['branch']}" + (f", last commit {date}" if date else "")
+              + (f" · {c['note']}" if c["note"] else ""))
+    print("\nPending claims are open pull requests to main adding a branch file: gh pr list --search 'Claim: in:title'")
 
 
 def cmd_owner():
     found = False
-    for r in registry_on_main():
-        if r["status"] != "assigned" or not last_commit(r["branch"]):
+    for c in claims_on_main():
+        if c["status"] not in ACTIVE or c["status"] == "reserved" or not last_commit(c["branch"]):
             continue
-        ref = f"origin/{r['branch']}"
-        for path in git("ls-tree", "--name-only", ref, "docs/branches/").splitlines():
-            if path.endswith("README.md"):
-                continue
-            text = git("show", f"{ref}:{path}")
-            if f"**Branch:** {r['branch']}" not in text and f"**Branch:** `{r['branch']}`" not in text:
-                continue
-            m = re.search(r"^## For the owner\n(.*?)(?=^## |\Z)", text, re.M | re.S)
-            items = m.group(1).strip() if m else ""
-            if items and items.lower() not in ("none.", "- none."):
-                found = True
-                print(f"## {r['work']} — {r['developer']} ({r['branch']}, {path})\n{items}\n")
+        ref = f"origin/{c['branch']}"
+        try:
+            text = git("show", f"{ref}:{BRANCHES}/{c['file']}")
+        except subprocess.CalledProcessError:
+            continue
+        m = re.search(r"^## For the owner\n(.*?)(?=^## |\Z)", text, re.M | re.S)
+        items = m.group(1).strip() if m else ""
+        if items and items.lower() not in ("none.", "- none."):
+            found = True
+            print(f"## {c['work']} — {c['developer']} ({c['branch']}, {c['file']})\n{items}\n")
     if not found:
         print("No active claim asks the owner anything.")
 
@@ -185,7 +240,8 @@ def main(argv):
     command = args[0] if args else "list"
     if command == "check":
         base = args[args.index("--base") + 1] if "--base" in args else None
-        return check(base)
+        head = args[args.index("--head") + 1] if "--head" in args else current_branch()
+        return check(base, head)
     if command == "after":
         cmd_after(args[1] if len(args) > 1 else None)
     elif command == "list":

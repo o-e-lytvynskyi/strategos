@@ -4,6 +4,10 @@ Feature cards of milestone M7. [ROADMAP.md](../ROADMAP.md) holds the overview, t
 and the status of every card (the source of truth); the statuses below mirror it. Cards after the
 MVP are coarser by design and are refined at the review that opens their milestone.
 
+Planning specification: [M7 implementation plan](../milestones/M7-multiplayer.md), 2026-10-28.
+It defines tasks and contracts for review; card statuses remain `proposed` and implementation
+is not opened by this document.
+
 ## Milestone
 
 **Goal.** The owner's next stage: 2–4 players on a dedicated server, against each other or
