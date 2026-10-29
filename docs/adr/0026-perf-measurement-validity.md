@@ -97,10 +97,33 @@ past the monotonic clock is now `invalid`, and calibration runs under `caffeinat
   sub-0.5 s interval also gave a noisy p95 (`snapshot_500` 20.33 % on the quiet machine). Intervals under 0.5 s are
   now merged into the next.
 
-**Recommendation for the owner** (after round 4 confirms the fix): enforce the mean limit `min(10 %, 50 %/N)` in
-place of QA-07's 25 %; keep the p95 limit report-only, judged only on windows of 60 s or more, at `min(20 %,
-1.25/N)`, until a burst condition (a periodic load) calibrates it; the 60 s preflight's own mean under the same mean
-limit. Condition (c), a typical desktop, is still to run with the owner at the machine.
+### Round 4 — 2026-10-29, commit 7b868d1, kept awake, 60 s preflight
+
+| | (a) quiet (preflight 2.26 %) | (b) one CPU busy (preflight 10.39 %) |
+|---|---|---|
+| Mean, windows ≥ 28 s | 1.98–5.39 % (`battle_soak` 5.39, `battle_stress` 3.55, the rest ≤ 2.79) | 10.05–16.35 % |
+| Mean, windows under 10 s (judged on the last 10 s) | 1.70–10.45 % (`group_paths_budget_d` 10.45, `snapshot_500` 9.02, `block_writer_cost` 8.64) | 9.86–17.07 % |
+| p95, windows ≥ 60 s | 4.90–11.99 % (`battle_stress`) | 13.34–36.93 % |
+| Unavailable windows | none | none |
+| QA-07 (25 % mean) | all valid | all valid |
+| `protected_lookup_ratio` | 1.13 | 1.08 |
+
+- The merged short intervals work: no window is unavailable.
+- **A 10 s judgement span is too short.** On the quiet machine three 10 s spans read 8.6–10.5 %, above (b)'s lowest
+  (9.86 %): the distributions overlap, and no limit separates them. Round 3's quiet short spans were lower, so this
+  is noise of the span, not of the machine. A likely source is the Gradle daemon (a foreign process) forwarding the
+  server's console burst between tests; not attributed yet.
+- **4.17 % is tight even on long windows.** `battle_soak` read 5.39 % on the quiet machine (p95 10.4 %, peak 24 %:
+  a background burst); the busy minimum over rounds 1, 3 and 4 is 9.35 %.
+- p95 on windows ≥ 60 s: the quiet `battle_stress` reached 11.99 %, above round 3's proposed 1.25/N (10.4 %). p95
+  stays report-only.
+
+**Recommendation for the owner** (a measured alternative to the proposed limits): judge every window's mean over at
+least its last 60 s of readings (`MIN_SPAN_NANOS` from 10 s to 60 s), and enforce the mean limit `min(10 %,
+0.75/N)` (6.25 % for N = 12) in place of QA-07's 25 %: quiet long windows reached 5.39 %, one busy core never read
+under 9.35 % in three rounds. Keep p95 report-only until a burst condition calibrates it; the 60 s preflight's mean
+under the same limit. Before enforcing: one more round with the 60 s span, and condition (c), a typical desktop, with
+the owner at the machine.
 
 ## Consequences
 

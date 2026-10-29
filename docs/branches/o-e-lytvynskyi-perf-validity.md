@@ -19,6 +19,13 @@
 
 ## Log
 
+### 2026-10-29 — round 4
+
+- Round 4 (a) and (b) on 7b868d1, 90 min each, awake: no unavailable window (the merge fix holds).
+- A 10 s judgement span overlaps the conditions (quiet up to 10.45 %, busy from 9.86 %); on long windows the quiet
+  `battle_soak` read 5.39 % against the 4.17 % limit. ADR-0026 now recommends a 60 s span and `min(10 %, 0.75/N)`;
+  a round with the 60 s span and condition (c) come before the owner enforces anything.
+
 ### 2026-10-29 — round 3 and the merged short intervals
 
 - Round 3 (a) and (b) on e8d84d7, 90 min each, awake; numbers and the recommendation in ADR-0026.
