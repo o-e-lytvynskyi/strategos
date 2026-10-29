@@ -36,6 +36,13 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Log
 
+### 2026-10-30 — scheduling hypothesis not yet isolated
+
+- [Full-ci 40974064459](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40974064459) again hit the ten-minute server timeout, after 216 passing core cases and 18/19 finished server cases. `map_fifty` had 38 seconds before termination. The logs still show core soak executing during the server run despite `--no-parallel`; the attempted isolation was ineffective.
+- Retained vmstat: 777 intervals, zero CPU steal, mean runnable queue 3.79, mean idle 33.04%; these whole-machine counters cannot attribute load to the mod or core soak individually.
+- Split the existing required tasks into two separate Gradle invocations: core slow/soak completes before server slow starts. Added slow-server logs to retained artifacts. No test, timeout, threshold or workload change. The two unsuccessful runs remain recorded; the next run tests actual process isolation.
+- Fetched main at this checkpoint: zero commits behind 134271f.
+
 ### 2026-10-30 — paired JMH accepted, diagnostic workflow removed
 
 - [Paired JMH 40972202260](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40972202260) passed on 33ecb12 against pinned prerequisite 0debda5 on the same runner. Both sides contain 27 matching configurations with equal measurement/JVM settings; the unchanged 15% and allocation comparator passed.

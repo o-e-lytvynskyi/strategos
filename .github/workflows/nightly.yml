@@ -32,14 +32,15 @@ jobs:
       - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
         with:
           cache-provider: basic
-      # Build with two workers, but run test projects serially: core soak must not compete with the server JVM.
+      # Separate invocations: --no-parallel alone still allowed core soak to overlap the server in observed logs.
       - name: slow and soak
         run: |
           mkdir -p build/reports/cloud-load
           vmstat -w 1 > build/reports/cloud-load/vmstat.txt &
           monitor=$!
           trap 'kill "$monitor" 2>/dev/null || true' EXIT
-          ./gradlew --console=plain --max-workers=2 --no-parallel verifySlow verifySoak
+          ./gradlew --console=plain --max-workers=2 --no-parallel :core:slowTest :core:soak
+          ./gradlew --console=plain --max-workers=2 --no-parallel :mod:runGameTestSlow
       - name: Test results (L1, L2, L3, L5)
         if: always()
         uses: mikepenz/action-junit-report@6ef3fdcfcd5f0b5d14df3e659ef19b8c6820f93d # v6.6.1
@@ -58,6 +59,7 @@ jobs:
             **/build/test-results/
             **/build/reports/
             mod/build/gametest/logs/
+            mod/build/gametest-slow/logs/
             mod/build/server-smoke/logs/
             mod/build/server-smoke/crash-reports/
             mod/build/harness/*/logs/
