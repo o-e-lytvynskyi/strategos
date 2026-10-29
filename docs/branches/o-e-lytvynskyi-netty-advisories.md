@@ -1,8 +1,8 @@
 # netty-advisories on dev/o-e-lytvynskyi/netty-advisories
 
-**Developer:** o-e-lytvynskyi (Claude Code, Opus) · **Branch:** dev/o-e-lytvynskyi/netty-advisories · **Work:** netty-advisories · **Base:** main @ 541f283 · **Claimed:** 2026-10-29 · **Status:** ready for review
+**Developer:** o-e-lytvynskyi (Claude Code, Opus) · **Branch:** dev/o-e-lytvynskyi/netty-advisories · **Work:** netty-advisories · **Base:** main @ 541f283 · **Claimed:** 2026-10-29 · **Status:** merged 2026-10-29
 
-**Note:** the owner's word in the maintainer session, 2026-10-29 («исключи эту уязвимость отдельным ПРом», then «Исключить зависимости игры»); claim and delivery in one pull request on that word.
+**Note:** delivered in #43; the owner's word in the maintainer session, 2026-10-29 («исключи эту уязвимость отдельным ПРом», then «Исключить зависимости игры»); claim and delivery in one pull request on that word.
 
 ## Now
 
