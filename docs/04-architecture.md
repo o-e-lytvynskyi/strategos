@@ -898,7 +898,7 @@ DimensionDataStorage.java:43):
   - Template identities are persisted by string id. Building slots and production queues retain their
     numeric layout together with `templateBindings` (saved index → stable id); restore resolves every
     live reference against the current set before rebuilding footprints or production counts.
-    [ADR-0026](adr/0026-save-template-identities.md) fixes legacy migration to the common historical
+    [ADR-0027](adr/0027-save-template-identities.md) fixes legacy migration to the common historical
     reserved prefix (indices 0..4). All later numeric references, including later builtins, fail explicitly;
     neither a content hash nor the current table proves their identity. Missing schema-3 bindings
     with live buildings are a decode error, rather than an implicit legacy mode.
@@ -1450,7 +1450,7 @@ kinds from one definition:
      before publishing the set/table and queues a journaled `ContentSwap` for the next tick boundary.
      Terminal matches keep their frozen content and do not block reloads. The adapter revalidates at
      that boundary; an invalidated published swap faults its match before simulation advances
-     ([ADR-0026](adr/0026-save-template-identities.md)).
+     ([ADR-0027](adr/0027-save-template-identities.md)).
 - **Why not datapack registries.** They load only at world load, ignore `/reload` and decode each
   file alone, so they cannot resolve parents (fact 22). Registries hold only engine-fixed things:
   entity types, damage types, payload types. No planned feature needs a `Holder` or tag that points

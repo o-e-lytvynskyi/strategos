@@ -4,7 +4,7 @@ Date: 2026-10-21
 
 ## Status
 
-Accepted; targets confirmed 2026-10-23 by spike S12; amended by ADR-0026 (reload validation)
+Accepted; targets confirmed 2026-10-23 by spike S12; amended by ADR-0027 (reload validation)
 
 **Confirmed 2026-10-23** by spike [S12](../spikes/S12-content-cycle.md) (M1 T16): `/reload` takes
 0.26–0.33 s end to end with twenty test templates over two levels of inheritance and mixins, the
@@ -92,6 +92,6 @@ registries, a reload listener, or registries for ids plus reload data? Verified 
 
 ## 2026-10-29 - persistence identities and reload validation
 
-[ADR-0026](0026-save-template-identities.md) owns schema 3, stable bindings, conservative
+[ADR-0027](0027-save-template-identities.md) owns schema 3, stable bindings, conservative
 legacy migration, terminal-match exclusions and the publication-to-INGEST fault boundary.
 It replaces the preliminary 2026-10-27 save/reload note in this branch.

@@ -13,7 +13,7 @@ index 5 to the house (47d7cbf, 1a2f675); adding the field shifted that identity.
 appended builtins where older custom ids could reside. Never resolve legacy indices through
 `TemplateSet.builtin()` or accept a content-hash match as proof of index assignment.
 
-[ADR-0026](../adr/0026-save-template-identities.md) limits schema-1/2 migration to the common
+[ADR-0027](../adr/0027-save-template-identities.md) limits schema-1/2 migration to the common
 reserved prefix 0..4 (debug walker, infantry, worker, barracks, civic centre). Later live
 building/queue references fail explicitly, even if they could have been builtins. This loses
 some legacy compatibility deliberately; recovery requires the original session table and an

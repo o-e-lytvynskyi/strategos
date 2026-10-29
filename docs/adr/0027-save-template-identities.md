@@ -1,4 +1,4 @@
-# ADR-0026: Persist template identities independently of session indices
+# ADR-0027: Persist template identities independently of session indices
 
 Date: 2026-10-29
 

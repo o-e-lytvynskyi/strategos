@@ -2,13 +2,15 @@
 
 **Developer:** lev1pes · **Branch:** dev/lev1pes/main-save-reload · **Work:** main-save-reload · **Base:** main @ b207e509a85a3303f515a716b04a87bc90ee2cb8 · **Claimed:** 2026-10-27 · **Status:** in progress
 
+**Note:** assignment merged in [PR #26](https://github.com/o-e-lytvynskyi/strategos/pull/26), not an implementation delivery; fixes #23, #24, #25; excludes fix-main and new M5 scope
+
 ## Now
 
 - **Milestone:** bounded follow-up fixes for three independently reproduced bugs in existing main: [#23](https://github.com/o-e-lytvynskyi/strategos/issues/23), [#24](https://github.com/o-e-lytvynskyi/strategos/issues/24), [#25](https://github.com/o-e-lytvynskyi/strategos/issues/25).
 - **State:** review corrections implemented; verify and verifySoak pass. Full slow and performance gates remain unaccepted. Assignment merged by PR #26.
 - **Last finished task:** all code review items and nits implemented, with 2,274 passing tests in complete reports and a passing isolated map_fifty diagnostic. Full slow gate hits its 10-minute timeout on both candidate and unchanged control. Paired local JMH is red under excessive foreign CPU load; no green L6 result is claimed.
 - **Next task:** independent maintainer review and accepted full slow/L6 gates in a suitable environment. All review fixes and evidence are recorded; do not mark ready for review while those gates remain red/unaccepted.
-- **Merged from main last:** cc43715 via f91f212 (2026-10-29). Its claims-format and records updates are integrated; runtime/build sources remain identical to the verified review candidate.
+- **Current main base:** 134271f (2026-10-29), rebased at the owner request. Save/reload runtime and test changes are preserved; current main supplies the latest performance-validity and dependency updates. Previous slow/L6 results remain historical evidence.
 
 ## Depends on unfinished work
 
@@ -81,7 +83,7 @@
 - Added core coverage for template-backed nodes, kind changes, M4/M5 custom-index collisions
   and early M3 house/field ambiguity. Added L3 ENDED/FAULTED reload and publication-boundary
   fault regressions. The terminal-outcome save test now uses Outcome.save(); fixed fixture nits.
-- ADR-0026 owns the persistence/legacy policy and reload boundary; ADR-0012 and ADR-0018 point
+- ADR-0027 owns the persistence/legacy policy and reload boundary; ADR-0012 and ADR-0018 point
   to it. Architecture and the save/reload KB describe the compatibility limitation explicitly.
 - First edit-batch verifyFast passed in 3m10s; refined historical-prefix batch in 1m54s.
   `verify` passed, including all 233 normal L3 tests (74.940s), 73 journal replays,
@@ -115,6 +117,12 @@
 - Post-merge records checks pass: 12 claims, 245 roadmap cards, zero problems; all 21
   claims-tool unit tests pass. Runtime/build trees match 4eef24d, so the completed functional
   evidence and recorded red slow/JMH gates apply unchanged to this synchronization.
+
+### 2026-10-29 - Rebase onto current main
+
+- Owner requested rebasing this branch and then M8; only the two developer branches are updated. Main is unchanged.
+- Rebased onto 134271f; kept all M5 snapshot fields and save/reload bindings, both ADR decisions, and the assignment note. Renumbered the branch save-identity ADR to 0027 because main now owns 0026. Backup refs retain both original tips.
+- Fresh synchronization checks: verifyFast passes in 2m39s with 1,639 core tests; targeted MatchSnapshot L2 tests pass in 20s (7 tests). Both report sets have zero failures/errors/skips. Claims: 13/0; roadmap: 245/0; all 21 claims-tool tests pass. An initial formatter failure from CRLF after resolving the snapshot conflict was corrected to LF before the passing run. Runtime/test/build trees equal the independently calculated main-plus-old-branch merge result. No full slow/L6 gate was rerun or reclassified.
 
 ## For the owner
 
@@ -170,7 +178,7 @@
   the common historical prefix 0..4 after checking the earliest building/production history;
   reject ambiguous later builtins too, because custom-table identities cannot be proven.
   This intentionally narrows schema-1/2 compatibility. Undo by reverting the migration,
-  but doing so reopens silent identity corruption. Record this policy in ADR-0026.
+  but doing so reopens silent identity corruption. Record this policy in ADR-0027.
 - 2026-10-29 - Keep terminal matches on their original set and fault an invalidated published
   swap before advancing the affected match. Undo by reverting the adapter/server guards;
   doing so restores terminal reload vetoes and permits silent server/match divergence.
