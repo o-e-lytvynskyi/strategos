@@ -397,10 +397,13 @@ final class PerfVerdicts {
          * calibration (b)); a shorter window is judged by the sampler's readings just before it.
          */
         private static final long MIN_SPAN_NANOS = 10_000_000_000L;
+        /** Wall-clock time beyond the monotonic clock that counts as sleep, above clock corrections. */
+        private static final long SLEEP_TOLERANCE_MILLIS = 2_000;
 
         private @Nullable Reading startReading;
         private @Nullable String startFailure;
         private long startNanos;
+        private long startWallMillis;
         private double windowSeconds;
         private boolean started;
         private @Nullable ForeignLoad frozen;
@@ -412,6 +415,7 @@ final class PerfVerdicts {
             startReading = null;
             startFailure = null;
             startNanos = System.nanoTime();
+            startWallMillis = System.currentTimeMillis();
             FIRST_START.compareAndSet(null, startNanos);
             if (fake() != null) {
                 return;
@@ -461,6 +465,14 @@ final class PerfVerdicts {
                 end = ForeignLoadSampler.now();
             } catch (CpuCounters.Unavailable e) {
                 return ForeignLoad.unavailable(e.getMessage());
+            }
+            // nanoTime and the CPU counters stop while the machine sleeps; the wall clock does not. A run that slept
+            // (the Mac's idle sleep, calibration round 2) measured a machine in and out of dark wake, not this one.
+            long sleptMillis =
+                    System.currentTimeMillis() - startWallMillis - (System.nanoTime() - startNanos) / 1_000_000;
+            if (sleptMillis > SLEEP_TOLERANCE_MILLIS) {
+                return ForeignLoad.unavailable(
+                        "the machine slept about " + sleptMillis / 1000 + " s during the window");
             }
             windowSeconds = (end.nanos() - first.nanos()) / 1e9;
             long from = Math.min(first.nanos(), end.nanos() - MIN_SPAN_NANOS);

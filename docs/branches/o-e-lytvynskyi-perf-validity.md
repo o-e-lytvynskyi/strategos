@@ -19,6 +19,16 @@
 
 ## Log
 
+### 2026-10-29 — round 2 lost to sleep; sleep detection
+
+- Round 2 (a) on 9e270aa ran 3.5 h: the Mac entered idle sleep at 06:55 (`pmset -g log`; the
+  `caffeinate` that kept round 1 awake had exited at 06:05). Stopped before (b); its results are
+  discarded, not used.
+- `PerfVerdicts.Window` now marks a window `invalid` ("the machine slept about N s") when the wall
+  clock ran more than 2 s past `nanoTime` — sleep stops both `nanoTime` and the Mach ticks, so it was
+  invisible. Calibration batches run under `caffeinate -i`. A pitfall in docs/kb/perf-tick-spacing.md.
+  `verifyFast` green.
+
 ### 2026-10-29 — calibration round 1 and two harness fixes
 
 - (a) quiet and (b) one busy CPU ran unattended on e1896f6, 90 and 89 minutes; results in ADR-0026

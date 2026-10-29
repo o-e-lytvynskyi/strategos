@@ -71,6 +71,12 @@ Findings:
   invalid) because Mach's 100 Hz ticks cannot be compared with the exact process time over a few ticks — the load
   is now judged over at least the last 10 s of readings, and the report keeps `windowSeconds` beside `seconds`.
 
+### Round 2 — discarded
+
+(a) on 9e270aa ran 3.5 h instead of 1.5: the Mac slept (idle sleep from 06:55, dark wakes only). Sleep stops
+`nanoTime` and the CPU counters, so nothing in the results showed it; a window whose wall clock runs more than 2 s
+past the monotonic clock is now `invalid`, and calibration runs under `caffeinate -i`. Rerun as round 3.
+
 ## Consequences
 
 - A run on a busy machine ends `invalid` with a reason, not as a budget failure or a call to optimise.

@@ -51,6 +51,14 @@ check in L1 (the work a lookup does, e.g. the size of the one section map it con
 grow with the index) and move the time into the perf batch, where the window's foreign load is
 measured and an invalid run asserts nothing (`PerfTests.protectedLookupCost`, #22).
 
+## A perf run on a Mac must keep it awake
+
+An unattended batch on a MacBook ran 3.5 h instead of 1.5: the Mac entered idle sleep at 06:55 (a
+`caffeinate` that had kept it awake had exited) and only dark-woke for maintenance (`pmset -g log`).
+`System.nanoTime` and the Mach CPU ticks stop during sleep, so neither the tick timers nor the
+foreign load see it; the wall clock does. Run batches under `caffeinate -i`, and the harness now
+marks a window `invalid` when the wall clock ran more than 2 s past the monotonic one.
+
 ## Invalid measurements remain invalid
 
 Windows measurements are not a Mac baseline. Preserve actual worker count and CPU verdict.
