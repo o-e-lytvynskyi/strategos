@@ -10,7 +10,7 @@
 - **In progress:** T2b.2 persisted-authority contract tests against the functionally verified T2b.1 composition; their final L6 acceptance remains shared and pending.
 - **Last finished task:** T2a independent diplomacy foundation (2026-10-29), cloud-verified implementation e8438cd.
 - **Next task:** accept combined prerequisite cloud gates, then T2b.2 core authority/setup, schema-4 migration, hashing and journal integration.
-- **Merged from main last:** b893a0d (2026-10-29); resumed synchronization checkpoint awaiting cloud verify.
+- **Merged from main last:** 134271f (2026-10-30); runtime identical to functional green checkpoint 82ee012; merged-head gates pending.
 
 The operator requested ownership of the whole M7 and work on what is currently possible on
 2026-10-29. This assignment intentionally includes responsibility for later blocked tasks;
@@ -35,6 +35,12 @@ before implementing them. T2 does not certify friendly-fire, allied victory, com
 or replication privacy; those retain their own integration tests and dependencies.
 
 ## Log
+
+### 2026-10-30 — functional authority gate passed, main synchronized
+
+- Verify 40970846751 on 82ee012 passed in 9m 2s: 2,303 canonical XML test cases, zero failures/errors/skips, including ten core authority cases, two journal-input cases, the NBT authority round trip and both schema-4 fixture readers. Existing shot/stance allocator/hash assertions pass with the mandatory authority-only JSON block.
+- Merged main 134271f. Incoming changes are CI dependency-graph submission, security documentation and its branch record; `git diff` confirms zero core/mod runtime changes relative to the verified checkpoint.
+- **Next:** final merged-head verify/slow/soak, complete 22-scene L6 under the corrected Actions resource limit, and pinned same-host JMH with the unchanged 15%/allocation gate. Both T2b checkboxes stay open until accepted.
 
 ### 2026-10-30 — resumed after usage interruption, schema-shape compatibility
 

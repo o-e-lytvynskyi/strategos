@@ -55,7 +55,10 @@ stranger; building it runs it (Gradle build scripts, tests, tools).
   Actions; NeoForge, Minecraft and ModDevGradle are moved by hand.
 - **Dependency review** (`.github/workflows/dependency-review.yml`): on pull requests that change
   dependencies or workflows, fails on known vulnerabilities and disallowed licences (public
-  repositories only).
+  repositories only). It judges what the pull request adds or changes against main's graph, which
+  `.github/workflows/dependency-graph.yml` submits on each push to main; the game's pinned libraries
+  (Netty, Guava, LZ4, Log4j and others) are judged when Minecraft or NeoForge moves, not on every
+  pull request.
 - **The maintainer's check** (strategos-maintain §4): every new or changed dependency in a branch
   is named in its review, with its licence.
 - **Later, recorded here when adopted:** Gradle dependency verification
