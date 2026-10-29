@@ -24,7 +24,7 @@ public final class Migrations {
         this.steps = List.copyOf(steps);
     }
 
-    /** 1 to 2 adds terrain pages; 2 to 3 preserves legacy numeric references for guarded resolution. */
+    /** 1 to 2 adds terrain pages; 2 to 3 binds only the original numeric building/queue table. */
     public static Migrations production() {
         return new Migrations(List.of(new AddTerrainPages(), new StableTemplateReferences()));
     }
@@ -42,7 +42,11 @@ public final class Migrations {
         }
     }
 
-    /** Legacy session tables cannot be inferred from content hashes; restore validates every reference. */
+    /**
+     * Numeric building references first shipped in M3. Only indices 0..4 kept the same ids:
+     * the house initially occupied 5, which later became the field. Subsequent builtins may also
+     * occupy an earlier custom index, so never infer them from the current builtin table.
+     */
     private static final class StableTemplateReferences implements MigrationStep {
         @Override
         public int from() {
@@ -51,7 +55,21 @@ public final class Migrations {
 
         @Override
         public <T> Dynamic<T> apply(Dynamic<T> input) {
-            return input;
+            if (input.get("buildings").asStream().findAny().isEmpty()) {
+                return input;
+            }
+            List<String> original = List.of(
+                    "strategos:unit/debug_walker",
+                    "strategos:unit/infantry",
+                    "strategos:unit/worker",
+                    "strategos:building/barracks",
+                    "strategos:building/civic_centre");
+            return input.set(
+                    "templateBindings",
+                    input.createList(java.util.stream.IntStream.range(0, original.size())
+                            .mapToObj(index -> input.emptyMap()
+                                    .set("index", input.createInt(index))
+                                    .set("id", input.createString(original.get(index))))));
         }
     }
 

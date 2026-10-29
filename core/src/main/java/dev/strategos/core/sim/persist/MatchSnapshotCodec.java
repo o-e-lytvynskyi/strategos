@@ -546,7 +546,17 @@ public final class MatchSnapshotCodec {
      */
     public static <T> DataResult<MatchSnapshot> decode(Dynamic<T> raw, Migrations migrations) {
         try {
-            return migrations.migrate(raw, SchemaVersion.CURRENT).flatMap(CODEC::parse);
+            return migrations
+                    .migrate(raw, SchemaVersion.CURRENT)
+                    .flatMap(CODEC::parse)
+                    .flatMap(snapshot -> {
+                        if (snapshot.templateBindings().isEmpty()
+                                && snapshot.buildings().stream().anyMatch(BuildingStore.Saved::alive)) {
+                            return DataResult.error(
+                                    () -> "schema 3 snapshot with live buildings needs template bindings");
+                        }
+                        return DataResult.success(snapshot);
+                    });
         } catch (RuntimeException e) {
             return DataResult.error(() -> "cannot decode the snapshot: " + e.getMessage());
         }

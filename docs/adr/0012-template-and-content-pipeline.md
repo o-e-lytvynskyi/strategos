@@ -4,7 +4,7 @@ Date: 2026-10-21
 
 ## Status
 
-Accepted; targets confirmed 2026-10-23 by spike S12
+Accepted; targets confirmed 2026-10-23 by spike S12; amended by ADR-0026 (reload validation)
 
 **Confirmed 2026-10-23** by spike [S12](../spikes/S12-content-cycle.md) (M1 T16): `/reload` takes
 0.26–0.33 s end to end with twenty test templates over two levels of inheritance and mixins, the
@@ -90,13 +90,8 @@ registries, a reload listener, or registries for ids plus reload data? Verified 
 | Templates as Java classes | Contradicts "content is data" (design rule 4) |
 | Vanilla `StructureTemplate` palettes for blueprints | Private; parsing ourselves gives an immutable core `BlueprintShape` |
 
-## 2026-10-27 — save/reload reference validation (#24, #25)
+## 2026-10-29 - persistence identities and reload validation
 
-Server reload and core INGEST use the same guard before changing the set: every live unit,
-building, queued product and template-backed resource node must retain its stable id, index
-and unit/building kind. A refusal preserves the server set/table and all match state.
-Snapshots with building slots also persist the session's index-to-id bindings. Restore remaps
-live buildings and every queued product by stable id; missing ids or wrong kinds fault the
-load with a named reason. Legacy custom indices without bindings cannot be reconstructed
-safely and are refused; fixed built-in indices still load. Content hashes exclude index
-assignment and therefore cannot authenticate a legacy session table.
+[ADR-0026](0026-save-template-identities.md) owns schema 3, stable bindings, conservative
+legacy migration, terminal-match exclusions and the publication-to-INGEST fault boundary.
+It replaces the preliminary 2026-10-27 save/reload note in this branch.

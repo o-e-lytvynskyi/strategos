@@ -13,8 +13,8 @@ import java.util.List;
 
 /**
  * A match at a completed tick: everything a restore needs, its terrain pages as references to the slices they were
- * built from, path requests in flight with their results computed, and stable template bindings (schema 3). The schema version is not a
- * field: the snapshot codec writes and migrates {@code "v"} (M0 spec 5.8).
+ * built from, path requests in flight with their results computed, and stable template bindings (schema 3).
+ * The schema version is not a field: the snapshot codec writes and migrates {@code "v"} (M0 spec 5.8).
  */
 @CoreApi
 public record MatchSnapshot(
@@ -110,7 +110,7 @@ public record MatchSnapshot(
         pages = List.copyOf(pages);
     }
 
-    /** Legacy snapshot without a persisted session table. */
+    /** Snapshot without a persisted session table; live building references require bindings before restore. */
     public MatchSnapshot(
             MatchConfig config,
             long tick,

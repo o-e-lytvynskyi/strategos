@@ -63,7 +63,7 @@ class SavedTemplatesTest {
     @Test
     void legacyBuiltinIndicesLoadButAmbiguousCustomIndicesRefuse() {
         MatchState builtin = state(TemplateSet.builtin());
-        building(builtin, HOUSE);
+        building(builtin, new TemplateId("strategos:building/civic_centre"));
         assertThat(SavedTemplates.buildings(legacy(Snapshots.take(builtin)), custom(true)))
                 .hasSize(1);
         MatchState custom = state(custom(false));
@@ -72,7 +72,7 @@ class SavedTemplatesTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("ambiguous template index");
         MatchState customQueue = state(custom(false));
-        int handle = building(customQueue, HOUSE);
+        int handle = building(customQueue, new TemplateId("strategos:building/civic_centre"));
         customQueue.buildings().enqueue(handle, FIRST + 1);
         MatchSnapshot queued = legacy(Snapshots.take(customQueue));
         assertThatThrownBy(() -> SavedTemplates.buildings(queued, custom(true)))
@@ -116,6 +116,92 @@ class SavedTemplatesTest {
         assertThatThrownBy(() -> SavedTemplates.buildings(legacy(snapshot), reordered))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("ambiguous template index");
+    }
+
+    @Test
+    void legacyIndicesLaterClaimedByBuiltinsNeverChangeIdentity() {
+        // Only the original common prefix 0..4 can be recovered across every building-save era.
+        // M4 and M5 appended builtins where earlier sessions could have assigned custom ids.
+        for (int index : List.of(7, 14, 16, 17)) {
+            TemplateSet builtin = TemplateSet.builtin();
+            List<TemplateCompiler.Flat> flats = new ArrayList<>();
+            for (UnitTemplate t : builtin.all()) {
+                if (t.netIndex() < 5) {
+                    flats.add(new TemplateCompiler.Flat(t.id(), t.netIndex(), builtin.flattened(t.id())));
+                }
+            }
+            TemplateId custom = new TemplateId("test:old_custom");
+            boolean isBuilding = builtin.byIndex(index).isBuilding();
+            flats.add(new TemplateCompiler.Flat(
+                    custom, index, builtin.flattened(isBuilding ? HOUSE : TemplateSet.INFANTRY)));
+            MatchState state = state(TemplateCompiler.fromFlattened(flats).set());
+            int handle = building(state, isBuilding ? custom : new TemplateId("strategos:building/civic_centre"));
+            if (!isBuilding) {
+                state.buildings().enqueue(handle, index);
+            }
+            MatchSnapshot old = legacy(Snapshots.take(state));
+            assertThatThrownBy(() -> SavedTemplates.buildings(roundTrip(old), builtin))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("ambiguous template index");
+        }
+    }
+
+    @Test
+    void earliestM3HouseCannotSilentlyBecomeAField() {
+        TemplateSet builtin = TemplateSet.builtin();
+        List<TemplateCompiler.Flat> flats = new ArrayList<>();
+        for (UnitTemplate t : builtin.all()) {
+            if (t.netIndex() < 5) {
+                flats.add(new TemplateCompiler.Flat(t.id(), t.netIndex(), builtin.flattened(t.id())));
+            }
+        }
+        flats.add(new TemplateCompiler.Flat(HOUSE, 5, builtin.flattened(HOUSE)));
+        MatchState state = state(TemplateCompiler.fromFlattened(flats).set());
+        building(state, HOUSE);
+        MatchSnapshot old = legacy(Snapshots.take(state));
+        assertThatThrownBy(() -> SavedTemplates.buildings(roundTrip(old), builtin))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("ambiguous template index");
+    }
+
+    @Test
+    void schemaThreeCannotMasqueradeAsLegacyWithoutBindings() {
+        MatchState state = state(TemplateSet.builtin());
+        building(state, HOUSE);
+        for (boolean empty : List.of(false, true)) {
+            var json = MatchSnapshotCodec.encode(JsonOps.INSTANCE, Snapshots.take(state))
+                    .getAsJsonObject();
+            if (empty) {
+                json.add("templateBindings", new com.google.gson.JsonArray());
+            } else {
+                json.remove("templateBindings");
+            }
+            var decoded = MatchSnapshotCodec.decode(new Dynamic<>(JsonOps.INSTANCE, json), Migrations.production());
+            assertThat(decoded.error()).isPresent();
+            assertThat(decoded.error().orElseThrow().message()).contains("bindings");
+        }
+    }
+
+    @Test
+    void reloadGuardsTemplateBackedNodesAndKindChanges() {
+        MatchState state = state(TemplateSet.builtin());
+        TemplateId deposit = new TemplateId("strategos:building/quarry");
+        int node = state.nodes()
+                .add(dev.strategos.core.sim.nav.MaterialKind.STONE, 0, 0, 1, 1, 8, 8, 1, new long[0], new int[0]);
+        state.nodes().setTemplate(node, state.templates().byId(deposit).netIndex());
+        TemplateSet before = state.templates();
+        assertThat(state.templateSwapProblem(without(before, deposit))).contains(deposit.value());
+        state.swapTemplates(without(before, deposit));
+        assertThat(state.templates()).isSameAs(before);
+        assertThat(state.nodes().template(node)).isEqualTo(before.byId(deposit).netIndex());
+        var changed = before.all().stream()
+                .map(t -> new TemplateCompiler.Flat(
+                        t.id(), t.netIndex(), before.flattened(t.id().equals(deposit) ? TemplateSet.INFANTRY : t.id())))
+                .toList();
+        TemplateSet wrongKind = TemplateCompiler.fromFlattened(changed).set();
+        assertThat(state.templateSwapProblem(wrongKind)).contains("kind");
+        state.swapTemplates(wrongKind);
+        assertThat(state.templates()).isSameAs(before);
     }
 
     private static MatchSnapshot legacy(MatchSnapshot saved) {

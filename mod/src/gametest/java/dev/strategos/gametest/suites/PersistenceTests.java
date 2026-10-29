@@ -445,6 +445,9 @@ public final class PersistenceTests {
                 h, MatchFixture.options(SimHarness.DEFAULT_SEED, h).withPersistent(true));
         registry.pause(rt.id());
         var saved = core(rt).snapshot();
+        var outcome = new dev.strategos.core.sim.Outcome();
+        outcome.hold(0);
+        outcome.end(0, saved.tick());
         var finished = new dev.strategos.core.sim.MatchSnapshot(
                 saved.config(),
                 saved.tick(),
@@ -462,7 +465,7 @@ public final class PersistenceTests {
                 saved.ledger(),
                 saved.carried(),
                 new dev.strategos.core.sim.MatchSnapshot.Play(
-                        java.util.List.of(1L, 0L, 1L, 0L, saved.tick()),
+                        outcome.save(),
                         saved.play().ai(),
                         saved.play().aiWake(),
                         saved.play().alerts()),
