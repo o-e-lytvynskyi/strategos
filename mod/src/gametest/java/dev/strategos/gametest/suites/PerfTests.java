@@ -1,6 +1,5 @@
 package dev.strategos.gametest.suites;
 
-import static dev.strategos.gametest.suites.PerfVerdicts.INVALID_FOREIGN_LOAD;
 import static dev.strategos.gametest.suites.PerfVerdicts.MS;
 import static dev.strategos.gametest.suites.PerfVerdicts.gated;
 import static dev.strategos.gametest.suites.PerfVerdicts.scaled;
@@ -140,11 +139,9 @@ public final class PerfTests {
                     long idle = Percentiles.percentile(state.idle, 0.50);
                     long moving = Percentiles.percentile(state.moving, 0.50);
                     double ratio = (double) idle / moving;
-                    double foreign = window.meanForeignLoad();
                     boolean over = ratio > 0.30;
-                    String verdict = foreign > INVALID_FOREIGN_LOAD
-                            ? "invalid"
-                            : !gated("a") ? "report-only" : over ? "fail" : "pass";
+                    String verdict =
+                            window.gateInvalid() ? "invalid" : !gated("a") ? "report-only" : over ? "fail" : "pass";
                     JsonObject json = new JsonObject();
                     json.addProperty("test", "idle_300");
                     json.addProperty("gate", "a");
@@ -159,7 +156,7 @@ public final class PerfTests {
                     json.addProperty("movingAdapterP50", Percentiles.percentile(state.movingAdapter, 0.5));
                     json.add("idlePhaseP50Ns", phaseMedians(state.phaseNames, state.idlePhases));
                     json.add("movingPhaseP50Ns", phaseMedians(state.phaseNames, state.movingPhases));
-                    json.addProperty("foreignCpu", foreign);
+                    window.addTo(json);
                     json.addProperty("verdict", verdict);
                     write("idle_300", json);
                     check(!verdict.equals("fail"), "300 standing units cost " + ratio + " of 300 walking, over 0.30");
@@ -339,11 +336,9 @@ public final class PerfTests {
                     long footP50 = Percentiles.percentile(foot.total, 0.50);
                     long mountedP50 = Percentiles.percentile(mounted.total, 0.50);
                     double ratio = (double) mountedP50 / footP50;
-                    double foreign = window.meanForeignLoad();
                     boolean over = ratio > 1.20;
-                    String verdict = foreign > INVALID_FOREIGN_LOAD
-                            ? "invalid"
-                            : !gated("a") ? "report-only" : over ? "fail" : "pass";
+                    String verdict =
+                            window.gateInvalid() ? "invalid" : !gated("a") ? "report-only" : over ? "fail" : "pass";
                     JsonObject json = new JsonObject();
                     json.addProperty("test", "mounted_cost");
                     json.addProperty("gate", "a");
@@ -356,7 +351,7 @@ public final class PerfTests {
                     json.addProperty("limit", 1.20);
                     json.addProperty("warmUpTicks", WARM_UP);
                     json.addProperty("samples", SAMPLES);
-                    json.addProperty("foreignCpu", foreign);
+                    window.addTo(json);
                     json.addProperty("verdict", verdict);
                     write("mounted_cost", json);
                     check(!verdict.equals("fail"), "mounted units cost " + ratio + " of foot units, over 1.20");
@@ -666,7 +661,7 @@ public final class PerfTests {
                             window,
                             extra);
                     long p95 = Percentiles.percentile(state.nanos, 0.95);
-                    if (window.meanForeignLoad() <= INVALID_FOREIGN_LOAD) {
+                    if (!window.gateInvalid()) {
                         check(p95 <= scaled(400_000), "capture and publication take " + p95 + " ns at p95");
                     }
                 })
@@ -745,7 +740,7 @@ public final class PerfTests {
                             r.work(),
                             window,
                             extra);
-                    if (window.meanForeignLoad() <= INVALID_FOREIGN_LOAD && gated("d")) {
+                    if (!window.gateInvalid() && gated("d")) {
                         check(
                                 r.groupP95() <= GROUP_RESULTS_TICKS,
                                 "the 100-unit order's results take " + r.groupP95() + " ticks at p95");

@@ -486,7 +486,14 @@ tasks.matching { it.name == 'runGameTestPerf' }.configureEach {
     doLast {
         def results = (perfOut.listFiles({ File f -> f.name.endsWith('.json') } as FileFilter) ?: []) as List
         def invalid = results.collect { new groovy.json.JsonSlurper().parse(it) }.findAll { it.verdict == 'invalid' }
-        if (invalid) throw new GradleException("INVALID run, not a regression: foreign CPU load ${invalid*.foreignCpu} above 0.25; rerun on a quiet machine")
+        if (invalid) {
+            // each invalid test with the gate's reasons (a mean over the limit, or counters that could not be read)
+            def lines = invalid.collect { r ->
+                def why = (r.foreignLoad?.reasons ?: []).findAll { it.startsWith('gate:') }
+                "${r.test}: " + (why ? why.join('; ') : "foreign CPU load ${r.foreignCpu} above 0.25")
+            }
+            throw new GradleException("INVALID run, not a regression: ${lines.join(' | ')}; rerun on a quiet machine")
+        }
     }
 }
 
