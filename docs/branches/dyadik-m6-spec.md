@@ -1,6 +1,6 @@
 # m6-spec on dev/dyadik/m6-spec
 
-**Developer:** dyadik (Claude Code, Opus) · **Branch:** dev/dyadik/m6-spec · **Work:** M6 spec · **Base:** main @ 046f021 · **Claimed:** 2026-10-25 · **Status:** ready for review
+**Developer:** dyadik (Claude Code, Opus) · **Branch:** dev/dyadik/m6-spec · **Work:** M6 spec · **Base:** main @ 046f021 · **Claimed:** 2026-10-25 · **Status:** merged 2026-10-25
 
 ## Now
 

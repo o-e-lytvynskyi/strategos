@@ -1,6 +1,6 @@
 # M7 spec on dev/lev1pes/m7-spec
 
-**Developer:** lev1pes · **Branch:** dev/lev1pes/m7-spec · **Work:** M7 spec · **Base:** main @ 3c1f4300bd457788374c74fe4ddbfc2679f17ec4 · **Claimed:** 2026-10-28 · **Status:** ready for review
+**Developer:** lev1pes · **Branch:** dev/lev1pes/m7-spec · **Work:** M7 spec · **Base:** main @ 3c1f4300bd457788374c74fe4ddbfc2679f17ec4 · **Claimed:** 2026-10-28 · **Status:** merged 2026-10-28
 
 ## Now
 

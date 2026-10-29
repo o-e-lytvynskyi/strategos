@@ -139,7 +139,9 @@ Every change reaches `main` through its pull request (branch protection may enfo
    - STATE "Decisions taken": its lines, marked with the branch;
    - STATE "Milestones" (status, held by, notes) and the header from the merged state;
    - STATE "For the owner": the items it raised — still open ones stay, answered ones go;
-   - the branch file's header `Status: merged <date>`; the docs/claims.md row `done`, today.
+   - the branch file's header `Status: merged <date>`; the docs/claims.md row `done`, today;
+     `python3 tools/claims.py check --base origin/main` passes on the branch (it fails while the
+     row and the branch file disagree, and the next pull request to `main` would inherit the red).
    - Cards become `accepted` only on the owner's word after the demo, here or later.
 3. `gh pr merge <n> --merge` — the permission prompt is the owner's approval, or the owner merges on
    GitHub (a merge commit; squash and rebase are off, so task commits stay findable). Never
