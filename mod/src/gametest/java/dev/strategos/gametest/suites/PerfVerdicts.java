@@ -391,10 +391,17 @@ final class PerfVerdicts {
     static final class Window {
         /** The first window's start in the JVM: the preflight is everything the sampler read before it. */
         private static final AtomicReference<@Nullable Long> FIRST_START = new AtomicReference<>();
+        /**
+         * The shortest span the load is judged over. Mach ticks are sampled at 100 Hz while the process's CPU time is
+         * exact, so a window of a few ticks gives nonsense (a 46 ms window read 56 % with one busy core of twelve,
+         * calibration (b)); a shorter window is judged by the sampler's readings just before it.
+         */
+        private static final long MIN_SPAN_NANOS = 10_000_000_000L;
 
         private @Nullable Reading startReading;
         private @Nullable String startFailure;
         private long startNanos;
+        private double windowSeconds;
         private boolean started;
         private @Nullable ForeignLoad frozen;
 
@@ -455,7 +462,9 @@ final class PerfVerdicts {
             } catch (CpuCounters.Unavailable e) {
                 return ForeignLoad.unavailable(e.getMessage());
             }
-            List<Reading> readings = new ArrayList<>();
+            windowSeconds = (end.nanos() - first.nanos()) / 1e9;
+            long from = Math.min(first.nanos(), end.nanos() - MIN_SPAN_NANOS);
+            List<Reading> readings = new ArrayList<>(ForeignLoadSampler.between(from, first.nanos() - 1));
             readings.add(first);
             for (Reading r : ForeignLoadSampler.between(first.nanos(), end.nanos())) {
                 if (r.nanos() > first.nanos() && r.nanos() < end.nanos()) {
@@ -506,6 +515,7 @@ final class PerfVerdicts {
             json.addProperty("logicalCpus", cpus);
             json.addProperty("intervalSeconds", fake() != null ? 0 : 1);
             json.addProperty("intervals", load.intervals());
+            json.addProperty("windowSeconds", windowSeconds);
             json.addProperty("seconds", load.seconds());
             json.addProperty("available", load.available());
             json.addProperty("mean", load.mean());

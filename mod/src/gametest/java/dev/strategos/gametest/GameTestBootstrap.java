@@ -29,7 +29,10 @@ public final class GameTestBootstrap {
                     new TeeReporter(new LogTestReporter(), new JUnitXmlReporter(Path.of(report))));
         }
         if (System.getProperty("strategos.gametest.filter", "").startsWith("^perftests")) {
-            ForeignLoadSampler.start(); // readings exist from the start of the batch: the first window's preflight
+            // readings exist from the start of the batch, and the first window waits for a preflight of them: the
+            // main thread, before the server thread exists (Main posts this event first; no watchdog on this path)
+            ForeignLoadSampler.start();
+            ForeignLoadSampler.preflight(Long.getLong("strategos.perf.preflightSeconds", 60));
         }
         event.register(StrategosGameTests.class); // the generator and the @AfterBatch hooks
     }

@@ -160,6 +160,8 @@ neoForge {
             systemProperty 'strategos.perf.gates', providers.gradleProperty('perf.gates').getOrElse('a,c,d,e,g') // d from M1 T27 (QA-07: 4.7 % over five runs); c and e by the owner, 2026-10-23
             // dev only: replaces the measured foreign CPU load, for the invalid-run check (QA-07.3)
             systemProperty 'strategos.perf.fakeForeignLoad', providers.gradleProperty('perf.fakeForeignLoad').getOrElse('')
+            // ADR-0026: seconds of machine-only readings before the first window (the preflight)
+            systemProperty 'strategos.perf.preflightSeconds', providers.gradleProperty('perf.preflightSeconds').getOrElse('60')
             systemProperty 'strategos.faults.rethrow', 'true'
         }
         // [T13] a self-terminating dedicated server for the spikes (spec 8.3)

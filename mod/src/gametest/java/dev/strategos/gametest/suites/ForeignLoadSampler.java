@@ -37,6 +37,23 @@ public final class ForeignLoadSampler {
         thread.start();
     }
 
+    /**
+     * Waits {@code seconds} while the sampler reads, so the time before the first window is a preflight of the
+     * machine alone (ADR-0026). Nothing to wait for with the self-test override.
+     */
+    public static void preflight(long seconds) {
+        synchronized (LOCK) {
+            if (!started) {
+                return;
+            }
+        }
+        try {
+            Thread.sleep(seconds * 1_000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
     private static void run() {
         while (true) {
             try {

@@ -19,6 +19,16 @@
 
 ## Log
 
+### 2026-10-29 — calibration round 1 and two harness fixes
+
+- (a) quiet and (b) one busy CPU ran unattended on e1896f6, 90 and 89 minutes; results in ADR-0026
+  "Round 1". The 25 % rule accepted every (b) window; the proposed mean limit separates (a) and (b);
+  the proposed p95 limit rejected two quiet results.
+- Fixed: a real 60 s preflight (the sampler reads while `RegisterGameTestsEvent`'s handler waits on the
+  main thread; verified on the sources: posted from `Main` before the server thread, no watchdog on
+  `GameTestServer`); loads judged over at least 10 s (a 46 ms window read 56 % in (b)).
+  `verifyFast` green. Round 2 reruns (a) and (b) on the fixed commit.
+
 ### 2026-10-29 — the flaky L1 timing test (taken into this claim)
 
 - Reported to the owner: `ProtectedBlockIndexTest.aLookupCostsTheSameAtAnySize` (a `nanoTime` ratio of
