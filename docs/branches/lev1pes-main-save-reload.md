@@ -7,8 +7,8 @@
 - **Milestone:** bounded follow-up fixes for three independently reproduced bugs in existing main: [#23](https://github.com/o-e-lytvynskyi/strategos/issues/23), [#24](https://github.com/o-e-lytvynskyi/strategos/issues/24), [#25](https://github.com/o-e-lytvynskyi/strategos/issues/25).
 - **State:** review corrections implemented; verify and verifySoak pass. Full slow and performance gates remain unaccepted. Assignment merged by PR #26.
 - **Last finished task:** all code review items and nits implemented, with 2,274 passing tests in complete reports and a passing isolated map_fifty diagnostic. Full slow gate hits its 10-minute timeout on both candidate and unchanged control. Paired local JMH is red under excessive foreign CPU load; no green L6 result is claimed.
-- **Next task:** integrate current main's claims-format changes, recheck records/verifyFast, commit and push the review fixes with this evidence. Independent maintainer review and valid full slow/L6 gates are still required; do not mark ready for review yet.
-- **Merged from main last:** 45c97ee via 8d4bdc3 (2026-10-29); current main cc43715 is fetched and pending integration. Runtime/build sources are unchanged between those main commits.
+- **Next task:** independent maintainer review and accepted full slow/L6 gates in a suitable environment. All review fixes and evidence are recorded; do not mark ready for review while those gates remain red/unaccepted.
+- **Merged from main last:** cc43715 via f91f212 (2026-10-29). Its claims-format and records updates are integrated; runtime/build sources remain identical to the verified review candidate.
 
 ## Depends on unfinished work
 
@@ -45,7 +45,7 @@
 - One bounded confirmatory candidate run is planned with same-window Windows system/Java CPU telemetry, using the same 1.15 gate and fresh control. Retain every earlier failure. No further candidate retry in this session if it remains red; document and hand off unresolved measurement validity instead of weakening checks. The diagnostic monitor is local under ignored build output and changes no production or CI gate.
 - Confirmatory candidate: RED, two Crossing breaches, maximum 1.253488, 6m 33s. CPU telemetry: 395 windows, zero errors, foreign busy mean 11.035%, peak 68.010%, 64 windows above 25%. This does not establish a particular cause or a production regression. All raw results are retained.
 - Stop under strategos-dev section 8 after three failed verification comparisons. No more perf retries in this session; no threshold or approved baseline changes; no applications paused/closed. The code is saved as WIP and no hand-in PR is opened.
-- Full score table, controls, binary/workload checks, CPU context and raw hashes: [local JMH evidence](lev1pes-main-save-reload-perf.md).
+- Full score table, controls, binary/workload checks, CPU context and raw hashes: [local JMH evidence](../testing/main-save-reload-perf.md).
 
 ### 2026-10-28 — cloud verification requested
 
@@ -54,7 +54,7 @@
 - Workflow validation: YAML parse, all pinned action hashes, read-only token permissions, Bash syntax of every run block, embedded Python syntax and roadmap checks pass. Production/test sources and benchmark settings are unchanged, so the completed 1,936-test functional evidence is retained. No new local Gradle run is started.
 - No new approved baseline, raised limit or skipped gate. Cloud outcome and artifacts must be inspected before declaring this claim ready.
 - First paired workflow run 40595484377 stopped before measurement because the preparation step used jmhJar, which this plugin-free harness does not define. Inspect the actual source-set convention and replace that preparation with jmhClasses; no benchmark result was produced or discarded. Preserve the failed run and logs. This is a workflow repair, not another unchanged performance retry.
-- Corrected paired run [40595834693](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40595834693) passed. Pin pristine bb800d0 and candidate 8e98d8b on the same Ubuntu four-vCPU EPYC 9V74 runner, Temurin 21.0.12.1+1. Both full JMH measurements took 6m 16s; all 21 configurations match, the unchanged jmhCompare gate and allocation checks pass. Maximum ratio 1.095538; SnapshotCodec 1.006691. All raw scores, hashes, CPU context and prior failures are in [performance evidence](lev1pes-main-save-reload-perf.md). Standard perf remains pending.
+- Corrected paired run [40595834693](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40595834693) passed. Pin pristine bb800d0 and candidate 8e98d8b on the same Ubuntu four-vCPU EPYC 9V74 runner, Temurin 21.0.12.1+1. Both full JMH measurements took 6m 16s; all 21 configurations match, the unchanged jmhCompare gate and allocation checks pass. Maximum ratio 1.095538; SnapshotCodec 1.006691. All raw scores, hashes, CPU context and prior failures are in [performance evidence](../testing/main-save-reload-perf.md). Standard perf remains pending.
 
 ### 2026-10-28 — hand-in report
 
@@ -63,7 +63,7 @@
 - **Deviations:** schema 3 protects against silent downgrade; legacy fixed built-ins remain supported, ambiguous custom indices explicitly fail. Released fixtures unchanged; new JSON/NBT fixtures pin buildings, queued products, progress and bindings.
 - **Decisions taken:** share the reload seam and conservatively remap before reading templates. Reverting implementation removes the repairs/schema-3 support. Use trusted pristine bb800d0 as the same-runner comparison input, without promoting a baseline; retain every earlier failure. Remove the one-off paired workflow from the final diff after successful validation; its exact version remains at 8e98d8b.
 - **For the owner:** independent maintainer review/human merge and the serial Windows verify-duration decision below. No gate or limit is weakened.
-- **Links:** [hand-in PR #30](https://github.com/o-e-lytvynskyi/strategos/pull/30), this branch record and [performance evidence](lev1pes-main-save-reload-perf.md). Main was freshly fetched and remains bb800d0, already merged here; core/mod/build-logic trees are identical to the verified candidate.
+- **Links:** [hand-in PR #30](https://github.com/o-e-lytvynskyi/strategos/pull/30), this branch record and [performance evidence](../testing/main-save-reload-perf.md). Main was freshly fetched and remains bb800d0, already merged here; core/mod/build-logic trees are identical to the verified candidate.
 
 ### 2026-10-29 - PR #30 review corrections
 
@@ -103,10 +103,18 @@
   byte-identical, seven breaches above 1.15 (maximum 1.382045), no allocation breaches.
   Candidate weighted foreign CPU is 28.000%, versus control 17.144%; neither a clean L6
   result nor a production regression is established. Full evidence and raw hashes are in
-  [performance evidence](lev1pes-main-save-reload-perf.md). No further unchanged retry.
+  [performance evidence](../testing/main-save-reload-perf.md). No further unchanged retry.
 - During verification main advanced to cc43715: records for #36 were repaired in #37;
   #39/#40 move claims into branch-file headers. No runtime/build sources changed. Integrate
   those maintainer-owned changes rather than editing another developer's records.
+- Main cc43715 is now merged via f91f212; verifyFast passes in 3s (no source rebuild).
+  Run the new claims checker with Python UTF-8 mode on Windows: the default cp1251
+  decoder misreads the UTF-8 header delimiters. Move the auxiliary performance report
+  to docs/testing/main-save-reload-perf.md, since docs/branches now contains claims only.
+  Every link in this branch record is updated; report content and raw evidence are retained.
+- Post-merge records checks pass: 12 claims, 245 roadmap cards, zero problems; all 21
+  claims-tool unit tests pass. Runtime/build trees match 4eef24d, so the completed functional
+  evidence and recorded red slow/JMH gates apply unchanged to this synchronization.
 
 ## For the owner
 
@@ -127,13 +135,14 @@
    gate and local paired JMH remain red/unaccepted, so the branch stays in progress. Old
    cloud results validate the pre-M5 candidate and are not proof of this head's slow/L6 gates.
 
-1. Independent maintainer review and human merge. Both owner-requested cloud runs passed: [standard perf](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40594606609) and [paired JMH](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40595834693). This is same-host regression/Linux CI evidence, not promotion of an approved baseline or native Mac-budget validation. Retain [all local failures](lev1pes-main-save-reload-perf.md).
+1. Independent maintainer review and human merge. Both owner-requested cloud runs passed: [standard perf](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40594606609) and [paired JMH](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40595834693). This is same-host regression/Linux CI evidence, not promotion of an approved baseline or native Mac-budget validation. Retain [all local failures](../testing/main-save-reload-perf.md).
 2. Review the serial Windows `verify` duration (about 9m 10s versus the documented 5-minute budget): accept the platform time or decide separately which run moves to `verifySlow`. No run or gate was moved here.
 3. Assignment merged by PR #26. The claim is ready for review and remains assigned until the maintainer merges the hand-in and closes it. No M5/M6 work is included.
 
 4. The inherited #36 records failure was repaired by the maintainer in PR #37. Current
-   main cc43715 also migrates claims to branch headers (#39/#40); integrate it and validate
-   with the new claims checker. No other developer's record is changed by this session.
+   main cc43715 also migrates claims to branch headers (#39/#40), now integrated. Use
+   the new claims checker in UTF-8 mode on Windows. No other developer's record is changed
+   by this session.
 
 5. Both the review candidate and clean 8d4bdc3 control exceed the unchanged 10-minute
    Windows slow-server task limit. A maintainer must obtain an unfiltered passing full slow
