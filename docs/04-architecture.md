@@ -935,6 +935,9 @@ DimensionDataStorage.java:43):
     block edit.
 - **Bodies are never saved** (§6.4), so a chunk reload or a restart cannot duplicate a unit.
 
+
+M7 authority foundation ([ADR-0028](adr/0028-diplomacy-authority-persistence.md)): schema 4 stores an immutable diplomacy value in `MatchSnapshot.Play`. A current save requires it; schemas 1–3 migrate to explicit identity bindings. `DiplomacySetup` is a bounded, trusted first-tick input (journal tag 9), installed once with teams locked. Player grant/revoke commands and private audience routing remain separate T8/T9 integrations. Exact legacy identity keeps released state hashes; non-default authority is hashed in slot order without allocation.
+
 ### 5.7 Staying open to an open world
 
 - Authority never depends on chunk loading. A unit without a body keeps its record, orders and

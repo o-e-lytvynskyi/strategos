@@ -5,6 +5,7 @@ import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Stance;
 import dev.strategos.core.sim.build.BuildingView;
+import dev.strategos.core.sim.diplomacy.DiplomacyView;
 import dev.strategos.core.sim.econ.EconomyTimes;
 import dev.strategos.core.sim.econ.FactionTreasury;
 import dev.strategos.core.sim.econ.NodeView;
@@ -20,6 +21,9 @@ import org.jspecify.annotations.Nullable;
 /** Read-only questions about a match at its last completed tick. */
 @CoreApi
 public interface MatchQueries {
+    /** Immutable authority at this completed tick; grants do not imply visibility of private state. */
+    DiplomacyView diplomacy();
+
     /** Why a template swap would be unsafe, or null when every live reference remains valid. */
     @Nullable String templateSwapProblem(TemplateSet next);
 

@@ -24,9 +24,9 @@ public final class Migrations {
         this.steps = List.copyOf(steps);
     }
 
-    /** 1 to 2 adds terrain pages; 2 to 3 binds only the original numeric building/queue table. */
+    /** 1 to 2 adds terrain; 2 to 3 binds legacy templates; 3 to 4 adds explicit identity authority. */
     public static Migrations production() {
-        return new Migrations(List.of(new AddTerrainPages(), new StableTemplateReferences()));
+        return new Migrations(List.of(new AddTerrainPages(), new StableTemplateReferences(), new DiplomacyIdentity()));
     }
 
     /** Schema 1 to 2: M0's snapshots had no terrain, so their page list is empty. */
@@ -70,6 +70,25 @@ public final class Migrations {
                             .mapToObj(index -> input.emptyMap()
                                     .set("index", input.createInt(index))
                                     .set("id", input.createString(original.get(index))))));
+        }
+    }
+
+    /** Schema 3 to 4 gives older saves an explicit one-seat-per-faction authority block. */
+    private static final class DiplomacyIdentity implements MigrationStep {
+        @Override
+        public int from() {
+            return 3;
+        }
+
+        @Override
+        public <T> Dynamic<T> apply(Dynamic<T> input) {
+            int factions = input.get("config").get("factions").asInt(-1);
+            var identity = dev.strategos.core.sim.diplomacy.DiplomacyState.identity(factions);
+            T encoded =
+                    DiplomacyCodec.STATE.encodeStart(input.getOps(), identity).getOrThrow();
+            return input.set(
+                    "play",
+                    input.get("play").orElseEmptyMap().set("diplomacy", new Dynamic<>(input.getOps(), encoded)));
         }
     }
 

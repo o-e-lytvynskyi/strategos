@@ -7,6 +7,7 @@ import dev.strategos.core.shared.Stance;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.build.BuildingView;
+import dev.strategos.core.sim.diplomacy.DiplomacyView;
 import dev.strategos.core.sim.econ.EconomyRules;
 import dev.strategos.core.sim.econ.FactionTreasury;
 import dev.strategos.core.sim.econ.GatherSlots;
@@ -38,6 +39,11 @@ final class QueriesImpl implements MatchQueries {
     @Override
     public @Nullable String templateSwapProblem(TemplateSet next) {
         return state.templateSwapProblem(next);
+    }
+
+    @Override
+    public DiplomacyView diplomacy() {
+        return state.diplomacy();
     }
 
     @Override

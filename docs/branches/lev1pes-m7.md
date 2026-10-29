@@ -36,6 +36,13 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Log
 
+### 2026-10-29 — T2b.2 test-first and implementation
+
+- Test-only checkpoint ac81511 failed cloud verify 40951563816 at compilation because the new setup/query/hash APIs were absent, as intended; zero test cases ran. Added the implementation after inspecting that failure.
+- MatchState now owns immutable authority; MatchQueries exposes a detached view. Trusted locked setup is canonicalized, journaled with bounded tag 9, and accepted only once on tick 1. Legacy identity hashes are preserved, with a primitive mixer for non-default authority.
+- Schema 4 carries immutable authority in Play, requires its block, migrates old schemas to identity, and validates bounded/canonical data. Existing schema-1/2/3 fixtures remain untouched; new JSON/NBT v4 fixtures/readers are append-only. Added ADR-0028 and a source AFTER-M6 marker for outcome/statistics reconciliation.
+- **Next:** cloud verify/slow/soak, full standard perf under the corrected runner limit, and pinned same-host JMH. Both T2b steps remain unchecked until required acceptance completes.
+
 ### 2026-10-29 — composition gates and CI execution limit
 
 - Composition 0debda5: verify run 40941835647 passed in 5m 48s with 2,288 canonical XML cases; full-ci 40941840635 passed in 10m 21s with 235 cases. Both have zero failures/errors/skips.
@@ -118,6 +125,9 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Decisions taken
 
+- 2026-10-29 · Keep immutable authority directly in Play and validate one value at decode — avoids repeated per-seat reconstruction while retaining detached snapshots — change only the internal representation behind the codec/value boundary if measurements justify it.
+- 2026-10-29 · Use schema 4 with explicit legacy identity migration and required current authority — old readers must reject rather than ignore rights — any future format interpretation requires a new migration/version.
+
 - 2026-10-29 · Give the standard perf Actions job 90 minutes after the observed 55-minute cancellation at 16/22 cases — allows completion of the same measurements without changing their acceptance criteria — restore the old resource limit if a reviewed execution layout fits the full suite within it.
 - 2026-10-29 · Share the final full L6 acceptance across composition and authority installation — dependency code already passes verify/slow/soak; the remaining issue is a runner deadline, not an accepted performance result — require separate complete runs if review needs independent predecessor L6 evidence.
 
@@ -131,6 +141,8 @@ or replication privacy; those retain their own integration tests and dependencie
 - 2026-10-29 · Start with independent core identity/diplomacy/grant foundations after readiness reconciliation — they can be tested without unmerged M6 runtime code — revisit the order when prerequisites merge.
 
 ## Pitfalls
+
+- Added [diplomacy restore](../kb/diplomacy-restore.md): current authority versus legacy fallback, immutable sharing, compatible live writers and hash preservation.
 
 - Use `python -X utf8` for bookkeeping on Windows; a legacy-code-page run can misleadingly report zero cards. Existing toolchain KB documents this.
 

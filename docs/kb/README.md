@@ -24,3 +24,5 @@ written in the same session, into the file of its area (a branch does it on the 
 | Analytic combat: used-empty shot allocators, release/movement phase alignment, circular and layered hit footprints | [rts-sim-combat.md](rts-sim-combat.md) |
 | RTS economy and construction: buildable ground ≠ walkable ground, demolition in the grid with a `pageK` delay, a target on a blocked cell, order news for an empty queue, AI slots, worker shares and the silence watchdog, expansion with storehouses and territory | [rts-sim-economy.md](rts-sim-economy.md) |
 | Performance fixtures: first asynchronous tick interval, idle warm-up and CPU sampling, equal probe working sets, no wall-clock comparison in a unit test, keeping a Mac awake, invalid measurements | [perf-tick-spacing.md](perf-tick-spacing.md) |
+
+- [Diplomacy restore](diplomacy-restore.md): immutable authority, current-save validation versus legacy migration, live Play writers, first-tick setup and legacy state hashes.

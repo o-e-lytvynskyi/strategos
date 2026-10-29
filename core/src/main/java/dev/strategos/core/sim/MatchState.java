@@ -13,6 +13,7 @@ import dev.strategos.core.sim.build.DamageRanks;
 import dev.strategos.core.sim.combat.Damage;
 import dev.strategos.core.sim.combat.HealthStore;
 import dev.strategos.core.sim.combat.ShotStore;
+import dev.strategos.core.sim.diplomacy.DiplomacyState;
 import dev.strategos.core.sim.econ.Amount;
 import dev.strategos.core.sim.econ.CarryStore;
 import dev.strategos.core.sim.econ.Costs;
@@ -54,6 +55,7 @@ public final class MatchState {
 
     private long tick;
     private MatchConfig config;
+    private DiplomacyState diplomacy;
     private final Outcome outcome = new Outcome();
     private final AiSlots aiSlots = new AiSlots();
     private TemplateSet templates;
@@ -104,6 +106,7 @@ public final class MatchState {
 
     MatchState(MatchConfig config, TemplateSet templates, EntityStore entities, MatchLog log) {
         this.config = config;
+        this.diplomacy = DiplomacyState.identity(config.factions());
         this.templates = templates;
         cacheMobility();
         this.entities = entities;
@@ -624,6 +627,25 @@ public final class MatchState {
 
     public long tick() {
         return tick;
+    }
+
+    public DiplomacyState diplomacy() {
+        return diplomacy;
+    }
+
+    void configureDiplomacy(DiplomacySetup setup) {
+        if (tick != 1 || diplomacy.teamsLocked() || setup.snapshot().teams().size() != config.factions()) {
+            log.warn("ignored diplomacy setup: late, duplicate or wrong faction count");
+            return;
+        }
+        diplomacy = DiplomacyState.restore(setup.snapshot());
+    }
+
+    void restoreDiplomacy(DiplomacyState saved) {
+        if (saved.factions() != config.factions()) {
+            throw new IllegalArgumentException("saved diplomacy faction count differs from match config");
+        }
+        diplomacy = saved;
     }
 
     public MatchConfig config() {

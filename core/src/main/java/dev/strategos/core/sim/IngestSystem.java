@@ -9,7 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * P0: puts the tick's inputs in canonical order (terrain pages by page, Z then X, then commands, then the agents, then
+ * P0: installs a trusted first-tick diplomacy setup before other inputs, then puts those in canonical order
+ * (terrain pages by page, Z then X, then commands, then the agents, then
  * damage to bodies in the order it came, then path deliveries, then a template set), records them in the journal and
  * routes each to its one handler: the pages are published together, a command is queued, the agents are the tick's for
  * avoidance, a delivery lists the finished jobs the path service applies this tick, a new template set is swapped in
@@ -33,7 +34,8 @@ final class IngestSystem implements MatchSystem {
                 ExternalDamage.class,
                 JobDelivery.class,
                 ContentSwap.class,
-                LeaderUpdate.class);
+                LeaderUpdate.class,
+                DiplomacySetup.class);
     }
 
     @Override
@@ -56,6 +58,7 @@ final class IngestSystem implements MatchSystem {
                 case JobDelivery delivery -> state.addDelivery(delivery);
                 case ContentSwap swap -> state.swapTemplates(swap.set());
                 case LeaderUpdate leader -> state.leaders().set(leader);
+                case DiplomacySetup setup -> state.configureDiplomacy(setup);
             }
         }
         state.publishAll(pages);
@@ -84,6 +87,7 @@ final class IngestSystem implements MatchSystem {
 
     private static int rank(InputEvent event) {
         return switch (event) {
+            case DiplomacySetup setup -> -1;
             case TerrainPage page -> 0;
             case CommandEnvelope envelope -> 1;
             case AgentUpdate update -> 2;

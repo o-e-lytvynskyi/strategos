@@ -36,8 +36,7 @@ class MigrationsTest {
     @Test
     void schemaThreeBlocksOldReadersAndBindsOnlyTheOriginalReservedTable() {
         Dynamic<JsonElement> old = json("{\"v\":2,\"buildings\":[{\"template\":31}]}");
-        var migrated =
-                Migrations.production().migrate(old, SchemaVersion.CURRENT).getOrThrow();
+        var migrated = Migrations.production().migrate(old, 3).getOrThrow();
         assertThat(migrated.get("v").asInt(0)).isEqualTo(3);
         assertThat(migrated.get("buildings").get().getOrThrow())
                 .isEqualTo(old.get("buildings").get().getOrThrow());

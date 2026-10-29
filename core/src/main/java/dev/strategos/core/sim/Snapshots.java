@@ -76,7 +76,8 @@ final class Snapshots {
                         s.alerts().save(),
                         s.shots().save(),
                         s.stances().save(),
-                        s.garrison().save()),
+                        s.garrison().save(),
+                        s.diplomacy()),
                 s.buildings().empty()
                         ? List.of()
                         : s.templates().all().stream()
@@ -140,6 +141,7 @@ final class Snapshots {
         EntityStore entities = EntityStore.restore(snapshot.slots(), alive);
         MatchState state = new MatchState(snapshot.config(), templates, entities, log);
         state.setTick(snapshot.tick());
+        state.restoreDiplomacy(snapshot.diplomacy());
         state.setNextGroup(snapshot.nextGroup());
         long[] counters =
                 new long[state.treasury().factions() * state.treasury().resources() * 5];

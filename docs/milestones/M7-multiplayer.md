@@ -148,6 +148,8 @@ units and hidden army membership are never added to vanilla scoreboard teams.
 
 ### 3.2 Persistence and restoration
 
+Implementation boundary: ADR-0028 defines schema 4 over the stacked schema-3 template policy. `Play` retains an immutable `DiplomacyState` value; the encoder derives canonical fields and the decoder validates them once. The versioned decoder requires authority in a current save. Migration 3→4 supplies identity from config.factions, while older migrations and released hashes remain intact. Root compatibility constructors normalize older typed Play values to identity. The trusted first-tick setup has bounded journal tag 9; command/roster/audience integration stays in T8/T5/T9. A source AFTER-M6 marker requires preserving authority when M6 adds outcome/statistics fields.
+
 Version the core snapshot for player/faction bindings, locked teams and grants. Version the
 adapter roster/session envelope for UUID seats and reconnect deadlines. Migrate valid older
 one-player/one-faction saves to identity bindings; do not reinterpret incompatible slot data.

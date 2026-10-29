@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Immutable core authority state, updated by the match's single writer. Mutation methods return a new state;
@@ -15,9 +16,10 @@ import java.util.Optional;
  *
  * <p>Bindings are setup authority, not connection status: disconnecting does not unbind a seat. The caller must
  * authenticate setup/grant intents. A grantor can delegate only its primary faction, never an inherited grant.
- * Installation in MatchState, its journal and versioned match snapshot belongs to M7 T2b/T5; this foundation alone
- * does not change an existing match or its command validation.
+ * MatchState owns the current immutable value; journaled setup and schema 4 preserve it. Asset command authority,
+ * private-query routing and UUID roster integration retain their separate M7 T8/T9/T5 gates.
  */
+@CoreApi
 public final class DiplomacyState implements DiplomacyView {
     private static final int SEATS = FactionSlot.MAX + 1;
     private static final int UNBOUND = -1;
@@ -26,6 +28,7 @@ public final class DiplomacyState implements DiplomacyView {
     private final int[] bindings;
     private final int[] grants; // receiving player -> bitset of granting factions
     private final boolean locked;
+    private final boolean legacyIdentity;
 
     /** Creates configured factions with distinct teams and no player bindings, including no implicit identity map. */
     public DiplomacyState(int factions) {
@@ -40,6 +43,7 @@ public final class DiplomacyState implements DiplomacyView {
         Arrays.fill(bindings, UNBOUND);
         grants = new int[SEATS];
         locked = false;
+        legacyIdentity = false;
     }
 
     private DiplomacyState(int[] teams, int[] bindings, int[] grants, boolean locked) {
@@ -47,6 +51,7 @@ public final class DiplomacyState implements DiplomacyView {
         this.bindings = bindings;
         this.grants = grants;
         this.locked = locked;
+        legacyIdentity = legacyIdentity(teams, bindings, grants, locked);
     }
 
     /** Explicit migration/default setup for the legacy one-player-per-faction authority model. */
@@ -211,28 +216,82 @@ public final class DiplomacyState implements DiplomacyView {
 
     /** Validates the complete contract before publishing a reconstructed state; malformed authority is rejected. */
     public static DiplomacyState restore(Snapshot saved) {
-        DiplomacyState state = new DiplomacyState(saved.teams().size());
-        for (int f = 0; f < state.factions(); f++) {
-            state = state.withTeam(new FactionSlot(f), saved.teams().get(f));
+        int n = saved.teams().size();
+        if (n < 1 || n > SEATS) throw new IllegalArgumentException("factions outside 1.." + SEATS);
+        int[] teams = new int[n];
+        int[] bindings = new int[SEATS];
+        int[] grants = new int[SEATS];
+        Arrays.fill(bindings, UNBOUND);
+        for (int f = 0; f < n; f++) {
+            int team = saved.teams().get(f);
+            if (team < 0 || team >= SEATS) throw new IllegalArgumentException("invalid saved team");
+            teams[f] = team;
         }
-        int seenPlayers = 0;
         for (Binding binding : saved.bindings()) {
             int p = requirePlayer(binding.player());
-            if ((seenPlayers & (1 << p)) != 0) {
-                throw new IllegalArgumentException("duplicate player binding");
-            }
-            seenPlayers |= 1 << p;
-            state = state.bind(binding.player(), binding.faction());
+            int f = binding.faction().value();
+            if (bindings[p] != UNBOUND) throw new IllegalArgumentException("duplicate player binding");
+            if (f >= n) throw new IllegalArgumentException("faction outside this match");
+            bindings[p] = f;
         }
         for (Grant grant : saved.grants()) {
-            int f = state.requireFaction(grant.faction());
+            int f = grant.faction().value();
             int p = requirePlayer(grant.recipient());
-            if ((state.grants[p] & (1 << f)) != 0) {
-                throw new IllegalArgumentException("duplicate control grant");
+            int primary = bindings[p];
+            if (f >= n
+                    || primary == UNBOUND
+                    || primary == f
+                    || teams[primary] != teams[f]
+                    || !hasPrimary(bindings, f)) {
+                throw new IllegalArgumentException("control grants require distinct, present allied participants");
             }
-            state = state.grantFrom(f, p);
+            if ((grants[p] & (1 << f)) != 0) throw new IllegalArgumentException("duplicate control grant");
+            grants[p] |= 1 << f;
         }
-        return saved.teamsLocked() ? state.lockTeams() : state;
+        return new DiplomacyState(teams, bindings, grants, saved.teamsLocked());
+    }
+
+    @Override
+    public boolean equals(@Nullable Object other) {
+        return this == other
+                || other instanceof DiplomacyState d
+                        && locked == d.locked
+                        && Arrays.equals(teams, d.teams)
+                        && Arrays.equals(bindings, d.bindings)
+                        && Arrays.equals(grants, d.grants);
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = Arrays.hashCode(teams);
+        hash = 31 * hash + Arrays.hashCode(bindings);
+        hash = 31 * hash + Arrays.hashCode(grants);
+        return 31 * hash + (locked ? 1 : 0);
+    }
+
+    public boolean isLegacyIdentity() {
+        return legacyIdentity;
+    }
+
+    private static boolean legacyIdentity(int[] teams, int[] bindings, int[] grants, boolean locked) {
+        if (locked) return false;
+        for (int f = 0; f < teams.length; f++) {
+            if (teams[f] != f) return false;
+        }
+        for (int p = 0; p < SEATS; p++) {
+            if (bindings[p] != (p < teams.length ? p : UNBOUND) || grants[p] != 0) return false;
+        }
+        return true;
+    }
+
+    /** Allocation-free contribution for the running match hash; order matches hashInto. */
+    public long mixHash(long hash) {
+        long h = Hasher.mix(Hasher.mix(hash, factions()), locked ? 1 : 0);
+        for (int team : teams) h = Hasher.mix(h, team);
+        for (int p = 0; p < SEATS; p++) {
+            h = Hasher.mix(Hasher.mix(h, bindings[p]), grants[p]);
+        }
+        return h;
     }
 
     /** Fixed slot order includes absence, teams, grants and the lock; T2b must wire it into the match hash. */

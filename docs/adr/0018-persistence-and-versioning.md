@@ -4,7 +4,7 @@ Date: 2026-10-21
 
 ## Status
 
-Accepted; amended by [ADR-0027](0027-save-template-identities.md) (template identities)
+Accepted; amended by [ADR-0027](0027-save-template-identities.md) (template identities) and [ADR-0028](0028-diplomacy-authority-persistence.md) (diplomacy authority)
 
 ## Context
 
@@ -81,3 +81,7 @@ Accepted; amended by [ADR-0027](0027-save-template-identities.md) (template iden
 | Chunk attachments for territory and exploration | Gone while chunks are unloaded; unusable for map-wide data |
 | Vanilla `DataFixer`s | Built for vanilla's schema types; DFU `Dynamic` migrations on our own versions are simpler and testable in L1 |
 | Trusting `computeIfAbsent` as is | Silently resets a match after any decode error |
+
+## M7 authority extension, 2026-10-29
+
+[ADR-0028](0028-diplomacy-authority-persistence.md) defines schema 4: mandatory diplomacy authority, explicit identity migration for schemas 1–3, immutable snapshot sharing and trusted journaled first-tick setup. Old template-identity restrictions remain in force. Runtime command/grant routing and UUID roster persistence retain their separate M7 tasks.
