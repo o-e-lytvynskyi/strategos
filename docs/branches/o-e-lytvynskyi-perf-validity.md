@@ -19,6 +19,14 @@
 
 ## Log
 
+### 2026-10-29 — round 3 and the merged short intervals
+
+- Round 3 (a) and (b) on e8d84d7, 90 min each, awake; numbers and the recommendation in ADR-0026.
+  The mean limit separates the conditions (3.45 % against 9.35 %); p95 on short windows is one burst.
+- Fixed: readings milliseconds apart (no counter movement) made 7 windows unavailable; intervals under
+  0.5 s are now merged (`ForeignLoad.MIN_INTERVAL_NANOS`), a test pins it (14 in `ForeignLoadTest`).
+  `verifyFast` green. Round 4 checks the fix.
+
 ### 2026-10-29 — round 2 lost to sleep; sleep detection
 
 - Round 2 (a) on 9e270aa ran 3.5 h: the Mac entered idle sleep at 06:55 (`pmset -g log`; the

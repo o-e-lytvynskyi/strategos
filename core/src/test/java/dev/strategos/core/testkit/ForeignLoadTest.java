@@ -150,6 +150,23 @@ class ForeignLoadTest {
     }
 
     @Test
+    void readingsMillisecondsApartAreMergedNotUnavailable() {
+        // a window's own readings land next to the sampler's; the counters have not moved between them
+        List<Reading> r = List.of(
+                new Reading(0, new CpuTimes(0, 0, 0)),
+                new Reading(SECOND / 1000, new CpuTimes(0, 0, 0)),
+                new Reading(SECOND, new CpuTimes(100, 90, 0)),
+                new Reading(2 * SECOND, new CpuTimes(200, 180, 0)),
+                new Reading(2 * SECOND + SECOND / 500, new CpuTimes(200, 180, 0)));
+        ForeignLoad load = ForeignLoad.of(r);
+        assertThat(load.available()).isTrue();
+        assertThat(load.intervals()).isEqualTo(2);
+        assertThat(load.mean()).isCloseTo(0.10, within(1e-9));
+        assertThat(load.p95()).isCloseTo(0.10, within(1e-9));
+        assertThat(load.seconds()).isCloseTo(2.002, within(1e-9));
+    }
+
+    @Test
     void tooFewOrInconsistentReadingsAreUnavailableNotAnException() {
         assertThat(ForeignLoad.of(List.of()).available()).isFalse();
         assertThat(ForeignLoad.of(List.of(new Reading(0, new CpuTimes(1, 0, 0))))

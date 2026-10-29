@@ -21,6 +21,13 @@ public final class ForeignLoad {
         }
     }
 
+    /**
+     * The shortest interval kept: a reading closer than this to the one before is merged into the next interval. The
+     * Mach counters move in 100 Hz ticks while readings may be milliseconds apart (a window's own reading next to the
+     * sampler's): such an interval has no ticks at all, or a meaningless fraction (calibration round 3).
+     */
+    public static final long MIN_INTERVAL_NANOS = 500_000_000L;
+
     /** Preflight the proposed policy asks for, in seconds. */
     public static final double PROPOSED_PREFLIGHT_SECONDS = 60;
 
@@ -46,20 +53,40 @@ public final class ForeignLoad {
         return new ForeignLoad(null, f, new double[] {f}, 0);
     }
 
-    /** Readings in time order; fewer than two, or counters that do not advance consistently, are unavailable. */
+    /**
+     * Readings in time order, intervals under {@link #MIN_INTERVAL_NANOS} merged into the next (the last into the one
+     * before); fewer than two, or counters that do not advance consistently, are unavailable.
+     */
     public static ForeignLoad of(List<Reading> readings) {
         if (readings.size() < 2) {
             return unavailable("fewer than two CPU readings (" + readings.size() + ")");
         }
+        for (int i = 1; i < readings.size(); i++) {
+            if (readings.get(i).nanos() <= readings.get(i - 1).nanos()) {
+                return unavailable("CPU readings are not in time order");
+            }
+        }
+        List<Reading> kept = new ArrayList<>();
+        kept.add(readings.get(0));
+        for (int i = 1; i < readings.size(); i++) {
+            Reading r = readings.get(i);
+            boolean last = i == readings.size() - 1;
+            if (r.nanos() - kept.get(kept.size() - 1).nanos() >= MIN_INTERVAL_NANOS) {
+                kept.add(r);
+            } else if (last) {
+                if (kept.size() > 1) {
+                    kept.set(kept.size() - 1, r); // the short tail joins the interval before it
+                } else {
+                    kept.add(r); // the whole run is shorter than one interval
+                }
+            }
+        }
+        readings = kept;
         double[] fractions = new double[readings.size() - 1];
         try {
             for (int i = 0; i < fractions.length; i++) {
-                Reading a = readings.get(i);
-                Reading b = readings.get(i + 1);
-                if (b.nanos() <= a.nanos()) {
-                    return unavailable("CPU readings are not in time order");
-                }
-                fractions[i] = a.times().foreignUntil(b.times());
+                fractions[i] =
+                        readings.get(i).times().foreignUntil(readings.get(i + 1).times());
             }
             Reading first = readings.get(0);
             Reading last = readings.get(readings.size() - 1);

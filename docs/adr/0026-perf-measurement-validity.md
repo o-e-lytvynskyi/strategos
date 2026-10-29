@@ -77,6 +77,31 @@ Findings:
 `nanoTime` and the CPU counters, so nothing in the results showed it; a window whose wall clock runs more than 2 s
 past the monotonic clock is now `invalid`, and calibration runs under `caffeinate -i`. Rerun as round 3.
 
+### Round 3 — 2026-10-29, commit e8d84d7, kept awake (`caffeinate -i`), 60 s preflight
+
+| | (a) quiet (preflight 2.09 %) | (b) one CPU busy (preflight 10.07 %) |
+|---|---|---|
+| Mean, every measured window | 1.52–3.45 % | 9.35–11.45 % |
+| p95, windows ≥ 60 s | 4.14–7.01 % | 11.14–15.31 % |
+| p95, windows 10–60 s | 2.33–12.66 % (`idle_300`, 28 s) | 10.13–15.73 % |
+| QA-07 (25 % mean) | all valid | all valid |
+| `protected_lookup_ratio` | 0.91 | 1.00 |
+
+- The mean limit `min(10 %, 50 %/N)` (4.17 % here) again separates the conditions: 3.45 % against 9.35 %.
+- On a window under a minute, the p95 of 1 s intervals is close to its maximum (28 intervals: the second highest),
+  so one burst decides it — `idle_300` failed it on the quiet machine. On windows of 60 s or more, 1/N (8.33 %)
+  separated round 3 (7.01 against 11.14), but round 1's quiet `economy_stress` reached 9.58 %; 1.25/N (10.4 %)
+  separates both rounds, with a thin margin.
+- One more harness defect, fixed for round 4: a window's own reading lands milliseconds from the sampler's, the
+  Mach counters do not move between them, and the whole window turned unavailable (3 windows in (a), 4 in (b)); a
+  sub-0.5 s interval also gave a noisy p95 (`snapshot_500` 20.33 % on the quiet machine). Intervals under 0.5 s are
+  now merged into the next.
+
+**Recommendation for the owner** (after round 4 confirms the fix): enforce the mean limit `min(10 %, 50 %/N)` in
+place of QA-07's 25 %; keep the p95 limit report-only, judged only on windows of 60 s or more, at `min(20 %,
+1.25/N)`, until a burst condition (a periodic load) calibrates it; the 60 s preflight's own mean under the same mean
+limit. Condition (c), a typical desktop, is still to run with the owner at the machine.
+
 ## Consequences
 
 - A run on a busy machine ends `invalid` with a reason, not as a budget failure or a call to optimise.
