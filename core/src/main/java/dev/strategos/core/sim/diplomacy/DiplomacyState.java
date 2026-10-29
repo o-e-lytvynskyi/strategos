@@ -254,11 +254,11 @@ public final class DiplomacyState implements DiplomacyView {
     @Override
     public boolean equals(@Nullable Object other) {
         return this == other
-                || other instanceof DiplomacyState d
+                || (other instanceof DiplomacyState d
                         && locked == d.locked
                         && Arrays.equals(teams, d.teams)
                         && Arrays.equals(bindings, d.bindings)
-                        && Arrays.equals(grants, d.grants);
+                        && Arrays.equals(grants, d.grants));
     }
 
     @Override

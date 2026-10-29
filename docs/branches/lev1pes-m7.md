@@ -36,6 +36,11 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Log
 
+### 2026-10-29 — T2b.2 static-check correction
+
+- Verify 40953293646 on b1239f5 reached ErrorProne and failed `OperatorPrecedence` under the unchanged `-Werror` policy: mixed `||`/`&&` in value equality needed explicit grouping. Added parentheses; no warning was suppressed and no test case had run in that attempt.
+- **Next:** third implementation verification attempt. If it fails again, stop this task line under the developer procedure and record the concrete result.
+
 ### 2026-10-29 — T2b.2 compilation correction
 
 - Implementation checkpoint e340d0f failed verify 40952453183 at core compilation: the setup diagnostic omitted MatchLog.warn's required simulation-tick argument. No test cases ran. Verified the actual signature and corrected the call; no check or threshold changed.
