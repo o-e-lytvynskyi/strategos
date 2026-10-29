@@ -7,7 +7,7 @@
 ## Now
 
 - **Milestone:** M7 Multiplayer; 2 of 27 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md), based on planning PR #32.
-- **In progress:** T2b.1 prerequisite composition and cloud gates since 2026-10-29.
+- **In progress:** T2b.2 persisted-authority contract tests against the functionally verified T2b.1 composition; their final L6 acceptance remains shared and pending.
 - **Last finished task:** T2a independent diplomacy foundation (2026-10-29), cloud-verified implementation e8438cd.
 - **Next task:** accept combined prerequisite cloud gates, then T2b.2 core authority/setup, schema-4 migration, hashing and journal integration.
 - **Merged from main last:** b893a0d (2026-10-29); resumed synchronization checkpoint awaiting cloud verify.
@@ -35,6 +35,15 @@ before implementing them. T2 does not certify friendly-fire, allied victory, com
 or replication privacy; those retain their own integration tests and dependencies.
 
 ## Log
+
+### 2026-10-29 — composition gates and CI execution limit
+
+- Composition 0debda5: verify run 40941835647 passed in 5m 48s with 2,288 canonical XML cases; full-ci 40941840635 passed in 10m 21s with 235 cases. Both have zero failures/errors/skips.
+- Standard perf run 40941845938 was cancelled by the GitHub job limit: annotation explicitly says maximum execution time 55m0s. It completed 27 JMH configurations and 16/22 GameTests, with 14 passing perf reports plus one report-only byte report. No full L6 pass is claimed.
+- GitHub cancelled during map setup for the next scene; JMH started at 19:42:52 UTC, speed ratio at 19:51:26, and 22 GameTests at 19:52:41. The job ended at 20:33:16. This is the aggregate runner deadline, not evidence of a per-test budget failure.
+- Raised only the aggregate Actions resource deadline to 90 minutes so all existing serial scenes can run; individual game-test timeouts, workload lengths, CI factors, performance thresholds and baselines remain unchanged. Added an opt-in pinned same-host JMH job with the existing 15%/allocation comparator.
+- Refined phasing: T2b.2 may use the verified persistence contract while T2b.1 stays incomplete; the corrected full L6 closes both steps only after the combined result passes. No performance gate is removed or accepted from the partial run. Publishing test-first contracts before runtime code.
+- **Next:** cloud red checkpoint, then production implementation and full combined gates.
 
 ### 2026-10-29 — T2b.1 explicit persistence prerequisite composition
 
@@ -108,6 +117,9 @@ or replication privacy; those retain their own integration tests and dependencie
 4. Cloud verify takes 6m 46s on the readiness baseline and 7m 20s with the foundation, beyond the procedure's 5-minute target. Keep all existing gates; recommend accepting the cloud duration. Moving checks or changing a Done gate requires an explicit owner decision.
 
 ## Decisions taken
+
+- 2026-10-29 · Give the standard perf Actions job 90 minutes after the observed 55-minute cancellation at 16/22 cases — allows completion of the same measurements without changing their acceptance criteria — restore the old resource limit if a reviewed execution layout fits the full suite within it.
+- 2026-10-29 · Share the final full L6 acceptance across composition and authority installation — dependency code already passes verify/slow/soak; the remaining issue is a runner deadline, not an accepted performance result — require separate complete runs if review needs independent predecessor L6 evidence.
 
 - 2026-10-29 · Explicitly stack our corrected PR #30 as a prerequisite — its persistence contract is needed to avoid competing schema changes; combined gates must pass and its own review/delivery remains separate — base M7 on the delivered equivalent when that PR merges.
 - 2026-10-29 · Renumber the imported save-identity ADR to 0027 — main already owns 0026 for performance validity — reconcile the number with the eventual dependency delivery without changing either policy.

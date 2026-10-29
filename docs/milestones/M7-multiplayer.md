@@ -60,6 +60,8 @@ issues, JFR counters for S11, and ART-03 silhouette/look approval. People start 
 
 ### 1.4 Implementation findings
 
+2026-10-29 resume: composition verify/slow/soak pass, but its L6 Actions job hit the 55-minute aggregate deadline at 16/22 scenes. The job resource limit is 90 minutes; all measurement parameters/gates are unchanged. T2b.2 proceeds against the functionally verified contract while both steps retain pending acceptance until the corrected full combined L6 succeeds. This replaces the earlier strictly serial gate scheduling, not the required evidence.
+
 | ID | Finding / decision | Scope and follow-up |
 |---|---|---|
 | D-01 | M5 delivery is already on the implementation base (PR #33); M6 runtime is not | Replace the stale planning assumption at each concrete adapter, not by importing another developer's unfinished branch |
@@ -363,7 +365,7 @@ and `python -X utf8` (see [toolchain KB](../kb/minecraft-mod-build.md)).
 | T1 | Reconcile merged predecessors, decisions, hook signatures, schema and scope; record readiness | Owner opens approved M7 scope; applicable M5/M6 close results | S | F; `python -X utf8 tools/roadmap.py check`; `python -X utf8 tools/claims.py check --base origin/main` |
 | T2a | Independent identity/diplomacy/grant state, detached immutable view and deterministic snapshot/hash contracts; MATCH-06 | T1; CORE-01 | M | `:core:test` exact permission matrix, invalid participants, grant revocation, detached views and deterministic reconstruction; V; no running tick/order path changes |
 | T2b.1 | Compose corrected PR #30 prerequisite with current main, resolve identifiers and validate gates | T2a; own prerequisite branch at 588fa57 | S | V, S, standard cloud perf; no gates/thresholds changed |
-| T2b.2 | Install T2a authority, immutable query, journaled first-tick setup and versioned diplomacy preservation; retain legacy identity defaults | T2b.1 | L | `:core:test`, current/legacy JSON/NBT, malformed snapshots and binary-journal replay; V, S, cloud JMH/perf |
+| T2b.2 | Install T2a authority, immutable query, journaled first-tick setup and versioned diplomacy preservation; retain legacy identity defaults | T2b.1 verified persistence contract; final full L6 shared with T2b.1 | L | `:core:test`, current/legacy JSON/NBT, malformed snapshots and binary-journal replay; V, S, cloud JMH/perf |
 | T3 | Server lobby/start intents and private lobby snapshots; NET-02 | T2b.2; MATCH-02 delivered; D-20 | L | `:mod:test :mod:runGameTestServer`, four-player start ≤10 s and outsider rejection |
 | T4 | Lobby screen/readiness/error rendering; NET-02 | T3 | M | `:mod:runScenario -Pscenario=m7-lobby -Pscenario.timeoutSeconds=180` (new scenario) |
 | T5 | Slot bindings, grants, roster and deadline migration/restore | T2a, T3; CORE-07; integrated save/reload schema | M | `:core:test :mod:test :mod:runGameTestServer`, old/new fixtures and malformed saves |
