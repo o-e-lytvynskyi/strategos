@@ -12,7 +12,7 @@ Codex or another agent; `CLAUDE.md` imports it).
 | Role | Who | Does |
 |---|---|---|
 | **Owner** | the repository's owner | product decisions, roadmap approvals, opening milestones for claims, the decisions kept for the owner below, and every merge into `main` |
-| **Maintainer** | the owner, or a session the owner starts for it — never the session that did the work | checks claim and release pull requests, reviews developer branches with delegated workers, keeps `main`'s records (STATE.md, worklog.md, claims.md), and prepares merges; **every merge and approval is a human's** (an `ask` permission, or on GitHub) ([strategos-maintain](.claude/skills/strategos-maintain/SKILL.md)) |
+| **Maintainer** | the owner, or a session the owner starts for it — never the session that did the work | checks claim and release pull requests, reviews developer branches with delegated workers, keeps `main`'s records (STATE.md, worklog.md, the merged branch files' status), and prepares merges; **every merge and approval is a human's** (an `ask` permission, or on GitHub) ([strategos-maintain](.claude/skills/strategos-maintain/SKILL.md)) |
 | **Developer** | anyone with access: a person, or an agent session (Claude Code, Codex, other) — the owner's own agent sessions included | claims work, builds it on their own branch, hands it in for review ([strategos-dev](.claude/skills/strategos-dev/SKILL.md)) |
 
 Who holds each role: [docs/people.md](docs/people.md). Every developer is external, the owner's
@@ -28,7 +28,8 @@ push your branch, repeat until a stop condition; then report.
 
 1. Read `docs/STATE.md` by heading — "Open for claims", "Standing restrictions", "Blocked" — and
    your branch file `docs/branches/<developer>-<work>.md` if you have one.
-2. Run `python3 tools/claims.py --fetch list` (the registry [docs/claims.md](docs/claims.md)) and
+2. Run `python3 tools/claims.py --fetch list` (the claims: one branch file each in
+   [docs/branches/](docs/branches/README.md)) and
    `python3 tools/roadmap.py check`.
 3. Read only the docs the task needs:
 
@@ -77,7 +78,7 @@ push your branch, repeat until a stop condition; then report.
 - **Never weaken a check to get green:** no raised thresholds, no retries until green, no test
   marked flaky, no skipped gate.
 - **Branches.** A developer commits only to their own `dev/<developer>/<work>` branch, and only
-  for work assigned to them in docs/claims.md; nobody but the maintainer writes to `main`. Never force-push, never rewrite pushed
+  for work they hold by a merged claim (their branch file); nobody but the maintainer writes to `main`. Never force-push, never rewrite pushed
   history, never delete someone else's branch or edits.
 - **Permissions.** Unattended sessions run without prompts (Claude Code: auto mode with the
   project allowlist `.claude/settings.json`; Codex: the equivalent approval policy). Never edit
@@ -160,21 +161,22 @@ always on their branch, landing by pull request like code.
   accepts outside claims by hand ([CONTRIBUTING.md](CONTRIBUTING.md)).
 - **Claimable work:** the tasks of a milestone listed in STATE.md "Open for claims" (a whole
   milestone or a run of tasks whose dependencies are met), and planning work — the next
-  milestone's spec — at any time. A `reserved` row in [docs/claims.md](docs/claims.md) may be
-  claimed only by the developer it names.
+  milestone's spec — at any time. A `reserved` branch file may be claimed only by the developer it
+  names.
 - **Assess before claiming:** what the work needs from milestones not yet merged into `main`; build
   independent functionality first, code against a contract where possible, and mark each spot
   that must be finished or validated later with `AFTER-M<n>: …` (listed by `tools/claims.py
   after` and in the branch file's "Depends on unfinished work"). Work that can only follow
   another milestone is not claimed yet.
-- **Assignment comes first, by pull request to `main`.** The claim pull request adds your row to
-  [docs/claims.md](docs/claims.md) (`assigned`) and your branch file, nothing else;
+- **Assignment comes first, by pull request to `main`.** The claim is your branch file
+  ([docs/branches/](docs/branches/README.md), `Status: claimed`); its pull request adds it and
+  nothing else — there is no shared registry;
   `python3 tools/claims.py check --base origin/main` must pass on it. A maintainer merges it
   (procedure: strategos-maintain §3). **No development before it is merged**; meanwhile, work on
   another claim of yours or stop.
 - **Nobody takes assigned work without its holder's explicit approval:** the holder releases it
-  in their own pull request, or approves the takeover in a comment that your row's note links
-  (`handed over by <developer>, <link>`). Only a stale claim (no commit for 7 days) may be
+  in their own pull request, or approves the takeover in a comment that your branch file's
+  `**Note:**` links (`handed over by <developer>, <link>`). Only a stale claim (no commit for 7 days) may be
   released by the owner instead.
 - **Work on it:** on your `dev/<developer>/<work>` branch; your records are the spec's "Progress",
   the cards' statuses and your branch file (its "Now", log, "For the owner", "Decisions taken");
@@ -183,10 +185,10 @@ always on their branch, landing by pull request like code.
 - **Hand it in:** when the claimed work is done and its gates pass, set the branch file's `Status:
   ready for review`, open the pull request to `main` with the milestone report as its body, and
   claim the next work.
-- **Release:** a pull request turning your row to `released`, if you stop.
+- **Release:** a pull request setting your branch file's `Status: released <date>`, if you stop.
 - **Review and merge:** a maintainer session (never the one that built it) validates the branch
-  with delegated workers, fixes or returns it, and merges it on the owner's word; the merge turns
-  the row to `done` ([strategos-maintain](.claude/skills/strategos-maintain/SKILL.md)).
+  with delegated workers, fixes or returns it, and merges it on the owner's word; the merge sets
+  the branch file's `Status: merged <date>` ([strategos-maintain](.claude/skills/strategos-maintain/SKILL.md)).
 
 ## Definition of Done
 

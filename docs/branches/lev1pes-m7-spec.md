@@ -2,6 +2,8 @@
 
 **Developer:** lev1pes · **Branch:** dev/lev1pes/m7-spec · **Work:** M7 spec · **Base:** main @ 3c1f4300bd457788374c74fe4ddbfc2679f17ec4 · **Claimed:** 2026-10-28 · **Status:** merged 2026-10-28
 
+**Note:** specification merged 2026-10-28 in [PR #32](https://github.com/o-e-lytvynskyi/strategos/pull/32); planning only, requested by the owner; task/dependency matrix, multiplayer contracts and verification plan; no implementation claim or milestone opening
+
 ## Now
 
 - **Milestone:** M7 Multiplayer specification only; no implementation tasks claimed.
