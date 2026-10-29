@@ -21,6 +21,9 @@ public final class FixtureMatches {
     /** The tick schema 2's fixture is saved at. */
     public static final long SCHEMA_2_TICK = 400;
 
+    /** The tick schema 3's fixture is saved at. */
+    public static final long SCHEMA_3_TICK = 9;
+
     private FixtureMatches() {}
 
     /**
@@ -56,6 +59,25 @@ public final class FixtureMatches {
         h.submit(new PlayerSlot(0), Move.replace(UnitSet.of(walker), new Vec2d(6, 26)));
         h.submit(new PlayerSlot(0), new Move(UnitSet.of(walker), new Vec2d(14, 26), QueueMode.QUEUE, 0));
         while (h.tick() < SCHEMA_2_TICK) {
+            h.step();
+        }
+        return h;
+    }
+
+    /** Schema 3 pins building identities, queued products and training progress alongside stable bindings. */
+    public static SimHarness schema3() {
+        SimHarness h = SimHarness.builder().size(64, 64).yBand(0, 31, 1).build();
+        h.publishAll(VoxelFixtures.flat(64, 64, 32, 1));
+        var centre = new dev.strategos.core.shared.TemplateId("strategos:building/civic_centre");
+        h.submit(PlayerSlot.ADMIN, new dev.strategos.core.protocol.SpawnBuilding(centre, new FactionSlot(0), 2, 2, 0));
+        h.submit(
+                PlayerSlot.ADMIN, new dev.strategos.core.protocol.SpawnBuilding(centre, new FactionSlot(1), 48, 48, 0));
+        h.submit(PlayerSlot.ADMIN, new dev.strategos.core.protocol.Grant(new FactionSlot(0), "food", 1_000));
+        h.step();
+        int building = h.queries().buildings().getFirst().handle();
+        h.submit(new PlayerSlot(0), new dev.strategos.core.protocol.Train(building, TemplateSet.WORKER));
+        h.submit(new PlayerSlot(0), new dev.strategos.core.protocol.Train(building, TemplateSet.WORKER));
+        while (h.tick() < SCHEMA_3_TICK) {
             h.step();
         }
         return h;

@@ -9,7 +9,7 @@ import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.sim.ContentSwap;
 import dev.strategos.core.sim.MatchCore;
-import dev.strategos.core.sim.UnitView;
+import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.mod.server.match.MatchRuntime;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -21,7 +21,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * The server's templates (DATA-03, ADR-0012): the set running matches use and new ones start with, the session's
  * append-only id table, and the problems of the last load. A load whose set has errors, or that drops the template of
- * a live unit of a running match, is refused, and the set stays; a good one goes to every match as a {@link
+ * a live unit, building, queued product or resource node, is refused, and the set stays; a good one goes to every match as a {@link
  * ContentSwap} at its next tick boundary. Before data packs load it holds the bundled set the core has built in.
  * Server thread only.
  */
@@ -61,7 +61,7 @@ public final class ServerTemplates {
 
     /**
      * Compiles {@code raws} against the session's id table, lints the set and, when it is good and no running match
-     * holds a unit of a template it lacks, makes it the server's and queues its swap in every match.
+     * holds a reference the new set cannot preserve, makes it the server's and queues its swap in every match.
      */
     public Outcome load(
             List<RawTemplate> raws,
@@ -90,7 +90,9 @@ public final class ServerTemplates {
         problems = List.copyOf(found);
         outcome = "loaded " + set + " from " + raws.size() + " files";
         for (MatchRuntime rt : matches) {
-            rt.queueSwap(new ContentSwap(set));
+            if (usesTemplates(rt)) {
+                rt.queueSwap(new ContentSwap(set));
+            }
         }
         return new Outcome(true, outcome, problems);
     }
@@ -101,22 +103,25 @@ public final class ServerTemplates {
         return new Outcome(false, outcome, problems);
     }
 
-    /** The first live unit of a running match whose template {@code next} lacks, in words; null when none. */
+    /** The first in-use template that {@code next} lacks, in words; null when none. */
     private static @Nullable String usedButMissing(TemplateSet next, Collection<MatchRuntime> matches) {
         for (MatchRuntime rt : matches) {
             MatchCore core = rt.core();
-            if (core == null) {
+            if (core == null || !usesTemplates(rt)) {
                 continue;
             }
-            for (int handle : core.queries().unitHandles()) {
-                UnitView unit = core.queries().unit(handle);
-                if (unit != null && next.byId(unit.template()) == null) {
-                    return "template " + unit.template() + " is in use in match "
-                            + rt.id().value() + " and the new set drops it";
-                }
+            String problem = core.queries().templateSwapProblem(next);
+            if (problem != null) {
+                return problem + " in match " + rt.id().value();
             }
         }
         return null;
+    }
+
+    private static boolean usesTemplates(MatchRuntime rt) {
+        return rt.lifecycle() != MatchLifecycle.ENDED
+                && rt.lifecycle() != MatchLifecycle.FAULTED
+                && rt.lifecycle() != MatchLifecycle.DISPOSED;
     }
 
     private static String fileOf(List<RawTemplate> raws, UnitTemplate t) {

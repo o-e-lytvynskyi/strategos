@@ -6,10 +6,10 @@
 
 ## Now
 
-- **Milestone:** M7 Multiplayer; 2 of 26 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md), based on planning PR #32.
-- **In progress:** resumed by the operator on 2026-10-29; main synchronization and T2b prerequisite assessment.
+- **Milestone:** M7 Multiplayer; 2 of 27 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md), based on planning PR #32.
+- **In progress:** T2b.1 prerequisite composition and cloud gates since 2026-10-29.
 - **Last finished task:** T2a independent diplomacy foundation (2026-10-29), cloud-verified implementation e8438cd.
-- **Next task:** cloud-verify the fresh main merge, then reassess T2b against the corrected PR #30 persistence contract and its outstanding gates.
+- **Next task:** accept combined prerequisite cloud gates, then T2b.2 core authority/setup, schema-4 migration, hashing and journal integration.
 - **Merged from main last:** b893a0d (2026-10-29); resumed synchronization checkpoint awaiting cloud verify.
 
 The operator requested ownership of the whole M7 and work on what is currently possible on
@@ -35,6 +35,13 @@ before implementing them. T2 does not certify friendly-fire, allied victory, com
 or replication privacy; those retain their own integration tests and dependencies.
 
 ## Log
+
+### 2026-10-29 — T2b.1 explicit persistence prerequisite composition
+
+- Stacked corrected PR #30 at 588fa57 without treating it as delivered or changing its branch/status. Its M5 snapshot merge and legacy-reference review fixes are now present in this composition; full combined gates are pending.
+- Resolved ADR index conflict by keeping main ADR-0026 performance validity and renumbering the imported save-identity ADR to 0027, with policy links updated. The original dependency branch/review records retain their historical numbering. No semantic policy, threshold or baseline change.
+- Split T2b before implementation: T2b.1 prerequisite composition/gates, T2b.2 authority installation with versioned snapshots and journaled setup. No live authority integration starts without preservation across restore/replay.
+- **Next:** cloud verify, full slow/soak and standard cloud performance on the combined prerequisite; then T2b.2 with failing contract tests first.
 
 ### 2026-10-29 — resumed, main synchronization and claims migration
 
@@ -100,6 +107,9 @@ or replication privacy; those retain their own integration tests and dependencie
 4. Cloud verify takes 6m 46s on the readiness baseline and 7m 20s with the foundation, beyond the procedure's 5-minute target. Keep all existing gates; recommend accepting the cloud duration. Moving checks or changing a Done gate requires an explicit owner decision.
 
 ## Decisions taken
+
+- 2026-10-29 · Explicitly stack our corrected PR #30 as a prerequisite — its persistence contract is needed to avoid competing schema changes; combined gates must pass and its own review/delivery remains separate — base M7 on the delivered equivalent when that PR merges.
+- 2026-10-29 · Renumber the imported save-identity ADR to 0027 — main already owns 0026 for performance validity — reconcile the number with the eventual dependency delivery without changing either policy.
 
 - 2026-10-29 · Make the standalone diplomacy state immutable and use it as the read view — old query/snapshot references cannot observe later mutation; canonical snapshots and a hash contribution are tested separately from match-schema integration — replace the representation behind DiplomacyView if measured setup costs justify it.
 - 2026-10-29 · Grants are faction-owned, primary-only and non-transitive; rebind/team changes revoke stale authority — prevents a reused seat or alliance change from retaining old control — change the explicit policy and regression tests together if the product model changes. Disconnect does not unbind.

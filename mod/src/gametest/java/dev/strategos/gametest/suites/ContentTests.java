@@ -116,6 +116,122 @@ public final class ContentTests {
                 .thenSucceed();
     }
 
+    /** A building reference alone must prevent an otherwise valid reload from retiring its template (#24). */
+    @StrategosTest(batch = "content_used_building", solo = true)
+    public static void reloadMissingBuildingKeepsSetAndTable(GameTestHelper h) {
+        StrategosServer server = StrategosServer.get();
+        MatchRuntime rt = match(h);
+        TemplateId house = new TemplateId("strategos:building/house");
+        rt.submit(PlayerSlot.ADMIN, new dev.strategos.core.protocol.SpawnBuilding(house, new FactionSlot(0), 8, 8, 0));
+        var before = server.templates().set();
+        var table = server.templates().table();
+        h.startSequence()
+                .thenWaitUntil(() -> check(core(rt).queries().buildings().size() == 1, "no building yet"))
+                .thenExecute(() -> {
+                    List<TemplateProblem> problems = new ArrayList<>();
+                    List<RawTemplate> raws = bundled(server, problems);
+                    raws.removeIf(raw -> raw.id().equals(house));
+                    var outcome = server.loadTemplates(raws, problems);
+                    check(!outcome.accepted(), "reload dropped an occupied building template");
+                    check(
+                            outcome.message().contains(house.value())
+                                    && outcome.message().contains("in use"),
+                            outcome.message());
+                    check(server.templates().set() == before, "server set changed after refusal");
+                    check(server.templates().table().equals(table), "server id table changed after refusal");
+                })
+                .thenExecuteAfter(2, () -> {
+                    check(core(rt).queries().templates() == before, "match swapped after refusal");
+                    check(core(rt).queries().buildings().getFirst().template().equals(house), "building changed");
+                })
+                .thenSucceed();
+    }
+
+    @StrategosTest(batch = "content_ended", solo = true)
+    public static void endedMatchDoesNotBlockReload(GameTestHelper h) {
+        terminalMatchDoesNotBlockReload(h, false);
+    }
+
+    @StrategosTest(batch = "content_faulted", solo = true)
+    public static void faultedMatchDoesNotBlockReload(GameTestHelper h) {
+        terminalMatchDoesNotBlockReload(h, true);
+    }
+
+    private static void terminalMatchDoesNotBlockReload(GameTestHelper h, boolean faulted) {
+        StrategosServer server = StrategosServer.get();
+        MatchRuntime rt = match(h);
+        TemplateId house = new TemplateId("strategos:building/house");
+        rt.submit(PlayerSlot.ADMIN, new dev.strategos.core.protocol.SpawnBuilding(house, new FactionSlot(0), 4, 4, 0));
+        h.startSequence()
+                .thenWaitUntil(() -> check(core(rt).queries().buildings().size() == 1, "no building yet"))
+                .thenExecute(() -> {
+                    if (faulted) {
+                        rt.fault(new IllegalStateException("terminal reload regression"), "test");
+                    } else {
+                        server.matches().end(rt.id());
+                    }
+                    var before = core(rt).queries().templates();
+                    List<TemplateProblem> problems = new ArrayList<>();
+                    List<RawTemplate> raws = bundled(server, problems);
+                    raws.removeIf(r -> r.id().equals(house));
+                    var outcome = server.loadTemplates(raws, problems);
+                    check(outcome.accepted(), "terminal match blocked reload: " + outcome.message());
+                    check(server.templates().set().byId(house) == null, "server retained the removed template");
+                    check(core(rt).queries().templates() == before, "terminal match's frozen set changed");
+                    check(core(rt).queries().buildings().getFirst().template().equals(house), "frozen queries failed");
+                    problems = new ArrayList<>();
+                    check(
+                            server.loadTemplates(bundled(server, problems), problems)
+                                    .accepted(),
+                            "restore bundled set");
+                })
+                .thenSucceed();
+    }
+
+    /** A reference introduced after publication must fault before the queued swap advances the match. */
+    @StrategosTest(batch = "content_swap_race", solo = true)
+    public static void invalidatedPublishedSwapFaultsMatch(GameTestHelper h) {
+        StrategosServer server = StrategosServer.get();
+        MatchRuntime rt = dev.strategos.gametest.MatchFixture.create(
+                h,
+                dev.strategos.gametest.MatchFixture.options(dev.strategos.core.testkit.SimHarness.DEFAULT_SEED, h)
+                        .withFaultPolicy(dev.strategos.mod.server.match.FaultPolicy.CONTAIN));
+        TemplateId house = new TemplateId("strategos:building/house");
+        h.startSequence()
+                .thenExecute(() -> {
+                    server.matches().pause(rt.id());
+                    List<TemplateProblem> problems = new ArrayList<>();
+                    List<RawTemplate> raws = bundled(server, problems);
+                    raws.removeIf(r -> r.id().equals(house));
+                    var outcome = server.loadTemplates(raws, problems);
+                    check(outcome.accepted(), "unused template removal was refused: " + outcome.message());
+                    var c = core(rt);
+                    long tick = c.queries().tick();
+                    // Inject the boundary race deterministically, before the adapter delivers its queued swap.
+                    c.step(new dev.strategos.core.sim.TickInputs(
+                            tick + 1,
+                            List.of(new dev.strategos.core.sim.CommandEnvelope(
+                                    PlayerSlot.ADMIN,
+                                    1000,
+                                    tick,
+                                    new dev.strategos.core.protocol.SpawnBuilding(
+                                            house, new FactionSlot(0), 4, 4, 0)))));
+                    check(c.queries().buildings().size() == 1, "race did not introduce the reference");
+                    long before = c.queries().tick();
+                    server.faults().run(rt, "published swap", () -> rt.tick(h.getLevel()));
+                    check(rt.lifecycle() == dev.strategos.core.sim.MatchLifecycle.FAULTED, "match kept running");
+                    check(c.queries().tick() == before, "invalid swap advanced simulation");
+                    check(rt.faultMessage() != null && rt.faultMessage().contains(house.value()), "fault omitted id");
+                    check(c.queries().buildings().getFirst().template().equals(house), "old state unusable");
+                    problems = new ArrayList<>();
+                    check(
+                            server.loadTemplates(bundled(server, problems), problems)
+                                    .accepted(),
+                            "restore bundled set");
+                })
+                .thenSucceed();
+    }
+
     /**
      * DATA-03.4: a walking unit's step is the bundled walk speed until a reload raises it, and the new speed from the
      * next tick on; the bundled set loads back at the end, at the same version.

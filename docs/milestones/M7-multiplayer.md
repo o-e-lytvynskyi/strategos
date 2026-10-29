@@ -63,8 +63,8 @@ issues, JFR counters for S11, and ART-03 silhouette/look approval. People start 
 | ID | Finding / decision | Scope and follow-up |
 |---|---|---|
 | D-01 | M5 delivery is already on the implementation base (PR #33); M6 runtime is not | Replace the stale planning assumption at each concrete adapter, not by importing another developer's unfinished branch |
-| D-02 | T2 mixes independent rules with live authority/persistence changes | Split T2a pure contract from T2b installation; no numeric authority check is replaced by the standalone foundation |
-| D-03 | T2a state itself implements the immutable view; every update returns a new state | Fixed slot arrays stay private, snapshots copy lists, and hash/reconstruction use canonical slot order; T2b owns match snapshot versioning and journal installation |
+| D-02 | T2 mixes independent rules with live authority/persistence changes | Split T2a pure contract from T2b.2 installation; no numeric authority check is replaced by the standalone foundation |
+| D-03 | T2a state itself implements the immutable view; every update returns a new state | Fixed slot arrays stay private, snapshots copy lists, and hash/reconstruction use canonical slot order; T2b.2 owns match snapshot versioning and journal installation |
 | D-04 | Explicit grants belong to the granting faction, but can be issued only from a player's primary faction | Reject grant chains and absent/enemy participants; rebind drops incoming grants, removing the last primary controller drops outgoing grants, and team changes revoke incompatible grants. Disconnect alone never unbinds a seat |
 
 ## 2. Baseline and dependencies
@@ -99,12 +99,14 @@ are ready, or an explicitly bounded contract-only scope. Do not claim blocked ad
 
 ### 2.3 Implementation readiness, 2026-10-29
 
+Resume update: main b893a0d uses branch-file claims and includes the M7 planning delivery. Corrected PR #30 at 588fa57 is explicitly stacked for T2b.1; earlier unresolved-code findings below are historical, and combined gates must be checked before acceptance. Its save-identity ADR is numbered 0027 in this composition because main now owns ADR-0026 for perf validity. Schema 4 is the next diplomacy writer format; existing schema-1/2/3 fixtures remain append-only and migrate to explicit identity bindings.
+
 - Operator exception: proceed before claim PR #34 approval/merge. No self-approval or merge is authorized.
 - M5 is delivered on main by PR #33; use its current damage/projectile paths at T7, not the old planning assumption that M5 is missing.
 - M6 runtime remains unmerged. Its setup/outcome, observed AI, minimap, solo-visibility and perf contracts are not production implementations. T3/T7/T13/T14/T15/T20 retain integration gates.
-- Main was synchronized to dcb5013 on 2026-10-29. PR #30 at c9dd148 still has an unresolved M5 snapshot conflict and a maintainer-reported legacy-index compatibility risk: its legacy resolver uses the expanded current built-in table. T2b/T5 need that policy corrected and verified before a versioned diplomacy installation, whether the prerequisite is merged or explicitly stacked.
+- Main was synchronized to dcb5013 on 2026-10-29. PR #30 at c9dd148 still has an unresolved M5 snapshot conflict and a maintainer-reported legacy-index compatibility risk: its legacy resolver uses the expanded current built-in table. T2b.2/T5 need that policy corrected and verified before a versioned diplomacy installation, whether the prerequisite is merged or explicitly stacked.
 - PR #30 persistence fixes and planning PR #32 remain open. Import only this reviewed planning document from our own planning branch; do not import its registry row or branch status. T5 coordinates schema numbers after persistence delivery.
-- T2 is split before code into T2a bounded pure state/view/snapshot foundations and T2b installation. T2a does not replace numeric authority checks, modify running matches or claim co-op/privacy acceptance. T2b must land together with the appropriate persistence/journal integration so authority is never lost on restore.
+- T2 is split before code into T2a bounded pure state/view/snapshot foundations and T2b.2 installation. T2a does not replace numeric authority checks, modify running matches or claim co-op/privacy acceptance. T2b.2 must land together with the appropriate persistence/journal integration so authority is never lost on restore.
 - D-20 hosting, D-03 art, the MVP fun verdict and deferred fighting/scouting remain unresolved. They do not prevent T2a.
 - No new engine call is needed by T2a. Recheck the planning hook signatures against the then-current engine artifacts when T13 becomes ready; no current hardening implementation is certified here.
 - Cloud verification requested by the operator: the initial local baseline `verifyFast` was interrupted and is not a pass. Dispatch existing verify workflow on pushed WIP checkpoints, inspect canonical XML/reports, then record a green task commit. T2a adds failing L1 tests first and must pass V before completion.
@@ -360,20 +362,21 @@ and `python -X utf8` (see [toolchain KB](../kb/minecraft-mod-build.md)).
 |---|---|---|---|---|
 | T1 | Reconcile merged predecessors, decisions, hook signatures, schema and scope; record readiness | Owner opens approved M7 scope; applicable M5/M6 close results | S | F; `python -X utf8 tools/roadmap.py check`; `python -X utf8 tools/claims.py check --base origin/main` |
 | T2a | Independent identity/diplomacy/grant state, detached immutable view and deterministic snapshot/hash contracts; MATCH-06 | T1; CORE-01 | M | `:core:test` exact permission matrix, invalid participants, grant revocation, detached views and deterministic reconstruction; V; no running tick/order path changes |
-| T2b | Install T2a in match authority/configuration and journaled setup; preserve legacy defaults | T2a; PR #30 persistence/schema boundary reconciled | M | `:core:test`, legacy match/replay/snapshot tests; V, S; J if step/hash kernel changes |
-| T3 | Server lobby/start intents and private lobby snapshots; NET-02 | T2b; MATCH-02 delivered; D-20 | L | `:mod:test :mod:runGameTestServer`, four-player start ≤10 s and outsider rejection |
+| T2b.1 | Compose corrected PR #30 prerequisite with current main, resolve identifiers and validate gates | T2a; own prerequisite branch at 588fa57 | S | V, S, standard cloud perf; no gates/thresholds changed |
+| T2b.2 | Install T2a authority, immutable query, journaled first-tick setup and versioned diplomacy preservation; retain legacy identity defaults | T2b.1 | L | `:core:test`, current/legacy JSON/NBT, malformed snapshots and binary-journal replay; V, S, cloud JMH/perf |
+| T3 | Server lobby/start intents and private lobby snapshots; NET-02 | T2b.2; MATCH-02 delivered; D-20 | L | `:mod:test :mod:runGameTestServer`, four-player start ≤10 s and outsider rejection |
 | T4 | Lobby screen/readiness/error rendering; NET-02 | T3 | M | `:mod:runScenario -Pscenario=m7-lobby -Pscenario.timeoutSeconds=180` (new scenario) |
 | T5 | Slot bindings, grants, roster and deadline migration/restore | T2a, T3; CORE-07; integrated save/reload schema | M | `:core:test :mod:test :mod:runGameTestServer`, old/new fixtures and malformed saves |
 | T6 | Reusable N-player kit, per-player captures and hostile packet helpers; QA-15 | T3; QA-19 | M | `:mod:runGameTestServer`, four-player smoke <30 s; cleanup/no leaked players |
-| T7 | Friendly-fire filters and allied victory; MATCH-06 | T2b; M5 combat and M6 MATCH-03 delivered | M | `:core:test :mod:runGameTestServer`, delayed/splash damage, coalition outcomes; S; J if hot path |
-| T8 | Co-op authority in every command/query/first-person path; MATCH-06 | T2b, T5, T6 | L | `:core:test :mod:runGameTestServer`, two humans one faction, owner costs and revoke; S |
-| T9 | Recipient projection/fan-out and no client attachment sync; NET-03 | T2b, T6, T8; NET-08 | L | `:core:test :mod:test :mod:runGameTestServer`, full/delta/query recipient matrix |
+| T7 | Friendly-fire filters and allied victory; MATCH-06 | T2b.2; M5 combat and M6 MATCH-03 delivered | M | `:core:test :mod:runGameTestServer`, delayed/splash damage, coalition outcomes; S; J if hot path |
+| T8 | Co-op authority in every command/query/first-person path; MATCH-06 | T2b.2, T5, T6 | L | `:core:test :mod:runGameTestServer`, two humans one faction, owner costs and revoke; S |
+| T9 | Recipient projection/fan-out and no client attachment sync; NET-03 | T2b.2, T6, T8; NET-08 | L | `:core:test :mod:test :mod:runGameTestServer`, full/delta/query recipient matrix |
 | T10 | UUID reconnect, expiry, AI/defeat policy, camera/groups and epoch reset; NET-05 | T5, T6, T9; M6 AI adapter if takeover selected; D-20 | L | `:mod:test :mod:runGameTestServer`; S for deterministic deadlines/orders |
 | T11 | Field/rate/sequence limits, reason codes and kick policy; NET-06 | T3, T6 | M | `:mod:test :mod:runGameTestServer`, threshold boundaries and valid traffic |
 | T12 | Permanent seeded fuzz corpus and ingress state regression; NET-06 | T11 | M | `:mod:test` ≥100,000 inputs across all serverbound types; L3 bounded corpus via `:mod:runGameTestServer` |
 | T13 | Two mixins and commander guard, inventory; NET-09 | T6, T9; M6 visibility delivered | L | `:mod:test :mod:runGameTestServer`; `./gradlew verify -Pcompat`; S for movement |
 | T14 | Team HUD/ping routing, lifetime/rate and goldens; UI-15 | T4, T9, T11; M6 UI-20 delivered | L | `:core:test :mod:runGameTestServer`; `:mod:runScenario -Pscenario=m7-team-hud -Pscenario.timeoutSeconds=180` |
-| T15 | Observed team AI, idle defence and wave coordination; AI-06 | T2b, T7; M6 AI-05/AI-18 delivered | M | `:core:test`, 600/1,200-tick bounds and no ally targeting; S; J if hot path |
+| T15 | Observed team AI, idle defence and wave coordination; AI-06 | T2b.2, T7; M6 AI-05/AI-18 delivered | M | `:core:test`, 600/1,200-tick bounds and no ally targeting; S; J if hot path |
 | T16 | Channel budgets, cumulative pending state and backpressure; NET-04 | T9, T11 | L | `:core:test :mod:test :mod:runGameTestServer`, deferred removals/epoch/revoke and convergence |
 | T17 | S11 mock scenes and archived byte report; NET-04 | T6, T7, T13, T16; PERF-01 | M | Register bounded L6 scene in existing perf harness; four recipients/600 units, counter assertions and report guard |
 | T18 | S11 real-client comparison and tier-4 decision; NET-04 | T17; owner two-client session | S | R: same scenes, JFR/counter comparison, explicit reserve decision |
@@ -395,7 +398,7 @@ reviewed implementation task between T17 and T18, keeping the acceptance depende
 
 | Card | Tasks | Complete acceptance evidence |
 |---|---|---|
-| MATCH-06 | T2a, T2b, T5, T7, T8 | No allied damage; coalition victory; two authorized controllers; player-name colours and zero scoreboard units |
+| MATCH-06 | T2a, T2b.2, T5, T7, T8 | No allied damage; coalition victory; two authorized controllers; player-name colours and zero scoreboard units |
 | NET-02 | T3, T4 | Four mock lobby clients agree; each `match_join` ≤10 s; outside commands refused; inspected lobby goldens |
 | NET-03 | T9 | Owner receives treasury/queues/research, opponent does not; ally rule table exactly; no synced Strategos attachment |
 | NET-04 | T16–T18 | Per-client scene mean ≤100 KB/s and peaks recorded; deferral converges; two real clients validate counts; tier-4 report decision |
@@ -413,7 +416,8 @@ reviewed implementation task between T17 and T18, keeping the acceptance depende
 
 - [x] T1 (2026-10-29) · Reconcile prerequisites and implementation readiness (bounded foundations; see §2.3).
 - [x] T2a (2026-10-29) · Independent identity, diplomacy, grants and immutable snapshot contract.
-- [ ] T2b · Match authority/configuration installation and journaled setup.
+- [ ] T2b.1 · Corrected persistence prerequisite composition and combined gates.
+- [ ] T2b.2 · Match authority/setup, schema-4 persistence/hash and binary journal integration.
 - [ ] T3 · Server lobby and start.
 - [ ] T4 · Lobby UI.
 - [ ] T5 · Persistence and migration.
@@ -488,6 +492,6 @@ reviewed implementation task between T17 and T18, keeping the acceptance depende
 
 ### Foundation verification, 2026-10-29
 
-T2a: [cloud verify 40788528341](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40788528341), implementation checkpoint `e8438cd`, passed in 7m 20s: 2,253 canonical XML test cases, zero failures/errors/skips; all 16 DiplomacyStateTest cases executed. Core architecture/static checks, adapter tests, GameTests, server smoke and negative harness self-tests passed through verify. Running tick/order/hash paths are unchanged, so this bounded task does not require slow/soak or JMH. T2b still owns installation, journal and versioned persistence; no live co-op or privacy criterion is declared complete.
+T2a: [cloud verify 40788528341](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40788528341), implementation checkpoint `e8438cd`, passed in 7m 20s: 2,253 canonical XML test cases, zero failures/errors/skips; all 16 DiplomacyStateTest cases executed. Core architecture/static checks, adapter tests, GameTests, server smoke and negative harness self-tests passed through verify. Running tick/order/hash paths are unchanged, so this bounded task does not require slow/soak or JMH. T2b.2 still owns installation, journal and versioned persistence; no live co-op or privacy criterion is declared complete.
 
-Main synchronization: merge `4e1ff97` includes `origin/main` at `dcb5013`. [Cloud verify 40789677322](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40789677322) passed in 6m 2s: 2,253 canonical XML cases, zero failures/errors/skips, all 16 diplomacy cases executed. Final fetch showed zero commits behind main. The operator requested a stop for 2026-10-29 after T2a and this merge; T2b is unstarted.
+Main synchronization: merge `4e1ff97` includes `origin/main` at `dcb5013`. [Cloud verify 40789677322](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40789677322) passed in 6m 2s: 2,253 canonical XML cases, zero failures/errors/skips, all 16 diplomacy cases executed. Final fetch showed zero commits behind main. The operator requested a stop for 2026-10-29 after T2a and this merge; T2b.2 is unstarted.
