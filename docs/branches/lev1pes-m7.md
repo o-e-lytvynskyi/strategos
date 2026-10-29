@@ -36,6 +36,13 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Log
 
+### 2026-10-30 — resumed after usage interruption, schema-shape compatibility
+
+- The operator resumed after the automatic approval reviewer hit a usage limit. No blocked action was bypassed; the same reviewed cloud-read route succeeded on resume.
+- Previous verify 40954525926 on 52a563c ran 1,913 canonical cases: two failures, zero skips. All ten new MatchDiplomacyTest cases, both input-codec cases and all sixteen foundation cases passed. The two failures were old shot/stance tests asserting that an unused `play` block is absent; schema 4 now requires authority there.
+- Refined those assertions to require exactly the `diplomacy` key while leaving allocator-history, stance, round-trip and hash assertions intact. No scenario, check, fixture or performance criterion is removed.
+- **Next:** complete cloud verify, then slow/soak, full L6 and the pinned same-host comparison.
+
 ### 2026-10-29 — T2b.2 static-check correction
 
 - Verify 40953293646 on b1239f5 reached ErrorProne and failed `OperatorPrecedence` under the unchanged `-Werror` policy: mixed `||`/`&&` in value equality needed explicit grouping. Added parentheses; no warning was suppressed and no test case had run in that attempt.
