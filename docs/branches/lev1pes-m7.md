@@ -41,6 +41,7 @@ or replication privacy; those retain their own integration tests and dependencie
 - Stacked corrected PR #30 at 588fa57 without treating it as delivered or changing its branch/status. Its M5 snapshot merge and legacy-reference review fixes are now present in this composition; full combined gates are pending.
 - Resolved ADR index conflict by keeping main ADR-0026 performance validity and renumbering the imported save-identity ADR to 0027, with policy links updated. The original dependency branch/review records retain their historical numbering. No semantic policy, threshold or baseline change.
 - Split T2b before implementation: T2b.1 prerequisite composition/gates, T2b.2 authority installation with versioned snapshots and journaled setup. No live authority integration starts without preservation across restore/replay.
+- Main merge checkpoint 760a3b4 passed [cloud verify 40940234420](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40940234420) in 8m 51s: 2,267 canonical XML cases, zero failures/errors/skips, including the 16 T2a cases.
 - **Next:** cloud verify, full slow/soak and standard cloud performance on the combined prerequisite; then T2b.2 with failing contract tests first.
 
 ### 2026-10-29 — resumed, main synchronization and claims migration
