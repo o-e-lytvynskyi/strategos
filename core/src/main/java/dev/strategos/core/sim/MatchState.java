@@ -635,7 +635,7 @@ public final class MatchState {
 
     void configureDiplomacy(DiplomacySetup setup) {
         if (tick != 1 || diplomacy.teamsLocked() || setup.snapshot().teams().size() != config.factions()) {
-            log.warn("ignored diplomacy setup: late, duplicate or wrong faction count");
+            log.warn(tick, "ignored diplomacy setup: late, duplicate or wrong faction count");
             return;
         }
         diplomacy = DiplomacyState.restore(setup.snapshot());

@@ -36,6 +36,11 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Log
 
+### 2026-10-29 — T2b.2 compilation correction
+
+- Implementation checkpoint e340d0f failed verify 40952453183 at core compilation: the setup diagnostic omitted MatchLog.warn's required simulation-tick argument. No test cases ran. Verified the actual signature and corrected the call; no check or threshold changed.
+- **Next:** complete cloud verify before starting the expensive post-implementation gates.
+
 ### 2026-10-29 — T2b.2 test-first and implementation
 
 - Test-only checkpoint ac81511 failed cloud verify 40951563816 at compilation because the new setup/query/hash APIs were absent, as intended; zero test cases ran. Added the implementation after inspecting that failure.

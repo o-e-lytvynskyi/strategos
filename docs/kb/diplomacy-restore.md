@@ -6,4 +6,5 @@
 - New live `Play` writers must retain the existing diplomacy value. Seven-argument compatibility constructors represent older typed snapshots and normalize to identity; they must not be used to replace fields of a live non-identity snapshot.
 - Exact legacy identity deliberately adds no new state-hash words. Check released fixtures/journals and non-identity primitive hash parity before changing this predicate.
 - Trusted first-tick setup is not a client command. Reconnect does not unbind a seat. Runtime player grant/revoke and ownership validation are separate T8 work.
+- `MatchLog` is a simulation diagnostic API: `warn(long tick, String format, Object... args)` requires the simulation tick; it is not the logger's plain-string overload.
 - Coordinate the M6 outcome/statistics schema with ADR-0028; do not reuse version 4 for a different interpretation. The source marker on `Play` tracks that integration.
