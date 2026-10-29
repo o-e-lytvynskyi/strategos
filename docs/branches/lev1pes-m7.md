@@ -36,6 +36,13 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Log
 
+### 2026-10-30 — slow gate timeout and isolated scheduling
+
+- Merged-head verify [40972188768](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40972188768) passed in 8m 49s: 2,303 canonical cases, zero failures/errors/skips.
+- Full-ci [40972193346](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40972193346) failed at the unchanged 10-minute `runGameTestSlow` timeout. Core slow/soak passed all 216 cases; 18 of 19 server cases had finished, with `map_fifty` starting only 17 seconds before termination. No full slow pass is claimed.
+- The logs show core soak concurrent with the server on the two-core runner. The prerequisite control completed the same server suite, including `map_fifty`, in the earlier green run 40941840635. Neither observation proves a runtime regression or excludes one.
+- Changed full-ci scheduling to `--no-parallel` and added retained vmstat evidence to test the contention hypothesis. All tests, scene lengths, individual timeouts and the 25-minute job limit are unchanged. The failed run remains evidence; no unchanged retry.
+
 ### 2026-10-30 — functional authority gate passed, main synchronized
 
 - Verify 40970846751 on 82ee012 passed in 9m 2s: 2,303 canonical XML test cases, zero failures/errors/skips, including ten core authority cases, two journal-input cases, the NBT authority round trip and both schema-4 fixture readers. Existing shot/stance allocator/hash assertions pass with the mandatory authority-only JSON block.
@@ -147,6 +154,8 @@ or replication privacy; those retain their own integration tests and dependencie
 4. Cloud verify takes 6m 46s on the readiness baseline and 7m 20s with the foundation, beyond the procedure's 5-minute target. Keep all existing gates; recommend accepting the cloud duration. Moving checks or changing a Done gate requires an explicit owner decision.
 
 ## Decisions taken
+
+- 2026-10-30 · Serialize full-ci test projects and retain vmstat — the failed run overlapped core soak with a server on two cores — restore parallel scheduling only after evidence establishes safe coexistence within unchanged timeouts.
 
 - 2026-10-29 · Keep immutable authority directly in Play and validate one value at decode — avoids repeated per-seat reconstruction while retaining detached snapshots — change only the internal representation behind the codec/value boundary if measurements justify it.
 - 2026-10-29 · Use schema 4 with explicit legacy identity migration and required current authority — old readers must reject rather than ignore rights — any future format interpretation requires a new migration/version.
