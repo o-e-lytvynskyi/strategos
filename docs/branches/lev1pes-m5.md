@@ -2,6 +2,8 @@
 
 **Developer:** lev1pes (Codex, GPT-6 family) · **Branch:** dev/lev1pes/m5 · **Work:** M5 · **Base:** main @ f723161 · **Claimed:** 2026-10-25 · **Status:** released 2026-10-26
 
+**Note:** released 2026-10-26 in [PR #18](https://github.com/o-e-lytvynskyi/strategos/pull/18) for owner-authorized takeover; holder approval is not claimed; preserve legacy T1-T2 and both original branches
+
 ## Now
 
 - **Milestone:** M5 Combat. Main records 0 of 17 tasks; the preserved legacy branch records T1-T2 complete and a planned T3 split (2 of 19), pending import and validation under the new process.

@@ -46,77 +46,87 @@ class OverlapTest(unittest.TestCase):
         self.assertFalse(claims.overlaps("M6 spec", "M5", read))
 
 
-class RowsTest(unittest.TestCase):
-    def test_header_and_rule_are_skipped(self):
-        text = ("| Work | Developer | Branch | Status | Since | Note |\n|---|---|---|---|---|---|\n"
-                "| M5 | alex | `dev/alex/m5` | assigned | 2026-10-26 |  |\n")
-        [row] = claims.rows(text)
-        self.assertEqual((row["work"], row["branch"], row["status"], row["note"]),
-                         ("M5", "dev/alex/m5", "assigned", ""))
+def branch_file(branch, status, work="w", developer="x", extra=""):
+    return (f"# {work} on {branch}\n\n**Developer:** {developer} (Codex) · **Branch:** {branch} · **Work:** {work}"
+            f" · **Base:** main @ abc · **Claimed:** 2026-10-26 · **Status:** {status}\n{extra}\n## Now\n")
 
 
-def branch_file(branch, status):
-    return f"# w on {branch}\n\n**Developer:** x · **Branch:** {branch} · **Work:** w · **Status:** {status}\n"
+def problems(files, head=None, before=None):
+    return claims.problems_of(claims.claims_in(files), claims.claims_in(before) if before else None, head, read)
 
 
-def row(branch, status):
-    return {"work": branch.rsplit("/", 1)[-1], "developer": "x", "branch": branch, "status": status}
+class ParseTest(unittest.TestCase):
+    def test_header_fields_status_and_note(self):
+        c = claims.parse("a-m5.md", branch_file("`dev/alex/m5`", "merged 2026-10-28", "M5", "alex",
+                                                "**Note:** delivered in #33\n"))
+        self.assertEqual((c["developer"], c["branch"], c["work"], c["since"], c["status"], c["note"]),
+                         ("alex", "dev/alex/m5", "M5", "2026-10-26", "merged", "delivered in #33"))
+
+    def test_readme_is_not_a_claim(self):
+        self.assertEqual([c["file"] for c in claims.claims_in({"README.md": "x", "a.md": branch_file("dev/a/w", "claimed")})],
+                         ["a.md"])
 
 
-class RecordsTest(unittest.TestCase):
-    def problems(self, rows, files, head=None):
-        return claims.record_problems(rows, files, head)
+class CheckTest(unittest.TestCase):
+    def test_valid_claims_pass(self):
+        files = {"a.md": branch_file("dev/a/m5", "claimed", "M5 T1–T2", "a"),
+                 "b.md": branch_file("dev/b/m6", "merged 2026-10-28", "M6 spec", "b"),
+                 "c.md": branch_file("dev/c/w", "released 2026-10-26", "M5 T3", "c"),
+                 "d.md": branch_file("dev/d/x", "reserved", "M5 T4", "d")}
+        self.assertEqual(problems(files), [])
 
-    def test_status_of_a_branch_file(self):
-        self.assertEqual(claims.branch_status(branch_file("dev/a/b", "merged 2026-10-28")), "merged")
-        self.assertEqual(claims.branch_status(branch_file("dev/a/b", "ready for review")), "ready for review")
-        self.assertEqual(claims.branch_status("**Status:** in progress · **Next:** T3\n"), "in progress")
+    def test_unknown_or_undated_status(self):
+        self.assertIn("unknown Status", problems({"a.md": branch_file("dev/a/w", "assigned")})[0])
+        self.assertIn("needs its date", problems({"a.md": branch_file("dev/a/w", "merged")})[0])
 
-    def test_consistent_records_pass(self):
-        rows = [row("dev/a/m5", "assigned"), row("dev/a/m6", "done"), row("dev/b/m5", "released"),
-                row("dev/c/m7", "reserved")]
-        files = {"a-m5.md": branch_file("dev/a/m5", "claimed"),
-                 "a-m6.md": branch_file("dev/a/m6", "merged 2026-10-28"),
-                 "b-m5.md": branch_file("dev/b/m5", "released 2026-10-26")}
-        self.assertEqual(self.problems(rows, files), [])
+    def test_missing_header_field(self):
+        [p] = problems({"a.md": "# x\n\n**Developer:** a · **Status:** claimed\n"})
+        self.assertIn("Branch, Work", p)
+
+    def test_active_claims_must_not_overlap(self):
+        files = {"a.md": branch_file("dev/a/m5", "claimed", "M5", "a"),
+                 "b.md": branch_file("dev/b/m5", "in progress", "M5 T3", "b")}
+        [p] = problems(files)
+        self.assertIn("overlap", p)
+
+    def test_finished_claims_do_not_block_the_work(self):
+        files = {"a.md": branch_file("dev/a/m5", "released 2026-10-26", "M5", "a"),
+                 "b.md": branch_file("dev/b/m5", "claimed", "M5", "b")}
+        self.assertEqual(problems(files), [])
 
     def test_delivery_merged_without_records_is_caught(self):
-        rows = [row("dev/a/m7-spec", "assigned")]
-        files = {"a-m7-spec.md": branch_file("dev/a/m7-spec", "ready for review")}
-        [problem] = self.problems(rows, files)
-        self.assertIn("ready for review", problem)
+        [p] = problems({"a.md": branch_file("dev/a/m7-spec", "ready for review")})
+        self.assertIn("ready for review", p)
 
     def test_the_hand_in_pull_request_itself_is_ready_for_review(self):
-        rows = [row("dev/a/m7-spec", "assigned")]
-        files = {"a-m7-spec.md": branch_file("dev/a/m7-spec", "ready for review")}
-        self.assertEqual(self.problems(rows, files, head="dev/a/m7-spec"), [])
+        self.assertEqual(problems({"a.md": branch_file("dev/a/m7-spec", "ready for review")}, head="dev/a/m7-spec"), [])
 
-    def test_a_fork_head_matches_its_row(self):
-        rows = [row("someone/strategos:dev/a/w", "assigned")]
-        files = {"a-w.md": branch_file("someone/strategos:dev/a/w", "ready for review")}
-        self.assertEqual(self.problems(rows, files, head="dev/a/w"), [])
+    def test_a_stacked_branch_carries_an_unmerged_ready_file(self):
+        before = {"a.md": branch_file("dev/a/m5", "claimed", "M5 T1", "a")}
+        files = {"a.md": branch_file("dev/a/m5", "ready for review", "M5 T1", "a"),
+                 "b.md": branch_file("dev/a/m5-next", "claimed", "M5 T2", "a")}
+        self.assertEqual(problems(files, head="dev/a/m5-next", before=before), [])
+        self.assertEqual(len(problems(files, head="dev/a/m5-next", before=files)), 1)
 
-    def test_done_row_needs_a_merged_branch_file_and_back(self):
-        self.assertEqual(len(self.problems([row("dev/a/m6", "done")],
-                                           {"f.md": branch_file("dev/a/m6", "ready for review")})), 1)
-        self.assertEqual(len(self.problems([row("dev/a/m6", "assigned")],
-                                           {"f.md": branch_file("dev/a/m6", "merged 2026-10-28")})), 1)
+    def test_active_status_takes_no_trailing_text(self):
+        self.assertIn("unknown Status", problems({"a.md": branch_file("dev/a/w", "claimed because x")})[0])
 
-    def test_records_for_the_merge_set_both_sides(self):
-        self.assertEqual(len(self.problems([row("dev/a/m6", "done")],
-                                           {"f.md": branch_file("dev/a/m6", "ready for review")}, head="dev/a/m6")), 1)
+    def test_a_fork_head_matches_its_claim(self):
+        files = {"a.md": branch_file("someone/strategos:dev/a/w", "ready for review")}
+        self.assertEqual(problems(files, head="dev/a/w"), [])
 
-    def test_released_row_needs_a_released_branch_file(self):
-        self.assertEqual(len(self.problems([row("dev/b/m5", "released")],
-                                           {"f.md": branch_file("dev/b/m5", "claimed")})), 1)
-
-    def test_claimed_row_needs_its_branch_file(self):
-        [problem] = self.problems([row("dev/a/m5", "assigned")], {})
-        self.assertIn("no branch file", problem)
-
-    def test_a_ready_file_without_a_row_is_caught(self):
-        [problem] = self.problems([], {"f.md": branch_file("dev/a/x", "ready for review")})
-        self.assertIn("ready for review", problem)
+    def test_takeover_needs_the_holders_hand_over(self):
+        before = {"a.md": branch_file("dev/a/m5", "claimed", "M5", "a")}
+        taken = {"a.md": branch_file("dev/a/m5", "released 2026-10-29", "M5", "a"),
+                 "b.md": branch_file("dev/b/m5", "claimed", "M5", "b")}
+        [p] = problems(taken, before=before)
+        self.assertIn("handed over by a", p)
+        taken["b.md"] = branch_file("dev/b/m5", "claimed", "M5", "b", "**Note:** handed over by abc, #18\n")
+        self.assertEqual(len(problems(taken, before=before)), 1)
+        taken["b.md"] = branch_file("dev/b/m5", "claimed", "M5", "b", "\n## Log\n- handed over by a, #18\n")
+        self.assertEqual(len(problems(taken, before=before)), 1)
+        taken["b.md"] = branch_file("dev/b/m5", "claimed", "M5", "b", "**Note:** handed over by a, #18\n")
+        self.assertEqual(problems(taken, before=before), [])
 
 
 if __name__ == "__main__":

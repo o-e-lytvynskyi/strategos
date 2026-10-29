@@ -31,12 +31,12 @@ without AI agents, under one set of rules: [AGENTS.md](AGENTS.md).
    reports. Tool-specific setup (Claude Code, Codex): [docs/developer-setup.md](docs/developer-setup.md).
 2. Add yourself to [docs/people.md](docs/people.md) as a developer, in your first pull request.
 3. Find work in [docs/STATE.md](docs/STATE.md) "Open for claims" and check
-   [docs/claims.md](docs/claims.md) for what is taken.
+   [docs/branches/](docs/branches/README.md) (one file per claim; `python3 tools/claims.py list`) for what is taken.
 
 ## The flow
 
-1. **Claim before you code**: a pull request that adds your row to `docs/claims.md` and your branch
-   file, nothing else. Develop only after it is merged. Work assigned to someone else is never
+1. **Claim before you code**: a pull request that adds your branch file to `docs/branches/`,
+   nothing else. Develop only after it is merged. Work assigned to someone else is never
    taken without their explicit approval.
 2. **Build on your branch**, test-first, recording progress in your branch file.
 3. **Test locally until the milestone is done.** CI runs only on hand-in pull requests to `main`
@@ -50,7 +50,7 @@ without AI agents, under one set of rules: [AGENTS.md](AGENTS.md).
 - **Collaborators** (write access, listed in people.md) work on `dev/<handle>/<work>` branches in
   this repository.
 - **Forks are equal to developer branches, at a lower priority.** Everyone can contribute from a
-  fork: the same claims, the same records, the same review. Your claims row names the branch as
+  fork: the same claims, the same records, the same review. Your branch file's `Branch` field names it as
   `<your-login>/strategos:dev/<handle>/<work>`. Lower priority means: when a collaborator's claim
   and yours compete for the same work, the collaborator's goes first; reviews take collaborators'
   hand-ins first; the owner accepts outside claims by hand and approves each CI run of a first

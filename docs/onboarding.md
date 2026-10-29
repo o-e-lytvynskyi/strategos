@@ -14,7 +14,7 @@ setup is in [developer-setup.md](developer-setup.md); the binding rules are in
   seed-stable); `mod` adapts them to Minecraft. Read
   [04-architecture.md](04-architecture.md) by section, and the ADRs it cites.
 - **Where it stands:** [STATE.md](STATE.md) — "Milestones", "Open for claims"; who works on what:
-  [claims.md](claims.md).
+  the branch files in [branches/](branches/README.md), one per claim.
 
 | Directory | Contents |
 |---|---|
@@ -83,12 +83,12 @@ Working without an agent is fine: follow the same procedure by hand.
 ## 5. From claim to merge
 
 1. **Find work:** STATE "Open for claims"; `python3 tools/claims.py --fetch list` for what is taken
-   ([claims.md](claims.md); a `reserved` row in your name is yours).
+   (the branch files in [branches/](branches/README.md); a `reserved` one in your name is yours).
 2. **Assess its dependencies:** what it needs from milestones not yet merged; plan independent
    work first, contracts and fakes where possible, `AFTER-M<n>: …` markers where something must be
    finished or validated later (procedure §2a step 0).
 3. **Claim it before writing code:** branch `dev/<you>/<work>`, a commit with only your
-   claims.md row and your branch file ([branches/README.md](branches/README.md)), a pull request
+   branch file ([branches/README.md](branches/README.md)), a pull request
    `Claim: <work>` to `main`. Start developing once a maintainer has merged it. Work assigned to
    someone else is never taken without their explicit approval.
 4. **Build it** task by task: tests, code, gates, records, one commit per task, push your branch.

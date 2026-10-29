@@ -2,6 +2,8 @@
 
 **Developer:** lev1pes · **Branch:** dev/lev1pes/m8-foundations · **Work:** M8 T1–T6 · **Base:** main @ bb800d0e526bf4d05d5bf2bcc3b71797e52e1d6b · **Claimed:** 2026-10-28 · **Status:** claimed
 
+**Note:** owner requested M8 independent work in the operator session; assignment merged in [PR #31](https://github.com/o-e-lytvynskyi/strategos/pull/31), not an implementation delivery; specification and contract-tested foundations only; runtime M6/M7 integration and final M8 gates excluded until prerequisites merge
+
 ## Now
 
 - **Milestone:** M8 Fog of war; independent foundation phase, zero implementation tasks complete. The owner requested taking M8 and implementing what can work without preceding unfinished milestones in the operator session on 2026-10-28.

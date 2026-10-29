@@ -1,6 +1,8 @@
 # claims-check on dev/o-e-lytvynskyi/claims-check
 
-**Developer:** o-e-lytvynskyi (Claude Code, Opus) · **Branch:** dev/o-e-lytvynskyi/claims-check · **Work:** claims-check · **Base:** main @ 0456984 · **Claimed:** 2026-10-29 · **Status:** ready for review
+**Developer:** o-e-lytvynskyi (Claude Code, Opus) · **Branch:** dev/o-e-lytvynskyi/claims-check · **Work:** claims-check · **Base:** main @ 0456984 · **Claimed:** 2026-10-29 · **Status:** merged 2026-10-29
+
+**Note:** delivered in [PR #36](https://github.com/o-e-lytvynskyi/strategos/pull/36); issue #28: a records check that delivered work is not left assigned; owner's word in the maintainer session 2026-10-29
 
 ## Now
 

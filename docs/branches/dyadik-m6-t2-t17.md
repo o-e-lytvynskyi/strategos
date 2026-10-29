@@ -2,6 +2,8 @@
 
 **Developer:** dyadik (Claude Code, Opus) · **Branch:** dev/dyadik/m6-t2-t17 · **Work:** M6 T2–T17 · **Base:** main @ 1dae9fa · **Claimed:** 2026-10-25 · **Status:** claimed
 
+**Note:** assignment merged in [PR #17](https://github.com/o-e-lytvynskyi/strategos/pull/17); implementation not merged; opening M6 remains an owner decision
+
 ## Now
 
 - **Milestone:** M6 MVP: First skirmish, 0 of 27 tasks done; spec [M6-first-skirmish.md](../milestones/M6-first-skirmish.md).

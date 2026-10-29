@@ -2,6 +2,8 @@
 
 **Developer:** lev1pes · **Branch:** dev/lev1pes/fix-main · **Work:** fix-main · **Base:** main @ b207e50 · **Claimed:** 2026-10-25 · **Status:** merged 2026-10-27
 
+**Note:** performance repair merged 2026-10-27 in [PR #21](https://github.com/o-e-lytvynskyi/strategos/pull/21); historical run 40176248614
+
 ## Now
 
 - **Hand-in:** [PR #21](https://github.com/o-e-lytvynskyi/strategos/pull/21), implementation commit f25e2c9; ready for human review.
