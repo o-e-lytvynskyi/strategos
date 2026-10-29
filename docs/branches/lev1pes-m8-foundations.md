@@ -7,10 +7,10 @@
 ## Now
 
 - **Milestone:** M8 Fog of war; only independent T1–T6 are assigned. Claim merged in PR #31. T2–T4 are complete; T5–T6 remain.
-- **In progress:** T5 implementation and fast checks complete; full gate blocked by the unchanged ProtectedBlockIndexTest timing assertion. T6 review/KB preparation is complete but final verification/handoff is not.
+- **In progress:** T5 implementation and fast checks complete; the old full-gate timing failure is retained as historical evidence. Current main replaces that timing assertion with structural coverage, and fresh fast/targeted checks pass. T6 review/KB preparation is complete, but final full verification/handoff is not.
 - **Last finished task:** T4 audience decisions and outbound audit; fast/L2/full verify and existing L4 smoke passed.
-- **Next task:** owner scope decision for the existing timing-test defect; preserve the failed gate, do not retry until green or hand in unfinished work. Full runtime integration remains unassigned T7–T12.
-- **Merged from main last:** dcb5013 (2026-10-29), including M5 delivery (#33) and reconciled claims (#29).
+- **Next task:** complete full verification of T5/T6 on the updated base before handoff; the historical timing blocker is addressed by upstream main, not by this branch. Rebase-only checks do not mark T5/T6 complete. Full runtime integration remains unassigned T7–T12.
+- **Current main base:** 134271f (2026-10-29), rebased at the owner request. Latest claims format, performance-validity fixes and dependencies are integrated; task completion and runtime integration scope are unchanged.
 
 ## Scope and intended task split
 
@@ -98,6 +98,11 @@ Full FOW-02 targeted tracking, FOW-03 live save/minimap ghosts, FOW-05 all-chann
 - Prepared T6 API/KB notes, reviewed all four production classes (87/134/70/91 lines; no new Minecraft imports, TODOs, suppressions or mutable static collections). Runtime fog/AI, MatchSnapshot, hashes, tracking and network senders remain untouched. Fresh origin/main is still 3c1f430. All AFTER dependencies remain explicit.
 - T5/T6 are not marked done and no hand-in PR is opened while the full gate is red. This is a WIP checkpoint; investigate/fix the pre-existing test only after the owner clarifies assignment scope, keeping the limit and workload intact.
 
+### 2026-10-29 - Rebase onto current main
+
+- Rebased onto 134271f after main-save-reload, independently on main. Preserved fog foundations and all current main updates; resolved the KB index conflict by retaining its current performance entry and both fog/Windows entries.
+- Main already replaces the old ProtectedBlockIndex timing comparison with structural coverage; the earlier failed run remains historical evidence. Fresh verifyFast plus FogChannelInventoryTest and ProtectedBlockIndexTest pass in 2m28s: 1645 core tests and 3 targeted mod tests, zero failures/errors/skips. Claims: 13/0; roadmap: 245/0. Runtime/test/build trees equal the independently calculated main-plus-original-branch merge result. No full verify, slow/soak, JMH or client acceptance was rerun; T5/T6 completion is unchanged.
+
 ## For the owner
 
 - **Refresh verification (2026-10-29):** verifyFast plus the targeted
@@ -116,7 +121,7 @@ Full FOW-02 targeted tracking, FOW-03 live save/minimap ghosts, FOW-05 all-chann
   failure remains unresolved. T5/T6 completion and scope are unchanged. M7 branches
   were excluded from this refresh at the owner's request.
 
-0. Blocking: choose a separate assigned claim for the protected-index measurement defect, or explicitly extend this M8 claim to its bounded correction. The isolated pass is not acceptance evidence for the failed full run; no threshold, retry policy or skipped gate is proposed.
+0. Historical timing blocker: addressed upstream in main and integrated by the 2026-10-29 rebase; no separate scope decision is now needed for that assertion. The original failed full run remains recorded and does not become passing evidence. Final full verification of T5/T6 is still required.
 1. Claim #31 is merged. Maintainer records may reflect the bounded M8 opening; this developer session does not write STATE.md or merge its own work. No new permission is needed to resume assigned T2–T6.
 2. M6/M7 runtime delivery remains a prerequisite for integrated M8 acceptance. The specification preserves all full-card criteria; specified does not mean implemented or accepted.
 
@@ -134,4 +139,4 @@ Full FOW-02 targeted tracking, FOW-03 live save/minimap ghosts, FOW-05 all-chann
 
 ## Review
 
-Assignment merged in #31. T2–T4 are green and pushed; T5 fast checks are green, full verification is blocked by the existing timing test. T6 review/KB prepared; no hand-in PR or ready-for-review claim while the gate is red. Runtime behavior is unchanged.
+Assignment merged in #31. T2–T4 are green and pushed; T5 fast checks are green. The former timing assertion has been replaced by upstream main; final full verification of the updated base is still outstanding. T6 review/KB prepared; no hand-in PR or ready-for-review claim from the rebase-only checks. Runtime behavior is unchanged.
