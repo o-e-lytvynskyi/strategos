@@ -1,6 +1,6 @@
 # perf-validity on dev/o-e-lytvynskyi/perf-validity
 
-**Developer:** o-e-lytvynskyi (Claude Code, Opus) · **Branch:** dev/o-e-lytvynskyi/perf-validity · **Work:** perf-validity · **Base:** main @ 2075428 · **Claimed:** 2026-10-29 · **Status:** in progress
+**Developer:** o-e-lytvynskyi (Claude Code, Opus) · **Branch:** dev/o-e-lytvynskyi/perf-validity · **Work:** perf-validity · **Base:** main @ 2075428 · **Claimed:** 2026-10-29 · **Status:** ready for review
 
 **Note:** issue #22, direction approved by the owner 2026-10-29: per-second foreign-load telemetry, preflight, `invalid environment` verdict, ADR; QA-07 thresholds change only after the Mac calibration and the owner's approval of the numbers
 
