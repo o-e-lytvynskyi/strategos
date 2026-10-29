@@ -138,3 +138,48 @@ All 18 server report files were inspected, including their configured report-onl
 Artifact: `perf-reports` (id 12777882458), 6,661,061 bytes, seven-day retention. Raw reports and full logs were downloaded to ignored `build/audit-tools/cloud-save-reload/40594606609/` in the original checkout. Copies remain local beyond GitHub artifact retention.
 
 The opt-in paired workflow was temporary validation scaffolding, preserved at 8e98d8b and in its successful run. After inspecting both successful runs, restore perf.yml byte-for-byte from bb800d0 before hand-in. The final bug-fix diff does not add a permanently pinned one-off CI mode. Production, benchmark and test sources remain identical to those already verified.
+
+## 2026-10-29 - PR #30 review corrections after M5
+
+Control: clean detached 8d4bdc3 (main 45c97ee integrated, before the review corrections).
+Candidate: the review fixes on that same base; no benchmark, navigation, build or JVM-setting changes.
+One full control and one full candidate, sequentially on the same Windows host. No applications
+were paused and no unchanged candidate was retried. Control build 9m06s, candidate+comparison 9m04s.
+
+**Verdict: RED / unsuitable environment for accepting performance evidence.** All 27 benchmark
+keys, parameter combinations and JVM/warmup/measurement settings match. jmhCompare reports seven
+scores above the unchanged 1.15 limit; maximum candidate/control 1.382045. No allocation breach,
+missing result or benchmark execution failure is reported. SnapshotCodecBench.encode500 is 1.130211.
+All 131 JMH classes and the 55 navigation classes plus MatchCore are byte-identical. These facts
+and the CPU evidence do not establish a production regression or a particular interfering process.
+The raw red gate is retained and is not replaced by a passing verdict.
+
+| Benchmark | Candidate/control |
+|---|---|
+| `bench.AttackLinesBench.extract300` | 1.382045 |
+| `bench.HealthBarBench.bars300` | 1.219839 |
+| `bench.HudBench.hudFrame200` | 1.247342 |
+| `bench.MovementBench.step600` | 1.174576 |
+| `sim.ShotBench.hashActive300` | 1.164575 |
+| `sim.TerrainEditBench.rebuildOnePage` | 1.365004 |
+| `bench.CrossingBench.cross512` | 1.224014 |
+
+CPU context (per-second native Windows counters, system busy minus matching-JDK process CPU;
+zero counter errors in both runs). Candidate mean foreign load exceeds QA-07's current 25% mean
+validity criterion; no clean L6 result is claimed and no baseline or threshold is changed.
+
+| Run | Windows | Weighted foreign mean | Peak | Windows above 25% |
+|---|---|---|---|---|
+| Control | 533 | 17.144% | 73.846% | 125 |
+| Candidate | 541 | 28.000% | 82.381% | 301 |
+
+Local raw evidence (ignored build outputs): `build/pr30-control-jmh.json`,
+`build/pr30-candidate-jmh.json`, matching `*-jmh.log` and `*-cpu.csv`,
+`build/pr30-jmh-summary.json`, and `build/pr30-navigation-binary-check.json`.
+
+- `pr30-control-jmh.json` SHA-256 `ab7f01113b04934d8f3d8976eb061eddb2c326229aea59667de0c7ce2b38b0a5`.
+- `pr30-candidate-jmh.json` SHA-256 `b14c8821042ceaf4740ffdbb264a7b1159373d413dcd922461976ad36723af68`.
+
+Next: an independent maintainer obtains valid performance evidence in a suitable environment.
+The owner's separate perf-validity claim (#22) owns environment-verdict/preflight changes;
+this bug-fix branch does not implement or bypass that work.

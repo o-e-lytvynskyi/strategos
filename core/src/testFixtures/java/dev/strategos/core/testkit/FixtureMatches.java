@@ -21,6 +21,7 @@ public final class FixtureMatches {
     /** The tick schema 2's fixture is saved at. */
     public static final long SCHEMA_2_TICK = 400;
 
+    /** The tick schema 3's fixture is saved at. */
     public static final long SCHEMA_3_TICK = 9;
 
     private FixtureMatches() {}
@@ -62,6 +63,7 @@ public final class FixtureMatches {
         }
         return h;
     }
+
     /** Schema 3 pins building identities, queued products and training progress alongside stable bindings. */
     public static SimHarness schema3() {
         SimHarness h = SimHarness.builder().size(64, 64).yBand(0, 31, 1).build();

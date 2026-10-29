@@ -1,16 +1,14 @@
 # main-save-reload on dev/lev1pes/main-save-reload
 
-**Developer:** lev1pes · **Branch:** dev/lev1pes/main-save-reload · **Work:** main-save-reload · **Base:** main @ b207e509a85a3303f515a716b04a87bc90ee2cb8 · **Claimed:** 2026-10-27 · **Status:** ready for review
-
-**Note:** assignment merged in [PR #26](https://github.com/o-e-lytvynskyi/strategos/pull/26), not an implementation delivery; fixes #23, #24, #25; excludes fix-main and new M5 scope
+**Developer:** lev1pes · **Branch:** dev/lev1pes/main-save-reload · **Work:** main-save-reload · **Base:** main @ b207e509a85a3303f515a716b04a87bc90ee2cb8 · **Claimed:** 2026-10-27 · **Status:** in progress
 
 ## Now
 
 - **Milestone:** bounded follow-up fixes for three independently reproduced bugs in existing main: [#23](https://github.com/o-e-lytvynskyi/strategos/issues/23), [#24](https://github.com/o-e-lytvynskyi/strategos/issues/24), [#25](https://github.com/o-e-lytvynskyi/strategos/issues/25).
-- **State:** all three fixes implemented and verified; ready for independent maintainer review. Assignment merged by PR #26.
-- **Last finished task:** cloud paired JMH: 21/21 comparable benchmarks, maximum slowdown 9.554% against the unchanged 15% gate; allocation checks pass. Standard cloud perf: all 18 required server GameTests pass. Functional verification: 1,936 tests pass.
-- **Next task:** inspect checks on hand-in [PR #30](https://github.com/o-e-lytvynskyi/strategos/pull/30), then independent maintainer review and human merge. Keep this claim assigned until the maintainer closes it.
-- **Merged from main last:** bb800d0 (2026-10-27), including the assignment merge (#26), fix-main (#21) and owner answers (#27).
+- **State:** review corrections implemented; verify and verifySoak pass. Full slow and performance gates remain unaccepted. Assignment merged by PR #26.
+- **Last finished task:** all code review items and nits implemented, with 2,274 passing tests in complete reports and a passing isolated map_fifty diagnostic. Full slow gate hits its 10-minute timeout on both candidate and unchanged control. Paired local JMH is red under excessive foreign CPU load; no green L6 result is claimed.
+- **Next task:** integrate current main's claims-format changes, recheck records/verifyFast, commit and push the review fixes with this evidence. Independent maintainer review and valid full slow/L6 gates are still required; do not mark ready for review yet.
+- **Merged from main last:** 45c97ee via 8d4bdc3 (2026-10-29); current main cc43715 is fetched and pending integration. Runtime/build sources are unchanged between those main commits.
 
 ## Depends on unfinished work
 
@@ -67,11 +65,85 @@
 - **For the owner:** independent maintainer review/human merge and the serial Windows verify-duration decision below. No gate or limit is weakened.
 - **Links:** [hand-in PR #30](https://github.com/o-e-lytvynskyi/strategos/pull/30), this branch record and [performance evidence](lev1pes-main-save-reload-perf.md). Main was freshly fetched and remains bb800d0, already merged here; core/mod/build-logic trees are identical to the verified candidate.
 
+### 2026-10-29 - PR #30 review corrections
+
+- Integrated main 45c97ee in 8d4bdc3. Baseline verifyFast passed (up-to-date tasks).
+- New regressions first failed for legacy remapping and schema-3 saves without bindings.
+  Historical inspection also found early M3 house index 5 later became the field (47d7cbf,
+  1a2f675 versus the later built-in table). Migration now supplies only the common reserved
+  prefix 0..4; all later building/queue references fail explicitly. Re-saving migrated data
+  keeps those conservative bindings instead of re-enabling implicit legacy resolution.
+- Schema-3 decoding refuses live buildings without bindings. Runtime restore always resolves
+  bindings; it never infers a legacy table from an empty list or a content hash.
+- Server reload excludes terminal matches from both validation and queued swaps, preserving
+  their frozen queryable set. The adapter rechecks a published swap before advancing the
+  simulation; an invalidated swap throws through the existing match fault barrier.
+- Added core coverage for template-backed nodes, kind changes, M4/M5 custom-index collisions
+  and early M3 house/field ambiguity. Added L3 ENDED/FAULTED reload and publication-boundary
+  fault regressions. The terminal-outcome save test now uses Outcome.save(); fixed fixture nits.
+- ADR-0026 owns the persistence/legacy policy and reload boundary; ADR-0012 and ADR-0018 point
+  to it. Architecture and the save/reload KB describe the compatibility limitation explicitly.
+- First edit-batch verifyFast passed in 3m10s; refined historical-prefix batch in 1m54s.
+  `verify` passed, including all 233 normal L3 tests (74.940s), 73 journal replays,
+  200 soak seeds, 111 L2 tests, 12 mod architecture tests and 4 smoke tests. All 1,625
+  normal and 16 slow core tests pass; complete reports total 2,274 tests with no failures,
+  errors or skips. The combined `verify verifySlow verifySoak` invocation stopped after
+  21m34s: runGameTestSlow hit its unchanged 10-minute task timeout, with 18/19 scenarios
+  complete and map_fifty still running. No assertion failure or final slow XML exists;
+  this is a failed/incomplete slow gate, not a passing functional aggregate.
+- The unchanged control at 8d4bdc3 also hits the same 10-minute runGameTestSlow timeout
+  (whole build 10m13s). Its worktree stays clean; all 55 navigation classes and MatchCore
+  are byte-identical to the candidate. This establishes that the timeout also occurs without
+  the review fixes; it does not turn either failed gate green or prove a particular CPU cause.
+  The isolated map_fifty diagnostic passes: 1/1 required test, 19.142s reported L3 time,
+  whole invocation 38s; verifySoak is confirmed (the same 200-seed result). That filtered
+  diagnostic does not replace the failed full slow gate. No timeout, threshold, fixture
+  or baseline changes.
+- Paired local JMH completed: 27/27 configurations match, all 131 benchmark classes are
+  byte-identical, seven breaches above 1.15 (maximum 1.382045), no allocation breaches.
+  Candidate weighted foreign CPU is 28.000%, versus control 17.144%; neither a clean L6
+  result nor a production regression is established. Full evidence and raw hashes are in
+  [performance evidence](lev1pes-main-save-reload-perf.md). No further unchanged retry.
+- During verification main advanced to cc43715: records for #36 were repaired in #37;
+  #39/#40 move claims into branch-file headers. No runtime/build sources changed. Integrate
+  those maintainer-owned changes rather than editing another developer's records.
+
 ## For the owner
+
+### 2026-10-29 synchronization evidence
+
+- Fast-forwarded the local worktree to the maintainer review c9dd148, then merged
+  origin/main dcb5013. The only source conflict was Snapshots.take; retained M5's
+  shots, stances and garrisons together with this branch's template bindings.
+- verifyFast passes in 5m 48s; 1,621 core tests, zero failures/errors/skips. Roadmap
+  checks 245 cards and claims checks 7 rows with no problems; diff whitespace check
+  passes. No full verify, slow/soak or performance rerun is claimed for this refresh.
+- Synchronization is complete; implementation of the maintainer's remaining review
+  findings is a separate next step on this assigned branch. No release or merge
+  into main was performed.
+
+0. Current status: review items 1-7 and nits are implemented. The current local verify and
+   verifySoak evidence supersedes the pre-M5 functional report. The complete Windows slow
+   gate and local paired JMH remain red/unaccepted, so the branch stays in progress. Old
+   cloud results validate the pre-M5 candidate and are not proof of this head's slow/L6 gates.
 
 1. Independent maintainer review and human merge. Both owner-requested cloud runs passed: [standard perf](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40594606609) and [paired JMH](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40595834693). This is same-host regression/Linux CI evidence, not promotion of an approved baseline or native Mac-budget validation. Retain [all local failures](lev1pes-main-save-reload-perf.md).
 2. Review the serial Windows `verify` duration (about 9m 10s versus the documented 5-minute budget): accept the platform time or decide separately which run moves to `verifySlow`. No run or gate was moved here.
 3. Assignment merged by PR #26. The claim is ready for review and remains assigned until the maintainer merges the hand-in and closes it. No M5/M6 work is included.
+
+4. The inherited #36 records failure was repaired by the maintainer in PR #37. Current
+   main cc43715 also migrates claims to branch headers (#39/#40); integrate it and validate
+   with the new claims checker. No other developer's record is changed by this session.
+
+5. Both the review candidate and clean 8d4bdc3 control exceed the unchanged 10-minute
+   Windows slow-server task limit. A maintainer must obtain an unfiltered passing full slow
+   gate on a suitable machine, or have the owner decide the batch/platform budget. No timeout
+   or test selection is changed in the project. Local logs are under ignored `build/pr30-*`.
+
+6. Obtain accepted L6 evidence in a suitable environment. The one bounded paired comparison
+   remains red (seven scores >1.15) with candidate foreign CPU mean 28.000%, above the
+   existing 25% validity criterion. The separate owner-held perf-validity claim owns harness
+   changes. No benchmark, threshold, baseline or application state is changed here.
 
 ## Decisions taken
 
@@ -85,13 +157,25 @@
 - 2026-10-27 · Write schema 3 so older builds cannot ignore bindings and silently misread new saves. Migrate versions 1 and 2 without inventing identities, leaving all released fixtures unchanged. Legacy fixed built-in indices resolve through the seeded built-in table; ambiguous custom indices explicitly fault instead of guessing. The content hash does not cover index assignment. Undo by reverting the bindings changes; doing so loses safe custom-save identity.
 - 2026-10-27 · Use one agent and review the full diff locally; no delegates or client windows. Compare JMH against an unmodified same-host control in addition to keeping the approved Mac baseline untouched.
 
+- 2026-10-29 - Resolve review items 2-7 rather than waive them. Freeze legacy migration to
+  the common historical prefix 0..4 after checking the earliest building/production history;
+  reject ambiguous later builtins too, because custom-table identities cannot be proven.
+  This intentionally narrows schema-1/2 compatibility. Undo by reverting the migration,
+  but doing so reopens silent identity corruption. Record this policy in ADR-0026.
+- 2026-10-29 - Keep terminal matches on their original set and fault an invalidated published
+  swap before advancing the affected match. Undo by reverting the adapter/server guards;
+  doing so restores terminal reload vetoes and permits silent server/match divergence.
+- 2026-10-29 - One agent; no delegates or client windows. Use an unchanged detached copy
+  of 8d4bdc3 for same-host JMH comparison; preserve raw reports and CPU telemetry, never
+  promote that diagnostic control to an approved baseline or retry unchanged until green.
+
 ## Pitfalls
 
 - See [save/reload identities](../kb/save-reload-identities.md): content hash versus session table, every in-use reload reference, and terminal lifecycle after load.
 
 ## Review
 
-Assignment merged by PR #26; hand-in [PR #30](https://github.com/o-e-lytvynskyi/strategos/pull/30) is open. Functional gates, independent cloud paired JMH and standard cloud server perf pass. Ready for independent maintainer review; every approval and merge remains human.
+Assignment merged by PR #26; hand-in [PR #30](https://github.com/o-e-lytvynskyi/strategos/pull/30) remains open. Code review corrections are implemented; the current full slow and performance gates remain unaccepted. The branch stays in progress. Every approval and merge remains human.
 
 ### Maintainer review 2026-10-29 (head a91996f)
 

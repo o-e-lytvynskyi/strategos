@@ -24,16 +24,15 @@ final class SavedTemplates {
                 throw new IllegalArgumentException("invalid saved template binding " + binding);
             }
         }
-        boolean legacy = snapshot.templateBindings().isEmpty();
         return snapshot.buildings().stream()
                 .map(saved -> {
                     if (!saved.alive()) {
                         return saved;
                     }
-                    int building = resolve(saved.template(), ids, legacy, next, true);
+                    int building = resolve(saved.template(), ids, next, true);
                     BuildingStore.Production p = saved.production();
                     List<Integer> queue = p.queue().stream()
-                            .map(index -> resolve(index, ids, legacy, next, false))
+                            .map(index -> resolve(index, ids, next, false))
                             .toList();
                     return new BuildingStore.Saved(
                             saved.generation(),
@@ -57,21 +56,12 @@ final class SavedTemplates {
                 .toList();
     }
 
-    private static int resolve(
-            int index, Map<Integer, TemplateId> ids, boolean legacy, TemplateSet next, boolean building) {
+    private static int resolve(int index, Map<Integer, TemplateId> ids, TemplateSet next, boolean building) {
         TemplateId id = ids.get(index);
-        if (legacy) {
-            // Built-in indices are seeded before custom ids in every server session. Custom indices
-            // cannot be reconstructed: even equal content hashes do not describe the session table.
-            TemplateSet builtin = TemplateSet.builtin();
-            if (!builtin.has(index)) {
-                throw new IllegalArgumentException("legacy save has ambiguous template index " + index
-                        + "; its original session template table is required");
-            }
-            id = builtin.byIndex(index).id();
-        }
         if (id == null) {
-            throw new IllegalArgumentException("saved template index " + index + " has no stable id");
+            throw new IllegalArgumentException(
+                    "saved template index " + index + " has no stable id (ambiguous template index); "
+                            + "its original session template table is required");
         }
         UnitTemplate template = next.byId(id);
         if (template == null || template.isBuilding() != building) {

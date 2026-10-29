@@ -27,7 +27,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 /**
- * CORE-07.4 for schema 2, released with M1 (T27): {@link FixtureMatches#schema3} as NBT still decodes to its recorded
+ * CORE-07.4 for schema 3 (#25): {@link FixtureMatches#schema3} as NBT still decodes to its recorded
  * hash, the same as the core's JSON fixture of the same match. {@code -Dstrategos.fixtures.update=true} writes the two
  * files once; they are released-schema fixtures, never changed or deleted, so an existing file is kept.
  */

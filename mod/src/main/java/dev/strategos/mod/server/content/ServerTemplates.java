@@ -9,6 +9,7 @@ import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.sim.ContentSwap;
 import dev.strategos.core.sim.MatchCore;
+import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.mod.server.match.MatchRuntime;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -89,7 +90,9 @@ public final class ServerTemplates {
         problems = List.copyOf(found);
         outcome = "loaded " + set + " from " + raws.size() + " files";
         for (MatchRuntime rt : matches) {
-            rt.queueSwap(new ContentSwap(set));
+            if (usesTemplates(rt)) {
+                rt.queueSwap(new ContentSwap(set));
+            }
         }
         return new Outcome(true, outcome, problems);
     }
@@ -104,7 +107,7 @@ public final class ServerTemplates {
     private static @Nullable String usedButMissing(TemplateSet next, Collection<MatchRuntime> matches) {
         for (MatchRuntime rt : matches) {
             MatchCore core = rt.core();
-            if (core == null) {
+            if (core == null || !usesTemplates(rt)) {
                 continue;
             }
             String problem = core.queries().templateSwapProblem(next);
@@ -113,6 +116,12 @@ public final class ServerTemplates {
             }
         }
         return null;
+    }
+
+    private static boolean usesTemplates(MatchRuntime rt) {
+        return rt.lifecycle() != MatchLifecycle.ENDED
+                && rt.lifecycle() != MatchLifecycle.FAULTED
+                && rt.lifecycle() != MatchLifecycle.DISPOSED;
     }
 
     private static String fileOf(List<RawTemplate> raws, UnitTemplate t) {

@@ -898,8 +898,10 @@ DimensionDataStorage.java:43):
   - Template identities are persisted by string id. Building slots and production queues retain their
     numeric layout together with `templateBindings` (saved index → stable id); restore resolves every
     live reference against the current set before rebuilding footprints or production counts.
-    Legacy snapshots without bindings may resolve only the fixed built-in indices; custom numeric
-    references fail explicitly because neither a content hash nor the current table proves their identity.
+    [ADR-0026](adr/0026-save-template-identities.md) fixes legacy migration to the common historical
+    reserved prefix (indices 0..4). All later numeric references, including later builtins, fail explicitly;
+    neither a content hash nor the current table proves their identity. Missing schema-3 bindings
+    with live buildings are a decode error, rather than an implicit legacy mode.
     Schema 3 prevents old builds from silently loading new numeric references without resolving
     their bindings. Versions 1 and 2 migrate conservatively; released fixtures are unchanged.
   - On 1.21.5+ the same codecs plug into `SavedDataType` and `ValueInput`/`ValueOutput` (§18.1).
@@ -1444,8 +1446,11 @@ kinds from one definition:
      item and block ids that the event's registry access does not know, and dangling production
      references.
   4. It builds an immutable `TemplateSet` whose version is the SHA-256 of the canonical JSON.
-  5. It hands the set to `StrategosServer`, which swaps it into running matches at the next tick
-     boundary as a journaled `ContentSwap` input.
+  5. It hands the set to `StrategosServer`, which validates every active/paused match's live references
+     before publishing the set/table and queues a journaled `ContentSwap` for the next tick boundary.
+     Terminal matches keep their frozen content and do not block reloads. The adapter revalidates at
+     that boundary; an invalidated published swap faults its match before simulation advances
+     ([ADR-0026](adr/0026-save-template-identities.md)).
 - **Why not datapack registries.** They load only at world load, ignore `/reload` and decode each
   file alone, so they cannot resolve parents (fact 22). Registries hold only engine-fixed things:
   entity types, damage types, payload types. No planned feature needs a `Holder` or tag that points
