@@ -30,13 +30,5 @@ jobs:
       - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
         with:
           fail-on-severity: moderate
-          # Netty 4.1.97 and Guava 32.1.2 come with Minecraft 1.21.1 (the game's pinned runtime; the mod cannot replace
-          # them, and core matches the game's Guava through DFU). The Netty advisories are in TLS (SslHandler,
-          # SniHandler, trust managers) and IpSubnetFilter, which the game's plain-TCP protocol does not use; the Guava
-          # one (GHSA-xxph-c9ww-hj94) needs Java deserialization of its collections, which neither the game nor the mod
-          # performs. The owner's decision, 2026-10-29; drop an entry when Minecraft moves past its patched version.
-          allow-ghsas: >-
-            GHSA-c4c3-7fpv-j4q5, GHSA-4g8c-wm8x-jfhw, GHSA-3qp7-7mw8-wx86, GHSA-x4gw-5cx5-pgmh, GHSA-c653-97m9-rcg9,
-            GHSA-fccg-mwvh-qqg4, GHSA-xxph-c9ww-hj94
           retry-on-snapshot-warnings: true
           allow-licenses: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, EPL-2.0, LGPL-2.1-only, LGPL-2.1-or-later, LGPL-3.0-only, LGPL-3.0-or-later, MPL-2.0, CC0-1.0, ISC
