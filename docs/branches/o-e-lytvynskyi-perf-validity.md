@@ -19,6 +19,23 @@
 
 ## Log
 
+### 2026-10-29 — the flaky L1 timing test (taken into this claim)
+
+- Reported to the owner: `ProtectedBlockIndexTest.aLookupCostsTheSameAtAnySize` (a `nanoTime` ratio of
+  lookups in 64 and 4 sections, limit 3) failed in a parallel `verify` for lev1pes (269.1 / 54.1 ns =
+  4.98) and blocks the hand-in of M8 T5–T6; alone it passes.
+- L1 now checks the structure instead: `aLookupConsultsOneBoundedSectionAtAnySize` — at 4 and 64 full
+  sections every lookup consults one section map of 4,096 positions (`ProtectedBlockIndex.sectionSize`,
+  package-private) and finds its owner. The time moved to the perf batch,
+  `PerfTests.protectedLookupCost` (batch `perf_protected`, report `protected_lookup_ratio`): the same
+  probes and median, ratio limit 3 unchanged, asserted only when the window is valid. A pitfall in
+  docs/kb/perf-tick-spacing.md.
+- Searched every `*/src/test` and `testFixtures` for wall-clock timing: no other assertion (the
+  `ClockIndependenceTest` clock is injected; `DeterminismFixtures` are ArchUnit fixtures). In
+  gametests outside the perf batch: `CameraTests` checks coverage within 3,000 ms of wall time, and
+  the smoke driver has a 180 s hang guard — see "For the owner".
+- Gates: `verifyFast` green; `:mod:test --tests ProtectedBlockIndexTest` 2 / 2.
+
 ### 2026-10-29 — part A: telemetry
 
 - `ForeignLoad` (core testFixtures): exact window mean from cumulative readings, nearest-rank p95 and
@@ -43,9 +60,21 @@
 
 ## For the owner
 
-- None.
+1. `CameraTests` (an L3 gametest in `verify`) asserts that coverage after a camera jump takes at most
+   3,000 ms of wall time. Generous, but wall time again without a load guard; the same check in ticks
+   would be load-proof. Not changed here (it is a card criterion); say if it should move to ticks.
+2. fix-main recorded the protected-lookup ratio over 3 even on a quiet Windows machine (75.9 / 24.3 ns
+   = 3.13). Moving it to the perf batch makes such a result attributable, not green: if the perf
+   batch shows it valid and over 3, that is a finding about the index on that machine.
 
 ## Decisions taken
+
+- 2026-10-29 · The flaky `ProtectedBlockIndexTest` timing (owner's request: «взять в свою работу или
+  завести отдельный fix-…») is taken into this claim, not a new one — same subject (#22), and a new
+  claim would wait for a merge — undo: move the two commits to a `fix-…` claim.
+- 2026-10-29 · The moved ratio check is enforced in the perf batch when the window is valid, as the
+  L1 test enforced it — it is not a new gate, so QA-07's five-run rule does not apply — undo: make it
+  report-only.
 
 - 2026-10-29 · Unavailable counters now make a run `invalid` (before: read as 0 on macOS/Linux) — the
   owner-approved direction of #22; a broken counter must not look like a quiet machine — undo: return

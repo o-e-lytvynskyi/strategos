@@ -42,6 +42,15 @@ index. A lookup benchmark then measured both index size and the input objects' c
 Allocate distinct immutable probe positions in the tail too. Section counts, coordinate
 coverage, lookup count, warm-up, median calculation and the ratio limit stay unchanged.
 
+## No wall-clock comparison in a unit test
+
+A unit test that timed lookups with `nanoTime` and required a ratio under 3 passed alone and with
+`--max-workers=1`, and failed in a parallel `verify` (269.1 ns against 54.1, a ratio of 4.98):
+neighbouring Gradle workers share the cores, and L1 has no foreign-load guard. Keep a structural
+check in L1 (the work a lookup does, e.g. the size of the one section map it consults, does not
+grow with the index) and move the time into the perf batch, where the window's foreign load is
+measured and an invalid run asserts nothing (`PerfTests.protectedLookupCost`, #22).
+
 ## Invalid measurements remain invalid
 
 Windows measurements are not a Mac baseline. Preserve actual worker count and CPU verdict.

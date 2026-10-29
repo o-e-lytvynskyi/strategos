@@ -71,6 +71,12 @@ public final class ProtectedBlockIndex {
         return size;
     }
 
+    /** How many positions the one section a lookup of {@code pos} consults holds (at most 4,096), or 0 without one. */
+    int sectionSize(BlockPos pos) {
+        Short2LongOpenHashMap section = sections.get(sectionKey(pos));
+        return section == null ? 0 : section.size();
+    }
+
     private long packed(BlockPos pos) {
         Short2LongOpenHashMap section = sections.get(sectionKey(pos));
         return section == null ? 0 : section.get(local(pos));

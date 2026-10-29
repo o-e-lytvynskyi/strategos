@@ -39,9 +39,11 @@ import dev.strategos.mod.server.persist.MatchData;
 import dev.strategos.mod.server.world.BlockChangeRouter;
 import dev.strategos.mod.server.world.BlockWriter;
 import dev.strategos.mod.server.world.PageJobs;
+import dev.strategos.mod.server.world.ProtectedBlockIndex;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.GameTestSequence;
@@ -694,6 +696,80 @@ public final class PerfTests {
                     check(bytes <= 32L << 20, "nav takes " + bytes + " bytes");
                 })
                 .thenSucceed();
+    }
+
+    /**
+     * BLD-07.4: a protected-block lookup costs the same in an index of 64 full sections as in one of 4 — the ratio of
+     * their median times under 3. It ran in every verify as a unit test and failed under parallel Gradle workers; here
+     * it runs alone, under the foreign-load guard, and an invalid window asserts nothing (#22).
+     */
+    @StrategosTest(batch = "perf_protected", arena = "arena_flat_48", timeoutTicks = 200)
+    public static void protectedLookupCost(GameTestHelper h) {
+        Window window = new Window();
+        h.startSequence()
+                .thenExecute(() -> {
+                    window.start();
+                    double small = nanosPerLookup(4);
+                    double large = nanosPerLookup(64);
+                    double ratio = large / small;
+                    boolean invalid = window.gateInvalid();
+                    JsonObject json = new JsonObject();
+                    json.addProperty("test", "protected_lookup_ratio");
+                    json.addProperty("gate", "protected");
+                    json.addProperty("ns_per_lookup_4_sections", small);
+                    json.addProperty("ns_per_lookup_64_sections", large);
+                    json.addProperty("ratio", ratio);
+                    json.addProperty("ratioLimit", 3.0);
+                    json.addProperty("verdict", invalid ? "invalid" : ratio < 3 ? "pass" : "fail");
+                    window.addTo(json);
+                    write("protected_lookup_ratio", json);
+                    if (!invalid) {
+                        check(ratio < 3, String.format(Locale.ROOT, "%.1f ns at 64 sections, %.1f at 4", large, small));
+                    }
+                })
+                .thenSucceed();
+    }
+
+    /** The median time of a lookup in an index of {@code sections} full sections, over a million lookups, seven times. */
+    private static double nanosPerLookup(int sections) {
+        ProtectedBlockIndex index = new ProtectedBlockIndex();
+        BlockPos[] probes = new BlockPos[1 << 16];
+        int stride = Math.max(1, sections * 4096 / probes.length); // probes spread over every section
+        int seen = 0;
+        int n = 0;
+        for (int s = 0; s < sections; s++) {
+            for (int x = 0; x < 16; x++) {
+                for (int y = 0; y < 16; y++) {
+                    for (int z = 0; z < 16; z++) {
+                        BlockPos pos = new BlockPos(s * 16 + x, 64 + y, z);
+                        index.protect(pos, 1, 1 + x);
+                        if (seen++ % stride == 0 && n < probes.length) {
+                            probes[n++] = pos;
+                        }
+                    }
+                }
+            }
+        }
+        for (int k = n; k < probes.length; k++) {
+            // Equal probe-object working sets: reusing references here gave the small index only
+            // 16K position objects while the large one dereferenced 64K distinct objects.
+            BlockPos pos = probes[(k * 7919) % n];
+            probes[k] = new BlockPos(pos.getX(), pos.getY(), pos.getZ());
+        }
+        long[] runs = new long[7];
+        long sink = 0;
+        for (int r = 0; r < runs.length + 3; r++) { // three to warm up
+            long start = System.nanoTime();
+            for (int k = 0; k < 1_000_000; k++) {
+                sink += index.owner(probes[(k * 40503) & (probes.length - 1)]);
+            }
+            if (r >= 3) {
+                runs[r - 3] = System.nanoTime() - start;
+            }
+        }
+        check(sink > 0, "the probes found no protected block");
+        Arrays.sort(runs);
+        return runs[runs.length / 2] / 1e6;
     }
 
     /**
