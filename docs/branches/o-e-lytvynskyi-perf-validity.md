@@ -2,6 +2,8 @@
 
 **Developer:** o-e-lytvynskyi (Claude Code, Opus) · **Branch:** dev/o-e-lytvynskyi/perf-validity · **Work:** perf-validity · **Base:** main @ 2075428 · **Claimed:** 2026-10-29 · **Status:** claimed
 
+**Note:** issue #22, direction approved by the owner 2026-10-29: per-second foreign-load telemetry, preflight, `invalid environment` verdict, ADR; QA-07 thresholds change only after the Mac calibration and the owner's approval of the numbers
+
 ## Now
 
 - **Work:** issue [#22](https://github.com/o-e-lytvynskyi/strategos/issues/22); the owner approved the direction on 2026-10-29 (recorded in the issue).

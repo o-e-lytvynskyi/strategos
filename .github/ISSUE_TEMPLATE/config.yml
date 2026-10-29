@@ -2,4 +2,4 @@ blank_issues_enabled: false
 contact_links:
   - name: Want to build something?
     url: https://github.com/o-e-lytvynskyi/strategos/blob/main/docs/onboarding.md
-    about: Work is planned in the roadmap and claimed by pull request (docs/claims.md), not through issues.
+    about: Work is planned in the roadmap and claimed by pull request (a branch file in docs/branches/), not through issues.

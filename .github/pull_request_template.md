@@ -1,8 +1,8 @@
-<!-- Claim or release: only docs/claims.md and your branch file change. Hand-in: the milestone report below. -->
+<!-- Claim or release: only your branch file in docs/branches/ changes. Hand-in: the milestone report below. -->
 
 **Kind:** claim | release | hand-in | review fix | other
 
-**Work:** <!-- M5, M5 T1–T6, M6 spec … as in docs/claims.md -->
+**Work:** <!-- M5, M5 T1–T6, M6 spec … as in your branch file -->
 
 ### Milestone report (hand-in)
 

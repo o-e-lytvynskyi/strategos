@@ -1,6 +1,6 @@
 # State
 
-The project-wide picture, kept by the maintainer and updated at merges. Who works on what is in [claims.md](claims.md)
+The project-wide picture, kept by the maintainer and updated at merges. Who works on what is in the branch files, one per claim ([branches/](branches/README.md))
 (`python3 tools/claims.py list`); live progress is in each developer's branch file ([branches/](branches/)). The session
 log is in [worklog.md](worklog.md); the work procedure is the `strategos-dev` skill (`.claude/skills/strategos-dev/SKILL.md`).
 
@@ -282,7 +282,7 @@ Nothing.
   - the new way of working (word of 2026-10-25): rules are tool-neutral in [AGENTS.md](../AGENTS.md) (CLAUDE.md imports
     it; Codex reads it as is) and bind every developer equally, every developer is external, the owner's own sessions
     too, joining is in [onboarding.md](onboarding.md); assignment first, by pull request: a claim pull request adds the
-    developer's row to [claims.md](claims.md) and their branch file and is merged before any development
+    developer's row to claims.md (since 2026-10-29: only the branch file, which is the claim) and is merged before any development
     (`tools/claims.py check` refuses overlaps and takeovers without the holder's approval), work is built on
     `dev/<developer>/<work>` and handed in as a pull request with the milestone report, reviewed by another session
     with delegated workers (`strategos-maintain` §4) and merged on the owner's «влей»; claim and release pull requests

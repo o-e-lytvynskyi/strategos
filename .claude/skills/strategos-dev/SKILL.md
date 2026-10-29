@@ -34,8 +34,8 @@ every claim — your GitHub login (`o-e-lytvynskyi`, `lev1pes`, …), as in docs
    - Rewrite it after every commit. Delete it (`rm -f .session.lock`) before the final report.
 2. **Git:**
    - `git status`: a dirty tree goes to §9;
-   - `python3 tools/claims.py --fetch list`: the registry docs/claims.md on `main` — yours and
-     everyone else's — and `gh pr list --author @me` for your open pull requests;
+   - `python3 tools/claims.py --fetch list`: the claims on `main` (the branch files in
+     docs/branches/) — yours and everyone else's — and `gh pr list --author @me` for your open pull requests;
    - on your branch: if `origin/main` moved since your last merge of it, `git merge origin/main`
      and re-run `./gradlew verifyFast`; if the branch is ahead of `origin`, push first.
 3. **Read, by heading** (`grep -n '^## '`, then a range — never the whole file):
@@ -90,17 +90,18 @@ approved roadmap; ideas go to "For the owner" as proposals.
    a core seam the other milestone will fill; a fake in the tests), or *after* (cannot start until
    that milestone lands). Order the claimed tasks so independent work comes first; claim only what
    has a plan. Work whose plan is *after* is not claimed yet.
-1. `python3 tools/claims.py --fetch list` and `gh pr list --search claims.md`: no `assigned` row and
-   no open claim pull request covers the work, and no `reserved` row keeps it for someone else (a
-   reservation in your name is yours to claim). Work `assigned` to someone else is never taken
+1. `python3 tools/claims.py --fetch list` and `gh pr list --search 'Claim: in:title'`: no active
+   claim (`claimed`, `in progress`, `ready for review`) and no open claim pull request covers the
+   work, and no `reserved` branch file keeps it for someone else (a reservation in your name is
+   yours to claim). Work claimed by someone else is never taken
    without their explicit approval (AGENTS.md "Developers and claims").
 2. **The base:** `origin/main`, or your own branch if the work depends on it (the header's
    `Base`).
 3. `git switch -c dev/<developer>/<work> <base>`; `<work>` is short: `m5`, `m5-t1-t6`, `m6-spec`,
    `fix-main`.
-4. The claim commit, and nothing else in it: your row in docs/claims.md (`assigned`, today, your
-   branch; or your `reserved` row turned `assigned`), your branch file from the template in
-   docs/branches/README.md (`Status: claimed`, "Now" filled in). `python3 tools/claims.py check
+4. The claim commit, and nothing else in it: your branch file from the template in
+   docs/branches/README.md (`Claimed:` today, `Status: claimed`, "Now" filled in; or the `reserved`
+   file in your name turned `claimed`). `python3 tools/claims.py check
    --base origin/main` passes. Commit `Mx: claim <work>` (or `Docs: claim <work>`), push with `git
    push -u origin dev/<developer>/<work>`.
 5. From a fork, push to your fork and use `--head <login>:dev/<developer>/<work>` below; forks
@@ -401,7 +402,7 @@ briefly:
 2. **Review findings** arrive in the branch file's "Review" and in the pull request: fix them on
    the branch (`Mx Tn: review fix — <what>`), push, and say so in the pull request.
 3. **Release** a claim you stop: `Status: released <date>` and a log line on why in your branch
-   file, push; then a pull request to `main` turning your docs/claims.md row to `released` (title
+   file, push; then a pull request to `main` carrying that branch-file change only (title
    `Release: <work>`). Approving someone's takeover of your work is the same release, or a
    comment on their claim pull request saying so.
-4. **The `done` row** is written by the maintainer at the merge.
+4. **`Status: merged <date>`** is written by the maintainer at the merge.
