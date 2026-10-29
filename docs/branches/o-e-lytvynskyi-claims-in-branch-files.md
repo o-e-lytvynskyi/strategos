@@ -1,8 +1,8 @@
 # claims-in-branch-files on dev/o-e-lytvynskyi/claims-in-branch-files
 
-**Developer:** o-e-lytvynskyi (Claude Code, Opus) · **Branch:** dev/o-e-lytvynskyi/claims-in-branch-files · **Work:** claims-in-branch-files · **Base:** main @ ea87681 · **Claimed:** 2026-10-29 · **Status:** ready for review
+**Developer:** o-e-lytvynskyi (Claude Code, Opus) · **Branch:** dev/o-e-lytvynskyi/claims-in-branch-files · **Work:** claims-in-branch-files · **Base:** main @ ea87681 · **Claimed:** 2026-10-29 · **Status:** merged 2026-10-29
 
-**Note:** the owner's request in the maintainer session, 2026-10-29 («мне не нравится один общий файл … давай будем там писать клеймы»); claim and delivery in one pull request on that word.
+**Note:** delivered in [PR #39](https://github.com/o-e-lytvynskyi/strategos/pull/39); the owner's request in the maintainer session, 2026-10-29 («мне не нравится один общий файл … давай будем там писать клеймы»); claim and delivery in one pull request on that word.
 
 ## Now
 
