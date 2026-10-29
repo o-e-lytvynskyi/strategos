@@ -472,7 +472,7 @@ tasks.matching { it.name == 'runGameTestSlow' }.configureEach { mustRunAfter 'ru
 gameTestGuard('runGameTestPerf', file('build/test-results/gametest-perf/TEST-gametest-perf.xml'),
         file('build/gametest-perf/world'), null, file('build/gametest-perf/logs/latest.log'))
 
-// [T12] QA-07.3: a run above 25 % foreign CPU load is invalid, neither pass nor fail. Gradle can only
+// [T12] QA-07.3: a run above min(10 %, 0.75/N) foreign CPU load (ADR-0026 part B) is invalid, neither pass nor fail. Gradle can only
 // stop the build, so the message starts with INVALID, distinct from a budget failure (§1.6 row 32).
 def perfOut = file('build/reports/perf')
 tasks.matching { it.name == 'runGameTestPerf' }.configureEach {
@@ -492,7 +492,7 @@ tasks.matching { it.name == 'runGameTestPerf' }.configureEach {
             // each invalid test with the gate's reasons (a mean over the limit, or counters that could not be read)
             def lines = invalid.collect { r ->
                 def why = (r.foreignLoad?.reasons ?: []).findAll { it.startsWith('gate:') }
-                "${r.test}: " + (why ? why.join('; ') : "foreign CPU load ${r.foreignCpu} above 0.25")
+                "${r.test}: " + (why ? why.join('; ') : "foreign CPU load ${r.foreignCpu} above ${r.foreignLoad?.gateLimit}")
             }
             throw new GradleException("INVALID run, not a regression: ${lines.join(' | ')}; rerun on a quiet machine")
         }
