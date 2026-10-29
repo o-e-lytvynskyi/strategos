@@ -5,7 +5,7 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * Cold decisions for entity information, not a network sender or proof that existing senders apply them.
- * AFTER-M5: audit and adapt actual projectile FX endpoints.
+ * M5 projectile FX endpoints audited; runtime adapters remain T9 after M6/M7.
  * AFTER-M6: derive sight from the authoritative view, not client flags.
  * AFTER-M7: classify recipients and wire every vanilla/custom channel with mock-player controls.
  */

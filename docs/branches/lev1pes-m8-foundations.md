@@ -10,7 +10,7 @@
 - **In progress:** T5 implementation and fast checks complete; full gate blocked by the unchanged ProtectedBlockIndexTest timing assertion. T6 review/KB preparation is complete but final verification/handoff is not.
 - **Last finished task:** T4 audience decisions and outbound audit; fast/L2/full verify and existing L4 smoke passed.
 - **Next task:** owner scope decision for the existing timing-test defect; preserve the failed gate, do not retry until green or hand in unfinished work. Full runtime integration remains unassigned T7–T12.
-- **Merged from main last:** 3c1f430 (2026-10-28).
+- **Merged from main last:** dcb5013 (2026-10-29), including M5 delivery (#33) and reconciled claims (#29).
 
 ## Scope and intended task split
 
@@ -27,11 +27,11 @@ T1–T6 are the bounded claim; task numbering is to be formalized by T1 because 
 
 ## Depends on unfinished work
 
-Main contains M0–M4 runtime. M5 is assigned elsewhere; M6's specification is merged, its runtime is not. M7/M8 implementations are absent. Read other developers' specifications as contract data; do not build, copy or alter their unfinished branches.
+Main contains M0–M5 runtime. M5 delivery #33 is merged; M6's specification is merged, its runtime is not. M7 runtime is not merged. Read other developers' specifications as contract data; do not build, copy or alter their unfinished branches.
 
 | Milestone | What this work needs from it | Plan: independent / against a contract / after | AFTER markers planned |
 |---|---|---|---|
-| M5 | Projectile effects and combat-only outbound channels | Independent channel inventory now; against declared inputs for policies; actual projectile guard/L3 integration after M5 | AFTER-M5: projectile FX channel audit/positive controls |
+| M5 (merged) | Projectile effects and combat-only outbound channels | Sender/endpoints audited against ShotFx, FxSender and NetGateway; T9 runtime guards still need M6/M7 | M5 audit dependency resolved; runtime positive/negative controls remain T9 |
 | M6 | FOW-01 VisionGrid/VisibilityIndex, FOW-07 explored/pairing, AI-18 observed-only AiView | Against query/event contracts, with fakes in L1. Do not recreate the solo grid, shroud or tracker refresher. Real adapters, live persistence and AI routing after M6 | AFTER-M6: solo-vision adapters, snapshot integration and observed AI inputs |
 | M7 | MATCH-06 diplomacy/shared vision, NET-03 recipient state, NET-09 commander/first-person bodies | Against a diplomacy/recipient contract now. Actual diplomacy, commander protection, targeted mock-player tests and four-player setup after M7 | AFTER-M7: diplomacy/recipient adapters, commander leak tests and multiplayer fixtures |
 | M7 | PERF-10 multiplayer performance reference | After. PERF-15's 20-minute 4x150 scenario and stress acceptance cannot be certified on the M4 base | AFTER-M7: full PERF-15 and multiplayer performance reference |
@@ -99,6 +99,22 @@ Full FOW-02 targeted tracking, FOW-03 live save/minimap ghosts, FOW-05 all-chann
 - T5/T6 are not marked done and no hand-in PR is opened while the full gate is red. This is a WIP checkpoint; investigate/fix the pre-existing test only after the owner clarifies assignment scope, keeping the limit and workload intact.
 
 ## For the owner
+
+- **Refresh verification (2026-10-29):** verifyFast plus the targeted
+  FogChannelInventoryTest pass in 5m 17s; 1,631 core tests and the L2 inventory test
+  have zero failures/errors/skips. Roadmap: 245 cards / 0 problems; claims: 7 / 0.
+  The three roadmap-tool self-tests also pass. Initial sandbox attempts at those
+  self-tests could not access temporary directories; the run with cache/temp
+  permissions passed. No full verify, slow/soak, JMH or client acceptance is claimed
+  for this synchronization; the previous timing-gate failure is retained.
+
+- **2026-10-29 branch refresh:** integrated main dcb5013 (M5 #33 and claims #29)
+  without conflicts. Audited ShotFx/FxSender/NetGateway and updated the outbound
+  inventory for SEES_EITHER; M5 is no longer an unfinished dependency. Actual fog
+  filtering remains T9 after M6/M7. ProtectedBlockIndex and its timing test have no
+  changes between the previous main base and this one; the recorded full-gate
+  failure remains unresolved. T5/T6 completion and scope are unchanged. M7 branches
+  were excluded from this refresh at the owner's request.
 
 0. Blocking: choose a separate assigned claim for the protected-index measurement defect, or explicitly extend this M8 claim to its bounded correction. The isolated pass is not acceptance evidence for the failed full run; no threshold, retry policy or skipped gate is proposed.
 1. Claim #31 is merged. Maintainer records may reflect the bounded M8 opening; this developer session does not write STATE.md or merge its own work. No new permission is needed to resume assigned T2–T6.

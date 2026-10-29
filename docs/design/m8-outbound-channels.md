@@ -1,6 +1,6 @@
 # M8 outbound-channel audit
 
-Foundation inventory against main 3c1f430. Runtime senders are unchanged by this
+Foundation inventory refreshed against main dcb5013 on 2026-10-29, including M5. Runtime senders are unchanged by this
 claim. `FogAudience` is an independently tested decision contract, not an installed
 guard. No all-channel leak-freedom claim is made before T9's mock-player tests.
 
@@ -23,7 +23,7 @@ Audiences below are declarations, not proof that every field is fog-filtered.
 | `strategos:faction_state` | PLAYER | Replication: seat's own treasury/population/workers | Keep owner-scoped even when another faction's units are visible |
 | `strategos:building_state` | PLAYER | Replication: all live buildings; own-only queue/rally fields | Visible live buildings versus immutable remembered records; hidden destruction/capture cannot refresh ghosts |
 | `strategos:deposit_state` | PLAYER | Replication: live deposits and current amounts | Audit unseen depletion/location by cell; current all-deposit frame is not fog-safe |
-| `strategos:fx` | TRACKERS_OF, SEES_CELL, PLAYER | FxSender: unit hits/deaths to trackers, world effects grouped by 16-block pages; SeesCell currently sends to every member | Per-event cell/endpoints; page visibility alone cannot reveal hidden events elsewhere on the page |
+| `strategos:fx` | TRACKERS_OF, SEES_CELL, SEES_EITHER, PLAYER | FxSender: unit hits/deaths to trackers, world effects grouped by 16-block pages; ShotFx groups launch/impact endpoints; SeesCell and SeesEither currently send to every member | Per-event cell/endpoints; page visibility alone cannot reveal hidden events elsewhere on the page |
 | `strategos:match_event` | MATCH, FACTION | OutputAppliers: defeat/end and WAVE public, attack alerts to owner faction | Preserve public WAVE telegraph (M6 spec §1.6 row 17), owner alerts and match isolation; classify any new event fields |
 | `strategos:debug_feed` | PLAYER | DebugFeed: permission-gated operator subscription; global diagnostic state | Explicit privileged channel, never ordinary gameplay visibility; sanitize subscriptions on permission/role changes |
 
@@ -38,7 +38,7 @@ connection identity, rate limits and target validation remain independent gates.
 | Unit body pairing | UnitEntity.broadcastToPlayer; M6/M7 runtime absent | Authoritative unit visibility; stationary viewer, chunk arrival, hide/unpair and visible control |
 | Sounds | UnitEntity suppresses server positional playSound; FxSender plays unit FX on client | Tracker/cell audience, plus PlayLevelSoundEvent.AtEntity backstop when integrated; never rely on AtPosition to identify a unit |
 | Particles | FxSender world/attached effects; InspectCommands sends server debug path particles | Per-event visible source; permission to invoke a debug command does not authorize broadcasting its hidden path to nearby nonoperators |
-| Projectile FX | Combat-only runtime is still M5 work | Either endpoint visible, no unrelated target fields; hidden/visible source and destination controls |
+| Projectile FX | M5 ShotFx.events/group -> FxSender -> Audience.SeesEither; NetGateway currently broadcasts to match members | Either endpoint visible, no unrelated target fields; hidden/visible source and destination controls; page grouping alone is insufficient |
 | Health bars | unit_hud, no HP mirrored in vanilla synced body health | Current sight, not exploration or building memory; positive/negative HP update controls |
 | Selection details | unit_detail owns subscriptions | Connection ownership and current sight where enemy summaries are permitted; denied and valid request controls |
 | Map summaries | unit_summary, building_state, deposit_state | Separate current view, last-seen buildings and resource knowledge; no hidden live fallback |
@@ -66,7 +66,8 @@ authorizes only MIRAGE. SCOREBOARD_TEAM always denies. Public catalogue/lifecycl
 and the intentional WAVE telegraph are classified separately from hidden entity
 channels; owner-only faction state is not made public by sight.
 
-AFTER-M5: audit actual projectile and combat FX senders/endpoints.
+M5 projectile/combat sender audit completed on 2026-10-29. Runtime endpoint filtering
+still belongs to T9 and requires the M6/M7 visibility and recipient adapters.
 AFTER-M6: supply authoritative cell/unit views, update cache revocation, integrate
 memory and compare each field against solo fog/AI-18 behavior.
 AFTER-M7: classify viewer roles/sharing, protect commander/first-person bodies and

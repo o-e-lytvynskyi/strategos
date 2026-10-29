@@ -14,7 +14,8 @@ list, destroyed unseen buildings remain ghosts until scouted, and AI scouts star
 ### 1.1 Authority and prerequisites
 
 The five cards in [M8](../roadmap/M8-fog-of-war.md), ADR-0016 and the cumulative
-Definition of Done remain authoritative. Main has M0–M4 runtime. M6's merged
+Definition of Done remain authoritative. Main has M0–M5 runtime as of the 2026-10-29
+refresh to dcb5013; M5 was delivered in PR #33. M6's merged
 specification defines `sim.vision.VisionGrid`, `VisibilityIndex` and observed
 `AiView`; these implementations are not available on this base. Do not duplicate
 them. M7 supplies diplomacy, recipient roles, commander gates and PERF-10.
