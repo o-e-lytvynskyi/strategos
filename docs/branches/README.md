@@ -9,6 +9,10 @@ it into them and keeps it here as the record.
 
 The header's fields are read by `tools/claims.py`; keep their spelling. `Status` is one of
 `claimed`, `in progress`, `ready for review`, `merged <date>`, `released <date>`.
+`claims.py check` holds it to the registry row: `assigned` ↔ `claimed` or `in progress` (`ready
+for review` only on the hand-in pull request's own branch), `done` ↔ `merged <date>`, `released` ↔
+`released <date>`. A `ready for review` file anywhere else is a delivery merged without its records,
+and every later pull request to `main` stays red until they are written (issue #28).
 
 ## Template
 

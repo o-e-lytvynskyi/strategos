@@ -24,7 +24,9 @@ before any development starts, so two developers can never hold the same work (A
   order; the owner accepts outside claims by hand.
 - Live progress is in each branch file, not here; this table changes only at a claim, a release
   and a merge. An assignment-only merge leaves the work `assigned`; merge of the delivered
-  work changes it to `done`. Maintainers update the row in the delivery merge.
+  work changes it to `done`. Maintainers update the row in the delivery merge, together with the
+  branch file's `Status: merged <date>`; `tools/claims.py check` (the `records` gate) fails while
+  the two disagree.
 
 | Work | Developer | Branch | Status | Since | Note |
 |---|---|---|---|---|---|
@@ -35,3 +37,5 @@ before any development starts, so two developers can never hold the same work (A
 | M5 | o-e-lytvynskyi | dev/o-e-lytvynskyi/m5 | done | 2026-10-28 | takeover assignment merged in [PR #19](https://github.com/o-e-lytvynskyi/strategos/pull/19); combat delivered 2026-10-28 in [PR #33](https://github.com/o-e-lytvynskyi/strategos/pull/33) |
 | main-save-reload | lev1pes | dev/lev1pes/main-save-reload | assigned | 2026-10-27 | assignment merged in [PR #26](https://github.com/o-e-lytvynskyi/strategos/pull/26), not an implementation delivery; fixes #23, #24, #25; excludes fix-main and new M5 scope |
 | M8 T1–T6 | lev1pes | dev/lev1pes/m8-foundations | assigned | 2026-10-28 | owner requested M8 independent work in the operator session; assignment merged in [PR #31](https://github.com/o-e-lytvynskyi/strategos/pull/31), not an implementation delivery; specification and contract-tested foundations only; runtime M6/M7 integration and final M8 gates excluded until prerequisites merge |
+| M7 spec | lev1pes | dev/lev1pes/m7-spec | done | 2026-10-28 | specification merged 2026-10-28 in [PR #32](https://github.com/o-e-lytvynskyi/strategos/pull/32); planning only, requested by the owner; task/dependency matrix, multiplayer contracts and verification plan; no implementation claim or milestone opening |
+| claims-check | o-e-lytvynskyi | dev/o-e-lytvynskyi/claims-check | assigned | 2026-10-29 | issue #28: a records check that delivered work is not left assigned; owner's word in the maintainer session 2026-10-29 |

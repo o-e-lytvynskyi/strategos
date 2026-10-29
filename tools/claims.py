@@ -2,10 +2,13 @@
 """Who works on what: the claims registry docs/claims.md and the developer branches.
 
     python3 tools/claims.py [--fetch] list       the registry on origin/main, with each branch's last commit
-    python3 tools/claims.py check [--base <ref>] the registry in the working tree is valid: known statuses, no two
-                                                 active rows covering the same work; against <ref> (a claim pull
-                                                 request's base), work taken from another developer names their
-                                                 hand-over in its note
+    python3 tools/claims.py check [--base <ref>] [--head <branch>]
+                                                 the registry in the working tree is valid: known statuses, no two
+                                                 active rows covering the same work; each row agrees with its branch
+                                                 file's Status, and only <branch> (the pull request's head; default
+                                                 $GITHUB_HEAD_REF or the checked-out branch) may be "ready for
+                                                 review"; against <ref> (a claim pull request's base), work taken
+                                                 from another developer names their hand-over in its note
     python3 tools/claims.py [--fetch] owner      the "For the owner" sections of the active claims' branch files
     python3 tools/claims.py after [M<n>]         the AFTER-M<n> markers in the working tree, by the milestone they wait for
 
@@ -15,6 +18,7 @@ Work is written `M5` (every task of its spec), `M5 T1–T6` or `M5 T1, T3, T7` (
 """
 
 import datetime
+import os
 import re
 import subprocess
 import sys
@@ -28,6 +32,11 @@ STALE_DAYS = 7
 ROW = re.compile(r"^\| (?!Work |---)(.+?) \| (.+?) \| (.+?) \| (.+?) \| (.+?) \| (.*?) \|\s*$")
 TASK = re.compile(r"\[[ x]\] (T[0-9]+[0-9a-z.]*)")
 RANGE = re.compile(r"^(M\d+)\s+(T[0-9a-z.]+)\s*[–-]\s*(T[0-9a-z.]+)$")
+BRANCHES = "docs/branches"
+STATUS = re.compile(r"\*\*Status:\*\* ([a-z ]+?)(?= \d| ·|\s*$)", re.M)
+# The branch-file Status each registry status allows; "ready for review" only on the hand-in's own head.
+AGREES = {"reserved": ("claimed", "in progress"), "assigned": ("claimed", "in progress"),
+          "done": ("merged",), "released": ("released",)}
 LIST = re.compile(r"^(M\d+)\s+(T[0-9a-z.]+(?:\s*,\s*T[0-9a-z.]+)*)$")
 
 
@@ -92,7 +101,57 @@ def read_worktree(path):
     return (ROOT / path).read_text()
 
 
-def check(base):
+def branch_status(text):
+    """A branch file's Status without its date: `merged 2026-10-28` is `merged`."""
+    m = STATUS.search(text)
+    return m.group(1).strip() if m else None
+
+
+def branch_files():
+    return {p.name: p.read_text() for p in sorted((ROOT / BRANCHES).glob("*.md")) if p.name != "README.md"}
+
+
+def same_branch(row_branch, head):
+    """A fork's row names `<login>/strategos:dev/...`; its pull request's head is the `dev/...` part."""
+    return head is not None and (row_branch == head or row_branch.endswith(f":{head}"))
+
+
+def record_problems(registry, files, head):
+    """Rows and branch files that disagree: the trace of a delivery merged without its records (issue #28)."""
+    problems = []
+    by_branch = {}
+    for name, text in files.items():
+        m = re.search(r"\*\*Branch:\*\* `?([^`·\s]+)`?", text)
+        if m:
+            by_branch[m.group(1)] = (name, branch_status(text))
+    for branch, (name, status) in by_branch.items():
+        if status == "ready for review" and not same_branch(branch, head):
+            problems.append(f"{BRANCHES}/{name} is 'ready for review' on a branch other than the pull request's: "
+                            f"its delivery was merged without the records (Status 'merged <date>', row 'done')")
+    for r in registry:
+        found = by_branch.get(r["branch"])
+        if found is None:
+            if r["status"] == "assigned":
+                problems.append(f"'{r['work']}' ({r['developer']}): no branch file in {BRANCHES}/ names "
+                                f"**Branch:** {r['branch']}")
+            continue
+        name, status = found
+        allowed = AGREES.get(r["status"], ())
+        if status == "ready for review":
+            # Off the head, the loop above reported it; on the head, the hand-in's own row is still assigned.
+            if not same_branch(r["branch"], head) or r["status"] == "assigned":
+                continue
+        if status not in allowed:
+            problems.append(f"'{r['work']}' ({r['developer']}) is '{r['status']}' but {BRANCHES}/{name} says "
+                            f"'{status}' (expected {' or '.join(allowed)})")
+    return problems
+
+
+def current_branch():
+    return os.environ.get("GITHUB_HEAD_REF") or git("rev-parse", "--abbrev-ref", "HEAD").strip()
+
+
+def check(base, head=None):
     problems = []
     current = rows(read_worktree(REGISTRY))
     for r in current:
@@ -103,6 +162,7 @@ def check(base):
         for b in active[i + 1:]:
             if overlaps(a["work"], b["work"], read_worktree):
                 problems.append(f"'{a['work']}' ({a['developer']}) and '{b['work']}' ({b['developer']}) overlap")
+    problems += record_problems(current, branch_files(), head)
     if base:
         before = [r for r in rows(git("show", f"{base}:{REGISTRY}")) if r["status"] in ACTIVE]
         for r in active:
@@ -185,7 +245,8 @@ def main(argv):
     command = args[0] if args else "list"
     if command == "check":
         base = args[args.index("--base") + 1] if "--base" in args else None
-        return check(base)
+        head = args[args.index("--head") + 1] if "--head" in args else current_branch()
+        return check(base, head)
     if command == "after":
         cmd_after(args[1] if len(args) > 1 else None)
     elif command == "list":

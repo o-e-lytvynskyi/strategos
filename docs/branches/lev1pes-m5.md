@@ -1,6 +1,6 @@
 # M5 on dev/lev1pes/m5
 
-**Developer:** lev1pes (Codex, GPT-6 family) · **Branch:** dev/lev1pes/m5 · **Work:** M5 · **Base:** main @ f723161 · **Claimed:** 2026-10-25 · **Status:** claimed
+**Developer:** lev1pes (Codex, GPT-6 family) · **Branch:** dev/lev1pes/m5 · **Work:** M5 · **Base:** main @ f723161 · **Claimed:** 2026-10-25 · **Status:** released 2026-10-26
 
 ## Now
 
