@@ -402,7 +402,8 @@ briefly:
 2. **Review findings** arrive in the branch file's "Review" and in the pull request: fix them on
    the branch (`Mx Tn: review fix — <what>`), push, and say so in the pull request.
 3. **Release** a claim you stop: `Status: released <date>` and a log line on why in your branch
-   file, push; then a pull request to `main` carrying that branch-file change only (title
-   `Release: <work>`). Approving someone's takeover of your work is the same release, or a
+   file, push; then a pull request to `main` from a new branch cut from `origin/main`
+   (`dev/<developer>/<work>-release`) that changes only your branch file's header — `Status:
+   released <date>` and its `**Note:**` (title `Release: <work>`). Approving someone's takeover of your work is the same release, or a
    comment on their claim pull request saying so.
 4. **`Status: merged <date>`** is written by the maintainer at the merge.

@@ -50,3 +50,13 @@
 ## Pitfalls
 
 ## Review
+
+2026-10-29 · a delegated `reviewer` (Sonnet) before the hand-in; fixed in the second commit:
+- [major] the `ready for review` rule broke stacked branches (strategos-dev §12.1): now only a file
+  already `ready for review` on the base is flagged; a test pins both cases.
+- the hand-over is matched as a whole name in `**Note:**` only; active statuses take no trailing
+  text; backticks stripped from `Branch`; a base without docs/branches/ gives a message, not a
+  traceback; `list` no longer drops a claim with an unknown status; the release pull request is cut
+  from `origin/main`; CONTRIBUTING's last "claims row"; STATE's history sentence. 25 tests pass.
+- Not done (no regression, recorded): `Branch` vs `Developer` and file-name consistency, two files
+  naming one branch, staleness of a never-pushed branch in `list`.

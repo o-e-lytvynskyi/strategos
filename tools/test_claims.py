@@ -101,6 +101,16 @@ class CheckTest(unittest.TestCase):
     def test_the_hand_in_pull_request_itself_is_ready_for_review(self):
         self.assertEqual(problems({"a.md": branch_file("dev/a/m7-spec", "ready for review")}, head="dev/a/m7-spec"), [])
 
+    def test_a_stacked_branch_carries_an_unmerged_ready_file(self):
+        before = {"a.md": branch_file("dev/a/m5", "claimed", "M5 T1", "a")}
+        files = {"a.md": branch_file("dev/a/m5", "ready for review", "M5 T1", "a"),
+                 "b.md": branch_file("dev/a/m5-next", "claimed", "M5 T2", "a")}
+        self.assertEqual(problems(files, head="dev/a/m5-next", before=before), [])
+        self.assertEqual(len(problems(files, head="dev/a/m5-next", before=files)), 1)
+
+    def test_active_status_takes_no_trailing_text(self):
+        self.assertIn("unknown Status", problems({"a.md": branch_file("dev/a/w", "claimed because x")})[0])
+
     def test_a_fork_head_matches_its_claim(self):
         files = {"a.md": branch_file("someone/strategos:dev/a/w", "ready for review")}
         self.assertEqual(problems(files, head="dev/a/w"), [])
@@ -111,6 +121,10 @@ class CheckTest(unittest.TestCase):
                  "b.md": branch_file("dev/b/m5", "claimed", "M5", "b")}
         [p] = problems(taken, before=before)
         self.assertIn("handed over by a", p)
+        taken["b.md"] = branch_file("dev/b/m5", "claimed", "M5", "b", "**Note:** handed over by abc, #18\n")
+        self.assertEqual(len(problems(taken, before=before)), 1)
+        taken["b.md"] = branch_file("dev/b/m5", "claimed", "M5", "b", "\n## Log\n- handed over by a, #18\n")
+        self.assertEqual(len(problems(taken, before=before)), 1)
         taken["b.md"] = branch_file("dev/b/m5", "claimed", "M5", "b", "**Note:** handed over by a, #18\n")
         self.assertEqual(problems(taken, before=before), [])
 

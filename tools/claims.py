@@ -47,10 +47,10 @@ def parse(name, text):
     header = next((line for line in text.splitlines() if line.startswith("**Developer:**")), "")
     fields = {k: v.strip().strip("`") for k, v in FIELD.findall(header)}
     raw = fields.get("Status", "")
-    status = next((s for s in STATUSES if raw == s or raw.startswith(s + " ")), raw)
+    status = next((s for s in STATUSES if raw == s or (s in DATED and raw.startswith(s + " "))), raw)
     note = re.search(r"^\*\*Note:\*\* (.*)$", text, re.M)
     return {"file": name, "fields": fields, "developer": fields.get("Developer", "").split(" ")[0],
-            "branch": fields.get("Branch", "").split(" ")[0], "work": fields.get("Work", ""),
+            "branch": fields.get("Branch", "").split(" ")[0].strip("`"), "work": fields.get("Work", ""),
             "since": fields.get("Claimed", ""), "status": status, "raw_status": raw,
             "note": note.group(1).strip() if note else "", "text": text}
 
@@ -65,7 +65,10 @@ def files_in_worktree():
 
 
 def files_at(ref):
-    names = git("ls-tree", "--name-only", f"{ref}:{BRANCHES}").split()
+    try:
+        names = git("ls-tree", "--name-only", f"{ref}:{BRANCHES}").split()
+    except subprocess.CalledProcessError:
+        sys.exit(f"{ref} has no {BRANCHES}/ (an unknown ref, or one older than the branch files)")
     return {n: git("show", f"{ref}:{BRANCHES}/{n}") for n in names if n.endswith(".md")}
 
 
@@ -122,6 +125,7 @@ def same_branch(branch, head):
 def problems_of(current, before, head, read):
     """What is wrong with the claims `current`; `before` are the claims on the pull request's base, or None."""
     problems = []
+    ready_before = {o["file"] for o in before or [] if o["status"] == "ready for review"}
     for c in current:
         where = f"{BRANCHES}/{c['file']}"
         missing = [f for f in REQUIRED if not c["fields"].get(f)]
@@ -132,7 +136,10 @@ def problems_of(current, before, head, read):
             problems.append(f"{where}: unknown Status '{c['raw_status']}' (one of {', '.join(STATUSES)})")
         elif c["status"] in DATED and not re.fullmatch(rf"{c['status']} \d{{4}}-\d\d-\d\d", c["raw_status"]):
             problems.append(f"{where}: Status '{c['raw_status']}' needs its date ('{c['status']} <yyyy-mm-dd>')")
-        elif c["status"] == "ready for review" and not same_branch(c["branch"], head):
+        elif c["status"] == "ready for review" and not same_branch(c["branch"], head) \
+                and (before is None or c["file"] in ready_before):
+            # Ready on the base too: its delivery was merged without the records. A stacked branch carries the
+            # earlier branch's ready file; that is fine while the base does not have it ready.
             problems.append(f"{where} is 'ready for review' on a branch other than the pull request's: its delivery "
                             f"was merged without the records (Status 'merged <date>')")
     active = [c for c in current if c["status"] in ACTIVE]
@@ -144,9 +151,9 @@ def problems_of(current, before, head, read):
     for c in active:
         for old in (o for o in before or [] if o["status"] in ACTIVE):
             if old["developer"] != c["developer"] and overlaps(old["work"], c["work"], read) \
-                    and f"handed over by {old['developer']}" not in c["text"]:
+                    and not re.search(rf"handed over by {re.escape(old['developer'])}\b", c["note"]):
                 problems.append(f"'{c['work']}' ({c['file']}) takes work active for {old['developer']} on the base: "
-                                f"its file must say 'handed over by {old['developer']}' with a link to their approval")
+                                f"its **Note:** must say 'handed over by {old['developer']}' with a link to their approval")
     return problems
 
 
@@ -177,7 +184,7 @@ def cmd_list():
     old = str(datetime.date.today() - datetime.timedelta(days=30))
     for c in claims_on_main():
         done = c["raw_status"].split(" ")[-1] if c["status"] in DATED else ""
-        if c["status"] not in ACTIVE and done < old:
+        if c["status"] in DATED and done < old:
             continue
         date = last_commit(c["branch"]) if c["status"] in ACTIVE else None
         stale = ""

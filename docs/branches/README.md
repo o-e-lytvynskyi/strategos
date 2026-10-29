@@ -30,8 +30,8 @@ main](https://github.com/o-e-lytvynskyi/strategos/tree/main/docs/branches).
 - **`claims.py check`** (the `records` gate on every pull request touching this folder): the header
   fields `Developer`, `Branch`, `Work`, `Status` present and spelled as here; a known Status, dated
   where it must be; no two active claims covering the same work; a takeover names its hand-over; and
-  `ready for review` only on the pull request's own branch — such a file anywhere else is a delivery
-  merged without its records, and every later pull request stays red until the maintainer sets
+  `ready for review` only on the pull request's own branch or on a branch it stacks on — a file that is
+  already `ready for review` on `main` is a delivery merged without its records, and every later pull request stays red until the maintainer sets
   `merged <date>` (issue #28).
 
 ## Template

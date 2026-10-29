@@ -50,7 +50,7 @@ without AI agents, under one set of rules: [AGENTS.md](AGENTS.md).
 - **Collaborators** (write access, listed in people.md) work on `dev/<handle>/<work>` branches in
   this repository.
 - **Forks are equal to developer branches, at a lower priority.** Everyone can contribute from a
-  fork: the same claims, the same records, the same review. Your claims row names the branch as
+  fork: the same claims, the same records, the same review. Your branch file's `Branch` field names it as
   `<your-login>/strategos:dev/<handle>/<work>`. Lower priority means: when a collaborator's claim
   and yours compete for the same work, the collaborator's goes first; reviews take collaborators'
   hand-ins first; the owner accepts outside claims by hand and approves each CI run of a first

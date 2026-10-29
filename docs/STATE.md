@@ -282,7 +282,7 @@ Nothing.
   - the new way of working (word of 2026-10-25): rules are tool-neutral in [AGENTS.md](../AGENTS.md) (CLAUDE.md imports
     it; Codex reads it as is) and bind every developer equally, every developer is external, the owner's own sessions
     too, joining is in [onboarding.md](onboarding.md); assignment first, by pull request: a claim pull request adds the
-    developer's row to claims.md (since 2026-10-29: only the branch file, which is the claim) and is merged before any development
+    developer's row to claims.md and their branch file (replaced 2026-10-29: the branch file alone is the claim) and is merged before any development
     (`tools/claims.py check` refuses overlaps and takeovers without the holder's approval), work is built on
     `dev/<developer>/<work>` and handed in as a pull request with the milestone report, reviewed by another session
     with delegated workers (`strategos-maintain` §4) and merged on the owner's «влей»; claim and release pull requests
