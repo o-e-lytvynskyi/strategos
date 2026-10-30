@@ -1,16 +1,16 @@
 # main-save-reload on dev/lev1pes/main-save-reload
 
-**Developer:** lev1pes · **Branch:** dev/lev1pes/main-save-reload · **Work:** main-save-reload · **Base:** main @ b207e509a85a3303f515a716b04a87bc90ee2cb8 · **Claimed:** 2026-10-27 · **Status:** in progress
+**Developer:** lev1pes · **Branch:** dev/lev1pes/main-save-reload · **Work:** main-save-reload · **Base:** main @ e6ef880 (merged 2026-10-30) · **Claimed:** 2026-10-27 · **Status:** merged 2026-10-30
 
-**Note:** assignment merged in [PR #26](https://github.com/o-e-lytvynskyi/strategos/pull/26), not an implementation delivery; fixes #23, #24, #25; excludes fix-main and new M5 scope
+**Note:** delivered by [PR #30](https://github.com/o-e-lytvynskyi/strategos/pull/30); assignment merged in [PR #26](https://github.com/o-e-lytvynskyi/strategos/pull/26); fixes #23, #24, #25; excludes fix-main and new M5 scope
 
 ## Now
 
 - **Milestone:** bounded follow-up fixes for three independently reproduced bugs in existing main: [#23](https://github.com/o-e-lytvynskyi/strategos/issues/23), [#24](https://github.com/o-e-lytvynskyi/strategos/issues/24), [#25](https://github.com/o-e-lytvynskyi/strategos/issues/25).
-- **State:** review corrections implemented; verify and verifySoak pass. Full slow and performance gates remain unaccepted. Assignment merged by PR #26.
+- **State:** merged 2026-10-30 by PR #30 after the maintainer's fixes (see Review). Before that: review corrections implemented; verify and verifySoak pass. Full slow and performance gates remain unaccepted. Assignment merged by PR #26.
 - **Last finished task:** all code review items and nits implemented, with 2,274 passing tests in complete reports and a passing isolated map_fifty diagnostic. Full slow gate hits its 10-minute timeout on both candidate and unchanged control. Paired local JMH is red under excessive foreign CPU load; no green L6 result is claimed.
 - **Next task:** independent maintainer review and accepted full slow/L6 gates in a suitable environment. All review fixes and evidence are recorded; do not mark ready for review while those gates remain red/unaccepted.
-- **Merged from main last:** cc43715 via f91f212 (2026-10-29). Its claims-format and records updates are integrated; runtime/build sources remain identical to the verified review candidate.
+- **Current main base:** 134271f (2026-10-29), rebased at the owner request. Save/reload runtime and test changes are preserved; current main supplies the latest performance-validity and dependency updates. Previous slow/L6 results remain historical evidence.
 
 ## Depends on unfinished work
 
@@ -83,7 +83,7 @@
 - Added core coverage for template-backed nodes, kind changes, M4/M5 custom-index collisions
   and early M3 house/field ambiguity. Added L3 ENDED/FAULTED reload and publication-boundary
   fault regressions. The terminal-outcome save test now uses Outcome.save(); fixed fixture nits.
-- ADR-0026 owns the persistence/legacy policy and reload boundary; ADR-0012 and ADR-0018 point
+- ADR-0027 owns the persistence/legacy policy and reload boundary; ADR-0012 and ADR-0018 point
   to it. Architecture and the save/reload KB describe the compatibility limitation explicitly.
 - First edit-batch verifyFast passed in 3m10s; refined historical-prefix batch in 1m54s.
   `verify` passed, including all 233 normal L3 tests (74.940s), 73 journal replays,
@@ -118,9 +118,15 @@
   claims-tool unit tests pass. Runtime/build trees match 4eef24d, so the completed functional
   evidence and recorded red slow/JMH gates apply unchanged to this synchronization.
 
+### 2026-10-29 - Rebase onto current main
+
+- Owner requested rebasing this branch and then M8; only the two developer branches are updated. Main is unchanged.
+- Rebased onto 134271f; kept all M5 snapshot fields and save/reload bindings, both ADR decisions, and the assignment note. Renumbered the branch save-identity ADR to 0027 because main now owns 0026. Backup refs retain both original tips.
+- Fresh synchronization checks: verifyFast passes in 2m39s with 1,639 core tests; targeted MatchSnapshot L2 tests pass in 20s (7 tests). Both report sets have zero failures/errors/skips. Claims: 13/0; roadmap: 245/0; all 21 claims-tool tests pass. An initial formatter failure from CRLF after resolving the snapshot conflict was corrected to LF before the passing run. Runtime/test/build trees equal the independently calculated main-plus-old-branch merge result. No full slow/L6 gate was rerun or reclassified.
+
 ## For the owner
 
-### 2026-10-29 synchronization evidence
+### 2026-10-29 synchronization evidence (superseded by the rebase onto 134271f; its counts are of base dcb5013)
 
 - Fast-forwarded the local worktree to the maintainer review c9dd148, then merged
   origin/main dcb5013. The only source conflict was Snapshots.take; retained M5's
@@ -165,14 +171,14 @@
 - 2026-10-27 · Keep these related save/reload repairs in a dedicated claim — avoid overlap with the completed performance work in PR #21 and active M6 work — split the claim if review finds a dependency or ownership conflict.
 - 2026-10-27 · Use one agent and an isolated main checkout with temporary diagnostic probes; no client windows or production-code edits.
 
-- 2026-10-27 · Write schema 3 so older builds cannot ignore bindings and silently misread new saves. Migrate versions 1 and 2 without inventing identities, leaving all released fixtures unchanged. Legacy fixed built-in indices resolve through the seeded built-in table; ambiguous custom indices explicitly fault instead of guessing. The content hash does not cover index assignment. Undo by reverting the bindings changes; doing so loses safe custom-save identity.
+- 2026-10-27 · Write schema 3 so older builds cannot ignore bindings and silently misread new saves. Migrate versions 1 and 2 without inventing identities, leaving all released fixtures unchanged. ~~Legacy fixed built-in indices resolve through the seeded built-in table;~~ (superseded 2026-10-29: only the historical prefix 0..4 binds, see below and ADR-0027) ambiguous custom indices explicitly fault instead of guessing. The content hash does not cover index assignment. Undo by reverting the bindings changes; doing so loses safe custom-save identity.
 - 2026-10-27 · Use one agent and review the full diff locally; no delegates or client windows. Compare JMH against an unmodified same-host control in addition to keeping the approved Mac baseline untouched.
 
 - 2026-10-29 - Resolve review items 2-7 rather than waive them. Freeze legacy migration to
   the common historical prefix 0..4 after checking the earliest building/production history;
   reject ambiguous later builtins too, because custom-table identities cannot be proven.
   This intentionally narrows schema-1/2 compatibility. Undo by reverting the migration,
-  but doing so reopens silent identity corruption. Record this policy in ADR-0026.
+  but doing so reopens silent identity corruption. Record this policy in ADR-0027.
 - 2026-10-29 - Keep terminal matches on their original set and fault an invalidated published
   swap before advancing the affected match. Undo by reverting the adapter/server guards;
   doing so restores terminal reload vetoes and permits silent server/match divergence.
@@ -185,6 +191,27 @@
 - See [save/reload identities](../kb/save-reload-identities.md): content hash versus session table, every in-use reload reference, and terminal lifecycle after load.
 
 ## Review
+
+### Maintainer review fixes and verdict 2026-10-30 (head d64ebb7)
+
+On the owner's word («дофиксить», 2026-10-30) the maintainer applied the re-review's minors on the branch:
+`origin/main` e6ef880 merged (merge, not rebase; one conflict in docs/adr/README.md, both rows kept: 0026 Accepted,
+0027); `ContentTests` restores the bundled set in `finally` (`restoringBundled`) in the terminal and swap-race
+tests; `Migrations` imports `IntStream`; ADR-0027 "Consequences" records that a reload may drop an ENDED match's
+template, so its next restore quarantines it as FAULTED; this file: the superseded 2026-10-27 decision marked,
+`Base` refreshed, the stale synchronization counts labelled with their base.
+
+**The owner's answer (2026-10-30):** legacy M4-era saves with built-ins at indices 5..15 refusing to load is
+accepted; no further migrations are wanted.
+
+**Gates on d64ebb7 (local, macOS):** `verify` green in 1m30s (core 1,930 tests, mod 127, GameTests 233 + 1 batch,
+0 failures; `selftests.exhausted` fails by design); `verifySlow` green in 4m06s (19 required GameTests);
+`:core:soak --rerun` 200/200 seeds in 17s; `:core:jmh :core:jmhCompare` green, 25 benchmarks against
+perf/baseline-m4pro.json, worst 1.108 (`SpatialBench.rebuild1000`, its known bimodality, STATE item 13), then
+`MovementBench.step600` 1.099; no regression over 15 %. The perf GameTest batch was not run: nothing new runs per
+tick. `roadmap.py check` 245/0, `claims.py check` 14/0, no tool traces in commit messages.
+
+**Recommendation: merge.** Process note stands: e759435 was a force-pushed rebase; merge `origin/main` from now on.
 
 Assignment merged by PR #26; hand-in [PR #30](https://github.com/o-e-lytvynskyi/strategos/pull/30) remains open. Code review corrections are implemented; the current full slow and performance gates remain unaccepted. The branch stays in progress. Every approval and merge remains human.
 

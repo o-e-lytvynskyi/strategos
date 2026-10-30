@@ -36,6 +36,12 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Log
 
+### 2026-10-30 — operator resumed T2b and M7
+
+- The operator explicitly resumed T2b to completion and then available M7 work. The previous stop and its three failed slow attempts remain recorded; this resume starts a fresh investigation, not an unchanged retry.
+- Integrated main 8111c0a, including delivered PR #30 and accepted ADR-0026 part B. Resolved shared persistence conflicts by retaining schema-4 authority plus main's stable-template implementation, review cleanup in ContentTests and ADR-0027's ended-match consequence. No released fixtures changed.
+- Added a temporary opt-in matched slow job: current main 8111c0a and M7 on one runner, both built before measurement, then sequential unchanged ten-minute server gates. Both exit statuses and logs are preserved even if the first gate fails. This diagnoses server/harness timing before selecting a fix; new main's validity rules apply unchanged.
+
 ### 2026-10-30 — full cloud L6 passed, checkpoint and stop
 
 - [Standard perf 40972197958](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40972197958) on 33ecb12 passed in 1h 1m 55s. The server log explicitly confirms all 22 required tests passed; all 27 JMH configurations completed. The 21 scene reports contain 19 `pass` and two unchanged `report-only` verdicts (page capture/publication and viewer bytes), no failed/invalid report or CPU-counter validity reason. Nested report-only metrics retain their existing policy.

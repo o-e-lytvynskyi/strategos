@@ -34,8 +34,9 @@ governs.
 | [0023](0023-plan-alignment-after-roadmap-approval.md) | Plan alignment after the roadmap's approval; the roadmap governs the schedule | Accepted | 2026-10-21 | §1.5, §3.4, §5.5, §6.7, §7.5, §9.5, §10, §13.7 |
 | [0024](0024-canopy-thinning-by-the-vanilla-distance-rule.md) | Canopy thinning by vanilla's leaf-distance rule | Accepted; supersedes 0021's leaf rule | 2026-10-23 | §11 |
 | [0025](0025-commands-into-unexplored-cells.md) | Movement positions may be unexplored; placement, node targets and the observer still need explored cells | Proposed (M6 spec) | 2026-10-25 | §7 |
-| [0026](0026-perf-measurement-validity.md) | Perf-measurement validity: attribution before a fix, per-second cumulative foreign-load telemetry, proposed limits pending calibration | Proposed (#22) | 2026-10-29 | §16 |
+| [0026](0026-perf-measurement-validity.md) | Perf-measurement validity: attribution before a fix, per-second cumulative foreign-load telemetry, a run invalid above `min(10 %, 0.9/N)` foreign load (GameTest and JMH) | Accepted (#22) | 2026-10-30 | §16 |
 | [0027](0027-save-template-identities.md) | Stable save identities, conservative legacy migration and reload boundary validation | Accepted | 2026-10-29 | §5.8, §8.4 |
+
 | [0028](0028-diplomacy-authority-persistence.md) | Immutable diplomacy authority, schema-4 migration and journaled setup | Accepted (M7 foundation) | 2026-10-29 | §5, §7 |
 
 ## Pending measurements

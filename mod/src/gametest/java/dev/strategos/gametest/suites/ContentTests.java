@@ -174,16 +174,19 @@ public final class ContentTests {
                     List<TemplateProblem> problems = new ArrayList<>();
                     List<RawTemplate> raws = bundled(server, problems);
                     raws.removeIf(r -> r.id().equals(house));
-                    var outcome = server.loadTemplates(raws, problems);
-                    check(outcome.accepted(), "terminal match blocked reload: " + outcome.message());
-                    check(server.templates().set().byId(house) == null, "server retained the removed template");
-                    check(core(rt).queries().templates() == before, "terminal match's frozen set changed");
-                    check(core(rt).queries().buildings().getFirst().template().equals(house), "frozen queries failed");
-                    problems = new ArrayList<>();
-                    check(
-                            server.loadTemplates(bundled(server, problems), problems)
-                                    .accepted(),
-                            "restore bundled set");
+                    restoringBundled(server, () -> {
+                        var outcome = server.loadTemplates(raws, problems);
+                        check(outcome.accepted(), "terminal match blocked reload: " + outcome.message());
+                        check(server.templates().set().byId(house) == null, "server retained the removed template");
+                        check(core(rt).queries().templates() == before, "terminal match's frozen set changed");
+                        check(
+                                core(rt).queries()
+                                        .buildings()
+                                        .getFirst()
+                                        .template()
+                                        .equals(house),
+                                "frozen queries failed");
+                    });
                 })
                 .thenSucceed();
     }
@@ -203,31 +206,30 @@ public final class ContentTests {
                     List<TemplateProblem> problems = new ArrayList<>();
                     List<RawTemplate> raws = bundled(server, problems);
                     raws.removeIf(r -> r.id().equals(house));
-                    var outcome = server.loadTemplates(raws, problems);
-                    check(outcome.accepted(), "unused template removal was refused: " + outcome.message());
-                    var c = core(rt);
-                    long tick = c.queries().tick();
-                    // Inject the boundary race deterministically, before the adapter delivers its queued swap.
-                    c.step(new dev.strategos.core.sim.TickInputs(
-                            tick + 1,
-                            List.of(new dev.strategos.core.sim.CommandEnvelope(
-                                    PlayerSlot.ADMIN,
-                                    1000,
-                                    tick,
-                                    new dev.strategos.core.protocol.SpawnBuilding(
-                                            house, new FactionSlot(0), 4, 4, 0)))));
-                    check(c.queries().buildings().size() == 1, "race did not introduce the reference");
-                    long before = c.queries().tick();
-                    server.faults().run(rt, "published swap", () -> rt.tick(h.getLevel()));
-                    check(rt.lifecycle() == dev.strategos.core.sim.MatchLifecycle.FAULTED, "match kept running");
-                    check(c.queries().tick() == before, "invalid swap advanced simulation");
-                    check(rt.faultMessage() != null && rt.faultMessage().contains(house.value()), "fault omitted id");
-                    check(c.queries().buildings().getFirst().template().equals(house), "old state unusable");
-                    problems = new ArrayList<>();
-                    check(
-                            server.loadTemplates(bundled(server, problems), problems)
-                                    .accepted(),
-                            "restore bundled set");
+                    restoringBundled(server, () -> {
+                        var outcome = server.loadTemplates(raws, problems);
+                        check(outcome.accepted(), "unused template removal was refused: " + outcome.message());
+                        var c = core(rt);
+                        long tick = c.queries().tick();
+                        // Inject the boundary race deterministically, before the adapter delivers its queued swap.
+                        c.step(new dev.strategos.core.sim.TickInputs(
+                                tick + 1,
+                                List.of(new dev.strategos.core.sim.CommandEnvelope(
+                                        PlayerSlot.ADMIN,
+                                        1000,
+                                        tick,
+                                        new dev.strategos.core.protocol.SpawnBuilding(
+                                                house, new FactionSlot(0), 4, 4, 0)))));
+                        check(c.queries().buildings().size() == 1, "race did not introduce the reference");
+                        long before = c.queries().tick();
+                        server.faults().run(rt, "published swap", () -> rt.tick(h.getLevel()));
+                        check(rt.lifecycle() == dev.strategos.core.sim.MatchLifecycle.FAULTED, "match kept running");
+                        check(c.queries().tick() == before, "invalid swap advanced simulation");
+                        check(
+                                rt.faultMessage() != null && rt.faultMessage().contains(house.value()),
+                                "fault omitted id");
+                        check(c.queries().buildings().getFirst().template().equals(house), "old state unusable");
+                    });
                 })
                 .thenSucceed();
     }
@@ -331,6 +333,16 @@ public final class ContentTests {
     private static void stat(MatchRuntime rt, int handle, String path, double expected) {
         StatBreakdown b = core(rt).queries().stats(handle, path);
         check(b != null && b.result() == expected, "unit " + handle + " " + path + ": " + b + ", not " + expected);
+    }
+
+    /** Runs {@code body}, then loads the bundled set back even if it failed, so later batches keep every template. */
+    private static void restoringBundled(StrategosServer server, Runnable body) {
+        try {
+            body.run();
+        } finally {
+            List<TemplateProblem> problems = new ArrayList<>();
+            check(server.loadTemplates(bundled(server, problems), problems).accepted(), "restore bundled set");
+        }
     }
 
     /** The loaded data packs' templates, the bundled ones in a GameTest server, as a reload reads them. */
