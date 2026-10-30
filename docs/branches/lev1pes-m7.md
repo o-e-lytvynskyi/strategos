@@ -36,6 +36,11 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Log
 
+### 2026-10-30 — T3a test-first checkpoint
+
+- Published independent lobby-contract tests before MatchLobby exists: canonical detached configuration, player/member/faction bounds, shared-faction consistency, readiness invalidation/no-op updates, open seats/AI, and preparation/rollback. No network payload, player admission, match creation or asset choice is installed.
+- T3a starts after the accepted T2b checkpoint 9a8ab27. The expected initial cloud compilation failure establishes the missing API; implementation follows those contracts. Hosting is the owner's accepted D-20 choice; actual production start remains AFTER-M6 in T3b.
+
 ### 2026-10-30 — T2b accepted; advance to T3a
 
 - Standard L6 41048400982 passed in 59m 51s: all 22 required GameTests, 27 JMH configurations, 19 passing and two existing report-only scene reports, no invalid report. Foreign CPU mean windows were 0.002102–0.006453; idle ratio 0.270785/0.30, path D p99 0.825912 ms/6 ms, protected-lookup ratio 2.412562/3.0. Current accepted validity policy applies, no threshold or native reference changed.
