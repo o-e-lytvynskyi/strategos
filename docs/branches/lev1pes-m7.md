@@ -6,10 +6,10 @@
 
 ## Now
 
-- **Milestone:** M7 Multiplayer; 4 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md), based on planning PR #32; T3 is split before implementation into independent aggregate and production integration.
-- **In progress:** T3a independent lobby contract, tests first. No network admission or production match start is installed by this step.
-- **Last finished task:** T2b.1 prerequisite composition and T2b.2 persisted authority, accepted on 2026-10-30 after all required current components passed.
-- **Next task:** T3a immutable configuration/readiness/preparation rules; T3b production integration still needs M6 MATCH-02. D-20 is explicitly accepted.
+- **Milestone:** M7 Multiplayer; 5 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md), based on planning PR #32; T3 is split before implementation into independent aggregate and production integration.
+- **In progress:** none running; T2b and T3a are accepted. Whole M7 remains in progress; network admission and production start are not installed by the foundation.
+- **Last finished task:** T3a immutable lobby/readiness/preparation contract, accepted on 2026-10-30 after full cloud verify.
+- **Next task:** T3b production integration, blocked on delivered M6 MATCH-02. D-20 is explicitly accepted. Remaining tasks keep the specification's integration dependencies; no M6 work is taken over.
 - **Merged from main last:** 8111c0a (2026-10-30), zero commits behind at final T2b fetch. Verify, core slow/soak, matched server slow, paired JMH, standard cloud L6 and tooling smoke passed.
 
 The operator requested ownership of the whole M7 and work on what is currently possible on
@@ -35,6 +35,13 @@ before implementing them. T2 does not certify friendly-fire, allied victory, com
 or replication privacy; those retain their own integration tests and dependencies.
 
 ## Log
+
+### 2026-10-30 — T3a accepted; ready work exhausted
+
+- Cloud verify 41057526203 on 0f0ae4a passed in 9m 3s: 2,321 canonical cases, zero failures/errors/skips; all 12 MatchLobbyTest cases ran. The model uses no engine API or world mutation, adds no payload and touches no running simulation hot path; its exact L1 contract plus full verify is the required foundation evidence. Real mock-player admission/start/privacy and lobby L4 remain T3b/T4 gates.
+- Covers four-member acknowledgements of one configuration, stale-ack rejection, co-op field consistency, immutable canonical views, reset/no-op rules and preparation/rollback. AFTER-M6 marker in MatchLobby names real setup validation, atomic freezing and partial-world cleanup still needed in LobbyService. Added the lobby-readiness KB entry.
+- **T3a complete (5/28).** T3b requires M6 MATCH-02, which is still unmerged/assigned separately. T4/T5/T6/T8/T9 and later networking tasks follow that production/test-kit chain; T7 also needs M6 MATCH-03 and a safe frozen-damage provenance policy (new KB finding); AI/HUD/final performance need their M6 deliveries; art/floating-platform work retains the MVP/owner/date gates. No further implementation task in the current dependency matrix is ready.
+- **Stop:** strategos-dev §8, "nothing is ready". This is the missing runtime prerequisite, not a wait for assignment approval or D-20. All launched cloud runs are finished; the branch and draft PR remain the continuing M7 claim, with no main merge or whole-M7 acceptance implied.
 
 ### 2026-10-30 — T3a implementation after the missing-API checkpoint
 
@@ -255,6 +262,8 @@ or replication privacy; those retain their own integration tests and dependencie
 - 2026-10-29 · Start with independent core identity/diplomacy/grant foundations after readiness reconciliation — they can be tested without unmerged M6 runtime code — revisit the order when prerequisites merge.
 
 ## Pitfalls
+
+- Added [lobby readiness](../kb/lobby-readiness.md) and the unresolved [frozen damage provenance](../kb/frozen-damage-authority.md) finding for T7. No allied-damage runtime acceptance is inferred from that source audit.
 
 - Added [diplomacy restore](../kb/diplomacy-restore.md): current authority versus legacy fallback, immutable sharing, compatible live writers and hash preservation.
 

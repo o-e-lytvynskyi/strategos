@@ -442,7 +442,7 @@ reviewed implementation task between T17 and T18, keeping the acceptance depende
 - [x] T2a (2026-10-29) · Independent identity, diplomacy, grants and immutable snapshot contract.
 - [x] T2b.1 (2026-10-30) · Corrected delivered persistence prerequisite composition and required cloud gate components.
 - [x] T2b.2 (2026-10-30) · Match authority/setup, schema-4 persistence/hash and binary journal integration.
-- [ ] T3a · Bounded lobby state/readiness/preparation contract.
+- [x] T3a (2026-10-30) · Bounded lobby state/readiness/preparation contract; full cloud verify, 12 new contract tests.
 - [ ] T3b · Authenticated lobby service and production start.
 - [ ] T4 · Lobby UI.
 - [ ] T5 · Persistence and migration.
