@@ -156,7 +156,10 @@ class JmhGate {
         def problems = []
         slurper.parse(result).each { r ->
             def b = base[key(r)]
-            if (b != null) {
+            def invalid = environment(r)
+            if (invalid != null) {
+                problems << "${key(r)}: ${invalid}"   // a timing taken on a busy machine is neither a pass nor a regression
+            } else if (b != null) {
                 double now = r.primaryMetric.score as double
                 double was = b.primaryMetric.score as double
                 boolean lowerIsBetter = r.mode in ['avgt', 'sample', 'ss']
@@ -175,6 +178,21 @@ class JmhGate {
             }
         }
         problems
+    }
+
+    // ADR-0026 part B: the foreign-load telemetry of -prof ForeignLoadProfiler (fractions of the machine, per benchmark).
+    // Missing telemetry is invalid too: a result file always carries it, the baseline never does.
+    static String environment(def r) {
+        def sec = r.secondaryMetrics ?: [:]
+        def find = { String suffix -> sec.find { k, v -> k.endsWith(suffix) }?.value }
+        if (find('foreign.unavailable') != null) return 'invalid environment — foreign CPU load telemetry unavailable (ADR-0026); rerun on a quiet machine'
+        def mean = find('foreign.mean')
+        def limit = find('foreign.limit')
+        if (mean == null || limit == null) return 'invalid environment — foreign CPU load telemetry missing (ADR-0026); run JMH with the ForeignLoadProfiler'
+        double m = mean.score as double
+        double l = limit.score as double
+        if (m > l) return String.format('invalid environment — foreign CPU load %.2f %% above the limit %.2f %% (ADR-0026); rerun on a quiet machine', m * 100, l * 100)
+        null
     }
 
     // What jmhCompare reports: regressions, allocations and missing results (jmhSelftest checks this very call).
@@ -237,6 +255,10 @@ tasks.register('jmhSelftest') {
         if (!slow.any { it.contains('regression') }) throw new GradleException('The JMH gate no longer catches a 30 % slowdown')
         if (alloc.count { it.contains('allocates') } != 2) throw new GradleException('The JMH gate no longer catches an allocating @HotPath kernel, short and long: ' + alloc)
         if (!background.isEmpty()) throw new GradleException('The JMH gate takes JMH\'s own background for a kernel\'s allocation: ' + background)
+        def busy = JmhGate.all(new File(jmhSelftestDir, 'busy-result.json'), baseline, [])
+        if (!busy.any { it.contains('Selftest.op') && it.contains('invalid environment') && it.contains('above the limit') } || busy.any { it.contains('regression') }) throw new GradleException('The JMH gate no longer calls a run on a busy machine invalid, instead of a regression: ' + busy)
+        def untimed = JmhGate.problems(new File(jmhSelftestDir, 'untelemetered-result.json'), baseline, [])
+        if (!untimed.any { it.contains('invalid environment') && it.contains('missing') }) throw new GradleException('The JMH gate accepts a result without foreign-load telemetry: ' + untimed)
         def missing = JmhGate.all(new File(jmhSelftestDir, 'slow-result.json'), baseline, ['Selftest.kernel'])
         if (!missing.any { it.contains('Selftest.kernel') }) throw new GradleException('The JMH gate no longer catches a benchmark missing from the result: ' + missing)
     }

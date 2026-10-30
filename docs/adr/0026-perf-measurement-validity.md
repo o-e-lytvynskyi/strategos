@@ -4,9 +4,9 @@ Date: 2026-10-29
 
 ## Status
 
-Proposed; the direction approved by the owner on 2026-10-29 ([issue #22](https://github.com/o-e-lytvynskyi/strategos/issues/22)).
-Part 1 (attribution) and part 2 (telemetry) apply now. Part 3 (the limits) stays report-only until a calibration on
-the owner's Mac is recorded below and the owner approves its numbers; then it amends QA-07's validity rule.
+Accepted 2026-10-30 ([issue #22](https://github.com/o-e-lytvynskyi/strategos/issues/22)): the direction approved by
+the owner on 2026-10-29; part 3's limits adopted after calibration round 5, on the owner's word of 2026-10-30
+(«заканчивать эту задачу»). Part 3 amends QA-07's validity rule (the 25 % mean).
 
 ## Context
 
@@ -34,9 +34,15 @@ the owner's Mac is recorded below and the owner approves its numbers; then it am
    count, the window's exact mean, the p95 and peak of the one-second intervals, a preflight (the readings before
    the first window) and the reasons a run is or would be invalid. **Unavailable counters make a run invalid**,
    never zero.
-3. **Limits (proposed, report-only until calibrated).** Mean foreign load ≤ `min(10 %, 50 % / N)` and the p95
-   of one-second intervals ≤ `min(20 %, 100 % / N)` for N logical CPUs, after a preflight of at least 60 s. Until
-   approved, results carry `proposedValid` and its reasons; the gate stays QA-07's 25 % mean.
+3. **Limits.** A run is invalid when the mean foreign load over its window — judged over at least its last 60 s
+   of readings — exceeds `min(10 %, 0.9 / N)` for N logical CPUs (7.5 % on 12), when the 60 s preflight's mean
+   exceeds it, or when the counters are unavailable. The p95 of one-second intervals (`min(20 %, 100 % / N)`)
+   is reported, not enforced: no calibration separated it. JMH applies the same mean limit per benchmark (part 4).
+   (Proposed first as `min(10 %, 50 % / N)` with an enforced p95; the calibration below replaced both.)
+4. **JMH.** A JMH profiler (`ForeignLoadProfiler`, `-prof` next to `gc`) records each benchmark's foreign load over
+   its measurement iterations from the JDK's machine load (`getCpuLoad`, cumulative since its previous call) minus
+   the fork's own CPU time. `jmhCompare` reports a benchmark above the limit, or without the telemetry, as
+   `invalid environment` — never as a pass or a regression.
 
 ## Calibration (part 3's evidence)
 
@@ -124,6 +130,29 @@ least its last 60 s of readings (`MIN_SPAN_NANOS` from 10 s to 60 s), and enforc
 under 9.35 % in three rounds. Keep p95 report-only until a burst condition calibrates it; the 60 s preflight's mean
 under the same limit. Before enforcing: one more round with the 60 s span, and condition (c), a typical desktop, with
 the owner at the machine.
+
+### Round 5 — 2026-10-30, commit e3682ff, kept awake; the limit enforced, 60 s span, JMH included
+
+Each condition ran the GameTest perf batch (91 min) then `:core:jmh` and `jmhCompare` (8 min). (c) is
+`tools/desktop_load.py`: a browser (UI, a video tab, a page, mail), a chat client, a messenger, two editors and the
+window server, 0.31 of one core steady plus seeded bursts.
+
+| | (a) quiet | (b) one CPU busy | (c) simulated desktop |
+|---|---|---|---|
+| Preflight mean | 1.85 % | 9.23 % | 4.93 % |
+| GameTest window means (20 tests) | 1.18–5.91 % | 9.25–11.03 % | 4.25–5.14 % |
+| JMH benchmark means (27) | 0.58–4.05 % (median 0.99) | 9.10–10.10 % | 3.06–6.44 % (median 4.52) |
+| Verdict at `0.75 / N` (6.25 %) | all valid | all invalid, GameTest and JMH | GameTest valid; 1 of 27 JMH invalid (`ShotBench.volley60`, 6.44 %) |
+
+- With a 60 s span the quiet and busy conditions separate in both harnesses (5.91 % against 9.10 %); the 10 s span of
+  round 4 did not.
+- A typical desktop sits at 4–6.5 %, below a busy CPU by about one CPU's share. The limit adopted, `0.9 / N`
+  (7.5 % here), keeps (c) valid with 1 point to spare and rejects (b) with 1.6. Over rounds 1, 3, 4 and 5 a busy
+  CPU never read under 9.10 %.
+- Attribution, not validity: in (c) `mounted_cost` failed its ratio (1.77 against 1.2) because the *foot* phase ran
+  faster (555 µs p50 against about 1,000 µs in every quiet run), not because mounted units cost more (985 µs, as
+  quiet). The phases run one after the other, so a load that changes the CPU's speed between them skews the ratio;
+  interleaving them, as `idle_300` does since M5 T18, is a follow-up.
 
 ## Consequences
 

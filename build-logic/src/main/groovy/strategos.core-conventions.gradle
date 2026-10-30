@@ -35,6 +35,7 @@ tasks.register('jmh', JavaExec) {
     args providers.gradleProperty('jmh.include').getOrElse('.*'),
          '-wi', '3', '-w', '1s', '-i', '5', '-r', '1s',     // forks per class: @Fork(2); five for SpatialBench.rebuild1000
          '-prof', 'gc',                                    // gc.alloc.rate.norm for the @HotPath check (QA-07.4)
+         '-prof', 'dev.strategos.core.bench.ForeignLoadProfiler', // foreign.* CPU load per iteration (ADR-0026 part B)
          '-jvmArgsAppend', '-Xms1g -Xmx1g -XX:+UseG1GC',   // heap and GC pinned in every fork (QA-07)
          '-rf', 'json', '-rff', jmhResult.absolutePath
     outputs.file(jmhResult)
