@@ -30,7 +30,6 @@ import org.jspecify.annotations.Nullable;
  */
 final class PerfVerdicts {
     static final long MS = 1_000_000L;
-    static final double INVALID_FOREIGN_LOAD = 0.25;
 
     /**
      * The first-loop soak per unit on the M4 Pro ({@code perf/first-loop-m4pro.json}), the base both scenes' soaks
@@ -394,9 +393,10 @@ final class PerfVerdicts {
         /**
          * The shortest span the load is judged over. Mach ticks are sampled at 100 Hz while the process's CPU time is
          * exact, so a window of a few ticks gives nonsense (a 46 ms window read 56 % with one busy core of twelve,
-         * calibration (b)); a shorter window is judged by the sampler's readings just before it.
+         * calibration (b)); a shorter window is judged by the sampler's readings just before it, at least its last
+         * minute: 10 s spans overlapped quiet and busy stretches of a noisy machine (ADR-0026 round 4).
          */
-        private static final long MIN_SPAN_NANOS = 10_000_000_000L;
+        private static final long MIN_SPAN_NANOS = 60_000_000_000L;
         /** Wall-clock time beyond the monotonic clock that counts as sleep, above clock corrections. */
         private static final long SLEEP_TOLERANCE_MILLIS = 2_000;
 
@@ -496,10 +496,7 @@ final class PerfVerdicts {
         }
 
         private Assessment assessment() {
-            return load().assess(
-                            Runtime.getRuntime().availableProcessors(),
-                            INVALID_FOREIGN_LOAD,
-                            preflight().seconds());
+            return load().assess(Runtime.getRuntime().availableProcessors(), preflight());
         }
 
         /** The mean foreign load over the window (1 when it could not be measured). */
@@ -533,8 +530,7 @@ final class PerfVerdicts {
             json.addProperty("mean", load.mean());
             json.addProperty("p95", load.p95());
             json.addProperty("peak", load.peak());
-            json.addProperty("gateLimit", INVALID_FOREIGN_LOAD);
-            json.addProperty("proposedMeanLimit", ForeignLoad.proposedMeanLimit(cpus));
+            json.addProperty("gateLimit", ForeignLoad.meanLimit(cpus));
             json.addProperty("proposedBurstLimit", ForeignLoad.proposedBurstLimit(cpus));
             json.addProperty("proposedValid", a.proposedValid());
             JsonArray reasons = new JsonArray();
