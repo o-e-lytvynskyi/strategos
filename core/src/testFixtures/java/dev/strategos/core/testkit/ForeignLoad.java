@@ -140,11 +140,12 @@ public final class ForeignLoad {
     }
 
     /**
-     * Limit on the mean foreign load: at most 10 % of the machine, and at most three quarters of one logical CPU
-     * (adopted by ADR-0026 part B; 25 % let a machine with one CPU fully busy pass).
+     * Limit on the mean foreign load: at most 10 % of the machine, and at most 0.9 of one logical CPU (adopted by ADR-0026
+     * part B: 25 % let a machine with one CPU fully busy pass; round 5 put a typical desktop under 6.5 % and one busy
+     * CPU above 9 % on 12 CPUs).
      */
     public static double meanLimit(int cpus) {
-        return Math.min(0.10, 0.75 / cpus);
+        return Math.min(0.10, 0.9 / cpus);
     }
 
     /** Burst limit (report-only) on the p95 of one-second intervals: at most 20 %, and at most one logical CPU. */

@@ -102,13 +102,13 @@ class ForeignLoadTest {
 
     @Test
     void meanLimitBoundaryIsInclusive() {
-        // min(0.10, 0.75 / N): 10 % up to 7 CPUs, then three quarters of one CPU
+        // min(0.10, 0.9 / N): 10 % up to 9 CPUs, then 0.9 of one CPU
         assertThat(ForeignLoad.meanLimit(4)).isEqualTo(0.1);
-        assertThat(ForeignLoad.meanLimit(12)).isEqualTo(0.0625);
+        assertThat(ForeignLoad.meanLimit(12)).isEqualTo(0.075);
         assertThat(seconds(flat(90, 1_000)).assess(4, quiet(90)).gateInvalid()).isFalse();
         assertThat(seconds(flat(90, 1_001)).assess(4, quiet(90)).gateInvalid()).isTrue();
-        assertThat(seconds(flat(90, 625)).assess(12, quiet(90)).gateInvalid()).isFalse();
-        assertThat(seconds(flat(90, 626)).assess(12, quiet(90)).gateInvalid()).isTrue();
+        assertThat(seconds(flat(90, 750)).assess(12, quiet(90)).gateInvalid()).isFalse();
+        assertThat(seconds(flat(90, 751)).assess(12, quiet(90)).gateInvalid()).isTrue();
     }
 
     @Test
@@ -150,7 +150,7 @@ class ForeignLoadTest {
 
     @Test
     void gateLimitBoundaryIsInclusive() {
-        // one CPU: min(0.10, 0.75) = 10 %
+        // one CPU: min(0.10, 0.9) = 10 %
         assertThat(seconds(flat(10, 1_000)).assess(1, quiet(90)).gateInvalid()).isFalse();
         assertThat(seconds(flat(10, 1_001)).assess(1, quiet(90)).gateInvalid()).isTrue();
     }

@@ -86,7 +86,7 @@ Useful options:
 - `-Pperf.ciFactor=<f>` scales the perf GameTests' budgets (CI uses 3; 0.001 is the synthetic
   overload of T12), `-Pperf.gates=a,d,g` lists the gates that fail on a breach (the others only
   report; `d` joined at M1's close, after five runs of one commit varied by 4.7 % at p95, QA-07), and `-Pperf.fakeForeignLoad=<x>` replaces the measured foreign CPU load, so 0.3 shows an
-  `INVALID` run. A run is invalid (QA-07.3, ADR-0026 part B) when the foreign CPU load exceeds `min(10 %, 0.75/N)` of
+  `INVALID` run. A run is invalid (QA-07.3, ADR-0026 part B) when the foreign CPU load exceeds `min(10 %, 0.9/N)` of
   the machine (N logical CPUs), judged over at least the window's last 60 s, or the preflight's does, or the counters
   are unavailable; `:core:jmh` reports the same limit per benchmark (`foreign.mean`, `foreign.limit`) and
   `jmhCompare` fails an invalid benchmark as an invalid environment. Results go to `mod/build/reports/perf/`.
