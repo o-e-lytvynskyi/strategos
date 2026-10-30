@@ -4,6 +4,7 @@ import com.mojang.serialization.DataResult;
 import com.mojang.serialization.Dynamic;
 import dev.strategos.core.shared.CoreApi;
 import java.util.List;
+import java.util.stream.IntStream;
 import org.jspecify.annotations.Nullable;
 
 /** A chain of {@link MigrationStep}s, each from one version to the next, applied before decoding. */
@@ -66,7 +67,7 @@ public final class Migrations {
                     "strategos:building/civic_centre");
             return input.set(
                     "templateBindings",
-                    input.createList(java.util.stream.IntStream.range(0, original.size())
+                    input.createList(IntStream.range(0, original.size())
                             .mapToObj(index -> input.emptyMap()
                                     .set("index", input.createInt(index))
                                     .set("id", input.createString(original.get(index))))));

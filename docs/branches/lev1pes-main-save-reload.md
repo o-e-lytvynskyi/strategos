@@ -1,6 +1,6 @@
 # main-save-reload on dev/lev1pes/main-save-reload
 
-**Developer:** lev1pes · **Branch:** dev/lev1pes/main-save-reload · **Work:** main-save-reload · **Base:** main @ b207e509a85a3303f515a716b04a87bc90ee2cb8 · **Claimed:** 2026-10-27 · **Status:** in progress
+**Developer:** lev1pes · **Branch:** dev/lev1pes/main-save-reload · **Work:** main-save-reload · **Base:** main @ e6ef880 (merged 2026-10-30) · **Claimed:** 2026-10-27 · **Status:** in progress
 
 **Note:** assignment merged in [PR #26](https://github.com/o-e-lytvynskyi/strategos/pull/26), not an implementation delivery; fixes #23, #24, #25; excludes fix-main and new M5 scope
 
@@ -126,7 +126,7 @@
 
 ## For the owner
 
-### 2026-10-29 synchronization evidence
+### 2026-10-29 synchronization evidence (superseded by the rebase onto 134271f; its counts are of base dcb5013)
 
 - Fast-forwarded the local worktree to the maintainer review c9dd148, then merged
   origin/main dcb5013. The only source conflict was Snapshots.take; retained M5's
@@ -171,7 +171,7 @@
 - 2026-10-27 · Keep these related save/reload repairs in a dedicated claim — avoid overlap with the completed performance work in PR #21 and active M6 work — split the claim if review finds a dependency or ownership conflict.
 - 2026-10-27 · Use one agent and an isolated main checkout with temporary diagnostic probes; no client windows or production-code edits.
 
-- 2026-10-27 · Write schema 3 so older builds cannot ignore bindings and silently misread new saves. Migrate versions 1 and 2 without inventing identities, leaving all released fixtures unchanged. Legacy fixed built-in indices resolve through the seeded built-in table; ambiguous custom indices explicitly fault instead of guessing. The content hash does not cover index assignment. Undo by reverting the bindings changes; doing so loses safe custom-save identity.
+- 2026-10-27 · Write schema 3 so older builds cannot ignore bindings and silently misread new saves. Migrate versions 1 and 2 without inventing identities, leaving all released fixtures unchanged. ~~Legacy fixed built-in indices resolve through the seeded built-in table;~~ (superseded 2026-10-29: only the historical prefix 0..4 binds, see below and ADR-0027) ambiguous custom indices explicitly fault instead of guessing. The content hash does not cover index assignment. Undo by reverting the bindings changes; doing so loses safe custom-save identity.
 - 2026-10-27 · Use one agent and review the full diff locally; no delegates or client windows. Compare JMH against an unmodified same-host control in addition to keeping the approved Mac baseline untouched.
 
 - 2026-10-29 - Resolve review items 2-7 rather than waive them. Freeze legacy migration to

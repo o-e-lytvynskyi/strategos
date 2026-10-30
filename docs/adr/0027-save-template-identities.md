@@ -49,6 +49,10 @@ added builtins where older sessions could have assigned custom templates.
 - Migration bindings are fixed historical data, not a runtime lookup into `TemplateSet.builtin()`.
 - Terminal matches remain queryable with their original content. A boundary race stops only its
   affected match and leaves its fault report for diagnosis.
+- Reload validation skips ENDED matches, so a reload may drop a template that a persisted ended
+  match still references. The next restore of that save then fails the match's identity check and
+  quarantines it as FAULTED, losing its recorded result. Accepted while ended matches are kept
+  only for inspection; keeping their templates in the server set is the fix if results must survive.
 
 ## Alternatives considered
 
