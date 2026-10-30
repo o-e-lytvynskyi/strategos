@@ -20,13 +20,13 @@ governs.
 | [0009](0009-tick-pipeline-determinism-and-fault-containment.md) | Tick pipeline, determinism boundary and fault containment | Accepted; amended by 0023 | 2026-10-21 | §4, §5 |
 | [0010](0010-match-model-and-lifecycle.md) | A match is a region of a level; arenas live in an arena world | Accepted; amended by 0023 | 2026-10-21 | §3 |
 | [0011](0011-unit-entity-and-body-seam.md) | Units are kinematic `LivingEntity` views behind a body seam | Accepted 2026-10-23 (S1, S10) | 2026-10-21 | §6 |
-| [0012](0012-template-and-content-pipeline.md) | Templates load through a reload listener with core-side inheritance | Accepted; confirmed by S12 2026-10-23 | 2026-10-21 | §8 |
+| [0012](0012-template-and-content-pipeline.md) | Templates load through a reload listener with core-side inheritance | Accepted; confirmed by S12 2026-10-23; amended by 0027 | 2026-10-21 | §8 |
 | [0013](0013-modifier-pipeline.md) | The core modifier pipeline is the single source of every stat | Accepted | 2026-10-21 | §8 |
 | [0014](0014-orders-commands-and-unitai.md) | Typed commands, server-side validation, 0 A.D. order queues and a hierarchical UnitAI | Accepted; amended by 0023 | 2026-10-21 | §7 |
 | [0015](0015-pathfinding-approach.md) | Layered 2.5D surface grid, staged search, ORCA and deterministic job delivery | Accepted 2026-10-23, with spikes S7 and S8 | 2026-10-21 | §9 |
 | [0016](0016-networking-and-fog-of-war.md) | One fog-aware sender, vanilla tracking behind a gate, targeted re-tracking | Accepted; amended by 0023 | 2026-10-21 | §10, §12 |
 | [0017](0017-camera-and-input.md) | A spectator body at the camera eye, a cursor-owning screen, perspective projection | Accepted with S9 2026-10-23 | 2026-10-21 | §13 |
-| [0018](0018-persistence-and-versioning.md) | One versioned `SavedData` blob per match, codecs in core, quarantine on failure | Accepted | 2026-10-21 | §5 |
+| [0018](0018-persistence-and-versioning.md) | One versioned `SavedData` blob per match, codecs in core, quarantine on failure | Accepted; amended by 0027 | 2026-10-21 | §5 |
 | [0019](0019-performance-budgets.md) | Performance budgets A–G at 600 units, measured from M0 | Accepted (2026-10-22); F measured by S4 for bare humanoids, armoured with ART-01 | 2026-10-21 | §17 |
 | [0020](0020-engine-surface-inventory.md) | One reviewed inventory of every hook into Minecraft | Accepted | 2026-10-21 | §2 |
 | [0021](0021-economy-and-construction-model.md) | Hybrid world economy: real-block nodes, finite deposits and fields, abstract building HP | Accepted; leaf rule superseded by 0024 | 2026-10-21 | §11 |
@@ -35,6 +35,7 @@ governs.
 | [0024](0024-canopy-thinning-by-the-vanilla-distance-rule.md) | Canopy thinning by vanilla's leaf-distance rule | Accepted; supersedes 0021's leaf rule | 2026-10-23 | §11 |
 | [0025](0025-commands-into-unexplored-cells.md) | Movement positions may be unexplored; placement, node targets and the observer still need explored cells | Proposed (M6 spec) | 2026-10-25 | §7 |
 | [0026](0026-perf-measurement-validity.md) | Perf-measurement validity: attribution before a fix, per-second cumulative foreign-load telemetry, a run invalid above `min(10 %, 0.9/N)` foreign load (GameTest and JMH) | Accepted (#22) | 2026-10-30 | §16 |
+| [0027](0027-save-template-identities.md) | Stable save identities, conservative legacy migration and reload boundary validation | Accepted | 2026-10-29 | §5.8, §8.4 |
 
 ## Pending measurements
 

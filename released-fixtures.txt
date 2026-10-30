@@ -15,3 +15,7 @@ mod/src/gametest/resources/fixtures/corrupt/oversized_slots.nbt
 mod/src/gametest/resources/fixtures/corrupt/truncated.dat
 mod/src/gametest/resources/fixtures/corrupt/version_99.nbt
 mod/src/gametest/resources/fixtures/corrupt/wrong_types.nbt
+core/src/test/resources/fixtures/match_v3.json
+core/src/test/resources/fixtures/match_v3.expected.json
+mod/src/test/resources/fixtures/match_v3.nbt
+mod/src/test/resources/fixtures/match_v3.expected.json

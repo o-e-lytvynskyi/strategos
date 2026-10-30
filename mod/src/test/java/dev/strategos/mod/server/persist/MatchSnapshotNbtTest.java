@@ -34,6 +34,38 @@ import org.junit.jupiter.api.io.TempDir;
  */
 class MatchSnapshotNbtTest {
 
+    /** Session bindings must survive the real NBT codec used by MatchData, not only JsonOps (#25). */
+    @Test
+    void templateBindingsSurviveNbt() {
+        MatchSnapshot s = SimHarness.builder().build().core().snapshot();
+        var bindings = List.of(
+                new MatchSnapshot.TemplateBinding(31, new dev.strategos.core.shared.TemplateId("test:z_house")),
+                new MatchSnapshot.TemplateBinding(47, new dev.strategos.core.shared.TemplateId("test:z_unit")));
+        var snapshot = new MatchSnapshot(
+                s.config(),
+                s.tick(),
+                s.templateSetHash(),
+                s.slots(),
+                s.units(),
+                s.pendingCommands(),
+                s.pages(),
+                s.paths(),
+                s.nextGroup(),
+                s.treasury(),
+                s.terrainEdits(),
+                s.nodes(),
+                s.buildings(),
+                s.ledger(),
+                s.carried(),
+                s.play(),
+                bindings);
+        var tag = MatchSnapshotCodec.encode(NbtOps.INSTANCE, snapshot);
+        var decoded = MatchSnapshotCodec.decode(NbtBridge.dynamic(tag), Migrations.production())
+                .getOrThrow();
+        assertThat(decoded.templateBindings()).containsExactlyElementsOf(bindings);
+        assertThat(decoded).isEqualTo(snapshot);
+    }
+
     @Test
     void aFiveHundredUnitSnapshotSurvivesNbtOnDisk(@TempDir Path dir) throws IOException {
         SimHarness h = SimHarness.builder().size(64, 64).build();

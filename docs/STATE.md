@@ -4,7 +4,7 @@ The project-wide picture, kept by the maintainer and updated at merges. Who work
 (`python3 tools/claims.py list`); live progress is in each developer's branch file ([branches/](branches/)). The session
 log is in [worklog.md](worklog.md); the work procedure is the `strategos-dev` skill (`.claude/skills/strategos-dev/SKILL.md`).
 
-**Last update:** 2026-10-29 · **Owner last seen:** 2026-10-29 · **Milestones done:** M0–M5 (M0 accepted) · **Open for claims:** none
+**Last update:** 2026-10-30 · **Owner last seen:** 2026-10-30 · **Milestones done:** M0–M5 (M0 accepted) · **Open for claims:** none
 
 ## For the owner
 
@@ -85,7 +85,9 @@ Items 11–22 come from the M5 branch file's "For the owner" 3–14; references 
 
 ## Since the owner's last visit
 
-Nothing yet: the owner was here on 2026-10-29.
+Nothing yet: the owner was here on 2026-10-30.
+
+- 2026-10-30 · save/reload repairs (#23, #24, #25) by `lev1pes` merged by [PR #30](https://github.com/o-e-lytvynskyi/strategos/pull/30): schema-3 saves bind template identities ([ADR-0027](adr/0027-save-template-identities.md)), reloads are validated against every live match, a swap invalidated after publication faults its match; legacy saves with built-ins past index 4 refuse to load (accepted by the owner, no further migrations).
 
 ## Milestones
 
@@ -95,7 +97,7 @@ Nothing yet: the owner was here on 2026-10-29.
 | M1 Movement | Done 2026-10-23 | the owner's sessions (`o-e-lytvynskyi`) | [M1](milestones/M1-movement.md) | Started 2026-10-22 on the owner's go-ahead; 29 tasks (T28, PATH-08, joined by its R3 trigger in T8; T29 by the owner's word); Accepted waits for the L7 demo (item 5) |
 | M2 Command | Done 2026-10-23 | the owner's sessions (`o-e-lytvynskyi`) | [M2](milestones/M2-command.md) | Started 2026-10-23 at the owner's word; 23 tasks; `pose_high` settled in M3 T30; Accepted waits for the L7 demo (item 4) |
 | M3 First loop | Done 2026-10-24 | the owner's sessions (`o-e-lytvynskyi`) | [M3](milestones/M3-first-loop.md) | Started 2026-10-23 at the owner's word; 31 tasks; Accepted waits for the L7 demo (item 7) |
-| M4 Economy and construction | Done 2026-10-24 | the owner's sessions (`o-e-lytvynskyi`) | [M4](milestones/M4-economy-and-construction.md) | Started 2026-10-24 as M3 closed; 24 tasks, closed by T28 (2026-10-24: Results written, [§8.1](milestones/M4-economy-and-construction.md); the health check's follow-ups are M5's first tasks); Accepted waits for the L7 demo (item 9); item 8 asks your word on the perf base |
+| M4 Economy and construction | Done 2026-10-24 | the owner's sessions (`o-e-lytvynskyi`) | [M4](milestones/M4-economy-and-construction.md) | Started 2026-10-24 as M3 closed; 24 tasks, closed by T28 (2026-10-24: Results written, [§8.1](milestones/M4-economy-and-construction.md); the health check's follow-ups are M5's first tasks); Accepted waits for the L7 demo (item 9); item 8 asks your word on the perf base; save/reload repairs by `lev1pes` merged 2026-10-30 (PR #30) |
 | M5 Combat | Done 2026-10-28 | the owner's sessions (`o-e-lytvynskyi`) | [M5](milestones/M5-combat.md) | 24 tasks; merged by [PR #33](https://github.com/o-e-lytvynskyi/strategos/pull/33) without a separate maintainer review; the owner closed it 2026-10-29; Accepted waits for the L7 playtest (item 22) |
 | M6 (MVP) | approved | — | — | Its spec is written when M5 closes |
 | M7–M15 | proposed | — | — | Approved by the owner closer to their time |
@@ -121,6 +123,9 @@ Decisions taken on a recommendation and merged into `main` (from the branch file
 branch), and the maintainer's own: what, why, how to undo. The owner vetoes by answering here; a veto becomes a
 `fix-…` claim. The list is cleared once the owner has seen it.
 
+- (dev/lev1pes/main-save-reload) 2026-10-27 · Saves are written as schema 3 so older builds cannot misread new saves; versions 1 and 2 migrate without invented identities; released fixtures unchanged. Undo by reverting the bindings; that loses safe custom-save identity.
+- (dev/lev1pes/main-save-reload) 2026-10-29 · Legacy migration binds only the historical built-in prefix 0..4; any other legacy index is refused as ambiguous (ADR-0027). The owner accepted it 2026-10-30. Undo by reverting the migration; that reopens silent identity corruption.
+- (dev/lev1pes/main-save-reload) 2026-10-29 · Terminal matches keep their original set and do not block reloads; a published swap invalidated before delivery faults its match. Undo by reverting the adapter/server guards.
 - (dev/o-e-lytvynskyi/m5) 2026-10-28 · The large-class grid is built lazily (see the log); behaviour-neutral by test against an eager grid. Undo by publishing eagerly in MatchTerrain.publishAll.
 - (dev/o-e-lytvynskyi/m5) 2026-10-28 · JMH forks per benchmark class (owner's choice, For the owner 5 (b)). Undo by restoring `-f 2` in build-logic's jmh task.
 - (dev/o-e-lytvynskyi/m5) 2026-10-28 · Golden images taken after looking at each frame (AGENTS.md "a golden image you checked"): `m5_goldens` (macos, macos-sodium) and `art_look`'s `look_m5_24`/`look_m5_64`, with masks on `rider_high`'s two horizon corners and one spot of `volley_impact`, and a 0.01 threshold on `ford_battle` (a live bot battle). Undo by deleting mod/src/devtools/goldens/*/m5_goldens and the two look_m5 frames, or tightening goldens.json.

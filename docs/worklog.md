@@ -9,6 +9,117 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
+## 2026-10-30 — main-save-reload: maintainer fixes and merge (dev/lev1pes/main-save-reload)
+
+- On the owner's word, the maintainer merged `origin/main` e6ef880 into the branch and applied the re-review's minors (bundled set restored in `finally` in two GameTests, an import, ADR-0027's ended-match consequence, branch-file records).
+- Gates on d64ebb7: `verify` (core 1,930, mod 127, GameTests 233 + 1 batch), `verifySlow` (19), soak 200/200, JMH 25 benchmarks worst 1.108; all green.
+- The owner accepted that legacy M4 saves with built-ins at indices 5..15 refuse to load; no further migrations.
+
+## 2026-10-29 — main-save-reload: Rebase onto current main (dev/lev1pes/main-save-reload)
+
+- Owner requested rebasing this branch and then M8; only the two developer branches are updated. Main is unchanged.
+- Rebased onto 134271f; kept all M5 snapshot fields and save/reload bindings, both ADR decisions, and the assignment note. Renumbered the branch save-identity ADR to 0027 because main now owns 0026. Backup refs retain both original tips.
+- Fresh synchronization checks: verifyFast passes in 2m39s with 1,639 core tests; targeted MatchSnapshot L2 tests pass in 20s (7 tests). Both report sets have zero failures/errors/skips. Claims: 13/0; roadmap: 245/0; all 21 claims-tool tests pass. An initial formatter failure from CRLF after resolving the snapshot conflict was corrected to LF before the passing run. Runtime/test/build trees equal the independently calculated main-plus-old-branch merge result. No full slow/L6 gate was rerun or reclassified.
+
+## 2026-10-29 — main-save-reload: PR #30 review corrections (dev/lev1pes/main-save-reload)
+
+- Integrated main 45c97ee in 8d4bdc3. Baseline verifyFast passed (up-to-date tasks).
+- New regressions first failed for legacy remapping and schema-3 saves without bindings.
+  Historical inspection also found early M3 house index 5 later became the field (47d7cbf,
+  1a2f675 versus the later built-in table). Migration now supplies only the common reserved
+  prefix 0..4; all later building/queue references fail explicitly. Re-saving migrated data
+  keeps those conservative bindings instead of re-enabling implicit legacy resolution.
+- Schema-3 decoding refuses live buildings without bindings. Runtime restore always resolves
+  bindings; it never infers a legacy table from an empty list or a content hash.
+- Server reload excludes terminal matches from both validation and queued swaps, preserving
+  their frozen queryable set. The adapter rechecks a published swap before advancing the
+  simulation; an invalidated swap throws through the existing match fault barrier.
+- Added core coverage for template-backed nodes, kind changes, M4/M5 custom-index collisions
+  and early M3 house/field ambiguity. Added L3 ENDED/FAULTED reload and publication-boundary
+  fault regressions. The terminal-outcome save test now uses Outcome.save(); fixed fixture nits.
+- ADR-0027 owns the persistence/legacy policy and reload boundary; ADR-0012 and ADR-0018 point
+  to it. Architecture and the save/reload KB describe the compatibility limitation explicitly.
+- First edit-batch verifyFast passed in 3m10s; refined historical-prefix batch in 1m54s.
+  `verify` passed, including all 233 normal L3 tests (74.940s), 73 journal replays,
+  200 soak seeds, 111 L2 tests, 12 mod architecture tests and 4 smoke tests. All 1,625
+  normal and 16 slow core tests pass; complete reports total 2,274 tests with no failures,
+  errors or skips. The combined `verify verifySlow verifySoak` invocation stopped after
+  21m34s: runGameTestSlow hit its unchanged 10-minute task timeout, with 18/19 scenarios
+  complete and map_fifty still running. No assertion failure or final slow XML exists;
+  this is a failed/incomplete slow gate, not a passing functional aggregate.
+- The unchanged control at 8d4bdc3 also hits the same 10-minute runGameTestSlow timeout
+  (whole build 10m13s). Its worktree stays clean; all 55 navigation classes and MatchCore
+  are byte-identical to the candidate. This establishes that the timeout also occurs without
+  the review fixes; it does not turn either failed gate green or prove a particular CPU cause.
+  The isolated map_fifty diagnostic passes: 1/1 required test, 19.142s reported L3 time,
+  whole invocation 38s; verifySoak is confirmed (the same 200-seed result). That filtered
+  diagnostic does not replace the failed full slow gate. No timeout, threshold, fixture
+  or baseline changes.
+- Paired local JMH completed: 27/27 configurations match, all 131 benchmark classes are
+  byte-identical, seven breaches above 1.15 (maximum 1.382045), no allocation breaches.
+  Candidate weighted foreign CPU is 28.000%, versus control 17.144%; neither a clean L6
+  result nor a production regression is established. Full evidence and raw hashes are in
+  [performance evidence](../testing/main-save-reload-perf.md). No further unchanged retry.
+- During verification main advanced to cc43715: records for #36 were repaired in #37;
+  #39/#40 move claims into branch-file headers. No runtime/build sources changed. Integrate
+  those maintainer-owned changes rather than editing another developer's records.
+- Main cc43715 is now merged via f91f212; verifyFast passes in 3s (no source rebuild).
+  Run the new claims checker with Python UTF-8 mode on Windows: the default cp1251
+  decoder misreads the UTF-8 header delimiters. Move the auxiliary performance report
+  to docs/testing/main-save-reload-perf.md, since docs/branches now contains claims only.
+  Every link in this branch record is updated; report content and raw evidence are retained.
+- Post-merge records checks pass: 12 claims, 245 roadmap cards, zero problems; all 21
+  claims-tool unit tests pass. Runtime/build trees match 4eef24d, so the completed functional
+  evidence and recorded red slow/JMH gates apply unchanged to this synchronization.
+
+## 2026-10-28 — main-save-reload: hand-in report (dev/lev1pes/main-save-reload)
+
+- **Built:** #23 keeps ENDED across restore and rejects resume/commands; #24 shares complete in-use template validation before server publication/core swap; #25 resolves saved building/production references by stable IDs across session index changes.
+- **Gates:** verifyFast 2m 18s; verify/slow/soak 19m 16s, 1,936 tests with no failures/errors/skips. Independent cloud paired JMH [40595834693](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40595834693): all 21 configurations and unchanged 15%/allocation gates pass, maximum ratio 1.095538; each measurement 6m 16s. Standard cloud [40594606609](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40594606609): all 18 required GameTests pass in 37.67m, whole build 45m 59s. All raw reports and verdicts inspected. This is Linux CI evidence, not native Mac-budget validation. L4 is not required for these persistence/reload fixes.
+- **Deviations:** schema 3 protects against silent downgrade; legacy fixed built-ins remain supported, ambiguous custom indices explicitly fail. Released fixtures unchanged; new JSON/NBT fixtures pin buildings, queued products, progress and bindings.
+- **Decisions taken:** share the reload seam and conservatively remap before reading templates. Reverting implementation removes the repairs/schema-3 support. Use trusted pristine bb800d0 as the same-runner comparison input, without promoting a baseline; retain every earlier failure. Remove the one-off paired workflow from the final diff after successful validation; its exact version remains at 8e98d8b.
+- **For the owner:** independent maintainer review/human merge and the serial Windows verify-duration decision below. No gate or limit is weakened.
+- **Links:** [hand-in PR #30](https://github.com/o-e-lytvynskyi/strategos/pull/30), this branch record and [performance evidence](../testing/main-save-reload-perf.md). Main was freshly fetched and remains bb800d0, already merged here; core/mod/build-logic trees are identical to the verified candidate.
+
+## 2026-10-28 — main-save-reload: cloud verification requested (dev/lev1pes/main-save-reload)
+
+- The owner requested cloud tests and continuation of the assigned work. Standard perf run 40594606609 targets f9f9846 and is still running. It checks JMH speed ratios and server budgets, but deliberately does not run jmhCompare.
+- Add an opt-in paired-JMH mode to the existing workflow_dispatch route, without opening an unfinished hand-in PR. The control is the trusted pre-repair main bb800d0; both versions run on one Ubuntu runner with the same JDK, heap, forks and iterations. All 21 benchmark keys and configurations must match before the existing comparison runs.
+- Workflow validation: YAML parse, all pinned action hashes, read-only token permissions, Bash syntax of every run block, embedded Python syntax and roadmap checks pass. Production/test sources and benchmark settings are unchanged, so the completed 1,936-test functional evidence is retained. No new local Gradle run is started.
+- No new approved baseline, raised limit or skipped gate. Cloud outcome and artifacts must be inspected before declaring this claim ready.
+- First paired workflow run 40595484377 stopped before measurement because the preparation step used jmhJar, which this plugin-free harness does not define. Inspect the actual source-set convention and replace that preparation with jmhClasses; no benchmark result was produced or discarded. Preserve the failed run and logs. This is a workflow repair, not another unchanged performance retry.
+- Corrected paired run [40595834693](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40595834693) passed. Pin pristine bb800d0 and candidate 8e98d8b on the same Ubuntu four-vCPU EPYC 9V74 runner, Temurin 21.0.12.1+1. Both full JMH measurements took 6m 16s; all 21 configurations match, the unchanged jmhCompare gate and allocation checks pass. Maximum ratio 1.095538; SnapshotCodec 1.006691. All raw scores, hashes, CPU context and prior failures are in [performance evidence](../testing/main-save-reload-perf.md). Standard perf remains pending.
+
+## 2026-10-27 — main-save-reload: implementation and regressions (dev/lev1pes/main-save-reload)
+
+- #23: permanent isolated L3 regression failed with `ended match restored as PAUSED`. Restore now preserves an ENDED record or a terminal saved outcome. Regressions also cover an older PAUSED record and rejection of resume/commands.
+- #24: permanent L1 regression failed when a live building lost its template. One shared guard now checks units, buildings, every queued product and template-backed resource nodes before either server publication or core INGEST. L3 checks that a refused building reload preserves both set and id table.
+- #25: permanent L1 regression failed by restoring a custom house as a newly inserted custom id. Snapshots now carry optional index-to-stable-id bindings; restore validates/remaps buildings and production queues before footprint/stat/production reads. Tests cover JSON and NBT, queue batches/progress, missing templates and legacy policy.
+- Initial baseline verification was invalidated by overlapping Gradle invocations; its results are not evidence. Subsequent early edit checks exposed the core API boundary and forbidden hash collections, both corrected. Source edits during compilation also invalidated one compiler run; final gates run serially with separate logs and no source edits.
+- Serial verifyFast passed in 2m 21s with no new compiler warnings. The first full run stopped at the solo-batch guard: the new building reload test shared a batch with an existing solo case. Give it its own batch; no guard is weakened.
+- Diff review also exposed a downgrade hazard in the initial additive-schema proposal: old builds would ignore bindings. Write schema 3 and test the conservative 2-to-3 migration and rejection by schema-2 readers.
+- Schema-3 JSON/NBT fixtures were generated once and pass their recorded hash checks (two civic centres, two queued workers, 16 bindings). Versions 1 and 2 fixtures remain unchanged. The current schema-3 `verifyFast` passes in 2m 18s.
+- The full main verification stage passed in about 9m 10s with one Gradle worker (215 normal L3 tests); slow/soak are still running. Record the final aggregate and exact total before hand-in.
+- Reuse the accepted full same-host JMH result from 2026-10-27 01:40 local as control: 21 benchmarks, SHA-256 `4658f73d256e5f99d47627a13070f3df5fabda4edd53692396ee387496210614`, identical to `build/fix-main-final-jmh.json` and the original checkout's full result. Between f25e2c9 and bb800d0 only docs changed; runtime, benchmark and build sources are identical. Freeze a copy under `build/save-reload-control-jmh.json`; run the changed candidate against it. This is diagnostic same-host evidence, not an approved replacement for the Mac baseline.
+- Final functional aggregate: `verify verifySlow verifySoak` passed in 19m 16s; 1,936 tests, zero failures/errors/skips (L1 1,319; slow L1 3; soak 200; journal replays 73; L2 97; mod ArchUnit 12; normal L3 215; slow L3 13; smoke 4). Normal L3 passed in about 79s; slow L3 in 487.235s.
+- First full candidate JMH against the historical accepted control: RED, 6m 51s. All 21 benchmarks and matching JVM/arguments are present; six scores exceed 1.15, maximum 1.238304 (`SnapshotCodecBench.encode500`). Unchanged NodeDiscovery/Idle/Crossing kernels also slow by 15–23%. Preserve the raw candidate as `build/save-reload-first-jmh.json` and its complete comparison summary; do not treat this as a passing or invalid run.
+- Next diagnostic: one fresh full JMH measurement of unmodified bb800d0 in isolated detached worktree `build/save-reload-control`, under current conditions, to separate source changes from drift in the historical control. Do not rerun the candidate until green, pause applications, weaken thresholds or replace approved baselines.
+- Fresh pristine control: 21 benchmarks, 6m 41s. The unchanged candidate still fails comparison: TemplateCompile, TerrainEdit and four Crossing cases, maximum candidate/control 1.330130. SnapshotCodec is instead below this fresh control. Every JMH class is byte-identical, all 54 navigation classes are byte-identical, and shared fixture classes differ only in the unused schema-3 fixture helper. JVM, arguments, benchmark configuration and parameter sets match. This is not a passing gate and no specific foreign-CPU cause is established.
+- One bounded confirmatory candidate run is planned with same-window Windows system/Java CPU telemetry, using the same 1.15 gate and fresh control. Retain every earlier failure. No further candidate retry in this session if it remains red; document and hand off unresolved measurement validity instead of weakening checks. The diagnostic monitor is local under ignored build output and changes no production or CI gate.
+- Confirmatory candidate: RED, two Crossing breaches, maximum 1.253488, 6m 33s. CPU telemetry: 395 windows, zero errors, foreign busy mean 11.035%, peak 68.010%, 64 windows above 25%. This does not establish a particular cause or a production regression. All raw results are retained.
+- Stop under strategos-dev section 8 after three failed verification comparisons. No more perf retries in this session; no threshold or approved baseline changes; no applications paused/closed. The code is saved as WIP and no hand-in PR is opened.
+- Full score table, controls, binary/workload checks, CPU context and raw hashes: [local JMH evidence](../testing/main-save-reload-perf.md).
+
+## 2026-10-27 — main-save-reload: audit and assignment request (dev/lev1pes/main-save-reload)
+
+- Baseline: isolated, unmodified main `verifyFast` passed in 1m 57s (34 actionable tasks).
+- **#23 (P2):** one isolated L3 GameTest ended a persistent match, verified its record was ENDED, saved/unloaded/restored it, and failed with `ended match restored as PAUSED`. Source tracing confirms that resume and command submission are then allowed; VictoryCheck already has an ended outcome and emits no new end event.
+- **#24 (P1):** isolated L1 ContentSwap probe spawned a finished house and supplied a valid set omitting its template. The unsafe swap was accepted; building queries then threw ArrayIndexOutOfBoundsException through StatService.block -> BuildingLife.maxHp -> QueriesImpl.buildings. Both server and core reload guards check live units only. Real data-pack /reload was traced in source, not executed with a modified pack.
+- **#25 (P1):** isolated L1 probe retained built-in indices and restored a saved custom audit:z_house against a new-session table with audit:a_house inserted before it. The restored identity was audit:a_house, without rejection. This models fresh custom-ID assignment using two valid compiled sets, not two live server processes. Production queues share numeric persistence and require follow-up inspection; their corruption was not independently reproduced.
+- All issues are assigned to lev1pes. Diagnostic sources and logs remain local under the original checkout's ignored build/audit-tools; temporary edits were restored byte-for-byte. This claim includes no implementation or test changes.
+- **Planned scope:** #25 stable building/production template identity with explicit legacy-save handling; #24 atomic validation of all in-use template references; #23 preserve terminal lifecycle and reject resume/commands after load. Do not silently reinterpret legacy indices, weaken gates, or change performance thresholds/baselines.
+- **Validation plan:** failing core and persistence/reload GameTests before fixes; verifyFast per edit batch; verify before task commits. Run the additional slow/soak/JMH gates if a fix touches their required change types. Keep malformed/missing-template saves explicit and preserve existing fixtures or migrate with a documented policy.
+
 ## 2026-10-29 — M5 T18: the close, hand-in (dev/o-e-lytvynskyi/m5)
 
 - `first_loop_soak` margin: a comparison of HEAD and b53c960 (alternating runs) found no growth — the core step is equal headless (833 vs 850 µs mean), and unchanged code spreads 11,123–12,368 ns per unit across runs (phase p50s by 40 %); HEAD 12,744 and 12,910. The one red run (13,399, 4 ns over) is this machine's spread: For the owner 13.
