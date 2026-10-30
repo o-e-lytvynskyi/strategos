@@ -42,6 +42,7 @@ or replication privacy; those retain their own integration tests and dependencie
 - Integrated main 8111c0a, including delivered PR #30 and accepted ADR-0026 part B. Resolved shared persistence conflicts by retaining schema-4 authority plus main's stable-template implementation, review cleanup in ContentTests and ADR-0027's ended-match consequence. No released fixtures changed.
 - Added a temporary opt-in matched slow job: current main 8111c0a and M7 on one runner, both built before measurement, then sequential unchanged ten-minute server gates. Both exit statuses and logs are preserved even if the first gate fails. This diagnoses server/harness timing before selecting a fix; new main's validity rules apply unchanged.
 - Reintroduced temporary paired JMH against delivered main 8111c0a so both sides use ForeignLoadProfiler and the current validity gate. Standard cloud L6 is rerun under the accepted policy; old Linux passes are not silently relabelled as current-policy acceptance.
+- Diagnostic run 41048334339 stopped during checkout of the abbreviated control SHA; no build or test executed. Pinned the full 40-character SHA for actions/checkout, as in paired JMH; preserved the failed setup evidence.
 
 ### 2026-10-30 — full cloud L6 passed, checkpoint and stop
 
