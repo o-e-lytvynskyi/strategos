@@ -1,13 +1,13 @@
 # main-save-reload on dev/lev1pes/main-save-reload
 
-**Developer:** lev1pes · **Branch:** dev/lev1pes/main-save-reload · **Work:** main-save-reload · **Base:** main @ e6ef880 (merged 2026-10-30) · **Claimed:** 2026-10-27 · **Status:** in progress
+**Developer:** lev1pes · **Branch:** dev/lev1pes/main-save-reload · **Work:** main-save-reload · **Base:** main @ e6ef880 (merged 2026-10-30) · **Claimed:** 2026-10-27 · **Status:** merged 2026-10-30
 
-**Note:** assignment merged in [PR #26](https://github.com/o-e-lytvynskyi/strategos/pull/26), not an implementation delivery; fixes #23, #24, #25; excludes fix-main and new M5 scope
+**Note:** delivered by [PR #30](https://github.com/o-e-lytvynskyi/strategos/pull/30); assignment merged in [PR #26](https://github.com/o-e-lytvynskyi/strategos/pull/26); fixes #23, #24, #25; excludes fix-main and new M5 scope
 
 ## Now
 
 - **Milestone:** bounded follow-up fixes for three independently reproduced bugs in existing main: [#23](https://github.com/o-e-lytvynskyi/strategos/issues/23), [#24](https://github.com/o-e-lytvynskyi/strategos/issues/24), [#25](https://github.com/o-e-lytvynskyi/strategos/issues/25).
-- **State:** review corrections implemented; verify and verifySoak pass. Full slow and performance gates remain unaccepted. Assignment merged by PR #26.
+- **State:** merged 2026-10-30 by PR #30 after the maintainer's fixes (see Review). Before that: review corrections implemented; verify and verifySoak pass. Full slow and performance gates remain unaccepted. Assignment merged by PR #26.
 - **Last finished task:** all code review items and nits implemented, with 2,274 passing tests in complete reports and a passing isolated map_fifty diagnostic. Full slow gate hits its 10-minute timeout on both candidate and unchanged control. Paired local JMH is red under excessive foreign CPU load; no green L6 result is claimed.
 - **Next task:** independent maintainer review and accepted full slow/L6 gates in a suitable environment. All review fixes and evidence are recorded; do not mark ready for review while those gates remain red/unaccepted.
 - **Current main base:** 134271f (2026-10-29), rebased at the owner request. Save/reload runtime and test changes are preserved; current main supplies the latest performance-validity and dependency updates. Previous slow/L6 results remain historical evidence.
@@ -191,6 +191,27 @@
 - See [save/reload identities](../kb/save-reload-identities.md): content hash versus session table, every in-use reload reference, and terminal lifecycle after load.
 
 ## Review
+
+### Maintainer review fixes and verdict 2026-10-30 (head d64ebb7)
+
+On the owner's word («дофиксить», 2026-10-30) the maintainer applied the re-review's minors on the branch:
+`origin/main` e6ef880 merged (merge, not rebase; one conflict in docs/adr/README.md, both rows kept: 0026 Accepted,
+0027); `ContentTests` restores the bundled set in `finally` (`restoringBundled`) in the terminal and swap-race
+tests; `Migrations` imports `IntStream`; ADR-0027 "Consequences" records that a reload may drop an ENDED match's
+template, so its next restore quarantines it as FAULTED; this file: the superseded 2026-10-27 decision marked,
+`Base` refreshed, the stale synchronization counts labelled with their base.
+
+**The owner's answer (2026-10-30):** legacy M4-era saves with built-ins at indices 5..15 refusing to load is
+accepted; no further migrations are wanted.
+
+**Gates on d64ebb7 (local, macOS):** `verify` green in 1m30s (core 1,930 tests, mod 127, GameTests 233 + 1 batch,
+0 failures; `selftests.exhausted` fails by design); `verifySlow` green in 4m06s (19 required GameTests);
+`:core:soak --rerun` 200/200 seeds in 17s; `:core:jmh :core:jmhCompare` green, 25 benchmarks against
+perf/baseline-m4pro.json, worst 1.108 (`SpatialBench.rebuild1000`, its known bimodality, STATE item 13), then
+`MovementBench.step600` 1.099; no regression over 15 %. The perf GameTest batch was not run: nothing new runs per
+tick. `roadmap.py check` 245/0, `claims.py check` 14/0, no tool traces in commit messages.
+
+**Recommendation: merge.** Process note stands: e759435 was a force-pushed rebase; merge `origin/main` from now on.
 
 Assignment merged by PR #26; hand-in [PR #30](https://github.com/o-e-lytvynskyi/strategos/pull/30) remains open. Code review corrections are implemented; the current full slow and performance gates remain unaccepted. The branch stays in progress. Every approval and merge remains human.
 
