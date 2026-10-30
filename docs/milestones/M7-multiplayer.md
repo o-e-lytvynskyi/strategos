@@ -38,7 +38,7 @@ client cannot use commander spectator powers to acquire hidden information or le
 | QA-14 platform decision | Floating T24, not an M7 Done prerequisite | Card explicitly excludes it from every Done gate; due at MVP exit or 2027-Q2, whichever is first |
 | ART-03 | Parallel T22–T23 after MVP fun verdict, QA-13 and theme decisions | Still required for the stated M7 visual acceptance; do not hide it behind runtime completion |
 | Team vision | M7 publishes relations and recipient identity; M8 implements FOW-02 shared vision and targeted re-tracking | NET-03 explicitly excludes vision; existing solo visibility remains the privacy floor |
-| Lobby harness bootstrap | T3 uses minimal existing QA-19 mock helpers; T6 extends the reusable kit | Avoid a NET-02 ↔ QA-15 development cycle; formal QA-15 still depends on NET-02 |
+| Lobby harness bootstrap | T3b uses minimal existing QA-19 mock helpers; T6 extends the reusable kit | Avoid a NET-02 ↔ QA-15 development cycle; formal QA-15 still depends on NET-02 |
 | Fuzz decoding | Expected bounded rejection of invalid bytes is captured as a decode result; no exception escapes the ingress boundary | NET-06's 100,000-input criterion is not an obligation to accept malformed payloads |
 | Hosting | D-20 recommendation described, not approved | Dedicated first, LAN supported and one match per server remain pending owner confirmation |
 | Co-op first-person wording | Preserve D-08's existing observer avatar; no fighting/scouting avatar is introduced | The card's demo/value prose mentions fighting/scouting, but CMB-08 remains deferred; owner confirmation is needed before adding either ability |
@@ -98,7 +98,7 @@ faction and `Visibility`. QA-19 provides `MockViewer`, `PacketCapture` and `Byte
 | M6 solo fog | FOW-01/FOW-07 `VisibilityIndex` and `FogGate` | Consume viewer visibility, never infer it from chunks | AFTER-M6: NET-09 hidden-body controls |
 | M6 QA-13 / PERF-09 | MVP verdict and validated performance reference | Plan ART-03 and PERF-10 | AFTER-M6: artwork start and final multiplayer measurements |
 | M8 foundations / later FOW-02 | Team visibility policy and recipient contracts | Reconcile public contract shape; no dependency on an unmerged implementation | AFTER-M8: shared vision is accepted in M8, not certified by M7 |
-| Owner D-20 / D-03 / D-04 | Hosting / theme / style direction | List options and conditional tasks | T3/T10 hosting and T22/T23 art retain their decision gates |
+| Owner D-20 / D-03 / D-04 | Hosting / theme / style direction | List options and conditional tasks | T3b/T10 hosting and T22/T23 art retain their decision gates |
 
 Planning is independent. When M7 opens, claim only implementation tasks whose prerequisites
 are ready, or an explicitly bounded contract-only scope. Do not claim blocked adapters as ready.
@@ -109,7 +109,7 @@ Resume update: main b893a0d uses branch-file claims and includes the M7 planning
 
 - Operator exception: proceed before claim PR #34 approval/merge. No self-approval or merge is authorized.
 - M5 is delivered on main by PR #33; use its current damage/projectile paths at T7, not the old planning assumption that M5 is missing.
-- M6 runtime remains unmerged. Its setup/outcome, observed AI, minimap, solo-visibility and perf contracts are not production implementations. T3/T7/T13/T14/T15/T20 retain integration gates.
+- M6 runtime remains unmerged. Its setup/outcome, observed AI, minimap, solo-visibility and perf contracts are not production implementations. T3b/T7/T13/T14/T15/T20 retain integration gates.
 - Main was synchronized to dcb5013 on 2026-10-29. PR #30 at c9dd148 still has an unresolved M5 snapshot conflict and a maintainer-reported legacy-index compatibility risk: its legacy resolver uses the expanded current built-in table. T2b.2/T5 need that policy corrected and verified before a versioned diplomacy installation, whether the prerequisite is merged or explicitly stacked.
 - PR #30 persistence fixes and planning PR #32 remain open. Import only this reviewed planning document from our own planning branch; do not import its registry row or branch status. T5 coordinates schema numbers after persistence delivery.
 - T2 is split before code into T2a bounded pure state/view/snapshot foundations and T2b.2 installation. T2a does not replace numeric authority checks, modify running matches or claim co-op/privacy acceptance. T2b.2 must land together with the appropriate persistence/journal integration so authority is never lost on restore.
@@ -171,6 +171,14 @@ and host/operator authority; clients submit intents, not authoritative roster sn
 Use the M6 setup/start pipeline for map preparation and match creation. Atomic start validates
 unique seats, map capacity, supported configuration and readiness, then freezes the roster;
 preparation failure returns a visible error without leaving an active partial match.
+
+Phasing refinement (2026-10-30): T3a is the independent immutable lobby aggregate: bounded
+human/AI/closed seats, UUID occupants outside core, faction-consistent team/civilisation/colour,
+readiness reset on configuration changes, and editing/preparation/rollback transitions. It creates
+no match, admits no network sender and chooses no hosting topology. Its readiness predicate is
+only a lobby prerequisite, not complete start validation. T3b supplies authenticated service,
+payloads, map/setup validation and the real M6 preparation/start pipeline after its dependencies
+land. Observer/combat modes retain the existing product gates; T3a adds no such mode selector.
 
 Add bounded `LobbyActionPayload` and `LobbyStatePayload` under `server/net/payload`, registered
 through `ModPayloads` and `PayloadSpec`. Only admitted lobby members get lobby state. Active-match
@@ -372,15 +380,16 @@ and `python -X utf8` (see [toolchain KB](../kb/minecraft-mod-build.md)).
 | T2a | Independent identity/diplomacy/grant state, detached immutable view and deterministic snapshot/hash contracts; MATCH-06 | T1; CORE-01 | M | `:core:test` exact permission matrix, invalid participants, grant revocation, detached views and deterministic reconstruction; V; no running tick/order path changes |
 | T2b.1 | Compose corrected PR #30 prerequisite with current main, resolve identifiers and validate gates | T2a; own prerequisite branch at 588fa57 | S | V, S, standard cloud perf; no gates/thresholds changed |
 | T2b.2 | Install T2a authority, immutable query, journaled first-tick setup and versioned diplomacy preservation; retain legacy identity defaults | T2b.1 verified persistence contract; final full L6 shared with T2b.1 | L | `:core:test`, current/legacy JSON/NBT, malformed snapshots and binary-journal replay; V, S, cloud JMH/perf |
-| T3 | Server lobby/start intents and private lobby snapshots; NET-02 | T2b.2; MATCH-02 delivered; D-20 | L | `:mod:test :mod:runGameTestServer`, four-player start ≤10 s and outsider rejection |
-| T4 | Lobby screen/readiness/error rendering; NET-02 | T3 | M | `:mod:runScenario -Pscenario=m7-lobby -Pscenario.timeoutSeconds=180` (new scenario) |
-| T5 | Slot bindings, grants, roster and deadline migration/restore | T2a, T3; CORE-07; integrated save/reload schema | M | `:core:test :mod:test :mod:runGameTestServer`, old/new fixtures and malformed saves |
-| T6 | Reusable N-player kit, per-player captures and hostile packet helpers; QA-15 | T3; QA-19 | M | `:mod:runGameTestServer`, four-player smoke <30 s; cleanup/no leaked players |
+| T3a | Immutable bounded lobby configuration/readiness/preparation contract; NET-02 foundation | T2b.2; independent of world start and hosting topology | M | `:mod:test`, seat/config bounds, co-op consistency, detached views, readiness resets and rollback; V |
+| T3b | Authenticated lobby/start service, intents and private payloads; NET-02 | T3a; MATCH-02 delivered; D-20 | L | `:mod:test :mod:runGameTestServer`, four-player start ≤10 s and outsider rejection |
+| T4 | Lobby screen/readiness/error rendering; NET-02 | T3b | M | `:mod:runScenario -Pscenario=m7-lobby -Pscenario.timeoutSeconds=180` (new scenario) |
+| T5 | Slot bindings, grants, roster and deadline migration/restore | T2a, T3b; CORE-07; integrated save/reload schema | M | `:core:test :mod:test :mod:runGameTestServer`, old/new fixtures and malformed saves |
+| T6 | Reusable N-player kit, per-player captures and hostile packet helpers; QA-15 | T3b; QA-19 | M | `:mod:runGameTestServer`, four-player smoke <30 s; cleanup/no leaked players |
 | T7 | Friendly-fire filters and allied victory; MATCH-06 | T2b.2; M5 combat and M6 MATCH-03 delivered | M | `:core:test :mod:runGameTestServer`, delayed/splash damage, coalition outcomes; S; J if hot path |
 | T8 | Co-op authority in every command/query/first-person path; MATCH-06 | T2b.2, T5, T6 | L | `:core:test :mod:runGameTestServer`, two humans one faction, owner costs and revoke; S |
 | T9 | Recipient projection/fan-out and no client attachment sync; NET-03 | T2b.2, T6, T8; NET-08 | L | `:core:test :mod:test :mod:runGameTestServer`, full/delta/query recipient matrix |
 | T10 | UUID reconnect, expiry, AI/defeat policy, camera/groups and epoch reset; NET-05 | T5, T6, T9; M6 AI adapter if takeover selected; D-20 | L | `:mod:test :mod:runGameTestServer`; S for deterministic deadlines/orders |
-| T11 | Field/rate/sequence limits, reason codes and kick policy; NET-06 | T3, T6 | M | `:mod:test :mod:runGameTestServer`, threshold boundaries and valid traffic |
+| T11 | Field/rate/sequence limits, reason codes and kick policy; NET-06 | T3b, T6 | M | `:mod:test :mod:runGameTestServer`, threshold boundaries and valid traffic |
 | T12 | Permanent seeded fuzz corpus and ingress state regression; NET-06 | T11 | M | `:mod:test` ≥100,000 inputs across all serverbound types; L3 bounded corpus via `:mod:runGameTestServer` |
 | T13 | Two mixins and commander guard, inventory; NET-09 | T6, T9; M6 visibility delivered | L | `:mod:test :mod:runGameTestServer`; `./gradlew verify -Pcompat`; S for movement |
 | T14 | Team HUD/ping routing, lifetime/rate and goldens; UI-15 | T4, T9, T11; M6 UI-20 delivered | L | `:core:test :mod:runGameTestServer`; `:mod:runScenario -Pscenario=m7-team-hud -Pscenario.timeoutSeconds=180` |
@@ -407,7 +416,7 @@ reviewed implementation task between T17 and T18, keeping the acceptance depende
 | Card | Tasks | Complete acceptance evidence |
 |---|---|---|
 | MATCH-06 | T2a, T2b.2, T5, T7, T8 | No allied damage; coalition victory; two authorized controllers; player-name colours and zero scoreboard units |
-| NET-02 | T3, T4 | Four mock lobby clients agree; each `match_join` ≤10 s; outside commands refused; inspected lobby goldens |
+| NET-02 | T3a, T3b, T4 | Four mock lobby clients agree; each `match_join` ≤10 s; outside commands refused; inspected lobby goldens |
 | NET-03 | T9 | Owner receives treasury/queues/research, opponent does not; ally rule table exactly; no synced Strategos attachment |
 | NET-04 | T16–T18 | Per-client scene mean ≤100 KB/s and peaks recorded; deferral converges; two real clients validate counts; tier-4 report decision |
 | NET-05 | T5, T10, T25 | Reclaim ≤5 min; existing orders continue; configured expiry policy once; real mid-fight rejoin |
@@ -426,7 +435,8 @@ reviewed implementation task between T17 and T18, keeping the acceptance depende
 - [x] T2a (2026-10-29) · Independent identity, diplomacy, grants and immutable snapshot contract.
 - [ ] T2b.1 · Corrected persistence prerequisite composition and combined gates.
 - [ ] T2b.2 · Match authority/setup, schema-4 persistence/hash and binary journal integration.
-- [ ] T3 · Server lobby and start.
+- [ ] T3a · Bounded lobby state/readiness/preparation contract.
+- [ ] T3b · Authenticated lobby service and production start.
 - [ ] T4 · Lobby UI.
 - [ ] T5 · Persistence and migration.
 - [ ] T6 · Multiplayer test kit.

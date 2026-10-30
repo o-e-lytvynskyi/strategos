@@ -6,7 +6,7 @@
 
 ## Now
 
-- **Milestone:** M7 Multiplayer; 2 of 27 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md), based on planning PR #32.
+- **Milestone:** M7 Multiplayer; 2 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md), based on planning PR #32; T3 is split before implementation into independent aggregate and production integration.
 - **In progress:** T2b on main 8111c0a; verify and matched server slow pass. Validation of a shared Linux JMH-profiler allocation repair and the full standard cloud L6 are pending. Earlier passes remain labelled with their original source/validity policy.
 - **Last finished task:** T2a independent diplomacy foundation (2026-10-29), cloud-verified implementation e8438cd.
 - **Next task:** attribute the matched server result, repair its demonstrated cause, accept all current gates and continue dependency-ready M7 work. Previous failed evidence is retained.
@@ -198,6 +198,8 @@ or replication privacy; those retain their own integration tests and dependencie
 4. Cloud verify takes 6m 46s on the readiness baseline and 7m 20s with the foundation, beyond the procedure's 5-minute target. Keep all existing gates; recommend accepting the cloud duration. Moving checks or changing a Done gate requires an explicit owner decision.
 
 ## Decisions taken
+
+- 2026-10-30 · Split T3a immutable lobby contract from T3b authenticated production service — configuration/readiness transitions can be proved independently while M6/start and D-20 remain open — recombine the task records after both parts pass; no NET-02 runtime criterion is removed or declared complete by T3a.
 
 - 2026-10-30 · Undo diagnostic slow-gate scheduling after true process isolation still failed — overlap was not sufficient to explain the timeout — investigate a matched server control before changing execution policy again; retain telemetry and all unsuccessful evidence.
 
