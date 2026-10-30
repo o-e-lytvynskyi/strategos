@@ -1,6 +1,6 @@
 # L6 on Linux (M0 T12 and T18, QA-08): JMH and the CI-to-M4 Pro speed ratio, then the perf GameTests at
 # 3x the budgets. Since 2026-10-25 by hand or on a hand-in pull request labelled `perf` by a maintainer (no schedule):
-# it costs about 50 minutes, so it runs when a milestone touching the hot paths is reviewed. Actions are pinned to the
+# the 22-scene serial suite exceeds an hour, so it runs when hot-path work is reviewed. Actions are pinned to the
 # commit of the tag in the comment.
 name: perf
 
@@ -21,7 +21,8 @@ jobs:
   perf:
     if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.draft == false && github.event.label.name == 'perf')
     runs-on: ubuntu-24.04
-    timeout-minutes: 55
+    # 22 serial scenes exceeded 55 minutes after M5; measurement gates and scene lengths are unchanged.
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0

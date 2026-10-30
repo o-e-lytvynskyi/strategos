@@ -453,7 +453,10 @@ public final class MatchSnapshotCodec {
                     Codec.LONG.listOf().optionalFieldOf("alerts", List.of()).forGetter(MatchSnapshot.Play::alerts),
                     SHOTS.optionalFieldOf("shots", ShotStore.Snapshot.EMPTY).forGetter(MatchSnapshot.Play::shots),
                     STANCE.listOf().optionalFieldOf("stances", List.of()).forGetter(MatchSnapshot.Play::stances),
-                    GARRISON.listOf().optionalFieldOf("garrisons", List.of()).forGetter(MatchSnapshot.Play::garrisons))
+                    GARRISON.listOf().optionalFieldOf("garrisons", List.of()).forGetter(MatchSnapshot.Play::garrisons),
+                    DiplomacyCodec.STATE
+                            .fieldOf("diplomacy")
+                            .forGetter(p -> java.util.Objects.requireNonNull(p.diplomacy())))
             .apply(i, MatchSnapshot.Play::new));
 
     private static final Codec<MatchSnapshot.TemplateBinding> BINDING = RecordCodecBuilder.create(i -> i.group(
@@ -548,7 +551,12 @@ public final class MatchSnapshotCodec {
         try {
             return migrations
                     .migrate(raw, SchemaVersion.CURRENT)
-                    .flatMap(CODEC::parse)
+                    .flatMap(migrated -> {
+                        if (migrated.get("play").get("diplomacy").result().isEmpty()) {
+                            return DataResult.error(() -> "schema 4 snapshot needs diplomacy");
+                        }
+                        return CODEC.parse(migrated);
+                    })
                     .flatMap(snapshot -> {
                         if (snapshot.templateBindings().isEmpty()
                                 && snapshot.buildings().stream().anyMatch(BuildingStore.Saved::alive)) {

@@ -162,6 +162,11 @@ class InvariantsTest {
     /** A 32 x 32 match, y 0..16, holding exactly the units it is given; {@code cap} is its unit cap. */
     private static final class FakeQueries implements MatchQueries {
         @Override
+        public dev.strategos.core.sim.diplomacy.DiplomacyView diplomacy() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public String templateSwapProblem(TemplateSet next) {
             throw new UnsupportedOperationException();
         }

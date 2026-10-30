@@ -32,9 +32,14 @@ jobs:
       - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
         with:
           cache-provider: basic
-      # Two workers: the runner has 2 cores and 7 GB, and every GameTest or smoke run is a server JVM.
+      # Preserve machine-load evidence even when the server times out before producing its final XML report.
       - name: slow and soak
-        run: ./gradlew --console=plain --max-workers=2 verifySlow verifySoak
+        run: |
+          mkdir -p build/reports/cloud-load
+          vmstat -w 1 > build/reports/cloud-load/vmstat.txt &
+          monitor=$!
+          trap 'kill "$monitor" 2>/dev/null || true' EXIT
+          ./gradlew --console=plain --max-workers=2 verifySlow verifySoak
       - name: Test results (L1, L2, L3, L5)
         if: always()
         uses: mikepenz/action-junit-report@6ef3fdcfcd5f0b5d14df3e659ef19b8c6820f93d # v6.6.1
@@ -53,6 +58,7 @@ jobs:
             **/build/test-results/
             **/build/reports/
             mod/build/gametest/logs/
+            mod/build/gametest-slow/logs/
             mod/build/server-smoke/logs/
             mod/build/server-smoke/crash-reports/
             mod/build/harness/*/logs/

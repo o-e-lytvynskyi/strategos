@@ -26,7 +26,7 @@ governs.
 | [0015](0015-pathfinding-approach.md) | Layered 2.5D surface grid, staged search, ORCA and deterministic job delivery | Accepted 2026-10-23, with spikes S7 and S8 | 2026-10-21 | §9 |
 | [0016](0016-networking-and-fog-of-war.md) | One fog-aware sender, vanilla tracking behind a gate, targeted re-tracking | Accepted; amended by 0023 | 2026-10-21 | §10, §12 |
 | [0017](0017-camera-and-input.md) | A spectator body at the camera eye, a cursor-owning screen, perspective projection | Accepted with S9 2026-10-23 | 2026-10-21 | §13 |
-| [0018](0018-persistence-and-versioning.md) | One versioned `SavedData` blob per match, codecs in core, quarantine on failure | Accepted; amended by 0027 | 2026-10-21 | §5 |
+| [0018](0018-persistence-and-versioning.md) | One versioned `SavedData` blob per match, codecs in core, quarantine on failure | Accepted; amended by 0027, 0028 | 2026-10-21 | §5 |
 | [0019](0019-performance-budgets.md) | Performance budgets A–G at 600 units, measured from M0 | Accepted (2026-10-22); F measured by S4 for bare humanoids, armoured with ART-01 | 2026-10-21 | §17 |
 | [0020](0020-engine-surface-inventory.md) | One reviewed inventory of every hook into Minecraft | Accepted | 2026-10-21 | §2 |
 | [0021](0021-economy-and-construction-model.md) | Hybrid world economy: real-block nodes, finite deposits and fields, abstract building HP | Accepted; leaf rule superseded by 0024 | 2026-10-21 | §11 |
@@ -36,6 +36,8 @@ governs.
 | [0025](0025-commands-into-unexplored-cells.md) | Movement positions may be unexplored; placement, node targets and the observer still need explored cells | Proposed (M6 spec) | 2026-10-25 | §7 |
 | [0026](0026-perf-measurement-validity.md) | Perf-measurement validity: attribution before a fix, per-second cumulative foreign-load telemetry, a run invalid above `min(10 %, 0.9/N)` foreign load (GameTest and JMH) | Accepted (#22) | 2026-10-30 | §16 |
 | [0027](0027-save-template-identities.md) | Stable save identities, conservative legacy migration and reload boundary validation | Accepted | 2026-10-29 | §5.8, §8.4 |
+
+| [0028](0028-diplomacy-authority-persistence.md) | Immutable diplomacy authority, schema-4 migration and journaled setup | Accepted (M7 foundation) | 2026-10-29 | §5, §7 |
 
 ## Pending measurements
 

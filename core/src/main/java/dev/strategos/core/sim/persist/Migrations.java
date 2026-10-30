@@ -4,7 +4,6 @@ import com.mojang.serialization.DataResult;
 import com.mojang.serialization.Dynamic;
 import dev.strategos.core.shared.CoreApi;
 import java.util.List;
-import java.util.stream.IntStream;
 import org.jspecify.annotations.Nullable;
 
 /** A chain of {@link MigrationStep}s, each from one version to the next, applied before decoding. */
@@ -25,9 +24,9 @@ public final class Migrations {
         this.steps = List.copyOf(steps);
     }
 
-    /** 1 to 2 adds terrain pages; 2 to 3 binds only the original numeric building/queue table. */
+    /** 1 to 2 adds terrain; 2 to 3 binds legacy templates; 3 to 4 adds explicit identity authority. */
     public static Migrations production() {
-        return new Migrations(List.of(new AddTerrainPages(), new StableTemplateReferences()));
+        return new Migrations(List.of(new AddTerrainPages(), new StableTemplateReferences(), new DiplomacyIdentity()));
     }
 
     /** Schema 1 to 2: M0's snapshots had no terrain, so their page list is empty. */
@@ -67,10 +66,29 @@ public final class Migrations {
                     "strategos:building/civic_centre");
             return input.set(
                     "templateBindings",
-                    input.createList(IntStream.range(0, original.size())
+                    input.createList(java.util.stream.IntStream.range(0, original.size())
                             .mapToObj(index -> input.emptyMap()
                                     .set("index", input.createInt(index))
                                     .set("id", input.createString(original.get(index))))));
+        }
+    }
+
+    /** Schema 3 to 4 gives older saves an explicit one-seat-per-faction authority block. */
+    private static final class DiplomacyIdentity implements MigrationStep {
+        @Override
+        public int from() {
+            return 3;
+        }
+
+        @Override
+        public <T> Dynamic<T> apply(Dynamic<T> input) {
+            int factions = input.get("config").get("factions").asInt(-1);
+            var identity = dev.strategos.core.sim.diplomacy.DiplomacyState.identity(factions);
+            T encoded =
+                    DiplomacyCodec.STATE.encodeStart(input.getOps(), identity).getOrThrow();
+            return input.set(
+                    "play",
+                    input.get("play").orElseEmptyMap().set("diplomacy", new Dynamic<>(input.getOps(), encoded)));
         }
     }
 

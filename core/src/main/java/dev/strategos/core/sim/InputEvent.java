@@ -8,4 +8,11 @@ import dev.strategos.core.shared.CoreApi;
  */
 @CoreApi
 public sealed interface InputEvent
-        permits CommandEnvelope, TerrainPage, AgentUpdate, ExternalDamage, JobDelivery, ContentSwap, LeaderUpdate {}
+        permits CommandEnvelope,
+                TerrainPage,
+                AgentUpdate,
+                ExternalDamage,
+                JobDelivery,
+                ContentSwap,
+                LeaderUpdate,
+                DiplomacySetup {}
