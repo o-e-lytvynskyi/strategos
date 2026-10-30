@@ -187,9 +187,10 @@ spectator join flow is added. Every admitted player gets `match_join` and the in
 snapshot within 10 seconds; the default commander state is entered through the existing
 `CommanderService`. Add `client/menu/MultiplayerLobbyScreen` over immutable view-models.
 
-D-20 blocks final host topology: recommended one active match per server, dedicated first-class,
-Open to LAN supported via the same service, dedicated tests authoritative. Do not implement
-multi-match lobby discovery or silently treat this recommendation as an owner decision.
+Hosting (D-20, explicitly accepted by the owner in this M7 session, 2026-10-30): one active
+match per server, dedicated first-class, Open to LAN through the same service. Dedicated tests
+are authoritative; multi-match discovery is outside M7. T3b still depends on the delivered M6
+start pipeline; T3a does not create or start matches.
 
 ### 3.4 Recipient rules (NET-03)
 
@@ -488,8 +489,9 @@ reviewed implementation task between T17 and T18, keeping the acceptance depende
 
 ## 8. Owner inputs, windows and handoff
 
-- D-20: confirm dedicated first-class plus Open to LAN, one active match per server, or choose
-  another listed hosting option. Only its dependent implementation waits; planning is complete.
+- D-20: accepted by the owner in the M7 session on 2026-10-30: dedicated first-class plus
+  Open to LAN through one service, one active match per server. Dedicated tests are authoritative.
+  The maintainer reconciles the main STATE record at review; M6 start integration remains separate.
 - D-03/D-04: theme and applicable style direction; name any owner-supplied asset work and record
   the M6 fun verdict before ART-03 starts. Do not invent approval for unresolved parts.
 - Co-op avatar: resolve the roadmap demo's fighting/scouting wording against D-08 and deferred

@@ -36,6 +36,18 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Log
 
+### 2026-10-30 — profiler repair validated without relaxing gates
+
+- Verify 41051799948 on e7a75bd passed in 8m 25s: 2,309 canonical cases, zero failures/errors/skips, including the four new Linux counter tests. Core slow/soak 41050854156 completed 216 cases in 4m 23s; server slow 41048580649 completed all 19 M7 cases within its original ten-minute task bound. These complete components are separate raw runs, not a relabelled pass for the older interrupted aggregate jobs.
+- Paired JMH 41051803906 passed all 27 matching configurations with the identical measurement repair on both sides. Maximum runtime ratio 1.099172; StateHash 1.000098 and Motion 1.000922. Both sides had valid cumulative CPU telemetry (maximum per-benchmark mean 0.007754/0.005631 against 0.10) and zero observed steal.
+- Non-event GC allocation rate fell from about 0.208 MB/s to 0.0073 MB/s; candidate StateHash 0.166 B/op, Motion 2.452, Spatial 0.037 and ShotHash 0.236. Every existing kernel allowance passed. No acceptance threshold, background allowance, production kernel or approved reference changed. See the new JMH-profiler KB entry for the source/experiment distinction.
+- Full standard L6 41048400982 and required tooling L4 smoke 41054233370 are still pending; both T2b checkboxes remain open until their evidence is accepted.
+- L4 smoke 41054233370 subsequently passed in 3m 16s under Linux llvmpipe/Xvfb, result.ok=true. Inspected all three full-resolution frames and their three resized candidates: rendered terrain/units present, no black frames. The smoke scenario has no approved golden frames (empty diff frame list); this is client/tooling smoke evidence, not golden or M7 lobby acceptance. Standard L6 remains pending.
+
+### 2026-10-30 — D-20 hosting decision received
+
+- The owner explicitly selected dedicated servers plus Open to LAN through the same service, with one active match per server, in this session. Recorded the decision in the M7 card/spec; dedicated-server tests remain authoritative, multiple-match discovery stays outside M7. Main STATE remains the maintainer's record to reconcile.
+
 ### 2026-10-30 — matched slow passed; Linux profiler allocation defect
 
 - Matched server run 41048580649 passed on both sides: main 7m 24s, M7 7m 55s, identical 19-case sets, no failures/errors/skips, original ten-minute bounds. Previous interrupted runs remain evidence; a server runtime regression was not established by this control.
@@ -192,10 +204,12 @@ or replication privacy; those retain their own integration tests and dependencie
 ## For the owner
 
 1. Independently review and merge the assignment PR. The operator explicitly waived the development wait in this session; independent review and human merge remain required.
-2. Planning PR #32 is still open. Its specification is incorporated and updated here; reconcile duplicate planning delivery on review; this request authorizes available M7 work, but does not resolve D-20 hosting, D-03 themes, deferred first-person fighting/scouting, the MVP fun verdict or art acceptance. Continue independent foundations while these gates remain open.
+2. Planning PR #32 and persistence PR #30 are delivered on current main. D-20 was explicitly resolved in this M7 session on 2026-10-30: dedicated plus LAN, one active match. Reconcile its main STATE record at review. D-03 themes, deferred first-person fighting/scouting, the MVP fun verdict and art acceptance remain separate owner gates.
 3. Later two-client measurement and acceptance require the owner's clients and the completed hardening prerequisites. No platform-port decision, public release or performance baseline change is included.
 
 4. Cloud verify takes 6m 46s on the readiness baseline and 7m 20s with the foundation, beyond the procedure's 5-minute target. Keep all existing gates; recommend accepting the cloud duration. Moving checks or changing a Done gate requires an explicit owner decision.
+
+5. Independently review the measured Linux JMH-profiler repair included here. The same allocation pollution occurs on delivered main; extracting the tested measurement-only change before full M7 delivery would unblock other Linux branches. Keep the accepted validity and allocation policies; no main merge or baseline promotion was performed by this session.
 
 ## Decisions taken
 

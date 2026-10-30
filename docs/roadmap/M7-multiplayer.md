@@ -57,6 +57,10 @@ F-R18 for the first art set.
 dedicated server; one match per server in M7, several later (the match container already allows
 it). **Needed by:** M7 (NET-02). **Affects:** NET-02, NET-05, QA-15, MATCH-16.
 
+**Decision (owner, M7 operator session, 2026-10-30):** dedicated servers and Open to LAN
+through the same service, one active match per server. Dedicated-server tests remain authoritative.
+Multiple-match discovery is outside M7. Recorded in the M7 branch pending maintainer reconciliation of STATE.
+
 ---
 
 ## Cards
