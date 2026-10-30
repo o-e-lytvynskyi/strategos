@@ -1,8 +1,8 @@
 # perf-validity-b on dev/o-e-lytvynskyi/perf-validity-b
 
-**Developer:** o-e-lytvynskyi (Claude Code, Opus) · **Branch:** dev/o-e-lytvynskyi/perf-validity-b · **Work:** perf-validity-b · **Base:** main @ 134271f · **Claimed:** 2026-10-30 · **Status:** ready for review
+**Developer:** o-e-lytvynskyi (Claude Code, Opus) · **Branch:** dev/o-e-lytvynskyi/perf-validity-b · **Work:** perf-validity-b · **Base:** main @ 134271f · **Claimed:** 2026-10-30 · **Status:** merged 2026-10-30
 
-**Note:** issue #22 part B on the owner's word, 2026-10-30 («можно начинать прогоны и заканчивать эту задачу … имитируй какую-то деятельность — уровня работы в хроме, дискорд, другие окна vscode, телеграм»); follows perf-validity (#41); claim and delivery in one pull request on that word.
+**Note:** delivered in #45; issue #22 part B on the owner's word, 2026-10-30 («можно начинать прогоны и заканчивать эту задачу … имитируй какую-то деятельность — уровня работы в хроме, дискорд, другие окна vscode, телеграм»); follows perf-validity (#41); claim and delivery in one pull request on that word.
 
 ## Now
 
