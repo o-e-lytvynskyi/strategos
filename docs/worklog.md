@@ -9,6 +9,25 @@ Append-only session log, newest first. Each entry says:
 The owner reads it to see what happened since the last visit; [STATE.md](STATE.md) shows where
 things stand now. Commits are named `Mx Tn: …`, so `git log --grep "M0 T3"` finds a task's work.
 
+## 2026-10-30 — maintainer: main's records for #32, #36, #39, #41, #43, #45
+
+- On the owner's word («наводить красоту по всем фронтам»), STATE.md caught up with the merges whose branch files
+  were updated but whose main records were not: the M7 spec (#32, `lev1pes`), claims-check (#36), claims in branch
+  files (#39), perf validity A and B (#41, #45, issue #22, ADR-0026 Accepted), the dependency graph (#43). Each
+  branch file's full log stays in docs/branches/; it is not copied here.
+- Perf validity (#41, #45): a run is `invalid environment` when the mean foreign CPU load over at least the window's
+  last 60 s exceeds `min(10 %, 0.9 / N)` (7.5 % on 12 CPUs), replacing QA-07's 25 %; preflight, unavailable
+  counters and sleep invalidate too; JMH carries the same telemetry and `jmhCompare` an invalid-environment verdict.
+  Calibration round 5: one busy CPU 9.10–11.03 % (all invalid), quiet ≤ 5.91 %, a simulated desktop 4.25–6.44 %.
+  The `ProtectedBlockIndexTest` timing moved from L1 to the L6 perf batch.
+- Dependency graph (#43): `main`'s graph is submitted on each push, so dependency review judges only a pull
+  request's own changes; green on later pull requests (e.g. #45).
+- STATE: the M6 row (spec merged 2026-10-25, T2–T17 held by `dyadik`), M7 and M8 rows, "Open for claims",
+  "Decisions taken", "CI and budgets", "History", "Known follow-ups"; "For the owner" 20–21 annotated with ADR-0026,
+  items 23–26 lifted from the branch files; "Since the owner's last visit" reset (the owner was here today, the #30
+  line moved to History).
+- `tools/claims.py check` and `tools/roadmap.py check` pass.
+
 ## 2026-10-30 — main-save-reload: maintainer fixes and merge (dev/lev1pes/main-save-reload)
 
 - On the owner's word, the maintainer merged `origin/main` e6ef880 into the branch and applied the re-review's minors (bundled set restored in `finally` in two GameTests, an import, ADR-0027's ended-match consequence, branch-file records).
