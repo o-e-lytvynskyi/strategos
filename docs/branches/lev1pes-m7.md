@@ -7,10 +7,10 @@
 ## Now
 
 - **Milestone:** M7 Multiplayer; 2 of 27 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md), based on planning PR #32.
-- **In progress:** T2b.2 authority/setup, schema-4 migration, hashing and journal integration are installed; verify, paired JMH and standard cloud L6 passed. Acceptance is blocked by the server slow gate after three attempts. Session stopped; no tests or monitors remain running.
+- **In progress:** operator-resumed T2b slow-gate attribution on current main 8111c0a; schema-4 authority is installed, new merged-head verify and matched control/candidate gates are running. Earlier successful gates remain historical evidence under the previous main/validity policy.
 - **Last finished task:** T2a independent diplomacy foundation (2026-10-29), cloud-verified implementation e8438cd.
-- **Next task on resume:** matched cloud server control and harness attribution before further runtime changes. No fourth slow attempt was started in this session under the three-failure rule.
-- **Merged from main last:** 134271f (2026-10-30); verify, paired JMH and standard cloud L6 passed; slow failed. Final fetch at 2026-10-30 showed zero commits behind main.
+- **Next task:** attribute the matched server result, repair its demonstrated cause, accept all current gates and continue dependency-ready M7 work. Previous failed evidence is retained.
+- **Merged from main last:** 8111c0a (2026-10-30), delivered persistence and accepted performance validity; merged-head gates pending.
 
 The operator requested ownership of the whole M7 and work on what is currently possible on
 2026-10-29. This assignment intentionally includes responsibility for later blocked tasks;
@@ -41,6 +41,7 @@ or replication privacy; those retain their own integration tests and dependencie
 - The operator explicitly resumed T2b to completion and then available M7 work. The previous stop and its three failed slow attempts remain recorded; this resume starts a fresh investigation, not an unchanged retry.
 - Integrated main 8111c0a, including delivered PR #30 and accepted ADR-0026 part B. Resolved shared persistence conflicts by retaining schema-4 authority plus main's stable-template implementation, review cleanup in ContentTests and ADR-0027's ended-match consequence. No released fixtures changed.
 - Added a temporary opt-in matched slow job: current main 8111c0a and M7 on one runner, both built before measurement, then sequential unchanged ten-minute server gates. Both exit statuses and logs are preserved even if the first gate fails. This diagnoses server/harness timing before selecting a fix; new main's validity rules apply unchanged.
+- Reintroduced temporary paired JMH against delivered main 8111c0a so both sides use ForeignLoadProfiler and the current validity gate. Standard cloud L6 is rerun under the accepted policy; old Linux passes are not silently relabelled as current-policy acceptance.
 
 ### 2026-10-30 — full cloud L6 passed, checkpoint and stop
 
