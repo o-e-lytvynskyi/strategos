@@ -60,6 +60,8 @@ issues, JFR counters for S11, and ART-03 silhouette/look approval. People start 
 
 ### 1.4 Implementation findings
 
+Current acceptance, 2026-10-30: T2b.1/T2b.2 are complete on delivered main 8111c0a. Verify 41051799948 passed 2,309 cases; core slow/soak 41050854156 passed 216; matched server slow 41048580649 passed all 19 M7 cases at 7m 55s under the original ten-minute bound. Standard L6 41048400982 passed all 22 scenes in 59m 51s under the accepted validity policy. The shared Linux JMH-profiler allocation defect was repaired without changing any allowance, with 27-config identical-probe comparison 41051803906 passing; tooling L4 smoke 41054233370 also passed with inspected frames. Earlier failed/interrupted evidence below is historical and preserved. This is foundation acceptance, not native PERF-10 or whole-M7 acceptance.
+
 2026-10-30 acceptance update: authority installation passes cloud verify (2,303 cases) and pinned same-host JMH (27 matching configurations, unchanged 15%/allocation gate). Server slow reached the unchanged ten-minute timeout in three attempts, including one with core slow/soak completed before server start. The contention hypothesis is insufficient; no runtime regression or relaxed deadline is inferred. Both T2b steps remain open, further slow attempts stop under the developer procedure, and a resumed investigation requires matched server/harness attribution. Existing failed evidence is retained in the branch log.
 
 Final standard cloud L6 run 40972197958 passed in 1h 1m 55s on 33ecb12: all 22 required server scenes and 27 JMH configurations completed; 19 passing and two existing report-only scene reports, no invalid report. This completes the standard cloud performance evidence, while the slow failure still prevents accepting either T2b step. No native reference or final multiplayer PERF-10 acceptance is implied.
@@ -434,8 +436,8 @@ reviewed implementation task between T17 and T18, keeping the acceptance depende
 
 - [x] T1 (2026-10-29) · Reconcile prerequisites and implementation readiness (bounded foundations; see §2.3).
 - [x] T2a (2026-10-29) · Independent identity, diplomacy, grants and immutable snapshot contract.
-- [ ] T2b.1 · Corrected persistence prerequisite composition and combined gates.
-- [ ] T2b.2 · Match authority/setup, schema-4 persistence/hash and binary journal integration.
+- [x] T2b.1 (2026-10-30) · Corrected delivered persistence prerequisite composition and required cloud gate components.
+- [x] T2b.2 (2026-10-30) · Match authority/setup, schema-4 persistence/hash and binary journal integration.
 - [ ] T3a · Bounded lobby state/readiness/preparation contract.
 - [ ] T3b · Authenticated lobby service and production start.
 - [ ] T4 · Lobby UI.

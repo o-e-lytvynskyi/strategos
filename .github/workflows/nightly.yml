@@ -9,18 +9,9 @@ on:
     branches: [main]
     types: [labeled, synchronize]
   workflow_dispatch:
-    inputs:
-      paired_slow:
-        description: 'Temporary M7 matched server control/candidate diagnosis'
-        type: boolean
-        default: false
-      core_only:
-        description: 'Temporary M7 isolated core slow/soak gate'
-        type: boolean
-        default: false
 
 concurrency:
-  group: full-ci-${{ github.event.pull_request.number || github.ref }}-${{ inputs.paired_slow && 'paired' || inputs.core_only && 'core' || 'standard' }}
+  group: full-ci-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -29,7 +20,7 @@ permissions:
 
 jobs:
   nightly:
-    if: (github.event_name == 'workflow_dispatch' && !inputs.paired_slow && !inputs.core_only) || (github.event.pull_request.draft == false && contains(github.event.pull_request.labels.*.name, 'full-ci'))
+    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.draft == false && contains(github.event.pull_request.labels.*.name, 'full-ci'))
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
@@ -71,95 +62,3 @@ jobs:
             mod/build/server-smoke/logs/
             mod/build/server-smoke/crash-reports/
             mod/build/harness/*/logs/
-
-  paired-slow:
-    if: github.event_name == 'workflow_dispatch' && inputs.paired_slow
-    runs-on: ubuntu-24.04
-    timeout-minutes: 35
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          path: candidate
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: 8111c0a4f68190e437b9d2aa5ec4178074110e2f
-          path: control
-      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
-        with:
-          distribution: temurin
-          java-version: '21'
-      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
-        with:
-          cache-provider: basic
-      - name: Record environment and build both before measuring
-        run: |
-          mkdir -p evidence
-          lscpu > evidence/cpu.txt
-          git -C control rev-parse HEAD > evidence/control.txt
-          git -C candidate rev-parse HEAD > evidence/candidate.txt
-          ./control/gradlew -p control --console=plain --max-workers=2 :mod:compileGametestJava :mod:prepareGameTestSlowRun
-          ./candidate/gradlew -p candidate --console=plain --max-workers=2 :mod:compileGametestJava :mod:prepareGameTestSlowRun
-      - name: Control server slow unchanged
-        continue-on-error: true
-        run: |
-          vmstat -w 1 > evidence/control-vmstat.txt &
-          monitor=$!
-          trap 'kill "$monitor" 2>/dev/null || true' EXIT
-          set +e
-          ./control/gradlew -p control --console=plain --max-workers=2 :mod:runGameTestSlow > evidence/control-run.txt 2>&1
-          status=$?
-          echo "$status" > evidence/control-status.txt
-          tail -n 18 evidence/control-run.txt
-          exit "$status"
-      - name: Candidate server slow unchanged
-        continue-on-error: true
-        run: |
-          vmstat -w 1 > evidence/candidate-vmstat.txt &
-          monitor=$!
-          trap 'kill "$monitor" 2>/dev/null || true' EXIT
-          set +e
-          ./candidate/gradlew -p candidate --console=plain --max-workers=2 :mod:runGameTestSlow > evidence/candidate-run.txt 2>&1
-          status=$?
-          echo "$status" > evidence/candidate-status.txt
-          tail -n 18 evidence/candidate-run.txt
-          exit "$status"
-      - name: Reports
-        if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: paired-slow-reports
-          retention-days: 7
-          path: |
-            evidence/
-            control/mod/build/test-results/gametest-slow/
-            candidate/mod/build/test-results/gametest-slow/
-            control/mod/build/gametest-slow/logs/
-            candidate/mod/build/gametest-slow/logs/
-      - name: Preserve both gate verdicts
-        if: always()
-        run: |
-          test "$(cat evidence/control-status.txt)" = 0
-          test "$(cat evidence/candidate-status.txt)" = 0
-
-  core-gates:
-    if: github.event_name == 'workflow_dispatch' && inputs.core_only
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
-        with:
-          distribution: temurin
-          java-version: '21'
-      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
-        with:
-          cache-provider: basic
-      - name: Required core slow and soak
-        run: ./gradlew --console=plain --max-workers=2 :core:slowTest :core:soak
-      - name: Reports
-        if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: nightly-reports
-          retention-days: 7
-          path: core/build/test-results/

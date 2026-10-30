@@ -6,11 +6,11 @@
 
 ## Now
 
-- **Milestone:** M7 Multiplayer; 2 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md), based on planning PR #32; T3 is split before implementation into independent aggregate and production integration.
-- **In progress:** T2b on main 8111c0a; verify and matched server slow pass. Validation of a shared Linux JMH-profiler allocation repair and the full standard cloud L6 are pending. Earlier passes remain labelled with their original source/validity policy.
-- **Last finished task:** T2a independent diplomacy foundation (2026-10-29), cloud-verified implementation e8438cd.
-- **Next task:** attribute the matched server result, repair its demonstrated cause, accept all current gates and continue dependency-ready M7 work. Previous failed evidence is retained.
-- **Merged from main last:** 8111c0a (2026-10-30), delivered persistence and accepted performance validity; merged-head gates pending.
+- **Milestone:** M7 Multiplayer; 4 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md), based on planning PR #32; T3 is split before implementation into independent aggregate and production integration.
+- **In progress:** T3a independent lobby contract, tests first. No network admission or production match start is installed by this step.
+- **Last finished task:** T2b.1 prerequisite composition and T2b.2 persisted authority, accepted on 2026-10-30 after all required current components passed.
+- **Next task:** T3a immutable configuration/readiness/preparation rules; T3b production integration still needs M6 MATCH-02. D-20 is explicitly accepted.
+- **Merged from main last:** 8111c0a (2026-10-30), zero commits behind at final T2b fetch. Verify, core slow/soak, matched server slow, paired JMH, standard cloud L6 and tooling smoke passed.
 
 The operator requested ownership of the whole M7 and work on what is currently possible on
 2026-10-29. This assignment intentionally includes responsibility for later blocked tasks;
@@ -35,6 +35,14 @@ before implementing them. T2 does not certify friendly-fire, allied victory, com
 or replication privacy; those retain their own integration tests and dependencies.
 
 ## Log
+
+### 2026-10-30 — T2b accepted; advance to T3a
+
+- Standard L6 41048400982 passed in 59m 51s: all 22 required GameTests, 27 JMH configurations, 19 passing and two existing report-only scene reports, no invalid report. Foreign CPU mean windows were 0.002102–0.006453; idle ratio 0.270785/0.30, path D p99 0.825912 ms/6 ms, protected-lookup ratio 2.412562/3.0. Current accepted validity policy applies, no threshold or native reference changed.
+- Combined current task evidence is complete: verify 41051799948 (2,309 cases), core slow/soak 41050854156 (216), matched server slow 41048580649 (19 M7 cases, identical control set), paired JMH 41051803906 (27 matching configurations, unchanged allocation/time/validity gates), L4 smoke 41054233370 (three inspected original frames and three candidates). All have zero failures/errors/skips where applicable. Earlier red/interrupted evidence remains unchanged in this log.
+- The standard server/perf source 42032ea has identical production runtime to the final verified checkpoint e7a75bd. Its JMH allocation evidence is superseded by the repaired identical-probe paired experiment; the probe-only change does not modify the GameTest/perf runtime. No aggregate failed job is relabelled as passed.
+- Removed temporary paired slow/core-only/JMH workflow modes and their concurrency branches after collection. Standard nightly command, 25-minute job bound and ten-minute server task bounds are unchanged; standard perf retains only its documented 90-minute aggregate resource window. Telemetry/log retention remains.
+- **T2b.1 and T2b.2 complete (4/28).** Proceeding to T3a contract tests before implementation; no M7 feature card or full multiplayer acceptance is declared complete by these foundations. PR #34 stays draft.
 
 ### 2026-10-30 — profiler repair validated without relaxing gates
 
