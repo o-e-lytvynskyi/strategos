@@ -7,7 +7,7 @@
 ## Now
 
 - **Milestone:** M7 Multiplayer; 2 of 27 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md), based on planning PR #32.
-- **In progress:** operator-resumed T2b slow-gate attribution on current main 8111c0a; schema-4 authority is installed, new merged-head verify and matched control/candidate gates are running. Earlier successful gates remain historical evidence under the previous main/validity policy.
+- **In progress:** T2b on main 8111c0a; verify and matched server slow pass. Validation of a shared Linux JMH-profiler allocation repair and the full standard cloud L6 are pending. Earlier passes remain labelled with their original source/validity policy.
 - **Last finished task:** T2a independent diplomacy foundation (2026-10-29), cloud-verified implementation e8438cd.
 - **Next task:** attribute the matched server result, repair its demonstrated cause, accept all current gates and continue dependency-ready M7 work. Previous failed evidence is retained.
 - **Merged from main last:** 8111c0a (2026-10-30), delivered persistence and accepted performance validity; merged-head gates pending.
@@ -35,6 +35,13 @@ before implementing them. T2 does not certify friendly-fire, allied victory, com
 or replication privacy; those retain their own integration tests and dependencies.
 
 ## Log
+
+### 2026-10-30 — matched slow passed; Linux profiler allocation defect
+
+- Matched server run 41048580649 passed on both sides: main 7m 24s, M7 7m 55s, identical 19-case sets, no failures/errors/skips, original ten-minute bounds. Previous interrupted runs remain evidence; a server runtime regression was not established by this control.
+- Paired JMH 41048405027 failed the unchanged allocation gate, not the 15% timing or validity gate. All 27 configurations matched; maximum timing ratio 1.061640, CPU load valid on both sides. Five kernels showed essentially identical unexpected allocations in main and M7: steady GC allocation rate about 0.208 MB/s (e.g. Motion 116.49/115.91 B/op), pointing to shared measurement overhead rather than M7's runtime.
+- The newly delivered InternalProfiler invokes the Linux MXBean CPU-load reader inside GC measurement callbacks. Replace that Linux path with reusable-buffer cumulative /proc counters, keeping the same validity limit, unavailable verdict and non-Linux behavior. Regression coverage checks counter semantics, malformed/overflowing input and bounded sampling allocation. No allowance, threshold, kernel code or approved baseline changes.
+- Next paired measurement applies the identical measurement-only repair to both pinned main and candidate, retaining the control patch and source digests. This isolates runtime differences and tests whether the shared profiler caused the observed allocation rate; no pass is claimed before that experiment completes.
 
 ### 2026-10-30 — operator resumed T2b and M7
 

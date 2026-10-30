@@ -86,6 +86,13 @@ jobs:
           java -version 2> evidence/java.txt
       - name: Build both benchmark jars before measuring
         run: |
+          # Apply the identical measurement-only repair to both sides; production runtime remains pinned.
+          cp candidate/core/src/jmh/java/dev/strategos/core/bench/ForeignLoadProfiler.java control/core/src/jmh/java/dev/strategos/core/bench/ForeignLoadProfiler.java
+          cp candidate/core/src/testFixtures/java/dev/strategos/core/testkit/LinuxCpuCounters.java control/core/src/testFixtures/java/dev/strategos/core/testkit/LinuxCpuCounters.java
+          git -C control add -N core/src/testFixtures/java/dev/strategos/core/testkit/LinuxCpuCounters.java
+          git -C control diff > evidence/control-measurement-patch.diff
+          sha256sum candidate/core/src/jmh/java/dev/strategos/core/bench/ForeignLoadProfiler.java control/core/src/jmh/java/dev/strategos/core/bench/ForeignLoadProfiler.java > evidence/profiler-digests.txt
+          sha256sum candidate/core/src/testFixtures/java/dev/strategos/core/testkit/LinuxCpuCounters.java control/core/src/testFixtures/java/dev/strategos/core/testkit/LinuxCpuCounters.java >> evidence/profiler-digests.txt
           ./control/gradlew -p control --no-daemon --console=plain --max-workers=2 :core:compileJmhJava
           ./candidate/gradlew -p candidate --no-daemon --console=plain --max-workers=2 :core:compileJmhJava
       - name: Control JMH
