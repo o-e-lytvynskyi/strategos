@@ -7,10 +7,10 @@
 ## Now
 
 - **Milestone:** M7 Multiplayer; 2 of 27 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md), based on planning PR #32.
-- **In progress:** T2b.2 authority/setup, schema-4 migration, hashing and journal integration are installed and functionally verified; acceptance is blocked by the server slow gate after three attempts. Standard L6 is still running.
+- **In progress:** T2b.2 authority/setup, schema-4 migration, hashing and journal integration are installed; verify, paired JMH and standard cloud L6 passed. Acceptance is blocked by the server slow gate after three attempts. Session stopped; no tests or monitors remain running.
 - **Last finished task:** T2a independent diplomacy foundation (2026-10-29), cloud-verified implementation e8438cd.
-- **Next task:** retain the running standard L6 result, then stop under the three-failure rule. A resumed investigation needs a matched cloud server control and harness attribution before further runtime changes.
-- **Merged from main last:** 134271f (2026-10-30); merged-head verify and paired JMH passed; slow failed and standard L6 is pending. Final fetch at 2026-10-30 showed zero commits behind main.
+- **Next task on resume:** matched cloud server control and harness attribution before further runtime changes. No fourth slow attempt was started in this session under the three-failure rule.
+- **Merged from main last:** 134271f (2026-10-30); verify, paired JMH and standard cloud L6 passed; slow failed. Final fetch at 2026-10-30 showed zero commits behind main.
 
 The operator requested ownership of the whole M7 and work on what is currently possible on
 2026-10-29. This assignment intentionally includes responsibility for later blocked tasks;
@@ -35,6 +35,13 @@ before implementing them. T2 does not certify friendly-fire, allied victory, com
 or replication privacy; those retain their own integration tests and dependencies.
 
 ## Log
+
+### 2026-10-30 — full cloud L6 passed, checkpoint and stop
+
+- [Standard perf 40972197958](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40972197958) on 33ecb12 passed in 1h 1m 55s. The server log explicitly confirms all 22 required tests passed; all 27 JMH configurations completed. The 21 scene reports contain 19 `pass` and two unchanged `report-only` verdicts (page capture/publication and viewer bytes), no failed/invalid report or CPU-counter validity reason. Nested report-only metrics retain their existing policy.
+- Measured foreign CPU ranged from 0 to 0.009142 (0.9142%); idle/moving ratio 0.218495 against 0.30, path D p99 0.484812 ms against the unchanged Linux CI limit of 6 ms, protected-lookup ratio 1.162653 against 3.0. This is full standard Linux CI evidence with factor 3, not native Mac or final multiplayer PERF-10 acceptance.
+- Runtime sources are unchanged since the verified/measured 33ecb12 checkpoint. Later commits only record results and adjust diagnostics. Records checks pass: 14 claims, 245 cards, zero problems. No performance reference or threshold was changed.
+- **Stop:** strategos-dev §8, "a task fails three times". The slow gate failed in three honest attempts, including true process isolation; T2b.1/T2b.2 remain open (2/27 steps complete). All launched cloud runs and local monitors are finished. The branch is pushed, PR #34 remains draft, and no merge/approval or full-M7 completion is claimed. On resume, investigate a matched server control and harness timing; later M7 runtime work retains the documented M6/hosting dependencies.
 
 ### 2026-10-30 — third slow failure, isolation did not explain the deadline
 

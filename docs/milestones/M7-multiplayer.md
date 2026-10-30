@@ -62,6 +62,8 @@ issues, JFR counters for S11, and ART-03 silhouette/look approval. People start 
 
 2026-10-30 acceptance update: authority installation passes cloud verify (2,303 cases) and pinned same-host JMH (27 matching configurations, unchanged 15%/allocation gate). Server slow reached the unchanged ten-minute timeout in three attempts, including one with core slow/soak completed before server start. The contention hypothesis is insufficient; no runtime regression or relaxed deadline is inferred. Both T2b steps remain open, further slow attempts stop under the developer procedure, and a resumed investigation requires matched server/harness attribution. Existing failed evidence is retained in the branch log.
 
+Final standard cloud L6 run 40972197958 passed in 1h 1m 55s on 33ecb12: all 22 required server scenes and 27 JMH configurations completed; 19 passing and two existing report-only scene reports, no invalid report. This completes the standard cloud performance evidence, while the slow failure still prevents accepting either T2b step. No native reference or final multiplayer PERF-10 acceptance is implied.
+
 2026-10-29 resume: composition verify/slow/soak pass, but its L6 Actions job hit the 55-minute aggregate deadline at 16/22 scenes. The job resource limit is 90 minutes; all measurement parameters/gates are unchanged. T2b.2 proceeds against the functionally verified contract while both steps retain pending acceptance until the corrected full combined L6 succeeds. This replaces the earlier strictly serial gate scheduling, not the required evidence.
 
 | ID | Finding / decision | Scope and follow-up |
