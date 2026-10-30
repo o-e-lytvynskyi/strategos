@@ -36,6 +36,13 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Log
 
+### 2026-10-30 — T3a implementation after the missing-API checkpoint
+
+- Cloud verify 41056261681 failed at mod test compilation because MatchLobby did not yet exist, as expected; 1,686 core cases had passed. This is the preserved test-first checkpoint, not a runtime failure or a hand-in.
+- Installed an immutable bounded lobby aggregate with canonical seats, UUID uniqueness outside core, explicit player/faction separation, co-op faction consistency, readiness invalidation and preparation/rollback. It performs no world mutation, network admission, asset lookup or production start.
+- Refined ready intents to require the observed configuration revision. State revision still advances on every real update; configuration revision changes only for actual settings changes/rollback, so peers may confirm one configuration concurrently. Added the stale-acknowledgement regression before installing that API. All changes are bounded pre-match logic, not a running simulation hot path.
+- AFTER-M6: authenticated LobbyService must validate the real supported setup, freeze it atomically with this value, invoke M6 and clean up partial world state. T3a alone does not prove NET-02 admission/privacy/start acceptance. Full cloud verify is required before acceptance.
+
 ### 2026-10-30 — T3a test-first checkpoint
 
 - Published independent lobby-contract tests before MatchLobby exists: canonical detached configuration, player/member/faction bounds, shared-faction consistency, readiness invalidation/no-op updates, open seats/AI, and preparation/rollback. No network payload, player admission, match creation or asset choice is installed.

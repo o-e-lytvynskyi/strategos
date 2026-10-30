@@ -181,6 +181,10 @@ no match, admits no network sender and chooses no hosting topology. Its readines
 only a lobby prerequisite, not complete start validation. T3b supplies authenticated service,
 payloads, map/setup validation and the real M6 preparation/start pipeline after its dependencies
 land. Observer/combat modes retain the existing product gates; T3a adds no such mode selector.
+Ready intents name a configuration revision: actual settings changes and preparation rollback
+invalidate it, while another member's ready toggle does not. A separate state revision tracks
+all updates. Thus a queued acknowledgement cannot approve new settings, and peers may confirm
+the same configuration without retrying merely because another peer became ready first.
 
 Add bounded `LobbyActionPayload` and `LobbyStatePayload` under `server/net/payload`, registered
 through `ModPayloads` and `PayloadSpec`. Only admitted lobby members get lobby state. Active-match

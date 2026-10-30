@@ -34,7 +34,7 @@ class MatchLobbyTest {
     }
 
     private static MatchLobby ready() {
-        return lobby().withReady(ANN, true).withReady(BOB, true);
+        return lobby().withReady(ANN, true, 0).withReady(BOB, true, 0);
     }
 
     @Test
@@ -110,19 +110,19 @@ class MatchLobbyTest {
     void onlyHumanSeatsHaveUuidOccupants() {
         assertThatIllegalArgumentException().isThrownBy(() -> seat(0, MatchLobby.Kind.AI, ANN, 0, 0, 0));
         assertThatIllegalArgumentException().isThrownBy(() -> seat(0, MatchLobby.Kind.CLOSED, ANN, 0, 0, 0));
-        assertThatIllegalArgumentException().isThrownBy(() -> lobby().withReady(EVE, true));
+        assertThatIllegalArgumentException().isThrownBy(() -> lobby().withReady(EVE, true, 0));
     }
 
     @Test
     void readyUpdatesAreIndividualAndOldViewsStayDetached() {
         MatchLobby before = lobby();
-        MatchLobby one = before.withReady(ANN, true);
-        MatchLobby both = one.withReady(BOB, true);
+        MatchLobby one = before.withReady(ANN, true, 0);
+        MatchLobby both = one.withReady(BOB, true, 0);
         assertThat(before.readyPlayers()).isEmpty();
         assertThat(one.readyPlayers()).containsExactly(new PlayerSlot(0));
         assertThat(both.readyPlayers()).containsExactlyInAnyOrder(new PlayerSlot(0), new PlayerSlot(1));
         assertThat(both.allHumansReady()).isTrue();
-        assertThat(both.withReady(ANN, false).readyPlayers()).containsExactly(new PlayerSlot(1));
+        assertThat(both.withReady(ANN, false, 0).readyPlayers()).containsExactly(new PlayerSlot(1));
         assertThatThrownBy(() -> both.readyPlayers().clear()).isInstanceOf(UnsupportedOperationException.class);
     }
 
@@ -144,7 +144,7 @@ class MatchLobbyTest {
         MatchLobby before = ready();
         assertThat(before.withSeat(human(0, ANN, 0))).isSameAs(before);
         assertThat(before.withSeats(before.seats().reversed())).isSameAs(before);
-        assertThat(before.withReady(ANN, true)).isSameAs(before);
+        assertThat(before.withReady(ANN, true, 0)).isSameAs(before);
         assertThat(before.withFactionCapacity(2)).isSameAs(before);
         assertThat(lobby().settingsChanged().revision()).isEqualTo(1);
     }
@@ -153,9 +153,13 @@ class MatchLobbyTest {
     void anEmptyHumanSeatBlocksReadinessAndAiDoesNotNeedAnAcknowledgement() {
         MatchLobby open =
                 MatchLobby.create(2, List.of(human(0, ANN, 0), seat(1, MatchLobby.Kind.HUMAN, null, 1, 1, 1)));
-        assertThat(open.withReady(ANN, true).allHumansReady()).isFalse();
+        assertThat(open.withReady(ANN, true, 0).allHumansReady()).isFalse();
         MatchLobby ai = open.withSeat(seat(1, MatchLobby.Kind.AI, null, 1, 1, 1));
-        assertThat(ai.withReady(ANN, true).allHumansReady()).isTrue();
+        assertThat(ai.withReady(ANN, true, ai.configurationRevision()).allHumansReady())
+                .isTrue();
+        MatchLobby closed = open.withSeat(seat(1, MatchLobby.Kind.CLOSED, null, 1, 1, 1));
+        assertThat(closed.withReady(ANN, true, closed.configurationRevision()).allHumansReady())
+                .isTrue();
         assertThat(MatchLobby.create(2, List.of(seat(0, MatchLobby.Kind.AI, null, 0, 0, 0)))
                         .allHumansReady())
                 .isFalse();
@@ -165,7 +169,7 @@ class MatchLobbyTest {
     void coOpMembersUseDifferentPlayersAndOneConsistentFactionConfiguration() {
         MatchLobby state = MatchLobby.create(
                 2, List.of(human(0, ANN, 0), human(1, BOB, 0), seat(2, MatchLobby.Kind.AI, null, 1, 1, 1)));
-        assertThat(state.withReady(ANN, true).withReady(BOB, true).allHumansReady())
+        assertThat(state.withReady(ANN, true, 0).withReady(BOB, true, 0).allHumansReady())
                 .isTrue();
         assertThat(state.seats()).extracting(s -> s.faction().value()).containsExactly(0, 0, 1);
     }
@@ -177,7 +181,7 @@ class MatchLobbyTest {
         MatchLobby pending = before.prepare();
         assertThat(pending.phase()).isEqualTo(MatchLobby.Phase.PREPARING);
         assertThat(before.phase()).isEqualTo(MatchLobby.Phase.EDITING);
-        assertThatIllegalStateException().isThrownBy(() -> pending.withReady(ANN, false));
+        assertThatIllegalStateException().isThrownBy(() -> pending.withReady(ANN, false, 0));
         assertThatIllegalStateException().isThrownBy(() -> pending.withSeat(human(0, ANN, 0)));
         assertThatIllegalStateException().isThrownBy(() -> pending.withSeats(pending.seats()));
         assertThatIllegalStateException().isThrownBy(pending::settingsChanged);
@@ -189,5 +193,31 @@ class MatchLobbyTest {
         assertThat(failed.revision()).isEqualTo(pending.revision() + 1);
         assertThatIllegalStateException().isThrownBy(failed::prepare);
         assertThatIllegalStateException().isThrownBy(before::preparationFailed);
+    }
+
+    @Test
+    void staleReadyCannotApproveNewSettingsOrAnOldPreparationAttempt() {
+        MatchLobby sameSettings = lobby().withReady(ANN, true, 0).withReady(BOB, true, 0);
+        assertThat(sameSettings.allHumansReady()).isTrue();
+        assertThat(sameSettings.configurationRevision()).isZero();
+        MatchLobby changed = sameSettings.settingsChanged();
+        assertThat(changed.configurationRevision()).isEqualTo(1);
+        assertThatIllegalStateException().isThrownBy(() -> changed.withReady(ANN, true, 0));
+        MatchLobby fresh = changed.withReady(ANN, true, 1).withReady(BOB, true, 1);
+        MatchLobby retry = fresh.prepare().preparationFailed();
+        assertThat(retry.configurationRevision()).isEqualTo(2);
+        assertThatIllegalStateException().isThrownBy(() -> retry.withReady(ANN, true, 1));
+    }
+
+    @Test
+    void fourMembersCanAcknowledgeOneConfigurationInAnyOrder() {
+        UUID dan = new UUID(0, 4);
+        MatchLobby state =
+                MatchLobby.create(4, List.of(human(3, dan, 3), human(0, ANN, 0), human(2, EVE, 2), human(1, BOB, 1)));
+        state = state.withReady(dan, true, 0).withReady(BOB, true, 0).withReady(EVE, true, 0);
+        assertThat(state.allHumansReady()).isFalse();
+        MatchLobby prepared = state.withReady(ANN, true, 0).prepare();
+        assertThat(prepared.seats()).extracting(s -> s.player().value()).containsExactly(0, 1, 2, 3);
+        assertThat(prepared.readyPlayers()).hasSize(4);
     }
 }
