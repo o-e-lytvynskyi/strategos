@@ -7,10 +7,10 @@
 ## Now
 
 - **Milestone:** M7 Multiplayer; 2 of 27 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md), based on planning PR #32.
-- **In progress:** T2b.2 authority/setup, schema-4 migration, hashing and journal integration are installed and functionally verified; final slow and standard L6 acceptance remains shared with T2b.1 and pending.
+- **In progress:** T2b.2 authority/setup, schema-4 migration, hashing and journal integration are installed and functionally verified; acceptance is blocked by the server slow gate after three attempts. Standard L6 is still running.
 - **Last finished task:** T2a independent diplomacy foundation (2026-10-29), cloud-verified implementation e8438cd.
-- **Next task:** complete the isolated slow/soak and standard performance gates, then reassess dependency-ready M7 work.
-- **Merged from main last:** 134271f (2026-10-30); merged-head verify and paired JMH passed; slow and standard L6 pending.
+- **Next task:** retain the running standard L6 result, then stop under the three-failure rule. A resumed investigation needs a matched cloud server control and harness attribution before further runtime changes.
+- **Merged from main last:** 134271f (2026-10-30); merged-head verify and paired JMH passed; slow failed and standard L6 is pending. Final fetch at 2026-10-30 showed zero commits behind main.
 
 The operator requested ownership of the whole M7 and work on what is currently possible on
 2026-10-29. This assignment intentionally includes responsibility for later blocked tasks;
@@ -35,6 +35,14 @@ before implementing them. T2 does not certify friendly-fire, allied victory, com
 or replication privacy; those retain their own integration tests and dependencies.
 
 ## Log
+
+### 2026-10-30 — third slow failure, isolation did not explain the deadline
+
+- [Full-ci 40975691944](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40975691944) completed core slow/soak successfully in 3m 48s (216 cases, no failures/errors/skips), then started server slow in a separate Gradle process. The server again hit its unchanged ten-minute timeout; 18/19 server cases had completed.
+- `map_fifty` started at 00:02:53 UTC and was interrupted at 00:04:31, after about 97 seconds. The earlier prerequisite control finished that scenario in roughly 105 seconds, but on a different runner; these timings cannot establish a runtime regression or justify a relaxed deadline.
+- Retained 898 vmstat intervals: mean runnable queue 2.31, idle 51.26%, zero observed CPU steal. Core workload overlap is not a sufficient explanation because this run eliminated it. Paired core JMH remains green, but does not certify server/harness performance.
+- Removed the ineffective diagnostic scheduling changes; retained vmstat and slow-server logs, the original gate command, every test and every timeout. No fourth slow attempt or new feature task is started under strategos-dev §8. Both T2b steps remain unchecked; standard L6 was already running and will be collected before stopping.
+- A resumed investigation should compare the prerequisite and candidate server suites on one cloud host, inspect scenario/tick/terrain/GC timing, and preserve failed evidence. No new baseline or threshold is proposed from the current data. Other M7 runtime tasks still need M6/D-20 or later multiplayer dependencies; QA-14 has its own MVP/date gate and branch.
 
 ### 2026-10-30 — scheduling hypothesis not yet isolated
 
@@ -167,6 +175,8 @@ or replication privacy; those retain their own integration tests and dependencie
 4. Cloud verify takes 6m 46s on the readiness baseline and 7m 20s with the foundation, beyond the procedure's 5-minute target. Keep all existing gates; recommend accepting the cloud duration. Moving checks or changing a Done gate requires an explicit owner decision.
 
 ## Decisions taken
+
+- 2026-10-30 · Undo diagnostic slow-gate scheduling after true process isolation still failed — overlap was not sufficient to explain the timeout — investigate a matched server control before changing execution policy again; retain telemetry and all unsuccessful evidence.
 
 - 2026-10-30 · Serialize full-ci test projects and retain vmstat — the failed run overlapped core soak with a server on two cores — restore parallel scheduling only after evidence establishes safe coexistence within unchanged timeouts.
 
