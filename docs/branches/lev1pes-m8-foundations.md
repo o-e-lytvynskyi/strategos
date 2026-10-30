@@ -10,7 +10,7 @@
 - **In progress:** T5 implementation and fast checks complete; the old full-gate timing failure is retained as historical evidence. Current main replaces that timing assertion with structural coverage, and fresh fast/targeted checks pass. T6 review/KB preparation is complete, but final full verification/handoff is not.
 - **Last finished task:** T4 audience decisions and outbound audit; fast/L2/full verify and existing L4 smoke passed.
 - **Next task:** complete full verification of T5/T6 on the updated base before handoff; the historical timing blocker is addressed by upstream main, not by this branch. Rebase-only checks do not mark T5/T6 complete. Full runtime integration remains unassigned T7–T12.
-- **Current main base:** 134271f (2026-10-29), rebased at the owner request. Latest claims format, performance-validity fixes and dependencies are integrated; task completion and runtime integration scope are unchanged.
+- **Current main base:** 8111c0a (2026-10-30), merged without rewriting published history during the operator-requested branch refresh. T5/T6 full verification and handoff remain outstanding.
 
 ## Scope and intended task split
 
@@ -39,6 +39,11 @@ Main contains M0–M5 runtime. M5 delivery #33 is merged; M6's specification is 
 Full FOW-02 targeted tracking, FOW-03 live save/minimap ghosts, FOW-05 all-channel L3, AI-07 integrated AI/balance, PERF-15, compatibility runs and consent-batch/client acceptance are later integration tasks, excluded from this ready implementation claim. No full M8 completion will be reported from isolated contracts.
 
 ## Log
+
+### 2026-10-30 — synchronize with current main
+
+- Merged origin/main at 8111c0a without conflicts; upstream save/reload and performance-validity changes are included. No additional M8 implementation task is claimed or completed by this synchronization.
+- Claims check: 14 claims, zero problems. Roadmap check: 245 cards, zero problems. verifyFast passed in 4m 28s; log: build/branch-refresh-verifyFast.log. Full verify and runtime/performance gates were not rerun for this branch synchronization; T5/T6 remain unfinished.
 
 ### 2026-10-28 — owner-requested M8 dependency assessment and claim
 

@@ -8,13 +8,14 @@ import org.jspecify.annotations.Nullable;
 /**
  * Foreign (not this process) CPU load over a run of timestamped cumulative readings: the exact window mean, and the
  * per-interval fractions that show bursts a mean hides. Missing or inconsistent counters make the whole measurement
- * {@linkplain #unavailable unavailable}, never zero. The proposed limits are report-only until the policy is adopted.
+ * {@linkplain #unavailable unavailable}, never zero. The mean limit is the gate (ADR-0026 part B); the burst limit and the
+ * preflight length are report-only.
  */
 public final class ForeignLoad {
     /** One reading and the {@link System#nanoTime()}-style instant it was taken. */
     public record Reading(long nanos, CpuTimes times) {}
 
-    /** What a measurement says about a run: the current gate, and the proposed policy (reported, not enforced). */
+    /** What a measurement says about a run: the gate, and the report-only burst and preflight policy. */
     public record Assessment(boolean gateInvalid, boolean proposedValid, List<String> reasons) {
         public Assessment {
             reasons = List.copyOf(reasons);
@@ -28,7 +29,7 @@ public final class ForeignLoad {
      */
     public static final long MIN_INTERVAL_NANOS = 500_000_000L;
 
-    /** Preflight the proposed policy asks for, in seconds. */
+    /** Preflight the report-only policy asks for, in seconds. */
     public static final double PROPOSED_PREFLIGHT_SECONDS = 60;
 
     private final @Nullable String unavailableReason;
@@ -138,45 +139,55 @@ public final class ForeignLoad {
         return seconds;
     }
 
-    /** Proposed limit on the mean: at most 10 % of the machine, and at most half a logical CPU. */
-    public static double proposedMeanLimit(int cpus) {
-        return Math.min(0.10, 0.50 / cpus);
+    /**
+     * Limit on the mean foreign load: at most 10 % of the machine, and at most 0.9 of one logical CPU (adopted by ADR-0026
+     * part B: 25 % let a machine with one CPU fully busy pass; round 5 put a typical desktop under 6.5 % and one busy
+     * CPU above 9 % on 12 CPUs).
+     */
+    public static double meanLimit(int cpus) {
+        return Math.min(0.10, 0.9 / cpus);
     }
 
-    /** Proposed limit on the p95 of one-second intervals: at most 20 %, and at most one logical CPU. */
+    /** Burst limit (report-only) on the p95 of one-second intervals: at most 20 %, and at most one logical CPU. */
     public static double proposedBurstLimit(int cpus) {
         return Math.min(0.20, 1.00 / cpus);
     }
 
-    /** Reasons are prefixed {@code gate:} (the current verdict) or {@code proposed:} (report-only). */
-    public Assessment assess(int cpus, double gateMeanLimit, double preflightSeconds) {
+    /**
+     * The gate is invalid when the load is unavailable, its mean is above {@link #meanLimit}, or the machine was
+     * already busy before the run (an available {@code preflight} whose mean is above it). Reasons are prefixed
+     * {@code gate:} (the verdict) or {@code proposed:} (report-only: the burst and the preflight length).
+     */
+    public Assessment assess(int cpus, ForeignLoad preflight) {
         List<String> reasons = new ArrayList<>();
         if (!available()) {
             reasons.add("gate: foreign CPU load unavailable: " + unavailableReason);
             reasons.add("proposed: foreign CPU load unavailable");
             return new Assessment(true, false, reasons);
         }
-        boolean gateInvalid = mean > gateMeanLimit;
-        if (gateInvalid) {
-            reasons.add("gate: mean foreign load " + pct(mean) + " above " + pct(gateMeanLimit));
+        double limit = meanLimit(cpus);
+        boolean gateInvalid = false;
+        if (mean > limit) {
+            gateInvalid = true;
+            reasons.add("gate: mean foreign load " + pct(mean) + " above " + pct(limit) + " on " + cpus + " CPUs");
+        }
+        if (preflight.available() && preflight.mean() > limit) {
+            gateInvalid = true;
+            reasons.add("gate: preflight foreign load " + pct(preflight.mean()) + " above " + pct(limit) + " on " + cpus
+                    + " CPUs");
         }
         boolean valid = true;
-        if (mean > proposedMeanLimit(cpus)) {
-            valid = false;
-            reasons.add("proposed: mean foreign load " + pct(mean) + " above " + pct(proposedMeanLimit(cpus)) + " on "
-                    + cpus + " CPUs");
-        }
         if (p95() > proposedBurstLimit(cpus)) {
             valid = false;
             reasons.add("proposed: p95 foreign load " + pct(p95()) + " above " + pct(proposedBurstLimit(cpus)) + " on "
                     + cpus + " CPUs");
         }
-        if (preflightSeconds < PROPOSED_PREFLIGHT_SECONDS) {
+        if (preflight.seconds() < PROPOSED_PREFLIGHT_SECONDS) {
             valid = false;
-            reasons.add("proposed: preflight " + Math.round(preflightSeconds) + " s, under "
+            reasons.add("proposed: preflight " + Math.round(preflight.seconds()) + " s, under "
                     + Math.round(PROPOSED_PREFLIGHT_SECONDS) + " s");
         }
-        return new Assessment(gateInvalid, valid, reasons);
+        return new Assessment(gateInvalid, valid && !gateInvalid, reasons);
     }
 
     private static String pct(double fraction) {

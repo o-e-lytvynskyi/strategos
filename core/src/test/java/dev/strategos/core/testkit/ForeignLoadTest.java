@@ -53,20 +53,25 @@ class ForeignLoadTest {
         assertThat(load.mean()).isEqualTo(0.4);
     }
 
+    /** A preflight of {@code n} quiet seconds. */
+    private static ForeignLoad quiet(int n) {
+        return seconds(flat(n, 0));
+    }
+
     @Test
-    void oneBusyLogicalCpuIsGateValidButProposedInvalid() {
+    void oneBusyLogicalCpuIsGateInvalid() {
         for (int cpus : new int[] {6, 32}) {
             long oneCpu = TICKS / cpus; // one fully busy CPU out of `cpus`
-            Assessment a = seconds(flat(90, oneCpu)).assess(cpus, 0.25, 90);
-            assertThat(a.gateInvalid()).as("gate on %d CPUs", cpus).isFalse();
+            Assessment a = seconds(flat(90, oneCpu)).assess(cpus, quiet(90));
+            assertThat(a.gateInvalid()).as("gate on %d CPUs", cpus).isTrue();
             assertThat(a.proposedValid()).as("proposed on %d CPUs", cpus).isFalse();
-            assertThat(a.reasons()).anyMatch(s -> s.startsWith("proposed: mean"));
+            assertThat(a.reasons()).anyMatch(s -> s.startsWith("gate: mean"));
         }
     }
 
     @Test
     void quietRunIsValidUnderBoth() {
-        Assessment a = seconds(flat(90, 100)).assess(8, 0.25, 90);
+        Assessment a = seconds(flat(90, 100)).assess(8, quiet(90));
         assertThat(a.gateInvalid()).isFalse();
         assertThat(a.proposedValid()).isTrue();
         assertThat(a.reasons()).isEmpty();
@@ -97,10 +102,29 @@ class ForeignLoadTest {
 
     @Test
     void meanLimitBoundaryIsInclusive() {
-        // 5 CPUs: min(0.10, 0.50 / 5) = 0.10
-        assertThat(ForeignLoad.proposedMeanLimit(5)).isEqualTo(0.1);
-        assertThat(seconds(flat(90, 1_000)).assess(5, 0.25, 90).proposedValid()).isTrue();
-        assertThat(seconds(flat(90, 1_001)).assess(5, 0.25, 90).proposedValid()).isFalse();
+        // min(0.10, 0.9 / N): 10 % up to 9 CPUs, then 0.9 of one CPU
+        assertThat(ForeignLoad.meanLimit(4)).isEqualTo(0.1);
+        assertThat(ForeignLoad.meanLimit(12)).isEqualTo(0.075);
+        assertThat(seconds(flat(90, 1_000)).assess(4, quiet(90)).gateInvalid()).isFalse();
+        assertThat(seconds(flat(90, 1_001)).assess(4, quiet(90)).gateInvalid()).isTrue();
+        assertThat(seconds(flat(90, 750)).assess(12, quiet(90)).gateInvalid()).isFalse();
+        assertThat(seconds(flat(90, 751)).assess(12, quiet(90)).gateInvalid()).isTrue();
+    }
+
+    @Test
+    void preflightAboveTheLimitIsGateInvalid() {
+        ForeignLoad run = seconds(flat(90, 0));
+        assertThat(run.assess(4, seconds(flat(90, 1_000))).gateInvalid()).isFalse();
+        Assessment a = run.assess(4, seconds(flat(90, 1_001)));
+        assertThat(a.gateInvalid()).isTrue();
+        assertThat(a.reasons()).anyMatch(s -> s.startsWith("gate: preflight"));
+    }
+
+    @Test
+    void anUnavailablePreflightIsReportedNotGated() {
+        Assessment a = seconds(flat(90, 0)).assess(4, ForeignLoad.unavailable("no preflight"));
+        assertThat(a.gateInvalid()).isFalse();
+        assertThat(a.proposedValid()).isFalse();
     }
 
     @Test
@@ -116,26 +140,27 @@ class ForeignLoadTest {
         }
         ForeignLoad load = seconds(four);
         assertThat(load.p95()).isEqualTo(0.2);
-        assertThat(load.assess(5, 0.25, 90).reasons()).noneMatch(s -> s.contains("p95"));
+        assertThat(load.assess(5, quiet(90)).reasons()).noneMatch(s -> s.contains("p95"));
         long[] over = flat(60, 0);
         for (int i = 0; i < 4; i++) {
             over[i] = 2_001;
         }
-        assertThat(seconds(over).assess(5, 0.25, 90).reasons()).anyMatch(s -> s.contains("p95"));
+        assertThat(seconds(over).assess(5, quiet(90)).reasons()).anyMatch(s -> s.contains("p95"));
     }
 
     @Test
     void gateLimitBoundaryIsInclusive() {
-        assertThat(seconds(flat(10, 2_500)).assess(1, 0.25, 90).gateInvalid()).isFalse();
-        assertThat(seconds(flat(10, 2_501)).assess(1, 0.25, 90).gateInvalid()).isTrue();
+        // one CPU: min(0.10, 0.9) = 10 %
+        assertThat(seconds(flat(10, 1_000)).assess(1, quiet(90)).gateInvalid()).isFalse();
+        assertThat(seconds(flat(10, 1_001)).assess(1, quiet(90)).gateInvalid()).isTrue();
     }
 
     @Test
     void shortPreflightIsProposedInvalidOnly() {
-        Assessment a = seconds(flat(90, 0)).assess(8, 0.25, 59.9);
+        Assessment a = seconds(flat(90, 0)).assess(8, quiet(59));
         assertThat(a.gateInvalid()).isFalse();
         assertThat(a.proposedValid()).isFalse();
-        assertThat(seconds(flat(90, 0)).assess(8, 0.25, 60).proposedValid()).isTrue();
+        assertThat(seconds(flat(90, 0)).assess(8, quiet(60)).proposedValid()).isTrue();
     }
 
     @Test
@@ -143,7 +168,7 @@ class ForeignLoadTest {
         ForeignLoad load = ForeignLoad.unavailable("no /proc/stat");
         assertThat(load.available()).isFalse();
         assertThat(load.mean()).isEqualTo(1);
-        Assessment a = load.assess(8, 0.25, 90);
+        Assessment a = load.assess(8, quiet(90));
         assertThat(a.gateInvalid()).isTrue();
         assertThat(a.proposedValid()).isFalse();
         assertThat(a.reasons()).anyMatch(s -> s.contains("no /proc/stat"));
@@ -175,7 +200,7 @@ class ForeignLoadTest {
         ForeignLoad stalled = ForeignLoad.of(
                 List.of(new Reading(0, new CpuTimes(100, 50, 0)), new Reading(SECOND, new CpuTimes(100, 50, 0))));
         assertThat(stalled.available()).isFalse();
-        assertThat(stalled.assess(8, 0.25, 90).gateInvalid()).isTrue();
+        assertThat(stalled.assess(8, quiet(90)).gateInvalid()).isTrue();
         ForeignLoad regress = ForeignLoad.of(
                 List.of(new Reading(0, new CpuTimes(100, 50, 0)), new Reading(SECOND, new CpuTimes(200, 40, 0))));
         assertThat(regress.available()).isFalse();
@@ -190,6 +215,6 @@ class ForeignLoadTest {
         assertThat(load.mean()).isEqualTo(0.4);
         assertThat(load.p95()).isEqualTo(0.4);
         assertThat(load.peak()).isEqualTo(0.4);
-        assertThat(load.assess(8, 0.25, 90).gateInvalid()).isTrue();
+        assertThat(load.assess(8, quiet(90)).gateInvalid()).isTrue();
     }
 }
