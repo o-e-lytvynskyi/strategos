@@ -19,7 +19,7 @@ error-prone = "2.51.0"
 nullaway = "0.14.2"
 archunit = "1.5.1"
 # Tests.
-junit = "5.14.4"
+junit = "6.1.3"
 assertj = "3.27.7"
 testframework = "21.1.264"   # used from M1 (NET-01 mock players); keep in lockstep with neoforge
 jmh = "1.37"
