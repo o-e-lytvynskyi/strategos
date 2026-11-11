@@ -81,7 +81,8 @@ final class Snapshots {
                         s.aiSlots().wakeMask(),
                         s.alerts().save(),
                         s.progress().save(),
-                        s.matchStats().save()));
+                        s.matchStats().save(),
+                        s.visionSystem() != null ? s.visionSystem().save() : List.of()));
     }
 
     /** The economy ledger's counters, or none while nothing was found or taken (ECO-05). */

@@ -4,9 +4,9 @@
 
 ## Now
 
-- **Milestone:** M6 MVP: First skirmish, 4 of 28 tasks done (T2 split into T2.1 and T2.2); spec [M6-first-skirmish.md](../milestones/M6-first-skirmish.md).
-- **Last finished task:** M6 T4 (2026-11-12), the commit `M6 T4: conquest, defeat and statistics`.
-- **Next task:** M6 T5 · FOW-01, VisionGrid, VisibilityIndex, resolver rule, VisionBench.
+- **Milestone:** M6 MVP: First skirmish, 5 of 28 tasks done (T2 split into T2.1 and T2.2); spec [M6-first-skirmish.md](../milestones/M6-first-skirmish.md).
+- **Last finished task:** M6 T5 (2026-11-12), the commit `M6 T5: vision grid, visibility and the resolver's fog`.
+- **Next task:** M6 T6 · FOW-07 server, explored, vision_delta, FogGate, TrackerRefresher.
 - **Merged from main last:** 0a7cc3b (2026-10-25).
 
 ## Depends on unfinished work
@@ -20,6 +20,12 @@ From the assessment before the claim (procedure §2a step 0); kept current.
 ## Log
 
 Newest first; one entry per session in the worklog's shape.
+
+### 2026-11-12 — M6 T5
+
+- **M6 T5 · FOW-01, vision grid, visibility and the resolver's fog** — FOW-01 `done` (all five checks). `DiscOffsets` precomputes filled-disc offset tables for radii 0–16 (instance class, ArchUnit forbids static arrays). `VisionGrid` per-faction: `short[] counts` + `long[] explored` bitset (9,216 cells at 384²); `stamp`/`unstamp` with fast path when the disc fits. `VisibilityIndex` per-faction bitset over unit handles; 10-tick hysteresis (revealed at once, hidden 10 ticks after last seen). `VisionSystem` (`MatchSystem`, Phase.WORLD, every tick): stamps units and buildings, updates explored and visibility; `save()`/`restore()`/`mix()` serialize explored bits + hysteresis (pristine returns empty/unchanged). `Ownership` gains a fog check between the alive check and NOT_OWNER: invisible enemies → `UNKNOWN_TARGET`. Save/restore wired through `MatchSnapshot.Play` (7th field `vision`), `MatchSnapshotCodec`, `Snapshots`, `StateHasher`. Golden journals and the determinism canary rebaselined (explored bits enter the hash). New: `VisionGridTest` (2), `VisibilityIndexTest` (1), `FogCommandTest` (1), `VisionBench` (JMH). `MoveRuleTest` and `StopRuleTest` adjusted to seed vision before commanding. `verifyFast` green (1375 L1).
+- **Decisions taken:** (5) `DiscOffsets` as instance class — ArchUnit rule B2 forbids mutable static arrays in core; each `VisionGrid` owns one. (6) Building vision from `Vision/range` in templates, default 12 blocks — spec §2.4 says "the template's range"; `CorePaths.DEFAULT_VISION = 12`. (7) All golden hashes rebaselined — unlike T4's `matchStats` (hashed only under CONQUEST), explored bits are mixed unconditionally once any cell is explored; the pristine guard preserves pre-FOW hashes for matches without vision.
+- **Delegation:** implementer agent (Sonnet, worktree); the agent built all new files and wiring. The orchestrator resolved 4 merge conflicts (MatchSnapshot.Play, Snapshots, StateHasher, MatchSnapshotCodec — the worktree was based on `main` which has M5 combat fields the branch lacks), fixed a dropped `alerts` field in the Play record, adjusted MoveRuleTest/StopRuleTest for the fog check's interaction with command ordering (COMMANDS phase runs before WORLD), and rebaselined golden hashes. Trial implementer: pass — the agent's code compiled, the design was correct, and deviations were documented; conflicts and test adjustments were the orchestrator's job (worktree/branch divergence + cross-cutting fog behavior).
 
 ### 2026-11-12 — M6 T4
 
@@ -51,6 +57,9 @@ Newest first; one entry per session in the worklog's shape.
 
 ## Decisions taken
 
+- 2026-11-12 · `DiscOffsets` as instance class (ArchUnit B2 forbids mutable static arrays) — each `VisionGrid` owns one — a single shared instance.
+- 2026-11-12 · Building vision from `Vision/range` in templates, default 12 blocks — a hardcoded constant or a stat-path column.
+- 2026-11-12 · All golden hashes rebaselined — explored bits enter the hash unconditionally once any cell is explored; the pristine guard keeps pre-FOW matches unchanged — hashing only under fog-enabled rules (would need a rule flag that does not exist).
 - 2026-10-26 · `ProtectedBlockIndexTest` measures the two sizes alternately and compares their fastest runs, the 3× threshold unchanged — load from other processes only adds time, and the sequential median failed under load — the sequential median.
 - 2026-10-26 · Only additions to `Trainer/units` and `Researcher/techs` count as unlocks (spec row 29) — a class edit makes nothing available — any `TOKENS` addition.
 - 2026-10-26 · The phase notice carries its ordinal in `MatchNews.ticks` (row 30) — the record's fields are generic and the kind says how to read them — a field of its own.

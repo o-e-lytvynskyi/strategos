@@ -13,6 +13,8 @@ import dev.strategos.core.sim.journal.JournalWriter;
 import dev.strategos.core.sim.move.MotionSystem;
 import dev.strategos.core.sim.nav.PathService;
 import dev.strategos.core.sim.unitai.UnitAiSystem;
+import dev.strategos.core.sim.vision.VisionSystem;
+import java.util.List;
 
 /** The match kernel: the systems registered in phase order and the nine-phase step. */
 final class MatchCoreImpl implements MatchCore {
@@ -30,10 +32,21 @@ final class MatchCoreImpl implements MatchCore {
     private final Phase[] phases = Phase.values();
 
     private MatchCoreImpl(
-            MatchState state, CorePorts ports, SliceSource slices, int checkpointEvery, int maxJournalTicks) {
+            MatchState state,
+            CorePorts ports,
+            SliceSource slices,
+            int checkpointEvery,
+            int maxJournalTicks,
+            List<Long> savedVision) {
         CommandRules rules = CommandRules.m0();
         rules.verifyCovers(CommandKinds.DEFAULT);
         this.state = state;
+        VisionSystem vision = new VisionSystem(state.config());
+        state.setVisionSystem(vision);
+        if (!savedVision.isEmpty()) {
+            vision.restore(savedVision);
+            vision.rebuild(state);
+        }
         this.timers = new PhaseTimers(Phase.names(), ports.clock(), TIMER_WINDOW);
         this.metrics = ports.metrics();
         this.journal = new JournalWriter(Snapshots.take(state), slices, checkpointEvery, maxJournalTicks);
@@ -51,6 +64,7 @@ final class MatchCoreImpl implements MatchCore {
         scheduler.register(state.spatial()); // the grid's rebuild ends MOVEMENT
         scheduler.register(new CombatSystem());
         scheduler.register(new EconomySystem());
+        scheduler.register(vision); // FOW-01: the grids and the visibility, before the terrain's edits
         scheduler.register(new TerrainSystem());
         scheduler.register(new GearSystem());
         scheduler.register(new AlertSystem());
@@ -61,7 +75,7 @@ final class MatchCoreImpl implements MatchCore {
     static MatchCoreImpl create(
             MatchConfig config, TemplateSet templates, CorePorts ports, int checkpointEvery, int maxJournalTicks) {
         MatchState state = new MatchState(config, templates, new EntityStore(), MatchLog.forSim(config.id()));
-        return new MatchCoreImpl(state, ports, SliceSource.NONE, checkpointEvery, maxJournalTicks);
+        return new MatchCoreImpl(state, ports, SliceSource.NONE, checkpointEvery, maxJournalTicks, List.of());
     }
 
     static MatchCoreImpl restore(
@@ -73,7 +87,13 @@ final class MatchCoreImpl implements MatchCore {
             int maxJournalTicks) {
         MatchState state = Snapshots.restore(
                 snapshot, templates, MatchLog.forSim(snapshot.config().id()), slices);
-        return new MatchCoreImpl(state, ports, slices, checkpointEvery, maxJournalTicks);
+        return new MatchCoreImpl(
+                state,
+                ports,
+                slices,
+                checkpointEvery,
+                maxJournalTicks,
+                snapshot.play().vision());
     }
 
     @Override

@@ -41,17 +41,19 @@ public record MatchSnapshot(
             long aiWake,
             List<Long> alerts,
             List<List<String>> progress,
-            List<Long> matchStats) {
-        public static final Play EMPTY = new Play(List.of(), List.of(), 0, List.of(), List.of(), List.of());
+            List<Long> matchStats,
+            List<Long> vision) {
+        public static final Play EMPTY = new Play(List.of(), List.of(), 0, List.of(), List.of(), List.of(), List.of());
 
-        /** A play with no live alert, as before MATCH-04 saved them. */
-        public Play(List<Long> outcome, List<AiSlots.Saved> ai, long aiWake) {
-            this(outcome, ai, aiWake, List.of(), List.of(), List.of());
-        }
-
-        /** A play with nothing researched, as before TECH-01 saved the techs. */
-        public Play(List<Long> outcome, List<AiSlots.Saved> ai, long aiWake, List<Long> alerts) {
-            this(outcome, ai, aiWake, alerts, List.of(), List.of());
+        /** A play without vision, as before FOW-01 saved it. */
+        public Play(
+                List<Long> outcome,
+                List<AiSlots.Saved> ai,
+                long aiWake,
+                List<Long> alerts,
+                List<List<String>> progress,
+                List<Long> matchStats) {
+            this(outcome, ai, aiWake, alerts, progress, matchStats, List.of());
         }
 
         /** A play with no match statistics, as before M6 saved them. */
@@ -61,7 +63,17 @@ public record MatchSnapshot(
                 long aiWake,
                 List<Long> alerts,
                 List<List<String>> progress) {
-            this(outcome, ai, aiWake, alerts, progress, List.of());
+            this(outcome, ai, aiWake, alerts, progress, List.of(), List.of());
+        }
+
+        /** A play with nothing researched, as before TECH-01 saved the techs. */
+        public Play(List<Long> outcome, List<AiSlots.Saved> ai, long aiWake, List<Long> alerts) {
+            this(outcome, ai, aiWake, alerts, List.of(), List.of(), List.of());
+        }
+
+        /** A play with no live alert, as before MATCH-04 saved them. */
+        public Play(List<Long> outcome, List<AiSlots.Saved> ai, long aiWake) {
+            this(outcome, ai, aiWake, List.of(), List.of(), List.of(), List.of());
         }
 
         public Play {
@@ -70,6 +82,7 @@ public record MatchSnapshot(
             alerts = List.copyOf(alerts);
             progress = progress.stream().<List<String>>map(List::copyOf).toList();
             matchStats = List.copyOf(matchStats);
+            vision = List.copyOf(vision);
         }
     }
 

@@ -45,6 +45,7 @@ import dev.strategos.core.sim.spatial.SpatialQueries;
 import dev.strategos.core.sim.stats.StatService;
 import dev.strategos.core.sim.unitai.ActivityTiers;
 import dev.strategos.core.sim.unitai.UnitAi;
+import dev.strategos.core.sim.vision.VisionSystem;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -84,6 +85,7 @@ public final class MatchState {
     private final List<Damage> damage = new ArrayList<>();
     private final MatchBus bus = new MatchBus();
     private final StatService stats;
+    private @Nullable VisionSystem visionSystem;
     private final SpatialQueries spatial;
     private final ArrayDeque<CommandEnvelope> pendingCommands = new ArrayDeque<>();
     private final List<OutputEvent> outputs = new ArrayList<>();
@@ -740,6 +742,15 @@ public final class MatchState {
     /** What templates cost each faction (ECO-01). */
     public Costs costs() {
         return costs;
+    }
+
+    /** The fog-of-war vision, or null for a state no kernel runs (FOW-01). */
+    public @Nullable VisionSystem visionSystem() {
+        return visionSystem;
+    }
+
+    void setVisionSystem(VisionSystem vision) {
+        this.visionSystem = vision;
     }
 
     /** Every unit's numbers, through the modifier pipeline (ADR-0013). */

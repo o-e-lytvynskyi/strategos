@@ -129,6 +129,9 @@ public final class StateHasher {
         if (config.rules().play().victory() == PlayRules.Victory.CONQUEST) {
             h = s.matchStats().mix(h);
         }
+        if (s.visionSystem() != null) { // explored cells and hysteresis, once any exist (FOW-01)
+            h = s.visionSystem().mix(h);
+        }
         MatchRules rules = config.rules();
         if (!rules.play().equals(PlayRules.DEFAULTS)
                 || rules.economy().populationMax() != EconomyRules.POPULATION_MAX) { // rules a scenario or a change set

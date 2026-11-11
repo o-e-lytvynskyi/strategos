@@ -404,7 +404,8 @@ public final class MatchSnapshotCodec {
                     Codec.LONG
                             .listOf()
                             .optionalFieldOf("matchStats", List.of())
-                            .forGetter(MatchSnapshot.Play::matchStats))
+                            .forGetter(MatchSnapshot.Play::matchStats),
+                    Codec.LONG.listOf().optionalFieldOf("vision", List.of()).forGetter(MatchSnapshot.Play::vision))
             .apply(i, MatchSnapshot.Play::new));
 
     /** The fields, without {@code "v"}. */
