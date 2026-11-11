@@ -1,6 +1,7 @@
 package dev.strategos.core.sim;
 
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.protocol.MatchResults;
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.TechId;
@@ -108,6 +109,11 @@ public interface MatchQueries {
 
     /** The technology whose modifiers carry {@code sourceId} (TECH-01), or null for any other source. */
     default @Nullable TechId techOf(int sourceId) {
+        return null;
+    }
+
+    /** The match results (M6 §2.3): winner, ended tick and per-faction statistics; null before ENDED. */
+    default @Nullable MatchResults matchResults() {
         return null;
     }
 

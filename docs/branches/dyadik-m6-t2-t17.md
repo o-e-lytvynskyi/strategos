@@ -4,10 +4,9 @@
 
 ## Now
 
-- **Milestone:** M6 MVP: First skirmish, 3 of 28 tasks done (T2 split into T2.1 and T2.2); spec [M6-first-skirmish.md](../milestones/M6-first-skirmish.md).
-- **In progress:** M6 T4 since 2026-10-26.
-- **Last finished task:** M6 T3 (2026-10-26), the commit `M6 T3: phases, Village to Town`.
-- **Next task:** M6 T4 · MATCH-03, conquest, defeat and statistics.
+- **Milestone:** M6 MVP: First skirmish, 4 of 28 tasks done (T2 split into T2.1 and T2.2); spec [M6-first-skirmish.md](../milestones/M6-first-skirmish.md).
+- **Last finished task:** M6 T4 (2026-11-12), the commit `M6 T4: conquest, defeat and statistics`.
+- **Next task:** M6 T5 · FOW-01, VisionGrid, VisibilityIndex, resolver rule, VisionBench.
 - **Merged from main last:** 0a7cc3b (2026-10-25).
 
 ## Depends on unfinished work
@@ -21,6 +20,12 @@ From the assessment before the claim (procedure §2a step 0); kept current.
 ## Log
 
 Newest first; one entry per session in the worklog's shape.
+
+### 2026-11-12 — M6 T4
+
+- **M6 T4 · MATCH-03, conquest, defeat and statistics** — MATCH-03 `done` (all four criteria). `ConquestCount` runs in FINAL phase every 20 ticks at offset 13; counts conquest-critical entities per faction (units + buildings CONSTRUCTING/COMPLETE except Field/Decoration; Gaia excluded); a faction with zero goes DEFEATED(CONQUERED). `MatchStats` tracks per-faction counters (unitsTrained, unitsLost, buildingsBuilt, buildingsLost) and phase ticks; wired into CombatSystem, Construction, BuildingLife, DemolishRule, Techs, MatchState.spawnUnit. `MatchResults` wire record appended to `match_state` at ENDED — no new payload: old clients ignore the extra bytes; `maxSize` 1008 (4 factions, 16 resources, 4 phases), `match_state` cap raised from 256 to 1024. `QueriesImpl.matchResults()` builds from Outcome, MatchStats, Treasury. EndScreen (HudBanners.end) rewritten: stats table (units trained/lost, buildings built/lost per faction), phase timeline, "Title screen" button. Save/restore via MatchSnapshotCodec; `StateHasher` hashes matchStats ONLY under CONQUEST to preserve existing golden hashes. New: `ConquestTest` (2), `MatchStatsTest` (2), `conquestEndsAMatch` L3 GameTest. `verify` green (1371 L1, 214 L3).
+- **Decisions taken:** (1) hash matchStats only under CONQUEST — avoids rebaselining all golden hashes for NONE/CIVIC_CENTRE; reversible by adding the hash under all modes and updating golden values. (2) match_state cap raised to 1024 — MatchResults piggybacks on the existing payload; old clients ignore extra bytes after tick. (3) Gaia units guarded in CombatSystem counters — matchStats arrays sized for player factions only; Gaia (faction ≥ factions count) skipped. (4) ConquestCount cadence gating — spec requires every 20 ticks at offset 13, not every tick.
+- **Delegation:** implementer agent (Sonnet) for the bulk, orchestrator fixed 20+ test failures afterwards (cadence, Gaia AIOOBE, hash preservation, NullAway, wire cap, RuleChangeTest, spotless). Trial implementer: fail — the agent missed the cadence spec, left Gaia unguarded, didn't preserve golden hashes, and its wire maxSize was unbounded.
 
 ### 2026-10-26 — M6 T3
 

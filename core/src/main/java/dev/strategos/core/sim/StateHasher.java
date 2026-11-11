@@ -126,10 +126,19 @@ public final class StateHasher {
         h = s.outcome().mix(h); // only once a centre stood or someone lost (MATCH-01)
         h = s.aiSlots().mix(h); // only once the computer plays a faction (AI-01)
         h = s.progress().mix(h); // only once a faction researched a tech (TECH-01)
+        if (config.rules().play().victory() == PlayRules.Victory.CONQUEST) {
+            h = s.matchStats().mix(h);
+        }
         MatchRules rules = config.rules();
         if (!rules.play().equals(PlayRules.DEFAULTS)
                 || rules.economy().populationMax() != EconomyRules.POPULATION_MAX) { // rules a scenario or a change set
-            h = Hasher.mix(h, rules.play().victory() == PlayRules.Victory.CIVIC_CENTRE ? 2 : 1);
+            h = Hasher.mix(
+                    h,
+                    switch (rules.play().victory()) {
+                        case NONE -> 1;
+                        case CIVIC_CENTRE -> 2;
+                        case CONQUEST -> 3;
+                    });
             h = Hasher.mix(h, rules.play().revealMap() ? 1 : 0);
             h = Hasher.mix(h, rules.play().aiVision() ? 1 : 0);
             h = Hasher.mix(h, rules.economy().populationMax());

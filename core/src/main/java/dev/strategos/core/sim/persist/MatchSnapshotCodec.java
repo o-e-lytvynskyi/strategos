@@ -400,7 +400,11 @@ public final class MatchSnapshotCodec {
                     COMPUTER.listOf().optionalFieldOf("ai", List.of()).forGetter(MatchSnapshot.Play::ai),
                     Codec.LONG.optionalFieldOf("aiWake", 0L).forGetter(MatchSnapshot.Play::aiWake),
                     Codec.LONG.listOf().optionalFieldOf("alerts", List.of()).forGetter(MatchSnapshot.Play::alerts),
-                    TECH_IDS.listOf().optionalFieldOf("progress", List.of()).forGetter(MatchSnapshot.Play::progress))
+                    TECH_IDS.listOf().optionalFieldOf("progress", List.of()).forGetter(MatchSnapshot.Play::progress),
+                    Codec.LONG
+                            .listOf()
+                            .optionalFieldOf("matchStats", List.of())
+                            .forGetter(MatchSnapshot.Play::matchStats))
             .apply(i, MatchSnapshot.Play::new));
 
     /** The fields, without {@code "v"}. */

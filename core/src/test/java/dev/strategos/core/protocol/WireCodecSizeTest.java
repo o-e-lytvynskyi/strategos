@@ -161,7 +161,7 @@ class WireCodecSizeTest {
     void thePayloadRecordsStayWithinTheirCaps() {
         assertThat(CommandBatch.WIRE.maxSize()).as("commands").isEqualTo(4 * 1024);
         assertThat(MatchJoin.WIRE.maxSize()).as("match_join").isLessThanOrEqualTo(4 * 1024);
-        assertThat(MatchStateMsg.WIRE.maxSize()).as("match_state").isLessThanOrEqualTo(256);
+        assertThat(MatchStateMsg.WIRE.maxSize()).as("match_state").isLessThanOrEqualTo(1024);
         assertThat(FeedbackMsg.WIRE.maxSize()).as("feedback").isLessThanOrEqualTo(1024);
 
         MatchJoin widest = new MatchJoin(
@@ -185,8 +185,19 @@ class WireCodecSizeTest {
                 new Feedback(Integer.MAX_VALUE, CommandOutcome.REJECTED, null, Integer.MAX_VALUE, Integer.MAX_VALUE);
         assertThat(roundTrip(FeedbackMsg.WIRE, all)).isEqualTo(all);
         MatchStateMsg late = new MatchStateMsg(Integer.MAX_VALUE, MatchStateMsg.Lifecycle.DISPOSED, Long.MAX_VALUE);
-        assertThat(size(MatchStateMsg.WIRE, late)).isEqualTo(MatchStateMsg.WIRE.maxSize());
+        assertThat(size(MatchStateMsg.WIRE, late))
+                .as("without results")
+                .isLessThanOrEqualTo(MatchStateMsg.WIRE.maxSize());
         assertThat(roundTrip(MatchStateMsg.WIRE, late)).isEqualTo(late);
+        MatchStateMsg ended = new MatchStateMsg(
+                Integer.MAX_VALUE,
+                MatchStateMsg.Lifecycle.ENDED,
+                Long.MAX_VALUE,
+                new dev.strategos.core.protocol.MatchResults(-1, Long.MAX_VALUE, java.util.List.of()));
+        assertThat(size(MatchStateMsg.WIRE, ended))
+                .as("with empty results")
+                .isLessThanOrEqualTo(MatchStateMsg.WIRE.maxSize());
+        assertThat(roundTrip(MatchStateMsg.WIRE, ended)).isEqualTo(ended);
     }
 
     @Test

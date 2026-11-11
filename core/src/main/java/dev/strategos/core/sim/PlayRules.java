@@ -18,7 +18,9 @@ public record PlayRules(Victory victory, boolean revealMap, boolean aiVision) {
         /** It never ends by itself: tests and sandboxes. */
         NONE,
         /** A faction whose last civic centre falls, or who resigns, loses; the last one standing wins (§1.6 row 18). */
-        CIVIC_CENTRE;
+        CIVIC_CENTRE,
+        /** A faction with no unit and no building but fields and decorations left loses (M6 §2.3). */
+        CONQUEST;
 
         public String id() {
             return name().toLowerCase(Locale.ROOT);

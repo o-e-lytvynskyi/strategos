@@ -80,6 +80,9 @@ public final class Techs {
      */
     static void complete(MatchState s, int faction, TechDef tech) {
         s.progress().complete(faction, tech.id());
+        if (tech.isPhase()) {
+            s.matchStats().phaseReached(faction, tech.ordinal(), s.tick());
+        }
         rebuild(s, faction, null);
         for (int handle : s.buildings().handles()) { // a change of most hit points can move a building's stage
             if (s.buildings().faction(handle) == faction && s.buildings().state(handle) == BuildingStore.COMPLETE) {

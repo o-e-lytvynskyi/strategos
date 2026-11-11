@@ -80,7 +80,8 @@ final class Snapshots {
                         s.aiSlots().save(),
                         s.aiSlots().wakeMask(),
                         s.alerts().save(),
-                        s.progress().save()));
+                        s.progress().save(),
+                        s.matchStats().save()));
     }
 
     /** The economy ledger's counters, or none while nothing was found or taken (ECO-05). */
@@ -141,6 +142,7 @@ final class Snapshots {
         state.setTick(snapshot.tick());
         state.setNextGroup(snapshot.nextGroup());
         state.progress().restore(snapshot.play().progress());
+        state.matchStats().restore(snapshot.play().matchStats());
         Techs.reapply(state, null); // the stats start empty: the researched techs' effects, before anything reads them
         long[] counters =
                 new long[state.treasury().factions() * state.treasury().resources() * 5];

@@ -59,10 +59,8 @@ class RuleChangeTest {
                 .extracting(CommandResult::firstReason)
                 .as("in the tick's canonical order")
                 .containsExactlyInAnyOrder(
-                        RejectReason.NOT_PERMITTED,
-                        RejectReason.INVALID_ARGUMENT,
-                        RejectReason.INVALID_ARGUMENT,
-                        RejectReason.INVALID_ARGUMENT);
+                        RejectReason.NOT_PERMITTED, RejectReason.INVALID_ARGUMENT, RejectReason.INVALID_ARGUMENT, null);
         assertThat(s.config().rules().economy().populationMax()).isEqualTo(40);
+        assertThat(s.config().rules().play().victory()).isEqualTo(PlayRules.Victory.CONQUEST);
     }
 }

@@ -65,6 +65,7 @@ public final class MatchState {
     private MatchConfig config;
     private final Outcome outcome = new Outcome();
     private final AiSlots aiSlots = new AiSlots();
+    private final MatchStats matchStats;
     private final Progress progress; // the techs each faction has researched (TECH-01)
     private TemplateSet templates;
     private final EntityStore entities;
@@ -123,6 +124,7 @@ public final class MatchState {
         this.entities = entities;
         this.log = log;
         this.stats = new StatService(templates, config.factions() + 1, identity, bus); // the players' and Gaia's
+        this.matchStats = new MatchStats(config.factions());
         this.progress = new Progress(templates, config.factions());
         EconomyRules economy = config.rules().economy();
         this.treasury = new Treasury(config.factions(), economy.size());
@@ -580,6 +582,9 @@ public final class MatchState {
             population.add(faction, unitPopulation(index));
         }
         outputs.add(new UnitCreated(handle, template, new FactionSlot(faction), x, y, z, yaw));
+        if (faction < config.factions()) {
+            matchStats.unitTrained(faction);
+        }
         return handle;
     }
 
@@ -676,6 +681,10 @@ public final class MatchState {
     }
 
     /** What each faction has researched (TECH-01). */
+    public MatchStats matchStats() {
+        return matchStats;
+    }
+
     public Progress progress() {
         return progress;
     }

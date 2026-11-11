@@ -1,6 +1,7 @@
 package dev.strategos.core.sim;
 
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.protocol.MatchResults;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.TechId;
@@ -306,6 +307,34 @@ final class QueriesImpl implements MatchQueries {
     @Override
     public @Nullable StatBreakdown stats(int handle, String path) {
         return state.entities().isAlive(handle) ? state.stats().breakdown(Handle.index(handle), path) : null;
+    }
+
+    @Override
+    public @Nullable MatchResults matchResults() {
+        Outcome o = state.outcome();
+        if (!o.ended()) {
+            return null;
+        }
+        int factions = state.config().factions();
+        MatchStats ms = state.matchStats();
+        var perFaction = new ArrayList<MatchResults.FactionStats>(factions);
+        for (int f = 0; f < factions; f++) {
+            FactionTreasury t = state.treasury().view(f);
+            List<Long> gathered = t.gathered();
+            int maxPhase = 0;
+            for (int p = 0; p < 8; p++) {
+                if (ms.phaseTick(f, p) >= 0) {
+                    maxPhase = p + 1;
+                }
+            }
+            var phases = new ArrayList<Long>(maxPhase);
+            for (int p = 0; p < maxPhase; p++) {
+                phases.add(ms.phaseTick(f, p));
+            }
+            perFaction.add(new MatchResults.FactionStats(
+                    ms.unitsTrained(f), ms.unitsLost(f), ms.buildingsBuilt(f), ms.buildingsLost(f), gathered, phases));
+        }
+        return new MatchResults(o.winner(), o.endedAt(), perFaction);
     }
 
     @Override

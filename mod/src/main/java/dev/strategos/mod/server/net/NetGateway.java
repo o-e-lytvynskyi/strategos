@@ -311,7 +311,11 @@ public final class NetGateway {
             case FAULTED -> MatchStateMsg.Lifecycle.FAULTED;
             case DISPOSED -> MatchStateMsg.Lifecycle.DISPOSED;
         };
-        return new MatchStatePayload(new MatchStateMsg(rt.id().value(), lifecycle, Math.max(0, rt.tick())));
+        var core = rt.core();
+        var results = lifecycle == MatchStateMsg.Lifecycle.ENDED && core != null
+                ? core.queries().matchResults()
+                : null;
+        return new MatchStatePayload(new MatchStateMsg(rt.id().value(), lifecycle, Math.max(0, rt.tick()), results));
     }
 
     private void toTrackers(Audience.TrackersOf trackers, CustomPacketPayload payload) {

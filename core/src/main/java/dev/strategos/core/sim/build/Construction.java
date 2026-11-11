@@ -262,6 +262,7 @@ public final class Construction {
                 done >= need ? BuildingStore.COMPLETE : BuildingStore.CONSTRUCTING,
                 done >= need ? BuildingStore.FULL : progress);
         if (finished) {
+            s.matchStats().buildingBuilt(s.buildings().faction(handle));
             Production.finished(s, handle); // its housing counts and a field ripens, as an instant building's do
         }
     }

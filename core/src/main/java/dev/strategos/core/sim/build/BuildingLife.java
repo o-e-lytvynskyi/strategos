@@ -41,6 +41,7 @@ public final class BuildingLife {
      */
     public static int placeComplete(MatchState s, int template, int faction, Footprint at, int baseY) {
         int handle = s.buildings().create(template, faction, at, baseY, BuildingStore.COMPLETE, BuildingStore.FULL);
+        s.matchStats().buildingBuilt(faction);
         Blueprint b = s.blueprintOf(handle);
         if (Placing.obstructs(s, template, faction)) { // a field does not (ECO-09)
             for (int cell : at.columns(b)) {
