@@ -1,5 +1,7 @@
 package dev.strategos.core.sim;
 
+import dev.strategos.core.content.Footprint;
+import dev.strategos.core.content.StartSlot;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.MatchResults;
 import dev.strategos.core.shared.FactionSlot;
@@ -22,6 +24,8 @@ import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.core.sim.stats.StatBreakdown;
 import dev.strategos.core.sim.unitai.ActivityTier;
+import dev.strategos.core.sim.vision.VisionGrid;
+import dev.strategos.core.sim.vision.VisionSystem;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -416,5 +420,50 @@ final class QueriesImpl implements MatchQueries {
     @Override
     public dev.strategos.core.sim.econ.EconomyTimes.Stats economyTimes() {
         return state.economyTimes().stats();
+    }
+
+    @Override
+    public List<StartSlot> startPositions() {
+        return state.startPositions();
+    }
+
+    @Override
+    public boolean visibleUnit(int faction, int handle) {
+        if (seesAll(faction)) {
+            return true;
+        }
+        VisionSystem vision = state.visionSystem();
+        return vision != null && vision.visibility(faction).isVisible(handle);
+    }
+
+    @Override
+    public boolean visibleBuilding(int faction, BuildingView building) {
+        if (seesAll(faction)) {
+            return true;
+        }
+        VisionSystem vision = state.visionSystem();
+        if (vision == null || faction < 0 || faction >= state.config().factions()) {
+            return true;
+        }
+        VisionGrid grid = vision.grid(faction);
+        Footprint f = building.footprint();
+        for (int x = f.anchorX(); x < f.anchorX() + f.spanX(); x++) {
+            for (int z = f.anchorZ(); z < f.anchorZ() + f.spanZ(); z++) {
+                if (grid.count(VisionGrid.cellOf(x), VisionGrid.cellOf(z)) > 0) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /** Revealed map, AI omniscience, or a faction outside the player set: everything is seen. */
+    private boolean seesAll(int faction) {
+        PlayRules play = state.config().rules().play();
+        return play.revealMap()
+                || play.aiVision()
+                || state.visionSystem() == null
+                || faction < 0
+                || faction >= state.config().factions();
     }
 }

@@ -2,6 +2,7 @@ package dev.strategos.core.sim;
 
 import dev.strategos.core.content.Blueprint;
 import dev.strategos.core.content.Footprint;
+import dev.strategos.core.content.StartSlot;
 import dev.strategos.core.content.TechDef;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.UnitTemplate;
@@ -84,6 +85,8 @@ public final class MatchState {
     private final MatchBus bus = new MatchBus();
     private final StatService stats;
     private @Nullable VisionSystem visionSystem;
+    /** The map's start slots (AI-18); not saved — a restored match sets them from the map again. */
+    private List<StartSlot> startPositions = List.of();
     private final SpatialQueries spatial;
     private final ArrayDeque<CommandEnvelope> pendingCommands = new ArrayDeque<>();
     private final List<OutputEvent> outputs = new ArrayList<>();
@@ -721,6 +724,16 @@ public final class MatchState {
 
     void setVisionSystem(VisionSystem vision) {
         this.visionSystem = vision;
+    }
+
+    /** The map's start slots for the AI (AI-18); empty until the match is seated on a map. */
+    public List<StartSlot> startPositions() {
+        return startPositions;
+    }
+
+    /** Seats the match on a map's start slots (AI-18); known to every faction, fog or not. */
+    public void setStartPositions(List<StartSlot> starts) {
+        this.startPositions = List.copyOf(starts);
     }
 
     /** Every unit's numbers, through the modifier pipeline (ADR-0013). */

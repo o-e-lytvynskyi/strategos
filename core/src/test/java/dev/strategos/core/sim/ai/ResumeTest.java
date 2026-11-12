@@ -6,6 +6,7 @@ import dev.strategos.core.content.Scenario;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.Command;
 import dev.strategos.core.shared.PlayerSlot;
+import dev.strategos.core.sim.KernelAccess;
 import dev.strategos.core.sim.MatchSnapshot;
 import dev.strategos.core.sim.command.ScenarioSetup;
 import dev.strategos.core.testkit.ProvingGround;
@@ -30,6 +31,7 @@ class ResumeTest {
                 .build();
         h.publishAll(ground.voxels());
         h.step();
+        KernelAccess.state(h.core()).setStartPositions(ground.startSlots());
         Scenario scenario = HeadlessMatch.firstLoop();
         List<Scenario.Slot> computers = new ArrayList<>();
         for (Scenario.Slot slot : scenario.slots()) {
@@ -50,6 +52,7 @@ class ResumeTest {
         assertThat(ten.buildings()).as("a town by minute 10").hasSizeGreaterThan(3);
         SimHarness back = SimHarness.restore(
                 ten, TemplateSet.builtin(), h.core().journal().segments().get(0)::slice);
+        KernelAccess.state(back.core()).setStartPositions(ground.startSlots());
         assertThat(back.stateHash()).isEqualTo(h.stateHash());
         while (h.tick() < 15 * 1_200) {
             h.step();

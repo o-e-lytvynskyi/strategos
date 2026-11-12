@@ -1,5 +1,6 @@
 package dev.strategos.core.sim.ai;
 
+import dev.strategos.core.content.StartSlot;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.content.ValuePath;
@@ -17,8 +18,9 @@ import java.util.List;
 import org.jspecify.annotations.Nullable;
 
 /**
- * What a computer player may read (AI-01, 04 §14): its own faction in full, everything else as its faction sees it,
- * which until fog (M6) is everything. Read-only: it wraps the match's queries. Each list it gives spends a unit of the
+ * What a computer player may read (AI-01, AI-18, 04 §14): its own faction in full, everything else as its faction sees
+ * it under fog ({@code VisibilityIndex} for units, a visible footprint cell for buildings), unless the map is revealed
+ * or AI vision (omniscience) is on. Read-only: it wraps the match's queries. Each list it gives spends a unit of the
  * budget per entry, once a think: the list is kept for the rest of it.
  */
 public final class AiView {
@@ -89,6 +91,11 @@ public final class AiView {
         return q.workers(new FactionSlot(faction));
     }
 
+    /** The map's start slots (AI-18); known under fog. */
+    public List<StartSlot> startPositions() {
+        return q.startPositions();
+    }
+
     /** Its own units. */
     public List<UnitView> units() {
         if (units == null) {
@@ -100,7 +107,9 @@ public final class AiView {
                 read += u == null ? 0 : 1;
                 if (u != null && u.faction().value() == faction) {
                     own.add(u);
-                } else if (u != null && u.faction().value() < q.config().factions()) { // Gaia's animals are no enemy
+                } else if (u != null
+                        && u.faction().value() < q.config().factions() // Gaia's animals are no enemy
+                        && q.visibleUnit(faction, h)) {
                     others.add(u);
                 }
             }
@@ -111,7 +120,7 @@ public final class AiView {
         return units;
     }
 
-    /** The other factions' units. */
+    /** The other factions' units this faction can see (AI-18). */
     public List<UnitView> enemyUnits() {
         units();
         return enemies == null ? List.of() : enemies;
@@ -122,7 +131,7 @@ public final class AiView {
         return buildingsOf(true);
     }
 
-    /** The other factions' buildings. */
+    /** The other factions' buildings this faction can see (AI-18). */
     public List<BuildingView> enemyBuildings() {
         return buildingsOf(false);
     }
@@ -134,7 +143,7 @@ public final class AiView {
         }
         List<BuildingView> out = new ArrayList<>();
         for (BuildingView b : all) {
-            if ((b.faction() == faction) == own) {
+            if ((b.faction() == faction) == own && (own || q.visibleBuilding(faction, b))) {
                 out.add(b);
             }
         }

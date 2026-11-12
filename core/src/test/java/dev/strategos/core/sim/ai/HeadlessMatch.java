@@ -149,6 +149,8 @@ final class HeadlessMatch {
                 .build();
         h.publishAll(ground.voxels());
         h.step();
+        MatchState s = KernelAccess.state(h.core());
+        s.setStartPositions(ground.startSlots()); // AI-18: the AI knows the starts under fog
         Scenario scenario = firstLoop();
         List<Scenario.Slot> computers = new ArrayList<>();
         for (Scenario.Slot slot : scenario.slots()) {
@@ -158,7 +160,6 @@ final class HeadlessMatch {
         for (Command c : ScenarioSetup.commands(played, ground.startSlots(), TemplateSet.builtin(), p -> script)) {
             h.submit(PlayerSlot.ADMIN, c);
         }
-        MatchState s = KernelAccess.state(h.core());
         int factions = 2;
         long firstContact = -1;
         List<List<Integer>> army = new ArrayList<>();

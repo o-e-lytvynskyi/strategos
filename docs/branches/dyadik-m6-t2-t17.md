@@ -6,9 +6,9 @@
 
 ## Now
 
-- **Milestone:** M6 MVP: First skirmish, 8 of 28 tasks done (T2 split into T2.1 and T2.2); spec [M6-first-skirmish.md](../milestones/M6-first-skirmish.md).
-- **Last finished task:** M6 T8 (2026-11-12), the commit `M6 T8: UI-16 minimap fog`.
-- **Next task:** M6 T9 · AI-18.
+- **Milestone:** M6 MVP: First skirmish, 9 of 28 tasks done (T2 split into T2.1 and T2.2); spec [M6-first-skirmish.md](../milestones/M6-first-skirmish.md).
+- **Last finished task:** M6 T9 (2026-11-12), the commit `M6 T9: AI-18 fair AI under fog`.
+- **Next task:** M6 T10 · MATCH-07.
 - **Merged from main last:** 8111c0a (2026-11-13) — M5 combat + save/reload repairs; ProtectedBlockIndexTest taken from main; inert fog seams marked AFTER-T10.
 
 ## Depends on unfinished work
@@ -23,6 +23,11 @@ From the assessment before the claim (procedure §2a step 0); kept current.
 ## Log
 
 Newest first; one entry per session in the worklog's shape.
+
+### 2026-11-12 — M6 T9
+
+- **M6 T9 · AI-18 fair AI under fog** — AI-18 `done` for checks 1–2 on the proving ground; check 3 (`FairAiTest.foggedMatchesEndWithin45`, slow) tagged with the existing slow suite until T12/T23. `AiView.enemyUnits` / `enemyBuildings` filter by the faction's `VisibilityIndex` and a visible footprint cell unless `revealMap` or `aiVision` holds; `AiView.startPositions()` reads the map starts on `MatchState`. `MilitaryManager` attack-moves short of the enemy start (`Tactics.front`) when no enemy building is visible, keeps marching between waves, and burns the centre once seen. `HeadlessMatch` (and related AI scenes) seat the proving-ground starts. L1: `FairAiTest.everyTargetWasVisible`, `findsTheBaseFromTheStarts`; slow: `foggedMatchesEndWithin45`. `:core:test` green (slow excluded).
+- **AI-18 status:** L1 non-slow done; slow fogged end-within-45 open in `slowTest` / T23 gate.
 
 ### 2026-11-12 — M6 T8
 
