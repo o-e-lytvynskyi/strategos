@@ -3,6 +3,22 @@
 HUD layers, particles, camera vectors, entity renderer layers. For the rest of the client, see
 [minecraft-mod-client.md](minecraft-mod-client.md).
 
+## Fog shroud: translucent block layer, not debug quads
+
+The M6 solo-fog shroud (`mod.client.fog.ShroudRenderer`) draws at
+`RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS` with `RenderType.translucent()` (BLOCK format,
+white_wool UVs, per-vertex black α). Shader packs (Iris) keep the translucent chunk pass; debug
+render types are easier to lose under a pack. Soft edges come from per-corner α averaged in
+`core.client.fog.ShroudExtract`; page meshes (16×16 vision cells) rebuild only when their
+fingerprint changes. This is the M6 client base — M8 team fog / mirages should extend it, not fork
+a second overlay.
+
+## Iris shader-pack golden (FOW-07.6)
+
+`-Pcompat` installs Iris and Sodium into client runs. A named shader pack for the Iris golden is
+deferred until its licence allows a test-only CI download (M6 §1.6 row 36). T7 does not fetch a
+pack; T27's Iris+shader view is the owner's L7 check until then.
+
 ## A custom GUI layer is drawn with F1 too
 
 A layer from `RegisterGuiLayersEvent.registerAboveAll` is called even when `options.hideGui` (F1)

@@ -12,6 +12,7 @@ import dev.strategos.mod.Strategos;
 import dev.strategos.mod.client.audio.FxPlayer;
 import dev.strategos.mod.client.debug.ClientDebugState;
 import dev.strategos.mod.client.debug.DebugOverlayHost;
+import dev.strategos.mod.client.fog.ShroudRenderer;
 import dev.strategos.mod.client.fx.ShotArcRenderer;
 import dev.strategos.mod.client.fx.ShotArcs;
 import dev.strategos.mod.client.hud.RtsHud;
@@ -46,6 +47,7 @@ public final class StrategosClient {
     private static final ClientMatchModel MODEL = new ClientMatchModel();
     private static final FarMarkers FAR = new FarMarkers(MODEL);
     private static final HealthBarOverlay BARS = new HealthBarOverlay(MODEL, RTS);
+    private static final ShroudRenderer SHROUD = new ShroudRenderer(MODEL);
     private static final ShotArcs ARCS = new ShotArcs();
     private static final FxPlayer SOUNDS = new FxPlayer(RTS, ARCS);
     private static final UnitLod LOD = new UnitLod();
@@ -79,8 +81,14 @@ public final class StrategosClient {
         RTS.register(modBus);
         HUD.register(modBus); // after RTS mode: its tick builds from the tick RTS mode just ran
         FAR.register();
+        SHROUD.register();
         NeoForge.EVENT_BUS.addListener(RenderFrameEvent.Pre.class, e -> LOD.frame());
         BARS.register();
+    }
+
+    /** The fog shroud (FOW-07); the client thread's only. */
+    public static ShroudRenderer shroud() {
+        return SHROUD;
     }
 
     /** The bodies' level of detail on this client (M4 T3). */

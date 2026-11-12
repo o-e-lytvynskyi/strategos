@@ -45,6 +45,7 @@ public final class ClientMatchModel {
     private int visionCellsZ;
     private long[] visibleBits = new long[0];
     private long[] exploredBits = new long[0];
+    private int visionRevision;
 
     /** Takes a frame: the joined match's, newer than the last; a new match's replaces everything. */
     public void accept(UnitSummary frame, int joinedMatch) {
@@ -269,6 +270,7 @@ public final class ClientMatchModel {
             for (int idx : delta.explored()) {
                 exploredBits[idx >> 6] |= 1L << (idx & 63);
             }
+            visionRevision++;
         } else {
             if (visibleBits.length != words) {
                 return;
@@ -279,6 +281,7 @@ public final class ClientMatchModel {
             for (int idx : delta.explored()) {
                 exploredBits[idx >> 6] |= 1L << (idx & 63);
             }
+            visionRevision++;
         }
     }
 
@@ -306,6 +309,30 @@ public final class ClientMatchModel {
         return visionCellsZ;
     }
 
+    /**
+     * Bumps whenever {@link #acceptVision} changes the grids; the shroud rebuilds pages when this moves (FOW-07). Zero
+     * after {@link #clear()}.
+     */
+    public int visionRevision() {
+        return visionRevision;
+    }
+
+    /**
+     * The visible bitset the shroud reads (FOW-07); length {@code (visionCellsX × visionCellsZ + 63) / 64}, empty when
+     * no vision has arrived. Not copied — callers must not mutate it.
+     */
+    public long[] visibleBits() {
+        return visibleBits;
+    }
+
+    /**
+     * The explored bitset the shroud reads (FOW-07); same length as {@link #visibleBits()}. Not copied — callers must
+     * not mutate it.
+     */
+    public long[] exploredBits() {
+        return exploredBits;
+    }
+
     /** Forgets the match: the player left it. */
     public void clear() {
         end = null;
@@ -325,6 +352,7 @@ public final class ClientMatchModel {
         visionCellsZ = 0;
         visibleBits = new long[0];
         exploredBits = new long[0];
+        visionRevision = 0;
     }
 
     public List<UnitSummary.Entry> units() {

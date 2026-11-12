@@ -178,6 +178,7 @@ None. The `strategos:ping` payload stays with multiplayer pings (UI-15, M7); UI-
 | 33 | Phase techs (T3) | A tech has the class `Phase` exactly when its id's path starts with `phase_`; phase ordinals are distinct whole numbers 0–255. Town's bonuses filter `Structure+!Field`: fields keep their numbers (in a filter a space separates alternatives, `+` joins terms) |
 | 34 | Damage stages at Town (T3) | Damage is stored as hit points lost, so a higher max HP moves a damaged building's stage: completing a tech updates the stage of each of the faction's complete buildings; a restore keeps the saved stage |
 | 35 | Techs in the balance sheet (T3) | The sheet gains a technologies section (cost per resource, time, requirement counts, each effect's value with its path, op and filter), ahead of TECH-03's check 2 (T18) |
+| 36 | Iris shader pack for FOW-07.6 (T7) | No pack is named or downloaded in T7: a test-only fetch needs a licence that allows redistributing the pack in CI (or a pinned URL the owner approves). `-Pcompat` already adds Iris and Sodium. Until a pack is chosen, the Iris+shader golden in T27 is the owner's own L7 check; Sodium-only and vanilla shroud goldens still run in the consent batch. See [kb/minecraft-mod-client-render.md](../kb/minecraft-mod-client-render.md) |
 
 ### 1.7 Consent plan
 
@@ -188,7 +189,7 @@ about 60 minutes:
   under fog; the shroud (unexplored, explored, visible). Each static scene twice (D-22).
 - **The same shroud scene** with Sodium, and with Iris and a shader pack (`-Pcompat` adds both). The pack is named in
   T7's §1.6 row once its licence allows a test-only download; otherwise that one view is the owner's own
-  check (L7).
+  check (L7). (Row 36: none named yet.)
 - **The other runs**: `skirmish_flow` (≤ 5 clicks); the M6 demo chapters (T25); PERF-14 with M6's HUD and the
   shroud (budget F); the production jar on a client, unless mc-runtime-test ran on CI. `arena_world` runs
   earlier, at T11's end (§0.2).
@@ -704,7 +705,7 @@ kernel adds `:core:jmh :core:jmhCompare`.
 
 ### 7.3 Progress
 
-- [x] T2.1 (2026-10-25) · [x] T2.2 (2026-10-25) · [x] T3 (2026-10-26) · [x] T4 (2026-11-12) · [x] T5 (2026-11-12) · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11 · [ ] T12
+- [x] T2.1 (2026-10-25) · [x] T2.2 (2026-10-25) · [x] T3 (2026-10-26) · [x] T4 (2026-11-12) · [x] T5 (2026-11-12) · [x] T6 (2026-11-12) · [x] T7 (2026-11-13) · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11 · [ ] T12
 - [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17 · [ ] T1 · [ ] T18 · [ ] T19 · [ ] T20 · [ ] T21
 - [ ] T22 · [ ] T23 · [ ] T24 · [ ] T25 · [ ] T27 · [ ] T28
 

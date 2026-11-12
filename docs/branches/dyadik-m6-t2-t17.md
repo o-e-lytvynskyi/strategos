@@ -6,9 +6,9 @@
 
 ## Now
 
-- **Milestone:** M6 MVP: First skirmish, 6 of 28 tasks done (T2 split into T2.1 and T2.2); spec [M6-first-skirmish.md](../milestones/M6-first-skirmish.md).
-- **Last finished task:** M6 T6 (2026-11-12), the commit `M6 T6: FOW-07 server — vision delta, fog gate, tracker refresh, explored wiring`.
-- **Next task:** M6 T7 · FOW-07 client: the fog shroud and ShroudBench.
+- **Milestone:** M6 MVP: First skirmish, 7 of 28 tasks done (T2 split into T2.1 and T2.2); spec [M6-first-skirmish.md](../milestones/M6-first-skirmish.md).
+- **Last finished task:** M6 T7 (2026-11-13), the commit `M6 T7: FOW-07 client shroud and ShroudBench`.
+- **Next task:** M6 T8 · UI-16 minimap fog.
 - **Merged from main last:** 8111c0a (2026-11-13) — M5 combat + save/reload repairs; ProtectedBlockIndexTest taken from main; inert fog seams marked AFTER-T10.
 
 ## Depends on unfinished work
@@ -18,10 +18,16 @@ From the assessment before the claim (procedure §2a step 0); kept current.
 | Milestone | What this work needs from it | Plan: independent / against a contract / after | `AFTER-M<n>` markers |
 |---|---|---|---|
 | M5 Combat (merged on main) | T12 (MAP-02): the horseman scout and the large class's reachability are now on main | independent for T2–T11 and T13–T17; T12 can use the landed classes | re-check AFTER-M5 markers in §2.10 when T12 starts |
+| M8 foundations (FOW-02/03/05) | Overlaps fog: team vision, last-seen buildings, leak audit | T7's `ShroudRenderer` / `ShroudExtract` are the **M6 solo-fog client base**; M8 must extend them (explored/visible/unexplored from `ClientMatchModel`), not replace with a parallel overlay or mirage path | coordinate if M8 lands client fog before this branch merges |
 
 ## Log
 
 Newest first; one entry per session in the worklog's shape.
+
+### 2026-11-13 — M6 T7
+
+- **M6 T7 · FOW-07 client — shroud and ShroudBench** — FOW-07 client shroud `done` for check 5 (`ShroudBench`); check 6 (L4 goldens with Sodium/Iris) stays T27. `core.client.fog.ShroudExtract`: per 16×16 vision-cell page, soft-edge corner alphas (unexplored α 1, explored 0.5, visible 0), fingerprint so a page rebuilds only when its cells change. `mod.client.fog.ShroudRenderer`: registered from `StrategosClient`, draws at `AFTER_TRANSLUCENT_BLOCKS` with `RenderType.translucent()` (white_wool UVs); no-ops with no match / no vision; heights baked on rebuild. `ClientMatchModel` exposes `visionRevision` / bitsets for the renderer. `ShroudBench` (core JMH) extracts 384². Spec §1.6 row 36: no Iris shader pack named or downloaded yet (licence). kb: shroud + Iris note in `minecraft-mod-client-render.md`. **M8:** this shroud is the solo-fog client base if M8 overlaps.
+- **FOW-07 status:** server (T6) done; client shroud + bench (T7) done; goldens / PERF-14 budget F (T27) open.
 
 ### 2026-11-13 — merge main
 
@@ -96,6 +102,7 @@ Newest first; one entry per session in the worklog's shape.
 New pitfalls go straight into `docs/kb/` on the branch; list here which entries were added.
 
 - [rts-sim.md](../kb/rts-sim.md) "`jmhCompare` on a machine other than the baseline's" (M6 T2.2).
+- [minecraft-mod-client-render.md](../kb/minecraft-mod-client-render.md) fog shroud translucent layer; Iris shader-pack golden deferred (M6 T7, §1.6 row 36).
 
 ## Review
 
