@@ -1,6 +1,6 @@
 # M6 — MVP: First skirmish: implementation spec
 
-*Written 2026-10-25 by the `dyadik` developer session (claim [M6 spec](../claims.md)) before M5 is built, from
+*Written 2026-10-25 by the `dyadik` developer session (claim [M6 spec](../branches/dyadik-m6-spec.md)) before M5 is built, from
 the 23 approved M6 cards in [roadmap/M6-first-skirmish.md](../roadmap/M6-first-skirmish.md),
 [04-architecture.md](../04-architecture.md) (cited as "04 §n"), the ADRs in [adr/](../adr/README.md), chiefly
 [ADR-0010](../adr/0010-match-model-and-lifecycle.md) (the match), [ADR-0013](../adr/0013-modifier-pipeline.md)

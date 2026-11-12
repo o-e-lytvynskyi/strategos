@@ -37,7 +37,7 @@ def roadmap_cards():
     """{card id: (milestone, status)} from the per-milestone tables of ROADMAP.md."""
     cards, milestone = OrderedDict(), None
     in_features = False
-    for line in (DOCS / "ROADMAP.md").read_text().splitlines():
+    for line in (DOCS / "ROADMAP.md").read_text(encoding="utf-8").splitlines():
         if line.startswith("## "):
             in_features = line.startswith("## Features per milestone")
             milestone = None
@@ -72,7 +72,7 @@ def card_files():
                     DUPLICATES.append(f"{current}: card defined in {cards[current][3]} and {path.name}")
                 cards[current] = (milestone, status, done, path.name)
 
-        for line in path.read_text().splitlines():
+        for line in path.read_text(encoding="utf-8").splitlines():
             m = CARD_HEADING.match(line)
             if m or line.startswith("## ") or line.startswith("### "):
                 flush()
@@ -91,7 +91,7 @@ def card_files():
 def open_decisions():
     """Decision ids whose owner answer is still pending."""
     pending, current = [], None
-    for line in (DOCS / "ROADMAP.md").read_text().splitlines():
+    for line in (DOCS / "ROADMAP.md").read_text(encoding="utf-8").splitlines():
         m = re.match(r"^\*\*(D-\d\d|Theme bundle)", line)
         if m:
             current = m.group(1)
@@ -107,7 +107,7 @@ def spec_progress():
     """{milestone: (checked, total)} from the Progress section of each milestone spec."""
     result = {}
     for path in sorted((DOCS / "milestones").glob("M*.md")):
-        text = path.read_text()
+        text = path.read_text(encoding="utf-8")
         m = re.search(r"^### [\d.]+ Progress\n(.*?)(?=^#{2,3} |\Z)", text, re.M | re.S)
         if not m:
             continue
@@ -119,6 +119,8 @@ def spec_progress():
 def check():
     problems = []
     road, files = roadmap_cards(), card_files()
+    if not road or not files:
+        problems.append("No roadmap cards found; check the document headings and encoding")
     for cid, (ms, status) in road.items():
         if base(status) not in STATUSES:
             problems.append(f"{cid}: unknown status '{status}' in ROADMAP.md")

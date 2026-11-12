@@ -31,6 +31,25 @@ class UnitLookTest {
     }
 
     @Test
+    void theRosterReadsFromWhatItHolds() {
+        UnitLook archer = look("strategos:unit/archer");
+        UnitLook horseman = look("strategos:unit/horseman");
+        UnitLook spearman = look("strategos:unit/infantry");
+        assertThat(archer.rest()).isEqualTo("minecraft:bow");
+        assertThat(archer.shield()).as("a bow needs the other hand").isEmpty();
+        assertThat(horseman.rest()).isEqualTo("minecraft:iron_sword");
+        assertThat(horseman.shield()).isEqualTo("minecraft:shield");
+        assertThat(spearman.rest()).isEqualTo("minecraft:trident");
+    }
+
+    private static UnitLook look(String id) {
+        return UnitLook.of(
+                Objects.requireNonNull(T.byId(new dev.strategos.core.shared.TemplateId(id)))
+                        .classes(),
+                0);
+    }
+
+    @Test
     void theDebugWalkerWearsNothing() {
         UnitLook walker = UnitLook.of(
                 Objects.requireNonNull(T.byId(TemplateSet.DEBUG_WALKER)).classes(), 0);

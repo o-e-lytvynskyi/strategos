@@ -25,6 +25,7 @@ public record UnitTemplate(
         double radius) {
     public static final double DEFAULT_TURN_RATE = 45;
     public static final double DEFAULT_RADIUS = 0.35;
+    public static final double DEFAULT_LARGE_RADIUS = 0.7;
     /** The mobility of a building's template: it never moves and has no body (BLD-01). */
     public static final String BUILDING = "building";
 

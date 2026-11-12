@@ -283,6 +283,56 @@ class MotionSystemTest {
                 .isGreaterThanOrEqualTo(10);
     }
 
+    @Test
+    void restingGroundFollowsTerrainAndKeepsTwoTickHeightEasing() {
+        VoxelWorld world = VoxelFixtures.flat(16, 16, 16, 1);
+        SimHarness h = harness(world);
+        int body = h.spawn(F0, new Vec2d(1.7, 8.5), 1, 0)[0];
+        h.runTicks(8);
+        world.fill(2, 1, 8, 2, 1, 8, VoxelFixtures.SOLID);
+        h.publishAll(world);
+        h.step();
+        assertThat(unit(h, body).y()).isEqualTo(1.5);
+        h.step();
+        assertThat(unit(h, body).y()).isEqualTo(2.0);
+        world.fill(2, 1, 8, 2, 1, 8, VoxelFixtures.AIR);
+        h.publishAll(world);
+        h.step();
+        assertThat(unit(h, body).y()).isEqualTo(1.5);
+        h.step();
+        assertThat(unit(h, body).y()).isEqualTo(1.0);
+        order(h, body, 8.5, 8.5);
+        assertThat(h.runUntil(() -> unit(h, body).state() == UnitState.IDLE, 100))
+                .isTrue();
+        assertThat(unit(h, body).x()).isEqualTo(8.5);
+    }
+
+    @Test
+    void idleGeometryFollowsFootprintEdgesAndExternalHeightWithinOneColumn() {
+        VoxelWorld world = VoxelFixtures.flat(16, 16, 16, 1);
+        world.fill(2, 1, 8, 2, 1, 8, VoxelFixtures.SOLID);
+        SimHarness h = harness(world);
+        int body = h.spawn(F0, new Vec2d(1.5, 8.5), 1, 0)[0];
+        h.runTicks(8);
+        var motion = state(h).motion();
+        int index = Handle.index(body);
+        motion.set(index, 1.7, 1, 8.5, motion.yaw(index));
+        h.step();
+        assertThat(unit(h, body).y()).isEqualTo(1.5);
+        h.step();
+        assertThat(unit(h, body).y()).isEqualTo(2.0);
+        motion.set(index, 1.5, 2, 8.5, motion.yaw(index));
+        h.step();
+        assertThat(unit(h, body).y()).isEqualTo(1.5);
+        h.step();
+        assertThat(unit(h, body).y()).isEqualTo(1.0);
+        motion.set(index, 1.5, 3, 8.5, motion.yaw(index));
+        h.step();
+        assertThat(unit(h, body).y()).isEqualTo(2.5);
+        h.runTicks(3);
+        assertThat(unit(h, body).y()).isEqualTo(1.0);
+    }
+
     private static float wrap(float degrees) {
         float d = degrees;
         while (d > 180f) {

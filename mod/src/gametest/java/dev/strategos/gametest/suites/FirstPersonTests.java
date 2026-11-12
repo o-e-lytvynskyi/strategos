@@ -327,7 +327,7 @@ public final class FirstPersonTests {
     }
 
     /** A viewer seated in slot 0 of {@code rt} and made its commander. */
-    private static MockViewer commander(GameTestHelper h, MatchRuntime rt, String name) {
+    static MockViewer commander(GameTestHelper h, MatchRuntime rt, String name) {
         Vec3 at = h.absoluteVec(new Vec3(8.5, 20, 8.5));
         MockViewer viewer = MockViewer.join(h.getLevel(), name, at.x, at.y, at.z, 4);
         StrategosServer.get().matches().join(rt, viewer.player().getUUID(), new PlayerSlot(0));
@@ -336,7 +336,7 @@ public final class FirstPersonTests {
     }
 
     /** Answers the teleports the viewer has had, as a client does. */
-    private static void accept(MockViewer viewer) {
+    static void accept(MockViewer viewer) {
         viewer.poll();
         for (ClientboundPlayerPositionPacket p : viewer.capture().of(ClientboundPlayerPositionPacket.class)) {
             viewer.player().connection.handleAcceptTeleportPacket(new ServerboundAcceptTeleportationPacket(p.getId()));

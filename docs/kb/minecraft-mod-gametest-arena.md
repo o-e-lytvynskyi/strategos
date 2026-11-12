@@ -99,3 +99,12 @@ distance over a neighbouring spot leaves loaded chunks there, and a test that ne
 unload fails ("the far chunk still holds the body"). It fails stably and only in a full run.
 Anything that goes beyond its own structure (a camera panorama, big match spaces, map imports)
 should be moved thousands of blocks aside, each test to its own "lane".
+
+## Blocks above the arena outlive the test
+
+GameTest clears only a structure's bounding box before the next batch takes the same spot, so a
+block a test sets above the arena's height stays in the world for whatever test lands there next.
+`GameTestHelper` y 1 is the floor (y 0 the structure block): `arena_flat_48_high` takes six
+blocks of platform at helper y 2..7 inside its eight. A match band may reach above the arena only
+if nothing is placed there. Locally the world under `mod/build/gametest/world` survives between
+runs as well.

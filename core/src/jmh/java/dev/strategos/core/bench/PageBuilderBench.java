@@ -10,17 +10,20 @@ import dev.strategos.core.sim.nav.VoxelSlice;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.infra.Blackhole;
 
 /**
  * One page built from a hilly slice in a 64-block band, with trees, a pond and a bridge (PATH-02.4, S8's third exit
  * number: ≤ 0.5 ms). A build allocates its page, so it is not a zero-allocation kernel.
  */
+@Fork(2)
 @State(Scope.Thread)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
@@ -29,6 +32,7 @@ public class PageBuilderBench {
 
     private VoxelSlice slice;
     private PageBuilder builder;
+    private PageBuilder largeBuilder;
     private PageCoord page;
 
     @Setup(Level.Trial)
@@ -58,11 +62,19 @@ public class PageBuilderBench {
         }
         slice = new VoxelSlice(HEIGHT, voxels);
         builder = new PageBuilder(MobilityClass.INFANTRY);
+        largeBuilder = new PageBuilder(MobilityClass.LARGE);
         page = new PageCoord(0, 0);
     }
 
     @Benchmark
     public SurfacePage build() {
         return builder.build(slice, NavOverlay.EMPTY, page);
+    }
+
+    /** PATH-11: both clearance classes built for the same captured page. */
+    @Benchmark
+    public void buildBothMobilityClasses(Blackhole sink) {
+        sink.consume(builder.build(slice, NavOverlay.EMPTY, page));
+        sink.consume(largeBuilder.build(slice, NavOverlay.EMPTY, page));
     }
 }

@@ -122,6 +122,29 @@ the proposal on 2026-10-22, so the table above stands as it is.
   system that will spend the budgets arrives after M0. A tighter budget now would only fail later
   for reasons M0 cannot see; the per-unit check below 600 units already catches regressions.
 
+## M5 two-mobility rebuild profile (2026-10-26)
+
+Under the owner's delegated recommended decisions and AGENTS.md autonomy defaults, establish
+TerrainEditBench.rebuildOnePage's two-grid Mac profile after removing avoidable recovery overhead.
+Its pre-M5 baseline is 291.665 us/op; the same-host T1 control is 290.034 us/op. The first
+recovery measured 1027.918 us/op; cached template mobility, empty-footprint eviction bypass,
+effective-slice sharing and selective border invalidation reduce it to 481.023 us/op.
+The remaining 1.66x cost builds the second class's clearance, links and components, within
+M5 §2.1's planned roughly twofold cost. The unchanged absolute path budget passes at
+0.427499 ms p99 against 2 ms; the standing-unit ratio is 0.218951 against 0.30, with valid load.
+
+Only this existing benchmark's score profile changes; the 15% JMH regression limit, all other
+existing benchmark scores, absolute budgets and per-unit comparisons remain unchanged. The
+proposal is retained as perf/baseline-m4pro.proposed.json; metadata paths are sanitized.
+The diagnostic uses the standard forks/warmup/measurement settings and is not itself a full
+comparison gate; final full JMH passes against this profile (21 configurations, 5m56s).
+The newly introduced PageBuilderBench.buildBothMobilityClasses also receives its first
+profile at 112.663 us/op; existing PageBuilderBench.build and every other existing score
+remain unchanged. NodeDiscoveryBench.provingGround remains informational as before.
+Evidence and rollback: docs/testing/data/M5-T2-recovery-m4pro.json; restore the prior
+TerrainEditBench row from commit 5437a1f to reinstate the single-grid comparison. This does not
+close the separate historical main CI investigation or approve a different platform's baseline.
+
 ## Consequences
 
 - Every phase has a target (§4.4 of [04-architecture.md](../04-architecture.md)), and budget

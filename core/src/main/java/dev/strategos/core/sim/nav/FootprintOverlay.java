@@ -13,11 +13,25 @@ public final class FootprintOverlay {
     private final int pagesX;
     private final long[][] masks;
     private final int[] blockedCounts;
+    private int activePages;
 
     public FootprintOverlay(int pagesX, int pagesZ) {
         this.pagesX = pagesX;
-        this.masks = new long[pagesX * pagesZ][4];
+        this.masks = new long[pagesX * pagesZ][]; // a page's mask is made when its first column is blocked
         this.blockedCounts = new int[pagesX * pagesZ];
+    }
+
+    /** An independent copy of the columns blocked now. */
+    public FootprintOverlay copy() {
+        FootprintOverlay copy = new FootprintOverlay(pagesX, masks.length / pagesX);
+        for (int page = 0; page < masks.length; page++) {
+            if (blockedCounts[page] > 0) {
+                copy.masks[page] = masks[page].clone();
+                copy.blockedCounts[page] = blockedCounts[page];
+            }
+        }
+        copy.activePages = activePages;
+        return copy;
     }
 
     /** The page index of match-local column (x, z). */
@@ -29,8 +43,9 @@ public final class FootprintOverlay {
     public void block(int x, int z) {
         int page = pageOf(x, z);
         int column = SurfacePage.column(x & 15, z & 15);
+        if (masks[page] == null) masks[page] = new long[4];
         masks[page][column >> 6] |= 1L << (column & 63);
-        blockedCounts[page]++;
+        if (blockedCounts[page]++ == 0) activePages++;
     }
 
     /** Releases match-local column (x, z). */
@@ -40,6 +55,7 @@ public final class FootprintOverlay {
             return;
         }
         if (--blockedCounts[page] == 0) {
+            activePages--;
             Arrays.fill(masks[page], 0); // the last footprint on the page is gone
             return;
         }
@@ -52,6 +68,11 @@ public final class FootprintOverlay {
         int page = pageOf(x, z);
         int column = SurfacePage.column(x & 15, z & 15);
         return blockedCounts[page] > 0 && (masks[page][column >> 6] & (1L << (column & 63))) != 0;
+    }
+
+    /** Whether any footprint is present, including restored columns. */
+    public boolean any() {
+        return activePages > 0;
     }
 
     /** Whether page {@code page} has a blocked column. */

@@ -261,6 +261,14 @@ public final class MatchRuntime {
     /** The tick driver's step: the inbox becomes the next tick's inputs; outputs and bodies are applied after it. */
     public void tick(ServerLevel level) {
         MatchCore c = requireCore();
+        if (swap != null) {
+            String problem = c.queries().templateSwapProblem(swap.set());
+            if (problem != null) {
+                // Publication and INGEST are separate boundaries. The fault barrier must stop this
+                // match if a newly introduced reference invalidated the server's earlier check.
+                throw new IllegalStateException("published template swap cannot be applied: " + problem);
+            }
+        }
         long next = c.queries().tick() + 1;
         AgentUpdate agents = this.agents.track(level, roster.members());
         ContentSwap swap = this.swap;

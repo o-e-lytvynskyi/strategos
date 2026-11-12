@@ -1,0 +1,254 @@
+{
+  "date": "2026-10-26",
+  "status": "green_full_validation",
+  "environment": {
+    "cpu": "Apple M4 Pro",
+    "memory_bytes": 25769803776,
+    "os": "macOS 27.0.1",
+    "jvm": "Temurin 21.0.12.1",
+    "gradle": "9.8.2"
+  },
+  "source": {
+    "base": "5437a1f",
+    "changed_source_sha256": "675cef23c62f8fcf94139c4875b58c4d5c851b3f70987e0b002fe06ff258f327",
+    "files": [
+      "core/src/jmh/java/dev/strategos/core/bench/PageBuilderBench.java",
+      "core/src/main/java/dev/strategos/core/content/TemplateCompiler.java",
+      "core/src/main/java/dev/strategos/core/content/UnitTemplate.java",
+      "core/src/main/java/dev/strategos/core/sim/LargeNavigation.java",
+      "core/src/main/java/dev/strategos/core/sim/MatchQueries.java",
+      "core/src/main/java/dev/strategos/core/sim/MatchState.java",
+      "core/src/main/java/dev/strategos/core/sim/MatchTerrain.java",
+      "core/src/main/java/dev/strategos/core/sim/QueriesImpl.java",
+      "core/src/main/java/dev/strategos/core/sim/build/Construction.java",
+      "core/src/main/java/dev/strategos/core/sim/move/Avoidance.java",
+      "core/src/main/java/dev/strategos/core/sim/move/MotionSystem.java",
+      "core/src/main/java/dev/strategos/core/sim/move/StuckLadder.java",
+      "core/src/main/java/dev/strategos/core/sim/nav/FootprintOverlay.java",
+      "core/src/main/java/dev/strategos/core/sim/nav/MobilityClass.java",
+      "core/src/main/java/dev/strategos/core/sim/nav/PageBuilder.java",
+      "core/src/main/java/dev/strategos/core/sim/nav/PathService.java",
+      "core/src/main/java/dev/strategos/core/sim/order/SlotPlanner.java",
+      "core/src/main/java/dev/strategos/core/sim/prod/Production.java",
+      "core/src/test/java/dev/strategos/core/content/LargeTemplateTest.java",
+      "core/src/test/java/dev/strategos/core/sim/MobilityCacheTest.java",
+      "core/src/test/java/dev/strategos/core/sim/nav/FootprintPresenceTest.java",
+      "core/src/test/java/dev/strategos/core/sim/nav/LargeIntegrationTest.java",
+      "core/src/test/java/dev/strategos/core/sim/nav/LargeMovementTest.java",
+      "core/src/test/java/dev/strategos/core/sim/nav/LargePublicationTest.java",
+      "core/src/test/java/dev/strategos/core/sim/nav/MobilityTest.java",
+      "core/src/testFixtures/java/dev/strategos/core/testkit/VoxelWorld.java",
+      "mod/src/gametest/java/dev/strategos/gametest/suites/CrowdSoak.java",
+      "mod/src/gametest/java/dev/strategos/gametest/suites/PerfTests.java"
+    ]
+  },
+  "t1_control": {
+    "commit": "152ca9d",
+    "command": "./gradlew :core:jmh '-Pjmh.include=(MovementBench|TerrainEditBench)'",
+    "seconds": 36,
+    "movement_us": 23.249,
+    "terrain_edit_us": 290.034
+  },
+  "first_recovery_full_jmh": {
+    "seconds": 359,
+    "movement_us": 27.479,
+    "terrain_edit_us": 1027.918,
+    "jmh_compare": "failed_two_regressions_no_missing_or_allocating_kernels"
+  },
+  "optimized_diagnostic": {
+    "seconds": 36,
+    "movement_us": 24.12,
+    "terrain_edit_us": 481.023,
+    "jmh_compare": "not_run_filtered_diagnostic"
+  },
+  "targeted_perf": {
+    "seconds": 18,
+    "test_count": 2,
+    "idle_ratio": 0.21895093062605753,
+    "idle_limit": 0.3,
+    "idle_foreign_cpu": 0.0179181,
+    "path_p99_ns": 427499,
+    "path_p99_limit_ns": 2000000,
+    "path_samples": 40,
+    "path_foreign_cpu": 0.0538001,
+    "verdict": "pass"
+  },
+  "baseline_decision": {
+    "benchmark": "dev.strategos.core.sim.TerrainEditBench.rebuildOnePage",
+    "previous_score_us": 291.66538764641797,
+    "two_grid_score_us": 481.02341924731826,
+    "basis": "same-host diagnostic after removing avoidable overhead; below planned twofold rebuild cost; absolute D and idle ratio pass",
+    "authority": "owner delegated recommended decisions, AGENTS.md autonomy defaults, 2026-10-26",
+    "regression_limit_percent": 15,
+    "other_existing_primary_metrics": "unchanged",
+    "final_full_comparison": "pass",
+    "new_m5_profile": {
+      "benchmark": "dev.strategos.core.bench.PageBuilderBench.buildBothMobilityClasses",
+      "score_us": 112.66308653427011
+    }
+  },
+  "final_full_gates": {
+    "seconds": 264,
+    "tests": 1939,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "additional_targeted_perf_tests": 2,
+    "navigation_bytes_populated_512_bridge": 10114672
+  },
+  "final_full_jmh": {
+    "seconds": 356,
+    "configurations": 21,
+    "jmh_compare": "pass",
+    "missing_or_allocating_kernels": 0,
+    "scores": [
+      {
+        "benchmark": "dev.strategos.core.bench.HealthBarBench.bars300",
+        "params": {},
+        "score": 0.9456593534161704,
+        "error": 0.008692344296914485,
+        "unit": "us/op"
+      },
+      {
+        "benchmark": "dev.strategos.core.bench.HudBench.hudFrame200",
+        "params": {},
+        "score": 1.5390027617053186,
+        "error": 0.01516608955187544,
+        "unit": "us/op"
+      },
+      {
+        "benchmark": "dev.strategos.core.bench.MatchBusBench.publish1000",
+        "params": {},
+        "score": 13.898016436196809,
+        "error": 0.44088561124845027,
+        "unit": "us/op"
+      },
+      {
+        "benchmark": "dev.strategos.core.bench.MovementBench.step600",
+        "params": {},
+        "score": 24.904263993950085,
+        "error": 0.3569030634858299,
+        "unit": "us/op"
+      },
+      {
+        "benchmark": "dev.strategos.core.bench.NodeDiscoveryBench.provingGround",
+        "params": {},
+        "score": 64.39622448124999,
+        "error": 0.2939794005951035,
+        "unit": "ms/op"
+      },
+      {
+        "benchmark": "dev.strategos.core.bench.PageBuilderBench.build",
+        "params": {},
+        "score": 35.38952593061275,
+        "error": 0.733593261885147,
+        "unit": "us/op"
+      },
+      {
+        "benchmark": "dev.strategos.core.bench.PageBuilderBench.buildBothMobilityClasses",
+        "params": {},
+        "score": 112.66308653427011,
+        "error": 4.493510633793305,
+        "unit": "us/op"
+      },
+      {
+        "benchmark": "dev.strategos.core.bench.PhaseTimersBench.overhead",
+        "params": {},
+        "score": 0.11110510817663362,
+        "error": 0.00045414456382967356,
+        "unit": "us/op"
+      },
+      {
+        "benchmark": "dev.strategos.core.bench.SnapshotCodecBench.encode500",
+        "params": {},
+        "score": 278.9807410873701,
+        "error": 2.9066289924124256,
+        "unit": "us/op"
+      },
+      {
+        "benchmark": "dev.strategos.core.bench.SpatialBench.query1000",
+        "params": {},
+        "score": 253.29581910126893,
+        "error": 15.409642502947566,
+        "unit": "us/op"
+      },
+      {
+        "benchmark": "dev.strategos.core.bench.SpatialBench.rebuild1000",
+        "params": {},
+        "score": 4.829651178595131,
+        "error": 0.03289156720067166,
+        "unit": "us/op"
+      },
+      {
+        "benchmark": "dev.strategos.core.bench.StatReadBench.cachedRead",
+        "params": {},
+        "score": 2.3115528455707826,
+        "error": 0.023243708392184242,
+        "unit": "ns/op"
+      },
+      {
+        "benchmark": "dev.strategos.core.bench.StateHashBench.hash600",
+        "params": {},
+        "score": 22.491310706968832,
+        "error": 0.09653588213830705,
+        "unit": "us/op"
+      },
+      {
+        "benchmark": "dev.strategos.core.bench.TemplateCompileBench.compile500",
+        "params": {},
+        "score": 5.828010274969026,
+        "error": 0.1246496567374286,
+        "unit": "ms/op"
+      },
+      {
+        "benchmark": "dev.strategos.core.sim.MotionBench.step600",
+        "params": {},
+        "score": 277.0060644515096,
+        "error": 3.345230381213169,
+        "unit": "us/op"
+      },
+      {
+        "benchmark": "dev.strategos.core.sim.OrcaBench.step600",
+        "params": {},
+        "score": 477.65394529624916,
+        "error": 4.147327907294669,
+        "unit": "us/op"
+      },
+      {
+        "benchmark": "dev.strategos.core.sim.TerrainEditBench.rebuildOnePage",
+        "params": {},
+        "score": 515.3117265323699,
+        "error": 14.11016823877295,
+        "unit": "us/op"
+      },
+      {
+        "benchmark": "dev.strategos.core.bench.CrossingBench.cross384",
+        "params": {},
+        "score": 0.2818733006926338,
+        "error": 0.00039213985972014057,
+        "unit": "ms/op"
+      },
+      {
+        "benchmark": "dev.strategos.core.bench.CrossingBench.cross512",
+        "params": {},
+        "score": 0.3199855182035355,
+        "error": 0.0004871028056242456,
+        "unit": "ms/op"
+      },
+      {
+        "benchmark": "dev.strategos.core.bench.CrossingBench.flat384",
+        "params": {},
+        "score": 4.356058763636363,
+        "error": 0.019344035973056874,
+        "unit": "ms/op"
+      },
+      {
+        "benchmark": "dev.strategos.core.bench.CrossingBench.flat512",
+        "params": {},
+        "score": 4.4188255480473915,
+        "error": 0.006719276828582558,
+        "unit": "ms/op"
+      }
+    ]
+  }
+}

@@ -5,15 +5,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 import dev.strategos.core.client.model.ClientMatchModel;
 import dev.strategos.core.client.select.Selection;
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.protocol.AllClear;
 import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.CancelTrain;
 import dev.strategos.core.protocol.Command;
 import dev.strategos.core.protocol.FactionState;
 import dev.strategos.core.protocol.Reseed;
+import dev.strategos.core.protocol.RingBell;
+import dev.strategos.core.protocol.SetStance;
 import dev.strategos.core.protocol.Stop;
 import dev.strategos.core.protocol.Train;
 import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.protocol.WireCodec;
+import dev.strategos.core.shared.Stance;
 import dev.strategos.core.shared.TemplateId;
 import java.util.ArrayList;
 import java.util.List;
@@ -100,9 +104,14 @@ class CommandCardTest {
         CommandCard card = card(model, List.of(), b, false);
         assertThat(card.page()).isEqualTo(CommandCard.Page.BUILDING);
         assertThat(card.buttons())
-                .as("the centre trains workers, at the worker's 60 food, which 100 covers; it can be demolished")
+                .as(
+                        "the centre trains workers, at the worker's 60 food, which 100 covers; it rings its bell and can be demolished")
                 .containsExactly(
                         new CommandCard.Button(CommandCard.Kind.TRAIN, 0, WORKER, List.of(60_000L, 0L, 0L, 0L), true),
+                        new CommandCard.Button(
+                                CommandCard.Kind.RING_BELL, CommandCard.SLOTS - 3, CENTRE, List.of(), true),
+                        new CommandCard.Button(
+                                CommandCard.Kind.ALL_CLEAR, CommandCard.SLOTS - 2, CENTRE, List.of(), true),
                         new CommandCard.Button(
                                 CommandCard.Kind.DEMOLISH, CommandCard.SLOTS - 1, CENTRE, List.of(), true));
 
@@ -153,6 +162,7 @@ class CommandCardTest {
         CommandCard main = card(model, List.of(WORKER), null, controller.buildPage());
         assertThat(main.buttons())
                 .extracting(CommandCard.Button::kind)
+                .filteredOn(k -> k != CommandCard.Kind.STANCE)
                 .containsExactly(CommandCard.Kind.BUILD_PAGE, CommandCard.Kind.STOP);
         List<Command> sent = new ArrayList<>();
         assertThat(controller
@@ -174,7 +184,7 @@ class CommandCardTest {
         CardController.Click arm = controller.click(house, units, null, T, sent::add);
         assertThat(arm).isEqualTo(new CardController.Click(CardController.Effect.ARM, house.template()));
         assertThat(controller.buildPage()).as("placing closes the page").isFalse();
-        controller.click(main.buttons().get(1), units, null, T, sent::add);
+        controller.click(button(main, CommandCard.Kind.STOP), units, null, T, sent::add);
         assertThat(sent).as("only stop sent anything").containsExactly(new Stop(UnitSet.of(5, 6)));
 
         controller.click(main.buttons().get(0), units, null, T, sent::add);
@@ -184,7 +194,187 @@ class CommandCardTest {
                         .buttons())
                 .extracting(CommandCard.Button::kind)
                 .as("a spearman builds nothing")
+                .filteredOn(k -> k != CommandCard.Kind.STANCE)
                 .containsExactly(CommandCard.Kind.STOP);
+    }
+
+    private static CommandCard.Button button(CommandCard card, CommandCard.Kind kind) {
+        return card.buttons().stream().filter(b -> b.kind() == kind).findFirst().orElseThrow();
+    }
+
+    @Test
+    void unitsShowTheFiveStancesInOrderAndABuildingNone() {
+        ClientMatchModel model = model(faction(0, 0), centre(List.of(), 0));
+        int spearman = index("strategos:unit/infantry");
+        CommandCard card = card(model, List.of(spearman), null, false);
+        List<CommandCard.Button> stances = card.buttons().stream()
+                .filter(b -> b.kind() == CommandCard.Kind.STANCE)
+                .toList();
+        assertThat(stances)
+                .extracting(CommandCard.Button::stance)
+                .containsExactly(
+                        Stance.VIOLENT, Stance.AGGRESSIVE, Stance.DEFENSIVE, Stance.STAND_GROUND, Stance.PASSIVE);
+        assertThat(stances).extracting(CommandCard.Button::on).containsOnly(false);
+        assertThat(stances).extracting(CommandCard.Button::slot).doesNotHaveDuplicates();
+        assertThat(card.buttons())
+                .extracting(CommandCard.Button::slot)
+                .as("no two buttons share a cell")
+                .doesNotHaveDuplicates();
+        assertThat(CommandCard.stanceKey(Stance.STAND_GROUND)).isEqualTo("strategos.stance.stand_ground");
+        BuildingState.Entry centre = model.buildings().get(0);
+        assertThat(card(model, List.of(), centre, false).buttons())
+                .extracting(CommandCard.Button::kind)
+                .doesNotContain(CommandCard.Kind.STANCE);
+    }
+
+    @Test
+    void theStanceTheWholeSelectionSharesIsShownActive() {
+        ClientMatchModel model = model(faction(0, 0));
+        int spearman = index("strategos:unit/infantry");
+        CardController controller = new CardController();
+        assertThat(CardController.stanceOf(T, spearman, null))
+                .as("its template's")
+                .isEqualTo(Stance.AGGRESSIVE);
+        assertThat(CardController.stanceOf(T, WORKER, null))
+                .as("a worker's template says passive")
+                .isEqualTo(Stance.PASSIVE);
+        CommandCard card = CommandCard.of(
+                new CommandCard.Input(
+                        T, RESOURCES, model.faction(), List.of(spearman), false, List.of(), false, Stance.AGGRESSIVE),
+                null);
+        assertThat(card.buttons())
+                .filteredOn(CommandCard.Button::on)
+                .extracting(CommandCard.Button::stance)
+                .containsExactly(Stance.AGGRESSIVE);
+        assertThat(CardController.shared(List.of(Stance.PASSIVE, Stance.PASSIVE)))
+                .isEqualTo(Stance.PASSIVE);
+        assertThat(CardController.shared(List.of(Stance.PASSIVE, Stance.VIOLENT)))
+                .as("a mix")
+                .isNull();
+        assertThat(CardController.shared(List.of())).isNull();
+        CommandCard mixed = CommandCard.of(
+                new CommandCard.Input(
+                        T,
+                        RESOURCES,
+                        model.faction(),
+                        List.of(spearman, WORKER),
+                        false,
+                        List.of(),
+                        false,
+                        CardController.shared(List.of(Stance.AGGRESSIVE, Stance.PASSIVE))),
+                null);
+        assertThat(mixed.buttons()).extracting(CommandCard.Button::on).containsOnly(false);
+    }
+
+    @Test
+    void theActiveStanceComesFromTheReceivedDataWhoeverSetIt() {
+        int spearman = index("strategos:unit/infantry");
+        assertThat(CardController.stanceOf(T, spearman, Stance.STAND_GROUND))
+                .as("a stance the server sent beats the template's")
+                .isEqualTo(Stance.STAND_GROUND);
+        assertThat(CardController.stanceOf(T, spearman, null))
+                .as("absent: the template's")
+                .isEqualTo(Stance.AGGRESSIVE);
+        ClientMatchModel model = model(faction(0, 0));
+        // another client's SetStance, seen only as the detail the server pushed
+        List<Stance> stances = List.of(
+                CardController.stanceOf(T, spearman, Stance.PASSIVE),
+                CardController.stanceOf(T, spearman, Stance.PASSIVE));
+        CommandCard card = CommandCard.of(
+                new CommandCard.Input(
+                        T,
+                        RESOURCES,
+                        model.faction(),
+                        List.of(spearman, spearman),
+                        false,
+                        List.of(),
+                        false,
+                        CardController.shared(stances)),
+                null);
+        assertThat(card.buttons())
+                .filteredOn(CommandCard.Button::on)
+                .extracting(CommandCard.Button::stance)
+                .containsExactly(Stance.PASSIVE);
+    }
+
+    @Test
+    void theCentreRingsItsBellAndSoundsTheAllClearAndAFieldHasNeitherButton() {
+        ClientMatchModel model = model(faction(0, 0), centre(List.of(), 0));
+        BuildingState.Entry b = model.buildings().get(0);
+        CommandCard card = card(model, List.of(), b, false);
+        CardController controller = new CardController();
+        List<Command> sent = new ArrayList<>();
+        for (CommandCard.Kind kind : List.of(CommandCard.Kind.RING_BELL, CommandCard.Kind.ALL_CLEAR)) {
+            CommandCard.Button button = card.buttons().stream()
+                    .filter(x -> x.kind() == kind)
+                    .findFirst()
+                    .orElseThrow();
+            double[] at = centreOf(CommandCard.cell(CARD, PAD, button.slot()));
+            assertThat(controller
+                            .click(card.at(CARD, PAD, at[0], at[1]), List.of(), b, T, sent::add)
+                            .effect())
+                    .isEqualTo(CardController.Effect.SENT);
+        }
+        assertThat(sent).containsExactly(new RingBell(1 << 20), new AllClear(1 << 20));
+        assertThat(controller
+                        .click(
+                                new CommandCard.Button(CommandCard.Kind.RING_BELL, 12, CENTRE, List.of(), true),
+                                List.of(),
+                                null,
+                                T,
+                                sent::add)
+                        .effect())
+                .as("no building, nothing sent")
+                .isEqualTo(CardController.Effect.NONE);
+        assertThat(sent).hasSize(2);
+
+        BuildingState.Entry field = new BuildingState.Entry(
+                (1 << 20) + 1,
+                FIELD,
+                0,
+                0,
+                0,
+                0,
+                1,
+                CommandCard.COMPLETE,
+                100,
+                100,
+                true,
+                List.of(),
+                false,
+                0,
+                0,
+                0,
+                -1,
+                0);
+        assertThat(CommandCard.of(new CommandCard.Input(T, RESOURCES, null, List.of(), false), field)
+                        .buttons())
+                .extracting(CommandCard.Button::kind)
+                .doesNotContain(CommandCard.Kind.RING_BELL, CommandCard.Kind.ALL_CLEAR);
+    }
+
+    @Test
+    void aStanceClickSendsOneSetStanceForTheSelection() {
+        ClientMatchModel model = model(faction(0, 0));
+        int spearman = index("strategos:unit/infantry");
+        CardController controller = new CardController();
+        List<Integer> units = List.of(5, 6);
+        CommandCard card = card(model, List.of(spearman, spearman), null, false);
+        CommandCard.Button defensive = card.buttons().stream()
+                .filter(b -> b.stance() == Stance.DEFENSIVE)
+                .findFirst()
+                .orElseThrow();
+        List<Command> sent = new ArrayList<>();
+        CardController.Click click = controller.click(defensive, units, null, T, sent::add);
+        assertThat(click.effect()).isEqualTo(CardController.Effect.SENT);
+        assertThat(sent).containsExactly(new SetStance(UnitSet.of(5, 6), Stance.DEFENSIVE));
+        assertThat(CardController.stanceOf(T, spearman, null))
+                .as("the card remembers nothing: only what the server sent counts")
+                .isEqualTo(Stance.AGGRESSIVE);
+        assertThat(controller.click(defensive, List.of(), null, T, sent::add).effect())
+                .as("nothing selected, nothing sent")
+                .isEqualTo(CardController.Effect.NONE);
+        assertThat(sent).hasSize(1);
     }
 
     @Test
@@ -404,5 +594,22 @@ class CommandCardTest {
                         .isEqualTo(server.blockValue(template, 0, path) * unit);
             }
         }
+    }
+
+    /** CMB-16.3: the archer's tooltip names the high-ground source and its knobs; a melee unit has none of it. */
+    @Test
+    void theArcherBreakdownNamesTheHighGroundSource() {
+        List<CommandCard.Line> archer = CommandCard.breakdown(T, index("strategos:unit/archer"));
+        assertThat(archer)
+                .extracting(CommandCard.Line::label, CommandCard.Line::value)
+                .contains(
+                        org.assertj.core.groups.Tuple.tuple("Pierce, ranged", 16.0),
+                        org.assertj.core.groups.Tuple.tuple("Range, blocks", 20.0),
+                        org.assertj.core.groups.Tuple.tuple("High ground, % range a block", 5.0),
+                        org.assertj.core.groups.Tuple.tuple("High ground, % damage a block", 4.0),
+                        org.assertj.core.groups.Tuple.tuple("High ground, up to blocks", 8.0));
+        assertThat(CommandCard.breakdown(T, index("strategos:unit/infantry")))
+                .extracting(CommandCard.Line::label)
+                .noneMatch(l -> l.startsWith("High ground") || l.endsWith("ranged") || l.startsWith("Range"));
     }
 }

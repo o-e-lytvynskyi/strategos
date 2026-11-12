@@ -10,32 +10,49 @@ import static dev.strategos.gametest.suites.Units.spawn;
 import com.mojang.authlib.GameProfile;
 import dev.strategos.core.client.audio.Sounds;
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.protocol.Attack;
 import dev.strategos.core.protocol.AttackMove;
+import dev.strategos.core.protocol.CommandOutcome;
 import dev.strategos.core.protocol.FxKind;
 import dev.strategos.core.protocol.NoticeKind;
 import dev.strategos.core.protocol.NoticeMsg;
+import dev.strategos.core.protocol.QueueMode;
+import dev.strategos.core.protocol.SetStance;
 import dev.strategos.core.protocol.SpawnUnits;
+import dev.strategos.core.protocol.Stop;
 import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
+import dev.strategos.core.shared.Stance;
+import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.ExternalDamage;
 import dev.strategos.core.sim.InputEvent;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.TickInputs;
+import dev.strategos.core.sim.UnitView;
 import dev.strategos.core.sim.journal.ReplayDriver;
 import dev.strategos.core.sim.journal.ReplayResult;
+import dev.strategos.core.sim.order.OrderKind;
+import dev.strategos.core.testkit.DuelLayout;
+import dev.strategos.core.testkit.DuelLayout.Kind;
+import dev.strategos.core.testkit.Seeds;
+import dev.strategos.core.testkit.SimHarness;
+import dev.strategos.gametest.MatchFixture;
 import dev.strategos.gametest.StrategosTest;
 import dev.strategos.gametest.net.MockViewer;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.entity.UnitEntity;
 import dev.strategos.mod.entity.UnitSpawnData;
 import dev.strategos.mod.server.match.MatchRuntime;
+import dev.strategos.mod.server.match.MatchSpace;
 import dev.strategos.mod.server.net.payload.FeedbackPayload;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
@@ -47,11 +64,15 @@ import net.minecraft.world.entity.projectile.Arrow;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.common.util.FakePlayer;
 import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.event.PlayLevelSoundEvent;
+import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The damage model on real bodies (CMB-01): vanilla's blows reach the core as its own damage, the body's vanilla health
@@ -303,6 +324,155 @@ public final class CombatTests {
         });
     }
 
+    /** CMB-04: a ranged volley damages core units, preserves living bodies' health, and replays exactly. */
+    @StrategosTest(timeoutTicks = 600)
+    public static void archerVolleyReplaysAsTheCorePredicts(GameTestHelper h) {
+        MatchRuntime rt = match(h);
+        rt.submit(
+                PlayerSlot.ADMIN,
+                new SpawnUnits(new TemplateId("strategos:unit/archer"), new FactionSlot(0), new Vec2d(8, 16), 5, 2));
+        rt.submit(
+                PlayerSlot.ADMIN,
+                new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(1), new Vec2d(24, 16), 5, 2));
+        var state = new Object() {
+            boolean ordered;
+            int elapsed;
+            int hurtBodies;
+        };
+        h.onEachTick(() -> {
+            MatchCore core = core(rt);
+            if (!state.ordered) {
+                int[] archers = core.queries().unitHandlesOf(new FactionSlot(0));
+                int[] targets = core.queries().unitHandlesOf(new FactionSlot(1));
+                if (archers.length != 5
+                        || targets.length != 5
+                        || Units.bodiesOf(h.getLevel(), rt).size() != 10) {
+                    return;
+                }
+                rt.submit(new PlayerSlot(0), Attack.replace(UnitSet.of(archers), targets[0]));
+                state.ordered = true;
+                return;
+            }
+            for (UnitEntity body : Units.bodiesOf(h.getLevel(), rt)) {
+                if (!body.isDeadOrDying()) {
+                    UnitSpawnData data = body.spawnData();
+                    check(body.getHealth() == body.getMaxHealth(), "a living body's vanilla health fell");
+                    if (data != null
+                            && core.queries().unit(data.handle()) != null
+                            && core.queries().hitPoints(data.handle())
+                                    < core.queries().maxHitPoints(data.handle())) {
+                        state.hurtBodies++;
+                    }
+                }
+            }
+            if (++state.elapsed < 120) {
+                return;
+            }
+            check(state.hurtBodies > 0, "the archer volley did no core damage");
+            ReplayResult replay = ReplayDriver.replay(core.journal(), TemplateSet.builtin());
+            check(replay.matches(), "the journal does not replay: " + replay);
+            check(replay.finalHash() == core.stateHash(), "the replay ends on another hash: " + replay);
+            h.succeed();
+        });
+    }
+
+    /**
+     * CMB-16.4: six archers stand on a six-block stone platform and six on the floor, each with a walker 25.4 blocks
+     * away on the floor: past the archer's range of 20, inside the 26 of six blocks up. The raised archers hurt a walker
+     * in the core without moving, while their twins on the floor, the same distance from their walkers, have to walk
+     * to get in range. Every block stays inside the eight-block-high arena, so GameTest clears it for the next test.
+     */
+    @StrategosTest(arena = "arena_flat_48_high", timeoutTicks = 300, skyAccess = true)
+    public static void highGroundReachesFarther(GameTestHelper h) {
+        for (int x = 0; x < 12; x++) {
+            for (int z = 2; z < 18; z++) {
+                for (int y = 2; y <= 7; y++) {
+                    h.setBlock(new BlockPos(x, y, z), Blocks.STONE); // six blocks over the floor at helper y 1
+                }
+            }
+        }
+        // A raised body reaches past the arena's top: the match's band is taller, with nothing placed above the arena
+        net.minecraft.world.phys.AABB box = h.getBounds();
+        MatchSpace space = new MatchSpace(
+                h.getLevel().dimension(),
+                new BlockPos((int) Math.floor(box.minX), (int) Math.floor(box.minY), (int) Math.floor(box.minZ)),
+                48,
+                48,
+                (int) Math.floor(box.minY),
+                (int) Math.floor(box.minY) + 12);
+        MatchRuntime rt = MatchFixture.create(h, space, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
+        double[] highZ = {3.5, 5.5, 7.5, 9.5, 11.5, 13.5};
+        double[] lowZ = {28.5, 30.5, 32.5, 34.5, 36.5, 38.5};
+        TemplateId archer = new TemplateId("strategos:unit/archer");
+        for (double[] row : new double[][] {highZ, lowZ}) {
+            for (double z : row) {
+                rt.submit(PlayerSlot.ADMIN, new SpawnUnits(archer, new FactionSlot(0), new Vec2d(6.5, z), 1, 0));
+                rt.submit(
+                        PlayerSlot.ADMIN,
+                        new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(1), new Vec2d(32.1, z), 1, 0));
+            }
+        }
+        var state = new Object() {
+            boolean ordered;
+        };
+        h.onEachTick(() -> {
+            MatchCore core = core(rt);
+            int[] archers = core.queries().unitHandlesOf(new FactionSlot(0));
+            int[] walkers = core.queries().unitHandlesOf(new FactionSlot(1));
+            if (archers.length != 12 || walkers.length != 12) {
+                return;
+            }
+            if (!state.ordered) {
+                for (int a : archers) {
+                    for (int w : walkers) {
+                        if (Math.abs(Units.unit(rt, a).z() - Units.unit(rt, w).z()) < 0.5) {
+                            rt.submit(new PlayerSlot(0), Attack.replace(UnitSet.of(a), w));
+                        }
+                    }
+                }
+                for (int a : archers) {
+                    for (int b : archers) {
+                        double over = Units.unit(rt, a).y() - Units.unit(rt, b).y();
+                        if (Units.unit(rt, a).z() < 22 && Units.unit(rt, b).z() > 22) {
+                            check(
+                                    over > 5.5 && over < 6.5,
+                                    "a raised archer stands " + over + " blocks over the floor");
+                        }
+                    }
+                }
+                state.ordered = true;
+                return;
+            }
+            for (int a : archers) {
+                UnitView u = Units.unit(rt, a);
+                if (u.z() < 22) {
+                    check(u.x() == 6.5, "a raised archer walked to " + u.x());
+                }
+            }
+            int hurtHigh = 0;
+            for (int w : walkers) {
+                if (Units.unit(rt, w).z() < 22
+                        && core.queries().hitPoints(w) < core.queries().maxHitPoints(w)) {
+                    hurtHigh++;
+                }
+            }
+            if (hurtHigh == 0) {
+                return;
+            }
+            // Only the raised archers can have hurt these walkers; they did it from where they stood, while their
+            // ground twins, 25.4 blocks from theirs, had to walk to get in range
+            int walked = 0;
+            for (int a : archers) {
+                UnitView u = Units.unit(rt, a);
+                if (u.z() > 22 && u.x() > 6.5) {
+                    walked++;
+                }
+            }
+            check(walked == 6, "only " + walked + " ground archers walked");
+            h.succeed();
+        });
+    }
+
     /**
      * ORD-04.3: five spearmen attack-move through three debug walkers standing in their way, kill them and walk on to
      * the point; replayed in L1, the journal ends on the live hash.
@@ -346,6 +516,230 @@ public final class CombatTests {
             ReplayResult replay = ReplayDriver.replay(core.journal(), TemplateSet.builtin());
             check(replay.matches(), "the journal does not replay: " + replay);
             check(replay.finalHash() == core.stateHash(), "the replay ends on another hash: " + replay);
+            h.succeed();
+        });
+    }
+
+    // ---- Stances (CMB-05, check 4): one test per stance family, each confirming its L1 behaviour in a real match.
+
+    /** A unit of {@code template} for {@code faction} at match-local (x, z); it exists after the next step. */
+    private static void put(MatchRuntime rt, TemplateId template, int faction, double x, double z) {
+        rt.submit(PlayerSlot.ADMIN, new SpawnUnits(template, new FactionSlot(faction), new Vec2d(x, z), 1, 0));
+    }
+
+    /** The handles of faction 0's and faction 1's only units, or null while either is yet to appear. */
+    private static int @Nullable [] pair(MatchRuntime rt) {
+        int[] a = core(rt).queries().unitHandlesOf(new FactionSlot(0));
+        int[] b = core(rt).queries().unitHandlesOf(new FactionSlot(1));
+        return a.length == 1 && b.length == 1 ? new int[] {a[0], b[0]} : null;
+    }
+
+    private static double distanceBetween(MatchRuntime rt, int a, int b) {
+        var from = Units.unit(rt, a);
+        var to = Units.unit(rt, b);
+        return Math.hypot(from.x() - to.x(), from.z() - to.z());
+    }
+
+    private static boolean engaged(MatchRuntime rt, int unit) {
+        return !core(rt).queries().orders(unit).isEmpty();
+    }
+
+    /**
+     * CMB-05.4, aggressive and violent: a spearman in its default stance stands still while an enemy is out of its
+     * sight (12 blocks), notices it as it walks in, goes to it and hurts it. Violent is covered here too: M5 finding 12
+     * makes the two engage and retaliate alike (they differ only in chasing beyond sight, L1's StanceTest).
+     */
+    @StrategosTest(timeoutTicks = 900)
+    public static void stanceAggressive(GameTestHelper h) {
+        MatchRuntime rt = match(h);
+        put(rt, TemplateSet.INFANTRY, 0, 6, 16);
+        put(rt, TemplateSet.DEBUG_WALKER, 1, 25, 16);
+        var state = new Object() {
+            boolean walking;
+            boolean seen;
+            int ticks;
+        };
+        h.onEachTick(() -> {
+            MatchCore core = core(rt);
+            if (!state.walking && pair(rt) == null) {
+                return;
+            }
+            int spearman = core.queries().unitHandlesOf(new FactionSlot(0))[0];
+            int walker = core.queries().unitHandlesOf(new FactionSlot(1))[0];
+            if (!state.walking) {
+                Units.move(rt, walker, 14, 16); // walks in from beyond sight
+                state.walking = true;
+                return;
+            }
+            double apart = distanceBetween(rt, spearman, walker);
+            if (!state.seen && !engaged(rt, spearman)) {
+                check(Math.abs(Units.unit(rt, spearman).x() - 6) < 0.3, "it left its place before it saw anything");
+                check(apart > 11 || state.ticks++ < 400, "it saw the enemy in range and did nothing");
+                return;
+            }
+            if (!state.seen) {
+                check(apart <= 12.5, "it engaged an enemy " + apart + " blocks off, beyond its sight");
+                state.seen = true;
+            }
+            if (core.queries().hitPoints(walker) >= core.queries().maxHitPoints(walker)
+                    && core.queries().isAlive(walker)) {
+                return; // on its way to strike
+            }
+            h.succeed();
+        });
+    }
+
+    /**
+     * CMB-05.4, defensive: a guard engages an enemy near its spot (within reach + half its sight), ignores one
+     * standing beyond that radius though in sight, and walks back to its spot when the fight is over.
+     */
+    @StrategosTest(timeoutTicks = 1_500)
+    public static void stanceDefensive(GameTestHelper h) {
+        MatchRuntime rt = match(h);
+        put(rt, TemplateSet.INFANTRY, 0, 8, 16);
+        put(rt, TemplateSet.DEBUG_WALKER, 1, 25, 16);
+        var state = new Object() {
+            int phase; // 0 set up, 1 the enemy stands in sight beyond the radius, 2 it comes near, 3 it is dealt with
+            int wait;
+            boolean fought;
+            int guard;
+            int walker;
+        };
+        h.onEachTick(() -> {
+            MatchCore core = core(rt);
+            if (state.guard == 0) {
+                int[] both = pair(rt);
+                if (both == null) {
+                    return;
+                }
+                state.guard = both[0];
+                state.walker = both[1];
+            }
+            int guard = state.guard;
+            int walker = state.walker;
+            double x = Units.unit(rt, guard).x();
+            switch (state.phase) {
+                case 0 -> {
+                    rt.submit(new PlayerSlot(0), new SetStance(UnitSet.of(guard), Stance.DEFENSIVE));
+                    Units.move(rt, walker, 18, 16); // 10 blocks from the spot: in sight, outside 1.2 + 6
+                    state.phase = 1;
+                }
+                case 1 -> {
+                    check(!engaged(rt, guard), "the guard went for an enemy outside its radius");
+                    check(Math.abs(x - 8) < 0.5, "the guard left its spot at " + x);
+                    if (state.wait++ == 150) {
+                        Units.move(rt, walker, 13, 16); // 5 blocks from the spot
+                        state.phase = 2;
+                    }
+                }
+                case 2 -> {
+                    state.fought |= engaged(rt, guard);
+                    if (state.fought && !core.queries().isAlive(walker)) {
+                        state.phase = 3;
+                        state.wait = 0;
+                    }
+                }
+                default -> {
+                    check(state.wait++ < 400, "the guard has not walked back, it is at " + x);
+                    if (!engaged(rt, guard) && Math.abs(x - 8) < 1.5) {
+                        h.succeed();
+                    }
+                }
+            }
+        });
+    }
+
+    /**
+     * CMB-05.4, stand ground: a unit strikes what comes within its reach, and never takes a step for what is in sight
+     * beyond it.
+     */
+    @StrategosTest(timeoutTicks = 900)
+    public static void stanceStandGround(GameTestHelper h) {
+        MatchRuntime rt = match(h);
+        put(rt, TemplateSet.INFANTRY, 0, 16, 16);
+        put(rt, TemplateSet.DEBUG_WALKER, 1, 16, 27);
+        var state = new Object() {
+            int phase;
+            int wait;
+        };
+        h.onEachTick(() -> {
+            MatchCore core = core(rt);
+            int[] both = pair(rt);
+            if (both == null) {
+                return;
+            }
+            int guard = both[0];
+            int walker = both[1];
+            check(
+                    Math.abs(Units.unit(rt, guard).x() - 16) < 0.6
+                            && Math.abs(Units.unit(rt, guard).z() - 16) < 0.6,
+                    "the unit moved from its ground");
+            switch (state.phase) {
+                case 0 -> {
+                    rt.submit(new PlayerSlot(0), new SetStance(UnitSet.of(guard), Stance.STAND_GROUND));
+                    Units.move(rt, walker, 16, 22); // 6 blocks off: in sight, out of reach
+                    state.phase = 1;
+                }
+                case 1 -> {
+                    check(!engaged(rt, guard), "it reached for an enemy beyond its reach");
+                    if (state.wait++ == 150) {
+                        Units.move(rt, walker, 16, 17.4); // right beside it
+                        state.phase = 2;
+                    }
+                }
+                default -> {
+                    if (core.queries().hitPoints(walker) < core.queries().maxHitPoints(walker)
+                            || !core.queries().isAlive(walker)) {
+                        h.succeed();
+                    }
+                }
+            }
+        });
+    }
+
+    /**
+     * CMB-05.4 and UNIT-04, passive: a worker (flee distance 8) hit by a spearman runs, in FLEEING, from the blow, and
+     * is idle once 8 blocks off. The spearman is passive and stopped as soon as the flight starts, so it neither
+     * chases nor takes the worker up again.
+     */
+    @StrategosTest(timeoutTicks = 900)
+    public static void stancePassive(GameTestHelper h) {
+        MatchRuntime rt = match(h);
+        put(rt, TemplateSet.WORKER, 0, 18, 16);
+        put(rt, TemplateSet.INFANTRY, 1, 12, 16);
+        var state = new Object() {
+            boolean ordered;
+            boolean fled;
+        };
+        h.onEachTick(() -> {
+            MatchCore core = core(rt);
+            int[] both = pair(rt);
+            if (both == null) {
+                return;
+            }
+            int worker = both[0];
+            int spearman = both[1];
+            if (!state.ordered) {
+                rt.submit(new PlayerSlot(1), new SetStance(UnitSet.of(spearman), Stance.PASSIVE));
+                rt.submit(new PlayerSlot(1), Attack.replace(UnitSet.of(spearman), worker));
+                state.ordered = true;
+                return;
+            }
+            var orders = core.queries().orders(worker);
+            if (!state.fled) {
+                if (!orders.isEmpty() && orders.get(0).kind() == OrderKind.FLEE) {
+                    state.fled = true;
+                    check(orders.get(0).target() == spearman, "the flight is not from the spearman");
+                    rt.submit(new PlayerSlot(1), new Stop(UnitSet.of(spearman)));
+                }
+                return;
+            }
+            if (!orders.isEmpty()) {
+                return; // still running
+            }
+            check(core.queries().hitPoints(worker) < core.queries().maxHitPoints(worker), "the worker was never hit");
+            double apart = distanceBetween(rt, worker, spearman);
+            check(apart >= 7.5 && apart <= 11, "the worker stopped " + apart + " blocks from the spearman, not 8");
             h.succeed();
         });
     }
@@ -517,5 +911,214 @@ public final class CombatTests {
                     }
                 })
                 .thenSucceed();
+    }
+
+    /**
+     * ORD-05.3: the player's own spearmen are refused an Attack on their own house, and once it is forced they torch it:
+     * its hit points fall.
+     */
+    @StrategosTest(timeoutTicks = 1_200)
+    public static void forceAttackOnAnOwnBuilding(GameTestHelper h) {
+        MatchRuntime rt = match(h);
+        rt.submit(PlayerSlot.ADMIN, new dev.strategos.core.protocol.SpawnBuilding(HOUSE, new FactionSlot(0), 6, 10, 0));
+        rt.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.INFANTRY, new FactionSlot(0), new Vec2d(8, 22), 4, 1.5));
+        AtomicReference<CommandOutcome> plain = new AtomicReference<>();
+        AtomicReference<CommandOutcome> forced = new AtomicReference<>();
+        var state = new Object() {
+            int house;
+            UnitSet units;
+        };
+        h.startSequence()
+                .thenWaitUntil(() -> check(
+                        core(rt).queries().unitHandles().length == 4
+                                && !core(rt).queries().buildings().isEmpty(),
+                        "not ready"))
+                .thenExecute(() -> {
+                    state.house = core(rt).queries().buildings().get(0).handle();
+                    state.units = UnitSet.of(core(rt).queries().unitHandles());
+                    rt.submit(
+                            new PlayerSlot(0),
+                            new Attack(state.units, state.house, QueueMode.REPLACE, false),
+                            result -> plain.set(result.outcome()));
+                })
+                .thenWaitUntil(() -> check(plain.get() != null, "no answer to the plain attack"))
+                .thenExecute(() -> {
+                    check(
+                            plain.get() == CommandOutcome.REJECTED,
+                            "the plain attack on an own house was " + plain.get());
+                    rt.submit(
+                            new PlayerSlot(0),
+                            new Attack(state.units, state.house, QueueMode.REPLACE, true),
+                            result -> forced.set(result.outcome()));
+                })
+                .thenWaitUntil(() -> check(forced.get() != null, "no answer to the forced attack"))
+                .thenExecute(() -> check(
+                        forced.get() == CommandOutcome.ACCEPTED,
+                        "the forced attack on an own house was " + forced.get()))
+                .thenWaitUntil(() -> {
+                    var house = core(rt).queries().buildings().get(0);
+                    check(house.hitPoints() < house.maxHitPoints(), "the house is whole: " + house.hitPoints());
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * CMB-07.3: faction 1's civic centre stands at (4, 4) and two of faction 0's spearmen are sent to burn it from the
+     * far corner, inside its 24-block range. Its arrows kill them before the centre falls; the match's journal, replayed
+     * in L1 from its start, ends on the live match's hash, so the L1 run of the same layout fights the same fight.
+     */
+    @StrategosTest(timeoutTicks = 3_000)
+    public static void theCentreBreaksASmallRaid(GameTestHelper h) {
+        MatchRuntime rt = match(h);
+        rt.submit(
+                PlayerSlot.ADMIN,
+                new dev.strategos.core.protocol.SpawnBuilding(
+                        new TemplateId("strategos:building/civic_centre"), new FactionSlot(1), 4, 4, 0));
+        rt.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.INFANTRY, new FactionSlot(0), new Vec2d(26, 26), 2, 1));
+        var state = new Object() {
+            int centre;
+            boolean ordered;
+        };
+        h.onEachTick(() -> {
+            MatchCore core = core(rt);
+            if (!state.ordered) {
+                int[] raiders = core.queries().unitHandlesOf(new FactionSlot(0));
+                if (raiders.length != 2 || core.queries().buildings().isEmpty()) {
+                    return;
+                }
+                state.centre = core.queries().buildings().get(0).handle();
+                rt.submit(new PlayerSlot(0), Attack.replace(UnitSet.of(raiders), state.centre));
+                state.ordered = true;
+                return;
+            }
+            check(!core.queries().buildings().isEmpty(), "the raid burnt the centre down");
+            if (core.queries().unitHandlesOf(new FactionSlot(0)).length > 0) {
+                return;
+            }
+            ReplayResult replay = ReplayDriver.replay(core.journal(), TemplateSet.builtin());
+            check(replay.matches(), "the journal does not replay: " + replay);
+            check(replay.finalHash() == core.stateHash(), "the replay ends on another hash: " + replay);
+            h.succeed();
+        });
+    }
+
+    // ---- The roster's duels (UNIT-07, check 3): the L1 matrix's smoke on real bodies, no threshold on the wins.
+
+    private static final Logger LOG = LoggerFactory.getLogger(CombatTests.class);
+    private static final int DUELS = 20;
+    private static final int DUEL_TICKS = 1_500; // L1's longest duel is under 600
+    private static final double DUEL_CENTER = 24;
+
+    /**
+     * Spearmen against horsemen, equal in cost, over the first twenty seeds of the committed set, one duel after
+     * another on the arena floor; each must end with one side gone within {@value #DUEL_TICKS} ticks. The wins are
+     * logged, not asserted: the counters' threshold is L1's {@code DuelTest}.
+     */
+    @StrategosTest(batch = "slow", arena = "arena_flat_48", timeoutTicks = DUELS * (DUEL_TICKS + 40))
+    public static void duelsSpearmenHorsemen(GameTestHelper h) {
+        duels(h, Kind.SPEARMAN, Kind.HORSEMAN);
+    }
+
+    /** As {@link #duelsSpearmenHorsemen}, horsemen against archers. */
+    @StrategosTest(batch = "slow", arena = "arena_flat_48", timeoutTicks = DUELS * (DUEL_TICKS + 40))
+    public static void duelsHorsemenArchers(GameTestHelper h) {
+        duels(h, Kind.HORSEMAN, Kind.ARCHER);
+    }
+
+    /** As {@link #duelsSpearmenHorsemen}, archers against spearmen starting at range. */
+    @StrategosTest(batch = "slow", arena = "arena_flat_48", timeoutTicks = DUELS * (DUEL_TICKS + 40))
+    public static void duelsArchersSpearmen(GameTestHelper h) {
+        duels(h, Kind.ARCHER, Kind.SPEARMAN);
+    }
+
+    /**
+     * {@link #DUELS} duels in one match, each seed in turn: spawn both groups at {@link DuelLayout}'s places, order
+     * each to attack the other, wait for one side to be gone (the wait is the work, never a fixed delay), clear the
+     * survivors with lethal damage, wait until the field is empty, then the next seed. Waits count ticks only to fail
+     * a duel that never ends.
+     */
+    private static void duels(GameTestHelper h, Kind first, Kind second) {
+        MatchRuntime rt = match(h);
+        long[] seeds = Seeds.set("m0-200").limit(DUELS).toArray();
+        int[] counts = DuelLayout.counts(first, second);
+        double gap = DuelLayout.gap(first, second);
+        var state = new Object() {
+            int duel;
+            int phase; // 0 spawn, 1 wait for the bodies, 2 fight, 3 clear
+            int fighting;
+            int wins;
+            int ties;
+        };
+        FactionSlot f0 = new FactionSlot(0);
+        FactionSlot f1 = new FactionSlot(1);
+        h.onEachTick(() -> {
+            MatchCore core = core(rt);
+            int[] a = core.queries().unitHandlesOf(f0);
+            int[] b = core.queries().unitHandlesOf(f1);
+            switch (state.phase) {
+                case 0 -> {
+                    long seed = seeds[state.duel];
+                    int west = DuelLayout.firstWest(seed) ? -1 : 1;
+                    for (int g = 0; g < 2; g++) {
+                        for (int k = 0; k < counts[g]; k++) {
+                            DuelLayout.Spot spot = DuelLayout.place(
+                                    seed, g, k, counts[g], g == 0 ? west : -west, gap, DUEL_CENTER, DUEL_CENTER);
+                            rt.submit(
+                                    PlayerSlot.ADMIN,
+                                    new SpawnUnits(
+                                            (g == 0 ? first : second).id(),
+                                            g == 0 ? f0 : f1,
+                                            new Vec2d(spot.x(), spot.z()),
+                                            1,
+                                            0));
+                        }
+                    }
+                    state.phase = 1;
+                }
+                case 1 -> {
+                    if (a.length == counts[0] && b.length == counts[1]) {
+                        long seed = seeds[state.duel];
+                        rt.submit(
+                                new PlayerSlot(0),
+                                Attack.replace(UnitSet.of(a), b[DuelLayout.target(seed, 0, b.length)]));
+                        rt.submit(
+                                new PlayerSlot(1),
+                                Attack.replace(UnitSet.of(b), a[DuelLayout.target(seed, 1, a.length)]));
+                        state.fighting = 0;
+                        state.phase = 2;
+                    }
+                }
+                case 2 -> {
+                    if (a.length > 0 && b.length > 0) {
+                        check(
+                                ++state.fighting <= DUEL_TICKS,
+                                "duel " + state.duel + " of " + first + " and " + second + " (seed " + seeds[state.duel]
+                                        + ") did not end in " + DUEL_TICKS + " ticks");
+                        return;
+                    }
+                    if (a.length > 0) {
+                        state.wins++;
+                    } else if (b.length == 0) {
+                        state.ties++;
+                    }
+                    for (int survivor : a.length > 0 ? a : b) {
+                        rt.damage(new ExternalDamage(
+                                survivor, ExternalDamage.Kind.LETHAL, 0, ExternalDamage.SourceKind.NONE));
+                    }
+                    state.phase = 3;
+                }
+                default -> {
+                    if (a.length > 0 || b.length > 0) {
+                        return;
+                    }
+                    if (++state.duel < DUELS) {
+                        state.phase = 0;
+                        return;
+                    }
+                    LOG.info("duels {} over {}: {} of {} (ties {})", first, second, state.wins, DUELS, state.ties);
+                    h.succeed();
+                }
+            }
+        });
     }
 }

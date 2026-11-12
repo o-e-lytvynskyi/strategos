@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
@@ -35,6 +36,7 @@ import org.openjdk.jmh.annotations.State;
  * kernel: no allocation). Every {@value #LOOP} ticks the units are put back at their starts, standing, on the same
  * paths. Per unit: the score divided by 600 (budget: 5 µs).
  */
+@Fork(2)
 @State(Scope.Thread)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)

@@ -3,21 +3,25 @@ package dev.strategos.gametest.suites;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.sun.management.OperatingSystemMXBean;
 import dev.strategos.core.sim.econ.EconomyTimes;
+import dev.strategos.core.testkit.BattleScene;
 import dev.strategos.core.testkit.BudgetCheck;
 import dev.strategos.core.testkit.EconomyScene;
+import dev.strategos.core.testkit.ForeignLoad;
+import dev.strategos.core.testkit.ForeignLoad.Assessment;
+import dev.strategos.core.testkit.ForeignLoad.Reading;
 import dev.strategos.core.testkit.Percentiles;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.lang.management.ManagementFactory;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import net.minecraft.gametest.framework.GameTestHelper;
+import org.jspecify.annotations.Nullable;
 
 /**
  * What the perf GameTests share: their verdicts and JSON files ({@code pass}, {@code fail}, {@code report-only} or
@@ -26,7 +30,6 @@ import net.minecraft.gametest.framework.GameTestHelper;
  */
 final class PerfVerdicts {
     static final long MS = 1_000_000L;
-    static final double INVALID_FOREIGN_LOAD = 0.25;
 
     /**
      * The first-loop soak per unit on the M4 Pro ({@code perf/first-loop-m4pro.json}), the base both scenes' soaks
@@ -37,6 +40,14 @@ final class PerfVerdicts {
     static final double M3_A_PER_UNIT = 11_648;
 
     static final double M3_B_PER_UNIT = 12_630;
+
+    /**
+     * The economy soak per unit on the M4 Pro ({@code perf/economy-m4pro.json}, {@code perUnitP95Ns}), the base the
+     * battle soak compares with (PERF-08): budget A's p95 a unit with 316 units alive.
+     */
+    static final double M4_A_PER_UNIT = 6_878;
+
+    static final double M4_B_PER_UNIT = 10_109;
 
     /** PERF-06.2 and PERF-07.2: a unit-driven bucket's p95 per unit grows at most 15 % over its base's. */
     static final double PER_UNIT_GROWTH = 1.15;
@@ -52,7 +63,6 @@ final class PerfVerdicts {
         boolean melee = r.config().melee();
         boolean loose = melee || r.config().firstLoop();
         boolean fast = r.config().speed() > 1;
-        double foreign = window.meanForeignLoad();
         long without = Percentiles.percentile(r.baseline(), 0.50);
         long[] b = Arrays.stream(r.tick()).map(t -> Math.max(0, t - without)).toArray();
         long[] c = new long[r.tick().length];
@@ -122,11 +132,13 @@ final class PerfVerdicts {
         json.addProperty("mostStuck", r.mostStuck());
         json.addProperty("worst", r.worst());
         json.addProperty("journal", String.valueOf(r.journal()));
-        json.addProperty("foreignCpu", foreign);
+        window.addTo(json);
         SoakCosts costs = r.costs();
         if (costs != null) {
             json.add(
-                    r.config().scene() instanceof EconomyScene.Config ? "economy" : "firstLoop",
+                    r.config().scene() instanceof BattleScene.Config
+                            ? "battle"
+                            : r.config().scene() instanceof EconomyScene.Config ? "economy" : "firstLoop",
                     firstLoop(r, costs, b, broken, !stress && !fast));
         }
         if (melee) {
@@ -147,7 +159,7 @@ final class PerfVerdicts {
         failures.forEach(failed::add);
         broken.forEach(failed::add);
         json.add("violations", failed);
-        String verdict = foreign > INVALID_FOREIGN_LOAD ? "invalid" : failed.isEmpty() ? "pass" : "fail";
+        String verdict = window.gateInvalid() ? "invalid" : failed.isEmpty() ? "pass" : "fail";
         json.addProperty("verdict", verdict);
         write(r.config().name(), json);
         if (verdict.equals("fail")) {
@@ -201,15 +213,17 @@ final class PerfVerdicts {
         if (gates && gated("g") && costs.saveNanos() > scaled(100 * MS)) {
             broken.add("budget G: the save took " + costs.saveNanos() + " ns, above " + scaled(100 * MS));
         }
-        boolean m4 = r.config().scene() instanceof EconomyScene.Config; // both against the first loop's own base
-        double aBase = M3_A_PER_UNIT;
-        double bBase = M3_B_PER_UNIT;
+        boolean battle = r.config().scene() instanceof BattleScene.Config; // against M4's economy soak
+        boolean m4 = battle || r.config().scene() instanceof EconomyScene.Config;
+        double aBase = battle ? M4_A_PER_UNIT : M3_A_PER_UNIT;
+        double bBase = battle ? M4_B_PER_UNIT : M3_B_PER_UNIT;
         int units = 2 * r.config().perFaction();
         double aPerUnit = (double) Percentiles.percentile(r.core(), 0.95) / units;
         double bPerUnit = (double) Percentiles.percentile(b, 0.95) / units;
         JsonObject perUnit = new JsonObject();
         perUnit.addProperty("units", units);
-        perUnit.addProperty("base", "the first-loop soak, map v3 (M4 T22)");
+        perUnit.addProperty(
+                "base", battle ? "the economy soak, map v3 (M4 T28)" : "the first-loop soak, map v3 (M4 T22)");
         perUnit.addProperty("aP95PerUnitNs", aPerUnit);
         perUnit.addProperty("aBasePerUnitNs", aBase);
         perUnit.addProperty("aGrowth", aPerUnit / aBase);
@@ -223,8 +237,38 @@ final class PerfVerdicts {
         if (gates && gated("a") && aPerUnit > aBase * PER_UNIT_GROWTH * ciFactor()) {
             broken.add(String.format(
                     "budget A per unit: p95 %.0f ns a unit, over %.0f (the %s's base %.0f + 15 %%)",
-                    aPerUnit, aBase * PER_UNIT_GROWTH, m4 ? "economy" : "first loop", aBase));
+                    aPerUnit, aBase * PER_UNIT_GROWTH, battle || m4 ? "economy" : "first loop", aBase));
         }
+        SoakCosts.Combat combat = costs.combat();
+        if (combat != null) {
+            json.add("combat", combat(combat, r.core().length));
+        }
+        return json;
+    }
+
+    /**
+     * PERF-08: what the combat systems cost a tick (nanoseconds, over the sampled window): the units' targeting, the
+     * centres' volleys, the shot system, the damage system and their sum, and the window's searches, shots fired,
+     * hits and deaths with the means per tick.
+     */
+    private static JsonObject combat(SoakCosts.Combat c, int ticks) {
+        JsonObject json = new JsonObject();
+        json.add("targetingPerTick", spread(c.targeting()));
+        json.add("volleysPerTick", spread(c.volleys()));
+        json.add("shotsPerTick", spread(c.shots()));
+        json.add("damagePerTick", spread(c.damage()));
+        long[] sum = new long[c.targeting().length];
+        for (int i = 0; i < sum.length; i++) {
+            sum[i] = c.targeting()[i] + c.volleys()[i] + c.shots()[i] + c.damage()[i];
+        }
+        json.add("combatPerTick", spread(sum));
+        json.addProperty("targetingSearches", c.searches());
+        json.addProperty("targetingSearchesPerTick", ticks == 0 ? 0 : (double) c.searches() / ticks);
+        json.addProperty("shotsFired", c.shotsFired());
+        json.addProperty("shotsFiredPerTick", ticks == 0 ? 0 : (double) c.shotsFired() / ticks);
+        json.addProperty("hits", c.hits());
+        json.addProperty("hitsPerTick", ticks == 0 ? 0 : (double) c.hits() / ticks);
+        json.addProperty("deaths", c.deaths());
         return json;
     }
 
@@ -285,13 +329,12 @@ final class PerfVerdicts {
             long[] samples,
             Window window,
             JsonObject extra) {
-        double foreign = window.meanForeignLoad();
         List<String> violations = budget.violations(samples);
         boolean listed = Arrays.asList(
                         System.getProperty("strategos.perf.gates", "a,c,d,e,g").split(","))
                 .contains(gate);
         String verdict;
-        if (foreign > INVALID_FOREIGN_LOAD) {
+        if (window.gateInvalid()) {
             verdict = "invalid";
         } else if (!listed) {
             verdict = "report-only";
@@ -309,7 +352,7 @@ final class PerfVerdicts {
         json.addProperty("max", Arrays.stream(samples).max().orElse(0));
         json.addProperty("p50Limit", budget.p50Limit());
         json.addProperty("p99Limit", budget.p99Limit());
-        json.addProperty("foreignCpu", foreign);
+        window.addTo(json);
         json.addProperty("verdict", verdict);
         JsonArray broken = new JsonArray();
         violations.forEach(broken::add);
@@ -322,6 +365,9 @@ final class PerfVerdicts {
     }
 
     static void write(String name, JsonObject json) {
+        if (json.has("foreignCpu")) {
+            json.addProperty("foreignCpuSource", Window.source());
+        }
         Path dir = Path.of(System.getProperty("strategos.perf.out", "build/reports/perf"));
         try {
             Files.createDirectories(dir);
@@ -335,33 +381,174 @@ final class PerfVerdicts {
     }
 
     /**
-     * The foreign CPU load over a measured window: the machine's load minus this process's, floored at 0, from
-     * {@code com.sun.management.OperatingSystemMXBean}; {@code strategos.perf.fakeForeignLoad} replaces it (QA-07.3).
+     * The foreign CPU load over a measured window, from the one-second readings of {@link ForeignLoadSampler} (plus a
+     * fresh reading at each end), all cumulative counters over the same interval. A counter that cannot be read makes
+     * the window unavailable and the run {@code invalid}, never zero. The explicit
+     * {@code strategos.perf.fakeForeignLoad} self-test override is identified in every report (QA-07.3). The
+     * assessment is taken once, at the first question after the window ends, so every verdict of one window agrees.
      */
     static final class Window {
-        private final List<Double> loads = new ArrayList<>();
+        /** The first window's start in the JVM: the preflight is everything the sampler read before it. */
+        private static final AtomicReference<@Nullable Long> FIRST_START = new AtomicReference<>();
+        /**
+         * The shortest span the load is judged over. Mach ticks are sampled at 100 Hz while the process's CPU time is
+         * exact, so a window of a few ticks gives nonsense (a 46 ms window read 56 % with one busy core of twelve,
+         * calibration (b)); a shorter window is judged by the sampler's readings just before it, at least its last
+         * minute: 10 s spans overlapped quiet and busy stretches of a noisy machine (ADR-0026 round 4).
+         */
+        private static final long MIN_SPAN_NANOS = 60_000_000_000L;
+        /** Wall-clock time beyond the monotonic clock that counts as sleep, above clock corrections. */
+        private static final long SLEEP_TOLERANCE_MILLIS = 2_000;
 
-        /** The window opens: a first reading, discarded, so the first sample covers the window and not the time before. */
+        private @Nullable Reading startReading;
+        private @Nullable String startFailure;
+        private long startNanos;
+        private long startWallMillis;
+        private double windowSeconds;
+        private boolean started;
+        private @Nullable ForeignLoad frozen;
+
+        /** The window opens: its first reading. */
         void start() {
-            OperatingSystemMXBean os = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
-            os.getCpuLoad();
-            os.getProcessCpuLoad();
-        }
-
-        void sampleForeignLoad() {
-            String fake = System.getProperty("strategos.perf.fakeForeignLoad", "");
-            if (!fake.isBlank()) {
-                loads.add(Double.parseDouble(fake));
+            started = true;
+            frozen = null;
+            startReading = null;
+            startFailure = null;
+            startNanos = System.nanoTime();
+            startWallMillis = System.currentTimeMillis();
+            FIRST_START.compareAndSet(null, startNanos);
+            if (fake() != null) {
                 return;
             }
-            OperatingSystemMXBean os = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
-            double machine = os.getCpuLoad();
-            double process = os.getProcessCpuLoad();
-            loads.add(machine < 0 || process < 0 ? 0 : Math.max(0, machine - process));
+            try {
+                startReading = ForeignLoadSampler.now();
+            } catch (CpuCounters.Unavailable e) {
+                startFailure = e.getMessage();
+            }
         }
 
+        /** The sampler thread already reads every second; kept so the callers' per-second hooks need no change. */
+        void sampleForeignLoad() {}
+
+        private static @Nullable Double fake() {
+            String fake = System.getProperty("strategos.perf.fakeForeignLoad", "");
+            return fake.isBlank() ? null : Double.parseDouble(fake);
+        }
+
+        private ForeignLoad load() {
+            ForeignLoad load = frozen;
+            if (load == null) {
+                load = measure();
+                frozen = load;
+            }
+            return load;
+        }
+
+        private ForeignLoad measure() {
+            Double fake = fake();
+            if (fake != null) {
+                return ForeignLoad.fixed(fake);
+            }
+            if (!started) {
+                return ForeignLoad.unavailable("CPU measurement window was not started");
+            }
+            String failure = ForeignLoadSampler.failure();
+            if (failure != null) {
+                return ForeignLoad.unavailable(failure);
+            }
+            Reading first = startReading;
+            if (first == null) {
+                return ForeignLoad.unavailable(startFailure == null ? "no first CPU reading" : startFailure);
+            }
+            Reading end;
+            try {
+                end = ForeignLoadSampler.now();
+            } catch (CpuCounters.Unavailable e) {
+                return ForeignLoad.unavailable(e.getMessage());
+            }
+            // nanoTime and the CPU counters stop while the machine sleeps; the wall clock does not. A run that slept
+            // (the Mac's idle sleep, calibration round 2) measured a machine in and out of dark wake, not this one.
+            long sleptMillis =
+                    System.currentTimeMillis() - startWallMillis - (System.nanoTime() - startNanos) / 1_000_000;
+            if (sleptMillis > SLEEP_TOLERANCE_MILLIS) {
+                return ForeignLoad.unavailable(
+                        "the machine slept about " + sleptMillis / 1000 + " s during the window");
+            }
+            windowSeconds = (end.nanos() - first.nanos()) / 1e9;
+            long from = Math.min(first.nanos(), end.nanos() - MIN_SPAN_NANOS);
+            List<Reading> readings = new ArrayList<>(ForeignLoadSampler.between(from, first.nanos() - 1));
+            readings.add(first);
+            for (Reading r : ForeignLoadSampler.between(first.nanos(), end.nanos())) {
+                if (r.nanos() > first.nanos() && r.nanos() < end.nanos()) {
+                    readings.add(r);
+                }
+            }
+            readings.add(end);
+            return ForeignLoad.of(readings);
+        }
+
+        private ForeignLoad preflight() {
+            Long first = FIRST_START.get();
+            if (first == null || fake() != null) {
+                return ForeignLoad.unavailable("no preflight");
+            }
+            return ForeignLoad.of(ForeignLoadSampler.between(Long.MIN_VALUE, first));
+        }
+
+        private Assessment assessment() {
+            return load().assess(Runtime.getRuntime().availableProcessors(), preflight());
+        }
+
+        /** The mean foreign load over the window (1 when it could not be measured). */
         double meanForeignLoad() {
-            return loads.stream().mapToDouble(Double::doubleValue).average().orElse(0);
+            return load().mean();
+        }
+
+        /** True when the run is invalid under the gate: the mean is over the limit, or the load is unavailable. */
+        boolean gateInvalid() {
+            return assessment().gateInvalid();
+        }
+
+        /** The window's load in a result file: the gate's number, and the telemetry beside it. */
+        void addTo(JsonObject json) {
+            json.addProperty("foreignCpu", meanForeignLoad());
+            json.add("foreignLoad", telemetry());
+        }
+
+        JsonObject telemetry() {
+            ForeignLoad load = load();
+            Assessment a = assessment();
+            int cpus = Runtime.getRuntime().availableProcessors();
+            JsonObject json = new JsonObject();
+            json.addProperty("source", source());
+            json.addProperty("logicalCpus", cpus);
+            json.addProperty("intervalSeconds", fake() != null ? 0 : 1);
+            json.addProperty("intervals", load.intervals());
+            json.addProperty("windowSeconds", windowSeconds);
+            json.addProperty("seconds", load.seconds());
+            json.addProperty("available", load.available());
+            json.addProperty("mean", load.mean());
+            json.addProperty("p95", load.p95());
+            json.addProperty("peak", load.peak());
+            json.addProperty("gateLimit", ForeignLoad.meanLimit(cpus));
+            json.addProperty("proposedBurstLimit", ForeignLoad.proposedBurstLimit(cpus));
+            json.addProperty("proposedValid", a.proposedValid());
+            JsonArray reasons = new JsonArray();
+            a.reasons().forEach(reasons::add);
+            json.add("reasons", reasons);
+            ForeignLoad pre = preflight();
+            JsonObject preflight = new JsonObject();
+            preflight.addProperty("seconds", pre.seconds());
+            preflight.addProperty("mean", pre.mean());
+            preflight.addProperty("p95", pre.p95());
+            preflight.addProperty("peak", pre.peak());
+            json.add("preflight", preflight);
+            return json;
+        }
+
+        /** Names where the numbers came from, in every report. */
+        static String source() {
+            return fake() != null ? "self-test override" : CpuCounters.source();
         }
     }
 }

@@ -36,7 +36,7 @@ class TemplateSetTest {
                 .as("ids sort the worker after the infantry: M2's indices stay")
                 .isEqualTo(2);
         assertThat(worker.classes()).containsExactly("Builder", "Gatherer", "Organic", "Unit", "Worker");
-        assertThat(set.all()).hasSize(16);
+        assertThat(set.all()).hasSize(18);
         assertThat(set.all().subList(0, 3)).containsExactly(walker, infantry, worker);
         assertThat(set.all().subList(3, 7))
                 .as("the buildings, appended after M2's pinned units, in id order")
@@ -165,14 +165,16 @@ class TemplateSetTest {
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> set(new UnitTemplate(walker.id(), 0, walker.bodyType(), 0, 0.6f, 1.8f)))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> TemplateSet.builtin().byIndex(16)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> TemplateSet.builtin().byIndex(18)).isInstanceOf(IllegalArgumentException.class);
     }
 
     private static final String BUILTIN_VERSION_BEFORE_TECH_01 =
             "b4dc5f372084f6e585991b46f0a5dd964000c22e094206ad5f375e00ac042c1c";
 
-    // M4: the farmstead's reach (ECO-17); M6 T2.1: the storehouse's Researcher and the tech gather_wood_1 (TECH-01); M6
-    // T3: the phases, the class Village, the civic centre's Researcher
+    // M4: the farmstead's reach (ECO-17); M5: the town bell block in the civic centre's blueprint (BLD-16), on the
+    // horseman's set (UNIT-06, UNIT-07); the barracks trains the roster, spearman, archer and horseman (AI-03); M6
+    // T2.1: the storehouse's Researcher and the tech gather_wood_1 (TECH-01); M6 T3: the phases, the class Village, the
+    // civic centre's Researcher. Hash is the M6-side pin for now; rebaseline after the merged BuiltinTemplates compile.
     private static final String BUILTIN_VERSION = "8e8b218edabd360c98d5da38a0c72c9e07430cfd98e4f66450e68bd7d381bf76";
 
     private static TemplateSet set(UnitTemplate template) {

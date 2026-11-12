@@ -6,8 +6,10 @@ import dev.strategos.core.shared.HotPath;
 import dev.strategos.core.sim.EntityStore;
 import dev.strategos.core.sim.IdentityStore;
 import dev.strategos.core.sim.MotionStore;
+import dev.strategos.core.sim.garrison.GarrisonStore;
 import java.util.Arrays;
 import java.util.function.IntConsumer;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Live units in a uniform grid of {@value #CELL}-block cells over the match space (04 §10.1), rebuilt whole at the end
@@ -36,6 +38,7 @@ public final class UnitGrid {
     private int[] found = new int[0];
     private long[] marks = new long[0]; // per 64 unit indices, those the running query found
     private int count;
+    private long builtAt = -1; // the motion store's writes when the last rebuild read it
     private boolean reporting;
 
     public UnitGrid(int sizeX, int sizeZ, TemplateSet templates) {
@@ -57,6 +60,18 @@ public final class UnitGrid {
 
     /** Every live unit, by cell; allocates only when the match has more unit slots than ever before. */
     public void rebuild(EntityStore entities, MotionStore motion, IdentityStore identity) {
+        rebuild(entities, motion, identity, null);
+    }
+
+    /** As {@link #rebuild(EntityStore, MotionStore, IdentityStore)}, but the units inside a building (BLD-16) are left out. */
+    public void rebuild(
+            EntityStore entities, MotionStore motion, IdentityStore identity, @Nullable GarrisonStore garrison) {
+        fill(entities, motion, identity, garrison);
+        builtAt = motion.writes();
+    }
+
+    private void fill(
+            EntityStore entities, MotionStore motion, IdentityStore identity, @Nullable GarrisonStore garrison) {
         int highWater = entities.highWater();
         if (highWater > cellOf.length) {
             grow(highWater);
@@ -72,6 +87,15 @@ public final class UnitGrid {
                 n++;
             } else {
                 cellOf[i] = -1;
+            }
+        }
+        if (garrison != null && !garrison.empty()) { // units inside a building are in no cell (BLD-16)
+            for (int i = 0; i < highWater; i++) {
+                if (cellOf[i] >= 0 && garrison.inside(i)) {
+                    start[cellOf[i] + 1]--;
+                    cellOf[i] = -1;
+                    n--;
+                }
             }
         }
         int cells = cellsX * cellsZ;
@@ -93,6 +117,14 @@ public final class UnitGrid {
             }
         }
         count = n;
+    }
+
+    /**
+     * Whether no pose was set since the last rebuild, so every position the grid holds is the unit's own: a query's
+     * cell and distance tests then agree with a read of the motion store.
+     */
+    public boolean matches(MotionStore motion) {
+        return builtAt == motion.writes();
     }
 
     /** The units the last rebuild placed. */
@@ -132,6 +164,26 @@ public final class UnitGrid {
         } finally {
             reporting = false;
             Arrays.fill(marks, first, last + 1, 0); // what a consumer that threw left unreported
+        }
+    }
+
+    /**
+     * As {@link #forEachInRadius}, but in the grid's own order (by cell, then index) and straight from the scan: for a
+     * consumer whose result does not depend on the order it is called in. It skips the ascending-order pass, which a
+     * query run per unit per tick pays for in full.
+     */
+    public void forEachInRadiusAnyOrder(double x, double z, double r, UnitFilter filter, IntConsumer consumer) {
+        if (reporting) {
+            throw new IllegalStateException("a spatial query inside another's consumer");
+        }
+        int n = collect(x, z, r, filter);
+        reporting = true;
+        try {
+            for (int k = 0; k < n; k++) {
+                consumer.accept(found[k]);
+            }
+        } finally {
+            reporting = false;
         }
     }
 

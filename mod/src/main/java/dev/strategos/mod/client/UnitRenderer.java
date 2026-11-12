@@ -41,7 +41,12 @@ public final class UnitRenderer extends LivingEntityRenderer<UnitEntity, PlayerM
     private boolean detailed = true; // this frame's verdict for the body being drawn (UnitLod)
 
     public UnitRenderer(EntityRendererProvider.Context ctx) {
-        super(ctx, new PlayerModel<>(ctx.bakeLayer(ModelLayers.PLAYER), false), 0.5F);
+        this(ctx, new PlayerModel<>(ctx.bakeLayer(ModelLayers.PLAYER), false));
+    }
+
+    /** With a model of its own: a mounted unit's rider (UNIT-06). */
+    UnitRenderer(EntityRendererProvider.Context ctx, PlayerModel<UnitEntity> model) {
+        super(ctx, model, 0.5F);
         addLayer(new Detailed(
                 this,
                 new HumanoidArmorLayer<>(

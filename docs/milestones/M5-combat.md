@@ -81,15 +81,15 @@ grow with the garrison), and an AI that fights by the same rules (the roadmap's 
 
 | Card | Task | Checks (level) |
 |---|---|---|
-| PATH-11 | T2 | 1 `MobilityTest.aOneBlockGapIsOpenToInfantryAndClosedToLarge` (L1) · 2 `MobilityTest.reachabilityPerClassIsAFloodFill` (L1) · 3 `pathtests.thirty_horsemen_cross` (L3) |
-| CMB-04 | T3 | 1 `ShotTest.fixedSeedsReproduceTheGoldenResults` (L1) · 2 `ShotTest.theHitRateStaysInTheBinomialBound` (L1) · 3 `ShotTest.movingTargetsAreHitLessAtLongRange` (L1) · 4 `combattests.a_volley_damages_as_l1_predicts` (L3) · 5 `perftests.battle_soak`'s budget E (L6, T14) |
-| CMB-16 | T4 | 1 `HighGroundTest.rangeAndDamageFollowTheFormula` (L1) · 2 `DuelTest.archersOnAHillWin` (L1, slow) · 3 `HighGroundTest.theBonusIsInTheBreakdown` (L1) · 4 `combattests.a_hill_reaches_further` (L3) |
-| CMB-05 | T5 | 1 `StanceTest.theTable` (L1) · 2 `StanceTest.targetPreferences` (L1) · 3 `StanceTest.aChaseEndsOutOfVision` (L1) · 4 `combattests.stance_*` per family (L3) |
+| PATH-11 | T2a–T2b, T6 | 1 `MobilityTest.aOneBlockGapIsOpenToInfantryAndClosedToLarge` (L1) · 2 `MobilityTest.reachabilityPerClassIsAFloodFill` (L1) · 3 `pathtests.thirty_horsemen_cross` (L3) |
+| CMB-04 | T3a–T3c, T14 | 1 `ShotTest.fixedSeedsReproduceTheGoldenResults` (L1) · 2 `ShotTest.theHitRateStaysInTheBinomialBound` (L1) · 3 `ShotTest.movingTargetsAreHitLessAtLongRange` (L1) · 4 `combattests.archer_volley_replays_as_the_core_predicts` (L3) · 5 `perftests.battle_soak`'s budget E (L6, T14) |
+| CMB-16 | T4 | 1 `HighGroundTest.rangeAndDamageFollowTheFormula` (L1) · 2 `DuelTest.archersOnAHillBeatArchersBelow` (L1, slow) · 3 `HighGroundTest.theBonusIsInTheBreakdown` (L1) · 4 `combattests.a_hill_reaches_further` (L3) |
+| CMB-05 | T5a, T5b | 1 `StanceTest.theTable` (L1) · 2 `StanceTest.targetPreferences` (L1) · 3 `StanceTest.aChaseEndsOutOfVision` (L1) · 4 `combattests.stance_*` per family (L3) |
 | ORD-05 | T8 | 1 `FocusTest.aFocusMakesEveryArcherInRangeShootIt` (L1) · 2 `FocusTest.aSpreadIsWithinOneOfEven` (L1) · 3 `combattests.force_attack_on_an_own_building` (L3) |
 | UNIT-06 | T6 | 1 `bodytests.a_horseman_is_one_entity` (L3) · 2 the engine-surface inventory lists `unit_mount` with ADR-0011's settings (L2) · 3 `perftests.mounted_cost` within 20 % of a foot unit (L6) · 4 `m5_goldens` riders at every camera height (L4, T17) |
 | UNIT-07 | T7 | 1 `DuelTest.eachCounterWins` (L1, slow) · 2 `DuelTest.everyUnitWinsOneAndLosesOne` (L1, slow) · 3 `combattests.duels_*` 20 seeds each, smoke (L3, slow batch) · 4 the owner's silhouettes (L7) |
 | CMB-07 | T9 | 1 `TownArrowsTest.countAndDpsAreTheSheets` (L1) · 2 `TownArrowsTest.onlyEnemies` (L1) · 3 `combattests.the_centre_breaks_a_small_raid` (L3) |
-| BLD-16 | T10 | 1 `GarrisonTest.capacityAndClasses` (L1) · 2 `GarrisonTest.handleHpAndOrdersSurvive` (L1) · 3 `garrisontests.the_bell_brings_them_in` (L3) · 4 `garrisontests.all_clear_returns_them` (L3) · 5 `garrisontests.garrisoned_units_have_no_body` (L3) · 6 `garrisontests.the_bell_block_rings` (L3) |
+| BLD-16 | T10a, T10b | 1 `GarrisonTest.capacityAndClasses` (L1) · 2 `GarrisonTest.handleHpAndOrdersSurvive` (L1) · 3 `garrisontests.the_bell_brings_them_in` (L3) · 4 `garrisontests.all_clear_returns_them` (L3) · 5 `garrisontests.garrisoned_units_have_no_body` (L3) · 6 `garrisontests.the_bell_block_rings` (L3) |
 | BLD-11 | T11 | 1 `TownArrowsTest.basePlusGarrisoned` (L1) · 2 `TownArrowsTest.dpsWithAGarrison` (L1) · 3 `garrisontests.a_garrisoned_centre_breaks_a_horse_raid` (L3) |
 | CMB-17 | T12 | 1 `AttackLinesTest.onlyWhatTheViewerMayReceive` (L1) · 2 `AttackLinesBench` under 0.3 ms for 300 units (L6) and PERF-14's battle scene (T17) · 3 `m5_goldens` lines and flashes (L4, T17) |
 | AI-03 | T13 | 1 `BattleBotTest.focusesAndRetreats` (L1, slow) · 2 `BattleBotTest.shiftsToSpearmenAgainstHorse` (L1, slow) · 3 `BattleBotTest.withinTheBudget` (L1) · 4 `aitests.battle_seed_replays_to_its_hash` (L3) |
@@ -107,6 +107,17 @@ grow with the garrison), and an AI that fights by the same rules (the roadmap's 
 |---|---|---|
 | 1 | Spread and focus in one command | `Attack` stays focus (every attacker on the target, M2's meaning); `AttackSpread` (30) splits a group over the enemies within its first target's vision, the nearest first, one per target round the even split; Ctrl and Alt on the right click choose (UI rows in 04 §2.5) |
 | 2 | Shots in the save | A shot in flight is core state: its store is saved and hashed, so a save mid-volley resumes with the same hits (MATCH-04's rule) |
+| 3 | PATH-11 mounted crossing and task order | T2 verifies class grids, large motion, mixed groups and save/resume in L1, plus existing L3 movement gates. The thirty mounted units cross in T6, which supplies the actual body; PATH-11 stays in progress until then. Its criterion and test level are unchanged. |
+| 4 | Footprints at page borders and steps | Large clearance reads all eight adjacent columns, including diagonal page neighbours. A border change rebuilds the surrounding large pages; an adjacent step may raise the body by at most one block, with raised headroom checked throughout. Infantry retains its grid and legacy journal hashes. |
+| 5 | Navigation accounting and body radius | Memory reports include both derived grids. Static avoidance uses the expanded large grid without subtracting body radius twice; body-to-body avoidance still uses template radius. Large templates default to 0.7 and reject smaller radii. |
+| 6 | Shot point, collision and impact ordering | Freeze the target body-center Y and predict X/Z with the current horizontal velocity; spread is horizontal Gaussian. Resolve a circular Body.radius footprint within the current body-height interval, preferring the complete live target handle, then ascending live spatial candidates of any faction, as "whatever unit" specifies. Simultaneous impacts follow stable shot IDs; a dead shooter does not cancel its frozen packet. |
+| 7 | Shot persistence extension | The outer snapshot codec already has 16 fields. Add optional shot state under nested Play, preserving pristine old bytes/hashes and the allocator of used-empty stores. The pure model is implemented first; scheduler, codec and hash wiring remains part of T3a before its checkbox is complete. |
+| 8 | Release phase and ranged defaults | UNIT_AI queues an internal firing intent; COMBAT constructs its frozen launch from post-MOVEMENT positions and velocity before resolving impacts. This preserves the approved lead formula and a constant-velocity control. Starting archer projectile speed is 4 blocks/tick, spread 2.25 blocks at 100 and sight 32; these project defaults receive provenance with the archer content and are tuned with the roster. |
+| 9 | Flat-world velocity and numeric damage safety | Flat matches deliberately persist only poses, preserving released journal hashes. A transient firing intent captures the target position before MOVEMENT; COMBAT derives its displacement for the lead. Terrain matches use the existing motion velocity. Ranged damage is bounded to finite float-safe values before packet conversion, including after modifiers. |
+| 10 | Shot feedback continuity and viewers | Freeze release coordinates and tick with every new shot so impact feedback retains both endpoints after shooter death or restore. Restore preserves future impact feedback; replaying past launch FX to reconstruct client arcs is outside the event contract. Deliver shot FX once to the union of viewers of either endpoint, batched by endpoint pages. Client arcs clear when the match changes. |
+| 11 | A passive unit's flee distance | §2.4 says 12 blocks; M4 approved the worker's `Behaviour/flee` of 8 with its provenance. A passive unit flees its template's `Behaviour/flee` when that is set and 12 blocks otherwise, so the worker keeps its approved 8. |
+| 12 | Stances: where the table is silent | `Stance` lives in `core.shared` (content and protocol both use it; ArchUnit forbids the cycle). Violent behaves as aggressive: with "a chase ends out of vision" for every order, "chases beyond vision" has no room, and no neutral or harmless targets exist yet to tell them apart. The out-of-vision rule ends an explicit attack only once it is chasing, so a far target ordered from afar is still walked to. A defensive unit's spot is set by `SetStance`, by going idle over 2 blocks from it, and by an engagement taken over other orders; it walks back after an engagement ends with an empty queue. Notice radii are capped at vision so the notice and the leash agree. Stand ground's reach is the melee reach or the ranged range less the 0.5 approach margin. |
+| 13 | The flash without a new hud bit | `unit_hud` carries health, not a hit bit; the client marks a unit hit when its received health falls (not on healing or first sight), and own units only flash for 400 ms. The attack target rides `unit_detail` as an append-only trailer, sent only for a live unit the viewer owns or sees; old frames are byte-identical. Lines are drawn for unit targets only (orders on buildings carry no unit target), at most 32 a frame (`unit_detail`'s limit). |
 
 ### 1.7 Consent plan
 
@@ -188,9 +199,14 @@ Starting values, ticks and blocks (worker speed 0.1875 a tick), each with its pr
 | Unit | Cost | HP | Attack | Range | Prepare / repeat | Speed | Resistance h/p/c |
 |---|---|---|---|---|---|---|---|
 | Spearman (M2) | 60F 40W | 100 | 3 hack + 3 pierce, ×2.5 vs Cavalry | 1.2 | 10 / 20 | 0.1875 | 5/5/2 |
-| Archer | 60F 40W 20I | 50 | 6 pierce | 20 | 16 / 25 | 0.2 | 1/1/1 |
-| Horseman | 80F 40W 30I | 120 | 5 hack | 1.5 | 8 / 18 | 0.34 | 3/2/2 |
+| Archer | 60F 40W 20I | 70 | 16 pierce | 20 | 16 / 20 | 0.2 | 1/1/1 |
+| Horseman | 80F 40W 30I | 200 | 10 hack | 1.5 | 8 / 18 | 0.34 | 3/2/2 |
 
+- Tuned in T7 (2026-10-27) from the starting archer 50 HP, 6 pierce, repeat 25 and horseman 120 HP,
+  5 hack, which lost both counters (archers over spearmen 0 of 200); each change is a provenance and
+  sheet row with its reason. The duel matrix at the tuned numbers, on a published floor as on the server: spearmen
+  over horsemen 200, horsemen over archers 193, archers over spearmen 200 of 200; archers on a
+  six-block plateau beat archers below 188 of 200 (flat control 90).
 - The duel matrix (T7): equal cost, 200 seeds of placement and spread, each counter at least 170 wins:
   spearmen over horsemen, horsemen over archers, archers over spearmen starting at range. Tuning moves
   only the table's numbers, each change a sheet row with its reason.
@@ -265,8 +281,8 @@ M4's scenes are.
 
 ### 7.1 Order
 
-T1 → T2 (PATH-11) → T3 (CMB-04) → T4 (CMB-16) → T5 (CMB-05) → T6 (UNIT-06) → T7 (UNIT-07) → T8 (ORD-05)
-→ T9 (CMB-07) → T10 (BLD-16) → T11 (BLD-11) → T12 (CMB-17) → T13 (AI-03) → T14 (PERF-08) → T15 (the
+T1 → T2a → T2b (PATH-11) → T3a → T3b.1 → T3b.2 → T3c.1 → T3c.2 (CMB-04) → T4 (CMB-16) → T5a → T5b (CMB-05) → T6 (UNIT-06) → T7 (UNIT-07) → T8 (ORD-05)
+→ T9 (CMB-07) → T10a → T10b (BLD-16) → T11 (BLD-11) → T12 (CMB-17) → T13 (AI-03) → T14 (PERF-08) → T15 (the
 battle scenario) → T17 (the consent batch) → T18 (close). T16 is reserved for a row a task adds.
 
 ### 7.2 Tasks
@@ -276,17 +292,59 @@ battle scenario) → T17 (the consent batch) → T18 (close). T16 is reserved fo
   failed check fails its run; Linux CI's goldens re-recorded when the scenario job next runs by hand.
 - **Verification:** `verify verifySlow`.
 
-#### T2 · PATH-11
-- §2.1. **Verification:** the card's checks; `PageBuilderBench` within its gate.
+#### T2 · PATH-11 (split during recovery, 2026-10-26)
 
-#### T3 · CMB-04
-- §2.2; the archer template ahead of T7 for the tests. **Verification:** the card's checks 1–4.
+- **T2a · Recover mobility and integration** (about 1,400 lines): §2.1, class grids, halos,
+  mixed movement, template validation, construction eviction and same-class formation recovery.
+  Checks 1–2 run in `MobilityTest`, `LargeMovementTest` and `LargeIntegrationTest`; check 3
+  remains in T6 with the actual mounted body (§1.6 row 3).
+- **T2b · Eliminate measured recovery overhead** (about 200–600 lines): cache template mobility
+  with correct accepted/rejected reload behavior; avoid impossible eviction work; avoid unchanged
+  halo rebuilding and duplicate effective-slice decoding. Differential terrain tests retain the
+  complete voxel-based clearance model, including headroom, diagonals and footprint removal.
+- **Verification for both steps:** `verify verifySlow verifySoak`, `:core:jmh :core:jmhCompare`
+  and the path-budget check. T2a and T2b remain unchecked until the combined implementation
+  passes the original gates; no intermediate red code is committed. Their shared recovery is
+  delivered atomically because the measured regressions cross the original T2 source changes.
+
+#### T3 · CMB-04 (bounded steps restored from legacy e8cf0c2)
+
+- **T3a · Analytic shot lifecycle:** deterministic lead/spread, landing damage, stable shot ids,
+  snapshot/restore and hashing. L1 fixed-seed golden results, stationary binomial model,
+  impact/lifecycle checks and exact save/resume, including a quiescent previously used store.
+- **T3b.1 · Ranged behavior** (estimated 900–1,300 source/test lines): typed ranged stats,
+  approach/wind-up/period without melee rings, internal firing intents released after MOVEMENT,
+  moving-target L1 checks with a constant-velocity positive control and direction changes.
+- **T3b.2 · Archer content and engine integration** (estimated 300–600 lines plus generated
+  balance evidence): the archer template ahead of T7, append-only template indices, provenance,
+  balance sheet, language label and the L3 volley. Keep the existing template index prefix,
+  including the previously implicit farmstead/storehouse entries, before appending the archer.
+- **T3c.1 · Shot FX state and wire** (estimated 700–1,000 source/test lines): optional frozen
+  release origin and tick, launch/impact outputs including misses, persistence/hash coverage,
+  append-only FX codes and bounded trajectory encoding. Preserve all old FX bytes and the
+  existing placement-byte cap; test new worst-case payloads separately.
+- **T3c.2 · Shot FX delivery and client** (estimated 550–850 source/test lines): bounded
+  batches to the union of viewers of either endpoint, client arrow arcs without entities and
+  bow/impact sounds. L1 audience and L2 wire tests; images stay in T17 and the 300-unit
+  network budget stays in T14.
+- Same approved scope and criteria as T3. Each step runs its required full gates and JMH
+  when it changes the core tick/codecs. CMB-04 remains in progress until all its criteria pass,
+  including T14 budget E. Target 300–1,500 changed lines per step; split further before expansion.
 
 #### T4 · CMB-16
 - §2.3. **Verification:** checks 1, 3, 4 (2 with T7's duel harness).
 
-#### T5 · CMB-05
-- §2.4; `SetStance` (25). **Verification:** the card's checks.
+#### T5 · CMB-05 (split before implementation, 2026-10-27)
+- **T5a · Stances in the core** (estimated 900–1,300 source/test lines): the five stances as data
+  (`Behaviour/stance`, workers passive), a per-unit stance and spot, persisted and hashed only when
+  set; `SetStance` (25) with its rule; engagement, retaliation, chase, leash and return per §2.4's
+  table; a chase ends when the target leaves vision under any order; targeting by the attack's
+  `preferred` classes, then the nearest. L1 checks 1–3.
+- **T5b · FLEEING, the card and the GameTests** (estimated 500–800 lines): FLEEING as a state
+  re-planned each think until 12 blocks off or the attacker is gone; the card's five stance
+  buttons; one GameTest per stance family (check 4).
+- **Verification:** the card's checks, split as above; `verify verifySlow verifySoak` and JMH
+  for each step (the unit AI is in the tick).
 
 #### T6 · UNIT-06
 - §2.6. **Verification:** checks 1–3; 4 in T17.
@@ -300,6 +358,12 @@ battle scenario) → T17 (the consent batch) → T18 (close). T16 is reserved fo
 #### T9 · CMB-07 · T10 · BLD-16 · T11 · BLD-11
 - §2.8, §2.9; `Garrison` (26), `Ungarrison` (27), `RingBell` (28), `AllClear` (29). **Verification:**
   the cards' checks.
+- T10 split before implementation (2026-10-27): **T10a · Garrison in the core** (estimated 800–1,200
+  lines): `GarrisonHolder` data, `Garrison` (26) and `Ungarrison` (27), the walk to the door, the
+  GARRISONED state with its handle, HP and orders kept, out of the spatial index, persisted and hashed;
+  BLD-16 checks 1–2 (L1). **T10b · The bell and the bodies** (estimated 600–900 lines): `RingBell` (28),
+  `AllClear` (29), the bell `fx`, the card buttons, no body while garrisoned (`BodyMode.NONE`), the
+  first-person bell block; checks 3–6 (L3).
 
 #### T12 · CMB-17
 - §2.10; `AttackLinesBench`. **Verification:** checks 1–2; 3 in T17.
@@ -319,8 +383,8 @@ battle scenario) → T17 (the consent batch) → T18 (close). T16 is reserved fo
 
 ### 7.3 Progress
 
-- [ ] T1 · [ ] T2 · [ ] T3 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11
-- [ ] T12 · [ ] T13 · [ ] T14 · [ ] T15 · [ ] T17 · [ ] T18
+- [x] T1 (2026-10-26) · [x] T2a (2026-10-26) · [x] T2b (2026-10-26) · [x] T3a (2026-10-26) · [x] T3b.1 (2026-10-27) · [x] T3b.2 (2026-10-27) · [x] T3c.1 (2026-10-27) · [x] T3c.2 (2026-10-27) · [x] T4 (2026-10-27) · [x] T5a (2026-10-27) · [x] T5b (2026-10-27) · [x] T6 (2026-10-27) · [x] T7 (2026-10-27) · [x] T8 (2026-10-27) · [x] T9 (2026-10-27) · [x] T10a (2026-10-27) · [x] T10b (2026-10-27) · [ ] T11
+- [x] T12 (2026-10-27) · [x] T13 (2026-10-28) · [x] T14 (2026-10-28) · [x] T15 (2026-10-28) · [x] T17 (2026-10-28) · [x] T18 (2026-10-29)
 
 ---
 
@@ -355,6 +419,131 @@ battle scenario) → T17 (the consent batch) → T18 (close). T16 is reserved fo
 
 | Input | When | Blocks |
 |---|---|---|
-| «начинай M5» | now | M5's start |
+| «начинай M5» | received; successor assignment #19 merged 2026-10-26 | Settled; recovery continues on dev/o-e-lytvynskyi/m5 |
 | The goldens and the looks | T17 | Accepted |
 | The battle playtest and the questionnaire | after the demo | Accepted |
+
+## 11. Implementation results
+
+### T1 — recovered and revalidated (2026-10-26)
+
+Recovered the source and regression tests from legacy a13850b after independent review,
+without importing its central records or historical measurement files. Resource discovery,
+HUD card presentation and long perf scenes now have separate classes; MatchState, RtsHud
+and PerfTests are 793, 788 and 779 lines respectively. Annotated perf entry points are unchanged.
+The scene-verdict selftest first reproduced the ignored failure with matching pixels, then
+passed after the fix, including platforms without goldens. The UTF-8/empty-input roadmap
+regressions also failed before their fixes; all 12 Python tool tests now pass.
+
+Current macOS validation: initial main verifyFast 1m20s; recovered T1 verifyFast 47s;
+combined verify verifySlow verifySoak 4m39s, 1,908 deduplicated tests, no failures, errors or
+skips. The combined run includes the scene-diff selftest. No baseline, threshold or image
+was changed. Visual checks remain in T17's batch; Linux golden refresh remains outstanding
+for the next scenario workflow, as T1 specifies.
+
+### T2a–T2b — recovered mobility and measured performance (2026-10-26)
+
+Recovered legacy a545902 selectively, retaining historical Windows evidence in its branch.
+LARGE has 2.5-block headroom, eight-column clearance across page boundaries, its own grid,
+reachability and paths; mixed groups share a request only within a mobility class. Memory
+queries include both grids and the new border-signature storage. Exact save/resume and old
+journals pass. PATH-11 remains in progress until T6's actual thirty-mounted-unit crossing.
+
+Six integration cases reproduced and fixed adjacent/diagonal construction eviction and
+mixed-class place trading. Further tests protect sparse template mobility caching, accepted
+and refused reloads, footprint lifecycle and incremental/full-grid equivalence over border,
+ceiling, duplicate-capture and footprint edits. Ordered changed-page reads are O(1); effective
+slices are shared within a publication and unchanged neighbouring pages are not rebuilt.
+
+Final verify verifySlow verifySoak passes in 4m24s: 1,939 tests, no failures/errors/skips;
+two separately run perf assertions also pass. Populated 512x512 navigation uses 10,114,672
+bytes (32 MiB cap). Final full JMH and comparison pass in 5m56s, 21 measured configurations:
+MovementBench.step600 24.904 us/op; TerrainEditBench.rebuildOnePage 515.312 us/op against
+the documented conservative two-grid profile 481.023; both-class PageBuilder 112.663 us/op.
+The 15% limit and every other existing score/budget remain unchanged (ADR-0019).
+Absolute D is 0.427499 ms p99 / 2 ms; idle ratio 0.218951 / 0.30, valid foreign load.
+See testing/data/M5-T2-recovery-m4pro.json for control, initial regression and final evidence.
+These local results do not declare the separate historical Linux CI investigation closed.
+
+### T3a — model slice checkpoint (2026-10-26, task not complete)
+
+ShotAim, ShotStore and standalone ShotSystem are implemented with deterministic lead and
+Gaussian spread, complete handles, frozen damage, body-circle/height collision, ordered
+single-use impacts and immutable store snapshots including allocator history. Empty and
+in-flight-only due checks avoid unnecessary temporary collections. The model is not yet
+registered in MatchCore or included in MatchSnapshot/codec/StateHasher; T3a remains unchecked.
+
+The exact 500-shot binomial test uses committed canary seed 7, shooter 1048576, launch tick 2,
+IDs 1–500, distance 20, spread 2.25 and radius 0.35. The preselected alpha 0.001 interval is
+99–164; an independent SplitMix64/Box-Muller calculation confirms 126 hits and the first
+32 outcomes MHMMMMMMMHMMMMMMHMMMMHMMMMHMMMMH. Exactly representable pierce 1/256 yields
+0.4921875 health damage in the golden regression; target survival and full packet preservation
+are tested. No bounds or seeds were adjusted to match observed results.
+
+The model slice's final verify verifySlow verifySoak passes in 4m26s with 1,952 cases,
+no failures/errors/skips. The session stops on the implementation worker's usage limit after
+pushing this green step. Next: state/scheduler, optional nested-Play codec and non-pristine
+hash integration, in-flight/used-empty continuation canaries and final JMH. T3b must build
+release positions after MOVEMENT to keep constant-velocity lead aligned with COMBAT impact.
+
+### T3a — integrated analytic lifecycle (2026-10-26)
+
+The owned store runs in COMBAT after MOVEMENT and before damage application. Nested Play
+stores optional immutable shot data and allocator history, preserving the outer 16-field codec,
+schema 2, old constructors, pristine JSON and released journal hashes. Used-empty relaunch,
+in-flight continuation and restored dead-shooter impacts have real pipeline tests.
+Non-pristine hashing mixes every frozen field and bonus token with primitive loops.
+
+Final verify verifySlow verifySoak passes in 4m 39s: 1,958 cases, no failures/errors/skips.
+Full JMH passes in 7m 02s with all 25 configurations present. Active 300-shot hashing is 32.394 us
+(0.223 B/op profiler background, within the existing allocation gate); a 60-shot impact+damage
+volley among 300 fighting infantry takes 5.348 us preferred, 6.270 us collateral, 0.827 us miss.
+The four new cases receive first profiles; all 20 existing metrics and thresholds are unchanged.
+Evidence: testing/data/M5-T3a-analytic-shots-m4pro.json. CMB-04 remains in progress for
+T3b orders/data, T3c presentation and T14's network-budget criterion.
+
+### M5 close — results (2026-10-28)
+
+T3b.1 to T18 were built on 2026-10-27/28 in Claude Code, continuing the Codex work recorded above
+(T1–T3a) and its uncommitted T3b drafts, which were read, verified and committed first.
+
+**§8 walked**
+
+| # | Result |
+|---|---|
+| 1 | Every M5 card done except UNIT-07 check 4 (the owner's silhouettes, L7) and CMB-08 (deferred); evidence on each card |
+| 2 | `DuelTest`: spearmen over horsemen 200, horsemen over archers 193, archers over spearmen 200 of 200; archers on a six-block plateau 188 of 200 (flat control 90) |
+| 3 | `ShotTest` goldens (126/500 hits, damage 126/256) and the binomial bound; `StanceTest.theTable` per stance |
+| 4 | `garrisontests.the_bell_brings_them_in` 82 ticks (limit 200); `all_clear_returns_them` 93 ticks (limit 100) |
+| 5 | `perftests.battle_soak` (320 units, 5 min): A p50 1.23 / p99 4.13 ms, C p95 7.85, D p99 0.47, E 9.2 KB/s; per-unit A 1.139 × M4; `battle_stress` (640) C p95 9.35 ms |
+| 6 | `m5_goldens` (nine frames, macos and macos-sodium), `art_look`'s M5 frames, PERF-14's `rts_frame_battle` (202 on screen): frame p50 5.03 / p99 10.56 ms, units 3.55, ours 0.06, client tick p50 0.96 |
+| 7 | `verify verifySlow verifySoak` green (5m 33s); `jmhCompare` green (8 min; forks per benchmark); `verifyPerf`: all 20 perf tests pass — `first_loop_soak`'s per-unit A sits in this Mac's run-to-run spread (11,123–13,399 ns on unchanged code against the 13,395 gate; one run 4 ns over, its rerun 13,309), `idle_300` 0.243–0.262, `mounted_cost` 1.074; CI on the hand-in pull request |
+| 8 | The owner's playtest — open (For the owner) |
+
+**Deviations** — spec §1.6 rows 9–13: flat-world lead from a transient displacement; shot feedback
+continuity; a passive unit's flee distance; where the stance table is silent (violent equals aggressive);
+the flash derived from received health. The roster's numbers were tuned in T7 (§2.7). Tasks split
+before implementation: T3b, T3c, T5, T10.
+
+**The close's performance stop** — the first full `verifyPerf` failed `first_loop_soak`'s per-unit
+A (16,349 ns against 13,395): bisected to T2a–T2b's large-class grid rebuilt on every page publication
+without a large unit alive (and T3a's share within it); built lazily now, 11,430 ns. With the owner's
+word (2026-10-28) the recommendations were applied: JMH forks per benchmark (five for the bimodal
+`SpatialBench.rebuild1000`), `idle_300` measured interleaved, stances replicated to their owner, the
+battle bot's spearman reserve (bot against bot ends), the gatherer ratio, horsemen's melee places
+spaced by body width.
+
+**Found and fixed on the way** — a JMH gate that never reported missing benchmarks; two GameTests
+racing the shared per-tick budgets (writer, bodies); a shot query sized by the largest template; the
+compiler re-splitting value paths per template; a stance livelock (notice beyond vision); garrison
+restore validation; the economy bot shot down by town arrows (data), the battle bot's wave and the
+barracks' roster; arrow arcs jittering in a frozen frame; stand-ground archers ignoring their height.
+
+**Follow-ups** (branch file "For the owner"): cavalry and buildings; the proving ground's trees
+running out for the bots; the battle soak's per-unit A at 1.139 of 1.15 and `idle_300` at 0.29 of
+0.30 (thin margins); `RtsHud` (801) and `MatchState` (806) just over 800 lines for M6's health check;
+one AFTER-M8 marker (shot FX audience).
+
+**Planned against actual** — the spec planned T1–T18 as 19 tasks; the splits made 24. The second
+session (Claude Code) built 19 of them and the close's fixes over about two days of wall time, one task's gates at a time,
+with delegated implementers, runners and two reviews.

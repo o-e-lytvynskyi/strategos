@@ -94,7 +94,7 @@ final class RtsFrameScenario implements Scenario {
     }
 
     /** One window's three timers. */
-    private static final class Sample {
+    static final class Sample {
         final FrameTimer frames = new FrameTimer(CAPACITY);
         final FrameTimer intervals = new FrameTimer(CAPACITY);
         final FrameTimer ticks = new FrameTimer(CAPACITY);

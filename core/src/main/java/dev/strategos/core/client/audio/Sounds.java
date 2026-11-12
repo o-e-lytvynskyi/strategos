@@ -22,6 +22,9 @@ public final class Sounds {
     public static final Cue UNIT_HIT = new Cue("minecraft:entity.player.hurt", Category.UNITS, 0.8F, 1.0F);
     public static final Cue UNIT_DIED = new Cue("minecraft:entity.player.death", Category.UNITS, 1.0F, 1.0F);
     public static final Cue FLAME = new Cue("minecraft:block.fire.ambient", Category.UNITS, 0.8F, 1.0F);
+    public static final Cue SHOT_LAUNCH = new Cue("minecraft:entity.arrow.shoot", Category.UNITS, 1.0F, 1.0F);
+    public static final Cue SHOT_IMPACT = new Cue("minecraft:entity.arrow.hit", Category.UNITS, 1.0F, 1.0F);
+    public static final Cue BELL = new Cue("minecraft:block.bell.use", Category.UNITS, 2.0F, 1.0F);
 
     /** Vanilla's distance over which a sound at volume 1 fades out. */
     public static final double ATTENUATION = 16;
@@ -36,6 +39,9 @@ public final class Sounds {
             case UNIT_HIT -> UNIT_HIT;
             case UNIT_DIED -> UNIT_DIED;
             case FLAME -> FLAME;
+            case SHOT_LAUNCH -> SHOT_LAUNCH;
+            case SHOT_IMPACT -> SHOT_IMPACT;
+            case BELL -> BELL;
             case BLOCK_CRACK, BLOCK_BREAK, BLOCK_PLACE ->
                 throw new IllegalArgumentException(kind + " sounds its block's own sound type");
         };

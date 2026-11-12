@@ -1,10 +1,10 @@
 # State
 
-The project-wide picture, kept by the maintainer and updated at merges. Who works on what is in [claims.md](claims.md)
+The project-wide picture, kept by the maintainer and updated at merges. Who works on what is in the branch files, one per claim ([branches/](branches/README.md))
 (`python3 tools/claims.py list`); live progress is in each developer's branch file ([branches/](branches/)). The session
 log is in [worklog.md](worklog.md); the work procedure is the `strategos-dev` skill (`.claude/skills/strategos-dev/SKILL.md`).
 
-**Last update:** 2026-10-25 · **Owner last seen:** 2026-10-25 · **Milestones done:** M0–M4 (M0 accepted) · **Open for claims:** M5
+**Last update:** 2026-10-30 · **Owner last seen:** 2026-10-30 · **Milestones done:** M0–M5 (M0 accepted) · **Open for claims:** none
 
 ## For the owner
 
@@ -68,14 +68,32 @@ Answer in chat or here; the next session applies the answers.
    batch to a rally point, the computer building its base. `-Pdemo=new` shows only what you have not seen at its
    current version (kept in `~/.strategos/demo-seen`); `-Pdemo=m4` or `-Pdemo=crowd,melee` picks, `-Pdemo.skip=`
    leaves out; `-Pdemo=list` lists them. It does not replace the L7 demos above, which are play, not watching.
+Items 11–22 come from the M5 branch file's "For the owner" 3–14; references inside M5 text use the branch's numbers (branch n = item n + 8).
+
+11. **M5 (dev/o-e-lytvynskyi/m5):** Commit 287bf54 on this branch contains the home-directory JVM path in one re-taken perf/baseline-m4pro.json row; cc04642 removes it. The history is pushed and is not rewritten (AGENTS.md); the repository is private. Nothing needed unless the history should be scrubbed before any visibility change.
+12. **M5 (dev/o-e-lytvynskyi/m5):** Obsolete: `dev/o-e-lytvynskyi/fix-main` (one docs commit 526dc72 proposing a release of lev1pes's fix-main, made moot by PR #21) and the local worktrees `strategos-fix-main`, `strategos-m5-content` (its T3b.2 draft is now in 95484c3) and `strategos-m5-control`. Recommend deleting them; left in place until you say so.
+13. **M5 (dev/o-e-lytvynskyi/m5):** Done 2026-10-28 (b): `SpatialBench.rebuild1000` is bimodal across JMH forks on this Mac: twice today one fork read 7.4–7.7 us while the other read 4.8 (baseline 4.79), failing the 15 % gate on the average; each single rerun passed with both forks at 4.7–4.9. No code touched the spatial index. Options: (a) leave it — a red run is rerun once by the rule (current); (b) give that benchmark more forks so one outlier fork cannot carry the average (a measurement change, your call); (c) investigate the bimodality (memory layout of the grid arrays). Recommend (b) with 5 forks for this benchmark only.
+14. **M5 (dev/o-e-lytvynskyi/m5):** Done 2026-10-28: replicate each unit's stance to its owner so the card's active stance is always right (now it shows the stance the player's own card last sent, else the template's). A small protocol addition; not in the approved cards' wording, so it waits for you.
+15. **M5 (dev/o-e-lytvynskyi/m5):** Done 2026-10-28 (ring spacing by body width; stand-still 84 → 46 ticks): in duels a horseman sometimes stands ~80 ticks beside the back-rank archer it is focused on before striking. Probably a melee chase/ring-slot detail for the large class; to look at with T13's battle AI unless you want it earlier.
+16. **M5 (dev/o-e-lytvynskyi/m5):** Done 2026-10-28 in part (gatherer ratio 7 : 11; trees on the proving ground still run out): from T9, the battle bot (T13) now weighs strength against defence and pulls back a doomed wave; the economy bot's wood-starved late economy (24 workers, other stocks in the thousands) remains — a candidate for AI-02's next tuning, not M5 scope.
+17. **M5 (dev/o-e-lytvynskyi/m5):** Horsemen cannot damage buildings (no `Attack/Structure` torch; only spearmen burn buildings, CMB-03). Recommend keeping it: the horseman is the raider of workers and archers, the spearman takes buildings. Say if cavalry should carry torches too.
+18. **M5 (dev/o-e-lytvynskyi/m5):** Performance watch for M6: the battle soak's per-unit A is 1.139 × M4's (gate 1.15) and its cost is movement and unit AI, not combat; 300 units crowding a ford in one burst can stall one large unit past the stuck invariant. Both are inputs for M6's spec health check, not M5 blockers.
+19. **M5 (dev/o-e-lytvynskyi/m5):** Done 2026-10-28 (b): the battle bot could not finish a match against itself: after the first waves annihilate each other only archers remain, which cannot burn a centre, and the bot's wood no longer buys spearmen. Options: (a) leave it (the scenario is player against bot, which ends); (b) keep a spearman reserve for buildings and train spearmen late (a small T13-scope change). Recommend (b) in M6's first tasks, together with item 8's wood starvation.
+20. **M5 (dev/o-e-lytvynskyi/m5):** Done 2026-10-28 (b, interleaved; 0.294–0.297 of 0.30): `perftests.idle_300_costs_a_third` fails on main itself on this Mac whenever other apps load the CPU (0.31–0.35 at foreign CPU 0.11–0.13; 0.155 at 0.004), though its foreign-CPU guard only invalidates above 0.25. Options: (a) run perf only on a quiet machine (as now); (b) lower the guard's invalid line for this ratio test, or measure idle and walking interleaved in one run so both halves see the same load (a measurement change: yours). Recommend (b), interleaved.
+    2026-10-30: [ADR-0026](adr/0026-perf-measurement-validity.md) ([PR #41](https://github.com/o-e-lytvynskyi/strategos/pull/41), [PR #45](https://github.com/o-e-lytvynskyi/strategos/pull/45)) now attributes such runs: on this Mac a run above 7.5 % foreign load (0.11–0.13 is 11–13 %) is `invalid environment`, not a failure; nothing further is needed unless you want more than (b).
+21. **M5 (dev/o-e-lytvynskyi/m5):** `perftests.first_loop_soak`'s per-unit A gate (base 11,648 + 15 %) lies inside this Mac's run-to-run spread on unchanged code (11,123–13,399 ns, foreign CPU 0.10–0.14), so it will fail now and then without a code change. Options: (a) keep it and rerun once on a red as the rule allows; (b) re-measure the base as the median of several runs on a quiet machine (a baseline decision: yours). Recommend (b) before M6's first perf gate.
+    2026-10-30: under [ADR-0026](adr/0026-perf-measurement-validity.md) ([PR #41](https://github.com/o-e-lytvynskyi/strategos/pull/41), [PR #45](https://github.com/o-e-lytvynskyi/strategos/pull/45)) the runs quoted here (foreign load 10–14 %) would be `invalid environment`, above this Mac's 7.5 % limit; whether the spread stays inside the gate on valid runs is not yet measured. The base decision (b) is still yours.
+22. **M5 (dev/o-e-lytvynskyi/m5):** Demo for your playtest: `scripts/playtest.sh`, then `/strategos match create map strategos:proving_ground`, `/strategos match join 1 0`, `/strategos match scenario strategos:battle_at_the_ford` (spec §1.3); the M5 chapters alone: `./gradlew :mod:runScenario -Pscenario=demo -Pdemo=m5 -Pscenario.timeoutSeconds=1200`. Your verdict (win once, lose once, the questionnaire, the silhouettes at 60 blocks for UNIT-07 check 4) goes into the spec's Acceptance.
+Items 23–26 come from the branch files of perf-validity, perf-validity-b and the M7 spec, merged without their records; folded on 2026-10-30.
+
+23. **perf-validity (#41):** `CameraTests` (an L3 GameTest in `verify`) asserts that coverage after a camera jump takes at most 3,000 ms of wall time — generous, but wall time without a load guard; the same check in ticks would be load-proof. Not changed (it is a card criterion); say if it should move to ticks.
+24. **perf-validity-b (#45), for your veto only:** the perf validity limit is `min(10 %, 0.9 / N)` of the machine's CPU, 7.5 % on this Mac ([ADR-0026](adr/0026-perf-measurement-validity.md) round 5): a simulated typical desktop (browser with video, chat, messenger, two editors) reads 4–6.5 %, one busy CPU at least 9.10 %. It replaces QA-07's 25 %. Nothing needed unless you veto.
+25. **M7 spec (lev1pes, #32):** the M7 implementation plan is specified ([M7](milestones/M7-multiplayer.md), 25 tasks); its 13 cards stay `proposed` until you approve the scope and open ready tasks for claims. D-20 (hosting) and D-03 (civilisation themes) stay yours (item 3); confirm the D-04 style direction and name your asset tasks before ART-03.
+26. **netty-advisories (#43), for your information:** the 38 known advisories in libraries pinned by Minecraft 1.21.1 and NeoForge's build (Netty, LZ4 Java, Commons Compress, Log4j, Guava and others) are not fixed, only no longer reported on every pull request; they are judged again when Minecraft or NeoForge moves ([security.md](security.md)).
 
 ## Since the owner's last visit
 
-- 2026-10-26 · **The repository is public.** The owner switched the visibility; on the owner's word the agent set up
-  the rest of [security.md](security.md) §5: secret scanning and push protection, private vulnerability reporting,
-  approval for every outside contributor's workflow run, a read-only workflow token, merge commits only, Dependabot
-  alerts and updates, the labels, and the `main` ruleset (pull requests only, one Code Owner approval, stale
-  approvals dismissed, no force pushes or deletion; repository admins may bypass through a pull request only).
+Nothing yet: the owner was here on 2026-10-30.
 
 ## Milestones
 
@@ -85,10 +103,12 @@ Answer in chat or here; the next session applies the answers.
 | M1 Movement | Done 2026-10-23 | the owner's sessions (`o-e-lytvynskyi`) | [M1](milestones/M1-movement.md) | Started 2026-10-22 on the owner's go-ahead; 29 tasks (T28, PATH-08, joined by its R3 trigger in T8; T29 by the owner's word); Accepted waits for the L7 demo (item 5) |
 | M2 Command | Done 2026-10-23 | the owner's sessions (`o-e-lytvynskyi`) | [M2](milestones/M2-command.md) | Started 2026-10-23 at the owner's word; 23 tasks; `pose_high` settled in M3 T30; Accepted waits for the L7 demo (item 4) |
 | M3 First loop | Done 2026-10-24 | the owner's sessions (`o-e-lytvynskyi`) | [M3](milestones/M3-first-loop.md) | Started 2026-10-23 at the owner's word; 31 tasks; Accepted waits for the L7 demo (item 7) |
-| M4 Economy and construction | Done 2026-10-24 | the owner's sessions (`o-e-lytvynskyi`) | [M4](milestones/M4-economy-and-construction.md) | Started 2026-10-24 as M3 closed; 24 tasks, closed by T28 (2026-10-24: Results written, [§8.1](milestones/M4-economy-and-construction.md); the health check's follow-ups are M5's first tasks); Accepted waits for the L7 demo (item 9); item 8 asks your word on the perf base |
-| M5 Combat | Open for claims 2026-10-25 | open for claims | [M5](milestones/M5-combat.md) | Spec written as M4 closed, 17 tasks; nothing on `main` is in progress; the colleague claims it by pull request ([claims.md](claims.md)); first task M5 T1, the health check from M4's close, once the claim is merged |
-| M6 (MVP) | approved | — | — | Its spec is written when M5 closes |
-| M7–M15 | proposed | — | — | Approved by the owner closer to their time |
+| M4 Economy and construction | Done 2026-10-24 | the owner's sessions (`o-e-lytvynskyi`) | [M4](milestones/M4-economy-and-construction.md) | Started 2026-10-24 as M3 closed; 24 tasks, closed by T28 (2026-10-24: Results written, [§8.1](milestones/M4-economy-and-construction.md); the health check's follow-ups are M5's first tasks); Accepted waits for the L7 demo (item 9); item 8 asks your word on the perf base; save/reload repairs by `lev1pes` merged 2026-10-30 (PR #30) |
+| M5 Combat | Done 2026-10-28 | the owner's sessions (`o-e-lytvynskyi`) | [M5](milestones/M5-combat.md) | 24 tasks; merged by [PR #33](https://github.com/o-e-lytvynskyi/strategos/pull/33) without a separate maintainer review; the owner closed it 2026-10-29; Accepted waits for the L7 playtest (item 22) |
+| M6 First skirmish (MVP) | approved, specified 2026-10-25; not open for claims | `dyadik` (T2–T17, claimed) | [M6](milestones/M6-first-skirmish.md) | Spec by `dyadik` merged in [PR #16](https://github.com/o-e-lytvynskyi/strategos/pull/16) (27 tasks, 23 cards `specified`); T2–T17 assigned to `dyadik` in [PR #17](https://github.com/o-e-lytvynskyi/strategos/pull/17), not started; T1 and T18–T28 unclaimed; opening M6 is the owner's word |
+| M7 Multiplayer | proposed; spec written 2026-10-28 | — (spec: `lev1pes`) | [M7](milestones/M7-multiplayer.md) | Planning spec by `lev1pes` merged in [PR #32](https://github.com/o-e-lytvynskyi/strategos/pull/32) (25 tasks, 13 cards traced); cards stay `proposed` until the owner approves the scope (item 25); a draft pull request #34 (`dev/lev1pes/m7`) is open, not assigned |
+| M8 Fog of war | proposed | `lev1pes` (T1–T6, claimed) | — | Specification and contract-tested foundations only, on the owner's request of 2026-10-28; assigned in [PR #31](https://github.com/o-e-lytvynskyi/strategos/pull/31); runtime M6/M7 integration excluded until they merge |
+| M9–M15 | proposed | — | — | Approved by the owner closer to their time |
 
 Overview of the roadmap: `python3 tools/roadmap.py summary`.
 
@@ -97,8 +117,9 @@ Overview of the roadmap: `python3 tools/roadmap.py summary`.
 Milestones whose tasks any developer may claim (AGENTS.md "Developers and claims"), opened on the owner's word.
 Planning work (the next milestone's spec) is always claimable.
 
-- **M5 Combat** — opened 2026-10-25 on the owner's word («разраб сам заасайнится на нее»): the colleague claims
-  it by pull request. The owner's own agent sessions do not claim M5 unless the owner asks.
+- None open. M6 opens on the owner's word.
+- Assigned before opening, on the owner's word: M6 T2–T17 (`dyadik`, [PR #17](https://github.com/o-e-lytvynskyi/strategos/pull/17), waits for M6 to open) and M8 T1–T6
+  (`lev1pes`, [PR #31](https://github.com/o-e-lytvynskyi/strategos/pull/31), independent foundations only).
 
 ## Standing restrictions
 
@@ -112,7 +133,83 @@ Decisions taken on a recommendation and merged into `main` (from the branch file
 branch), and the maintainer's own: what, why, how to undo. The owner vetoes by answering here; a veto becomes a
 `fix-…` claim. The list is cleared once the owner has seen it.
 
-- None yet.
+- (dev/o-e-lytvynskyi/perf-validity-b) 2026-10-30 · The mean limit is `0.9 / N`, not round 4's `0.75 / N`: with `0.75 / N` a simulated desktop failed one JMH benchmark of 27 (6.44 %); `0.9 / N` stays 1.6 points under the lowest busy-CPU reading. Undo: `ForeignLoad.meanLimit`.
+- (dev/o-e-lytvynskyi/perf-validity-b) 2026-10-30 · The JMH profiler reads the JDK's `OperatingSystemMXBean.getCpuLoad()` instead of the GameTest sampler's Mach/`/proc` counters, so core's JMH needs no JNA. Undo: share `CpuCounters` with core.
+- (dev/o-e-lytvynskyi/perf-validity-b) 2026-10-30 · An unavailable preflight does not gate a run (the window's own load still does). Undo: `ForeignLoad.assess`.
+- (dev/o-e-lytvynskyi/netty-advisories) 2026-10-29 · A dependency graph for `main` instead of an allow-list or excluded configurations: the review checks exactly what a pull request adds or changes; it adds a ~4-minute job on each push to `main`, an exception to "CI on pull requests only" that runs no tests. Undo: delete `.github/workflows/dependency-graph.yml`.
+- (dev/o-e-lytvynskyi/perf-validity) 2026-10-29 · The flaky `ProtectedBlockIndexTest` timing (the owner's «взять в свою работу или завести отдельный fix-…») is taken into this claim, and the moved ratio check is enforced in the perf batch when the window is valid, as the L1 test enforced it (not a new gate). Undo: move its two commits to a `fix-…` claim; make the check report-only.
+- (dev/o-e-lytvynskyi/perf-validity) 2026-10-29 · Unavailable counters make a run `invalid` (before: read as 0 on macOS and Linux). Undo: `fixed(0)` instead of `unavailable` in `PerfVerdicts.Window.measure`.
+- (dev/o-e-lytvynskyi/perf-validity) 2026-10-29 · The preflight is the sampler's readings from the batch's registration to the first window, not a separate 60 s wait. Undo: a wait before the first window.
+- (dev/o-e-lytvynskyi/claims-in-branch-files) 2026-10-29 · The claim is its branch file (statuses `claimed` … `merged <date>`); docs/claims.md is gone; the folder keeps the name docs/branches/. Undo: revert #39.
+- (dev/o-e-lytvynskyi/claims-check) 2026-10-29 · The records check is offline, from the files on the branch; a stray `ready for review` file fails every later pull request to `main`. Undo: drop `record_problems` from `check`, or make it a warning.
+- (dev/lev1pes/m7-spec) 2026-10-28 · Planning claimed and delivered in one pull request on the owner's session instruction; cards stay `proposed`. Undo: return it to assignment-only.
+- (dev/lev1pes/main-save-reload) 2026-10-27 · Saves are written as schema 3 so older builds cannot misread new saves; versions 1 and 2 migrate without invented identities; released fixtures unchanged. Undo by reverting the bindings; that loses safe custom-save identity.
+- (dev/lev1pes/main-save-reload) 2026-10-29 · Legacy migration binds only the historical built-in prefix 0..4; any other legacy index is refused as ambiguous (ADR-0027). The owner accepted it 2026-10-30. Undo by reverting the migration; that reopens silent identity corruption.
+- (dev/lev1pes/main-save-reload) 2026-10-29 · Terminal matches keep their original set and do not block reloads; a published swap invalidated before delivery faults its match. Undo by reverting the adapter/server guards.
+- (dev/o-e-lytvynskyi/m5) 2026-10-28 · The large-class grid is built lazily (see the log); behaviour-neutral by test against an eager grid. Undo by publishing eagerly in MatchTerrain.publishAll.
+- (dev/o-e-lytvynskyi/m5) 2026-10-28 · JMH forks per benchmark class (owner's choice, For the owner 5 (b)). Undo by restoring `-f 2` in build-logic's jmh task.
+- (dev/o-e-lytvynskyi/m5) 2026-10-28 · Golden images taken after looking at each frame (AGENTS.md "a golden image you checked"): `m5_goldens` (macos, macos-sodium) and `art_look`'s `look_m5_24`/`look_m5_64`, with masks on `rider_high`'s two horizon corners and one spot of `volley_impact`, and a 0.01 threshold on `ford_battle` (a live bot battle). Undo by deleting mod/src/devtools/goldens/*/m5_goldens and the two look_m5 frames, or tightening goldens.json.
+- (dev/o-e-lytvynskyi/m5) 2026-10-28 · PERF-14's "ours" in the observer battle scene is bars p50 plus HUD p50 (nothing is selected, so the rts-minus-moving split has no counterpart). Undo by adding a selection step to the scene.
+- (dev/o-e-lytvynskyi/m5) 2026-10-28 · trial implementer: pass — the L4 scenes written without a window, every risk named in advance (the arrow jitter among them); two framing rounds after the orchestrator's runs.
+- (dev/o-e-lytvynskyi/m5) 2026-10-28 · The battle scenario's L1 winner check plays the player's side with a small scripted general (attack-move, then spearmen at the centre) against the shipped bot; a bot-only match stalls (For the owner 11). The skirmish seats `ai:battle` in human slots of scenarios that use it. Undo in BattleAtTheFordTest / Skirmishes.
+- (dev/o-e-lytvynskyi/m5) 2026-10-28 · trial implementer: pass — T15 and the bot fix; it kept the scripted side honestly when bot v bot would not end, and reported it.
+- (dev/o-e-lytvynskyi/m5) 2026-10-28 · trial implementer: pass — T14 measured everything asked and named its thin margins; it skipped the slow gates after touching core, which the orchestrator ran.
+- (dev/o-e-lytvynskyi/m5) 2026-10-28 · The barracks trains the whole roster (the cards made archer and horseman templates but named no trainer; 0 A.D.'s barracks trains infantry and cavalry). Undo in barracks.json.
+- (dev/o-e-lytvynskyi/m5) 2026-10-28 · Battle-bot details: strength = Σ template cost × HP fraction; defence 600 and launch 0.6 untuned starting values; new soldiers do not join a wave already out; difficulty levels are separate script files (only battle.json ships). Undo in battle.json / Tactics.
+- (dev/o-e-lytvynskyi/m5) 2026-10-28 · trial implementer: pass — T13, with the barracks gap raised as a question rather than worked around in shipped data.
+- (dev/o-e-lytvynskyi/m5) 2026-10-27 · Spec finding 13 (the flash derived from received health, the target trailer); the first profile of `AttackLinesBench.extract300` added to perf/baseline-m4pro.json (home path rewritten). Undo by removing that row.
+- (dev/o-e-lytvynskyi/m5) 2026-10-27 · trial implementer: pass — T12; it found and removed a boxing allocation the 0 B/op gate would have caught, and added the kernel to the gate's list.
+- (dev/o-e-lytvynskyi/m5) 2026-10-27 · trial implementer: pass — T11 measured the raid sizes in L1 before choosing the L3 one, and reported the horsemen's zero building damage instead of tuning it.
+- (dev/o-e-lytvynskyi/m5) 2026-10-27 · The bell: AllClear is faction-wide (it ends every bell order of the faction and releases every unit any bell called in); a ring with no worker in reach is accepted and still sounds; the first-person ring cancels vanilla's bell and the `BELL` fx sounds it; `TemplateLint` admits the bell's block entity (still refuses others); "no body" lives in BodyRegistry since `BodyMode` was only a design name. Undo per point in Bell / TownBell / TemplateLint.
+- (dev/o-e-lytvynskyi/m5) 2026-10-27 · trial implementer: pass with a note — T10b complete, but it handed back before its own long gate run finished; the orchestrator awaited it and ran JMH.
+- (dev/o-e-lytvynskyi/m5) 2026-10-27 · Garrison details §2.9 leaves open: any of the holder's classes admits (archers and spearmen as Infantry, horsemen refused); a full building fails the order on the way, not at command time; Garrison replaces orders, those queued behind it stay and run on release; orders given to a unit inside wait until release (attacks on an inside unit are refused); walking in ignores blows; non-lethal damage to an inside unit is ignored, lethal still kills; an empty Ungarrison counts as 20 at the rate limiter. Undo per rule in GarrisonRules / Garrisoning.
+- (dev/o-e-lytvynskyi/m5) 2026-10-27 · trial reviewer: pass — two major and five minor findings on T10a, each with a scenario; one (the latch) turned out covered already, which the implementer showed with a test.
+- (dev/o-e-lytvynskyi/m5) 2026-10-27 · trial implementer: pass — T10a and its review round, with a self-found JMH regression fixed before reporting.
+- (dev/o-e-lytvynskyi/m5) 2026-10-27 · The economy bot's minimum wave raised to 14 spearmen (data only) so it overcomes the centre's arrows; neither the arrows nor the test moved. Undo in ai/economy.json.
+- (dev/o-e-lytvynskyi/m5) 2026-10-27 · A town volley's range is checked at selection, not again at release (a target a block past the edge still takes the arrow). Undo by a release-time check for building shooters.
+- (dev/o-e-lytvynskyi/m5) 2026-10-27 · trial implementer: pass — T9, and it reported the bot regression with its cause instead of relaxing the test.
+- (dev/o-e-lytvynskyi/m5) 2026-10-27 · A spread attacker re-picks among the current targets of its spread's other attackers (the order's group id), not a saved original set, so nothing new is persisted; with none left it falls back to its stance's nearest enemy. A grouped ATTACK may now finish by the crowd-arrival rule when stuck, as grouped moves do. Undo with a persisted spread set.
+- (dev/o-e-lytvynskyi/m5) 2026-10-27 · trial implementer: pass — T8 complete with a backward-compatible force flag; it flagged the limiter's default branch instead of editing an unnamed file.
+- (dev/o-e-lytvynskyi/m5) 2026-10-27 · Tuned the §2.7 roster (above) to satisfy the 170-of-200 counters at equal cost; cost counted as food + wood + iron. Undo by reverting the provenance rows and rerunning DuelTest.
+- (dev/o-e-lytvynskyi/m5) 2026-10-27 · Melee bonuses as numeric template leaves `Attack/Melee/bonus/<Class>` (the spec named "a template bonus" with no mechanism). Undo with the leaf.
+- (dev/o-e-lytvynskyi/m5) 2026-10-27 · trial implementer: pass — T7, and on review it traced the L1/L3 gap to its own harness and fixed the harness rather than the threshold.
+- (dev/o-e-lytvynskyi/m5) 2026-10-27 · The mounted rider is the unit renderer's own humanoid in a forced seated pose (armour, items, faction colours and LOD carry over); seat height 0.62 and the untinted horse wait for T17's images. The card's "inventory entry" is the engine-surface entity list: units have no spawn egg (noSummon). Undo in MountRenderer.
+- (dev/o-e-lytvynskyi/m5) 2026-10-27 · PATH-11 check 3 reads "no ladder rung above repath" as rungs 2–5 at zero plus the existing stuck-under-100-ticks measure. Undo by a stricter reading in MapTests.
+- (dev/o-e-lytvynskyi/m5) 2026-10-27 · trial implementer: pass — T6 with two follow-up rounds; it found the body-budget race when asked to fix rather than rename.
+- (dev/o-e-lytvynskyi/m5) 2026-10-27 · A flight's point and its end are measured from the attacker (§2.4: "back to the order when it is 12 blocks off"), not from where the unit stood; StanceTest's passive case and WorkerModelTest now assert that. Undo by planning from the unit.
+- (dev/o-e-lytvynskyi/m5) 2026-10-27 · The card's active stance is what the client knows (the stance its card last sent, else the template's); stances are not replicated. Proposal in For the owner 6. Undo n/a.
+- (dev/o-e-lytvynskyi/m5) 2026-10-27 · trial implementer: pass — T5b in one round, reported the gate's one red row honestly instead of retrying.
+- (dev/o-e-lytvynskyi/m5) 2026-10-27 · Spec finding 12 (stance details the table leaves open) and the template SHA re-pinned for the worker's passive stance (8bb9790c…); RangedOrdersTest's receding dummy moved inside sight (22 → 11 blocks) because the out-of-vision rule now ends that chase as specified. Undo with finding 12.
+- (dev/o-e-lytvynskyi/m5) 2026-10-27 · trial reviewer: pass — found a real livelock and three determinism/cost defects in T5a, each with a scenario; read-only, no Gradle while JMH ran.
+- (dev/o-e-lytvynskyi/m5) 2026-10-27 · trial implementer: pass — T5a plus its review round; it found the compiler's repeated path split behind the JMH regression instead of proposing a baseline.
+- (dev/o-e-lytvynskyi/m5) 2026-10-27 · High ground uses the units' motion Y (the floor on terrain) and applies only to ranged attacks, as §2.3 states; the card's breakdown is the template tooltip (per-template knobs), the situational bonus is shown there as rates. Undo with the card's data knobs.
+- (dev/o-e-lytvynskyi/m5) 2026-10-27 · Fix the reconciler GameTest's race (wait for the match's queued writes) rather than retry or mark it flaky. Undo is not recommended.
+- (dev/o-e-lytvynskyi/m5) 2026-10-27 · trial implementer: pass — T4 met the brief, found the floor-Y convention and reported a GameTest failure it could not pin; the orchestrator traced it to a pre-existing race.
+- (dev/o-e-lytvynskyi/m5) 2026-10-27 · Shot arcs render at AFTER_ENTITIES (the entity cutout render type fits there) and in any camera mode; size and orientation are checked in T17's images. Undo by moving the stage.
+- (dev/o-e-lytvynskyi/m5) 2026-10-27 · trial implementer: pass — T3c.2 verified every engine name in the sources with file:line, reported the coordinate convention it found, and stayed inside its files.
+- (dev/o-e-lytvynskyi/m5) 2026-10-27 · Re-take only the `ShotBench.volley60{mode=miss}` row of perf/baseline-m4pro.json (0.827 → 1.085 us/op): the growth is the 60 `ShotLanded` records the spec requires for misses, confirmed in two runs; limits unchanged. Undo by restoring the row from 95484c3.
+- (dev/o-e-lytvynskyi/m5) 2026-10-27 · Fix `jmhCompare` to report missing benchmarks (it never did); a stricter gate, not a weaker one. Undo is not recommended.
+- (dev/o-e-lytvynskyi/m5) 2026-10-27 · trial implementer: pass — T3c.1 matched the brief with no deviations, kept old constructors and bytes, named its one test-assertion change; the orchestrator read the core diff.
+- (dev/o-e-lytvynskyi/m5) 2026-10-27 · Spec traceability for CMB-04 check 4 names the existing GameTest `combattests.archer_volley_replays_as_the_core_predicts` (M2's "as the core predicts" convention: the headless replay is the L1 prediction) instead of the planned `a_volley_damages_as_l1_predicts`. Undo by renaming the test and the row.
+- (dev/o-e-lytvynskyi/m5) 2026-10-27 · Re-pin the builtin template set's SHA (e4624330…) and size 17 for the archer; the canonical form changed only by the appended template. Undo with the archer.
+- (dev/o-e-lytvynskyi/m5) 2026-10-27 · trial runner: pass — three bounded gate/JMH runs with exact failing tests, pinned values and per-fork evidence; no retries or edits.
+- (dev/o-e-lytvynskyi/m5) 2026-10-27 · Persist optional shot release origin/tick for future impact feedback across death/restore; preserve old snapshot and FX bytes when the extension is absent. Deliver once to viewers of either endpoint and clear client arcs on match changes; no past-launch resync is added. Undo through a reviewed feedback contract change.
+- (dev/o-e-lytvynskyi/m5) 2026-10-27 · Derive flat-world target velocity from transient pre-/post-MOVEMENT positions at release. Preserve the existing pose-only flat snapshot/hash contract; terrain still uses MotionStore velocity. Undo by a reviewed motion-state version change. Bound ranged damage to finite float-safe values so accepted templates and modifiers cannot fail when converted to a damage packet.
+- (dev/o-e-lytvynskyi/m5) 2026-10-26 · Establish first Mac profiles for active-shot hashing and preferred/collateral/miss volley60 cases from the full measured run. All existing profile scores and limits remain unchanged; remove only these four rows to undo. Keep T2's proposed baseline as its historical decision artifact.
+- (dev/o-e-lytvynskyi/m5) 2026-10-26 · Use available standard worker gpt-6-sol for the unchanged tier-B contract after the earlier model's usage limit; runner and independent reviewer remained available. Trial implementer/reviewer/runner pass: scoped integration, actual continuation tests, representative combat fixture, bounded summaries and unchanged gates verified by the orchestrator.
+- (dev/o-e-lytvynskyi/m5) 2026-10-26 · Accept the shot golden only after an independent SplitMix64/Box-Muller calculation matched 126/500 hits, first 32 outcomes and exact damage 126/256. The nearest circle-boundary margin is 0.000171829 in squared distance, well above floating-point rounding differences. Undo by replacing the test golden through a reviewed behavior change; statistical bounds and seed stay fixed.
+- (dev/o-e-lytvynskyi/m5) 2026-10-26 · Use circular body-radius footprints with a body-height check and frozen aim Y to avoid cross-layer hits; preferred full target handle precedes ascending any-faction collateral. This refines the approved landing-point model. Undo by revising the collision policy and its explicit circle/bridge/friendly-collateral tests.
+- (dev/o-e-lytvynskyi/m5) 2026-10-26 · Continue ready M5 tasks once this branch's full functional and performance gates are green, including both historical failure counterexamples. Keep the separate Linux main investigation assigned and unresolved; its release proposal is optional coordination, not a reason to idle validated M5 work. Undo by pausing features until that separate claim is delivered.
+- (dev/o-e-lytvynskyi/m5) 2026-10-26 · trial implementer: pass — integration and performance briefs stayed within named source/test files, preserved old query/reload behavior, demonstrated meaningful regression cases and differential terrain checks, and returned focused/full-fast evidence without commits or records edits.
+- (dev/o-e-lytvynskyi/m5) 2026-10-26 · trial reviewer: pass — found and then verified fixes for eviction, mixed slots and quadratic page access; final cache/signature review has no findings, with the orchestrator reading source/test diffs.
+- (dev/o-e-lytvynskyi/m5) 2026-10-26 · trial runner: pass — final full gates, isolated controls/diagnostics, targeted perf and full JMH ran serially with bounded summaries; no unrequested retries or baseline edits. Corrected corpus counts distinguish 1,939 functional tests from two extra perf tests.
+- (dev/o-e-lytvynskyi/m5) 2026-10-26 · Establish TerrainEditBench's two-grid Mac profile at 481.023 us/op after reducing the initial recovery cost from 1027.918, confirming a 290.034 us/op same-host T1 control and passing absolute D (0.427499 ms p99 / 2 ms) and idle ratio (0.218951 / 0.30). This is the new class's measured cost within the planned roughly twofold rebuild; owner delegated recommended baseline decisions under AGENTS.md. Keep the 15% limit and every other existing score/budget unchanged. ADR-0019 and a retained proposal record it; undo by restoring only this benchmark's prior row from 5437a1f. Final full comparison is still required.
+- (dev/o-e-lytvynskyi/m5) 2026-10-26 · Split mobility recovery and measured performance work; keep acceptance and code delivery atomic so no red intermediate implementation is committed. Undo by collapsing the two progress entries; the gates and feature scope remain unchanged.
+- (dev/o-e-lytvynskyi/m5) 2026-10-26 · Recover reviewed T1 source and tests selectively; keep historical Windows artifacts in the preserved branch and require fresh current-host evidence. Undo by reverting this recovery commit; no pushed history is rewritten.
+- (dev/o-e-lytvynskyi/m5) 2026-10-26 · trial runner: pass — baseline, deliberate red tests and final gates ran sequentially with compact verdicts, timings and no unrequested retries; the negative checks failed before the fixes and passed afterwards.
+- (dev/o-e-lytvynskyi/m5) 2026-10-26 · trial reviewer: pass — reviewed immutable T1 source without edits/builds, verified semantic preservation and scene guard behavior; T2 findings are being validated separately.
+- (dev/o-e-lytvynskyi/m5) 2026-10-26 · Follow the owner's explicit takeover authorization through a release PR followed by an assignment PR; retain all historical branches and evidence. Undo by rejecting the release or assigning M5 back by PR.
+- (dev/o-e-lytvynskyi/m5) 2026-10-26 · Prefer selective reuse of legacy T1-T2 over reimplementation, subject to review and current verification. Keep Windows evidence labeled and sanitize personal paths without changing numbers; discard the import if validation reveals an unsuitable design.
 
 ## Blocked
 
@@ -123,7 +220,20 @@ Nothing.
 - **CI policy (2026-10-25):** CI runs on pull requests to `main` only, never on pushes or drafts: `verify` on every
   hand-in, `records` on record changes, `full-ci` (`verifySlow`, `verifySoak`, `:core:slowTest`) and `perf` only when a
   maintainer adds their label. Tests during a milestone are local ([05-testing.md](05-testing.md)). Minutes: about
-  1,575 of 2,000 used as of 2026-10-24 while private; a public repository's standard runners cost nothing.
+  1,575 of 2,000 used as of 2026-10-24 while private; a public repository's standard runners cost nothing (the
+  repository reads public on 2026-10-30).
+- **Dependency graph (2026-10-29, [PR #43](https://github.com/o-e-lytvynskyi/strategos/pull/43)):** `.github/workflows/dependency-graph.yml` submits `main`'s Gradle
+  dependency graph on each push to `main` (and by hand), so `dependency-review` judges only a pull request's own
+  dependency changes; before it, every dependency counted as added and every pull request touching `*.gradle` or a
+  workflow failed on advisories in game-pinned libraries (item 26). The one CI job that runs on pushes; it runs no tests.
+- **Perf validity (2026-10-29/30, [PR #41](https://github.com/o-e-lytvynskyi/strategos/pull/41), [PR #45](https://github.com/o-e-lytvynskyi/strategos/pull/45), issue #22, [ADR-0026](adr/0026-perf-measurement-validity.md)
+  Accepted):** a perf run is `invalid environment` when the mean foreign CPU load over at least the window's last 60 s
+  exceeds `min(10 %, 0.9 / N)` of the machine (N logical CPUs; 7.5 % on the 12-CPU Mac), replacing QA-07's 25 %; a
+  preflight above the limit, unavailable counters or a sleep in the window invalidate it too; p95 and peak are
+  reported, not gated. JMH records the same telemetry per benchmark and `jmhCompare` reports a benchmark above its limit
+  as an invalid environment, not a pass or a regression. A red budget is attributed before it is optimised. The L1
+  `ProtectedBlockIndexTest` timing moved to the L6 perf batch (`perf_protected`, ratio limit 3, asserted on valid
+  windows). Calibrated on the Mac in five rounds (quiet, one busy CPU, a simulated desktop, `tools/desktop_load.py`).
 - Performance baselines are the owner's Mac (Apple M4 Pro, 24 GB, macOS 26) only; other machines and Windows are
   untested (README "Platforms").
 
@@ -147,6 +257,20 @@ Nothing.
   harness, the deterministic kernel with persistence, quarantine and fault containment, the
   walking skeleton, the performance harness and spikes S1 to S6; accepted by the owner on
   2026-10-22.
+- **2026-10-27 to 2026-10-30** (folded into the records on 2026-10-30):
+  - the M7 planning spec by `lev1pes`, [PR #32](https://github.com/o-e-lytvynskyi/strategos/pull/32), merged 2026-10-28: 25 tasks, multiplayer contracts and a
+    verification plan; no implementation claim, M7 not opened;
+  - M8 T1–T6 assigned to `lev1pes`, [PR #31](https://github.com/o-e-lytvynskyi/strategos/pull/31) (2026-10-27), and a claims reconciliation, [PR #29](https://github.com/o-e-lytvynskyi/strategos/pull/29);
+  - claims-check (issue #28), [PR #36](https://github.com/o-e-lytvynskyi/strategos/pull/36), 2026-10-29: the records check fails a delivery left `assigned` or `ready for
+    review` on `main`;
+  - claims in branch files, [PR #39](https://github.com/o-e-lytvynskyi/strategos/pull/39), 2026-10-29: docs/claims.md is gone, the branch file alone is the claim;
+  - perf validity part A (issue #22), [PR #41](https://github.com/o-e-lytvynskyi/strategos/pull/41), 2026-10-29: per-second foreign-load telemetry on macOS, Linux and
+    Windows, a preflight, the `invalid environment` verdict, sleep detection, ADR-0026 (proposed); the L1
+    `ProtectedBlockIndexTest` timing moved to the L6 perf batch;
+  - dependency review judges only a pull request's own changes, [PR #43](https://github.com/o-e-lytvynskyi/strategos/pull/43), 2026-10-29 (`dependency-graph.yml`);
+  - perf validity part B, [PR #45](https://github.com/o-e-lytvynskyi/strategos/pull/45), 2026-10-30: the limit `min(10 %, 0.9 / N)` over at least 60 s in the GameTest
+    perf gate and in JMH (`jmhCompare`), ADR-0026 Accepted after calibration round 5;
+  - save/reload repairs (#23, #24, #25) by `lev1pes`, 2026-10-30, merged by [PR #30](https://github.com/o-e-lytvynskyi/strategos/pull/30): schema-3 saves bind template identities ([ADR-0027](adr/0027-save-template-identities.md)), reloads are validated against every live match, a swap invalidated after publication faults its match; legacy saves with built-ins past index 4 refuse to load (accepted by the owner, no further migrations).
 - **Settled items moved out of "For the owner" (2026-10-25):**
   - 2026-10-22, consent for M1's tests: every kind of test, client windows included; with the lid closed a Mac window
     may not render, so client scenarios run on the Linux route on CI first and a Mac run is used only where a
@@ -210,7 +334,7 @@ Nothing.
   - the new way of working (word of 2026-10-25): rules are tool-neutral in [AGENTS.md](../AGENTS.md) (CLAUDE.md imports
     it; Codex reads it as is) and bind every developer equally, every developer is external, the owner's own sessions
     too, joining is in [onboarding.md](onboarding.md); assignment first, by pull request: a claim pull request adds the
-    developer's row to [claims.md](claims.md) and their branch file and is merged before any development
+    developer's row to claims.md and their branch file (replaced 2026-10-29: the branch file alone is the claim) and is merged before any development
     (`tools/claims.py check` refuses overlaps and takeovers without the holder's approval), work is built on
     `dev/<developer>/<work>` and handed in as a pull request with the milestone report, reviewed by another session
     with delegated workers (`strategos-maintain` §4) and merged on the owner's «влей»; claim and release pull requests
@@ -224,6 +348,14 @@ Details are in [worklog.md](worklog.md).
 
 ## Known follow-ups (not blocking)
 
+- fix-main review (2026-10-27, minor): a differential test of the rest shortcut (state hashes with it on and off in a
+  dense settled scene); `RestingGround`'s reliance on `SurfaceGrid.version()` rising with every change, unstated and
+  untested, and its slot reuse after a unit's removal; `IdleBench` does not assert its units settled; UNIT-05 and the
+  idle300 javadoc should name the pacing and the preconditioning; the `ProtectedBlockIndexTest` ratio before and
+  after its probe change is not recorded (the timing itself moved to the L6 perf batch in [PR #41](https://github.com/o-e-lytvynskyi/strategos/pull/41)).
+- `mounted_cost` (perf batch) measures its foot and mounted phases one after the other, so a load that changes the
+  CPU's speed between them skews the ratio (1.77 under the simulated desktop): interleave them, as `idle_300` does since
+  M5 T18 (perf-validity-b's branch file).
 - [01-feasibility.md](01-feasibility.md) §3 predates the architecture in places; its precedence
   note says the architecture and the ADRs win. §6.5 was re-estimated after M0 (2026-10-22).
 - ADRs owed by future cards:

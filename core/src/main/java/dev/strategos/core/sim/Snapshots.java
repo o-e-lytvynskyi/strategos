@@ -9,6 +9,7 @@ import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.econ.CarryStore;
+import dev.strategos.core.sim.garrison.Garrisons;
 import dev.strategos.core.sim.nav.PageCoord;
 import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.order.OrderQueues;
@@ -82,7 +83,15 @@ final class Snapshots {
                         s.alerts().save(),
                         s.progress().save(),
                         s.matchStats().save(),
-                        s.visionSystem() != null ? s.visionSystem().save() : List.of()));
+                        s.visionSystem() != null ? s.visionSystem().save() : List.of(),
+                        s.shots().save(),
+                        s.stances().save(),
+                        s.garrison().save()),
+                s.buildings().empty()
+                        ? List.of()
+                        : s.templates().all().stream()
+                                .map(t -> new MatchSnapshot.TemplateBinding(t.netIndex(), t.id()))
+                                .toList());
     }
 
     /** The economy ledger's counters, or none while nothing was found or taken (ECO-05). */
@@ -193,11 +202,15 @@ final class Snapshots {
         }
         dev.strategos.core.sim.econ.Deposits.restoreFootprints(state); // before the pages too (ECO-08)
         if (!snapshot.buildings().isEmpty()) {
-            state.restoreBuildings(snapshot.buildings()); // before the pages, so their footprints are laid over them
+            state.restoreBuildings(SavedTemplates.buildings(
+                    snapshot, templates)); // before the pages, so their footprints are laid over them
         }
         state.outcome().restore(snapshot.play().outcome());
         state.aiSlots().restore(snapshot.play().ai(), snapshot.play().aiWake());
         state.alerts().restore(snapshot.play().alerts());
+        state.shots().restore(snapshot.play().shots());
+        state.stances().restore(snapshot.play().stances(), Handle::index);
+        Garrisons.restore(state, snapshot.play().garrisons());
         for (CarryStore.Saved load : snapshot.carried()) {
             if (!state.entities().isAlive(load.handle())) {
                 throw new IllegalArgumentException(

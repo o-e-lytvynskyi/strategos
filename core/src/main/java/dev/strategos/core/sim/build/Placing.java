@@ -84,7 +84,7 @@ public final class Placing {
 
             @Override
             public boolean explored(int x, int z) {
-                // AFTER-M6: T10 (MATCH-07) wires this to the fog option; until then the check is inert.
+                // AFTER-T10: MATCH-07 wires this to the fog option; until then the check is inert.
                 return true;
             }
 

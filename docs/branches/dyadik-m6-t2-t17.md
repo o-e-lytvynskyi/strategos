@@ -2,12 +2,14 @@
 
 **Developer:** dyadik (Claude Code, Opus) · **Branch:** dev/dyadik/m6-t2-t17 · **Work:** M6 T2–T17 · **Base:** main @ 1dae9fa · **Claimed:** 2026-10-25 · **Status:** in progress
 
+**Note:** assignment merged in [PR #17](https://github.com/o-e-lytvynskyi/strategos/pull/17); implementation not merged; opening M6 remains an owner decision
+
 ## Now
 
 - **Milestone:** M6 MVP: First skirmish, 6 of 28 tasks done (T2 split into T2.1 and T2.2); spec [M6-first-skirmish.md](../milestones/M6-first-skirmish.md).
 - **Last finished task:** M6 T6 (2026-11-12), the commit `M6 T6: FOW-07 server — vision delta, fog gate, tracker refresh, explored wiring`.
-- **Next task:** M6 T7 · FOW-08 client: the fog shader and the minimap.
-- **Merged from main last:** 0a7cc3b (2026-10-25).
+- **Next task:** M6 T7 · FOW-07 client: the fog shroud and ShroudBench.
+- **Merged from main last:** 8111c0a (2026-11-13) — M5 combat + save/reload repairs; ProtectedBlockIndexTest taken from main; inert fog seams marked AFTER-T10.
 
 ## Depends on unfinished work
 
@@ -15,11 +17,16 @@ From the assessment before the claim (procedure §2a step 0); kept current.
 
 | Milestone | What this work needs from it | Plan: independent / against a contract / after | `AFTER-M<n>` markers |
 |---|---|---|---|
-| M5 Combat (assigned to lev1pes, not started) | T12 (MAP-02): the horseman scout (UNIT-07's `unit/horseman`) and the large class's reachability (PATH-11). Nothing else in T2–T17 | independent: T2–T11 and T13–T17 need nothing from M5 (spec §7.1); T12 against a contract: the manifest names the horseman, and the checker's per-class reachability covers the classes that exist, with the large class added when PATH-11 lands | the spec's AFTER-M5 lines in §2.10; code markers added in T12 |
+| M5 Combat (merged on main) | T12 (MAP-02): the horseman scout and the large class's reachability are now on main | independent for T2–T11 and T13–T17; T12 can use the landed classes | re-check AFTER-M5 markers in §2.10 when T12 starts |
 
 ## Log
 
 Newest first; one entry per session in the worklog's shape.
+
+### 2026-11-13 — merge main
+
+- **Merge origin/main into dev/dyadik/m6-t2-t17** (do not rebase), per maintainer review on #53. Resolved 23 content conflicts: kept M6 progress/matchStats/vision and M5 shots/stances/garrisons in MatchSnapshot.Play (and Snapshots / StateHasher / MatchSnapshotCodec); command kinds 25–30 from M5 plus RESEARCH=31; both FogTests and GarrisonTests; HUD queue tech icons with main's cardPresentation. Took main's ProtectedBlockIndexTest (timing moved to perf). Renamed deferred fog seams to AFTER-T10 (Placing.explored, CommanderService.explored, Replication visibility / building send, BodyEvents.canSee, GatherRule, FogTests pairing). core and mod compileJava green after the merge. Golden hashes and the reconciler gate still to rebaseline / verify on this tip.
+- **Still open from the review:** convert #53 to draft until T7–T17; fill the hand-in report; coordinate FOW with M8 (#31); owner veto on ADR-0025 Accepted.
 
 ### 2026-11-12 — M6 T6
 

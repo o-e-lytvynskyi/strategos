@@ -97,6 +97,29 @@ class BlueprintFilesTest {
         assertThat(PlaceholderBlueprints.problems(house)).isEmpty();
     }
 
+    @Test
+    void theLintRefusesABlockEntityButTheCivicCentresTownBell() {
+        Blueprint house = PlaceholderBlueprints.house();
+        List<String> palette = new ArrayList<>(house.palette());
+        palette.set(2, "minecraft:chest");
+        assertThat(TemplateLint.palette(rebuild(house, palette, house.markers()), "house.json"))
+                .extracting(TemplateProblem::message)
+                .contains("strategos:house holds minecraft:chest, a block entity");
+        Blueprint centre = PlaceholderBlueprints.civicCentre();
+        assertThat(centre.palette()).contains(PlaceholderBlueprints.BELL_BLOCK);
+        assertThat(TemplateLint.palette(centre, "civic_centre.json")).isEmpty();
+        boolean bellStands = false;
+        for (int k = 0; k < centre.count(); k++) {
+            bellStands |= centre.x(k) == PlaceholderBlueprints.CENTRE_BELL_X
+                    && centre.y(k) == PlaceholderBlueprints.CENTRE_BELL_Y
+                    && centre.z(k) == PlaceholderBlueprints.CENTRE_BELL_Z
+                    && centre.palette().get(centre.state(k)).equals(PlaceholderBlueprints.BELL_BLOCK);
+        }
+        assertThat(bellStands)
+                .as("the bell stands on the floor just inside the doorway")
+                .isTrue();
+    }
+
     private static int[] blocks(Blueprint b) {
         int[] out = new int[b.count() * 4];
         for (int k = 0; k < b.count(); k++) {

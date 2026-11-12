@@ -17,7 +17,9 @@ public enum UnitState {
     /** Gathering at a resource node (ECO-05); approaching it and carrying a load back walk. */
     GATHERING,
     /** Building a foundation or a site (BLD-03); walking to it walks. */
-    BUILDING;
+    BUILDING,
+    /** Inside a building (BLD-16): no body, not in the spatial index, its orders kept for when it comes out. */
+    GARRISONED;
 
     public int code() {
         return switch (this) {
@@ -26,6 +28,7 @@ public enum UnitState {
             case COMBAT -> 2;
             case GATHERING -> 3;
             case BUILDING -> 4;
+            case GARRISONED -> 5;
         };
     }
 
@@ -36,6 +39,7 @@ public enum UnitState {
             case 2 -> COMBAT;
             case 3 -> GATHERING;
             case 4 -> BUILDING;
+            case 5 -> GARRISONED;
             default -> throw new IllegalArgumentException("no unit state with code " + code);
         };
     }

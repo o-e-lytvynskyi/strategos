@@ -1,8 +1,8 @@
 # People
 
 Who holds which role (AGENTS.md "Roles"). The owner edits this file; a change reaches `main` by
-pull request. The handle is the one used in branch names (`dev/<handle>/<work>`), branch files
-and [claims.md](claims.md).
+pull request. The handle is the one used in branch names (`dev/<handle>/<work>`), and branch files
+([branches/](branches/README.md)), which are the claims.
 
 ## Owner
 

@@ -80,6 +80,30 @@ public final class ComputerPlayer {
         return memory.get(Slots.WAVE);
     }
 
+    /** The retreats it has ordered (AI-03). */
+    public long retreats() {
+        return memory.get(Slots.RETREATS);
+    }
+
+    /** The enemy unit its wave focuses, 0 for none (AI-03). */
+    public int focus() {
+        return (int) Math.max(0, memory.get(Slots.FOCUS) - 1);
+    }
+
+    /** Its wave's state: 0 none out, 1 out, 2 going home (AI-03). */
+    public long fight() {
+        return memory.get(Slots.FIGHT);
+    }
+
+    /** What it wants trained of each role, in permille: spearmen, archers, horsemen (AI-03). */
+    public int[] want() {
+        return new int[] {
+            (int) Composition.want(memory, AiView.ROLE_SPEAR),
+            (int) Composition.want(memory, AiView.ROLE_ARCHER),
+            (int) Composition.want(memory, AiView.ROLE_HORSE)
+        };
+    }
+
     /** The step of its build order it is on. */
     public long step() {
         return memory.get(Slots.STEP);

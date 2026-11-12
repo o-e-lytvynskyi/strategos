@@ -56,6 +56,7 @@ final class Burning {
         for (int j = 0; j < s.entities().highWater(); j++) {
             if (j != i
                     && s.entities().aliveAt(j)
+                    && !s.garrisoned(j)
                     && orders.kind(j) == OrderKind.BURN
                     && orders.target(j) == target
                     && orders.slot(j) > 0
@@ -154,13 +155,13 @@ final class Burning {
         ctx.setData(tick + Math.max(1, (int) value(s, i, REPEAT, 20)), 0);
     }
 
-    /** Whether unit {@code i} can still burn {@code target}: a standing building of another faction, and a torch. */
+    /**
+     * Whether unit {@code i} can still burn {@code target}: a standing building and a torch. Whose building it may be is
+     * the attack command's to decide (an own one only when forced, ORD-05), so the order is not checked again here.
+     */
     static boolean burnable(MatchState s, int i, int target) {
         BuildingStore b = s.buildings();
-        return BuildingStore.isBuilding(target)
-                && b.alive(target)
-                && b.faction(target) != s.identity().faction(i)
-                && canBurn(s, i);
+        return BuildingStore.isBuilding(target) && b.alive(target) && canBurn(s, i);
     }
 
     private static double value(MatchState s, int i, String path, double otherwise) {

@@ -38,6 +38,7 @@ final class Following {
             n = 0;
             for (int j = 0; j < s.entities().highWater(); j++) {
                 if (s.entities().aliveAt(j)
+                        && !s.garrisoned(j)
                         && orders.kind(j) == OrderKind.FOLLOW
                         && orders.group(j) == group
                         && orders.target(j) == leader) {

@@ -202,7 +202,7 @@ public final class StuckLadder {
     /** The component of the surface unit {@code i} stands on; -1 when it stands on none. */
     private static int component(MatchState s, int i) {
         MotionStore motion = s.motion();
-        SurfaceGrid grid = s.surfaces();
+        SurfaceGrid grid = s.surfacesFor(i);
         int home = PathService.startNode(
                 grid, motion.x(i), motion.y(i), motion.z(i), s.config().bounds().minY());
         return home < 0 ? -1 : grid.component(home);
@@ -214,7 +214,7 @@ public final class StuckLadder {
      * centre.
      */
     private boolean free(MatchState s, int i, int x, int z, int component) {
-        SurfaceGrid grid = s.surfaces();
+        SurfaceGrid grid = s.surfacesFor(i);
         if (!grid.inside(x, z)) {
             return false;
         }

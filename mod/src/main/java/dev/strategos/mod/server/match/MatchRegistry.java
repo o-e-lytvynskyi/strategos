@@ -412,7 +412,8 @@ public final class MatchRegistry {
     }
 
     /**
-     * A saved match back from its record and blob: PAUSED with every live unit wanted for a body, its journal starting
+     * A saved match back from its record and blob: ENDED when its record or outcome is terminal, otherwise PAUSED
+     * with every live unit wanted for a body, its journal starting
      * at the restored snapshot; FAULTED with the reason when the blob is quarantined, the record says FAULTED or the
      * snapshot does not restore. A blob whose epoch differs from the record's still loads (the blob wins).
      */
@@ -477,7 +478,11 @@ public final class MatchRegistry {
             prewarm(level, rt);
             rt.transition(MatchLifecycle.READY);
             rt.transition(MatchLifecycle.RUNNING);
-            rt.transition(MatchLifecycle.PAUSED);
+            rt.transition(
+                    record.lifecycle() == MatchLifecycle.ENDED
+                                    || (snapshot != null && snapshot.play().ended())
+                            ? MatchLifecycle.ENDED
+                            : MatchLifecycle.PAUSED);
             for (int handle : core.queries().unitHandles()) {
                 rt.bodies().want(handle);
             }

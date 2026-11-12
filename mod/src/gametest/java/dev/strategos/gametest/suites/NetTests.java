@@ -29,9 +29,15 @@ import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
+import dev.strategos.core.sim.BodyFrame;
 import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.ExternalDamage;
+import dev.strategos.core.sim.OutputEvent;
+import dev.strategos.core.sim.ShotFired;
+import dev.strategos.core.sim.ShotLanded;
+import dev.strategos.core.sim.TickOutputs;
 import dev.strategos.core.sim.UnitState;
+import dev.strategos.core.sim.combat.ShotStore;
 import dev.strategos.core.testkit.SimHarness;
 import dev.strategos.gametest.MatchFixture;
 import dev.strategos.gametest.StrategosTest;
@@ -41,6 +47,7 @@ import dev.strategos.mod.entity.UnitEntity;
 import dev.strategos.mod.server.content.ServerTemplates;
 import dev.strategos.mod.server.content.TemplateSync;
 import dev.strategos.mod.server.match.MatchRuntime;
+import dev.strategos.mod.server.net.FxSender;
 import dev.strategos.mod.server.net.NetCounters;
 import dev.strategos.mod.server.net.RateLimiter;
 import dev.strategos.mod.server.net.payload.CommandsPayload;
@@ -699,6 +706,60 @@ public final class NetTests {
                 })
                 .thenExecute(() -> {
                     check(NetFixtures.payloads(outsider, FxPayload.class).isEmpty(), "the outsider got fx");
+                    member.close();
+                    outsider.close();
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * CMB-04: a volley's shot events (three launches and an impact with both ends in two pages) reach a seated member
+     * once each, in one batch of the two pages; a player seated in no match gets none.
+     */
+    @StrategosTest(timeoutTicks = 200)
+    public static void shotFxAudience(GameTestHelper h) {
+        MatchRuntime rt = match(h);
+        Vec3 at = h.absoluteVec(new Vec3(12.5, 2, 12.5));
+        MockViewer member = MockViewer.join(h.getLevel(), "strat-shotin", at.x, at.y, at.z, 4);
+        MockViewer outsider = MockViewer.join(h.getLevel(), "strat-shotout", at.x + 1, at.y, at.z, 4);
+        NetFixtures.seat(rt, member, 0);
+        double y = rt.space().origin().getY() + 2;
+        List<OutputEvent> volley = new ArrayList<>();
+        for (int k = 0; k < 3; k++) {
+            volley.add(new ShotFired(1 + k, 9, 10 + k, y, 10, 30, y, 12, 5, 9));
+        }
+        volley.add(new ShotLanded(1, 9, 9, new ShotStore.Release(10, y, 10, 5), 30, y, 12, 9));
+        var state = new Object() {
+            boolean sent;
+        };
+        h.onEachTick(() -> {
+            member.poll();
+            outsider.poll();
+            if (!state.sent) {
+                FxSender.send(
+                        rt,
+                        new TickOutputs(1, BodyFrame.EMPTY, volley),
+                        StrategosServer.get().net());
+                state.sent = true;
+            }
+        });
+        h.startSequence()
+                .thenWaitUntil(() -> {
+                    List<Fx.Event> got = NetFixtures.fxOf(member, rt);
+                    check(!got.isEmpty(), "no shot fx yet");
+                    long launches = got.stream()
+                            .filter(e -> e.kind() == FxKind.SHOT_LAUNCH)
+                            .count();
+                    long impacts = got.stream()
+                            .filter(e -> e.kind() == FxKind.SHOT_IMPACT)
+                            .count();
+                    check(
+                            launches == 3 && impacts == 1,
+                            "the member got " + launches + " launches, " + impacts + " impacts");
+                    check(got.get(0).toX8() == 30 * 8 && got.get(0).flightTicks() == 4, "the launch is " + got.get(0));
+                })
+                .thenExecute(() -> {
+                    check(NetFixtures.payloads(outsider, FxPayload.class).isEmpty(), "the outsider got shot fx");
                     member.close();
                     outsider.close();
                 })

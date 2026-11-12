@@ -13,6 +13,7 @@ import dev.strategos.core.protocol.UnitSummary;
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
+import dev.strategos.core.shared.Stance;
 import dev.strategos.core.sim.MatchQueries;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.UnitView;
@@ -22,6 +23,7 @@ import dev.strategos.core.sim.econ.Deposits;
 import dev.strategos.core.sim.econ.FactionTreasury;
 import dev.strategos.core.sim.econ.NodeView;
 import dev.strategos.core.sim.nav.MaterialKind;
+import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.core.sim.stats.StatBreakdown;
 import java.util.ArrayList;
@@ -155,6 +157,16 @@ public final class ReplicationService {
      * order; another faction's unit, or a dead one, is left out. An observer (no viewer) gets any faction's.
      */
     public static UnitDetail detail(MatchQueries q, int matchId, @Nullable FactionSlot viewer, List<Integer> handles) {
+        return detail(q, matchId, viewer, handles, Visibility.ALL);
+    }
+
+    /**
+     * As {@link #detail(MatchQueries, int, FactionSlot, List)}, with each unit's current attack target (CMB-17): the
+     * index of the unit its current order attacks, left out when that unit is dead or {@code visibility} hides it from
+     * {@code viewer}.
+     */
+    public static UnitDetail detail(
+            MatchQueries q, int matchId, @Nullable FactionSlot viewer, List<Integer> handles, Visibility visibility) {
         List<UnitDetail.Unit> units = new ArrayList<>();
         for (int handle : handles) {
             UnitView unit = q.unit(handle);
@@ -164,10 +176,21 @@ public final class ReplicationService {
                 continue;
             }
             List<UnitDetail.Order> orders = new ArrayList<>();
+            int target = UnitDetail.NO_TARGET;
             for (OrderQueues.Order o : q.orders(handle)) {
+                if (orders.isEmpty() && o.target() != 0 && OrderKind.attacks(o.kind())) {
+                    UnitView attacked = q.unit(o.target());
+                    if (attacked != null
+                            && (viewer == null
+                                    || attacked.faction().equals(viewer)
+                                    || visibility.sees(viewer, attacked))) {
+                        target = Handle.index(o.target());
+                    }
+                }
                 orders.add(new UnitDetail.Order(o.kind(), (float) o.x(), (float) o.z()));
             }
             StatBreakdown speed = q.stats(handle, CorePaths.WALK_SPEED);
+            Stance stance = q.explicitStance(handle);
             units.add(new UnitDetail.Unit(
                     handle,
                     unit.templateIndex(),
@@ -177,12 +200,14 @@ public final class ReplicationService {
                     speed == null ? 0 : (float) speed.result(),
                     orders,
                     q.carriedResource(handle),
-                    q.carriedAmount(handle)));
+                    q.carriedAmount(handle),
+                    target,
+                    stance == null ? UnitDetail.NO_STANCE : stance.code()));
         }
         return new UnitDetail(matchId, q.tick(), units);
     }
 
-    /** A state's code in a summary entry: IDLE 0, WALKING 1, COMBAT 2, GATHERING 3, BUILDING 4. */
+    /** A state's code in a summary entry: IDLE 0, WALKING 1, COMBAT 2, GATHERING 3, BUILDING 4, GARRISONED 5. */
     public static int stateCode(UnitState state) {
         return switch (state) {
             case IDLE -> 0;
@@ -190,6 +215,7 @@ public final class ReplicationService {
             case COMBAT -> 2;
             case GATHERING -> 3;
             case BUILDING -> 4;
+            case GARRISONED -> 5;
         };
     }
 }

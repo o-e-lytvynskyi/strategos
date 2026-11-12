@@ -7,6 +7,8 @@ import dev.strategos.core.shared.TemplateId;
 final class Ids {
     static final TemplateId WORKER = TemplateSet.WORKER;
     static final TemplateId INFANTRY = TemplateSet.INFANTRY;
+    static final TemplateId ARCHER = new TemplateId("strategos:unit/archer");
+    static final TemplateId HORSEMAN = new TemplateId("strategos:unit/horseman");
     static final TemplateId SHEEP = new TemplateId("strategos:unit/sheep");
     static final TemplateId PIG = new TemplateId("strategos:unit/pig");
     static final TemplateId CIVIC_CENTRE = new TemplateId("strategos:building/civic_centre");

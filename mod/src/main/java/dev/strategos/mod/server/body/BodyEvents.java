@@ -79,7 +79,7 @@ public final class BodyEvents {
         server.faults().run(rt, "hurt", () -> rt.damage(DamageBridge.of(data.handle(), source, amount)));
     }
 
-    // AFTER-M6: T10 (MATCH-07) wires this to the fog gate with per-unit visibility; until then match membership only.
+    // AFTER-T10: MATCH-07 wires this to the fog gate with per-unit visibility; until then match membership only.
     /** Whether vanilla's tracking may pair {@code player} with a body of match {@code match} (the fog gate). */
     public static boolean canSee(int match, ServerPlayer player) {
         StrategosServer server = StrategosServer.getOrNull();

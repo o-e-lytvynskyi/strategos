@@ -126,6 +126,56 @@ public final class AiTests {
                 .thenSucceed();
     }
 
+    /**
+     * AI-03.4: a short seeded battle of the battle bot against itself, each side's six spearmen sent as a wave at 20 s
+     * with the shipped tactics knobs: both attack, and the match's journal replays to the live hash (the bots' own
+     * commands are not journaled; a replay thinks them again).
+     */
+    @StrategosTest(arena = "arena_flat_48", batch = "ai_battle", solo = true, timeoutTicks = 1_700)
+    public static void battleSeedReplaysToItsHash(GameTestHelper h) {
+        MatchRuntime rt = town(h, 5);
+        String script = Objects.requireNonNull(Scenarios.script(h.getLevel().getServer(), "battle"))
+                .replace("\"first\":450", "\"first\":1")
+                .replace("\"min\":14", "\"min\":4")
+                .replace("\"muster\":24", "\"muster\":12")
+                .replace("\"launch\":0.6", "\"launch\":0.4") // six spearmen against six and a centre
+                .replace("\"spears\":6", "\"spears\":0"); // the shipped reserve of six would be the whole army
+        for (int f = 0; f < 2; f++) {
+            rt.submit(
+                    PlayerSlot.ADMIN,
+                    new SpawnUnits(
+                            TemplateSet.INFANTRY,
+                            new FactionSlot(f),
+                            new Vec2d(f == 0 ? 12 : 26, f == 0 ? 12 : 26),
+                            6,
+                            2));
+            rt.submit(PlayerSlot.ADMIN, new SetAi(new FactionSlot(f), "battle", script));
+        }
+        int[] attacks = new int[2];
+        rt.addListener(out -> out.events().forEach(e -> {
+            if (e instanceof CommandResult r
+                    && !r.issuer().isAdmin()
+                    && r.issuer().value() < 2
+                    && r.kind().startsWith("strategos:attack")
+                    && r.accepted() > 0) {
+                attacks[r.issuer().value()]++;
+            }
+        }));
+        h.startSequence()
+                .thenWaitUntil(() -> check(
+                        core(rt).queries().tick() >= 1_500,
+                        "at tick " + core(rt).queries().tick()))
+                .thenExecute(() -> {
+                    check(attacks[0] > 0 && attacks[1] > 0, "attacks accepted: " + attacks[0] + ", " + attacks[1]);
+                    var core = core(rt);
+                    ReplayResult replay =
+                            ReplayDriver.replay(core.journal(), core.queries().templates());
+                    check(replay.matches(), "the replay diverged: " + replay);
+                    check(replay.finalHash() == core.stateHash(), "the replay ends at another hash");
+                })
+                .thenSucceed();
+    }
+
     @StrategosTest(arena = "arena_flat_48", batch = "ai_seed_1", solo = true, timeoutTicks = 1_600)
     public static void seedOneReplaysToItsHash(GameTestHelper h) {
         replays(h, 1);

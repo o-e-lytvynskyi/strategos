@@ -8,6 +8,8 @@ import dev.strategos.core.protocol.DebugFeedMsg;
 import dev.strategos.core.protocol.DebugLayer;
 import dev.strategos.core.protocol.DebugSubscribe;
 import dev.strategos.core.protocol.Feedback;
+import dev.strategos.core.protocol.Fx;
+import dev.strategos.core.protocol.FxKind;
 import dev.strategos.core.protocol.Limits;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.MatchStateMsg;
@@ -23,6 +25,7 @@ import dev.strategos.mod.server.net.payload.CommandsPayload;
 import dev.strategos.mod.server.net.payload.DebugFeedPayload;
 import dev.strategos.mod.server.net.payload.DebugSubscribePayload;
 import dev.strategos.mod.server.net.payload.FeedbackPayload;
+import dev.strategos.mod.server.net.payload.FxPayload;
 import dev.strategos.mod.server.net.payload.MatchJoinPayload;
 import dev.strategos.mod.server.net.payload.MatchStatePayload;
 import io.netty.buffer.Unpooled;
@@ -123,6 +126,24 @@ class PayloadRoundTripTest {
         } finally {
             buf.release();
         }
+    }
+
+    /** CMB-04: a payload of shot events, a full 64, round-trips through the real codec within the type's cap. */
+    @Test
+    void aShotFxPayloadRoundTripsWithinItsCap() {
+        List<Fx.Event> events = new java.util.ArrayList<>();
+        for (int k = 0; k < Fx.MAX_EVENTS; k++) {
+            events.add(Fx.Event.shot(
+                    k % 2 == 0 ? FxKind.SHOT_LAUNCH : FxKind.SHOT_IMPACT,
+                    12.5 + k,
+                    -3.25,
+                    200,
+                    8_000,
+                    90.125,
+                    7_000.5,
+                    Fx.MAX_FLIGHT_TICKS - k));
+        }
+        roundTrip(FxPayload.STREAM_CODEC, new FxPayload(new Fx(7, events)), FxPayload.SPEC.cap());
     }
 
     private static <P> void roundTrip(StreamCodec<RegistryFriendlyByteBuf, P> codec, P payload, int cap) {

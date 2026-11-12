@@ -7,6 +7,7 @@ import dev.strategos.core.protocol.Feedback;
 import dev.strategos.core.protocol.Fx;
 import dev.strategos.core.protocol.FxKind;
 import dev.strategos.core.protocol.MatchJoin;
+import dev.strategos.mod.client.fx.ShotArcs;
 import dev.strategos.mod.client.rts.RtsMode;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -32,11 +33,13 @@ import org.jspecify.annotations.Nullable;
  */
 public final class FxPlayer {
     private final RtsMode rts;
+    private final ShotArcs arcs;
     private final SoundBudget budget = new SoundBudget();
     private int played;
 
-    public FxPlayer(RtsMode rts) {
+    public FxPlayer(RtsMode rts, ShotArcs arcs) {
         this.rts = rts;
+        this.arcs = arcs;
     }
 
     public void accept(Fx fx, MatchJoin join) {
@@ -53,6 +56,13 @@ public final class FxPlayer {
             if (e.kind() == FxKind.FLAME) {
                 flames(level, join, e);
             }
+            // a shot sounds where it leaves and where it lands, and its arrow is drawn between (CMB-04)
+            boolean impact = e.kind() == FxKind.SHOT_IMPACT;
+            if (e.kind() == FxKind.SHOT_LAUNCH) {
+                arcs.launch(fx.matchId(), e, join.originX(), join.originY(), join.originZ(), level.getGameTime());
+            } else if (impact) {
+                arcs.impact(fx.matchId(), e);
+            }
             Sounds.Cue cue = Sounds.of(e.kind());
             SoundEvent sound = sound(cue);
             if (sound == null || !budget.take(e.kind(), level.getGameTime())) {
@@ -62,9 +72,9 @@ public final class FxPlayer {
                     ? cue.volume()
                     : Sounds.volume(cue, rig.height(), rig.pose().pitch());
             level.playLocalSound(
-                    join.originX() + e.x8() / 8.0,
-                    join.originY() + e.y8() / 8.0,
-                    join.originZ() + e.z8() / 8.0,
+                    join.originX() + (impact ? e.toX8() : e.x8()) / 8.0,
+                    join.originY() + (impact ? e.toY8() : e.y8()) / 8.0,
+                    join.originZ() + (impact ? e.toZ8() : e.z8()) / 8.0,
                     sound,
                     source(cue),
                     volume,

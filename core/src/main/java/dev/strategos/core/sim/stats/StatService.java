@@ -6,6 +6,7 @@ import dev.strategos.core.content.ValuePath;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.HotPath;
+import dev.strategos.core.shared.Stance;
 import dev.strategos.core.sim.IdentityStore;
 import dev.strategos.core.sim.MatchBus;
 import dev.strategos.core.sim.StatsChanged;
@@ -70,8 +71,22 @@ public final class StatService {
     private int reach;
     private int prepare;
     private int repeat;
+    private int[] ranged = new int[4];
+    private int rangedRange;
+    private int rangedPrepare;
+    private int rangedRepeat;
+    private int rangedSpeed;
+    private int rangedSpread;
+    private int highRange;
+    private int highDamage;
+    private int highMax;
     private int vision;
     private int flee;
+    private int stance;
+    private int meleePreferred;
+    private int rangedPreferred;
+    private int[] meleeBonusPaths = new int[0];
+    private String[] meleeBonusTokens = new String[0];
     private int classesPath;
     private int turnRate;
     private StatBlock[] blocks = new StatBlock[0];
@@ -160,8 +175,37 @@ public final class StatService {
         this.reach = path(CorePaths.MELEE_REACH);
         this.prepare = path(CorePaths.MELEE_PREPARE);
         this.repeat = path(CorePaths.MELEE_REPEAT);
+        this.ranged = new int[] {
+            path(CorePaths.RANGED_HACK),
+            path(CorePaths.RANGED_PIERCE),
+            path(CorePaths.RANGED_CRUSH),
+            path(CorePaths.RANGED_FIRE)
+        };
+        this.rangedRange = path(CorePaths.RANGED_RANGE);
+        this.rangedPrepare = path(CorePaths.RANGED_PREPARE);
+        this.rangedRepeat = path(CorePaths.RANGED_REPEAT);
+        this.rangedSpeed = path(CorePaths.RANGED_SPEED);
+        this.rangedSpread = path(CorePaths.RANGED_SPREAD);
+        this.highRange = path(CorePaths.HIGH_RANGE);
+        this.highDamage = path(CorePaths.HIGH_DAMAGE);
+        this.highMax = path(CorePaths.HIGH_MAX);
         this.vision = path(CorePaths.VISION);
         this.flee = path(CorePaths.FLEE);
+        this.stance = path(CorePaths.STANCE);
+        this.meleePreferred = tokenPath(CorePaths.MELEE_PREFERRED);
+        this.rangedPreferred = tokenPath(CorePaths.RANGED_PREFERRED);
+        List<ValuePath> bonuses = new ArrayList<>();
+        for (ValuePath p : set.valuePaths().all()) {
+            if (p.path().startsWith(CorePaths.MELEE_BONUS_PREFIX)) {
+                bonuses.add(p);
+            }
+        }
+        this.meleeBonusPaths = new int[bonuses.size()];
+        this.meleeBonusTokens = new String[bonuses.size()];
+        for (int k = 0; k < bonuses.size(); k++) {
+            meleeBonusPaths[k] = bonuses.get(k).id();
+            meleeBonusTokens[k] = bonuses.get(k).path().substring(CorePaths.MELEE_BONUS_PREFIX.length());
+        }
         this.classesPath = tokenPath(IDENTITY_CLASSES);
         this.blocks = new StatBlock[count * factions];
         for (int k = 0; k < blocks.length; k++) {
@@ -212,9 +256,91 @@ public final class StatService {
         return read(index, melee[type]);
     }
 
+    /** How many classes some template's melee attack has a bonus against (UNIT-07); 0 for most sets' units. */
+    public int meleeBonusCount() {
+        return meleeBonusPaths.length;
+    }
+
+    /** The class token of melee bonus {@code k}, in path order. */
+    public String meleeBonusToken(int k) {
+        return meleeBonusTokens[k];
+    }
+
+    /** Unit {@code index}'s multiplier for melee bonus {@code k}; 0 when its template has none against that class. */
+    public double meleeBonus(int index, int k) {
+        double value = read(index, meleeBonusPaths[k]);
+        return Double.isNaN(value) ? 0 : value;
+    }
+
     /** Whether unit {@code index} has a melee attack: some damage per hit. */
     public boolean canMelee(int index) {
         return meleeDamage(index, 0) > 0 || meleeDamage(index, 1) > 0 || meleeDamage(index, 2) > 0;
+    }
+
+    /** Ranged damage of type 0 hack, 1 pierce, 2 crush or 3 fire, after modifiers. */
+    public double rangedDamage(int index, int type) {
+        double value = read(index, ranged[type]);
+        return Double.isNaN(value) ? 0 : value;
+    }
+
+    /** Whether the unit has a ranged weapon with positive range and damage. */
+    public boolean canRanged(int index) {
+        return rangedRange(index) > 0
+                && (rangedDamage(index, 0) > 0
+                        || rangedDamage(index, 1) > 0
+                        || rangedDamage(index, 2) > 0
+                        || rangedDamage(index, 3) > 0);
+    }
+
+    /** Whether the unit can attack by either supported weapon. */
+    public boolean canAttack(int index) {
+        return canMelee(index) || canRanged(index);
+    }
+
+    /** Ranged reach in blocks. Zero disables a ranged weapon. */
+    public double rangedRange(int index) {
+        double value = read(index, rangedRange);
+        return Double.isNaN(value) ? 0 : value;
+    }
+
+    /** Ticks from starting a ranged attack to its first shot. */
+    public int rangedPrepare(int index) {
+        return (int) Math.round(read(index, rangedPrepare));
+    }
+
+    /** Ticks between ranged shots. */
+    public int rangedRepeat(int index) {
+        return (int) Math.max(1, Math.round(read(index, rangedRepeat)));
+    }
+
+    /** Projectile speed in blocks per tick. */
+    public double rangedSpeed(int index) {
+        double value = read(index, rangedSpeed);
+        return Double.isNaN(value) ? CorePaths.min(CorePaths.RANGED_SPEED) : value;
+    }
+
+    /** Horizontal shot spread, in percent of distance. */
+    public double rangedSpread(int index) {
+        double value = read(index, rangedSpread);
+        return Double.isNaN(value) ? 0 : value;
+    }
+
+    /** Share of ranged reach a block of height over the target adds (CMB-16). */
+    public double highGroundRange(int index) {
+        double value = read(index, highRange);
+        return Double.isNaN(value) ? 0 : value;
+    }
+
+    /** Share of ranged damage a block of height over the target adds (CMB-16). */
+    public double highGroundDamage(int index) {
+        double value = read(index, highDamage);
+        return Double.isNaN(value) ? 0 : value;
+    }
+
+    /** The most blocks of height over the target that count (CMB-16). */
+    public double highGroundMax(int index) {
+        double value = read(index, highMax);
+        return Double.isNaN(value) ? 0 : value;
     }
 
     /** Unit {@code index}'s melee reach, in blocks between its edge and its target's. */
@@ -240,6 +366,20 @@ public final class StatService {
     /** How far unit {@code index} runs from a blow when it cannot hit back, in blocks; 0 for none (UNIT-04). */
     public double fleeDistance(int index) {
         return read(index, flee);
+    }
+
+    /** Unit {@code index}'s stance as its template says (CMB-05); a player's choice is the stance store's. */
+    public Stance stance(int index) {
+        double value = read(index, stance);
+        Stance of = Double.isNaN(value) ? null : Stance.of((int) Math.round(value));
+        return of == null ? Stance.AGGRESSIVE : of;
+    }
+
+    /** The class tokens unit {@code index}'s melee or ranged attack picks its targets from first, in order (CMB-05). */
+    public List<String> preferredClasses(int index, boolean ranged) {
+        int path = ranged ? rangedPreferred : meleePreferred;
+        List<String> tokens = path < 0 ? null : tokens(index, path);
+        return tokens == null ? List.of() : tokens;
     }
 
     /** Whether unit {@code index} gathers: its classes hold {@value #GATHERER} (D-02, UNIT-04). */

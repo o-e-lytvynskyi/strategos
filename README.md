@@ -63,7 +63,7 @@ rules every developer and agent follows are in [AGENTS.md](AGENTS.md).
 |---|---|
 | [docs/STATE.md](docs/STATE.md) | Where the project stands, milestone by milestone |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | Milestones, features and the decisions the owner approves |
-| [docs/claims.md](docs/claims.md) | Who works on what |
+| [docs/branches/](docs/branches/README.md) | Who works on what: one branch file per claim |
 | [docs/onboarding.md](docs/onboarding.md) | Joining as a developer: tools, approach, claim to merge, reports |
 | [docs/developer-setup.md](docs/developer-setup.md) | Setting up Claude Code or Codex for the project |
 | [docs/01-feasibility.md](docs/01-feasibility.md) | What is realistic, complexity, risks, the MVP |

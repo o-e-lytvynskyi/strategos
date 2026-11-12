@@ -25,8 +25,17 @@ final class Footing {
         if (motion.floor(i) == MotionStore.NO_FLOOR) {
             return;
         }
-        double floorY = s.config().bounds().minY() + standFloor(s, i) / 16.0;
+        height(s, i, standFloor(s, i));
+    }
+
+    /** The same per-tick easing with an already verified footprint floor. */
+    static void height(MatchState s, int i, int floor) {
+        MotionStore motion = s.motion();
+        double floorY = s.config().bounds().minY() + floor / 16.0;
         double y = motion.y(i);
+        if (Double.doubleToLongBits(floorY) == Double.doubleToLongBits(y) && !motion.rising(i)) {
+            return; // no changed store values; preserve the original signed-zero normalization
+        }
         if (floorY > y) {
             if (motion.rising(i)) {
                 y = floorY;

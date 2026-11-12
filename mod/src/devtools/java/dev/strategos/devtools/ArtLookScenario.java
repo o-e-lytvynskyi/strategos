@@ -6,6 +6,7 @@ import dev.strategos.core.port.MetricsSink;
 import dev.strategos.core.protocol.SpawnUnits;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
+import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.client.StrategosClient;
@@ -32,13 +33,17 @@ import org.lwjgl.glfw.GLFW;
  * ART-01.3's scene (golden candidates for T30): at noon, four workers of faction 0 and four spearmen each of factions 0
  * and 1 stand still; the RTS camera looks at them from its default 24 blocks and from its top, 64. Each body must be
  * dressed in its look: the dyed tunic, a spearman's helmet, trident and shield. Frames {@code look_24} and
- * {@code look_64}.
+ * {@code look_64}; then, for M5 (T17), four archers and four horsemen with riders join the row: {@code look_m5_64},
+ * {@code look_m5_24}.
  */
 final class ArtLookScenario implements Scenario {
     private static final int EACH = 4;
+    private static final TemplateId ARCHER = new TemplateId("strategos:unit/archer");
+    private static final TemplateId HORSEMAN = new TemplateId("strategos:unit/horseman");
     private static final int SETTLE = 50;
 
     private final StringBuilder failures = new StringBuilder();
+    private @Nullable MatchRuntime match;
     private int phase;
     private int wait;
 
@@ -62,6 +67,7 @@ final class ArtLookScenario implements Scenario {
                         level,
                         StrategosCommands.spaceAround(level, new BlockPos(0, floor, 0), 128, 128),
                         new MatchOptions(5L, 2, false, MatchSource.GAMETEST, null, MetricsSink.none(), floor));
+        match = rt;
         rt.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.WORKER, new FactionSlot(0), new Vec2d(60, 82), EACH, 2));
         rt.submit(
                 PlayerSlot.ADMIN,
@@ -138,6 +144,48 @@ final class ArtLookScenario implements Scenario {
             case 3 -> {
                 RtsGoldensScenario.pinBodies(mc);
                 ctx.capture("look_64");
+            }
+            case 4 -> { // M5's archers and horsemen join the row; the frames above stay as approved (T17)
+                IntegratedServer server = mc.getSingleplayerServer();
+                MatchRuntime rt = match;
+                if (server != null && rt != null) {
+                    server.execute(() -> {
+                        rt.submit(
+                                PlayerSlot.ADMIN,
+                                new SpawnUnits(ARCHER, new FactionSlot(0), new Vec2d(74, 82), EACH, 2));
+                        rt.submit(
+                                PlayerSlot.ADMIN,
+                                new SpawnUnits(HORSEMAN, new FactionSlot(0), new Vec2d(79, 82), EACH, 2));
+                        ScenarioWorld.run(server, "tick unfreeze");
+                    });
+                }
+                wait = SETTLE;
+            }
+            case 5 -> {
+                if (bodies(mc) < 5 * EACH) {
+                    return tick > 3_000 && fail(ctx, bodies(mc) + " bodies of " + 5 * EACH);
+                }
+                IntegratedServer server = mc.getSingleplayerServer();
+                if (server != null) {
+                    server.execute(() -> ScenarioWorld.run(server, "tick freeze"));
+                }
+                rts.centreOn(5.5, 18);
+                wait = SETTLE;
+            }
+            case 6 -> {
+                RtsGoldensScenario.pinBodies(mc);
+                ctx.capture("look_m5_64");
+            }
+            case 7 -> {
+                CameraRig rig = rts.rig();
+                if (rig != null) {
+                    rig.zoomTo(CameraRig.DEFAULT_HEIGHT);
+                }
+                wait = SETTLE;
+            }
+            case 8 -> {
+                RtsGoldensScenario.pinBodies(mc);
+                ctx.capture("look_m5_24");
             }
             default -> {
                 mc.options.hideGui = false;

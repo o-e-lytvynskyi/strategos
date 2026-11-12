@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
@@ -34,6 +35,7 @@ import org.openjdk.jmh.annotations.State;
  * floor with steps (a {@code @HotPath} kernel: no allocation). Every 200 ticks the units are put back at their starts
  * on the same paths, from arrays, so they never arrive. Per unit: the score divided by 600 (budget: 5 µs).
  */
+@Fork(2)
 @State(Scope.Thread)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)

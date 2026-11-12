@@ -17,4 +17,8 @@ public final class Modifiers {
     public static boolean ctrl(int mods) {
         return (mods & CTRL) != 0;
     }
+
+    public static boolean alt(int mods) {
+        return (mods & ALT) != 0;
+    }
 }

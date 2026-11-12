@@ -1,12 +1,14 @@
 package dev.strategos.gametest.suites;
 
 import dev.strategos.core.sim.econ.EconomyTimes;
+import org.jspecify.annotations.Nullable;
 
 /**
  * What the first loop's soak adds (PERF-06.4), per sampled tick in nanoseconds: the block writer's {@code setBlock}
  * time, the fx sent for the match, and the commands phase of each tick that applied a placement; the placements
  * accepted and refused, the waves, the buildings at the end, one save of the match's blob in the window (budget G),
- * -1 if it has none, and the economy's node index and dropsite query times in the window (PERF-07.4).
+ * -1 if it has none, the economy's node index and dropsite query times in the window (PERF-07.4), and the battle's
+ * combat systems' times (PERF-08).
  */
 final class SoakCosts {
     private final long[] writer;
@@ -21,6 +23,21 @@ final class SoakCosts {
     private final int buildings;
     private final long saveNanos;
     private final EconomyTimes.Stats economy;
+    private final @Nullable Combat combat;
+
+    /**
+     * PERF-08: per sampled tick in nanoseconds, the units' enemy searches (targeting), the centres' volleys, the shot
+     * system and the damage system; and in the window the searches made, the shots fired, the hits dealt and the deaths.
+     */
+    record Combat(
+            long[] targeting,
+            long[] volleys,
+            long[] shots,
+            long[] damage,
+            long searches,
+            long shotsFired,
+            long hits,
+            long deaths) {}
 
     SoakCosts(
             long[] writer,
@@ -34,7 +51,8 @@ final class SoakCosts {
             int waves,
             int buildings,
             long saveNanos,
-            EconomyTimes.Stats economy) {
+            EconomyTimes.Stats economy,
+            @Nullable Combat combat) {
         this.writer = writer;
         this.fx = fx;
         this.adapter = adapter;
@@ -47,6 +65,7 @@ final class SoakCosts {
         this.buildings = buildings;
         this.saveNanos = saveNanos;
         this.economy = economy;
+        this.combat = combat;
     }
 
     long[] writer() {
@@ -98,5 +117,10 @@ final class SoakCosts {
     /** PERF-07.4: the node index's and the dropsite queries' counts and times in the window. */
     EconomyTimes.Stats economy() {
         return economy;
+    }
+
+    /** PERF-08: the combat systems' times; null for the other scenes. */
+    @Nullable Combat combat() {
+        return combat;
     }
 }

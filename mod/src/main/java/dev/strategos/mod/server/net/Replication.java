@@ -88,7 +88,7 @@ public final class Replication {
         visibility.put(match, rule);
     }
 
-    // AFTER-M6: T10 (MATCH-07) gates this on the fog option; until then every unit is visible.
+    // AFTER-T10: MATCH-07 gates this on the fog option; until then every unit is visible.
     private Visibility visibility(MatchRuntime rt) {
         return visibility.getOrDefault(rt.id(), Visibility.ALL);
     }
@@ -206,6 +206,8 @@ public final class Replication {
     /**
      * Each seated player's buildings (BLD-01), when they differ from the last the player got, at the summaries' pace:
      * its own faction's with the owner's fields, the others' without them.
+     * AFTER-T10: building fog (hide unexplored enemy buildings) needs the pristine guard and cell-coordinate
+     * conversion when the fog option is wired; until then every live building is sent.
      */
     private void sendBuildings() {
         for (MatchRuntime rt : matches.get().all()) {
@@ -284,8 +286,8 @@ public final class Replication {
             if (player == null || seat == null || core == null || sub.handles.isEmpty()) {
                 continue;
             }
-            UnitDetail detail =
-                    ReplicationService.detail(core.queries(), seat.match().id().value(), viewer(seat), sub.handles);
+            UnitDetail detail = ReplicationService.detail(
+                    core.queries(), seat.match().id().value(), viewer(seat), sub.handles, visibility(seat.match()));
             UnitDetail last = sub.sent;
             if (last == null || !last.units().equals(detail.units())) {
                 sub.sent = detail;

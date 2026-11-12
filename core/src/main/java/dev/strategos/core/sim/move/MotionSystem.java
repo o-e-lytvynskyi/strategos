@@ -102,6 +102,7 @@ public final class MotionSystem implements MatchSystem {
     private static final byte SETTLING = 0;
     private static final byte WALKING = 1;
     private static final byte SPENT = 2; // walking, with no waypoint and no request: nowhere to go this tick
+    private static final byte HIDDEN = 3; // garrisoned: neither walking nor settling, passed by every pass
 
     private static final byte LANDS = 1;
     private static final byte FOLLOWING = 2;
@@ -110,6 +111,7 @@ public final class MotionSystem implements MatchSystem {
 
     private final MatchState state;
     private final Avoidance avoidance;
+    private final RestingGround restingGround = new RestingGround();
     private final StuckLadder ladder = new StuckLadder();
     private final IntConsumer toucher = this::touch;
     private final IntConsumer taker = this::take;
@@ -161,13 +163,15 @@ public final class MotionSystem implements MatchSystem {
             }
             if (s.ai().state(i) == UnitState.WALKING && orders.kind(i) != OrderKind.NONE) {
                 steer(s, i);
+            } else if (s.garrisoned(i)) {
+                mode[i] = HIDDEN; // inside a building: no step, no push, nothing to plan (BLD-16)
             } else {
                 mode[i] = SETTLING;
             }
         }
         avoidance.intents(mode, endX, endZ, WALKING);
         for (int i = 0; i < highWater; i++) { // plan, round the others' places and the walkers' steps
-            if (!entities.aliveAt(i)) {
+            if (!entities.aliveAt(i) || mode[i] == HIDDEN) {
                 continue;
             }
             if (mode[i] == WALKING && s.motion().ghostTicks(i) > 0) {
@@ -183,7 +187,7 @@ public final class MotionSystem implements MatchSystem {
             }
         }
         for (int i = 0; i < highWater; i++) { // move
-            if (!entities.aliveAt(i)) {
+            if (!entities.aliveAt(i) || mode[i] == HIDDEN) {
                 continue;
             }
             switch (mode[i]) {
@@ -336,7 +340,7 @@ public final class MotionSystem implements MatchSystem {
     private void planIdle(MatchState s, int i) {
         avoiding[i] = Stagger.selects(s.tick(), i, IDLE_EVERY);
         if (avoiding[i]) {
-            avoidance.plan(s, i, 0, 0, s.stats().walkSpeed(i) * speedFactor(s, i), false);
+            avoidance.planIdle(s, i);
             planX[i] = avoidance.x();
             planZ[i] = avoidance.z();
         }
@@ -404,13 +408,13 @@ public final class MotionSystem implements MatchSystem {
         double y0 = motion.y(i);
         double z0 = motion.z(i);
         boolean pushed = false;
-        if (ground(s, i)) {
+        if (restingGround.ground(s, i)) {
             if (avoiding[i] && (planX[i] != 0 || planZ[i] != 0)) {
-                move(s, i, x0 + planX[i], z0 + planZ[i]);
+                move(s, i, x0 + planX[i], z0 + planZ[i], true);
                 pushed = motion.x(i) != x0 || motion.z(i) != z0;
             }
             motion.setVelocity(i, motion.x(i) - x0, motion.z(i) - z0);
-            Footing.height(s, i);
+            restingGround.height(s, i);
             if (pushed || motion.y(i) != y0) {
                 s.frame().add(handle, motion.x(i), motion.y(i), motion.z(i), motion.yaw(i), STANDING);
             }
@@ -498,6 +502,7 @@ public final class MotionSystem implements MatchSystem {
             return;
         }
         int capacity = Math.max(size, mode.length * 2);
+        restingGround.ensure(capacity);
         mode = new byte[capacity];
         flags = new byte[capacity];
         avoiding = new boolean[capacity];
@@ -548,6 +553,7 @@ public final class MotionSystem implements MatchSystem {
         for (int j = 0; j < s.entities().highWater(); j++) {
             if (j == i
                     || !s.entities().aliveAt(j)
+                    || s.mobility(j) != s.mobility(i)
                     || orders.group(j) != group
                     || orders.kind(j) != orders.kind(i)
                     || s.ai().state(j) != UnitState.WALKING) {
@@ -582,9 +588,9 @@ public final class MotionSystem implements MatchSystem {
      * passable surface at most a quarter block above the floor (or the unit's feet, for a unit that never stood on one),
      * else the lowest passable surface; false when the column has none.
      */
-    private static boolean ground(MatchState s, int i) {
+    static boolean ground(MatchState s, int i) {
         MotionStore motion = s.motion();
-        SurfaceGrid grid = s.surfaces();
+        SurfaceGrid grid = s.surfacesFor(i);
         int cx = (int) Math.floor(motion.x(i));
         int cz = (int) Math.floor(motion.z(i));
         int floor = motion.floor(i);
@@ -626,13 +632,17 @@ public final class MotionSystem implements MatchSystem {
      * along X alone, else along Z alone; false when it stays. A unit on no surface moves straight, as in M0.
      */
     private static boolean move(MatchState s, int i, double nx, double nz) {
+        return move(s, i, nx, nz, false);
+    }
+
+    private static boolean move(MatchState s, int i, double nx, double nz, boolean grounded) {
         MotionStore motion = s.motion();
         double x = motion.x(i);
         double z = motion.z(i);
         if (nx == x && nz == z) {
             return false;
         }
-        if (!ground(s, i)) {
+        if (!grounded && !ground(s, i)) {
             motion.set(i, nx, motion.y(i), nz, motion.yaw(i));
             return true;
         }
@@ -649,7 +659,7 @@ public final class MotionSystem implements MatchSystem {
         if (nx == x && nz == z) {
             return false;
         }
-        SurfaceGrid grid = s.surfaces();
+        SurfaceGrid grid = s.surfacesFor(i);
         int cx = (int) Math.floor(x);
         int cz = (int) Math.floor(z);
         int ncx = (int) Math.floor(nx);
@@ -719,13 +729,17 @@ public final class MotionSystem implements MatchSystem {
         return turned;
     }
 
+    static double idleSpeed(MatchState s, int i) {
+        return s.stats().walkSpeed(i) * speedFactor(s, i);
+    }
+
     /** The surface's effect on speed: shallow water halves it, slow ground takes it to six tenths. */
     private static double speedFactor(MatchState s, int i) {
         MotionStore motion = s.motion();
         if (motion.floor(i) == MotionStore.NO_FLOOR) {
             return 1;
         }
-        SurfaceGrid grid = s.surfaces();
+        SurfaceGrid grid = s.surfacesFor(i);
         int cx = (int) Math.floor(motion.x(i));
         int cz = (int) Math.floor(motion.z(i));
         int layer = layerOf(grid, cx, cz, motion.floor(i));
@@ -742,7 +756,7 @@ public final class MotionSystem implements MatchSystem {
     /** Whether unit {@code i} can walk straight from where it stands to (tx, tz). */
     private static boolean inLine(MatchState s, int i, double tx, double tz) {
         MotionStore motion = s.motion();
-        SurfaceGrid grid = s.surfaces();
+        SurfaceGrid grid = s.surfacesFor(i);
         int cx = (int) Math.floor(motion.x(i));
         int cz = (int) Math.floor(motion.z(i));
         int layer = motion.floor(i) == MotionStore.NO_FLOOR ? -1 : layerOf(grid, cx, cz, motion.floor(i));

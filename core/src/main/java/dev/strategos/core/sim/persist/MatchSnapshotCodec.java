@@ -23,8 +23,11 @@ import dev.strategos.core.sim.MotionStore;
 import dev.strategos.core.sim.PageRef;
 import dev.strategos.core.sim.UnitRecord;
 import dev.strategos.core.sim.build.BuildingStore;
+import dev.strategos.core.sim.combat.Damage;
+import dev.strategos.core.sim.combat.ShotStore;
 import dev.strategos.core.sim.econ.CarryStore;
 import dev.strategos.core.sim.econ.NodeStore;
+import dev.strategos.core.sim.garrison.GarrisonStore;
 import dev.strategos.core.sim.nav.MemberPath;
 import dev.strategos.core.sim.nav.PathRequest;
 import dev.strategos.core.sim.nav.PathResult;
@@ -32,6 +35,7 @@ import dev.strategos.core.sim.nav.PathStatus;
 import dev.strategos.core.sim.nav.PathStore;
 import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.order.OrderQueues;
+import dev.strategos.core.sim.order.StanceStore;
 import dev.strategos.core.sim.unitai.StateId;
 import dev.strategos.core.sim.unitai.UnitAi;
 import java.util.Arrays;
@@ -395,6 +399,62 @@ public final class MatchSnapshotCodec {
                     Codec.LONG.listOf().fieldOf("memory").forGetter(AiSlots.Saved::memory))
             .apply(i, AiSlots.Saved::new));
 
+    private static final Codec<Damage.Bonus> SHOT_BONUS = RecordCodecBuilder.create(i -> i.group(
+                    Codec.STRING.fieldOf("token").forGetter(Damage.Bonus::token),
+                    Codec.FLOAT.fieldOf("multiplier").forGetter(Damage.Bonus::multiplier))
+            .apply(i, Damage.Bonus::new));
+
+    private static final Codec<Damage> SHOT_DAMAGE = RecordCodecBuilder.create(i -> i.group(
+                    Codec.INT.fieldOf("target").forGetter(Damage::target),
+                    Codec.INT.fieldOf("attacker").forGetter(Damage::attacker),
+                    Codec.FLOAT.fieldOf("hack").forGetter(Damage::hack),
+                    Codec.FLOAT.fieldOf("pierce").forGetter(Damage::pierce),
+                    Codec.FLOAT.fieldOf("crush").forGetter(Damage::crush),
+                    Codec.FLOAT.fieldOf("fire").forGetter(Damage::fire),
+                    SHOT_BONUS.listOf().fieldOf("bonuses").forGetter(Damage::bonuses),
+                    Codec.BOOL.fieldOf("lethal").forGetter(Damage::lethal))
+            .apply(i, Damage::new));
+
+    private static final Codec<ShotStore.Release> RELEASE = RecordCodecBuilder.create(i -> i.group(
+                    Codec.DOUBLE.fieldOf("x").forGetter(ShotStore.Release::x),
+                    Codec.DOUBLE.fieldOf("y").forGetter(ShotStore.Release::y),
+                    Codec.DOUBLE.fieldOf("z").forGetter(ShotStore.Release::z),
+                    Codec.LONG.fieldOf("tick").forGetter(ShotStore.Release::tick))
+            .apply(i, ShotStore.Release::new));
+
+    private static final Codec<ShotStore.Shot> SHOT = RecordCodecBuilder.create(i -> i.group(
+                    Codec.LONG.fieldOf("id").forGetter(ShotStore.Shot::id),
+                    Codec.INT.fieldOf("shooter").forGetter(ShotStore.Shot::shooter),
+                    Codec.INT.fieldOf("target").forGetter(ShotStore.Shot::target),
+                    Codec.LONG.fieldOf("landTick").forGetter(ShotStore.Shot::landTick),
+                    Codec.DOUBLE.fieldOf("landingX").forGetter(ShotStore.Shot::landingX),
+                    Codec.DOUBLE.fieldOf("landingY").forGetter(ShotStore.Shot::landingY),
+                    Codec.DOUBLE.fieldOf("landingZ").forGetter(ShotStore.Shot::landingZ),
+                    SHOT_DAMAGE.fieldOf("damage").forGetter(ShotStore.Shot::damage),
+                    RELEASE.optionalFieldOf("release").forGetter(shot -> Optional.ofNullable(shot.release())))
+            .apply(
+                    i,
+                    (id, shooter, target, landTick, x, y, z, damage, release) ->
+                            new ShotStore.Shot(id, shooter, target, landTick, x, y, z, damage, release.orElse(null))));
+
+    private static final Codec<ShotStore.Snapshot> SHOTS = RecordCodecBuilder.create(i -> i.group(
+                    Codec.LONG.fieldOf("nextId").forGetter(ShotStore.Snapshot::nextId),
+                    SHOT.listOf().fieldOf("rows").forGetter(ShotStore.Snapshot::rows))
+            .apply(i, ShotStore.Snapshot::new));
+
+    private static final Codec<StanceStore.Saved> STANCE = RecordCodecBuilder.create(i -> i.group(
+                    Codec.INT.fieldOf("unit").forGetter(StanceStore.Saved::handle),
+                    Codec.INT.fieldOf("stance").forGetter(StanceStore.Saved::stance),
+                    Codec.DOUBLE.fieldOf("x").forGetter(StanceStore.Saved::x),
+                    Codec.DOUBLE.fieldOf("z").forGetter(StanceStore.Saved::z))
+            .apply(i, StanceStore.Saved::new));
+
+    private static final Codec<GarrisonStore.Saved> GARRISON = RecordCodecBuilder.create(i -> i.group(
+                    Codec.INT.fieldOf("unit").forGetter(GarrisonStore.Saved::unit),
+                    Codec.INT.fieldOf("building").forGetter(GarrisonStore.Saved::building),
+                    Codec.BOOL.optionalFieldOf("bell", false).forGetter(GarrisonStore.Saved::bell))
+            .apply(i, GarrisonStore.Saved::new));
+
     static final Codec<MatchSnapshot.Play> PLAY = RecordCodecBuilder.create(i -> i.group(
                     Codec.LONG.listOf().optionalFieldOf("outcome", List.of()).forGetter(MatchSnapshot.Play::outcome),
                     COMPUTER.listOf().optionalFieldOf("ai", List.of()).forGetter(MatchSnapshot.Play::ai),
@@ -405,8 +465,25 @@ public final class MatchSnapshotCodec {
                             .listOf()
                             .optionalFieldOf("matchStats", List.of())
                             .forGetter(MatchSnapshot.Play::matchStats),
-                    Codec.LONG.listOf().optionalFieldOf("vision", List.of()).forGetter(MatchSnapshot.Play::vision))
+                    Codec.LONG.listOf().optionalFieldOf("vision", List.of()).forGetter(MatchSnapshot.Play::vision),
+                    SHOTS.optionalFieldOf("shots", ShotStore.Snapshot.EMPTY).forGetter(MatchSnapshot.Play::shots),
+                    STANCE.listOf().optionalFieldOf("stances", List.of()).forGetter(MatchSnapshot.Play::stances),
+                    GARRISON.listOf().optionalFieldOf("garrisons", List.of()).forGetter(MatchSnapshot.Play::garrisons))
             .apply(i, MatchSnapshot.Play::new));
+
+    private static final Codec<MatchSnapshot.TemplateBinding> BINDING = RecordCodecBuilder.create(i -> i.group(
+                    Codec.INT.fieldOf("index").forGetter(MatchSnapshot.TemplateBinding::index),
+                    TemplateId.CODEC.fieldOf("id").forGetter(MatchSnapshot.TemplateBinding::id))
+            .apply(i, MatchSnapshot.TemplateBinding::new));
+
+    private record Tail(MatchSnapshot.Play play, List<MatchSnapshot.TemplateBinding> bindings) {}
+
+    private static final MapCodec<Tail> TAIL = RecordCodecBuilder.mapCodec(i -> i.group(
+                    PLAY.optionalFieldOf("play", MatchSnapshot.Play.EMPTY).forGetter(Tail::play),
+                    BINDING.listOf()
+                            .optionalFieldOf("templateBindings", List.of())
+                            .forGetter(Tail::bindings))
+            .apply(i, Tail::new));
 
     /** The fields, without {@code "v"}. */
     public static final Codec<MatchSnapshot> CODEC = RecordCodecBuilder.create(i -> i.group(
@@ -430,8 +507,42 @@ public final class MatchSnapshotCodec {
                     BUILDING.listOf().optionalFieldOf("buildings", List.of()).forGetter(MatchSnapshot::buildings),
                     Codec.LONG.listOf().optionalFieldOf("ledger", List.of()).forGetter(MatchSnapshot::ledger),
                     CARRY.listOf().optionalFieldOf("carried", List.of()).forGetter(MatchSnapshot::carried),
-                    PLAY.optionalFieldOf("play", MatchSnapshot.Play.EMPTY).forGetter(MatchSnapshot::play))
-            .apply(i, MatchSnapshot::new));
+                    TAIL.forGetter(s -> new Tail(s.play(), s.templateBindings())))
+            .apply(
+                    i,
+                    (config,
+                            tick,
+                            hash,
+                            slots,
+                            units,
+                            commands,
+                            pages,
+                            paths,
+                            group,
+                            treasury,
+                            edits,
+                            nodes,
+                            buildings,
+                            ledger,
+                            carried,
+                            tail) -> new MatchSnapshot(
+                            config,
+                            tick,
+                            hash,
+                            slots,
+                            units,
+                            commands,
+                            pages,
+                            paths,
+                            group,
+                            treasury,
+                            edits,
+                            nodes,
+                            buildings,
+                            ledger,
+                            carried,
+                            tail.play(),
+                            tail.bindings())));
 
     private MatchSnapshotCodec() {}
 
@@ -450,7 +561,17 @@ public final class MatchSnapshotCodec {
      */
     public static <T> DataResult<MatchSnapshot> decode(Dynamic<T> raw, Migrations migrations) {
         try {
-            return migrations.migrate(raw, SchemaVersion.CURRENT).flatMap(CODEC::parse);
+            return migrations
+                    .migrate(raw, SchemaVersion.CURRENT)
+                    .flatMap(CODEC::parse)
+                    .flatMap(snapshot -> {
+                        if (snapshot.templateBindings().isEmpty()
+                                && snapshot.buildings().stream().anyMatch(BuildingStore.Saved::alive)) {
+                            return DataResult.error(
+                                    () -> "schema 3 snapshot with live buildings needs template bindings");
+                        }
+                        return DataResult.success(snapshot);
+                    });
         } catch (RuntimeException e) {
             return DataResult.error(() -> "cannot decode the snapshot: " + e.getMessage());
         }

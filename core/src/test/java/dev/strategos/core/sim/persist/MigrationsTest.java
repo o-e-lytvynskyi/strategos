@@ -34,6 +34,21 @@ class MigrationsTest {
     }
 
     @Test
+    void schemaThreeBlocksOldReadersAndBindsOnlyTheOriginalReservedTable() {
+        Dynamic<JsonElement> old = json("{\"v\":2,\"buildings\":[{\"template\":31}]}");
+        var migrated =
+                Migrations.production().migrate(old, SchemaVersion.CURRENT).getOrThrow();
+        assertThat(migrated.get("v").asInt(0)).isEqualTo(3);
+        assertThat(migrated.get("buildings").get().getOrThrow())
+                .isEqualTo(old.get("buildings").get().getOrThrow());
+        var bindings = migrated.get("templateBindings").asStream().toList();
+        assertThat(bindings).hasSize(5);
+        assertThat(bindings.getLast().get("index").asInt(-1)).isEqualTo(4);
+        assertThat(bindings.getLast().get("id").asString("")).isEqualTo("strategos:building/civic_centre");
+        assertThat(Migrations.production().migrate(migrated, 2).error()).isPresent();
+    }
+
+    @Test
     void aMissingVersionFails() {
         DataResult<Dynamic<JsonElement>> result = Migrations.production().migrate(json("{\"tick\":1}"), 1);
         assertThat(result.error()).isPresent();

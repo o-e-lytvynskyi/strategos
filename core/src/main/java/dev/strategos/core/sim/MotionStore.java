@@ -15,6 +15,7 @@ public final class MotionStore {
     /** No surface known: the unit has not touched terrain yet, or stands on none. */
     public static final int NO_FLOOR = -1;
 
+    private long writes;
     private double[] x = new double[0];
     private double[] y = new double[0];
     private double[] z = new double[0];
@@ -118,10 +119,16 @@ public final class MotionStore {
     }
 
     public void set(int i, double x, double y, double z, float yaw) {
+        writes++;
         this.x[i] = x;
         this.y[i] = y;
         this.z[i] = z;
         this.yaw[i] = yaw;
+    }
+
+    /** How many times a pose was set: equal at two moments, no unit moved or turned between them. */
+    public long writes() {
+        return writes;
     }
 
     public double vx(int i) {

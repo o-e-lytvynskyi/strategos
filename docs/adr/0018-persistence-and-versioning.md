@@ -4,7 +4,7 @@ Date: 2026-10-21
 
 ## Status
 
-Accepted
+Accepted; amended by [ADR-0027](0027-save-template-identities.md) (template identities)
 
 ## Context
 

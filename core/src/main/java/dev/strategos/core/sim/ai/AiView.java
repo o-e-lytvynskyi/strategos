@@ -29,6 +29,17 @@ public final class AiView {
     private @Nullable List<UnitView> enemies;
     private @Nullable List<BuildingView> all;
     private @Nullable List<NodeView> nodes;
+    private int @Nullable [] roles;
+    private double @Nullable [] worths;
+
+    /** A unit that is no soldier: a worker, an animal. */
+    public static final int ROLE_NONE = 0;
+    /** A melee foot soldier: the spearman. */
+    public static final int ROLE_SPEAR = 1;
+    /** A ranged foot soldier: the archer. */
+    public static final int ROLE_ARCHER = 2;
+    /** A mounted soldier: the horseman. */
+    public static final int ROLE_HORSE = 3;
 
     public AiView(MatchQueries q, int faction, AiBudget budget) {
         this.q = q;
@@ -226,5 +237,66 @@ public final class AiView {
             }
         }
         return null;
+    }
+
+    /** What template net index {@code index} fights as: one of the {@code ROLE_} constants (AI-03). */
+    public int roleOf(int index) {
+        int[] r = roles;
+        if (r == null) {
+            r = new int[q.templates().indexCount()];
+            java.util.Arrays.fill(r, -1);
+            roles = r;
+        }
+        if (index < 0 || index >= r.length || !q.templates().has(index)) {
+            return ROLE_NONE;
+        }
+        if (r[index] < 0) {
+            List<String> c = q.templates().byIndex(index).classes();
+            r[index] = c.contains("Cavalry")
+                    ? ROLE_HORSE
+                    : c.contains("Archer") ? ROLE_ARCHER : c.contains("Infantry") ? ROLE_SPEAR : ROLE_NONE;
+        }
+        return r[index];
+    }
+
+    /** What unit {@code u} fights as. */
+    public int role(UnitView u) {
+        return roleOf(u.templateIndex());
+    }
+
+    /** What unit {@code u} cost to train, all resources together, whole units: its worth in a fight (AI-03). */
+    public double worth(UnitView u) {
+        double[] w = worths;
+        int index = u.templateIndex();
+        if (w == null) {
+            w = new double[q.templates().indexCount()];
+            java.util.Arrays.fill(w, Double.NaN);
+            worths = w;
+        }
+        if (index < 0 || index >= w.length || !q.templates().has(index)) {
+            return 0;
+        }
+        if (Double.isNaN(w[index])) {
+            long sum = 0;
+            for (String r : resources()) {
+                sum += cost(u.template(), r);
+            }
+            w[index] = sum / 1000.0;
+        }
+        return w[index];
+    }
+
+    /** Unit {@code u}'s health as a fraction of its most, 1 for a unit without a maximum. */
+    public double health(UnitView u) {
+        double max = q.maxHitPoints(u.handle());
+        return max > 0 ? Math.min(1, q.hitPoints(u.handle()) / max) : 1;
+    }
+
+    /** The unit {@code u}'s current order attacks, or 0 when its first order attacks none. */
+    public int attackTarget(UnitView u) {
+        List<OrderQueues.Order> orders = q.orders(u.handle());
+        return !orders.isEmpty() && orders.get(0).kind() == OrderKind.ATTACK
+                ? orders.get(0).target()
+                : 0;
     }
 }

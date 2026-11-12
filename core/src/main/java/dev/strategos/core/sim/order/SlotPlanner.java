@@ -74,6 +74,47 @@ public final class SlotPlanner {
         }
         snap(s, px, pz, tx, cy, tz);
         assign(s, indices, cx, cz, fx, fz, n, width, spacing, px, pz);
+        snapLarge(s, indices, tx, cy, tz);
+    }
+
+    /** After matching units to places, each large member's final place must fit its own grid. */
+    private void snapLarge(MatchState s, int[] indices, double tx, double y, double tz) {
+        for (int k = 0; k < indices.length; k++) {
+            if (s.mobility(indices[k]) != dev.strategos.core.sim.nav.MobilityClass.LARGE) continue;
+            SurfaceGrid grid = s.surfacesFor(indices[k]);
+            if (grid.version() == 0) continue;
+            int home =
+                    PathService.startNode(grid, tx, y, tz, s.config().bounds().minY());
+            int component = home < 0 ? -1 : grid.component(home);
+            int ox = (int) Math.floor(xs[k]);
+            int oz = (int) Math.floor(zs[k]);
+            for (int c = 0; c < spiral.length; c += 2) {
+                int x = ox + spiral[c];
+                int z = oz + spiral[c + 1];
+                if (!grid.inside(x, z) || !holds(grid, x, z, component)) continue;
+                double candidateX = c == 0 ? xs[k] : x + 0.5;
+                double candidateZ = c == 0 ? zs[k] : z + 0.5;
+                if (crowdsAssigned(s, indices, k, candidateX, candidateZ)) continue;
+                xs[k] = candidateX;
+                zs[k] = candidateZ;
+                break;
+            }
+        }
+    }
+
+    private boolean crowdsAssigned(MatchState s, int[] indices, int k, double x, double z) {
+        double radius =
+                s.templates().byIndex(s.identity().templateIndex(indices[k])).radius();
+        for (int j = 0; j < indices.length; j++) {
+            if (j == k) continue;
+            double other = s.templates()
+                    .byIndex(s.identity().templateIndex(indices[j]))
+                    .radius();
+            double dx = xs[j] - x;
+            double dz = zs[j] - z;
+            if (dx * dx + dz * dz < (radius + other) * (radius + other)) return true;
+        }
+        return false;
     }
 
     /** The planned X of the unit at position {@code k} of the indices given. */

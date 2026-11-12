@@ -6,7 +6,7 @@ name: records
 on:
   pull_request:
     branches: [main]
-    paths: ['docs/claims.md', 'docs/branches/**', 'docs/ROADMAP.md', 'docs/roadmap/**', 'docs/milestones/**', 'tools/**']
+    paths: ['docs/branches/**', 'docs/ROADMAP.md', 'docs/roadmap/**', 'docs/milestones/**', 'tools/**']
   workflow_dispatch:
 
 concurrency:

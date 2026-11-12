@@ -12,6 +12,7 @@ import dev.strategos.core.testkit.VoxelWorld;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
@@ -23,6 +24,7 @@ import org.openjdk.jmh.annotations.State;
  * ECO-02.5 (L6): indexing the proving ground at prepare, under 2 s: its 576 slices decoded from their encoded form, as
  * the match keeps them, and every log and leaf of its forest found, the oaks joined into trees.
  */
+@Fork(2)
 @State(Scope.Thread)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)

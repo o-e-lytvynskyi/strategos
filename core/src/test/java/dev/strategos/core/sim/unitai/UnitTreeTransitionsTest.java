@@ -98,6 +98,10 @@ class UnitTreeTransitionsTest {
                 BuildTransitionRows.start(this, from);
             } else if (from.equals(UnitAi.BURN_APPROACHING) || from.equals(UnitAi.BURNING)) {
                 BurnTransitionRows.start(this, from);
+            } else if (from.equals(UnitAi.FLEEING)) {
+                FleeTransitionRows.start(this);
+            } else if (from.equals(UnitAi.GARRISON_APPROACHING) || from.equals(UnitAi.GARRISONED)) {
+                GarrisonTransitionRows.start(this, from);
             } else if (!from.equals(UnitAi.IDLE)) {
                 double ex = from.equals(UnitAi.ATTACKING) ? 5.2 : 10; // in reach (a 0.5 gap), or 6 blocks off
                 place(enemy, ex, 8);
@@ -246,7 +250,13 @@ class UnitTreeTransitionsTest {
     }
 
     static Stream<Arguments> unitRows() {
-        return Stream.of(rows(), GatherTransitionRows.rows(), BuildTransitionRows.rows(), BurnTransitionRows.rows())
+        return Stream.of(
+                        rows(),
+                        GatherTransitionRows.rows(),
+                        BuildTransitionRows.rows(),
+                        BurnTransitionRows.rows(),
+                        FleeTransitionRows.rows(),
+                        GarrisonTransitionRows.rows())
                 .flatMap(r -> r);
     }
 

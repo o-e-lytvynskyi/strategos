@@ -40,6 +40,43 @@ class SpatialOrderTest {
     }
 
     @Test
+    void anyOrderFindsTheUnitsOfTheOrderedQuery() {
+        SpatialWorld w = new SpatialWorld();
+        Random r = new Random(9);
+        for (int k = 0; k < 300; k++) {
+            w.add(r.nextDouble() * 64, r.nextDouble() * 64, r.nextInt(4), r.nextInt(3));
+        }
+        UnitGrid grid = w.grid(64, 64);
+        UnitFilter filter = UnitFilter.allBut(1);
+        List<Integer> ordered = new ArrayList<>();
+        List<Integer> unordered = new ArrayList<>();
+
+        grid.forEachInRadius(30, 31, 20, filter, ordered::add);
+        grid.forEachInRadiusAnyOrder(30, 31, 20, filter, unordered::add);
+
+        assertThat(ordered).hasSizeGreaterThan(20);
+        assertThat(unordered).doesNotHaveDuplicates().containsExactlyInAnyOrderElementsOf(ordered);
+        assertThatThrownBy(() -> grid.forEachInRadiusAnyOrder(
+                        5, 5, 2, UnitFilter.ANY, i -> grid.forEachInRadiusAnyOrder(5, 5, 2, UnitFilter.ANY, j -> {})))
+                .isInstanceOf(IllegalStateException.class);
+        assertThat(grid.countWithin(30, 31, 20, filter)).as("usable after").isEqualTo(ordered.size());
+    }
+
+    @Test
+    void theGridMatchesTheMotionStoreUntilAPoseIsSet() {
+        SpatialWorld w = new SpatialWorld();
+        w.add(5, 5, 0, 0);
+        UnitGrid grid = w.grid(16, 16);
+        assertThat(grid.matches(w.motion)).isTrue();
+
+        w.motion.set(0, 5.5, 0, 5, 0);
+        assertThat(grid.matches(w.motion)).as("a unit moved since the rebuild").isFalse();
+
+        grid.rebuild(w.entities, w.motion, w.identity);
+        assertThat(grid.matches(w.motion)).as("rebuilt").isTrue();
+    }
+
+    @Test
     void aReusedSlotKeepsItsPlace() {
         SpatialWorld w = new SpatialWorld();
         int first = w.add(10, 10, 0, 0);

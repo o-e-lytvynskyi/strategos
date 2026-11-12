@@ -1,5 +1,6 @@
 package dev.strategos.gametest;
 
+import dev.strategos.gametest.suites.ForeignLoadSampler;
 import dev.strategos.mod.Strategos;
 import java.nio.file.Path;
 import net.minecraft.gametest.framework.GlobalTestReporter;
@@ -26,6 +27,12 @@ public final class GameTestBootstrap {
         if (report != null && GameTestHooks.isGametestServer()) {
             GlobalTestReporter.replaceWith(
                     new TeeReporter(new LogTestReporter(), new JUnitXmlReporter(Path.of(report))));
+        }
+        if (System.getProperty("strategos.gametest.filter", "").startsWith("^perftests")) {
+            // readings exist from the start of the batch, and the first window waits for a preflight of them: the
+            // main thread, before the server thread exists (Main posts this event first; no watchdog on this path)
+            ForeignLoadSampler.start();
+            ForeignLoadSampler.preflight(Long.getLong("strategos.perf.preflightSeconds", 60));
         }
         event.register(StrategosGameTests.class); // the generator and the @AfterBatch hooks
     }

@@ -41,6 +41,12 @@ class CommandKindsTest {
                         "strategos:set_auto_reseed",
                         "strategos:train_batch",
                         "strategos:spawn_deposit",
+                        "strategos:set_stance",
+                        "strategos:garrison",
+                        "strategos:ungarrison",
+                        "strategos:ring_bell",
+                        "strategos:all_clear",
+                        "strategos:attack_spread",
                         "strategos:research");
     }
 

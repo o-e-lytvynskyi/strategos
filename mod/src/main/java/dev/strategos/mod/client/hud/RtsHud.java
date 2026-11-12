@@ -27,6 +27,7 @@ import dev.strategos.core.protocol.UnitDetail;
 import dev.strategos.core.protocol.UnitHud;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.QueueEntry;
+import dev.strategos.core.shared.Stance;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.mod.client.StrategosClient;
 import dev.strategos.mod.client.net.ClientPayloads;
@@ -44,7 +45,6 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.neoforged.bus.api.IEventBus;
@@ -101,6 +101,7 @@ public final class RtsHud {
     private final RtsMode mode;
     private final HudTheme theme = HudTheme.DEFAULT;
     private final HudPaint paint = new HudPaint();
+    private final HudCardPresentation cardPresentation = new HudCardPresentation(paint);
     private final HudBanners banners = new HudBanners(paint);
     private SelectionSummary summary = SelectionSummary.EMPTY;
     private SelectionPanel panel = SelectionPanel.EMPTY;
@@ -252,31 +253,7 @@ public final class RtsHud {
     /** The selected own building's entry, or null. */
     private BuildingState.@Nullable Entry ownBuilding() {
         Integer handle = mode.selection().building();
-        return handle == null ? null : entry(handle);
-    }
-
-    private static DepositState.@Nullable Entry deposit(@Nullable Integer node) {
-        if (node == null) {
-            return null;
-        }
-        for (DepositState.Entry e : StrategosClient.model().deposits()) {
-            if (e.node() == node) {
-                return e;
-            }
-        }
-        return null;
-    }
-
-    private static BuildingState.@Nullable Entry entry(@Nullable Integer handle) {
-        if (handle == null) {
-            return null;
-        }
-        for (BuildingState.Entry e : StrategosClient.model().buildings()) {
-            if (e.handle() == handle) {
-                return e;
-            }
-        }
-        return null;
+        return handle == null ? null : HudCardPresentation.entry(handle);
     }
 
     private void onLayer(RenderGuiLayerEvent.Pre event) {
@@ -349,17 +326,27 @@ public final class RtsHud {
                     UnitSpawnData d = bodies.get(h);
                     return d == null ? -1 : d.templateIndex();
                 },
-                t -> name(templates, t),
-                inspectedData == null ? null : name(templates, inspectedData.templateIndex()));
-        selection.pruneBuilding(h -> entry(h) != null);
-        BuildingState.Entry shown = entry(selection.shownBuilding());
-        panel = SelectionPanel.of(summary, unit(selection, bodies), shown, deposit(selection.deposit()));
+                t -> HudCardPresentation.name(templates, t),
+                inspectedData == null ? null : HudCardPresentation.name(templates, inspectedData.templateIndex()));
+        selection.pruneBuilding(h -> HudCardPresentation.entry(h) != null);
+        BuildingState.Entry shown = HudCardPresentation.entry(selection.shownBuilding());
+        panel = SelectionPanel.of(
+                summary, unit(selection, bodies), shown, HudCardPresentation.deposit(selection.deposit()));
         controller.selected(selection.handles(), selection.building());
         List<Integer> unitTemplates = new ArrayList<>();
+        List<Stance> stances = new ArrayList<>();
+        Map<Integer, Stance> received = new HashMap<>();
+        for (UnitDetail.Unit u : StrategosClient.model().details()) {
+            Stance sent = u.stance() == UnitDetail.NO_STANCE ? null : Stance.of(u.stance());
+            if (sent != null) {
+                received.put(u.handle(), sent);
+            }
+        }
         for (int h : selection.handles()) {
             UnitSpawnData d = bodies.get(h);
             if (d != null) {
                 unitTemplates.add(d.templateIndex());
+                stances.add(CardController.stanceOf(templates, d.templateIndex(), received.get(h)));
             }
         }
         BuildingState.Entry own = selection.building() == null ? null : shown;
@@ -371,9 +358,10 @@ public final class RtsHud {
                         unitTemplates,
                         controller.buildPage(),
                         StrategosClient.model().buildings(),
-                        own != null && controller.demolishAsked(own.handle())),
+                        own != null && controller.demolishAsked(own.handle()),
+                        CardController.shared(stances)),
                 own);
-        double[] gui = cursorGui(mc);
+        double[] gui = HudCardPresentation.cursorGui(mc);
         hovered = card.at(layout().commandCard(), theme.padding(), gui[0], gui[1]);
         bar = GroupBar.of(mode.groups());
         FactionState faction = StrategosClient.model().faction();
@@ -505,7 +493,10 @@ public final class RtsHud {
             detail = Math.round(100.0 * health / UnitHud.WHOLE) + " %";
         }
         return new Inspect(
-                name(StrategosClient.templates(), data.templateIndex()), data.faction(), data.handle(), detail);
+                HudCardPresentation.name(StrategosClient.templates(), data.templateIndex()),
+                data.faction(),
+                data.handle(),
+                detail);
     }
 
     /** The first-person inspection, for scenarios; null when the crosshair is on no unit. */
@@ -533,15 +524,8 @@ public final class RtsHud {
             return null;
         }
         return new Tooltip(
-                name(templates, body.spawnData().templateIndex()),
+                HudCardPresentation.name(templates, body.spawnData().templateIndex()),
                 body.spawnData().faction());
-    }
-
-    /** A template's name, its translation key in the language files. */
-    private static String name(TemplateSet templates, int index) {
-        return templates.has(index)
-                ? Component.translatable(templates.byIndex(index).name()).getString()
-                : "?";
     }
 
     /** The HUD's parts for the window as it is now. */
@@ -570,7 +554,7 @@ public final class RtsHud {
                     HudRect cell = SelectionPanel.typeCell(r, pad, k);
                     boolean more = k == capacity - 1 && types.size() > capacity;
                     if (!more) {
-                        icon(g, font, templates, types.get(k).template(), cell);
+                        cardPresentation.icon(g, font, templates, types.get(k).template(), cell);
                     }
                     String count = more
                             ? "+" + (types.size() - k)
@@ -586,8 +570,9 @@ public final class RtsHud {
             }
             case UNIT -> {
                 SelectionPanel.Unit u = java.util.Objects.requireNonNull(p.unit());
-                icon(g, font, templates, u.template(), SelectionPanel.icon(r, pad));
-                paint.text(g, font, r, 0, name(templates, u.template()), theme.faction(u.faction()));
+                cardPresentation.icon(g, font, templates, u.template(), SelectionPanel.icon(r, pad));
+                paint.text(
+                        g, font, r, 0, HudCardPresentation.name(templates, u.template()), theme.faction(u.faction()));
                 paint.text(
                         g,
                         font,
@@ -611,8 +596,8 @@ public final class RtsHud {
             case DEPOSIT -> {
                 DepositState.Entry d = java.util.Objects.requireNonNull(p.deposit());
                 List<String> resources = StrategosClient.resources();
-                icon(g, font, templates, d.template(), SelectionPanel.icon(r, pad));
-                paint.text(g, font, r, 0, name(templates, d.template()), theme.text());
+                cardPresentation.icon(g, font, templates, d.template(), SelectionPanel.icon(r, pad));
+                paint.text(g, font, r, 0, HudCardPresentation.name(templates, d.template()), theme.text());
                 paint.text(
                         g,
                         font,
@@ -629,8 +614,8 @@ public final class RtsHud {
     /** One building: its name and state, then its queue with the head's progress, or a field's crop. */
     private void drawBuilding(
             GuiGraphics g, Font font, TemplateSet templates, HudRect r, int pad, BuildingState.Entry b) {
-        icon(g, font, templates, b.template(), SelectionPanel.icon(r, pad));
-        paint.text(g, font, r, 0, name(templates, b.template()), theme.faction(b.faction()));
+        cardPresentation.icon(g, font, templates, b.template(), SelectionPanel.icon(r, pad));
+        paint.text(g, font, r, 0, HudCardPresentation.name(templates, b.template()), theme.faction(b.faction()));
         String state = switch (b.state()) {
             case 0 -> "Foundation";
             case 1 -> "Building " + b.progress() / 10 + " %";
@@ -680,7 +665,7 @@ public final class RtsHud {
                     cell.bottom(),
                     b.equals(hovered) ? theme.accent() & 0x60FFFFFF : 0x40FFFFFF);
             switch (b.kind()) {
-                case TRAIN, BUILD -> icon(g, font, templates, b.template(), cell);
+                case TRAIN, BUILD -> cardPresentation.icon(g, font, templates, b.template(), cell);
                 case RESEED -> paint.item(g, "minecraft:wheat_seeds", cell);
                 case BUILD_PAGE -> paint.item(g, "minecraft:bricks", cell);
                 case BACK -> paint.item(g, "minecraft:arrow", cell);
@@ -691,7 +676,16 @@ public final class RtsHud {
                         g.fill(cell.x(), cell.y(), cell.right(), cell.bottom(), 0x80202020);
                     }
                 }
+                case STANCE -> {
+                    paint.item(g, HudCardPresentation.stanceItem(b.stance()), cell);
+                    if (b.on()) { // the whole selection holds it: framed
+                        int edge = theme.accent();
+                        g.renderOutline(cell.x(), cell.y(), cell.width(), cell.height(), edge);
+                    }
+                }
                 case CANCEL_BUILDING -> paint.item(g, "minecraft:barrier", cell);
+                case RING_BELL -> paint.item(g, "minecraft:bell", cell);
+                case ALL_CLEAR -> paint.item(g, "minecraft:lime_banner", cell);
                 case DEMOLISH -> {
                     paint.item(g, "minecraft:tnt", cell);
                     if (b.on()) { // asked: one more click demolishes
@@ -712,83 +706,14 @@ public final class RtsHud {
         }
     }
 
-    /** What the hovered card button does, and what it costs. */
-    private String describe(CommandCard.Button b, TemplateSet templates) {
-        String what = switch (b.kind()) {
-            case TRAIN -> "Train " + name(templates, b.template());
-            case BUILD -> "Build " + name(templates, b.template());
-            case RESEED -> "Reseed";
-            case BUILD_PAGE -> "Build";
-            case BACK -> "Back";
-            case STOP -> "Stop";
-            case AUTO_RESEED -> b.on() ? "Auto-reseed: on (click to turn off)" : "Auto-reseed: off (click to turn on)";
-            case CANCEL_BUILDING -> "Cancel: the share not yet built comes back";
-            case DEMOLISH -> b.on() ? "Click again to demolish, for nothing back" : "Demolish";
-        };
-        List<String> resources = StrategosClient.resources();
-        StringBuilder text = new StringBuilder(what);
-        for (int k = 0; k < b.cost().size(); k++) {
-            if (b.cost().get(k) > 0) {
-                text.append(" · ")
-                        .append(b.cost().get(k) / 1000)
-                        .append(' ')
-                        .append(k < resources.size() ? resources.get(k) : "?");
-            }
-        }
-        if (b.kind() == CommandCard.Kind.TRAIN || b.kind() == CommandCard.Kind.BUILD) {
-            for (CommandCard.Line line : CommandCard.breakdown(templates, b.template())) {
-                text.append(" · ").append(line.label()).append(' ').append(plain(line.value()));
-            }
-        }
-        String reason = b.reason();
-        if (reason != null) {
-            text.append(" — ").append(reason);
-        }
-        return text.toString();
-    }
-
-    /** A number as a player reads it: a whole one bare, else to one decimal. */
-    private static String plain(double v) {
-        return v == Math.rint(v) ? String.valueOf((long) v) : String.format(java.util.Locale.ROOT, "%.1f", v);
-    }
-
-    /** A queue entry's icon: a unit's, or for a technology (TECH-01) its own item. */
+    /** A queue entry's icon: a unit's via {@link HudCardPresentation}, or for a technology (TECH-01) its own item. */
     private void entryIcon(GuiGraphics g, Font font, TemplateSet templates, int entry, HudRect cell) {
         if (!QueueEntry.isTech(entry)) {
-            icon(g, font, templates, entry, cell);
+            cardPresentation.icon(g, font, templates, entry, cell);
             return;
         }
         TechDef tech = templates.techByIndex(QueueEntry.techIndex(entry));
         paint.item(g, tech == null ? "minecraft:barrier" : tech.icon(), cell);
-    }
-
-    /** Template {@code template}'s icon centred in {@code cell}, or its name's first letter when it has none. */
-    private void icon(GuiGraphics g, Font font, TemplateSet templates, int template, HudRect cell) {
-        String id = CommandCard.icon(templates, template);
-        if (id != null) {
-            paint.item(g, id, cell);
-        } else {
-            String letter = name(templates, template).substring(0, 1);
-            g.drawString(
-                    font,
-                    letter,
-                    cell.x() + (cell.width() - font.width(letter)) / 2,
-                    cell.y() + (cell.height() - font.lineHeight) / 2 + 1,
-                    theme.text(),
-                    false);
-        }
-    }
-
-    /** The cursor in GUI pixels, as Minecraft turns window points into a screen's mouse position. */
-    private static double[] cursorGui(Minecraft mc) {
-        return new double[] {
-            mc.mouseHandler.xpos()
-                    * mc.getWindow().getGuiScaledWidth()
-                    / mc.getWindow().getScreenWidth(),
-            mc.mouseHandler.ypos()
-                    * mc.getWindow().getGuiScaledHeight()
-                    / mc.getWindow().getScreenHeight()
-        };
     }
 
     private void drawGroups(GuiGraphics g, DeltaTracker delta) {
@@ -805,16 +730,16 @@ public final class RtsHud {
         if (shown() && bar != null) {
             Font font = mc.font;
             int pad = theme.padding();
-            double[] gui = cursorGui(mc);
+            double[] gui = HudCardPresentation.cursorGui(mc);
             HudRect r = layout().tooltip(font.width(bar) + 2 * pad, font.lineHeight + 2 * pad, gui[0], gui[1]);
             paint.panel(g, r);
             g.drawString(font, bar, r.x() + pad, r.y() + pad + 1, theme.text(), false);
         }
         if (shown() && b != null) {
             Font font = mc.font;
-            String text = describe(b, StrategosClient.templates());
+            String text = cardPresentation.describe(b, StrategosClient.templates());
             int pad = theme.padding();
-            double[] gui = cursorGui(mc);
+            double[] gui = HudCardPresentation.cursorGui(mc);
             HudRect r = layout().tooltip(font.width(text) + 2 * pad, font.lineHeight + 2 * pad, gui[0], gui[1]);
             paint.panel(g, r);
             g.drawString(font, text, r.x() + pad, r.y() + pad + 1, b.affordable() ? theme.text() : 0xFFFF8080, false);

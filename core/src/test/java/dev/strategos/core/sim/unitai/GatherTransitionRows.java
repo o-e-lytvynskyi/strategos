@@ -251,10 +251,16 @@ final class GatherTransitionRows {
                         toNode,
                         gathering(1)),
                 workerRow(
+                        "a move while working",
+                        working,
+                        UnitTreeTransitionsTest::newMove,
+                        walking,
+                        slotFreed(UnitTreeTransitionsTest.kept(OrderKind.MOVE))),
+                workerRow(
                         "a worker hit while working runs, its gathering waiting",
                         working,
                         GatherTransitionRows::blow,
-                        walking,
+                        UnitAi.FLEEING,
                         slotFreed(u -> {
                             assertThat(u.state.orders().kind(u.index())).isEqualTo(OrderKind.FLEE);
                             assertThat(u.state.orders().order(u.index(), 1).kind())

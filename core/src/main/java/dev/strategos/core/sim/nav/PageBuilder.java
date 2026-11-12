@@ -29,6 +29,18 @@ public final class PageBuilder {
     }
 
     public SurfacePage build(VoxelSlice slice, NavOverlay overlay, PageCoord coord) {
+        return build(slice, overlay, coord, (x, z, floor, clearance) -> floor);
+    }
+
+    /** A neighbouring column outside this page, in match-local x/z and slice-relative sixteenths. */
+    @CoreApi
+    @FunctionalInterface
+    public interface Columns {
+        int supportingFloor(int x, int z, int floor, int clearance);
+    }
+
+    /** Large footprints need the neighbouring pages too; a whole-grid caller supplies their columns. */
+    public SurfacePage build(VoxelSlice slice, NavOverlay overlay, PageCoord coord, Columns columns) {
         Arrays.fill(counts, 0);
         int overflow = 0;
         int overflowColumns = 0;
@@ -74,6 +86,9 @@ public final class PageBuilder {
                     if (headroom < mobility.clearance()) {
                         continue;
                     }
+                    if (mobility == MobilityClass.LARGE && !fits(slice, overlay, coord, x, z, floor, columns)) {
+                        continue;
+                    }
                     if (counts[column] == SurfacePage.MAX_LAYERS) {
                         if (lastOverflowColumn != column) {
                             overflowColumns++;
@@ -112,6 +127,63 @@ public final class PageBuilder {
             labels[i] = (short) component[i]; // at most 1,024 surfaces a page
         }
         return new SurfacePage(coord, start, surfaces, labels, components, drops, layers, overflow, overflowColumns);
+    }
+
+    private boolean fits(
+            VoxelSlice slice, NavOverlay overlay, PageCoord coord, int x, int z, int floor, Columns columns) {
+        int raised = floor;
+        for (int dir = 0; dir < Dir.COUNT; dir++) {
+            int nx = x + Dir.dx(dir);
+            int nz = z + Dir.dz(dir);
+            int support;
+            if (nx >= 0 && nz >= 0 && nx < VoxelSlice.SIDE && nz < VoxelSlice.SIDE) {
+                if (overlay.blocked(coord, SurfacePage.column(nx, nz))) return false;
+                support = supportingFloor(slice, nx, nz, floor, mobility.clearance());
+            } else {
+                support =
+                        columns.supportingFloor(coord.x() * 16 + nx, coord.z() * 16 + nz, floor, mobility.clearance());
+            }
+            if (support < 0) return false;
+            raised = Math.max(raised, support);
+        }
+        // A step under an edge raises the whole body: its head must still fit in every column.
+        if (!clearColumn(slice, x, z, raised, mobility.clearance())) return false;
+        for (int dir = 0; dir < Dir.COUNT; dir++) {
+            int nx = x + Dir.dx(dir);
+            int nz = z + Dir.dz(dir);
+            if (nx >= 0 && nz >= 0 && nx < VoxelSlice.SIDE && nz < VoxelSlice.SIDE) {
+                if (!clearColumn(slice, nx, nz, raised, mobility.clearance())) return false;
+            } else if (columns.supportingFloor(coord.x() * 16 + nx, coord.z() * 16 + nz, raised, mobility.clearance())
+                    != raised) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** A footprint may already rest on a neighbouring step, but never on a wall more than one block up. */
+    public static int supportingFloor(VoxelSlice slice, int x, int z, int floor, int clearance) {
+        int raised = floor;
+        for (int y = floor / 16; y < slice.height() && y * 16 < raised + clearance; y++) {
+            short block = slice.get(x, y, z);
+            if (BlockClass.is(block, BlockClass.HAZARD)) return -1;
+            int top = y * 16 + BlockClass.top(block);
+            if (!BlockClass.clear(block) && top > raised) {
+                if (!BlockClass.is(block, BlockClass.STANDABLE) || top > floor + MobilityClass.LARGE.step()) return -1;
+                raised = top;
+            }
+        }
+        return raised;
+    }
+
+    /** Whether a neighbouring column leaves the body's height clear, including partial collision tops. */
+    public static boolean clearColumn(VoxelSlice slice, int x, int z, int floor, int clearance) {
+        for (int y = floor / 16; y < slice.height() && y * 16 < floor + clearance; y++) {
+            short block = slice.get(x, y, z);
+            if (!BlockClass.clear(block) && y * 16 + BlockClass.top(block) > floor) return false;
+            if (BlockClass.is(block, BlockClass.HAZARD)) return false;
+        }
+        return true;
     }
 
     /**

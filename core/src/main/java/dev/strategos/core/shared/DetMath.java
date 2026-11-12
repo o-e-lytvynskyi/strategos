@@ -24,6 +24,10 @@ public final class DetMath {
         return StrictMath.pow(a, b);
     }
 
+    public static double log(double v) {
+        return StrictMath.log(v);
+    }
+
     public static double sqrt(double v) {
         return Math.sqrt(v);
     }

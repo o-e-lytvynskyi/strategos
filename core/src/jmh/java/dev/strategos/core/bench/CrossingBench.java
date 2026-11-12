@@ -11,6 +11,7 @@ import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
@@ -25,6 +26,7 @@ import org.openjdk.jmh.annotations.State;
  * flat384} and {@code flat512} through flat A* at its 20,000 cap, which R3 measured in T8. Sampled, so the report has
  * p95; each trial prints the expansions and waypoints. Budget D gives the main thread 2 ms a tick for all path work.
  */
+@Fork(2)
 @State(Scope.Thread)
 @BenchmarkMode(Mode.SampleTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)

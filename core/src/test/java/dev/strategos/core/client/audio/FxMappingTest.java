@@ -27,6 +27,14 @@ class FxMappingTest {
     }
 
     @Test
+    void theTwoShotKindsPlayTheBowAndTheArrowHit() {
+        assertThat(Sounds.of(FxKind.SHOT_LAUNCH))
+                .isEqualTo(new Sounds.Cue("minecraft:entity.arrow.shoot", Sounds.Category.UNITS, 1.0F, 1.0F));
+        assertThat(Sounds.of(FxKind.SHOT_IMPACT))
+                .isEqualTo(new Sounds.Cue("minecraft:entity.arrow.hit", Sounds.Category.UNITS, 1.0F, 1.0F));
+    }
+
+    @Test
     void aUnitSoundCarriesFromTheCameraToPastTheGroundInView() {
         Sounds.Cue hit = Sounds.UNIT_HIT;
         assertThat(Sounds.volume(hit, 1.6, 20)).isEqualTo(hit.volume()); // first person: vanilla's own

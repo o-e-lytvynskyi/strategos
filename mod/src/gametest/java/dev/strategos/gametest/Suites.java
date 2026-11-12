@@ -17,12 +17,14 @@ import dev.strategos.gametest.suites.FaultTests;
 import dev.strategos.gametest.suites.FidelityTests;
 import dev.strategos.gametest.suites.FirstPersonTests;
 import dev.strategos.gametest.suites.FogTests;
+import dev.strategos.gametest.suites.GarrisonTests;
 import dev.strategos.gametest.suites.JournalTests;
 import dev.strategos.gametest.suites.MapTests;
 import dev.strategos.gametest.suites.MatchTests;
 import dev.strategos.gametest.suites.NavTests;
 import dev.strategos.gametest.suites.NetTests;
 import dev.strategos.gametest.suites.OrderTests;
+import dev.strategos.gametest.suites.PacingTests;
 import dev.strategos.gametest.suites.PathTests;
 import dev.strategos.gametest.suites.PerfTests;
 import dev.strategos.gametest.suites.PersistenceTests;
@@ -62,6 +64,7 @@ public final class Suites {
                         ReplicationTests.class,
                         CombatTests.class,
                         FirstPersonTests.class,
+                        GarrisonTests.class,
                         MatchTests.class,
                         CommandTests.class,
                         ContentTests.class,
@@ -79,6 +82,7 @@ public final class Suites {
                         NetTests.class,
                         OrderTests.class,
                         PathTests.class,
+                        PacingTests.class,
                         ProtectionTests.class,
                         TechTests.class,
                         WriterTests.class);

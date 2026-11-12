@@ -1,16 +1,20 @@
 package dev.strategos.core.sim;
 
 import dev.strategos.core.shared.CoreApi;
+import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.sim.build.BuildingStore;
+import dev.strategos.core.sim.combat.ShotStore;
 import dev.strategos.core.sim.econ.CarryStore;
 import dev.strategos.core.sim.econ.NodeStore;
+import dev.strategos.core.sim.garrison.GarrisonStore;
 import dev.strategos.core.sim.nav.PathStore;
+import dev.strategos.core.sim.order.StanceStore;
 import java.util.List;
 
 /**
  * A match at a completed tick: everything a restore needs, its terrain pages as references to the slices they were
- * built from, and the path requests in flight with their results computed (schema 2). The schema version is not a
- * field: the snapshot codec writes and migrates {@code "v"} (M0 spec 5.8).
+ * built from, path requests in flight with their results computed, and stable template bindings (schema 3).
+ * The schema version is not a field: the snapshot codec writes and migrates {@code "v"} (M0 spec 5.8).
  */
 @CoreApi
 public record MatchSnapshot(
@@ -29,7 +33,8 @@ public record MatchSnapshot(
         List<BuildingStore.Saved> buildings,
         List<Long> ledger,
         List<CarryStore.Saved> carried,
-        Play play) {
+        Play play,
+        List<TemplateBinding> templateBindings) {
     /**
      * How the match is played (MATCH-01, AI-01): the outcome as {@code Outcome} saves it, the computer players, and
      * which of them think early.
@@ -42,8 +47,48 @@ public record MatchSnapshot(
             List<Long> alerts,
             List<List<String>> progress,
             List<Long> matchStats,
-            List<Long> vision) {
-        public static final Play EMPTY = new Play(List.of(), List.of(), 0, List.of(), List.of(), List.of(), List.of());
+            List<Long> vision,
+            ShotStore.Snapshot shots,
+            List<StanceStore.Saved> stances,
+            List<GarrisonStore.Saved> garrisons) {
+        public static final Play EMPTY = new Play(
+                List.of(),
+                List.of(),
+                0,
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                ShotStore.Snapshot.EMPTY,
+                List.of(),
+                List.of());
+
+        /** A play without garrisons, as before BLD-16 saved them. */
+        public Play(
+                List<Long> outcome,
+                List<AiSlots.Saved> ai,
+                long aiWake,
+                List<Long> alerts,
+                List<List<String>> progress,
+                List<Long> matchStats,
+                List<Long> vision,
+                ShotStore.Snapshot shots,
+                List<StanceStore.Saved> stances) {
+            this(outcome, ai, aiWake, alerts, progress, matchStats, vision, shots, stances, List.of());
+        }
+
+        /** A play without stances, as before CMB-05 saved them. */
+        public Play(
+                List<Long> outcome,
+                List<AiSlots.Saved> ai,
+                long aiWake,
+                List<Long> alerts,
+                List<List<String>> progress,
+                List<Long> matchStats,
+                List<Long> vision,
+                ShotStore.Snapshot shots) {
+            this(outcome, ai, aiWake, alerts, progress, matchStats, vision, shots, List.of(), List.of());
+        }
 
         /** A play without vision, as before FOW-01 saved it. */
         public Play(
@@ -53,7 +98,34 @@ public record MatchSnapshot(
                 List<Long> alerts,
                 List<List<String>> progress,
                 List<Long> matchStats) {
-            this(outcome, ai, aiWake, alerts, progress, matchStats, List.of());
+            this(
+                    outcome,
+                    ai,
+                    aiWake,
+                    alerts,
+                    progress,
+                    matchStats,
+                    List.of(),
+                    ShotStore.Snapshot.EMPTY,
+                    List.of(),
+                    List.of());
+        }
+
+        /** A play without shots/stances/garrisons, as before combat saves (M5). */
+        public Play(
+                List<Long> outcome,
+                List<AiSlots.Saved> ai,
+                long aiWake,
+                List<Long> alerts,
+                ShotStore.Snapshot shots,
+                List<StanceStore.Saved> stances) {
+            this(outcome, ai, aiWake, alerts, List.of(), List.of(), List.of(), shots, stances, List.of());
+        }
+
+        /** A play without stances or garrisons, as before CMB-05 / BLD-16. */
+        public Play(
+                List<Long> outcome, List<AiSlots.Saved> ai, long aiWake, List<Long> alerts, ShotStore.Snapshot shots) {
+            this(outcome, ai, aiWake, alerts, List.of(), List.of(), List.of(), shots, List.of(), List.of());
         }
 
         /** A play with no match statistics, as before M6 saved them. */
@@ -63,17 +135,54 @@ public record MatchSnapshot(
                 long aiWake,
                 List<Long> alerts,
                 List<List<String>> progress) {
-            this(outcome, ai, aiWake, alerts, progress, List.of(), List.of());
+            this(
+                    outcome,
+                    ai,
+                    aiWake,
+                    alerts,
+                    progress,
+                    List.of(),
+                    List.of(),
+                    ShotStore.Snapshot.EMPTY,
+                    List.of(),
+                    List.of());
         }
 
         /** A play with nothing researched, as before TECH-01 saved the techs. */
         public Play(List<Long> outcome, List<AiSlots.Saved> ai, long aiWake, List<Long> alerts) {
-            this(outcome, ai, aiWake, alerts, List.of(), List.of(), List.of());
+            this(
+                    outcome,
+                    ai,
+                    aiWake,
+                    alerts,
+                    List.of(),
+                    List.of(),
+                    List.of(),
+                    ShotStore.Snapshot.EMPTY,
+                    List.of(),
+                    List.of());
         }
 
         /** A play with no live alert, as before MATCH-04 saved them. */
         public Play(List<Long> outcome, List<AiSlots.Saved> ai, long aiWake) {
-            this(outcome, ai, aiWake, List.of(), List.of(), List.of(), List.of());
+            this(
+                    outcome,
+                    ai,
+                    aiWake,
+                    List.of(),
+                    List.of(),
+                    List.of(),
+                    List.of(),
+                    ShotStore.Snapshot.EMPTY,
+                    List.of(),
+                    List.of());
+        }
+
+        /** Whether the persisted victory outcome is terminal, even if the registry record is older. */
+        public boolean ended() {
+            Outcome restored = new Outcome();
+            restored.restore(outcome);
+            return restored.ended();
         }
 
         public Play {
@@ -83,10 +192,17 @@ public record MatchSnapshot(
             progress = progress.stream().<List<String>>map(List::copyOf).toList();
             matchStats = List.copyOf(matchStats);
             vision = List.copyOf(vision);
+            stances = List.copyOf(stances);
+            garrisons = List.copyOf(garrisons);
         }
     }
 
+    /** Saved session indices, resolved by stable id on restore; absent in legacy snapshots. */
+    @CoreApi
+    public record TemplateBinding(int index, TemplateId id) {}
+
     public MatchSnapshot {
+        templateBindings = List.copyOf(templateBindings);
         buildings = List.copyOf(buildings);
         ledger = List.copyOf(ledger);
         carried = List.copyOf(carried);
@@ -96,6 +212,44 @@ public record MatchSnapshot(
         nodes = List.copyOf(nodes);
         pendingCommands = List.copyOf(pendingCommands);
         pages = List.copyOf(pages);
+    }
+
+    /** Snapshot without a persisted session table; live building references require bindings before restore. */
+    public MatchSnapshot(
+            MatchConfig config,
+            long tick,
+            long templateSetHash,
+            EntitySlots slots,
+            List<UnitRecord> units,
+            List<CommandEnvelope> pendingCommands,
+            List<PageRef> pages,
+            PathStore.Queue paths,
+            int nextGroup,
+            List<Long> treasury,
+            List<Long> terrainEdits,
+            List<NodeStore.Saved> nodes,
+            List<BuildingStore.Saved> buildings,
+            List<Long> ledger,
+            List<CarryStore.Saved> carried,
+            Play play) {
+        this(
+                config,
+                tick,
+                templateSetHash,
+                slots,
+                units,
+                pendingCommands,
+                pages,
+                paths,
+                nextGroup,
+                treasury,
+                terrainEdits,
+                nodes,
+                buildings,
+                ledger,
+                carried,
+                play,
+                List.of());
     }
 
     /** A snapshot from before victory and computer players (MATCH-01, AI-01). */

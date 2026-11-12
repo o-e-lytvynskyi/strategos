@@ -1,0 +1,8 @@
+[
+  {
+    "benchmark": "dev.strategos.core.bench.Selftest.op",
+    "mode": "avgt",
+    "primaryMetric": { "score": 130.0, "scoreUnit": "us/op" },
+    "secondaryMetrics": { "·foreign.mean": { "score": 0.2, "scoreUnit": "fraction" }, "·foreign.limit": { "score": 0.075, "scoreUnit": "fraction" } }
+  }
+]

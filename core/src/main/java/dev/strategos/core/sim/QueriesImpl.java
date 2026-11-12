@@ -4,6 +4,7 @@ import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.MatchResults;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
+import dev.strategos.core.shared.Stance;
 import dev.strategos.core.shared.TechId;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.build.BuildingStore;
@@ -34,6 +35,11 @@ final class QueriesImpl implements MatchQueries {
     QueriesImpl(MatchState state, PathService paths) {
         this.state = state;
         this.paths = paths;
+    }
+
+    @Override
+    public @Nullable String templateSwapProblem(TemplateSet next) {
+        return state.templateSwapProblem(next);
     }
 
     @Override
@@ -159,6 +165,11 @@ final class QueriesImpl implements MatchQueries {
     }
 
     @Override
+    public @Nullable Stance explicitStance(int handle) {
+        return state.entities().isAlive(handle) ? state.stances().explicit(Handle.index(handle)) : null;
+    }
+
+    @Override
     public int carriedResource(int handle) {
         return state.entities().isAlive(handle) ? state.carry().resource(Handle.index(handle)) : -1;
     }
@@ -240,6 +251,11 @@ final class QueriesImpl implements MatchQueries {
     @Override
     public SurfaceGrid surfaces() {
         return state.surfaces();
+    }
+
+    @Override
+    public long navigationBytes() {
+        return state.navigationBytes();
     }
 
     @Override
@@ -390,6 +406,11 @@ final class QueriesImpl implements MatchQueries {
     @Override
     public boolean footprintAt(int x, int z) {
         return state.footprintAt(x, z);
+    }
+
+    @Override
+    public dev.strategos.core.sim.combat.CombatTimes.Stats combatTimes() {
+        return state.combatTimes().stats();
     }
 
     @Override

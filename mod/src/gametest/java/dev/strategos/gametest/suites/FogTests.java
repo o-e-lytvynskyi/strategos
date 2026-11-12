@@ -83,5 +83,5 @@ public final class FogTests {
                 .thenSucceed();
     }
 
-    // AFTER-M6: T10 (MATCH-07) adds pairsWithin6UnpairsWithin15 once the fog gate filters by visibility.
+    // AFTER-T10: MATCH-07 adds pairsWithin6UnpairsWithin15 once the fog gate filters by visibility.
 }

@@ -11,4 +11,5 @@ public sealed interface BusMessage
                 Stuck,
                 StatsChanged,
                 Attacked,
-                PlaceMoved {}
+                PlaceMoved,
+                ShotRequested {}

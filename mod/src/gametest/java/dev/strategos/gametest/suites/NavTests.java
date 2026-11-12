@@ -93,7 +93,24 @@ public final class NavTests {
                         }
                     }
                 })
-                .thenWaitUntil(() -> h.assertTrue(writer.pending(h.getLevel()) == 0, "writing"))
+                // its own writes done: the level's queue holds the batch's other matches too (shared budget)
+                .thenWaitUntil(() -> {
+                    var space = rt.space();
+                    h.assertTrue(
+                            writer.pendingIn(
+                                            h.getLevel(),
+                                            rt.id().value(),
+                                            new BlockPos(
+                                                    space.origin().getX(),
+                                                    space.minY(),
+                                                    space.origin().getZ()),
+                                            new BlockPos(
+                                                    space.origin().getX() + space.sizeX() - 1,
+                                                    space.maxY(),
+                                                    space.origin().getZ() + space.sizeZ() - 1))
+                                    .isEmpty(),
+                            "writing");
+                })
                 .thenIdle(45)
                 .thenExecute(() -> {
                     h.assertTrue(rt.pages().dirtyPages() == 0, rt.pages().dirtyPages() + " pages dirty");

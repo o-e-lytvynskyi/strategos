@@ -11,7 +11,7 @@ import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
-/** The mod's entity types: M0's one unit body. */
+/** The mod's entity types: the unit bodies, by size. */
 public final class ModEntityTypes {
     public static final DeferredRegister<EntityType<?>> ENTITY_TYPES =
             DeferredRegister.create(Registries.ENTITY_TYPE, Strategos.MOD_ID);
@@ -49,12 +49,31 @@ public final class ModEntityTypes {
                     .setShouldReceiveVelocityUpdates(false)
                     .build("strategos:unit_fauna"));
 
+    /**
+     * The mounted units' bodies (UNIT-06): the humanoid's settings at a horse and rider's size, still one entity per
+     * unit with no passenger and no vanilla horse; the renderer composes the horse and its rider.
+     */
+    public static final DeferredHolder<EntityType<?>, EntityType<UnitEntity>> UNIT_MOUNT = ENTITY_TYPES.register(
+            "unit_mount",
+            () -> EntityType.Builder.<UnitEntity>of(UnitEntity::new, MobCategory.MISC)
+                    .sized(1.4F, 2.0F)
+                    .noSummon()
+                    .noSave()
+                    .fireImmune()
+                    .clientTrackingRange(10)
+                    .updateInterval(3)
+                    .setShouldReceiveVelocityUpdates(false)
+                    .build("strategos:unit_mount"));
+
     private ModEntityTypes() {}
 
     /** The body type template {@code netIndex} names in {@code Body/entityType}; a humanoid's by default. */
     public static EntityType<UnitEntity> forTemplate(dev.strategos.core.content.TemplateSet templates, int netIndex) {
         var path = templates.tokenPaths().byPath("Body/entityType");
         String type = path == null || !templates.has(netIndex) ? null : templates.text(netIndex, path.id());
+        if ("strategos:unit_mount".equals(type)) {
+            return UNIT_MOUNT.get();
+        }
         return "strategos:unit_fauna".equals(type) ? UNIT_FAUNA.get() : UNIT_HUMANOID.get();
     }
 
@@ -67,5 +86,6 @@ public final class ModEntityTypes {
     static void onAttributes(EntityAttributeCreationEvent event) {
         event.put(UNIT_HUMANOID.get(), LivingEntity.createLivingAttributes().build());
         event.put(UNIT_FAUNA.get(), LivingEntity.createLivingAttributes().build());
+        event.put(UNIT_MOUNT.get(), LivingEntity.createLivingAttributes().build());
     }
 }

@@ -6,6 +6,8 @@ import dev.strategos.core.client.order.OrderIntents;
 import dev.strategos.core.client.order.SlotPreview;
 import dev.strategos.core.client.pick.CrosshairPick;
 import dev.strategos.core.client.pick.Picking;
+import dev.strategos.core.client.select.FocusTargets;
+import dev.strategos.core.protocol.Attack;
 import dev.strategos.core.protocol.Build;
 import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.Command;
@@ -61,6 +63,7 @@ final class RtsOrders {
     private final List<double[]> markers =
             new ArrayList<>(); // world x, y, z, ticks left, kind (0 move, 1 attack, 2 attack-move)
     private boolean attackMove;
+    private final FocusTargets focus = new FocusTargets();
     private @Nullable Command lastCommand;
 
     RtsOrders(RtsMode mode) {
@@ -95,6 +98,11 @@ final class RtsOrders {
         return attackMove;
     }
 
+    /** The target every selected unit was last told to attack, or null (ORD-05's ring). */
+    @Nullable Integer focusedTarget() {
+        return focus.shared(mode.selection().handles());
+    }
+
     /** STOP: the selection's orders end (ORD-02). */
     void stop() {
         if (mode.selection().handles().isEmpty()) {
@@ -105,6 +113,7 @@ final class RtsOrders {
         if (ClientPayloads.toServer(
                 new CommandsPayload(new CommandBatch(clientSeq++, List.of(new Stop(UnitSet.of(handles)))), ""))) {
             ordersSent++;
+            focus.release(handles);
         }
     }
 
@@ -112,8 +121,10 @@ final class RtsOrders {
      * The context order for the selection to what the cursor at window points picks (UI-05, ORD-04): an Attack on an
      * enemy's body or building, a Build on an own unfinished building, else a Move to the block or unit there, or with
      * attack-move armed an AttackMove there, match-local, queued with Shift; one command per click. Attack-move disarms with the click.
+     * With {@code force} (Ctrl) an own unit or building under the cursor is attacked too, and with {@code spread} (Alt)
+     * an enemy's attack is shared over the enemies round it (ORD-05).
      */
-    void order(double x, double y, boolean shift) {
+    void order(double x, double y, boolean shift, boolean force, boolean spread) {
         previewing = false;
         boolean armed = attackMove;
         attackMove = false;
@@ -149,44 +160,70 @@ final class RtsOrders {
         if (enemy == 0 && struck != null && struck.faction() != join.slot().value()) {
             enemy = struck.handle(); // an enemy's building: an attack, which torches carry out (CMB-03)
         }
-        boolean resource = !armed && enemy == 0 && pick.entityId() < 0 && yieldsResource(mc, pick);
+        int ownTarget = 0;
+        if (force && !armed && enemy == 0) { // Ctrl: an own unit or building is the target
+            if (pick.entityId() >= 0
+                    && mc.level.getEntity(pick.entityId()) instanceof UnitEntity body
+                    && body.spawnData() != null
+                    && body.spawnData().matchId() == join.matchId()
+                    && body.spawnData().faction() == join.slot().value()) {
+                ownTarget = body.spawnData().handle();
+            } else if (struck != null && struck.faction() == join.slot().value()) {
+                ownTarget = struck.handle();
+            }
+        }
+        boolean modified = !armed && (ownTarget != 0 || (spread && enemy != 0));
+        boolean resource = !armed && enemy == 0 && ownTarget == 0 && pick.entityId() < 0 && yieldsResource(mc, pick);
         BuildingState.Entry site = !armed
                         && enemy == 0
+                        && ownTarget == 0
                         && struck != null
                         && struck.faction() == join.slot().value()
                         && (struck.state() != CommandCard.COMPLETE || struck.health() < UnitHud.WHOLE)
                 ? struck // an own foundation: the builders help (M4 T2); a damaged building: they repair it (BLD-06)
                 : null;
         boolean help = site != null;
-        Command command = site != null
-                ? new Build(
-                        UnitSet.of(mode.selection().handles().stream()
-                                .mapToInt(Integer::intValue)
-                                .toArray()),
-                        site.handle(),
-                        shift ? QueueMode.QUEUE : QueueMode.REPLACE)
-                : resource
-                        ? OrderIntents.gather(
-                                mode.selection().handles(),
-                                (int) Math.floor(pick.x()) - join.originX(),
-                                (int) Math.floor(pick.y()),
-                                (int) Math.floor(pick.z()) - join.originZ(),
-                                shift)
-                        : OrderIntents.context(
-                                mode.selection().handles(),
-                                enemy,
-                                wx - join.originX(),
-                                wz - join.originZ(),
-                                shift,
-                                armed);
+        Command command = modified
+                ? OrderIntents.attack(
+                        mode.selection().handles(), ownTarget != 0 ? ownTarget : enemy, shift, ownTarget != 0, spread)
+                : site != null
+                        ? new Build(
+                                UnitSet.of(mode.selection().handles().stream()
+                                        .mapToInt(Integer::intValue)
+                                        .toArray()),
+                                site.handle(),
+                                shift ? QueueMode.QUEUE : QueueMode.REPLACE)
+                        : resource
+                                ? OrderIntents.gather(
+                                        mode.selection().handles(),
+                                        (int) Math.floor(pick.x()) - join.originX(),
+                                        (int) Math.floor(pick.y()),
+                                        (int) Math.floor(pick.z()) - join.originZ(),
+                                        shift)
+                                : OrderIntents.context(
+                                        mode.selection().handles(),
+                                        enemy,
+                                        wx - join.originX(),
+                                        wz - join.originZ(),
+                                        shift,
+                                        armed);
         if (command == null) {
             return;
         }
         if (ClientPayloads.toServer(new CommandsPayload(new CommandBatch(clientSeq++, List.of(command)), ""))) {
             ordersSent++;
             lastCommand = command;
-            int kind = armed ? 2 : enemy != 0 ? 1 : resource || help ? 3 : 0;
-            double my = pick.entityId() < 0 ? pick.y() + 1 : pick.y() + (enemy != 0 ? 2.2 : 0); // over a target's head
+            int[] ordered = mode.selection().handles().stream()
+                    .mapToInt(Integer::intValue)
+                    .toArray();
+            if (command instanceof Attack attack) {
+                focus.focus(ordered, attack.target(), shift);
+            } else if (!shift) {
+                focus.release(ordered); // a spread, a move or any other order holds no single target
+            }
+            boolean attacking = enemy != 0 || ownTarget != 0;
+            int kind = armed ? 2 : attacking ? 1 : resource || help ? 3 : 0;
+            double my = pick.entityId() < 0 ? pick.y() + 1 : pick.y() + (attacking ? 2.2 : 0); // over a target's head
             markers.add(new double[] {wx, my, wz, shift ? 200 : 40, kind});
         }
     }
