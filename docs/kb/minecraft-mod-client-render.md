@@ -13,6 +13,13 @@ render types are easier to lose under a pack. Soft edges come from per-corner α
 fingerprint changes. This is the M6 client base — M8 team fog / mirages should extend it, not fork
 a second overlay.
 
+## Minimap fog is baked into the terrain texture
+
+UI-16 composes fog in `MinimapImage` (unexplored black, explored half brightness, visible clear)
+from the same vision bitsets as the shroud. `RtsMinimap` must invalidate tile hashes when
+`ClientMatchModel.visionRevision` changes; otherwise only the next terrain rebuild would show new
+fog. Enemy dots stay a separate path: they come only from fog-filtered `unit_summary`.
+
 ## Iris shader-pack golden (FOW-07.6)
 
 `-Pcompat` installs Iris and Sodium into client runs. A named shader pack for the Iris golden is

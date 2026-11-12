@@ -6,9 +6,9 @@
 
 ## Now
 
-- **Milestone:** M6 MVP: First skirmish, 7 of 28 tasks done (T2 split into T2.1 and T2.2); spec [M6-first-skirmish.md](../milestones/M6-first-skirmish.md).
-- **Last finished task:** M6 T7 (2026-11-13), the commit `M6 T7: FOW-07 client shroud and ShroudBench`.
-- **Next task:** M6 T8 · UI-16 minimap fog.
+- **Milestone:** M6 MVP: First skirmish, 8 of 28 tasks done (T2 split into T2.1 and T2.2); spec [M6-first-skirmish.md](../milestones/M6-first-skirmish.md).
+- **Last finished task:** M6 T8 (2026-11-12), the commit `M6 T8: UI-16 minimap fog`.
+- **Next task:** M6 T9 · AI-18.
 - **Merged from main last:** 8111c0a (2026-11-13) — M5 combat + save/reload repairs; ProtectedBlockIndexTest taken from main; inert fog seams marked AFTER-T10.
 
 ## Depends on unfinished work
@@ -23,6 +23,11 @@ From the assessment before the claim (procedure §2a step 0); kept current.
 ## Log
 
 Newest first; one entry per session in the worklog's shape.
+
+### 2026-11-12 — M6 T8
+
+- **M6 T8 · UI-16 minimap fog** — UI-16 `done` for checks 1–2; check 3 (`m6_goldens` minimap fog) stays T27. `MinimapImage` gains `Fog` and composes terrain with fog: unexplored black, explored half brightness, visible clear; `fromVision` maps block columns to vision cells (`ShroudExtract.CELL_BLOCKS`). `RtsMinimap` rebuilds tiles under the client's vision bitsets and invalidates chunk hashes when `visionRevision` moves. `Replication.visibility` defaults to each faction's `VisibilityIndex` (test overrides still win; revealed-map → `ALL` stays AFTER-T10). L1: `MinimapFogTest.pixelsUnderFogEqualTheHash`. L3: `fogtests.no_dot_data_for_fogged_units` (own + visible enemy in `unit_summary`, fogged enemy absent). `:core:test` and mod compile green.
+- **UI-16 status:** L1 + L3 done; L4 golden (T27) open.
 
 ### 2026-11-13 — M6 T7
 
@@ -102,7 +107,7 @@ Newest first; one entry per session in the worklog's shape.
 New pitfalls go straight into `docs/kb/` on the branch; list here which entries were added.
 
 - [rts-sim.md](../kb/rts-sim.md) "`jmhCompare` on a machine other than the baseline's" (M6 T2.2).
-- [minecraft-mod-client-render.md](../kb/minecraft-mod-client-render.md) fog shroud translucent layer; Iris shader-pack golden deferred (M6 T7, §1.6 row 36).
+- [minecraft-mod-client-render.md](../kb/minecraft-mod-client-render.md) fog shroud translucent layer; Iris shader-pack golden deferred (M6 T7, §1.6 row 36); minimap fog baked into terrain texture + visionRevision invalidate (M6 T8).
 
 ## Review
 

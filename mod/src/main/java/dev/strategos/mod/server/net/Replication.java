@@ -83,14 +83,26 @@ public final class Replication {
         this.net = net;
     }
 
-    /** A test's own rule for match {@code match}; without one, every unit is visible. */
+    /** A test's own rule for match {@code match}; without one, the faction's {@code VisibilityIndex}. */
     public void visibility(MatchId match, Visibility rule) {
         visibility.put(match, rule);
     }
 
-    // AFTER-T10: MATCH-07 gates this on the fog option; until then every unit is visible.
+    /**
+     * Default: each faction's {@code VisibilityIndex} (FOW-07 / UI-16). A test override wins. AFTER-T10: MATCH-07's
+     * revealed map returns {@link Visibility#ALL} for every participant.
+     */
     private Visibility visibility(MatchRuntime rt) {
-        return visibility.getOrDefault(rt.id(), Visibility.ALL);
+        Visibility override = visibility.get(rt.id());
+        if (override != null) {
+            return override;
+        }
+        MatchCore core = rt.core();
+        VisionSystem vision = core == null ? null : core.vision();
+        if (vision == null) {
+            return Visibility.ALL;
+        }
+        return (viewer, unit) -> vision.visibility(viewer.value()).isVisible(unit.handle());
     }
 
     /** A seated player's {@code ui_query}: it replaces the last; one past the rate is refused. */

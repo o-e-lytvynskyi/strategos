@@ -41,6 +41,7 @@ final class RtsMinimap {
     private int next;
     private boolean dirty;
     private long uploadedAt = -1_000; // "long ago", without the overflow Long.MIN_VALUE would give a subtraction
+    private int visionRevision = -1;
 
     /** Whether the texture holds a match's image. */
     boolean ready() {
@@ -83,13 +84,21 @@ final class RtsMinimap {
         }
         int chunksX = (sizeX + 15) / 16;
         int chunksZ = (sizeZ + 15) / 16;
+        var model = StrategosClient.model();
+        int rev = model.visionRevision();
+        if (rev != visionRevision) {
+            Arrays.fill(tileHashes, 1); // fog changed: every chunk must be rewritten
+            visionRevision = rev;
+        }
         MinimapImage.Columns columns = new Columns(level, join);
+        MinimapImage.Fog fog = MinimapImage.fromVision(
+                model.visibleBits(), model.exploredBits(), model.visionCellsX(), model.visionCellsZ());
         for (int k = 0; k < PER_TICK; k++) {
             int c = next;
             next = (next + 1) % (chunksX * chunksZ);
             int cx = c % chunksX;
             int cz = c / chunksX;
-            int[] tile = MinimapImage.tile(columns, cx, cz, sizeX, sizeZ);
+            int[] tile = MinimapImage.tile(columns, fog, cx, cz, sizeX, sizeZ);
             int hash = Arrays.hashCode(tile);
             if (hash == tileHashes[c]) {
                 continue;
@@ -128,6 +137,7 @@ final class RtsMinimap {
         next = 0;
         dirty = true;
         uploadedAt = -1_000;
+        visionRevision = -1;
     }
 
     private void close(Minecraft mc) {
