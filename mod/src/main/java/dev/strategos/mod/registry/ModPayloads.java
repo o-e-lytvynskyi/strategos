@@ -23,6 +23,7 @@ import dev.strategos.mod.server.net.payload.UiQueryPayload;
 import dev.strategos.mod.server.net.payload.UnitDetailPayload;
 import dev.strategos.mod.server.net.payload.UnitHudPayload;
 import dev.strategos.mod.server.net.payload.UnitSummaryPayload;
+import dev.strategos.mod.server.net.payload.VisionDeltaPayload;
 import java.util.List;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
@@ -62,6 +63,7 @@ public final class ModPayloads {
         registrar.playToClient(UnitDetailPayload.TYPE, UnitDetailPayload.STREAM_CODEC, PayloadArrived::post);
         registrar.playToClient(FxPayload.TYPE, FxPayload.STREAM_CODEC, PayloadArrived::post);
         registrar.playToClient(MatchEventPayload.TYPE, MatchEventPayload.STREAM_CODEC, PayloadArrived::post);
+        registrar.playToClient(VisionDeltaPayload.TYPE, VisionDeltaPayload.STREAM_CODEC, PayloadArrived::post);
         registrar.playToServer(
                 UiQueryPayload.TYPE, UiQueryPayload.STREAM_CODEC, C2sHandlers.timed(C2sHandlers::uiQuery));
         registrar.playToServer(
@@ -99,6 +101,7 @@ public final class ModPayloads {
                 UnitDetailPayload.SPEC,
                 FxPayload.SPEC,
                 MatchEventPayload.SPEC,
+                VisionDeltaPayload.SPEC,
                 UiQueryPayload.SPEC,
                 TemplateAckPayload.SPEC,
                 CameraJumpPayload.SPEC,

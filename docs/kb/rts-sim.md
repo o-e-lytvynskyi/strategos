@@ -159,6 +159,19 @@ to do with it here. This is about ORCA, unit crowds and JMH. The mod toolchain i
 - A setup that waits a fixed number of ticks ("paths arrive in 4") breaks with any change of the
   delivery pace. Wait for a condition bounded from above, or open a tolerance window for the scene.
 
+## Vision: COMMANDS phase runs before WORLD
+
+- `VisionSystem` runs in `Phase.WORLD`; command resolution is in `Phase.COMMANDS`, which runs
+  first. On any tick, commands see the **previous** tick's vision data. On the very first tick,
+  no vision data exists — all enemies are invisible to every issuer.
+- Tests that resolve a cross-faction command must step the match at least once before submitting
+  the command, so `VisionSystem` has stamped the grids and updated visibility. An instance
+  initializer `{ h.step(); }` after the spawn fields is the lightest fix. The twin match (for
+  hash equality) needs the same number of ticks.
+- A faction with no units has an empty grid: every enemy is invisible to it. Tests where a
+  faction without units issues a command on another faction's unit will get `UNKNOWN_TARGET`, not
+  `NOT_OWNER`. Spawn an observer unit for that faction to give it vision.
+
 ## `jmhCompare` on a machine other than the baseline's
 
 - `perf/baseline-m4pro.json` comes from one machine. On another (an M1 Pro under a load average of

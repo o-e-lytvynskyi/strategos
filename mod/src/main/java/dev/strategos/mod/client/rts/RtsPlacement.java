@@ -280,5 +280,10 @@ final class RtsPlacement {
             }
             return false;
         }
+
+        @Override
+        public boolean explored(int x, int z) {
+            return StrategosClient.model().isExplored(x, z);
+        }
     }
 }

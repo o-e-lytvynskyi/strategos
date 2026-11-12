@@ -221,6 +221,72 @@ public final class PersistenceTests {
         }
     }
 
+    /**
+     * FOW-07.4: explored bits survive a save and restore. A unit spawned and stepped so it explores cells around it;
+     * the match is saved, unloaded and restored, and the explored cells are still set.
+     */
+    @StrategosTest(timeoutTicks = 400)
+    public static void exploredSurvivesSaveAndLoad(GameTestHelper h) {
+        MatchRegistry registry = StrategosServer.get().matches();
+        MatchRuntime rt = MatchFixture.create(
+                h, MatchFixture.options(SimHarness.DEFAULT_SEED, h).withPersistent(true));
+        spawn(rt, 16, 16, 1, 0);
+        var state = new Object() {
+            MatchRuntime back;
+        };
+        h.startSequence()
+                .thenWaitUntil(() -> {
+                    int[] units = handles(rt);
+                    check(units.length == 1, "not spawned yet");
+                    body(rt, units[0]);
+                })
+                .thenExecuteAfter(20, () -> {
+                    dev.strategos.core.sim.vision.VisionSystem vision = core(rt).vision();
+                    check(vision != null, "no vision system");
+                    dev.strategos.core.sim.vision.VisionGrid grid = vision.grid(0);
+                    int cx = dev.strategos.core.sim.vision.VisionGrid.cellOf(16);
+                    int cz = dev.strategos.core.sim.vision.VisionGrid.cellOf(16);
+                    check(grid.isExplored(cx, cz), "the unit's cell was not explored");
+                    int explored = 0;
+                    for (int x = 0; x < grid.cellsX(); x++) {
+                        for (int z = 0; z < grid.cellsZ(); z++) {
+                            if (grid.isExplored(x, z)) {
+                                explored++;
+                            }
+                        }
+                    }
+                    check(explored > 0, "nothing was explored");
+
+                    MatchData data = rt.data();
+                    MatchRecord record = registry.record(rt.id());
+                    check(data != null && record != null, "the persistent match has no blob or record");
+                    CompoundTag tag = data.save(new CompoundTag(), h.getLevel().registryAccess());
+                    int exploredBefore = explored;
+
+                    registry.unload(rt.id());
+                    state.back = registry.restore(h.getLevel(), record, MatchData.load(rt.id(), tag));
+                    registry.resume(state.back.id());
+
+                    dev.strategos.core.sim.vision.VisionSystem visionBack =
+                            core(state.back).vision();
+                    check(visionBack != null, "restored match has no vision");
+                    dev.strategos.core.sim.vision.VisionGrid gridBack = visionBack.grid(0);
+                    check(gridBack.isExplored(cx, cz), "the unit's cell lost explored after restore");
+                    int exploredAfter = 0;
+                    for (int x = 0; x < gridBack.cellsX(); x++) {
+                        for (int z = 0; z < gridBack.cellsZ(); z++) {
+                            if (gridBack.isExplored(x, z)) {
+                                exploredAfter++;
+                            }
+                        }
+                    }
+                    check(
+                            exploredAfter == exploredBefore,
+                            "explored count differs: before=" + exploredBefore + " after=" + exploredAfter);
+                })
+                .thenSucceed();
+    }
+
     private static final dev.strategos.core.shared.TemplateId HOUSE =
             new dev.strategos.core.shared.TemplateId("strategos:building/house");
     private static final dev.strategos.core.shared.TemplateId CIVIC_CENTRE =

@@ -19,6 +19,7 @@ import dev.strategos.mod.server.content.TemplateSync;
 import dev.strategos.mod.server.debug.DebugFeed;
 import dev.strategos.mod.server.debug.PerfDump;
 import dev.strategos.mod.server.fog.InterestSets;
+import dev.strategos.mod.server.fog.TrackerRefresher;
 import dev.strategos.mod.server.jobs.PathThreads;
 import dev.strategos.mod.server.match.MapImports;
 import dev.strategos.mod.server.match.MatchRegistry;
@@ -81,6 +82,7 @@ public final class StrategosServer {
     private final InterestSets interest = new InterestSets();
     private final DebugFeed debug;
     private final Replication replication;
+    private final TrackerRefresher trackerRefresher;
     private final PerfDump perf;
     private volatile BlockClassTable blockClasses;
     private volatile MaterialTable materials;
@@ -115,6 +117,7 @@ public final class StrategosServer {
                 new DebugFeed(server, () -> this.matches, net, StrategosConfig.INSTANCE.debugPermission.getAsInt());
         this.perf = new PerfDump(server, () -> this.matches);
         this.replication = new Replication(server, () -> this.matches, net);
+        this.trackerRefresher = new TrackerRefresher(server, () -> this.matches);
         this.blockClasses = buildBlockClasses();
         this.materials = buildMaterials();
     }
@@ -379,6 +382,7 @@ public final class StrategosServer {
             s.perf.tick();
             s.debug.tick();
             s.replication.tick();
+            s.trackerRefresher.tick();
             s.net.flush();
             s.betweenTicks.tickEnds(System.nanoTime() - start);
         }

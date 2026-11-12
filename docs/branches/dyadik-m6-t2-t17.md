@@ -4,9 +4,9 @@
 
 ## Now
 
-- **Milestone:** M6 MVP: First skirmish, 5 of 28 tasks done (T2 split into T2.1 and T2.2); spec [M6-first-skirmish.md](../milestones/M6-first-skirmish.md).
-- **Last finished task:** M6 T5 (2026-11-12), the commit `M6 T5: vision grid, visibility and the resolver's fog`.
-- **Next task:** M6 T6 · FOW-07 server, explored, vision_delta, FogGate, TrackerRefresher.
+- **Milestone:** M6 MVP: First skirmish, 6 of 28 tasks done (T2 split into T2.1 and T2.2); spec [M6-first-skirmish.md](../milestones/M6-first-skirmish.md).
+- **Last finished task:** M6 T6 (2026-11-12), the commit `M6 T6: FOW-07 server — vision delta, fog gate, tracker refresh, explored wiring`.
+- **Next task:** M6 T7 · FOW-08 client: the fog shader and the minimap.
 - **Merged from main last:** 0a7cc3b (2026-10-25).
 
 ## Depends on unfinished work
@@ -20,6 +20,11 @@ From the assessment before the claim (procedure §2a step 0); kept current.
 ## Log
 
 Newest first; one entry per session in the worklog's shape.
+
+### 2026-11-12 — M6 T6
+
+- **M6 T6 · FOW-07 server — vision delta, fog gate, tracker refresh, explored wiring** — FOW-07 `done`. `VisionDelta` protocol record (matchId, tick, visible cell indices, explored cell indices). `VisionDeltaTracker` delta-encodes the visible/explored cell changes per faction at the summary pace (2 Hz); wired into `Replication.tick()`. `VisionDeltaPayload` S2C payload registered in `ModPayloads`, client receives through `ClientPayloads`. `FogGate` 3-overload: `decide` (match membership), `canSee(match, uuid, matchOf)` for legacy `broadcastToPlayer`, and the 7-arg `canSee` with VisibilityIndex for per-unit visibility (deferred to T10 MATCH-07). `TrackerRefresher` every 5 ticks at offset 1: re-runs `ServerChunkCache#move(player)` when the faction's visibility version changed, triggering re-pairing. `BodyEvents.canSee` updated comment — match membership only until T10 wires per-unit visibility. `Placing.world()` gains `faction` parameter; `explored()` intentionally inert (`return true`), deferred to T10. `CommanderService.explored()` same pattern. `GatherRule`, `PlaceBuildingRule`, `QueriesImpl` callers updated. `ClientPlacement`/`RtsPlacement` gains `explored()` default (delegates to `StrategosClient.model().isExplored()`). `ClientMatchModel.isExplored()` wired to VisionSystem. ADR-0025 status → Accepted (option C: allow all commands, explored check deferred). `VisionSystem.isExplored()` public with pristine fallback. `VisionGrid.cellOf()` public static. `VisibilityIndex` gains save/restore/mix hysteresis. 04 §7.3 amended (the fog gate paragraph). `rts-sim.md` kb entry on cell vs block coordinates. New: `ExploredTest` (core, 2 tests), `FogTests.aHiddenEnemyIsNeverPaired` (L3), `PersistenceTests.exploredSurvivesSaveAndLoad` (L3). `verify`: 1376 L1 green, 215/216 L3 green (1 pre-existing: reconciler convergence), smoke green.
+- **Decisions taken:** (8) ADR-0025 option C (allow all commands into unexplored cells) — the explored check is intentionally inert for T6; T10 (MATCH-07) wires it to the fog option. (9) FogGate pairing test deferred to T10 — `broadcastToPlayer` uses match membership only until T10 wires per-unit visibility; the `pairsWithin6UnpairsWithin15` test requires that wiring. (10) `fogBuildings` in Replication inert (`return live;`) — building fog requires the pristine guard and cell-coordinate conversion that belong in T10 when the fog option is wired.
 
 ### 2026-11-12 — M6 T5
 

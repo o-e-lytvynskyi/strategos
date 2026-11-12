@@ -1,5 +1,6 @@
 package dev.strategos.core.sim.vision;
 
+import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.Hasher;
 import dev.strategos.core.sim.EntityStore;
@@ -14,15 +15,22 @@ import java.util.List;
  * Which units one faction sees: its own, and an enemy's from the tick it stands in a seen cell until
  * {@link #HYSTERESIS} ticks after it last did. Keyed by unit index.
  */
+@CoreApi
 public final class VisibilityIndex {
     static final int HYSTERESIS = 10;
     private static final long NONE = -1;
 
     private final BitSet visible = new BitSet();
     private long[] lastSeen = new long[0];
+    private int version;
 
     public boolean isVisible(int handle) {
         return visible.get(Handle.index(handle));
+    }
+
+    /** Counts the updates that changed what the faction sees; equal values mean an equal set. */
+    public int version() {
+        return version;
     }
 
     public void update(
@@ -38,15 +46,22 @@ public final class VisibilityIndex {
             lastSeen = Arrays.copyOf(lastSeen, Math.max(high, old * 2));
             Arrays.fill(lastSeen, old, lastSeen.length, NONE);
         }
+        boolean changed = false;
         for (int i = 0; i < high; i++) {
             boolean held = false;
             if (entities.aliveAt(i)) {
                 if (identity.faction(i) == thisFaction) {
+                    if (!visible.get(i)) {
+                        changed = true;
+                    }
                     visible.set(i);
                     lastSeen[i] = NONE;
                     continue;
                 }
                 if (grid.count(VisionGrid.cellOf(motion.x(i)), VisionGrid.cellOf(motion.z(i))) > 0) {
+                    if (!visible.get(i)) {
+                        changed = true;
+                    }
                     visible.set(i);
                     lastSeen[i] = tick;
                     continue;
@@ -54,9 +69,15 @@ public final class VisibilityIndex {
                 held = visible.get(i) && lastSeen[i] != NONE && tick - lastSeen[i] <= HYSTERESIS;
             }
             if (!held) {
+                if (visible.get(i)) {
+                    changed = true;
+                }
                 visible.clear(i);
                 lastSeen[i] = NONE;
             }
+        }
+        if (changed) {
+            version++;
         }
     }
 

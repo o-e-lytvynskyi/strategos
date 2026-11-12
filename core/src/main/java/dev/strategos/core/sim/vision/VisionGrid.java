@@ -1,11 +1,13 @@
 package dev.strategos.core.sim.vision;
 
+import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.Hasher;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 /** One faction's vision: per 4-block cell the number of its viewers that see it, and the cells it ever saw. */
+@CoreApi
 public final class VisionGrid {
     private final int cellsX;
     private final int cellsZ;
@@ -81,6 +83,15 @@ public final class VisionGrid {
         }
         int i = cellZ * cellsX + cellX;
         return (explored[i >> 6] & (1L << (i & 63))) != 0;
+    }
+
+    /** The raw explored word at index {@code w}; for the delta tracker. */
+    long exploredWord(int w) {
+        return explored[w];
+    }
+
+    int exploredWords() {
+        return explored.length;
     }
 
     /** Whether no cell was ever explored. */

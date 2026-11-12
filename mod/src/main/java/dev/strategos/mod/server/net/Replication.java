@@ -13,6 +13,8 @@ import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.core.sim.replicate.HudMemory;
 import dev.strategos.core.sim.replicate.ReplicationService;
 import dev.strategos.core.sim.replicate.Visibility;
+import dev.strategos.core.sim.vision.VisionDeltaTracker;
+import dev.strategos.core.sim.vision.VisionSystem;
 import dev.strategos.mod.server.match.MatchRegistry;
 import dev.strategos.mod.server.match.MatchRuntime;
 import dev.strategos.mod.server.net.payload.BuildingStatePayload;
@@ -21,6 +23,7 @@ import dev.strategos.mod.server.net.payload.FactionStatePayload;
 import dev.strategos.mod.server.net.payload.UnitDetailPayload;
 import dev.strategos.mod.server.net.payload.UnitHudPayload;
 import dev.strategos.mod.server.net.payload.UnitSummaryPayload;
+import dev.strategos.mod.server.net.payload.VisionDeltaPayload;
 import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.List;
@@ -68,6 +71,7 @@ public final class Replication {
     private final Supplier<MatchRegistry> matches;
     private final NetGateway net;
     private final Map<MatchId, Visibility> visibility = new HashMap<>();
+    private final Map<Long, VisionDeltaTracker> visionTrackers = new HashMap<>();
 
     private final Map<UUID, FactionState> factions = new HashMap<>();
     private final Map<UUID, BuildingState> buildings = new HashMap<>();
@@ -79,11 +83,12 @@ public final class Replication {
         this.net = net;
     }
 
-    /** Who sees which enemy in match {@code match}; every unit until fog (M6), or a test's own rule for its match. */
+    /** A test's own rule for match {@code match}; without one, every unit is visible. */
     public void visibility(MatchId match, Visibility rule) {
         visibility.put(match, rule);
     }
 
+    // AFTER-M6: T10 (MATCH-07) gates this on the fog option; until then every unit is visible.
     private Visibility visibility(MatchRuntime rt) {
         return visibility.getOrDefault(rt.id(), Visibility.ALL);
     }
@@ -135,12 +140,14 @@ public final class Replication {
         if (now % SUMMARY_EVERY != 0) {
             return;
         }
-        visibility.keySet().removeIf(id -> matches.get().get(id) == null); // a disposed match's rule
+        visibility.keySet().removeIf(id -> matches.get().get(id) == null);
+        visionTrackers.keySet().removeIf(key -> matches.get().get(new MatchId((int) (key >> 8))) == null);
         for (MatchRuntime rt : matches.get().all()) {
             MatchCore core = rt.core();
             if (core == null || rt.lifecycle() != MatchLifecycle.RUNNING) {
                 continue;
             }
+            VisionSystem vision = core.vision();
             for (int f = 0; f < core.queries().config().factions(); f++) {
                 FactionSlot faction = new FactionSlot(f);
                 if (rt.roster().of(faction).isEmpty()) {
@@ -150,6 +157,16 @@ public final class Replication {
                         new Audience.Faction(rt.id(), faction),
                         new UnitSummaryPayload(ReplicationService.summary(
                                 core.queries(), rt.id().value(), faction, visibility(rt))));
+                if (vision != null) {
+                    long trackerKey = ((long) rt.id().value() << 8) | f;
+                    var grid = vision.grid(f);
+                    VisionDeltaTracker tracker = visionTrackers.computeIfAbsent(
+                            trackerKey, k -> new VisionDeltaTracker(grid.cellsX(), grid.cellsZ()));
+                    net.send(
+                            new Audience.Faction(rt.id(), faction),
+                            new VisionDeltaPayload(tracker.delta(
+                                    rt.id().value(), core.queries().tick(), grid)));
+                }
             }
         }
     }

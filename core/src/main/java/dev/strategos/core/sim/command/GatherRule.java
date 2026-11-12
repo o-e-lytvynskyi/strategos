@@ -44,6 +44,7 @@ final class GatherRule implements CommandRule<Gather> {
             return Tally.rejectAll(envelope, kind(), units.size(), RejectReason.UNKNOWN_TARGET);
         }
         NodeStore nodes = state.nodes();
+        // AFTER-M6: T10 (MATCH-07) gates this on the fog option; until then gather is not gated on explored.
         int resource = nodes.resource(node);
         int subtype = nodes.subtype(node);
         double x = nodes.anchorX(node);

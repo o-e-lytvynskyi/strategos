@@ -370,7 +370,7 @@ final class QueriesImpl implements MatchQueries {
         }
         var at = dev.strategos.core.content.Footprint.of(b, x, z, 0);
         var failed = dev.strategos.core.content.PlacementRules.check(
-                        dev.strategos.core.sim.build.Placing.world(state),
+                        dev.strategos.core.sim.build.Placing.world(state, faction),
                         b,
                         at,
                         faction,

@@ -10,6 +10,7 @@ import dev.strategos.core.protocol.MatchNews;
 import dev.strategos.core.protocol.UnitDetail;
 import dev.strategos.core.protocol.UnitHud;
 import dev.strategos.core.protocol.UnitSummary;
+import dev.strategos.core.protocol.VisionDelta;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +37,11 @@ public final class ClientMatchModel {
     private List<UnitSummary.Entry> units = List.of();
     private final Map<Integer, Integer> health = new HashMap<>();
     private List<UnitDetail.Unit> details = List.of();
+
+    private int visionCellsX;
+    private int visionCellsZ;
+    private long[] visibleBits = new long[0];
+    private long[] exploredBits = new long[0];
 
     /** Takes a frame: the joined match's, newer than the last; a new match's replaces everything. */
     public void accept(UnitSummary frame, int joinedMatch) {
@@ -208,6 +214,61 @@ public final class ClientMatchModel {
         return details;
     }
 
+    /** Takes a vision delta of the joined match. */
+    public void acceptVision(VisionDelta delta, int joinedMatch) {
+        if (delta.matchId() != joinedMatch) {
+            return;
+        }
+        int cells = delta.cellsX() * delta.cellsZ();
+        int words = (cells + 63) / 64;
+        if (delta.full()) {
+            visionCellsX = delta.cellsX();
+            visionCellsZ = delta.cellsZ();
+            visibleBits = new long[words];
+            exploredBits = new long[words];
+            for (int idx : delta.visible()) {
+                visibleBits[idx >> 6] |= 1L << (idx & 63);
+            }
+            for (int idx : delta.explored()) {
+                exploredBits[idx >> 6] |= 1L << (idx & 63);
+            }
+        } else {
+            if (visibleBits.length != words) {
+                return;
+            }
+            for (int idx : delta.visible()) {
+                visibleBits[idx >> 6] ^= 1L << (idx & 63);
+            }
+            for (int idx : delta.explored()) {
+                exploredBits[idx >> 6] |= 1L << (idx & 63);
+            }
+        }
+    }
+
+    public boolean isVisible(int cellX, int cellZ) {
+        if (cellX < 0 || cellX >= visionCellsX || cellZ < 0 || cellZ >= visionCellsZ) {
+            return false;
+        }
+        int i = cellZ * visionCellsX + cellX;
+        return (visibleBits[i >> 6] & (1L << (i & 63))) != 0;
+    }
+
+    public boolean isExplored(int cellX, int cellZ) {
+        if (cellX < 0 || cellX >= visionCellsX || cellZ < 0 || cellZ >= visionCellsZ) {
+            return false;
+        }
+        int i = cellZ * visionCellsX + cellX;
+        return (exploredBits[i >> 6] & (1L << (i & 63))) != 0;
+    }
+
+    public int visionCellsX() {
+        return visionCellsX;
+    }
+
+    public int visionCellsZ() {
+        return visionCellsZ;
+    }
+
     /** Forgets the match: the player left it. */
     public void clear() {
         end = null;
@@ -221,6 +282,10 @@ public final class ClientMatchModel {
         units = List.of();
         health.clear();
         details = List.of();
+        visionCellsX = 0;
+        visionCellsZ = 0;
+        visibleBits = new long[0];
+        exploredBits = new long[0];
     }
 
     public List<UnitSummary.Entry> units() {

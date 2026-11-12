@@ -29,8 +29,8 @@ public final class Placing {
 
     private Placing() {}
 
-    /** The match as the rules read it, taken now: footprints and nodes as they stand. */
-    public static PlacementRules.World world(MatchState s) {
+    /** The match as the rules read it, taken now; {@code faction} &lt; 0 means observer (everything explored). */
+    public static PlacementRules.World world(MatchState s, int faction) {
         MatchBounds bounds = s.config().bounds();
         BitSet taken = new BitSet(bounds.sizeX() * bounds.sizeZ());
         List<PlacementRules.Centre> centres = new ArrayList<>();
@@ -84,7 +84,8 @@ public final class Placing {
 
             @Override
             public boolean explored(int x, int z) {
-                return true; // every cell until fog (M6), as CAM-05's drop point (M2 spec §1.6 row 44)
+                // AFTER-M6: T10 (MATCH-07) wires this to the fog option; until then the check is inert.
+                return true;
             }
 
             @Override

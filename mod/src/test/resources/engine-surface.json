@@ -25,7 +25,8 @@
     "strategos:ui_query",
     "strategos:unit_detail",
     "strategos:unit_hud",
-    "strategos:unit_summary"
+    "strategos:unit_summary",
+    "strategos:vision_delta"
   ],
   "dataMaps": ["strategos:nav_class", "strategos:resource_yield"],
   "worldgen": [

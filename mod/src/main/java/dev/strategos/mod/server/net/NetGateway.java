@@ -97,7 +97,8 @@ public final class NetGateway {
                     rt.roster().of(f.faction()).forEach(player -> queue(player, payload));
                 }
             }
-            case Audience.SeesCell c -> toMembers(c.match(), payload); // every member sees every cell until fog (M8)
+            case Audience.SeesCell c ->
+                toMembers(c.match(), payload); // TODO fog-filter: send only to factions that see the cell (FOW-03, M8)
             case Audience.Match m -> toMembers(m.match(), payload);
         }
     }

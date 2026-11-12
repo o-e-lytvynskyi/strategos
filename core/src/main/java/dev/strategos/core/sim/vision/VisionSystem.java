@@ -1,6 +1,7 @@
 package dev.strategos.core.sim.vision;
 
 import dev.strategos.core.content.CorePaths;
+import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.Hasher;
 import dev.strategos.core.sim.EntityStore;
 import dev.strategos.core.sim.IdentityStore;
@@ -22,6 +23,7 @@ import java.util.TreeMap;
  * bits rise, and each faction's visibility index is brought up to date. A faction beyond the player factions (Gaia)
  * sees nothing and adds nothing. With {@code revealMap} every cell counts as seen.
  */
+@CoreApi
 public final class VisionSystem implements MatchSystem {
     private static final int UNSET = -1;
 
@@ -51,6 +53,12 @@ public final class VisionSystem implements MatchSystem {
 
     public VisionGrid grid(int faction) {
         return grids[faction];
+    }
+
+    /** Whether cell ({@code x}, {@code z}) is explored by {@code faction}; true when no cell was ever explored. */
+    public boolean isExplored(int faction, int x, int z) {
+        VisionGrid g = grids[faction];
+        return g.pristine() || g.isExplored(x, z);
     }
 
     public VisibilityIndex visibility(int faction) {

@@ -3,6 +3,8 @@ package dev.strategos.mod.server.commander;
 import dev.strategos.core.client.camera.CameraRig;
 import dev.strategos.core.protocol.CameraJump;
 import dev.strategos.core.protocol.ModeSwitch;
+import dev.strategos.mod.StrategosServer;
+import dev.strategos.mod.server.match.MatchRegistry;
 import dev.strategos.mod.server.match.MatchRuntime;
 import dev.strategos.mod.server.match.MatchSpace;
 import java.util.ArrayList;
@@ -209,7 +211,7 @@ public final class CommanderService {
                 && level.getFluidState(pos).isEmpty();
     }
 
-    /** Every cell counts as explored until fog arrives (M6, D-24); then the faction's explored cells. */
+    // AFTER-M6: T10 (MATCH-07) gates this on the fog option; until then the observer may stand anywhere.
     static boolean explored(MatchRuntime rt, BlockPos feet) {
         return true;
     }
@@ -286,7 +288,14 @@ public final class CommanderService {
             if (player == null || !observes(player) || last == null) {
                 continue;
             }
-            if (e.getValue().contains(player.blockPosition())) {
+            MatchRuntime rt = null;
+            MatchRegistry.Seat seat = StrategosServer.get().matches().seatOf(e.getKey());
+            if (seat != null) {
+                rt = seat.match();
+            }
+            boolean inside = e.getValue().contains(player.blockPosition())
+                    && (rt == null || explored(rt, player.blockPosition()));
+            if (inside) {
                 lastInside.put(e.getKey(), new double[] {player.getX(), player.getY(), player.getZ()});
             } else {
                 player.connection.teleport(last[0], last[1], last[2], player.getYRot(), player.getXRot());

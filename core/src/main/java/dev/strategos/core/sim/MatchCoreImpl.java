@@ -15,6 +15,7 @@ import dev.strategos.core.sim.nav.PathService;
 import dev.strategos.core.sim.unitai.UnitAiSystem;
 import dev.strategos.core.sim.vision.VisionSystem;
 import java.util.List;
+import org.jspecify.annotations.Nullable;
 
 /** The match kernel: the systems registered in phase order and the nine-phase step. */
 final class MatchCoreImpl implements MatchCore {
@@ -141,6 +142,11 @@ final class MatchCoreImpl implements MatchCore {
     @Override
     public PhaseTimers timers() {
         return timers;
+    }
+
+    @Override
+    public @Nullable VisionSystem vision() {
+        return state.visionSystem();
     }
 
     /** For the kernel's own tests. */
