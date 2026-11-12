@@ -436,8 +436,9 @@ class ResearchTest {
         TemplateSet b = TemplateSet.builtin();
         List<TemplateCompiler.Flat> flats = new ArrayList<>();
         for (UnitTemplate t : b.all()) {
-            flats.add(new TemplateCompiler.Flat(
-                    t.id(), t.netIndex(), b.flattened(t.id()).deepCopy()));
+            JsonObject json = b.flattened(t.id()).deepCopy();
+            json.remove("Researcher"); // no techs: drop Researcher so the compile stays clean
+            flats.add(new TemplateCompiler.Flat(t.id(), t.netIndex(), json));
         }
         return TemplateCompiler.fromFlattened(flats, List.of()).set();
     }

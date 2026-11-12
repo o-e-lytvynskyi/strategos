@@ -186,6 +186,11 @@ public final class TemplateCompiler {
                 set(flats, units, techs), flattened, List.copyOf(problems), next, List.copyOf(derivations), techNext);
     }
 
+    /** A set from flattened templates only; technologies are empty (tests and M5 paths without TECH-01). */
+    public static Result fromFlattened(List<Flat> flats) {
+        return fromFlattened(flats, List.of());
+    }
+
     /**
      * A set from flattened templates and technologies at their net indices, decoded as {@link #compile} decodes them: a
      * journal's or a client's copy, so the set has the sha it had. The problems name each template by its id.

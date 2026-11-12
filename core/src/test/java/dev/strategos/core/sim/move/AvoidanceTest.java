@@ -193,11 +193,12 @@ class AvoidanceTest {
      */
     @Test
     void aStandingCrowdKeepsItsHistory() {
-        assertThat(standingCrowd(false, false)).isEqualTo(-3768017173266802458L);
+        // FOW-01: explored cells and hysteresis enter the state hash (rebaselined after M5+M6 merge).
+        assertThat(standingCrowd(false, false)).isEqualTo(8936906590444107932L);
         assertThat(standingCrowd(true, false))
                 .as("one unit displaced from outside")
-                .isEqualTo(2536433895209204293L);
-        assertThat(standingCrowd(false, true)).as("an agent beside it").isEqualTo(-7976379457236708123L);
+                .isEqualTo(158291209440373445L);
+        assertThat(standingCrowd(false, true)).as("an agent beside it").isEqualTo(3513230342197489514L);
     }
 
     private static long standingCrowd(boolean displace, boolean agent) {

@@ -167,7 +167,8 @@ class ContentSwapReplayTest {
         int next = builtin.all().stream().mapToInt(UnitTemplate::netIndex).max().orElseThrow() + 1;
         List<TemplateCompiler.Flat> oldFlats = new ArrayList<>(original);
         oldFlats.add(new TemplateCompiler.Flat(existing, next, builtin.flattened(house)));
-        TemplateCompiler.Result oldSet = TemplateCompiler.fromFlattened(oldFlats);
+        var techs = builtin.techs().stream().map(TemplateCompiler.TechFlat::of).toList();
+        TemplateCompiler.Result oldSet = TemplateCompiler.fromFlattened(oldFlats, techs);
         assertThat(oldSet.ok()).isTrue();
         SimHarness h = SimHarness.builder().size(64, 32).templates(oldSet.set()).build();
         h.publishAll(VoxelFixtures.flat(64, 32, 16, 1));
@@ -177,7 +178,7 @@ class ContentSwapReplayTest {
         List<TemplateCompiler.Flat> newFlats = new ArrayList<>(original);
         newFlats.add(new TemplateCompiler.Flat(added, next, builtin.flattened(house)));
         newFlats.add(new TemplateCompiler.Flat(existing, next + 1, builtin.flattened(house)));
-        TemplateCompiler.Result newSet = TemplateCompiler.fromFlattened(newFlats);
+        TemplateCompiler.Result newSet = TemplateCompiler.fromFlattened(newFlats, techs);
         assertThat(newSet.ok()).isTrue();
         SimHarness restored = SimHarness.restore(h.core().snapshot(), newSet.set());
         assertThat(restored.queries().buildings().getFirst().template())

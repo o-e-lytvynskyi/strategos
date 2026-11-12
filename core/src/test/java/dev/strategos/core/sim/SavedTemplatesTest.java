@@ -104,7 +104,7 @@ class SavedTemplatesTest {
                         t.id().equals(CUSTOM_HOUSE) ? FIRST + 1 : t.id().equals(CUSTOM_UNIT) ? FIRST : t.netIndex(),
                         original.flattened(t.id())))
                 .toList();
-        TemplateSet reordered = TemplateCompiler.fromFlattened(flats).set();
+        TemplateSet reordered = TemplateCompiler.fromFlattened(flats, techFlats(original)).set();
         assertThat(reordered.hash()).isEqualTo(original.hash());
         MatchState state = state(original);
         building(state, CUSTOM_HOUSE);
@@ -134,7 +134,7 @@ class SavedTemplatesTest {
             boolean isBuilding = builtin.byIndex(index).isBuilding();
             flats.add(new TemplateCompiler.Flat(
                     custom, index, builtin.flattened(isBuilding ? HOUSE : TemplateSet.INFANTRY)));
-            MatchState state = state(TemplateCompiler.fromFlattened(flats).set());
+            MatchState state = state(TemplateCompiler.fromFlattened(flats, techFlats(builtin)).set());
             int handle = building(state, isBuilding ? custom : new TemplateId("strategos:building/civic_centre"));
             if (!isBuilding) {
                 state.buildings().enqueue(handle, index);
@@ -156,7 +156,7 @@ class SavedTemplatesTest {
             }
         }
         flats.add(new TemplateCompiler.Flat(HOUSE, 5, builtin.flattened(HOUSE)));
-        MatchState state = state(TemplateCompiler.fromFlattened(flats).set());
+        MatchState state = state(TemplateCompiler.fromFlattened(flats, techFlats(builtin)).set());
         building(state, HOUSE);
         MatchSnapshot old = legacy(Snapshots.take(state));
         assertThatThrownBy(() -> SavedTemplates.buildings(roundTrip(old), builtin))
@@ -198,7 +198,7 @@ class SavedTemplatesTest {
                 .map(t -> new TemplateCompiler.Flat(
                         t.id(), t.netIndex(), before.flattened(t.id().equals(deposit) ? TemplateSet.INFANTRY : t.id())))
                 .toList();
-        TemplateSet wrongKind = TemplateCompiler.fromFlattened(changed).set();
+        TemplateSet wrongKind = TemplateCompiler.fromFlattened(changed, techFlats(before)).set();
         assertThat(state.templateSwapProblem(wrongKind)).contains("kind");
         state.swapTemplates(wrongKind);
         assertThat(state.templates()).isSameAs(before);
@@ -252,16 +252,22 @@ class SavedTemplatesTest {
         flats.add(new TemplateCompiler.Flat(CUSTOM_HOUSE, FIRST + (inserted ? 1 : 0), builtin.flattened(HOUSE)));
         flats.add(new TemplateCompiler.Flat(
                 CUSTOM_UNIT, FIRST + (inserted ? 2 : 1), builtin.flattened(TemplateSet.INFANTRY)));
-        var result = TemplateCompiler.fromFlattened(flats);
+        var result = TemplateCompiler.fromFlattened(flats, techFlats(builtin));
         assertThat(result.ok()).isTrue();
         return result.set();
     }
 
     private static TemplateSet without(TemplateSet set, TemplateId omitted) {
-        return TemplateCompiler.fromFlattened(set.all().stream()
-                        .filter(t -> !t.id().equals(omitted))
-                        .map(t -> new TemplateCompiler.Flat(t.id(), t.netIndex(), set.flattened(t.id())))
-                        .toList())
+        return TemplateCompiler.fromFlattened(
+                        set.all().stream()
+                                .filter(t -> !t.id().equals(omitted))
+                                .map(t -> new TemplateCompiler.Flat(t.id(), t.netIndex(), set.flattened(t.id())))
+                                .toList(),
+                        techFlats(set))
                 .set();
+    }
+
+    private static List<TemplateCompiler.TechFlat> techFlats(TemplateSet set) {
+        return set.techs().stream().map(TemplateCompiler.TechFlat::of).toList();
     }
 }

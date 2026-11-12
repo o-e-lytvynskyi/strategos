@@ -8,6 +8,7 @@ import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.diag.MatchLog;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
+import dev.strategos.core.shared.QueueEntry;
 import dev.strategos.core.shared.TechId;
 import dev.strategos.core.sim.build.BuildingLife;
 import dev.strategos.core.sim.build.BuildingStore;
@@ -846,6 +847,10 @@ public final class MatchState {
     }
 
     private @Nullable String referenceProblem(TemplateSet next, int index) {
+        if (QueueEntry.isTech(index)) {
+            // Queued research (-1 - tech net index) does not refuse a swap; Techs.dropRetired drops what the set lacks.
+            return null;
+        }
         UnitTemplate now = templates.byIndex(index);
         UnitTemplate replacement = next.byId(now.id());
         return replacement == null || replacement.netIndex() != index || replacement.isBuilding() != now.isBuilding()
