@@ -26,10 +26,13 @@ import dev.strategos.core.protocol.FactionState;
 import dev.strategos.core.protocol.FeedbackMsg;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.MatchNews;
+import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.NoticeMsg;
+import dev.strategos.core.protocol.QueueMode;
 import dev.strategos.core.protocol.UiQuery;
 import dev.strategos.core.protocol.UnitDetail;
 import dev.strategos.core.protocol.UnitHud;
+import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.QueueEntry;
 import dev.strategos.core.shared.Stance;
@@ -207,6 +210,18 @@ public final class RtsHud {
             if (button == 0 && m.contains(x, y)) { // UI-11: the camera to the clicked column
                 double[] at = m.toWorld(x, y);
                 mode.centreOn(join.originX() + at[0], join.originZ() + at[1]);
+            } else if (button == 1
+                    && m.contains(x, y)
+                    && !mode.selection().handles().isEmpty()) {
+                double[] at = m.toWorld(x, y); // UI-20: one move of the selection to the mapped point, Shift queues
+                int[] units = mode.selection().handles().stream()
+                        .mapToInt(Integer::intValue)
+                        .toArray();
+                mode.send(new Move(
+                        UnitSet.of(units),
+                        new Vec2d(at[0], at[1]),
+                        net.minecraft.client.gui.screens.Screen.hasShiftDown() ? QueueMode.QUEUE : QueueMode.REPLACE,
+                        0));
             }
             return true;
         }

@@ -296,7 +296,7 @@ only its own vision at every level except that labelled top level.
   5. A golden with a ping (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent), L6 · **Depends on:** UI-11, UI-12 · **Size:** M ·
   **Tier:** T1 (pulled into the MVP by D-16)
-- **Status:** specified
+- **Status:** in_progress
 
 #### UI-21 · Notification feed and alert audio
 - **Value:** Never miss what matters (an attack, a finished research, a new phase) and hear it

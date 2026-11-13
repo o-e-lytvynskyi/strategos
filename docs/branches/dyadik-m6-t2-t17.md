@@ -8,7 +8,7 @@
 
 - **Milestone:** M6 MVP: First skirmish, 13 of 29 tasks done (T12 split into T12.1 and T12.2) (T2 split into T2.1 and T2.2); spec [M6-first-skirmish.md](../milestones/M6-first-skirmish.md).
 - **Last finished task:** M6 T12.2 (2026-11-13), the commit `M6 T12.2: the first skirmish package, the jar and one headless match`.
-- **In progress:** M6 T13–T15 code in (`WIP M6 T13`–`T15`), tests not written, gates not run; next T16 · UI-20.
+- **In progress:** M6 T13–T16 code in (`WIP M6 T13`–`T16`), tests not written, gates not run; next T17 · UI-14.
 - **Open (tests, deferred on the developer's word 2026-11-13 «чисто код без тестов»):** `verifySlow`'s five fog-fallout failures (give `BattleBotTest.ground`, `EconomyBotTest`'s `HeadlessMatch` runs and `aitests` battle seeds `aiVision`); rerun `maptests.thirty_horsemen_cross`; tests for T13–T17 are not written and their gates not run.
 - **Merged from main last:** 8111c0a (2026-11-13) — M5 combat + save/reload repairs.
 
@@ -24,6 +24,10 @@ From the assessment before the claim (procedure §2a step 0); kept current.
 ## Log
 
 Newest first; one entry per session in the worklog's shape.
+
+### 2026-11-13 — M6 T16 (code only)
+
+- **M6 T16 · UI-20 minimap orders, pings and live construction — code, no tests.** A right click on the minimap sends one `Move` of the selection to the mapped point (Shift: `QUEUE`). Pings: a ring growing out of each alert and wave muster for 3 s. Live construction: a building whose `building_state` state or progress moved marks the chunks round its corner dirty; dirty chunks are rebuilt ahead of the round, each at most once a second (spec row 45: no client block hook). Not done: `MinimapBench` (JMH, PERF-14), L1 (one move per click; a changed tile within 1 s, at most once a second), L3 (the server applies it), L4 (T27).
 
 ### 2026-11-13 — M6 T15 (code only)
 
