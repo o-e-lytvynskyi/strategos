@@ -159,7 +159,7 @@ class FocusTest {
     void aSpreadIsRefusedForBadArguments() {
         int[] archers = archers(2);
         int[] enemies = dummies(2);
-        int stranger = RangedOrdersTest.spawn(h, RANGER, F1, 20.5, 20.5);
+        int stranger = RangedOrdersTest.spawn(h, RANGER, F1, 8.5, 8.5); // within DEFAULT_VISION of own archers
 
         CommandResult own = send(new AttackSpread(UnitSet.of(archers[0]), archers[1], QueueMode.REPLACE));
         assertThat(own.accepted()).isZero();

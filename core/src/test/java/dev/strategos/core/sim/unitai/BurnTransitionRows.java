@@ -47,7 +47,11 @@ final class BurnTransitionRows {
             }
             flats.add(new TemplateCompiler.Flat(t.id(), t.netIndex(), json));
         }
-        TemplateCompiler.Result result = TemplateCompiler.fromFlattened(flats);
+        TemplateCompiler.Result result = TemplateCompiler.fromFlattened(
+                flats,
+                TemplateSet.builtin().techs().stream()
+                        .map(TemplateCompiler.TechFlat::of)
+                        .toList());
         assertThat(result.problems()).isEmpty();
         return result.set();
     }

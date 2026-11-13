@@ -1,10 +1,18 @@
 package dev.strategos.core.protocol;
 
 import dev.strategos.core.shared.CoreApi;
+import org.jspecify.annotations.Nullable;
 
-/** The {@code match_state} payload: where a match is in its life, and its last completed tick. */
+/**
+ * The {@code match_state} payload: where a match is in its life, its last completed tick, and at
+ * {@link Lifecycle#ENDED} the match results (M6 §2.3).
+ */
 @CoreApi
-public record MatchStateMsg(int matchId, Lifecycle lifecycle, long tick) {
+public record MatchStateMsg(
+        int matchId,
+        Lifecycle lifecycle,
+        long tick,
+        @Nullable MatchResults results) {
     /** A match's lifecycle as the wire carries it, one name per state the server's matches go through. */
     @CoreApi
     public enum Lifecycle {
@@ -16,6 +24,10 @@ public record MatchStateMsg(int matchId, Lifecycle lifecycle, long tick) {
         ENDED,
         FAULTED,
         DISPOSED
+    }
+
+    public MatchStateMsg(int matchId, Lifecycle lifecycle, long tick) {
+        this(matchId, lifecycle, tick, null);
     }
 
     public static final WireCodec<MatchStateMsg> WIRE = new WireCodec<>() {
@@ -34,6 +46,9 @@ public record MatchStateMsg(int matchId, Lifecycle lifecycle, long tick) {
                         case DISPOSED -> 7;
                     });
             out.writeZigZag(value.tick());
+            if (value.results() != null) {
+                MatchResults.WIRE.write(out, value.results());
+            }
         }
 
         @Override
@@ -51,12 +66,15 @@ public record MatchStateMsg(int matchId, Lifecycle lifecycle, long tick) {
                 case 7 -> Lifecycle.DISPOSED;
                 default -> throw new WireException("unknown lifecycle " + code);
             };
-            return new MatchStateMsg(id, lifecycle, in.readZigZagLong());
+            long tick = in.readZigZagLong();
+            MatchResults results =
+                    lifecycle == Lifecycle.ENDED && in.remaining() > 0 ? MatchResults.WIRE.read(in) : null;
+            return new MatchStateMsg(id, lifecycle, tick, results);
         }
 
         @Override
         public int maxSize() {
-            return 5 + 1 + 10;
+            return 5 + 1 + 10 + MatchResults.WIRE.maxSize();
         }
     };
 }

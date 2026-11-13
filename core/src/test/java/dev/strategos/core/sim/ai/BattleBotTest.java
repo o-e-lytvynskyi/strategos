@@ -3,6 +3,7 @@ package dev.strategos.core.sim.ai;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.gson.JsonParser;
+import dev.strategos.core.content.StartSlot;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.Grant;
 import dev.strategos.core.protocol.SetAi;
@@ -16,6 +17,7 @@ import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.KernelAccess;
 import dev.strategos.core.sim.MatchQueries;
 import dev.strategos.core.sim.MatchRules;
+import dev.strategos.core.sim.PlayRules;
 import dev.strategos.core.sim.UnitView;
 import dev.strategos.core.sim.build.BuildingView;
 import dev.strategos.core.sim.econ.EconomyRules;
@@ -52,9 +54,11 @@ class BattleBotTest {
 
     static SimHarness ground(TemplateSet templates) {
         MatchRules d = MatchRules.DEFAULTS;
+        PlayRules ai = new PlayRules(PlayRules.Victory.NONE, false, true, true);
         SimHarness h = SimHarness.builder()
                 .size(128, 128)
-                .rules(d.withEconomy(new EconomyRules(d.economy().resources(), 300)))
+                .rules(d.withEconomy(new EconomyRules(d.economy().resources(), 300))
+                        .withPlay(ai))
                 .yBand(0, 31, 1)
                 .templates(templates)
                 .build();
@@ -62,6 +66,8 @@ class BattleBotTest {
         h.submit(PlayerSlot.ADMIN, new SpawnBuilding(CENTRE, new FactionSlot(0), 8, 8, 0));
         h.submit(PlayerSlot.ADMIN, new SpawnBuilding(CENTRE, new FactionSlot(1), 112, 112, 0));
         h.step();
+        KernelAccess.state(h.core())
+                .setStartPositions(List.of(new StartSlot(8, 1, 8, 0f), new StartSlot(112, 1, 112, 0f)));
         return h;
     }
 

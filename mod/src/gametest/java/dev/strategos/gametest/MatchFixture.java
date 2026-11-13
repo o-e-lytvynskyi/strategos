@@ -1,5 +1,6 @@
 package dev.strategos.gametest;
 
+import dev.strategos.core.sim.PlayRules;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.server.match.MatchOptions;
 import dev.strategos.mod.server.match.MatchRuntime;
@@ -36,6 +37,11 @@ public final class MatchFixture {
     /** An unsaved match with this seed; the arena's floor layer is the bounds' lowest, so units stand one higher. */
     public static MatchOptions options(long seed, GameTestHelper h) {
         return MatchOptions.gameTest(seed, Math.floor(h.getBounds().minY) + 1);
+    }
+
+    /** As {@link #options}, under MATCH-07's Fog option: for the GameTests about fog of war. */
+    public static MatchOptions fogOptions(long seed, GameTestHelper h) {
+        return options(seed, h).withPlay(PlayRules.DEFAULTS);
     }
 
     /** Disposes every GameTest match of the level: a batch's cleanup. */

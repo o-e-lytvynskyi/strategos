@@ -10,5 +10,6 @@
   "Housing": { "capacity": 20 },
   "GarrisonHolder": { "capacity": 20, "classes": "Worker Infantry" },
   "Trainer": { "units": "strategos:unit/worker", "batchExponent": 0.8 },
-  "Limit": { "count": 1 }
+  "Limit": { "count": 1 },
+  "Researcher": { "techs": "strategos:phase_town" }
 }

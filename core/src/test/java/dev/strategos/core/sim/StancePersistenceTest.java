@@ -41,9 +41,9 @@ class StancePersistenceTest {
         h.runTicks(5);
         JsonObject json =
                 MatchSnapshotCodec.encode(JsonOps.INSTANCE, h.core().snapshot()).getAsJsonObject();
-        assertThat(json.has("play"))
-                .as("no play block while nothing in it is set")
-                .isFalse();
+        assertThat(json.getAsJsonObject("play").keySet())
+                .as("matchStats/vision may be set, but unused stance state remains absent")
+                .doesNotContain("stances");
         assertThat(h.core().snapshot().play().stances()).isEmpty();
         long hash = h.stateHash();
         KernelAccess.state(h.core()).stances(); // reading is not using

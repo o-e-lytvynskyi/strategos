@@ -2,6 +2,7 @@ package dev.strategos.core.sim;
 
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.UnitTemplate;
+import dev.strategos.core.shared.QueueEntry;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.sim.build.BuildingStore;
 import java.util.List;
@@ -31,8 +32,9 @@ final class SavedTemplates {
                     }
                     int building = resolve(saved.template(), ids, next, true);
                     BuildingStore.Production p = saved.production();
+                    // Tech entries are -1 - place in production.techs (TECH-01); leave them for BuildingStore.restore.
                     List<Integer> queue = p.queue().stream()
-                            .map(index -> resolve(index, ids, next, false))
+                            .map(index -> QueueEntry.isTech(index) ? index : resolve(index, ids, next, false))
                             .toList();
                     return new BuildingStore.Saved(
                             saved.generation(),
@@ -48,7 +50,13 @@ final class SavedTemplates {
                             saved.damage(),
                             saved.site(),
                             new BuildingStore.Production(
-                                    queue, p.trained(), p.reserved(), p.waiting(), p.batches(), p.autoReseed()),
+                                    queue,
+                                    p.trained(),
+                                    p.reserved(),
+                                    p.waiting(),
+                                    p.batches(),
+                                    p.autoReseed(),
+                                    p.techs()),
                             saved.rally(),
                             saved.field(),
                             saved.stage());

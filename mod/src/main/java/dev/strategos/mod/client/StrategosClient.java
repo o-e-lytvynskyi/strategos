@@ -12,9 +12,12 @@ import dev.strategos.mod.Strategos;
 import dev.strategos.mod.client.audio.FxPlayer;
 import dev.strategos.mod.client.debug.ClientDebugState;
 import dev.strategos.mod.client.debug.DebugOverlayHost;
+import dev.strategos.mod.client.fog.ShroudRenderer;
 import dev.strategos.mod.client.fx.ShotArcRenderer;
 import dev.strategos.mod.client.fx.ShotArcs;
 import dev.strategos.mod.client.hud.RtsHud;
+import dev.strategos.mod.client.menu.ArenaWorldLauncher;
+import dev.strategos.mod.client.menu.SkirmishEntry;
 import dev.strategos.mod.client.net.ClientPayloads;
 import dev.strategos.mod.client.overlay.FarMarkers;
 import dev.strategos.mod.client.overlay.HealthBarOverlay;
@@ -22,6 +25,7 @@ import dev.strategos.mod.client.rts.RtsMode;
 import dev.strategos.mod.registry.ModEntityTypes;
 import dev.strategos.mod.server.net.payload.PayloadArrived;
 import java.util.List;
+import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -31,6 +35,7 @@ import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RenderFrameEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.neoforge.client.event.ScreenEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import org.jspecify.annotations.Nullable;
 
@@ -46,9 +51,11 @@ public final class StrategosClient {
     private static final ClientMatchModel MODEL = new ClientMatchModel();
     private static final FarMarkers FAR = new FarMarkers(MODEL);
     private static final HealthBarOverlay BARS = new HealthBarOverlay(MODEL, RTS);
+    private static final ShroudRenderer SHROUD = new ShroudRenderer(MODEL);
     private static final ShotArcs ARCS = new ShotArcs();
     private static final FxPlayer SOUNDS = new FxPlayer(RTS, ARCS);
     private static final UnitLod LOD = new UnitLod();
+    private static final ArenaWorldLauncher ARENA = new ArenaWorldLauncher();
     private static volatile @Nullable MatchJoin match;
     private static volatile List<String> resources = List.of();
     private static volatile @Nullable MatchStateMsg state;
@@ -65,6 +72,9 @@ public final class StrategosClient {
                 EntityRenderersEvent.RegisterLayerDefinitions.class,
                 e -> e.registerLayerDefinition(MountModel.LAYER, MountModel::layer));
         NeoForge.EVENT_BUS.addListener(PayloadArrived.class, ClientPayloads::onPayload);
+        NeoForge.EVENT_BUS.addListener(
+                ClientPlayerNetworkEvent.LoggingIn.class, e -> ARENA.onLoggedIn(Minecraft.getInstance()));
+        NeoForge.EVENT_BUS.addListener(ScreenEvent.Init.Post.class, SkirmishEntry::onInit);
         NeoForge.EVENT_BUS.addListener(ClientPlayerNetworkEvent.LoggingOut.class, e -> {
             RTS.remember(); // the match's camera and groups, for a return (MATCH-04)
             match = null;
@@ -79,8 +89,19 @@ public final class StrategosClient {
         RTS.register(modBus);
         HUD.register(modBus); // after RTS mode: its tick builds from the tick RTS mode just ran
         FAR.register();
+        SHROUD.register();
         NeoForge.EVENT_BUS.addListener(RenderFrameEvent.Pre.class, e -> LOD.frame());
         BARS.register();
+    }
+
+    /** The fog shroud (FOW-07); the client thread's only. */
+    public static ShroudRenderer shroud() {
+        return SHROUD;
+    }
+
+    /** Opens or creates the skirmish arena world (MATCH-14). */
+    public static ArenaWorldLauncher arena() {
+        return ARENA;
     }
 
     /** The bodies' level of detail on this client (M4 T3). */

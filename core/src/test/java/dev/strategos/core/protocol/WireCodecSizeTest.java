@@ -98,7 +98,7 @@ class WireCodecSizeTest {
                         "strategos:move=1,strategos:stop=2,strategos:spawn_units=3,"
                                 + "strategos:attack=4,strategos:attack_move=5,strategos:follow=6,strategos:grant=7,"
                                 + "strategos:spawn_building=8,strategos:gather=9,strategos:place_building=10,strategos:train=11,"
-                                + "strategos:cancel_train=12,strategos:set_rally=13,strategos:reseed=14,strategos:resign=15,strategos:rule_change=16,strategos:announce_wave=17,strategos:set_ai=18,strategos:build=19,strategos:cancel_building=20,strategos:demolish=21,strategos:set_auto_reseed=22,strategos:train_batch=23,strategos:spawn_deposit=24,strategos:set_stance=25,strategos:garrison=26,strategos:ungarrison=27,strategos:ring_bell=28,strategos:all_clear=29,strategos:attack_spread=30");
+                                + "strategos:cancel_train=12,strategos:set_rally=13,strategos:reseed=14,strategos:resign=15,strategos:rule_change=16,strategos:announce_wave=17,strategos:set_ai=18,strategos:build=19,strategos:cancel_building=20,strategos:demolish=21,strategos:set_auto_reseed=22,strategos:train_batch=23,strategos:spawn_deposit=24,strategos:set_stance=25,strategos:garrison=26,strategos:ungarrison=27,strategos:ring_bell=28,strategos:all_clear=29,strategos:attack_spread=30,strategos:research=31");
         assertThat(CommandKinds.DEFAULT.reads("strategos:move=1,strategos:stop=2,strategos:spawn_units=3"))
                 .as("M1's journals read")
                 .isTrue();
@@ -161,7 +161,7 @@ class WireCodecSizeTest {
     void thePayloadRecordsStayWithinTheirCaps() {
         assertThat(CommandBatch.WIRE.maxSize()).as("commands").isEqualTo(4 * 1024);
         assertThat(MatchJoin.WIRE.maxSize()).as("match_join").isLessThanOrEqualTo(4 * 1024);
-        assertThat(MatchStateMsg.WIRE.maxSize()).as("match_state").isLessThanOrEqualTo(256);
+        assertThat(MatchStateMsg.WIRE.maxSize()).as("match_state").isLessThanOrEqualTo(1024);
         assertThat(FeedbackMsg.WIRE.maxSize()).as("feedback").isLessThanOrEqualTo(1024);
 
         MatchJoin widest = new MatchJoin(
@@ -185,8 +185,19 @@ class WireCodecSizeTest {
                 new Feedback(Integer.MAX_VALUE, CommandOutcome.REJECTED, null, Integer.MAX_VALUE, Integer.MAX_VALUE);
         assertThat(roundTrip(FeedbackMsg.WIRE, all)).isEqualTo(all);
         MatchStateMsg late = new MatchStateMsg(Integer.MAX_VALUE, MatchStateMsg.Lifecycle.DISPOSED, Long.MAX_VALUE);
-        assertThat(size(MatchStateMsg.WIRE, late)).isEqualTo(MatchStateMsg.WIRE.maxSize());
+        assertThat(size(MatchStateMsg.WIRE, late))
+                .as("without results")
+                .isLessThanOrEqualTo(MatchStateMsg.WIRE.maxSize());
         assertThat(roundTrip(MatchStateMsg.WIRE, late)).isEqualTo(late);
+        MatchStateMsg ended = new MatchStateMsg(
+                Integer.MAX_VALUE,
+                MatchStateMsg.Lifecycle.ENDED,
+                Long.MAX_VALUE,
+                new dev.strategos.core.protocol.MatchResults(-1, Long.MAX_VALUE, java.util.List.of()));
+        assertThat(size(MatchStateMsg.WIRE, ended))
+                .as("with empty results")
+                .isLessThanOrEqualTo(MatchStateMsg.WIRE.maxSize());
+        assertThat(roundTrip(MatchStateMsg.WIRE, ended)).isEqualTo(ended);
     }
 
     @Test

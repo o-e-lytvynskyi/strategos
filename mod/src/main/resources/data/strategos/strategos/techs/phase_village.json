@@ -1,0 +1,7 @@
+{
+  "name": "strategos.tech.phase_village",
+  "icon": "minecraft:hay_block",
+  "classes": ["Phase"],
+  "ordinal": 0,
+  "time": 1
+}

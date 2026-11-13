@@ -2,11 +2,15 @@ package dev.strategos.core.sim;
 
 import dev.strategos.core.content.Blueprint;
 import dev.strategos.core.content.Footprint;
+import dev.strategos.core.content.StartSlot;
+import dev.strategos.core.content.TechDef;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.diag.MatchLog;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
+import dev.strategos.core.shared.QueueEntry;
+import dev.strategos.core.shared.TechId;
 import dev.strategos.core.sim.build.BuildingLife;
 import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.build.DamageRanks;
@@ -34,10 +38,12 @@ import dev.strategos.core.sim.nav.TerrainEdits;
 import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.core.sim.order.StanceStore;
 import dev.strategos.core.sim.prod.Population;
+import dev.strategos.core.sim.prod.Techs;
 import dev.strategos.core.sim.spatial.SpatialQueries;
 import dev.strategos.core.sim.stats.StatService;
 import dev.strategos.core.sim.unitai.ActivityTiers;
 import dev.strategos.core.sim.unitai.UnitAi;
+import dev.strategos.core.sim.vision.VisionSystem;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,6 +62,8 @@ public final class MatchState {
     private MatchConfig config;
     private final Outcome outcome = new Outcome();
     private final AiSlots aiSlots = new AiSlots();
+    private final MatchStats matchStats;
+    private final Progress progress; // the techs each faction has researched (TECH-01)
     private TemplateSet templates;
     private final EntityStore entities;
     private final IdentityStore identity = new IdentityStore();
@@ -76,6 +84,10 @@ public final class MatchState {
     private final List<Damage> damage = new ArrayList<>();
     private final MatchBus bus = new MatchBus();
     private final StatService stats;
+    private @Nullable VisionSystem visionSystem;
+    /** The map's start slots (AI-18); not saved — a restored match sets them from the map again. */
+    private List<StartSlot> startPositions = List.of();
+
     private final SpatialQueries spatial;
     private final ArrayDeque<CommandEnvelope> pendingCommands = new ArrayDeque<>();
     private final List<OutputEvent> outputs = new ArrayList<>();
@@ -110,6 +122,8 @@ public final class MatchState {
         this.stances = new StanceStore(entities::handleAt);
         this.log = log;
         this.stats = new StatService(templates, config.factions() + 1, identity, bus); // the players' and Gaia's
+        this.matchStats = new MatchStats(config.factions());
+        this.progress = new Progress(templates, config.factions());
         EconomyRules economy = config.rules().economy();
         this.treasury = new Treasury(config.factions(), economy.size());
         for (int f = 0; f < config.factions(); f++) {
@@ -358,7 +372,10 @@ public final class MatchState {
 
     /** A snapshot's buildings, their footprints blocked again (the writer's blocks are the world's already). */
     void restoreBuildings(List<BuildingStore.Saved> saved) {
-        buildings.restore(saved);
+        buildings.restore(saved, id -> {
+            TechDef tech = templates.tech(new TechId(id));
+            return tech == null ? -1 : tech.netIndex();
+        });
         for (int handle : buildings.handles()) {
             if (buildings.state(handle) != BuildingStore.FOUNDATION
                     && dev.strategos.core.sim.build.Placing.obstructs(
@@ -541,6 +558,9 @@ public final class MatchState {
             population.add(faction, unitPopulation(index));
         }
         outputs.add(new UnitCreated(handle, template, new FactionSlot(faction), x, y, z, yaw));
+        if (faction < config.factions()) {
+            matchStats.unitTrained(faction);
+        }
         return handle;
     }
 
@@ -636,6 +656,15 @@ public final class MatchState {
         population.setMax(rules.economy().populationMax());
     }
 
+    /** What each faction has researched (TECH-01). */
+    public MatchStats matchStats() {
+        return matchStats;
+    }
+
+    public Progress progress() {
+        return progress;
+    }
+
     /** The factions the computer plays (AI-01). */
     public AiSlots aiSlots() {
         return aiSlots;
@@ -687,6 +716,25 @@ public final class MatchState {
     /** What templates cost each faction (ECO-01). */
     public Costs costs() {
         return costs;
+    }
+
+    /** The fog-of-war vision, or null for a state no kernel runs (FOW-01). */
+    public @Nullable VisionSystem visionSystem() {
+        return visionSystem;
+    }
+
+    void setVisionSystem(VisionSystem vision) {
+        this.visionSystem = vision;
+    }
+
+    /** The map's start slots for the AI (AI-18); empty until the match is seated on a map. */
+    public List<StartSlot> startPositions() {
+        return startPositions;
+    }
+
+    /** Seats the match on a map's start slots (AI-18); known to every faction, fog or not. */
+    public void setStartPositions(List<StartSlot> starts) {
+        this.startPositions = List.copyOf(starts);
     }
 
     /** Every unit's numbers, through the modifier pipeline (ADR-0013). */
@@ -766,9 +814,13 @@ public final class MatchState {
             log.warn(tick, "template set {} refused: {}", set, problem);
             return;
         }
+        TemplateSet old = templates;
         templates = set;
         cacheMobility();
         stats.swap(set);
+        progress.swap(set);
+        Techs.reapply(this, old); // the researched techs' effects, from the new set (spec row 22)
+        Techs.dropRetired(this, old);
         costs.swap(stats);
         gatherRates.swap(stats);
         spatial.swap(set);
@@ -809,6 +861,10 @@ public final class MatchState {
     }
 
     private @Nullable String referenceProblem(TemplateSet next, int index) {
+        if (QueueEntry.isTech(index)) {
+            // Queued research (-1 - tech net index) does not refuse a swap; Techs.dropRetired drops what the set lacks.
+            return null;
+        }
         UnitTemplate now = templates.byIndex(index);
         UnitTemplate replacement = next.byId(now.id());
         return replacement == null || replacement.netIndex() != index || replacement.isBuilding() != now.isBuilding()

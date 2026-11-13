@@ -18,6 +18,7 @@ import dev.strategos.core.protocol.Train;
 import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.protocol.WireCodec;
 import dev.strategos.core.shared.Stance;
+import dev.strategos.core.shared.TechId;
 import dev.strategos.core.shared.TemplateId;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,6 +40,8 @@ class CommandCardTest {
     static final int CENTRE = index("strategos:building/civic_centre");
     static final int FIELD = index("strategos:building/field");
     static final int WORKER = index("strategos:unit/worker");
+    static final int PHASE_TOWN = java.util.Objects.requireNonNull(T.tech(new TechId("strategos:phase_town")))
+            .netIndex();
 
     static BuildingState.Entry centre(List<Integer> queue, int trained) {
         return new BuildingState.Entry(
@@ -109,6 +112,14 @@ class CommandCardTest {
                 .containsExactly(
                         new CommandCard.Button(CommandCard.Kind.TRAIN, 0, WORKER, List.of(60_000L, 0L, 0L, 0L), true),
                         new CommandCard.Button(
+                                CommandCard.Kind.RESEARCH,
+                                1,
+                                PHASE_TOWN,
+                                List.of(500_000L, 500_000L, 300_000L, 200_000L),
+                                false,
+                                false,
+                                "Needs 5 Village (0)"),
+                        new CommandCard.Button(
                                 CommandCard.Kind.RING_BELL, CommandCard.SLOTS - 3, CENTRE, List.of(), true),
                         new CommandCard.Button(
                                 CommandCard.Kind.ALL_CLEAR, CommandCard.SLOTS - 2, CENTRE, List.of(), true),
@@ -123,8 +134,8 @@ class CommandCardTest {
         assertThat(click.effect()).isEqualTo(CardController.Effect.SENT);
         assertThat(sent).containsExactly(new Train(1 << 20, new TemplateId("strategos:unit/worker")));
 
-        double[] beside = centreOf(CommandCard.cell(CARD, PAD, 1));
-        controller.click(card.at(CARD, PAD, beside[0], beside[1]), selection.handles(), b, T, sent::add);
+        double[] empty = centreOf(CommandCard.cell(CARD, PAD, 2));
+        controller.click(card.at(CARD, PAD, empty[0], empty[1]), selection.handles(), b, T, sent::add);
         controller.click(card.at(CARD, PAD, CARD.x() - 1, CARD.y()), selection.handles(), b, T, sent::add);
         assertThat(sent).as("an empty cell and a point outside send nothing").hasSize(1);
     }

@@ -190,11 +190,11 @@ public final class UnitEntity extends LivingEntity implements IEntityWithComplex
         tickDeath();
     }
 
-    /** The fog gate (NET-01): another match's member is never paired with this body; an unbound body with no one. */
+    /** The fog gate (NET-01 / FOW-07): another match's member is never paired; under fog, only visible enemies are. */
     @Override
     public boolean broadcastToPlayer(ServerPlayer player) {
         UnitSpawnData data = spawnData;
-        return data != null && BodyEvents.canSee(data.matchId(), player);
+        return data != null && BodyEvents.canSee(data, player);
     }
 
     @Override

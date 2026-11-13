@@ -4,9 +4,13 @@ import dev.strategos.core.content.Footprint;
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.Hasher;
+import dev.strategos.core.shared.QueueEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.IntFunction;
+import java.util.function.ToIntFunction;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A match's buildings (BLD-01): each a template (a building's), an owning faction, where it stands ({@link Footprint}:
@@ -48,7 +52,8 @@ public final class BuildingStore {
     private int[] placed = new int[8];
     private int[][] slots = new int[8][];
     private int[][] claims = new int[8][];
-    private int[][] queue = new int[8][]; // per building its entries' template net indices, the head first
+    private int[][] queue =
+            new int[8][]; // per building its entries (a unit's template index, or a tech: -1 - index), head first
     private int[][] batch = new int[8][]; // per entry the units it trains at once (PROD-02), 1 for a single one
     private long[] trained = new long[8]; // the head's ticks of training
     private boolean[] reserved = new boolean[8]; // whether the head holds its population
@@ -180,7 +185,7 @@ public final class BuildingStore {
     public static final int RALLY_NODE = 2;
     public static final int RALLY_BUILDING = 3;
 
-    /** Building {@code handle}'s queue: its entries' template net indices, the head first. */
+    /** Building {@code handle}'s queue: its entries, the head first; a tech entry is {@link QueueEntry#isTech}. */
     public int[] queue(int handle) {
         return queue[at(handle)].clone();
     }
@@ -583,24 +588,41 @@ public final class BuildingStore {
         }
     }
 
-    /** A queue as a snapshot keeps it (PROD-01): its entries, the head's ticks, its reservation and its wait. */
+    /**
+     * A queue as a snapshot keeps it (PROD-01): its entries, the head's ticks, its reservation and its wait. A tech
+     * entry is saved by its id (spec row 20): {@code -1 - k} in {@code queue}, {@code k} the place of its id in {@code
+     * techs}.
+     */
     public record Production(
             List<Integer> queue,
             long trained,
             boolean reserved,
             boolean waiting,
             List<Integer> batches,
-            boolean autoReseed) {
-        public static final Production NONE = new Production(List.of(), 0, false, false, List.of(), false);
+            boolean autoReseed,
+            List<String> techs) {
+        public static final Production NONE = new Production(List.of(), 0, false, false, List.of(), false, List.of());
 
         /** A queue of single entries, as before batches (PROD-02). */
         public Production(List<Integer> queue, long trained, boolean reserved, boolean waiting) {
-            this(queue, trained, reserved, waiting, List.of(), false);
+            this(queue, trained, reserved, waiting, List.of(), false, List.of());
+        }
+
+        /** A queue of units, as before technologies (TECH-01). */
+        public Production(
+                List<Integer> queue,
+                long trained,
+                boolean reserved,
+                boolean waiting,
+                List<Integer> batches,
+                boolean autoReseed) {
+            this(queue, trained, reserved, waiting, batches, autoReseed, List.of());
         }
 
         public Production {
             queue = List.copyOf(queue);
             batches = List.copyOf(batches);
+            techs = List.copyOf(techs);
         }
     }
 
@@ -628,7 +650,11 @@ public final class BuildingStore {
             int field,
             int stage) {}
 
-    public List<Saved> save() {
+    /**
+     * The slots as a snapshot keeps them; {@code techId} names a tech by net index, so a queued tech is saved by its id
+     * (an entry whose tech it cannot name is left out).
+     */
+    public List<Saved> save(IntFunction<@Nullable String> techId) {
         List<Saved> out = new ArrayList<>(high);
         for (int k = 0; k < high; k++) {
             Site site = new Site(
@@ -640,17 +666,31 @@ public final class BuildingStore {
                     Arrays.stream(claims[k] == null ? new int[0] : claims[k])
                             .boxed()
                             .toList());
+            List<Integer> entries = new ArrayList<>();
+            List<Integer> counts = new ArrayList<>();
+            List<String> techs = new ArrayList<>();
+            int[] q = queue[k] == null ? new int[0] : queue[k];
+            for (int e = 0; e < q.length; e++) {
+                int entry = q[e];
+                if (QueueEntry.isTech(entry)) {
+                    String id = techId.apply(QueueEntry.techIndex(entry));
+                    if (id == null) {
+                        continue;
+                    }
+                    entry = QueueEntry.techEntry(techs.size()); // -1 - the id's place in the list
+                    techs.add(id);
+                }
+                entries.add(entry);
+                counts.add(batch[k] != null && e < batch[k].length ? Math.max(1, batch[k][e]) : 1);
+            }
             Production production = new Production(
-                    Arrays.stream(queue[k] == null ? new int[0] : queue[k])
-                            .boxed()
-                            .toList(),
+                    entries,
                     trained[k],
                     reserved[k],
                     waiting[k],
-                    batched(k)
-                            ? Arrays.stream(batch[k]).boxed().toList()
-                            : List.of(), // single entries save as before batches
-                    autoReseed[k]);
+                    batched(k) ? counts : List.of(), // single entries save as before batches
+                    autoReseed[k],
+                    techs);
             out.add(new Saved(
                     generation[k],
                     alive[k],
@@ -672,8 +712,11 @@ public final class BuildingStore {
         return out;
     }
 
-    /** Restores a snapshot's slots into this empty store. */
-    public void restore(List<Saved> saved) {
+    /**
+     * Restores a snapshot's slots into this empty store. {@code techIndex} gives a saved tech id its net index in the
+     * current set, or -1; an entry whose id the set lacks is dropped without a refund (its cost is no longer known).
+     */
+    public void restore(List<Saved> saved, ToIntFunction<String> techIndex) {
         if (high != 0) {
             throw new IllegalStateException("restoring buildings into a store that holds " + high + " slots");
         }
@@ -698,15 +741,33 @@ public final class BuildingStore {
             for (int i = 0; i < claims[k].length && i < s.site().claims().size(); i++) {
                 claims[k][i] = s.site().claims().get(i);
             }
-            queue[k] =
-                    s.production().queue().stream().mapToInt(Integer::intValue).toArray();
-            batch[k] = new int[queue[k].length];
-            for (int e = 0; e < queue[k].length; e++) {
-                batch[k][e] = e < s.production().batches().size()
+            List<Integer> savedQueue = s.production().queue();
+            int[] entries = new int[savedQueue.size()];
+            int[] counts = new int[entries.length];
+            int kept = 0;
+            boolean headDropped = false;
+            for (int e = 0; e < entries.length; e++) {
+                int entry = savedQueue.get(e);
+                if (QueueEntry.isTech(entry)) {
+                    int place = QueueEntry.techIndex(entry);
+                    int index = place < s.production().techs().size()
+                            ? techIndex.applyAsInt(s.production().techs().get(place))
+                            : -1;
+                    if (index < 0) {
+                        headDropped |= e == 0;
+                        continue;
+                    }
+                    entry = QueueEntry.techEntry(index);
+                }
+                entries[kept] = entry;
+                counts[kept] = e < s.production().batches().size()
                         ? Math.max(1, s.production().batches().get(e))
                         : 1;
+                kept++;
             }
-            trained[k] = s.production().trained();
+            queue[k] = Arrays.copyOf(entries, kept);
+            batch[k] = Arrays.copyOf(counts, kept);
+            trained[k] = headDropped ? 0 : s.production().trained(); // the next entry starts afresh
             reserved[k] = s.production().reserved();
             waiting[k] = s.production().waiting();
             autoReseed[k] = s.production().autoReseed();

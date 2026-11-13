@@ -14,12 +14,14 @@ import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.CommandResult;
+import dev.strategos.core.sim.PlayRules;
 import dev.strategos.core.sim.journal.ReplayDriver;
 import dev.strategos.core.sim.journal.ReplayResult;
 import dev.strategos.gametest.MatchFixture;
 import dev.strategos.gametest.StrategosTest;
 import dev.strategos.gametest.net.MockViewer;
 import dev.strategos.mod.server.content.Scenarios;
+import dev.strategos.mod.server.match.MatchOptions;
 import dev.strategos.mod.server.match.MatchRuntime;
 import dev.strategos.mod.server.net.payload.MatchEventPayload;
 import java.util.ArrayList;
@@ -38,9 +40,16 @@ public final class AiTests {
 
     private AiTests() {}
 
+    /** The computer sees through fog (no map starts to march on in a GameTest): AI-17's tests are not about fog. */
+    private static final PlayRules AI_SEES = new PlayRules(PlayRules.Victory.NONE, false, true, true);
+
     /** Both factions' centres on the 48 arena, five workers and 300 food each. */
     static MatchRuntime town(GameTestHelper h, long seed) {
-        MatchRuntime rt = MatchFixture.create(h, MatchFixture.options(seed, h));
+        return town(h, seed, MatchOptions.GAMETEST_PLAY);
+    }
+
+    private static MatchRuntime town(GameTestHelper h, long seed, PlayRules play) {
+        MatchRuntime rt = MatchFixture.create(h, MatchFixture.options(seed, h).withPlay(play));
         rt.submit(PlayerSlot.ADMIN, new SpawnBuilding(CENTRE, new FactionSlot(0), 2, 2, 0));
         rt.submit(PlayerSlot.ADMIN, new SpawnBuilding(CENTRE, new FactionSlot(1), 34, 34, 0));
         for (int f = 0; f < 2; f++) {
@@ -133,7 +142,7 @@ public final class AiTests {
      */
     @StrategosTest(arena = "arena_flat_48", batch = "ai_battle", solo = true, timeoutTicks = 1_700)
     public static void battleSeedReplaysToItsHash(GameTestHelper h) {
-        MatchRuntime rt = town(h, 5);
+        MatchRuntime rt = town(h, 5, AI_SEES);
         String script = Objects.requireNonNull(Scenarios.script(h.getLevel().getServer(), "battle"))
                 .replace("\"first\":450", "\"first\":1")
                 .replace("\"min\":14", "\"min\":4")
@@ -189,7 +198,7 @@ public final class AiTests {
     /** AI-17.3: faction 1's computer announces a wave; faction 0's player hears it, 30 s at least before it leaves. */
     @StrategosTest(arena = "arena_flat_48", timeoutTicks = 400)
     public static void theWaveAnnouncementReachesTheOpponents(GameTestHelper h) {
-        MatchRuntime rt = town(h, 1);
+        MatchRuntime rt = town(h, 1, AI_SEES);
         rt.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.INFANTRY, new FactionSlot(1), new Vec2d(28, 28), 2, 1));
         String quick = """
                 {"maxWorkers":0,"ratio":{},"build":[],"housingMargin":0,

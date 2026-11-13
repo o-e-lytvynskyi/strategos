@@ -65,7 +65,7 @@ class PayloadRoundTripTest {
                 FeedbackPayload.STREAM_CODEC,
                 new FeedbackPayload(new NoticeMsg(NoticeKind.STUCK, 12345, "boxed in")),
                 FeedbackPayload.SPEC.cap());
-        assertThat(MatchStatePayload.SPEC.cap()).isLessThanOrEqualTo(256);
+        assertThat(MatchStatePayload.SPEC.cap()).isLessThanOrEqualTo(1024);
         assertThat(FeedbackPayload.SPEC.cap()).isLessThanOrEqualTo(1024);
         assertThat(MatchJoinPayload.SPEC.cap()).isLessThanOrEqualTo(4096);
     }

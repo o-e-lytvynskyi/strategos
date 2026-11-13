@@ -7,9 +7,12 @@ import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.sim.MatchBounds;
 import dev.strategos.core.sim.MatchState;
+import dev.strategos.core.sim.PlayRules;
 import dev.strategos.core.sim.econ.NodeStore;
 import dev.strategos.core.sim.nav.Surface;
 import dev.strategos.core.sim.nav.SurfaceGrid;
+import dev.strategos.core.sim.vision.VisionGrid;
+import dev.strategos.core.sim.vision.VisionSystem;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
@@ -29,8 +32,8 @@ public final class Placing {
 
     private Placing() {}
 
-    /** The match as the rules read it, taken now: footprints and nodes as they stand. */
-    public static PlacementRules.World world(MatchState s) {
+    /** The match as the rules read it, taken now; {@code faction} &lt; 0 means observer (everything explored). */
+    public static PlacementRules.World world(MatchState s, int faction) {
         MatchBounds bounds = s.config().bounds();
         BitSet taken = new BitSet(bounds.sizeX() * bounds.sizeZ());
         List<PlacementRules.Centre> centres = new ArrayList<>();
@@ -84,7 +87,18 @@ public final class Placing {
 
             @Override
             public boolean explored(int x, int z) {
-                return true; // every cell until fog (M6), as CAM-05's drop point (M2 spec §1.6 row 44)
+                if (faction < 0) {
+                    return true;
+                }
+                PlayRules play = s.config().rules().play();
+                if (play.revealMap() || play.explored()) {
+                    return true;
+                }
+                VisionSystem vision = s.visionSystem();
+                if (vision == null || faction >= s.config().factions()) {
+                    return true;
+                }
+                return vision.grid(faction).isExplored(VisionGrid.cellOf(x), VisionGrid.cellOf(z));
             }
 
             @Override
