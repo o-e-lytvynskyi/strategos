@@ -119,12 +119,16 @@ public record SkirmishSetup(
             int resources = in.readUnsignedByte();
             int cap = in.readVarInt();
             int visibility = in.readUnsignedByte();
-            return new SkirmishSetup(
-                    map,
-                    pick(Level.values(), level, Level::code, "level"),
-                    pick(StartResources.values(), resources, StartResources::code, "resources"),
-                    cap,
-                    pick(Visibility.values(), visibility, Visibility::code, "visibility"));
+            try {
+                return new SkirmishSetup(
+                        map,
+                        pick(Level.values(), level, Level::code, "level"),
+                        pick(StartResources.values(), resources, StartResources::code, "resources"),
+                        cap,
+                        pick(Visibility.values(), visibility, Visibility::code, "visibility"));
+            } catch (IllegalArgumentException e) { // client input: a wire fault, not a bug
+                throw new WireException(String.valueOf(e.getMessage()));
+            }
         }
 
         @Override

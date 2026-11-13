@@ -64,7 +64,9 @@ public final class Skirmishes {
      * the map is no package or has no scenario. The match imports first; the setup follows in {@link #tick}.
      */
     public MatchRuntime start(StrategosServer server, SkirmishSetup setup, UUID player, Placer placer) {
-        if (server.matches().seatOf(player) != null) {
+        // a skirmish still importing seats nobody yet: its player counts as playing it
+        if (server.matches().seatOf(player) != null
+                || pending.stream().anyMatch(p -> p.player().equals(player))) {
             throw new MatchRefusedException("you already play a match");
         }
         ResourceLocation map = ResourceLocation.tryParse(setup.map());

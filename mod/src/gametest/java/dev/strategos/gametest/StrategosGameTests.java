@@ -361,6 +361,21 @@ public final class StrategosGameTests {
         afterBatch(level, "map_horsemen");
     }
 
+    @AfterBatch(batch = "map_skirmish_setup")
+    public static void afterMapSkirmishSetup(ServerLevel level) {
+        afterBatch(level, "map_skirmish_setup");
+    }
+
+    @AfterBatch(batch = "map_skirmish_two")
+    public static void afterMapSkirmishTwo(ServerLevel level) {
+        afterBatch(level, "map_skirmish_two");
+    }
+
+    @AfterBatch(batch = "skirmish_payload")
+    public static void afterSkirmishPayload(ServerLevel level) {
+        afterBatch(level, "skirmish_payload");
+    }
+
     @AfterBatch(batch = "map_skirmish")
     public static void afterMapSkirmish(ServerLevel level) {
         afterBatch(level, "map_skirmish");
