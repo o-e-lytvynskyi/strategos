@@ -87,6 +87,7 @@ public final class MatchState {
     private @Nullable VisionSystem visionSystem;
     /** The map's start slots (AI-18); not saved — a restored match sets them from the map again. */
     private List<StartSlot> startPositions = List.of();
+
     private final SpatialQueries spatial;
     private final ArrayDeque<CommandEnvelope> pendingCommands = new ArrayDeque<>();
     private final List<OutputEvent> outputs = new ArrayList<>();

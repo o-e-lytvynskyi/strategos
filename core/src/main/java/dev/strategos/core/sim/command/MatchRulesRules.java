@@ -86,20 +86,23 @@ final class MatchRulesRules {
             }
             case "victory" -> {
                 try {
-                    yield rules.withPlay(new PlayRules(PlayRules.Victory.of(value), play.revealMap(), play.aiVision()));
+                    yield rules.withPlay(new PlayRules(
+                            PlayRules.Victory.of(value), play.revealMap(), play.explored(), play.aiVision()));
                 } catch (IllegalArgumentException e) {
                     yield null;
                 }
             }
-            case "revealMap", "aiVision" -> {
+            case "revealMap", "explored", "aiVision" -> {
                 if (!value.equals("true") && !value.equals("false")) {
                     yield null;
                 }
                 boolean on = value.equals("true");
                 yield rules.withPlay(
-                        key.equals("revealMap")
-                                ? new PlayRules(play.victory(), on, play.aiVision())
-                                : new PlayRules(play.victory(), play.revealMap(), on));
+                        switch (key) {
+                            case "revealMap" -> new PlayRules(play.victory(), on, play.explored(), play.aiVision());
+                            case "explored" -> new PlayRules(play.victory(), play.revealMap(), on, play.aiVision());
+                            default -> new PlayRules(play.victory(), play.revealMap(), play.explored(), on);
+                        });
             }
             default -> null;
         };

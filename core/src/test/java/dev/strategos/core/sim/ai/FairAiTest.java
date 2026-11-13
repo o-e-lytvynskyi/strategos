@@ -133,10 +133,13 @@ class FairAiTest {
                     .findFirst()
                     .orElse(null);
         }
-        assertThat(march).as("the wave attack-moves toward the enemy start under fog").isNotNull();
+        assertThat(march)
+                .as("the wave attack-moves toward the enemy start under fog")
+                .isNotNull();
         AttackMove leave = java.util.Objects.requireNonNull(march);
         // Short of the start (Tactics.front), not onto the civic centre footprint.
-        assertThat(DetMath.length(leave.target().x() - (east.x() + 0.5), leave.target().z() - (east.z() + 0.5)))
+        assertThat(DetMath.length(
+                        leave.target().x() - (east.x() + 0.5), leave.target().z() - (east.z() + 0.5)))
                 .as("march aims near the east start")
                 .isBetween(8.0, 24.0);
 

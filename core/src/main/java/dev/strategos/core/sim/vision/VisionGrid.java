@@ -95,7 +95,7 @@ public final class VisionGrid {
     }
 
     /** Whether no cell was ever explored. */
-    boolean pristine() {
+    public boolean pristine() {
         for (long w : explored) {
             if (w != 0) {
                 return false;
@@ -135,6 +135,11 @@ public final class VisionGrid {
         for (int i = 0; i < counts.length; i++) {
             explored[i >> 6] |= 1L << (i & 63);
         }
+    }
+
+    /** Every cell explored, for MATCH-07's explored-at-start option; counts stay as vision stamps them. */
+    public void exploreAll() {
+        Arrays.fill(explored, -1L);
     }
 
     public void clearCounts() {

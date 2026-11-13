@@ -6,10 +6,10 @@
 
 ## Now
 
-- **Milestone:** M6 MVP: First skirmish, 9 of 28 tasks done (T2 split into T2.1 and T2.2); spec [M6-first-skirmish.md](../milestones/M6-first-skirmish.md).
-- **Last finished task:** M6 T9 (2026-11-12), the commit `M6 T9: AI-18 fair AI under fog`.
-- **Next task:** M6 T10 · MATCH-07.
-- **Merged from main last:** 8111c0a (2026-11-13) — M5 combat + save/reload repairs; ProtectedBlockIndexTest taken from main; inert fog seams marked AFTER-T10.
+- **Milestone:** M6 MVP: First skirmish, 10 of 28 tasks done (T2 split into T2.1 and T2.2); spec [M6-first-skirmish.md](../milestones/M6-first-skirmish.md).
+- **Last finished task:** M6 T10 (2026-11-12), the commit `M6 T10: MATCH-07 visibility options`.
+- **Next task:** M6 T11 · MATCH-14.
+- **Merged from main last:** 8111c0a (2026-11-13) — M5 combat + save/reload repairs; ProtectedBlockIndexTest taken from main; AFTER-T10 seams now live as of T10.
 
 ## Depends on unfinished work
 
@@ -24,6 +24,11 @@ From the assessment before the claim (procedure §2a step 0); kept current.
 
 Newest first; one entry per session in the worklog's shape.
 
+### 2026-11-12 — M6 T10
+
+- **M6 T10 · MATCH-07 visibility options** — MATCH-07 `done` for L1; L3 `fogtests.a_revealed_map_shows_everything` written (GameTest). `PlayRules` gains `explored` beside `revealMap`; Fog / Explored / Revealed initialise the grids at match start (`VisionGrid.exploreAll` / `revealAll`); `RuleChange` accepts both keys. Setup UI control left for T13. **AFTER-T10 seams now live:** `Placing.explored`, `CommanderService.explored`, `GatherRule` → `NOT_EXPLORED`, `Replication.visibility` → `ALL` under `revealMap`, `Replication.fogBuildings` (pristine guard + cell conversion), `BodyEvents.canSee` → FogGate per-unit `VisibilityIndex` (revealMap short-circuit). SimHarness defaults to Explored so non-fog L1 placement/gather stay green; fog tests keep `PlayRules.DEFAULTS`. Canary + AvoidanceTest hashes rebaselined. L1: `VisibilityOptionsTest.eachOptionInitialisesTheGrids`. `:core:test` green (1728).
+- **MATCH-07 status:** L1 done; L3 revealed-map GameTest authored, not run in this session (full `runGameTestServer`).
+
 ### 2026-11-12 — M6 T9
 
 - **M6 T9 · AI-18 fair AI under fog** — AI-18 `done` for checks 1–2 on the proving ground; check 3 (`FairAiTest.foggedMatchesEndWithin45`, slow) tagged with the existing slow suite until T12/T23. `AiView.enemyUnits` / `enemyBuildings` filter by the faction's `VisibilityIndex` and a visible footprint cell unless `revealMap` or `aiVision` holds; `AiView.startPositions()` reads the map starts on `MatchState`. `MilitaryManager` attack-moves short of the enemy start (`Tactics.front`) when no enemy building is visible, keeps marching between waves, and burns the centre once seen. `HeadlessMatch` (and related AI scenes) seat the proving-ground starts. L1: `FairAiTest.everyTargetWasVisible`, `findsTheBaseFromTheStarts`; slow: `foggedMatchesEndWithin45`. `:core:test` green (slow excluded).
@@ -31,7 +36,7 @@ Newest first; one entry per session in the worklog's shape.
 
 ### 2026-11-12 — M6 T8
 
-- **M6 T8 · UI-16 minimap fog** — UI-16 `done` for checks 1–2; check 3 (`m6_goldens` minimap fog) stays T27. `MinimapImage` gains `Fog` and composes terrain with fog: unexplored black, explored half brightness, visible clear; `fromVision` maps block columns to vision cells (`ShroudExtract.CELL_BLOCKS`). `RtsMinimap` rebuilds tiles under the client's vision bitsets and invalidates chunk hashes when `visionRevision` moves. `Replication.visibility` defaults to each faction's `VisibilityIndex` (test overrides still win; revealed-map → `ALL` stays AFTER-T10). L1: `MinimapFogTest.pixelsUnderFogEqualTheHash`. L3: `fogtests.no_dot_data_for_fogged_units` (own + visible enemy in `unit_summary`, fogged enemy absent). `:core:test` and mod compile green.
+- **M6 T8 · UI-16 minimap fog** — UI-16 `done` for checks 1–2; check 3 (`m6_goldens` minimap fog) stays T27. `MinimapImage` gains `Fog` and composes terrain with fog: unexplored black, explored half brightness, visible clear; `fromVision` maps block columns to vision cells (`ShroudExtract.CELL_BLOCKS`). `RtsMinimap` rebuilds tiles under the client's vision bitsets and invalidates chunk hashes when `visionRevision` moves. `Replication.visibility` defaults to each faction's `VisibilityIndex` (test overrides still win; revealed-map → `ALL` wired in T10). L1: `MinimapFogTest.pixelsUnderFogEqualTheHash`. L3: `fogtests.no_dot_data_for_fogged_units` (own + visible enemy in `unit_summary`, fogged enemy absent). `:core:test` and mod compile green.
 - **UI-16 status:** L1 + L3 done; L4 golden (T27) open.
 
 ### 2026-11-13 — M6 T7

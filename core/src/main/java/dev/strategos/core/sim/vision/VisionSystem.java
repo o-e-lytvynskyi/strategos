@@ -19,9 +19,10 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * Fog of war's vision (FOW-01): each tick a unit's or building's disc is moved on its faction's grid, the explored
- * bits rise, and each faction's visibility index is brought up to date. A faction beyond the player factions (Gaia)
- * sees nothing and adds nothing. With {@code revealMap} every cell counts as seen.
+ * Fog of war's vision (FOW-01, MATCH-07): each tick a unit's or building's disc is moved on its faction's grid, the
+ * explored bits rise, and each faction's visibility index is brought up to date. A faction beyond the player factions
+ * (Gaia) sees nothing and adds nothing. With {@code explored} every cell starts explored; with {@code revealMap} every
+ * cell counts as seen.
  */
 @CoreApi
 public final class VisionSystem implements MatchSystem {
@@ -35,6 +36,7 @@ public final class VisionSystem implements MatchSystem {
     private int[] lastFaction = new int[0];
     private final Map<Integer, int[]> stampedBuildings = new TreeMap<>(); // handle -> faction, cell x, cell z, radius
     private boolean revealed;
+    private boolean allExplored;
 
     public VisionSystem(MatchConfig config) {
         int factions = config.factions();
@@ -67,13 +69,21 @@ public final class VisionSystem implements MatchSystem {
 
     @Override
     public void run(MatchState state) {
-        if (state.config().rules().play().revealMap()) {
+        var play = state.config().rules().play();
+        if (play.explored() && !allExplored) {
+            for (VisionGrid g : grids) {
+                g.exploreAll();
+            }
+            allExplored = true;
+        }
+        if (play.revealMap()) {
             if (!revealed) {
                 resetStamps();
                 for (VisionGrid g : grids) {
                     g.revealAll();
                 }
                 revealed = true;
+                allExplored = true;
             }
         } else {
             if (revealed) {
@@ -93,6 +103,7 @@ public final class VisionSystem implements MatchSystem {
     public void rebuild(MatchState state) {
         resetStamps();
         revealed = false;
+        allExplored = false;
         run(state);
     }
 

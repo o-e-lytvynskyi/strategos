@@ -177,8 +177,7 @@ final class MilitaryManager implements AiModule {
             budget.spend(10);
             if (base.enemy() == null) {
                 sink.send(AttackMove.replace(
-                        UnitSet.of(going.stream().mapToInt(Integer::intValue).toArray()),
-                        Tactics.front(base)));
+                        UnitSet.of(going.stream().mapToInt(Integer::intValue).toArray()), Tactics.front(base)));
             } else {
                 sink.send(Attack.replace(
                         UnitSet.of(going.stream().mapToInt(Integer::intValue).toArray()),

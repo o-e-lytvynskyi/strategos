@@ -13,13 +13,7 @@ import org.jspecify.annotations.Nullable;
  * point-mirrored map turns them round).
  */
 record Base(
-        BuildingView centre,
-        double x,
-        double z,
-        @Nullable BuildingView enemy,
-        int mirror,
-        double aimX,
-        double aimZ) {
+        BuildingView centre, double x, double z, @Nullable BuildingView enemy, int mirror, double aimX, double aimZ) {
     static final String CENTRE = "CivicCentre";
 
     /** The base in {@code view}, or null while the player holds no finished centre. */

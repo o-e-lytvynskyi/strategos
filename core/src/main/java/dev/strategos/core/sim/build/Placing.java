@@ -7,9 +7,12 @@ import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.sim.MatchBounds;
 import dev.strategos.core.sim.MatchState;
+import dev.strategos.core.sim.PlayRules;
 import dev.strategos.core.sim.econ.NodeStore;
 import dev.strategos.core.sim.nav.Surface;
 import dev.strategos.core.sim.nav.SurfaceGrid;
+import dev.strategos.core.sim.vision.VisionGrid;
+import dev.strategos.core.sim.vision.VisionSystem;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
@@ -84,8 +87,18 @@ public final class Placing {
 
             @Override
             public boolean explored(int x, int z) {
-                // AFTER-T10: MATCH-07 wires this to the fog option; until then the check is inert.
-                return true;
+                if (faction < 0) {
+                    return true;
+                }
+                PlayRules play = s.config().rules().play();
+                if (play.revealMap() || play.explored()) {
+                    return true;
+                }
+                VisionSystem vision = s.visionSystem();
+                if (vision == null || faction >= s.config().factions()) {
+                    return true;
+                }
+                return vision.grid(faction).isExplored(VisionGrid.cellOf(x), VisionGrid.cellOf(z));
             }
 
             @Override

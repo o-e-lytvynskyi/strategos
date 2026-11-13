@@ -191,6 +191,7 @@ public final class StateHasher {
                         case CONQUEST -> 3;
                     });
             h = Hasher.mix(h, rules.play().revealMap() ? 1 : 0);
+            h = Hasher.mix(h, rules.play().explored() ? 1 : 0);
             h = Hasher.mix(h, rules.play().aiVision() ? 1 : 0);
             h = Hasher.mix(h, rules.economy().populationMax());
         }

@@ -89,7 +89,8 @@ final class MatchCommands {
                 .then(Commands.literal("config")
                         .then(Commands.argument("key", StringArgumentType.word())
                                 .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(
-                                        List.of("populationMax", "victory", "revealMap", "aiVision"), builder))
+                                        List.of("populationMax", "victory", "revealMap", "explored", "aiVision"),
+                                        builder))
                                 .then(Commands.argument("value", StringArgumentType.word())
                                         .executes(ctx -> withMatchAtSource(ctx.getSource(), rt -> {
                                             StrategosCommands.send(

@@ -3,6 +3,10 @@ package dev.strategos.mod.server.commander;
 import dev.strategos.core.client.camera.CameraRig;
 import dev.strategos.core.protocol.CameraJump;
 import dev.strategos.core.protocol.ModeSwitch;
+import dev.strategos.core.sim.MatchCore;
+import dev.strategos.core.sim.PlayRules;
+import dev.strategos.core.sim.vision.VisionGrid;
+import dev.strategos.core.sim.vision.VisionSystem;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.server.match.MatchRegistry;
 import dev.strategos.mod.server.match.MatchRuntime;
@@ -163,7 +167,7 @@ public final class CommanderService {
             return refuse(id);
         }
         if (request.firstPerson() && commands(player)) {
-            double[] feet = dropPoint(player.serverLevel(), rt, request.x(), request.z());
+            double[] feet = dropPoint(player.serverLevel(), rt, player, request.x(), request.z());
             if (feet == null) {
                 return refuse(id);
             }
@@ -203,7 +207,7 @@ public final class CommanderService {
      * nor a fluid, if explored; null otherwise. Scanning the band, not a heightmap, keeps a roof above the band (a
      * GameTest arena's barriers) out of it.
      */
-    static double @Nullable [] dropPoint(ServerLevel level, MatchRuntime rt, double x, double z) {
+    static double @Nullable [] dropPoint(ServerLevel level, MatchRuntime rt, ServerPlayer player, double x, double z) {
         MatchSpace space = rt.space();
         BlockPos column = BlockPos.containing(x, space.minY(), z);
         if (!level.isLoaded(column) || !space.contains(column)) {
@@ -215,7 +219,7 @@ public final class CommanderService {
             if (level.getBlockState(below).isFaceSturdy(level, below, Direction.UP)
                     && free(level, feet)
                     && free(level, feet.above())) {
-                return explored(rt, feet) ? new double[] {feet.getX() + 0.5, y, feet.getZ() + 0.5} : null;
+                return explored(rt, player, feet) ? new double[] {feet.getX() + 0.5, y, feet.getZ() + 0.5} : null;
             }
         }
         return null;
@@ -226,9 +230,28 @@ public final class CommanderService {
                 && level.getFluidState(pos).isEmpty();
     }
 
-    // AFTER-T10: MATCH-07 gates this on the fog option; until then the observer may stand anywhere.
-    static boolean explored(MatchRuntime rt, BlockPos feet) {
-        return true;
+    /** Whether the seated faction has explored the observer's footing (ADR-0025 / MATCH-07). */
+    static boolean explored(MatchRuntime rt, ServerPlayer player, BlockPos feet) {
+        MatchCore core = rt.core();
+        if (core == null) {
+            return true;
+        }
+        PlayRules play = core.queries().config().rules().play();
+        if (play.revealMap() || play.explored()) {
+            return true;
+        }
+        MatchRegistry.Seat seat = StrategosServer.get().matches().seatOf(player.getUUID());
+        if (seat == null || seat.slot().isAdmin()) {
+            return true;
+        }
+        VisionSystem vision = core.vision();
+        int faction = seat.slot().value();
+        if (vision == null || faction < 0 || faction >= core.queries().config().factions()) {
+            return true;
+        }
+        double localX = rt.space().localX(feet.getX() + 0.5);
+        double localZ = rt.space().localZ(feet.getZ() + 0.5);
+        return vision.grid(faction).isExplored(VisionGrid.cellOf(localX), VisionGrid.cellOf(localZ));
     }
 
     /** A chunk reached {@code player}: if it commands, its pairing re-runs at the next tick's start. */
@@ -309,7 +332,7 @@ public final class CommanderService {
                 rt = seat.match();
             }
             boolean inside = e.getValue().contains(player.blockPosition())
-                    && (rt == null || explored(rt, player.blockPosition()));
+                    && (rt == null || explored(rt, player, player.blockPosition()));
             if (inside) {
                 lastInside.put(e.getKey(), new double[] {player.getX(), player.getY(), player.getZ()});
             } else {
