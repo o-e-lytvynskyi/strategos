@@ -8,6 +8,7 @@ plugins {
 
 evaluationDependsOn(':core')
 def core = project(':core')
+def mapgenName = providers.gradleProperty('mapgen').getOrElse('proving_ground') // [M6 T12.2] the map mapgen writes
 
 version = providers.gradleProperty('mod_version').get()
 group = providers.gradleProperty('mod_group_id').get()
@@ -223,14 +224,15 @@ neoForge {
             systemProperty 'strategos.smoke', 'arena2'
             systemProperty 'strategos.smoke.marker', file('build/smoke-arena/arena-run2.json').absolutePath
         }
-        // [M1 T6] writes the proving ground's map package into the devtools resources, then stops (spec 4.1)
+        // [M1 T6] writes a map package, then stops (spec 4.1): -Pmapgen=proving_ground (the default) into the
+        // devtools resources, -Pmapgen=first_skirmish (M6 T12.2, MAP-02) into the mod's own, which the jar ships
         mapgen {
             server()
             disableIdeRun()
             gameDirectory = file('build/mapgen')
             programArgument('--nogui')
-            systemProperty 'strategos.mapgen', 'proving_ground'
-            systemProperty 'strategos.mapgen.out', file('src/devtools/resources').absolutePath
+            systemProperty 'strategos.mapgen', mapgenName
+            systemProperty 'strategos.mapgen.out', file(mapgenName == 'first_skirmish' ? 'src/main/resources' : 'src/devtools/resources').absolutePath
             systemProperty 'strategos.mapgen.marker', file('build/mapgen/mapgen-result.json').absolutePath
         }
         // [T9b] run 2 of the restart round trip: run 1's game directory, never wiped (QA-05.4)
@@ -405,11 +407,19 @@ tasks.register('checkJarContents') {
         }
         if (forbidden) throw new GradleException("Dev-only classes or module-info in the jar: ${forbidden.take(10)}")
         // [M1 T6] the proving ground's package lives in the devtools resources: dev runs load it, the jar never does
-        // [M3 T7] building blueprints (data/strategos/structure/strategos/buildings/) ship; map tiles do not
+        // [M3 T7] building blueprints (data/strategos/structure/strategos/buildings/) ship
+        // [M6 T12.2] the first skirmish map ships (MAP-02), and no other map package
+        def shipped = { String n ->
+            n.endsWith('/') || n == 'data/strategos/strategos/maps/first_skirmish.json' ||
+                    n.startsWith('data/strategos/structure/strategos/maps/first_skirmish/')
+        }
         def maps = names.findAll {
-            it.startsWith('data/strategos/strategos/maps/') || it.startsWith('data/strategos/structure/strategos/maps/')
+            (it.startsWith('data/strategos/strategos/maps/') || it.startsWith('data/strategos/structure/strategos/maps/')) && !shipped(it)
         }
         if (maps) throw new GradleException("Map packages in the jar: ${maps.take(10)}")
+        if (!names.contains('data/strategos/strategos/maps/first_skirmish.json')) {
+            throw new GradleException('the first skirmish map is missing from the jar')
+        }
         if (!names.contains('META-INF/neoforge.mods.toml')) throw new GradleException('META-INF/neoforge.mods.toml missing from the jar')
     }
 }
@@ -545,7 +555,9 @@ def prepareMapgen = tasks.register('prepareMapgen', Sync) {
 }
 neoForge.runs.mapgen.taskBefore prepareMapgen
 def mapgenMarker = file('build/mapgen/mapgen-result.json')
-def mapgenManifest = file('src/devtools/resources/data/strategos/strategos/maps/proving_ground.json')
+def mapgenManifest = file(mapgenName == 'first_skirmish'
+        ? 'src/main/resources/data/strategos/strategos/maps/first_skirmish.json'
+        : 'src/devtools/resources/data/strategos/strategos/maps/proving_ground.json')
 tasks.matching { it.name == 'runMapgen' }.configureEach {
     timeout = Duration.ofMinutes(5)
     doLast {

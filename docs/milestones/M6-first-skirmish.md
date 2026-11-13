@@ -185,6 +185,8 @@ None. The `strategos:ping` payload stays with multiplayer pings (UI-15, M7); UI-
 | 40 | `MapChecker`'s package (T12) | `core.sim.map`, not `core.content`: reachability and walking distances read `sim.nav`'s `SurfaceGrid`, which the content layer may not import (B3). The terrain jobs' data stays in `core.content` (`MapManifest.terrainJobs`) |
 | 41 | The first map's layout (T12) | Point symmetry puts any single feature between the bases through the centre. The river comes down the middle and splits round a central island, which holds the hill and the large iron deposit; each channel has one ford, so the island is the one crossing. The forest line is one per half (two, mirrored), three gaps each. The owner's hand-finishing (§10) may break the symmetry; the checker's tolerances then decide |
 | 42 | The first map's computer player (T12) | The scenario `first_skirmish` plays slot 1 as `ai:first_loop`: no `ai/skirmish.json` exists before AI-04 and AI-05 (T21, T22), and an unknown profile would leave the slot idle. T21/T22 turn it to `ai:skirmish` at the setup's level (§2.11, §2.20) |
+| 43 | The forest lines' oaks (T12.2) | A first cut of solid log walls was one node whose work slots lay on both faces, and a worker sent to the far face walked round through a gap; oaks on both edges did the same, since the computer picks the tree nearest in a straight line. Each line now has its oaks on the edge facing its start, leaves elsewhere (an obstacle, never a floor). `SimHarness`'s no-progress invariant found both in the timed match |
+| 44 | One headless match (T12.2, R5) | On the first skirmish map, seed 1, both slots `first_loop` under fog: 45 game minutes in 11.2 s of wall time on the M1 Pro (first contact at tick 10,569, two waves, no winner by the limit). A thousand such matches take about 3 hours on one thread; QA-12 runs them in parallel (R5). Fogged matches ending within 45 minutes are AI-18.3's and QA-12's, in T23, with AI-04's openings and waves |
 
 ### 1.7 Consent plan
 
@@ -719,7 +721,7 @@ kernel adds `:core:jmh :core:jmhCompare`.
 
 ### 7.3 Progress
 
-- [x] T2.1 (2026-10-25) · [x] T2.2 (2026-10-25) · [x] T3 (2026-10-26) · [x] T4 (2026-11-12) · [x] T5 (2026-11-12) · [x] T6 (2026-11-12) · [x] T7 (2026-11-13) · [x] T8 (2026-11-12) · [x] T9 (2026-11-12) · [x] T10 (2026-11-13) · [x] T11 (2026-11-13) · [x] T12.1 (2026-11-13) · [ ] T12.2
+- [x] T2.1 (2026-10-25) · [x] T2.2 (2026-10-25) · [x] T3 (2026-10-26) · [x] T4 (2026-11-12) · [x] T5 (2026-11-12) · [x] T6 (2026-11-12) · [x] T7 (2026-11-13) · [x] T8 (2026-11-12) · [x] T9 (2026-11-12) · [x] T10 (2026-11-13) · [x] T11 (2026-11-13) · [x] T12.1 (2026-11-13) · [x] T12.2 (2026-11-13)
 - [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17 · [ ] T1 · [ ] T18 · [ ] T19 · [ ] T20 · [ ] T21
 - [ ] T22 · [ ] T23 · [ ] T24 · [ ] T25 · [ ] T27 · [ ] T28
 

@@ -20,7 +20,8 @@ import org.jspecify.annotations.Nullable;
 /**
  * The first skirmish map (MAP-02, spec §2.10, D-17): 384², 64 high, seeded, point-symmetric about its centre (x, z to
  * 383 - x, 383 - z), so the two starts are alike. West to east: the west start on a level pad, its two groves, its
- * berry bushes and room for six fields; a forest line north to south with three gaps; the river, which comes down the
+ * berry bushes and room for six fields; a forest line north to south with three gaps, its oaks on the edge facing the
+ * start and leaves behind them; the river, which comes down the
  * middle, splits round an island and joins again, each channel with one ford, so the island is the one crossing; on
  * the island a hill whose top plateau holds the large iron deposit; then the east half, the west's turned half round.
  * Each start's quarry, iron mine, animals and units come from the scenario {@code first_skirmish}.
@@ -343,8 +344,12 @@ public final class FirstSkirmish {
     }
 
     /**
-     * A forest line in each half, five logs wide and four high with a canopy two leaves deep on it, the whole height
-     * of the map except its three gaps; the east one the west's mirror.
+     * A forest line in each half, five wide, the whole height of the map except its three gaps: oaks on the edge
+     * that faces its start, one every 3 blocks, each a single trunk of four logs that workers fell from that side;
+     * leaves three high over the rest, an obstacle that is never a floor, so the line is crossed only at its gaps; a
+     * canopy two leaves deep over it. Separate trunks keep each tree its own node, and none stands on the river's side:
+     * a computer that picks the tree nearest in a straight line would walk round through a gap to reach it. The east
+     * line is the west's mirror.
      */
     private void forestLines() {
         for (int z = 0; z < SIZE; z++) {
@@ -352,8 +357,9 @@ public final class FirstSkirmish {
                 continue;
             }
             for (int x = FOREST_X0; x <= FOREST_X1; x++) {
-                trunkWall(x, z);
-                trunkWall(mirror(x), mirror(z));
+                boolean trunk = x == FOREST_X0 && z % 3 == 0;
+                forestColumn(x, z, trunk);
+                forestColumn(mirror(x), mirror(z), trunk);
             }
         }
         for (int z = 0; z < SIZE; z++) {
@@ -376,10 +382,10 @@ public final class FirstSkirmish {
         return false;
     }
 
-    private void trunkWall(int x, int z) {
+    private void forestColumn(int x, int z, boolean trunk) {
         int g = groundTop(x, z);
-        for (int y = g + 1; y <= g + 4; y++) {
-            set(x, y, z, LOG);
+        for (int y = g + 1; y <= g + (trunk ? 4 : 3); y++) {
+            set(x, y, z, trunk ? LOG : LEAVES);
         }
     }
 

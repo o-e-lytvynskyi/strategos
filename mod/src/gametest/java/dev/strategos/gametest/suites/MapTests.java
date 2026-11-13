@@ -74,6 +74,7 @@ import org.slf4j.LoggerFactory;
  */
 public final class MapTests {
     static final ResourceLocation PROVING_GROUND = Ids.id("proving_ground");
+    static final ResourceLocation FIRST_SKIRMISH = Ids.id("first_skirmish");
     private static final Logger LOG = LoggerFactory.getLogger(MapTests.class);
     private static final int FAR = 2_048;
     private static final int IMPORT_LANE = 1;
@@ -90,6 +91,7 @@ public final class MapTests {
     private static final int SOAK_LANE = 8;
     private static final int SKIRMISH_LANE = 9;
     private static final int BATTLE_LANE = 11;
+    private static final int FIRST_SKIRMISH_LANE = 12;
 
     private MapTests() {}
 
@@ -109,6 +111,39 @@ public final class MapTests {
                             "the match is " + rt.lifecycle() + ": " + rt.faultMessage());
                     h.assertTrue(expected.equals(rt.importedHash()), "terrain " + rt.importedHash());
                     h.assertTrue(rt.importMillis() <= 30_000, "the import took " + rt.importMillis() + " ms");
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * MAP-02.5: a match on the first skirmish map, the package the jar ships, imports and runs, and what stands in the
+     * level hashes to the manifest's terrain hash.
+     */
+    @StrategosTest(batch = "map_first_skirmish", solo = true, timeoutTicks = 40_000)
+    public static void firstSkirmishImportsWithItsTerrainHash(GameTestHelper h) {
+        MapManifest m =
+                MapPackageLoader.load(h.getLevel().getServer(), FIRST_SKIRMISH).manifest();
+        BlockPos corner = h.absolutePos(BlockPos.ZERO);
+        BlockPos origin = new BlockPos(corner.getX() + FIRST_SKIRMISH_LANE * FAR, corner.getY(), corner.getZ());
+        MatchSpace space = new MatchSpace(
+                h.getLevel().dimension(), origin, m.sizeX(), m.sizeZ(), origin.getY(), origin.getY() + m.height() - 1);
+        MatchRuntime rt = MatchFixture.create(
+                h,
+                space,
+                MatchFixture.options(SimHarness.DEFAULT_SEED, h)
+                        .withMap(
+                                FIRST_SKIRMISH,
+                                origin.getY() + m.startSlots().get(0).y()));
+        h.startSequence()
+                .thenWaitUntil(() -> h.assertTrue(rt.lifecycle() != MatchLifecycle.PREPARING, "importing"))
+                .thenExecute(() -> {
+                    h.assertTrue(
+                            rt.lifecycle() == MatchLifecycle.RUNNING,
+                            "the match is " + rt.lifecycle() + ": " + rt.faultMessage());
+                    h.assertTrue(
+                            m.terrainHash().equals(rt.importedHash()),
+                            "terrain " + rt.importedHash() + ", the manifest " + m.terrainHash());
+                    LOG.info("MAP-02.5: the first skirmish map imported in {} ms", rt.importMillis());
                 })
                 .thenSucceed();
     }

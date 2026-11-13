@@ -182,3 +182,13 @@ to do with it here. This is about ORCA, unit crowds and JMH. The mod toolchain i
   after the other, never at the same time. Then run `:core:jmhCompare -Pjmh.result=<new> -Pjmh.baseline=<base>`.
 - `:core:jmh` always writes `core/build/reports/jmh/result.json` in its own tree; `-Pjmh.result`
   only tells `jmhCompare` where to read. Copy the two files out before comparing them.
+
+## A wall of trees: one node, and slots behind it
+
+Logs that touch form one tree node, whose work slots ring the whole mass. M6 T12.2: a forest
+line built as a solid wall of logs gave a worker a slot on the far face, and it walked round
+through a gap, about 110 blocks; oaks spaced on both faces did the same, because the computer
+picks the tree nearest in a straight line, not along a path. `SimHarness`'s invariant ("WALKING
+without progress toward … for 641 ticks") caught both in a headless match. A line that units must
+go round keeps its fellable trees on one side only, the side its users come from, and blocks the
+rest with leaves (an obstacle, never a floor).

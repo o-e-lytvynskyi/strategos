@@ -3,6 +3,7 @@ package dev.strategos.core.sim.ai;
 import com.google.gson.JsonParser;
 import com.mojang.serialization.JsonOps;
 import dev.strategos.core.content.Scenario;
+import dev.strategos.core.content.StartSlot;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.Command;
 import dev.strategos.core.protocol.NoticeKind;
@@ -25,8 +26,10 @@ import dev.strategos.core.sim.WaveAnnounced;
 import dev.strategos.core.sim.build.BuildingView;
 import dev.strategos.core.sim.command.ScenarioSetup;
 import dev.strategos.core.sim.journal.JournalExport;
+import dev.strategos.core.testkit.FirstSkirmish;
 import dev.strategos.core.testkit.ProvingGround;
 import dev.strategos.core.testkit.SimHarness;
+import dev.strategos.core.testkit.VoxelWorld;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -141,23 +144,40 @@ final class HeadlessMatch {
      * soldier may well be silent that long.
      */
     static Result run(long seed, long limit, String script, Watcher watcher, boolean decided) {
-        ProvingGround ground = ProvingGround.generate();
+        return run(Ground.provingGround(), firstLoop(), seed, limit, script, watcher, decided);
+    }
+
+    /** The map a run plays on: its terrain and its start slots. */
+    record Ground(int size, int height, VoxelWorld voxels, List<StartSlot> starts) {
+        static Ground provingGround() {
+            ProvingGround g = ProvingGround.generate();
+            return new Ground(ProvingGround.SIZE, ProvingGround.HEIGHT, g.voxels(), g.startSlots());
+        }
+
+        static Ground firstSkirmish() {
+            FirstSkirmish g = FirstSkirmish.generate();
+            return new Ground(FirstSkirmish.SIZE, FirstSkirmish.HEIGHT, g.voxels(), g.startSlots());
+        }
+    }
+
+    /** As {@link #run(long, long, String, Watcher, boolean)}, on {@code ground} with {@code scenario}'s starts. */
+    static Result run(
+            Ground ground, Scenario scenario, long seed, long limit, String script, Watcher watcher, boolean decided) {
         SimHarness h = SimHarness.builder()
-                .size(ProvingGround.SIZE, ProvingGround.SIZE)
-                .yBand(0, ProvingGround.HEIGHT, 16)
+                .size(ground.size(), ground.size())
+                .yBand(0, ground.height(), 16)
                 .seed(seed)
                 .build();
         h.publishAll(ground.voxels());
         h.step();
         MatchState s = KernelAccess.state(h.core());
-        s.setStartPositions(ground.startSlots()); // AI-18: the AI knows the starts under fog
-        Scenario scenario = firstLoop();
+        s.setStartPositions(ground.starts()); // AI-18: the AI knows the starts under fog
         List<Scenario.Slot> computers = new ArrayList<>();
         for (Scenario.Slot slot : scenario.slots()) {
             computers.add(new Scenario.Slot(ScenarioSetup.AI + "first_loop", slot.resources(), slot.entities()));
         }
         Scenario played = new Scenario(scenario.map(), scenario.victory(), computers);
-        for (Command c : ScenarioSetup.commands(played, ground.startSlots(), TemplateSet.builtin(), p -> script)) {
+        for (Command c : ScenarioSetup.commands(played, ground.starts(), TemplateSet.builtin(), p -> script)) {
             h.submit(PlayerSlot.ADMIN, c);
         }
         int factions = 2;
