@@ -16,6 +16,7 @@ import dev.strategos.mod.client.fog.ShroudRenderer;
 import dev.strategos.mod.client.fx.ShotArcRenderer;
 import dev.strategos.mod.client.fx.ShotArcs;
 import dev.strategos.mod.client.hud.RtsHud;
+import dev.strategos.mod.client.menu.ArenaWorldLauncher;
 import dev.strategos.mod.client.net.ClientPayloads;
 import dev.strategos.mod.client.overlay.FarMarkers;
 import dev.strategos.mod.client.overlay.HealthBarOverlay;
@@ -23,6 +24,7 @@ import dev.strategos.mod.client.rts.RtsMode;
 import dev.strategos.mod.registry.ModEntityTypes;
 import dev.strategos.mod.server.net.payload.PayloadArrived;
 import java.util.List;
+import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -51,6 +53,7 @@ public final class StrategosClient {
     private static final ShotArcs ARCS = new ShotArcs();
     private static final FxPlayer SOUNDS = new FxPlayer(RTS, ARCS);
     private static final UnitLod LOD = new UnitLod();
+    private static final ArenaWorldLauncher ARENA = new ArenaWorldLauncher();
     private static volatile @Nullable MatchJoin match;
     private static volatile List<String> resources = List.of();
     private static volatile @Nullable MatchStateMsg state;
@@ -67,6 +70,8 @@ public final class StrategosClient {
                 EntityRenderersEvent.RegisterLayerDefinitions.class,
                 e -> e.registerLayerDefinition(MountModel.LAYER, MountModel::layer));
         NeoForge.EVENT_BUS.addListener(PayloadArrived.class, ClientPayloads::onPayload);
+        NeoForge.EVENT_BUS.addListener(
+                ClientPlayerNetworkEvent.LoggingIn.class, e -> ARENA.onLoggedIn(Minecraft.getInstance()));
         NeoForge.EVENT_BUS.addListener(ClientPlayerNetworkEvent.LoggingOut.class, e -> {
             RTS.remember(); // the match's camera and groups, for a return (MATCH-04)
             match = null;
@@ -89,6 +94,11 @@ public final class StrategosClient {
     /** The fog shroud (FOW-07); the client thread's only. */
     public static ShroudRenderer shroud() {
         return SHROUD;
+    }
+
+    /** Opens or creates the skirmish arena world (MATCH-14). */
+    public static ArenaWorldLauncher arena() {
+        return ARENA;
     }
 
     /** The bodies' level of detail on this client (M4 T3). */

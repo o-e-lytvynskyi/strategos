@@ -422,7 +422,7 @@ Cards: [roadmap/M6-first-skirmish.md](roadmap/M6-first-skirmish.md#cards). 23 ca
 | TECH-03 | Starting technologies and visible equipment tiers | M | TECH-01, UNIT-07 | specified |
 | CMB-09 | Siege ram and the arsenal | M | CMB-03, UNIT-06, PATH-11, TECH-02, D-12 | specified |
 | BLD-17 | Defence tower | M | CMB-07, TECH-02 | specified |
-| MATCH-14 | Spike: an arena world from the title screen | S | MAP-07 | specified |
+| MATCH-14 | Spike: an arena world from the title screen | S | MAP-07 | done |
 | MATCH-02 | Skirmish setup and launch | L | MATCH-14, MAP-01, MATCH-01, UI-02 | specified |
 | MATCH-03 | Conquest, defeat and statistics | M | MATCH-01, BLD-08 | in_progress |
 | MAP-02 | First skirmish map | M | MAP-01, ECO-02, ECO-16, D-17 | specified |

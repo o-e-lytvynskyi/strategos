@@ -181,7 +181,8 @@ only its own vision at every level except that labelled top level.
      and the arena rules applied once (L4, consent).
   2. The report states how MATCH-02 creates and reuses the world (R).
 - **Tests:** L4 (consent), R · **Depends on:** MAP-07 · **Size:** S · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-11-13 — L4 `arena_world` scenario green (created: `APPLIED`; reopened: `ALREADY_APPLIED`, the owner's rule change kept, one save); R: [S13](../spikes/S13-arena-world-from-code.md); spec T11.
 
 #### MATCH-02 · Skirmish setup and launch
 - **Value:** Start a skirmish from the main menu in a few clicks (P3).

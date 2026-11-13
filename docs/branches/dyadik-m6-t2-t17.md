@@ -6,9 +6,9 @@
 
 ## Now
 
-- **Milestone:** M6 MVP: First skirmish, 11 of 28 tasks done (T2 split into T2.1 and T2.2); spec [M6-first-skirmish.md](../milestones/M6-first-skirmish.md).
-- **Last finished task:** M6 T10 (2026-11-13), with the GameTest repair `M6 T10: GameTests green under fog`.
-- **Next task:** M6 T11 · MATCH-14.
+- **Milestone:** M6 MVP: First skirmish, 12 of 28 tasks done (T2 split into T2.1 and T2.2); spec [M6-first-skirmish.md](../milestones/M6-first-skirmish.md).
+- **Last finished task:** M6 T11 (2026-11-13), the commit `M6 T11: MATCH-14 the arena world from code`.
+- **Next task:** M6 T12 · MAP-02.
 - **Merged from main last:** 8111c0a (2026-11-13) — M5 combat + save/reload repairs.
 
 ## Depends on unfinished work
@@ -23,6 +23,11 @@ From the assessment before the claim (procedure §2a step 0); kept current.
 ## Log
 
 Newest first; one entry per session in the worklog's shape.
+
+### 2026-11-13 — M6 T11
+
+- **M6 T11 · MATCH-14 the arena world from code** — MATCH-14 `done`. `mod.client.menu.ArenaWorldLauncher` (held by `StrategosClient`, B8): the save `strategos_skirmish` opened with `WorldOpenFlows#openWorld` when it exists, else made with `createFreshLevel` from the `strategos:arena` preset (adventure, peaceful, no cheats, no structures); on joining it asks the integrated server `ArenaWorld.isArena` — an arena gets NeoForge's confirmed-experimental flag (a data-pack preset is an experimental lifecycle, and a reopen would ask for a backup), anything else is refused with "Not an arena world". L4 `arena_world` (`Scenario#openWorld`, a new runner hook; the watchdog now names the phase and screen): green on its first run in 10 s — created `APPLIED`, reopened `ALREADY_APPLIED` with the owner's rule change kept, no backup screen, one save. Spike report [S13](../spikes/S13-arena-world-from-code.md); spec rows 38–39. The non-arena refusal ran in no scenario (MATCH-02's L4 may add it).
+- **Gates:** `verify` green in 1 min 58 s (`runGameTestServer` 241 of 241, the server smoke); `:mod:archTest` green (the launcher is an instance, B8); L4 `arena_world` 1 run, green.
 
 ### 2026-11-13 — M6 T10 GameTest repair
 

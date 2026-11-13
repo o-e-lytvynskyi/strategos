@@ -72,5 +72,7 @@
   "strategos.stance.stand_ground": "Stand ground: strikes only what comes in reach, never moves",
   "strategos.stance.passive": "Passive: never fights, runs from a blow",
   "strategos.card.ring_bell": "Ring the bell: every worker within 64 blocks goes into the nearest building with room",
-  "strategos.card.all_clear": "All clear: the workers come out and go back to what they were doing"
+  "strategos.card.all_clear": "All clear: the workers come out and go back to what they were doing",
+  "strategos.skirmish.not_arena.title": "Not an arena world",
+  "strategos.skirmish.not_arena": "The save \"%s\" is not a Strategos arena. Rename or delete it, and a skirmish makes a new one."
 }

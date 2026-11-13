@@ -179,6 +179,9 @@ None. The `strategos:ping` payload stays with multiplayer pings (UI-15, M7); UI-
 | 34 | Damage stages at Town (T3) | Damage is stored as hit points lost, so a higher max HP moves a damaged building's stage: completing a tech updates the stage of each of the faction's complete buildings; a restore keeps the saved stage |
 | 35 | Techs in the balance sheet (T3) | The sheet gains a technologies section (cost per resource, time, requirement counts, each effect's value with its path, op and filter), ahead of TECH-03's check 2 (T18) |
 | 36 | Iris shader pack for FOW-07.6 (T7) | No pack is named or downloaded in T7: a test-only fetch needs a licence that allows redistributing the pack in CI (or a pinned URL the owner approves). `-Pcompat` already adds Iris and Sodium. Until a pack is chosen, the Iris+shader golden in T27 is the owner's own L7 check; Sodium-only and vanilla shroud goldens still run in the consent batch. See [kb/minecraft-mod-client-render.md](../kb/minecraft-mod-client-render.md) |
+| 37 | GameTest play rules (T10 repair) | `MatchOptions` carries the match's `PlayRules`; Fog by default, and T13's setup fills it. GameTests not about fog use Explored (`MatchOptions.GAMETEST_PLAY`), the fog suites Fog (`MatchFixture.fogOptions`), as L1's `SimHarness` does since T10 |
+| 38 | Reopening the arena (T11) | A world made from a data-pack preset has an experimental generator lifecycle (`RegistryDataLoader`, `WorldDimensions#checkStability`), so `openWorld` would ask for a backup each time. `ArenaWorldLauncher` sets NeoForge's `PrimaryLevelData#withConfirmedWarning` on an arena it opened, saved in `level.dat`; S13 |
+| 39 | The arena's settings (T11) | Adventure (the lobby pad's blocks stay; the commander service switches modes itself), peaceful, no cheats, no structures. `/strategos` needs level 2, so a skirmish starts through `strategos:skirmish`, never the command; S13 |
 
 ### 1.7 Consent plan
 
@@ -705,7 +708,7 @@ kernel adds `:core:jmh :core:jmhCompare`.
 
 ### 7.3 Progress
 
-- [x] T2.1 (2026-10-25) · [x] T2.2 (2026-10-25) · [x] T3 (2026-10-26) · [x] T4 (2026-11-12) · [x] T5 (2026-11-12) · [x] T6 (2026-11-12) · [x] T7 (2026-11-13) · [x] T8 (2026-11-12) · [x] T9 (2026-11-12) · [x] T10 (2026-11-13) · [ ] T11 · [ ] T12
+- [x] T2.1 (2026-10-25) · [x] T2.2 (2026-10-25) · [x] T3 (2026-10-26) · [x] T4 (2026-11-12) · [x] T5 (2026-11-12) · [x] T6 (2026-11-12) · [x] T7 (2026-11-13) · [x] T8 (2026-11-12) · [x] T9 (2026-11-12) · [x] T10 (2026-11-13) · [x] T11 (2026-11-13) · [ ] T12
 - [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17 · [ ] T1 · [ ] T18 · [ ] T19 · [ ] T20 · [ ] T21
 - [ ] T22 · [ ] T23 · [ ] T24 · [ ] T25 · [ ] T27 · [ ] T28
 

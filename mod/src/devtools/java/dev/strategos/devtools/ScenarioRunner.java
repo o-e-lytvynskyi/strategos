@@ -102,6 +102,7 @@ public final class ScenarioRunner {
             case "overlay_goldens" -> new OverlayGoldensScenario();
             case "qa19" -> new PacketSentScenario();
             case "demo" -> new DemoScenario();
+            case "arena_world" -> new ArenaWorldScenario();
             default -> null;
         };
     }
@@ -136,7 +137,14 @@ public final class ScenarioRunner {
                         return;
                     }
                     if (r.phase != Phase.DONE) {
-                        write(r.ctx.out, failure("watchdog: no result within " + seconds + " s"));
+                        var screen = Minecraft.getInstance().screen; // a read from another thread: a diagnosis only
+                        write(
+                                r.ctx.out,
+                                failure("watchdog: no result within " + seconds + " s, in phase " + r.phase
+                                        + " on screen "
+                                        + (screen == null
+                                                ? "none"
+                                                : screen.getClass().getName())));
                         Runtime.getRuntime().halt(1);
                     }
                 },
@@ -194,7 +202,7 @@ public final class ScenarioRunner {
                                 new ServerData("strategos-spike", address, ServerData.Type.OTHER),
                                 false,
                                 null);
-                    } else {
+                    } else if (!r.scenario.openWorld(mc)) {
                         createWorld(mc, r.world, r.seed);
                     }
                     r.phase = Phase.LOADING;
