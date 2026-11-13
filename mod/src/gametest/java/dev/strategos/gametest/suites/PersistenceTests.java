@@ -229,7 +229,7 @@ public final class PersistenceTests {
     public static void exploredSurvivesSaveAndLoad(GameTestHelper h) {
         MatchRegistry registry = StrategosServer.get().matches();
         MatchRuntime rt = MatchFixture.create(
-                h, MatchFixture.options(SimHarness.DEFAULT_SEED, h).withPersistent(true));
+                h, MatchFixture.fogOptions(SimHarness.DEFAULT_SEED, h).withPersistent(true));
         spawn(rt, 16, 16, 1, 0);
         var state = new Object() {
             MatchRuntime back;

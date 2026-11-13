@@ -424,7 +424,7 @@ Cards: [roadmap/M6-first-skirmish.md](roadmap/M6-first-skirmish.md#cards). 23 ca
 | BLD-17 | Defence tower | M | CMB-07, TECH-02 | specified |
 | MATCH-14 | Spike: an arena world from the title screen | S | MAP-07 | specified |
 | MATCH-02 | Skirmish setup and launch | L | MATCH-14, MAP-01, MATCH-01, UI-02 | specified |
-| MATCH-03 | Conquest, defeat and statistics | M | MATCH-01, BLD-08 | specified |
+| MATCH-03 | Conquest, defeat and statistics | M | MATCH-01, BLD-08 | in_progress |
 | MAP-02 | First skirmish map | M | MAP-01, ECO-02, ECO-16, D-17 | specified |
 | AI-04 | AI openings, waves, raid bar and defence | L | AI-03, MAP-02, BLD-16 | specified |
 | AI-05 | AI phases, research and difficulty levels | M | AI-04, TECH-02, D-19 | specified |
@@ -432,11 +432,11 @@ Cards: [roadmap/M6-first-skirmish.md](roadmap/M6-first-skirmish.md#cards). 23 ca
 | UI-21 | Notification feed and alert audio | M | UI-12, TECH-01 | specified |
 | UI-13 | Research and phase UI | M | UI-08, TECH-02 | specified |
 | UI-14 | First-match hints and controls help | M | UI-21 | specified |
-| FOW-01 | Vision grid per faction (solo fog, D-24 (c)) | M | CORE-08 | specified |
-| FOW-07 | Explored state, the shroud and solo fog gating (solo fog, D-24 (c)) | M | FOW-01, NET-08 | specified |
-| UI-16 | Minimap fog and explored areas (solo fog, D-24 (c)) | S | UI-11, FOW-07 | specified |
-| AI-18 | The AI reads only its own vision (solo fog, D-24 (c)) | S | AI-01, FOW-01 | specified |
-| MATCH-07 | Visibility options (solo fog, D-24 (c)) | S | FOW-07, MATCH-02 | specified |
+| FOW-01 | Vision grid per faction (solo fog, D-24 (c)) | M | CORE-08 | in_progress |
+| FOW-07 | Explored state, the shroud and solo fog gating (solo fog, D-24 (c)) | M | FOW-01, NET-08 | in_progress |
+| UI-16 | Minimap fog and explored areas (solo fog, D-24 (c)) | S | UI-11, FOW-07 | in_progress |
+| AI-18 | The AI reads only its own vision (solo fog, D-24 (c)) | S | AI-01, FOW-01 | in_progress |
+| MATCH-07 | Visibility options (solo fog, D-24 (c)) | S | FOW-07, MATCH-02 | done |
 | QA-12 | AI-versus-AI soak and opening balance | S | QA-11, AI-05, MATCH-03 | specified |
 | QA-13 | MVP release-candidate gate | S | QA-12, QA-09, PERF-09 | specified |
 | PERF-09 | MVP perf gate | S | PERF-08, QA-12 | specified |

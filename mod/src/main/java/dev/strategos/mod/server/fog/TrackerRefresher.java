@@ -49,15 +49,16 @@ public final class TrackerRefresher {
             }
             VisionSystem vision = core.vision();
             int factions = core.queries().config().factions();
+            boolean[] changed = new boolean[factions];
+            for (int f = 0; f < factions; f++) {
+                long key = ((long) rt.id().value() << 8) | f;
+                int version = vision.visibility(f).version();
+                Integer last = seen.put(key, version);
+                changed[f] = last == null || last != version;
+            }
             for (UUID member : rt.roster().members()) {
                 var slot = rt.roster().slotOf(member);
-                if (slot == null || slot.value() < 0 || slot.value() >= factions) {
-                    continue;
-                }
-                long key = ((long) rt.id().value() << 8) | slot.value();
-                int version = vision.visibility(slot.value()).version();
-                Integer last = seen.put(key, version);
-                if (last != null && last == version) {
+                if (slot == null || slot.value() < 0 || slot.value() >= factions || !changed[slot.value()]) {
                     continue;
                 }
                 ServerPlayer player = server.getPlayerList().getPlayer(member);

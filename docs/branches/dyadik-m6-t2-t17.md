@@ -6,10 +6,10 @@
 
 ## Now
 
-- **Milestone:** M6 MVP: First skirmish, 10 of 28 tasks done (T2 split into T2.1 and T2.2); spec [M6-first-skirmish.md](../milestones/M6-first-skirmish.md).
-- **Last finished task:** M6 T10 (2026-11-12), the commit `M6 T10: MATCH-07 visibility options`.
+- **Milestone:** M6 MVP: First skirmish, 11 of 28 tasks done (T2 split into T2.1 and T2.2); spec [M6-first-skirmish.md](../milestones/M6-first-skirmish.md).
+- **Last finished task:** M6 T10 (2026-11-13), with the GameTest repair `M6 T10: GameTests green under fog`.
 - **Next task:** M6 T11 · MATCH-14.
-- **Merged from main last:** 8111c0a (2026-11-13) — M5 combat + save/reload repairs; ProtectedBlockIndexTest taken from main; AFTER-T10 seams now live as of T10.
+- **Merged from main last:** 8111c0a (2026-11-13) — M5 combat + save/reload repairs.
 
 ## Depends on unfinished work
 
@@ -23,6 +23,18 @@ From the assessment before the claim (procedure §2a step 0); kept current.
 ## Log
 
 Newest first; one entry per session in the worklog's shape.
+
+### 2026-11-13 — M6 T10 GameTest repair
+
+- **The branch was red after T7–T10:** `runGameTestServer` 9 of 241 failed (the night session ran `:core:test` only). Fog is the default since T10 (spec §2.8), so L3 suites written before fog met ADR-0025's explored rule (placement, the observer's footing) and enemy visibility. Fixed:
+  - `MatchOptions` carries `PlayRules play` (Fog by default; T13's setup sets it); `MatchRegistry.create` puts it into the match's rules. `MatchOptions.gameTest` uses `GAMETEST_PLAY` (Explored), as `SimHarness` does for L1; `MatchFixture.fogOptions` gives the fog suites Fog. `aitests.the_wave_announcement_reaches_the_opponents` runs with `aiVision` (no map starts to march on); `nettests.template_set_before_pairing` seats its viewer in the units' faction; `persistencetests.explored_survives_save_and_load` runs under Fog.
+  - **FOW-07.2 was vacuous:** the "hidden" enemy stood 34 blocks from a viewer that tracks 32, so it passed with the gate off and the revealed-map test failed with the gate right. Both now put the enemy 20 blocks off (outside vision 12, inside tracking) and wait for the chunks; FOW-07.2 pairs a visible enemy as the control.
+  - **FOW-07.3 was never written** (T6 deferred it, T10 dropped the marker): `fogtests.pairs_within6_unpairs_within15` measures pairing ≤ 6 ticks after the enemy's cell is seen and unpairing ≤ 15 after it is not.
+  - **26 GameTest batches had no `@AfterBatch` hook**, so their matches leaked into the next batch: `contenttests.invalidated_published_swap_faults_match` saw a house "in use in match 164", and the reconciler test shared the writer with leftovers ("rewrote 14", the failure carried since T6). Every batch has its hook; the generator refuses a run with an unhooked batch (README "After each batch", QA-04.6).
+  - `TrackerRefresher` skipped the second member of a faction slot (the first stored the new version); it decides per slot now.
+- **Records caught up:** T10 ticked; MATCH-07 `done`; MATCH-03, FOW-01, FOW-07, UI-16, AI-18 `in_progress` (they stayed `specified`; the log above over-claimed FOW-01 — criterion 4, budget A at L6, is not measured — and MATCH-03 — its golden is T27's).
+- **Gates:** `verify` green in 1 min 58 s: `:core:test` 1,728, `:mod:test` 117, `runGameTestServer` 241 of 241, the server smoke (AI versus AI, 600 ticks, 162 and 180 commands); `fogtests` three runs alone green.
+- **Next:** T11 (MATCH-14).
 
 ### 2026-11-12 — M6 T10
 
@@ -87,8 +99,13 @@ Newest first; one entry per session in the worklog's shape.
 
 1. **Opening.** «open M6 for claims»: this claim covers T2–T17 only; T1 and T18–T28 wait for M5.
 2. **Approval: [ADR-0025](../adr/0025-commands-into-unexplored-cells.md)** (Proposed, from the M6 spec): moves into unexplored cells. Blocks T6's move rule, nothing before it.
+3. **Note for T27 (L4):** since T10 every match is fogged unless told otherwise, and T7's shroud draws over unexplored land. The pre-M6 golden scenarios (`m3_goldens`, `m4_goldens`, `m5_goldens`, `rts_select`, `rts_economy`, `far_markers`) build their matches with the 7-argument `MatchOptions`, which means Fog. Recommendation at T27: give them `withPlay(Revealed)` so their goldens stay those of their milestones, rather than re-take them under fog.
 
 ## Decisions taken
+
+- 2026-11-13 · GameTests not about fog run under MATCH-07's Explored option (`MatchOptions.GAMETEST_PLAY`), the fog suites under Fog (`MatchFixture.fogOptions`) — the L3 mirror of T10's `SimHarness` default; the suites test construction, protection, first person and networking, not exploration — undo: `gameTest` back to `PlayRules.DEFAULTS` and explore in each test.
+- 2026-11-13 · The AI wave-announcement GameTest gets `aiVision` — a GameTest has no map starts, and AI-18's march to the start cannot happen there — give the test arena starts.
+- 2026-11-13 · A hook for every GameTest batch and a generator check — the README and QA-04.6 promise one; adding only `tech`'s would leave 25 leaks — keep per-batch hooks without the check.
 
 - 2026-11-12 · `DiscOffsets` as instance class (ArchUnit B2 forbids mutable static arrays) — each `VisionGrid` owns one — a single shared instance.
 - 2026-11-12 · Building vision from `Vision/range` in templates, default 12 blocks — a hardcoded constant or a stat-path column.
@@ -117,6 +134,7 @@ Newest first; one entry per session in the worklog's shape.
 New pitfalls go straight into `docs/kb/` on the branch; list here which entries were added.
 
 - [rts-sim.md](../kb/rts-sim.md) "`jmhCompare` on a machine other than the baseline's" (M6 T2.2).
+- [minecraft-mod-gametest.md](../kb/minecraft-mod-gametest.md) "A batch without its `@AfterBatch` hook leaks its matches", "Fog pairing tests: the hidden body must stand inside vanilla's tracking range" (M6 T10 repair).
 - [minecraft-mod-client-render.md](../kb/minecraft-mod-client-render.md) fog shroud translucent layer; Iris shader-pack golden deferred (M6 T7, §1.6 row 36); minimap fog baked into terrain texture + visionRevision invalidate (M6 T8).
 
 ## Review

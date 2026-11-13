@@ -217,7 +217,7 @@ only its own vision at every level except that labelled top level.
   5. End-screen golden (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** MATCH-01, BLD-08 · **Size:** M ·
   **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 #### MAP-02 · First skirmish map
 - **Value:** A balanced 1 v 1 map whose terrain creates decisions, not only paths (P1, P4).
@@ -364,7 +364,7 @@ only its own vision at every level except that labelled top level.
      hidden case of CORE-03 AC4, which M0 cannot test without fog).
 - **Tests:** L0, L1, L6 · **Depends on:** CORE-08 · **Size:** M · **Tier:** T1 (pulled into the MVP
   by D-24)
-- **Status:** specified
+- **Status:** in_progress
 
 #### FOW-07 · Explored state, the shroud and solo fog gating
 - **Value:** A match starts in the dark: scouting matters, explored land stays dim, and hidden
@@ -390,7 +390,7 @@ only its own vision at every level except that labelled top level.
      shader pack (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent), L5, L6 · **Depends on:** FOW-01, NET-08 · **Size:** M ·
   **Tier:** T1 (pulled into the MVP by D-24)
-- **Status:** specified
+- **Status:** in_progress
 
 #### UI-16 · Minimap fog and explored areas
 - **Value:** The minimap shows what you know, and no more (P5).
@@ -404,7 +404,7 @@ only its own vision at every level except that labelled top level.
   3. Golden (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** UI-11, FOW-07 · **Size:** S · **Tier:** T1
   (pulled into the MVP by D-24)
-- **Status:** specified
+- **Status:** in_progress
 
 #### AI-18 · The AI reads only its own vision
 - **Value:** The AI plays with the information you have (P5).
@@ -418,7 +418,7 @@ only its own vision at every level except that labelled top level.
   3. Fogged AI-versus-AI matches still end within 45 game minutes (L1).
 - **Tests:** L0, L1 · **Depends on:** AI-01, FOW-01 · **Size:** S · **Tier:** T1 (pulled into the
   MVP by D-24)
-- **Status:** specified
+- **Status:** in_progress
 
 #### MATCH-07 · Visibility options
 - **Value:** Choose how much of the map you know at the start.
@@ -430,7 +430,8 @@ only its own vision at every level except that labelled top level.
   2. A revealed map makes `FogGate` answer "visible" for every participant (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** FOW-07, MATCH-02 · **Size:** S · **Tier:** T1 (pulled
   into the MVP by D-24)
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-11-13 — L1 `VisibilityOptionsTest.eachOptionInitialisesTheGrids`; L3 `fogtests.a_revealed_map_shows_everything` (an enemy outside vision, inside tracking range, paired under `revealMap`); spec T10.
 
 ### The MVP gate
 
