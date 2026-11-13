@@ -431,7 +431,7 @@ Cards: [roadmap/M6-first-skirmish.md](roadmap/M6-first-skirmish.md#cards). 23 ca
 | UI-20 | Minimap orders, pings and live construction | M | UI-11, UI-12 | in_progress |
 | UI-21 | Notification feed and alert audio | M | UI-12, TECH-01 | in_progress |
 | UI-13 | Research and phase UI | M | UI-08, TECH-02 | in_progress |
-| UI-14 | First-match hints and controls help | M | UI-21 | specified |
+| UI-14 | First-match hints and controls help | M | UI-21 | in_progress |
 | FOW-01 | Vision grid per faction (solo fog, D-24 (c)) | M | CORE-08 | in_progress |
 | FOW-07 | Explored state, the shroud and solo fog gating (solo fog, D-24 (c)) | M | FOW-01, NET-08 | in_progress |
 | UI-16 | Minimap fog and explored areas (solo fog, D-24 (c)) | S | UI-11, FOW-07 | in_progress |

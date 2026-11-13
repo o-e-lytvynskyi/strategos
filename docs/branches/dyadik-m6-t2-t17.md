@@ -8,7 +8,7 @@
 
 - **Milestone:** M6 MVP: First skirmish, 13 of 29 tasks done (T12 split into T12.1 and T12.2) (T2 split into T2.1 and T2.2); spec [M6-first-skirmish.md](../milestones/M6-first-skirmish.md).
 - **Last finished task:** M6 T12.2 (2026-11-13), the commit `M6 T12.2: the first skirmish package, the jar and one headless match`.
-- **In progress:** M6 T13–T16 code in (`WIP M6 T13`–`T16`), tests not written, gates not run; next T17 · UI-14.
+- **In progress:** none. T13–T17 code in (`WIP M6 T13`–`T17`): the claim's code is complete; its tests are not written and its gates not run (below).
 - **Open (tests, deferred on the developer's word 2026-11-13 «чисто код без тестов»):** `verifySlow`'s five fog-fallout failures (give `BattleBotTest.ground`, `EconomyBotTest`'s `HeadlessMatch` runs and `aitests` battle seeds `aiVision`); rerun `maptests.thirty_horsemen_cross`; tests for T13–T17 are not written and their gates not run.
 - **Merged from main last:** 8111c0a (2026-11-13) — M5 combat + save/reload repairs.
 
@@ -24,6 +24,10 @@ From the assessment before the claim (procedure §2a step 0); kept current.
 ## Log
 
 Newest first; one entry per session in the worklog's shape.
+
+### 2026-11-13 — M6 T17 (code only)
+
+- **M6 T17 · UI-14 first-match hints and the controls overlay — code, no tests.** `core.client.HintBook`: how to order (the first selection), the idle button (the first idle worker), a house (two below the cap); one at a time, each once per profile; a click on it dismisses it and the id joins `seenHints` in `strategos-client.toml`. The `CONTROLS` action on K (`key.strategos.controls`, in `engine-surface.json` and 04 §2.5) toggles an overlay listing the mod's key mappings on their current keys (`getTranslatedKeyMessage`), drawn by `RtsHud` in the RTS view. Not done: L1 (each hint once per profile under its condition; the overlay shows rebinds), L4 (T27), L7 (the playtest).
 
 ### 2026-11-13 — M6 T16 (code only)
 

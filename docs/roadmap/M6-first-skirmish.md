@@ -339,7 +339,7 @@ only its own vision at every level except that labelled top level.
   4. A friend playtester new to the game gets through the first 5 minutes with the hints alone
      (L7, acceptance).
 - **Tests:** L0, L1, L4 (consent), L7 · **Depends on:** UI-21 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 ### Solo fog (D-24 (c))
 

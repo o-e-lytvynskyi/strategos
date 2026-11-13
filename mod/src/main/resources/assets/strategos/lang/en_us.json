@@ -110,5 +110,11 @@
   "strategos.feed.worker_idle": "A worker is idle",
   "strategos.phase.0": "Village",
   "strategos.phase.1": "Town",
-  "strategos.phase.2": "City"
+  "strategos.phase.2": "City",
+  "strategos.hint.first_order": "Right-click the ground to send the selection there; hold Shift to queue orders",
+  "strategos.hint.idle_worker": "A worker stands idle: click the idle count on the resource bar, or press I",
+  "strategos.hint.build_house": "Two below the population cap: select a worker and build a house",
+  "strategos.hint.dismiss": "   (click to hide)",
+  "strategos.controls.title": "Controls (K to close)",
+  "key.strategos.controls": "Controls overlay"
 }

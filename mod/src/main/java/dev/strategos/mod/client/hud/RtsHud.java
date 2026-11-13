@@ -1,5 +1,6 @@
 package dev.strategos.mod.client.hud;
 
+import dev.strategos.core.client.HintBook;
 import dev.strategos.core.client.hud.CardController;
 import dev.strategos.core.client.hud.ClientFactionView;
 import dev.strategos.core.client.hud.CommandCard;
@@ -41,6 +42,7 @@ import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.mod.client.StrategosClient;
+import dev.strategos.mod.client.StrategosClientConfig;
 import dev.strategos.mod.client.audio.AlertSounds;
 import dev.strategos.mod.client.net.ClientPayloads;
 import dev.strategos.mod.client.rts.RtsMode;
@@ -54,6 +56,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -138,6 +141,9 @@ public final class RtsHud {
     private long alertAt = -1_000_000;
     private final NotificationFeed feed = new NotificationFeed();
     private @Nullable PhasePanel phasePanel;
+    private @Nullable HintBook hints;
+    private HintBook.@Nullable Hint hint;
+    private boolean controlsShown;
     private @Nullable AlertSounds alertSounds;
 
     private @Nullable Inspect inspect;
@@ -201,6 +207,15 @@ public final class RtsHud {
     public boolean click(double x, double y, int button) {
         if (!shown()) {
             return false;
+        }
+        HudRect hintAt = hintRect();
+        HintBook book = hints;
+        if (hintAt != null && book != null && hintAt.contains(x, y)) { // UI-14: a click dismisses the hint, for good
+            book.dismiss();
+            hint = null;
+            StrategosClientConfig.INSTANCE.seenHints.set(book.seen());
+            StrategosClientConfig.INSTANCE.seenHints.save();
+            return true;
         }
         HudLayout l = layout();
         int pad = theme.padding();
@@ -480,6 +495,12 @@ public final class RtsHud {
                         StrategosClient.model().faction(),
                         StrategosClient.model().buildings()),
                 own);
+        if (hints == null) { // UI-14: the seen hints come from the client config, read once
+            hints = new HintBook(List.copyOf(StrategosClientConfig.INSTANCE.seenHints.get()));
+        }
+        hint = hints.current(
+                !selection.handles().isEmpty() || selection.building() != null,
+                StrategosClient.model().faction());
         double[] gui = HudCardPresentation.cursorGui(mc);
         hovered = card.at(layout().commandCard(), theme.padding(), gui[0], gui[1]);
         bar = GroupBar.of(mode.groups());
@@ -962,10 +983,98 @@ public final class RtsHud {
         return mode.active() && !Minecraft.getInstance().options.hideGui;
     }
 
+    /** UI-14's overlay on or off (its key, K by default). */
+    public void toggleControls() {
+        controlsShown = !controlsShown;
+    }
+
+    /** Whether the controls overlay shows, for scenarios. */
+    public boolean controlsShown() {
+        return controlsShown;
+    }
+
+    /** The hint shown now, or null, for scenarios. */
+    public HintBook.@Nullable Hint hint() {
+        return hint;
+    }
+
+    /** Where the hint draws: a line across the top middle of the screen; null with none. */
+    private @Nullable HudRect hintRect() {
+        HintBook.Hint h = hint;
+        if (h == null || !mode.active()) {
+            return null;
+        }
+        Minecraft mc = Minecraft.getInstance();
+        Component text = hintText(h);
+        int w = mc.font.width(text) + 2 * theme.padding();
+        return new HudRect(
+                (mc.getWindow().getGuiScaledWidth() - w) / 2, 28, w, mc.font.lineHeight + 2 * theme.padding());
+    }
+
+    private static Component hintText(HintBook.Hint h) {
+        return Component.translatable(h.key()).append(Component.translatable("strategos.hint.dismiss"));
+    }
+
+    private void drawHint(GuiGraphics g) {
+        HudRect r = hintRect();
+        HintBook.Hint h = hint;
+        if (r == null || h == null) {
+            return;
+        }
+        paint.panel(g, r);
+        g.drawString(
+                Minecraft.getInstance().font,
+                hintText(h),
+                r.x() + theme.padding(),
+                r.y() + theme.padding(),
+                0xFFFFFFA0,
+                false);
+    }
+
+    /** UI-14: the mod's key mappings on their current keys, rebinds included, in two columns. */
+    private void drawControls(GuiGraphics g) {
+        Minecraft mc = Minecraft.getInstance();
+        Font font = mc.font;
+        List<KeyMapping> keys = new ArrayList<>();
+        for (KeyMapping k : mc.options.keyMappings) {
+            if (k.getCategory().equals("key.categories.strategos")) {
+                keys.add(k);
+            }
+        }
+        int line = font.lineHeight + 1;
+        int rows = (keys.size() + 1) / 2;
+        int colW = 170;
+        int w = 2 * colW + 3 * theme.padding();
+        int h = (rows + 2) * line + 2 * theme.padding();
+        int x = (mc.getWindow().getGuiScaledWidth() - w) / 2;
+        int y = Math.max(4, (mc.getWindow().getGuiScaledHeight() - h) / 2);
+        paint.panel(g, new HudRect(x, y, w, h));
+        g.drawString(
+                font,
+                Component.translatable("strategos.controls.title"),
+                x + theme.padding(),
+                y + theme.padding(),
+                0xFFFFD040,
+                false);
+        for (int k = 0; k < keys.size(); k++) {
+            KeyMapping key = keys.get(k);
+            int cx = x + theme.padding() + (k / rows) * (colW + theme.padding());
+            int cy = y + theme.padding() + (k % rows + 2) * line;
+            String name = Component.translatable(key.getName()).getString();
+            String bound = key.getTranslatedKeyMessage().getString();
+            g.drawString(font, name, cx, cy, 0xFFFFFFFF, false);
+            g.drawString(font, bound, cx + colW - font.width(bound) - 4, cy, 0xFFA0E0FF, false);
+        }
+    }
+
     private void drawNotices(GuiGraphics g, DeltaTracker delta) {
         if (shown()) {
             banners.notices(g, List.of(), clientTicks - alertAt < 100);
             banners.feed(g, feed.visible(clientTicks), clientTicks);
+            drawHint(g);
+            if (controlsShown) {
+                drawControls(g);
+            }
         }
     }
 
