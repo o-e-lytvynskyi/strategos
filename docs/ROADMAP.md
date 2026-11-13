@@ -425,7 +425,7 @@ Cards: [roadmap/M6-first-skirmish.md](roadmap/M6-first-skirmish.md#cards). 23 ca
 | MATCH-14 | Spike: an arena world from the title screen | S | MAP-07 | done |
 | MATCH-02 | Skirmish setup and launch | L | MATCH-14, MAP-01, MATCH-01, UI-02 | specified |
 | MATCH-03 | Conquest, defeat and statistics | M | MATCH-01, BLD-08 | in_progress |
-| MAP-02 | First skirmish map | M | MAP-01, ECO-02, ECO-16, D-17 | specified |
+| MAP-02 | First skirmish map | M | MAP-01, ECO-02, ECO-16, D-17 | in_progress |
 | AI-04 | AI openings, waves, raid bar and defence | L | AI-03, MAP-02, BLD-16 | specified |
 | AI-05 | AI phases, research and difficulty levels | M | AI-04, TECH-02, D-19 | specified |
 | UI-20 | Minimap orders, pings and live construction | M | UI-11, UI-12 | specified |

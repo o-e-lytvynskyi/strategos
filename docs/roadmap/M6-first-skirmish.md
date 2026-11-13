@@ -238,7 +238,7 @@ only its own vision at every level except that labelled top level.
   5. The package imports with its terrain hash (L3).
 - **Tests:** L0, L1, L3 · **Fixtures:** the skirmish map package with a terrain hash ·
   **Depends on:** MAP-01, ECO-02, ECO-16, D-17 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 ### The opponent
 

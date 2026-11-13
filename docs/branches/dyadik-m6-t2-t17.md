@@ -6,9 +6,9 @@
 
 ## Now
 
-- **Milestone:** M6 MVP: First skirmish, 12 of 28 tasks done (T2 split into T2.1 and T2.2); spec [M6-first-skirmish.md](../milestones/M6-first-skirmish.md).
-- **Last finished task:** M6 T11 (2026-11-13), the commit `M6 T11: MATCH-14 the arena world from code`.
-- **In progress:** M6 T12.1 · MAP-02 since 2026-11-13 (T12 split into T12.1 and T12.2).
+- **Milestone:** M6 MVP: First skirmish, 12 of 29 tasks done (T12 split into T12.1 and T12.2) (T2 split into T2.1 and T2.2); spec [M6-first-skirmish.md](../milestones/M6-first-skirmish.md).
+- **Last finished task:** M6 T12.1 (2026-11-13), the commit `M6 T12.1: the first skirmish map and its checker`.
+- **Next task:** M6 T12.2 · MAP-02 (the package, the jar, the import, one headless match).
 - **Merged from main last:** 8111c0a (2026-11-13) — M5 combat + save/reload repairs.
 
 ## Depends on unfinished work
@@ -23,6 +23,11 @@ From the assessment before the claim (procedure §2a step 0); kept current.
 ## Log
 
 Newest first; one entry per session in the worklog's shape.
+
+### 2026-11-13 — M6 T12.1
+
+- **M6 T12.1 · the first skirmish map and its checker** — MAP-02 `in_progress` (checks 1–3 at L1). T12 split first (spec, `37cf675`). `TerrainJob` and `MapManifest.terrainJobs` (optional; older manifests encode as before). `MapChecker` in `core.sim.map` (row 40: content may not import `sim`): resources within 48 of each start within 5 %, walks to the dropsite sites within 10 %, every start reached for each mobility class, and the jobs (hill, forest line and river crossings counted and measured, a resource near a place, a level clear room). `FirstSkirmish` (testFixtures, row 41): point-symmetric; the river splits round a central island with the hill (plateau at 20) and the large iron deposit, one ford per channel; a forest line per half with three gaps; per start two groves, eight bushes, room for six fields. Scenario `first_skirmish` (conquest; a civic centre, five workers, a horseman, a quarry, an iron mine and animals per start; `iron_mine_large` on the plateau). Measured: wood 1,600, food 1,300, stone and iron 1,000 per start; walks 17.3–21.3 blocks, equal; infantry and large reach; the hill 7 above the ford's bank; gaps 6, 8, 6; fords 8 wide; rooms 825 columns for 486. L1: `FirstSkirmishTest` (6: deterministic, voxel-exact mirror, the checker passes, each job kind, six fields of the shipped field's span, the starts' units), `MapCheckerTest` (5: each check bites). The checker's first cut read `reachableFrom`'s bits as nodes; they are components.
+- **Gates:** `verify` green in 2 min 49 s: `:core:test` 1,739 (`CoreArchitectureTest` caught a static `Set` and a `Map.copyOf` in the first cut, B8/B4), `:mod:test` 117, `runGameTestServer` 241 of 241, the server smoke. The scenario's computer slot plays `ai:first_loop` until T21/T22 (row 42).
 
 ### 2026-11-13 — M6 T11
 
