@@ -33,6 +33,7 @@ public final class ClientMatchModel {
     private int alerts;
     private @Nullable MatchNews phase;
     private int phases;
+    private int clears;
     private long defeatedMask;
 
     private int matchId = -1;
@@ -348,8 +349,14 @@ public final class ClientMatchModel {
         return exploredBits;
     }
 
+    /** How many times the model forgot a match; a reader holding counters of its news resets them when this moves. */
+    public int clears() {
+        return clears;
+    }
+
     /** Forgets the match: the player left it. */
     public void clear() {
+        clears++;
         end = null;
         alert = null;
         alerts = 0;

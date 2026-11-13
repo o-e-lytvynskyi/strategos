@@ -7,6 +7,7 @@ import dev.strategos.core.content.Footprint;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.CommandOutcome;
 import dev.strategos.core.protocol.Grant;
+import dev.strategos.core.protocol.NoticeKind;
 import dev.strategos.core.protocol.PlaceBuilding;
 import dev.strategos.core.protocol.QueueMode;
 import dev.strategos.core.protocol.SpawnBuilding;
@@ -21,6 +22,7 @@ import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.KernelAccess;
 import dev.strategos.core.sim.MatchSnapshot;
 import dev.strategos.core.sim.MatchState;
+import dev.strategos.core.sim.Notice;
 import dev.strategos.core.sim.OutputEvent;
 import dev.strategos.core.sim.UnitCreated;
 import dev.strategos.core.sim.WorldEffect;
@@ -237,5 +239,30 @@ class ConstructionTest {
         MatchState s = KernelAccess.state(h.core());
         assertThat(s.buildings().handles()).as("no foundation").hasSize(1);
         assertThat(s.treasury().stock(0, 1)).as("nothing paid").isEqualTo(50_000);
+    }
+
+    @Test
+    void aFinishedBuildTellsItsFactionOnceNamingTheTemplate() {
+        SimHarness h = match();
+        MatchState s = KernelAccess.state(h.core());
+        assertThat(h.events(Notice.class))
+                .as("a spawned civic centre was not built")
+                .filteredOn(n -> n.kind() == NoticeKind.BUILT)
+                .isEmpty();
+        int[] builders = buildersOnSlots(h, 3);
+        h.submit(P0, new PlaceBuilding(HOUSE, 30, 30, 0, UnitSet.of(builders), QueueMode.REPLACE));
+        h.runUntil(
+                () -> s.buildings().handles().length > 1
+                        && s.buildings().state(s.buildings().handles()[1]) == BuildingStore.COMPLETE,
+                2_000);
+        h.runTicks(5);
+        assertThat(h.events(Notice.class))
+                .filteredOn(n -> n.kind() == NoticeKind.BUILT)
+                .singleElement()
+                .satisfies(n -> {
+                    assertThat(n.faction()).isEqualTo(new FactionSlot(0));
+                    assertThat(n.handle()).isEqualTo(s.buildings().handles()[1]);
+                    assertThat(n.detail()).isEqualTo(HOUSE.value());
+                });
     }
 }

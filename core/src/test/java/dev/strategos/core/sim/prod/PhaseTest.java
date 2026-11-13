@@ -11,6 +11,7 @@ import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.protocol.CommandOutcome;
 import dev.strategos.core.protocol.Grant;
+import dev.strategos.core.protocol.NoticeKind;
 import dev.strategos.core.protocol.RejectReason;
 import dev.strategos.core.protocol.Research;
 import dev.strategos.core.protocol.SpawnBuilding;
@@ -20,6 +21,7 @@ import dev.strategos.core.shared.TechId;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.MatchFactionView;
+import dev.strategos.core.sim.Notice;
 import dev.strategos.core.sim.OutputEvent;
 import dev.strategos.core.sim.TechResearched;
 import dev.strategos.core.sim.build.BuildingStore;
@@ -427,5 +429,28 @@ class PhaseTest {
                 .as("at 440 hit points 298 left is 67.7 %, over 65 + 2")
                 .isEqualTo(1);
         assertThat(p.s.buildings().stage(house)).isEqualTo(fresh);
+    }
+
+    @Test
+    void aPhaseIsNoResearchNoticeButATechAfterItIs() {
+        ProdScene p = rich(testSet());
+        for (int k = 0; k < 5; k++) {
+            spawn(p, HOUSE, k);
+        }
+        int shed = spawn(p, STOREHOUSE, 5);
+        assertThat(research(p, p.centre, TOWN).outcome()).isEqualTo(CommandOutcome.ACCEPTED);
+        assertThat(untilResearched(p, 1_300)).isTrue();
+        p.h.runTicks(5);
+        assertThat(p.h.events(Notice.class))
+                .as("a phase reaches the feed as match news, not as a research notice")
+                .filteredOn(n -> n.kind() == NoticeKind.RESEARCHED)
+                .isEmpty();
+        assertThat(research(p, shed, TOWN_AXES).outcome()).isEqualTo(CommandOutcome.ACCEPTED);
+        assertThat(untilResearched(p, 300)).isTrue();
+        p.h.runTicks(5);
+        assertThat(p.h.events(Notice.class))
+                .filteredOn(n -> n.kind() == NoticeKind.RESEARCHED)
+                .singleElement()
+                .satisfies(n -> assertThat(n.detail()).isEqualTo(TOWN_AXES.value()));
     }
 }

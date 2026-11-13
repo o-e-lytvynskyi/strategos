@@ -67,6 +67,7 @@ public final class NotificationFeed {
 
     private final List<Entry> entries = new ArrayList<>();
     private final Map<String, Long> lastByKey = new TreeMap<>();
+    private @Nullable Vec2d newestAlert;
 
     /**
      * Offers an entry at tick {@code now}: under its rate limit it is dropped and false comes back; otherwise it joins
@@ -82,6 +83,9 @@ public final class NotificationFeed {
         }
         lastByKey.put(counted, now);
         entries.add(new Entry(kind, key, args, now, at));
+        if (kind.alert() && at != null) {
+            newestAlert = at; // kept apart: the entry fades and is dropped, J's target stays
+        }
         entries.removeIf(e -> now - e.tick() >= FADE_TICKS);
         return true;
     }
@@ -105,15 +109,16 @@ public final class NotificationFeed {
         return left >= 40 ? 1f : Math.max(0f, left / 40f);
     }
 
+    /** Forgets every entry, rate limit and alert place: a new match starts with an empty feed. */
+    public void clear() {
+        entries.clear();
+        lastByKey.clear();
+        newestAlert = null;
+    }
+
     /** The place of the newest alert that has one, faded or not; null when none came. */
     public @Nullable Vec2d newestAlert() {
-        for (int k = entries.size() - 1; k >= 0; k--) {
-            Entry e = entries.get(k);
-            if (e.kind().alert() && e.at() != null) {
-                return e.at();
-            }
-        }
-        return null;
+        return newestAlert;
     }
 
     private static long every(Kind kind) {

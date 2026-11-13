@@ -4,6 +4,7 @@ import dev.strategos.core.client.HintBook;
 import dev.strategos.core.client.hud.CardController;
 import dev.strategos.core.client.hud.ClientFactionView;
 import dev.strategos.core.client.hud.CommandCard;
+import dev.strategos.core.client.hud.ControlsOverlay;
 import dev.strategos.core.client.hud.EconomyNotices;
 import dev.strategos.core.client.hud.GroupBar;
 import dev.strategos.core.client.hud.HudLayout;
@@ -16,6 +17,7 @@ import dev.strategos.core.client.hud.PhasePanel;
 import dev.strategos.core.client.hud.ResourceBar;
 import dev.strategos.core.client.hud.SelectionPanel;
 import dev.strategos.core.client.hud.SelectionSummary;
+import dev.strategos.core.client.input.DefaultBindings;
 import dev.strategos.core.client.pick.Picking;
 import dev.strategos.core.client.select.Selection;
 import dev.strategos.core.content.TechDef;
@@ -137,6 +139,7 @@ public final class RtsHud {
     private int alertsHeard;
     private int wavesHeard;
     private int phasesHeard;
+    private int clearsSeen;
     private long economySeen = -1;
     private long alertAt = -1_000_000;
     private final NotificationFeed feed = new NotificationFeed();
@@ -388,6 +391,13 @@ public final class RtsHud {
         clientTicks++;
         Minecraft client = Minecraft.getInstance();
         minimap.tick(client);
+        if (StrategosClient.model().clears() != clearsSeen) { // the model forgot a match: its news counts restart
+            clearsSeen = StrategosClient.model().clears();
+            wavesHeard = 0;
+            alertsHeard = 0;
+            phasesHeard = 0;
+            feed.clear();
+        }
         int announced = StrategosClient.model().waves();
         MatchNews wave = StrategosClient.model().wave();
         MatchJoin joined = StrategosClient.match();
@@ -1035,12 +1045,16 @@ public final class RtsHud {
     private void drawControls(GuiGraphics g) {
         Minecraft mc = Minecraft.getInstance();
         Font font = mc.font;
-        List<KeyMapping> keys = new ArrayList<>();
+        Map<String, KeyMapping> mappings = new HashMap<>();
         for (KeyMapping k : mc.options.keyMappings) {
             if (k.getCategory().equals("key.categories.strategos")) {
-                keys.add(k);
+                mappings.put(k.getName(), k);
             }
         }
+        List<ControlsOverlay.Row> keys = ControlsOverlay.rows(DefaultBindings.all(), b -> {
+            KeyMapping m = mappings.get(b.mappingName());
+            return m == null ? null : m.getTranslatedKeyMessage().getString();
+        });
         int line = font.lineHeight + 1;
         int rows = (keys.size() + 1) / 2;
         int colW = 170;
@@ -1057,11 +1071,11 @@ public final class RtsHud {
                 0xFFFFD040,
                 false);
         for (int k = 0; k < keys.size(); k++) {
-            KeyMapping key = keys.get(k);
+            ControlsOverlay.Row row = keys.get(k);
             int cx = x + theme.padding() + (k / rows) * (colW + theme.padding());
             int cy = y + theme.padding() + (k % rows + 2) * line;
-            String name = Component.translatable(key.getName()).getString();
-            String bound = key.getTranslatedKeyMessage().getString();
+            String name = Component.translatable(row.nameKey()).getString();
+            String bound = row.keyLabel();
             g.drawString(font, name, cx, cy, 0xFFFFFFFF, false);
             g.drawString(font, bound, cx + colW - font.width(bound) - 4, cy, 0xFFA0E0FF, false);
         }

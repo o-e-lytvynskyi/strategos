@@ -14,6 +14,7 @@ import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.protocol.CancelTrain;
 import dev.strategos.core.protocol.CommandOutcome;
 import dev.strategos.core.protocol.Grant;
+import dev.strategos.core.protocol.NoticeKind;
 import dev.strategos.core.protocol.RejectReason;
 import dev.strategos.core.protocol.Research;
 import dev.strategos.core.protocol.SpawnBuilding;
@@ -24,6 +25,7 @@ import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.ContentSwap;
 import dev.strategos.core.sim.MatchSnapshot;
+import dev.strategos.core.sim.Notice;
 import dev.strategos.core.sim.OutputEvent;
 import dev.strategos.core.sim.TechResearched;
 import dev.strategos.core.sim.TickOutputs;
@@ -513,5 +515,24 @@ class ResearchTest {
         p.h.submit(PlayerSlot.ADMIN, new Research(gaia, WOOD_1));
         p.h.step();
         assertThat(p.h.results().get(p.h.results().size() - 1).firstReason()).isEqualTo(RejectReason.UNSUPPORTED);
+    }
+
+    @Test
+    void aResearchedTechTellsItsFactionOnceNamingTheTech() {
+        ProdScene p = rich();
+        int house = storehouse(p, 30, 30);
+        research(p, house, WOOD_1);
+        assertThat(p.h.events(Notice.class))
+                .filteredOn(n -> n.kind() == NoticeKind.RESEARCHED)
+                .isEmpty();
+        assertThat(untilResearched(p, 700)).isPositive();
+        p.h.runTicks(5);
+        assertThat(p.h.events(Notice.class))
+                .filteredOn(n -> n.kind() == NoticeKind.RESEARCHED)
+                .singleElement()
+                .satisfies(n -> {
+                    assertThat(n.faction()).isEqualTo(new FactionSlot(0));
+                    assertThat(n.detail()).isEqualTo(WOOD_1.value());
+                });
     }
 }
