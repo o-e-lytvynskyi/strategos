@@ -200,7 +200,7 @@ only its own vision at every level except that labelled top level.
   4. Setup-screen goldens (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** MATCH-14, MAP-01, MATCH-01, UI-02 ·
   **Size:** L · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 #### MATCH-03 · Conquest, defeat and statistics
 - **Value:** A clear ending: destroy everything the enemy has, or make them resign, then see how

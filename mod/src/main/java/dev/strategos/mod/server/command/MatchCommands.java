@@ -17,6 +17,7 @@ import dev.strategos.core.content.Scenario;
 import dev.strategos.core.content.StartSlot;
 import dev.strategos.core.protocol.Resign;
 import dev.strategos.core.protocol.RuleChange;
+import dev.strategos.core.protocol.SkirmishSetup;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.sim.MatchCore;
@@ -36,6 +37,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Pattern;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -214,15 +216,23 @@ final class MatchCommands {
     }
 
     /**
-     * {@code skirmish <map> observe [seed=<n>]} (QA-11.5): a match on the map, as {@code match create map} makes one,
-     * with seed {@code n}; once imported it plays the map's first scenario bot against bot and the source watches it
-     * as its observer.
+     * {@code skirmish <map> [level=easy|normal|hard] [visibility=fog|explored|revealed] [resources=map|low|high]
+     * [population=50..200]} (MATCH-02): the caller's skirmish in the arena's next slot, the caller in slot 0. {@code
+     * skirmish <map> observe [seed=<n>]} (QA-11.5): a match on the map, as {@code match create map} makes one, with seed
+     * {@code n}; once imported it plays the map's first scenario bot against bot and the source watches it as its
+     * observer.
      */
     static LiteralArgumentBuilder<CommandSourceStack> skirmish() {
         return Commands.literal("skirmish")
                 .then(Commands.argument("map", ResourceLocationArgument.id())
                         .suggests((ctx, builder) -> SharedSuggestionProvider.suggestResource(
                                 MapPackageLoader.list(ctx.getSource().getServer()), builder))
+                        .executes(ctx -> play(ctx.getSource(), ResourceLocationArgument.getId(ctx, "map"), ""))
+                        .then(Commands.argument("options", StringArgumentType.greedyString())
+                                .executes(ctx -> play(
+                                        ctx.getSource(),
+                                        ResourceLocationArgument.getId(ctx, "map"),
+                                        StringArgumentType.getString(ctx, "options"))))
                         .then(Commands.literal("observe")
                                 .executes(ctx ->
                                         skirmish(ctx.getSource(), ResourceLocationArgument.getId(ctx, "map"), "seed=1"))
@@ -231,6 +241,53 @@ final class MatchCommands {
                                                 ctx.getSource(),
                                                 ResourceLocationArgument.getId(ctx, "map"),
                                                 StringArgumentType.getString(ctx, "seed"))))));
+    }
+
+    private static int play(CommandSourceStack source, ResourceLocation map, String options) {
+        return run(source, () -> {
+            ServerPlayer player = source.getPlayer();
+            if (player == null) {
+                throw new MatchRefusedException("a skirmish is played by a player");
+            }
+            SkirmishSetup setup = setup(map, options);
+            MatchRuntime rt = StrategosServer.get().skirmishes().start(StrategosServer.get(), setup, player);
+            return rt.id() + " created on " + map + " (" + setup.level() + ", " + setup.visibility() + ", "
+                    + setup.resources() + " resources, population " + setup.populationCap()
+                    + "); you play slot 0 once it is imported";
+        });
+    }
+
+    /** The setup that {@code options} (space-separated {@code key=value}) make of the defaults. */
+    static SkirmishSetup setup(ResourceLocation map, String options) {
+        SkirmishSetup d = SkirmishSetup.DEFAULTS;
+        SkirmishSetup.Level level = d.level();
+        SkirmishSetup.Visibility visibility = d.visibility();
+        SkirmishSetup.StartResources resources = d.resources();
+        int population = d.populationCap();
+        for (String token : options.trim().split("\\s+", -1)) {
+            if (token.isEmpty()) {
+                continue;
+            }
+            int eq = token.indexOf('=');
+            String key = eq < 0 ? token : token.substring(0, eq);
+            String value = eq < 0 ? "" : token.substring(eq + 1).toUpperCase(Locale.ROOT);
+            try {
+                switch (key) {
+                    case "level" -> level = SkirmishSetup.Level.valueOf(value);
+                    case "visibility" -> visibility = SkirmishSetup.Visibility.valueOf(value);
+                    case "resources" -> resources = SkirmishSetup.StartResources.valueOf(value);
+                    case "population" -> population = Integer.parseInt(value);
+                    default -> throw new MatchRefusedException("unknown skirmish option " + key);
+                }
+            } catch (IllegalArgumentException e) {
+                throw new MatchRefusedException("bad skirmish option " + token);
+            }
+        }
+        try {
+            return new SkirmishSetup(map.toString(), level, resources, population, visibility);
+        } catch (IllegalArgumentException e) {
+            throw new MatchRefusedException(String.valueOf(e.getMessage()));
+        }
     }
 
     private static int skirmish(CommandSourceStack source, ResourceLocation map, String seedArg) {

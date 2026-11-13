@@ -17,6 +17,7 @@ import dev.strategos.mod.server.net.payload.MatchJoinPayload;
 import dev.strategos.mod.server.net.payload.MatchStatePayload;
 import dev.strategos.mod.server.net.payload.ModeSwitchPayload;
 import dev.strategos.mod.server.net.payload.PayloadArrived;
+import dev.strategos.mod.server.net.payload.SkirmishPayload;
 import dev.strategos.mod.server.net.payload.TemplateAckPayload;
 import dev.strategos.mod.server.net.payload.TemplateSetPayload;
 import dev.strategos.mod.server.net.payload.UiQueryPayload;
@@ -73,6 +74,8 @@ public final class ModPayloads {
         registrar.playToServer(
                 ModeSwitchPayload.TYPE, ModeSwitchPayload.STREAM_CODEC, C2sHandlers.timed(C2sHandlers::modeSwitch));
         registrar.playToServer(
+                SkirmishPayload.TYPE, SkirmishPayload.STREAM_CODEC, C2sHandlers.timed(C2sHandlers::skirmish));
+        registrar.playToServer(
                 MatchControlPayload.TYPE,
                 MatchControlPayload.STREAM_CODEC,
                 C2sHandlers.timed(C2sHandlers::matchControl));
@@ -107,6 +110,7 @@ public final class ModPayloads {
                 CameraJumpPayload.SPEC,
                 ModeSwitchPayload.SPEC,
                 MatchControlPayload.SPEC,
+                SkirmishPayload.SPEC,
                 DebugSubscribePayload.SPEC,
                 DebugFeedPayload.SPEC);
     }

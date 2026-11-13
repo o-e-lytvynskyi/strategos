@@ -8,7 +8,7 @@
 
 - **Milestone:** M6 MVP: First skirmish, 13 of 29 tasks done (T12 split into T12.1 and T12.2) (T2 split into T2.1 and T2.2); spec [M6-first-skirmish.md](../milestones/M6-first-skirmish.md).
 - **Last finished task:** M6 T12.2 (2026-11-13), the commit `M6 T12.2: the first skirmish package, the jar and one headless match`.
-- **Next task:** M6 T13 · MATCH-02.
+- **In progress:** M6 T13 · MATCH-02 since 2026-11-13 — code in (`WIP M6 T13`), tests not written, gates not run.
 - **Open (tests, deferred on the developer's word 2026-11-13 «чисто код без тестов»):** `verifySlow`'s five fog-fallout failures (give `BattleBotTest.ground`, `EconomyBotTest`'s `HeadlessMatch` runs and `aitests` battle seeds `aiVision`); rerun `maptests.thirty_horsemen_cross`; tests for T13–T17 are not written and their gates not run.
 - **Merged from main last:** 8111c0a (2026-11-13) — M5 combat + save/reload repairs.
 
@@ -24,6 +24,10 @@ From the assessment before the claim (procedure §2a step 0); kept current.
 ## Log
 
 Newest first; one entry per session in the worklog's shape.
+
+### 2026-11-13 — M6 T13 (code only)
+
+- **M6 T13 · MATCH-02 skirmish setup and launch — code, no tests** (the developer's word: «чисто код без тестов»). `SkirmishSetup` (core protocol: map, level, starting resources map/low/high = ×1/×0.5/×2, population cap 50–200 default 150, visibility; explicit wire codes). `strategos:skirmish` (client to server; the host or an operator only; refused to a seated player), in `engine-surface.json` and 04 §2.5. `Skirmishes.start(setup, player[, placer])`: the arena's next slot (`createInArena`), the setup's visibility as the match's play rules; once imported, the map's scenario with scaled resources, `populationMax`, the player in slot 0 as its commander; the import's progress on the player's action bar (`MapImporter.progress`). `/strategos skirmish <map> [level= visibility= resources= population=]`; `observe` stays. Client: **Skirmish** beside Singleplayer on the title screen (`ScreenEvent.Init.Post`), `SkirmishScreen` (map, the civilisation shown, level with its handicaps, resources, population slider, visibility, Start), `ArenaWorldLauncher.launch(…, setup)` sends the setup after the arena check. `AFTER-T22`: the computer's slot plays `first_loop` whatever the level. Not done: L1 (setup bounds and codec), L3 (pipeline; a second skirmish's next slot at L5 in the arena smoke), L4 (T27).
 
 ### 2026-11-13 — M6 T12.2
 
@@ -119,6 +123,9 @@ Newest first; one entry per session in the worklog's shape.
 
 ## Decisions taken
 
+- 2026-11-13 · Starting resources "low" and "high" are half and double the map scenario's (MATCH-02; no number is written anywhere) — undo: `SkirmishSetup.StartResources` factors.
+- 2026-11-13 · `strategos:skirmish` is accepted from the integrated server's owner or an operator only, never from a player already seated — a dedicated server's players cannot make matches at will — undo: `C2sHandlers.skirmish`.
+- 2026-11-13 · The import's progress is a percentage on the player's action bar, not a new wire field — the client has no match before it is seated — undo: a `match_state` progress field.
 - 2026-11-13 · GameTests not about fog run under MATCH-07's Explored option (`MatchOptions.GAMETEST_PLAY`), the fog suites under Fog (`MatchFixture.fogOptions`) — the L3 mirror of T10's `SimHarness` default; the suites test construction, protection, first person and networking, not exploration — undo: `gameTest` back to `PlayRules.DEFAULTS` and explore in each test.
 - 2026-11-13 · The AI wave-announcement GameTest gets `aiVision` — a GameTest has no map starts, and AI-18's march to the start cannot happen there — give the test arena starts.
 - 2026-11-13 · A hook for every GameTest batch and a generator check — the README and QA-04.6 promise one; adding only `tech`'s would leave 25 leaks — keep per-batch hooks without the check.

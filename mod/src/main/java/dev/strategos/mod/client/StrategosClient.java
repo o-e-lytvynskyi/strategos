@@ -17,6 +17,7 @@ import dev.strategos.mod.client.fx.ShotArcRenderer;
 import dev.strategos.mod.client.fx.ShotArcs;
 import dev.strategos.mod.client.hud.RtsHud;
 import dev.strategos.mod.client.menu.ArenaWorldLauncher;
+import dev.strategos.mod.client.menu.SkirmishEntry;
 import dev.strategos.mod.client.net.ClientPayloads;
 import dev.strategos.mod.client.overlay.FarMarkers;
 import dev.strategos.mod.client.overlay.HealthBarOverlay;
@@ -34,6 +35,7 @@ import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RenderFrameEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.neoforge.client.event.ScreenEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import org.jspecify.annotations.Nullable;
 
@@ -72,6 +74,7 @@ public final class StrategosClient {
         NeoForge.EVENT_BUS.addListener(PayloadArrived.class, ClientPayloads::onPayload);
         NeoForge.EVENT_BUS.addListener(
                 ClientPlayerNetworkEvent.LoggingIn.class, e -> ARENA.onLoggedIn(Minecraft.getInstance()));
+        NeoForge.EVENT_BUS.addListener(ScreenEvent.Init.Post.class, SkirmishEntry::onInit);
         NeoForge.EVENT_BUS.addListener(ClientPlayerNetworkEvent.LoggingOut.class, e -> {
             RTS.remember(); // the match's camera and groups, for a return (MATCH-04)
             match = null;
