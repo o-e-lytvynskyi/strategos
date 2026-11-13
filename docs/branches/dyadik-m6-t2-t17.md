@@ -1,8 +1,8 @@
 # m6-t2-t17 on dev/dyadik/m6-t2-t17
 
-**Developer:** dyadik (Claude Code, Opus) · **Branch:** dev/dyadik/m6-t2-t17 · **Work:** M6 T2–T17 · **Base:** main @ 1dae9fa · **Claimed:** 2026-10-25 · **Status:** claimed
+**Developer:** dyadik (Claude Code, Opus) · **Branch:** dev/dyadik/m6-t2-t17 · **Work:** M6 T2–T17 · **Base:** main @ 1dae9fa · **Claimed:** 2026-10-25 · **Status:** released 2026-11-14
 
-**Note:** assignment merged in [PR #17](https://github.com/o-e-lytvynskyi/strategos/pull/17); implementation not merged; opening M6 remains an owner decision
+**Note:** assignment merged in [PR #17](https://github.com/o-e-lytvynskyi/strategos/pull/17); implementation not merged; opening M6 remains an owner decision; released 2026-11-14 by the owner's word in a maintainer session («давай перехватим задачу и добьем ее», then choosing that the owner releases the claim), not by the holder and not as a stale claim; the work, from the holder's head 7f08f40 of [PR #53](https://github.com/o-e-lytvynskyi/strategos/pull/53), goes to `o-e-lytvynskyi`; the holder's commits stay in that history
 
 ## Now
 
