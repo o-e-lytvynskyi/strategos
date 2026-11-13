@@ -12,9 +12,11 @@ import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.sim.KernelAccess;
 import dev.strategos.core.sim.MatchEnded;
+import dev.strategos.core.sim.MatchRules;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.Notice;
 import dev.strategos.core.sim.OutputEvent;
+import dev.strategos.core.sim.PlayRules;
 import dev.strategos.core.sim.TickOutputs;
 import dev.strategos.core.sim.UnderAttack;
 import dev.strategos.core.sim.UnitCreated;
@@ -163,10 +165,12 @@ final class HeadlessMatch {
     /** As {@link #run(long, long, String, Watcher, boolean)}, on {@code ground} with {@code scenario}'s starts. */
     static Result run(
             Ground ground, Scenario scenario, long seed, long limit, String script, Watcher watcher, boolean decided) {
+        PlayRules ai = new PlayRules(PlayRules.Victory.NONE, false, true, true);
         SimHarness h = SimHarness.builder()
                 .size(ground.size(), ground.size())
                 .yBand(0, ground.height(), 16)
                 .seed(seed)
+                .rules(MatchRules.DEFAULTS.withPlay(ai))
                 .build();
         h.publishAll(ground.voxels());
         h.step();

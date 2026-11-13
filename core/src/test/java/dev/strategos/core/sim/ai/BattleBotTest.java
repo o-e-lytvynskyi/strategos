@@ -17,6 +17,7 @@ import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.KernelAccess;
 import dev.strategos.core.sim.MatchQueries;
 import dev.strategos.core.sim.MatchRules;
+import dev.strategos.core.sim.PlayRules;
 import dev.strategos.core.sim.UnitView;
 import dev.strategos.core.sim.build.BuildingView;
 import dev.strategos.core.sim.econ.EconomyRules;
@@ -53,9 +54,11 @@ class BattleBotTest {
 
     static SimHarness ground(TemplateSet templates) {
         MatchRules d = MatchRules.DEFAULTS;
+        PlayRules ai = new PlayRules(PlayRules.Victory.NONE, false, true, true);
         SimHarness h = SimHarness.builder()
                 .size(128, 128)
-                .rules(d.withEconomy(new EconomyRules(d.economy().resources(), 300)))
+                .rules(d.withEconomy(new EconomyRules(d.economy().resources(), 300))
+                        .withPlay(ai))
                 .yBand(0, 31, 1)
                 .templates(templates)
                 .build();

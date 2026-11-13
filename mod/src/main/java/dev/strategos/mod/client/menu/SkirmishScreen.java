@@ -22,9 +22,6 @@ import net.minecraft.util.Mth;
  * to the server once it is joined.
  */
 public final class SkirmishScreen extends Screen {
-    /** The maps the mod ships; a data pack's own maps are a later card's (MATCH-08). */
-    static final List<String> SHIPPED_MAPS = List.of(SkirmishSetup.FIRST_SKIRMISH);
-
     private static final int ROW = 24;
     private static final int WIDTH = 220;
 
@@ -50,7 +47,7 @@ public final class SkirmishScreen extends Screen {
         int x = width / 2 - WIDTH / 2;
         int y = height / 6 + 12;
         addRenderableWidget(CycleButton.<String>builder(SkirmishScreen::mapName)
-                .withValues(SHIPPED_MAPS)
+                .withValues(List.of(SkirmishSetup.FIRST_SKIRMISH))
                 .withInitialValue(map)
                 .create(x, y, WIDTH, 20, Component.translatable("strategos.skirmish.map"), (b, v) -> map = v));
         y += ROW * 2;

@@ -142,7 +142,7 @@ public final class AiTests {
      */
     @StrategosTest(arena = "arena_flat_48", batch = "ai_battle", solo = true, timeoutTicks = 1_700)
     public static void battleSeedReplaysToItsHash(GameTestHelper h) {
-        MatchRuntime rt = town(h, 5);
+        MatchRuntime rt = town(h, 5, AI_SEES);
         String script = Objects.requireNonNull(Scenarios.script(h.getLevel().getServer(), "battle"))
                 .replace("\"first\":450", "\"first\":1")
                 .replace("\"min\":14", "\"min\":4")
