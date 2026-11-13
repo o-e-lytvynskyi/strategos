@@ -182,6 +182,8 @@ None. The `strategos:ping` payload stays with multiplayer pings (UI-15, M7); UI-
 | 37 | GameTest play rules (T10 repair) | `MatchOptions` carries the match's `PlayRules`; Fog by default, and T13's setup fills it. GameTests not about fog use Explored (`MatchOptions.GAMETEST_PLAY`), the fog suites Fog (`MatchFixture.fogOptions`), as L1's `SimHarness` does since T10 |
 | 38 | Reopening the arena (T11) | A world made from a data-pack preset has an experimental generator lifecycle (`RegistryDataLoader`, `WorldDimensions#checkStability`), so `openWorld` would ask for a backup each time. `ArenaWorldLauncher` sets NeoForge's `PrimaryLevelData#withConfirmedWarning` on an arena it opened, saved in `level.dat`; S13 |
 | 39 | The arena's settings (T11) | Adventure (the lobby pad's blocks stay; the commander service switches modes itself), peaceful, no cheats, no structures. `/strategos` needs level 2, so a skirmish starts through `strategos:skirmish`, never the command; S13 |
+| 40 | `MapChecker`'s package (T12) | `core.sim.map`, not `core.content`: reachability and walking distances read `sim.nav`'s `SurfaceGrid`, which the content layer may not import (B3). The terrain jobs' data stays in `core.content` (`MapManifest.terrainJobs`) |
+| 41 | The first map's layout (T12) | Point symmetry puts any single feature between the bases through the centre. The river comes down the middle and splits round a central island, which holds the hill and the large iron deposit; each channel has one ford, so the island is the one crossing. The forest line is one per half (two, mirrored), three gaps each. The owner's hand-finishing (§10) may break the symmetry; the checker's tolerances then decide |
 
 ### 1.7 Consent plan
 
@@ -640,7 +642,14 @@ kernel adds `:core:jmh :core:jmhCompare`.
 #### T12 · MAP-02
 - §2.10; `FirstSkirmish`, `MapChecker`, the package, the jar's allowlist; one headless match's time.
   **Depends:** — (AFTER-M5: the large class's reachability, the horseman). **Size:** L. **Verification:**
-  checks 1–3 and 5; `:mod:checkJarContents`.
+  checks 1–3 and 5; `:mod:checkJarContents`. Split (2026-11-13), the two parts in order:
+- **T12.1** — the manifest's optional `terrainJobs`; `MapChecker` (`core.sim.map`, row 40); `FirstSkirmish`
+  (core testFixtures) with its starts, resources and terrain jobs; L1: the generator is deterministic and the
+  checker passes it (checks 1–3). **Size:** M.
+- **T12.2** — `mapgen` writes `first_skirmish` into the main resources; the start scenario
+  `first_skirmish` (each start's civic centre, five workers, a horseman, its quarry, iron mine and livestock;
+  the large iron deposit in the middle); `checkJarContents` allows exactly that package; L3 import with its
+  terrain hash (check 5, a `map_` batch); one headless match's time on it. **Size:** M.
 
 #### T13 · MATCH-02
 - §2.11; `SkirmishSetup`, `SkirmishScreen`, `strategos:skirmish`, `Skirmishes.start`, the dedicated-server
@@ -708,7 +717,7 @@ kernel adds `:core:jmh :core:jmhCompare`.
 
 ### 7.3 Progress
 
-- [x] T2.1 (2026-10-25) · [x] T2.2 (2026-10-25) · [x] T3 (2026-10-26) · [x] T4 (2026-11-12) · [x] T5 (2026-11-12) · [x] T6 (2026-11-12) · [x] T7 (2026-11-13) · [x] T8 (2026-11-12) · [x] T9 (2026-11-12) · [x] T10 (2026-11-13) · [x] T11 (2026-11-13) · [ ] T12
+- [x] T2.1 (2026-10-25) · [x] T2.2 (2026-10-25) · [x] T3 (2026-10-26) · [x] T4 (2026-11-12) · [x] T5 (2026-11-12) · [x] T6 (2026-11-12) · [x] T7 (2026-11-13) · [x] T8 (2026-11-12) · [x] T9 (2026-11-12) · [x] T10 (2026-11-13) · [x] T11 (2026-11-13) · [ ] T12.1 · [ ] T12.2
 - [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17 · [ ] T1 · [ ] T18 · [ ] T19 · [ ] T20 · [ ] T21
 - [ ] T22 · [ ] T23 · [ ] T24 · [ ] T25 · [ ] T27 · [ ] T28
 

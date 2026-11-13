@@ -8,7 +8,7 @@
 
 - **Milestone:** M6 MVP: First skirmish, 12 of 28 tasks done (T2 split into T2.1 and T2.2); spec [M6-first-skirmish.md](../milestones/M6-first-skirmish.md).
 - **Last finished task:** M6 T11 (2026-11-13), the commit `M6 T11: MATCH-14 the arena world from code`.
-- **Next task:** M6 T12 · MAP-02.
+- **In progress:** M6 T12.1 · MAP-02 since 2026-11-13 (T12 split into T12.1 and T12.2).
 - **Merged from main last:** 8111c0a (2026-11-13) — M5 combat + save/reload repairs.
 
 ## Depends on unfinished work
