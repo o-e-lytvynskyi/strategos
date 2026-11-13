@@ -17,6 +17,14 @@ interface Scenario {
         return 42;
     }
 
+    /**
+     * On the title screen, before each world: true when the scenario opened a world itself (the runner then waits for
+     * it to load); false for the runner's flat creative world named {@link #worldName()}.
+     */
+    default boolean openWorld(Minecraft mc) {
+        return false;
+    }
+
     /** A dedicated server's address to join instead of creating a world, or null for a world of its own. */
     default @Nullable String server() {
         return null;

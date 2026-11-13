@@ -108,7 +108,8 @@ public final class NetGateway {
                     rt.roster().of(f.faction()).forEach(player -> queue(player, payload));
                 }
             }
-            case Audience.SeesCell c -> toMembers(c.match(), payload); // every member sees every cell until fog (M8)
+            case Audience.SeesCell c ->
+                toMembers(c.match(), payload); // TODO fog-filter: send only to factions that see the cell (FOW-03, M8)
             case Audience.SeesEither
                     e -> // AFTER-M8: deliver to the union of the two cells' viewers once fog of war exists
                 toMembers(e.match(), payload);
@@ -325,7 +326,11 @@ public final class NetGateway {
             case FAULTED -> MatchStateMsg.Lifecycle.FAULTED;
             case DISPOSED -> MatchStateMsg.Lifecycle.DISPOSED;
         };
-        return new MatchStatePayload(new MatchStateMsg(rt.id().value(), lifecycle, Math.max(0, rt.tick())));
+        var core = rt.core();
+        var results = lifecycle == MatchStateMsg.Lifecycle.ENDED && core != null
+                ? core.queries().matchResults()
+                : null;
+        return new MatchStatePayload(new MatchStateMsg(rt.id().value(), lifecycle, Math.max(0, rt.tick()), results));
     }
 
     private void toTrackers(Audience.TrackersOf trackers, CustomPacketPayload payload) {

@@ -1,6 +1,8 @@
 package dev.strategos.mod.client.hud;
 
+import dev.strategos.core.client.HintBook;
 import dev.strategos.core.client.hud.CardController;
+import dev.strategos.core.client.hud.ClientFactionView;
 import dev.strategos.core.client.hud.CommandCard;
 import dev.strategos.core.client.hud.EconomyNotices;
 import dev.strategos.core.client.hud.GroupBar;
@@ -9,25 +11,39 @@ import dev.strategos.core.client.hud.HudRect;
 import dev.strategos.core.client.hud.HudTheme;
 import dev.strategos.core.client.hud.Income;
 import dev.strategos.core.client.hud.Minimap;
+import dev.strategos.core.client.hud.NotificationFeed;
+import dev.strategos.core.client.hud.PhasePanel;
 import dev.strategos.core.client.hud.ResourceBar;
 import dev.strategos.core.client.hud.SelectionPanel;
 import dev.strategos.core.client.hud.SelectionSummary;
 import dev.strategos.core.client.pick.Picking;
 import dev.strategos.core.client.select.Selection;
+import dev.strategos.core.content.TechDef;
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.DepositState;
 import dev.strategos.core.protocol.FactionState;
 import dev.strategos.core.protocol.FeedbackMsg;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.MatchNews;
+import dev.strategos.core.protocol.Move;
+import dev.strategos.core.protocol.NoticeMsg;
+import dev.strategos.core.protocol.QueueMode;
 import dev.strategos.core.protocol.UiQuery;
 import dev.strategos.core.protocol.UnitDetail;
 import dev.strategos.core.protocol.UnitHud;
+import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.Handle;
+import dev.strategos.core.shared.QueueEntry;
 import dev.strategos.core.shared.Stance;
+import dev.strategos.core.shared.TechId;
+import dev.strategos.core.shared.TemplateId;
+import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.mod.client.StrategosClient;
+import dev.strategos.mod.client.StrategosClientConfig;
+import dev.strategos.mod.client.audio.AlertSounds;
 import dev.strategos.mod.client.net.ClientPayloads;
 import dev.strategos.mod.client.rts.RtsMode;
 import dev.strategos.mod.entity.UnitEntity;
@@ -40,9 +56,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.neoforged.bus.api.IEventBus;
@@ -118,7 +136,15 @@ public final class RtsHud {
     private final RtsMinimap minimap = new RtsMinimap();
     private int alertsHeard;
     private int wavesHeard;
+    private int phasesHeard;
+    private long economySeen = -1;
     private long alertAt = -1_000_000;
+    private final NotificationFeed feed = new NotificationFeed();
+    private @Nullable PhasePanel phasePanel;
+    private @Nullable HintBook hints;
+    private HintBook.@Nullable Hint hint;
+    private boolean controlsShown;
+    private @Nullable AlertSounds alertSounds;
 
     private @Nullable Inspect inspect;
     private long buildNanos;
@@ -182,6 +208,15 @@ public final class RtsHud {
         if (!shown()) {
             return false;
         }
+        HudRect hintAt = hintRect();
+        HintBook book = hints;
+        if (hintAt != null && book != null && hintAt.contains(x, y)) { // UI-14: a click dismisses the hint, for good
+            book.dismiss();
+            hint = null;
+            StrategosClientConfig.INSTANCE.seenHints.set(book.seen());
+            StrategosClientConfig.INSTANCE.seenHints.save();
+            return true;
+        }
         HudLayout l = layout();
         int pad = theme.padding();
         MatchJoin join = StrategosClient.match();
@@ -190,6 +225,18 @@ public final class RtsHud {
             if (button == 0 && m.contains(x, y)) { // UI-11: the camera to the clicked column
                 double[] at = m.toWorld(x, y);
                 mode.centreOn(join.originX() + at[0], join.originZ() + at[1]);
+            } else if (button == 1
+                    && m.contains(x, y)
+                    && !mode.selection().handles().isEmpty()) {
+                double[] at = m.toWorld(x, y); // UI-20: one move of the selection to the mapped point, Shift queues
+                int[] units = mode.selection().handles().stream()
+                        .mapToInt(Integer::intValue)
+                        .toArray();
+                mode.send(new Move(
+                        UnitSet.of(units),
+                        new Vec2d(at[0], at[1]),
+                        net.minecraft.client.gui.screens.Screen.hasShiftDown() ? QueueMode.QUEUE : QueueMode.REPLACE,
+                        0));
             }
             return true;
         }
@@ -263,6 +310,72 @@ public final class RtsHud {
     /** A feedback message from the server: the economy's become notices (UI-10). */
     public void feedback(FeedbackMsg msg) {
         notices.accept(msg, clientTicks, StrategosClient.resources());
+        List<EconomyNotices.Shown> fired = notices.fired();
+        if (!fired.isEmpty() && fired.getLast().last() > economySeen) {
+            EconomyNotices.Shown s = fired.getLast();
+            economySeen = s.last();
+            offer(NotificationFeed.Kind.ECONOMY, economyKey(s), List.of(s.detail()), null, s.cause() + s.detail());
+        }
+        if (msg instanceof NoticeMsg n) {
+            TemplateSet templates = StrategosClient.templates();
+            switch (n.kind()) {
+                case TRAINED ->
+                    offer(
+                            NotificationFeed.Kind.TRAINED,
+                            "strategos.feed.trained",
+                            List.of(templateName(templates, n.detail())),
+                            null,
+                            n.detail());
+                case BUILT ->
+                    offer(
+                            NotificationFeed.Kind.BUILT,
+                            "strategos.feed.built",
+                            List.of(templateName(templates, n.detail())),
+                            null,
+                            n.detail());
+                case RESEARCHED -> {
+                    TechDef tech = templates.tech(new TechId(n.detail()));
+                    offer(
+                            NotificationFeed.Kind.RESEARCH,
+                            "strategos.feed.researched",
+                            List.of(tech == null ? n.detail() : tech.name()),
+                            null,
+                            n.detail());
+                }
+                default -> {}
+            }
+        }
+    }
+
+    /** The feed's entries shown now, for scenarios and goldens. */
+    public List<NotificationFeed.Entry> feedShown() {
+        return feed.visible(clientTicks);
+    }
+
+    private void offer(NotificationFeed.Kind kind, String key, List<String> args, @Nullable Vec2d at, String limitKey) {
+        if (feed.offer(kind, key, args, clientTicks, at, limitKey)) {
+            if (alertSounds == null) {
+                alertSounds = new AlertSounds(StrategosClient.sounds());
+            }
+            alertSounds.play(kind, clientTicks);
+        }
+    }
+
+    private static Vec2d place(MatchJoin join, MatchNews news) {
+        return new Vec2d(join.originX() + news.x(), join.originZ() + news.z());
+    }
+
+    private static String templateName(TemplateSet templates, String id) {
+        UnitTemplate t = templates.byId(new TemplateId(id));
+        return t == null ? id : t.name();
+    }
+
+    private static String economyKey(EconomyNotices.Shown s) {
+        return switch (s.cause()) {
+            case NOT_ENOUGH_RESOURCES -> "strategos.feed.not_enough";
+            case POPULATION_CAPPED -> "strategos.feed.population_capped";
+            case DEPOSIT_EXHAUSTED -> "strategos.feed.worker_idle";
+        };
     }
 
     /** The notices shown now, the newest first, for scenarios. */
@@ -278,23 +391,39 @@ public final class RtsHud {
         int announced = StrategosClient.model().waves();
         MatchNews wave = StrategosClient.model().wave();
         MatchJoin joined = StrategosClient.match();
-        if (announced > wavesHeard) { // AI-17: an enemy's wave, a horn for those it comes for
+        if (announced > wavesHeard) { // AI-17: an enemy's wave, for those it comes for
             wavesHeard = announced;
             if (wave != null
                     && joined != null
                     && wave.faction() != joined.slot().value()) {
-                client.getSoundManager()
-                        .play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
-                                net.minecraft.sounds.SoundEvents.RAID_HORN.value(), 1.0F, 1.0F));
+                offer(NotificationFeed.Kind.WAVE, "strategos.feed.wave", List.of(), place(joined, wave), "");
             }
         }
         int heard = StrategosClient.model().alerts();
-        if (heard > alertsHeard) { // UI-12: a new alert sounds once, here only
+        if (heard > alertsHeard) { // UI-12: a new alert, rate-limited per area by the feed
             alertsHeard = heard;
             alertAt = clientTicks;
-            client.getSoundManager()
-                    .play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
-                            net.minecraft.sounds.SoundEvents.BELL_BLOCK, 1.0F, 0.8F));
+            MatchNews alert = StrategosClient.model().alert();
+            offer(
+                    NotificationFeed.Kind.UNDER_ATTACK,
+                    "strategos.feed.under_attack",
+                    List.of(),
+                    alert == null || joined == null ? null : place(joined, alert),
+                    "");
+        }
+        int phases = StrategosClient.model().phases();
+        MatchNews phase = StrategosClient.model().phase();
+        if (phases > phasesHeard) { // TECH-02's notice, to every participant
+            phasesHeard = phases;
+            if (phase != null && joined != null) {
+                boolean own = phase.faction() == joined.slot().value();
+                offer(
+                        NotificationFeed.Kind.PHASE,
+                        own ? "strategos.feed.phase.own" : "strategos.feed.phase.enemy",
+                        List.of("strategos.phase." + phase.ticks()),
+                        null,
+                        phase.faction() + ":" + phase.ticks());
+            }
         }
         Minecraft mc = Minecraft.getInstance();
         if (!mode.active() || mc.level == null) {
@@ -359,6 +488,19 @@ public final class RtsHud {
                         own != null && controller.demolishAsked(own.handle()),
                         CardController.shared(stances)),
                 own);
+        phasePanel = PhasePanel.of( // UI-13: the next phase's checklist, the server's own evaluation
+                templates,
+                new ClientFactionView(
+                        templates,
+                        StrategosClient.model().faction(),
+                        StrategosClient.model().buildings()),
+                own);
+        if (hints == null) { // UI-14: the seen hints come from the client config, read once
+            hints = new HintBook(List.copyOf(StrategosClientConfig.INSTANCE.seenHints.get()));
+        }
+        hint = hints.current(
+                !selection.handles().isEmpty() || selection.building() != null,
+                StrategosClient.model().faction());
         double[] gui = HudCardPresentation.cursorGui(mc);
         hovered = card.at(layout().commandCard(), theme.padding(), gui[0], gui[1]);
         bar = GroupBar.of(mode.groups());
@@ -418,6 +560,11 @@ public final class RtsHud {
 
     /** The camera to the latest alert (UI-12's jump key); whether there was one. */
     public boolean jumpToAlert() {
+        Vec2d newest = feed.newestAlert();
+        if (newest != null) { // UI-21: the newest alert in the feed, a wave's muster included
+            mode.centreOn(newest.x(), newest.z());
+            return true;
+        }
         MatchNews alert = StrategosClient.model().alert();
         MatchJoin join = StrategosClient.match();
         if (alert == null || join == null) {
@@ -630,7 +777,7 @@ public final class RtsHud {
         for (int k = 0; k < b.queue().size(); k++) {
             HudRect cell = SelectionPanel.queueCell(r, pad, k);
             g.fill(cell.x(), cell.y(), cell.right(), cell.bottom(), theme.border());
-            cardPresentation.icon(g, font, templates, b.queue().get(k), cell);
+            entryIcon(g, font, templates, b.queue().get(k), cell);
             if (b.batch(k) > 1) { // a batch (PROD-02): its count in the corner
                 String n = "×" + b.batch(k);
                 g.drawString(
@@ -640,6 +787,35 @@ public final class RtsHud {
                 int w = (int) Math.round(cell.width() * Math.min(1000, b.trained()) / 1000.0);
                 g.fill(cell.x(), cell.bottom() - 2, cell.x() + w, cell.bottom(), theme.accent());
             }
+        }
+    }
+
+    /** UI-13: the next phase's leaves above the card, met ones green, the rest with their amounts. */
+    private void drawPhasePanel(GuiGraphics g, Font font, HudRect card) {
+        PhasePanel p = phasePanel;
+        if (p == null) {
+            return;
+        }
+        int line = font.lineHeight + 2;
+        int height = (p.rows().size() + 1) * line + 2 * theme.padding();
+        HudRect r = new HudRect(card.x(), card.y() - height - 2, card.width(), height);
+        paint.panel(g, r);
+        int x = r.x() + theme.padding();
+        int y = r.y() + theme.padding();
+        g.drawString(
+                font,
+                Component.translatable(p.phase().name()).getString() + " — "
+                        + (p.rows().isEmpty() ? "ready" : "needs"),
+                x,
+                y,
+                0xFFFFD040,
+                false);
+        for (PhasePanel.Row row : p.rows()) {
+            y += line;
+            String text = (row.met() ? "✔ " : "✘ ")
+                    + row.label()
+                    + (row.need() > 1 ? " " + row.have() + "/" + row.need() : "");
+            g.drawString(font, text, x, y, row.met() ? 0xFF80FF80 : 0xFFFF8080, false);
         }
     }
 
@@ -654,6 +830,7 @@ public final class RtsHud {
         HudRect r = layout().commandCard();
         int pad = theme.padding();
         paint.panel(g, r);
+        drawPhasePanel(g, font, r);
         for (CommandCard.Button b : c.buttons()) {
             HudRect cell = CommandCard.cell(r, pad, b.slot());
             g.fill(
@@ -690,6 +867,13 @@ public final class RtsHud {
                         g.fill(cell.x(), cell.y(), cell.right(), cell.bottom(), 0x60FF0000);
                     }
                 }
+                case RESEARCH -> {
+                    TechDef tech = templates.techByIndex(b.template());
+                    paint.item(g, tech == null || tech.icon().isBlank() ? "minecraft:book" : tech.icon(), cell);
+                    if (!b.affordable()) { // unmet or queued: dimmed
+                        g.fill(cell.x(), cell.y(), cell.right(), cell.bottom(), 0x80202020);
+                    }
+                }
             }
             g.drawString(
                     font,
@@ -704,7 +888,16 @@ public final class RtsHud {
         }
     }
 
-    /** Template {@code template}'s icon centred in {@code cell}, or its name's first letter when it has none. */
+    /** A queue entry's icon: a unit's via {@link HudCardPresentation}, or for a technology (TECH-01) its own item. */
+    private void entryIcon(GuiGraphics g, Font font, TemplateSet templates, int entry, HudRect cell) {
+        if (!QueueEntry.isTech(entry)) {
+            cardPresentation.icon(g, font, templates, entry, cell);
+            return;
+        }
+        TechDef tech = templates.techByIndex(QueueEntry.techIndex(entry));
+        paint.item(g, tech == null ? "minecraft:barrier" : tech.icon(), cell);
+    }
+
     private void drawGroups(GuiGraphics g, DeltaTracker delta) {
         if (shown()) {
             banners.groups(g, bar);
@@ -790,9 +983,98 @@ public final class RtsHud {
         return mode.active() && !Minecraft.getInstance().options.hideGui;
     }
 
+    /** UI-14's overlay on or off (its key, K by default). */
+    public void toggleControls() {
+        controlsShown = !controlsShown;
+    }
+
+    /** Whether the controls overlay shows, for scenarios. */
+    public boolean controlsShown() {
+        return controlsShown;
+    }
+
+    /** The hint shown now, or null, for scenarios. */
+    public HintBook.@Nullable Hint hint() {
+        return hint;
+    }
+
+    /** Where the hint draws: a line across the top middle of the screen; null with none. */
+    private @Nullable HudRect hintRect() {
+        HintBook.Hint h = hint;
+        if (h == null || !mode.active()) {
+            return null;
+        }
+        Minecraft mc = Minecraft.getInstance();
+        Component text = hintText(h);
+        int w = mc.font.width(text) + 2 * theme.padding();
+        return new HudRect(
+                (mc.getWindow().getGuiScaledWidth() - w) / 2, 28, w, mc.font.lineHeight + 2 * theme.padding());
+    }
+
+    private static Component hintText(HintBook.Hint h) {
+        return Component.translatable(h.key()).append(Component.translatable("strategos.hint.dismiss"));
+    }
+
+    private void drawHint(GuiGraphics g) {
+        HudRect r = hintRect();
+        HintBook.Hint h = hint;
+        if (r == null || h == null) {
+            return;
+        }
+        paint.panel(g, r);
+        g.drawString(
+                Minecraft.getInstance().font,
+                hintText(h),
+                r.x() + theme.padding(),
+                r.y() + theme.padding(),
+                0xFFFFFFA0,
+                false);
+    }
+
+    /** UI-14: the mod's key mappings on their current keys, rebinds included, in two columns. */
+    private void drawControls(GuiGraphics g) {
+        Minecraft mc = Minecraft.getInstance();
+        Font font = mc.font;
+        List<KeyMapping> keys = new ArrayList<>();
+        for (KeyMapping k : mc.options.keyMappings) {
+            if (k.getCategory().equals("key.categories.strategos")) {
+                keys.add(k);
+            }
+        }
+        int line = font.lineHeight + 1;
+        int rows = (keys.size() + 1) / 2;
+        int colW = 170;
+        int w = 2 * colW + 3 * theme.padding();
+        int h = (rows + 2) * line + 2 * theme.padding();
+        int x = (mc.getWindow().getGuiScaledWidth() - w) / 2;
+        int y = Math.max(4, (mc.getWindow().getGuiScaledHeight() - h) / 2);
+        paint.panel(g, new HudRect(x, y, w, h));
+        g.drawString(
+                font,
+                Component.translatable("strategos.controls.title"),
+                x + theme.padding(),
+                y + theme.padding(),
+                0xFFFFD040,
+                false);
+        for (int k = 0; k < keys.size(); k++) {
+            KeyMapping key = keys.get(k);
+            int cx = x + theme.padding() + (k / rows) * (colW + theme.padding());
+            int cy = y + theme.padding() + (k % rows + 2) * line;
+            String name = Component.translatable(key.getName()).getString();
+            String bound = key.getTranslatedKeyMessage().getString();
+            g.drawString(font, name, cx, cy, 0xFFFFFFFF, false);
+            g.drawString(font, bound, cx + colW - font.width(bound) - 4, cy, 0xFFA0E0FF, false);
+        }
+    }
+
     private void drawNotices(GuiGraphics g, DeltaTracker delta) {
         if (shown()) {
-            banners.notices(g, shownNotices, clientTicks - alertAt < 100);
+            banners.notices(g, List.of(), clientTicks - alertAt < 100);
+            banners.feed(g, feed.visible(clientTicks), clientTicks);
+            drawHint(g);
+            if (controlsShown) {
+                drawControls(g);
+            }
         }
     }
 

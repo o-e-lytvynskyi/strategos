@@ -18,6 +18,14 @@ final class Ownership {
         if (!s.entities().isAlive(handle)) {
             return RejectReason.UNKNOWN_TARGET;
         }
+        if (!issuer.isAdmin() && s.visionSystem() != null) {
+            int issuerFaction = issuer.value();
+            if (issuerFaction != s.identity().faction(Handle.index(handle))
+                    && issuerFaction < s.config().factions()
+                    && !s.visionSystem().visibility(issuerFaction).isVisible(handle)) {
+                return RejectReason.UNKNOWN_TARGET;
+            }
+        }
         if (!issuer.isAdmin() && issuer.value() != s.identity().faction(Handle.index(handle))) {
             return RejectReason.NOT_OWNER;
         }

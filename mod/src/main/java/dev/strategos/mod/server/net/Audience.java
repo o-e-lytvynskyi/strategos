@@ -41,7 +41,7 @@ public sealed interface Audience {
         }
     }
 
-    /** The players who see a vision cell of a match (fog of war, M8); its members until then. */
+    /** The players who see a vision cell of a match; sends to all members until FOW-03 (M8) filters by vision. */
     record SeesCell(MatchId match, int cellX, int cellZ) implements Audience {
         @Override
         public Kind kind() {

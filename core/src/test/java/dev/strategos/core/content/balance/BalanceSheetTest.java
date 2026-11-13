@@ -4,10 +4,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import dev.strategos.core.content.PlaceholderBlueprints;
+import dev.strategos.core.content.RawTech;
 import dev.strategos.core.content.RawTemplate;
+import dev.strategos.core.content.TechIdTable;
 import dev.strategos.core.content.TemplateCompiler;
+import dev.strategos.core.content.TemplateIdTable;
 import dev.strategos.core.content.TemplateProblem;
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.shared.TechId;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.testkit.BalanceData;
 import java.io.IOException;
@@ -162,6 +167,74 @@ class BalanceSheetTest {
     }
 
     @Test
+    void theSheetListsEveryTechNumber() {
+        List<RawTemplate> raws = chain("1.5");
+        RawTech tech = new RawTech(
+                new TechId("t:axes"), "axes.json", JsonParser.parseString("""
+                        { "icon": "i", "cost": { "food": 10, "wood": 2.5 }, "time": 5,
+                          "requires": { "all": [ { "buildings": { "filter": "House", "count": 2 } } ] },
+                          "effects": [ { "path": "Cost/resources/food", "op": "mul", "value": 0.9, "filter": "Worker" } ] }""").getAsJsonObject());
+        TemplateCompiler.Result r = TemplateCompiler.compile(
+                raws, List.of(tech), TemplateIdTable.EMPTY, TechIdTable.EMPTY, PlaceholderBlueprints.byId());
+        Map<String, String> notes = new java.util.TreeMap<>(Map.of(
+                "cost/food", "ten food",
+                "cost/wood", "two and a half wood",
+                "time", "five seconds",
+                "requires/all/0/buildings/count", "two houses",
+                "effects/0/value", "a tenth off"));
+        BalanceSheet sheet = BalanceSheet.of(r, raws, Map.of("t:axes", notes), List.of());
+
+        assertThat(sheet.techRows())
+                .extracting(
+                        BalanceSheet.TechRow::path,
+                        row -> row.value().toPlainString(),
+                        BalanceSheet.TechRow::provenance)
+                .containsExactly(
+                        org.assertj.core.groups.Tuple.tuple("cost/food", "10", "ten food"),
+                        org.assertj.core.groups.Tuple.tuple("cost/wood", "2.5", "two and a half wood"),
+                        org.assertj.core.groups.Tuple.tuple("time", "5", "five seconds"),
+                        org.assertj.core.groups.Tuple.tuple("requires/all/0/buildings/count", "2", "two houses"),
+                        org.assertj.core.groups.Tuple.tuple("effects/0/value", "0.9", "a tenth off"));
+        assertThat(sheet.markdown())
+                .contains("## Technologies", "### t:axes", "| cost/food | 10 | cost of t:axes | ten food |")
+                .contains("| effects/0/value | 0.9 | mul Cost/resources/food for Worker | a tenth off |");
+        assertThat(sheet.csv().lines())
+                .contains("t:axes,time,5,\"time in seconds\",\"five seconds\"")
+                .contains("t:axes,effects/0/value,0.9,\"mul Cost/resources/food for Worker\",\"a tenth off\"");
+    }
+
+    @Test
+    void aTechsNumbersNeedProvenanceNotesAndAStaleTechKeyFails() {
+        List<RawTemplate> raws = chain("1.5");
+        RawTech tech = new RawTech(
+                new TechId("t:axes"), "axes.json", JsonParser.parseString("""
+                        { "icon": "i", "cost": { "food": 10 }, "time": 5,
+                          "requires": { "all": [ { "buildings": { "filter": "House", "count": 2 } } ] },
+                          "effects": [ { "path": "Cost/resources/food", "op": "mul", "value": 0.9 } ] }""").getAsJsonObject());
+        TemplateCompiler.Result r = TemplateCompiler.compile(
+                raws, List.of(tech), TemplateIdTable.EMPTY, TechIdTable.EMPTY, PlaceholderBlueprints.byId());
+        assertThat(r.problems()).isEmpty();
+
+        assertThat(BalanceSheet.of(r, raws, Map.of(), List.of()).problems())
+                .contains(
+                        "tech t:axes cost/food: no provenance note",
+                        "tech t:axes time: no provenance note",
+                        "tech t:axes requires/all/0/buildings/count: no provenance note",
+                        "tech t:axes effects/0/value: no provenance note");
+
+        Map<String, String> notes = new java.util.TreeMap<>(Map.of(
+                "cost/food", "n",
+                "time", "n",
+                "requires/all/0/buildings/count", "n",
+                "effects/0/value", "n"));
+        assertThat(BalanceSheet.of(r, raws, Map.of("t:axes", notes), List.of()).problems())
+                .noneMatch(p -> p.startsWith("tech t:axes"));
+        notes.put("cost/wood", "stale");
+        assertThat(BalanceSheet.of(r, raws, Map.of("t:axes", notes), List.of()).problems())
+                .contains("provenance names t:axes cost/wood, which sets no number there");
+    }
+
+    @Test
     void everyGatherableResourceIsSpentTwice() {
         List<RawTemplate> raws = new ArrayList<>(chain("1.5"));
         raws.add(raw("t:unit/forester", """
@@ -190,6 +263,17 @@ class BalanceSheetTest {
         assertThat(Files.readString(docs.resolve("sheet.csv"), StandardCharsets.UTF_8))
                 .as("docs/balance/sheet.csv is stale: run ./gradlew :core:balanceSheet")
                 .isEqualTo(sheet.csv());
+        assertThat(sheet.techRows())
+                .as("the shipped techs' numbers are on the sheet, each with its note")
+                .extracting(row -> row.tech().value() + " " + row.path())
+                .contains(
+                        "strategos:phase_town cost/stone",
+                        "strategos:phase_town time",
+                        "strategos:phase_town requires/buildings/count",
+                        "strategos:phase_town effects/0/value",
+                        "strategos:gather_wood_1 cost/food");
+        assertThat(sheet.techRows())
+                .allSatisfy(row -> assertThat(row.provenance()).isNotBlank());
         assertThat(data.compile().set().version())
                 .isEqualTo(TemplateSet.builtin().version());
 

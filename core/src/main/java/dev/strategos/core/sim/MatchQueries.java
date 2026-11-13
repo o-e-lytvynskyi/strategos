@@ -1,9 +1,12 @@
 package dev.strategos.core.sim;
 
+import dev.strategos.core.content.StartSlot;
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.protocol.MatchResults;
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Stance;
+import dev.strategos.core.shared.TechId;
 import dev.strategos.core.sim.build.BuildingView;
 import dev.strategos.core.sim.econ.EconomyTimes;
 import dev.strategos.core.sim.econ.FactionTreasury;
@@ -117,6 +120,21 @@ public interface MatchQueries {
      */
     @Nullable StatBreakdown stats(int handle, String path);
 
+    /** The techs {@code faction} has researched, in the order it researched them (UI-13). */
+    default List<TechId> researched(FactionSlot faction) {
+        return List.of();
+    }
+
+    /** The technology whose modifiers carry {@code sourceId} (TECH-01), or null for any other source. */
+    default @Nullable TechId techOf(int sourceId) {
+        return null;
+    }
+
+    /** The match results (M6 §2.3): winner, ended tick and per-faction statistics; null before ENDED. */
+    default @Nullable MatchResults matchResults() {
+        return null;
+    }
+
     /** The path service's counts since the match started. */
     PathService.Stats pathStats();
 
@@ -152,5 +170,28 @@ public interface MatchQueries {
     /** PERF-07.4's node index and dropsite query times so far. */
     default EconomyTimes.Stats economyTimes() {
         return new EconomyTimes.Stats(0, 0, 0, 0, 0, 0);
+    }
+
+    /**
+     * The map's start slots (AI-18); empty until the match is seated on a map. Known to every faction under fog.
+     */
+    default List<StartSlot> startPositions() {
+        return List.of();
+    }
+
+    /**
+     * Whether {@code faction} sees unit {@code handle} under fog (AI-18 / FOW-01): own units, or an enemy the
+     * {@code VisibilityIndex} holds. True when the map is revealed, AI vision is on, or vision is not yet wired.
+     */
+    default boolean visibleUnit(int faction, int handle) {
+        return true;
+    }
+
+    /**
+     * Whether {@code faction} sees building {@code building} under fog (AI-18): any cell of its footprint has vision.
+     * True when the map is revealed, AI vision is on, or vision is not yet wired.
+     */
+    default boolean visibleBuilding(int faction, BuildingView building) {
+        return true;
     }
 }

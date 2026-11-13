@@ -1,5 +1,6 @@
 package dev.strategos.core.sim.econ;
 
+import dev.strategos.core.content.TechDef;
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.sim.stats.StatService;
 
@@ -25,6 +26,16 @@ public final class Costs {
             p[r] = stats.path(PREFIX + rules.resources().get(r).id());
         }
         this.paths = p;
+    }
+
+    /** Technology {@code tech}'s cost, per resource in thousandths: its {@code cost} by resource id; no modifier reaches it. */
+    public long[] ofTech(TechDef tech) {
+        long[] cost = new long[rules.size()];
+        for (int r = 0; r < cost.length; r++) {
+            Double units = tech.cost().get(rules.resources().get(r).id());
+            cost[r] = units == null ? 0 : Math.max(0, Amount.of(units));
+        }
+        return cost;
     }
 
     /** Template {@code template}'s cost for {@code faction}, per resource in thousandths. */

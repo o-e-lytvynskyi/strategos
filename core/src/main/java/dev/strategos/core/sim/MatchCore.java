@@ -4,6 +4,8 @@ import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.diag.PhaseTimers;
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.sim.journal.Journal;
+import dev.strategos.core.sim.vision.VisionSystem;
+import org.jspecify.annotations.Nullable;
 
 /** The driving port of one match: the mod feeds it a tick's inputs and applies what it returns. */
 @CoreApi
@@ -23,6 +25,10 @@ public interface MatchCore {
     Journal journal();
 
     PhaseTimers timers();
+
+    default @Nullable VisionSystem vision() {
+        return null;
+    }
 
     static MatchCore create(MatchConfig config, TemplateSet templates, CorePorts ports) {
         return MatchCoreImpl.create(

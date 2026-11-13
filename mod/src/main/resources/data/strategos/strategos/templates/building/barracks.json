@@ -1,6 +1,6 @@
 {
   "parent": "strategos:template/building_base",
-  "Identity": { "name": "strategos.building.barracks", "icon": "minecraft:shield", "classes": "+Barracks" },
+  "Identity": { "name": "strategos.building.barracks", "icon": "minecraft:shield", "classes": "+Barracks +Village" },
   "Building": { "blueprint": "strategos:barracks", "material": "wood" },
   "Resistance": { "fire": 0 },
   "Health": { "max": 1200 },

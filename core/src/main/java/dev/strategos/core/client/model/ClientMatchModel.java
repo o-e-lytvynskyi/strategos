@@ -10,6 +10,7 @@ import dev.strategos.core.protocol.MatchNews;
 import dev.strategos.core.protocol.UnitDetail;
 import dev.strategos.core.protocol.UnitHud;
 import dev.strategos.core.protocol.UnitSummary;
+import dev.strategos.core.protocol.VisionDelta;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -30,6 +31,8 @@ public final class ClientMatchModel {
     private @Nullable MatchNews wave;
     private int waves;
     private int alerts;
+    private @Nullable MatchNews phase;
+    private int phases;
     private long defeatedMask;
 
     private int matchId = -1;
@@ -39,6 +42,12 @@ public final class ClientMatchModel {
     private int[] slotOfIndex = new int[0]; // a unit's place in {@code units} by index, -1 for none
     private long[] hitAt = new long[0]; // when a unit's hit points last fell, by index, in milliseconds
     private List<UnitDetail.Unit> details = List.of();
+
+    private int visionCellsX;
+    private int visionCellsZ;
+    private long[] visibleBits = new long[0];
+    private long[] exploredBits = new long[0];
+    private int visionRevision;
 
     /** Takes a frame: the joined match's, newer than the last; a new match's replaces everything. */
     public void accept(UnitSummary frame, int joinedMatch) {
@@ -124,7 +133,10 @@ public final class ClientMatchModel {
         }
     }
 
-    /** Takes match news (MATCH-01, UI-12): the joined match's defeats, its end and its alerts. */
+    /**
+     * Takes match news (MATCH-01, UI-12): the joined match's defeats, its end, its alerts and its phase notices
+     * (TECH-02), which the feed shows (UI-21).
+     */
     public void accept(MatchNews news, int joinedMatch) {
         if (news.matchId() != joinedMatch) {
             return;
@@ -137,7 +149,10 @@ public final class ClientMatchModel {
         } else if (news.kind() == MatchNews.ALERT) {
             alert = news;
             alerts++;
-        } else if (news.faction() >= 0 && news.faction() < 64) {
+        } else if (news.kind() == MatchNews.PHASE) {
+            phase = news;
+            phases++;
+        } else if (news.kind() == MatchNews.DEFEATED && news.faction() >= 0 && news.faction() < 64) {
             defeatedMask |= 1L << news.faction();
         }
     }
@@ -150,6 +165,16 @@ public final class ClientMatchModel {
     /** The latest under-attack alert (UI-12), or null before any. */
     public @Nullable MatchNews alert() {
         return alert;
+    }
+
+    /** The latest phase notice (TECH-02), or null before any. */
+    public @Nullable MatchNews phase() {
+        return phase;
+    }
+
+    /** How many phase notices came, for a new one to be noticed. */
+    public int phases() {
+        return phases;
     }
 
     /** The latest announced wave (AI-17), or null before any. */
@@ -242,6 +267,87 @@ public final class ClientMatchModel {
         return details;
     }
 
+    /** Takes a vision delta of the joined match. */
+    public void acceptVision(VisionDelta delta, int joinedMatch) {
+        if (delta.matchId() != joinedMatch) {
+            return;
+        }
+        int cells = delta.cellsX() * delta.cellsZ();
+        int words = (cells + 63) / 64;
+        if (delta.full()) {
+            visionCellsX = delta.cellsX();
+            visionCellsZ = delta.cellsZ();
+            visibleBits = new long[words];
+            exploredBits = new long[words];
+            for (int idx : delta.visible()) {
+                visibleBits[idx >> 6] |= 1L << (idx & 63);
+            }
+            for (int idx : delta.explored()) {
+                exploredBits[idx >> 6] |= 1L << (idx & 63);
+            }
+            visionRevision++;
+        } else {
+            if (visibleBits.length != words) {
+                return;
+            }
+            for (int idx : delta.visible()) {
+                visibleBits[idx >> 6] ^= 1L << (idx & 63);
+            }
+            for (int idx : delta.explored()) {
+                exploredBits[idx >> 6] |= 1L << (idx & 63);
+            }
+            visionRevision++;
+        }
+    }
+
+    public boolean isVisible(int cellX, int cellZ) {
+        if (cellX < 0 || cellX >= visionCellsX || cellZ < 0 || cellZ >= visionCellsZ) {
+            return false;
+        }
+        int i = cellZ * visionCellsX + cellX;
+        return (visibleBits[i >> 6] & (1L << (i & 63))) != 0;
+    }
+
+    public boolean isExplored(int cellX, int cellZ) {
+        if (cellX < 0 || cellX >= visionCellsX || cellZ < 0 || cellZ >= visionCellsZ) {
+            return false;
+        }
+        int i = cellZ * visionCellsX + cellX;
+        return (exploredBits[i >> 6] & (1L << (i & 63))) != 0;
+    }
+
+    public int visionCellsX() {
+        return visionCellsX;
+    }
+
+    public int visionCellsZ() {
+        return visionCellsZ;
+    }
+
+    /**
+     * Bumps whenever {@link #acceptVision} changes the grids; the shroud rebuilds pages when this moves (FOW-07). Zero
+     * after {@link #clear()}.
+     */
+    public int visionRevision() {
+        return visionRevision;
+    }
+
+    /**
+     * The visible bitset the shroud reads (FOW-07); length {@code (visionCellsX × visionCellsZ + 63) / 64}, empty when
+     * no vision has arrived. Not copied — callers must not mutate it.
+     */
+    public long[] visibleBits() {
+        return visibleBits;
+    }
+
+    /**
+     * The explored bitset the shroud reads (FOW-07); same length as {@link #visibleBits()}. Not copied — callers must
+     * not mutate it.
+     */
+    public long[] exploredBits() {
+        return exploredBits;
+    }
+
     /** Forgets the match: the player left it. */
     public void clear() {
         end = null;
@@ -249,6 +355,8 @@ public final class ClientMatchModel {
         alerts = 0;
         wave = null;
         waves = 0;
+        phase = null;
+        phases = 0;
         defeatedMask = 0;
         matchId = -1;
         tick = -1;
@@ -257,6 +365,11 @@ public final class ClientMatchModel {
         Arrays.fill(slotOfIndex, -1);
         Arrays.fill(hitAt, 0);
         details = List.of();
+        visionCellsX = 0;
+        visionCellsZ = 0;
+        visibleBits = new long[0];
+        exploredBits = new long[0];
+        visionRevision = 0;
     }
 
     public List<UnitSummary.Entry> units() {

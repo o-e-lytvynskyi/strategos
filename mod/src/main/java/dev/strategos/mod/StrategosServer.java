@@ -3,6 +3,7 @@ package dev.strategos.mod;
 import com.google.gson.JsonElement;
 import com.mojang.serialization.JsonOps;
 import dev.strategos.core.content.Blueprint;
+import dev.strategos.core.content.RawTech;
 import dev.strategos.core.content.RawTemplate;
 import dev.strategos.core.content.TemplateProblem;
 import dev.strategos.core.port.JobExecutor;
@@ -18,6 +19,7 @@ import dev.strategos.mod.server.content.TemplateSync;
 import dev.strategos.mod.server.debug.DebugFeed;
 import dev.strategos.mod.server.debug.PerfDump;
 import dev.strategos.mod.server.fog.InterestSets;
+import dev.strategos.mod.server.fog.TrackerRefresher;
 import dev.strategos.mod.server.jobs.PathThreads;
 import dev.strategos.mod.server.match.MapImports;
 import dev.strategos.mod.server.match.MatchRegistry;
@@ -80,6 +82,7 @@ public final class StrategosServer {
     private final InterestSets interest = new InterestSets();
     private final DebugFeed debug;
     private final Replication replication;
+    private final TrackerRefresher trackerRefresher;
     private final PerfDump perf;
     private volatile BlockClassTable blockClasses;
     private volatile MaterialTable materials;
@@ -114,6 +117,7 @@ public final class StrategosServer {
                 new DebugFeed(server, () -> this.matches, net, StrategosConfig.INSTANCE.debugPermission.getAsInt());
         this.perf = new PerfDump(server, () -> this.matches);
         this.replication = new Replication(server, () -> this.matches, net);
+        this.trackerRefresher = new TrackerRefresher(server, () -> this.matches);
         this.blockClasses = buildBlockClasses();
         this.materials = buildMaterials();
     }
@@ -178,13 +182,19 @@ public final class StrategosServer {
      * running match; the outcome is logged, and told to the operators online.
      */
     public ServerTemplates.Outcome loadTemplates(List<RawTemplate> raws, List<TemplateProblem> problems) {
-        return loadTemplates(raws, problems, packBlueprints(problems));
+        TemplateFiles.Read read = TemplateFiles.read(server.getResourceManager());
+        addNew(problems, read.problems());
+        List<RawTech> techs = TemplateFiles.rawTechs(read, conditionalOps(), problems);
+        return loadTemplates(raws, techs, problems, TemplateFiles.blueprints(read, problems));
     }
 
-    /** As {@link #loadTemplates(List, List)}, with the blueprints the reload read (BLD-01). */
+    /** As {@link #loadTemplates(List, List)}, with the blueprints and the technologies the reload read (BLD-01, TECH-01). */
     public ServerTemplates.Outcome loadTemplates(
-            List<RawTemplate> raws, List<TemplateProblem> problems, Map<String, Blueprint> blueprints) {
-        return report(templates.load(raws, problems, server.registryAccess(), matches.all(), blueprints));
+            List<RawTemplate> raws,
+            List<RawTech> techs,
+            List<TemplateProblem> problems,
+            Map<String, Blueprint> blueprints) {
+        return report(templates.load(raws, techs, problems, server.registryAccess(), matches.all(), blueprints));
     }
 
     /** The blueprints of the loaded data packs, read now on this thread. */
@@ -240,8 +250,28 @@ public final class StrategosServer {
     /** The templates of the data packs the server started with, read here: no server was up when they applied. */
     private void loadTemplatesAtStart() {
         List<TemplateProblem> problems = new ArrayList<>();
+        TemplateFiles.Read read = TemplateFiles.read(server.getResourceManager());
+        problems.addAll(read.problems());
+        List<RawTemplate> raws = TemplateFiles.raws(read, conditionalOps(), problems);
+        List<RawTech> techs = TemplateFiles.rawTechs(read, conditionalOps(), problems);
         report(templates.load(
-                packTemplates(problems), problems, server.registryAccess(), List.of(), packBlueprints(problems)));
+                raws, techs, problems, server.registryAccess(), List.of(), TemplateFiles.blueprints(read, problems)));
+    }
+
+    /** The technologies of the loaded data packs, read now on this thread; the files' problems go to {@code problems}. */
+    public List<RawTech> packTechs(List<TemplateProblem> problems) {
+        TemplateFiles.Read read = TemplateFiles.read(server.getResourceManager());
+        addNew(problems, read.problems());
+        return TemplateFiles.rawTechs(read, conditionalOps(), problems);
+    }
+
+    /** {@code more} added to {@code problems} but for those already there: callers read the same files twice. */
+    private static void addNew(List<TemplateProblem> problems, List<TemplateProblem> more) {
+        for (TemplateProblem p : more) {
+            if (!problems.contains(p)) {
+                problems.add(p);
+            }
+        }
     }
 
     /** The templates of the loaded data packs, read now on this thread; the problems of the files go to {@code problems}. */
@@ -352,6 +382,7 @@ public final class StrategosServer {
             s.perf.tick();
             s.debug.tick();
             s.replication.tick();
+            s.trackerRefresher.tick();
             s.net.flush();
             s.betweenTicks.tickEnds(System.nanoTime() - start);
         }

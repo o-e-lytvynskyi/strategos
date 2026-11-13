@@ -46,7 +46,8 @@ class CommandKindsTest {
                         "strategos:ungarrison",
                         "strategos:ring_bell",
                         "strategos:all_clear",
-                        "strategos:attack_spread");
+                        "strategos:attack_spread",
+                        "strategos:research");
     }
 
     @Test

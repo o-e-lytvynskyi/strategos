@@ -476,7 +476,7 @@ public final class NetTests {
                         "bodies " + NetFixtures.bodyIds(rt).size()))
                 .thenExecute(() -> {
                     viewer[0] = MockViewer.join(h.getLevel(), "strategos-tset", at.x, at.y, at.z, 4);
-                    NetFixtures.seat(rt, viewer[0], 1);
+                    NetFixtures.seat(rt, viewer[0], 0); // its own faction's bodies: fog hides no one
                 })
                 .thenWaitUntil(() -> {
                     viewer[0].moved();

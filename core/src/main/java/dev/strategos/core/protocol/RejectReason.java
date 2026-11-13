@@ -30,5 +30,7 @@ public enum RejectReason {
     /** A building beyond its reach of its faction's civic centres (BLD-02). */
     OUT_OF_REACH,
     /** A building its faction has as many of as its {@code Limit/count} allows (BLD-08). */
-    LIMIT
+    LIMIT,
+    /** A technology whose requirements the faction does not meet (TECH-01). */
+    REQUIREMENTS
 }

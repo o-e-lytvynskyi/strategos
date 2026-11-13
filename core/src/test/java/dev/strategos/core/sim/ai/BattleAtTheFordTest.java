@@ -9,6 +9,7 @@ import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.Command;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
+import dev.strategos.core.sim.KernelAccess;
 import dev.strategos.core.sim.MatchEnded;
 import dev.strategos.core.sim.MatchQueries;
 import dev.strategos.core.sim.OutputEvent;
@@ -103,6 +104,7 @@ class BattleAtTheFordTest {
                 .build();
         h.publishAll(ground.voxels());
         h.step();
+        KernelAccess.state(h.core()).setStartPositions(ground.startSlots());
         String script = HeadlessMatch.read("ai/battle.json");
         Scenario base = scenario();
         Scenario.Slot first = base.slots().get(0);

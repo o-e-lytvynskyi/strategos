@@ -43,12 +43,17 @@ public final class ArenaTickets {
         set(level, id, space, false);
     }
 
+    // ChunkHolder.prepareEntityTickingChunk needs a 2-chunk radius of FULL neighbours; without
+    // this border the edge chunks never receive the ENTITY_TICKING callback from the entity manager
+    // and BodyRegistry.materialise skips them (isPositionEntityTicking = false).
+    private static final int BORDER = 2;
+
     private static void set(ServerLevel level, MatchId id, MatchSpace space, boolean add) {
         UUID owner = owner(id);
         ChunkPos min = space.minChunk();
         ChunkPos max = space.maxChunk();
-        for (int x = min.x; x <= max.x; x++) {
-            for (int z = min.z; z <= max.z; z++) {
+        for (int x = min.x - BORDER; x <= max.x + BORDER; x++) {
+            for (int z = min.z - BORDER; z <= max.z + BORDER; z++) {
                 ModTickets.MATCH.forceChunk(level, owner, x, z, add, false);
             }
         }

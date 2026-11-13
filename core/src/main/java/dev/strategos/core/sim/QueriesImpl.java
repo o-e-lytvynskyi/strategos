@@ -1,9 +1,13 @@
 package dev.strategos.core.sim;
 
+import dev.strategos.core.content.Footprint;
+import dev.strategos.core.content.StartSlot;
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.protocol.MatchResults;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.Stance;
+import dev.strategos.core.shared.TechId;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.build.BuildingView;
@@ -20,6 +24,8 @@ import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.core.sim.stats.StatBreakdown;
 import dev.strategos.core.sim.unitai.ActivityTier;
+import dev.strategos.core.sim.vision.VisionGrid;
+import dev.strategos.core.sim.vision.VisionSystem;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -78,6 +84,16 @@ final class QueriesImpl implements MatchQueries {
                             .toList()));
         }
         return out;
+    }
+
+    @Override
+    public List<TechId> researched(FactionSlot faction) {
+        return faction.value() < state.config().factions() ? state.progress().of(faction.value()) : List.of();
+    }
+
+    @Override
+    public @Nullable TechId techOf(int sourceId) {
+        return state.progress().techOf(sourceId);
     }
 
     @Override
@@ -319,6 +335,34 @@ final class QueriesImpl implements MatchQueries {
     }
 
     @Override
+    public @Nullable MatchResults matchResults() {
+        Outcome o = state.outcome();
+        if (!o.ended()) {
+            return null;
+        }
+        int factions = state.config().factions();
+        MatchStats ms = state.matchStats();
+        var perFaction = new ArrayList<MatchResults.FactionStats>(factions);
+        for (int f = 0; f < factions; f++) {
+            FactionTreasury t = state.treasury().view(f);
+            List<Long> gathered = t.gathered();
+            int maxPhase = 0;
+            for (int p = 0; p < 8; p++) {
+                if (ms.phaseTick(f, p) >= 0) {
+                    maxPhase = p + 1;
+                }
+            }
+            var phases = new ArrayList<Long>(maxPhase);
+            for (int p = 0; p < maxPhase; p++) {
+                phases.add(ms.phaseTick(f, p));
+            }
+            perFaction.add(new MatchResults.FactionStats(
+                    ms.unitsTrained(f), ms.unitsLost(f), ms.buildingsBuilt(f), ms.buildingsLost(f), gathered, phases));
+        }
+        return new MatchResults(o.winner(), o.endedAt(), perFaction);
+    }
+
+    @Override
     public PathService.Stats pathStats() {
         return paths.stats(state);
     }
@@ -351,7 +395,7 @@ final class QueriesImpl implements MatchQueries {
         }
         var at = dev.strategos.core.content.Footprint.of(b, x, z, 0);
         var failed = dev.strategos.core.content.PlacementRules.check(
-                        dev.strategos.core.sim.build.Placing.world(state),
+                        dev.strategos.core.sim.build.Placing.world(state, faction),
                         b,
                         at,
                         faction,
@@ -381,5 +425,50 @@ final class QueriesImpl implements MatchQueries {
     @Override
     public dev.strategos.core.sim.econ.EconomyTimes.Stats economyTimes() {
         return state.economyTimes().stats();
+    }
+
+    @Override
+    public List<StartSlot> startPositions() {
+        return state.startPositions();
+    }
+
+    @Override
+    public boolean visibleUnit(int faction, int handle) {
+        if (seesAll(faction)) {
+            return true;
+        }
+        VisionSystem vision = state.visionSystem();
+        return vision != null && vision.visibility(faction).isVisible(handle);
+    }
+
+    @Override
+    public boolean visibleBuilding(int faction, BuildingView building) {
+        if (seesAll(faction)) {
+            return true;
+        }
+        VisionSystem vision = state.visionSystem();
+        if (vision == null || faction < 0 || faction >= state.config().factions()) {
+            return true;
+        }
+        VisionGrid grid = vision.grid(faction);
+        Footprint f = building.footprint();
+        for (int x = f.anchorX(); x < f.anchorX() + f.spanX(); x++) {
+            for (int z = f.anchorZ(); z < f.anchorZ() + f.spanZ(); z++) {
+                if (grid.count(VisionGrid.cellOf(x), VisionGrid.cellOf(z)) > 0) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /** Revealed map, AI omniscience, or a faction outside the player set: everything is seen. */
+    private boolean seesAll(int faction) {
+        PlayRules play = state.config().rules().play();
+        return play.revealMap()
+                || play.aiVision()
+                || state.visionSystem() == null
+                || faction < 0
+                || faction >= state.config().factions();
     }
 }

@@ -279,6 +279,87 @@ public final class MatchTests {
     }
 
     /**
+     * M6 §2.3 check 4: under conquest, killing a faction's units and buildings ends the match within 20 ticks, its
+     * events reach every participant, and the winner and the results are right.
+     */
+    @StrategosTest(arena = "arena_flat_48", timeoutTicks = 600)
+    public static void conquestEndsAMatch(GameTestHelper h) {
+        MatchRuntime rt = match(h);
+        var admin = dev.strategos.core.shared.PlayerSlot.ADMIN;
+        rt.submit(
+                admin,
+                new dev.strategos.core.protocol.SpawnBuilding(
+                        CENTRE, new dev.strategos.core.shared.FactionSlot(0), 4, 4, 0));
+        rt.submit(
+                admin,
+                new dev.strategos.core.protocol.SpawnBuilding(
+                        CENTRE, new dev.strategos.core.shared.FactionSlot(1), 30, 30, 0));
+        rt.submit(admin, new dev.strategos.core.protocol.RuleChange("victory", "conquest"));
+        rt.submit(
+                admin,
+                new dev.strategos.core.protocol.SpawnUnits(
+                        dev.strategos.core.content.TemplateSet.DEBUG_WALKER,
+                        new dev.strategos.core.shared.FactionSlot(1),
+                        new dev.strategos.core.shared.Vec2d(36, 36),
+                        2,
+                        1));
+        var a = BuildingTests.seated(h, rt, "strat-cq-a", 0);
+        var b = BuildingTests.seated(h, rt, "strat-cq-b", 1);
+        h.startSequence()
+                .thenWaitUntil(() -> check(
+                        core(rt).queries().buildings().size() == 2 && handles(rt).length >= 2,
+                        "not ready: " + core(rt).queries().buildings().size() + " buildings, " + handles(rt).length
+                                + " units"))
+                .thenIdle(20)
+                .thenExecute(() -> {
+                    var q = core(rt).queries();
+                    for (int u : q.unitHandlesOf(new dev.strategos.core.shared.FactionSlot(1))) {
+                        rt.damage(new dev.strategos.core.sim.ExternalDamage(
+                                u,
+                                dev.strategos.core.sim.ExternalDamage.Kind.LETHAL,
+                                9999,
+                                dev.strategos.core.sim.ExternalDamage.SourceKind.NONE));
+                    }
+                    for (var bld : q.buildings()) {
+                        if (bld.faction() == 1) {
+                            rt.damage(new dev.strategos.core.sim.ExternalDamage(
+                                    bld.handle(),
+                                    dev.strategos.core.sim.ExternalDamage.Kind.LETHAL,
+                                    9999,
+                                    dev.strategos.core.sim.ExternalDamage.SourceKind.NONE));
+                        }
+                    }
+                })
+                .thenWaitUntil(() -> check(rt.lifecycle() == MatchLifecycle.ENDED, "not ended: " + rt.lifecycle()))
+                .thenExecuteAfter(3, () -> {
+                    for (var viewer : java.util.List.of(a, b)) {
+                        viewer.poll();
+                        java.util.List<dev.strategos.core.protocol.MatchNews> news = new java.util.ArrayList<>();
+                        for (var p : viewer.capture()
+                                .of(net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket.class)) {
+                            if (p.payload() instanceof dev.strategos.mod.server.net.payload.MatchEventPayload m
+                                    && m.news().matchId() == rt.id().value()) {
+                                news.add(m.news());
+                            }
+                        }
+                        String who = viewer.player().getName().getString();
+                        check(news.size() >= 2, who + " heard " + news.size() + " events: " + news);
+                        boolean defeated = news.stream()
+                                .anyMatch(n ->
+                                        n.kind() == dev.strategos.core.protocol.MatchNews.DEFEATED && n.faction() == 1);
+                        check(defeated, who + ": no defeated of faction 1 in " + news);
+                        boolean ended = news.stream()
+                                .anyMatch(n ->
+                                        n.kind() == dev.strategos.core.protocol.MatchNews.ENDED && n.faction() == 0);
+                        check(ended, who + ": no ended with winner 0 in " + news);
+                    }
+                    a.close();
+                    b.close();
+                })
+                .thenSucceed();
+    }
+
+    /**
      * MATCH-05.3: two matches in one level; one paused steps no more while the other steps on, an order given to it
      * while paused is taken, and it moves its units once resumed.
      */

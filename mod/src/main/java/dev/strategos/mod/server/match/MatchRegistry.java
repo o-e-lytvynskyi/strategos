@@ -135,7 +135,7 @@ public final class MatchRegistry {
                 seed != null ? seed : level.getRandom().nextLong(),
                 bounds,
                 options.factions(),
-                MatchRules.DEFAULTS.withEconomy(economy.get()));
+                MatchRules.DEFAULTS.withEconomy(economy.get()).withPlay(options.play()));
         MatchCore core = MatchCore.create(config, templates.get(), ports(options.metrics(), id));
         FaultPolicy policy = options.faultPolicy();
         if (policy == null) {

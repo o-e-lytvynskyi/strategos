@@ -31,6 +31,11 @@ public final class ClientPlacement {
 
         /** Whether a block of a node stands in the column: a log or a forage plant, by its resource entry. */
         boolean node(int x, int z);
+
+        /** Whether the faction has explored this cell; true by default (no fog). */
+        default boolean explored(int x, int z) {
+            return true;
+        }
     }
 
     /** The match of {@code sizeX} × {@code sizeZ} as the rules read it on a client. */
@@ -80,7 +85,7 @@ public final class ClientPlacement {
 
             @Override
             public boolean explored(int x, int z) {
-                return true; // every cell until fog (M6), as on the server
+                return columns.explored(x, z);
             }
 
             @Override

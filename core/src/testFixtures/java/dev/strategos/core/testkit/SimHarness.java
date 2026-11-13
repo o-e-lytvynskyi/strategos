@@ -26,6 +26,7 @@ import dev.strategos.core.sim.MatchQueries;
 import dev.strategos.core.sim.MatchRules;
 import dev.strategos.core.sim.MatchSnapshot;
 import dev.strategos.core.sim.OutputEvent;
+import dev.strategos.core.sim.PlayRules;
 import dev.strategos.core.sim.SliceSource;
 import dev.strategos.core.sim.TerrainPage;
 import dev.strategos.core.sim.TickInputs;
@@ -297,12 +298,17 @@ public final class SimHarness implements ScenarioContext {
         return "seed=" + seed + " tick=" + tick() + ": ";
     }
 
-    /** A 32 x 32 match on a floor at y 1, seed 42, two factions, the built-in templates, unless told otherwise. */
+    /**
+     * A 32 x 32 match on a floor at y 1, seed 42, two factions, the built-in templates, unless told otherwise. Play
+     * rules default to MATCH-07's Explored option so placement and gather work across the map; fog-of-war visibility
+     * still applies. Tests that need Fog or Revealed set {@link #rules} explicitly.
+     */
     public static final class Builder {
         private MatchBounds bounds = new MatchBounds(32, 32, 0, 16, 1.0);
         private long seed = DEFAULT_SEED;
         private int factions = 2;
-        private MatchRules rules = MatchRules.DEFAULTS;
+        private MatchRules rules =
+                MatchRules.DEFAULTS.withPlay(new PlayRules(PlayRules.Victory.NONE, false, true, false));
         private TemplateSet templates = TemplateSet.builtin();
         private Clock clock = new FixedClock(0);
         private MetricsSink metrics = MetricsSink.none();

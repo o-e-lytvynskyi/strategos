@@ -25,7 +25,11 @@ class MoveRuleTest {
 
     private final SimHarness h = SimHarness.builder().build();
     private final int[] own = h.spawn(new FactionSlot(0), new Vec2d(8, 8), 2, 2.0);
-    private final int[] theirs = h.spawn(new FactionSlot(1), new Vec2d(24, 24), 1, 0.0);
+    private final int[] theirs = h.spawn(new FactionSlot(1), new Vec2d(10, 10), 1, 0.0);
+
+    {
+        h.step();
+    } // seed VisionSystem so the fog check sees the other faction's units
 
     private CommandResult move(PlayerSlot issuer, Move move) {
         int seq = h.submit(issuer, move);
@@ -66,8 +70,9 @@ class MoveRuleTest {
         // where the refused Move was: equal hashes mean the Move changed no unit, order or queue.
         SimHarness twin = SimHarness.builder().build();
         twin.spawn(new FactionSlot(0), new Vec2d(8, 8), 2, 2.0);
-        twin.spawn(new FactionSlot(1), new Vec2d(24, 24), 1, 0.0);
-        twin.step();
+        twin.spawn(new FactionSlot(1), new Vec2d(10, 10), 1, 0.0);
+        twin.step(); // warmup
+        twin.step(); // the tick where the refused Move was
         assertThat(h.stateHash()).as("the refused Move changed nothing").isEqualTo(twin.stateHash());
     }
 

@@ -36,4 +36,5 @@ public sealed interface Command extends Hashable
                 Ungarrison,
                 RingBell,
                 AllClear,
-                AttackSpread {}
+                AttackSpread,
+                Research {}

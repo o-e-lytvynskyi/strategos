@@ -40,6 +40,8 @@ public enum Action {
     NEXT_IDLE_WORKER(false),
     /** The camera to the latest under-attack alert (UI-12). */
     JUMP_TO_ALERT(false),
+    /** The controls overlay (UI-14): the mod's keys on their current keys, rebinds included. */
+    CONTROLS(false),
     /** Singleplayer: the match paused, or resumed (MATCH-05). */
     PAUSE_MATCH(false),
     /** Singleplayer: the next slower game speed offered. */

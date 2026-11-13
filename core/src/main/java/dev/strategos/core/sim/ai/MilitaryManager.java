@@ -13,10 +13,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Attacks in announced waves (AI-17, 04 §14's MilitaryManager): when a wave is due by the schedule and enough
- * spearmen stand, they muster {@code muster} blocks from the civic centre toward the enemy's, and the wave is
- * announced to the other players; once its warning has run, every spearman goes to burn the enemy's civic centre.
- * Waves repeat on the schedule until the match is won.
+ * Attacks in announced waves (AI-17, AI-18, 04 §14's MilitaryManager): when a wave is due by the schedule and enough
+ * spearmen stand, they muster {@code muster} blocks from the civic centre toward the enemy's (or the enemy start when
+ * none is visible), and the wave is announced to the other players; once its warning has run, every spearman goes to
+ * burn the enemy's civic centre, or attack-moves to the enemy start under fog until a building is seen. Waves repeat
+ * on the schedule until the match is won.
  */
 final class MilitaryManager implements AiModule {
     private final StrategyScript script;
@@ -30,8 +31,11 @@ final class MilitaryManager implements AiModule {
     @Override
     public void think(AiView view, AiBudget budget, CommandSink sink) {
         Base base = Base.of(view);
-        if (base == null || base.enemy() == null || budget.exhausted()) {
+        if (base == null || budget.exhausted()) {
             return;
+        }
+        if (base.enemy() == null && Base.enemyStart(view, base.x(), base.z()) == null) {
+            return; // no visible enemy and no start to march on
         }
         StrategyScript.Attack a = script.attack();
         long tick = view.tick();
@@ -56,7 +60,16 @@ final class MilitaryManager implements AiModule {
         long mustered = memory.get(Slots.MUSTER);
         if (mustered == 0) {
             long due = 20L * (a.first() + memory.get(Slots.WAVE) * a.every());
-            if (tick < due || army.size() < a.min() || !strongEnough(view, battle, soldiers)) {
+            boolean waveDue = tick >= due && army.size() >= a.min() && strongEnough(view, battle, soldiers);
+            // AI-18: between waves, keep marching on the enemy start, or burn the centre once seen
+            if (!waveDue
+                    && memory.get(Slots.WAVE) > 0
+                    && handles.length > 0
+                    && away(base, soldiers, Tactics.home(a))
+                    && pushFogMarch(budget, sink, base, battle, handles)) {
+                return;
+            }
+            if (!waveDue) {
                 return;
             }
             double dx = base.enemyX() - base.x();
@@ -72,7 +85,10 @@ final class MilitaryManager implements AiModule {
         }
         if (tick - (mustered - 1) >= 20L * a.announce() && handles.length > 0) {
             budget.spend(10);
-            if (battle.fights()) { // AI-03: attack-move, so every kind engages the units on the way
+            if (base.enemy() == null) {
+                // AI-18: no enemy building in sight — attack-move short of the enemy start (not onto its footprint)
+                sink.send(AttackMove.replace(UnitSet.of(handles), Tactics.front(base)));
+            } else if (battle.fights()) { // AI-03: attack-move, so every kind engages the units on the way
                 sink.send(AttackMove.replace(UnitSet.of(handles), Tactics.front(base)));
             } else {
                 sink.send(Attack.replace(
@@ -86,6 +102,34 @@ final class MilitaryManager implements AiModule {
                 memory.set(Slots.FOCUS, 0);
             }
         }
+    }
+
+    /**
+     * Under fog (AI-18): while a wave is out with no battle tactics, keep attack-moving toward the enemy start, and
+     * once a civic centre is visible send every soldier to burn it.
+     */
+    private static boolean pushFogMarch(
+            AiBudget budget, CommandSink sink, Base base, StrategyScript.Battle battle, int[] handles) {
+        if (battle.fights()) {
+            return false;
+        }
+        budget.spend(10);
+        if (base.enemy() == null) {
+            sink.send(AttackMove.replace(UnitSet.of(handles), Tactics.front(base)));
+        } else {
+            sink.send(Attack.replace(UnitSet.of(handles), base.enemy().handle()));
+        }
+        return true;
+    }
+
+    /** Whether any soldier stands farther than {@code home} from the civic centre. */
+    private static boolean away(Base base, List<UnitView> soldiers, double home) {
+        for (UnitView u : soldiers) {
+            if (DetMath.length(u.x() - base.x(), u.z() - base.z()) > home) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -127,13 +171,18 @@ final class MilitaryManager implements AiModule {
                     going.add(u.handle());
                 }
             }
-            if (going.isEmpty() || base.enemy() == null) {
+            if (going.isEmpty()) {
                 return false;
             }
             budget.spend(10);
-            sink.send(Attack.replace(
-                    UnitSet.of(going.stream().mapToInt(Integer::intValue).toArray()),
-                    base.enemy().handle()));
+            if (base.enemy() == null) {
+                sink.send(AttackMove.replace(
+                        UnitSet.of(going.stream().mapToInt(Integer::intValue).toArray()), Tactics.front(base)));
+            } else {
+                sink.send(Attack.replace(
+                        UnitSet.of(going.stream().mapToInt(Integer::intValue).toArray()),
+                        base.enemy().handle()));
+            }
             return true;
         }
         spears.sort(java.util.Comparator.comparingInt(UnitView::handle));
