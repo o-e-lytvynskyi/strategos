@@ -87,6 +87,11 @@ final class QueriesImpl implements MatchQueries {
     }
 
     @Override
+    public List<TechId> researched(FactionSlot faction) {
+        return faction.value() < state.config().factions() ? state.progress().of(faction.value()) : List.of();
+    }
+
+    @Override
     public @Nullable TechId techOf(int sourceId) {
         return state.progress().techOf(sourceId);
     }

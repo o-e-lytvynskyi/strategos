@@ -1,6 +1,7 @@
 package dev.strategos.mod.client.hud;
 
 import dev.strategos.core.client.hud.CardController;
+import dev.strategos.core.client.hud.ClientFactionView;
 import dev.strategos.core.client.hud.CommandCard;
 import dev.strategos.core.client.hud.EconomyNotices;
 import dev.strategos.core.client.hud.GroupBar;
@@ -10,6 +11,7 @@ import dev.strategos.core.client.hud.HudTheme;
 import dev.strategos.core.client.hud.Income;
 import dev.strategos.core.client.hud.Minimap;
 import dev.strategos.core.client.hud.NotificationFeed;
+import dev.strategos.core.client.hud.PhasePanel;
 import dev.strategos.core.client.hud.ResourceBar;
 import dev.strategos.core.client.hud.SelectionPanel;
 import dev.strategos.core.client.hud.SelectionSummary;
@@ -52,6 +54,7 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.neoforged.bus.api.IEventBus;
@@ -131,6 +134,7 @@ public final class RtsHud {
     private long economySeen = -1;
     private long alertAt = -1_000_000;
     private final NotificationFeed feed = new NotificationFeed();
+    private @Nullable PhasePanel phasePanel;
     private @Nullable AlertSounds alertSounds;
 
     private @Nullable Inspect inspect;
@@ -454,6 +458,13 @@ public final class RtsHud {
                         own != null && controller.demolishAsked(own.handle()),
                         CardController.shared(stances)),
                 own);
+        phasePanel = PhasePanel.of( // UI-13: the next phase's checklist, the server's own evaluation
+                templates,
+                new ClientFactionView(
+                        templates,
+                        StrategosClient.model().faction(),
+                        StrategosClient.model().buildings()),
+                own);
         double[] gui = HudCardPresentation.cursorGui(mc);
         hovered = card.at(layout().commandCard(), theme.padding(), gui[0], gui[1]);
         bar = GroupBar.of(mode.groups());
@@ -743,6 +754,35 @@ public final class RtsHud {
         }
     }
 
+    /** UI-13: the next phase's leaves above the card, met ones green, the rest with their amounts. */
+    private void drawPhasePanel(GuiGraphics g, Font font, HudRect card) {
+        PhasePanel p = phasePanel;
+        if (p == null) {
+            return;
+        }
+        int line = font.lineHeight + 2;
+        int height = (p.rows().size() + 1) * line + 2 * theme.padding();
+        HudRect r = new HudRect(card.x(), card.y() - height - 2, card.width(), height);
+        paint.panel(g, r);
+        int x = r.x() + theme.padding();
+        int y = r.y() + theme.padding();
+        g.drawString(
+                font,
+                Component.translatable(p.phase().name()).getString() + " — "
+                        + (p.rows().isEmpty() ? "ready" : "needs"),
+                x,
+                y,
+                0xFFFFD040,
+                false);
+        for (PhasePanel.Row row : p.rows()) {
+            y += line;
+            String text = (row.met() ? "✔ " : "✘ ")
+                    + row.label()
+                    + (row.need() > 1 ? " " + row.have() + "/" + row.need() : "");
+            g.drawString(font, text, x, y, row.met() ? 0xFF80FF80 : 0xFFFF8080, false);
+        }
+    }
+
     /** The command card: a cell per button with its icon, dimmed where the stock does not cover it. */
     private void drawCard(GuiGraphics g, DeltaTracker delta) {
         CommandCard c = card;
@@ -754,6 +794,7 @@ public final class RtsHud {
         HudRect r = layout().commandCard();
         int pad = theme.padding();
         paint.panel(g, r);
+        drawPhasePanel(g, font, r);
         for (CommandCard.Button b : c.buttons()) {
             HudRect cell = CommandCard.cell(r, pad, b.slot());
             g.fill(
@@ -788,6 +829,13 @@ public final class RtsHud {
                     paint.item(g, "minecraft:tnt", cell);
                     if (b.on()) { // asked: one more click demolishes
                         g.fill(cell.x(), cell.y(), cell.right(), cell.bottom(), 0x60FF0000);
+                    }
+                }
+                case RESEARCH -> {
+                    TechDef tech = templates.techByIndex(b.template());
+                    paint.item(g, tech == null || tech.icon().isBlank() ? "minecraft:book" : tech.icon(), cell);
+                    if (!b.affordable()) { // unmet or queued: dimmed
+                        g.fill(cell.x(), cell.y(), cell.right(), cell.bottom(), 0x80202020);
                     }
                 }
             }

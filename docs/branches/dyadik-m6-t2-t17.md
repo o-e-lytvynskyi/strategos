@@ -8,7 +8,7 @@
 
 - **Milestone:** M6 MVP: First skirmish, 13 of 29 tasks done (T12 split into T12.1 and T12.2) (T2 split into T2.1 and T2.2); spec [M6-first-skirmish.md](../milestones/M6-first-skirmish.md).
 - **Last finished task:** M6 T12.2 (2026-11-13), the commit `M6 T12.2: the first skirmish package, the jar and one headless match`.
-- **In progress:** M6 T13–T14 code in (`WIP M6 T13`, `WIP M6 T14`), tests not written, gates not run; next T15 · UI-13.
+- **In progress:** M6 T13–T15 code in (`WIP M6 T13`–`T15`), tests not written, gates not run; next T16 · UI-20.
 - **Open (tests, deferred on the developer's word 2026-11-13 «чисто код без тестов»):** `verifySlow`'s five fog-fallout failures (give `BattleBotTest.ground`, `EconomyBotTest`'s `HeadlessMatch` runs and `aitests` battle seeds `aiVision`); rerun `maptests.thirty_horsemen_cross`; tests for T13–T17 are not written and their gates not run.
 - **Merged from main last:** 8111c0a (2026-11-13) — M5 combat + save/reload repairs.
 
@@ -24,6 +24,10 @@ From the assessment before the claim (procedure §2a step 0); kept current.
 ## Log
 
 Newest first; one entry per session in the worklog's shape.
+
+### 2026-11-13 — M6 T15 (code only)
+
+- **M6 T15 · UI-13 research and phase UI — code, no tests.** `faction_state` gains the researched techs (net indices) and the phase (ordinal), at the end of its wire (`MatchQueries.researched`, `ReplicationService`); the old constructor stays. `ClassFilter` moved from `sim.stats` to `content` (it reads only content types) so the client may match classes (`CLIENT_DOES_NOT_DEPEND_ON_SIM`). `ClientFactionView` (core client) answers `FactionView` from `faction_state` and `building_state`. `CommandCard`: a `RESEARCH` button per tech of the building's `Researcher/techs` not yet researched, its cost, disabled when queued, the queue is full, the stock falls short or a requirement is unmet (named); the tooltip lists the time and each effect. `PhasePanel`: the next phase's `Requirements.checklist` rows above the card when its researcher is selected. `CardController` sends `Research`. Not done: L1 (the checklist mirrors the server), L3 (research survives save and load), L4 (T27).
 
 ### 2026-11-13 — M6 T14 (code only)
 

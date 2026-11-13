@@ -1,12 +1,17 @@
 package dev.strategos.core.client.hud;
 
 import dev.strategos.core.content.CorePaths;
+import dev.strategos.core.content.Requirements;
+import dev.strategos.core.content.TechDef;
+import dev.strategos.core.content.TechEffect;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.content.ValuePath;
 import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.FactionState;
+import dev.strategos.core.shared.QueueEntry;
 import dev.strategos.core.shared.Stance;
+import dev.strategos.core.shared.TechId;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -60,7 +65,9 @@ public record CommandCard(Page page, List<Button> buttons) {
         /** Ring the town bell of an own finished garrison holder (BLD-16): its workers go in. */
         RING_BELL,
         /** Sound the all clear at an own finished garrison holder (BLD-16): they come out and go back to work. */
-        ALL_CLEAR
+        ALL_CLEAR,
+        /** Research a tech at an own finished building (TECH-01, UI-13): {@link Button#template} is the tech's net index. */
+        RESEARCH
     }
 
     /**
@@ -228,6 +235,24 @@ public record CommandCard(Page page, List<Button> buttons) {
             }
             out.add(train);
         }
+        ClientFactionView view = new ClientFactionView(in.templates(), in.faction(), in.buildings());
+        for (TechDef tech : researches(in.templates(), b.template())) {
+            if (slot >= SLOTS - 3) { // the bell, the all clear and demolish keep their cells
+                break;
+            }
+            if (view.researched(tech.id())) {
+                continue;
+            }
+            Button research = button(in, Kind.RESEARCH, slot++, tech.netIndex(), techCost(in, tech));
+            if (b.queue().contains(QueueEntry.techEntry(tech.netIndex()))) {
+                research = disabled(research, "Queued");
+            } else if (research.reason() == null && b.queue().size() >= QUEUE_MAX) {
+                research = disabled(research, "Queue full");
+            } else if (!Requirements.evaluate(tech.requires(), view)) {
+                research = disabled(research, "Needs " + unmet(Requirements.checklist(tech.requires(), view)));
+            }
+            out.add(research);
+        }
         if (b.fieldLeft() == 0 && b.fieldRipening() == 0) {
             out.add(button(
                     in, Kind.RESEED, Math.min(slot, SLOTS - 1), b.template(), cost(in, b.template(), "Field/reseed/")));
@@ -292,6 +317,64 @@ public record CommandCard(Page page, List<Button> buttons) {
             }
         }
         return out;
+    }
+
+    /** The techs building template {@code building} researches, by its {@code Researcher/techs}, in their order there. */
+    public static List<TechDef> researches(TemplateSet templates, int building) {
+        ValuePath path = templates.tokenPaths().byPath("Researcher/techs");
+        String techs = path == null || !templates.has(building) ? null : templates.text(building, path.id());
+        List<TechDef> out = new ArrayList<>();
+        if (techs == null || techs.isBlank()) {
+            return out;
+        }
+        for (String id : techs.trim().split("\\s+", -1)) {
+            TechDef tech;
+            try {
+                tech = templates.tech(new TechId(id));
+            } catch (IllegalArgumentException e) {
+                continue;
+            }
+            if (tech != null) {
+                out.add(tech);
+            }
+        }
+        return out;
+    }
+
+    /** A tech's cost per resource of the match, in thousandths. */
+    static List<Long> techCost(Input in, TechDef tech) {
+        List<Long> out = new ArrayList<>(in.resources().size());
+        for (String r : in.resources()) {
+            double v = tech.cost().getOrDefault(r, 0.0);
+            out.add(v > 0 ? Math.round(v * 1000) : 0L);
+        }
+        return out;
+    }
+
+    /** The checklist's leaves not met, named as the panel names them. */
+    static String unmet(List<Requirements.Leaf> leaves) {
+        StringBuilder out = new StringBuilder();
+        for (Requirements.Leaf leaf : leaves) {
+            if (!leaf.met()) {
+                out.append(out.isEmpty() ? "" : ", ").append(PhasePanel.label(leaf));
+            }
+        }
+        return out.toString();
+    }
+
+    /** A tech's effects for its tooltip (UI-13): each modifier's path, op and value, and its class filter. */
+    public static List<String> techEffects(TechDef tech) {
+        List<String> out = new ArrayList<>();
+        for (TechEffect e : tech.effects()) {
+            String filter = e.filter().isBlank() ? "" : " for " + e.filter();
+            String value = e.tokens() != null ? e.tokens() : plain(e.value());
+            out.add(e.path() + " " + e.op().name().toLowerCase(java.util.Locale.ROOT) + " " + value + filter);
+        }
+        return out;
+    }
+
+    private static String plain(double v) {
+        return v == Math.rint(v) ? Long.toString((long) v) : Double.toString(v);
     }
 
     /** Template {@code template}'s icon, the item its {@code Identity/icon} names, or null for none. */

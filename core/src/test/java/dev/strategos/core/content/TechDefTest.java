@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import dev.strategos.core.shared.TechId;
-import dev.strategos.core.sim.stats.ClassFilter;
 import dev.strategos.core.sim.stats.Modifier;
 import dev.strategos.core.sim.stats.ModifierOp;
 import java.util.ArrayList;

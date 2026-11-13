@@ -2,7 +2,8 @@ package dev.strategos.core.content;
 
 /**
  * The syntax of class filters and token edits (04 §8.1), in one place: the content layer checks tech files with it,
- * and the stat service's {@code ClassFilter} and {@code TokenEdit} (sim.stats, a layer above) refuse what it refuses.
+ * {@code ClassFilter} (here since UI-13, so the client's phase panel can match classes) and the stat service's {@code
+ * TokenEdit} (sim.stats, a layer above) refuse what it refuses.
  */
 public final class StatSyntax {
     private StatSyntax() {}

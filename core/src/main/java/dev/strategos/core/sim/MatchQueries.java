@@ -120,6 +120,11 @@ public interface MatchQueries {
      */
     @Nullable StatBreakdown stats(int handle, String path);
 
+    /** The techs {@code faction} has researched, in the order it researched them (UI-13). */
+    default List<TechId> researched(FactionSlot faction) {
+        return List.of();
+    }
+
     /** The technology whose modifiers carry {@code sourceId} (TECH-01), or null for any other source. */
     default @Nullable TechId techOf(int sourceId) {
         return null;

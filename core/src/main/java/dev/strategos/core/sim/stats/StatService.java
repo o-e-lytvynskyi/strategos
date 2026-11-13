@@ -1,5 +1,6 @@
 package dev.strategos.core.sim.stats;
 
+import dev.strategos.core.content.ClassFilter;
 import dev.strategos.core.content.CorePaths;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.ValuePath;

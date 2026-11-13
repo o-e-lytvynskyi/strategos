@@ -1,10 +1,10 @@
 package dev.strategos.core.sim;
 
+import dev.strategos.core.content.ClassFilter;
 import dev.strategos.core.content.FactionView;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.shared.TechId;
 import dev.strategos.core.sim.build.BuildingStore;
-import dev.strategos.core.sim.stats.ClassFilter;
 
 /** A faction of a running match as {@link dev.strategos.core.content.Requirements} reads it (TECH-01). */
 public final class MatchFactionView implements FactionView {

@@ -324,7 +324,7 @@ only its own vision at every level except that labelled top level.
   2. Research progress survives save and load (L3).
   3. Goldens (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** UI-08, TECH-02 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 #### UI-14 · First-match hints and controls help
 - **Value:** A new player learns the controls by playing, without a manual.
