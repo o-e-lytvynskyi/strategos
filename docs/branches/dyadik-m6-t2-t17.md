@@ -8,7 +8,7 @@
 
 - **Milestone:** M6 MVP: First skirmish, 13 of 29 tasks done (T12 split into T12.1 and T12.2) (T2 split into T2.1 and T2.2); spec [M6-first-skirmish.md](../milestones/M6-first-skirmish.md).
 - **Last finished task:** M6 T12.2 (2026-11-13), the commit `M6 T12.2: the first skirmish package, the jar and one headless match`.
-- **In progress:** M6 T13 · MATCH-02 since 2026-11-13 — code in (`WIP M6 T13`), tests not written, gates not run.
+- **In progress:** M6 T13–T14 code in (`WIP M6 T13`, `WIP M6 T14`), tests not written, gates not run; next T15 · UI-13.
 - **Open (tests, deferred on the developer's word 2026-11-13 «чисто код без тестов»):** `verifySlow`'s five fog-fallout failures (give `BattleBotTest.ground`, `EconomyBotTest`'s `HeadlessMatch` runs and `aitests` battle seeds `aiVision`); rerun `maptests.thirty_horsemen_cross`; tests for T13–T17 are not written and their gates not run.
 - **Merged from main last:** 8111c0a (2026-11-13) — M5 combat + save/reload repairs.
 
@@ -24,6 +24,10 @@ From the assessment before the claim (procedure §2a step 0); kept current.
 ## Log
 
 Newest first; one entry per session in the worklog's shape.
+
+### 2026-11-13 — M6 T14 (code only)
+
+- **M6 T14 · UI-21 notification feed and alert audio — code, no tests.** Core: `NoticeKind` gains `TRAINED` (a batch out of its building, `Production`), `BUILT` (a construction finished, `Construction`; not instant placement) and `RESEARCHED` (a tech that is no phase, `Techs`), wire codes 5–7. `core.client.hud.NotificationFeed`: kinds by priority (alerts, phase, research, training and building, economy), under attack once per 10 s per 32-block area, each economy notice once per 15 s, six visible, fading over the last 2 of 8 s, the newest alert's place for J. `ClientMatchModel` keeps the phase notices. `AlertSounds` (bell, raid horn, challenge toast, level-up, villager cheer, anvil at 1.2 and 0.4; alerts under `HOSTILE`, the rest `NEUTRAL`; once per 3 s each) through `FxPlayer.local`; the horn and the bell left `RtsHud`. The feed draws as a column under the notices' row (`HudBanners.feed`); the row keeps the wave countdown and "Under attack! (J)". Not done: L1 (priorities, limits, one sound per alert), L4 (T27).
 
 ### 2026-11-13 — M6 T13 (code only)
 

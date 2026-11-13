@@ -2,13 +2,16 @@ package dev.strategos.core.sim.build;
 
 import dev.strategos.core.content.Blueprint;
 import dev.strategos.core.content.Footprint;
+import dev.strategos.core.protocol.NoticeKind;
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.DetMath;
+import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.sim.EntityStore;
 import dev.strategos.core.sim.MatchBounds;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.MotionStore;
+import dev.strategos.core.sim.Notice;
 import dev.strategos.core.sim.WorldEffect;
 import dev.strategos.core.sim.prod.Production;
 import dev.strategos.core.sim.world.WritePriority;
@@ -292,6 +295,15 @@ public final class Construction {
         if (finished) {
             s.matchStats().buildingBuilt(s.buildings().faction(handle));
             Production.finished(s, handle); // its housing counts and a field ripens, as an instant building's do
+            s.outputs()
+                    .add(new Notice(
+                            new FactionSlot(s.buildings().faction(handle)),
+                            NoticeKind.BUILT,
+                            handle,
+                            s.templates()
+                                    .byIndex(s.buildings().template(handle))
+                                    .id()
+                                    .value()));
         }
     }
 }

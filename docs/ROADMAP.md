@@ -429,7 +429,7 @@ Cards: [roadmap/M6-first-skirmish.md](roadmap/M6-first-skirmish.md#cards). 23 ca
 | AI-04 | AI openings, waves, raid bar and defence | L | AI-03, MAP-02, BLD-16 | specified |
 | AI-05 | AI phases, research and difficulty levels | M | AI-04, TECH-02, D-19 | specified |
 | UI-20 | Minimap orders, pings and live construction | M | UI-11, UI-12 | specified |
-| UI-21 | Notification feed and alert audio | M | UI-12, TECH-01 | specified |
+| UI-21 | Notification feed and alert audio | M | UI-12, TECH-01 | in_progress |
 | UI-13 | Research and phase UI | M | UI-08, TECH-02 | specified |
 | UI-14 | First-match hints and controls help | M | UI-21 | specified |
 | FOW-01 | Vision grid per faction (solo fog, D-24 (c)) | M | CORE-08 | in_progress |

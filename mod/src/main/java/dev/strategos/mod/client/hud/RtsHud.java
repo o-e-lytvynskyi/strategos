@@ -9,6 +9,7 @@ import dev.strategos.core.client.hud.HudRect;
 import dev.strategos.core.client.hud.HudTheme;
 import dev.strategos.core.client.hud.Income;
 import dev.strategos.core.client.hud.Minimap;
+import dev.strategos.core.client.hud.NotificationFeed;
 import dev.strategos.core.client.hud.ResourceBar;
 import dev.strategos.core.client.hud.SelectionPanel;
 import dev.strategos.core.client.hud.SelectionSummary;
@@ -16,20 +17,26 @@ import dev.strategos.core.client.pick.Picking;
 import dev.strategos.core.client.select.Selection;
 import dev.strategos.core.content.TechDef;
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.DepositState;
 import dev.strategos.core.protocol.FactionState;
 import dev.strategos.core.protocol.FeedbackMsg;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.MatchNews;
+import dev.strategos.core.protocol.NoticeMsg;
 import dev.strategos.core.protocol.UiQuery;
 import dev.strategos.core.protocol.UnitDetail;
 import dev.strategos.core.protocol.UnitHud;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.QueueEntry;
 import dev.strategos.core.shared.Stance;
+import dev.strategos.core.shared.TechId;
+import dev.strategos.core.shared.TemplateId;
+import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.mod.client.StrategosClient;
+import dev.strategos.mod.client.audio.AlertSounds;
 import dev.strategos.mod.client.net.ClientPayloads;
 import dev.strategos.mod.client.rts.RtsMode;
 import dev.strategos.mod.entity.UnitEntity;
@@ -120,7 +127,11 @@ public final class RtsHud {
     private final RtsMinimap minimap = new RtsMinimap();
     private int alertsHeard;
     private int wavesHeard;
+    private int phasesHeard;
+    private long economySeen = -1;
     private long alertAt = -1_000_000;
+    private final NotificationFeed feed = new NotificationFeed();
+    private @Nullable AlertSounds alertSounds;
 
     private @Nullable Inspect inspect;
     private long buildNanos;
@@ -265,6 +276,72 @@ public final class RtsHud {
     /** A feedback message from the server: the economy's become notices (UI-10). */
     public void feedback(FeedbackMsg msg) {
         notices.accept(msg, clientTicks, StrategosClient.resources());
+        List<EconomyNotices.Shown> fired = notices.fired();
+        if (!fired.isEmpty() && fired.getLast().last() > economySeen) {
+            EconomyNotices.Shown s = fired.getLast();
+            economySeen = s.last();
+            offer(NotificationFeed.Kind.ECONOMY, economyKey(s), List.of(s.detail()), null, s.cause() + s.detail());
+        }
+        if (msg instanceof NoticeMsg n) {
+            TemplateSet templates = StrategosClient.templates();
+            switch (n.kind()) {
+                case TRAINED ->
+                    offer(
+                            NotificationFeed.Kind.TRAINED,
+                            "strategos.feed.trained",
+                            List.of(templateName(templates, n.detail())),
+                            null,
+                            n.detail());
+                case BUILT ->
+                    offer(
+                            NotificationFeed.Kind.BUILT,
+                            "strategos.feed.built",
+                            List.of(templateName(templates, n.detail())),
+                            null,
+                            n.detail());
+                case RESEARCHED -> {
+                    TechDef tech = templates.tech(new TechId(n.detail()));
+                    offer(
+                            NotificationFeed.Kind.RESEARCH,
+                            "strategos.feed.researched",
+                            List.of(tech == null ? n.detail() : tech.name()),
+                            null,
+                            n.detail());
+                }
+                default -> {}
+            }
+        }
+    }
+
+    /** The feed's entries shown now, for scenarios and goldens. */
+    public List<NotificationFeed.Entry> feedShown() {
+        return feed.visible(clientTicks);
+    }
+
+    private void offer(NotificationFeed.Kind kind, String key, List<String> args, @Nullable Vec2d at, String limitKey) {
+        if (feed.offer(kind, key, args, clientTicks, at, limitKey)) {
+            if (alertSounds == null) {
+                alertSounds = new AlertSounds(StrategosClient.sounds());
+            }
+            alertSounds.play(kind, clientTicks);
+        }
+    }
+
+    private static Vec2d place(MatchJoin join, MatchNews news) {
+        return new Vec2d(join.originX() + news.x(), join.originZ() + news.z());
+    }
+
+    private static String templateName(TemplateSet templates, String id) {
+        UnitTemplate t = templates.byId(new TemplateId(id));
+        return t == null ? id : t.name();
+    }
+
+    private static String economyKey(EconomyNotices.Shown s) {
+        return switch (s.cause()) {
+            case NOT_ENOUGH_RESOURCES -> "strategos.feed.not_enough";
+            case POPULATION_CAPPED -> "strategos.feed.population_capped";
+            case DEPOSIT_EXHAUSTED -> "strategos.feed.worker_idle";
+        };
     }
 
     /** The notices shown now, the newest first, for scenarios. */
@@ -280,23 +357,39 @@ public final class RtsHud {
         int announced = StrategosClient.model().waves();
         MatchNews wave = StrategosClient.model().wave();
         MatchJoin joined = StrategosClient.match();
-        if (announced > wavesHeard) { // AI-17: an enemy's wave, a horn for those it comes for
+        if (announced > wavesHeard) { // AI-17: an enemy's wave, for those it comes for
             wavesHeard = announced;
             if (wave != null
                     && joined != null
                     && wave.faction() != joined.slot().value()) {
-                client.getSoundManager()
-                        .play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
-                                net.minecraft.sounds.SoundEvents.RAID_HORN.value(), 1.0F, 1.0F));
+                offer(NotificationFeed.Kind.WAVE, "strategos.feed.wave", List.of(), place(joined, wave), "");
             }
         }
         int heard = StrategosClient.model().alerts();
-        if (heard > alertsHeard) { // UI-12: a new alert sounds once, here only
+        if (heard > alertsHeard) { // UI-12: a new alert, rate-limited per area by the feed
             alertsHeard = heard;
             alertAt = clientTicks;
-            client.getSoundManager()
-                    .play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
-                            net.minecraft.sounds.SoundEvents.BELL_BLOCK, 1.0F, 0.8F));
+            MatchNews alert = StrategosClient.model().alert();
+            offer(
+                    NotificationFeed.Kind.UNDER_ATTACK,
+                    "strategos.feed.under_attack",
+                    List.of(),
+                    alert == null || joined == null ? null : place(joined, alert),
+                    "");
+        }
+        int phases = StrategosClient.model().phases();
+        MatchNews phase = StrategosClient.model().phase();
+        if (phases > phasesHeard) { // TECH-02's notice, to every participant
+            phasesHeard = phases;
+            if (phase != null && joined != null) {
+                boolean own = phase.faction() == joined.slot().value();
+                offer(
+                        NotificationFeed.Kind.PHASE,
+                        own ? "strategos.feed.phase.own" : "strategos.feed.phase.enemy",
+                        List.of("strategos.phase." + phase.ticks()),
+                        null,
+                        phase.faction() + ":" + phase.ticks());
+            }
         }
         Minecraft mc = Minecraft.getInstance();
         if (!mode.active() || mc.level == null) {
@@ -420,6 +513,11 @@ public final class RtsHud {
 
     /** The camera to the latest alert (UI-12's jump key); whether there was one. */
     public boolean jumpToAlert() {
+        Vec2d newest = feed.newestAlert();
+        if (newest != null) { // UI-21: the newest alert in the feed, a wave's muster included
+            mode.centreOn(newest.x(), newest.z());
+            return true;
+        }
         MatchNews alert = StrategosClient.model().alert();
         MatchJoin join = StrategosClient.match();
         if (alert == null || join == null) {
@@ -803,7 +901,8 @@ public final class RtsHud {
 
     private void drawNotices(GuiGraphics g, DeltaTracker delta) {
         if (shown()) {
-            banners.notices(g, shownNotices, clientTicks - alertAt < 100);
+            banners.notices(g, List.of(), clientTicks - alertAt < 100);
+            banners.feed(g, feed.visible(clientTicks), clientTicks);
         }
     }
 

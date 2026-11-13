@@ -143,6 +143,12 @@ public final class Production {
             int unit = s.spawnUnit(template, faction, door[0] + 0.5, y, door[1] + 0.5, 0f);
             rally(s, handle, unit);
         }
+        s.outputs()
+                .add(new Notice(
+                        new FactionSlot(faction),
+                        NoticeKind.TRAINED,
+                        handle,
+                        s.templates().byIndex(template).id().value()));
     }
 
     /** A tech at the head (TECH-01) needs no population and no door: it takes its time, then the faction has it. */

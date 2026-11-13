@@ -3,11 +3,13 @@ package dev.strategos.core.sim.prod;
 import dev.strategos.core.content.TechDef;
 import dev.strategos.core.content.TechEffect;
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.protocol.NoticeKind;
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.QueueEntry;
 import dev.strategos.core.shared.TechId;
 import dev.strategos.core.sim.MatchState;
+import dev.strategos.core.sim.Notice;
 import dev.strategos.core.sim.Progress;
 import dev.strategos.core.sim.TechResearched;
 import dev.strategos.core.sim.build.BuildingStore;
@@ -90,6 +92,14 @@ public final class Techs {
             }
         }
         s.outputs().add(new TechResearched(new FactionSlot(faction), tech.id()));
+        if (!tech.isPhase()) { // a phase reaches the feed as match news (TECH-02)
+            s.outputs()
+                    .add(new Notice(
+                            new FactionSlot(faction),
+                            NoticeKind.RESEARCHED,
+                            0,
+                            tech.id().value()));
+        }
     }
 
     /**

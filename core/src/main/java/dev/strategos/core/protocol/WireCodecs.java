@@ -287,6 +287,9 @@ public final class WireCodecs {
                         case UNIT_LOST -> 2;
                         case IDLE_WORKER -> 3;
                         case HOUSING_NEEDED -> 4;
+                        case TRAINED -> 5;
+                        case BUILT -> 6;
+                        case RESEARCHED -> 7;
                     });
         }
 
@@ -299,6 +302,9 @@ public final class WireCodecs {
                 case 2 -> NoticeKind.UNIT_LOST;
                 case 3 -> NoticeKind.IDLE_WORKER;
                 case 4 -> NoticeKind.HOUSING_NEEDED;
+                case 5 -> NoticeKind.TRAINED;
+                case 6 -> NoticeKind.BUILT;
+                case 7 -> NoticeKind.RESEARCHED;
                 default -> throw new WireException("unknown notice kind " + code);
             };
         }

@@ -4,6 +4,7 @@ import dev.strategos.core.client.hud.EconomyNotices;
 import dev.strategos.core.client.hud.GroupBar;
 import dev.strategos.core.client.hud.HudRect;
 import dev.strategos.core.client.hud.HudTheme;
+import dev.strategos.core.client.hud.NotificationFeed;
 import dev.strategos.core.protocol.MatchControl;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.MatchNews;
@@ -15,6 +16,7 @@ import java.util.Locale;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.chat.Component;
 
 /**
  * The HUD's banners: the notices strip with the wave countdown and the alert (UI-10, UI-12, AI-17), the end screen
@@ -28,6 +30,44 @@ final class HudBanners {
     HudBanners(HudPaint paint) {
         this.paint = paint;
         this.theme = paint.theme;
+    }
+
+    /**
+     * The notification feed (UI-21): a column under the notices' row, by priority, each entry fading in its last two
+     * seconds. An argument that is a lang key (a template's or a tech's name, a phase) is translated.
+     */
+    void feed(GuiGraphics g, List<NotificationFeed.Entry> entries, long now) {
+        if (entries.isEmpty()) {
+            return;
+        }
+        Font font = Minecraft.getInstance().font;
+        HudRect r = RtsHud.layout().notices();
+        int y = r.y() + r.height() + 2;
+        for (NotificationFeed.Entry e : entries) {
+            Object[] args = e.args().stream()
+                    .map(a -> a.startsWith("strategos.") ? Component.translatable(a) : (Object) a)
+                    .toArray();
+            Component text = Component.translatable(e.key(), args);
+            int w = font.width(text) + 2 * theme.padding();
+            int x = r.right() - w;
+            float alpha = NotificationFeed.alpha(e, now);
+            if (alpha >= 1f) {
+                paint.panel(g, new HudRect(x, y, w, r.height()));
+            }
+            int a = Math.max(5, Math.round(alpha * 255)); // vanilla draws text below alpha 4 opaque
+            g.drawString(font, text, x + theme.padding(), y + 2, (a << 24) | color(e.kind()), false);
+            y += r.height() + 2;
+        }
+    }
+
+    private static int color(NotificationFeed.Kind kind) {
+        return switch (kind) {
+            case UNDER_ATTACK, WAVE -> 0xFF4040;
+            case PHASE -> 0xFFD040;
+            case RESEARCH -> 0x60D0FF;
+            case TRAINED, BUILT -> 0xA0FFA0;
+            case ECONOMY -> 0xFFFFA0;
+        };
     }
 
     /** The newest notices, right-aligned in the notices' strip, the newest nearest the corner. */

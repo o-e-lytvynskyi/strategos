@@ -97,5 +97,18 @@
   "strategos.skirmish.visibility.explored": "Explored",
   "strategos.skirmish.visibility.revealed": "Revealed",
   "strategos.skirmish.start": "Start",
-  "strategos.skirmish.preparing": "Preparing the map: %s %%"
+  "strategos.skirmish.preparing": "Preparing the map: %s %%",
+  "strategos.feed.wave": "An attack is coming",
+  "strategos.feed.under_attack": "Under attack! (J)",
+  "strategos.feed.phase.own": "We reached the %s phase",
+  "strategos.feed.phase.enemy": "The enemy reached the %s phase",
+  "strategos.feed.trained": "Trained: %s",
+  "strategos.feed.built": "Built: %s",
+  "strategos.feed.researched": "Researched: %s",
+  "strategos.feed.not_enough": "Not enough %s",
+  "strategos.feed.population_capped": "Population capped: build houses",
+  "strategos.feed.worker_idle": "A worker is idle",
+  "strategos.phase.0": "Village",
+  "strategos.phase.1": "Town",
+  "strategos.phase.2": "City"
 }

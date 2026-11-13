@@ -31,6 +31,8 @@ public final class ClientMatchModel {
     private @Nullable MatchNews wave;
     private int waves;
     private int alerts;
+    private @Nullable MatchNews phase;
+    private int phases;
     private long defeatedMask;
 
     private int matchId = -1;
@@ -132,8 +134,8 @@ public final class ClientMatchModel {
     }
 
     /**
-     * Takes match news (MATCH-01, UI-12): the joined match's defeats, its end and its alerts. A phase notice (TECH-02)
-     * changes nothing here; the feed shows it from T14.
+     * Takes match news (MATCH-01, UI-12): the joined match's defeats, its end, its alerts and its phase notices
+     * (TECH-02), which the feed shows (UI-21).
      */
     public void accept(MatchNews news, int joinedMatch) {
         if (news.matchId() != joinedMatch) {
@@ -147,6 +149,9 @@ public final class ClientMatchModel {
         } else if (news.kind() == MatchNews.ALERT) {
             alert = news;
             alerts++;
+        } else if (news.kind() == MatchNews.PHASE) {
+            phase = news;
+            phases++;
         } else if (news.kind() == MatchNews.DEFEATED && news.faction() >= 0 && news.faction() < 64) {
             defeatedMask |= 1L << news.faction();
         }
@@ -160,6 +165,16 @@ public final class ClientMatchModel {
     /** The latest under-attack alert (UI-12), or null before any. */
     public @Nullable MatchNews alert() {
         return alert;
+    }
+
+    /** The latest phase notice (TECH-02), or null before any. */
+    public @Nullable MatchNews phase() {
+        return phase;
+    }
+
+    /** How many phase notices came, for a new one to be noticed. */
+    public int phases() {
+        return phases;
     }
 
     /** The latest announced wave (AI-17), or null before any. */
@@ -340,6 +355,8 @@ public final class ClientMatchModel {
         alerts = 0;
         wave = null;
         waves = 0;
+        phase = null;
+        phases = 0;
         defeatedMask = 0;
         matchId = -1;
         tick = -1;

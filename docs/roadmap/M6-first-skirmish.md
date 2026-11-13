@@ -312,7 +312,7 @@ only its own vision at every level except that labelled top level.
   3. Feed golden (L4, consent).
   4. The owner's audio checklist passes (L7, acceptance).
 - **Tests:** L0, L1, L4 (consent), L7 · **Depends on:** UI-12, TECH-01 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress
 
 #### UI-13 · Research and phase UI
 - **Value:** Plan your phase-up: see what Town needs and what each technology does (P4).
