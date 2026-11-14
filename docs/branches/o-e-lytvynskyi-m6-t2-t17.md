@@ -7,9 +7,9 @@
 ## Now
 
 - **Milestone:** M6 MVP: First skirmish, the claim's T2.1–T17 done (18 of 29 tasks with the T2 and T12 splits; T1 and T18–T28 are outside the claim); spec [M6-first-skirmish.md](../milestones/M6-first-skirmish.md).
-- **In progress:** none.
-- **Last finished task:** M6 T15 (2026-11-14), commit 1436cda.
-- **Next:** `jmhCompare` on a quiet machine (row "Gates" below), then the hand-in.
+- **In progress:** M6 T18 (TECH-03) and T21 (AI-04) since 2026-11-14.
+- **Last finished task:** M6 T1 (2026-11-14).
+- **Next:** T19, T20, T22, T23, T24, T25, T27, T28.
 - **Merged from main last:** a24572d (2026-11-14).
 
 ## Depends on unfinished work
@@ -24,6 +24,11 @@ From the assessment before the claim (procedure §2a step 0); kept current.
 ## Log
 
 Newest first; one entry per session in the worklog's shape. Before 2026-11-14: dyadik's branch file on 7f08f40.
+
+### 2026-11-14 — M6 T1 and the vision fix
+
+- **M6 T1 · health check from M5's close** — the classes over 800 lines split by moves only: `RtsHud` 1,100 → 756 (`HudNews`, `HudBuildingCard`, `HudOverlays`, `HudTooltips`), `TemplateCompiler` 1,013 → 597 (`TechChecks`, `Fields`), `MatchState` 897 → 732 (`MobilityCache`, `TemplateSwap`, `BuildingRestore`, `UnitLifecycle`, `NodeIndexCache`, `DamageRankCache`, `PopulationCost`); same API, pinned set SHA and hashes (1,795 core tests rerun). The largest class is now `BuildingStore` (798). M5's other follow-ups: cavalry and buildings and the bots' trees stay with the owner and T23's tuning; the thin perf margins are measured at the close (`verifyPerf`). `verify` 1 min 31 s, `verifySlow` 22 GameTests in 3 min 27 s.
+- **Vision** — `jmhCompare` red on `MovementBench.step600` (+51 % against the M4 Pro baseline; 34.4 µs against main's 24.7 here), bisected to the T2–T6 merge and profiled: the fog's stamping (24.7 µs with `VisionSystem` stubbed). On the way: no per-tick pass over the explored grid (a stamp marks its cells), building stamps revisited only when buildings or a faction's modifiers change, and buildings see by their faction's `Vision/range` (`BuildingVisionTest`: fails without it). For the owner 3.
 
 ### 2026-11-14 — M6 T13–T17: tests, fixes, gates
 
