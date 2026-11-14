@@ -95,6 +95,10 @@ public final class MotionSystem implements MatchSystem {
     static final double PASS_CROWD = 2.0;
 
     static final int CROWDED = 10;
+    static final double SETTLE_ZONE = 2.5;
+    static final int SETTLE_AFTER = 20;
+    /** Where a mover on its own arrives after the settle count: half a block, so a step aside after stays within one. */
+    static final double ARRIVE_ALONE = 0.5;
     /** How near two bodies count as touching, beyond their radii. */
     static final double TOUCH = 0.1;
     /** The largest unit radius the touch query looks for, in blocks. */
@@ -347,10 +351,31 @@ public final class MotionSystem implements MatchSystem {
         this.speed[i] = speed;
     }
 
-    /** A unit that does not walk has no net-progress count (QA-12). */
+    /** A unit that does not walk has no net-progress count and no crowd-settle count (QA-12). */
     private static void clearNet(MatchState s, int i) {
         if (s.motion().net(i) != 0) {
             s.motion().setNet(i, 0, 0, 0);
+        }
+        if (s.motion().settle(i) != 0) {
+            s.motion().setSettle(i, 0);
+        }
+    }
+
+    /**
+     * QA-12: the ticks a unit on a move order has spent within {@value #SETTLE_ZONE} blocks of its place, on its last leg,
+     * without arriving. Crawling through arrived mates a hundredth of a block a tick counts as progress to the stuck
+     * monitor, so the crowd rules, which wait {@value #CROWDED} ticks without it, never came (and a pushed mate walking
+     * back to its latch went on for as long); this count is the crowd rules' own and feeds no rung of the ladder. After
+     * {@value #SETTLE_AFTER} ticks, within {@value #ARRIVE_CROWD} blocks of its place (the slot tolerance) for a member of
+     * a group order, within {@value #ARRIVE_ALONE} for a single mover, the unit arrives where it stands.
+     */
+    private void settleCount(MatchState s, int i, double d) {
+        MotionStore motion = s.motion();
+        int n = (flags[i] & LAST) != 0 && s.orders().kind(i) == OrderKind.MOVE && d <= SETTLE_ZONE
+                ? motion.settle(i) + 1
+                : 0;
+        if (n != motion.settle(i)) {
+            motion.setSettle(i, n);
         }
     }
 
@@ -386,14 +411,17 @@ public final class MotionSystem implements MatchSystem {
         motion.set(i, x, motion.y(i), z, yaw);
         Footing.height(s, i);
         monitor(s, i, tx, tz);
+        settleCount(s, i, DetMath.length(tx - x, tz - z));
         StuckLadder.countDown(motion, i);
         boolean landed = preferred && (flags[i] & LANDS) != 0 && x == tx && z == tz;
         if (!landed && (flags[i] & LAST) != 0) {
             double d = DetMath.length(tx - x, tz - z);
-            landed = motion.stuck(i) >= CROWDED
-                    && ((d <= ARRIVE_CROWD && (s.orders().group(i) != 0 || taken(s, i, tx, tz)))
-                            || touchesArrived(s, i, tx, tz)
-                            || tradePlace(s, i, x, z, d));
+            landed = (motion.stuck(i) >= CROWDED
+                            && ((d <= ARRIVE_CROWD && (s.orders().group(i) != 0 || taken(s, i, tx, tz)))
+                                    || touchesArrived(s, i, tx, tz)
+                                    || tradePlace(s, i, x, z, d)))
+                    || (motion.settle(i) >= SETTLE_AFTER
+                            && d <= (s.orders().group(i) != 0 ? ARRIVE_CROWD : ARRIVE_ALONE));
         }
         if (landed) {
             if ((flags[i] & FOLLOWING) != 0) {

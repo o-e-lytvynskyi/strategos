@@ -38,6 +38,7 @@ public final class MotionStore {
     private double[] netX = new double[0];
     private double[] netZ = new double[0];
     private int[] net = new int[0];
+    private int[] settle = new int[0];
     private int[] ghostTicks = new int[0];
 
     /** The terrain part of a unit's motion, as a snapshot keeps it. */
@@ -73,8 +74,15 @@ public final class MotionStore {
      */
     @CoreApi
     public record Ladder(
-            double detourX, double detourZ, int detourTicks, int ghostTicks, double netX, double netZ, int net) {
-        public static final Ladder NONE = new Ladder(0, 0, 0, 0, 0, 0, 0);
+            double detourX,
+            double detourZ,
+            int detourTicks,
+            int ghostTicks,
+            double netX,
+            double netZ,
+            int net,
+            int settle) {
+        public static final Ladder NONE = new Ladder(0, 0, 0, 0, 0, 0, 0, 0);
     }
 
     public void ensureCapacity(int size) {
@@ -106,6 +114,7 @@ public final class MotionStore {
             netX = Arrays.copyOf(netX, capacity);
             netZ = Arrays.copyOf(netZ, capacity);
             net = Arrays.copyOf(net, capacity);
+            settle = Arrays.copyOf(settle, capacity);
         }
     }
 
@@ -267,6 +276,18 @@ public final class MotionStore {
         net[i] = ticks;
     }
 
+    /**
+     * Ticks the walking unit has spent near its place, in reach of the crowd rules, without arriving (QA-12); 0 for none.
+     * It feeds no rung of the stuck ladder.
+     */
+    public int settle(int i) {
+        return settle[i];
+    }
+
+    public void setSettle(int i, int ticks) {
+        settle[i] = ticks;
+    }
+
     /** The arrival latch holds the unit to (x, z); {@code latched} false releases it. */
     public void setLatch(int i, boolean latched, double x, double z) {
         this.latched[i] = latched;
@@ -289,9 +310,17 @@ public final class MotionStore {
                 latchX[i],
                 latchZ[i],
                 pushed[i],
-                detourTicks[i] == 0 && ghostTicks[i] == 0 && net[i] == 0
+                detourTicks[i] == 0 && ghostTicks[i] == 0 && net[i] == 0 && settle[i] == 0
                         ? Ladder.NONE
-                        : new Ladder(detourX[i], detourZ[i], detourTicks[i], ghostTicks[i], netX[i], netZ[i], net[i]));
+                        : new Ladder(
+                                detourX[i],
+                                detourZ[i],
+                                detourTicks[i],
+                                ghostTicks[i],
+                                netX[i],
+                                netZ[i],
+                                net[i],
+                                settle[i]));
     }
 
     public void setExtra(int i, Extra e) {
@@ -314,6 +343,7 @@ public final class MotionStore {
         netX[i] = e.ladder().netX();
         netZ[i] = e.ladder().netZ();
         net[i] = e.ladder().net();
+        settle[i] = e.ladder().settle();
     }
 
     /** Whether unit {@code i}'s terrain part is still {@link Extra#NONE}'s: it never touched terrain. */
@@ -330,6 +360,7 @@ public final class MotionStore {
                 && pushed[i] == 0
                 && detourTicks[i] == 0
                 && ghostTicks[i] == 0
-                && net[i] == 0;
+                && net[i] == 0
+                && settle[i] == 0;
     }
 }

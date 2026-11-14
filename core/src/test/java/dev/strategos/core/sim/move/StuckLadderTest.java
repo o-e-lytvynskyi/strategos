@@ -295,11 +295,12 @@ class StuckLadderTest {
     }
 
     /**
-     * QA-12: a walker within 1.5 blocks of its place with its path spent and a request made a moment ago is not asked a
-     * path again every few ticks, as one at an occupied place was, WALKING without progress; its order fails once.
+     * QA-12: a mover within 1.5 blocks of its place with its path spent and a request made a moment ago is not asked a
+     * path again every few ticks, as one at an occupied place was, WALKING without progress: it has arrived, where it
+     * stands, and no order is given up (the soak counted the failure as a stall).
      */
     @Test
-    void aSpentPathAtAnOccupiedPlaceFailsTheOrderOnceInsteadOfAskingForever() {
+    void aSpentPathAtAnOccupiedPlaceArrivesInsteadOfAskingForever() {
         SimHarness h = harness(VoxelFixtures.flat(48, 32, 16, 1));
         int unit = h.spawn(F0, new Vec2d(8.5, 16.5), 1, 0)[0];
         int i = Handle.index(unit);
@@ -321,7 +322,8 @@ class StuckLadderTest {
                 break;
             }
         }
-        assertThat(stuck).extracting(Stuck::rung).as("its order fails, once").containsExactly(Stuck.GIVE_UP);
+        assertThat(stuck).as("no order is given up").isEmpty();
+        assertThat(unit(h, unit).state()).as("it has arrived").isEqualTo(UnitState.IDLE);
         assertThat(state(h).paths().nextRequestId() - asked)
                 .as("paths asked for meanwhile")
                 .isLessThanOrEqualTo(1);

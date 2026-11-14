@@ -390,6 +390,9 @@ public final class PathService {
 
     private static final double SETTLED_WITHIN = 1.5;
 
+    /** How near its place a mover on its own, not of a group order, arrives (MotionSystem's latch). */
+    private static final double ARRIVED_ALONE = 1.0;
+
     /** A chase (an attack the player ordered, or one the unit took up): its place is a moving target's. */
     private static boolean chasing(MatchState s, int i) {
         int kind = s.orders().kind(i);
@@ -398,9 +401,27 @@ public final class PathService {
 
     private static final long SETTLED_AFTER = 8;
 
-    /** Its order fails once, as the stuck ladder's last rung fails one. */
+    /**
+     * Its order fails once, as the stuck ladder's last rung fails one; a move that has come within reach of its place
+     * (1.5 blocks for a member of a group order, 1.0 for one alone) has not failed: it has arrived, where it stands, and is counted for no one (QA-12: a unit standing on its place,
+     * its place taken, was counted a given-up order).
+     */
     private static void failSettled(MatchState s, int i) {
         int handle = s.entities().handleAt(i);
+        MotionStore motion = s.motion();
+        if (s.orders().kind(i) == OrderKind.MOVE
+                && DetMath.length(
+                                motion.x(i) - s.orders().targetX(i),
+                                motion.z(i) - s.orders().targetZ(i))
+                        <= (s.orders().group(i) != 0 ? SETTLED_WITHIN : ARRIVED_ALONE)) {
+            motion.setLatch(i, true, motion.x(i), motion.z(i));
+            motion.setVelocity(i, 0, 0);
+            motion.setDetour(i, 0, 0, 0);
+            motion.setGhostTicks(i, 0);
+            s.bus().publish(new Arrived(handle));
+            s.paths().decided(i, s.tick());
+            return;
+        }
         s.countRung(Stuck.GIVE_UP);
         s.outputs()
                 .add(new Notice(

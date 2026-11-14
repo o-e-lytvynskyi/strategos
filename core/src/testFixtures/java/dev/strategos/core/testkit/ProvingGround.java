@@ -31,6 +31,13 @@ import org.jspecify.annotations.Nullable;
 public final class ProvingGround {
     public static final int SIZE = 384;
     public static final int HEIGHT = 64;
+
+    /**
+     * Ticks within which eight walkers ordered 16 blocks across the ground are all idle at their places, on every match
+     * seed: the server smoke's wait and CrowdSettleTest's bound (QA-12: no stall).
+     */
+    public static final int GROUP_SETTLE_TICKS = 160;
+
     public static final int TILE = 32;
 
     /** Block states as Minecraft writes them; a voxel holds an index. Stone is the base block. */

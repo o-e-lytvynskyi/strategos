@@ -24,6 +24,7 @@ import dev.strategos.core.sim.command.ScenarioSetup;
 import dev.strategos.core.sim.journal.JournalExport;
 import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.core.testkit.JournalFiles;
+import dev.strategos.core.testkit.ProvingGround;
 import dev.strategos.core.testkit.ReplayRunner;
 import dev.strategos.mod.Strategos;
 import dev.strategos.mod.StrategosServer;
@@ -112,7 +113,7 @@ public final class SmokeDriver {
     private static final int DEADLINE = 600;
     private static final int MAP_UNITS = 8;
     /** The 16-block walk takes 64 ticks; the crowd then settles round the target (PATH-06's crowd arrival). */
-    private static final int MAP_TICKS = 160;
+    private static final int MAP_TICKS = ProvingGround.GROUP_SETTLE_TICKS;
 
     private static final long MAP_DEADLINE_NANOS = 180_000_000_000L;
 
