@@ -134,3 +134,11 @@ Every row of `core/build/reports/jmh/result.json` names its `"jvm"` by absolute 
 directory included. A row copied into `perf/baseline-*.json` must have it rewritten to
 `~/.gradle/…` before the commit (security.md §4); `grep -rn '/Users/\|/home/' perf/` is the check.
 M5 T3c.1 pushed one such row (287bf54) and fixed it in the next commit.
+
+## Two worktrees, one smoke port
+
+`runServerSmoke` (in `verify`) starts a dedicated server on a fixed port, 25599. Two `verify` runs
+in two worktrees of the same machine collide there: the later one fails `FAILED TO BIND TO PORT`,
+which is no fault of its change. Run the gate again when the other has finished (M6, 2026-11-14,
+two workers side by side); never treat it as a failure of the code under test.
+

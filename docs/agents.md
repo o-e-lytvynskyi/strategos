@@ -60,6 +60,14 @@ Return: the format in the role file
 A brief cites line ranges, not whole documents, and lists what the orchestrator already knows
 so the worker does not rediscover it.
 
+**Where a worker works.** Claude Code's `isolation: worktree` cuts the worker's worktree from
+`main`, not from the branch being developed (M6, 2026-11-14: two workers found none of the code
+they were to test). For work on a `dev/*` branch, add a detached worktree at the branch head yourself
+(`git worktree add --detach ../strategos-<task> <commit>`), name it in the brief, and carry the
+worker's diff back with `git diff --binary` and `git apply --index`. Two workers can build side by
+side in two worktrees, but `runServerSmoke` binds one fixed port: at the same moment one of them
+fails "FAILED TO BIND TO PORT" ([minecraft-mod-build.md](kb/minecraft-mod-build.md)).
+
 ## Quality gates that do not move
 
 - The orchestrator reads `git diff` of every worker change before committing it.
