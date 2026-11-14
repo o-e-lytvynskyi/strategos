@@ -202,6 +202,7 @@ None. The `strategos:ping` payload stays with multiplayer pings (UI-15, M7); UI-
 | 57 | AI-05's pace (T22) | `ComputerPlayer` thinks on its level's period (40/20/20); the offset formula stays (row 4, 04 §4.5 corrected). The level's commands-per-think cap exhausts the think's budget, so no module sees a dropped command. The reaction delay runs from the fight's first sight (AiMemory slot 25, `SIZE` 26); the bell is not delayed |
 | 58 | Research steps (T22) | A due tech's reserve lasts 5 minutes (a building's 1). A step is done once the tech is researched or queued; an unmet requirement (five Village buildings) is retried every 100 ticks. Normal's Town lands at 10.7–11.9 minutes over 10 seeds with the ratio food 24, wood 36, stone 9, iron 4 and the Town step at population 22 — stone was the gate. `HeadlessMatch` ran with explored and AI vision on; T23 adds fog |
 | 59 | The handicap (T22) | `ai_handicap` is derived from the script's `level.handicap` (a faction modifier on every `ResourceGatherer/rates/*` path and on units' `Cost/time`), never saved, re-derived at restore and at a swap; its codec admits gather ≤ 1 and training ≥ 1 only (row 9) |
+| 60 | The AI under fog (T23) | The first fogged runs of `:core:openingBalance` ended no match by conquest: the AI never scouts, so an unexplored stone node is never gathered (`GatherRule` → `NOT_EXPLORED`), the barracks and Town never come, and with full knowledge waves burn the centre but nothing clears the rest. `FairAiTest.foggedMatchesEndWithin45` and `DifficultyTest` had run explored with AI vision on. T23 splits: T23.1 exploration (the economy explores toward a needed resource before gathering; scouting the enemy start), conquest completion (last-known buildings, then exploring) and a state-change watchdog; T23.2 the 641-tick walking stalls of long fogged matches; T23.3 the tuning and `aisoak` |
 
 ### 1.7 Consent plan
 
@@ -712,6 +713,7 @@ kernel adds `:core:jmh :core:jmhCompare`.
   with `verifySlow verifySoak`; 2 in T23.
 
 #### T23 · QA-12
+- **Split 2026-11-15** (row 60): T23.1 the AI under fog (exploration, conquest completion, the watchdog); T23.2 the long matches' walking stalls; T23.3 the tuning and `aisoak`.
 - §2.21; `:core:openingBalance`, `aisoak`, `:mod:runGameTestSoak`; Town's cost and the openings tuned, each
   change a sheet row. **Depends:** T4, T9, T12, T22. **Size:** M. **Verification:** the card's checks; AI-05.2,
   MAP-02.4, AI-18.3 on MAP-02; the wall times recorded.
