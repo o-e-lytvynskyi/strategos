@@ -36,6 +36,8 @@ public final class VisionSystem implements MatchSystem {
     private int[] lastFaction = new int[0];
     private final Map<Integer, int[]> stampedBuildings = new TreeMap<>(); // handle -> faction, cell x, cell z, radius
     private boolean revealed;
+    private long seenBuildings = -1;
+    private long[] seenStats = new long[0];
     private boolean allExplored;
 
     public VisionSystem(MatchConfig config) {
@@ -90,11 +92,8 @@ public final class VisionSystem implements MatchSystem {
                 resetStamps();
                 revealed = false;
             }
-            stampUnits(state);
+            stampUnits(state); // a stamp marks its cells explored
             stampBuildings(state);
-            for (VisionGrid g : grids) {
-                g.updateExplored();
-            }
         }
         updateIndices(state);
     }
@@ -113,6 +112,7 @@ public final class VisionSystem implements MatchSystem {
         }
         Arrays.fill(lastCellX, UNSET);
         stampedBuildings.clear();
+        seenBuildings = -1;
     }
 
     private void updateIndices(MatchState state) {
@@ -167,6 +167,9 @@ public final class VisionSystem implements MatchSystem {
         if (buildings.empty() && stampedBuildings.isEmpty()) {
             return;
         }
+        if (!buildingsMoved(state)) { // nothing placed, lost, finished or modified: the stamps stand
+            return;
+        }
         for (Iterator<Map.Entry<Integer, int[]>> it =
                         stampedBuildings.entrySet().iterator();
                 it.hasNext(); ) {
@@ -180,15 +183,12 @@ public final class VisionSystem implements MatchSystem {
         int visionPath = state.stats().path(CorePaths.VISION);
         for (int handle : buildings.handles()) {
             int faction = buildings.faction(handle);
-            if (faction < 0
-                    || faction >= grids.length
-                    || buildings.state(handle) < BuildingStore.CONSTRUCTING
-                    || stampedBuildings.containsKey(handle)) {
+            if (faction < 0 || faction >= grids.length || buildings.state(handle) < BuildingStore.CONSTRUCTING) {
                 continue;
             }
             double range = CorePaths.DEFAULT_VISION;
-            if (visionPath >= 0) {
-                double v = state.templates().value(buildings.template(handle), visionPath);
+            if (visionPath >= 0) { // the faction's value: a phase's +2 vision reaches its buildings (TECH-02)
+                double v = state.stats().blockValue(buildings.template(handle), faction, visionPath);
                 if (!Double.isNaN(v)) {
                     range = v;
                 }
@@ -199,9 +199,34 @@ public final class VisionSystem implements MatchSystem {
                 VisionGrid.cellOf(buildings.anchorZ(handle)),
                 (int) (range / DiscOffsets.CELL)
             };
+            int[] was = stampedBuildings.get(handle);
+            if (was != null) {
+                if (Arrays.equals(was, s)) {
+                    continue;
+                }
+                grids[was[0]].unstamp(was[1], was[2], was[3]);
+            }
             grids[faction].stamp(s[1], s[2], s[3]);
             stampedBuildings.put(handle, s);
         }
+    }
+
+    /** Whether a building was placed, lost, finished or changed state, or a faction's modifiers moved, since the last look. */
+    private boolean buildingsMoved(MatchState state) {
+        boolean moved = state.buildings().changes() != seenBuildings;
+        seenBuildings = state.buildings().changes();
+        if (seenStats.length != grids.length) {
+            seenStats = new long[grids.length];
+            Arrays.fill(seenStats, -1);
+        }
+        for (int f = 0; f < grids.length; f++) {
+            long v = state.stats().version(f);
+            if (v != seenStats[f]) {
+                seenStats[f] = v;
+                moved = true;
+            }
+        }
+        return moved;
     }
 
     private boolean pristine() {

@@ -6,7 +6,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-/** One faction's vision: per 4-block cell the number of its viewers that see it, and the cells it ever saw. */
+/**
+ * One faction's vision: per 4-block cell the number of its viewers that see it, and the cells it ever saw. A stamp sets
+ * the explored bit of every cell it covers, so the explored set never needs a pass over the grid; a bit never clears.
+ */
 @CoreApi
 public final class VisionGrid {
     private final int cellsX;
@@ -48,7 +51,11 @@ public final class VisionGrid {
         int rr = Math.min(r, DiscOffsets.MAX_RADIUS);
         if (cx - rr >= 0 && cx + rr < cellsX && cz - rr >= 0 && cz + rr < cellsZ) {
             for (int k = 0; k < o.length; k += 2) {
-                counts[(cz + o[k + 1]) * cellsX + cx + o[k]] += (short) delta;
+                int i = (cz + o[k + 1]) * cellsX + cx + o[k];
+                counts[i] += (short) delta;
+                if (delta > 0) {
+                    explored[i >> 6] |= 1L << (i & 63);
+                }
             }
             return;
         }
@@ -56,16 +63,11 @@ public final class VisionGrid {
             int x = cx + o[k];
             int z = cz + o[k + 1];
             if (x >= 0 && x < cellsX && z >= 0 && z < cellsZ) {
-                counts[z * cellsX + x] += (short) delta;
-            }
-        }
-    }
-
-    /** Sets the explored bit of every cell that is seen now; a bit never clears. */
-    public void updateExplored() {
-        for (int i = 0; i < counts.length; i++) {
-            if (counts[i] > 0) {
-                explored[i >> 6] |= 1L << (i & 63);
+                int i = z * cellsX + x;
+                counts[i] += (short) delta;
+                if (delta > 0) {
+                    explored[i >> 6] |= 1L << (i & 63);
+                }
             }
         }
     }

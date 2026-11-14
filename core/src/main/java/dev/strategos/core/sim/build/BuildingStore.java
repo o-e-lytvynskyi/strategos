@@ -37,6 +37,8 @@ public final class BuildingStore {
     public static final long FULL = 1_000;
 
     private int high;
+
+    private long changes;
     private int[] generation = new int[8];
     private boolean[] alive = new boolean[8];
     private int[] template = new int[8];
@@ -87,6 +89,7 @@ public final class BuildingStore {
             high++;
         }
         generation[k] = Handle.nextGeneration(generation[k]);
+        changes++;
         alive[k] = true;
         this.template[k] = template;
         this.faction[k] = faction;
@@ -440,6 +443,15 @@ public final class BuildingStore {
     /** Takes the building out; its handle never names it again. */
     public void remove(int handle) {
         alive[at(handle)] = false;
+        changes++;
+    }
+
+    /**
+     * A number that moves whenever a building is placed, removed or restored or changes state; not saved or hashed, a
+     * reader caches against it.
+     */
+    public long changes() {
+        return changes;
     }
 
     /** The live buildings' handles, by slot. */
@@ -495,6 +507,9 @@ public final class BuildingStore {
 
     public void setState(int handle, int value, long progress) {
         int k = at(handle);
+        if (state[k] != value) {
+            changes++;
+        }
         state[k] = value;
         this.progress[k] = progress;
     }
@@ -721,6 +736,7 @@ public final class BuildingStore {
             throw new IllegalStateException("restoring buildings into a store that holds " + high + " slots");
         }
         grow(Math.max(8, saved.size()));
+        changes++;
         for (Saved s : saved) {
             int k = high++;
             generation[k] = s.generation();

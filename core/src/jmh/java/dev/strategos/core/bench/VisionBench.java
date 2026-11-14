@@ -61,8 +61,6 @@ public class VisionBench {
                 moved++;
             }
         }
-        grids[0].updateExplored();
-        grids[1].updateExplored();
         return moved;
     }
 

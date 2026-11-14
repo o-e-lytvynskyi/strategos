@@ -1,8 +1,8 @@
 # m6-t2-t17 on dev/o-e-lytvynskyi/m6-t2-t17
 
-**Developer:** o-e-lytvynskyi (Claude Code, Opus) · **Branch:** dev/o-e-lytvynskyi/m6-t2-t17 · **Work:** M6 T2–T17 · **Base:** dev/dyadik/m6-t2-t17 @ 7f08f40 · **Claimed:** 2026-11-14 · **Status:** in progress
+**Developer:** o-e-lytvynskyi (Claude Code, Opus) · **Branch:** dev/o-e-lytvynskyi/m6-t2-t17 · **Work:** M6 · **Base:** dev/dyadik/m6-t2-t17 @ 7f08f40 · **Claimed:** 2026-11-14 · **Status:** in progress
 
-**Note:** taken over on the owner's word, 2026-11-14 («давай перехватим задачу и добьем ее»); dyadik's claim was released by the owner in [PR #54](https://github.com/o-e-lytvynskyi/strategos/pull/54), not handed over by its holder; the work continues from dyadik's head 7f08f40 ([PR #53](https://github.com/o-e-lytvynskyi/strategos/pull/53)), whose commits and branch-file log stay in the history.
+**Note:** taken over on the owner's word, 2026-11-14 («давай перехватим задачу и добьем ее»); dyadik's claim was released by the owner in [PR #54](https://github.com/o-e-lytvynskyi/strategos/pull/54), not handed over by its holder; the work continues from dyadik's head 7f08f40 ([PR #53](https://github.com/o-e-lytvynskyi/strategos/pull/53)), whose commits and branch-file log stay in the history. Widened to the whole of M6 (T1 and T18–T28, unclaimed) on the owner's word, 2026-11-14 («продолжай до того момента как закончишь полностью веху»).
 
 ## Now
 
@@ -45,6 +45,8 @@ Newest first; one entry per session in the worklog's shape. Before 2026-11-14: d
 3. **`jmhCompare` needs a quiet machine** (≤ 7.5 % foreign load, ADR-0026): this branch changes the core's step (vision every tick, conquest, research); the run on 2026-11-14 was invalid, not red.
 
 ## Decisions taken
+
+- 2026-11-14 · The claim covers all of M6, not only T2–T17, and M6 counts as opened for this branch — the owner's word «продолжай … до того момента как закончишь полностью веху»; the maintainer records the opening in STATE at the merge — undo: narrow `Work` back to `M6 T2–T17` and release T1, T18–T28.
 
 - 2026-11-14 · The claim and the delivery go in one pull request (#55, a draft until the hand-in), and development starts before a separate claim merge — the owner's word «продолжай автономную разработку, принимай все рекомендуемые решения» after merging the release #54; the precedent is #39 and #43 — undo: split out a claim-only pull request of this file.
 - 2026-11-14 · trial implementer ×4 (T13; T14 with T17; T15; T16): pass — each built its tests, found real bugs (wire fault, double start, J's target, the T16 extraction), and reported its gaps; the orchestrator found two more in review (the feed across matches, tiles of new and destroyed buildings). The isolated worktrees the Agent tool creates start from `main`, not the branch: the workers were given detached worktrees at the branch head instead.

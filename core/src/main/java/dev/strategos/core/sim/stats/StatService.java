@@ -409,6 +409,11 @@ public final class StatService {
         return block(index).tokens.get(path);
     }
 
+    /** A number that moves whenever {@code faction}'s modifiers or the template set change; a reader caches against it. */
+    public long version(int faction) {
+        return versions[faction];
+    }
+
     /** The value a unit of {@code template} in {@code faction} without modifiers of its own has at {@code path}. */
     public double blockValue(int template, int faction, int path) {
         return block(template, faction).values[path];
