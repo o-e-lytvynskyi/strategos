@@ -7,6 +7,7 @@ import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.core.sim.PlayRules;
+import dev.strategos.core.sim.ai.Levels;
 import dev.strategos.core.sim.command.ScenarioSetup;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.server.content.MapPackageLoader;
@@ -14,7 +15,10 @@ import dev.strategos.mod.server.content.Scenarios;
 import dev.strategos.mod.server.world.ArenaPolicy;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.function.Function;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -161,32 +165,52 @@ public final class Skirmishes {
     }
 
     /**
-     * The player's skirmish: the scenario with each slot's resources scaled, the computer's slots as the scenario
-     * plays them, the population cap, then the player in slot 0.
+     * The player's skirmish: the scenario with each slot's resources scaled, the computer's slots playing {@code
+     * ai:skirmish} at the setup's level (AI-05: the script resolved for it is what {@code SetAi} carries, so the journal
+     * replays it), the population cap, then the player in slot 0.
      */
     private static void play(StrategosServer server, Pending p, SkirmishSetup setup, MatchCore core) {
         Scenario scenario = Scenarios.load(server.server(), p.scenario());
         List<Scenario.Slot> slots = new ArrayList<>();
         for (Scenario.Slot slot : scenario.slots()) {
-            // AFTER-T22: a computer's slot plays ai/skirmish.json at setup.level(), resolved into SetAi's script
-            // (§2.20)
-            slots.add(new Scenario.Slot(slot.player(), setup.startResources(slot.resources()), slot.entities()));
+            String player =
+                    slot.player().startsWith(ScenarioSetup.AI) ? ScenarioSetup.AI + Levels.PROFILE : slot.player();
+            slots.add(new Scenario.Slot(player, setup.startResources(slot.resources()), slot.entities()));
         }
-        apply(server, p.match(), new Scenario(scenario.map(), scenario.victory(), slots), core);
+        String skirmish = Objects.requireNonNull(
+                Scenarios.script(server.server(), Levels.PROFILE), "the skirmish computer player's ai/skirmish.json");
+        String level = setup.level().name().toLowerCase(Locale.ROOT);
+        apply(
+                server,
+                p.match(),
+                new Scenario(scenario.map(), scenario.victory(), slots),
+                core,
+                profile -> profile.equals(Levels.PROFILE)
+                        ? Levels.resolve(skirmish, level)
+                        : Scenarios.script(server.server(), profile));
         p.match().submit(PlayerSlot.ADMIN, new RuleChange("populationMax", String.valueOf(setup.populationCap())));
         seat(server, p.match(), p.player(), new PlayerSlot(0));
     }
 
     private static void apply(StrategosServer server, MatchRuntime rt, Scenario scenario, MatchCore core) {
+        apply(server, rt, scenario, core, profile -> Scenarios.script(server.server(), profile));
+    }
+
+    private static void apply(
+            StrategosServer server,
+            MatchRuntime rt,
+            Scenario scenario,
+            MatchCore core,
+            Function<String, @Nullable String> scripts) {
         ResourceLocation map = rt.map();
         Scenarios.apply(
-                server.server(),
                 rt,
                 scenario,
                 map == null
                         ? List.of()
                         : MapPackageLoader.load(server.server(), map).manifest().startSlots(),
-                core.queries().templates());
+                core.queries().templates(),
+                scripts);
     }
 
     private static void seat(StrategosServer server, MatchRuntime rt, UUID player, PlayerSlot slot) {

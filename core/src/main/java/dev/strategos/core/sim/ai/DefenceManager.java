@@ -23,7 +23,8 @@ import org.jspecify.annotations.Nullable;
  * else at its buildings (army, economy, civic centre). Soldiers under {@value #WOUNDED_PERCENT} per cent health
  * walk back to the centre instead. When two distinct workers are hit within {@value #BELL_WINDOW} ticks the bell is
  * rung at the civic centre (BLD-16); {@value #QUIET} ticks with no enemy within {@value #NEAR} blocks end it with the all
- * clear. The think after an attack runs at once ({@code AiSlots.wake}), so the commit follows within the cadence.
+ * clear. The think after an attack runs at once ({@code AiSlots.wake}), so the commit follows within the cadence;
+ * a level's {@code reaction} (AI-05) holds the commit back that many ticks from the fight's first sight.
  */
 final class DefenceManager implements AiModule {
     /** Ticks a blow counts as an attack going on: 10 seconds, the budget AI-04.2 gives a defence. */
@@ -50,9 +51,12 @@ final class DefenceManager implements AiModule {
     private record Hit(int handle, long tick, double x, double z, boolean worker) {}
 
     private final AiMemory memory;
+    private final int reaction;
 
-    DefenceManager(AiMemory memory) {
+    /** A defence that commits {@code reaction} ticks after it first sees the attack (a level's reaction, AI-05). */
+    DefenceManager(AiMemory memory, int reaction) {
         this.memory = memory;
+        this.reaction = reaction;
     }
 
     /** Whether a defence is going on: a blow or an enemy soldier at home within {@value #ATTACK} ticks. */
@@ -85,8 +89,13 @@ final class DefenceManager implements AiModule {
             hit |= tick - b.tick() <= ATTACK;
         }
         if (hit || soldierNear) {
+            if (!defending(memory, tick)) {
+                memory.set(Slots.ALERT_SINCE, tick + 1); // a new fight: the reaction delay runs from here
+            }
             memory.set(Slots.THREAT, tick + 1);
-            defend(view, budget, sink, base, blows, enemies);
+            if (tick - (memory.get(Slots.ALERT_SINCE) - 1) >= reaction) {
+                defend(view, budget, sink, base, blows, enemies);
+            }
             bell(budget, sink, base, blows, tick);
         }
         allClear(budget, sink, base, enemies, tick);

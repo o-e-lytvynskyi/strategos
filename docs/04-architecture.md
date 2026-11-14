@@ -732,7 +732,7 @@ Each system declares a `Cadence(period, offset)` or a per-entity stagger
 
 | System | Period | Offset or partition |
 |---|---|---|
-| Computer player *i* | 20 ticks | `(5 × i) mod 20` |
+| Computer player *i* | its level's think period: 40 ticks on Easy, 20 on Normal and Hard (M6 §2.20) | `7 × ((i + seed) mod factions)`; a woken think (attacked, a building lost) runs at once |
 | UnitAI thinks | per tier: 2, 4, 10, 20 ticks | handle stagger |
 | Auras (T2) | 10 ticks | 5 |
 | Victory check | 20 ticks | 7 |

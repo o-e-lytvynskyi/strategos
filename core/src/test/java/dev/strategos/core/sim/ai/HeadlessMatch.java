@@ -165,6 +165,21 @@ final class HeadlessMatch {
     /** As {@link #run(long, long, String, Watcher, boolean)}, on {@code ground} with {@code scenario}'s starts. */
     static Result run(
             Ground ground, Scenario scenario, long seed, long limit, String script, Watcher watcher, boolean decided) {
+        return run(ground, scenario, seed, limit, List.of(script, script), watcher, decided);
+    }
+
+    /**
+     * As above, slot {@code k} playing {@code scripts.get(k)}: two levels, two openings or two scripts in one match
+     * (AI-05's Hard against Normal).
+     */
+    static Result run(
+            Ground ground,
+            Scenario scenario,
+            long seed,
+            long limit,
+            List<String> scripts,
+            Watcher watcher,
+            boolean decided) {
         PlayRules ai = new PlayRules(PlayRules.Victory.NONE, false, true, true);
         SimHarness h = SimHarness.builder()
                 .size(ground.size(), ground.size())
@@ -181,7 +196,9 @@ final class HeadlessMatch {
             computers.add(new Scenario.Slot(ScenarioSetup.AI + "first_loop", slot.resources(), slot.entities()));
         }
         Scenario played = new Scenario(scenario.map(), scenario.victory(), computers);
-        for (Command c : ScenarioSetup.commands(played, ground.starts(), TemplateSet.builtin(), p -> script)) {
+        int[] seat = {0}; // the setup asks for each computer slot's script in slot order
+        for (Command c :
+                ScenarioSetup.commands(played, ground.starts(), TemplateSet.builtin(), p -> scripts.get(seat[0]++))) {
             h.submit(PlayerSlot.ADMIN, c);
         }
         int factions = 2;
@@ -202,7 +219,10 @@ final class HeadlessMatch {
         long[] doneAt = {-1, -1};
         long[] launched = {0, 0};
         int maxSpent = 0;
-        int steps = StrategyScript.parse(script).build().size();
+        int[] steps = {
+            StrategyScript.parse(scripts.get(0)).build().size(),
+            StrategyScript.parse(scripts.get(1)).build().size()
+        };
         int winner = -2;
         String failure = "";
         try {
@@ -292,7 +312,7 @@ final class HeadlessMatch {
                         continue;
                     }
                     maxSpent = Math.max(maxSpent, p.lastSpent());
-                    if (doneAt[f] < 0 && p.step() >= steps) {
+                    if (doneAt[f] < 0 && p.step() >= steps[f]) {
                         doneAt[f] = out.tick();
                     }
                     if (p.waves() > launched[f]) {

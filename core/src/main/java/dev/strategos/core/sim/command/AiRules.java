@@ -6,6 +6,7 @@ import dev.strategos.core.protocol.CommandKinds;
 import dev.strategos.core.protocol.RejectReason;
 import dev.strategos.core.protocol.SetAi;
 import dev.strategos.core.shared.FactionSlot;
+import dev.strategos.core.sim.AiHandicap;
 import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.MatchState;
@@ -37,10 +38,12 @@ final class AiRules {
             }
             if (set.script().isEmpty()) {
                 state.aiSlots().set(faction, null);
+                AiHandicap.apply(state, faction);
                 return Tally.acceptAll(envelope, kind(), 0);
             }
             try {
                 state.aiSlots().set(faction, new ComputerPlayer(faction, set.profile(), set.script()));
+                AiHandicap.apply(state, faction);
             } catch (IllegalArgumentException e) {
                 return Tally.rejectAll(envelope, kind(), 0, RejectReason.INVALID_ARGUMENT);
             }

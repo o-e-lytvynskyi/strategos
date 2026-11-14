@@ -27,6 +27,7 @@ final class TemplateSwap {
         state.progress().swap(set);
         Techs.reapply(state, old); // the researched techs' effects, from the new set (spec row 22)
         Techs.dropRetired(state, old);
+        AiHandicap.reapply(state); // the computer players' open handicaps, from the new set (AI-05)
         state.costs().swap(state.stats());
         state.gatherRates().swap(state.stats());
         state.spatial().swap(set);

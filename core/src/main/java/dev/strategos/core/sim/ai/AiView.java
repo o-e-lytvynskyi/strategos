@@ -1,6 +1,7 @@
 package dev.strategos.core.sim.ai;
 
 import dev.strategos.core.content.StartSlot;
+import dev.strategos.core.content.TechDef;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.content.ValuePath;
@@ -228,6 +229,52 @@ public final class AiView {
             }
         }
         return true;
+    }
+
+    /** Technology {@code tech}'s cost in resource {@code resource}, thousandths. */
+    public long cost(TechDef tech, String resource) {
+        Double units = tech.cost().get(resource);
+        return units == null ? 0 : Math.max(0, Math.round(units * 1000));
+    }
+
+    /** Whether its stock covers technology {@code tech}'s cost. */
+    public boolean affords(TechDef tech) {
+        for (String r : resources()) {
+            if (stock(r) < cost(tech, r)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** Whether the faction has researched {@code tech}, or an own building holds it in its queue. */
+    public boolean hasOrQueues(TechDef tech) {
+        if (q.researched(new FactionSlot(faction)).contains(tech.id())) {
+            return true;
+        }
+        int entry = dev.strategos.core.shared.QueueEntry.techEntry(tech.netIndex());
+        for (BuildingView b : buildings()) {
+            if (b.queue().contains(entry)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Whether building template {@code building} researches {@code tech}: its {@code Researcher/techs}. */
+    public boolean researches(TemplateId building, TechDef tech) {
+        UnitTemplate t = q.templates().byId(building);
+        ValuePath path = q.templates().tokenPaths().byPath("Researcher/techs");
+        String techs = t == null || path == null ? null : q.templates().text(t.netIndex(), path.id());
+        if (techs == null) {
+            return false;
+        }
+        for (String id : techs.trim().split("\\s+", -1)) {
+            if (id.equals(tech.id().value())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** Whether building template {@code building} trains unit template {@code unit}: its {@code Trainer/units}. */

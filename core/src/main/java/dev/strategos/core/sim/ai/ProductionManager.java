@@ -52,7 +52,7 @@ final class ProductionManager implements AiModule {
                 have[view.roleOf(t)]++;
             }
         }
-        TemplateId due = BuildManager.due(view, script, memory);
+        BuildManager.Due due = BuildManager.due(view, script, memory);
         for (BuildingView b : view.buildings()) {
             if (budget.exhausted()) {
                 return;
@@ -89,10 +89,10 @@ final class ProductionManager implements AiModule {
         }
     }
 
-    /** Whether the stock covers {@code a}'s cost and {@code b}'s together. */
-    private static boolean affordsBoth(AiView view, TemplateId a, TemplateId b) {
+    /** Whether the stock covers {@code a}'s cost and what is due's together. */
+    private static boolean affordsBoth(AiView view, TemplateId a, BuildManager.Due due) {
         for (String r : view.resources()) {
-            if (view.stock(r) < view.cost(a, r) + view.cost(b, r)) {
+            if (view.stock(r) < view.cost(a, r) + due.cost(view, r)) {
                 return false;
             }
         }

@@ -40,7 +40,7 @@ public final class ComputerPlayer {
             }
             StrategyScript s = strategy.opened((int) memory.get(Slots.OPENING) - 1);
             m = List.of(
-                    new DefenceManager(memory),
+                    new DefenceManager(memory, strategy.level().reaction()),
                     new EconomyManager(s, memory),
                     new ProductionManager(s, memory),
                     new BuildManager(s, memory),
@@ -96,6 +96,16 @@ public final class ComputerPlayer {
         return faction;
     }
 
+    /** The ticks between its thinks (its level's, 20 by default). */
+    public int period() {
+        return strategy.level().think();
+    }
+
+    /** Its level's open handicap (none for a script without a level). */
+    public StrategyScript.Handicap handicap() {
+        return strategy.level().handicap();
+    }
+
     public String profile() {
         return profile;
     }
@@ -110,10 +120,15 @@ public final class ComputerPlayer {
 
     /** One think: every module in turn, within {@code budget}, sending through {@code sink}. */
     public void think(AiView view, AiBudget budget, CommandSink sink) {
+        int most = strategy.level().commands();
+        int[] sent = {0};
         CommandSink counted = command -> {
             memory.set(Slots.COMMANDS, memory.get(Slots.COMMANDS) + 1);
             memory.set(Slots.LAST_COMMAND, view.tick());
             sink.send(command);
+            if (most > 0 && ++sent[0] >= most) {
+                budget.exhaust(); // a level's commands per think: the rest wait for the next one
+            }
         };
         for (AiModule m : modules(view)) {
             if (budget.exhausted()) {

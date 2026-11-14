@@ -207,6 +207,7 @@ final class Snapshots {
         }
         state.outcome().restore(snapshot.play().outcome());
         state.aiSlots().restore(snapshot.play().ai(), snapshot.play().aiWake());
+        AiHandicap.reapply(state); // the stats start empty: each computer player's open handicap (AI-05)
         state.alerts().restore(snapshot.play().alerts());
         state.shots().restore(snapshot.play().shots());
         state.stances().restore(snapshot.play().stances(), Handle::index);

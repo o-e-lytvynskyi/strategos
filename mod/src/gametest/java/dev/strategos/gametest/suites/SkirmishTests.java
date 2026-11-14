@@ -4,16 +4,23 @@ import static dev.strategos.gametest.suites.Units.check;
 import static dev.strategos.gametest.suites.Units.core;
 
 import dev.strategos.core.content.MapManifest;
+import dev.strategos.core.protocol.SetAi;
 import dev.strategos.core.protocol.SkirmishSetup;
 import dev.strategos.core.shared.FactionSlot;
+import dev.strategos.core.sim.CommandEnvelope;
+import dev.strategos.core.sim.InputEvent;
 import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.core.sim.PlayRules;
+import dev.strategos.core.sim.TickInputs;
+import dev.strategos.core.sim.ai.Levels;
+import dev.strategos.core.sim.ai.StrategyScript;
 import dev.strategos.core.testkit.SimHarness;
 import dev.strategos.gametest.MatchFixture;
 import dev.strategos.gametest.StrategosTest;
 import dev.strategos.gametest.net.MockViewer;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.server.content.MapPackageLoader;
+import dev.strategos.mod.server.content.Scenarios;
 import dev.strategos.mod.server.match.MatchRefusedException;
 import dev.strategos.mod.server.match.MatchRuntime;
 import dev.strategos.mod.server.match.MatchSpace;
@@ -72,7 +79,7 @@ public final class SkirmishTests {
     /**
      * MATCH-02.1: the setup the screen sends (map, rules, level, resources, cap, visibility) makes a match on that map;
      * once imported it holds the chosen population cap, visibility and Conquest, twice the scenario's starting
-     * resources, the player seated in slot 0 and the computer commanding from slot 1; and the same player cannot start
+     * resources, the player seated in slot 0 and the computer commanding from slot 1, playing ai:skirmish at the chosen level (Hard); and the same player cannot start
      * a second skirmish while the first is still importing.
      */
     @StrategosTest(batch = "map_skirmish_setup", solo = true, timeoutTicks = 40_000)
@@ -128,6 +135,27 @@ public final class SkirmishTests {
                             .sum();
                     // the scenario grants 300 food, 100 stone and 100 iron, doubled; the treasury counts thousandths
                     check(a == 1_000_000L && b == 1_000_000L, "treasuries " + a + " and " + b);
+                })
+                .thenExecute(() -> {
+                    // AI-05: slot 1 is the computer, ai:skirmish at the chosen level; the journal holds what it plays
+                    List<SetAi> seated = new ArrayList<>();
+                    for (TickInputs t : core(rt).journal().nonEmptyTicks()) {
+                        for (InputEvent e : t.events()) {
+                            if (e instanceof CommandEnvelope c && c.command() instanceof SetAi set) {
+                                seated.add(set);
+                            }
+                        }
+                    }
+                    check(seated.size() == 1, "computer players set: " + seated.size());
+                    SetAi set = seated.get(0);
+                    check(
+                            set.faction().value() == 1,
+                            "the computer sits in slot " + set.faction().value());
+                    check(set.profile().equals(Levels.PROFILE), "profile " + set.profile());
+                    String shipped = Scenarios.script(server.server(), Levels.PROFILE);
+                    check(shipped != null, "no ai/skirmish.json");
+                    check(set.script().equals(Levels.resolve(shipped, "hard")), "not the script resolved at Hard");
+                    check(StrategyScript.parse(set.script()).level().name().equals("hard"), "level not Hard");
                 })
                 .thenWaitUntil(() -> check(commands[0] > 0, "the computer in slot 1 has commanded nothing yet"))
                 .thenExecute(() -> server.matches().dispose(rt.id()))

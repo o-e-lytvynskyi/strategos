@@ -55,6 +55,8 @@ final class Slots {
     static final int NEAR = 23;
     /** One more than the tick the defence last had a fight at home (a blow, or an enemy soldier near); 0 before. */
     static final int THREAT = 24;
+    /** One more than the tick the defence's current fight began, for a level's reaction delay (AI-05); 0 before. */
+    static final int ALERT_SINCE = 25;
 
     private Slots() {}
 }

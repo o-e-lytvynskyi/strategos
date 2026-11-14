@@ -23,7 +23,9 @@ import java.util.TreeMap;
  * {@code dropsite} names the building put up by a resource's nearest node once every own dropsite of it lies far from
  * there; a step's {@code near} puts its building by the nearest node of a resource or by an own building of a template.
  * AI-03's {@code battle} block holds the tactics' knobs, all off by default ({@link Battle}); a difficulty is a script
- * with other knobs. AI-04's {@code openings} are drawn from at the first think ({@link Opening}).
+ * with other knobs. AI-04's {@code openings} are drawn from at the first think ({@link Opening}). AI-05's
+ * {@code level} (resolved into a script by {@link Levels}) holds the pace of a difficulty ({@link Level}); a build
+ * step may research a tech or a phase instead of placing a building.
  */
 public record StrategyScript(
         String worker,
@@ -41,20 +43,86 @@ public record StrategyScript(
         String dropsite,
         Battle battle,
         List<Opening> openings,
-        Camp camp) {
+        Camp camp,
+        Level level) {
     /**
      * A build order step: the building, once the population reaches {@code population}, by {@code near} when it names
-     * one: a resource's nearest node, or an own building of that template id; "" for no preference.
+     * one: a resource's nearest node, or an own building of that template id; "" for no preference. A research step
+     * ({@code {"research": <tech>}}, or {@code {"phase": "town"}} for {@code strategos:phase_town}) names the tech in
+     * {@code research} instead and has {@link #NONE} for its building; it is done once the faction has the tech or
+     * queues it.
      */
-    public record Step(TemplateId building, int population, String near) {
+    public record Step(TemplateId building, int population, String near, String research) {
+        /** The building of a research step. */
+        public static final TemplateId NONE = new TemplateId("strategos:none");
+
         static final Codec<Step> CODEC = RecordCodecBuilder.create(i -> i.group(
-                        TemplateId.CODEC.fieldOf("building").forGetter(Step::building),
+                        TemplateId.CODEC.optionalFieldOf("building", NONE).forGetter(Step::building),
                         Codec.INT.optionalFieldOf("population", 0).forGetter(Step::population),
-                        Codec.STRING.optionalFieldOf("near", "").forGetter(Step::near))
-                .apply(i, Step::new));
+                        Codec.STRING.optionalFieldOf("near", "").forGetter(Step::near),
+                        Codec.STRING.optionalFieldOf("research", "").forGetter(Step::research),
+                        Codec.STRING.optionalFieldOf("phase", "").forGetter(step -> ""))
+                .apply(
+                        i,
+                        (building, population, near, research, phase) -> new Step(
+                                building, population, near, phase.isEmpty() ? research : "strategos:phase_" + phase)));
 
         public Step(TemplateId building, int population) {
-            this(building, population, "");
+            this(building, population, "", "");
+        }
+
+        public Step(TemplateId building, int population, String near) {
+            this(building, population, near, "");
+        }
+
+        public Step {
+            if (research.isEmpty() == building.equals(NONE)) {
+                throw new IllegalArgumentException(
+                        "a step places a building or researches a tech, not both or neither");
+            }
+        }
+
+        /** Whether this step researches a tech. */
+        public boolean researches() {
+            return !research.isEmpty();
+        }
+    }
+
+    /**
+     * What a difficulty changes of the pace (AI-05, §2.20), the rest of it being in the script itself ({@link Levels}
+     * resolves it): the ticks between thinks, the ticks a defence waits after the attack is seen, the most commands one
+     * think sends (0 for no limit) and the open handicap. {@link #NONE} is the pace every script had before.
+     */
+    public record Level(String name, int think, int reaction, int commands, Handicap handicap) {
+        public static final Level NONE = new Level("", 20, 0, 0, Handicap.NONE);
+
+        static final Codec<Level> CODEC = RecordCodecBuilder.create(i -> i.group(
+                        Codec.STRING.optionalFieldOf("name", "").forGetter(Level::name),
+                        Codec.intRange(1, 1_200).optionalFieldOf("think", 20).forGetter(Level::think),
+                        Codec.intRange(0, 1_200).optionalFieldOf("reaction", 0).forGetter(Level::reaction),
+                        Codec.intRange(0, 1_000).optionalFieldOf("commands", 0).forGetter(Level::commands),
+                        Handicap.CODEC
+                                .optionalFieldOf("handicap", Handicap.NONE)
+                                .forGetter(Level::handicap))
+                .apply(i, Level::new));
+    }
+
+    /**
+     * The open handicap of a level (D-19, the faction modifier source {@code ai_handicap}): gathering rates and unit
+     * training times are multiplied by {@code gather} and {@code train}; 1 for none. Never above 1 for gathering nor
+     * below 1 for training: a handicap, not a bonus (row 9).
+     */
+    public record Handicap(double gather, double train) {
+        public static final Handicap NONE = new Handicap(1, 1);
+
+        static final Codec<Handicap> CODEC = RecordCodecBuilder.create(i -> i.group(
+                        Codec.doubleRange(0.1, 1).optionalFieldOf("gather", 1.0).forGetter(Handicap::gather),
+                        Codec.doubleRange(1, 10).optionalFieldOf("train", 1.0).forGetter(Handicap::train))
+                .apply(i, Handicap::new));
+
+        /** Whether it changes anything. */
+        public boolean any() {
+            return gather != 1 || train != 1;
         }
     }
 
@@ -211,7 +279,8 @@ public record StrategyScript(
                 dropsite,
                 battle,
                 openings,
-                camp);
+                camp,
+                level);
     }
 
     public StrategyScript {
@@ -248,8 +317,50 @@ public record StrategyScript(
                             .listOf()
                             .optionalFieldOf("openings", List.of())
                             .forGetter(StrategyScript::openings),
-                    Camp.CODEC.optionalFieldOf("camp", Camp.DEFAULT).forGetter(StrategyScript::camp))
-            .apply(i, StrategyScript::new));
+                    Tail.CODEC.forGetter(script -> new Tail(script.camp(), script.level())))
+            .apply(
+                    i,
+                    (worker,
+                            maxWorkers,
+                            ratio,
+                            build,
+                            margin,
+                            soldier,
+                            queue,
+                            attack,
+                            sites,
+                            livestock,
+                            balance,
+                            reserve,
+                            dropsite,
+                            battle,
+                            openings,
+                            tail) -> new StrategyScript(
+                            worker,
+                            maxWorkers,
+                            ratio,
+                            build,
+                            margin,
+                            soldier,
+                            queue,
+                            attack,
+                            sites,
+                            livestock,
+                            balance,
+                            reserve,
+                            dropsite,
+                            battle,
+                            openings,
+                            tail.camp(),
+                            tail.level())));
+
+    /** The last two fields, grouped: a record codec takes at most 16 fields. */
+    private record Tail(Camp camp, Level level) {
+        static final com.mojang.serialization.MapCodec<Tail> CODEC = RecordCodecBuilder.mapCodec(i -> i.group(
+                        Camp.CODEC.optionalFieldOf("camp", Camp.DEFAULT).forGetter(Tail::camp),
+                        Level.CODEC.optionalFieldOf("level", Level.NONE).forGetter(Tail::level))
+                .apply(i, Tail::new));
+    }
 
     /** The script in {@code json}; a malformed one throws {@link IllegalArgumentException}. */
     public static StrategyScript parse(String json) {
