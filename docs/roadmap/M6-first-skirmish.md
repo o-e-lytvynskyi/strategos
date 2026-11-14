@@ -286,7 +286,7 @@ only its own vision at every level except that labelled top level.
   2. Hard beats Normal, and Normal beats Easy, in at least 124 of 200 seeded L1 matches (L1).
   3. No level below the labelled top receives a bonus, and every handicap is listed in setup (L1).
 - **Tests:** L0, L1 · **Depends on:** AI-04, TECH-02, D-19 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress (checks 1 and 3 2026-11-14: `DifficultyTest.normalReachesTownOnTime`, `noBonusAndEveryHandicapListed`; check 2 in T23)
 
 ### Interface
 

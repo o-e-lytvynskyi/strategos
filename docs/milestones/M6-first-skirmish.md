@@ -199,6 +199,9 @@ None. The `strategos:ping` payload stays with multiplayer pings (UI-15, M7); UI-
 | 54 | AI-04's memory and draw (T21) | AiMemory slots 17–24 (opening, last attack, rebuild, camp, camp y, bell, near, threat): 11–16 were AI-03's. The opening is drawn at the player's first think (within 140 ticks), not at the match's start; a script without `openings` draws nothing and keeps its build order |
 | 55 | The camp (T21) | "On the path" is a flood-fill-reachable point on the straight line to the enemy; on small maps it is capped at 0.75 of the way, so it may lie under 40 blocks. `camp.minDistance` is a script field: 40 by default, 0 (the old muster point) in `first_loop`, `economy` and `battle`, so M3–M5's matches and their tests keep their timings; the skirmish script (T22) takes the default. The camp lives in AI memory, so a resumed match restores its markers |
 | 56 | Targets and the raid bar (T21) | The army → economy → centre priority applies in defence; waves attack-move and burn the centre as before. The raid bar counts down a fixed 1,200 ticks after the leave (no wave-end event). The reaction-delay knob is T22's. The battle bot's march sent `Attack.replace` to the whole wave every think, resetting each unit's stuck count, so units in a burners' lane never reached the give-up rung: it now orders only soldiers not already on the target (`FieldWaveTest`, kb rts-sim) |
+| 57 | AI-05's pace (T22) | `ComputerPlayer` thinks on its level's period (40/20/20); the offset formula stays (row 4, 04 §4.5 corrected). The level's commands-per-think cap exhausts the think's budget, so no module sees a dropped command. The reaction delay runs from the fight's first sight (AiMemory slot 25, `SIZE` 26); the bell is not delayed |
+| 58 | Research steps (T22) | A due tech's reserve lasts 5 minutes (a building's 1). A step is done once the tech is researched or queued; an unmet requirement (five Village buildings) is retried every 100 ticks. Normal's Town lands at 10.7–11.9 minutes over 10 seeds with the ratio food 24, wood 36, stone 9, iron 4 and the Town step at population 22 — stone was the gate. `HeadlessMatch` ran with explored and AI vision on; T23 adds fog |
+| 59 | The handicap (T22) | `ai_handicap` is derived from the script's `level.handicap` (a faction modifier on every `ResourceGatherer/rates/*` path and on units' `Cost/time`), never saved, re-derived at restore and at a swap; its codec admits gather ≤ 1 and training ≥ 1 only (row 9) |
 
 ### 1.7 Consent plan
 
@@ -735,7 +738,7 @@ kernel adds `:core:jmh :core:jmhCompare`.
 
 - [x] T2.1 (2026-10-25) · [x] T2.2 (2026-10-25) · [x] T3 (2026-10-26) · [x] T4 (2026-11-12) · [x] T5 (2026-11-12) · [x] T6 (2026-11-12) · [x] T7 (2026-11-13) · [x] T8 (2026-11-12) · [x] T9 (2026-11-12) · [x] T10 (2026-11-13) · [x] T11 (2026-11-13) · [x] T12.1 (2026-11-13) · [x] T12.2 (2026-11-13)
 - [x] T13 (2026-11-14) · [x] T14 (2026-11-14) · [x] T15 (2026-11-14) · [x] T16 (2026-11-14) · [x] T17 (2026-11-14) · [x] T1 (2026-11-14) · [x] T18 (2026-11-14) · [x] T19 (2026-11-14) · [x] T20 (2026-11-14) · [x] T21 (2026-11-14)
-- [ ] T22 · [ ] T23 · [ ] T24 · [x] T25 (2026-11-14) · [ ] T27 · [ ] T28
+- [x] T22 (2026-11-14) · [ ] T23 · [ ] T24 · [x] T25 (2026-11-14) · [ ] T27 · [ ] T28
 
 ---
 
