@@ -66,17 +66,19 @@ final class MilitaryManager implements AiModule {
                     && memory.get(Slots.WAVE) > 0
                     && handles.length > 0
                     && away(base, soldiers, Tactics.home(a))
-                    && pushFogMarch(budget, sink, base, battle, handles)) {
+                    && pushFogMarch(view, budget, sink, base, battle, soldiers)) {
                 return;
             }
             if (!waveDue) {
                 return;
             }
-            double dx = base.enemyX() - base.x();
-            double dz = base.enemyZ() - base.z();
-            double d = Math.max(1, DetMath.length(dx, dz));
-            int mx = (int) Math.floor(base.x() + dx / d * a.muster());
-            int mz = (int) Math.floor(base.z() + dz / d * a.muster());
+            if (DefenceManager.defending(memory, tick)) {
+                return; // the base is under attack: its soldiers stay to defend it (AI-04)
+            }
+            int[] camp =
+                    CampSite.find(view, budget, base, a.muster(), script.camp().minDistance());
+            int mx = camp[0];
+            int mz = camp[1];
             budget.spend(20);
             sink.send(Move.replace(UnitSet.of(handles), new Vec2d(mx + 0.5, mz + 0.5)));
             sink.send(new AnnounceWave(mx, mz, 20 * a.announce()));
@@ -97,6 +99,7 @@ final class MilitaryManager implements AiModule {
             }
             memory.set(Slots.WAVE, memory.get(Slots.WAVE) + 1);
             memory.set(Slots.MUSTER, 0);
+            memory.set(Slots.LAST_ATTACK, tick + 1);
             if (battle.fights()) {
                 memory.set(Slots.FIGHT, 1);
                 memory.set(Slots.FOCUS, 0);
@@ -109,13 +112,39 @@ final class MilitaryManager implements AiModule {
      * once a civic centre is visible send every soldier to burn it.
      */
     private static boolean pushFogMarch(
-            AiBudget budget, CommandSink sink, Base base, StrategyScript.Battle battle, int[] handles) {
+            AiView view,
+            AiBudget budget,
+            CommandSink sink,
+            Base base,
+            StrategyScript.Battle battle,
+            List<UnitView> soldiers) {
         if (battle.fights()) {
             return false;
         }
+        // only soldiers not already on it: an order sent again resets a unit's stuck count, so a unit held up in a
+        // crowd round the centre would never climb the ladder to its end (a think's re-order every 20 ticks)
+        Vec2d front = Tactics.front(base);
+        List<Integer> idle = new ArrayList<>();
+        for (UnitView u : soldiers) {
+            boolean onIt = base.enemy() == null
+                    ? u.target() != null
+                            && DetMath.length(
+                                            u.target().x() - front.x(),
+                                            u.target().z() - front.z())
+                                    < 4
+                    : view.attackTarget(u) == base.enemy().handle()
+                            || view.burning(u, base.enemy().handle());
+            if (!onIt) {
+                idle.add(u.handle());
+            }
+        }
+        if (idle.isEmpty()) {
+            return true; // all on their way: nothing to say, and the think is done
+        }
+        int[] handles = idle.stream().mapToInt(Integer::intValue).toArray();
         budget.spend(10);
         if (base.enemy() == null) {
-            sink.send(AttackMove.replace(UnitSet.of(handles), Tactics.front(base)));
+            sink.send(AttackMove.replace(UnitSet.of(handles), front));
         } else {
             sink.send(Attack.replace(UnitSet.of(handles), base.enemy().handle()));
         }

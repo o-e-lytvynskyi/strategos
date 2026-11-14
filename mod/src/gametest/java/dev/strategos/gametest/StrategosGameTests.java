@@ -286,6 +286,11 @@ public final class StrategosGameTests {
         afterBatch(level, "ai_seed_1");
     }
 
+    @AfterBatch(batch = "ai_waves")
+    public static void afterAiWaves(ServerLevel level) {
+        afterBatch(level, "ai_waves");
+    }
+
     @AfterBatch(batch = "ai_seed_2")
     public static void afterAiSeed2(ServerLevel level) {
         afterBatch(level, "ai_seed_2");

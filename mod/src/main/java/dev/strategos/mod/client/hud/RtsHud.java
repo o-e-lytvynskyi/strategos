@@ -740,6 +740,7 @@ public final class RtsHud {
         if (shown()) {
             banners.notices(g, List.of(), clientTicks - news.alertAt() < 100);
             banners.feed(g, news.feed().visible(clientTicks), clientTicks);
+            banners.raidBar(g);
             overlays.draw(g, mode.active());
         }
     }

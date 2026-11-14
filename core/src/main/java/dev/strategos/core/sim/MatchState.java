@@ -240,6 +240,15 @@ public final class MatchState {
         return alerts;
     }
 
+    /** Building {@code handle} of a computer player was destroyed: its rebuilder is told where it stood (AI-04). */
+    public void recordLoss(int handle) {
+        int faction = buildings.faction(handle);
+        if (aiSlots.get(faction) != null) {
+            Footprint at = footprintOf(handle);
+            alerts.lost(faction, buildings.template(handle), at.anchorX(), at.anchorZ(), at.rotation(), tick());
+        }
+    }
+
     /** Blueprint {@code b}'s damage ranks (BLD-05), worked out once a match: derived, neither hashed nor saved. */
     public int[] damageRanks(Blueprint b) {
         return damageRanks.of(b);

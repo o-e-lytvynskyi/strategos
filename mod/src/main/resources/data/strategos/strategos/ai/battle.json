@@ -41,5 +41,6 @@
     "launch": 0.6,
     "spears": 6,
     "line": 400
-  }
+  },
+  "camp": { "minDistance": 0 }
 }

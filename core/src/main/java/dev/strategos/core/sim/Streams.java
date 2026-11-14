@@ -4,6 +4,8 @@ package dev.strategos.core.sim;
 public final class Streams {
     public static final int SPAWN = 1;
     public static final int SHOT = 2;
+    /** A computer player's opening, drawn once at its first think (AI-04); M6's streams start at 10. */
+    public static final int OPENING = 10;
 
     private Streams() {}
 }

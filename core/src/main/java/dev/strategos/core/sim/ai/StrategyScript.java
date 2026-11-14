@@ -23,7 +23,7 @@ import java.util.TreeMap;
  * {@code dropsite} names the building put up by a resource's nearest node once every own dropsite of it lies far from
  * there; a step's {@code near} puts its building by the nearest node of a resource or by an own building of a template.
  * AI-03's {@code battle} block holds the tactics' knobs, all off by default ({@link Battle}); a difficulty is a script
- * with other knobs.
+ * with other knobs. AI-04's {@code openings} are drawn from at the first think ({@link Opening}).
  */
 public record StrategyScript(
         String worker,
@@ -39,7 +39,9 @@ public record StrategyScript(
         boolean balance,
         boolean reserve,
         String dropsite,
-        Battle battle) {
+        Battle battle,
+        List<Opening> openings,
+        Camp camp) {
     /**
      * A build order step: the building, once the population reaches {@code population}, by {@code near} when it names
      * one: a resource's nearest node, or an own building of that template id; "" for no preference.
@@ -124,7 +126,96 @@ public record StrategyScript(
         }
     }
 
+    /**
+     * An opening (AI-04): a weight it is drawn by, and what it changes of the script: a build order (empty keeps the
+     * script's), a worker target (-1 keeps it), the soldier queue (-1 keeps it) and the attack schedule (none keeps it).
+     * Rush attacks early with a short build order and few workers, boom grows a large economy first, balanced sits
+     * between; the data holds the numbers.
+     */
+    public record Opening(
+            String name,
+            int weight,
+            List<Step> build,
+            int maxWorkers,
+            int soldierQueue,
+            java.util.Optional<Attack> attack) {
+        static final Codec<Opening> CODEC = RecordCodecBuilder.create(i -> i.group(
+                        Codec.STRING.fieldOf("name").forGetter(Opening::name),
+                        Codec.intRange(1, 1_000).optionalFieldOf("weight", 1).forGetter(Opening::weight),
+                        Step.CODEC.listOf().optionalFieldOf("build", List.of()).forGetter(Opening::build),
+                        Codec.intRange(0, 200).optionalFieldOf("maxWorkers", -1).forGetter(Opening::maxWorkers),
+                        Codec.intRange(0, 20)
+                                .optionalFieldOf("soldierQueue", -1)
+                                .forGetter(Opening::soldierQueue),
+                        Attack.CODEC.optionalFieldOf("attack").forGetter(Opening::attack))
+                .apply(i, Opening::new));
+
+        public Opening {
+            build = List.copyOf(build);
+        }
+    }
+
+    /**
+     * Where a wave musters (AI-04): at least {@code minDistance} blocks from the base's centre; 0 keeps the attack's own
+     * {@code muster} distance on the line to the enemy, as M3 to M5 scripts played.
+     */
+    public record Camp(int minDistance) {
+        public static final Camp DEFAULT = new Camp(40);
+
+        static final Codec<Camp> CODEC = RecordCodecBuilder.create(i -> i.group(Codec.intRange(0, 200)
+                        .optionalFieldOf("minDistance", 40)
+                        .forGetter(Camp::minDistance))
+                .apply(i, Camp::new));
+    }
+
+    /** The opening drawn for {@code roll} in {@code 0 .. totalWeight() - 1} by weight, in order; -1 with none. */
+    public int pick(int roll) {
+        int left = roll;
+        for (int k = 0; k < openings.size(); k++) {
+            left -= openings.get(k).weight();
+            if (left < 0) {
+                return k;
+            }
+        }
+        return openings.isEmpty() ? -1 : openings.size() - 1;
+    }
+
+    /** The openings' weights together. */
+    public int totalWeight() {
+        int sum = 0;
+        for (Opening o : openings) {
+            sum += o.weight();
+        }
+        return sum;
+    }
+
+    /** This script as opening {@code index} changes it; the script itself for -1 or none such. */
+    public StrategyScript opened(int index) {
+        if (index < 0 || index >= openings.size()) {
+            return this;
+        }
+        Opening o = openings.get(index);
+        return new StrategyScript(
+                worker,
+                o.maxWorkers() >= 0 ? o.maxWorkers() : maxWorkers,
+                ratio,
+                o.build().isEmpty() ? build : o.build(),
+                housingMargin,
+                soldier,
+                o.soldierQueue() >= 0 ? o.soldierQueue() : soldierQueue,
+                o.attack().orElse(attack),
+                sites,
+                livestock,
+                balance,
+                reserve,
+                dropsite,
+                battle,
+                openings,
+                camp);
+    }
+
     public StrategyScript {
+        openings = List.copyOf(openings);
         ratio = Collections.unmodifiableSortedMap(new TreeMap<>(ratio));
         build = List.copyOf(build);
         sites = sites.stream().map(List::copyOf).toList();
@@ -152,7 +243,12 @@ public record StrategyScript(
                     Codec.BOOL.optionalFieldOf("balance", false).forGetter(StrategyScript::balance),
                     Codec.BOOL.optionalFieldOf("reserve", false).forGetter(StrategyScript::reserve),
                     Codec.STRING.optionalFieldOf("dropsite", "").forGetter(StrategyScript::dropsite),
-                    Battle.CODEC.optionalFieldOf("battle", Battle.NONE).forGetter(StrategyScript::battle))
+                    Battle.CODEC.optionalFieldOf("battle", Battle.NONE).forGetter(StrategyScript::battle),
+                    Opening.CODEC
+                            .listOf()
+                            .optionalFieldOf("openings", List.of())
+                            .forGetter(StrategyScript::openings),
+                    Camp.CODEC.optionalFieldOf("camp", Camp.DEFAULT).forGetter(StrategyScript::camp))
             .apply(i, StrategyScript::new));
 
     /** The script in {@code json}; a malformed one throws {@link IllegalArgumentException}. */

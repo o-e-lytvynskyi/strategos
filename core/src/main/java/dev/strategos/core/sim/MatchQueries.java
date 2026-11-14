@@ -144,6 +144,16 @@ public interface MatchQueries {
     /** The path service's counts since the match started. */
     PathService.Stats pathStats();
 
+    /** The blows on computer player {@code faction}'s units and buildings of the last 30 seconds, one a unit (AI-04). */
+    default List<DefenceLog.Blow> blows(int faction) {
+        return List.of();
+    }
+
+    /** Computer player {@code faction}'s destroyed buildings its rebuilder has not handled yet (AI-04). */
+    default List<DefenceLog.Loss> losses(int faction) {
+        return List.of();
+    }
+
     /** The blocks the core owns, as they must stand (MATCH-04): what a resumed match's reconciler puts back. */
     default List<WorldEffect> worldClaims() {
         return List.of();

@@ -97,6 +97,7 @@ public final class CombatSystem implements MatchSystem {
                 s.matchStats().buildingLost(faction.value());
             }
             s.aiSlots().wake(faction.value()); // a computer player that lost a building thinks at once
+            s.recordLoss(handle); // a computer player's rebuilder places it again (AI-04)
             s.outputs().add(new Notice(faction, NoticeKind.UNIT_LOST, handle, "destroyed"));
             s.destroyBuilding(handle);
         }

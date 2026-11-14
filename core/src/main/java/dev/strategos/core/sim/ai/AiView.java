@@ -6,6 +6,7 @@ import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.content.ValuePath;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.TemplateId;
+import dev.strategos.core.sim.DefenceLog;
 import dev.strategos.core.sim.MatchBounds;
 import dev.strategos.core.sim.MatchQueries;
 import dev.strategos.core.sim.UnitView;
@@ -55,6 +56,32 @@ public final class AiView {
 
     public long tick() {
         return q.tick();
+    }
+
+    /** The match's seed, for a draw that must replay (AI-04's opening). */
+    public long seed() {
+        return q.config().seed();
+    }
+
+    /** The blows on its units and buildings of the last 30 seconds, one a unit (AI-04); each spends a unit. */
+    public List<DefenceLog.Blow> blows() {
+        List<DefenceLog.Blow> out = q.blows(faction);
+        budget.spend(out.size());
+        return out;
+    }
+
+    /** Its buildings destroyed lately, oldest first (AI-04); each spends a unit. */
+    public List<DefenceLog.Loss> losses() {
+        List<DefenceLog.Loss> out = q.losses(faction);
+        budget.spend(out.size());
+        return out;
+    }
+
+    /** The id of the template with net index {@code index}, null for none. */
+    public @Nullable TemplateId templateId(int index) {
+        return index >= 0 && index < q.templates().indexCount() && q.templates().has(index)
+                ? q.templates().byIndex(index).id()
+                : null;
     }
 
     public TemplateSet templates() {
@@ -307,5 +334,13 @@ public final class AiView {
         return !orders.isEmpty() && orders.get(0).kind() == OrderKind.ATTACK
                 ? orders.get(0).target()
                 : 0;
+    }
+
+    /** Whether unit {@code u}'s current order is to burn building {@code building}. */
+    public boolean burning(UnitView u, int building) {
+        List<OrderQueues.Order> orders = q.orders(u.handle());
+        return !orders.isEmpty()
+                && orders.get(0).kind() == OrderKind.BURN
+                && orders.get(0).target() == building;
     }
 }

@@ -10,6 +10,7 @@ import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.WaveAnnounced;
+import dev.strategos.core.sim.WaveCamps;
 import dev.strategos.core.sim.ai.ComputerPlayer;
 
 /**
@@ -64,6 +65,7 @@ final class AiRules {
             }
             state.outputs()
                     .add(new WaveAnnounced(new FactionSlot(faction), wave.x(), wave.z(), state.tick() + wave.ticks()));
+            WaveCamps.raise(state, faction, wave.x(), wave.z()); // its campfire and banners, till it leaves (AI-04)
             return Tally.acceptAll(envelope, kind(), 0);
         }
     }

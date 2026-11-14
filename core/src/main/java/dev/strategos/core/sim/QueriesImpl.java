@@ -436,6 +436,28 @@ final class QueriesImpl implements MatchQueries {
     }
 
     @Override
+    public List<DefenceLog.Blow> blows(int faction) {
+        List<DefenceLog.Blow> out = new java.util.ArrayList<>();
+        for (Alerts.Blow b : state.alerts().blows) {
+            if (b.faction() == faction) {
+                out.add(new DefenceLog.Blow(b.handle(), b.tick()));
+            }
+        }
+        return out;
+    }
+
+    @Override
+    public List<DefenceLog.Loss> losses(int faction) {
+        List<DefenceLog.Loss> out = new java.util.ArrayList<>();
+        for (Alerts.Loss l : state.alerts().losses) {
+            if (l.faction() == faction) {
+                out.add(new DefenceLog.Loss(l.template(), l.x(), l.z(), l.rotation(), l.tick()));
+            }
+        }
+        return out;
+    }
+
+    @Override
     public List<WorldEffect> worldClaims() {
         return WorldClaims.of(state);
     }

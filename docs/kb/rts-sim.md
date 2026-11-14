@@ -107,6 +107,12 @@ to do with it here. This is about ORCA, unit crowds and JMH. The mod toolchain i
   because units are not solid to each other. Only a unit with speed 0 (a modifier) has no exit on
   any rung.
 
+- A bot that sends the same order to a unit on every think resets its stuck count each time (a new
+  order resets it), so a unit held up in a crowd (a one-block lane of burners round a centre, two
+  swapped head-on) never reaches the ladder's end and the invariant "WALKING without progress for
+  641 ticks" fires, though the ladder is fine. Send an order only to units not already on it
+  (`MilitaryManager.pushFogMarch`, M6 T21; `FieldWaveTest`).
+
 ## A task pool for pathfinding: how to measure
 
 - A harness that steps ticks back to back lies: the worker threads do not get the 50 ms between

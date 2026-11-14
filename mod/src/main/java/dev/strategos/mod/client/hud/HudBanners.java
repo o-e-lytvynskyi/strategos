@@ -5,6 +5,7 @@ import dev.strategos.core.client.hud.GroupBar;
 import dev.strategos.core.client.hud.HudRect;
 import dev.strategos.core.client.hud.HudTheme;
 import dev.strategos.core.client.hud.NotificationFeed;
+import dev.strategos.core.client.hud.RaidBar;
 import dev.strategos.core.protocol.MatchControl;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.MatchNews;
@@ -68,6 +69,37 @@ final class HudBanners {
             case TRAINED, BUILT -> 0xA0FFA0;
             case ECONOMY -> 0xFFFFA0;
         };
+    }
+
+    /**
+     * The raid bar (AI-04): our own layer, red and notched like a vanilla raid's, under the resource bar in the middle.
+     * It fills with the muster and counts down once the wave has left; {@link RaidBar} says how full it is.
+     */
+    void raidBar(GuiGraphics g) {
+        MatchJoin joined = StrategosClient.match();
+        RaidBar bar = joined == null
+                ? null
+                : RaidBar.of(
+                        StrategosClient.model().wave(),
+                        joined.slot().value(),
+                        StrategosClient.model().tick());
+        if (bar == null) {
+            return;
+        }
+        Font font = Minecraft.getInstance().font;
+        HudRect layout = RtsHud.layout().resourceBar();
+        int width = 182; // vanilla's boss bar
+        int x = (RtsHud.layout().guiWidth() - width) / 2;
+        int y = layout.bottom() + 14;
+        String title = bar.marching() ? "Raid on the march" : "Raid in " + bar.seconds() + " s";
+        g.drawCenteredString(font, title, x + width / 2, y - 11, 0xFFFF4040);
+        g.fill(x - 1, y - 1, x + width + 1, y + 6, 0xFF000000);
+        g.fill(x, y, x + width, y + 5, 0xFF3A1010);
+        g.fill(x, y, x + Math.round(width * bar.fill()), y + 5, 0xFFC02020);
+        for (int k = 1; k < RaidBar.NOTCHES; k++) { // the ten notches
+            int nx = x + RaidBar.notchAt(k, width);
+            g.fill(nx, y, nx + 1, y + 5, 0xFF000000);
+        }
     }
 
     /** The newest notices, right-aligned in the notices' strip, the newest nearest the corner. */
