@@ -30,5 +30,6 @@
     "muster": 24,
     "announce": 30
   },
-  "sites": []
+  "sites": [],
+  "camp": { "minDistance": 0 }
 }

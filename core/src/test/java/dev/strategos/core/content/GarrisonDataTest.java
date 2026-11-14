@@ -27,7 +27,11 @@ class GarrisonDataTest {
             }
             flats.add(new TemplateCompiler.Flat(t.id(), t.netIndex(), json));
         }
-        return TemplateCompiler.fromFlattened(flats);
+        return TemplateCompiler.fromFlattened(
+                flats,
+                TemplateSet.builtin().techs().stream()
+                        .map(TemplateCompiler.TechFlat::of)
+                        .toList());
     }
 
     @Test

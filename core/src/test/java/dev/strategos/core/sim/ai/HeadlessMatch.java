@@ -3,6 +3,7 @@ package dev.strategos.core.sim.ai;
 import com.google.gson.JsonParser;
 import com.mojang.serialization.JsonOps;
 import dev.strategos.core.content.Scenario;
+import dev.strategos.core.content.StartSlot;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.Command;
 import dev.strategos.core.protocol.NoticeKind;
@@ -11,9 +12,11 @@ import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.sim.KernelAccess;
 import dev.strategos.core.sim.MatchEnded;
+import dev.strategos.core.sim.MatchRules;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.Notice;
 import dev.strategos.core.sim.OutputEvent;
+import dev.strategos.core.sim.PlayRules;
 import dev.strategos.core.sim.TickOutputs;
 import dev.strategos.core.sim.UnderAttack;
 import dev.strategos.core.sim.UnitCreated;
@@ -25,8 +28,10 @@ import dev.strategos.core.sim.WaveAnnounced;
 import dev.strategos.core.sim.build.BuildingView;
 import dev.strategos.core.sim.command.ScenarioSetup;
 import dev.strategos.core.sim.journal.JournalExport;
+import dev.strategos.core.testkit.FirstSkirmish;
 import dev.strategos.core.testkit.ProvingGround;
 import dev.strategos.core.testkit.SimHarness;
+import dev.strategos.core.testkit.VoxelWorld;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -141,24 +146,82 @@ final class HeadlessMatch {
      * soldier may well be silent that long.
      */
     static Result run(long seed, long limit, String script, Watcher watcher, boolean decided) {
-        ProvingGround ground = ProvingGround.generate();
+        return run(Ground.provingGround(), firstLoop(), seed, limit, script, watcher, decided);
+    }
+
+    /** The map a run plays on: its terrain and its start slots. */
+    record Ground(int size, int height, VoxelWorld voxels, List<StartSlot> starts) {
+        static Ground provingGround() {
+            ProvingGround g = ProvingGround.generate();
+            return new Ground(ProvingGround.SIZE, ProvingGround.HEIGHT, g.voxels(), g.startSlots());
+        }
+
+        static Ground firstSkirmish() {
+            FirstSkirmish g = FirstSkirmish.generate();
+            return new Ground(FirstSkirmish.SIZE, FirstSkirmish.HEIGHT, g.voxels(), g.startSlots());
+        }
+    }
+
+    /** As {@link #run(long, long, String, Watcher, boolean)}, on {@code ground} with {@code scenario}'s starts. */
+    static Result run(
+            Ground ground, Scenario scenario, long seed, long limit, String script, Watcher watcher, boolean decided) {
+        return run(ground, scenario, seed, limit, List.of(script, script), watcher, decided);
+    }
+
+    /**
+     * As above, slot {@code k} playing {@code scripts.get(k)}: two levels, two openings or two scripts in one match
+     * (AI-05's Hard against Normal).
+     */
+    static Result run(
+            Ground ground,
+            Scenario scenario,
+            long seed,
+            long limit,
+            List<String> scripts,
+            Watcher watcher,
+            boolean decided) {
+        return run(ground, scenario, seed, limit, scripts, watcher, decided, EXPLORED);
+    }
+
+    /** The rules of QA-11's matches: explored, the AI seeing through everything, no victory rule of its own. */
+    static final PlayRules EXPLORED = new PlayRules(PlayRules.Victory.NONE, false, true, true);
+
+    /**
+     * The rules of QA-12's matches (MAP-02 with fog on, AI-18's fair AI): conquest decides, no cell starts explored,
+     * the AI sees what its faction sees. The scenario's own victory rule is applied by its setup.
+     */
+    static final PlayRules FOGGED = new PlayRules(PlayRules.Victory.CONQUEST, false, false, false);
+
+    /** As above, under {@code ai}'s play rules: {@link #EXPLORED} or {@link #FOGGED}. */
+    static Result run(
+            Ground ground,
+            Scenario scenario,
+            long seed,
+            long limit,
+            List<String> scripts,
+            Watcher watcher,
+            boolean decided,
+            PlayRules ai) {
         SimHarness h = SimHarness.builder()
-                .size(ProvingGround.SIZE, ProvingGround.SIZE)
-                .yBand(0, ProvingGround.HEIGHT, 16)
+                .size(ground.size(), ground.size())
+                .yBand(0, ground.height(), 16)
                 .seed(seed)
+                .rules(MatchRules.DEFAULTS.withPlay(ai))
                 .build();
         h.publishAll(ground.voxels());
         h.step();
-        Scenario scenario = firstLoop();
+        MatchState s = KernelAccess.state(h.core());
+        s.setStartPositions(ground.starts()); // AI-18: the AI knows the starts under fog
         List<Scenario.Slot> computers = new ArrayList<>();
         for (Scenario.Slot slot : scenario.slots()) {
             computers.add(new Scenario.Slot(ScenarioSetup.AI + "first_loop", slot.resources(), slot.entities()));
         }
         Scenario played = new Scenario(scenario.map(), scenario.victory(), computers);
-        for (Command c : ScenarioSetup.commands(played, ground.startSlots(), TemplateSet.builtin(), p -> script)) {
+        int[] seat = {0}; // the setup asks for each computer slot's script in slot order
+        for (Command c :
+                ScenarioSetup.commands(played, ground.starts(), TemplateSet.builtin(), p -> scripts.get(seat[0]++))) {
             h.submit(PlayerSlot.ADMIN, c);
         }
-        MatchState s = KernelAccess.state(h.core());
         int factions = 2;
         long firstContact = -1;
         List<List<Integer>> army = new ArrayList<>();
@@ -177,8 +240,15 @@ final class HeadlessMatch {
         long[] doneAt = {-1, -1};
         long[] launched = {0, 0};
         int maxSpent = 0;
-        int steps = StrategyScript.parse(script).build().size();
+        int[] steps = {
+            StrategyScript.parse(scripts.get(0)).build().size(),
+            StrategyScript.parse(scripts.get(1)).build().size()
+        };
         int winner = -2;
+        boolean watchState =
+                ai.victory() == PlayRules.Victory.CONQUEST; // QA-12's watchdog: the state, not the commands
+        long lastDigest = 0;
+        long changedAt = 0;
         String failure = "";
         try {
             while (h.tick() < limit && winner == -2) {
@@ -267,7 +337,7 @@ final class HeadlessMatch {
                         continue;
                     }
                     maxSpent = Math.max(maxSpent, p.lastSpent());
-                    if (doneAt[f] < 0 && p.step() >= steps) {
+                    if (doneAt[f] < 0 && p.step() >= steps[f]) {
                         doneAt[f] = out.tick();
                     }
                     if (p.waves() > launched[f]) {
@@ -276,8 +346,20 @@ final class HeadlessMatch {
                             left.add(out.tick()); // its attack order went out in this tick's think
                         }
                     }
-                    if (decided && !s.outcome().defeated(f) && out.tick() - Math.max(p.lastCommand(), 1) > STALL) {
+                    if (decided
+                            && !watchState
+                            && !s.outcome().defeated(f)
+                            && out.tick() - Math.max(p.lastCommand(), 1) > STALL) {
                         failure = "faction " + f + " stalled: no command since tick " + p.lastCommand();
+                    }
+                }
+                if (watchState && decided && out.tick() % STATE_SAMPLE == 0) {
+                    long digest = progress(h);
+                    if (digest != lastDigest) {
+                        lastDigest = digest;
+                        changedAt = out.tick();
+                    } else if (out.tick() - changedAt >= STALL) {
+                        failure = "stalled: no state change since tick " + changedAt;
                     }
                 }
                 if (!failure.isEmpty()) {
@@ -320,6 +402,32 @@ final class HeadlessMatch {
                 h.stateHash(),
                 failure);
         return new Result(summary, new JournalExport(h.core().journal(), h.tick(), h.stateHash()));
+    }
+
+    /** How often the state is sampled for the watchdog: ticks. */
+    static final long STATE_SAMPLE = 100;
+
+    /**
+     * A digest of what moves in a match: every unit's place, every building's progress and health, every
+     * faction's stock. Not the match's hash, which holds the tick and so always changes: a match whose digest stays
+     * the same for {@link #STALL} ticks has stopped.
+     */
+    static long progress(SimHarness h) {
+        long d = 17;
+        for (UnitView u : units(h)) {
+            d = d * 31 + Double.hashCode(u.x());
+            d = d * 31 + Double.hashCode(u.z());
+        }
+        int factions = 2;
+        for (BuildingView b : h.core().queries().buildings()) {
+            d = d * 31 + b.handle();
+            d = d * 31 + b.progress();
+            d = d * 31 + Double.hashCode(b.hitPoints());
+        }
+        for (int f = 0; f < factions; f++) {
+            d = d * 31 + h.core().queries().treasury(new FactionSlot(f)).stock().hashCode();
+        }
+        return d;
     }
 
     private static List<UnitView> units(SimHarness h) {

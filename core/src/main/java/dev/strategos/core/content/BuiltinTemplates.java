@@ -2,7 +2,9 @@ package dev.strategos.core.content;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import dev.strategos.core.shared.TechId;
 import dev.strategos.core.shared.TemplateId;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -23,7 +25,8 @@ final class BuiltinTemplates {
             {
               "parent": "strategos:template/unit_base",
               "abstract": true,
-              "Identity": { "classes": "+Infantry +Organic" }
+              "Identity": { "classes": "+Infantry +Organic" },
+              "Look": { "weapon": 0, "armour": 0 }
             }
             """;
     static final String DEBUG_WALKER = """
@@ -90,6 +93,7 @@ final class BuiltinTemplates {
               "UnitMotion": { "walkSpeed": 0.34, "mobility": "large" },
               "Attack": { "Melee": { "hack": 10, "reach": 1.5, "prepare": 8, "repeat": 18 } },
               "Resistance": { "hack": 3, "pierce": 2, "crush": 2 },
+              "Look": { "weapon": 0, "armour": 0 },
               "Cost": {
                 "resources": { "food": 80, "wood": 40, "iron": 30 },
                 "population": 1,
@@ -105,7 +109,7 @@ final class BuiltinTemplates {
               "Health": { "max": 50 },
               "Behaviour": { "flee": 8, "stance": "passive" },
               "Cost": { "resources": { "food": 60 }, "population": 1, "time": 10 },
-              "Builder": { "rate": 1 },
+              "Builder": { "rate": 1, "buildings": "strategos:building/civic_centre strategos:building/house strategos:building/barracks strategos:building/storehouse strategos:building/farmstead strategos:building/field" },
               "ResourceGatherer": {
                 "rates": { "food": { "fruit": 1, "grain": 0.5, "meat": 1 }, "wood": { "tree": 0.6 }, "stone": { "rock": 0.4 }, "iron": { "ore": 0.35 } },
                 "capacities": { "food": 10, "wood": 10, "stone": 10, "iron": 10 },
@@ -176,7 +180,8 @@ final class BuiltinTemplates {
               "Housing": { "capacity": 20 },
               "GarrisonHolder": { "capacity": 20, "classes": "Worker Infantry" },
               "Trainer": { "units": "strategos:unit/worker", "batchExponent": 0.8 },
-              "Limit": { "count": 1 }
+              "Limit": { "count": 1 },
+              "Researcher": { "techs": "strategos:phase_town" }
             }
             """;
     static final String FIELD = """
@@ -194,7 +199,7 @@ final class BuiltinTemplates {
     static final String HOUSE = """
             {
               "parent": "strategos:template/building_base",
-              "Identity": { "name": "strategos.building.house", "icon": "minecraft:oak_door", "classes": "+House" },
+              "Identity": { "name": "strategos.building.house", "icon": "minecraft:oak_door", "classes": "+House +Village" },
               "Building": { "blueprint": "strategos:house", "material": "wood" },
               "Resistance": { "fire": 0 },
               "Health": { "max": 400 },
@@ -205,12 +210,13 @@ final class BuiltinTemplates {
     static final String BARRACKS = """
             {
               "parent": "strategos:template/building_base",
-              "Identity": { "name": "strategos.building.barracks", "icon": "minecraft:shield", "classes": "+Barracks" },
+              "Identity": { "name": "strategos.building.barracks", "icon": "minecraft:shield", "classes": "+Barracks +Village" },
               "Building": { "blueprint": "strategos:barracks", "material": "wood" },
               "Resistance": { "fire": 0 },
               "Health": { "max": 1200 },
               "Cost": { "resources": { "wood": 200, "stone": 100, "iron": 50 }, "time": 60 },
-              "Trainer": { "units": "strategos:unit/infantry strategos:unit/archer strategos:unit/horseman", "batchExponent": 0.8 }
+              "Trainer": { "units": "strategos:unit/infantry strategos:unit/archer strategos:unit/horseman", "batchExponent": 0.8 },
+              "Researcher": { "techs": "" }
             }
             """;
 
@@ -218,26 +224,190 @@ final class BuiltinTemplates {
      * The net indices the built-in set gives, in the order its templates arrived: M2's units first, so their indices
      * stay 0 and 1 whatever ids later templates sort under (M3 spec §9 R10); a new id is appended.
      */
+    static final String TOWER = """
+            {
+              "parent": "strategos:template/building_base",
+              "Identity": { "name": "strategos.building.tower", "icon": "minecraft:crossbow", "classes": "+Tower" },
+              "Building": { "blueprint": "strategos:tower" },
+              "Health": { "max": 1000 },
+              "Vision": { "range": 24 },
+              "Attack": { "Building": { "arrows": 1, "interval": 40, "pierce": 10, "range": 28 } },
+              "Cost": { "resources": { "wood": 100, "stone": 150 }, "time": 75 }
+            }
+            """;
+
+    static final String ARSENAL = """
+            {
+              "parent": "strategos:template/building_base",
+              "Identity": { "name": "strategos.building.arsenal", "icon": "minecraft:anvil", "classes": "+Arsenal" },
+              "Building": { "blueprint": "strategos:arsenal" },
+              "Health": { "max": 1500 },
+              "Cost": { "resources": { "wood": 200, "stone": 150 }, "time": 90 },
+              "Trainer": { "units": "strategos:unit/ram", "batchExponent": 0.8 }
+            }
+            """;
+    static final String RAM = """
+            {
+              "parent": "strategos:template/unit_base",
+              "Identity": { "name": "strategos.unit.ram", "icon": "minecraft:oak_log", "classes": "+Siege +Ram" },
+              "Health": { "max": 500 },
+              "UnitMotion": { "walkSpeed": 0.1, "mobility": "large" },
+              "Attack": { "Melee": { "crush": 40, "reach": 1.5, "prepare": 20, "repeat": 40, "restrictedClasses": "Unit Field" } },
+              "Resistance": { "hack": 1, "pierce": 8, "crush": 3 },
+              "Cost": {
+                "resources": { "wood": 150, "iron": 70 },
+                "population": 3,
+                "time": { "$derive": { "from": "strategos:unit/worker", "path": "Cost/time", "factor": 3 }, "note": "A ram is framed and hung in three times a worker's training" }
+              },
+              "Body": { "entityType": "strategos:unit_large", "model": "ram", "width": 2.0, "height": 2.0, "radius": 1.0 }
+            }
+            """;
+
     static final String STOREHOUSE = """
             {
               "parent": "strategos:template/building_base",
-              "Identity": { "name": "strategos.building.storehouse", "icon": "minecraft:barrel", "classes": "+Storehouse" },
+              "Identity": { "name": "strategos.building.storehouse", "icon": "minecraft:barrel", "classes": "+Storehouse +Village" },
               "Building": { "blueprint": "strategos:storehouse" },
               "Health": { "max": 800 },
               "Cost": { "resources": { "wood": 100, "stone": 50 }, "time": 40 },
-              "Dropsite": { "resources": "wood stone iron" }
+              "Dropsite": { "resources": "wood stone iron" },
+              "Researcher": { "techs": "strategos:gather_wood_1 strategos:gather_stone_1 strategos:gather_iron_1 strategos:carry_1" }
+            }
+            """;
+
+    static final String GATHER_WOOD_1 = """
+            {
+              "name": "strategos.tech.gather_wood_1",
+              "icon": "minecraft:iron_axe",
+              "cost": { "food": 100, "wood": 50 },
+              "time": 30,
+              "effects": [
+                { "path": "ResourceGatherer/rates/wood/tree", "op": "mul", "value": 1.2, "filter": "Worker" }
+              ]
+            }
+            """;
+
+    static final String GATHER_FARM_1 = """
+            {
+              "name": "strategos.tech.gather_farm_1",
+              "icon": "minecraft:iron_hoe",
+              "cost": { "food": 50, "wood": 100 },
+              "time": 30,
+              "effects": [
+                { "path": "ResourceGatherer/rates/food/grain", "op": "mul", "value": 1.2, "filter": "Worker" }
+              ]
+            }
+            """;
+
+    static final String GATHER_STONE_1 = """
+            {
+              "name": "strategos.tech.gather_stone_1",
+              "icon": "minecraft:iron_pickaxe",
+              "cost": { "food": 100, "wood": 100 },
+              "time": 35,
+              "effects": [
+                { "path": "ResourceGatherer/rates/stone/rock", "op": "mul", "value": 1.2, "filter": "Worker" }
+              ]
+            }
+            """;
+
+    static final String GATHER_IRON_1 = """
+            {
+              "name": "strategos.tech.gather_iron_1",
+              "icon": "minecraft:raw_iron",
+              "cost": { "food": 100, "wood": 100, "stone": 50 },
+              "time": 40,
+              "effects": [
+                { "path": "ResourceGatherer/rates/iron/ore", "op": "mul", "value": 1.2, "filter": "Worker" }
+              ]
+            }
+            """;
+
+    static final String CARRY_1 = """
+            {
+              "name": "strategos.tech.carry_1",
+              "icon": "minecraft:bundle",
+              "cost": { "food": 150, "wood": 100 },
+              "time": 40,
+              "effects": [
+                { "path": "ResourceGatherer/capacities/food", "op": "add", "value": 5, "filter": "Worker" },
+                { "path": "ResourceGatherer/capacities/wood", "op": "add", "value": 5, "filter": "Worker" },
+                { "path": "ResourceGatherer/capacities/stone", "op": "add", "value": 5, "filter": "Worker" },
+                { "path": "ResourceGatherer/capacities/iron", "op": "add", "value": 5, "filter": "Worker" }
+              ]
+            }
+            """;
+
+    static final String IRON_WEAPONS = """
+            {
+              "name": "strategos.tech.iron_weapons",
+              "icon": "minecraft:iron_sword",
+              "cost": { "food": 200, "wood": 100, "iron": 150 },
+              "time": 60,
+              "requires": { "phase": "town" },
+              "effects": [
+                { "path": "Attack/Melee/hack", "op": "add", "value": 1, "filter": "Spearman Cavalry" },
+                { "path": "Attack/Melee/pierce", "op": "add", "value": 1, "filter": "Spearman Cavalry" },
+                { "path": "Attack/Ranged/pierce", "op": "add", "value": 1, "filter": "Archer" },
+                { "path": "Look/weapon", "op": "add", "value": 1, "filter": "Infantry Cavalry" }
+              ]
+            }
+            """;
+
+    static final String CHAINMAIL = """
+            {
+              "name": "strategos.tech.chainmail",
+              "icon": "minecraft:chainmail_chestplate",
+              "cost": { "food": 200, "wood": 100, "iron": 150 },
+              "time": 60,
+              "requires": { "phase": "town" },
+              "effects": [
+                { "path": "Resistance/hack", "op": "add", "value": 1, "filter": "Infantry Cavalry" },
+                { "path": "Resistance/pierce", "op": "add", "value": 1, "filter": "Infantry Cavalry" },
+                { "path": "Look/armour", "op": "add", "value": 1, "filter": "Infantry Cavalry" }
+              ]
+            }
+            """;
+
+    static final String PHASE_VILLAGE = """
+            {
+              "name": "strategos.tech.phase_village",
+              "icon": "minecraft:hay_block",
+              "classes": ["Phase"],
+              "ordinal": 0,
+              "time": 1
+            }
+            """;
+
+    static final String PHASE_TOWN = """
+            {
+              "name": "strategos.tech.phase_town",
+              "icon": "minecraft:bell",
+              "classes": ["Phase"],
+              "ordinal": 1,
+              "cost": { "food": 500, "wood": 600, "stone": 300, "iron": 200 },
+              "time": 60,
+              "requires": { "buildings": { "filter": "Village", "count": 5 } },
+              "effects": [
+                { "path": "Health/max", "op": "mul", "value": 1.1, "filter": "Structure+!Field" },
+                { "path": "Vision/range", "op": "add", "value": 2, "filter": "Structure+!Field" },
+                { "path": "Researcher/techs", "op": "tokens", "tokens": "+strategos:iron_weapons +strategos:chainmail", "filter": "Barracks" },
+                { "path": "Builder/buildings", "op": "tokens", "tokens": "+strategos:building/tower +strategos:building/arsenal", "filter": "Builder" }
+              ],
+              "unlocks": ["strategos:iron_weapons", "strategos:chainmail", "strategos:building/tower", "strategos:building/arsenal"]
             }
             """;
 
     static final String FARMSTEAD = """
             {
               "parent": "strategos:template/building_base",
-              "Identity": { "name": "strategos.building.farmstead", "icon": "minecraft:hay_block", "classes": "+Farmstead" },
+              "Identity": { "name": "strategos.building.farmstead", "icon": "minecraft:hay_block", "classes": "+Farmstead +Village" },
               "Building": { "blueprint": "strategos:farmstead" },
               "Health": { "max": 600 },
               "Cost": { "resources": { "wood": 100 }, "time": 35 },
               "Dropsite": { "resources": "food" },
-              "Reseeder": { "reach": 24 }
+              "Reseeder": { "reach": 24 },
+              "Researcher": { "techs": "strategos:gather_farm_1" }
             }
             """;
     static final String QUARRY = """
@@ -296,40 +466,110 @@ final class BuiltinTemplates {
             new TemplateId("strategos:building/farmstead"), // M4, previously appended implicitly
             new TemplateId("strategos:building/storehouse"),
             new TemplateId("strategos:unit/archer"), // M5
-            new TemplateId("strategos:unit/horseman")));
+            new TemplateId("strategos:unit/horseman"),
+            new TemplateId("strategos:building/tower"), // M6 T20
+            new TemplateId("strategos:building/arsenal"), // M6 T19
+            new TemplateId("strategos:unit/ram")));
+
+    /** The indices the built-in techs were given, kept as {@link #PINNED} keeps the templates' (row 20). */
+    private static final TechIdTable PINNED_TECHS = new TechIdTable(List.of(
+            new TechId("strategos:gather_wood_1"),
+            new TechId("strategos:phase_town"), // M6 T3
+            new TechId("strategos:phase_village"),
+            new TechId("strategos:carry_1"), // M6 T18
+            new TechId("strategos:chainmail"),
+            new TechId("strategos:gather_farm_1"),
+            new TechId("strategos:gather_iron_1"),
+            new TechId("strategos:gather_stone_1"),
+            new TechId("strategos:iron_weapons")));
 
     private BuiltinTemplates() {}
 
     static TemplateSet compile() {
+        return compile(true);
+    }
+
+    /**
+     * The set with its techs (the wood tech and the phases Village and Town), the class {@code Village} and the
+     * {@code Researcher} of the storehouse and the civic centre, or without all of them, as it was before TECH-01.
+     */
+    static TemplateSet compile(boolean withTechs) {
+        List<RawTemplate> templates = new ArrayList<>(List.of(
+                raw("strategos:template/unit_base", UNIT_BASE),
+                raw("strategos:template/unit_infantry", UNIT_INFANTRY, withTechs),
+                raw("strategos:template/unit_fauna", UNIT_FAUNA),
+                raw("strategos:template/building_base", BUILDING_BASE),
+                raw("strategos:unit/debug_walker", DEBUG_WALKER),
+                raw("strategos:unit/infantry", INFANTRY),
+                raw("strategos:unit/archer", ARCHER),
+                raw("strategos:unit/horseman", HORSEMAN, withTechs),
+                raw("strategos:unit/worker", WORKER, withTechs),
+                raw("strategos:unit/sheep", SHEEP),
+                raw("strategos:unit/pig", PIG),
+                raw("strategos:unit/chicken", CHICKEN),
+                raw("strategos:building/civic_centre", CIVIC_CENTRE, withTechs),
+                raw("strategos:building/field", FIELD),
+                raw("strategos:building/house", HOUSE, withTechs),
+                raw("strategos:building/barracks", BARRACKS, withTechs),
+                raw("strategos:building/storehouse", STOREHOUSE, withTechs),
+                raw("strategos:building/farmstead", FARMSTEAD, withTechs),
+                raw("strategos:building/quarry", QUARRY),
+                raw("strategos:building/quarry_large", QUARRY_LARGE),
+                raw("strategos:building/iron_mine", IRON_MINE),
+                raw("strategos:building/iron_mine_large", IRON_MINE_LARGE)));
+        if (withTechs) {
+            templates.add(raw("strategos:building/tower", TOWER)); // on the build list Town adds (BLD-17)
+            templates.add(raw("strategos:building/arsenal", ARSENAL)); // M6 T19
+            templates.add(raw("strategos:unit/ram", RAM));
+        }
         TemplateCompiler.Result result = TemplateCompiler.compile(
-                List.of(
-                        raw("strategos:template/unit_base", UNIT_BASE),
-                        raw("strategos:template/unit_infantry", UNIT_INFANTRY),
-                        raw("strategos:template/unit_fauna", UNIT_FAUNA),
-                        raw("strategos:template/building_base", BUILDING_BASE),
-                        raw("strategos:unit/debug_walker", DEBUG_WALKER),
-                        raw("strategos:unit/infantry", INFANTRY),
-                        raw("strategos:unit/archer", ARCHER),
-                        raw("strategos:unit/horseman", HORSEMAN),
-                        raw("strategos:unit/worker", WORKER),
-                        raw("strategos:unit/sheep", SHEEP),
-                        raw("strategos:unit/pig", PIG),
-                        raw("strategos:unit/chicken", CHICKEN),
-                        raw("strategos:building/civic_centre", CIVIC_CENTRE),
-                        raw("strategos:building/field", FIELD),
-                        raw("strategos:building/house", HOUSE),
-                        raw("strategos:building/barracks", BARRACKS),
-                        raw("strategos:building/storehouse", STOREHOUSE),
-                        raw("strategos:building/farmstead", FARMSTEAD),
-                        raw("strategos:building/quarry", QUARRY),
-                        raw("strategos:building/quarry_large", QUARRY_LARGE),
-                        raw("strategos:building/iron_mine", IRON_MINE),
-                        raw("strategos:building/iron_mine_large", IRON_MINE_LARGE)),
-                PINNED);
+                templates,
+                withTechs
+                        ? List.of(
+                                tech("strategos:gather_wood_1", GATHER_WOOD_1),
+                                tech("strategos:gather_farm_1", GATHER_FARM_1),
+                                tech("strategos:gather_stone_1", GATHER_STONE_1),
+                                tech("strategos:gather_iron_1", GATHER_IRON_1),
+                                tech("strategos:carry_1", CARRY_1),
+                                tech("strategos:iron_weapons", IRON_WEAPONS),
+                                tech("strategos:chainmail", CHAINMAIL),
+                                tech("strategos:phase_town", PHASE_TOWN),
+                                tech("strategos:phase_village", PHASE_VILLAGE))
+                        : List.of(),
+                PINNED,
+                PINNED_TECHS,
+                PlaceholderBlueprints.byId());
         if (!result.ok()) {
             throw new IllegalStateException("the builtin templates do not compile: " + result.problems());
         }
         return result.set();
+    }
+
+    private static RawTech tech(String id, String json) {
+        return new RawTech(
+                new TechId(id),
+                "builtin/techs/" + id.substring(id.indexOf(':') + 1) + ".json",
+                JsonParser.parseString(json).getAsJsonObject());
+    }
+
+    /**
+     * A template as the set had it before TECH-01 without {@code withTechs}: no {@code Researcher}, no {@code Look}
+     * (TECH-03), and none of the class {@code Village} (TECH-02), so that set keeps its version.
+     */
+    private static RawTemplate raw(String id, String json, boolean withTechs) {
+        JsonObject object = JsonParser.parseString(json).getAsJsonObject();
+        if (!withTechs) {
+            object.remove("Researcher");
+            object.remove("Look"); // TECH-03's tiers, which only the techs raise
+            if (object.has("Builder")) {
+                object.getAsJsonObject("Builder").remove("buildings"); // the build list the phases add to (BLD-17)
+            }
+            JsonObject identity = object.getAsJsonObject("Identity");
+            identity.addProperty(
+                    "classes", identity.get("classes").getAsString().replace(" +Village", ""));
+        }
+        String path = id.substring(id.indexOf(':') + 1);
+        return new RawTemplate(new TemplateId(id), "builtin/" + path + ".json", object);
     }
 
     private static RawTemplate raw(String id, String json) {

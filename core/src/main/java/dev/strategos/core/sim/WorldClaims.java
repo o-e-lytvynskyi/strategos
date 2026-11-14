@@ -77,6 +77,7 @@ public final class WorldClaims {
                         0));
             }
         }
+        out.addAll(WaveCamps.claims(s));
         return out;
     }
 

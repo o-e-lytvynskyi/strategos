@@ -3,6 +3,7 @@ package dev.strategos.mod.server.net;
 import dev.strategos.core.protocol.MatchControl;
 import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.mod.StrategosServer;
+import dev.strategos.mod.server.match.MatchRefusedException;
 import dev.strategos.mod.server.match.MatchRegistry;
 import dev.strategos.mod.server.match.MatchRuntime;
 import dev.strategos.mod.server.net.payload.CameraJumpPayload;
@@ -10,8 +11,10 @@ import dev.strategos.mod.server.net.payload.CommandsPayload;
 import dev.strategos.mod.server.net.payload.DebugSubscribePayload;
 import dev.strategos.mod.server.net.payload.MatchControlPayload;
 import dev.strategos.mod.server.net.payload.ModeSwitchPayload;
+import dev.strategos.mod.server.net.payload.SkirmishPayload;
 import dev.strategos.mod.server.net.payload.TemplateAckPayload;
 import dev.strategos.mod.server.net.payload.UiQueryPayload;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
@@ -147,6 +150,27 @@ public final class C2sHandlers {
                             seat.match(),
                             payload.request(),
                             server.server().getTickCount());
+        }
+    }
+
+    /**
+     * A skirmish from the setup screen (MATCH-02): the integrated server's owner, or an operator; never a player who
+     * already sits in a match. A refusal is logged and told to the player.
+     */
+    public static void skirmish(SkirmishPayload payload, IPayloadContext context) {
+        StrategosServer server = StrategosServer.getOrNull();
+        if (server == null || !(context.player() instanceof ServerPlayer player)) {
+            return;
+        }
+        boolean owner = server.server().isSingleplayerOwner(player.getGameProfile());
+        if (!owner && !player.hasPermissions(2)) {
+            LOG.warn("{} asked for a skirmish without being the host or an operator", player.getScoreboardName());
+            return;
+        }
+        try {
+            server.skirmishes().start(server, payload.setup(), player);
+        } catch (MatchRefusedException e) {
+            player.sendSystemMessage(Component.literal("[Strategos] skirmish refused: " + e.getMessage()));
         }
     }
 

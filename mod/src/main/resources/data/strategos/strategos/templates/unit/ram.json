@@ -1,0 +1,14 @@
+{
+  "parent": "strategos:template/unit_base",
+  "Identity": { "name": "strategos.unit.ram", "icon": "minecraft:oak_log", "classes": "+Siege +Ram" },
+  "Health": { "max": 500 },
+  "UnitMotion": { "walkSpeed": 0.1, "mobility": "large" },
+  "Attack": { "Melee": { "crush": 40, "reach": 1.5, "prepare": 20, "repeat": 40, "restrictedClasses": "Unit Field" } },
+  "Resistance": { "hack": 1, "pierce": 8, "crush": 3 },
+  "Cost": {
+    "resources": { "wood": 150, "iron": 70 },
+    "population": 3,
+    "time": { "$derive": { "from": "strategos:unit/worker", "path": "Cost/time", "factor": 3 }, "note": "A ram is framed and hung in three times a worker's training" }
+  },
+  "Body": { "entityType": "strategos:unit_large", "model": "ram", "width": 2.0, "height": 2.0, "radius": 1.0 }
+}

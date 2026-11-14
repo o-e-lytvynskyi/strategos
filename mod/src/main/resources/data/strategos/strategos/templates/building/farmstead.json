@@ -1,9 +1,10 @@
 {
   "parent": "strategos:template/building_base",
-  "Identity": { "name": "strategos.building.farmstead", "icon": "minecraft:hay_block", "classes": "+Farmstead" },
+  "Identity": { "name": "strategos.building.farmstead", "icon": "minecraft:hay_block", "classes": "+Farmstead +Village" },
   "Building": { "blueprint": "strategos:farmstead" },
   "Health": { "max": 600 },
   "Cost": { "resources": { "wood": 100 }, "time": 35 },
   "Dropsite": { "resources": "food" },
-  "Reseeder": { "reach": 24 }
+  "Reseeder": { "reach": 24 },
+  "Researcher": { "techs": "strategos:gather_farm_1" }
 }

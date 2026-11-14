@@ -446,8 +446,8 @@ narrow mixin with a compatibility test ([01-feasibility.md §7](01-feasibility.m
 | Ticket controller | `strategos:match`, with a `LoadingValidationCallback` | Force-loading arenas (§3.4) | M1 |
 | `SavedData` | `strategos_registry` (overworld), `strategos_match_<id>` (hosting level) | Persistence (§5.6) | M0 |
 | Reload listener | `TemplateReloadListener`, named `strategos:templates` | Templates, maps, blueprints, AI scripts (§8.4) | M1 |
-| Payloads | `strategos:commands`, `strategos:match_join`, `strategos:match_state`, `strategos:feedback`, `strategos:template_set`, `strategos:template_ack`, `strategos:camera_jump`, `strategos:mode_switch`, `strategos:unit_summary`, `strategos:unit_hud`, `strategos:ui_query`, `strategos:unit_detail` and `strategos:fx` (M2), `strategos:faction_state`, `strategos:building_state`, `strategos:match_event` and `strategos:match_control` (M3), `strategos:deposit_state` (M4), and the optional dev payloads `strategos:debug_subscribe` and `strategos:debug_feed` (M1); the whole catalogue in §12.2 | Networking | M1 onward |
-| Key mappings, GUI layers | The movement overlay's key `key.strategos.overlay` (F8) and panel `strategos:debug_panel` (M1); the RTS keys `key.strategos.camera_pan_forward`, `key.strategos.camera_pan_back`, `key.strategos.camera_pan_left`, `key.strategos.camera_pan_right`, `key.strategos.camera_rotate_left`, `key.strategos.camera_rotate_right`, `key.strategos.camera_zoom_in`, `key.strategos.camera_zoom_out`, `key.strategos.camera_centre_on_selection`, `key.strategos.attack_move`, `key.strategos.stop`, `key.strategos.toggle_first_person`, `key.strategos.toggle_rts` (M2, UI-01), `key.strategos.order_here` (M2, CAM-05); the command card's cells `key.strategos.card_1`, `key.strategos.card_2`, `key.strategos.card_3`, `key.strategos.card_4`, `key.strategos.card_5`, `key.strategos.card_6`, `key.strategos.card_7`, `key.strategos.card_8`, `key.strategos.card_9`, `key.strategos.card_10`, `key.strategos.card_11`, `key.strategos.card_12`, `key.strategos.card_13`, `key.strategos.card_14`, `key.strategos.card_15` (M4, UI-08: Alt and the grid); the HUD's layers `strategos:rts_selection`, `strategos:rts_groups`, `strategos:rts_tooltip` (M2, UI-02); resource bar, selection panel, command card, minimap, notices | Client (§13) | M1–M6 |
+| Payloads | `strategos:commands`, `strategos:match_join`, `strategos:match_state`, `strategos:feedback`, `strategos:template_set`, `strategos:template_ack`, `strategos:camera_jump`, `strategos:mode_switch`, `strategos:unit_summary`, `strategos:unit_hud`, `strategos:ui_query`, `strategos:unit_detail` and `strategos:fx` (M2), `strategos:faction_state`, `strategos:building_state`, `strategos:match_event` and `strategos:match_control` (M3), `strategos:deposit_state` (M4), `strategos:vision_delta` and `strategos:skirmish` (M6), and the optional dev payloads `strategos:debug_subscribe` and `strategos:debug_feed` (M1); the whole catalogue in §12.2 | Networking | M1 onward |
+| Key mappings, GUI layers | The movement overlay's key `key.strategos.overlay` (F8) and panel `strategos:debug_panel` (M1); the RTS keys `key.strategos.camera_pan_forward`, `key.strategos.camera_pan_back`, `key.strategos.camera_pan_left`, `key.strategos.camera_pan_right`, `key.strategos.camera_rotate_left`, `key.strategos.camera_rotate_right`, `key.strategos.camera_zoom_in`, `key.strategos.camera_zoom_out`, `key.strategos.camera_centre_on_selection`, `key.strategos.attack_move`, `key.strategos.stop`, `key.strategos.toggle_first_person`, `key.strategos.toggle_rts` (M2, UI-01), `key.strategos.order_here` (M2, CAM-05), `key.strategos.controls` (M6, UI-14); the command card's cells `key.strategos.card_1`, `key.strategos.card_2`, `key.strategos.card_3`, `key.strategos.card_4`, `key.strategos.card_5`, `key.strategos.card_6`, `key.strategos.card_7`, `key.strategos.card_8`, `key.strategos.card_9`, `key.strategos.card_10`, `key.strategos.card_11`, `key.strategos.card_12`, `key.strategos.card_13`, `key.strategos.card_14`, `key.strategos.card_15` (M4, UI-08: Alt and the grid); the HUD's layers `strategos:rts_selection`, `strategos:rts_groups`, `strategos:rts_tooltip` (M2, UI-02); resource bar, selection panel, command card, minimap, notices | Client (§13) | M1–M6 |
 | Commands | `/strategos` (server), `/strategos-client` (client) | Tooling (§15.3) | M0, M1 |
 | Config | `strategos-server.toml`, `strategos-client.toml` (`ModConfigSpec`) | Technical tunables (§15.4) | M1 |
 | Gamerules | None registered | Per-match settings are `MatchRules`; world policy is config | – |
@@ -732,7 +732,7 @@ Each system declares a `Cadence(period, offset)` or a per-entity stagger
 
 | System | Period | Offset or partition |
 |---|---|---|
-| Computer player *i* | 20 ticks | `(5 × i) mod 20` |
+| Computer player *i* | its level's think period: 40 ticks on Easy, 20 on Normal and Hard (M6 §2.20) | `7 × ((i + seed) mod factions)`; a woken think (attacked, a building lost) runs at once |
 | UnitAI thinks | per tier: 2, 4, 10, 20 ticks | handle stagger |
 | Auras (T2) | 10 ticks | 5 |
 | Victory check | 20 ticks | 7 |
@@ -1258,7 +1258,8 @@ sequenceDiagram
    - Every handle must exist, be alive and belong to the issuer's faction, or to an ally that
      granted control.
    - Attack targets must be visible to the issuer's faction.
-   - Positions must lie in the match space and in explored area.
+   - Positions must lie in the match space. Placement, gather targets and the observer's footing
+     require explored area; move, attack-move and rally targets do not (ADR-0025).
    - Costs are checked when spent, not when sent.
    - Invalid parts are dropped, valid parts apply, and the issuer gets one feedback record per
      command.
@@ -2054,7 +2055,7 @@ placing; the events are the second line of defence.
 |---|---|---|---|---|
 | `strategos:template_set` | Compiled client view, id table, hash | Player | Login, `/reload` | M1 |
 | `strategos:match_join` | Match id, space, factions, colours, your slot, rules, minimap base | Player | Join, rejoin | M1 |
-| `strategos:match_state` | Lifecycle, clock sync every 5 s, results | Match | On change | M1 |
+| `strategos:match_state` | Lifecycle, clock sync every 5 s, results, and `looks`: each faction's equipment tiers (`Look/weapon`, `Look/armour`; one byte per faction appended after the results; TECH-03) | Match | On change of lifecycle or tiers, at join | M1, M6 |
 | `strategos:feedback` | Command results and notices | Player or faction | Event | M1 |
 | `strategos:unit_summary` | Handle, template index, faction, X and Z quantised to 1/8 block, state; about 6 B per unit | Each player: own units and visible enemies | 2 Hz | M2 |
 | `strategos:unit_hud` | HP fraction (1 B) and state bits for tracked own and visible units | Per player | Changes only, ≤ 5 Hz | M2 |
@@ -2063,7 +2064,7 @@ placing; the events are the second line of defence.
 | `strategos:building_state` | Footprint, progress, HP, stage; queue and rally for the owner | Own faction in full; others last-seen once explored | On change, coalesced | M3 |
 | `strategos:deposit_state` | Each mine and quarry: node, template, corner, resource, amount left of its most | Everyone (nobody owns a deposit) | On change | M4 |
 | `strategos:fx` | Swings, projectile launches and impacts, gather, build and death sounds, particles | Spatial audiences (§10.5) | Per tick, batched | M2 |
-| `strategos:match_event` | Alerts, end of match | Match or faction | Event | M3 |
+| `strategos:match_event` | Alerts (faction), a defeat and the end of the match, a wave's notice (M3), a phase reached (`PHASE`, its ordinal in `ticks`, M6) | Match or faction | Event | M3 |
 | `strategos:vision_delta` | Visible and explored cells, run-length encoded | Own faction and vision-sharing allies | 2 Hz | M6; allies from M8 |
 | `strategos:motion` | Reserve tier 4: quantised motion deltas for streamed types | Per player | 10 Hz near the focus, 5 Hz beyond 64 blocks | Reserve |
 | `strategos:debug_feed` | Overlay data | Subscribed operators | 2–10 Hz | M1 |

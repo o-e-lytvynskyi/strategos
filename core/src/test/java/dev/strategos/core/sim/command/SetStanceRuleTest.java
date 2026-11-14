@@ -24,8 +24,12 @@ class SetStanceRuleTest {
 
     private final SimHarness h = SimHarness.builder().build();
     private final int[] own = h.spawn(new FactionSlot(0), new Vec2d(8, 8), 2, 2.0);
-    private final int theirs = h.spawn(new FactionSlot(1), new Vec2d(24, 24), 1, 0.0)[0];
+    private final int theirs = h.spawn(new FactionSlot(1), new Vec2d(10, 10), 1, 0.0)[0];
     private final MatchState state = KernelAccess.state(h.core());
+
+    {
+        h.step();
+    } // seed VisionSystem so the fog check sees the other faction's units
 
     private CommandResult send(PlayerSlot issuer, SetStance set) {
         int seq = h.submit(issuer, set);

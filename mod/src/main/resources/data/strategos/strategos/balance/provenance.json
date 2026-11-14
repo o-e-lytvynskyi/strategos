@@ -36,6 +36,10 @@
   "strategos:unit/debug_walker": {
     "UnitMotion/walkSpeed": "Five blocks a second: the movement tests' brisk walker, never a game unit"
   },
+  "strategos:template/unit_infantry": {
+    "Look/weapon": "Zero: the starting equipment tier of the weapon, raised to one by iron weapons (TECH-03); a tier, not a stat, so it carries no balance of its own",
+    "Look/armour": "Zero: the starting equipment tier of the armour, raised to one by chainmail (TECH-03); a tier, not a stat, so it carries no balance of its own"
+  },
   "strategos:unit/infantry": {
     "Attack/Melee/hack": "With 100 hit points and resistance 5, one spearman kills another in 29 blows, about half a minute at a blow a second (M2, CMB-02)",
     "Attack/Melee/reach": "A spear reaches a little past an arm's length",
@@ -69,6 +73,8 @@
     "Cost/population": "One house's room for one archer, as for other infantry"
   },
   "strategos:unit/horseman": {
+    "Look/weapon": "Zero: the starting equipment tier of the weapon, raised to one by iron weapons (TECH-03); a tier, not a stat, so it carries no balance of its own",
+    "Look/armour": "Zero: the starting equipment tier of the armour, raised to one by chainmail (TECH-03); a tier, not a stat, so it carries no balance of its own",
     "Health/max": "Two hundred hit points, tuned up from a hundred and twenty (duel matrix, M5 UNIT-07): twice a spearman, the price of being hard to catch, enough to live through the archers' fire to the melee",
     "UnitMotion/walkSpeed": "0.34 blocks a tick: nearly twice the spearman, so cavalry can run archers down (M5 UNIT-07)",
     "Attack/Melee/hack": "Ten hack per sword stroke, tuned up from five (duel matrix on the real terrain, M5 UNIT-07): over three times a spearman's three, so the counter over archers is quick",
@@ -85,6 +91,23 @@
     "Body/width": "A horse's hit box, 1.4 blocks, the mounted body's size (ADR-0011, UNIT-06)",
     "Body/height": "Two blocks: a horse and the rider above its saddle (ADR-0011, UNIT-06)",
     "Body/radius": "The large class's avoidance radius, 0.7: half the body's width (PATH-11)"
+  },
+  "strategos:unit/ram": {
+    "Health/max": "Five hundred hit points: ten times a worker, two and a half horsemen; a ram is slow, so it has to outlast the arrows on the way to the wall (CMB-09)",
+    "UnitMotion/walkSpeed": "A tenth of a block a tick: half a spearman's pace, so a ram is seen coming and a force must escort it (CMB-09)",
+    "Attack/Melee/crush": "Forty crush a swing of the log: against a stone building two rams raze a civic centre in under a minute, where the same price in torch-bearers takes over five (D-12, CMB-09)",
+    "Attack/Melee/reach": "A block and a half, a log's swing from the front of the frame",
+    "Attack/Melee/prepare": "Twenty ticks: the log is drawn back before it swings",
+    "Attack/Melee/repeat": "A swing every forty ticks, two seconds: heavy and slow, twenty crush a second a ram",
+    "Resistance/hack": "One armour: a roof of planks, so soldiers beat a ram in melee, which is its counter (CMB-09)",
+    "Resistance/pierce": "Eight armour: arrows glance off the roof, as the classics' siege shrugs off archers; 0.9^8 lets 43 % through (CMB-09)",
+    "Resistance/crush": "Three armour: a ram hurts a ram less than it hurts a house",
+    "Cost/resources/wood": "A hundred and fifty wood: the frame, the roof and the wheels (CMB-09)",
+    "Cost/resources/iron": "Seventy iron: the log's cap; two rams cost 440 resources, which buys only four spearmen, so row 14's five minutes on stone holds (D-12, CMB-09)",
+    "Cost/population": "Three: a ram is a team of men, so two rams are a spearman squad's room and a siege is felt in the housing",
+    "Body/width": "Two blocks: the frame and its wheels, the `unit_large` type's size (ADR-0011, CMB-09)",
+    "Body/height": "Two blocks: the roof's ridge over the wheels (ADR-0011, CMB-09)",
+    "Body/radius": "One block, half the width: the large class's avoidance radius, so a ram keeps others off its frame (PATH-11, CMB-09)"
   },
   "strategos:unit/worker": {
     "Health/max": "Half a spearman's: a raid on workers costs their owner dearly, so workers are worth guarding",
@@ -166,6 +189,24 @@
     "Cost/resources/iron": "Fifty iron: the spear points and helmets of the barracks' armoury; the first loop's starts bring a hundred (ECO-08)",
     "Trainer/batchExponent": "As the civic centre's: one rule for every trainer until a technology changes it (TECH-05)"
   },
+  "strategos:building/tower": {
+    "Attack/Building/arrows": "One arrow a shot: a tower is a single bowman on a wall, so it wears a raid down but never stops one (BLD-17, CMB-07)",
+    "Attack/Building/interval": "Forty ticks (two seconds) between arrows: half the centre's pause, a steady five pierce a second that two or three towers turn into a real wall of arrows (BLD-17)",
+    "Attack/Building/pierce": "Ten pierce an arrow, more than the centre's eight and under an archer's sixteen: a tower hurts a spearman but is no match for a squad (BLD-17)",
+    "Attack/Building/range": "Twenty-eight blocks, four beyond the centre and eight beyond an archer: it covers the ground an archer would have to cross to answer it (BLD-17)",
+    "Vision/range": "Twenty-four: it sees about as far as it shoots, a little under an archer's thirty-two, so a tower on a ridge is a lookout too (BLD-17)",
+    "Health/max": "A thousand: half the centre's, as much as a barracks and a bit less; ten torch-bearers take half a minute to tear it down (CMB-03)",
+    "Cost/resources/wood": "A hundred wood: the beams and the platform, cheap enough to place several (BLD-17)",
+    "Cost/resources/stone": "A hundred and fifty stone: stone is the tower's price, so a boom player's quarry buys defence (P4, BLD-17)",
+    "Cost/time": "A minute and a quarter for one builder: slower than a barracks, so a tower is raised before the raid, not during it"
+  },
+  "strategos:building/arsenal": {
+    "Health/max": "Fifteen hundred: a stone workshop, tougher than a barracks (1,200), so the siege line is not lost to the first raid that reaches it (CMB-09)",
+    "Cost/resources/wood": "Two hundred wood: the frames and the beams a ram is hung from, as a barracks' (CMB-09)",
+    "Cost/resources/stone": "A hundred and fifty stone: the arsenal is a Town building, paid for from the quarry as the tower is (CMB-09, D-12)",
+    "Cost/time": "A minute and a half for one builder: the longest build of the town, so rams come after the army, not before it (CMB-09)",
+    "Trainer/batchExponent": "As the civic centre's: one rule for every trainer until a technology changes it (TECH-05)"
+  },
   "strategos:building/quarry": {
     "Deposit/amount": "A thousand stone, two hundred quarried blocks' worth: a small quarry pays a civic centre five times over and lasts a match's opening (ECO-08)",
     "Deposit/slots": "Three workers at a small quarry: a third of a field's, so stone comes slower than food"
@@ -220,5 +261,71 @@
     "Cost/resources/wood": "As a storehouse: the food side's dropsite costs what the other side's does, less its stone",
     "Cost/time": "Thirty-five seconds, 2.5 blocks a second for its 88",
     "Reseeder/reach": "Twenty-four blocks: a ring of fields round the farmstead, as the classics' farm by the mill (ECO-17, D-14)"
+  },
+  "strategos:gather_wood_1": {
+    "cost/food": "100 food: what the classic first wood-gathering tech costs, 100 food and 50 wood (docs/research/mechanics.md §1.3, the Double-Bit Axe row)",
+    "cost/wood": "50 wood: the same row of the table, 100 food and 50 wood, so the tech is paid from both sides of the economy (docs/research/mechanics.md §1.3)",
+    "time": "Thirty seconds, three workers' training: the classics' first wood tech takes about forty (docs/research/mechanics.md, economy techs); our own starting value, tuned against QA-12 in M6 T23",
+    "effects/0/value": "A fifth faster felling: the classics' first wood tech gives a quarter (docs/research/mechanics.md, economy techs); ours is a smaller first step, our own starting value, tuned against QA-12 in M6 T23"
+  },
+  "strategos:phase_town": {
+    "cost/food": "500 food: the classic Town phase costs 500 food and 500 wood (docs/research/mechanics.md §1.7, Phase section); the first two thirds of it are the same",
+    "cost/wood": "600 wood: the classic Town phase costs 500 (docs/research/mechanics.md §1.7), paid from both sides of the economy; a hundred more in M6 T23 (QA-12) because, with the skirmish AI keeping Town's price in its stock, Normal reached Town by 10:00 and the target is 12:00; our own value, tuned against QA-12",
+    "cost/stone": "300 stone: the classics' Town costs none; stone is added so reaching Town takes a quarry, not only a bigger farm (TECH-02.3); our own starting value, tuned against QA-12 in M6 T23",
+    "cost/iron": "200 iron: iron is the scarcest resource, so Town also asks for a mine before an army of its own can be afforded (TECH-02.3); our own starting value, tuned against QA-12 in M6 T23",
+    "time": "Sixty seconds: twice the classic Town phase's 30 s (docs/research/mechanics.md §1.7), since ours costs stone and iron too; our own starting value, tuned against QA-12 in M6 T23",
+    "requires/buildings/count": "Five Village buildings: the classic Town phase requires five Village-class structures (docs/research/mechanics.md §1.7)",
+    "effects/0/value": "A tenth more building hit points, fields excepted (a crop is not a building to harden): the classics' phase bonuses are small and per structure (docs/research/mechanics.md §1.7); ours is a modest first step, our own starting value, tuned against QA-12 in M6 T23",
+    "effects/1/value": "Two blocks more sight for buildings, fields excepted, so a Town sees an approaching raid sooner; our own starting value, tuned against QA-12 in M6 T23"
+  },
+  "strategos:phase_village": {
+    "time": "One second, never run: Village is the phase of a faction with none researched, so the tech exists only for its name and icon (spec row 19)"
+  },
+  "strategos:gather_farm_1": {
+    "cost/food": "50 food: the classics' first farming tech is the cheapest of the line (docs/research/mechanics.md, economy techs); our own starting value, tuned against QA-12 in M6 T23",
+    "cost/wood": "100 wood: the plough and the wheelbarrow are wood work; our own starting value, tuned against QA-12 in M6 T23",
+    "time": "Thirty seconds, as the wood tech: the same first step in each line; our own starting value, tuned against QA-12 in M6 T23",
+    "effects/0/value": "A fifth more grain per second, as the wood tech's fifth (TECH-03): one step of the same size for every resource line; our own starting value, tuned against QA-12 in M6 T23"
+  },
+  "strategos:gather_stone_1": {
+    "cost/food": "100 food: as the wood tech's, the food side pays for every gathering tech; our own starting value, tuned against QA-12 in M6 T23",
+    "cost/wood": "100 wood: dearer than the felling axes' 50 since a pick needs a stronger head; our own starting value, tuned against QA-12 in M6 T23",
+    "time": "Thirty-five seconds: a little over the wood tech's thirty, as rock is a harder trade; our own starting value, tuned against QA-12 in M6 T23",
+    "effects/0/value": "A fifth faster quarrying, as the wood tech's fifth (TECH-03): one step of the same size for every resource line; our own starting value, tuned against QA-12 in M6 T23"
+  },
+  "strategos:gather_iron_1": {
+    "cost/food": "100 food: as the other gathering techs; our own starting value, tuned against QA-12 in M6 T23",
+    "cost/wood": "100 wood: as the stone tech's, a mine is the same hard trade; our own starting value, tuned against QA-12 in M6 T23",
+    "cost/stone": "50 stone: iron is the scarcest line, so its tech also asks for a quarry's output first; our own starting value, tuned against QA-12 in M6 T23",
+    "time": "Forty seconds: the longest of the gathering techs, as iron is the scarcest line; our own starting value, tuned against QA-12 in M6 T23",
+    "effects/0/value": "A fifth faster mining, as the wood tech's fifth (TECH-03): one step of the same size for every resource line; our own starting value, tuned against QA-12 in M6 T23"
+  },
+  "strategos:carry_1": {
+    "cost/food": "150 food: a fifty more than a gathering tech, since it helps every line at once; our own starting value, tuned against QA-12 in M6 T23",
+    "cost/wood": "100 wood: sacks and baskets, as the stone tech's wood; our own starting value, tuned against QA-12 in M6 T23",
+    "time": "Forty seconds: the long end of the village techs, since it serves every worker; our own starting value, tuned against QA-12 in M6 T23",
+    "effects/0/value": "Five more food a trip: a load of ten becomes fifteen (TECH-03), fewer walks to the dropsite; our own starting value, tuned against QA-12 in M6 T23",
+    "effects/1/value": "Five more wood a trip, as the food's (TECH-03); our own starting value, tuned against QA-12 in M6 T23",
+    "effects/2/value": "Five more stone a trip, as the food's (TECH-03); our own starting value, tuned against QA-12 in M6 T23",
+    "effects/3/value": "Five more iron a trip, as the food's (TECH-03); our own starting value, tuned against QA-12 in M6 T23"
+  },
+  "strategos:iron_weapons": {
+    "cost/food": "200 food: a Town tech costs two village techs' food, as phase_town's 500 is five of them; our own starting value, tuned against QA-12 in M6 T23",
+    "cost/wood": "100 wood: hafts and shafts; our own starting value, tuned against QA-12 in M6 T23",
+    "cost/iron": "150 iron: the tier is paid in iron, the scarcest resource, so an army of iron needs a mine first (TECH-03); our own starting value, tuned against QA-12 in M6 T23",
+    "time": "Sixty seconds, as phase_town: a Town-sized research; our own starting value, tuned against QA-12 in M6 T23",
+    "effects/0/value": "One more hack per blow for spearmen and horsemen (TECH-03, spec 2.16): a third more for a spearman's three, a tenth for a horseman's ten; our own starting value, tuned against QA-12 in M6 T23",
+    "effects/1/value": "One more pierce per blow for spearmen and horsemen (TECH-03, spec 2.16): the spearman's pierce rises with its hack; our own starting value, tuned against QA-12 in M6 T23",
+    "effects/2/value": "One more pierce per arrow for archers (TECH-03, spec 2.16), a sixteenth of their sixteen: the archers' share of the weapon tier; our own starting value, tuned against QA-12 in M6 T23",
+    "effects/3/value": "One tier: the weapon the unit renderer draws moves from stone to iron (TECH-03, row 5); a tier, not a balance number"
+  },
+  "strategos:chainmail": {
+    "cost/food": "200 food: as the iron weapons', the military Town techs cost the same; our own starting value, tuned against QA-12 in M6 T23",
+    "cost/wood": "100 wood: as the iron weapons'; our own starting value, tuned against QA-12 in M6 T23",
+    "cost/iron": "150 iron: as the iron weapons': paid in the scarcest resource (TECH-03); our own starting value, tuned against QA-12 in M6 T23",
+    "time": "Sixty seconds, as the iron weapons': a Town-sized research; our own starting value, tuned against QA-12 in M6 T23",
+    "effects/0/value": "One more hack resistance for soldiers (TECH-03, spec 2.16): a fifth more for a spearman's five, about a tenth fewer blows through; our own starting value, tuned against QA-12 in M6 T23",
+    "effects/1/value": "One more pierce resistance for soldiers (TECH-03, spec 2.16), as the hack's; our own starting value, tuned against QA-12 in M6 T23",
+    "effects/2/value": "One tier: the armour the unit renderer draws moves from leather to chainmail (TECH-03, row 5); a tier, not a balance number"
   }
 }

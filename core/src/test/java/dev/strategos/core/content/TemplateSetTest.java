@@ -3,6 +3,9 @@ package dev.strategos.core.content;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import dev.strategos.core.shared.TechId;
 import dev.strategos.core.shared.TemplateId;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -33,7 +36,7 @@ class TemplateSetTest {
                 .as("ids sort the worker after the infantry: M2's indices stay")
                 .isEqualTo(2);
         assertThat(worker.classes()).containsExactly("Builder", "Gatherer", "Organic", "Unit", "Worker");
-        assertThat(set.all()).hasSize(18);
+        assertThat(set.all()).hasSize(21);
         assertThat(set.all().subList(0, 3)).containsExactly(walker, infantry, worker);
         assertThat(set.all().subList(3, 7))
                 .as("the buildings, appended after M2's pinned units, in id order")
@@ -58,6 +61,78 @@ class TemplateSetTest {
         TemplateSet set = TemplateSet.builtin();
         assertThat(set.version()).as("pins the canonical form").isEqualTo(BUILTIN_VERSION);
         assertThat(set.hash()).isEqualTo(Long.parseUnsignedLong(BUILTIN_VERSION.substring(0, 16), 16));
+    }
+
+    @Test
+    void theBuiltinTemplatesWithoutTechsHaveTheVersionTheyHadBeforeTech01() {
+        assertThat(BuiltinTemplates.compile(false).version())
+                .as("no sample tech and no Researcher: the pin of 064ac8a^, no $techs key")
+                .isEqualTo(BUILTIN_VERSION_BEFORE_TECH_01);
+        assertThat(BuiltinTemplates.compile(false).techs()).isEmpty();
+    }
+
+    @Test
+    void theBuiltinSetCarriesTheSampleTechAndTheStorehouseResearchesIt() {
+        TemplateSet set = TemplateSet.builtin();
+        TechDef tech = set.tech(new TechId("strategos:gather_wood_1"));
+
+        assertThat(tech).isNotNull();
+        assertThat(set.techs())
+                .extracting(t -> t.id().value())
+                .containsExactly(
+                        "strategos:gather_wood_1",
+                        "strategos:phase_town",
+                        "strategos:phase_village",
+                        "strategos:carry_1", // M6 T18's, appended to the pinned indices
+                        "strategos:chainmail",
+                        "strategos:gather_farm_1",
+                        "strategos:gather_iron_1",
+                        "strategos:gather_stone_1",
+                        "strategos:iron_weapons");
+        assertThat(set.techByIndex(0)).isSameAs(tech);
+        assertThat(tech.cost()).isEqualTo(java.util.Map.of("food", 100.0, "wood", 50.0));
+        assertThat(tech.ticks()).isEqualTo(600);
+        JsonObject storehouse = set.flattened(new TemplateId("strategos:building/storehouse"));
+        assertThat(storehouse.getAsJsonObject("Researcher").get("techs").getAsString())
+                .isEqualTo(
+                        "strategos:gather_wood_1 strategos:gather_stone_1 strategos:gather_iron_1 strategos:carry_1");
+        double rate = set.value(
+                set.byId(TemplateSet.WORKER).netIndex(),
+                set.valuePaths().byPath("ResourceGatherer/rates/wood/tree").id());
+        assertThat(rate).as("the path the tech's effect names exists").isEqualTo(0.6);
+    }
+
+    @Test
+    void techsChangeTheShaOnlyWhenThereAreAny() {
+        UnitTemplate walker = TemplateSet.builtin().byIndex(0);
+        TemplateSet plain = new TemplateSet(List.of(walker));
+        assertThat(TemplateCompiler.compile(List.of()).set().version())
+                .as("no techs, no $techs key: the same version as a set from code with no templates")
+                .isEqualTo(new TemplateSet(List.of()).version());
+        assertThat(plain.techs()).isEmpty();
+        TemplateSet one = oneTech("{\"icon\":\"i\",\"time\":5}");
+        TemplateSet other = oneTech("{\"icon\":\"i\",\"time\":6}");
+        assertThat(one.version()).isNotEqualTo(TemplateSet.builtin().version());
+        assertThat(one.version()).isNotEqualTo(other.version());
+        assertThat(oneTech("{\"icon\":\"i\",\"time\":5}").version()).isEqualTo(one.version());
+        assertThat(TemplateSet.builtin().version())
+                .as("the builtin set has the sample tech")
+                .isNotEqualTo(BUILTIN_VERSION_BEFORE_TECH_01);
+    }
+
+    private static TemplateSet oneTech(String json) {
+        TemplateSet builtin = TemplateSet.builtin();
+        List<TemplateCompiler.Flat> flats = new java.util.ArrayList<>();
+        for (UnitTemplate t : builtin.all()) {
+            flats.add(new TemplateCompiler.Flat(t.id(), t.netIndex(), builtin.flattened(t.id())));
+        }
+        return TemplateCompiler.fromFlattened(
+                        flats,
+                        List.of(new TemplateCompiler.TechFlat(
+                                new TechId("t:axes"),
+                                0,
+                                JsonParser.parseString(json).getAsJsonObject())))
+                .set();
     }
 
     @Test
@@ -100,12 +175,22 @@ class TemplateSetTest {
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> set(new UnitTemplate(walker.id(), 0, walker.bodyType(), 0, 0.6f, 1.8f)))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> TemplateSet.builtin().byIndex(18)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> TemplateSet.builtin().byIndex(21)).isInstanceOf(IllegalArgumentException.class);
     }
 
-    // M5: the town bell block in the civic centre's blueprint (BLD-16), on the horseman's set (UNIT-06, UNIT-07); the
-    // barracks trains the roster, spearman, archer and horseman (AI-03)
-    private static final String BUILTIN_VERSION = "77f5cd0bead30c868d09b5d0738695c39c2ef8345f430c2a435fa24a4e0597ea";
+    // M5 combat content (horseman, barracks roster, town bell) without $techs / Researcher — pin after M5+M6 merge.
+    private static final String BUILTIN_VERSION_BEFORE_TECH_01 =
+            "77f5cd0bead30c868d09b5d0738695c39c2ef8345f430c2a435fa24a4e0597ea";
+
+    // M4: the farmstead's reach (ECO-17); M5: the town bell block in the civic centre's blueprint (BLD-16), on the
+    // horseman's set (UNIT-06, UNIT-07); the barracks trains the roster, spearman, archer and horseman (AI-03); M6
+    // T2.1: the storehouse's Researcher and the tech gather_wood_1 (TECH-01); M6 T3: the phases, the class Village, the
+    // civic centre's Researcher; M6 T20: the defence tower (BLD-17) and its blueprint; M6
+    // T19: the worker's build list, Town's additions to it, the arsenal and the ram (CMB-09); M6 T23: Town costs 600
+    // wood, not 500 (QA-12's tuning). Rebaselined after merging
+    // M5
+    // combat content into BuiltinTemplates.
+    private static final String BUILTIN_VERSION = "db8065cdf14e6f0806e44fe3d9f179b6a956ac0b40072e7ede2728caec2fa21d";
 
     private static TemplateSet set(UnitTemplate template) {
         return new TemplateSet(List.of(template));

@@ -17,12 +17,14 @@ import dev.strategos.mod.server.net.payload.MatchJoinPayload;
 import dev.strategos.mod.server.net.payload.MatchStatePayload;
 import dev.strategos.mod.server.net.payload.ModeSwitchPayload;
 import dev.strategos.mod.server.net.payload.PayloadArrived;
+import dev.strategos.mod.server.net.payload.SkirmishPayload;
 import dev.strategos.mod.server.net.payload.TemplateAckPayload;
 import dev.strategos.mod.server.net.payload.TemplateSetPayload;
 import dev.strategos.mod.server.net.payload.UiQueryPayload;
 import dev.strategos.mod.server.net.payload.UnitDetailPayload;
 import dev.strategos.mod.server.net.payload.UnitHudPayload;
 import dev.strategos.mod.server.net.payload.UnitSummaryPayload;
+import dev.strategos.mod.server.net.payload.VisionDeltaPayload;
 import java.util.List;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
@@ -62,6 +64,7 @@ public final class ModPayloads {
         registrar.playToClient(UnitDetailPayload.TYPE, UnitDetailPayload.STREAM_CODEC, PayloadArrived::post);
         registrar.playToClient(FxPayload.TYPE, FxPayload.STREAM_CODEC, PayloadArrived::post);
         registrar.playToClient(MatchEventPayload.TYPE, MatchEventPayload.STREAM_CODEC, PayloadArrived::post);
+        registrar.playToClient(VisionDeltaPayload.TYPE, VisionDeltaPayload.STREAM_CODEC, PayloadArrived::post);
         registrar.playToServer(
                 UiQueryPayload.TYPE, UiQueryPayload.STREAM_CODEC, C2sHandlers.timed(C2sHandlers::uiQuery));
         registrar.playToServer(
@@ -70,6 +73,8 @@ public final class ModPayloads {
                 CameraJumpPayload.TYPE, CameraJumpPayload.STREAM_CODEC, C2sHandlers.timed(C2sHandlers::cameraJump));
         registrar.playToServer(
                 ModeSwitchPayload.TYPE, ModeSwitchPayload.STREAM_CODEC, C2sHandlers.timed(C2sHandlers::modeSwitch));
+        registrar.playToServer(
+                SkirmishPayload.TYPE, SkirmishPayload.STREAM_CODEC, C2sHandlers.timed(C2sHandlers::skirmish));
         registrar.playToServer(
                 MatchControlPayload.TYPE,
                 MatchControlPayload.STREAM_CODEC,
@@ -99,11 +104,13 @@ public final class ModPayloads {
                 UnitDetailPayload.SPEC,
                 FxPayload.SPEC,
                 MatchEventPayload.SPEC,
+                VisionDeltaPayload.SPEC,
                 UiQueryPayload.SPEC,
                 TemplateAckPayload.SPEC,
                 CameraJumpPayload.SPEC,
                 ModeSwitchPayload.SPEC,
                 MatchControlPayload.SPEC,
+                SkirmishPayload.SPEC,
                 DebugSubscribePayload.SPEC,
                 DebugFeedPayload.SPEC);
     }

@@ -51,9 +51,12 @@ final class PlaceBuildingRule implements CommandRule<PlaceBuilding> {
         if (limit > 0 && Placing.owned(state, template.netIndex(), faction) >= limit) {
             return Tally.rejectAll(envelope, kind(), builders.size(), RejectReason.LIMIT);
         }
+        if (!Placing.listed(state, template.netIndex(), faction)) {
+            return Tally.rejectAll(envelope, kind(), builders.size(), RejectReason.REQUIREMENTS); // not yet on the list
+        }
         Footprint at = Footprint.of(b, place.x(), place.z(), place.rotation());
         PlacementRules.Verdict verdict = PlacementRules.check(
-                Placing.world(state), b, at, faction, Placing.params(state, template.netIndex(), faction));
+                Placing.world(state, faction), b, at, faction, Placing.params(state, template.netIndex(), faction));
         PlacementRules.Rule failed = verdict.failed();
         long[] cost = state.costs().of(state.stats(), template.netIndex(), faction);
         if (failed == PlacementRules.Rule.AFFORDABLE) {

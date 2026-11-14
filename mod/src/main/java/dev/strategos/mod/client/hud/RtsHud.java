@@ -1,6 +1,8 @@
 package dev.strategos.mod.client.hud;
 
+import dev.strategos.core.client.HintBook;
 import dev.strategos.core.client.hud.CardController;
+import dev.strategos.core.client.hud.ClientFactionView;
 import dev.strategos.core.client.hud.CommandCard;
 import dev.strategos.core.client.hud.EconomyNotices;
 import dev.strategos.core.client.hud.GroupBar;
@@ -9,11 +11,15 @@ import dev.strategos.core.client.hud.HudRect;
 import dev.strategos.core.client.hud.HudTheme;
 import dev.strategos.core.client.hud.Income;
 import dev.strategos.core.client.hud.Minimap;
+import dev.strategos.core.client.hud.MinimapOrders;
+import dev.strategos.core.client.hud.NotificationFeed;
+import dev.strategos.core.client.hud.PhasePanel;
 import dev.strategos.core.client.hud.ResourceBar;
 import dev.strategos.core.client.hud.SelectionPanel;
 import dev.strategos.core.client.hud.SelectionSummary;
 import dev.strategos.core.client.pick.Picking;
 import dev.strategos.core.client.select.Selection;
+import dev.strategos.core.content.TechDef;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.DepositState;
@@ -26,6 +32,7 @@ import dev.strategos.core.protocol.UnitDetail;
 import dev.strategos.core.protocol.UnitHud;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.Stance;
+import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.mod.client.StrategosClient;
 import dev.strategos.mod.client.net.ClientPayloads;
@@ -112,13 +119,14 @@ public final class RtsHud {
     private ResourceBar resources = ResourceBar.EMPTY;
     private List<ResourceBarSegments.Segment> segments = List.of();
     private @Nullable String barHover;
-    private final EconomyNotices notices = new EconomyNotices();
+    private final HudNews news = new HudNews();
+    private final HudBuildingCard buildingCard = new HudBuildingCard(paint, cardPresentation);
+    private final HudOverlays overlays = new HudOverlays(paint);
+    private final HudTooltips tooltips = new HudTooltips(paint, cardPresentation);
     private List<EconomyNotices.Shown> shownNotices = List.of();
     private long clientTicks;
     private final RtsMinimap minimap = new RtsMinimap();
-    private int alertsHeard;
-    private int wavesHeard;
-    private long alertAt = -1_000_000;
+    private @Nullable PhasePanel phasePanel;
 
     private @Nullable Inspect inspect;
     private long buildNanos;
@@ -182,6 +190,9 @@ public final class RtsHud {
         if (!shown()) {
             return false;
         }
+        if (overlays.click(x, y, mode.active())) { // UI-14: a click dismisses the hint, for good
+            return true;
+        }
         HudLayout l = layout();
         int pad = theme.padding();
         MatchJoin join = StrategosClient.match();
@@ -190,6 +201,16 @@ public final class RtsHud {
             if (button == 0 && m.contains(x, y)) { // UI-11: the camera to the clicked column
                 double[] at = m.toWorld(x, y);
                 mode.centreOn(join.originX() + at[0], join.originZ() + at[1]);
+            } else if (button == 1
+                    && m.contains(x, y)
+                    && !mode.selection().handles().isEmpty()) {
+                MinimapOrders.rightClick(
+                                m,
+                                x,
+                                y,
+                                mode.selection().handles(),
+                                net.minecraft.client.gui.screens.Screen.hasShiftDown())
+                        .ifPresent(mode::send); // UI-20: one move of the selection, Shift queues
             }
             return true;
         }
@@ -262,7 +283,12 @@ public final class RtsHud {
 
     /** A feedback message from the server: the economy's become notices (UI-10). */
     public void feedback(FeedbackMsg msg) {
-        notices.accept(msg, clientTicks, StrategosClient.resources());
+        news.feedback(msg, clientTicks);
+    }
+
+    /** The feed's entries shown now, for scenarios and goldens. */
+    public List<NotificationFeed.Entry> feedShown() {
+        return news.feed().visible(clientTicks);
     }
 
     /** The notices shown now, the newest first, for scenarios. */
@@ -275,27 +301,7 @@ public final class RtsHud {
         clientTicks++;
         Minecraft client = Minecraft.getInstance();
         minimap.tick(client);
-        int announced = StrategosClient.model().waves();
-        MatchNews wave = StrategosClient.model().wave();
-        MatchJoin joined = StrategosClient.match();
-        if (announced > wavesHeard) { // AI-17: an enemy's wave, a horn for those it comes for
-            wavesHeard = announced;
-            if (wave != null
-                    && joined != null
-                    && wave.faction() != joined.slot().value()) {
-                client.getSoundManager()
-                        .play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
-                                net.minecraft.sounds.SoundEvents.RAID_HORN.value(), 1.0F, 1.0F));
-            }
-        }
-        int heard = StrategosClient.model().alerts();
-        if (heard > alertsHeard) { // UI-12: a new alert sounds once, here only
-            alertsHeard = heard;
-            alertAt = clientTicks;
-            client.getSoundManager()
-                    .play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
-                            net.minecraft.sounds.SoundEvents.BELL_BLOCK, 1.0F, 0.8F));
-        }
+        news.poll(clientTicks);
         Minecraft mc = Minecraft.getInstance();
         if (!mode.active() || mc.level == null) {
             summary = SelectionSummary.EMPTY;
@@ -359,15 +365,25 @@ public final class RtsHud {
                         own != null && controller.demolishAsked(own.handle()),
                         CardController.shared(stances)),
                 own);
+        phasePanel = PhasePanel.of( // UI-13: the next phase's checklist, the server's own evaluation
+                templates,
+                new ClientFactionView(
+                        templates,
+                        StrategosClient.model().faction(),
+                        StrategosClient.model().buildings()),
+                own);
+        overlays.update(
+                !selection.handles().isEmpty() || selection.building() != null,
+                StrategosClient.model().faction());
         double[] gui = HudCardPresentation.cursorGui(mc);
         hovered = card.at(layout().commandCard(), theme.padding(), gui[0], gui[1]);
         bar = GroupBar.of(mode.groups());
         FactionState faction = StrategosClient.model().faction();
         if (faction != null) {
             income.accept(faction);
-            notices.population(faction.populationUsed(), faction.populationCap());
+            news.notices().population(faction.populationUsed(), faction.populationCap());
         }
-        shownNotices = notices.shown(clientTicks);
+        shownNotices = news.notices().shown(clientTicks);
         resources = ResourceBar.of(faction, StrategosClient.resources(), income);
         segments = ResourceBarSegments.of(mc.font, layout().resourceBar(), resources);
         barHover = null;
@@ -413,11 +429,16 @@ public final class RtsHud {
 
     /** The HUD's ticks since the latest alert was heard; large when there was none. */
     public long alertAge() {
-        return clientTicks - alertAt;
+        return clientTicks - news.alertAt();
     }
 
     /** The camera to the latest alert (UI-12's jump key); whether there was one. */
     public boolean jumpToAlert() {
+        Vec2d newest = news.feed().newestAlert();
+        if (newest != null) { // UI-21: the newest alert in the feed, a wave's muster included
+            mode.centreOn(newest.x(), newest.z());
+            return true;
+        }
         MatchNews alert = StrategosClient.model().alert();
         MatchJoin join = StrategosClient.match();
         if (alert == null || join == null) {
@@ -590,7 +611,8 @@ public final class RtsHud {
                     paint.text(g, font, r, 2, state, theme.dimText());
                 }
             }
-            case BUILDING -> drawBuilding(g, font, templates, r, pad, java.util.Objects.requireNonNull(p.building()));
+            case BUILDING ->
+                buildingCard.building(g, font, templates, r, pad, java.util.Objects.requireNonNull(p.building()));
             case DEPOSIT -> {
                 DepositState.Entry d = java.util.Objects.requireNonNull(p.deposit());
                 List<String> resources = StrategosClient.resources();
@@ -609,40 +631,6 @@ public final class RtsHud {
         }
     }
 
-    /** One building: its name and state, then its queue with the head's progress, or a field's crop. */
-    private void drawBuilding(
-            GuiGraphics g, Font font, TemplateSet templates, HudRect r, int pad, BuildingState.Entry b) {
-        cardPresentation.icon(g, font, templates, b.template(), SelectionPanel.icon(r, pad));
-        paint.text(g, font, r, 0, HudCardPresentation.name(templates, b.template()), theme.faction(b.faction()));
-        String state = switch (b.state()) {
-            case 0 -> "Foundation";
-            case 1 -> "Building " + b.progress() / 10 + " %";
-            default -> Math.round(100.0 * b.health() / UnitHud.WHOLE) + " % HP";
-        };
-        paint.text(g, font, r, 1, b.rally() ? state + " · rally set" : state, theme.text());
-        if (b.fieldLeft() >= 0) {
-            String crop = b.fieldRipening() > 0
-                    ? "Ripening, " + (b.fieldRipening() + 19) / 20 + " s"
-                    : b.fieldLeft() > 0 ? b.fieldLeft() / 1000 + " food left" : "Empty: reseed it";
-            paint.text(g, font, r, 2, crop, theme.dimText());
-            return;
-        }
-        for (int k = 0; k < b.queue().size(); k++) {
-            HudRect cell = SelectionPanel.queueCell(r, pad, k);
-            g.fill(cell.x(), cell.y(), cell.right(), cell.bottom(), theme.border());
-            cardPresentation.icon(g, font, templates, b.queue().get(k), cell);
-            if (b.batch(k) > 1) { // a batch (PROD-02): its count in the corner
-                String n = "×" + b.batch(k);
-                g.drawString(
-                        font, n, cell.right() - font.width(n), cell.bottom() - font.lineHeight + 1, theme.text(), true);
-            }
-            if (k == 0) {
-                int w = (int) Math.round(cell.width() * Math.min(1000, b.trained()) / 1000.0);
-                g.fill(cell.x(), cell.bottom() - 2, cell.x() + w, cell.bottom(), theme.accent());
-            }
-        }
-    }
-
     /** The command card: a cell per button with its icon, dimmed where the stock does not cover it. */
     private void drawCard(GuiGraphics g, DeltaTracker delta) {
         CommandCard c = card;
@@ -654,6 +642,7 @@ public final class RtsHud {
         HudRect r = layout().commandCard();
         int pad = theme.padding();
         paint.panel(g, r);
+        buildingCard.phasePanel(g, font, r, phasePanel);
         for (CommandCard.Button b : c.buttons()) {
             HudRect cell = CommandCard.cell(r, pad, b.slot());
             g.fill(
@@ -690,6 +679,13 @@ public final class RtsHud {
                         g.fill(cell.x(), cell.y(), cell.right(), cell.bottom(), 0x60FF0000);
                     }
                 }
+                case RESEARCH -> {
+                    TechDef tech = templates.techByIndex(b.template());
+                    paint.item(g, tech == null || tech.icon().isBlank() ? "minecraft:book" : tech.icon(), cell);
+                    if (!b.affordable()) { // unmet or queued: dimmed
+                        g.fill(cell.x(), cell.y(), cell.right(), cell.bottom(), 0x80202020);
+                    }
+                }
             }
             g.drawString(
                     font,
@@ -704,7 +700,6 @@ public final class RtsHud {
         }
     }
 
-    /** Template {@code template}'s icon centred in {@code cell}, or its name's first letter when it has none. */
     private void drawGroups(GuiGraphics g, DeltaTracker delta) {
         if (shown()) {
             banners.groups(g, bar);
@@ -712,77 +707,28 @@ public final class RtsHud {
     }
 
     private void drawTooltip(GuiGraphics g, DeltaTracker delta) {
-        Tooltip t = tooltip;
-        Minecraft mc = Minecraft.getInstance();
-        CommandCard.Button b = hovered;
-        String bar = barHover;
-        if (shown() && bar != null) {
-            Font font = mc.font;
-            int pad = theme.padding();
-            double[] gui = HudCardPresentation.cursorGui(mc);
-            HudRect r = layout().tooltip(font.width(bar) + 2 * pad, font.lineHeight + 2 * pad, gui[0], gui[1]);
-            paint.panel(g, r);
-            g.drawString(font, bar, r.x() + pad, r.y() + pad + 1, theme.text(), false);
-        }
-        if (shown() && b != null) {
-            Font font = mc.font;
-            String text = cardPresentation.describe(b, StrategosClient.templates());
-            int pad = theme.padding();
-            double[] gui = HudCardPresentation.cursorGui(mc);
-            HudRect r = layout().tooltip(font.width(text) + 2 * pad, font.lineHeight + 2 * pad, gui[0], gui[1]);
-            paint.panel(g, r);
-            g.drawString(font, text, r.x() + pad, r.y() + pad + 1, b.affordable() ? theme.text() : 0xFFFF8080, false);
-        }
-        if (shown() && t != null) {
-            Font font = mc.font;
-            int pad = theme.padding();
-            int swatch = font.lineHeight - 2;
-            int w = swatch + 3 + font.width(t.name()) + 2 * pad;
-            int h = font.lineHeight + 2 * pad;
-            // the cursor in GUI pixels, as Minecraft turns window points into a screen's mouse position
-            double x = mc.mouseHandler.xpos()
-                    * mc.getWindow().getGuiScaledWidth()
-                    / mc.getWindow().getScreenWidth();
-            double y = mc.mouseHandler.ypos()
-                    * mc.getWindow().getGuiScaledHeight()
-                    / mc.getWindow().getScreenHeight();
-            HudRect r = layout().tooltip(w, h, x, y);
-            paint.panel(g, r);
-            g.fill(
-                    r.x() + pad,
-                    r.y() + pad + 1,
-                    r.x() + pad + swatch,
-                    r.y() + pad + 1 + swatch,
-                    theme.faction(t.faction()));
-            g.drawString(font, t.name(), r.x() + pad + swatch + 3, r.y() + pad + 1, theme.text(), false);
-        }
+        tooltips.tooltips(g, shown(), hovered, barHover, tooltip);
         drawNanos = System.nanoTime() - drawing;
     }
 
     /** Under the first-person crosshair: a panel with the unit's name, faction swatch and what is known of it. */
     private void drawInspect(GuiGraphics g, DeltaTracker delta) {
-        Inspect i = inspect;
-        Minecraft mc = Minecraft.getInstance();
-        if (i == null || mc.options.hideGui || mode.active()) {
-            return;
-        }
-        Font font = mc.font;
-        int pad = theme.padding();
-        int swatch = font.lineHeight - 2;
-        int w = Math.max(swatch + 3 + font.width(i.name()), font.width(i.detail())) + 2 * pad;
-        int h = 2 * font.lineHeight + 2 * pad + 1;
-        int x = mc.getWindow().getGuiScaledWidth() / 2 + 8;
-        int y = mc.getWindow().getGuiScaledHeight() / 2 + 8;
-        HudRect r = new HudRect(x, y, w, h);
-        paint.panel(g, r);
-        g.fill(
-                r.x() + pad,
-                r.y() + pad + 1,
-                r.x() + pad + swatch,
-                r.y() + pad + 1 + swatch,
-                theme.faction(i.faction()));
-        g.drawString(font, i.name(), r.x() + pad + swatch + 3, r.y() + pad + 1, theme.text(), false);
-        g.drawString(font, i.detail(), r.x() + pad, r.y() + pad + 2 + font.lineHeight, theme.text(), false);
+        tooltips.inspect(g, inspect, mode.active());
+    }
+
+    /** UI-14's overlay on or off (its key, K by default). */
+    public void toggleControls() {
+        overlays.toggleControls();
+    }
+
+    /** Whether the controls overlay shows, for scenarios. */
+    public boolean controlsShown() {
+        return overlays.controlsShown();
+    }
+
+    /** The hint shown now, or null, for scenarios. */
+    public HintBook.@Nullable Hint hint() {
+        return overlays.hint();
     }
 
     /** In RTS mode with the GUI shown: F1 hides the HUD as it hides vanilla's. */
@@ -792,7 +738,10 @@ public final class RtsHud {
 
     private void drawNotices(GuiGraphics g, DeltaTracker delta) {
         if (shown()) {
-            banners.notices(g, shownNotices, clientTicks - alertAt < 100);
+            banners.notices(g, List.of(), clientTicks - news.alertAt() < 100);
+            banners.feed(g, news.feed().visible(clientTicks), clientTicks);
+            banners.raidBar(g);
+            overlays.draw(g, mode.active());
         }
     }
 
@@ -802,7 +751,7 @@ public final class RtsHud {
 
     private void drawMinimap(GuiGraphics g, DeltaTracker delta) {
         if (shown()) {
-            minimap.draw(g, mode, paint, clientTicks, alertAt);
+            minimap.draw(g, mode, paint, clientTicks, news.alertAt());
         }
     }
 }

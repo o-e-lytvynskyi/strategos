@@ -107,6 +107,12 @@ to do with it here. This is about ORCA, unit crowds and JMH. The mod toolchain i
   because units are not solid to each other. Only a unit with speed 0 (a modifier) has no exit on
   any rung.
 
+- A bot that sends the same order to a unit on every think resets its stuck count each time (a new
+  order resets it), so a unit held up in a crowd (a one-block lane of burners round a centre, two
+  swapped head-on) never reaches the ladder's end and the invariant "WALKING without progress for
+  641 ticks" fires, though the ladder is fine. Send an order only to units not already on it
+  (`MilitaryManager.pushFogMarch`, M6 T21; `FieldWaveTest`).
+
 ## A task pool for pathfinding: how to measure
 
 - A harness that steps ticks back to back lies: the worker threads do not get the 50 ms between
@@ -158,3 +164,37 @@ to do with it here. This is about ORCA, unit crowds and JMH. The mod toolchain i
   M3 T9 to M4 T19. Look for `<failure>` in the log.
 - A setup that waits a fixed number of ticks ("paths arrive in 4") breaks with any change of the
   delivery pace. Wait for a condition bounded from above, or open a tolerance window for the scene.
+
+## Vision: COMMANDS phase runs before WORLD
+
+- `VisionSystem` runs in `Phase.WORLD`; command resolution is in `Phase.COMMANDS`, which runs
+  first. On any tick, commands see the **previous** tick's vision data. On the very first tick,
+  no vision data exists — all enemies are invisible to every issuer.
+- Tests that resolve a cross-faction command must step the match at least once before submitting
+  the command, so `VisionSystem` has stamped the grids and updated visibility. An instance
+  initializer `{ h.step(); }` after the spawn fields is the lightest fix. The twin match (for
+  hash equality) needs the same number of ticks.
+- A faction with no units has an empty grid: every enemy is invisible to it. Tests where a
+  faction without units issues a command on another faction's unit will get `UNKNOWN_TARGET`, not
+  `NOT_OWNER`. Spawn an observer unit for that faction to give it vision.
+
+## `jmhCompare` on a machine other than the baseline's
+
+- `perf/baseline-m4pro.json` comes from one machine. On another (an M1 Pro under a load average of
+  about 12, M6 T2.2) about 20 benchmarks come out 40–60 % slower, unrelated ones included, and the
+  gate goes red without any regression in the change.
+- To judge a change there, compare it with its own base on the same machine. Make a worktree of the
+  base commit (`git worktree add <dir> <base>`), run `:core:jmh` in it and in the working tree one
+  after the other, never at the same time. Then run `:core:jmhCompare -Pjmh.result=<new> -Pjmh.baseline=<base>`.
+- `:core:jmh` always writes `core/build/reports/jmh/result.json` in its own tree; `-Pjmh.result`
+  only tells `jmhCompare` where to read. Copy the two files out before comparing them.
+
+## A wall of trees: one node, and slots behind it
+
+Logs that touch form one tree node, whose work slots ring the whole mass. M6 T12.2: a forest
+line built as a solid wall of logs gave a worker a slot on the far face, and it walked round
+through a gap, about 110 blocks; oaks spaced on both faces did the same, because the computer
+picks the tree nearest in a straight line, not along a path. `SimHarness`'s invariant ("WALKING
+without progress toward … for 641 ticks") caught both in a headless match. A line that units must
+go round keeps its fellable trees on one side only, the side its users come from, and blocks the
+rest with leaves (an obstacle, never a floor).

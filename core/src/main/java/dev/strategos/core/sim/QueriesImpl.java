@@ -1,9 +1,15 @@
 package dev.strategos.core.sim;
 
+import dev.strategos.core.content.CorePaths;
+import dev.strategos.core.content.Footprint;
+import dev.strategos.core.content.StartSlot;
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.protocol.FactionLook;
+import dev.strategos.core.protocol.MatchResults;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.Stance;
+import dev.strategos.core.shared.TechId;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.build.BuildingView;
@@ -19,7 +25,10 @@ import dev.strategos.core.sim.nav.SurfaceGrid;
 import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.core.sim.stats.StatBreakdown;
+import dev.strategos.core.sim.stats.StatService;
 import dev.strategos.core.sim.unitai.ActivityTier;
+import dev.strategos.core.sim.vision.VisionGrid;
+import dev.strategos.core.sim.vision.VisionSystem;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -28,6 +37,8 @@ import org.jspecify.annotations.Nullable;
 /** {@link MatchQueries} over a match's state. */
 final class QueriesImpl implements MatchQueries {
     private final MatchState state;
+    private @Nullable List<FactionLook> looks; // factionLooks' last answer, valid while the stats' versions hold
+    private long looksVersion;
     private final PathService paths;
 
     QueriesImpl(MatchState state, PathService paths) {
@@ -78,6 +89,16 @@ final class QueriesImpl implements MatchQueries {
                             .toList()));
         }
         return out;
+    }
+
+    @Override
+    public List<TechId> researched(FactionSlot faction) {
+        return faction.value() < state.config().factions() ? state.progress().of(faction.value()) : List.of();
+    }
+
+    @Override
+    public @Nullable TechId techOf(int sourceId) {
+        return state.progress().techOf(sourceId);
     }
 
     @Override
@@ -319,6 +340,82 @@ final class QueriesImpl implements MatchQueries {
     }
 
     @Override
+    public List<FactionLook> factionLooks() {
+        StatService stats = state.stats();
+        long version = 0;
+        for (int f = 0; f < state.config().factions(); f++) {
+            version += stats.version(f);
+        }
+        if (looks != null && version == looksVersion) {
+            return looks; // no faction's modifiers moved since
+        }
+        looksVersion = version;
+        looks = computeLooks(stats);
+        return looks;
+    }
+
+    private List<FactionLook> computeLooks(StatService stats) {
+        int weapon = stats.path(CorePaths.LOOK_WEAPON);
+        int armour = stats.path(CorePaths.LOOK_ARMOUR);
+        if (weapon < 0 && armour < 0) {
+            return List.of();
+        }
+        int factions = state.config().factions();
+        int[][] tiers = new int[factions][2];
+        for (int t = 0; t < state.templates().indexCount(); t++) {
+            if (!state.templates().has(t)) {
+                continue;
+            }
+            for (int f = 0; f < factions; f++) {
+                tiers[f][0] = Math.max(tiers[f][0], tier(stats, t, f, weapon));
+                tiers[f][1] = Math.max(tiers[f][1], tier(stats, t, f, armour));
+            }
+        }
+        var out = new ArrayList<FactionLook>(factions);
+        for (int[] pair : tiers) {
+            out.add(new FactionLook(pair[0], pair[1]));
+        }
+        return List.copyOf(out);
+    }
+
+    /** A faction's tier of a template at a value path: its block's value, 0 for no path or a template without it. */
+    private static int tier(StatService stats, int template, int faction, int path) {
+        if (path < 0) {
+            return 0;
+        }
+        double v = stats.blockValue(template, faction, path);
+        return v > 0 ? (int) Math.min(v, CorePaths.MAX_LOOK) : 0;
+    }
+
+    @Override
+    public @Nullable MatchResults matchResults() {
+        Outcome o = state.outcome();
+        if (!o.ended()) {
+            return null;
+        }
+        int factions = state.config().factions();
+        MatchStats ms = state.matchStats();
+        var perFaction = new ArrayList<MatchResults.FactionStats>(factions);
+        for (int f = 0; f < factions; f++) {
+            FactionTreasury t = state.treasury().view(f);
+            List<Long> gathered = t.gathered();
+            int maxPhase = 0;
+            for (int p = 0; p < 8; p++) {
+                if (ms.phaseTick(f, p) >= 0) {
+                    maxPhase = p + 1;
+                }
+            }
+            var phases = new ArrayList<Long>(maxPhase);
+            for (int p = 0; p < maxPhase; p++) {
+                phases.add(ms.phaseTick(f, p));
+            }
+            perFaction.add(new MatchResults.FactionStats(
+                    ms.unitsTrained(f), ms.unitsLost(f), ms.buildingsBuilt(f), ms.buildingsLost(f), gathered, phases));
+        }
+        return new MatchResults(o.winner(), o.endedAt(), perFaction);
+    }
+
+    @Override
     public PathService.Stats pathStats() {
         return paths.stats(state);
     }
@@ -339,6 +436,28 @@ final class QueriesImpl implements MatchQueries {
     }
 
     @Override
+    public List<DefenceLog.Blow> blows(int faction) {
+        List<DefenceLog.Blow> out = new java.util.ArrayList<>();
+        for (Alerts.Blow b : state.alerts().blows) {
+            if (b.faction() == faction) {
+                out.add(new DefenceLog.Blow(b.handle(), b.tick()));
+            }
+        }
+        return out;
+    }
+
+    @Override
+    public List<DefenceLog.Loss> losses(int faction) {
+        List<DefenceLog.Loss> out = new java.util.ArrayList<>();
+        for (Alerts.Loss l : state.alerts().losses) {
+            if (l.faction() == faction) {
+                out.add(new DefenceLog.Loss(l.template(), l.x(), l.z(), l.rotation(), l.tick()));
+            }
+        }
+        return out;
+    }
+
+    @Override
     public List<WorldEffect> worldClaims() {
         return WorldClaims.of(state);
     }
@@ -351,7 +470,7 @@ final class QueriesImpl implements MatchQueries {
         }
         var at = dev.strategos.core.content.Footprint.of(b, x, z, 0);
         var failed = dev.strategos.core.content.PlacementRules.check(
-                        dev.strategos.core.sim.build.Placing.world(state),
+                        dev.strategos.core.sim.build.Placing.world(state, faction),
                         b,
                         at,
                         faction,
@@ -381,5 +500,60 @@ final class QueriesImpl implements MatchQueries {
     @Override
     public dev.strategos.core.sim.econ.EconomyTimes.Stats economyTimes() {
         return state.economyTimes().stats();
+    }
+
+    @Override
+    public List<StartSlot> startPositions() {
+        return state.startPositions();
+    }
+
+    @Override
+    public boolean visibleUnit(int faction, int handle) {
+        if (seesAll(faction)) {
+            return true;
+        }
+        VisionSystem vision = state.visionSystem();
+        return vision != null && vision.visibility(faction).isVisible(handle);
+    }
+
+    @Override
+    public boolean visibleBuilding(int faction, BuildingView building) {
+        if (seesAll(faction)) {
+            return true;
+        }
+        VisionSystem vision = state.visionSystem();
+        if (vision == null || faction < 0 || faction >= state.config().factions()) {
+            return true;
+        }
+        VisionGrid grid = vision.grid(faction);
+        Footprint f = building.footprint();
+        for (int x = f.anchorX(); x < f.anchorX() + f.spanX(); x++) {
+            for (int z = f.anchorZ(); z < f.anchorZ() + f.spanZ(); z++) {
+                if (grid.count(VisionGrid.cellOf(x), VisionGrid.cellOf(z)) > 0) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean explored(int faction, double x, double z) {
+        VisionSystem vision = state.visionSystem();
+        if (seesAll(faction) || state.config().rules().play().explored() || vision == null) {
+            return true;
+        }
+        return vision.isExplored(
+                faction, VisionGrid.cellOf((int) Math.floor(x)), VisionGrid.cellOf((int) Math.floor(z)));
+    }
+
+    /** Revealed map, AI omniscience, or a faction outside the player set: everything is seen. */
+    private boolean seesAll(int faction) {
+        PlayRules play = state.config().rules().play();
+        return play.revealMap()
+                || play.aiVision()
+                || state.visionSystem() == null
+                || faction < 0
+                || faction >= state.config().factions();
     }
 }

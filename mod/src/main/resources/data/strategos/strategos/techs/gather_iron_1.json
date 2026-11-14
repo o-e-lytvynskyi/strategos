@@ -1,0 +1,9 @@
+{
+  "name": "strategos.tech.gather_iron_1",
+  "icon": "minecraft:raw_iron",
+  "cost": { "food": 100, "wood": 100, "stone": 50 },
+  "time": 40,
+  "effects": [
+    { "path": "ResourceGatherer/rates/iron/ore", "op": "mul", "value": 1.2, "filter": "Worker" }
+  ]
+}

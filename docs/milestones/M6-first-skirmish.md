@@ -110,21 +110,21 @@ L0 (`verifyFast`: formatting, ErrorProne, NullAway, ArchUnit) holds for every ca
 
 | Card | Task | Checks (level) |
 |---|---|---|
-| TECH-01 | T2 | 1 `RequirementTest.theTable` (L1) · 2 `ResearchTest.aCompletedTechChangesStatsAtOnce`, `ResearchTest.theBreakdownNamesTheTech` (L1) · 3 `ResearchTest.onceAndInOneBuildingAtATime` (L1) · 4 `techtests.a_research_completes_and_applies` (L3) |
+| TECH-01 | T2.1, T2.2 | 1 `RequirementTest.theTable` (L1) · 2 `ResearchTest.aCompletedTechChangesStatsAtOnce`, `ResearchTest.theBreakdownNamesTheTech` (L1) · 3 `ResearchTest.onceAndInOneBuildingAtATime` (L1) · 4 `techtests.a_research_completes_and_applies` (L3) |
 | TECH-02 | T3 | 1 `PhaseTest.requirementsTable` (L1) · 2 `PhaseTest.townUnlocksExactlyItsList` (L1) · 3 `PhaseTest.townCostsStoneOrIron` (L1) · 4 `techtests.every_player_gets_the_phase_notice` (L3) |
 | TECH-03 | T18 | 1 `TechEffectTest.eachEffectEqualsItsModifier` (L1) · 2 `BalanceSheetTest` lists every technology and tier (L1) · 3 `techtests.a_tier_reaches_every_viewer_within_a_second` (L3) · 4 `m6_goldens` a spearman before and after (L4, T27) |
 | CMB-09 | T19 | 1 `SiegeTest.twoRamsRazeACentreInTheSheetTime`, `SiegeTest.torchesTakeFiveMinutesOnStone` (L1, row 14) · 2 `SiegeTest.ramsNeverAttackUnits` (L1) · 3 the engine-surface inventory lists `unit_large` with ADR-0011's settings (L2) · 4 `pathtests.rams_pass_only_gaps_that_fit` (L3) · L5: `runServerSmoke` spawns, saves and restores a ram |
 | BLD-17 | T20 | 1 `TowerTest.arrowsAndDpsAreTheSheets` (L1) · 2 `TowerTest.townOnlyAndStone` (L1) · 3 `TowerTest.onlyEnemies` (L1) · 4 the blueprint lint and `constructiontests.tower_*` (construction, damage stages) (L3) |
 | MATCH-14 | T11 | 1 L4 scenario `arena_world`: the world created from code loads with the preset's biome and the rules applied once (L4, at T11's end) · 2 `docs/spikes/S13-arena-world-from-code.md` (T11): how MATCH-02 creates and reuses the world (R) |
-| MATCH-02 | T13 | L1 `SkirmishSetupTest` (codec, defaults, bounds) · 1 `skirmishtests.the_pipeline_creates_the_match` (L3) · 2 `skirmishtests.a_second_skirmish_takes_the_next_slot` (L3) · 3 L4 `skirmish_flow`: title screen to a running match in ≤ 5 clicks (T27) · 4 `m6_goldens` setup screen (L4, T27) |
+| MATCH-02 | T13 | L1 `SkirmishSetupTest` (codec, defaults, bounds) · 1 `skirmishtests.setup_makes_the_match_with_the_chosen_settings` (L3) · 2 `skirmishtests.a_second_skirmish_is_a_match_of_its_own` (L3) and the arena smoke's run 2 (the next free slots, row 47); `SkirmishOptionsTest` (the command's options), `skirmishtests.the_payload_needs_the_host_or_an_operator` · 3 L4 `skirmish_flow`: title screen to a running match in ≤ 5 clicks (T27) · 4 `m6_goldens` setup screen (L4, T27) |
 | MATCH-03 | T4 | 1 `ConquestTest.defeatWithinTwentyTicks` (L1) · 2 `ConquestTest.civicCentresOnly` (L1) · 3 `MatchStatsTest.theEndScreenEqualsTheCounters` (L1) · 4 `matchtests.conquest_ends_a_match` (L3) · 5 `m6_goldens` end screen (L4, T27) |
 | MAP-02 | T12 | 1 `FirstSkirmishTest.resourcesWithinFivePercentAndDropsitesWithinTen` (L1) · 2 `FirstSkirmishTest.everyTerrainJobHolds` (L1) · 3 `FirstSkirmishTest.everyStartReachesEveryOtherPerClass` (L1) · 4 QA-12's start split (L1, T23) · 5 `maptests.first_skirmish_imports_with_its_hash` (L3) |
 | AI-04 | T21 | 1 `WaveTest.announcedThirtySecondsAhead` (L1) · 2 `DefenceTest.defendersWithinTenSecondsAndTheBell` (L1) · 3 `OpeningTest.seedsPickDifferentOpenings` (L1) · 4 `aitests.waves_reach_the_base` with no ladder rung above repath (L3, slow sample) · 5 `aitests.the_raid_bar_reaches_only_its_audience` (L3) · 6 `m6_goldens` raid bar (L4, T27) |
 | AI-05 | T22 | 1 `DifficultyTest.normalReachesTownOnTime` (L1, 10 seeds) · 2 `:core:openingBalance`'s level pairings (L1, 200 seeds, T23) · 3 `DifficultyTest.noBonusAndEveryHandicapListed` (L1) |
-| UI-20 | T16 | 1 `MinimapOrderTest.aRightClickSendsOneMove` (L1) · 2 `MinimapTilesTest.aChangedChunkWithinASecondAtMostOnce` (L1) · 3 `nettests.a_minimap_order_applies` (L3) · 4 `MinimapBench` < 0.5 ms (L6), PERF-14 budget F (T27) · 5 `m6_goldens` a ping (L4, T27) |
-| UI-21 | T14 | 1 `NotificationFeedTest.prioritiesAndRateLimits` (L1) · 2 `AlertSoundsTest.oneSoundEachWithinItsLimit` (L1) · 3 `m6_goldens` feed (L4, T27) · 4 the owner's audio checklist (L7) |
+| UI-20 | T16 | 1 `MinimapOrderTest.aRightClickSendsOneMove` (L1) · 2 `MinimapTilesTest.aChangedChunkWithinASecondAtMostOnce`, `aBuildingThatAppearsOrGoesAwayMarksItsTiles` (L1) · 3 `nettests.a_minimap_order_applies` (L3) · 4 `MinimapBench` < 0.5 ms (L6), PERF-14 budget F (T27) · 5 `m6_goldens` a ping (L4, T27) |
+| UI-21 | T14 | 1 `NotificationFeedTest` (priorities, the per-area and per-notice limits, six visible, the fade, J; L1) · 2 `AlertSoundPlanTest` (one sound each, its limit; L1) · 3 `m6_goldens` feed (L4, T27) · 4 the owner's audio checklist (L7) |
 | UI-13 | T15 | 1 `PhasePanelTest.theChecklistMirrorsTheServer` (L1) · 2 `persistencetests.research_progress_survives_save_and_load` (L3) · 3 `m6_goldens` research card and phase panel (L4, T27) |
-| UI-14 | T17 | 1 `HintBookTest.eachHintOncePerProfile` (L1) · 2 `ControlsOverlayTest.showsTheCurrentBindings` (L1) · 3 `m6_goldens` overlay (L4, T27) · 4 a friend's first five minutes (L7) |
+| UI-14 | T17 | 1 `HintBookTest` (each condition, once per profile, after a reload; L1) · 2 `ControlsOverlayTest.aRebindShowsItsNewKey` and its neighbours (L1) · 3 `m6_goldens` overlay (L4, T27) · 4 a friend's first five minutes (L7) |
 | FOW-01 | T5 | 1 `VisionGridTest.equalsBruteForce` (L1) · 2 `VisibilityIndexTest.revealAtOnceHideAfterTen` (L1) · 3 `VisionGridTest.anObserverAddsNothing` (L1) · 4 `VisionBench`, `perftests.mvp_soak` budget A (L6, T24) · 5 `FogCommandTest.hiddenIsUnknownTargetVisibleIsNotOwner` (L1) |
 | FOW-07 | T6, T7 | 1 `ExploredTest.neverReverts` (L1) · 2 `fogtests.a_hidden_enemy_is_never_paired` (L3) · 3 `fogtests.pairs_within_6_unpairs_within_15` (L3) · 4 `persistencetests.explored_survives_save_and_load` (L3) · 5 `ShroudBench` (L6), PERF-14 (T27) · 6 `m6_goldens` shroud, with Sodium, with Iris and a shader pack (L4, T27) · L5: `runServerSmoke` runs with fog on |
 | UI-16 | T8 | 1 `MinimapFogTest.pixelsUnderFogEqualTheHash` (L1) · 2 `fogtests.no_dot_data_for_fogged_units` (L3) · 3 `m6_goldens` minimap fog (L4, T27) |
@@ -143,7 +143,7 @@ None. The `strategos:ping` payload stays with multiplayer pings (UI-15, M7); UI-
 
 | # | Topic | Resolution |
 |---|---|---|
-| 1 | Phases | The architecture names no phase concept. A phase is a technology with the class `Phase` and an ordinal; a faction's phase is the highest phase researched; `phase_village` is researched by every faction at tick 0 (TECH-02's "phases as technologies") |
+| 1 | Phases | The architecture names no phase concept. A phase is a technology with the class `Phase` and an ordinal; a faction's phase is the highest phase researched, and `phase_village` is the phase of a faction that has researched none (row 19) |
 | 2 | Moves into the dark | 04 §7.3 and ADR-0014 ask positions "in explored area" for every command; scouting needs moves into the shroud. [ADR-0025](../adr/0025-commands-into-unexplored-cells.md) (Proposed) keeps the explored check for placement (`Placing`, `ClientPlacement`), node targets (`NOT_EXPLORED`) and the observer's footing (`CommanderService`, ADR-0023), and lets move, attack-move and rally points lie anywhere in the match space. T6 wires all of them and amends 04 §7.3 |
 | 3 | Pings | 04 §12.2 lists `ping` (C2S) for M7. UI-20's alert pings are drawn by the client from `match_event` alerts, so M6 adds no payload; UI-15 keeps `ping` |
 | 4 | AI think offset | 04 §4.5 says `(5 × i) mod 20`; the code (M3) wakes at `20k + 7 × ((faction + seed) mod factions)`. The code stands, and the think period becomes a per-level script value (§2.20); T22 corrects 04 §4.5 |
@@ -160,6 +160,54 @@ None. The `strategos:ping` payload stays with multiplayer pings (UI-15, M7); UI-
 | 15 | A player in no match | `FogGate.decide` shows every body to a player in no match (M1 spec §1.6 row 8: an operator watching the arena), unlike 04 §10.4's default. M6 keeps it: solo play has no such viewer, and the rule for non-participants comes with multiplayer (M7, M8). The no-holder fallback (`BodyEvents.canSee` → `decide(match, 0)`) keeps today's answer |
 | 16 | The victory cadence | `VictoryCheck` runs every tick in FINAL (M3), not every 20 ticks as 04 §4.5 has it; `CIVIC_CENTRE` keeps that. `CONQUEST`'s recount runs every 20 ticks at offset 13, clear of the AI's offsets 0 and 7 with two factions |
 | 17 | The WAVE notice | Stays as M3 sends it, to every participant of the match; the raid bar draws from it, and a viewer in another match gets none (AI-04.5) |
+| 18 | Tech entries in the queue (T2.2) | `BuildingStore`'s queue holds unit template net indices, and about ten readers (`Production`, `QueriesImpl`, `ReplicationService` and `BuildingState`, `ProductionManager`, the client's `SelectionPanel`, `RtsHud`, `CardController`) take an entry for a unit. As built: a tech entry is `-1 - netIndex` in the same int queue (`core.shared.QueueEntry`), so queues and hashes without techs are unchanged; every reader branches on it; a save writes it by id (row 20); `building_state` marks a queue holding techs with `0x10` on its size and a mask byte, and writes the old bytes otherwise |
+| 19 | Village without a tech (T2.2, T3) | Researching `phase_village` at tick 0 would make `Progress` non-empty in every match and change every saved hash and journal. Village is the phase of a faction with no phase researched; `phase_village` stays a data entry for its name and icon, never queued |
+| 20 | Stable tech ids (T2.1, T2.2) | A bitset over tech indices breaks when a reload reorders the techs. Techs get an append-only id table, as templates have (`ServerTemplates`, seeded from the built-in set), but the table lives for a server's session only: saves hold tech ids, never indices (ADR-0018). `Progress` saves the researched ids; a queued tech is saved as `-1 - k` against its building's `techs` id list, and a tech the current set lacks leaves the queue unrefunded at restore or at a swap |
+| 21 | Techs in the template set (T2.1) | Techs join the set's canonical JSON under the key `$techs`, which no template id can take, only when there are any, so sets without techs keep their hash; they travel in `TemplateSetView`, or a client would never ack the set and a journal with a `ContentSwap` would stop decoding |
+| 22 | Modifiers at restore (T2.2) | Nothing rebuilds `StatService` at restore today: `MatchState` starts it empty. T2.2 re-adds the researched techs' effects in `Snapshots`' restore before `Production.recount` (housing reads modified values) and in `MatchState.swapTemplates` after `stats.swap` |
+| 23 | The card's token lists (T15) | `CommandCard` reads a building's `Trainer/units` as raw template text, so a `TOKENS` unlock never shows on the card; T15 reads the effective lists. `CommandCard.QUEUE_MAX` (8) disagrees with `BuildingStore.QUEUE_MAX` (5); T15 makes them one |
+| 24 | A view's techs on the wire (T2.1) | A journal's inputs are read back to back with no framing, so `TemplateSetView` cannot tell a trailing tech section by the bytes left. A view with techs writes its version with the suffix `+t`, which a hex version never has, then the techs; a view without them writes the old bytes exactly, so every journal and client of M0–M5 reads as before |
+| 25 | Superseded techs (T2.2) | Completing a tech, a restore and a swap derive a faction's tech sources the same way: every researched tech that no researched tech supersedes. A tech superseded by a researched or pending one is refused with `LIMIT` |
+| 26 | Tech source ids (T2.2) | A tech's modifiers carry `-1 - netIndex`: entity handles, the other source ids, are positive and at least 2²⁰. `/strategos stats` names a tech source by its id |
+| 27 | Phase names (T2.2) | A `phase` requirement names a bare lower-case phase (`town`), checked when the content compiles; the phase is the tech `strategos:phase_<name>`, and `village` is always reached (row 19) |
+| 28 | Tech costs (T2.2) | A tech's cost is its data's, not modified: no M6 tech or bonus changes another tech's cost |
+| 29 | Unlocks (T3) | A tech's `unlocks` must equal the tokens its `TOKENS` effects add to the lists that make things available, `Trainer/units` and `Researcher/techs`; an edit of another list (`Identity/classes`) unlocks nothing. Each id must name a template or a tech of the set. No list gates buildings yet: the worker's build page lists every building, so T19 (the arsenal) adds a build list and joins it to the check. `phase_town`'s `unlocks` are empty in T3; T18–T20 each add their items to it, and `PhaseTest` compares the shipped Town's token diff with them |
+| 30 | The phase notice (T3) | `match_event`'s `MatchNews` gains `PHASE` (4): `faction` advanced, `ticks` carries the phase's ordinal, no place; to the Match audience. The client counted every kind it did not know as a defeat; it now counts `DEFEATED` only |
+| 31 | `phase_village`'s time (T3) | The compiler needs a positive time, so the never-researched `phase_village` has 1 s, with a provenance note that it never runs |
+| 32 | The civic centre's limit (T3) | M4 §2.9 says "one civic centre until Town"; no M6 card lifts it, so Town keeps the limit at one |
+| 33 | Phase techs (T3) | A tech has the class `Phase` exactly when its id's path starts with `phase_`; phase ordinals are distinct whole numbers 0–255. Town's bonuses filter `Structure+!Field`: fields keep their numbers (in a filter a space separates alternatives, `+` joins terms) |
+| 34 | Damage stages at Town (T3) | Damage is stored as hit points lost, so a higher max HP moves a damaged building's stage: completing a tech updates the stage of each of the faction's complete buildings; a restore keeps the saved stage |
+| 35 | Techs in the balance sheet (T3) | The sheet gains a technologies section (cost per resource, time, requirement counts, each effect's value with its path, op and filter), ahead of TECH-03's check 2 (T18) |
+| 36 | Iris shader pack for FOW-07.6 (T7) | No pack is named or downloaded in T7: a test-only fetch needs a licence that allows redistributing the pack in CI (or a pinned URL the owner approves). `-Pcompat` already adds Iris and Sodium. Until a pack is chosen, the Iris+shader golden in T27 is the owner's own L7 check; Sodium-only and vanilla shroud goldens still run in the consent batch. See [kb/minecraft-mod-client-render.md](../kb/minecraft-mod-client-render.md) |
+| 37 | GameTest play rules (T10 repair) | `MatchOptions` carries the match's `PlayRules`; Fog by default, and T13's setup fills it. GameTests not about fog use Explored (`MatchOptions.GAMETEST_PLAY`), the fog suites Fog (`MatchFixture.fogOptions`), as L1's `SimHarness` does since T10 |
+| 38 | Reopening the arena (T11) | A world made from a data-pack preset has an experimental generator lifecycle (`RegistryDataLoader`, `WorldDimensions#checkStability`), so `openWorld` would ask for a backup each time. `ArenaWorldLauncher` sets NeoForge's `PrimaryLevelData#withConfirmedWarning` on an arena it opened, saved in `level.dat`; S13 |
+| 39 | The arena's settings (T11) | Adventure (the lobby pad's blocks stay; the commander service switches modes itself), peaceful, no cheats, no structures. `/strategos` needs level 2, so a skirmish starts through `strategos:skirmish`, never the command; S13 |
+| 40 | `MapChecker`'s package (T12) | `core.sim.map`, not `core.content`: reachability and walking distances read `sim.nav`'s `SurfaceGrid`, which the content layer may not import (B3). The terrain jobs' data stays in `core.content` (`MapManifest.terrainJobs`) |
+| 41 | The first map's layout (T12) | Point symmetry puts any single feature between the bases through the centre. The river comes down the middle and splits round a central island, which holds the hill and the large iron deposit; each channel has one ford, so the island is the one crossing. The forest line is one per half (two, mirrored), three gaps each. The owner's hand-finishing (§10) may break the symmetry; the checker's tolerances then decide |
+| 42 | The first map's computer player (T12) | The scenario `first_skirmish` plays slot 1 as `ai:first_loop`: no `ai/skirmish.json` exists before AI-04 and AI-05 (T21, T22), and an unknown profile would leave the slot idle. T21/T22 turn it to `ai:skirmish` at the setup's level (§2.11, §2.20) |
+| 43 | The forest lines' oaks (T12.2) | A first cut of solid log walls was one node whose work slots lay on both faces, and a worker sent to the far face walked round through a gap; oaks on both edges did the same, since the computer picks the tree nearest in a straight line. Each line now has its oaks on the edge facing its start, leaves elsewhere (an obstacle, never a floor). `SimHarness`'s no-progress invariant found both in the timed match |
+| 44 | One headless match (T12.2, R5) | On the first skirmish map, seed 1, both slots `first_loop` under fog: 45 game minutes in 11.2 s of wall time on the M1 Pro (first contact at tick 10,569, two waves, no winner by the limit). A thousand such matches take about 3 hours on one thread; QA-12 runs them in parallel (R5). Fogged matches ending within 45 minutes are AI-18.3's and QA-12's, in T23, with AI-04's openings and waves |
+| 45 | The minimap's live construction (T16) | The dirty mark comes from `building_state`: a building whose state or progress moved marks the chunks round its corner, rebuilt ahead of the round within a second and at most once a second. No client block-update hook is added: construction writes only where a building stands, and everything else keeps the round's few seconds |
+| 46 | The skirmish's AI level (T13) | `SkirmishSetup` carries the level (codec, bounds, the command's `level=`), but slot 1 plays the scenario's `ai:first_loop` (row 42) until T22 brings `ai/skirmish.json`: `Skirmishes.play` marks it `AFTER-T22`. Check 1 asserts a computer that commands in slot 1; the level's effect is T22's |
+| 47 | The next free slot (T13, check 2) | A GameTest world is no arena, so the GameTest checks that a second skirmish is a match of its own with its player in slot 0; the slot order (3 and 4 after run 1's) is checked where the arena exists, in the arena smoke's run 2 (`ArenaSmokeDriver`) |
+| 48 | The minimap's dirty tiles (T16) | Beside row 45, a building that appears or goes away (destroyed, demolished) marks its tiles too; still no client block-update hook, so terrain changes away from buildings wait for the round (a few seconds) — the card's "changed chunks" read as construction; the owner may ask for the hook |
+| 49 | The feed across matches (T14) | `ClientMatchModel.clear()` resets its alert, wave and phase counts; the HUD now follows `clears()` and resets its own counts and the feed, else a second match's first alerts, waves and phases went unheard |
+| 50 | Where the tiers map to items (T18) | No `Body/equipment` field exists: a unit's look is code, `core.client.look.UnitLook` (ART-01), and it maps the tiers — the horseman's sword stone → iron (the spearman's trident and the archer's bow stay), leather → chainmail (undyed: the faction's colour stays on shields and outlines) |
+| 51 | `match_state`'s cap (T18) | 1,024 → 1,056 bytes: `MatchResults` (T4) already filled 1,024, and `looks` adds a count and a byte per faction, after the results; at ENDED with no results no looks are written. Town now unlocks the barracks' two techs (`Researcher/techs` tokens, row 29) |
+| 52 | The tower's Town gate (T20) | No list gated buildings yet (row 29), so T20 gates the tower with a numeric `Placement/minPhase` (`PlaceBuilding` refuses below it with `REQUIREMENTS`; the build card greys it). T19's build list replaces it: Town's `TOKENS` effect adds the tower and the arsenal to the worker's list, `unlocks` names them, and `minPhase` goes |
+| 53 | The ram's blows and the build list (T19) | Rams strike through the BURN states (`Siege`): a unit with no torch but `Attack/Melee/crush` blows crush on its melee timing; `restrictedClasses` stops the order (`UNSUPPORTED`) and the target pick. Two rams take 49.0 s on the civic centre; the same cost (four spearmen) about 348 s (row 14). `Builder/buildings` is the build list (rows 29, 52): `minPhase` is gone, Town's `unlocks` hold the tower and the arsenal, the card greys what Town would add, the B key offers only what the list reaches |
+| 54 | AI-04's memory and draw (T21) | AiMemory slots 17–24 (opening, last attack, rebuild, camp, camp y, bell, near, threat): 11–16 were AI-03's. The opening is drawn at the player's first think (within 140 ticks), not at the match's start; a script without `openings` draws nothing and keeps its build order |
+| 55 | The camp (T21) | "On the path" is a flood-fill-reachable point on the straight line to the enemy; on small maps it is capped at 0.75 of the way, so it may lie under 40 blocks. `camp.minDistance` is a script field: 40 by default, 0 (the old muster point) in `first_loop`, `economy` and `battle`, so M3–M5's matches and their tests keep their timings; the skirmish script (T22) takes the default. The camp lives in AI memory, so a resumed match restores its markers |
+| 56 | Targets and the raid bar (T21) | The army → economy → centre priority applies in defence; waves attack-move and burn the centre as before. The raid bar counts down a fixed 1,200 ticks after the leave (no wave-end event). The reaction-delay knob is T22's. The battle bot's march sent `Attack.replace` to the whole wave every think, resetting each unit's stuck count, so units in a burners' lane never reached the give-up rung: it now orders only soldiers not already on the target (`FieldWaveTest`, kb rts-sim) |
+| 57 | AI-05's pace (T22) | `ComputerPlayer` thinks on its level's period (40/20/20); the offset formula stays (row 4, 04 §4.5 corrected). The level's commands-per-think cap exhausts the think's budget, so no module sees a dropped command. The reaction delay runs from the fight's first sight (AiMemory slot 25, `SIZE` 26); the bell is not delayed |
+| 58 | Research steps (T22) | A due tech's reserve lasts 5 minutes (a building's 1). A step is done once the tech is researched or queued; an unmet requirement (five Village buildings) is retried every 100 ticks. Normal's Town lands at 10.7–11.9 minutes over 10 seeds with the ratio food 24, wood 36, stone 9, iron 4 and the Town step at population 22 — stone was the gate. `HeadlessMatch` ran with explored and AI vision on; T23 adds fog |
+| 59 | The handicap (T22) | `ai_handicap` is derived from the script's `level.handicap` (a faction modifier on every `ResourceGatherer/rates/*` path and on units' `Cost/time`), never saved, re-derived at restore and at a swap; its codec admits gather ≤ 1 and training ≥ 1 only (row 9) |
+| 60 | The AI under fog (T23) | The first fogged runs of `:core:openingBalance` ended no match by conquest: the AI never scouts, so an unexplored stone node is never gathered (`GatherRule` → `NOT_EXPLORED`), the barracks and Town never come, and with full knowledge waves burn the centre but nothing clears the rest. `FairAiTest.foggedMatchesEndWithin45` and `DifficultyTest` had run explored with AI vision on. T23 splits: T23.1 exploration (the economy explores toward a needed resource before gathering; scouting the enemy start), conquest completion (last-known buildings, then exploring) and a state-change watchdog; T23.2 the 641-tick walking stalls of long fogged matches; T23.3 the tuning and `aisoak` |
+| 61 | Stalls the stuck ladder never saw (T23) | The ladder's count is reset by every waypoint passed, so a unit looping through the same few waypoints (the crowd soak's walker at a one-block ramp corner: it passed the turn off-centre, its straight leg crossed the cliff corner, it slid along the cliff and was routed back) never reached its last rung. | A saved, hashed net-progress count in `MotionStore.Ladder` (ticks within 8 blocks of where it began; fails the order at 620 ticks, counted in rung 5 like any give-up); the loop fixed at its cause: just past a waypoint, a unit whose straight leg on is not walkable (`LineOfWalk`) and which is more than 0.25 block off it steers back to the waypoint's centre (`RampCornerTest`, `CrowdSoakNoGiveUpTest`). `crowd_soak_orders` keeps its bound of 0 given up. |
+| 62 | Orders that asked forever (T23) | A unit at an occupied place with a spent path asked for a new one every ~4 ticks; a chaser after a shuffling target re-asked every 5 ticks so no path ever came; a ram oscillating in a pocket short of its burn place never arrived; a melee place round a target could lie inside a building. | A unit within 1.5 blocks of its place with a spent path, asked a moment ago, fails its order once (`PathService`); a chaser keeps its place while a path is asked for (`RangedOrdersTest`); a burn order ends after two arrivals within 1.5 blocks short of its place; melee places and nearest enemies skip building footprints. |
+| 63 | Wood and Town under fog (T23) | Wood trips averaged 48 blocks (food 8): the AI's storehouses were sought only within 40 blocks of the centre; with remote storehouses Town slipped past DifficultyTest's window, and with Town's price reserved it came too early (≈10:00). | `SiteFinder` remote mode (a site within 10 blocks of an explored node up to 120 from the centre; trips 27 blocks); before Town's step at most one remote storehouse, placed only if the stock covers it and Town; rams' price reserved while an arsenal stands and fewer than `rams` (4) exist; **Town's wood 500 → 600** (provenance row, sheet regenerated) — Normal's Town at 10:00–12:06 in DifficultyTest, its window unchanged. |
+| 64 | Matches the AI could not finish (T23.3) | The first full `:core:openingBalance` run ended 268 of 1,000 matches by conquest. Measured on 142 unfinished of a 200-match sample: in 88 a centre fell (median 34.2 min) and the winner's soldiers stood idle (median 19 of 34, none burning) while the loser kept 2 buildings and 3 workers; in 54 no centre fell, though one side held twice the other's soldiers in 30. Burn speed was not the cause (a squad of 4 burns a house in 0.6 min, a centre in 5.9). | `MopUp`: once the enemy centre is seen gone, idle soldiers go in squads of 4 to distinct buildings, the first squad hunts units in sight, the rest sweep the nodes near the enemy start; rams one per building. A wave goes when the army has ≥ 8 soldiers and twice the most enemy soldiers seen in 3 minutes. Both behind the battle knob `finish` (skirmish only; M5's pinned battle unchanged). Sample conquest 28% → 57%, 0 exceptions; no conquest rule or burn number changed. Archer and chaser places outside footprints, a chaser's empty path fails once (each with its test). |
+| 65 | QA-12's conquest bar (T23.3) | "Every match ends by conquest within 45 minutes" leaves no room for an even match between equal AIs; at 57% on the samples it held up the milestone. | The owner, 2026-11-14 («да, согласен, давай так, чтобы закончить это дело не сильно затягивая»): **at least 90% of matches end by conquest**; every match still has no exception and no stall; 200 seeds per pairing and every other criterion unchanged. QA-12.1 and the done gate amended. |
 
 ### 1.7 Consent plan
 
@@ -170,7 +218,7 @@ about 60 minutes:
   under fog; the shroud (unexplored, explored, visible). Each static scene twice (D-22).
 - **The same shroud scene** with Sodium, and with Iris and a shader pack (`-Pcompat` adds both). The pack is named in
   T7's §1.6 row once its licence allows a test-only download; otherwise that one view is the owner's own
-  check (L7).
+  check (L7). (Row 36: none named yet.)
 - **The other runs**: `skirmish_flow` (≤ 5 clicks); the M6 demo chapters (T25); PERF-14 with M6's HUD and the
   shroud (budget F); the production jar on a client, unless mc-runtime-test ran on CI. `arena_world` runs
   earlier, at T11's end (§0.2).
@@ -187,7 +235,7 @@ While "Standing restrictions" forbids windows, T27 goes to the branch file's "Fo
 - **Data.** `strategos/techs/<id>.json`, loaded by `TemplateReloadListener` beside the templates (04 §8.4)
   into `TechDef` (`core.content`): `name`, `icon`, `classes`, `cost` (resources), `time` (seconds, rounded
   once to ticks), `requires` (a requirement tree), `supersedes` (a tech id), `effects` (DATA-02 modifiers,
-  `TOKENS` included). The `TemplateSet` hash covers the techs.
+  `TOKENS` included). The `TemplateSet` hash covers the techs (row 21); their ids are stable (row 20).
 - **Requirements.** `Requirement` is a sealed tree: `all[…]`, `any[…]`, `tech: <id>`, `phase: <name>`,
   `buildings: {filter: <classes>, count: n}` (own COMPLETE buildings matching a class filter). The pure
   `Requirements.evaluate(req, FactionView)` and `Requirements.checklist(req, FactionView)` (each leaf with
@@ -197,18 +245,18 @@ While "Standing restrictions" forbids windows, T27 goes to the branch file's "Fo
   faction; requirements met; the queue below `BuildingStore.QUEUE_MAX` (5); the cost paid at queue time.
   Reasons: `UNKNOWN_TEMPLATE` (no such tech), `LIMIT` (researched or pending), `REQUIREMENTS` (new, the last
   `RejectReason`), `QUEUE_FULL`, `NOT_ENOUGH_RESOURCES`. Unit batches and techs share the queue; the entry
-  kind is new in the queue's record and saved with it.
+  kind is new (row 18).
 - **Completion.** In ECONOMY, as a unit batch completes today (`Production`): the tech joins the faction's
   researched set, its effects join `StatService` with the tech as `sourceId`, a superseded tech's effects
   leave, `TechResearched(faction, tech)` is posted (the feed, the statistics). `StatsChanged` already updates
   every cached block and the breakdown names the source.
-- **Store.** `Progress` in `Play`: per faction a bitset over tech indices and the phase ordinal. At restore,
-  `StatService` is rebuilt from it (§0.3). A cancel (`CancelTrain` on a tech entry) refunds the cost and
+- **Store.** `Progress` in `Play`: per faction the researched techs by their stable ids (row 20). At restore,
+  `StatService` is rebuilt from it (§0.3, row 22). A cancel (`CancelTrain` on a tech entry) refunds the cost and
   clears the pending mark.
 
 ### 2.2 Phases (TECH-02, D-05)
 
-- `phase_village` (class `Phase`, ordinal 0): researched by every faction at tick 0, free. `phase_town`
+- `phase_village` (class `Phase`, ordinal 0) is the phase of a faction with no phase researched (row 19). `phase_town`
   (ordinal 1) at the civic centre: starting cost 500 food, 500 wood, 300 stone, 200 iron, 60 s; requires
   `buildings: {filter: Village, count: 5}`, with the class `Village` added to the M4 set's houses,
   storehouse, farmstead and barracks. The numbers are sheet rows; T23 tunes them against QA-12.
@@ -386,8 +434,8 @@ an arena: refused with a message).
   stone → iron (`stone_sword`, `iron_sword`, or the spear's own), armour `LEATHER` → `CHAIN`. The renderer
   draws the armour layer and the held item for the unit's faction tier; a change reaches every viewer with
   the next `match_state`.
-- **AFTER-M5:** the archer's and horseman's tiers follow UNIT-07's roster; the spearman (M2) carries them
-  from T18.
+- The archer's and horseman's tiers follow UNIT-07's roster (M5 merged); the spearman (M2) carries them too
+  (T18, row 50).
 
 ### 2.17 The ram and the arsenal (CMB-09, D-12)
 
@@ -452,8 +500,8 @@ garrison (BLD-12, M9).
   `HeadlessMatch` gains conquest, a 45-minute limit and its 2-minute stall watchdog. Matches run in
   parallel over the machine's cores, each single-threaded. It writes a JSON and a markdown summary: win rates
   per start, opening and level, median and longest match, per-match telemetry.
-- **It asserts** QA-12's criteria and AI-05.2, MAP-02.4 and AI-18.3: every match ends by conquest within 45
-  minutes, median 20–35; no exception and no stall; each opening 60–140 of 200 against each other; each level
+- **It asserts** QA-12's criteria and AI-05.2, MAP-02.4 and AI-18.3: at least 90% of matches end by conquest
+  within 45 minutes (the owner, 2026-11-14; row 65), median 20–35; no exception and no stall; each opening 60–140 of 200 against each other; each level
   at least 124 against the one below; neither start 121 or more in any pairing.
 - **`aisoak`** (L3): 20 seeds of Normal against Normal on the arena under `/tick sprint`, in `verifySoak`
   (`:mod:runGameTestSoak`), no win-rate threshold; each journal replays to its hash; the wall time stated.
@@ -545,7 +593,7 @@ population (R8).
 
 ### 7.1 Order
 
-T1 → T2 (TECH-01) → T3 (TECH-02) → T4 (MATCH-03) → T5 (FOW-01) → T6 (FOW-07 server) → T7 (FOW-07 client) → T8
+T1 → T2.1, T2.2 (TECH-01) → T3 (TECH-02) → T4 (MATCH-03) → T5 (FOW-01) → T6 (FOW-07 server) → T7 (FOW-07 client) → T8
 (UI-16) → T9 (AI-18) → T10 (MATCH-07) → T11 (MATCH-14) → T12 (MAP-02) → T13 (MATCH-02) → T14 (UI-21) → T15
 (UI-13) → T16 (UI-20) → T17 (UI-14) → T18 (TECH-03) → T19 (CMB-09) → T20 (BLD-17) → T21 (AI-04) → T22 (AI-05)
 → T23 (QA-12) → T24 (PERF-09) → T25 (the demo and the playtest) → T27 (the consent batch) → T28 (QA-13 and the
@@ -565,13 +613,21 @@ kernel adds `:core:jmh :core:jmhCompare`.
 - **AFTER-M5:** M5's close lists its follow-ups (procedure §7.2); they become this task's content, split if
   over L. **Depends:** M5 closed. **Size:** set from M5's close. **Verification:** `verify verifySlow`.
 
-#### T2 · TECH-01
-- §2.1; `Research` (31), `REQUIREMENTS`; the `Progress` store; one sample tech for the tests.
-  **Depends:** — . **Size:** L. **Verification:** the card's checks; `:core:jmhCompare` (`StatService`'s
-  cached lookup stays under 50 ns).
+#### T2.1 · TECH-01, the content
+- §2.1's data: `TechDef`, `Requirement`, `Requirements` (`core.content`); `strategos/techs/` loaded beside the
+  templates; the techs in the set's hash and in `TemplateSetView` (row 21); the stable id table (row 20); one
+  sample tech (`gather_wood_1` at the storehouse) in `BuiltinTemplates` and the data pack, with its provenance;
+  the lint's icon check. Split from T2 (procedure §3.7). **Depends:** — . **Size:** M. **Verification:**
+  check 1 (`RequirementTest`); `BundledTemplatesTest`, `BalanceSheetTest`, `TemplateSetPayloadSizeTest`.
+
+#### T2.2 · TECH-01, research
+- §2.1's rules: `Research` (31), `REQUIREMENTS`; the tech entry kind and its readers (row 18); completion,
+  cancel and refund; `Progress` in `Play`, saved and hashed; `StatService` re-derived at restore and at a
+  swap (row 22); `TechResearched` and its applier. **Depends:** T2.1. **Size:** L. **Verification:** checks
+  2–4; `:core:jmh :core:jmhCompare` (`StatService`'s cached lookup under 50 ns).
 
 #### T3 · TECH-02
-- §2.2; the `Village` class on the M4 set; the PHASE event. **Depends:** T2. **Size:** M. **Verification:**
+- §2.2; the `Village` class on the M4 set; the PHASE event. **Depends:** T2.2. **Size:** M. **Verification:**
   the card's checks; `:core:balanceSheet`.
 
 #### T4 · MATCH-03
@@ -610,7 +666,15 @@ kernel adds `:core:jmh :core:jmhCompare`.
 #### T12 · MAP-02
 - §2.10; `FirstSkirmish`, `MapChecker`, the package, the jar's allowlist; one headless match's time.
   **Depends:** — (AFTER-M5: the large class's reachability, the horseman). **Size:** L. **Verification:**
-  checks 1–3 and 5; `:mod:checkJarContents`.
+  checks 1–3 and 5; `:mod:checkJarContents`. Split (2026-11-13), the two parts in order:
+- **T12.1** — the manifest's optional `terrainJobs`; `MapChecker` (`core.sim.map`, row 40); `FirstSkirmish`
+  (core testFixtures) with its starts, resources and terrain jobs; the start scenario `first_skirmish` (each
+  start's civic centre, five workers, a horseman, its quarry, iron mine and livestock; the large iron deposit in
+  the middle), which the checker's resources need; L1: the generator is deterministic and the checker passes it
+  (checks 1–3). **Size:** M.
+- **T12.2** — `mapgen` writes `first_skirmish` into the main resources; `checkJarContents` allows exactly that
+  package; L3 import with its terrain hash (check 5, a `map_` batch); one headless match's time on it.
+  **Size:** M.
 
 #### T13 · MATCH-02
 - §2.11; `SkirmishSetup`, `SkirmishScreen`, `strategos:skirmish`, `Skirmishes.start`, the dedicated-server
@@ -654,6 +718,7 @@ kernel adds `:core:jmh :core:jmhCompare`.
   with `verifySlow verifySoak`; 2 in T23.
 
 #### T23 · QA-12
+- **Split 2026-11-15** (row 60): T23.1 the AI under fog (exploration, conquest completion, the watchdog); T23.2 the long matches' walking stalls; T23.3 the tuning and `aisoak`.
 - §2.21; `:core:openingBalance`, `aisoak`, `:mod:runGameTestSoak`; Town's cost and the openings tuned, each
   change a sheet row. **Depends:** T4, T9, T12, T22. **Size:** M. **Verification:** the card's checks; AI-05.2,
   MAP-02.4, AI-18.3 on MAP-02; the wall times recorded.
@@ -678,9 +743,9 @@ kernel adds `:core:jmh :core:jmhCompare`.
 
 ### 7.3 Progress
 
-- [ ] T2 · [ ] T3 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T7 · [ ] T8 · [ ] T9 · [ ] T10 · [ ] T11 · [ ] T12
-- [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17 · [ ] T1 · [ ] T18 · [ ] T19 · [ ] T20 · [ ] T21
-- [ ] T22 · [ ] T23 · [ ] T24 · [ ] T25 · [ ] T27 · [ ] T28
+- [x] T2.1 (2026-10-25) · [x] T2.2 (2026-10-25) · [x] T3 (2026-10-26) · [x] T4 (2026-11-12) · [x] T5 (2026-11-12) · [x] T6 (2026-11-12) · [x] T7 (2026-11-13) · [x] T8 (2026-11-12) · [x] T9 (2026-11-12) · [x] T10 (2026-11-13) · [x] T11 (2026-11-13) · [x] T12.1 (2026-11-13) · [x] T12.2 (2026-11-13)
+- [x] T13 (2026-11-14) · [x] T14 (2026-11-14) · [x] T15 (2026-11-14) · [x] T16 (2026-11-14) · [x] T17 (2026-11-14) · [x] T1 (2026-11-14) · [x] T18 (2026-11-14) · [x] T19 (2026-11-14) · [x] T20 (2026-11-14) · [x] T21 (2026-11-14)
+- [x] T22 (2026-11-14) · [ ] T23 · [ ] T24 · [x] T25 (2026-11-14) · [ ] T27 · [ ] T28
 
 ---
 
@@ -689,7 +754,7 @@ kernel adds `:core:jmh :core:jmhCompare`.
 | # | Criterion | Evidence |
 |---|---|---|
 | 1 | Every acceptance criterion of the 23 cards passes at its level | §1.4 |
-| 2 | L1, 200 seeds per pairing: every match by conquest within 45 minutes, median 20–35, no exception or stall; each opening 60–140 against each other; each level ≥ 124 against the one below; neither start ≥ 121 | `:core:openingBalance` |
+| 2 | L1, 200 seeds per pairing: ≥ 90% of matches by conquest within 45 minutes (row 65), median 20–35, no exception or stall; each opening 60–140 against each other; each level ≥ 124 against the one below; neither start ≥ 121 | `:core:openingBalance` |
 | 3 | L3: conquest ends the match; save and resume keep the state hash; pause stops the match while the camera and UI work; an enemy outside vision is never paired while a visible control unit is | `matchtests`, `persistencetests`, `fogtests` |
 | 4 | L6: 2 × 150 and 60 buildings, both sides active, 30 game minutes within A–E and G; C p95 ≤ 15.3 ms; the 2× pass C p95 ≤ 50 ms | `perftests.mvp_soak`, `mvp_stress` |
 | 5 | MVP completeness: every card entry has an icon; every MVP blueprint passes its GameTests; the naming and `NOTICE` lint; a provenance note per subsystem | T28 |
@@ -697,6 +762,30 @@ kernel adds `:core:jmh :core:jmhCompare`.
 | 7 | The MVP regression suite (feasibility §6.3): gather timing (`GatherTimingTest`), builders (`constructiontests`), a batch at its rally point (`BatchTest`), the counters (`DuelTest`, AFTER-M5), 200 units with zero stuck (`maptests`), damage stages and repair (`DamageStagesTest`), the bell (`garrisontests`, AFTER-M5), save mid-construction, and a match resumed at minute 10 equals an uninterrupted run at minute 15 (`persistencetests.reload_at_ten_equals_fifteen_uninterrupted`), conquest and fog pairing (`matchtests`, `fogtests`) | the runs |
 | 8 | M0's to M5's gates still pass; `verify`, `verifySlow`, `verifySoak`, `verifyClient`, `verifyPerf` green; CI green | the runs |
 | 9 | L7: the owner's matches per level, one against a dedicated server, a win on Easy, no score ≤ 2, the verdict in STATE.md; two friends' matches; no P0 or P1 open | the owner's note |
+
+### 8.1 The MVP regression suite: [feasibility §6.3](../01-feasibility.md) to the test that keeps it (QA-13)
+
+Each automated criterion of §6.3, the test that holds it, and the gate that runs it. All of them run in `verify`
+unless the last column says otherwise.
+
+| §6.3 criterion | Test | Level, gate |
+|---|---|---|
+| A worker gathers X wood in T seconds | `GatherTimingTest.aTripIsTheLoadAtTheRateAndTwoWalksOverSeededRuns` | L1 `:core:test` |
+| k builders finish a house in the expected time | `ConstructionTest.buildTimeForOneTwoFiveAndTenBuilders`; `ConstructionTests.workersSentToAFoundationFinishIt`, `aFinishedHouseEqualsItsBlueprint` | L1; L3 `constructiontests` |
+| A batch of 5 reaches its rally point | `BatchTest.aBatchOfFiveTakesTheUnitTimeTimesFiveToThePointEight`; `ProdTests.aBatchStepsOutTogetherAndRallies` | L1; L3 `prodtests` |
+| Each counter wins at equal cost in at least 170 of 200 seeded fights | `DuelTest.eachCounterWins` (and `everyUnitWinsOneAndLosesOne`) | L1 `:core:test` |
+| 200 units cross the proving ground with zero stuck | `MapTests.twoHundredCross` | L3 `maptests` |
+| Damage to 30 % removes the expected blocks, and repair restores them | `DamageStagesTest.thirtyPercentAndBack`, `eachThresholdRemovesItsRankedBlocks`; `RepairTest`; `ConstructionTests.stagesAndRepairSurviveSave`, `tower_damage_stages_remove_its_ranked_blocks` | L1; L3 `constructiontests` |
+| The town bell brings every worker within 64 blocks inside within 10 s | `GarrisonTests.the_bell_brings_them_in` | L3 `garrisontests` |
+| Save and reload mid-construction | `ConstructionTests.saveMidBuildResumesAtTheSameBlock` | L3 `constructiontests` |
+| A match resumed at minute 10 equals an uninterrupted run at minute 15 | `ResumeTest.reloadAtTenEqualsFifteenUninterrupted` (the computers' plans); `PersistenceTests.reloadAtTenEqualsFifteenUninterrupted` (the world) | L1; L3 `persistencetests` |
+| Conquest ends the match | `MatchTests.conquestEndsAMatch` | L3 `matchtests` |
+| An enemy outside vision is never paired while a visible control unit is | `FogTests.aHiddenEnemyIsNeverPaired`, `pairsWithin6UnpairsWithin15` | L3 `fogtests` |
+| The production jar starts on a dedicated server | `runServerSmokeJar` (QA-13.4) | L5 `verify` |
+| Every command-card entry has an icon that is an item | `CommandCardIconsTest` | L2 `:mod:test` |
+| The naming and `NOTICE` lint | `checkNaming`, proved by `checkNamingSelftest` | L0 `verifyFast`, `verifyHarness` |
+| A provenance note per subsystem | [provenance.md](../provenance.md) | D, reviewed |
+| The AI criteria (QA-12) and the budgets (PERF-09) | `:core:openingBalance`; `perftests.mvp_soak`, `mvp_stress` | §8 rows 2 and 4, outside `verify` |
 
 ---
 

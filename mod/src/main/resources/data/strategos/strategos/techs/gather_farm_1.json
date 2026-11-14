@@ -1,0 +1,9 @@
+{
+  "name": "strategos.tech.gather_farm_1",
+  "icon": "minecraft:iron_hoe",
+  "cost": { "food": 50, "wood": 100 },
+  "time": 30,
+  "effects": [
+    { "path": "ResourceGatherer/rates/food/grain", "op": "mul", "value": 1.2, "filter": "Worker" }
+  ]
+}

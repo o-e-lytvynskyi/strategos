@@ -37,6 +37,7 @@ final class DemolishRule implements CommandRule<Demolish> {
             return Tally.rejectAll(envelope, kind(), 1, RejectReason.UNSUPPORTED);
         }
         state.outputs().add(new BuildingDestroyed(handle, faction));
+        state.matchStats().buildingLost(faction.value());
         BuildingLife.destroy(state, handle);
         return Tally.acceptAll(envelope, kind(), 1);
     }

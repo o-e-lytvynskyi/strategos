@@ -1,0 +1,424 @@
+package dev.strategos.core.content;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
+import dev.strategos.core.shared.CoreApi;
+import dev.strategos.core.shared.TechId;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import org.jspecify.annotations.Nullable;
+
+/**
+ * A technology as data (TECH-01, spec §2.1): {@code data/<ns>/strategos/techs/<path>.json}. {@code cost} is resource
+ * name to units, as a template's {@code Cost/resources}; {@code time} is seconds, rounded once to ticks like a
+ * template's {@code Cost/time}; {@code requires} is a requirement tree; {@code supersedes} names the tech this one
+ * replaces; {@code effects} are modifiers research hands to the stat service. A tech of the class {@code Phase} has an
+ * {@code ordinal} (TECH-02: 0 Village, 1 Town), and no other does; {@code unlocks} lists the templates and techs its
+ * {@code TOKENS} effects make available, which the compiler checks against the effects.
+ */
+@CoreApi
+public record TechDef(
+        TechId id,
+        int netIndex,
+        String name,
+        String icon,
+        List<String> classes,
+        Map<String, Double> cost,
+        double time,
+        Requirement requires,
+        @Nullable TechId supersedes,
+        List<TechEffect> effects,
+        int ordinal,
+        List<String> unlocks) {
+    /** The ordinal of a tech that is no phase. */
+    public static final int NO_ORDINAL = -1;
+
+    /** The most an ordinal can be (TECH-02): a phase fits a byte. */
+    public static final int MAX_ORDINAL = 255;
+
+    /** The class of a phase (TECH-02): such a tech, and only such a tech, has an ordinal. */
+    public static final String PHASE_CLASS = "Phase";
+
+    private static final String KEYS =
+            "name, icon, classes, cost, time, requires, supersedes, effects, ordinal, unlocks";
+    private static final String EFFECT_KEYS = "path, op, value, tokens, filter, stage, priority";
+
+    public TechDef {
+        classes = List.copyOf(classes);
+        cost = Collections.unmodifiableMap(new TreeMap<>(cost));
+        effects = List.copyOf(effects);
+        unlocks = List.copyOf(unlocks);
+    }
+
+    /** A tech that is no phase and unlocks nothing: the form before TECH-02. */
+    public TechDef(
+            TechId id,
+            int netIndex,
+            String name,
+            String icon,
+            List<String> classes,
+            Map<String, Double> cost,
+            double time,
+            Requirement requires,
+            @Nullable TechId supersedes,
+            List<TechEffect> effects) {
+        this(id, netIndex, name, icon, classes, cost, time, requires, supersedes, effects, NO_ORDINAL, List.of());
+    }
+
+    /** Whether this tech is a phase (class {@link #PHASE_CLASS}). */
+    public boolean isPhase() {
+        return ordinal != NO_ORDINAL;
+    }
+
+    /** The research time in ticks: seconds × 20 rounded once, at least one, as a template's {@code Cost/time}. */
+    public long ticks() {
+        return Double.isFinite(time) && time > 0 ? Math.max(1, Math.round(time * 20)) : 1;
+    }
+
+    public TechDef atIndex(int index) {
+        return new TechDef(id, index, name, icon, classes, cost, time, requires, supersedes, effects, ordinal, unlocks);
+    }
+
+    /** The canonical JSON the set hashes and ships: defaults written out, the id and index left to the key. */
+    public JsonObject toJson() {
+        JsonObject o = new JsonObject();
+        o.addProperty("name", name);
+        o.addProperty("icon", icon);
+        JsonArray cls = new JsonArray();
+        classes.forEach(cls::add);
+        o.add("classes", cls);
+        JsonObject costs = new JsonObject();
+        new TreeMap<>(cost).forEach(costs::addProperty);
+        o.add("cost", costs);
+        o.addProperty("time", time);
+        if (!requires.equals(Requirement.none())) {
+            o.add("requires", requires.toJson());
+        }
+        if (supersedes != null) {
+            o.addProperty("supersedes", supersedes.value());
+        }
+        JsonArray list = new JsonArray();
+        for (TechEffect e : effects) {
+            JsonObject fx = new JsonObject();
+            fx.addProperty("path", e.path());
+            fx.addProperty("op", e.op().name().toLowerCase(Locale.ROOT));
+            if (e.op() == TechEffect.Op.TOKENS) {
+                fx.addProperty("tokens", e.tokens());
+            } else {
+                fx.addProperty("value", e.value());
+            }
+            fx.addProperty("filter", e.filter());
+            fx.addProperty("stage", e.stage());
+            fx.addProperty("priority", e.priority());
+            list.add(fx);
+        }
+        o.add("effects", list);
+        if (ordinal != NO_ORDINAL) {
+            o.addProperty("ordinal", ordinal);
+        }
+        if (!unlocks.isEmpty()) {
+            JsonArray names = new JsonArray();
+            unlocks.forEach(names::add);
+            o.add("unlocks", names);
+        }
+        return o;
+    }
+
+    /**
+     * Decodes a tech file; null after recording each problem with {@code file} and the JSON pointer. References to
+     * other techs are checked by the compiler, which knows them all.
+     */
+    public static @Nullable TechDef fromJson(
+            TechId id, int netIndex, JsonObject json, String file, List<TemplateProblem> problems) {
+        int before = problems.size();
+        for (String key : new TreeSet<>(json.keySet())) {
+            if (!List.of(KEYS.split(", ")).contains(key)) {
+                problems.add(TemplateProblem.error(file, "/" + key, "unknown key '" + key + "'; known here: " + KEYS));
+            }
+        }
+        String name = string(json, "name", id.value(), file, problems);
+        String icon = string(json, "icon", null, file, problems);
+        if (json.get("icon") instanceof JsonPrimitive p && p.isString() && icon.isEmpty()) {
+            problems.add(TemplateProblem.error(file, "/icon", "an icon is not empty"));
+        }
+        List<String> classes = new ArrayList<>();
+        JsonElement cls = json.get("classes");
+        if (cls != null) {
+            if (!cls.isJsonArray()) {
+                problems.add(TemplateProblem.error(file, "/classes", "expected an array of class names"));
+            } else {
+                for (int i = 0; i < cls.getAsJsonArray().size(); i++) {
+                    JsonElement c = cls.getAsJsonArray().get(i);
+                    if (isString(c) && !c.getAsString().isBlank()) {
+                        classes.add(c.getAsString());
+                    } else {
+                        problems.add(TemplateProblem.error(file, "/classes/" + i, "expected a class name string"));
+                    }
+                }
+            }
+        }
+        Map<String, Double> cost = new TreeMap<>();
+        JsonElement costs = json.get("cost");
+        if (costs != null) {
+            if (!costs.isJsonObject()) {
+                problems.add(TemplateProblem.error(file, "/cost", "expected an object of resource amounts"));
+            } else {
+                for (Map.Entry<String, JsonElement> e :
+                        costs.getAsJsonObject().asMap().entrySet()) {
+                    JsonElement v = e.getValue();
+                    if (!isNumber(v) || !(v.getAsDouble() >= 0) || !Double.isFinite(v.getAsDouble())) {
+                        problems.add(TemplateProblem.error(
+                                file, "/cost/" + e.getKey(), "expected an amount of 0 or more, got " + v));
+                    } else {
+                        cost.put(e.getKey(), v.getAsDouble());
+                    }
+                }
+            }
+        }
+        double time = 0;
+        JsonElement t = json.get("time");
+        if (t == null || !isNumber(t) || !(t.getAsDouble() > 0) || !Double.isFinite(t.getAsDouble())) {
+            problems.add(TemplateProblem.error(file, "/time", "expected seconds above 0, got " + t));
+        } else {
+            time = t.getAsDouble();
+        }
+        Requirement requires = Requirement.none();
+        if (json.has("requires")) {
+            Requirement r = Requirement.fromJson(json.get("requires"), file, "/requires", problems);
+            if (r != null) {
+                requires = r;
+            }
+        }
+        TechId supersedes = null;
+        JsonElement sup = json.get("supersedes");
+        if (sup != null) {
+            if (!isString(sup)) {
+                problems.add(TemplateProblem.error(file, "/supersedes", "expected a tech id string, got " + sup));
+            } else {
+                try {
+                    supersedes = new TechId(sup.getAsString());
+                } catch (IllegalArgumentException e) {
+                    problems.add(TemplateProblem.error(file, "/supersedes", String.valueOf(e.getMessage())));
+                }
+            }
+        }
+        List<TechEffect> effects = new ArrayList<>();
+        JsonElement fx = json.get("effects");
+        if (fx != null) {
+            if (!fx.isJsonArray()) {
+                problems.add(TemplateProblem.error(file, "/effects", "expected an array of effects"));
+            } else {
+                for (int i = 0; i < fx.getAsJsonArray().size(); i++) {
+                    TechEffect e = effect(fx.getAsJsonArray().get(i), file, "/effects/" + i, problems);
+                    if (e != null) {
+                        effects.add(e);
+                    }
+                }
+            }
+        }
+        int ordinal = NO_ORDINAL;
+        JsonElement ord = json.get("ordinal");
+        if (ord != null) {
+            double d = isNumber(ord) ? ord.getAsDouble() : Double.NaN;
+            if (!(d == Math.rint(d)) || d < 0 || d > MAX_ORDINAL) { // NaN, 1.5, -1, 1e400 and 256 all fail here
+                problems.add(TemplateProblem.error(
+                        file, "/ordinal", "expected a whole number from 0 to " + MAX_ORDINAL + ", got " + ord));
+            } else {
+                ordinal = ord.getAsInt();
+            }
+        }
+        if (classes.contains(PHASE_CLASS) && ord == null) {
+            problems.add(TemplateProblem.error(file, "/ordinal", "a tech of the class Phase needs an ordinal"));
+        } else if (!classes.contains(PHASE_CLASS) && ord != null) {
+            problems.add(TemplateProblem.error(file, "/ordinal", "only a tech of the class Phase has an ordinal"));
+        }
+        List<String> unlocks = unlocks(json, effects, file, problems);
+        if (problems.size() > before) {
+            return null;
+        }
+        return new TechDef(
+                id, netIndex, name, icon, classes, cost, time, requires, supersedes, effects, ordinal, unlocks);
+    }
+
+    /**
+     * The {@code unlocks} list, which must be the tokens the effects' {@code TOKENS} edits add to the lists that make
+     * things available ({@link #unlocking}: what a building trains and researches): each added token listed, each
+     * listed token added. An edit of any other list, such as {@code Identity/classes}, unlocks nothing.
+     */
+    private static List<String> unlocks(
+            JsonObject json, List<TechEffect> effects, String file, List<TemplateProblem> problems) {
+        List<String> listed = new ArrayList<>();
+        JsonElement raw = json.get("unlocks");
+        if (raw != null) {
+            if (!raw.isJsonArray()) {
+                problems.add(TemplateProblem.error(file, "/unlocks", "expected an array of ids"));
+                return listed;
+            }
+            for (int i = 0; i < raw.getAsJsonArray().size(); i++) {
+                JsonElement e = raw.getAsJsonArray().get(i);
+                if (isString(e) && !e.getAsString().isBlank()) {
+                    listed.add(e.getAsString());
+                } else {
+                    problems.add(TemplateProblem.error(file, "/unlocks/" + i, "expected an id string"));
+                }
+            }
+        }
+        TreeSet<String> added = new TreeSet<>();
+        for (TechEffect e : effects) {
+            if (e.op() == TechEffect.Op.TOKENS && e.tokens() != null && unlocking(e.path())) {
+                for (String item : MergeOps.tokens(e.tokens())) {
+                    if (item.startsWith("+")) {
+                        added.add(item.substring(1));
+                    }
+                }
+            }
+        }
+        if (!new TreeSet<>(listed).equals(added) || new TreeSet<>(listed).size() != listed.size()) {
+            problems.add(TemplateProblem.error(
+                    file, "/unlocks", "unlocks " + listed + " must list exactly the tokens the effects add, " + added));
+        }
+        return listed;
+    }
+
+    /** Whether additions to token list {@code path} are unlocks: what a building trains or researches, or a worker places. */
+    static boolean unlocking(String path) {
+        return path.equals("Trainer/units") || path.equals("Researcher/techs") || path.equals("Builder/buildings");
+    }
+
+    /** Whether the unlocks added to token list {@code path} name templates, not techs. */
+    static boolean unlockingTemplates(String path) {
+        return path.equals("Trainer/units") || path.equals("Builder/buildings");
+    }
+
+    private static @Nullable TechEffect effect(
+            JsonElement json, String file, String at, List<TemplateProblem> problems) {
+        if (!json.isJsonObject()) {
+            problems.add(TemplateProblem.error(file, at, "expected an effect object"));
+            return null;
+        }
+        JsonObject o = json.getAsJsonObject();
+        int before = problems.size();
+        for (String key : new TreeSet<>(o.keySet())) {
+            if (!List.of(EFFECT_KEYS.split(", ")).contains(key)) {
+                problems.add(TemplateProblem.error(
+                        file, at + "/" + key, "unknown key '" + key + "'; known here: " + EFFECT_KEYS));
+            }
+        }
+        String path = "";
+        JsonElement p = o.get("path");
+        if (p == null || !isString(p) || p.getAsString().isBlank()) {
+            problems.add(TemplateProblem.error(file, at + "/path", "expected a value path string"));
+        } else {
+            path = p.getAsString();
+        }
+        TechEffect.Op op = TechEffect.Op.MUL;
+        JsonElement opJson = o.get("op");
+        TechEffect.Op parsed = null;
+        if (opJson != null && isString(opJson)) {
+            for (TechEffect.Op candidate : TechEffect.Op.values()) {
+                if (candidate.name().equalsIgnoreCase(opJson.getAsString())) {
+                    parsed = candidate;
+                }
+            }
+        }
+        if (opJson == null) {
+            problems.add(TemplateProblem.error(file, at + "/op", "missing op; known: replace, mul, add, tokens"));
+        } else if (parsed == null) {
+            problems.add(TemplateProblem.error(
+                    file, at + "/op", "unknown op " + opJson + "; known: replace, mul, add, tokens"));
+        } else {
+            op = parsed;
+        }
+        double value = 0;
+        String tokens = null;
+        if (parsed != null) {
+            if (op == TechEffect.Op.TOKENS) {
+                JsonElement tk = o.get("tokens");
+                if (tk == null || !isString(tk)) {
+                    problems.add(TemplateProblem.error(file, at + "/tokens", "a TOKENS effect needs tokens, '+a -b'"));
+                } else if (!StatSyntax.validTokenEdit(tk.getAsString())) {
+                    problems.add(
+                            TemplateProblem.error(file, at + "/tokens", "a TOKENS effect edits by '+a -b', not " + tk));
+                } else {
+                    tokens = tk.getAsString();
+                }
+                if (o.has("value")) {
+                    problems.add(TemplateProblem.error(file, at + "/value", "a TOKENS effect has no value"));
+                }
+            } else {
+                JsonElement v = o.get("value");
+                if (v == null || !isNumber(v) || !Double.isFinite(v.getAsDouble())) {
+                    problems.add(TemplateProblem.error(file, at + "/value", "a " + op + " effect needs a number"));
+                } else {
+                    value = v.getAsDouble();
+                }
+                if (o.has("tokens")) {
+                    problems.add(TemplateProblem.error(file, at + "/tokens", "a " + op + " effect has no tokens"));
+                }
+            }
+        }
+        String filter = "";
+        JsonElement f = o.get("filter");
+        if (f != null) {
+            if (!isString(f)) {
+                problems.add(TemplateProblem.error(file, at + "/filter", "expected a class filter string"));
+            } else {
+                filter = f.getAsString();
+                if (!StatSyntax.validFilter(filter)) {
+                    problems.add(
+                            TemplateProblem.error(file, at + "/filter", "malformed class filter '" + filter + "'"));
+                }
+            }
+        }
+        int stage = integer(o, "stage", at, file, problems);
+        int priority = integer(o, "priority", at, file, problems);
+        if (problems.size() > before) {
+            return null;
+        }
+        return new TechEffect(path, op, value, tokens, filter, stage, priority);
+    }
+
+    private static int integer(JsonObject o, String key, String at, String file, List<TemplateProblem> problems) {
+        JsonElement e = o.get(key);
+        if (e == null) {
+            return 0;
+        }
+        if (!isNumber(e) || e.getAsDouble() != Math.rint(e.getAsDouble()) || Math.abs(e.getAsDouble()) > 1_000_000) {
+            problems.add(TemplateProblem.error(file, at + "/" + key, "expected a whole number, got " + e));
+            return 0;
+        }
+        return e.getAsInt();
+    }
+
+    private static String string(
+            JsonObject o, String key, @Nullable String fallback, String file, List<TemplateProblem> problems) {
+        JsonElement e = o.get(key);
+        if (e == null) {
+            if (fallback == null) {
+                problems.add(TemplateProblem.error(file, "/" + key, "missing " + key));
+                return "";
+            }
+            return fallback;
+        }
+        if (!isString(e)) {
+            problems.add(TemplateProblem.error(file, "/" + key, "expected a string, got " + e));
+            return "";
+        }
+        return e.getAsString();
+    }
+
+    private static boolean isString(JsonElement e) {
+        return e instanceof JsonPrimitive p && p.isString();
+    }
+
+    private static boolean isNumber(JsonElement e) {
+        return e instanceof JsonPrimitive p && p.isNumber();
+    }
+}

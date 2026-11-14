@@ -31,7 +31,7 @@ class VictoryTest {
             h = SimHarness.builder()
                     .size(96, 64)
                     .yBand(0, 31, 1)
-                    .rules(MatchRules.DEFAULTS.withPlay(new PlayRules(victory, false, false)))
+                    .rules(MatchRules.DEFAULTS.withPlay(new PlayRules(victory, false, false, false)))
                     .build();
             h.publishAll(VoxelFixtures.flat(96, 64, 32, 1));
             h.submit(PlayerSlot.ADMIN, new SpawnBuilding(CIVIC_CENTRE, new FactionSlot(0), 4, 4, 0));

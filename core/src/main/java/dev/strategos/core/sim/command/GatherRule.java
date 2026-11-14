@@ -7,16 +7,20 @@ import dev.strategos.core.protocol.QueueMode;
 import dev.strategos.core.protocol.RejectReason;
 import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.Handle;
+import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.OrderReceived;
+import dev.strategos.core.sim.PlayRules;
 import dev.strategos.core.sim.econ.Felling;
 import dev.strategos.core.sim.econ.NodeStore;
 import dev.strategos.core.sim.nav.Material;
 import dev.strategos.core.sim.nav.MaterialKind;
 import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.order.OrderQueues;
+import dev.strategos.core.sim.vision.VisionGrid;
+import dev.strategos.core.sim.vision.VisionSystem;
 
 /**
  * Gather (ECO-05): the server resolves the node the block belongs to, the one that holds it, else the nearest of the
@@ -44,10 +48,13 @@ final class GatherRule implements CommandRule<Gather> {
             return Tally.rejectAll(envelope, kind(), units.size(), RejectReason.UNKNOWN_TARGET);
         }
         NodeStore nodes = state.nodes();
-        int resource = nodes.resource(node);
-        int subtype = nodes.subtype(node);
         double x = nodes.anchorX(node);
         double z = nodes.anchorZ(node);
+        if (!explored(state, envelope.issuer(), x, z)) {
+            return Tally.rejectAll(envelope, kind(), units.size(), RejectReason.NOT_EXPLORED);
+        }
+        int resource = nodes.resource(node);
+        int subtype = nodes.subtype(node);
         OrderQueues orders = state.orders();
         Tally tally = new Tally();
         for (int k = 0; k < units.size(); k++) {
@@ -81,6 +88,23 @@ final class GatherRule implements CommandRule<Gather> {
             tally.accept();
         }
         return tally.result(envelope, kind());
+    }
+
+    /** Whether the issuer's faction has explored the node's cell (ADR-0025 / MATCH-07). */
+    static boolean explored(MatchState state, PlayerSlot issuer, double x, double z) {
+        if (issuer.isAdmin()) {
+            return true;
+        }
+        PlayRules play = state.config().rules().play();
+        if (play.revealMap() || play.explored()) {
+            return true;
+        }
+        VisionSystem vision = state.visionSystem();
+        int faction = issuer.value();
+        if (vision == null || faction < 0 || faction >= state.config().factions()) {
+            return true;
+        }
+        return vision.grid(faction).isExplored(VisionGrid.cellOf(x), VisionGrid.cellOf(z));
     }
 
     /** The node the block at (x, y, z) belongs to, or 0. */

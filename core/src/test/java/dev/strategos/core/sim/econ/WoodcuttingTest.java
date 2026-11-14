@@ -2,9 +2,7 @@ package dev.strategos.core.sim.econ;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import dev.strategos.core.content.PlaceholderBlueprints;
 import dev.strategos.core.content.TemplateCompiler;
-import dev.strategos.core.content.TemplateIdTable;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.balance.BalanceSheet;
 import dev.strategos.core.shared.Vec2d;
@@ -32,8 +30,7 @@ class WoodcuttingTest {
                         l.template().equals(TemplateSet.WORKER) && l.resource().equals("wood"))
                 .findFirst()
                 .orElseThrow();
-        TemplateCompiler.Result bundled =
-                TemplateCompiler.compile(data.raws(), TemplateIdTable.EMPTY, PlaceholderBlueprints.byId());
+        TemplateCompiler.Result bundled = data.compile();
         assertThat(bundled.problems()).isEmpty();
         EconScene e = EconScene.flat(64, 48).tree(Species.OAK, 16, 24).build(bundled.set(), SimHarness.DEFAULT_SEED);
         e.civicCentre(0, 40, 19);

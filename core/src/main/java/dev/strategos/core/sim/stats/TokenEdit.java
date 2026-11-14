@@ -1,5 +1,6 @@
 package dev.strategos.core.sim.stats;
 
+import dev.strategos.core.content.StatSyntax;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,15 +12,7 @@ final class TokenEdit {
     private TokenEdit() {}
 
     static boolean valid(String edit) {
-        if (edit.isBlank()) {
-            return false;
-        }
-        for (String item : edit.trim().split("\\s+", -1)) {
-            if (item.length() < 2 || !sign(item.charAt(0)) || sign(item.charAt(1))) {
-                return false;
-            }
-        }
-        return true;
+        return StatSyntax.validTokenEdit(edit);
     }
 
     /** The tokens of a list, in order. */
@@ -46,9 +39,5 @@ final class TokenEdit {
                 list.remove(token);
             }
         }
-    }
-
-    private static boolean sign(char c) {
-        return c == '+' || c == '-';
     }
 }

@@ -5,11 +5,14 @@ import static dev.strategos.gametest.suites.Units.core;
 import static dev.strategos.gametest.suites.Units.handles;
 import static dev.strategos.gametest.suites.Units.unit;
 
+import com.google.gson.JsonObject;
 import dev.strategos.core.client.build.ClientPlacement;
 import dev.strategos.core.content.Blueprint;
 import dev.strategos.core.content.Footprint;
 import dev.strategos.core.content.PlacementRules;
+import dev.strategos.core.content.TemplateCompiler;
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.protocol.Build;
 import dev.strategos.core.protocol.CommandOutcome;
 import dev.strategos.core.protocol.Grant;
@@ -24,6 +27,7 @@ import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.CommandResult;
+import dev.strategos.core.sim.ContentSwap;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.build.BuildingView;
@@ -629,6 +633,94 @@ public final class ConstructionTests {
                             fallenInWorld(h, state.back, houses(state.back).get(0), state.fallen) == 0,
                             "blocks still gone");
                     equalsBlueprint(h, state.back, houses(state.back).get(0));
+                })
+                .thenSucceed();
+    }
+
+    static final TemplateId TOWER = new TemplateId("strategos:building/tower");
+
+    private static List<BuildingView> towers(MatchRuntime rt) {
+        return core(rt).queries().buildings().stream()
+                .filter(b -> b.template().equals(TOWER))
+                .toList();
+    }
+
+    /**
+     * The built-in set with the tower on the Village worker's list: its Town gate is L1's ({@code BuildListTest}), and
+     * researching Town here would be a second test of TECH-02 inside a test of the tower's blocks.
+     */
+    private static TemplateSet towerOpenToVillage() {
+        TemplateSet b = TemplateSet.builtin();
+        List<TemplateCompiler.Flat> flats = new ArrayList<>();
+        for (UnitTemplate t : b.all()) {
+            JsonObject json = b.flattened(t.id()).deepCopy();
+            if (t.id().equals(TemplateSet.WORKER)) {
+                JsonObject builder = json.getAsJsonObject("Builder");
+                builder.addProperty("buildings", builder.get("buildings").getAsString() + " " + TOWER.value());
+            }
+            flats.add(new TemplateCompiler.Flat(t.id(), t.netIndex(), json));
+        }
+        return TemplateCompiler.fromFlattened(
+                        flats,
+                        List.copyOf(b.techs().stream()
+                                .map(t -> new TemplateCompiler.TechFlat(t.id(), t.netIndex(), t.toJson()))
+                                .toList()))
+                .set();
+    }
+
+    /** BLD-17.4: four workers raise a defence tower on the sheet's stone and wood; finished, it equals its blueprint. */
+    @StrategosTest(batch = "construction", timeoutTicks = 3_000)
+    public static void tower_is_built_and_equals_its_blueprint(GameTestHelper h) {
+        MatchRuntime rt = Units.match(h);
+        town(rt, 4);
+        rt.submit(PlayerSlot.ADMIN, new Grant(new FactionSlot(0), "stone", 150));
+        rt.queueSwap(new ContentSwap(towerOpenToVillage()));
+        h.startSequence()
+                .thenWaitUntil(() -> check(handles(rt).length == 4, "no workers yet"))
+                .thenExecute(() ->
+                        rt.submit(P0, new PlaceBuilding(TOWER, 20, 20, 0, UnitSet.of(handles(rt)), QueueMode.REPLACE)))
+                .thenWaitUntil(() -> check(!towers(rt).isEmpty(), "no foundation"))
+                .thenWaitUntil(() -> check(towers(rt).get(0).state() == BuildingStore.COMPLETE, "not finished"))
+                .thenExecuteAfter(20, () -> equalsBlueprint(h, rt, towers(rt).get(0)))
+                .thenSucceed();
+    }
+
+    /**
+     * BLD-17.4: sixteen enemy torches bring a tower to its third stage, whose ranked blocks are air in the world (the
+     * tower's arrows thin them but cannot stop them).
+     */
+    @StrategosTest(batch = "construction", timeoutTicks = 6_000)
+    public static void tower_damage_stages_remove_its_ranked_blocks(GameTestHelper h) {
+        MatchRuntime rt = Units.match(h);
+        town(rt, 0);
+        rt.submit(PlayerSlot.ADMIN, new SpawnBuilding(TOWER, new FactionSlot(0), 20, 20, 0));
+        rt.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.INFANTRY, new FactionSlot(1), new Vec2d(22, 28), 16, 2));
+        var state = new Object() {
+            int fallen;
+        };
+        h.startSequence()
+                .thenWaitUntil(
+                        () -> check(handles(rt).length == 16 && towers(rt).size() == 1, "not ready"))
+                .thenExecute(() -> rt.submit(
+                        new PlayerSlot(1),
+                        dev.strategos.core.protocol.Attack.replace(
+                                UnitSet.of(handles(rt)), towers(rt).get(0).handle())))
+                .thenWaitUntil(() -> {
+                    BuildingView tower = towers(rt).get(0);
+                    check(tower.hitPoints() < 0.34 * tower.maxHitPoints(), "at " + tower.hitPoints());
+                })
+                .thenExecuteAfter(20, () -> {
+                    BuildingView tower = towers(rt).get(0);
+                    Blueprint bp = Objects.requireNonNull(core(rt).queries()
+                            .templates()
+                            .blueprint(Objects.requireNonNull(
+                                            core(rt).queries().templates().byId(TOWER))
+                                    .netIndex()));
+                    state.fallen = dev.strategos.core.sim.build.DamageStages.fallen(
+                            3, dev.strategos.core.sim.build.DamageRanks.of(bp).length, 0.85, 0.65, 0.35);
+                    check(state.fallen > 0, "a tower with nothing to fall");
+                    int air = fallenInWorld(h, rt, tower, state.fallen);
+                    check(air == state.fallen, air + " of the third stage's " + state.fallen + " blocks are air");
                 })
                 .thenSucceed();
     }

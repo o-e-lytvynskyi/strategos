@@ -10,12 +10,11 @@ import dev.strategos.core.sim.PlaceMoved;
 import dev.strategos.core.sim.UnitStruck;
 import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.build.Placing;
-import dev.strategos.core.sim.combat.CombatSystem;
-import dev.strategos.core.sim.combat.Damage;
+import dev.strategos.core.sim.combat.Engagement;
+import dev.strategos.core.sim.combat.Siege;
 import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.core.sim.unitai.Hfsm.Context;
-import java.util.List;
 import java.util.function.IntPredicate;
 
 /**
@@ -23,19 +22,11 @@ import java.util.function.IntPredicate;
  * place round the footprint, the builders' slots, walks there and, after its torch's wind-up, deals its
  * {@code Attack/Structure/fire} every {@code Attack/Structure/repeat} ticks, against the building's {@code
  * Resistance/fire}, each blow showing flames on the nearest of its blocks, never a fire block. It burns until the
- * building falls or the order ends.
+ * building falls or the order ends. A unit with no torch but a crush in its melee attack, a ram (CMB-09), takes the same
+ * states and strikes with that, on its melee attack's timing, showing no flame ({@link Siege}).
  */
 final class Burning {
-    static final String FIRE = CombatSystem.TORCH_FIRE;
-    static final String PREPARE = CombatSystem.TORCH_PREPARE;
-    static final String REPEAT = CombatSystem.TORCH_REPEAT;
-
     private Burning() {}
-
-    /** Whether unit {@code i} carries a torch: its {@code Attack/Structure/fire} above 0. */
-    static boolean canBurn(MatchState s, int i) {
-        return value(s, i, FIRE, 0) > 0;
-    }
 
     /**
      * Entering the approach: the free place round the building nearest the unit, walked to; none, or a building gone,
@@ -87,12 +78,57 @@ final class Burning {
         s.bus().publish(new PlaceMoved(ctx.handle()));
     }
 
+    /**
+     * QA-12: ticks without progress after which a unit within {@code Constructing.BUILD_REACH} of its place burns from
+     * where it is. A crowd at the wall pushes the burners about, and one held 1.2 blocks off its place by the others,
+     * trying to return, never lands: it drifted there for good.
+     */
+    static final int PATIENCE = 5;
+
     /** The approach's think: a building gone on the way ends the order. */
     static void keepApproaching(Context<MatchState> ctx) {
         MatchState s = ctx.host();
-        if (!burnable(s, ctx.unit(), s.orders().target(ctx.unit()))) {
+        int i = ctx.unit();
+        int target = s.orders().target(i);
+        if (!burnable(s, i, target)) {
             UnitAi.finishOrder(ctx, false);
+        } else if (touching(s, i, target) || (s.motion().stuck(i) >= PATIENCE && atPlace(s, i))) {
+            ctx.go(UnitAi.BURNING);
         }
+    }
+
+    private static boolean atPlace(MatchState s, int i) {
+        OrderQueues orders = s.orders();
+        MotionStore m = s.motion();
+        return DetMath.length(m.x(i) - orders.targetX(i), m.z(i) - orders.targetZ(i)) <= Constructing.BUILD_REACH;
+    }
+
+    /** An arrival short of the place within this of the last one is on the same spot: blocks. */
+    static final double AGAIN = 1.5;
+
+    // an arrival short of the place twice on one spot ends the order (QA-12): a ram walled into the pocket its arsenal
+    // stands in was answered a path to its own cell and asked again, every few ticks, for good; the spot is packed, in
+    // eighths of a block, in the state's second data word
+
+    /** How far from a wall the body of a large unit may stop and still strike it: blocks past its radius. */
+    static final double WALL_REACH = 1.0;
+
+    /**
+     * QA-12: a body wider than a ring cell (a ram's, radius 1) cannot stand on the cell it was given, which lies half a
+     * block off the wall, and a house or a crowd beside it keeps it wobbling short of that place for good. It strikes
+     * from where its body meets the wall, within {@value #WALL_REACH} blocks of it. A torch-bearer's body fits the cell, so
+     * its approach is as it was.
+     */
+    private static boolean touching(MatchState s, int i, int target) {
+        double radius = Engagement.radius(s, i);
+        if (radius <= 0.5) {
+            return false;
+        }
+        Footprint at = s.footprintOf(target);
+        MotionStore m = s.motion();
+        double dx = m.x(i) - Math.max(at.anchorX(), Math.min(m.x(i), at.anchorX() + at.spanX()));
+        double dz = m.z(i) - Math.max(at.anchorZ(), Math.min(m.z(i), at.anchorZ() + at.spanZ()));
+        return DetMath.length(dx, dz) <= radius + WALL_REACH;
     }
 
     /** Arrived at the place: burn, or walk on if the crowd stopped the unit short of it. */
@@ -105,7 +141,16 @@ final class Burning {
         if (d <= Constructing.BUILD_REACH) {
             ctx.go(UnitAi.BURNING);
         } else {
-            s.bus().publish(new PlaceMoved(ctx.handle()));
+            int here = ((int) (s.motion().x(i) * 8) << 16) | (int) (s.motion().z(i) * 8);
+            double lastX = (ctx.data1() >>> 16) / 8.0;
+            double lastZ = (ctx.data1() & 0xFFFF) / 8.0;
+            if (ctx.data1() != 0
+                    && DetMath.length(s.motion().x(i) - lastX, s.motion().z(i) - lastZ) < AGAIN) {
+                UnitAi.finishOrder(ctx, true); // arrived again where it arrived last: the way gets no nearer
+            } else {
+                ctx.setData(ctx.data0(), here);
+                s.bus().publish(new PlaceMoved(ctx.handle()));
+            }
         }
     }
 
@@ -114,7 +159,7 @@ final class Burning {
         MatchState s = ctx.host();
         int i = ctx.unit();
         int target = s.orders().target(i);
-        ctx.setData((int) s.tick() + (int) value(s, i, PREPARE, 0), 0);
+        ctx.setData((int) s.tick() + Siege.prepare(s, i), 0);
         if (!s.buildings().alive(target)) {
             return; // its think ends the order
         }
@@ -144,29 +189,25 @@ final class Burning {
         if (tick < ctx.data0()) {
             return;
         }
-        s.queueDamage(new Damage(target, ctx.handle(), 0, 0, 0, (float) value(s, i, FIRE, 0), List.of(), false));
+        s.queueDamage(Siege.blow(s, i, ctx.handle(), target));
         s.outputs().add(new UnitStruck(ctx.handle(), target));
-        Footprint at = s.footprintOf(target);
-        MotionStore m = s.motion();
-        int x = (int) Math.max(at.anchorX(), Math.min(at.anchorX() + at.spanX() - 1, Math.floor(m.x(i))));
-        int z = (int) Math.max(at.anchorZ(), Math.min(at.anchorZ() + at.spanZ() - 1, Math.floor(m.z(i))));
-        int height = s.blueprintOf(target).sizeY();
-        s.outputs().add(new FlameShown(x, s.buildings().baseY(target) + 1 + Math.min(2, height - 1), z));
-        ctx.setData(tick + Math.max(1, (int) value(s, i, REPEAT, 20)), 0);
+        if (Siege.fire(s, i) > 0) { // a torch shows flames, a log none
+            Footprint at = s.footprintOf(target);
+            MotionStore m = s.motion();
+            int x = (int) Math.max(at.anchorX(), Math.min(at.anchorX() + at.spanX() - 1, Math.floor(m.x(i))));
+            int z = (int) Math.max(at.anchorZ(), Math.min(at.anchorZ() + at.spanZ() - 1, Math.floor(m.z(i))));
+            int height = s.blueprintOf(target).sizeY();
+            s.outputs().add(new FlameShown(x, s.buildings().baseY(target) + 1 + Math.min(2, height - 1), z));
+        }
+        ctx.setData(tick + Math.max(1, Siege.repeat(s, i)), 0);
     }
 
     /**
-     * Whether unit {@code i} can still burn {@code target}: a standing building and a torch. Whose building it may be is
+     * Whether unit {@code i} can still strike {@code target}: a standing building, and a torch or a log that may. Whose building it may be is
      * the attack command's to decide (an own one only when forced, ORD-05), so the order is not checked again here.
      */
     static boolean burnable(MatchState s, int i, int target) {
         BuildingStore b = s.buildings();
-        return BuildingStore.isBuilding(target) && b.alive(target) && canBurn(s, i);
-    }
-
-    private static double value(MatchState s, int i, String path, double otherwise) {
-        int p = s.stats().path(path);
-        double v = p < 0 ? Double.NaN : s.stats().read(i, p);
-        return Double.isFinite(v) && v >= 0 ? v : otherwise;
+        return BuildingStore.isBuilding(target) && b.alive(target) && Siege.canStrike(s, i, target);
     }
 }

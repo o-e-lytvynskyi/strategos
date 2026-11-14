@@ -3,10 +3,14 @@ package dev.strategos.mod.server.body;
 import dev.strategos.core.diag.MatchLog;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.MatchId;
+import dev.strategos.core.sim.MatchCore;
+import dev.strategos.core.sim.vision.VisibilityIndex;
+import dev.strategos.core.sim.vision.VisionSystem;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.entity.UnitEntity;
 import dev.strategos.mod.entity.UnitSpawnData;
 import dev.strategos.mod.server.fog.FogGate;
+import dev.strategos.mod.server.match.MatchRegistry;
 import dev.strategos.mod.server.match.MatchRuntime;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
@@ -79,13 +83,41 @@ public final class BodyEvents {
         server.faults().run(rt, "hurt", () -> rt.damage(DamageBridge.of(data.handle(), source, amount)));
     }
 
-    /** Whether vanilla's tracking may pair {@code player} with a body of match {@code match} (the fog gate). */
-    public static boolean canSee(int match, ServerPlayer player) {
+    /**
+     * Whether vanilla's tracking may pair {@code player} with {@code body}'s unit (the fog gate, FOW-07 / MATCH-07):
+     * match membership, then per-unit visibility from the viewer's {@code VisibilityIndex}; a revealed map shows every
+     * body to every participant.
+     */
+    public static boolean canSee(UnitSpawnData body, ServerPlayer player) {
         StrategosServer server = StrategosServer.getOrNull();
         if (server == null) {
-            return FogGate.decide(match, 0); // no server holder, so no one sits in a match
+            return FogGate.decide(body.matchId(), 0);
         }
-        return FogGate.canSee(match, player.getUUID(), server.matches()::matchOf);
+        MatchRegistry.Seat seat = server.matches().seatOf(player.getUUID());
+        if (seat == null) {
+            return FogGate.decide(body.matchId(), 0);
+        }
+        int viewerMatch = seat.match().id().value();
+        if (viewerMatch != body.matchId()) {
+            return false;
+        }
+        MatchRuntime rt = seat.match();
+        MatchCore core = rt.core();
+        if (core == null) {
+            return false;
+        }
+        if (core.queries().config().rules().play().revealMap()) {
+            return true;
+        }
+        int viewerFaction = seat.slot().isAdmin() ? -1 : seat.slot().value();
+        int factions = core.queries().config().factions();
+        VisibilityIndex visibility = null;
+        VisionSystem vision = core.vision();
+        if (vision != null && viewerFaction >= 0 && viewerFaction < factions) {
+            visibility = vision.visibility(viewerFaction);
+        }
+        return FogGate.canSee(
+                body.matchId(), body.handle(), body.faction(), viewerMatch, viewerFaction, factions, visibility);
     }
 
     /** A pairing began ({@code seen}) or ended: the player's interest set follows. */

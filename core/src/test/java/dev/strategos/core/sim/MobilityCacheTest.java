@@ -77,10 +77,11 @@ class MobilityCacheTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("unknown mobility 'building'");
         assertThat(s.templates().all())
-                .as("the building adds no large class; the horseman (UNIT-06) is the builtin set's only one")
+                .as(
+                        "the building adds no large class; the horseman (UNIT-06) and the ram (CMB-09) are the builtin set's only ones")
                 .filteredOn(t -> "large".equals(t.mobility()))
                 .extracting(t -> t.id().value())
-                .containsExactly("strategos:unit/horseman");
+                .containsExactly("strategos:unit/horseman", "strategos:unit/ram");
     }
 
     @Test

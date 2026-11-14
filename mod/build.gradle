@@ -8,6 +8,7 @@ plugins {
 
 evaluationDependsOn(':core')
 def core = project(':core')
+def mapgenName = providers.gradleProperty('mapgen').getOrElse('proving_ground') // [M6 T12.2] the map mapgen writes
 
 version = providers.gradleProperty('mod_version').get()
 group = providers.gradleProperty('mod_group_id').get()
@@ -17,6 +18,7 @@ sourceSets {
     gametest   // L3 GameTests, smoke and spike drivers: dev only, never in the jar
     devtools   // L4 client scenario harness: dev only
     archTest   // L0 ArchUnit rules on plain JVM, no Minecraft on the classpath
+    jarSmoke   // [M6 T28] empty: the classpath of runServerSmokeJar, which has the game but none of the mod's classes
 }
 
 repositories {
@@ -51,6 +53,7 @@ neoForge {
     }
     addModdingDependenciesTo sourceSets.gametest
     addModdingDependenciesTo sourceSets.devtools
+    addModdingDependenciesTo sourceSets.jarSmoke
 
     mods {
         strategos {
@@ -223,15 +226,28 @@ neoForge {
             systemProperty 'strategos.smoke', 'arena2'
             systemProperty 'strategos.smoke.marker', file('build/smoke-arena/arena-run2.json').absolutePath
         }
-        // [M1 T6] writes the proving ground's map package into the devtools resources, then stops (spec 4.1)
+        // [M1 T6] writes a map package, then stops (spec 4.1): -Pmapgen=proving_ground (the default) into the
+        // devtools resources, -Pmapgen=first_skirmish (M6 T12.2, MAP-02) into the mod's own, which the jar ships
         mapgen {
             server()
             disableIdeRun()
             gameDirectory = file('build/mapgen')
             programArgument('--nogui')
-            systemProperty 'strategos.mapgen', 'proving_ground'
-            systemProperty 'strategos.mapgen.out', file('src/devtools/resources').absolutePath
+            systemProperty 'strategos.mapgen', mapgenName
+            systemProperty 'strategos.mapgen.out', file(mapgenName == 'first_skirmish' ? 'src/main/resources' : 'src/devtools/resources').absolutePath
             systemProperty 'strategos.mapgen.marker', file('build/mapgen/mapgen-result.json').absolutePath
+        }
+        // [M6 T28] QA-13.4: the dedicated server with only the built production jar, in mods/: no source set of the
+        // mod is loaded from classes (loadedMods is empty, the run's own source set is empty), so a class or a resource
+        // missing from the jar fails here and nowhere else. The mod's smoke driver is dev-only, so the run ends by
+        // the guard below: it stops the server on its "Done" line and reads the log.
+        serverSmokeJar {
+            server()
+            disableIdeRun()
+            sourceSet = sourceSets.jarSmoke
+            loadedMods = []
+            gameDirectory = file('build/server-smoke-jar')
+            programArgument('--nogui')
         }
         // [T9b] run 2 of the restart round trip: run 1's game directory, never wiped (QA-05.4)
         serverSmokeRestart {
@@ -405,11 +421,19 @@ tasks.register('checkJarContents') {
         }
         if (forbidden) throw new GradleException("Dev-only classes or module-info in the jar: ${forbidden.take(10)}")
         // [M1 T6] the proving ground's package lives in the devtools resources: dev runs load it, the jar never does
-        // [M3 T7] building blueprints (data/strategos/structure/strategos/buildings/) ship; map tiles do not
+        // [M3 T7] building blueprints (data/strategos/structure/strategos/buildings/) ship
+        // [M6 T12.2] the first skirmish map ships (MAP-02), and no other map package
+        def shipped = { String n ->
+            n.endsWith('/') || n == 'data/strategos/strategos/maps/first_skirmish.json' ||
+                    n.startsWith('data/strategos/structure/strategos/maps/first_skirmish/')
+        }
         def maps = names.findAll {
-            it.startsWith('data/strategos/strategos/maps/') || it.startsWith('data/strategos/structure/strategos/maps/')
+            (it.startsWith('data/strategos/strategos/maps/') || it.startsWith('data/strategos/structure/strategos/maps/')) && !shipped(it)
         }
         if (maps) throw new GradleException("Map packages in the jar: ${maps.take(10)}")
+        if (!names.contains('data/strategos/strategos/maps/first_skirmish.json')) {
+            throw new GradleException('the first skirmish map is missing from the jar')
+        }
         if (!names.contains('META-INF/neoforge.mods.toml')) throw new GradleException('META-INF/neoforge.mods.toml missing from the jar')
     }
 }
@@ -545,7 +569,9 @@ def prepareMapgen = tasks.register('prepareMapgen', Sync) {
 }
 neoForge.runs.mapgen.taskBefore prepareMapgen
 def mapgenMarker = file('build/mapgen/mapgen-result.json')
-def mapgenManifest = file('src/devtools/resources/data/strategos/strategos/maps/proving_ground.json')
+def mapgenManifest = file(mapgenName == 'first_skirmish'
+        ? 'src/main/resources/data/strategos/strategos/maps/first_skirmish.json'
+        : 'src/devtools/resources/data/strategos/strategos/maps/proving_ground.json')
 tasks.matching { it.name == 'runMapgen' }.configureEach {
     timeout = Duration.ofMinutes(5)
     doLast {
@@ -942,5 +968,59 @@ class ScenarioDiff {
         def known = goldens.listFiles().collect { it.name }
         def fresh = (out.listFiles() ?: []).findAll { it.name.endsWith('.png') && !(it.name in known) }.collect { it.name - '.png' }
         return [goldens: goldens.path, frames: frames, problems: problems, fresh: fresh]
+    }
+}
+
+// [M6 T28] QA-13.4 (L5): the dedicated server on the built production jar, not the dev classpath. A fresh game
+// directory per run holds the server.properties of the smoke (port 25599: never beside runServerSmoke) and the jar,
+// the only copy of the mod anywhere on the run's classpath or in its mods folder. The verdict is the log: the mod's
+// templates load, the server reports "Done", and a stop from the console ends it; no crash report, exit code 0.
+def smokeJarDir = file('build/server-smoke-jar')
+def prepareServerSmokeJar = tasks.register('prepareServerSmokeJar', Sync) {
+    from('src/gametest/smoke-gamedir') { include 'server.properties' }
+    from(jarArchive) { into 'mods' }
+    into smokeJarDir
+    outputs.upToDateWhen { false }
+}
+neoForge.runs.serverSmokeJar.taskBefore prepareServerSmokeJar
+tasks.matching { it.name == 'runServerSmokeJar' }.configureEach {
+    timeout = Duration.ofMinutes(5)
+    mustRunAfter 'runServerSmoke', 'runServerSmokeRestart', 'runServerSmokeArena', 'runServerSmokeArena2', 'runServerSmokeNoMarker'
+    doFirst {
+        // Console stdin: "stop" once the log says Done (the dedicated server reads its console even with --nogui).
+        def pipe = new PipedOutputStream()
+        standardInput = new PipedInputStream(pipe)
+        def log = new File(smokeJarDir, 'logs/latest.log')
+        Thread.startDaemon {
+            long deadline = System.currentTimeMillis() + 4 * 60_000L
+            while (System.currentTimeMillis() < deadline) {
+                if (log.isFile() && log.text.contains('Done (')) break
+                Thread.sleep(250)
+            }
+            Thread.sleep(2_000)    // a short life of the running server, so a late failure still shows
+            pipe.write('stop\n'.bytes)
+            pipe.flush()
+            Thread.sleep(60_000)    // the pipe stays open until the server is gone (a dead writer makes Gradle's reader complain)
+        }
+    }
+    doLast {
+        def log = new File(smokeJarDir, 'logs/latest.log')
+        def crashes = new File(smokeJarDir, 'crash-reports').listFiles()
+        String problem = null
+        if (crashes != null && crashes.length > 0) problem = "Jar smoke crashed: ${crashes*.name}"
+        else if (!log.isFile()) problem = "Jar smoke wrote no log: ${log}"
+        else {
+            def text = log.text
+            if (!text.contains('dev.strategos.mod.StrategosServer/]: Templates: loaded')) problem = 'Jar smoke: the mod did not load its templates from the jar'
+            else if (!text.contains('Done (')) problem = 'Jar smoke: the server never reported Done'
+            else if (!text.contains('Stopping server')) problem = 'Jar smoke: the server did not stop on the console command'
+            else if (text.contains('dev.strategos.gametest') || text.contains('dev.strategos.devtools')) problem = 'Jar smoke: a dev-only class was loaded'
+        }
+        smokeJUnitDir.mkdirs()
+        def failure = problem == null ? '' : "<failure message=\"${groovy.xml.XmlUtil.escapeXml(problem)}\"/>"
+        new File(smokeJUnitDir, 'TEST-runServerSmokeJar.xml').text =
+                "<testsuite name=\"strategos.smoke\" tests=\"1\" failures=\"${problem == null ? 0 : 1}\">" +
+                "<testcase classname=\"smoke\" name=\"runServerSmokeJar\">${failure}</testcase></testsuite>\n"
+        if (problem != null) throw new GradleException(problem)
     }
 }

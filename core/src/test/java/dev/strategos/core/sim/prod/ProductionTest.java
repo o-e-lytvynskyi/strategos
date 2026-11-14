@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.CancelTrain;
 import dev.strategos.core.protocol.CommandOutcome;
+import dev.strategos.core.protocol.NoticeKind;
 import dev.strategos.core.protocol.RejectReason;
 import dev.strategos.core.protocol.SpawnUnits;
 import dev.strategos.core.protocol.Train;
@@ -12,6 +13,7 @@ import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.CommandResult;
+import dev.strategos.core.sim.Notice;
 import dev.strategos.core.sim.UnitCreated;
 import dev.strategos.core.testkit.SimHarness;
 import dev.strategos.core.testkit.VoxelFixtures;
@@ -132,5 +134,23 @@ class ProductionTest {
         assertThat(Math.hypot(dx, dz)).as("by the door").isLessThanOrEqualTo(1.5);
         assertThat(made.y()).as("on the ground").isEqualTo(1.0);
         assertThat(PlayerSlot.ADMIN).isNotNull();
+    }
+
+    @Test
+    void aTrainedBatchTellsItsFactionOnceNamingTheTemplate() {
+        ProdScene p = ProdScene.of(1_000, 0);
+        assertThat(p.train().outcome()).isEqualTo(CommandOutcome.ACCEPTED);
+        assertThat(p.h.events(Notice.class))
+                .filteredOn(n -> n.kind() == NoticeKind.TRAINED)
+                .isEmpty();
+        p.h.runTicks(250);
+        assertThat(p.h.events(Notice.class))
+                .filteredOn(n -> n.kind() == NoticeKind.TRAINED)
+                .singleElement()
+                .satisfies(n -> {
+                    assertThat(n.faction()).isEqualTo(new FactionSlot(0));
+                    assertThat(n.handle()).as("the building").isEqualTo(p.centre);
+                    assertThat(n.detail()).isEqualTo(TemplateSet.WORKER.value());
+                });
     }
 }

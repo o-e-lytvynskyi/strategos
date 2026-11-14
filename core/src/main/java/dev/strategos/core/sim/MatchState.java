@@ -2,14 +2,11 @@ package dev.strategos.core.sim;
 
 import dev.strategos.core.content.Blueprint;
 import dev.strategos.core.content.Footprint;
+import dev.strategos.core.content.StartSlot;
 import dev.strategos.core.content.TemplateSet;
-import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.diag.MatchLog;
-import dev.strategos.core.shared.FactionSlot;
-import dev.strategos.core.shared.Handle;
 import dev.strategos.core.sim.build.BuildingLife;
 import dev.strategos.core.sim.build.BuildingStore;
-import dev.strategos.core.sim.build.DamageRanks;
 import dev.strategos.core.sim.combat.Damage;
 import dev.strategos.core.sim.combat.HealthStore;
 import dev.strategos.core.sim.combat.ShotStore;
@@ -37,7 +34,7 @@ import dev.strategos.core.sim.prod.Population;
 import dev.strategos.core.sim.spatial.SpatialQueries;
 import dev.strategos.core.sim.stats.StatService;
 import dev.strategos.core.sim.unitai.ActivityTiers;
-import dev.strategos.core.sim.unitai.UnitAi;
+import dev.strategos.core.sim.vision.VisionSystem;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,6 +53,8 @@ public final class MatchState {
     private MatchConfig config;
     private final Outcome outcome = new Outcome();
     private final AiSlots aiSlots = new AiSlots();
+    private final MatchStats matchStats;
+    private final Progress progress; // the techs each faction has researched (TECH-01)
     private TemplateSet templates;
     private final EntityStore entities;
     private final IdentityStore identity = new IdentityStore();
@@ -76,6 +75,10 @@ public final class MatchState {
     private final List<Damage> damage = new ArrayList<>();
     private final MatchBus bus = new MatchBus();
     private final StatService stats;
+    private @Nullable VisionSystem visionSystem;
+    /** The map's start slots (AI-18); not saved — a restored match sets them from the map again. */
+    private List<StartSlot> startPositions = List.of();
+
     private final SpatialQueries spatial;
     private final ArrayDeque<CommandEnvelope> pendingCommands = new ArrayDeque<>();
     private final List<OutputEvent> outputs = new ArrayList<>();
@@ -89,15 +92,12 @@ public final class MatchState {
     private final ActivityTiers tiers = new ActivityTiers();
     private final List<JobDelivery> deliveries = new ArrayList<>();
     private final MatchTerrain terrain;
-    private @Nullable MobilityClass[] mobilityByTemplate = new MobilityClass[0];
-    private boolean hasLargeMobility;
-    private int liveLarge; // live units of the large class; valid unless liveLargeStale
-    private boolean liveLargeStale = true; // after a build, restore or template swap: recounted on demand
+    private final MobilityCache mobilityCache = new MobilityCache(this);
     private final NodeStore nodes = new NodeStore();
     private final BuildingStore buildings = new BuildingStore();
     private final Alerts alerts = new Alerts(); // UI-12's live alerts, saved (MATCH-04)
-    private final java.util.TreeMap<String, int[]> damageRanks = new java.util.TreeMap<>(); // by blueprint id
-    private @Nullable NodeIndex nodeIndex;
+    private final DamageRankCache damageRanks = new DamageRankCache();
+    private final NodeIndexCache nodeIndex = new NodeIndexCache(this);
     private final EconomyTimes economyTimes = new EconomyTimes();
     private final dev.strategos.core.sim.combat.CombatTimes combatTimes =
             new dev.strategos.core.sim.combat.CombatTimes();
@@ -105,11 +105,13 @@ public final class MatchState {
     MatchState(MatchConfig config, TemplateSet templates, EntityStore entities, MatchLog log) {
         this.config = config;
         this.templates = templates;
-        cacheMobility();
+        mobilityCache.rebuild();
         this.entities = entities;
         this.stances = new StanceStore(entities::handleAt);
         this.log = log;
         this.stats = new StatService(templates, config.factions() + 1, identity, bus); // the players' and Gaia's
+        this.matchStats = new MatchStats(config.factions());
+        this.progress = new Progress(templates, config.factions());
         EconomyRules economy = config.rules().economy();
         this.treasury = new Treasury(config.factions(), economy.size());
         for (int f = 0; f < config.factions(); f++) {
@@ -143,16 +145,11 @@ public final class MatchState {
     }
 
     public MobilityClass mobility(int index) {
-        int template = identity.templateIndex(index);
-        if (template >= 0 && template < mobilityByTemplate.length) {
-            MobilityClass cached = mobilityByTemplate[template];
-            if (cached != null) return cached;
-        }
-        return MobilityClass.of(templates.byIndex(template).mobility());
+        return mobilityCache.of(index);
     }
 
     public boolean hasLargeMobility() {
-        return hasLargeMobility;
+        return mobilityCache.hasLarge();
     }
 
     /**
@@ -161,34 +158,7 @@ public final class MatchState {
      * #removeUnit}; recounted once after a template swap or a build over restored units.
      */
     public boolean hasLiveLargeUnits() {
-        if (!hasLargeMobility) {
-            return false;
-        }
-        if (liveLargeStale) {
-            liveLarge = 0;
-            for (int i = 0; i < entities.highWater(); i++) {
-                if (entities.aliveAt(i) && mobility(i) == MobilityClass.LARGE) {
-                    liveLarge++;
-                }
-            }
-            liveLargeStale = false;
-        }
-        return liveLarge > 0;
-    }
-
-    private void cacheMobility() {
-        mobilityByTemplate = new MobilityClass[templates.indexCount()];
-        hasLargeMobility = false;
-        liveLargeStale = true;
-        for (UnitTemplate template : templates.all()) {
-            MobilityClass mobility = switch (template.mobility()) {
-                case "infantry" -> MobilityClass.INFANTRY;
-                case "large" -> MobilityClass.LARGE;
-                default -> null; // Preserve the original error when an unsupported mobility is queried.
-            };
-            mobilityByTemplate[template.netIndex()] = mobility;
-            hasLargeMobility |= mobility == MobilityClass.LARGE;
-        }
+        return mobilityCache.hasLiveLarge();
     }
 
     public boolean hasFootprints() {
@@ -228,7 +198,7 @@ public final class MatchState {
 
     /** Discover the resource model once all terrain slices have arrived. */
     void discoverNodes(byte[][] sliceBytes) {
-        nodeIndex = null;
+        nodeIndex.invalidate();
         MatchResourceDiscovery.discover(this, sliceBytes);
     }
 
@@ -270,9 +240,18 @@ public final class MatchState {
         return alerts;
     }
 
+    /** Building {@code handle} of a computer player was destroyed: its rebuilder is told where it stood (AI-04). */
+    public void recordLoss(int handle) {
+        int faction = buildings.faction(handle);
+        if (aiSlots.get(faction) != null) {
+            Footprint at = footprintOf(handle);
+            alerts.lost(faction, buildings.template(handle), at.anchorX(), at.anchorZ(), at.rotation(), tick());
+        }
+    }
+
     /** Blueprint {@code b}'s damage ranks (BLD-05), worked out once a match: derived, neither hashed nor saved. */
     public int[] damageRanks(Blueprint b) {
-        return damageRanks.computeIfAbsent(b.id(), id -> DamageRanks.of(b));
+        return damageRanks.of(b);
     }
 
     /** Where building {@code handle} stands. */
@@ -318,7 +297,7 @@ public final class MatchState {
             long[] blocks,
             int[] slots) {
         int id = nodes.add(kind, resource, subtype, perBlock, amount, anchorX, anchorZ, baseY, blocks, slots);
-        nodeIndex = null;
+        nodeIndex.invalidate();
         return id;
     }
 
@@ -334,18 +313,7 @@ public final class MatchState {
 
     /** Where the nodes are, built on first use after discovery or a restore. */
     public NodeIndex nodeIndex() {
-        NodeIndex index = nodeIndex;
-        if (index == null) {
-            long start = economyTimes.start();
-            index = new NodeIndex(
-                    nodes,
-                    config.rules().economy(),
-                    surfaces().pagesX(),
-                    surfaces().pagesZ());
-            nodeIndex = index;
-            economyTimes.built(start);
-        }
-        return index;
+        return nodeIndex.get();
     }
 
     /**
@@ -358,16 +326,7 @@ public final class MatchState {
 
     /** A snapshot's buildings, their footprints blocked again (the writer's blocks are the world's already). */
     void restoreBuildings(List<BuildingStore.Saved> saved) {
-        buildings.restore(saved);
-        for (int handle : buildings.handles()) {
-            if (buildings.state(handle) != BuildingStore.FOUNDATION
-                    && dev.strategos.core.sim.build.Placing.obstructs(
-                            this, buildings.template(handle), buildings.faction(handle))) { // a field's are walked on
-                for (int cell : footprintOf(handle).columns(blueprintOf(handle))) {
-                    restoreColumn(cell >>> 16, cell & 0xFFFF);
-                }
-            }
-        }
+        BuildingRestore.restore(this, saved);
     }
 
     /** Whether a building's footprint blocks match-local column (x, z). */
@@ -501,19 +460,7 @@ public final class MatchState {
      * (path results and waiting requests for it are dropped on arrival); a unit spawned there later resets every store.
      */
     public void removeUnit(int handle) {
-        int i = Handle.index(handle);
-        if (identity.faction(i) < config.factions()) { // Gaia has no population
-            population.remove(identity.faction(i), unitPopulation(i));
-        }
-        health.reset(i);
-        stances.clear(i);
-        garrison.remove(i);
-        releaseClaim(i, handle);
-        dropLoad(i);
-        if (!liveLargeStale && mobility(i) == MobilityClass.LARGE) {
-            liveLarge--;
-        }
-        entities.destroy(handle);
+        UnitLifecycle.remove(this, handle);
     }
 
     /**
@@ -521,27 +468,7 @@ public final class MatchState {
      * store reset; it takes its population (ECO-06). Its handle; {@link UnitCreated} tells the mod.
      */
     public int spawnUnit(int template, int faction, double x, double y, double z, float yaw) {
-        int handle = entities.create();
-        int index = Handle.index(handle);
-        ensureCapacity(index + 1);
-        identity.set(index, template, faction);
-        if (!liveLargeStale && mobility(index) == MobilityClass.LARGE) {
-            liveLarge++;
-        }
-        motion.set(index, x, y, z, yaw);
-        orders.clear(index);
-        paths.reset(index);
-        motion.setExtra(index, MotionStore.Extra.NONE);
-        stats.clearPersonal(index);
-        health.reset(index);
-        stances.clear(index);
-        garrison.remove(index);
-        ai.reset(index, UnitAi.IDLE);
-        if (faction < config.factions()) {
-            population.add(faction, unitPopulation(index));
-        }
-        outputs.add(new UnitCreated(handle, template, new FactionSlot(faction), x, y, z, yaw));
-        return handle;
+        return UnitLifecycle.spawn(this, template, faction, x, y, z, yaw);
     }
 
     /**
@@ -554,16 +481,12 @@ public final class MatchState {
 
     /** What unit {@code i} takes of its faction's population: its {@code Cost/population}, 0 for none (ECO-06). */
     public int unitPopulation(int i) {
-        int path = stats.path(Population.COST);
-        double v = path < 0 ? Double.NaN : stats.read(i, path);
-        return Double.isFinite(v) && v > 0 ? (int) Math.round(v) : 0;
+        return PopulationCost.ofUnit(stats, i);
     }
 
     /** What a unit of {@code template} for {@code faction} takes of the population. */
     public int templatePopulation(int template, int faction) {
-        int path = stats.path(Population.COST);
-        double v = path < 0 ? Double.NaN : stats.blockValue(template, faction, path);
-        return Double.isFinite(v) && v > 0 ? (int) Math.round(v) : 0;
+        return PopulationCost.ofTemplate(stats, template, faction);
     }
 
     /** The factions' population counters (ECO-06). */
@@ -573,25 +496,12 @@ public final class MatchState {
 
     /** Unit {@code i} ({@code handle}) gives up the work slot it holds, if any (ECO-05). */
     public void releaseClaim(int i, int handle) {
-        int node = carry.claimed(i);
-        if (node != 0) {
-            nodes.release(node, handle);
-            carry.setClaimed(i, 0);
-        }
-        int site = carry.site(i);
-        if (site != 0) {
-            buildings.release(site, handle);
-            carry.setSite(i, 0);
-        }
+        UnitLifecycle.releaseClaim(this, i, handle);
     }
 
     /** Unit {@code i} drops what it carries: lost to everyone, as the ledger records. */
     public void dropLoad(int i) {
-        int resource = carry.resource(i);
-        long dropped = carry.clear(i);
-        if (dropped > 0) {
-            ledger.dropped(resource, dropped);
-        }
+        UnitLifecycle.dropLoad(this, i);
     }
 
     /** The claims a restored match's nodes and buildings hold, put back on their units (ECO-05, BLD-03). */
@@ -634,6 +544,15 @@ public final class MatchState {
     public void setRules(MatchRules rules) {
         config = new MatchConfig(config.id(), config.seed(), config.bounds(), config.factions(), rules);
         population.setMax(rules.economy().populationMax());
+    }
+
+    /** What each faction has researched (TECH-01). */
+    public MatchStats matchStats() {
+        return matchStats;
+    }
+
+    public Progress progress() {
+        return progress;
     }
 
     /** The factions the computer plays (AI-01). */
@@ -687,6 +606,25 @@ public final class MatchState {
     /** What templates cost each faction (ECO-01). */
     public Costs costs() {
         return costs;
+    }
+
+    /** The fog-of-war vision, or null for a state no kernel runs (FOW-01). */
+    public @Nullable VisionSystem visionSystem() {
+        return visionSystem;
+    }
+
+    void setVisionSystem(VisionSystem vision) {
+        this.visionSystem = vision;
+    }
+
+    /** The map's start slots for the AI (AI-18); empty until the match is seated on a map. */
+    public List<StartSlot> startPositions() {
+        return startPositions;
+    }
+
+    /** Seats the match on a map's start slots (AI-18); known to every faction, fog or not. */
+    public void setStartPositions(List<StartSlot> starts) {
+        this.startPositions = List.copyOf(starts);
     }
 
     /** Every unit's numbers, through the modifier pipeline (ADR-0013). */
@@ -761,59 +699,21 @@ public final class MatchState {
      * set, when a live unit's template is missing from it or holds another net index there.
      */
     void swapTemplates(TemplateSet set) {
-        String problem = templateSwapProblem(set);
-        if (problem != null) {
-            log.warn(tick, "template set {} refused: {}", set, problem);
-            return;
-        }
+        TemplateSwap.apply(this, set);
+    }
+
+    /** Takes the set a swap was approved for; {@link TemplateSwap} does the rest. */
+    MobilityCache mobilityCache() {
+        return mobilityCache;
+    }
+
+    void setTemplates(TemplateSet set) {
         templates = set;
-        cacheMobility();
-        stats.swap(set);
-        costs.swap(stats);
-        gatherRates.swap(stats);
-        spatial.swap(set);
     }
 
     /** One guard for both the server reload and INGEST, before any template-dependent state changes. */
     public @Nullable String templateSwapProblem(TemplateSet next) {
-        for (int i = 0; i < entities.highWater(); i++) {
-            if (entities.aliveAt(i)) {
-                String problem = referenceProblem(next, identity.templateIndex(i));
-                if (problem != null) {
-                    return problem;
-                }
-            }
-        }
-        for (int handle : buildings.handles()) {
-            String problem = referenceProblem(next, buildings.template(handle));
-            if (problem != null) {
-                return problem;
-            }
-            for (int queued : buildings.queue(handle)) {
-                problem = referenceProblem(next, queued);
-                if (problem != null) {
-                    return problem;
-                }
-            }
-        }
-        for (int id = 1; id <= nodes.count(); id++) {
-            int template = nodes.template(id);
-            if (template >= 0) {
-                String problem = referenceProblem(next, template);
-                if (problem != null) {
-                    return problem;
-                }
-            }
-        }
-        return null;
-    }
-
-    private @Nullable String referenceProblem(TemplateSet next, int index) {
-        UnitTemplate now = templates.byIndex(index);
-        UnitTemplate replacement = next.byId(now.id());
-        return replacement == null || replacement.netIndex() != index || replacement.isBuilding() != now.isBuilding()
-                ? "template " + now.id() + " is in use and must keep its index and kind"
-                : null;
+        return TemplateSwap.problem(this, next);
     }
 
     /** Whether this tick's {@link JobDelivery} inputs list path request {@code id}; none on a tick without one. */

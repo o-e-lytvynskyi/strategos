@@ -22,6 +22,8 @@ class StyleGuideRangesTest {
             new Range("Storehouse", 5, 8, 4, 6, 80, 200),
             new Range("Farmstead", 5, 8, 3, 6, 60, 160),
             new Range("CivicCentre", 9, 15, 6, 10, 300, 800),
+            new Range("Tower", 5, 7, 7, 12, 100, 260),
+            new Range("Arsenal", 9, 13, 6, 9, 250, 500),
             new Range("Deposit", 3, 6, 2, 4, 18, 90));
 
     static final double RISE_MIN = 1.5;
@@ -55,6 +57,6 @@ class StyleGuideRangesTest {
             }
             checked++;
         }
-        assertThat(checked).isEqualTo(10);
+        assertThat(checked).isEqualTo(12);
     }
 }

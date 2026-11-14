@@ -1,0 +1,13 @@
+{
+  "name": "strategos.tech.iron_weapons",
+  "icon": "minecraft:iron_sword",
+  "cost": { "food": 200, "wood": 100, "iron": 150 },
+  "time": 60,
+  "requires": { "phase": "town" },
+  "effects": [
+    { "path": "Attack/Melee/hack", "op": "add", "value": 1, "filter": "Spearman Cavalry" },
+    { "path": "Attack/Melee/pierce", "op": "add", "value": 1, "filter": "Spearman Cavalry" },
+    { "path": "Attack/Ranged/pierce", "op": "add", "value": 1, "filter": "Archer" },
+    { "path": "Look/weapon", "op": "add", "value": 1, "filter": "Infantry Cavalry" }
+  ]
+}

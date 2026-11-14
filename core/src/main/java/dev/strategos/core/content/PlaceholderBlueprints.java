@@ -19,6 +19,8 @@ public final class PlaceholderBlueprints {
     public static final String FIELD = "strategos:field";
     public static final String STOREHOUSE = "strategos:storehouse";
     public static final String FARMSTEAD = "strategos:farmstead";
+    public static final String TOWER = "strategos:tower";
+    public static final String ARSENAL = "strategos:arsenal";
     public static final String QUARRY = "strategos:quarry";
     public static final String QUARRY_LARGE = "strategos:quarry_large";
     public static final String IRON_MINE = "strategos:iron_mine";
@@ -35,6 +37,8 @@ public final class PlaceholderBlueprints {
                 field(),
                 storehouse(),
                 farmstead(),
+                tower(),
+                arsenal(),
                 deposit(QUARRY, 3, "minecraft:stone", "minecraft:andesite"),
                 deposit(QUARRY_LARGE, 5, "minecraft:stone", "minecraft:andesite"),
                 deposit(IRON_MINE, 3, "minecraft:iron_ore", "minecraft:deepslate_iron_ore"),
@@ -174,6 +178,55 @@ public final class PlaceholderBlueprints {
         g.clear(1, 1, 0, 4, 2, 0); // the open front
         g.fill(0, 3, 0, 5, 3, 4, 2);
         return g.blueprint(FARMSTEAD, 2, 1, 0);
+    }
+
+    /**
+     * 5 x 9 x 5 (BLD-17): a stone-brick shaft on a cobblestone base, a doorway on the north side, a polished-andesite
+     * platform and a crenellated parapet above it, where the arrows leave from.
+     */
+    public static Blueprint tower() {
+        Grid g = new Grid(
+                5, 9, 5, List.of("minecraft:stone_bricks", "minecraft:cobblestone", "minecraft:polished_andesite"));
+        g.fill(0, 0, 0, 4, 0, 4, 1);
+        for (int y = 1; y <= 6; y++) {
+            g.ring(0, y, 0, 4, 4, y <= 1 ? 1 : 0);
+        }
+        g.clear(2, 1, 0, 2, 2, 0); // the doorway
+        g.fill(0, 7, 0, 4, 7, 4, 2);
+        for (int i = 0; i <= 4; i += 2) { // the merlons: every other block of the parapet ring
+            g.set(i, 8, 0, 0);
+            g.set(i, 8, 4, 0);
+            g.set(0, 8, i, 0);
+            g.set(4, 8, i, 0);
+        }
+        return g.blueprint(TOWER, 2, 1, 0);
+    }
+
+    /**
+     * 11 x 7 x 9 (CMB-09): stone-brick walls on a cobblestone base, a crimson-plank roof and a ridge, and a doorway three
+     * wide and three high on the north side, wide enough for a ram to roll out of.
+     */
+    public static Blueprint arsenal() {
+        Grid g = new Grid(
+                11,
+                7,
+                9,
+                List.of(
+                        "minecraft:cobblestone",
+                        "minecraft:stone_bricks",
+                        "minecraft:crimson_planks",
+                        "minecraft:polished_andesite"));
+        g.fill(0, 0, 0, 10, 0, 8, 0);
+        for (int y = 1; y <= 4; y++) {
+            g.ring(0, y, 0, 10, 8, y == 1 ? 0 : 1);
+        }
+        g.clear(4, 1, 0, 6, 3, 0); // the doorway
+        g.fill(0, 5, 0, 10, 5, 8, 2);
+        g.fill(1, 6, 1, 9, 6, 7, 2);
+        for (int x = 0; x <= 10; x += 5) { // polished stone at the lintel and the corners
+            g.set(x, 4, 0, 3);
+        }
+        return g.blueprint(ARSENAL, 5, 1, 0);
     }
 
     /** 9 x 6 x 7: mud-brick walls on cobblestone, a crimson-plank roof and a ridge. */

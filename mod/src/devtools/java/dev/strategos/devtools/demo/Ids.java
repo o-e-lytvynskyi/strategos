@@ -1,6 +1,7 @@
 package dev.strategos.devtools.demo;
 
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.shared.TechId;
 import dev.strategos.core.shared.TemplateId;
 
 /** The templates the chapters use. */
@@ -18,6 +19,11 @@ final class Ids {
     static final TemplateId HOUSE = new TemplateId("strategos:building/house");
     static final TemplateId BARRACKS = new TemplateId("strategos:building/barracks");
     static final TemplateId IRON_MINE = new TemplateId("strategos:building/iron_mine");
+    static final TemplateId TOWER = new TemplateId("strategos:building/tower");
+    static final TemplateId ARSENAL = new TemplateId("strategos:building/arsenal");
+    static final TemplateId RAM = new TemplateId("strategos:unit/ram");
+    static final TechId WOOD_1 = new TechId("strategos:gather_wood_1");
+    static final TechId PHASE_TOWN = new TechId("strategos:phase_town");
     static final TemplateId QUARRY = new TemplateId("strategos:building/quarry");
     /** Gaia's slot in a two-faction match: the animals'. */
     static final int GAIA = 2;

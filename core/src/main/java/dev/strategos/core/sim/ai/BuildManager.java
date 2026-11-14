@@ -2,12 +2,15 @@ package dev.strategos.core.sim.ai;
 
 import dev.strategos.core.content.Blueprint;
 import dev.strategos.core.content.Footprint;
+import dev.strategos.core.content.TechDef;
 import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.protocol.Build;
 import dev.strategos.core.protocol.PlaceBuilding;
 import dev.strategos.core.protocol.QueueMode;
+import dev.strategos.core.protocol.Research;
 import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.DetMath;
+import dev.strategos.core.shared.TechId;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.sim.UnitView;
 import dev.strategos.core.sim.build.BuildingStore;
@@ -16,13 +19,15 @@ import dev.strategos.core.sim.econ.NodeView;
 import dev.strategos.core.sim.nav.MaterialKind;
 import java.util.ArrayList;
 import java.util.List;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Builds the script's build order and houses (04 §14's BuildManager). A step starts once the population reaches its
  * number; its building is placed with the two workers nearest the site, at the next of the script's sites round the
  * civic centre (mirrored for the second start slot); a placement the server refused leaves no new building, so after
  * {@value #RETRY} ticks the next site is tried. The step is done once one more of its building stands, in any state.
- * Before that, a house goes up whenever the free population falls to the margin and none is being built: no room to
+ * A research step (AI-05) sends {@code Research} from an own building that holds the tech once the population is reached
+ * and the stock covers its cost, and is done once the tech is researched or queued. Before that, a house goes up whenever the free population falls to the margin and none is being built: no room to
  * grow comes first. An own building left unfinished with nobody on it gets the nearest free worker back (M4 T2). Then,
  * before the build order, the script's {@code dropsite} goes up by a resource running out near its dropsites (AI-02).
  */
@@ -34,6 +39,11 @@ final class BuildManager implements AiModule {
 
     /** How far from an own dropsite a node is near it. */
     static final double FAR = 24;
+
+    /**
+     * How far from the centre a dropsite may go up by a far grove (QA-12); its stone is Town's too (50 of it each).
+     */
+    static final double REMOTE_REACH = 120;
 
     /** A resource is running out near its dropsites below this much in their nodes, in thousandths. */
     static final long RUNNING_OUT = 600_000;
@@ -68,6 +78,10 @@ final class BuildManager implements AiModule {
         int step = (int) memory.get(Slots.STEP);
         if (step < script.build().size()) {
             StrategyScript.Step s = script.build().get(step);
+            if (s.researches()) {
+                research(view, budget, sink, s, step, waited);
+                return;
+            }
             int count = count(view, s.building());
             if (memory.get(Slots.STEP_BASE) == 0) {
                 memory.set(Slots.STEP_BASE, count + 1L);
@@ -93,29 +107,82 @@ final class BuildManager implements AiModule {
     /** How long the stock is kept for a due building before soldiers may have it again: a minute (AI-02). */
     static final long RESERVE_TICKS = 1_200;
 
+    /** As {@link #RESERVE_TICKS} for a due tech, whose cost is several buildings' (AI-05): five minutes. */
+    static final long RESEARCH_RESERVE_TICKS = 6_000;
+
+    /** What the stock is kept for: a building, or a tech. */
+    record Due(TemplateId building, @Nullable TechDef tech) {
+        /** Its cost in {@code resource}, thousandths. */
+        long cost(AiView view, String resource) {
+            return tech == null ? view.cost(building, resource) : view.cost(tech, resource);
+        }
+    }
+
     /**
      * What the stock is kept for (AI-02's {@code reserve}; null without it or with nothing due): a dropsite by a far
-     * node the stock did not cover, until it is placed, or else the building the build order waits on, its step's
-     * population reached and not yet placed, for at most {@value #RESERVE_TICKS} ticks.
+     * node the stock did not cover, until it is placed, or else the build order's next step ({@link #stepDue}).
      */
-    static @org.jspecify.annotations.Nullable TemplateId due(AiView view, StrategyScript script, AiMemory memory) {
+    static @Nullable Due due(AiView view, StrategyScript script, AiMemory memory) {
         if (script.reserve() && memory.get(Slots.EXPAND_SINCE) != 0) {
-            return new TemplateId(script.dropsite()); // with its resource running out, nothing else pays more
+            return new Due(
+                    new TemplateId(script.dropsite()), null); // with its resource running out, nothing else pays more
         }
         return stepDue(view, script, memory);
     }
 
-    /** The build order's part of {@link #due}: its next building, due and unplaced, for {@value #RESERVE_TICKS} ticks. */
-    static @org.jspecify.annotations.Nullable TemplateId stepDue(AiView view, StrategyScript script, AiMemory memory) {
+    /**
+     * The build order's part of {@link #due}: its next step, due and not yet done, a building for {@value
+     * #RESERVE_TICKS} ticks, a research for {@value #RESEARCH_RESERVE_TICKS}.
+     */
+    static @Nullable Due stepDue(AiView view, StrategyScript script, AiMemory memory) {
         int step = (int) memory.get(Slots.STEP);
         long since = memory.get(Slots.DUE_SINCE);
-        if (!script.reserve()
-                || step >= script.build().size()
-                || since == 0
-                || view.tick() - (since - 1) > RESERVE_TICKS) {
+        if (!script.reserve() || step >= script.build().size() || since == 0) {
             return null;
         }
-        return script.build().get(step).building();
+        StrategyScript.Step s = script.build().get(step);
+        if (s.researches()) {
+            TechDef tech = view.templates().tech(new TechId(s.research()));
+            return tech == null || view.tick() - (since - 1) > RESEARCH_RESERVE_TICKS
+                    ? null
+                    : new Due(s.building(), tech);
+        }
+        return view.tick() - (since - 1) > RESERVE_TICKS ? null : new Due(s.building(), null);
+    }
+
+    /**
+     * A research step (AI-05): done once the tech is researched or queued (or the set lacks it); due once the population
+     * is reached, when {@code Research} goes out from a finished own building that holds it, as soon as the stock covers
+     * the cost, again after {@value #RETRY} ticks if the server refused it (a requirement not yet met).
+     */
+    private void research(
+            AiView view, AiBudget budget, CommandSink sink, StrategyScript.Step s, int step, boolean waited) {
+        TechDef tech = view.templates().tech(new TechId(s.research()));
+        if (tech == null || view.hasOrQueues(tech)) {
+            memory.set(Slots.STEP, step + 1L);
+            memory.set(Slots.STEP_BASE, 0);
+            memory.set(Slots.DUE_SINCE, 0);
+            return;
+        }
+        if (view.populationUsed() < s.population()) {
+            return;
+        }
+        if (memory.get(Slots.DUE_SINCE) == 0) {
+            memory.set(Slots.DUE_SINCE, view.tick() + 1);
+        }
+        if (!waited || !view.affords(tech)) {
+            return;
+        }
+        for (BuildingView b : view.buildings()) {
+            if (b.state() == BuildingStore.COMPLETE
+                    && b.queue().size() < BuildingStore.QUEUE_MAX
+                    && view.researches(b.template(), tech)
+                    && budget.spend(10)) {
+                memory.set(Slots.PLACED, view.tick() + 1);
+                sink.send(new Research(b.handle(), tech.id()));
+                return;
+            }
+        }
     }
 
     /** Every own unfinished building with no worker on its site gets the nearest one not building elsewhere. */
@@ -159,8 +226,11 @@ final class BuildManager implements AiModule {
             }
         }
         for (String resource : script.ratio().keySet()) {
-            NodeView far = takes.contains(resource) ? farNode(view, base, resource) : null;
-            if (far == null) {
+            boolean town = townQueued();
+            // before Town: one storehouse beyond the usual reach at most, and never into Town's price (QA-12)
+            boolean remote = town || remoteDropsites(view, base, template) == 0;
+            NodeView far = takes.contains(resource) ? farNode(view, base, resource, remote) : null;
+            if (far == null || (!town && !affordsWithTown(view, template))) {
                 continue;
             }
             if (!view.affords(template)) {
@@ -170,17 +240,60 @@ final class BuildManager implements AiModule {
                 return true;
             }
             memory.set(Slots.EXPAND_SINCE, 0);
-            return placeAt(view, budget, sink, base, template, far.anchorX(), far.anchorZ());
+            return placeAt(view, budget, sink, base, template, far.anchorX(), far.anchorZ(), true);
         }
         memory.set(Slots.EXPAND_SINCE, 0);
         return false;
+    }
+
+    /** How many own buildings of {@code template} stand beyond the usual reach of the centre. */
+    private static int remoteDropsites(AiView view, Base base, TemplateId template) {
+        int n = 0;
+        for (BuildingView b : view.buildings()) {
+            Footprint f = b.footprint();
+            if (b.template().equals(template)
+                    && DetMath.length(f.anchorX() - base.x(), f.anchorZ() - base.z()) > SiteFinder.REACH) {
+                n++;
+            }
+        }
+        return n;
+    }
+
+    /** Whether the stock covers {@code template} and the build order's research step (Town) together. */
+    private boolean affordsWithTown(AiView view, TemplateId template) {
+        for (StrategyScript.Step s : script.build()) {
+            if (s.researches()) {
+                TechDef tech = view.templates().tech(new TechId(s.research()));
+                if (tech == null) {
+                    return true;
+                }
+                for (String r : view.resources()) {
+                    if (view.stock(r) < view.cost(template, r) + view.cost(tech, r)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
+        return true;
+    }
+
+    /** Whether the build order's research step (Town) is done: its stone is spent, and remote storehouses may go up (QA-12). */
+    private boolean townQueued() {
+        for (int k = 0; k < script.build().size(); k++) {
+            if (script.build().get(k).researches()) {
+                return memory.get(Slots.STEP) > k;
+            }
+        }
+        return true;
     }
 
     /**
      * With {@code resource} running out near its own dropsites, its live node nearest the centre among those farther
      * from them and within {@link SiteFinder#REACH} of the centre, where a site may go; null otherwise.
      */
-    private static @org.jspecify.annotations.Nullable NodeView farNode(AiView view, Base base, String resource) {
+    private static @org.jspecify.annotations.Nullable NodeView farNode(
+            AiView view, Base base, String resource, boolean remote) {
         NodeView best = null;
         double bestD = Double.POSITIVE_INFINITY;
         long near = 0;
@@ -196,7 +309,9 @@ final class BuildManager implements AiModule {
                 continue;
             }
             double d = DetMath.length(n.anchorX() - base.x(), n.anchorZ() - base.z());
-            if (d < bestD && d <= SiteFinder.REACH) {
+            if (d < bestD
+                    && d <= (remote ? REMOTE_REACH : SiteFinder.REACH)
+                    && view.explored(n.anchorX(), n.anchorZ())) {
                 bestD = d;
                 best = n;
             }
@@ -220,7 +335,7 @@ final class BuildManager implements AiModule {
 
     private void place(AiView view, AiBudget budget, CommandSink sink, Base base, TemplateId template, String near) {
         double[] want = want(view, base, near);
-        placeAt(view, budget, sink, base, template, want[0], want[1]);
+        placeAt(view, budget, sink, base, template, want[0], want[1], false);
     }
 
     /** Places {@code template} by (wantX, wantZ); whether a placement went out. */
@@ -231,14 +346,16 @@ final class BuildManager implements AiModule {
             Base base,
             TemplateId template,
             double wantX,
-            double wantZ) {
+            double wantZ,
+            boolean remote) {
         UnitTemplate t = view.templates().byId(template);
         Blueprint bp = t == null ? null : view.templates().blueprint(t.netIndex());
         if (bp == null) {
             return false;
         }
         if (script.sites().isEmpty()) { // no scripted sites: the player finds its own (AI-02)
-            int[] at = SiteFinder.find(view, budget, base, template, wantX, wantZ, memory.get(Slots.LAST_SITE) - 1);
+            int[] at = SiteFinder.find(
+                    view, budget, base, template, wantX, wantZ, memory.get(Slots.LAST_SITE) - 1, remote);
             memory.set(Slots.PLACED, view.tick() + 1);
             if (at == null) {
                 return false; // nothing within reach now; the wait, then a look again
@@ -318,7 +435,7 @@ final class BuildManager implements AiModule {
         return out;
     }
 
-    private static List<Integer> nearestWorkers(AiView view, double x, double z, int n) {
+    static List<Integer> nearestWorkers(AiView view, double x, double z, int n) {
         List<UnitView> workers = new ArrayList<>();
         for (UnitView u : view.units()) {
             if (view.is(u.template(), "Builder") && !view.building(u)) { // a REPLACE would abandon its site

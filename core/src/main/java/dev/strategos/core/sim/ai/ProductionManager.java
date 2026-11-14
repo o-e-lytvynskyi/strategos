@@ -32,9 +32,13 @@ final class ProductionManager implements AiModule {
         boolean compose = battle.replan() > 0;
         int[] have = new int[4]; // own soldiers by role, queued ones too (AI-03)
         int workers = 0;
+        int rams = 0;
         for (UnitView u : view.units()) {
             if (u.template().equals(worker)) {
                 workers++;
+            }
+            if (u.template().equals(RAM)) {
+                rams++;
             }
             have[view.role(u)]++;
         }
@@ -49,10 +53,19 @@ final class ProductionManager implements AiModule {
                 if (view.templates().has(t) && view.templates().byIndex(t).id().equals(worker)) {
                     workers++;
                 }
+                if (view.templates().has(t) && view.templates().byIndex(t).id().equals(RAM)) {
+                    rams++;
+                }
                 have[view.roleOf(t)]++;
             }
         }
-        TemplateId due = BuildManager.due(view, script, memory);
+        BuildManager.Due due = BuildManager.due(view, script, memory);
+        boolean ramWanted = false; // a ram is wanted and an arsenal stands: soldiers leave its price in the stock
+        if (battle.rams() > 0 && rams < battle.rams()) {
+            for (BuildingView b : view.buildings()) {
+                ramWanted |= b.state() == 2 && view.trains(b.template(), RAM);
+            }
+        }
         for (BuildingView b : view.buildings()) {
             if (budget.exhausted()) {
                 return;
@@ -63,6 +76,17 @@ final class ProductionManager implements AiModule {
             if (b.fieldAmount() == 0 && b.fieldRipening() == 0 && view.stock("wood") >= RESEED_WOOD) {
                 budget.spend(10);
                 sink.send(new Reseed(b.handle())); // a field reaped empty is sown again (ECO-09, manual in M3)
+                continue;
+            }
+            if (battle.rams() > 0 && view.trains(b.template(), RAM)) { // an arsenal trains rams, one at a time
+                if (b.queue().isEmpty()
+                        && rams < battle.rams()
+                        && view.affords(RAM)
+                        && (due == null || affordsBoth(view, RAM, due))) {
+                    budget.spend(10);
+                    rams++;
+                    sink.send(new Train(b.handle(), RAM));
+                }
                 continue;
             }
             if (view.trains(b.template(), worker)
@@ -77,7 +101,8 @@ final class ProductionManager implements AiModule {
                 if (unit != null
                         && view.trains(b.template(), unit)
                         && view.affords(unit)
-                        && (due == null || affordsBoth(view, unit, due))) { // AI-02: the build order first
+                        && (due == null || affordsBoth(view, unit, due)) // AI-02: the build order first
+                        && (!ramWanted || affordsBoth(view, unit, RAM))) { // QA-12: the rams' price is kept
                     budget.spend(10);
                     have[
                             view.roleOf(java.util.Objects.requireNonNull(
@@ -89,10 +114,22 @@ final class ProductionManager implements AiModule {
         }
     }
 
-    /** Whether the stock covers {@code a}'s cost and {@code b}'s together. */
+    /** The siege unit (QA-12). */
+    static final TemplateId RAM = new TemplateId("strategos:unit/ram");
+
+    /** Whether the stock covers {@code a}'s cost and what is due's together. */
     private static boolean affordsBoth(AiView view, TemplateId a, TemplateId b) {
         for (String r : view.resources()) {
             if (view.stock(r) < view.cost(a, r) + view.cost(b, r)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean affordsBoth(AiView view, TemplateId a, BuildManager.Due due) {
+        for (String r : view.resources()) {
+            if (view.stock(r) < view.cost(a, r) + due.cost(view, r)) {
                 return false;
             }
         }

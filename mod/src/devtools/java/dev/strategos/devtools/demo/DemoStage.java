@@ -17,6 +17,7 @@ import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchQueries;
+import dev.strategos.core.sim.PlayRules;
 import dev.strategos.core.sim.UnitView;
 import dev.strategos.core.sim.build.BuildingView;
 import dev.strategos.core.sim.econ.NodeView;
@@ -128,14 +129,29 @@ public final class DemoStage {
         return match(SIZE);
     }
 
-    /** As {@link #match()}, on a square of side {@code size}, {@link #PLOT} at most. */
+    /** As {@link #match()}, on a square of side {@code size}, {@link #PLOT} at most; the map is revealed. */
     public MatchRuntime match(int size) {
+        return match(size, rules(false));
+    }
+
+    /** As {@link #match()} under Fog: only the chapter about fog opts in. */
+    public MatchRuntime fogMatch() {
+        return match(SIZE, rules(true));
+    }
+
+    /** The play rules of a chapter's match: the map revealed, so the scene shows everything, unless {@code fog}. */
+    static PlayRules rules(boolean fog) {
+        return new PlayRules(PlayRules.Victory.NONE, !fog, false, false);
+    }
+
+    private MatchRuntime match(int size, PlayRules play) {
         MatchRuntime rt = StrategosServer.get()
                 .matches()
                 .create(
                         level,
                         StrategosCommands.spaceAround(level, centre, size, size),
-                        new MatchOptions(7L, 2, false, MatchSource.GAMETEST, null, MetricsSink.none(), floor()));
+                        new MatchOptions(
+                                7L, 2, false, MatchSource.GAMETEST, null, MetricsSink.none(), floor(), null, play));
         match = rt;
         rt.addListener(out -> out.events().forEach(e -> {
             if (e instanceof CommandResult r && r.rejected() > 0) { // a refusal is a chapter's bug, or the mod's

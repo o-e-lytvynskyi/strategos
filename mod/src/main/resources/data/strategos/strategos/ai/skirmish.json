@@ -1,0 +1,154 @@
+{
+  "maxWorkers": 24,
+  "ratio": {
+    "food": 24,
+    "wood": 36,
+    "stone": 9,
+    "iron": 4
+  },
+  "livestock": true,
+  "balance": true,
+  "reserve": true,
+  "dropsite": "strategos:building/storehouse",
+  "build": [
+    {
+      "building": "strategos:building/storehouse",
+      "population": 6,
+      "near": "wood"
+    },
+    {
+      "building": "strategos:building/house",
+      "population": 8
+    },
+    {
+      "building": "strategos:building/farmstead",
+      "population": 9,
+      "near": "food"
+    },
+    {
+      "building": "strategos:building/field",
+      "population": 10,
+      "near": "strategos:building/farmstead"
+    },
+    {
+      "building": "strategos:building/field",
+      "population": 12,
+      "near": "strategos:building/farmstead"
+    },
+    {
+      "building": "strategos:building/barracks",
+      "population": 14
+    },
+    {
+      "building": "strategos:building/storehouse",
+      "population": 15,
+      "near": "stone"
+    },
+    {
+      "building": "strategos:building/field",
+      "population": 16,
+      "near": "strategos:building/farmstead"
+    },
+    {
+      "building": "strategos:building/field",
+      "population": 18,
+      "near": "strategos:building/farmstead"
+    },
+    {
+      "building": "strategos:building/house",
+      "population": 20
+    },
+    {
+      "phase": "town",
+      "population": 22
+    },
+    {
+      "building": "strategos:building/arsenal",
+      "population": 24
+    }
+  ],
+  "housingMargin": 3,
+  "soldierQueue": 2,
+  "attack": {
+    "first": 600,
+    "every": 180,
+    "min": 16,
+    "muster": 24,
+    "announce": 30
+  },
+  "battle": {
+    "focus": "wounded",
+    "behind": 4,
+    "retreat": 0.6,
+    "replan": 1200,
+    "reach": 28,
+    "defence": 600,
+    "launch": 0.6,
+    "spears": 6,
+    "line": 400,
+    "rams": 4,
+    "finish": true
+  },
+  "camp": {
+    "minDistance": 40
+  },
+  "openings": [
+    {
+      "name": "rush",
+      "weight": 2,
+      "maxWorkers": 24,
+      "soldierQueue": 3,
+      "attack": {
+        "first": 480,
+        "every": 150,
+        "min": 12,
+        "muster": 40,
+        "announce": 30
+      }
+    },
+    {
+      "name": "boom",
+      "weight": 2,
+      "maxWorkers": 24,
+      "soldierQueue": 2,
+      "attack": {
+        "first": 660,
+        "every": 210,
+        "min": 20,
+        "muster": 40,
+        "announce": 45
+      }
+    },
+    {
+      "name": "balanced",
+      "weight": 3
+    }
+  ],
+  "levels": {
+    "easy": {
+      "think": 40,
+      "reaction": 100,
+      "commands": 8,
+      "wave": 0.6,
+      "tactics": false,
+      "handicap": {
+        "gather": 0.85,
+        "train": 1.15
+      }
+    },
+    "normal": {
+      "think": 20,
+      "reaction": 60,
+      "commands": 16,
+      "wave": 1.0,
+      "tactics": true
+    },
+    "hard": {
+      "think": 20,
+      "reaction": 20,
+      "commands": 32,
+      "wave": 1.4,
+      "tactics": true
+    }
+  }
+}

@@ -13,8 +13,8 @@ import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.OrderReceived;
 import dev.strategos.core.sim.build.BuildingStore;
-import dev.strategos.core.sim.combat.CombatSystem;
 import dev.strategos.core.sim.combat.Engagement;
+import dev.strategos.core.sim.combat.Siege;
 import dev.strategos.core.sim.econ.Livestock;
 import dev.strategos.core.sim.econ.NodeStore;
 import dev.strategos.core.sim.order.OrderKind;
@@ -26,7 +26,8 @@ import dev.strategos.core.sim.order.OrderQueues;
  * unknown, as a hidden one will be (04 §7.3); one of the issuer's own faction as an invalid argument; a unit with no
  * melee attack as unsupported, unless the target is an animal and it gathers meat: then it gets a gather order on the
  * animal's meat, which slaughters it first (ECO-16). A building as the target is burned by the units with a torch
- * (CMB-03). A forced attack (ORD-05) may also target the issuer's own units and buildings, never Gaia's animals, which
+ * (CMB-03), or a log (CMB-09), unless the unit's restricted classes name the building's. A unit whose melee attack
+ * restricts a class refuses a target of it. A forced attack (ORD-05) may also target the issuer's own units and buildings, never Gaia's animals, which
  * are gathered; without the flag an own target is an invalid argument.
  */
 final class AttackRule implements CommandRule<Attack> {
@@ -69,6 +70,10 @@ final class AttackRule implements CommandRule<Attack> {
             int i = Handle.index(handle);
             if (i == t || (state.identity().faction(i) == targetFaction && !attack.force())) {
                 tally.reject(RejectReason.INVALID_ARGUMENT);
+                continue;
+            }
+            if (state.stats().restricts(i, state.stats().classes(t))) {
+                tally.reject(RejectReason.UNSUPPORTED); // a ram's blows are for buildings (CMB-09)
                 continue;
             }
             boolean slaughter = !state.stats().canAttack(i)
@@ -132,9 +137,7 @@ final class AttackRule implements CommandRule<Attack> {
                 tally.reject(RejectReason.INVALID_ARGUMENT);
                 continue;
             }
-            int path = state.stats().path(CombatSystem.TORCH_FIRE);
-            double fire = path < 0 ? Double.NaN : state.stats().read(i, path);
-            if (!(fire > 0)) {
+            if (!Siege.canStrike(state, i, target)) {
                 tally.reject(RejectReason.UNSUPPORTED);
                 continue;
             }

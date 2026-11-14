@@ -16,6 +16,7 @@ import dev.strategos.gametest.suites.EcoTests;
 import dev.strategos.gametest.suites.FaultTests;
 import dev.strategos.gametest.suites.FidelityTests;
 import dev.strategos.gametest.suites.FirstPersonTests;
+import dev.strategos.gametest.suites.FogTests;
 import dev.strategos.gametest.suites.GarrisonTests;
 import dev.strategos.gametest.suites.JournalTests;
 import dev.strategos.gametest.suites.MapTests;
@@ -33,6 +34,8 @@ import dev.strategos.gametest.suites.ReplicationTests;
 import dev.strategos.gametest.suites.RetryNoReasonSelfTest;
 import dev.strategos.gametest.suites.SelfTests;
 import dev.strategos.gametest.suites.SharedBatchSelfTest;
+import dev.strategos.gametest.suites.SkirmishTests;
+import dev.strategos.gametest.suites.TechTests;
 import dev.strategos.gametest.suites.TicketLeakSelfTest;
 import dev.strategos.gametest.suites.WriterTests;
 import java.util.List;
@@ -72,6 +75,7 @@ public final class Suites {
                         EcoTests.class,
                         PersistenceTests.class,
                         FaultTests.class,
+                        FogTests.class,
                         FidelityTests.class,
                         JournalTests.class,
                         MapTests.class,
@@ -81,6 +85,8 @@ public final class Suites {
                         PathTests.class,
                         PacingTests.class,
                         ProtectionTests.class,
+                        SkirmishTests.class,
+                        TechTests.class,
                         WriterTests.class);
         };
     }
