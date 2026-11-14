@@ -1,6 +1,7 @@
 package dev.strategos.core.sim.ai;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import dev.strategos.core.sim.KernelAccess;
 import java.util.ArrayList;
@@ -108,5 +109,42 @@ class OpeningTest {
                 },
                 false);
         assertThat(names).containsExactly("");
+    }
+
+    @Test
+    void aPinnedOpeningSkipsTheDraw() {
+        String skirmish = HeadlessMatch.read("ai/skirmish.json");
+        for (String name : List.of("rush", "boom", "balanced")) {
+            StrategyScript pinned = StrategyScript.parse(Levels.resolve(skirmish, "normal", name));
+            assertThat(pinned.opening()).isEqualTo(name);
+            assertThat(pinned.openings().get(pinned.pinned()).name()).isEqualTo(name);
+        }
+        assertThat(StrategyScript.parse(Levels.resolve(skirmish, "normal")).pinned())
+                .as("a script that pins nothing draws")
+                .isEqualTo(-1);
+        assertThatThrownBy(() -> Levels.resolve(skirmish, "normal", "siege"))
+                .as("an opening the script lacks")
+                .isInstanceOf(IllegalArgumentException.class);
+        List<String> played = new ArrayList<>();
+        for (long seed = 1; seed <= 6; seed++) {
+            String boom = Levels.resolve(skirmish, "normal", "boom");
+            String rush = Levels.resolve(skirmish, "normal", "rush");
+            HeadlessMatch.run(
+                    HeadlessMatch.Ground.firstSkirmish(),
+                    DifficultyTest.firstSkirmish(),
+                    seed,
+                    300,
+                    List.of(boom, rush),
+                    (h, out) -> {
+                        if (h.tick() == 299) {
+                            var slots = KernelAccess.state(h.core()).aiSlots();
+                            played.add(slots.get(0).openingName() + "/"
+                                    + slots.get(1).openingName());
+                        }
+                    },
+                    false,
+                    HeadlessMatch.FOGGED);
+        }
+        assertThat(played).as("six seeds, one pairing").containsOnly("boom/rush");
     }
 }

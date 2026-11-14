@@ -23,7 +23,8 @@ import java.util.TreeMap;
  * {@code dropsite} names the building put up by a resource's nearest node once every own dropsite of it lies far from
  * there; a step's {@code near} puts its building by the nearest node of a resource or by an own building of a template.
  * AI-03's {@code battle} block holds the tactics' knobs, all off by default ({@link Battle}); a difficulty is a script
- * with other knobs. AI-04's {@code openings} are drawn from at the first think ({@link Opening}). AI-05's
+ * with other knobs. AI-04's {@code openings} are drawn from at the first think ({@link Opening}) unless {@code opening}
+ * names one (QA-12's pairings). AI-05's
  * {@code level} (resolved into a script by {@link Levels}) holds the pace of a difficulty ({@link Level}); a build
  * step may research a tech or a phase instead of placing a building.
  */
@@ -44,7 +45,8 @@ public record StrategyScript(
         Battle battle,
         List<Opening> openings,
         Camp camp,
-        Level level) {
+        Level level,
+        String opening) {
     /**
      * A build order step: the building, once the population reaches {@code population}, by {@code near} when it names
      * one: a resource's nearest node, or an own building of that template id; "" for no preference. A research step
@@ -147,7 +149,8 @@ public record StrategyScript(
      * when its strength is at least this fraction of the enemy's army and defence together; {@code spears}: spearmen
      * (the only soldiers that burn a building) kept home out of the field fight until the enemy fields no army, then
      * sent at its civic centre; {@code line}: the share of spearmen, in permille, the training plan never falls below
-     * (a spearman short of it is waited for, not replaced by another kind).
+     * (a spearman short of it is waited for, not replaced by another kind); {@code rams}: how many rams the player keeps
+     * (QA-12: an arsenal trains them; once a wave is out they strike the enemy's buildings while the soldiers screen).
      */
     public record Battle(
             String focus,
@@ -158,13 +161,14 @@ public record StrategyScript(
             int defence,
             double launch,
             int spears,
-            int line) {
+            int line,
+            int rams) {
         public static final String OFF = "off";
         public static final String WOUNDED = "wounded";
         public static final String VALUE = "value";
 
         /** Every knob off: M4's military manager. */
-        public static final Battle NONE = new Battle(OFF, 0, 0, 0, 28, 0, 0, 0, 250);
+        public static final Battle NONE = new Battle(OFF, 0, 0, 0, 28, 0, 0, 0, 250, 0);
 
         private static final Codec<String> FOCUS =
                 Codec.STRING.validate(f -> f.equals(OFF) || f.equals(WOUNDED) || f.equals(VALUE)
@@ -180,7 +184,8 @@ public record StrategyScript(
                         Codec.intRange(0, 100_000).optionalFieldOf("defence", 0).forGetter(Battle::defence),
                         Codec.doubleRange(0, 10).optionalFieldOf("launch", 0.0).forGetter(Battle::launch),
                         Codec.intRange(0, 64).optionalFieldOf("spears", 0).forGetter(Battle::spears),
-                        Codec.intRange(0, 1000).optionalFieldOf("line", 250).forGetter(Battle::line))
+                        Codec.intRange(0, 1000).optionalFieldOf("line", 250).forGetter(Battle::line),
+                        Codec.intRange(0, 16).optionalFieldOf("rams", 0).forGetter(Battle::rams))
                 .apply(i, Battle::new));
 
         /** Whether any knob of the fight itself is on. */
@@ -280,10 +285,27 @@ public record StrategyScript(
                 battle,
                 openings,
                 camp,
-                level);
+                level,
+                opening);
+    }
+
+    /**
+     * The index in {@code openings} of the opening {@link #opening} pins, -1 when the script draws (QA-12 pins each side's
+     * opening so a pairing is the same two openings in every seed).
+     */
+    public int pinned() {
+        for (int k = 0; k < openings.size(); k++) {
+            if (openings.get(k).name().equals(opening)) {
+                return k;
+            }
+        }
+        return -1;
     }
 
     public StrategyScript {
+        if (!opening.isEmpty() && openings.stream().noneMatch(o -> o.name().equals(opening))) {
+            throw new IllegalArgumentException("a strategy script pins the opening '" + opening + "', which it lacks");
+        }
         openings = List.copyOf(openings);
         ratio = Collections.unmodifiableSortedMap(new TreeMap<>(ratio));
         build = List.copyOf(build);
@@ -317,7 +339,7 @@ public record StrategyScript(
                             .listOf()
                             .optionalFieldOf("openings", List.of())
                             .forGetter(StrategyScript::openings),
-                    Tail.CODEC.forGetter(script -> new Tail(script.camp(), script.level())))
+                    Tail.CODEC.forGetter(script -> new Tail(script.camp(), script.level(), script.opening())))
             .apply(
                     i,
                     (worker,
@@ -352,13 +374,15 @@ public record StrategyScript(
                             battle,
                             openings,
                             tail.camp(),
-                            tail.level())));
+                            tail.level(),
+                            tail.opening())));
 
-    /** The last two fields, grouped: a record codec takes at most 16 fields. */
-    private record Tail(Camp camp, Level level) {
+    /** The last three fields, grouped: a record codec takes at most 16 fields. */
+    private record Tail(Camp camp, Level level, String opening) {
         static final com.mojang.serialization.MapCodec<Tail> CODEC = RecordCodecBuilder.mapCodec(i -> i.group(
                         Camp.CODEC.optionalFieldOf("camp", Camp.DEFAULT).forGetter(Tail::camp),
-                        Level.CODEC.optionalFieldOf("level", Level.NONE).forGetter(Tail::level))
+                        Level.CODEC.optionalFieldOf("level", Level.NONE).forGetter(Tail::level),
+                        Codec.STRING.optionalFieldOf("opening", "").forGetter(Tail::opening))
                 .apply(i, Tail::new));
     }
 

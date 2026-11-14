@@ -10,6 +10,7 @@ import dev.strategos.core.sim.PlaceMoved;
 import dev.strategos.core.sim.UnitStruck;
 import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.build.Placing;
+import dev.strategos.core.sim.combat.Engagement;
 import dev.strategos.core.sim.combat.Siege;
 import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.order.OrderQueues;
@@ -77,12 +78,50 @@ final class Burning {
         s.bus().publish(new PlaceMoved(ctx.handle()));
     }
 
+    /**
+     * QA-12: ticks without progress after which a unit within {@code Constructing.BUILD_REACH} of its place burns from
+     * where it is. A crowd at the wall pushes the burners about, and one held 1.2 blocks off its place by the others,
+     * trying to return, never lands: it drifted there for good.
+     */
+    static final int PATIENCE = 5;
+
     /** The approach's think: a building gone on the way ends the order. */
     static void keepApproaching(Context<MatchState> ctx) {
         MatchState s = ctx.host();
-        if (!burnable(s, ctx.unit(), s.orders().target(ctx.unit()))) {
+        int i = ctx.unit();
+        int target = s.orders().target(i);
+        if (!burnable(s, i, target)) {
             UnitAi.finishOrder(ctx, false);
+        } else if (touching(s, i, target) || (s.motion().stuck(i) >= PATIENCE && atPlace(s, i))) {
+            ctx.go(UnitAi.BURNING);
         }
+    }
+
+    private static boolean atPlace(MatchState s, int i) {
+        OrderQueues orders = s.orders();
+        MotionStore m = s.motion();
+        return DetMath.length(m.x(i) - orders.targetX(i), m.z(i) - orders.targetZ(i)) <= Constructing.BUILD_REACH;
+    }
+
+    /** How far from a wall the body of a large unit may stop and still strike it: blocks past its radius. */
+    static final double WALL_REACH = 1.0;
+
+    /**
+     * QA-12: a body wider than a ring cell (a ram's, radius 1) cannot stand on the cell it was given, which lies half a
+     * block off the wall, and a house or a crowd beside it keeps it wobbling short of that place for good. It strikes
+     * from where its body meets the wall, within {@value #WALL_REACH} blocks of it. A torch-bearer's body fits the cell, so
+     * its approach is as it was.
+     */
+    private static boolean touching(MatchState s, int i, int target) {
+        double radius = Engagement.radius(s, i);
+        if (radius <= 0.5) {
+            return false;
+        }
+        Footprint at = s.footprintOf(target);
+        MotionStore m = s.motion();
+        double dx = m.x(i) - Math.max(at.anchorX(), Math.min(m.x(i), at.anchorX() + at.spanX()));
+        double dz = m.z(i) - Math.max(at.anchorZ(), Math.min(m.z(i), at.anchorZ() + at.spanZ()));
+        return DetMath.length(dx, dz) <= radius + WALL_REACH;
     }
 
     /** Arrived at the place: burn, or walk on if the crowd stopped the unit short of it. */

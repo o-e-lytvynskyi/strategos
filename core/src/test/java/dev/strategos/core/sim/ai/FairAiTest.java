@@ -32,7 +32,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * AI-18 in L1: under fog the AI only commands visible targets, finds the enemy from the map's start slots, and
- * fogged bot matches still end within 45 game minutes (on the proving ground until MAP-02).
+ * fogged bot matches still end within 45 game minutes (on the proving ground, explored; the real fog on MAP-02 is QA-12's, `:core:openingBalance`).
  */
 class FairAiTest {
     static final TemplateId CENTRE = new TemplateId("strategos:building/civic_centre");
@@ -155,7 +155,7 @@ class FairAiTest {
 
     @Test
     @Tag("slow")
-    void foggedMatchesEndWithin45() {
+    void firstLoopMatchEndsWithin45OnTheProvingGround() {
         HeadlessMatch.Summary match = HeadlessMatch.play(1, FORTY_FIVE_MIN);
         assertThat(match.failure()).isEmpty();
         assertThat(match.winner()).isGreaterThanOrEqualTo(0);

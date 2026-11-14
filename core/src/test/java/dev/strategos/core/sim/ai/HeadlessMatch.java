@@ -180,7 +180,28 @@ final class HeadlessMatch {
             List<String> scripts,
             Watcher watcher,
             boolean decided) {
-        PlayRules ai = new PlayRules(PlayRules.Victory.NONE, false, true, true);
+        return run(ground, scenario, seed, limit, scripts, watcher, decided, EXPLORED);
+    }
+
+    /** The rules of QA-11's matches: explored, the AI seeing through everything, no victory rule of its own. */
+    static final PlayRules EXPLORED = new PlayRules(PlayRules.Victory.NONE, false, true, true);
+
+    /**
+     * The rules of QA-12's matches (MAP-02 with fog on, AI-18's fair AI): conquest decides, no cell starts explored,
+     * the AI sees what its faction sees. The scenario's own victory rule is applied by its setup.
+     */
+    static final PlayRules FOGGED = new PlayRules(PlayRules.Victory.CONQUEST, false, false, false);
+
+    /** As above, under {@code ai}'s play rules: {@link #EXPLORED} or {@link #FOGGED}. */
+    static Result run(
+            Ground ground,
+            Scenario scenario,
+            long seed,
+            long limit,
+            List<String> scripts,
+            Watcher watcher,
+            boolean decided,
+            PlayRules ai) {
         SimHarness h = SimHarness.builder()
                 .size(ground.size(), ground.size())
                 .yBand(0, ground.height(), 16)
@@ -224,6 +245,10 @@ final class HeadlessMatch {
             StrategyScript.parse(scripts.get(1)).build().size()
         };
         int winner = -2;
+        boolean watchState =
+                ai.victory() == PlayRules.Victory.CONQUEST; // QA-12's watchdog: the state, not the commands
+        long lastDigest = 0;
+        long changedAt = 0;
         String failure = "";
         try {
             while (h.tick() < limit && winner == -2) {
@@ -321,8 +346,20 @@ final class HeadlessMatch {
                             left.add(out.tick()); // its attack order went out in this tick's think
                         }
                     }
-                    if (decided && !s.outcome().defeated(f) && out.tick() - Math.max(p.lastCommand(), 1) > STALL) {
+                    if (decided
+                            && !watchState
+                            && !s.outcome().defeated(f)
+                            && out.tick() - Math.max(p.lastCommand(), 1) > STALL) {
                         failure = "faction " + f + " stalled: no command since tick " + p.lastCommand();
+                    }
+                }
+                if (watchState && decided && out.tick() % STATE_SAMPLE == 0) {
+                    long digest = progress(h);
+                    if (digest != lastDigest) {
+                        lastDigest = digest;
+                        changedAt = out.tick();
+                    } else if (out.tick() - changedAt >= STALL) {
+                        failure = "stalled: no state change since tick " + changedAt;
                     }
                 }
                 if (!failure.isEmpty()) {
@@ -365,6 +402,32 @@ final class HeadlessMatch {
                 h.stateHash(),
                 failure);
         return new Result(summary, new JournalExport(h.core().journal(), h.tick(), h.stateHash()));
+    }
+
+    /** How often the state is sampled for the watchdog: ticks. */
+    static final long STATE_SAMPLE = 100;
+
+    /**
+     * A digest of what moves in a match: every unit's place, every building's progress and health, every
+     * faction's stock. Not the match's hash, which holds the tick and so always changes: a match whose digest stays
+     * the same for {@link #STALL} ticks has stopped.
+     */
+    static long progress(SimHarness h) {
+        long d = 17;
+        for (UnitView u : units(h)) {
+            d = d * 31 + Double.hashCode(u.x());
+            d = d * 31 + Double.hashCode(u.z());
+        }
+        int factions = 2;
+        for (BuildingView b : h.core().queries().buildings()) {
+            d = d * 31 + b.handle();
+            d = d * 31 + b.progress();
+            d = d * 31 + Double.hashCode(b.hitPoints());
+        }
+        for (int f = 0; f < factions; f++) {
+            d = d * 31 + h.core().queries().treasury(new FactionSlot(f)).stock().hashCode();
+        }
+        return d;
     }
 
     private static List<UnitView> units(SimHarness h) {

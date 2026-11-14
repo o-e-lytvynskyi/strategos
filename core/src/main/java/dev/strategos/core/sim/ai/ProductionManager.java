@@ -32,9 +32,13 @@ final class ProductionManager implements AiModule {
         boolean compose = battle.replan() > 0;
         int[] have = new int[4]; // own soldiers by role, queued ones too (AI-03)
         int workers = 0;
+        int rams = 0;
         for (UnitView u : view.units()) {
             if (u.template().equals(worker)) {
                 workers++;
+            }
+            if (u.template().equals(RAM)) {
+                rams++;
             }
             have[view.role(u)]++;
         }
@@ -48,6 +52,9 @@ final class ProductionManager implements AiModule {
             for (int t : b.queue()) {
                 if (view.templates().has(t) && view.templates().byIndex(t).id().equals(worker)) {
                     workers++;
+                }
+                if (view.templates().has(t) && view.templates().byIndex(t).id().equals(RAM)) {
+                    rams++;
                 }
                 have[view.roleOf(t)]++;
             }
@@ -63,6 +70,17 @@ final class ProductionManager implements AiModule {
             if (b.fieldAmount() == 0 && b.fieldRipening() == 0 && view.stock("wood") >= RESEED_WOOD) {
                 budget.spend(10);
                 sink.send(new Reseed(b.handle())); // a field reaped empty is sown again (ECO-09, manual in M3)
+                continue;
+            }
+            if (battle.rams() > 0 && view.trains(b.template(), RAM)) { // an arsenal trains rams, one at a time
+                if (b.queue().isEmpty()
+                        && rams < battle.rams()
+                        && view.affords(RAM)
+                        && (due == null || affordsBoth(view, RAM, due))) {
+                    budget.spend(10);
+                    rams++;
+                    sink.send(new Train(b.handle(), RAM));
+                }
                 continue;
             }
             if (view.trains(b.template(), worker)
@@ -88,6 +106,9 @@ final class ProductionManager implements AiModule {
             }
         }
     }
+
+    /** The siege unit (QA-12). */
+    static final TemplateId RAM = new TemplateId("strategos:unit/ram");
 
     /** Whether the stock covers {@code a}'s cost and what is due's together. */
     private static boolean affordsBoth(AiView view, TemplateId a, BuildManager.Due due) {

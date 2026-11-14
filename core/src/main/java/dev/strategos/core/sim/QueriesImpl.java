@@ -537,6 +537,16 @@ final class QueriesImpl implements MatchQueries {
         return false;
     }
 
+    @Override
+    public boolean explored(int faction, double x, double z) {
+        VisionSystem vision = state.visionSystem();
+        if (seesAll(faction) || state.config().rules().play().explored() || vision == null) {
+            return true;
+        }
+        return vision.isExplored(
+                faction, VisionGrid.cellOf((int) Math.floor(x)), VisionGrid.cellOf((int) Math.floor(z)));
+    }
+
     /** Revealed map, AI omniscience, or a faction outside the player set: everything is seen. */
     private boolean seesAll(int faction) {
         PlayRules play = state.config().rules().play();

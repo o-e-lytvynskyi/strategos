@@ -9,6 +9,7 @@ import dev.strategos.core.shared.DetMath;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.UnitView;
+import dev.strategos.core.sim.build.BuildingView;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,6 +50,9 @@ final class MilitaryManager implements AiModule {
                 army.add(u.handle());
                 soldiers.add(u);
             }
+        }
+        if (battle.rams() > 0 && memory.get(Slots.WAVE) > 0 && away(base, soldiers, Tactics.home(a))) {
+            rams(view, budget, sink, base);
         }
         if (battle.spears() > 0 && reserve(view, budget, sink, memory, base, battle, army, soldiers)) {
             return; // the way is clear: the spearmen are at its centre
@@ -151,6 +155,37 @@ final class MilitaryManager implements AiModule {
         return true;
     }
 
+    /**
+     * QA-12: once a wave is out, the rams strike the enemy's nearest building (a ram attacks buildings only, and an
+     * attack-move would not pick one), or attack-move to its front while none is in sight.
+     */
+    private static void rams(AiView view, AiBudget budget, CommandSink sink, Base base) {
+        List<Integer> going = new ArrayList<>();
+        BuildingView target = base.enemy();
+        Vec2d front = Tactics.front(base);
+        for (UnitView u : view.units()) {
+            if (!view.is(u.template(), "Ram") || u.state() == UnitState.GARRISONED) {
+                continue;
+            }
+            boolean busy = target != null
+                    ? view.attackTarget(u) == target.handle() || view.burning(u, target.handle())
+                    : u.state() != UnitState.IDLE
+                            || DetMath.length(u.x() - front.x(), u.z() - front.z()) <= 2 * Tactics.ARROWS;
+            if (!busy) {
+                going.add(u.handle());
+            }
+        }
+        if (going.isEmpty() || budget.exhausted()) {
+            return;
+        }
+        budget.spend(10);
+        int[] handles = going.stream().mapToInt(Integer::intValue).toArray();
+        sink.send(
+                target != null
+                        ? Attack.replace(UnitSet.of(handles), target.handle())
+                        : AttackMove.replace(UnitSet.of(handles), front));
+    }
+
     /** Whether any soldier stands farther than {@code home} from the civic centre. */
     private static boolean away(Base base, List<UnitView> soldiers, double home) {
         for (UnitView u : soldiers) {
@@ -195,8 +230,13 @@ final class MilitaryManager implements AiModule {
         }
         if (clear) {
             List<Integer> going = new ArrayList<>();
+            Vec2d front = Tactics.front(base);
             for (UnitView u : spears) {
-                if (view.attackTarget(u) == 0) {
+                // none in sight to attack: those already at the front are not sent there again (QA-12: this order,
+                // sent every think, kept the wave's sweep of the enemy's ground from ever being thought)
+                if (view.attackTarget(u) == 0
+                        && (base.enemy() != null
+                                || DetMath.length(u.x() - front.x(), u.z() - front.z()) > 2 * Tactics.ARROWS)) {
                     going.add(u.handle());
                 }
             }

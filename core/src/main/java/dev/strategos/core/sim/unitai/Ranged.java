@@ -66,6 +66,10 @@ final class Ranged {
         if (moved > Math.max(REGOAL, away / 4)) {
             orders.setPlace(i, px, pz);
             s.bus().publish(new PlaceMoved(ctx.handle()));
+        } else if (away <= REGOAL && gap <= range) {
+            // QA-12: at its place, which the target's shuffle left a hair beyond the margin (a regoal's worth is more
+            // than that): in range all the same, it fires; else it stood there WALKING for good
+            ctx.go(UnitAi.ATTACKING);
         }
     }
 

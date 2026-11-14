@@ -28,6 +28,7 @@ import dev.strategos.core.sim.UnitCreated;
 import dev.strategos.core.sim.UnitGear;
 import dev.strategos.core.sim.UnitHurt;
 import dev.strategos.core.sim.UnitStruck;
+import dev.strategos.core.sim.unitai.UnitAi;
 import dev.strategos.core.testkit.BalanceData;
 import dev.strategos.core.testkit.SimHarness;
 import dev.strategos.core.testkit.VoxelFixtures;
@@ -150,6 +151,48 @@ class SiegeTest {
                 .isBetween(sheet.twoTicks(), sheet.twoTicks() + 200);
         assertThat(fall.flames()).as("a log shows no flame").isFalse();
         assertThat(h.events(UnitGear.class)).as("a ram carries no torch").noneMatch(g -> g.tool() == UnitGear.TORCH);
+    }
+
+    /**
+     * QA-12: a ram's body (radius 1) does not fit the ring cell half a block off the wall that its place is, so one
+     * kept short of it by a house or a crowd wobbled there WALKING for good. Within a block of the wall past its radius
+     * it strikes from where it stands.
+     */
+    @Test
+    void aRamThatCannotReachItsPlaceStrikesFromTheWall() {
+        int centre = building(CENTRE, 1, 40, 40); // x 40..51, z 40..51
+        int[] rams = units(RAM, 0, new Vec2d(45.5, 52.4), 1); // 1.4 blocks south of the wall
+        assertThat(attack(rams, centre).accepted()).isEqualTo(1);
+        int i = Handle.index(rams[0]);
+        s.orders()
+                .setPlace(i, 45.5, 45.5); // its place lies behind the wall: out of reach, as the ring cell is to a ram
+        assertThat(h.runUntil(() -> UnitAi.leaf(s.ai().code(i)) == UnitAi.BURNING, 40))
+                .as("it strikes from the wall")
+                .isTrue();
+    }
+
+    /**
+     * QA-12: a burner held off its place by the crowd at the wall, within reach of it, never landed on it and drifted
+     * there for good; once held up {@code Burning.PATIENCE} ticks it burns from where it is.
+     */
+    @Test
+    void aBurnerHeldNearItsPlaceBurnsAfterItsPatience() {
+        int centre = building(CENTRE, 1, 40, 40);
+        int[] spearmen = units(TemplateSet.INFANTRY, 0, new Vec2d(45.5, 52.0), 1);
+        assertThat(attack(spearmen, centre).accepted()).isEqualTo(1);
+        int i = Handle.index(spearmen[0]);
+        assertThat(h.runUntil(() -> UnitAi.leaf(s.ai().code(i)) == UnitAi.BURNING, 200))
+                .isTrue();
+        // the crowd pushes it 1.2 blocks off its place, every tick, so that it never lands on it again
+        double px = s.orders().targetX(i);
+        double pz = s.orders().targetZ(i);
+        s.ai().set(i, UnitAi.BURN_APPROACHING);
+        long since = h.tick();
+        while (UnitAi.leaf(s.ai().code(i)) != UnitAi.BURNING && h.tick() < since + 400) {
+            s.motion().set(i, px + 1.2, s.motion().y(i), pz, s.motion().yaw(i));
+            h.step();
+        }
+        assertThat(h.tick() - since).as("it burns once it is held up").isBetween(5L, 60L);
     }
 
     @Test

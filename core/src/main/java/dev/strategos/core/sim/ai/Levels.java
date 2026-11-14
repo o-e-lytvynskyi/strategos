@@ -59,6 +59,11 @@ public final class Levels {
 
     /** The script {@code SetAi} carries for {@code level} (lower case): compact JSON, without the level table. */
     public static String resolve(String skirmishJson, String level) {
+        return resolve(skirmishJson, level, "");
+    }
+
+    /** As {@link #resolve(String, String)}, with the opening {@code opening} pinned ("" draws by weight, as in play). */
+    public static String resolve(String skirmishJson, String level, String opening) {
         Knobs k = knobs(skirmishJson, level);
         JsonObject script = JsonParser.parseString(skirmishJson).getAsJsonObject();
         script.remove("levels");
@@ -74,6 +79,9 @@ public final class Levels {
             pace.add("handicap", h);
         }
         script.add("level", pace);
+        if (!opening.isEmpty()) {
+            script.addProperty("opening", opening);
+        }
         if (!k.tactics()) {
             script.remove("battle");
         }

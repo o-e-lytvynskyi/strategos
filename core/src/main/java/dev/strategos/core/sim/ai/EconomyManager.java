@@ -1,9 +1,11 @@
 package dev.strategos.core.sim.ai;
 
 import dev.strategos.core.protocol.Gather;
+import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.SetAutoReseed;
 import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.DetMath;
+import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.UnitView;
 import dev.strategos.core.sim.build.BuildingStore;
@@ -53,13 +55,22 @@ final class EconomyManager implements AiModule {
             stocks.put(r, view.stock(r));
         }
         int[] gatherers = view.gatherers();
-        List<NodeView> nodes = view.nodes();
+        List<NodeView> everyNode = view.nodes();
+        int walker = scout(
+                view, budget, sink, everyNode, base,
+                gatherers); // AI-18: nodes in the dark are explored first, by the worker it returns
+        List<NodeView> nodes = new java.util.ArrayList<>(); // a gather on ground never explored is rejected
+        for (NodeView n : everyNode) {
+            if (view.explored(n.anchorX(), n.anchorZ())) {
+                nodes.add(n);
+            }
+        }
         Map<Integer, Integer> free = new TreeMap<>(); // a node's free slots, less this think's sends
         for (UnitView u : view.units()) {
             if (budget.exhausted()) {
                 return;
             }
-            if (u.state() != UnitState.IDLE || !view.is(u.template(), "Gatherer")) {
+            if (u.handle() == walker || u.state() != UnitState.IDLE || !view.is(u.template(), "Gatherer")) {
                 continue;
             }
             NodeView target = null;
@@ -85,6 +96,81 @@ final class EconomyManager implements AiModule {
         } else {
             rebalance(view, budget, sink, nodes, base);
         }
+    }
+
+    /** How long one explorer is left to walk before another may be sent: ticks. */
+    static final long SCOUTING = 600;
+
+    /** How far short of a node the explorer stops: within the worker's sight of it. */
+    static final double SHORT_OF = 6;
+
+    /**
+     * AI-18: a resource of the ratio with no usable node explored, but one in the dark, gets one worker sent to the
+     * nearest such node to explore it; the gathering follows once its cell is explored. One explorer at a time.
+     */
+    private int scout(
+            AiView view,
+            AiBudget budget,
+            CommandSink sink,
+            List<NodeView> nodes,
+            @Nullable Base base,
+            int[] gatherers) {
+        long tick = view.tick();
+        long sent = memory.get(Slots.SCOUT);
+        if (base == null || budget.exhausted() || (sent > 0 && tick - (sent - 1) < SCOUTING)) {
+            return 0;
+        }
+        Map<Integer, Integer> none = new TreeMap<>();
+        for (int r : byNeed(view.resources(), gatherers)) {
+            String resource = view.resources().get(r);
+            NodeView dark = null;
+            double darkest = Double.POSITIVE_INFINITY;
+            boolean known = false;
+            for (NodeView n : nodes) {
+                if (!usable(n, resource, base, none)) {
+                    continue;
+                }
+                if (view.explored(n.anchorX(), n.anchorZ())) {
+                    known = true;
+                    break;
+                }
+                double d = DetMath.length(n.anchorX() - base.x(), n.anchorZ() - base.z());
+                if (d < darkest) {
+                    darkest = d;
+                    dark = n;
+                }
+            }
+            if (known || dark == null) {
+                continue;
+            }
+            UnitView walker = null;
+            double nearest = Double.POSITIVE_INFINITY;
+            for (UnitView u : view.units()) {
+                if (!view.is(u.template(), "Gatherer") || u.state() == UnitState.GARRISONED || view.building(u)) {
+                    continue;
+                }
+                double d = DetMath.length(dark.anchorX() - u.x(), dark.anchorZ() - u.z())
+                        + (u.state() == UnitState.IDLE ? 0 : 1_000);
+                if (d < nearest) {
+                    nearest = d;
+                    walker = u;
+                }
+            }
+            if (walker == null) {
+                return 0;
+            }
+            double dx = base.x() - dark.anchorX();
+            double dz = base.z() - dark.anchorZ();
+            double len = Math.max(1, DetMath.length(dx, dz));
+            double back = Math.min(SHORT_OF, len);
+            budget.spend(10);
+            sink.send(Move.replace(
+                    UnitSet.of(walker.handle()),
+                    new Vec2d(dark.anchorX() + dx / len * back, dark.anchorZ() + dz / len * back)));
+            memory.set(Slots.SCOUT, tick + 1);
+            return walker.handle();
+        }
+        return 0;
     }
 
     /**
@@ -248,20 +334,8 @@ final class EconomyManager implements AiModule {
         NodeView best = null;
         double bestD = Double.POSITIVE_INFINITY;
         for (NodeView n : nodes) {
-            if (!n.resource().equals(resource)
-                    || (n.kind() == MaterialKind.CARCASS && !script.livestock()) // M3's bot leaves the animals
-                    || n.amount() <= 0
-                    || n.ripening() > 0
-                    || !n.hasBlock()
-                    || n.freeSlots() + free.getOrDefault(n.id(), 0) <= 0) {
+            if (!usable(n, resource, base, free)) {
                 continue;
-            }
-            if (n.kind() == MaterialKind.CROP
-                    && (base == null || DetMath.length(n.anchorX() - base.x(), n.anchorZ() - base.z()) > OWN_FIELD)) {
-                continue;
-            }
-            if (script.balance() && base != null && base.enemyHome(n.anchorX(), n.anchorZ())) {
-                continue; // AI-02 leaves the enemy's home alone
             }
             double d = DetMath.length(n.anchorX() - u.x(), n.anchorZ() - u.z());
             if (d < bestD) {
@@ -270,5 +344,22 @@ final class EconomyManager implements AiModule {
             }
         }
         return best;
+    }
+
+    /** Whether node {@code n} is one a worker of the script may gather {@code resource} at. */
+    private boolean usable(NodeView n, String resource, @Nullable Base base, Map<Integer, Integer> free) {
+        if (!n.resource().equals(resource)
+                || (n.kind() == MaterialKind.CARCASS && !script.livestock()) // M3's bot leaves the animals
+                || n.amount() <= 0
+                || n.ripening() > 0
+                || !n.hasBlock()
+                || n.freeSlots() + free.getOrDefault(n.id(), 0) <= 0) {
+            return false;
+        }
+        if (n.kind() == MaterialKind.CROP
+                && (base == null || DetMath.length(n.anchorX() - base.x(), n.anchorZ() - base.z()) > OWN_FIELD)) {
+            return false;
+        }
+        return !(script.balance() && base != null && base.enemyHome(n.anchorX(), n.anchorZ())); // AI-02 leaves it
     }
 }

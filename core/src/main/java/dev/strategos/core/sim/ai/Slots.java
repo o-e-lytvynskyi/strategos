@@ -58,5 +58,11 @@ final class Slots {
     /** One more than the tick the defence's current fight began, for a level's reaction delay (AI-05); 0 before. */
     static final int ALERT_SINCE = 25;
 
+    /** One more than the tick the current exploring worker was sent (AI-18); 0 before: one scout at a time. */
+    static final int SCOUT = 26;
+
+    /** The waypoints of the sweep of the enemy's ground a wave has been sent to, once nothing of the enemy is in sight. */
+    static final int SWEEP = 27;
+
     private Slots() {}
 }

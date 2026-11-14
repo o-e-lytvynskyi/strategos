@@ -70,7 +70,7 @@ final class Tactics {
                 cz += u.z();
             }
         }
-        if (wave.isEmpty()) {
+        if (wave.isEmpty() || straggling(script, base, wave)) {
             memory.set(Slots.FIGHT, 0);
             memory.set(Slots.FOCUS, 0);
             memory.set(Slots.CLEAR, 0);
@@ -107,6 +107,25 @@ final class Tactics {
         }
         if (battle.fights()) {
             engage(view, budget, sink, memory, base, battle, wave, near);
+        }
+        return true;
+    }
+
+    /**
+     * QA-12: the wave is a few idle stragglers, fewer than half an attack's minimum and none near the enemy's centre or
+     * in a fight: it is over. One soldier stuck 20 blocks from home would else hold the fight state for good, and no
+     * wave would form again.
+     */
+    private static boolean straggling(StrategyScript script, Base base, List<UnitView> wave) {
+        if (wave.size() * 2 >= script.attack().min()) {
+            return false;
+        }
+        for (UnitView u : wave) {
+            if (u.state() != UnitState.IDLE
+                    || DetMath.length(u.x() - base.enemyX(), u.z() - base.enemyZ())
+                            <= script.battle().reach()) {
+                return false;
+            }
         }
         return true;
     }
@@ -170,9 +189,12 @@ final class Tactics {
         int target = focus == null ? 0 : focus.handle();
         memory.set(Slots.FOCUS, target == 0 ? 0 : target + 1L);
         // the melee line: one target, or back to the march when none stands in reach
+        BuildingView centre = base.enemy();
+        if (centre == null && near.isEmpty() && sweep(view, budget, sink, memory, base, wave)) {
+            return;
+        }
         List<Integer> orders = new ArrayList<>();
         List<Integer> marching = new ArrayList<>();
-        BuildingView centre = base.enemy();
         Vec2d front = front(base);
         for (UnitView u : melee) {
             int t = view.attackTarget(u);
@@ -252,6 +274,63 @@ final class Tactics {
             sink.send(Attack.replace(
                     UnitSet.of(shoot.stream().mapToInt(Integer::intValue).toArray()), target));
         }
+    }
+
+    /** The eight directions of a sweep's waypoints, as (x, z) of a unit vector: east, then round by 45 degrees. */
+    private static Vec2d compass(int k) {
+        double r = 0.7071;
+        return switch (k) {
+            case 0 -> new Vec2d(1, 0);
+            case 1 -> new Vec2d(r, r);
+            case 2 -> new Vec2d(0, 1);
+            case 3 -> new Vec2d(-r, r);
+            case 4 -> new Vec2d(-1, 0);
+            case 5 -> new Vec2d(-r, -r);
+            case 6 -> new Vec2d(0, -1);
+            default -> new Vec2d(r, -r);
+        };
+    }
+
+    /** Blocks between a sweep's rings round the enemy's start. */
+    static final double RING = 22;
+
+    /**
+     * QA-12: once the wave stands at the enemy's start and nothing of the enemy is in sight, it attack-moves from
+     * waypoint to waypoint on rings round the start (eight a ring, three rings, over again), so what is left of the
+     * enemy's buildings and units comes into sight and conquest can finish. True when it sent the wave on.
+     */
+    private static boolean sweep(
+            AiView view, AiBudget budget, CommandSink sink, AiMemory memory, Base base, List<UnitView> wave) {
+        int idle = 0;
+        for (UnitView u : wave) {
+            if (u.state() == UnitState.IDLE) {
+                idle++;
+            }
+        }
+        if (idle * 5 < wave.size() * 4) {
+            return false; // still on its way, or fighting
+        }
+        boolean seen = false; // one of ours stands where it would see the centre
+        for (UnitView u : wave) {
+            seen |= DetMath.length(u.x() - base.enemyX(), u.z() - base.enemyZ()) <= Base.SIGHT;
+        }
+        if (!seen) { // look first: the centre may stand, out of sight
+            budget.spend(10);
+            sink.send(AttackMove.replace(
+                    UnitSet.of(wave.stream().mapToInt(UnitView::handle).toArray()),
+                    new Vec2d(base.enemyX(), base.enemyZ())));
+            return true;
+        }
+        long k = memory.get(Slots.SWEEP);
+        Vec2d dir = compass((int) (k % 8));
+        double radius = RING * (1 + (k / 8) % 3);
+        double x = Math.max(4, Math.min(view.bounds().sizeX() - 4, base.enemyX() + dir.x() * radius));
+        double z = Math.max(4, Math.min(view.bounds().sizeZ() - 4, base.enemyZ() + dir.z() * radius));
+        memory.set(Slots.SWEEP, k + 1);
+        budget.spend(10);
+        sink.send(AttackMove.replace(
+                UnitSet.of(wave.stream().mapToInt(UnitView::handle).toArray()), new Vec2d(x, z)));
+        return true;
     }
 
     /** Where a wave attack-moves to: {@value #ARROWS_FRONT} blocks from the enemy centre, toward our own. */

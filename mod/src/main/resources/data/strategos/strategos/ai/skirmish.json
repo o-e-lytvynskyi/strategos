@@ -61,6 +61,10 @@
     {
       "phase": "town",
       "population": 22
+    },
+    {
+      "building": "strategos:building/arsenal",
+      "population": 24
     }
   ],
   "housingMargin": 3,
@@ -81,7 +85,8 @@
     "defence": 600,
     "launch": 0.6,
     "spears": 6,
-    "line": 400
+    "line": 400,
+    "rams": 2
   },
   "camp": {
     "minDistance": 40

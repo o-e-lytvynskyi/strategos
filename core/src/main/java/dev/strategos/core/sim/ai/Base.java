@@ -3,6 +3,7 @@ package dev.strategos.core.sim.ai;
 import dev.strategos.core.content.Footprint;
 import dev.strategos.core.content.StartSlot;
 import dev.strategos.core.shared.DetMath;
+import dev.strategos.core.sim.UnitView;
 import dev.strategos.core.sim.build.BuildingView;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
@@ -43,6 +44,23 @@ record Base(
                 }
             }
         }
+        StartSlot home = enemy == null ? enemyStart(view, x, z) : null;
+        if (home != null && standingAt(view, home.x() + 0.5, home.z() + 0.5)) {
+            // QA-12: one of our soldiers stands at the enemy's start and sees no centre: it is down. What else of the
+            // enemy's stands in sight is the target, the nearest first, so conquest can finish; fields and
+            // decorations do not count to it
+            for (BuildingView b : view.enemyBuildings()) {
+                if (b.state() != 2 || view.is(b.template(), "Field") || view.is(b.template(), "Decoration")) {
+                    continue;
+                }
+                Footprint e = b.footprint();
+                double d = DetMath.length(e.anchorX() + e.spanX() / 2.0 - x, e.anchorZ() + e.spanZ() / 2.0 - z);
+                if (d < best) {
+                    best = d;
+                    enemy = b;
+                }
+            }
+        }
         double aimX;
         double aimZ;
         if (enemy != null) {
@@ -61,6 +79,18 @@ record Base(
         }
         int mirror = x < view.bounds().sizeX() / 2.0 ? 1 : -1;
         return new Base(own, x, z, enemy, mirror, aimX, aimZ);
+    }
+
+    /** How near the enemy's start a soldier of ours stands to see its centre, if one stands there: blocks. */
+    static final double SIGHT = 12;
+
+    private static boolean standingAt(AiView view, double x, double z) {
+        for (UnitView u : view.units()) {
+            if (view.role(u) != AiView.ROLE_NONE && DetMath.length(u.x() - x, u.z() - z) <= SIGHT) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

@@ -28,13 +28,15 @@ public final class ComputerPlayer {
     }
 
     /**
-     * The modules, made once the opening is known (AI-04): drawn by weight from {@code Rng(seed, OPENING, 0, faction,
+     * The modules, made once the opening is known (AI-04): drawn by weight (or pinned by the script) from {@code Rng(seed, OPENING, 0, faction,
      * 0)} at the first think and kept in memory, so a resumed player takes up the same one without drawing.
      */
     private List<AiModule> modules(AiView view) {
         List<AiModule> m = modules;
         if (m == null) {
-            if (memory.get(Slots.OPENING) == 0 && !strategy.openings().isEmpty()) {
+            if (memory.get(Slots.OPENING) == 0 && strategy.pinned() >= 0) {
+                memory.set(Slots.OPENING, strategy.pinned() + 1L); // pinned: no draw
+            } else if (memory.get(Slots.OPENING) == 0 && !strategy.openings().isEmpty()) {
                 int roll = Rng.below(view.seed(), Streams.OPENING, 0, faction, 0, strategy.totalWeight());
                 memory.set(Slots.OPENING, strategy.pick(roll) + 1L);
             }

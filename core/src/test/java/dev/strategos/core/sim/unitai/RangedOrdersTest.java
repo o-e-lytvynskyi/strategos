@@ -21,6 +21,7 @@ import dev.strategos.core.sim.KernelAccess;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.UnitCreated;
 import dev.strategos.core.sim.UnitStruck;
+import dev.strategos.core.sim.combat.Engagement;
 import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.stats.Modifier;
 import dev.strategos.core.testkit.Seeds;
@@ -132,6 +133,37 @@ class RangedOrdersTest {
         assertThat(h.runUntil(() -> UnitAi.leaf(s.ai().code(i)) == UnitAi.ATTACKING, 30))
                 .isTrue();
         assertThat(s.motion().x(i)).isGreaterThan(oldX);
+    }
+
+    /**
+     * QA-12: a chasing archer standing on its place, the target a hair beyond the margin it closes to (a gatherer
+     * shuffling a millimetre), is within range and fires. The place did not move by a regoal's worth and the margin was
+     * not met, so it once stood there for good, WALKING without progress.
+     */
+    @Test
+    void anArcherAtItsPlaceAHairShortOfTheMarginFires() {
+        SimHarness h = harness(8, 1, 20, 0);
+        int ranger = spawn(h, RANGER, F0, 5.5, 10.5);
+        int dummy = spawn(h, DUMMY, F1, 10.5, 10.5);
+        MatchState s = KernelAccess.state(h.core());
+        int i = Handle.index(ranger);
+        int d = Handle.index(dummy);
+        h.submit(new PlayerSlot(0), Attack.replace(UnitSet.of(ranger), dummy));
+        assertThat(h.runUntil(() -> UnitAi.leaf(s.ai().code(i)) == UnitAi.ATTACKING, 80))
+                .isTrue();
+        double radii = 5.0 - Engagement.gap(s, i, d);
+        s.motion()
+                .set(
+                        d,
+                        5.5 + radii + 7.5 + 0.0014,
+                        1,
+                        10.5,
+                        0); // the gap: the margin (0.5 short of range 8) and a hair
+        s.ai().set(i, UnitAi.CHASING);
+        s.orders().setPlace(i, s.motion().x(i), s.motion().z(i)); // its place: where it stands
+        assertThat(h.runUntil(() -> UnitAi.leaf(s.ai().code(i)) == UnitAi.ATTACKING, 12))
+                .as("in range and at its place, it fires")
+                .isTrue();
     }
 
     @Test

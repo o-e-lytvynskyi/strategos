@@ -210,4 +210,12 @@ public interface MatchQueries {
     default boolean visibleBuilding(int faction, BuildingView building) {
         return true;
     }
+
+    /**
+     * Whether {@code faction} has explored the cell of block column ({@code x}, {@code z}) (MATCH-07): what a gather or
+     * a placement there needs. True when the map is revealed or explored, AI vision is on, or vision is not wired.
+     */
+    default boolean explored(int faction, double x, double z) {
+        return true;
+    }
 }

@@ -178,6 +178,11 @@ public final class AiView {
         return out;
     }
 
+    /** Whether its faction has explored the cell of ({@code x}, {@code z}): the ground a gather or a site needs (AI-18). */
+    public boolean explored(double x, double z) {
+        return q.explored(faction, x, z);
+    }
+
     /** The resource nodes. */
     public List<NodeView> nodes() {
         if (nodes == null) {
