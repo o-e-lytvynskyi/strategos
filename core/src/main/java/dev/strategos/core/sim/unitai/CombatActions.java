@@ -50,6 +50,7 @@ final class CombatActions {
         }
         boolean stand = stance == Stance.STAND_GROUND;
         List<String> preferred = s.stats().preferredClasses(i, s.stats().canRanged(i));
+        boolean melee = !s.stats().canRanged(i); // only a melee attack restricts its targets (CMB-09)
         double[] best = {Double.POSITIVE_INFINITY};
         int[] rank = {preferred.size() + 1};
         int[] found = {-1};
@@ -62,6 +63,7 @@ final class CombatActions {
                         j -> {
                             if (!s.entities().aliveAt(j) || s.garrisoned(j))
                                 return; // the grid may still hold a unit killed or garrisoned since its rebuild
+                            if (melee && s.stats().restricts(i, s.stats().classes(j))) return;
                             if (stand && Engagement.gap(s, i, j) > Math.min(radius, Stances.reachTo(s, i, j)) + 1e-9)
                                 return;
                             double d = DetMath.length(motion.x(j) - x, motion.z(j) - z);
@@ -156,6 +158,7 @@ final class CombatActions {
         }
         if (!s.stats().canAttack(i)) return;
         int a = Handle.index(attacker);
+        if (!s.stats().canRanged(i) && s.stats().restricts(i, s.stats().classes(a))) return; // a ram leaves units be
         boolean near = switch (stance) {
             case STAND_GROUND -> Engagement.gap(s, i, a) <= Stances.reachTo(s, i, a) + 1e-9;
             case DEFENSIVE ->

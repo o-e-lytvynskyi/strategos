@@ -70,6 +70,13 @@ public final class BalanceSheet {
      */
     public record Burn(TemplateId attacker, TemplateId building, BigDecimal perHit, long hits, long tenTicks) {}
 
+    /**
+     * How rams raze a building down (CMB-09): {@code hits} blows of the log's crush, each times 0.9 to the building's
+     * {@code Resistance/crush}, take its hit points; two rams striking together from one tick finish in {@code
+     * twoTicks}: the wind-up, then a period for each further round of two.
+     */
+    public record Raze(TemplateId attacker, TemplateId building, BigDecimal perHit, long hits, long twoTicks) {}
+
     /** The provenance key of the resource yields: notes by entry key. */
     public static final String YIELDS = "resource_yield";
 
@@ -86,6 +93,7 @@ public final class BalanceSheet {
     private final Map<String, List<String>> gatherers = new TreeMap<>();
     private final List<Load> loads = new ArrayList<>();
     private final List<Burn> burns = new ArrayList<>();
+    private final List<Raze> razes = new ArrayList<>();
     private final Map<String, List<String>> spenders = new TreeMap<>();
     private final List<String> problems = new ArrayList<>();
 
@@ -170,6 +178,7 @@ public final class BalanceSheet {
             }
         }
         sheet.burns(result.set(), concrete);
+        sheet.razes(result.set(), concrete);
         for (Yield y : yields) {
             String note =
                     provenance.getOrDefault(YIELDS, Collections.emptyMap()).get(y.key());
@@ -293,6 +302,53 @@ public final class BalanceSheet {
                 long ticks = (long) set.value(a.netIndex(), prepare.id())
                         + (rounds - 1) * (long) set.value(a.netIndex(), repeat.id());
                 burns.add(new Burn(
+                        a.id(), b.id(), BigDecimal.valueOf(dealt).setScale(3, RoundingMode.HALF_UP), hits, ticks));
+            }
+        }
+    }
+
+    /** How long two rams take to raze each building they may strike, by attacker and building. */
+    public List<Raze> razes() {
+        return List.copyOf(razes);
+    }
+
+    /** Every unit with a log and no torch against every building with hit points whose classes it may strike. */
+    private void razes(TemplateSet set, List<UnitTemplate> templates) {
+        ValuePath crush = set.valuePaths().byPath(CorePaths.MELEE_CRUSH);
+        ValuePath fire = set.valuePaths().byPath("Attack/Structure/fire");
+        ValuePath prepare = set.valuePaths().byPath(CorePaths.MELEE_PREPARE);
+        ValuePath repeat = set.valuePaths().byPath(CorePaths.MELEE_REPEAT);
+        ValuePath resist = set.valuePaths().byPath(CorePaths.RESIST_CRUSH);
+        ValuePath health = set.valuePaths().byPath(CorePaths.HEALTH);
+        ValuePath restricted = set.tokenPaths().byPath(CorePaths.MELEE_RESTRICTED);
+        if (crush == null || prepare == null || repeat == null || health == null || restricted == null) {
+            return;
+        }
+        for (UnitTemplate a : templates) {
+            double blow = set.value(a.netIndex(), crush.id());
+            double torch = fire == null ? 0 : set.value(a.netIndex(), fire.id());
+            String bans = set.text(a.netIndex(), restricted.id());
+            if (a.isBuilding() || !(blow > 0) || torch > 0 || bans == null) {
+                continue;
+            }
+            List<String> banned = List.of(bans.trim().split("\\s+"));
+            for (UnitTemplate b : templates) {
+                double hp = set.value(b.netIndex(), health.id());
+                if (!b.isBuilding() || !(hp > 0) || b.classes().stream().anyMatch(banned::contains)) {
+                    continue;
+                }
+                double level = resist == null ? 0 : set.value(b.netIndex(), resist.id());
+                double dealt = (float) blow * DetMath.pow(0.9, Double.isFinite(level) ? level : 0);
+                long hits = 0;
+                double taken = 0;
+                while (taken < hp) { // as the core adds blows up
+                    taken += dealt;
+                    hits++;
+                }
+                long rounds = (hits + 1) / 2;
+                long ticks = (long) set.value(a.netIndex(), prepare.id())
+                        + (rounds - 1) * (long) set.value(a.netIndex(), repeat.id());
+                razes.add(new Raze(
                         a.id(), b.id(), BigDecimal.valueOf(dealt).setScale(3, RoundingMode.HALF_UP), hits, ticks));
             }
         }
@@ -507,6 +563,27 @@ public final class BalanceSheet {
                         .append(b.hits())
                         .append(" | ")
                         .append(seconds(b.tenTicks()))
+                        .append(" |\n");
+            }
+        }
+        sb.append("\n## Razing down\n\n");
+        if (razes.isEmpty()) {
+            sb.append("No template carries a log yet.\n");
+        } else {
+            sb.append("A log's crush times 0.9 to the building's crush resistance a blow; two rams striking together"
+                    + " from one tick take the wind-up and a period for each further round of two (CMB-09).\n\n");
+            sb.append("| Attacker | Building | Crush a blow | Blows | Two rams in |\n|---|---|---|---|---|\n");
+            for (Raze r : razes) {
+                sb.append("| ")
+                        .append(r.attacker().value())
+                        .append(" | ")
+                        .append(r.building().value())
+                        .append(" | ")
+                        .append(plain(r.perHit()))
+                        .append(" | ")
+                        .append(r.hits())
+                        .append(" | ")
+                        .append(seconds(r.twoTicks()))
                         .append(" |\n");
             }
         }

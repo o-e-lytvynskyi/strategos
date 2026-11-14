@@ -109,7 +109,7 @@ final class BuiltinTemplates {
               "Health": { "max": 50 },
               "Behaviour": { "flee": 8, "stance": "passive" },
               "Cost": { "resources": { "food": 60 }, "population": 1, "time": 10 },
-              "Builder": { "rate": 1 },
+              "Builder": { "rate": 1, "buildings": "strategos:building/civic_centre strategos:building/house strategos:building/barracks strategos:building/storehouse strategos:building/farmstead strategos:building/field" },
               "ResourceGatherer": {
                 "rates": { "food": { "fruit": 1, "grain": 0.5, "meat": 1 }, "wood": { "tree": 0.6 }, "stone": { "rock": 0.4 }, "iron": { "ore": 0.35 } },
                 "capacities": { "food": 10, "wood": 10, "stone": 10, "iron": 10 },
@@ -229,11 +229,37 @@ final class BuiltinTemplates {
               "parent": "strategos:template/building_base",
               "Identity": { "name": "strategos.building.tower", "icon": "minecraft:crossbow", "classes": "+Tower" },
               "Building": { "blueprint": "strategos:tower" },
-              "Placement": { "minPhase": 1 },
               "Health": { "max": 1000 },
               "Vision": { "range": 24 },
               "Attack": { "Building": { "arrows": 1, "interval": 40, "pierce": 10, "range": 28 } },
               "Cost": { "resources": { "wood": 100, "stone": 150 }, "time": 75 }
+            }
+            """;
+
+    static final String ARSENAL = """
+            {
+              "parent": "strategos:template/building_base",
+              "Identity": { "name": "strategos.building.arsenal", "icon": "minecraft:anvil", "classes": "+Arsenal" },
+              "Building": { "blueprint": "strategos:arsenal" },
+              "Health": { "max": 1500 },
+              "Cost": { "resources": { "wood": 200, "stone": 150 }, "time": 90 },
+              "Trainer": { "units": "strategos:unit/ram", "batchExponent": 0.8 }
+            }
+            """;
+    static final String RAM = """
+            {
+              "parent": "strategos:template/unit_base",
+              "Identity": { "name": "strategos.unit.ram", "icon": "minecraft:oak_log", "classes": "+Siege +Ram" },
+              "Health": { "max": 500 },
+              "UnitMotion": { "walkSpeed": 0.1, "mobility": "large" },
+              "Attack": { "Melee": { "crush": 40, "reach": 1.5, "prepare": 20, "repeat": 40, "restrictedClasses": "Unit Field" } },
+              "Resistance": { "hack": 1, "pierce": 8, "crush": 3 },
+              "Cost": {
+                "resources": { "wood": 150, "iron": 70 },
+                "population": 3,
+                "time": { "$derive": { "from": "strategos:unit/worker", "path": "Cost/time", "factor": 3 }, "note": "A ram is framed and hung in three times a worker's training" }
+              },
+              "Body": { "entityType": "strategos:unit_large", "model": "ram", "width": 2.0, "height": 2.0, "radius": 1.0 }
             }
             """;
 
@@ -365,9 +391,10 @@ final class BuiltinTemplates {
               "effects": [
                 { "path": "Health/max", "op": "mul", "value": 1.1, "filter": "Structure+!Field" },
                 { "path": "Vision/range", "op": "add", "value": 2, "filter": "Structure+!Field" },
-                { "path": "Researcher/techs", "op": "tokens", "tokens": "+strategos:iron_weapons +strategos:chainmail", "filter": "Barracks" }
+                { "path": "Researcher/techs", "op": "tokens", "tokens": "+strategos:iron_weapons +strategos:chainmail", "filter": "Barracks" },
+                { "path": "Builder/buildings", "op": "tokens", "tokens": "+strategos:building/tower +strategos:building/arsenal", "filter": "Builder" }
               ],
-              "unlocks": ["strategos:iron_weapons", "strategos:chainmail"]
+              "unlocks": ["strategos:iron_weapons", "strategos:chainmail", "strategos:building/tower", "strategos:building/arsenal"]
             }
             """;
 
@@ -440,7 +467,9 @@ final class BuiltinTemplates {
             new TemplateId("strategos:building/storehouse"),
             new TemplateId("strategos:unit/archer"), // M5
             new TemplateId("strategos:unit/horseman"),
-            new TemplateId("strategos:building/tower"))); // M6 T20
+            new TemplateId("strategos:building/tower"), // M6 T20
+            new TemplateId("strategos:building/arsenal"), // M6 T19
+            new TemplateId("strategos:unit/ram")));
 
     /** The indices the built-in techs were given, kept as {@link #PINNED} keeps the templates' (row 20). */
     private static final TechIdTable PINNED_TECHS = new TechIdTable(List.of(
@@ -474,7 +503,7 @@ final class BuiltinTemplates {
                 raw("strategos:unit/infantry", INFANTRY),
                 raw("strategos:unit/archer", ARCHER),
                 raw("strategos:unit/horseman", HORSEMAN, withTechs),
-                raw("strategos:unit/worker", WORKER),
+                raw("strategos:unit/worker", WORKER, withTechs),
                 raw("strategos:unit/sheep", SHEEP),
                 raw("strategos:unit/pig", PIG),
                 raw("strategos:unit/chicken", CHICKEN),
@@ -489,7 +518,9 @@ final class BuiltinTemplates {
                 raw("strategos:building/iron_mine", IRON_MINE),
                 raw("strategos:building/iron_mine_large", IRON_MINE_LARGE)));
         if (withTechs) {
-            templates.add(raw("strategos:building/tower", TOWER)); // gated by Placement/minPhase: a phase is a tech
+            templates.add(raw("strategos:building/tower", TOWER)); // on the build list Town adds (BLD-17)
+            templates.add(raw("strategos:building/arsenal", ARSENAL)); // M6 T19
+            templates.add(raw("strategos:unit/ram", RAM));
         }
         TemplateCompiler.Result result = TemplateCompiler.compile(
                 templates,
@@ -530,6 +561,9 @@ final class BuiltinTemplates {
         if (!withTechs) {
             object.remove("Researcher");
             object.remove("Look"); // TECH-03's tiers, which only the techs raise
+            if (object.has("Builder")) {
+                object.getAsJsonObject("Builder").remove("buildings"); // the build list the phases add to (BLD-17)
+            }
             JsonObject identity = object.getAsJsonObject("Identity");
             identity.addProperty(
                     "classes", identity.get("classes").getAsString().replace(" +Village", ""));

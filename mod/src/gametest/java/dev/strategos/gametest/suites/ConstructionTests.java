@@ -646,7 +646,7 @@ public final class ConstructionTests {
     }
 
     /**
-     * The built-in set with the tower open to Village: its Town gate is L1's ({@code TowerTest.townOnlyAndStone}), and
+     * The built-in set with the tower on the Village worker's list: its Town gate is L1's ({@code BuildListTest}), and
      * researching Town here would be a second test of TECH-02 inside a test of the tower's blocks.
      */
     private static TemplateSet towerOpenToVillage() {
@@ -654,8 +654,9 @@ public final class ConstructionTests {
         List<TemplateCompiler.Flat> flats = new ArrayList<>();
         for (UnitTemplate t : b.all()) {
             JsonObject json = b.flattened(t.id()).deepCopy();
-            if (t.id().equals(TOWER)) {
-                json.getAsJsonObject("Placement").addProperty("minPhase", 0);
+            if (t.id().equals(TemplateSet.WORKER)) {
+                JsonObject builder = json.getAsJsonObject("Builder");
+                builder.addProperty("buildings", builder.get("buildings").getAsString() + " " + TOWER.value());
             }
             flats.add(new TemplateCompiler.Flat(t.id(), t.netIndex(), json));
         }

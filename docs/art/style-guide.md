@@ -64,6 +64,7 @@ blueprints may replace them later (an owner task); they keep the same ranges.
 | Farmstead (food) | 5–8 | 3–6 | 60–160 | 6 × 4 × 5, 88 blocks (BLD-08) |
 | Civic centre | 9–15 | 6–10 | 300–800 | 11 × 7 × 11, 442 blocks |
 | Tower (defence) | 5–7 | 7–12 | 100–260 | 5 × 9 × 5, 152 blocks (BLD-17) |
+| Arsenal (siege) | 9–13 | 6–9 | 250–500 | 11 × 7 × 9, 396 blocks, a doorway three wide for the rams (CMB-09) |
 | Deposit (quarry, iron mine) | 3–6 | 2–4 | 18–90 | 3 × 2 × 3, 18 blocks; 5 × 3 × 5, 59 blocks (ECO-08: spawned, never built) |
 
 - **They read at camera heights of 24–64 blocks**: a house is at least 4 blocks high, so its

@@ -92,6 +92,23 @@
     "Body/height": "Two blocks: a horse and the rider above its saddle (ADR-0011, UNIT-06)",
     "Body/radius": "The large class's avoidance radius, 0.7: half the body's width (PATH-11)"
   },
+  "strategos:unit/ram": {
+    "Health/max": "Five hundred hit points: ten times a worker, two and a half horsemen; a ram is slow, so it has to outlast the arrows on the way to the wall (CMB-09)",
+    "UnitMotion/walkSpeed": "A tenth of a block a tick: half a spearman's pace, so a ram is seen coming and a force must escort it (CMB-09)",
+    "Attack/Melee/crush": "Forty crush a swing of the log: against a stone building two rams raze a civic centre in under a minute, where the same price in torch-bearers takes over five (D-12, CMB-09)",
+    "Attack/Melee/reach": "A block and a half, a log's swing from the front of the frame",
+    "Attack/Melee/prepare": "Twenty ticks: the log is drawn back before it swings",
+    "Attack/Melee/repeat": "A swing every forty ticks, two seconds: heavy and slow, twenty crush a second a ram",
+    "Resistance/hack": "One armour: a roof of planks, so soldiers beat a ram in melee, which is its counter (CMB-09)",
+    "Resistance/pierce": "Eight armour: arrows glance off the roof, as the classics' siege shrugs off archers; 0.9^8 lets 43 % through (CMB-09)",
+    "Resistance/crush": "Three armour: a ram hurts a ram less than it hurts a house",
+    "Cost/resources/wood": "A hundred and fifty wood: the frame, the roof and the wheels (CMB-09)",
+    "Cost/resources/iron": "Seventy iron: the log's cap; two rams cost 440 resources, which buys only four spearmen, so row 14's five minutes on stone holds (D-12, CMB-09)",
+    "Cost/population": "Three: a ram is a team of men, so two rams are a spearman squad's room and a siege is felt in the housing",
+    "Body/width": "Two blocks: the frame and its wheels, the `unit_large` type's size (ADR-0011, CMB-09)",
+    "Body/height": "Two blocks: the roof's ridge over the wheels (ADR-0011, CMB-09)",
+    "Body/radius": "One block, half the width: the large class's avoidance radius, so a ram keeps others off its frame (PATH-11, CMB-09)"
+  },
   "strategos:unit/worker": {
     "Health/max": "Half a spearman's: a raid on workers costs their owner dearly, so workers are worth guarding",
     "Behaviour/flee": "Eight blocks from a blow: out of a spearman's reach, near enough to go back to work",
@@ -181,8 +198,14 @@
     "Health/max": "A thousand: half the centre's, as much as a barracks and a bit less; ten torch-bearers take half a minute to tear it down (CMB-03)",
     "Cost/resources/wood": "A hundred wood: the beams and the platform, cheap enough to place several (BLD-17)",
     "Cost/resources/stone": "A hundred and fifty stone: stone is the tower's price, so a boom player's quarry buys defence (P4, BLD-17)",
-    "Cost/time": "A minute and a quarter for one builder: slower than a barracks, so a tower is raised before the raid, not during it",
-    "Placement/minPhase": "Phase one, Town: towers come with the second age, so the opening's raids meet soldiers and the centre, not walls (BLD-17, TECH-02)"
+    "Cost/time": "A minute and a quarter for one builder: slower than a barracks, so a tower is raised before the raid, not during it"
+  },
+  "strategos:building/arsenal": {
+    "Health/max": "Fifteen hundred: a stone workshop, tougher than a barracks (1,200), so the siege line is not lost to the first raid that reaches it (CMB-09)",
+    "Cost/resources/wood": "Two hundred wood: the frames and the beams a ram is hung from, as a barracks' (CMB-09)",
+    "Cost/resources/stone": "A hundred and fifty stone: the arsenal is a Town building, paid for from the quarry as the tower is (CMB-09, D-12)",
+    "Cost/time": "A minute and a half for one builder: the longest build of the town, so rams come after the army, not before it (CMB-09)",
+    "Trainer/batchExponent": "As the civic centre's: one rule for every trainer until a technology changes it (TECH-05)"
   },
   "strategos:building/quarry": {
     "Deposit/amount": "A thousand stone, two hundred quarried blocks' worth: a small quarry pays a civic centre five times over and lasts a match's opening (ECO-08)",

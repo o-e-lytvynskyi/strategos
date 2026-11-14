@@ -53,6 +53,12 @@ public final class CorePaths {
     /** The class tokens an attack picks its targets from first (CMB-05): a list, empty for the nearest enemy. */
     public static final String MELEE_PREFERRED = "Attack/Melee/preferred";
 
+    /**
+     * The class tokens a melee attack never takes as targets (CMB-09): the rules refuse such a target and the unit never
+     * picks one on its own, as a ram's {@code Unit Field}.
+     */
+    public static final String MELEE_RESTRICTED = "Attack/Melee/restrictedClasses";
+
     public static final String RANGED_PREFERRED = "Attack/Ranged/preferred";
 
     /**

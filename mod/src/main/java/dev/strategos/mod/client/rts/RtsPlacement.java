@@ -76,7 +76,8 @@ final class RtsPlacement {
 
     /** The build key: the next building template, after the last none. */
     void cycle() {
-        List<Integer> buildings = CommandCard.buildings(StrategosClient.templates());
+        List<Integer> buildings = CommandCard.placeable(
+                StrategosClient.templates(), StrategosClient.model().faction());
         int next = buildings.indexOf(armed) + 1;
         armed = next < buildings.size() ? buildings.get(next) : -1;
         ghost = null;

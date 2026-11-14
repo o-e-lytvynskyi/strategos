@@ -68,10 +68,12 @@ public final class StrategosClient {
             e.registerEntityRenderer(ModEntityTypes.UNIT_HUMANOID.get(), UnitRenderer::new);
             e.registerEntityRenderer(ModEntityTypes.UNIT_FAUNA.get(), FaunaRenderer::new);
             e.registerEntityRenderer(ModEntityTypes.UNIT_MOUNT.get(), MountRenderer::new);
+            e.registerEntityRenderer(ModEntityTypes.UNIT_LARGE.get(), RamRenderer::new);
         });
-        modBus.addListener(
-                EntityRenderersEvent.RegisterLayerDefinitions.class,
-                e -> e.registerLayerDefinition(MountModel.LAYER, MountModel::layer));
+        modBus.addListener(EntityRenderersEvent.RegisterLayerDefinitions.class, e -> {
+            e.registerLayerDefinition(MountModel.LAYER, MountModel::layer);
+            e.registerLayerDefinition(RamModel.LAYER, RamModel::layer);
+        });
         NeoForge.EVENT_BUS.addListener(PayloadArrived.class, ClientPayloads::onPayload);
         NeoForge.EVENT_BUS.addListener(
                 ClientPlayerNetworkEvent.LoggingIn.class, e -> ARENA.onLoggedIn(Minecraft.getInstance()));

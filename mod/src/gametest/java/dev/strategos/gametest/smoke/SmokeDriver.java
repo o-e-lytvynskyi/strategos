@@ -13,6 +13,7 @@ import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.Hex64;
 import dev.strategos.core.shared.PlayerSlot;
+import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.MatchCore;
@@ -28,6 +29,7 @@ import dev.strategos.mod.Strategos;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.entity.UnitEntity;
 import dev.strategos.mod.platform.Ids;
+import dev.strategos.mod.registry.ModEntityTypes;
 import dev.strategos.mod.server.command.StrategosCommands;
 import dev.strategos.mod.server.content.MapPackageLoader;
 import dev.strategos.mod.server.content.Scenarios;
@@ -92,6 +94,8 @@ import org.slf4j.LoggerFactory;
 public final class SmokeDriver {
     private static final Logger LOG = LoggerFactory.getLogger(SmokeDriver.class);
     private static final int UNITS = 8;
+    private static final TemplateId RAM = new TemplateId("strategos:unit/ram"); // CMB-09: one, standing, never ordered
+    private static final Vec2d RAM_AT = new Vec2d(9, 13);
     private static final Vec2d START = new Vec2d(4, 8);
     private static final Vec2d TARGET = new Vec2d(12.5, 8.5);
     private static final Vec2d BACK = new Vec2d(4.5, 8.5);
@@ -244,6 +248,7 @@ public final class SmokeDriver {
                         0,
                         0));
         match.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(0), START, UNITS, 2));
+        match.submit(PlayerSlot.ADMIN, new SpawnUnits(RAM, new FactionSlot(0), RAM_AT, 1, 0));
         run = new Run(server, match, false);
     }
 
@@ -287,6 +292,17 @@ public final class SmokeDriver {
                     null);
             return;
         }
+        long rams = Arrays.stream(core.queries().unitHandles())
+                .filter(u -> core.queries().unit(u).template().equals(RAM))
+                .count();
+        if (rams != 1 || core.queries().unitCount() != UNITS + 1) {
+            finish(
+                    server,
+                    "the saved match is back with " + rams + " rams among "
+                            + core.queries().unitCount() + " units, not one among " + (UNITS + 1),
+                    null);
+            return;
+        }
         Run r = new Run(server, match, true);
         r.restoredTick = tick;
         r.run1 = journal;
@@ -321,9 +337,16 @@ public final class SmokeDriver {
         }
     }
 
+    /** The debug walkers among the live units: the ram stands where it was spawned, so it is no part of the walk. */
+    private static int[] walkers(MatchCore core) {
+        return Arrays.stream(core.queries().unitHandles())
+                .filter(u -> core.queries().unit(u).template().equals(TemplateSet.DEBUG_WALKER))
+                .toArray();
+    }
+
     private static void tickRun1(Run r, MatchCore core) {
-        int[] units = core.queries().unitHandles();
-        if (!r.ordered && units.length == UNITS) {
+        int[] units = walkers(core);
+        if (!r.ordered && units.length == UNITS && core.queries().unitCount() == UNITS + 1) {
             r.match.submit(PlayerSlot.ADMIN, Move.replace(UnitSet.of(units), TARGET));
             r.ordered = true;
         } else if (r.ordered) {
@@ -548,15 +571,16 @@ public final class SmokeDriver {
         if (!r.match.persistent()) {
             return "the smoke match is not saved";
         }
-        if (units.length != UNITS) {
-            return units.length + " units, not " + UNITS;
+        if (units.length != UNITS || core.queries().unitCount() != UNITS + 1) {
+            return units.length + " walkers and " + core.queries().unitCount() + " units, not " + UNITS + " and "
+                    + (UNITS + 1);
         }
         String away = notAtPlaces(core, units, r.places);
         if (away != null) {
             return away;
         }
-        if (r.match.bodies().count() != UNITS) {
-            return r.match.bodies().count() + " bodies, not " + UNITS + " (" + Arrays.toString(units) + ")";
+        if (r.match.bodies().count() != UNITS + 1) { // the walkers and the ram
+            return r.match.bodies().count() + " bodies, not " + (UNITS + 1) + " (" + Arrays.toString(units) + ")";
         }
         return null;
     }
@@ -575,6 +599,12 @@ public final class SmokeDriver {
         if (!Arrays.equals(shown, expected)) {
             return "the level shows unit bodies " + Arrays.toString(shown) + " for the units "
                     + Arrays.toString(expected);
+        }
+        long rams = bodies.stream()
+                .filter(b -> b.getType().equals(ModEntityTypes.UNIT_LARGE.get()))
+                .count();
+        if (rams != 1) {
+            return rams + " ram bodies of the type unit_large after the restart, not 1"; // CMB-09, L5
         }
         return null;
     }

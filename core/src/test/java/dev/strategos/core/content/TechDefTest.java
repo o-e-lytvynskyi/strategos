@@ -398,6 +398,27 @@ class TechDefTest {
         assertThat(r.set().techs()).extracting(t -> t.id().value()).containsExactly("t:plain");
     }
 
+    /** CMB-09 / spec row 29: a worker's build list is an unlock list, so Town's additions to it are named and real. */
+    @Test
+    void theBuildListsAdditionsAreUnlocksToo() {
+        String lists = ", \"Builder\": { \"buildings\": \"t:unit/worker\" }";
+        String effect = "{\"path\":\"Builder/buildings\",\"op\":\"tokens\",\"tokens\":\"+%s\"}";
+        String body = "{\"icon\":\"i\",\"time\":5,\"unlocks\":[%s],\"effects\":[%s]}";
+
+        assertThat(withWorker(
+                                lists,
+                                tech("t:ok", body.formatted("\"t:unit/worker\"", effect.formatted("t:unit/worker"))))
+                        .problems())
+                .isEmpty();
+        TemplateCompiler.Result unlisted =
+                withWorker(lists, tech("t:bad", body.formatted("", effect.formatted("t:unit/worker"))));
+        assertThat(where(unlisted)).containsExactly("bad.json/unlocks");
+        TemplateCompiler.Result ghost = withWorker(
+                lists, tech("t:ghost", body.formatted("\"t:unit/ghost\"", effect.formatted("t:unit/ghost"))));
+        assertThat(where(ghost)).containsExactly("ghost.json/unlocks/0");
+        assertThat(ghost.set().techs()).isEmpty();
+    }
+
     @Test
     void aTechHasTheClassPhaseIfItsIdIsAPhaseId() {
         assertThat(techs(plain("t:phase_x", ",\"classes\":[\"Phase\"],\"ordinal\":0"))

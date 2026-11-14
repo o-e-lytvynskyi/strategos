@@ -287,9 +287,14 @@ public record TechDef(
         return listed;
     }
 
-    /** Whether additions to token list {@code path} are unlocks; a build list joins when buildings are gated (M6 T19). */
+    /** Whether additions to token list {@code path} are unlocks: what a building trains or researches, or a worker places. */
     static boolean unlocking(String path) {
-        return path.equals("Trainer/units") || path.equals("Researcher/techs");
+        return path.equals("Trainer/units") || path.equals("Researcher/techs") || path.equals("Builder/buildings");
+    }
+
+    /** Whether the unlocks added to token list {@code path} name templates, not techs. */
+    static boolean unlockingTemplates(String path) {
+        return path.equals("Trainer/units") || path.equals("Builder/buildings");
     }
 
     private static @Nullable TechEffect effect(

@@ -10,12 +10,10 @@ import dev.strategos.core.sim.PlaceMoved;
 import dev.strategos.core.sim.UnitStruck;
 import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.build.Placing;
-import dev.strategos.core.sim.combat.CombatSystem;
-import dev.strategos.core.sim.combat.Damage;
+import dev.strategos.core.sim.combat.Siege;
 import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.core.sim.unitai.Hfsm.Context;
-import java.util.List;
 import java.util.function.IntPredicate;
 
 /**
@@ -23,19 +21,11 @@ import java.util.function.IntPredicate;
  * place round the footprint, the builders' slots, walks there and, after its torch's wind-up, deals its
  * {@code Attack/Structure/fire} every {@code Attack/Structure/repeat} ticks, against the building's {@code
  * Resistance/fire}, each blow showing flames on the nearest of its blocks, never a fire block. It burns until the
- * building falls or the order ends.
+ * building falls or the order ends. A unit with no torch but a crush in its melee attack, a ram (CMB-09), takes the same
+ * states and strikes with that, on its melee attack's timing, showing no flame ({@link Siege}).
  */
 final class Burning {
-    static final String FIRE = CombatSystem.TORCH_FIRE;
-    static final String PREPARE = CombatSystem.TORCH_PREPARE;
-    static final String REPEAT = CombatSystem.TORCH_REPEAT;
-
     private Burning() {}
-
-    /** Whether unit {@code i} carries a torch: its {@code Attack/Structure/fire} above 0. */
-    static boolean canBurn(MatchState s, int i) {
-        return value(s, i, FIRE, 0) > 0;
-    }
 
     /**
      * Entering the approach: the free place round the building nearest the unit, walked to; none, or a building gone,
@@ -114,7 +104,7 @@ final class Burning {
         MatchState s = ctx.host();
         int i = ctx.unit();
         int target = s.orders().target(i);
-        ctx.setData((int) s.tick() + (int) value(s, i, PREPARE, 0), 0);
+        ctx.setData((int) s.tick() + Siege.prepare(s, i), 0);
         if (!s.buildings().alive(target)) {
             return; // its think ends the order
         }
@@ -144,29 +134,25 @@ final class Burning {
         if (tick < ctx.data0()) {
             return;
         }
-        s.queueDamage(new Damage(target, ctx.handle(), 0, 0, 0, (float) value(s, i, FIRE, 0), List.of(), false));
+        s.queueDamage(Siege.blow(s, i, ctx.handle(), target));
         s.outputs().add(new UnitStruck(ctx.handle(), target));
-        Footprint at = s.footprintOf(target);
-        MotionStore m = s.motion();
-        int x = (int) Math.max(at.anchorX(), Math.min(at.anchorX() + at.spanX() - 1, Math.floor(m.x(i))));
-        int z = (int) Math.max(at.anchorZ(), Math.min(at.anchorZ() + at.spanZ() - 1, Math.floor(m.z(i))));
-        int height = s.blueprintOf(target).sizeY();
-        s.outputs().add(new FlameShown(x, s.buildings().baseY(target) + 1 + Math.min(2, height - 1), z));
-        ctx.setData(tick + Math.max(1, (int) value(s, i, REPEAT, 20)), 0);
+        if (Siege.fire(s, i) > 0) { // a torch shows flames, a log none
+            Footprint at = s.footprintOf(target);
+            MotionStore m = s.motion();
+            int x = (int) Math.max(at.anchorX(), Math.min(at.anchorX() + at.spanX() - 1, Math.floor(m.x(i))));
+            int z = (int) Math.max(at.anchorZ(), Math.min(at.anchorZ() + at.spanZ() - 1, Math.floor(m.z(i))));
+            int height = s.blueprintOf(target).sizeY();
+            s.outputs().add(new FlameShown(x, s.buildings().baseY(target) + 1 + Math.min(2, height - 1), z));
+        }
+        ctx.setData(tick + Math.max(1, Siege.repeat(s, i)), 0);
     }
 
     /**
-     * Whether unit {@code i} can still burn {@code target}: a standing building and a torch. Whose building it may be is
+     * Whether unit {@code i} can still strike {@code target}: a standing building, and a torch or a log that may. Whose building it may be is
      * the attack command's to decide (an own one only when forced, ORD-05), so the order is not checked again here.
      */
     static boolean burnable(MatchState s, int i, int target) {
         BuildingStore b = s.buildings();
-        return BuildingStore.isBuilding(target) && b.alive(target) && canBurn(s, i);
-    }
-
-    private static double value(MatchState s, int i, String path, double otherwise) {
-        int p = s.stats().path(path);
-        double v = p < 0 ? Double.NaN : s.stats().read(i, p);
-        return Double.isFinite(v) && v >= 0 ? v : otherwise;
+        return BuildingStore.isBuilding(target) && b.alive(target) && Siege.canStrike(s, i, target);
     }
 }

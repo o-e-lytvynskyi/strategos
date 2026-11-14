@@ -30,8 +30,8 @@ public final class Placing {
     public static final String SPACING = "Placement/spacing";
     public static final String CIVIC_REACH = "Placement/civicReach";
 
-    /** The least phase ordinal a faction must have reached to place the building (BLD-17); 0 for none. */
-    public static final String MIN_PHASE = "Placement/minPhase";
+    /** The token path of the buildings a worker may place: its build list (BLD-17, CMB-09). */
+    public static final String BUILD_LIST = "Builder/buildings";
 
     private Placing() {}
 
@@ -171,9 +171,25 @@ public final class Placing {
         return Double.isFinite(v) && v > 0 ? (int) Math.round(v) : 0;
     }
 
-    /** The phase ordinal {@code faction} needs to place {@code template}, its {@code Placement/minPhase}; 0 for any. */
-    public static int minPhase(MatchState s, int template, int faction) {
-        return (int) Math.round(value(s, template, faction, MIN_PHASE));
+    /**
+     * Whether {@code faction} may place building {@code template}: the effective {@code Builder/buildings} of one of its
+     * builder templates names it, as the phase it has reached adds to it. A set with no build list gates nothing.
+     */
+    public static boolean listed(MatchState s, int template, int faction) {
+        int path = s.stats().tokenPath(BUILD_LIST);
+        if (path < 0) {
+            return true;
+        }
+        String id = s.templates().byIndex(template).id().value();
+        for (UnitTemplate t : s.templates().all()) {
+            if (!t.isBuilding() && t.classes().contains("Builder")) {
+                List<String> list = s.stats().blockTokens(t.netIndex(), faction, path);
+                if (list != null && list.contains(id)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /** How many buildings of {@code template} faction {@code faction} has, foundations and sites among them. */

@@ -27,9 +27,13 @@ import net.minecraft.world.level.block.state.BlockState;
 public final class TemplateLint {
     private TemplateLint() {}
 
-    /** The models the renderer of body type {@code type} draws: the humanoid, or the animals' (ECO-16). */
+    /** The models the renderer of body type {@code type} draws: the humanoid, the animals' (ECO-16) or the ram (CMB-09). */
     static List<String> models(String type) {
-        return "strategos:unit_fauna".equals(type) ? List.of("chicken", "pig", "sheep") : List.of("humanoid");
+        return switch (type) {
+            case "strategos:unit_fauna" -> List.of("chicken", "pig", "sheep");
+            case "strategos:unit_large" -> List.of("ram");
+            default -> List.of("humanoid");
+        };
     }
 
     /** The skins M1 ships, and none. */

@@ -26,6 +26,7 @@ import dev.strategos.core.sim.ShotLanded;
 import dev.strategos.core.sim.UnitCreated;
 import dev.strategos.core.sim.UnitHurt;
 import dev.strategos.core.sim.econ.Amount;
+import dev.strategos.core.sim.prod.Techs;
 import dev.strategos.core.testkit.SimHarness;
 import dev.strategos.core.testkit.VoxelFixtures;
 import java.util.List;
@@ -35,7 +36,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * BLD-17 in L1: the defence tower's arrows are the sheet's (one every 40 ticks, ten pierce, twenty-eight blocks), it is
- * placed only in Town and costs stone, and it shoots only enemy units.
+ * placed only from the build list Town adds to and costs stone, and it shoots only enemy units.
  */
 class TowerTest {
     static final TemplateId TOWER = new TemplateId("strategos:building/tower");
@@ -150,7 +151,6 @@ class TowerTest {
     @Test
     void townOnlyAndStone() {
         assertThat(sheet("Cost/resources/stone")).as("stone is its price").isPositive();
-        assertThat(sheet("Placement/minPhase")).as("Town, phase one").isEqualTo(1);
         building(CENTRE, 0, 20, 20);
         h.submit(PlayerSlot.ADMIN, new Grant(new FactionSlot(0), "wood", 1_000));
         h.submit(PlayerSlot.ADMIN, new Grant(new FactionSlot(0), "stone", 1_000));
@@ -164,6 +164,7 @@ class TowerTest {
         assertThat(village.firstReason()).as("not in Village").isEqualTo(RejectReason.REQUIREMENTS);
         int before = s.buildings().handles().length;
         s.progress().complete(0, TOWN);
+        Techs.reapply(s, null); // Town's tokens join the workers' build list
         assertThat(s.treasury().spent(0, STONE)).isZero();
         h.submit(p0, place);
         h.step();

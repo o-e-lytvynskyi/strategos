@@ -126,7 +126,7 @@ final class TechChecks {
     }
 
     /**
-     * Each unlock names what it unlocks: a {@code Trainer/units} addition a template of the set, a {@code
+     * Each unlock names what it unlocks: a {@code Trainer/units} or {@code Builder/buildings} addition a template of the set, a {@code
      * Researcher/techs} addition a tech that stands. The error is at the unlock.
      */
     private static List<TechDef> withResolvedUnlocks(
@@ -143,7 +143,7 @@ final class TechChecks {
                 if (e.op() != TechEffect.Op.TOKENS || e.tokens() == null || !TechDef.unlocking(e.path())) {
                     continue;
                 }
-                boolean units = e.path().equals("Trainer/units");
+                boolean units = TechDef.unlockingTemplates(e.path());
                 for (String item : MergeOps.tokens(e.tokens())) {
                     String id = item.substring(1);
                     if (item.startsWith("+") && !(units ? templateIds : techIds).contains(id)) {

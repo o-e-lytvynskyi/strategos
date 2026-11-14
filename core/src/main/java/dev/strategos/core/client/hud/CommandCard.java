@@ -184,11 +184,15 @@ public record CommandCard(Page page, List<Button> buttons) {
                 if (slot == SLOTS - 1) {
                     break;
                 }
+                String gate = gate(in.templates(), in.faction(), in.unitTemplates(), t);
+                if (HIDDEN.equals(gate)) {
+                    continue; // on no list a research adds to
+                }
                 Button build = button(in, Kind.BUILD, slot++, t, cost(in, t, "Cost/resources/"));
                 out.add(
                         atLimit(in, t)
                                 ? disabled(build, "Limit reached")
-                                : phaseShort(in, t) ? disabled(build, "Needs the Town phase") : build);
+                                : gate != null ? disabled(build, gate) : build);
             }
             out.add(new Button(Kind.BACK, SLOTS - 1, -1, List.of(), true));
             return new CommandCard(Page.BUILD, out);
@@ -304,12 +308,70 @@ public record CommandCard(Page page, List<Button> buttons) {
         return own >= limit;
     }
 
-    /** Whether the faction's phase is below the {@code Placement/minPhase} of {@code template} (BLD-17). */
-    private static boolean phaseShort(Input in, int template) {
-        ValuePath path = in.templates().valuePaths().byPath("Placement/minPhase");
-        double need = path == null ? Double.NaN : in.templates().value(template, path.id());
-        FactionState f = in.faction();
-        return need > 0 && (f == null ? 0 : f.phase()) < need;
+    /**
+     * The building templates the faction's workers may place now, by net index (the B key's cycle): those of
+     * {@link #buildings} that some builder template's build list, or a tech the faction researched, names.
+     */
+    public static List<Integer> placeable(TemplateSet templates, @Nullable FactionState faction) {
+        List<Integer> builders = new ArrayList<>();
+        for (UnitTemplate t : templates.all()) {
+            if (!t.isBuilding() && t.classes().contains("Builder")) {
+                builders.add(t.netIndex());
+            }
+        }
+        List<Integer> out = new ArrayList<>();
+        for (int t : buildings(templates)) {
+            if (gate(templates, faction, builders, t) == null) {
+                out.add(t);
+            }
+        }
+        return out;
+    }
+
+    /** What {@link #gate} returns for a building no list the faction can reach names. */
+    private static final String HIDDEN = "";
+
+    /**
+     * Why the faction's workers cannot place {@code template} yet (BLD-17, CMB-09): null when a selected builder's
+     * {@code Builder/buildings} names it, or a tech the faction has researched added it; "Needs the Town phase" when a
+     * phase not yet reached would add it; {@link #HIDDEN} when nothing does. A set with no build list gates nothing.
+     */
+    private static @Nullable String gate(
+            TemplateSet templates, @Nullable FactionState f, List<Integer> unitTemplates, int template) {
+        ValuePath path = templates.tokenPaths().byPath("Builder/buildings");
+        if (path == null) {
+            return null;
+        }
+        String id = templates.byIndex(template).id().value();
+        for (int t : unitTemplates) {
+            if (templates.has(t) && templates.byIndex(t).classes().contains("Builder")) {
+                String list = templates.text(t, path.id());
+                if (list != null && List.of(list.trim().split("\\s+")).contains(id)) {
+                    return null;
+                }
+            }
+        }
+        String reason = HIDDEN;
+        for (TechDef tech : templates.techs()) {
+            for (TechEffect e : tech.effects()) {
+                if (e.op() != TechEffect.Op.TOKENS
+                        || !path.path().equals(e.path())
+                        || e.tokens() == null
+                        || !List.of(e.tokens().trim().split("\\s+")).contains("+" + id)) {
+                    continue;
+                }
+                if (f != null && f.researched().contains(tech.netIndex())) {
+                    return null;
+                }
+                if (tech.isPhase()) {
+                    String name = tech.id().value().substring(tech.id().value().indexOf('_') + 1);
+                    reason = "Needs the " + Character.toUpperCase(name.charAt(0)) + name.substring(1) + " phase";
+                } else if (HIDDEN.equals(reason)) {
+                    reason = "Needs research";
+                }
+            }
+        }
+        return reason;
     }
 
     /** The templates building template {@code building} trains, by its {@code Trainer/units}, in their order there. */

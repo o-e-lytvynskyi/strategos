@@ -1,5 +1,6 @@
 package dev.strategos.mod.entity;
 
+import dev.strategos.mod.registry.ModEntityTypes;
 import dev.strategos.mod.server.body.BodyEvents;
 import java.util.List;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -12,6 +13,7 @@ import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
 import org.jspecify.annotations.Nullable;
 
@@ -101,6 +103,16 @@ public final class UnitEntity extends LivingEntity implements IEntityWithComplex
     @Override
     public boolean shouldRenderAtSqrDistance(double distance) {
         return distance < RENDER_DISTANCE * RENDER_DISTANCE;
+    }
+
+    /**
+     * A ram's culling box is its hit box grown a block each way (CMB-09): its log swings out past the 2 x 2 box, and a
+     * frame culled while its log is still in view would blink at the screen's edge. Other bodies' are their hit boxes.
+     */
+    @Override
+    public AABB getBoundingBoxForCulling() {
+        AABB box = super.getBoundingBoxForCulling();
+        return getType().equals(ModEntityTypes.UNIT_LARGE.get()) ? box.inflate(1.0, 0.5, 1.0) : box;
     }
 
     /** The body registry removes this body itself, so its leave event is not a lost body. */

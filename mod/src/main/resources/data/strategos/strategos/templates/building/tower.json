@@ -2,7 +2,6 @@
   "parent": "strategos:template/building_base",
   "Identity": { "name": "strategos.building.tower", "icon": "minecraft:crossbow", "classes": "+Tower" },
   "Building": { "blueprint": "strategos:tower" },
-  "Placement": { "minPhase": 1 },
   "Health": { "max": 1000 },
   "Vision": { "range": 24 },
   "Attack": { "Building": { "arrows": 1, "interval": 40, "pierce": 10, "range": 28 } },

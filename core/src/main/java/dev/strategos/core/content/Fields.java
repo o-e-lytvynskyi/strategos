@@ -76,10 +76,13 @@ record Fields(String file, List<TemplateProblem> problems) {
         return v;
     }
 
-    /** An attack's preferred classes, if it has any: a string of class tokens (CMB-05). */
+    /** An attack's preferred and restricted classes, if it has any: strings of class tokens (CMB-05, CMB-09). */
     void preferred(JsonObject attack, String pointer) {
         if (attack.has("preferred")) {
             string(attack, pointer, "preferred", "");
+        }
+        if (attack.has("restrictedClasses")) {
+            string(attack, pointer, "restrictedClasses", ""); // CMB-09: the classes a melee attack never takes
         }
     }
 

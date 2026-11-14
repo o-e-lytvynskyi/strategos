@@ -15,7 +15,6 @@ import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.build.Placing;
 import dev.strategos.core.sim.econ.Deposits;
-import dev.strategos.core.sim.prod.Techs;
 
 /**
  * PlaceBuilding (BLD-02): a seated player's faction places a building template where {@link PlacementRules} allow, as
@@ -52,8 +51,8 @@ final class PlaceBuildingRule implements CommandRule<PlaceBuilding> {
         if (limit > 0 && Placing.owned(state, template.netIndex(), faction) >= limit) {
             return Tally.rejectAll(envelope, kind(), builders.size(), RejectReason.LIMIT);
         }
-        if (Techs.phase(state, faction) < Placing.minPhase(state, template.netIndex(), faction)) {
-            return Tally.rejectAll(envelope, kind(), builders.size(), RejectReason.REQUIREMENTS); // a Town building
+        if (!Placing.listed(state, template.netIndex(), faction)) {
+            return Tally.rejectAll(envelope, kind(), builders.size(), RejectReason.REQUIREMENTS); // not yet on the list
         }
         Footprint at = Footprint.of(b, place.x(), place.z(), place.rotation());
         PlacementRules.Verdict verdict = PlacementRules.check(

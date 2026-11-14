@@ -9,7 +9,8 @@
   "effects": [
     { "path": "Health/max", "op": "mul", "value": 1.1, "filter": "Structure+!Field" },
     { "path": "Vision/range", "op": "add", "value": 2, "filter": "Structure+!Field" },
-    { "path": "Researcher/techs", "op": "tokens", "tokens": "+strategos:iron_weapons +strategos:chainmail", "filter": "Barracks" }
+    { "path": "Researcher/techs", "op": "tokens", "tokens": "+strategos:iron_weapons +strategos:chainmail", "filter": "Barracks" },
+    { "path": "Builder/buildings", "op": "tokens", "tokens": "+strategos:building/tower +strategos:building/arsenal", "filter": "Builder" }
   ],
-  "unlocks": ["strategos:iron_weapons", "strategos:chainmail"]
+  "unlocks": ["strategos:iron_weapons", "strategos:chainmail", "strategos:building/tower", "strategos:building/arsenal"]
 }
