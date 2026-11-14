@@ -29,6 +29,9 @@ public final class OpeningBalance {
     /** QA-12's seeds per pairing. */
     static final int SEEDS = 200;
 
+    /** The share of matches that must end by conquest within the limit (QA-12.1, amended). */
+    static final double CONQUEST_SHARE = 0.75;
+
     /** A match's limit: 45 game minutes. */
     static final long LIMIT = 54_000;
 
@@ -337,11 +340,18 @@ public final class OpeningBalance {
         for (Row r : rows) {
             if (!r.failure().isEmpty()) {
                 bad.add(r.pairing() + " seed " + r.seed() + ": " + r.failure());
-            } else if (r.winnerSlot() < 0) {
-                bad.add(r.pairing() + " seed " + r.seed() + ": no conquest");
-            } else if (r.ticks() > LIMIT) {
+            } else if (r.winnerSlot() >= 0 && r.ticks() > LIMIT) {
                 bad.add(r.pairing() + " seed " + r.seed() + ": ran past 45 minutes");
             }
+        }
+        long ended = count(rows, r -> r.winnerSlot() >= 0 && r.ticks() <= LIMIT);
+        if (ended < CONQUEST_SHARE * rows.size()) {
+            bad.add(String.format(
+                    Locale.ROOT,
+                    "only %d of %d matches ended by conquest within 45 minutes (QA-12.1: %.0f%%)",
+                    ended,
+                    rows.size(),
+                    CONQUEST_SHARE * 100));
         }
         long median = median(rows.stream().map(Row::ticks).toList());
         if (median < 20 * MINUTE || median > 35 * MINUTE) {

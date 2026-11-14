@@ -78,7 +78,7 @@ final class OpeningBalanceTest {
     }
 
     @Test
-    void aMatchWithoutConquestOrWithAFailureIsReported() {
+    void aStalledMatchIsReported() {
         OpeningBalance.Pairing p = OpeningBalance.Pairing.openings("rush", "boom");
         List<OpeningBalance.Row> rows = new ArrayList<>(rows(p, 100, 27));
         OpeningBalance.Row r = rows.get(0);
@@ -104,6 +104,42 @@ final class OpeningBalanceTest {
                         1,
                         "faction 0 stalled: no command since tick 9"));
         assertThat(OpeningBalance.judge(List.of(p), rows)).anyMatch(m -> m.contains("stalled"));
+    }
+
+    @Test
+    void threeQuartersOfTheMatchesMustEndByConquest() {
+        OpeningBalance.Pairing p = OpeningBalance.Pairing.openings("rush", "boom");
+        assertThat(OpeningBalance.judge(List.of(p), unfinished(p, 50))).noneMatch(m -> m.contains("conquest"));
+        assertThat(OpeningBalance.judge(List.of(p), unfinished(p, 51))).anyMatch(m -> m.contains("QA-12.1: 75%"));
+    }
+
+    private static List<OpeningBalance.Row> unfinished(OpeningBalance.Pairing p, int count) {
+        List<OpeningBalance.Row> rows = new ArrayList<>(rows(p, 100, 27));
+        for (int i = 0; i < count; i++) {
+            OpeningBalance.Row r = rows.get(i);
+            rows.set(
+                    i,
+                    new OpeningBalance.Row(
+                            r.pairing(),
+                            r.seed(),
+                            r.aSlot(),
+                            -1,
+                            false,
+                            45 * MINUTE,
+                            r.firstContact(),
+                            r.openings(),
+                            r.townAt(),
+                            r.commands(),
+                            r.waves(),
+                            r.unitsLost(),
+                            r.idleWorkerSeconds(),
+                            r.centres(),
+                            r.soldiers(),
+                            r.mop(),
+                            1,
+                            ""));
+        }
+        return rows;
     }
 
     @Test

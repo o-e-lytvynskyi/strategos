@@ -50,7 +50,7 @@
     "Resistance/crush": "Padding does little against blunt blows; crush belongs to cavalry and siege later",
     "Cost/resources/wood": "Forty wood: the shaft and the shield; wood gathered early goes to both houses and soldiers",
     "Cost/population": "One house's room for one soldier, as for a worker",
-    "Attack/Structure/fire": "Three fire a blow: ten spearmen burn a wooden house in 13.5 s and a stone civic centre in about two and a half minutes, so a raid hurts but alone does not end a match (CMB-03, D-12)",
+    "Attack/Structure/fire": "Six fire a blow: ten spearmen burn a wooden house in 7 s and a stone civic centre in about a minute and a quarter. Measured in M6 T23 (QA-12): a squad of four at three fire needed 1.7 to 4.4 minutes for a barracks, storehouse or arsenal and 5.9 for a civic centre, longer than the 8 to 12 minutes the winner has left after a centre falls, so matches did not end; doubled so a squad of four burns a wooden building in about a minute. A raid still hurts and takes several minutes to end a base (CMB-03, D-12); our own value, tuned against QA-12",
     "Attack/Structure/prepare": "Half a second to light the torch and reach the wall, as the spear's wind-up",
     "Attack/Structure/repeat": "A blow of fire a second, the spear's rhythm"
   },
@@ -95,7 +95,7 @@
   "strategos:unit/ram": {
     "Health/max": "Five hundred hit points: ten times a worker, two and a half horsemen; a ram is slow, so it has to outlast the arrows on the way to the wall (CMB-09)",
     "UnitMotion/walkSpeed": "A tenth of a block a tick: half a spearman's pace, so a ram is seen coming and a force must escort it (CMB-09)",
-    "Attack/Melee/crush": "Forty crush a swing of the log: against a stone building two rams raze a civic centre in under a minute, where the same price in torch-bearers takes over five (D-12, CMB-09)",
+    "Attack/Melee/crush": "Forty crush a swing of the log: against a stone building two rams raze a civic centre in under a minute, where the same price in torch-bearers takes about three (over five before M6 T23 doubled the torch) (D-12, CMB-09)",
     "Attack/Melee/reach": "A block and a half, a log's swing from the front of the frame",
     "Attack/Melee/prepare": "Twenty ticks: the log is drawn back before it swings",
     "Attack/Melee/repeat": "A swing every forty ticks, two seconds: heavy and slow, twenty crush a second a ram",
@@ -103,7 +103,7 @@
     "Resistance/pierce": "Eight armour: arrows glance off the roof, as the classics' siege shrugs off archers; 0.9^8 lets 43 % through (CMB-09)",
     "Resistance/crush": "Three armour: a ram hurts a ram less than it hurts a house",
     "Cost/resources/wood": "A hundred and fifty wood: the frame, the roof and the wheels (CMB-09)",
-    "Cost/resources/iron": "Seventy iron: the log's cap; two rams cost 440 resources, which buys only four spearmen, so row 14's five minutes on stone holds (D-12, CMB-09)",
+    "Cost/resources/iron": "Seventy iron: the log's cap; two rams cost 440 resources, which buys only four spearmen, so a ram still beats torches on stone, three minutes for four spearmen (row 14 said five before M6 T23 doubled the torch) (D-12, CMB-09)",
     "Cost/population": "Three: a ram is a team of men, so two rams are a spearman squad's room and a siege is felt in the housing",
     "Body/width": "Two blocks: the frame and its wheels, the `unit_large` type's size (ADR-0011, CMB-09)",
     "Body/height": "Two blocks: the roof's ridge over the wheels (ADR-0011, CMB-09)",

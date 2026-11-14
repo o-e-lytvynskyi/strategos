@@ -42,9 +42,9 @@ class StructureAttackTest {
     static final PlayerSlot P0 = new PlayerSlot(0);
 
     /** The balance sheet's "Burning down" row for the house: blows, and ten bearers from one tick. */
-    static final int HOUSE_BLOWS = 134;
+    static final int HOUSE_BLOWS = 67;
 
-    static final int HOUSE_TEN_TICKS = 270;
+    static final int HOUSE_TEN_TICKS = 130;
 
     final SimHarness h;
     final MatchState s;
@@ -100,10 +100,10 @@ class StructureAttackTest {
         assertThat(fell).as("the house falls").isPositive();
         long end = fell;
         assertThat(blows.stream().filter(t -> t < end).count())
-                .as("it stands through every blow before the sheet's 134th")
+                .as("it stands through every blow before the sheet's 67th")
                 .isLessThan(HOUSE_BLOWS);
         assertThat(blows.stream().filter(t -> t <= end).count()).isGreaterThanOrEqualTo(HOUSE_BLOWS);
-        // each bearer strikes from its first blow on, a blow every 20 ticks: the 134th of them all is the fall
+        // each bearer strikes from its first blow on, a blow every 20 ticks: the 67th of them all is the fall
         List<Long> schedule = new ArrayList<>();
         for (long f : first.values()) {
             for (long t = f; t <= fell + 20; t += 20) {
@@ -111,8 +111,8 @@ class StructureAttackTest {
             }
         }
         schedule.sort(null);
-        assertThat(fell).as("the fall is the 134th blow's tick").isEqualTo(schedule.get(HOUSE_BLOWS - 1));
-        // and ten bearers from one tick: the wind-up and 13 further rounds, the sheet's 270 ticks
+        assertThat(fell).as("the fall is the 67th blow's tick").isEqualTo(schedule.get(HOUSE_BLOWS - 1));
+        // and ten bearers from one tick: the wind-up and 6 further rounds, the sheet's 130 ticks
         assertThat(10 + (long) Math.ceilDiv(HOUSE_BLOWS, 10) * 20 - 20).isEqualTo(HOUSE_TEN_TICKS);
         assertThat(s.buildings().alive(house)).isFalse();
         assertThat(h.events(FlameShown.class)).as("a flame a blow").hasSizeGreaterThanOrEqualTo(HOUSE_BLOWS);

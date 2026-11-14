@@ -98,6 +98,21 @@ final class MilitaryManager implements AiModule {
             int mz = camp[1];
             budget.spend(20);
             sink.send(Move.replace(UnitSet.of(handles), new Vec2d(mx + 0.5, mz + 0.5)));
+            if (battle.finish()) { // QA-12: the rams muster with the wave and leave with it
+                List<Integer> ramHandles = new ArrayList<>();
+                for (UnitView u : view.units()) {
+                    if (view.is(u.template(), "Ram") && u.state() != UnitState.GARRISONED) {
+                        ramHandles.add(u.handle());
+                    }
+                }
+                if (!ramHandles.isEmpty()) {
+                    sink.send(Move.replace(
+                            UnitSet.of(ramHandles.stream()
+                                    .mapToInt(Integer::intValue)
+                                    .toArray()),
+                            new Vec2d(mx + 0.5, mz + 0.5)));
+                }
+            }
             sink.send(new AnnounceWave(mx, mz, 20 * a.announce()));
             memory.set(Slots.MUSTER, tick + 1);
             return;
@@ -115,6 +130,9 @@ final class MilitaryManager implements AiModule {
                         java.util.Objects.requireNonNull(base.enemy()).handle()));
             }
             memory.set(Slots.WAVE, memory.get(Slots.WAVE) + 1);
+            if (battle.finish() && battle.rams() > 0) {
+                rams(view, budget, sink, base);
+            }
             memory.set(Slots.MUSTER, 0);
             memory.set(Slots.LAST_ATTACK, tick + 1);
             if (battle.fights()) {
@@ -257,8 +275,9 @@ final class MilitaryManager implements AiModule {
             StrategyScript.Battle battle,
             List<Integer> army,
             List<UnitView> soldiers) {
-        boolean clear = memory.get(Slots.CLEAR) != 0;
-        if (!clear) { // or the enemy fields no army at all
+        boolean retreating = memory.get(Slots.FIGHT) == 2 && battle.finish(); // QA-12: no spearman goes out meanwhile
+        boolean clear = memory.get(Slots.CLEAR) != 0 && !retreating;
+        if (!clear && !retreating) { // or the enemy fields no army at all
             clear = true;
             for (UnitView e : view.enemyUnits()) {
                 if (view.role(e) != AiView.ROLE_NONE && e.state() != UnitState.GARRISONED) {

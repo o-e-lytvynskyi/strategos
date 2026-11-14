@@ -180,7 +180,7 @@ class TemplateSetTest {
 
     // M5 combat content (horseman, barracks roster, town bell) without $techs / Researcher — pin after M5+M6 merge.
     private static final String BUILTIN_VERSION_BEFORE_TECH_01 =
-            "77f5cd0bead30c868d09b5d0738695c39c2ef8345f430c2a435fa24a4e0597ea";
+            "0f0a11e24ee9046d3831697ce750e664a32dc292bf7cfd2533e19f121084a5ef";
 
     // M4: the farmstead's reach (ECO-17); M5: the town bell block in the civic centre's blueprint (BLD-16), on the
     // horseman's set (UNIT-06, UNIT-07); the barracks trains the roster, spearman, archer and horseman (AI-03); M6
@@ -190,7 +190,7 @@ class TemplateSetTest {
     // wood, not 500 (QA-12's tuning). Rebaselined after merging
     // M5
     // combat content into BuiltinTemplates.
-    private static final String BUILTIN_VERSION = "db8065cdf14e6f0806e44fe3d9f179b6a956ac0b40072e7ede2728caec2fa21d";
+    private static final String BUILTIN_VERSION = "2b500c1bac3ef33615701f65f3cfdebdfaa4b88f2c30c0cbacaff61f90a79a0e";
 
     private static TemplateSet set(UnitTemplate template) {
         return new TemplateSet(List.of(template));

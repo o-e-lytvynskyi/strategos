@@ -15,7 +15,11 @@ class ScriptedBotTest {
 
     @BeforeAll
     static void play() {
-        match = HeadlessMatch.play(1, HeadlessMatch.LIMIT);
+        // M6 T23's faster torch lets the first wave end the match before the 3-minute second one leaves; waves every
+        // 90 s keep the rule under test (every wave announced 30 s ahead) running on two or more of them
+        String script = HeadlessMatch.read("ai/first_loop.json").replace("\"every\": 180", "\"every\": 90");
+        assertThat(script).contains("\"every\": 90");
+        match = HeadlessMatch.run(1, HeadlessMatch.LIMIT, script, t -> {}).summary();
     }
 
     @Test

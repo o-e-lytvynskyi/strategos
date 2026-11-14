@@ -80,7 +80,8 @@ final class MopUp {
         rams.sort(Comparator.comparingInt(UnitView::handle));
         boolean sent = false;
         for (UnitView ram : rams) {
-            BuildingView b = nearest(buildings, burners, ram.x(), ram.z());
+            // a ram is slow and the squads are quick: it takes the building the squads are farthest from
+            BuildingView b = farthestFrom(buildings, burners, idle, ram.x(), ram.z());
             if (b == null || budget.exhausted()) {
                 break;
             }
@@ -90,19 +91,24 @@ final class MopUp {
             sent = true;
         }
         List<NodeView> places = null;
-        for (int from = 0, squad = 0; from < idle.size(); from += SQUAD, squad++) {
+        List<UnitView> left = new ArrayList<>(idle);
+        for (int squad = 0; !left.isEmpty(); squad++) {
             if (budget.exhausted()) {
                 break;
             }
-            List<UnitView> group = idle.subList(from, Math.min(idle.size(), from + SQUAD));
-            double cx = 0;
-            double cz = 0;
-            for (UnitView u : group) {
-                cx += u.x();
-                cz += u.z();
+            // a squad forms round the soldier nearest an unburned building and takes that building: the nearest
+            // one from where it stands, not from the army's centre
+            UnitView seed = seed(left, buildings, burners);
+            left.remove(seed);
+            List<UnitView> group = new ArrayList<>();
+            group.add(seed);
+            left.sort(Comparator.comparingDouble((UnitView u) -> DetMath.length(u.x() - seed.x(), u.z() - seed.z()))
+                    .thenComparingInt(UnitView::handle));
+            while (group.size() < SQUAD && !left.isEmpty()) {
+                group.add(left.remove(0));
             }
-            cx /= group.size();
-            cz /= group.size();
+            double cx = seed.x();
+            double cz = seed.z();
             UnitView prey = squad == 0 ? nearestUnit(enemies, cx, cz) : null;
             BuildingView b = prey == null ? nearest(buildings, burners, cx, cz) : null;
             budget.spend(10);
@@ -121,6 +127,56 @@ final class MopUp {
             sent = true;
         }
         return sent;
+    }
+
+    /** The idle soldier nearest a building no own unit burns yet; the first by handle when none is unburned. */
+    private static UnitView seed(List<UnitView> idle, List<BuildingView> buildings, Map<Integer, Integer> burners) {
+        UnitView best = idle.get(0);
+        double bestD = Double.POSITIVE_INFINITY;
+        for (UnitView u : idle) {
+            BuildingView b = nearest(buildings, burners, u.x(), u.z());
+            if (b == null) {
+                continue;
+            }
+            double d = DetMath.length(
+                    b.footprint().anchorX() + b.footprint().spanX() / 2.0 - u.x(),
+                    b.footprint().anchorZ() + b.footprint().spanZ() / 2.0 - u.z());
+            boolean fresh = burners.getOrDefault(b.handle(), 0) == 0;
+            if (fresh && d < bestD) {
+                bestD = d;
+                best = u;
+            }
+        }
+        return best;
+    }
+
+    /**
+     * The building no own unit burns yet that the idle soldiers are farthest from (the nearest to (x, z) among equals);
+     * the nearest to (x, z) when none stands idle.
+     */
+    private static @org.jspecify.annotations.Nullable BuildingView farthestFrom(
+            List<BuildingView> buildings, Map<Integer, Integer> burners, List<UnitView> idle, double x, double z) {
+        if (idle.isEmpty()) {
+            return nearest(buildings, burners, x, z);
+        }
+        BuildingView best = null;
+        double bestFar = -1;
+        for (BuildingView b : buildings) {
+            if (burners.getOrDefault(b.handle(), 0) > 0) {
+                continue;
+            }
+            double bx = b.footprint().anchorX() + b.footprint().spanX() / 2.0;
+            double bz = b.footprint().anchorZ() + b.footprint().spanZ() / 2.0;
+            double far = Double.POSITIVE_INFINITY;
+            for (UnitView u : idle) {
+                far = Math.min(far, DetMath.length(u.x() - bx, u.z() - bz));
+            }
+            if (far > bestFar) {
+                bestFar = far;
+                best = b;
+            }
+        }
+        return best != null ? best : nearest(buildings, burners, x, z);
     }
 
     /** Foot soldiers burn the building; archers, which cannot, attack-move to it and shoot what defends it. */

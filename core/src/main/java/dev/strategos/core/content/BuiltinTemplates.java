@@ -50,7 +50,7 @@ final class BuiltinTemplates {
                   "repeat": 20,
                   "bonus": { "Cavalry": 2.5 }
                 },
-                "Structure": { "fire": 3, "prepare": 10, "repeat": 20 }
+                "Structure": { "fire": 6, "prepare": 10, "repeat": 20 }
               },
               "Resistance": {
                 "hack": 5,
