@@ -99,6 +99,14 @@ public final class MotionSystem implements MatchSystem {
     static final int SETTLE_AFTER = 20;
     /** Where a mover on its own arrives after the settle count: half a block, so a step aside after stays within one. */
     static final double ARRIVE_ALONE = 0.5;
+    /**
+     * QA-12: an idle unit pushed off its latch point by up to this far, with {@value #RELATCH_MATES} idle units touching
+     * it, holds where it stands rather than walking back (and pushing another, who walks back and pushes the next: a
+     * crowd settling round a target went on shuffling past 170 ticks on some seeds).
+     */
+    static final double RELATCH_REACH = 1.5;
+
+    static final int RELATCH_MATES = 2;
     /** How near two bodies count as touching, beyond their radii. */
     static final double TOUCH = 0.1;
     /** The largest unit radius the touch query looks for, in blocks. */
@@ -476,8 +484,13 @@ public final class MotionSystem implements MatchSystem {
                 && s.ai().state(i) == UnitState.IDLE
                 && s.orders().kind(i) == OrderKind.NONE // a waiting follower keeps its order: its think moves it
                 && DetMath.length(motion.x(i) - motion.latchX(i), motion.z(i) - motion.latchZ(i)) > LATCH) {
-            s.orders().replaceMove(i, motion.latchX(i), motion.latchZ(i));
-            s.bus().publish(new OrderReceived(handle)); // back to the latch point; the order releases the latch
+            if (DetMath.length(motion.x(i) - motion.latchX(i), motion.z(i) - motion.latchZ(i)) <= RELATCH_REACH
+                    && matesAround(s, i) >= RELATCH_MATES) {
+                motion.setLatch(i, true, motion.x(i), motion.z(i)); // QA-12: the crowd moved it: it holds where it is
+            } else {
+                s.orders().replaceMove(i, motion.latchX(i), motion.latchZ(i));
+                s.bus().publish(new OrderReceived(handle)); // back to the latch point; the order releases the latch
+            }
         }
     }
 
@@ -524,6 +537,26 @@ public final class MotionSystem implements MatchSystem {
         s.spatial()
                 .forEachInRadius(motion.x(i), motion.z(i), touchRadius + MAX_RADIUS + TOUCH, UnitFilter.ANY, toucher);
         return touched;
+    }
+
+    /** How many other idle units touch unit {@code i}. */
+    private int matesAround(MatchState s, int i) {
+        MotionStore motion = s.motion();
+        touchSelf = i;
+        mates = 0;
+        s.spatial()
+                .forEachInRadius(
+                        motion.x(i), motion.z(i), radius(s, i) + MAX_RADIUS + TOUCH, UnitFilter.ANY, matesCounter);
+        return mates;
+    }
+
+    private final IntConsumer matesCounter = this::mate;
+    private int mates;
+
+    private void mate(int j) {
+        if (j != touchSelf && state.ai().state(j) == UnitState.IDLE) {
+            mates++;
+        }
     }
 
     private void touch(int j) {

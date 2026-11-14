@@ -24,7 +24,7 @@ import org.junit.jupiter.params.provider.ValueSource;
  */
 class CrowdSettleTest {
     @ParameterizedTest
-    @ValueSource(longs = {1, 90, 378, 482, 681, 914, 1060, 1413, 1563, 2462})
+    @ValueSource(longs = {1, 90, 378, 482, 681, 914, 1060, 1413, 1563, 2462, 2695})
     void aGroupMoveSettlesWithinTheSmokesWaitOnEverySeed(long seed) {
         ProvingGround ground = ProvingGround.generate();
         SimHarness h = SimHarness.builder()
