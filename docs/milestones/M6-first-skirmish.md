@@ -750,6 +750,30 @@ kernel adds `:core:jmh :core:jmhCompare`.
 | 8 | M0's to M5's gates still pass; `verify`, `verifySlow`, `verifySoak`, `verifyClient`, `verifyPerf` green; CI green | the runs |
 | 9 | L7: the owner's matches per level, one against a dedicated server, a win on Easy, no score ≤ 2, the verdict in STATE.md; two friends' matches; no P0 or P1 open | the owner's note |
 
+### 8.1 The MVP regression suite: [feasibility §6.3](../01-feasibility.md) to the test that keeps it (QA-13)
+
+Each automated criterion of §6.3, the test that holds it, and the gate that runs it. All of them run in `verify`
+unless the last column says otherwise.
+
+| §6.3 criterion | Test | Level, gate |
+|---|---|---|
+| A worker gathers X wood in T seconds | `GatherTimingTest.aTripIsTheLoadAtTheRateAndTwoWalksOverSeededRuns` | L1 `:core:test` |
+| k builders finish a house in the expected time | `ConstructionTest.buildTimeForOneTwoFiveAndTenBuilders`; `ConstructionTests.workersSentToAFoundationFinishIt`, `aFinishedHouseEqualsItsBlueprint` | L1; L3 `constructiontests` |
+| A batch of 5 reaches its rally point | `BatchTest.aBatchOfFiveTakesTheUnitTimeTimesFiveToThePointEight`; `ProdTests.aBatchStepsOutTogetherAndRallies` | L1; L3 `prodtests` |
+| Each counter wins at equal cost in at least 170 of 200 seeded fights | `DuelTest.eachCounterWins` (and `everyUnitWinsOneAndLosesOne`) | L1 `:core:test` |
+| 200 units cross the proving ground with zero stuck | `MapTests.twoHundredCross` | L3 `maptests` |
+| Damage to 30 % removes the expected blocks, and repair restores them | `DamageStagesTest.thirtyPercentAndBack`, `eachThresholdRemovesItsRankedBlocks`; `RepairTest`; `ConstructionTests.stagesAndRepairSurviveSave`, `tower_damage_stages_remove_its_ranked_blocks` | L1; L3 `constructiontests` |
+| The town bell brings every worker within 64 blocks inside within 10 s | `GarrisonTests.the_bell_brings_them_in` | L3 `garrisontests` |
+| Save and reload mid-construction | `ConstructionTests.saveMidBuildResumesAtTheSameBlock` | L3 `constructiontests` |
+| A match resumed at minute 10 equals an uninterrupted run at minute 15 | `ResumeTest.reloadAtTenEqualsFifteenUninterrupted` (the computers' plans); `PersistenceTests.reloadAtTenEqualsFifteenUninterrupted` (the world) | L1; L3 `persistencetests` |
+| Conquest ends the match | `MatchTests.conquestEndsAMatch` | L3 `matchtests` |
+| An enemy outside vision is never paired while a visible control unit is | `FogTests.aHiddenEnemyIsNeverPaired`, `pairsWithin6UnpairsWithin15` | L3 `fogtests` |
+| The production jar starts on a dedicated server | `runServerSmokeJar` (QA-13.4) | L5 `verify` |
+| Every command-card entry has an icon that is an item | `CommandCardIconsTest` | L2 `:mod:test` |
+| The naming and `NOTICE` lint | `checkNaming`, proved by `checkNamingSelftest` | L0 `verifyFast`, `verifyHarness` |
+| A provenance note per subsystem | [provenance.md](../provenance.md) | D, reviewed |
+| The AI criteria (QA-12) and the budgets (PERF-09) | `:core:openingBalance`; `perftests.mvp_soak`, `mvp_stress` | §8 rows 2 and 4, outside `verify` |
+
 ---
 
 ## 9. Risks and fallbacks

@@ -6,6 +6,36 @@ plugins {
     id 'strategos.java-conventions' apply false
 }
 
+// [M6 T28] QA-13.1: the naming and NOTICE lint. The project is inspired by other games but never borrows their names
+// (feasibility §6.3 / ADR-0005): neither the mod id, the display name, the toml's text, the README title nor a logo's
+// file name may carry one, and NOTICE must keep the RVO2 notice.
+class NamingCheck {
+    static final java.util.regex.Pattern FORBIDDEN =
+            java.util.regex.Pattern.compile('(?i:age\\s+of\\s+empires|\\baoe\\b)|0\\s*A\\.\\s*D\\.')
+
+    static List<String> problems(String modId, String modName, String modsToml, String readme, String notice, List<String> logoNames) {
+        def problems = []
+        def check = { String where, String text ->
+            def m = FORBIDDEN.matcher(text ?: '')
+            if (m.find()) problems << "${where} names another game: '${m.group()}'".toString()
+        }
+        if (!modId) problems << 'mod id is empty'
+        if (!(modId ==~ /[a-z][a-z0-9_]{1,63}/)) problems << "mod id '${modId}' is not lower-case letters, digits and underscores".toString()
+        check('mod id', (modId ?: '').replace('_', ' '))
+        if (!modName) problems << 'display name is empty'
+        check('display name', modName)
+        // the toml's description, logo and URLs are its tags; comment lines are not shipped
+        check('neoforge.mods.toml', (modsToml ?: '').readLines().findAll { !it.trim().startsWith('#') }.join('\n'))
+        def title = (readme ?: '').readLines().find { !it.trim().isEmpty() }
+        if (!title) problems << 'README has no title'
+        check('README title', title)
+        logoNames.each { check("logo file name ${it}".toString(), it.replaceAll('[_-]', ' ')) }
+        if (!(notice ?: '').contains('RVO2')) problems << 'NOTICE lacks the RVO2 notice'
+        if (!(notice ?: '').contains('Apache License')) problems << 'NOTICE lacks the Apache-2.0 licence text reference'
+        return problems
+    }
+}
+
 def catalogFile = file('gradle/libs.versions.toml')
 def settingsFile = file('settings.gradle')
 def catalogMarker = layout.buildDirectory.file('checks/version-catalog.ok')
@@ -111,13 +141,50 @@ tasks.register('checkFixturesSelftest') {
     }
 }
 
+// [M6 T28] QA-13.1; the self-test feeds the lint its broken inputs (verifyHarness).
+def namingProps = new Properties().tap { file('gradle.properties').withInputStream { s -> load(s) } }
+tasks.register('checkNaming') {
+    group = 'verification'
+    description = 'The mod id, display name, mods.toml, README title and logo file names carry no other game\'s name; NOTICE keeps the RVO2 notice (QA-13.1).'
+    def toml = file('mod/src/main/templates/META-INF/neoforge.mods.toml')
+    def readme = file('README.md')
+    def notice = file('NOTICE')
+    def resources = fileTree(dir: 'mod/src/main', includes: ['resources/**', 'templates/**'])
+    inputs.files(toml, readme, notice, file('gradle.properties'))
+    doLast {
+        def logos = resources.files.collect { it.name }.findAll { it =~ /(?i)logo|icon|pack\.png/ }
+        def problems = NamingCheck.problems(namingProps.getProperty('mod_id'), namingProps.getProperty('mod_name'),
+                toml.text, readme.text, notice.text, logos)
+        if (problems) throw new GradleException('Naming problems:\n  ' + problems.join('\n  '))
+    }
+}
+tasks.register('checkNamingSelftest') {
+    group = 'verification'
+    description = 'Proves checkNaming bites: another game in the id, name, toml, README title or a logo name, and a NOTICE without RVO2.'
+    doLast {
+        def okNotice = 'RVO2 Library\nLicensed under the Apache License, Version 2.0'
+        assert NamingCheck.problems('strategos', 'Strategos', 'description="x"', '# Strategos', okNotice, ['logo.png']).isEmpty()
+        def bad = [
+                'mod id'      : NamingCheck.problems('strategos_aoe', 'Strategos', '', '# S', okNotice, []),
+                'display name': NamingCheck.problems('strategos', 'Age of Empires Mod', '', '# S', okNotice, []),
+                'toml'        : NamingCheck.problems('strategos', 'S', 'description="like 0 A.D."', '# S', okNotice, []),
+                'README title': NamingCheck.problems('strategos', 'S', '', '# The AoE clone', okNotice, []),
+                'logo'        : NamingCheck.problems('strategos', 'S', '', '# S', okNotice, ['age_of_empires_logo.png']),
+                'RVO2'        : NamingCheck.problems('strategos', 'S', '', '# S', 'nothing', []),
+        ]
+        bad.each { kind, found ->
+            if (found.isEmpty()) throw new GradleException("checkNaming no longer catches: ${kind}")
+        }
+    }
+}
+
 tasks.register('verifyFast') {
     group = 'verification'
     description = 'L0 + L1: catalog, fixtures, formatting, ErrorProne and NullAway, ArchUnit, jar check, core tests.'
     dependsOn 'checkVersionCatalog', 'checkFixtures', ':core:check',
             ':mod:spotlessCheck', ':mod:compileJava', ':mod:compileTestJava',
             ':mod:compileGametestJava', ':mod:compileDevtoolsJava',
-            ':mod:archTest', ':mod:checkJarContents'
+            ':mod:archTest', ':mod:checkJarContents', 'checkNaming'
 }
 
 // [T3] The harness self-tests, kept for good as automated checks (QA-01, QA-04, QA-05, QA-07, QA-17):
@@ -130,16 +197,17 @@ tasks.register('verifyHarness') {
     dependsOn ':mod:runGameTestEmptyFilter', ':mod:runGameTestBrokenLoad', ':mod:runServerSmokeNoMarker',
             ':mod:runGameTestRetry', ':mod:runGameTestRetryNoReason', ':mod:runGameTestSharedBatch',
             ':mod:runGameTestTicketLeak',
-            ':mod:archTest', ':core:test', 'checkFixturesSelftest', ':core:jmhSelftest', ':mod:checkScenarioDiffSelftest'
+            ':mod:archTest', ':core:test', 'checkFixturesSelftest', ':core:jmhSelftest', ':mod:checkScenarioDiffSelftest', 'checkNamingSelftest'
 }
 
 // [T3] the commit gate: 5 minutes, of which L3 3; ':core:soak' joined in T6b, ':core:replayJournals' in T8,
 // the restart round trip in T9b.
 tasks.register('verify') {
     group = 'verification'
-    description = 'verifyFast + verifyHarness + L2 + core soak + L3 GameTests (report guard) + L5 smoke and restart round trip and the arena smoke (marker guards) + GameTest journal replay.'
+    description = 'verifyFast + verifyHarness + L2 + core soak + L3 GameTests (report guard) + L5 smoke and restart round trip and the arena smoke (marker guards) + GameTest journal replay + the dedicated server on the built production jar (QA-13.4, [M6 T28]: 10 s, so it fits the commit gate).'
     dependsOn 'verifyFast', 'verifyHarness', ':mod:check', ':core:soak', ':mod:runGameTestServer', ':mod:runServerSmoke',
-            ':mod:runServerSmokeRestart', ':mod:runServerSmokeArena', ':mod:runServerSmokeArena2', ':core:replayJournals'
+            ':mod:runServerSmokeRestart', ':mod:runServerSmokeArena', ':mod:runServerSmokeArena2', ':core:replayJournals',
+            ':mod:runServerSmokeJar'
 }
 
 // [T7c] Per working session that touched its area, at the milestone exit and on CI; no budget, the time

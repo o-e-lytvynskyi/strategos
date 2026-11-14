@@ -18,6 +18,7 @@ sourceSets {
     gametest   // L3 GameTests, smoke and spike drivers: dev only, never in the jar
     devtools   // L4 client scenario harness: dev only
     archTest   // L0 ArchUnit rules on plain JVM, no Minecraft on the classpath
+    jarSmoke   // [M6 T28] empty: the classpath of runServerSmokeJar, which has the game but none of the mod's classes
 }
 
 repositories {
@@ -52,6 +53,7 @@ neoForge {
     }
     addModdingDependenciesTo sourceSets.gametest
     addModdingDependenciesTo sourceSets.devtools
+    addModdingDependenciesTo sourceSets.jarSmoke
 
     mods {
         strategos {
@@ -234,6 +236,18 @@ neoForge {
             systemProperty 'strategos.mapgen', mapgenName
             systemProperty 'strategos.mapgen.out', file(mapgenName == 'first_skirmish' ? 'src/main/resources' : 'src/devtools/resources').absolutePath
             systemProperty 'strategos.mapgen.marker', file('build/mapgen/mapgen-result.json').absolutePath
+        }
+        // [M6 T28] QA-13.4: the dedicated server with only the built production jar, in mods/: no source set of the
+        // mod is loaded from classes (loadedMods is empty, the run's own source set is empty), so a class or a resource
+        // missing from the jar fails here and nowhere else. The mod's smoke driver is dev-only, so the run ends by
+        // the guard below: it stops the server on its "Done" line and reads the log.
+        serverSmokeJar {
+            server()
+            disableIdeRun()
+            sourceSet = sourceSets.jarSmoke
+            loadedMods = []
+            gameDirectory = file('build/server-smoke-jar')
+            programArgument('--nogui')
         }
         // [T9b] run 2 of the restart round trip: run 1's game directory, never wiped (QA-05.4)
         serverSmokeRestart {
@@ -954,5 +968,59 @@ class ScenarioDiff {
         def known = goldens.listFiles().collect { it.name }
         def fresh = (out.listFiles() ?: []).findAll { it.name.endsWith('.png') && !(it.name in known) }.collect { it.name - '.png' }
         return [goldens: goldens.path, frames: frames, problems: problems, fresh: fresh]
+    }
+}
+
+// [M6 T28] QA-13.4 (L5): the dedicated server on the built production jar, not the dev classpath. A fresh game
+// directory per run holds the server.properties of the smoke (port 25599: never beside runServerSmoke) and the jar,
+// the only copy of the mod anywhere on the run's classpath or in its mods folder. The verdict is the log: the mod's
+// templates load, the server reports "Done", and a stop from the console ends it; no crash report, exit code 0.
+def smokeJarDir = file('build/server-smoke-jar')
+def prepareServerSmokeJar = tasks.register('prepareServerSmokeJar', Sync) {
+    from('src/gametest/smoke-gamedir') { include 'server.properties' }
+    from(jarArchive) { into 'mods' }
+    into smokeJarDir
+    outputs.upToDateWhen { false }
+}
+neoForge.runs.serverSmokeJar.taskBefore prepareServerSmokeJar
+tasks.matching { it.name == 'runServerSmokeJar' }.configureEach {
+    timeout = Duration.ofMinutes(5)
+    mustRunAfter 'runServerSmoke', 'runServerSmokeRestart', 'runServerSmokeArena', 'runServerSmokeArena2', 'runServerSmokeNoMarker'
+    doFirst {
+        // Console stdin: "stop" once the log says Done (the dedicated server reads its console even with --nogui).
+        def pipe = new PipedOutputStream()
+        standardInput = new PipedInputStream(pipe)
+        def log = new File(smokeJarDir, 'logs/latest.log')
+        Thread.startDaemon {
+            long deadline = System.currentTimeMillis() + 4 * 60_000L
+            while (System.currentTimeMillis() < deadline) {
+                if (log.isFile() && log.text.contains('Done (')) break
+                Thread.sleep(250)
+            }
+            Thread.sleep(2_000)    // a short life of the running server, so a late failure still shows
+            pipe.write('stop\n'.bytes)
+            pipe.flush()
+            Thread.sleep(60_000)    // the pipe stays open until the server is gone (a dead writer makes Gradle's reader complain)
+        }
+    }
+    doLast {
+        def log = new File(smokeJarDir, 'logs/latest.log')
+        def crashes = new File(smokeJarDir, 'crash-reports').listFiles()
+        String problem = null
+        if (crashes != null && crashes.length > 0) problem = "Jar smoke crashed: ${crashes*.name}"
+        else if (!log.isFile()) problem = "Jar smoke wrote no log: ${log}"
+        else {
+            def text = log.text
+            if (!text.contains('dev.strategos.mod.StrategosServer/]: Templates: loaded')) problem = 'Jar smoke: the mod did not load its templates from the jar'
+            else if (!text.contains('Done (')) problem = 'Jar smoke: the server never reported Done'
+            else if (!text.contains('Stopping server')) problem = 'Jar smoke: the server did not stop on the console command'
+            else if (text.contains('dev.strategos.gametest') || text.contains('dev.strategos.devtools')) problem = 'Jar smoke: a dev-only class was loaded'
+        }
+        smokeJUnitDir.mkdirs()
+        def failure = problem == null ? '' : "<failure message=\"${groovy.xml.XmlUtil.escapeXml(problem)}\"/>"
+        new File(smokeJUnitDir, 'TEST-runServerSmokeJar.xml').text =
+                "<testsuite name=\"strategos.smoke\" tests=\"1\" failures=\"${problem == null ? 0 : 1}\">" +
+                "<testcase classname=\"smoke\" name=\"runServerSmokeJar\">${failure}</testcase></testsuite>\n"
+        if (problem != null) throw new GradleException(problem)
     }
 }
