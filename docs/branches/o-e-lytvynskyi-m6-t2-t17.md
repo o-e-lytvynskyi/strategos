@@ -7,9 +7,9 @@
 ## Now
 
 - **Milestone:** M6 MVP: First skirmish, the claim's T2.1–T17 done (18 of 29 tasks with the T2 and T12 splits; T1 and T18–T28 are outside the claim); spec [M6-first-skirmish.md](../milestones/M6-first-skirmish.md).
-- **In progress:** M6 T18 (TECH-03) and T21 (AI-04) since 2026-11-14.
-- **Last finished task:** M6 T1 (2026-11-14).
-- **Next:** T19, T20, T22, T23, T24, T25, T27, T28.
+- **In progress:** M6 T23 (QA-12) since 2026-11-15.
+- **Last finished task:** M6 T22 (2026-11-14).
+- **Next:** T24 (PERF-09), T27 (the window batch: goldens for your approval), T28 (the close).
 - **Merged from main last:** a24572d (2026-11-14).
 
 ## Depends on unfinished work
@@ -24,6 +24,18 @@ From the assessment before the claim (procedure §2a step 0); kept current.
 ## Log
 
 Newest first; one entry per session in the worklog's shape. Before 2026-11-14: dyadik's branch file on 7f08f40.
+
+### 2026-11-14/15 — M6 T18–T22, T25, T28.1
+
+- **T18 · TECH-03** — five Village techs and two Town techs (iron weapons, chainmail) with sheet and provenance rows; the tiers as faction values on `match_state`'s `looks` (cap 1,024 → 1,056), redressing bodies (`UnitLook`). Rows 50–51.
+- **T19 · CMB-09** — `unit_large`, the ram (own cube model; crush through the BURN states; restricted targets refused and never picked), the arsenal; the worker's build list `Builder/buildings` (Town adds the tower and the arsenal; the B key and the card follow it). Two rams 49 s on a centre, torch-bearers ~348 s on stone. Row 53. CMB-09 done.
+- **T20 · BLD-17** — the defence tower (100 wood 150 stone; 10 pierce every 40 ticks to 28 blocks; vision 24). Row 52. BLD-17 done.
+- **T21 · AI-04** — openings, waves at a marked camp (`camp.minDistance`, 40 by default, 0 for M3–M5's scripts so their tests keep their timings), the raid bar, DefenceManager, RebuildManager. Found on the way: the battle bot re-ordered a wave on its target every think, resetting the stuck count, so units in a burners' lane never gave up (a 641-tick stall; `FieldWaveTest`, kb rts-sim); and its own GameTest lane collided with `SkirmishTests`' (the "b is not seated yet" flake). Rows 54–56.
+- **T22 · AI-05** — `ai/skirmish.json`, three levels resolved into `SetAi`'s script, `ai_handicap` (penalties only), research and phase steps; Normal's Town 10.7–11.9 min over 10 seeds; the skirmish seats `ai:skirmish` at the setup's level. Rows 57–59.
+- **T25** — the m6 demo chapters (research, town, fog, raid, siege, tower, notices); the demo stage runs revealed by default, only the fog chapter fogged; `docs/testing/playtest.md` the MVP protocol. Chapters not yet run (the window batch).
+- **T28.1** — `checkNaming` (verifyFast), `CommandCardIconsTest`, `runServerSmokeJar` (verify, ~10 s), `docs/provenance.md`, spec §8.1's regression map.
+- **Gates** after T21's merge: `verify` 249 GameTests and `verifySlow` 23, 4 min 51 s; each later task's `verify` green.
+- **Delegation:** implementer trials pass for T1 (×3), T18–T22, T25, T28.1; one T18 worker looped on its report and was stopped; workers' own diffs were read and two more fixes asked (the B key's list, the demo's fog default).
 
 ### 2026-11-14 — M6 T1 and the vision fix
 
