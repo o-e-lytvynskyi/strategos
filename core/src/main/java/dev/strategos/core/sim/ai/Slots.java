@@ -64,5 +64,13 @@ final class Slots {
     /** The waypoints of the sweep of the enemy's ground a wave has been sent to, once nothing of the enemy is in sight. */
     static final int SWEEP = 27;
 
+    /** One more than the tick a soldier of ours stood at the enemy's start and saw no centre (QA-12's mop-up); 0 before. */
+    static final int FELL = 28;
+
+    /** The most enemy soldiers seen at once in the last {@code MilitaryManager.SEEN_FOR} ticks (QA-12); 0 before. */
+    static final int SEEN = 29;
+    /** One more than the tick of that sighting; 0 before. */
+    static final int SEEN_AT = 30;
+
     private Slots() {}
 }

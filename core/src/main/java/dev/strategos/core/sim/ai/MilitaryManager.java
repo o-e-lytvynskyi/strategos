@@ -40,6 +40,9 @@ final class MilitaryManager implements AiModule {
         }
         StrategyScript.Attack a = script.attack();
         long tick = view.tick();
+        if (script.battle().finish()) {
+            watch(view, memory, tick);
+        }
         StrategyScript.Battle battle = script.battle();
         List<Integer> army = new ArrayList<>();
         List<UnitView> soldiers = new ArrayList<>();
@@ -51,7 +54,16 @@ final class MilitaryManager implements AiModule {
                 soldiers.add(u);
             }
         }
-        if (battle.rams() > 0 && memory.get(Slots.WAVE) > 0 && away(base, soldiers, Tactics.home(a))) {
+        if (battle.finish() && base.fallen() && memory.get(Slots.FELL) == 0) {
+            memory.set(Slots.FELL, tick + 1); // QA-12: the enemy's centre is down: the mop-up
+        }
+        if (battle.finish() && memory.get(Slots.FELL) != 0 && MopUp.run(view, budget, sink, base, soldiers)) {
+            return;
+        }
+        if (battle.rams() > 0
+                && memory.get(Slots.FELL) == 0
+                && memory.get(Slots.WAVE) > 0
+                && away(base, soldiers, Tactics.home(a))) {
             rams(view, budget, sink, base);
         }
         if (battle.spears() > 0 && reserve(view, budget, sink, memory, base, battle, army, soldiers)) {
@@ -65,6 +77,7 @@ final class MilitaryManager implements AiModule {
         if (mustered == 0) {
             long due = 20L * (a.first() + memory.get(Slots.WAVE) * a.every());
             boolean waveDue = tick >= due && army.size() >= a.min() && strongEnough(view, battle, soldiers);
+            waveDue |= battle.finish() && outnumbers(memory, army.size(), tick) && strongEnough(view, battle, soldiers);
             // AI-18: between waves, keep marching on the enemy start, or burn the centre once seen
             if (!waveDue
                     && memory.get(Slots.WAVE) > 0
@@ -184,6 +197,38 @@ final class MilitaryManager implements AiModule {
                 target != null
                         ? Attack.replace(UnitSet.of(handles), target.handle())
                         : AttackMove.replace(UnitSet.of(handles), front));
+    }
+
+    /** How long the most enemy soldiers seen at once stay what the army knows of the enemy's: three minutes. */
+    static final long SEEN_FOR = 3_600;
+
+    /** The smallest army that goes on its numbers alone. */
+    static final int DECISIVE = 8;
+
+    /**
+     * QA-12: the army clearly outnumbers what it has seen of the enemy's (at least {@value #DECISIVE} soldiers and twice
+     * the most enemy soldiers seen at once in the last {@value #SEEN_FOR} ticks): it goes, without waiting for the
+     * script's size or hour. Under fog the enemy's army is known by sight only, so nothing is seen before a first contact.
+     */
+    private static boolean outnumbers(AiMemory memory, int army, long tick) {
+        long seen = memory.get(Slots.SEEN);
+        long at = memory.get(Slots.SEEN_AT) - 1;
+        return seen > 0 && at >= 0 && tick - at <= SEEN_FOR && army >= DECISIVE && army >= 2 * seen;
+    }
+
+    /** Keeps the most enemy soldiers seen at once (see {@link #outnumbers}). */
+    private static void watch(AiView view, AiMemory memory, long tick) {
+        long count = 0;
+        for (UnitView e : view.enemyUnits()) {
+            if (view.role(e) != AiView.ROLE_NONE && e.state() != UnitState.GARRISONED) {
+                count++;
+            }
+        }
+        long at = memory.get(Slots.SEEN_AT) - 1;
+        if (count > 0 && (count >= memory.get(Slots.SEEN) || at < 0 || tick - at > SEEN_FOR)) {
+            memory.set(Slots.SEEN, count);
+            memory.set(Slots.SEEN_AT, tick + 1);
+        }
     }
 
     /** Whether any soldier stands farther than {@code home} from the civic centre. */

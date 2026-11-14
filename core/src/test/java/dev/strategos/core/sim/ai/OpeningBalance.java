@@ -72,6 +72,9 @@ public final class OpeningBalance {
             List<Long> idleWorkerSeconds,
             List<Integer> centres, // by slot, at the match's last sample (every 600 ticks)
             List<Integer> soldiers, // by slot, as above
+            List<Long>
+                    mop, // fell0 fell1 (tick of the first sample without a centre, -1 none), buildings0/1 (not fields),
+            // workers0/1, idle0/1, walking0/1, fighting0/1 soldiers, at the last sample
             long wallMillis,
             String failure) {
         boolean ended() {
@@ -91,6 +94,7 @@ public final class OpeningBalance {
         long[] town = {-1, -1};
         int[] centres = {0, 0};
         int[] soldiers = {0, 0};
+        long[] mop = {-1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         long started = System.nanoTime();
         HeadlessMatch.Result r = HeadlessMatch.run(
                 ground,
@@ -109,9 +113,21 @@ public final class OpeningBalance {
                     }
                     if (h.tick() % 600 == 0) {
                         centres[0] = centres[1] = soldiers[0] = soldiers[1] = 0;
+                        for (int k = 2; k < mop.length; k++) {
+                            mop[k] = 0;
+                        }
                         for (var building : h.core().queries().buildings()) {
                             if (building.template().value().endsWith("civic_centre") && building.faction() < 2) {
                                 centres[building.faction()]++;
+                            }
+                            if (building.faction() < 2
+                                    && !building.template().value().endsWith("field")) {
+                                mop[2 + building.faction()]++;
+                            }
+                        }
+                        for (int f = 0; f < 2; f++) {
+                            if (centres[f] == 0 && mop[f] < 0 && h.tick() > 1_200) {
+                                mop[f] = h.tick();
                             }
                         }
                         for (int handle : h.core().queries().unitHandles()) {
@@ -120,6 +136,19 @@ public final class OpeningBalance {
                                     && u.faction().value() < 2
                                     && !u.template().equals(dev.strategos.core.content.TemplateSet.WORKER)) {
                                 soldiers[u.faction().value()]++;
+                                int slot = u.faction().value();
+                                if (u.state() == dev.strategos.core.sim.UnitState.IDLE) {
+                                    mop[6 + slot]++;
+                                } else if (u.state() == dev.strategos.core.sim.UnitState.WALKING) {
+                                    mop[8 + slot]++;
+                                } else if (u.state() == dev.strategos.core.sim.UnitState.COMBAT) {
+                                    mop[10 + slot]++;
+                                }
+                            }
+                            if (u != null
+                                    && u.faction().value() < 2
+                                    && u.template().equals(dev.strategos.core.content.TemplateSet.WORKER)) {
+                                mop[4 + u.faction().value()]++;
                             }
                         }
                     }
@@ -151,6 +180,7 @@ public final class OpeningBalance {
                 s.idleWorkerSeconds(),
                 List.of(centres[0], centres[1]),
                 List.of(soldiers[0], soldiers[1]),
+                java.util.Arrays.stream(mop).boxed().toList(),
                 (System.nanoTime() - started) / 1_000_000,
                 s.failure());
     }

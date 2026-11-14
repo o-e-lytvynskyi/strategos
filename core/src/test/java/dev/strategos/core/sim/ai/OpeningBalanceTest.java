@@ -33,6 +33,7 @@ final class OpeningBalanceTest {
                     List.of(0L, 0L),
                     List.of(1, 1),
                     List.of(0, 0),
+                    List.of(),
                     1,
                     ""));
         }
@@ -99,6 +100,7 @@ final class OpeningBalanceTest {
                         r.idleWorkerSeconds(),
                         r.centres(),
                         r.soldiers(),
+                        r.mop(),
                         1,
                         "faction 0 stalled: no command since tick 9"));
         assertThat(OpeningBalance.judge(List.of(p), rows)).anyMatch(m -> m.contains("stalled"));

@@ -18,6 +18,14 @@ import java.util.List;
 final class Ranged {
     private static final double MARGIN = 0.5;
     private static final double REGOAL = 0.125;
+    private static final double BACK_STEP = 0.5;
+    private static final int BACK_STEPS = 24;
+
+    /** The block column of a coordinate, kept inside the match. */
+    private static int cell(double v, MatchState s, boolean x) {
+        int max = (x ? s.config().bounds().sizeX() : s.config().bounds().sizeZ()) - 1;
+        return Math.max(0, Math.min(max, (int) Math.floor(v)));
+    }
 
     private Ranged() {}
 
@@ -61,6 +69,13 @@ final class Ranged {
         double desired = Engagement.radius(s, i) + Engagement.radius(s, t) + Math.max(0, range - MARGIN);
         double px = motion.x(t) - dx / distance * desired;
         double pz = motion.z(t) - dz / distance * desired;
+        // QA-12: a place inside a building's footprint cannot be stood on: it moves back toward the archer, a half
+        // block
+        // at a time, to the first that is clear
+        for (int k = 0; k < BACK_STEPS && s.footprintAt(cell(px, s, true), cell(pz, s, false)); k++) {
+            px += dx / distance * BACK_STEP;
+            pz += dz / distance * BACK_STEP;
+        }
         double moved = DetMath.length(px - orders.targetX(i), pz - orders.targetZ(i));
         double away = DetMath.length(px - motion.x(i), pz - motion.z(i));
         // a place moved while a path is asked for supersedes it, and a target that shuffles would do so for good

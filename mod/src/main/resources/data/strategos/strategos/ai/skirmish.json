@@ -70,9 +70,9 @@
   "housingMargin": 3,
   "soldierQueue": 2,
   "attack": {
-    "first": 450,
+    "first": 600,
     "every": 180,
-    "min": 14,
+    "min": 16,
     "muster": 24,
     "announce": 30
   },
@@ -86,7 +86,8 @@
     "launch": 0.6,
     "spears": 6,
     "line": 400,
-    "rams": 4
+    "rams": 4,
+    "finish": true
   },
   "camp": {
     "minDistance": 40
@@ -95,12 +96,12 @@
     {
       "name": "rush",
       "weight": 2,
-      "maxWorkers": 20,
+      "maxWorkers": 24,
       "soldierQueue": 3,
       "attack": {
-        "first": 330,
-        "every": 120,
-        "min": 8,
+        "first": 480,
+        "every": 150,
+        "min": 12,
         "muster": 40,
         "announce": 30
       }
@@ -108,12 +109,12 @@
     {
       "name": "boom",
       "weight": 2,
-      "maxWorkers": 32,
-      "soldierQueue": 1,
+      "maxWorkers": 24,
+      "soldierQueue": 2,
       "attack": {
-        "first": 600,
-        "every": 240,
-        "min": 18,
+        "first": 660,
+        "every": 210,
+        "min": 20,
         "muster": 40,
         "announce": 45
       }

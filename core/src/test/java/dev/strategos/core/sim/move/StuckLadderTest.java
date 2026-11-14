@@ -327,6 +327,37 @@ class StuckLadderTest {
                 .isLessThanOrEqualTo(1);
     }
 
+    /**
+     * QA-12: an empty answer (no waypoint: no way nearer) to a chaser far from its place is as final as one near it: the
+     * request every four ticks it was asked again, with nothing to walk, never ended. Its order fails once.
+     */
+    @Test
+    void anEmptyPathFarFromThePlaceFailsTheOrderOnceToo() {
+        SimHarness h = harness(VoxelFixtures.flat(48, 32, 16, 1));
+        int unit = h.spawn(F0, new Vec2d(8.5, 16.5), 1, 0)[0];
+        int i = Handle.index(unit);
+        hold(h, unit);
+        order(h, unit, 40.5, 16.5);
+        int prey = h.spawn(new FactionSlot(1), new Vec2d(40.5, 16.5), 1, 0)[0];
+        state(h).orders().replace(i, dev.strategos.core.sim.order.OrderKind.ENGAGE, 40.5, 16.5, 0, -1, prey);
+        state(h).ai().set(i, dev.strategos.core.sim.unitai.UnitAi.CHASING);
+        List<Stuck> stuck = new ArrayList<>();
+        state(h).bus().subscribe(Stuck.class, stuck::add);
+        for (int t = 0; t < 40; t++) {
+            state(h).paths()
+                    .follow(
+                            i,
+                            dev.strategos.core.sim.nav.PathStore.Waypoints.NONE,
+                            dev.strategos.core.sim.nav.PathStatus.OK);
+            state(h).paths().decided(i, h.tick());
+            h.step();
+            if (unit(h, unit).state() != UnitState.WALKING) {
+                break;
+            }
+        }
+        assertThat(stuck).extracting(Stuck::rung).containsExactly(Stuck.GIVE_UP);
+    }
+
     /** Holds unit {@code handle} still: its walk speed 0, as boxed in as a unit can be. */
     private static void hold(SimHarness h, int handle) {
         state(h).stats().addPersonal(handle, Modifier.replace(CorePaths.WALK_SPEED, 0, ROCK));

@@ -14,7 +14,14 @@ import org.jspecify.annotations.Nullable;
  * point-mirrored map turns them round).
  */
 record Base(
-        BuildingView centre, double x, double z, @Nullable BuildingView enemy, int mirror, double aimX, double aimZ) {
+        BuildingView centre,
+        double x,
+        double z,
+        @Nullable BuildingView enemy,
+        int mirror,
+        double aimX,
+        double aimZ,
+        boolean fallen) {
     static final String CENTRE = "CivicCentre";
 
     /** The base in {@code view}, or null while the player holds no finished centre. */
@@ -45,7 +52,8 @@ record Base(
             }
         }
         StartSlot home = enemy == null ? enemyStart(view, x, z) : null;
-        if (home != null && standingAt(view, home.x() + 0.5, home.z() + 0.5)) {
+        boolean fallen = home != null && standingAt(view, home.x() + 0.5, home.z() + 0.5);
+        if (fallen) {
             // QA-12: one of our soldiers stands at the enemy's start and sees no centre: it is down. What else of the
             // enemy's stands in sight is the target, the nearest first, so conquest can finish; fields and
             // decorations do not count to it
@@ -78,7 +86,7 @@ record Base(
             }
         }
         int mirror = x < view.bounds().sizeX() / 2.0 ? 1 : -1;
-        return new Base(own, x, z, enemy, mirror, aimX, aimZ);
+        return new Base(own, x, z, enemy, mirror, aimX, aimZ, fallen);
     }
 
     /** How near the enemy's start a soldier of ours stands to see its centre, if one stands there: blocks. */

@@ -381,13 +381,21 @@ public final class PathService {
         return s.orders().kind(i) != OrderKind.BURN // a burner within reach of its place burns (Burning)
                 && last != PathStore.NEVER
                 && tick - last <= SETTLED_AFTER
-                && DetMath.length(
-                                s.motion().x(i) - s.orders().targetX(i),
-                                s.motion().z(i) - s.orders().targetZ(i))
-                        <= SETTLED_WITHIN;
+                && ((s.paths().path(i).count() == 0 && chasing(s, i)) // no waypoint at all: no way nearer, near or far
+                        || DetMath.length(
+                                        s.motion().x(i) - s.orders().targetX(i),
+                                        s.motion().z(i) - s.orders().targetZ(i))
+                                <= SETTLED_WITHIN);
     }
 
     private static final double SETTLED_WITHIN = 1.5;
+
+    /** A chase (an attack the player ordered, or one the unit took up): its place is a moving target's. */
+    private static boolean chasing(MatchState s, int i) {
+        int kind = s.orders().kind(i);
+        return kind == OrderKind.ENGAGE || kind == OrderKind.ATTACK;
+    }
+
     private static final long SETTLED_AFTER = 8;
 
     /** Its order fails once, as the stuck ladder's last rung fails one. */

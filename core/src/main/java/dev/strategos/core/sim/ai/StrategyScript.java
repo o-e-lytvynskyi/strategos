@@ -149,7 +149,7 @@ public record StrategyScript(
      * when its strength is at least this fraction of the enemy's army and defence together; {@code spears}: spearmen
      * (the only soldiers that burn a building) kept home out of the field fight until the enemy fields no army, then
      * sent at its civic centre; {@code line}: the share of spearmen, in permille, the training plan never falls below
-     * (a spearman short of it is waited for, not replaced by another kind); {@code rams}: how many rams the player keeps
+     * (a spearman short of it is waited for, not replaced by another kind); {@code finish}: the army mops up once an enemy centre has fallen and goes on its numbers (QA-12); {@code rams}: how many rams the player keeps
      * (QA-12: an arsenal trains them; once a wave is out they strike the enemy's buildings while the soldiers screen).
      */
     public record Battle(
@@ -162,13 +162,14 @@ public record StrategyScript(
             double launch,
             int spears,
             int line,
-            int rams) {
+            int rams,
+            boolean finish) {
         public static final String OFF = "off";
         public static final String WOUNDED = "wounded";
         public static final String VALUE = "value";
 
         /** Every knob off: M4's military manager. */
-        public static final Battle NONE = new Battle(OFF, 0, 0, 0, 28, 0, 0, 0, 250, 0);
+        public static final Battle NONE = new Battle(OFF, 0, 0, 0, 28, 0, 0, 0, 250, 0, false);
 
         private static final Codec<String> FOCUS =
                 Codec.STRING.validate(f -> f.equals(OFF) || f.equals(WOUNDED) || f.equals(VALUE)
@@ -185,7 +186,8 @@ public record StrategyScript(
                         Codec.doubleRange(0, 10).optionalFieldOf("launch", 0.0).forGetter(Battle::launch),
                         Codec.intRange(0, 64).optionalFieldOf("spears", 0).forGetter(Battle::spears),
                         Codec.intRange(0, 1000).optionalFieldOf("line", 250).forGetter(Battle::line),
-                        Codec.intRange(0, 16).optionalFieldOf("rams", 0).forGetter(Battle::rams))
+                        Codec.intRange(0, 16).optionalFieldOf("rams", 0).forGetter(Battle::rams),
+                        Codec.BOOL.optionalFieldOf("finish", false).forGetter(Battle::finish))
                 .apply(i, Battle::new));
 
         /** Whether any knob of the fight itself is on. */
