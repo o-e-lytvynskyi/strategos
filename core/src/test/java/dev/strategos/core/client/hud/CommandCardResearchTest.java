@@ -82,7 +82,10 @@ class CommandCardResearchTest {
         ClientMatchModel model = CommandCardTest.model(faction(500_000, 500_000, List.of()), shed);
         List<CommandCard.Button> buttons = research(model, model.buildings().get(0));
         assertThat(buttons)
-                .containsExactly(new CommandCard.Button(
+                .as("the storehouse's four techs, in its list's order")
+                .hasSize(4)
+                .first()
+                .isEqualTo(new CommandCard.Button(
                         CommandCard.Kind.RESEARCH, 0, WOOD_1, List.of(100_000L, 50_000L, 0L, 0L), true));
         var tech = Objects.requireNonNull(CommandCardTest.T.techByIndex(WOOD_1));
         assertThat(tech.time()).isEqualTo(30.0);
@@ -135,7 +138,11 @@ class CommandCardResearchTest {
 
         ClientMatchModel done = CommandCardTest.model(
                 faction(500_000, 500_000, List.of(WOOD_1)), building(7, STOREHOUSE, List.of(), 0));
-        assertThat(research(done, done.buildings().get(0))).isEmpty();
+        assertThat(research(done, done.buildings().get(0)))
+                .extracting(CommandCard.Button::template)
+                .as("the others stay")
+                .hasSize(3)
+                .doesNotContain(WOOD_1);
     }
 
     @Test

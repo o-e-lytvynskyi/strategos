@@ -38,6 +38,7 @@ public final class UnitEntity extends LivingEntity implements IEntityWithComplex
     private ItemStack restMain = ItemStack.EMPTY;
     private ItemStack restOff = ItemStack.EMPTY;
     private boolean dressed;
+    private int dressedTiers = -1; // the weapon and armour tiers it was dressed at, packed; -1 before
 
     public UnitEntity(EntityType<? extends UnitEntity> type, Level level) {
         super(type, level);
@@ -238,12 +239,22 @@ public final class UnitEntity extends LivingEntity implements IEntityWithComplex
         return dressed;
     }
 
-    /** On a client: the look it wears, and what its hands hold at rest (ART-01). */
-    public void dress(ItemStack head, ItemStack chest, ItemStack legs, ItemStack feet, ItemStack main, ItemStack off) {
+    /** The equipment tiers a client dressed it at (TECH-03), packed; -1 while undressed. */
+    public int dressedTiers() {
+        return dressedTiers;
+    }
+
+    /**
+     * On a client: the look it wears, and what its hands hold at rest (ART-01), at the faction's equipment tiers
+     * {@code tiers} (TECH-03), which the renderer compares to the faction's current ones to dress it again.
+     */
+    public void dress(
+            ItemStack head, ItemStack chest, ItemStack legs, ItemStack feet, ItemStack main, ItemStack off, int tiers) {
         worn = new ItemStack[] {head, chest, legs, feet};
         restMain = main;
         restOff = off;
         dressed = true;
+        dressedTiers = tiers;
     }
 
     /** The hands only: what the core's gear puts there on the server, or the equipment packet on a client. */

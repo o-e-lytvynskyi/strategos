@@ -157,11 +157,48 @@ class WireCodecSizeTest {
                 .isEqualTo(1 + 2 + 1 + 2 + 1 + 1 + 1 + 2 + 1 + 1 + 3);
     }
 
+    /** TECH-03, row 5: {@code looks} are appended to {@code match_state}, a byte a faction, after any results. */
+    @Test
+    void matchStateCarriesTheFactionTiersAppended() {
+        List<FactionLook> looks = List.of(new FactionLook(1, 0), new FactionLook(0, 1), FactionLook.BASE);
+        MatchStateMsg running = new MatchStateMsg(3, MatchStateMsg.Lifecycle.RUNNING, 1_200, null, looks);
+        assertThat(size(MatchStateMsg.WIRE, running))
+                .as("id, lifecycle, tick, the count and a byte per faction")
+                .isEqualTo(1 + 1 + 2 + 1 + 3);
+        assertThat(roundTrip(MatchStateMsg.WIRE, running).looks()).isEqualTo(looks);
+        byte[] older =
+                WireCodec.encode(MatchStateMsg.WIRE, new MatchStateMsg(3, MatchStateMsg.Lifecycle.RUNNING, 1_200));
+        assertThat(WireCodec.decode(MatchStateMsg.WIRE, older).looks())
+                .as("a message of the form before the field reads as no looks")
+                .isEmpty();
+        assertThat(Arrays.copyOf(WireCodec.encode(MatchStateMsg.WIRE, running), older.length))
+                .as("the tiers come after the form that went before")
+                .isEqualTo(older);
+        MatchResults results = new MatchResults(1, 500, List.of());
+        MatchStateMsg ended = new MatchStateMsg(3, MatchStateMsg.Lifecycle.ENDED, 600, results, looks);
+        assertThat(roundTrip(MatchStateMsg.WIRE, ended)).isEqualTo(ended);
+        MatchStateMsg noResults = new MatchStateMsg(3, MatchStateMsg.Lifecycle.ENDED, 600, null, looks);
+        assertThat(roundTrip(MatchStateMsg.WIRE, noResults).looks())
+                .as("the reader could not tell them from results, so they are not written")
+                .isEmpty();
+        List<FactionLook> most = new ArrayList<>();
+        for (int k = 0; k < MatchStateMsg.MAX_FACTIONS; k++) {
+            most.add(new FactionLook(15, 15));
+        }
+        MatchStateMsg widest =
+                new MatchStateMsg(Integer.MAX_VALUE, MatchStateMsg.Lifecycle.RUNNING, Long.MAX_VALUE, null, most);
+        assertThat(roundTrip(MatchStateMsg.WIRE, widest)).isEqualTo(widest);
+        assertThat(size(MatchStateMsg.WIRE, widest)).isLessThanOrEqualTo(MatchStateMsg.WIRE.maxSize());
+        assertThatThrownBy(() -> new FactionLook(16, 0)).isInstanceOf(IllegalArgumentException.class);
+    }
+
     @Test
     void thePayloadRecordsStayWithinTheirCaps() {
         assertThat(CommandBatch.WIRE.maxSize()).as("commands").isEqualTo(4 * 1024);
         assertThat(MatchJoin.WIRE.maxSize()).as("match_join").isLessThanOrEqualTo(4 * 1024);
-        assertThat(MatchStateMsg.WIRE.maxSize()).as("match_state").isLessThanOrEqualTo(1024);
+        assertThat(MatchStateMsg.WIRE.maxSize())
+                .as("match_state")
+                .isLessThanOrEqualTo(1056); // results 1024, looks 21 (TECH-03)
         assertThat(FeedbackMsg.WIRE.maxSize()).as("feedback").isLessThanOrEqualTo(1024);
 
         MatchJoin widest = new MatchJoin(

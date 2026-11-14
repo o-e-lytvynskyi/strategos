@@ -5,6 +5,7 @@
   "UnitMotion": { "walkSpeed": 0.34, "mobility": "large" },
   "Attack": { "Melee": { "hack": 10, "reach": 1.5, "prepare": 8, "repeat": 18 } },
   "Resistance": { "hack": 3, "pierce": 2, "crush": 2 },
+  "Look": { "weapon": 0, "armour": 0 },
   "Cost": {
     "resources": { "food": 80, "wood": 40, "iron": 30 },
     "population": 1,

@@ -8,6 +8,8 @@
   "requires": { "buildings": { "filter": "Village", "count": 5 } },
   "effects": [
     { "path": "Health/max", "op": "mul", "value": 1.1, "filter": "Structure+!Field" },
-    { "path": "Vision/range", "op": "add", "value": 2, "filter": "Structure+!Field" }
-  ]
+    { "path": "Vision/range", "op": "add", "value": 2, "filter": "Structure+!Field" },
+    { "path": "Researcher/techs", "op": "tokens", "tokens": "+strategos:iron_weapons +strategos:chainmail", "filter": "Barracks" }
+  ],
+  "unlocks": ["strategos:iron_weapons", "strategos:chainmail"]
 }

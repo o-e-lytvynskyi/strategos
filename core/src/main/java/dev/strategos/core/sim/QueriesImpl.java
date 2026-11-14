@@ -1,8 +1,10 @@
 package dev.strategos.core.sim;
 
+import dev.strategos.core.content.CorePaths;
 import dev.strategos.core.content.Footprint;
 import dev.strategos.core.content.StartSlot;
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.protocol.FactionLook;
 import dev.strategos.core.protocol.MatchResults;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
@@ -23,6 +25,7 @@ import dev.strategos.core.sim.nav.SurfaceGrid;
 import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.core.sim.stats.StatBreakdown;
+import dev.strategos.core.sim.stats.StatService;
 import dev.strategos.core.sim.unitai.ActivityTier;
 import dev.strategos.core.sim.vision.VisionGrid;
 import dev.strategos.core.sim.vision.VisionSystem;
@@ -34,6 +37,8 @@ import org.jspecify.annotations.Nullable;
 /** {@link MatchQueries} over a match's state. */
 final class QueriesImpl implements MatchQueries {
     private final MatchState state;
+    private @Nullable List<FactionLook> looks; // factionLooks' last answer, valid while the stats' versions hold
+    private long looksVersion;
     private final PathService paths;
 
     QueriesImpl(MatchState state, PathService paths) {
@@ -332,6 +337,54 @@ final class QueriesImpl implements MatchQueries {
     @Override
     public @Nullable StatBreakdown stats(int handle, String path) {
         return state.entities().isAlive(handle) ? state.stats().breakdown(Handle.index(handle), path) : null;
+    }
+
+    @Override
+    public List<FactionLook> factionLooks() {
+        StatService stats = state.stats();
+        long version = 0;
+        for (int f = 0; f < state.config().factions(); f++) {
+            version += stats.version(f);
+        }
+        if (looks != null && version == looksVersion) {
+            return looks; // no faction's modifiers moved since
+        }
+        looksVersion = version;
+        looks = computeLooks(stats);
+        return looks;
+    }
+
+    private List<FactionLook> computeLooks(StatService stats) {
+        int weapon = stats.path(CorePaths.LOOK_WEAPON);
+        int armour = stats.path(CorePaths.LOOK_ARMOUR);
+        if (weapon < 0 && armour < 0) {
+            return List.of();
+        }
+        int factions = state.config().factions();
+        int[][] tiers = new int[factions][2];
+        for (int t = 0; t < state.templates().indexCount(); t++) {
+            if (!state.templates().has(t)) {
+                continue;
+            }
+            for (int f = 0; f < factions; f++) {
+                tiers[f][0] = Math.max(tiers[f][0], tier(stats, t, f, weapon));
+                tiers[f][1] = Math.max(tiers[f][1], tier(stats, t, f, armour));
+            }
+        }
+        var out = new ArrayList<FactionLook>(factions);
+        for (int[] pair : tiers) {
+            out.add(new FactionLook(pair[0], pair[1]));
+        }
+        return List.copyOf(out);
+    }
+
+    /** A faction's tier of a template at a value path: its block's value, 0 for no path or a template without it. */
+    private static int tier(StatService stats, int template, int faction, int path) {
+        if (path < 0) {
+            return 0;
+        }
+        double v = stats.blockValue(template, faction, path);
+        return v > 0 ? (int) Math.min(v, CorePaths.MAX_LOOK) : 0;
     }
 
     @Override

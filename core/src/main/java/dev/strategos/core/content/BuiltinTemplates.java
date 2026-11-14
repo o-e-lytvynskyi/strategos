@@ -24,7 +24,8 @@ final class BuiltinTemplates {
             {
               "parent": "strategos:template/unit_base",
               "abstract": true,
-              "Identity": { "classes": "+Infantry +Organic" }
+              "Identity": { "classes": "+Infantry +Organic" },
+              "Look": { "weapon": 0, "armour": 0 }
             }
             """;
     static final String DEBUG_WALKER = """
@@ -91,6 +92,7 @@ final class BuiltinTemplates {
               "UnitMotion": { "walkSpeed": 0.34, "mobility": "large" },
               "Attack": { "Melee": { "hack": 10, "reach": 1.5, "prepare": 8, "repeat": 18 } },
               "Resistance": { "hack": 3, "pierce": 2, "crush": 2 },
+              "Look": { "weapon": 0, "armour": 0 },
               "Cost": {
                 "resources": { "food": 80, "wood": 40, "iron": 30 },
                 "population": 1,
@@ -212,7 +214,8 @@ final class BuiltinTemplates {
               "Resistance": { "fire": 0 },
               "Health": { "max": 1200 },
               "Cost": { "resources": { "wood": 200, "stone": 100, "iron": 50 }, "time": 60 },
-              "Trainer": { "units": "strategos:unit/infantry strategos:unit/archer strategos:unit/horseman", "batchExponent": 0.8 }
+              "Trainer": { "units": "strategos:unit/infantry strategos:unit/archer strategos:unit/horseman", "batchExponent": 0.8 },
+              "Researcher": { "techs": "" }
             }
             """;
 
@@ -228,7 +231,7 @@ final class BuiltinTemplates {
               "Health": { "max": 800 },
               "Cost": { "resources": { "wood": 100, "stone": 50 }, "time": 40 },
               "Dropsite": { "resources": "wood stone iron" },
-              "Researcher": { "techs": "strategos:gather_wood_1" }
+              "Researcher": { "techs": "strategos:gather_wood_1 strategos:gather_stone_1 strategos:gather_iron_1 strategos:carry_1" }
             }
             """;
 
@@ -240,6 +243,88 @@ final class BuiltinTemplates {
               "time": 30,
               "effects": [
                 { "path": "ResourceGatherer/rates/wood/tree", "op": "mul", "value": 1.2, "filter": "Worker" }
+              ]
+            }
+            """;
+
+    static final String GATHER_FARM_1 = """
+            {
+              "name": "strategos.tech.gather_farm_1",
+              "icon": "minecraft:iron_hoe",
+              "cost": { "food": 50, "wood": 100 },
+              "time": 30,
+              "effects": [
+                { "path": "ResourceGatherer/rates/food/grain", "op": "mul", "value": 1.2, "filter": "Worker" }
+              ]
+            }
+            """;
+
+    static final String GATHER_STONE_1 = """
+            {
+              "name": "strategos.tech.gather_stone_1",
+              "icon": "minecraft:iron_pickaxe",
+              "cost": { "food": 100, "wood": 100 },
+              "time": 35,
+              "effects": [
+                { "path": "ResourceGatherer/rates/stone/rock", "op": "mul", "value": 1.2, "filter": "Worker" }
+              ]
+            }
+            """;
+
+    static final String GATHER_IRON_1 = """
+            {
+              "name": "strategos.tech.gather_iron_1",
+              "icon": "minecraft:raw_iron",
+              "cost": { "food": 100, "wood": 100, "stone": 50 },
+              "time": 40,
+              "effects": [
+                { "path": "ResourceGatherer/rates/iron/ore", "op": "mul", "value": 1.2, "filter": "Worker" }
+              ]
+            }
+            """;
+
+    static final String CARRY_1 = """
+            {
+              "name": "strategos.tech.carry_1",
+              "icon": "minecraft:bundle",
+              "cost": { "food": 150, "wood": 100 },
+              "time": 40,
+              "effects": [
+                { "path": "ResourceGatherer/capacities/food", "op": "add", "value": 5, "filter": "Worker" },
+                { "path": "ResourceGatherer/capacities/wood", "op": "add", "value": 5, "filter": "Worker" },
+                { "path": "ResourceGatherer/capacities/stone", "op": "add", "value": 5, "filter": "Worker" },
+                { "path": "ResourceGatherer/capacities/iron", "op": "add", "value": 5, "filter": "Worker" }
+              ]
+            }
+            """;
+
+    static final String IRON_WEAPONS = """
+            {
+              "name": "strategos.tech.iron_weapons",
+              "icon": "minecraft:iron_sword",
+              "cost": { "food": 200, "wood": 100, "iron": 150 },
+              "time": 60,
+              "requires": { "phase": "town" },
+              "effects": [
+                { "path": "Attack/Melee/hack", "op": "add", "value": 1, "filter": "Spearman Cavalry" },
+                { "path": "Attack/Melee/pierce", "op": "add", "value": 1, "filter": "Spearman Cavalry" },
+                { "path": "Attack/Ranged/pierce", "op": "add", "value": 1, "filter": "Archer" },
+                { "path": "Look/weapon", "op": "add", "value": 1, "filter": "Infantry Cavalry" }
+              ]
+            }
+            """;
+
+    static final String CHAINMAIL = """
+            {
+              "name": "strategos.tech.chainmail",
+              "icon": "minecraft:chainmail_chestplate",
+              "cost": { "food": 200, "wood": 100, "iron": 150 },
+              "time": 60,
+              "requires": { "phase": "town" },
+              "effects": [
+                { "path": "Resistance/hack", "op": "add", "value": 1, "filter": "Infantry Cavalry" },
+                { "path": "Resistance/pierce", "op": "add", "value": 1, "filter": "Infantry Cavalry" },
+                { "path": "Look/armour", "op": "add", "value": 1, "filter": "Infantry Cavalry" }
               ]
             }
             """;
@@ -265,8 +350,10 @@ final class BuiltinTemplates {
               "requires": { "buildings": { "filter": "Village", "count": 5 } },
               "effects": [
                 { "path": "Health/max", "op": "mul", "value": 1.1, "filter": "Structure+!Field" },
-                { "path": "Vision/range", "op": "add", "value": 2, "filter": "Structure+!Field" }
-              ]
+                { "path": "Vision/range", "op": "add", "value": 2, "filter": "Structure+!Field" },
+                { "path": "Researcher/techs", "op": "tokens", "tokens": "+strategos:iron_weapons +strategos:chainmail", "filter": "Barracks" }
+              ],
+              "unlocks": ["strategos:iron_weapons", "strategos:chainmail"]
             }
             """;
 
@@ -278,7 +365,8 @@ final class BuiltinTemplates {
               "Health": { "max": 600 },
               "Cost": { "resources": { "wood": 100 }, "time": 35 },
               "Dropsite": { "resources": "food" },
-              "Reseeder": { "reach": 24 }
+              "Reseeder": { "reach": 24 },
+              "Researcher": { "techs": "strategos:gather_farm_1" }
             }
             """;
     static final String QUARRY = """
@@ -343,7 +431,13 @@ final class BuiltinTemplates {
     private static final TechIdTable PINNED_TECHS = new TechIdTable(List.of(
             new TechId("strategos:gather_wood_1"),
             new TechId("strategos:phase_town"), // M6 T3
-            new TechId("strategos:phase_village")));
+            new TechId("strategos:phase_village"),
+            new TechId("strategos:carry_1"), // M6 T18
+            new TechId("strategos:chainmail"),
+            new TechId("strategos:gather_farm_1"),
+            new TechId("strategos:gather_iron_1"),
+            new TechId("strategos:gather_stone_1"),
+            new TechId("strategos:iron_weapons")));
 
     private BuiltinTemplates() {}
 
@@ -359,13 +453,13 @@ final class BuiltinTemplates {
         TemplateCompiler.Result result = TemplateCompiler.compile(
                 List.of(
                         raw("strategos:template/unit_base", UNIT_BASE),
-                        raw("strategos:template/unit_infantry", UNIT_INFANTRY),
+                        raw("strategos:template/unit_infantry", UNIT_INFANTRY, withTechs),
                         raw("strategos:template/unit_fauna", UNIT_FAUNA),
                         raw("strategos:template/building_base", BUILDING_BASE),
                         raw("strategos:unit/debug_walker", DEBUG_WALKER),
                         raw("strategos:unit/infantry", INFANTRY),
                         raw("strategos:unit/archer", ARCHER),
-                        raw("strategos:unit/horseman", HORSEMAN),
+                        raw("strategos:unit/horseman", HORSEMAN, withTechs),
                         raw("strategos:unit/worker", WORKER),
                         raw("strategos:unit/sheep", SHEEP),
                         raw("strategos:unit/pig", PIG),
@@ -383,6 +477,12 @@ final class BuiltinTemplates {
                 withTechs
                         ? List.of(
                                 tech("strategos:gather_wood_1", GATHER_WOOD_1),
+                                tech("strategos:gather_farm_1", GATHER_FARM_1),
+                                tech("strategos:gather_stone_1", GATHER_STONE_1),
+                                tech("strategos:gather_iron_1", GATHER_IRON_1),
+                                tech("strategos:carry_1", CARRY_1),
+                                tech("strategos:iron_weapons", IRON_WEAPONS),
+                                tech("strategos:chainmail", CHAINMAIL),
                                 tech("strategos:phase_town", PHASE_TOWN),
                                 tech("strategos:phase_village", PHASE_VILLAGE))
                         : List.of(),
@@ -403,13 +503,14 @@ final class BuiltinTemplates {
     }
 
     /**
-     * A building as the set had it before TECH-01 without {@code withTechs}: no {@code Researcher}, and none of the
-     * class {@code Village} (TECH-02), so that set keeps its version.
+     * A template as the set had it before TECH-01 without {@code withTechs}: no {@code Researcher}, no {@code Look}
+     * (TECH-03), and none of the class {@code Village} (TECH-02), so that set keeps its version.
      */
     private static RawTemplate raw(String id, String json, boolean withTechs) {
         JsonObject object = JsonParser.parseString(json).getAsJsonObject();
         if (!withTechs) {
             object.remove("Researcher");
+            object.remove("Look"); // TECH-03's tiers, which only the techs raise
             JsonObject identity = object.getAsJsonObject("Identity");
             identity.addProperty(
                     "classes", identity.get("classes").getAsString().replace(" +Village", ""));

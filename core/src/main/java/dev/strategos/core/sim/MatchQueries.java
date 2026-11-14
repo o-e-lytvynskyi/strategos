@@ -2,6 +2,7 @@ package dev.strategos.core.sim;
 
 import dev.strategos.core.content.StartSlot;
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.protocol.FactionLook;
 import dev.strategos.core.protocol.MatchResults;
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.FactionSlot;
@@ -133,6 +134,11 @@ public interface MatchQueries {
     /** The match results (M6 §2.3): winner, ended tick and per-faction statistics; null before ENDED. */
     default @Nullable MatchResults matchResults() {
         return null;
+    }
+
+    /** Each faction's equipment tiers (TECH-03), by faction; empty for a core without the tier values. */
+    default List<FactionLook> factionLooks() {
+        return List.of();
     }
 
     /** The path service's counts since the match started. */

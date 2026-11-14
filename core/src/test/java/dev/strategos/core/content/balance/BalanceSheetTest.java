@@ -273,6 +273,29 @@ class BalanceSheetTest {
                         "strategos:phase_town effects/0/value",
                         "strategos:gather_wood_1 cost/food");
         assertThat(sheet.techRows())
+                .as("TECH-03: every technology and every tier is a row with a note")
+                .extracting(row -> row.tech().value() + " " + row.path())
+                .contains(
+                        "strategos:gather_farm_1 effects/0/value",
+                        "strategos:gather_stone_1 effects/0/value",
+                        "strategos:gather_iron_1 effects/0/value",
+                        "strategos:carry_1 effects/3/value",
+                        "strategos:iron_weapons effects/3/value", // Look/weapon, the weapon tier
+                        "strategos:chainmail effects/2/value"); // Look/armour, the armour tier
+        assertThat(sheet.techRows().stream().map(row -> row.tech().value()).distinct())
+                .as("every shipped technology has rows")
+                .containsAll(TemplateSet.builtin().techs().stream()
+                        .filter(t -> !t.id().value().equals("strategos:phase_village"))
+                        .map(t -> t.id().value())
+                        .toList());
+        assertThat(sheet.rows())
+                .extracting(row -> row.template().value() + " " + row.path())
+                .as("the starting tiers are rows of the unit templates")
+                .contains(
+                        "strategos:unit/infantry Look/weapon",
+                        "strategos:unit/archer Look/armour",
+                        "strategos:unit/horseman Look/weapon");
+        assertThat(sheet.techRows())
                 .allSatisfy(row -> assertThat(row.provenance()).isNotBlank());
         assertThat(data.compile().set().version())
                 .isEqualTo(TemplateSet.builtin().version());

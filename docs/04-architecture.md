@@ -2055,7 +2055,7 @@ placing; the events are the second line of defence.
 |---|---|---|---|---|
 | `strategos:template_set` | Compiled client view, id table, hash | Player | Login, `/reload` | M1 |
 | `strategos:match_join` | Match id, space, factions, colours, your slot, rules, minimap base | Player | Join, rejoin | M1 |
-| `strategos:match_state` | Lifecycle, clock sync every 5 s, results | Match | On change | M1 |
+| `strategos:match_state` | Lifecycle, clock sync every 5 s, results, and `looks`: each faction's equipment tiers (`Look/weapon`, `Look/armour`; one byte per faction appended after the results; TECH-03) | Match | On change of lifecycle or tiers, at join | M1, M6 |
 | `strategos:feedback` | Command results and notices | Player or faction | Event | M1 |
 | `strategos:unit_summary` | Handle, template index, faction, X and Z quantised to 1/8 block, state; about 6 B per unit | Each player: own units and visible enemies | 2 Hz | M2 |
 | `strategos:unit_hud` | HP fraction (1 B) and state bits for tracked own and visible units | Per player | Changes only, ≤ 5 Hz | M2 |

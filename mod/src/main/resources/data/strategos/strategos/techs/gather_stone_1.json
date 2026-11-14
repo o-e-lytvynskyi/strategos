@@ -1,0 +1,9 @@
+{
+  "name": "strategos.tech.gather_stone_1",
+  "icon": "minecraft:iron_pickaxe",
+  "cost": { "food": 100, "wood": 100 },
+  "time": 35,
+  "effects": [
+    { "path": "ResourceGatherer/rates/stone/rock", "op": "mul", "value": 1.2, "filter": "Worker" }
+  ]
+}

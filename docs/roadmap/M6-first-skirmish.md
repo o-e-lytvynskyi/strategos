@@ -128,6 +128,12 @@ only its own vision at every level except that labelled top level.
   faction-level value the unit renderer reads, sent to every match participant (enemies may see
   it; it shows on the units anyway), or as spawn data with a re-pair, the card recording which;
   balance-sheet entries for every tier.
+  **Transport (decided, M6 spec row 5, T18):** the tiers are faction-level values `Look/weapon` and
+  `Look/armour` (0 or 1, templates of soldiers carry them at 0, the two military techs add 1). They ride a
+  `looks` field of `match_state` (Match audience: one byte per faction, weapon low and armour high), sent
+  with the next flush after a change and at join; no body is re-paired, and the renderer re-dresses a
+  body whose faction's tiers differ from the ones it was dressed at. Enemies see the tiers: the gear shows
+  on the units anyway.
 - **Out of scope:** the full tree (TECH-05).
 - **Acceptance:**
   1. Each technology's effect equals its modifier exactly (L1).

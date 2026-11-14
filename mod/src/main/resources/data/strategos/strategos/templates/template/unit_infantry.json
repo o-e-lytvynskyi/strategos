@@ -1,5 +1,6 @@
 {
   "parent": "strategos:template/unit_base",
   "abstract": true,
-  "Identity": { "classes": "+Infantry +Organic" }
+  "Identity": { "classes": "+Infantry +Organic" },
+  "Look": { "weapon": 0, "armour": 0 }
 }

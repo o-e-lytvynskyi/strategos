@@ -79,13 +79,23 @@ class TemplateSetTest {
         assertThat(tech).isNotNull();
         assertThat(set.techs())
                 .extracting(t -> t.id().value())
-                .containsExactly("strategos:gather_wood_1", "strategos:phase_town", "strategos:phase_village");
+                .containsExactly(
+                        "strategos:gather_wood_1",
+                        "strategos:phase_town",
+                        "strategos:phase_village",
+                        "strategos:carry_1", // M6 T18's, appended to the pinned indices
+                        "strategos:chainmail",
+                        "strategos:gather_farm_1",
+                        "strategos:gather_iron_1",
+                        "strategos:gather_stone_1",
+                        "strategos:iron_weapons");
         assertThat(set.techByIndex(0)).isSameAs(tech);
         assertThat(tech.cost()).isEqualTo(java.util.Map.of("food", 100.0, "wood", 50.0));
         assertThat(tech.ticks()).isEqualTo(600);
         JsonObject storehouse = set.flattened(new TemplateId("strategos:building/storehouse"));
         assertThat(storehouse.getAsJsonObject("Researcher").get("techs").getAsString())
-                .isEqualTo("strategos:gather_wood_1");
+                .isEqualTo(
+                        "strategos:gather_wood_1 strategos:gather_stone_1 strategos:gather_iron_1 strategos:carry_1");
         double rate = set.value(
                 set.byId(TemplateSet.WORKER).netIndex(),
                 set.valuePaths().byPath("ResourceGatherer/rates/wood/tree").id());
@@ -176,7 +186,7 @@ class TemplateSetTest {
     // horseman's set (UNIT-06, UNIT-07); the barracks trains the roster, spearman, archer and horseman (AI-03); M6
     // T2.1: the storehouse's Researcher and the tech gather_wood_1 (TECH-01); M6 T3: the phases, the class Village, the
     // civic centre's Researcher. Rebaselined after merging M5 combat content into BuiltinTemplates.
-    private static final String BUILTIN_VERSION = "0b19c97afdb7abd50ad68d74a55c5b80cc2ad5e31ccd7317637b8e290d7194a2";
+    private static final String BUILTIN_VERSION = "e42cc033bf06e9c3c262444cd97031ffe00aed5d3db282cfed015e024ea5f376";
 
     private static TemplateSet set(UnitTemplate template) {
         return new TemplateSet(List.of(template));

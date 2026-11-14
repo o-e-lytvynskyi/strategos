@@ -4,6 +4,7 @@ import com.google.gson.JsonParser;
 import com.mojang.serialization.JsonOps;
 import dev.strategos.core.client.model.ClientMatchModel;
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.protocol.FactionLook;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.MatchStateMsg;
 import dev.strategos.core.sim.MatchRules;
@@ -172,6 +173,14 @@ public final class StrategosClient {
 
     public static @Nullable MatchStateMsg state() {
         return state;
+    }
+
+    /** Faction {@code faction}'s equipment tiers as the last {@code match_state} said (TECH-03); the starting gear before one. */
+    public static FactionLook looks(int faction) {
+        MatchStateMsg current = state;
+        return current != null && faction >= 0 && faction < current.looks().size()
+                ? current.looks().get(faction)
+                : FactionLook.BASE;
     }
 
     public static void state(MatchStateMsg update) {

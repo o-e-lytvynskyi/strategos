@@ -36,6 +36,10 @@
   "strategos:unit/debug_walker": {
     "UnitMotion/walkSpeed": "Five blocks a second: the movement tests' brisk walker, never a game unit"
   },
+  "strategos:template/unit_infantry": {
+    "Look/weapon": "Zero: the starting equipment tier of the weapon, raised to one by iron weapons (TECH-03); a tier, not a stat, so it carries no balance of its own",
+    "Look/armour": "Zero: the starting equipment tier of the armour, raised to one by chainmail (TECH-03); a tier, not a stat, so it carries no balance of its own"
+  },
   "strategos:unit/infantry": {
     "Attack/Melee/hack": "With 100 hit points and resistance 5, one spearman kills another in 29 blows, about half a minute at a blow a second (M2, CMB-02)",
     "Attack/Melee/reach": "A spear reaches a little past an arm's length",
@@ -69,6 +73,8 @@
     "Cost/population": "One house's room for one archer, as for other infantry"
   },
   "strategos:unit/horseman": {
+    "Look/weapon": "Zero: the starting equipment tier of the weapon, raised to one by iron weapons (TECH-03); a tier, not a stat, so it carries no balance of its own",
+    "Look/armour": "Zero: the starting equipment tier of the armour, raised to one by chainmail (TECH-03); a tier, not a stat, so it carries no balance of its own",
     "Health/max": "Two hundred hit points, tuned up from a hundred and twenty (duel matrix, M5 UNIT-07): twice a spearman, the price of being hard to catch, enough to live through the archers' fire to the melee",
     "UnitMotion/walkSpeed": "0.34 blocks a tick: nearly twice the spearman, so cavalry can run archers down (M5 UNIT-07)",
     "Attack/Melee/hack": "Ten hack per sword stroke, tuned up from five (duel matrix on the real terrain, M5 UNIT-07): over three times a spearman's three, so the counter over archers is quick",
@@ -239,5 +245,52 @@
   },
   "strategos:phase_village": {
     "time": "One second, never run: Village is the phase of a faction with none researched, so the tech exists only for its name and icon (spec row 19)"
+  },
+  "strategos:gather_farm_1": {
+    "cost/food": "50 food: the classics' first farming tech is the cheapest of the line (docs/research/mechanics.md, economy techs); our own starting value, tuned against QA-12 in M6 T23",
+    "cost/wood": "100 wood: the plough and the wheelbarrow are wood work; our own starting value, tuned against QA-12 in M6 T23",
+    "time": "Thirty seconds, as the wood tech: the same first step in each line; our own starting value, tuned against QA-12 in M6 T23",
+    "effects/0/value": "A fifth more grain per second, as the wood tech's fifth (TECH-03): one step of the same size for every resource line; our own starting value, tuned against QA-12 in M6 T23"
+  },
+  "strategos:gather_stone_1": {
+    "cost/food": "100 food: as the wood tech's, the food side pays for every gathering tech; our own starting value, tuned against QA-12 in M6 T23",
+    "cost/wood": "100 wood: dearer than the felling axes' 50 since a pick needs a stronger head; our own starting value, tuned against QA-12 in M6 T23",
+    "time": "Thirty-five seconds: a little over the wood tech's thirty, as rock is a harder trade; our own starting value, tuned against QA-12 in M6 T23",
+    "effects/0/value": "A fifth faster quarrying, as the wood tech's fifth (TECH-03): one step of the same size for every resource line; our own starting value, tuned against QA-12 in M6 T23"
+  },
+  "strategos:gather_iron_1": {
+    "cost/food": "100 food: as the other gathering techs; our own starting value, tuned against QA-12 in M6 T23",
+    "cost/wood": "100 wood: as the stone tech's, a mine is the same hard trade; our own starting value, tuned against QA-12 in M6 T23",
+    "cost/stone": "50 stone: iron is the scarcest line, so its tech also asks for a quarry's output first; our own starting value, tuned against QA-12 in M6 T23",
+    "time": "Forty seconds: the longest of the gathering techs, as iron is the scarcest line; our own starting value, tuned against QA-12 in M6 T23",
+    "effects/0/value": "A fifth faster mining, as the wood tech's fifth (TECH-03): one step of the same size for every resource line; our own starting value, tuned against QA-12 in M6 T23"
+  },
+  "strategos:carry_1": {
+    "cost/food": "150 food: a fifty more than a gathering tech, since it helps every line at once; our own starting value, tuned against QA-12 in M6 T23",
+    "cost/wood": "100 wood: sacks and baskets, as the stone tech's wood; our own starting value, tuned against QA-12 in M6 T23",
+    "time": "Forty seconds: the long end of the village techs, since it serves every worker; our own starting value, tuned against QA-12 in M6 T23",
+    "effects/0/value": "Five more food a trip: a load of ten becomes fifteen (TECH-03), fewer walks to the dropsite; our own starting value, tuned against QA-12 in M6 T23",
+    "effects/1/value": "Five more wood a trip, as the food's (TECH-03); our own starting value, tuned against QA-12 in M6 T23",
+    "effects/2/value": "Five more stone a trip, as the food's (TECH-03); our own starting value, tuned against QA-12 in M6 T23",
+    "effects/3/value": "Five more iron a trip, as the food's (TECH-03); our own starting value, tuned against QA-12 in M6 T23"
+  },
+  "strategos:iron_weapons": {
+    "cost/food": "200 food: a Town tech costs two village techs' food, as phase_town's 500 is five of them; our own starting value, tuned against QA-12 in M6 T23",
+    "cost/wood": "100 wood: hafts and shafts; our own starting value, tuned against QA-12 in M6 T23",
+    "cost/iron": "150 iron: the tier is paid in iron, the scarcest resource, so an army of iron needs a mine first (TECH-03); our own starting value, tuned against QA-12 in M6 T23",
+    "time": "Sixty seconds, as phase_town: a Town-sized research; our own starting value, tuned against QA-12 in M6 T23",
+    "effects/0/value": "One more hack per blow for spearmen and horsemen (TECH-03, spec 2.16): a third more for a spearman's three, a tenth for a horseman's ten; our own starting value, tuned against QA-12 in M6 T23",
+    "effects/1/value": "One more pierce per blow for spearmen and horsemen (TECH-03, spec 2.16): the spearman's pierce rises with its hack; our own starting value, tuned against QA-12 in M6 T23",
+    "effects/2/value": "One more pierce per arrow for archers (TECH-03, spec 2.16), a sixteenth of their sixteen: the archers' share of the weapon tier; our own starting value, tuned against QA-12 in M6 T23",
+    "effects/3/value": "One tier: the weapon the unit renderer draws moves from stone to iron (TECH-03, row 5); a tier, not a balance number"
+  },
+  "strategos:chainmail": {
+    "cost/food": "200 food: as the iron weapons', the military Town techs cost the same; our own starting value, tuned against QA-12 in M6 T23",
+    "cost/wood": "100 wood: as the iron weapons'; our own starting value, tuned against QA-12 in M6 T23",
+    "cost/iron": "150 iron: as the iron weapons': paid in the scarcest resource (TECH-03); our own starting value, tuned against QA-12 in M6 T23",
+    "time": "Sixty seconds, as the iron weapons': a Town-sized research; our own starting value, tuned against QA-12 in M6 T23",
+    "effects/0/value": "One more hack resistance for soldiers (TECH-03, spec 2.16): a fifth more for a spearman's five, about a tenth fewer blows through; our own starting value, tuned against QA-12 in M6 T23",
+    "effects/1/value": "One more pierce resistance for soldiers (TECH-03, spec 2.16), as the hack's; our own starting value, tuned against QA-12 in M6 T23",
+    "effects/2/value": "One tier: the armour the unit renderer draws moves from leather to chainmail (TECH-03, row 5); a tier, not a balance number"
   }
 }

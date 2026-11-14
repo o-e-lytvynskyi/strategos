@@ -1,18 +1,26 @@
 package dev.strategos.core.protocol;
 
 import dev.strategos.core.shared.CoreApi;
+import java.util.List;
 import org.jspecify.annotations.Nullable;
 
 /**
  * The {@code match_state} payload: where a match is in its life, its last completed tick, and at
- * {@link Lifecycle#ENDED} the match results (M6 §2.3).
+ * {@link Lifecycle#ENDED} the match results (M6 §2.3), and each faction's equipment tiers {@code looks} (TECH-03; empty
+ * when none is known, as in a message of the form before it). On the wire the results come first, then the looks, so an
+ * older reader that stops after the results still reads the rest; at {@code ENDED} without results no looks are
+ * written, since the reader could not tell them from results.
  */
 @CoreApi
 public record MatchStateMsg(
         int matchId,
         Lifecycle lifecycle,
         long tick,
-        @Nullable MatchResults results) {
+        @Nullable MatchResults results,
+        List<FactionLook> looks) {
+    /** The most factions a match has, which bounds {@code looks}. */
+    public static final int MAX_FACTIONS = 16;
+
     /** A match's lifecycle as the wire carries it, one name per state the server's matches go through. */
     @CoreApi
     public enum Lifecycle {
@@ -26,8 +34,19 @@ public record MatchStateMsg(
         DISPOSED
     }
 
+    public MatchStateMsg {
+        looks = List.copyOf(looks);
+        if (looks.size() > MAX_FACTIONS) {
+            throw new IllegalArgumentException("more looks than factions: " + looks.size());
+        }
+    }
+
+    public MatchStateMsg(int matchId, Lifecycle lifecycle, long tick, @Nullable MatchResults results) {
+        this(matchId, lifecycle, tick, results, List.of());
+    }
+
     public MatchStateMsg(int matchId, Lifecycle lifecycle, long tick) {
-        this(matchId, lifecycle, tick, null);
+        this(matchId, lifecycle, tick, null, List.of());
     }
 
     public static final WireCodec<MatchStateMsg> WIRE = new WireCodec<>() {
@@ -49,6 +68,12 @@ public record MatchStateMsg(
             if (value.results() != null) {
                 MatchResults.WIRE.write(out, value.results());
             }
+            if (!value.looks().isEmpty() && (value.lifecycle() != Lifecycle.ENDED || value.results() != null)) {
+                out.writeVarInt(value.looks().size());
+                for (FactionLook look : value.looks()) {
+                    out.writeByte(look.pack());
+                }
+            }
         }
 
         @Override
@@ -69,12 +94,24 @@ public record MatchStateMsg(
             long tick = in.readZigZagLong();
             MatchResults results =
                     lifecycle == Lifecycle.ENDED && in.remaining() > 0 ? MatchResults.WIRE.read(in) : null;
-            return new MatchStateMsg(id, lifecycle, tick, results);
+            List<FactionLook> looks = List.of();
+            if (in.remaining() > 0) {
+                int count = in.readVarInt();
+                if (count > MAX_FACTIONS) {
+                    throw new WireException("too many looks " + count);
+                }
+                FactionLook[] read = new FactionLook[count];
+                for (int k = 0; k < count; k++) {
+                    read[k] = FactionLook.unpack(in.readUnsignedByte());
+                }
+                looks = List.of(read);
+            }
+            return new MatchStateMsg(id, lifecycle, tick, results, looks);
         }
 
         @Override
         public int maxSize() {
-            return 5 + 1 + 10 + MatchResults.WIRE.maxSize();
+            return 5 + 1 + 10 + MatchResults.WIRE.maxSize() + 5 + MAX_FACTIONS;
         }
     };
 }

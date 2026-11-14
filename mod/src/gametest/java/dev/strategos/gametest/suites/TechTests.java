@@ -26,6 +26,7 @@ import dev.strategos.core.sim.stats.StatBreakdown;
 import dev.strategos.gametest.StrategosTest;
 import dev.strategos.mod.server.match.MatchRuntime;
 import dev.strategos.mod.server.net.payload.MatchEventPayload;
+import dev.strategos.mod.server.net.payload.MatchStatePayload;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -155,6 +156,96 @@ public final class TechTests {
                     b.close();
                 })
                 .thenSucceed();
+    }
+
+    /**
+     * TECH-03.3: when iron weapons are researched, every player of the match, the researcher and the other, has the
+     * faction's new weapon tier in its {@code match_state} (its client model) within a second: 20 ticks.
+     */
+    @StrategosTest(batch = "tech", arena = "arena_flat_48", timeoutTicks = 400)
+    public static void aTierReachesEveryViewerWithinASecond(GameTestHelper h) {
+        MatchRuntime rt = Units.match(h);
+        TechId weapons = new TechId("strategos:iron_weapons");
+        TemplateId barracks = new TemplateId("strategos:building/barracks");
+        rt.submit(PlayerSlot.ADMIN, new SpawnBuilding(barracks, new FactionSlot(0), 4, 4, 0));
+        rt.submit(PlayerSlot.ADMIN, new SpawnBuilding(barracks, new FactionSlot(1), 30, 30, 0));
+        rt.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.INFANTRY, new FactionSlot(0), new Vec2d(20, 20), 1, 1));
+        for (String resource : List.of("food", "wood", "iron")) {
+            rt.submit(PlayerSlot.ADMIN, new Grant(new FactionSlot(0), resource, 1_000));
+        }
+        rt.queueSwap(new ContentSwap(withIronWeaponsAtOnce()));
+        var a = BuildingTests.seated(h, rt, "strat-tier-a", 0);
+        var b = BuildingTests.seated(h, rt, "strat-tier-b", 1);
+        long[] doneAt = {-1};
+        rt.addListener(out -> out.events().stream()
+                .filter(TechResearched.class::isInstance)
+                .map(TechResearched.class::cast)
+                .filter(t -> t.tech().equals(weapons))
+                .forEach(t -> doneAt[0] = core(rt).queries().tick()));
+        h.startSequence()
+                .thenWaitUntil(
+                        () -> check(core(rt).queries().buildings().size() == 2 && handles(rt).length == 1, "not ready"))
+                .thenWaitUntil(() -> check(
+                        weaponTier(a, rt, 0) == 0 && weaponTier(b, rt, 0) == 0,
+                        "no starting tier yet: " + weaponTier(a, rt, 0) + ", " + weaponTier(b, rt, 0)))
+                .thenExecute(() -> rt.submit(
+                        P0,
+                        new Research(
+                                core(rt).queries().buildings().stream()
+                                        .filter(v -> v.template().equals(barracks) && v.faction() == 0)
+                                        .findFirst()
+                                        .orElseThrow()
+                                        .handle(),
+                                weapons)))
+                .thenWaitUntil(() -> check(doneAt[0] >= 0, "not researched yet"))
+                .thenWaitUntil(() -> check(
+                        weaponTier(a, rt, 0) == 1 && weaponTier(b, rt, 0) == 1,
+                        "the tier has not arrived: " + weaponTier(a, rt, 0) + ", " + weaponTier(b, rt, 0)))
+                .thenExecute(() -> {
+                    long took = core(rt).queries().tick() - doneAt[0];
+                    check(took <= 20, "the tier took " + took + " ticks to reach both viewers");
+                    check(weaponTier(a, rt, 1) == 0 && weaponTier(b, rt, 1) == 0, "the other faction's tier moved");
+                    a.close();
+                    b.close();
+                })
+                .thenSucceed();
+    }
+
+    /** The weapon tier of {@code faction} in the last {@code match_state} {@code viewer} received; -1 if none. */
+    private static int weaponTier(dev.strategos.gametest.net.MockViewer viewer, MatchRuntime rt, int faction) {
+        viewer.poll();
+        int tier = -1;
+        for (var p : viewer.capture().of(ClientboundCustomPayloadPacket.class)) {
+            if (p.payload() instanceof MatchStatePayload m
+                    && m.state().matchId() == rt.id().value()
+                    && faction < m.state().looks().size()) {
+                tier = m.state().looks().get(faction).weapon();
+            }
+        }
+        return tier;
+    }
+
+    /** The built-in set whose iron weapons take a second, need no Town and are researched at the barracks. */
+    private static TemplateSet withIronWeaponsAtOnce() {
+        TemplateSet b = TemplateSet.builtin();
+        List<TemplateCompiler.Flat> flats = new ArrayList<>();
+        for (UnitTemplate t : b.all()) {
+            JsonObject json = b.flattened(t.id()).deepCopy();
+            if (t.id().value().equals("strategos:building/barracks")) {
+                json.getAsJsonObject("Researcher").addProperty("techs", "strategos:iron_weapons");
+            }
+            flats.add(new TemplateCompiler.Flat(t.id(), t.netIndex(), json));
+        }
+        List<TemplateCompiler.TechFlat> techs = new ArrayList<>();
+        for (TechDef t : b.techs()) {
+            JsonObject json = t.toJson();
+            if (t.id().value().equals("strategos:iron_weapons")) {
+                json.addProperty("time", 1);
+                json.remove("requires");
+            }
+            techs.add(new TemplateCompiler.TechFlat(t.id(), t.netIndex(), json));
+        }
+        return TemplateCompiler.fromFlattened(flats, techs).set();
     }
 
     /** The built-in set with {@code phase_town} researched in {@code seconds}. */

@@ -3,6 +3,7 @@ package dev.strategos.mod.client;
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.strategos.core.client.look.UnitLook;
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.protocol.FactionLook;
 import dev.strategos.mod.entity.UnitEntity;
 import dev.strategos.mod.entity.UnitSpawnData;
 import net.minecraft.client.Minecraft;
@@ -30,7 +31,8 @@ import net.minecraft.world.phys.Vec3;
  * The unit renderer for the RTS view (UNIT-03, ART-01): the placeholder player model with the wide Steve skin, read from
  * the game's own resources, vanilla's armour and held-item layers, no name tag, an outline in its faction's colour when
  * selected (the body's client glow), out to 192 blocks (the body's render distance). A body is dressed once, on its
- * first frame, in its {@link UnitLook}: the tunic dyed its faction's colour, its role's armour and its rest gear. Far or
+ * first frame, in its {@link UnitLook}: the tunic dyed its faction's colour, its role's armour and its rest gear, and
+ * again when its faction's equipment tiers move (TECH-03). Far or
  * crowded bodies draw without armour and items, and an outline is the body's alone ({@link UnitLod}, M4 T3).
  */
 public final class UnitRenderer extends LivingEntityRenderer<UnitEntity, PlayerModel<UnitEntity>> {
@@ -60,8 +62,10 @@ public final class UnitRenderer extends LivingEntityRenderer<UnitEntity, PlayerM
     @Override
     public void render(
             UnitEntity entity, float yaw, float partialTicks, PoseStack pose, MultiBufferSource buffers, int light) {
-        if (!entity.dressed()) {
-            dress(entity);
+        UnitSpawnData data = entity.spawnData();
+        int tiers = data == null ? 0 : tiers(StrategosClient.looks(data.faction()));
+        if (!entity.dressed() || entity.dressedTiers() != tiers) {
+            dress(entity, tiers);
         }
         Vec3 camera = entityRenderDispatcher.camera.getPosition();
         detailed = StrategosClient.unitLod().detailed(entity.position(), camera);
@@ -112,20 +116,27 @@ public final class UnitRenderer extends LivingEntityRenderer<UnitEntity, PlayerM
     }
 
     /** The body's look, from its template's classes and its faction (ART-01's rules). */
-    private static void dress(UnitEntity entity) {
+    private static void dress(UnitEntity entity, int tiers) {
         UnitSpawnData data = entity.spawnData();
         TemplateSet templates = StrategosClient.templates();
         if (data == null || !templates.has(data.templateIndex())) {
             return;
         }
-        UnitLook look = UnitLook.of(templates.byIndex(data.templateIndex()).classes(), data.faction());
+        UnitLook look = UnitLook.of(
+                templates.byIndex(data.templateIndex()).classes(), data.faction(), tiers & 15, tiers >> 4 & 15);
         entity.dress(
                 item(look.head(), look),
                 item(look.chest(), look),
                 item(look.legs(), look),
                 item(look.feet(), look),
                 item(look.rest(), look),
-                item(look.shield(), look));
+                item(look.shield(), look),
+                tiers);
+    }
+
+    /** A faction's tiers in one number: the weapon low, the armour high. */
+    private static int tiers(FactionLook look) {
+        return look.weapon() | look.armour() << 4;
     }
 
     /** Vanilla item {@code id}: leather dyed the look's colour, a shield with its faction's banner; empty for none. */
