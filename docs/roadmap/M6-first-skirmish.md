@@ -21,8 +21,8 @@ D-24 (c) on 2026-10-21 ([M2's file](M2-command.md#d-24--exploration-in-the-mvp))
 **Done gate** (automated and consent-batch items; plus the cumulative rule):
 1. Every acceptance criterion of the M6 cards passes; `verify`, `verifyClient` (owner-approved
    goldens, with consent or on CI) and `verifyPerf` are green.
-2. QA-12 (L1, 200 fixed seeds per pairing; a 20-seed L3 sample in `verifySoak`): every AI-versus-AI
-   match ends by conquest, with a median length of 20–35 game minutes and none over 45; no
+2. QA-12 (L1, 200 fixed seeds per pairing; a 20-seed L3 sample in `verifySoak`): at least 90% of
+   AI-versus-AI matches end by conquest (the owner, 2026-11-14), with a median length of 20–35 game minutes and none over 45; no
    exception and no stall; each opening (rush, boom, balanced) wins 60–140 of 200 against each
    other opening; Hard beats Normal and Normal beats Easy in at least 124 of 200; neither start of
    MAP-02 wins 121 or more of 200.
@@ -450,12 +450,13 @@ only its own vision at every level except that labelled top level.
 - **In scope:** QA-11 at MVP scale: L1 on 200 fixed seeds per pairing as the gate; a 20-seed L3
   sample in `verifySoak` as a smoke test with no win-rate threshold and a stated wall time;
   pairings of openings (rush, boom, balanced) at equal difficulty and of difficulty levels;
-  pacing (median 20–35 game minutes, every match within 45); telemetry, and a summary of win rates
+  pacing (median 20–35 game minutes, at least 90% of matches by conquest within 45); telemetry, and a summary of win rates
   per start, opening and level.
 - **Out of scope:** the balance matrix across civilisations (QA-16).
 - **Acceptance:**
-  1. Every match ends by conquest within 45 game minutes, with a median of 20–35, no exception and
-     no stall (L1).
+  1. At least 90% of matches end by conquest within 45 game minutes, with a median of 20–35; every
+     match, decided or not, has no exception and no stall (L1). Amended on the owner's word,
+     2026-11-14 (was "every match"; spec row 65).
   2. Each opening wins 60–140 of 200 matches against each other opening (L1).
   3. The summary reports win rates per start, opening and level (L1).
   4. The L3 sample completes, and its journals replay to the same hash (L3).

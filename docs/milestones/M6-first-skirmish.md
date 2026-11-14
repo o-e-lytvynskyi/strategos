@@ -207,6 +207,7 @@ None. The `strategos:ping` payload stays with multiplayer pings (UI-15, M7); UI-
 | 62 | Orders that asked forever (T23) | A unit at an occupied place with a spent path asked for a new one every ~4 ticks; a chaser after a shuffling target re-asked every 5 ticks so no path ever came; a ram oscillating in a pocket short of its burn place never arrived; a melee place round a target could lie inside a building. | A unit within 1.5 blocks of its place with a spent path, asked a moment ago, fails its order once (`PathService`); a chaser keeps its place while a path is asked for (`RangedOrdersTest`); a burn order ends after two arrivals within 1.5 blocks short of its place; melee places and nearest enemies skip building footprints. |
 | 63 | Wood and Town under fog (T23) | Wood trips averaged 48 blocks (food 8): the AI's storehouses were sought only within 40 blocks of the centre; with remote storehouses Town slipped past DifficultyTest's window, and with Town's price reserved it came too early (≈10:00). | `SiteFinder` remote mode (a site within 10 blocks of an explored node up to 120 from the centre; trips 27 blocks); before Town's step at most one remote storehouse, placed only if the stock covers it and Town; rams' price reserved while an arsenal stands and fewer than `rams` (4) exist; **Town's wood 500 → 600** (provenance row, sheet regenerated) — Normal's Town at 10:00–12:06 in DifficultyTest, its window unchanged. |
 | 64 | Matches the AI could not finish (T23.3) | The first full `:core:openingBalance` run ended 268 of 1,000 matches by conquest. Measured on 142 unfinished of a 200-match sample: in 88 a centre fell (median 34.2 min) and the winner's soldiers stood idle (median 19 of 34, none burning) while the loser kept 2 buildings and 3 workers; in 54 no centre fell, though one side held twice the other's soldiers in 30. Burn speed was not the cause (a squad of 4 burns a house in 0.6 min, a centre in 5.9). | `MopUp`: once the enemy centre is seen gone, idle soldiers go in squads of 4 to distinct buildings, the first squad hunts units in sight, the rest sweep the nodes near the enemy start; rams one per building. A wave goes when the army has ≥ 8 soldiers and twice the most enemy soldiers seen in 3 minutes. Both behind the battle knob `finish` (skirmish only; M5's pinned battle unchanged). Sample conquest 28% → 57%, 0 exceptions; no conquest rule or burn number changed. Archer and chaser places outside footprints, a chaser's empty path fails once (each with its test). |
+| 65 | QA-12's conquest bar (T23.3) | "Every match ends by conquest within 45 minutes" leaves no room for an even match between equal AIs; at 57% on the samples it held up the milestone. | The owner, 2026-11-14 («да, согласен, давай так, чтобы закончить это дело не сильно затягивая»): **at least 90% of matches end by conquest**; every match still has no exception and no stall; 200 seeds per pairing and every other criterion unchanged. QA-12.1 and the done gate amended. |
 
 ### 1.7 Consent plan
 
@@ -499,8 +500,8 @@ garrison (BLD-12, M9).
   `HeadlessMatch` gains conquest, a 45-minute limit and its 2-minute stall watchdog. Matches run in
   parallel over the machine's cores, each single-threaded. It writes a JSON and a markdown summary: win rates
   per start, opening and level, median and longest match, per-match telemetry.
-- **It asserts** QA-12's criteria and AI-05.2, MAP-02.4 and AI-18.3: every match ends by conquest within 45
-  minutes, median 20–35; no exception and no stall; each opening 60–140 of 200 against each other; each level
+- **It asserts** QA-12's criteria and AI-05.2, MAP-02.4 and AI-18.3: at least 90% of matches end by conquest
+  within 45 minutes (the owner, 2026-11-14; row 65), median 20–35; no exception and no stall; each opening 60–140 of 200 against each other; each level
   at least 124 against the one below; neither start 121 or more in any pairing.
 - **`aisoak`** (L3): 20 seeds of Normal against Normal on the arena under `/tick sprint`, in `verifySoak`
   (`:mod:runGameTestSoak`), no win-rate threshold; each journal replays to its hash; the wall time stated.
@@ -753,7 +754,7 @@ kernel adds `:core:jmh :core:jmhCompare`.
 | # | Criterion | Evidence |
 |---|---|---|
 | 1 | Every acceptance criterion of the 23 cards passes at its level | §1.4 |
-| 2 | L1, 200 seeds per pairing: every match by conquest within 45 minutes, median 20–35, no exception or stall; each opening 60–140 against each other; each level ≥ 124 against the one below; neither start ≥ 121 | `:core:openingBalance` |
+| 2 | L1, 200 seeds per pairing: ≥ 90% of matches by conquest within 45 minutes (row 65), median 20–35, no exception or stall; each opening 60–140 against each other; each level ≥ 124 against the one below; neither start ≥ 121 | `:core:openingBalance` |
 | 3 | L3: conquest ends the match; save and resume keep the state hash; pause stops the match while the camera and UI work; an enemy outside vision is never paired while a visible control unit is | `matchtests`, `persistencetests`, `fogtests` |
 | 4 | L6: 2 × 150 and 60 buildings, both sides active, 30 game minutes within A–E and G; C p95 ≤ 15.3 ms; the 2× pass C p95 ≤ 50 ms | `perftests.mvp_soak`, `mvp_stress` |
 | 5 | MVP completeness: every card entry has an icon; every MVP blueprint passes its GameTests; the naming and `NOTICE` lint; a provenance note per subsystem | T28 |

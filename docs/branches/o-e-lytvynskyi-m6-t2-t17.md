@@ -72,6 +72,7 @@ Newest first; one entry per session in the worklog's shape. Before 2026-11-14: d
 - 2026-11-14 · The released `dyadik-m6-t2-t17.md` keeps dyadik's log from 7f08f40 with `main`'s released header and note (the merge's resolution) — undo: take `main`'s version of that file.
 - 2026-11-14 · Town's wood cost 500 → 600 (spec row 63): with storehouses and Town's price reserved, Normal reached Town near 10:00, below the 12:00 target; 600 puts it at 10:00–12:06 inside DifficultyTest's unchanged window. Undo: `phase_town.json`, `BuiltinTemplates`, its provenance row.
 - 2026-11-14 · A net-progress backstop beside the stuck ladder (spec row 61), saved and hashed; five goldens re-recorded (walking_skeleton and canary keep every checkpoint hash), one line in REBASELINE.md. Undo: revert the T23 round-6 commit.
+- 2026-11-14 · QA-12.1 amended on the owner's word in this session («да, согласен, давай так, чтобы закончить это дело не сильно затягивая»): ≥ 90% of matches by conquest within 45 minutes instead of every match; no exception and no stall in any match; 200 seeds per pairing kept (spec row 65). Undo: restore "every match" in QA-12.1, the done gate and spec §2.21/§8.
 
 ## Pitfalls
 
