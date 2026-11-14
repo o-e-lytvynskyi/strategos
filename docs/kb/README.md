@@ -11,7 +11,7 @@ written in the same session, into the file of its area (a branch does it on the 
 | Question | File |
 |---|---|
 | Versions and toolchain, server config, block batches, chunk unloading, Brigadier roots and `word()` against `=`, protecting blocks with events (where cancelling does not work), licences | [minecraft-mod.md](minecraft-mod.md) |
-| Build: sources jar, Spotless, the dev runtime, MDG, the Spotless/compile race, `:mod:test` as a server, ErrorProne, `build/` in `.gitignore` and a package named `build` | [minecraft-mod-build.md](minecraft-mod-build.md) |
+| Build: sources jar, Spotless, the dev runtime, MDG, the Spotless/compile race, `:mod:test` as a server, ErrorProne, `build/` in `.gitignore` and a package named `build`, two worktrees and one smoke port | [minecraft-mod-build.md](minecraft-mod-build.md) |
 | Save/reload: stable template identities, legacy custom indices, atomic reload guards and terminal lifecycle | [save-reload-identities.md](save-reload-identities.md) |
 | Data: SavedData, an unreadable file, the IO worker, DFU, a reload listener at start-up, test datapacks with errors, a data map without `synced` is invisible to the client, the 16-field limit of `RecordCodecBuilder`, finding a mismatch after loading | [minecraft-mod-data.md](minecraft-mod-data.md) |
 | GameTest and measurements: verdict from the report, shared per-tick budgets (wait, no fixed delay), retries, chunks, tickets, mass generation, CPU load, blocks next to a moving unit, tick pacing for measurements, work in Post outside MSPT, a batch without its after-batch hook, fog pairing within the tracking range | [minecraft-mod-gametest.md](minecraft-mod-gametest.md) |
