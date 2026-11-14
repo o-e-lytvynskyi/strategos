@@ -377,6 +377,70 @@ class WireCodecSizeTest {
     }
 
     @Test
+    void aFactionStateWithResearchRoundTripsWithinItsCap() {
+        List<Long> amounts = new ArrayList<>();
+        List<Integer> workers = new ArrayList<>();
+        for (int r = 0; r < FactionState.MAX_RESOURCES; r++) {
+            amounts.add(Long.MAX_VALUE - r);
+            workers.add(Integer.MAX_VALUE - r);
+        }
+        List<Integer> researched = new ArrayList<>();
+        for (int k = 0; k < FactionState.MAX_RESEARCHED; k++) {
+            researched.add(Integer.MAX_VALUE - k); // the widest varints
+        }
+        FactionState widest = new FactionState(
+                Integer.MAX_VALUE,
+                7,
+                Long.MAX_VALUE,
+                amounts,
+                amounts,
+                amounts,
+                150,
+                200,
+                99,
+                workers,
+                researched,
+                255);
+        assertThat(size(FactionState.WIRE, widest)).isLessThanOrEqualTo(FactionState.WIRE.maxSize());
+        assertThat(roundTrip(FactionState.WIRE, widest)).isEqualTo(widest);
+
+        FactionState some = new FactionState(
+                1, 0, 400, List.of(1L), List.of(0L), List.of(0L), 5, 20, 0, List.of(0), List.of(3, 0, 12), 1);
+        assertThat(roundTrip(FactionState.WIRE, some)).isEqualTo(some);
+        assertThat(roundTrip(FactionState.WIRE, some).researched())
+                .as("in the order researched")
+                .containsExactly(3, 0, 12);
+        assertThat(some.sameAs(
+                        new FactionState(1, 0, 999, List.of(1L), List.of(0L), List.of(0L), 5, 20, 0, List.of(0))))
+                .as("research and phase count as a change")
+                .isFalse();
+    }
+
+    @Test
+    void aFactionStateWithoutResearchKeepsTheOldFieldsAndAddsTwoBytes() {
+        FactionState old =
+                new FactionState(1, 0, 400, List.of(300_000L), List.of(0L), List.of(0L), 5, 20, 0, List.of(0));
+        assertThat(old.researched()).isEmpty();
+        assertThat(old.phase()).isZero();
+        byte[] bytes = WireCodec.encode(FactionState.WIRE, old);
+        // the old layout ends with idle workers; research is a zero count then phase 0
+        assertThat(bytes[bytes.length - 2]).as("no techs").isZero();
+        assertThat(bytes[bytes.length - 1]).as("phase 0").isZero();
+        assertThat(WireCodec.decode(FactionState.WIRE, bytes)).isEqualTo(old);
+
+        List<Integer> many = new ArrayList<>();
+        for (int k = 0; k <= FactionState.MAX_RESEARCHED; k++) {
+            many.add(k);
+        }
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> new FactionState(
+                        1, 0, 400, List.of(1L), List.of(0L), List.of(0L), 5, 20, 0, List.of(0), many, 0))
+                .isInstanceOf(IllegalArgumentException.class);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> new FactionState(
+                        1, 0, 400, List.of(1L), List.of(0L), List.of(0L), 5, 20, 0, List.of(0), List.of(), 256))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
     void aRefusalForWantOfResourcesCarriesTheMissingAmounts() {
         List<Long> missing = new ArrayList<>();
         for (int r = 0; r < Feedback.MAX_MISSING; r++) {

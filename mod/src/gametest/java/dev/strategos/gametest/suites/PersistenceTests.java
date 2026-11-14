@@ -287,6 +287,68 @@ public final class PersistenceTests {
                 .thenSucceed();
     }
 
+    /**
+     * UI-13.2: a research under way is saved, the match unloaded and restored; the entry is still queued at the
+     * progress it had, then completes and the tech is researched, as the replicated faction state reports it.
+     */
+    @StrategosTest(timeoutTicks = 1_500)
+    public static void researchProgressSurvivesSaveAndLoad(GameTestHelper h) {
+        MatchRegistry registry = StrategosServer.get().matches();
+        MatchRuntime rt = MatchFixture.create(
+                h, MatchFixture.options(SimHarness.DEFAULT_SEED, h).withPersistent(true));
+        dev.strategos.core.shared.TemplateId storehouse =
+                new dev.strategos.core.shared.TemplateId("strategos:building/storehouse");
+        dev.strategos.core.shared.TechId wood1 = new dev.strategos.core.shared.TechId("strategos:gather_wood_1");
+        dev.strategos.core.shared.FactionSlot f0 = new dev.strategos.core.shared.FactionSlot(0);
+        rt.submit(PlayerSlot.ADMIN, new dev.strategos.core.protocol.SpawnBuilding(storehouse, f0, 4, 4, 0));
+        rt.submit(PlayerSlot.ADMIN, new dev.strategos.core.protocol.Grant(f0, "food", 500));
+        rt.submit(PlayerSlot.ADMIN, new dev.strategos.core.protocol.Grant(f0, "wood", 500));
+        var state = new Object() {
+            MatchRuntime back;
+            long progress;
+        };
+        java.util.function.Function<MatchRuntime, dev.strategos.core.sim.build.BuildingView> shed =
+                m -> core(m).queries().buildings().stream()
+                        .filter(b -> b.template().equals(storehouse))
+                        .findFirst()
+                        .orElse(null);
+        h.startSequence()
+                .thenWaitUntil(() -> check(shed.apply(rt) != null, "no storehouse yet"))
+                .thenExecute(() -> rt.submit(
+                        new PlayerSlot(0),
+                        new dev.strategos.core.protocol.Research(shed.apply(rt).handle(), wood1)))
+                .thenWaitUntil(() -> check(
+                        shed.apply(rt).queue().size() == 1 && shed.apply(rt).trained() > 0,
+                        "the research has not begun"))
+                .thenExecuteAfter(40, () -> {
+                    check(core(rt).queries().researched(f0).isEmpty(), "researched before its time");
+                    state.progress = shed.apply(rt).trained();
+                    check(state.progress > 0 && state.progress < 1_000, "progress " + state.progress);
+                    MatchData data = rt.data();
+                    MatchRecord record = registry.record(rt.id());
+                    check(data != null && record != null, "the persistent match has no blob or record");
+                    CompoundTag tag = data.save(new CompoundTag(), h.getLevel().registryAccess());
+                    registry.unload(rt.id());
+                    state.back = registry.restore(h.getLevel(), record, MatchData.load(rt.id(), tag));
+                    var entry = shed.apply(state.back);
+                    check(entry != null && entry.queue().size() == 1, "the queued research is gone after restore");
+                    check(
+                            dev.strategos.core.shared.QueueEntry.isTech(
+                                    entry.queue().get(0)),
+                            "the entry is not a tech");
+                    check(
+                            entry.trained() >= state.progress - 50 && entry.trained() <= state.progress + 50,
+                            "progress " + state.progress + " became " + entry.trained());
+                    check(core(state.back).queries().researched(f0).isEmpty(), "researched by the restore");
+                    registry.resume(state.back.id());
+                })
+                .thenWaitUntil(() -> check(
+                        core(state.back).queries().researched(f0).contains(wood1),
+                        "the research did not complete after the restore"))
+                .thenExecute(() -> check(shed.apply(state.back).queue().isEmpty(), "the entry stayed in the queue"))
+                .thenSucceed();
+    }
+
     private static final dev.strategos.core.shared.TemplateId HOUSE =
             new dev.strategos.core.shared.TemplateId("strategos:building/house");
     private static final dev.strategos.core.shared.TemplateId CIVIC_CENTRE =

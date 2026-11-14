@@ -242,7 +242,6 @@ class CommandCardTest {
     void theStanceTheWholeSelectionSharesIsShownActive() {
         ClientMatchModel model = model(faction(0, 0));
         int spearman = index("strategos:unit/infantry");
-        CardController controller = new CardController();
         assertThat(CardController.stanceOf(T, spearman, null))
                 .as("its template's")
                 .isEqualTo(Stance.AGGRESSIVE);
