@@ -9,6 +9,8 @@ import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.UnitView;
 import dev.strategos.core.sim.build.BuildingView;
+import dev.strategos.core.sim.econ.NodeView;
+import dev.strategos.core.sim.nav.MaterialKind;
 import java.util.ArrayList;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
@@ -276,6 +278,33 @@ final class Tactics {
         }
     }
 
+    /** The most resource nodes a sweep visits before it starts over, and how far from the enemy's start they lie. */
+    static final int SWEEP_NODES = 40;
+
+    static final double SWEEP_REACH = 160;
+
+    /**
+     * The live nodes within {@value #SWEEP_REACH} blocks of the enemy's start that a worker could be gathering at,
+     * the nearest to it first, at most {@value #SWEEP_NODES}: where a sweep looks for what is left of the enemy.
+     */
+    private static List<NodeView> sweepNodes(AiView view, Base base) {
+        List<NodeView> out = new ArrayList<>();
+        for (NodeView n : view.nodes()) {
+            if (n.amount() > 0
+                    && n.kind() != MaterialKind.CROP
+                    && n.kind() != MaterialKind.CARCASS
+                    && DetMath.length(n.anchorX() - base.enemyX(), n.anchorZ() - base.enemyZ()) <= SWEEP_REACH) {
+                out.add(n);
+            }
+        }
+        out.sort((a, b) -> {
+            double da = DetMath.length(a.anchorX() - base.enemyX(), a.anchorZ() - base.enemyZ());
+            double db = DetMath.length(b.anchorX() - base.enemyX(), b.anchorZ() - base.enemyZ());
+            return da != db ? Double.compare(da, db) : Integer.compare(a.id(), b.id());
+        });
+        return out.size() > SWEEP_NODES ? new ArrayList<>(out.subList(0, SWEEP_NODES)) : out;
+    }
+
     /** The eight directions of a sweep's waypoints, as (x, z) of a unit vector: east, then round by 45 degrees. */
     private static Vec2d compass(int k) {
         double r = 0.7071;
@@ -322,10 +351,19 @@ final class Tactics {
             return true;
         }
         long k = memory.get(Slots.SWEEP);
-        Vec2d dir = compass((int) (k % 8));
-        double radius = RING * (1 + (k / 8) % 3);
-        double x = Math.max(4, Math.min(view.bounds().sizeX() - 4, base.enemyX() + dir.x() * radius));
-        double z = Math.max(4, Math.min(view.bounds().sizeZ() - 4, base.enemyZ() + dir.z() * radius));
+        double x;
+        double z;
+        List<NodeView> places = sweepNodes(view, base);
+        if (places.isEmpty()) {
+            Vec2d dir = compass((int) (k % 8));
+            double radius = RING * (1 + (k / 8) % 3);
+            x = Math.max(4, Math.min(view.bounds().sizeX() - 4, base.enemyX() + dir.x() * radius));
+            z = Math.max(4, Math.min(view.bounds().sizeZ() - 4, base.enemyZ() + dir.z() * radius));
+        } else { // the enemy's last workers are at a resource: the nearest of them first, then on
+            NodeView n = places.get((int) (k % places.size()));
+            x = n.anchorX();
+            z = n.anchorZ();
+        }
         memory.set(Slots.SWEEP, k + 1);
         budget.spend(10);
         sink.send(AttackMove.replace(

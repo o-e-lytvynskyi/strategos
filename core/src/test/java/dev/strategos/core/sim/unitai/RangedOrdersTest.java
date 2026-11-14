@@ -166,6 +166,31 @@ class RangedOrdersTest {
                 .isTrue();
     }
 
+    /**
+     * QA-12: a chaser whose target shuffles moved its place on every think, and each move asked for a new path before the
+     * last was answered, so no path ever came and it stood WALKING. While a path is asked for the place stays.
+     */
+    @Test
+    void aChaserKeepsItsPlaceWhileAPathIsAskedFor() {
+        SimHarness h = harness(8, 1, 20, 0);
+        int ranger = spawn(h, RANGER, F0, 5.5, 10.5);
+        int dummy = spawn(h, DUMMY, F1, 40.5, 10.5);
+        MatchState s = KernelAccess.state(h.core());
+        int i = Handle.index(ranger);
+        h.submit(new PlayerSlot(0), Attack.replace(UnitSet.of(ranger), dummy));
+        h.runTicks(6);
+        double place = s.orders().targetX(i);
+        s.paths().awaiting(i, 9_999, h.tick()); // its request is out, and stays out
+        s.motion().set(Handle.index(dummy), 30.5, 1, 10.5, 0); // the target steps 10 blocks aside
+        h.runTicks(12);
+        assertThat(s.orders().targetX(i))
+                .as("the place while the path is awaited")
+                .isEqualTo(place);
+        s.paths().clear(i);
+        h.runTicks(12);
+        assertThat(s.orders().targetX(i)).as("the place once it is not").isLessThan(place);
+    }
+
     @Test
     void switchingFromMeleeToRangedRetakesSlotAndFullRangedWindup() {
         SimHarness h = harness(12, 6, 20, 0);

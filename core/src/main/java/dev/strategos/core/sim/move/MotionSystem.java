@@ -81,6 +81,7 @@ public final class MotionSystem implements MatchSystem {
     static final double SNAP_TOLERANCE = 1e-6;
 
     static final double ADVANCE_WITHIN = 0.5;
+
     static final double SHALLOW = 0.5;
     static final double SLOW = 0.6;
     static final double FALL = 0.5;
@@ -187,7 +188,11 @@ public final class MotionSystem implements MatchSystem {
             }
         }
         for (int i = 0; i < highWater; i++) { // move
-            if (!entities.aliveAt(i) || mode[i] == HIDDEN) {
+            if (!entities.aliveAt(i)) {
+                continue;
+            }
+            if (mode[i] == HIDDEN) {
+                clearNet(s, i);
                 continue;
             }
             switch (mode[i]) {
@@ -196,9 +201,13 @@ public final class MotionSystem implements MatchSystem {
                     if (s.paths().status(i) == PathStatus.NO_PATH) {
                         arrive(s, i, entities.handleAt(i)); // nowhere nearer to go
                     }
+                    ladder.net(s, i, entities.handleAt(i)); // QA-12: it walks, in the state's eyes, all the same
                     settle(s, i); // a spent partial path: the next request pass asks again
                 }
-                default -> settle(s, i);
+                default -> {
+                    clearNet(s, i);
+                    settle(s, i);
+                }
             }
         }
     }
@@ -318,8 +327,10 @@ public final class MotionSystem implements MatchSystem {
         }
         double speed = s.stats().walkSpeed(i) * speedFactor(s, i);
         boolean detour = motion.detourTicks(i) > 0; // the stuck ladder's walk to a free spot, steered instead
-        double sx = detour ? motion.detourX(i) : tx;
-        double sz = detour ? motion.detourZ(i) : tz;
+        double[] back = !detour && following ? backToCorner(s, i, path, cursor, x0, z0, tx, tz) : null;
+        boolean redirected = detour || back != null;
+        double sx = detour ? motion.detourX(i) : back != null ? back[0] : tx;
+        double sz = detour ? motion.detourZ(i) : back != null ? back[1] : tz;
         double dx = sx - x0;
         double dz = sz - z0;
         double d = DetMath.length(dx, dz);
@@ -328,12 +339,19 @@ public final class MotionSystem implements MatchSystem {
         double nz = lands ? sz : z0 + dz / d * speed;
         mode[i] = WALKING;
         avoiding[i] = false;
-        flags[i] = detour ? DETOUR : (byte) ((lands ? LANDS : 0) | (following ? FOLLOWING : 0) | (last ? LAST : 0));
+        flags[i] = redirected ? DETOUR : (byte) ((lands ? LANDS : 0) | (following ? FOLLOWING : 0) | (last ? LAST : 0));
         aimX[i] = tx;
         aimZ[i] = tz;
         endX[i] = nx;
         endZ[i] = nz;
         this.speed[i] = speed;
+    }
+
+    /** A unit that does not walk has no net-progress count (QA-12). */
+    private static void clearNet(MatchState s, int i) {
+        if (s.motion().net(i) != 0) {
+            s.motion().setNet(i, 0, 0, 0);
+        }
     }
 
     /** The planning pass for a unit that does not walk: every {@value #IDLE_EVERY} ticks it plans to stand still. */
@@ -390,6 +408,7 @@ public final class MotionSystem implements MatchSystem {
             }
         } else {
             ladder.climb(s, i, handle); // a nudge displaces it
+            ladder.net(s, i, handle);
         }
         if (moved || motion.x(i) != x || motion.z(i) != z || motion.y(i) != startY[i] || yaw != yaw0) {
             s.frame().add(handle, motion.x(i), motion.y(i), motion.z(i), yaw, STANDING);
@@ -751,6 +770,46 @@ public final class MotionSystem implements MatchSystem {
             case Surface.SLOW -> SLOW;
             default -> 1;
         };
+    }
+
+    /** How near a waypoint it has just passed a unit's leg on is checked for being clear, blocks. */
+    static final double CORNER = 3;
+
+    /** A unit this near the line of its leg is on it: it steers on, clear leg or not. */
+    static final double OFF_LEG = 0.25;
+
+    /**
+     * QA-12: just past a waypoint, the straight leg from where the unit now stands to the next one may cross the corner
+     * of what the path was routed through (a one-block ramp beside a cliff: the unit passed the turn half a block off
+     * its centre, slid along the cliff and walked back to the turn, again and again). While the leg is not clear the
+     * unit steers to the passed waypoint's centre; the centre of a waypoint on the path is clear by construction, and
+     * on flat ground every leg is, so nothing changes there. Checked only within {@value #CORNER} blocks of the passed
+     * waypoint, where the corner is. Null while the leg is clear.
+     */
+    private static double @org.jspecify.annotations.Nullable [] backToCorner(
+            MatchState s, int i, PathStore.Waypoints path, int cursor, double x, double z, double tx, double tz) {
+        if (cursor < 1 || cursor >= path.count()) {
+            return null;
+        }
+        double px = path.x(cursor - 1);
+        double pz = path.z(cursor - 1);
+        double away = DetMath.length(x - px, z - pz);
+        double legX = tx - px;
+        double legZ = tz - pz;
+        double leg = DetMath.length(legX, legZ);
+        double lateral = leg == 0 ? 0 : Math.abs(legX * (z - pz) - legZ * (x - px)) / leg;
+        if (away > CORNER || lateral <= OFF_LEG || inLine(s, i, tx, tz)) {
+            return null; // on its leg: an unclear leg is the path's own, and it goes on as before
+        }
+        // going back helps only if the leg is clear from the corner's centre: else the unit would go to and fro
+        SurfaceGrid grid = s.surfacesFor(i);
+        int cx = (int) Math.floor(px);
+        int cz = (int) Math.floor(pz);
+        int layer = layerOf(grid, cx, cz, path.floor(cursor - 1));
+        if (layer < 0 || LineOfWalk.walk(grid, grid.node(cx, cz, layer), px, pz, tx, tz) < 0) {
+            return null;
+        }
+        return new double[] {px, pz};
     }
 
     /** Whether unit {@code i} can walk straight from where it stands to (tx, tz). */

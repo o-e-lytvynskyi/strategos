@@ -3,7 +3,7 @@
   "icon": "minecraft:bell",
   "classes": ["Phase"],
   "ordinal": 1,
-  "cost": { "food": 500, "wood": 500, "stone": 300, "iron": 200 },
+  "cost": { "food": 500, "wood": 600, "stone": 300, "iron": 200 },
   "time": 60,
   "requires": { "buildings": { "filter": "Village", "count": 5 } },
   "effects": [

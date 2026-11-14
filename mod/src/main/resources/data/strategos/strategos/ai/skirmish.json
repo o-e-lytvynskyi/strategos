@@ -86,7 +86,7 @@
     "launch": 0.6,
     "spears": 6,
     "line": 400,
-    "rams": 2
+    "rams": 4
   },
   "camp": {
     "minDistance": 40

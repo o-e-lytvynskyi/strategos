@@ -60,6 +60,12 @@ final class ProductionManager implements AiModule {
             }
         }
         BuildManager.Due due = BuildManager.due(view, script, memory);
+        boolean ramWanted = false; // a ram is wanted and an arsenal stands: soldiers leave its price in the stock
+        if (battle.rams() > 0 && rams < battle.rams()) {
+            for (BuildingView b : view.buildings()) {
+                ramWanted |= b.state() == 2 && view.trains(b.template(), RAM);
+            }
+        }
         for (BuildingView b : view.buildings()) {
             if (budget.exhausted()) {
                 return;
@@ -95,7 +101,8 @@ final class ProductionManager implements AiModule {
                 if (unit != null
                         && view.trains(b.template(), unit)
                         && view.affords(unit)
-                        && (due == null || affordsBoth(view, unit, due))) { // AI-02: the build order first
+                        && (due == null || affordsBoth(view, unit, due)) // AI-02: the build order first
+                        && (!ramWanted || affordsBoth(view, unit, RAM))) { // QA-12: the rams' price is kept
                     budget.spend(10);
                     have[
                             view.roleOf(java.util.Objects.requireNonNull(
@@ -111,6 +118,15 @@ final class ProductionManager implements AiModule {
     static final TemplateId RAM = new TemplateId("strategos:unit/ram");
 
     /** Whether the stock covers {@code a}'s cost and what is due's together. */
+    private static boolean affordsBoth(AiView view, TemplateId a, TemplateId b) {
+        for (String r : view.resources()) {
+            if (view.stock(r) < view.cost(a, r) + view.cost(b, r)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private static boolean affordsBoth(AiView view, TemplateId a, BuildManager.Due due) {
         for (String r : view.resources()) {
             if (view.stock(r) < view.cost(a, r) + due.cost(view, r)) {

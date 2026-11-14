@@ -103,6 +103,13 @@ final class Burning {
         return DetMath.length(m.x(i) - orders.targetX(i), m.z(i) - orders.targetZ(i)) <= Constructing.BUILD_REACH;
     }
 
+    /** An arrival short of the place within this of the last one is on the same spot: blocks. */
+    static final double AGAIN = 1.5;
+
+    // an arrival short of the place twice on one spot ends the order (QA-12): a ram walled into the pocket its arsenal
+    // stands in was answered a path to its own cell and asked again, every few ticks, for good; the spot is packed, in
+    // eighths of a block, in the state's second data word
+
     /** How far from a wall the body of a large unit may stop and still strike it: blocks past its radius. */
     static final double WALL_REACH = 1.0;
 
@@ -134,7 +141,16 @@ final class Burning {
         if (d <= Constructing.BUILD_REACH) {
             ctx.go(UnitAi.BURNING);
         } else {
-            s.bus().publish(new PlaceMoved(ctx.handle()));
+            int here = ((int) (s.motion().x(i) * 8) << 16) | (int) (s.motion().z(i) * 8);
+            double lastX = (ctx.data1() >>> 16) / 8.0;
+            double lastZ = (ctx.data1() & 0xFFFF) / 8.0;
+            if (ctx.data1() != 0
+                    && DetMath.length(s.motion().x(i) - lastX, s.motion().z(i) - lastZ) < AGAIN) {
+                UnitAi.finishOrder(ctx, true); // arrived again where it arrived last: the way gets no nearer
+            } else {
+                ctx.setData(ctx.data0(), here);
+                s.bus().publish(new PlaceMoved(ctx.handle()));
+            }
         }
     }
 

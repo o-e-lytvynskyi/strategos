@@ -245,6 +245,11 @@ public final class StateHasher {
             h = Hasher.mix(h, motion.detourTicks(i));
             h = Hasher.mix(h, motion.ghostTicks(i));
         }
+        if (motion.net(i) != 0) { // QA-12's backstop, only while a unit walks: standing units hash as they did
+            h = Hasher.mix(h, Double.doubleToLongBits(motion.netX(i)));
+            h = Hasher.mix(h, Double.doubleToLongBits(motion.netZ(i)));
+            h = Hasher.mix(h, motion.net(i));
+        }
         return h;
     }
 

@@ -164,7 +164,7 @@ class PhaseTest {
                 this(name, houses, foundations, others, 0, 0, stock, outcome, reason);
             }
         }
-        List<Long> enough = List.of(500L, 500L, 300L, 200L);
+        List<Long> enough = List.of(500L, 600L, 300L, 200L);
         List<Row> rows = new ArrayList<>();
         for (int n = 0; n <= 5; n++) {
             rows.add(new Row(
@@ -196,7 +196,7 @@ class PhaseTest {
                 5,
                 0,
                 0,
-                List.of(499L, 500L, 300L, 200L),
+                List.of(499L, 600L, 300L, 200L),
                 CommandOutcome.REJECTED,
                 RejectReason.NOT_ENOUGH_RESOURCES));
         rows.add(new Row(
@@ -204,7 +204,7 @@ class PhaseTest {
                 5,
                 0,
                 0,
-                List.of(500L, 499L, 300L, 200L),
+                List.of(500L, 599L, 300L, 200L),
                 CommandOutcome.REJECTED,
                 RejectReason.NOT_ENOUGH_RESOURCES));
         rows.add(new Row(
@@ -212,7 +212,7 @@ class PhaseTest {
                 5,
                 0,
                 0,
-                List.of(500L, 500L, 299L, 200L),
+                List.of(500L, 600L, 299L, 200L),
                 CommandOutcome.REJECTED,
                 RejectReason.NOT_ENOUGH_RESOURCES));
         rows.add(new Row(
@@ -220,7 +220,7 @@ class PhaseTest {
                 5,
                 0,
                 0,
-                List.of(500L, 500L, 300L, 199L),
+                List.of(500L, 600L, 300L, 199L),
                 CommandOutcome.REJECTED,
                 RejectReason.NOT_ENOUGH_RESOURCES));
         for (Row row : rows) {
@@ -273,7 +273,7 @@ class PhaseTest {
         assertThat(town.cost().getOrDefault("stone", 0.0) + town.cost().getOrDefault("iron", 0.0))
                 .as("Town's cost holds stone or iron")
                 .isPositive();
-        assertThat(town.cost()).containsEntry("food", 500.0).containsEntry("wood", 500.0);
+        assertThat(town.cost()).containsEntry("food", 500.0).containsEntry("wood", 600.0);
         assertThat(town.ticks()).isEqualTo(1_200);
         assertThat(town.ordinal()).isEqualTo(1);
     }

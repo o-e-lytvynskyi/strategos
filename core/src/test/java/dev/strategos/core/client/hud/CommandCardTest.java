@@ -115,7 +115,7 @@ class CommandCardTest {
                                 CommandCard.Kind.RESEARCH,
                                 1,
                                 PHASE_TOWN,
-                                List.of(500_000L, 500_000L, 300_000L, 200_000L),
+                                List.of(500_000L, 600_000L, 300_000L, 200_000L),
                                 false,
                                 false,
                                 "Needs 5 Village (0)"),

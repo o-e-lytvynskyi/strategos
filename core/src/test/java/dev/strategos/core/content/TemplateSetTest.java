@@ -186,10 +186,11 @@ class TemplateSetTest {
     // horseman's set (UNIT-06, UNIT-07); the barracks trains the roster, spearman, archer and horseman (AI-03); M6
     // T2.1: the storehouse's Researcher and the tech gather_wood_1 (TECH-01); M6 T3: the phases, the class Village, the
     // civic centre's Researcher; M6 T20: the defence tower (BLD-17) and its blueprint; M6
-    // T19: the worker's build list, Town's additions to it, the arsenal and the ram (CMB-09). Rebaselined after merging
+    // T19: the worker's build list, Town's additions to it, the arsenal and the ram (CMB-09); M6 T23: Town costs 600
+    // wood, not 500 (QA-12's tuning). Rebaselined after merging
     // M5
     // combat content into BuiltinTemplates.
-    private static final String BUILTIN_VERSION = "a421c20e378643c11e2ab5027bcc9bfc88ba7000beac12caff1900150ff9c879";
+    private static final String BUILTIN_VERSION = "db8065cdf14e6f0806e44fe3d9f179b6a956ac0b40072e7ede2728caec2fa21d";
 
     private static TemplateSet set(UnitTemplate template) {
         return new TemplateSet(List.of(template));

@@ -70,6 +70,8 @@ Newest first; one entry per session in the worklog's shape. Before 2026-11-14: d
 - 2026-11-14 · Trace-table test names replaced by the tests' real names (spec §1.4 rows for MATCH-02, UI-20, UI-21, UI-14) — the planned names were intents, one check became several tests — undo: rename the tests.
 - 2026-11-14 · MATCH-02 check 2 is split between a GameTest and the arena smoke (row 47) — a GameTest world has no arena slots — undo: an arena GameTest harness.
 - 2026-11-14 · The released `dyadik-m6-t2-t17.md` keeps dyadik's log from 7f08f40 with `main`'s released header and note (the merge's resolution) — undo: take `main`'s version of that file.
+- 2026-11-14 · Town's wood cost 500 → 600 (spec row 63): with storehouses and Town's price reserved, Normal reached Town near 10:00, below the 12:00 target; 600 puts it at 10:00–12:06 inside DifficultyTest's unchanged window. Undo: `phase_town.json`, `BuiltinTemplates`, its provenance row.
+- 2026-11-14 · A net-progress backstop beside the stuck ladder (spec row 61), saved and hashed; five goldens re-recorded (walking_skeleton and canary keep every checkpoint hash), one line in REBASELINE.md. Undo: revert the T23 round-6 commit.
 
 ## Pitfalls
 

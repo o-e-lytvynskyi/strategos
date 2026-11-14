@@ -3,8 +3,10 @@ package dev.strategos.core.sim.nav;
 import dev.strategos.core.diag.RingHistogram;
 import dev.strategos.core.port.Clock;
 import dev.strategos.core.port.JobExecutor;
+import dev.strategos.core.protocol.NoticeKind;
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.DetMath;
+import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.sim.Arrived;
 import dev.strategos.core.sim.EntityStore;
@@ -14,12 +16,14 @@ import dev.strategos.core.sim.MatchRules;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.MatchSystem;
 import dev.strategos.core.sim.MotionStore;
+import dev.strategos.core.sim.Notice;
 import dev.strategos.core.sim.OrderReceived;
 import dev.strategos.core.sim.PathDelivered;
 import dev.strategos.core.sim.PathInvalidated;
 import dev.strategos.core.sim.Phase;
 import dev.strategos.core.sim.PlaceMoved;
 import dev.strategos.core.sim.StopOrdered;
+import dev.strategos.core.sim.Stuck;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.order.OrderQueues;
@@ -344,6 +348,10 @@ public final class PathService {
             if (paths.request(i) == 0) {
                 PathStore.Waypoints w = paths.path(i);
                 int cursor = paths.cursor(i);
+                if (cursor >= w.count() && paths.status(i) != PathStatus.NO_PATH && settled(s, i, tick)) {
+                    failSettled(s, i);
+                    continue;
+                }
                 if ((w.truncated() && cursor >= REASK_AT)
                         || (cursor >= w.count() && paths.status(i) != PathStatus.NO_PATH)) {
                     request(s, i, true);
@@ -361,6 +369,39 @@ public final class PathService {
         for (Map.Entry<Long, IntList> group : groups.entrySet()) {
             groupRequest(s, orders.group(group.getValue().getInt(0)), group.getValue());
         }
+    }
+
+    /**
+     * QA-12: a unit that stands within {@value #SETTLED_WITHIN} blocks of its place, its path spent, and asked for one a
+     * moment ago, is not helped by another: the place is taken (the path to it was empty, the unit is as near as it
+     * gets), and asking again, every few ticks, never ended.
+     */
+    private static boolean settled(MatchState s, int i, long tick) {
+        long last = s.paths().lastRequest(i);
+        return s.orders().kind(i) != OrderKind.BURN // a burner within reach of its place burns (Burning)
+                && last != PathStore.NEVER
+                && tick - last <= SETTLED_AFTER
+                && DetMath.length(
+                                s.motion().x(i) - s.orders().targetX(i),
+                                s.motion().z(i) - s.orders().targetZ(i))
+                        <= SETTLED_WITHIN;
+    }
+
+    private static final double SETTLED_WITHIN = 1.5;
+    private static final long SETTLED_AFTER = 8;
+
+    /** Its order fails once, as the stuck ladder's last rung fails one. */
+    private static void failSettled(MatchState s, int i) {
+        int handle = s.entities().handleAt(i);
+        s.countRung(Stuck.GIVE_UP);
+        s.outputs()
+                .add(new Notice(
+                        new FactionSlot(s.identity().faction(i)),
+                        NoticeKind.STUCK,
+                        handle,
+                        "no way nearer its place; the order failed"));
+        s.bus().publish(new Stuck(handle, Stuck.GIVE_UP));
+        s.paths().decided(i, s.tick()); // not asked for again at once
     }
 
     /**

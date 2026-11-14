@@ -63,4 +63,27 @@ final class FogEconomyTest {
                 .summary();
         assertThat(s.failure()).contains("no state change");
     }
+
+    /**
+     * QA-12: boom against balanced, seed 9, first skirmish map: a ram trained inside the walled pocket of its arsenal
+     * was ordered to burn a building 280 blocks off; its path ended on its own cell, it arrived there and asked again,
+     * every few ticks, WALKING without progress from tick 24,964 on. The order must fail and the match go on.
+     */
+    @Test
+    void aRamWalledInByItsArsenalFailsItsOrder() {
+        String skirmish = HeadlessMatch.read("ai/skirmish.json");
+        String boom = Levels.resolve(skirmish, "normal", "boom");
+        String balanced = Levels.resolve(skirmish, "normal", "balanced");
+        HeadlessMatch.Summary s = HeadlessMatch.run(
+                        HeadlessMatch.Ground.firstSkirmish(),
+                        DifficultyTest.firstSkirmish(),
+                        9,
+                        26_000,
+                        List.of(balanced, boom),
+                        (h, out) -> {},
+                        false,
+                        HeadlessMatch.FOGGED)
+                .summary();
+        assertThat(s.failure()).isEmpty();
+    }
 }

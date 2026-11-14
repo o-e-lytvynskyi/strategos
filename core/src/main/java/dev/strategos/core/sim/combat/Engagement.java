@@ -77,6 +77,17 @@ public final class Engagement {
         return 2 * Math.PI * ((place - first) + (k % 2) * 0.5) / n;
     }
 
+    /** Whether (x, z) lies on a building's footprint: no attacker can stand there (QA-12). */
+    private static boolean inBuilding(MatchState s, double x, double z) {
+        int cx = (int) Math.floor(x);
+        int cz = (int) Math.floor(z);
+        return cx >= 0
+                && cz >= 0
+                && cx < s.config().bounds().sizeX()
+                && cz < s.config().bounds().sizeZ()
+                && s.footprintAt(cx, cz);
+    }
+
     /**
      * The place unit {@code i} takes round {@code target}: the innermost ring's free place nearest to it, among those
      * the other attackers of {@code target} have not taken.
@@ -116,7 +127,7 @@ public final class Engagement {
                 break; // a place that far out is beyond the unit's reach: it would never strike from there
             }
             for (int p = first; p < Math.min(first + n, total); p++) {
-                if (taken[p]) {
+                if (taken[p] || inBuilding(s, tx + offsetX(p, radii, body), tz + offsetZ(p, radii, body))) {
                     continue;
                 }
                 double d = DetMath.length(tx + offsetX(p, radii, body) - x, tz + offsetZ(p, radii, body) - z);
@@ -137,7 +148,7 @@ public final class Engagement {
         for (int k = 0; k < RINGS; k++) { // none within reach is free: the first free place further out
             int n = places(k, radii, body);
             for (int p = first; p < Math.min(first + n, total); p++) {
-                if (!taken[p]) {
+                if (!taken[p] && !inBuilding(s, tx + offsetX(p, radii, body), tz + offsetZ(p, radii, body))) {
                     return p;
                 }
             }

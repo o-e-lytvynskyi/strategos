@@ -40,6 +40,11 @@ final class BuildManager implements AiModule {
     /** How far from an own dropsite a node is near it. */
     static final double FAR = 24;
 
+    /**
+     * How far from the centre a dropsite may go up by a far grove (QA-12); its stone is Town's too (50 of it each).
+     */
+    static final double REMOTE_REACH = 120;
+
     /** A resource is running out near its dropsites below this much in their nodes, in thousandths. */
     static final long RUNNING_OUT = 600_000;
 
@@ -221,8 +226,11 @@ final class BuildManager implements AiModule {
             }
         }
         for (String resource : script.ratio().keySet()) {
-            NodeView far = takes.contains(resource) ? farNode(view, base, resource) : null;
-            if (far == null) {
+            boolean town = townQueued();
+            // before Town: one storehouse beyond the usual reach at most, and never into Town's price (QA-12)
+            boolean remote = town || remoteDropsites(view, base, template) == 0;
+            NodeView far = takes.contains(resource) ? farNode(view, base, resource, remote) : null;
+            if (far == null || (!town && !affordsWithTown(view, template))) {
                 continue;
             }
             if (!view.affords(template)) {
@@ -232,17 +240,60 @@ final class BuildManager implements AiModule {
                 return true;
             }
             memory.set(Slots.EXPAND_SINCE, 0);
-            return placeAt(view, budget, sink, base, template, far.anchorX(), far.anchorZ());
+            return placeAt(view, budget, sink, base, template, far.anchorX(), far.anchorZ(), true);
         }
         memory.set(Slots.EXPAND_SINCE, 0);
         return false;
+    }
+
+    /** How many own buildings of {@code template} stand beyond the usual reach of the centre. */
+    private static int remoteDropsites(AiView view, Base base, TemplateId template) {
+        int n = 0;
+        for (BuildingView b : view.buildings()) {
+            Footprint f = b.footprint();
+            if (b.template().equals(template)
+                    && DetMath.length(f.anchorX() - base.x(), f.anchorZ() - base.z()) > SiteFinder.REACH) {
+                n++;
+            }
+        }
+        return n;
+    }
+
+    /** Whether the stock covers {@code template} and the build order's research step (Town) together. */
+    private boolean affordsWithTown(AiView view, TemplateId template) {
+        for (StrategyScript.Step s : script.build()) {
+            if (s.researches()) {
+                TechDef tech = view.templates().tech(new TechId(s.research()));
+                if (tech == null) {
+                    return true;
+                }
+                for (String r : view.resources()) {
+                    if (view.stock(r) < view.cost(template, r) + view.cost(tech, r)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
+        return true;
+    }
+
+    /** Whether the build order's research step (Town) is done: its stone is spent, and remote storehouses may go up (QA-12). */
+    private boolean townQueued() {
+        for (int k = 0; k < script.build().size(); k++) {
+            if (script.build().get(k).researches()) {
+                return memory.get(Slots.STEP) > k;
+            }
+        }
+        return true;
     }
 
     /**
      * With {@code resource} running out near its own dropsites, its live node nearest the centre among those farther
      * from them and within {@link SiteFinder#REACH} of the centre, where a site may go; null otherwise.
      */
-    private static @org.jspecify.annotations.Nullable NodeView farNode(AiView view, Base base, String resource) {
+    private static @org.jspecify.annotations.Nullable NodeView farNode(
+            AiView view, Base base, String resource, boolean remote) {
         NodeView best = null;
         double bestD = Double.POSITIVE_INFINITY;
         long near = 0;
@@ -258,7 +309,9 @@ final class BuildManager implements AiModule {
                 continue;
             }
             double d = DetMath.length(n.anchorX() - base.x(), n.anchorZ() - base.z());
-            if (d < bestD && d <= SiteFinder.REACH) {
+            if (d < bestD
+                    && d <= (remote ? REMOTE_REACH : SiteFinder.REACH)
+                    && view.explored(n.anchorX(), n.anchorZ())) {
                 bestD = d;
                 best = n;
             }
@@ -282,7 +335,7 @@ final class BuildManager implements AiModule {
 
     private void place(AiView view, AiBudget budget, CommandSink sink, Base base, TemplateId template, String near) {
         double[] want = want(view, base, near);
-        placeAt(view, budget, sink, base, template, want[0], want[1]);
+        placeAt(view, budget, sink, base, template, want[0], want[1], false);
     }
 
     /** Places {@code template} by (wantX, wantZ); whether a placement went out. */
@@ -293,14 +346,16 @@ final class BuildManager implements AiModule {
             Base base,
             TemplateId template,
             double wantX,
-            double wantZ) {
+            double wantZ,
+            boolean remote) {
         UnitTemplate t = view.templates().byId(template);
         Blueprint bp = t == null ? null : view.templates().blueprint(t.netIndex());
         if (bp == null) {
             return false;
         }
         if (script.sites().isEmpty()) { // no scripted sites: the player finds its own (AI-02)
-            int[] at = SiteFinder.find(view, budget, base, template, wantX, wantZ, memory.get(Slots.LAST_SITE) - 1);
+            int[] at = SiteFinder.find(
+                    view, budget, base, template, wantX, wantZ, memory.get(Slots.LAST_SITE) - 1, remote);
             memory.set(Slots.PLACED, view.tick() + 1);
             if (at == null) {
                 return false; // nothing within reach now; the wait, then a look again

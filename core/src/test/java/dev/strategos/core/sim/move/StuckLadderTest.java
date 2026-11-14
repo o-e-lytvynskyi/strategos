@@ -219,6 +219,114 @@ class StuckLadderTest {
         assertThat(ghost.units().get(0).motion().ladder().ghostTicks()).isPositive();
     }
 
+    /**
+     * QA-12's backstop: the ladder's count is reset by every waypoint a unit passes, so a unit that loops through a few
+     * waypoints, or is held a few blocks off its place and drifts, never reached its last rung and walked for good. The
+     * net-progress count is not reset by that: 8 blocks of displacement restart it, and at {@code NET_FAIL} ticks the
+     * order fails as the ladder's last rung does. Here the unit's ladder count is cleared each tick, as a waypoint passed
+     * would (the shape of the traced burners, archer and ram), and the unit stays put or goes to and fro within 3 blocks.
+     */
+    @Test
+    void aUnitWhoseLadderIsResetEveryTickStillFailsOnNetProgress() {
+        for (double swing : new double[] {0, 3}) {
+            SimHarness h = harness(VoxelFixtures.flat(48, 32, 16, 1));
+            int unit = h.spawn(F0, new Vec2d(8.5, 16.5), 1, 0)[0];
+            int i = Handle.index(unit);
+            hold(h, unit);
+            List<Stuck> stuck = new ArrayList<>();
+            state(h).bus().subscribe(Stuck.class, stuck::add);
+            order(h, unit, 40.5, 16.5);
+            long failedAt = -1;
+            for (int t = 0; t < 800 && failedAt < 0; t++) {
+                MotionStore motion = state(h).motion();
+                motion.setProgress(i, 40.5, 16.5, Double.POSITIVE_INFINITY, 0); // a waypoint passed
+                motion.set(i, 8.5 + (t % 40 < 20 ? swing : 0), motion.y(i), 16.5, motion.yaw(i));
+                h.step();
+                if (unit(h, unit).state() != UnitState.WALKING) {
+                    failedAt = t;
+                }
+            }
+            assertThat(stuck)
+                    .as("swing %s: only the last rung", swing)
+                    .extracting(Stuck::rung)
+                    .containsOnly(Stuck.GIVE_UP);
+            assertThat(failedAt)
+                    .as("swing %s: failed after the net count's ticks", swing)
+                    .isBetween((long) StuckLadder.FAIL, (long) StuckLadder.NET_FAIL + 5);
+        }
+    }
+
+    @Test
+    void aUnitThatWalksOnIsNoNetStall() {
+        SimHarness h = harness(VoxelFixtures.flat(200, 32, 16, 1));
+        int unit = h.spawn(F0, new Vec2d(8.5, 16.5), 1, 0)[0];
+        order(h, unit, 190.5, 16.5);
+        List<Stuck> stuck = new ArrayList<>();
+        state(h).bus().subscribe(Stuck.class, stuck::add);
+        for (int t = 0; t < 1_500 && unit(h, unit).state() == UnitState.WALKING; t++) {
+            h.step();
+        }
+        assertThat(stuck).isEmpty();
+        assertThat(unit(h, unit).x()).isGreaterThan(150);
+    }
+
+    @Test
+    void theNetCountSurvivesASaveWithTheHash() {
+        SimHarness h = harness(VoxelFixtures.flat(48, 32, 16, 1));
+        int unit = h.spawn(F0, new Vec2d(8.5, 16.5), 1, 0)[0];
+        int i = Handle.index(unit);
+        hold(h, unit);
+        order(h, unit, 40.5, 16.5);
+        h.runTicks(50);
+        assertThat(state(h).motion().net(i)).isPositive();
+        MatchSnapshot saved = h.core().snapshot();
+        JsonElement json = MatchSnapshotCodec.encode(JsonOps.INSTANCE, saved);
+        MatchSnapshot decoded = MatchSnapshotCodec.decode(
+                        new Dynamic<>(JsonOps.INSTANCE, json), Migrations.production())
+                .getOrThrow();
+        MatchCore original = MatchCore.restore(saved, TemplateSet.builtin(), CorePorts.of(() -> 0L));
+        MatchCore restored = MatchCore.restore(decoded, TemplateSet.builtin(), CorePorts.of(() -> 0L));
+        MatchCore cleared = MatchCore.restore(saved, TemplateSet.builtin(), CorePorts.of(() -> 0L));
+        KernelAccess.state(cleared).motion().setNet(i, 0, 0, 0);
+        assertThat(decoded).isEqualTo(saved);
+        assertThat(KernelAccess.state(restored).motion().net(i))
+                .isEqualTo(state(h).motion().net(i));
+        assertThat(restored.stateHash()).isEqualTo(original.stateHash()).isNotEqualTo(cleared.stateHash());
+    }
+
+    /**
+     * QA-12: a walker within 1.5 blocks of its place with its path spent and a request made a moment ago is not asked a
+     * path again every few ticks, as one at an occupied place was, WALKING without progress; its order fails once.
+     */
+    @Test
+    void aSpentPathAtAnOccupiedPlaceFailsTheOrderOnceInsteadOfAskingForever() {
+        SimHarness h = harness(VoxelFixtures.flat(48, 32, 16, 1));
+        int unit = h.spawn(F0, new Vec2d(8.5, 16.5), 1, 0)[0];
+        int i = Handle.index(unit);
+        hold(h, unit);
+        order(h, unit, 40.5, 16.5);
+        List<Stuck> stuck = new ArrayList<>();
+        state(h).bus().subscribe(Stuck.class, stuck::add);
+        state(h).motion().set(i, 40.2, state(h).motion().y(i), 16.5, 0f);
+        long asked = state(h).paths().nextRequestId();
+        for (int t = 0; t < 40; t++) {
+            state(h).paths()
+                    .follow(
+                            i,
+                            dev.strategos.core.sim.nav.PathStore.Waypoints.NONE,
+                            dev.strategos.core.sim.nav.PathStatus.OK);
+            state(h).paths().decided(i, h.tick()); // the path it was given was empty
+            h.step();
+            if (unit(h, unit).state() != UnitState.WALKING) {
+                break;
+            }
+        }
+        assertThat(stuck).extracting(Stuck::rung).as("its order fails, once").containsExactly(Stuck.GIVE_UP);
+        assertThat(state(h).paths().nextRequestId() - asked)
+                .as("paths asked for meanwhile")
+                .isLessThanOrEqualTo(1);
+    }
+
     /** Holds unit {@code handle} still: its walk speed 0, as boxed in as a unit can be. */
     private static void hold(SimHarness h, int handle) {
         state(h).stats().addPersonal(handle, Modifier.replace(CorePaths.WALK_SPEED, 0, ROCK));

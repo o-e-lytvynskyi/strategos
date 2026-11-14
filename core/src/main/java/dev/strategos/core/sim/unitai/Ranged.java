@@ -63,7 +63,9 @@ final class Ranged {
         double pz = motion.z(t) - dz / distance * desired;
         double moved = DetMath.length(px - orders.targetX(i), pz - orders.targetZ(i));
         double away = DetMath.length(px - motion.x(i), pz - motion.z(i));
-        if (moved > Math.max(REGOAL, away / 4)) {
+        // a place moved while a path is asked for supersedes it, and a target that shuffles would do so for good
+        // (QA-12)
+        if (s.paths().request(i) == 0 && moved > Math.max(REGOAL, away / 4)) {
             orders.setPlace(i, px, pz);
             s.bus().publish(new PlaceMoved(ctx.handle()));
         } else if (away <= REGOAL && gap <= range) {
