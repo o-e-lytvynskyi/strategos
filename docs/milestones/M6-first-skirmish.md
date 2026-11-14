@@ -192,6 +192,8 @@ None. The `strategos:ping` payload stays with multiplayer pings (UI-15, M7); UI-
 | 47 | The next free slot (T13, check 2) | A GameTest world is no arena, so the GameTest checks that a second skirmish is a match of its own with its player in slot 0; the slot order (3 and 4 after run 1's) is checked where the arena exists, in the arena smoke's run 2 (`ArenaSmokeDriver`) |
 | 48 | The minimap's dirty tiles (T16) | Beside row 45, a building that appears or goes away (destroyed, demolished) marks its tiles too; still no client block-update hook, so terrain changes away from buildings wait for the round (a few seconds) — the card's "changed chunks" read as construction; the owner may ask for the hook |
 | 49 | The feed across matches (T14) | `ClientMatchModel.clear()` resets its alert, wave and phase counts; the HUD now follows `clears()` and resets its own counts and the feed, else a second match's first alerts, waves and phases went unheard |
+| 50 | Where the tiers map to items (T18) | No `Body/equipment` field exists: a unit's look is code, `core.client.look.UnitLook` (ART-01), and it maps the tiers — the horseman's sword stone → iron (the spearman's trident and the archer's bow stay), leather → chainmail (undyed: the faction's colour stays on shields and outlines) |
+| 51 | `match_state`'s cap (T18) | 1,024 → 1,056 bytes: `MatchResults` (T4) already filled 1,024, and `looks` adds a count and a byte per faction, after the results; at ENDED with no results no looks are written. Town now unlocks the barracks' two techs (`Researcher/techs` tokens, row 29) |
 
 ### 1.7 Consent plan
 
@@ -418,8 +420,8 @@ an arena: refused with a message).
   stone → iron (`stone_sword`, `iron_sword`, or the spear's own), armour `LEATHER` → `CHAIN`. The renderer
   draws the armour layer and the held item for the unit's faction tier; a change reaches every viewer with
   the next `match_state`.
-- **AFTER-M5:** the archer's and horseman's tiers follow UNIT-07's roster; the spearman (M2) carries them
-  from T18.
+- The archer's and horseman's tiers follow UNIT-07's roster (M5 merged); the spearman (M2) carries them too
+  (T18, row 50).
 
 ### 2.17 The ram and the arsenal (CMB-09, D-12)
 
@@ -727,7 +729,7 @@ kernel adds `:core:jmh :core:jmhCompare`.
 ### 7.3 Progress
 
 - [x] T2.1 (2026-10-25) · [x] T2.2 (2026-10-25) · [x] T3 (2026-10-26) · [x] T4 (2026-11-12) · [x] T5 (2026-11-12) · [x] T6 (2026-11-12) · [x] T7 (2026-11-13) · [x] T8 (2026-11-12) · [x] T9 (2026-11-12) · [x] T10 (2026-11-13) · [x] T11 (2026-11-13) · [x] T12.1 (2026-11-13) · [x] T12.2 (2026-11-13)
-- [x] T13 (2026-11-14) · [x] T14 (2026-11-14) · [x] T15 (2026-11-14) · [x] T16 (2026-11-14) · [x] T17 (2026-11-14) · [x] T1 (2026-11-14) · [ ] T18 · [ ] T19 · [ ] T20 · [ ] T21
+- [x] T13 (2026-11-14) · [x] T14 (2026-11-14) · [x] T15 (2026-11-14) · [x] T16 (2026-11-14) · [x] T17 (2026-11-14) · [x] T1 (2026-11-14) · [x] T18 (2026-11-14) · [ ] T19 · [ ] T20 · [ ] T21
 - [ ] T22 · [ ] T23 · [ ] T24 · [ ] T25 · [ ] T27 · [ ] T28
 
 ---

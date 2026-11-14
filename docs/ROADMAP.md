@@ -419,7 +419,7 @@ Cards: [roadmap/M6-first-skirmish.md](roadmap/M6-first-skirmish.md#cards). 23 ca
 |---|---|---|---|---|
 | TECH-01 | Research system | M | DATA-02, PROD-01 | done |
 | TECH-02 | Phases: Village to Town | M | TECH-01, BLD-08, D-05 | done |
-| TECH-03 | Starting technologies and visible equipment tiers | M | TECH-01, UNIT-07 | specified |
+| TECH-03 | Starting technologies and visible equipment tiers | M | TECH-01, UNIT-07 | in_progress |
 | CMB-09 | Siege ram and the arsenal | M | CMB-03, UNIT-06, PATH-11, TECH-02, D-12 | specified |
 | BLD-17 | Defence tower | M | CMB-07, TECH-02 | specified |
 | MATCH-14 | Spike: an arena world from the title screen | S | MAP-07 | done |

@@ -142,7 +142,7 @@ only its own vision at every level except that labelled top level.
   4. A golden shows a unit before and after the tier change (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** TECH-01, UNIT-07 · **Size:** M ·
   **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress (checks 1–3 2026-11-14: `TechEffectTest`, `BalanceSheetTest`, `techtests.a_tier_reaches_every_viewer_within_a_second`; check 4 in T27)
 
 #### CMB-09 · Siege ram and the arsenal
 - **Value:** The decisive answer to buildings: slow and tough, devastating to structures, helpless
