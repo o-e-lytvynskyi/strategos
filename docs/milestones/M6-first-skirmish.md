@@ -196,6 +196,9 @@ None. The `strategos:ping` payload stays with multiplayer pings (UI-15, M7); UI-
 | 51 | `match_state`'s cap (T18) | 1,024 → 1,056 bytes: `MatchResults` (T4) already filled 1,024, and `looks` adds a count and a byte per faction, after the results; at ENDED with no results no looks are written. Town now unlocks the barracks' two techs (`Researcher/techs` tokens, row 29) |
 | 52 | The tower's Town gate (T20) | No list gated buildings yet (row 29), so T20 gates the tower with a numeric `Placement/minPhase` (`PlaceBuilding` refuses below it with `REQUIREMENTS`; the build card greys it). T19's build list replaces it: Town's `TOKENS` effect adds the tower and the arsenal to the worker's list, `unlocks` names them, and `minPhase` goes |
 | 53 | The ram's blows and the build list (T19) | Rams strike through the BURN states (`Siege`): a unit with no torch but `Attack/Melee/crush` blows crush on its melee timing; `restrictedClasses` stops the order (`UNSUPPORTED`) and the target pick. Two rams take 49.0 s on the civic centre; the same cost (four spearmen) about 348 s (row 14). `Builder/buildings` is the build list (rows 29, 52): `minPhase` is gone, Town's `unlocks` hold the tower and the arsenal, the card greys what Town would add, the B key offers only what the list reaches |
+| 54 | AI-04's memory and draw (T21) | AiMemory slots 17–24 (opening, last attack, rebuild, camp, camp y, bell, near, threat): 11–16 were AI-03's. The opening is drawn at the player's first think (within 140 ticks), not at the match's start; a script without `openings` draws nothing and keeps its build order |
+| 55 | The camp (T21) | "On the path" is a flood-fill-reachable point on the straight line to the enemy; on small maps it is capped at 0.75 of the way, so it may lie under 40 blocks. `camp.minDistance` is a script field: 40 by default, 0 (the old muster point) in `first_loop`, `economy` and `battle`, so M3–M5's matches and their tests keep their timings; the skirmish script (T22) takes the default. The camp lives in AI memory, so a resumed match restores its markers |
+| 56 | Targets and the raid bar (T21) | The army → economy → centre priority applies in defence; waves attack-move and burn the centre as before. The raid bar counts down a fixed 1,200 ticks after the leave (no wave-end event). The reaction-delay knob is T22's. The battle bot's march sent `Attack.replace` to the whole wave every think, resetting each unit's stuck count, so units in a burners' lane never reached the give-up rung: it now orders only soldiers not already on the target (`FieldWaveTest`, kb rts-sim) |
 
 ### 1.7 Consent plan
 
@@ -731,7 +734,7 @@ kernel adds `:core:jmh :core:jmhCompare`.
 ### 7.3 Progress
 
 - [x] T2.1 (2026-10-25) · [x] T2.2 (2026-10-25) · [x] T3 (2026-10-26) · [x] T4 (2026-11-12) · [x] T5 (2026-11-12) · [x] T6 (2026-11-12) · [x] T7 (2026-11-13) · [x] T8 (2026-11-12) · [x] T9 (2026-11-12) · [x] T10 (2026-11-13) · [x] T11 (2026-11-13) · [x] T12.1 (2026-11-13) · [x] T12.2 (2026-11-13)
-- [x] T13 (2026-11-14) · [x] T14 (2026-11-14) · [x] T15 (2026-11-14) · [x] T16 (2026-11-14) · [x] T17 (2026-11-14) · [x] T1 (2026-11-14) · [x] T18 (2026-11-14) · [x] T19 (2026-11-14) · [x] T20 (2026-11-14) · [ ] T21
+- [x] T13 (2026-11-14) · [x] T14 (2026-11-14) · [x] T15 (2026-11-14) · [x] T16 (2026-11-14) · [x] T17 (2026-11-14) · [x] T1 (2026-11-14) · [x] T18 (2026-11-14) · [x] T19 (2026-11-14) · [x] T20 (2026-11-14) · [x] T21 (2026-11-14)
 - [ ] T22 · [ ] T23 · [ ] T24 · [ ] T25 · [ ] T27 · [ ] T28
 
 ---

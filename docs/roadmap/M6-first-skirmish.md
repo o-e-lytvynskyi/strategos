@@ -272,7 +272,7 @@ only its own vision at every level except that labelled top level.
   6. A golden of the raid bar (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** AI-03, MAP-02, BLD-16 · **Size:** L ·
   **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress (checks 1–5 2026-11-14: `WaveTest.announcedThirtySecondsAhead`, `DefenceTest.defendersWithinTenSecondsAndTheBell`, `OpeningTest.seedsPickDifferentOpenings`, `aitests.waves_reach_the_base`, `aitests.the_raid_bar_reaches_only_its_audience`; check 6 in T27)
 
 #### AI-05 · AI phases, research and difficulty levels
 - **Value:** An AI that advances and researches, with three levels that feel different and never
