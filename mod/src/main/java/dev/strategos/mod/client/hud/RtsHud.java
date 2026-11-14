@@ -12,6 +12,7 @@ import dev.strategos.core.client.hud.HudRect;
 import dev.strategos.core.client.hud.HudTheme;
 import dev.strategos.core.client.hud.Income;
 import dev.strategos.core.client.hud.Minimap;
+import dev.strategos.core.client.hud.MinimapOrders;
 import dev.strategos.core.client.hud.NotificationFeed;
 import dev.strategos.core.client.hud.PhasePanel;
 import dev.strategos.core.client.hud.ResourceBar;
@@ -29,13 +30,10 @@ import dev.strategos.core.protocol.FactionState;
 import dev.strategos.core.protocol.FeedbackMsg;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.MatchNews;
-import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.NoticeMsg;
-import dev.strategos.core.protocol.QueueMode;
 import dev.strategos.core.protocol.UiQuery;
 import dev.strategos.core.protocol.UnitDetail;
 import dev.strategos.core.protocol.UnitHud;
-import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.QueueEntry;
 import dev.strategos.core.shared.Stance;
@@ -231,15 +229,13 @@ public final class RtsHud {
             } else if (button == 1
                     && m.contains(x, y)
                     && !mode.selection().handles().isEmpty()) {
-                double[] at = m.toWorld(x, y); // UI-20: one move of the selection to the mapped point, Shift queues
-                int[] units = mode.selection().handles().stream()
-                        .mapToInt(Integer::intValue)
-                        .toArray();
-                mode.send(new Move(
-                        UnitSet.of(units),
-                        new Vec2d(at[0], at[1]),
-                        net.minecraft.client.gui.screens.Screen.hasShiftDown() ? QueueMode.QUEUE : QueueMode.REPLACE,
-                        0));
+                MinimapOrders.rightClick(
+                                m,
+                                x,
+                                y,
+                                mode.selection().handles(),
+                                net.minecraft.client.gui.screens.Screen.hasShiftDown())
+                        .ifPresent(mode::send); // UI-20: one move of the selection, Shift queues
             }
             return true;
         }

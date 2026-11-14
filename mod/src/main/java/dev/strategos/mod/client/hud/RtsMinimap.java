@@ -2,9 +2,11 @@ package dev.strategos.mod.client.hud;
 
 import com.mojang.blaze3d.platform.NativeImage;
 import dev.strategos.core.client.camera.CameraRig;
+import dev.strategos.core.client.hud.DirtyTiles;
 import dev.strategos.core.client.hud.HudRect;
 import dev.strategos.core.client.hud.Minimap;
 import dev.strategos.core.client.hud.MinimapImage;
+import dev.strategos.core.client.hud.MinimapPings;
 import dev.strategos.core.client.pick.View;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.MatchNews;
@@ -45,17 +47,8 @@ final class RtsMinimap {
     private boolean dirty;
     private long uploadedAt = -1_000; // "long ago", without the overflow Long.MIN_VALUE would give a subtraction
     private int visionRevision = -1;
-    private long[] builtAt = new long[0];
-    private final java.util.LinkedHashSet<Integer> dirtyChunks = new java.util.LinkedHashSet<>();
-    private final java.util.Map<Integer, Long> buildingSeen = new java.util.HashMap<>();
-    private final java.util.ArrayList<long[]> pings = new java.util.ArrayList<>(); // x, z, start tick
-    private int alertsSeen;
-    private int wavesSeen;
-
-    /** How long a ping shows, and how soon a dirty chunk may be rebuilt again: ticks. */
-    static final int PING_TICKS = 60;
-
-    static final int REBUILD_EVERY = 20;
+    private DirtyTiles dirtyTiles = new DirtyTiles(0, 0);
+    private final MinimapPings pings = new MinimapPings();
 
     /** Whether the texture holds a match's image. */
     boolean ready() {
@@ -108,22 +101,18 @@ final class RtsMinimap {
         MinimapImage.Fog fog = MinimapImage.fromVision(
                 model.visibleBits(), model.exploredBits(), model.visionCellsX(), model.visionCellsZ());
         long now = level.getGameTime();
-        markConstruction(model.buildings(), chunksX, chunksZ);
-        notePings(model, now);
-        int budget = PER_TICK;
-        for (java.util.Iterator<Integer> it = dirtyChunks.iterator(); it.hasNext() && budget > 0; ) {
-            int c = it.next();
-            if (now - builtAt[c] < REBUILD_EVERY) {
-                continue; // built within the second: it waits its turn
-            }
-            it.remove();
-            rebuild(image, columns, fog, c, chunksX, now);
-            budget--;
-        }
-        for (int k = 0; k < budget; k++) {
+        dirtyTiles.observe(model.buildings());
+        pings.observe(model.alerts(), model.alert(), model.waves(), model.wave(), now);
+        int[] budget = {PER_TICK};
+        dirtyTiles.drain(now, PER_TICK, c -> {
+            rebuild(image, columns, fog, c, chunksX);
+            budget[0]--;
+        });
+        for (int k = 0; k < budget[0]; k++) {
             int c = next;
             next = (next + 1) % (chunksX * chunksZ);
-            rebuild(image, columns, fog, c, chunksX, now);
+            dirtyTiles.built(c, now);
+            rebuild(image, columns, fog, c, chunksX);
         }
         if (dirty && now - uploadedAt >= 20) {
             t.upload();
@@ -132,11 +121,9 @@ final class RtsMinimap {
         }
     }
 
-    private void rebuild(
-            NativeImage image, MinimapImage.Columns columns, MinimapImage.Fog fog, int c, int chunksX, long now) {
+    private void rebuild(NativeImage image, MinimapImage.Columns columns, MinimapImage.Fog fog, int c, int chunksX) {
         int cx = c % chunksX;
         int cz = c / chunksX;
-        builtAt[c] = now;
         int[] tile = MinimapImage.tile(columns, fog, cx, cz, sizeX, sizeZ);
         int hash = Arrays.hashCode(tile);
         if (hash == tileHashes[c]) {
@@ -155,46 +142,6 @@ final class RtsMinimap {
         dirty = true;
     }
 
-    /** A building whose state or progress moved since the last tick marks the chunks round its corner dirty. */
-    private void markConstruction(
-            java.util.List<dev.strategos.core.protocol.BuildingState.Entry> buildings, int chunksX, int chunksZ) {
-        for (dev.strategos.core.protocol.BuildingState.Entry b : buildings) {
-            long seen = ((long) b.state() << 32) | (b.progress() & 0xFFFFFFFFL);
-            Long before = buildingSeen.put(b.handle(), seen);
-            if (before == null || before == seen) {
-                continue;
-            }
-            for (int dx = -1; dx <= 1; dx++) { // the footprint reaches into the chunks round its corner
-                for (int dz = -1; dz <= 1; dz++) {
-                    int cx = (b.x() >> 4) + dx;
-                    int cz = (b.z() >> 4) + dz;
-                    if (cx >= 0 && cz >= 0 && cx < chunksX && cz < chunksZ) {
-                        dirtyChunks.add(cz * chunksX + cx);
-                    }
-                }
-            }
-        }
-    }
-
-    /** New alerts and wave musters since the last tick become pings. */
-    private void notePings(dev.strategos.core.client.model.ClientMatchModel model, long now) {
-        if (model.alerts() > alertsSeen) {
-            alertsSeen = model.alerts();
-            MatchNews a = model.alert();
-            if (a != null) {
-                pings.add(new long[] {Math.round(a.x()), Math.round(a.z()), now});
-            }
-        }
-        if (model.waves() > wavesSeen) {
-            wavesSeen = model.waves();
-            MatchNews w = model.wave();
-            if (w != null) {
-                pings.add(new long[] {Math.round(w.x()), Math.round(w.z()), now});
-            }
-        }
-        pings.removeIf(p -> now - p[2] >= PING_TICKS);
-    }
-
     private void open(Minecraft mc, MatchJoin join) {
         close(mc);
         matchId = join.matchId();
@@ -206,11 +153,8 @@ final class RtsMinimap {
         int chunks = ((sizeX + 15) / 16) * ((sizeZ + 15) / 16);
         tileHashes = new int[chunks];
         Arrays.fill(tileHashes, 1); // an empty tile hashes otherwise, so every chunk is written once
-        builtAt = new long[chunks];
-        Arrays.fill(builtAt, -1_000);
-        dirtyChunks.clear();
-        buildingSeen.clear();
-        pings.clear();
+        dirtyTiles = new DirtyTiles((sizeX + 15) / 16, (sizeZ + 15) / 16);
+        pings.reset();
         next = 0;
         dirty = true;
         uploadedAt = -1_000;
@@ -299,9 +243,9 @@ final class RtsMinimap {
         }
         ClientLevel level = Minecraft.getInstance().level;
         long now = level == null ? 0 : level.getGameTime();
-        for (long[] ping : pings) { // UI-20: a ring growing out of each alert and muster for three seconds
-            double[] p = m.toMap((double) ping[0], (double) ping[1]);
-            int radius = 2 + (int) ((now - ping[2]) * 10 / PING_TICKS);
+        for (MinimapPings.Ping ping : pings.active(now)) { // UI-20: a ring growing out of each alert and muster
+            double[] p = m.toMap(ping.x(), ping.z());
+            int radius = 2 + (int) (ping.progress(now) * 10);
             g.renderOutline((int) p[0] - radius, (int) p[1] - radius, 2 * radius + 1, 2 * radius + 1, 0xFFFFB030);
         }
         CameraRig rig = mode.rig();

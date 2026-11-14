@@ -8,6 +8,9 @@ import static dev.strategos.gametest.suites.Units.move;
 import static dev.strategos.gametest.suites.Units.spawn;
 import static dev.strategos.gametest.suites.Units.unit;
 
+import dev.strategos.core.client.hud.HudRect;
+import dev.strategos.core.client.hud.Minimap;
+import dev.strategos.core.client.hud.MinimapOrders;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.CommandBatch;
 import dev.strategos.core.protocol.CommandOutcome;
@@ -412,6 +415,52 @@ public final class NetTests {
                             && sent.get(0).clientSeq() == 7
                             && sent.get(1).clientSeq() == 8,
                     "journaled under slot 1: " + sent);
+            viewer.close();
+            h.succeed();
+        });
+    }
+
+    /**
+     * UI-20.3: the move a right click on the minimap builds (the selection to the mapped point, replacing the units'
+     * orders) is accepted from the seated player and walks its units to that point.
+     */
+    @StrategosTest(timeoutTicks = 400)
+    public static void aMinimapOrderApplies(GameTestHelper h) {
+        MatchRuntime rt = match(h);
+        spawn(rt, 8.5, 8.5, 2, 1);
+        Vec3 at = h.absoluteVec(new Vec3(16.5, 2, 8.5));
+        MockViewer viewer = MockViewer.join(h.getLevel(), "strategos-map", at.x, at.y, at.z, 2);
+        NetFixtures.seat(rt, viewer, 0);
+        Minimap map = new Minimap(new HudRect(10, 20, 128, 128), 32, 32);
+        double[] click = map.toMap(24.5, 24.5);
+        var state = new Object() {
+            boolean sent;
+        };
+        h.onEachTick(() -> {
+            viewer.poll();
+            int[] units = handles(rt);
+            if (units.length != 2) {
+                return;
+            }
+            if (!state.sent) {
+                state.sent = true;
+                Move move = MinimapOrders.rightClick(
+                                map,
+                                click[0],
+                                click[1],
+                                java.util.Arrays.stream(units).boxed().toList(),
+                                false)
+                        .orElseThrow();
+                viewer.send(CommandsPayload.of(new CommandBatch(1, List.of(move))));
+                return;
+            }
+            for (int unit : units) {
+                var u = unit(rt, unit);
+                if (Math.hypot(u.x() - 24.5, u.z() - 24.5) > 3) {
+                    return;
+                }
+            }
+            check(NetFixtures.envelopes(rt, 0).size() == 1, "one command reached the core");
             viewer.close();
             h.succeed();
         });
