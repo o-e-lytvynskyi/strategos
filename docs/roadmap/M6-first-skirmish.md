@@ -172,7 +172,8 @@ only its own vision at every level except that labelled top level.
   3. Only enemies are targeted (L1).
   4. Its blueprint passes the lint and the construction and damage-stage GameTests (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** CMB-07, TECH-02 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-11-14 (M6 T20) — 1–3 `TowerTest.arrowsAndDpsAreTheSheets`, `townOnlyAndStone`, `onlyEnemies`; 4 `BlueprintFilesTest`, `StyleGuideRangesTest`, `constructiontests.tower_is_built_and_equals_its_blueprint`, `tower_damage_stages_remove_its_ranked_blocks`
 
 ### The match
 
