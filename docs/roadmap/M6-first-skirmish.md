@@ -159,7 +159,8 @@ only its own vision at every level except that labelled top level.
   4. Rams pass only gaps that fit their footprint (L3).
 - **Tests:** L0, L1, L2, L3, L5 · **Depends on:** CMB-03, UNIT-06, PATH-11, TECH-02, D-12 ·
   **Size:** M · **Tier:** T1 (pulled into the MVP by D-12)
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-11-14 (M6 T19) — 1 `SiegeTest.twoRamsRazeACentreInTheSheetTime`, `torchesTakeFiveMinutesOnStone`; 2 `SiegeTest.ramsNeverAttackUnits`; 3 `UnitLargeTypeTest` and the engine-surface inventory; 4 `pathtests.rams_pass_only_gaps_that_fit`; L5 the smoke driver's ram across a restart
 
 #### BLD-17 · Defence tower
 - **Value:** A defensive path to Town (boom behind towers) and another way to spend stone (P4).

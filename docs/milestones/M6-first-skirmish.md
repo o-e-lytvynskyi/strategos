@@ -195,6 +195,7 @@ None. The `strategos:ping` payload stays with multiplayer pings (UI-15, M7); UI-
 | 50 | Where the tiers map to items (T18) | No `Body/equipment` field exists: a unit's look is code, `core.client.look.UnitLook` (ART-01), and it maps the tiers — the horseman's sword stone → iron (the spearman's trident and the archer's bow stay), leather → chainmail (undyed: the faction's colour stays on shields and outlines) |
 | 51 | `match_state`'s cap (T18) | 1,024 → 1,056 bytes: `MatchResults` (T4) already filled 1,024, and `looks` adds a count and a byte per faction, after the results; at ENDED with no results no looks are written. Town now unlocks the barracks' two techs (`Researcher/techs` tokens, row 29) |
 | 52 | The tower's Town gate (T20) | No list gated buildings yet (row 29), so T20 gates the tower with a numeric `Placement/minPhase` (`PlaceBuilding` refuses below it with `REQUIREMENTS`; the build card greys it). T19's build list replaces it: Town's `TOKENS` effect adds the tower and the arsenal to the worker's list, `unlocks` names them, and `minPhase` goes |
+| 53 | The ram's blows and the build list (T19) | Rams strike through the BURN states (`Siege`): a unit with no torch but `Attack/Melee/crush` blows crush on its melee timing; `restrictedClasses` stops the order (`UNSUPPORTED`) and the target pick. Two rams take 49.0 s on the civic centre; the same cost (four spearmen) about 348 s (row 14). `Builder/buildings` is the build list (rows 29, 52): `minPhase` is gone, Town's `unlocks` hold the tower and the arsenal, the card greys what Town would add, the B key offers only what the list reaches |
 
 ### 1.7 Consent plan
 
@@ -730,7 +731,7 @@ kernel adds `:core:jmh :core:jmhCompare`.
 ### 7.3 Progress
 
 - [x] T2.1 (2026-10-25) · [x] T2.2 (2026-10-25) · [x] T3 (2026-10-26) · [x] T4 (2026-11-12) · [x] T5 (2026-11-12) · [x] T6 (2026-11-12) · [x] T7 (2026-11-13) · [x] T8 (2026-11-12) · [x] T9 (2026-11-12) · [x] T10 (2026-11-13) · [x] T11 (2026-11-13) · [x] T12.1 (2026-11-13) · [x] T12.2 (2026-11-13)
-- [x] T13 (2026-11-14) · [x] T14 (2026-11-14) · [x] T15 (2026-11-14) · [x] T16 (2026-11-14) · [x] T17 (2026-11-14) · [x] T1 (2026-11-14) · [x] T18 (2026-11-14) · [ ] T19 · [x] T20 (2026-11-14) · [ ] T21
+- [x] T13 (2026-11-14) · [x] T14 (2026-11-14) · [x] T15 (2026-11-14) · [x] T16 (2026-11-14) · [x] T17 (2026-11-14) · [x] T1 (2026-11-14) · [x] T18 (2026-11-14) · [x] T19 (2026-11-14) · [x] T20 (2026-11-14) · [ ] T21
 - [ ] T22 · [ ] T23 · [ ] T24 · [ ] T25 · [ ] T27 · [ ] T28
 
 ---
