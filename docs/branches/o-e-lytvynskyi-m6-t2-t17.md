@@ -42,7 +42,7 @@ Newest first; one entry per session in the worklog's shape. Before 2026-11-14: d
 
 1. **The minimap's "changed chunks" (UI-20, spec rows 45 and 48):** construction, new and destroyed buildings redraw within a second; other terrain changes (a felled tree, a placed block) wait for the round, a few seconds. Recommended: keep it; a client block-update hook would make it strict (a mixin, no NeoForge event). Say if you want the hook.
 2. **`MinimapBench` has no baseline entry:** it joins `perf/baseline-m4pro.json` at the next baseline you approve (0.76 µs a tile against a 0.5 ms budget).
-3. **`jmhCompare` needs a quiet machine** (≤ 7.5 % foreign load, ADR-0026): this branch changes the core's step (vision every tick, conquest, research); the run on 2026-11-14 was invalid, not red.
+3. **`jmhCompare` red, one benchmark** (2026-11-14, a valid run: chat closed): `MovementBench.step600` 22.0 → 33.3 µs against the baseline (main itself reads 24.6–25.0 here). Bisected and profiled: vision stamping is the whole difference (24.7 µs with `VisionSystem` stubbed); `VisionBench` reads the same ~11 µs for 300 moving units, inside WORLD's 0.5 ms budget (spec §6). Recommended: accept it as the fog's own cost — a proposed baseline (`perf/baseline-m4pro.proposed.json`) from the full run at the close, for your approval; a cheaper restamp (only the disc's changed edge on a one-cell move) is possible later if the budget tightens.
 
 ## Decisions taken
 
