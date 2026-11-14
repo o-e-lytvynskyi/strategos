@@ -45,6 +45,25 @@ class DemoCatalogTest {
     }
 
     @Test
+    void m6IsSevenChaptersEachWithItsScriptAndAListedLine() {
+        List<DemoChapter> m6 = DemoCatalog.pick(ALL, "m6", "", Set.of());
+        assertThat(ids(m6)).containsExactly("research", "town", "fog", "raid", "siege", "tower", "notices");
+        List<String> listed = DemoCatalog.describe(m6);
+        assertThat(listed).hasSize(7);
+        for (int k = 0; k < m6.size(); k++) {
+            assertThat(listed.get(k)).contains(m6.get(k).id(), m6.get(k).title(), "m6");
+        }
+    }
+
+    @Test
+    void everyChapterRunsRevealedExceptFog() {
+        assertThat(DemoStage.rules(false).revealMap()).isTrue();
+        assertThat(DemoStage.rules(true).revealMap()).isFalse();
+        assertThat(ALL.stream().filter(DemoChapter::fogged).map(DemoChapter::id))
+                .containsExactly("fog");
+    }
+
+    @Test
     void newLeavesOutWhatWasSeenAtItsVersion() {
         DemoChapter crowd = ALL.getFirst();
         Set<String> seen = Set.of(
