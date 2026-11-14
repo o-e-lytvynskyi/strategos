@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import dev.strategos.core.shared.TechId;
 import dev.strategos.core.shared.TemplateId;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -223,6 +224,19 @@ final class BuiltinTemplates {
      * The net indices the built-in set gives, in the order its templates arrived: M2's units first, so their indices
      * stay 0 and 1 whatever ids later templates sort under (M3 spec §9 R10); a new id is appended.
      */
+    static final String TOWER = """
+            {
+              "parent": "strategos:template/building_base",
+              "Identity": { "name": "strategos.building.tower", "icon": "minecraft:crossbow", "classes": "+Tower" },
+              "Building": { "blueprint": "strategos:tower" },
+              "Placement": { "minPhase": 1 },
+              "Health": { "max": 1000 },
+              "Vision": { "range": 24 },
+              "Attack": { "Building": { "arrows": 1, "interval": 40, "pierce": 10, "range": 28 } },
+              "Cost": { "resources": { "wood": 100, "stone": 150 }, "time": 75 }
+            }
+            """;
+
     static final String STOREHOUSE = """
             {
               "parent": "strategos:template/building_base",
@@ -425,7 +439,8 @@ final class BuiltinTemplates {
             new TemplateId("strategos:building/farmstead"), // M4, previously appended implicitly
             new TemplateId("strategos:building/storehouse"),
             new TemplateId("strategos:unit/archer"), // M5
-            new TemplateId("strategos:unit/horseman")));
+            new TemplateId("strategos:unit/horseman"),
+            new TemplateId("strategos:building/tower"))); // M6 T20
 
     /** The indices the built-in techs were given, kept as {@link #PINNED} keeps the templates' (row 20). */
     private static final TechIdTable PINNED_TECHS = new TechIdTable(List.of(
@@ -450,30 +465,34 @@ final class BuiltinTemplates {
      * {@code Researcher} of the storehouse and the civic centre, or without all of them, as it was before TECH-01.
      */
     static TemplateSet compile(boolean withTechs) {
+        List<RawTemplate> templates = new ArrayList<>(List.of(
+                raw("strategos:template/unit_base", UNIT_BASE),
+                raw("strategos:template/unit_infantry", UNIT_INFANTRY, withTechs),
+                raw("strategos:template/unit_fauna", UNIT_FAUNA),
+                raw("strategos:template/building_base", BUILDING_BASE),
+                raw("strategos:unit/debug_walker", DEBUG_WALKER),
+                raw("strategos:unit/infantry", INFANTRY),
+                raw("strategos:unit/archer", ARCHER),
+                raw("strategos:unit/horseman", HORSEMAN, withTechs),
+                raw("strategos:unit/worker", WORKER),
+                raw("strategos:unit/sheep", SHEEP),
+                raw("strategos:unit/pig", PIG),
+                raw("strategos:unit/chicken", CHICKEN),
+                raw("strategos:building/civic_centre", CIVIC_CENTRE, withTechs),
+                raw("strategos:building/field", FIELD),
+                raw("strategos:building/house", HOUSE, withTechs),
+                raw("strategos:building/barracks", BARRACKS, withTechs),
+                raw("strategos:building/storehouse", STOREHOUSE, withTechs),
+                raw("strategos:building/farmstead", FARMSTEAD, withTechs),
+                raw("strategos:building/quarry", QUARRY),
+                raw("strategos:building/quarry_large", QUARRY_LARGE),
+                raw("strategos:building/iron_mine", IRON_MINE),
+                raw("strategos:building/iron_mine_large", IRON_MINE_LARGE)));
+        if (withTechs) {
+            templates.add(raw("strategos:building/tower", TOWER)); // gated by Placement/minPhase: a phase is a tech
+        }
         TemplateCompiler.Result result = TemplateCompiler.compile(
-                List.of(
-                        raw("strategos:template/unit_base", UNIT_BASE),
-                        raw("strategos:template/unit_infantry", UNIT_INFANTRY, withTechs),
-                        raw("strategos:template/unit_fauna", UNIT_FAUNA),
-                        raw("strategos:template/building_base", BUILDING_BASE),
-                        raw("strategos:unit/debug_walker", DEBUG_WALKER),
-                        raw("strategos:unit/infantry", INFANTRY),
-                        raw("strategos:unit/archer", ARCHER),
-                        raw("strategos:unit/horseman", HORSEMAN, withTechs),
-                        raw("strategos:unit/worker", WORKER),
-                        raw("strategos:unit/sheep", SHEEP),
-                        raw("strategos:unit/pig", PIG),
-                        raw("strategos:unit/chicken", CHICKEN),
-                        raw("strategos:building/civic_centre", CIVIC_CENTRE, withTechs),
-                        raw("strategos:building/field", FIELD),
-                        raw("strategos:building/house", HOUSE, withTechs),
-                        raw("strategos:building/barracks", BARRACKS, withTechs),
-                        raw("strategos:building/storehouse", STOREHOUSE, withTechs),
-                        raw("strategos:building/farmstead", FARMSTEAD, withTechs),
-                        raw("strategos:building/quarry", QUARRY),
-                        raw("strategos:building/quarry_large", QUARRY_LARGE),
-                        raw("strategos:building/iron_mine", IRON_MINE),
-                        raw("strategos:building/iron_mine_large", IRON_MINE_LARGE)),
+                templates,
                 withTechs
                         ? List.of(
                                 tech("strategos:gather_wood_1", GATHER_WOOD_1),

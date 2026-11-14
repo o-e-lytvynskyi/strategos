@@ -172,6 +172,18 @@
     "Cost/resources/iron": "Fifty iron: the spear points and helmets of the barracks' armoury; the first loop's starts bring a hundred (ECO-08)",
     "Trainer/batchExponent": "As the civic centre's: one rule for every trainer until a technology changes it (TECH-05)"
   },
+  "strategos:building/tower": {
+    "Attack/Building/arrows": "One arrow a shot: a tower is a single bowman on a wall, so it wears a raid down but never stops one (BLD-17, CMB-07)",
+    "Attack/Building/interval": "Forty ticks (two seconds) between arrows: half the centre's pause, a steady five pierce a second that two or three towers turn into a real wall of arrows (BLD-17)",
+    "Attack/Building/pierce": "Ten pierce an arrow, more than the centre's eight and under an archer's sixteen: a tower hurts a spearman but is no match for a squad (BLD-17)",
+    "Attack/Building/range": "Twenty-eight blocks, four beyond the centre and eight beyond an archer: it covers the ground an archer would have to cross to answer it (BLD-17)",
+    "Vision/range": "Twenty-four: it sees about as far as it shoots, a little under an archer's thirty-two, so a tower on a ridge is a lookout too (BLD-17)",
+    "Health/max": "A thousand: half the centre's, as much as a barracks and a bit less; ten torch-bearers take half a minute to tear it down (CMB-03)",
+    "Cost/resources/wood": "A hundred wood: the beams and the platform, cheap enough to place several (BLD-17)",
+    "Cost/resources/stone": "A hundred and fifty stone: stone is the tower's price, so a boom player's quarry buys defence (P4, BLD-17)",
+    "Cost/time": "A minute and a quarter for one builder: slower than a barracks, so a tower is raised before the raid, not during it",
+    "Placement/minPhase": "Phase one, Town: towers come with the second age, so the opening's raids meet soldiers and the centre, not walls (BLD-17, TECH-02)"
+  },
   "strategos:building/quarry": {
     "Deposit/amount": "A thousand stone, two hundred quarried blocks' worth: a small quarry pays a civic centre five times over and lasts a match's opening (ECO-08)",
     "Deposit/slots": "Three workers at a small quarry: a third of a field's, so stone comes slower than food"

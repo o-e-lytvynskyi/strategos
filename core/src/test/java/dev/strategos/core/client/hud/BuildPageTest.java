@@ -57,9 +57,11 @@ class BuildPageTest {
                             "Cost/resources/"));
         }
         assertThat(builds.stream().filter(b -> b.reason() != null))
-                .as("the second centre: its limit, the only requirement")
-                .singleElement()
-                .satisfies(b -> assertThat(b.reason()).isEqualTo("Limit reached"));
+                .as("the second centre: its limit; the tower: Town (BLD-17), the only requirements")
+                .extracting(b -> T.byIndex(b.template()).id().value() + ": " + b.reason())
+                .containsExactly(
+                        "strategos:building/civic_centre: Limit reached",
+                        "strategos:building/tower: Needs the Town phase");
         assertThat(page.buttons())
                 .filteredOn(b -> b.kind() == CommandCard.Kind.BACK)
                 .singleElement()

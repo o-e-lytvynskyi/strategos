@@ -31,6 +31,6 @@ public enum RejectReason {
     OUT_OF_REACH,
     /** A building its faction has as many of as its {@code Limit/count} allows (BLD-08). */
     LIMIT,
-    /** A technology whose requirements the faction does not meet (TECH-01). */
+    /** A technology or a building whose requirements, its phase, the faction does not meet (TECH-01, BLD-17). */
     REQUIREMENTS
 }

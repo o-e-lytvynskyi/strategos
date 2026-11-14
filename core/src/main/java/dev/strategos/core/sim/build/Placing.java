@@ -30,6 +30,9 @@ public final class Placing {
     public static final String SPACING = "Placement/spacing";
     public static final String CIVIC_REACH = "Placement/civicReach";
 
+    /** The least phase ordinal a faction must have reached to place the building (BLD-17); 0 for none. */
+    public static final String MIN_PHASE = "Placement/minPhase";
+
     private Placing() {}
 
     /** The match as the rules read it, taken now; {@code faction} &lt; 0 means observer (everything explored). */
@@ -166,6 +169,11 @@ public final class Placing {
         int p = s.stats().path("Limit/count");
         double v = p < 0 ? Double.NaN : s.stats().blockValue(template, faction, p);
         return Double.isFinite(v) && v > 0 ? (int) Math.round(v) : 0;
+    }
+
+    /** The phase ordinal {@code faction} needs to place {@code template}, its {@code Placement/minPhase}; 0 for any. */
+    public static int minPhase(MatchState s, int template, int faction) {
+        return (int) Math.round(value(s, template, faction, MIN_PHASE));
     }
 
     /** How many buildings of {@code template} faction {@code faction} has, foundations and sites among them. */

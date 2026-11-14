@@ -185,7 +185,10 @@ public record CommandCard(Page page, List<Button> buttons) {
                     break;
                 }
                 Button build = button(in, Kind.BUILD, slot++, t, cost(in, t, "Cost/resources/"));
-                out.add(atLimit(in, t) ? disabled(build, "Limit reached") : build);
+                out.add(
+                        atLimit(in, t)
+                                ? disabled(build, "Limit reached")
+                                : phaseShort(in, t) ? disabled(build, "Needs the Town phase") : build);
             }
             out.add(new Button(Kind.BACK, SLOTS - 1, -1, List.of(), true));
             return new CommandCard(Page.BUILD, out);
@@ -299,6 +302,14 @@ public record CommandCard(Page page, List<Button> buttons) {
             own += e.own() && e.template() == template ? 1 : 0;
         }
         return own >= limit;
+    }
+
+    /** Whether the faction's phase is below the {@code Placement/minPhase} of {@code template} (BLD-17). */
+    private static boolean phaseShort(Input in, int template) {
+        ValuePath path = in.templates().valuePaths().byPath("Placement/minPhase");
+        double need = path == null ? Double.NaN : in.templates().value(template, path.id());
+        FactionState f = in.faction();
+        return need > 0 && (f == null ? 0 : f.phase()) < need;
     }
 
     /** The templates building template {@code building} trains, by its {@code Trainer/units}, in their order there. */

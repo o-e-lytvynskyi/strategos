@@ -36,7 +36,7 @@ class TemplateSetTest {
                 .as("ids sort the worker after the infantry: M2's indices stay")
                 .isEqualTo(2);
         assertThat(worker.classes()).containsExactly("Builder", "Gatherer", "Organic", "Unit", "Worker");
-        assertThat(set.all()).hasSize(18);
+        assertThat(set.all()).hasSize(19);
         assertThat(set.all().subList(0, 3)).containsExactly(walker, infantry, worker);
         assertThat(set.all().subList(3, 7))
                 .as("the buildings, appended after M2's pinned units, in id order")
@@ -175,7 +175,7 @@ class TemplateSetTest {
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> set(new UnitTemplate(walker.id(), 0, walker.bodyType(), 0, 0.6f, 1.8f)))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> TemplateSet.builtin().byIndex(18)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> TemplateSet.builtin().byIndex(19)).isInstanceOf(IllegalArgumentException.class);
     }
 
     // M5 combat content (horseman, barracks roster, town bell) without $techs / Researcher — pin after M5+M6 merge.
@@ -185,8 +185,9 @@ class TemplateSetTest {
     // M4: the farmstead's reach (ECO-17); M5: the town bell block in the civic centre's blueprint (BLD-16), on the
     // horseman's set (UNIT-06, UNIT-07); the barracks trains the roster, spearman, archer and horseman (AI-03); M6
     // T2.1: the storehouse's Researcher and the tech gather_wood_1 (TECH-01); M6 T3: the phases, the class Village, the
-    // civic centre's Researcher. Rebaselined after merging M5 combat content into BuiltinTemplates.
-    private static final String BUILTIN_VERSION = "e42cc033bf06e9c3c262444cd97031ffe00aed5d3db282cfed015e024ea5f376";
+    // civic centre's Researcher; M6 T20: the defence tower (BLD-17) and its blueprint. Rebaselined after merging M5
+    // combat content into BuiltinTemplates.
+    private static final String BUILTIN_VERSION = "69340dad176dca173c5d164417d7a911c6c26644d8842cd00755e0e66adecaf9";
 
     private static TemplateSet set(UnitTemplate template) {
         return new TemplateSet(List.of(template));
