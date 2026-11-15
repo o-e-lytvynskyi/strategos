@@ -95,6 +95,7 @@ final class S10StepsScenario implements Scenario {
                         level,
                         StrategosCommands.spaceAround(level, anchor, SIZE, SIZE),
                         MatchOptions.generated(anchor.getY())
+                                .withPlay(ScenarioWorld.REVEALED)
                                 .withPersistent(false)
                                 .withSeed(ScenarioWorld.SEED));
         m.submit(

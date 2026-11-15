@@ -5,6 +5,7 @@ import dev.strategos.core.protocol.SpawnUnits;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.Vec2d;
+import dev.strategos.core.sim.PlayRules;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.server.command.StrategosCommands;
 import dev.strategos.mod.server.match.MatchOptions;
@@ -19,6 +20,9 @@ import net.minecraft.world.level.levelgen.Heightmap;
 /** Server-side helpers of the scenarios, on the integrated server's thread. */
 final class ScenarioWorld {
     private ScenarioWorld() {}
+
+    /** The rules every scenario made before M6 plays under: the map revealed, so the scene shows all, no shroud. */
+    static final PlayRules REVEALED = new PlayRules(PlayRules.Victory.NONE, true, false, false);
 
     static ServerPlayer player(IntegratedServer server) {
         return server.getPlayerList().getPlayers().get(0);
@@ -47,6 +51,7 @@ final class ScenarioWorld {
                         level,
                         StrategosCommands.spaceAround(level, feet, size, size),
                         MatchOptions.generated(feet.getY())
+                                .withPlay(REVEALED)
                                 .withPersistent(persistent)
                                 .withSeed(SEED));
         for (int left = count; left > 0; left -= 300) {

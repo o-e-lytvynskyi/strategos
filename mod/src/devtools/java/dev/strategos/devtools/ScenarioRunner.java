@@ -93,7 +93,7 @@ public final class ScenarioRunner {
             case "m3_goldens" -> new M3GoldensScenario();
             case "m4_goldens" -> new M4GoldensScenario();
             case "art_look" -> new ArtLookScenario();
-            case "rts_frame" -> new RtsFrameScenario();
+            case "rts_frame" -> new RtsFrameScenario("rts_frame", RtsFrameScenario.REVEALED);
             case "rts_frame_battle" -> new BattleFrameScenario();
             case "m5_goldens" -> new M5GoldensScenario();
             case "rts_goldens" -> new RtsGoldensScenario();
@@ -103,6 +103,9 @@ public final class ScenarioRunner {
             case "qa19" -> new PacketSentScenario();
             case "demo" -> new DemoScenario();
             case "arena_world" -> new ArenaWorldScenario();
+            case "m6_goldens" -> new M6GoldensScenario();
+            case "skirmish_flow" -> new SkirmishFlowScenario();
+            case "rts_frame_shroud" -> new RtsFrameScenario("rts_frame_shroud", RtsFrameScenario.EXPLORED);
             default -> null;
         };
     }

@@ -122,7 +122,16 @@ final class M3GoldensScenario implements Scenario {
                 .create(
                         level,
                         StrategosCommands.spaceAround(level, new BlockPos(0, floor, 0), 128, 128),
-                        new MatchOptions(5L, 2, false, MatchSource.GAMETEST, null, MetricsSink.none(), floor));
+                        new MatchOptions(
+                                5L,
+                                2,
+                                false,
+                                MatchSource.GAMETEST,
+                                null,
+                                MetricsSink.none(),
+                                floor,
+                                null,
+                                ScenarioWorld.REVEALED));
         var space = rt.space();
         rt.submit(
                 PlayerSlot.ADMIN,

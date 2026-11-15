@@ -153,7 +153,16 @@ final class M5GoldensScenario implements Scenario {
                 .create(
                         level,
                         StrategosCommands.spaceAround(level, new BlockPos(0, floor, 0), 256, 256),
-                        new MatchOptions(5L, 2, false, MatchSource.GAMETEST, null, MetricsSink.none(), floor));
+                        new MatchOptions(
+                                5L,
+                                2,
+                                false,
+                                MatchSource.GAMETEST,
+                                null,
+                                MetricsSink.none(),
+                                floor,
+                                null,
+                                ScenarioWorld.REVEALED));
         match = rt;
         rt.addListener(out -> onStep(server, rt, out));
         StrategosServer.get().matches().join(rt, player.getUUID(), new PlayerSlot(0));
