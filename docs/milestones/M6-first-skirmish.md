@@ -118,7 +118,7 @@ L0 (`verifyFast`: formatting, ErrorProne, NullAway, ArchUnit) holds for every ca
 | MATCH-14 | T11 | 1 L4 scenario `arena_world`: the world created from code loads with the preset's biome and the rules applied once (L4, at T11's end) · 2 `docs/spikes/S13-arena-world-from-code.md` (T11): how MATCH-02 creates and reuses the world (R) |
 | MATCH-02 | T13 | L1 `SkirmishSetupTest` (codec, defaults, bounds) · 1 `skirmishtests.setup_makes_the_match_with_the_chosen_settings` (L3) · 2 `skirmishtests.a_second_skirmish_is_a_match_of_its_own` (L3) and the arena smoke's run 2 (the next free slots, row 47); `SkirmishOptionsTest` (the command's options), `skirmishtests.the_payload_needs_the_host_or_an_operator` · 3 L4 `skirmish_flow`: title screen to a running match in ≤ 5 clicks (T27) · 4 `m6_goldens` setup screen (L4, T27) |
 | MATCH-03 | T4 | 1 `ConquestTest.defeatWithinTwentyTicks` (L1) · 2 `ConquestTest.civicCentresOnly` (L1) · 3 `MatchStatsTest.theEndScreenEqualsTheCounters` (L1) · 4 `matchtests.conquest_ends_a_match` (L3) · 5 `m6_goldens` end screen (L4, T27) |
-| MAP-02 | T12 | 1 `FirstSkirmishTest.resourcesWithinFivePercentAndDropsitesWithinTen` (L1) · 2 `FirstSkirmishTest.everyTerrainJobHolds` (L1) · 3 `FirstSkirmishTest.everyStartReachesEveryOtherPerClass` (L1) · 4 QA-12's start split (L1, T23) · 5 `maptests.first_skirmish_imports_with_its_hash` (L3) |
+| MAP-02 | T12 | 1 `MapCheckerTest.resourcesWithinFivePerCentPassAndBeyondFail`, `unequalWalksToTheDropsitesFail`, `FirstSkirmishTest.theCheckerPassesTheMapAndItsScenario` (L1) · 2 `FirstSkirmishTest.theManifestDocumentsEachKindOfJob`, `MapCheckerTest.aHillBelowItsRiseFails`, `aBandCountsItsCrossingsAndTheirWidths` (L1) · 3 `MapCheckerTest.aWallWithoutAGapLeavesTheEastStartUnreached` and the checker on the real map (L1) · 4 QA-12's start split (L1, T23) · 5 `maptests.first_skirmish_imports_with_its_hash` (L3) |
 | AI-04 | T21 | 1 `WaveTest.announcedThirtySecondsAhead` (L1) · 2 `DefenceTest.defendersWithinTenSecondsAndTheBell` (L1) · 3 `OpeningTest.seedsPickDifferentOpenings` (L1) · 4 `aitests.waves_reach_the_base` with no ladder rung above repath (L3, slow sample) · 5 `aitests.the_raid_bar_reaches_only_its_audience` (L3) · 6 `m6_goldens` raid bar (L4, T27) |
 | AI-05 | T22 | 1 `DifficultyTest.normalReachesTownOnTime` (L1, 10 seeds) · 2 `:core:openingBalance`'s level pairings (L1, 200 seeds, T23) · 3 `DifficultyTest.noBonusAndEveryHandicapListed` (L1) |
 | UI-20 | T16 | 1 `MinimapOrderTest.aRightClickSendsOneMove` (L1) · 2 `MinimapTilesTest.aChangedChunkWithinASecondAtMostOnce`, `aBuildingThatAppearsOrGoesAwayMarksItsTiles` (L1) · 3 `nettests.a_minimap_order_applies` (L3) · 4 `MinimapBench` < 0.5 ms (L6), PERF-14 budget F (T27) · 5 `m6_goldens` a ping (L4, T27) |
@@ -215,6 +215,7 @@ None. The `strategos:ping` payload stays with multiplayer pings (UI-15, M7); UI-
 | 70 | QA-12.1's median against AI-05's Town time (T23.3) | Row 68's openings (an early-soldier guard of 6, the second barracks at population 21) brought the median to 33:46, but spent the wood, stone and iron Town needs: Normal reached Town at 13:30–14:30 or never, outside AI-05's 12:00 ± 2. With Town back on time the median sat at 36–37 minutes. In 100-seed samples nothing brought it under 35:00: an early-soldier guard that spends only the surplus over the next step's cost (36:50); a per-opening guard (rush at 2 or more pushed Normal's Town out of the window, since the AI draws its opening by weight); the arsenal sooner; faster waves (37:56); more iron for rams (37:10; rams dealt 6% of a centre's damage); no rams (36:24). Centres fall to torches about 17 minutes after Town. | On the owner's word (2026-11-15) the median bar is 20–38. The other criteria are unchanged. The early soldiers spend only the surplus; `early` is an opening knob (base 0, rush 1); the second barracks comes right after Town (population 23); Hard's bonus is gather ×3.0 / train ×0.35 (2.6/0.4 won 57 of 100 against Normal once Town was on time; 3.0/0.35 won 142 of 200). Shortening the time from Town to a centre's fall (a centre's HP against a torch's fire) is left for the balance pass (QA-16). Full run, 1,000 matches, every criterion holds: rush–boom 80, rush–balanced 81, boom–balanced 89, Hard–Normal 142, Normal–Easy 169 of 200; 79.2% by conquest; median 36:10; no exception or stall; starts at most 92 of 200; 19.3 minutes on 12 threads. The judge had failed every unfinished match (a run marked it "no winner"), so the 75% share never applied to a real run: an unfinished match carries no failure now (`OpeningBalanceTest.anUnfinishedMatchIsNoFailure`). |
 | 71 | The MVP soak's tick tail (T24) | The first `perftests.mvp_soak` broke budget A's p99: 11.08 ms against 10 ms. A computer player's failed site search took 41–51 ms every 100 ticks: `SiteFinder` asks the placement rules of about 5,000 corners, and each ask rebuilt the whole map's footprints and node blocks (`Placing.world`). R8: `:core:openingBalance` runs on a fixed clock and keeps no per-system times, so the scene's costs cannot be set beside a grown match's; and the scene does not hold 2 × 150 (the armies fight it down to about 90 a side, then it regrows to about 110). | `QueriesImpl` keeps the placement world while the tick, the buildings' and the nodes' changes and the surface grid hold (`PlacementWorldCacheTest`; the answers and the journals are unchanged). Again: A p99 8.70 ms, C p95 7.25 ms (15.3 ms at 1.5×), every budget holds; the stress pass C p95 11.2 ms. Archived as `perf/mvp-m4pro.json`. The rest of the tail is the terrain's rebuild when a building is placed or lost (WORLD p99 6.4 ms), left as it is. R8 stays open: a per-system clock for the headless matches is the way to close it. |
 | 72 | The consent batch's windows (T27) | The first window of `m6_goldens` showed no shroud in the world, stray dots past the minimap's edge, and failing demo chapters; each of these had passed its L1 or L3 checks. Found in the windows: (1) the shroud's quads were wound clockwise from above, so `translucent()`'s culling dropped every one; (2) `ClientMatchModel.clear()` kept the old match's buildings across a world switch; (3) the build ghost asked `isExplored` with block columns where it takes 4-block vision cells, so a valid site showed red (m3's `placement_valid`) — a bug in play, not only in the scenario; (4) the admin's seat gets no vision payload, so its minimap drew all black; (5) the minimap throttled its upload on the level's game time, so a paused game (F9) never refreshed it; (6) the demo's town chapter granted wood 500 for a 600 Town, the notices chapter ordered raiders in the step that spawned them, the tower scene looked past the match's edge. The goldens were not repeatable: clustered spawns pushed into one of two layouts, the server froze with a building half written, the client's light drifted until the time packet, a text caret blinked. | Fixed with L1 tests where one can see it (`ShroudExtractTest.aQuadIsEmittedFacingUpSoCullingKeepsIt`, `ClientMatchModelClearTest`, `ClientPlacementExploredTest`, `MinimapTilesTest.theImageUploadsAfterTwentyClientTicksWhateverTheGameTime`, `ChapterSetupTest`); the scenarios spawn singly on a 3-block grid, freeze once the block writer is quiet, settle the client, pin noon and keep the hints seen. Every golden scenario agrees with itself over three runs; `m6_goldens` and new sets for m3, m4, m5, rts_goldens and art_look (M6's HUD, T23's arrivals, the stone sword before a tier) are proposed in `goldens-proposed/macos/` for the owner; overlay_goldens is unchanged. `skirmish_flow`: 2 clicks. The M6 demo: seven chapters pass. Sodium with Iris (no pack, row 36): the shroud draws the same. PERF-14 on the M4 Pro: frame p50/p99 3.70/8.93 ms, with the shroud (explored rules) 4.03/8.00 ms, Sodium and Iris with the shroud 2.34/5.35 ms; HUD p99 0.80 ms; client tick p50 1.00 ms. A fake `DemoStage` for an L1 run of each chapter's script is left as a follow-up. |
+| 73 | The close's runs (T28) | (1) The whole perf batch ran out of `runGameTestPerf`'s 110 minutes inside `mvp_soak` (36,000 ticks paced at 50 ms are 30 minutes of wall time). (2) The client jar smoke's guard never ended the client: ModDevGradle passes a run's arguments in @-files named after the run, so the command line never names the game directory the guard looked for; and a guard reading `project` at execution breaks the configuration cache. (3) Under Sodium and Iris, `m4_goldens` agreed with itself over three runs, but `m6_goldens` (`minimap_fog` 5e-5, `shroud_unexplored` once 1.2e-3), `m5_goldens` (`bell_empty` 3.4e-5) and `art_look` (`look_m5_24` 1.1e-4) did not, run 1 against runs 2 and 3. (4) In `shroud_unexplored`, vanilla and Sodium alike, the enemy's civic centre stands above the black: the shroud lies on the terrain, and a building's walls and roof are real blocks above it, so the unexplored enemy base can be seen. | (1) The bound is 150 minutes, as M1, M3 and M4 raised it for their soaks; the perf batch passes (2 h 11 min). (2) The guard matches the run's name and reads the version at configuration; `runClientSmokeJar` passes (13 s; kb minecraft-mod-build). (3) Only `m4_goldens` is proposed for `macos-sodium`; the others keep their old Sodium goldens, which M6's HUD changes, until their variance is found (a follow-up). (4) Not fixed: hiding a building means covering its column or not sending its blocks, a product choice (For the owner in the branch file). |
 
 ### 1.7 Consent plan
 
@@ -752,7 +753,7 @@ kernel adds `:core:jmh :core:jmhCompare`.
 
 - [x] T2.1 (2026-10-25) · [x] T2.2 (2026-10-25) · [x] T3 (2026-10-26) · [x] T4 (2026-11-12) · [x] T5 (2026-11-12) · [x] T6 (2026-11-12) · [x] T7 (2026-11-13) · [x] T8 (2026-11-12) · [x] T9 (2026-11-12) · [x] T10 (2026-11-13) · [x] T11 (2026-11-13) · [x] T12.1 (2026-11-13) · [x] T12.2 (2026-11-13)
 - [x] T13 (2026-11-14) · [x] T14 (2026-11-14) · [x] T15 (2026-11-14) · [x] T16 (2026-11-14) · [x] T17 (2026-11-14) · [x] T1 (2026-11-14) · [x] T18 (2026-11-14) · [x] T19 (2026-11-14) · [x] T20 (2026-11-14) · [x] T21 (2026-11-14)
-- [x] T22 (2026-11-14) · [x] T23 (2026-11-15) · [x] T24 (2026-11-15) · [x] T25 (2026-11-14) · [ ] T27 · [ ] T28
+- [x] T22 (2026-11-14) · [x] T23 (2026-11-15) · [x] T24 (2026-11-15) · [x] T25 (2026-11-14) · [ ] T27 · [x] T28 (2026-11-15)
 
 ---
 
@@ -821,3 +822,46 @@ unless the last column says otherwise.
 | The goldens and the looks | T27 | Accepted |
 | The MVP baseline on the M4 Pro | T24 | PERF-09.4 |
 | The matches per level, the questionnaire, the audio checklist, two friends' playtests | after the demo | Accepted, the MVP gate |
+
+---
+
+## 11. Implementation results
+
+### The close (T28, 2026-11-15)
+
+**Delivered.** All 29 tasks (T2 and T12 split in two) are built; 12 of the 23 cards are `done`, and the other 11
+wait only for the owner's word (TECH-03, MATCH-02, MATCH-03, AI-04, UI-13, UI-14, UI-16, UI-20, UI-21, FOW-07: the
+goldens; QA-13: the sign-off). Findings 1–72 in §1.6; the decisions taken are in the
+branch file `docs/branches/o-e-lytvynskyi-m6-t2-t17.md`.
+
+**Gates on the M4 Pro.**
+
+| Gate | Result |
+|---|---|
+| `verify verifySlow` | green, 4 min 47 s; 258 GameTests in `verify`'s and `verifySlow`'s batches, none failed |
+| `runServerSmokeJar` (L5) | green, 8 s |
+| `verifySoak` | green, 3 h 13 min (200 seeded replays, the AI soak's 20 matches) |
+| `:core:openingBalance` (QA-12) | every criterion holds: 1,000 matches in 19.3 min on 12 threads; openings 80, 81, 89 of 200; Hard 142 of 200 against Normal, Normal 169 against Easy; neither start above 92; medians 26:24–38:23 |
+| `runGameTestPerf` (PERF-09 and earlier milestones' soaks) | green, 2 h 11 min; `mvp_soak` A p50/p99 0.70/8.86 ms, B p95 3.30, C p95 7.17 against 15.3, D p99 0.13, E at most 4.6 KB/s a viewer, G 11.0 ms; A per unit without the AI 6.66 µs against M5's 7.83 (12.36 with it); `mvp_stress` C p95 11.3 ms against 50 (`perf/mvp-m4pro.json`) |
+| `runClientSmokeJar` (QA-13.5, L4) | green, 13 s: the production jar alone loads the client to the title screen |
+| `jmhCompare` | one red, `MovementBench.step600` 22.0 → 36.3 µs: the fog's stamping, bisected (M5 24.9, the vision fix 35.0, the head 36.0); every other benchmark within 15 %; a proposed baseline `perf/baseline-m4pro.proposed.json` waits for the owner |
+| PERF-14 (L4) | frame p50/p99 3.70/8.93 ms; with the shroud 4.03/8.00; Sodium and Iris with the shroud 2.34/5.35; HUD p99 0.80; client tick p50 1.00 (`perf/client/m4pro.json`) |
+| Goldens (L4) | `m6_goldens` and new m3, m4, m5, rts_goldens and art_look sets proposed in `goldens-proposed/macos/`, each three runs in agreement; overlay_goldens unchanged; under Sodium and Iris only `m4_goldens` repeats and is proposed (`goldens-proposed/macos-sodium/`, row 73) |
+
+**Deviations from this spec**, each with its row: QA-12.1's bar is ≥ 75 % by conquest and the median 20–38 (rows
+65, 70, the owner's word); Hard carries an open bonus (R6, row 70); Town costs 600 wood (row 63); the AI's start
+positions belong to the match (row 69); the per-unit comparison of PERF-09 holds A without the AI's phase (§2.22,
+the branch file); R8 is left open (row 71).
+
+**Health check.** Two classes over 800 lines, both grown by T23's movement fixes: `MotionSystem` 910 and
+`PathService` 837 (next: `BuildingStore` 798). No ArchUnit change. One TODO (NetGateway's fog filter, FOW-03 in
+M8) and one `AFTER-M8` marker (the shot effects' audience), both from M5; M6 adds none.
+
+**Follow-ups** for the next milestone's first task:
+- split `MotionSystem` and `PathService` under 800 lines by moves only, as M6 T1 did for M5's three;
+- a fake `DemoStage` so each demo chapter's script runs at L1 (row 72);
+- R8: a real clock under a flag in `HeadlessMatch` to compare the MVP soak with a grown match;
+- the minimap's "changed chunks" for terrain outside buildings (rows 45, 48; the owner's choice);
+- a cheaper vision restamp (only the changed edge of the disc) if `step600`'s budget tightens;
+- the Sodium goldens of m5, m6 and art_look, once their run-to-run variance is found (row 73);
+- buildings above the shroud (row 73), as the owner chooses.

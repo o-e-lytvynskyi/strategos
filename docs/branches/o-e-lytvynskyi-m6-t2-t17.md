@@ -1,15 +1,15 @@
 # m6-t2-t17 on dev/o-e-lytvynskyi/m6-t2-t17
 
-**Developer:** o-e-lytvynskyi (Claude Code, Opus) · **Branch:** dev/o-e-lytvynskyi/m6-t2-t17 · **Work:** M6 · **Base:** dev/dyadik/m6-t2-t17 @ 7f08f40 · **Claimed:** 2026-11-14 · **Status:** in progress
+**Developer:** o-e-lytvynskyi (Claude Code, Opus) · **Branch:** dev/o-e-lytvynskyi/m6-t2-t17 · **Work:** M6 · **Base:** dev/dyadik/m6-t2-t17 @ 7f08f40 · **Claimed:** 2026-11-14 · **Status:** ready for review
 
 **Note:** taken over on the owner's word, 2026-11-14 («давай перехватим задачу и добьем ее»); dyadik's claim was released by the owner in [PR #54](https://github.com/o-e-lytvynskyi/strategos/pull/54), not handed over by its holder; the work continues from dyadik's head 7f08f40 ([PR #53](https://github.com/o-e-lytvynskyi/strategos/pull/53)), whose commits and branch-file log stay in the history. Widened to the whole of M6 (T1 and T18–T28, unclaimed) on the owner's word, 2026-11-14 («продолжай до того момента как закончишь полностью веху»).
 
 ## Now
 
-- **Milestone:** M6 MVP: First skirmish, the claim's T2.1–T17 done (18 of 29 tasks with the T2 and T12 splits; T1 and T18–T28 are outside the claim); spec [M6-first-skirmish.md](../milestones/M6-first-skirmish.md).
-- **In progress:** M6 T23 (QA-12) since 2026-11-15.
-- **Last finished task:** M6 T22 (2026-11-14).
-- **Next:** T24 (PERF-09), T27 (the window batch: goldens for your approval), T28 (the close).
+- **Milestone:** M6 MVP: First skirmish, all 29 tasks built (with the T2 and T12 splits); spec [M6-first-skirmish.md](../milestones/M6-first-skirmish.md), results in its §11.
+- **In progress:** nothing; handed in by [PR #55](https://github.com/o-e-lytvynskyi/strategos/pull/55) for a fresh maintainer session's review.
+- **Last finished task:** M6 T28 (2026-11-15); T27 is built, its goldens wait for the owner (item 4).
+- **Next:** the owner's word on items 3–6; the review.
 - **Merged from main last:** a24572d (2026-11-14).
 
 ## Depends on unfinished work
@@ -18,12 +18,20 @@ From the assessment before the claim (procedure §2a step 0); kept current.
 
 | Milestone | What this work needs from it | Plan: independent / against a contract / after | `AFTER-M<n>` markers |
 |---|---|---|---|
-| M6 T22 (AI-05, unclaimed) | The skirmish's AI level: slot 1 plays `ai:first_loop` until `ai/skirmish.json` exists (spec §1.6 row 46) | against a contract: `SkirmishSetup` carries the level end to end | `AFTER-T22` in `Skirmishes.play` |
-| M8 foundations (FOW-02/03/05, `lev1pes`, claimed) | Nothing; it overlaps fog: team vision, last-seen buildings, leak audit | independent: T5–T8's vision grid and client shroud are M6's solo fog; M8 extends them, the owner settles the base if both land fog | none |
+| M6 T22 (AI-05) | Resolved: T22 is done in this branch; `Skirmishes.play` seats `ai:skirmish` at the setup's level | — | none left |
+| M8 foundations (FOW-02/03/05, `lev1pes`, claimed) | Nothing; it overlaps fog: team vision, last-seen buildings, leak audit | independent: T5–T8's vision grid and client shroud are M6's solo fog; M8 extends them, the owner settles the base if both land fog | M5's `AFTER-M8` in `NetGateway` (shot effects to the union of two cells' viewers) stays; M6 adds none |
 
 ## Log
 
 Newest first; one entry per session in the worklog's shape. Before 2026-11-14: dyadik's branch file on 7f08f40.
+
+### 2026-11-15 — M6 T23, T24, T27, T28
+
+- **T23 · QA-12** — the AI under fog, the net-progress backstop, openings and levels tuned (rows 60–70); QA-12.1 amended twice on the owner's word (≥ 75 % by conquest, median 20–38). Final `:core:openingBalance`: 1,000 matches in 19.3 min; openings 80, 81, 89 of 200 against each other; Hard 142 against Normal, Normal 169 against Easy; starts 60–92; medians 26:24–38:23; every criterion holds.
+- **T24 · PERF-09** — `MvpScene`, `perftests.mvp_soak` and `mvp_stress`; the AI's placement world cached per tick (row 71); `perf/mvp-m4pro.json`.
+- **T27 · the consent batch** — `m6_goldens` (23 frames) and new sets for m3, m4, m5, rts_goldens and art_look proposed, each three runs in agreement; seven fixes the windows found (row 72); PERF-14 archived in `perf/client/m4pro.json`.
+- **T28 · the close** — `constructiontests` for every MVP blueprint (arsenal, storehouse, farmstead, field built and staged; deposits as their blueprints); `runClientSmokeJar`; the per-unit check without the AI.
+- **Gates** (M4 Pro, 2026-11-15): `verify verifySlow` green, 4 min 47 s (258 GameTests); `runServerSmokeJar` green; `verifySoak` green, 3 h 13 min; `:core:openingBalance` green; `runGameTestPerf` green, 2 h 11 min (A per unit without the AI 6.66 µs against 7.83); `runClientSmokeJar` green, 13 s; `jmhCompare` red on `step600` only (item 3).
 
 ### 2026-11-14/15 — M6 T18–T22, T25, T28.1
 
@@ -60,8 +68,12 @@ Newest first; one entry per session in the worklog's shape. Before 2026-11-14: d
 1. **The minimap's "changed chunks" (UI-20, spec rows 45 and 48):** construction, new and destroyed buildings redraw within a second; other terrain changes (a felled tree, a placed block) wait for the round, a few seconds. Recommended: keep it; a client block-update hook would make it strict (a mixin, no NeoForge event). Say if you want the hook.
 2. **`MinimapBench` has no baseline entry:** it joins `perf/baseline-m4pro.json` at the next baseline you approve (0.76 µs a tile against a 0.5 ms budget).
 3. **`jmhCompare` red, one benchmark** (2026-11-14, a valid run: chat closed): `MovementBench.step600` 22.0 → 33.3 µs against the baseline (main itself reads 24.6–25.0 here). Bisected and profiled: vision stamping is the whole difference (24.7 µs with `VisionSystem` stubbed); `VisionBench` reads the same ~11 µs for 300 moving units, inside WORLD's 0.5 ms budget (spec §6). Recommended: accept it as the fog's own cost — a proposed baseline (`perf/baseline-m4pro.proposed.json`) from the full run at the close, for your approval; a cheaper restamp (only the disc's changed edge on a one-cell move) is possible later if the budget tightens.
+   **At the close** (2026-11-15, a valid full run): `jmhCompare`'s only red is still `step600`, 22.0 → 36.3 µs; every other benchmark is within 15 % (`ShotBench.volley60{collateral}` +14 %, `MatchBusBench` −11 %, `TerrainEditBench` −40 %). Re-bisected the same hour: M5's T18 reads 24.9, the vision fix (90c7b34b) 35.0, T23's backstop 36.3, the head 36.0 — the fog is the cost; T23 adds about 1 µs (3 %); the 33.3 of 2026-11-14 was the machine's spread. `perf/baseline-m4pro.proposed.json` is that full run (30 benchmarks, the first scores of `MinimapBench` 0.64 µs, `ShroudBench.extract384` 19.0 µs, `VisionBench` 10.9 µs, `NodeDiscoveryBench` 67.4 µs and `IdleBench` 25.3 µs); on a yes it replaces `perf/baseline-m4pro.json` and item 2 closes with it.
 
 4. **Goldens to approve (T27, spec row 72):** `mod/src/devtools/goldens-proposed/macos/` holds `m6_goldens` (23 frames, new) and new sets for `m3_goldens`, `m4_goldens`, `m5_goldens`, `rts_goldens` and `art_look` (M6's HUD, T23's arrivals, the horseman's stone sword before a tier, the client's light pinned at noon). Each agreed with itself over three window runs. Two settings to look at: m5's `volley_impact` mask moved onto the new arrows, and m6's `setup_screen` takes a 1e-4 threshold (the blurred world behind the screen varies 1–2e-5; the screen itself is identical). On a yes they move into `goldens/macos/` (README "Approving goldens").
+   **Under Sodium and Iris** (spec row 73): `goldens-proposed/macos-sodium/m4_goldens` (10 frames, three runs in agreement, each looked at). `m6_goldens`, `m5_goldens` and `art_look` did not repeat (run 1 against 2 and 3: up to 5e-5, `look_m5_24` 1.1e-4, `shroud_unexplored` once 1.2e-3), so none is proposed; their old Sodium goldens (m5, art_look) predate M6's HUD and fail with `-Pcompat` until then. Recommended: approve m4's, and leave the others as a follow-up of the next milestone.
+5. **Buildings stand above the shroud** (FOW-07, spec row 73): in `shroud_unexplored` the enemy's civic centre shows above the black, because the shroud lies on the terrain and a building's blocks rise above it, so an unexplored enemy base can be seen from the RTS camera. Not fixed. Options: (a) lay the shroud over the column's top, buildings included (hides roofs, a wall still shows from the side); (b) a black volume over unexplored columns up to the highest block; (c) leave it until M8's leak audit (FOW-05). Recommended: (b) as the next milestone's first fix if you want the MVP's fog honest; (c) costs nothing now. Your choice.
+6. **Your part of the MVP gate** (QA-13.7, spec §8 row 9): the playtest protocol `docs/testing/playtest.md`: one match per level (Easy, Normal, Hard), one on a dedicated server (`scripts/playtest.sh`), a win on Easy, the questionnaire, the audio checklist; two friends' matches. The demo chapters first, if you like: `./gradlew :mod:runScenario -Pscenario=demo -Pdemo=m6 -Pscenario.timeoutSeconds=3600`. Then the cards waiting on you become `done` (the goldens) and `accepted` (your verdict).
 
 ## Decisions taken
 
@@ -80,8 +92,10 @@ Newest first; one entry per session in the worklog's shape. Before 2026-11-14: d
 - 2026-11-15 · The AI's start positions are part of the match (spec row 69): `MatchConfig.starts`, filled from the map manifest; `setStartPositions` removed. Undo: none sensible — without it the AI never attacks under fog.
 - 2026-11-15 · The pre-M6 L4 scenarios build their matches with `ScenarioWorld.REVEALED`, the rules their goldens were made under (M6 made fog the default); `rts_frame` stays PERF-14's revealed baseline and `rts_frame_shroud` adds the shroud. Undo: `PlayRules.DEFAULTS` in those scenarios.
 - 2026-11-15 · m6's `setup_screen` golden takes a 1e-4 threshold (the blurred world behind the screen varies 1–2e-5 run to run), and m5's `volley_impact` mask follows the arrows to their new place (spec row 72). Undo: `goldens.json` in the proposals.
+- 2026-11-15 · PERF-09's per-unit check (§2.22) holds A's p95 per unit without the AI's phase to M5's battle soak (1.139 × M4's base, M5 spec §11; no `perf/battle-m4pro.json` was archived), within 15 %; the AI is M6's own new cost and the report gives A with it beside (12.2 µs a unit with, about 7.4 without, against 7.8). Resolves the AFTER-M5 marker. Undo: `PerfVerdicts.mvp`, A with the AI.
 - 2026-11-15 · R8 left open (spec row 71): the MVP soak's costs are not compared with a grown match's, because the headless matches keep no per-system times; the scene is placed, as §6 says. Undo: a real clock under a flag in `HeadlessMatch`, summing the phase timers at about 150 population.
 - 2026-11-15 · The stress pass runs 6,000 ticks (PERF-09.3 names no length; M5's ran the short first-loop length). Undo: `strategos.mvpStress.ticks`.
+- 2026-11-15 · `runGameTestPerf`'s wall-clock bound 110 → 150 min: the MVP soak is 36,000 ticks paced at 50 ms (30 min) and its stress pass six, and the whole perf batch ran out of time in `mvp_soak` at tick 19,058 (2026-11-15), as M1, M3 and M4 raised it for their soaks; it bounds the run, not a budget. Undo: `mod/build.gradle`'s timeout, with the MVP soak in its own task.
 - 2026-11-15 · The net-progress count belongs to an order (spec row 68's exceptions): a new order starts it again; a path delivered after its start column was built over stands as found. Undo: `StuckLadder.orderKey`, `PathService.startFrom`'s guard.
 
 ## Pitfalls

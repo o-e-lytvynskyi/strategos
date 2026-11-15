@@ -246,7 +246,8 @@ only its own vision at every level except that labelled top level.
   5. The package imports with its terrain hash (L3).
 - **Tests:** L0, L1, L3 · **Fixtures:** the skirmish map package with a terrain hash ·
   **Depends on:** MAP-01, ECO-02, ECO-16, D-17 · **Size:** M · **Tier:** T0
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-11-15: checks 1–3 `MapCheckerTest` and `FirstSkirmishTest` (spec §1.4), check 4 QA-12's start split, at most 92 of 200 (row 70), check 5 `maptests.first_skirmish_imports_with_its_terrain_hash`
 
 ### The opponent
 
@@ -374,7 +375,8 @@ only its own vision at every level except that labelled top level.
      hidden case of CORE-03 AC4, which M0 cannot test without fog).
 - **Tests:** L0, L1, L6 · **Depends on:** CORE-08 · **Size:** M · **Tier:** T1 (pulled into the MVP
   by D-24)
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-11-15: checks 1–3 and 5 `VisionGridTest`, `VisibilityIndexTest`, `FogCommandTest`; check 4 `VisionBench` (about 11 µs for 300 units) and `perftests.mvp_soak` budget A, p99 8.70 ms (row 71)
 
 #### FOW-07 · Explored state, the shroud and solo fog gating
 - **Value:** A match starts in the dark: scouting matters, explored land stays dim, and hidden
@@ -487,7 +489,7 @@ only its own vision at every level except that labelled top level.
   7. The owner signs off the checklist (L7, acceptance).
 - **Tests:** L0, L2, L3, L4 (consent), L5, L7, D · **Depends on:** QA-12, QA-09, PERF-09 ·
   **Size:** S · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress (2026-11-15: check 1 `checkNaming` in `verifyFast`; check 2 `CommandCardIconsTest`; check 3 `constructiontests`, every MVP blueprint is built to equal its blueprint and loses its ranked blocks by stage (the civic centre, house, barracks and tower in `constructiontests` and `buildingtests`; the arsenal, storehouse, farmstead and field in the T28 sweep; the four deposits stand as their blueprints); check 4 `runServerSmokeJar` in `verify`; check 6 `docs/provenance.md`; check 5 `runClientSmokeJar` (L4), the production jar loads the client to the title screen; check 7 waits for the owner's sign-off)
 
 #### PERF-09 · MVP perf gate
 - **Value:** The MVP plays smoothly from the first minute to the last.
@@ -502,4 +504,4 @@ only its own vision at every level except that labelled top level.
   4. The report is archived as the MVP baseline (R).
 - **Tests:** L6, R · **Depends on:** PERF-08, QA-12 · **Size:** S · **Tier:** T0
 - **Status:** done
-- **Done:** 2026-11-15: checks 1–2 `perftests.mvp_soak` on the M4 Pro, every budget holds (A p50 0.68 ms, p99 8.70 ms; B p95 3.07 ms; C p95 7.25 ms against 23 and 15.3 ms; D p99 0.16 ms; E at most 6.1 KB/s a viewer; G 8.4 ms); check 3 `perftests.mvp_stress`, C p95 11.2 ms against 50 ms; check 4 `perf/mvp-m4pro.json` (spec row 71)
+- **Done:** 2026-11-15: checks 1–2 `perftests.mvp_soak` on the M4 Pro, every budget holds (A p50 0.68 ms, p99 8.70 ms; B p95 3.07 ms; C p95 7.25 ms against 23 and 15.3 ms; D p99 0.16 ms; E at most 6.1 KB/s a viewer; G 8.4 ms); check 3 `perftests.mvp_stress`, C p95 11.2 ms against 50 ms; check 4 `perf/mvp-m4pro.json` (spec row 71); the close's run (2026-11-15) holds them again, A per unit without the AI 6.66 µs against M5's 7.83 (spec §11)
