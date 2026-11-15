@@ -19,6 +19,59 @@
   },
   "results": [
     {
+      "date": "2026-11-15",
+      "tree": "M6 T27, on dev/o-e-lytvynskyi/m6-t2-t17 after f2df9421",
+      "template": "the M6 roster",
+      "scene": "rts_frame with M6's HUD (resource bar, minimap, notices); rts_frame_shroud: the same view with the shroud on under the explored rules; one run each",
+      "command": "./gradlew :mod:runScenario -Pscenario=rts_frame|rts_frame_shroud [-Pcompat]",
+      "note": "M6's consent batch (T27, finding 72): every PERF-14 budget holds with M6's HUD and the shroud; the shroud costs 0.33 ms at p50 in vanilla. Client tick p50 1.00 ms is at its 1 ms budget, as in M5's battle (0.96). Only the medians were kept from the run. Not yet approved as a baseline.",
+      "profiles": {
+        "vanilla": {
+          "mods": "NeoForge 21.1.264 and Strategos",
+          "median": {
+            "frameP50Ms": 3.7,
+            "frameP99Ms": 8.93,
+            "hudDrawP99Ms": 0.8,
+            "clientTickP50Ms": 1.0
+          },
+          "runs": [
+            {
+              "frameP50Ms": 3.7,
+              "frameP99Ms": 8.93,
+              "hudDrawP99Ms": 0.8,
+              "clientTickP50Ms": 1.0
+            }
+          ]
+        },
+        "vanilla-shroud": {
+          "mods": "NeoForge 21.1.264 and Strategos",
+          "median": {
+            "frameP50Ms": 4.03,
+            "frameP99Ms": 8.0
+          },
+          "runs": [
+            {
+              "frameP50Ms": 4.03,
+              "frameP99Ms": 8.0
+            }
+          ]
+        },
+        "sodium-shroud": {
+          "mods": "NeoForge 21.1.264, Sodium, Iris (no shader pack) and Strategos",
+          "median": {
+            "frameP50Ms": 2.34,
+            "frameP99Ms": 5.35
+          },
+          "runs": [
+            {
+              "frameP50Ms": 2.34,
+              "frameP99Ms": 5.35
+            }
+          ]
+        }
+      }
+    },
+    {
       "date": "2026-10-28",
       "tree": "M5 T17, on dev/o-e-lytvynskyi/m5 after 6fa9efc",
       "template": "the M5 roster",
