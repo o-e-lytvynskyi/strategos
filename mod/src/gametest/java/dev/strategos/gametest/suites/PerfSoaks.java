@@ -3,10 +3,14 @@ package dev.strategos.gametest.suites;
 import static dev.strategos.gametest.suites.PerfVerdicts.judgeSoak;
 
 import dev.strategos.core.protocol.MatchControl;
+import dev.strategos.core.sim.ai.Levels;
 import dev.strategos.core.testkit.BattleScene;
 import dev.strategos.core.testkit.EconomyScene;
 import dev.strategos.core.testkit.FirstLoopScene;
+import dev.strategos.core.testkit.MvpScene;
 import dev.strategos.gametest.suites.PerfVerdicts.Window;
+import dev.strategos.mod.server.content.Scenarios;
+import java.util.Objects;
 import net.minecraft.gametest.framework.GameTestHelper;
 
 /** Long-running performance scenes, behind PerfTests' stable annotated entry points. */
@@ -28,6 +32,12 @@ final class PerfSoaks {
     private static final int BATTLE_TICKS = Integer.getInteger("strategos.battle.ticks", 6_000);
     private static final int BATTLE_LANE = 9;
     private static final int BATTLE_STRESS_LANE = 10;
+    /** PERF-09: 30 game minutes; {@code -Dstrategos.mvp.ticks} shortens a trial run. */
+    private static final int MVP_TICKS = Integer.getInteger("strategos.mvp.ticks", MvpScene.SOAK_TICKS);
+
+    private static final int MVP_STRESS_TICKS = Integer.getInteger("strategos.mvpStress.ticks", 6_000);
+    private static final int MVP_LANE = 11;
+    private static final int MVP_STRESS_LANE = 12;
 
     private PerfSoaks() {}
 
@@ -124,6 +134,33 @@ final class PerfSoaks {
                 h,
                 CrowdSoak.Config.firstLoop(
                         "battle_stress", BattleScene.Config.STRESS, FIRST_LOOP_SHORT_TICKS, BATTLE_STRESS_LANE, 1),
+                r -> judgeSoak(h, r, window, true),
+                window::start,
+                window::sampleForeignLoad);
+    }
+
+    /** The scene at {@code scale}, both factions played by the shipped skirmish script at Hard. */
+    private static MvpScene.Config mvp(GameTestHelper h, MvpScene.Config scale) {
+        return scale.withAi(Objects.requireNonNull(
+                Scenarios.script(h.getLevel().getServer(), Levels.PROFILE), "the shipped ai/skirmish.json"));
+    }
+
+    static void mvpSoak(GameTestHelper h) {
+        Window window = new Window();
+        CrowdSoak.start(
+                h,
+                CrowdSoak.Config.firstLoop("mvp_soak", mvp(h, MvpScene.Config.SOAK), MVP_TICKS, MVP_LANE, 1),
+                r -> judgeSoak(h, r, window, false),
+                window::start,
+                window::sampleForeignLoad);
+    }
+
+    static void mvpStress(GameTestHelper h) {
+        Window window = new Window();
+        CrowdSoak.start(
+                h,
+                CrowdSoak.Config.firstLoop(
+                        "mvp_stress", mvp(h, MvpScene.Config.STRESS), MVP_STRESS_TICKS, MVP_STRESS_LANE, 1),
                 r -> judgeSoak(h, r, window, true),
                 window::start,
                 window::sampleForeignLoad);

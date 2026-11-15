@@ -25,6 +25,7 @@ public final class TrackerRefresher {
     private final MinecraftServer server;
     private final Supplier<MatchRegistry> matches;
     private final Map<Long, Integer> seen = new HashMap<>();
+    private long nanos;
 
     public TrackerRefresher(MinecraftServer server, Supplier<MatchRegistry> matches) {
         this.server = server;
@@ -35,11 +36,25 @@ public final class TrackerRefresher {
         return tick % EVERY == OFFSET;
     }
 
+    /** The time the refreshes have taken since the server began, for the perf soaks (PERF-09). */
+    public long nanos() {
+        return nanos;
+    }
+
     public void tick() {
         int now = server.getTickCount();
         if (!due(now)) {
             return;
         }
+        long start = System.nanoTime();
+        try {
+            refresh();
+        } finally {
+            nanos += System.nanoTime() - start;
+        }
+    }
+
+    private void refresh() {
         MatchRegistry registry = matches.get();
         seen.keySet().removeIf(key -> registry.get(new MatchId((int) (key >> 8))) == null);
         for (MatchRuntime rt : registry.all()) {

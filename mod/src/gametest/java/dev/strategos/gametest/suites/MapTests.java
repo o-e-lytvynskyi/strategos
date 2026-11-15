@@ -873,6 +873,26 @@ public final class MapTests {
         return MapPackageLoader.load(h.getLevel().getServer(), PROVING_GROUND).manifest();
     }
 
+    /**
+     * A first-skirmish match (MAP-02) in the test's lane east of it, a skirmish's rules: fog and no victory rule, so it
+     * cannot end by itself, with a saved blob if {@code persistent}.
+     */
+    static MatchRuntime firstSkirmish(GameTestHelper h, int lane, boolean persistent) {
+        MapManifest m = firstSkirmishManifest(h);
+        BlockPos corner = h.absolutePos(BlockPos.ZERO);
+        BlockPos origin = new BlockPos(corner.getX() + lane * FAR, corner.getY(), corner.getZ());
+        MatchSpace space = new MatchSpace(
+                h.getLevel().dimension(), origin, m.sizeX(), m.sizeZ(), origin.getY(), origin.getY() + m.height() - 1);
+        MatchOptions options = MatchFixture.fogOptions(SimHarness.DEFAULT_SEED, h)
+                .withMap(FIRST_SKIRMISH, origin.getY() + m.startSlots().get(0).y())
+                .withPersistent(persistent);
+        return MatchFixture.create(h, space, options);
+    }
+
+    static MapManifest firstSkirmishManifest(GameTestHelper h) {
+        return MapPackageLoader.load(h.getLevel().getServer(), FIRST_SKIRMISH).manifest();
+    }
+
     private static BlockState stone() {
         return Blocks.STONE.defaultBlockState();
     }

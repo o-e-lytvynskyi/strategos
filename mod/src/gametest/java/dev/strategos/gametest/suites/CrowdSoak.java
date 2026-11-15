@@ -30,6 +30,7 @@ import dev.strategos.core.sim.econ.EconomyTimes;
 import dev.strategos.core.sim.journal.JournalExport;
 import dev.strategos.core.testkit.BattleScene;
 import dev.strategos.core.testkit.JournalFiles;
+import dev.strategos.core.testkit.MvpScene;
 import dev.strategos.core.testkit.ProvingGround;
 import dev.strategos.core.testkit.Seeds;
 import dev.strategos.core.testkit.SoakOrders;
@@ -172,6 +173,9 @@ final class CrowdSoak {
     private long shots;
     private final @Nullable SoakScene scene;
     private final boolean battle;
+    private final boolean mvp;
+    private final long[] trackers;
+    private long trackersBefore;
     private final long[][] combat;
     private CombatTimes.Stats combatLast = new CombatTimes.Stats(0, 0, 0, 0, 0);
     private CombatTimes.Stats combatBefore = new CombatTimes.Stats(0, 0, 0, 0, 0);
@@ -194,8 +198,11 @@ final class CrowdSoak {
         this.h = h;
         this.config = config;
         this.seed = Seeds.set("soak").skip(config.seedLine()).findFirst().orElseThrow();
-        this.rt = MapTests.provingGround(h, config.lane(), 0, config.firstLoop());
-        this.manifest = MapTests.manifest(h);
+        boolean skirmish = config.scene() instanceof MvpScene.Config; // PERF-09 plays MAP-02, not the proving ground
+        this.rt = skirmish
+                ? MapTests.firstSkirmish(h, config.lane(), true)
+                : MapTests.provingGround(h, config.lane(), 0, config.firstLoop());
+        this.manifest = skirmish ? MapTests.firstSkirmishManifest(h) : MapTests.manifest(h);
         this.orders = new SoakOrders(seed, ProvingGround.generate());
         this.done = done;
         this.windowStarts = windowStarts;
@@ -208,6 +215,8 @@ final class CrowdSoak {
         SoakScene.Spec sc = config.scene();
         this.scene = sc == null ? null : sc.create(manifest.startSlots());
         this.battle = scene instanceof BattleScene;
+        this.mvp = scene instanceof MvpScene;
+        this.trackers = new long[mvp ? samples : 0];
         this.combat = new long[4][battle ? samples : 0];
         this.writer = new long[sc == null ? 0 : samples];
         this.fx = new long[sc == null ? 0 : samples];
@@ -287,7 +296,11 @@ final class CrowdSoak {
                         core(rt).queries().unitCount() + " units and "
                                 + rt.bodies().count() + " bodies of " + units + " after a minute; without a body: "
                                 + unbodied());
-                if (core(rt).queries().unitCount() == units && rt.bodies().count() == units) {
+                int alive = core(rt).queries().unitCount();
+                // the computer is already playing: the MVP scene's units may be one more by the time the bodies are in
+                if (mvp
+                        ? alive >= units && rt.bodies().count() == alive
+                        : alive == units && rt.bodies().count() == units) {
                     longest = new int[maxIndex() + 1];
                     next(Phase.SOAK);
                 }
@@ -337,6 +350,10 @@ final class CrowdSoak {
                     combat[3][i] = now.damageNanos() - combatLast.damageNanos();
                     combatLast = now;
                 }
+                if (mvp) {
+                    long now = StrategosServer.get().trackerRefresher().nanos();
+                    trackers[i] = now - trackersBefore; // the refresh runs one tick in five
+                }
                 if (placing) {
                     placement.add(core(rt).timers().lastPhaseNanos()[COMMANDS]);
                 }
@@ -380,6 +397,7 @@ final class CrowdSoak {
         if (scene != null) {
             writerBefore = StrategosServer.get().writer().writeNanos();
             fxBefore = rt.fxNanos();
+            trackersBefore = StrategosServer.get().trackerRefresher().nanos();
             placing = false;
             for (SoakScene.Issue issue : scene.next(q)) {
                 boolean place = issue.command() instanceof PlaceBuilding;
@@ -483,7 +501,8 @@ final class CrowdSoak {
                                 shots - shotsBefore,
                                 hits - hitsBefore,
                                 deaths - deathsBefore)
-                        : null);
+                        : null,
+                trackers);
     }
 
     /** Budget G in the window: one save of the match's blob, as an autosave would make it. */
@@ -521,6 +540,10 @@ final class CrowdSoak {
         StartSlot west = manifest.startSlots().get(0);
         var at = rt.space().origin().getCenter().add(cx, west.y() + 2, cz);
         for (int k = 0; k < config.viewers(); k++) {
+            if (mvp) { // under fog a viewer sees what its faction does: it stands at its own start
+                StartSlot own = manifest.startSlots().get(k);
+                at = rt.space().origin().getCenter().add(own.x(), own.y() + 2, own.z());
+            }
             MockViewer viewer = MockViewer.join(h.getLevel(), "strategos-soak" + k, at.x, at.y, at.z, 12);
             viewer.capture().keep(false);
             StrategosServer.get().matches().join(rt, viewer.player().getUUID(), new PlayerSlot(k));

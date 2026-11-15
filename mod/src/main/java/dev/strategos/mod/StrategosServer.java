@@ -329,6 +329,11 @@ public final class StrategosServer {
         return faults;
     }
 
+    /** Makes vanilla's tracking ask the fog gate again; its time is a perf soak's report (PERF-09). */
+    public TrackerRefresher trackerRefresher() {
+        return trackerRefresher;
+    }
+
     /** Our work outside the server's measured ticks (budget C). */
     public BetweenTicks betweenTicks() {
         return betweenTicks;
