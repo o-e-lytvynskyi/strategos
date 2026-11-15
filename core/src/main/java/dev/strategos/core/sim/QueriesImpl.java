@@ -37,6 +37,12 @@ import org.jspecify.annotations.Nullable;
 /** {@link MatchQueries} over a match's state. */
 final class QueriesImpl implements MatchQueries {
     private final MatchState state;
+    private dev.strategos.core.content.PlacementRules.@Nullable World placementWorld;
+    private int placementFaction;
+    private long placementTick;
+    private long placementBuildings;
+    private long placementNodes;
+    private dev.strategos.core.sim.nav.@Nullable SurfaceGrid placementSurfaces;
     private @Nullable List<FactionLook> looks; // factionLooks' last answer, valid while the stats' versions hold
     private long looksVersion;
     private final PathService paths;
@@ -470,7 +476,7 @@ final class QueriesImpl implements MatchQueries {
         }
         var at = dev.strategos.core.content.Footprint.of(b, x, z, 0);
         var failed = dev.strategos.core.content.PlacementRules.check(
-                        dev.strategos.core.sim.build.Placing.world(state, faction),
+                        placementWorld(faction),
                         b,
                         at,
                         faction,
@@ -479,6 +485,29 @@ final class QueriesImpl implements MatchQueries {
         return failed == null || failed == dev.strategos.core.content.PlacementRules.Rule.AFFORDABLE
                 ? null
                 : failed.name();
+    }
+
+    /**
+     * The match as the placement rules read it, kept while nothing it is made of moves: a search asks the rules of
+     * thousands of corners in one tick, and the read (every footprint, every standing node block) is the same for all.
+     */
+    private dev.strategos.core.content.PlacementRules.World placementWorld(int faction) {
+        var cached = placementWorld;
+        if (cached == null
+                || placementFaction != faction
+                || placementTick != state.tick()
+                || placementBuildings != state.buildings().changes()
+                || placementNodes != state.nodes().blockChanges()
+                || placementSurfaces != state.surfaces()) {
+            cached = dev.strategos.core.sim.build.Placing.world(state, faction);
+            placementWorld = cached;
+            placementFaction = faction;
+            placementTick = state.tick();
+            placementBuildings = state.buildings().changes();
+            placementNodes = state.nodes().blockChanges();
+            placementSurfaces = state.surfaces();
+        }
+        return cached;
     }
 
     @Override

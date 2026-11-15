@@ -501,4 +501,5 @@ only its own vision at every level except that labelled top level.
   3. The stress pass holds C p95 ≤ 50 ms (L6).
   4. The report is archived as the MVP baseline (R).
 - **Tests:** L6, R · **Depends on:** PERF-08, QA-12 · **Size:** S · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-11-15: checks 1–2 `perftests.mvp_soak` on the M4 Pro, every budget holds (A p50 0.68 ms, p99 8.70 ms; B p95 3.07 ms; C p95 7.25 ms against 23 and 15.3 ms; D p99 0.16 ms; E at most 6.1 KB/s a viewer; G 8.4 ms); check 3 `perftests.mvp_stress`, C p95 11.2 ms against 50 ms; check 4 `perf/mvp-m4pro.json` (spec row 71)

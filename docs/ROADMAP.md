@@ -439,7 +439,7 @@ Cards: [roadmap/M6-first-skirmish.md](roadmap/M6-first-skirmish.md#cards). 23 ca
 | MATCH-07 | Visibility options (solo fog, D-24 (c)) | S | FOW-07, MATCH-02 | done |
 | QA-12 | AI-versus-AI soak and opening balance | S | QA-11, AI-05, MATCH-03 | done |
 | QA-13 | MVP release-candidate gate | S | QA-12, QA-09, PERF-09 | specified |
-| PERF-09 | MVP perf gate | S | PERF-08, QA-12 | specified |
+| PERF-09 | MVP perf gate | S | PERF-08, QA-12 | done |
 
 ### M7 · Multiplayer
 

@@ -76,6 +76,8 @@ Newest first; one entry per session in the worklog's shape. Before 2026-11-14: d
 - 2026-11-14 · R6 taken (spec rows 9, 68): Hard is the labelled top level with an open bonus, gather ×3.0 and train ×0.35 (row 70; 2.6/0.4 first, 130 of 200, until Town was put back on time), listed in its setup text; 142 of 200 against Normal. Undo: drop `handicap` from Hard in `skirmish.json` and `Levels.TOP`.
 - 2026-11-15 · Early soldiers only from the surplus (spec row 70): a skirmish AI trains a soldier while a build step is due only if the stock pays both; `early` is an opening knob (base 0, rush 1) for soldiers that pass the reserve; the second barracks follows Town (population 23). Keeps AI-05's Town at 12:00 ± 2. Undo: `early` in `skirmish.json`'s openings and script, the barracks step back to 21.
 - 2026-11-15 · The AI's start positions are part of the match (spec row 69): `MatchConfig.starts`, filled from the map manifest; `setStartPositions` removed. Undo: none sensible — without it the AI never attacks under fog.
+- 2026-11-15 · R8 left open (spec row 71): the MVP soak's costs are not compared with a grown match's, because the headless matches keep no per-system times; the scene is placed, as §6 says. Undo: a real clock under a flag in `HeadlessMatch`, summing the phase timers at about 150 population.
+- 2026-11-15 · The stress pass runs 6,000 ticks (PERF-09.3 names no length; M5's ran the short first-loop length). Undo: `strategos.mvpStress.ticks`.
 - 2026-11-15 · The net-progress count belongs to an order (spec row 68's exceptions): a new order starts it again; a path delivered after its start column was built over stands as found. Undo: `StuckLadder.orderKey`, `PathService.startFrom`'s guard.
 
 ## Pitfalls

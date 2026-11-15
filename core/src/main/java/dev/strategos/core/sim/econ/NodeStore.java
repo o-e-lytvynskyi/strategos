@@ -33,6 +33,7 @@ public final class NodeStore {
     private int[] baseY = new int[16];
     private long[][] blocks = new long[16][];
     private int[] gone = new int[16];
+    private long blockChanges; // not saved or hashed: moves when a node is added or loses a block
     private int[][] slots = new int[16][];
     private int[][] claims = new int[16][];
     private long[] most = new long[16];
@@ -96,6 +97,7 @@ public final class NodeStore {
             this.template = Arrays.copyOf(this.template, n);
             this.unit = Arrays.copyOf(this.unit, n);
         }
+        blockChanges++;
         int k = count++;
         this.kind[k] = kind;
         this.resource[k] = resource;
@@ -443,7 +445,16 @@ public final class NodeStore {
         int k = at(id);
         if (gone[k] < blocks[k].length) {
             gone[k]++;
+            blockChanges++;
         }
+    }
+
+    /**
+     * A number that moves whenever a node is added, or loses a block, or is restored; not saved or hashed, a
+     * cache's key for what the standing blocks take.
+     */
+    public long blockChanges() {
+        return blockChanges;
     }
 
     public long mix(long h) {
@@ -562,6 +573,7 @@ public final class NodeStore {
                     s);
             int k = id - 1;
             gone[k] = n.gone();
+            blockChanges++;
             most[k] = n.most() > 0 ? n.most() : n.amount(); // a save from before regrowth: its amount
             regrow[k] = n.regrow();
             growth[k] = n.growth();
