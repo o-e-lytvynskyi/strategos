@@ -89,6 +89,21 @@ public final class OpeningBalance {
 
     /** Plays {@code seed} of {@code p}. */
     static Row play(Pairing p, long seed, HeadlessMatch.Ground ground, Scenario scenario, String skirmish, Path dir) {
+        return play(p, seed, ground, scenario, skirmish, dir, LIMIT);
+    }
+
+    /**
+     * Plays {@code seed} of {@code p} for at most {@code limit} ticks. A match with no winner by then carries no failure:
+     * it is unfinished, which QA-12.1 counts against its conquest share (row 65), not a failure of its own.
+     */
+    static Row play(
+            Pairing p,
+            long seed,
+            HeadlessMatch.Ground ground,
+            Scenario scenario,
+            String skirmish,
+            Path dir,
+            long limit) {
         String a = Levels.resolve(skirmish, p.aLevel(), p.aOpening());
         String b = Levels.resolve(skirmish, p.bLevel(), p.bOpening());
         int aSlot = seed % 2 == 0 ? 0 : 1;
@@ -103,7 +118,7 @@ public final class OpeningBalance {
                 ground,
                 scenario,
                 seed,
-                LIMIT,
+                limit,
                 scripts,
                 (h, out) -> {
                     if (h.tick() == 300) { // every player has thought by tick 140
@@ -161,7 +176,7 @@ public final class OpeningBalance {
                         }
                     }
                 },
-                true,
+                false, // unfinished is no failure: QA-12.1 counts it (row 65)
                 HeadlessMatch.FOGGED);
         HeadlessMatch.Summary s = r.summary();
         if (s.failed()) {

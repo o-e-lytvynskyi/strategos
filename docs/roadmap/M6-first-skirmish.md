@@ -286,7 +286,8 @@ only its own vision at every level except that labelled top level.
   2. Hard beats Normal, and Normal beats Easy, in at least 124 of 200 seeded L1 matches (L1).
   3. No level below the labelled top receives a bonus, and every handicap is listed in setup (L1).
 - **Tests:** L0, L1 · **Depends on:** AI-04, TECH-02, D-19 · **Size:** M · **Tier:** T0
-- **Status:** in_progress (checks 1 and 3 2026-11-14: `DifficultyTest.normalReachesTownOnTime`, `noBonusAndEveryHandicapListed`; check 2 in T23)
+- **Status:** done
+- **Done:** 2026-11-15: checks 1 and 3 `DifficultyTest.normalReachesTownOnTime`, `onlyTheTopLevelHasABonusAndEveryHandicapListed` (R6: Hard is the labelled top level); check 2 `:core:openingBalance`, Hard 142 and Normal 169 of 200
 
 ### Interface
 
@@ -427,7 +428,8 @@ only its own vision at every level except that labelled top level.
   3. Fogged AI-versus-AI matches still end within 45 game minutes (L1).
 - **Tests:** L0, L1 · **Depends on:** AI-01, FOW-01 · **Size:** S · **Tier:** T1 (pulled into the
   MVP by D-24)
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-11-15: checks 1 and 2 `FairAiTest`, `StartSlotsPersistTest`, `aitests.the_ai_knows_the_starts_in_a_skirmish`; check 3 in `:core:openingBalance`, fogged, read under QA-12.1's amendment: 79.2% end by conquest within 45 minutes and none runs past them
 
 #### MATCH-07 · Visibility options
 - **Value:** Choose how much of the map you know at the start.
@@ -462,7 +464,8 @@ only its own vision at every level except that labelled top level.
   4. The L3 sample completes, and its journals replay to the same hash (L3).
 - **Tests:** L1, L3 · **Fixtures:** soak seed sets · **Depends on:** QA-11, AI-05, MATCH-03 ·
   **Size:** S · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-11-15: checks 1–3 `:core:openingBalance` every criterion holds: 79.2% by conquest, median 36:10, no exception or stall, openings 80/81/89 of 200, starts at most 92 of 200, summary per start, opening and level; check 4 `:mod:runGameTestSoak` (aisoak), 20 matches, every journal replays, 189 min
 
 #### QA-13 · MVP release-candidate gate
 - **Value:** The MVP the owner plays is complete, stable and honest about its origins.

@@ -142,6 +142,25 @@ final class OpeningBalanceTest {
         return rows;
     }
 
+    /** QA-12.1 (row 65): a match unfinished at the limit is counted against the conquest share, not failed. */
+    @Test
+    void anUnfinishedMatchIsNoFailure(@org.junit.jupiter.api.io.TempDir java.nio.file.Path dir) {
+        OpeningBalance.Pairing p = OpeningBalance.Pairing.openings("rush", "boom");
+        OpeningBalance.Row row = OpeningBalance.play(
+                p,
+                1,
+                HeadlessMatch.Ground.firstSkirmish(),
+                OpeningBalance.firstSkirmish(),
+                HeadlessMatch.read("ai/skirmish.json"),
+                dir,
+                1_200);
+        assertThat(row.winnerSlot()).as("no winner in a game minute").isNegative();
+        assertThat(row.failure()).as("unfinished is no failure").isEmpty();
+        assertThat(OpeningBalance.judge(List.of(p), List.of(row)))
+                .as("no per-seed failure for it")
+                .noneMatch(m -> m.contains(" seed "));
+    }
+
     @Test
     void aTrialPlaysAndWritesItsSummary(@org.junit.jupiter.api.io.TempDir java.nio.file.Path dir) throws Exception {
         List<OpeningBalance.Row> rows =
