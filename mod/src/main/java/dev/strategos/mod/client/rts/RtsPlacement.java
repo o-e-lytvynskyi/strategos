@@ -284,7 +284,7 @@ final class RtsPlacement {
 
         @Override
         public boolean explored(int x, int z) {
-            return StrategosClient.model().isExplored(x, z);
+            return ClientPlacement.explored(StrategosClient.model(), x, z);
         }
     }
 }

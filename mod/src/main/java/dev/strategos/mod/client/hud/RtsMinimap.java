@@ -101,8 +101,12 @@ final class RtsMinimap {
             visionRevision = rev;
         }
         MinimapImage.Columns columns = new Columns(level, join);
-        MinimapImage.Fog fog = MinimapImage.fromVision(
-                model.visibleBits(), model.exploredBits(), model.visionCellsX(), model.visionCellsZ());
+        // an observer (the admin's seat) has no vision grid and sees everything; a player's before its first delta sees
+        // none
+        MinimapImage.Fog fog = model.visionCellsX() <= 0 && join.slot().isAdmin()
+                ? MinimapImage.Fog.NONE
+                : MinimapImage.fromVision(
+                        model.visibleBits(), model.exploredBits(), model.visionCellsX(), model.visionCellsZ());
         long now = level.getGameTime(); // the pings' clock
         ticks++;
         dirtyTiles.observe(model.buildings());

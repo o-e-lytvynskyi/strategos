@@ -3,7 +3,9 @@ package dev.strategos.devtools;
 import com.google.gson.GsonBuilder;
 import com.mojang.blaze3d.platform.GlUtil;
 import com.mojang.blaze3d.platform.NativeImage;
+import dev.strategos.core.client.HintBook;
 import dev.strategos.mod.Strategos;
+import dev.strategos.mod.client.StrategosClientConfig;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
@@ -123,6 +125,10 @@ public final class ScenarioRunner {
             Runtime.getRuntime().halt(1);
             return;
         }
+        // the first-match hints would show in whatever frame the first selection or the first spare house falls in
+        StrategosClientConfig.INSTANCE.seenHints.set(java.util.Arrays.stream(HintBook.Hint.values())
+                .map(HintBook.Hint::id)
+                .toList());
         Run r = new Run(scenario, new ScenarioContext(out));
         run = r;
         startWatchdog(r);
