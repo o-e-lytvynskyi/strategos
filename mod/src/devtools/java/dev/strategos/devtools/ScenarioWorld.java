@@ -4,6 +4,7 @@ import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.SpawnUnits;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
+import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.PlayRules;
 import dev.strategos.mod.StrategosServer;
@@ -23,6 +24,28 @@ final class ScenarioWorld {
 
     /** The rules every scenario made before M6 plays under: the map revealed, so the scene shows all, no shroud. */
     static final PlayRules REVEALED = new PlayRules(PlayRules.Victory.NONE, true, false, false);
+
+    /**
+     * {@code count} units of {@code template} one by one on a grid of {@code columns} columns, {@code pitch} blocks
+     * apart, centred on {@code centre}: far enough apart that no crowd separation ever moves them, which a cluster's
+     * spawn does by a layout that depends on the tick the spawn lands on.
+     */
+    static void spawnSpaced(
+            MatchRuntime rt,
+            TemplateId template,
+            FactionSlot faction,
+            Vec2d centre,
+            int count,
+            int columns,
+            double pitch) {
+        int rows = (count + columns - 1) / columns;
+        for (int k = 0; k < count; k++) {
+            double x = centre.x() + (k % columns - (columns - 1) / 2.0) * pitch;
+            int row = k / columns;
+            double z = centre.z() + (row - (rows - 1) / 2.0) * pitch;
+            rt.submit(PlayerSlot.ADMIN, new SpawnUnits(template, faction, new Vec2d(x, z), 1, 0));
+        }
+    }
 
     static ServerPlayer player(IntegratedServer server) {
         return server.getPlayerList().getPlayers().get(0);

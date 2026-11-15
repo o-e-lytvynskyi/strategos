@@ -323,7 +323,8 @@ final class M6GoldensScenario implements Scenario {
         // the tick its spawn lands on)
         for (int k = 0; k < SPEARMEN; k++) {
             double x = (k % 3 - 1) * SPEARMEN_PITCH;
-            double z = SPEARMEN_Z + (k / 3 - 0.5) * SPEARMEN_PITCH;
+            int row = k / 3;
+            double z = SPEARMEN_Z + (row - 0.5) * SPEARMEN_PITCH;
             rt.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.INFANTRY, OWN, local(rt, x, z), 1, 0));
         }
         for (String resource : List.of("food", "wood", "stone", "iron")) {
@@ -399,6 +400,13 @@ final class M6GoldensScenario implements Scenario {
             mc.setScreen(new SkirmishScreen(new TitleScreen()));
         }));
         s.add(wait(20));
+        // no widget focused: a focused field blinks its caret
+        s.add(act((mc, ctx) -> {
+            if (mc.screen != null) {
+                mc.screen.setFocused(null);
+            }
+        }));
+        s.add(wait(2));
         shoot(s, "setup_screen", true);
         s.add(act((mc, ctx) -> {
             mc.setScreen(null);
