@@ -125,14 +125,24 @@ public final class ScenarioRunner {
             Runtime.getRuntime().halt(1);
             return;
         }
-        // the first-match hints would show in whatever frame the first selection or the first spare house falls in
-        StrategosClientConfig.INSTANCE.seenHints.set(java.util.Arrays.stream(HintBook.Hint.values())
-                .map(HintBook.Hint::id)
-                .toList());
+        markHintsSeen();
         Run r = new Run(scenario, new ScenarioContext(out));
         run = r;
         startWatchdog(r);
         LOG.info("Scenario {} starts", name);
+    }
+
+    /**
+     * The first-match hints would show in whatever frame the first selection or the first spare house falls in, so every
+     * scenario plays with them seen. Saved as well as set: the config file is new on every run and NeoForge reloads it
+     * once written, which would replace an in-memory value; set again as each world starts, before RTS mode reads it.
+     */
+    private static void markHintsSeen() {
+        var seen = StrategosClientConfig.INSTANCE.seenHints;
+        seen.set(java.util.Arrays.stream(HintBook.Hint.values())
+                .map(HintBook.Hint::id)
+                .toList());
+        seen.save();
     }
 
     private static void startWatchdog(Run r) {
@@ -178,6 +188,7 @@ public final class ScenarioRunner {
      * depend on how many ticks the load took; it is pinned at its limit under the open noon sky, 0.
      */
     private static void holdCamera(Minecraft mc, ScenarioContext ctx) {
+        pinLight(mc);
         double[] pose = ctx.camera;
         if (mc.mouseHandler.isMouseGrabbed()) {
             mc.mouseHandler.releaseMouse();
@@ -186,6 +197,21 @@ public final class ScenarioRunner {
         if (pose != null && mc.player != null) {
             mc.player.moveTo(pose[0], pose[1], pose[2], (float) pose[3], (float) pose[4]);
             mc.player.setDeltaMovement(Vec3.ZERO);
+        }
+    }
+
+    /**
+     * The world's light, the same in every frame: noon with the day cycle off and no rain or thunder, on the client too.
+     * The server's {@code time set} reaches a client only in the next time packet, and until then the client counts its
+     * own ticks, so a frame shot early would be lit a little differently from one shot later (a uniform shift of one or
+     * two levels, which shows as a failed diff).
+     */
+    private static void pinLight(Minecraft mc) {
+        var level = mc.level;
+        if (level != null) {
+            level.setDayTime(-6000); // a negative time also turns the client's day cycle off
+            level.setRainLevel(0);
+            level.setThunderLevel(0);
         }
     }
 
@@ -223,6 +249,7 @@ public final class ScenarioRunner {
                             && mc.player != null
                             && mc.screen == null
                             && mc.levelRenderer.hasRenderedAllSections()) {
+                        markHintsSeen();
                         r.scenario.joined(mc, r.ctx);
                         r.ticks = 0;
                         r.phase = Phase.RUNNING;
@@ -235,6 +262,7 @@ public final class ScenarioRunner {
                         && mc.player != null
                         && mc.screen == null
                         && mc.levelRenderer.hasRenderedAllSections()) {
+                    markHintsSeen();
                     server.execute(() -> r.scenario.setup(server, r.ctx));
                     r.ticks = 0;
                     r.phase = Phase.RUNNING;
