@@ -102,4 +102,13 @@ class MinimapTilesTest {
         tiles.observe(List.of(building(2, 100, 100, 0)));
         assertThat(tiles.pending()).as("a building gone is marked once").isZero();
     }
+
+    @Test
+    void theImageUploadsAfterTwentyClientTicksWhateverTheGameTime() {
+        // the throttle reads the client's tick count: a paused or frozen game's time stands still, its ticks do not
+        assertThat(DirtyTiles.uploadDue(true, 19, 0)).isFalse();
+        assertThat(DirtyTiles.uploadDue(true, 20, 0)).isTrue();
+        assertThat(DirtyTiles.uploadDue(false, 500, 0)).as("nothing changed").isFalse();
+        assertThat(DirtyTiles.uploadDue(true, 1_020, 1_000)).isTrue();
+    }
 }

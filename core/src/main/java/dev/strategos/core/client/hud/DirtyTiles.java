@@ -74,6 +74,15 @@ public final class DirtyTiles {
         seen = now;
     }
 
+    /**
+     * Whether the minimap's image is to be uploaded: it changed and {@value #EVERY} ticks of the client's own clock have
+     * passed since the last upload. The clock must be one that runs while the game is paused or frozen (the client's
+     * tick count, not the level's game time), or a paused game would never show what its map learned.
+     */
+    public static boolean uploadDue(boolean changed, long clientTicks, long uploadedAt) {
+        return changed && clientTicks - uploadedAt >= EVERY;
+    }
+
     /** Records that tile {@code tile} was built at {@code now} (the round builds tiles too). */
     public void built(int tile, long now) {
         builtAt[tile] = now;

@@ -100,6 +100,8 @@ final class M6GoldensScenario implements Scenario {
     private static final double SPEARMEN_Z = -3;
 
     private static final double SPEARMEN_HEIGHT = 16;
+    /** Blocks between the spearmen's centres: well beyond any separation between bodies. */
+    private static final double SPEARMEN_PITCH = 3;
     /** The scout's three places in the fog world, world X on Z 0: home, the far end of its ride, and "home" again. */
     private static final double HOME_X = -26;
 
@@ -119,6 +121,12 @@ final class M6GoldensScenario implements Scenario {
     private static final int PING_AGE = 30;
 
     private static final int FEED_AGE = 10;
+    /** Consecutive ticks the section compiler must be idle before a shot, and the world unchanged before a freeze. */
+    private static final int CALM_RENDER = 20;
+
+    private static final int CALM_WORLD = 60;
+    /** Server steps the block writer's queue must stay empty before the freeze. */
+    private static final int IDLE_STEPS = 8;
 
     /** One step of a scene: true once it is done; it runs once a client tick, {@link #inStep} ticks in. */
     @FunctionalInterface
@@ -138,6 +146,11 @@ final class M6GoldensScenario implements Scenario {
     /** The scout's ride: 0 idle, 1 out, 2 back, 3 home. */
     private volatile int ride;
 
+    /** Set by the client: freeze the server once the writer's queue has stayed empty for a few steps. */
+    private volatile boolean freezeOnIdle;
+
+    private volatile boolean frozenIdle;
+    private int idleSteps;
     private volatile int endStage;
     private volatile long endTick;
 
@@ -150,6 +163,9 @@ final class M6GoldensScenario implements Scenario {
     private int inStep;
     /** The HUD tick a timed scene counts from. */
     private long mark;
+
+    private int calm;
+    private int lastHash;
 
     @Override
     public String name() {
@@ -200,6 +216,14 @@ final class M6GoldensScenario implements Scenario {
                 researched.add(t.tech());
             } else if (e instanceof CommandResult r && r.rejected() > 0) {
                 refusals.add(r.kind() + " " + r.firstReason() + " at tick " + tick);
+            }
+        }
+        if (freezeOnIdle) {
+            idleSteps = StrategosServer.get().writer().pending(server.overworld()) == 0 ? idleSteps + 1 : 0;
+            if (idleSteps >= IDLE_STEPS) { // longer than a site's 4-tick burst interval
+                freezeOnIdle = false;
+                ScenarioWorld.run(server, "tick freeze");
+                frozenIdle = true;
             }
         }
         var core = rt.core();
@@ -295,7 +319,13 @@ final class M6GoldensScenario implements Scenario {
         place(rt, STOREHOUSE, OWN, 0, -14);
         place(rt, FARMSTEAD, OWN, 12, -14);
         place(rt, CIVIC_CENTRE, ENEMY, 70, 0);
-        rt.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.INFANTRY, OWN, local(rt, 0, SPEARMEN_Z), SPEARMEN, 2.5));
+        // one by one on a grid, so far apart that no crowd separation ever moves them (a cluster's outcome depends on
+        // the tick its spawn lands on)
+        for (int k = 0; k < SPEARMEN; k++) {
+            double x = (k % 3 - 1) * SPEARMEN_PITCH;
+            double z = SPEARMEN_Z + (k / 3 - 0.5) * SPEARMEN_PITCH;
+            rt.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.INFANTRY, OWN, local(rt, x, z), 1, 0));
+        }
         for (String resource : List.of("food", "wood", "stone", "iron")) {
             rt.submit(PlayerSlot.ADMIN, new Grant(OWN, resource, 2_000));
         }
@@ -365,12 +395,14 @@ final class M6GoldensScenario implements Scenario {
         // the setup screen, over the world before RTS mode takes the screen
         s.add(act((mc, ctx) -> {
             cursorAside = true;
+            mc.options.hideGui = true; // the golden is the screen's: no HUD behind it
             mc.setScreen(new SkirmishScreen(new TitleScreen()));
         }));
         s.add(wait(20));
         shoot(s, "setup_screen", true);
         s.add(act((mc, ctx) -> {
             mc.setScreen(null);
+            mc.options.hideGui = false;
             cursorAside = false;
             rtsWanted = true;
         }));
@@ -386,9 +418,7 @@ final class M6GoldensScenario implements Scenario {
                         && ownBuilding(STOREHOUSE) != null
                         && ownBuilding(FARMSTEAD) != null
                         && bodies(mc, 0, SPEARMEN_Z) >= SPEARMEN));
-        s.add(wait(ARRIVE));
-        s.add(act((mc, ctx) -> onServer(mc, (server, rt) -> ScenarioWorld.run(server, "tick freeze"))));
-        s.add(wait(ARRIVE));
+        freeze(s);
         // the spearman with the starting gear
         s.add(act((mc, ctx) -> frame(0, SPEARMEN_Z, SPEARMEN_HEIGHT)));
         s.add(wait(SETTLE));
@@ -431,7 +461,7 @@ final class M6GoldensScenario implements Scenario {
             FactionLook look = StrategosClient.looks(0);
             return look.weapon() == 1 && look.armour() == 1;
         }));
-        s.add(wait(ARRIVE));
+        settle(s);
         s.add(until(
                 "the feed to be empty",
                 400,
@@ -523,13 +553,11 @@ final class M6GoldensScenario implements Scenario {
                 "the two centres and the scout",
                 LIMIT,
                 mc -> ownBuilding(CIVIC_CENTRE) != null && bodies(mc, HOME_X, 0) >= 1));
-        s.add(wait(ARRIVE));
         s.add(act((mc, ctx) -> onServer(mc, (server, rt) -> {
             var core = rt.core();
             scout = core == null ? -1 : scoutOf(core.queries());
-            ScenarioWorld.run(server, "tick freeze");
         })));
-        s.add(wait(ARRIVE));
+        freeze(s);
         s.add(act((mc, ctx) -> {
             StrategosClient.rts().centreOn(-8, 0);
             Objects.requireNonNull(StrategosClient.rts().rig()).zoomTo(CameraRig.MAX_HEIGHT);
@@ -555,7 +583,7 @@ final class M6GoldensScenario implements Scenario {
             ScenarioWorld.run(server, "tick sprint 1000000");
         })));
         s.add(until("the scout's ride", SPRINT_LIMIT, mc -> ride == 3));
-        s.add(wait(SETTLE));
+        settle(s);
         s.add(act((mc, ctx) -> {
             StrategosClient.rts().centreOn(0, 0);
             Objects.requireNonNull(StrategosClient.rts().rig()).zoomTo(CameraRig.MAX_HEIGHT);
@@ -613,6 +641,11 @@ final class M6GoldensScenario implements Scenario {
 
     /** A shot of the scene as it stands, and for a static one a second {@value #BETWEEN} ticks later. */
     private void shoot(List<Step> s, String name, boolean twice) {
+        s.add(act((mc, ctx) -> calm = 0));
+        s.add(until("the level renderer to be done for " + name, LIMIT, mc -> {
+            calm = mc.levelRenderer.hasRenderedAllSections() ? calm + 1 : 0;
+            return calm >= CALM_RENDER;
+        }));
         s.add(act((mc, ctx) -> {
             RtsGoldensScenario.pinBodies(mc);
             ctx.capture(name);
@@ -624,6 +657,66 @@ final class M6GoldensScenario implements Scenario {
                 ctx.capture(name + "_2");
             }));
         }
+    }
+
+    /**
+     * Freezes the server as soon as the block writer has written every building (its queue takes many ticks, and a
+     * freeze before it is empty leaves a footprint half written, at a run-dependent point; units are spaced so they
+     * never drift meanwhile), then waits for the client to settle: every building finished, the section
+     * compiler idle and the minimap's image unchanged for {@value #CALM_WORLD} ticks. The minimap uploads on the
+     * client's own tick count, so a frozen game still refreshes it.
+     */
+    private void freeze(List<Step> s) {
+        s.add(act((mc, ctx) -> {
+            idleSteps = 0;
+            frozenIdle = false;
+            freezeOnIdle = true;
+        }));
+        s.add(until("the writer idle and the server frozen", 2 * LIMIT, mc -> frozenIdle));
+        settle(s);
+    }
+
+    /** Waits, the server frozen already, for the client's world to stand still. */
+    private void settle(List<Step> s) {
+        s.add(act((mc, ctx) -> {
+            calm = 0;
+            lastHash = 0;
+        }));
+        s.add(until("the client to settle", 2 * LIMIT, mc -> {
+            int hash = minimapHash();
+            boolean still = hash == lastHash
+                    && mc.levelRenderer.hasRenderedAllSections()
+                    && allBuilt()
+                    && StrategosClient.hud().minimapPixel(1, 1) != 0;
+            lastHash = hash;
+            calm = still ? calm + 1 : 0;
+            return calm >= CALM_WORLD;
+        }));
+        s.add(wait(ARRIVE));
+    }
+
+    /** Whether every building the client knows of is finished. */
+    private static boolean allBuilt() {
+        for (BuildingState.Entry e : StrategosClient.model().buildings()) {
+            if (e.state() != CommandCard.COMPLETE) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** A hash of the minimap's image, sampled every fourth column. */
+    private static int minimapHash() {
+        MatchJoin join = StrategosClient.match();
+        int h = 1;
+        if (join != null) {
+            for (int z = 0; z < join.sizeZ(); z += 4) {
+                for (int x = 0; x < join.sizeX(); x += 4) {
+                    h = 31 * h + StrategosClient.hud().minimapPixel(x, z);
+                }
+            }
+        }
+        return h;
     }
 
     // ---- what the steps do ----

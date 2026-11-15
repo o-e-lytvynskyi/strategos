@@ -45,6 +45,9 @@ final class RtsMinimap {
     private int[] tileHashes = new int[0];
     private int next;
     private boolean dirty;
+    /** The client's own tick count: it runs while a paused or frozen game's time stands still. */
+    private long ticks;
+
     private long uploadedAt = -1_000; // "long ago", without the overflow Long.MIN_VALUE would give a subtraction
     private int visionRevision = -1;
     private DirtyTiles dirtyTiles = new DirtyTiles(0, 0);
@@ -100,24 +103,25 @@ final class RtsMinimap {
         MinimapImage.Columns columns = new Columns(level, join);
         MinimapImage.Fog fog = MinimapImage.fromVision(
                 model.visibleBits(), model.exploredBits(), model.visionCellsX(), model.visionCellsZ());
-        long now = level.getGameTime();
+        long now = level.getGameTime(); // the pings' clock
+        ticks++;
         dirtyTiles.observe(model.buildings());
         pings.observe(model.alerts(), model.alert(), model.waves(), model.wave(), now);
         int[] budget = {PER_TICK};
-        dirtyTiles.drain(now, PER_TICK, c -> {
+        dirtyTiles.drain(ticks, PER_TICK, c -> {
             rebuild(image, columns, fog, c, chunksX);
             budget[0]--;
         });
         for (int k = 0; k < budget[0]; k++) {
             int c = next;
             next = (next + 1) % (chunksX * chunksZ);
-            dirtyTiles.built(c, now);
+            dirtyTiles.built(c, ticks);
             rebuild(image, columns, fog, c, chunksX);
         }
-        if (dirty && now - uploadedAt >= 20) {
+        if (DirtyTiles.uploadDue(dirty, ticks, uploadedAt)) {
             t.upload();
             dirty = false;
-            uploadedAt = now;
+            uploadedAt = ticks;
         }
     }
 
