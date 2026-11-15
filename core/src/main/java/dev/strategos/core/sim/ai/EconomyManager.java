@@ -188,7 +188,7 @@ final class EconomyManager implements AiModule {
         double weights = 0;
         int all = 0;
         for (int r = 0; r < resources.size(); r++) {
-            int w = script.ratio().getOrDefault(resources.get(r), 0);
+            double w = shaped(resources.get(r));
             if (w > 0) {
                 weights += w;
                 all += gatherers[r];
@@ -202,7 +202,7 @@ final class EconomyManager implements AiModule {
         double most = 0;
         double least = 0;
         for (int r = 0; r < resources.size(); r++) {
-            int w = script.ratio().getOrDefault(resources.get(r), 0);
+            double w = shaped(resources.get(r));
             if (w <= 0) {
                 continue;
             }
@@ -238,6 +238,26 @@ final class EconomyManager implements AiModule {
                 sink.send(Gather.replace(UnitSet.of(u.handle()), target.topX(), target.topY(), target.topZ()));
             }
         }
+    }
+
+    /**
+     * The ratio's weight of {@code resource} for the balance: the ratio's own, and with the skirmish's {@code finish}
+     * knob doubled while its stock runs low and halved while it piles up, so a hoard of food that nothing spends
+     * sends its gatherers to the wood the soldiers lack (QA-12).
+     */
+    private double shaped(String resource) {
+        return shape(
+                script.ratio().getOrDefault(resource, 0),
+                stocks.getOrDefault(resource, 0L),
+                script.battle().finish());
+    }
+
+    /** {@code weight} shaped by {@code stock} (thousandths) when {@code finish} is on; unchanged otherwise. */
+    static double shape(double weight, long stock, boolean finish) {
+        if (weight <= 0 || !finish) {
+            return weight;
+        }
+        return stock < LOW ? weight * 2 : stock > HIGH ? weight / 2 : weight;
     }
 
     /**

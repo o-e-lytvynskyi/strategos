@@ -1,5 +1,6 @@
 package dev.strategos.core.testkit;
 
+import dev.strategos.core.content.StartSlot;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.port.Clock;
 import dev.strategos.core.port.JobExecutor;
@@ -314,6 +315,7 @@ public final class SimHarness implements ScenarioContext {
         private MetricsSink metrics = MetricsSink.none();
         private JobExecutor jobs = JobExecutor.inline();
         private MatchId id = new MatchId(1);
+        private List<StartSlot> starts = List.of();
         private JournalSink journal = JournalSink.MEMORY;
 
         private Builder() {}
@@ -380,8 +382,14 @@ public final class SimHarness implements ScenarioContext {
             return this;
         }
 
+        /** The map's start slots, which the computer players know (AI-18). */
+        public Builder starts(List<StartSlot> starts) {
+            this.starts = List.copyOf(starts);
+            return this;
+        }
+
         public SimHarness build() {
-            MatchConfig config = new MatchConfig(id, seed, bounds, factions, rules);
+            MatchConfig config = new MatchConfig(id, seed, bounds, factions, rules, starts);
             return new SimHarness(MatchCore.create(config, templates, new CorePorts(metrics, clock, jobs, journal)));
         }
     }

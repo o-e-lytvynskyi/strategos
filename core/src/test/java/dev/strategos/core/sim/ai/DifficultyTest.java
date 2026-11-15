@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * AI-05 in L1 (M6 §2.20): Normal reaches Town at {@code targets.json}'s 12:00 within two minutes, in ten seeded
- * matches on the first skirmish map; no level takes a bonus and every handicap is listed in setup.
+ * matches on the first skirmish map; only the top level takes a bonus and every handicap is listed in setup.
  */
 final class DifficultyTest {
     private static final long MINUTE = 1_200;
@@ -45,7 +45,8 @@ final class DifficultyTest {
                         }
                     }
                 },
-                false);
+                false,
+                HeadlessMatch.FOGGED);
         assertThat(r.summary().failure()).as("seed " + seed).isEmpty();
         return at;
     }
@@ -71,9 +72,12 @@ final class DifficultyTest {
                 .isEmpty();
     }
 
-    /** AI-05.3: no level is better than the plain script for gathering or training, and setup lists each handicap. */
+    /**
+     * AI-05.3 with R6: only the labelled top level is better than the plain script for gathering or training; the
+     * lower ones take at most a handicap; setup lists each handicap and bonus.
+     */
     @Test
-    void noBonusAndEveryHandicapListed() throws IOException {
+    void onlyTheTopLevelHasABonusAndEveryHandicapListed() throws IOException {
         String skirmish = HeadlessMatch.read("ai/skirmish.json");
         JsonObject lang = JsonParser.parseString(
                         Files.readString(Path.of("../mod/src/main/resources/assets/strategos/lang/en_us.json")))
@@ -81,12 +85,14 @@ final class DifficultyTest {
         for (String level : Levels.names()) {
             Levels.Knobs k = Levels.knobs(skirmish, level);
             StrategyScript.Handicap h = k.handicap();
-            assertThat(h.gather())
-                    .as(level + " gathers at most the template's rate")
-                    .isLessThanOrEqualTo(1);
-            assertThat(h.train())
-                    .as(level + " trains no quicker than the template")
-                    .isGreaterThanOrEqualTo(1);
+            if (!level.equals(Levels.TOP)) {
+                assertThat(h.gather())
+                        .as(level + " gathers at most the template's rate")
+                        .isLessThanOrEqualTo(1);
+                assertThat(h.train())
+                        .as(level + " trains no quicker than the template")
+                        .isGreaterThanOrEqualTo(1);
+            }
             String listed =
                     lang.get("strategos.skirmish.level." + level + ".handicaps").getAsString();
             assertThat(listed).as(level + " is listed in setup").isNotBlank();
@@ -105,9 +111,9 @@ final class DifficultyTest {
         assertThat(Levels.knobs(skirmish, "normal").handicap().any())
                 .as("Normal's handicap")
                 .isFalse();
-        assertThat(Levels.knobs(skirmish, "hard").handicap().any())
-                .as("Hard takes no bonus, nor a handicap")
-                .isFalse();
+        StrategyScript.Handicap hard = Levels.knobs(skirmish, "hard").handicap();
+        assertThat(hard.gather()).as("Hard's gathering bonus").isGreaterThan(1);
+        assertThat(hard.train()).as("Hard's training bonus").isLessThan(1);
         assertThat(Levels.knobs(skirmish, "easy").handicap().any())
                 .as("Easy's handicap is open")
                 .isTrue();

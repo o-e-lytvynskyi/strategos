@@ -77,9 +77,8 @@ public final class MatchState {
     private final StatService stats;
     private @Nullable VisionSystem visionSystem;
     /** The map's start slots (AI-18); not saved — a restored match sets them from the map again. */
-    private List<StartSlot> startPositions = List.of();
-
     private final SpatialQueries spatial;
+
     private final ArrayDeque<CommandEnvelope> pendingCommands = new ArrayDeque<>();
     private final List<OutputEvent> outputs = new ArrayList<>();
     private final MatchLog log;
@@ -542,7 +541,8 @@ public final class MatchState {
 
     /** A journaled rule change's rules (MATCH-01): the config carries them, and the population takes its maximum. */
     public void setRules(MatchRules rules) {
-        config = new MatchConfig(config.id(), config.seed(), config.bounds(), config.factions(), rules);
+        config =
+                new MatchConfig(config.id(), config.seed(), config.bounds(), config.factions(), rules, config.starts());
         population.setMax(rules.economy().populationMax());
     }
 
@@ -617,14 +617,9 @@ public final class MatchState {
         this.visionSystem = vision;
     }
 
-    /** The map's start slots for the AI (AI-18); empty until the match is seated on a map. */
+    /** The map's start slots for the AI (AI-18), the config's; empty for a match on no map. */
     public List<StartSlot> startPositions() {
-        return startPositions;
-    }
-
-    /** Seats the match on a map's start slots (AI-18); known to every faction, fog or not. */
-    public void setStartPositions(List<StartSlot> starts) {
-        this.startPositions = List.copyOf(starts);
+        return config.starts();
     }
 
     /** Every unit's numbers, through the modifier pipeline (ADR-0013). */

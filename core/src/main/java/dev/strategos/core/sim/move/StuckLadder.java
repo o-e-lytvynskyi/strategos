@@ -13,6 +13,7 @@ import dev.strategos.core.sim.nav.PathStore;
 import dev.strategos.core.sim.nav.Spiral;
 import dev.strategos.core.sim.nav.Surface;
 import dev.strategos.core.sim.nav.SurfaceGrid;
+import dev.strategos.core.sim.order.OrderQueues;
 import dev.strategos.core.sim.spatial.UnitFilter;
 import java.util.function.IntConsumer;
 
@@ -148,18 +149,40 @@ public final class StuckLadder {
     void net(MatchState s, int i, int handle) {
         MotionStore motion = s.motion();
         int count = motion.net(i);
-        if (count == 0 || DetMath.length(motion.x(i) - motion.netX(i), motion.z(i) - motion.netZ(i)) >= NET) {
-            motion.setNet(i, motion.x(i), motion.z(i), 1);
+        long order = orderKey(s, i);
+        if (count == 0
+                || motion.netOrder(i) != order
+                || DetMath.length(motion.x(i) - motion.netX(i), motion.z(i) - motion.netZ(i)) >= NET) {
+            motion.setNet(i, motion.x(i), motion.z(i), 1, order);
             return;
         }
         if (count + 1 < NET_FAIL) {
-            motion.setNet(i, motion.netX(i), motion.netZ(i), count + 1);
+            motion.setNet(i, motion.netX(i), motion.netZ(i), count + 1, order);
             return;
         }
         motion.setNet(i, 0, 0, 0);
         s.countRung(Stuck.GIVE_UP);
         notice(s, i, handle);
         s.bus().publish(new Stuck(handle, Stuck.GIVE_UP));
+    }
+
+    /**
+     * What order unit {@code i} walks on, as far as the net-progress count is concerned: its kind, its group, its target
+     * unit, and for a lone move its place. A new order starts the count again (the 1,000-match run's two stalls: a count
+     * that went on across an order change was restarted by the walk to the old order's place, 8 blocks on, a little after
+     * the new walk began, and so ran out later than the new walk's own 640 ticks). A group member's place traded to it, or
+     * a chaser's prey moving, is no new order.
+     */
+    private static long orderKey(MatchState s, int i) {
+        OrderQueues orders = s.orders();
+        long key = orders.kind(i);
+        key = key * 31 + orders.group(i);
+        key = key * 31 + orders.target(i);
+        if (orders.group(i) == 0 && orders.target(i) == 0) {
+            key = key * 31 + Double.doubleToLongBits(orders.targetX(i));
+            key = key * 31 + Double.doubleToLongBits(orders.targetZ(i));
+        }
+        return key == 0 ? 1 : key;
     }
 
     /** Rung 2: a short walk to the nearest free spot other than the unit's own column, if there is one. */

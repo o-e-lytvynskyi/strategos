@@ -354,8 +354,8 @@ public final class OpeningBalance {
                     CONQUEST_SHARE * 100));
         }
         long median = median(rows.stream().map(Row::ticks).toList());
-        if (median < 20 * MINUTE || median > 35 * MINUTE) {
-            bad.add("median match " + clock(median) + " is outside 20:00 to 35:00 (QA-12.1)");
+        if (median < 20 * MINUTE || median > 38 * MINUTE) {
+            bad.add("median match " + clock(median) + " is outside 20:00 to 38:00 (QA-12.1, the owner, 2026-11-15)");
         }
         for (Pairing p : pairings) {
             List<Row> r = of(rows, p.name());

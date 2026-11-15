@@ -69,12 +69,12 @@ final class OpeningBalanceTest {
     }
 
     @Test
-    void theMedianIsTwentyToThirtyFiveMinutes() {
+    void theMedianIsTwentyToThirtyEightMinutes() { // the owner, 2026-11-15 (spec row 70)
         OpeningBalance.Pairing p = OpeningBalance.Pairing.openings("rush", "boom");
         assertThat(judge(p, 100, 20)).isEmpty();
-        assertThat(judge(p, 100, 35)).isEmpty();
+        assertThat(judge(p, 100, 38)).isEmpty();
         assertThat(judge(p, 100, 19)).anyMatch(m -> m.contains("QA-12.1"));
-        assertThat(judge(p, 100, 36)).anyMatch(m -> m.contains("QA-12.1"));
+        assertThat(judge(p, 100, 39)).anyMatch(m -> m.contains("QA-12.1"));
     }
 
     @Test

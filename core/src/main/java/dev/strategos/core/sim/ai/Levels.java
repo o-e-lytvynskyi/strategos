@@ -16,12 +16,15 @@ import java.util.List;
  * into the plain script {@code SetAi} carries, so a journal replays it: the level's pace goes into the script's
  * {@code level} field (think period, reaction, commands per think, the open handicap), the wave size multiplies each
  * attack's {@code min}, and the tactics (counters, focus, retreat: the {@code battle} block) are dropped when the level
- * has them off. No level has a bonus: {@link StrategyScript.Handicap}'s codec admits none.
+ * has them off. Only the top level, {@link #TOP}, may carry a bonus (R6), shown in setup; the lower ones only a handicap.
  */
 @CoreApi
 public final class Levels {
     /** The profile of the skirmish script: {@code ai:skirmish}. */
     public static final String PROFILE = "skirmish";
+
+    /** The labelled top level (D-19, M6 spec R6): the only one that may take an open bonus. */
+    public static final String TOP = "hard";
 
     /** The levels' names, in order of strength. */
     public static List<String> names() {
@@ -52,9 +55,13 @@ public final class Levels {
         if (!levels.has(level)) {
             throw new IllegalArgumentException("the skirmish script has no level '" + level + "'");
         }
-        return Knobs.CODEC
+        Knobs k = Knobs.CODEC
                 .parse(JsonOps.INSTANCE, levels.get(level))
                 .getOrThrow(m -> new IllegalArgumentException("skirmish level " + level + ": " + m));
+        if (!level.equals(TOP) && (k.handicap().gather() > 1 || k.handicap().train() < 1)) {
+            throw new IllegalArgumentException("skirmish level " + level + ": a bonus belongs to the top level only");
+        }
+        return k;
     }
 
     /** The script {@code SetAi} carries for {@code level} (lower case): compact JSON, without the level table. */

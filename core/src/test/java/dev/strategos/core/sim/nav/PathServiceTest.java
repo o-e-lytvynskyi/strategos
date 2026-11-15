@@ -279,6 +279,28 @@ class PathServiceTest {
     }
 
     /** A harness the size of {@code world} whose pages are published on the first step. */
+    /**
+     * QA-12: a path found for a unit that has since had the ground taken from under it (a building placed over the
+     * column it asked from, in the 1,000-match run) is delivered without a crash: the search's start no longer exists,
+     * so the path stands as the search found it and the unit asks again.
+     */
+    @Test
+    void aPathDeliveredAfterItsStartColumnWasBuiltOverDoesNotCrash() {
+        VoxelWorld world = wallWithGapAtTheSouth();
+        SimHarness h = harness(world);
+        int unit = h.spawn(F0, new Vec2d(10.5, 20.5), 1, 0)[0];
+        order(h, unit, 30.5, 20.5);
+        assertThat(path(h, unit).request()).as("a request in flight").isEqualTo(1);
+
+        world.fill(8, 1, 18, 14, 2, 22, VoxelFixtures.FENCE); // fenced over: no column of it can be stood on
+        PageCoord coord = new PageCoord(0, 1);
+        h.publish(TerrainPage.build(coord, world.slice(coord), new PageBuilder(MobilityClass.INFANTRY)));
+
+        h.step();
+        h.step(); // the result arrives
+        assertThat(path(h, unit).request()).as("delivered").isZero();
+    }
+
     private static SimHarness harness(VoxelWorld world) {
         SimHarness h = SimHarness.builder().size(world.sizeX(), world.sizeZ()).build();
         h.publishAll(world);

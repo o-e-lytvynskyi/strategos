@@ -25,6 +25,8 @@ import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.core.sim.PlayRules;
 import dev.strategos.core.sim.UnitView;
 import dev.strategos.core.sim.WaveAnnounced;
+import dev.strategos.core.sim.ai.AiBudget;
+import dev.strategos.core.sim.ai.AiView;
 import dev.strategos.core.sim.command.ScenarioSetup;
 import dev.strategos.core.sim.journal.ReplayDriver;
 import dev.strategos.core.sim.journal.ReplayResult;
@@ -57,6 +59,7 @@ public final class AiTests {
     static final TemplateId CENTRE = new TemplateId("strategos:building/civic_centre");
 
     private static final int WAVES_LANE = 17;
+    private static final int STARTS_LANE = 18;
 
     private AiTests() {}
 
@@ -405,6 +408,50 @@ public final class AiTests {
             if (near > 0) {
                 h.succeed(); // the wave reached the base; the rungs were held at zero every tick up to here
             }
+        });
+    }
+
+    /**
+     * AI-18 (QA-12): in a skirmish made the way {@code Skirmishes} makes it (the first skirmish map, Conquest under
+     * Fog, computer players of ai:skirmish at Normal), the match config carries the map's start slots and every
+     * computer player's view has them: without them a computer under fog has no base to march on and never attacks.
+     */
+    @StrategosTest(batch = "ai_starts", solo = true, timeoutTicks = 40_000)
+    public static void theAiKnowsTheStartsInASkirmish(GameTestHelper h) {
+        MapManifest m = MapPackageLoader.load(h.getLevel().getServer(), MapTests.FIRST_SKIRMISH)
+                .manifest();
+        BlockPos corner = h.absolutePos(BlockPos.ZERO);
+        BlockPos origin = new BlockPos(corner.getX() + STARTS_LANE * 2_048, corner.getY(), corner.getZ());
+        MatchSpace space = new MatchSpace(
+                h.getLevel().dimension(), origin, m.sizeX(), m.sizeZ(), origin.getY(), origin.getY() + m.height() - 1);
+        MatchRuntime rt = MatchFixture.create(
+                h,
+                space,
+                MatchFixture.options(SimHarness.DEFAULT_SEED, h)
+                        .withPlay(PlayRules.DEFAULTS)
+                        .withMap(
+                                MapTests.FIRST_SKIRMISH,
+                                origin.getY() + m.startSlots().get(0).y()));
+        h.onEachTick(() -> {
+            if (rt.lifecycle() == MatchLifecycle.PREPARING) {
+                return;
+            }
+            check(
+                    rt.lifecycle() == MatchLifecycle.RUNNING,
+                    "the match is " + rt.lifecycle() + ": " + rt.faultMessage());
+            var q = core(rt).queries();
+            check(
+                    q.startPositions().equals(m.startSlots())
+                            && q.startPositions().size() >= 2,
+                    "the match knows the starts " + q.startPositions() + ", the map has " + m.startSlots());
+            for (int faction = 0; faction < 2; faction++) {
+                var view = new AiView(q, faction, new AiBudget(AiBudget.CAP));
+                check(
+                        view.startPositions().size() >= 2
+                                && !q.config().rules().play().explored(),
+                        "faction " + faction + "'s computer sees the starts " + view.startPositions() + " under fog");
+            }
+            h.succeed();
         });
     }
 }

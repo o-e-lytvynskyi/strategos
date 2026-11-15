@@ -51,14 +51,15 @@ class LevelsTest {
                 .isEqualTo(new StrategyScript.Level("normal", 20, 60, 16, StrategyScript.Handicap.NONE));
         assertThat(normal.battle().enabled()).isTrue();
         StrategyScript hard = resolved("hard");
-        assertThat(hard.level()).isEqualTo(new StrategyScript.Level("hard", 20, 20, 32, StrategyScript.Handicap.NONE));
+        assertThat(hard.level())
+                .isEqualTo(new StrategyScript.Level("hard", 20, 20, 32, new StrategyScript.Handicap(3.0, 0.35)));
         assertThat(hard.battle()).as("Hard's tactics are Normal's").isEqualTo(normal.battle());
     }
 
     @Test
     void theWaveSizeScalesEveryAttack() {
         StrategyScript base = StrategyScript.parse(SKIRMISH);
-        for (var level : List.of("easy:0.6", "normal:1.0", "hard:1.4")) {
+        for (var level : List.of("easy:0.6", "normal:1.0", "hard:1.0")) {
             String name = level.substring(0, level.indexOf(':'));
             double wave = Double.parseDouble(level.substring(level.indexOf(':') + 1));
             StrategyScript s = resolved(name);
@@ -96,19 +97,28 @@ class LevelsTest {
     @Test
     void aMissingOrMalformedLevelIsRefused() {
         assertThatThrownBy(() -> Levels.resolve(SKIRMISH, "brutal")).isInstanceOf(IllegalArgumentException.class);
-        JsonObject bonus = JsonParser.parseString(SKIRMISH).getAsJsonObject();
-        bonus.getAsJsonObject("levels")
+        for (String level : new String[] {"easy", "normal"}) {
+            JsonObject bonus = JsonParser.parseString(SKIRMISH).getAsJsonObject();
+            bonus.getAsJsonObject("levels")
+                    .getAsJsonObject(level)
+                    .add("handicap", JsonParser.parseString("{\"gather\":1.2}"));
+            assertThatThrownBy(() -> Levels.resolve(bonus.toString(), level))
+                    .as("a gathering bonus belongs to the top level only")
+                    .isInstanceOf(IllegalArgumentException.class);
+            JsonObject quicker = JsonParser.parseString(SKIRMISH).getAsJsonObject();
+            quicker.getAsJsonObject("levels")
+                    .getAsJsonObject(level)
+                    .add("handicap", JsonParser.parseString("{\"train\":0.8}"));
+            assertThatThrownBy(() -> Levels.resolve(quicker.toString(), level))
+                    .as("a quicker training belongs to the top level only")
+                    .isInstanceOf(IllegalArgumentException.class);
+        }
+        JsonObject wild = JsonParser.parseString(SKIRMISH).getAsJsonObject();
+        wild.getAsJsonObject("levels")
                 .getAsJsonObject("hard")
-                .add("handicap", JsonParser.parseString("{\"gather\":1.2}"));
-        assertThatThrownBy(() -> Levels.resolve(bonus.toString(), "hard"))
-                .as("a gathering bonus is no handicap")
-                .isInstanceOf(IllegalArgumentException.class);
-        JsonObject quicker = JsonParser.parseString(SKIRMISH).getAsJsonObject();
-        quicker.getAsJsonObject("levels")
-                .getAsJsonObject("hard")
-                .add("handicap", JsonParser.parseString("{\"train\":0.8}"));
-        assertThatThrownBy(() -> Levels.resolve(quicker.toString(), "hard"))
-                .as("a quicker training is no handicap")
+                .add("handicap", JsonParser.parseString("{\"gather\":5}"));
+        assertThatThrownBy(() -> Levels.resolve(wild.toString(), "hard"))
+                .as("even the top level's bonus is bounded")
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -160,14 +170,18 @@ class LevelsTest {
     }
 
     @Test
-    void easySlowsItsGatheringAndTrainingAndNothingGivesMore() {
+    void easySlowsItsGatheringAndTrainingAndOnlyHardGivesMore() {
         SimHarness h = twoLevels("easy", "normal");
         assertThat(trainSeconds(h, 0)).isEqualTo(trainSeconds(h, 1) * 1.15);
         assertThat(gatherRate(h, 0)).isEqualTo(gatherRate(h, 1) * 0.85);
         assertThat(gatherRate(h, 1)).as("Normal's rate is the template's").isPositive();
         SimHarness hard = twoLevels("hard", "normal");
-        assertThat(trainSeconds(hard, 0)).isEqualTo(trainSeconds(hard, 1));
-        assertThat(gatherRate(hard, 0)).isEqualTo(gatherRate(hard, 1));
+        assertThat(trainSeconds(hard, 0))
+                .as("Hard's open bonus: it trains in 0.35 of the time")
+                .isCloseTo(trainSeconds(hard, 1) * 0.35, org.assertj.core.data.Offset.offset(1e-9));
+        assertThat(gatherRate(hard, 0))
+                .as("Hard's open bonus: it gathers at 3.0 times the rate")
+                .isCloseTo(gatherRate(hard, 1) * 3.0, org.assertj.core.data.Offset.offset(1e-9));
         h.submit(PlayerSlot.ADMIN, new SetAi(new FactionSlot(0), "", ""));
         h.step();
         assertThat(trainSeconds(h, 0)).as("handed back, handicap gone").isEqualTo(trainSeconds(h, 1));

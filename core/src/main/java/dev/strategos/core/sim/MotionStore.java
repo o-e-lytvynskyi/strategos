@@ -38,6 +38,7 @@ public final class MotionStore {
     private double[] netX = new double[0];
     private double[] netZ = new double[0];
     private int[] net = new int[0];
+    private long[] netOrder = new long[0];
     private int[] settle = new int[0];
     private int[] ghostTicks = new int[0];
 
@@ -81,8 +82,9 @@ public final class MotionStore {
             double netX,
             double netZ,
             int net,
-            int settle) {
-        public static final Ladder NONE = new Ladder(0, 0, 0, 0, 0, 0, 0, 0);
+            int settle,
+            long netOrder) {
+        public static final Ladder NONE = new Ladder(0, 0, 0, 0, 0, 0, 0, 0, 0);
     }
 
     public void ensureCapacity(int size) {
@@ -114,6 +116,7 @@ public final class MotionStore {
             netX = Arrays.copyOf(netX, capacity);
             netZ = Arrays.copyOf(netZ, capacity);
             net = Arrays.copyOf(net, capacity);
+            netOrder = Arrays.copyOf(netOrder, capacity);
             settle = Arrays.copyOf(settle, capacity);
         }
     }
@@ -271,9 +274,20 @@ public final class MotionStore {
 
     /** The net-progress count: {@code ticks} spent near ({@code x}, {@code z}); 0 clears it. */
     public void setNet(int i, double x, double z, int ticks) {
+        setNet(i, x, z, ticks, 0);
+    }
+
+    /** The order the net-progress count is of (a hash of it, see StuckLadder), so a new order starts it again. */
+    public long netOrder(int i) {
+        return netOrder[i];
+    }
+
+    /** As {@link #setNet(int, double, double, int)}, for the order {@code order}. */
+    public void setNet(int i, double x, double z, int ticks, long order) {
         netX[i] = ticks == 0 ? 0 : x;
         netZ[i] = ticks == 0 ? 0 : z;
         net[i] = ticks;
+        netOrder[i] = ticks == 0 ? 0 : order;
     }
 
     /**
@@ -310,7 +324,7 @@ public final class MotionStore {
                 latchX[i],
                 latchZ[i],
                 pushed[i],
-                detourTicks[i] == 0 && ghostTicks[i] == 0 && net[i] == 0 && settle[i] == 0
+                detourTicks[i] == 0 && ghostTicks[i] == 0 && net[i] == 0 && settle[i] == 0 && netOrder[i] == 0
                         ? Ladder.NONE
                         : new Ladder(
                                 detourX[i],
@@ -320,7 +334,8 @@ public final class MotionStore {
                                 netX[i],
                                 netZ[i],
                                 net[i],
-                                settle[i]));
+                                settle[i],
+                                netOrder[i]));
     }
 
     public void setExtra(int i, Extra e) {
@@ -344,6 +359,7 @@ public final class MotionStore {
         netZ[i] = e.ladder().netZ();
         net[i] = e.ladder().net();
         settle[i] = e.ladder().settle();
+        netOrder[i] = e.ladder().netOrder();
     }
 
     /** Whether unit {@code i}'s terrain part is still {@link Extra#NONE}'s: it never touched terrain. */
@@ -361,6 +377,7 @@ public final class MotionStore {
                 && detourTicks[i] == 0
                 && ghostTicks[i] == 0
                 && net[i] == 0
-                && settle[i] == 0;
+                && settle[i] == 0
+                && netOrder[i] == 0;
     }
 }

@@ -223,8 +223,8 @@ tasks.register('verifySlow') {
 // one soak also runs inside verify (QA-02); QA-12's (M6) and QA-16's (M10) L3 samples join only here.
 tasks.register('verifySoak') {
     group = 'verification'
-    description = 'The soak runs: the seeded determinism soak, 200 seeds x 10,000 ticks.'
-    dependsOn ':core:soak'
+    description = 'The soak runs: the seeded determinism soak, 200 seeds x 10,000 ticks, and QA-12.4\'s aisoak.'
+    dependsOn ':core:soak', ':mod:runGameTestSoak'
 }
 
 // [T16] L4: opens a game window; only with the owner's consent.

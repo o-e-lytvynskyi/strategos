@@ -5,6 +5,7 @@ import dev.strategos.core.protocol.Train;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.sim.UnitView;
 import dev.strategos.core.sim.build.BuildingView;
+import java.util.List;
 
 /**
  * Keeps the queues full within the stock (04 §14's ProductionManager): its civic centre trains workers until the
@@ -101,7 +102,9 @@ final class ProductionManager implements AiModule {
                 if (unit != null
                         && view.trains(b.template(), unit)
                         && view.affords(unit)
-                        && (due == null || affordsBoth(view, unit, due)) // AI-02: the build order first
+                        && (due == null
+                                || affordsBoth(view, unit, due) // AI-02: the build order first
+                                || early(script.early(), have))
                         && (!ramWanted || affordsBoth(view, unit, RAM))) { // QA-12: the rams' price is kept
                     budget.spend(10);
                     have[
@@ -112,6 +115,16 @@ final class ProductionManager implements AiModule {
                 }
             }
         }
+    }
+
+    /** QA-12: whether fewer than the script's {@code early} soldiers stand or queue: they pass the reserve. */
+    private static boolean early(int guard, int[] have) {
+        return early(guard, have[AiView.ROLE_SPEAR] + have[AiView.ROLE_ARCHER] + have[AiView.ROLE_HORSE]);
+    }
+
+    /** The guard's rule: fewer than {@code guard} soldiers, standing or queued; none when it is 0. */
+    static boolean early(int guard, int soldiers) {
+        return soldiers < guard;
     }
 
     /** The siege unit (QA-12). */
@@ -128,8 +141,22 @@ final class ProductionManager implements AiModule {
     }
 
     private static boolean affordsBoth(AiView view, TemplateId a, BuildManager.Due due) {
-        for (String r : view.resources()) {
-            if (view.stock(r) < view.cost(a, r) + due.cost(view, r)) {
+        List<String> resources = view.resources();
+        long[] stock = new long[resources.size()];
+        long[] first = new long[stock.length];
+        long[] second = new long[stock.length];
+        for (int r = 0; r < stock.length; r++) {
+            stock[r] = view.stock(resources.get(r));
+            first[r] = view.cost(a, resources.get(r));
+            second[r] = due.cost(view, resources.get(r));
+        }
+        return covers(stock, first, second);
+    }
+
+    /** Whether {@code stock} pays {@code first} and {@code second} together, in every resource (thousandths). */
+    static boolean covers(long[] stock, long[] first, long[] second) {
+        for (int r = 0; r < stock.length; r++) {
+            if (stock[r] < first[r] + second[r]) {
                 return false;
             }
         }

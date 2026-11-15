@@ -131,6 +131,18 @@ neoForge {
             systemProperty 'strategos.soak.ticks', providers.gradleProperty('soak.ticks').getOrElse('12000')
             systemProperty 'strategos.soak.out', file('build/reports/soak').absolutePath
         }
+        // [M6 T23] verifySoak: QA-12.4's AI-versus-AI soak (the aisoak batch), alone and under /tick sprint
+        gameTestSoak {
+            type = 'gameTestServer'
+            disableIdeRun()
+            gameDirectory = file('build/gametest-soak')
+            jvmArgument('-Xmx6G')
+            systemProperty 'strategos.gametest.report', file('build/test-results/gametest-soak/TEST-gametest-soak.xml').absolutePath
+            systemProperty 'strategos.gametest.soak', 'true'
+            systemProperty 'strategos.faults.rethrow', 'true'
+            systemProperty 'strategos.gametest.filter', '^aisoak[.]'
+            systemProperty 'strategos.aisoak.seeds', providers.gradleProperty('aisoak.seeds').getOrElse('20')
+        }
         // [T3]
         serverSmoke {
             server()
@@ -493,6 +505,13 @@ gameTestGuard('runGameTestServer', file('build/test-results/gametest/TEST-gamete
 gameTestGuard('runGameTestSlow', file('build/test-results/gametest-slow/TEST-gametest-slow.xml'),
         file('build/gametest-slow/world'), null, file('build/gametest-slow/logs/latest.log'))
 tasks.matching { it.name == 'runGameTestSlow' }.configureEach { mustRunAfter 'runGameTestServer' }
+// [M6 T23] QA-12.4: twenty matches of up to 45 game minutes under /tick sprint; no budget, the wall time is reported
+gameTestGuard('runGameTestSoak', file('build/test-results/gametest-soak/TEST-gametest-soak.xml'),
+        file('build/gametest-soak/world'), null, file('build/gametest-soak/logs/latest.log'))
+tasks.matching { it.name == 'runGameTestSoak' }.configureEach {
+    timeout = Duration.ofMinutes(240)
+    mustRunAfter 'runGameTestSlow'
+}
 gameTestGuard('runGameTestPerf', file('build/test-results/gametest-perf/TEST-gametest-perf.xml'),
         file('build/gametest-perf/world'), null, file('build/gametest-perf/logs/latest.log'))
 

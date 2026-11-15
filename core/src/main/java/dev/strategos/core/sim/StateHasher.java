@@ -249,6 +249,7 @@ public final class StateHasher {
             h = Hasher.mix(h, Double.doubleToLongBits(motion.netX(i)));
             h = Hasher.mix(h, Double.doubleToLongBits(motion.netZ(i)));
             h = Hasher.mix(h, motion.net(i));
+            h = Hasher.mix(h, motion.netOrder(i));
         }
         if (motion.settle(i) != 0) { // QA-12's crowd-settle count, only while a unit walks near its place
             h = Hasher.mix(h, motion.settle(i));

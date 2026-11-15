@@ -61,13 +61,12 @@ class BattleBotTest {
                         .withPlay(ai))
                 .yBand(0, 31, 1)
                 .templates(templates)
+                .starts(List.of(new StartSlot(8, 1, 8, 0f), new StartSlot(112, 1, 112, 0f)))
                 .build();
         h.publishAll(VoxelFixtures.flat(128, 128, 32, 1));
         h.submit(PlayerSlot.ADMIN, new SpawnBuilding(CENTRE, new FactionSlot(0), 8, 8, 0));
         h.submit(PlayerSlot.ADMIN, new SpawnBuilding(CENTRE, new FactionSlot(1), 112, 112, 0));
         h.step();
-        KernelAccess.state(h.core())
-                .setStartPositions(List.of(new StartSlot(8, 1, 8, 0f), new StartSlot(112, 1, 112, 0f)));
         return h;
     }
 

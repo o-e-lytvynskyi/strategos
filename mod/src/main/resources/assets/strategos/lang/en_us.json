@@ -95,7 +95,7 @@
   "strategos.skirmish.level.hard": "Hard",
   "strategos.skirmish.level.easy.handicaps": "Slower to think and react, smaller waves; gathers at 0.85 and trains in 1.15 times the time",
   "strategos.skirmish.level.normal.handicaps": "No handicap and no bonus",
-  "strategos.skirmish.level.hard.handicaps": "Quick to react, larger waves; no bonus",
+  "strategos.skirmish.level.hard.handicaps": "Quick to react; the open bonus of the top level: gathers at 3.0 times the rate and trains in 0.35 times the time",
   "strategos.skirmish.resources": "Starting resources",
   "strategos.skirmish.resources.map": "The map's",
   "strategos.skirmish.resources.low": "Low (half)",

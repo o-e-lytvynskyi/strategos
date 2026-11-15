@@ -1,6 +1,7 @@
 package dev.strategos.gametest;
 
 import dev.strategos.gametest.net.MockViewer;
+import dev.strategos.gametest.suites.AiSoak;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -271,6 +272,16 @@ public final class StrategosGameTests {
         afterBatch(level, "selftest");
     }
 
+    @AfterBatch(batch = "aisoak")
+    public static void afterAiSoak(ServerLevel level) {
+        afterBatch(level, "aisoak");
+    }
+
+    @AfterBatch(batch = "ai_starts")
+    public static void afterAiStarts(ServerLevel level) {
+        afterBatch(level, "ai_starts");
+    }
+
     @AfterBatch(batch = "ai_battle")
     public static void afterAiBattle(ServerLevel level) {
         afterBatch(level, "ai_battle");
@@ -437,6 +448,7 @@ public final class StrategosGameTests {
     public static Collection<TestFunction> all() {
         boolean perf = Boolean.getBoolean("strategos.gametest.perf");
         boolean slow = Boolean.getBoolean("strategos.gametest.slow"); // runGameTestSlow keeps batch slow, alone
+        boolean soak = Boolean.getBoolean("strategos.gametest.soak"); // runGameTestSoak keeps batch aisoak, alone
         String selftest = System.getProperty("strategos.selftest", "");
         String filter = System.getProperty("strategos.gametest.filter", "");
         List<Declared> declared = new ArrayList<>();
@@ -469,6 +481,7 @@ public final class StrategosGameTests {
         }
         Pattern pattern = Pattern.compile(filter);
         List<TestFunction> functions = candidates.stream()
+                .filter(c -> c.batch().equals(AiSoak.BATCH) == soak)
                 .filter(c -> slow(c.batch()) == slow)
                 .filter(c -> pattern.matcher(c.name()).find())
                 .sorted(Comparator.comparing(Candidate::name))

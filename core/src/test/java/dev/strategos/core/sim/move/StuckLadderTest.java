@@ -256,6 +256,32 @@ class StuckLadderTest {
         }
     }
 
+    /**
+     * QA-12: the net-progress count belongs to an order. A unit walked on under a new order (a chaser's order replaced by
+     * a move, a group's by another, the unit never pausing) with the old order's count still running, and the first
+     * step 8 blocks from where that count began restarted it a little after the new walk began, so the new walk's
+     * order ran out later than the 640 ticks the stall check allows (the 1,000-match run's two stalls). A new order
+     * starts the count.
+     */
+    @Test
+    void aNewOrderStartsTheNetCountAgain() {
+        SimHarness h = harness(VoxelFixtures.flat(64, 32, 16, 1));
+        int unit = h.spawn(F0, new Vec2d(8.5, 16.5), 1, 0)[0];
+        int i = Handle.index(unit);
+        hold(h, unit);
+        order(h, unit, 40.5, 16.5);
+        h.runTicks(5);
+        MotionStore motion = state(h).motion();
+        assertThat(motion.net(i)).as("its own count").isBetween(1, 10);
+
+        motion.setNet(i, motion.x(i), motion.z(i), 400, 12_345L); // another order's count, long running
+        h.step();
+        assertThat(motion.net(i)).as("the count of another order starts again").isBetween(1, 2);
+        assertThat(motion.netOrder(i)).isNotEqualTo(12_345L);
+        h.runTicks(10);
+        assertThat(motion.net(i)).as("and runs on under this order's own").isBetween(11, 13);
+    }
+
     @Test
     void aUnitThatWalksOnIsNoNetStall() {
         SimHarness h = harness(VoxelFixtures.flat(200, 32, 16, 1));

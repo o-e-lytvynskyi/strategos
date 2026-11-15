@@ -46,7 +46,8 @@ public record StrategyScript(
         List<Opening> openings,
         Camp camp,
         Level level,
-        String opening) {
+        String opening,
+        int early) {
     /**
      * A build order step: the building, once the population reaches {@code population}, by {@code near} when it names
      * one: a resource's nearest node, or an own building of that template id; "" for no preference. A research step
@@ -110,16 +111,16 @@ public record StrategyScript(
     }
 
     /**
-     * The open handicap of a level (D-19, the faction modifier source {@code ai_handicap}): gathering rates and unit
-     * training times are multiplied by {@code gather} and {@code train}; 1 for none. Never above 1 for gathering nor
-     * below 1 for training: a handicap, not a bonus (row 9).
+     * The open handicap or bonus of a level (D-19, the faction modifier source {@code ai_handicap}): gathering rates and
+     * unit training times are multiplied by {@code gather} and {@code train}; 1 for none. Above 1 for gathering or
+     * below 1 for training it is a bonus, which {@link Levels} admits only at the labelled top level (R6).
      */
     public record Handicap(double gather, double train) {
         public static final Handicap NONE = new Handicap(1, 1);
 
         static final Codec<Handicap> CODEC = RecordCodecBuilder.create(i -> i.group(
-                        Codec.doubleRange(0.1, 1).optionalFieldOf("gather", 1.0).forGetter(Handicap::gather),
-                        Codec.doubleRange(1, 10).optionalFieldOf("train", 1.0).forGetter(Handicap::train))
+                        Codec.doubleRange(0.1, 3).optionalFieldOf("gather", 1.0).forGetter(Handicap::gather),
+                        Codec.doubleRange(0.2, 10).optionalFieldOf("train", 1.0).forGetter(Handicap::train))
                 .apply(i, Handicap::new));
 
         /** Whether it changes anything. */
@@ -203,7 +204,7 @@ public record StrategyScript(
 
     /**
      * An opening (AI-04): a weight it is drawn by, and what it changes of the script: a build order (empty keeps the
-     * script's), a worker target (-1 keeps it), the soldier queue (-1 keeps it) and the attack schedule (none keeps it).
+     * script's), a worker target (-1 keeps it), the soldier queue (-1 keeps it), the attack schedule (none keeps it) and {@code early}, the soldiers trained past the build order's reserve (-1 keeps the script's, 0 by default: none).
      * Rush attacks early with a short build order and few workers, boom grows a large economy first, balanced sits
      * between; the data holds the numbers.
      */
@@ -213,7 +214,8 @@ public record StrategyScript(
             List<Step> build,
             int maxWorkers,
             int soldierQueue,
-            java.util.Optional<Attack> attack) {
+            java.util.Optional<Attack> attack,
+            int early) {
         static final Codec<Opening> CODEC = RecordCodecBuilder.create(i -> i.group(
                         Codec.STRING.fieldOf("name").forGetter(Opening::name),
                         Codec.intRange(1, 1_000).optionalFieldOf("weight", 1).forGetter(Opening::weight),
@@ -222,7 +224,8 @@ public record StrategyScript(
                         Codec.intRange(0, 20)
                                 .optionalFieldOf("soldierQueue", -1)
                                 .forGetter(Opening::soldierQueue),
-                        Attack.CODEC.optionalFieldOf("attack").forGetter(Opening::attack))
+                        Attack.CODEC.optionalFieldOf("attack").forGetter(Opening::attack),
+                        Codec.intRange(0, 100).optionalFieldOf("early", -1).forGetter(Opening::early))
                 .apply(i, Opening::new));
 
         public Opening {
@@ -288,7 +291,8 @@ public record StrategyScript(
                 openings,
                 camp,
                 level,
-                opening);
+                opening,
+                o.early() >= 0 ? o.early() : early);
     }
 
     /**
@@ -341,7 +345,8 @@ public record StrategyScript(
                             .listOf()
                             .optionalFieldOf("openings", List.of())
                             .forGetter(StrategyScript::openings),
-                    Tail.CODEC.forGetter(script -> new Tail(script.camp(), script.level(), script.opening())))
+                    Tail.CODEC.forGetter(
+                            script -> new Tail(script.camp(), script.level(), script.opening(), script.early())))
             .apply(
                     i,
                     (worker,
@@ -377,14 +382,16 @@ public record StrategyScript(
                             openings,
                             tail.camp(),
                             tail.level(),
-                            tail.opening())));
+                            tail.opening(),
+                            tail.early())));
 
-    /** The last three fields, grouped: a record codec takes at most 16 fields. */
-    private record Tail(Camp camp, Level level, String opening) {
+    /** The last four fields, grouped: a record codec takes at most 16 fields. */
+    private record Tail(Camp camp, Level level, String opening, int early) {
         static final com.mojang.serialization.MapCodec<Tail> CODEC = RecordCodecBuilder.mapCodec(i -> i.group(
                         Camp.CODEC.optionalFieldOf("camp", Camp.DEFAULT).forGetter(Tail::camp),
                         Level.CODEC.optionalFieldOf("level", Level.NONE).forGetter(Tail::level),
-                        Codec.STRING.optionalFieldOf("opening", "").forGetter(Tail::opening))
+                        Codec.STRING.optionalFieldOf("opening", "").forGetter(Tail::opening),
+                        Codec.intRange(0, 100).optionalFieldOf("early", 0).forGetter(Tail::early))
                 .apply(i, Tail::new));
     }
 

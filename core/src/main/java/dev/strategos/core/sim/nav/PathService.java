@@ -767,6 +767,9 @@ public final class PathService {
         if (node >= 0 && LineOfWalk.walk(grid, node, x, z, w.x(0), w.z(0)) >= 0) {
             return w;
         }
+        if (SurfaceGrid.nodeLayer(fromNode) >= grid.count(grid.nodeX(fromNode), grid.nodeZ(fromNode))) {
+            return w; // QA-12: the ground it asked from has been built over since: the path stands as found
+        }
         int keep = Math.min(w.count(), PathStore.Waypoints.MAX - 1);
         double[] xs = new double[keep + 1];
         double[] zs = new double[keep + 1];

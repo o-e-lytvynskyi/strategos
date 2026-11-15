@@ -13,7 +13,7 @@ import dev.strategos.core.sim.stats.Modifier;
  * The open handicap of a computer player's level (D-19, AI-05): the faction modifier source {@link #SOURCE} that
  * multiplies its gathering rates and its units' training times by the script's {@code level.handicap}. Never saved:
  * derived from the player's script when it is set, when a match is restored and when the template set is swapped, as a
- * tech's effects are. A handicap only ever slows the AI; no source here adds to it (row 9).
+ * tech's effects are. A bonus (gathering above 1, training below 1) is allowed only on the top level (R6); every other level only slows the AI.
  */
 @CoreApi
 public final class AiHandicap {

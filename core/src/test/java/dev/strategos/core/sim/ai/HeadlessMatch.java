@@ -149,6 +149,11 @@ final class HeadlessMatch {
         return run(Ground.provingGround(), firstLoop(), seed, limit, script, watcher, decided);
     }
 
+    /** As {@link #run(long, long, String, Watcher, boolean)}, under {@code ai}'s play rules ({@link #FOGGED}). */
+    static Result run(long seed, long limit, String script, Watcher watcher, boolean decided, PlayRules ai) {
+        return run(Ground.provingGround(), firstLoop(), seed, limit, List.of(script, script), watcher, decided, ai);
+    }
+
     /** The map a run plays on: its terrain and its start slots. */
     record Ground(int size, int height, VoxelWorld voxels, List<StartSlot> starts) {
         static Ground provingGround() {
@@ -207,11 +212,11 @@ final class HeadlessMatch {
                 .yBand(0, ground.height(), 16)
                 .seed(seed)
                 .rules(MatchRules.DEFAULTS.withPlay(ai))
+                .starts(ground.starts()) // AI-18: the AI knows the starts under fog
                 .build();
         h.publishAll(ground.voxels());
         h.step();
         MatchState s = KernelAccess.state(h.core());
-        s.setStartPositions(ground.starts()); // AI-18: the AI knows the starts under fog
         List<Scenario.Slot> computers = new ArrayList<>();
         for (Scenario.Slot slot : scenario.slots()) {
             computers.add(new Scenario.Slot(ScenarioSetup.AI + "first_loop", slot.resources(), slot.entities()));

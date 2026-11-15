@@ -135,7 +135,8 @@ public final class MatchRegistry {
                 seed != null ? seed : level.getRandom().nextLong(),
                 bounds,
                 options.factions(),
-                MatchRules.DEFAULTS.withEconomy(economy.get()).withPlay(options.play()));
+                MatchRules.DEFAULTS.withEconomy(economy.get()).withPlay(options.play()),
+                map == null ? List.of() : map.manifest().startSlots()); // AI-18: the computer knows the starts
         MatchCore core = MatchCore.create(config, templates.get(), ports(options.metrics(), id));
         FaultPolicy policy = options.faultPolicy();
         if (policy == null) {

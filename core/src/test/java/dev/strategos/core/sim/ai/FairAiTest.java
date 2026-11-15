@@ -56,7 +56,8 @@ class FairAiTest {
                 HeadlessMatch.LIMIT,
                 HeadlessMatch.read("ai/first_loop.json"),
                 (h, out) -> checkPendingAttacks(h, out, bad),
-                true);
+                true,
+                HeadlessMatch.FOGGED);
         assertThat(bad).isEmpty();
     }
 
@@ -94,16 +95,16 @@ class FairAiTest {
     @Test
     void findsTheBaseFromTheStarts() {
         MatchRules d = MatchRules.DEFAULTS;
+        StartSlot west = new StartSlot(8, 1, 8, 0f);
+        StartSlot east = new StartSlot(112, 1, 112, 0f);
         SimHarness h = SimHarness.builder()
                 .size(128, 128)
                 .factions(2)
                 .rules(d.withEconomy(new EconomyRules(d.economy().resources(), 200)))
                 .yBand(0, 31, 1)
+                .starts(List.of(west, east))
                 .build();
         h.publishAll(VoxelFixtures.flat(128, 128, 32, 1));
-        StartSlot west = new StartSlot(8, 1, 8, 0f);
-        StartSlot east = new StartSlot(112, 1, 112, 0f);
-        KernelAccess.state(h.core()).setStartPositions(List.of(west, east));
         h.submit(PlayerSlot.ADMIN, new SpawnBuilding(CENTRE, new FactionSlot(0), 8, 8, 0));
         h.submit(PlayerSlot.ADMIN, new SpawnBuilding(CENTRE, new FactionSlot(1), 112, 112, 0));
         h.submit(PlayerSlot.ADMIN, new SpawnUnits(SPEAR, new FactionSlot(0), new Vec2d(14, 14), 4, 2));
@@ -156,7 +157,14 @@ class FairAiTest {
     @Test
     @Tag("slow")
     void firstLoopMatchEndsWithin45OnTheProvingGround() {
-        HeadlessMatch.Summary match = HeadlessMatch.play(1, FORTY_FIVE_MIN);
+        HeadlessMatch.Summary match = HeadlessMatch.run(
+                        1,
+                        FORTY_FIVE_MIN,
+                        HeadlessMatch.read("ai/first_loop.json"),
+                        (h, out) -> {},
+                        true,
+                        HeadlessMatch.FOGGED)
+                .summary();
         assertThat(match.failure()).isEmpty();
         assertThat(match.winner()).isGreaterThanOrEqualTo(0);
         assertThat(match.ticks()).isLessThanOrEqualTo(FORTY_FIVE_MIN);
