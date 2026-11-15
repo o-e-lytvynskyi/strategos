@@ -19,3 +19,16 @@ service must validate the actual M6 setup/map and supported assets before freezi
 atomically with the lobby value. allHumansReady is only a prerequisite; it does not prove
 opponents, valid map starts, network admission or command/privacy integration. Rolling back
 the aggregate does not dispose a partial match in the world. Those are T3b integration gates.
+
+## Runtime admission must wait for installed authority
+
+A player slot is a network/command identity; a faction is an economy and simulation owner.
+Comparing a player slot number with the faction count rejects valid co-op seats (four players,
+two factions). Validate the installed primary binding instead, while preserving the existing
+administrator behavior and legacy rejection of unbound slots.
+
+Queued first-tick authority is not installed authority. Refuse admission during that queue so
+no initial recipient snapshot observes the legacy identity mapping. Install the trusted setup
+through the normal journaled tick input before admitting any member. This transient adapter
+queue is not persistence: production preparation must cancel on server stop until the launch
+transaction is covered by save/restore tests.

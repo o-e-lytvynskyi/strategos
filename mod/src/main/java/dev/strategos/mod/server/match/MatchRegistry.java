@@ -682,17 +682,18 @@ public final class MatchRegistry {
 
     /**
      * Seats {@code player} in {@code rt} at {@code slot}, out of any match it sat in; a saved match's blob is marked to
-     * save it. Refused for a slot the match has no faction for, or one someone else holds.
+     * save it. Refused while authority initializes, for an unbound player slot, or one someone else holds.
      */
     public void join(MatchRuntime rt, UUID player, PlayerSlot slot) {
         MatchCore core = rt.core();
         if (core == null) {
             throw new MatchRefusedException("match " + rt.id() + " is " + rt.lifecycle() + " and seats no one");
         }
-        int factions = core.queries().config().factions();
-        if (slot.value() >= factions) {
-            throw new MatchRefusedException(
-                    "match " + rt.id() + " has " + factions + " factions, so no slot " + slot.value());
+        if (rt.initializingDiplomacy()) {
+            throw new MatchRefusedException("match " + rt.id() + " is initializing its authority");
+        }
+        if (!slot.isAdmin() && core.queries().diplomacy().factionOf(slot).isEmpty()) {
+            throw new MatchRefusedException("match " + rt.id() + " has no bound player slot " + slot.value());
         }
         rt.roster().seat(player, slot); // refused before anything changes if the slot is taken
         MatchId before = seated.put(player, rt.id());

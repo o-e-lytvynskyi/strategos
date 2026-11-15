@@ -7,6 +7,7 @@ import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.sim.DiplomacySetup;
 import dev.strategos.core.sim.diplomacy.DiplomacyState;
+import dev.strategos.core.sim.journal.ReplayDriver;
 import dev.strategos.core.testkit.SimHarness;
 import dev.strategos.gametest.MatchFixture;
 import dev.strategos.gametest.StrategosTest;
@@ -33,6 +34,14 @@ public final class LobbyAdmissionTests {
         MatchRuntime rt = MatchFixture.create(h, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
         DiplomacySetup setup = coop();
         rt.initializeDiplomacy(setup);
+        boolean early = false;
+        try {
+            StrategosServer.get().matches().join(rt, new UUID(7, 100), new PlayerSlot(0));
+        } catch (MatchRefusedException expected) {
+            early = true;
+        }
+        check(early, "admission observed identity before the queued authority was installed");
+        check(rt.roster().isEmpty(), "early admission left a partial roster");
         h.startSequence()
                 .thenExecuteAfter(1, () -> {
                     var core = core(rt);
@@ -54,6 +63,11 @@ public final class LobbyAdmissionTests {
                                 "wrong co-op faction");
                     }
                     check(rt.roster().members().size() == 4, "not all four players admitted");
+                    var replay =
+                            ReplayDriver.replay(core.journal(), core.queries().templates());
+                    check(
+                            replay.matches() && replay.finalHash() == core.stateHash(),
+                            "runtime authority setup did not replay to its live hash");
                 })
                 .thenSucceed();
     }
@@ -78,6 +92,32 @@ public final class LobbyAdmissionTests {
                         late = true;
                     }
                     check(late, "late setup was accepted");
+                })
+                .thenSucceed();
+    }
+
+    @StrategosTest(timeoutTicks = 40)
+    public static void wrongFactionCountDoesNotConsumeTheInitializationSlot(GameTestHelper h) {
+        MatchRuntime rt = MatchFixture.create(h, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
+        boolean refused = false;
+        try {
+            rt.initializeDiplomacy(
+                    new DiplomacySetup(DiplomacyState.identity(3).lockTeams().snapshot()));
+        } catch (IllegalArgumentException expected) {
+            refused = true;
+        }
+        check(refused, "foreign authority faction count was accepted");
+        rt.initializeDiplomacy(coop());
+        h.startSequence()
+                .thenExecuteAfter(1, () -> {
+                    check(
+                            core(rt).queries()
+                                            .diplomacy()
+                                            .factionOf(new PlayerSlot(3))
+                                            .orElseThrow()
+                                            .value()
+                                    == 1,
+                            "failed validation consumed the initialization slot");
                 })
                 .thenSucceed();
     }

@@ -36,6 +36,14 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Log
 
+### 2026-11-15 — T3b runtime authority/admission implementation
+
+- Test-first cloud verify 43759001528 on d94284ac failed at GameTest compilation for the absent `initializeDiplomacy` API, as expected; 1,944 canonical core cases passed. No runtime test acceptance is inferred from that checkpoint.
+- Added single-use authority setup for a fresh, unseated runtime; the normal first tick journals it before commands. Admission is refused while authority is queued. Thereafter primary bindings, not the economy faction count, validate player slots; legacy unbound-seat and administrator behavior are preserved.
+- Four engine cases cover four players/two factions, early admission without a partial seat, duplicate/late setup, wrong faction count without consuming the setup slot, unchanged legacy refusal and replay to the live hash.
+- This runtime queue is transient: the production preparation backend must cancel on server stop until T5 covers its persistence. No production start, C2S endpoint, client snapshot privacy or whole T3b acceptance is installed by this step. Recorded the admission/persistence boundary in the lobby KB.
+- **Next:** cloud verify plus verifySlow/verifySoak on this exact checkpoint; only accept after all required gates finish. Then implement the production M6 preparation backend and private protocol.
+
 ### 2026-11-15 — T3b runtime admission test-first checkpoint
 
 - Added three engine regressions: four distinct player seats controlling two economy factions, single-use first-tick authority installation, and preserved refusal of unbound legacy seats without partial roster changes.

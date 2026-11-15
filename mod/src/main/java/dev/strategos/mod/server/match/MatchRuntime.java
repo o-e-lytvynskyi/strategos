@@ -8,12 +8,15 @@ import dev.strategos.core.sim.AgentUpdate;
 import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.ContentSwap;
+import dev.strategos.core.sim.DiplomacySetup;
 import dev.strategos.core.sim.ExternalDamage;
+import dev.strategos.core.sim.InputEvent;
 import dev.strategos.core.sim.JobDelivery;
 import dev.strategos.core.sim.LeaderUpdate;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.core.sim.MatchRules;
+import dev.strategos.core.sim.TickInputs;
 import dev.strategos.core.sim.TickOutputs;
 import dev.strategos.core.sim.nav.DeliveryMode;
 import dev.strategos.mod.StrategosServer;
@@ -42,6 +45,7 @@ import org.slf4j.LoggerFactory;
  */
 public final class MatchRuntime {
     private dev.strategos.mod.server.world.WorldReconciler.@org.jspecify.annotations.Nullable Result reconciled;
+    private @Nullable DiplomacySetup diplomacySetup;
     private @Nullable ContentSwap swap; // a reload's set, for the next step
     private final MatchId id;
     private final MatchSpace space;
@@ -198,6 +202,30 @@ public final class MatchRuntime {
     }
 
     /**
+     * Trusted lobby setup for a fresh, unseated runtime. The tick driver journals and installs it before the first
+     * tick's commands; no connection may be admitted while it is queued. Production preparation must cancel on
+     * server stop until T5 persists the launch transaction: this transient queue is not a restorable lobby.
+     */
+    public void initializeDiplomacy(DiplomacySetup setup) {
+        MatchCore c = requireCore();
+        if (lifecycle != MatchLifecycle.RUNNING
+                || c.queries().tick() != 0
+                || diplomacySetup != null
+                || c.queries().diplomacy().teamsLocked()
+                || !roster.isEmpty()) {
+            throw new IllegalStateException("authority can only initialize a fresh, unseated runtime once");
+        }
+        if (setup.snapshot().teams().size() != c.queries().config().factions()) {
+            throw new IllegalArgumentException("authority faction count differs from match config");
+        }
+        diplomacySetup = setup;
+    }
+
+    boolean initializingDiplomacy() {
+        return diplomacySetup != null;
+    }
+
+    /**
      * Queues a command for the next step, received this tick with this match's next sequence number; returns that
      * number. Only a RUNNING or PAUSED match takes commands.
      */
@@ -273,8 +301,17 @@ public final class MatchRuntime {
         AgentUpdate agents = this.agents.track(level, roster.members());
         ContentSwap swap = this.swap;
         this.swap = null;
-        TickOutputs out = c.step(InputCollector.collect(
-                next, inbox, pages.due(next), agents, leaders(level), damage, delivery(c, next), swap));
+        TickInputs inputs = InputCollector.collect(
+                next, inbox, pages.due(next), agents, leaders(level), damage, delivery(c, next), swap);
+        DiplomacySetup setup = diplomacySetup;
+        if (setup != null) {
+            List<InputEvent> events = new ArrayList<>(inputs.events().size() + 1);
+            events.add(setup);
+            events.addAll(inputs.events());
+            inputs = new TickInputs(next, events);
+            diplomacySetup = null;
+        }
+        TickOutputs out = c.step(inputs);
         long start = System.nanoTime();
         OutputAppliers.apply(this, level, out);
         bodies.materialise(level, c.queries(), spawnBudget);
