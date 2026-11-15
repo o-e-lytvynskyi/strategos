@@ -121,6 +121,19 @@ Resume update: main b893a0d uses branch-file claims and includes the M7 planning
 
 T1 verification: [cloud verify 40787146879](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40787146879), commit `40e770d`: BUILD SUCCESSFUL in 6m 46s; 2,237 canonical XML test cases, zero failures/errors/skips. Expected negative harness failures were caught by their self-test gates.
 
+### 2.4 Resume after M6 delivery, 2026-11-15
+
+Main d39069e7 includes M6 through PR #55. Merge checkpoint 213d0564 passed full cloud
+verify 43756194393 (7m 22s; 2,623 canonical XML cases, no failures/errors/skips). Its snapshot
+composition retains research, match statistics and vision together with schema-4 diplomacy;
+`withDiplomacy` must preserve every M6 field. This resolves the snapshot-composition marker.
+
+The earlier M6-unmerged statements in §2.3 describe the historical checkpoint. MATCH-02/03,
+UI-20, observed AI and solo fog are now available for actual integration at T3b/T7/T13/T14/T15/T20.
+They do not themselves certify multiplayer behavior. M6's owner playtest (QA-13), civilisation/style
+decisions and final M7 performance/real-client evidence retain their own acceptance boundaries.
+The existing cloud workflow route remains mandatory for tests in this session.
+
 ## 3. Design
 
 ### 3.1 Identity, teams and control

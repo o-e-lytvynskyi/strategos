@@ -7,10 +7,10 @@
 ## Now
 
 - **Milestone:** M7 Multiplayer; 5 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md), based on planning PR #32; T3 is split before implementation into independent aggregate and production integration.
-- **In progress:** main reconciliation since 2026-11-15; T2b and T3a are accepted. Whole M7 remains in progress; network admission and production start are not installed by the foundation.
+- **In progress:** M7 T3b authenticated lobby/start integration since 2026-11-15; main reconciliation passed. Whole M7 remains in progress; network admission and production start are not installed by the foundation.
 - **Last finished task:** T3a immutable lobby/readiness/preparation contract, accepted on 2026-10-30 after full cloud verify.
 - **Next task:** T3b production integration after the main-merge cloud gate; M6 MATCH-02 is delivered by PR #55. D-20 is explicitly accepted. Remaining tasks keep the specification's integration dependencies; no M6 work is taken over.
-- **Merged from main last:** 8111c0a (2026-10-30), zero commits behind at final T2b fetch. Verify, core slow/soak, matched server slow, paired JMH, standard cloud L6 and tooling smoke passed.
+- **Merged from main last:** d39069e7 (2026-11-15, PR #55/M6); merge 213d0564 is zero commits behind that main. Cloud verify 43756194393 passed: 2,623 canonical XML cases, zero failures/errors/skips, 7m 22s. Prior T2b slow/soak/L6 evidence remains historical; new integration will receive its required gates.
 
 The operator requested ownership of the whole M7 and work on what is currently possible on
 2026-10-29. This assignment intentionally includes responsibility for later blocked tasks;
@@ -41,7 +41,9 @@ or replication privacy; those retain their own integration tests and dependencie
 - Fetched main at d39069e7 (PR #55, M6 delivery); reconciled snapshot composition with schema-4 diplomacy, preserving M6 research progress, statistics and vision in compatibility constructors and `withDiplomacy`.
 - Added a regression for installing authority over populated M6 fields; stance absence remains checked alongside required diplomacy and optional M6 state.
 - Owner requests all tests in the cloud. This merge checkpoint is not accepted until full cloud verify reports pass. M6 runtime dependencies are now available; final art/MVP acceptance prerequisites still require their own evidence.
-- **Next:** cloud verify of the merge, then production lobby/start integration (T3b).
+- Cloud verify [43756194393](https://github.com/o-e-lytvynskyi/strategos/actions/runs/43756194393) on 213d0564 passed in 7m 22s: 2,623 canonical XML cases, zero failures/errors/skips, including the new composition regression and 11 diplomacy cases. No engine API, network path or running tick hot path changed in the conflict resolution.
+- Roadmap validation: 245 cards, zero problems. Claims validation inherits one main record error: PR #55 is merged but the M6 branch file remains `ready for review`; the maintainer owns that status correction.
+- **Next:** production lobby/start integration (T3b), test-first in the cloud.
 
 ### 2026-10-30 — T3a accepted; ready work exhausted
 
