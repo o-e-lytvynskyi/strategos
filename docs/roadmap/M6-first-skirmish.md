@@ -142,7 +142,8 @@ only its own vision at every level except that labelled top level.
   4. A golden shows a unit before and after the tier change (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** TECH-01, UNIT-07 · **Size:** M ·
   **Tier:** T0
-- **Status:** in_progress (checks 1–3 2026-11-14: `TechEffectTest`, `BalanceSheetTest`, `techtests.a_tier_reaches_every_viewer_within_a_second`; check 4 in T27)
+- **Status:** done
+- **Done:** 2026-11-15: checks 1–3 2026-11-14 (`TechEffectTest`, `BalanceSheetTest`, `techtests.a_tier_reaches_every_viewer_within_a_second`); check 4 `m6_goldens` `spearman_base`, `spearman_tiered` (L4), approved 2026-11-15
 
 #### CMB-09 · Siege ram and the arsenal
 - **Value:** The decisive answer to buildings: slow and tough, devastating to structures, helpless
@@ -208,7 +209,8 @@ only its own vision at every level except that labelled top level.
   4. Setup-screen goldens (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** MATCH-14, MAP-01, MATCH-01, UI-02 ·
   **Size:** L · **Tier:** T0
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-11-15: checks 1–2 (spec §1.4: `SkirmishSetupTest`, `skirmishtests`, the arena smoke); check 3 `skirmish_flow`, 2 clicks (L4); check 4 `m6_goldens` `setup_screen` (L4), approved 2026-11-15
 
 #### MATCH-03 · Conquest, defeat and statistics
 - **Value:** A clear ending: destroy everything the enemy has, or make them resign, then see how
@@ -226,7 +228,8 @@ only its own vision at every level except that labelled top level.
   5. End-screen golden (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** MATCH-01, BLD-08 · **Size:** M ·
   **Tier:** T0
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-11-15: checks 1–4 (spec §1.4: `matchtests`, `persistencetests`); check 5 `m6_goldens` `end_screen` (L4), approved 2026-11-15
 
 #### MAP-02 · First skirmish map
 - **Value:** A balanced 1 v 1 map whose terrain creates decisions, not only paths (P1, P4).
@@ -273,7 +276,8 @@ only its own vision at every level except that labelled top level.
   6. A golden of the raid bar (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** AI-03, MAP-02, BLD-16 · **Size:** L ·
   **Tier:** T0
-- **Status:** in_progress (checks 1–5 2026-11-14: `WaveTest.announcedThirtySecondsAhead`, `DefenceTest.defendersWithinTenSecondsAndTheBell`, `OpeningTest.seedsPickDifferentOpenings`, `aitests.waves_reach_the_base`, `aitests.the_raid_bar_reaches_only_its_audience`; check 6 in T27)
+- **Status:** done
+- **Done:** 2026-11-15: checks 1–5 2026-11-14 (`WaveTest`, `DefenceTest`, `OpeningTest`, `aitests.waves_reach_the_base`, `aitests.the_raid_bar_reaches_only_its_audience`); check 6 `m6_goldens` `raid_bar` (L4), approved 2026-11-15
 
 #### AI-05 · AI phases, research and difficulty levels
 - **Value:** An AI that advances and researches, with three levels that feel different and never
@@ -306,7 +310,8 @@ only its own vision at every level except that labelled top level.
   5. A golden with a ping (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent), L6 · **Depends on:** UI-11, UI-12 · **Size:** M ·
   **Tier:** T1 (pulled into the MVP by D-16)
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-11-15: checks 1–4 (`MinimapOrderTest`, `MinimapTilesTest`, `nettests.a_minimap_order_applies`, `MinimapBench`); check 5 `m6_goldens` `minimap_ping` (L4), approved 2026-11-15
 
 #### UI-21 · Notification feed and alert audio
 - **Value:** Never miss what matters (an attack, a finished research, a new phase) and hear it
@@ -322,7 +327,8 @@ only its own vision at every level except that labelled top level.
   3. Feed golden (L4, consent).
   4. The owner's audio checklist passes (L7, acceptance).
 - **Tests:** L0, L1, L4 (consent), L7 · **Depends on:** UI-12, TECH-01 · **Size:** M · **Tier:** T0
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-11-15: checks 1–2 (`NotificationFeedTest`, `AlertSoundPlanTest`, spec §1.4); check 3 `m6_goldens` `feed` (L4), approved 2026-11-15; check 4 is the owner's audio checklist at acceptance (`docs/testing/playtest.md`)
 
 #### UI-13 · Research and phase UI
 - **Value:** Plan your phase-up: see what Town needs and what each technology does (P4).
@@ -334,7 +340,8 @@ only its own vision at every level except that labelled top level.
   2. Research progress survives save and load (L3).
   3. Goldens (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** UI-08, TECH-02 · **Size:** M · **Tier:** T0
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-11-15: checks 1–2 (`PhasePanelTest`, `CommandCardResearchTest`, spec §1.4); check 3 `m6_goldens` `phase_panel`, `research_card` (L4), approved 2026-11-15
 
 #### UI-14 · First-match hints and controls help
 - **Value:** A new player learns the controls by playing, without a manual.
@@ -349,7 +356,8 @@ only its own vision at every level except that labelled top level.
   4. A friend playtester new to the game gets through the first 5 minutes with the hints alone
      (L7, acceptance).
 - **Tests:** L0, L1, L4 (consent), L7 · **Depends on:** UI-21 · **Size:** M · **Tier:** T0
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-11-15: checks 1–2 (`HintBookTest`, `ControlsOverlayTest`); check 3 `m6_goldens` `controls_overlay` (L4), approved 2026-11-15
 
 ### Solo fog (D-24 (c))
 
@@ -416,7 +424,8 @@ only its own vision at every level except that labelled top level.
   3. Golden (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** UI-11, FOW-07 · **Size:** S · **Tier:** T1
   (pulled into the MVP by D-24)
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-11-15: checks 1–2 (spec §1.4); check 3 `m6_goldens` `minimap_fog` (L4), approved 2026-11-15
 
 #### AI-18 · The AI reads only its own vision
 - **Value:** The AI plays with the information you have (P5).

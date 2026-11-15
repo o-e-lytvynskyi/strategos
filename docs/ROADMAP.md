@@ -419,22 +419,22 @@ Cards: [roadmap/M6-first-skirmish.md](roadmap/M6-first-skirmish.md#cards). 23 ca
 |---|---|---|---|---|
 | TECH-01 | Research system | M | DATA-02, PROD-01 | done |
 | TECH-02 | Phases: Village to Town | M | TECH-01, BLD-08, D-05 | done |
-| TECH-03 | Starting technologies and visible equipment tiers | M | TECH-01, UNIT-07 | in_progress |
+| TECH-03 | Starting technologies and visible equipment tiers | M | TECH-01, UNIT-07 | done |
 | CMB-09 | Siege ram and the arsenal | M | CMB-03, UNIT-06, PATH-11, TECH-02, D-12 | done |
 | BLD-17 | Defence tower | M | CMB-07, TECH-02 | done |
 | MATCH-14 | Spike: an arena world from the title screen | S | MAP-07 | done |
-| MATCH-02 | Skirmish setup and launch | L | MATCH-14, MAP-01, MATCH-01, UI-02 | in_progress |
-| MATCH-03 | Conquest, defeat and statistics | M | MATCH-01, BLD-08 | in_progress |
+| MATCH-02 | Skirmish setup and launch | L | MATCH-14, MAP-01, MATCH-01, UI-02 | done |
+| MATCH-03 | Conquest, defeat and statistics | M | MATCH-01, BLD-08 | done |
 | MAP-02 | First skirmish map | M | MAP-01, ECO-02, ECO-16, D-17 | done |
-| AI-04 | AI openings, waves, raid bar and defence | L | AI-03, MAP-02, BLD-16 | in_progress |
+| AI-04 | AI openings, waves, raid bar and defence | L | AI-03, MAP-02, BLD-16 | done |
 | AI-05 | AI phases, research and difficulty levels | M | AI-04, TECH-02, D-19 | done |
-| UI-20 | Minimap orders, pings and live construction | M | UI-11, UI-12 | in_progress |
-| UI-21 | Notification feed and alert audio | M | UI-12, TECH-01 | in_progress |
-| UI-13 | Research and phase UI | M | UI-08, TECH-02 | in_progress |
-| UI-14 | First-match hints and controls help | M | UI-21 | in_progress |
+| UI-20 | Minimap orders, pings and live construction | M | UI-11, UI-12 | done |
+| UI-21 | Notification feed and alert audio | M | UI-12, TECH-01 | done |
+| UI-13 | Research and phase UI | M | UI-08, TECH-02 | done |
+| UI-14 | First-match hints and controls help | M | UI-21 | done |
 | FOW-01 | Vision grid per faction (solo fog, D-24 (c)) | M | CORE-08 | done |
 | FOW-07 | Explored state, the shroud and solo fog gating (solo fog, D-24 (c)) | M | FOW-01, NET-08 | in_progress |
-| UI-16 | Minimap fog and explored areas (solo fog, D-24 (c)) | S | UI-11, FOW-07 | in_progress |
+| UI-16 | Minimap fog and explored areas (solo fog, D-24 (c)) | S | UI-11, FOW-07 | done |
 | AI-18 | The AI reads only its own vision (solo fog, D-24 (c)) | S | AI-01, FOW-01 | done |
 | MATCH-07 | Visibility options (solo fog, D-24 (c)) | S | FOW-07, MATCH-02 | done |
 | QA-12 | AI-versus-AI soak and opening balance | S | QA-11, AI-05, MATCH-03 | done |

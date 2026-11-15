@@ -753,7 +753,7 @@ kernel adds `:core:jmh :core:jmhCompare`.
 
 - [x] T2.1 (2026-10-25) · [x] T2.2 (2026-10-25) · [x] T3 (2026-10-26) · [x] T4 (2026-11-12) · [x] T5 (2026-11-12) · [x] T6 (2026-11-12) · [x] T7 (2026-11-13) · [x] T8 (2026-11-12) · [x] T9 (2026-11-12) · [x] T10 (2026-11-13) · [x] T11 (2026-11-13) · [x] T12.1 (2026-11-13) · [x] T12.2 (2026-11-13)
 - [x] T13 (2026-11-14) · [x] T14 (2026-11-14) · [x] T15 (2026-11-14) · [x] T16 (2026-11-14) · [x] T17 (2026-11-14) · [x] T1 (2026-11-14) · [x] T18 (2026-11-14) · [x] T19 (2026-11-14) · [x] T20 (2026-11-14) · [x] T21 (2026-11-14)
-- [x] T22 (2026-11-14) · [x] T23 (2026-11-15) · [x] T24 (2026-11-15) · [x] T25 (2026-11-14) · [ ] T27 · [x] T28 (2026-11-15)
+- [x] T22 (2026-11-14) · [x] T23 (2026-11-15) · [x] T24 (2026-11-15) · [x] T25 (2026-11-14) · [x] T27 (2026-11-15) · [x] T28 (2026-11-15)
 
 ---
 
@@ -848,6 +848,9 @@ branch file `docs/branches/o-e-lytvynskyi-m6-t2-t17.md`.
 | PERF-14 (L4) | frame p50/p99 3.70/8.93 ms; with the shroud 4.03/8.00; Sodium and Iris with the shroud 2.34/5.35; HUD p99 0.80; client tick p50 1.00 (`perf/client/m4pro.json`) |
 | Goldens (L4) | `m6_goldens` and new m3, m4, m5, rts_goldens and art_look sets proposed in `goldens-proposed/macos/`, each three runs in agreement; overlay_goldens unchanged; under Sodium and Iris only `m4_goldens` repeats and is proposed (`goldens-proposed/macos-sodium/`, row 73) |
 
+**The owner's word** (PR #55, 2026-11-15): the goldens approved (macOS sets and Sodium's m4); the new JMH baseline
+approved (ADR-0019), so `jmhCompare` holds against it; buildings above the shroud wait for M8's leak audit (FOW-05).
+
 **Deviations from this spec**, each with its row: QA-12.1's bar is ≥ 75 % by conquest and the median 20–38 (rows
 65, 70, the owner's word); Hard carries an open bonus (R6, row 70); Town costs 600 wood (row 63); the AI's start
 positions belong to the match (row 69); the per-unit comparison of PERF-09 holds A without the AI's phase (§2.22,
@@ -864,4 +867,4 @@ M8) and one `AFTER-M8` marker (the shot effects' audience), both from M5; M6 add
 - the minimap's "changed chunks" for terrain outside buildings (rows 45, 48; the owner's choice);
 - a cheaper vision restamp (only the changed edge of the disc) if `step600`'s budget tightens;
 - the Sodium goldens of m5, m6 and art_look, once their run-to-run variance is found (row 73);
-- buildings above the shroud (row 73), as the owner chooses.
+- buildings above the shroud (row 73): with M8's leak audit (FOW-05), the owner's choice.
