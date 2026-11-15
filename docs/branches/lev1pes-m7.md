@@ -36,6 +36,12 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Log
 
+### 2026-11-15 — T3b service test-first checkpoint
+
+- Added nine L2 service contract tests for host authority, member-only publication, authenticated readiness, occupied-seat/duplicate-member rejection, configuration invalidation, validation before allocation, frozen single preparation, allocation rollback, disconnect cancellation and the one-active-match restriction.
+- `LobbyService` is intentionally absent at this checkpoint. The cloud compilation must fail for that missing API before implementation; this is not runtime acceptance. Production M6 import, admission/payloads and mock-player start remain required parts of T3b.
+- **Next:** inspect the cloud red checkpoint, implement the service and its M6 backend, then full required gates.
+
 ### 2026-11-15 — Reconcile delivered M6 before resuming T3b
 
 - Fetched main at d39069e7 (PR #55, M6 delivery); reconciled snapshot composition with schema-4 diplomacy, preserving M6 research progress, statistics and vision in compatibility constructors and `withDiplomacy`.
