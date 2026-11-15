@@ -142,3 +142,12 @@ in two worktrees of the same machine collide there: the later one fails `FAILED 
 which is no fault of its change. Run the gate again when the other has finished (M6, 2026-11-14,
 two workers side by side); never treat it as a failure of the code under test.
 
+
+### A guard that ends a run's process finds it by the run's name
+
+ModDevGradle starts a run's JVM with its arguments in @-files, `build/moddev/<run>RunProgramArgs.txt` and
+`<run>RunVmArgs.txt`, so the process's command line names the run, never `--gameDir` or other program
+arguments. A guard that ends the client (`ProcessHandle.current().descendants()`) must match
+`commandLine()` on the run's name (`clientSmokeJar`); matching the game directory finds nothing and the task
+waits for its timeout (M6 T28). Read `project.version` and the like into a local at configuration: a
+`doLast` that touches `project` fails the build under the configuration cache.

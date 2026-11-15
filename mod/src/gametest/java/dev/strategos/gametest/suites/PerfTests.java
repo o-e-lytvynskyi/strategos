@@ -981,8 +981,8 @@ public final class PerfTests {
      * PERF-09 (M6 spec §2.22, §6), the MVP perf gate: MAP-02 under fog and {@code Victory.NONE} with 2 x 150 population
      * and 2 x 30 buildings all placed at the start ({@link MvpScene}), both factions played by the Hard computer, for
      * 36,000 ticks, 30 game minutes paced at 20 a second, autosaves included, two viewers seated. Budgets A-E and G
-     * gate as in the battle soak, and C's p95 at most 15.3 ms (23 ms over D-18's fastest speed, 1.5); A's p95 per unit
-     * against M5's battle soak is skipped until its base is archived (AFTER-M5). The report adds the AI's, the vision's
+     * gate as in the battle soak, and C's p95 at most 15.3 ms (23 ms over D-18's fastest speed, 1.5); A's p95 per unit,
+     * without the AI's phase, within 15 % of M5's battle soak (1.139 x M4's base). The report adds the AI's, the vision's
      * and the trackers' refresh time a tick. Writes {@code mvp_soak.json} and the match's journal.
      */
     @StrategosTest(batch = "perf_mvp", arena = "arena_flat_48", timeoutTicks = 60_000)

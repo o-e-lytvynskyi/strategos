@@ -261,6 +261,17 @@ neoForge {
             gameDirectory = file('build/server-smoke-jar')
             programArgument('--nogui')
         }
+        // [M6 T28] QA-13.5 (L4, consent: it opens a window): the client with only the built production jar, in mods/,
+        // as serverSmokeJar does for the server. Never part of verify; run by hand (runClientSmokeJar below).
+        clientSmokeJar {
+            client()
+            disableIdeRun()
+            sourceSet = sourceSets.jarSmoke
+            loadedMods = []
+            gameDirectory = file('build/client-smoke-jar')
+            programArguments.addAll('--username', 'JarSmoke', '--width', '854', '--height', '480')
+            jvmArgument('-Xmx3G')
+        }
         // [T9b] run 2 of the restart round trip: run 1's game directory, never wiped (QA-05.4)
         serverSmokeRestart {
             server()
@@ -521,8 +532,9 @@ def perfOut = file('build/reports/perf')
 tasks.matching { it.name == 'runGameTestPerf' }.configureEach {
     // [M1 T26] the crowd soak runs 12,000 ticks paced at 50 ms, ten minutes of wall time, and the stress pass two;
     // [M3 T29] the first loop's soak 15 more, its stress pass five and its 1.5x pass three and a half;
-    // [M4 T28] the economy's soak 15 more and its stress pass six
-    timeout = Duration.ofMinutes(110)
+    // [M4 T28] the economy's soak 15 more and its stress pass six;
+    // [M6 T24] the MVP soak 30 more (36,000 ticks paced at 50 ms) and its stress pass six
+    timeout = Duration.ofMinutes(150)
     // The server exits with the number of failed tests; the guard's report check names the budget instead.
     ignoreExitValue = true
     // org.gradle.parallel would otherwise run the perf batch beside JMH and spoil both measurements.
@@ -1040,6 +1052,67 @@ tasks.matching { it.name == 'runServerSmokeJar' }.configureEach {
         new File(smokeJUnitDir, 'TEST-runServerSmokeJar.xml').text =
                 "<testsuite name=\"strategos.smoke\" tests=\"1\" failures=\"${problem == null ? 0 : 1}\">" +
                 "<testcase classname=\"smoke\" name=\"runServerSmokeJar\">${failure}</testcase></testsuite>\n"
+        if (problem != null) throw new GradleException(problem)
+    }
+}
+
+// [M6 T28] QA-13.5 (L4, consent; the CI side is release.yml's mc-runtime-test): the client on the built production
+// jar, not the dev classpath. A fresh game directory per run holds the jar, the only copy of the mod anywhere. It opens
+// a window, so it is never in verify: `./gradlew :mod:runClientSmokeJar`, announced first (AGENTS.md, client windows).
+// The client has no console and the mod has no production hook to quit, so the guard below is the verdict: it waits
+// for the title screen's resource reload to finish ("Sound engine started"), lets the title screen live a few
+// seconds, then ends the client process; the log proves the load (the mod's entry in the loader's mod list, its
+// resource pack, its client config file), and no crash report may exist. A world is not entered (Quick Play needs an
+// existing save); the in-world side stays with the L4 scenarios and the jar's server smoke.
+def clientSmokeJarDir = file('build/client-smoke-jar')
+def clientSmokeJarModLine = 'Strategos ' + project.version + ' (strategos)'    // read now: no project at execution
+def prepareClientSmokeJar = tasks.register('prepareClientSmokeJar', Sync) {
+    from(jarArchive) { into 'mods' }
+    into clientSmokeJarDir
+    outputs.upToDateWhen { false }
+}
+neoForge.runs.clientSmokeJar.taskBefore prepareClientSmokeJar
+tasks.matching { it.name == 'runClientSmokeJar' }.configureEach {
+    timeout = Duration.ofMinutes(6)
+    ignoreExitValue = true    // the guard ends the client by a signal
+    doFirst {
+        def log = new File(clientSmokeJarDir, 'logs/latest.log')
+        Thread.startDaemon {
+            long deadline = System.currentTimeMillis() + 5 * 60_000L
+            while (System.currentTimeMillis() < deadline) {
+                if (log.isFile() && log.text.contains('Sound engine started')) {
+                    Thread.sleep(8_000)    // a short life on the title screen, so a late failure still shows
+                    break
+                }
+                Thread.sleep(500)
+            }
+            // the client is a child of this daemon; ModDevGradle hands it its arguments in @-files named after the run
+            // (build/moddev/clientSmokeJarRun*Args.txt), so the command line names the run, not the game directory
+            ProcessHandle.current().descendants().filter { ph ->
+                ph.info().commandLine().map { it.contains('clientSmokeJar') || it.contains('client-smoke-jar') }
+                        .orElse(false)
+            }.forEach { it.destroy() }
+        }
+    }
+    doLast {
+        def log = new File(clientSmokeJarDir, 'logs/latest.log')
+        def crashes = new File(clientSmokeJarDir, 'crash-reports').listFiles()
+        String problem = null
+        if (crashes != null && crashes.length > 0) problem = "Client jar smoke crashed: ${crashes*.name}"
+        else if (!log.isFile()) problem = "Client jar smoke wrote no log: ${log}"
+        else {
+            def text = log.text
+            if (!text.contains(clientSmokeJarModLine)) problem = 'Client jar smoke: the loader did not list the mod'
+            else if (!text.contains('mod/strategos')) problem = 'Client jar smoke: the mod\'s resource pack was not loaded'
+            else if (!new File(clientSmokeJarDir, 'config/strategos-client.toml').isFile()) problem = 'Client jar smoke: the mod\'s client entry did not run (no client config file)'
+            else if (!text.contains('Sound engine started')) problem = 'Client jar smoke: the client never reached the title screen'
+            else if (text.contains('dev.strategos.gametest') || text.contains('dev.strategos.devtools')) problem = 'Client jar smoke: a dev-only class was loaded'
+        }
+        smokeJUnitDir.mkdirs()
+        def failure = problem == null ? '' : "<failure message=\"${groovy.xml.XmlUtil.escapeXml(problem)}\"/>"
+        new File(smokeJUnitDir, 'TEST-runClientSmokeJar.xml').text =
+                "<testsuite name=\"strategos.smoke\" tests=\"1\" failures=\"${problem == null ? 0 : 1}\">" +
+                "<testcase classname=\"smoke\" name=\"runClientSmokeJar\">${failure}</testcase></testsuite>\n"
         if (problem != null) throw new GradleException(problem)
     }
 }

@@ -52,10 +52,11 @@ final class PerfVerdicts {
 
     /**
      * The battle soak per unit on the M4 Pro ({@code perf/battle-m4pro.json}), the base the MVP soak's A p95 a unit is
-     * held to, within {@link #PER_UNIT_GROWTH} (PERF-09). NaN until M5's run is archived, and the MVP soak then reports
-     * its figure and skips the comparison. AFTER-M5: set both from the archived file's {@code perUnitP95Ns}.
+     * held to, within {@link #PER_UNIT_GROWTH} (PERF-09). M5's report gives it as 1.139 x M4's base; the MVP soak holds A
+     * without the AI's phase to it, the AI being M6's own new cost and reported beside it (the branch file's Decisions).
      */
-    static final double M5_A_PER_UNIT = Double.NaN;
+    static final double M5_A_PER_UNIT =
+            1.139 * M4_A_PER_UNIT; // M5 spec §11: the battle soak's A per unit, 1.139 x M4's
 
     /** PERF-06.2 and PERF-07.2: a unit-driven bucket's p95 per unit grows at most 15 % over its base's. */
     static final double PER_UNIT_GROWTH = 1.15;
@@ -244,13 +245,21 @@ final class PerfVerdicts {
         double aBase = battle ? M4_A_PER_UNIT : M3_A_PER_UNIT;
         double bBase = battle ? M4_B_PER_UNIT : M3_B_PER_UNIT;
         int units = 2 * r.config().perFaction();
-        double aPerUnit = (double) Percentiles.percentile(r.core(), 0.95) / units;
+        int ai = costs.phaseNames().indexOf("AI");
+        long[] withoutAi = new long[Math.min(r.core().length, costs.phases().length)];
+        for (int i = 0; i < withoutAi.length; i++) { // M6's AI is a new system, reported in systemsPerTick
+            long aiNanos = costs.phases()[i] == null || ai < 0 ? 0 : costs.phases()[i][ai];
+            withoutAi[i] = r.core()[i] - aiNanos;
+        }
+        double aPerUnit = (double) Percentiles.percentile(withoutAi, 0.95) / units;
+        double aWithAiPerUnit = (double) Percentiles.percentile(r.core(), 0.95) / units;
         double bPerUnit = (double) Percentiles.percentile(b, 0.95) / units;
         JsonObject perUnit = new JsonObject();
         perUnit.addProperty("units", units);
         perUnit.addProperty(
                 "base", battle ? "the economy soak, map v3 (M4 T28)" : "the first-loop soak, map v3 (M4 T22)");
         perUnit.addProperty("aP95PerUnitNs", aPerUnit);
+        perUnit.addProperty("aP95PerUnitWithAiNs", aWithAiPerUnit);
         perUnit.addProperty("aBasePerUnitNs", aBase);
         perUnit.addProperty("aGrowth", aPerUnit / aBase);
         perUnit.addProperty("bP95PerUnitNs", bPerUnit);
@@ -300,16 +309,24 @@ final class PerfVerdicts {
                         + " tick in five, so read its meanPerTick");
         json.add("systemsPerTick", systems);
         int units = 2 * r.config().perFaction();
-        double aPerUnit = (double) Percentiles.percentile(r.core(), 0.95) / units;
+        int ai = costs.phaseNames().indexOf("AI");
+        long[] withoutAi = new long[Math.min(r.core().length, costs.phases().length)];
+        for (int i = 0; i < withoutAi.length; i++) { // M6's AI is a new system, reported in systemsPerTick
+            long aiNanos = costs.phases()[i] == null || ai < 0 ? 0 : costs.phases()[i][ai];
+            withoutAi[i] = r.core()[i] - aiNanos;
+        }
+        double aPerUnit = (double) Percentiles.percentile(withoutAi, 0.95) / units;
+        double aWithAiPerUnit = (double) Percentiles.percentile(r.core(), 0.95) / units;
         double bPerUnit = (double) Percentiles.percentile(b, 0.95) / units;
         JsonObject perUnit = new JsonObject();
         perUnit.addProperty("units", units);
         perUnit.addProperty("aP95PerUnitNs", aPerUnit);
+        perUnit.addProperty("aP95PerUnitWithAiNs", aWithAiPerUnit);
         perUnit.addProperty("bP95PerUnitNs", bPerUnit);
         if (Double.isNaN(M5_A_PER_UNIT)) {
             perUnit.addProperty("comparison", "skipped: no base archived (perf/battle-m4pro.json)");
         } else {
-            perUnit.addProperty("base", "the battle soak, perf/battle-m4pro.json");
+            perUnit.addProperty("base", "the battle soak, M5 spec §11 (1.139 x M4's base), A without the AI's phase");
             perUnit.addProperty("aBasePerUnitNs", M5_A_PER_UNIT);
             perUnit.addProperty("aGrowth", aPerUnit / M5_A_PER_UNIT);
             if (gates && gated("a") && aPerUnit > M5_A_PER_UNIT * PER_UNIT_GROWTH * ciFactor()) {
