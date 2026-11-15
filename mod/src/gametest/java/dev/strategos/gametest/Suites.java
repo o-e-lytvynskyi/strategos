@@ -21,6 +21,7 @@ import dev.strategos.gametest.suites.FogTests;
 import dev.strategos.gametest.suites.GarrisonTests;
 import dev.strategos.gametest.suites.JournalTests;
 import dev.strategos.gametest.suites.LobbyAdmissionTests;
+import dev.strategos.gametest.suites.LobbyPreparationTests;
 import dev.strategos.gametest.suites.MapTests;
 import dev.strategos.gametest.suites.MatchTests;
 import dev.strategos.gametest.suites.NavTests;
@@ -90,6 +91,7 @@ public final class Suites {
                         ProtectionTests.class,
                         SkirmishTests.class,
                         LobbyAdmissionTests.class,
+                        LobbyPreparationTests.class,
                         TechTests.class,
                         WriterTests.class);
         };

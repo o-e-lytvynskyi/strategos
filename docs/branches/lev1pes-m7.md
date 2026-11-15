@@ -36,6 +36,12 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Log
 
+### 2026-11-16 — T3b real preparation test-first checkpoint
+
+- Added real-world engine contracts for the shipped M6 map/scenario: initialization before two commander admissions, member-only match_join delivery, invalid preflight before the world allocator, and cancellation of an importing partial runtime.
+- `LobbyPreparation` is intentionally absent. Tests use the existing MockViewer and the M6 placer seam, not a substitute runtime or a network stub. Verified the relevant Minecraft/NeoForge 21.1.264 connection, permission and GameTest callback APIs in the source artifact.
+- **Next:** inspect the expected missing-API cloud result, implement the preparation transaction and queued import initialization, then full cloud verify/slow/soak. Private lobby intents and roster payloads remain separate required T3b work.
+
 ### 2026-11-16 — Full cloud soak repaired and preflight verified
 
 - Full-ci [43763260481](https://github.com/o-e-lytvynskyi/strategos/actions/runs/43763260481) on 6043f74e passed every constituent job and `complete-soak`. Independently read its aggregate manifest: exact seeds 1..20, 20 completed matches, 896,421 game ticks, 17 conquests/3 full-limit matches, one commit, all per-seed XML/log hashes verified. Its checker has eight counterexample tests; 24 slow GameTests, 21 core slow cases and 200 core replay seeds also passed. The inherited 25-minute cancellation is resolved without shrinking the workload or changing its simulation assertions.
