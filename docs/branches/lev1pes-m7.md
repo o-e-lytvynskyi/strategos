@@ -36,6 +36,14 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Log
 
+### 2026-11-16 — Implement real M6 preparation and atomic admission
+
+- Test-first cloud verify 43767063415 on 89efdf1a failed at GameTest compilation for absent `LobbyPreparation`, as intended; 1,944 core cases passed. Implemented actual map/scenario/template preflight, import allocation, queued first-tick authority/admin setup and checked command replies before admission.
+- A fresh importing runtime accepts only trusted admin initialization after authority is queued; ordinary player submissions remain refused. Prepared terrain/starts/templates are checked again before entering commanders and sending match_join. The real test also requires initial unit/faction/building frames for both members and none for an outsider.
+- Cancellation disposes the partial runtime and drops unsent data without resetting the incoming violation limiter. Failed begin with retained runtime state, or explicitly incomplete cleanup after registry removal, keeps the service frozen rather than advertising safe retry; two new service counterexamples cover these cases. Original and cleanup failures remain linked.
+- Production preparation refuses non-identity player/faction layouts until T8 installs their command/client/recipient routing; the canonical co-op plan remains tested independently. This is a safe intermediate boundary, not a cut to M7 or completed T3b. Global service/shutdown wiring and private lobby intents/state remain to be installed before production use and whole-card acceptance.
+- **Next:** cloud verify of this implementation, then full slow/soak on the same source after compile/fast gates pass. Continue with the actual backend/protocol integration; no owner decision is pending.
+
 ### 2026-11-16 — T3b real preparation test-first checkpoint
 
 - Added real-world engine contracts for the shipped M6 map/scenario: initialization before two commander admissions, member-only match_join delivery, invalid preflight before the world allocator, and cancellation of an importing partial runtime.

@@ -38,6 +38,13 @@ public final class LobbyService {
         void cancel();
     }
 
+    /** Allocation failed and rollback could not establish a clean state, even if registry removal already ran. */
+    public static final class IncompleteCleanupException extends RuntimeException {
+        public IncompleteCleanupException(RuntimeException cause) {
+            super("lobby allocation cleanup is incomplete", cause);
+        }
+    }
+
     public interface Backend {
         boolean mayHost(UUID member);
 
@@ -175,6 +182,12 @@ public final class LobbyService {
         try {
             preparation = Objects.requireNonNull(backend.begin(frozen, before.setup()));
         } catch (RuntimeException failure) {
+            if (failure instanceof IncompleteCleanupException || backend.activeMatch()) {
+                LOG.error("Lobby allocation failed with runtime state still retained", failure);
+                current = new Snapshot(frozen, before.setup(), State.FAILED, "cleanup_failed");
+                publish();
+                return;
+            }
             fail("preparation_failed", failure);
             return;
         }

@@ -40,6 +40,8 @@ class LobbyServiceTest {
         boolean active;
         boolean invalid;
         boolean fail;
+        boolean retainedOnFailure;
+        boolean incompleteCleanup;
         boolean cancelled;
         boolean cancelFails;
         int starts;
@@ -73,7 +75,12 @@ class LobbyServiceTest {
         @Override
         public LobbyService.Preparation begin(MatchLobby lobby, SkirmishSetup setup) {
             starts++;
-            if (fail) throw new IllegalStateException("preparation failed");
+            if (fail) {
+                active |= retainedOnFailure;
+                if (incompleteCleanup)
+                    throw new LobbyService.IncompleteCleanupException(new IllegalStateException("cleanup failed"));
+                throw new IllegalStateException("preparation failed");
+            }
             return new LobbyService.Preparation() {
                 @Override
                 public Status poll() {
@@ -241,6 +248,34 @@ class LobbyServiceTest {
         service.tick();
         assertThat(service.snapshot().state()).isEqualTo(LobbyService.State.FAILED);
         assertThat(service.snapshot().lobby().phase()).isEqualTo(MatchLobby.Phase.PREPARING);
+        assertThatIllegalStateException().isThrownBy(() -> service.start(HOST));
+        assertThat(backend.starts).isEqualTo(1);
+    }
+
+    @Test
+    void failedBeginWithRetainedRuntimeCannotAdvertiseSafeRetry() {
+        Backend backend = new Backend();
+        LobbyService service = open(backend);
+        ready(service);
+        backend.fail = true;
+        backend.retainedOnFailure = true;
+        service.start(HOST);
+        assertThat(service.snapshot().state()).isEqualTo(LobbyService.State.FAILED);
+        assertThat(service.snapshot().lobby().phase()).isEqualTo(MatchLobby.Phase.PREPARING);
+        assertThatIllegalStateException().isThrownBy(() -> service.start(HOST));
+        assertThat(backend.starts).isEqualTo(1);
+    }
+
+    @Test
+    void incompleteCleanupStaysFrozenEvenAfterTheRegistryEntryWasRemoved() {
+        Backend backend = new Backend();
+        LobbyService service = open(backend);
+        ready(service);
+        backend.fail = true;
+        backend.incompleteCleanup = true;
+        service.start(HOST);
+        assertThat(backend.active).isFalse();
+        assertThat(service.snapshot().state()).isEqualTo(LobbyService.State.FAILED);
         assertThatIllegalStateException().isThrownBy(() -> service.start(HOST));
         assertThat(backend.starts).isEqualTo(1);
     }

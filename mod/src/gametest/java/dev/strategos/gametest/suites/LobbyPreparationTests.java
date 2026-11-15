@@ -83,6 +83,13 @@ public final class LobbyPreparationTests {
                 placer(h, 21));
         var rt = preparation.match();
         check(rt.lifecycle() == MatchLifecycle.PREPARING, "map did not enter preparation");
+        boolean refused = false;
+        try {
+            rt.submit(new PlayerSlot(0), new dev.strategos.core.protocol.RuleChange("populationMax", "200"));
+        } catch (dev.strategos.mod.server.match.MatchRefusedException expected) {
+            refused = true;
+        }
+        check(refused, "a player submitted commands during import");
         check(server.matches().seatOf(host.player().getUUID()) == null, "host admitted before import/setup");
         h.onEachTick(() -> {
             var status = preparation.poll();
@@ -102,6 +109,17 @@ public final class LobbyPreparationTests {
             check(core(rt).queries().diplomacy().teamsLocked(), "authority not installed");
             if (host.capture().counts().getOrDefault("payload/strategos:match_join", 0) == 0
                     || peer.capture().counts().getOrDefault("payload/strategos:match_join", 0) == 0) return;
+            for (String type : List.of("unit_summary", "faction_state", "building_state")) {
+                check(
+                        host.capture().counts().getOrDefault("payload/strategos:" + type, 0) > 0,
+                        "host missing initial " + type);
+                check(
+                        peer.capture().counts().getOrDefault("payload/strategos:" + type, 0) > 0,
+                        "peer missing initial " + type);
+                check(
+                        outsider.capture().counts().getOrDefault("payload/strategos:" + type, 0) == 0,
+                        "outsider received " + type);
+            }
             check(
                     outsider.capture().counts().getOrDefault("payload/strategos:match_join", 0) == 0,
                     "outsider received match_join");

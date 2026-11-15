@@ -208,11 +208,12 @@ public final class MatchRuntime {
      */
     public void initializeDiplomacy(DiplomacySetup setup) {
         MatchCore c = requireCore();
-        if (lifecycle != MatchLifecycle.RUNNING
+        if ((lifecycle != MatchLifecycle.RUNNING && lifecycle != MatchLifecycle.PREPARING)
                 || c.queries().tick() != 0
                 || diplomacySetup != null
                 || c.queries().diplomacy().teamsLocked()
-                || !roster.isEmpty()) {
+                || !roster.isEmpty()
+                || !inbox.isEmpty()) {
             throw new IllegalStateException("authority can only initialize a fresh, unseated runtime once");
         }
         if (setup.snapshot().teams().size() != c.queries().config().factions()) {
@@ -227,10 +228,11 @@ public final class MatchRuntime {
 
     /**
      * Queues a command for the next step, received this tick with this match's next sequence number; returns that
-     * number. Only a RUNNING or PAUSED match takes commands.
+     * number. RUNNING/PAUSED matches take commands; a fresh importing lobby also takes trusted admin initialization.
      */
     public int submit(PlayerSlot issuer, Command command) {
-        if (lifecycle != MatchLifecycle.RUNNING && lifecycle != MatchLifecycle.PAUSED) {
+        boolean initializing = lifecycle == MatchLifecycle.PREPARING && issuer.isAdmin() && diplomacySetup != null;
+        if (lifecycle != MatchLifecycle.RUNNING && lifecycle != MatchLifecycle.PAUSED && !initializing) {
             throw new MatchRefusedException("match " + id + " is " + lifecycle + " and takes no commands");
         }
         int seq = nextClientSeq++;

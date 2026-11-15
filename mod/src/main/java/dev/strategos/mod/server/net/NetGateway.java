@@ -297,6 +297,11 @@ public final class NetGateway {
         return counters;
     }
 
+    /** Drop unsent match data during preparation rollback without resetting the incoming violation budget. */
+    public void discardQueued(UUID player) {
+        queued.remove(player);
+    }
+
     /** A player who left starts afresh. */
     public void forget(ServerPlayer player) {
         limiter.forget(player.getUUID());
