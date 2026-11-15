@@ -142,6 +142,7 @@ neoForge {
             systemProperty 'strategos.faults.rethrow', 'true'
             systemProperty 'strategos.gametest.filter', '^aisoak[.]'
             systemProperty 'strategos.aisoak.seeds', providers.gradleProperty('aisoak.seeds').getOrElse('20')
+            systemProperty 'strategos.aisoak.firstSeed', providers.gradleProperty('aisoak.firstSeed').getOrElse('1')
         }
         // [T3]
         serverSmoke {

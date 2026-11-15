@@ -19,7 +19,17 @@ permissions:
   checks: write
 
 jobs:
+  validate-harness:
+    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.draft == false && contains(github.event.pull_request.labels.*.name, 'full-ci'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Evidence checker counterexamples
+        run: python3 -m unittest discover -s tools/tests -p test_ai_soak_reports.py -v
+
   nightly:
+    needs: validate-harness
     if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.draft == false && contains(github.event.pull_request.labels.*.name, 'full-ci'))
     runs-on: ubuntu-24.04
     timeout-minutes: 25
@@ -33,13 +43,13 @@ jobs:
         with:
           cache-provider: basic
       # Preserve machine-load evidence even when the server times out before producing its final XML report.
-      - name: slow and soak
+      - name: slow and core replay soak
         run: |
           mkdir -p build/reports/cloud-load
           vmstat -w 1 > build/reports/cloud-load/vmstat.txt &
           monitor=$!
           trap 'kill "$monitor" 2>/dev/null || true' EXIT
-          ./gradlew --console=plain --max-workers=2 verifySlow verifySoak
+          ./gradlew --console=plain --max-workers=2 verifySlow :core:soak
       - name: Test results (L1, L2, L3, L5)
         if: always()
         uses: mikepenz/action-junit-report@6ef3fdcfcd5f0b5d14df3e659ef19b8c6820f93d # v6.6.1
@@ -62,3 +72,75 @@ jobs:
             mod/build/server-smoke/logs/
             mod/build/server-smoke/crash-reports/
             mod/build/harness/*/logs/
+
+  # M6 added a multi-hour AI soak. Every original seed runs once in its own isolated runner.
+  # Each match still runs to conquest or 45 game minutes and must replay to its live hash.
+  ai-soak:
+    needs: validate-harness
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        seed: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          cache-provider: basic
+      - name: Full AI match and replay
+        env:
+          SOAK_SEED: ${{ matrix.seed }}
+        run: |
+          mkdir -p build/reports/cloud-load
+          vmstat -w 1 > build/reports/cloud-load/vmstat.txt &
+          monitor=$!
+          trap 'kill "$monitor" 2>/dev/null || true' EXIT
+          ./gradlew --console=plain --max-workers=2 :mod:runGameTestSoak -Paisoak.seeds=1 -Paisoak.firstSeed="$SOAK_SEED"
+      - name: Verify this seed's XML and completed replay evidence
+        env:
+          SOAK_SEED: ${{ matrix.seed }}
+        run: python3 tools/ai_soak_reports.py shard --root . --seed "$SOAK_SEED" --commit "$GITHUB_SHA" --output build/reports/ai-soak/shard.json
+      - name: Reports and logs, including incomplete or failed matches
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: aisoak-${{ matrix.seed }}-reports
+          retention-days: 7
+          if-no-files-found: error
+          path: |
+            mod/build/test-results/gametest-soak/
+            mod/build/gametest-soak/logs/
+            mod/build/gametest-soak/crash-reports/
+            build/reports/ai-soak/
+            build/reports/cloud-load/
+
+  complete-soak:
+    needs: [validate-harness, nightly, ai-soak]
+    if: always() && needs.validate-harness.result != 'skipped'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Require every constituent gate
+        env:
+          HARNESS_RESULT: ${{ needs.validate-harness.result }}
+          SLOW_RESULT: ${{ needs.nightly.result }}
+          AI_RESULT: ${{ needs.ai-soak.result }}
+        run: test "$HARNESS_RESULT" = success && test "$SLOW_RESULT" = success && test "$AI_RESULT" = success
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: aisoak-*-reports
+          path: build/ai-soak-evidence
+      - name: Require all twenty distinct seeds from this exact commit
+        run: python3 tools/ai_soak_reports.py aggregate --root build/ai-soak-evidence --commit "$GITHUB_SHA" --output build/reports/ai-soak/complete.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: complete-ai-soak-reports
+          retention-days: 7
+          if-no-files-found: error
+          path: build/reports/ai-soak/complete.json

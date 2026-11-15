@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory;
  * run's, in the report line {@code L3 wall time}; the matches' outcomes are in the log lines {@code aisoak seed}.
  */
 public final class AiSoak {
-    static final int SEEDS = 20;
+    static final int SEEDS = AiSoakSeeds.TOTAL;
     /** The match limit of QA-12: 45 game minutes. */
     static final long LIMIT = 45L * 60 * 20;
 
@@ -80,12 +80,13 @@ public final class AiSoak {
         Scenario computers = new Scenario(scenario.map(), scenario.victory(), slots);
         BlockPos corner = h.absolutePos(BlockPos.ZERO);
         int seeds = Integer.getInteger("strategos.aisoak.seeds", SEEDS); // fewer only for a trial run
+        AiSoakSeeds selection = new AiSoakSeeds(Integer.getInteger("strategos.aisoak.firstSeed", 1), seeds);
         int window = Integer.getInteger("strategos.aisoak.parallel", PARALLEL);
         Game[] games = new Game[seeds];
         int[] next = {0};
         Runnable opener = () -> {
             int k = next[0]++;
-            long seed = k + 1L;
+            long seed = selection.seedAt(k);
             BlockPos origin = new BlockPos(corner.getX() + (FIRST_LANE + k) * FAR, corner.getY(), corner.getZ());
             MatchSpace space = new MatchSpace(
                     h.getLevel().dimension(),

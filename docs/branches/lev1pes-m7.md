@@ -36,6 +36,13 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Log
 
+### 2026-11-15 — Implement the complete cloud soak route
+
+- Cloud test-first checkpoint 43762586891 on e3463a9b failed at unit-test compilation for the absent `AiSoakSeeds` selector; 1,944 core cases passed. Implemented validated seed ranges afterward; default seeds remain 1..20, with the same 45-game-minute limit and replay/fault assertions.
+- Full-ci now runs its original slow/core replay gates separately from twenty isolated AI seed jobs. Every AI job must produce one successful case, exactly its requested completed replay, and a same-commit manifest; an aggregate gate checks all twenty artifacts and their original XML/log hashes. Missing/duplicate seeds, mixed commits, skipped/failed/empty/truncated XML and incomplete logs have explicit checker counterexamples.
+- Complete/incomplete AI logs and crash reports are archived, unlike the inherited route. Pinned download-artifact v8.0.2 to the commit verified against the official release/ref/action.yml. No production dependency or simulation behavior changes.
+- **Next:** full cloud verify, complete sharded slow/soak, and headless smoke for the build/workflow change. Do not accept the route or runtime step until the full evidence set is green.
+
 ### 2026-11-15 — Continue with deterministic cloud soak sharding
 
 - Operator explicitly requests continuation without another permission pause. Main remains d39069e7; the worktree was clean and no other session lock exists.
@@ -295,6 +302,8 @@ or replication privacy; those retain their own integration tests and dependencie
 7. The required full cloud soak is blocked by the inherited workflow's 25-minute runner limit (run 43759507763), not by a failing runtime assertion. Recommend deterministic CI sharding of all 20 M6 AI seeds, preserving their 45-game-minute limit/replay checks, default local coverage and complete per-seed logs, with an aggregate coverage gate. No workflow bound, seed count, assertion or acceptance threshold was changed in this session. Until that route completes, the runtime step cannot be accepted and M7 is not ready for review.
 
 ## Decisions taken
+
+- 2026-11-15 · Execute all 20 M6 AI seeds on isolated cloud runners and require an exact same-commit evidence set before the full gate can pass. The unchanged local aggregate remains available. The existing 25-minute slow/core job remains bounded; each new AI job is bounded at 90 minutes, separate from the unchanged 45-game-minute match limit and 240-minute local task bound. Undo by restoring one sequential cloud job only when its runner can execute the complete workload. This applies the operator's explicit continuation/cloud-tests instruction; no further approval pause is needed for branch implementation.
 
 - 2026-10-30 · Split T3a immutable lobby contract from T3b authenticated production service — configuration/readiness transitions can be proved independently while M6/start and D-20 remain open — recombine the task records after both parts pass; no NET-02 runtime criterion is removed or declared complete by T3a.
 
