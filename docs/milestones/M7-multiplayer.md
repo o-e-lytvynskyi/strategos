@@ -199,6 +199,23 @@ invalidate it, while another member's ready toggle does not. A separate state re
 all updates. Thus a queued acknowledgement cannot approve new settings, and peers may confirm
 the same configuration without retrying merely because another peer became ready first.
 
+Service step (2026-11-15): `LobbyService` authenticates connection UUIDs and owns the
+single mutable reference to the immutable lobby/setup pair. Its backend supplies host permission,
+connection/match availability, supported map/setup validation, transactional preparation and private
+publication. Configuration edits preserve occupants; only a member's join/leave changes its UUID
+binding. Validation runs before allocation. Preparation success freezes settings through admission;
+failed preparation disposes partial runtime state before resetting acknowledgements. If disposal
+fails, the service stays frozen in `FAILED`, rather than announcing a safe retry. Failure messages
+are bounded reason codes; backend exception details remain in server logs.
+
+This service step introduces no payload, production launcher or simulation-tick hook. Production
+integration must prevalidate `ScenarioSetup.commands` against the actual map starts and templates,
+use the existing map import/runtime pipeline, install locked `DiplomacySetup` before the first
+simulation tick, seat authenticated members and enter commanders, and prove initial recipient
+state plus cancellation with real mock players. Co-op player slots must be checked through
+bindings rather than compared with the economy-faction count; ordinary legacy slot admission
+must remain covered. T3b stays unchecked until these backend/protocol/engine checks pass.
+
 Add bounded `LobbyActionPayload` and `LobbyStatePayload` under `server/net/payload`, registered
 through `ModPayloads` and `PayloadSpec`. Only admitted lobby members get lobby state. Active-match
 new-player join requests are refused; an existing UUID reclaim uses the reconnect path. No

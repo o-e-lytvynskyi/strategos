@@ -8,7 +8,7 @@
 
 - **Milestone:** M7 Multiplayer; 5 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md), based on planning PR #32; T3 is split before implementation into independent aggregate and production integration.
 - **In progress:** M7 T3b authenticated lobby/start integration since 2026-11-15; main reconciliation passed. Whole M7 remains in progress; network admission and production start are not installed by the foundation.
-- **Last finished task:** T3a immutable lobby/readiness/preparation contract, accepted on 2026-10-30 after full cloud verify.
+- **Last finished task:** T3a remains the last complete task. T3b service step passed cloud verify 43757985631 on 2026-11-15 (11 new contracts); production start/protocol remains in progress.
 - **Next task:** T3b production integration after the main-merge cloud gate; M6 MATCH-02 is delivered by PR #55. D-20 is explicitly accepted. Remaining tasks keep the specification's integration dependencies; no M6 work is taken over.
 - **Merged from main last:** d39069e7 (2026-11-15, PR #55/M6); merge 213d0564 is zero commits behind that main. Cloud verify 43756194393 passed: 2,623 canonical XML cases, zero failures/errors/skips, 7m 22s. Prior T2b slow/soak/L6 evidence remains historical; new integration will receive its required gates.
 
@@ -41,7 +41,8 @@ or replication privacy; those retain their own integration tests and dependencie
 - Test-first cloud verify 43757256933 on 193c84b7 failed at `:mod:compileTestJava` because `LobbyService` did not exist, as intended; this is not a runtime failure.
 - Added authenticated lobby admission/edit/readiness and a frozen preparation transaction behind a backend boundary. Only admitted online members receive state; client configuration cannot assign UUID occupants. A failed/disconnected preparation cancels partial runtime state before readiness resets; failed cleanup keeps the lobby frozen instead of admitting another launch.
 - Added asynchronous failure and cleanup-failure cases (11 service contracts total). The production M6 backend, payload registration/client projection and real mock-player start remain unimplemented; this code alone does not close T3b or certify networking/privacy at runtime.
-- **Next:** full cloud verify for this step, then wire the M6 backend and protocol with their engine-level tests.
+- Cloud verify [43757985631](https://github.com/o-e-lytvynskyi/strategos/actions/runs/43757985631) on f9f002d2 passed: 2,634 canonical XML cases, zero failures/errors/skips, all 11 new service contracts. This pre-match service changes no engine API, payload, running simulation tick or core hot path.
+- **Next:** test-first runtime authority installation and player-slot admission, then M6 start/backend and private payload integration. T3b remains unchecked.
 
 ### 2026-11-15 — T3b service test-first checkpoint
 
