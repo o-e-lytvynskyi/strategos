@@ -348,6 +348,7 @@ dependencies {
     testImplementation libs.assertj
     testRuntimeOnly libs.junit.platform.launcher
     testImplementation sourceSets.devtools.output   // the demo's catalog (DemoCatalogTest)
+    testImplementation sourceSets.gametest.output   // pure soak shard selection contracts
 
     gametestImplementation sourceSets.main.output
     gametestImplementation core

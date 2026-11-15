@@ -7,7 +7,7 @@
 ## Now
 
 - **Milestone:** M7 Multiplayer; 5 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md), based on planning PR #32; T3 is split before implementation into independent aggregate and production integration.
-- **In progress:** M7 T3b remains WIP; no process or cloud run is active. Runtime verify and verifySlow passed; the mandatory full verifySoak is blocked by the cloud runner deadline. Whole M7 remains in progress; network admission and production start are not installed by the foundation.
+- **In progress:** repairing the full cloud soak route since 2026-11-15 under the operator's explicit continuation instruction; T3b runtime remains WIP until the complete soak passes. Whole M7 remains in progress; network admission and production start are not installed by the foundation.
 - **Last finished task:** T3a remains the last complete task. T3b service step passed cloud verify 43757985631 on 2026-11-15 (11 new contracts); production start/protocol remains in progress.
 - **Next task:** repair the cloud route for the unchanged full 20-seed AI soak, then complete T3b production M6 preparation/backend and private protocol; M6 MATCH-02 is delivered by PR #55. D-20 is explicitly accepted. Remaining tasks keep the specification's integration dependencies; no M6 work is taken over.
 - **Merged from main last:** d39069e7 (2026-11-15, PR #55/M6); merge 213d0564 is zero commits behind that main. Cloud verify 43756194393 passed: 2,623 canonical XML cases, zero failures/errors/skips, 7m 22s. Prior T2b slow/soak/L6 evidence remains historical; new integration will receive its required gates.
@@ -35,6 +35,12 @@ before implementing them. T2 does not certify friendly-fire, allied victory, com
 or replication privacy; those retain their own integration tests and dependencies.
 
 ## Log
+
+### 2026-11-15 — Continue with deterministic cloud soak sharding
+
+- Operator explicitly requests continuation without another permission pause. Main remains d39069e7; the worktree was clean and no other session lock exists.
+- Test-first contract: default seed range remains 1..20; twenty single-seed shards cover exactly that range; invalid/overflowing ranges and indices are refused. Added GameTest output to the unit-test classpath only so the pure test-harness selector can be checked without shipping it in the production jar.
+- **Next:** cloud missing-selector checkpoint, then bounded per-seed jobs, complete XML/log coverage validation, and full cloud gates. No simulation duration, assertion or local default seed coverage is reduced.
 
 ### 2026-11-15 — Runtime verify/slow passed; cloud soak route cannot finish
 
