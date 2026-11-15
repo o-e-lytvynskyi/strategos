@@ -7,9 +7,9 @@
 ## Now
 
 - **Milestone:** M7 Multiplayer; 5 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md), based on planning PR #32; T3 is split before implementation into independent aggregate and production integration.
-- **In progress:** repairing the full cloud soak route since 2026-11-15 under the operator's explicit continuation instruction; T3b runtime remains WIP until the complete soak passes. Whole M7 remains in progress; network admission and production start are not installed by the foundation.
+- **In progress:** M7 T3b real M6 preparation/admission since 2026-11-16. The cloud route is repaired and the previously blocked runtime step has all required gates; T3b as a whole remains incomplete. Whole M7 remains in progress; network admission and production start are not installed by the foundation.
 - **Last finished task:** T3a remains the last complete task. T3b service step passed cloud verify 43757985631 on 2026-11-15 (11 new contracts); production start/protocol remains in progress.
-- **Next task:** repair the cloud route for the unchanged full 20-seed AI soak, then complete T3b production M6 preparation/backend and private protocol; M6 MATCH-02 is delivered by PR #55. D-20 is explicitly accepted. Remaining tasks keep the specification's integration dependencies; no M6 work is taken over.
+- **Next task:** complete T3b production M6 preparation/backend and private protocol; the full cloud verification route is available, with all twenty AI seeds mandatory. D-20 is explicitly accepted. Remaining tasks keep the specification's integration dependencies; no M6 work is taken over.
 - **Merged from main last:** d39069e7 (2026-11-15, PR #55/M6); merge 213d0564 is zero commits behind that main. Cloud verify 43756194393 passed: 2,623 canonical XML cases, zero failures/errors/skips, 7m 22s. Prior T2b slow/soak/L6 evidence remains historical; new integration will receive its required gates.
 
 The operator requested ownership of the whole M7 and work on what is currently possible on
@@ -35,6 +35,13 @@ before implementing them. T2 does not certify friendly-fire, allied victory, com
 or replication privacy; those retain their own integration tests and dependencies.
 
 ## Log
+
+### 2026-11-16 — Full cloud soak repaired and preflight verified
+
+- Full-ci [43763260481](https://github.com/o-e-lytvynskyi/strategos/actions/runs/43763260481) on 6043f74e passed every constituent job and `complete-soak`. Independently read its aggregate manifest: exact seeds 1..20, 20 completed matches, 896,421 game ticks, 17 conquests/3 full-limit matches, one commit, all per-seed XML/log hashes verified. Its checker has eight counterexample tests; 24 slow GameTests, 21 core slow cases and 200 core replay seeds also passed. The inherited 25-minute cancellation is resolved without shrinking the workload or changing its simulation assertions.
+- Cloud verify [43765638626](https://github.com/o-e-lytvynskyi/strategos/actions/runs/43765638626) on f1260963 passed: 2,648 canonical cases, zero failures/errors/skips, all seven preflight contracts. Earlier smoke 43763264065 is green; all six PNGs were inspected and no golden changed. The later matrix concurrency cap is scheduling only; all twenty seed jobs and aggregate evidence remain mandatory.
+- The runtime first-tick/admission step from 263a137b is now verified through the unchanged production code on 6043f74e; the later pure preflight changes no running tick, core kernel or codec. No JMH/baseline claim is inferred from functional cloud timings.
+- **Next:** real M6 allocation, pending import initialization, commander admission and rollback, then private lobby protocol; T3b remains unchecked. No owner input or permission is needed for this authorized continuation.
 
 ### 2026-11-15 — Implement validated M6 lobby launch preflight
 
@@ -313,7 +320,7 @@ or replication privacy; those retain their own integration tests and dependencie
 
 6. Main PR #55 merged M6, but `docs/branches/o-e-lytvynskyi-m6-t2-t17.md` still says `ready for review`. `tools/claims.py check --base origin/main` therefore reports one inherited record error. The maintainer must reconcile that status on main; this developer branch does not rewrite another claim's delivery record.
 
-7. The required full cloud soak is blocked by the inherited workflow's 25-minute runner limit (run 43759507763), not by a failing runtime assertion. Recommend deterministic CI sharding of all 20 M6 AI seeds, preserving their 45-game-minute limit/replay checks, default local coverage and complete per-seed logs, with an aggregate coverage gate. No workflow bound, seed count, assertion or acceptance threshold was changed in this session. Until that route completes, the runtime step cannot be accepted and M7 is not ready for review.
+7. **Resolved 2026-11-16:** full cloud soak 43763260481 passed the complete 20-seed set and aggregate evidence gate. The operator authorized the repair and continuation; no decision is pending here. Review the workflow/harness changes normally with the M7 hand-in.
 
 ## Decisions taken
 
