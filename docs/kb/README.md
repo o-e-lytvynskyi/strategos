@@ -15,7 +15,7 @@ written in the same session, into the file of its area (a branch does it on the 
 | Save/reload: stable template identities, legacy custom indices, atomic reload guards and terminal lifecycle | [save-reload-identities.md](save-reload-identities.md) |
 | Cloud gates: aggregate deadlines, concurrent test JVMs and incomplete XML evidence | [cloud-gates.md](cloud-gates.md) |
 | JMH: a CPU-load profiler can contaminate the allocation gate; reusable Linux cumulative counters | [jmh-profiler-allocation.md](jmh-profiler-allocation.md) |
-| Lobby: detached readiness, configuration versus state revisions, and the production-start boundary | [lobby-readiness.md](lobby-readiness.md) |
+| Lobby: detached readiness, configuration versus state revisions, runtime admission and launch durability | [lobby-readiness.md](lobby-readiness.md) |
 | Team damage: frozen-shot source provenance and dead/reused shooter migration | [frozen-damage-authority.md](frozen-damage-authority.md) |
 | Data: SavedData, an unreadable file, the IO worker, DFU, a reload listener at start-up, test datapacks with errors, a data map without `synced` is invisible to the client, the 16-field limit of `RecordCodecBuilder`, finding a mismatch after loading | [minecraft-mod-data.md](minecraft-mod-data.md) |
 | GameTest and measurements: verdict from the report, shared per-tick budgets (wait, no fixed delay), retries, chunks, tickets, mass generation, CPU load, blocks next to a moving unit, tick pacing for measurements, work in Post outside MSPT, a batch without its after-batch hook, fog pairing within the tracking range | [minecraft-mod-gametest.md](minecraft-mod-gametest.md) |

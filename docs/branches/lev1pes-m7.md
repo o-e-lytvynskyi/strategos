@@ -7,9 +7,9 @@
 ## Now
 
 - **Milestone:** M7 Multiplayer; 5 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md), based on planning PR #32; T3 is split before implementation into independent aggregate and production integration.
-- **In progress:** M7 T3b authenticated lobby/start integration since 2026-11-15; main reconciliation passed. Whole M7 remains in progress; network admission and production start are not installed by the foundation.
+- **In progress:** M7 T3b remains WIP; no process or cloud run is active. Runtime verify and verifySlow passed; the mandatory full verifySoak is blocked by the cloud runner deadline. Whole M7 remains in progress; network admission and production start are not installed by the foundation.
 - **Last finished task:** T3a remains the last complete task. T3b service step passed cloud verify 43757985631 on 2026-11-15 (11 new contracts); production start/protocol remains in progress.
-- **Next task:** T3b production integration after the main-merge cloud gate; M6 MATCH-02 is delivered by PR #55. D-20 is explicitly accepted. Remaining tasks keep the specification's integration dependencies; no M6 work is taken over.
+- **Next task:** repair the cloud route for the unchanged full 20-seed AI soak, then complete T3b production M6 preparation/backend and private protocol; M6 MATCH-02 is delivered by PR #55. D-20 is explicitly accepted. Remaining tasks keep the specification's integration dependencies; no M6 work is taken over.
 - **Merged from main last:** d39069e7 (2026-11-15, PR #55/M6); merge 213d0564 is zero commits behind that main. Cloud verify 43756194393 passed: 2,623 canonical XML cases, zero failures/errors/skips, 7m 22s. Prior T2b slow/soak/L6 evidence remains historical; new integration will receive its required gates.
 
 The operator requested ownership of the whole M7 and work on what is currently possible on
@@ -23,11 +23,11 @@ The planning specification from our own PR #32 is incorporated and reconciled in
 | Milestone | What this work needs from it | Plan: independent / against a contract / after | `AFTER-M<n>` markers |
 |---|---|---|---|
 | M5 | Combat authority, final damage, projectile output and close findings | Independent: combat delivered by PR #33 at the base; inspect current implementation during T1 | None required for merged M5 |
-| M6 MATCH-02 / MATCH-03 | Production start pipeline and terminal outcome/snapshot integration | Against a contract for pure rules; after for production lobby start, coalition victory and restore validation | AFTER-M6: start, outcome and schema adapters when introduced |
-| M6 AI-05 / AI-18 / UI-20 / solo fog | Observed AI inputs, difficulty, minimap and authoritative visibility | Against a contract only where fakes prove independent behavior; after for runtime AI, HUD and hidden-body integration | AFTER-M6: AI, HUD and visibility adapters when introduced |
-| M6 QA-13 / PERF-09 | MVP fun verdict and accepted performance reference | After: ART-03 start and final PERF-10 acceptance; do not substitute provisional results | AFTER-M6: art and final performance prerequisites |
+| M6 MATCH-02 / MATCH-03 | Production start pipeline and terminal outcome/snapshot integration | Delivered by PR #55; snapshot composition verified in 213d0564; production start, coalition victory and restore still need M7 integration | T3b/T7/T5 remain; the M6 implementation is no longer missing |
+| M6 AI-05 / AI-18 / UI-20 / solo fog | Observed AI inputs, difficulty, minimap and authoritative visibility | Delivered by PR #55; integrate the actual adapters at T13/T14/T15/T9 | Existing source markers identify unimplemented M7 adapters, not missing M6 code |
+| M6 QA-13 / PERF-09 | MVP fun verdict and accepted performance reference | PERF-09 reference delivered by PR #55; QA-13 owner playtest remains open in the M6 hand-in | ART-03 and final PERF-10 retain their own prerequisites |
 | M8 foundations | Shared-vision and recipient policy contracts | Independent M7 identity/grant rules; reconcile contracts without importing or changing the separate M8 branch | AFTER-M8: shared-vision reconciliation when introduced |
-| Save/reload PR #30 | Stable template references and terminal-state restoration fixes | T2a independent foundation complete; T2b/T5 require a verified resolution of M5 snapshot composition and the open legacy-index review finding before schema installation, on a merged or explicitly stacked prerequisite | List unresolved integration in T2b/T5 |
+| Save/reload PR #30 | Stable template references and terminal-state restoration fixes | Delivered on main and validated by T2b; the M6 snapshot composition is now reconciled | T5 still needs multiplayer roster, pending launch and restore integration |
 
 Initial order: T1 readiness, T2a pure core foundations, T2b authority/persistence installation, then reassess T3/T5/T6 and later tasks
 against merged prerequisites. Split oversized or partially ready tasks in the specification
@@ -36,11 +36,20 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Log
 
+### 2026-11-15 — Runtime verify/slow passed; cloud soak route cannot finish
+
+- Cloud verify [43759504619](https://github.com/o-e-lytvynskyi/strategos/actions/runs/43759504619) on 263a137b passed: 2,638 canonical XML cases, zero failures/errors/skips; all 11 service contracts and four runtime admission/setup/replay GameTests ran. No new ErrorProne/NullAway finding is present in the changed code; the reported warnings name unchanged core tests/fixtures.
+- Cloud full-ci [43759507763](https://github.com/o-e-lytvynskyi/strategos/actions/runs/43759507763), same checkpoint: `verifySlow` completed (24 GameTests, L3 wall time 427.149 s; 21 core slow cases), and the 200-seed core replay soak passed. Its 245 canonical cases have zero failures/errors/skips. The M6 AI soak began, but produced no final XML before runner cancellation.
+- GitHub's job annotation is explicit: `The job has exceeded the maximum execution time of 25m0s`. The run is cancelled, not a passing verifySoak. M6 added `:mod:runGameTestSoak` (20 AI matches); its accepted M6 report records 3 h 13 min for verifySoak, while the existing cloud full-ci still has its older 25-minute whole-job bound. Its artifact paths also omit `gametest-soak/logs`.
+- **Stop:** developer procedure §8, environment failure: the only currently configured cloud route cannot complete the required gate. The operator requires cloud tests, so no local fallback, shortened seed set, relaxed assertion or blind rerun was used. The runtime step stays WIP, T3b stays unchecked, and the PR stays draft. All launched runs have ended.
+- **Next:** provide a cloud execution route for all 20 unchanged AI seeds with per-seed evidence and preserved logs (recommend deterministic sharding and an aggregate coverage check), then finish T3b's actual M6 start/backend and private payload integration. This does not open later cards or accept art/owner decisions.
+
 ### 2026-11-15 — T3b runtime authority/admission implementation
 
 - Test-first cloud verify 43759001528 on d94284ac failed at GameTest compilation for the absent `initializeDiplomacy` API, as expected; 1,944 canonical core cases passed. No runtime test acceptance is inferred from that checkpoint.
 - Added single-use authority setup for a fresh, unseated runtime; the normal first tick journals it before commands. Admission is refused while authority is queued. Thereafter primary bindings, not the economy faction count, validate player slots; legacy unbound-seat and administrator behavior are preserved.
 - Four engine cases cover four players/two factions, early admission without a partial seat, duplicate/late setup, wrong faction count without consuming the setup slot, unchanged legacy refusal and replay to the live hash.
+- NET-02 is now `in_progress` in the overview and card: resumed implementation follows the operator's 2026-11-15 instruction to finish M7, within the existing specification. No card acceptance, new roadmap scope or art/owner decision is implied.
 - This runtime queue is transient: the production preparation backend must cancel on server stop until T5 covers its persistence. No production start, C2S endpoint, client snapshot privacy or whole T3b acceptance is installed by this step. Recorded the admission/persistence boundary in the lobby KB.
 - **Next:** cloud verify plus verifySlow/verifySoak on this exact checkpoint; only accept after all required gates finish. Then implement the production M6 preparation backend and private protocol.
 
@@ -275,6 +284,10 @@ or replication privacy; those retain their own integration tests and dependencie
 
 5. Independently review the measured Linux JMH-profiler repair included here. The same allocation pollution occurs on delivered main; extracting the tested measurement-only change before full M7 delivery would unblock other Linux branches. Keep the accepted validity and allocation policies; no main merge or baseline promotion was performed by this session.
 
+6. Main PR #55 merged M6, but `docs/branches/o-e-lytvynskyi-m6-t2-t17.md` still says `ready for review`. `tools/claims.py check --base origin/main` therefore reports one inherited record error. The maintainer must reconcile that status on main; this developer branch does not rewrite another claim's delivery record.
+
+7. The required full cloud soak is blocked by the inherited workflow's 25-minute runner limit (run 43759507763), not by a failing runtime assertion. Recommend deterministic CI sharding of all 20 M6 AI seeds, preserving their 45-game-minute limit/replay checks, default local coverage and complete per-seed logs, with an aggregate coverage gate. No workflow bound, seed count, assertion or acceptance threshold was changed in this session. Until that route completes, the runtime step cannot be accepted and M7 is not ready for review.
+
 ## Decisions taken
 
 - 2026-10-30 · Split T3a immutable lobby contract from T3b authenticated production service — configuration/readiness transitions can be proved independently while M6/start and D-20 remain open — recombine the task records after both parts pass; no NET-02 runtime criterion is removed or declared complete by T3a.
@@ -299,6 +312,8 @@ or replication privacy; those retain their own integration tests and dependencie
 - 2026-10-29 · Start with independent core identity/diplomacy/grant foundations after readiness reconciliation — they can be tested without unmerged M6 runtime code — revisit the order when prerequisites merge.
 
 ## Pitfalls
+
+- Runtime admission must wait for installed authority and resolve player-to-faction bindings; the first-tick queue is transient, not a durable launch transaction ([lobby readiness](../kb/lobby-readiness.md)).
 
 - Added [lobby readiness](../kb/lobby-readiness.md) and the unresolved [frozen damage provenance](../kb/frozen-damage-authority.md) finding for T7. No allied-damage runtime acceptance is inferred from that source audit.
 

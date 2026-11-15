@@ -216,6 +216,15 @@ state plus cancellation with real mock players. Co-op player slots must be check
 bindings rather than compared with the economy-faction count; ordinary legacy slot admission
 must remain covered. T3b stays unchecked until these backend/protocol/engine checks pass.
 
+Runtime authority step (2026-11-15): `MatchRuntime.initializeDiplomacy` admits one locked setup
+only before tick 1 on an unseated runtime with matching faction capacity. Its normal tick installs
+and journals the setup before commands. The registry refuses admission until it is installed,
+then checks the player's primary binding rather than comparing player and faction counts.
+The existing administrator behavior and rejection of unbound legacy slots remain. The four
+engine regressions also verify replay to the live hash. This transient queue requires cancellation
+on server stop by the future production backend; T5 must prove any durable launch transaction.
+
+
 Add bounded `LobbyActionPayload` and `LobbyStatePayload` under `server/net/payload`, registered
 through `ModPayloads` and `PayloadSpec`. Only admitted lobby members get lobby state. Active-match
 new-player join requests are refused; an existing UUID reclaim uses the reconnect path. No

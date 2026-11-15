@@ -5,8 +5,9 @@ and the status of every card (the source of truth); the statuses below mirror it
 MVP are coarser by design and are refined at the review that opens their milestone.
 
 Planning specification: [M7 implementation plan](../milestones/M7-multiplayer.md), 2026-10-28.
-It defines tasks and contracts for review; card statuses remain `proposed` and implementation
-is not opened by this document.
+It defines tasks and contracts for review; it did not itself approve implementation.
+MATCH-06 and NET-02 are now `in_progress` under the continuing M7 development instruction;
+other card statuses and their owner decision gates remain explicit below.
 
 ## Milestone
 
@@ -97,7 +98,7 @@ Multiple-match discovery is outside M7. Recorded in the M7 branch pending mainta
   4. Lobby goldens (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent), L5 · **Depends on:** MATCH-02, MATCH-06, NET-01, D-20 ·
   **Size:** L · **Tier:** T1
-- **Status:** proposed
+- **Status:** in_progress
 
 #### NET-03 · Per-player and per-faction state through the gateway
 - **Value:** Each player sees their own economy and queues, allies see what allies should, and
