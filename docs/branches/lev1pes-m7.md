@@ -36,6 +36,13 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Log
 
+### 2026-11-15 — Cloud route preliminary gates green; T3b launch-plan checkpoint
+
+- Cloud verify 43763256587 on 6043f74e passed: 2,641 canonical XML cases, zero failures/errors/skips, including all three seed-range contracts. Full-ci's evidence-checker counterexamples and slow/core job passed; all twenty AI jobs are still running and the aggregate is not accepted yet.
+- Headless smoke 43763264065 passed on linux-llvmpipe. Inspected all six generated/candidate PNGs: scene visible, no black frames or new visual defect. No golden was changed.
+- Added six test-first launch-plan contracts using the real M6 scenario command builder: four co-op members/two faction initializations, map/scenario capacity, supported civilisation, frozen readiness and map identity, resource scaling/closed seats, invalid templates, and AI/human controller conflicts/script requirements.
+- `LobbyLaunchPlan` is intentionally absent at this checkpoint. **Next:** inspect its cloud missing-API result, implement pure preflight, then the actual M6 preparation backend and private protocol. The complete AI soak remains monitored independently on 6043f74e.
+
 ### 2026-11-15 — Implement the complete cloud soak route
 
 - Cloud test-first checkpoint 43762586891 on e3463a9b failed at unit-test compilation for the absent `AiSoakSeeds` selector; 1,944 core cases passed. Implemented validated seed ranges afterward; default seeds remain 1..20, with the same 45-game-minute limit and replay/fault assertions.
