@@ -3,6 +3,7 @@ package dev.strategos.core.sim.replicate;
 import dev.strategos.core.content.Blueprint;
 import dev.strategos.core.content.CorePaths;
 import dev.strategos.core.content.Footprint;
+import dev.strategos.core.content.TechDef;
 import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.DepositState;
 import dev.strategos.core.protocol.FactionState;
@@ -14,6 +15,7 @@ import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.Stance;
+import dev.strategos.core.shared.TechId;
 import dev.strategos.core.sim.MatchQueries;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.UnitView;
@@ -129,7 +131,8 @@ public final class ReplicationService {
 
     /**
      * Faction {@code faction}'s {@code faction_state} (ECO-01): its treasury's stock, gathered and spent per resource,
-     * its population and cap (ECO-06), its idle workers and its gatherers per resource (ECO-05).
+     * its population and cap (ECO-06), its idle workers and its gatherers per resource (ECO-05), its researched techs and
+     * its phase (UI-13).
      */
     public static FactionState factionState(MatchQueries q, int matchId, FactionSlot faction) {
         FactionTreasury t = q.treasury(faction);
@@ -138,6 +141,15 @@ public final class ReplicationService {
         List<Integer> workers = new ArrayList<>(n);
         for (int r = 0; r < n; r++) {
             workers.add(r < counted.length - 1 ? counted[r] : 0);
+        }
+        List<Integer> researched = new ArrayList<>();
+        int phase = 0;
+        for (TechId id : q.researched(faction)) { // UI-13: the techs by net index, and the highest phase reached
+            TechDef tech = q.templates().tech(id);
+            if (tech != null) {
+                researched.add(tech.netIndex());
+                phase = Math.max(phase, tech.isPhase() ? tech.ordinal() : 0);
+            }
         }
         return new FactionState(
                 matchId,
@@ -149,7 +161,9 @@ public final class ReplicationService {
                 q.populationUsed(faction),
                 q.populationCap(faction),
                 counted[counted.length - 1],
-                workers);
+                workers,
+                researched,
+                phase);
     }
 
     /**

@@ -21,8 +21,8 @@ D-24 (c) on 2026-10-21 ([M2's file](M2-command.md#d-24--exploration-in-the-mvp))
 **Done gate** (automated and consent-batch items; plus the cumulative rule):
 1. Every acceptance criterion of the M6 cards passes; `verify`, `verifyClient` (owner-approved
    goldens, with consent or on CI) and `verifyPerf` are green.
-2. QA-12 (L1, 200 fixed seeds per pairing; a 20-seed L3 sample in `verifySoak`): every AI-versus-AI
-   match ends by conquest, with a median length of 20–35 game minutes and none over 45; no
+2. QA-12 (L1, 200 fixed seeds per pairing; a 20-seed L3 sample in `verifySoak`): at least 75% of
+   AI-versus-AI matches end by conquest (the owner, 2026-11-14), with a median length of 20–38 game minutes and none over 45; no
    exception and no stall; each opening (rush, boom, balanced) wins 60–140 of 200 against each
    other opening; Hard beats Normal and Normal beats Easy in at least 124 of 200; neither start of
    MAP-02 wins 121 or more of 200.
@@ -97,7 +97,8 @@ only its own vision at every level except that labelled top level.
   3. A technology cannot be researched twice or in two buildings at once (L1).
   4. A research completes and applies in a GameTest (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** DATA-02, PROD-01 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-25 — 1 `RequirementTest.theTable`; 2 `ResearchTest.aCompletedTechChangesStatsAtOnce`, `ResearchTest.theBreakdownNamesTheTech`; 3 `ResearchTest.onceAndInOneBuildingAtATime`; 4 `techtests.a_research_completes_and_applies` (M6 T2.1, T2.2)
 
 #### TECH-02 · Phases: Village to Town
 - **Value:** Advancing to Town is a real decision, boom or rush, and a moment that unlocks new
@@ -114,7 +115,8 @@ only its own vision at every level except that labelled top level.
   3. The Town cost includes stone or iron (L1).
   4. Every player gets the phase notice (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** TECH-01, BLD-08, D-05 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-10-26 — 1 `PhaseTest.requirementsTable`; 2 `PhaseTest.townUnlocksExactlyItsList` (the shipped Town and a test set); 3 `PhaseTest.townCostsStoneOrIron`; 4 `techtests.every_player_gets_the_phase_notice` (M6 T3)
 
 #### TECH-03 · Starting technologies and visible equipment tiers
 - **Value:** Early research choices, a faster economy now or a stronger army later, and upgrades
@@ -126,6 +128,12 @@ only its own vision at every level except that labelled top level.
   faction-level value the unit renderer reads, sent to every match participant (enemies may see
   it; it shows on the units anyway), or as spawn data with a re-pair, the card recording which;
   balance-sheet entries for every tier.
+  **Transport (decided, M6 spec row 5, T18):** the tiers are faction-level values `Look/weapon` and
+  `Look/armour` (0 or 1, templates of soldiers carry them at 0, the two military techs add 1). They ride a
+  `looks` field of `match_state` (Match audience: one byte per faction, weapon low and armour high), sent
+  with the next flush after a change and at join; no body is re-paired, and the renderer re-dresses a
+  body whose faction's tiers differ from the ones it was dressed at. Enemies see the tiers: the gear shows
+  on the units anyway.
 - **Out of scope:** the full tree (TECH-05).
 - **Acceptance:**
   1. Each technology's effect equals its modifier exactly (L1).
@@ -134,7 +142,8 @@ only its own vision at every level except that labelled top level.
   4. A golden shows a unit before and after the tier change (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** TECH-01, UNIT-07 · **Size:** M ·
   **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-11-15: checks 1–3 2026-11-14 (`TechEffectTest`, `BalanceSheetTest`, `techtests.a_tier_reaches_every_viewer_within_a_second`); check 4 `m6_goldens` `spearman_base`, `spearman_tiered` (L4), approved 2026-11-15
 
 #### CMB-09 · Siege ram and the arsenal
 - **Value:** The decisive answer to buildings: slow and tough, devastating to structures, helpless
@@ -151,7 +160,8 @@ only its own vision at every level except that labelled top level.
   4. Rams pass only gaps that fit their footprint (L3).
 - **Tests:** L0, L1, L2, L3, L5 · **Depends on:** CMB-03, UNIT-06, PATH-11, TECH-02, D-12 ·
   **Size:** M · **Tier:** T1 (pulled into the MVP by D-12)
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-11-14 (M6 T19) — 1 `SiegeTest.twoRamsRazeACentreInTheSheetTime`, `torchesTakeFiveMinutesOnStone`; 2 `SiegeTest.ramsNeverAttackUnits`; 3 `UnitLargeTypeTest` and the engine-surface inventory; 4 `pathtests.rams_pass_only_gaps_that_fit`; L5 the smoke driver's ram across a restart
 
 #### BLD-17 · Defence tower
 - **Value:** A defensive path to Town (boom behind towers) and another way to spend stone (P4).
@@ -164,7 +174,8 @@ only its own vision at every level except that labelled top level.
   3. Only enemies are targeted (L1).
   4. Its blueprint passes the lint and the construction and damage-stage GameTests (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** CMB-07, TECH-02 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-11-14 (M6 T20) — 1–3 `TowerTest.arrowsAndDpsAreTheSheets`, `townOnlyAndStone`, `onlyEnemies`; 4 `BlueprintFilesTest`, `StyleGuideRangesTest`, `constructiontests.tower_is_built_and_equals_its_blueprint`, `tower_damage_stages_remove_its_ranked_blocks`
 
 ### The match
 
@@ -179,7 +190,8 @@ only its own vision at every level except that labelled top level.
      and the arena rules applied once (L4, consent).
   2. The report states how MATCH-02 creates and reuses the world (R).
 - **Tests:** L4 (consent), R · **Depends on:** MAP-07 · **Size:** S · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-11-13 — L4 `arena_world` scenario green (created: `APPLIED`; reopened: `ALREADY_APPLIED`, the owner's rule change kept, one save); R: [S13](../spikes/S13-arena-world-from-code.md); spec T11.
 
 #### MATCH-02 · Skirmish setup and launch
 - **Value:** Start a skirmish from the main menu in a few clicks (P3).
@@ -197,7 +209,8 @@ only its own vision at every level except that labelled top level.
   4. Setup-screen goldens (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** MATCH-14, MAP-01, MATCH-01, UI-02 ·
   **Size:** L · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-11-15: checks 1–2 (spec §1.4: `SkirmishSetupTest`, `skirmishtests`, the arena smoke); check 3 `skirmish_flow`, 2 clicks (L4); check 4 `m6_goldens` `setup_screen` (L4), approved 2026-11-15
 
 #### MATCH-03 · Conquest, defeat and statistics
 - **Value:** A clear ending: destroy everything the enemy has, or make them resign, then see how
@@ -215,7 +228,8 @@ only its own vision at every level except that labelled top level.
   5. End-screen golden (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** MATCH-01, BLD-08 · **Size:** M ·
   **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-11-15: checks 1–4 (spec §1.4: `matchtests`, `persistencetests`); check 5 `m6_goldens` `end_screen` (L4), approved 2026-11-15
 
 #### MAP-02 · First skirmish map
 - **Value:** A balanced 1 v 1 map whose terrain creates decisions, not only paths (P1, P4).
@@ -235,7 +249,8 @@ only its own vision at every level except that labelled top level.
   5. The package imports with its terrain hash (L3).
 - **Tests:** L0, L1, L3 · **Fixtures:** the skirmish map package with a terrain hash ·
   **Depends on:** MAP-01, ECO-02, ECO-16, D-17 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-11-15: checks 1–3 `MapCheckerTest` and `FirstSkirmishTest` (spec §1.4), check 4 QA-12's start split, at most 92 of 200 (row 70), check 5 `maptests.first_skirmish_imports_with_its_terrain_hash`
 
 ### The opponent
 
@@ -261,7 +276,8 @@ only its own vision at every level except that labelled top level.
   6. A golden of the raid bar (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** AI-03, MAP-02, BLD-16 · **Size:** L ·
   **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-11-15: checks 1–5 2026-11-14 (`WaveTest`, `DefenceTest`, `OpeningTest`, `aitests.waves_reach_the_base`, `aitests.the_raid_bar_reaches_only_its_audience`); check 6 `m6_goldens` `raid_bar` (L4), approved 2026-11-15
 
 #### AI-05 · AI phases, research and difficulty levels
 - **Value:** An AI that advances and researches, with three levels that feel different and never
@@ -275,7 +291,8 @@ only its own vision at every level except that labelled top level.
   2. Hard beats Normal, and Normal beats Easy, in at least 124 of 200 seeded L1 matches (L1).
   3. No level below the labelled top receives a bonus, and every handicap is listed in setup (L1).
 - **Tests:** L0, L1 · **Depends on:** AI-04, TECH-02, D-19 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-11-15: checks 1 and 3 `DifficultyTest.normalReachesTownOnTime`, `onlyTheTopLevelHasABonusAndEveryHandicapListed` (R6: Hard is the labelled top level); check 2 `:core:openingBalance`, Hard 142 and Normal 169 of 200
 
 ### Interface
 
@@ -293,7 +310,8 @@ only its own vision at every level except that labelled top level.
   5. A golden with a ping (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent), L6 · **Depends on:** UI-11, UI-12 · **Size:** M ·
   **Tier:** T1 (pulled into the MVP by D-16)
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-11-15: checks 1–4 (`MinimapOrderTest`, `MinimapTilesTest`, `nettests.a_minimap_order_applies`, `MinimapBench`); check 5 `m6_goldens` `minimap_ping` (L4), approved 2026-11-15
 
 #### UI-21 · Notification feed and alert audio
 - **Value:** Never miss what matters (an attack, a finished research, a new phase) and hear it
@@ -309,7 +327,8 @@ only its own vision at every level except that labelled top level.
   3. Feed golden (L4, consent).
   4. The owner's audio checklist passes (L7, acceptance).
 - **Tests:** L0, L1, L4 (consent), L7 · **Depends on:** UI-12, TECH-01 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-11-15: checks 1–2 (`NotificationFeedTest`, `AlertSoundPlanTest`, spec §1.4); check 3 `m6_goldens` `feed` (L4), approved 2026-11-15; check 4 is the owner's audio checklist at acceptance (`docs/testing/playtest.md`)
 
 #### UI-13 · Research and phase UI
 - **Value:** Plan your phase-up: see what Town needs and what each technology does (P4).
@@ -321,7 +340,8 @@ only its own vision at every level except that labelled top level.
   2. Research progress survives save and load (L3).
   3. Goldens (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** UI-08, TECH-02 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-11-15: checks 1–2 (`PhasePanelTest`, `CommandCardResearchTest`, spec §1.4); check 3 `m6_goldens` `phase_panel`, `research_card` (L4), approved 2026-11-15
 
 #### UI-14 · First-match hints and controls help
 - **Value:** A new player learns the controls by playing, without a manual.
@@ -336,7 +356,8 @@ only its own vision at every level except that labelled top level.
   4. A friend playtester new to the game gets through the first 5 minutes with the hints alone
      (L7, acceptance).
 - **Tests:** L0, L1, L4 (consent), L7 · **Depends on:** UI-21 · **Size:** M · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-11-15: checks 1–2 (`HintBookTest`, `ControlsOverlayTest`); check 3 `m6_goldens` `controls_overlay` (L4), approved 2026-11-15
 
 ### Solo fog (D-24 (c))
 
@@ -362,7 +383,8 @@ only its own vision at every level except that labelled top level.
      hidden case of CORE-03 AC4, which M0 cannot test without fog).
 - **Tests:** L0, L1, L6 · **Depends on:** CORE-08 · **Size:** M · **Tier:** T1 (pulled into the MVP
   by D-24)
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-11-15: checks 1–3 and 5 `VisionGridTest`, `VisibilityIndexTest`, `FogCommandTest`; check 4 `VisionBench` (about 11 µs for 300 units) and `perftests.mvp_soak` budget A, p99 8.70 ms (row 71)
 
 #### FOW-07 · Explored state, the shroud and solo fog gating
 - **Value:** A match starts in the dark: scouting matters, explored land stays dim, and hidden
@@ -388,7 +410,7 @@ only its own vision at every level except that labelled top level.
      shader pack (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent), L5, L6 · **Depends on:** FOW-01, NET-08 · **Size:** M ·
   **Tier:** T1 (pulled into the MVP by D-24)
-- **Status:** specified
+- **Status:** in_progress
 
 #### UI-16 · Minimap fog and explored areas
 - **Value:** The minimap shows what you know, and no more (P5).
@@ -402,7 +424,8 @@ only its own vision at every level except that labelled top level.
   3. Golden (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent) · **Depends on:** UI-11, FOW-07 · **Size:** S · **Tier:** T1
   (pulled into the MVP by D-24)
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-11-15: checks 1–2 (spec §1.4); check 3 `m6_goldens` `minimap_fog` (L4), approved 2026-11-15
 
 #### AI-18 · The AI reads only its own vision
 - **Value:** The AI plays with the information you have (P5).
@@ -416,7 +439,8 @@ only its own vision at every level except that labelled top level.
   3. Fogged AI-versus-AI matches still end within 45 game minutes (L1).
 - **Tests:** L0, L1 · **Depends on:** AI-01, FOW-01 · **Size:** S · **Tier:** T1 (pulled into the
   MVP by D-24)
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-11-15: checks 1 and 2 `FairAiTest`, `StartSlotsPersistTest`, `aitests.the_ai_knows_the_starts_in_a_skirmish`; check 3 in `:core:openingBalance`, fogged, read under QA-12.1's amendment: 79.2% end by conquest within 45 minutes and none runs past them
 
 #### MATCH-07 · Visibility options
 - **Value:** Choose how much of the map you know at the start.
@@ -428,7 +452,8 @@ only its own vision at every level except that labelled top level.
   2. A revealed map makes `FogGate` answer "visible" for every participant (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** FOW-07, MATCH-02 · **Size:** S · **Tier:** T1 (pulled
   into the MVP by D-24)
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-11-13 — L1 `VisibilityOptionsTest.eachOptionInitialisesTheGrids`; L3 `fogtests.a_revealed_map_shows_everything` (an enemy outside vision, inside tracking range, paired under `revealMap`); spec T10.
 
 ### The MVP gate
 
@@ -438,18 +463,20 @@ only its own vision at every level except that labelled top level.
 - **In scope:** QA-11 at MVP scale: L1 on 200 fixed seeds per pairing as the gate; a 20-seed L3
   sample in `verifySoak` as a smoke test with no win-rate threshold and a stated wall time;
   pairings of openings (rush, boom, balanced) at equal difficulty and of difficulty levels;
-  pacing (median 20–35 game minutes, every match within 45); telemetry, and a summary of win rates
+  pacing (median 20–38 game minutes, at least 75% of matches by conquest within 45); telemetry, and a summary of win rates
   per start, opening and level.
 - **Out of scope:** the balance matrix across civilisations (QA-16).
 - **Acceptance:**
-  1. Every match ends by conquest within 45 game minutes, with a median of 20–35, no exception and
-     no stall (L1).
+  1. At least 75% of matches end by conquest within 45 game minutes, with a median of 20–38; every
+     match, decided or not, has no exception and no stall (L1). Amended on the owner's word,
+     2026-11-14 (was "every match", then 90%; spec row 65); the median from 20–35 to 20–38 on the owner's word, 2026-11-15 (spec row 70).
   2. Each opening wins 60–140 of 200 matches against each other opening (L1).
   3. The summary reports win rates per start, opening and level (L1).
   4. The L3 sample completes, and its journals replay to the same hash (L3).
 - **Tests:** L1, L3 · **Fixtures:** soak seed sets · **Depends on:** QA-11, AI-05, MATCH-03 ·
   **Size:** S · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-11-15: checks 1–3 `:core:openingBalance` every criterion holds: 79.2% by conquest, median 36:10, no exception or stall, openings 80/81/89 of 200, starts at most 92 of 200, summary per start, opening and level; check 4 `:mod:runGameTestSoak` (aisoak), 20 matches, every journal replays, 189 min
 
 #### QA-13 · MVP release-candidate gate
 - **Value:** The MVP the owner plays is complete, stable and honest about its origins.
@@ -471,7 +498,7 @@ only its own vision at every level except that labelled top level.
   7. The owner signs off the checklist (L7, acceptance).
 - **Tests:** L0, L2, L3, L4 (consent), L5, L7, D · **Depends on:** QA-12, QA-09, PERF-09 ·
   **Size:** S · **Tier:** T0
-- **Status:** specified
+- **Status:** in_progress (2026-11-15: check 1 `checkNaming` in `verifyFast`; check 2 `CommandCardIconsTest`; check 3 `constructiontests`, every MVP blueprint is built to equal its blueprint and loses its ranked blocks by stage (the civic centre, house, barracks and tower in `constructiontests` and `buildingtests`; the arsenal, storehouse, farmstead and field in the T28 sweep; the four deposits stand as their blueprints); check 4 `runServerSmokeJar` in `verify`; check 6 `docs/provenance.md`; check 5 `runClientSmokeJar` (L4), the production jar loads the client to the title screen; check 7 waits for the owner's sign-off)
 
 #### PERF-09 · MVP perf gate
 - **Value:** The MVP plays smoothly from the first minute to the last.
@@ -485,4 +512,5 @@ only its own vision at every level except that labelled top level.
   3. The stress pass holds C p95 ≤ 50 ms (L6).
   4. The report is archived as the MVP baseline (R).
 - **Tests:** L6, R · **Depends on:** PERF-08, QA-12 · **Size:** S · **Tier:** T0
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-11-15: checks 1–2 `perftests.mvp_soak` on the M4 Pro, every budget holds (A p50 0.68 ms, p99 8.70 ms; B p95 3.07 ms; C p95 7.25 ms against 23 and 15.3 ms; D p99 0.16 ms; E at most 6.1 KB/s a viewer; G 8.4 ms); check 3 `perftests.mvp_stress`, C p95 11.2 ms against 50 ms; check 4 `perf/mvp-m4pro.json` (spec row 71); the close's run (2026-11-15) holds them again, A per unit without the AI 6.66 µs against M5's 7.83 (spec §11)

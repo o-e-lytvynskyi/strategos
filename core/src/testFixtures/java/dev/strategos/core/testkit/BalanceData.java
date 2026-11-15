@@ -3,9 +3,14 @@ package dev.strategos.core.testkit;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import dev.strategos.core.content.PlaceholderBlueprints;
+import dev.strategos.core.content.RawTech;
 import dev.strategos.core.content.RawTemplate;
+import dev.strategos.core.content.TechIdTable;
 import dev.strategos.core.content.TemplateCompiler;
+import dev.strategos.core.content.TemplateIdTable;
 import dev.strategos.core.content.balance.BalanceSheet;
+import dev.strategos.core.shared.TechId;
 import dev.strategos.core.shared.TemplateId;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -31,16 +36,19 @@ public final class BalanceData {
     private static final String CONDITIONS = "neoforge:conditions";
 
     private final List<RawTemplate> raws;
+    private final List<RawTech> techs;
     private final Map<String, Map<String, String>> provenance;
     private final List<BalanceSheet.Target> targets;
     private final List<BalanceSheet.Yield> yields;
 
     private BalanceData(
             List<RawTemplate> raws,
+            List<RawTech> techs,
             Map<String, Map<String, String>> provenance,
             List<BalanceSheet.Target> targets,
             List<BalanceSheet.Yield> yields) {
         this.raws = raws;
+        this.techs = techs;
         this.provenance = provenance;
         this.targets = targets;
         this.yields = yields;
@@ -48,6 +56,7 @@ public final class BalanceData {
 
     public static BalanceData read(Path data) {
         List<RawTemplate> raws = new ArrayList<>();
+        List<RawTech> techs = new ArrayList<>();
         Map<String, Map<String, String>> provenance = new TreeMap<>();
         List<BalanceSheet.Target> targets = new ArrayList<>();
         List<BalanceSheet.Yield> yields = new ArrayList<>();
@@ -65,6 +74,21 @@ public final class BalanceData {
                             json.remove(CONDITIONS);
                             raws.add(new RawTemplate(
                                     new TemplateId(id), data.relativize(f).toString(), json));
+                        }
+                    }
+                }
+                Path techDir = ns.resolve("strategos/techs");
+                if (Files.isDirectory(techDir)) {
+                    try (Stream<Path> files = Files.walk(techDir)) {
+                        for (Path f : files.filter(p -> p.toString().endsWith(".json"))
+                                .sorted()
+                                .toList()) {
+                            String rel = techDir.relativize(f).toString().replace('\\', '/');
+                            String id = ns.getFileName() + ":" + rel.substring(0, rel.length() - ".json".length());
+                            JsonObject json = parse(f).getAsJsonObject();
+                            json.remove(CONDITIONS);
+                            techs.add(new RawTech(
+                                    new TechId(id), data.relativize(f).toString(), json));
                         }
                     }
                 }
@@ -109,11 +133,16 @@ public final class BalanceData {
                         o.get("note").getAsString()));
             }
         }
-        return new BalanceData(List.copyOf(raws), provenance, List.copyOf(targets), List.copyOf(yields));
+        return new BalanceData(
+                List.copyOf(raws), List.copyOf(techs), provenance, List.copyOf(targets), List.copyOf(yields));
     }
 
     public List<RawTemplate> raws() {
         return raws;
+    }
+
+    public List<RawTech> techs() {
+        return techs;
     }
 
     public Map<String, Map<String, String>> provenance() {
@@ -134,7 +163,8 @@ public final class BalanceData {
     }
 
     public TemplateCompiler.Result compile() {
-        return TemplateCompiler.compile(raws);
+        return TemplateCompiler.compile(
+                raws, techs, TemplateIdTable.EMPTY, TechIdTable.EMPTY, PlaceholderBlueprints.byId());
     }
 
     private static JsonElement parse(Path f) {

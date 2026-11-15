@@ -24,6 +24,7 @@ import dev.strategos.core.testkit.BattleScene;
 import dev.strategos.core.testkit.BudgetCheck;
 import dev.strategos.core.testkit.EconomyScene;
 import dev.strategos.core.testkit.FirstLoopScene;
+import dev.strategos.core.testkit.MvpScene;
 import dev.strategos.core.testkit.Percentiles;
 import dev.strategos.core.testkit.SimHarness;
 import dev.strategos.gametest.MatchFixture;
@@ -974,6 +975,28 @@ public final class PerfTests {
     @StrategosTest(batch = "perf_battle_stress", arena = "arena_flat_48", timeoutTicks = 20_000)
     public static void battleStress(GameTestHelper h) {
         PerfSoaks.battleStress(h);
+    }
+
+    /**
+     * PERF-09 (M6 spec §2.22, §6), the MVP perf gate: MAP-02 under fog and {@code Victory.NONE} with 2 x 150 population
+     * and 2 x 30 buildings all placed at the start ({@link MvpScene}), both factions played by the Hard computer, for
+     * 36,000 ticks, 30 game minutes paced at 20 a second, autosaves included, two viewers seated. Budgets A-E and G
+     * gate as in the battle soak, and C's p95 at most 15.3 ms (23 ms over D-18's fastest speed, 1.5); A's p95 per unit,
+     * without the AI's phase, within 15 % of M5's battle soak (1.139 x M4's base). The report adds the AI's, the vision's
+     * and the trackers' refresh time a tick. Writes {@code mvp_soak.json} and the match's journal.
+     */
+    @StrategosTest(batch = "perf_mvp", arena = "arena_flat_48", timeoutTicks = 60_000)
+    public static void mvpSoak(GameTestHelper h) {
+        PerfSoaks.mvpSoak(h);
+    }
+
+    /**
+     * PERF-09: the MVP match at twice its scale, 2 x 300 population and 2 x 60 buildings, for 6,000 ticks: budget C's
+     * p95 at most 50 ms gates, the rest is reported. Writes {@code mvp_stress.json}.
+     */
+    @StrategosTest(batch = "perf_mvp_stress", arena = "arena_flat_48", timeoutTicks = 20_000)
+    public static void mvpStress(GameTestHelper h) {
+        PerfSoaks.mvpStress(h);
     }
 
     /**

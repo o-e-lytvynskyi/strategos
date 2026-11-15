@@ -53,7 +53,10 @@ class ArcherTemplateTest {
                         "strategos:building/farmstead",
                         "strategos:building/storehouse",
                         "strategos:unit/archer",
-                        "strategos:unit/horseman");
+                        "strategos:unit/horseman",
+                        "strategos:building/tower",
+                        "strategos:building/arsenal",
+                        "strategos:unit/ram");
     }
 
     private static void assertValue(TemplateSet set, UnitTemplate template, String path, double expected) {

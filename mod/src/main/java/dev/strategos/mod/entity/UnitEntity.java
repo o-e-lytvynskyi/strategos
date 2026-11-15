@@ -1,5 +1,6 @@
 package dev.strategos.mod.entity;
 
+import dev.strategos.mod.registry.ModEntityTypes;
 import dev.strategos.mod.server.body.BodyEvents;
 import java.util.List;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -12,6 +13,7 @@ import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
 import org.jspecify.annotations.Nullable;
 
@@ -38,6 +40,7 @@ public final class UnitEntity extends LivingEntity implements IEntityWithComplex
     private ItemStack restMain = ItemStack.EMPTY;
     private ItemStack restOff = ItemStack.EMPTY;
     private boolean dressed;
+    private int dressedTiers = -1; // the weapon and armour tiers it was dressed at, packed; -1 before
 
     public UnitEntity(EntityType<? extends UnitEntity> type, Level level) {
         super(type, level);
@@ -100,6 +103,16 @@ public final class UnitEntity extends LivingEntity implements IEntityWithComplex
     @Override
     public boolean shouldRenderAtSqrDistance(double distance) {
         return distance < RENDER_DISTANCE * RENDER_DISTANCE;
+    }
+
+    /**
+     * A ram's culling box is its hit box grown a block each way (CMB-09): its log swings out past the 2 x 2 box, and a
+     * frame culled while its log is still in view would blink at the screen's edge. Other bodies' are their hit boxes.
+     */
+    @Override
+    public AABB getBoundingBoxForCulling() {
+        AABB box = super.getBoundingBoxForCulling();
+        return getType().equals(ModEntityTypes.UNIT_LARGE.get()) ? box.inflate(1.0, 0.5, 1.0) : box;
     }
 
     /** The body registry removes this body itself, so its leave event is not a lost body. */
@@ -190,11 +203,11 @@ public final class UnitEntity extends LivingEntity implements IEntityWithComplex
         tickDeath();
     }
 
-    /** The fog gate (NET-01): another match's member is never paired with this body; an unbound body with no one. */
+    /** The fog gate (NET-01 / FOW-07): another match's member is never paired; under fog, only visible enemies are. */
     @Override
     public boolean broadcastToPlayer(ServerPlayer player) {
         UnitSpawnData data = spawnData;
-        return data != null && BodyEvents.canSee(data.matchId(), player);
+        return data != null && BodyEvents.canSee(data, player);
     }
 
     @Override
@@ -238,12 +251,22 @@ public final class UnitEntity extends LivingEntity implements IEntityWithComplex
         return dressed;
     }
 
-    /** On a client: the look it wears, and what its hands hold at rest (ART-01). */
-    public void dress(ItemStack head, ItemStack chest, ItemStack legs, ItemStack feet, ItemStack main, ItemStack off) {
+    /** The equipment tiers a client dressed it at (TECH-03), packed; -1 while undressed. */
+    public int dressedTiers() {
+        return dressedTiers;
+    }
+
+    /**
+     * On a client: the look it wears, and what its hands hold at rest (ART-01), at the faction's equipment tiers
+     * {@code tiers} (TECH-03), which the renderer compares to the faction's current ones to dress it again.
+     */
+    public void dress(
+            ItemStack head, ItemStack chest, ItemStack legs, ItemStack feet, ItemStack main, ItemStack off, int tiers) {
         worn = new ItemStack[] {head, chest, legs, feet};
         restMain = main;
         restOff = off;
         dressed = true;
+        dressedTiers = tiers;
     }
 
     /** The hands only: what the core's gear puts there on the server, or the equipment packet on a client. */

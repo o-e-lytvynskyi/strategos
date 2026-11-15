@@ -93,7 +93,11 @@ public final class CombatSystem implements MatchSystem {
         for (int handle : falling) {
             FactionSlot faction = new FactionSlot(s.buildings().faction(handle));
             s.outputs().add(new BuildingDestroyed(handle, faction));
+            if (faction.value() < s.config().factions()) {
+                s.matchStats().buildingLost(faction.value());
+            }
             s.aiSlots().wake(faction.value()); // a computer player that lost a building thinks at once
+            s.recordLoss(handle); // a computer player's rebuilder places it again (AI-04)
             s.outputs().add(new Notice(faction, NoticeKind.UNIT_LOST, handle, "destroyed"));
             s.destroyBuilding(handle);
         }
@@ -102,6 +106,9 @@ public final class CombatSystem implements MatchSystem {
             int handle = dead[0];
             FactionSlot faction = new FactionSlot(s.identity().faction(Handle.index(handle)));
             s.outputs().add(new UnitDied(handle, faction, dead[1]));
+            if (faction.value() < s.config().factions()) {
+                s.matchStats().unitLost(faction.value());
+            }
             if (faction.value() == s.gaia()) {
                 Livestock.died(s, handle); // an animal leaves its carcass (ECO-16)
             } else {

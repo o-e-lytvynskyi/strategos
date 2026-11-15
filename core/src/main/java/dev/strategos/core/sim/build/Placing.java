@@ -7,9 +7,12 @@ import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.sim.MatchBounds;
 import dev.strategos.core.sim.MatchState;
+import dev.strategos.core.sim.PlayRules;
 import dev.strategos.core.sim.econ.NodeStore;
 import dev.strategos.core.sim.nav.Surface;
 import dev.strategos.core.sim.nav.SurfaceGrid;
+import dev.strategos.core.sim.vision.VisionGrid;
+import dev.strategos.core.sim.vision.VisionSystem;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
@@ -27,10 +30,13 @@ public final class Placing {
     public static final String SPACING = "Placement/spacing";
     public static final String CIVIC_REACH = "Placement/civicReach";
 
+    /** The token path of the buildings a worker may place: its build list (BLD-17, CMB-09). */
+    public static final String BUILD_LIST = "Builder/buildings";
+
     private Placing() {}
 
-    /** The match as the rules read it, taken now: footprints and nodes as they stand. */
-    public static PlacementRules.World world(MatchState s) {
+    /** The match as the rules read it, taken now; {@code faction} &lt; 0 means observer (everything explored). */
+    public static PlacementRules.World world(MatchState s, int faction) {
         MatchBounds bounds = s.config().bounds();
         BitSet taken = new BitSet(bounds.sizeX() * bounds.sizeZ());
         List<PlacementRules.Centre> centres = new ArrayList<>();
@@ -84,7 +90,18 @@ public final class Placing {
 
             @Override
             public boolean explored(int x, int z) {
-                return true; // every cell until fog (M6), as CAM-05's drop point (M2 spec §1.6 row 44)
+                if (faction < 0) {
+                    return true;
+                }
+                PlayRules play = s.config().rules().play();
+                if (play.revealMap() || play.explored()) {
+                    return true;
+                }
+                VisionSystem vision = s.visionSystem();
+                if (vision == null || faction >= s.config().factions()) {
+                    return true;
+                }
+                return vision.grid(faction).isExplored(VisionGrid.cellOf(x), VisionGrid.cellOf(z));
             }
 
             @Override
@@ -152,6 +169,27 @@ public final class Placing {
         int p = s.stats().path("Limit/count");
         double v = p < 0 ? Double.NaN : s.stats().blockValue(template, faction, p);
         return Double.isFinite(v) && v > 0 ? (int) Math.round(v) : 0;
+    }
+
+    /**
+     * Whether {@code faction} may place building {@code template}: the effective {@code Builder/buildings} of one of its
+     * builder templates names it, as the phase it has reached adds to it. A set with no build list gates nothing.
+     */
+    public static boolean listed(MatchState s, int template, int faction) {
+        int path = s.stats().tokenPath(BUILD_LIST);
+        if (path < 0) {
+            return true;
+        }
+        String id = s.templates().byIndex(template).id().value();
+        for (UnitTemplate t : s.templates().all()) {
+            if (!t.isBuilding() && t.classes().contains("Builder")) {
+                List<String> list = s.stats().blockTokens(t.netIndex(), faction, path);
+                if (list != null && list.contains(id)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /** How many buildings of {@code template} faction {@code faction} has, foundations and sites among them. */

@@ -11,6 +11,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import dev.strategos.core.content.ValuePath;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.Hex64;
+import dev.strategos.core.shared.TechId;
 import dev.strategos.core.sim.MatchQueries;
 import dev.strategos.core.sim.UnitView;
 import dev.strategos.core.sim.nav.PathService;
@@ -186,12 +187,13 @@ final class InspectCommands {
         StringBuilder line =
                 new StringBuilder(rt.id() + " " + Handle.toString(handle) + " " + path + ": base " + number(b.base()));
         for (Modifier m : b.modifiers()) {
+            TechId tech = q.techOf(m.sourceId()); // a technology's modifiers name the tech (TECH-01)
             line.append(", ")
                     .append(m.op().name().toLowerCase(Locale.ROOT))
                     .append(' ')
                     .append(number(m.value()))
                     .append(" (source ")
-                    .append(m.sourceId())
+                    .append(tech == null ? String.valueOf(m.sourceId()) : tech.value())
                     .append(", stage ")
                     .append(m.stage())
                     .append(')');

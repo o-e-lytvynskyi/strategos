@@ -26,8 +26,8 @@ import net.minecraft.core.BlockPos;
  * track the body, a death in place of the tick's hits; it runs before the outputs apply, while the dead still have
  * bodies. The world's edits go to those who see their cells: the core's cracks and a torch's flames with the step, the blocks the writer
  * broke and placed after its flush. A page's events of a tick travel together, at most {@value Fx#MAX_EVENTS} to a
- * payload; until fog (M8) every member sees every cell. A shot's launch and impact go once to those who see either end
- * ({@link ShotFx}).
+ * payload; every member sees every cell until FOW-03 (M8) filters by vision. A shot's launch and impact go once to those
+ * who see either end ({@link ShotFx}).
  */
 public final class FxSender {
     private FxSender() {}

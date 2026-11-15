@@ -1,6 +1,7 @@
 package dev.strategos.core.client.hud;
 
 import dev.strategos.core.content.CorePaths;
+import dev.strategos.core.content.TechDef;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.ValuePath;
 import dev.strategos.core.protocol.AllClear;
@@ -9,6 +10,7 @@ import dev.strategos.core.protocol.CancelBuilding;
 import dev.strategos.core.protocol.CancelTrain;
 import dev.strategos.core.protocol.Command;
 import dev.strategos.core.protocol.Demolish;
+import dev.strategos.core.protocol.Research;
 import dev.strategos.core.protocol.Reseed;
 import dev.strategos.core.protocol.RingBell;
 import dev.strategos.core.protocol.SetAutoReseed;
@@ -105,6 +107,14 @@ public final class CardController {
                 }
                 send.accept(new Reseed(building.handle()));
                 yield new Click(Effect.SENT, button.template());
+            }
+            case RESEARCH -> {
+                TechDef tech = templates.techByIndex(button.template());
+                if (building == null || tech == null) {
+                    yield Click.NONE;
+                }
+                send.accept(new Research(building.handle(), tech.id()));
+                yield new Click(Effect.SENT, -1);
             }
             case AUTO_RESEED -> {
                 if (building == null) {

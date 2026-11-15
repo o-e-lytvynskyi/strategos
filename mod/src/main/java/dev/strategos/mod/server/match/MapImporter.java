@@ -89,6 +89,15 @@ public final class MapImporter {
         return true;
     }
 
+    /** How far the import is, 0 to 1: the tiles queued, the last tenth for the writes to land and the light. */
+    public double progress() {
+        if (hash != null) {
+            return 1;
+        }
+        MapManifest m = pkg.manifest();
+        return 0.9 * nextTile / Math.max(1, m.tilesX() * m.tilesZ());
+    }
+
     /** The terrain hash of the placed map, once {@link #step()} returned true. */
     public @Nullable String hash() {
         return hash;

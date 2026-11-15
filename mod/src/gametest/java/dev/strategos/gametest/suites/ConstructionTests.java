@@ -5,11 +5,14 @@ import static dev.strategos.gametest.suites.Units.core;
 import static dev.strategos.gametest.suites.Units.handles;
 import static dev.strategos.gametest.suites.Units.unit;
 
+import com.google.gson.JsonObject;
 import dev.strategos.core.client.build.ClientPlacement;
 import dev.strategos.core.content.Blueprint;
 import dev.strategos.core.content.Footprint;
 import dev.strategos.core.content.PlacementRules;
+import dev.strategos.core.content.TemplateCompiler;
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.protocol.Build;
 import dev.strategos.core.protocol.CommandOutcome;
 import dev.strategos.core.protocol.Grant;
@@ -24,6 +27,7 @@ import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.CommandResult;
+import dev.strategos.core.sim.ContentSwap;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.build.BuildingView;
@@ -74,6 +78,14 @@ public final class ConstructionTests {
 
     /** The level's blocks over building {@code house}'s blueprint equal it, block for block, and its air is air. */
     static void equalsBlueprint(GameTestHelper h, MatchRuntime rt, BuildingView house) {
+        equalsBlueprint(h, rt, house, false);
+    }
+
+    /**
+     * As above; with {@code cropAgeFree} a wheat block of the blueprint matches wheat of any age: a finished field's
+     * crop ripens by the core's clock (ECO-09), so its age is no part of what was built.
+     */
+    static void equalsBlueprint(GameTestHelper h, MatchRuntime rt, BuildingView house, boolean cropAgeFree) {
         MatchCore core = core(rt);
         int index = Objects.requireNonNull(core.queries().templates().byId(house.template()))
                 .netIndex();
@@ -89,9 +101,10 @@ public final class ConstructionTests {
                     house.baseY() + b.y(k),
                     origin.getZ() + at.worldZ(b.x(k), b.z(k)));
             BlockState want = writer.state(b.palette().get(b.state(k)));
+            BlockState got = h.getLevel().getBlockState(pos);
             check(
-                    h.getLevel().getBlockState(pos).equals(want),
-                    pos + " is " + h.getLevel().getBlockState(pos) + ", not " + want);
+                    (cropAgeFree && want.is(Blocks.WHEAT)) ? got.is(Blocks.WHEAT) : got.equals(want),
+                    pos + " is " + got + ", not " + want);
         }
         for (int x = 0; x < b.sizeX(); x++) {
             for (int z = 0; z < b.sizeZ(); z++) {
@@ -629,6 +642,291 @@ public final class ConstructionTests {
                             fallenInWorld(h, state.back, houses(state.back).get(0), state.fallen) == 0,
                             "blocks still gone");
                     equalsBlueprint(h, state.back, houses(state.back).get(0));
+                })
+                .thenSucceed();
+    }
+
+    static final TemplateId TOWER = new TemplateId("strategos:building/tower");
+
+    private static List<BuildingView> towers(MatchRuntime rt) {
+        return core(rt).queries().buildings().stream()
+                .filter(b -> b.template().equals(TOWER))
+                .toList();
+    }
+
+    /**
+     * The built-in set with the tower on the Village worker's list: its Town gate is L1's ({@code BuildListTest}), and
+     * researching Town here would be a second test of TECH-02 inside a test of the tower's blocks.
+     */
+    private static TemplateSet towerOpenToVillage() {
+        return openToVillage(TOWER);
+    }
+
+    /** The built-in set with building {@code open} on the Village worker's list (as the tower's, above). */
+    private static TemplateSet openToVillage(TemplateId open) {
+        TemplateSet b = TemplateSet.builtin();
+        List<TemplateCompiler.Flat> flats = new ArrayList<>();
+        for (UnitTemplate t : b.all()) {
+            JsonObject json = b.flattened(t.id()).deepCopy();
+            if (t.id().equals(TemplateSet.WORKER)) {
+                JsonObject builder = json.getAsJsonObject("Builder");
+                builder.addProperty("buildings", builder.get("buildings").getAsString() + " " + open.value());
+            }
+            flats.add(new TemplateCompiler.Flat(t.id(), t.netIndex(), json));
+        }
+        return TemplateCompiler.fromFlattened(
+                        flats,
+                        List.copyOf(b.techs().stream()
+                                .map(t -> new TemplateCompiler.TechFlat(t.id(), t.netIndex(), t.toJson()))
+                                .toList()))
+                .set();
+    }
+
+    /** BLD-17.4: four workers raise a defence tower on the sheet's stone and wood; finished, it equals its blueprint. */
+    @StrategosTest(batch = "construction", timeoutTicks = 3_000)
+    public static void tower_is_built_and_equals_its_blueprint(GameTestHelper h) {
+        MatchRuntime rt = Units.match(h);
+        town(rt, 4);
+        rt.submit(PlayerSlot.ADMIN, new Grant(new FactionSlot(0), "stone", 150));
+        rt.queueSwap(new ContentSwap(towerOpenToVillage()));
+        h.startSequence()
+                .thenWaitUntil(() -> check(handles(rt).length == 4, "no workers yet"))
+                .thenExecute(() ->
+                        rt.submit(P0, new PlaceBuilding(TOWER, 20, 20, 0, UnitSet.of(handles(rt)), QueueMode.REPLACE)))
+                .thenWaitUntil(() -> check(!towers(rt).isEmpty(), "no foundation"))
+                .thenWaitUntil(() -> check(towers(rt).get(0).state() == BuildingStore.COMPLETE, "not finished"))
+                .thenExecuteAfter(20, () -> equalsBlueprint(h, rt, towers(rt).get(0)))
+                .thenSucceed();
+    }
+
+    /**
+     * BLD-17.4: sixteen enemy torches bring a tower to its third stage, whose ranked blocks are air in the world (the
+     * tower's arrows thin them but cannot stop them).
+     */
+    @StrategosTest(batch = "construction", timeoutTicks = 6_000)
+    public static void tower_damage_stages_remove_its_ranked_blocks(GameTestHelper h) {
+        MatchRuntime rt = Units.match(h);
+        town(rt, 0);
+        rt.submit(PlayerSlot.ADMIN, new SpawnBuilding(TOWER, new FactionSlot(0), 20, 20, 0));
+        rt.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.INFANTRY, new FactionSlot(1), new Vec2d(22, 28), 16, 2));
+        var state = new Object() {
+            int fallen;
+        };
+        h.startSequence()
+                .thenWaitUntil(
+                        () -> check(handles(rt).length == 16 && towers(rt).size() == 1, "not ready"))
+                .thenExecute(() -> rt.submit(
+                        new PlayerSlot(1),
+                        dev.strategos.core.protocol.Attack.replace(
+                                UnitSet.of(handles(rt)), towers(rt).get(0).handle())))
+                .thenWaitUntil(() -> {
+                    BuildingView tower = towers(rt).get(0);
+                    check(tower.hitPoints() < 0.34 * tower.maxHitPoints(), "at " + tower.hitPoints());
+                })
+                .thenExecuteAfter(20, () -> {
+                    BuildingView tower = towers(rt).get(0);
+                    Blueprint bp = Objects.requireNonNull(core(rt).queries()
+                            .templates()
+                            .blueprint(Objects.requireNonNull(
+                                            core(rt).queries().templates().byId(TOWER))
+                                    .netIndex()));
+                    state.fallen = dev.strategos.core.sim.build.DamageStages.fallen(
+                            3, dev.strategos.core.sim.build.DamageRanks.of(bp).length, 0.85, 0.65, 0.35);
+                    check(state.fallen > 0, "a tower with nothing to fall");
+                    int air = fallenInWorld(h, rt, tower, state.fallen);
+                    check(air == state.fallen, air + " of the third stage's " + state.fallen + " blocks are air");
+                })
+                .thenSucceed();
+    }
+
+    // QA-13.3: every MVP blueprint through its construction and damage-stage GameTests. The civic centre, house,
+    // barracks and tower have their own tests above and in BuildingTests; the rest go through the two helpers below.
+    // Not every blueprint is a building a player raises and the enemy burns:
+    //  - arsenal, storehouse, farmstead: both checks.
+    //  - field: both checks; its wheat is the core's crop, ripening by its own clock (ECO-09), so the built
+    //    field equals its blueprint with the wheat's age free, and the raiders wait for the crop to ripen, since
+    //    the core rewrites the crop's blocks at every age it passes and would stand up the wheat that had fallen.
+    //  - quarry, quarry_large, iron_mine, iron_mine_large: deposits (ECO-08): resource nodes the map or a scenario
+    //    spawns, with no Cost and on no worker's build list, so there is no construction to test, and no building
+    //    behind them for a damage stage (they are no BuildingStore entry; their blocks go by depletion). What they have
+    // is
+    //    the blueprint standing in the world as written (deposits_stand_as_their_blueprints) and, for the iron mine,
+    //    its depletion stages (EcoTests.aDepositChangesLookAtItsStages).
+
+    private static final TemplateId ARSENAL = new TemplateId("strategos:building/arsenal");
+    private static final TemplateId STOREHOUSE = new TemplateId("strategos:building/storehouse");
+    private static final TemplateId FARMSTEAD = new TemplateId("strategos:building/farmstead");
+    private static final TemplateId FIELD = new TemplateId("strategos:building/field");
+
+    private static List<BuildingView> of(MatchRuntime rt, TemplateId id) {
+        return core(rt).queries().buildings().stream()
+                .filter(b -> b.template().equals(id))
+                .toList();
+    }
+
+    /** Four workers raise {@code id} at (20, 20) on 1,000 wood and 200 stone; finished, it equals its blueprint. */
+    private static void builtEqualsBlueprint(GameTestHelper h, TemplateId id, boolean cropAgeFree) {
+        MatchRuntime rt = Units.match(h);
+        town(rt, 4);
+        rt.submit(PlayerSlot.ADMIN, new Grant(new FactionSlot(0), "stone", 200));
+        rt.queueSwap(new ContentSwap(openToVillage(id)));
+        h.startSequence()
+                .thenWaitUntil(() -> check(handles(rt).length == 4, "no workers yet"))
+                .thenExecute(() ->
+                        rt.submit(P0, new PlaceBuilding(id, 20, 20, 0, UnitSet.of(handles(rt)), QueueMode.REPLACE)))
+                .thenWaitUntil(() -> check(!of(rt, id).isEmpty(), "no foundation"))
+                .thenWaitUntil(() -> check(of(rt, id).get(0).state() == BuildingStore.COMPLETE, "not finished"))
+                .thenExecuteAfter(20, () -> equalsBlueprint(h, rt, of(rt, id).get(0), cropAgeFree))
+                .thenSucceed();
+    }
+
+    /**
+     * {@code raiders} enemy torches bring {@code id}, spawned finished at (20, 20), to its third stage; then they are
+     * gone, and the stage's ranked blocks are air in the world.
+     */
+    private static void damageStagesRemoveRankedBlocks(GameTestHelper h, TemplateId id, int raiders) {
+        MatchRuntime rt = Units.match(h);
+        town(rt, 0);
+        rt.submit(PlayerSlot.ADMIN, new SpawnBuilding(id, new FactionSlot(0), 20, 20, 0));
+        rt.submit(
+                PlayerSlot.ADMIN,
+                new SpawnUnits(TemplateSet.INFANTRY, new FactionSlot(1), new Vec2d(22, 28), raiders, 2));
+        boolean crop = id.equals(FIELD);
+        h.startSequence()
+                .thenWaitUntil(() -> {
+                    check(handles(rt).length == raiders && of(rt, id).size() == 1, "not ready");
+                    check(
+                            !crop
+                                    || core(rt).queries().nodes().stream()
+                                            .anyMatch(n -> n.amount() > 0 && n.ripening() == 0),
+                            "the crop is not ripe");
+                })
+                .thenExecute(() -> rt.submit(
+                        new PlayerSlot(1),
+                        dev.strategos.core.protocol.Attack.replace(
+                                UnitSet.of(handles(rt)), of(rt, id).get(0).handle())))
+                .thenWaitUntil(() -> {
+                    BuildingView b = of(rt, id).get(0);
+                    check(b.hitPoints() < 0.34 * b.maxHitPoints(), "at " + b.hitPoints());
+                })
+                .thenExecute(() -> {
+                    for (int raider : handles(rt)) { // gone at once, so the building is not burnt down
+                        rt.damage(new dev.strategos.core.sim.ExternalDamage(
+                                raider,
+                                dev.strategos.core.sim.ExternalDamage.Kind.LETHAL,
+                                0,
+                                dev.strategos.core.sim.ExternalDamage.SourceKind.NONE));
+                    }
+                })
+                .thenExecuteAfter(60, () -> {
+                    BuildingView b = of(rt, id).get(0);
+                    Blueprint bp = Objects.requireNonNull(core(rt).queries()
+                            .templates()
+                            .blueprint(Objects.requireNonNull(
+                                            core(rt).queries().templates().byId(id))
+                                    .netIndex()));
+                    int fallen = dev.strategos.core.sim.build.DamageStages.fallen(
+                            3, dev.strategos.core.sim.build.DamageRanks.of(bp).length, 0.85, 0.65, 0.35);
+                    check(fallen > 0, id + " with nothing to fall");
+                    int air = fallenInWorld(h, rt, b, fallen);
+                    check(air == fallen, air + " of the third stage's " + fallen + " blocks are air");
+                })
+                .thenSucceed();
+    }
+
+    /** BLD-08 / M6 T19: four workers raise an arsenal (Town opens it); finished, it equals its blueprint. */
+    @StrategosTest(batch = "construction", timeoutTicks = 4_000)
+    public static void arsenal_is_built_and_equals_its_blueprint(GameTestHelper h) {
+        builtEqualsBlueprint(h, ARSENAL, false);
+    }
+
+    /** The arsenal's third damage stage: its ranked blocks are air in the world. */
+    @StrategosTest(batch = "construction", timeoutTicks = 6_000)
+    public static void arsenal_damage_stages_remove_its_ranked_blocks(GameTestHelper h) {
+        damageStagesRemoveRankedBlocks(h, ARSENAL, 16);
+    }
+
+    /** BLD-08: four workers raise a storehouse; finished, it equals its blueprint. */
+    @StrategosTest(batch = "construction", timeoutTicks = 3_000)
+    public static void storehouse_is_built_and_equals_its_blueprint(GameTestHelper h) {
+        builtEqualsBlueprint(h, STOREHOUSE, false);
+    }
+
+    /** The storehouse's third damage stage: its ranked blocks are air in the world. */
+    @StrategosTest(batch = "construction", timeoutTicks = 6_000)
+    public static void storehouse_damage_stages_remove_its_ranked_blocks(GameTestHelper h) {
+        damageStagesRemoveRankedBlocks(h, STOREHOUSE, 16);
+    }
+
+    /** Four workers raise a farmstead; finished, it equals its blueprint. */
+    @StrategosTest(batch = "construction", timeoutTicks = 3_000)
+    public static void farmstead_is_built_and_equals_its_blueprint(GameTestHelper h) {
+        builtEqualsBlueprint(h, FARMSTEAD, false);
+    }
+
+    /** The farmstead's third damage stage: its ranked blocks are air in the world. */
+    @StrategosTest(batch = "construction", timeoutTicks = 6_000)
+    public static void farmstead_damage_stages_remove_its_ranked_blocks(GameTestHelper h) {
+        damageStagesRemoveRankedBlocks(h, FARMSTEAD, 12);
+    }
+
+    /** ECO-09: four workers lay a field; finished, it equals its blueprint but for its wheat's age. */
+    @StrategosTest(batch = "construction", timeoutTicks = 3_000)
+    public static void field_is_built_and_equals_its_blueprint(GameTestHelper h) {
+        builtEqualsBlueprint(h, FIELD, true);
+    }
+
+    /** The field's third damage stage (a ripe field's), its ranked blocks air in the world. */
+    @StrategosTest(batch = "construction", timeoutTicks = 6_000)
+    public static void field_damage_stages_remove_its_ranked_blocks(GameTestHelper h) {
+        damageStagesRemoveRankedBlocks(h, FIELD, 3);
+    }
+
+    /**
+     * ECO-08: the four deposits spawned in the arena stand in the world as their blueprints, block for block, on the
+     * ground their node says (the top block of the first to be gathered).
+     */
+    @StrategosTest(batch = "construction", timeoutTicks = 600)
+    public static void deposits_stand_as_their_blueprints(GameTestHelper h) {
+        MatchRuntime rt = Units.match(h);
+        List<TemplateId> ids = List.of(
+                new TemplateId("strategos:building/quarry"),
+                new TemplateId("strategos:building/quarry_large"),
+                new TemplateId("strategos:building/iron_mine"),
+                new TemplateId("strategos:building/iron_mine_large"));
+        int[][] at = {{10, 10}, {20, 10}, {10, 20}, {20, 20}};
+        for (int i = 0; i < ids.size(); i++) {
+            rt.submit(PlayerSlot.ADMIN, new dev.strategos.core.protocol.SpawnDeposit(ids.get(i), at[i][0], at[i][1]));
+        }
+        h.startSequence()
+                .thenWaitUntil(() -> {
+                    for (int i = 0; i < ids.size(); i++) {
+                        int index = Objects.requireNonNull(
+                                        core(rt).queries().templates().byId(ids.get(i)))
+                                .netIndex();
+                        Blueprint b = Objects.requireNonNull(
+                                core(rt).queries().templates().blueprint(index));
+                        var node = core(rt).queries().nodes().stream()
+                                .filter(n -> n.template() == index)
+                                .findFirst()
+                                .orElse(null);
+                        check(node != null, ids.get(i) + " is not spawned yet");
+                        Footprint footprint = Footprint.of(b, at[i][0], at[i][1], 0);
+                        int baseY = node.topY() - b.y(b.count() - 1);
+                        BlockPos origin = rt.space().origin();
+                        BlockWriter writer = StrategosServer.get().writer();
+                        for (int k = 0; k < b.count(); k++) {
+                            BlockPos pos = new BlockPos(
+                                    origin.getX() + footprint.worldX(b.x(k), b.z(k)),
+                                    baseY + b.y(k),
+                                    origin.getZ() + footprint.worldZ(b.x(k), b.z(k)));
+                            BlockState want = writer.state(b.palette().get(b.state(k)));
+                            check(
+                                    h.getLevel().getBlockState(pos).equals(want),
+                                    ids.get(i) + ": " + pos + " is "
+                                            + h.getLevel().getBlockState(pos) + ", not " + want);
+                        }
+                    }
                 })
                 .thenSucceed();
     }

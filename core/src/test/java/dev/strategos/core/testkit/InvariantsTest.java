@@ -91,6 +91,28 @@ class InvariantsTest {
     }
 
     @Test
+    void aLongDetourAwayFromTheTargetIsNoStall() {
+        Invariants invariants = new Invariants();
+        for (long tick = 0; tick <= 1_400; tick++) {
+            double z =
+                    3.0 + tick * 0.02; // round an obstacle: 0.02 blocks a tick, farther from the target all the while
+            FakeQueries q = new FakeQueries(4).with(unit(2, 4.5, 1.0, z, UnitState.WALKING, new Vec2d(4.5, 1.5)));
+            assertThat(invariants.check(q, tick)).as("tick %d", tick).isEmpty();
+        }
+    }
+
+    @Test
+    void aUnitTurningOnTheSpotIsStillAStall() {
+        Invariants invariants = new Invariants();
+        List<String> last = List.of();
+        for (long tick = 0; tick <= Invariants.STUCK_TICKS + 3; tick++) {
+            double x = tick % 2 == 0 ? 4.5 : 6.5; // two blocks to and fro, never nearer, never 8 blocks on
+            last = invariants.check(new FakeQueries(4).with(unit(2, x, 1.0, 8.5, UnitState.WALKING, TARGET)), tick);
+        }
+        assertThat(last).singleElement().asString().contains("WALKING without progress");
+    }
+
+    @Test
     void progressOrANewTargetRestartsTheStuckClock() {
         Invariants invariants = new Invariants();
         for (long tick = 0; tick <= 1_000; tick++) {

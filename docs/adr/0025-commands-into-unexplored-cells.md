@@ -4,8 +4,8 @@ Date: 2026-10-25
 
 ## Status
 
-Proposed (the M6 spec, [M6-first-skirmish.md](../milestones/M6-first-skirmish.md) §1.6 row 2). Accepted on the
-owner's word; it amends ADR-0014's validation list and 04 §7.3 when M6 T6 lands.
+Accepted (2026-11-12, the owner's word). Amends ADR-0014's validation list and 04 §7.3; wired
+in M6 T6.
 
 ## Context
 

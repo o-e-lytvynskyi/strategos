@@ -1,0 +1,8 @@
+{
+  "parent": "strategos:template/building_base",
+  "Identity": { "name": "strategos.building.arsenal", "icon": "minecraft:anvil", "classes": "+Arsenal" },
+  "Building": { "blueprint": "strategos:arsenal" },
+  "Health": { "max": 1500 },
+  "Cost": { "resources": { "wood": 200, "stone": 150 }, "time": 90 },
+  "Trainer": { "units": "strategos:unit/ram", "batchExponent": 0.8 }
+}

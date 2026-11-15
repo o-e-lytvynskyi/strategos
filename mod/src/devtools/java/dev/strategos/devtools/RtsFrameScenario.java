@@ -13,6 +13,7 @@ import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
+import dev.strategos.core.sim.PlayRules;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.client.StrategosClient;
 import dev.strategos.mod.client.rts.RtsMode;
@@ -123,6 +124,17 @@ final class RtsFrameScenario implements Scenario {
         }
     }
 
+    /** The baseline's rules: the map revealed, so no shroud is drawn and every unit shows (PERF-14 before M6). */
+    static final PlayRules REVEALED = ScenarioWorld.REVEALED;
+
+    /**
+     * M6's shroud: every cell explored and none revealed, so the shroud draws over all ground out of sight (FOW-07,
+     * budget F with the shroud).
+     */
+    static final PlayRules EXPLORED = new PlayRules(PlayRules.Victory.NONE, false, true, false);
+
+    private final String name;
+    private final PlayRules play;
     private final StringBuilder failures = new StringBuilder();
     private volatile @Nullable MatchRuntime match;
     private volatile int bodiesOnServer;
@@ -138,9 +150,14 @@ final class RtsFrameScenario implements Scenario {
     /** The camera's focus when timing starts, which every window must end at. */
     private double @Nullable [] focus;
 
+    RtsFrameScenario(String name, PlayRules play) {
+        this.name = name;
+        this.play = play;
+    }
+
     @Override
     public String name() {
-        return "rts_frame";
+        return name;
     }
 
     @Override
@@ -158,7 +175,8 @@ final class RtsFrameScenario implements Scenario {
                 .create(
                         level,
                         StrategosCommands.spaceAround(level, new BlockPos(0, floor, 0), 256, 256),
-                        new MatchOptions(5L, 2, false, MatchSource.GAMETEST, null, MetricsSink.none(), floor));
+                        new MatchOptions(
+                                5L, 2, false, MatchSource.GAMETEST, null, MetricsSink.none(), floor, null, play));
         match = rt;
         StrategosServer.get().matches().join(rt, player.getUUID(), new PlayerSlot(0));
         StrategosServer.get().commanders().enter(player, rt);

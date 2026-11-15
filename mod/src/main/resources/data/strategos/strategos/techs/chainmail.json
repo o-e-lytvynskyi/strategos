@@ -1,0 +1,12 @@
+{
+  "name": "strategos.tech.chainmail",
+  "icon": "minecraft:chainmail_chestplate",
+  "cost": { "food": 200, "wood": 100, "iron": 150 },
+  "time": 60,
+  "requires": { "phase": "town" },
+  "effects": [
+    { "path": "Resistance/hack", "op": "add", "value": 1, "filter": "Infantry Cavalry" },
+    { "path": "Resistance/pierce", "op": "add", "value": 1, "filter": "Infantry Cavalry" },
+    { "path": "Look/armour", "op": "add", "value": 1, "filter": "Infantry Cavalry" }
+  ]
+}

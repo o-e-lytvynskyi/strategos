@@ -1,5 +1,6 @@
 package dev.strategos.core.sim;
 
+import dev.strategos.core.sim.combat.Siege;
 import dev.strategos.core.sim.econ.CarryStore;
 import dev.strategos.core.sim.order.OrderKind;
 import dev.strategos.core.sim.unitai.UnitAi;
@@ -52,6 +53,7 @@ final class GearSystem implements MatchSystem {
     private static int tool(MatchState s, int i) {
         int leaf = s.ai().code(i);
         if (s.orders().kind(i) == OrderKind.BURN
+                && Siege.fire(s, i) > 0
                 && (leaf == UnitAi.BURN_APPROACHING.code() || leaf == UnitAi.BURNING.code())) {
             return UnitGear.TORCH; // a torch against a building, and only there (CMB-03)
         }

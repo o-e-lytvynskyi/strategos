@@ -2,9 +2,11 @@ package dev.strategos.mod.client.hud;
 
 import com.mojang.blaze3d.platform.NativeImage;
 import dev.strategos.core.client.camera.CameraRig;
+import dev.strategos.core.client.hud.DirtyTiles;
 import dev.strategos.core.client.hud.HudRect;
 import dev.strategos.core.client.hud.Minimap;
 import dev.strategos.core.client.hud.MinimapImage;
+import dev.strategos.core.client.hud.MinimapPings;
 import dev.strategos.core.client.pick.View;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.MatchNews;
@@ -25,7 +27,10 @@ import org.jspecify.annotations.Nullable;
  * The minimap's terrain (UI-11, D-16): one {@link DynamicTexture} the size of the joined match's space, a pixel a
  * column, built a chunk at a time from the client's loaded blocks by {@link MinimapImage}. A few chunks a tick are
  * rebuilt in turn, so every chunk is looked at every few seconds; a chunk whose pixels changed marks the texture, which
- * is uploaded at most once a second. A chunk not loaded yet stays transparent until it is.
+ * is uploaded at most once a second. A chunk not loaded yet stays transparent until it is. Live construction (UI-20):
+ * a building whose {@code building_state} progress or state moved marks the chunks under it dirty, and a dirty chunk is
+ * rebuilt ahead of the round, within a second and at most once a second. Pings (UI-20): a ring at each alert and wave
+ * muster for three seconds.
  */
 final class RtsMinimap {
     static final ResourceLocation TEXTURE = Ids.id("minimap");
@@ -40,7 +45,13 @@ final class RtsMinimap {
     private int[] tileHashes = new int[0];
     private int next;
     private boolean dirty;
+    /** The client's own tick count: it runs while a paused or frozen game's time stands still. */
+    private long ticks;
+
     private long uploadedAt = -1_000; // "long ago", without the overflow Long.MIN_VALUE would give a subtraction
+    private int visionRevision = -1;
+    private DirtyTiles dirtyTiles = new DirtyTiles(0, 0);
+    private final MinimapPings pings = new MinimapPings();
 
     /** Whether the texture holds a match's image. */
     boolean ready() {
@@ -83,35 +94,60 @@ final class RtsMinimap {
         }
         int chunksX = (sizeX + 15) / 16;
         int chunksZ = (sizeZ + 15) / 16;
+        var model = StrategosClient.model();
+        int rev = model.visionRevision();
+        if (rev != visionRevision) {
+            Arrays.fill(tileHashes, 1); // fog changed: every chunk must be rewritten
+            visionRevision = rev;
+        }
         MinimapImage.Columns columns = new Columns(level, join);
-        for (int k = 0; k < PER_TICK; k++) {
+        // an observer (the admin's seat) has no vision grid and sees everything; a player's before its first delta sees
+        // none
+        MinimapImage.Fog fog = model.visionCellsX() <= 0 && join.slot().isAdmin()
+                ? MinimapImage.Fog.NONE
+                : MinimapImage.fromVision(
+                        model.visibleBits(), model.exploredBits(), model.visionCellsX(), model.visionCellsZ());
+        long now = level.getGameTime(); // the pings' clock
+        ticks++;
+        dirtyTiles.observe(model.buildings());
+        pings.observe(model.alerts(), model.alert(), model.waves(), model.wave(), now);
+        int[] budget = {PER_TICK};
+        dirtyTiles.drain(ticks, PER_TICK, c -> {
+            rebuild(image, columns, fog, c, chunksX);
+            budget[0]--;
+        });
+        for (int k = 0; k < budget[0]; k++) {
             int c = next;
             next = (next + 1) % (chunksX * chunksZ);
-            int cx = c % chunksX;
-            int cz = c / chunksX;
-            int[] tile = MinimapImage.tile(columns, cx, cz, sizeX, sizeZ);
-            int hash = Arrays.hashCode(tile);
-            if (hash == tileHashes[c]) {
-                continue;
-            }
-            tileHashes[c] = hash;
-            for (int dz = 0; dz < 16; dz++) {
-                for (int dx = 0; dx < 16; dx++) {
-                    int x = cx * 16 + dx;
-                    int z = cz * 16 + dz;
-                    if (x < sizeX && z < sizeZ) {
-                        image.setPixelRGBA(x, z, abgr(tile[dz * 16 + dx]));
-                    }
-                }
-            }
-            dirty = true;
+            dirtyTiles.built(c, ticks);
+            rebuild(image, columns, fog, c, chunksX);
         }
-        long now = level.getGameTime();
-        if (dirty && now - uploadedAt >= 20) {
+        if (DirtyTiles.uploadDue(dirty, ticks, uploadedAt)) {
             t.upload();
             dirty = false;
-            uploadedAt = now;
+            uploadedAt = ticks;
         }
+    }
+
+    private void rebuild(NativeImage image, MinimapImage.Columns columns, MinimapImage.Fog fog, int c, int chunksX) {
+        int cx = c % chunksX;
+        int cz = c / chunksX;
+        int[] tile = MinimapImage.tile(columns, fog, cx, cz, sizeX, sizeZ);
+        int hash = Arrays.hashCode(tile);
+        if (hash == tileHashes[c]) {
+            return;
+        }
+        tileHashes[c] = hash;
+        for (int dz = 0; dz < 16; dz++) {
+            for (int dx = 0; dx < 16; dx++) {
+                int x = cx * 16 + dx;
+                int z = cz * 16 + dz;
+                if (x < sizeX && z < sizeZ) {
+                    image.setPixelRGBA(x, z, abgr(tile[dz * 16 + dx]));
+                }
+            }
+        }
+        dirty = true;
     }
 
     private void open(Minecraft mc, MatchJoin join) {
@@ -125,9 +161,12 @@ final class RtsMinimap {
         int chunks = ((sizeX + 15) / 16) * ((sizeZ + 15) / 16);
         tileHashes = new int[chunks];
         Arrays.fill(tileHashes, 1); // an empty tile hashes otherwise, so every chunk is written once
+        dirtyTiles = new DirtyTiles((sizeX + 15) / 16, (sizeZ + 15) / 16);
+        pings.reset();
         next = 0;
         dirty = true;
         uploadedAt = -1_000;
+        visionRevision = -1;
     }
 
     private void close(Minecraft mc) {
@@ -209,6 +248,13 @@ final class RtsMinimap {
         if (alert != null && clientTicks - alertAt < 200 && (clientTicks / 5) % 2 == 0) {
             double[] p = m.toMap(alert.x(), alert.z());
             g.renderOutline((int) p[0] - 4, (int) p[1] - 4, 9, 9, 0xFFFF3030);
+        }
+        ClientLevel level = Minecraft.getInstance().level;
+        long now = level == null ? 0 : level.getGameTime();
+        for (MinimapPings.Ping ping : pings.active(now)) { // UI-20: a ring growing out of each alert and muster
+            double[] p = m.toMap(ping.x(), ping.z());
+            int radius = 2 + (int) (ping.progress(now) * 10);
+            g.renderOutline((int) p[0] - radius, (int) p[1] - radius, 2 * radius + 1, 2 * radius + 1, 0xFFFFB030);
         }
         CameraRig rig = mode.rig();
         View view = mode.view();

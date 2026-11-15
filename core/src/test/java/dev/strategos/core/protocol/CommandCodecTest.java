@@ -10,6 +10,7 @@ import com.mojang.serialization.JsonOps;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Stance;
+import dev.strategos.core.shared.TechId;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
 import java.util.List;
@@ -51,7 +52,8 @@ class CommandCodecTest {
                 new Ungarrison(0x80003, UnitSet.of(3, 4)),
                 new RingBell(0x80003),
                 new AllClear(0x80003),
-                new AttackSpread(UnitSet.of(3, 4), 0x300007, QueueMode.QUEUE));
+                new AttackSpread(UnitSet.of(3, 4), 0x300007, QueueMode.QUEUE),
+                new Research(524_294, new TechId("strategos:gather_wood_1")));
     }
 
     @Test

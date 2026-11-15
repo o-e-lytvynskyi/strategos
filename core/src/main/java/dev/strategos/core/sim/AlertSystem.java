@@ -29,8 +29,10 @@ final class AlertSystem implements MatchSystem {
     @Override
     public void run(MatchState s) {
         long tick = s.tick();
+        WaveCamps.clearLeft(s); // a wave that left takes its camp down (AI-04)
         List<Alerts.Alert> alerts = s.alerts().list;
         alerts.removeIf(a -> tick - a.last() >= QUIET);
+        s.alerts().prune(tick);
         List<OutputEvent> outputs = s.outputs();
         int n = outputs.size(); // the alerts this adds are not attacks
         for (int k = 0; k < n; k++) {
@@ -72,6 +74,9 @@ final class AlertSystem implements MatchSystem {
             }
             if (faction == by || faction >= s.config().factions()) { // Gaia is never alerted
                 continue;
+            }
+            if (s.aiSlots().get(faction) != null) {
+                s.alerts().blow(faction, target, tick); // a computer player's defence reads its blows (AI-04)
             }
             attacked(s, faction, x, z, tick);
         }

@@ -1,14 +1,18 @@
 package dev.strategos.gametest;
 
 import dev.strategos.gametest.net.MockViewer;
+import dev.strategos.gametest.suites.AiSoak;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -32,6 +36,13 @@ public final class StrategosGameTests {
     private static final Map<String, String> RETRY_REASONS = new ConcurrentHashMap<>();
 
     private static final String SLOW = "slow";
+
+    /** The batches with an {@code @AfterBatch} hook below. */
+    private static final Set<String> HOOKED = Arrays.stream(StrategosGameTests.class.getDeclaredMethods())
+            .map(m -> m.getAnnotation(AfterBatch.class))
+            .filter(Objects::nonNull)
+            .map(AfterBatch::batch)
+            .collect(Collectors.toUnmodifiableSet());
 
     private StrategosGameTests() {}
 
@@ -226,6 +237,16 @@ public final class StrategosGameTests {
         afterBatch(level, "perf_battle_stress");
     }
 
+    @AfterBatch(batch = "perf_mvp")
+    public static void afterPerfMvp(ServerLevel level) {
+        afterBatch(level, "perf_mvp");
+    }
+
+    @AfterBatch(batch = "perf_mvp_stress")
+    public static void afterPerfMvpStress(ServerLevel level) {
+        afterBatch(level, "perf_mvp_stress");
+    }
+
     @AfterBatch(batch = "perf_first_loop_fast")
     public static void afterPerfFirstLoopFast(ServerLevel level) {
         afterBatch(level, "perf_first_loop_fast");
@@ -261,6 +282,166 @@ public final class StrategosGameTests {
         afterBatch(level, "selftest");
     }
 
+    @AfterBatch(batch = "aisoak")
+    public static void afterAiSoak(ServerLevel level) {
+        afterBatch(level, "aisoak");
+    }
+
+    @AfterBatch(batch = "ai_starts")
+    public static void afterAiStarts(ServerLevel level) {
+        afterBatch(level, "ai_starts");
+    }
+
+    @AfterBatch(batch = "ai_battle")
+    public static void afterAiBattle(ServerLevel level) {
+        afterBatch(level, "ai_battle");
+    }
+
+    @AfterBatch(batch = "ai_economy")
+    public static void afterAiEconomy(ServerLevel level) {
+        afterBatch(level, "ai_economy");
+    }
+
+    @AfterBatch(batch = "ai_seed_1")
+    public static void afterAiSeed1(ServerLevel level) {
+        afterBatch(level, "ai_seed_1");
+    }
+
+    @AfterBatch(batch = "ai_waves")
+    public static void afterAiWaves(ServerLevel level) {
+        afterBatch(level, "ai_waves");
+    }
+
+    @AfterBatch(batch = "ai_seed_2")
+    public static void afterAiSeed2(ServerLevel level) {
+        afterBatch(level, "ai_seed_2");
+    }
+
+    @AfterBatch(batch = "buildings")
+    public static void afterBuildings(ServerLevel level) {
+        afterBatch(level, "buildings");
+    }
+
+    @AfterBatch(batch = "content_ended")
+    public static void afterContentEnded(ServerLevel level) {
+        afterBatch(level, "content_ended");
+    }
+
+    @AfterBatch(batch = "content_faulted")
+    public static void afterContentFaulted(ServerLevel level) {
+        afterBatch(level, "content_faulted");
+    }
+
+    @AfterBatch(batch = "content_swap_race")
+    public static void afterContentSwapRace(ServerLevel level) {
+        afterBatch(level, "content_swap_race");
+    }
+
+    @AfterBatch(batch = "content_units")
+    public static void afterContentUnits(ServerLevel level) {
+        afterBatch(level, "content_units");
+    }
+
+    @AfterBatch(batch = "content_used_building")
+    public static void afterContentUsedBuilding(ServerLevel level) {
+        afterBatch(level, "content_used_building");
+    }
+
+    @AfterBatch(batch = "eco_nodes")
+    public static void afterEcoNodes(ServerLevel level) {
+        afterBatch(level, "eco_nodes");
+    }
+
+    @AfterBatch(batch = "map_battle")
+    public static void afterMapBattle(ServerLevel level) {
+        afterBatch(level, "map_battle");
+    }
+
+    @AfterBatch(batch = "map_body")
+    public static void afterMapBody(ServerLevel level) {
+        afterBatch(level, "map_body");
+    }
+
+    @AfterBatch(batch = "map_cross")
+    public static void afterMapCross(ServerLevel level) {
+        afterBatch(level, "map_cross");
+    }
+
+    @AfterBatch(batch = "map_crowd")
+    public static void afterMapCrowd(ServerLevel level) {
+        afterBatch(level, "map_crowd");
+    }
+
+    @AfterBatch(batch = "map_fifty")
+    public static void afterMapFifty(ServerLevel level) {
+        afterBatch(level, "map_fifty");
+    }
+
+    @AfterBatch(batch = "map_first_skirmish")
+    public static void afterMapFirstSkirmish(ServerLevel level) {
+        afterBatch(level, "map_first_skirmish");
+    }
+
+    @AfterBatch(batch = "map_horsemen")
+    public static void afterMapHorsemen(ServerLevel level) {
+        afterBatch(level, "map_horsemen");
+    }
+
+    @AfterBatch(batch = "map_skirmish_setup")
+    public static void afterMapSkirmishSetup(ServerLevel level) {
+        afterBatch(level, "map_skirmish_setup");
+    }
+
+    @AfterBatch(batch = "map_skirmish_two")
+    public static void afterMapSkirmishTwo(ServerLevel level) {
+        afterBatch(level, "map_skirmish_two");
+    }
+
+    @AfterBatch(batch = "skirmish_payload")
+    public static void afterSkirmishPayload(ServerLevel level) {
+        afterBatch(level, "skirmish_payload");
+    }
+
+    @AfterBatch(batch = "map_skirmish")
+    public static void afterMapSkirmish(ServerLevel level) {
+        afterBatch(level, "map_skirmish");
+    }
+
+    @AfterBatch(batch = "pacing")
+    public static void afterPacing(ServerLevel level) {
+        afterBatch(level, "pacing");
+    }
+
+    @AfterBatch(batch = "perf_group_paths")
+    public static void afterPerfGroupPaths(ServerLevel level) {
+        afterBatch(level, "perf_group_paths");
+    }
+
+    @AfterBatch(batch = "perf_melee")
+    public static void afterPerfMelee(ServerLevel level) {
+        afterBatch(level, "perf_melee");
+    }
+
+    @AfterBatch(batch = "perf_paths")
+    public static void afterPerfPaths(ServerLevel level) {
+        afterBatch(level, "perf_paths");
+    }
+
+    @AfterBatch(batch = "perf_protected")
+    public static void afterPerfProtected(ServerLevel level) {
+        afterBatch(level, "perf_protected");
+    }
+
+    @AfterBatch(batch = "tech")
+    public static void afterTech(ServerLevel level) {
+        afterBatch(level, "tech");
+    }
+
+    @AfterBatch(batch = "writer_capture")
+    public static void afterWriterCapture(ServerLevel level) {
+        afterBatch(level, "writer_capture");
+    }
+
     /** The batches of {@code runGameTestSlow}: {@code slow} and the map batches ({@code map_…}), which only it runs. */
     private static boolean slow(String batch) {
         return batch.equals(SLOW) || batch.startsWith("map_") || batch.startsWith("ai_"); // QA-11's sample is slow too
@@ -277,6 +458,7 @@ public final class StrategosGameTests {
     public static Collection<TestFunction> all() {
         boolean perf = Boolean.getBoolean("strategos.gametest.perf");
         boolean slow = Boolean.getBoolean("strategos.gametest.slow"); // runGameTestSlow keeps batch slow, alone
+        boolean soak = Boolean.getBoolean("strategos.gametest.soak"); // runGameTestSoak keeps batch aisoak, alone
         String selftest = System.getProperty("strategos.selftest", "");
         String filter = System.getProperty("strategos.gametest.filter", "");
         List<Declared> declared = new ArrayList<>();
@@ -298,8 +480,18 @@ public final class StrategosGameTests {
                 candidates.add(new Candidate(test.name(), test.batch(), () -> ScenarioGameTests.function(test)));
             }
         }
+        List<String> unhooked = candidates.stream()
+                .map(Candidate::batch)
+                .filter(b -> !HOOKED.contains(b))
+                .distinct()
+                .sorted()
+                .toList();
+        if (!unhooked.isEmpty()) { // QA-04.6: a batch without its hook leaks its matches into the next one
+            throw new IllegalStateException("batches without an @AfterBatch hook here: " + unhooked);
+        }
         Pattern pattern = Pattern.compile(filter);
         List<TestFunction> functions = candidates.stream()
+                .filter(c -> c.batch().equals(AiSoak.BATCH) == soak)
                 .filter(c -> slow(c.batch()) == slow)
                 .filter(c -> pattern.matcher(c.name()).find())
                 .sorted(Comparator.comparing(Candidate::name))

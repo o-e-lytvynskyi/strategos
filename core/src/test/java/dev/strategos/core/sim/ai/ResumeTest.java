@@ -27,6 +27,7 @@ class ResumeTest {
         SimHarness h = SimHarness.builder()
                 .size(ProvingGround.SIZE, ProvingGround.SIZE)
                 .yBand(0, ProvingGround.HEIGHT, 16)
+                .starts(ground.startSlots())
                 .build();
         h.publishAll(ground.voxels());
         h.step();

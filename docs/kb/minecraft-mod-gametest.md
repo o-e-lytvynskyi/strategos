@@ -151,3 +151,21 @@ sort). M5 T4: the reconciler test saved a half-written house ("rewrote 62"); wai
 until `rt.bodies().count()` reaches the count, then assert. M5 T18: `navtests.own_writes_never_dirty`
 waited for the whole level's writer queue to empty, which other matches keep busy; it waits for its
 own match's `pendingIn` now.
+
+## A batch without its `@AfterBatch` hook leaks its matches into the next batch
+
+Vanilla finds the after-batch function by the batch's name (`@AfterBatch(batch = "…")`), one
+static method per name; a batch with none skips the disposal and `BatchEndCheck`. M6: 26 batch
+names had no hook. Their matches lived on until the next hooked batch disposed every GameTest
+match, so a later solo test saw a house "in use in match 164" when it removed the house
+template, and the reconciler test's writes shared the writer with leftover matches ("rewrote
+14"). The generator now refuses a run in which a declared batch has no hook.
+
+## Fog pairing tests: the hidden body must stand inside vanilla's tracking range
+
+Vanilla pairs a body only within `min(clientTrackingRange × 16, viewDistance × 16)` blocks of
+the player (`ChunkMap.TrackedEntity#updatePlayer`). A mock viewer with view distance 2 tracks 32
+blocks: an enemy 34 blocks away is never paired whatever `broadcastToPlayer` answers, so "a
+hidden enemy is never paired" passes with the fog gate switched off, and "a revealed map pairs
+it" fails with the gate right. Put the hidden body outside the faction's vision and inside the
+tracking range (M6: vision 12, the enemy 20 blocks off), and pair a visible enemy as the control.

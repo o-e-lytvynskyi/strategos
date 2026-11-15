@@ -100,6 +100,7 @@ class BattleAtTheFordTest {
                 .size(ProvingGround.SIZE, ProvingGround.SIZE)
                 .yBand(0, ProvingGround.HEIGHT, 16)
                 .seed(seed)
+                .starts(ground.startSlots())
                 .build();
         h.publishAll(ground.voxels());
         h.step();

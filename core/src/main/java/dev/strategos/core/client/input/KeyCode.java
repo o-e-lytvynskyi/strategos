@@ -23,6 +23,7 @@ public record KeyCode(Kind kind, int code) {
     public static final int H = 72;
     public static final int I = 73;
     public static final int J = 74;
+    public static final int K = 75;
     public static final int LEFT_BRACKET = 91;
     public static final int RIGHT_BRACKET = 93;
     public static final int R = 82;

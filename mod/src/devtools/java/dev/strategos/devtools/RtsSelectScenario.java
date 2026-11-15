@@ -62,7 +62,16 @@ final class RtsSelectScenario implements Scenario {
                 .create(
                         level,
                         StrategosCommands.spaceAround(level, new BlockPos(0, floor, 0), 256, 256),
-                        new MatchOptions(5L, 2, false, MatchSource.GAMETEST, null, MetricsSink.none(), floor));
+                        new MatchOptions(
+                                5L,
+                                2,
+                                false,
+                                MatchSource.GAMETEST,
+                                null,
+                                MetricsSink.none(),
+                                floor,
+                                null,
+                                ScenarioWorld.REVEALED));
         rt.submit(
                 PlayerSlot.ADMIN,
                 new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(0), new Vec2d(128, 142), OWN, 7));

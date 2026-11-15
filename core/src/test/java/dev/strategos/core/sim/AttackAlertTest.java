@@ -2,6 +2,7 @@ package dev.strategos.core.sim;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import dev.strategos.core.content.CorePaths;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.Attack;
 import dev.strategos.core.protocol.SpawnBuilding;
@@ -44,7 +45,16 @@ class AttackAlertTest {
         long blows = h.events(BuildingHurt.class).stream()
                 .filter(e -> e.handle() == first)
                 .count();
-        assertThat(blows).as("a blow a second for two minutes").isGreaterThan(100);
+        TemplateSet set = TemplateSet.builtin();
+        double blow = set.value(
+                set.byId(TemplateSet.INFANTRY).netIndex(),
+                set.valuePaths().byPath("Attack/Structure/fire").id());
+        double hp = set.value(
+                set.byId(HOUSE).netIndex(),
+                set.valuePaths().byPath(CorePaths.HEALTH).id());
+        assertThat(blows)
+                .as("a blow a second until the house's hit points are gone")
+                .isGreaterThanOrEqualTo((long) Math.floor(hp / blow));
         assertThat(h.events(UnderAttack.class))
                 .as("one alert for the whole raid")
                 .containsExactly(new UnderAttack(new FactionSlot(0), 12.5, 12.5));

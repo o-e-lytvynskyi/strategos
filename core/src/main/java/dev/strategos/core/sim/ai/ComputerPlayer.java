@@ -1,6 +1,9 @@
 package dev.strategos.core.sim.ai;
 
+import dev.strategos.core.shared.Rng;
+import dev.strategos.core.sim.Streams;
 import java.util.List;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A computer player (AI-01, 04 §14): its faction, its profile and strategy, its memory, and its modules, which think
@@ -11,8 +14,9 @@ public final class ComputerPlayer {
     private final int faction;
     private final String profile;
     private final String script;
+    private final StrategyScript strategy;
     private final AiMemory memory = new AiMemory();
-    private final List<AiModule> modules;
+    private @Nullable List<AiModule> modules;
     private int lastSpent;
 
     /** A scripted player of {@code faction}; a malformed {@code script} throws {@link IllegalArgumentException}. */
@@ -20,16 +24,88 @@ public final class ComputerPlayer {
         this.faction = faction;
         this.profile = profile;
         this.script = script;
-        StrategyScript s = StrategyScript.parse(script);
-        this.modules = List.of(
-                new EconomyManager(s, memory),
-                new ProductionManager(s, memory),
-                new BuildManager(s, memory),
-                new MilitaryManager(s, memory));
+        this.strategy = StrategyScript.parse(script);
+    }
+
+    /**
+     * The modules, made once the opening is known (AI-04): drawn by weight (or pinned by the script) from {@code Rng(seed, OPENING, 0, faction,
+     * 0)} at the first think and kept in memory, so a resumed player takes up the same one without drawing.
+     */
+    private List<AiModule> modules(AiView view) {
+        List<AiModule> m = modules;
+        if (m == null) {
+            if (memory.get(Slots.OPENING) == 0 && strategy.pinned() >= 0) {
+                memory.set(Slots.OPENING, strategy.pinned() + 1L); // pinned: no draw
+            } else if (memory.get(Slots.OPENING) == 0 && !strategy.openings().isEmpty()) {
+                int roll = Rng.below(view.seed(), Streams.OPENING, 0, faction, 0, strategy.totalWeight());
+                memory.set(Slots.OPENING, strategy.pick(roll) + 1L);
+            }
+            StrategyScript s = strategy.opened((int) memory.get(Slots.OPENING) - 1);
+            m = List.of(
+                    new DefenceManager(memory, strategy.level().reaction()),
+                    new EconomyManager(s, memory),
+                    new ProductionManager(s, memory),
+                    new BuildManager(s, memory),
+                    new MilitaryManager(s, memory),
+                    new RebuildManager(memory));
+            modules = m;
+        }
+        return m;
+    }
+
+    /** The opening it plays, by its index in the script's {@code openings}; -1 before the draw or with none. */
+    public int opening() {
+        return (int) memory.get(Slots.OPENING) - 1;
+    }
+
+    /** The name of the opening it plays, or "" for none. */
+    public String openingName() {
+        int k = opening();
+        return k >= 0 && k < strategy.openings().size()
+                ? strategy.openings().get(k).name()
+                : "";
+    }
+
+    /** Raises the record of a camp at column ({@code x}, {@code z}), ground at block row {@code y}. */
+    public void setCamp(int x, int y, int z) {
+        memory.set(Slots.CAMP, (((long) x << 32) | (z & 0xFFFFFFFFL)) + 1);
+        memory.set(Slots.CAMP_Y, y + 1L);
+    }
+
+    /** Forgets the camp. */
+    public void clearCamp() {
+        memory.set(Slots.CAMP, 0);
+        memory.set(Slots.CAMP_Y, 0);
+    }
+
+    /** Whether a camp's blocks stand. */
+    public boolean campUp() {
+        return memory.get(Slots.CAMP) != 0;
+    }
+
+    /** The camp's column and ground row: x, y, z. */
+    public int[] camp() {
+        long at = memory.get(Slots.CAMP) - 1;
+        return new int[] {(int) (at >> 32), (int) (memory.get(Slots.CAMP_Y) - 1), (int) at};
+    }
+
+    /** Whether a wave is mustering. */
+    public boolean mustering() {
+        return memory.get(Slots.MUSTER) != 0;
     }
 
     public int faction() {
         return faction;
+    }
+
+    /** The ticks between its thinks (its level's, 20 by default). */
+    public int period() {
+        return strategy.level().think();
+    }
+
+    /** Its level's open handicap (none for a script without a level). */
+    public StrategyScript.Handicap handicap() {
+        return strategy.level().handicap();
     }
 
     public String profile() {
@@ -46,12 +122,17 @@ public final class ComputerPlayer {
 
     /** One think: every module in turn, within {@code budget}, sending through {@code sink}. */
     public void think(AiView view, AiBudget budget, CommandSink sink) {
+        int most = strategy.level().commands();
+        int[] sent = {0};
         CommandSink counted = command -> {
             memory.set(Slots.COMMANDS, memory.get(Slots.COMMANDS) + 1);
             memory.set(Slots.LAST_COMMAND, view.tick());
             sink.send(command);
+            if (most > 0 && ++sent[0] >= most) {
+                budget.exhaust(); // a level's commands per think: the rest wait for the next one
+            }
         };
-        for (AiModule m : modules) {
+        for (AiModule m : modules(view)) {
             if (budget.exhausted()) {
                 break;
             }

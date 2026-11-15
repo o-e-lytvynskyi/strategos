@@ -3,6 +3,7 @@ package dev.strategos.mod.client.hud;
 import dev.strategos.core.client.hud.CommandCard;
 import dev.strategos.core.client.hud.HudRect;
 import dev.strategos.core.client.hud.HudTheme;
+import dev.strategos.core.content.TechDef;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.DepositState;
@@ -46,6 +47,7 @@ final class HudCardPresentation {
             case RING_BELL -> Component.translatable("strategos.card.ring_bell").getString();
             case ALL_CLEAR -> Component.translatable("strategos.card.all_clear").getString();
             case DEMOLISH -> b.on() ? "Click again to demolish, for nothing back" : "Demolish";
+            case RESEARCH -> research(templates, b.template());
         };
         List<String> resources = StrategosClient.resources();
         StringBuilder text = new StringBuilder(what);
@@ -62,11 +64,24 @@ final class HudCardPresentation {
                 text.append(" · ").append(line.label()).append(' ').append(plain(line.value()));
             }
         }
+        TechDef tech = b.kind() == CommandCard.Kind.RESEARCH ? templates.techByIndex(b.template()) : null;
+        if (tech != null) { // UI-13: the time, then what it changes
+            text.append(" · ").append(plain(tech.time())).append(" s");
+            for (String effect : CommandCard.techEffects(tech)) {
+                text.append(" · ").append(effect);
+            }
+        }
         String reason = b.reason();
         if (reason != null) {
             text.append(" — ").append(reason);
         }
         return text.toString();
+    }
+
+    private static String research(TemplateSet templates, int techIndex) {
+        TechDef tech = templates.techByIndex(techIndex);
+        return "Research "
+                + (tech == null ? "?" : Component.translatable(tech.name()).getString());
     }
 
     /** A stance button's tooltip: its translated name, and that the selection holds it. */

@@ -4,6 +4,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import dev.strategos.core.shared.Hex64;
 import dev.strategos.core.shared.Stance;
+import dev.strategos.core.shared.TechId;
 import dev.strategos.core.shared.TemplateId;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,7 +17,8 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * An immutable set of unit templates in net-index order, with their flattened JSON (04 §8.3): its version is the
- * SHA-256 of the canonical JSON of every template keyed by id, so two servers with equal content have equal versions.
+ * SHA-256 of the canonical JSON of every template keyed by id and, when the set has techs, of the techs under the key
+ * {@code $techs}, so two servers with equal content have equal versions.
  * Net indices come from the session's {@link TemplateIdTable}, so a set after a reload may leave a retired one out.
  * {@link TemplateCompiler} builds sets from data; the constructor builds one from code, as tests and M0 did.
  */
@@ -37,6 +39,8 @@ public final class TemplateSet {
     private final double[][] values; // by net index, then value path id; NaN where a template has no such number
     private final @Nullable String[][] texts; // by net index, then token path id
     private final @Nullable Blueprint[] blueprints; // by net index: a building's shape
+    private final List<TechDef> techs; // ascending by net index
+    private final int[] techPosition; // by tech net index: the tech's place in the list, -1 for a retired index
 
     /** A set from code: each template's JSON is {@link UnitTemplate#toJson()}. */
     public TemplateSet(List<UnitTemplate> templates) {
@@ -45,6 +49,11 @@ public final class TemplateSet {
 
     /** Templates ascending by {@code netIndex}, ids distinct; speeds and sizes positive. */
     TemplateSet(List<UnitTemplate> templates, List<JsonObject> flattened) {
+        this(templates, flattened, List.of());
+    }
+
+    /** As above, with the technologies (TECH-01) ascending by net index, ids distinct. */
+    TemplateSet(List<UnitTemplate> templates, List<JsonObject> flattened, List<TechDef> techs) {
         if (templates.size() != flattened.size()) {
             throw new IllegalArgumentException("one JSON per template");
         }
@@ -83,6 +92,27 @@ public final class TemplateSet {
             leafPaths(json, "", paths, lists);
         }
         this.flattened = List.copyOf(copies);
+        int techIndices = techs.stream().mapToInt(TechDef::netIndex).max().orElse(-1) + 1;
+        this.techPosition = new int[Math.max(0, techIndices)];
+        Arrays.fill(techPosition, -1);
+        JsonObject techJson = new JsonObject();
+        for (int i = 0; i < techs.size(); i++) {
+            TechDef d = techs.get(i);
+            if (d.netIndex() < 0 || (i > 0 && d.netIndex() <= techs.get(i - 1).netIndex())) {
+                throw new IllegalArgumentException(d.id() + " has net index " + d.netIndex() + " at position " + i);
+            }
+            techPosition[d.netIndex()] = i;
+            for (int j = 0; j < i; j++) {
+                if (techs.get(j).id().equals(d.id())) {
+                    throw new IllegalArgumentException(d.id() + " listed twice");
+                }
+            }
+            techJson.add(d.id().value(), d.toJson());
+        }
+        this.techs = List.copyOf(techs);
+        if (!techs.isEmpty()) {
+            canonical.add("$techs", techJson); // no template id can be '$techs': sets without techs keep their hash
+        }
         this.sha = CanonicalJson.sha256(CanonicalJson.write(canonical));
         this.tokens = new ClassTokens(tokenNames);
         this.valuePaths = new ValuePaths(paths);
@@ -166,6 +196,27 @@ public final class TemplateSet {
         return templates;
     }
 
+    /** The technologies (TECH-01) in net-index order. */
+    public List<TechDef> techs() {
+        return techs;
+    }
+
+    public @Nullable TechDef tech(TechId id) {
+        for (TechDef t : techs) {
+            if (t.id().equals(id)) {
+                return t;
+            }
+        }
+        return null;
+    }
+
+    /** The tech holding {@code netIndex}, or null for a retired or unknown index. */
+    public @Nullable TechDef techByIndex(int netIndex) {
+        return netIndex >= 0 && netIndex < techPosition.length && techPosition[netIndex] >= 0
+                ? techs.get(techPosition[netIndex])
+                : null;
+    }
+
     /** A copy of a template's flattened JSON, or null for an unknown id. */
     public @Nullable JsonObject flattened(TemplateId id) {
         UnitTemplate t = byId(id);
@@ -233,7 +284,7 @@ public final class TemplateSet {
     }
 
     /** Every numeric leaf's path, such as {@code UnitMotion/walkSpeed}, and every string leaf's. */
-    private static void leafPaths(JsonObject json, String prefix, List<String> numbers, List<String> strings) {
+    static void leafPaths(JsonObject json, String prefix, List<String> numbers, List<String> strings) {
         Map<String, JsonElement> sorted = new TreeMap<>(json.asMap());
         for (Map.Entry<String, JsonElement> e : sorted.entrySet()) {
             String path = prefix.isEmpty() ? e.getKey() : prefix + "/" + e.getKey();

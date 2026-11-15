@@ -1,10 +1,13 @@
 package dev.strategos.core.sim.ai;
 
+import dev.strategos.core.content.StartSlot;
+import dev.strategos.core.content.TechDef;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.content.ValuePath;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.TemplateId;
+import dev.strategos.core.sim.DefenceLog;
 import dev.strategos.core.sim.MatchBounds;
 import dev.strategos.core.sim.MatchQueries;
 import dev.strategos.core.sim.UnitView;
@@ -17,8 +20,9 @@ import java.util.List;
 import org.jspecify.annotations.Nullable;
 
 /**
- * What a computer player may read (AI-01, 04 §14): its own faction in full, everything else as its faction sees it,
- * which until fog (M6) is everything. Read-only: it wraps the match's queries. Each list it gives spends a unit of the
+ * What a computer player may read (AI-01, AI-18, 04 §14): its own faction in full, everything else as its faction sees
+ * it under fog ({@code VisibilityIndex} for units, a visible footprint cell for buildings), unless the map is revealed
+ * or AI vision (omniscience) is on. Read-only: it wraps the match's queries. Each list it gives spends a unit of the
  * budget per entry, once a think: the list is kept for the rest of it.
  */
 public final class AiView {
@@ -55,6 +59,32 @@ public final class AiView {
         return q.tick();
     }
 
+    /** The match's seed, for a draw that must replay (AI-04's opening). */
+    public long seed() {
+        return q.config().seed();
+    }
+
+    /** The blows on its units and buildings of the last 30 seconds, one a unit (AI-04); each spends a unit. */
+    public List<DefenceLog.Blow> blows() {
+        List<DefenceLog.Blow> out = q.blows(faction);
+        budget.spend(out.size());
+        return out;
+    }
+
+    /** Its buildings destroyed lately, oldest first (AI-04); each spends a unit. */
+    public List<DefenceLog.Loss> losses() {
+        List<DefenceLog.Loss> out = q.losses(faction);
+        budget.spend(out.size());
+        return out;
+    }
+
+    /** The id of the template with net index {@code index}, null for none. */
+    public @Nullable TemplateId templateId(int index) {
+        return index >= 0 && index < q.templates().indexCount() && q.templates().has(index)
+                ? q.templates().byIndex(index).id()
+                : null;
+    }
+
     public TemplateSet templates() {
         return q.templates();
     }
@@ -89,6 +119,11 @@ public final class AiView {
         return q.workers(new FactionSlot(faction));
     }
 
+    /** The map's start slots (AI-18); known under fog. */
+    public List<StartSlot> startPositions() {
+        return q.startPositions();
+    }
+
     /** Its own units. */
     public List<UnitView> units() {
         if (units == null) {
@@ -100,7 +135,9 @@ public final class AiView {
                 read += u == null ? 0 : 1;
                 if (u != null && u.faction().value() == faction) {
                     own.add(u);
-                } else if (u != null && u.faction().value() < q.config().factions()) { // Gaia's animals are no enemy
+                } else if (u != null
+                        && u.faction().value() < q.config().factions() // Gaia's animals are no enemy
+                        && q.visibleUnit(faction, h)) {
                     others.add(u);
                 }
             }
@@ -111,7 +148,7 @@ public final class AiView {
         return units;
     }
 
-    /** The other factions' units. */
+    /** The other factions' units this faction can see (AI-18). */
     public List<UnitView> enemyUnits() {
         units();
         return enemies == null ? List.of() : enemies;
@@ -122,7 +159,7 @@ public final class AiView {
         return buildingsOf(true);
     }
 
-    /** The other factions' buildings. */
+    /** The other factions' buildings this faction can see (AI-18). */
     public List<BuildingView> enemyBuildings() {
         return buildingsOf(false);
     }
@@ -134,11 +171,16 @@ public final class AiView {
         }
         List<BuildingView> out = new ArrayList<>();
         for (BuildingView b : all) {
-            if ((b.faction() == faction) == own) {
+            if ((b.faction() == faction) == own && (own || q.visibleBuilding(faction, b))) {
                 out.add(b);
             }
         }
         return out;
+    }
+
+    /** Whether its faction has explored the cell of ({@code x}, {@code z}): the ground a gather or a site needs (AI-18). */
+    public boolean explored(double x, double z) {
+        return q.explored(faction, x, z);
     }
 
     /** The resource nodes. */
@@ -192,6 +234,52 @@ public final class AiView {
             }
         }
         return true;
+    }
+
+    /** Technology {@code tech}'s cost in resource {@code resource}, thousandths. */
+    public long cost(TechDef tech, String resource) {
+        Double units = tech.cost().get(resource);
+        return units == null ? 0 : Math.max(0, Math.round(units * 1000));
+    }
+
+    /** Whether its stock covers technology {@code tech}'s cost. */
+    public boolean affords(TechDef tech) {
+        for (String r : resources()) {
+            if (stock(r) < cost(tech, r)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** Whether the faction has researched {@code tech}, or an own building holds it in its queue. */
+    public boolean hasOrQueues(TechDef tech) {
+        if (q.researched(new FactionSlot(faction)).contains(tech.id())) {
+            return true;
+        }
+        int entry = dev.strategos.core.shared.QueueEntry.techEntry(tech.netIndex());
+        for (BuildingView b : buildings()) {
+            if (b.queue().contains(entry)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Whether building template {@code building} researches {@code tech}: its {@code Researcher/techs}. */
+    public boolean researches(TemplateId building, TechDef tech) {
+        UnitTemplate t = q.templates().byId(building);
+        ValuePath path = q.templates().tokenPaths().byPath("Researcher/techs");
+        String techs = t == null || path == null ? null : q.templates().text(t.netIndex(), path.id());
+        if (techs == null) {
+            return false;
+        }
+        for (String id : techs.trim().split("\\s+", -1)) {
+            if (id.equals(tech.id().value())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** Whether building template {@code building} trains unit template {@code unit}: its {@code Trainer/units}. */
@@ -298,5 +386,13 @@ public final class AiView {
         return !orders.isEmpty() && orders.get(0).kind() == OrderKind.ATTACK
                 ? orders.get(0).target()
                 : 0;
+    }
+
+    /** Whether unit {@code u}'s current order is to burn building {@code building}. */
+    public boolean burning(UnitView u, int building) {
+        List<OrderQueues.Order> orders = q.orders(u.handle());
+        return !orders.isEmpty()
+                && orders.get(0).kind() == OrderKind.BURN
+                && orders.get(0).target() == building;
     }
 }

@@ -64,7 +64,11 @@ final class AttackSpreadRule implements CommandRule<AttackSpread> {
                 int i = Handle.index(handle);
                 reason = state.identity().faction(i) == targetFaction || targetFaction == state.gaia()
                         ? RejectReason.INVALID_ARGUMENT
-                        : !state.stats().canAttack(i) ? RejectReason.UNSUPPORTED : null;
+                        : !state.stats().canAttack(i)
+                                        || state.stats()
+                                                .restricts(i, state.stats().classes(t))
+                                ? RejectReason.UNSUPPORTED
+                                : null;
                 if (reason == null) {
                     attackerFaction = attackerFaction < 0 ? state.identity().faction(i) : attackerFaction;
                     attackers.add(new Ranked(

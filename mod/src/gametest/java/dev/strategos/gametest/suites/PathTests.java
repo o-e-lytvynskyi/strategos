@@ -9,7 +9,11 @@ import static dev.strategos.gametest.suites.Units.spawn;
 import static dev.strategos.gametest.suites.Units.unit;
 
 import dev.strategos.core.port.JobScratch;
+import dev.strategos.core.protocol.SpawnUnits;
 import dev.strategos.core.shared.Hex64;
+import dev.strategos.core.shared.PlayerSlot;
+import dev.strategos.core.shared.TemplateId;
+import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.CorePorts;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchSnapshot;
@@ -133,6 +137,58 @@ public final class PathTests {
                 check(u.z() == 24.5, "stopped at z " + u.z());
                 long asked = core(rt).queries().pathStats().requests() - state.requestsBefore;
                 check(asked >= 1, "no new request after the wall");
+                h.succeed();
+            }
+        });
+    }
+
+    /**
+     * CMB-09.4: a wall three high stands across the arena at x 24 with two openings, one block wide at z 10 and three wide
+     * at z 30..32. A walker and a ram, both ordered from the west to the east of the narrow opening, both arrive: the
+     * walker through the narrow one, as the ram cannot, since a body of the large class needs a gap of three; the ram goes
+     * round by the wide one, and on every tick it stands in the wall's columns it stands in the wide opening.
+     */
+    @StrategosTest(arena = "arena_flat_48", timeoutTicks = 2_400)
+    public static void rams_pass_only_gaps_that_fit(GameTestHelper h) {
+        MatchRuntime rt = Units.match(h);
+        for (int z = 0; z < 48; z++) {
+            if (z == 10 || (z >= 30 && z <= 32)) {
+                continue;
+            }
+            for (int y = 2; y <= 4; y++) { // relative y 1 is the floor layer
+                h.setBlock(new BlockPos(24, y, z), Blocks.STONE);
+            }
+        }
+        spawn(rt, 10.5, 10.5, 1, 0);
+        rt.submit(
+                PlayerSlot.ADMIN,
+                new SpawnUnits(new TemplateId("strategos:unit/ram"), Units.FACTION, new Vec2d(10.5, 14.5), 1, 0));
+        var state = new Object() {
+            boolean ordered;
+            int wallTicks;
+        };
+        h.onEachTick(() -> {
+            if (core(rt).queries().unitCount() != 2) {
+                return;
+            }
+            int[] all = handles(rt);
+            UnitView walker = unit(rt, all[0]);
+            UnitView ram = unit(rt, all[1]);
+            check(ram.template().value().equals("strategos:unit/ram"), "the second unit is " + ram.template());
+            if (!state.ordered) {
+                state.ordered = true;
+                move(rt, all[0], 40.5, 10.5);
+                move(rt, all[1], 40.5, 12.5);
+                return;
+            }
+            if (ram.x() >= 24 && ram.x() < 25) {
+                state.wallTicks++;
+                check(ram.z() >= 30 && ram.z() < 33, "the ram is in the wall at z " + ram.z());
+            }
+            boolean walkerDone = walker.state() == UnitState.IDLE && walker.x() > 38;
+            boolean ramDone = ram.state() == UnitState.IDLE && ram.x() > 38;
+            if (walkerDone && ramDone) {
+                check(state.wallTicks > 0, "the ram never crossed the wall");
                 h.succeed();
             }
         });

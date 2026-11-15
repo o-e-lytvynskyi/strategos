@@ -25,6 +25,10 @@ class StopRuleTest {
     private final SimHarness h = SimHarness.builder().build();
     private final int unit = h.spawn(new FactionSlot(0), new Vec2d(4, 8), 1, 0.0)[0];
 
+    {
+        h.spawn(new FactionSlot(1), new Vec2d(12, 8), 1, 0.0);
+    } // observer so PLAYER_1 has vision
+
     private CommandResult send(PlayerSlot issuer, Stop stop) {
         int seq = h.submit(issuer, stop);
         h.step();

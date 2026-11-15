@@ -44,6 +44,26 @@ final class SiteFinder {
      */
     static int @Nullable [] find(
             AiView view, AiBudget budget, Base base, TemplateId building, double wantX, double wantZ, long skip) {
+        return find(view, budget, base, building, wantX, wantZ, skip, false);
+    }
+
+    /** How far from its point a remote site (a dropsite by a far grove, QA-12) may lie. */
+    static final int REMOTE = 10;
+
+    /**
+     * As above; {@code remote}: the site lies within {@value #REMOTE} blocks of the wanted point wherever that is, not
+     * within {@value #REACH} of the centre, and the walk that the centre's ground must still reach is not asked of it
+     * (a storehouse by the wood line walls nothing off).
+     */
+    static int @Nullable [] find(
+            AiView view,
+            AiBudget budget,
+            Base base,
+            TemplateId building,
+            double wantX,
+            double wantZ,
+            long skip,
+            boolean remote) {
         UnitTemplate t = view.templates().byId(building);
         Blueprint bp = t == null ? null : view.templates().blueprint(t.netIndex());
         if (bp == null) {
@@ -54,11 +74,14 @@ final class SiteFinder {
         int cx = (int) Math.floor(base.x());
         int cz = (int) Math.floor(base.z());
         Footprint seed = base.centre().footprint();
-        for (int dx = -REACH; dx <= REACH; dx++) {
-            for (int dz = -REACH; dz <= REACH; dz++) {
-                int mx = cx + dx;
-                int mz = cz + dz;
-                if (DetMath.length(dx, dz) > REACH) {
+        int range = remote ? REMOTE : REACH;
+        int ox = remote ? (int) Math.floor(wantX) : cx;
+        int oz = remote ? (int) Math.floor(wantZ) : cz;
+        for (int dx = -range; dx <= range; dx++) {
+            for (int dz = -range; dz <= range; dz++) {
+                int mx = ox + dx;
+                int mz = oz + dz;
+                if (DetMath.length(dx, dz) > range) {
                     continue;
                 }
                 int x = mx - probe.spanX() / 2;
@@ -89,6 +112,9 @@ final class SiteFinder {
                 continue;
             }
             looks++;
+            if (remote) {
+                return new int[] {c[0], c[1]};
+            }
             if (before == null) {
                 before = Reach.walk(view, cx, cz, seed, null);
             }

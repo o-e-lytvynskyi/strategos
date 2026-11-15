@@ -4,7 +4,7 @@
   "Health": { "max": 50 },
   "Behaviour": { "flee": 8, "stance": "passive" },
   "Cost": { "resources": { "food": 60 }, "population": 1, "time": 10 },
-  "Builder": { "rate": 1 },
+  "Builder": { "rate": 1, "buildings": "strategos:building/civic_centre strategos:building/house strategos:building/barracks strategos:building/storehouse strategos:building/farmstead strategos:building/field" },
   "ResourceGatherer": {
     "rates": { "food": { "fruit": 1, "grain": 0.5, "meat": 1 }, "wood": { "tree": 0.6 }, "stone": { "rock": 0.4 }, "iron": { "ore": 0.35 } },
     "capacities": { "food": 10, "wood": 10, "stone": 10, "iron": 10 },

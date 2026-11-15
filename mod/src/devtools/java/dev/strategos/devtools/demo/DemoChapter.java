@@ -23,6 +23,11 @@ public interface DemoChapter {
     /** The milestone that brought it ({@code m1} ..), then the topics it belongs to. */
     List<String> groups();
 
+    /** Whether its match runs under Fog; every chapter's map is revealed but the one about fog. */
+    default boolean fogged() {
+        return false;
+    }
+
     /** Its script: the plot's blocks, the match, the orders, the camera and the lines. */
     void script(DemoScript script);
 }

@@ -66,7 +66,16 @@ final class ArtLookScenario implements Scenario {
                 .create(
                         level,
                         StrategosCommands.spaceAround(level, new BlockPos(0, floor, 0), 128, 128),
-                        new MatchOptions(5L, 2, false, MatchSource.GAMETEST, null, MetricsSink.none(), floor));
+                        new MatchOptions(
+                                5L,
+                                2,
+                                false,
+                                MatchSource.GAMETEST,
+                                null,
+                                MetricsSink.none(),
+                                floor,
+                                null,
+                                ScenarioWorld.REVEALED));
         match = rt;
         rt.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.WORKER, new FactionSlot(0), new Vec2d(60, 82), EACH, 2));
         rt.submit(

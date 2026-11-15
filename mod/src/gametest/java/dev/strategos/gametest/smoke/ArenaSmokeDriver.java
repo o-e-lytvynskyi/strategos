@@ -3,6 +3,7 @@ package dev.strategos.gametest.smoke;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import dev.strategos.core.protocol.SkirmishSetup;
 import dev.strategos.core.shared.MatchId;
 import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.core.sim.world.WritePriority;
@@ -23,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -189,7 +191,28 @@ public final class ArenaSmokeDriver {
         if (ModTickets.MATCH.forceChunk(level, ArenaTickets.owner(c.id()), cChunk.x, cChunk.z, false, false)) {
             return "disposing " + c.id() + " left its tickets";
         }
+        String skirmishes = skirmishSlotsProblem(s);
+        if (skirmishes != null) {
+            return skirmishes;
+        }
         marker.addProperty("slot", 2);
+        return null;
+    }
+
+    /** MATCH-02.2: two skirmishes, two players, take the next two free slots in order (3 and 4 after run 1's). */
+    private static @Nullable String skirmishSlotsProblem(StrategosServer s) {
+        SkirmishSetup setup = SkirmishSetup.DEFAULTS;
+        MatchRuntime one = s.skirmishes()
+                .start(s, setup, UUID.randomUUID(), (map, o) -> s.matches().createInArena(map, o));
+        MatchRuntime two = s.skirmishes()
+                .start(s, setup, UUID.randomUUID(), (map, o) -> s.matches().createInArena(map, o));
+        int x1 = one.space().origin().getX();
+        int x2 = two.space().origin().getX();
+        s.matches().dispose(one.id());
+        s.matches().dispose(two.id());
+        if (x1 != 3 * 2_048 || x2 != 4 * 2_048) {
+            return "the skirmishes took the slots at x " + x1 + " and " + x2 + ", not 6144 and 8192";
+        }
         return null;
     }
 

@@ -39,7 +39,14 @@ public final class DemoCatalog {
             new HorsemenChapter(),
             new FocusSpreadChapter(),
             new GarrisonChapter(),
-            new AttackLinesChapter());
+            new AttackLinesChapter(),
+            new ResearchChapter(),
+            new TownChapter(),
+            new FogChapter(),
+            new RaidChapter(),
+            new SiegeChapter(),
+            new TowerChapter(),
+            new NoticesChapter());
 
     private DemoCatalog() {}
 

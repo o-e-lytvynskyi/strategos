@@ -5,11 +5,14 @@ import com.google.gson.JsonObject;
 import dev.strategos.core.content.CorePaths;
 import dev.strategos.core.content.Derivation;
 import dev.strategos.core.content.RawTemplate;
+import dev.strategos.core.content.TechDef;
+import dev.strategos.core.content.TechEffect;
 import dev.strategos.core.content.TemplateCompiler;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.content.ValuePath;
 import dev.strategos.core.shared.DetMath;
+import dev.strategos.core.shared.TechId;
 import dev.strategos.core.shared.TemplateId;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -36,6 +39,9 @@ public final class BalanceSheet {
 
     /** One number of a concrete template. */
     public record Row(TemplateId template, String path, BigDecimal value, String source, String provenance) {}
+
+    /** One number of a technology (TECH-01): its path as the provenance notes key it, and what it is. */
+    public record TechRow(TechId tech, String path, BigDecimal value, String source, String provenance) {}
 
     /**
      * A {@code strategos:resource_yield} entry (ECO-02): the block or tag, its kind, what it yields and how much, and
@@ -64,6 +70,13 @@ public final class BalanceSheet {
      */
     public record Burn(TemplateId attacker, TemplateId building, BigDecimal perHit, long hits, long tenTicks) {}
 
+    /**
+     * How rams raze a building down (CMB-09): {@code hits} blows of the log's crush, each times 0.9 to the building's
+     * {@code Resistance/crush}, take its hit points; two rams striking together from one tick finish in {@code
+     * twoTicks}: the wind-up, then a period for each further round of two.
+     */
+    public record Raze(TemplateId attacker, TemplateId building, BigDecimal perHit, long hits, long twoTicks) {}
+
     /** The provenance key of the resource yields: notes by entry key. */
     public static final String YIELDS = "resource_yield";
 
@@ -71,6 +84,7 @@ public final class BalanceSheet {
     public static final String CORE = "core";
 
     private final List<Row> rows = new ArrayList<>();
+    private final List<TechRow> techRows = new ArrayList<>();
     private final List<Derivation> overrides = new ArrayList<>();
     private final List<Derivation> derived = new ArrayList<>();
     private final List<Target> targets;
@@ -79,6 +93,7 @@ public final class BalanceSheet {
     private final Map<String, List<String>> gatherers = new TreeMap<>();
     private final List<Load> loads = new ArrayList<>();
     private final List<Burn> burns = new ArrayList<>();
+    private final List<Raze> razes = new ArrayList<>();
     private final Map<String, List<String>> spenders = new TreeMap<>();
     private final List<String> problems = new ArrayList<>();
 
@@ -163,6 +178,7 @@ public final class BalanceSheet {
             }
         }
         sheet.burns(result.set(), concrete);
+        sheet.razes(result.set(), concrete);
         for (Yield y : yields) {
             String note =
                     provenance.getOrDefault(YIELDS, Collections.emptyMap()).get(y.key());
@@ -172,6 +188,21 @@ public final class BalanceSheet {
             }
             sheet.yields.add(y);
             sheet.yieldNotes.add(note == null ? "" : note);
+        }
+        List<TechDef> techs = new ArrayList<>(result.set().techs());
+        techs.sort((a, b) -> a.id().value().compareTo(b.id().value()));
+        for (TechDef tech : techs) { // a tech's numbers need notes, keyed by its id
+            for (TechRow row : techNumbers(tech)) {
+                String note = provenance
+                        .getOrDefault(tech.id().value(), Collections.emptyMap())
+                        .get(row.path());
+                used.computeIfAbsent(tech.id().value(), a -> new TreeSet<>()).add(row.path());
+                if (note == null || note.isBlank()) {
+                    sheet.problems.add("tech " + tech.id() + " " + row.path() + ": no provenance note");
+                }
+                sheet.techRows.add(
+                        new TechRow(row.tech(), row.path(), row.value(), row.source(), note == null ? "" : note));
+            }
         }
         provenance.forEach((template, notes) -> notes.keySet().forEach(key -> {
             if (!used.getOrDefault(template, new TreeSet<>()).contains(key)) {
@@ -186,6 +217,48 @@ public final class BalanceSheet {
             }
         });
         return sheet;
+    }
+
+    /**
+     * A tech's numbers, in the order of its file: {@code cost/<resource>}, {@code time}, the building counts of {@code
+     * requires} at their JSON pointers, and {@code effects/<n>/value}; the notes are filled in by the caller.
+     */
+    private static List<TechRow> techNumbers(TechDef tech) {
+        List<TechRow> rows = new ArrayList<>();
+        new TreeMap<>(tech.cost())
+                .forEach((r, amount) ->
+                        rows.add(new TechRow(tech.id(), "cost/" + r, exact(amount), "cost of " + tech.id(), "")));
+        rows.add(new TechRow(tech.id(), "time", exact(tech.time()), "time in seconds", ""));
+        tech.requires()
+                .buildingCounts(
+                        "requires",
+                        (b, pointer) -> rows.add(new TechRow(
+                                tech.id(),
+                                pointer,
+                                BigDecimal.valueOf(b.count()),
+                                "buildings of " + b.filter() + " needed",
+                                "")));
+        for (int i = 0; i < tech.effects().size(); i++) {
+            TechEffect e = tech.effects().get(i);
+            if (e.op() != TechEffect.Op.TOKENS) {
+                rows.add(new TechRow(
+                        tech.id(),
+                        "effects/" + i + "/value",
+                        exact(e.value()),
+                        e.op().name().toLowerCase(java.util.Locale.ROOT) + " " + e.path()
+                                + (e.filter().isEmpty() ? "" : " for " + e.filter()),
+                        ""));
+            }
+        }
+        return rows;
+    }
+
+    private static BigDecimal exact(double v) {
+        return BigDecimal.valueOf(v).stripTrailingZeros();
+    }
+
+    public List<TechRow> techRows() {
+        return List.copyOf(techRows);
     }
 
     public List<Row> rows() {
@@ -229,6 +302,53 @@ public final class BalanceSheet {
                 long ticks = (long) set.value(a.netIndex(), prepare.id())
                         + (rounds - 1) * (long) set.value(a.netIndex(), repeat.id());
                 burns.add(new Burn(
+                        a.id(), b.id(), BigDecimal.valueOf(dealt).setScale(3, RoundingMode.HALF_UP), hits, ticks));
+            }
+        }
+    }
+
+    /** How long two rams take to raze each building they may strike, by attacker and building. */
+    public List<Raze> razes() {
+        return List.copyOf(razes);
+    }
+
+    /** Every unit with a log and no torch against every building with hit points whose classes it may strike. */
+    private void razes(TemplateSet set, List<UnitTemplate> templates) {
+        ValuePath crush = set.valuePaths().byPath(CorePaths.MELEE_CRUSH);
+        ValuePath fire = set.valuePaths().byPath("Attack/Structure/fire");
+        ValuePath prepare = set.valuePaths().byPath(CorePaths.MELEE_PREPARE);
+        ValuePath repeat = set.valuePaths().byPath(CorePaths.MELEE_REPEAT);
+        ValuePath resist = set.valuePaths().byPath(CorePaths.RESIST_CRUSH);
+        ValuePath health = set.valuePaths().byPath(CorePaths.HEALTH);
+        ValuePath restricted = set.tokenPaths().byPath(CorePaths.MELEE_RESTRICTED);
+        if (crush == null || prepare == null || repeat == null || health == null || restricted == null) {
+            return;
+        }
+        for (UnitTemplate a : templates) {
+            double blow = set.value(a.netIndex(), crush.id());
+            double torch = fire == null ? 0 : set.value(a.netIndex(), fire.id());
+            String bans = set.text(a.netIndex(), restricted.id());
+            if (a.isBuilding() || !(blow > 0) || torch > 0 || bans == null) {
+                continue;
+            }
+            List<String> banned = List.of(bans.trim().split("\\s+"));
+            for (UnitTemplate b : templates) {
+                double hp = set.value(b.netIndex(), health.id());
+                if (!b.isBuilding() || !(hp > 0) || b.classes().stream().anyMatch(banned::contains)) {
+                    continue;
+                }
+                double level = resist == null ? 0 : set.value(b.netIndex(), resist.id());
+                double dealt = (float) blow * DetMath.pow(0.9, Double.isFinite(level) ? level : 0);
+                long hits = 0;
+                double taken = 0;
+                while (taken < hp) { // as the core adds blows up
+                    taken += dealt;
+                    hits++;
+                }
+                long rounds = (hits + 1) / 2;
+                long ticks = (long) set.value(a.netIndex(), prepare.id())
+                        + (rounds - 1) * (long) set.value(a.netIndex(), repeat.id());
+                razes.add(new Raze(
                         a.id(), b.id(), BigDecimal.valueOf(dealt).setScale(3, RoundingMode.HALF_UP), hits, ticks));
             }
         }
@@ -310,6 +430,24 @@ public final class BalanceSheet {
             if (!r.template().equals(current)) {
                 current = r.template();
                 sb.append("\n### ").append(current.value()).append("\n\n");
+                sb.append("| Value | Amount | Source | Provenance |\n|---|---|---|---|\n");
+            }
+            sb.append("| ")
+                    .append(cell(r.path()))
+                    .append(" | ")
+                    .append(plain(r.value()))
+                    .append(" | ")
+                    .append(cell(r.source()))
+                    .append(" | ")
+                    .append(cell(r.provenance()))
+                    .append(" |\n");
+        }
+        sb.append("\n## Technologies\n");
+        TechId currentTech = null;
+        for (TechRow r : techRows) {
+            if (!r.tech().equals(currentTech)) {
+                currentTech = r.tech();
+                sb.append("\n### ").append(currentTech.value()).append("\n\n");
                 sb.append("| Value | Amount | Source | Provenance |\n|---|---|---|---|\n");
             }
             sb.append("| ")
@@ -428,6 +566,27 @@ public final class BalanceSheet {
                         .append(" |\n");
             }
         }
+        sb.append("\n## Razing down\n\n");
+        if (razes.isEmpty()) {
+            sb.append("No template carries a log yet.\n");
+        } else {
+            sb.append("A log's crush times 0.9 to the building's crush resistance a blow; two rams striking together"
+                    + " from one tick take the wind-up and a period for each further round of two (CMB-09).\n\n");
+            sb.append("| Attacker | Building | Crush a blow | Blows | Two rams in |\n|---|---|---|---|---|\n");
+            for (Raze r : razes) {
+                sb.append("| ")
+                        .append(r.attacker().value())
+                        .append(" | ")
+                        .append(r.building().value())
+                        .append(" | ")
+                        .append(plain(r.perHit()))
+                        .append(" | ")
+                        .append(r.hits())
+                        .append(" | ")
+                        .append(seconds(r.twoTicks()))
+                        .append(" |\n");
+            }
+        }
         sb.append("\n## Cancelling and demolishing\n\n");
         sb.append(
                 "A foundation or a site cancelled gives back its cost but for the share built, cost × (1000 − progress) ÷"
@@ -463,6 +622,18 @@ public final class BalanceSheet {
         StringBuilder sb = new StringBuilder("template,path,value,source,provenance\n");
         for (Row r : rows) {
             sb.append(r.template().value())
+                    .append(',')
+                    .append(r.path())
+                    .append(',')
+                    .append(plain(r.value()))
+                    .append(',')
+                    .append(quote(r.source()))
+                    .append(',')
+                    .append(quote(r.provenance()))
+                    .append('\n');
+        }
+        for (TechRow r : techRows) {
+            sb.append(r.tech().value())
                     .append(',')
                     .append(r.path())
                     .append(',')

@@ -65,6 +65,23 @@ public final class ModEntityTypes {
                     .setShouldReceiveVelocityUpdates(false)
                     .build("strategos:unit_mount"));
 
+    /**
+     * The siege units' bodies (CMB-09): the humanoid's settings at a ram's 2 x 2, tracked a chunk farther (12) so a long
+     * frame never pops in at the edge; the renderer draws a ram from cubes of its own, and the entity's culling box is
+     * wider than its hit box for the log that reaches out of it.
+     */
+    public static final DeferredHolder<EntityType<?>, EntityType<UnitEntity>> UNIT_LARGE = ENTITY_TYPES.register(
+            "unit_large",
+            () -> EntityType.Builder.<UnitEntity>of(UnitEntity::new, MobCategory.MISC)
+                    .sized(2.0F, 2.0F)
+                    .noSummon()
+                    .noSave()
+                    .fireImmune()
+                    .clientTrackingRange(12)
+                    .updateInterval(3)
+                    .setShouldReceiveVelocityUpdates(false)
+                    .build("strategos:unit_large"));
+
     private ModEntityTypes() {}
 
     /** The body type template {@code netIndex} names in {@code Body/entityType}; a humanoid's by default. */
@@ -73,6 +90,9 @@ public final class ModEntityTypes {
         String type = path == null || !templates.has(netIndex) ? null : templates.text(netIndex, path.id());
         if ("strategos:unit_mount".equals(type)) {
             return UNIT_MOUNT.get();
+        }
+        if ("strategos:unit_large".equals(type)) {
+            return UNIT_LARGE.get();
         }
         return "strategos:unit_fauna".equals(type) ? UNIT_FAUNA.get() : UNIT_HUMANOID.get();
     }
@@ -87,5 +107,6 @@ public final class ModEntityTypes {
         event.put(UNIT_HUMANOID.get(), LivingEntity.createLivingAttributes().build());
         event.put(UNIT_FAUNA.get(), LivingEntity.createLivingAttributes().build());
         event.put(UNIT_MOUNT.get(), LivingEntity.createLivingAttributes().build());
+        event.put(UNIT_LARGE.get(), LivingEntity.createLivingAttributes().build());
     }
 }

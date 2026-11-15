@@ -134,3 +134,20 @@ Every row of `core/build/reports/jmh/result.json` names its `"jvm"` by absolute 
 directory included. A row copied into `perf/baseline-*.json` must have it rewritten to
 `~/.gradle/…` before the commit (security.md §4); `grep -rn '/Users/\|/home/' perf/` is the check.
 M5 T3c.1 pushed one such row (287bf54) and fixed it in the next commit.
+
+## Two worktrees, one smoke port
+
+`runServerSmoke` (in `verify`) starts a dedicated server on a fixed port, 25599. Two `verify` runs
+in two worktrees of the same machine collide there: the later one fails `FAILED TO BIND TO PORT`,
+which is no fault of its change. Run the gate again when the other has finished (M6, 2026-11-14,
+two workers side by side); never treat it as a failure of the code under test.
+
+
+### A guard that ends a run's process finds it by the run's name
+
+ModDevGradle starts a run's JVM with its arguments in @-files, `build/moddev/<run>RunProgramArgs.txt` and
+`<run>RunVmArgs.txt`, so the process's command line names the run, never `--gameDir` or other program
+arguments. A guard that ends the client (`ProcessHandle.current().descendants()`) must match
+`commandLine()` on the run's name (`clientSmokeJar`); matching the game directory finds nothing and the task
+waits for its timeout (M6 T28). Read `project.version` and the like into a local at configuration: a
+`doLast` that touches `project` fails the build under the configuration cache.

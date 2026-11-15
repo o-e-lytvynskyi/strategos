@@ -3,8 +3,7 @@ package dev.strategos.core.content;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
-import dev.strategos.core.shared.Stance;
+import dev.strategos.core.shared.TechId;
 import dev.strategos.core.shared.TemplateId;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -37,7 +36,17 @@ public final class TemplateCompiler {
             Map<TemplateId, JsonObject> flattened,
             List<TemplateProblem> problems,
             TemplateIdTable table,
-            List<Derivation> derivations) {
+            List<Derivation> derivations,
+            TechIdTable techTable) {
+        public Result(
+                TemplateSet set,
+                Map<TemplateId, JsonObject> flattened,
+                List<TemplateProblem> problems,
+                TemplateIdTable table,
+                List<Derivation> derivations) {
+            this(set, flattened, problems, table, derivations, TechIdTable.EMPTY);
+        }
+
         public boolean ok() {
             return problems.stream().noneMatch(p -> p.severity() == TemplateProblem.Severity.ERROR);
         }
@@ -45,6 +54,14 @@ public final class TemplateCompiler {
 
     /** A flattened template with its net index: a journal's or a client's copy of a set. */
     public record Flat(TemplateId id, int netIndex, JsonObject json) {}
+
+    /** A technology as a journal's or a client's copy holds it: its net index and its JSON. */
+    public record TechFlat(TechId id, int netIndex, JsonObject json) {
+        /** {@code tech} as a copy holds it. */
+        public static TechFlat of(TechDef tech) {
+            return new TechFlat(tech.id(), tech.netIndex(), tech.toJson());
+        }
+    }
 
     /** Compiles with a fresh id table: net indices in id order. */
     public static Result compile(List<RawTemplate> raws) {
@@ -62,6 +79,19 @@ public final class TemplateCompiler {
      * {@code blueprints} supplies it, and its JSON joins the flattened template under {@code Blueprint} (BLD-01).
      */
     public static Result compile(List<RawTemplate> raws, TemplateIdTable table, Map<String, Blueprint> blueprints) {
+        return compile(raws, List.of(), table, TechIdTable.EMPTY, blueprints);
+    }
+
+    /**
+     * As above, with the technologies (TECH-01): each holds its index in {@code techTable}, a new one is appended (row
+     * 20), and a tech whose {@code requires} or {@code supersedes} names a tech that does not exist is an error.
+     */
+    public static Result compile(
+            List<RawTemplate> raws,
+            List<RawTech> rawTechs,
+            TemplateIdTable table,
+            TechIdTable techTable,
+            Map<String, Blueprint> blueprints) {
         List<TemplateProblem> problems = new ArrayList<>();
         Map<String, RawTemplate> byId = new TreeMap<>();
         for (RawTemplate raw : raws) {
@@ -124,14 +154,44 @@ public final class TemplateCompiler {
         for (int k = 0; k < units.size(); k++) {
             flats.add(new Flat(units.get(k).id(), next.indexOf(units.get(k).id()), unitJson.get(k)));
         }
-        return new Result(set(flats, units), flattened, List.copyOf(problems), next, List.copyOf(derivations));
+        List<TechDef> drafts = new ArrayList<>();
+        Map<String, RawTech> techById = new TreeMap<>();
+        for (RawTech raw : rawTechs) {
+            RawTech previous = techById.put(raw.id().value(), raw);
+            if (previous != null) {
+                problems.add(TemplateProblem.error(
+                        raw.file(), "", "tech " + raw.id() + " is also defined in " + previous.file()));
+            }
+        }
+        for (RawTech raw : techById.values()) {
+            TechDef def = TechDef.fromJson(raw.id(), 0, raw.json(), raw.file(), problems);
+            if (def != null) {
+                drafts.add(def);
+            }
+        }
+        drafts = TechChecks.check(
+                drafts,
+                techById.keySet(),
+                id -> Objects.requireNonNull(techById.get(id.value())).file(),
+                flats,
+                id -> Objects.requireNonNull(byId.get(id.value())).file(),
+                problems);
+        TechIdTable techNext = techTable.with(drafts.stream().map(TechDef::id).toList());
+        List<TechDef> techs = placed(drafts, techNext);
+        return new Result(
+                set(flats, units, techs), flattened, List.copyOf(problems), next, List.copyOf(derivations), techNext);
+    }
+
+    /** A set from flattened templates only; technologies are empty (tests and M5 paths without TECH-01). */
+    public static Result fromFlattened(List<Flat> flats) {
+        return fromFlattened(flats, List.of());
     }
 
     /**
-     * A set from flattened templates at their net indices, decoded as {@link #compile} decodes them: a journal's or a
-     * client's copy. The problems name each template by its id.
+     * A set from flattened templates and technologies at their net indices, decoded as {@link #compile} decodes them: a
+     * journal's or a client's copy, so the set has the sha it had. The problems name each template by its id.
      */
-    public static Result fromFlattened(List<Flat> flats) {
+    public static Result fromFlattened(List<Flat> flats, List<TechFlat> techFlats) {
         List<TemplateProblem> problems = new ArrayList<>();
         List<UnitTemplate> units = new ArrayList<>();
         List<Flat> kept = new ArrayList<>();
@@ -154,11 +214,48 @@ public final class TemplateCompiler {
                     .findFirst()
                     .orElse(new TemplateId("strategos:retired/" + k)));
         }
-        return new Result(set(kept, units), flattened, List.copyOf(problems), new TemplateIdTable(ids), List.of());
+        List<TechDef> drafts = new ArrayList<>();
+        Map<String, TechFlat> declared = new TreeMap<>();
+        for (TechFlat f : techFlats) {
+            declared.put(f.id().value(), f);
+            TechDef def = TechDef.fromJson(f.id(), f.netIndex(), f.json(), f.id().value(), problems);
+            if (def != null) {
+                drafts.add(def);
+            }
+        }
+        drafts = TechChecks.check(drafts, declared.keySet(), id -> id.value(), kept, id -> id.value(), problems);
+        drafts.sort((a, b) -> Integer.compare(a.netIndex(), b.netIndex()));
+        int techTop = drafts.stream().mapToInt(TechDef::netIndex).max().orElse(-1);
+        List<TechId> techIds = new ArrayList<>();
+        for (int k = 0; k <= techTop; k++) {
+            int index = k;
+            techIds.add(drafts.stream()
+                    .filter(d -> d.netIndex() == index)
+                    .map(TechDef::id)
+                    .findFirst()
+                    .orElse(new TechId("strategos:retired/" + k)));
+        }
+        return new Result(
+                set(kept, units, drafts),
+                flattened,
+                List.copyOf(problems),
+                new TemplateIdTable(ids),
+                List.of(),
+                new TechIdTable(techIds));
+    }
+
+    /** The techs at their indices in {@code table}, ascending. */
+    private static List<TechDef> placed(List<TechDef> drafts, TechIdTable table) {
+        List<TechDef> out = new ArrayList<>();
+        for (TechDef d : drafts) {
+            out.add(d.atIndex(table.indexOf(d.id())));
+        }
+        out.sort((a, b) -> Integer.compare(a.netIndex(), b.netIndex()));
+        return out;
     }
 
     /** The decoded units at their flats' net indices, ascending. */
-    private static TemplateSet set(List<Flat> flats, List<UnitTemplate> units) {
+    private static TemplateSet set(List<Flat> flats, List<UnitTemplate> units, List<TechDef> techs) {
         List<Integer> order = new ArrayList<>();
         for (int k = 0; k < flats.size(); k++) {
             order.add(k);
@@ -171,7 +268,7 @@ public final class TemplateCompiler {
             placed.add(units.get(k).atIndex(flats.get(k).netIndex()));
             json.add(flats.get(k).json());
         }
-        return new TemplateSet(placed, json);
+        return new TemplateSet(placed, json, techs);
     }
 
     /** The ids some template lists as a mixin: they are overlays, never compiled on their own. */
@@ -496,185 +593,5 @@ public final class TemplateCompiler {
             return null;
         }
         return UnitTemplate.building(id, netIndex, name, MergeOps.tokens(classes));
-    }
-
-    /** Reads typed fields, recording a problem at the field's pointer for anything missing or of the wrong type. */
-    private record Fields(String file, List<TemplateProblem> problems) {
-        /**
-         * Records an error at each key of a component the core decodes that is not one of its fields: a typo. Other
-         * components pass unchecked: their numbers are value paths, and later cards decode them.
-         */
-        void known(JsonObject object, String pointer, String... fields) {
-            List<String> known = List.of(fields);
-            for (String key : new TreeSet<>(object.keySet())) {
-                if (!known.contains(key)) {
-                    problems.add(TemplateProblem.error(
-                            file, pointer + "/" + key, "unknown key '" + key + "'; known here: " + known));
-                }
-            }
-        }
-
-        @Nullable JsonObject object(JsonObject parent, String pointer, String key, boolean required) {
-            JsonElement e = parent.get(key);
-            if (e == null) {
-                if (required) {
-                    problems.add(TemplateProblem.error(file, pointer + "/" + key, "missing component " + key));
-                }
-                return null;
-            }
-            if (!e.isJsonObject()) {
-                problems.add(TemplateProblem.error(file, pointer + "/" + key, "expected an object"));
-                return null;
-            }
-            return e.getAsJsonObject();
-        }
-
-        String string(JsonObject parent, String pointer, String key, @Nullable String fallback) {
-            JsonElement e = parent.get(key);
-            if (e == null) {
-                if (fallback == null) {
-                    problems.add(TemplateProblem.error(file, pointer + "/" + key, "missing " + key));
-                    return "";
-                }
-                return fallback;
-            }
-            if (!e.isJsonPrimitive() || !e.getAsJsonPrimitive().isString()) {
-                problems.add(TemplateProblem.error(file, pointer + "/" + key, "expected a string, got " + e));
-                return "";
-            }
-            return e.getAsString();
-        }
-
-        double positive(JsonObject parent, String pointer, String key, @Nullable Double fallback) {
-            JsonElement e = parent.get(key);
-            if (e == null) {
-                if (fallback == null) {
-                    problems.add(TemplateProblem.error(file, pointer + "/" + key, "missing " + key));
-                    return 0;
-                }
-                return fallback;
-            }
-            if (!(e instanceof JsonPrimitive p) || !p.isNumber()) {
-                problems.add(TemplateProblem.error(file, pointer + "/" + key, "expected a number, got " + e));
-                return 0;
-            }
-            double v = p.getAsDouble();
-            if (!(v > 0) || !Double.isFinite(v)) {
-                problems.add(TemplateProblem.error(file, pointer + "/" + key, "expected a positive number, got " + e));
-                return 0;
-            }
-            return v;
-        }
-
-        /** An attack's preferred classes, if it has any: a string of class tokens (CMB-05). */
-        void preferred(JsonObject attack, String pointer) {
-            if (attack.has("preferred")) {
-                string(attack, pointer, "preferred", "");
-            }
-        }
-
-        /**
-         * A building's town arrows (CMB-07), if it has any: known keys, each number within its range, the counts whole,
-         * and arrows that can fly (a pierce, a range and a period).
-         */
-        void buildingAttack(JsonObject building) {
-            JsonObject attack = object(building, "", "Attack", false);
-            JsonObject arrows = attack == null ? null : object(attack, "/Attack", "Building", false);
-            if (arrows == null) return;
-            known(
-                    arrows,
-                    "/Attack/Building",
-                    "arrows",
-                    "perGarrisoned",
-                    "interval",
-                    "pierce",
-                    "range",
-                    "speed",
-                    "spread",
-                    "preferred");
-            preferred(arrows, "/Attack/Building");
-            for (String path : CorePaths.buildingAttack()) {
-                rangedNumber(arrows, path);
-            }
-            for (String path : List.of(
-                    CorePaths.BUILDING_ARROWS, CorePaths.BUILDING_PER_GARRISONED, CorePaths.BUILDING_INTERVAL)) {
-                String key = path.substring(path.lastIndexOf('/') + 1);
-                if (arrows.get(key) instanceof JsonPrimitive p && p.isNumber() && p.getAsDouble() % 1 != 0) {
-                    problems.add(TemplateProblem.error(file, "/" + path, "expected a whole number, got " + p));
-                }
-            }
-            if (arrows.has("arrows")
-                    && arrows.get("arrows") instanceof JsonPrimitive n
-                    && n.isNumber()
-                    && n.getAsDouble() > 0) {
-                for (String path : List.of(CorePaths.BUILDING_PIERCE, CorePaths.BUILDING_RANGE)) {
-                    String key = path.substring(path.lastIndexOf('/') + 1);
-                    if (!(arrows.get(key) instanceof JsonPrimitive p) || !p.isNumber() || !(p.getAsDouble() > 0)) {
-                        problems.add(TemplateProblem.error(file, "/" + path, "arrows need a positive " + key));
-                    }
-                }
-                if (!arrows.has("interval")) {
-                    problems.add(
-                            TemplateProblem.error(file, "/" + CorePaths.BUILDING_INTERVAL, "arrows need an interval"));
-                }
-            }
-        }
-
-        /** A building's garrison (BLD-16), if it has one: known keys, a whole capacity of at least 1 and class tokens. */
-        void garrisonHolder(JsonObject building) {
-            JsonObject holder = object(building, "", "GarrisonHolder", false);
-            if (holder == null) return;
-            known(holder, "/GarrisonHolder", "capacity", "classes");
-            rangedNumber(holder, CorePaths.GARRISON_CAPACITY);
-            if (!(holder.get("capacity") instanceof JsonPrimitive n)
-                    || !n.isNumber()
-                    || n.getAsDouble() < 1
-                    || n.getAsDouble() % 1 != 0) {
-                problems.add(TemplateProblem.error(
-                        file, "/" + CorePaths.GARRISON_CAPACITY, "a garrison needs a whole capacity of at least 1"));
-            }
-            if (!(holder.get("classes") instanceof JsonPrimitive c)
-                    || !c.isString()
-                    || c.getAsString().isBlank()) {
-                problems.add(TemplateProblem.error(
-                        file, "/" + CorePaths.GARRISON_CLASSES, "a garrison needs the class tokens it admits"));
-            }
-        }
-
-        /** A stance by name, or by the code of one (CMB-05). */
-        void stance(JsonObject behaviour) {
-            JsonElement e = behaviour.get("stance");
-            if (e == null) return;
-            String pointer = "/Behaviour/stance";
-            if (e instanceof JsonPrimitive p && p.isString()) {
-                if (Stance.byId(p.getAsString()) == null) {
-                    problems.add(TemplateProblem.error(
-                            file,
-                            pointer,
-                            "unknown stance '" + p.getAsString()
-                                    + "'; expected violent, aggressive, defensive, stand_ground or passive"));
-                }
-            } else if (!(e instanceof JsonPrimitive n
-                    && n.isNumber()
-                    && Stance.of(n.getAsInt()) != null
-                    && n.getAsDouble() == n.getAsInt())) {
-                problems.add(TemplateProblem.error(file, pointer, "expected a stance name, got " + e));
-            }
-        }
-
-        void rangedNumber(JsonObject ranged, String path) {
-            String key = path.substring(path.lastIndexOf('/') + 1);
-            JsonElement e = ranged.get(key);
-            if (e == null) return;
-            String pointer = "/" + path.substring(0, path.lastIndexOf('/') + 1) + key;
-            if (!(e instanceof JsonPrimitive p) || !p.isNumber()) {
-                problems.add(TemplateProblem.error(file, pointer, "expected a number, got " + e));
-                return;
-            }
-            double value = p.getAsDouble();
-            if (!Double.isFinite(value) || value < CorePaths.min(path) || value > CorePaths.max(path)) {
-                problems.add(TemplateProblem.error(file, pointer, "number outside its allowed range: " + e));
-            }
-        }
     }
 }

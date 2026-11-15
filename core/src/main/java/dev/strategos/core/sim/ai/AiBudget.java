@@ -25,6 +25,11 @@ public final class AiBudget {
         return true;
     }
 
+    /** Spends what is left: the think ends where it is (a level's commands per think, AI-05). */
+    public void exhaust() {
+        spent = cap;
+    }
+
     public boolean exhausted() {
         return spent >= cap;
     }

@@ -24,6 +24,7 @@ final class SoakCosts {
     private final long saveNanos;
     private final EconomyTimes.Stats economy;
     private final @Nullable Combat combat;
+    private final long[] trackers;
 
     /**
      * PERF-08: per sampled tick in nanoseconds, the units' enemy searches (targeting), the centres' volleys, the shot
@@ -52,7 +53,8 @@ final class SoakCosts {
             int buildings,
             long saveNanos,
             EconomyTimes.Stats economy,
-            @Nullable Combat combat) {
+            @Nullable Combat combat,
+            long[] trackers) {
         this.writer = writer;
         this.fx = fx;
         this.adapter = adapter;
@@ -66,6 +68,7 @@ final class SoakCosts {
         this.saveNanos = saveNanos;
         this.economy = economy;
         this.combat = combat;
+        this.trackers = trackers;
     }
 
     long[] writer() {
@@ -122,5 +125,13 @@ final class SoakCosts {
     /** PERF-08: the combat systems' times; null for the other scenes. */
     @Nullable Combat combat() {
         return combat;
+    }
+
+    /**
+     * PERF-09: the trackers' refresh each sampled tick in nanoseconds, which runs one tick in five; empty for the other
+     * scenes.
+     */
+    long[] trackers() {
+        return trackers;
     }
 }
