@@ -85,8 +85,10 @@ final class NoticesChapter implements DemoChapter {
                 .fast("the research done", 120, st -> watch.researched(Ids.WOOD_1))
                 .pause(3)
                 .say("Under attack: the bell, and the alert's place")
+                .run(st -> st.units(Ids.INFANTRY, 1, 30, 10, 2, 1.5))
+                // the spawn is a command: the raiders exist from the next tick, so the order waits for them
+                .until("the raiders", 10, st -> st.handles(1, Ids.INFANTRY).length >= 2)
                 .run(st -> {
-                    st.units(Ids.INFANTRY, 1, 30, 10, 2, 1.5);
                     int[] w = st.handles(0, Ids.WORKER);
                     if (w.length > 0) { // the raiders go for a worker itself: a point beside the house may be its walls
                         st.admin(Attack.replace(UnitSet.of(st.handles(1, Ids.INFANTRY)), w[0]));

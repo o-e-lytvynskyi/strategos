@@ -212,7 +212,10 @@ public final class DemoStage {
         rt().submit(new PlayerSlot(faction), command);
     }
 
-    /** {@code count} units of {@code template} for {@code faction} at plot (dx, dz). */
+    /**
+     * {@code count} units of {@code template} for {@code faction} at plot (dx, dz): a command, so the units exist from
+     * the next tick, and an order to them waits for a later step.
+     */
     public void units(TemplateId template, int faction, double dx, double dz, int count, double spread) {
         admin(new SpawnUnits(template, new FactionSlot(faction), at(dx, dz), count, spread));
     }
