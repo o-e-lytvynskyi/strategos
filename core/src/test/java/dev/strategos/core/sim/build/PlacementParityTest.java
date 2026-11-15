@@ -90,7 +90,7 @@ class PlacementParityTest {
                         return false;
                     }
                 });
-        PlacementRules.World server = Placing.world(s);
+        PlacementRules.World server = Placing.world(s, 0);
         int compared = 0;
         int refused = 0;
         for (String id :

@@ -20,6 +20,7 @@ import dev.strategos.mod.server.net.payload.TemplateSetPayload;
 import dev.strategos.mod.server.net.payload.UnitDetailPayload;
 import dev.strategos.mod.server.net.payload.UnitHudPayload;
 import dev.strategos.mod.server.net.payload.UnitSummaryPayload;
+import dev.strategos.mod.server.net.payload.VisionDeltaPayload;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -95,6 +96,12 @@ public final class ClientPayloads {
                 MatchJoin join = StrategosClient.match();
                 if (join != null) {
                     StrategosClient.model().accept(p.detail(), join.matchId());
+                }
+            }
+            case VisionDeltaPayload p -> {
+                MatchJoin join = StrategosClient.match();
+                if (join != null) {
+                    StrategosClient.model().acceptVision(p.delta(), join.matchId());
                 }
             }
             default -> LOG.debug("unhandled payload {}", event.payload().type().id());

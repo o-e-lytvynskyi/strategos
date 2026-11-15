@@ -14,7 +14,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * The match invariants every harness checks after every step (QA-02.3): every unit inside the match space; WALKING
  * only with a target; at most {@link #MAX_ORDERS} orders; no WALKING unit without progress toward its target for more
- * than {@link #STUCK_TICKS} ticks; alive units within the unit cap. Later cards add theirs. One instance per harness:
+ * than {@link #STUCK_TICKS} ticks (progress: nearer to the target, or {@link #DETOUR} blocks on from the last place that counted); alive units within the unit cap. Later cards add theirs. One instance per harness:
  * it remembers each walking unit's best distance to its target.
  */
 public final class Invariants {
@@ -34,6 +34,17 @@ public final class Invariants {
     private double[] targetZ = new double[64];
     private double[] best = new double[64];
     private long[] since = new long[64];
+    // and the place it last counted as progress at: a walk round a river is long and, for a while, leads away from its
+    // target in a straight line
+    private double[] anchorX = new double[64];
+    private double[] anchorZ = new double[64];
+
+    /**
+     * How far a walking unit must get from where it last made progress to count as making it again: a walk that goes
+     * round an obstacle moves away from its target, so the distance to it alone would call a long detour stuck (QA-12:
+     * the first skirmish map's river). A unit standing still, or turning on the spot, never gets this far.
+     */
+    public static final double DETOUR = 8;
 
     /** The broken invariants at {@code tick}, one message each; empty when all hold. */
     public List<String> check(MatchQueries q, long tick) {
@@ -90,11 +101,16 @@ public final class Invariants {
             targetZ[i] = target.z();
             best[i] = distance;
             since[i] = tick;
+            anchorX[i] = unit.x();
+            anchorZ[i] = unit.z();
             return null;
         }
-        if (distance < best[i]) {
-            best[i] = distance;
+        double moved = Math.hypot(unit.x() - anchorX[i], unit.z() - anchorZ[i]);
+        if (distance < best[i] || moved >= DETOUR) {
+            best[i] = Math.min(best[i], distance);
             since[i] = tick;
+            anchorX[i] = unit.x();
+            anchorZ[i] = unit.z();
             return null;
         }
         long stuckFor = tick - since[i];
@@ -114,5 +130,7 @@ public final class Invariants {
         targetZ = Arrays.copyOf(targetZ, capacity);
         best = Arrays.copyOf(best, capacity);
         since = Arrays.copyOf(since, capacity);
+        anchorX = Arrays.copyOf(anchorX, capacity);
+        anchorZ = Arrays.copyOf(anchorZ, capacity);
     }
 }

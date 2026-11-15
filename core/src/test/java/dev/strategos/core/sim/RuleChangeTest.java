@@ -31,14 +31,16 @@ class RuleChangeTest {
         h.submit(PlayerSlot.ADMIN, new RuleChange("populationMax", "40"));
         h.submit(PlayerSlot.ADMIN, new RuleChange("victory", "civic_centre"));
         h.submit(PlayerSlot.ADMIN, new RuleChange("revealMap", "true"));
+        h.submit(PlayerSlot.ADMIN, new RuleChange("explored", "true"));
         h.step();
         plain.step();
-        assertThat(h.results().subList(h.results().size() - 3, h.results().size()))
+        assertThat(h.results().subList(h.results().size() - 4, h.results().size()))
                 .extracting(CommandResult::outcome)
                 .containsOnly(CommandOutcome.ACCEPTED);
         MatchState s = KernelAccess.state(h.core());
         assertThat(s.config().rules().economy().populationMax()).isEqualTo(40);
-        assertThat(s.config().rules().play()).isEqualTo(new PlayRules(PlayRules.Victory.CIVIC_CENTRE, true, false));
+        assertThat(s.config().rules().play())
+                .isEqualTo(new PlayRules(PlayRules.Victory.CIVIC_CENTRE, true, true, false));
         assertThat(s.population().cap(0))
                 .as("no housing yet: the cap is the base, under the new maximum")
                 .isZero();
@@ -59,10 +61,8 @@ class RuleChangeTest {
                 .extracting(CommandResult::firstReason)
                 .as("in the tick's canonical order")
                 .containsExactlyInAnyOrder(
-                        RejectReason.NOT_PERMITTED,
-                        RejectReason.INVALID_ARGUMENT,
-                        RejectReason.INVALID_ARGUMENT,
-                        RejectReason.INVALID_ARGUMENT);
+                        RejectReason.NOT_PERMITTED, RejectReason.INVALID_ARGUMENT, RejectReason.INVALID_ARGUMENT, null);
         assertThat(s.config().rules().economy().populationMax()).isEqualTo(40);
+        assertThat(s.config().rules().play().victory()).isEqualTo(PlayRules.Victory.CONQUEST);
     }
 }

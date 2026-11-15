@@ -13,9 +13,9 @@ import java.util.TreeMap;
  * A map package's manifest (04 §3.3, MAP-01): {@code sizeX} x {@code sizeZ} blocks over a band of {@code height}
  * blocks, which an arena slot places from Y {@code minY}; tiles of {@code tileSize} x height x {@code tileSize} blocks
  * in the vanilla structure format, each column storing its blocks from its lowest one that is not {@code baseBlock},
- * the importer filling base blocks below; the start slots and waypoints; and the terrain hash: hex SHA-256 over the
- * {@code palette} index of every voxel ({@link TerrainHash}). The palette lists block states as Minecraft writes them,
- * air included.
+ * the importer filling base blocks below; the start slots and waypoints; the terrain hash: hex SHA-256 over the
+ * {@code palette} index of every voxel ({@link TerrainHash}); and the terrain's jobs, which the map checker verifies
+ * (MAP-02; none before it). The palette lists block states as Minecraft writes them, air included.
  */
 @CoreApi
 public record MapManifest(
@@ -30,7 +30,8 @@ public record MapManifest(
         List<StartSlot> startSlots,
         Map<String, MapWaypoint> waypoints,
         int version,
-        String terrainHash) {
+        String terrainHash,
+        List<TerrainJob> terrainJobs) {
     public static final Codec<MapManifest> CODEC = RecordCodecBuilder.<MapManifest>create(i -> i.group(
                             Codec.STRING.fieldOf("id").forGetter(MapManifest::id),
                             Codec.intRange(1, 4_096).fieldOf("sizeX").forGetter(MapManifest::sizeX),
@@ -47,7 +48,11 @@ public record MapManifest(
                             Codec.intRange(1, Integer.MAX_VALUE)
                                     .fieldOf("version")
                                     .forGetter(MapManifest::version),
-                            Codec.STRING.fieldOf("terrainHash").forGetter(MapManifest::terrainHash))
+                            Codec.STRING.fieldOf("terrainHash").forGetter(MapManifest::terrainHash),
+                            TerrainJob.CODEC
+                                    .listOf()
+                                    .optionalFieldOf("terrainJobs", List.of())
+                                    .forGetter(MapManifest::terrainJobs))
                     .apply(i, MapManifest::new))
             .validate(MapManifest::check);
 
@@ -55,6 +60,37 @@ public record MapManifest(
         palette = List.copyOf(palette);
         startSlots = List.copyOf(startSlots);
         waypoints = Collections.unmodifiableMap(new TreeMap<>(waypoints));
+        terrainJobs = List.copyOf(terrainJobs);
+    }
+
+    /** A manifest without terrain jobs, as every map before MAP-02's has. */
+    public MapManifest(
+            String id,
+            int sizeX,
+            int sizeZ,
+            int minY,
+            int height,
+            String baseBlock,
+            int tileSize,
+            List<String> palette,
+            List<StartSlot> startSlots,
+            Map<String, MapWaypoint> waypoints,
+            int version,
+            String terrainHash) {
+        this(
+                id,
+                sizeX,
+                sizeZ,
+                minY,
+                height,
+                baseBlock,
+                tileSize,
+                palette,
+                startSlots,
+                waypoints,
+                version,
+                terrainHash,
+                List.of());
     }
 
     /** Tiles along X. */

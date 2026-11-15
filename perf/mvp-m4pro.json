@@ -1,0 +1,64 @@
+{
+  "what": "M6's MVP soak on the M4 Pro (PERF-09, M6 spec \u00a72.22, \u00a76): MAP-02 under fog, two Hard AIs, 2 x 150 population and 60 buildings placed at the start, 30 game minutes; the MVP baseline",
+  "date": "2026-11-15",
+  "test": "perftests.mvp_soak",
+  "units": 144,
+  "ticks": 36000,
+  "budgetsNs": {
+    "aP50": 697459,
+    "aP99": 8856624,
+    "bP95": 3302334,
+    "cP95": 7165250,
+    "dP99": 128250,
+    "gSave": 10988208
+  },
+  "eBytesPerSecondPerViewer": [
+    4649,
+    1835
+  ],
+  "perUnitP95Ns": {
+    "a": 6657,
+    "aWithAi": 12357,
+    "b": 11794,
+    "aBase": 7834,
+    "aGrowth": -0.15
+  },
+  "systemsPerTickNs": {
+    "ai": {
+      "p50": 1292,
+      "p95": 1412250,
+      "p99": 2151083,
+      "max": 16218167
+    },
+    "vision": {
+      "p50": 48125,
+      "p95": 81791,
+      "p99": 6484708,
+      "max": 16891708
+    },
+    "trackersRefresh": {
+      "p50": 0,
+      "p95": 30750,
+      "p99": 100625,
+      "max": 283667,
+      "meanPerTick": 5042
+    }
+  },
+  "stress": {
+    "test": "perftests.mvp_stress",
+    "units": 294,
+    "ticks": 6000,
+    "cP95": 11329042,
+    "limitCP95": 50000000,
+    "note": "the full perf batch of 2026-11-15, after the placement-world cache"
+  },
+  "notes": [
+    "units is the live count at the end; the per-unit figures divide by the 280 placed",
+    "C p95 is held to 23 ms / 1.5 (D-18's fastest speed) = 15.3 ms",
+    "vision is the WORLD phase (vision, terrain edits, gear, alerts)",
+    "population falls from 150 a side as the armies fight (spec R8)",
+    "the per-unit A is held without the AI's phase to M5's battle soak (1.139 x M4's base), within 15 %; aWithAi beside it (M6 spec section 11)"
+  ],
+  "unitsPlaced": 280,
+  "foreignCpuMean": 0.0276
+}

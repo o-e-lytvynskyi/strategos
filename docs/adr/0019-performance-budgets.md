@@ -145,6 +145,17 @@ Evidence and rollback: docs/testing/data/M5-T2-recovery-m4pro.json; restore the 
 TerrainEditBench row from commit 5437a1f to reinstate the single-grid comparison. This does not
 close the separate historical main CI investigation or approve a different platform's baseline.
 
+## M6 baseline: the fog's stamping (2026-11-15)
+
+At M6's close `jmhCompare` failed on one benchmark only, `MovementBench.step600`, 22.003 → 36.261 µs/op.
+Bisected on the same machine and hour: M5's T18 24.9, M6's vision fix (90c7b34b) 35.0, the head 36.0. The
+whole difference is solo fog's vision stamping (FOW-01, 24.7 µs with `VisionSystem` stubbed); `VisionBench`
+reads about 11 µs for 300 moving units, inside WORLD's 0.5 ms budget. Every other benchmark stayed within
+15 %. The owner left the choice to the developer's recommendation (PR #55, 2026-11-15, «остальное прими
+решения самые подходящие»): `perf/baseline-m4pro.json` is that close's full run (30 benchmarks, with the
+first scores of `MinimapBench`, `ShroudBench`, `VisionBench`, `NodeDiscoveryBench` and `IdleBench`); metadata
+paths are sanitized. The 15 % limit and every absolute budget are unchanged.
+
 ## Consequences
 
 - Every phase has a target (§4.4 of [04-architecture.md](../04-architecture.md)), and budget

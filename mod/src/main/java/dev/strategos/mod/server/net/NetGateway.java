@@ -10,6 +10,7 @@ import dev.strategos.core.protocol.AttackSpread;
 import dev.strategos.core.protocol.Command;
 import dev.strategos.core.protocol.CommandBatch;
 import dev.strategos.core.protocol.DebugFeedMsg;
+import dev.strategos.core.protocol.FactionLook;
 import dev.strategos.core.protocol.Feedback;
 import dev.strategos.core.protocol.FeedbackMsg;
 import dev.strategos.core.protocol.Follow;
@@ -68,7 +69,8 @@ import org.jspecify.annotations.Nullable;
  * refused batches and senders with no seat are violations, and the 101st in a minute disconnects (spec §6.5); a seated
  * sender's commands carry its slot as issuer and go to its match inside the match's fault barrier, and each result goes
  * back to it as {@code feedback}. Members of a match get its {@code match_state} on every change of its lifecycle and
- * every 5 seconds, which keeps their clients' clock of the match in step (04 §12.2).
+ * every 5 seconds, and when a faction's equipment tiers change (TECH-03), which keeps their clients' clock of the match
+ * in step (04 §12.2).
  */
 public final class NetGateway {
     /** The reason a player hears when it is disconnected for its violations. */
@@ -87,6 +89,7 @@ public final class NetGateway {
     private final FaultBarrier faults;
     private final Map<UUID, List<CustomPacketPayload>> queued = new LinkedHashMap<>();
     private final Map<Integer, MatchLifecycle> lastState = new HashMap<>();
+    private final Map<Integer, List<FactionLook>> lastLooks = new HashMap<>();
     private final NetCounters counters = new NetCounters();
     private final RateLimiter limiter = new RateLimiter();
 
@@ -108,7 +111,8 @@ public final class NetGateway {
                     rt.roster().of(f.faction()).forEach(player -> queue(player, payload));
                 }
             }
-            case Audience.SeesCell c -> toMembers(c.match(), payload); // every member sees every cell until fog (M8)
+            case Audience.SeesCell c ->
+                toMembers(c.match(), payload); // TODO fog-filter: send only to factions that see the cell (FOW-03, M8)
             case Audience.SeesEither
                     e -> // AFTER-M8: deliver to the union of the two cells' viewers once fog of war exists
                 toMembers(e.match(), payload);
@@ -175,6 +179,7 @@ public final class NetGateway {
                         slot,
                         rules)));
         lastState.remove(rt.id().value());
+        lastLooks.remove(rt.id().value());
     }
 
     /** Refuses a payload type the server does not send ({@code spec} null or client-to-server) or an audience it lacks. */
@@ -194,14 +199,22 @@ public final class NetGateway {
     public void flush() {
         int tick = server.getTickCount();
         Map<Integer, MatchLifecycle> now = new HashMap<>();
+        Map<Integer, List<FactionLook>> nowLooks = new HashMap<>();
         for (MatchRuntime rt : matches.get().all()) {
             now.put(rt.id().value(), rt.lifecycle());
-            if (lastState.get(rt.id().value()) != rt.lifecycle() || tick % STATE_EVERY == 0) {
-                send(new Audience.Match(rt.id()), state(rt));
+            MatchCore core = rt.core();
+            List<FactionLook> looks = core == null ? List.of() : core.queries().factionLooks();
+            nowLooks.put(rt.id().value(), looks);
+            if (lastState.get(rt.id().value()) != rt.lifecycle()
+                    || !looks.equals(lastLooks.get(rt.id().value()))
+                    || tick % STATE_EVERY == 0) {
+                send(new Audience.Match(rt.id()), state(rt, looks));
             }
         }
         lastState.clear();
         lastState.putAll(now); // a disposed match is forgotten
+        lastLooks.clear();
+        lastLooks.putAll(nowLooks);
         for (Map.Entry<UUID, List<CustomPacketPayload>> e : queued.entrySet()) {
             ServerPlayer player = server.getPlayerList().getPlayer(e.getKey());
             if (player == null) {
@@ -314,7 +327,7 @@ public final class NetGateway {
         }
     }
 
-    private static MatchStatePayload state(MatchRuntime rt) {
+    private static MatchStatePayload state(MatchRuntime rt, List<FactionLook> looks) {
         MatchStateMsg.Lifecycle lifecycle = switch (rt.lifecycle()) {
             case CREATED -> MatchStateMsg.Lifecycle.CREATED;
             case PREPARING -> MatchStateMsg.Lifecycle.PREPARING;
@@ -325,7 +338,12 @@ public final class NetGateway {
             case FAULTED -> MatchStateMsg.Lifecycle.FAULTED;
             case DISPOSED -> MatchStateMsg.Lifecycle.DISPOSED;
         };
-        return new MatchStatePayload(new MatchStateMsg(rt.id().value(), lifecycle, Math.max(0, rt.tick())));
+        var core = rt.core();
+        var results = lifecycle == MatchStateMsg.Lifecycle.ENDED && core != null
+                ? core.queries().matchResults()
+                : null;
+        return new MatchStatePayload(
+                new MatchStateMsg(rt.id().value(), lifecycle, Math.max(0, rt.tick()), results, looks));
     }
 
     private void toTrackers(Audience.TrackersOf trackers, CustomPacketPayload payload) {

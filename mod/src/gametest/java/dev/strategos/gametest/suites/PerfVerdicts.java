@@ -10,6 +10,7 @@ import dev.strategos.core.testkit.EconomyScene;
 import dev.strategos.core.testkit.ForeignLoad;
 import dev.strategos.core.testkit.ForeignLoad.Assessment;
 import dev.strategos.core.testkit.ForeignLoad.Reading;
+import dev.strategos.core.testkit.MvpScene;
 import dev.strategos.core.testkit.Percentiles;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -49,6 +50,14 @@ final class PerfVerdicts {
 
     static final double M4_B_PER_UNIT = 10_109;
 
+    /**
+     * The battle soak per unit on the M4 Pro ({@code perf/battle-m4pro.json}), the base the MVP soak's A p95 a unit is
+     * held to, within {@link #PER_UNIT_GROWTH} (PERF-09). M5's report gives it as 1.139 x M4's base; the MVP soak holds A
+     * without the AI's phase to it, the AI being M6's own new cost and reported beside it (the branch file's Decisions).
+     */
+    static final double M5_A_PER_UNIT =
+            1.139 * M4_A_PER_UNIT; // M5 spec §11: the battle soak's A per unit, 1.139 x M4's
+
     /** PERF-06.2 and PERF-07.2: a unit-driven bucket's p95 per unit grows at most 15 % over its base's. */
     static final double PER_UNIT_GROWTH = 1.15;
 
@@ -86,6 +95,18 @@ final class PerfVerdicts {
             budgets.add("a_p99", budget("a", "budget A", r.core(), 0.99, scaled(10 * MS), broken, gated("a")));
             budgets.add("b", budget("b", "budget B", b, 0.95, scaled(17 * MS), broken, gated("b")));
             budgets.add("c", budget("c", "budget C", c, 0.95, scaled(23 * MS), broken, gated("c")));
+            if (r.config().scene() instanceof MvpScene.Config) { // PERF-09.2: 23 ms over D-18's fastest speed, 1.5
+                budgets.add(
+                        "c_fastest_speed",
+                        budget(
+                                "c",
+                                "budget C at 1.5x",
+                                c,
+                                0.95,
+                                scaled(Math.round(23 * MS / 1.5)),
+                                broken,
+                                gated("c")));
+            }
             budgets.add("d", budget("d", "budget D", r.paths(), 0.99, scaled(2 * MS), broken, gated("d") && !melee));
             JsonArray viewers = new JsonArray();
             for (long bytes : r.viewerBytes()) {
@@ -136,9 +157,11 @@ final class PerfVerdicts {
         SoakCosts costs = r.costs();
         if (costs != null) {
             json.add(
-                    r.config().scene() instanceof BattleScene.Config
-                            ? "battle"
-                            : r.config().scene() instanceof EconomyScene.Config ? "economy" : "firstLoop",
+                    r.config().scene() instanceof MvpScene.Config
+                            ? "mvp"
+                            : r.config().scene() instanceof BattleScene.Config
+                                    ? "battle"
+                                    : r.config().scene() instanceof EconomyScene.Config ? "economy" : "firstLoop",
                     firstLoop(r, costs, b, broken, !stress && !fast));
         }
         if (melee) {
@@ -213,18 +236,30 @@ final class PerfVerdicts {
         if (gates && gated("g") && costs.saveNanos() > scaled(100 * MS)) {
             broken.add("budget G: the save took " + costs.saveNanos() + " ns, above " + scaled(100 * MS));
         }
+        if (r.config().scene() instanceof MvpScene.Config) {
+            mvp(json, r, costs, b, broken, gates);
+            return json;
+        }
         boolean battle = r.config().scene() instanceof BattleScene.Config; // against M4's economy soak
         boolean m4 = battle || r.config().scene() instanceof EconomyScene.Config;
         double aBase = battle ? M4_A_PER_UNIT : M3_A_PER_UNIT;
         double bBase = battle ? M4_B_PER_UNIT : M3_B_PER_UNIT;
         int units = 2 * r.config().perFaction();
-        double aPerUnit = (double) Percentiles.percentile(r.core(), 0.95) / units;
+        int ai = costs.phaseNames().indexOf("AI");
+        long[] withoutAi = new long[Math.min(r.core().length, costs.phases().length)];
+        for (int i = 0; i < withoutAi.length; i++) { // M6's AI is a new system, reported in systemsPerTick
+            long aiNanos = costs.phases()[i] == null || ai < 0 ? 0 : costs.phases()[i][ai];
+            withoutAi[i] = r.core()[i] - aiNanos;
+        }
+        double aPerUnit = (double) Percentiles.percentile(withoutAi, 0.95) / units;
+        double aWithAiPerUnit = (double) Percentiles.percentile(r.core(), 0.95) / units;
         double bPerUnit = (double) Percentiles.percentile(b, 0.95) / units;
         JsonObject perUnit = new JsonObject();
         perUnit.addProperty("units", units);
         perUnit.addProperty(
                 "base", battle ? "the economy soak, map v3 (M4 T28)" : "the first-loop soak, map v3 (M4 T22)");
         perUnit.addProperty("aP95PerUnitNs", aPerUnit);
+        perUnit.addProperty("aP95PerUnitWithAiNs", aWithAiPerUnit);
         perUnit.addProperty("aBasePerUnitNs", aBase);
         perUnit.addProperty("aGrowth", aPerUnit / aBase);
         perUnit.addProperty("bP95PerUnitNs", bPerUnit);
@@ -244,6 +279,63 @@ final class PerfVerdicts {
             json.add("combat", combat(combat, r.core().length));
         }
         return json;
+    }
+
+    /**
+     * PERF-09: the MVP soak's part of the report, beside the first loop's: the systems M6 adds, a tick's cost in
+     * nanoseconds over the sampled window (the AI's phase; the WORLD phase, which runs the vision first and the
+     * terrain's edits, the gear and the alerts after it; the trackers' refresh, which runs one tick in five), and A's
+     * and B's p95 per unit. A's is held to the M5 battle soak's within 15 % once that base is archived
+     * ({@link #M5_A_PER_UNIT}); until then the comparison is skipped and says so.
+     */
+    private static void mvp(
+            JsonObject json, SoakResult r, SoakCosts costs, long[] b, List<String> broken, boolean gates) {
+        JsonObject systems = new JsonObject();
+        for (String name : List.of("AI", "WORLD")) {
+            int p = costs.phaseNames().indexOf(name);
+            long[] v = new long[costs.phases().length];
+            for (int i = 0; i < v.length; i++) {
+                v[i] = costs.phases()[i] == null || p < 0 ? 0 : costs.phases()[i][p];
+            }
+            systems.add(name.equals("AI") ? "ai" : "vision", spread(v));
+        }
+        JsonObject trackers = spread(costs.trackers());
+        trackers.addProperty(
+                "meanPerTick", Arrays.stream(costs.trackers()).average().orElse(0));
+        systems.add("trackersRefresh", trackers);
+        systems.addProperty(
+                "note",
+                "vision is the WORLD phase (vision, then terrain edits, gear and alerts); the trackers' refresh runs one"
+                        + " tick in five, so read its meanPerTick");
+        json.add("systemsPerTick", systems);
+        int units = 2 * r.config().perFaction();
+        int ai = costs.phaseNames().indexOf("AI");
+        long[] withoutAi = new long[Math.min(r.core().length, costs.phases().length)];
+        for (int i = 0; i < withoutAi.length; i++) { // M6's AI is a new system, reported in systemsPerTick
+            long aiNanos = costs.phases()[i] == null || ai < 0 ? 0 : costs.phases()[i][ai];
+            withoutAi[i] = r.core()[i] - aiNanos;
+        }
+        double aPerUnit = (double) Percentiles.percentile(withoutAi, 0.95) / units;
+        double aWithAiPerUnit = (double) Percentiles.percentile(r.core(), 0.95) / units;
+        double bPerUnit = (double) Percentiles.percentile(b, 0.95) / units;
+        JsonObject perUnit = new JsonObject();
+        perUnit.addProperty("units", units);
+        perUnit.addProperty("aP95PerUnitNs", aPerUnit);
+        perUnit.addProperty("aP95PerUnitWithAiNs", aWithAiPerUnit);
+        perUnit.addProperty("bP95PerUnitNs", bPerUnit);
+        if (Double.isNaN(M5_A_PER_UNIT)) {
+            perUnit.addProperty("comparison", "skipped: no base archived (perf/battle-m4pro.json)");
+        } else {
+            perUnit.addProperty("base", "the battle soak, M5 spec §11 (1.139 x M4's base), A without the AI's phase");
+            perUnit.addProperty("aBasePerUnitNs", M5_A_PER_UNIT);
+            perUnit.addProperty("aGrowth", aPerUnit / M5_A_PER_UNIT);
+            if (gates && gated("a") && aPerUnit > M5_A_PER_UNIT * PER_UNIT_GROWTH * ciFactor()) {
+                broken.add(String.format(
+                        "budget A per unit: p95 %.0f ns a unit, over %.0f (the battle soak's base %.0f + 15 %%)",
+                        aPerUnit, M5_A_PER_UNIT * PER_UNIT_GROWTH, M5_A_PER_UNIT));
+            }
+        }
+        json.add("perUnit", perUnit);
     }
 
     /**

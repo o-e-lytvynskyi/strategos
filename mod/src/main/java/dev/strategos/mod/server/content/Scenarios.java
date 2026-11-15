@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.List;
 import java.util.TreeSet;
+import java.util.function.Function;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import org.jspecify.annotations.Nullable;
@@ -84,8 +85,17 @@ public final class Scenarios {
      */
     public static List<Command> apply(
             MinecraftServer server, MatchRuntime rt, Scenario scenario, List<StartSlot> starts, TemplateSet templates) {
-        List<Command> commands =
-                ScenarioSetup.commands(scenario, starts, templates, profile -> script(server, profile));
+        return apply(rt, scenario, starts, templates, profile -> script(server, profile));
+    }
+
+    /** As {@link #apply(MinecraftServer, MatchRuntime, Scenario, List, TemplateSet)}, the strategies {@code scripts} gives. */
+    public static List<Command> apply(
+            MatchRuntime rt,
+            Scenario scenario,
+            List<StartSlot> starts,
+            TemplateSet templates,
+            Function<String, @Nullable String> scripts) {
+        List<Command> commands = ScenarioSetup.commands(scenario, starts, templates, scripts);
         for (Command c : commands) {
             rt.submit(PlayerSlot.ADMIN, c);
         }

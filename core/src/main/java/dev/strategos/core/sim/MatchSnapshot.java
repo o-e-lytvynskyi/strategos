@@ -48,15 +48,41 @@ public record MatchSnapshot(
             List<AiSlots.Saved> ai,
             long aiWake,
             List<Long> alerts,
+            List<List<String>> progress,
+            List<Long> matchStats,
+            List<Long> vision,
             ShotStore.Snapshot shots,
             List<StanceStore.Saved> stances,
             List<GarrisonStore.Saved> garrisons,
             @Nullable DiplomacyState diplomacy) {
-        // AFTER-M6: preserve diplomacy when composing the outcome/statistics snapshot additions.
-        public static final Play EMPTY =
-                new Play(List.of(), List.of(), 0, List.of(), ShotStore.Snapshot.EMPTY, List.of(), List.of());
+        public static final Play EMPTY = new Play(
+                List.of(),
+                List.of(),
+                0,
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                ShotStore.Snapshot.EMPTY,
+                List.of(),
+                List.of());
 
         /** Compatibility construction before schema 4; the enclosing snapshot supplies explicit identity. */
+        public Play(
+                List<Long> outcome,
+                List<AiSlots.Saved> ai,
+                long aiWake,
+                List<Long> alerts,
+                List<List<String>> progress,
+                List<Long> matchStats,
+                List<Long> vision,
+                ShotStore.Snapshot shots,
+                List<StanceStore.Saved> stances,
+                List<GarrisonStore.Saved> garrisons) {
+            this(outcome, ai, aiWake, alerts, progress, matchStats, vision, shots, stances, garrisons, null);
+        }
+
+        /** A play before M6 introduced research, statistics and vision state. */
         public Play(
                 List<Long> outcome,
                 List<AiSlots.Saved> ai,
@@ -65,11 +91,12 @@ public record MatchSnapshot(
                 ShotStore.Snapshot shots,
                 List<StanceStore.Saved> stances,
                 List<GarrisonStore.Saved> garrisons) {
-            this(outcome, ai, aiWake, alerts, shots, stances, garrisons, null);
+            this(outcome, ai, aiWake, alerts, List.of(), List.of(), List.of(), shots, stances, garrisons, null);
         }
 
         public Play withDiplomacy(DiplomacyState saved) {
-            return new Play(outcome, ai, aiWake, alerts, shots, stances, garrisons, saved);
+            return new Play(
+                    outcome, ai, aiWake, alerts, progress, matchStats, vision, shots, stances, garrisons, saved);
         }
 
         /** A play without garrisons, as before BLD-16 saved them. */
@@ -78,24 +105,113 @@ public record MatchSnapshot(
                 List<AiSlots.Saved> ai,
                 long aiWake,
                 List<Long> alerts,
+                List<List<String>> progress,
+                List<Long> matchStats,
+                List<Long> vision,
                 ShotStore.Snapshot shots,
                 List<StanceStore.Saved> stances) {
-            this(outcome, ai, aiWake, alerts, shots, stances, List.of());
+            this(outcome, ai, aiWake, alerts, progress, matchStats, vision, shots, stances, List.of());
         }
 
         /** A play without stances, as before CMB-05 saved them. */
         public Play(
-                List<Long> outcome, List<AiSlots.Saved> ai, long aiWake, List<Long> alerts, ShotStore.Snapshot shots) {
-            this(outcome, ai, aiWake, alerts, shots, List.of(), List.of());
+                List<Long> outcome,
+                List<AiSlots.Saved> ai,
+                long aiWake,
+                List<Long> alerts,
+                List<List<String>> progress,
+                List<Long> matchStats,
+                List<Long> vision,
+                ShotStore.Snapshot shots) {
+            this(outcome, ai, aiWake, alerts, progress, matchStats, vision, shots, List.of(), List.of());
         }
 
+        /** A play without vision, as before FOW-01 saved it. */
+        public Play(
+                List<Long> outcome,
+                List<AiSlots.Saved> ai,
+                long aiWake,
+                List<Long> alerts,
+                List<List<String>> progress,
+                List<Long> matchStats) {
+            this(
+                    outcome,
+                    ai,
+                    aiWake,
+                    alerts,
+                    progress,
+                    matchStats,
+                    List.of(),
+                    ShotStore.Snapshot.EMPTY,
+                    List.of(),
+                    List.of());
+        }
+
+        /** A play without shots/stances/garrisons, as before combat saves (M5). */
+        public Play(
+                List<Long> outcome,
+                List<AiSlots.Saved> ai,
+                long aiWake,
+                List<Long> alerts,
+                ShotStore.Snapshot shots,
+                List<StanceStore.Saved> stances) {
+            this(outcome, ai, aiWake, alerts, List.of(), List.of(), List.of(), shots, stances, List.of());
+        }
+
+        /** A play without stances or garrisons, as before CMB-05 / BLD-16. */
+        public Play(
+                List<Long> outcome, List<AiSlots.Saved> ai, long aiWake, List<Long> alerts, ShotStore.Snapshot shots) {
+            this(outcome, ai, aiWake, alerts, List.of(), List.of(), List.of(), shots, List.of(), List.of());
+        }
+
+        /** A play with no match statistics, as before M6 saved them. */
+        public Play(
+                List<Long> outcome,
+                List<AiSlots.Saved> ai,
+                long aiWake,
+                List<Long> alerts,
+                List<List<String>> progress) {
+            this(
+                    outcome,
+                    ai,
+                    aiWake,
+                    alerts,
+                    progress,
+                    List.of(),
+                    List.of(),
+                    ShotStore.Snapshot.EMPTY,
+                    List.of(),
+                    List.of());
+        }
+
+        /** A play with nothing researched, as before TECH-01 saved the techs. */
         public Play(List<Long> outcome, List<AiSlots.Saved> ai, long aiWake, List<Long> alerts) {
-            this(outcome, ai, aiWake, alerts, ShotStore.Snapshot.EMPTY, List.of(), List.of());
+            this(
+                    outcome,
+                    ai,
+                    aiWake,
+                    alerts,
+                    List.of(),
+                    List.of(),
+                    List.of(),
+                    ShotStore.Snapshot.EMPTY,
+                    List.of(),
+                    List.of());
         }
 
         /** A play with no live alert, as before MATCH-04 saved them. */
         public Play(List<Long> outcome, List<AiSlots.Saved> ai, long aiWake) {
-            this(outcome, ai, aiWake, List.of(), ShotStore.Snapshot.EMPTY, List.of(), List.of());
+            this(
+                    outcome,
+                    ai,
+                    aiWake,
+                    List.of(),
+                    List.of(),
+                    List.of(),
+                    List.of(),
+                    ShotStore.Snapshot.EMPTY,
+                    List.of(),
+                    List.of());
         }
 
         /** Whether the persisted victory outcome is terminal, even if the registry record is older. */
@@ -109,6 +225,9 @@ public record MatchSnapshot(
             outcome = List.copyOf(outcome);
             ai = List.copyOf(ai);
             alerts = List.copyOf(alerts);
+            progress = progress.stream().<List<String>>map(List::copyOf).toList();
+            matchStats = List.copyOf(matchStats);
+            vision = List.copyOf(vision);
             stances = List.copyOf(stances);
             garrisons = List.copyOf(garrisons);
         }

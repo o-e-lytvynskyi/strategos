@@ -1,5 +1,6 @@
 package dev.strategos.core.sim.stats;
 
+import dev.strategos.core.content.ClassFilter;
 import dev.strategos.core.content.CorePaths;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.ValuePath;
@@ -84,6 +85,7 @@ public final class StatService {
     private int flee;
     private int stance;
     private int meleePreferred;
+    private int meleeRestricted;
     private int rangedPreferred;
     private int[] meleeBonusPaths = new int[0];
     private String[] meleeBonusTokens = new String[0];
@@ -193,6 +195,7 @@ public final class StatService {
         this.flee = path(CorePaths.FLEE);
         this.stance = path(CorePaths.STANCE);
         this.meleePreferred = tokenPath(CorePaths.MELEE_PREFERRED);
+        this.meleeRestricted = tokenPath(CorePaths.MELEE_RESTRICTED);
         this.rangedPreferred = tokenPath(CorePaths.RANGED_PREFERRED);
         List<ValuePath> bonuses = new ArrayList<>();
         for (ValuePath p : set.valuePaths().all()) {
@@ -382,6 +385,23 @@ public final class StatService {
         return tokens == null ? List.of() : tokens;
     }
 
+    /**
+     * Whether unit {@code index}'s melee attack must leave alone a target with {@code classes}: it holds one of its
+     * {@code Attack/Melee/restrictedClasses} (CMB-09).
+     */
+    public boolean restricts(int index, List<String> classes) {
+        List<String> tokens = meleeRestricted < 0 ? null : tokens(index, meleeRestricted);
+        if (tokens == null) {
+            return false;
+        }
+        for (String token : tokens) {
+            if (classes.contains(token)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /** Whether unit {@code index} gathers: its classes hold {@value #GATHERER} (D-02, UNIT-04). */
     public boolean canGather(int index) {
         return classes(index).contains(GATHERER);
@@ -406,6 +426,11 @@ public final class StatService {
     /** Unit {@code index}'s token list at token path {@code path}, or null when its template has none. */
     public @Nullable List<String> tokens(int index, int path) {
         return block(index).tokens.get(path);
+    }
+
+    /** A number that moves whenever {@code faction}'s modifiers or the template set change; a reader caches against it. */
+    public long version(int faction) {
+        return versions[faction];
     }
 
     /** The value a unit of {@code template} in {@code faction} without modifiers of its own has at {@code path}. */

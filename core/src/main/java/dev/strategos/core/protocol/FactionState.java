@@ -21,15 +21,52 @@ public record FactionState(
         int populationUsed,
         int populationCap,
         int idleWorkers,
-        List<Integer> workers) {
+        List<Integer> workers,
+        List<Integer> researched,
+        int phase) {
     /** The most resources a match has (EconomyRules.MAX). */
     public static final int MAX_RESOURCES = 16;
+
+    /** The most techs a faction can have researched on the wire (UI-13). */
+    public static final int MAX_RESEARCHED = 256;
+
+    /** A state without research: no tech researched, phase 0 (Village). */
+    public FactionState(
+            int matchId,
+            int faction,
+            long tick,
+            List<Long> stock,
+            List<Long> gathered,
+            List<Long> spent,
+            int populationUsed,
+            int populationCap,
+            int idleWorkers,
+            List<Integer> workers) {
+        this(
+                matchId,
+                faction,
+                tick,
+                stock,
+                gathered,
+                spent,
+                populationUsed,
+                populationCap,
+                idleWorkers,
+                workers,
+                List.of(),
+                0);
+    }
 
     public FactionState {
         stock = List.copyOf(stock);
         gathered = List.copyOf(gathered);
         spent = List.copyOf(spent);
         workers = List.copyOf(workers);
+        researched = List.copyOf(researched);
+        if (researched.size() > MAX_RESEARCHED || phase < 0 || phase > 255) {
+            throw new IllegalArgumentException(
+                    "a faction state of " + researched.size() + " researched techs, phase " + phase);
+        }
         if (stock.size() > MAX_RESOURCES
                 || gathered.size() != stock.size()
                 || spent.size() != stock.size()
@@ -49,7 +86,9 @@ public record FactionState(
                 && populationUsed == other.populationUsed
                 && populationCap == other.populationCap
                 && idleWorkers == other.idleWorkers
-                && workers.equals(other.workers);
+                && workers.equals(other.workers)
+                && researched.equals(other.researched)
+                && phase == other.phase;
     }
 
     public static final WireCodec<FactionState> WIRE = new WireCodec<>() {
@@ -64,6 +103,11 @@ public record FactionState(
                         .writeVarInt(s.workers().get(r));
             }
             out.writeVarInt(s.populationUsed()).writeVarInt(s.populationCap()).writeVarInt(s.idleWorkers());
+            out.writeVarInt(s.researched().size());
+            for (int tech : s.researched()) {
+                out.writeVarInt(tech);
+            }
+            out.writeByte(s.phase());
         }
 
         @Override
@@ -82,22 +126,22 @@ public record FactionState(
                 spent.add(in.readVarLong());
                 workers.add(in.readVarInt());
             }
+            int used = in.readVarInt();
+            int cap = in.readVarInt();
+            int idle = in.readVarInt();
+            int t = in.readVarInt(MAX_RESEARCHED);
+            List<Integer> researched = new ArrayList<>(t);
+            for (int k = 0; k < t; k++) {
+                researched.add(in.readVarInt());
+            }
+            int phase = in.readUnsignedByte();
             return new FactionState(
-                    matchId,
-                    faction,
-                    tick,
-                    stock,
-                    gathered,
-                    spent,
-                    in.readVarInt(),
-                    in.readVarInt(),
-                    in.readVarInt(),
-                    workers);
+                    matchId, faction, tick, stock, gathered, spent, used, cap, idle, workers, researched, phase);
         }
 
         @Override
         public int maxSize() {
-            return 5 + 5 + 10 + 1 + MAX_RESOURCES * (10 + 10 + 10 + 5) + 5 + 5 + 5;
+            return 5 + 5 + 10 + 1 + MAX_RESOURCES * (10 + 10 + 10 + 5) + 5 + 5 + 5 + 2 + MAX_RESEARCHED * 5 + 1;
         }
     };
 }

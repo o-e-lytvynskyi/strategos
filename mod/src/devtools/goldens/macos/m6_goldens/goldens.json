@@ -1,0 +1,6 @@
+{
+  "frames": {
+    "setup_screen": { "threshold": 1.0E-4 },
+    "setup_screen_2": { "threshold": 1.0E-4 }
+  }
+}

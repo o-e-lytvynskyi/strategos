@@ -10,9 +10,13 @@ import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.MatchId;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchLifecycle;
+import dev.strategos.core.sim.PlayRules;
 import dev.strategos.core.sim.replicate.HudMemory;
 import dev.strategos.core.sim.replicate.ReplicationService;
 import dev.strategos.core.sim.replicate.Visibility;
+import dev.strategos.core.sim.vision.VisionDeltaTracker;
+import dev.strategos.core.sim.vision.VisionGrid;
+import dev.strategos.core.sim.vision.VisionSystem;
 import dev.strategos.mod.server.match.MatchRegistry;
 import dev.strategos.mod.server.match.MatchRuntime;
 import dev.strategos.mod.server.net.payload.BuildingStatePayload;
@@ -21,7 +25,9 @@ import dev.strategos.mod.server.net.payload.FactionStatePayload;
 import dev.strategos.mod.server.net.payload.UnitDetailPayload;
 import dev.strategos.mod.server.net.payload.UnitHudPayload;
 import dev.strategos.mod.server.net.payload.UnitSummaryPayload;
+import dev.strategos.mod.server.net.payload.VisionDeltaPayload;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -68,6 +74,7 @@ public final class Replication {
     private final Supplier<MatchRegistry> matches;
     private final NetGateway net;
     private final Map<MatchId, Visibility> visibility = new HashMap<>();
+    private final Map<Long, VisionDeltaTracker> visionTrackers = new HashMap<>();
 
     private final Map<UUID, FactionState> factions = new HashMap<>();
     private final Map<UUID, BuildingState> buildings = new HashMap<>();
@@ -79,13 +86,29 @@ public final class Replication {
         this.net = net;
     }
 
-    /** Who sees which enemy in match {@code match}; every unit until fog (M6), or a test's own rule for its match. */
+    /** A test's own rule for match {@code match}; without one, the faction's {@code VisibilityIndex}. */
     public void visibility(MatchId match, Visibility rule) {
         visibility.put(match, rule);
     }
 
+    /**
+     * Default: each faction's {@code VisibilityIndex} (FOW-07 / UI-16). A test override wins. MATCH-07's revealed map
+     * returns {@link Visibility#ALL} for every participant.
+     */
     private Visibility visibility(MatchRuntime rt) {
-        return visibility.getOrDefault(rt.id(), Visibility.ALL);
+        Visibility override = visibility.get(rt.id());
+        if (override != null) {
+            return override;
+        }
+        MatchCore core = rt.core();
+        if (core != null && core.queries().config().rules().play().revealMap()) {
+            return Visibility.ALL;
+        }
+        VisionSystem vision = core == null ? null : core.vision();
+        if (vision == null) {
+            return Visibility.ALL;
+        }
+        return (viewer, unit) -> vision.visibility(viewer.value()).isVisible(unit.handle());
     }
 
     /** A seated player's {@code ui_query}: it replaces the last; one past the rate is refused. */
@@ -135,12 +158,14 @@ public final class Replication {
         if (now % SUMMARY_EVERY != 0) {
             return;
         }
-        visibility.keySet().removeIf(id -> matches.get().get(id) == null); // a disposed match's rule
+        visibility.keySet().removeIf(id -> matches.get().get(id) == null);
+        visionTrackers.keySet().removeIf(key -> matches.get().get(new MatchId((int) (key >> 8))) == null);
         for (MatchRuntime rt : matches.get().all()) {
             MatchCore core = rt.core();
             if (core == null || rt.lifecycle() != MatchLifecycle.RUNNING) {
                 continue;
             }
+            VisionSystem vision = core.vision();
             for (int f = 0; f < core.queries().config().factions(); f++) {
                 FactionSlot faction = new FactionSlot(f);
                 if (rt.roster().of(faction).isEmpty()) {
@@ -150,6 +175,16 @@ public final class Replication {
                         new Audience.Faction(rt.id(), faction),
                         new UnitSummaryPayload(ReplicationService.summary(
                                 core.queries(), rt.id().value(), faction, visibility(rt))));
+                if (vision != null) {
+                    long trackerKey = ((long) rt.id().value() << 8) | f;
+                    var grid = vision.grid(f);
+                    VisionDeltaTracker tracker = visionTrackers.computeIfAbsent(
+                            trackerKey, k -> new VisionDeltaTracker(grid.cellsX(), grid.cellsZ()));
+                    net.send(
+                            new Audience.Faction(rt.id(), faction),
+                            new VisionDeltaPayload(tracker.delta(
+                                    rt.id().value(), core.queries().tick(), grid)));
+                }
             }
         }
     }
@@ -188,7 +223,8 @@ public final class Replication {
 
     /**
      * Each seated player's buildings (BLD-01), when they differ from the last the player got, at the summaries' pace:
-     * its own faction's with the owner's fields, the others' without them.
+     * its own faction's with the owner's fields, the others' without them. Under fog, unexplored enemy buildings are
+     * hidden (MATCH-07); a pristine grid still sends every live building.
      */
     private void sendBuildings() {
         for (MatchRuntime rt : matches.get().all()) {
@@ -202,8 +238,10 @@ public final class Replication {
                 if (seat == null || seat.match() != rt || online == null) {
                     continue;
                 }
-                BuildingState now =
-                        ReplicationService.buildingState(core.queries(), rt.id().value(), viewer(seat));
+                FactionSlot view = viewer(seat);
+                BuildingState live =
+                        ReplicationService.buildingState(core.queries(), rt.id().value(), view);
+                BuildingState now = fogBuildings(core, view, live);
                 BuildingState last = buildings.get(player);
                 if ((last == null && !now.buildings().isEmpty()) || (last != null && !last.sameAs(now))) {
                     buildings.put(player, now);
@@ -211,6 +249,35 @@ public final class Replication {
                 }
             }
         }
+    }
+
+    /**
+     * Hide enemy buildings whose anchor cell the viewer has never explored. Own buildings and a revealed map keep the
+     * full list; a pristine grid (nothing explored yet) keeps today's send-all behaviour.
+     */
+    static BuildingState fogBuildings(MatchCore core, @Nullable FactionSlot viewer, BuildingState live) {
+        if (viewer == null || live.buildings().isEmpty()) {
+            return live;
+        }
+        PlayRules play = core.queries().config().rules().play();
+        if (play.revealMap() || play.explored()) {
+            return live;
+        }
+        VisionSystem vision = core.vision();
+        if (vision == null) {
+            return live;
+        }
+        VisionGrid grid = vision.grid(viewer.value());
+        if (grid.pristine()) {
+            return live;
+        }
+        List<BuildingState.Entry> out = new ArrayList<>(live.buildings().size());
+        for (BuildingState.Entry e : live.buildings()) {
+            if (e.faction() == viewer.value() || grid.isExplored(VisionGrid.cellOf(e.x()), VisionGrid.cellOf(e.z()))) {
+                out.add(e);
+            }
+        }
+        return out.size() == live.buildings().size() ? live : new BuildingState(live.matchId(), live.tick(), out);
     }
 
     /** Each seated player's deposits (ECO-08), when they differ from the last the player got, at the summaries' pace. */

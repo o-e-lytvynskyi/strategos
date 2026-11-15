@@ -7,9 +7,9 @@
 ## Now
 
 - **Milestone:** M7 Multiplayer; 5 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md), based on planning PR #32; T3 is split before implementation into independent aggregate and production integration.
-- **In progress:** none running; T2b and T3a are accepted. Whole M7 remains in progress; network admission and production start are not installed by the foundation.
+- **In progress:** main reconciliation since 2026-11-15; T2b and T3a are accepted. Whole M7 remains in progress; network admission and production start are not installed by the foundation.
 - **Last finished task:** T3a immutable lobby/readiness/preparation contract, accepted on 2026-10-30 after full cloud verify.
-- **Next task:** T3b production integration, blocked on delivered M6 MATCH-02. D-20 is explicitly accepted. Remaining tasks keep the specification's integration dependencies; no M6 work is taken over.
+- **Next task:** T3b production integration after the main-merge cloud gate; M6 MATCH-02 is delivered by PR #55. D-20 is explicitly accepted. Remaining tasks keep the specification's integration dependencies; no M6 work is taken over.
 - **Merged from main last:** 8111c0a (2026-10-30), zero commits behind at final T2b fetch. Verify, core slow/soak, matched server slow, paired JMH, standard cloud L6 and tooling smoke passed.
 
 The operator requested ownership of the whole M7 and work on what is currently possible on
@@ -35,6 +35,13 @@ before implementing them. T2 does not certify friendly-fire, allied victory, com
 or replication privacy; those retain their own integration tests and dependencies.
 
 ## Log
+
+### 2026-11-15 — Reconcile delivered M6 before resuming T3b
+
+- Fetched main at d39069e7 (PR #55, M6 delivery); reconciled snapshot composition with schema-4 diplomacy, preserving M6 research progress, statistics and vision in compatibility constructors and `withDiplomacy`.
+- Added a regression for installing authority over populated M6 fields; stance absence remains checked alongside required diplomacy and optional M6 state.
+- Owner requests all tests in the cloud. This merge checkpoint is not accepted until full cloud verify reports pass. M6 runtime dependencies are now available; final art/MVP acceptance prerequisites still require their own evidence.
+- **Next:** cloud verify of the merge, then production lobby/start integration (T3b).
 
 ### 2026-10-30 — T3a accepted; ready work exhausted
 

@@ -246,6 +246,7 @@ public final class RtsScreen extends Screen {
                         CARD_15 -> StrategosClient.hud().pressCard(e.action().cardSlot());
                 case NEXT_IDLE_WORKER -> mode.nextIdleWorker();
                 case JUMP_TO_ALERT -> StrategosClient.hud().jumpToAlert();
+                case CONTROLS -> StrategosClient.hud().toggleControls();
                 case PAUSE_MATCH -> {
                     MatchStateMsg state = StrategosClient.state();
                     boolean paused = state != null && state.lifecycle() == MatchStateMsg.Lifecycle.PAUSED;

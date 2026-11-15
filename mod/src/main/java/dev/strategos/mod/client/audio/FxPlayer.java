@@ -12,6 +12,7 @@ import dev.strategos.mod.client.rts.RtsMode;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -152,6 +153,26 @@ public final class FxPlayer {
             Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(sound, cue.pitch(), cue.volume()));
             played++;
         }
+    }
+
+    /** A sound at the listener, under {@code source} so vanilla's slider sets it (UI-21's alerts and notices). */
+    public void local(SoundEvent sound, SoundSource source, float volume, float pitch) {
+        Minecraft.getInstance()
+                .getSoundManager()
+                .play(new SimpleSoundInstance(
+                        sound.getLocation(),
+                        source,
+                        volume,
+                        pitch,
+                        SoundInstance.createUnseededRandom(),
+                        false,
+                        0,
+                        SoundInstance.Attenuation.NONE,
+                        0.0,
+                        0.0,
+                        0.0,
+                        true));
+        played++;
     }
 
     /** How many sounds this client started, for the scenario harness. */

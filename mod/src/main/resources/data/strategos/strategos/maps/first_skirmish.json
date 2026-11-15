@@ -1,0 +1,271 @@
+{
+  "waypoints": {
+    "dropsite_food_0": {
+      "x": 54,
+      "y": 16,
+      "z": 156
+    },
+    "dropsite_food_1": {
+      "x": 329,
+      "y": 16,
+      "z": 227
+    },
+    "dropsite_iron_0": {
+      "x": 52,
+      "y": 16,
+      "z": 122
+    },
+    "dropsite_iron_1": {
+      "x": 331,
+      "y": 16,
+      "z": 261
+    },
+    "dropsite_stone_0": {
+      "x": 36,
+      "y": 16,
+      "z": 126
+    },
+    "dropsite_stone_1": {
+      "x": 347,
+      "y": 16,
+      "z": 257
+    },
+    "dropsite_wood_0": {
+      "x": 56,
+      "y": 16,
+      "z": 126
+    },
+    "dropsite_wood_1": {
+      "x": 327,
+      "y": 16,
+      "z": 257
+    },
+    "east": {
+      "x": 339,
+      "y": 16,
+      "z": 243
+    },
+    "ford_east": {
+      "x": 220,
+      "y": 11,
+      "z": 184
+    },
+    "ford_west": {
+      "x": 163,
+      "y": 11,
+      "z": 199
+    },
+    "hill": {
+      "x": 191,
+      "y": 21,
+      "z": 191
+    },
+    "west": {
+      "x": 44,
+      "y": 16,
+      "z": 140
+    }
+  },
+  "version": 1,
+  "terrainHash": "78a8969d6e6d91e54ef370e48277f2d73b251761936dc1fc34945c7634830860",
+  "terrainJobs": [
+    {
+      "x1": 172,
+      "z1": 199,
+      "size": 6,
+      "kind": "hill",
+      "x0": 191,
+      "z0": 191
+    },
+    {
+      "x1": 112,
+      "z1": 383,
+      "count": 3,
+      "size": 4,
+      "kind": "forest_line",
+      "x0": 108,
+      "z0": 0
+    },
+    {
+      "x1": 275,
+      "z1": 383,
+      "count": 3,
+      "size": 4,
+      "kind": "forest_line",
+      "x0": 271,
+      "z0": 0
+    },
+    {
+      "x1": 195,
+      "z1": 135,
+      "size": 4,
+      "kind": "river",
+      "x0": 188,
+      "z0": 0
+    },
+    {
+      "x1": 223,
+      "z1": 143,
+      "size": 4,
+      "kind": "river",
+      "x0": 160,
+      "z0": 136
+    },
+    {
+      "x1": 167,
+      "z1": 239,
+      "count": 1,
+      "size": 4,
+      "kind": "river",
+      "x0": 160,
+      "z0": 144
+    },
+    {
+      "x1": 223,
+      "z1": 239,
+      "count": 1,
+      "size": 4,
+      "kind": "river",
+      "x0": 216,
+      "z0": 144
+    },
+    {
+      "x1": 223,
+      "z1": 247,
+      "size": 4,
+      "kind": "river",
+      "x0": 160,
+      "z0": 240
+    },
+    {
+      "x1": 195,
+      "z1": 383,
+      "size": 4,
+      "kind": "river",
+      "x0": 188,
+      "z0": 248
+    },
+    {
+      "count": 5000,
+      "size": 12,
+      "kind": "resource",
+      "resource": "iron",
+      "x0": 192,
+      "z0": 192
+    },
+    {
+      "count": 1000,
+      "size": 48,
+      "kind": "resource",
+      "resource": "wood",
+      "x0": 44,
+      "z0": 140
+    },
+    {
+      "count": 600,
+      "size": 48,
+      "kind": "resource",
+      "resource": "food",
+      "x0": 44,
+      "z0": 140
+    },
+    {
+      "count": 1000,
+      "size": 48,
+      "kind": "resource",
+      "resource": "stone",
+      "x0": 44,
+      "z0": 140
+    },
+    {
+      "count": 1000,
+      "size": 48,
+      "kind": "resource",
+      "resource": "iron",
+      "x0": 44,
+      "z0": 140
+    },
+    {
+      "count": 1000,
+      "size": 48,
+      "kind": "resource",
+      "resource": "wood",
+      "x0": 339,
+      "z0": 243
+    },
+    {
+      "count": 600,
+      "size": 48,
+      "kind": "resource",
+      "resource": "food",
+      "x0": 339,
+      "z0": 243
+    },
+    {
+      "count": 1000,
+      "size": 48,
+      "kind": "resource",
+      "resource": "stone",
+      "x0": 339,
+      "z0": 243
+    },
+    {
+      "count": 1000,
+      "size": 48,
+      "kind": "resource",
+      "resource": "iron",
+      "x0": 339,
+      "z0": 243
+    },
+    {
+      "x1": 84,
+      "z1": 184,
+      "count": 6,
+      "size": 9,
+      "kind": "room",
+      "x0": 52,
+      "z0": 160
+    },
+    {
+      "x1": 331,
+      "z1": 223,
+      "count": 6,
+      "size": 9,
+      "kind": "room",
+      "x0": 299,
+      "z0": 199
+    }
+  ],
+  "tileSize": 32,
+  "palette": [
+    "minecraft:air",
+    "minecraft:stone",
+    "minecraft:grass_block",
+    "minecraft:dirt",
+    "minecraft:water",
+    "minecraft:sand",
+    "minecraft:oak_log",
+    "minecraft:oak_leaves[persistent\u003dtrue]",
+    "minecraft:sweet_berry_bush[age\u003d3]"
+  ],
+  "startSlots": [
+    {
+      "x": 44,
+      "y": 16,
+      "z": 140,
+      "yaw": 270.0
+    },
+    {
+      "x": 339,
+      "y": 16,
+      "z": 243,
+      "yaw": 90.0
+    }
+  ],
+  "minY": 0,
+  "height": 64,
+  "baseBlock": "minecraft:stone",
+  "id": "strategos:first_skirmish",
+  "sizeX": 384,
+  "sizeZ": 384
+}

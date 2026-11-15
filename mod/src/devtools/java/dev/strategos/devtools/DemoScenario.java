@@ -9,6 +9,7 @@ import dev.strategos.devtools.demo.DemoChapter;
 import dev.strategos.devtools.demo.DemoDirector;
 import dev.strategos.devtools.demo.DemoScript;
 import dev.strategos.mod.client.StrategosClient;
+import dev.strategos.mod.client.StrategosClientConfig;
 import dev.strategos.mod.client.rts.RtsMode;
 import java.util.List;
 import net.minecraft.client.Minecraft;
@@ -83,6 +84,8 @@ final class DemoScenario implements Scenario {
         }
         if (tick == 1) {
             ScenarioWorld.renderDistance(mc, 12);
+            // the first-match hints would stay on the screen through every chapter that follows
+            StrategosClientConfig.INSTANCE.seenHints.set(List.of("first_order", "idle_worker", "build_house"));
         }
         DemoDirector d = director;
         if (d == null) {

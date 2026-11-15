@@ -7,7 +7,6 @@ import dev.strategos.core.port.MetricsSink;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.RingBell;
 import dev.strategos.core.protocol.SpawnBuilding;
-import dev.strategos.core.protocol.SpawnUnits;
 import dev.strategos.core.protocol.UnitHud;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
@@ -91,6 +90,9 @@ final class M5GoldensScenario implements Scenario {
     private static final double[] HEIGHTS = {CameraRig.MIN_HEIGHT, CameraRig.DEFAULT_HEIGHT, CameraRig.MAX_HEIGHT};
 
     private static final String[] RIDER_FRAMES = {"rider_low", "rider_default", "rider_high"};
+    /** Blocks between the units of a squad: no crowd separation acts on units so far apart. */
+    private static final double PITCH = 3;
+
     private static final int HORSEMEN = 5;
     private static final int WORKERS = 8;
     private static final int VOLLEY_RANGE = 18;
@@ -153,7 +155,16 @@ final class M5GoldensScenario implements Scenario {
                 .create(
                         level,
                         StrategosCommands.spaceAround(level, new BlockPos(0, floor, 0), 256, 256),
-                        new MatchOptions(5L, 2, false, MatchSource.GAMETEST, null, MetricsSink.none(), floor));
+                        new MatchOptions(
+                                5L,
+                                2,
+                                false,
+                                MatchSource.GAMETEST,
+                                null,
+                                MetricsSink.none(),
+                                floor,
+                                null,
+                                ScenarioWorld.REVEALED));
         match = rt;
         rt.addListener(out -> onStep(server, rt, out));
         StrategosServer.get().matches().join(rt, player.getUUID(), new PlayerSlot(0));
@@ -275,8 +286,8 @@ final class M5GoldensScenario implements Scenario {
             case 0 -> look(rts, rig, RIDERS_X, 24);
             case 1 -> {
                 if (inPhase >= SETTLE) {
-                    server.execute(() -> rt.submit(
-                            PlayerSlot.ADMIN, new SpawnUnits(HORSEMAN, OWN, local(rt, RIDERS_X, 0), HORSEMEN, 3)));
+                    server.execute(() ->
+                            ScenarioWorld.spawnSpaced(rt, HORSEMAN, OWN, local(rt, RIDERS_X, 0), HORSEMEN, 3, PITCH));
                     next();
                 }
             }
@@ -311,17 +322,16 @@ final class M5GoldensScenario implements Scenario {
             case 6 -> {
                 if (inPhase >= SETTLE) {
                     server.execute(() -> {
-                        rt.submit(
-                                PlayerSlot.ADMIN,
-                                new SpawnUnits(ARCHER, OWN, local(rt, VOLLEY_X - VOLLEY_RANGE / 2.0, 0), 6, 2));
-                        rt.submit(
-                                PlayerSlot.ADMIN,
-                                new SpawnUnits(
-                                        TemplateSet.INFANTRY,
-                                        ENEMY,
-                                        local(rt, VOLLEY_X + VOLLEY_RANGE / 2.0, 0),
-                                        4,
-                                        2));
+                        ScenarioWorld.spawnSpaced(
+                                rt, ARCHER, OWN, local(rt, VOLLEY_X - VOLLEY_RANGE / 2.0, 0), 6, 3, PITCH);
+                        ScenarioWorld.spawnSpaced(
+                                rt,
+                                TemplateSet.INFANTRY,
+                                ENEMY,
+                                local(rt, VOLLEY_X + VOLLEY_RANGE / 2.0, 0),
+                                4,
+                                2,
+                                PITCH);
                         watchShots = true;
                         ScenarioWorld.run(server, "tick unfreeze");
                     });
@@ -369,17 +379,16 @@ final class M5GoldensScenario implements Scenario {
             case 13 -> {
                 if (inPhase >= SETTLE) {
                     server.execute(() -> {
-                        rt.submit(
-                                PlayerSlot.ADMIN,
-                                new SpawnUnits(ARCHER, OWN, local(rt, LINES_X - VOLLEY_RANGE / 2.0, 0), 4, 1.5));
-                        rt.submit(
-                                PlayerSlot.ADMIN,
-                                new SpawnUnits(
-                                        TemplateSet.INFANTRY,
-                                        ENEMY,
-                                        local(rt, LINES_X + VOLLEY_RANGE / 2.0, 0),
-                                        3,
-                                        1.5));
+                        ScenarioWorld.spawnSpaced(
+                                rt, ARCHER, OWN, local(rt, LINES_X - VOLLEY_RANGE / 2.0, 0), 4, 2, PITCH);
+                        ScenarioWorld.spawnSpaced(
+                                rt,
+                                TemplateSet.INFANTRY,
+                                ENEMY,
+                                local(rt, LINES_X + VOLLEY_RANGE / 2.0, 0),
+                                3,
+                                2,
+                                PITCH);
                         freezeAt = new long[] {coreTick(rt) + LINES_AFTER};
                         freezeNext = 0;
                         ScenarioWorld.run(server, "tick unfreeze");
@@ -426,9 +435,8 @@ final class M5GoldensScenario implements Scenario {
                                         (int) rt.space().localZ(0),
                                         0));
                         collecting = true;
-                        rt.submit(
-                                PlayerSlot.ADMIN,
-                                new SpawnUnits(TemplateSet.WORKER, OWN, local(rt, BELL_X, 16), WORKERS, 3));
+                        ScenarioWorld.spawnSpaced(
+                                rt, TemplateSet.WORKER, OWN, local(rt, BELL_X, 16), WORKERS, 4, PITCH);
                         ScenarioWorld.run(server, "tick unfreeze");
                     });
                     next();

@@ -6,8 +6,9 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 /**
- * NET-01.7 (spec §1.6 row 8): the fog gate's stub over match ids: another match's member never sees a body, the same
- * match's member and a player in no match do; when the lookup of the viewer's match throws, the body stays hidden.
+ * NET-01.7 / FOW-07: the fog gate over match ids and per-unit visibility: another match's member never sees a body;
+ * the same match's member and a player in no match do; when the lookup of the viewer's match throws, the body stays
+ * hidden. Under fog an enemy needs the viewer's VisibilityIndex.
  */
 class FogGateTest {
     private static final UUID VIEWER = UUID.fromString("00000000-0000-0000-0000-000000000007");
@@ -27,5 +28,16 @@ class FogGateTest {
                     throw new IllegalStateException("no registry");
                 }))
                 .isFalse();
+    }
+
+    @Test
+    void perUnitVisibility() {
+        assertThat(FogGate.canSee(3, 10, 1, 3, 0, 2, null))
+                .as("null visibility shows the enemy (fail open only for the index)")
+                .isTrue();
+        assertThat(FogGate.canSee(3, 10, 0, 3, 0, 2, null)).as("own faction").isTrue();
+        assertThat(FogGate.canSee(3, 10, 1, 3, -1, 2, null)).as("observer").isTrue();
+        assertThat(FogGate.canSee(3, 10, 1, 4, 0, 2, null)).as("other match").isFalse();
+        assertThat(FogGate.canSee(3, 10, 1, 0, 0, 2, null)).as("no match").isTrue();
     }
 }

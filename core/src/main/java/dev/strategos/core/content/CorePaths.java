@@ -38,6 +38,11 @@ public final class CorePaths {
     public static final String HIGH_DAMAGE = "Attack/Ranged/highGround/damagePerBlock";
     public static final String HIGH_MAX = "Attack/Ranged/highGround/maxBlocks";
     public static final String VISION = "Vision/range";
+    /** The faction-level equipment tiers units wear (TECH-03): 0 the starting gear, up to {@link #MAX_LOOK}. */
+    public static final String LOOK_WEAPON = "Look/weapon";
+
+    public static final String LOOK_ARMOUR = "Look/armour";
+    public static final int MAX_LOOK = 7;
     /** How far a unit without a melee attack runs from a blow, in blocks; 0 stands (UNIT-04). */
     public static final String FLEE = "Behaviour/flee";
     /**
@@ -47,6 +52,12 @@ public final class CorePaths {
     public static final String STANCE = "Behaviour/stance";
     /** The class tokens an attack picks its targets from first (CMB-05): a list, empty for the nearest enemy. */
     public static final String MELEE_PREFERRED = "Attack/Melee/preferred";
+
+    /**
+     * The class tokens a melee attack never takes as targets (CMB-09): the rules refuse such a target and the unit never
+     * picks one on its own, as a ram's {@code Unit Field}.
+     */
+    public static final String MELEE_RESTRICTED = "Attack/Melee/restrictedClasses";
 
     public static final String RANGED_PREFERRED = "Attack/Ranged/preferred";
 
@@ -161,6 +172,8 @@ public final class CorePaths {
                     HIGH_DAMAGE,
                     HIGH_MAX,
                     VISION,
+                    LOOK_WEAPON,
+                    LOOK_ARMOUR,
                     FLEE,
                     STANCE,
                     BUILDING_ARROWS,
@@ -194,6 +207,7 @@ public final class CorePaths {
             case HIGH_MAX -> 64;
             case RANGED_HACK, RANGED_PIERCE, RANGED_CRUSH, RANGED_FIRE -> Float.MAX_VALUE;
             case VISION -> 64;
+            case LOOK_WEAPON, LOOK_ARMOUR -> MAX_LOOK;
             case FLEE -> 32;
             case STANCE -> 4;
             case RESIST_HACK, RESIST_PIERCE, RESIST_CRUSH -> MAX_RESISTANCE;

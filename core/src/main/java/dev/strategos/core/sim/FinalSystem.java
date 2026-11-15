@@ -44,6 +44,7 @@ final class FinalSystem implements MatchSystem {
             throw new IllegalStateException("the treasury is out of balance at tick " + state.tick() + ": " + treasury);
         }
         VictoryCheck.run(state); // MATCH-01: who lost, and whether the match is over
+        ConquestCount.run(state);
         String economy = state.economyBroken();
         if (economy != null) { // ECO-05: what nodes gave is carried, delivered or dropped, every step
             throw new IllegalStateException("the economy is out of balance at tick " + state.tick() + ": " + economy);

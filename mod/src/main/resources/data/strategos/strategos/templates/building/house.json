@@ -1,6 +1,6 @@
 {
   "parent": "strategos:template/building_base",
-  "Identity": { "name": "strategos.building.house", "icon": "minecraft:oak_door", "classes": "+House" },
+  "Identity": { "name": "strategos.building.house", "icon": "minecraft:oak_door", "classes": "+House +Village" },
   "Building": { "blueprint": "strategos:house", "material": "wood" },
   "Resistance": { "fire": 0 },
   "Health": { "max": 400 },

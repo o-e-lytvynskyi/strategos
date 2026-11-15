@@ -119,6 +119,27 @@ class MatchDiplomacyTest {
     }
 
     @Test
+    void addingAuthorityPreservesM6ProgressStatisticsAndVision() {
+        var original = new MatchSnapshot.Play(
+                List.of(),
+                List.of(),
+                3L,
+                List.of(),
+                List.of(List.of("strategos:test")),
+                List.of(17L, 23L),
+                List.of(31L, 47L),
+                dev.strategos.core.sim.combat.ShotStore.Snapshot.EMPTY,
+                List.of(),
+                List.of());
+        var installed = original.withDiplomacy(setup());
+        assertThat(installed.progress()).isEqualTo(original.progress());
+        assertThat(installed.matchStats()).isEqualTo(original.matchStats());
+        assertThat(installed.vision()).isEqualTo(original.vision());
+        assertThat(installed.aiWake()).isEqualTo(original.aiWake());
+        assertThat(installed.diplomacy()).isEqualTo(setup());
+    }
+
+    @Test
     void schemaFourCannotSilentlyLoseDiplomacyOrAcceptDuplicateAndForeignBindings() {
         JsonObject encoded = json(configured());
         encoded.getAsJsonObject("play").remove("diplomacy");

@@ -3,7 +3,9 @@ package dev.strategos.devtools;
 import com.google.gson.GsonBuilder;
 import com.mojang.blaze3d.platform.GlUtil;
 import com.mojang.blaze3d.platform.NativeImage;
+import dev.strategos.core.client.HintBook;
 import dev.strategos.mod.Strategos;
+import dev.strategos.mod.client.StrategosClientConfig;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
@@ -93,7 +95,7 @@ public final class ScenarioRunner {
             case "m3_goldens" -> new M3GoldensScenario();
             case "m4_goldens" -> new M4GoldensScenario();
             case "art_look" -> new ArtLookScenario();
-            case "rts_frame" -> new RtsFrameScenario();
+            case "rts_frame" -> new RtsFrameScenario("rts_frame", RtsFrameScenario.REVEALED);
             case "rts_frame_battle" -> new BattleFrameScenario();
             case "m5_goldens" -> new M5GoldensScenario();
             case "rts_goldens" -> new RtsGoldensScenario();
@@ -102,6 +104,10 @@ public final class ScenarioRunner {
             case "overlay_goldens" -> new OverlayGoldensScenario();
             case "qa19" -> new PacketSentScenario();
             case "demo" -> new DemoScenario();
+            case "arena_world" -> new ArenaWorldScenario();
+            case "m6_goldens" -> new M6GoldensScenario();
+            case "skirmish_flow" -> new SkirmishFlowScenario();
+            case "rts_frame_shroud" -> new RtsFrameScenario("rts_frame_shroud", RtsFrameScenario.EXPLORED);
             default -> null;
         };
     }
@@ -119,10 +125,24 @@ public final class ScenarioRunner {
             Runtime.getRuntime().halt(1);
             return;
         }
+        markHintsSeen();
         Run r = new Run(scenario, new ScenarioContext(out));
         run = r;
         startWatchdog(r);
         LOG.info("Scenario {} starts", name);
+    }
+
+    /**
+     * The first-match hints would show in whatever frame the first selection or the first spare house falls in, so every
+     * scenario plays with them seen. Saved as well as set: the config file is new on every run and NeoForge reloads it
+     * once written, which would replace an in-memory value; set again as each world starts, before RTS mode reads it.
+     */
+    private static void markHintsSeen() {
+        var seen = StrategosClientConfig.INSTANCE.seenHints;
+        seen.set(java.util.Arrays.stream(HintBook.Hint.values())
+                .map(HintBook.Hint::id)
+                .toList());
+        seen.save();
     }
 
     private static void startWatchdog(Run r) {
@@ -136,7 +156,14 @@ public final class ScenarioRunner {
                         return;
                     }
                     if (r.phase != Phase.DONE) {
-                        write(r.ctx.out, failure("watchdog: no result within " + seconds + " s"));
+                        var screen = Minecraft.getInstance().screen; // a read from another thread: a diagnosis only
+                        write(
+                                r.ctx.out,
+                                failure("watchdog: no result within " + seconds + " s, in phase " + r.phase
+                                        + " on screen "
+                                        + (screen == null
+                                                ? "none"
+                                                : screen.getClass().getName())));
                         Runtime.getRuntime().halt(1);
                     }
                 },
@@ -161,6 +188,7 @@ public final class ScenarioRunner {
      * depend on how many ticks the load took; it is pinned at its limit under the open noon sky, 0.
      */
     private static void holdCamera(Minecraft mc, ScenarioContext ctx) {
+        pinLight(mc);
         double[] pose = ctx.camera;
         if (mc.mouseHandler.isMouseGrabbed()) {
             mc.mouseHandler.releaseMouse();
@@ -169,6 +197,21 @@ public final class ScenarioRunner {
         if (pose != null && mc.player != null) {
             mc.player.moveTo(pose[0], pose[1], pose[2], (float) pose[3], (float) pose[4]);
             mc.player.setDeltaMovement(Vec3.ZERO);
+        }
+    }
+
+    /**
+     * The world's light, the same in every frame: noon with the day cycle off and no rain or thunder, on the client too.
+     * The server's {@code time set} reaches a client only in the next time packet, and until then the client counts its
+     * own ticks, so a frame shot early would be lit a little differently from one shot later (a uniform shift of one or
+     * two levels, which shows as a failed diff).
+     */
+    private static void pinLight(Minecraft mc) {
+        var level = mc.level;
+        if (level != null) {
+            level.setDayTime(-6000); // a negative time also turns the client's day cycle off
+            level.setRainLevel(0);
+            level.setThunderLevel(0);
         }
     }
 
@@ -194,7 +237,7 @@ public final class ScenarioRunner {
                                 new ServerData("strategos-spike", address, ServerData.Type.OTHER),
                                 false,
                                 null);
-                    } else {
+                    } else if (!r.scenario.openWorld(mc)) {
                         createWorld(mc, r.world, r.seed);
                     }
                     r.phase = Phase.LOADING;
@@ -206,6 +249,7 @@ public final class ScenarioRunner {
                             && mc.player != null
                             && mc.screen == null
                             && mc.levelRenderer.hasRenderedAllSections()) {
+                        markHintsSeen();
                         r.scenario.joined(mc, r.ctx);
                         r.ticks = 0;
                         r.phase = Phase.RUNNING;
@@ -218,6 +262,7 @@ public final class ScenarioRunner {
                         && mc.player != null
                         && mc.screen == null
                         && mc.levelRenderer.hasRenderedAllSections()) {
+                    markHintsSeen();
                     server.execute(() -> r.scenario.setup(server, r.ctx));
                     r.ticks = 0;
                     r.phase = Phase.RUNNING;

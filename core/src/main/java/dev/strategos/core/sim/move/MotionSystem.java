@@ -81,6 +81,7 @@ public final class MotionSystem implements MatchSystem {
     static final double SNAP_TOLERANCE = 1e-6;
 
     static final double ADVANCE_WITHIN = 0.5;
+
     static final double SHALLOW = 0.5;
     static final double SLOW = 0.6;
     static final double FALL = 0.5;
@@ -94,6 +95,18 @@ public final class MotionSystem implements MatchSystem {
     static final double PASS_CROWD = 2.0;
 
     static final int CROWDED = 10;
+    static final double SETTLE_ZONE = 2.5;
+    static final int SETTLE_AFTER = 20;
+    /** Where a mover on its own arrives after the settle count: half a block, so a step aside after stays within one. */
+    static final double ARRIVE_ALONE = 0.5;
+    /**
+     * QA-12: an idle unit pushed off its latch point by up to this far, with {@value #RELATCH_MATES} idle units touching
+     * it, holds where it stands rather than walking back (and pushing another, who walks back and pushes the next: a
+     * crowd settling round a target went on shuffling past 170 ticks on some seeds).
+     */
+    static final double RELATCH_REACH = 1.5;
+
+    static final int RELATCH_MATES = 2;
     /** How near two bodies count as touching, beyond their radii. */
     static final double TOUCH = 0.1;
     /** The largest unit radius the touch query looks for, in blocks. */
@@ -187,7 +200,11 @@ public final class MotionSystem implements MatchSystem {
             }
         }
         for (int i = 0; i < highWater; i++) { // move
-            if (!entities.aliveAt(i) || mode[i] == HIDDEN) {
+            if (!entities.aliveAt(i)) {
+                continue;
+            }
+            if (mode[i] == HIDDEN) {
+                clearNet(s, i);
                 continue;
             }
             switch (mode[i]) {
@@ -196,9 +213,13 @@ public final class MotionSystem implements MatchSystem {
                     if (s.paths().status(i) == PathStatus.NO_PATH) {
                         arrive(s, i, entities.handleAt(i)); // nowhere nearer to go
                     }
+                    ladder.net(s, i, entities.handleAt(i)); // QA-12: it walks, in the state's eyes, all the same
                     settle(s, i); // a spent partial path: the next request pass asks again
                 }
-                default -> settle(s, i);
+                default -> {
+                    clearNet(s, i);
+                    settle(s, i);
+                }
             }
         }
     }
@@ -318,8 +339,10 @@ public final class MotionSystem implements MatchSystem {
         }
         double speed = s.stats().walkSpeed(i) * speedFactor(s, i);
         boolean detour = motion.detourTicks(i) > 0; // the stuck ladder's walk to a free spot, steered instead
-        double sx = detour ? motion.detourX(i) : tx;
-        double sz = detour ? motion.detourZ(i) : tz;
+        double[] back = !detour && following ? backToCorner(s, i, path, cursor, x0, z0, tx, tz) : null;
+        boolean redirected = detour || back != null;
+        double sx = detour ? motion.detourX(i) : back != null ? back[0] : tx;
+        double sz = detour ? motion.detourZ(i) : back != null ? back[1] : tz;
         double dx = sx - x0;
         double dz = sz - z0;
         double d = DetMath.length(dx, dz);
@@ -328,12 +351,40 @@ public final class MotionSystem implements MatchSystem {
         double nz = lands ? sz : z0 + dz / d * speed;
         mode[i] = WALKING;
         avoiding[i] = false;
-        flags[i] = detour ? DETOUR : (byte) ((lands ? LANDS : 0) | (following ? FOLLOWING : 0) | (last ? LAST : 0));
+        flags[i] = redirected ? DETOUR : (byte) ((lands ? LANDS : 0) | (following ? FOLLOWING : 0) | (last ? LAST : 0));
         aimX[i] = tx;
         aimZ[i] = tz;
         endX[i] = nx;
         endZ[i] = nz;
         this.speed[i] = speed;
+    }
+
+    /** A unit that does not walk has no net-progress count and no crowd-settle count (QA-12). */
+    private static void clearNet(MatchState s, int i) {
+        if (s.motion().net(i) != 0) {
+            s.motion().setNet(i, 0, 0, 0);
+        }
+        if (s.motion().settle(i) != 0) {
+            s.motion().setSettle(i, 0);
+        }
+    }
+
+    /**
+     * QA-12: the ticks a unit on a move order has spent within {@value #SETTLE_ZONE} blocks of its place, on its last leg,
+     * without arriving. Crawling through arrived mates a hundredth of a block a tick counts as progress to the stuck
+     * monitor, so the crowd rules, which wait {@value #CROWDED} ticks without it, never came (and a pushed mate walking
+     * back to its latch went on for as long); this count is the crowd rules' own and feeds no rung of the ladder. After
+     * {@value #SETTLE_AFTER} ticks, within {@value #ARRIVE_CROWD} blocks of its place (the slot tolerance) for a member of
+     * a group order, within {@value #ARRIVE_ALONE} for a single mover, the unit arrives where it stands.
+     */
+    private void settleCount(MatchState s, int i, double d) {
+        MotionStore motion = s.motion();
+        int n = (flags[i] & LAST) != 0 && s.orders().kind(i) == OrderKind.MOVE && d <= SETTLE_ZONE
+                ? motion.settle(i) + 1
+                : 0;
+        if (n != motion.settle(i)) {
+            motion.setSettle(i, n);
+        }
     }
 
     /** The planning pass for a unit that does not walk: every {@value #IDLE_EVERY} ticks it plans to stand still. */
@@ -368,14 +419,17 @@ public final class MotionSystem implements MatchSystem {
         motion.set(i, x, motion.y(i), z, yaw);
         Footing.height(s, i);
         monitor(s, i, tx, tz);
+        settleCount(s, i, DetMath.length(tx - x, tz - z));
         StuckLadder.countDown(motion, i);
         boolean landed = preferred && (flags[i] & LANDS) != 0 && x == tx && z == tz;
         if (!landed && (flags[i] & LAST) != 0) {
             double d = DetMath.length(tx - x, tz - z);
-            landed = motion.stuck(i) >= CROWDED
-                    && ((d <= ARRIVE_CROWD && (s.orders().group(i) != 0 || taken(s, i, tx, tz)))
-                            || touchesArrived(s, i, tx, tz)
-                            || tradePlace(s, i, x, z, d));
+            landed = (motion.stuck(i) >= CROWDED
+                            && ((d <= ARRIVE_CROWD && (s.orders().group(i) != 0 || taken(s, i, tx, tz)))
+                                    || touchesArrived(s, i, tx, tz)
+                                    || tradePlace(s, i, x, z, d)))
+                    || (motion.settle(i) >= SETTLE_AFTER
+                            && d <= (s.orders().group(i) != 0 ? ARRIVE_CROWD : ARRIVE_ALONE));
         }
         if (landed) {
             if ((flags[i] & FOLLOWING) != 0) {
@@ -390,6 +444,7 @@ public final class MotionSystem implements MatchSystem {
             }
         } else {
             ladder.climb(s, i, handle); // a nudge displaces it
+            ladder.net(s, i, handle);
         }
         if (moved || motion.x(i) != x || motion.z(i) != z || motion.y(i) != startY[i] || yaw != yaw0) {
             s.frame().add(handle, motion.x(i), motion.y(i), motion.z(i), yaw, STANDING);
@@ -429,8 +484,13 @@ public final class MotionSystem implements MatchSystem {
                 && s.ai().state(i) == UnitState.IDLE
                 && s.orders().kind(i) == OrderKind.NONE // a waiting follower keeps its order: its think moves it
                 && DetMath.length(motion.x(i) - motion.latchX(i), motion.z(i) - motion.latchZ(i)) > LATCH) {
-            s.orders().replaceMove(i, motion.latchX(i), motion.latchZ(i));
-            s.bus().publish(new OrderReceived(handle)); // back to the latch point; the order releases the latch
+            if (DetMath.length(motion.x(i) - motion.latchX(i), motion.z(i) - motion.latchZ(i)) <= RELATCH_REACH
+                    && matesAround(s, i) >= RELATCH_MATES) {
+                motion.setLatch(i, true, motion.x(i), motion.z(i)); // QA-12: the crowd moved it: it holds where it is
+            } else {
+                s.orders().replaceMove(i, motion.latchX(i), motion.latchZ(i));
+                s.bus().publish(new OrderReceived(handle)); // back to the latch point; the order releases the latch
+            }
         }
     }
 
@@ -477,6 +537,26 @@ public final class MotionSystem implements MatchSystem {
         s.spatial()
                 .forEachInRadius(motion.x(i), motion.z(i), touchRadius + MAX_RADIUS + TOUCH, UnitFilter.ANY, toucher);
         return touched;
+    }
+
+    /** How many other idle units touch unit {@code i}. */
+    private int matesAround(MatchState s, int i) {
+        MotionStore motion = s.motion();
+        touchSelf = i;
+        mates = 0;
+        s.spatial()
+                .forEachInRadius(
+                        motion.x(i), motion.z(i), radius(s, i) + MAX_RADIUS + TOUCH, UnitFilter.ANY, matesCounter);
+        return mates;
+    }
+
+    private final IntConsumer matesCounter = this::mate;
+    private int mates;
+
+    private void mate(int j) {
+        if (j != touchSelf && state.ai().state(j) == UnitState.IDLE) {
+            mates++;
+        }
     }
 
     private void touch(int j) {
@@ -751,6 +831,46 @@ public final class MotionSystem implements MatchSystem {
             case Surface.SLOW -> SLOW;
             default -> 1;
         };
+    }
+
+    /** How near a waypoint it has just passed a unit's leg on is checked for being clear, blocks. */
+    static final double CORNER = 3;
+
+    /** A unit this near the line of its leg is on it: it steers on, clear leg or not. */
+    static final double OFF_LEG = 0.25;
+
+    /**
+     * QA-12: just past a waypoint, the straight leg from where the unit now stands to the next one may cross the corner
+     * of what the path was routed through (a one-block ramp beside a cliff: the unit passed the turn half a block off
+     * its centre, slid along the cliff and walked back to the turn, again and again). While the leg is not clear the
+     * unit steers to the passed waypoint's centre; the centre of a waypoint on the path is clear by construction, and
+     * on flat ground every leg is, so nothing changes there. Checked only within {@value #CORNER} blocks of the passed
+     * waypoint, where the corner is. Null while the leg is clear.
+     */
+    private static double @org.jspecify.annotations.Nullable [] backToCorner(
+            MatchState s, int i, PathStore.Waypoints path, int cursor, double x, double z, double tx, double tz) {
+        if (cursor < 1 || cursor >= path.count()) {
+            return null;
+        }
+        double px = path.x(cursor - 1);
+        double pz = path.z(cursor - 1);
+        double away = DetMath.length(x - px, z - pz);
+        double legX = tx - px;
+        double legZ = tz - pz;
+        double leg = DetMath.length(legX, legZ);
+        double lateral = leg == 0 ? 0 : Math.abs(legX * (z - pz) - legZ * (x - px)) / leg;
+        if (away > CORNER || lateral <= OFF_LEG || inLine(s, i, tx, tz)) {
+            return null; // on its leg: an unclear leg is the path's own, and it goes on as before
+        }
+        // going back helps only if the leg is clear from the corner's centre: else the unit would go to and fro
+        SurfaceGrid grid = s.surfacesFor(i);
+        int cx = (int) Math.floor(px);
+        int cz = (int) Math.floor(pz);
+        int layer = layerOf(grid, cx, cz, path.floor(cursor - 1));
+        if (layer < 0 || LineOfWalk.walk(grid, grid.node(cx, cz, layer), px, pz, tx, tz) < 0) {
+            return null;
+        }
+        return new double[] {px, pz};
     }
 
     /** Whether unit {@code i} can walk straight from where it stands to (tx, tz). */

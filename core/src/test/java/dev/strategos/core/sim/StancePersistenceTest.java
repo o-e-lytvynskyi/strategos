@@ -42,8 +42,9 @@ class StancePersistenceTest {
         JsonObject json =
                 MatchSnapshotCodec.encode(JsonOps.INSTANCE, h.core().snapshot()).getAsJsonObject();
         assertThat(json.getAsJsonObject("play").keySet())
-                .as("schema 4 requires authority, but unused stance state remains absent")
-                .containsExactly("diplomacy");
+                .as("authority is required; statistics/vision may be set without using stances")
+                .contains("diplomacy")
+                .doesNotContain("stances");
         assertThat(h.core().snapshot().play().stances()).isEmpty();
         long hash = h.stateHash();
         KernelAccess.state(h.core()).stances(); // reading is not using

@@ -75,6 +75,24 @@ tasks.register('headlessMatches', JavaExec) {
             providers.gradleProperty('script').getOrElse('first_loop'))
 }
 
+// [M6 T23] QA-12: AI-versus-AI opening and level balance, 5 pairings x 200 seeds on the first skirmish map with fog, in
+// parallel over the cores (-Pseeds=<n per pairing>, -Ppairings=rush-boom,..., -Pthreads=<n>; anything but the full run is
+// a trial that judges exceptions and stalls only). Outside verify: tens of minutes. Writes build/reports/opening-balance.
+tasks.register('openingBalance', JavaExec) {
+    group = 'verification'
+    description = 'QA-12: the opening and level balance over 1,000 fogged AI matches; fails when a criterion does not hold.'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'dev.strategos.core.sim.ai.OpeningBalance'
+    workingDir = projectDir
+    maxHeapSize = '8g'
+    args(layout.buildDirectory.dir('reports/opening-balance').get().asFile.absolutePath,
+            providers.gradleProperty('seeds').getOrElse('200'),
+            providers.gradleProperty('pairings').getOrElse(''),
+            providers.gradleProperty('threads').getOrElse(Runtime.runtime.availableProcessors().toString()))
+    inputs.files(rootProject.fileTree('mod/src/main/resources/data')).withPropertyName('modData')
+    outputs.upToDateWhen { false }
+}
+
 // [T6b] long seeded determinism runs; part of verify and of verifySoak, not verifyFast.
 tasks.register('soak', Test) {
     group = 'verification'

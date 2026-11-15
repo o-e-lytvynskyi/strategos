@@ -1,5 +1,7 @@
 package dev.strategos.core.client.build;
 
+import dev.strategos.core.client.fog.ShroudExtract;
+import dev.strategos.core.client.model.ClientMatchModel;
 import dev.strategos.core.content.Blueprint;
 import dev.strategos.core.content.Footprint;
 import dev.strategos.core.content.PlacementRules;
@@ -31,6 +33,24 @@ public final class ClientPlacement {
 
         /** Whether a block of a node stands in the column: a log or a forage plant, by its resource entry. */
         boolean node(int x, int z);
+
+        /** Whether the faction has explored this cell; true by default (no fog). */
+        default boolean explored(int x, int z) {
+            return true;
+        }
+    }
+
+    /**
+     * Whether the client's faction has explored match-local block column ({@code x}, {@code z}): the vision grid's cells
+     * are {@value ShroudExtract#CELL_BLOCKS} blocks wide, and a client with no vision grid (an observer's, or before the
+     * first delta) has nothing hidden; the server checks the placement anyway.
+     */
+    public static boolean explored(ClientMatchModel model, int x, int z) {
+        if (model.visionCellsX() <= 0 || model.visionCellsZ() <= 0) {
+            return true;
+        }
+        return model.isExplored(
+                Math.floorDiv(x, ShroudExtract.CELL_BLOCKS), Math.floorDiv(z, ShroudExtract.CELL_BLOCKS));
     }
 
     /** The match of {@code sizeX} × {@code sizeZ} as the rules read it on a client. */
@@ -80,7 +100,7 @@ public final class ClientPlacement {
 
             @Override
             public boolean explored(int x, int z) {
-                return true; // every cell until fog (M6), as on the server
+                return columns.explored(x, z);
             }
 
             @Override

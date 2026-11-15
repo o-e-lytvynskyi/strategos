@@ -98,7 +98,7 @@ class WireCodecSizeTest {
                         "strategos:move=1,strategos:stop=2,strategos:spawn_units=3,"
                                 + "strategos:attack=4,strategos:attack_move=5,strategos:follow=6,strategos:grant=7,"
                                 + "strategos:spawn_building=8,strategos:gather=9,strategos:place_building=10,strategos:train=11,"
-                                + "strategos:cancel_train=12,strategos:set_rally=13,strategos:reseed=14,strategos:resign=15,strategos:rule_change=16,strategos:announce_wave=17,strategos:set_ai=18,strategos:build=19,strategos:cancel_building=20,strategos:demolish=21,strategos:set_auto_reseed=22,strategos:train_batch=23,strategos:spawn_deposit=24,strategos:set_stance=25,strategos:garrison=26,strategos:ungarrison=27,strategos:ring_bell=28,strategos:all_clear=29,strategos:attack_spread=30");
+                                + "strategos:cancel_train=12,strategos:set_rally=13,strategos:reseed=14,strategos:resign=15,strategos:rule_change=16,strategos:announce_wave=17,strategos:set_ai=18,strategos:build=19,strategos:cancel_building=20,strategos:demolish=21,strategos:set_auto_reseed=22,strategos:train_batch=23,strategos:spawn_deposit=24,strategos:set_stance=25,strategos:garrison=26,strategos:ungarrison=27,strategos:ring_bell=28,strategos:all_clear=29,strategos:attack_spread=30,strategos:research=31");
         assertThat(CommandKinds.DEFAULT.reads("strategos:move=1,strategos:stop=2,strategos:spawn_units=3"))
                 .as("M1's journals read")
                 .isTrue();
@@ -157,11 +157,48 @@ class WireCodecSizeTest {
                 .isEqualTo(1 + 2 + 1 + 2 + 1 + 1 + 1 + 2 + 1 + 1 + 3);
     }
 
+    /** TECH-03, row 5: {@code looks} are appended to {@code match_state}, a byte a faction, after any results. */
+    @Test
+    void matchStateCarriesTheFactionTiersAppended() {
+        List<FactionLook> looks = List.of(new FactionLook(1, 0), new FactionLook(0, 1), FactionLook.BASE);
+        MatchStateMsg running = new MatchStateMsg(3, MatchStateMsg.Lifecycle.RUNNING, 1_200, null, looks);
+        assertThat(size(MatchStateMsg.WIRE, running))
+                .as("id, lifecycle, tick, the count and a byte per faction")
+                .isEqualTo(1 + 1 + 2 + 1 + 3);
+        assertThat(roundTrip(MatchStateMsg.WIRE, running).looks()).isEqualTo(looks);
+        byte[] older =
+                WireCodec.encode(MatchStateMsg.WIRE, new MatchStateMsg(3, MatchStateMsg.Lifecycle.RUNNING, 1_200));
+        assertThat(WireCodec.decode(MatchStateMsg.WIRE, older).looks())
+                .as("a message of the form before the field reads as no looks")
+                .isEmpty();
+        assertThat(Arrays.copyOf(WireCodec.encode(MatchStateMsg.WIRE, running), older.length))
+                .as("the tiers come after the form that went before")
+                .isEqualTo(older);
+        MatchResults results = new MatchResults(1, 500, List.of());
+        MatchStateMsg ended = new MatchStateMsg(3, MatchStateMsg.Lifecycle.ENDED, 600, results, looks);
+        assertThat(roundTrip(MatchStateMsg.WIRE, ended)).isEqualTo(ended);
+        MatchStateMsg noResults = new MatchStateMsg(3, MatchStateMsg.Lifecycle.ENDED, 600, null, looks);
+        assertThat(roundTrip(MatchStateMsg.WIRE, noResults).looks())
+                .as("the reader could not tell them from results, so they are not written")
+                .isEmpty();
+        List<FactionLook> most = new ArrayList<>();
+        for (int k = 0; k < MatchStateMsg.MAX_FACTIONS; k++) {
+            most.add(new FactionLook(15, 15));
+        }
+        MatchStateMsg widest =
+                new MatchStateMsg(Integer.MAX_VALUE, MatchStateMsg.Lifecycle.RUNNING, Long.MAX_VALUE, null, most);
+        assertThat(roundTrip(MatchStateMsg.WIRE, widest)).isEqualTo(widest);
+        assertThat(size(MatchStateMsg.WIRE, widest)).isLessThanOrEqualTo(MatchStateMsg.WIRE.maxSize());
+        assertThatThrownBy(() -> new FactionLook(16, 0)).isInstanceOf(IllegalArgumentException.class);
+    }
+
     @Test
     void thePayloadRecordsStayWithinTheirCaps() {
         assertThat(CommandBatch.WIRE.maxSize()).as("commands").isEqualTo(4 * 1024);
         assertThat(MatchJoin.WIRE.maxSize()).as("match_join").isLessThanOrEqualTo(4 * 1024);
-        assertThat(MatchStateMsg.WIRE.maxSize()).as("match_state").isLessThanOrEqualTo(256);
+        assertThat(MatchStateMsg.WIRE.maxSize())
+                .as("match_state")
+                .isLessThanOrEqualTo(1056); // results 1024, looks 21 (TECH-03)
         assertThat(FeedbackMsg.WIRE.maxSize()).as("feedback").isLessThanOrEqualTo(1024);
 
         MatchJoin widest = new MatchJoin(
@@ -185,8 +222,19 @@ class WireCodecSizeTest {
                 new Feedback(Integer.MAX_VALUE, CommandOutcome.REJECTED, null, Integer.MAX_VALUE, Integer.MAX_VALUE);
         assertThat(roundTrip(FeedbackMsg.WIRE, all)).isEqualTo(all);
         MatchStateMsg late = new MatchStateMsg(Integer.MAX_VALUE, MatchStateMsg.Lifecycle.DISPOSED, Long.MAX_VALUE);
-        assertThat(size(MatchStateMsg.WIRE, late)).isEqualTo(MatchStateMsg.WIRE.maxSize());
+        assertThat(size(MatchStateMsg.WIRE, late))
+                .as("without results")
+                .isLessThanOrEqualTo(MatchStateMsg.WIRE.maxSize());
         assertThat(roundTrip(MatchStateMsg.WIRE, late)).isEqualTo(late);
+        MatchStateMsg ended = new MatchStateMsg(
+                Integer.MAX_VALUE,
+                MatchStateMsg.Lifecycle.ENDED,
+                Long.MAX_VALUE,
+                new dev.strategos.core.protocol.MatchResults(-1, Long.MAX_VALUE, java.util.List.of()));
+        assertThat(size(MatchStateMsg.WIRE, ended))
+                .as("with empty results")
+                .isLessThanOrEqualTo(MatchStateMsg.WIRE.maxSize());
+        assertThat(roundTrip(MatchStateMsg.WIRE, ended)).isEqualTo(ended);
     }
 
     @Test
@@ -363,6 +411,70 @@ class WireCodecSizeTest {
                 .as("a usual state is a few dozen bytes")
                 .isLessThan(40);
         assertThat(roundTrip(FactionState.WIRE, opening)).isEqualTo(opening);
+    }
+
+    @Test
+    void aFactionStateWithResearchRoundTripsWithinItsCap() {
+        List<Long> amounts = new ArrayList<>();
+        List<Integer> workers = new ArrayList<>();
+        for (int r = 0; r < FactionState.MAX_RESOURCES; r++) {
+            amounts.add(Long.MAX_VALUE - r);
+            workers.add(Integer.MAX_VALUE - r);
+        }
+        List<Integer> researched = new ArrayList<>();
+        for (int k = 0; k < FactionState.MAX_RESEARCHED; k++) {
+            researched.add(Integer.MAX_VALUE - k); // the widest varints
+        }
+        FactionState widest = new FactionState(
+                Integer.MAX_VALUE,
+                7,
+                Long.MAX_VALUE,
+                amounts,
+                amounts,
+                amounts,
+                150,
+                200,
+                99,
+                workers,
+                researched,
+                255);
+        assertThat(size(FactionState.WIRE, widest)).isLessThanOrEqualTo(FactionState.WIRE.maxSize());
+        assertThat(roundTrip(FactionState.WIRE, widest)).isEqualTo(widest);
+
+        FactionState some = new FactionState(
+                1, 0, 400, List.of(1L), List.of(0L), List.of(0L), 5, 20, 0, List.of(0), List.of(3, 0, 12), 1);
+        assertThat(roundTrip(FactionState.WIRE, some)).isEqualTo(some);
+        assertThat(roundTrip(FactionState.WIRE, some).researched())
+                .as("in the order researched")
+                .containsExactly(3, 0, 12);
+        assertThat(some.sameAs(
+                        new FactionState(1, 0, 999, List.of(1L), List.of(0L), List.of(0L), 5, 20, 0, List.of(0))))
+                .as("research and phase count as a change")
+                .isFalse();
+    }
+
+    @Test
+    void aFactionStateWithoutResearchKeepsTheOldFieldsAndAddsTwoBytes() {
+        FactionState old =
+                new FactionState(1, 0, 400, List.of(300_000L), List.of(0L), List.of(0L), 5, 20, 0, List.of(0));
+        assertThat(old.researched()).isEmpty();
+        assertThat(old.phase()).isZero();
+        byte[] bytes = WireCodec.encode(FactionState.WIRE, old);
+        // the old layout ends with idle workers; research is a zero count then phase 0
+        assertThat(bytes[bytes.length - 2]).as("no techs").isZero();
+        assertThat(bytes[bytes.length - 1]).as("phase 0").isZero();
+        assertThat(WireCodec.decode(FactionState.WIRE, bytes)).isEqualTo(old);
+
+        List<Integer> many = new ArrayList<>();
+        for (int k = 0; k <= FactionState.MAX_RESEARCHED; k++) {
+            many.add(k);
+        }
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> new FactionState(
+                        1, 0, 400, List.of(1L), List.of(0L), List.of(0L), 5, 20, 0, List.of(0), many, 0))
+                .isInstanceOf(IllegalArgumentException.class);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> new FactionState(
+                        1, 0, 400, List.of(1L), List.of(0L), List.of(0L), 5, 20, 0, List.of(0), List.of(), 256))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

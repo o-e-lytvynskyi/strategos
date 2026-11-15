@@ -193,11 +193,12 @@ class AvoidanceTest {
      */
     @Test
     void aStandingCrowdKeepsItsHistory() {
-        assertThat(standingCrowd(false, false)).isEqualTo(-3768017173266802458L);
+        // FOW-01 / MATCH-07: explored bits enter the state hash (SimHarness defaults to explored-at-start).
+        assertThat(standingCrowd(false, false)).isEqualTo(-8518389129855957091L);
         assertThat(standingCrowd(true, false))
                 .as("one unit displaced from outside")
-                .isEqualTo(2536433895209204293L);
-        assertThat(standingCrowd(false, true)).as("an agent beside it").isEqualTo(-7976379457236708123L);
+                .isEqualTo(4949583233203846329L);
+        assertThat(standingCrowd(false, true)).as("an agent beside it").isEqualTo(542518103420186108L);
     }
 
     private static long standingCrowd(boolean displace, boolean agent) {
