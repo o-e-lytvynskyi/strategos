@@ -36,6 +36,12 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Log
 
+### 2026-11-15 — T3b runtime admission test-first checkpoint
+
+- Added three engine regressions: four distinct player seats controlling two economy factions, single-use first-tick authority installation, and preserved refusal of unbound legacy seats without partial roster changes.
+- `MatchRuntime.initializeDiplomacy` is intentionally absent in this checkpoint. These tests establish runtime/registry integration, not mock-client transport or whole-lobby start acceptance. Verified GameTest sequence APIs in the NeoForge 21.1.264 source artifact.
+- **Next:** inspect the expected missing-API cloud failure; install the bounded runtime setup path and diplomacy-based seat validation; verify/slow/soak in the cloud before accepting this tick-boundary step.
+
 ### 2026-11-15 — T3b authority/preparation service implementation
 
 - Test-first cloud verify 43757256933 on 193c84b7 failed at `:mod:compileTestJava` because `LobbyService` did not exist, as intended; this is not a runtime failure.
