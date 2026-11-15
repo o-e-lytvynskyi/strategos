@@ -147,6 +147,29 @@ class LobbyLaunchPlanTest {
     }
 
     @Test
+    void aiUsesTheShippedM6StrategyAtTheChosenLevel() throws java.io.IOException {
+        String script;
+        try (var input = java.util.Objects.requireNonNull(
+                getClass().getClassLoader().getResourceAsStream("data/strategos/strategos/ai/skirmish.json"))) {
+            script = new String(input.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+        }
+        MatchLobby lobby = ready(List.of(seat(0, MatchLobby.Kind.HUMAN, 0), seat(1, MatchLobby.Kind.AI, 1)));
+        SkirmishSetup hard = new SkirmishSetup(
+                SkirmishSetup.FIRST_SKIRMISH,
+                SkirmishSetup.Level.HARD,
+                SkirmishSetup.StartResources.MAP,
+                150,
+                SkirmishSetup.Visibility.FOG);
+        LobbyLaunchPlan plan =
+                LobbyLaunchPlan.create(lobby, hard, scenario(), STARTS, TemplateSet.builtin(), CIVS, script);
+        assertThat(plan.commands())
+                .contains(new dev.strategos.core.protocol.SetAi(
+                        new FactionSlot(1),
+                        dev.strategos.core.sim.ai.Levels.PROFILE,
+                        dev.strategos.core.sim.ai.Levels.resolve(script, "hard")));
+    }
+
+    @Test
     void aFactionCannotMixAiAndHumanControllersAndAiNeedsItsActualScript() {
         MatchLobby mixed = ready(List.of(seat(0, MatchLobby.Kind.HUMAN, 0), seat(1, MatchLobby.Kind.AI, 0)));
         assertThatIllegalArgumentException().isThrownBy(() -> plan(mixed, null));

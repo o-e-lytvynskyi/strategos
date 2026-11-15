@@ -32,3 +32,10 @@ no initial recipient snapshot observes the legacy identity mapping. Install the 
 through the normal journaled tick input before admitting any member. This transient adapter
 queue is not persistence: production preparation must cancel on server stop until the launch
 transaction is covered by save/restore tests.
+
+## Prepare factions once, not once per co-op member
+
+Build initial scenario commands by economy faction, then bind each player seat separately.
+Iterating human seats to grant/spawn starting assets duplicates a co-op faction's economy.
+Use the actual scenario command builder before allocation, reject unsupported controller/asset
+configurations, and freeze the template-set version for the preparation backend to check again.

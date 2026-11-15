@@ -36,6 +36,13 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Log
 
+### 2026-11-15 — Implement validated M6 lobby launch preflight
+
+- Cloud verify 43764218449 on b9772439 failed at unit-test compilation for the absent `LobbyLaunchPlan`, as intended; 1,944 core cases passed. Implemented the immutable preflight via actual M6 `ScenarioSetup.commands`, `SkirmishSetup` resource presets and shipped AI level resolution.
+- A frozen ready lobby now yields one initialization per economy faction, distinct player bindings, locked teams, the chosen play/population rules and a frozen template-set hash. Unsupported map/scenario capacity, civ assets, templates or controller combinations are rejected before allocation. Closed factions receive no starting assets. Seven contracts include the real shipped Hard AI strategy.
+- Reserve hosted-runner capacity for development by capping subsequent AI matrices at 16 parallel jobs; all twenty seeds and the aggregate coverage gate remain mandatory. The first complete route invocation continues undisturbed on 6043f74e.
+- **Next:** full cloud verify for preflight, finish monitoring all twenty seeds, then implement the M6 allocation/preparation/admission backend and private protocol. No world start or payload is certified by this pure plan.
+
 ### 2026-11-15 — Cloud route preliminary gates green; T3b launch-plan checkpoint
 
 - Cloud verify 43763256587 on 6043f74e passed: 2,641 canonical XML cases, zero failures/errors/skips, including all three seed-range contracts. Full-ci's evidence-checker counterexamples and slow/core job passed; all twenty AI jobs are still running and the aggregate is not accepted yet.
