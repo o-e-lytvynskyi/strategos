@@ -1,6 +1,6 @@
 package dev.strategos.devtools.demo;
 
-import dev.strategos.core.protocol.AttackMove;
+import dev.strategos.core.protocol.Attack;
 import dev.strategos.core.protocol.Grant;
 import dev.strategos.core.protocol.NoticeKind;
 import dev.strategos.core.protocol.PlaceBuilding;
@@ -15,6 +15,13 @@ import org.jspecify.annotations.Nullable;
 
 /** M6: the notification feed and its sounds: a villager trained, a house built, a tech researched, an attack. */
 final class NoticesChapter implements DemoChapter {
+    // the scene's places, plot-relative: the workers start clear of every building, the house goes up beside them
+    static final int CENTRE_DX = -12;
+    static final int STOREHOUSE_DX = 10;
+    static final int WORKERS_DX = 0;
+    static final int WORKERS_DZ = 2;
+    static final int HOUSE_DZ = 12;
+
     @Override
     public String id() {
         return "notices";
@@ -35,9 +42,9 @@ final class NoticesChapter implements DemoChapter {
         Watch watch = new Watch();
         s.run(st -> watch.attach(st.match()))
                 .run(st -> {
-                    st.building(Ids.CIVIC_CENTRE, 0, -12, -6);
-                    st.building(Ids.STOREHOUSE, 0, 10, -6);
-                    st.units(Ids.WORKER, 0, 0, 10, 4, 1.5);
+                    st.building(Ids.CIVIC_CENTRE, 0, CENTRE_DX, -6);
+                    st.building(Ids.STOREHOUSE, 0, STOREHOUSE_DX, -6);
+                    st.units(Ids.WORKER, 0, WORKERS_DX, WORKERS_DZ, 4, 1.5);
                     st.admin(new Grant(new FactionSlot(0), "food", 300));
                     st.admin(new Grant(new FactionSlot(0), "wood", 300));
                 })
@@ -54,7 +61,7 @@ final class NoticesChapter implements DemoChapter {
                 .pause(3)
                 .say("A house is built: the anvil")
                 .run(st -> {
-                    int[] at = st.corner(Ids.HOUSE, 0, 12);
+                    int[] at = st.corner(Ids.HOUSE, 0, HOUSE_DZ);
                     int[] w = st.handles(0, Ids.WORKER);
                     st.order(
                             0,
@@ -80,7 +87,10 @@ final class NoticesChapter implements DemoChapter {
                 .say("Under attack: the bell, and the alert's place")
                 .run(st -> {
                     st.units(Ids.INFANTRY, 1, 30, 10, 2, 1.5);
-                    st.admin(AttackMove.replace(UnitSet.of(st.handles(1, Ids.INFANTRY)), st.at(0, 10)));
+                    int[] w = st.handles(0, Ids.WORKER);
+                    if (w.length > 0) { // the raiders go for a worker itself: a point beside the house may be its walls
+                        st.admin(Attack.replace(UnitSet.of(st.handles(1, Ids.INFANTRY)), w[0]));
+                    }
                 })
                 .until("a worker hurt", 60, st -> Fights.hurt(st, 0, Ids.WORKER) > 0)
                 .pause(6);

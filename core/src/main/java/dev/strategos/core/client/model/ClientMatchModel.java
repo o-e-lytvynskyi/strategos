@@ -357,6 +357,9 @@ public final class ClientMatchModel {
     /** Forgets the match: the player left it. */
     public void clear() {
         clears++;
+        faction = null;
+        buildings = null;
+        deposits = null;
         end = null;
         alert = null;
         alerts = 0;

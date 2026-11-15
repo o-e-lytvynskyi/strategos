@@ -145,34 +145,18 @@ public final class ShroudRenderer {
         for (Page page : pages) {
             ShroudExtract.PageMesh mesh = page.mesh;
             for (int q = 0; q < mesh.quads(); q++) {
-                vertex(quads, pose, ox + mesh.x(q, 0), oy + page.y[q * 4], oz + mesh.z(q, 0), u0, v0, mesh.alpha(q, 0));
-                vertex(
-                        quads,
-                        pose,
-                        ox + mesh.x(q, 1),
-                        oy + page.y[q * 4 + 1],
-                        oz + mesh.z(q, 1),
-                        u1,
-                        v0,
-                        mesh.alpha(q, 1));
-                vertex(
-                        quads,
-                        pose,
-                        ox + mesh.x(q, 2),
-                        oy + page.y[q * 4 + 2],
-                        oz + mesh.z(q, 2),
-                        u1,
-                        v1,
-                        mesh.alpha(q, 2));
-                vertex(
-                        quads,
-                        pose,
-                        ox + mesh.x(q, 3),
-                        oy + page.y[q * 4 + 3],
-                        oz + mesh.z(q, 3),
-                        u0,
-                        v1,
-                        mesh.alpha(q, 3));
+                for (int slot = 0; slot < 4; slot++) {
+                    int c = ShroudExtract.PageMesh.upwardCorner(slot); // the quad's face is up, or culling drops it
+                    vertex(
+                            quads,
+                            pose,
+                            ox + mesh.x(q, c),
+                            oy + page.y[q * 4 + c],
+                            oz + mesh.z(q, c),
+                            c == 0 || c == 3 ? u0 : u1,
+                            c < 2 ? v0 : v1,
+                            mesh.alpha(q, c));
+                }
             }
         }
         buffers.endBatch(type);

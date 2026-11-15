@@ -52,6 +52,14 @@ public final class ShroudExtract {
             return held;
         }
 
+        /**
+         * The corner to emit {@code slot}-th (0..3) so the quad faces up: the stored order SW, SE, NE, NW runs
+         * clockwise seen from above, which back-face culling drops, so it is emitted reversed (SW, NW, NE, SE).
+         */
+        public static int upwardCorner(int slot) {
+            return (4 - slot) & 3;
+        }
+
         /** Corner {@code c} (0..3: SW, SE, NE, NW) of quad {@code q}: match-local X. */
         public float x(int q, int c) {
             return data[12 * q + 3 * c];
@@ -173,7 +181,7 @@ public final class ShroudExtract {
                 float bz0 = cz * (float) CELL_BLOCKS;
                 float bx1 = (cx + 1) * (float) CELL_BLOCKS;
                 float bz1 = (cz + 1) * (float) CELL_BLOCKS;
-                // SW, SE, NE, NW — winding for an upward normal
+                // SW, SE, NE, NW; the renderer emits them through upwardCorner for an upward normal
                 out.add(bx0, bz0, a00, bx1, bz0, a10, bx1, bz1, a11, bx0, bz1, a01);
             }
         }

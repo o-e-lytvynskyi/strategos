@@ -5,10 +5,14 @@ import dev.strategos.core.protocol.Research;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.sim.build.BuildingView;
 import java.util.List;
+import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
 /** M6: four village buildings, then a fifth; the civic centre researches Town and the phase notice goes out. */
 final class TownChapter implements DemoChapter {
+    /** What the chapter grants: at least the Town phase's cost. */
+    static final Map<String, Integer> GRANTS = Map.of("food", 500, "wood", 600, "stone", 300, "iron", 200);
+
     @Override
     public String id() {
         return "town";
@@ -34,10 +38,7 @@ final class TownChapter implements DemoChapter {
                     st.building(Ids.HOUSE, 0, -12, -14);
                     st.building(Ids.STOREHOUSE, 0, 0, -14);
                     st.building(Ids.FARMSTEAD, 0, 12, -14);
-                    st.admin(new Grant(new FactionSlot(0), "food", 500));
-                    st.admin(new Grant(new FactionSlot(0), "wood", 500));
-                    st.admin(new Grant(new FactionSlot(0), "stone", 300));
-                    st.admin(new Grant(new FactionSlot(0), "iron", 200));
+                    GRANTS.forEach((resource, n) -> st.admin(new Grant(new FactionSlot(0), resource, n)));
                 })
                 .look(0, -2, 48)
                 .until(

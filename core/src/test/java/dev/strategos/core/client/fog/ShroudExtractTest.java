@@ -94,4 +94,24 @@ class ShroudExtractTest {
         assertThat(ShroudExtract.pages(cells)).isEqualTo(6);
         assertThat(cells * ShroudExtract.CELL_BLOCKS).isEqualTo(blocks);
     }
+
+    @Test
+    void aQuadIsEmittedFacingUpSoCullingKeepsIt() {
+        long[] visible = new long[ShroudExtract.words(1, 1)];
+        long[] explored = new long[visible.length];
+        ShroudExtract.PageMesh mesh = new ShroudExtract.PageMesh();
+        ShroudExtract.extractPage(visible, explored, 1, 1, 0, 0, mesh);
+        assertThat(mesh.quads()).isEqualTo(1);
+        int a = ShroudExtract.PageMesh.upwardCorner(0);
+        int b = ShroudExtract.PageMesh.upwardCorner(1);
+        int c = ShroudExtract.PageMesh.upwardCorner(2);
+        assertThat(java.util.List.of(a, b, c, ShroudExtract.PageMesh.upwardCorner(3)))
+                .containsExactlyInAnyOrder(0, 1, 2, 3);
+        // the up face's normal is (e1 x e2).y with e1 = b - a, e2 = c - a on the (x, z) plane: x1*z2 - z1*x2 > 0
+        double e1x = mesh.x(0, b) - mesh.x(0, a);
+        double e1z = mesh.z(0, b) - mesh.z(0, a);
+        double e2x = mesh.x(0, c) - mesh.x(0, a);
+        double e2z = mesh.z(0, c) - mesh.z(0, a);
+        assertThat(e1z * e2x - e1x * e2z).as("normal y of a, b, c").isPositive();
+    }
 }
