@@ -36,6 +36,13 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Log
 
+### 2026-11-15 — T3b authority/preparation service implementation
+
+- Test-first cloud verify 43757256933 on 193c84b7 failed at `:mod:compileTestJava` because `LobbyService` did not exist, as intended; this is not a runtime failure.
+- Added authenticated lobby admission/edit/readiness and a frozen preparation transaction behind a backend boundary. Only admitted online members receive state; client configuration cannot assign UUID occupants. A failed/disconnected preparation cancels partial runtime state before readiness resets; failed cleanup keeps the lobby frozen instead of admitting another launch.
+- Added asynchronous failure and cleanup-failure cases (11 service contracts total). The production M6 backend, payload registration/client projection and real mock-player start remain unimplemented; this code alone does not close T3b or certify networking/privacy at runtime.
+- **Next:** full cloud verify for this step, then wire the M6 backend and protocol with their engine-level tests.
+
 ### 2026-11-15 — T3b service test-first checkpoint
 
 - Added nine L2 service contract tests for host authority, member-only publication, authenticated readiness, occupied-seat/duplicate-member rejection, configuration invalidation, validation before allocation, frozen single preparation, allocation rollback, disconnect cancellation and the one-active-match restriction.

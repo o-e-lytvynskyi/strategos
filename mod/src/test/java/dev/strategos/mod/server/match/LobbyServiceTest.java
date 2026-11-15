@@ -41,6 +41,7 @@ class LobbyServiceTest {
         boolean invalid;
         boolean fail;
         boolean cancelled;
+        boolean cancelFails;
         int starts;
         LobbyService.Preparation.Status status = LobbyService.Preparation.Status.PREPARING;
 
@@ -81,6 +82,7 @@ class LobbyServiceTest {
 
                 @Override
                 public void cancel() {
+                    if (cancelFails) throw new IllegalStateException("cleanup failed");
                     cancelled = true;
                 }
             };
@@ -213,6 +215,34 @@ class LobbyServiceTest {
         assertThat(backend.cancelled).isTrue();
         assertThat(service.snapshot().state()).isEqualTo(LobbyService.State.EDITING);
         assertThat(service.snapshot().lobby().readyPlayers()).isEmpty();
+    }
+
+    @Test
+    void asynchronousFailureDisposesBeforeReturningToEditing() {
+        Backend backend = new Backend();
+        LobbyService service = open(backend);
+        ready(service);
+        service.start(HOST);
+        backend.status = LobbyService.Preparation.Status.FAILED;
+        service.tick();
+        assertThat(backend.cancelled).isTrue();
+        assertThat(service.snapshot().state()).isEqualTo(LobbyService.State.EDITING);
+        assertThat(service.snapshot().lobby().readyPlayers()).isEmpty();
+    }
+
+    @Test
+    void failedCleanupCannotAdvertiseAnEditableLobbyOrAllocateAgain() {
+        Backend backend = new Backend();
+        LobbyService service = open(backend);
+        ready(service);
+        service.start(HOST);
+        backend.status = LobbyService.Preparation.Status.FAILED;
+        backend.cancelFails = true;
+        service.tick();
+        assertThat(service.snapshot().state()).isEqualTo(LobbyService.State.FAILED);
+        assertThat(service.snapshot().lobby().phase()).isEqualTo(MatchLobby.Phase.PREPARING);
+        assertThatIllegalStateException().isThrownBy(() -> service.start(HOST));
+        assertThat(backend.starts).isEqualTo(1);
     }
 
     @Test
