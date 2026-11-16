@@ -76,6 +76,12 @@ public final class LobbyService {
         return member.equals(host);
     }
 
+    /** An editable, preparing or failed lobby reserves the production match-start entry points. */
+    public boolean reservesStart() {
+        Snapshot value = current;
+        return value != null && value.state() != State.CLOSED && value.state() != State.STARTED;
+    }
+
     public Snapshot snapshot() {
         Snapshot value = current;
         if (value == null) throw new IllegalStateException("no lobby is open");

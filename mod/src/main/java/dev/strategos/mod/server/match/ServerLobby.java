@@ -39,6 +39,13 @@ public final class ServerLobby {
         LobbyIntents.accept(service, sender, action);
     }
 
+    /** Production solo setup shares the lobby's single active match policy. Test placers remain isolated seams. */
+    public void requireSoloStartAllowed() {
+        if (service.reservesStart() || backend.activeMatch()) {
+            throw new MatchRefusedException("a lobby or match is already active");
+        }
+    }
+
     public void tick() {
         service.tick();
     }
