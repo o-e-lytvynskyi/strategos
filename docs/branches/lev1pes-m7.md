@@ -36,6 +36,12 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Log
 
+### 2026-11-16 — Correct the preparation test's isolated batch
+
+- Verify 43768987265 on 33728b65 compiled the implementation, then the generator correctly rejected the new solo preflight test in the shared `default` batch (QA-04.5). Its engine suite did not run; 1,944 canonical core cases passed. This is a test declaration error, not an accepted runtime result.
+- Assigned the test its own `lobby_preflight` batch, retaining `solo`, the timeout and every assertion. No isolation guard or gate was changed.
+- **Next:** full verify of the corrected fixture; only then launch complete slow/soak for the new runtime path.
+
 ### 2026-11-16 — Implement real M6 preparation and atomic admission
 
 - Test-first cloud verify 43767063415 on 89efdf1a failed at GameTest compilation for absent `LobbyPreparation`, as intended; 1,944 core cases passed. Implemented actual map/scenario/template preflight, import allocation, queued first-tick authority/admin setup and checked command replies before admission.

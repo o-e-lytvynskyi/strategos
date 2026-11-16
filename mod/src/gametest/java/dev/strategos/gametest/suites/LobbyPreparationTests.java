@@ -127,7 +127,7 @@ public final class LobbyPreparationTests {
         });
     }
 
-    @StrategosTest(solo = true, timeoutTicks = 100)
+    @StrategosTest(batch = "lobby_preflight", solo = true, timeoutTicks = 100)
     public static void invalidPreflightDoesNotInvokeTheWorldAllocator(GameTestHelper h) {
         int[] allocations = {0};
         boolean refused = false;
