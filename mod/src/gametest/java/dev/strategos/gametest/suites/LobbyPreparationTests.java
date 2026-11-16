@@ -13,9 +13,11 @@ import dev.strategos.gametest.StrategosTest;
 import dev.strategos.gametest.net.MockViewer;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.server.content.MapPackageLoader;
+import dev.strategos.mod.server.match.LobbyBackend;
 import dev.strategos.mod.server.match.LobbyPreparation;
 import dev.strategos.mod.server.match.LobbyService;
 import dev.strategos.mod.server.match.MatchLobby;
+import dev.strategos.mod.server.match.MatchRuntime;
 import dev.strategos.mod.server.match.MatchSpace;
 import dev.strategos.mod.server.match.Skirmishes;
 import java.util.List;
@@ -49,8 +51,8 @@ public final class LobbyPreparationTests {
         };
     }
 
-    private static MatchLobby ready(UUID host, UUID peer, String civilisation) {
-        MatchLobby lobby = MatchLobby.create(
+    private static MatchLobby configured(UUID host, @org.jspecify.annotations.Nullable UUID peer, String civilisation) {
+        return MatchLobby.create(
                 2,
                 List.of(
                         new MatchLobby.Seat(
@@ -63,7 +65,13 @@ public final class LobbyPreparationTests {
                                 1,
                                 civilisation,
                                 1)));
-        return lobby.withReady(host, true, 0).withReady(peer, true, 0).prepare();
+    }
+
+    private static MatchLobby ready(UUID host, UUID peer, String civilisation) {
+        return configured(host, peer, civilisation)
+                .withReady(host, true, 0)
+                .withReady(peer, true, 0)
+                .prepare();
     }
 
     @StrategosTest(batch = "map_lobby_start", solo = true, timeoutTicks = 40000)
@@ -75,13 +83,29 @@ public final class LobbyPreparationTests {
                 MockViewer.join(h.getLevel(), "stg-lobby-peer", corner.getX(), corner.getY() + 16, corner.getZ(), 2);
         MockViewer outsider =
                 MockViewer.join(h.getLevel(), "stg-lobby-out", corner.getX(), corner.getY() + 16, corner.getZ(), 2);
+        host.operator(2);
         StrategosServer server = StrategosServer.get();
-        LobbyPreparation preparation = LobbyPreparation.start(
+        List<UUID> published = new java.util.ArrayList<>();
+        MatchRuntime[] allocated = new MatchRuntime[1];
+        Skirmishes.Placer actual = placer(h, 21);
+        LobbyService service = new LobbyService(new LobbyBackend(
                 server,
-                ready(host.player().getUUID(), peer.player().getUUID(), "strategos:placeholder"),
-                SkirmishSetup.DEFAULTS,
-                placer(h, 21));
-        var rt = preparation.match();
+                (map, options) -> {
+                    MatchRuntime rt = actual.place(map, options);
+                    allocated[0] = rt;
+                    return rt;
+                },
+                (member, snapshot) -> published.add(member)));
+        UUID hostId = host.player().getUUID();
+        UUID peerId = peer.player().getUUID();
+        service.open(
+                hostId, 2, configured(hostId, null, "strategos:placeholder").seats(), SkirmishSetup.DEFAULTS);
+        service.join(peerId, new PlayerSlot(1));
+        long revision = service.snapshot().lobby().configurationRevision();
+        service.ready(hostId, true, revision);
+        service.ready(peerId, true, revision);
+        service.start(hostId);
+        var rt = java.util.Objects.requireNonNull(allocated[0]);
         check(rt.lifecycle() == MatchLifecycle.PREPARING, "map did not enter preparation");
         boolean refused = false;
         try {
@@ -92,12 +116,20 @@ public final class LobbyPreparationTests {
         check(refused, "a player submitted commands during import");
         check(server.matches().seatOf(host.player().getUUID()) == null, "host admitted before import/setup");
         h.onEachTick(() -> {
-            var status = preparation.poll();
-            check(status != LobbyService.Preparation.Status.FAILED, "lobby preparation failed");
+            service.tick();
+            var status = service.snapshot().state();
+            check(
+                    status == LobbyService.State.PREPARING || status == LobbyService.State.STARTED,
+                    "lobby preparation failed: " + service.snapshot().message());
             host.poll();
             peer.poll();
             outsider.poll();
-            if (status != LobbyService.Preparation.Status.COMPLETE) return;
+            if (status != LobbyService.State.STARTED) return;
+            check(
+                    published.contains(hostId)
+                            && published.contains(peerId)
+                            && !published.contains(outsider.player().getUUID()),
+                    "private publication escaped membership");
             var hostSeat = server.matches().seatOf(host.player().getUUID());
             var peerSeat = server.matches().seatOf(peer.player().getUUID());
             check(hostSeat != null && hostSeat.slot().value() == 0, "wrong host seat");
