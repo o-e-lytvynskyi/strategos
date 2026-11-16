@@ -129,12 +129,17 @@ public final class LobbyPreparationTests {
 
     @StrategosTest(batch = "lobby_preflight", solo = true, timeoutTicks = 100)
     public static void invalidPreflightDoesNotInvokeTheWorldAllocator(GameTestHelper h) {
+        BlockPos corner = h.absolutePos(BlockPos.ZERO);
+        MockViewer host =
+                MockViewer.join(h.getLevel(), "stg-pref-a", corner.getX(), corner.getY() + 16, corner.getZ(), 2);
+        MockViewer peer =
+                MockViewer.join(h.getLevel(), "stg-pref-b", corner.getX(), corner.getY() + 16, corner.getZ(), 2);
         int[] allocations = {0};
         boolean refused = false;
         try {
             LobbyPreparation.start(
                     StrategosServer.get(),
-                    ready(new UUID(7, 201), new UUID(7, 202), "strategos:missing"),
+                    ready(host.player().getUUID(), peer.player().getUUID(), "strategos:missing"),
                     SkirmishSetup.DEFAULTS,
                     (map, options) -> {
                         allocations[0]++;

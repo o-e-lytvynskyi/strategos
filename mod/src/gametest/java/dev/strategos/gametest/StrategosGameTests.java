@@ -387,6 +387,21 @@ public final class StrategosGameTests {
         afterBatch(level, "map_horsemen");
     }
 
+    @AfterBatch(batch = "lobby_preflight")
+    public static void afterLobbyPreflight(ServerLevel level) {
+        afterBatch(level, "lobby_preflight");
+    }
+
+    @AfterBatch(batch = "map_lobby_start")
+    public static void afterMapLobbyStart(ServerLevel level) {
+        afterBatch(level, "map_lobby_start");
+    }
+
+    @AfterBatch(batch = "map_lobby_cancel")
+    public static void afterMapLobbyCancel(ServerLevel level) {
+        afterBatch(level, "map_lobby_cancel");
+    }
+
     @AfterBatch(batch = "map_skirmish_setup")
     public static void afterMapSkirmishSetup(ServerLevel level) {
         afterBatch(level, "map_skirmish_setup");

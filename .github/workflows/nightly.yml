@@ -76,7 +76,8 @@ jobs:
   # M6 added a multi-hour AI soak. Every original seed runs once in its own isolated runner.
   # Each match still runs to conquest or 45 game minutes and must replay to its live hash.
   ai-soak:
-    needs: validate-harness
+    # Fail functional slow checks before reserving runners for the long twenty-seed soak.
+    needs: [validate-harness, nightly]
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     strategy:

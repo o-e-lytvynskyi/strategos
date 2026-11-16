@@ -36,6 +36,13 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Log
 
+### 2026-11-16 — Complete registration of the preparation batches
+
+- Verify 43950556665 on 7bc8aa1a correctly rejected all three new batch names because their mandatory `@AfterBatch` hooks were absent (QA-04.6); 1,944 core cases passed and no engine acceptance is inferred.
+- Added explicit hooks for `lobby_preflight`, `map_lobby_start` and `map_lobby_cancel`, each using the standard shared cleanup and end-of-batch verification. Reviewed the generator's complete rejection/registration path: each solo batch now has one case and a hook. No isolation, cleanup or report guard was weakened.
+- Strengthened the invalid-civ fixture with actual connected members, so an unrelated missing-player rejection cannot make that check pass. Subsequent AI matrices now wait for functional slow/core success before consuming long-runner capacity; the complete twenty-seed gate is unchanged.
+- **Next:** verify the corrected registration and real preflight; then run the mandatory full slow/soak against this runtime source. These are concrete fixture corrections, not retries of unchanged code.
+
 ### 2026-11-16 — Correct the preparation test's isolated batch
 
 - Verify 43768987265 on 33728b65 compiled the implementation, then the generator correctly rejected the new solo preflight test in the shared `default` batch (QA-04.5). Its engine suite did not run; 1,944 canonical core cases passed. This is a test declaration error, not an accepted runtime result.
