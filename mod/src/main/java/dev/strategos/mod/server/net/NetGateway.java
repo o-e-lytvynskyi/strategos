@@ -308,6 +308,13 @@ public final class NetGateway {
         queued.remove(player.getUUID());
     }
 
+    /** Lobby intents share the existing authenticated connection budget with simulation commands. */
+    public boolean allowLobbyIntent(ServerPlayer player) {
+        if (limiter.take(player.getUUID(), server.getTickCount(), 1, 0)) return true;
+        refused(player, "lobby_rate");
+        return false;
+    }
+
     /** Another handler refused what {@code player} sent: a violation, counted as the gateway's own are. */
     public void refused(ServerPlayer player, String reason) {
         refuse(player, server.getTickCount(), reason);

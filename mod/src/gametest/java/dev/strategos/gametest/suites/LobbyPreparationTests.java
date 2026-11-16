@@ -217,13 +217,27 @@ public final class LobbyPreparationTests {
                 MockViewer.join(h.getLevel(), "stg-lobby-ca", corner.getX(), corner.getY() + 16, corner.getZ(), 2);
         MockViewer peer =
                 MockViewer.join(h.getLevel(), "stg-lobby-cb", corner.getX(), corner.getY() + 16, corner.getZ(), 2);
-        LobbyPreparation preparation = LobbyPreparation.start(
-                StrategosServer.get(),
-                ready(host.player().getUUID(), peer.player().getUUID(), "strategos:placeholder"),
-                SkirmishSetup.DEFAULTS,
-                placer(h, 22));
-        var rt = preparation.match();
-        preparation.cancel();
+        host.operator(2);
+        MatchRuntime[] allocated = new MatchRuntime[1];
+        Skirmishes.Placer actual = placer(h, 22);
+        ServerLobby facade = new ServerLobby(StrategosServer.get(), (map, options) -> {
+            MatchRuntime rt = actual.place(map, options);
+            allocated[0] = rt;
+            return rt;
+        });
+        LobbyService service = facade.service();
+        UUID hostId = host.player().getUUID();
+        UUID peerId = peer.player().getUUID();
+        service.open(
+                hostId, 2, configured(hostId, null, "strategos:placeholder").seats(), SkirmishSetup.DEFAULTS);
+        service.join(peerId, new PlayerSlot(1));
+        long revision = service.snapshot().lobby().configurationRevision();
+        service.ready(hostId, true, revision);
+        service.ready(peerId, true, revision);
+        service.start(hostId);
+        var rt = java.util.Objects.requireNonNull(allocated[0]);
+        facade.shutdown();
+        check(service.snapshot().state() == LobbyService.State.CLOSED, "shutdown did not close lobby");
         check(rt.lifecycle() == MatchLifecycle.DISPOSED, "partial runtime not disposed");
         check(
                 StrategosServer.get().matches().all().stream().noneMatch(m -> m.id().equals(rt.id())),

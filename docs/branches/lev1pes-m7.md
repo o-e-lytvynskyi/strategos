@@ -36,6 +36,15 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Log
 
+### 2026-11-16 — Register private lobby ingress and lifecycle ownership
+
+- Verify 43958753086 on 50de3e72 passed 2,658 canonical cases, zero failures/errors/skips, including the real backend preflight and seven new bounded-wire tests. It does not certify subsequent intent/view or lifecycle changes.
+- Test-first 0a573e0c covers shutdown cancellation, completed-match preservation and fail-closed cleanup propagation; 7d400d17 covers actual stream codecs, consumed malformed bytes and exclusive PLAYER state audience. Checkpoint 977c8eed adds registered real-connection ingress, stale/outsider refusal and recipient-private views, plus STARTED views in the actual M6 preparation case; the new solo batch has its explicit cleanup hook.
+- `ServerLobby` now owns the service on the production server, ticks after imports, publishes only through the gateway to admitted recipients, and cancels transient preparation before `prepareSave` on stop. Names retained for final disconnect views are bounded by the actual roster. Unresolved cleanup propagates rather than reaching the normal persistence call.
+- Registered lobby intents/state in `ModPayloads`, inventory and audience checks. Oversized/malformed intent bytes are consumed without allocation above the cap and arrive as a bounded violation. Connection authentication, existing ingress budgets and violation counting are shared with commands; T11 retains its full security acceptance. User-visible refusals use bounded translated messages, never backend exception text.
+- **Pending:** combined-source verify, actual service-driven slow preparation/cleanup, full twenty-seed same-source AI gate. T3b.3's four-player start/deadline and legacy-entry reconciliation, T4 client reset/rendering, and T5 durable roster/launch restore remain incomplete. No task/card is marked complete by this integration checkpoint.
+
+
 ### 2026-11-16 — T3b.2 bounded wire values
 
 - Split the oversized parent into preparation/backend, protocol/lifecycle adapters and four-player acceptance; parent T3b and the 5/28 completion count remain unchanged.

@@ -71,6 +71,11 @@ public final class LobbyService {
         this.backend = Objects.requireNonNull(backend);
     }
 
+    /** Server-owned role for the private recipient projection; it grants no connection membership. */
+    public boolean isHost(UUID member) {
+        return member.equals(host);
+    }
+
     public Snapshot snapshot() {
         Snapshot value = current;
         if (value == null) throw new IllegalStateException("no lobby is open");
@@ -258,6 +263,28 @@ public final class LobbyService {
                 publish();
             }
         }
+    }
+
+    /** Cancel transient launch work before the owner attempts match persistence on server stop. */
+    public void shutdown() {
+        Snapshot before = current;
+        if (before == null || before.state() == State.CLOSED) return;
+        Preparation pending = preparation;
+        if (before.state() == State.FAILED && pending == null) {
+            throw new IncompleteCleanupException(new IllegalStateException("lobby cleanup remains unresolved"));
+        }
+        if (pending != null) {
+            try {
+                pending.cancel();
+            } catch (RuntimeException failure) {
+                current = new Snapshot(before.lobby(), before.setup(), State.FAILED, "cleanup_failed");
+                publish();
+                throw new IncompleteCleanupException(failure);
+            }
+            preparation = null;
+        }
+        current = new Snapshot(before.lobby(), before.setup(), State.CLOSED, "server_stopping");
+        publish();
     }
 
     private void fail(String message, @Nullable RuntimeException failure) {

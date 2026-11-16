@@ -125,5 +125,8 @@
   "strategos.hint.build_house": "Two below the population cap: select a worker and build a house",
   "strategos.hint.dismiss": "   (click to hide)",
   "strategos.controls.title": "Controls (K to close)",
-  "key.strategos.controls": "Controls overlay"
+  "key.strategos.controls": "Controls overlay",
+  "message.strategos.invalid_lobby_action": "The lobby request could not be read.",
+  "message.strategos.lobby_refused": "The lobby request was refused. Check your seat, permissions and current settings.",
+  "message.strategos.lobby_error": "The lobby request failed. See the server log for details."
 }

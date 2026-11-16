@@ -9,6 +9,7 @@ import dev.strategos.mod.server.match.MatchRuntime;
 import dev.strategos.mod.server.net.payload.CameraJumpPayload;
 import dev.strategos.mod.server.net.payload.CommandsPayload;
 import dev.strategos.mod.server.net.payload.DebugSubscribePayload;
+import dev.strategos.mod.server.net.payload.LobbyActionPayload;
 import dev.strategos.mod.server.net.payload.MatchControlPayload;
 import dev.strategos.mod.server.net.payload.ModeSwitchPayload;
 import dev.strategos.mod.server.net.payload.SkirmishPayload;
@@ -171,6 +172,28 @@ public final class C2sHandlers {
             server.skirmishes().start(server, payload.setup(), player);
         } catch (MatchRefusedException e) {
             player.sendSystemMessage(Component.literal("[Strategos] skirmish refused: " + e.getMessage()));
+        }
+    }
+
+    /** Connection-authenticated lobby ingress: bounded refusals never expose backend exception details. */
+    public static void lobby(LobbyActionPayload payload, IPayloadContext context) {
+        StrategosServer server = StrategosServer.getOrNull();
+        if (server == null || !(context.player() instanceof ServerPlayer player)) return;
+        if (!server.net().allowLobbyIntent(player)) return;
+        LobbyAction action = payload.action();
+        if (action == null) {
+            server.net().refused(player, "invalid_lobby_action");
+            player.sendSystemMessage(Component.translatable("message.strategos.invalid_lobby_action"));
+            return;
+        }
+        try {
+            server.lobby().accept(player.getUUID(), action);
+        } catch (IllegalArgumentException | IllegalStateException refused) {
+            server.net().refused(player, "lobby_refused");
+            player.sendSystemMessage(Component.translatable("message.strategos.lobby_refused"));
+        } catch (RuntimeException failure) {
+            LOG.error("Lobby intent failed", failure);
+            player.sendSystemMessage(Component.translatable("message.strategos.lobby_error"));
         }
     }
 

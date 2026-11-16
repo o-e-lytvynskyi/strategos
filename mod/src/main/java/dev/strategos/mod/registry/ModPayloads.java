@@ -11,6 +11,8 @@ import dev.strategos.mod.server.net.payload.DepositStatePayload;
 import dev.strategos.mod.server.net.payload.FactionStatePayload;
 import dev.strategos.mod.server.net.payload.FeedbackPayload;
 import dev.strategos.mod.server.net.payload.FxPayload;
+import dev.strategos.mod.server.net.payload.LobbyActionPayload;
+import dev.strategos.mod.server.net.payload.LobbyStatePayload;
 import dev.strategos.mod.server.net.payload.MatchControlPayload;
 import dev.strategos.mod.server.net.payload.MatchEventPayload;
 import dev.strategos.mod.server.net.payload.MatchJoinPayload;
@@ -55,6 +57,9 @@ public final class ModPayloads {
         registrar.playToClient(MatchJoinPayload.TYPE, MatchJoinPayload.STREAM_CODEC, PayloadArrived::post);
         registrar.playToClient(MatchStatePayload.TYPE, MatchStatePayload.STREAM_CODEC, PayloadArrived::post);
         registrar.playToClient(FeedbackPayload.TYPE, FeedbackPayload.STREAM_CODEC, PayloadArrived::post);
+        registrar.playToClient(LobbyStatePayload.TYPE, LobbyStatePayload.STREAM_CODEC, PayloadArrived::post);
+        registrar.playToServer(
+                LobbyActionPayload.TYPE, LobbyActionPayload.STREAM_CODEC, C2sHandlers.timed(C2sHandlers::lobby));
         registrar.playToClient(TemplateSetPayload.TYPE, TemplateSetPayload.STREAM_CODEC, PayloadArrived::post);
         registrar.playToClient(UnitSummaryPayload.TYPE, UnitSummaryPayload.STREAM_CODEC, PayloadArrived::post);
         registrar.playToClient(UnitHudPayload.TYPE, UnitHudPayload.STREAM_CODEC, PayloadArrived::post);
@@ -111,6 +116,8 @@ public final class ModPayloads {
                 ModeSwitchPayload.SPEC,
                 MatchControlPayload.SPEC,
                 SkirmishPayload.SPEC,
+                LobbyActionPayload.SPEC,
+                LobbyStatePayload.SPEC,
                 DebugSubscribePayload.SPEC,
                 DebugFeedPayload.SPEC);
     }
