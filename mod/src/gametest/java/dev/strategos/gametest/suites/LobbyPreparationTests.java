@@ -19,7 +19,10 @@ import dev.strategos.mod.server.match.LobbyService;
 import dev.strategos.mod.server.match.MatchLobby;
 import dev.strategos.mod.server.match.MatchRuntime;
 import dev.strategos.mod.server.match.MatchSpace;
+import dev.strategos.mod.server.match.ServerLobby;
 import dev.strategos.mod.server.match.Skirmishes;
+import dev.strategos.mod.server.net.LobbyState;
+import dev.strategos.mod.server.net.payload.LobbyStatePayload;
 import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
@@ -85,17 +88,14 @@ public final class LobbyPreparationTests {
                 MockViewer.join(h.getLevel(), "stg-lobby-out", corner.getX(), corner.getY() + 16, corner.getZ(), 2);
         host.operator(2);
         StrategosServer server = StrategosServer.get();
-        List<UUID> published = new java.util.ArrayList<>();
         MatchRuntime[] allocated = new MatchRuntime[1];
         Skirmishes.Placer actual = placer(h, 21);
-        LobbyService service = new LobbyService(new LobbyBackend(
-                server,
-                (map, options) -> {
-                    MatchRuntime rt = actual.place(map, options);
-                    allocated[0] = rt;
-                    return rt;
-                },
-                (member, snapshot) -> published.add(member)));
+        ServerLobby facade = new ServerLobby(server, (map, options) -> {
+            MatchRuntime rt = actual.place(map, options);
+            allocated[0] = rt;
+            return rt;
+        });
+        LobbyService service = facade.service();
         UUID hostId = host.player().getUUID();
         UUID peerId = peer.player().getUUID();
         service.open(
@@ -125,11 +125,15 @@ public final class LobbyPreparationTests {
             peer.poll();
             outsider.poll();
             if (status != LobbyService.State.STARTED) return;
+            var hostViews = NetFixtures.payloads(host, LobbyStatePayload.class);
+            var peerViews = NetFixtures.payloads(peer, LobbyStatePayload.class);
+            if (hostViews.stream().noneMatch(p -> p.state().phase() == LobbyState.Phase.STARTED)
+                    || peerViews.stream().noneMatch(p -> p.state().phase() == LobbyState.Phase.STARTED)) return;
             check(
-                    published.contains(hostId)
-                            && published.contains(peerId)
-                            && !published.contains(outsider.player().getUUID()),
-                    "private publication escaped membership");
+                    hostViews.stream().allMatch(p -> p.state().self() == 0)
+                            && peerViews.stream().allMatch(p -> p.state().self() == 1),
+                    "wrong private lobby recipient");
+            check(NetFixtures.payloads(outsider, LobbyStatePayload.class).isEmpty(), "outsider received lobby state");
             var hostSeat = server.matches().seatOf(host.player().getUUID());
             var peerSeat = server.matches().seatOf(peer.player().getUUID());
             check(hostSeat != null && hostSeat.slot().value() == 0, "wrong host seat");
