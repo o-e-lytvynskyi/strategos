@@ -1,5 +1,6 @@
 package dev.strategos.mod.server.match;
 
+import dev.strategos.core.content.MapManifest;
 import dev.strategos.core.content.StartSlot;
 import dev.strategos.core.port.MetricsSink;
 import dev.strategos.core.protocol.CommandOutcome;
@@ -53,8 +54,15 @@ public final class LobbyPreparation implements LobbyService.Preparation {
         this.humans = List.copyOf(humans);
     }
 
-    public static LobbyPreparation start(
-            StrategosServer server, MatchLobby lobby, SkirmishSetup setup, Skirmishes.Placer placer) {
+    private record Inputs(
+            ResourceLocation map, MapManifest manifest, LobbyLaunchPlan plan, List<MatchLobby.Seat> humans) {}
+
+    /** Check supported content, bindings and membership without allocating world or match state. */
+    public static void validate(StrategosServer server, MatchLobby lobby, SkirmishSetup setup) {
+        inspect(server, lobby, setup);
+    }
+
+    private static Inputs inspect(StrategosServer server, MatchLobby lobby, SkirmishSetup setup) {
         ResourceLocation map = ResourceLocation.tryParse(setup.map());
         if (map == null || !MapPackageLoader.list(server.server()).contains(map)) {
             throw new IllegalArgumentException("map is not available");
@@ -87,6 +95,16 @@ public final class LobbyPreparation implements LobbyService.Preparation {
                 throw new IllegalArgumentException("lobby member is unavailable");
             }
         }
+        return new Inputs(map, manifest, plan, humans);
+    }
+
+    public static LobbyPreparation start(
+            StrategosServer server, MatchLobby lobby, SkirmishSetup setup, Skirmishes.Placer placer) {
+        Inputs inputs = inspect(server, lobby, setup);
+        ResourceLocation map = inputs.map();
+        var manifest = inputs.manifest();
+        LobbyLaunchPlan plan = inputs.plan();
+        List<MatchLobby.Seat> humans = inputs.humans();
         MatchOptions options = new MatchOptions(
                 null,
                 plan.factions(),

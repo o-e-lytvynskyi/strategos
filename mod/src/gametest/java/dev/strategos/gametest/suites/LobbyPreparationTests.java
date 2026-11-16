@@ -167,6 +167,28 @@ public final class LobbyPreparationTests {
         MockViewer peer =
                 MockViewer.join(h.getLevel(), "stg-pref-b", corner.getX(), corner.getY() + 16, corner.getZ(), 2);
         int[] allocations = {0};
+        LobbyBackend backend = new LobbyBackend(
+                StrategosServer.get(),
+                (map, options) -> {
+                    allocations[0]++;
+                    throw new AssertionError("must not allocate");
+                },
+                (member, snapshot) -> {
+                    throw new AssertionError("must not publish");
+                });
+        UUID hostId = host.player().getUUID();
+        check(backend.online(hostId) && !backend.seated(hostId), "connected member unavailable");
+        check(!backend.online(UUID.randomUUID()), "absent member is online");
+        check(!backend.mayHost(hostId), "ordinary member has host authority");
+        host.operator(2);
+        check(backend.mayHost(hostId), "operator lacks host authority");
+        boolean invalid = false;
+        try {
+            backend.validate(ready(hostId, peer.player().getUUID(), "strategos:missing"), SkirmishSetup.DEFAULTS);
+        } catch (IllegalArgumentException expected) {
+            invalid = true;
+        }
+        check(invalid && allocations[0] == 0, "validation allocated or accepted invalid content");
         boolean refused = false;
         try {
             LobbyPreparation.start(

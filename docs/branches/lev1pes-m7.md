@@ -36,6 +36,15 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Log
 
+### 2026-11-16 — Connect the real lobby backend and avoid matrix dependency stampedes
+
+- Verify 43952117807 on 504a73a1 passed 2,651 canonical cases with zero failures/errors/skips. Full-ci 43954269214 passed functional slow/core replay; its actual preparation/cancellation GameTests passed (6.372 s / 1.585 s). The full AI gate is not green: seeds 10 and 15 failed before tests because Maven Central returned HTTP 429 while compiling build-logic.
+- Test-first checkpoint 1905e9f4 replaces the direct positive preparation call with authenticated `LobbyService` and the real `LobbyBackend`, retaining all import, authority, commander and private initial-frame assertions. Verify 43956229197 failed at compilation with the expected missing `LobbyBackend`; all 1,944 reported core cases passed and no backend acceptance is inferred.
+- The backend checks actual online membership, owner/operator permissions, occupied seats and retained active/faulted runtimes; it uses the same no-allocation preflight as preparation and requires an explicit private-state publisher. The fast fixture also checks actual operator authority and invalid preflight before allocation. No global service, lobby payload or shutdown hook is claimed yet.
+- The matrix now restores Maven dependency artifacts packed by its own successful functional job. This removes twenty simultaneous downloads of identical dependencies without replacing source compilation, assertions, replay, the twenty seeds or the aggregate evidence gate. Only dependency modules are shared; no credentials or project outputs are archived.
+- **Next:** verify the backend and exercise its service-driven map start in slow GameTests; obtain a complete same-commit AI gate on the repaired route. T3b remains incomplete.
+
+
 ### 2026-11-16 â€” Complete registration of the preparation batches
 
 - Verify 43950556665 on 7bc8aa1a correctly rejected all three new batch names because their mandatory `@AfterBatch` hooks were absent (QA-04.6); 1,944 core cases passed and no engine acceptance is inferred.
