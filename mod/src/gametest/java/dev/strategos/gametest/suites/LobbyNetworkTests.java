@@ -12,6 +12,7 @@ import dev.strategos.mod.server.net.LobbyConfiguration;
 import dev.strategos.mod.server.net.LobbyState;
 import dev.strategos.mod.server.net.payload.LobbyActionPayload;
 import dev.strategos.mod.server.net.payload.LobbyStatePayload;
+import dev.strategos.mod.server.net.payload.SkirmishPayload;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -64,11 +65,13 @@ public final class LobbyNetworkTests {
                                             .get(0)
                                             .occupant()),
                             "forged host identity");
+                    host.send(new SkirmishPayload(SkirmishSetup.DEFAULTS));
                     peer.send(LobbyActionPayload.of(new LobbyAction.Join(1)));
                     stage[0] = 1;
                 }
                 case 1 -> {
                     if (peerStates.isEmpty()) return;
+                    check(StrategosServer.get().matches().all().isEmpty(), "solo start bypassed the active lobby");
                     long revision = service.snapshot().lobby().configurationRevision();
                     host.send(LobbyActionPayload.of(new LobbyAction.Ready(true, revision)));
                     peer.send(LobbyActionPayload.of(new LobbyAction.Ready(true, revision)));
