@@ -36,7 +36,18 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Log
 
-### 2026-11-16 � Connect the real lobby backend and avoid matrix dependency stampedes
+### 2026-11-16 — T3b.2 bounded wire values
+
+- Split the oversized parent into preparation/backend, protocol/lifecycle adapters and four-player acceptance; parent T3b and the 5/28 completion count remain unchanged.
+- Added test-first wire contracts in 40b63756: all six intent shapes (including both ready values), private four-member views in every phase, field/list bounds, detached collections, truncation and 100,000 seeded malformed inputs for each decoder. The intent schema contains no connection UUID or authoritative occupant assignment.
+- Implemented detached `LobbyConfiguration`, sealed `LobbyAction` and recipient `LobbyState` using existing bounded wire primitives. Configuration reuses the aggregate's seat/faction consistency rules. Explicit version/op/enum codes reject unsupported messages; decode failures stay `WireException`. Views carry names, player seats, self and authority/readiness flags; UUIDs remain server-side.
+- **Pending:** cloud verification. Backend verify 43957222786 remained queued without a job while this next step was prepared; combined-source verification supersedes it. These values are not registered payloads and install no network admission or global service. Next are authenticated dispatch, private gateway publication and tick/stop integration with engine tests.
+
+
+
+
+
+### 2026-11-16 — Connect the real lobby backend and avoid matrix dependency stampedes
 
 - Verify 43952117807 on 504a73a1 passed 2,651 canonical cases with zero failures/errors/skips. Full-ci 43954269214 passed functional slow/core replay; its actual preparation/cancellation GameTests passed (6.372 s / 1.585 s). The full AI gate is not green: seeds 10 and 15 failed before tests because Maven Central returned HTTP 429 while compiling build-logic.
 - Test-first checkpoint 1905e9f4 replaces the direct positive preparation call with authenticated `LobbyService` and the real `LobbyBackend`, retaining all import, authority, commander and private initial-frame assertions. Verify 43956229197 failed at compilation with the expected missing `LobbyBackend`; all 1,944 reported core cases passed and no backend acceptance is inferred.
