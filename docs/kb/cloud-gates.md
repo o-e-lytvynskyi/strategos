@@ -16,3 +16,11 @@
   run 40941845938 hit its 55-minute job cap at 16/22 scenes; its complete suite requires the
   90-minute resource window. Partial passing reports remain partial evidence. Scene lengths,
   individual timeouts, CI factors, thresholds and accepted baselines must stay unchanged.
+
+- A wide matrix can fail before any test when every clean runner downloads the same Maven
+  modules. In run 43954269214, seeds 10 and 15 received HTTP 429 for Spotless dependencies
+  while compiling build-logic; passing functional XML did not make the full gate green.
+  Pack only the resolved `modules-2` dependency cache from the successful prerequisite job
+  and restore that same-run artifact in the matrix. Never archive the entire Gradle home
+  (which can contain credentials), reuse project outputs as test evidence, or retry until green.
+  All twenty source builds, match/replay assertions and the exact-commit aggregate remain required.

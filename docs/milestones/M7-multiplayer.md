@@ -180,6 +180,14 @@ before choosing the next schema number.
 
 ### 3.3 Lobby and start
 
+Implementation split (2026-11-16): T3b remains the parent acceptance task. Keep its three
+bounded steps separate: **T3b.1** authenticated service, content preflight and transactional
+M6 preparation/backend; **T3b.2** bounded lobby intents/private recipient views and production
+network/tick/shutdown adapters; **T3b.3** four-player engine acceptance, rollback/privacy and
+start deadline. Each step receives its relevant gates; completing a step does not check T3b
+or reduce NET-02's four-player acceptance. T4 still depends on the complete parent.
+
+
 Add `mod/server/match/MatchLobby` with bounded slot records (human, AI, closed), faction,
 team, civilisation, colour, mode and ready state. `LobbyService` validates connection membership
 and host/operator authority; clients submit intents, not authoritative roster snapshots.
