@@ -281,6 +281,45 @@ class LobbyServiceTest {
     }
 
     @Test
+    void shutdownCancelsPendingPreparationAndClosesOnlyAfterSuccessfulCleanup() {
+        Backend backend = new Backend();
+        LobbyService service = open(backend);
+        ready(service);
+        service.start(HOST);
+        service.shutdown();
+        assertThat(backend.cancelled).isTrue();
+        assertThat(service.snapshot().state()).isEqualTo(LobbyService.State.CLOSED);
+        assertThat(service.snapshot().message()).isEqualTo("server_stopping");
+        service.shutdown();
+    }
+
+    @Test
+    void shutdownCleanupFailureStaysFrozenAndPropagatesBeforePersistence() {
+        Backend backend = new Backend();
+        LobbyService service = open(backend);
+        ready(service);
+        service.start(HOST);
+        backend.cancelFails = true;
+        org.assertj.core.api.Assertions.assertThatThrownBy(service::shutdown)
+                .isInstanceOf(LobbyService.IncompleteCleanupException.class);
+        assertThat(service.snapshot().state()).isEqualTo(LobbyService.State.FAILED);
+        assertThat(service.snapshot().message()).isEqualTo("cleanup_failed");
+    }
+
+    @Test
+    void shutdownDoesNotCancelACompletedMatch() {
+        Backend backend = new Backend();
+        LobbyService service = open(backend);
+        ready(service);
+        service.start(HOST);
+        backend.status = LobbyService.Preparation.Status.COMPLETE;
+        service.tick();
+        service.shutdown();
+        assertThat(backend.cancelled).isFalse();
+        assertThat(service.snapshot().state()).isEqualTo(LobbyService.State.CLOSED);
+    }
+
+    @Test
     void oneActiveMatchPreventsOpeningOrStartingAnother() {
         Backend backend = new Backend();
         backend.active = true;
