@@ -36,6 +36,13 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Log
 
+### 2026-11-16 — Correct the protocol inventory and stale-ready assertion
+
+- Verify 43961428636 on f893a0f5 compiled and reported 2,665 canonical cases with six unit failures. Five were the exact engine-surface inventory guard/counterexamples: both registered payload ids were present in the architecture but missing from `engine-surface.json`. Added their actual ids to the machine-readable inventory; no comparison or negative case changed.
+- The remaining failure was the new intent fixture expecting `IllegalArgumentException` for an existing member's stale acknowledgement. The established aggregate contract throws `IllegalStateException` for changed settings. Corrected this exact assertion, retaining refusal and the empty ready-set check; no production rejection behavior changed.
+- The actual registered two-member network/privacy case passed in 0.732 s, but its passing subset does not establish the whole gate. Subsequent verification includes the legacy solo guard and must pass in full before the slow/AI batch starts.
+
+
 ### 2026-11-16 — Register private lobby ingress and lifecycle ownership
 
 - Verify 43958753086 on 50de3e72 passed 2,658 canonical cases, zero failures/errors/skips, including the real backend preflight and seven new bounded-wire tests. It does not certify subsequent intent/view or lifecycle changes.

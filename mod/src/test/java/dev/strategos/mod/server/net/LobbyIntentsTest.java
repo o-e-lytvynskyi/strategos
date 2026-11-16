@@ -108,7 +108,7 @@ class LobbyIntentsTest {
             assertThat(service.snapshot()).isSameAs(before);
         }
         assertThatThrownBy(() -> LobbyIntents.accept(service, PEER, new LobbyAction.Ready(true, revision)))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(IllegalStateException.class);
         assertThat(service.snapshot().lobby().readyPlayers()).isEmpty();
     }
 
