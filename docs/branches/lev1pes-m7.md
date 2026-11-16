@@ -41,7 +41,8 @@ or replication privacy; those retain their own integration tests and dependencie
 - Split the oversized parent into preparation/backend, protocol/lifecycle adapters and four-player acceptance; parent T3b and the 5/28 completion count remain unchanged.
 - Added test-first wire contracts in 40b63756: all six intent shapes (including both ready values), private four-member views in every phase, field/list bounds, detached collections, truncation and 100,000 seeded malformed inputs for each decoder. The intent schema contains no connection UUID or authoritative occupant assignment.
 - Implemented detached `LobbyConfiguration`, sealed `LobbyAction` and recipient `LobbyState` using existing bounded wire primitives. Configuration reuses the aggregate's seat/faction consistency rules. Explicit version/op/enum codes reject unsupported messages; decode failures stay `WireException`. Views carry names, player seats, self and authority/readiness flags; UUIDs remain server-side.
-- **Pending:** cloud verification. Backend verify 43957222786 remained queued without a job while this next step was prepared; combined-source verification supersedes it. These values are not registered payloads and install no network admission or global service. Next are authenticated dispatch, private gateway publication and tick/stop integration with engine tests.
+- **Pending:** cloud verification. Backend verify 43957222786 remained queued without a job while this next step was prepared; combined-source verification supersedes it. These values are not registered payloads and install no network admission or global service.
+- Test-first d6e72867 specifies intent translation and recipient projection. `LobbyIntents` assigns the authenticated sender on open/join and preserves server occupants during edits; `LobbyViews` refuses outsiders before display-name lookup. Actual gateway publication and tick/stop integration still require engine tests.
 
 
 

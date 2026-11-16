@@ -43,6 +43,12 @@ public record LobbyConfiguration(int factionCapacity, List<Seat> seats, Skirmish
     public LobbyConfiguration {
         seats = List.copyOf(seats);
         Objects.requireNonNull(setup);
+        Objects.requireNonNull(setup.level());
+        Objects.requireNonNull(setup.resources());
+        Objects.requireNonNull(setup.visibility());
+        if (!setup.map().matches("[a-z0-9_.-]+:[a-z0-9_./-]+")) {
+            throw new IllegalArgumentException("lobby map must be a resource id");
+        }
         MatchLobby.create(
                 factionCapacity,
                 seats.stream()
