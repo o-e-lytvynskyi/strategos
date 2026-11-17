@@ -36,6 +36,12 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Log
 
+### 2026-11-17 — Include optional work in the session's completion scope
+
+- The operator explicitly requested completing optional work too, including T24. This session retains responsibility for all 23 remaining checklist items, rather than stopping when the mandatory M7 subset is handed in.
+- T24's independent status and its own decision/spike acceptance remain intact; this instruction does not pre-approve its technical conclusion or waive the owner's art, gameplay, platform-decision or merge roles.
+
+
 ### 2026-11-17 — Verify protocol integration and exercise four-player start
 
 - Verify 43963085367 on 0a80ddb4 passed all 2,668 canonical cases, zero failures/errors/skips, including 16 service contracts, intent/view/payload checks and actual registered ingress with the production solo guard. Fresh `origin/main` is unchanged at d39069e7, already merged.
