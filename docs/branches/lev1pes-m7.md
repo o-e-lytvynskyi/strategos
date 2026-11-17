@@ -36,6 +36,14 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Log
 
+### 2026-11-17 — Pause on the four-player deadline regression
+
+- The operator requested stopping until tomorrow. No new implementation or test run starts after that request.
+- Verify 43990044644 on 8e4e86a2 succeeded. Full-ci 43990049824 failed its functional slow job: the four-player initial-state case reached 10,002 ms before all frames were available. The ten-second limit remains unchanged. The two-player preparation case passed in 9.633 s and shutdown cancellation in 2.124 s; passing subsets do not establish the full gate. The dependent AI matrix was correctly skipped, so no AI acceptance is claimed.
+- Source audit found avoidable full tile/NBT loads when only manifest metadata is used: `LobbyBackend.validate` and `LobbyPreparation.start` each inspect the map through a full package load; the arena allocator and test placer also load full tiles for bounds/starts before creation loads the actual package. No optimization has been applied yet. Resume test-first with manifest-only inspection that preserves validation, exported-map precedence and full-load rejection of missing/malformed tiles; use it for metadata-only callers and retain actual import/hash verification. Then rerun the unchanged deadline and complete all required gates.
+- T3b stays unchecked. Optional T24 remains in the requested completion scope. No auto-join or T4/T7 implementation was begun during the wait.
+
+
 ### 2026-11-17 — Include optional work in the session's completion scope
 
 - The operator explicitly requested completing optional work too, including T24. This session retains responsibility for all 23 remaining checklist items, rather than stopping when the mandatory M7 subset is handed in.
