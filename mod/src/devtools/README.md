@@ -17,6 +17,13 @@ without one (`.github/workflows/scenario.yml`).
 
 ## The demo
 
+`-Pscenario=m7-lobby` captures seven stable lobby presentations (entry, host, ready,
+member, preparing, preparation error and refused request). These are explicit private DTO
+fixtures, not evidence of server admission. The scenario then clicks the actual pause-menu
+entry, creates a lobby, changes the vacant seat to AI, readies and starts through production
+transport; it requires the resulting match admission and automatic screen closure. Cloud
+`scenario.yml` runs the same path under Xvfb. `result.json` records both forms of evidence.
+
 `-Pscenario=demo` shows the mechanics for a person to watch, a chapter per mechanic, in RTS mode
 (`java/dev/strategos/devtools/demo/`). `-Pdemo=all|new|list|<ids and groups>`, `-Pdemo.skip=<ids and groups>`,
 `-Pdemo.seen=<file>` (default `~/.strategos/demo-seen`), `-Pdemo.shots` for a frame two seconds after each line;

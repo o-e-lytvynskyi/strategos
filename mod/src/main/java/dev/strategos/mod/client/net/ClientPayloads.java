@@ -5,12 +5,15 @@ import dev.strategos.core.protocol.Feedback;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.TemplateAck;
 import dev.strategos.mod.client.StrategosClient;
+import dev.strategos.mod.client.menu.ClientLobby;
 import dev.strategos.mod.server.net.payload.BuildingStatePayload;
 import dev.strategos.mod.server.net.payload.DebugFeedPayload;
 import dev.strategos.mod.server.net.payload.DepositStatePayload;
 import dev.strategos.mod.server.net.payload.FactionStatePayload;
 import dev.strategos.mod.server.net.payload.FeedbackPayload;
 import dev.strategos.mod.server.net.payload.FxPayload;
+import dev.strategos.mod.server.net.payload.LobbyReplyPayload;
+import dev.strategos.mod.server.net.payload.LobbyStatePayload;
 import dev.strategos.mod.server.net.payload.MatchEventPayload;
 import dev.strategos.mod.server.net.payload.MatchJoinPayload;
 import dev.strategos.mod.server.net.payload.MatchStatePayload;
@@ -40,6 +43,8 @@ public final class ClientPayloads {
     public static void onPayload(PayloadArrived event) {
         switch (event.payload()) {
             case MatchJoinPayload p -> StrategosClient.match(p.join());
+            case LobbyStatePayload p -> ClientLobby.accept(p.state());
+            case LobbyReplyPayload p -> ClientLobby.reply(p.reply());
             case MatchStatePayload p -> StrategosClient.state(p.state());
             case FeedbackPayload p -> {
                 LOG.info("feedback: {}", p.message());

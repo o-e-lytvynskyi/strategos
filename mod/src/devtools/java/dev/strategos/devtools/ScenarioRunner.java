@@ -107,6 +107,7 @@ public final class ScenarioRunner {
             case "arena_world" -> new ArenaWorldScenario();
             case "m6_goldens" -> new M6GoldensScenario();
             case "skirmish_flow" -> new SkirmishFlowScenario();
+            case "m7-lobby" -> new LobbyScenario();
             case "rts_frame_shroud" -> new RtsFrameScenario("rts_frame_shroud", RtsFrameScenario.EXPLORED);
             default -> null;
         };

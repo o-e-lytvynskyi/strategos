@@ -18,6 +18,8 @@ import dev.strategos.mod.client.fx.ShotArcRenderer;
 import dev.strategos.mod.client.fx.ShotArcs;
 import dev.strategos.mod.client.hud.RtsHud;
 import dev.strategos.mod.client.menu.ArenaWorldLauncher;
+import dev.strategos.mod.client.menu.ClientLobby;
+import dev.strategos.mod.client.menu.LobbyEntry;
 import dev.strategos.mod.client.menu.SkirmishEntry;
 import dev.strategos.mod.client.net.ClientPayloads;
 import dev.strategos.mod.client.overlay.FarMarkers;
@@ -78,7 +80,9 @@ public final class StrategosClient {
         NeoForge.EVENT_BUS.addListener(
                 ClientPlayerNetworkEvent.LoggingIn.class, e -> ARENA.onLoggedIn(Minecraft.getInstance()));
         NeoForge.EVENT_BUS.addListener(ScreenEvent.Init.Post.class, SkirmishEntry::onInit);
+        NeoForge.EVENT_BUS.addListener(ScreenEvent.Init.Post.class, LobbyEntry::onInit);
         NeoForge.EVENT_BUS.addListener(ClientPlayerNetworkEvent.LoggingOut.class, e -> {
+            ClientLobby.clear();
             RTS.remember(); // the match's camera and groups, for a return (MATCH-04)
             match = null;
             resources = List.of();

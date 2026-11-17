@@ -36,6 +36,13 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Log
 
+### 2026-11-18 — T4.2 actual lobby screen and cloud visual checkpoint
+
+- Fresh main remains d39069e7, with no commits missing from this branch. T4.1 checkpoint 49aad4b9 passed cloud verify 44198552285: 2,682 canonical cases, zero failures/errors/skips, including idempotent pending-admission cancellation.
+- Added the connected pause-menu entry and screen over canonical private session state, server-confirmed edits/readiness, bounded refusals, frozen preparation, leave/cancel and logout cleanup. The host edits vacant seat kinds and faction team/colour, available civilisation and shared skirmish settings; members view the same configuration without host controls. No names or UUIDs confer authority.
+- Added the L4 scenario before the screen: seven detached presentation fixtures followed by real menu/button/transport flow through create, AI seat edit, ready, start, admission and automatic closure. Fixture screenshots are distinguished from real server acceptance. Compact layout keeps all four seats visible; an opaque background avoids moving-world golden noise.
+- **Pending:** cloud compilation/full verify and the first cloud L4 run, then personal inspection of every new PNG and strict approved-golden rerun. T4 and NET-02 remain unchecked. All checks/tests run in the cloud; the local formatter edits source only.
+
 ### 2026-11-18 — T4.1 private join/refusal and client session state
 
 - Split T4 before its UI/transport integration grows: T4.1 owns detached presentation/session contracts and the small private join/refusal adapters; T4.2 owns the actual screen, entry point and inspected L4 goldens. No NET-02 scope or parent acceptance is removed.
