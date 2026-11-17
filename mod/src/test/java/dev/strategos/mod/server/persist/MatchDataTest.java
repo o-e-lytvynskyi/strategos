@@ -9,8 +9,11 @@ import dev.strategos.core.shared.MatchId;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.testkit.SimHarness;
+import java.util.UUID;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.StringTag;
 import org.junit.jupiter.api.Test;
 
@@ -92,5 +95,47 @@ class MatchDataTest {
         assertThat(data.state()).isEqualTo(MatchData.State.DISPOSED);
         assertThat(data.isDirty()).isFalse();
         assertThat(data.save(new CompoundTag(), RegistryAccess.EMPTY).isEmpty()).isTrue();
+    }
+
+    @Test
+    void aMalformedRosterCannotSilentlyBecomeAnEmptyRoster() {
+        CompoundTag wrongType = saved(walking(), 3);
+        wrongType.putString("roster", "invalid");
+        assertQuarantinedUnchanged(wrongType);
+
+        CompoundTag wrongElements = saved(walking(), 3);
+        ListTag strings = new ListTag();
+        strings.add(StringTag.valueOf("invalid"));
+        wrongElements.put("roster", strings);
+        assertQuarantinedUnchanged(wrongElements);
+    }
+
+    @Test
+    void aSavedPlayerSeatNeedsAnExistingPrimaryBindingButAnObserverDoesNot() {
+        CompoundTag unbound = withSeat(saved(walking(), 3), 15);
+        assertQuarantinedUnchanged(unbound);
+
+        CompoundTag observer = withSeat(saved(walking(), 3), PlayerSlot.ADMIN.value());
+        MatchData loaded = MatchData.load(ID, observer);
+        assertThat(loaded.state()).isEqualTo(MatchData.State.LOADED);
+        assertThat(loaded.roster().members()).hasSize(1);
+    }
+
+    private static CompoundTag withSeat(CompoundTag tag, int slot) {
+        CompoundTag seat = new CompoundTag();
+        seat.put("uuid", NbtUtils.createUUID(UUID.fromString("00000000-0000-0000-0000-00000000000a")));
+        seat.putInt("slot", slot);
+        ListTag roster = new ListTag();
+        roster.add(seat);
+        tag.put("roster", roster);
+        return tag;
+    }
+
+    private static void assertQuarantinedUnchanged(CompoundTag tag) {
+        MatchData data = MatchData.load(ID, tag);
+        assertThat(data.state()).isEqualTo(MatchData.State.QUARANTINED);
+        assertThat(data.save(new CompoundTag(), RegistryAccess.EMPTY)).isEqualTo(tag);
+        data.setDirty();
+        assertThat(data.isDirty()).isFalse();
     }
 }

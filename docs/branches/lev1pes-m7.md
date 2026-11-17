@@ -36,6 +36,12 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Log
 
+### 2026-11-18 — T5.1 persisted-roster validation contracts
+
+- While T4.2's immutable cloud checkpoint runs, prepare the independent T5 dependency on completed T2b.2/T3b. Split the adapter work into strict roster/restore validation and the versioned session/deadline envelope before implementation grows.
+- Source inspection found that legacy roster decoding silently overwrites a duplicate UUID; a malformed roster type is ignored as absent; a valid numeric player slot can be loaded without a saved primary authority binding. Add failing contracts first. Valid legacy identity bindings and explicit administrator observers remain supported; malformed authority must be quarantined without rewriting its raw file.
+- **Pending:** cloud red checkpoint after the current T4.2 verify completes, then the smallest decoder/restore fixes and the complete T5 envelope/engine gates. No T5 completion is claimed.
+
 ### 2026-11-18 — T4.2 actual lobby screen and cloud visual checkpoint
 
 - Fresh main remains d39069e7, with no commits missing from this branch. T4.1 checkpoint 49aad4b9 passed cloud verify 44198552285: 2,682 canonical cases, zero failures/errors/skips, including idempotent pending-admission cancellation.

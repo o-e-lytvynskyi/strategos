@@ -53,6 +53,18 @@ class MatchRosterTest {
     }
 
     @Test
+    void aPersistedUuidCannotOccurTwiceEvenWhenItsSeatIsIdentical() {
+        MatchRoster roster = new MatchRoster();
+        roster.seat(ANN, new PlayerSlot(0));
+        var repeated = roster.save();
+        repeated.add(repeated.getCompound(0).copy());
+
+        assertThatThrownBy(() -> MatchRoster.load(repeated)).isInstanceOf(IllegalArgumentException.class);
+        repeated.getCompound(1).putInt("slot", 1);
+        assertThatThrownBy(() -> MatchRoster.load(repeated)).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
     void theRosterIsSavedWithTheMatch() {
         SimHarness h = SimHarness.builder().build();
         MatchData live = MatchData.live(ID, h.core()::snapshot, () -> 4);
