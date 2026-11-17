@@ -56,3 +56,12 @@ actual creation still loads every tile before allocating a runtime, and admissio
 starts, template version and imported terrain hash. Keep world-export precedence, reject a
 malformed export rather than falling back, and never substitute resource tiles for an
 incomplete export. A short-lived metadata read needs no cache/invalidation policy.
+
+## Client admission opens the RTS input screen
+
+`RtsMode` automatically enters for a newly admitted spectator commander and keeps its
+`RtsScreen` open while active. A successful lobby-to-match scenario must require the
+server's STARTED acknowledgement, the matching `match_join`, an active camera rig and
+the RTS screen. Requiring `Minecraft.screen == null` after admission can never be a
+stable success condition: the existing input controller immediately restores its screen.
+Keep private DTO presentation fixtures separate from this real transport assertion.

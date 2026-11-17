@@ -5,6 +5,7 @@ import dev.strategos.mod.client.StrategosClient;
 import dev.strategos.mod.client.menu.ArenaWorldLauncher;
 import dev.strategos.mod.client.menu.ClientLobby;
 import dev.strategos.mod.client.menu.MultiplayerLobbyScreen;
+import dev.strategos.mod.client.rts.RtsScreen;
 import dev.strategos.mod.server.net.LobbyConfiguration;
 import dev.strategos.mod.server.net.LobbyReply;
 import dev.strategos.mod.server.net.LobbyState;
@@ -80,7 +81,45 @@ final class LobbyScenario implements Scenario {
             if (phase == 6) ClientLobby.reply(LobbyReply.REFUSED);
         }
         ClientLobby.open(null);
-        if (!(mc.screen instanceof MultiplayerLobbyScreen)) failures.append("lobby screen missing; ");
+        if (!(mc.screen instanceof MultiplayerLobbyScreen screen)) {
+            failures.append("lobby screen missing; ");
+            return;
+        }
+        if (screen.isPauseScreen()) failures.append("lobby pauses the server; ");
+        if (phase == 0) {
+            expectButton(screen, "strategos.lobby.create", true);
+            expectButton(screen, "strategos.lobby.join", true);
+        } else {
+            expectButton(screen, "strategos.lobby.start", phase == 2);
+            expectButton(
+                    screen,
+                    phase == 2 || phase == 3 || phase == 4 ? "strategos.lobby.not_ready" : "strategos.lobby.ready",
+                    phase != 4);
+            expectButton(screen, "strategos.lobby.leave", true);
+        }
+        for (var child : screen.children()) {
+            if (child instanceof AbstractWidget widget
+                    && (widget.getX() < 0
+                            || widget.getY() < 0
+                            || widget.getX() + widget.getWidth() > screen.width
+                            || widget.getY() + widget.getHeight() > screen.height)) {
+                failures.append("off-screen lobby control at fixture ")
+                        .append(phase)
+                        .append("; ");
+            }
+        }
+    }
+
+    private void expectButton(Screen screen, String key, boolean active) {
+        Component label = Component.translatable(key);
+        for (var child : screen.children()) {
+            if (child instanceof AbstractWidget widget && widget.getMessage().equals(label)) {
+                if (widget.active != active)
+                    failures.append("wrong enabled state: ").append(key).append("; ");
+                return;
+            }
+        }
+        failures.append("missing button: ").append(key).append("; ");
     }
 
     private boolean click(Screen screen, String key) {
@@ -122,6 +161,14 @@ final class LobbyScenario implements Scenario {
         }
         if (inPhase > 600) {
             failures.append("real UI transport stalled at phase ").append(phase);
+            var model = ClientLobby.session().model();
+            ctx.result.addProperty(
+                    "lastLobbyPhase",
+                    model == null ? "none" : model.state().phase().name());
+            ctx.result.addProperty(
+                    "lastScreen",
+                    mc.screen == null ? "none" : mc.screen.getClass().getSimpleName());
+            ctx.result.addProperty("matchAdmitted", StrategosClient.match() != null);
             return done(ctx, false);
         }
         switch (phase) {
@@ -165,7 +212,8 @@ final class LobbyScenario implements Scenario {
                 if (model != null
                         && model.state().phase() == LobbyState.Phase.STARTED
                         && join != null
-                        && mc.screen == null) {
+                        && mc.screen instanceof RtsScreen
+                        && StrategosClient.rts().rig() != null) {
                     if (join.slot().value() != 0 || join.factions() != 2) failures.append("wrong real admission; ");
                     return done(ctx, true);
                 }
