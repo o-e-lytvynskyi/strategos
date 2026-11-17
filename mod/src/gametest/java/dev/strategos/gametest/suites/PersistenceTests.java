@@ -35,8 +35,10 @@ import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.UUID;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtUtils;
 import net.minecraft.server.level.ServerLevel;
 import net.neoforged.neoforge.common.IOUtilities;
 
@@ -54,6 +56,43 @@ public final class PersistenceTests {
     private static final FileTime PLANTED = FileTime.fromMillis(1_000_000_000_000L);
 
     private PersistenceTests() {}
+
+    /** M7 T5.1: a conflicting saved UUID must not replace another live match's membership. */
+    @StrategosTest
+    public static void aRestoredRosterCannotStealAnotherMatchsMember(GameTestHelper h) {
+        MatchRegistry registry = StrategosServer.get().matches();
+        var options = MatchFixture.options(SimHarness.DEFAULT_SEED, h).withPersistent(true);
+        MatchRuntime first = MatchFixture.create(h, 0, 0, 14, 32, options);
+        MatchRuntime second = MatchFixture.create(h, 18, 0, 14, 32, options);
+        UUID firstMember = new UUID(9, 5101);
+        UUID secondMember = new UUID(9, 5102);
+        registry.join(first, firstMember, new PlayerSlot(0));
+        registry.join(second, secondMember, new PlayerSlot(0));
+        MatchData data = second.data();
+        MatchRecord record = registry.record(second.id());
+        check(data != null && record != null, "persistent roster fixture has no data");
+        CompoundTag saved = data.save(new CompoundTag(), h.getLevel().registryAccess());
+        registry.unload(second.id());
+
+        MatchRuntime valid = registry.restore(h.getLevel(), record, MatchData.load(second.id(), saved));
+        check(valid.lifecycle() == MatchLifecycle.PAUSED, "an unrelated roster did not restore");
+        var validSeat = registry.seatOf(secondMember);
+        check(validSeat != null && validSeat.match() == valid, "valid restored membership is missing");
+        registry.unload(valid.id());
+
+        CompoundTag conflicting = saved.copy();
+        conflicting
+                .getList("roster", net.minecraft.nbt.Tag.TAG_COMPOUND)
+                .getCompound(0)
+                .put("uuid", NbtUtils.createUUID(firstMember));
+        MatchRuntime refused = registry.restore(h.getLevel(), record, MatchData.load(second.id(), conflicting));
+        check(refused.lifecycle() == MatchLifecycle.FAULTED, "a cross-match UUID was accepted");
+        check(String.valueOf(refused.faultMessage()).contains("roster"), "missing roster conflict reason");
+        var kept = registry.seatOf(firstMember);
+        check(kept != null && kept.match() == first, "restore replaced the original membership");
+        check(registry.seatOf(secondMember) == null, "an unloaded connection survived the rejected restore");
+        h.succeed();
+    }
 
     /**
      * CORE-07.5, ORD-01.5 (spec 1.6 row 30): saved, unloaded and restored in the same level, the hash holds, and the
