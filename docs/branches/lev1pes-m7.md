@@ -6,10 +6,10 @@
 
 ## Now
 
-- **Milestone:** M7 Multiplayer; 5 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md), based on planning PR #32; T3 is split before implementation into independent aggregate and production integration.
-- **In progress:** M7 T3b real M6 preparation/admission. The authenticated protocol, server tick/stop ownership and actual import/admission are installed and fast-cloud verified; four-player initial-state/deadline acceptance and final slow/soak gates remain. The current fix separates metadata reads and ensures initial empty recipient tables are sent. Whole M7 remains in progress.
-- **Last finished task:** T3a remains the last complete task. T3b service step passed cloud verify 43757985631 on 2026-11-15 (11 new contracts); production start/protocol remains in progress.
-- **Next task:** complete T3b production M6 preparation/backend and private protocol; the full cloud verification route is available, with all twenty AI seeds mandatory. D-20 is explicitly accepted. Remaining tasks keep the specification's integration dependencies; no M6 work is taken over.
+- **Milestone:** M7 Multiplayer; 6 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md), based on planning PR #32; T3 is split before implementation into independent aggregate and production integration.
+- **In progress:** M7 T4 lobby presentation since 2026-11-18; T3b is accepted on e382f7b6. Whole M7, including optional T24 requested by the operator, remains in progress. All further checks run in the cloud.
+- **Last finished task:** T3b authenticated service/protocol/production start: cloud verify 44148921127 (2,669 canonical cases), complete full-ci 44148929120 (248 slow/core cases, all twenty AI seeds and aggregate), zero failures/errors/skips in the acceptance reports.
+- **Next task:** T4 immutable lobby view-model, screen/readiness/errors and cloud L4 scenario; then T5 persistence/migration and the later integration tasks in specification order. D-20 remains accepted; T8's co-op routing is not inferred from four-faction start acceptance.
 - **Merged from main last:** d39069e7 (2026-11-15, PR #55/M6); merge 213d0564 is zero commits behind that main. Cloud verify 43756194393 passed: 2,623 canonical XML cases, zero failures/errors/skips, 7m 22s. Prior T2b slow/soak/L6 evidence remains historical; new integration will receive its required gates.
 
 The operator requested ownership of the whole M7 and work on what is currently possible on
@@ -35,6 +35,14 @@ before implementing them. T2 does not certify friendly-fire, allied victory, com
 or replication privacy; those retain their own integration tests and dependencies.
 
 ## Log
+
+### 2026-11-18 — Complete T3b cloud acceptance; start T4
+
+- Fresh main remains d39069e7 and is already merged. The pending push completed: e382f7b6 is present on origin. Verify 44148921127 passed 2,669 canonical cases with zero failures/errors/skips, including sixteen service contracts and the new initial-empty snapshot/header checks.
+- Full-ci 44148929120 passed its evidence-checker job and 248 canonical slow/core-soak cases. Actual preparation passed in 5.287 s, cancellation in 1.202 s, and four-player initial-state acceptance in 4.710 s for the complete case under the unchanged ten-second start limit.
+- Every original AI seed 1–20 passed its full match/replay assertion, and `complete-soak` passed. Independently inspected aggregate artifact 14362975462: exact commit e382f7b6008a34bfc1cfff804cf14c8e5401709b, twenty matches, 896,421 ticks, seventeen conquests and three complete game-limit runs, with per-shard XML/log hashes. No partial matrix is accepted. The same-run Maven-module sharing route succeeded without bypassing source compilation or tests.
+- T3b is complete; specification progress is checked. NET-02 remains in progress until T4's screen and inspected goldens pass. T4 starts against the delivered private state/intents; reconnect, durable roster and co-op control keep their own gates. No local tests are started under the operator's renewed cloud-only instruction.
+
 
 ### 2026-11-17 — Resume with local tests and isolate incomplete initial snapshots
 

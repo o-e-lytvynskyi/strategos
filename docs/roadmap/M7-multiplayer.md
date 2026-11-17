@@ -98,6 +98,7 @@ Multiple-match discovery is outside M7. Recorded in the M7 branch pending mainta
   4. Lobby goldens (L4, consent).
 - **Tests:** L0, L1, L3, L4 (consent), L5 · **Depends on:** MATCH-02, MATCH-06, NET-01, D-20 ·
   **Size:** L · **Tier:** T1
+- **Evidence:** T3b server/start acceptance passed 2026-11-18: verify 44148921127 and complete slow/20-seed full-ci 44148929120 on e382f7b6; four-player case 4.710 s, no relaxed deadline. T4 screen/goldens remain pending.
 - **Status:** in_progress
 
 #### NET-03 · Per-player and per-faction state through the gateway

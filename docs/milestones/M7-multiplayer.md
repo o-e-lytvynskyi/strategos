@@ -233,6 +233,16 @@ engine regressions also verify replay to the live hash. This transient queue req
 on server stop by the future production backend; T5 must prove any durable launch transaction.
 
 
+Production acceptance (2026-11-18): the real server owns `ServerLobby`, authenticated intent
+translation, bounded/private payloads, tick polling and cancellation before normal persistence.
+The four-human/four-faction actual-terrain case passes the unchanged ten-second deadline
+(4.710 s for the complete cloud case); workers-only starts receive initial empty building and
+deposit snapshots exactly once. Metadata inspection avoids full tile reads while actual creation
+still validates the full package. Verify 44148921127 passed 2,669 cases; full-ci 44148929120
+passed all 248 slow/core-soak cases, every original AI seed 1–20 and the exact-commit aggregate
+on e382f7b6 (896,421 ticks, 17 conquests and three full-limit runs). These gates complete T3b;
+T4 still supplies client presentation/reset, T5 durable roster/launch restore, and T8 co-op routing.
+
 Add bounded `LobbyActionPayload` and `LobbyStatePayload` under `server/net/payload`, registered
 through `ModPayloads` and `PayloadSpec`. Only admitted lobby members get lobby state. Active-match
 new-player join requests are refused; an existing UUID reclaim uses the reconnect path. No
@@ -490,7 +500,7 @@ reviewed implementation task between T17 and T18, keeping the acceptance depende
 - [x] T2b.1 (2026-10-30) · Corrected delivered persistence prerequisite composition and required cloud gate components.
 - [x] T2b.2 (2026-10-30) · Match authority/setup, schema-4 persistence/hash and binary journal integration.
 - [x] T3a (2026-10-30) · Bounded lobby state/readiness/preparation contract; full cloud verify, 12 new contract tests.
-- [ ] T3b · Authenticated lobby service and production start.
+- [x] T3b (2026-11-18) · Authenticated lobby service, private protocol and production start; verify 44148921127 and complete slow/20-seed soak 44148929120 on e382f7b6.
 - [ ] T4 · Lobby UI.
 - [ ] T5 · Persistence and migration.
 - [ ] T6 · Multiplayer test kit.
