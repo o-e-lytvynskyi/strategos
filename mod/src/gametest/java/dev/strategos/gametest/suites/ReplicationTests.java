@@ -31,6 +31,7 @@ import dev.strategos.gametest.net.MockViewer;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.server.match.MatchRuntime;
 import dev.strategos.mod.server.net.Replication;
+import dev.strategos.mod.server.net.payload.BuildingStatePayload;
 import dev.strategos.mod.server.net.payload.DepositStatePayload;
 import dev.strategos.mod.server.net.payload.FactionStatePayload;
 import dev.strategos.mod.server.net.payload.UiQueryPayload;
@@ -197,6 +198,47 @@ public final class ReplicationTests {
                             "faction 1, seeing both, got " + toB);
                     a.close();
                     b.close();
+                })
+                .thenSucceed();
+    }
+
+    /** Initial empty tables are snapshots too: send once to the new recipient, then suppress unchanged repeats. */
+    @StrategosTest(timeoutTicks = 200)
+    public static void anInitialEmptyBuildingAndDepositSnapshotReachesOnlyItsRecipientOnce(GameTestHelper h) {
+        MatchRuntime rt = match(h);
+        MockViewer owner = seated(h, rt, "stg-empty-owner", 0);
+        BlockPos at = h.absolutePos(BlockPos.ZERO);
+        MockViewer outsider = MockViewer.join(h.getLevel(), "stg-empty-out", at.getX(), at.getY() + 16, at.getZ(), 2);
+        h.startSequence()
+                .thenIdle(3 * Replication.SUMMARY_EVERY)
+                .thenExecute(() -> {
+                    owner.poll();
+                    outsider.poll();
+                    var frames = NetFixtures.payloads(owner, BuildingStatePayload.class);
+                    check(frames.size() == 1, "initial empty building snapshot count: " + frames.size());
+                    check(
+                            frames.getFirst().state().matchId() == rt.id().value()
+                                    && frames.getFirst().state().buildings().isEmpty(),
+                            "wrong initial empty building snapshot");
+                    var depositFrames = NetFixtures.payloads(owner, DepositStatePayload.class);
+                    check(depositFrames.size() == 1, "initial empty deposit snapshot count: " + depositFrames.size());
+                    check(
+                            depositFrames.getFirst().state().matchId()
+                                            == rt.id().value()
+                                    && depositFrames
+                                            .getFirst()
+                                            .state()
+                                            .deposits()
+                                            .isEmpty(),
+                            "wrong initial empty deposit snapshot");
+                    check(
+                            NetFixtures.payloads(outsider, BuildingStatePayload.class)
+                                            .isEmpty()
+                                    && NetFixtures.payloads(outsider, DepositStatePayload.class)
+                                            .isEmpty(),
+                            "empty state reached outsider");
+                    owner.close();
+                    outsider.close();
                 })
                 .thenSucceed();
     }

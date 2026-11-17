@@ -37,7 +37,7 @@ public final class LobbyPreparationTests {
 
     private static Skirmishes.Placer placer(GameTestHelper h, int lane) {
         return (map, options) -> {
-            var manifest = MapPackageLoader.load(h.getLevel().getServer(), map).manifest();
+            var manifest = MapPackageLoader.manifest(h.getLevel().getServer(), map);
             BlockPos corner = h.absolutePos(BlockPos.ZERO);
             BlockPos origin = new BlockPos(corner.getX() + lane * 2048, corner.getY(), corner.getZ());
             return MatchFixture.create(
@@ -153,7 +153,7 @@ public final class LobbyPreparationTests {
             check(core(rt).queries().diplomacy().teamsLocked(), "authority not installed");
             if (host.capture().counts().getOrDefault("payload/strategos:match_join", 0) == 0
                     || peer.capture().counts().getOrDefault("payload/strategos:match_join", 0) == 0) return;
-            for (String type : List.of("unit_summary", "faction_state", "building_state")) {
+            for (String type : List.of("unit_summary", "faction_state", "building_state", "deposit_state")) {
                 check(
                         host.capture().counts().getOrDefault("payload/strategos:" + type, 0) > 0,
                         "host missing initial " + type);
@@ -224,7 +224,13 @@ public final class LobbyPreparationTests {
             for (MockViewer viewer : viewers) viewer.poll();
             outsider.poll();
             long elapsed = java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started);
-            check(elapsed <= 10_000, "four-player initial state exceeded ten seconds: " + elapsed + " ms");
+            if (elapsed > 10_000) {
+                var counts = viewers.stream().map(v -> v.capture().counts()).toList();
+                check(
+                        false,
+                        "four-player initial state exceeded ten seconds: " + elapsed + " ms; runtime=" + rt.lifecycle()
+                                + "; lobby=" + service.snapshot().state() + "; frames=" + counts);
+            }
             check(
                     service.snapshot().state() == LobbyService.State.PREPARING
                             || service.snapshot().state() == LobbyService.State.STARTED,
@@ -249,7 +255,7 @@ public final class LobbyPreparationTests {
                         binding != null && binding.slot().value() == seat && binding.match() == rt,
                         "wrong four-player admission");
                 check(server.commanders().commands(viewer.player()), "member did not enter commander mode");
-                for (String type : List.of("unit_summary", "faction_state", "building_state")) {
+                for (String type : List.of("unit_summary", "faction_state", "building_state", "deposit_state")) {
                     if (viewer.capture().counts().getOrDefault("payload/strategos:" + type, 0) == 0) return;
                 }
             }
@@ -307,6 +313,7 @@ public final class LobbyPreparationTests {
             refused = true;
         }
         check(refused && allocations[0] == 0, "invalid civ reached world allocation");
+        LobbyMapHeaders.verify(StrategosServer.get());
         h.succeed();
     }
 

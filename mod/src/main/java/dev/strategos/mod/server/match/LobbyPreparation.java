@@ -69,7 +69,7 @@ public final class LobbyPreparation implements LobbyService.Preparation {
         }
         ResourceLocation scenario = Skirmishes.scenarioFor(server, map);
         if (scenario == null) throw new IllegalArgumentException("map has no scenario");
-        var manifest = MapPackageLoader.load(server.server(), map).manifest();
+        var manifest = MapPackageLoader.manifest(server.server(), map);
         LobbyLaunchPlan plan = LobbyLaunchPlan.create(
                 lobby,
                 setup,

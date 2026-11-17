@@ -272,7 +272,7 @@ public final class MatchRegistry {
         }
         MapManifest m;
         try {
-            m = MapPackageLoader.load(server, map).manifest();
+            m = MapPackageLoader.manifest(server, map);
         } catch (IllegalArgumentException e) {
             throw new MatchRefusedException(String.valueOf(e.getMessage()));
         }

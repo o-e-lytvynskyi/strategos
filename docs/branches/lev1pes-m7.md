@@ -7,7 +7,7 @@
 ## Now
 
 - **Milestone:** M7 Multiplayer; 5 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md), based on planning PR #32; T3 is split before implementation into independent aggregate and production integration.
-- **In progress:** M7 T3b real M6 preparation/admission since 2026-11-16. The cloud route is repaired and the previously blocked runtime step has all required gates; T3b as a whole remains incomplete. Whole M7 remains in progress; network admission and production start are not installed by the foundation.
+- **In progress:** M7 T3b real M6 preparation/admission. The authenticated protocol, server tick/stop ownership and actual import/admission are installed and fast-cloud verified; four-player initial-state/deadline acceptance and final slow/soak gates remain. The current fix separates metadata reads and ensures initial empty recipient tables are sent. Whole M7 remains in progress.
 - **Last finished task:** T3a remains the last complete task. T3b service step passed cloud verify 43757985631 on 2026-11-15 (11 new contracts); production start/protocol remains in progress.
 - **Next task:** complete T3b production M6 preparation/backend and private protocol; the full cloud verification route is available, with all twenty AI seeds mandatory. D-20 is explicitly accepted. Remaining tasks keep the specification's integration dependencies; no M6 work is taken over.
 - **Merged from main last:** d39069e7 (2026-11-15, PR #55/M6); merge 213d0564 is zero commits behind that main. Cloud verify 43756194393 passed: 2,623 canonical XML cases, zero failures/errors/skips, 7m 22s. Prior T2b slow/soak/L6 evidence remains historical; new integration will receive its required gates.
@@ -35,6 +35,16 @@ before implementing them. T2 does not certify friendly-fire, allied victory, com
 or replication privacy; those retain their own integration tests and dependencies.
 
 ## Log
+
+### 2026-11-17 — Resume with local tests and isolate incomplete initial snapshots
+
+- The operator authorized local testing, use of computer resources and closing applications when needed. No application needed closing for these headless checks. Main was fetched unchanged at d39069e7; roadmap validation passed.
+- The unchanged four-player case failed locally at 11,961 ms. Metadata-only inspection removed redundant full tile decoding from preflight/arena bounds and the faithful test placer. Its new real-server contract passed: world manifests take precedence without tile reads, full loading still refuses missing exported tiles, malformed manifests do not fall back, and cleanup restores resource lookup. The four-player case still reached 10,008 ms, so metadata work alone did not resolve acceptance.
+- A smaller actual-network regression isolated the missing initial table: a newly seated player received zero building snapshots for an empty world. Buildings and deposits used the same first-empty suppression. The fix sends their first projected table even when empty, remembers it, and continues suppressing unchanged frames. The regression covers one frame per type, no repeat and no outsider delivery. The four-player assertions retain the ten-second deadline and now also require initial deposits; timeout diagnostics expose lifecycle and per-recipient frame counts without weakening the checks.
+- Targeted local checks passed before the operator restored cloud-only testing: the initial-empty building/deposit regression passed, and the four-player deadline case passed (9.817 s for the entire case, including fixture setup). The ten-second start bound is unchanged. The metadata-only/export-precedence contract also passed.
+- The broader local `verify` produced 265 passing ordinary GameTests but no terminal build verdict; its processes are no longer running. It is incomplete evidence, not a successful gate. The operator subsequently required all further checks in the cloud.
+- **Pending:** complete cloud verify and slow/20-seed evidence on this exact source. No further local tests start. T3b and all downstream task/card completion states remain unchanged.
+
 
 ### 2026-11-17 — Pause on the four-player deadline regression
 

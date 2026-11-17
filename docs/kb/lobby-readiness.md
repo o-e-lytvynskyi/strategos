@@ -39,3 +39,20 @@ Build initial scenario commands by economy faction, then bind each player seat s
 Iterating human seats to grant/spawn starting assets duplicates a co-op faction's economy.
 Use the actual scenario command builder before allocation, reject unsupported controller/asset
 configurations, and freeze the template-set version for the preparation backend to check again.
+
+## Initial empty tables are snapshots
+
+Do not suppress the first building/deposit frame merely because its table is empty. A valid
+four-player worker-only setup has no buildings; waiting for its initial building snapshot
+then never completes. Send the first projected table, cache it and suppress unchanged repeats.
+Apply the same recipient audience to empty frames; they must not become server-wide notices.
+
+## Inspect map metadata without decoding all tiles
+
+Lobby validation and arena bounds need the manifest. Full `MapPackageLoader.load` also
+inflates/parses every NBT tile and resolves block states; repeating it before creation adds
+avoidable synchronous start work. Manifest-only inspection is not full content validation:
+actual creation still loads every tile before allocating a runtime, and admission still checks
+starts, template version and imported terrain hash. Keep world-export precedence, reject a
+malformed export rather than falling back, and never substitute resource tiles for an
+incomplete export. A short-lived metadata read needs no cache/invalidation policy.

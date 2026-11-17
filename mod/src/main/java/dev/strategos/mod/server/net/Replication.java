@@ -224,7 +224,7 @@ public final class Replication {
     /**
      * Each seated player's buildings (BLD-01), when they differ from the last the player got, at the summaries' pace:
      * its own faction's with the owner's fields, the others' without them. Under fog, unexplored enemy buildings are
-     * hidden (MATCH-07); a pristine grid still sends every live building.
+     * hidden (MATCH-07); a pristine grid still sends every live building. The first frame includes empty tables.
      */
     private void sendBuildings() {
         for (MatchRuntime rt : matches.get().all()) {
@@ -243,7 +243,7 @@ public final class Replication {
                         ReplicationService.buildingState(core.queries(), rt.id().value(), view);
                 BuildingState now = fogBuildings(core, view, live);
                 BuildingState last = buildings.get(player);
-                if ((last == null && !now.buildings().isEmpty()) || (last != null && !last.sameAs(now))) {
+                if (last == null || !last.sameAs(now)) {
                     buildings.put(player, now);
                     net.send(new Audience.Player(online), new BuildingStatePayload(now));
                 }
@@ -296,7 +296,7 @@ public final class Replication {
                     continue;
                 }
                 DepositState last = deposits.get(player);
-                if ((last == null && !now.deposits().isEmpty()) || (last != null && !last.sameAs(now))) {
+                if (last == null || !last.sameAs(now)) {
                     deposits.put(player, now);
                     net.send(new Audience.Player(online), new DepositStatePayload(now));
                 }
