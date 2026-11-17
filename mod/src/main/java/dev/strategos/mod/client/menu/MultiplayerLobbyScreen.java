@@ -6,6 +6,7 @@ import dev.strategos.mod.server.net.LobbyConfiguration;
 import dev.strategos.mod.server.net.LobbyReply;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.function.UnaryOperator;
 import java.util.stream.IntStream;
 import net.minecraft.client.Minecraft;
@@ -318,7 +319,7 @@ public final class MultiplayerLobbyScreen extends Screen {
     @Override
     public void tick() {
         super.tick();
-        if (shown != ClientLobby.session().model()
+        if (!Objects.equals(shown, ClientLobby.session().model())
                 || error != ClientLobby.session().error()
                 || waiting != ClientLobby.session().waiting()) rebuildWidgets();
     }
