@@ -17,12 +17,15 @@ import dev.strategos.mod.server.match.LobbyBackend;
 import dev.strategos.mod.server.match.LobbyPreparation;
 import dev.strategos.mod.server.match.LobbyService;
 import dev.strategos.mod.server.match.MatchLobby;
+import dev.strategos.mod.server.match.MatchOptions;
 import dev.strategos.mod.server.match.MatchRuntime;
+import dev.strategos.mod.server.match.MatchSource;
 import dev.strategos.mod.server.match.MatchSpace;
 import dev.strategos.mod.server.match.ServerLobby;
 import dev.strategos.mod.server.match.Skirmishes;
 import dev.strategos.mod.server.net.LobbyState;
 import dev.strategos.mod.server.net.payload.LobbyStatePayload;
+import dev.strategos.mod.server.net.payload.MatchJoinPayload;
 import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
@@ -46,11 +49,16 @@ public final class LobbyPreparationTests {
                             manifest.sizeZ(),
                             origin.getY(),
                             origin.getY() + manifest.height() - 1),
-                    MatchFixture.options(SimHarness.DEFAULT_SEED, h)
-                            .withMap(
-                                    map,
-                                    origin.getY() + manifest.startSlots().get(0).y())
-                            .withPlay(options.play()));
+                    new MatchOptions(
+                            SimHarness.DEFAULT_SEED,
+                            options.factions(),
+                            false,
+                            MatchSource.GAMETEST,
+                            null,
+                            options.metrics(),
+                            origin.getY() + manifest.startSlots().get(0).y(),
+                            map,
+                            options.play()));
         };
     }
 
@@ -159,6 +167,98 @@ public final class LobbyPreparationTests {
             check(
                     outsider.capture().counts().getOrDefault("payload/strategos:match_join", 0) == 0,
                     "outsider received match_join");
+            h.succeed();
+        });
+    }
+
+    /** Four distinct player/faction identities, actual terrain import, and all private initial frames within NET-02's deadline. */
+    @StrategosTest(batch = "map_lobby_four", solo = true, timeoutTicks = 40000)
+    public static void fourHumansReceiveTheirInitialStateWithinTenSeconds(GameTestHelper h) {
+        StrategosServer server = StrategosServer.get();
+        LobbyFourMap.install(server);
+        BlockPos at = h.absolutePos(BlockPos.ZERO);
+        var viewers = new java.util.ArrayList<MockViewer>();
+        for (int i = 0; i < 4; i++)
+            viewers.add(MockViewer.join(h.getLevel(), "stg-lobby-f" + i, at.getX(), at.getY() + 16, at.getZ(), 2));
+        viewers.getFirst().operator(2);
+        MockViewer outsider = MockViewer.join(h.getLevel(), "stg-lobby-fout", at.getX(), at.getY() + 16, at.getZ(), 2);
+        var seats = new java.util.ArrayList<MatchLobby.Seat>();
+        for (int i = 0; i < 4; i++)
+            seats.add(new MatchLobby.Seat(
+                    new PlayerSlot(i),
+                    MatchLobby.Kind.HUMAN,
+                    i == 0 ? viewers.getFirst().player().getUUID() : null,
+                    new FactionSlot(i),
+                    i,
+                    "strategos:placeholder",
+                    i));
+        MatchRuntime[] allocated = new MatchRuntime[1];
+        Skirmishes.Placer actual = placer(h, 23);
+        ServerLobby facade = new ServerLobby(server, (map, options) -> {
+            MatchRuntime rt = actual.place(map, options);
+            allocated[0] = rt;
+            return rt;
+        });
+        LobbyService service = facade.service();
+        var setup = new SkirmishSetup(
+                LobbyFourMap.ID.toString(),
+                SkirmishSetup.Level.NORMAL,
+                SkirmishSetup.StartResources.MAP,
+                150,
+                SkirmishSetup.Visibility.FOG);
+        UUID host = viewers.getFirst().player().getUUID();
+        service.open(host, 4, seats, setup);
+        for (int i = 1; i < 4; i++) service.join(viewers.get(i).player().getUUID(), new PlayerSlot(i));
+        long revision = service.snapshot().lobby().configurationRevision();
+        for (MockViewer viewer : viewers) service.ready(viewer.player().getUUID(), true, revision);
+        long started = System.nanoTime();
+        service.start(host);
+        MatchRuntime rt = java.util.Objects.requireNonNull(allocated[0]);
+        check(rt.lifecycle() == MatchLifecycle.PREPARING, "four-player map did not enter import");
+        for (MockViewer viewer : viewers)
+            check(
+                    server.matches().seatOf(viewer.player().getUUID()) == null,
+                    "player admitted before authority/import");
+        h.onEachTick(() -> {
+            facade.tick();
+            for (MockViewer viewer : viewers) viewer.poll();
+            outsider.poll();
+            long elapsed = java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started);
+            check(elapsed <= 10_000, "four-player initial state exceeded ten seconds: " + elapsed + " ms");
+            check(
+                    service.snapshot().state() == LobbyService.State.PREPARING
+                            || service.snapshot().state() == LobbyService.State.STARTED,
+                    "four-player preparation failed");
+            if (service.snapshot().state() != LobbyService.State.STARTED) return;
+            for (int i = 0; i < 4; i++) {
+                MockViewer viewer = viewers.get(i);
+                int seat = i;
+                var joins = NetFixtures.payloads(viewer, MatchJoinPayload.class);
+                var states = NetFixtures.payloads(viewer, LobbyStatePayload.class);
+                if (joins.isEmpty() || states.stream().noneMatch(p -> p.state().phase() == LobbyState.Phase.STARTED))
+                    return;
+                check(
+                        joins.stream()
+                                .allMatch(p -> p.join().slot().value() == seat
+                                        && p.join().factions() == 4
+                                        && p.join().matchId() == rt.id().value()),
+                        "wrong four-player match_join");
+                check(states.stream().allMatch(p -> p.state().self() == seat), "wrong four-player lobby recipient");
+                var binding = server.matches().seatOf(viewer.player().getUUID());
+                check(
+                        binding != null && binding.slot().value() == seat && binding.match() == rt,
+                        "wrong four-player admission");
+                check(server.commanders().commands(viewer.player()), "member did not enter commander mode");
+                for (String type : List.of("unit_summary", "faction_state", "building_state")) {
+                    if (viewer.capture().counts().getOrDefault("payload/strategos:" + type, 0) == 0) return;
+                }
+            }
+            for (String type : List.of("lobby_state", "match_join", "unit_summary", "faction_state", "building_state"))
+                check(
+                        outsider.capture().counts().getOrDefault("payload/strategos:" + type, 0) == 0,
+                        "four-player state leaked: " + type);
+            check(core(rt).queries().diplomacy().teamsLocked(), "four-player authority not frozen");
+            check(rt.roster().members().size() == 4, "four-player roster is incomplete");
             h.succeed();
         });
     }

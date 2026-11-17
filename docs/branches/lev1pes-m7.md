@@ -36,6 +36,14 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Log
 
+### 2026-11-17 — Verify protocol integration and exercise four-player start
+
+- Verify 43963085367 on 0a80ddb4 passed all 2,668 canonical cases, zero failures/errors/skips, including 16 service contracts, intent/view/payload checks and actual registered ingress with the production solo guard. Fresh `origin/main` is unchanged at d39069e7, already merged.
+- Added a four-player actual-import case with four distinct player/faction identities, commander admission, per-recipient lobby/match_join/initial-summary assertions and an outsider negative control. Its ten-second wall-clock bound begins before start validation/allocation and ends only after every initial frame arrives. It does not use four co-op identities to bypass the unfinished T8 routing work.
+- The devtools-only scenario uses four independent workers. The engine fixture copies the shipped M6 terrain unchanged into the isolated GameTest world's map exports, preserving the hash/jobs/palette and adding four non-overlapping starts inside the original clearings. No production map, default setup, balance value or art asset changes. The test placer now preserves the requested faction count while retaining unsaved GameTest ownership. The new solo slow batch has its explicit standard cleanup hook.
+- **Pending:** verify and complete slow/soak on the source containing this case; the previous matrix's HTTP 429 failures remain failed historical evidence. No parent task/card is marked complete until its required gates pass.
+
+
 ### 2026-11-16 — Correct the protocol inventory and stale-ready assertion
 
 - Verify 43961428636 on f893a0f5 compiled and reported 2,665 canonical cases with six unit failures. Five were the exact engine-surface inventory guard/counterexamples: both registered payload ids were present in the architecture but missing from `engine-surface.json`. Added their actual ids to the machine-readable inventory; no comparison or negative case changed.
