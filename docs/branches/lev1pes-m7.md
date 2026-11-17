@@ -36,6 +36,15 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Log
 
+### 2026-11-18 — T4.1 private join/refusal and client session state
+
+- Split T4 before its UI/transport integration grows: T4.1 owns detached presentation/session contracts and the small private join/refusal adapters; T4.2 owns the actual screen, entry point and inspected L4 goldens. No NET-02 scope or parent acceptance is removed.
+- A roster is private until admission, so `JoinAvailable` asks the server to pick the first vacant HUMAN seat. Explicit slot joins remain supported. The test-first contract skips AI/closed seats, rejects full lobbies without publishing their roster, and resends only an authenticated existing member's view without resetting readiness or configuration. Actual registered-ingress coverage now uses this intent.
+- Added a two-byte `LobbyReply`/payload for REFUSED, INVALID, ERROR and RATE_LIMITED. It goes only to the requesting player and contains no membership or exception details. Stream/audience/version/length contracts and the actual outsider refusal are covered; machine-readable inventory and architecture catalogue include the new type. Existing chat feedback remains while screen wiring is unfinished.
+- The pure `LobbyClientSession` accepts views only after an explicit request, keeps server acknowledgements canonical, renders bounded errors, and ignores late views/replies after leaving or disconnecting until a new request. Three test-first session contracts cover these transitions. No Minecraft client hook is installed by this foundation alone.
+- **Pending:** complete cloud verify, then T4.2 screen/connection handling and cloud scenario goldens. All tests/checks remain cloud-only; local formatting only edits source files. T4 remains unchecked.
+
+
 ### 2026-11-18 — T4 detached presentation contract
 
 - Added five test-first view-model contracts for explicit host/operator permission, all-human readiness including empty seats, AI/closed seats, own-ready intents tied to configuration revision, every frozen phase, immutable ordered rows and safe status translations.

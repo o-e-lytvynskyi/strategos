@@ -113,6 +113,26 @@ public final class LobbyService {
         publish();
     }
 
+    /** Admit the authenticated caller to the first vacant human seat; reveal no roster before admission. */
+    public void joinAvailable(UUID member) {
+        Snapshot before = editing();
+        if (!backend.online(member) || backend.seated(member))
+            throw new IllegalArgumentException("member is not available");
+        for (MatchLobby.Seat seat : before.lobby().seats()) {
+            if (member.equals(seat.occupant())) {
+                backend.send(member, before);
+                return;
+            }
+        }
+        for (MatchLobby.Seat seat : before.lobby().seats()) {
+            if (seat.kind() == MatchLobby.Kind.HUMAN && seat.occupant() == null) {
+                join(member, seat.player());
+                return;
+            }
+        }
+        throw new IllegalStateException("no human seat is available");
+    }
+
     public void join(UUID member, PlayerSlot player) {
         Snapshot before = editing();
         if (!backend.online(member) || backend.seated(member)) {

@@ -128,5 +128,20 @@
   "key.strategos.controls": "Controls overlay",
   "message.strategos.invalid_lobby_action": "The lobby request could not be read.",
   "message.strategos.lobby_refused": "The lobby request was refused. Check your seat, permissions and current settings.",
-  "message.strategos.lobby_error": "The lobby request failed. See the server log for details."
+  "message.strategos.lobby_error": "The lobby request failed. See the server log for details.",
+  "strategos.lobby.status.editing": "Review the settings, then mark yourself ready.",
+  "strategos.lobby.status.preparing": "Preparing the match…",
+  "strategos.lobby.status.started": "Match started.",
+  "strategos.lobby.status.failed": "Match preparation failed.",
+  "strategos.lobby.status.closed": "The lobby is closed.",
+  "strategos.lobby.reason.preparation_failed": "Could not prepare the match. Review the settings and try again.",
+  "strategos.lobby.reason.cleanup_failed": "Setup could not be cancelled safely. Contact the server host.",
+  "strategos.lobby.reason.member_left": "A player left. Review the settings and mark yourself ready again.",
+  "strategos.lobby.reason.member_disconnected": "A player disconnected. Review the settings and mark yourself ready again.",
+  "strategos.lobby.reason.host_left": "The host left the lobby.",
+  "strategos.lobby.reason.server_stopping": "The server is stopping.",
+  "strategos.lobby.reply.refused": "That request was refused. Check the current seats, settings and your permissions.",
+  "strategos.lobby.reply.invalid": "This lobby request is not supported. Check that client and server mod versions match.",
+  "strategos.lobby.reply.error": "The server could not complete this request. Please contact the host.",
+  "strategos.lobby.reply.rate_limited": "Please wait a moment before trying again."
 }

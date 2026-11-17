@@ -250,6 +250,14 @@ spectator join flow is added. Every admitted player gets `match_join` and the in
 snapshot within 10 seconds; the default commander state is entered through the existing
 `CommanderService`. Add `client/menu/MultiplayerLobbyScreen` over immutable view-models.
 
+T4 implementation split (2026-11-18): keep **T4.1** detached presentation/session contracts
+and the small private join/refusal adapters separate from **T4.2** the screen, entry point and
+inspected L4 goldens. The complete T4 remains NET-02's UI acceptance task. A joining client
+receives no roster before admission: a bounded `JoinAvailable` intent lets the server choose
+a vacant human seat. A private bounded refusal reply contains no roster or exception text and
+lets the screen render rejected requests. These refine UI transport, not lobby discovery or
+server authority. Neither substep checks the parent before the screen/goldens pass.
+
 Hosting (D-20, explicitly accepted by the owner in this M7 session, 2026-10-30): one active
 match per server, dedicated first-class, Open to LAN through the same service. Dedicated tests
 are authoritative; multi-match discovery is outside M7. T3b still depends on the delivered M6

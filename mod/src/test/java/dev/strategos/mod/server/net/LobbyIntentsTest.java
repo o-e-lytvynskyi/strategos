@@ -90,6 +90,37 @@ class LobbyIntentsTest {
     }
 
     @Test
+    void availableJoinSkipsAiAndClosedSeatsAndResubscribesWithoutResettingReadiness() {
+        var backend = new Backend();
+        var service = new LobbyService(backend);
+        var seats = new ArrayList<LobbyConfiguration.Seat>();
+        for (int i = 0; i < 4; i++)
+            seats.add(new LobbyConfiguration.Seat(
+                    i,
+                    i == 1
+                            ? LobbyConfiguration.Kind.AI
+                            : i == 2 ? LobbyConfiguration.Kind.CLOSED : LobbyConfiguration.Kind.HUMAN,
+                    i,
+                    i,
+                    "strategos:placeholder",
+                    i));
+        LobbyIntents.accept(
+                service, HOST, new LobbyAction.Open(new LobbyConfiguration(4, seats, SkirmishSetup.DEFAULTS)));
+        LobbyIntents.accept(service, PEER, new LobbyAction.JoinAvailable());
+        assertThat(service.snapshot().lobby().seats().get(3).occupant()).isEqualTo(PEER);
+        service.ready(PEER, true, service.snapshot().lobby().configurationRevision());
+        var before = service.snapshot();
+        int sent = backend.recipients.size();
+        LobbyIntents.accept(service, PEER, new LobbyAction.JoinAvailable());
+        assertThat(service.snapshot()).isSameAs(before);
+        assertThat(backend.recipients.subList(sent, backend.recipients.size())).containsExactly(PEER);
+        assertThatThrownBy(() -> LobbyIntents.accept(service, OUTSIDER, new LobbyAction.JoinAvailable()))
+                .isInstanceOf(IllegalStateException.class);
+        assertThat(service.snapshot()).isSameAs(before);
+        assertThat(backend.recipients).doesNotContain(OUTSIDER);
+    }
+
+    @Test
     void staleReadinessAndUnadmittedIntentsCannotMutateTheLobby() {
         var service = new LobbyService(new Backend());
         LobbyIntents.accept(service, HOST, new LobbyAction.Open(config(150)));

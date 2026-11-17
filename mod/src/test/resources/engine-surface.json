@@ -16,6 +16,7 @@
     "strategos:feedback",
     "strategos:fx",
     "strategos:lobby_action",
+    "strategos:lobby_reply",
     "strategos:lobby_state",
     "strategos:match_control",
     "strategos:match_event",

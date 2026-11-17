@@ -9,8 +9,10 @@ import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.server.match.LobbyService;
 import dev.strategos.mod.server.net.LobbyAction;
 import dev.strategos.mod.server.net.LobbyConfiguration;
+import dev.strategos.mod.server.net.LobbyReply;
 import dev.strategos.mod.server.net.LobbyState;
 import dev.strategos.mod.server.net.payload.LobbyActionPayload;
+import dev.strategos.mod.server.net.payload.LobbyReplyPayload;
 import dev.strategos.mod.server.net.payload.LobbyStatePayload;
 import dev.strategos.mod.server.net.payload.SkirmishPayload;
 import java.util.List;
@@ -66,7 +68,7 @@ public final class LobbyNetworkTests {
                                             .occupant()),
                             "forged host identity");
                     host.send(new SkirmishPayload(SkirmishSetup.DEFAULTS));
-                    peer.send(LobbyActionPayload.of(new LobbyAction.Join(1)));
+                    peer.send(LobbyActionPayload.of(new LobbyAction.JoinAvailable()));
                     stage[0] = 1;
                 }
                 case 1 -> {
@@ -98,6 +100,10 @@ public final class LobbyNetworkTests {
                                     .allMatch(p ->
                                             p.state().self() == 1 && !p.state().mayConfigure()),
                             "wrong peer view");
+                    check(
+                            NetFixtures.payloads(outsider, LobbyReplyPayload.class).stream()
+                                    .anyMatch(p -> p.reply() == LobbyReply.REFUSED),
+                            "outsider did not receive its own bounded refusal");
                     check(!outsider.disconnected() && !peer.disconnected(), "bounded refusal disconnected client");
                     host.send(LobbyActionPayload.of(new LobbyAction.Leave()));
                     stage[0] = 3;

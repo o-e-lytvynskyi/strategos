@@ -33,6 +33,8 @@ public sealed interface LobbyAction {
         }
     }
 
+    record JoinAvailable() implements LobbyAction {}
+
     record Leave() implements LobbyAction {}
 
     record Start() implements LobbyAction {}
@@ -55,6 +57,7 @@ public sealed interface LobbyAction {
                     out.writeByte(3).writeBoolean(ready.ready()).writeVarLong(ready.configurationRevision());
                 case Leave ignored -> out.writeByte(4);
                 case Start ignored -> out.writeByte(5);
+                case JoinAvailable ignored -> out.writeByte(6);
             }
         }
 
@@ -69,6 +72,7 @@ public sealed interface LobbyAction {
                     case 3 -> new Ready(in.readBoolean(), in.readVarLong());
                     case 4 -> new Leave();
                     case 5 -> new Start();
+                    case 6 -> new JoinAvailable();
                     default -> throw new WireException("unknown lobby action");
                 };
             } catch (IllegalArgumentException invalid) {

@@ -28,6 +28,7 @@ class LobbyWireTest {
                 new LobbyAction.Open(configuration()),
                 new LobbyAction.Edit(configuration()),
                 new LobbyAction.Join(3),
+                new LobbyAction.JoinAvailable(),
                 new LobbyAction.Ready(true, Long.MAX_VALUE),
                 new LobbyAction.Ready(false, 0),
                 new LobbyAction.Leave(),

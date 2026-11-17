@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import dev.strategos.core.protocol.SkirmishSetup;
 import dev.strategos.mod.registry.ModPayloads;
 import dev.strategos.mod.server.net.payload.LobbyActionPayload;
+import dev.strategos.mod.server.net.payload.LobbyReplyPayload;
 import dev.strategos.mod.server.net.payload.LobbyStatePayload;
 import io.netty.buffer.Unpooled;
 import java.util.List;
@@ -64,6 +65,24 @@ class LobbyPayloadTest {
                 assertThat(buf.readableBytes()).isZero();
                 assertThatThrownBy(() -> LobbyActionPayload.STREAM_CODEC.encode(buf, refused))
                         .isInstanceOf(IllegalStateException.class);
+            } finally {
+                buf.release();
+            }
+        }
+    }
+
+    @Test
+    void refusalRepliesHaveOnlyAPrivatePlayerAudienceAndNoRoster() {
+        assertThat(LobbyReplyPayload.SPEC.audiences()).containsExactly(Audience.Kind.PLAYER);
+        assertThat(ModPayloads.spec(LobbyReplyPayload.TYPE.id())).isEqualTo(LobbyReplyPayload.SPEC);
+        for (LobbyReply reply : LobbyReply.values()) {
+            var payload = new LobbyReplyPayload(reply);
+            var buf = buffer();
+            try {
+                LobbyReplyPayload.STREAM_CODEC.encode(buf, payload);
+                assertThat(buf.readableBytes()).isEqualTo(2);
+                assertThat(LobbyReplyPayload.STREAM_CODEC.decode(buf)).isEqualTo(payload);
+                assertThat(buf.readableBytes()).isZero();
             } finally {
                 buf.release();
             }
