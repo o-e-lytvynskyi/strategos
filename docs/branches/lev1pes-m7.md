@@ -36,6 +36,13 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Log
 
+### 2026-11-18 — T4 detached presentation contract
+
+- Added five test-first view-model contracts for explicit host/operator permission, all-human readiness including empty seats, AI/closed seats, own-ready intents tied to configuration revision, every frozen phase, immutable ordered rows and safe status translations.
+- `LobbyScreenModel` reads only the immutable private recipient DTO. It does not optimistically change acknowledgements or infer authority from a display name. Start/ready affordances are presentation only; server validation remains authoritative.
+- **Pending:** cloud verification of this foundation, actual screen/session wiring, visible refusals and inspected cloud-rendered lobby goldens. T4 and NET-02 remain in progress. Formatting is an edit operation; no local tests or verification builds are run under cloud-only testing.
+
+
 ### 2026-11-18 — Complete T3b cloud acceptance; start T4
 
 - Fresh main remains d39069e7 and is already merged. The pending push completed: e382f7b6 is present on origin. Verify 44148921127 passed 2,669 canonical cases with zero failures/errors/skips, including sixteen service contracts and the new initial-empty snapshot/header checks.
