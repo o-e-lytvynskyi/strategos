@@ -2049,7 +2049,7 @@ placing; the events are the second line of defence.
 | `strategos:mode_switch` | RTS or first person, with a drop point | 1/s; match rules | M2 |
 | `strategos:ui_query` | Detail subscription: selected own units, one visible entity, an own building | ≤ 32 handles; 4/s | M2 |
 | `strategos:match_control` | Ready, pause and resume (singleplayer), surrender | 1/s | M3 |
-| `strategos:lobby_action` | Open/edit configuration, join own seat or request a vacant human seat, ready revision, leave, start; sender from connection | ≤ 687 bytes; 4 seats; shared command ingress budget (40/s, burst 80); malformed bytes become bounded refusals | M7 T3b.2 |
+| `strategos:lobby_action` | Open/edit configuration, join own seat or request a vacant human seat, ready revision, leave, start and idempotent own-request cancellation; sender from connection | ≤ 687 bytes; 4 seats; shared command ingress budget (40/s, burst 80); malformed bytes become bounded refusals | M7 T3b.2 |
 | `strategos:ping` | Minimap ping | 1 per 2 s | M7 |
 | `strategos:debug_subscribe` | Overlay layers and area | Operators only, dev builds; optional | M1 |
 

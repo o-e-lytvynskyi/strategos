@@ -121,6 +121,29 @@ class LobbyIntentsTest {
     }
 
     @Test
+    void cancellingAnUnacknowledgedJoinIsIdempotentAndCannotCancelAnotherMembersLobby() {
+        var backend = new Backend();
+        var service = new LobbyService(backend);
+        LobbyIntents.accept(service, OUTSIDER, new LobbyAction.Cancel());
+        assertThat(backend.recipients).isEmpty();
+        LobbyIntents.accept(service, HOST, new LobbyAction.Open(config(150)));
+        LobbyIntents.accept(service, PEER, new LobbyAction.JoinAvailable());
+        var before = service.snapshot();
+        int sent = backend.recipients.size();
+        LobbyIntents.accept(service, OUTSIDER, new LobbyAction.Cancel());
+        assertThat(service.snapshot()).isSameAs(before);
+        assertThat(backend.recipients).hasSize(sent);
+        LobbyIntents.accept(service, PEER, new LobbyAction.Cancel());
+        assertThat(service.snapshot().lobby().seats().get(1).occupant()).isNull();
+        before = service.snapshot();
+        LobbyIntents.accept(service, PEER, new LobbyAction.Cancel());
+        assertThat(service.snapshot()).isSameAs(before);
+        LobbyIntents.accept(service, HOST, new LobbyAction.Cancel());
+        assertThat(service.snapshot().state()).isEqualTo(LobbyService.State.CLOSED);
+        assertThat(service.reservesStart()).isFalse();
+    }
+
+    @Test
     void staleReadinessAndUnadmittedIntentsCannotMutateTheLobby() {
         var service = new LobbyService(new Backend());
         LobbyIntents.accept(service, HOST, new LobbyAction.Open(config(150)));

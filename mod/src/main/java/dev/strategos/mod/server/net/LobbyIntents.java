@@ -59,6 +59,7 @@ public final class LobbyIntents {
             }
             case LobbyAction.Join join -> service.join(sender, new PlayerSlot(join.player()));
             case LobbyAction.JoinAvailable ignored -> service.joinAvailable(sender);
+            case LobbyAction.Cancel ignored -> service.cancel(sender);
             case LobbyAction.Ready ready -> service.ready(sender, ready.ready(), ready.configurationRevision());
             case LobbyAction.Leave ignored -> service.leave(sender);
             case LobbyAction.Start ignored -> service.start(sender);

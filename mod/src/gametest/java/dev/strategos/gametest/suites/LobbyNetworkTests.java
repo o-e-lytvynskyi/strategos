@@ -78,6 +78,7 @@ public final class LobbyNetworkTests {
                     host.send(LobbyActionPayload.of(new LobbyAction.Ready(true, revision)));
                     peer.send(LobbyActionPayload.of(new LobbyAction.Ready(true, revision)));
                     outsider.send(LobbyActionPayload.of(new LobbyAction.Ready(true, revision)));
+                    outsider.send(LobbyActionPayload.of(new LobbyAction.Cancel()));
                     host.send(LobbyActionPayload.of(new LobbyAction.Edit(config(200))));
                     peer.send(LobbyActionPayload.of(new LobbyAction.Ready(true, revision)));
                     stage[0] = 2;
@@ -105,13 +106,15 @@ public final class LobbyNetworkTests {
                                     .anyMatch(p -> p.reply() == LobbyReply.REFUSED),
                             "outsider did not receive its own bounded refusal");
                     check(!outsider.disconnected() && !peer.disconnected(), "bounded refusal disconnected client");
-                    host.send(LobbyActionPayload.of(new LobbyAction.Leave()));
+                    host.send(LobbyActionPayload.of(new LobbyAction.Cancel()));
                     stage[0] = 3;
                 }
                 case 3 -> {
                     if (hostStates.stream().noneMatch(p -> p.state().phase() == LobbyState.Phase.CLOSED)
                             || peerStates.stream().noneMatch(p -> p.state().phase() == LobbyState.Phase.CLOSED)) return;
-                    check(service.snapshot().state() == LobbyService.State.CLOSED, "host leave did not close lobby");
+                    check(
+                            service.snapshot().state() == LobbyService.State.CLOSED,
+                            "host cancellation did not close lobby");
                     h.succeed();
                 }
                 default -> throw new AssertionError("unknown stage");

@@ -225,6 +225,13 @@ public final class LobbyService {
         publish();
     }
 
+    /** Idempotent cancellation of a pending UI request; it never leaves a started match or another member's lobby. */
+    public void cancel(UUID member) {
+        Snapshot before = current;
+        if (before == null || (before.state() != State.EDITING && before.state() != State.PREPARING)) return;
+        if (before.lobby().seats().stream().anyMatch(seat -> member.equals(seat.occupant()))) leave(member);
+    }
+
     public void leave(UUID member) {
         Snapshot before = snapshot();
         requireMember(before.lobby(), member);

@@ -255,7 +255,10 @@ and the small private join/refusal adapters separate from **T4.2** the screen, e
 inspected L4 goldens. The complete T4 remains NET-02's UI acceptance task. A joining client
 receives no roster before admission: a bounded `JoinAvailable` intent lets the server choose
 a vacant human seat. A private bounded refusal reply contains no roster or exception text and
-lets the screen render rejected requests. These refine UI transport, not lobby discovery or
+lets the screen render rejected requests. Idempotent cancellation removes only the caller's
+editing/preparing membership when a screen closes before admission is acknowledged; late
+frames cannot reopen it. It never cancels another player's lobby or leaves a started match.
+These refine UI transport, not lobby discovery or
 server authority. Neither substep checks the parent before the screen/goldens pass.
 
 Hosting (D-20, explicitly accepted by the owner in this M7 session, 2026-10-30): one active
