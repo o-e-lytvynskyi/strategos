@@ -36,6 +36,12 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Log
 
+### 2026-11-18 — T7.1 final allied-damage contracts while T5 gates run
+
+- T7 is independently ready against completed T2b.2 and the delivered M5/M6 contracts; MATCH-06 remains in progress. Split the final damage/provenance/adapters from coalition outcome work before growing the implementation. T5 gates continue on their immutable checkpoints and are not superseded.
+- The recorded source-provenance finding is still present: delayed/collateral damage contains an attacker handle but no launch faction, and a dead shooter's index can be reused. Add detached final-application and release/impact contracts before implementing a frozen provenance model. Unit/building, environmental/consequence, current-relation and hostile positive controls retain separate coverage.
+- **Pending:** T5 verify/complete aggregate, then the T7.1 test-first cloud checkpoint and explicit snapshot/hash/legacy policy. No T7 implementation or acceptance is claimed by these tests.
+
 ### 2026-11-18 — T5.2 remaining-duration persistence contracts
 
 - While the immutable T5.1 fix is checked in cloud verify 44205162665, prepare the next test-first boundary. A restored UUID binding is disconnected; a live connection never survives a save. Legacy roster rows receive the configured reclaim duration. A disconnected seat saves its remaining monotonic duration rather than an absolute clock value; duplicate disconnect notifications must not extend it.

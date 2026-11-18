@@ -138,6 +138,14 @@ The existing cloud workflow route remains mandatory for tests in this session.
 
 ### 3.1 Identity, teams and control
 
+T7 implementation split (2026-11-18): **T7.1** owns final hostile-damage filtering,
+frozen source-faction provenance for delayed/collateral hits, its current/legacy snapshot
+and journal policy, and actual engine damage adapters. **T7.2** owns allied coalition
+victory, deterministic winner sets/draws and terminal outcome persistence/replication.
+The complete parent retains all combat, replay, save/restore, slow/soak and applicable
+performance gates. A live-handle lookup at impact cannot identify a dead/reused shooter;
+the source provenance finding is recorded in `docs/kb/frozen-damage-authority.md`.
+
 Extend `core/sim` with `diplomacy/DiplomacyState` and an immutable `DiplomacyView` seam: relation
 (ally/enemy), locked team membership, per-player primary faction and explicit control grants.
 `PlayerSlot` identifies an issuer; `FactionSlot` identifies an economy/army. They are distinct
