@@ -15,6 +15,11 @@ import org.junit.jupiter.api.Test;
 class CoalitionOutcomePersistenceTest {
     private static SimHarness terminal(List<Integer> winners) {
         SimHarness h = SimHarness.builder().build();
+        if (winners.size() > 1)
+            KernelAccess.state(h.core())
+                    .restoreDiplomacy(dev.strategos.core.sim.diplomacy.DiplomacyState.identity(2)
+                            .withTeam(new dev.strategos.core.shared.FactionSlot(1), 0)
+                            .lockTeams());
         Outcome outcome = KernelAccess.state(h.core()).outcome();
         outcome.hold(0);
         outcome.hold(1);
@@ -51,7 +56,7 @@ class CoalitionOutcomePersistenceTest {
     @Test
     void currentMissingInconsistentOutOfRangeOrNonterminalWinnerMasksFailClosed() {
         JsonObject good = json(terminal(List.of(0, 1)));
-        for (int problem = 0; problem < 6; problem++) {
+        for (int problem = 0; problem < 8; problem++) {
             JsonObject bad = good.deepCopy();
             JsonArray outcome = bad.getAsJsonObject("play").getAsJsonArray("outcome");
             switch (problem) {
@@ -61,6 +66,18 @@ class CoalitionOutcomePersistenceTest {
                 case 3 -> outcome.set(2, new com.google.gson.JsonPrimitive(0));
                 case 4 -> outcome.set(1, new com.google.gson.JsonPrimitive(1));
                 case 5 -> outcome.set(3, new com.google.gson.JsonPrimitive(1L << 32));
+                case 6 ->
+                    bad.getAsJsonObject("play").getAsJsonObject("diplomacy").addProperty("locked", false);
+                case 7 ->
+                    bad.getAsJsonObject("play")
+                            .add(
+                                    "diplomacy",
+                                    dev.strategos.core.sim.persist.DiplomacyCodec.STATE
+                                            .encodeStart(
+                                                    JsonOps.INSTANCE,
+                                                    dev.strategos.core.sim.diplomacy.DiplomacyState.identity(2)
+                                                            .lockTeams())
+                                            .getOrThrow());
                 default -> throw new AssertionError();
             }
             assertThat(MatchSnapshotCodec.decode(new Dynamic<>(JsonOps.INSTANCE, bad), Migrations.production())

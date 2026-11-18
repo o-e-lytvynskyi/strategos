@@ -599,6 +599,16 @@ public final class MatchSnapshotCodec {
                                     || (!restored.ended() && outcome.get(4) != 0)) {
                                 return DataResult.error(() -> "invalid terminal outcome metadata");
                             }
+                            if (restored.winners().size() > 1) {
+                                if (!snapshot.diplomacy().teamsLocked()) {
+                                    return DataResult.error(() -> "coalition outcome requires locked teams");
+                                }
+                                for (int faction : restored.winners()) {
+                                    if (!snapshot.diplomacy().alliedFactions(restored.winner(), faction)) {
+                                        return DataResult.error(() -> "coalition winners must be allied");
+                                    }
+                                }
+                            }
                         }
                         if (snapshot.templateBindings().isEmpty()
                                 && snapshot.buildings().stream().anyMatch(BuildingStore.Saved::alive)) {

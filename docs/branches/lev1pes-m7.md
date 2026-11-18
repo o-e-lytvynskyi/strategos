@@ -551,3 +551,5 @@ Pending independent review.
 - Decision 2026-11-18 · ADR-0031 uses only surviving allies, preserves unlocked individual outcomes and their hashes, and adds explicit bounded coalition extensions under network version 2. This implements the approved deterministic surviving-coalition criterion; undo before schema-6 data exists, otherwise require an explicit conversion. T8 must replace the identity-seat UI perspective before enabling co-op admission.
 
 - 2026-11-18 · T7.2 verify 44219656157 on 9703c503 stopped at ErrorProne InvalidParam: the changed MatchEnded record retained an obsolete single-winner Javadoc. Corrected the description to the full set; no check was weakened and no tests had executed.
+
+- 2026-11-18 · T7.2 acceptance additions: real three-faction conquest ends with both allied winners, one result to every member and none to an outsider, then no core advancement; current outcome masks also require a locked allied coalition. New bounded cloud L4 m7-results uses actual faction-1 admission and decoded terminal-state presentation fixtures for non-first allied Victory, Defeat and draw, each captured twice. Visual/functional acceptance remains pending.
