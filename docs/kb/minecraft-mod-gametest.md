@@ -169,3 +169,20 @@ blocks: an enemy 34 blocks away is never paired whatever `broadcastToPlayer` ans
 hidden enemy is never paired" passes with the fog gate switched off, and "a revealed map pairs
 it" fails with the gate right. Put the hidden body outside the faction's vision and inside the
 tracking range (M6: vision 12, the enemy 20 blocks off), and pair a visible enemy as the control.
+
+## Maven throttling before any test starts
+
+A cloud run can fail in build-logic compilation because Maven Central returns HTTP 429 for
+an unchanged Gradle plugin dependency. Record the failed run and its zero executed tests;
+never count it as functional evidence, substitute dependency versions or retry until green.
+The optional verify dispatch input `dependency_cache_run` restores the existing
+`cloud-gradle-modules` artifact from a successful same-branch manual full-ci nightly producer.
+It changes neither the Gradle verification command nor any allowance or test selection.
+
+`tools/ci_dependency_cache.py` validates the repository, source repository, branch, workflow,
+trigger and successful producer jobs before the pinned artifact download. The parent AI
+aggregate need not be finished: this is a dependency cache, not an acceptance verdict.
+Only bounded regular files/directories under modules-2 are extracted; traversal, links,
+other caches, oversized archives and escaping existing symlinks fail before any module is
+written. No credentials, init scripts or project outputs are restored. Cloud unit
+counterexamples run before this optional hand-off. The ordinary empty-input path is unchanged.
