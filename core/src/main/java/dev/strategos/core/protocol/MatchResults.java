@@ -5,7 +5,7 @@ import dev.strategos.core.shared.Winners;
 import java.util.List;
 
 /**
- * The match results appended to {@code match_state} at {@link MatchStateMsg.Lifecycle#ENDED} (M6 §2.3): the winner,
+ * The match results appended to {@code match_state} at {@link MatchStateMsg.Lifecycle#ENDED}: ordered surviving winners,
  * the tick the match ended at, and each faction's statistics.
  */
 @CoreApi

@@ -6,7 +6,8 @@ import java.util.List;
 
 /**
  * The {@code match_event} payload (MATCH-01, UI-12): at {@code tick}, faction {@code faction} was defeated ({@link
- * #DEFEATED}), or the match ended ({@link #ENDED}), {@code faction} its winner, -1 for none, after {@code ticks} ticks,
+ * #DEFEATED}), or the match ended ({@link #ENDED}), {@code winners} its full ordered surviving coalition and
+ * {@code faction} its first member (-1 for a draw), after {@code ticks} ticks,
  * both to every participant of match {@code matchId}; or {@code faction} is under attack at match-local ({@code x},
  * {@code z}) ({@link #ALERT}), to that faction's players only; or {@code faction}'s computer player announced a wave
  * mustering at ({@code x}, {@code z}) that leaves at tick {@code ticks} ({@link #WAVE}), to every participant; or {@code

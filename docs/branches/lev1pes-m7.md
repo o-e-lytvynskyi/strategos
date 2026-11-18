@@ -7,9 +7,9 @@
 ## Now
 
 - **Milestone:** M7 Multiplayer; 8 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md), based on planning PR #32; T3 is split before implementation into independent aggregate and production integration.
-- **In progress:** M7 T7.1 acceptance and T7.2 coalition victory since 2026-11-18. Whole M7, including optional T24 requested by the operator, remains in progress. All further checks run in the cloud.
+- **In progress:** M7 T7.1 acceptance and T7.2 coalition victory since 2026-11-18. Session stopped at the operator's request to continue tomorrow. Whole M7, including optional T24 requested by the operator, remains in progress. All further checks run in the cloud.
 - **Last finished task:** T5 persistence/migration: verify 44209974849 (2,696 canonical cases) and complete full-ci 44208443663 (248 slow/core cases, all twenty AI seeds and aggregate). Acceptance production source is 73cee49d; d7a8911b changes only the stricter queue-replication test. Current T7 code remains under verification.
-- **Next task:** T7.1 functional/replay/performance acceptance and T7.2 allied coalition outcomes; reassess T6 readiness before its engine-kit work and T8 integration. D-20 remains accepted; co-op commands/reconnect and native multiplayer acceptance retain their own gates.
+- **Next task:** Repair the unlocked legacy test fixture rejected by the required locked setup constructor, then run final T7.2 verify, inspect cloud m7-results and complete combined T7 slow/soak/performance acceptance; reassess T6 readiness before its engine-kit work and T8 integration. D-20 remains accepted; co-op commands/reconnect and native multiplayer acceptance retain their own gates.
 - **Merged from main last:** d39069e7 (2026-11-15, PR #55/M6); merge 213d0564 is zero commits behind that main. Cloud verify 43756194393 passed: 2,623 canonical XML cases, zero failures/errors/skips, 7m 22s. Prior T2b slow/soak/L6 evidence remains historical; new integration will receive its required gates.
 
 The operator requested ownership of the whole M7 and work on what is currently possible on
@@ -553,3 +553,10 @@ Pending independent review.
 - 2026-11-18 · T7.2 verify 44219656157 on 9703c503 stopped at ErrorProne InvalidParam: the changed MatchEnded record retained an obsolete single-winner Javadoc. Corrected the description to the full set; no check was weakened and no tests had executed.
 
 - 2026-11-18 · T7.2 acceptance additions: real three-faction conquest ends with both allied winners, one result to every member and none to an outsider, then no core advancement; current outcome masks also require a locked allied coalition. New bounded cloud L4 m7-results uses actual faction-1 admission and decoded terminal-state presentation fixtures for non-first allied Victory, Defeat and draw, each captured twice. Visual/functional acceptance remains pending.
+
+### 2026-11-18 — Operator requested continuation tomorrow
+
+- Stopped on the operator's request; T7 remains incomplete. Main fetched again at d39069e7, zero commits behind. No local tests/check builds ran; formatter tasks were source edits only.
+- Verify 44220026205 on 0312a383 failed two new unlocked-legacy fixture cases (CIVIC_CENTRE and CONQUEST): DiplomacySetup correctly requires locked teams. The fixture must use the genuine legacy identity path rather than submit an invalid unlocked setup. Preserve the individual-victory assertions and the setup guard. Canonical reports contain 2,246 cases with two failures and no errors/skips; this is not acceptance.
+- Latest pushed implementation f9f37ed7 additionally contains locked/allied terminal-mask validation, actual three-member coalition delivery/privacy coverage and L4 m7-results. Cloud scenario 44220491804 is still running at stop; let it finish and inspect its result and all six PNGs on resume. Do not supersede a required active run.
+- After fixing the fixture, final cloud verify must include the latest actual delivery test and persistence validation. Combined full-ci, paired JMH (control d7a8911b), standard L6 and visual acceptance remain outstanding; neither T7 substep nor whole M7 is closed. No final T7 performance workflow has been launched.

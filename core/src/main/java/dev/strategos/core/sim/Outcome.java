@@ -6,8 +6,8 @@ import java.util.List;
 
 /**
  * Who has lost and whether the match is over (MATCH-01): the factions that ever held a finished civic centre, those
- * defeated (their last centre fell, or they resigned), and once at most one stands, the end: its tick and the winner,
- * -1 for none. Hashed and saved once anything is set, so a match that never had a centre hashes as before.
+ * defeated (their last centre fell, or they resigned), and the terminal tick and ordered surviving winners.
+ * An empty winner set explicitly represents a draw. Hashed and saved once anything is set, so a match that never had a centre hashes as before.
  */
 public final class Outcome {
     public static final int NONE = -1;

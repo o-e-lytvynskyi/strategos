@@ -69,3 +69,17 @@ Persist a launch-pending marker before queuing setup and keep it until complete 
 and the initial replication period. Refuse an interrupted saved launch without rewriting
 its raw tag; never infer completed identity authority merely because the snapshot itself
 decodes. Normal shutdown cancellation and crash-time detection cover different cases.
+
+## Compare completed ticks, and preserve the full terminal coalition
+
+A snapshot represents a completed simulation tick. A test that removes an entity directly
+between ticks can leave vision/hysteresis derived from the previous tick; comparing that
+mutated live state's hash with a restored snapshot tests an invalid boundary. Queue the
+intended death through ExternalDamage and step normally before snapshotting. Keep the exact
+hash comparison and compare identical continuation inputs; do not drop the assertion.
+
+Terminal results are also state. Persist the full ordered surviving winner set, not only
+its first faction. Validate the mask against held/defeated factions, match bounds and locked
+allied relations. A newer terminal blob must override an older paused registry record and
+refuse resume. Rejoining clients reconstruct the banner from terminal state instead of
+requiring an old one-time end notification. See ADR-0031.

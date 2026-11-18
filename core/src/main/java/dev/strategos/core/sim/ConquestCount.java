@@ -6,8 +6,8 @@ import java.util.List;
 
 /**
  * Conquest (M6 §2.3), FINAL under {@link PlayRules.Victory#CONQUEST}: a faction in play that has no unit and no
- * building but fields and decorations is defeated; once someone was defeated and at most one in play stands, the match
- * ends, that one the winner.
+ * building but fields and decorations is defeated; once someone was defeated, the match ends when only one faction or a locked allied coalition
+ * stands; no survivors is a draw.
  */
 final class ConquestCount {
     private ConquestCount() {}
