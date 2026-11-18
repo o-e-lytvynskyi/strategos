@@ -149,6 +149,23 @@ it must not remove another test's players or call global cleanup. Keep the exist
 encoder/capture as the single byte-counting implementation. T6 stays unchecked until its
 cloud engine gate passes. No new owner product decision is needed for this approved scope.
 
+T8 readiness/split (2026-11-18): T2b, T5 and T6 engine dependencies are delivered.
+Split this large task before code into **T8.1** existing core-command asset ownership,
+primary-faction placement/production/economy authorization and tick-time revoke revalidation;
+**T8.2** bounded journaled grant/revoke commands and their replay/primary-only delegation policy;
+**T8.3** server/client primary/control-view routing, private same-faction fan-out, first-person
+adapters and actual co-op lobby admission (split backend/client further if it exceeds the
+normal size target); **T8.4** durable faction presentation/palette and human-name-only
+scoreboard integration for MATCH-06; and **T8.5** integrated two-controller/recipient/visual
+acceptance. QA-15's L7 criterion remains T19/T25. UI-15's broader HUD/ping work remains T14.
+
+Audit each numeric seat use by domain: command sequence keys and first-person leader indices
+remain player identities; ownership/economy/fog use the primary faction and explicit grants.
+Placement creates assets for the primary faction, as the existing intent defines; grants
+permit operating another faction's assets without revealing its treasury/research/queues or
+transferring ownership. Trusted server ADMIN behavior must remain explicit; no client may
+supply that privilege. Parent T8 stays unchecked until every integration gate passes.
+
 T7 implementation split (2026-11-18): **T7.1** owns final hostile-damage filtering,
 frozen source-faction provenance for delayed/collateral hits, its current/legacy snapshot
 and journal policy, and actual engine damage adapters. **T7.2** owns allied coalition
