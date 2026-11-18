@@ -36,6 +36,12 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Log
 
+### 2026-11-18 — T5.2 remaining-duration persistence contracts
+
+- While the immutable T5.1 fix is checked in cloud verify 44205162665, prepare the next test-first boundary. A restored UUID binding is disconnected; a live connection never survives a save. Legacy roster rows receive the configured reclaim duration. A disconnected seat saves its remaining monotonic duration rather than an absolute clock value; duplicate disconnect notifications must not extend it.
+- Four detached contracts cover legacy/default migration, live-to-disconnected restore, decreasing remaining duration across restart, expiry at the exact boundary, arbitrary/wrapping monotonic clock origins, and required typed/bounded current duration fields. No wall-clock timestamp or encoded private frame is persisted.
+- **Pending:** cloud test-first checkpoint after T5.1 acceptance, then the versioned blob/session integration and real restore/migration gates. Reconnect authentication, session revocation and the once-only expiry policy remain T10, not acceptance inferred from these duration contracts.
+
 ### 2026-11-18 — Complete T4 and NET-02; continue T5
 
 - Full cloud verify 44202558089 passed on 7c17da65: 2,682 canonical XML cases, zero failures/errors/skips, including all sixteen lobby-service contracts and four admission cases. The earlier b5fad06a verify was superseded during L5 and remains incomplete despite its passing partial XML reports.
