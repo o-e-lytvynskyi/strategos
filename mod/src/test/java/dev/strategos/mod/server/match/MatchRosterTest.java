@@ -69,7 +69,11 @@ class MatchRosterTest {
         SimHarness h = SimHarness.builder().build();
         MatchData live = MatchData.live(ID, h.core()::snapshot, () -> 4);
         CompoundTag empty = live.save(new CompoundTag(), RegistryAccess.EMPTY);
-        assertThat(empty.contains("roster")).as("nobody sits: M0's blob").isFalse();
+        assertThat(empty.getInt("v")).isEqualTo(2);
+        assertThat(empty.contains("roster"))
+                .as("current blobs have an explicit session envelope")
+                .isTrue();
+        assertThat(empty.getList("roster", net.minecraft.nbt.Tag.TAG_COMPOUND)).isEmpty();
 
         live.roster().seat(ANN, new PlayerSlot(1));
         live.roster().seat(BOB, new PlayerSlot(0));

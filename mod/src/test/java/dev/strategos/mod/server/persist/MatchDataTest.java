@@ -65,8 +65,8 @@ class MatchDataTest {
         CompoundTag tag = saved(walking(), 3);
         assertThat(MatchData.load(new MatchId(2), tag).state()).isEqualTo(MatchData.State.QUARANTINED);
         CompoundTag later = tag.copy();
-        later.putInt("v", 2);
-        assertThat(MatchData.load(ID, later).quarantineReason()).contains("blob version 2");
+        later.putInt("v", 3);
+        assertThat(MatchData.load(ID, later).quarantineReason()).contains("blob version 3");
         assertThat(MatchData.load(ID, new CompoundTag()).quarantineReason()).contains("no version");
     }
 
@@ -125,10 +125,50 @@ class MatchDataTest {
         CompoundTag seat = new CompoundTag();
         seat.put("uuid", NbtUtils.createUUID(UUID.fromString("00000000-0000-0000-0000-00000000000a")));
         seat.putInt("slot", slot);
+        seat.putLong("remainingNanos", 300_000_000_000L);
         ListTag roster = new ListTag();
         roster.add(seat);
         tag.put("roster", roster);
         return tag;
+    }
+
+    @Test
+    void aLegacyRosterMigratesWithoutRestoringAConnectionOrChangingTheSnapshot() {
+        SimHarness h = walking();
+        CompoundTag legacy = withSeat(saved(h, 3), 0);
+        legacy.putInt("v", 1);
+        legacy.getList("roster", net.minecraft.nbt.Tag.TAG_COMPOUND)
+                .getCompound(0)
+                .remove("remainingNanos");
+        MatchData loaded = MatchData.load(ID, legacy);
+
+        assertThat(loaded.state()).isEqualTo(MatchData.State.LOADED);
+        assertThat(loaded.loadedSnapshot()).isEqualTo(h.core().snapshot());
+        UUID member = loaded.roster().members().getFirst();
+        assertThat(loaded.roster().isConnected(member)).isFalse();
+        assertThat(loaded.roster().remainingNanos(member)).isBetween(1L, 300_000_000_000L);
+        CompoundTag migrated = loaded.save(new CompoundTag(), RegistryAccess.EMPTY);
+        assertThat(migrated.getInt("v")).isEqualTo(2);
+        assertThat(migrated.getList("roster", net.minecraft.nbt.Tag.TAG_COMPOUND)
+                        .getCompound(0)
+                        .contains("remainingNanos", net.minecraft.nbt.Tag.TAG_LONG))
+                .isTrue();
+        assertThat(MatchData.load(ID, migrated).state()).isEqualTo(MatchData.State.LOADED);
+    }
+
+    @Test
+    void aCurrentBlobRequiresTheExplicitSessionEnvelopeAndDuration() {
+        CompoundTag missingRoster = saved(walking(), 3);
+        missingRoster.putInt("v", 2);
+        missingRoster.remove("roster");
+        assertQuarantinedUnchanged(missingRoster);
+        CompoundTag missingDuration = withSeat(saved(walking(), 3), 0);
+        missingDuration.putInt("v", 2);
+        missingDuration
+                .getList("roster", net.minecraft.nbt.Tag.TAG_COMPOUND)
+                .getCompound(0)
+                .remove("remainingNanos");
+        assertQuarantinedUnchanged(missingDuration);
     }
 
     private static void assertQuarantinedUnchanged(CompoundTag tag) {
