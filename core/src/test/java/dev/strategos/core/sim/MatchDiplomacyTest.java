@@ -104,7 +104,7 @@ class MatchDiplomacyTest {
         SimHarness h = configured();
         JsonObject encoded =
                 MatchSnapshotCodec.encode(JsonOps.INSTANCE, h.core().snapshot()).getAsJsonObject();
-        assertThat(encoded.get("v").getAsInt()).isEqualTo(4).isEqualTo(SchemaVersion.CURRENT);
+        assertThat(encoded.get("v").getAsInt()).isEqualTo(SchemaVersion.CURRENT);
         MatchSnapshot decoded = MatchSnapshotCodec.decode(
                         new Dynamic<>(JsonOps.INSTANCE, encoded), Migrations.production())
                 .getOrThrow();

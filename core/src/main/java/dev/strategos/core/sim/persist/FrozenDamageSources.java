@@ -7,9 +7,9 @@ import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.combat.Damage;
 import dev.strategos.core.sim.combat.ShotStore;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 /** Schema 4 to 5: preserve unlocked shots; infer a locked source only from a complete saved live identity. */
 final class FrozenDamageSources implements MigrationStep {
@@ -26,7 +26,7 @@ final class FrozenDamageSources implements MigrationStep {
         }
         MatchSnapshot old = MatchSnapshotCodec.CODEC.parse(input).getOrThrow();
         if (old.play().shots().rows().isEmpty()) return input;
-        Map<Integer, Integer> owners = new HashMap<>();
+        Map<Integer, Integer> owners = new TreeMap<>();
         for (var unit : old.units()) {
             if (owners.putIfAbsent(unit.handle(), unit.faction().value()) != null) {
                 throw new IllegalArgumentException("duplicate handle in legacy damage source");

@@ -536,7 +536,7 @@ reviewed implementation task between T17 and T18, keeping the acceptance depende
 - [x] T3a (2026-10-30) · Bounded lobby state/readiness/preparation contract; full cloud verify, 12 new contract tests.
 - [x] T3b (2026-11-18) · Authenticated lobby service, private protocol and production start; verify 44148921127 and complete slow/20-seed soak 44148929120 on e382f7b6.
 - [x] T4 (2026-11-18) · Lobby UI; verify 44202558089 and cloud L4 44203471758, seven inspected zero-difference goldens, real start/RTS flow and altered-golden rejection.
-- [ ] T5 · Persistence and migration.
+- [x] T5 (2026-11-18) · Adapter blob-2 roster/session migration, disconnected restore and durable launch refusal; verify 44209974849 plus complete full-ci 44208443663 (248 slow/core cases and all twenty AI seeds).
 - [ ] T6 · Multiplayer test kit.
 - [ ] T7 · Allied damage and victory.
 - [ ] T8 · Co-op authority.

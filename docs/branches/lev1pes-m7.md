@@ -6,10 +6,10 @@
 
 ## Now
 
-- **Milestone:** M7 Multiplayer; 7 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md), based on planning PR #32; T3 is split before implementation into independent aggregate and production integration.
-- **In progress:** M7 T5 persistence/migration since 2026-11-18; T5.1 test-first cloud checkpoint pending. Whole M7, including optional T24 requested by the operator, remains in progress. All further checks run in the cloud.
-- **Last finished task:** T4 lobby UI: cloud verify 44202558089 (2,682 canonical cases) and L4 44203471758 (seven personally inspected goldens, NMSE 0, real five-click start/RTS admission and altered-golden rejection). NET-02 is done; source/visual acceptance commits are 7c17da65/5f7d18be. New T5 tests on HEAD are a separate expected-red checkpoint.
-- **Next task:** T5 roster/session persistence, strict restore/migration and engine acceptance; then T6 and later integration in specification order. D-20 remains accepted; T8's co-op routing is not inferred from four-faction start acceptance.
+- **Milestone:** M7 Multiplayer; 8 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md), based on planning PR #32; T3 is split before implementation into independent aggregate and production integration.
+- **In progress:** M7 T7.1 final allied-damage filtering and frozen provenance since 2026-11-18. Whole M7, including optional T24 requested by the operator, remains in progress. All further checks run in the cloud.
+- **Last finished task:** T5 persistence/migration: verify 44209974849 (2,696 canonical cases) and complete full-ci 44208443663 (248 slow/core cases, all twenty AI seeds and aggregate). Acceptance production source is 73cee49d; d7a8911b changes only the stricter queue-replication test. Current T7 code remains under verification.
+- **Next task:** T7.1 functional/replay/performance acceptance and T7.2 allied coalition outcomes; reassess T6 readiness before its engine-kit work and T8 integration. D-20 remains accepted; co-op commands/reconnect and native multiplayer acceptance retain their own gates.
 - **Merged from main last:** d39069e7 (2026-11-15, PR #55/M6); merge 213d0564 is zero commits behind that main. Cloud verify 43756194393 passed: 2,623 canonical XML cases, zero failures/errors/skips, 7m 22s. Prior T2b slow/soak/L6 evidence remains historical; new integration will receive its required gates.
 
 The operator requested ownership of the whole M7 and work on what is currently possible on
@@ -35,6 +35,13 @@ before implementing them. T2 does not certify friendly-fire, allied victory, com
 or replication privacy; those retain their own integration tests and dependencies.
 
 ## Log
+
+### 2026-11-18 — Complete T5; retain independent T7 gates
+
+- Verify 44209974849 on d7a8911b passed 2,696 canonical cases with zero failures/errors/skips. Complete full-ci 44208443663 passed every constituent job on identical production source 73cee49d; the only d7 code change is the stricter initial-empty table regression test.
+- Independently inspected nightly artifact 14384873468: all 248 slow/core cases passed; persistent two-human import/transaction case 6.000 s, cancellation 1.348 s, unchanged four-player deadline case 4.822 s. Complete aggregate artifact 14388611554 has exact commit 73cee49db52c070e3b423e3e8ed4c9a200f2709c, seeds 1–20, twenty matches, 896,421 ticks, seventeen conquests and three complete game-limit runs, with each shard's XML/log hashes.
+- T5 is complete. The session envelope, raw-preserving malformed/conflict/pending-launch refusal and actual paused connection events are accepted; authenticated reclaim and once-only expiry actions remain T10. MATCH-06 remains in progress for allied victory/co-op; no whole-M7 completion is inferred.
+- Tooling L4 smoke 44215498818 on dd0cc212 passed; personally inspected all three 640-pixel candidate frames and `ok: true`. T7 verify 44215494159 instead has four failures: the forbidden hash-map dependency, the old explicit schema-4 writer assertion, and two new fixtures snapshotting a manually removed source before a completed tick updates visibility/hysteresis. Use the required ordered map, assert the current schema, and kill the source through the normal journaled tick before taking the snapshot. Exact hash and continuation assertions remain; no fixture or gate is relaxed.
 
 ### 2026-11-18 — T7.1 final allied-damage contracts while T5 gates run
 

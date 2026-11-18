@@ -37,7 +37,10 @@ class FrozenDamagePersistenceTest {
         s.shots()
                 .restore(new ShotStore.Snapshot(
                         2, List.of(new ShotStore.Shot(1, source, target, s.tick() + 4, 20.5, 1.9, 8.5, damage))));
-        if (deadSource) s.removeUnit(source);
+        if (deadSource) {
+            h.damage(new ExternalDamage(source, ExternalDamage.Kind.LETHAL, 0, ExternalDamage.SourceKind.NONE));
+            h.step(); // snapshot a completed tick, after vision/hysteresis observes the source's death
+        }
         return h;
     }
 
