@@ -40,7 +40,9 @@ or replication privacy; those retain their own integration tests and dependencie
 
 - T7 is independently ready against completed T2b.2 and the delivered M5/M6 contracts; MATCH-06 remains in progress. Split the final damage/provenance/adapters from coalition outcome work before growing the implementation. T5 gates continue on their immutable checkpoints and are not superseded.
 - The recorded source-provenance finding is still present: delayed/collateral damage contains an attacker handle but no launch faction, and a dead shooter's index can be reused. Add detached final-application and release/impact contracts before implementing a frozen provenance model. Unit/building, environmental/consequence, current-relation and hostile positive controls retain separate coverage.
-- **Pending:** T5 verify/complete aggregate, then the T7.1 test-first cloud checkpoint and explicit snapshot/hash/legacy policy. No T7 implementation or acceptance is claimed by these tests.
+- T5 verify 44209974849 passed on d7a8911b: 2,696 canonical cases with zero failures/errors/skips, including all new storage and connection contracts. Main was fetched again unchanged at d39069e7. Full-ci 44208443663 passed its slow/core job on identical production source 73cee49d; all twenty AI seeds/aggregate remain pending. The only d7a8911b code difference is the stricter full-table queue-replication test.
+- Test-first T7.1 checkpoint 084d1f11 failed cloud verify 44211638044 at core test compilation because frozen damage origins were absent; zero cases ran. Added current/legacy snapshot, dead-source continuation/hash and no-guessed-origin contracts before implementation.
+- **Pending:** T5 complete aggregate, T7.1 implementation under ADR-0030 and complete cloud gates. No T7 acceptance is claimed by these tests.
 
 ### 2026-11-18 — T5.2 remaining-duration persistence contracts
 

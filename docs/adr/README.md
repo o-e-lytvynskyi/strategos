@@ -39,6 +39,7 @@ governs.
 
 | [0028](0028-diplomacy-authority-persistence.md) | Immutable diplomacy authority, schema-4 migration and journaled setup | Accepted (M7 foundation) | 2026-10-29 | §5, §7 |
 | [0029](0029-roster-session-persistence.md) | Adapter blob-2 membership, disconnected restore and remaining monotonic duration | Accepted (M7 persistence; gates tracked in branch) | 2026-11-18 | §5.8, §12 |
+| [0030](0030-frozen-hostile-damage-provenance.md) | Frozen hostile source faction, final locked-team filtering and conservative schema-5 migration | Accepted (T7.1 implementation; gates pending) | 2026-11-18 | §5.8, §6.7, §7 |
 
 ## Pending measurements
 
