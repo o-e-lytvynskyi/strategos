@@ -39,6 +39,67 @@ public final class MultiplayerKitTests {
                 MatchOptions.GAMETEST_PLAY);
     }
 
+    /** T6.2: valid commands before/after malformed frames prove the actual connection and handler remain usable. */
+    @StrategosTest
+    public static void boundedHostileFramesUseRealIngressAndOnlyValidCommandsReachTheJournal(GameTestHelper h) {
+        MultiplayerHarness kit = MultiplayerHarness.create(h, options(h));
+        kit.match().submit(PlayerSlot.ADMIN,
+                new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(0), new Vec2d(8.5, 8.5), 1, 0));
+        var counters = StrategosServer.get().net().counters();
+        int[] violations = {0};
+        h.startSequence()
+                .thenWaitUntil(() -> check(kit.ready() && core(kit.match()).queries().unitHandles().length == 1,
+                        "command fixture is not ready"))
+                .thenExecute(() -> {
+                    kit.admit("m7-wire", List.of(new PlayerSlot(0)));
+                    kit.sendCommands(0, move(kit, 1));
+                })
+                .thenWaitUntil(() -> check(accepted(kit, 1), "valid command before hostile traffic was not accepted"))
+                .thenExecute(() -> {
+                    String name = kit.viewer(0).player().getGameProfile().getName();
+                    violations[0] = counters.violations(name);
+                    kit.sendCommandBytes(0, new byte[dev.strategos.core.protocol.Limits.BATCH_BYTES + 1]);
+                    kit.sendCommandBytes(0, new byte[] {0, 1, (byte) 255});
+                    kit.sendCommands(0, move(kit, 2));
+                })
+                .thenWaitUntil(() -> check(accepted(kit, 2), "valid command after hostile frames was not accepted"))
+                .thenExecute(() -> kit.sendPacket(0,
+                        new net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket(
+                                dev.strategos.mod.server.net.payload.CommandsPayload.of(move(kit, 3)))))
+                .thenWaitUntil(() -> check(accepted(kit, 3), "generic packet route bypassed or missed real ingress"))
+                .thenExecute(() -> {
+                    var commands = NetFixtures.envelopes(kit.match(), 0);
+                    check(commands.size() == 3 && commands.get(0).clientSeq() == 1
+                            && commands.get(1).clientSeq() == 2 && commands.get(2).clientSeq() == 3,
+                            "malformed traffic changed the journal: " + commands);
+                    String name = kit.viewer(0).player().getGameProfile().getName();
+                    check(counters.violations(name) == violations[0] + 2, "hostile frames did not traverse the violation policy");
+                    check(!kit.viewer(0).disconnected(), "bounded hostile probes disconnected a valid player");
+                    var retained = move(kit, 4);
+                    kit.close();
+                    boolean refused = false;
+                    try {
+                        kit.sendCommands(0, retained);
+                    } catch (IllegalStateException expected) {
+                        refused = true;
+                    }
+                    check(refused, "closed harness accepted another command");
+                })
+                .thenSucceed();
+    }
+
+    private static dev.strategos.core.protocol.CommandBatch move(MultiplayerHarness kit, int sequence) {
+        int handle = core(kit.match()).queries().unitHandles()[0];
+        return new dev.strategos.core.protocol.CommandBatch(sequence, List.of(
+                dev.strategos.core.protocol.Move.replace(dev.strategos.core.protocol.UnitSet.of(handle), new Vec2d(20.5, 20.5))));
+    }
+
+    private static boolean accepted(MultiplayerHarness kit, int sequence) {
+        return kit.payloads(0, dev.strategos.mod.server.net.payload.FeedbackPayload.class).stream()
+                .anyMatch(p -> p.message() instanceof dev.strategos.core.protocol.Feedback f
+                        && f.clientSeq() == sequence && f.outcome() == dev.strategos.core.protocol.CommandOutcome.ACCEPTED);
+    }
+
     @StrategosTest(timeoutTicks = 400)
     public static void fourPlayersAcknowledgeCapturePrivatelyAndCleanUpWithinThirtySeconds(GameTestHelper h) {
         long started = System.nanoTime();
