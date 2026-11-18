@@ -25,6 +25,7 @@ import dev.strategos.gametest.suites.LobbyNetworkTests;
 import dev.strategos.gametest.suites.LobbyPreparationTests;
 import dev.strategos.gametest.suites.MapTests;
 import dev.strategos.gametest.suites.MatchTests;
+import dev.strategos.gametest.suites.MultiplayerKitTests;
 import dev.strategos.gametest.suites.NavTests;
 import dev.strategos.gametest.suites.NetTests;
 import dev.strategos.gametest.suites.OrderTests;
@@ -86,6 +87,7 @@ public final class Suites {
                         MapTests.class,
                         NavTests.class,
                         NetTests.class,
+                        MultiplayerKitTests.class,
                         OrderTests.class,
                         PathTests.class,
                         PacingTests.class,

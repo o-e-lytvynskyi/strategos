@@ -6,7 +6,7 @@ MVP are coarser by design and are refined at the review that opens their milesto
 
 Planning specification: [M7 implementation plan](../milestones/M7-multiplayer.md), 2026-10-28.
 It defines tasks and contracts for review; it did not itself approve implementation.
-MATCH-06 is `in_progress` and NET-02 is `done` under the continuing M7 development instruction;
+MATCH-06 and QA-15 are `in_progress` and NET-02 is `done` under the continuing M7 development instruction;
 other card statuses and their owner decision gates remain explicit below.
 
 ## Milestone
@@ -238,7 +238,7 @@ Multiple-match discovery is outside M7. Recorded in the M7 branch pending mainta
   2. Captured payloads can be asserted per player (L3).
   3. The extended protocol is used at the M7 acceptance (L7, acceptance).
 - **Tests:** L0, L3, L7 · **Depends on:** QA-19, NET-02 · **Size:** M · **Tier:** T1
-- **Status:** proposed
+- **Status:** in_progress
 
 #### PERF-10 · Multiplayer perf and bandwidth gate
 - **Value:** Four-player matches stay smooth for every player.
