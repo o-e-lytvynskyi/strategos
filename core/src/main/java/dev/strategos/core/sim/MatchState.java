@@ -5,6 +5,7 @@ import dev.strategos.core.content.Footprint;
 import dev.strategos.core.content.StartSlot;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.diag.MatchLog;
+import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.sim.build.BuildingLife;
 import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.combat.Damage;
@@ -541,6 +542,11 @@ public final class MatchState {
 
     public DiplomacyState diplomacy() {
         return diplomacy;
+    }
+
+    /** Single-writer application of a validated journaled control command; bindings and teams never change. */
+    public void setControl(PlayerSlot grantor, PlayerSlot recipient, boolean granted) {
+        diplomacy = granted ? diplomacy.grant(grantor, recipient) : diplomacy.revoke(grantor, recipient);
     }
 
     void configureDiplomacy(DiplomacySetup setup) {

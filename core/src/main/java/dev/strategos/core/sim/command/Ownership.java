@@ -39,7 +39,9 @@ final class Ownership {
 
     /** Visibility precedes authority, so grants cannot probe another faction's hidden buildings. */
     static @Nullable RejectReason building(PlayerSlot issuer, int handle, MatchState s) {
-        if (!BuildingStore.isBuilding(handle) || !s.buildings().alive(handle) || !buildingVisible(issuer, handle, s))
+        if (!BuildingStore.isBuilding(handle)
+                || !s.buildings().alive(handle)
+                || (s.diplomacy().teamsLocked() && !buildingVisible(issuer, handle, s)))
             return RejectReason.UNKNOWN_TARGET;
         return issuer.isAdmin()
                         || s.diplomacy().controlsFaction(issuer, s.buildings().faction(handle))
