@@ -48,6 +48,8 @@ jobs:
       - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
         with:
           cache-provider: basic
+          # Manual development runs may save their branch-scoped dependency cache; PR runs remain read-only.
+          cache-read-only: ${{ github.event_name != 'workflow_dispatch' }}
       - name: Dependency cache guard counterexamples
         run: python3 -m unittest discover -s tools/tests -p test_ci_dependency_cache.py -v
       - name: Paired measurement guard counterexamples

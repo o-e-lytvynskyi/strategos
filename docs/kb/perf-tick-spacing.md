@@ -168,3 +168,14 @@ verdict, or shorten the thirty-minute soak. The T7 evidence is guarded by
 For future full suites, allow the workflow to outlive the existing 150-minute
 `runGameTestPerf` process bound plus build/upload overhead. This orchestration
 limit does not change any measured wall-time, percentile or CPU-validity gate.
+
+## A branch's read-only cache never primes itself
+
+The basic setup-gradle provider found no matching setup-java cache in M7 while
+all manual development jobs inherited cache-read-only=true. Successful branch
+runs therefore refetched formatter dependencies, eventually receiving Central
+HTTP 429. Existing old gradle-home-v2 entries on main use a different key format.
+Allow manually dispatched verify jobs to save their branch-scoped cache; keep PR
+runs read-only. A nightly module archive can lack formatter artifacts because
+verifySlow does not run Spotless. An official Central host alias remains opt-in,
+with the pinned formatter POM/JAR hashes checked before the unchanged full verify.
