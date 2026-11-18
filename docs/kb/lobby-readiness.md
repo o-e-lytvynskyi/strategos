@@ -46,6 +46,10 @@ Do not suppress the first building/deposit frame merely because its table is emp
 four-player worker-only setup has no buildings; waiting for its initial building snapshot
 then never completes. Send the first projected table, cache it and suppress unchanged repeats.
 Apply the same recipient audience to empty frames; they must not become server-wide notices.
+Replication tests must compare that legitimate empty table too. An owner may receive its
+initial frame before a queued building spawn executes; indexing row zero before checking the
+snapshot shape can crash the whole GameTest server. Record the server's table at tick zero
+and each completed tick, compare every received table, then inspect actual queue rows.
 
 ## Inspect map metadata without decoding all tiles
 

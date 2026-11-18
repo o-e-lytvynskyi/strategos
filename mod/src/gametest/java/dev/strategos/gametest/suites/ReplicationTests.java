@@ -323,12 +323,19 @@ public final class ReplicationTests {
         MatchRuntime rt = match(h);
         ProdTests.town(rt);
         MockViewer owner = BuildingTests.seated(h, rt, "strategos-queue", 0);
-        java.util.Map<Long, String> server = new java.util.HashMap<>();
+        java.util.Map<Long, List<String>> server = new java.util.HashMap<>();
+        server.put(
+                core(rt).queries().tick(),
+                core(rt).queries().buildings().stream()
+                        .map(b -> b.queue() + " " + b.trained())
+                        .toList());
         rt.addListener(out -> {
             var q = core(rt).queries();
-            for (var b : q.buildings()) {
-                server.put(q.tick(), b.queue() + " " + b.trained());
-            }
+            server.put(
+                    q.tick(),
+                    q.buildings().stream()
+                            .map(b -> b.queue() + " " + b.trained())
+                            .toList());
         });
         h.startSequence()
                 .thenWaitUntil(() -> check(!core(rt).queries().buildings().isEmpty(), "no centre yet"))
@@ -343,17 +350,20 @@ public final class ReplicationTests {
                     int matched = 0;
                     boolean midway = false;
                     for (var state : got) {
-                        var e = state.buildings().get(0);
-                        String expected = server.get(state.tick());
-                        if (expected == null || e.queue().isEmpty()) {
-                            continue;
-                        }
+                        List<String> expected = server.get(state.tick());
+                        check(expected != null, "no server state recorded at tick " + state.tick());
+                        List<String> received = state.buildings().stream()
+                                .map(e -> e.queue() + " " + e.trained())
+                                .toList();
                         check(
-                                (e.queue() + " " + e.trained()).equals(expected),
-                                "at tick " + state.tick() + " the owner got " + e.queue() + " " + e.trained()
-                                        + ", the server held " + expected);
-                        matched++;
-                        midway |= e.queue().size() >= 2 && e.trained() > 0 && e.trained() < 1000;
+                                received.equals(expected),
+                                "at tick " + state.tick() + " the owner got " + received + ", the server held "
+                                        + expected);
+                        for (var e : state.buildings()) {
+                            if (e.queue().isEmpty()) continue;
+                            matched++;
+                            midway |= e.queue().size() >= 2 && e.trained() > 0 && e.trained() < 1000;
+                        }
                     }
                     check(matched >= 3, "only " + matched + " states with a queue matched, of " + got.size());
                     check(midway, "no state caught a head in training with more behind it");
