@@ -502,3 +502,9 @@ a criterion testable; none adds scope, and no status changed. The owner may veto
 | Card | Change | Why |
 |---|---|---|
 | QA-12.4 / M7 verification prerequisite | On CI, execute seeds 1–20 in separate isolated server jobs, each to the same conquest/45-game-minute boundary with the same fault and replay/hash assertions. Require successful XML, completed replay logs and manifests from one commit for every distinct seed. Local `verifySoak` still runs the original full 20-seed set with its existing match window. | M6's complete soak took 3 h 13 min; the inherited 25-minute full-ci job cancelled its first M7 invocation. The existing slow/core job keeps its bound; separate AI jobs have a 90-minute orchestration bound. This is functional soak execution, not a performance measurement or a change to AI acceptance criteria. No seed, assertion, duration or performance budget is removed. |
+
+### 2026-11-18 — Complete interrupted T7 L6 evidence
+
+| Card | Change | Why |
+|---|---|---|
+| PERF-10 / T7 hot-path gate | Preserve 21 completed scene reports from standard run 44296716682, then execute only battle_soak, group_paths_budget_d and the full 36,000-tick mvp_soak on the same immutable production source 4dd51afa. Require exact disjoint 21+3 inventory, original report hashes, passing completion XML and unchanged verdicts/windows. Future standard workflow orchestration permits the existing 150-minute process bound plus build/upload overhead. | The outer 90-minute workflow limit interrupted the 24-scene suite before completion. No performance threshold, CI factor, per-scene baseline, foreign-load rule or measurement duration changes; same-host ratio cases remain in their original run. |
