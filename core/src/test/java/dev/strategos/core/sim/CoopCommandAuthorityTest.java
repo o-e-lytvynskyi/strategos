@@ -183,4 +183,25 @@ class CoopCommandAuthorityTest {
         assertThat(s.state().treasury().stock(0, 1)).isEqualTo(wood0);
         assertThat(s.state().treasury().stock(1, 1)).isEqualTo(wood1);
     }
+
+    @Test
+    void computerCommandsUseTheBoundControllerInsteadOfTheFactionNumber() throws Exception {
+        Scene s = scene(false, true);
+        long humanFood = s.state().treasury().stock(0, 0);
+        long computerFood = s.state().treasury().stock(1, 0);
+        int mark = s.h().results().size();
+        String script = java.nio.file.Files.readString(
+                java.nio.file.Path.of("../mod/src/main/resources/data/strategos/strategos/ai/first_loop.json"));
+        s.h().submit(PlayerSlot.ADMIN, new dev.strategos.core.protocol.SetAi(F1, "first_loop", script));
+        s.h().runTicks(40);
+        var commands = s.h().results().subList(mark, s.h().results().size()).stream()
+                .filter(c -> !c.issuer().isAdmin())
+                .toList();
+        assertThat(commands).isNotEmpty().allSatisfy(c -> {
+            assertThat(c.issuer()).isEqualTo(P2);
+            assertThat(c.outcome()).isEqualTo(CommandOutcome.ACCEPTED);
+        });
+        assertThat(s.state().treasury().stock(1, 0)).isLessThan(computerFood);
+        assertThat(s.state().treasury().stock(0, 0)).isEqualTo(humanFood);
+    }
 }
