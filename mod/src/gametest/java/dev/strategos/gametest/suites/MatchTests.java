@@ -64,6 +64,10 @@ public final class MatchTests {
         var outsider = dev.strategos.gametest.net.MockViewer.join(
                 h.getLevel(), "m7-end-outsider", at.getX(), at.getY(), at.getZ(), 2);
         long[] terminalTick = {-1};
+        h.onEachTick(() -> {
+            for (var viewer : viewers) viewer.poll();
+            outsider.poll();
+        });
         h.startSequence()
                 .thenWaitUntil(() -> check(
                         core(rt).queries().tick() >= 15 && core(rt).queries().unitHandles().length == 3,

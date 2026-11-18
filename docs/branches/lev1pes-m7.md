@@ -564,3 +564,5 @@ Pending independent review.
 - 2026-11-18 · Resumed T7.2. Corrected the two unlocked legacy fixtures to use untouched legacy identity authority rather than construct an invalid unlocked production setup. Kept both-rule individual-victory assertions and the constructor guard. L4 44220491804 completed with failure; investigating its bounded log before rerunning.
 
 - 2026-11-18 · L4 44220491804 failed before any PNG: its fixture called MatchRegistry.join while diplomacy was still initializing. Changed only the scenario to admit on the first completed core tick, after setup is applied. No production guard, timeout or visual threshold changed.
+
+- 2026-11-18 · Inspection found the new coalition-delivery test read NetFixtures.payloads without draining its mock channels. Added per-tick polling for members and outsider, as required by QA-19, so both positive payload checks and negative audience assertions inspect actual received traffic. Verify on de4d6c1f is left to finish; the next functional gate must include this test-only repair.
