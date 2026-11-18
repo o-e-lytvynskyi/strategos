@@ -260,4 +260,23 @@ class CoopCommandAuthorityTest {
         assertThat(s.command(P1, new dev.strategos.core.protocol.Resign(F0)).firstReason())
                 .isEqualTo(RejectReason.UNSUPPORTED); // this scene disables victory, after authority is checked
     }
+
+    @Test
+    void foreignControlRefusalCannotExposeTheOwnersTreasuryThroughMissingAmounts() {
+        Scene s = scene(true, true);
+        long[] drain = new long[s.state().treasury().resources()];
+        drain[0] = s.state().treasury().stock(0, 0);
+        s.state().treasury().pay(0, drain);
+        long ally = s.state().treasury().stock(1, 0);
+        var foreign = s.command(P2, new Train(s.centre(), TemplateSet.WORKER));
+        assertThat(foreign.firstReason()).isEqualTo(RejectReason.NOT_ENOUGH_RESOURCES);
+        assertThat(foreign.missing()).isEmpty();
+        var primary = s.command(P1, new Train(s.centre(), TemplateSet.WORKER));
+        assertThat(primary.firstReason()).isEqualTo(RejectReason.NOT_ENOUGH_RESOURCES);
+        assertThat(primary.missing()).isNotEmpty();
+        assertThat(primary.missing().getFirst()).isEqualTo(60_000);
+        assertThat(s.state().treasury().stock(0, 0)).isZero();
+        assertThat(s.state().treasury().stock(1, 0)).isEqualTo(ally);
+        assertThat(s.state().buildings().queueSize(s.centre())).isZero();
+    }
 }

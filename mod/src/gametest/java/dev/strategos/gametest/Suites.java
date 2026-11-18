@@ -12,6 +12,7 @@ import dev.strategos.gametest.suites.CombatTests;
 import dev.strategos.gametest.suites.CommandTests;
 import dev.strategos.gametest.suites.ConstructionTests;
 import dev.strategos.gametest.suites.ContentTests;
+import dev.strategos.gametest.suites.CoopReplicationTests;
 import dev.strategos.gametest.suites.DebugTests;
 import dev.strategos.gametest.suites.EcoTests;
 import dev.strategos.gametest.suites.FaultTests;
@@ -88,6 +89,7 @@ public final class Suites {
                         NavTests.class,
                         NetTests.class,
                         MultiplayerKitTests.class,
+                        CoopReplicationTests.class,
                         OrderTests.class,
                         PathTests.class,
                         PacingTests.class,

@@ -153,9 +153,11 @@ T8 readiness/split (2026-11-18): T2b, T5 and T6 engine dependencies are delivere
 Split this large task before code into **T8.1** existing core-command asset ownership,
 primary-faction placement/production/economy authorization and tick-time revoke revalidation;
 **T8.2** bounded journaled grant/revoke commands and their replay/primary-only delegation policy;
-**T8.3** server/client primary/control-view routing, private same-faction fan-out, first-person
-adapters and actual co-op lobby admission (split backend/client further if it exceeds the
-normal size target); **T8.4** durable faction presentation/palette and human-name-only
+**T8.3** is split before code: **T8.3a** server primary/control routing, same-faction
+private replication/fan-out and first-person visibility; **T8.3b** bounded authenticated
+primary/control views, client selection/orders/HUD perspective and grant/revoke updates;
+**T8.3c** actual co-op lobby admission and integrated transport acceptance. Keep production
+co-op admission refused until all three are ready; **T8.4** durable faction presentation/palette and human-name-only
 scoreboard integration for MATCH-06; and **T8.5** integrated two-controller/recipient/visual
 acceptance. QA-15's L7 criterion remains T19/T25. UI-15's broader HUD/ping work remains T14.
 
