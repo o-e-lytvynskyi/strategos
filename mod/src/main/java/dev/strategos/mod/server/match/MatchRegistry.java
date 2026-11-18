@@ -5,6 +5,7 @@ import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.diag.MatchLog;
 import dev.strategos.core.port.JobExecutor;
 import dev.strategos.core.port.MetricsSink;
+import dev.strategos.core.protocol.PlayerAuthority;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.MatchId;
 import dev.strategos.core.shared.PlayerSlot;
@@ -696,6 +697,26 @@ public final class MatchRegistry {
         public Optional<FactionSlot> primaryFaction() {
             MatchCore core = match.core();
             return core == null ? Optional.empty() : core.queries().diplomacy().factionOf(slot);
+        }
+
+        /** A bounded recipient view, derived after authoritative commands; no received grant changes private identity. */
+        public Optional<PlayerAuthority> authority() {
+            MatchCore core = match.core();
+            if (core == null) return Optional.empty();
+            long tick = core.queries().tick();
+            if (slot.isAdmin())
+                return Optional.of(new PlayerAuthority(match.id().value(), slot, tick, -1, 0, 0));
+            var diplomacy = core.queries().diplomacy();
+            var primary = diplomacy.factionOf(slot);
+            if (primary.isEmpty()) return Optional.empty();
+            FactionSlot own = primary.orElseThrow();
+            int controls = 0, allies = 0;
+            for (int f = 0; f < diplomacy.factions(); f++) {
+                FactionSlot faction = new FactionSlot(f);
+                if (diplomacy.controls(slot, faction)) controls |= 1 << f;
+                if (diplomacy.allied(own, faction)) allies |= 1 << f;
+            }
+            return Optional.of(new PlayerAuthority(match.id().value(), slot, tick, own.value(), controls, allies));
         }
 
         /** Only an explicit ADMIN seat is an observer; an unbound player is never promoted to one. */

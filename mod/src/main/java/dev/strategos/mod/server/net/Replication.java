@@ -3,6 +3,7 @@ package dev.strategos.mod.server.net;
 import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.DepositState;
 import dev.strategos.core.protocol.FactionState;
+import dev.strategos.core.protocol.PlayerAuthority;
 import dev.strategos.core.protocol.UiQuery;
 import dev.strategos.core.protocol.UnitDetail;
 import dev.strategos.core.protocol.UnitHud;
@@ -11,6 +12,7 @@ import dev.strategos.core.shared.MatchId;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.core.sim.PlayRules;
+import dev.strategos.core.sim.diplomacy.DiplomacyView;
 import dev.strategos.core.sim.replicate.HudMemory;
 import dev.strategos.core.sim.replicate.ReplicationService;
 import dev.strategos.core.sim.replicate.Visibility;
@@ -22,6 +24,7 @@ import dev.strategos.mod.server.match.MatchRuntime;
 import dev.strategos.mod.server.net.payload.BuildingStatePayload;
 import dev.strategos.mod.server.net.payload.DepositStatePayload;
 import dev.strategos.mod.server.net.payload.FactionStatePayload;
+import dev.strategos.mod.server.net.payload.PlayerAuthorityPayload;
 import dev.strategos.mod.server.net.payload.UnitDetailPayload;
 import dev.strategos.mod.server.net.payload.UnitHudPayload;
 import dev.strategos.mod.server.net.payload.UnitSummaryPayload;
@@ -80,6 +83,10 @@ public final class Replication {
     private final Map<UUID, BuildingState> buildings = new HashMap<>();
     private final Map<UUID, DepositState> deposits = new HashMap<>();
 
+    private record AuthorityMemory(DiplomacyView source, PlayerAuthority frame) {}
+
+    private final Map<UUID, AuthorityMemory> authorities = new HashMap<>();
+
     public Replication(MinecraftServer server, Supplier<MatchRegistry> matches, NetGateway net) {
         this.server = server;
         this.matches = matches;
@@ -135,6 +142,7 @@ public final class Replication {
     /** Forgets a player that left: its hud memory and subscription. */
     public void forget(UUID player) {
         huds.remove(player);
+        authorities.remove(player);
         subscriptions.remove(player);
         factions.remove(player);
         buildings.remove(player);
@@ -142,6 +150,7 @@ public final class Replication {
     }
 
     public void tick() {
+        sendAuthorities();
         int now = server.getTickCount();
         if (now % HUD_EVERY == 0) {
             sendHuds();
@@ -185,6 +194,32 @@ public final class Replication {
                             new Audience.Faction(rt.id(), faction),
                             new VisionDeltaPayload(tracker.delta(
                                     rt.id().value(), core.queries().tick(), grid)));
+                }
+            }
+        }
+    }
+
+    /** Immutable source identity avoids rebuilding unchanged permission masks every tick. */
+    private void sendAuthorities() {
+        for (MatchRuntime rt : matches.get().all()) {
+            MatchCore core = rt.core();
+            if (core == null) continue;
+            DiplomacyView source = core.queries().diplomacy();
+            for (UUID player : rt.roster().members()) {
+                var seat = matches.get().seatOf(player);
+                ServerPlayer online = server.getPlayerList().getPlayer(player);
+                if (seat == null || seat.match() != rt || online == null || !seat.hasPerspective()) continue;
+                AuthorityMemory last = authorities.get(player);
+                if (last != null
+                        && last.source() == source
+                        && last.frame().matchId() == rt.id().value()
+                        && last.frame().player().equals(seat.slot())) continue;
+                var next = seat.authority();
+                if (next.isEmpty()) continue;
+                PlayerAuthority frame = next.orElseThrow();
+                authorities.put(player, new AuthorityMemory(source, frame));
+                if (last == null || !last.frame().sameAuthority(frame)) {
+                    net.send(new Audience.Player(online), new PlayerAuthorityPayload(frame));
                 }
             }
         }

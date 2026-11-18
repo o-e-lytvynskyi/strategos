@@ -5,7 +5,10 @@ import static dev.strategos.gametest.suites.Units.core;
 
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.port.MetricsSink;
+import dev.strategos.core.protocol.CommandBatch;
 import dev.strategos.core.protocol.Grant;
+import dev.strategos.core.protocol.PlayerAuthority;
+import dev.strategos.core.protocol.SetControl;
 import dev.strategos.core.protocol.SpawnBuilding;
 import dev.strategos.core.protocol.Train;
 import dev.strategos.core.protocol.VisionDelta;
@@ -23,6 +26,8 @@ import dev.strategos.mod.server.match.MatchSource;
 import dev.strategos.mod.server.net.Audience;
 import dev.strategos.mod.server.net.payload.BuildingStatePayload;
 import dev.strategos.mod.server.net.payload.FactionStatePayload;
+import dev.strategos.mod.server.net.payload.MatchJoinPayload;
+import dev.strategos.mod.server.net.payload.PlayerAuthorityPayload;
 import dev.strategos.mod.server.net.payload.VisionDeltaPayload;
 import java.util.List;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -61,6 +66,7 @@ public final class CoopReplicationTests {
         var centre = new TemplateId("strategos:building/civic_centre");
         rt.submit(PlayerSlot.ADMIN, new SpawnBuilding(centre, f0, 4, 4, 0));
         rt.submit(PlayerSlot.ADMIN, new SpawnBuilding(centre, f1, 26, 26, 0));
+        long[] revokedAt = {-1};
         h.startSequence()
                 .thenWaitUntil(() -> check(
                         kit.ready() && core(rt).queries().buildings().size() == 2,
@@ -135,9 +141,53 @@ public final class CoopReplicationTests {
                     check(
                             !marker(kit, 2) && !marker(kit, 3),
                             "faction-private audience used control rights or numeric slots");
+                    for (int player = 0; player < 4; player++) {
+                        var joined = kit.payloads(player, MatchJoinPayload.class)
+                                .getFirst()
+                                .join();
+                        int expected = player < 2 ? 0 : player - 1;
+                        check(
+                                joined.primaryFaction() == expected
+                                        && joined.slot().value() == player,
+                                "join confused primary faction with recipient identity");
+                    }
+                    check(authority(kit, 2).controlsFaction(0), "initial control grant absent");
+                    kit.sendCommands(0, new CommandBatch(1, List.of(new SetControl(p2, false))));
+                })
+                .thenWaitUntil(() -> check(!authority(kit, 2).controlsFaction(0), "revoke did not reach its recipient"))
+                .thenExecute(() -> {
+                    var changed = authority(kit, 2);
+                    check(changed.primaryFaction() == 1 && changed.controlsFaction(1), "revoke lost primary authority");
+                    revokedAt[0] = changed.tick();
+                    kit.sendCommands(1, new CommandBatch(1, List.of(new SetControl(p2, true))));
+                })
+                .thenWaitUntil(() -> check(
+                        authority(kit, 2).controlsFaction(0)
+                                && authority(kit, 2).tick() > revokedAt[0],
+                        "co-op primary regrant not published"))
+                .thenExecute(() -> {
+                    for (int player = 0; player < 4; player++) {
+                        for (var frame : kit.payloads(player, PlayerAuthorityPayload.class)) {
+                            check(
+                                    frame.authority().player().value() == player
+                                            && frame.authority().matchId()
+                                                    == rt.id().value(),
+                                    "authority reached another recipient");
+                        }
+                        int expected = player < 2 ? 0 : player - 1;
+                        for (var frame : kit.payloads(player, FactionStatePayload.class)) {
+                            check(frame.state().faction() == expected, "grant/revoke widened private identity");
+                        }
+                    }
                     kit.close();
                 })
                 .thenSucceed();
+    }
+
+    private static PlayerAuthority authority(MultiplayerHarness kit, int player) {
+        var frames = kit.payloads(player, PlayerAuthorityPayload.class);
+        check(!frames.isEmpty(), "no positive authority frame for player " + player);
+        return frames.getLast().authority();
     }
 
     private static boolean marker(MultiplayerHarness kit, int player) {

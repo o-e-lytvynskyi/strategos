@@ -19,6 +19,7 @@ import dev.strategos.core.protocol.Garrison;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.MatchStateMsg;
 import dev.strategos.core.protocol.Move;
+import dev.strategos.core.protocol.PlayerAuthority;
 import dev.strategos.core.protocol.RingBell;
 import dev.strategos.core.protocol.SetStance;
 import dev.strategos.core.protocol.Stop;
@@ -41,6 +42,7 @@ import dev.strategos.mod.server.net.payload.FeedbackPayload;
 import dev.strategos.mod.server.net.payload.FxPayload;
 import dev.strategos.mod.server.net.payload.MatchJoinPayload;
 import dev.strategos.mod.server.net.payload.MatchStatePayload;
+import dev.strategos.mod.server.net.payload.PlayerAuthorityPayload;
 import dev.strategos.mod.server.tick.FaultBarrier;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -164,6 +166,8 @@ public final class NetGateway {
         if (core == null) {
             return;
         }
+        var authority = new MatchRegistry.Seat(rt, slot).authority();
+        if (authority.isEmpty()) return;
         MatchSpace space = rt.space();
         String rules = CanonicalJson.write(MatchRules.CODEC
                 .encodeStart(JsonOps.INSTANCE, core.queries().config().rules())
@@ -181,7 +185,8 @@ public final class NetGateway {
                         space.maxY(),
                         core.queries().config().factions(),
                         slot,
-                        rules)));
+                        rules,
+                        authority.orElseThrow())));
         lastState.remove(rt.id().value());
         lastLooks.remove(rt.id().value());
     }
@@ -396,6 +401,7 @@ public final class NetGateway {
     static int size(CustomPacketPayload payload) {
         return switch (payload) {
             case MatchJoinPayload p -> WireCodec.encode(MatchJoin.WIRE, p.join()).length;
+            case PlayerAuthorityPayload p -> WireCodec.encode(PlayerAuthority.WIRE, p.authority()).length;
             case MatchStatePayload p -> WireCodec.encode(MatchStateMsg.WIRE, p.state()).length;
             case FeedbackPayload p -> WireCodec.encode(FeedbackMsg.WIRE, p.message()).length;
             case DebugFeedPayload p -> WireCodec.encode(DebugFeedMsg.WIRE, p.message()).length;

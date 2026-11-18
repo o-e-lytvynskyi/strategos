@@ -81,7 +81,7 @@ final class HudBanners {
                 ? null
                 : RaidBar.of(
                         StrategosClient.model().wave(),
-                        joined.slot().value(),
+                        joined.primaryFaction(),
                         StrategosClient.model().tick());
         if (bar == null) {
             return;
@@ -116,7 +116,7 @@ final class HudBanners {
         MatchNews wave = StrategosClient.model().wave();
         MatchJoin joined = StrategosClient.match();
         long matchTick = StrategosClient.model().tick();
-        if (wave != null && joined != null && wave.faction() != joined.slot().value() && wave.ticks() > matchTick) {
+        if (wave != null && joined != null && !joined.alliedFaction(wave.faction()) && wave.ticks() > matchTick) {
             String text = "Attack coming: " + (wave.ticks() - matchTick + 19) / 20 + " s"; // AI-17's countdown
             int w = font.width(text) + 2 * theme.padding();
             x -= w;
@@ -170,7 +170,7 @@ final class HudBanners {
             return;
         }
         Font font = mc.font;
-        int own = join.slot().value();
+        int own = join.primaryFaction();
         boolean won = end.winners().contains(own);
         String title = won ? "Victory" : end.winners().isEmpty() ? "The match is over" : "Defeat";
         int titleColor = won ? theme.accent() : theme.text();

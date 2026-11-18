@@ -82,6 +82,7 @@ public final class RtsMode {
 
     private int pendingIdleTicks;
     private Selection selection = new Selection(-1);
+    private int selectionMatch = -1;
     private @Nullable CameraRig rig;
     private @Nullable InputState input;
     private @Nullable View view;
@@ -173,7 +174,7 @@ public final class RtsMode {
             return;
         }
         UnitSummary.Entry e =
-                idle.next(StrategosClient.model().units(), join.slot().value(), StrategosClient.templates());
+                idle.next(StrategosClient.model().units(), join.primaryFaction(), StrategosClient.templates());
         if (e == null) {
             return;
         }
@@ -280,13 +281,23 @@ public final class RtsMode {
         return orders.crosshairUnit();
     }
 
-    /** The player's selection; the faction it may select follows the seat. */
+    /** The player's command selection within the current authenticated match and control rights. */
     public Selection selection() {
         MatchJoin join = StrategosClient.match();
-        int faction = join == null ? -1 : join.slot().value();
-        if (selection.faction() != faction) {
-            selection = new Selection(faction);
+        int faction = join == null ? -1 : join.primaryFaction();
+        int matchId = join == null ? -1 : join.matchId();
+        if (selection.faction() != faction || selectionMatch != matchId) {
+            selection = new Selection(faction, controlled -> {
+                MatchJoin current = StrategosClient.match();
+                return current != null && current.controlsFaction(controlled);
+            });
+            selectionMatch = matchId;
         }
+        if (join != null)
+            selection.pruneControlled(handle -> {
+                UnitSummary.Entry known = StrategosClient.model().unit(Handle.index(handle));
+                return known != null && join.controlsFaction(known.faction());
+            });
         return selection;
     }
 

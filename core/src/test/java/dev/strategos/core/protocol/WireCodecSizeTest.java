@@ -153,8 +153,8 @@ class WireCodecSizeTest {
                 .as("kind, notice kind, handle, text with its length")
                 .isEqualTo(1 + 1 + 4 + 1 + 8);
         assertThat(size(MatchJoin.WIRE, new MatchJoin(1, 100, -60, -200, 48, 48, -64, 319, 2, new PlayerSlot(1), "{}")))
-                .as("id, origin, size, band, factions, slot, rules")
-                .isEqualTo(1 + 2 + 1 + 2 + 1 + 1 + 1 + 2 + 1 + 1 + 3);
+                .as("id, origin, size, band, factions, slot, rules, bounded initial authority")
+                .isEqualTo(1 + 2 + 1 + 2 + 1 + 1 + 1 + 2 + 1 + 1 + 3 + 6);
     }
 
     /** TECH-03, row 5: {@code looks} are appended to {@code match_state}, a byte a faction, after any results. */
@@ -211,8 +211,9 @@ class WireCodecSizeTest {
                 Integer.MIN_VALUE,
                 Integer.MIN_VALUE,
                 Integer.MAX_VALUE,
-                PlayerSlot.ADMIN,
-                "r".repeat(MatchJoin.RULES_BYTES));
+                new PlayerSlot(15),
+                "r".repeat(MatchJoin.RULES_BYTES),
+                new PlayerAuthority(Integer.MAX_VALUE, new PlayerSlot(15), Long.MAX_VALUE, 15, 65535, 65535));
         assertThat(size(MatchJoin.WIRE, widest)).isEqualTo(MatchJoin.WIRE.maxSize());
         assertThat(roundTrip(MatchJoin.WIRE, widest)).isEqualTo(widest);
         NoticeMsg longest = new NoticeMsg(NoticeKind.ORDER_FAILED, -1, "d".repeat(NoticeMsg.DETAIL_BYTES));

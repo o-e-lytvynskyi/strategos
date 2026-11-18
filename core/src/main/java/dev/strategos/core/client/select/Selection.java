@@ -7,7 +7,7 @@ import java.util.function.IntPredicate;
 import org.jspecify.annotations.Nullable;
 
 /**
- * The player's selection (UI-03, 04 §13.4): own units only, at most {@value #MOST}, in handle order. A click selects one
+ * The player's selection (UI-03, 04 §13.4): controlled units only, at most {@value #MOST}, in handle order. A click selects one
  * own unit or inspects an enemy without selecting it; Shift with a click adds or removes it; a box takes the own
  * units whose feet or head project inside it, Shift adding to what is selected; a double click takes every own unit
  * of that template on screen. An empty click or box clears, unless Shift is held. A click on a building (UI-06) selects
@@ -18,15 +18,22 @@ public final class Selection {
     public static final int MOST = 300;
 
     private final int faction;
+    private final IntPredicate controls;
     private final TreeSet<Integer> selected = new TreeSet<>();
     private @Nullable Integer inspected;
     private @Nullable Integer building;
-    private boolean ownBuilding;
+    private int buildingFaction = -1;
     private @Nullable Integer deposit;
 
     /** A selection for the player who commands {@code faction}. */
     public Selection(int faction) {
+        this(faction, candidate -> candidate == faction);
+    }
+
+    /** Command selection may include explicit grants; the primary perspective remains {@code faction}. */
+    public Selection(int faction, IntPredicate controls) {
         this.faction = faction;
+        this.controls = controls;
     }
 
     public int faction() {
@@ -42,7 +49,7 @@ public final class Selection {
         }
         building = null;
         deposit = null;
-        if (unit.faction() != faction) {
+        if (!controls.test(unit.faction())) {
             inspected = unit.handle();
             if (!shift) {
                 selected.clear();
@@ -66,7 +73,7 @@ public final class Selection {
         inspected = null;
         deposit = null;
         building = handle;
-        ownBuilding = faction == this.faction;
+        buildingFaction = faction;
     }
 
     /** A click on deposit {@code node}: shown alone, as an inspected building is. */
@@ -78,22 +85,22 @@ public final class Selection {
     public void box(List<Seen> seen, double x0, double y0, double x1, double y1, boolean shift) {
         List<Seen> own = new ArrayList<>();
         for (Seen s : seen) {
-            if (s.faction() == faction && s.inside(x0, y0, x1, y1)) {
+            if (controls.test(s.faction()) && s.inside(x0, y0, x1, y1)) {
                 own.add(s);
             }
         }
         replaceOrAdd(own, shift);
     }
 
-    /** Every own unit of {@code unit}'s template among {@code seen}; an enemy is only inspected. */
+    /** Every controlled unit of {@code unit}'s template among {@code seen}; an enemy is only inspected. */
     public void allOfType(List<Seen> seen, Seen unit, boolean shift) {
-        if (unit.faction() != faction) {
+        if (!controls.test(unit.faction())) {
             click(unit, shift);
             return;
         }
         List<Seen> same = new ArrayList<>();
         for (Seen s : seen) {
-            if (s.faction() == faction && s.template() == unit.template()) {
+            if (controls.test(s.faction()) && s.template() == unit.template()) {
                 same.add(s);
             }
         }
@@ -133,6 +140,11 @@ public final class Selection {
         }
     }
 
+    /** Revoked or no-longer-visible command targets leave the selection; public inspection is independent. */
+    public void pruneControlled(IntPredicate commandable) {
+        selected.removeIf(handle -> !commandable.test(handle));
+    }
+
     /** Drops the building if {@code standing} no longer holds it. */
     public void pruneBuilding(IntPredicate standing) {
         if (building != null && !standing.test(building)) {
@@ -156,9 +168,9 @@ public final class Selection {
         return selected.contains(handle);
     }
 
-    /** The own building selected, alone; null when none. */
+    /** The currently controlled building selected, alone; null when none or after revocation. */
     public @Nullable Integer building() {
-        return ownBuilding ? building : null;
+        return building != null && controls.test(buildingFaction) ? building : null;
     }
 
     /** The building shown in the panel, own or inspected; null when none. */

@@ -104,7 +104,7 @@ final class RallyMarker {
             return null;
         }
         for (BuildingState.Entry b : StrategosClient.model().buildings()) {
-            if (b.handle() == handle && b.rally() && b.faction() == join.slot().value()) {
+            if (b.handle() == handle && b.rally() && b.faction() == join.primaryFaction()) {
                 return b;
             }
         }

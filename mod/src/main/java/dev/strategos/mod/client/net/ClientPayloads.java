@@ -18,6 +18,7 @@ import dev.strategos.mod.server.net.payload.MatchEventPayload;
 import dev.strategos.mod.server.net.payload.MatchJoinPayload;
 import dev.strategos.mod.server.net.payload.MatchStatePayload;
 import dev.strategos.mod.server.net.payload.PayloadArrived;
+import dev.strategos.mod.server.net.payload.PlayerAuthorityPayload;
 import dev.strategos.mod.server.net.payload.TemplateAckPayload;
 import dev.strategos.mod.server.net.payload.TemplateSetPayload;
 import dev.strategos.mod.server.net.payload.UnitDetailPayload;
@@ -43,6 +44,7 @@ public final class ClientPayloads {
     public static void onPayload(PayloadArrived event) {
         switch (event.payload()) {
             case MatchJoinPayload p -> StrategosClient.match(p.join());
+            case PlayerAuthorityPayload p -> StrategosClient.authority(p.authority());
             case LobbyStatePayload p -> ClientLobby.accept(p.state());
             case LobbyReplyPayload p -> ClientLobby.reply(p.reply());
             case MatchStatePayload p -> StrategosClient.state(p.state());

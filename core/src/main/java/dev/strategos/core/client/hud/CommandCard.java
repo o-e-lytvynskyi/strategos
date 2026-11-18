@@ -15,6 +15,7 @@ import dev.strategos.core.shared.TechId;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.IntPredicate;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -67,7 +68,11 @@ public record CommandCard(Page page, List<Button> buttons) {
         /** Sound the all clear at an own finished garrison holder (BLD-16): they come out and go back to work. */
         ALL_CLEAR,
         /** Research a tech at an own finished building (TECH-01, UI-13): {@link Button#template} is the tech's net index. */
-        RESEARCH
+        RESEARCH,
+        /** A delegated controller may cancel the next item without seeing the private queue. */
+        CANCEL_NEXT,
+        AUTO_RESEED_ENABLE,
+        AUTO_RESEED_DISABLE
     }
 
     /**
@@ -165,6 +170,55 @@ public record CommandCard(Page page, List<Button> buttons) {
 
     /** The building state code of a finished building (BuildingStore.COMPLETE). */
     public static final int COMPLETE = 2;
+
+    /** Control grants permit orders, while owner-only queue, stock and research stay undisclosed. */
+    public static CommandCard of(Input in, BuildingState.@Nullable Entry building, IntPredicate controls) {
+        if (building == null) return of(in, null);
+        if (!controls.test(building.faction())) return EMPTY;
+        return building.own() ? of(in, building) : new CommandCard(Page.BUILDING, sharedBuildingButtons(in, building));
+    }
+
+    private static List<Button> sharedBuildingButtons(Input in, BuildingState.Entry building) {
+        List<Button> out = new ArrayList<>();
+        int template = building.template();
+        if (!in.templates().has(template)) return out;
+        if (building.state() != COMPLETE) {
+            out.add(new Button(Kind.CANCEL_BUILDING, SLOTS - 1, template, List.of(), true));
+            return out;
+        }
+        ValuePath reseeder = in.templates().valuePaths().byPath("Reseeder/reach");
+        boolean auto = reseeder != null && in.templates().value(template, reseeder.id()) > 0;
+        int limit = SLOTS - 4 - (auto ? 2 : 0);
+        int slot = 0;
+        List<Integer> training = trains(in.templates(), template);
+        List<TechDef> research = researches(in.templates(), template);
+        for (int unit : training) {
+            if (slot >= limit) break;
+            out.add(new Button(Kind.TRAIN, slot++, unit, List.of(), true));
+        }
+        for (TechDef tech : research) {
+            if (slot >= limit) break;
+            out.add(new Button(Kind.RESEARCH, slot++, tech.netIndex(), List.of(), true));
+        }
+        ValuePath field = in.templates().valuePaths().byPath("Field/amount");
+        if (slot < limit && field != null && in.templates().value(template, field.id()) > 0) {
+            out.add(new Button(Kind.RESEED, slot++, template, List.of(), true));
+        }
+        if (auto) {
+            out.add(new Button(Kind.AUTO_RESEED_ENABLE, slot++, template, List.of(), true));
+            out.add(new Button(Kind.AUTO_RESEED_DISABLE, slot, template, List.of(), true));
+        }
+        if (!training.isEmpty() || !research.isEmpty()) {
+            out.add(new Button(Kind.CANCEL_NEXT, SLOTS - 4, template, List.of(), true));
+        }
+        ValuePath holder = in.templates().valuePaths().byPath(CorePaths.GARRISON_CAPACITY);
+        if (holder != null && in.templates().value(template, holder.id()) > 0) {
+            out.add(new Button(Kind.RING_BELL, SLOTS - 3, template, List.of(), true));
+            out.add(new Button(Kind.ALL_CLEAR, SLOTS - 2, template, List.of(), true));
+        }
+        out.add(new Button(Kind.DEMOLISH, SLOTS - 1, template, List.of(), true, in.demolishAsked()));
+        return out;
+    }
 
     /** The card for {@code in}, or for own building {@code b} when one is selected. */
     public static CommandCard of(Input in, BuildingState.@Nullable Entry b) {

@@ -7,6 +7,7 @@ import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.FactionLook;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.MatchStateMsg;
+import dev.strategos.core.protocol.PlayerAuthority;
 import dev.strategos.core.sim.MatchRules;
 import dev.strategos.core.sim.econ.ResourceDef;
 import dev.strategos.mod.Strategos;
@@ -159,6 +160,12 @@ public final class StrategosClient {
         match = join;
         ARCS.joined(join.matchId());
         resources = resources(join);
+    }
+
+    /** A permission update changes neither the joined world nor its private primary perspective. */
+    public static void authority(PlayerAuthority authority) {
+        MatchJoin joined = match;
+        if (joined != null) match = joined.withAuthority(authority);
     }
 
     /** The joined match's resources in their order, from the rules it was joined with; empty before a join. */

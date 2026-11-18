@@ -105,7 +105,7 @@ final class RtsPlacement {
     void tick(Minecraft mc, long ticks) {
         MatchJoin join = StrategosClient.match();
         ClientLevel level = mc.level;
-        if (!armed() || join == null || level == null) {
+        if (!armed() || join == null || level == null || !join.controlsFaction(join.primaryFaction())) {
             ghost = null;
             return;
         }
@@ -130,8 +130,7 @@ final class RtsPlacement {
         FactionState faction = StrategosClient.model().faction();
         PlacementRules.Params params = ClientPlacement.params(
                 templates, armed, StrategosClient.resources(), faction == null ? null : faction.stock());
-        PlacementRules.Verdict verdict =
-                PlacementRules.check(world, b, at, join.slot().value(), params);
+        PlacementRules.Verdict verdict = PlacementRules.check(world, b, at, join.primaryFaction(), params);
         double stand = Double.NEGATIVE_INFINITY;
         for (int cell : verdict.cells()) {
             double f = world.floor(cell >>> 16, cell & 0xFFFF);

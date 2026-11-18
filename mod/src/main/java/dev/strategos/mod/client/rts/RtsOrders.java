@@ -153,11 +153,11 @@ final class RtsOrders {
                 && mc.level.getEntity(pick.entityId()) instanceof UnitEntity body
                 && body.spawnData() != null
                 && body.spawnData().matchId() == join.matchId()
-                && body.spawnData().faction() != join.slot().value()) {
+                && !join.alliedFaction(body.spawnData().faction())) {
             enemy = body.spawnData().handle();
         }
         BuildingState.Entry struck = mode.buildingAt(pick);
-        if (enemy == 0 && struck != null && struck.faction() != join.slot().value()) {
+        if (enemy == 0 && struck != null && !join.alliedFaction(struck.faction())) {
             enemy = struck.handle(); // an enemy's building: an attack, which torches carry out (CMB-03)
         }
         int ownTarget = 0;
@@ -166,9 +166,9 @@ final class RtsOrders {
                     && mc.level.getEntity(pick.entityId()) instanceof UnitEntity body
                     && body.spawnData() != null
                     && body.spawnData().matchId() == join.matchId()
-                    && body.spawnData().faction() == join.slot().value()) {
+                    && join.controlsFaction(body.spawnData().faction())) {
                 ownTarget = body.spawnData().handle();
-            } else if (struck != null && struck.faction() == join.slot().value()) {
+            } else if (struck != null && join.controlsFaction(struck.faction())) {
                 ownTarget = struck.handle();
             }
         }
@@ -178,7 +178,7 @@ final class RtsOrders {
                         && enemy == 0
                         && ownTarget == 0
                         && struck != null
-                        && struck.faction() == join.slot().value()
+                        && join.controlsFaction(struck.faction())
                         && (struck.state() != CommandCard.COMPLETE || struck.health() < UnitHud.WHOLE)
                 ? struck // an own foundation: the builders help (M4 T2); a damaged building: they repair it (BLD-06)
                 : null;
@@ -298,7 +298,7 @@ final class RtsOrders {
         UnitEntity looked = crosshairUnit();
         UnitSpawnData data = looked == null ? null : looked.spawnData();
         Command command;
-        if (data != null && data.faction() != join.slot().value()) {
+        if (data != null && !join.alliedFaction(data.faction())) {
             command = OrderIntents.context(mode.selection().handles(), data.handle(), 0, 0, false, false); // CAM-07
         } else {
             Vec3 eye = player.getEyePosition();

@@ -168,6 +168,22 @@ permit operating another faction's assets without revealing its treasury/researc
 transferring ownership. Trusted server ADMIN behavior must remain explicit; no client may
 supply that privilege. Parent T8 stays unchecked until every integration gate passes.
 
+T8.3b authority protocol (2026-11-19): protocol 4 extends the initial `MatchJoin`
+with a recipient-specific `PlayerAuthority`, also sent as `player_authority` to that
+player when permissions change. It contains match/player identity, a monotonic core
+tick, the primary faction, and bounded 16-bit control/allied masks. Only an explicit
+observer has no primary and zero command rights. Updates cannot change the primary
+binding or context, and equal/older ticks cannot restore revoked permissions.
+The record's maximum is 22 bytes; the joined record remains under the existing 4 KiB
+cap with exact maximum-size coverage. Its immutable source avoids per-tick mask
+rebuilding. Control affects selection and permitted orders; private stock, queues,
+research, camera fog and result perspective remain primary-only. Delegated-building
+cards issue requests without guessing their owner's private availability, use generic
+next-item cancellation and explicit reseed enable/disable, and retain primary-owned
+cards unchanged. Public participant names/presentation and the usable grant controls
+remain the following presentation/integration work; production co-op admission stays
+closed until T8.3c.
+
 T7 implementation split (2026-11-18): **T7.1** owns final hostile-damage filtering,
 frozen source-faction provenance for delayed/collateral hits, its current/legacy snapshot
 and journal policy, and actual engine damage adapters. **T7.2** owns allied coalition

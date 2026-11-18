@@ -23,3 +23,16 @@ primary binding, never the control predicate. P0/P1 bound to F0 both receive F0
 state, while P2 bound to F1 with F0 control still receives only F1 private state.
 An unbound participant must not fall through to the null-viewer observer path;
 only an explicit trusted ADMIN seat has that perspective.
+
+## Permission frames do not replace a joined world
+
+The initial MatchJoin carries an explicit recipient PlayerAuthority, never an
+identity-seat guess. Later frames keep match/player/primary identity fixed and
+strictly increase the core tick; equal/older updates cannot undo revocation.
+Use controls for command selection and primary for private panels/fog/results.
+Updating permissions must not call the full join/world-reset path.
+
+Delegated-building cards cannot evaluate affordability against the issuer's
+unrelated treasury or pretend an undisclosed queue is empty. Offer request
+buttons with server-side validation, generic next-item cancellation and explicit
+reseed enable/disable. Keep private primary-owner cards and panels unchanged.
