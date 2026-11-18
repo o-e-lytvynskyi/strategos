@@ -77,6 +77,8 @@ jobs:
       - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
         with:
           cache-provider: basic
+      - name: Paired report guard counterexamples
+        run: python3 -m unittest discover -s candidate/tools/tests -p test_jmh_pair_reports.py -v
       - name: Record commits and runner
         run: |
           mkdir -p evidence
@@ -101,29 +103,11 @@ jobs:
           trap 'kill "$monitor" 2>/dev/null || true' EXIT
           ./candidate/gradlew -p candidate --no-daemon --console=plain --max-workers=2 :core:jmh
       - name: Require comparable complete results
-        run: |
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-
-          def results(checkout):
-              rows = json.loads(Path(checkout, 'core/build/reports/jmh/result.json').read_text())
-              keyed = {(r['benchmark'], tuple(sorted(r.get('params', {}).items()))): r for r in rows}
-              assert len(keyed) == len(rows) == 27, 'Missing or duplicate benchmarks'
-              return keyed
-
-          control, candidate = results('control'), results('candidate')
-          assert control.keys() == candidate.keys(), 'Benchmark sets differ'
-          fields = ('mode', 'threads', 'forks', 'jvm', 'jvmArgs', 'jdkVersion', 'jmhVersion',
-                    'warmupIterations', 'warmupTime', 'warmupBatchSize',
-                    'measurementIterations', 'measurementTime', 'measurementBatchSize')
-          for key, before in control.items():
-              after = candidate[key]
-              for field in fields:
-                  assert before[field] == after[field], (key, field)
-              assert before['primaryMetric']['scoreUnit'] == after['primaryMetric']['scoreUnit'], key
-          print(f'{len(control)} matching benchmark configurations')
-          PY
+        run: >-
+          python3 candidate/tools/jmh_pair_reports.py reports --root .
+          --manifest candidate/perf/jmh-suite.json --sources candidate/core/src/jmh/java
+          --control d7a8911ba4000bc759a10913652327c266d54066 --candidate "$GITHUB_SHA"
+          --output evidence/report-guard.json
       - name: Existing 15 percent and allocation gates
         run: >-
           ./candidate/gradlew -p candidate --no-daemon --console=plain --max-workers=2 :core:jmhCompare

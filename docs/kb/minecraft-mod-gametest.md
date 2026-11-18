@@ -198,3 +198,18 @@ its own runtime/players, so an unrelated positive-control viewer must survive.
 A capture is not updated until the mock channel is polled. A negative audience assertion
 against an undrained capture can pass falsely. The reusable harness polls every tick and
 before payload reads; retain matching positive recipient traffic and byte-encoder assertions.
+
+## A benchmark inventory is not a performance baseline
+
+After M6, the complete JMH suite has 28 annotated methods and 30 configurations: the three
+ShotBench.volley60 modes add two rows. A restored pre-M6 wrapper still expecting 27 rejects
+both complete reports before the performance gate can run. Keep an exact method/parameter
+inventory (`perf/jmh-suite.json`), not a historical magic number; missing, extra and duplicate
+configurations and changed measurement settings still fail. The inventory contains no scores.
+
+If both original measurements succeeded and the sole failure was this wrapper, verify's
+optional `paired_reports_run` validates the same-branch producer and source identities,
+downloads the immutable reports and calls the unchanged :core:jmhCompare on their original
+bytes. It never repeats timing, rewrites measurements, changes the 15%/allocation gates or
+reinterprets a genuine prior performance failure. Keep the original runner/VM telemetry
+and report hashes, and report the measured commit rather than the later tooling commit.

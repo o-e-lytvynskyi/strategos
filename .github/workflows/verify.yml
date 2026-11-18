@@ -14,6 +14,10 @@ on:
         description: 'Optional successful same-branch full-ci nightly producer of cloud-gradle-modules'
         type: string
         default: ''
+      paired_reports_run:
+        description: 'Optional archived paired JMH run that failed only its completeness wrapper'
+        type: string
+        default: ''
 
 # A newer push to the same pull request cancels the older run.
 concurrency:
@@ -42,6 +46,8 @@ jobs:
           cache-provider: basic
       - name: Dependency cache guard counterexamples
         run: python3 -m unittest discover -s tools/tests -p test_ci_dependency_cache.py -v
+      - name: Paired measurement guard counterexamples
+        run: python3 -m unittest discover -s tools/tests -p test_jmh_pair_reports.py -v
       - name: Validate optional dependency producer
         if: github.event_name == 'workflow_dispatch' && inputs.dependency_cache_run != ''
         env:
@@ -58,9 +64,39 @@ jobs:
       - name: Restore validated dependency modules only
         if: github.event_name == 'workflow_dispatch' && inputs.dependency_cache_run != ''
         run: python3 tools/ci_dependency_cache.py restore --archive build/cloud-dependencies/cloud-gradle-modules.tar.gz --caches "$HOME/.gradle/caches"
+      - name: Validate optional archived measurement producer
+        id: paired_producer
+        if: github.event_name == 'workflow_dispatch' && inputs.paired_reports_run != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPORTS_RUN: ${{ inputs.paired_reports_run }}
+        run: python3 tools/jmh_pair_reports.py producer --run "$REPORTS_RUN" --repository "$GITHUB_REPOSITORY" --branch "$GITHUB_REF_NAME" --github-output "$GITHUB_OUTPUT"
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        if: github.event_name == 'workflow_dispatch' && inputs.paired_reports_run != ''
+        with:
+          name: paired-jmh-reports
+          path: build/paired-review
+          run-id: ${{ inputs.paired_reports_run }}
+          github-token: ${{ github.token }}
+      - name: Validate full original paired measurement matrix
+        if: github.event_name == 'workflow_dispatch' && inputs.paired_reports_run != ''
+        env:
+          MEASURED_SHA: ${{ steps.paired_producer.outputs.candidate_sha }}
+        run: >-
+          python3 tools/jmh_pair_reports.py reports --root build/paired-review
+          --manifest perf/jmh-suite.json --sources core/src/jmh/java
+          --control d7a8911ba4000bc759a10913652327c266d54066 --candidate "$MEASURED_SHA"
+          --output build/reports/paired-review/evidence.json
       # Two workers: the runner has 2 cores and 7 GB, and every GameTest or smoke run is a server JVM.
       - name: verify
         run: ./gradlew --console=plain --max-workers=2 verify
+      - name: Existing 15 percent and allocation gates on preserved measurements
+        if: github.event_name == 'workflow_dispatch' && inputs.paired_reports_run != ''
+        run: |
+          ./gradlew --console=plain --max-workers=2 :core:jmhCompare \
+            -Pjmh.result=build/paired-review/candidate/core/build/reports/jmh/result.json \
+            -Pjmh.baseline=build/paired-review/control/core/build/reports/jmh/result.json \
+            | tee build/reports/paired-review/comparison.log
       - name: Test results (L1, L2, L3, L5)
         if: always()
         # A fork's token cannot write checks; the artifact below still carries the reports.

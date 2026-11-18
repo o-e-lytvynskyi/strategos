@@ -143,6 +143,7 @@ broken inputs in `gradle/selftest/fixtures/`.
 | ArchUnit violating fixtures and stubs | `core/src/test/java/.../archfixture/`, `mod/src/archTest/java/` | written by hand | one per rule and per banned API; a new rule brings its fixture |
 | JMH self-test results | `core/src/jmh/resources/selftest/` | written by hand | fixed |
 | Harness self-test inputs | `gradle/selftest/fixtures/` | written by hand | fixed |
+| JMH suite inventory | `perf/jmh-suite.json` | declared benchmark methods and explicit parameter configurations, reviewed against sources | changes only with the full suite; contains no scores and never replaces an approved baseline |
 | JMH baseline | `perf/baseline-<machine>.json` | `:core:jmh`, copied after the owner approves | only with the owner's approval |
 | GameTest journals (binary `.strj`), perf and smoke results | `mod/build/gametest/journals/`, `mod/build/reports/perf/`, `mod/build/server-smoke/` | every run | build output, never committed |
 
