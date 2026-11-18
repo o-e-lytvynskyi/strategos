@@ -191,6 +191,8 @@ public final class StrategosClient {
 
     public static void state(MatchStateMsg update) {
         state = update;
+        MatchJoin joined = match;
+        if (joined != null) MODEL.accept(update, joined.matchId());
         if (update.lifecycle() == MatchStateMsg.Lifecycle.ENDED) {
             ARCS.clear();
         }

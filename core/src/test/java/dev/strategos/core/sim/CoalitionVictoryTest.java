@@ -77,7 +77,13 @@ class CoalitionVictoryTest {
         assertThat(java.util.Objects.requireNonNull(s.h().core().queries().matchResults())
                         .winners())
                 .containsExactly(0, 1);
-        SimHarness back = SimHarness.restore(s.h().core().snapshot(), s.state().templates());
+        var encoded = dev.strategos.core.sim.persist.MatchSnapshotCodec.encode(
+                com.mojang.serialization.JsonOps.INSTANCE, s.h().core().snapshot());
+        var decoded = dev.strategos.core.sim.persist.MatchSnapshotCodec.decode(
+                        new com.mojang.serialization.Dynamic<>(com.mojang.serialization.JsonOps.INSTANCE, encoded),
+                        dev.strategos.core.sim.persist.Migrations.production())
+                .getOrThrow();
+        SimHarness back = SimHarness.restore(decoded, s.state().templates());
         assertThat(back.stateHash()).isEqualTo(s.h().stateHash());
         assertThat(KernelAccess.state(back.core()).outcome().winners()).containsExactly(0, 1);
         back.runTicks(40);

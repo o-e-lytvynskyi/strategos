@@ -41,6 +41,8 @@ governs.
 | [0029](0029-roster-session-persistence.md) | Adapter blob-2 membership, disconnected restore and remaining monotonic duration | Accepted (M7 persistence; gates tracked in branch) | 2026-11-18 | §5.8, §12 |
 | [0030](0030-frozen-hostile-damage-provenance.md) | Frozen hostile source faction, final locked-team filtering and conservative schema-5 migration | Accepted (T7.1 implementation; gates pending) | 2026-11-18 | §5.8, §6.7, §7 |
 
+| [0031](0031-coalition-terminal-results.md) | Ordered surviving coalition results, schema-6 migration and bounded terminal replication | Accepted (T7.2 implementation; gates pending) | 2026-11-18 | §5.8, §7, §12 |
+
 ## Pending measurements
 
 | Spike | Confirms | Runs in (card) | Owner consent |

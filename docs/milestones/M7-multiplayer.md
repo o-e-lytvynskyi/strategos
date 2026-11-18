@@ -612,3 +612,10 @@ reviewed implementation task between T17 and T18, keeping the acceptance depende
 T2a: [cloud verify 40788528341](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40788528341), implementation checkpoint `e8438cd`, passed in 7m 20s: 2,253 canonical XML test cases, zero failures/errors/skips; all 16 DiplomacyStateTest cases executed. Core architecture/static checks, adapter tests, GameTests, server smoke and negative harness self-tests passed through verify. Running tick/order/hash paths are unchanged, so this bounded task does not require slow/soak or JMH. T2b.2 still owns installation, journal and versioned persistence; no live co-op or privacy criterion is declared complete.
 
 Main synchronization: merge `4e1ff97` includes `origin/main` at `dcb5013`. [Cloud verify 40789677322](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40789677322) passed in 6m 2s: 2,253 canonical XML cases, zero failures/errors/skips, all 16 diplomacy cases executed. Final fetch showed zero commits behind main. The operator requested a stop for 2026-10-29 after T2a and this merge; T2b.2 is unstarted.
+
+T7 checkpoint (2026-11-18): T7.1 source `1053f0e0` passes cloud verify
+[44217598204](https://github.com/o-e-lytvynskyi/strategos/actions/runs/44217598204),
+2,715 canonical cases without failures/errors/skips. T7.2 now implements both-rule ordered
+surviving coalition results and explicit draws, schema-6 migration and terminal replication
+under ADR-0031; its cloud gates are pending. T7 stays unchecked. Slow/soak and paired JMH
+acceptance will cover the combined T7 source, including the frozen-damage hot path.

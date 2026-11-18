@@ -20,6 +20,14 @@ class CoalitionResultWireTest {
         MatchResults result = new MatchResults(List.of(0, 2), 300, List.of());
         assertThat(WireCodec.decode(MatchResults.WIRE, WireCodec.encode(MatchResults.WIRE, result)))
                 .isEqualTo(result);
+        ClientMatchModel rejoined = new ClientMatchModel();
+        rejoined.accept(new MatchStateMsg(7, MatchStateMsg.Lifecycle.ENDED, 301, result, List.of()), 7);
+        assertThat(java.util.Objects.requireNonNull(rejoined.end()).winners()).containsExactly(0, 2);
+        rejoined.accept(
+                new MatchStateMsg(
+                        8, MatchStateMsg.Lifecycle.ENDED, 302, new MatchResults(-1, 302, List.of()), List.of()),
+                7);
+        assertThat(java.util.Objects.requireNonNull(rejoined.end()).winners()).containsExactly(0, 2);
         MatchResults draw = new MatchResults(List.of(), 300, List.of());
         assertThat(WireCodec.decode(MatchResults.WIRE, WireCodec.encode(MatchResults.WIRE, draw))
                         .winners())

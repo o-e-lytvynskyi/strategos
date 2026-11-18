@@ -1,6 +1,7 @@
 package dev.strategos.core.protocol;
 
 import dev.strategos.core.shared.CoreApi;
+import dev.strategos.core.shared.Winners;
 import java.util.List;
 
 /**
@@ -8,7 +9,7 @@ import java.util.List;
  * the tick the match ended at, and each faction's statistics.
  */
 @CoreApi
-public record MatchResults(int winner, long endedAt, List<FactionStats> factions) {
+public record MatchResults(List<Integer> winners, long endedAt, List<FactionStats> factions) {
     @CoreApi
     public record FactionStats(
             int unitsTrained,
@@ -24,13 +25,23 @@ public record MatchResults(int winner, long endedAt, List<FactionStats> factions
     }
 
     public MatchResults {
+        Winners.mask(winners);
+        winners = List.copyOf(winners);
         factions = List.copyOf(factions);
+    }
+
+    public MatchResults(int winner, long endedAt, List<FactionStats> factions) {
+        this(Winners.legacy(winner), endedAt, factions);
+    }
+
+    public int winner() {
+        return winners.isEmpty() ? -1 : winners.getFirst();
     }
 
     public static final WireCodec<MatchResults> WIRE = new WireCodec<>() {
         @Override
         public void write(WireWriter out, MatchResults r) {
-            out.writeZigZag(r.winner());
+            WinnerWire.write(out, r.winners());
             out.writeVarLong(r.endedAt());
             out.writeVarInt(r.factions().size());
             for (FactionStats f : r.factions()) {
@@ -51,7 +62,7 @@ public record MatchResults(int winner, long endedAt, List<FactionStats> factions
 
         @Override
         public MatchResults read(WireReader in) {
-            int winner = in.readZigZagInt();
+            List<Integer> winners = WinnerWire.read(in);
             long endedAt = in.readVarLong();
             int count = in.readVarInt();
             var factions = new java.util.ArrayList<FactionStats>(count);
@@ -73,12 +84,12 @@ public record MatchResults(int winner, long endedAt, List<FactionStats> factions
                 factions.add(
                         new FactionStats(unitsTrained, unitsLost, buildingsBuilt, buildingsLost, gathered, phases));
             }
-            return new MatchResults(winner, endedAt, factions);
+            return new MatchResults(winners, endedAt, factions);
         }
 
         @Override
         public int maxSize() {
-            return 1008;
+            return 1011;
         }
     };
 }

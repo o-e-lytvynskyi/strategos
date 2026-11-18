@@ -703,6 +703,15 @@ public final class PersistenceTests {
     /** A newer terminal blob cannot be revived by an older PAUSED registry record (#23). */
     @StrategosTest
     public static void terminalOutcomeOverridesPausedRecord(GameTestHelper h) {
+        terminalOutcomeOverridesPausedRecord(h, false);
+    }
+
+    @StrategosTest
+    public static void coalitionOutcomeOverridesPausedRecord(GameTestHelper h) {
+        terminalOutcomeOverridesPausedRecord(h, true);
+    }
+
+    private static void terminalOutcomeOverridesPausedRecord(GameTestHelper h, boolean coalition) {
         MatchRegistry registry = StrategosServer.get().matches();
         MatchRuntime rt = MatchFixture.create(
                 h, MatchFixture.options(SimHarness.DEFAULT_SEED, h).withPersistent(true));
@@ -710,7 +719,8 @@ public final class PersistenceTests {
         var saved = core(rt).snapshot();
         var outcome = new dev.strategos.core.sim.Outcome();
         outcome.hold(0);
-        outcome.end(0, saved.tick());
+        if (coalition) outcome.hold(1);
+        outcome.end(coalition ? java.util.List.of(0, 1) : java.util.List.of(0), saved.tick());
         var finished = new dev.strategos.core.sim.MatchSnapshot(
                 saved.config(),
                 saved.tick(),
@@ -728,10 +738,16 @@ public final class PersistenceTests {
                 saved.ledger(),
                 saved.carried(),
                 new dev.strategos.core.sim.MatchSnapshot.Play(
-                        outcome.save(),
-                        saved.play().ai(),
-                        saved.play().aiWake(),
-                        saved.play().alerts()),
+                                outcome.save(),
+                                saved.play().ai(),
+                                saved.play().aiWake(),
+                                saved.play().alerts())
+                        .withDiplomacy(
+                                coalition
+                                        ? DiplomacyState.identity(saved.config().factions())
+                                                .withTeam(new FactionSlot(1), 0)
+                                                .lockTeams()
+                                        : saved.diplomacy()),
                 saved.templateBindings());
         MatchRecord record = registry.record(rt.id());
         check(record != null && record.lifecycle() == MatchLifecycle.PAUSED, "no paused record");
@@ -741,6 +757,17 @@ public final class PersistenceTests {
         MatchRuntime back = registry.restore(h.getLevel(), record, MatchData.load(rt.id(), tag));
         check(back.lifecycle() == MatchLifecycle.ENDED, "terminal outcome restored as " + back.lifecycle());
         check(core(back).snapshot().play().ended(), "terminal outcome lost");
+        var results = core(back).queries().matchResults();
+        check(
+                results != null && results.winners().equals(coalition ? java.util.List.of(0, 1) : java.util.List.of(0)),
+                "restored terminal winners changed");
+        boolean refused = false;
+        try {
+            registry.resume(back.id());
+        } catch (IllegalStateException expected) {
+            refused = true;
+        }
+        check(refused, "terminal coalition accepted resume");
         h.succeed();
     }
 }

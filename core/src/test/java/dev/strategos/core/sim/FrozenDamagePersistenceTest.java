@@ -68,7 +68,7 @@ class FrozenDamagePersistenceTest {
     void currentSnapshotRetainsDeadSourceProvenanceAndContinuesWithEqualHashes() {
         SimHarness h = shot(true, true);
         JsonObject encoded = json(h);
-        assertThat(encoded.get("v").getAsInt()).isEqualTo(5);
+        assertThat(encoded.get("v").getAsInt()).isEqualTo(dev.strategos.core.sim.persist.SchemaVersion.CURRENT);
         assertThat(damage(encoded).get("sourceFaction").getAsInt()).isZero();
         MatchCore back = restore(encoded);
         assertThat(back.stateHash()).isEqualTo(h.stateHash());

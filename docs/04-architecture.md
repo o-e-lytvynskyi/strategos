@@ -910,6 +910,12 @@ DimensionDataStorage.java:43):
   is tested in L1 with JSON fixtures and in L2 with NBT fixture files of every released schema
   (`mod/src/test/resources/fixtures/`). A template that the snapshot references but the current
   set lacks fails the load with a named error, unless the operator allows a lossy upgrade.
+- **Coalition results (M7).** [ADR-0031](adr/0031-coalition-terminal-results.md) extends both
+  victory rules after all defeats are evaluated. Locked teams win as the ascending surviving
+  allied faction set; no survivors is a draw. Schema 6 stores the full terminal mask and
+  migrates legacy individual/draw results without changing their hashes. Match-end news and
+  terminal state carry the same bounded set; registration version 2 rejects older readers.
+  Restored terminal state overrides a stale paused registry and cannot resume.
 - **Adapter sessions (M7).** [ADR-0029](adr/0029-roster-session-persistence.md) versions only
   the outer match blob to 2. Its explicit UUID/player roster stores remaining monotonic reclaim
   duration, never a live connection or clock origin. Valid blob-1 membership migrates with the

@@ -171,9 +171,18 @@ final class HudBanners {
         }
         Font font = mc.font;
         int own = join.slot().value();
-        String title = end.faction() == own ? "Victory" : end.faction() < 0 ? "The match is over" : "Defeat";
-        int titleColor = end.faction() == own ? theme.accent() : theme.text();
-        String winner = end.faction() < 0 ? "Nobody won" : "Faction " + (end.faction() + 1) + " wins";
+        boolean won = end.winners().contains(own);
+        String title = won ? "Victory" : end.winners().isEmpty() ? "The match is over" : "Defeat";
+        int titleColor = won ? theme.accent() : theme.text();
+        String winner = end.winners().isEmpty()
+                ? "Nobody won"
+                : end.winners().size() == 1
+                        ? "Faction " + (end.faction() + 1) + " wins"
+                        : "Factions "
+                                + end.winners().stream()
+                                        .map(f -> Integer.toString(f + 1))
+                                        .collect(java.util.stream.Collectors.joining(", "))
+                                + " win";
         long seconds = end.ticks() / 20;
         String time = "After " + seconds / 60 + ":" + String.format(Locale.ROOT, "%02d", seconds % 60);
 

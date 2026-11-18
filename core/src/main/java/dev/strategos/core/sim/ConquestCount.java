@@ -49,7 +49,6 @@ final class ConquestCount {
         }
         boolean anyDefeated = false;
         int standing = 0;
-        int last = Outcome.NONE;
         for (int f = 0; f < factions; f++) {
             if (count[f] > 0) {
                 o.hold(f);
@@ -60,14 +59,9 @@ final class ConquestCount {
             }
             anyDefeated |= o.defeated(f);
             if (o.held(f) && !o.defeated(f)) {
-                standing++;
-                last = f;
+                standing |= 1 << f;
             }
         }
-        if (anyDefeated && standing <= 1) {
-            int winner = standing == 1 ? last : Outcome.NONE;
-            o.end(winner, s.tick());
-            s.outputs().add(new MatchEnded(winner, s.tick()));
-        }
+        VictoryResolution.finish(s, anyDefeated, standing);
     }
 }

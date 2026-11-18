@@ -7,6 +7,7 @@ import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.DepositState;
 import dev.strategos.core.protocol.FactionState;
 import dev.strategos.core.protocol.MatchNews;
+import dev.strategos.core.protocol.MatchStateMsg;
 import dev.strategos.core.protocol.UnitDetail;
 import dev.strategos.core.protocol.UnitHud;
 import dev.strategos.core.protocol.UnitSummary;
@@ -131,6 +132,24 @@ public final class ClientMatchModel {
         if (state.matchId() == joinedMatch
                 && (last == null || last.matchId() != joinedMatch || state.tick() >= last.tick())) {
             deposits = state;
+        }
+    }
+
+    /** A late join or reload receives the same terminal result through match_state, without replaying old news. */
+    public void accept(MatchStateMsg state, int joinedMatch) {
+        var result = state.results();
+        if (state.matchId() == joinedMatch && state.lifecycle() == MatchStateMsg.Lifecycle.ENDED && result != null) {
+            accept(
+                    new MatchNews(
+                            state.matchId(),
+                            state.tick(),
+                            MatchNews.ENDED,
+                            result.winner(),
+                            result.endedAt(),
+                            0,
+                            0,
+                            result.winners()),
+                    joinedMatch);
         }
     }
 

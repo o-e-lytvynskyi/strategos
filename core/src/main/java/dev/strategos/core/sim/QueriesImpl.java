@@ -424,7 +424,7 @@ final class QueriesImpl implements MatchQueries {
             perFaction.add(new MatchResults.FactionStats(
                     ms.unitsTrained(f), ms.unitsLost(f), ms.buildingsBuilt(f), ms.buildingsLost(f), gathered, phases));
         }
-        return new MatchResults(o.winner(), o.endedAt(), perFaction);
+        return new MatchResults(o.winners(), o.endedAt(), perFaction);
     }
 
     @Override

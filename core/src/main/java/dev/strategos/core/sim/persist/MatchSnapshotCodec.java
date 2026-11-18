@@ -581,6 +581,25 @@ public final class MatchSnapshotCodec {
                         return CODEC.parse(migrated);
                     })
                     .flatMap(snapshot -> {
+                        List<Long> outcome = snapshot.play().outcome();
+                        if (!outcome.isEmpty()) {
+                            if (outcome.size() != 6) {
+                                return DataResult.error(() -> "schema 6 outcome needs its full winner mask");
+                            }
+                            var restored = new dev.strategos.core.sim.Outcome();
+                            restored.restore(outcome);
+                            long allowed = (1L << snapshot.config().factions()) - 1;
+                            if (((outcome.get(0) | outcome.get(1) | outcome.get(5)) & ~allowed) != 0
+                                    || outcome.get(2) < 0
+                                    || outcome.get(2) > 1
+                                    || outcome.get(4) < 0
+                                    || outcome.get(4) > snapshot.tick()
+                                    || (outcome.get(5) & outcome.get(1)) != 0
+                                    || (outcome.get(5) & ~outcome.get(0)) != 0
+                                    || (!restored.ended() && outcome.get(4) != 0)) {
+                                return DataResult.error(() -> "invalid terminal outcome metadata");
+                            }
+                        }
                         if (snapshot.templateBindings().isEmpty()
                                 && snapshot.buildings().stream().anyMatch(BuildingStore.Saved::alive)) {
                             return DataResult.error(

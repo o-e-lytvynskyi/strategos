@@ -545,3 +545,7 @@ or replication privacy; those retain their own integration tests and dependencie
 Pending independent review.
 
 - 2026-11-18 · T7.2 test-first: both victory rules must emit ordered surviving winners once, exclude defeated allies, draw on simultaneous elimination, retain unlocked legacy individual wins, and restore terminal results. T7.1 verify 44217598204 remains in progress; shared final T7 slow/soak and paired JMH gates will cover both substeps without superseding an active required run.
+
+- 2026-11-18 · T7.1 functional source 1053f0e0 passed cloud verify 44217598204: 2,715 canonical cases, zero failures/errors/skips. T7 remains incomplete until shared slow/soak/performance gates and T7.2 acceptance.
+- 2026-11-18 · T7.2 test-first source d3d511b9 failed cloud verify 44218692849 at the missing coalition APIs as expected (zero canonical cases). Implemented both-rule resolution after all defeats, schema 6 and conservative 5→6 migration, bounded live/restored winner sets, terminal client reconstruction and all-winner banner. Added actual NBT stale-paused-record coalition restore/resume refusal coverage. All acceptance remains pending.
+- Decision 2026-11-18 · ADR-0031 uses only surviving allies, preserves unlocked individual outcomes and their hashes, and adds explicit bounded coalition extensions under network version 2. This implements the approved deterministic surviving-coalition criterion; undo before schema-6 data exists, otherwise require an explicit conversion. T8 must replace the identity-seat UI perspective before enabling co-op admission.

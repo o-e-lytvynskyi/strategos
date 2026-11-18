@@ -30,7 +30,6 @@ final class VictoryCheck {
         }
         boolean anyDefeated = false;
         int standing = 0;
-        int last = Outcome.NONE;
         for (int f = 0; f < factions; f++) {
             boolean holds = (holding & (1L << f)) != 0;
             if (holds) {
@@ -42,14 +41,9 @@ final class VictoryCheck {
             }
             anyDefeated |= o.defeated(f);
             if (o.held(f) && !o.defeated(f)) {
-                standing++;
-                last = f;
+                standing |= 1 << f;
             }
         }
-        if (anyDefeated && standing <= 1) {
-            int winner = standing == 1 ? last : Outcome.NONE;
-            o.end(winner, s.tick());
-            s.outputs().add(new MatchEnded(winner, s.tick()));
-        }
+        VictoryResolution.finish(s, anyDefeated, standing);
     }
 }
