@@ -6,10 +6,10 @@
 
 ## Now
 
-- **Milestone:** M7 Multiplayer; 6 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md), based on planning PR #32; T3 is split before implementation into independent aggregate and production integration.
-- **In progress:** M7 T4 lobby presentation since 2026-11-18; T3b is accepted on e382f7b6. Whole M7, including optional T24 requested by the operator, remains in progress. All further checks run in the cloud.
-- **Last finished task:** T3b authenticated service/protocol/production start: cloud verify 44148921127 (2,669 canonical cases), complete full-ci 44148929120 (248 slow/core cases, all twenty AI seeds and aggregate), zero failures/errors/skips in the acceptance reports.
-- **Next task:** T4 immutable lobby view-model, screen/readiness/errors and cloud L4 scenario; then T5 persistence/migration and the later integration tasks in specification order. D-20 remains accepted; T8's co-op routing is not inferred from four-faction start acceptance.
+- **Milestone:** M7 Multiplayer; 7 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md), based on planning PR #32; T3 is split before implementation into independent aggregate and production integration.
+- **In progress:** M7 T5 persistence/migration since 2026-11-18; T5.1 test-first cloud checkpoint pending. Whole M7, including optional T24 requested by the operator, remains in progress. All further checks run in the cloud.
+- **Last finished task:** T4 lobby UI: cloud verify 44202558089 (2,682 canonical cases) and L4 44203471758 (seven personally inspected goldens, NMSE 0, real five-click start/RTS admission and altered-golden rejection). NET-02 is done; source/visual acceptance commits are 7c17da65/5f7d18be. New T5 tests on HEAD are a separate expected-red checkpoint.
+- **Next task:** T5 roster/session persistence, strict restore/migration and engine acceptance; then T6 and later integration in specification order. D-20 remains accepted; T8's co-op routing is not inferred from four-faction start acceptance.
 - **Merged from main last:** d39069e7 (2026-11-15, PR #55/M6); merge 213d0564 is zero commits behind that main. Cloud verify 43756194393 passed: 2,623 canonical XML cases, zero failures/errors/skips, 7m 22s. Prior T2b slow/soak/L6 evidence remains historical; new integration will receive its required gates.
 
 The operator requested ownership of the whole M7 and work on what is currently possible on
@@ -35,6 +35,13 @@ before implementing them. T2 does not certify friendly-fire, allied victory, com
 or replication privacy; those retain their own integration tests and dependencies.
 
 ## Log
+
+### 2026-11-18 — Complete T4 and NET-02; continue T5
+
+- Full cloud verify 44202558089 passed on 7c17da65: 2,682 canonical XML cases, zero failures/errors/skips, including all sixteen lobby-service contracts and four admission cases. The earlier b5fad06a verify was superseded during L5 and remains incomplete despite its passing partial XML reports.
+- Third cloud L4 44203471758 passed on 5f7d18be: seven presentation fixtures, every actual widget enabled-state/bounds assertion, five production menu/intent clicks, expected `match_join`, STARTED and active RTS screen/rig. Every normal golden has NMSE exactly 0 under the unchanged 1e-5 threshold; deliberately altered copies fail. The archived final diff report belongs to that negative guard; the job log preserves the preceding seven zero-error comparisons.
+- The three cloud candidate sets agree without masks or threshold changes; all seven new baseline images were personally inspected at raw and normalized sizes. T4 and NET-02 are complete. Dedicated four-player/start/private-state acceptance remains the T3b evidence, not the DTO fixtures. Reconnect, co-op command routing and the remaining M7 gates are still their own work.
+- Continue the independent test-first T5.1 checkpoint bc23e56c in cloud verify 44203883447. It is expected to expose the newly specified persisted-roster defects; no production fix or T5 acceptance has been claimed yet.
 
 ### 2026-11-18 — T5.1 persisted-roster validation contracts
 

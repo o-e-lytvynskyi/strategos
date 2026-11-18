@@ -451,7 +451,7 @@ for review; the cards below remain `proposed` until owner approval and opening f
 | ID | Feature | Size | Depends on | Status |
 |---|---|---|---|---|
 | QA-14 | 26.x platform decision gate (floating: 2027-Q2 or the MVP gate) | M | — | proposed |
-| NET-02 | Match lobby on a dedicated server | L | MATCH-02, MATCH-06, NET-01, D-20 | in_progress |
+| NET-02 | Match lobby on a dedicated server | L | MATCH-02, MATCH-06, NET-01, D-20 | done |
 | NET-03 | Per-player and per-faction state through the gateway | M | NET-08, MATCH-06 | proposed |
 | NET-04 | Spike S11: bandwidth and per-channel byte budgets | M | NET-03, QA-19, PERF-01 | proposed |
 | NET-05 | Reconnect and rejoin | M | NET-02, CORE-07 | proposed |

@@ -519,7 +519,7 @@ reviewed implementation task between T17 and T18, keeping the acceptance depende
 - [x] T2b.2 (2026-10-30) · Match authority/setup, schema-4 persistence/hash and binary journal integration.
 - [x] T3a (2026-10-30) · Bounded lobby state/readiness/preparation contract; full cloud verify, 12 new contract tests.
 - [x] T3b (2026-11-18) · Authenticated lobby service, private protocol and production start; verify 44148921127 and complete slow/20-seed soak 44148929120 on e382f7b6.
-- [ ] T4 · Lobby UI.
+- [x] T4 (2026-11-18) · Lobby UI; verify 44202558089 and cloud L4 44203471758, seven inspected zero-difference goldens, real start/RTS flow and altered-golden rejection.
 - [ ] T5 · Persistence and migration.
 - [ ] T6 · Multiplayer test kit.
 - [ ] T7 · Allied damage and victory.
