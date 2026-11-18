@@ -138,6 +138,17 @@ The existing cloud workflow route remains mandatory for tests in this session.
 
 ### 3.1 Identity, teams and control
 
+T6 readiness assessment (2026-11-18): T3b/NET-02 are delivered on this branch and QA-19
+is delivered on main (M1 T14 with M2 JFR reconciliation). The reusable engine kit is ready;
+QA-15's L7 protocol/use criterion remains T19/T25, not part of an engine-only completion.
+Split before implementation into **T6.1** bounded owned player groups, explicit admission,
+automatic acknowledgement/polling, per-player payload/byte views and idempotent cleanup;
+and **T6.2** bounded real-ingress command/hostile-packet helpers plus a four-player smoke
+under the unchanged 30-second limit. A fixture owns its runtime and disposes it when closed;
+it must not remove another test's players or call global cleanup. Keep the existing QA-19
+encoder/capture as the single byte-counting implementation. T6 stays unchecked until its
+cloud engine gate passes. No new owner product decision is needed for this approved scope.
+
 T7 implementation split (2026-11-18): **T7.1** owns final hostile-damage filtering,
 frozen source-faction provenance for delayed/collateral hits, its current/legacy snapshot
 and journal policy, and actual engine damage adapters. **T7.2** owns allied coalition
