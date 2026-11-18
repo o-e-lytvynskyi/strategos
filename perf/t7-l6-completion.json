@@ -1,0 +1,36 @@
+{
+  "source": "4dd51afa9f2b8165042e4792ee750b9cf317e187",
+  "producer_run": 44296716682,
+  "completed": {
+    "battle_stress": "a4b6bfe3d8afa72afcb48ceb61517ba14238a731e2add6159662c02c7c876c4d",
+    "block_writer_cost": "98cebfb26c152b6f4124ef68da2b974750cbc2019e27de187581bc0af058f510",
+    "commander_pan_move_cost": "2bac2851549580200f589aa2408c94a056c475d813bd7305cc141d1331bf810e",
+    "crowd_soak_600": "ac86945d755cd86818d97ca4a85ddeda1c5a05979719c4a9516791216e89f82d",
+    "economy_soak": "1bccdce417aa2e22fba68b5b83e36538ed5db1b30e2aeff9d3eaf54068a77414",
+    "economy_stress": "5ccb9c1cc29b1d4638f7009ad52cd088d7371fe535b7c0bab1153785a153093c",
+    "first_loop_fast": "34e8ddf61fab3c58f1e4f0093d6fa18c0449dfb129ed0967eb25ffa95e00c929",
+    "first_loop_soak": "606e1678884077a03d828dbb629299756ed48c2fcbd359dce77f28ff36aaac6d",
+    "first_loop_stress": "9d21127a6bced9b2090daaee131764fa508d99164c683056940f565729d5971e",
+    "idle_300": "0ddaf98df8cbe80675cfbb25d2b07eab4313c3be6ba7f887b10350c337bc7439",
+    "melee_soak_200": "ba96eb567e0200fbb7264e8bf17adb481793bee7a4edf68d1169e219d39c17ed",
+    "mounted_cost": "ec65ac1f6a3d209148fd627d0d1d9deb0a041cac3734eb88cb46af5af3cc0a37",
+    "mvp_stress": "d1abcad7f441a7afbb81a39fe87eaed5e5d00fcfc4ef87001ffe5d28c76b3e5a",
+    "page_capture_and_publication": "bca541e0899486f38936dd3ae80b081f7242377dc8dc036fda962241651b68d4",
+    "path_budget_d": "9998eb5ea15b60c3bda05568fdfae35f184615d5c6fc28ab2f9bc3faed136f5e",
+    "protected_lookup_ratio": "5c5f60e3a2a5b3bf7eb94d1d5a8ebbd38de798cf1e9016ce4ed3e011aa8c43fa",
+    "prewarm_512_generated": "3c7997fb61799714ad97e0d5a82401d5e1db5431a4d192073da6004bfd1b8d86",
+    "snapshot_500": "3c6bcd2275a3260785b7f7ef5ec01dda6abc7499b319dd0873189385efddfc90",
+    "stress_1200": "e0af7b39d20c85b1bbadac1491aa0dc60bd12b939bb6a8111c04f01bd0da9b18",
+    "viewer_bytes_600": "11bf943102f1d2dace91bb4c99832cf23e7cdf081838fe32a4cef85a1bd83fa1",
+    "walk_600": "fe9ef6d128ef7c68133eb585e95c497f555b4356b6dab665f40975275cd404c1"
+  },
+  "remaining": {
+    "group_paths_budget_d": "group_paths_budget_d",
+    "battle_soak": "battle_soak",
+    "mvp_soak": "mvp_soak"
+  },
+  "ticks": {
+    "battle_soak": 6000,
+    "mvp_soak": 36000
+  }
+}
