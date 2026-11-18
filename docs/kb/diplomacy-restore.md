@@ -8,3 +8,18 @@
 - Trusted first-tick setup is not a client command. Reconnect does not unbind a seat. Runtime player grant/revoke and ownership validation are separate T8 work.
 - `MatchLog` is a simulation diagnostic API: `warn(long tick, String format, Object... args)` requires the simulation tick; it is not the logger's plain-string overload.
 - Coordinate the M6 outcome/statistics schema with ADR-0028; do not reuse version 4 for a different interpretation. The source marker on `Play` tracks that integration.
+
+## Control authority does not grant private feedback
+
+A granted ally may train from a visible foreign building, charging its owner,
+but the exact NOT_ENOUGH_RESOURCES vector exposes that owner's current stock
+(cost minus missing). Pass the paying faction explicitly into the common
+affordability result builder. Preserve exact amounts for primary controllers
+and trusted ADMIN; give a granted ally the same refusal without those amounts.
+Do not infer the paying faction from the issuer's numeric seat.
+
+Likewise, private faction audiences and building owner fields use the current
+primary binding, never the control predicate. P0/P1 bound to F0 both receive F0
+state, while P2 bound to F1 with F0 control still receives only F1 private state.
+An unbound participant must not fall through to the null-viewer observer path;
+only an explicit trusted ADMIN seat has that perspective.

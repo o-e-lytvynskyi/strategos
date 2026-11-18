@@ -113,6 +113,7 @@ public final class Replication {
 
     /** A seated player's {@code ui_query}: it replaces the last; one past the rate is refused. */
     public void query(ServerPlayer player, MatchRegistry.Seat seat, UiQuery query, long tick) {
+        if (!seat.hasPerspective()) return;
         Subscription sub = subscriptions.computeIfAbsent(player.getUUID(), k -> new Subscription());
         while (!sub.recent.isEmpty() && tick - sub.recent.peekFirst() >= 20) {
             sub.recent.removeFirst();
@@ -168,7 +169,7 @@ public final class Replication {
             VisionSystem vision = core.vision();
             for (int f = 0; f < core.queries().config().factions(); f++) {
                 FactionSlot faction = new FactionSlot(f);
-                if (rt.roster().of(faction).isEmpty()) {
+                if (rt.roster().of(faction, core.queries().diplomacy()).isEmpty()) {
                     continue;
                 }
                 net.send(
@@ -204,14 +205,13 @@ public final class Replication {
                 ServerPlayer online = server.getPlayerList().getPlayer(player);
                 if (seat == null
                         || seat.match() != rt
+                        || !seat.hasPerspective()
                         || online == null
                         || seat.slot().isAdmin()) {
                     continue;
                 }
                 FactionState now = ReplicationService.factionState(
-                        core.queries(),
-                        rt.id().value(),
-                        new FactionSlot(seat.slot().value()));
+                        core.queries(), rt.id().value(), seat.primaryFaction().orElseThrow());
                 FactionState last = factions.get(player);
                 if (last == null || !last.sameAs(now)) {
                     factions.put(player, now);
@@ -235,7 +235,7 @@ public final class Replication {
             for (UUID player : rt.roster().members()) {
                 MatchRegistry.Seat seat = matches.get().seatOf(player);
                 ServerPlayer online = server.getPlayerList().getPlayer(player);
-                if (seat == null || seat.match() != rt || online == null) {
+                if (seat == null || seat.match() != rt || !seat.hasPerspective() || online == null) {
                     continue;
                 }
                 FactionSlot view = viewer(seat);
@@ -292,7 +292,7 @@ public final class Replication {
             for (UUID player : rt.roster().members()) {
                 MatchRegistry.Seat seat = matches.get().seatOf(player);
                 ServerPlayer online = server.getPlayerList().getPlayer(player);
-                if (seat == null || seat.match() != rt || online == null) {
+                if (seat == null || seat.match() != rt || !seat.hasPerspective() || online == null) {
                     continue;
                 }
                 DepositState last = deposits.get(player);
@@ -312,7 +312,7 @@ public final class Replication {
             }
             for (UUID player : rt.roster().members()) {
                 MatchRegistry.Seat seat = matches.get().seatOf(player);
-                if (seat == null || seat.match() != rt) {
+                if (seat == null || seat.match() != rt || !seat.hasPerspective()) {
                     continue;
                 }
                 UnitHud changed = huds.computeIfAbsent(player, k -> new HudMemory())
@@ -331,7 +331,7 @@ public final class Replication {
             ServerPlayer player = server.getPlayerList().getPlayer(e.getKey());
             MatchRegistry.Seat seat = matches.get().seatOf(e.getKey());
             MatchCore core = seat == null ? null : seat.match().core();
-            if (player == null || seat == null || core == null || sub.handles.isEmpty()) {
+            if (player == null || seat == null || core == null || !seat.hasPerspective() || sub.handles.isEmpty()) {
                 continue;
             }
             UnitDetail detail = ReplicationService.detail(
@@ -346,6 +346,6 @@ public final class Replication {
 
     /** The faction a seat views as; none for an observer (the admin's slot), who sees every faction. */
     private static @Nullable FactionSlot viewer(MatchRegistry.Seat seat) {
-        return seat.slot().isAdmin() ? null : new FactionSlot(seat.slot().value());
+        return seat.slot().isAdmin() ? null : seat.primaryFaction().orElseThrow();
     }
 }

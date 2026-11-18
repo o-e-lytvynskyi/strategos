@@ -109,10 +109,11 @@ public final class BodyEvents {
         if (core == null) {
             return false;
         }
+        if (!seat.hasPerspective()) return false;
         if (core.queries().config().rules().play().revealMap()) {
             return true;
         }
-        int viewerFaction = seat.slot().isAdmin() ? -1 : seat.slot().value();
+        int viewerFaction = seat.primaryFaction().map(f -> f.value()).orElse(-1);
         int factions = core.queries().config().factions();
         VisibilityIndex visibility = null;
         VisionSystem vision = core.vision();

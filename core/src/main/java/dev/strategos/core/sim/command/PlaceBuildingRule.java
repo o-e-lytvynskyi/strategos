@@ -61,7 +61,8 @@ final class PlaceBuildingRule implements CommandRule<PlaceBuilding> {
         long[] cost = state.costs().of(state.stats(), template.netIndex(), faction);
         if (failed == PlacementRules.Rule.AFFORDABLE) {
             long[] missing = state.treasury().missing(faction, cost);
-            return Tally.unaffordable(envelope, kind(), builders.size(), missing == null ? new long[0] : missing);
+            return Tally.unaffordable(
+                    envelope, kind(), builders.size(), missing == null ? new long[0] : missing, state, faction);
         }
         if (failed != null) {
             return Tally.rejectAll(envelope, kind(), builders.size(), reason(failed));

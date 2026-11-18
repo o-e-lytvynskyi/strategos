@@ -108,7 +108,11 @@ public final class NetGateway {
             case Audience.Faction f -> {
                 MatchRuntime rt = matches.get().get(f.match());
                 if (rt != null) {
-                    rt.roster().of(f.faction()).forEach(player -> queue(player, payload));
+                    MatchCore core = rt.core();
+                    if (core != null)
+                        rt.roster()
+                                .of(f.faction(), core.queries().diplomacy())
+                                .forEach(player -> queue(player, payload));
                 }
             }
             case Audience.SeesCell c ->

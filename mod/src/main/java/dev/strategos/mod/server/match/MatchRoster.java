@@ -2,6 +2,7 @@ package dev.strategos.mod.server.match;
 
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
+import dev.strategos.core.sim.diplomacy.DiplomacyView;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -101,13 +102,22 @@ public final class MatchRoster {
         return List.copyOf(seats.keySet());
     }
 
-    /** The players whose slot controls {@code faction}. */
+    /** Legacy identity-only membership, for old roster fixtures. Live routing requires the authority overload. */
     public List<UUID> of(FactionSlot faction) {
         List<UUID> out = new ArrayList<>();
         for (Map.Entry<UUID, SeatState> e : seats.entrySet()) {
             if (e.getValue().slot().value() == faction.value()) {
                 out.add(e.getKey());
             }
+        }
+        return out;
+    }
+
+    /** Private faction audiences include primary participants only, never recipients of control grants. */
+    public List<UUID> of(FactionSlot faction, DiplomacyView authority) {
+        List<UUID> out = new ArrayList<>();
+        for (Map.Entry<UUID, SeatState> e : seats.entrySet()) {
+            if (authority.factionOf(e.getValue().slot()).filter(faction::equals).isPresent()) out.add(e.getKey());
         }
         return out;
     }

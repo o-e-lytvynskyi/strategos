@@ -5,6 +5,7 @@ import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.diag.MatchLog;
 import dev.strategos.core.port.JobExecutor;
 import dev.strategos.core.port.MetricsSink;
+import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.MatchId;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.sim.CorePorts;
@@ -690,7 +691,18 @@ public final class MatchRegistry {
     }
 
     /** Where a player sits: its match and slot. */
-    public record Seat(MatchRuntime match, PlayerSlot slot) {}
+    public record Seat(MatchRuntime match, PlayerSlot slot) {
+        /** Current primary identity; an observer or an absent binding has none. */
+        public Optional<FactionSlot> primaryFaction() {
+            MatchCore core = match.core();
+            return core == null ? Optional.empty() : core.queries().diplomacy().factionOf(slot);
+        }
+
+        /** Only an explicit ADMIN seat is an observer; an unbound player is never promoted to one. */
+        public boolean hasPerspective() {
+            return match.core() != null && (slot.isAdmin() || primaryFaction().isPresent());
+        }
+    }
 
     /**
      * Seats {@code player} in {@code rt} at {@code slot}, out of any match it sat in; a saved match's blob is marked to
