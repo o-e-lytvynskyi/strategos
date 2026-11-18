@@ -85,7 +85,11 @@ public final class MatchRoster {
             if (!seat.contains("uuid", Tag.TAG_INT_ARRAY) || !seat.contains("slot", Tag.TAG_ANY_NUMERIC)) {
                 throw new IllegalArgumentException("roster seat " + k + " has no uuid or slot");
             }
-            roster.seat(UUIDUtil.uuidFromIntArray(seat.getIntArray("uuid")), new PlayerSlot(seat.getInt("slot")));
+            UUID member = UUIDUtil.uuidFromIntArray(seat.getIntArray("uuid"));
+            if (roster.seats.containsKey(member)) {
+                throw new IllegalArgumentException("duplicate roster UUID");
+            }
+            roster.seat(member, new PlayerSlot(seat.getInt("slot")));
         }
         return roster;
     }

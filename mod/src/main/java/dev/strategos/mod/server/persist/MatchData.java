@@ -10,6 +10,7 @@ import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.world.level.saveddata.SavedData;
@@ -99,8 +100,21 @@ public final class MatchData extends SavedData {
             MatchData data = new MatchData(id, State.LOADED);
             data.loaded = snapshot;
             data.loadedEpoch = tag.getLong("epoch");
-            if (tag.contains("roster", Tag.TAG_LIST)) {
-                data.roster = MatchRoster.load(tag.getList("roster", Tag.TAG_COMPOUND));
+            Tag rosterTag = tag.get("roster");
+            if (rosterTag != null) {
+                if (!(rosterTag instanceof ListTag listed)
+                        || (!listed.isEmpty() && listed.getElementType() != Tag.TAG_COMPOUND)) {
+                    return quarantined(id, tag, "the roster is not a list of seats");
+                }
+                data.roster = MatchRoster.load(listed);
+                for (var member : data.roster.members()) {
+                    var slot = data.roster.slotOf(member);
+                    if (slot == null
+                            || (!slot.isAdmin()
+                                    && snapshot.diplomacy().factionOf(slot).isEmpty())) {
+                        return quarantined(id, tag, "a roster seat has no primary authority binding");
+                    }
+                }
             }
             return data;
         } catch (RuntimeException e) {

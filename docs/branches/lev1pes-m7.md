@@ -47,7 +47,9 @@ or replication privacy; those retain their own integration tests and dependencie
 
 - While T4.2's immutable cloud checkpoint runs, prepare the independent T5 dependency on completed T2b.2/T3b. Split the adapter work into strict roster/restore validation and the versioned session/deadline envelope before implementation grows.
 - Source inspection found that legacy roster decoding silently overwrites a duplicate UUID; a malformed roster type is ignored as absent; a valid numeric player slot can be loaded without a saved primary authority binding. Add failing contracts first. Valid legacy identity bindings and explicit administrator observers remain supported; malformed authority must be quarantined without rewriting its raw file.
-- **Pending:** cloud red checkpoint after the current T4.2 verify completes, then the smallest decoder/restore fixes and the complete T5 envelope/engine gates. No T5 completion is claimed.
+- Test-first cloud verify 44203883447 on bc23e56c failed the new actual-server restore contract: after its valid unrelated-roster positive control, a conflicting saved UUID was accepted. The job stopped at GameTests, before the new unit contracts ran; its partial 1,944 canonical XML cases do not establish unit or full acceptance.
+- Implemented duplicate-UUID rejection, original NBT roster shape validation, and non-administrator primary-binding validation against the already decoded core authority. Malformed blobs use unchanged raw-preserving quarantine. Restore rejects cross-match conflicts before core/world reconciliation; a faulted restore is retained diagnostically without publishing its untrusted roster into the global membership index.
+- **Pending:** complete cloud verify of the fix, including the new unit contracts and real-server positive/negative restore flow; then the complete T5 session/deadline envelope and migration/engine gates. No T5 completion is claimed. The core schema, hashes and M6 outcome representation are unchanged.
 
 ### 2026-11-18 — T4.2 actual lobby screen and cloud visual checkpoint
 

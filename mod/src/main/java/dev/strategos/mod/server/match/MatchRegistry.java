@@ -435,6 +435,8 @@ public final class MatchRegistry {
             reason = "the server stopped while it was importing its map";
         } else if (data.state() != MatchData.State.LOADED || snapshot == null) {
             reason = "its blob is " + data.state();
+        } else if (!rosterAvailable(record.id(), data.roster())) {
+            reason = "its roster conflicts with a member of another match";
         } else {
             if (data.loadedEpoch() != record.lastEpoch()) {
                 log.warn(
@@ -653,9 +655,19 @@ public final class MatchRegistry {
         return settings.faultsRethrow() ? FaultPolicy.RETHROW : FaultPolicy.CONTAIN;
     }
 
+    private boolean rosterAvailable(MatchId id, MatchRoster roster) {
+        for (UUID player : roster.members()) {
+            MatchId occupied = seated.get(player);
+            if (occupied != null && !occupied.equals(id)) return false;
+        }
+        return true;
+    }
+
     private void register(MatchRuntime rt) {
         matches.put(rt.id().value(), rt);
         regionsOf(rt.space().level()).add(rt.id(), rt.space());
+        // A refused restore retains its diagnostic runtime, never publishes its untrusted membership.
+        if (rt.core() == null || rt.lifecycle() == MatchLifecycle.FAULTED) return;
         for (UUID player : rt.roster().members()) {
             seated.put(player, rt.id());
         }

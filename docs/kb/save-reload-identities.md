@@ -39,3 +39,18 @@ Restoring every healthy blob as PAUSED revives ENDED matches. Preserve an ENDED 
 terminal saved victory outcome even when the registry is older. Such a match must neither
 resume nor accept commands; active matches still restore PAUSED. FAULTED and quarantined saves
 retain their existing fault paths.
+
+## Validate persisted membership before publishing its index
+
+A UUID occurs once in a saved roster, even if duplicate entries name the same seat. Do
+not use normal live reseating to decode duplicates: it silently replaces the first row.
+Distinguish an absent legacy roster from a present value with the wrong NBT type;
+`getList(key, TAG_COMPOUND)` can turn an incompatible list into an empty one. Validate
+the original tag and element type before decoding. Each non-administrator player seat
+must have a primary binding in the decoded snapshot authority; a numeric slot alone
+does not establish one. Invalid blobs retain the ordinary raw-preserving quarantine.
+
+Check cross-match UUID conflicts before restoring the core or reconciling world state.
+Retain a refused restore as a faulted diagnostic runtime, but never publish its roster
+into the server membership index. Otherwise even the fault path can replace another
+match's valid UUID mapping. An unrelated saved roster must still restore normally.
