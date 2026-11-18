@@ -5,8 +5,8 @@ import dev.strategos.core.shared.Winners;
 import java.util.List;
 
 /**
- * The match is over (MATCH-01): at most one faction stands. {@code winner} is that faction, -1 when none does; {@code
- * ticks} how long it lasted.
+ * The terminal match result: ascending surviving winning factions, empty for a draw, and elapsed ticks.
+ * Locked teams may have multiple winners; legacy matches retain individual results.
  */
 @CoreApi
 public record MatchEnded(List<Integer> winners, long ticks) implements MatchEvent {
