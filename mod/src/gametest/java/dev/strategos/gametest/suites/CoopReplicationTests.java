@@ -33,7 +33,7 @@ public final class CoopReplicationTests {
 
     private static final long MARKER_TICK = 1_000_000_000L;
 
-    @StrategosTest(timeoutTicks = 400)
+    @StrategosTest(arena = "arena_flat_48", timeoutTicks = 400)
     public static void coopPrimariesSharePrivateStateButGrantedControlNeverReceivesIt(GameTestHelper h) {
         var options = new MatchOptions(
                 SimHarness.DEFAULT_SEED,
@@ -62,8 +62,10 @@ public final class CoopReplicationTests {
         rt.submit(PlayerSlot.ADMIN, new SpawnBuilding(centre, f0, 4, 4, 0));
         rt.submit(PlayerSlot.ADMIN, new SpawnBuilding(centre, f1, 26, 26, 0));
         h.startSequence()
-                .thenWaitUntil(() ->
-                        check(kit.ready() && core(rt).queries().buildings().size() == 2, "fixture not ready"))
+                .thenWaitUntil(() -> check(
+                        kit.ready() && core(rt).queries().buildings().size() == 2,
+                        "fixture not ready: " + core(rt).queries().buildings().size() + " buildings at tick "
+                                + core(rt).queries().tick()))
                 .thenExecute(() -> {
                     int building = core(rt).queries().buildings().stream()
                             .filter(b -> b.faction() == 0)
