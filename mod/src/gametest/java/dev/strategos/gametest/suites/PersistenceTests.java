@@ -9,13 +9,16 @@ import static dev.strategos.gametest.suites.Units.unit;
 
 import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.UnitSet;
+import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.MatchId;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.Vec2d;
+import dev.strategos.core.sim.DiplomacySetup;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.UnitView;
+import dev.strategos.core.sim.diplomacy.DiplomacyState;
 import dev.strategos.core.testkit.SimHarness;
 import dev.strategos.gametest.MatchFixture;
 import dev.strategos.gametest.StrategosTest;
@@ -56,6 +59,66 @@ public final class PersistenceTests {
     private static final FileTime PLANTED = FileTime.fromMillis(1_000_000_000_000L);
 
     private PersistenceTests() {}
+
+    /** T5.2: four UUID/player seats retain two primary factions and a directional grant after restore. */
+    @StrategosTest(timeoutTicks = 40)
+    public static void coopRosterAndGrantsRestoreWithDisconnectedSessions(GameTestHelper h) {
+        MatchRegistry registry = StrategosServer.get().matches();
+        MatchRuntime rt = MatchFixture.create(
+                h, MatchFixture.options(SimHarness.DEFAULT_SEED, h).withPersistent(true));
+        DiplomacyState authority = new DiplomacyState(2).withTeam(new FactionSlot(1), 0);
+        for (int player = 0; player < 4; player++) {
+            authority = authority.bind(new PlayerSlot(player), new FactionSlot(player / 2));
+        }
+        rt.initializeDiplomacy(new DiplomacySetup(authority
+                .lockTeams()
+                .grant(new PlayerSlot(0), new PlayerSlot(2))
+                .snapshot()));
+        h.startSequence()
+                .thenExecuteAfter(1, () -> {
+                    for (int player = 0; player < 4; player++) {
+                        registry.join(rt, new UUID(9, 5200 + player), new PlayerSlot(player));
+                    }
+                    long hash = core(rt).stateHash();
+                    MatchData data = rt.data();
+                    MatchRecord record = registry.record(rt.id());
+                    check(data != null && record != null, "co-op fixture has no persisted match");
+                    CompoundTag saved =
+                            data.save(new CompoundTag(), h.getLevel().registryAccess());
+                    check(saved.getInt("v") == 2, "session metadata did not use the versioned blob");
+                    registry.unload(rt.id());
+                    MatchRuntime back = registry.restore(h.getLevel(), record, MatchData.load(rt.id(), saved));
+                    check(back.lifecycle() == MatchLifecycle.PAUSED, "co-op roster did not restore paused");
+                    check(core(back).stateHash() == hash, "restoring sessions changed the core authority/hash");
+                    for (int player = 0; player < 4; player++) {
+                        UUID member = new UUID(9, 5200 + player);
+                        var seat = registry.seatOf(member);
+                        check(
+                                seat != null
+                                        && seat.match() == back
+                                        && seat.slot().value() == player,
+                                "co-op player identity was reinterpreted as a faction");
+                        check(!back.roster().isConnected(member), "restore trusted a saved connection");
+                        check(back.roster().remainingNanos(member) > 0, "saved reclaim window is missing");
+                        check(
+                                core(back)
+                                                .queries()
+                                                .diplomacy()
+                                                .factionOf(new PlayerSlot(player))
+                                                .orElseThrow()
+                                                .value()
+                                        == player / 2,
+                                "co-op primary binding changed");
+                    }
+                    check(
+                            core(back).queries().diplomacy().controls(new PlayerSlot(2), new FactionSlot(0)),
+                            "the saved explicit grant was lost");
+                    check(
+                            !core(back).queries().diplomacy().controls(new PlayerSlot(3), new FactionSlot(0)),
+                            "restore gave the ungranted co-op partner inherited control");
+                })
+                .thenSucceed();
+    }
 
     /** M7 T5.1: a conflicting saved UUID must not replace another live match's membership. */
     @StrategosTest
