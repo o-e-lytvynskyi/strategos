@@ -17,8 +17,9 @@ import net.minecraft.world.level.saveddata.SavedData;
 import org.jspecify.annotations.Nullable;
 
 /**
- * One match's blob, {@code strategos_match_<id>} in its level's data storage: {@code {v: 1, epoch, snapshot}}, the
- * snapshot in the core's schema with its own {@code "v"}, and the {@code roster} once anyone sits in the match.
+ * One match's blob, {@code strategos_match_<id>} in its level's data storage: {@code {v: 2, epoch, snapshot, roster}}, the
+ * snapshot in the core's schema with its own {@code "v"}, and disconnected-session durations in the roster.
+ * Version 1 migrates valid legacy membership with a full reclaim window; current versions require explicit metadata.
  * Loading never throws (guard 1 of ADR-0018): a blob that does not decode is QUARANTINED, keeps its raw tag and is
  * never dirty, so the file stays as it was.
  */
@@ -34,7 +35,7 @@ public final class MatchData extends SavedData {
         DISPOSED
     }
 
-    static final int VERSION = 1;
+    static final int VERSION = 2;
 
     private final MatchId id;
     private State state;
@@ -45,6 +46,7 @@ public final class MatchData extends SavedData {
     private @Nullable CompoundTag raw;
     private @Nullable String quarantineReason;
     private MatchRoster roster = new MatchRoster();
+    private boolean launchPending;
 
     private MatchData(MatchId id, State state) {
         this.id = id;
@@ -75,8 +77,17 @@ public final class MatchData extends SavedData {
                 return quarantined(id, tag, "the blob has no version \"v\"");
             }
             int version = tag.getInt("v");
-            if (version != VERSION) {
+            if (version != 1 && version != VERSION) {
                 return quarantined(id, tag, "blob version " + version + ", this build reads " + VERSION);
+            }
+            if (version == VERSION) {
+                if (!tag.contains("launchPending", Tag.TAG_BYTE)
+                        || (tag.getByte("launchPending") != 0 && tag.getByte("launchPending") != 1)) {
+                    return quarantined(id, tag, "the blob has no valid lobby launch transaction flag");
+                }
+                if (tag.getBoolean("launchPending")) {
+                    return quarantined(id, tag, "incomplete lobby launch transaction");
+                }
             }
             if (!tag.contains("epoch", Tag.TAG_ANY_NUMERIC)) {
                 return quarantined(id, tag, "the blob has no save epoch");
@@ -101,12 +112,15 @@ public final class MatchData extends SavedData {
             data.loaded = snapshot;
             data.loadedEpoch = tag.getLong("epoch");
             Tag rosterTag = tag.get("roster");
+            if (version == VERSION && rosterTag == null) {
+                return quarantined(id, tag, "the blob has no roster session envelope");
+            }
             if (rosterTag != null) {
                 if (!(rosterTag instanceof ListTag listed)
                         || (!listed.isEmpty() && listed.getElementType() != Tag.TAG_COMPOUND)) {
                     return quarantined(id, tag, "the roster is not a list of seats");
                 }
-                data.roster = MatchRoster.load(listed);
+                data.roster = version == 1 ? MatchRoster.load(listed) : MatchRoster.loadSessions(listed);
                 for (var member : data.roster.members()) {
                     var slot = data.roster.slotOf(member);
                     if (slot == null
@@ -155,6 +169,27 @@ public final class MatchData extends SavedData {
         return roster;
     }
 
+    public boolean isLobbyLaunchPending() {
+        return launchPending;
+    }
+
+    /** Brackets production allocation/setup/admission; interruption fails closed on the next load. */
+    public void beginLobbyLaunch() {
+        if (state != State.LIVE || launchPending) {
+            throw new IllegalStateException("only a live match without a pending launch can begin one");
+        }
+        launchPending = true;
+        setDirty();
+    }
+
+    public void completeLobbyLaunch() {
+        if (state != State.LIVE || !launchPending) {
+            throw new IllegalStateException("only a pending live lobby launch can complete");
+        }
+        launchPending = false;
+        setDirty();
+    }
+
     /** LOADED to LIVE once its match is restored: from now on saving encodes that match. */
     public void attach(Supplier<MatchSnapshot> snapshot, LongSupplier epoch) {
         if (state != State.LOADED) {
@@ -190,14 +225,14 @@ public final class MatchData extends SavedData {
                 if (live == null || saveEpoch == null) {
                     throw new IllegalStateException("a LIVE blob without its match");
                 }
-                write(tag, saveEpoch.getAsLong(), live.get(), roster);
+                write(tag, saveEpoch.getAsLong(), live.get(), roster, launchPending);
             }
             case LOADED -> {
                 MatchSnapshot kept = loaded;
                 if (kept == null) {
                     throw new IllegalStateException("a LOADED blob without its snapshot");
                 }
-                write(tag, loadedEpoch, kept, roster);
+                write(tag, loadedEpoch, kept, roster, false);
             }
             case QUARANTINED -> {
                 CompoundTag kept = raw;
@@ -208,13 +243,13 @@ public final class MatchData extends SavedData {
         return tag;
     }
 
-    /** A match nobody sits in keeps M0's blob: the roster is written only once it seats someone. */
-    private static void write(CompoundTag tag, long epoch, MatchSnapshot snapshot, MatchRoster roster) {
+    /** Current blobs always name the session envelope, even when nobody is seated. */
+    private static void write(
+            CompoundTag tag, long epoch, MatchSnapshot snapshot, MatchRoster roster, boolean launchPending) {
         tag.putInt("v", VERSION);
         tag.putLong("epoch", epoch);
+        tag.putBoolean("launchPending", launchPending);
         tag.put("snapshot", MatchSnapshotCodec.encode(NbtOps.INSTANCE, snapshot));
-        if (!roster.isEmpty()) {
-            tag.put("roster", roster.save());
-        }
+        tag.put("roster", roster.saveSessions());
     }
 }

@@ -26,6 +26,7 @@ import dev.strategos.mod.server.match.Skirmishes;
 import dev.strategos.mod.server.net.LobbyState;
 import dev.strategos.mod.server.net.payload.LobbyStatePayload;
 import dev.strategos.mod.server.net.payload.MatchJoinPayload;
+import dev.strategos.mod.server.persist.MatchData;
 import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
@@ -36,6 +37,10 @@ public final class LobbyPreparationTests {
     private LobbyPreparationTests() {}
 
     private static Skirmishes.Placer placer(GameTestHelper h, int lane) {
+        return placer(h, lane, false);
+    }
+
+    private static Skirmishes.Placer placer(GameTestHelper h, int lane, boolean persistent) {
         return (map, options) -> {
             var manifest = MapPackageLoader.manifest(h.getLevel().getServer(), map);
             BlockPos corner = h.absolutePos(BlockPos.ZERO);
@@ -52,7 +57,7 @@ public final class LobbyPreparationTests {
                     new MatchOptions(
                             SimHarness.DEFAULT_SEED,
                             options.factions(),
-                            false,
+                            persistent,
                             MatchSource.GAMETEST,
                             null,
                             options.metrics(),
@@ -97,7 +102,7 @@ public final class LobbyPreparationTests {
         host.operator(2);
         StrategosServer server = StrategosServer.get();
         MatchRuntime[] allocated = new MatchRuntime[1];
-        Skirmishes.Placer actual = placer(h, 21);
+        Skirmishes.Placer actual = placer(h, 21, true);
         ServerLobby facade = new ServerLobby(server, (map, options) -> {
             MatchRuntime rt = actual.place(map, options);
             allocated[0] = rt;
@@ -115,6 +120,17 @@ public final class LobbyPreparationTests {
         service.start(hostId);
         var rt = java.util.Objects.requireNonNull(allocated[0]);
         check(rt.lifecycle() == MatchLifecycle.PREPARING, "map did not enter preparation");
+        MatchData data = java.util.Objects.requireNonNull(rt.data());
+        check(data.isLobbyLaunchPending(), "the production backend did not open a durable launch transaction");
+        var interrupted =
+                data.save(new net.minecraft.nbt.CompoundTag(), h.getLevel().registryAccess());
+        var refusedSave = MatchData.load(rt.id(), interrupted);
+        check(refusedSave.state() == MatchData.State.QUARANTINED, "incomplete import/setup restored as complete");
+        check(
+                refusedSave
+                        .save(new net.minecraft.nbt.CompoundTag(), h.getLevel().registryAccess())
+                        .equals(interrupted),
+                "refusing an incomplete launch changed its saved tag");
         boolean refused = false;
         try {
             rt.submit(new PlayerSlot(0), new dev.strategos.core.protocol.RuleChange("populationMax", "200"));
@@ -123,6 +139,7 @@ public final class LobbyPreparationTests {
         }
         check(refused, "a player submitted commands during import");
         check(server.matches().seatOf(host.player().getUUID()) == null, "host admitted before import/setup");
+        boolean[] durableAfterSetup = {false};
         h.onEachTick(() -> {
             service.tick();
             var status = service.snapshot().state();
@@ -132,7 +149,28 @@ public final class LobbyPreparationTests {
             host.poll();
             peer.poll();
             outsider.poll();
+            if (status == LobbyService.State.PREPARING
+                    && core(rt).queries().diplomacy().teamsLocked()) {
+                check(data.isLobbyLaunchPending(), "launch committed before every initial admission frame");
+                if (!durableAfterSetup[0]) {
+                    var partial = data.save(
+                            new net.minecraft.nbt.CompoundTag(), h.getLevel().registryAccess());
+                    check(
+                            MatchData.load(rt.id(), partial).state() == MatchData.State.QUARANTINED,
+                            "installed authority made an unfinished launch restorable");
+                    durableAfterSetup[0] = true;
+                }
+            }
             if (status != LobbyService.State.STARTED) return;
+            check(durableAfterSetup[0], "did not inspect a durable post-setup preparation");
+            check(!data.isLobbyLaunchPending(), "completed admission did not commit the launch transaction");
+            var complete =
+                    data.save(new net.minecraft.nbt.CompoundTag(), h.getLevel().registryAccess());
+            var reload = MatchData.load(rt.id(), complete);
+            check(
+                    reload.state() == MatchData.State.LOADED
+                            && reload.roster().members().size() == 2,
+                    "completed lobby roster did not load");
             var hostViews = NetFixtures.payloads(host, LobbyStatePayload.class);
             var peerViews = NetFixtures.payloads(peer, LobbyStatePayload.class);
             if (hostViews.stream().noneMatch(p -> p.state().phase() == LobbyState.Phase.STARTED)

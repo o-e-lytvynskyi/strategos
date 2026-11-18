@@ -415,6 +415,7 @@ public final class StrategosServer {
         if (s != null && event.getEntity() instanceof ServerPlayer player) {
             MatchRegistry.Seat seat = s.matches.seatOf(player.getUUID());
             if (seat != null) {
+                s.matches.connection(player.getUUID(), true);
                 s.commanders.enter(player, seat.match());
                 s.net.joined(seat.match(), player, seat.slot());
             } else {
@@ -427,6 +428,7 @@ public final class StrategosServer {
     public static void onLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
         StrategosServer s = current;
         if (s != null && event.getEntity() instanceof ServerPlayer player) {
+            s.matches.connection(player.getUUID(), false);
             s.net.forget(player);
             s.commanders.forget(player);
             s.templateSync.forget(player);

@@ -203,8 +203,9 @@ public final class MatchRuntime {
 
     /**
      * Trusted lobby setup for a fresh, unseated runtime. The tick driver journals and installs it before the first
-     * tick's commands; no connection may be admitted while it is queued. Production preparation must cancel on
-     * server stop until T5 persists the launch transaction: this transient queue is not a restorable lobby.
+     * tick's commands; no connection may be admitted while it is queued. Production preparation brackets setup and
+     * admission in a durable launch transaction; an interrupted saved launch fails closed. This transient queue
+     * itself is not a restorable lobby.
      */
     public void initializeDiplomacy(DiplomacySetup setup) {
         MatchCore c = requireCore();

@@ -38,6 +38,7 @@ public final class LobbyPreparation implements LobbyService.Preparation {
     private boolean admitted;
     private int admittedAt;
     private boolean cancelled;
+    private boolean completed;
 
     private LobbyPreparation(
             StrategosServer server,
@@ -119,6 +120,8 @@ public final class LobbyPreparation implements LobbyService.Preparation {
         LobbyPreparation preparation =
                 new LobbyPreparation(server, rt, plan, manifest.startSlots(), manifest.terrainHash(), humans);
         try {
+            var data = rt.data();
+            if (data != null) data.beginLobbyLaunch();
             MatchCore core = Objects.requireNonNull(rt.core());
             if (core.queries().templates().hash() != plan.templateSetHash()) {
                 throw new IllegalStateException("template version changed during allocation");
@@ -143,6 +146,7 @@ public final class LobbyPreparation implements LobbyService.Preparation {
     @Override
     public Status poll() {
         if (cancelled) return Status.FAILED;
+        if (completed) return Status.COMPLETE;
         MatchLifecycle life = match.lifecycle();
         if (life == MatchLifecycle.FAULTED
                 || life == MatchLifecycle.DISPOSED
@@ -184,9 +188,11 @@ public final class LobbyPreparation implements LobbyService.Preparation {
             }
         }
         // The existing replication cadence queues all initial owner state within one summary period.
-        return server.server().getTickCount() - admittedAt >= Replication.SUMMARY_EVERY
-                ? Status.COMPLETE
-                : Status.PREPARING;
+        if (server.server().getTickCount() - admittedAt < Replication.SUMMARY_EVERY) return Status.PREPARING;
+        var data = match.data();
+        if (data != null) data.completeLobbyLaunch();
+        completed = true;
+        return Status.COMPLETE;
     }
 
     private RuntimeException cleanupAfterFailure(RuntimeException failure) {

@@ -1,6 +1,7 @@
 package dev.strategos.mod.server.persist;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.UnitSet;
@@ -169,6 +170,33 @@ class MatchDataTest {
                 .getCompound(0)
                 .remove("remainingNanos");
         assertQuarantinedUnchanged(missingDuration);
+    }
+
+    @Test
+    void anIncompleteLobbyLaunchCannotRestoreAsACompletedIdentityMatch() {
+        MatchData live = MatchData.live(ID, walking().core()::snapshot, () -> 3);
+        live.beginLobbyLaunch();
+        assertThat(live.isLobbyLaunchPending()).isTrue();
+        assertThatThrownBy(live::beginLobbyLaunch).isInstanceOf(IllegalStateException.class);
+        CompoundTag pending = live.save(new CompoundTag(), RegistryAccess.EMPTY);
+        assertThat(pending.getBoolean("launchPending")).isTrue();
+        assertQuarantinedUnchanged(pending);
+
+        live.completeLobbyLaunch();
+        assertThat(live.isLobbyLaunchPending()).isFalse();
+        assertThat(MatchData.load(ID, live.save(new CompoundTag(), RegistryAccess.EMPTY))
+                        .state())
+                .isEqualTo(MatchData.State.LOADED);
+    }
+
+    @Test
+    void aCurrentBlobRequiresATypedLaunchTransactionFlag() {
+        CompoundTag missing = saved(walking(), 3);
+        missing.remove("launchPending");
+        assertQuarantinedUnchanged(missing);
+        CompoundTag malformed = saved(walking(), 3);
+        malformed.putString("launchPending", "false");
+        assertQuarantinedUnchanged(malformed);
     }
 
     private static void assertQuarantinedUnchanged(CompoundTag tag) {

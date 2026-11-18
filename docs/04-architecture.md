@@ -910,6 +910,15 @@ DimensionDataStorage.java:43):
   is tested in L1 with JSON fixtures and in L2 with NBT fixture files of every released schema
   (`mod/src/test/resources/fixtures/`). A template that the snapshot references but the current
   set lacks fails the load with a named error, unless the operator allows a lossy upgrade.
+- **Adapter sessions (M7).** [ADR-0029](adr/0029-roster-session-persistence.md) versions only
+  the outer match blob to 2. Its explicit UUID/player roster stores remaining monotonic reclaim
+  duration, never a live connection or clock origin. Valid blob-1 membership migrates with the
+  full configured window; all restored seats are disconnected. Core schema-4 authority remains
+  canonical and unchanged. Validate the original roster types, duplicate/cross-match UUIDs and
+  primary bindings before publishing membership; malformed current metadata cannot fall back
+  to legacy defaults. A durable `launchPending` flag brackets production setup/admission;
+  interrupted launches fail closed on restore. Existing authenticated connection events mark
+  session metadata dirty even while paused. T10 owns rejoin authorization, revocation and expiry actions.
 - **Quarantine: a bad save must never reset a match.** Vanilla logs any read exception and
   returns null; `computeIfAbsent` then creates an empty object that overwrites the file at the next
   save (DimensionDataStorage.java:43–76). Two guards:

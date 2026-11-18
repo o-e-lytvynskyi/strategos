@@ -54,3 +54,18 @@ Check cross-match UUID conflicts before restoring the core or reconciling world 
 Retain a refused restore as a faulted diagnostic runtime, but never publish its roster
 into the server membership index. Otherwise even the fault path can replace another
 match's valid UUID mapping. An unrelated saved roster must still restore normally.
+
+## Save remaining time, and keep incomplete launches distinguishable
+
+Store a disconnected reservation's remaining monotonic duration, not `nanoTime()`'s
+process-local origin or a wall-clock timestamp. On load, anchor that duration to the new
+clock and keep the connection disconnected. Subtract elapsed time so counter wrap is
+handled correctly; repeated disconnect notifications must not refill the budget. Login
+and logout must mark a paused blob dirty too. Connection metadata does not replace
+authenticated rejoin, session invalidation or the once-only expiry action.
+
+A core snapshot at tick zero does not contain its adapter's queued diplomacy setup.
+Persist a launch-pending marker before queuing setup and keep it until complete admission
+and the initial replication period. Refuse an interrupted saved launch without rewriting
+its raw tag; never infer completed identity authority merely because the snapshot itself
+decodes. Normal shutdown cancellation and crash-time detection cover different cases.

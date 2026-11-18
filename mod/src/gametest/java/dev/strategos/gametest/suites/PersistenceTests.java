@@ -22,6 +22,7 @@ import dev.strategos.core.sim.diplomacy.DiplomacyState;
 import dev.strategos.core.testkit.SimHarness;
 import dev.strategos.gametest.MatchFixture;
 import dev.strategos.gametest.StrategosTest;
+import dev.strategos.gametest.net.MockViewer;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.server.match.MatchRecord;
 import dev.strategos.mod.server.match.MatchRegistry;
@@ -59,6 +60,38 @@ public final class PersistenceTests {
     private static final FileTime PLANTED = FileTime.fromMillis(1_000_000_000_000L);
 
     private PersistenceTests() {}
+
+    /** T5.2: actual login/logout updates the saved reservation even when the match is paused. */
+    @StrategosTest
+    public static void authenticatedConnectionEventsPersistWhilePaused(GameTestHelper h) {
+        MatchRegistry registry = StrategosServer.get().matches();
+        MatchRuntime rt = MatchFixture.create(
+                h, MatchFixture.options(SimHarness.DEFAULT_SEED, h).withPersistent(true));
+        String name = "roster-session";
+        UUID member = MockViewer.uuidOf(name);
+        registry.join(rt, member, new PlayerSlot(0));
+        registry.pause(rt.id());
+        MatchData data = rt.data();
+        check(data != null, "paused connection fixture has no data");
+        var at = h.absolutePos(new net.minecraft.core.BlockPos(8, 2, 8));
+        data.setDirty(false);
+        try (MockViewer viewer = MockViewer.join(h.getLevel(), name, at.getX(), at.getY(), at.getZ(), 2)) {
+            check(rt.roster().isConnected(viewer.player().getUUID()), "authenticated login did not confirm the seat");
+            check(data.isDirty(), "paused login did not mark session metadata for saving");
+        }
+        check(!rt.roster().isConnected(member), "logout retained a live connection");
+        check(data.isDirty(), "paused logout did not mark session metadata for saving");
+        check(rt.roster().remainingNanos(member) > 0, "logout lost the reclaim duration");
+        data.setDirty(false);
+        try (MockViewer viewer = MockViewer.join(h.getLevel(), name, at.getX(), at.getY(), at.getZ(), 2)) {
+            check(
+                    rt.roster().isConnected(viewer.player().getUUID()),
+                    "returning authenticated connection stayed offline");
+            check(data.isDirty(), "returning connection did not mark the paused blob");
+        }
+        check(rt.lifecycle() == MatchLifecycle.PAUSED, "connection bookkeeping resumed the simulation");
+        h.succeed();
+    }
 
     /** T5.2: four UUID/player seats retain two primary factions and a directional grant after restore. */
     @StrategosTest(timeoutTicks = 40)

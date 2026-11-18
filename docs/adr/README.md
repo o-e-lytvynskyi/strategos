@@ -38,6 +38,7 @@ governs.
 | [0027](0027-save-template-identities.md) | Stable save identities, conservative legacy migration and reload boundary validation | Accepted | 2026-10-29 | §5.8, §8.4 |
 
 | [0028](0028-diplomacy-authority-persistence.md) | Immutable diplomacy authority, schema-4 migration and journaled setup | Accepted (M7 foundation) | 2026-10-29 | §5, §7 |
+| [0029](0029-roster-session-persistence.md) | Adapter blob-2 membership, disconnected restore and remaining monotonic duration | Accepted (M7 persistence; gates tracked in branch) | 2026-11-18 | §5.8, §12 |
 
 ## Pending measurements
 

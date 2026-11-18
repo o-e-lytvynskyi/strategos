@@ -726,6 +726,15 @@ public final class MatchRegistry {
         return rt == null || slot == null ? null : new Seat(rt, slot);
     }
 
+    /** Connection metadata from authenticated login/logout only; expiry/reclaim authorization is T10. */
+    public void connection(UUID player, boolean connected) {
+        Seat seat = seatOf(player);
+        if (seat == null) return;
+        if (connected) seat.match().roster().connect(player);
+        else seat.match().roster().disconnect(player);
+        markRoster(seat.match()); // also while the simulation is paused
+    }
+
     /** The id of the match {@code player} sits in, or 0: what the fog gate asks for every pairing. */
     public int matchOf(UUID player) {
         MatchId id = seated.get(player);

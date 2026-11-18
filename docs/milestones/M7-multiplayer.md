@@ -173,6 +173,10 @@ membership; **T5.2** versions the adapter session/deadline envelope, migrates va
 rosters and restores connections as disconnected with explicit remaining monotonic duration.
 The parent keeps every original persistence and engine acceptance gate. Core schema-4
 authority is already delivered by T2b.2 and must not receive a second representation.
+Adapter schema 2 is specified in ADR-0029: explicit disconnected-session durations and a
+required launch transaction flag. Interrupted production preparation is refused on restore,
+including after authority is installed but before initial admission completes; completed
+launches preserve the roster, primary bindings and grants.
 
 Implementation boundary: ADR-0028 defines schema 4 over the stacked schema-3 template policy. `Play` retains an immutable `DiplomacyState` value; the encoder derives canonical fields and the decoder validates them once. The versioned decoder requires authority in a current save. Migration 3→4 supplies identity from config.factions, while older migrations and released hashes remain intact. Root compatibility constructors normalize older typed Play values to identity. The trusted first-tick setup has bounded journal tag 9; command/roster/audience integration stays in T8/T5/T9. A source AFTER-M6 marker requires preserving authority when M6 adds outcome/statistics fields.
 
