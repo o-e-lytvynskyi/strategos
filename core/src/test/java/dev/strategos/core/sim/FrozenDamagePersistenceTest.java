@@ -72,8 +72,9 @@ class FrozenDamagePersistenceTest {
         assertThat(back.snapshot().play().shots().rows().getFirst().damage().sourceFaction())
                 .isZero();
         for (int tick = 0; tick < 6; tick++) {
-            h.step();
-            back.step(List.of());
+            long next = h.tick() + 1;
+            h.core().step(TickInputs.empty(next));
+            back.step(TickInputs.empty(next));
             assertThat(back.stateHash()).as("continuation tick %s", tick).isEqualTo(h.stateHash());
         }
     }
@@ -118,8 +119,9 @@ class FrozenDamagePersistenceTest {
         MatchCore back = restore(old);
         assertThat(back.stateHash()).isEqualTo(h.stateHash());
         for (int tick = 0; tick < 6; tick++) {
-            h.step();
-            back.step(List.of());
+            long next = h.tick() + 1;
+            h.core().step(TickInputs.empty(next));
+            back.step(TickInputs.empty(next));
             assertThat(back.stateHash()).isEqualTo(h.stateHash());
         }
     }
