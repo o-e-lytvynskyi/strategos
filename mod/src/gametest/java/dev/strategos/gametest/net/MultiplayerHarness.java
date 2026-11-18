@@ -1,18 +1,25 @@
 package dev.strategos.gametest.net;
 
+import dev.strategos.core.protocol.CommandBatch;
+import dev.strategos.core.protocol.Limits;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.gametest.MatchFixture;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.server.match.MatchOptions;
 import dev.strategos.mod.server.match.MatchRuntime;
+import dev.strategos.mod.server.net.payload.CommandsPayload;
+import io.netty.buffer.Unpooled;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.neoforged.neoforge.network.connection.ConnectionType;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -80,7 +87,7 @@ public final class MultiplayerHarness implements AutoCloseable {
             try {
                 close();
             } catch (RuntimeException cleanup) {
-                failure.addSuppressed(cleanup);
+                if (failure != cleanup) failure.addSuppressed(cleanup);
             }
             throw failure;
         }
@@ -120,6 +127,32 @@ public final class MultiplayerHarness implements AutoCloseable {
         if (closed) throw new IllegalStateException("multiplayer group is closed");
     }
 
+    /** The normal typed command route; the server derives identity from this peer's authenticated connection. */
+    public void sendCommands(int player, CommandBatch batch) {
+        requireOpen();
+        viewer(player).send(CommandsPayload.of(batch));
+    }
+
+    /** At most one byte over the protocol limit, enough to exercise oversized refusal without an unbounded probe. */
+    public void sendCommandBytes(int player, byte[] bytes) {
+        requireOpen();
+        if (bytes.length > Limits.BATCH_BYTES + 1)
+            throw new IllegalArgumentException("hostile probe exceeds harness bound");
+        RegistryFriendlyByteBuf buffer = new RegistryFriendlyByteBuf(
+                Unpooled.wrappedBuffer(bytes), helper.getLevel().registryAccess(), ConnectionType.NEOFORGE);
+        try {
+            viewer(player).send(CommandsPayload.STREAM_CODEC.decode(buffer));
+        } finally {
+            buffer.release();
+        }
+    }
+
+    /** The actual serverbound pipeline, shared by vanilla and custom-payload hostile-packet scenarios. */
+    public void sendPacket(int player, Packet<?> packet) {
+        requireOpen();
+        viewer(player).sendPacket(packet);
+    }
+
     /** Idempotent and local: never calls MockViewer.closeAll or removes another test's match/player. */
     @Override
     public void close() {
@@ -151,7 +184,7 @@ public final class MultiplayerHarness implements AutoCloseable {
 
     private static RuntimeException accumulate(@Nullable RuntimeException failure, RuntimeException next) {
         if (failure == null) return next;
-        failure.addSuppressed(next);
+        if (failure != next) failure.addSuppressed(next);
         return failure;
     }
 }

@@ -146,7 +146,12 @@ public final class MockViewer implements AutoCloseable {
 
     /** As the client would send {@code payload}: the server's connection reads it, on the server thread. */
     public void send(CustomPacketPayload payload) {
-        channel.writeInbound(new ServerboundCustomPayloadPacket(payload));
+        sendPacket(new ServerboundCustomPayloadPacket(payload));
+    }
+
+    /** A serverbound game packet through the actual connection pipeline, for bounded hostile-ingress scenarios. */
+    public void sendPacket(Packet<?> packet) {
+        channel.writeInbound(packet);
     }
 
     /**
