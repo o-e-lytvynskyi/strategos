@@ -112,6 +112,14 @@ Useful options:
 | `mod/src/archTest` | ArchUnit rules on the compiled classes |
 | `mod/src/scenario/golden/<platform>/` | approved golden images per platform |
 
+QA-15's `MultiplayerHarness` in `mod/src/gametest/java/dev/strategos/gametest/net/` owns
+one match and up to four QA-19 viewers. Wait for `ready()`, admit bound distinct player
+slots, then use per-player `payloads`, the existing byte counters and typed/raw/generic
+packet ingress. It polls/acknowledges automatically; payload reads drain first. Raw command
+probes are bounded to one byte above the protocol limit. Close explicitly in the final
+asynchronous sequence action: a try-with-resources block around sequence registration
+would close before the callbacks run. Closing never calls global player cleanup.
+
 ## Fixture catalogue
 
 Every committed fixture, where it lives, what writes it and how it may change (QA-17.4; M0 spec

@@ -186,3 +186,15 @@ Only bounded regular files/directories under modules-2 are extracted; traversal,
 other caches, oversized archives and escaping existing symlinks fail before any module is
 written. No credentials, init scripts or project outputs are restored. Cloud unit
 counterexamples run before this optional hand-off. The ordinary empty-input path is unchanged.
+
+## Deferred sequences own their multiplayer fixture lifetime
+
+Registering a GameTest sequence does not execute its callbacks before returning. Do not
+wrap sequence registration in try-with-resources for MultiplayerHarness: that would close
+the owned connections/match before admission or assertions run. Close in the final sequence
+action; the established batch cleanup remains the failure backstop. The fixture closes only
+its own runtime/players, so an unrelated positive-control viewer must survive.
+
+A capture is not updated until the mock channel is polled. A negative audience assertion
+against an undrained capture can pass falsely. The reusable harness polls every tick and
+before payload reads; retain matching positive recipient traffic and byte-encoder assertions.

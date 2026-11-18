@@ -238,6 +238,7 @@ Multiple-match discovery is outside M7. Recorded in the M7 branch pending mainta
   2. Captured payloads can be asserted per player (L3).
   3. The extended protocol is used at the M7 acceptance (L7, acceptance).
 - **Tests:** L0, L3, L7 · **Depends on:** QA-19, NET-02 · **Size:** M · **Tier:** T1
+- **Engine evidence (2026-11-18):** T6 cloud verify 44300748747, 2,734 cases without failures/errors/skips; four acknowledging players/private captures/actual byte counters/owned cleanup 1.099 s under 30 s, plus atomic admission and hostile ingress with positive controls. L7 protocol/use remains T19/T25.
 - **Status:** in_progress
 
 #### PERF-10 · Multiplayer perf and bandwidth gate

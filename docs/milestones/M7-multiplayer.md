@@ -548,7 +548,7 @@ reviewed implementation task between T17 and T18, keeping the acceptance depende
 - [x] T3b (2026-11-18) · Authenticated lobby service, private protocol and production start; verify 44148921127 and complete slow/20-seed soak 44148929120 on e382f7b6.
 - [x] T4 (2026-11-18) · Lobby UI; verify 44202558089 and cloud L4 44203471758, seven inspected zero-difference goldens, real start/RTS flow and altered-golden rejection.
 - [x] T5 (2026-11-18) · Adapter blob-2 roster/session migration, disconnected restore and durable launch refusal; verify 44209974849 plus complete full-ci 44208443663 (248 slow/core cases and all twenty AI seeds).
-- [ ] T6 · Multiplayer test kit.
+- [x] T6 · Multiplayer test kit. Engine verify 44300748747; four-player smoke 1.099 s under 30 s. QA-15 L7 remains T19/T25.
 - [ ] T7 · Allied damage and victory.
 - [ ] T8 · Co-op authority.
 - [ ] T9 · Recipient privacy.
@@ -630,3 +630,5 @@ T7 checkpoint (2026-11-18): T7.1 source `1053f0e0` passes cloud verify
 surviving coalition results and explicit draws, schema-6 migration and terminal replication
 under ADR-0031; its cloud gates are pending. T7 stays unchecked. Slow/soak and paired JMH
 acceptance will cover the combined T7 source, including the frozen-damage hot path.
+
+T6 engine acceptance (2026-11-18): source `f329fc55`, cloud verify [44300748747](https://github.com/o-e-lytvynskyi/strategos/actions/runs/44300748747), 2,734 canonical cases with no failures/errors/skips. All three new engine contracts passed (four players 1.099 s, atomic admission 0.770 s, bounded hostile ingress 1.319 s); six dependency-cache counterexamples and the validated module hand-off passed before Gradle. QA-15 stays in progress for T19/T25 L7.
