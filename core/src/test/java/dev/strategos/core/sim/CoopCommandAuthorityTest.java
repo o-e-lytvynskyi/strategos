@@ -204,4 +204,60 @@ class CoopCommandAuthorityTest {
         assertThat(s.state().treasury().stock(1, 0)).isLessThan(computerFood);
         assertThat(s.state().treasury().stock(0, 0)).isEqualTo(humanFood);
     }
+
+    @Test
+    void grantedHiddenBuildingsAndMissingBuildingsHaveTheSameRefusal() {
+        Scene s = scene(true, false);
+        assertThat(s.command(P2, new Train(s.centre(), TemplateSet.WORKER)).firstReason())
+                .isEqualTo(RejectReason.UNKNOWN_TARGET);
+        assertThat(s.command(P2, new Train(Integer.MAX_VALUE, TemplateSet.WORKER))
+                        .firstReason())
+                .isEqualTo(RejectReason.UNKNOWN_TARGET);
+        assertThat(s.command(P1, new Train(s.centre(), TemplateSet.WORKER)).outcome())
+                .isEqualTo(CommandOutcome.ACCEPTED);
+    }
+
+    @Test
+    void coopAttackUsesPrimaryFogForBothUnitAndBuildingTargets() {
+        Scene s = scene(false, false);
+        int hiddenUnit = -1;
+        for (int i = 0; i < s.state().entities().highWater(); i++) {
+            if (!s.state().entities().aliveAt(i)) continue;
+            int unit = s.state().entities().handleAt(i);
+            if (s.state().identity().faction(Handle.index(unit)) == 1) hiddenUnit = unit;
+        }
+        assertThat(hiddenUnit).isNotEqualTo(-1);
+        assertThat(s.command(P1, dev.strategos.core.protocol.Attack.replace(UnitSet.of(s.own()), hiddenUnit))
+                        .firstReason())
+                .isEqualTo(RejectReason.UNKNOWN_TARGET);
+        int hiddenBuilding = -1;
+        for (int building : s.state().buildings().handles()) {
+            if (s.state().buildings().faction(building) == 1) hiddenBuilding = building;
+        }
+        assertThat(s.command(P1, dev.strategos.core.protocol.Attack.replace(UnitSet.of(s.own()), hiddenBuilding))
+                        .firstReason())
+                .isEqualTo(RejectReason.UNKNOWN_TARGET);
+        assertThat(s.command(P1, dev.strategos.core.protocol.Attack.replace(UnitSet.of(s.own()), Handle.of(1000, 1)))
+                        .firstReason())
+                .isEqualTo(RejectReason.UNKNOWN_TARGET);
+    }
+
+    @Test
+    void unboundSeatsHaveNoNumericFallbackOrPlacementAuthority() {
+        Scene s = scene(false, true);
+        PlayerSlot absent = new PlayerSlot(4);
+        assertThat(s.command(absent, move(s.own(), 30.5)).firstReason()).isEqualTo(RejectReason.UNKNOWN_TARGET);
+        assertThat(s.command(absent, new PlaceBuilding(HOUSE, 60, 40, 0, UnitSet.of(), QueueMode.REPLACE))
+                        .firstReason())
+                .isEqualTo(RejectReason.NOT_PERMITTED);
+    }
+
+    @Test
+    void aGrantCannotResignItsOwnerButACoopPrimaryPassesTheAuthorityGate() {
+        Scene s = scene(true, true);
+        assertThat(s.command(P2, new dev.strategos.core.protocol.Resign(F0)).firstReason())
+                .isEqualTo(RejectReason.NOT_PERMITTED);
+        assertThat(s.command(P1, new dev.strategos.core.protocol.Resign(F0)).firstReason())
+                .isEqualTo(RejectReason.UNSUPPORTED); // this scene disables victory, after authority is checked
+    }
 }

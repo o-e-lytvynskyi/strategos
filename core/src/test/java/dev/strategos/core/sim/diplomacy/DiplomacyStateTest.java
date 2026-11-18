@@ -233,4 +233,22 @@ class DiplomacyStateTest {
         state.hashInto(hasher);
         return hasher.finish();
     }
+
+    @Test
+    void primitiveCommandQueriesUseBoundPrimariesAndCanonicalPlayerOrder() {
+        DiplomacyState state =
+                DiplomacyState.identity(3).bind(P1, F0).bind(P2, F1).bind(P3, F2);
+        assertThat(state.primaryFaction(P1)).isZero();
+        assertThat(state.primaryFaction(PlayerSlot.ADMIN)).isEqualTo(-1);
+        assertThat(state.primaryFaction(new PlayerSlot(4))).isEqualTo(-1);
+        assertThat(state.firstPrimaryPlayer(0)).isZero();
+        assertThat(state.firstPrimaryPlayer(1)).isEqualTo(2);
+        assertThat(state.firstPrimaryPlayer(2)).isEqualTo(3);
+        assertThat(state.firstPrimaryPlayer(3)).isEqualTo(-1);
+        assertThat(state.controlsFaction(P1, 0)).isTrue();
+        assertThat(state.controlsFaction(P1, 1)).isFalse();
+        assertThat(state.controlsFaction(PlayerSlot.ADMIN, -1)).isFalse();
+        assertThat(state.controlsFaction(PlayerSlot.ADMIN, 3)).isFalse();
+        assertThat(state.unbind(P2).firstPrimaryPlayer(1)).isEqualTo(-1);
+    }
 }

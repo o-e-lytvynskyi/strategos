@@ -29,14 +29,7 @@ final class TrainRules {
 
     /** Why the issuer may not use building {@code handle}, or null. */
     static @Nullable RejectReason own(CommandEnvelope envelope, int handle, MatchState state) {
-        if (!state.buildings().alive(handle)) {
-            return RejectReason.UNKNOWN_TARGET;
-        }
-        if (!envelope.issuer().isAdmin()
-                && envelope.issuer().value() != state.buildings().faction(handle)) {
-            return RejectReason.NOT_OWNER;
-        }
-        return null;
+        return Ownership.building(envelope.issuer(), handle, state);
     }
 
     static final class TrainRule implements CommandRule<Train> {

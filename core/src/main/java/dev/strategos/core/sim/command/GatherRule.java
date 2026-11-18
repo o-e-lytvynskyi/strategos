@@ -95,12 +95,13 @@ final class GatherRule implements CommandRule<Gather> {
         if (issuer.isAdmin()) {
             return true;
         }
+        if (state.diplomacy().primaryFaction(issuer) < 0) return false;
         PlayRules play = state.config().rules().play();
         if (play.revealMap() || play.explored()) {
             return true;
         }
         VisionSystem vision = state.visionSystem();
-        int faction = issuer.value();
+        int faction = state.diplomacy().primaryFaction(issuer);
         if (vision == null || faction < 0 || faction >= state.config().factions()) {
             return true;
         }

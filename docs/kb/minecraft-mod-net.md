@@ -123,3 +123,14 @@ yourself: `ServerChunkCache#broadcast(entity, new ClientboundSetEquipmentPacket(
 List.of(Pair.of(slot, stack))))` — the audience is the same as for tracking. The client handler
 calls `setItemSlot` (ClientPacketListener.java:1398), so the body's `setItemSlot` must store the
 hands on the client too.
+
+## Captured state can precede a queued spawn
+
+MockViewer capture begins at admission, while SpawnDeposit applies on the next
+core tick. The initial deposit frame may therefore be empty even when the later
+fixture-ready condition succeeds. Do not index its first element blindly: this
+threw from GameTestSequence.thenExecuteAfter and crashed the whole server in
+44306541248. Check every captured state against its same-tick server state;
+permit only the initial empty prefix, then require the expected deposit count,
+continued presence and monotonically decreasing stock. Keep the mining positive
+control. Do not add sleeps, retries or remove the early publication frames.

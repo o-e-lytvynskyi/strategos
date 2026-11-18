@@ -473,11 +473,18 @@ public final class ReplicationTests {
                         List<DepositState> got = deposits(v, rt);
                         check(got.size() >= 3, "only " + got.size() + " deposit states");
                         int last = Integer.MAX_VALUE;
+                        boolean seen = false;
                         for (DepositState state : got) {
                             DepositState expected = server.get(state.tick());
                             check(
                                     expected == null || state.sameAs(expected),
                                     "at tick " + state.tick() + " got " + state + ", the server held " + expected);
+                            if (state.deposits().isEmpty()) {
+                                check(!seen, "deposit disappeared after publication");
+                                continue; // the first captured tick may precede the queued SpawnDeposit
+                            }
+                            seen = true;
+                            check(state.deposits().size() == 1, "unexpected deposit count");
                             int left = state.deposits().get(0).left();
                             check(left <= last, "what is left grew: " + last + " to " + left);
                             last = left;

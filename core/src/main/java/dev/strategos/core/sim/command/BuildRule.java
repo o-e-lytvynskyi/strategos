@@ -4,7 +4,6 @@ import dev.strategos.core.protocol.Build;
 import dev.strategos.core.protocol.CommandKind;
 import dev.strategos.core.protocol.CommandKinds;
 import dev.strategos.core.protocol.RejectReason;
-import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.MatchState;
@@ -29,8 +28,9 @@ final class BuildRule implements CommandRule<Build> {
         if (!BuildingStore.isBuilding(handle) || !buildings.alive(handle)) {
             return Tally.rejectAll(envelope, kind(), build.units().size(), RejectReason.UNKNOWN_TARGET);
         }
-        if (!envelope.issuer().controls(new FactionSlot(buildings.faction(handle)))) {
-            return Tally.rejectAll(envelope, kind(), build.units().size(), RejectReason.NOT_OWNER);
+        var authority = Ownership.building(envelope.issuer(), handle, state);
+        if (authority != null) {
+            return Tally.rejectAll(envelope, kind(), build.units().size(), authority);
         }
         if (buildings.state(handle) == BuildingStore.COMPLETE) {
             if (buildings.damage(handle) <= 0) {

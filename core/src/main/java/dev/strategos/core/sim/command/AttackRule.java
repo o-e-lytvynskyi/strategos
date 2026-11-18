@@ -46,7 +46,8 @@ final class AttackRule implements CommandRule<Attack> {
         if (BuildingStore.isBuilding(target)) {
             return burn(envelope, attack, state);
         }
-        if (Engagement.gone(state, target)) {
+        if (Engagement.gone(state, target)
+                || (state.diplomacy().teamsLocked() && !Ownership.unitVisible(envelope.issuer(), target, state))) {
             return Tally.rejectAll(envelope, kind(), units.size(), RejectReason.UNKNOWN_TARGET);
         }
         int t = Handle.index(target);
@@ -117,7 +118,8 @@ final class AttackRule implements CommandRule<Attack> {
         UnitSet units = attack.units();
         int target = attack.target();
         BuildingStore buildings = state.buildings();
-        if (!buildings.alive(target)) {
+        if (!buildings.alive(target)
+                || (state.diplomacy().teamsLocked() && !Ownership.buildingVisible(envelope.issuer(), target, state))) {
             return Tally.rejectAll(envelope, kind(), units.size(), RejectReason.UNKNOWN_TARGET);
         }
         Footprint at = state.footprintOf(target);

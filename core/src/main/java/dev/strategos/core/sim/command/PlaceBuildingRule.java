@@ -31,9 +31,9 @@ final class PlaceBuildingRule implements CommandRule<PlaceBuilding> {
 
     @Override
     public CommandResult apply(CommandEnvelope envelope, PlaceBuilding place, MatchState state) {
-        int faction = envelope.issuer().value();
+        int faction = state.diplomacy().primaryFaction(envelope.issuer());
         UnitSet builders = place.builders();
-        if (envelope.issuer().isAdmin() || faction >= state.config().factions()) {
+        if (faction < 0 || faction >= state.config().factions()) {
             return Tally.rejectAll(envelope, kind(), builders.size(), RejectReason.NOT_PERMITTED);
         }
         UnitTemplate template = state.templates().byId(place.template());

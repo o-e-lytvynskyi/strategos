@@ -70,7 +70,7 @@ public final class DiplomacyState implements DiplomacyView {
 
     @Override
     public Optional<FactionSlot> factionOf(PlayerSlot player) {
-        int faction = player.isAdmin() ? UNBOUND : bindings[player.value()];
+        int faction = primaryFaction(player);
         return faction == UNBOUND ? Optional.empty() : Optional.of(new FactionSlot(faction));
     }
 
@@ -94,17 +94,31 @@ public final class DiplomacyState implements DiplomacyView {
         return first >= 0 && second >= 0 && first < factions() && second < factions() && teams[first] == teams[second];
     }
 
+    /** Allocation-free primary-faction query; admin and unbound players have no primary faction. */
+    public int primaryFaction(PlayerSlot player) {
+        return player.isAdmin() ? UNBOUND : bindings[player.value()];
+    }
+
+    /** Lowest bound primary controller, or -1. AI never impersonates a numeric faction seat. */
+    public int firstPrimaryPlayer(int faction) {
+        if (faction < 0 || faction >= factions()) return UNBOUND;
+        for (int p = 0; p < SEATS; p++) {
+            if (bindings[p] == faction) return p;
+        }
+        return UNBOUND;
+    }
+
     @Override
     public boolean controls(PlayerSlot player, FactionSlot faction) {
-        int f = faction.value();
-        if (f >= factions()) {
-            return false;
-        }
-        if (player.isAdmin()) {
-            return true;
-        }
-        int primary = bindings[player.value()];
-        return primary != UNBOUND && (primary == f || (grants[player.value()] & (1 << f)) != 0);
+        return controlsFaction(player, faction.value());
+    }
+
+    /** Allocation-free command authority. Gaia and absent factions remain outside diplomacy. */
+    public boolean controlsFaction(PlayerSlot player, int faction) {
+        if (faction < 0 || faction >= factions()) return false;
+        if (player.isAdmin()) return true;
+        int primary = primaryFaction(player);
+        return primary != UNBOUND && (primary == faction || (grants[player.value()] & (1 << faction)) != 0);
     }
 
     public DiplomacyState withTeam(FactionSlot faction, int team) {

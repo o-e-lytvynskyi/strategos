@@ -8,7 +8,7 @@ import dev.strategos.core.sim.ai.ComputerPlayer;
 /**
  * P3, AI: every computer player thinks every {@value #EVERY} ticks (a level's own period, AI-05), its turn offset by its faction and the seed, or in the tick
  * after it was attacked or lost a building (AI-01, 04 §14). It reads the match's queries through an {@link AiView}
- * and its commands join the pending commands under its faction's slot, so the next tick's COMMANDS phase applies them
+ * and its commands join the pending commands under its bound primary player slot, so the next tick's COMMANDS phase applies them
  * with the same validators as a human's; they are not journaled, since a replay thinks them again. A defeated
  * faction, or an ended match, thinks no more.
  */
@@ -51,7 +51,9 @@ final class AiSystem implements MatchSystem {
             if (s.outcome().defeated(f) || (!woken && (tick + offset(s, f)) % player.period() != 0)) {
                 continue;
             }
-            PlayerSlot issuer = new PlayerSlot(f);
+            int controller = s.diplomacy().firstPrimaryPlayer(f);
+            if (controller < 0) continue;
+            PlayerSlot issuer = new PlayerSlot(controller);
             int[] k = {0};
             AiBudget budget = new AiBudget(AiBudget.CAP);
             player.think(

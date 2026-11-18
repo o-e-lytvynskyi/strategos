@@ -18,7 +18,7 @@ public record PlayerSlot(int value) {
         return value == -1;
     }
 
-    /** ADMIN controls every faction; a player controls the faction of the same number (M0: one seat per faction). */
+    /** Legacy identity-only convenience (M0). Live match authority must use its current DiplomacyView. */
     public boolean controls(FactionSlot faction) {
         return isAdmin() || value == faction.value();
     }
