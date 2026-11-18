@@ -24,9 +24,13 @@ public final class Migrations {
         this.steps = List.copyOf(steps);
     }
 
-    /** 1 to 2 adds terrain; 2 to 3 binds legacy templates; 3 to 4 adds explicit identity authority. */
+    /** 1 to 2 terrain; 2 to 3 template identities; 3 to 4 authority; 4 to 5 frozen damage provenance. */
     public static Migrations production() {
-        return new Migrations(List.of(new AddTerrainPages(), new StableTemplateReferences(), new DiplomacyIdentity()));
+        return new Migrations(List.of(
+                new AddTerrainPages(),
+                new StableTemplateReferences(),
+                new DiplomacyIdentity(),
+                new FrozenDamageSources()));
     }
 
     /** Schema 1 to 2: M0's snapshots had no terrain, so their page list is empty. */

@@ -8,6 +8,7 @@ import dev.strategos.core.diag.MatchLog;
 import dev.strategos.core.sim.build.BuildingLife;
 import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.combat.Damage;
+import dev.strategos.core.sim.combat.DamageOrigins;
 import dev.strategos.core.sim.combat.HealthStore;
 import dev.strategos.core.sim.combat.ShotStore;
 import dev.strategos.core.sim.diplomacy.DiplomacyState;
@@ -444,7 +445,7 @@ public final class MatchState {
 
     /** A damage packet for this tick's COMBAT phase, after those already queued. */
     public void queueDamage(Damage packet) {
-        damage.add(packet);
+        damage.add(DamageOrigins.captureQueued(this, packet));
     }
 
     /** This tick's damage packets, in their order; the queue is empty after. */

@@ -80,7 +80,10 @@ public final class BodyEvents {
         if (data == null) {
             return;
         }
-        server.faults().run(rt, "hurt", () -> rt.damage(DamageBridge.of(data.handle(), source, amount)));
+        server.faults().run(rt, "hurt", () -> {
+            var damage = DamageBridge.ofForMatch(server.matches(), rt, data.handle(), source, amount);
+            if (damage != null) rt.damage(damage);
+        });
     }
 
     /**

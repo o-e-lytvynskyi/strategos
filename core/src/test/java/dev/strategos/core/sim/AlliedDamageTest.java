@@ -121,6 +121,35 @@ class AlliedDamageTest {
     }
 
     @Test
+    void externalAttributionSurvivesIngestWithoutTurningWorldDamageIntoFriendlyFire() {
+        Scene f = scene();
+        double allied = f.state().health().damage(Handle.index(f.ally()));
+        double enemy = f.state().health().damage(Handle.index(f.enemy()));
+        f.harness()
+                .damage(new ExternalDamage(
+                        f.ally(), ExternalDamage.Kind.HACK, 10, ExternalDamage.SourceKind.PLAYER, 0));
+        f.harness()
+                .damage(new ExternalDamage(
+                        f.enemy(), ExternalDamage.Kind.HACK, 10, ExternalDamage.SourceKind.PLAYER, 0));
+        f.harness().step();
+        assertThat(f.state().health().damage(Handle.index(f.ally()))).isEqualTo(allied);
+        assertThat(f.state().health().damage(Handle.index(f.enemy()))).isGreaterThan(enemy);
+        f.harness().damage(new ExternalDamage(f.ally(), ExternalDamage.Kind.HACK, 10, ExternalDamage.SourceKind.MOB));
+        f.harness().step();
+        assertThat(f.state().health().damage(Handle.index(f.ally()))).isGreaterThan(allied);
+    }
+
+    @Test
+    void anUnprovenDeadHostileSourceIsNotReinterpretedAsEnvironmentalDamage() {
+        Scene f = scene();
+        double before = f.state().health().damage(Handle.index(f.enemy()));
+        f.state().removeUnit(f.source());
+        f.state().queueDamage(Damage.of(f.enemy(), f.source(), DamageType.HACK, 10));
+        new CombatSystem().run(f.state());
+        assertThat(f.state().health().damage(Handle.index(f.enemy()))).isEqualTo(before);
+    }
+
+    @Test
     void productionShotReleaseFreezesTheActualSourceFaction() {
         Scene f = scene();
         f.state()

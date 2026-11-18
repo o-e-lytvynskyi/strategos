@@ -86,9 +86,12 @@ public final class DiplomacyState implements DiplomacyView {
 
     @Override
     public boolean allied(FactionSlot first, FactionSlot second) {
-        return first.value() < factions()
-                && second.value() < factions()
-                && teams[first.value()] == teams[second.value()];
+        return alliedFactions(first.value(), second.value());
+    }
+
+    /** Primitive kernel query; absent factions, including Gaia, are never allies. */
+    public boolean alliedFactions(int first, int second) {
+        return first >= 0 && second >= 0 && first < factions() && second < factions() && teams[first] == teams[second];
     }
 
     @Override

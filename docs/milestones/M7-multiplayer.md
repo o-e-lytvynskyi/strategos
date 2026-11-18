@@ -145,6 +145,10 @@ victory, deterministic winner sets/draws and terminal outcome persistence/replic
 The complete parent retains all combat, replay, save/restore, slow/soak and applicable
 performance gates. A live-handle lookup at impact cannot identify a dead/reused shooter;
 the source provenance finding is recorded in `docs/kb/frozen-damage-authority.md`.
+ADR-0030 specifies schema-5 frozen origins and append-only attributed input tag 10. M7
+locked-team combat receives final allied filtering; released unlocked combat retains its
+old semantics/hashes. A locked legacy shot is migrated only from a matching saved live
+source generation, never guessed after death. Current snapshots require explicit provenance.
 
 Extend `core/sim` with `diplomacy/DiplomacyState` and an immutable `DiplomacyView` seam: relation
 (ally/enemy), locked team membership, per-player primary faction and explicit control grants.

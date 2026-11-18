@@ -417,7 +417,10 @@ public final class MatchSnapshotCodec {
                     Codec.FLOAT.fieldOf("crush").forGetter(Damage::crush),
                     Codec.FLOAT.fieldOf("fire").forGetter(Damage::fire),
                     SHOT_BONUS.listOf().fieldOf("bonuses").forGetter(Damage::bonuses),
-                    Codec.BOOL.fieldOf("lethal").forGetter(Damage::lethal))
+                    Codec.BOOL.fieldOf("lethal").forGetter(Damage::lethal),
+                    Codec.intRange(Damage.UNATTRIBUTED, FactionSlot.MAX + 1)
+                            .optionalFieldOf("sourceFaction", Damage.UNATTRIBUTED)
+                            .forGetter(Damage::sourceFaction))
             .apply(i, Damage::new));
 
     private static final Codec<ShotStore.Release> RELEASE = RecordCodecBuilder.create(i -> i.group(
@@ -442,7 +445,7 @@ public final class MatchSnapshotCodec {
                     (id, shooter, target, landTick, x, y, z, damage, release) ->
                             new ShotStore.Shot(id, shooter, target, landTick, x, y, z, damage, release.orElse(null))));
 
-    private static final Codec<ShotStore.Snapshot> SHOTS = RecordCodecBuilder.create(i -> i.group(
+    static final Codec<ShotStore.Snapshot> SHOTS = RecordCodecBuilder.create(i -> i.group(
                     Codec.LONG.fieldOf("nextId").forGetter(ShotStore.Snapshot::nextId),
                     SHOT.listOf().fieldOf("rows").forGetter(ShotStore.Snapshot::rows))
             .apply(i, ShotStore.Snapshot::new));
@@ -582,6 +585,18 @@ public final class MatchSnapshotCodec {
                                 && snapshot.buildings().stream().anyMatch(BuildingStore.Saved::alive)) {
                             return DataResult.error(
                                     () -> "schema 3 snapshot with live buildings needs template bindings");
+                        }
+                        for (ShotStore.Shot shot : snapshot.play().shots().rows()) {
+                            int source = shot.damage().sourceFaction();
+                            if (source > snapshot.config().factions()) {
+                                return DataResult.error(() -> "shot source faction is outside the match");
+                            }
+                            if (snapshot.diplomacy().teamsLocked()
+                                    && shot.shooter() != dev.strategos.core.shared.Handle.NONE
+                                    && source == Damage.UNATTRIBUTED) {
+                                return DataResult.error(
+                                        () -> "current locked-team shot needs its explicit source faction");
+                            }
                         }
                         return DataResult.success(snapshot);
                     });

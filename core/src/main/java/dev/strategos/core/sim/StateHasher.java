@@ -172,6 +172,10 @@ public final class StateHasher {
                     h = Hasher.mix(h, Float.floatToIntBits(bonus.multiplier()));
                 }
                 h = Hasher.mix(h, damage.lethal() ? 1 : 0);
+                if (damage.sourceFaction() != Damage.UNATTRIBUTED) {
+                    h = Hasher.mix(h, 0x534F55524345L);
+                    h = Hasher.mix(h, damage.sourceFaction());
+                }
                 ShotStore.Release release = shot.release();
                 if (release != null) { // a release-less shot hashes as before
                     h = Hasher.mix(h, 1);

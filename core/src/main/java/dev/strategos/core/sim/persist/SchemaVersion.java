@@ -11,8 +11,10 @@ public final class SchemaVersion {
      * Versions 1 and 2 migrate without inventing identities; legacy custom indices fail explicitly.
      * <p>4 (M7): explicit diplomacy authority; older versions migrate to identity bindings, while a current save
      * must contain its authority block. Older readers reject this version instead of dropping control rights.
+     * <p>5 freezes hostile shot source factions for locked-team combat. Legacy unlocked shots retain their
+     * behavior; a locked legacy shot needs a matching saved live source identity for conservative migration.
      */
-    public static final int CURRENT = 4;
+    public static final int CURRENT = 5;
 
     private SchemaVersion() {}
 }

@@ -30,7 +30,8 @@ import java.util.List;
  * read; 3 a path delivery, a count and the ids ascending, each as its gap from the one before; 4 a template set swapped
  * in, as its {@link TemplateSetView}, whose version is checked when read; 5 the tick's agents, a count and each one's
  * id and six floats; 6 damage a body took, as its handle, kind, amount and source kind; 7 a leader pose;
- * 8 a sampled terrain page; 9 a bounded, canonical first-tick diplomacy setup. Existing tags never change meaning.
+ * 8 a sampled terrain page; 9 a bounded, canonical first-tick diplomacy setup; 10 external damage with its
+ * authenticated source faction. Existing tags never change meaning.
  */
 final class InputCodec {
     private static final int COMMAND = 1;
@@ -44,6 +45,7 @@ final class InputCodec {
     private static final int TERRAIN_PAGE_SAMPLED = 8;
 
     private static final int DIPLOMACY_SETUP = 9;
+    private static final int ATTRIBUTED_EXTERNAL_DAMAGE = 10;
 
     private InputCodec() {}
 
@@ -76,11 +78,13 @@ final class InputCodec {
                 }
             }
             case ExternalDamage damage -> {
-                out.writeByte(EXTERNAL_DAMAGE);
+                boolean attributed = damage.sourceFaction() >= 0;
+                out.writeByte(attributed ? ATTRIBUTED_EXTERNAL_DAMAGE : EXTERNAL_DAMAGE);
                 out.writeInt(damage.handle());
                 out.writeByte(damage.kind().code());
                 out.writeFloat(damage.amount());
                 out.writeByte(damage.sourceKind().code());
+                if (attributed) out.writeVarInt(damage.sourceFaction());
             }
             case ContentSwap swap -> {
                 out.writeByte(CONTENT_SWAP);
@@ -197,7 +201,7 @@ final class InputCodec {
                     throw new WireException("leader update: " + e.getMessage());
                 }
             }
-            case EXTERNAL_DAMAGE -> {
+            case EXTERNAL_DAMAGE, ATTRIBUTED_EXTERNAL_DAMAGE -> {
                 int handle = in.readInt();
                 int damageKind = in.readUnsignedByte();
                 float amount = in.readFloat();
@@ -207,7 +211,10 @@ final class InputCodec {
                             handle,
                             ExternalDamage.Kind.ofCode(damageKind),
                             amount,
-                            ExternalDamage.SourceKind.ofCode(source));
+                            ExternalDamage.SourceKind.ofCode(source),
+                            kind == ATTRIBUTED_EXTERNAL_DAMAGE
+                                    ? in.readVarInt(FactionSlot.MAX + 1)
+                                    : dev.strategos.core.sim.combat.Damage.UNATTRIBUTED);
                 } catch (IllegalArgumentException e) {
                     throw new WireException("external damage: " + e.getMessage());
                 }

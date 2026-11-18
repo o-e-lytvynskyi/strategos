@@ -66,12 +66,13 @@ final class IngestSystem implements MatchSystem {
 
     /** A vanilla blow as the core's damage packet, from no unit (CMB-01): hack, pierce or crush, or lethal. */
     private static Damage packet(ExternalDamage d) {
-        return switch (d.kind()) {
+        Damage packet = switch (d.kind()) {
             case HACK -> Damage.of(d.handle(), Handle.NONE, DamageType.HACK, d.amount());
             case PIERCE -> Damage.of(d.handle(), Handle.NONE, DamageType.PIERCE, d.amount());
             case CRUSH -> Damage.of(d.handle(), Handle.NONE, DamageType.CRUSH, d.amount());
             case LETHAL -> Damage.lethal(d.handle(), Handle.NONE);
         };
+        return packet.withSourceFaction(d.sourceFaction());
     }
 
     private static int canonical(InputEvent a, InputEvent b) {

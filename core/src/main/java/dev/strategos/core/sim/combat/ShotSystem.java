@@ -94,7 +94,15 @@ public final class ShotSystem implements MatchSystem {
             if (selected != Handle.NONE) {
                 Damage d = shot.damage();
                 state.queueDamage(new Damage(
-                        selected, d.attacker(), d.hack(), d.pierce(), d.crush(), d.fire(), d.bonuses(), d.lethal()));
+                        selected,
+                        d.attacker(),
+                        d.hack(),
+                        d.pierce(),
+                        d.crush(),
+                        d.fire(),
+                        d.bonuses(),
+                        d.lethal(),
+                        d.sourceFaction()));
             }
         }
         queryShot = null;
@@ -154,7 +162,7 @@ public final class ShotSystem implements MatchSystem {
                             vz,
                             request.speed(),
                             request.spread(),
-                            request.damage()));
+                            DamageOrigins.captureAttack(state, request.damage())));
             ShotStore.Release from = Objects.requireNonNull(shot.release());
             state.outputs()
                     .add(new ShotFired(
