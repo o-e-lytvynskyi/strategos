@@ -6,10 +6,10 @@
 
 ## Now
 
-- **Milestone:** M7 Multiplayer; 9 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md), based on planning PR #32; T3 is split before implementation into independent aggregate and production integration.
-- **In progress:** T7 final standard L6 acceptance only; T8.1 test-first work is parked until the evening on the operator's request. Its functional and visual gates pass; the archived JMH comparison and all full-ci jobs have passed. All tests remain cloud-only. Whole M7 includes optional T24.
-- **Last finished task:** T6 reusable multiplayer engine kit, verify 44300748747 on f329fc55: 2,734 canonical cases, zero failures/errors/skips, plus six cache-security counterexample tests. Four-player acknowledgement/private-state/byte-count/owned-cleanup smoke passed in 1.099 s under the unchanged 30-second limit. QA-15 remains in progress for the later L7 protocol criterion.
-- **Next task:** Complete T7's three interrupted L6 scenes in cloud run 44314975700, then stop until evening as requested. Resume the already split T8 authority work only later. Co-op admission remains refused until that integration is ready. D-20 and native acceptance/product gates remain unchanged.
+- **Milestone:** M7 Multiplayer; 10 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md), based on planning PR #32; T3 is split before implementation into independent aggregate and production integration.
+- **In progress:** T8.1 co-op command/query authority; eight test-first contracts are parked at 08c953e1, with seven previously confirmed failures. All tests remain cloud-only. Whole M7 includes optional T24.
+- **Last finished task:** T7 allied damage and surviving coalition results. Immutable production source 4dd51afa passes functional, full-ci, inspected L4, matched JMH/allocation and all 24 standard L6 scenes; completion 44314975700 preserves the original 21 reports and passes exactly the three missing scenes, including the full 36,000-tick MVP soak.
+- **Next task:** Implement T8.1 and verify its ownership, owner charges/refunds, primary fog and bound AI-controller contracts; then the remaining T8 substeps and whole approved M7. The operator resumed the entire epic on 2026-11-18. Co-op admission remains refused until actual authority/private-recipient integration is ready. D-20 and native acceptance/product gates remain unchanged.
 - **Merged from main last:** d39069e7 (2026-11-15, PR #55/M6); merge 213d0564 is zero commits behind that main. Cloud verify 43756194393 passed: 2,623 canonical XML cases, zero failures/errors/skips, 7m 22s. Prior T2b slow/soak/L6 evidence remains historical; new integration will receive its required gates.
 
 The operator requested ownership of the whole M7 and work on what is currently possible on
@@ -608,3 +608,8 @@ Pending independent review.
 - Decision 2026-11-18 · Split the interrupted L6 execution at its completed-scene boundary; no performance threshold, foreign-load rule, sample count or production source changes. Each scene retains its own baselines. Undo by removing the one-time completion dispatch after review; retain the immutable measurement evidence.
 
 - 2026-11-18 · Completion run 44314975700 on bdb9466e passed four completion-guard and six dependency-cache counterexample methods, trusted producer validation and dependency restoration before measuring the three missing scenes. Future standard orchestration is aligned with the unchanged existing 150-minute process timeout (180 minutes including build/report overhead); measured gates and windows are untouched. This avoids another purely orchestration-driven cancellation without repeating accepted T7 measurements.
+
+### 2026-11-18 — Complete T7; resume the whole epic
+
+- Completion 44314975700 on bdb9466e succeeded. Independently inspected artifact 14434942206: exact source 4dd51afa, 24 distinct report hashes, original run 44296716682 plus exactly three new passing XML cases, no failures/errors/skips. battle_soak passed 6,000 ticks (342.256 s), group_paths_budget_d passed (10.891 s), and mvp_soak passed all 36,000 ticks (1,851.188 s). All three verdicts pass with no violations and foreign CPU approximately 0.0135–0.0137. Original standard JMH/speed-ratio covered all 30 configurations (ratio 1.7183396688959356). T7 is complete; MATCH-06 still requires T8.
+- The owner resumed the entire epic, including optional work, with cloud-only testing. Main fetched at d39069e7, zero commits behind. The earlier automatic permission-review service usage limit has expired; cloud access works again. No local tests/check builds ran. Continue T8 from the recorded test-first source; do not repeat completed T7 measurements.

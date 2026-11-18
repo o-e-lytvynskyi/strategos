@@ -566,7 +566,7 @@ reviewed implementation task between T17 and T18, keeping the acceptance depende
 - [x] T4 (2026-11-18) · Lobby UI; verify 44202558089 and cloud L4 44203471758, seven inspected zero-difference goldens, real start/RTS flow and altered-golden rejection.
 - [x] T5 (2026-11-18) · Adapter blob-2 roster/session migration, disconnected restore and durable launch refusal; verify 44209974849 plus complete full-ci 44208443663 (248 slow/core cases and all twenty AI seeds).
 - [x] T6 · Multiplayer test kit. Engine verify 44300748747; four-player smoke 1.099 s under 30 s. QA-15 L7 remains T19/T25.
-- [ ] T7 · Allied damage and victory.
+- [x] T7 (2026-11-18) · Allied damage and victory; verify 44296700394, full-ci 44296705408, L4 44297120970, matched JMH review 44303346246 and complete 24-scene L6 evidence 44314975700.
 - [ ] T8 · Co-op authority.
 - [ ] T9 · Recipient privacy.
 - [ ] T10 · Reconnect and timeout.
@@ -641,11 +641,20 @@ T2a: [cloud verify 40788528341](https://github.com/o-e-lytvynskyi/strategos/acti
 
 Main synchronization: merge `4e1ff97` includes `origin/main` at `dcb5013`. [Cloud verify 40789677322](https://github.com/o-e-lytvynskyi/strategos/actions/runs/40789677322) passed in 6m 2s: 2,253 canonical XML cases, zero failures/errors/skips, all 16 diplomacy cases executed. Final fetch showed zero commits behind main. The operator requested a stop for 2026-10-29 after T2a and this merge; T2b.2 is unstarted.
 
-T7 checkpoint (2026-11-18): T7.1 source `1053f0e0` passes cloud verify
-[44217598204](https://github.com/o-e-lytvynskyi/strategos/actions/runs/44217598204),
-2,715 canonical cases without failures/errors/skips. T7.2 now implements both-rule ordered
-surviving coalition results and explicit draws, schema-6 migration and terminal replication
-under ADR-0031; its cloud gates are pending. T7 stays unchecked. Slow/soak and paired JMH
-acceptance will cover the combined T7 source, including the frozen-damage hot path.
+T7 acceptance (2026-11-18): immutable production source `4dd51afa` passes cloud verify
+[44296700394](https://github.com/o-e-lytvynskyi/strategos/actions/runs/44296700394)
+(2,731 canonical cases, zero failures/errors/skips); full-ci
+[44296705408](https://github.com/o-e-lytvynskyi/strategos/actions/runs/44296705408)
+(all 23 jobs, 248 slow/core cases and complete seeds 1–20); inspected six-frame L4
+[44297120970](https://github.com/o-e-lytvynskyi/strategos/actions/runs/44297120970)
+(all NMSE 0, altered-golden negatives rejected); and the unchanged 15%/allocation JMH gate
+[44303346246](https://github.com/o-e-lytvynskyi/strategos/actions/runs/44303346246)
+on all 30 preserved matched measurements. Standard L6 run 44296716682 passed 21 scenes
+before its outer execution clock expired; completion
+[44314975700](https://github.com/o-e-lytvynskyi/strategos/actions/runs/44314975700)
+passed exactly the three missing scenes at the same source and original settings, including
+6,000 battle ticks and 36,000 MVP ticks. The strict disjoint 21+3 inventory and original
+report hashes are archived in artifact 14434942206. No gate, window or threshold changed.
+T8 still owns co-op command/recipient integration; MATCH-06 remains in progress.
 
 T6 engine acceptance (2026-11-18): source `f329fc55`, cloud verify [44300748747](https://github.com/o-e-lytvynskyi/strategos/actions/runs/44300748747), 2,734 canonical cases with no failures/errors/skips. All three new engine contracts passed (four players 1.099 s, atomic admission 0.770 s, bounded hostile ingress 1.319 s); six dependency-cache counterexamples and the validated module hand-off passed before Gradle. QA-15 stays in progress for T19/T25 L7.

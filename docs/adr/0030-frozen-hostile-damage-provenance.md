@@ -4,7 +4,7 @@ Date: 2026-11-18
 
 ## Status
 
-Accepted for T7.1 implementation; its cloud functional, replay and performance gates remain pending.
+Accepted; T7 cloud functional/replay, complete slow/soak, inspected L4, matched JMH/allocation and all 24 L6 scenes passed (2026-11-18). Evidence: M7 specification T7 acceptance; immutable production source `4dd51afa`.
 
 ## Context
 
