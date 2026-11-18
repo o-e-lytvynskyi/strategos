@@ -45,7 +45,7 @@ class CoalitionVictoryTest {
         h.publishAll(VoxelFixtures.flat(96, 96, 32, 1));
         DiplomacyState teams =
                 DiplomacyState.identity(4).withTeam(new FactionSlot(1), 0).withTeam(new FactionSlot(3), 2);
-        h.schedule(1, new DiplomacySetup((locked ? teams.lockTeams() : teams).snapshot()));
+        if (locked) h.schedule(1, new DiplomacySetup(teams.lockTeams().snapshot()));
         for (int f = 0; f < 4; f++) {
             int x = 4 + (f % 2) * 56;
             int z = 4 + (f / 2) * 56;

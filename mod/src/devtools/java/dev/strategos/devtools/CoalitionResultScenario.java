@@ -36,8 +36,12 @@ final class CoalitionResultScenario implements Scenario {
                 .lockTeams()
                 .snapshot()));
         var player = ScenarioWorld.player(server);
-        StrategosServer.get().matches().join(rt, player.getUUID(), new PlayerSlot(1));
-        StrategosServer.get().net().joined(rt, player, new PlayerSlot(1));
+        rt.addListener(out -> {
+            if (out.tick() == 1) {
+                StrategosServer.get().matches().join(rt, player.getUUID(), new PlayerSlot(1));
+                StrategosServer.get().net().joined(rt, player, new PlayerSlot(1));
+            }
+        });
         var anchor = ScenarioWorld.anchor(server);
         ScenarioWorld.camera(server, anchor.getX() + 0.5, anchor.getY() + 24, anchor.getZ() + 0.5, 0, 80);
     }
