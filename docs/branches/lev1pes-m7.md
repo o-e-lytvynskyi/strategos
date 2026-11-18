@@ -7,7 +7,7 @@
 ## Now
 
 - **Milestone:** M7 Multiplayer; 8 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md), based on planning PR #32; T3 is split before implementation into independent aggregate and production integration.
-- **In progress:** M7 T7.1 final allied-damage filtering and frozen provenance since 2026-11-18. Whole M7, including optional T24 requested by the operator, remains in progress. All further checks run in the cloud.
+- **In progress:** M7 T7.1 acceptance and T7.2 coalition victory since 2026-11-18. Whole M7, including optional T24 requested by the operator, remains in progress. All further checks run in the cloud.
 - **Last finished task:** T5 persistence/migration: verify 44209974849 (2,696 canonical cases) and complete full-ci 44208443663 (248 slow/core cases, all twenty AI seeds and aggregate). Acceptance production source is 73cee49d; d7a8911b changes only the stricter queue-replication test. Current T7 code remains under verification.
 - **Next task:** T7.1 functional/replay/performance acceptance and T7.2 allied coalition outcomes; reassess T6 readiness before its engine-kit work and T8 integration. D-20 remains accepted; co-op commands/reconnect and native multiplayer acceptance retain their own gates.
 - **Merged from main last:** d39069e7 (2026-11-15, PR #55/M6); merge 213d0564 is zero commits behind that main. Cloud verify 43756194393 passed: 2,623 canonical XML cases, zero failures/errors/skips, 7m 22s. Prior T2b slow/soak/L6 evidence remains historical; new integration will receive its required gates.
@@ -543,3 +543,5 @@ or replication privacy; those retain their own integration tests and dependencie
 ## Review
 
 Pending independent review.
+
+- 2026-11-18 · T7.2 test-first: both victory rules must emit ordered surviving winners once, exclude defeated allies, draw on simultaneous elimination, retain unlocked legacy individual wins, and restore terminal results. T7.1 verify 44217598204 remains in progress; shared final T7 slow/soak and paired JMH gates will cover both substeps without superseding an active required run.
