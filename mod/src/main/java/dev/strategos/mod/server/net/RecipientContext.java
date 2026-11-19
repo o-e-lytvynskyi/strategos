@@ -24,6 +24,8 @@ record RecipientContext(
                 seat == null ? -1 : primary(seat));
     }
 
+    // Entity.equals compares numeric entity ids, which are not an authenticated connection identity.
+    @SuppressWarnings("ReferenceEquality")
     boolean current(ServerPlayer online, MatchRegistry registry) {
         if (online != player || online.connection != connection) return false;
         Seat now = registry.seatOf(online.getUUID());
