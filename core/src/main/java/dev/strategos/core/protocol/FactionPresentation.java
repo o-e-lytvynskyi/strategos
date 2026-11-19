@@ -59,7 +59,7 @@ public final class FactionPresentation {
 
     @Override
     public boolean equals(@Nullable Object other) {
-        return this == other || other instanceof FactionPresentation p && styles.equals(p.styles);
+        return this == other || (other instanceof FactionPresentation p && styles.equals(p.styles));
     }
 
     @Override

@@ -673,3 +673,5 @@ Pending independent review.
 - 2026-11-19 · T8.4a candidate adds bounded public presentation, cached configuration hashing only for non-legacy choices, trusted first-tick setup, append-only journal tag 11 and schema 7 migration/refusal. Existing typed Play constructors normalize legacy presentation; withDiplomacy preserves it. No client transport/palette/scoreboard installation is claimed yet. Cloud verification remains required.
 
 - 2026-11-19 · Verify 44428959445 on d9042407 confirms corrected recovery: five formatter guard counterexamples and pinned bytes pass; compilation reaches the deliberately absent T8.4a FactionPresentation/PresentationSetup APIs, zero candidate XML cases. Producer reports are removed before discovery. Submit the formatted T8.4a implementation for cumulative T8.3/T8.4a acceptance; retain proposed ADR status until green.
+
+- 2026-11-19 · Cumulative verify 44429809090 on 93afc3b2 reaches core compilation with recovered dependencies, but ErrorProne requires explicit grouping in FactionPresentation.equals. Add the grouping parentheses without changing equality or suppressing the check; no candidate tests executed.
