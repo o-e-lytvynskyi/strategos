@@ -207,6 +207,15 @@ never attach Strategos units or change the server's global scoreboard. On contex
 remove owned client teams and restore existing vanilla name membership without enumerating
 foreign team members. Verify outsider negatives and actual packet name membership.
 
+T8.5 readiness/split (2026-11-19): **T8.5a** adds an actual four-peer command
+integration with P0/P1 sharing F0, including camera training/move, first-person follow
+whose leader remains player 1, same-owner cancellation/refund and separate feedback
+sequences. **T8.5b** supplies inspected cloud L4 co-op/palette/sharing-panel frames and
+refreshes changed lobby frames without changing image thresholds. **T8.5c** runs the
+parent's full slow/soak and applicable hot-path comparison gates before T8 is checked.
+Visual DTO fixtures must identify their limited presentation purpose; actual transport
+acceptance remains the engine tests, and two-client human acceptance remains T19/T25.
+
 T7 implementation split (2026-11-18): **T7.1** owns final hostile-damage filtering,
 frozen source-faction provenance for delayed/collateral hits, its current/legacy snapshot
 and journal policy, and actual engine damage adapters. **T7.2** owns allied coalition

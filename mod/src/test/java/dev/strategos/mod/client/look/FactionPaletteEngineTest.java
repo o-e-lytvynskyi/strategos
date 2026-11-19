@@ -15,7 +15,7 @@ class FactionPaletteEngineTest {
         for (int i = 0; i < 16; i++) styles.add(new FactionPresentation.Style("strategos:placeholder", i));
         var palette = new FactionPalette(new FactionPresentation(styles));
         for (int i = 0; i < 16; i++) {
-            assertThat(palette.colour(i) & 0xFFFFFF).isEqualTo(DyeColor.byId(i).getTextureDiffuseColor());
+            assertThat(palette.colour(i)).isEqualTo(DyeColor.byId(i).getTextureDiffuseColor());
             assertThat(palette.dyeName(i)).isEqualTo(DyeColor.byId(i).getName());
         }
     }
