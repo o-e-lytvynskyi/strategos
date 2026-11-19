@@ -141,6 +141,8 @@
   "strategos.lobby.player": "Player",
   "strategos.lobby.slot": "Seat",
   "strategos.lobby.team": "Team",
+  "strategos.lobby.faction": "Faction",
+  "strategos.lobby.faction_value": "F%s",
   "strategos.lobby.colour": "Colour",
   "strategos.lobby.civilisation": "Civilisation",
   "strategos.lobby.readiness": "Ready",

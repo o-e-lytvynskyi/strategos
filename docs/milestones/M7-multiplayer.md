@@ -184,6 +184,18 @@ cards unchanged. Public participant names/presentation and the usable grant cont
 remain the following presentation/integration work; production co-op admission stays
 closed until T8.3c.
 
+T8.4 readiness/split (2026-11-19): **T8.4a** owns a bounded immutable
+core faction-presentation registry (civilisation and selected colour), trusted journaled
+first-tick installation, versioned save migration and deterministic restoration. Released
+matches without explicit presentation retain their existing appearance and hash.
+**T8.4b** projects public faction presentation and authenticated participant names separately
+from the bounded initial authority frame, applies one palette to client faction markers,
+and colours human names through scoreboard teams with no unit membership.
+**T8.4c** exposes explicit grant/revoke actions for eligible named allies through the normal
+command producer; no foreign private queue, treasury or outgoing grant list is exported.
+The broader player-list/ping HUD remains T14. These substeps retain the parent T8 gates;
+no civilisation art or product theme is selected by this implementation.
+
 T7 implementation split (2026-11-18): **T7.1** owns final hostile-damage filtering,
 frozen source-faction provenance for delayed/collateral hits, its current/legacy snapshot
 and journal policy, and actual engine damage adapters. **T7.2** owns allied coalition

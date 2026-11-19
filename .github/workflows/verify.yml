@@ -14,6 +14,10 @@ on:
         description: Use the official repo1 Maven Central alias after pinned formatter checksum validation
         type: boolean
         default: false
+      formatter_cache_run:
+        description: 'Optional successful same-branch verify producer of checksum-approved formatter reports'
+        type: string
+        default: ''
       dependency_cache_run:
         description: 'Optional successful same-branch full-ci nightly producer of cloud-gradle-modules'
         type: string
@@ -52,6 +56,8 @@ jobs:
           cache-read-only: ${{ github.event_name != 'workflow_dispatch' }}
       - name: Dependency cache guard counterexamples
         run: python3 -m unittest discover -s tools/tests -p test_ci_dependency_cache.py -v
+      - name: Pinned formatter cache counterexamples
+        run: python3 -m unittest discover -s tools/tests -p test_ci_formatter_cache.py -v
       - name: Paired measurement guard counterexamples
         run: python3 -m unittest discover -s tools/tests -p test_jmh_pair_reports.py -v
       - name: Validate optional dependency producer
@@ -70,6 +76,22 @@ jobs:
       - name: Restore validated dependency modules only
         if: github.event_name == 'workflow_dispatch' && inputs.dependency_cache_run != ''
         run: python3 tools/ci_dependency_cache.py restore --archive build/cloud-dependencies/cloud-gradle-modules.tar.gz --caches "$HOME/.gradle/caches"
+      - name: Validate optional pinned formatter producer
+        if: github.event_name == 'workflow_dispatch' && inputs.formatter_cache_run != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FORMATTER_RUN: ${{ inputs.formatter_cache_run }}
+        run: python3 tools/ci_formatter_cache.py validate --run "$FORMATTER_RUN" --repository "$GITHUB_REPOSITORY" --branch "$GITHUB_REF_NAME"
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        if: github.event_name == 'workflow_dispatch' && inputs.formatter_cache_run != ''
+        with:
+          name: verify-reports
+          path: build/cloud-formatter-source
+          run-id: ${{ inputs.formatter_cache_run }}
+          github-token: ${{ github.token }}
+      - name: Recover exact pinned formatter coordinate
+        if: github.event_name == 'workflow_dispatch' && inputs.formatter_cache_run != ''
+        run: python3 tools/ci_formatter_cache.py restore --source build/cloud-formatter-source --repository build/cloud-formatter-repository
       - name: Validate optional archived measurement producer
         id: paired_producer
         if: github.event_name == 'workflow_dispatch' && inputs.paired_reports_run != ''
@@ -106,9 +128,12 @@ jobs:
           echo '8074d7e21832edcad422f8dbf6002d296551963bec410daad97317210a55b5c1  formatter.jar' | sha256sum --check
       - name: verify
         env:
+          PINNED_FORMATTER: ${{ github.event_name == 'workflow_dispatch' && inputs.formatter_cache_run != '' }}
+          STRATEGOS_FORMATTER_REPOSITORY: ${{ github.workspace }}/build/cloud-formatter-repository
           CENTRAL_ALTERNATE: ${{ github.event_name == 'workflow_dispatch' && inputs.central_alternate }}
         run: |
           options=()
+          if [ "$PINNED_FORMATTER" = true ]; then options+=(--init-script tools/pinned-formatter.init.gradle); fi
           if [ "$CENTRAL_ALTERNATE" = true ]; then options+=(--init-script tools/maven-central-alternate.init.gradle); fi
           ./gradlew --console=plain --max-workers=2 "${options[@]}" verify
       - name: Existing 15 percent and allocation gates on preserved measurements

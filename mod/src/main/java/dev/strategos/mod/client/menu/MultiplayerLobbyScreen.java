@@ -33,7 +33,7 @@ public final class MultiplayerLobbyScreen extends Screen {
     private int rowsY;
     private int footerY;
     private int statusY;
-    private int[] columns = {84, 66, 48, 64, 54, 56};
+    private int[] columns = {76, 54, 48, 42, 60, 48, 50};
     private List<LobbyScreenModel.Row> rows = List.of();
 
     public MultiplayerLobbyScreen(@Nullable Screen parent) {
@@ -56,8 +56,8 @@ public final class MultiplayerLobbyScreen extends Screen {
         waiting = ClientLobby.session().waiting();
         panelWidth = Math.min(560, width - 20);
         left = (width - panelWidth) / 2;
-        compact = panelWidth < 406;
-        columns = compact ? new int[] {66, 54, 42, 48, 50} : new int[] {84, 66, 48, 64, 54, 56};
+        compact = panelWidth < 426;
+        columns = compact ? new int[] {54, 46, 40, 36, 42, 44} : new int[] {76, 54, 48, 42, 60, 48, 50};
         LobbyScreenModel model = shown;
         rows = model == null ? List.of() : model.rows();
         int contentHeight = model == null ? 170 : 132 + 22 * rows.size();
@@ -145,15 +145,28 @@ public final class MultiplayerLobbyScreen extends Screen {
                                 s -> new LobbyConfiguration.Seat(
                                         s.player(), v, s.faction(), s.team(), s.civilisation(), s.colour()))));
         kind.active = edit && !row.occupied();
+        var faction = addRenderableWidget(CycleButton.<Integer>builder(
+                        v -> Component.translatable("strategos.lobby.faction_value", v + 1))
+                .withValues(model.factionsFor(seat.player()))
+                .withInitialValue(seat.faction())
+                .displayOnlyValue()
+                .create(
+                        column(2),
+                        y,
+                        columns[2],
+                        20,
+                        text("faction"),
+                        (b, v) -> ClientLobby.request(model.factionIntent(seat.player(), v))));
+        faction.active = edit && seat.kind() == LobbyConfiguration.Kind.HUMAN;
         var team = addRenderableWidget(CycleButton.<Integer>builder(
                         v -> Component.translatable("strategos.lobby.team_value", v + 1))
                 .withValues(IntStream.range(0, 16).boxed().toList())
                 .withInitialValue(seat.team())
                 .displayOnlyValue()
                 .create(
-                        column(2),
+                        column(3),
                         y,
-                        columns[2],
+                        columns[3],
                         20,
                         text("team"),
                         (b, v) -> changeFaction(
@@ -176,13 +189,13 @@ public final class MultiplayerLobbyScreen extends Screen {
                                             s.team(),
                                             "strategos:placeholder",
                                             s.colour())))
-                    .bounds(column(3), y, columns[3], 20)
+                    .bounds(column(4), y, columns[4], 20)
                     .build());
             civilisation.active = edit
                     && seat.kind() != LobbyConfiguration.Kind.CLOSED
                     && !seat.civilisation().equals("strategos:placeholder");
         }
-        int colourColumn = compact ? 3 : 4;
+        int colourColumn = compact ? 4 : 5;
         var choices = IntStream.range(0, 16)
                 .filter(value -> value == seat.colour()
                         || model.state().configuration().seats().stream()
@@ -355,8 +368,8 @@ public final class MultiplayerLobbyScreen extends Screen {
             g.drawCenteredString(
                     font, Component.translatable("strategos.lobby.map_value", name), width / 2, top + 24, 0xB9C7D4);
             String[] labels = compact
-                    ? new String[] {"player", "slot", "team", "colour", "readiness"}
-                    : new String[] {"player", "slot", "team", "civilisation", "colour", "readiness"};
+                    ? new String[] {"player", "slot", "faction", "team", "colour", "readiness"}
+                    : new String[] {"player", "slot", "faction", "team", "civilisation", "colour", "readiness"};
             for (int i = 0; i < labels.length; i++)
                 g.drawCenteredString(font, text(labels[i]), column(i) + columns[i] / 2, rowsY - 11, 0xA8B4C0);
             for (int i = 0; i < rows.size(); i++) {

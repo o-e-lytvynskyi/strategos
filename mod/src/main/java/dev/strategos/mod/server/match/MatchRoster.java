@@ -18,8 +18,8 @@ import net.minecraft.nbt.Tag;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Who sits in a match (NET-01, spec §2.7): players by UUID, each in a player slot, which controls the faction of the
- * same number; a slot holds one player. The administrator's slot seats observers, any number of them, who see every
+ * Who sits in a match (NET-01, spec §2.7): players by UUID, each in a player slot whose primary faction is resolved through
+ * the current diplomacy binding; a slot holds one player. The administrator's slot seats observers, any number of them, who see every
  * faction and issue nothing (the gateway refuses their commands). A command's issuer is the slot bound to its sender's UUID, never a name or a
  * payload field. Saved with the match's blob; the registry keeps a player in one match at a time.
  */

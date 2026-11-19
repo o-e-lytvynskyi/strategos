@@ -6,6 +6,7 @@ import dev.strategos.mod.server.net.LobbyState;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.IntStream;
 
 /** Detached presentation of an authenticated recipient view; button affordances never replace server validation. */
 public record LobbyScreenModel(LobbyState state) {
@@ -42,6 +43,60 @@ public record LobbyScreenModel(LobbyState state) {
 
     public boolean mayConfigure() {
         return state.phase() == LobbyState.Phase.EDITING && state.mayConfigure();
+    }
+
+    /** Human-only choices: one AI owns its entire faction and cannot share it. */
+    public List<Integer> factionsFor(int player) {
+        var config = state.configuration();
+        var seat = config.seats().stream()
+                .filter(s -> s.player() == player)
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("unknown lobby player"));
+        if (seat.kind() != LobbyConfiguration.Kind.HUMAN) return List.of(seat.faction());
+        return IntStream.range(0, config.factionCapacity())
+                .filter(f -> config.seats().stream()
+                        .noneMatch(s -> s.faction() == f && s.kind() == LobbyConfiguration.Kind.AI))
+                .boxed()
+                .toList();
+    }
+
+    /** Join or split a human faction atomically, keeping the player identity and all unrelated seats. */
+    public LobbyAction.Edit factionIntent(int player, int faction) {
+        if (!mayConfigure()) throw new IllegalStateException("lobby configuration is frozen or unauthorized");
+        var config = state.configuration();
+        var source = config.seats().stream()
+                .filter(s -> s.player() == player)
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("unknown lobby player"));
+        if (source.kind() != LobbyConfiguration.Kind.HUMAN
+                || !factionsFor(player).contains(faction)) {
+            throw new IllegalArgumentException("faction cannot accept this human controller");
+        }
+        if (source.faction() == faction) return new LobbyAction.Edit(config);
+        var target = config.seats().stream()
+                .filter(s -> s.kind() == LobbyConfiguration.Kind.HUMAN && s.faction() == faction)
+                .findFirst();
+        int colour = target.map(LobbyConfiguration.Seat::colour)
+                .orElseGet(() -> IntStream.range(0, 16)
+                        .filter(c -> config.seats().stream()
+                                .noneMatch(s -> s.player() != player
+                                        && s.kind() != LobbyConfiguration.Kind.CLOSED
+                                        && s.colour() == c))
+                        .findFirst()
+                        .orElseThrow(() -> new IllegalArgumentException("no unused faction colour")));
+        var replacement = new LobbyConfiguration.Seat(
+                player,
+                source.kind(),
+                faction,
+                target.map(LobbyConfiguration.Seat::team).orElse(faction),
+                target.map(LobbyConfiguration.Seat::civilisation).orElse(source.civilisation()),
+                colour);
+        return new LobbyAction.Edit(new LobbyConfiguration(
+                config.factionCapacity(),
+                config.seats().stream()
+                        .map(s -> s.player() == player ? replacement : s)
+                        .toList(),
+                config.setup()));
     }
 
     public boolean mayReady() {

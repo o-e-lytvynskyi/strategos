@@ -79,13 +79,6 @@ public final class LobbyPreparation implements LobbyService.Preparation {
                 server.templates().set(),
                 Set.of("strategos:placeholder"),
                 Scenarios.script(server.server(), Levels.PROFILE));
-        // T8 installs co-op command/client/recipient routing. Do not activate unsupported bindings meanwhile.
-        for (MatchLobby.Seat seat : lobby.seats()) {
-            if (seat.kind() != MatchLobby.Kind.CLOSED
-                    && seat.player().value() != seat.faction().value()) {
-                throw new IllegalArgumentException("this runtime layout is not supported yet");
-            }
-        }
         List<MatchLobby.Seat> humans = lobby.seats().stream()
                 .filter(s -> s.kind() == MatchLobby.Kind.HUMAN)
                 .toList();

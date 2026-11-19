@@ -23,6 +23,7 @@
     "strategos:match_join",
     "strategos:match_state",
     "strategos:mode_switch",
+    "strategos:player_authority",
     "strategos:skirmish",
     "strategos:template_ack",
     "strategos:template_set",
