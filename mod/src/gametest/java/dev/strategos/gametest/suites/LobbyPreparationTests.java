@@ -212,6 +212,15 @@ public final class LobbyPreparationTests {
     /** Four distinct player/faction identities, actual terrain import, and all private initial frames within NET-02's deadline. */
     @StrategosTest(batch = "map_lobby_four", solo = true, timeoutTicks = 40000)
     public static void fourHumansReceiveTheirInitialStateWithinTenSeconds(GameTestHelper h) {
+        fourHumanLaunch(h, false);
+    }
+
+    @StrategosTest(batch = "map_lobby_coop", solo = true, timeoutTicks = 40000)
+    public static void coopHumansReceiveTheirPrimaryStateThroughProductionLobby(GameTestHelper h) {
+        fourHumanLaunch(h, true);
+    }
+
+    private static void fourHumanLaunch(GameTestHelper h, boolean coop) {
         StrategosServer server = StrategosServer.get();
         LobbyFourMap.install(server);
         BlockPos at = h.absolutePos(BlockPos.ZERO);
@@ -220,18 +229,19 @@ public final class LobbyPreparationTests {
             viewers.add(MockViewer.join(h.getLevel(), "stg-lobby-f" + i, at.getX(), at.getY() + 16, at.getZ(), 2));
         viewers.getFirst().operator(2);
         MockViewer outsider = MockViewer.join(h.getLevel(), "stg-lobby-fout", at.getX(), at.getY() + 16, at.getZ(), 2);
+        int[] primaries = coop ? new int[] {0, 0, 1, 2} : new int[] {0, 1, 2, 3};
         var seats = new java.util.ArrayList<MatchLobby.Seat>();
         for (int i = 0; i < 4; i++)
             seats.add(new MatchLobby.Seat(
                     new PlayerSlot(i),
                     MatchLobby.Kind.HUMAN,
                     i == 0 ? viewers.getFirst().player().getUUID() : null,
-                    new FactionSlot(i),
-                    i,
+                    new FactionSlot(primaries[i]),
+                    primaries[i],
                     "strategos:placeholder",
-                    i));
+                    primaries[i]));
         MatchRuntime[] allocated = new MatchRuntime[1];
-        Skirmishes.Placer actual = placer(h, 23);
+        Skirmishes.Placer actual = placer(h, coop ? 24 : 23);
         ServerLobby facade = new ServerLobby(server, (map, options) -> {
             MatchRuntime rt = actual.place(map, options);
             allocated[0] = rt;
@@ -284,6 +294,8 @@ public final class LobbyPreparationTests {
                 check(
                         joins.stream()
                                 .allMatch(p -> p.join().slot().value() == seat
+                                        && p.join().primaryFaction() == primaries[seat]
+                                        && p.join().controlsFaction(primaries[seat])
                                         && p.join().factions() == 4
                                         && p.join().matchId() == rt.id().value()),
                         "wrong four-player match_join");
@@ -296,6 +308,23 @@ public final class LobbyPreparationTests {
                 for (String type : List.of("unit_summary", "faction_state", "building_state", "deposit_state")) {
                     if (viewer.capture().counts().getOrDefault("payload/strategos:" + type, 0) == 0) return;
                 }
+            }
+            for (int i = 0; i < viewers.size(); i++) {
+                int primary = primaries[i];
+                var frames = NetFixtures.payloads(
+                        viewers.get(i), dev.strategos.mod.server.net.payload.FactionStatePayload.class);
+                check(!frames.isEmpty(), "primary treasury never arrived");
+                check(
+                        frames.stream().allMatch(p -> p.state().faction() == primary),
+                        "foreign treasury leaked through production admission");
+                check(
+                        core(rt).queries()
+                                        .diplomacy()
+                                        .factionOf(new PlayerSlot(i))
+                                        .orElseThrow()
+                                        .value()
+                                == primary,
+                        "production binding changed");
             }
             for (String type : List.of("lobby_state", "match_join", "unit_summary", "faction_state", "building_state"))
                 check(
