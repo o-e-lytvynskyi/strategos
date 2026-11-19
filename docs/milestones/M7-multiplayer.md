@@ -420,6 +420,10 @@ Use existing primary-private projections and existing visibility policy;
 no ally vision, new observer role or T16 bandwidth policy is introduced.
 Contracts run cloud-first, then actual engine recipient tests and full verify.
 Parent T9 remains unchecked until every path and its required gates pass.
+T9.2a passes verify 44627171948 (2,799 cases). T9.2b/c pass
+verify 44629974163 (2,801 cases) and inspected client scenario 44629985316,
+including same-match private-view reset and unchanged image/negative gates.
+T9.3 recipient matrix and final acceptance remain open.
 T9.2 refinement before further code (2026-11-20): **T9.2a** binds delayed
 command replies to their submission origin; **T9.2b** resets replication and
 query memories on recipient-generation/full-join boundaries and restores a
@@ -427,6 +431,12 @@ complete initial vision frame; **T9.2c** resets client private views at every
 full join, including the same match id. Use separate red/green evidence for
 the callback and cache boundaries. Broader reconnect deadlines/camera/groups
 remain T10; no client-supplied session token is introduced.
+
+T9.3 structural contracts inventory live Strategos attachment registrations and
+reject every attachment-builder client-sync call in shipped bytecode. A local-only
+fixture must remain allowed and a sync fixture must be rejected; an unlisted registry
+entry must fail the inventory. The actual recipient/observer/reconnect matrix follows
+these checks and reuses existing co-op privacy evidence rather than duplicating it.
 
 T9.1 acceptance: verify 44624637029 on 5d969b64 passes 2,798 canonical
 cases, including four generation contracts and actual two-peer stale-queue

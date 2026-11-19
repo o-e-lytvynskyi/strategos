@@ -424,7 +424,7 @@ Test source sets use `dev.strategos.gametest`, `dev.strategos.devtools` and `dev
 | B9 | Hot paths | Classes annotated `@HotPath` use no `java.util.stream` and no boxed collections | ArchUnit |
 | B10 | Mixins only route | Classes in `mod.mixin` call only `BlockChangeRouter`, `FogGate` and `CommanderGuard` and contain no game logic | ArchUnit |
 | B11 | Dev code never ships | `main` never depends on `gametest`, `devtools` or `testFixtures` | Gradle; ArchUnit; jar check |
-| B12 | Engine surface | Mixin config entries, access-transformer lines, entity types, payload types and data registrations equal the inventory in §2.5 | L2 test |
+| B12 | Engine surface | Mixin config entries, access-transformer lines, entity types, attachment types, payload types and data registrations equal the inventory in §2.5 | L2 test |
 | B13 | Null safety | `@NullMarked` in every `package-info.java`; NullAway in JSpecify mode at error level on main sources | Compiler |
 
 ### 2.5 Engine-surface inventory
@@ -435,6 +435,7 @@ narrow mixin with a compatibility test ([01-feasibility.md §7](01-feasibility.m
 
 | Kind | Item | Purpose | Lands in |
 |---|---|---|---|
+| Attachment types | None registered; future server-only types must be inventoried | Client synchronization is forbidden by NET-03/B6; private match fields use recipient projections through the gateway | M7 |
 | Mixin | `LevelChunkMixin` (config `strategos.mixins.json`): RETURN of `LevelChunk#setBlockState(BlockPos, BlockState, boolean)` (LevelChunk.java:239), routed to `BlockChangeRouter` | Sees every block change, direct chunk writes included (fact 12): nav invalidation for external edits, node shrinkage, protection backstop | M1 |
 | Mixin | `ServerPlayerMixin`: HEAD of `ServerPlayer#broadcastToPlayer(ServerPlayer)` (ServerPlayer.java:957) and HEAD of `ServerPlayer#attack(Entity)` (1767) | Hides enemy commanders always and enemy first-person bodies in fog (spectators see spectators, 957–962); a commander can never spectate a unit by attacking it (1767–1769) | M7 |
 | Mixin | `ServerGamePacketListenerImplMixin`: HEAD of `handleTeleportToEntityPacket` (ServerGamePacketListenerImpl.java:1204) | Drops spectator teleports to any entity for match members; no NeoForge event covers this path | M7 |
