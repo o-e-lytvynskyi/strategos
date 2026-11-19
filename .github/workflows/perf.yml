@@ -207,9 +207,13 @@ jobs:
   identical-binary-samples:
     if: github.event_name == 'workflow_dispatch' && inputs.template_diagnostic
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: d7a8911ba4000bc759a10913652327c266d54066
+          path: control
       - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: temurin
@@ -218,7 +222,7 @@ jobs:
         with:
           cache-provider: basic
           cache-read-only: true
-      - name: Four planned identical-source samples with the existing JMH parameters
+      - name: Fixed control/candidate/candidate/control attribution with the existing JMH parameters
         run: |
           mkdir -p build/reports/template-diagnostic
           git rev-parse HEAD > build/reports/template-diagnostic/source.txt
@@ -227,12 +231,18 @@ jobs:
           vmstat -wt 1 > build/reports/template-diagnostic/vmstat.txt &
           monitor=$!
           trap 'kill "$monitor" 2>/dev/null || true' EXIT
-          for sample in 1 2 3 4; do
+          ./control/gradlew -p control --no-daemon --console=plain --max-workers=2 :core:compileJmhJava
+          ./gradlew --no-daemon --console=plain --max-workers=2 :core:compileJmhJava
+          sample=0
+          for checkout in control . . control; do
+            sample=$((sample + 1))
+            printf '%s\n' "$checkout" > "build/reports/template-diagnostic/run-$sample-checkout.txt"
             date -u +%FT%TZ > "build/reports/template-diagnostic/run-$sample-start.txt"
-            ./gradlew --no-daemon --console=plain --max-workers=2 :core:jmh \
+            ./gradlew -p "$checkout" --no-daemon --console=plain --max-workers=2 :core:jmh \
               -Pjmh.include=dev.strategos.core.bench.TemplateCompileBench.compile500
-            cp core/build/reports/jmh/result.json "build/reports/template-diagnostic/run-$sample.json"
-            sha256sum core/build/classes/java/main/dev/strategos/core/content/TemplateCompiler.class \
+            cp "$checkout/core/build/reports/jmh/result.json" "build/reports/template-diagnostic/run-$sample.json"
+            (cd "$checkout/core/build/classes/java/main" &&
+              find dev/strategos/core/content -type f -name '*.class' -print0 | sort -z | xargs -0 sha256sum) \
               > "build/reports/template-diagnostic/run-$sample-bytecode.txt"
           done
       - name: Summarize diagnostic data without accepting a candidate
@@ -247,19 +257,19 @@ jobs:
               if len(rows) != 1 or not rows[0]['benchmark'].endswith('TemplateCompileBench.compile500'):
                   raise ValueError('diagnostic did not measure exactly the intended benchmark')
               row = rows[0]
-              samples.append({'run': index, 'score': row['primaryMetric']['score'],
+              samples.append({'run': index, 'checkout': (root / f'run-{index}-checkout.txt').read_text().strip(), 'score': row['primaryMetric']['score'],
                               'error': row['primaryMetric']['scoreError'],
                               'forkMeans': [statistics.mean(fork) for fork in row['primaryMetric']['rawData']],
                               'jvmArgs': row['jvmArgs'], 'forks': row['forks'],
                               'warmupIterations': row['warmupIterations'],
                               'measurementIterations': row['measurementIterations'],
                               'secondary': {key: value['score'] for key, value in row['secondaryMetrics'].items()}})
-          checksums = {(root / f'run-{index}-bytecode.txt').read_text().split()[0] for index in range(1, 5)}
+          checksums = {(root / f'run-{index}-bytecode.txt').read_text() for index in range(1, 5)}
           if len(checksums) != 1:
-              raise ValueError('the compiler binary changed between identical-source samples')
+              raise ValueError('the content package bytecode differs between control and candidate')
           summary = {'diagnosticOnly': True, 'candidateAccepted': False,
                      'source': (root / 'source.txt').read_text().strip(),
-                     'compilerBytecodeSha256': next(iter(checksums)), 'samples': samples}
+                     'contentBytecodeIdentical': True, 'plan': 'control,candidate,candidate,control', 'samples': samples}
           (root / 'summary.json').write_text(json.dumps(summary, indent=2) + '\n')
           print(json.dumps(summary, indent=2))
           PY
