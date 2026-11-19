@@ -163,7 +163,7 @@ Multiple-match discovery is outside M7. Recorded in the M7 branch pending mainta
   4. The corpus and the crash fixtures run in every build (L2).
 - **Tests:** L0, L2, L3 · **Fixtures:** fuzz corpus and crash inputs (append-only) ·
   **Depends on:** CORE-03, NET-02 · **Size:** M · **Tier:** T1
-- **Status:** proposed
+- **Status:** in_progress
 
 #### NET-09 · Commander hardening against modified clients
 - **Value:** A modified client cannot use the vanilla spectator's powers to scout, teleport or leave

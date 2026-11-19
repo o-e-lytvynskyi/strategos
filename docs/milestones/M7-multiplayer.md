@@ -461,6 +461,18 @@ rejoin before, at and after expiry, paused matches and save/restart.
 
 ### 3.6 Ingress hardening (NET-06)
 
+T11 readiness/split (2026-11-20): T3b and T6 are delivered. Under the operator's
+continuing whole-M7 instruction, begin the existing specified NET-06 scope as
+**T11.1** authenticated current-connection and sequence boundaries;
+**T11.2** bounded field validation across all registered serverbound types; and
+**T11.3** stable rejection reasons, rate/handle limits and kick boundaries with
+legitimate traffic controls. T12 retains the permanent 100,000-input corpus.
+T11.1 is independent of the running T9 acceptance gates. Tests must establish a
+replacement connection with the same UUID, prove a fresh command applies, and
+show that a retained predecessor cannot mutate the new recipient's match.
+Do not invent a client-supplied authentication token or silently change the
+wire contract. Parent T11 and NET-06 remain unaccepted until all required gates.
+
 Extend existing `NetGateway.commands`, `ByteBufWire` and rate limiter; do not create a second
 ingress route. Bound every serverbound type, not only commands: list lengths, byte size, enum
 tags, finite numeric coordinates, match/handle generations and sequence fields. Preserve the
