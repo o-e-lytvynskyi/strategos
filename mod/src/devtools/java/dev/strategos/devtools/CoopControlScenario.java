@@ -42,6 +42,8 @@ final class CoopControlScenario implements Scenario {
     private int captures;
     private int calm;
     private boolean clientConfigured;
+    private boolean framed;
+    private int rigSettles;
     private boolean waitingCapture;
     private volatile @Nullable String setupFailure;
 
@@ -92,9 +94,15 @@ final class CoopControlScenario implements Scenario {
                         .findFirst()
                         .orElseThrow()
                         .handle();
-                for (int i = 0; i < 8; i++) {
-                    match.submit(PlayerSlot.ADMIN, new Train(ownBuilding, TemplateSet.WORKER));
-                    match.submit(PlayerSlot.ADMIN, new Train(alliedBuilding, TemplateSet.WORKER));
+                for (int i = 0; i < 5; i++) {
+                    match.submit(PlayerSlot.ADMIN, new Train(ownBuilding, TemplateSet.WORKER), result -> {
+                        if (result.outcome() != dev.strategos.core.protocol.CommandOutcome.ACCEPTED)
+                            setupFailure = "primary queue setup refused: " + result.firstReason();
+                    });
+                    match.submit(PlayerSlot.ADMIN, new Train(alliedBuilding, TemplateSet.WORKER), result -> {
+                        if (result.outcome() != dev.strategos.core.protocol.CommandOutcome.ACCEPTED)
+                            setupFailure = "allied queue setup refused: " + result.firstReason();
+                    });
                 }
                 var player = ScenarioWorld.player(server);
                 StrategosServer.get().matches().join(match, player.getUUID(), p1);
@@ -112,7 +120,6 @@ final class CoopControlScenario implements Scenario {
         });
         var anchor = ScenarioWorld.anchor(server);
         ScenarioWorld.camera(server, anchor.getX() + 0.5, anchor.getY() + 28, anchor.getZ() + 0.5, 0, 80);
-        ctx.holdCamera(anchor.getX() + 0.5, anchor.getY() + 28, anchor.getZ() + 0.5, 0, 80);
     }
 
     @Override
@@ -138,6 +145,15 @@ final class CoopControlScenario implements Scenario {
             StrategosClient.rts().enter();
             return false;
         }
+        var rig = StrategosClient.rts().rig();
+        if (rig == null) return false;
+        if (!framed) {
+            StrategosClient.rts().centreOn(join.originX() + 19.0, join.originZ() + 15.0);
+            rig.zoomTo(36);
+            framed = true;
+            return false;
+        }
+        if (rigSettles++ < 40) return false;
         var own = building(ownBuilding);
         var allied = building(alliedBuilding);
         var unit = StrategosClient.model().unit(Handle.index(worker));

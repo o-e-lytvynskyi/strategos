@@ -108,6 +108,10 @@ public final class ControlSharingScreen extends Screen {
         Minecraft.getInstance().setScreen(parent);
     }
 
+    /** Screen.render invokes this again; the background is drawn once explicitly before panel content. */
+    @Override
+    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {}
+
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.renderBackground(graphics, mouseX, mouseY, partialTick);
@@ -117,13 +121,11 @@ public final class ControlSharingScreen extends Screen {
         if (visible.isEmpty()) graphics.drawWordWrap(font, text("empty"), left + 4, 78, panelWidth - 8, 0xA8B4C0);
         for (int i = 0; i < visible.size(); i++) {
             var row = visible.get(i);
+            int y = 78 + i * 24;
+            graphics.renderOutline(left + 3, y, 8, 9, 0xFF9AA4AE);
+            graphics.fill(left + 4, y + 1, left + 10, y + 8, StrategosClient.colour(row.faction()));
             graphics.drawString(
-                    font,
-                    font.plainSubstrByWidth(row.name(), panelWidth - 184),
-                    left + 4,
-                    78 + i * 24,
-                    StrategosClient.colour(row.faction()),
-                    false);
+                    font, font.plainSubstrByWidth(row.name(), panelWidth - 196), left + 16, y, 0xFFE8ECF0, false);
         }
         if (status != null)
             graphics.drawString(font, text(status), left + 4, 78 + Math.max(1, visible.size()) * 24, 0xCDD5DD, false);
