@@ -89,6 +89,18 @@ jobs:
           cache-provider: basic
       - name: Paired report guard counterexamples
         run: python3 -m unittest discover -s candidate/tools/tests -p test_jmh_pair_reports.py -v
+      - name: Validate the successful same-branch dependency producer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 candidate/tools/ci_dependency_cache.py validate --run 44606455194 --repository "$GITHUB_REPOSITORY" --branch "$GITHUB_REF_NAME"
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: cloud-gradle-modules
+          path: build/cloud-dependencies
+          run-id: 44606455194
+          github-token: ${{ github.token }}
+      - name: Restore validated dependency modules only
+        run: python3 candidate/tools/ci_dependency_cache.py restore --archive build/cloud-dependencies/cloud-gradle-modules.tar.gz --caches "$HOME/.gradle/caches"
       - name: Record commits and runner
         run: |
           mkdir -p evidence
@@ -100,18 +112,18 @@ jobs:
         run: |
           ./control/gradlew -p control --no-daemon --console=plain --max-workers=2 :core:compileJmhJava
           ./candidate/gradlew -p candidate --no-daemon --console=plain --max-workers=2 :core:compileJmhJava
-      - name: Control JMH
-        run: |
-          vmstat -w 1 > evidence/control-vmstat.txt &
-          monitor=$!
-          trap 'kill "$monitor" 2>/dev/null || true' EXIT
-          ./control/gradlew -p control --no-daemon --console=plain --max-workers=2 :core:jmh
       - name: Candidate JMH
         run: |
           vmstat -w 1 > evidence/candidate-vmstat.txt &
           monitor=$!
           trap 'kill "$monitor" 2>/dev/null || true' EXIT
           ./candidate/gradlew -p candidate --no-daemon --console=plain --max-workers=2 :core:jmh
+      - name: Control JMH
+        run: |
+          vmstat -w 1 > evidence/control-vmstat.txt &
+          monitor=$!
+          trap 'kill "$monitor" 2>/dev/null || true' EXIT
+          ./control/gradlew -p control --no-daemon --console=plain --max-workers=2 :core:jmh
       - name: Require comparable complete results
         run: >-
           python3 candidate/tools/jmh_pair_reports.py reports --root .
