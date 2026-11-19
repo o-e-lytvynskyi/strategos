@@ -35,7 +35,8 @@ final class IngestSystem implements MatchSystem {
                 JobDelivery.class,
                 ContentSwap.class,
                 LeaderUpdate.class,
-                DiplomacySetup.class);
+                DiplomacySetup.class,
+                PresentationSetup.class);
     }
 
     @Override
@@ -59,6 +60,7 @@ final class IngestSystem implements MatchSystem {
                 case ContentSwap swap -> state.swapTemplates(swap.set());
                 case LeaderUpdate leader -> state.leaders().set(leader);
                 case DiplomacySetup setup -> state.configureDiplomacy(setup);
+                case PresentationSetup setup -> state.configurePresentation(setup);
             }
         }
         state.publishAll(pages);
@@ -88,7 +90,8 @@ final class IngestSystem implements MatchSystem {
 
     private static int rank(InputEvent event) {
         return switch (event) {
-            case DiplomacySetup setup -> -1;
+            case DiplomacySetup setup -> -2;
+            case PresentationSetup setup -> -1;
             case TerrainPage page -> 0;
             case CommandEnvelope envelope -> 1;
             case AgentUpdate update -> 2;

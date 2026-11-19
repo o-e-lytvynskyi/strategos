@@ -87,7 +87,8 @@ final class Snapshots {
                         s.shots().save(),
                         s.stances().save(),
                         s.garrison().save(),
-                        s.diplomacy()),
+                        s.diplomacy(),
+                        s.presentation()),
                 s.buildings().empty()
                         ? List.of()
                         : s.templates().all().stream()
@@ -152,6 +153,7 @@ final class Snapshots {
         MatchState state = new MatchState(snapshot.config(), templates, entities, log);
         state.setTick(snapshot.tick());
         state.restoreDiplomacy(snapshot.diplomacy());
+        state.restorePresentation(snapshot.presentation());
         state.setNextGroup(snapshot.nextGroup());
         state.progress().restore(snapshot.play().progress());
         state.matchStats().restore(snapshot.play().matchStats());

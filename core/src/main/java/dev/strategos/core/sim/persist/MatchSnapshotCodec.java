@@ -479,7 +479,10 @@ public final class MatchSnapshotCodec {
                     GARRISON.listOf().optionalFieldOf("garrisons", List.of()).forGetter(MatchSnapshot.Play::garrisons),
                     DiplomacyCodec.STATE
                             .fieldOf("diplomacy")
-                            .forGetter(p -> java.util.Objects.requireNonNull(p.diplomacy())))
+                            .forGetter(p -> java.util.Objects.requireNonNull(p.diplomacy())),
+                    PresentationCodec.STATE
+                            .fieldOf("presentation")
+                            .forGetter(p -> java.util.Objects.requireNonNull(p.presentation())))
             .apply(i, MatchSnapshot.Play::new));
 
     private static final Codec<MatchSnapshot.TemplateBinding> BINDING = RecordCodecBuilder.create(i -> i.group(
@@ -577,6 +580,9 @@ public final class MatchSnapshotCodec {
                     .flatMap(migrated -> {
                         if (migrated.get("play").get("diplomacy").result().isEmpty()) {
                             return DataResult.error(() -> "schema 4 snapshot needs diplomacy");
+                        }
+                        if (migrated.get("play").get("presentation").result().isEmpty()) {
+                            return DataResult.error(() -> "schema 7 snapshot needs presentation");
                         }
                         return CODEC.parse(migrated);
                     })

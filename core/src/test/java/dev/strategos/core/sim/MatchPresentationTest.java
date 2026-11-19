@@ -93,4 +93,46 @@ class MatchPresentationTest {
                         .error())
                 .isPresent();
     }
+
+    @Test
+    void malformedCurrentPresentationAndForeignFactionCountsAreRejected() {
+        var match = SimHarness.builder().factions(2).build();
+        match.schedule(1, new PresentationSetup(chosen()));
+        match.step();
+        JsonObject original = MatchSnapshotCodec.encode(
+                        JsonOps.INSTANCE, match.core().snapshot())
+                .getAsJsonObject();
+        var invalidColour = original.deepCopy();
+        invalidColour
+                .getAsJsonObject("play")
+                .getAsJsonArray("presentation")
+                .get(0)
+                .getAsJsonObject()
+                .addProperty("colour", 16);
+        assertThat(MatchSnapshotCodec.decode(new Dynamic<>(JsonOps.INSTANCE, invalidColour), Migrations.production())
+                        .error())
+                .isPresent();
+        var invalidCivilisation = original.deepCopy();
+        invalidCivilisation
+                .getAsJsonObject("play")
+                .getAsJsonArray("presentation")
+                .get(0)
+                .getAsJsonObject()
+                .addProperty("civilisation", "strategos:Bad");
+        assertThat(MatchSnapshotCodec.decode(
+                                new Dynamic<>(JsonOps.INSTANCE, invalidCivilisation), Migrations.production())
+                        .error())
+                .isPresent();
+        var foreignCount = original.deepCopy();
+        foreignCount.getAsJsonObject("play").getAsJsonArray("presentation").remove(1);
+        assertThat(MatchSnapshotCodec.decode(new Dynamic<>(JsonOps.INSTANCE, foreignCount), Migrations.production())
+                        .error())
+                .isPresent();
+        var replacedAuthority = match.core()
+                .snapshot()
+                .play()
+                .withDiplomacy(dev.strategos.core.sim.diplomacy.DiplomacyState.identity(2)
+                        .lockTeams());
+        assertThat(replacedAuthority.presentation()).isEqualTo(chosen());
+    }
 }

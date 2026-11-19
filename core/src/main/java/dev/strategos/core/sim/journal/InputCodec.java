@@ -2,6 +2,7 @@ package dev.strategos.core.sim.journal;
 
 import dev.strategos.core.content.TemplateIdTable;
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.protocol.FactionPresentation;
 import dev.strategos.core.protocol.TemplateSetView;
 import dev.strategos.core.protocol.WireException;
 import dev.strategos.core.protocol.WireReader;
@@ -17,6 +18,7 @@ import dev.strategos.core.sim.ExternalDamage;
 import dev.strategos.core.sim.InputEvent;
 import dev.strategos.core.sim.JobDelivery;
 import dev.strategos.core.sim.LeaderUpdate;
+import dev.strategos.core.sim.PresentationSetup;
 import dev.strategos.core.sim.SliceSource;
 import dev.strategos.core.sim.TerrainPage;
 import dev.strategos.core.sim.diplomacy.DiplomacyState;
@@ -31,7 +33,7 @@ import java.util.List;
  * in, as its {@link TemplateSetView}, whose version is checked when read; 5 the tick's agents, a count and each one's
  * id and six floats; 6 damage a body took, as its handle, kind, amount and source kind; 7 a leader pose;
  * 8 a sampled terrain page; 9 a bounded, canonical first-tick diplomacy setup; 10 external damage with its
- * authenticated source faction. Existing tags never change meaning.
+ * authenticated source faction; 11 public first-tick faction presentation. Existing tags never change meaning.
  */
 final class InputCodec {
     private static final int COMMAND = 1;
@@ -46,6 +48,7 @@ final class InputCodec {
 
     private static final int DIPLOMACY_SETUP = 9;
     private static final int ATTRIBUTED_EXTERNAL_DAMAGE = 10;
+    private static final int PRESENTATION_SETUP = 11;
 
     private InputCodec() {}
 
@@ -96,6 +99,10 @@ final class InputCodec {
                 out.writeFloat(leader.x());
                 out.writeFloat(leader.z());
                 out.writeFloat(leader.yaw());
+            }
+            case PresentationSetup setup -> {
+                out.writeByte(PRESENTATION_SETUP);
+                FactionPresentation.WIRE.write(out, setup.presentation());
             }
             case DiplomacySetup setup -> {
                 out.writeByte(DIPLOMACY_SETUP);
@@ -248,6 +255,7 @@ final class InputCodec {
                 yield new JobDelivery(ids);
             }
             case DIPLOMACY_SETUP -> readDiplomacy(in);
+            case PRESENTATION_SETUP -> new PresentationSetup(FactionPresentation.WIRE.read(in));
             default -> throw new WireException("unknown input kind " + kind);
         };
     }

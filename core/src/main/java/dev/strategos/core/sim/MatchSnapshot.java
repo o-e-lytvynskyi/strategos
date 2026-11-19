@@ -1,5 +1,6 @@
 package dev.strategos.core.sim;
 
+import dev.strategos.core.protocol.FactionPresentation;
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.sim.build.BuildingStore;
@@ -54,7 +55,8 @@ public record MatchSnapshot(
             ShotStore.Snapshot shots,
             List<StanceStore.Saved> stances,
             List<GarrisonStore.Saved> garrisons,
-            @Nullable DiplomacyState diplomacy) {
+            @Nullable DiplomacyState diplomacy,
+            @Nullable FactionPresentation presentation) {
         public static final Play EMPTY = new Play(
                 List.of(),
                 List.of(),
@@ -66,6 +68,38 @@ public record MatchSnapshot(
                 ShotStore.Snapshot.EMPTY,
                 List.of(),
                 List.of());
+
+        /** Compatibility construction through schema 6; the enclosing snapshot supplies legacy presentation. */
+        public Play(
+                List<Long> outcome,
+                List<AiSlots.Saved> ai,
+                long aiWake,
+                List<Long> alerts,
+                List<List<String>> progress,
+                List<Long> matchStats,
+                List<Long> vision,
+                ShotStore.Snapshot shots,
+                List<StanceStore.Saved> stances,
+                List<GarrisonStore.Saved> garrisons,
+                @Nullable DiplomacyState diplomacy) {
+            this(outcome, ai, aiWake, alerts, progress, matchStats, vision, shots, stances, garrisons, diplomacy, null);
+        }
+
+        public Play withPresentation(FactionPresentation saved) {
+            return new Play(
+                    outcome,
+                    ai,
+                    aiWake,
+                    alerts,
+                    progress,
+                    matchStats,
+                    vision,
+                    shots,
+                    stances,
+                    garrisons,
+                    diplomacy,
+                    saved);
+        }
 
         /** Compatibility construction before schema 4; the enclosing snapshot supplies explicit identity. */
         public Play(
@@ -96,7 +130,18 @@ public record MatchSnapshot(
 
         public Play withDiplomacy(DiplomacyState saved) {
             return new Play(
-                    outcome, ai, aiWake, alerts, progress, matchStats, vision, shots, stances, garrisons, saved);
+                    outcome,
+                    ai,
+                    aiWake,
+                    alerts,
+                    progress,
+                    matchStats,
+                    vision,
+                    shots,
+                    stances,
+                    garrisons,
+                    saved,
+                    presentation);
         }
 
         /** A play without garrisons, as before BLD-16 saved them. */
@@ -242,6 +287,10 @@ public record MatchSnapshot(
         return java.util.Objects.requireNonNull(play.diplomacy());
     }
 
+    public FactionPresentation presentation() {
+        return java.util.Objects.requireNonNull(play.presentation());
+    }
+
     public MatchSnapshot {
         var savedDiplomacy = play.diplomacy();
         if (savedDiplomacy == null) {
@@ -250,6 +299,14 @@ public record MatchSnapshot(
         }
         if (savedDiplomacy.factions() != config.factions()) {
             throw new IllegalArgumentException("saved diplomacy faction count differs from match config");
+        }
+        var savedPresentation = play.presentation();
+        if (savedPresentation == null) {
+            savedPresentation = FactionPresentation.legacy(config.factions());
+            play = play.withPresentation(savedPresentation);
+        }
+        if (savedPresentation.styles().size() != config.factions()) {
+            throw new IllegalArgumentException("saved presentation faction count differs from match config");
         }
         templateBindings = List.copyOf(templateBindings);
         buildings = List.copyOf(buildings);

@@ -5,6 +5,7 @@ import dev.strategos.core.content.Footprint;
 import dev.strategos.core.content.StartSlot;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.FactionLook;
+import dev.strategos.core.protocol.FactionPresentation;
 import dev.strategos.core.protocol.MatchResults;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
@@ -56,6 +57,11 @@ final class QueriesImpl implements MatchQueries {
     @Override
     public @Nullable String templateSwapProblem(TemplateSet next) {
         return state.templateSwapProblem(next);
+    }
+
+    @Override
+    public FactionPresentation presentation() {
+        return state.presentation();
     }
 
     @Override

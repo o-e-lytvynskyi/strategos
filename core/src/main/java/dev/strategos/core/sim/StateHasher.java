@@ -214,6 +214,7 @@ public final class StateHasher {
         if (!s.diplomacy().isLegacyIdentity()) {
             h = s.diplomacy().mixHash(h);
         }
+        if (!s.presentation().isLegacy()) h = s.presentation().mixHash(h);
         return Hasher.finish(h);
     }
 

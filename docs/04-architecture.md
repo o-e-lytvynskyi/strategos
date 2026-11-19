@@ -916,6 +916,13 @@ DimensionDataStorage.java:43):
   migrates legacy individual/draw results without changing their hashes. Match-end news and
   terminal state carry the same bounded set; registration version 2 rejects older readers.
   Restored terminal state overrides a stale paused registry and cannot resume.
+- **Public faction presentation (M7 T8.4a; cloud acceptance pending).**
+  [ADR-0032](adr/0032-faction-presentation-persistence.md) proposes schema 7's required
+  `play.presentation`: bounded civilisation/colour values in faction order, installed only by
+  trusted first-tick journal tag 11. Migration 6→7 retains explicit legacy appearance; default
+  values contribute nothing to released hashes. Non-default configuration has a cached canonical
+  hash. Authority, human names and private economy remain separate. Client palette/scoreboard
+  installation belongs to T8.4b; this foundation alone does not publish chosen colours.
 - **Adapter sessions (M7).** [ADR-0029](adr/0029-roster-session-persistence.md) versions only
   the outer match blob to 2. Its explicit UUID/player roster stores remaining monotonic reclaim
   duration, never a live connection or clock origin. Valid blob-1 membership migrates with the

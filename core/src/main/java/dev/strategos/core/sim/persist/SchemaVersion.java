@@ -14,8 +14,9 @@ public final class SchemaVersion {
      * <p>5 freezes hostile shot source factions for locked-team combat. Legacy unlocked shots retain their
      * behavior; a locked legacy shot needs a matching saved live source identity for conservative migration.
      * <p>6 records an explicit terminal winner mask; legacy individual/draw hashes remain unchanged.
+     * <p>7 requires public faction presentation; older matches migrate with unchanged legacy colours and hashes.
      */
-    public static final int CURRENT = 6;
+    public static final int CURRENT = 7;
 
     private SchemaVersion() {}
 }

@@ -3,6 +3,7 @@ package dev.strategos.core.sim;
 import dev.strategos.core.content.StartSlot;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.FactionLook;
+import dev.strategos.core.protocol.FactionPresentation;
 import dev.strategos.core.protocol.MatchResults;
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.FactionSlot;
@@ -27,6 +28,9 @@ import org.jspecify.annotations.Nullable;
 public interface MatchQueries {
     /** Immutable authority at this completed tick; grants do not imply visibility of private state. */
     DiplomacyView diplomacy();
+
+    /** Detached public faction presentation at this completed tick. */
+    FactionPresentation presentation();
 
     /** Why a template swap would be unsafe, or null when every live reference remains valid. */
     @Nullable String templateSwapProblem(TemplateSet next);

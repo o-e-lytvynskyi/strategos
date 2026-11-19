@@ -15,4 +15,5 @@ public sealed interface InputEvent
                 JobDelivery,
                 ContentSwap,
                 LeaderUpdate,
-                DiplomacySetup {}
+                DiplomacySetup,
+                PresentationSetup {}

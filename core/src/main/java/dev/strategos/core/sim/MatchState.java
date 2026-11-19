@@ -5,6 +5,7 @@ import dev.strategos.core.content.Footprint;
 import dev.strategos.core.content.StartSlot;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.diag.MatchLog;
+import dev.strategos.core.protocol.FactionPresentation;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.sim.build.BuildingLife;
 import dev.strategos.core.sim.build.BuildingStore;
@@ -55,6 +56,8 @@ public final class MatchState {
     private long tick;
     private MatchConfig config;
     private DiplomacyState diplomacy;
+    private FactionPresentation presentation;
+    private boolean presentationConfigured;
     private final Outcome outcome = new Outcome();
     private final AiSlots aiSlots = new AiSlots();
     private final MatchStats matchStats;
@@ -108,6 +111,7 @@ public final class MatchState {
     MatchState(MatchConfig config, TemplateSet templates, EntityStore entities, MatchLog log) {
         this.config = config;
         this.diplomacy = DiplomacyState.identity(config.factions());
+        this.presentation = FactionPresentation.legacy(config.factions());
         this.templates = templates;
         mobilityCache.rebuild();
         this.entities = entities;
@@ -542,6 +546,26 @@ public final class MatchState {
 
     public DiplomacyState diplomacy() {
         return diplomacy;
+    }
+
+    public FactionPresentation presentation() {
+        return presentation;
+    }
+
+    void configurePresentation(PresentationSetup setup) {
+        if (tick != 1 || presentationConfigured || setup.presentation().styles().size() != config.factions()) {
+            log.warn(tick, "ignored presentation setup: late, duplicate or wrong faction count");
+            return;
+        }
+        presentation = setup.presentation();
+        presentationConfigured = true;
+    }
+
+    void restorePresentation(FactionPresentation saved) {
+        if (saved.styles().size() != config.factions())
+            throw new IllegalArgumentException("saved presentation faction count differs from match config");
+        presentation = saved;
+        presentationConfigured = tick > 0 || !saved.isLegacy();
     }
 
     /** Single-writer application of a validated journaled control command; bindings and teams never change. */
