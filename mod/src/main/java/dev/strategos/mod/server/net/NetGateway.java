@@ -93,7 +93,10 @@ public final class NetGateway {
     private final MinecraftServer server;
     private final Supplier<MatchRegistry> matches;
     private final FaultBarrier faults;
-    private final Map<UUID, List<CustomPacketPayload>> queued = new LinkedHashMap<>();
+
+    private record QueuedFrame(CustomPacketPayload payload, RecipientContext recipient) {}
+
+    private final Map<UUID, List<QueuedFrame>> queued = new LinkedHashMap<>();
     private final Map<Integer, MatchLifecycle> lastState = new HashMap<>();
     private final Map<Integer, List<FactionLook>> lastLooks = new HashMap<>();
     private final NetCounters counters = new NetCounters();
@@ -109,7 +112,7 @@ public final class NetGateway {
     public void send(Audience audience, CustomPacketPayload payload) {
         check(ModPayloads.spec(payload.type().id()), payload.type().id(), audience.kind());
         switch (audience) {
-            case Audience.Player p -> queue(p.player().getUUID(), payload);
+            case Audience.Player p -> queue(p.player(), payload);
             case Audience.TrackersOf t -> toTrackers(t, payload);
             case Audience.Faction f -> {
                 MatchRuntime rt = matches.get().get(f.match());
@@ -246,13 +249,15 @@ public final class NetGateway {
         lastState.putAll(now); // a disposed match is forgotten
         lastLooks.clear();
         lastLooks.putAll(nowLooks);
-        for (Map.Entry<UUID, List<CustomPacketPayload>> e : queued.entrySet()) {
+        for (Map.Entry<UUID, List<QueuedFrame>> e : queued.entrySet()) {
             ServerPlayer player = server.getPlayerList().getPlayer(e.getKey());
             if (player == null) {
                 continue; // it left this tick
             }
             List<CustomPacketPayload> sendable = new ArrayList<>();
-            for (CustomPacketPayload p : e.getValue()) {
+            for (QueuedFrame frame : e.getValue()) {
+                if (!frame.recipient().current(player, matches.get())) continue;
+                CustomPacketPayload p = frame.payload();
                 if (player.connection.hasChannel(p)) {
                     sendable.add(p);
                     counters.sent(p.type().id(), player.getGameProfile().getName(), size(p));
@@ -360,7 +365,13 @@ public final class NetGateway {
     }
 
     private void queue(UUID player, CustomPacketPayload payload) {
-        queued.computeIfAbsent(player, k -> new ArrayList<>()).add(payload);
+        ServerPlayer online = server.getPlayerList().getPlayer(player);
+        if (online != null) queue(online, payload);
+    }
+
+    private void queue(ServerPlayer player, CustomPacketPayload payload) {
+        RecipientContext context = RecipientContext.capture(player, matches.get());
+        queued.computeIfAbsent(player.getUUID(), k -> new ArrayList<>()).add(new QueuedFrame(payload, context));
     }
 
     private void toMembers(MatchId match, CustomPacketPayload payload) {
