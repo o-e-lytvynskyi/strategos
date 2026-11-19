@@ -3,7 +3,8 @@ package dev.strategos.gametest.suites;
 import static dev.strategos.gametest.suites.Units.check;
 
 import dev.strategos.core.port.MetricsSink;
-import dev.strategos.core.protocol.VisionDelta;
+import dev.strategos.core.protocol.CommandOutcome;
+import dev.strategos.core.protocol.Feedback;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.testkit.SimHarness;
 import dev.strategos.gametest.StrategosTest;
@@ -12,8 +13,8 @@ import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.server.match.MatchOptions;
 import dev.strategos.mod.server.match.MatchSource;
 import dev.strategos.mod.server.net.Audience;
+import dev.strategos.mod.server.net.payload.FeedbackPayload;
 import dev.strategos.mod.server.net.payload.MatchJoinPayload;
-import dev.strategos.mod.server.net.payload.VisionDeltaPayload;
 import java.util.List;
 import net.minecraft.gametest.framework.GameTestHelper;
 
@@ -77,23 +78,17 @@ public final class RecipientQueueTests {
                 .thenSucceed();
     }
 
-    private static void marker(MultiplayerHarness kit, int player, long marker) {
+    private static void marker(MultiplayerHarness kit, int player, int marker) {
         StrategosServer.get()
                 .net()
                 .send(
                         new Audience.Player(kit.viewer(player).player()),
-                        new VisionDeltaPayload(new VisionDelta(
-                                kit.match().id().value(),
-                                1_000_000_000L + marker,
-                                1,
-                                1,
-                                true,
-                                new int[] {0},
-                                new int[] {0})));
+                        new FeedbackPayload(new Feedback(1_000_000_000 + marker, CommandOutcome.ACCEPTED, null, 1, 1)));
     }
 
-    private static boolean received(MultiplayerHarness kit, int player, long marker) {
-        return kit.payloads(player, VisionDeltaPayload.class).stream()
-                .anyMatch(frame -> frame.delta().tick() == 1_000_000_000L + marker);
+    private static boolean received(MultiplayerHarness kit, int player, int marker) {
+        return kit.payloads(player, FeedbackPayload.class).stream()
+                .anyMatch(frame ->
+                        frame.message() instanceof Feedback feedback && feedback.clientSeq() == 1_000_000_000 + marker);
     }
 }
