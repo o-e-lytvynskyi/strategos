@@ -27,9 +27,10 @@ public final class MatchRoster {
     public static final long DEFAULT_RECONNECT_NANOS = 300_000_000_000L;
     public static final long MAX_RECONNECT_NANOS = 86_400_000_000_000L;
 
-    private record SeatState(PlayerSlot slot, boolean connected, long reservedAt, long remaining) {}
+    private record SeatState(PlayerSlot slot, boolean connected, long reservedAt, long remaining, long generation) {}
 
     private final TreeMap<UUID, SeatState> seats = new TreeMap<>();
+    private long nextGeneration;
     private final LongSupplier clock;
     private final long reclaimNanos;
 
@@ -51,10 +52,21 @@ public final class MatchRoster {
         return seat == null ? null : seat.slot();
     }
 
+    /** A live per-player transport generation; absent/disconnected seats have none. Never persisted. */
+    public long generationOf(UUID player) {
+        SeatState seat = seats.get(player);
+        return seat == null || !seat.connected() ? 0 : seat.generation();
+    }
+
+    private long newGeneration() {
+        nextGeneration = Math.incrementExact(nextGeneration);
+        return nextGeneration;
+    }
+
     /** Seats {@code player} in {@code slot}: a player's (0 to 15) which no one else holds, or the observers'. */
     void seat(UUID player, PlayerSlot slot) {
         if (slot.isAdmin()) {
-            seats.put(player, new SeatState(slot, true, 0, reclaimNanos));
+            seats.put(player, new SeatState(slot, true, 0, reclaimNanos, newGeneration()));
             return;
         }
         for (Map.Entry<UUID, SeatState> e : seats.entrySet()) {
@@ -62,7 +74,7 @@ public final class MatchRoster {
                 throw new MatchRefusedException("slot " + slot.value() + " is taken");
             }
         }
-        seats.put(player, new SeatState(slot, true, 0, reclaimNanos));
+        seats.put(player, new SeatState(slot, true, 0, reclaimNanos, newGeneration()));
     }
 
     void unseat(UUID player) {
@@ -77,14 +89,15 @@ public final class MatchRoster {
     /** Only the authenticated server lifecycle confirms an existing member; this never creates a seat. */
     void connect(UUID player) {
         SeatState seat = seats.get(player);
-        if (seat != null) seats.put(player, new SeatState(seat.slot(), true, 0, reclaimNanos));
+        if (seat != null && !seat.connected())
+            seats.put(player, new SeatState(seat.slot(), true, 0, reclaimNanos, newGeneration()));
     }
 
     /** Repeated disconnect notifications cannot restart a reserved seat's timer. */
     public void disconnect(UUID player) {
         SeatState seat = seats.get(player);
         if (seat != null && seat.connected()) {
-            seats.put(player, new SeatState(seat.slot(), false, clock.getAsLong(), reclaimNanos));
+            seats.put(player, new SeatState(seat.slot(), false, clock.getAsLong(), reclaimNanos, seat.generation()));
         }
     }
 
@@ -192,7 +205,7 @@ public final class MatchRoster {
             }
             PlayerSlot slot = new PlayerSlot(seat.getInt("slot"));
             roster.seat(member, slot);
-            roster.seats.put(member, new SeatState(slot, false, restoredAt, remaining));
+            roster.seats.put(member, new SeatState(slot, false, restoredAt, remaining, roster.nextGeneration));
         }
         return roster;
     }
