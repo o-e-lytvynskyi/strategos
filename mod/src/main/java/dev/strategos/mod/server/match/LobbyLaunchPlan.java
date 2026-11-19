@@ -4,11 +4,13 @@ import dev.strategos.core.content.Scenario;
 import dev.strategos.core.content.StartSlot;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.Command;
+import dev.strategos.core.protocol.FactionPresentation;
 import dev.strategos.core.protocol.RuleChange;
 import dev.strategos.core.protocol.SkirmishSetup;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.sim.DiplomacySetup;
 import dev.strategos.core.sim.PlayRules;
+import dev.strategos.core.sim.PresentationSetup;
 import dev.strategos.core.sim.ai.Levels;
 import dev.strategos.core.sim.command.ScenarioSetup;
 import dev.strategos.core.sim.diplomacy.DiplomacyState;
@@ -30,14 +32,21 @@ public final class LobbyLaunchPlan {
     private final long templateSetHash;
     private final PlayRules play;
     private final DiplomacySetup authority;
+    private final PresentationSetup presentation;
     private final List<Command> commands;
 
     private LobbyLaunchPlan(
-            int factions, long templateSetHash, PlayRules play, DiplomacySetup authority, List<Command> commands) {
+            int factions,
+            long templateSetHash,
+            PlayRules play,
+            DiplomacySetup authority,
+            PresentationSetup presentation,
+            List<Command> commands) {
         this.factions = factions;
         this.templateSetHash = templateSetHash;
         this.play = play;
         this.authority = authority;
+        this.presentation = presentation;
         this.commands = List.copyOf(commands);
     }
 
@@ -58,6 +67,7 @@ public final class LobbyLaunchPlan {
         var authority = new DiplomacyState(capacity);
         List<Scenario.Slot> slots = new ArrayList<>(capacity);
         boolean needsAi = false;
+        List<FactionPresentation.Style> styles = new ArrayList<>(capacity);
         for (int f = 0; f < capacity; f++) {
             MatchLobby.@Nullable Seat first = null;
             for (MatchLobby.Seat seat : lobby.seats()) {
@@ -72,10 +82,12 @@ public final class LobbyLaunchPlan {
                 authority = authority.bind(seat.player(), new FactionSlot(f));
             }
             if (first == null) {
+                styles.add(new FactionPresentation.Style("strategos:placeholder", -1));
                 slots.add(new Scenario.Slot("human", Map.of(), List.of()));
                 continue;
             }
             if (f >= source.slots().size()) throw new IllegalArgumentException("scenario has too few faction slots");
+            styles.add(new FactionPresentation.Style(first.civilisation(), first.colour()));
             authority = authority.withTeam(new FactionSlot(f), first.team());
             boolean ai = first.kind() == MatchLobby.Kind.AI;
             needsAi |= ai;
@@ -99,6 +111,7 @@ public final class LobbyLaunchPlan {
                 templates.hash(),
                 Skirmishes.play(setup),
                 new DiplomacySetup(authority.lockTeams().snapshot()),
+                new PresentationSetup(new FactionPresentation(styles)),
                 commands);
     }
 
@@ -116,6 +129,10 @@ public final class LobbyLaunchPlan {
 
     public DiplomacySetup authority() {
         return authority;
+    }
+
+    public PresentationSetup presentation() {
+        return presentation;
     }
 
     public List<Command> commands() {

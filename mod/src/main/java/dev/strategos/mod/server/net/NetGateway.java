@@ -17,6 +17,7 @@ import dev.strategos.core.protocol.Follow;
 import dev.strategos.core.protocol.Fx;
 import dev.strategos.core.protocol.Garrison;
 import dev.strategos.core.protocol.MatchJoin;
+import dev.strategos.core.protocol.MatchPresentation;
 import dev.strategos.core.protocol.MatchStateMsg;
 import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.PlayerAuthority;
@@ -41,6 +42,7 @@ import dev.strategos.mod.server.net.payload.DebugFeedPayload;
 import dev.strategos.mod.server.net.payload.FeedbackPayload;
 import dev.strategos.mod.server.net.payload.FxPayload;
 import dev.strategos.mod.server.net.payload.MatchJoinPayload;
+import dev.strategos.mod.server.net.payload.MatchPresentationPayload;
 import dev.strategos.mod.server.net.payload.MatchStatePayload;
 import dev.strategos.mod.server.net.payload.PlayerAuthorityPayload;
 import dev.strategos.mod.server.tick.FaultBarrier;
@@ -52,6 +54,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Supplier;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket;
 import net.minecraft.resources.ResourceLocation;
@@ -75,6 +78,7 @@ import org.jspecify.annotations.Nullable;
  * in step (04 §12.2).
  */
 public final class NetGateway {
+    private final Map<Integer, MatchPresentation> publicPresentations = new HashMap<>();
     /** The reason a player hears when it is disconnected for its violations. */
     public static final String TOO_MANY = "strategos: too many invalid packets";
 
@@ -187,8 +191,25 @@ public final class NetGateway {
                         slot,
                         rules,
                         authority.orElseThrow())));
+        send(new Audience.Player(player), new MatchPresentationPayload(presentation(rt)));
         lastState.remove(rt.id().value());
         lastLooks.remove(rt.id().value());
+    }
+
+    /** Adapter changes keep ordering even while the simulation is paused. */
+    MatchPresentation presentation(MatchRuntime match) {
+        MatchPresentation next = PublicPresentation.of(server, match);
+        MatchPresentation previous = publicPresentations.get(match.id().value());
+        if (previous != null && previous.sameView(next)) return previous;
+        long revision = previous == null ? 1 : Math.addExact(previous.revision(), 1);
+        var published = new MatchPresentation(next.matchId(), revision, next.factions(), next.participants());
+        publicPresentations.put(match.id().value(), published);
+        return published;
+    }
+
+    /** Bounded player-name team packets; the caller owns an isolated board, never a global broadcast. */
+    void sendPlayerPacket(ServerPlayer player, Packet<?> packet) {
+        player.connection.send(packet);
     }
 
     /** Refuses a payload type the server does not send ({@code spec} null or client-to-server) or an audience it lacks. */
@@ -220,6 +241,7 @@ public final class NetGateway {
                 send(new Audience.Match(rt.id()), state(rt, looks));
             }
         }
+        publicPresentations.keySet().retainAll(now.keySet());
         lastState.clear();
         lastState.putAll(now); // a disposed match is forgotten
         lastLooks.clear();
@@ -400,6 +422,7 @@ public final class NetGateway {
     /** A payload's record bytes, as the wire carries them. */
     static int size(CustomPacketPayload payload) {
         return switch (payload) {
+            case MatchPresentationPayload p -> WireCodec.encode(MatchPresentation.WIRE, p.presentation()).length;
             case MatchJoinPayload p -> WireCodec.encode(MatchJoin.WIRE, p.join()).length;
             case PlayerAuthorityPayload p -> WireCodec.encode(PlayerAuthority.WIRE, p.authority()).length;
             case MatchStatePayload p -> WireCodec.encode(MatchStateMsg.WIRE, p.state()).length;

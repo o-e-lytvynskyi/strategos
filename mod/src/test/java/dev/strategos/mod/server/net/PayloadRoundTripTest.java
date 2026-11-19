@@ -7,15 +7,18 @@ import dev.strategos.core.protocol.CommandOutcome;
 import dev.strategos.core.protocol.DebugFeedMsg;
 import dev.strategos.core.protocol.DebugLayer;
 import dev.strategos.core.protocol.DebugSubscribe;
+import dev.strategos.core.protocol.FactionPresentation;
 import dev.strategos.core.protocol.Feedback;
 import dev.strategos.core.protocol.Fx;
 import dev.strategos.core.protocol.FxKind;
 import dev.strategos.core.protocol.Limits;
 import dev.strategos.core.protocol.MatchJoin;
+import dev.strategos.core.protocol.MatchPresentation;
 import dev.strategos.core.protocol.MatchStateMsg;
 import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.NoticeKind;
 import dev.strategos.core.protocol.NoticeMsg;
+import dev.strategos.core.protocol.PlayerAuthority;
 import dev.strategos.core.protocol.RejectReason;
 import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.protocol.WireWriter;
@@ -27,7 +30,9 @@ import dev.strategos.mod.server.net.payload.DebugSubscribePayload;
 import dev.strategos.mod.server.net.payload.FeedbackPayload;
 import dev.strategos.mod.server.net.payload.FxPayload;
 import dev.strategos.mod.server.net.payload.MatchJoinPayload;
+import dev.strategos.mod.server.net.payload.MatchPresentationPayload;
 import dev.strategos.mod.server.net.payload.MatchStatePayload;
+import dev.strategos.mod.server.net.payload.PlayerAuthorityPayload;
 import io.netty.buffer.Unpooled;
 import java.util.List;
 import net.minecraft.core.RegistryAccess;
@@ -67,6 +72,19 @@ class PayloadRoundTripTest {
                 FeedbackPayload.SPEC.cap());
         assertThat(MatchStatePayload.SPEC.cap()).isLessThanOrEqualTo(1056); // results 1024, looks 21 (TECH-03)
         assertThat(FeedbackPayload.SPEC.cap()).isLessThanOrEqualTo(1024);
+        roundTrip(
+                PlayerAuthorityPayload.STREAM_CODEC,
+                new PlayerAuthorityPayload(new PlayerAuthority(1, new PlayerSlot(0), 3, 0, 1, 3)),
+                PlayerAuthorityPayload.SPEC.cap());
+        roundTrip(
+                MatchPresentationPayload.STREAM_CODEC,
+                new MatchPresentationPayload(new MatchPresentation(
+                        1,
+                        1,
+                        FactionPresentation.legacy(2),
+                        List.of(new MatchPresentation.Participant(new PlayerSlot(0), 0, "host", true)))),
+                MatchPresentationPayload.SPEC.cap());
+        assertThat(MatchPresentationPayload.SPEC.cap()).isLessThanOrEqualTo(4096);
         assertThat(MatchJoinPayload.SPEC.cap()).isLessThanOrEqualTo(4096);
     }
 

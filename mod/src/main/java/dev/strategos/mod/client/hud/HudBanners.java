@@ -217,7 +217,7 @@ final class HudBanners {
                     line,
                     px + (pw - font.width(winner)) / 2 - 3,
                     line + 7,
-                    theme.faction(end.faction()));
+                    StrategosClient.colour(end.faction()));
         }
         g.drawString(font, winner, px + (pw - font.width(winner)) / 2, line, theme.text(), false);
         g.drawString(font, time, px + (pw - font.width(time)) / 2, line + font.lineHeight + 2, theme.dimText(), false);
@@ -233,7 +233,7 @@ final class HudBanners {
             g.drawString(font, "", tableX, hdrY, theme.dimText(), false);
             for (int f = 0; f < factions; f++) {
                 int cx = tableX + labelW + colW * f + (colW - font.width(headers[f])) / 2;
-                g.fill(cx - 2, hdrY, cx - 2 + 4, hdrY + font.lineHeight, theme.faction(f));
+                g.fill(cx - 2, hdrY, cx - 2 + 4, hdrY + font.lineHeight, StrategosClient.colour(f));
                 g.drawString(font, headers[f], cx + 5, hdrY, theme.text(), false);
             }
             String[] labels = {"Units trained", "Units lost", "Buildings built", "Buildings lost"};

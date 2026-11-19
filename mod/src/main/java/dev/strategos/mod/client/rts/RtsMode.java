@@ -566,6 +566,13 @@ public final class RtsMode {
         for (Entity e : mc.level.entitiesForRendering()) {
             if (e instanceof UnitEntity body) {
                 UnitSpawnData data = body.spawnData();
+                if (data != null) {
+                    var palette = StrategosClient.palette(data.matchId());
+                    body.factionColourOnClient(
+                            palette.hasExplicitColour(data.faction())
+                                    ? (palette.colour(data.faction()) & 0xFFFFFF)
+                                    : -1);
+                }
                 body.selectedOnClient(data != null
                         && rig != null
                         && (join == null || data.matchId() == join.matchId())

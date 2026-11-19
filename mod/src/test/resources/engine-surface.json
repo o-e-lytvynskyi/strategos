@@ -21,6 +21,7 @@
     "strategos:match_control",
     "strategos:match_event",
     "strategos:match_join",
+    "strategos:match_presentation",
     "strategos:match_state",
     "strategos:mode_switch",
     "strategos:player_authority",

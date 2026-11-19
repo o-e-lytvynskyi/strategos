@@ -242,7 +242,7 @@ final class RtsMinimap {
                     y0,
                     x0 + Math.max(1, (int) Math.round(d.w())),
                     y0 + Math.max(1, (int) Math.round(d.h())),
-                    paint.theme.faction(d.faction()));
+                    StrategosClient.colour(d.faction()));
         }
         MatchNews alert = StrategosClient.model().alert();
         if (alert != null && clientTicks - alertAt < 200 && (clientTicks / 5) % 2 == 0) {

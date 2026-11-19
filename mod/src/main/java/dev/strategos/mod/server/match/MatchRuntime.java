@@ -16,6 +16,7 @@ import dev.strategos.core.sim.LeaderUpdate;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.core.sim.MatchRules;
+import dev.strategos.core.sim.PresentationSetup;
 import dev.strategos.core.sim.TickInputs;
 import dev.strategos.core.sim.TickOutputs;
 import dev.strategos.core.sim.nav.DeliveryMode;
@@ -46,6 +47,7 @@ import org.slf4j.LoggerFactory;
 public final class MatchRuntime {
     private dev.strategos.mod.server.world.WorldReconciler.@org.jspecify.annotations.Nullable Result reconciled;
     private @Nullable DiplomacySetup diplomacySetup;
+    private @Nullable PresentationSetup presentationSetup;
     private @Nullable ContentSwap swap; // a reload's set, for the next step
     private final MatchId id;
     private final MatchSpace space;
@@ -223,6 +225,15 @@ public final class MatchRuntime {
         diplomacySetup = setup;
     }
 
+    /** Atomically queue validated public appearance with the existing fresh-runtime authority transaction. */
+    public void initializeDiplomacy(DiplomacySetup setup, PresentationSetup presentation) {
+        if (presentation.presentation().styles().size()
+                != requireCore().queries().config().factions())
+            throw new IllegalArgumentException("presentation faction count differs from match config");
+        initializeDiplomacy(setup);
+        presentationSetup = presentation;
+    }
+
     boolean initializingDiplomacy() {
         return diplomacySetup != null;
     }
@@ -308,11 +319,13 @@ public final class MatchRuntime {
                 next, inbox, pages.due(next), agents, leaders(level), damage, delivery(c, next), swap);
         DiplomacySetup setup = diplomacySetup;
         if (setup != null) {
-            List<InputEvent> events = new ArrayList<>(inputs.events().size() + 1);
+            List<InputEvent> events = new ArrayList<>(inputs.events().size() + 2);
             events.add(setup);
+            if (presentationSetup != null) events.add(presentationSetup);
             events.addAll(inputs.events());
             inputs = new TickInputs(next, events);
             diplomacySetup = null;
+            presentationSetup = null;
         }
         TickOutputs out = c.step(inputs);
         long start = System.nanoTime();

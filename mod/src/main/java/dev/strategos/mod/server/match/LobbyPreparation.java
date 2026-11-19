@@ -119,7 +119,7 @@ public final class LobbyPreparation implements LobbyService.Preparation {
             if (core.queries().templates().hash() != plan.templateSetHash()) {
                 throw new IllegalStateException("template version changed during allocation");
             }
-            rt.initializeDiplomacy(plan.authority());
+            rt.initializeDiplomacy(plan.authority(), plan.presentation());
             for (var command : plan.commands()) {
                 rt.submit(PlayerSlot.ADMIN, command, result -> {
                     preparation.replies++;
@@ -167,10 +167,12 @@ public final class LobbyPreparation implements LobbyService.Preparation {
             }
             try {
                 for (MatchLobby.Seat seat : humans) {
+                    server.matches().join(match, Objects.requireNonNull(seat.occupant()), seat.player());
+                }
+                for (MatchLobby.Seat seat : humans) {
                     UUID member = Objects.requireNonNull(seat.occupant());
                     ServerPlayer player = Objects.requireNonNull(
                             server.server().getPlayerList().getPlayer(member));
-                    server.matches().join(match, member, seat.player());
                     server.commanders().enter(player, match);
                     server.net().joined(match, player, seat.player());
                 }

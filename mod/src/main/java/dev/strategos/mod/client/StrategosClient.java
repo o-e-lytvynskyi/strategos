@@ -2,10 +2,14 @@ package dev.strategos.mod.client;
 
 import com.google.gson.JsonParser;
 import com.mojang.serialization.JsonOps;
+import dev.strategos.core.client.look.FactionPalette;
 import dev.strategos.core.client.model.ClientMatchModel;
+import dev.strategos.core.client.model.ClientPresentation;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.FactionLook;
+import dev.strategos.core.protocol.FactionPresentation;
 import dev.strategos.core.protocol.MatchJoin;
+import dev.strategos.core.protocol.MatchPresentation;
 import dev.strategos.core.protocol.MatchStateMsg;
 import dev.strategos.core.protocol.PlayerAuthority;
 import dev.strategos.core.sim.MatchRules;
@@ -49,6 +53,8 @@ import org.jspecify.annotations.Nullable;
  */
 @Mod(value = Strategos.MOD_ID, dist = Dist.CLIENT)
 public final class StrategosClient {
+    private static final FactionPalette LEGACY_PALETTE = new FactionPalette(FactionPresentation.legacy(16));
+    private static final ClientPresentation PRESENTATION = new ClientPresentation();
     private static final ClientDebugState DEBUG = new ClientDebugState();
     private static final RtsMode RTS = new RtsMode();
     private static final RtsHud HUD = new RtsHud(RTS);
@@ -86,6 +92,7 @@ public final class StrategosClient {
             ClientLobby.clear();
             RTS.remember(); // the match's camera and groups, for a return (MATCH-04)
             match = null;
+            PRESENTATION.clear();
             resources = List.of();
             state = null;
             DEBUG.reset();
@@ -158,8 +165,26 @@ public final class StrategosClient {
 
     public static void match(MatchJoin join) {
         match = join;
+        PRESENTATION.joined(join.matchId(), join.factions());
         ARCS.joined(join.matchId());
         resources = resources(join);
+    }
+
+    public static @Nullable MatchPresentation presentation() {
+        return PRESENTATION.view();
+    }
+
+    public static void presentation(MatchPresentation frame) {
+        PRESENTATION.accept(frame);
+    }
+
+    public static int colour(int faction) {
+        return PRESENTATION.palette().colour(faction);
+    }
+
+    public static FactionPalette palette(int matchId) {
+        MatchJoin joined = match;
+        return joined != null && joined.matchId() == matchId ? PRESENTATION.palette() : LEGACY_PALETTE;
     }
 
     /** A permission update changes neither the joined world nor its private primary perspective. */

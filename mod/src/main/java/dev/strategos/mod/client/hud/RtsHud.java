@@ -607,7 +607,12 @@ public final class RtsHud {
                 SelectionPanel.Unit u = java.util.Objects.requireNonNull(p.unit());
                 cardPresentation.icon(g, font, templates, u.template(), SelectionPanel.icon(r, pad));
                 paint.text(
-                        g, font, r, 0, HudCardPresentation.name(templates, u.template()), theme.faction(u.faction()));
+                        g,
+                        font,
+                        r,
+                        0,
+                        HudCardPresentation.name(templates, u.template()),
+                        StrategosClient.colour(u.faction()));
                 paint.text(
                         g,
                         font,

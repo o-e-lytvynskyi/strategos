@@ -3,6 +3,7 @@ package dev.strategos.mod.server.net;
 import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.DepositState;
 import dev.strategos.core.protocol.FactionState;
+import dev.strategos.core.protocol.MatchPresentation;
 import dev.strategos.core.protocol.PlayerAuthority;
 import dev.strategos.core.protocol.UiQuery;
 import dev.strategos.core.protocol.UnitDetail;
@@ -24,6 +25,7 @@ import dev.strategos.mod.server.match.MatchRuntime;
 import dev.strategos.mod.server.net.payload.BuildingStatePayload;
 import dev.strategos.mod.server.net.payload.DepositStatePayload;
 import dev.strategos.mod.server.net.payload.FactionStatePayload;
+import dev.strategos.mod.server.net.payload.MatchPresentationPayload;
 import dev.strategos.mod.server.net.payload.PlayerAuthorityPayload;
 import dev.strategos.mod.server.net.payload.UnitDetailPayload;
 import dev.strategos.mod.server.net.payload.UnitHudPayload;
@@ -76,6 +78,8 @@ public final class Replication {
     private final MinecraftServer server;
     private final Supplier<MatchRegistry> matches;
     private final NetGateway net;
+    private final PlayerNameTeams nameTeams;
+    private final Map<UUID, MatchPresentation> presentations = new HashMap<>();
     private final Map<MatchId, Visibility> visibility = new HashMap<>();
     private final Map<Long, VisionDeltaTracker> visionTrackers = new HashMap<>();
 
@@ -91,6 +95,7 @@ public final class Replication {
         this.server = server;
         this.matches = matches;
         this.net = net;
+        this.nameTeams = new PlayerNameTeams(server, net);
     }
 
     /** A test's own rule for match {@code match}; without one, the faction's {@code VisibilityIndex}. */
@@ -143,6 +148,8 @@ public final class Replication {
     public void forget(UUID player) {
         huds.remove(player);
         authorities.remove(player);
+        presentations.remove(player);
+        nameTeams.forget(player);
         subscriptions.remove(player);
         factions.remove(player);
         buildings.remove(player);
@@ -151,6 +158,7 @@ public final class Replication {
 
     public void tick() {
         sendAuthorities();
+        sendPresentations();
         int now = server.getTickCount();
         if (now % HUD_EVERY == 0) {
             sendHuds();
@@ -197,6 +205,32 @@ public final class Replication {
                 }
             }
         }
+    }
+
+    private void sendPresentations() {
+        var recipients = new java.util.HashSet<UUID>();
+        for (MatchRuntime match : matches.get().all()) {
+            if (match.core() == null) continue;
+            MatchPresentation frame = net.presentation(match);
+            for (UUID member : match.roster().members()) {
+                var seat = matches.get().seatOf(member);
+                ServerPlayer online = server.getPlayerList().getPlayer(member);
+                if (seat == null
+                        || !seat.match().equals(match)
+                        || !seat.hasPerspective()
+                        || online == null
+                        || online.hasDisconnected()) continue;
+                recipients.add(member);
+                MatchPresentation last = presentations.get(member);
+                if (last == null || !last.sameView(frame)) {
+                    net.send(new Audience.Player(online), new MatchPresentationPayload(frame));
+                    presentations.put(member, frame);
+                }
+                nameTeams.update(online, frame);
+            }
+        }
+        nameTeams.retain(recipients);
+        presentations.keySet().retainAll(recipients);
     }
 
     /** Unchanged diplomacy avoids rebuilding permission masks every tick. */
