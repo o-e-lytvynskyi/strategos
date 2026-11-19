@@ -47,3 +47,12 @@ The exact-coordinate recovery repository belongs only to the main Strategos buil
 adding any project repository to `build-logic` shadows its settings repositories.
 Discard the downloaded producer reports immediately after recovering approved files,
 before Gradle and report discovery. Producer XML is never candidate test evidence.
+
+## Preserve positive visual evidence before the negative control
+
+The altered-golden check invokes the same `scenarioDiff` task and overwrites its
+`diff/report.json`. A successful workflow can therefore publish a final report
+containing deliberately failed frames. Inspect the normal step and the negative
+step separately; never call those negative verdicts a normal comparison failure.
+The scenario workflow now preserves `normal-report.json` before the altered check
+and `altered-report.json` afterward, retaining both unmodified verdicts.
