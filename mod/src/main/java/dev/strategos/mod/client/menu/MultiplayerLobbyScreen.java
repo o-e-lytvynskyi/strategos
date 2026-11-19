@@ -204,9 +204,19 @@ public final class MultiplayerLobbyScreen extends Screen {
                                         && s.colour() == value))
                 .boxed()
                 .toList();
-        var colour = addRenderableWidget(CycleButton.<Integer>builder(v -> Component.translatable(
-                        "color.minecraft." + DyeColor.byId(v).getName()))
+        var colour = addRenderableWidget(CycleButton.<Integer>builder(v -> {
+                    String name = Component.translatable(
+                                    "color.minecraft." + DyeColor.byId(v).getName())
+                            .getString();
+                    int available = columns[colourColumn] - 8;
+                    return Component.literal(
+                            font.width(name) <= available
+                                    ? name
+                                    : font.plainSubstrByWidth(name, available - font.width("...")) + "...");
+                })
                 .withValues(choices)
+                .withTooltip(v -> Tooltip.create(Component.translatable(
+                        "color.minecraft." + DyeColor.byId(v).getName())))
                 .withInitialValue(seat.colour())
                 .displayOnlyValue()
                 .create(
