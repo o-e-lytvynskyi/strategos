@@ -61,6 +61,27 @@ class MatchRosterGenerationTest {
     }
 
     @Test
+    void aFullViewRenewalChangesOnlyItsLiveRecipientsTransportGeneration() {
+        MatchRoster roster = new MatchRoster();
+        roster.seat(FIRST, new PlayerSlot(0));
+        roster.seat(SECOND, new PlayerSlot(1));
+        long first = roster.generationOf(FIRST);
+        long second = roster.generationOf(SECOND);
+        long remaining = roster.remainingNanos(FIRST);
+        roster.renew(FIRST);
+        assertThat(roster.generationOf(FIRST)).isGreaterThan(first);
+        assertThat(roster.generationOf(SECOND)).isEqualTo(second);
+        assertThat(roster.slotOf(FIRST)).isEqualTo(new PlayerSlot(0));
+        assertThat(roster.remainingNanos(FIRST)).isEqualTo(remaining);
+        roster.disconnect(FIRST);
+        roster.renew(FIRST);
+        assertThat(roster.generationOf(FIRST)).isZero();
+        roster.unseat(FIRST);
+        roster.renew(FIRST);
+        assertThat(roster.slotOf(FIRST)).isNull();
+    }
+
+    @Test
     void savedMembershipNeverRestoresALiveTransportGeneration() {
         MatchRoster roster = new MatchRoster();
         roster.seat(FIRST, new PlayerSlot(0));

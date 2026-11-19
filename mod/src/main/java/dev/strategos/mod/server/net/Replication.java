@@ -34,6 +34,7 @@ import dev.strategos.mod.server.net.payload.VisionDeltaPayload;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -71,6 +72,7 @@ public final class Replication {
         final ArrayDeque<Long> recent = new ArrayDeque<>();
     }
 
+    private final Map<UUID, RecipientContext> contexts = new HashMap<>();
     private final Map<UUID, HudMemory> huds = new HashMap<>();
     private final Map<UUID, Subscription> subscriptions = new HashMap<>();
     private long queriesRefused;
@@ -125,7 +127,17 @@ public final class Replication {
 
     /** A seated player's {@code ui_query}: it replaces the last; one past the rate is refused. */
     public void query(ServerPlayer player, MatchRegistry.Seat seat, UiQuery query, long tick) {
-        if (!seat.hasPerspective()) return;
+        MatchRegistry registry = matches.get();
+        MatchRegistry.Seat current = registry.seatOf(player.getUUID());
+        ServerPlayer online = server.getPlayerList().getPlayer(player.getUUID());
+        RecipientContext origin = RecipientContext.capture(player, registry);
+        if (!seat.hasPerspective()
+                || current == null
+                || current.match() != seat.match()
+                || !current.slot().equals(seat.slot())
+                || online == null
+                || !origin.current(online, registry)) return;
+        refreshRecipient(player, registry);
         Subscription sub = subscriptions.computeIfAbsent(player.getUUID(), k -> new Subscription());
         while (!sub.recent.isEmpty() && tick - sub.recent.peekFirst() >= 20) {
             sub.recent.removeFirst();
@@ -146,6 +158,7 @@ public final class Replication {
 
     /** Forgets a player that left: its hud memory and subscription. */
     public void forget(UUID player) {
+        contexts.remove(player);
         huds.remove(player);
         authorities.remove(player);
         presentations.remove(player);
@@ -156,7 +169,43 @@ public final class Replication {
         deposits.remove(player);
     }
 
+    /** Reset every recipient-specific memory before producing from a new connection, seat or full view. */
+    private void refreshRecipients() {
+        MatchRegistry registry = matches.get();
+        var live = new HashSet<UUID>();
+        for (MatchRuntime rt : registry.all()) {
+            for (UUID member : rt.roster().members()) {
+                ServerPlayer player = server.getPlayerList().getPlayer(member);
+                MatchRegistry.Seat seat = registry.seatOf(member);
+                if (player == null
+                        || seat == null
+                        || seat.match() != rt
+                        || rt.roster().generationOf(member) == 0) continue;
+                live.add(member);
+                refreshRecipient(player, registry);
+            }
+        }
+        for (UUID member : List.copyOf(contexts.keySet())) {
+            if (!live.contains(member)) forget(member);
+        }
+    }
+
+    private void refreshRecipient(ServerPlayer player, MatchRegistry registry) {
+        UUID member = player.getUUID();
+        RecipientContext before = contexts.get(member);
+        if (before != null && before.current(player, registry)) return;
+        forget(member);
+        RecipientContext fresh = RecipientContext.capture(player, registry);
+        contexts.put(member, fresh);
+        MatchRegistry.Seat seat = fresh.seat();
+        if (seat != null && fresh.generation() != 0 && fresh.primary() >= 0) {
+            // The delta tracker is per faction; a joining co-op primary needs a full initial bitmap too.
+            visionTrackers.remove(((long) seat.match().id().value() << 8) | fresh.primary());
+        }
+    }
+
     public void tick() {
+        refreshRecipients();
         sendAuthorities();
         sendPresentations();
         int now = server.getTickCount();

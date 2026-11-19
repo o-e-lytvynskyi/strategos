@@ -164,6 +164,9 @@ public final class StrategosClient {
     }
 
     public static void match(MatchJoin join) {
+        MODEL.clear();
+        state = null;
+        DEBUG.reset();
         match = join;
         PRESENTATION.joined(join.matchId(), join.factions());
         ARCS.joined(join.matchId());

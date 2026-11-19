@@ -93,6 +93,13 @@ public final class MatchRoster {
             seats.put(player, new SeatState(seat.slot(), true, 0, reclaimNanos, newGeneration()));
     }
 
+    /** A full view is a new transport epoch, without reseating or extending a reservation. */
+    void renew(UUID player) {
+        SeatState seat = seats.get(player);
+        if (seat != null && seat.connected())
+            seats.put(player, new SeatState(seat.slot(), true, seat.reservedAt(), seat.remaining(), newGeneration()));
+    }
+
     /** Repeated disconnect notifications cannot restart a reserved seat's timer. */
     public void disconnect(UUID player) {
         SeatState seat = seats.get(player);

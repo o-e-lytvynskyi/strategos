@@ -759,6 +759,12 @@ public final class MatchRegistry {
         return rt == null || slot == null ? null : new Seat(rt, slot);
     }
 
+    /** Invalidates the previous private view without changing a live member's seat or persisted reservation. */
+    public void renewRecipient(UUID player) {
+        Seat seat = seatOf(player);
+        if (seat != null) seat.match().roster().renew(player);
+    }
+
     /** Connection metadata from authenticated login/logout only; expiry/reclaim authorization is T10. */
     public void connection(UUID player, boolean connected) {
         Seat seat = seatOf(player);

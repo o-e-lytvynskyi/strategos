@@ -173,8 +173,18 @@ public final class NetGateway {
         if (core == null) {
             return;
         }
-        var authority = new MatchRegistry.Seat(rt, slot).authority();
+        MatchRegistry registry = matches.get();
+        MatchRegistry.Seat current = registry.seatOf(player.getUUID());
+        if (current == null
+                || current.match() != rt
+                || !current.slot().equals(slot)
+                || !rt.roster().isConnected(player.getUUID())) return;
+        ServerPlayer online = server.getPlayerList().getPlayer(player.getUUID());
+        RecipientContext origin = RecipientContext.capture(player, registry);
+        if (online == null || !origin.current(online, registry)) return;
+        var authority = current.authority();
         if (authority.isEmpty()) return;
+        registry.renewRecipient(player.getUUID());
         MatchSpace space = rt.space();
         String rules = CanonicalJson.write(MatchRules.CODEC
                 .encodeStart(JsonOps.INSTANCE, core.queries().config().rules())
