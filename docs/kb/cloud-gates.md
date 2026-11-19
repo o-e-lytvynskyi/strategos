@@ -24,3 +24,21 @@
   and restore that same-run artifact in the matrix. Never archive the entire Gradle home
   (which can contain credentials), reuse project outputs as test evidence, or retry until green.
   All twenty source builds, match/replay assertions and the exact-commit aggregate remain required.
+
+## Recover a pinned formatter without changing it
+
+A successful `verifySlow` module-cache producer does not imply Spotless dependencies
+were resolved. A later verify may still need its exact formatter, and an old module
+metadata restore can coexist with an incomplete branch cache. Normal Central and its
+official alias can also return 404 before compilation; these runs prove nothing about
+the implementation tests.
+
+If a successful same-branch dispatched verify already archived the approved formatter
+POM/JAR under `build/reports/central-endpoint`, `formatter_cache_run` can recover those
+two files. The producer must match the repository, head repository, branch, workflow,
+trigger and successful completed status. Recovery checks the already pinned SHA-256
+for both files before writing either, rejects symlink paths and oversized files, and
+publishes only `com.palantir.javaformat:palantir-java-format:2.102.0`. An optional init
+script routes only that exact coordinate to the recovered repository. Other dependencies,
+versions, checks and test gates remain unchanged. Counterexamples run in the cloud before
+recovery; a cache producer is never acceptance evidence for the candidate.
