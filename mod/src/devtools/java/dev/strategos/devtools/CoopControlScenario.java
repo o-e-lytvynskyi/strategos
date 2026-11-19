@@ -3,7 +3,7 @@ package dev.strategos.devtools;
 import dev.strategos.core.client.hud.CommandCard;
 import dev.strategos.core.client.select.Seen;
 import dev.strategos.core.content.TemplateSet;
-import dev.strategos.core.protocol.BuildingState;
+import dev.strategos.core.protocol.BuildingState.Entry;
 import dev.strategos.core.protocol.FactionPresentation;
 import dev.strategos.core.protocol.Grant;
 import dev.strategos.core.protocol.MatchPresentation;
@@ -140,7 +140,8 @@ final class CoopControlScenario implements Scenario {
         }
         var own = building(ownBuilding);
         var allied = building(alliedBuilding);
-        if (own == null || allied == null || StrategosClient.model().unit(Handle.index(worker)) == null) return false;
+        var unit = StrategosClient.model().unit(Handle.index(worker));
+        if (own == null || allied == null || unit == null) return false;
         if (!own.own()
                 || own.queue().isEmpty()
                 || allied.own()
@@ -169,7 +170,7 @@ final class CoopControlScenario implements Scenario {
         if (age == 0) {
             var selection = StrategosClient.rts().selection();
             selection.clear();
-            if (phase == 0) selection.click(new Seen(worker, 0, TemplateSet.WORKER, 0, 0, 0, 0), false);
+            if (phase == 0) selection.click(new Seen(worker, 0, unit.template(), 0, 0, 0, 0), false);
             else if (phase == 1) selection.clickBuilding(ownBuilding, 0);
             else if (phase == 2) selection.clickBuilding(alliedBuilding, 1);
             else {
@@ -201,7 +202,7 @@ final class CoopControlScenario implements Scenario {
         return false;
     }
 
-    private static @Nullable BuildingState.Entry building(int handle) {
+    private static @Nullable Entry building(int handle) {
         return StrategosClient.model().buildings().stream()
                 .filter(b -> b.handle() == handle)
                 .findFirst()
