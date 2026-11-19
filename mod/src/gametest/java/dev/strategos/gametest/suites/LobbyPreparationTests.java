@@ -300,6 +300,69 @@ public final class LobbyPreparationTests {
                                         && p.join().matchId() == rt.id().value()),
                         "wrong four-player match_join");
                 check(states.stream().allMatch(p -> p.state().self() == seat), "wrong four-player lobby recipient");
+                var publicFrames = NetFixtures.payloads(
+                        viewer, dev.strategos.mod.server.net.payload.MatchPresentationPayload.class);
+                if (publicFrames.isEmpty()) return;
+                for (var frame : publicFrames) {
+                    var presentation = frame.presentation();
+                    check(presentation.matchId() == rt.id().value(), "foreign public presentation");
+                    check(
+                            presentation.factions().style(primaries[seat]).colour() == primaries[seat],
+                            "lobby colour lost at production start");
+                    check(presentation.participants().size() == 4, "public human roster is incomplete");
+                    for (var participant : presentation.participants()) {
+                        int player = participant.player().value();
+                        check(participant.faction() == primaries[player], "public name bound to wrong primary");
+                        check(
+                                participant
+                                        .name()
+                                        .equals(viewers.get(player)
+                                                .player()
+                                                .getGameProfile()
+                                                .getName()),
+                                "public display name changed");
+                    }
+                }
+                String teamPrefix = "stg_m" + Integer.toHexString(rt.id().value()) + "_";
+                var teams =
+                        viewer
+                                .capture()
+                                .of(net.minecraft.network.protocol.game.ClientboundSetPlayerTeamPacket.class)
+                                .stream()
+                                .filter(packet -> packet.getName().startsWith(teamPrefix))
+                                .toList();
+                if (teams.stream()
+                        .noneMatch(packet -> packet.getParameters().isPresent()
+                                && !packet.getPlayers().isEmpty())) return;
+                var humanNames = viewers.stream()
+                        .map(v -> v.player().getGameProfile().getName())
+                        .toList();
+                for (var packet : teams) {
+                    check(
+                            humanNames.containsAll(packet.getPlayers()),
+                            "scoreboard includes a unit or non-human identity");
+                    if (packet.getName().equals(teamPrefix + "0")
+                            && packet.getParameters().isPresent()) {
+                        check(
+                                packet.getParameters().orElseThrow().getColor() == net.minecraft.ChatFormatting.WHITE,
+                                "chosen human-name colour differs from lobby");
+                        check(
+                                packet.getPlayers()
+                                        .contains(viewers.getFirst()
+                                                .player()
+                                                .getGameProfile()
+                                                .getName()),
+                                "host name missing from coloured team");
+                        if (coop)
+                            check(
+                                    packet.getPlayers()
+                                            .contains(viewers.get(1)
+                                                    .player()
+                                                    .getGameProfile()
+                                                    .getName()),
+                                    "co-op peer name missing from the same coloured team");
+                    }
+                }
                 var binding = server.matches().seatOf(viewer.player().getUUID());
                 check(
                         binding != null && binding.slot().value() == seat && binding.match() == rt,
@@ -330,6 +393,17 @@ public final class LobbyPreparationTests {
                 check(
                         outsider.capture().counts().getOrDefault("payload/strategos:" + type, 0) == 0,
                         "four-player state leaked: " + type);
+            check(
+                    NetFixtures.payloads(outsider, dev.strategos.mod.server.net.payload.MatchPresentationPayload.class)
+                            .isEmpty(),
+                    "public match state leaked to outsider");
+            check(
+                    outsider
+                            .capture()
+                            .of(net.minecraft.network.protocol.game.ClientboundSetPlayerTeamPacket.class)
+                            .stream()
+                            .noneMatch(packet -> packet.getName().startsWith("stg_m")),
+                    "match name teams leaked to outsider");
             check(core(rt).queries().diplomacy().teamsLocked(), "four-player authority not frozen");
             check(rt.roster().members().size() == 4, "four-player roster is incomplete");
             h.succeed();

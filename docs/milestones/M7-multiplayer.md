@@ -196,6 +196,17 @@ command producer; no foreign private queue, treasury or outgoing grant list is e
 The broader player-list/ping HUD remains T14. These substeps retain the parent T8 gates;
 no civilisation art or product theme is selected by this implementation.
 
+T8.4b transport boundary (2026-11-19): publish immutable public faction styles and
+bounded authenticated human names/connection status in a separate recipient-context
+`MatchPresentation` payload, preserving the existing 4 KiB `MatchJoin` cap. No UUID,
+private economy or grant list belongs in it. Install the lobby's choices before initial
+admission; restore from the core registry. Use one selected palette for client faction
+markers, outlines and equipment. Released legacy appearance remains unchanged.
+Human-name scoreboard teams use an isolated board and recipient-only vanilla packets;
+never attach Strategos units or change the server's global scoreboard. On context removal,
+remove owned client teams and restore existing vanilla name membership without enumerating
+foreign team members. Verify outsider negatives and actual packet name membership.
+
 T7 implementation split (2026-11-18): **T7.1** owns final hostile-damage filtering,
 frozen source-faction provenance for delayed/collateral hits, its current/legacy snapshot
 and journal policy, and actual engine damage adapters. **T7.2** owns allied coalition
