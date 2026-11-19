@@ -1,11 +1,19 @@
 package dev.strategos.gametest.suites;
 
 import static dev.strategos.gametest.suites.Units.check;
+import static dev.strategos.gametest.suites.Units.core;
 
+import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.port.MetricsSink;
+import dev.strategos.core.protocol.CommandBatch;
 import dev.strategos.core.protocol.CommandOutcome;
 import dev.strategos.core.protocol.Feedback;
+import dev.strategos.core.protocol.Move;
+import dev.strategos.core.protocol.SpawnUnits;
+import dev.strategos.core.protocol.UnitSet;
+import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
+import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.testkit.SimHarness;
 import dev.strategos.gametest.StrategosTest;
 import dev.strategos.gametest.net.MultiplayerHarness;
@@ -13,6 +21,7 @@ import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.server.match.MatchOptions;
 import dev.strategos.mod.server.match.MatchSource;
 import dev.strategos.mod.server.net.Audience;
+import dev.strategos.mod.server.net.payload.CommandsPayload;
 import dev.strategos.mod.server.net.payload.FeedbackPayload;
 import dev.strategos.mod.server.net.payload.MatchJoinPayload;
 import java.util.List;
@@ -73,6 +82,74 @@ public final class RecipientQueueTests {
                     check(
                             !received(kit, 1, 102) && !received(kit, 1, 104) && !received(kit, 1, 106),
                             "issuer-only frame escaped to another participant");
+                })
+                .thenExecute(kit::close)
+                .thenSucceed();
+    }
+
+    @StrategosTest(arena = "arena_flat_48", timeoutTicks = 400)
+    public static void delayedFeedbackCannotRebindToTheIssuersNewRecipientContext(GameTestHelper h) {
+        var options = new MatchOptions(
+                SimHarness.DEFAULT_SEED,
+                2,
+                false,
+                MatchSource.GAMETEST,
+                null,
+                MetricsSink.none(),
+                Math.floor(h.getBounds().minY) + 1,
+                null,
+                MatchOptions.GAMETEST_PLAY);
+        MultiplayerHarness kit = MultiplayerHarness.create(h, options);
+        var rt = kit.match();
+        var server = StrategosServer.get();
+        rt.submit(
+                PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(0), new Vec2d(6, 6), 1, 0));
+        rt.submit(
+                PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(1), new Vec2d(6, 18), 1, 0));
+        h.startSequence()
+                .thenWaitUntil(() -> check(
+                        kit.ready()
+                                && core(rt).queries().unitHandlesOf(new FactionSlot(0)).length == 1
+                                && core(rt).queries().unitHandlesOf(new FactionSlot(1)).length == 1,
+                        "units not ready"))
+                .thenExecute(() -> kit.admit("reply", List.of(new PlayerSlot(0), new PlayerSlot(1))))
+                .thenWaitUntil(() -> check(
+                        !kit.payloads(0, MatchJoinPayload.class).isEmpty()
+                                && !kit.payloads(1, MatchJoinPayload.class).isEmpty(),
+                        "initial admission missing"))
+                .thenExecute(() -> {
+                    int first = core(rt).queries().unitHandlesOf(new FactionSlot(0))[0];
+                    int second = core(rt).queries().unitHandlesOf(new FactionSlot(1))[0];
+                    // Synchronous typed gateway entry ensures submission precedes the role change;
+                    // the core result still runs asynchronously, after the roster has changed.
+                    server.net()
+                            .commands(
+                                    kit.viewer(0).player(),
+                                    CommandsPayload.of(new CommandBatch(
+                                            600001, List.of(Move.replace(UnitSet.of(first), new Vec2d(24, 6))))));
+                    server.matches().join(rt, kit.viewer(0).player().getUUID(), PlayerSlot.ADMIN);
+                    server.net()
+                            .commands(
+                                    kit.viewer(1).player(),
+                                    CommandsPayload.of(new CommandBatch(
+                                            600002, List.of(Move.replace(UnitSet.of(second), new Vec2d(24, 18))))));
+                })
+                .thenWaitUntil(() -> check(
+                        kit.payloads(1, FeedbackPayload.class).stream()
+                                        .anyMatch(frame -> frame.message() instanceof Feedback reply
+                                                && reply.clientSeq() == 600002
+                                                && reply.outcome() == CommandOutcome.ACCEPTED)
+                                && !core(rt).queries()
+                                        .orders(core(rt).queries().unitHandlesOf(new FactionSlot(0))[0])
+                                        .isEmpty(),
+                        "positive peer reply or original command application missing"))
+                .thenExecute(() -> {
+                    for (int peer = 0; peer < 2; peer++)
+                        check(
+                                kit.payloads(peer, FeedbackPayload.class).stream()
+                                        .noneMatch(frame -> frame.message() instanceof Feedback reply
+                                                && reply.clientSeq() == 600001),
+                                "delayed feedback rebound to a changed recipient or another peer");
                 })
                 .thenExecute(kit::close)
                 .thenSucceed();

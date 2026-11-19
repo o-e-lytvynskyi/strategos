@@ -420,6 +420,9 @@ Use existing primary-private projections and existing visibility policy;
 no ally vision, new observer role or T16 bandwidth policy is introduced.
 Contracts run cloud-first, then actual engine recipient tests and full verify.
 Parent T9 remains unchecked until every path and its required gates pass.
+T9.1 acceptance: verify 44624637029 on 5d969b64 passes 2,798 canonical
+cases, including four generation contracts and actual two-peer stale-queue
+rejection with current/unrelated positive deliveries. T9.2 and T9.3 remain open.
 
 ### 3.5 Reconnect (NET-05)
 
