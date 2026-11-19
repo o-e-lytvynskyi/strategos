@@ -304,19 +304,19 @@ public final class NetGateway {
             counters.violation(player.getGameProfile().getName(), "match " + rt.lifecycle()); // dropped, not a fault
             return;
         }
-        UUID id = player.getUUID();
+        RecipientContext origin = RecipientContext.capture(player, matches.get());
         faults.run(rt, "commands", () -> {
             for (int k = 0; k < batch.commands().size(); k++) {
                 int seq = batch.clientSeq() + k;
-                rt.submit(seat.slot(), batch.commands().get(k), seq, result -> feedback(id, seq, result));
+                rt.submit(seat.slot(), batch.commands().get(k), seq, result -> feedback(origin, seq, result));
             }
         });
     }
 
     /** A command's result for the player who sent it, if it is still here. */
-    private void feedback(UUID player, int seq, CommandResult result) {
-        ServerPlayer online = server.getPlayerList().getPlayer(player);
-        if (online != null) {
+    private void feedback(RecipientContext origin, int seq, CommandResult result) {
+        ServerPlayer online = server.getPlayerList().getPlayer(origin.player().getUUID());
+        if (online != null && origin.current(online, matches.get())) {
             send(
                     new Audience.Player(online),
                     new FeedbackPayload(new Feedback(
