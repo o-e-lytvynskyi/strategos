@@ -92,6 +92,17 @@ jobs:
       - name: Recover exact pinned formatter coordinate
         if: github.event_name == 'workflow_dispatch' && inputs.formatter_cache_run != ''
         run: python3 tools/ci_formatter_cache.py restore --source build/cloud-formatter-source --repository build/cloud-formatter-repository
+      - name: Discard producer reports before candidate verification
+        if: github.event_name == 'workflow_dispatch' && inputs.formatter_cache_run != ''
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import shutil
+          source = Path('build/cloud-formatter-source')
+          if source.is_symlink() or source.resolve().parent != Path('build').resolve():
+              raise ValueError('unexpected formatter producer directory')
+          shutil.rmtree(source)
+          PY
       - name: Validate optional archived measurement producer
         id: paired_producer
         if: github.event_name == 'workflow_dispatch' && inputs.paired_reports_run != ''
