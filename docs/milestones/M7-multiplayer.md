@@ -216,6 +216,16 @@ parent's full slow/soak and applicable hot-path comparison gates before T8 is ch
 Visual DTO fixtures must identify their limited presentation purpose; actual transport
 acceptance remains the engine tests, and two-client human acceptance remains T19/T25.
 
+T8 acceptance checkpoint (2026-11-19): functional verify 44614567652 passes
+2,793 canonical cases; full-ci 44606455194 passes all 23 jobs, including
+249 slow/core cases and twenty AI match/replay seeds (896,421 ticks).
+Co-op visual repeat 44613485447 passes the normal reference comparisons
+and rejects every altered reference. Personally inspected refreshed lobby
+references await their final comparison. The original paired compiler timing
+breach and its fixed A/A/bytecode-identical ABBA attribution evidence are
+retained in the branch log; the complete performance comparison remains open.
+Parent T8 and MATCH-06 are not accepted by these partial checkpoints.
+
 T7 implementation split (2026-11-18): **T7.1** owns final hostile-damage filtering,
 frozen source-faction provenance for delayed/collateral hits, its current/legacy snapshot
 and journal policy, and actual engine damage adapters. **T7.2** owns allied coalition
