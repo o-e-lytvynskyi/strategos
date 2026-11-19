@@ -204,6 +204,12 @@ public final class Replication {
         }
     }
 
+    /** A pause freezes simulation, not a member's initial/recipient snapshot delivery. */
+    private static boolean publishesSnapshots(MatchRuntime rt) {
+        MatchLifecycle lifecycle = rt.lifecycle();
+        return lifecycle == MatchLifecycle.RUNNING || lifecycle == MatchLifecycle.PAUSED;
+    }
+
     public void tick() {
         refreshRecipients();
         sendAuthorities();
@@ -229,7 +235,7 @@ public final class Replication {
         visionTrackers.keySet().removeIf(key -> matches.get().get(new MatchId((int) (key >> 8))) == null);
         for (MatchRuntime rt : matches.get().all()) {
             MatchCore core = rt.core();
-            if (core == null || rt.lifecycle() != MatchLifecycle.RUNNING) {
+            if (core == null || !publishesSnapshots(rt)) {
                 continue;
             }
             VisionSystem vision = core.vision();
@@ -315,7 +321,7 @@ public final class Replication {
     private void sendFactions() {
         for (MatchRuntime rt : matches.get().all()) {
             MatchCore core = rt.core();
-            if (core == null || rt.lifecycle() != MatchLifecycle.RUNNING) {
+            if (core == null || !publishesSnapshots(rt)) {
                 continue;
             }
             for (UUID player : rt.roster().members()) {
@@ -347,7 +353,7 @@ public final class Replication {
     private void sendBuildings() {
         for (MatchRuntime rt : matches.get().all()) {
             MatchCore core = rt.core();
-            if (core == null || rt.lifecycle() != MatchLifecycle.RUNNING) {
+            if (core == null || !publishesSnapshots(rt)) {
                 continue;
             }
             for (UUID player : rt.roster().members()) {
@@ -402,7 +408,7 @@ public final class Replication {
     private void sendDeposits() {
         for (MatchRuntime rt : matches.get().all()) {
             MatchCore core = rt.core();
-            if (core == null || rt.lifecycle() != MatchLifecycle.RUNNING) {
+            if (core == null || !publishesSnapshots(rt)) {
                 continue;
             }
             DepositState now =
@@ -425,7 +431,7 @@ public final class Replication {
     private void sendHuds() {
         for (MatchRuntime rt : matches.get().all()) {
             MatchCore core = rt.core();
-            if (core == null || rt.lifecycle() != MatchLifecycle.RUNNING) {
+            if (core == null || !publishesSnapshots(rt)) {
                 continue;
             }
             for (UUID player : rt.roster().members()) {
