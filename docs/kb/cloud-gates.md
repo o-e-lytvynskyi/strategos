@@ -42,3 +42,8 @@ publishes only `com.palantir.javaformat:palantir-java-format:2.102.0`. An option
 script routes only that exact coordinate to the recovered repository. Other dependencies,
 versions, checks and test gates remain unchanged. Counterexamples run in the cloud before
 recovery; a cache producer is never acceptance evidence for the candidate.
+
+The exact-coordinate recovery repository belongs only to the main Strategos build:
+adding any project repository to `build-logic` shadows its settings repositories.
+Discard the downloaded producer reports immediately after recovering approved files,
+before Gradle and report discovery. Producer XML is never candidate test evidence.
