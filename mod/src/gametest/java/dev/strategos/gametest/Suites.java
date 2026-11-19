@@ -40,6 +40,7 @@ import dev.strategos.gametest.suites.ProtectionTests;
 import dev.strategos.gametest.suites.RecipientAccessTests;
 import dev.strategos.gametest.suites.RecipientQueueTests;
 import dev.strategos.gametest.suites.RecipientRejoinTests;
+import dev.strategos.gametest.suites.RecipientTransferTests;
 import dev.strategos.gametest.suites.ReplicationTests;
 import dev.strategos.gametest.suites.RetryNoReasonSelfTest;
 import dev.strategos.gametest.suites.SelfTests;
@@ -97,6 +98,7 @@ public final class Suites {
                         RecipientAccessTests.class,
                         RecipientQueueTests.class,
                         RecipientRejoinTests.class,
+                        RecipientTransferTests.class,
                         CoopAuthorityTransportTests.class,
                         OrderTests.class,
                         PathTests.class,
