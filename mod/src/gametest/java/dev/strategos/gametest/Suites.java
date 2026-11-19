@@ -38,6 +38,7 @@ import dev.strategos.gametest.suites.PersistenceTests;
 import dev.strategos.gametest.suites.ProdTests;
 import dev.strategos.gametest.suites.ProtectionTests;
 import dev.strategos.gametest.suites.RecipientQueueTests;
+import dev.strategos.gametest.suites.RecipientRejoinTests;
 import dev.strategos.gametest.suites.ReplicationTests;
 import dev.strategos.gametest.suites.RetryNoReasonSelfTest;
 import dev.strategos.gametest.suites.SelfTests;
@@ -93,6 +94,7 @@ public final class Suites {
                         MultiplayerKitTests.class,
                         CoopReplicationTests.class,
                         RecipientQueueTests.class,
+                        RecipientRejoinTests.class,
                         CoopAuthorityTransportTests.class,
                         OrderTests.class,
                         PathTests.class,

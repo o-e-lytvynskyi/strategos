@@ -174,12 +174,30 @@ final class CoopControlScenario implements Scenario {
             }
         }
         if (phase >= FRAMES.length) {
+            var model = StrategosClient.model();
+            if (model.faction() == null
+                    || model.buildings().isEmpty()
+                    || model.units().isEmpty())
+                return failure(ctx, "full-join client reset fixture has no established private view");
+            // Replay this client's actual full-join DTO through its production handler entry.
+            // This is a client reset contract, not evidence of a real network reconnection.
+            StrategosClient.match(join);
+            if (model.faction() != null
+                    || !model.buildings().isEmpty()
+                    || !model.deposits().isEmpty()
+                    || !model.units().isEmpty()
+                    || !model.details().isEmpty()
+                    || model.visionCellsX() != 0
+                    || StrategosClient.state() != null
+                    || StrategosClient.presentation() != null)
+                return failure(ctx, "same-match full join retained a previous client view");
+            ctx.result.addProperty("sameMatchFullJoinClearsPrivateView", true);
             ctx.result.addProperty("frames", captures);
             ctx.result.addProperty("playerSlot", 1);
             ctx.result.addProperty("primaryFaction", 0);
             ctx.result.addProperty(
                     "source",
-                    "actual co-op admission and palette/private frames; decoded named-ally visual DTO only for sharing panel");
+                    "actual co-op admission and palette/private frames; decoded named-ally visual DTO only for sharing panel; actual full-join DTO replay for client reset contract");
             ctx.result.addProperty("ok", captures == 8);
             return true;
         }
