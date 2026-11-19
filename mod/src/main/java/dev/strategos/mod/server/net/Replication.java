@@ -199,7 +199,7 @@ public final class Replication {
         }
     }
 
-    /** Immutable source identity avoids rebuilding unchanged permission masks every tick. */
+    /** Unchanged diplomacy avoids rebuilding permission masks every tick. */
     private void sendAuthorities() {
         for (MatchRuntime rt : matches.get().all()) {
             MatchCore core = rt.core();
@@ -211,7 +211,7 @@ public final class Replication {
                 if (seat == null || seat.match() != rt || online == null || !seat.hasPerspective()) continue;
                 AuthorityMemory last = authorities.get(player);
                 if (last != null
-                        && last.source() == source
+                        && last.source().equals(source)
                         && last.frame().matchId() == rt.id().value()
                         && last.frame().player().equals(seat.slot())) continue;
                 var next = seat.authority();
