@@ -10,6 +10,10 @@ on:
     types: [labeled]
   workflow_dispatch:
     inputs:
+      template_diagnostic:
+        description: Four fixed identical-binary samples; diagnostic only, never acceptance
+        type: boolean
+        default: false
       complete_t7:
         description: Complete only the three T7 scenes interrupted by the outer time limit
         type: boolean
@@ -20,7 +24,7 @@ on:
         default: false
 
 concurrency:
-  group: perf-${{ github.ref }}-${{ inputs.complete_t7 && 't7-completion' || inputs.paired_jmh && 'paired-jmh' || 'standard' }}
+  group: perf-${{ github.ref }}-${{ inputs.template_diagnostic && 'template-diagnostic' || inputs.complete_t7 && 't7-completion' || inputs.paired_jmh && 'paired-jmh' || 'standard' }}
   cancel-in-progress: true
 
 permissions:
@@ -29,7 +33,7 @@ permissions:
 
 jobs:
   perf:
-    if: (github.event_name == 'workflow_dispatch' && !inputs.paired_jmh && !inputs.complete_t7) || (github.event.pull_request.draft == false && github.event.label.name == 'perf')
+    if: (github.event_name == 'workflow_dispatch' && !inputs.paired_jmh && !inputs.complete_t7 && !inputs.template_diagnostic) || (github.event.pull_request.draft == false && github.event.label.name == 'perf')
     runs-on: ubuntu-24.04
     # Outlive the existing 150-minute process bound plus build/report overhead; all measured gates stay unchanged.
     timeout-minutes: 180
@@ -65,7 +69,7 @@ jobs:
   paired-jmh:
     # Supplemental same-host evidence for M7 T7.1 frozen-damage authority, not a replacement for the approved Mac baseline.
     # Both checkouts are trusted repository commits; the control is pinned to the verified T5 checkpoint.
-    if: github.event_name == 'workflow_dispatch' && inputs.paired_jmh
+    if: github.event_name == 'workflow_dispatch' && inputs.paired_jmh && !inputs.template_diagnostic
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     steps:
@@ -131,7 +135,7 @@ jobs:
             candidate/core/build/reports/jmh/
 
   t7-completion:
-    if: github.event_name == 'workflow_dispatch' && inputs.complete_t7 && !inputs.paired_jmh
+    if: github.event_name == 'workflow_dispatch' && inputs.complete_t7 && !inputs.paired_jmh && !inputs.template_diagnostic
     runs-on: ubuntu-24.04
     timeout-minutes: 65
     steps:
@@ -199,3 +203,71 @@ jobs:
             measured/mod/build/reports/perf/
             measured/mod/build/test-results/gametest-perf/
             measured/mod/build/gametest-perf/logs/
+
+  identical-binary-samples:
+    if: github.event_name == 'workflow_dispatch' && inputs.template_diagnostic
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          cache-provider: basic
+          cache-read-only: true
+      - name: Four planned identical-source samples with the existing JMH parameters
+        run: |
+          mkdir -p build/reports/template-diagnostic
+          git rev-parse HEAD > build/reports/template-diagnostic/source.txt
+          lscpu > build/reports/template-diagnostic/cpu.txt
+          java -version 2> build/reports/template-diagnostic/java.txt
+          vmstat -wt 1 > build/reports/template-diagnostic/vmstat.txt &
+          monitor=$!
+          trap 'kill "$monitor" 2>/dev/null || true' EXIT
+          for sample in 1 2 3 4; do
+            date -u +%FT%TZ > "build/reports/template-diagnostic/run-$sample-start.txt"
+            ./gradlew --no-daemon --console=plain --max-workers=2 :core:jmh \
+              -Pjmh.include=dev.strategos.core.bench.TemplateCompileBench.compile500
+            cp core/build/reports/jmh/result.json "build/reports/template-diagnostic/run-$sample.json"
+            sha256sum core/build/classes/java/main/dev/strategos/core/content/TemplateCompiler.class \
+              > "build/reports/template-diagnostic/run-$sample-bytecode.txt"
+          done
+      - name: Summarize diagnostic data without accepting a candidate
+        run: |
+          python3 - <<'PY'
+          import json, statistics
+          from pathlib import Path
+          root = Path('build/reports/template-diagnostic')
+          samples = []
+          for index in range(1, 5):
+              rows = json.loads((root / f'run-{index}.json').read_text())
+              if len(rows) != 1 or not rows[0]['benchmark'].endswith('TemplateCompileBench.compile500'):
+                  raise ValueError('diagnostic did not measure exactly the intended benchmark')
+              row = rows[0]
+              samples.append({'run': index, 'score': row['primaryMetric']['score'],
+                              'error': row['primaryMetric']['scoreError'],
+                              'forkMeans': [statistics.mean(fork) for fork in row['primaryMetric']['rawData']],
+                              'jvmArgs': row['jvmArgs'], 'forks': row['forks'],
+                              'warmupIterations': row['warmupIterations'],
+                              'measurementIterations': row['measurementIterations'],
+                              'secondary': {key: value['score'] for key, value in row['secondaryMetrics'].items()}})
+          checksums = {(root / f'run-{index}-bytecode.txt').read_text().split()[0] for index in range(1, 5)}
+          if len(checksums) != 1:
+              raise ValueError('the compiler binary changed between identical-source samples')
+          summary = {'diagnosticOnly': True, 'candidateAccepted': False,
+                     'source': (root / 'source.txt').read_text().strip(),
+                     'compilerBytecodeSha256': next(iter(checksums)), 'samples': samples}
+          (root / 'summary.json').write_text(json.dumps(summary, indent=2) + '\n')
+          print(json.dumps(summary, indent=2))
+          PY
+      - name: Diagnostic reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: template-aa-reports
+          retention-days: 7
+          if-no-files-found: error
+          path: build/reports/template-diagnostic/
