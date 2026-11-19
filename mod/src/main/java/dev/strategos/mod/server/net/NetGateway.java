@@ -32,6 +32,7 @@ import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.core.sim.MatchRules;
+import dev.strategos.core.sim.vision.VisionGrid;
 import dev.strategos.mod.entity.UnitEntity;
 import dev.strategos.mod.registry.ModPayloads;
 import dev.strategos.mod.server.match.MatchRegistry;
@@ -124,11 +125,8 @@ public final class NetGateway {
                                 .forEach(player -> queue(player, payload));
                 }
             }
-            case Audience.SeesCell c ->
-                toMembers(c.match(), payload); // TODO fog-filter: send only to factions that see the cell (FOW-03, M8)
-            case Audience.SeesEither
-                    e -> // AFTER-M8: deliver to the union of the two cells' viewers once fog of war exists
-                toMembers(e.match(), payload);
+            case Audience.SeesCell c -> toVisibleEvents(c.match(), payload, false);
+            case Audience.SeesEither e -> toVisibleEvents(e.match(), payload, true);
             case Audience.Match m -> toMembers(m.match(), payload);
         }
     }
@@ -382,6 +380,46 @@ public final class NetGateway {
     private void queue(ServerPlayer player, CustomPacketPayload payload) {
         RecipientContext context = RecipientContext.capture(player, matches.get());
         queued.computeIfAbsent(player.getUUID(), k -> new ArrayList<>()).add(new QueuedFrame(payload, context));
+    }
+
+    /** Project each event, not its coarse batching page; a control grant never grants vision. */
+    private void toVisibleEvents(MatchId match, CustomPacketPayload payload, boolean eitherEnd) {
+        if (!(payload instanceof FxPayload frame)) {
+            throw new IllegalArgumentException("visibility audiences require an fx payload");
+        }
+        if (frame.fx().matchId() != match.value()) {
+            throw new IllegalArgumentException("fx audience and match differ");
+        }
+        MatchRegistry registry = matches.get();
+        MatchRuntime rt = registry.get(match);
+        if (rt == null) return;
+        MatchCore core = rt.core();
+        if (core == null) return;
+        boolean revealed = core.queries().config().rules().play().revealMap();
+        var vision = core.vision();
+        for (UUID player : rt.roster().members()) {
+            MatchRegistry.Seat seat = registry.seatOf(player);
+            if (seat == null || seat.match() != rt) continue;
+            if (seat.slot().isAdmin() || revealed) {
+                queue(player, payload);
+                continue;
+            }
+            var primary = seat.primaryFaction();
+            if (primary.isEmpty() || vision == null) continue;
+            VisionGrid grid = vision.grid(primary.orElseThrow().value());
+            List<Fx.Event> visible = frame.fx().events().stream()
+                    .filter(event -> seesEvent(grid, event, eitherEnd))
+                    .toList();
+            if (!visible.isEmpty()) {
+                queue(player, new FxPayload(new Fx(match.value(), visible)));
+            }
+        }
+    }
+
+    private static boolean seesEvent(VisionGrid grid, Fx.Event event, boolean eitherEnd) {
+        // Protocol coordinates are eighths of a block; vision cells are four blocks, not 16-block FX pages.
+        return grid.count(event.x8() >> 5, event.z8() >> 5) > 0
+                || (eitherEnd && event.kind().carriesPath() && grid.count(event.toX8() >> 5, event.toZ8() >> 5) > 0);
     }
 
     private void toMembers(MatchId match, CustomPacketPayload payload) {

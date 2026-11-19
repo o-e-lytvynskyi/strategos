@@ -17,6 +17,7 @@ import dev.strategos.core.sim.diplomacy.DiplomacyState;
 import dev.strategos.core.sim.vision.VisionGrid;
 import dev.strategos.core.testkit.SimHarness;
 import dev.strategos.gametest.StrategosTest;
+import dev.strategos.gametest.net.MockViewer;
 import dev.strategos.gametest.net.MultiplayerHarness;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.server.match.MatchOptions;
@@ -24,6 +25,7 @@ import dev.strategos.mod.server.match.MatchSource;
 import dev.strategos.mod.server.net.Audience;
 import dev.strategos.mod.server.net.payload.FxPayload;
 import java.util.List;
+import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 
 /** A page is a batching unit, never permission to reveal its hidden events. */
@@ -44,7 +46,13 @@ public final class RecipientFxTests {
                 PlayRules.DEFAULTS);
         var kit = MultiplayerHarness.create(h, options);
         var rt = kit.match();
-        var net = StrategosServer.get().net();
+        var server = StrategosServer.get();
+        var net = server.net();
+        var at = h.absolutePos(new BlockPos(12, 20, 12));
+        var observer = MockViewer.join(h.getLevel(), "fx-observer", at.getX(), at.getY(), at.getZ(), 2);
+        var unbound = MockViewer.join(h.getLevel(), "fx-unbound", at.getX() + 1, at.getY(), at.getZ(), 2);
+        h.onEachTick(observer::poll);
+        h.onEachTick(unbound::poll);
         var p0 = new PlayerSlot(0);
         var p1 = new PlayerSlot(1);
         var p2 = new PlayerSlot(2);
@@ -93,9 +101,15 @@ public final class RecipientFxTests {
                                     && third.count(9, 9) == 0,
                             "hidden-event precondition failed");
                 })
-                .thenExecute(() -> kit.admit("fx-priv", List.of(p0, p1, p2, p3)))
+                .thenExecute(() -> {
+                    kit.admit("fx-priv", List.of(p0, p1, p2, p3));
+                    server.matches().join(rt, observer.player().getUUID(), PlayerSlot.ADMIN);
+                    net.joined(rt, observer.player(), PlayerSlot.ADMIN);
+                })
                 .thenExecute(() -> {
                     for (var viewer : kit.viewers()) viewer.capture().clear();
+                    observer.capture().clear();
+                    unbound.capture().clear();
                     net.send(
                             new Audience.SeesCell(rt.id(), 0, 0),
                             new FxPayload(new Fx(rt.id().value(), List.of(own, hidden))));
@@ -111,14 +125,19 @@ public final class RecipientFxTests {
                 })
                 .thenWaitUntil(() -> {
                     for (var viewer : kit.viewers()) viewer.poll();
+                    observer.poll();
+                    unbound.poll();
                     check(
                             NetFixtures.fxOf(kit.viewer(0), rt).containsAll(List.of(own, launch, landing))
                                     && NetFixtures.fxOf(kit.viewer(1), rt).containsAll(List.of(own, launch, landing))
                                     && NetFixtures.fxOf(kit.viewer(2), rt).contains(other)
-                                    && NetFixtures.fxOf(kit.viewer(3), rt).contains(enemy),
+                                    && NetFixtures.fxOf(kit.viewer(3), rt).contains(enemy)
+                                    && NetFixtures.fxOf(observer, rt)
+                                            .containsAll(List.of(own, hidden, other, enemy, launch, landing, unseen)),
                             "visible FX positive controls missing");
                 })
                 .thenExecute(() -> {
+                    check(NetFixtures.fxOf(unbound, rt).isEmpty(), "non-member received match FX");
                     check(
                             !NetFixtures.fxOf(kit.viewer(1), rt).contains(hidden)
                                     && !NetFixtures.fxOf(kit.viewer(1), rt).contains(other)
@@ -146,6 +165,8 @@ public final class RecipientFxTests {
                             "hidden page/shot event leaked to faction one");
                 })
                 .thenExecute(kit::close)
+                .thenExecute(observer::close)
+                .thenExecute(unbound::close)
                 .thenSucceed();
     }
 }

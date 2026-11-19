@@ -32,3 +32,13 @@ Tests must establish the old view, change context, and require a fresh positive
 frame and an unaffected peer's delivery before asserting absence of old data.
 The queue, delayed-result and full-join engine contracts exercise separate
 boundaries; the client DTO-replay scenario is not a real reconnection test.
+
+A paused core still has an authoritative current view. Gate snapshot publication
+on RUNNING or PAUSED, without stepping or resuming the simulation; otherwise a
+full join clears the old view but never receives unchanged initial snapshots.
+
+FX pages are 16-block batching buckets, while vision uses 4-block cells. A
+visible event never authorizes another event in the same batch. Project the
+individual eighth-block event coordinates before encoding. Shots retain their
+existing either-end policy; grants and alliance membership do not confer M8
+shared vision. A missing authoritative grid must not authorize hidden effects.
