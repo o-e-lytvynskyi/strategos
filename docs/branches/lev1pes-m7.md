@@ -6,10 +6,10 @@
 
 ## Now
 
-- **Milestone:** M7 Multiplayer; 10 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md), based on planning PR #32; T3 is split before implementation into independent aggregate and production integration.
-- **In progress:** T8.5 full performance comparison; inspected co-op and lobby visuals both accepted. Latest verify 44614567652 on c6fe4902 passes all 2,793 canonical cases. Full-ci 44606455194 passes all 23 jobs, including 249 slow/core cases and twenty AI matches/replays (896,421 ticks). Co-op L4 44613485447 passes normal/altered-reference checks. Original paired compiler timing breach remains recorded; fixed A/A and bytecode-identical ABBA diagnostics do not accept the parent gate. Functional T8.3–T8.5a acceptance passes cloud verify 44604492044 on 5d83af52: 2,793 canonical cases, zero failures/errors/skips; actual co-op camera/first-person/owner-refund transport 0.596 s. Backend T8.3a passes full verify 44417846067 on ff08ef8f: 2,756 canonical cases, no failures/errors/skips; actual four-peer private transport 1.139 s and foreign affordability privacy 0.041 s. T8.1 and T8.2 functional acceptance passes full verify 44392174326 on 6e259162: 2,754 canonical cases, zero failures/errors/skips. All tests remain cloud-only. Whole M7 includes optional T24.
-- **Last finished task:** T7 allied damage and surviving coalition results. Immutable production source 4dd51afa passes functional, full-ci, inspected L4, matched JMH/allocation and all 24 standard L6 scenes; completion 44314975700 preserves the original 21 reports and passes exactly the three missing scenes, including the full 36,000-tick MVP soak.
-- **Next task:** Finish T8.5 visual/full-ci/performance gates, close T8, then continue T9 and the whole approved M7. The operator resumed the entire epic on 2026-11-18. Co-op admission is enabled after actual authority/private-recipient integration; parent T8 remains pending its remaining gates. D-20 and native acceptance/product gates remain unchanged.
+- **Milestone:** M7 Multiplayer; 11 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md), based on planning PR #32; T3 is split before implementation into independent aggregate and production integration.
+- **In progress:** T9.1 recipient-context contracts and queued-frame boundaries, within the resumed whole-M7 instruction. Tests/check builds remain cloud-only; optional T24 remains in scope.
+- **Last finished task:** T8 co-op authority and MATCH-06: verify 44614567652 (2,793 cases), full-ci 44606455194 (23 jobs, 249 slow/core cases, twenty AI replays), inspected co-op/lobby repeats 44613485447/44616116638, and complete matched JMH 44616013773 (30 configurations, unchanged 15%/allocation gates). Original compiler breach and bounded attribution experiments remain in the log.
+- **Next task:** Complete T9 recipient privacy, then the remaining approved M7 tasks. T9 is split before code; current-context tests precede implementation. D-20 and native acceptance/product gates remain unchanged.
 - **Merged from main last:** d39069e7 (2026-11-15, PR #55/M6); merge 213d0564 is zero commits behind that main. Cloud verify 43756194393 passed: 2,623 canonical XML cases, zero failures/errors/skips, 7m 22s. Prior T2b slow/soak/L6 evidence remains historical; new integration will receive its required gates.
 
 The operator requested ownership of the whole M7 and work on what is currently possible on
@@ -35,6 +35,14 @@ before implementing them. T2 does not certify friendly-fire, allied victory, com
 or replication privacy; those retain their own integration tests and dependencies.
 
 ## Log
+
+### 2026-11-19 — Complete T8 and MATCH-06; begin T9 contracts
+
+- Confirmatory full paired JMH 44616013773 on a1afd2cc passes all thirty configurations. Independently checked exact configuration keys, both archived report SHA-256 values and strict manifest guard. Maximum candidate/control ratio is 1.03549 (snapshot encode); the unchanged compiler is 12.37384→12.64483 ms/op, ratio 1.02190. Allocation gates pass. Original 44606464578 breach remains recorded with unknown transient cause; fixed A/A and bytecode-identical ABBA diagnostics plus the predeclared reversed-order comparison do not reproduce it. No runtime optimization, baseline change, skipped gate or raised threshold.
+- Functional verify 44614567652 passes 2,793 canonical cases; full-ci 44606455194 passes all 23 jobs, including 249 slow/core cases and twenty AI replays. Independently checked actual human-only scoreboard packet assertions in the passing four-human/co-op production cases (8.463 s/9.498 s), not merely client palettes.
+- Personally inspected co-op and refreshed lobby PNGs; cloud repeats 44613485447/44616116638 pass normal comparisons and reject every altered reference. Lobby normal NMSE is zero for all seven scenes. No image mask or threshold changes.
+- T8 complete (11/28); MATCH-06 done in both roadmap views. Begin specified T9/NET-03 under the operator's continuing whole-M7 instruction, as with NET-02. Split current recipient generation/queue boundaries, callback/query/rejoin boundaries, and complete actual recipient/inventory acceptance before code. Human L7 and later art/product decisions remain separate.
+- Inherited main M6 claim-record failure remains For the owner #6; current roadmap checks pass. Main is still d39069e7, zero commits behind. No other developer records changed.
 
 ### 2026-11-18 — Complete T5; retain independent T7 gates
 

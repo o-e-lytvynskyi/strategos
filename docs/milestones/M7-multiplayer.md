@@ -224,7 +224,14 @@ and rejects every altered reference. Personally inspected refreshed lobby
 references pass repeat 44616116638 (seven normal NMSE 0, all altered references rejected). The original paired compiler timing
 breach and its fixed A/A/bytecode-identical ABBA attribution evidence are
 retained in the branch log; the complete performance comparison remains open.
-Parent T8 and MATCH-06 are not accepted by these partial checkpoints.
+Final T8 acceptance (2026-11-19): complete matched JMH 44616013773 passes
+all 30 configurations with unchanged 15% and allocation gates; maximum ratio
+1.03549 and compiler ratio 1.02190. Both archived result hashes match the
+strict report guard. The original compiler breach remains a budget breach
+whose transient cause is unconfirmed; fixed same-binary A/A, bytecode-identical
+ABBA and the predeclared reversed-order full comparison do not reproduce it.
+No production optimization, reference change or relaxed check was used.
+Together these gates complete T8 and MATCH-06; human L7 remains T19/T25.
 
 T7 implementation split (2026-11-18): **T7.1** owns final hostile-damage filtering,
 frozen source-faction provenance for delayed/collateral hits, its current/legacy snapshot
@@ -399,6 +406,20 @@ Existing observer access remains an explicit server-authorized role and is teste
 being a spectator entity does not confer observer authority. No Strategos attachment type syncs
 to clients. Scan full and delta payloads, query responses, reconnect snapshots and deferred
 frames; dropping a match-wide private broadcast is insufficient if another path leaks it.
+
+T9 readiness/split (2026-11-19): T8, T6 and the existing NET-08 transport
+are delivered. Before code, split **T9.1** into recipient-context contracts and
+current per-player connection/seat/primary generations for queued frames;
+**T9.2** into callback/query/subscription context and full rejoin reset; and
+**T9.3** into the actual multi-recipient full/delta/query/observer matrix,
+attachment inventory and acceptance. A global roster revision must not discard
+the first participant's valid initial frames when later participants join.
+Capture origin context when producing a private response and revalidate before
+sending; looking up only a UUID at flush or callback time is insufficient.
+Use existing primary-private projections and existing visibility policy;
+no ally vision, new observer role or T16 bandwidth policy is introduced.
+Contracts run cloud-first, then actual engine recipient tests and full verify.
+Parent T9 remains unchecked until every path and its required gates pass.
 
 ### 3.5 Reconnect (NET-05)
 
@@ -627,7 +648,7 @@ reviewed implementation task between T17 and T18, keeping the acceptance depende
 - [x] T5 (2026-11-18) · Adapter blob-2 roster/session migration, disconnected restore and durable launch refusal; verify 44209974849 plus complete full-ci 44208443663 (248 slow/core cases and all twenty AI seeds).
 - [x] T6 · Multiplayer test kit. Engine verify 44300748747; four-player smoke 1.099 s under 30 s. QA-15 L7 remains T19/T25.
 - [x] T7 (2026-11-18) · Allied damage and victory; verify 44296700394, full-ci 44296705408, L4 44297120970, matched JMH review 44303346246 and complete 24-scene L6 evidence 44314975700.
-- [ ] T8 · Co-op authority.
+- [x] T8 (2026-11-19) · Co-op authority; verify 44614567652, full-ci 44606455194, inspected L4 repeats 44613485447/44616116638, complete matched JMH 44616013773.
 - [ ] T9 · Recipient privacy.
 - [ ] T10 · Reconnect and timeout.
 - [ ] T11 · Ingress validation.

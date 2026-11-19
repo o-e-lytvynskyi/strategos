@@ -1,6 +1,6 @@
 # ADR-0032: Durable public faction presentation
 
-- **Status:** Accepted for T8.4a implementation; functional cloud verify 44604492044 passes. Parent T8 integration gates remain pending.
+- **Status:** Accepted for T8.4a implementation; functional cloud verify 44604492044 passes. Parent T8 integration, inspected L4, slow/AI and matched performance gates pass on 2026-11-19 (M7 specification acceptance checkpoint).
 - **Date:** 2026-11-19
 
 ## Context

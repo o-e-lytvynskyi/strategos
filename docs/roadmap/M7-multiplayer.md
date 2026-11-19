@@ -6,7 +6,7 @@ MVP are coarser by design and are refined at the review that opens their milesto
 
 Planning specification: [M7 implementation plan](../milestones/M7-multiplayer.md), 2026-10-28.
 It defines tasks and contracts for review; it did not itself approve implementation.
-MATCH-06 and QA-15 are `in_progress` and NET-02 is `done` under the continuing M7 development instruction;
+MATCH-06 and NET-02 are `done`; QA-15 and NET-03 are `in_progress` under the continuing M7 development instruction;
 other card statuses and their owner decision gates remain explicit below.
 
 ## Milestone
@@ -114,7 +114,7 @@ Multiple-match discovery is outside M7. Recorded in the M7 branch pending mainta
   2. Allies receive the shared data of the rules table and nothing more (L3).
   3. No Strategos attachment type syncs to clients (L2, inventory).
 - **Tests:** L0, L2, L3 · **Depends on:** NET-08, MATCH-06 · **Size:** M · **Tier:** T1
-- **Status:** proposed
+- **Status:** in_progress
 
 #### NET-04 · Spike S11: bandwidth and per-channel byte budgets
 - **Value:** Smooth games over home internet with whole armies on the move.
@@ -200,7 +200,7 @@ Multiple-match discovery is outside M7. Recorded in the M7 branch pending mainta
   3. Two mock players controlling one faction both have their commands accepted (L3).
   4. No unit is ever added to a scoreboard team, while player names are coloured (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** MATCH-03, CORE-01 · **Size:** M · **Tier:** T1
-- **Status:** in_progress
+- **Status:** done
 
 #### UI-15 · Multiplayer HUD and pings
 - **Value:** Coordinate with allies: see who is playing and point at places on the map.
