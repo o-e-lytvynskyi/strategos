@@ -42,7 +42,7 @@ governs.
 | [0030](0030-frozen-hostile-damage-provenance.md) | Frozen hostile source faction, final locked-team filtering and conservative schema-5 migration | Accepted (T7.1 implementation; gates pending) | 2026-11-18 | §5.8, §6.7, §7 |
 
 | [0031](0031-coalition-terminal-results.md) | Ordered surviving coalition results, schema-6 migration and bounded terminal replication | Accepted (cloud gates passed) | 2026-11-18 | §5.8, §7, §12 |
-| [0032](0032-faction-presentation-persistence.md) | Durable public faction presentation, first-tick journal setup and schema-7 legacy migration | Proposed (cloud gates pending) | 2026-11-19 | §5.8, §12 |
+| [0032](0032-faction-presentation-persistence.md) | Durable public faction presentation, first-tick journal setup and schema-7 legacy migration | Accepted (functional; parent gates pending) | 2026-11-19 | §5.8, §12 |
 
 ## Pending measurements
 

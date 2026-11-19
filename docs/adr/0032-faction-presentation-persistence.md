@@ -1,6 +1,6 @@
 # ADR-0032: Durable public faction presentation
 
-- **Status:** Proposed; implementation and cloud acceptance pending (M7 T8.4a).
+- **Status:** Accepted for T8.4a implementation; functional cloud verify 44604492044 passes. Parent T8 integration gates remain pending.
 - **Date:** 2026-11-19
 
 ## Context
@@ -36,6 +36,7 @@ apply a consistent palette. Human names and scoreboard membership remain adapter
 units never become scoreboard team members. T8.4b installs those presentation paths and
 T8.4c supplies named grant controls. This ADR chooses no civilisation theme or art asset.
 
-Cloud acceptance must cover bounded codecs, first-tick setup, exact legacy hashes, schema
-migration/refusal, binary journal replay, and identical post-restore continuation, plus the
-existing complete verification suite. Acceptance is not claimed by this proposed ADR.
+Cloud verify 44604492044 covers bounded codecs, first-tick setup, exact legacy hashes, schema
+migration/refusal, binary journal replay, identical post-restore continuation and the full
+functional suite: 2,793 canonical cases, no failures/errors/skips. Slow/performance and
+inspected client visual acceptance remain parent T8 gates.

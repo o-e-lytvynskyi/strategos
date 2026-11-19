@@ -109,6 +109,7 @@ public final class ScenarioRunner {
             case "skirmish_flow" -> new SkirmishFlowScenario();
             case "m7-lobby" -> new LobbyScenario();
             case "m7-results" -> new CoalitionResultScenario();
+            case "m7-coop" -> new CoopControlScenario();
             case "rts_frame_shroud" -> new RtsFrameScenario("rts_frame_shroud", RtsFrameScenario.EXPLORED);
             default -> null;
         };
