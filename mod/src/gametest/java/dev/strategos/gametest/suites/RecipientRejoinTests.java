@@ -14,6 +14,7 @@ import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.Vec2d;
+import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.core.testkit.SimHarness;
 import dev.strategos.gametest.StrategosTest;
 import dev.strategos.gametest.net.MultiplayerHarness;
@@ -27,6 +28,7 @@ import dev.strategos.mod.server.net.payload.FactionStatePayload;
 import dev.strategos.mod.server.net.payload.FeedbackPayload;
 import dev.strategos.mod.server.net.payload.UiQueryPayload;
 import dev.strategos.mod.server.net.payload.UnitDetailPayload;
+import dev.strategos.mod.server.net.payload.UnitSummaryPayload;
 import dev.strategos.mod.server.net.payload.VisionDeltaPayload;
 import java.util.List;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -105,6 +107,51 @@ public final class RecipientRejoinTests {
                 })
                 .thenWaitUntil(
                         () -> check(changedDetail(kit, 0), "fresh query did not resume details for the new view"))
+                .thenExecute(kit::close)
+                .thenSucceed();
+    }
+
+    @StrategosTest(arena = "arena_flat_48", timeoutTicks = 400)
+    public static void aPausedFullJoinStillPublishesItsInitialPrivateView(GameTestHelper h) {
+        var options = new MatchOptions(
+                SimHarness.DEFAULT_SEED,
+                2,
+                false,
+                MatchSource.GAMETEST,
+                null,
+                MetricsSink.none(),
+                Math.floor(h.getBounds().minY) + 1,
+                null,
+                MatchOptions.GAMETEST_PLAY);
+        MultiplayerHarness kit = MultiplayerHarness.create(h, options);
+        var rt = kit.match();
+        var server = StrategosServer.get();
+        rt.submit(
+                PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(0), new Vec2d(6, 6), 1, 0));
+        h.startSequence()
+                .thenWaitUntil(
+                        () -> check(kit.ready() && core(rt).queries().unitHandles().length == 1, "unit not ready"))
+                .thenExecute(() -> kit.admit("paused", List.of(new PlayerSlot(0))))
+                .thenWaitUntil(() -> check(
+                        snapshots(kit, 0)
+                                && !kit.payloads(0, UnitSummaryPayload.class).isEmpty(),
+                        "initial running view was not established"))
+                .thenExecute(() -> {
+                    kit.viewer(0).poll();
+                    kit.viewer(0).capture().clear();
+                    server.matches().pause(rt.id());
+                    server.net().joined(rt, kit.viewer(0).player(), new PlayerSlot(0));
+                    marker(kit, 0, 700004);
+                })
+                .thenWaitUntil(() -> check(
+                        rt.lifecycle() == MatchLifecycle.PAUSED && received(kit, 0, 700004),
+                        "paused transport positive control missing"))
+                .thenWaitUntil(() -> check(
+                        snapshots(kit, 0)
+                                && !kit.payloads(0, UnitSummaryPayload.class).isEmpty(),
+                        "paused full join missed initial private snapshots or full vision"))
+                .thenExecute(() ->
+                        check(rt.lifecycle() == MatchLifecycle.PAUSED, "initial replication resumed the simulation"))
                 .thenExecute(kit::close)
                 .thenSucceed();
     }
