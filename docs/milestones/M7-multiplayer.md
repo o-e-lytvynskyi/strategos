@@ -221,7 +221,7 @@ T8 acceptance checkpoint (2026-11-19): functional verify 44614567652 passes
 249 slow/core cases and twenty AI match/replay seeds (896,421 ticks).
 Co-op visual repeat 44613485447 passes the normal reference comparisons
 and rejects every altered reference. Personally inspected refreshed lobby
-references await their final comparison. The original paired compiler timing
+references pass repeat 44616116638 (seven normal NMSE 0, all altered references rejected). The original paired compiler timing
 breach and its fixed A/A/bytecode-identical ABBA attribution evidence are
 retained in the branch log; the complete performance comparison remains open.
 Parent T8 and MATCH-06 are not accepted by these partial checkpoints.
