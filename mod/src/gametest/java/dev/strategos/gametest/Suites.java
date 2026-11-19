@@ -38,6 +38,7 @@ import dev.strategos.gametest.suites.PersistenceTests;
 import dev.strategos.gametest.suites.ProdTests;
 import dev.strategos.gametest.suites.ProtectionTests;
 import dev.strategos.gametest.suites.RecipientAccessTests;
+import dev.strategos.gametest.suites.RecipientFxTests;
 import dev.strategos.gametest.suites.RecipientQueueTests;
 import dev.strategos.gametest.suites.RecipientRejoinTests;
 import dev.strategos.gametest.suites.RecipientTransferTests;
@@ -96,6 +97,7 @@ public final class Suites {
                         MultiplayerKitTests.class,
                         CoopReplicationTests.class,
                         RecipientAccessTests.class,
+                        RecipientFxTests.class,
                         RecipientQueueTests.class,
                         RecipientRejoinTests.class,
                         RecipientTransferTests.class,
