@@ -454,8 +454,8 @@ for review; the cards below remain `proposed` until owner approval and opening f
 | NET-02 | Match lobby on a dedicated server | L | MATCH-02, MATCH-06, NET-01, D-20 | done |
 | NET-03 | Per-player and per-faction state through the gateway | M | NET-08, MATCH-06 | in_progress |
 | NET-04 | Spike S11: bandwidth and per-channel byte budgets | M | NET-03, QA-19, PERF-01 | proposed |
-| NET-05 | Reconnect and rejoin | M | NET-02, CORE-07 | proposed |
-| NET-06 | Command validation hardening and fuzzing | M | CORE-03, NET-02 | in_progress |
+| NET-05 | Reconnect and rejoin | M | NET-02, CORE-07 | in_progress |
+| NET-06 | Command validation hardening and fuzzing | M | CORE-03, NET-02 | done |
 | NET-09 | Commander hardening against modified clients | M | NET-02, QA-15 | proposed |
 | MATCH-06 | Teams, diplomacy and shared control | M | MATCH-03, CORE-01 | done |
 | UI-15 | Multiplayer HUD and pings | M | UI-20, NET-02 | proposed |

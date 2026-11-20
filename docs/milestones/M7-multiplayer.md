@@ -454,6 +454,20 @@ in_progress for T14's existing ping/team-marker criterion; no criterion is remov
 
 ### 3.5 Reconnect (NET-05)
 
+T10 readiness/split before code (2026-11-20): T5, T6 and T9 are delivered.
+Continue NET-05 under the operator's existing whole-M7 implementation instruction,
+as with NET-02/NET-03; no new-player mid-match admission or hosting decision is added.
+**T10.1** authenticates reconnect/lifecycle events, honors the reserved UUID's
+strict monotonic deadline and preserves replacement sessions against late
+predecessor events. Test exact before/at/after and restored-expired boundaries,
+then actual replacement control and sequence continuity around a stale logout.
+**T10.2** installs configurable validated expiry policy, once-only faction
+handling, paused-clock accounting and save/restart integration (including S).
+**T10.3** completes same-connection match epoch rejection and confirmed-match
+client camera/group restoration, with required client evidence. The parent and
+NET-05 remain open until all subparts and their gates pass. T10.1 is independent
+of the running T12.2 engine corpus gate.
+
 Add `server/match/ReconnectService`: authenticated UUID reclaims its reserved seat, same faction
 and grants. Disconnect revokes connection/session tokens and new commands, preserves the core
 orders, then units idle when their queues finish. Use a configurable server timeout; recommend
@@ -470,6 +484,16 @@ camera through the existing server path. Client cache never supplies faction own
 rejoin before, at and after expiry, paused matches and save/restart.
 
 ### 3.6 Ingress hardening (NET-06)
+
+T12 and NET-06 are complete (2026-11-20): full verify 44791164065 on
+de4dd109 passes all 2,966 canonical cases, zero failures/errors/skips.
+The nine seeded codec gates again execute 100,008 generated probes; the 27
+permanent malformed entries are an exact all-type L3 subset. Actual registered
+refusal handlers preserve the paused core hash, complete command journal,
+authority and lifecycle. After resume, exactly two new accepted commands enter
+the complete journal (four player entries total), both peers remain functional
+and unit count is unchanged. No production, wire, build or UI change was needed
+for T12. L7 and whole-M7 acceptance remain separate.
 
 T12.1 passes full verify 44789454855 on 72f894a7: all 2,964 canonical
 cases pass, including 100,008 actually generated probes across the nine real
@@ -785,7 +809,7 @@ reviewed implementation task between T17 and T18, keeping the acceptance depende
 - [x] T9 · Recipient privacy.
 - [ ] T10 · Reconnect and timeout.
 - [x] T11 (2026-11-20) · Ingress validation; full verify 44786479783 (2,927 cases), paired core L6 44774432743 with unchanged gates.
-- [ ] T12 · Seeded fuzzing.
+- [x] T12 (2026-11-20) · Seeded fuzzing; full verify 44791164065 (2,966 cases), 100,008 generated probes plus permanent and actual paused-state/journal controls.
 - [ ] T13 · Commander hardening.
 - [ ] T14 · Team HUD and pings.
 - [ ] T15 · Team AI.
