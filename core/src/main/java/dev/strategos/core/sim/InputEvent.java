@@ -16,4 +16,5 @@ public sealed interface InputEvent
                 ContentSwap,
                 LeaderUpdate,
                 DiplomacySetup,
-                PresentationSetup {}
+                PresentationSetup,
+                FactionExpiry {}

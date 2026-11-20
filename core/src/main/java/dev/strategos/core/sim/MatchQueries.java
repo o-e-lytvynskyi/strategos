@@ -32,6 +32,9 @@ public interface MatchQueries {
     /** Whether this faction has already been defeated, including a match restored before its opponents finish. */
     boolean factionDefeated(FactionSlot faction);
 
+    /** Whether a persistent computer controller currently owns this faction. */
+    boolean computerControlled(FactionSlot faction);
+
     /** Detached public faction presentation at this completed tick. */
     FactionPresentation presentation();
 

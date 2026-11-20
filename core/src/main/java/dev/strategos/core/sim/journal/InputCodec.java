@@ -15,6 +15,7 @@ import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.ContentSwap;
 import dev.strategos.core.sim.DiplomacySetup;
 import dev.strategos.core.sim.ExternalDamage;
+import dev.strategos.core.sim.FactionExpiry;
 import dev.strategos.core.sim.InputEvent;
 import dev.strategos.core.sim.JobDelivery;
 import dev.strategos.core.sim.LeaderUpdate;
@@ -33,7 +34,8 @@ import java.util.List;
  * in, as its {@link TemplateSetView}, whose version is checked when read; 5 the tick's agents, a count and each one's
  * id and six floats; 6 damage a body took, as its handle, kind, amount and source kind; 7 a leader pose;
  * 8 a sampled terrain page; 9 a bounded, canonical first-tick diplomacy setup; 10 external damage with its
- * authenticated source faction; 11 public first-tick faction presentation. Existing tags never change meaning.
+ * authenticated source faction; 11 public first-tick faction presentation; 12 trusted faction expiry.
+ * Existing tags never change meaning.
  */
 final class InputCodec {
     private static final int COMMAND = 1;
@@ -49,6 +51,7 @@ final class InputCodec {
     private static final int DIPLOMACY_SETUP = 9;
     private static final int ATTRIBUTED_EXTERNAL_DAMAGE = 10;
     private static final int PRESENTATION_SETUP = 11;
+    private static final int FACTION_EXPIRY = 12;
 
     private InputCodec() {}
 
@@ -99,6 +102,10 @@ final class InputCodec {
                 out.writeFloat(leader.x());
                 out.writeFloat(leader.z());
                 out.writeFloat(leader.yaw());
+            }
+            case FactionExpiry expiry -> {
+                out.writeByte(FACTION_EXPIRY);
+                out.writeVarInt(expiry.faction().value());
             }
             case PresentationSetup setup -> {
                 out.writeByte(PRESENTATION_SETUP);
@@ -254,6 +261,7 @@ final class InputCodec {
                 }
                 yield new JobDelivery(ids);
             }
+            case FACTION_EXPIRY -> new FactionExpiry(new FactionSlot(in.readVarInt(FactionSlot.MAX)));
             case DIPLOMACY_SETUP -> readDiplomacy(in);
             case PRESENTATION_SETUP -> new PresentationSetup(FactionPresentation.WIRE.read(in));
             default -> throw new WireException("unknown input kind " + kind);

@@ -9,21 +9,26 @@ import dev.strategos.core.protocol.CommandOutcome;
 import dev.strategos.core.protocol.Feedback;
 import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.Resign;
+import dev.strategos.core.protocol.SetAi;
 import dev.strategos.core.protocol.SpawnUnits;
 import dev.strategos.core.protocol.UiQuery;
 import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.Vec2d;
+import dev.strategos.core.sim.FactionExpiry;
 import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.core.sim.PlayRules;
+import dev.strategos.core.sim.journal.ReplayDriver;
 import dev.strategos.core.testkit.SimHarness;
 import dev.strategos.gametest.MatchFixture;
 import dev.strategos.gametest.StrategosTest;
 import dev.strategos.gametest.net.MockViewer;
 import dev.strategos.gametest.net.MultiplayerHarness;
 import dev.strategos.mod.StrategosServer;
+import dev.strategos.mod.server.match.MatchOptions;
 import dev.strategos.mod.server.match.MatchRuntime;
+import dev.strategos.mod.server.match.ReconnectSettings;
 import dev.strategos.mod.server.net.payload.CommandsPayload;
 import dev.strategos.mod.server.net.payload.FeedbackPayload;
 import dev.strategos.mod.server.net.payload.MatchJoinPayload;
@@ -49,6 +54,177 @@ public final class ExpiryPolicyTests {
     @StrategosTest(arena = "arena_flat_48", timeoutTicks = 400)
     public static void expirySurvivesAnotherPausedSaveAndRestoreAndAppliesOnce(GameTestHelper h) {
         defeat(h, true, "timeback");
+    }
+
+    @StrategosTest(arena = "arena_flat_48", timeoutTicks = 400)
+    public static void aResolvedDefeatIsNotReissuedAfterAnOngoingMatchIsSavedAndRestored(GameTestHelper h) {
+        resolved(h, false);
+    }
+
+    @StrategosTest(arena = "arena_flat_48", timeoutTicks = 400)
+    public static void aConfiguredComputerTakeoverSurvivesRestoreWithoutResetOrDefeat(GameTestHelper h) {
+        resolved(h, true);
+    }
+
+    @StrategosTest(arena = "arena_flat_48", timeoutTicks = 400)
+    public static void sandboxExpiryIsPersistentWithoutEndingOtherPlayersOrRepeatingTheInput(GameTestHelper h) {
+        resolved(h, false, PlayRules.Victory.NONE);
+    }
+
+    private static void resolved(GameTestHelper h, boolean computer) {
+        resolved(h, computer, PlayRules.Victory.CONQUEST);
+    }
+
+    private static void resolved(GameTestHelper h, boolean computer, PlayRules.Victory victory) {
+        var registry = StrategosServer.get().matches();
+        String prefix = computer ? "takeover" : victory == PlayRules.Victory.NONE ? "sandbox" : "resolved";
+        var base = MatchFixture.options(SimHarness.DEFAULT_SEED, h);
+        var options = new MatchOptions(
+                base.seed(),
+                3,
+                true,
+                base.source(),
+                base.faultPolicy(),
+                base.metrics(),
+                base.flatFloorY(),
+                base.map(),
+                new PlayRules(victory, false, false, false));
+        var kit = MultiplayerHarness.create(h, options);
+        var rt = kit.match();
+        for (int i = 0; i < 3; i++)
+            rt.submit(
+                    PlayerSlot.ADMIN,
+                    new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(i), new Vec2d(6, 6 + 12 * i), 1, 0));
+        var state = new Object() {
+            @Nullable MatchRuntime back;
+
+            @Nullable MockViewer peer;
+        };
+        h.onEachTick(() -> {
+            var peer = state.peer;
+            if (peer != null) peer.poll();
+        });
+        h.startSequence()
+                .thenWaitUntil(() -> check(
+                        kit.ready() && core(rt).queries().unitHandles().length == 3,
+                        "three-faction expiry fixture not ready"))
+                .thenExecute(() -> kit.admit(prefix, List.of(new PlayerSlot(0), new PlayerSlot(1))))
+                .thenExecute(() -> kit.viewer(1).send(move(rt, 1, 1, 40)))
+                .thenWaitUntil(() -> check(accepted(kit.viewer(1), 1), "original live opponent command missing"))
+                .thenExecute(() -> {
+                    var at = kit.viewer(1).player().position();
+                    kit.viewer(0).close();
+                    kit.viewer(1).close();
+                    var back = restore(h, rt, true);
+                    state.back = back;
+                    kit.close();
+                    state.peer = MockViewer.join(h.getLevel(), prefix + "-1", at.x, at.y, at.z, 2);
+                    subscribe(Objects.requireNonNull(state.peer), back);
+                })
+                .thenWaitUntil(() -> check(
+                        privateControl(Objects.requireNonNull(state.peer), Objects.requireNonNull(state.back)),
+                        "first restored opponent control missing"))
+                .thenExecute(() -> {
+                    var back = Objects.requireNonNull(state.back);
+                    if (computer) {
+                        long hash = core(back).stateHash();
+                        long tick = back.tick();
+                        back.expireDisconnected(new ReconnectSettings(
+                                ReconnectSettings.DEFAULT_SECONDS, ReconnectSettings.Policy.AI_TAKEOVER));
+                        check(
+                                core(back).stateHash() == hash && back.tick() == tick && policyActions(back, true) == 0,
+                                "explicit takeover advanced the paused core or queued a policy action");
+                    }
+                    registry.resume(back.id());
+                    if (computer)
+                        back.expireDisconnected(new ReconnectSettings(
+                                ReconnectSettings.DEFAULT_SECONDS, ReconnectSettings.Policy.AI_TAKEOVER));
+                    Objects.requireNonNull(state.peer).send(move(back, 1, 1, 35));
+                })
+                .thenWaitUntil(() -> check(
+                        accepted(Objects.requireNonNull(state.peer), 1),
+                        "opponent command missing while initial expiry resolves"))
+                .thenWaitUntil(() -> check(
+                        resolved(core(Objects.requireNonNull(state.back)), computer), "first expiry never resolved"))
+                .thenExecute(() -> {
+                    var back = Objects.requireNonNull(state.back);
+                    check(
+                            back.lifecycle() == MatchLifecycle.RUNNING,
+                            "third surviving faction did not keep match running");
+                    check(policyActions(back, computer) == 1, "first runtime did not issue exactly one expiry command");
+                    replays(back);
+                    var peer = Objects.requireNonNull(state.peer);
+                    var at = peer.player().position();
+                    peer.close();
+                    back = restore(h, back, false);
+                    state.back = back;
+                    check(resolved(core(back), computer), "save lost resolved ownership");
+                    check(!core(back).queries().factionDefeated(new FactionSlot(1)), "save defeated the live opponent");
+                    state.peer = MockViewer.join(h.getLevel(), prefix + "-1", at.x, at.y, at.z, 2);
+                    subscribe(Objects.requireNonNull(state.peer), back);
+                })
+                .thenWaitUntil(() -> check(
+                        privateControl(Objects.requireNonNull(state.peer), Objects.requireNonNull(state.back)),
+                        "resolved-restore private opponent control missing"))
+                .thenExecute(() -> {
+                    var back = Objects.requireNonNull(state.back);
+                    registry.resume(back.id());
+                    Objects.requireNonNull(state.peer).send(move(back, 1, 1, 30));
+                })
+                .thenWaitUntil(() -> check(
+                        accepted(Objects.requireNonNull(state.peer), 1),
+                        "post-resolution restore lost the live opponent command"))
+                .thenExecuteAfter(10, () -> {
+                    var back = Objects.requireNonNull(state.back);
+                    check(
+                            policyActions(back, computer) == 0,
+                            "restored resolved faction received a duplicate expiry command");
+                    check(resignations(back) == 0, "restored computer faction was defeated instead of retained");
+                    check(back.lifecycle() == MatchLifecycle.RUNNING, "expiry ended unrelated surviving factions");
+                    Objects.requireNonNull(state.peer).close();
+                    registry.dispose(back.id());
+                })
+                .thenSucceed();
+    }
+
+    private static void replays(MatchRuntime rt) {
+        var c = core(rt);
+        var result = ReplayDriver.replay(c.journal(), c.queries().templates());
+        check(
+                result.matches() && result.finalTick() == c.queries().tick() && result.finalHash() == c.stateHash(),
+                "canonical expiry journal did not reproduce its actual final hash/checkpoints");
+    }
+
+    private static boolean resolved(dev.strategos.core.sim.MatchCore c, boolean computer) {
+        var faction = new FactionSlot(0);
+        return computer
+                ? c.queries().computerControlled(faction) && !c.queries().factionDefeated(faction)
+                : c.queries().factionDefeated(faction);
+    }
+
+    private static long policyActions(MatchRuntime rt, boolean computer) {
+        if (!computer)
+            return resignations(rt)
+                    + core(rt).journal().nonEmptyTicks().stream()
+                            .flatMap(t -> t.events().stream())
+                            .filter(e -> e instanceof FactionExpiry expiry
+                                    && expiry.faction().equals(new FactionSlot(0)))
+                            .count();
+        return NetFixtures.envelopes(rt, Integer.MIN_VALUE).stream()
+                .filter(e -> e.issuer().isAdmin()
+                        && e.command() instanceof SetAi a
+                        && a.faction().equals(new FactionSlot(0))
+                        && a.profile().equals("battle")
+                        && !a.script().isEmpty())
+                .count();
+    }
+
+    private static long resignations(MatchRuntime rt) {
+        return NetFixtures.envelopes(rt, Integer.MIN_VALUE).stream()
+                .filter(e -> e.issuer().isAdmin()
+                        && e.command() instanceof Resign r
+                        && r.faction().equals(new FactionSlot(0)))
+                .count();
     }
 
     private static void defeat(GameTestHelper h, boolean restart, String prefix) {
@@ -151,6 +327,7 @@ public final class ExpiryPolicyTests {
                                     && r.faction().equals(new FactionSlot(0)))
                             .count();
                     check(resignations == 1, "expiry did not record exactly one canonical faction resignation");
+                    replays(back);
                     check(
                             !Objects.requireNonNull(state.peer).disconnected(),
                             "expiry disconnected the unaffected opponent");

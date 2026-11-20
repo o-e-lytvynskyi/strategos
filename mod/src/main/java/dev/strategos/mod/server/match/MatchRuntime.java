@@ -2,7 +2,9 @@ package dev.strategos.mod.server.match;
 
 import dev.strategos.core.diag.MatchLog;
 import dev.strategos.core.protocol.Command;
+import dev.strategos.core.protocol.CommandOutcome;
 import dev.strategos.core.protocol.Resign;
+import dev.strategos.core.protocol.SetAi;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.MatchId;
 import dev.strategos.core.shared.PlayerSlot;
@@ -12,6 +14,7 @@ import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.ContentSwap;
 import dev.strategos.core.sim.DiplomacySetup;
 import dev.strategos.core.sim.ExternalDamage;
+import dev.strategos.core.sim.FactionExpiry;
 import dev.strategos.core.sim.InputEvent;
 import dev.strategos.core.sim.JobDelivery;
 import dev.strategos.core.sim.LeaderUpdate;
@@ -26,6 +29,7 @@ import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.server.body.AgentTracker;
 import dev.strategos.mod.server.body.BodyRegistry;
 import dev.strategos.mod.server.body.SpawnBudget;
+import dev.strategos.mod.server.content.Scenarios;
 import dev.strategos.mod.server.persist.MatchData;
 import dev.strategos.mod.server.tick.InputCollector;
 import dev.strategos.mod.server.tick.OutputAppliers;
@@ -35,6 +39,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -69,6 +74,7 @@ public final class MatchRuntime {
     private final AgentTracker agents;
     private final List<CommandEnvelope> inbox = new ArrayList<>();
     private final Set<FactionSlot> expiryIssued = new HashSet<>();
+    private final List<FactionExpiry> expiryInputs = new ArrayList<>();
     private final List<ExternalDamage> damage = new ArrayList<>();
     private final Map<ReplyKey, Consumer<CommandResult>> replies = new HashMap<>();
     private final List<Consumer<TickOutputs>> listeners = new ArrayList<>();
@@ -324,6 +330,12 @@ public final class MatchRuntime {
         this.swap = null;
         TickInputs inputs = InputCollector.collect(
                 next, inbox, pages.due(next), agents, leaders(level), damage, delivery(c, next), swap);
+        if (!expiryInputs.isEmpty()) {
+            var events = new ArrayList<InputEvent>(inputs.events());
+            events.addAll(expiryInputs);
+            expiryInputs.clear();
+            inputs = new TickInputs(next, events);
+        }
         DiplomacySetup setup = diplomacySetup;
         if (setup != null) {
             List<InputEvent> events = new ArrayList<>(inputs.events().size() + 2);
@@ -348,11 +360,9 @@ public final class MatchRuntime {
     }
 
     /** Resolve elapsed primary reservations only at a real simulation boundary, never while paused. */
-    private void expireDisconnected(ReconnectSettings settings) {
-        if (settings.policy() != ReconnectSettings.Policy.DEFEAT) return;
+    public void expireDisconnected(ReconnectSettings settings) {
+        if (lifecycle != MatchLifecycle.RUNNING) return;
         MatchCore c = requireCore();
-        // Victory-disabled matches require a separate trusted input; do not change released Resign semantics.
-        if (c.queries().config().rules().play().victory() == dev.strategos.core.sim.PlayRules.Victory.NONE) return;
         var members = new ArrayList<FactionExpiryPlan.Member>();
         for (UUID player : roster.members()) {
             PlayerSlot slot = roster.slotOf(player);
@@ -363,8 +373,22 @@ public final class MatchRuntime {
                     roster.remainingNanos(player)));
         }
         for (FactionSlot faction : FactionExpiryPlan.due(members)) {
-            if (c.queries().factionDefeated(faction) || !expiryIssued.add(faction)) continue;
-            submit(PlayerSlot.ADMIN, new Resign(faction));
+            if (c.queries().factionDefeated(faction)
+                    || c.queries().computerControlled(faction)
+                    || !expiryIssued.add(faction)) continue;
+            if (settings.policy() == ReconnectSettings.Policy.AI_TAKEOVER) {
+                String script = Objects.requireNonNull(
+                        Scenarios.script(StrategosServer.get().server(), "battle"),
+                        "reconnect takeover requires the shipped battle strategy");
+                submit(PlayerSlot.ADMIN, new SetAi(faction, "battle", script), result -> {
+                    if (result.outcome() != CommandOutcome.ACCEPTED)
+                        throw new IllegalStateException("reconnect takeover refused for faction " + faction.value());
+                });
+            } else if (c.queries().config().rules().play().victory() == dev.strategos.core.sim.PlayRules.Victory.NONE) {
+                expiryInputs.add(new FactionExpiry(faction));
+            } else {
+                submit(PlayerSlot.ADMIN, new Resign(faction));
+            }
         }
     }
 

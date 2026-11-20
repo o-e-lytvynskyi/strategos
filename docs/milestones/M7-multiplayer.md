@@ -74,6 +74,7 @@ Final standard cloud L6 run 40972197958 passed in 1h 1m 55s on 33ecb12: all 22 r
 | D-02 | T2 mixes independent rules with live authority/persistence changes | Split T2a pure contract from T2b.2 installation; no numeric authority check is replaced by the standalone foundation |
 | D-03 | T2a state itself implements the immutable view; every update returns a new state | Fixed slot arrays stay private, snapshots copy lists, and hash/reconstruction use canonical slot order; T2b.2 owns match snapshot versioning and journal installation |
 | D-04 | Explicit grants belong to the granting faction, but can be issued only from a player's primary faction | Reject grant chains and absent/enemy participants; rebind drops incoming grants, removing the last primary controller drops outgoing grants, and team changes revoke incompatible grants. Disconnect alone never unbinds a seat |
+| D-05 | T10.2 defeat must also resolve an expired human faction under `Victory.NONE`, while released human/admin `Resign` remains unsupported there | Implement a trusted, journaled faction-expiry input with a new append-only tag; preserve every existing tag and command meaning. Persist defeat in the existing core outcome without automatically ending a sandbox. The ordinary victory-enabled policy continues to journal `Resign`; AI takeover carries the shipped battle script in `SetAi`. All branches require pause/once/restore/replay evidence; pending implementation/acceptance |
 
 ## 2. Baseline and dependencies
 

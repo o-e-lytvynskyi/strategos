@@ -36,7 +36,8 @@ final class IngestSystem implements MatchSystem {
                 ContentSwap.class,
                 LeaderUpdate.class,
                 DiplomacySetup.class,
-                PresentationSetup.class);
+                PresentationSetup.class,
+                FactionExpiry.class);
     }
 
     @Override
@@ -61,6 +62,7 @@ final class IngestSystem implements MatchSystem {
                 case LeaderUpdate leader -> state.leaders().set(leader);
                 case DiplomacySetup setup -> state.configureDiplomacy(setup);
                 case PresentationSetup setup -> state.configurePresentation(setup);
+                case FactionExpiry expiry -> expire(state, expiry);
             }
         }
         state.publishAll(pages);
@@ -77,7 +79,17 @@ final class IngestSystem implements MatchSystem {
         return packet.withSourceFaction(d.sourceFaction());
     }
 
+    private static void expire(MatchState state, FactionExpiry expiry) {
+        int faction = expiry.faction().value();
+        if (faction >= state.config().factions()) throw new IllegalArgumentException("expiry faction outside match");
+        if (state.outcome().ended() || state.outcome().defeated(faction)) return;
+        state.outcome().defeat(faction);
+        state.outputs().add(new FactionDefeated(expiry.faction(), FactionDefeated.RESIGNED));
+    }
+
     private static int canonical(InputEvent a, InputEvent b) {
+        if (a instanceof FactionExpiry first && b instanceof FactionExpiry second)
+            return Integer.compare(first.faction().value(), second.faction().value());
         if (a instanceof TerrainPage pa && b instanceof TerrainPage pb) {
             int byZ = Integer.compare(pa.coord().z(), pb.coord().z());
             return byZ != 0 ? byZ : Integer.compare(pa.coord().x(), pb.coord().x());
@@ -99,6 +111,7 @@ final class IngestSystem implements MatchSystem {
             case JobDelivery delivery -> 4;
             case ContentSwap swap -> 5;
             case LeaderUpdate leader -> 6;
+            case FactionExpiry expiry -> 7;
         };
     }
 }

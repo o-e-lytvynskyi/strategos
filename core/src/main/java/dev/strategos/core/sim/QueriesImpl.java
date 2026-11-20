@@ -406,6 +406,11 @@ final class QueriesImpl implements MatchQueries {
     }
 
     @Override
+    public boolean computerControlled(FactionSlot faction) {
+        return state.aiSlots().get(faction.value()) != null;
+    }
+
+    @Override
     public boolean factionDefeated(FactionSlot faction) {
         return faction.value() < state.config().factions() && state.outcome().defeated(faction.value());
     }
