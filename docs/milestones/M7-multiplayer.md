@@ -471,6 +471,20 @@ rejoin before, at and after expiry, paused matches and save/restart.
 
 ### 3.6 Ingress hardening (NET-06)
 
+T11.1a/b pass verify 44748687209 on 1f70e195 (2,814 canonical cases,
+zero failures/errors/skips): current-connection denial, whole-range replay and
+overlap rejection, wide overflow bounds, gaps and new-view sequence renewal
+with existing core orders retained. Ordinary commands and placement share one
+client sequence source; protocol 6 declares the compatibility requirement.
+T11.2/T11.3 and parent T11 remain open.
+
+T11.2 refinement before code (2026-11-20): **T11.2a** inventories all nine current
+serverbound StreamCodecs and requires empty, truncated, over-cap and trailing
+input to become consumed refusal values, with byte-exact valid controls.
+**T11.2b** applies stable handler rejection, current-sender and field validation
+with actual state/transport controls. Strict S2C decoding stays unchanged;
+T12 retains the separate permanent fuzz corpus and 100,000-input gate.
+
 T11 readiness/split (2026-11-20): T3b and T6 are delivered. Under the operator's
 continuing whole-M7 instruction, begin the existing specified NET-06 scope as
 **T11.1** authenticated current-connection and sequence boundaries;
