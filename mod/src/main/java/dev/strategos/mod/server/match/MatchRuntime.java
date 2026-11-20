@@ -347,6 +347,13 @@ public final class MatchRuntime {
             presentationSetup = null;
         }
         TickOutputs out = c.step(inputs);
+        MatchData blob = data;
+        if (blob != null) {
+            for (FactionSlot faction : expiryIssued)
+                if (!blob.expiryResolved(faction)
+                        && (c.queries().factionDefeated(faction) || c.queries().computerControlled(faction)))
+                    blob.recordExpiry(faction);
+        }
         long start = System.nanoTime();
         OutputAppliers.apply(this, level, out);
         bodies.materialise(level, c.queries(), spawnBudget);
@@ -373,9 +380,12 @@ public final class MatchRuntime {
                     roster.remainingNanos(player)));
         }
         for (FactionSlot faction : FactionExpiryPlan.due(members)) {
-            if (c.queries().factionDefeated(faction)
-                    || c.queries().computerControlled(faction)
-                    || !expiryIssued.add(faction)) continue;
+            if (data != null && data.expiryResolved(faction)) continue;
+            if (c.queries().factionDefeated(faction) || c.queries().computerControlled(faction)) {
+                if (data != null) data.recordExpiry(faction);
+                continue;
+            }
+            if (!expiryIssued.add(faction)) continue;
             if (settings.policy() == ReconnectSettings.Policy.AI_TAKEOVER) {
                 String script = Objects.requireNonNull(
                         Scenarios.script(StrategosServer.get().server(), "battle"),

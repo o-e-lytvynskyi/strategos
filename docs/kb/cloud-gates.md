@@ -56,3 +56,11 @@ containing deliberately failed frames. Inspect the normal step and the negative
 step separately; never call those negative verdicts a normal comparison failure.
 The scenario workflow now preserves `normal-report.json` before the altered check
 and `altered-report.json` afterward, retaining both unmodified verdicts.
+
+Minecraft GameTestSequence.thenExecute catches GameTestAssertException and
+marks the test failed, but can continue later sequence actions in that same tick.
+A failed pre-save assertion followed by a stale-positive wait can reach a second
+resume and crash the whole server with RUNNING -> RUNNING, hiding the original
+case from XML. Guard later mutation phases with a flag set only after the prior
+assertions and restore complete. Preserve the original assertion and report its
+actual diagnostic; do not weaken it or make lifecycle transitions idempotent.

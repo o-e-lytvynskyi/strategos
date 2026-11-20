@@ -210,7 +210,7 @@ class MatchDataTest {
         assertThat(loaded.roster().isConnected(member)).isFalse();
         assertThat(loaded.roster().remainingNanos(member)).isBetween(1L, 300_000_000_000L);
         CompoundTag migrated = loaded.save(new CompoundTag(), RegistryAccess.EMPTY);
-        assertThat(migrated.getInt("v")).isEqualTo(2);
+        assertThat(migrated.getInt("v")).isEqualTo(3);
         assertThat(migrated.getList("roster", net.minecraft.nbt.Tag.TAG_COMPOUND)
                         .getCompound(0)
                         .contains("remainingNanos", net.minecraft.nbt.Tag.TAG_LONG))

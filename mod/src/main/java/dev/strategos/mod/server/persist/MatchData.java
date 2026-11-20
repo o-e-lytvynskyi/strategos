@@ -1,11 +1,13 @@
 package dev.strategos.mod.server.persist;
 
 import com.mojang.serialization.DataResult;
+import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.MatchId;
 import dev.strategos.core.sim.MatchSnapshot;
 import dev.strategos.core.sim.persist.MatchSnapshotCodec;
 import dev.strategos.core.sim.persist.Migrations;
 import dev.strategos.mod.server.match.MatchRoster;
+import java.util.TreeSet;
 import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 import net.minecraft.core.HolderLookup;
@@ -17,9 +19,10 @@ import net.minecraft.world.level.saveddata.SavedData;
 import org.jspecify.annotations.Nullable;
 
 /**
- * One match's blob, {@code strategos_match_<id>} in its level's data storage: {@code {v: 2, epoch, snapshot, roster}}, the
+ * One match's blob, {@code strategos_match_<id>} in its level's data storage: {@code {v: 3, epoch, snapshot, roster, expiryResolved}}, the
  * snapshot in the core's schema with its own {@code "v"}, and disconnected-session durations in the roster.
- * Version 1 migrates valid legacy membership with a full reclaim window; current versions require explicit metadata.
+ * Version 1 migrates legacy membership with a full reclaim window; version 2 retains explicit session durations.
+ * Version 3 also requires a canonical completed-expiry envelope, independent of current computer control.
  * Loading never throws (guard 1 of ADR-0018): a blob that does not decode is QUARANTINED, keeps its raw tag and is
  * never dirty, so the file stays as it was.
  */
@@ -35,7 +38,7 @@ public final class MatchData extends SavedData {
         DISPOSED
     }
 
-    static final int VERSION = 2;
+    static final int VERSION = 3;
 
     private final MatchId id;
     private State state;
@@ -47,6 +50,7 @@ public final class MatchData extends SavedData {
     private @Nullable String quarantineReason;
     private MatchRoster roster;
     private boolean launchPending;
+    private final TreeSet<Integer> expiryResolved = new TreeSet<>();
 
     private MatchData(MatchId id, State state) {
         this(id, state, new MatchRoster());
@@ -100,10 +104,10 @@ public final class MatchData extends SavedData {
                 return quarantined(id, tag, "the blob has no version \"v\"");
             }
             int version = tag.getInt("v");
-            if (version != 1 && version != VERSION) {
+            if (version != 1 && version != 2 && version != VERSION) {
                 return quarantined(id, tag, "blob version " + version + ", this build reads " + VERSION);
             }
-            if (version == VERSION) {
+            if (version >= 2) {
                 if (!tag.contains("launchPending", Tag.TAG_BYTE)
                         || (tag.getByte("launchPending") != 0 && tag.getByte("launchPending") != 1)) {
                     return quarantined(id, tag, "the blob has no valid lobby launch transaction flag");
@@ -135,7 +139,7 @@ public final class MatchData extends SavedData {
             data.loaded = snapshot;
             data.loadedEpoch = tag.getLong("epoch");
             Tag rosterTag = tag.get("roster");
-            if (version == VERSION && rosterTag == null) {
+            if (version >= 2 && rosterTag == null) {
                 return quarantined(id, tag, "the blob has no roster session envelope");
             }
             if (rosterTag != null) {
@@ -153,6 +157,20 @@ public final class MatchData extends SavedData {
                                     && snapshot.diplomacy().factionOf(slot).isEmpty())) {
                         return quarantined(id, tag, "a roster seat has no primary authority binding");
                     }
+                }
+            }
+            if (version == VERSION) {
+                if (!tag.contains("expiryResolved", Tag.TAG_INT_ARRAY))
+                    return quarantined(id, tag, "the blob has no typed expiry resolution envelope");
+                int[] resolved = tag.getIntArray("expiryResolved");
+                if (resolved.length > snapshot.config().factions())
+                    return quarantined(id, tag, "too many resolved expiry factions");
+                int previous = -1;
+                for (int faction : resolved) {
+                    if (faction <= previous || faction >= snapshot.config().factions())
+                        return quarantined(id, tag, "expiry factions are not unique, ordered match factions");
+                    data.expiryResolved.add(faction);
+                    previous = faction;
                 }
             }
             return data;
@@ -187,6 +205,21 @@ public final class MatchData extends SavedData {
 
     public @Nullable String quarantineReason() {
         return quarantineReason;
+    }
+
+    /** The action was completed at a prior core boundary, even if its controller has since been disabled. */
+    public boolean expiryResolved(FactionSlot faction) {
+        return expiryResolved.contains(faction.value());
+    }
+
+    /** Called only after the canonical policy effect exists at a completed core tick. */
+    public void recordExpiry(FactionSlot faction) {
+        if (state != State.LIVE) throw new IllegalStateException("only a live match resolves expiry");
+        if (expiryResolved.add(faction.value())) setDirty();
+    }
+
+    private int[] resolvedExpiryArray() {
+        return expiryResolved.stream().mapToInt(Integer::intValue).toArray();
     }
 
     /** Who sits in the match: the runtime's roster, saved with the snapshot. */
@@ -250,14 +283,14 @@ public final class MatchData extends SavedData {
                 if (live == null || saveEpoch == null) {
                     throw new IllegalStateException("a LIVE blob without its match");
                 }
-                write(tag, saveEpoch.getAsLong(), live.get(), roster, launchPending);
+                write(tag, saveEpoch.getAsLong(), live.get(), roster, launchPending, resolvedExpiryArray());
             }
             case LOADED -> {
                 MatchSnapshot kept = loaded;
                 if (kept == null) {
                     throw new IllegalStateException("a LOADED blob without its snapshot");
                 }
-                write(tag, loadedEpoch, kept, roster, false);
+                write(tag, loadedEpoch, kept, roster, false, resolvedExpiryArray());
             }
             case QUARANTINED -> {
                 CompoundTag kept = raw;
@@ -270,11 +303,17 @@ public final class MatchData extends SavedData {
 
     /** Current blobs always name the session envelope, even when nobody is seated. */
     private static void write(
-            CompoundTag tag, long epoch, MatchSnapshot snapshot, MatchRoster roster, boolean launchPending) {
+            CompoundTag tag,
+            long epoch,
+            MatchSnapshot snapshot,
+            MatchRoster roster,
+            boolean launchPending,
+            int[] resolvedExpiry) {
         tag.putInt("v", VERSION);
         tag.putLong("epoch", epoch);
         tag.putBoolean("launchPending", launchPending);
         tag.put("snapshot", MatchSnapshotCodec.encode(NbtOps.INSTANCE, snapshot));
         tag.put("roster", roster.saveSessions());
+        tag.putIntArray("expiryResolved", resolvedExpiry);
     }
 }

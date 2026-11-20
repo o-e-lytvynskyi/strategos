@@ -3,6 +3,8 @@ package dev.strategos.gametest.suites;
 import static dev.strategos.gametest.suites.Units.check;
 import static dev.strategos.gametest.suites.Units.core;
 
+import com.google.gson.JsonElement;
+import com.mojang.serialization.JsonOps;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.CommandBatch;
 import dev.strategos.core.protocol.CommandOutcome;
@@ -16,10 +18,14 @@ import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.Vec2d;
+import dev.strategos.core.sim.CorePorts;
 import dev.strategos.core.sim.FactionExpiry;
+import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.core.sim.PlayRules;
+import dev.strategos.core.sim.TickInputs;
 import dev.strategos.core.sim.journal.ReplayDriver;
+import dev.strategos.core.sim.persist.MatchSnapshotCodec;
 import dev.strategos.core.testkit.SimHarness;
 import dev.strategos.gametest.MatchFixture;
 import dev.strategos.gametest.StrategosTest;
@@ -35,8 +41,10 @@ import dev.strategos.mod.server.net.payload.MatchJoinPayload;
 import dev.strategos.mod.server.net.payload.UiQueryPayload;
 import dev.strategos.mod.server.net.payload.UnitDetailPayload;
 import dev.strategos.mod.server.persist.MatchData;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.TreeSet;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
@@ -224,10 +232,65 @@ public final class ExpiryPolicyTests {
     private static void replays(MatchRuntime rt) {
         var c = core(rt);
         var result = ReplayDriver.replay(c.journal(), c.queries().templates());
+        boolean matches =
+                result.matches() && result.finalTick() == c.queries().tick() && result.finalHash() == c.stateHash();
+        String difference = matches ? "" : replayDifference(c);
         check(
-                result.matches() && result.finalTick() == c.queries().tick() && result.finalHash() == c.stateHash(),
+                matches,
                 "canonical expiry replay mismatch: " + result + "; live tick="
-                        + c.queries().tick() + " hash=" + c.stateHash());
+                        + c.queries().tick() + " hash=" + c.stateHash() + "; fields=" + difference);
+    }
+
+    private static String replayDifference(MatchCore live) {
+        var journal = live.journal();
+        var back = MatchCore.restore(
+                journal.start(),
+                live.queries().templates(),
+                CorePorts.of(() -> 0L),
+                journal.segments().getFirst()::slice);
+        var ticks = journal.nonEmptyTicks();
+        int index = 0;
+        for (long tick = journal.startTick() + 1; tick <= journal.lastTick(); tick++) {
+            TickInputs input = TickInputs.empty(tick);
+            if (index < ticks.size() && ticks.get(index).tick() == tick) input = ticks.get(index++);
+            back.step(input);
+        }
+        var differences = new ArrayList<String>();
+        differences(
+                "",
+                MatchSnapshotCodec.encode(JsonOps.INSTANCE, live.snapshot()),
+                MatchSnapshotCodec.encode(JsonOps.INSTANCE, back.snapshot()),
+                differences);
+        return differences.toString();
+    }
+
+    private static void differences(String path, JsonElement live, JsonElement replay, List<String> out) {
+        if (live.equals(replay) || out.size() >= 16) return;
+        if (live.isJsonObject() && replay.isJsonObject()) {
+            var keys = new TreeSet<String>();
+            for (var e : live.getAsJsonObject().entrySet()) keys.add(e.getKey());
+            for (var e : replay.getAsJsonObject().entrySet()) keys.add(e.getKey());
+            for (String key : keys) {
+                var a = live.getAsJsonObject().get(key);
+                var b = replay.getAsJsonObject().get(key);
+                if (a == null || b == null) out.add(path + "/" + key + " missing");
+                else differences(path + "/" + key, a, b, out);
+                if (out.size() >= 16) return;
+            }
+        } else if (live.isJsonArray()
+                && replay.isJsonArray()
+                && live.getAsJsonArray().size() == replay.getAsJsonArray().size()) {
+            for (int i = 0; i < live.getAsJsonArray().size() && out.size() < 16; i++)
+                differences(
+                        path + "/" + i,
+                        live.getAsJsonArray().get(i),
+                        replay.getAsJsonArray().get(i),
+                        out);
+        } else {
+            String a = live.toString(), b = replay.toString();
+            out.add(path + "=" + a.substring(0, Math.min(80, a.length())) + " vs "
+                    + b.substring(0, Math.min(80, b.length())));
+        }
     }
 
     private static boolean resolved(dev.strategos.core.sim.MatchCore c, boolean computer) {
