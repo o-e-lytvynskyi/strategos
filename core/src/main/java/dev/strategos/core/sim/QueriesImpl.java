@@ -406,6 +406,11 @@ final class QueriesImpl implements MatchQueries {
     }
 
     @Override
+    public boolean factionDefeated(FactionSlot faction) {
+        return faction.value() < state.config().factions() && state.outcome().defeated(faction.value());
+    }
+
+    @Override
     public @Nullable MatchResults matchResults() {
         Outcome o = state.outcome();
         if (!o.ended()) {

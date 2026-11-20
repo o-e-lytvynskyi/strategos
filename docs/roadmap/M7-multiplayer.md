@@ -164,6 +164,7 @@ Multiple-match discovery is outside M7. Recorded in the M7 branch pending mainta
 - **Tests:** L0, L2, L3 · **Fixtures:** fuzz corpus and crash inputs (append-only) ·
   **Depends on:** CORE-03, NET-02 · **Size:** M · **Tier:** T1
 - **Status:** done
+- **Done:** T11 full verify 44786479783 (2,927 cases) and T12 full verify 44791164065 (2,966 cases), with zero failures/errors/skips. Seeded L2 covers 100,008 generated probes and 27 permanent vectors; the actual paused-match L3 corpus preserves state/full journal and live accepted owner/peer controls. See the M7 specification sections 3.6 and T11/T12 branch evidence.
 
 #### NET-09 · Commander hardening against modified clients
 - **Value:** A modified client cannot use the vanilla spectator's powers to scout, teleport or leave
@@ -201,6 +202,7 @@ Multiple-match discovery is outside M7. Recorded in the M7 branch pending mainta
   4. No unit is ever added to a scoreboard team, while player names are coloured (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** MATCH-03, CORE-01 · **Size:** M · **Tier:** T1
 - **Status:** done
+- **Done:** T8 acceptance is recorded in the M7 specification section 3.1: full verify, slow/soak and two-controller transport/scoreboard controls, inspected cloud client evidence, and final matched JMH 44616013773 (all 30 configurations; unchanged 15% and allocation gates). T2/T5/T7 authority, allied damage/victory and persistence evidence is retained there. Human L7 remains T19/T25.
 
 #### UI-15 · Multiplayer HUD and pings
 - **Value:** Coordinate with allies: see who is playing and point at places on the map.

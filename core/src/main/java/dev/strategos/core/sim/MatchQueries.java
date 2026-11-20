@@ -29,6 +29,9 @@ public interface MatchQueries {
     /** Immutable authority at this completed tick; grants do not imply visibility of private state. */
     DiplomacyView diplomacy();
 
+    /** Whether this faction has already been defeated, including a match restored before its opponents finish. */
+    boolean factionDefeated(FactionSlot faction);
+
     /** Detached public faction presentation at this completed tick. */
     FactionPresentation presentation();
 

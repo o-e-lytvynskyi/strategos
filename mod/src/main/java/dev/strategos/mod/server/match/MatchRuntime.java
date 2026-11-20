@@ -2,6 +2,8 @@ package dev.strategos.mod.server.match;
 
 import dev.strategos.core.diag.MatchLog;
 import dev.strategos.core.protocol.Command;
+import dev.strategos.core.protocol.Resign;
+import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.MatchId;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.sim.AgentUpdate;
@@ -30,8 +32,10 @@ import dev.strategos.mod.server.tick.OutputAppliers;
 import dev.strategos.mod.server.world.PageJobs;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import net.minecraft.resources.ResourceLocation;
@@ -64,6 +68,7 @@ public final class MatchRuntime {
     private final MatchRoster roster;
     private final AgentTracker agents;
     private final List<CommandEnvelope> inbox = new ArrayList<>();
+    private final Set<FactionSlot> expiryIssued = new HashSet<>();
     private final List<ExternalDamage> damage = new ArrayList<>();
     private final Map<ReplyKey, Consumer<CommandResult>> replies = new HashMap<>();
     private final List<Consumer<TickOutputs>> listeners = new ArrayList<>();
@@ -312,6 +317,7 @@ public final class MatchRuntime {
                 throw new IllegalStateException("published template swap cannot be applied: " + problem);
             }
         }
+        expireDisconnected(StrategosServer.get().settings().reconnect());
         long next = c.queries().tick() + 1;
         AgentUpdate agents = this.agents.track(level, roster.members());
         ContentSwap swap = this.swap;
@@ -338,6 +344,27 @@ public final class MatchRuntime {
         c.timers().recordAdapter(System.nanoTime() - start);
         for (Consumer<TickOutputs> listener : listeners) {
             listener.accept(out);
+        }
+    }
+
+    /** Resolve elapsed primary reservations only at a real simulation boundary, never while paused. */
+    private void expireDisconnected(ReconnectSettings settings) {
+        if (settings.policy() != ReconnectSettings.Policy.DEFEAT) return;
+        MatchCore c = requireCore();
+        // Victory-disabled matches require a separate trusted input; do not change released Resign semantics.
+        if (c.queries().config().rules().play().victory() == dev.strategos.core.sim.PlayRules.Victory.NONE) return;
+        var members = new ArrayList<FactionExpiryPlan.Member>();
+        for (UUID player : roster.members()) {
+            PlayerSlot slot = roster.slotOf(player);
+            if (slot == null) continue;
+            members.add(new FactionExpiryPlan.Member(
+                    c.queries().diplomacy().factionOf(slot).orElse(null),
+                    roster.isConnected(player),
+                    roster.remainingNanos(player)));
+        }
+        for (FactionSlot faction : FactionExpiryPlan.due(members)) {
+            if (c.queries().factionDefeated(faction) || !expiryIssued.add(faction)) continue;
+            submit(PlayerSlot.ADMIN, new Resign(faction));
         }
     }
 

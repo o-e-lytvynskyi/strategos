@@ -457,7 +457,9 @@ in_progress for T14's existing ping/team-marker criterion; no criterion is remov
 T10.2a configuration passes full verify 44825483804 on ddccefe8
 (2,982 canonical cases, zero issues). Nine typed duration/policy/default/schema
 contracts pass; configured fresh/restore routing and co-op eligibility receive
-the next independent full verify. Live expiry effects remain T10.2b.
+full verify 44827196833 on 592b8261: all 2,994 canonical cases pass,
+including four configured blob-window and eight primary-owner eligibility contracts.
+Live expiry effects remain T10.2b.
 
 T10.1 passes full verify 44821434059 on fa91c15e (2,973 canonical cases,
 zero failures/errors/skips, L5 included). Four exact monotonic boundaries and
