@@ -471,6 +471,13 @@ rejoin before, at and after expiry, paused matches and save/restart.
 
 ### 3.6 Ingress hardening (NET-06)
 
+T11.2a passes verify 44751375106 on cfd9f0f6 (2,861 canonical cases,
+zero issues): all nine registered C2S codecs have four malformed-input and
+byte-exact valid controls; a real registered-handler test counts mixed-type
+refusals, preserves accepted owner/peer commands at 100 violations, and kicks
+only the offender at 101. Field/current-sender/rate/handle validation and the
+permanent fuzz corpus remain separate gates.
+
 T11.1a/b pass verify 44748687209 on 1f70e195 (2,814 canonical cases,
 zero failures/errors/skips): current-connection denial, whole-range replay and
 overlap rejection, wide overflow bounds, gaps and new-view sequence renewal
