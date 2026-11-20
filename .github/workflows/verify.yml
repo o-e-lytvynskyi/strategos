@@ -146,7 +146,7 @@ jobs:
           options=()
           if [ "$PINNED_FORMATTER" = true ]; then options+=(--init-script tools/pinned-formatter.init.gradle); fi
           if [ "$CENTRAL_ALTERNATE" = true ]; then options+=(--init-script tools/maven-central-alternate.init.gradle); fi
-          ./gradlew --console=plain --max-workers=2 "${options[@]}" verify
+          ./gradlew --console=plain --max-workers=2 "${options[@]}" :core:test :mod:test verify
       - name: Existing 15 percent and allocation gates on preserved measurements
         if: github.event_name == 'workflow_dispatch' && inputs.paired_reports_run != ''
         run: |

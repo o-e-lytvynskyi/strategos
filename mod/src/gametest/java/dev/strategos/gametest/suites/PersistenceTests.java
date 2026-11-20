@@ -118,7 +118,7 @@ public final class PersistenceTests {
                     check(data != null && record != null, "co-op fixture has no persisted match");
                     CompoundTag saved =
                             data.save(new CompoundTag(), h.getLevel().registryAccess());
-                    check(saved.getInt("v") == 2, "session metadata did not use the versioned blob");
+                    check(saved.getInt("v") == 3, "session metadata did not use the versioned blob");
                     registry.unload(rt.id());
                     MatchRuntime back = registry.restore(h.getLevel(), record, MatchData.load(rt.id(), saved));
                     check(back.lifecycle() == MatchLifecycle.PAUSED, "co-op roster did not restore paused");

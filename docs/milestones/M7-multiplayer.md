@@ -76,6 +76,7 @@ Final standard cloud L6 run 40972197958 passed in 1h 1m 55s on 33ecb12: all 22 r
 | D-04 | Explicit grants belong to the granting faction, but can be issued only from a player's primary faction | Reject grant chains and absent/enemy participants; rebind drops incoming grants, removing the last primary controller drops outgoing grants, and team changes revoke incompatible grants. Disconnect alone never unbinds a seat |
 | D-05 | T10.2 defeat must also resolve an expired human faction under `Victory.NONE`, while released human/admin `Resign` remains unsupported there | Implement a trusted, journaled faction-expiry input with a new append-only tag; preserve every existing tag and command meaning. Persist defeat in the existing core outcome without automatically ending a sandbox. The ordinary victory-enabled policy continues to journal `Resign`; AI takeover carries the shipped battle script in `SetAi`. All branches require pause/once/restore/replay evidence; pending implementation/acceptance |
 | D-06 | Current computer control is not proof that an earlier timeout action has never run: an administrator can later disable that controller | Persist completed expiry actions in adapter blob 3, independent of current core controller/outcome. Keep core snapshot 7 and protocol 6; migrate valid blob 1/2 without inventing history or renewing saved grace, preserve all blob-2 launch/session guards, and require strict canonical metadata in blob 3. Record completion only after a canonical effect is present at a completed core tick. Validate the actual disable/save/restore counterexample and malformed metadata; pending implementation/acceptance |
+| D-07 | Actual restored-match journals lose known but unpublished terrain references: live lastPageChange stays 1, replay advances it to 4 and may also re-arm a unit path | Split T10.2c before code: core schema 8 distinguishes pending terrain references from published pages, migrates schema 7 published references explicitly, and preserves pending geometry absence through snapshots and journal starts/segments. Published pages still require their actual slice; only an explicitly pending reference is geometry-free. Keep existing command/input meanings and exact final-hash gates, test the no-expiry control and both unchanged/changed first captures, then repeat S/J. T10.2b remains pending this prerequisite |
 
 ## 2. Baseline and dependencies
 
@@ -455,6 +456,14 @@ primary visibility is the floor; M8 shared vision remains separate. NET-03 stays
 in_progress for T14's existing ping/team-marker criterion; no criterion is removed.
 
 ### 3.5 Reconnect (NET-05)
+
+T10.2c is split before code after the replay field diagnostic in 44834380667:
+restore correctly knows the old slice hash of an unpublished page, but a new
+snapshot/journal drops that reference. The first recapture then wrongly counts
+as a map edit during replay. Preserve explicit pending page references in core
+schema 8, including paused re-save and journal segment boundaries, with strict
+published-slice validation and exact hash continuation. This is a prerequisite
+for T10.2b replay acceptance; no policy or parent completion is inferred.
 
 T10.2b functional verification is pending. Blob 3 adds a strict canonical
 completed-expiry envelope so an administrator disabling takeover cannot re-arm

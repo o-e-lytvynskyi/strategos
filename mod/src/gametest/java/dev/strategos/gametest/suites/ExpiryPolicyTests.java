@@ -325,6 +325,72 @@ public final class ExpiryPolicyTests {
                 .count();
     }
 
+    @StrategosTest(arena = "arena_flat_48", timeoutTicks = 400)
+    public static void aRestoredMovingMatchReplaysWithoutAnyExpiredReservation(GameTestHelper h) {
+        var registry = StrategosServer.get().matches();
+        var kit = MultiplayerHarness.create(
+                h, MatchFixture.options(SimHarness.DEFAULT_SEED, h).withPersistent(true));
+        var rt = kit.match();
+        for (int i = 0; i < 2; i++)
+            rt.submit(
+                    PlayerSlot.ADMIN,
+                    new SpawnUnits(TemplateSet.DEBUG_WALKER, new FactionSlot(i), new Vec2d(6, 6 + 12 * i), 1, 0));
+        var state = new Object() {
+            @Nullable MatchRuntime back;
+
+            @Nullable MockViewer peer;
+
+            boolean checked;
+        };
+        h.onEachTick(() -> {
+            var peer = state.peer;
+            if (peer != null) peer.poll();
+        });
+        h.startSequence()
+                .thenWaitUntil(() ->
+                        check(kit.ready() && core(rt).queries().unitHandles().length == 2, "replay control not ready"))
+                .thenExecute(() -> kit.admit("noexpiry", List.of(new PlayerSlot(0), new PlayerSlot(1))))
+                .thenExecute(() -> kit.viewer(0).send(move(rt, 0, 1, 40)))
+                .thenWaitUntil(() -> check(accepted(kit.viewer(0), 1), "original replay-control command missing"))
+                .thenExecute(() -> {
+                    var at = kit.viewer(1).player().position();
+                    kit.viewer(0).close();
+                    kit.viewer(1).close();
+                    var back = restore(h, rt, false);
+                    state.back = back;
+                    kit.close();
+                    check(
+                            back.roster().remainingNanos(MockViewer.uuidOf("noexpiry-0")) > 0,
+                            "control reservation expired");
+                    state.peer = MockViewer.join(h.getLevel(), "noexpiry-1", at.x, at.y, at.z, 2);
+                    subscribe(Objects.requireNonNull(state.peer), back);
+                })
+                .thenWaitUntil(() -> check(
+                        privateControl(Objects.requireNonNull(state.peer), Objects.requireNonNull(state.back)),
+                        "restored replay-control private handshake missing"))
+                .thenExecute(() -> {
+                    var back = Objects.requireNonNull(state.back);
+                    registry.resume(back.id());
+                    Objects.requireNonNull(state.peer).send(move(back, 1, 1, 35));
+                })
+                .thenWaitUntil(() -> check(
+                        accepted(Objects.requireNonNull(state.peer), 1), "restored replay-control command missing"))
+                .thenExecute(() -> {
+                    var back = Objects.requireNonNull(state.back);
+                    check(
+                            policyActions(back, false) == 0 && policyActions(back, true) == 0,
+                            "unexpired replay control unexpectedly resolved a policy");
+                    replays(back);
+                    state.checked = true;
+                })
+                .thenWaitUntil(() -> check(state.checked, "replay-control final comparison failed"))
+                .thenExecute(() -> {
+                    Objects.requireNonNull(state.peer).close();
+                    registry.dispose(Objects.requireNonNull(state.back).id());
+                })
+                .thenSucceed();
+    }
+
     private static void defeat(GameTestHelper h, boolean restart, String prefix) {
         var registry = StrategosServer.get().matches();
         var options = MatchFixture.options(SimHarness.DEFAULT_SEED, h)
