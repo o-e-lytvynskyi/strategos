@@ -12,6 +12,13 @@ violation in a minute), the codec reads softly: whatever is left in the buffer i
 above the limit — `skipBytes` and a "reject"; broken data — catch it and also return a
 "reject", and the handler on the server thread counts it.
 
+All registered C2S codecs need that rule, not only commands and lobby intents.
+Use the bounded `ByteBufWire.serverCodec` for a consumed refusal value; check the
+value before any handler state/permission operation and count a stable reason
+through the existing gateway policy. Refusal values are never encoded back to
+the client. Keep S2C decoding strict. Exercise each registered codec with valid
+byte-exact controls as well as empty, truncated, over-cap and trailing input.
+
 ## Client S2C handlers cannot be named in common code
 
 21.1 has no separate event for registering client handlers: `playToClient(type, codec, handler)`

@@ -67,8 +67,13 @@ public final class C2sHandlers {
         if (server == null || !(context.player() instanceof ServerPlayer player)) {
             return;
         }
+        var message = payload.ack();
+        if (message == null) {
+            server.net().refused(player, "invalid_template_ack");
+            return;
+        }
         try {
-            server.templateSync().ack(server, player, payload.ack());
+            server.templateSync().ack(server, player, message);
         } catch (RuntimeException e) {
             LOG.error("the template ack of {} failed", player.getGameProfile().getName(), e);
         }
@@ -80,10 +85,15 @@ public final class C2sHandlers {
         if (server == null || !(context.player() instanceof ServerPlayer player)) {
             return;
         }
+        var message = payload.jump();
+        if (message == null) {
+            server.net().refused(player, "invalid_camera_jump");
+            return;
+        }
         MatchRegistry.Seat seat = server.matches().seatOf(player.getUUID());
         if (seat != null) {
             server.commanders()
-                    .jump(player, seat.match(), payload.jump(), server.server().getTickCount());
+                    .jump(player, seat.match(), message, server.server().getTickCount());
         }
     }
 
@@ -93,10 +103,14 @@ public final class C2sHandlers {
         if (server == null || !(context.player() instanceof ServerPlayer player)) {
             return;
         }
+        var message = payload.query();
+        if (message == null) {
+            server.net().refused(player, "invalid_ui_query");
+            return;
+        }
         MatchRegistry.Seat seat = server.matches().seatOf(player.getUUID());
         if (seat != null) {
-            server.replication()
-                    .query(player, seat, payload.query(), server.server().getTickCount());
+            server.replication().query(player, seat, message, server.server().getTickCount());
         }
     }
 
@@ -108,17 +122,21 @@ public final class C2sHandlers {
      */
     public static void matchControl(MatchControlPayload payload, IPayloadContext context) {
         StrategosServer server = StrategosServer.getOrNull();
-        if (server == null
-                || !(context.player() instanceof ServerPlayer player)
-                || !server.server().isSingleplayer()) {
+        if (server == null || !(context.player() instanceof ServerPlayer player)) {
             return;
         }
+        var message = payload.control();
+        if (message == null) {
+            server.net().refused(player, "invalid_match_control");
+            return;
+        }
+        if (!server.server().isSingleplayer()) return;
         MatchRegistry.Seat seat = server.matches().seatOf(player.getUUID());
         MatchRuntime rt = seat == null ? null : seat.match();
         if (rt == null) {
             return;
         }
-        MatchControl c = payload.control();
+        MatchControl c = message;
         switch (c.action()) {
             case MatchControl.PAUSE -> {
                 if (rt.lifecycle() == MatchLifecycle.RUNNING) {
@@ -144,14 +162,15 @@ public final class C2sHandlers {
         if (server == null || !(context.player() instanceof ServerPlayer player)) {
             return;
         }
+        var message = payload.request();
+        if (message == null) {
+            server.net().refused(player, "invalid_mode_switch");
+            return;
+        }
         MatchRegistry.Seat seat = server.matches().seatOf(player.getUUID());
         if (seat != null) {
             server.commanders()
-                    .switchMode(
-                            player,
-                            seat.match(),
-                            payload.request(),
-                            server.server().getTickCount());
+                    .switchMode(player, seat.match(), message, server.server().getTickCount());
         }
     }
 
@@ -164,13 +183,18 @@ public final class C2sHandlers {
         if (server == null || !(context.player() instanceof ServerPlayer player)) {
             return;
         }
+        var message = payload.setup();
+        if (message == null) {
+            server.net().refused(player, "invalid_skirmish");
+            return;
+        }
         boolean owner = server.server().isSingleplayerOwner(player.getGameProfile());
         if (!owner && !player.hasPermissions(2)) {
             LOG.warn("{} asked for a skirmish without being the host or an operator", player.getScoreboardName());
             return;
         }
         try {
-            server.skirmishes().start(server, payload.setup(), player);
+            server.skirmishes().start(server, message, player);
         } catch (MatchRefusedException e) {
             player.sendSystemMessage(Component.literal("[Strategos] skirmish refused: " + e.getMessage()));
         }
@@ -210,8 +234,13 @@ public final class C2sHandlers {
         if (server == null || !(context.player() instanceof ServerPlayer player)) {
             return;
         }
+        var message = payload.request();
+        if (message == null) {
+            server.net().refused(player, "invalid_debug_subscribe");
+            return;
+        }
         try {
-            server.debug().subscribe(player, payload.request());
+            server.debug().subscribe(player, message);
         } catch (RuntimeException e) {
             LOG.error(
                     "the debug subscription of {} failed",
