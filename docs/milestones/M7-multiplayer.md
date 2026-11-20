@@ -471,6 +471,22 @@ rejoin before, at and after expiry, paused matches and save/restart.
 
 ### 3.6 Ingress hardening (NET-06)
 
+T11.2b current-origin and T11.3 fixed-kernel contracts pass verify 44776130049
+on b93d8f1d (2,912 canonical cases, zero issues). The actual registered lobby
+handler cannot rebind a retained context to a replacement host; fresh private
+state and Ready/Cancel remain functional. All registered C2S wrappers validate
+current player/listener/open transport before handler work, while pre-seat
+current handshake/lobby traffic remains allowed. Remaining auxiliary admission,
+audit reasons, full network gates and the permanent fuzz corpus stay open.
+
+T11.3 refinement before code (2026-11-20): **T11.3a** fixes kernel policy
+bounds and adds a separate auxiliary-intent budget (80 burst, 40 per 20 server
+ticks), preserving the existing command/handle budget and tighter per-type
+limits. Malformed refusals retain the common 100/101 violation policy.
+**T11.3b** verifies stable rejection/audit reasons and the remaining per-type
+rate/field/handle controls. Test auxiliary bursts with real template acknowledgments,
+backend-resend controls and accepted owner/peer unit orders in the same scene.
+
 T11.2b numeric-field contracts pass verify 44754651943 on 9935db19
 (2,905 canonical cases, zero issues): 41 raw invalid-field vectors and three
 L1 typed-model/wire-fault cases. Raw IEEE primitive reading is preserved;

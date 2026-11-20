@@ -387,6 +387,11 @@ public final class StrategosGameTests {
         afterBatch(level, "map_horsemen");
     }
 
+    @AfterBatch(batch = "ingress_aux_rate")
+    public static void afterIngressAuxiliaryRate(ServerLevel level) {
+        afterBatch(level, "ingress_aux_rate");
+    }
+
     @AfterBatch(batch = "ingress_lobby_origin")
     public static void afterIngressLobbyOrigin(ServerLevel level) {
         afterBatch(level, "ingress_lobby_origin");
