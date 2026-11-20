@@ -136,7 +136,10 @@ public final class Replication {
                 || current.match() != seat.match()
                 || !current.slot().equals(seat.slot())
                 || online == null
-                || !origin.current(online, registry)) return;
+                || !origin.current(online, registry)) {
+            net.rejected(player, IngressReason.UI_QUERY_UNAVAILABLE);
+            return;
+        }
         refreshRecipient(player, registry);
         Subscription sub = subscriptions.computeIfAbsent(player.getUUID(), k -> new Subscription());
         while (!sub.recent.isEmpty() && tick - sub.recent.peekFirst() >= 20) {
@@ -144,6 +147,7 @@ public final class Replication {
         }
         if (sub.recent.size() >= QUERIES_PER_SECOND) {
             queriesRefused++;
+            net.rejected(player, IngressReason.UI_QUERY_RATE);
             return;
         }
         sub.recent.addLast(tick);

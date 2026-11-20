@@ -73,7 +73,7 @@ public final class C2sHandlers {
         }
         var message = payload.ack();
         if (message == null) {
-            server.net().refused(player, "invalid_template_ack");
+            server.net().refused(player, IngressReason.INVALID_TEMPLATE_ACK);
             return;
         }
         if (!server.net().allowAuxiliaryIntent(player)) return;
@@ -92,14 +92,15 @@ public final class C2sHandlers {
         }
         var message = payload.jump();
         if (message == null) {
-            server.net().refused(player, "invalid_camera_jump");
+            server.net().refused(player, IngressReason.INVALID_CAMERA_JUMP);
             return;
         }
         if (!server.net().allowAuxiliaryIntent(player)) return;
         MatchRegistry.Seat seat = server.matches().seatOf(player.getUUID());
-        if (seat != null) {
-            server.commanders()
-                    .jump(player, seat.match(), message, server.server().getTickCount());
+        if (seat == null
+                || !server.commanders()
+                        .jump(player, seat.match(), message, server.server().getTickCount())) {
+            server.net().rejected(player, IngressReason.CAMERA_REFUSED);
         }
     }
 
@@ -111,18 +112,20 @@ public final class C2sHandlers {
         }
         var message = payload.query();
         if (message == null) {
-            server.net().refused(player, "invalid_ui_query");
+            server.net().refused(player, IngressReason.INVALID_UI_QUERY);
             return;
         }
         if (!server.net().allowAuxiliaryIntent(player)) return;
         MatchRegistry.Seat seat = server.matches().seatOf(player.getUUID());
         if (seat != null) {
             server.replication().query(player, seat, message, server.server().getTickCount());
+        } else {
+            server.net().rejected(player, IngressReason.UI_QUERY_UNAVAILABLE);
         }
     }
 
     /**
-     * A seated player's pause, resume or game speed (MATCH-05), in singleplayer only: a pause stops its match's steps
+     * A seated player's pause, resume or game speed (MATCH-05), for the owner of an unpublished singleplayer world only: a pause stops its match's steps
      * while commands keep coming in, a resume steps it again, and a speed offered sets the server's tick rate, which
      * in singleplayer is this match's alone. A match that is neither running nor paused, or a speed not offered, is
      * ignored.
@@ -134,14 +137,17 @@ public final class C2sHandlers {
         }
         var message = payload.control();
         if (message == null) {
-            server.net().refused(player, "invalid_match_control");
+            server.net().refused(player, IngressReason.INVALID_MATCH_CONTROL);
             return;
         }
         if (!server.net().allowAuxiliaryIntent(player)) return;
-        if (!server.server().isSingleplayer()) return;
         MatchRegistry.Seat seat = server.matches().seatOf(player.getUUID());
         MatchRuntime rt = seat == null ? null : seat.match();
-        if (rt == null) {
+        if (rt == null
+                || !MatchControlPolicy.allows(
+                        server.server().isSingleplayer(), server.server().isPublished(),
+                        server.server().isSingleplayerOwner(player.getGameProfile()), rt.lifecycle())) {
+            server.net().rejected(player, IngressReason.MATCH_CONTROL_UNAVAILABLE);
             return;
         }
         MatchControl c = message;
@@ -172,14 +178,16 @@ public final class C2sHandlers {
         }
         var message = payload.request();
         if (message == null) {
-            server.net().refused(player, "invalid_mode_switch");
+            server.net().refused(player, IngressReason.INVALID_MODE_SWITCH);
             return;
         }
         if (!server.net().allowAuxiliaryIntent(player)) return;
         MatchRegistry.Seat seat = server.matches().seatOf(player.getUUID());
-        if (seat != null) {
-            server.commanders()
-                    .switchMode(player, seat.match(), message, server.server().getTickCount());
+        if (seat == null
+                || !server.commanders()
+                        .switchMode(
+                                player, seat.match(), message, server.server().getTickCount())) {
+            server.net().rejected(player, IngressReason.MODE_REFUSED);
         }
     }
 
@@ -194,18 +202,20 @@ public final class C2sHandlers {
         }
         var message = payload.setup();
         if (message == null) {
-            server.net().refused(player, "invalid_skirmish");
+            server.net().refused(player, IngressReason.INVALID_SKIRMISH);
             return;
         }
         if (!server.net().allowAuxiliaryIntent(player)) return;
         boolean owner = server.server().isSingleplayerOwner(player.getGameProfile());
         if (!owner && !player.hasPermissions(2)) {
+            server.net().rejected(player, IngressReason.SKIRMISH_PERMISSION);
             LOG.warn("{} asked for a skirmish without being the host or an operator", player.getScoreboardName());
             return;
         }
         try {
             server.skirmishes().start(server, message, player);
         } catch (MatchRefusedException e) {
+            server.net().rejected(player, IngressReason.SKIRMISH_REFUSED);
             player.sendSystemMessage(Component.literal("[Strategos] skirmish refused: " + e.getMessage()));
         }
     }
@@ -220,7 +230,7 @@ public final class C2sHandlers {
         }
         LobbyAction action = payload.action();
         if (action == null) {
-            server.net().refused(player, "invalid_lobby_action");
+            server.net().refused(player, IngressReason.INVALID_LOBBY_ACTION);
             server.net().send(new Audience.Player(player), new LobbyReplyPayload(LobbyReply.INVALID));
             player.sendSystemMessage(Component.translatable("message.strategos.invalid_lobby_action"));
             return;
@@ -228,7 +238,7 @@ public final class C2sHandlers {
         try {
             server.lobby().accept(player.getUUID(), action);
         } catch (IllegalArgumentException | IllegalStateException refused) {
-            server.net().refused(player, "lobby_refused");
+            server.net().refused(player, IngressReason.LOBBY_REFUSED);
             server.net().send(new Audience.Player(player), new LobbyReplyPayload(LobbyReply.REFUSED));
             player.sendSystemMessage(Component.translatable("message.strategos.lobby_refused"));
         } catch (RuntimeException failure) {
@@ -246,7 +256,7 @@ public final class C2sHandlers {
         }
         var message = payload.request();
         if (message == null) {
-            server.net().refused(player, "invalid_debug_subscribe");
+            server.net().refused(player, IngressReason.INVALID_DEBUG_SUBSCRIBE);
             return;
         }
         if (!server.net().allowAuxiliaryIntent(player)) return;

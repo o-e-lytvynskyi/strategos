@@ -148,3 +148,14 @@ threw from GameTestSequence.thenExecuteAfter and crashed the whole server in
 permit only the initial empty prefix, then require the expected deposit count,
 continued presence and monotonically decreasing stock. Keep the mining positive
 control. Do not add sleeps, retries or remove the early publication frames.
+
+## An integrated server is still singleplayer after LAN publication
+
+MinecraftServer.isSingleplayer() checks only whether its singleplayer profile
+exists. IntegratedServer.isPublished() independently checks publishedPort > -1.
+Therefore isSingleplayer() alone cannot authorize a player to change server-wide
+time: a published LAN world still passes. For the existing singleplayer-only
+pause/speed contract, also require the unpublished world's owner and an active
+RUNNING/PAUSED match. Verify both APIs in the pinned 1.21.1 sources; do not use
+a client's local-world flag as server authority. Covered by MatchControlPolicyTest
+and the dedicated-server semantic-refusal fixture in IngressAuditTests.

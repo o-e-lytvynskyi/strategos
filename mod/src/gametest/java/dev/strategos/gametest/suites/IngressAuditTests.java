@@ -7,6 +7,7 @@ import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.CommandBatch;
 import dev.strategos.core.protocol.CommandOutcome;
 import dev.strategos.core.protocol.Feedback;
+import dev.strategos.core.protocol.MatchControl;
 import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.SkirmishSetup;
 import dev.strategos.core.protocol.SpawnUnits;
@@ -21,6 +22,7 @@ import dev.strategos.gametest.StrategosTest;
 import dev.strategos.gametest.net.MultiplayerHarness;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.server.net.payload.FeedbackPayload;
+import dev.strategos.mod.server.net.payload.MatchControlPayload;
 import dev.strategos.mod.server.net.payload.SkirmishPayload;
 import java.util.List;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -42,6 +44,8 @@ public final class IngressAuditTests {
         var state = new Object() {
             int violations;
             int rejections;
+            int controls;
+            float tickRate;
         };
         String owner = "refusal-0";
         String key = owner + " skirmish_permission";
@@ -61,7 +65,17 @@ public final class IngressAuditTests {
                     var audit = counters.toJson().getAsJsonObject("rejections");
                     state.rejections =
                             audit != null && audit.has(key) ? audit.get(key).getAsInt() : 0;
+                    check(!server.server().isSingleplayer(), "match-control fixture is not a dedicated server");
+                    String controlKey = owner + " match_control_unavailable";
+                    state.controls = audit != null && audit.has(controlKey)
+                            ? audit.get(controlKey).getAsInt()
+                            : 0;
+                    state.tickRate = server.server().tickRateManager().tickrate();
                     for (int i = 0; i < 3; i++) kit.viewer(0).send(new SkirmishPayload(SkirmishSetup.DEFAULTS));
+                    kit.viewer(0).send(new MatchControlPayload(MatchControl.PAUSE_NOW));
+                    kit.viewer(0)
+                            .send(new MatchControlPayload(new MatchControl(MatchControl.SPEED, MatchControl.FAST)));
+                    kit.viewer(0).send(new MatchControlPayload(MatchControl.RESUME_NOW));
                     kit.sendCommands(
                             0,
                             new CommandBatch(
@@ -98,6 +112,15 @@ public final class IngressAuditTests {
                     check(
                             !kit.viewer(0).disconnected() && !kit.viewer(1).disconnected(),
                             "semantic refusal disconnected a valid peer");
+                    String controlKey = owner + " match_control_unavailable";
+                    check(
+                            audit != null
+                                    && audit.has(controlKey)
+                                    && audit.get(controlKey).getAsInt() == state.controls + 3,
+                            "dedicated match controls have no stable semantic refusal audit");
+                    check(
+                            server.server().tickRateManager().tickrate() == state.tickRate,
+                            "dedicated client changed server-wide simulation speed");
                     check(rt.lifecycle() == MatchLifecycle.RUNNING, "refused setup changed match lifecycle");
                 })
                 .thenExecute(kit::close)

@@ -298,7 +298,7 @@ public final class NetGateway {
         ServerPlayer online = server.getPlayerList().getPlayer(player.getUUID());
         if (online != null && origin.connectionCurrent(online, transport)) return true;
         // Do not let an old handler spend the replacement connection's rate or kick budget.
-        counters.violation(player.getGameProfile().getName(), "stale_connection");
+        counters.violation(player.getGameProfile().getName(), IngressReason.STALE_CONNECTION);
         return false;
     }
 
@@ -309,13 +309,13 @@ public final class NetGateway {
         ServerPlayer online = server.getPlayerList().getPlayer(player.getUUID());
         if (online == null || !origin.current(online, registry)) {
             // A stale handler must not mutate the new seat or spend the replacement's violation budget.
-            counters.violation(player.getGameProfile().getName(), "stale_connection");
+            counters.violation(player.getGameProfile().getName(), IngressReason.STALE_CONNECTION);
             return;
         }
         long tick = server.getTickCount();
         CommandBatch batch = payload.batch();
         if (batch == null) {
-            refuse(player, tick, "unreadable");
+            refuse(player, tick, IngressReason.UNREADABLE);
             return;
         }
         int handles = 0;
@@ -323,22 +323,22 @@ public final class NetGateway {
             handles += handles(command);
         }
         if (!limiter.take(player.getUUID(), tick, batch.commands().size(), handles)) {
-            refuse(player, tick, "over rate");
+            refuse(player, tick, IngressReason.COMMAND_RATE);
             return;
         }
         MatchRegistry.Seat seat = matches.get().seatOf(player.getUUID());
         if (seat == null) {
-            refuse(player, tick, "unseated");
+            refuse(player, tick, IngressReason.UNSEATED);
             return;
         }
         if (seat.slot().isAdmin()) {
             // the admin's slot seats watchers, whose commands would rule every faction: dropped, not a fault
-            counters.violation(player.getGameProfile().getName(), "observer");
+            counters.violation(player.getGameProfile().getName(), IngressReason.OBSERVER);
             return;
         }
         MatchRuntime rt = seat.match();
         if (rt.lifecycle() != MatchLifecycle.RUNNING && rt.lifecycle() != MatchLifecycle.PAUSED) {
-            counters.violation(player.getGameProfile().getName(), "match " + rt.lifecycle()); // dropped, not a fault
+            counters.violation(player.getGameProfile().getName(), IngressReason.INACTIVE_MATCH); // dropped, not a fault
             return;
         }
         SequencedRecipient sequenced = commandSequences.get(player.getUUID());
@@ -346,7 +346,7 @@ public final class NetGateway {
             sequenced = new SequencedRecipient(origin, new CommandSequenceWindow());
         }
         if (!sequenced.window().take(batch.clientSeq(), batch.commands().size())) {
-            refuse(player, tick, "command_sequence");
+            refuse(player, tick, IngressReason.COMMAND_SEQUENCE);
             return;
         }
         commandSequences.put(player.getUUID(), sequenced);
@@ -393,26 +393,31 @@ public final class NetGateway {
 
     /** Lobby intents use the auxiliary budget, independently of simulation commands and handle costs. */
     public boolean allowLobbyIntent(ServerPlayer player) {
-        return takeAuxiliaryIntent(player, "lobby_rate");
+        return takeAuxiliaryIntent(player, IngressReason.LOBBY_RATE);
     }
 
     /** A well-formed auxiliary request, before its type-specific permission/rate/state checks. */
     public boolean allowAuxiliaryIntent(ServerPlayer player) {
-        return takeAuxiliaryIntent(player, "auxiliary_rate");
+        return takeAuxiliaryIntent(player, IngressReason.AUXILIARY_RATE);
     }
 
-    private boolean takeAuxiliaryIntent(ServerPlayer player, String reason) {
+    private boolean takeAuxiliaryIntent(ServerPlayer player, IngressReason reason) {
         if (auxiliaryLimiter.take(player.getUUID(), server.getTickCount(), 1, 0)) return true;
         refused(player, reason);
         return false;
     }
 
+    /** A normal unavailable action is audited without charging the protocol kick budget. */
+    public void rejected(ServerPlayer player, IngressReason reason) {
+        counters.rejected(player.getGameProfile().getName(), reason);
+    }
+
     /** Another handler refused what {@code player} sent: a violation, counted as the gateway's own are. */
-    public void refused(ServerPlayer player, String reason) {
+    public void refused(ServerPlayer player, IngressReason reason) {
         refuse(player, server.getTickCount(), reason);
     }
 
-    private void refuse(ServerPlayer player, long tick, String reason) {
+    private void refuse(ServerPlayer player, long tick, IngressReason reason) {
         counters.violation(player.getGameProfile().getName(), reason);
         if (limiter.violation(player.getUUID(), tick)) {
             limiter.forget(player.getUUID());

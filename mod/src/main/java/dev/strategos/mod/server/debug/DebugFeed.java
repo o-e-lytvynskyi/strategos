@@ -10,6 +10,7 @@ import dev.strategos.mod.server.match.MatchRegistry;
 import dev.strategos.mod.server.match.MatchRuntime;
 import dev.strategos.mod.server.match.MatchSpace;
 import dev.strategos.mod.server.net.Audience;
+import dev.strategos.mod.server.net.IngressReason;
 import dev.strategos.mod.server.net.NetGateway;
 import dev.strategos.mod.server.net.payload.DebugFeedPayload;
 import java.util.ArrayDeque;
@@ -77,11 +78,14 @@ public final class DebugFeed {
      * refused: the player lacks the permission, or sent too many.
      */
     public boolean subscribe(ServerPlayer player, DebugSubscribe request) {
-        String refusal = !player.hasPermissions(permission)
-                ? "the debug feed needs permission level " + permission
-                : !take(player.getUUID()) ? "at most " + RATE + " debug subscriptions a second" : null;
-        if (refusal != null) {
-            net.refused(player, "debug: " + refusal);
+        IngressReason reason = !player.hasPermissions(permission)
+                ? IngressReason.DEBUG_PERMISSION
+                : !take(player.getUUID()) ? IngressReason.DEBUG_RATE : null;
+        if (reason != null) {
+            String refusal = reason == IngressReason.DEBUG_PERMISSION
+                    ? "the debug feed needs permission level " + permission
+                    : "at most " + RATE + " debug subscriptions a second";
+            net.refused(player, reason);
             player.sendSystemMessage(Component.literal("strategos: " + refusal));
             return false;
         }

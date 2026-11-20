@@ -471,6 +471,12 @@ rejoin before, at and after expiry, paused matches and save/restart.
 
 ### 3.6 Ingress hardening (NET-06)
 
+T11.3a auxiliary admission passes verify 44780066073 on 38faac03
+(2,913 canonical cases, zero failures/errors/skips). Two capped auxiliary
+bursts retain actual template resends and accepted commands for both peers;
+100 retained stale contexts cannot consume the replacement connection's kick
+budget. Stable semantic audit reasons and the remaining T11 gates stay open.
+
 T11.2b current-origin and T11.3 fixed-kernel contracts pass verify 44776130049
 on b93d8f1d (2,912 canonical cases, zero issues). The actual registered lobby
 handler cannot rebind a retained context to a replacement host; fresh private
