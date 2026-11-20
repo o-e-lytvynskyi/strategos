@@ -471,6 +471,32 @@ rejoin before, at and after expiry, paused matches and save/restart.
 
 ### 3.6 Ingress hardening (NET-06)
 
+T11 is complete (2026-11-20): full verify 44786479783 on f7103b2d
+passes all 2,927 canonical cases, zero failures/errors/skips, including L5.
+The final subscription fixture preserves accepted own-unit detail/debug output
+after both bursts and requires new frames after refill plus actual owner/peer
+commands; only the existing debug-rate policy charges protocol violations.
+Unchanged camera/mode cooldown cases, nine malformed codecs, finite-field,
+sequence, current-transport and exact 100/101 controls all remain green.
+Paired core L6 44774432743 covers the identical production core tree: all
+30 configurations/28 methods pass the unchanged 15 percent/allocation gates.
+T12 and the NET-06 card remain open; this does not accept L7 or whole M7.
+
+T12 refinement before code (2026-11-20): **T12.1** depends only on the accepted
+T11.2 decoder foundation, independently of the final subscription-rate fixture. It
+shares the existing nine-type
+fixture catalog with a permanent append-only corpus and committed seed set;
+execute at least 100,000 generated inputs in each L2 build, with bounded bytes,
+complete input consumption, safe refusal and accepted round-trip controls.
+Persist an exact crashing input in the cloud reports before adding its permanent
+regression; do not swallow unexpected exceptions or retry for a passing seed.
+**T12.2** depends on completed T11 and feeds a bounded representative corpus
+through actual handlers with
+accepted owner/peer commands and state/journal controls. Keep its L3 resource
+subset byte-identical to the canonical corpus under mod/src/test/resources
+through an L2 consistency assertion, using the existing source-set classpaths.
+This planning does not accept the corpus or close T11/NET-06.
+
 T11.3b typed-reason and time-control authorization passes full verify
 44784613770 on 855f83b8 (2,926 canonical cases, zero issues; L5 included).
 The two intended engine failures in 44783227554 are resolved. Three L2
@@ -751,7 +777,7 @@ reviewed implementation task between T17 and T18, keeping the acceptance depende
 - [x] T8 (2026-11-19) · Co-op authority; verify 44614567652, full-ci 44606455194, inspected L4 repeats 44613485447/44616116638, complete matched JMH 44616013773.
 - [x] T9 · Recipient privacy.
 - [ ] T10 · Reconnect and timeout.
-- [ ] T11 · Ingress validation.
+- [x] T11 (2026-11-20) · Ingress validation; full verify 44786479783 (2,927 cases), paired core L6 44774432743 with unchanged gates.
 - [ ] T12 · Seeded fuzzing.
 - [ ] T13 · Commander hardening.
 - [ ] T14 · Team HUD and pings.
