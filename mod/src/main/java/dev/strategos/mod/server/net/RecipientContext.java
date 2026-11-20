@@ -31,6 +31,8 @@ record RecipientContext(
         return first == second;
     }
 
+    // The exact listener and raw transport own queued work; value equality cannot replace either identity.
+    @SuppressWarnings("ReferenceEquality")
     boolean connectionCurrent(ServerPlayer online, Connection transport) {
         return samePlayer(online, player)
                 && online.connection == connection
