@@ -97,6 +97,10 @@ public final class NetGateway {
 
     private record QueuedFrame(CustomPacketPayload payload, RecipientContext recipient) {}
 
+    private record SequencedRecipient(RecipientContext origin, CommandSequenceWindow window) {}
+
+    private final Map<UUID, SequencedRecipient> commandSequences = new HashMap<>();
+
     private final Map<UUID, List<QueuedFrame>> queued = new LinkedHashMap<>();
     private final Map<Integer, MatchLifecycle> lastState = new HashMap<>();
     private final Map<Integer, List<FactionLook>> lastLooks = new HashMap<>();
@@ -239,6 +243,11 @@ public final class NetGateway {
      */
     public void flush() {
         int tick = server.getTickCount();
+        MatchRegistry registry = matches.get();
+        commandSequences.entrySet().removeIf(entry -> {
+            ServerPlayer online = server.getPlayerList().getPlayer(entry.getKey());
+            return online == null || !entry.getValue().origin().current(online, registry);
+        });
         Map<Integer, MatchLifecycle> now = new HashMap<>();
         Map<Integer, List<FactionLook>> nowLooks = new HashMap<>();
         for (MatchRuntime rt : matches.get().all()) {
@@ -320,6 +329,15 @@ public final class NetGateway {
             counters.violation(player.getGameProfile().getName(), "match " + rt.lifecycle()); // dropped, not a fault
             return;
         }
+        SequencedRecipient sequenced = commandSequences.get(player.getUUID());
+        if (sequenced == null || !sequenced.origin().current(player, registry)) {
+            sequenced = new SequencedRecipient(origin, new CommandSequenceWindow());
+        }
+        if (!sequenced.window().take(batch.clientSeq(), batch.commands().size())) {
+            refuse(player, tick, "command_sequence");
+            return;
+        }
+        commandSequences.put(player.getUUID(), sequenced);
         faults.run(rt, "commands", () -> {
             for (int k = 0; k < batch.commands().size(); k++) {
                 int seq = batch.clientSeq() + k;
@@ -355,6 +373,7 @@ public final class NetGateway {
 
     /** A player who left starts afresh. */
     public void forget(ServerPlayer player) {
+        commandSequences.remove(player.getUUID());
         limiter.forget(player.getUUID());
         queued.remove(player.getUUID());
     }

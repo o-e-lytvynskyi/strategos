@@ -48,13 +48,10 @@ final class RtsPlacement {
     private static final int OK = 0x6040E040;
     private static final int REFUSED = 0x60E04040;
     private static final float INSET = 0.04F;
-    /** Client sequence numbers of placements, apart from the orders' own. */
-    private static final int SEQ_BASE = 1 << 30;
 
     private final RtsMode mode;
     private int armed = -1;
     private int rotation;
-    private int seq = SEQ_BASE;
     private @Nullable Ghost ghost;
     private long checkedAt;
 
@@ -160,7 +157,8 @@ final class RtsPlacement {
                         .mapToInt(Integer::intValue)
                         .toArray()),
                 shift ? QueueMode.QUEUE : QueueMode.REPLACE);
-        ClientPayloads.toServer(new CommandsPayload(new CommandBatch(seq++, List.of(command)), ""));
+        ClientPayloads.toServer(
+                new CommandsPayload(new CommandBatch(mode.nextCommandSequence(), List.of(command)), ""));
         if (!shift) {
             cancel();
         }

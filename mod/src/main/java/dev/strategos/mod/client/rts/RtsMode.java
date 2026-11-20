@@ -71,6 +71,7 @@ public final class RtsMode {
     private final ControlGroups groups = new ControlGroups();
     private final ClientResume resume = new ClientResume(); // MATCH-04: each match's camera and groups, as left
     private int groupsMatch = -1; // the match the groups are of
+    private long commandSequence = 1;
     private final RtsOrders orders = new RtsOrders(this);
     private final RtsPlacement placement = new RtsPlacement(this);
     private final RallyMarker rally = new RallyMarker(this);
@@ -147,6 +148,13 @@ public final class RtsMode {
     /** Whether the next right click attack-moves (ORD-04): its key was pressed since the last order. */
     public boolean attackMoveArmed() {
         return orders.attackMoveArmed();
+    }
+
+    /** All command producers share one ordered stream; never wrap into a negative wire sequence. */
+    int nextCommandSequence() {
+        int next = Math.toIntExact(commandSequence);
+        commandSequence++;
+        return next;
     }
 
     /** Placement mode (BLD-02). */

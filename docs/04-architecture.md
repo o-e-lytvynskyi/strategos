@@ -2067,7 +2067,7 @@ placing; the events are the second line of defence.
 
 | Payload | Content | Caps | Lands in |
 |---|---|---|---|
-| `strategos:commands` | Client sequence number; up to 32 commands | ≤ 4 KiB; ≤ 300 handles per command; 40 commands/s with bursts of 80; 3,000 handles/s | M1 |
+| `strategos:commands` | One shared client sequence stream; up to 32 commands; protocol 6 rejects replayed/overlapping ranges | ≤ 4 KiB; ≤ 300 handles per command; 40 commands/s with bursts of 80; 3,000 handles/s | M1 |
 | `strategos:camera_jump` | Target X and Z (match-local), zoom | 4/s; inside the match space + 32 blocks; commanders only | M2 |
 | `strategos:mode_switch` | RTS or first person, with a drop point | 1/s; match rules | M2 |
 | `strategos:ui_query` | Detail subscription: selected own units, one visible entity, an own building | ≤ 32 handles; 4/s | M2 |
@@ -2083,7 +2083,7 @@ placing; the events are the second line of defence.
 | `strategos:lobby_state` | Detached configuration, public display names/seat flags, recipient seat, revisions and bounded reason; no UUIDs | One admitted player only | On configuration/readiness/lifecycle change; ≤ 1,057 bytes | M7 T3b.2 |
 | `strategos:lobby_reply` | Bounded refusal/invalid/error/rate-limit code; no roster or exception detail | Requesting player only, including before admission | Rejected request; 2 bytes | M7 T4.1 |
 | `strategos:template_set` | Compiled client view, id table, hash | Player | Login, `/reload` | M1 |
-| `strategos:match_join` | Match id, space, faction count, authenticated player slot, rules, minimap base and recipient authority | Player | Join, rejoin; protocol 5 retains initial authority, ≤ 3,142 bytes under the existing 4 KiB cap | M1, M7 |
+| `strategos:match_join` | Match id, space, faction count, authenticated player slot, rules, minimap base and recipient authority | Player | Join, rejoin; protocol 6 retains initial authority, ≤ 3,142 bytes under the existing 4 KiB cap | M1, M7 |
 | `strategos:player_authority` | Match/player identity, core tick, primary faction, 16-bit control and ally masks; no private economy or grant lists | Authenticated recipient only | Initial join and changed authority, ≤ 22 bytes; stale or wrong-context updates ignored | M7 T8 |
 | `strategos:match_presentation` | Match id, adapter publication revision, core civilisation/colour choices and bounded authenticated human names/connection status; no UUIDs or grants | Admitted recipient only | Join/rejoin and changed public view, ≤ 3,200 bytes; revision advances independently while paused | M7 T8.4b |
 | `strategos:match_state` | Lifecycle, clock sync every 5 s, results, and `looks`: each faction's equipment tiers (`Look/weapon`, `Look/armour`; one byte per faction appended after the results; TECH-03) | Match | On change of lifecycle or tiers, at join | M1, M6 |

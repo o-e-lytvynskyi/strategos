@@ -42,3 +42,13 @@ visible event never authorizes another event in the same batch. Project the
 individual eighth-block event coordinates before encoding. Shots retain their
 existing either-end policy; grants and alliance membership do not confer M8
 shared vision. A missing authoritative grid must not authorize hidden effects.
+
+Replay validation consumes a whole non-overlapping command-number range before
+submission, including commands the core may refuse semantically. Reject range
+overflow with wide arithmetic; permit gaps from failed client sends. Bind the
+window to the authenticated live recipient view, reset it on a fresh view, and
+prune invalid contexts so disposed matches are not retained by idle players.
+The client must share one sequence source across orders and placement: the old
+independent placement range would cause every later ordinary order to fail a
+global high-water check. Protocol 6 makes that semantic change explicit to old
+clients; the binary command layout and saved schema remain unchanged.

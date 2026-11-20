@@ -45,7 +45,7 @@ import org.jspecify.annotations.Nullable;
  */
 public final class ModPayloads {
     /** The payload protocol's version: a client of another version cannot join. */
-    public static final String VERSION = "5";
+    public static final String VERSION = "6";
 
     private ModPayloads() {}
 

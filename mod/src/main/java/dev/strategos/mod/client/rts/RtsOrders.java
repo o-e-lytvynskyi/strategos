@@ -58,7 +58,6 @@ final class RtsOrders {
 
     private final RtsMode mode;
     private boolean previewing;
-    private int clientSeq = 1;
     private int ordersSent;
     private final List<double[]> markers =
             new ArrayList<>(); // world x, y, z, ticks left, kind (0 move, 1 attack, 2 attack-move)
@@ -110,8 +109,8 @@ final class RtsOrders {
         }
         int[] handles =
                 mode.selection().handles().stream().mapToInt(Integer::intValue).toArray();
-        if (ClientPayloads.toServer(
-                new CommandsPayload(new CommandBatch(clientSeq++, List.of(new Stop(UnitSet.of(handles)))), ""))) {
+        if (ClientPayloads.toServer(new CommandsPayload(
+                new CommandBatch(mode.nextCommandSequence(), List.of(new Stop(UnitSet.of(handles)))), ""))) {
             ordersSent++;
             focus.release(handles);
         }
@@ -210,7 +209,8 @@ final class RtsOrders {
         if (command == null) {
             return;
         }
-        if (ClientPayloads.toServer(new CommandsPayload(new CommandBatch(clientSeq++, List.of(command)), ""))) {
+        if (ClientPayloads.toServer(
+                new CommandsPayload(new CommandBatch(mode.nextCommandSequence(), List.of(command)), ""))) {
             ordersSent++;
             lastCommand = command;
             int[] ordered = mode.selection().handles().stream()
@@ -323,7 +323,8 @@ final class RtsOrders {
     /** One command, as its own batch, the last sent; whether it went. */
     boolean send(@Nullable Command command) {
         if (command != null
-                && ClientPayloads.toServer(new CommandsPayload(new CommandBatch(clientSeq++, List.of(command)), ""))) {
+                && ClientPayloads.toServer(
+                        new CommandsPayload(new CommandBatch(mode.nextCommandSequence(), List.of(command)), ""))) {
             ordersSent++;
             lastCommand = command;
             return true;

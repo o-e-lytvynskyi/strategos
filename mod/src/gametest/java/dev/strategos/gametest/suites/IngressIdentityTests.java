@@ -134,6 +134,25 @@ public final class IngressIdentityTests {
                                 .toList()
                                 .equals(List.of(6.0, 12.0, 36.0)),
                         "repeated/older/overlapping batch appended unauthorized orders"))
+                .thenExecute(() -> {
+                    int unit = core(rt).queries().unitHandlesOf(faction)[0];
+                    server.net().joined(rt, kit.viewer(0).player(), new PlayerSlot(0));
+                    server.net().commands(kit.viewer(0).player(), queued(0, unit, 42));
+                })
+                .thenWaitUntil(() -> check(
+                        kit.payloads(0, FeedbackPayload.class).stream()
+                                        .anyMatch(frame -> frame.message() instanceof Feedback reply
+                                                && reply.clientSeq() == 0
+                                                && reply.outcome() == CommandOutcome.ACCEPTED)
+                                && core(rt).queries().orders(core(rt).queries().unitHandlesOf(faction)[0]).stream()
+                                        .anyMatch(order -> order.z() == 42),
+                        "new recipient view did not start its own sequence window"))
+                .thenExecute(() -> check(
+                        core(rt).queries().orders(core(rt).queries().unitHandlesOf(faction)[0]).stream()
+                                .map(order -> order.z())
+                                .toList()
+                                .equals(List.of(6.0, 12.0, 36.0, 42.0)),
+                        "view renewal discarded existing core orders"))
                 .thenExecute(kit::close)
                 .thenSucceed();
     }
