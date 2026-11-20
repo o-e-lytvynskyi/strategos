@@ -423,7 +423,7 @@ Parent T9 remains unchecked until every path and its required gates pass.
 T9.2a passes verify 44627171948 (2,799 cases). T9.2b/c pass
 verify 44629974163 (2,801 cases) and inspected client scenario 44629985316,
 including same-match private-view reset and unchanged image/negative gates.
-T9.3 recipient matrix and final acceptance remain open.
+T9.3 recipient matrix and parent acceptance pass verify 44746013321 on e501bf96 (2,809 canonical cases, zero failures/errors/skips); full-ci 44641218952 on c3e653f3 passes all 23 jobs, including 249 canonical slow/core cases.
 T9.2 refinement before further code (2026-11-20): **T9.2a** binds delayed
 command replies to their submission origin; **T9.2b** resets replication and
 query memories on recipient-generation/full-join boundaries and restores a
@@ -440,7 +440,17 @@ these checks and reuses existing co-op privacy evidence rather than duplicating 
 
 T9.1 acceptance: verify 44624637029 on 5d969b64 passes 2,798 canonical
 cases, including four generation contracts and actual two-peer stale-queue
-rejection with current/unrelated positive deliveries. T9.2 and T9.3 remain open.
+rejection with current/unrelated positive deliveries. T9.2 and T9.3 are accepted by the subsequent evidence above.
+
+T9 closure (2026-11-20): the actual matrix covers per-recipient queued and
+delayed output, same-match full join, paused initial snapshots, cross-match
+reused handles, replacement connections, unbound spectators versus explicit
+observers, co-op/granted/enemy visibility and individually projected world/shot
+FX. Attachment registrations and attachment-builder sync calls are structurally
+checked. Client same-match private-view reset retains inspected scenario
+44629985316 and its unchanged positive/altered-reference gates. Existing M6
+primary visibility is the floor; M8 shared vision remains separate. NET-03 stays
+in_progress for T14's existing ping/team-marker criterion; no criterion is removed.
 
 ### 3.5 Reconnect (NET-05)
 
@@ -682,7 +692,7 @@ reviewed implementation task between T17 and T18, keeping the acceptance depende
 - [x] T6 · Multiplayer test kit. Engine verify 44300748747; four-player smoke 1.099 s under 30 s. QA-15 L7 remains T19/T25.
 - [x] T7 (2026-11-18) · Allied damage and victory; verify 44296700394, full-ci 44296705408, L4 44297120970, matched JMH review 44303346246 and complete 24-scene L6 evidence 44314975700.
 - [x] T8 (2026-11-19) · Co-op authority; verify 44614567652, full-ci 44606455194, inspected L4 repeats 44613485447/44616116638, complete matched JMH 44616013773.
-- [ ] T9 · Recipient privacy.
+- [x] T9 · Recipient privacy.
 - [ ] T10 · Reconnect and timeout.
 - [ ] T11 · Ingress validation.
 - [ ] T12 · Seeded fuzzing.
