@@ -3,6 +3,7 @@ package dev.strategos.mod.server.net;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.mod.server.match.MatchRegistry;
 import dev.strategos.mod.server.match.MatchRegistry.Seat;
+import net.minecraft.network.Connection;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import org.jspecify.annotations.Nullable;
@@ -26,8 +27,15 @@ record RecipientContext(
 
     // Entity.equals compares numeric entity ids, which are not an authenticated connection identity.
     @SuppressWarnings("ReferenceEquality")
+    boolean connectionCurrent(ServerPlayer online, Connection transport) {
+        return online == player
+                && online.connection == connection
+                && connection.getConnection() == transport
+                && transport.isConnected();
+    }
+
     boolean current(ServerPlayer online, MatchRegistry registry) {
-        if (online != player || online.connection != connection) return false;
+        if (!connectionCurrent(online, connection.getConnection())) return false;
         Seat now = registry.seatOf(online.getUUID());
         Seat before = seat;
         if (before == null) return now == null;

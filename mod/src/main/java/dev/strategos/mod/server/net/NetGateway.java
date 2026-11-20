@@ -54,6 +54,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Supplier;
+import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -288,6 +289,16 @@ public final class NetGateway {
             }
         }
         queued.clear();
+    }
+
+    /** The live transport may speak before match admission; freshness alone confers no match authority. */
+    public boolean acceptsSender(ServerPlayer player, Connection transport) {
+        RecipientContext origin = RecipientContext.capture(player, matches.get());
+        ServerPlayer online = server.getPlayerList().getPlayer(player.getUUID());
+        if (online != null && origin.connectionCurrent(online, transport)) return true;
+        // Do not let an old handler spend the replacement connection's rate or kick budget.
+        counters.violation(player.getGameProfile().getName(), "stale_connection");
+        return false;
     }
 
     /** A batch a client sent, on the server thread. */

@@ -52,3 +52,11 @@ The client must share one sequence source across orders and placement: the old
 independent placement range would cause every later ordinary order to fail a
 global high-water check. Protocol 6 makes that semantic change explicit to old
 clients; the binary command layout and saved schema remain unchanged.
+
+Validate the actual IPayloadContext transport before every registered C2S
+handler. A retained context can still name the replacement account's UUID and
+cancel its newly opened lobby even when stale S2C replies are dropped. Compare
+the exact online player, listener and open Connection; connection freshness is
+separate from match admission, so current template/lobby traffic still works
+before seating. Stale handlers must not consume the replacement's rate or
+violation budget. Keep match authority and generation checks at their endpoints.

@@ -39,6 +39,10 @@ public final class C2sHandlers {
         return (payload, context) -> {
             long start = System.nanoTime();
             try {
+                StrategosServer active = StrategosServer.getOrNull();
+                if (active != null
+                        && context.player() instanceof ServerPlayer player
+                        && !active.net().acceptsSender(player, context.connection())) return;
                 handler.handle(payload, context);
             } finally {
                 StrategosServer server = StrategosServer.getOrNull();
