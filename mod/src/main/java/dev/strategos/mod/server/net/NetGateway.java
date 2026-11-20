@@ -283,6 +283,14 @@ public final class NetGateway {
 
     /** A batch a client sent, on the server thread. */
     public void commands(ServerPlayer player, CommandsPayload payload) {
+        MatchRegistry registry = matches.get();
+        RecipientContext origin = RecipientContext.capture(player, registry);
+        ServerPlayer online = server.getPlayerList().getPlayer(player.getUUID());
+        if (online == null || !origin.current(online, registry)) {
+            // A stale handler must not mutate the new seat or spend the replacement's violation budget.
+            counters.violation(player.getGameProfile().getName(), "stale_connection");
+            return;
+        }
         long tick = server.getTickCount();
         CommandBatch batch = payload.batch();
         if (batch == null) {
@@ -312,7 +320,6 @@ public final class NetGateway {
             counters.violation(player.getGameProfile().getName(), "match " + rt.lifecycle()); // dropped, not a fault
             return;
         }
-        RecipientContext origin = RecipientContext.capture(player, matches.get());
         faults.run(rt, "commands", () -> {
             for (int k = 0; k < batch.commands().size(); k++) {
                 int seq = batch.clientSeq() + k;
