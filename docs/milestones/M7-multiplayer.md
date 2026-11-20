@@ -471,6 +471,14 @@ rejoin before, at and after expiry, paused matches and save/restart.
 
 ### 3.6 Ingress hardening (NET-06)
 
+T11.3b typed-reason and time-control authorization passes full verify
+44784613770 on 855f83b8 (2,926 canonical cases, zero issues; L5 included).
+The two intended engine failures in 44783227554 are resolved. Three L2
+reason/counter contracts, nine private-owner/publication/lifecycle policy cases
+and actual dedicated control refusals preserve the established kick budget and
+accepted two-peer commands. The final per-type subscription contract remains
+pending; parent T11 and the T12 permanent corpus are still open.
+
 T11.3a auxiliary admission passes verify 44780066073 on 38faac03
 (2,913 canonical cases, zero failures/errors/skips). Two capped auxiliary
 bursts retain actual template resends and accepted commands for both peers;

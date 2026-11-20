@@ -26,6 +26,7 @@ import dev.strategos.gametest.suites.IngressDecodeTests;
 import dev.strategos.gametest.suites.IngressIdentityTests;
 import dev.strategos.gametest.suites.IngressOriginTests;
 import dev.strategos.gametest.suites.IngressRateTests;
+import dev.strategos.gametest.suites.IngressTypeRateTests;
 import dev.strategos.gametest.suites.JournalTests;
 import dev.strategos.gametest.suites.LobbyAdmissionTests;
 import dev.strategos.gametest.suites.LobbyNetworkTests;
@@ -104,6 +105,7 @@ public final class Suites {
                         IngressIdentityTests.class,
                         IngressOriginTests.class,
                         IngressRateTests.class,
+                        IngressTypeRateTests.class,
                         IngressDecodeTests.class,
                         IngressAuditTests.class,
                         RecipientAccessTests.class,

@@ -18,15 +18,14 @@ import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.core.testkit.SimHarness;
 import dev.strategos.gametest.MatchFixture;
 import dev.strategos.gametest.StrategosTest;
+import dev.strategos.gametest.net.IngressContext;
 import dev.strategos.gametest.net.MultiplayerHarness;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.server.net.C2sHandlers;
 import dev.strategos.mod.server.net.payload.FeedbackPayload;
 import dev.strategos.mod.server.net.payload.TemplateAckPayload;
-import java.lang.reflect.Proxy;
 import java.util.List;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /** Valid auxiliary traffic is bounded independently of unit commands and the existing per-type backend cooldown. */
 public final class IngressRateTests {
@@ -105,18 +104,7 @@ public final class IngressRateTests {
     }
 
     private static void burst(MultiplayerHarness kit, TemplateAckPayload ack) {
-        var player = kit.viewer(0).player();
-        var listener = player.connection;
-        var transport = listener.getConnection();
-        IPayloadContext context = (IPayloadContext) Proxy.newProxyInstance(
-                IPayloadContext.class.getClassLoader(),
-                new Class<?>[] {IPayloadContext.class},
-                (proxy, method, args) -> {
-                    if (method.getName().equals("player")) return player;
-                    if (method.getName().equals("listener")) return listener;
-                    if (method.getName().equals("connection")) return transport;
-                    throw new UnsupportedOperationException("unused test context method " + method.getName());
-                });
+        var context = IngressContext.capture(kit.viewer(0).player());
         var handler = C2sHandlers.<TemplateAckPayload>timed(C2sHandlers::templateAck);
         // Invoke the actual registered decorator/handler synchronously so one burst has one server-tick budget.
         for (int i = 0; i < 81; i++) handler.handle(ack, context);
