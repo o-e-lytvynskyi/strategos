@@ -229,6 +229,11 @@ final class Snapshots {
         int missing = 0;
         List<TerrainPage> pages = new ArrayList<>();
         for (PageRef ref : snapshot.pages()) {
+            if (ref.pending()) {
+                state.expect(ref);
+                missing++;
+                continue;
+            }
             byte[] slice = slices.slice(ref.slice());
             if (slice == null) {
                 state.expect(ref);

@@ -271,7 +271,8 @@ public final class MatchSnapshotCodec {
     private static final Codec<PageRef> PAGE = RecordCodecBuilder.create(i -> i.group(
                     Codec.INT.fieldOf("x").forGetter(PageRef::x),
                     Codec.INT.fieldOf("z").forGetter(PageRef::z),
-                    Hex64.CODEC.fieldOf("slice").forGetter(PageRef::slice))
+                    Hex64.CODEC.fieldOf("slice").forGetter(PageRef::slice),
+                    Codec.BOOL.optionalFieldOf("pending", false).forGetter(PageRef::pending))
             .apply(i, PageRef::new));
 
     /** A node's deposit or animal (ECO-08, -16), as two flat optional fields: a builder takes at most sixteen. */

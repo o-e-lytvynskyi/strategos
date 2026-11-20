@@ -83,3 +83,18 @@ its first faction. Validate the mask against held/defeated factions, match bound
 allied relations. A newer terminal blob must override an older paused registry record and
 refuse resume. Rejoining clients reconstruct the banner from terminal state instead of
 requiring an old one-time end notification. See ADR-0031.
+
+## Preserve a restored terrain baseline while its geometry is pending
+
+A restored match can know a page's old slice hash before its geometry is
+recaptured. That baseline prevents an unchanged first capture from being treated
+as a terrain edit. Saving only published pages drops this information: a journal
+replay then advances paths.lastPageChange and can request a different path even
+though the same TerrainPage inputs were recorded. Exact final hashes catch it
+before the first periodic checkpoint; ReplayResult.matches alone does not.
+
+Schema 8 PageRef.pending records geometry absence explicitly. Preserve it through
+a paused re-save and journal segment boundaries; even an available shared slice
+must not publish a pending page early. Published references still require their
+actual journal slice. Schema 7 references migrate as published, regardless of an
+unknown extra pending field. Test both unchanged and genuinely changed captures.

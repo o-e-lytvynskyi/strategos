@@ -69,7 +69,7 @@ class MatchRosterTest {
         SimHarness h = SimHarness.builder().build();
         MatchData live = MatchData.live(ID, h.core()::snapshot, () -> 4);
         CompoundTag empty = live.save(new CompoundTag(), RegistryAccess.EMPTY);
-        assertThat(empty.getInt("v")).isEqualTo(2);
+        assertThat(empty.getInt("v")).isEqualTo(3);
         assertThat(empty.contains("roster"))
                 .as("current blobs have an explicit session envelope")
                 .isTrue();

@@ -127,8 +127,8 @@ class MatchDataTest {
         CompoundTag tag = saved(walking(), 3);
         assertThat(MatchData.load(new MatchId(2), tag).state()).isEqualTo(MatchData.State.QUARANTINED);
         CompoundTag later = tag.copy();
-        later.putInt("v", 3);
-        assertThat(MatchData.load(ID, later).quarantineReason()).contains("blob version 3");
+        later.putInt("v", MatchData.VERSION + 1);
+        assertThat(MatchData.load(ID, later).quarantineReason()).contains("blob version " + (MatchData.VERSION + 1));
         assertThat(MatchData.load(ID, new CompoundTag()).quarantineReason()).contains("no version");
     }
 

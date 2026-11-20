@@ -468,7 +468,8 @@ for T10.2b replay acceptance; no policy or parent completion is inferred.
 T10.2b functional verification is pending. Blob 3 adds a strict canonical
 completed-expiry envelope so an administrator disabling takeover cannot re-arm
 the timeout after restore. Valid blob 1/2 retain their migration and session
-guards; core snapshot 7 and network protocol 6 are unchanged. See D-05/D-06.
+guards; network protocol 6 is unchanged. Core schema 8 pending-terrain
+preservation is tracked separately in D-07; see D-05/D-06 for policy semantics.
 The six trusted-expiry core/codec cases pass in 44831846476, whose GameTest
 server crash is not L3 acceptance; guarded diagnostics run on 7dc964b8.
 Fresh S and paired L6 remain required for the changed core ingress/codec tree.

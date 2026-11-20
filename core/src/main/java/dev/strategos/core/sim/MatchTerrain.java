@@ -276,11 +276,11 @@ final class MatchTerrain {
         return changed[k];
     }
 
-    /** The published pages, in page order, by the hash of the slice each was built from. */
+    /** Known slice baselines, including unpublished restored pages, in canonical page order. */
     public List<PageRef> pageRefs() {
-        List<PageRef> refs = new ArrayList<>(published.cardinality());
-        for (int i = published.nextSetBit(0); i >= 0; i = published.nextSetBit(i + 1)) {
-            refs.add(new PageRef(i % surfaces.pagesX(), i / surfaces.pagesX(), pageSlices[i]));
+        List<PageRef> refs = new ArrayList<>(known.cardinality());
+        for (int i = known.nextSetBit(0); i >= 0; i = known.nextSetBit(i + 1)) {
+            refs.add(new PageRef(i % surfaces.pagesX(), i / surfaces.pagesX(), pageSlices[i], !published.get(i)));
         }
         return refs;
     }
