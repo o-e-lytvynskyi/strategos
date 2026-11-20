@@ -23,6 +23,7 @@ import dev.strategos.gametest.suites.FogTests;
 import dev.strategos.gametest.suites.GarrisonTests;
 import dev.strategos.gametest.suites.IngressDecodeTests;
 import dev.strategos.gametest.suites.IngressIdentityTests;
+import dev.strategos.gametest.suites.IngressOriginTests;
 import dev.strategos.gametest.suites.JournalTests;
 import dev.strategos.gametest.suites.LobbyAdmissionTests;
 import dev.strategos.gametest.suites.LobbyNetworkTests;
@@ -99,6 +100,7 @@ public final class Suites {
                         MultiplayerKitTests.class,
                         CoopReplicationTests.class,
                         IngressIdentityTests.class,
+                        IngressOriginTests.class,
                         IngressDecodeTests.class,
                         RecipientAccessTests.class,
                         RecipientFxTests.class,

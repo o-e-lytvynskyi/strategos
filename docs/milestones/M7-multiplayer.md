@@ -471,6 +471,12 @@ rejoin before, at and after expiry, paused matches and save/restart.
 
 ### 3.6 Ingress hardening (NET-06)
 
+T11.2b numeric-field contracts pass verify 44754651943 on 9935db19
+(2,905 canonical cases, zero issues): 41 raw invalid-field vectors and three
+L1 typed-model/wire-fault cases. Raw IEEE primitive reading is preserved;
+request records enforce finite values and the already supported SPEED set.
+The core-codec L6/JMH gate and all-C2S current-origin acceptance remain open.
+
 T11.2a passes verify 44751375106 on cfd9f0f6 (2,861 canonical cases,
 zero issues): all nine registered C2S codecs have four malformed-input and
 byte-exact valid controls; a real registered-handler test counts mixed-type
