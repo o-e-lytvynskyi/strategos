@@ -292,6 +292,12 @@ public final class NetGateway {
         queued.clear();
     }
 
+    /** Logout may follow a closed transport, but never owns a newer player's UUID-scoped state. */
+    public boolean acceptsLogout(ServerPlayer player) {
+        ServerPlayer online = server.getPlayerList().getPlayer(player.getUUID());
+        return online == null || RecipientContext.samePlayer(online, player);
+    }
+
     /** The live transport may speak before match admission; freshness alone confers no match authority. */
     public boolean acceptsSender(ServerPlayer player, Connection transport) {
         RecipientContext origin = RecipientContext.capture(player, matches.get());

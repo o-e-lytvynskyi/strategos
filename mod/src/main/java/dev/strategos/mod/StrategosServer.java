@@ -428,6 +428,7 @@ public final class StrategosServer {
     public static void onLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
         StrategosServer s = current;
         if (s != null && event.getEntity() instanceof ServerPlayer player) {
+            if (!s.net.acceptsLogout(player)) return;
             s.matches.connection(player.getUUID(), false);
             s.net.forget(player);
             s.commanders.forget(player);

@@ -35,6 +35,16 @@ public final class ReconnectLifecycleTests {
 
     @StrategosTest(arena = "arena_flat_48", timeoutTicks = 400)
     public static void aLatePredecessorLogoutCannotRevokeTheFreshSeatOrItsSequenceWindow(GameTestHelper h) {
+        lifecycle(h, false, "lateout");
+    }
+
+    @StrategosTest(arena = "arena_flat_48", timeoutTicks = 400)
+    public static void aLatePredecessorLoginCannotResetTheFreshViewOrItsSequenceWindow(GameTestHelper h) {
+        lifecycle(h, true, "latein");
+    }
+
+    private static void lifecycle(GameTestHelper h, boolean login, String prefix) {
+        String owner = prefix + "-0";
         var kit = MultiplayerHarness.create(h, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
         var rt = kit.match();
         var server = StrategosServer.get();
@@ -52,7 +62,7 @@ public final class ReconnectLifecycleTests {
         h.startSequence()
                 .thenWaitUntil(() -> check(
                         kit.ready() && core(rt).queries().unitHandles().length == 2, "lifecycle fixture not ready"))
-                .thenExecute(() -> kit.admit("lateout", List.of(new PlayerSlot(0), new PlayerSlot(1))))
+                .thenExecute(() -> kit.admit(prefix, List.of(new PlayerSlot(0), new PlayerSlot(1))))
                 .thenExecute(() -> {
                     kit.viewer(0).send(move(kit, 0, 1, 40));
                     kit.viewer(1).send(move(kit, 1, 1, 40));
@@ -65,7 +75,7 @@ public final class ReconnectLifecycleTests {
                     state.old = old;
                     var at = old.position();
                     kit.viewer(0).close();
-                    var fresh = MockViewer.join(h.getLevel(), "lateout-0", at.x, at.y, at.z, 2);
+                    var fresh = MockViewer.join(h.getLevel(), owner, at.x, at.y, at.z, 2);
                     state.fresh = fresh;
                     fresh.send(move(kit, 0, 1, 36));
                     kit.viewer(1).send(move(kit, 1, 2, 36));
@@ -84,12 +94,17 @@ public final class ReconnectLifecycleTests {
                 })
                 .thenExecute(() -> {
                     var fresh = Objects.requireNonNull(state.fresh);
-                    state.violations = server.net().counters().violations("lateout-0");
-                    StrategosServer.onLoggedOut(
-                            new PlayerEvent.PlayerLoggedOutEvent(Objects.requireNonNull(state.old)));
+                    state.violations = server.net().counters().violations(owner);
+                    long generation = rt.roster().generationOf(fresh.player().getUUID());
+                    var old = Objects.requireNonNull(state.old);
+                    if (login) StrategosServer.onLoggedIn(new PlayerEvent.PlayerLoggedInEvent(old));
+                    else StrategosServer.onLoggedOut(new PlayerEvent.PlayerLoggedOutEvent(old));
                     check(
                             rt.roster().isConnected(fresh.player().getUUID()),
-                            "late predecessor logout revoked the fresh seat");
+                            "late predecessor event revoked the fresh seat");
+                    check(
+                            rt.roster().generationOf(fresh.player().getUUID()) == generation,
+                            "late predecessor event rotated the fresh recipient epoch");
                     fresh.send(move(kit, 0, 1, 12)); // must still be a replay after the stale lifecycle callback
                     fresh.send(move(kit, 0, 2, 40));
                     kit.viewer(1).send(move(kit, 1, 3, 40));
@@ -101,12 +116,12 @@ public final class ReconnectLifecycleTests {
                     var fresh = Objects.requireNonNull(state.fresh);
                     check(accepted(fresh, 1) == 1, "late logout erased the fresh command sequence window");
                     check(
-                            server.net().counters().violations("lateout-0") == state.violations + 1,
+                            server.net().counters().violations(owner) == state.violations + 1,
                             "replay was not the only new protocol violation");
                     var reasons = server.net().counters().toJson().getAsJsonObject("violations");
                     check(
-                            reasons.has("lateout-0 command_sequence")
-                                    && reasons.get("lateout-0 command_sequence").getAsInt() == 1,
+                            reasons.has(owner + " command_sequence")
+                                    && reasons.get(owner + " command_sequence").getAsInt() == 1,
                             "fresh replay has no sequence refusal");
                     var seat = server.matches().seatOf(fresh.player().getUUID());
                     check(

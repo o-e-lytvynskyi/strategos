@@ -25,10 +25,14 @@ record RecipientContext(
                 seat == null ? -1 : primary(seat));
     }
 
-    // Entity.equals compares numeric entity ids, which are not an authenticated connection identity.
+    // Entity.equals compares numeric entity ids, which are not an authenticated session identity.
     @SuppressWarnings("ReferenceEquality")
+    static boolean samePlayer(ServerPlayer first, ServerPlayer second) {
+        return first == second;
+    }
+
     boolean connectionCurrent(ServerPlayer online, Connection transport) {
-        return online == player
+        return samePlayer(online, player)
                 && online.connection == connection
                 && connection.getConnection() == transport
                 && transport.isConnected();
