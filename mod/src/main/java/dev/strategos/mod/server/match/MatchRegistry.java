@@ -146,7 +146,8 @@ public final class MatchRegistry {
         }
         MatchData data = null;
         if (saved != null) {
-            data = MatchData.live(id, core::snapshot, saved::epoch);
+            data = MatchData.live(
+                    id, core::snapshot, saved::epoch, settings.reconnect().timeoutNanos());
             level.getDataStorage().set(MatchData.name(id), data);
             data.setDirty();
             saved.put(new MatchRecord(
@@ -159,8 +160,17 @@ public final class MatchRegistry {
                     Optional.empty(),
                     Optional.ofNullable(mapId).map(ResourceLocation::toString)));
         }
-        MatchRuntime rt =
-                new MatchRuntime(id, space, options.source(), policy, saved != null, core, data, spawnBudget, mapId);
+        MatchRuntime rt = new MatchRuntime(
+                id,
+                space,
+                options.source(),
+                policy,
+                saved != null,
+                core,
+                data,
+                spawnBudget,
+                mapId,
+                settings.reconnect().timeoutNanos());
         rt.onLifecycleChange(() -> recordChanged(rt));
         rt.transition(MatchLifecycle.PREPARING);
         if (holdsTickets(rt)) {
@@ -462,7 +472,8 @@ public final class MatchRegistry {
                 core,
                 data,
                 spawnBudget,
-                record.map().map(ResourceLocation::parse).orElse(null));
+                record.map().map(ResourceLocation::parse).orElse(null),
+                settings.reconnect().timeoutNanos());
         rt.onLifecycleChange(() -> recordChanged(rt));
         if (core == null) {
             rt.restoredFaulted(String.valueOf(reason));
@@ -521,7 +532,8 @@ public final class MatchRegistry {
         if (level == null) {
             return registerFaulted(record, "its level " + record.space().level().location() + " is gone");
         }
-        return switch (Quarantine.loadMatch(level, record.id(), epoch)) {
+        return switch (Quarantine.loadMatch(
+                level, record.id(), epoch, settings.reconnect().timeoutNanos())) {
             case Quarantine.Missing missing ->
                 registerFaulted(record, "its blob " + MatchData.name(record.id()) + " is missing");
             case Quarantine.CorruptFile corrupt ->
@@ -573,7 +585,8 @@ public final class MatchRegistry {
                 null,
                 null,
                 spawnBudget,
-                record.map().map(ResourceLocation::parse).orElse(null));
+                record.map().map(ResourceLocation::parse).orElse(null),
+                settings.reconnect().timeoutNanos());
         rt.restoredFaulted(reason);
         rt.onLifecycleChange(() -> recordChanged(rt));
         recordChanged(rt);

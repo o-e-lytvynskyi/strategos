@@ -11,6 +11,7 @@ import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.testkit.SimHarness;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -33,6 +34,66 @@ class MatchDataTest {
 
     private static CompoundTag saved(SimHarness h, long epoch) {
         return MatchData.live(ID, h.core()::snapshot, () -> epoch).save(new CompoundTag(), RegistryAccess.EMPTY);
+    }
+
+    @Test
+    void aFreshBlobUsesItsConfiguredFutureReservationWindow() {
+        var h = walking();
+        var data = MatchData.live(ID, h.core()::snapshot, () -> 7, 60_000_000_000L);
+        assertThat(data.roster().reclaimWindowNanos()).isEqualTo(60_000_000_000L);
+        assertThat(MatchData.live(ID, h.core()::snapshot, () -> 7).roster().reclaimWindowNanos())
+                .isEqualTo(300_000_000_000L);
+    }
+
+    @Test
+    void legacyMembershipGetsTheConfiguredWindowWithoutChangingTheSnapshot() {
+        var h = walking();
+        var tag = withSeat(saved(h, 7), 0);
+        tag.putInt("v", 1);
+        tag.getList("roster", net.minecraft.nbt.Tag.TAG_COMPOUND).getCompound(0).remove("remainingNanos");
+        var clock = new AtomicLong(-10_000);
+        var data = MatchData.load(ID, tag, clock::get, 60_000_000_000L);
+        assertThat(data.state()).isEqualTo(MatchData.State.LOADED);
+        var member = data.roster().members().getFirst();
+        assertThat(data.roster().isConnected(member)).isFalse();
+        assertThat(data.roster().remainingNanos(member)).isEqualTo(60_000_000_000L);
+        assertThat(data.roster().reclaimWindowNanos()).isEqualTo(60_000_000_000L);
+        assertThat(data.loadedSnapshot()).isEqualTo(h.core().snapshot());
+    }
+
+    @Test
+    void anExplicitSavedRemainingDurationIsNotClampedOrResetByANewWindow() {
+        var h = walking();
+        var tag = withSeat(saved(h, 7), 0);
+        tag.getList("roster", net.minecraft.nbt.Tag.TAG_COMPOUND)
+                .getCompound(0)
+                .putLong("remainingNanos", 240_000_000_000L);
+        var clock = new AtomicLong(10_000);
+        var data = MatchData.load(ID, tag, clock::get, 60_000_000_000L);
+        assertThat(data.state()).isEqualTo(MatchData.State.LOADED);
+        var member = data.roster().members().getFirst();
+        assertThat(data.roster().remainingNanos(member)).isEqualTo(240_000_000_000L);
+        assertThat(data.roster().reclaimWindowNanos()).isEqualTo(60_000_000_000L);
+        clock.addAndGet(17);
+        assertThat(data.roster().remainingNanos(member)).isEqualTo(239_999_999_983L);
+        var saved = data.save(new CompoundTag(), RegistryAccess.EMPTY);
+        assertThat(saved.getList("roster", net.minecraft.nbt.Tag.TAG_COMPOUND)
+                        .getCompound(0)
+                        .getLong("remainingNanos"))
+                .isEqualTo(239_999_999_983L);
+        assertThat(data.loadedSnapshot()).isEqualTo(h.core().snapshot());
+    }
+
+    @Test
+    void aLargerConfiguredWindowCannotReviveAnExplicitExpiredSave() {
+        var tag = withSeat(saved(walking(), 7), 0);
+        tag.getList("roster", net.minecraft.nbt.Tag.TAG_COMPOUND).getCompound(0).putLong("remainingNanos", 0);
+        var data = MatchData.load(ID, tag, () -> 10_000, 86_400_000_000_000L);
+        assertThat(data.state()).isEqualTo(MatchData.State.LOADED);
+        var member = data.roster().members().getFirst();
+        assertThat(data.roster().isConnected(member)).isFalse();
+        assertThat(data.roster().remainingNanos(member)).isZero();
+        assertThat(data.roster().reclaimWindowNanos()).isEqualTo(86_400_000_000_000L);
     }
 
     @Test

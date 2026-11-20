@@ -45,12 +45,17 @@ public final class MatchData extends SavedData {
     private long loadedEpoch;
     private @Nullable CompoundTag raw;
     private @Nullable String quarantineReason;
-    private MatchRoster roster = new MatchRoster();
+    private MatchRoster roster;
     private boolean launchPending;
 
     private MatchData(MatchId id, State state) {
+        this(id, state, new MatchRoster());
+    }
+
+    private MatchData(MatchId id, State state, MatchRoster roster) {
         this.id = id;
         this.state = state;
+        this.roster = roster;
     }
 
     public static String name(MatchId id) {
@@ -59,12 +64,22 @@ public final class MatchData extends SavedData {
 
     /** How vanilla reads the blob; nothing ever asks it for an empty one. */
     public static SavedData.Factory<MatchData> factory(MatchId id) {
-        return new SavedData.Factory<>(() -> new MatchData(id, State.DISPOSED), (tag, registries) -> load(id, tag));
+        return factory(id, MatchRoster.DEFAULT_RECONNECT_NANOS);
+    }
+
+    public static SavedData.Factory<MatchData> factory(MatchId id, long reclaimNanos) {
+        return new SavedData.Factory<>(
+                () -> new MatchData(id, State.DISPOSED, new MatchRoster(System::nanoTime, reclaimNanos)),
+                (tag, registries) -> load(id, tag, reclaimNanos));
     }
 
     /** A running match's blob; {@code epoch} is the registry's current save epoch. */
     public static MatchData live(MatchId id, Supplier<MatchSnapshot> snapshot, LongSupplier epoch) {
-        MatchData data = new MatchData(id, State.LIVE);
+        return live(id, snapshot, epoch, MatchRoster.DEFAULT_RECONNECT_NANOS);
+    }
+
+    public static MatchData live(MatchId id, Supplier<MatchSnapshot> snapshot, LongSupplier epoch, long reclaimNanos) {
+        MatchData data = new MatchData(id, State.LIVE, new MatchRoster(System::nanoTime, reclaimNanos));
         data.snapshot = snapshot;
         data.epoch = epoch;
         return data;
@@ -72,6 +87,14 @@ public final class MatchData extends SavedData {
 
     /** LOADED with the decoded snapshot, or QUARANTINED with the reason and the raw tag; never throws. */
     public static MatchData load(MatchId id, CompoundTag tag) {
+        return load(id, tag, MatchRoster.DEFAULT_RECONNECT_NANOS);
+    }
+
+    public static MatchData load(MatchId id, CompoundTag tag, long reclaimNanos) {
+        return load(id, tag, System::nanoTime, reclaimNanos);
+    }
+
+    static MatchData load(MatchId id, CompoundTag tag, LongSupplier clock, long reclaimNanos) {
         try {
             if (!tag.contains("v", Tag.TAG_ANY_NUMERIC)) {
                 return quarantined(id, tag, "the blob has no version \"v\"");
@@ -108,7 +131,7 @@ public final class MatchData extends SavedData {
                 return quarantined(
                         id, tag, "the blob holds match " + snapshot.config().id() + ", not " + id);
             }
-            MatchData data = new MatchData(id, State.LOADED);
+            MatchData data = new MatchData(id, State.LOADED, new MatchRoster(clock, reclaimNanos));
             data.loaded = snapshot;
             data.loadedEpoch = tag.getLong("epoch");
             Tag rosterTag = tag.get("roster");
@@ -120,7 +143,9 @@ public final class MatchData extends SavedData {
                         || (!listed.isEmpty() && listed.getElementType() != Tag.TAG_COMPOUND)) {
                     return quarantined(id, tag, "the roster is not a list of seats");
                 }
-                data.roster = version == 1 ? MatchRoster.load(listed) : MatchRoster.loadSessions(listed);
+                data.roster = version == 1
+                        ? MatchRoster.load(listed, clock, reclaimNanos)
+                        : MatchRoster.loadSessions(listed, clock, reclaimNanos);
                 for (var member : data.roster.members()) {
                     var slot = data.roster.slotOf(member);
                     if (slot == null

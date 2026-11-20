@@ -47,6 +47,11 @@ public final class MatchRoster {
         this.reclaimNanos = reclaimNanos;
     }
 
+    /** The configured window for a future disconnect; explicit saved remaining durations are independent. */
+    public long reclaimWindowNanos() {
+        return reclaimNanos;
+    }
+
     public @Nullable PlayerSlot slotOf(UUID player) {
         SeatState seat = seats.get(player);
         return seat == null ? null : seat.slot();

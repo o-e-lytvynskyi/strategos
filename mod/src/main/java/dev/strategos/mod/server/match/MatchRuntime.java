@@ -85,7 +85,8 @@ public final class MatchRuntime {
             @Nullable MatchCore core,
             @Nullable MatchData data,
             SpawnBudget spawnBudget,
-            @Nullable ResourceLocation map) {
+            @Nullable ResourceLocation map,
+            long reclaimNanos) {
         this.map = map;
         this.pages = new PageJobs(
                 space, core != null ? core.queries().config().rules().pageK() : MatchRules.DEFAULTS.pageK());
@@ -99,7 +100,7 @@ public final class MatchRuntime {
         this.spawnBudget = spawnBudget;
         this.bodies = new BodyRegistry(id, space);
         this.log = new MatchLog(LoggerFactory.getLogger(MatchRuntime.class), id);
-        this.roster = data != null ? data.roster() : new MatchRoster();
+        this.roster = data != null ? data.roster() : new MatchRoster(System::nanoTime, reclaimNanos);
         this.agents = new AgentTracker(space);
     }
 
