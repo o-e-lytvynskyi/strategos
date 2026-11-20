@@ -28,7 +28,8 @@ public enum IngressReason {
     MODE_REFUSED("mode_refused"),
     UI_QUERY_UNAVAILABLE("ui_query_unavailable"),
     UI_QUERY_RATE("ui_query_rate"),
-    MATCH_CONTROL_UNAVAILABLE("match_control_unavailable");
+    MATCH_CONTROL_UNAVAILABLE("match_control_unavailable"),
+    RECONNECT_EXPIRED("reconnect_expired");
     private final String code;
 
     IngressReason(String code) {

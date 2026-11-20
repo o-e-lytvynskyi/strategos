@@ -23,6 +23,7 @@ import dev.strategos.mod.server.fog.TrackerRefresher;
 import dev.strategos.mod.server.jobs.PathThreads;
 import dev.strategos.mod.server.match.MapImports;
 import dev.strategos.mod.server.match.MatchRegistry;
+import dev.strategos.mod.server.match.ReconnectService;
 import dev.strategos.mod.server.match.ServerLobby;
 import dev.strategos.mod.server.match.Skirmishes;
 import dev.strategos.mod.server.net.NetGateway;
@@ -81,6 +82,7 @@ public final class StrategosServer {
     private final Skirmishes skirmishes = new Skirmishes();
     private final ServerLobby lobby;
     private final NetGateway net;
+    private final ReconnectService reconnects;
     private final InterestSets interest = new InterestSets();
     private final DebugFeed debug;
     private final Replication replication;
@@ -115,6 +117,7 @@ public final class StrategosServer {
             }
         });
         this.net = new NetGateway(server, () -> this.matches, faults);
+        this.reconnects = new ReconnectService(server, matches, commanders, net);
         this.lobby = new ServerLobby(this);
         this.debug =
                 new DebugFeed(server, () -> this.matches, net, StrategosConfig.INSTANCE.debugPermission.getAsInt());
@@ -413,14 +416,7 @@ public final class StrategosServer {
     public static void onLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
         StrategosServer s = current;
         if (s != null && event.getEntity() instanceof ServerPlayer player) {
-            MatchRegistry.Seat seat = s.matches.seatOf(player.getUUID());
-            if (seat != null) {
-                s.matches.connection(player.getUUID(), true);
-                s.commanders.enter(player, seat.match());
-                s.net.joined(seat.match(), player, seat.slot());
-            } else {
-                s.commanders.leave(s.server, player); // its match ended while it was away
-            }
+            s.reconnects.loggedIn(player);
         }
     }
 

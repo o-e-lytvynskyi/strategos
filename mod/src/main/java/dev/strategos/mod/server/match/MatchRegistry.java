@@ -765,13 +765,14 @@ public final class MatchRegistry {
         if (seat != null) seat.match().roster().renew(player);
     }
 
-    /** Connection metadata from authenticated login/logout only; expiry/reclaim authorization is T10. */
-    public void connection(UUID player, boolean connected) {
+    /** Authenticated lifecycle metadata; expired reservations cannot reconnect or renew their saved duration. */
+    public boolean connection(UUID player, boolean connected) {
         Seat seat = seatOf(player);
-        if (seat == null) return;
-        if (connected) seat.match().roster().connect(player);
-        else seat.match().roster().disconnect(player);
+        if (seat == null) return false;
+        if (connected && !seat.match().roster().connect(player)) return false;
+        if (!connected) seat.match().roster().disconnect(player);
         markRoster(seat.match()); // also while the simulation is paused
+        return true;
     }
 
     /** The id of the match {@code player} sits in, or 0: what the fog gate asks for every pairing. */

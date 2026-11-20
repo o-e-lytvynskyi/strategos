@@ -102,6 +102,28 @@ public final class MultiplayerHarness implements AutoCloseable {
         return viewers.get(index);
     }
 
+    /** Replaces only this group's transport; authenticated login alone must reclaim its existing UUID/slot. */
+    public MockViewer reconnect(int index) {
+        requireOpen();
+        MockViewer before = viewer(index);
+        String name = before.player().getGameProfile().getName();
+        var at = before.player().position();
+        before.close();
+        try {
+            MockViewer fresh = MockViewer.join(helper.getLevel(), name, at.x, at.y, at.z, 2);
+            viewers.set(
+                    index, fresh); // polling and cleanup now belong to the live replacement, never the removed player
+            return fresh;
+        } catch (RuntimeException failure) {
+            try {
+                close();
+            } catch (RuntimeException cleanup) {
+                failure.addSuppressed(cleanup);
+            }
+            throw failure;
+        }
+    }
+
     /** Drain before asserting so an empty capture cannot accidentally count as a privacy success. */
     public <P extends CustomPacketPayload> List<P> payloads(int player, Class<P> type) {
         MockViewer viewer = viewer(player);

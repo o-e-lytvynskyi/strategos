@@ -128,6 +128,7 @@
   "key.strategos.controls": "Controls overlay",
   "message.strategos.invalid_lobby_action": "The lobby request could not be read.",
   "message.strategos.lobby_refused": "The lobby request was refused. Check your seat, permissions and current settings.",
+  "message.strategos.reconnect_expired": "Your reserved place in this match has expired.",
   "message.strategos.lobby_error": "The lobby request failed. See the server log for details.",
   "strategos.control_sharing.title": "Share control",
   "strategos.control_sharing.description": "Let an ally command your units and buildings. Resources and production remain private.",

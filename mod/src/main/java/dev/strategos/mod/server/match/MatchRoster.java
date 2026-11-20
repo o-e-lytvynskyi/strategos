@@ -86,11 +86,14 @@ public final class MatchRoster {
         return seat != null && seat.connected();
     }
 
-    /** Only the authenticated server lifecycle confirms an existing member; this never creates a seat. */
-    void connect(UUID player) {
+    /** Authenticated lifecycle only: an expired reservation is never revived, and a current login is idempotent. */
+    boolean connect(UUID player) {
         SeatState seat = seats.get(player);
-        if (seat != null && !seat.connected())
-            seats.put(player, new SeatState(seat.slot(), true, 0, reclaimNanos, newGeneration()));
+        if (seat == null) return false;
+        if (seat.connected()) return true;
+        if (remainingNanos(player) == 0) return false;
+        seats.put(player, new SeatState(seat.slot(), true, 0, reclaimNanos, newGeneration()));
+        return true;
     }
 
     /** A full view is a new transport epoch, without reseating or extending a reservation. */

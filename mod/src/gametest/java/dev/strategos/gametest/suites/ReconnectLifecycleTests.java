@@ -7,6 +7,7 @@ import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.CommandBatch;
 import dev.strategos.core.protocol.CommandOutcome;
 import dev.strategos.core.protocol.Feedback;
+import dev.strategos.core.protocol.ModeSwitch;
 import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.SpawnUnits;
 import dev.strategos.core.protocol.UnitSet;
@@ -19,9 +20,11 @@ import dev.strategos.gametest.StrategosTest;
 import dev.strategos.gametest.net.MockViewer;
 import dev.strategos.gametest.net.MultiplayerHarness;
 import dev.strategos.mod.StrategosServer;
+import dev.strategos.mod.server.match.MatchRuntime;
 import dev.strategos.mod.server.net.payload.CommandsPayload;
 import dev.strategos.mod.server.net.payload.FeedbackPayload;
 import dev.strategos.mod.server.net.payload.MatchJoinPayload;
+import dev.strategos.mod.server.net.payload.ModeSwitchPayload;
 import java.util.List;
 import java.util.Objects;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -39,7 +42,7 @@ public final class ReconnectLifecycleTests {
     }
 
     @StrategosTest(arena = "arena_flat_48", timeoutTicks = 400)
-    public static void aLatePredecessorLoginCannotResetTheFreshViewOrItsSequenceWindow(GameTestHelper h) {
+    public static void aLatePredecessorLoginCannotRemoveTheFreshObserverClampOrItsSequenceWindow(GameTestHelper h) {
         lifecycle(h, true, "latein");
     }
 
@@ -71,11 +74,8 @@ public final class ReconnectLifecycleTests {
                         accepted(kit.viewer(0), 1) == 1 && accepted(kit.viewer(1), 1) == 1,
                         "initial actual command controls missing"))
                 .thenExecute(() -> {
-                    var old = kit.viewer(0).player();
-                    state.old = old;
-                    var at = old.position();
-                    kit.viewer(0).close();
-                    var fresh = MockViewer.join(h.getLevel(), owner, at.x, at.y, at.z, 2);
+                    state.old = kit.viewer(0).player();
+                    var fresh = kit.reconnect(0);
                     state.fresh = fresh;
                     fresh.send(move(kit, 0, 1, 36));
                     kit.viewer(1).send(move(kit, 1, 2, 36));
@@ -93,6 +93,36 @@ public final class ReconnectLifecycleTests {
                             "fresh replacement never regained its actual faction/command/handshake control");
                 })
                 .thenExecute(() -> {
+                    if (login) {
+                        var space = rt.space();
+                        Objects.requireNonNull(state.fresh)
+                                .send(new ModeSwitchPayload(new ModeSwitch(
+                                        true,
+                                        space.origin().getX() + 6.5,
+                                        space.origin().getZ() + 6.5)));
+                    }
+                })
+                .thenWaitUntil(() -> {
+                    if (login)
+                        check(
+                                server.commanders()
+                                        .observes(Objects.requireNonNull(state.fresh)
+                                                .player()),
+                                "fresh first-person observer control was never established");
+                })
+                .thenExecute(() -> {
+                    if (login) outside(Objects.requireNonNull(state.fresh), rt);
+                })
+                .thenWaitUntil(() -> {
+                    if (login)
+                        check(
+                                rt.space()
+                                        .contains(Objects.requireNonNull(state.fresh)
+                                                .player()
+                                                .blockPosition()),
+                                "fresh observer clamp did not work before the stale lifecycle event");
+                })
+                .thenExecute(() -> {
                     var fresh = Objects.requireNonNull(state.fresh);
                     state.violations = server.net().counters().violations(owner);
                     long generation = rt.roster().generationOf(fresh.player().getUUID());
@@ -105,6 +135,7 @@ public final class ReconnectLifecycleTests {
                     check(
                             rt.roster().generationOf(fresh.player().getUUID()) == generation,
                             "late predecessor event rotated the fresh recipient epoch");
+                    if (login) outside(fresh, rt);
                     fresh.send(move(kit, 0, 1, 12)); // must still be a replay after the stale lifecycle callback
                     fresh.send(move(kit, 0, 2, 40));
                     kit.viewer(1).send(move(kit, 1, 3, 40));
@@ -115,6 +146,10 @@ public final class ReconnectLifecycleTests {
                 .thenExecute(() -> {
                     var fresh = Objects.requireNonNull(state.fresh);
                     check(accepted(fresh, 1) == 1, "late logout erased the fresh command sequence window");
+                    if (login)
+                        check(
+                                rt.space().contains(fresh.player().blockPosition()),
+                                "late predecessor login removed the fresh observer boundary clamp");
                     check(
                             server.net().counters().violations(owner) == state.violations + 1,
                             "replay was not the only new protocol violation");
@@ -136,6 +171,11 @@ public final class ReconnectLifecycleTests {
                 })
                 .thenExecute(kit::close)
                 .thenSucceed();
+    }
+
+    private static void outside(MockViewer viewer, MatchRuntime rt) {
+        var player = viewer.player();
+        player.connection.teleport(rt.space().origin().getX() - 64, player.getY(), player.getZ(), 0, 0);
     }
 
     private static CommandsPayload move(MultiplayerHarness kit, int player, int sequence, int x) {
