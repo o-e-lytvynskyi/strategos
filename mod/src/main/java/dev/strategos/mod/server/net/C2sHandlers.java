@@ -76,6 +76,7 @@ public final class C2sHandlers {
             server.net().refused(player, "invalid_template_ack");
             return;
         }
+        if (!server.net().allowAuxiliaryIntent(player)) return;
         try {
             server.templateSync().ack(server, player, message);
         } catch (RuntimeException e) {
@@ -94,6 +95,7 @@ public final class C2sHandlers {
             server.net().refused(player, "invalid_camera_jump");
             return;
         }
+        if (!server.net().allowAuxiliaryIntent(player)) return;
         MatchRegistry.Seat seat = server.matches().seatOf(player.getUUID());
         if (seat != null) {
             server.commanders()
@@ -112,6 +114,7 @@ public final class C2sHandlers {
             server.net().refused(player, "invalid_ui_query");
             return;
         }
+        if (!server.net().allowAuxiliaryIntent(player)) return;
         MatchRegistry.Seat seat = server.matches().seatOf(player.getUUID());
         if (seat != null) {
             server.replication().query(player, seat, message, server.server().getTickCount());
@@ -134,6 +137,7 @@ public final class C2sHandlers {
             server.net().refused(player, "invalid_match_control");
             return;
         }
+        if (!server.net().allowAuxiliaryIntent(player)) return;
         if (!server.server().isSingleplayer()) return;
         MatchRegistry.Seat seat = server.matches().seatOf(player.getUUID());
         MatchRuntime rt = seat == null ? null : seat.match();
@@ -171,6 +175,7 @@ public final class C2sHandlers {
             server.net().refused(player, "invalid_mode_switch");
             return;
         }
+        if (!server.net().allowAuxiliaryIntent(player)) return;
         MatchRegistry.Seat seat = server.matches().seatOf(player.getUUID());
         if (seat != null) {
             server.commanders()
@@ -192,6 +197,7 @@ public final class C2sHandlers {
             server.net().refused(player, "invalid_skirmish");
             return;
         }
+        if (!server.net().allowAuxiliaryIntent(player)) return;
         boolean owner = server.server().isSingleplayerOwner(player.getGameProfile());
         if (!owner && !player.hasPermissions(2)) {
             LOG.warn("{} asked for a skirmish without being the host or an operator", player.getScoreboardName());
@@ -243,6 +249,7 @@ public final class C2sHandlers {
             server.net().refused(player, "invalid_debug_subscribe");
             return;
         }
+        if (!server.net().allowAuxiliaryIntent(player)) return;
         try {
             server.debug().subscribe(player, message);
         } catch (RuntimeException e) {

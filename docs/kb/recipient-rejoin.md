@@ -60,3 +60,10 @@ the exact online player, listener and open Connection; connection freshness is
 separate from match admission, so current template/lobby traffic still works
 before seating. Stale handlers must not consume the replacement's rate or
 violation budget. Keep match authority and generation checks at their endpoints.
+
+Use a separate admission budget for well-formed auxiliary intents. Sharing its
+bucket with unit commands lets template/lobby/UI bursts exhaust the published
+command allowance. Keep tighter per-type backend limits, reject malformed
+markers before auxiliary charging, and preserve the common violation/kick
+window. Test the exact burst in one server tick through the real registered
+handler, with actual backend and independent unit-command positives.

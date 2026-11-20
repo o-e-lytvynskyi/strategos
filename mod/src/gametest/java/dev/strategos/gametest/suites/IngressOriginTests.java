@@ -52,8 +52,12 @@ public final class IngressOriginTests {
                                         .anyMatch(frame -> frame.state().phase() == LobbyState.Phase.EDITING
                                                 && frame.state().mayConfigure()),
                         "fresh connection's host/backend/private-view positive control missing"))
-                .thenExecute(() -> C2sHandlers.<LobbyActionPayload>timed(C2sHandlers::lobby)
-                        .handle(LobbyActionPayload.of(new LobbyAction.Cancel()), retained))
+                .thenExecute(() -> {
+                    var handler = C2sHandlers.<LobbyActionPayload>timed(C2sHandlers::lobby);
+                    for (int i = 0; i < 100; i++) {
+                        handler.handle(LobbyActionPayload.of(new LobbyAction.Cancel()), retained);
+                    }
+                })
                 .thenExecute(() -> {
                     check(
                             service.reservesStart()
@@ -61,6 +65,8 @@ public final class IngressOriginTests {
                             "predecessor context cancelled the replacement connection's lobby");
                     check(service.snapshot().lobby().readyPlayers().isEmpty(), "new lobby unexpectedly ready");
                     long revision = service.snapshot().lobby().configurationRevision();
+                    // One current malformed frame remains below the kick limit after 100 stale contexts.
+                    state.active.send(new LobbyActionPayload(null, "invalid_lobby_action"));
                     state.active.send(LobbyActionPayload.of(new LobbyAction.Ready(true, revision)));
                 })
                 .thenWaitUntil(() -> check(

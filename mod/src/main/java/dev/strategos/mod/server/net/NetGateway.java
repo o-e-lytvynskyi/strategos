@@ -107,6 +107,7 @@ public final class NetGateway {
     private final Map<Integer, List<FactionLook>> lastLooks = new HashMap<>();
     private final NetCounters counters = new NetCounters();
     private final RateLimiter limiter = new RateLimiter();
+    private final RateLimiter auxiliaryLimiter = new RateLimiter();
 
     public NetGateway(MinecraftServer server, Supplier<MatchRegistry> matches, FaultBarrier faults) {
         this.server = server;
@@ -386,13 +387,23 @@ public final class NetGateway {
     public void forget(ServerPlayer player) {
         commandSequences.remove(player.getUUID());
         limiter.forget(player.getUUID());
+        auxiliaryLimiter.forget(player.getUUID());
         queued.remove(player.getUUID());
     }
 
-    /** Lobby intents share the existing authenticated connection budget with simulation commands. */
+    /** Lobby intents use the auxiliary budget, independently of simulation commands and handle costs. */
     public boolean allowLobbyIntent(ServerPlayer player) {
-        if (limiter.take(player.getUUID(), server.getTickCount(), 1, 0)) return true;
-        refused(player, "lobby_rate");
+        return takeAuxiliaryIntent(player, "lobby_rate");
+    }
+
+    /** A well-formed auxiliary request, before its type-specific permission/rate/state checks. */
+    public boolean allowAuxiliaryIntent(ServerPlayer player) {
+        return takeAuxiliaryIntent(player, "auxiliary_rate");
+    }
+
+    private boolean takeAuxiliaryIntent(ServerPlayer player, String reason) {
+        if (auxiliaryLimiter.take(player.getUUID(), server.getTickCount(), 1, 0)) return true;
+        refused(player, reason);
         return false;
     }
 
@@ -405,6 +416,7 @@ public final class NetGateway {
         counters.violation(player.getGameProfile().getName(), reason);
         if (limiter.violation(player.getUUID(), tick)) {
             limiter.forget(player.getUUID());
+            auxiliaryLimiter.forget(player.getUUID());
             player.connection.disconnect(Component.literal(TOO_MANY));
         }
     }
