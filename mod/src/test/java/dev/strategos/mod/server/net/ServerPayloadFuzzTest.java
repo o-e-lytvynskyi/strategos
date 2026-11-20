@@ -49,6 +49,17 @@ class ServerPayloadFuzzTest {
                         .collect(Collectors.toSet()));
     }
 
+    @Test
+    void boundedEngineCorpusIsAnExactSubsetOfThePermanentCorpusAndCoversAllTypes() {
+        var canonical = permanent().collect(Collectors.toMap(NetFuzzCorpus.Entry::id, c -> c));
+        var subset = NetFuzzCorpus.read("fixtures/net-fuzz/ingress.json");
+        assertThat(subset).isNotEmpty().hasSizeLessThanOrEqualTo(100);
+        assertThat(subset).extracting(NetFuzzCorpus.Entry::id).doesNotHaveDuplicates();
+        for (var entry : subset) assertThat(entry).isEqualTo(canonical.get(entry.id()));
+        assertThat(subset.stream().map(NetFuzzCorpus.Entry::payload).collect(Collectors.toSet()))
+                .isEqualTo(inputs().map(c -> c.spec().id().toString()).collect(Collectors.toSet()));
+    }
+
     @ParameterizedTest
     @MethodSource("permanent")
     void permanentInputHasItsRecordedOutcome(NetFuzzCorpus.Entry entry) {

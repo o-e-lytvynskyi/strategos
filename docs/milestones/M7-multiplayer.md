@@ -471,6 +471,13 @@ rejoin before, at and after expiry, paused matches and save/restart.
 
 ### 3.6 Ingress hardening (NET-06)
 
+T12.1 passes full verify 44789454855 on 72f894a7: all 2,964 canonical
+cases pass, including 100,008 actually generated probes across the nine real
+registered C2S codecs and three committed seeds, 27 permanent malformed vectors
+and additional accepted/byte-boundary controls. The original decoder inventory
+and byte-exact positives remain intact. T12.2 state/journal/subset consistency
+gates and parent T12/NET-06 remain open.
+
 T11 is complete (2026-11-20): full verify 44786479783 on f7103b2d
 passes all 2,927 canonical cases, zero failures/errors/skips, including L5.
 The final subscription fixture preserves accepted own-unit detail/debug output
