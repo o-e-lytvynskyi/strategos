@@ -26,6 +26,9 @@ public record MatchControl(int action, float speed) {
         if (action < PAUSE || action > SPEED) {
             throw new IllegalArgumentException("no match control " + action);
         }
+        if (!Float.isFinite(speed) || (action == SPEED && !offered(speed))) {
+            throw new IllegalArgumentException("unsupported match speed");
+        }
     }
 
     /** Whether {@code speed} is one of those offered. */
@@ -45,7 +48,11 @@ public record MatchControl(int action, float speed) {
             if (action > SPEED) {
                 throw new WireException("unknown match control " + action);
             }
-            return new MatchControl(action, in.readFloat());
+            try {
+                return new MatchControl(action, in.readFloat());
+            } catch (IllegalArgumentException invalid) {
+                throw new WireException("unsupported match speed");
+            }
         }
 
         @Override

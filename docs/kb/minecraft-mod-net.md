@@ -19,6 +19,13 @@ through the existing gateway policy. Refusal values are never encoded back to
 the client. Keep S2C decoding strict. Exercise each registered codec with valid
 byte-exact controls as well as empty, truncated, over-cap and trailing input.
 
+`WireReader` deliberately preserves raw IEEE values, including NaN. Put numeric
+request invariants in their typed records rather than globally changing the
+primitive reader. When a record constructor rejects malformed wire values,
+translate its IllegalArgumentException into WireException in that record's
+reader; the server codec then returns the same bounded refusal. Check unused
+numeric fields too, so a mode-switch column cannot carry non-finite values.
+
 ## Client S2C handlers cannot be named in common code
 
 21.1 has no separate event for registering client handlers: `playToClient(type, codec, handler)`
