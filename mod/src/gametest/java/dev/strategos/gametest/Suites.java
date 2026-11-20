@@ -21,6 +21,7 @@ import dev.strategos.gametest.suites.FidelityTests;
 import dev.strategos.gametest.suites.FirstPersonTests;
 import dev.strategos.gametest.suites.FogTests;
 import dev.strategos.gametest.suites.GarrisonTests;
+import dev.strategos.gametest.suites.IngressIdentityTests;
 import dev.strategos.gametest.suites.JournalTests;
 import dev.strategos.gametest.suites.LobbyAdmissionTests;
 import dev.strategos.gametest.suites.LobbyNetworkTests;
@@ -96,6 +97,7 @@ public final class Suites {
                         NetTests.class,
                         MultiplayerKitTests.class,
                         CoopReplicationTests.class,
+                        IngressIdentityTests.class,
                         RecipientAccessTests.class,
                         RecipientFxTests.class,
                         RecipientQueueTests.class,
