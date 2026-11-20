@@ -16,6 +16,7 @@ import dev.strategos.gametest.suites.CoopAuthorityTransportTests;
 import dev.strategos.gametest.suites.CoopReplicationTests;
 import dev.strategos.gametest.suites.DebugTests;
 import dev.strategos.gametest.suites.EcoTests;
+import dev.strategos.gametest.suites.ExpiryPolicyTests;
 import dev.strategos.gametest.suites.FaultTests;
 import dev.strategos.gametest.suites.FidelityTests;
 import dev.strategos.gametest.suites.FirstPersonTests;
@@ -118,6 +119,7 @@ public final class Suites {
                         RecipientRejoinTests.class,
                         ReconnectLifecycleTests.class,
                         ReconnectRestoreTests.class,
+                        ExpiryPolicyTests.class,
                         RecipientTransferTests.class,
                         CoopAuthorityTransportTests.class,
                         OrderTests.class,
