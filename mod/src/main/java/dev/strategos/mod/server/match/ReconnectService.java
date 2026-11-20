@@ -23,6 +23,7 @@ public final class ReconnectService {
     }
 
     public void loggedIn(ServerPlayer player) {
+        if (!net.acceptsLogin(player)) return;
         MatchRegistry.Seat seat = matches.seatOf(player.getUUID());
         if (seat == null) {
             commanders.leave(server, player);

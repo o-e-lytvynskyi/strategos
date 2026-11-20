@@ -292,6 +292,11 @@ public final class NetGateway {
         queued.clear();
     }
 
+    /** A lifecycle notification may initialize modes only for the current open transport; it is not a packet violation. */
+    public boolean acceptsLogin(ServerPlayer player) {
+        return currentTransport(player, player.connection.getConnection());
+    }
+
     /** Logout may follow a closed transport, but never owns a newer player's UUID-scoped state. */
     public boolean acceptsLogout(ServerPlayer player) {
         ServerPlayer online = server.getPlayerList().getPlayer(player.getUUID());
@@ -300,12 +305,15 @@ public final class NetGateway {
 
     /** The live transport may speak before match admission; freshness alone confers no match authority. */
     public boolean acceptsSender(ServerPlayer player, Connection transport) {
-        RecipientContext origin = RecipientContext.capture(player, matches.get());
-        ServerPlayer online = server.getPlayerList().getPlayer(player.getUUID());
-        if (online != null && origin.connectionCurrent(online, transport)) return true;
+        if (currentTransport(player, transport)) return true;
         // Do not let an old handler spend the replacement connection's rate or kick budget.
         counters.violation(player.getGameProfile().getName(), IngressReason.STALE_CONNECTION);
         return false;
+    }
+
+    private boolean currentTransport(ServerPlayer player, Connection transport) {
+        ServerPlayer online = server.getPlayerList().getPlayer(player.getUUID());
+        return online != null && RecipientContext.capture(player, matches.get()).connectionCurrent(online, transport);
     }
 
     /** A batch a client sent, on the server thread. */
