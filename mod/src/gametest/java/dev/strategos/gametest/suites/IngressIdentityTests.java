@@ -4,10 +4,12 @@ import static dev.strategos.gametest.suites.Units.check;
 import static dev.strategos.gametest.suites.Units.core;
 
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.protocol.Command;
 import dev.strategos.core.protocol.CommandBatch;
 import dev.strategos.core.protocol.CommandOutcome;
 import dev.strategos.core.protocol.Feedback;
 import dev.strategos.core.protocol.Move;
+import dev.strategos.core.protocol.QueueMode;
 import dev.strategos.core.protocol.SpawnUnits;
 import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.FactionSlot;
@@ -17,6 +19,7 @@ import dev.strategos.core.testkit.SimHarness;
 import dev.strategos.gametest.MatchFixture;
 import dev.strategos.gametest.StrategosTest;
 import dev.strategos.gametest.net.MockViewer;
+import dev.strategos.gametest.net.MultiplayerHarness;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.server.net.payload.CommandsPayload;
 import dev.strategos.mod.server.net.payload.FeedbackPayload;
@@ -94,6 +97,51 @@ public final class IngressIdentityTests {
                     original.close();
                 })
                 .thenSucceed();
+    }
+
+    @StrategosTest(arena = "arena_flat_48", timeoutTicks = 400)
+    public static void repeatedOlderAndOverlappingBatchesCannotAppendOrders(GameTestHelper h) {
+        var kit = MultiplayerHarness.create(h, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
+        var rt = kit.match();
+        var server = StrategosServer.get();
+        var faction = new FactionSlot(0);
+        rt.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.DEBUG_WALKER, faction, new Vec2d(6, 6), 1, 0));
+        h.startSequence()
+                .thenWaitUntil(() -> check(
+                        kit.ready() && core(rt).queries().unitHandlesOf(faction).length == 1,
+                        "sequence fixture not ready"))
+                .thenExecute(() -> kit.admit("sequence", List.of(new PlayerSlot(0))))
+                .thenExecute(() -> {
+                    int unit = core(rt).queries().unitHandlesOf(faction)[0];
+                    var player = kit.viewer(0).player();
+                    server.net().commands(player, queued(20, unit, 6, 12));
+                    server.net().commands(player, queued(20, unit, 6, 12));
+                    server.net().commands(player, queued(19, unit, 18));
+                    server.net().commands(player, queued(21, unit, 24, 30));
+                    server.net().commands(player, queued(22, unit, 36));
+                })
+                .thenWaitUntil(() -> check(
+                        kit.payloads(0, FeedbackPayload.class).stream()
+                                        .anyMatch(frame -> frame.message() instanceof Feedback reply
+                                                && reply.clientSeq() == 22
+                                                && reply.outcome() == CommandOutcome.ACCEPTED)
+                                && core(rt).queries().orders(core(rt).queries().unitHandlesOf(faction)[0]).stream()
+                                        .anyMatch(order -> order.x() == 40 && order.z() == 36),
+                        "fresh sequence's accepted order missing"))
+                .thenExecute(() -> check(
+                        core(rt).queries().orders(core(rt).queries().unitHandlesOf(faction)[0]).stream()
+                                .map(order -> order.z())
+                                .toList()
+                                .equals(List.of(6.0, 12.0, 36.0)),
+                        "repeated/older/overlapping batch appended unauthorized orders"))
+                .thenExecute(kit::close)
+                .thenSucceed();
+    }
+
+    private static CommandsPayload queued(int sequence, int unit, double... targets) {
+        java.util.ArrayList<Command> commands = new java.util.ArrayList<>();
+        for (double z : targets) commands.add(new Move(UnitSet.of(unit), new Vec2d(40, z), QueueMode.QUEUE, 0));
+        return CommandsPayload.of(new CommandBatch(sequence, commands));
     }
 
     private static MockViewer viewer(GameTestHelper h) {
