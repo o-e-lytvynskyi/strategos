@@ -24,8 +24,8 @@ import org.jspecify.annotations.Nullable;
  * payload field. Saved with the match's blob; the registry keeps a player in one match at a time.
  */
 public final class MatchRoster {
-    public static final long DEFAULT_RECONNECT_NANOS = 300_000_000_000L;
-    public static final long MAX_RECONNECT_NANOS = 86_400_000_000_000L;
+    public static final long DEFAULT_RECONNECT_NANOS = ReconnectSettings.DEFAULT_SECONDS * 1_000_000_000L;
+    public static final long MAX_RECONNECT_NANOS = ReconnectSettings.MAX_SECONDS * 1_000_000_000L;
 
     private record SeatState(PlayerSlot slot, boolean connected, long reservedAt, long remaining, long generation) {}
 

@@ -454,6 +454,22 @@ in_progress for T14's existing ping/team-marker criterion; no criterion is remov
 
 ### 3.5 Reconnect (NET-05)
 
+T10.1 passes full verify 44821434059 on fa91c15e (2,973 canonical cases,
+zero failures/errors/skips, L5 included). Four exact monotonic boundaries and
+three actual lifecycle/restore scenes preserve fresh authority/sequence and
+observer bounds, refuse expired login before private view/body entry, and retain
+an unexpired co-op peer's actual commands. Parent T10/NET-05 remain open.
+
+T10.2 refinement before code: **T10.2a** adds the validated server timeout
+(default 300 seconds, range 1..86,400) and DEFEAT/AI_TAKEOVER policy, then wires
+fresh and restored reservation windows without replacing explicit saved remaining
+durations. **T10.2b** resolves each faction only after all its primary human
+reservations have expired, preserving connected or still-reserved co-op owners;
+apply the configured canonical action once with pause/save/restart/replay controls.
+Grants do not become primary ownership. Keep existing replay semantics, check
+victory-disabled matches explicitly and retain the required S gate. Client epoch,
+camera/groups and parent completion remain T10.3/later gates.
+
 T10 readiness/split before code (2026-11-20): T5, T6 and T9 are delivered.
 Continue NET-05 under the operator's existing whole-M7 implementation instruction,
 as with NET-02/NET-03; no new-player mid-match admission or hosting decision is added.

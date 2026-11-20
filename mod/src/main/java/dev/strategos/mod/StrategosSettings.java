@@ -1,6 +1,8 @@
 package dev.strategos.mod;
 
+import dev.strategos.mod.server.match.ReconnectSettings;
 import java.nio.file.Path;
+import java.util.Objects;
 
 /**
  * The server's switches: whether a match fault is rethrown after it is recorded (the dev and GameTest runs set
@@ -20,7 +22,12 @@ public record StrategosSettings(
         int importBudget,
         StrategosConfig.Journal journal,
         int pathThreads,
-        int journalRingMinutes) {
+        int journalRingMinutes,
+        ReconnectSettings reconnect) {
+    public StrategosSettings {
+        Objects.requireNonNull(reconnect, "reconnect");
+    }
+
     public static final int SPAWNS_PER_TICK = 64;
 
     /** From the system properties and the server config, which NeoForge has loaded by {@code ServerAboutToStartEvent}. */
@@ -35,6 +42,7 @@ public record StrategosSettings(
                 config.importBudget.getAsInt(),
                 config.journal.get(),
                 config.pathThreads.getAsInt(),
-                config.journalRingMinutes.getAsInt());
+                config.journalRingMinutes.getAsInt(),
+                new ReconnectSettings(config.reconnectSeconds.getAsInt(), config.reconnectPolicy.get()));
     }
 }

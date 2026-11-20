@@ -1,5 +1,6 @@
 package dev.strategos.mod;
 
+import dev.strategos.mod.server.match.ReconnectSettings;
 import java.util.List;
 import net.neoforged.neoforge.common.ModConfigSpec;
 import org.apache.commons.lang3.tuple.Pair;
@@ -42,6 +43,8 @@ public final class StrategosConfig {
     public final ModConfigSpec.IntValue violationsPerMinute;
     public final ModConfigSpec.IntValue maxMatches;
     public final ModConfigSpec.IntValue debugPermission;
+    public final ModConfigSpec.IntValue reconnectSeconds;
+    public final ModConfigSpec.EnumValue<ReconnectSettings.Policy> reconnectPolicy;
 
     private StrategosConfig(ModConfigSpec.Builder b) {
         pathThreads = b.comment("Path job threads: -1 picks from the cores, 0 runs jobs on the server thread.")
@@ -65,6 +68,12 @@ public final class StrategosConfig {
         maxMatches = b.comment("Matches the server runs at once.").defineInRange("maxMatches", 16, 1, 256);
         debugPermission = b.comment("The permission level of the debug commands and overlays.")
                 .defineInRange("debugPermission", 2, 0, 4);
+        reconnectSeconds = b.comment(
+                        "Seconds a disconnected player may reclaim a reserved seat; captured when the server starts.")
+                .defineInRange("reconnectSeconds", ReconnectSettings.DEFAULT_SECONDS, 1, ReconnectSettings.MAX_SECONDS);
+        reconnectPolicy = b.comment(
+                        "Policy after all primary human reservations of a faction expire; captured at server start.")
+                .defineEnum("reconnectPolicy", ReconnectSettings.Policy.DEFEAT);
     }
 
     /** The config files this mod registers; the inventory test reads it. */
