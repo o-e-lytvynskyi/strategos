@@ -22,6 +22,10 @@ on:
         description: 'M7 same-host comparison against the verified T5 checkpoint (15% gate)'
         type: boolean
         default: false
+      dependency_cache_run:
+        description: 'Successful same-branch full-ci producer of Maven modules for paired/completion runs'
+        type: string
+        default: '44641218952'
 
 concurrency:
   group: perf-${{ github.ref }}-${{ inputs.template_diagnostic && 'template-diagnostic' || inputs.complete_t7 && 't7-completion' || inputs.paired_jmh && 'paired-jmh' || 'standard' }}
@@ -92,12 +96,13 @@ jobs:
       - name: Validate the successful same-branch dependency producer
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 candidate/tools/ci_dependency_cache.py validate --run 44606455194 --repository "$GITHUB_REPOSITORY" --branch "$GITHUB_REF_NAME"
+          DEPENDENCY_CACHE_RUN: ${{ inputs.dependency_cache_run }}
+        run: python3 candidate/tools/ci_dependency_cache.py validate --run "$DEPENDENCY_CACHE_RUN" --repository "$GITHUB_REPOSITORY" --branch "$GITHUB_REF_NAME"
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: cloud-gradle-modules
           path: build/cloud-dependencies
-          run-id: 44606455194
+          run-id: ${{ inputs.dependency_cache_run }}
           github-token: ${{ github.token }}
       - name: Restore validated dependency modules only
         run: python3 candidate/tools/ci_dependency_cache.py restore --archive build/cloud-dependencies/cloud-gradle-modules.tar.gz --caches "$HOME/.gradle/caches"
@@ -237,12 +242,13 @@ jobs:
       - name: Validate the successful same-branch dependency producer
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 tools/ci_dependency_cache.py validate --run 44606455194 --repository "$GITHUB_REPOSITORY" --branch "$GITHUB_REF_NAME"
+          DEPENDENCY_CACHE_RUN: ${{ inputs.dependency_cache_run }}
+        run: python3 tools/ci_dependency_cache.py validate --run "$DEPENDENCY_CACHE_RUN" --repository "$GITHUB_REPOSITORY" --branch "$GITHUB_REF_NAME"
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: cloud-gradle-modules
           path: build/cloud-dependencies
-          run-id: 44606455194
+          run-id: ${{ inputs.dependency_cache_run }}
           github-token: ${{ github.token }}
       - name: Restore validated dependency modules only
         run: python3 tools/ci_dependency_cache.py restore --archive build/cloud-dependencies/cloud-gradle-modules.tar.gz --caches "$HOME/.gradle/caches"

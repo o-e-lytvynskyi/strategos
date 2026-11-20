@@ -67,3 +67,16 @@ command allowance. Keep tighter per-type backend limits, reject malformed
 markers before auxiliary charging, and preserve the common violation/kick
 window. Test the exact burst in one server tick through the real registered
 handler, with actual backend and independent unit-command positives.
+
+A reconnect deadline belongs to the reservation, not to the next login. Test
+remaining duration strictly before, at and after zero with an injected monotonic
+clock. Loading an explicit saved remaining duration must not renew or clamp it
+to a newly configured future window. A late predecessor login/logout must be
+authenticated before UUID-keyed observer or membership cleanup.
+
+Expiry is faction-wide only after every primary human reservation expires;
+control grants and observer seats do not extend ownership. A paused adapter may
+observe elapsed time without advancing the core. Journal the eventual action at
+a running boundary and use persistent core defeat/controller state after restore,
+not a transient UUID or runtime set alone. Released Resign rejects Victory.NONE:
+do not reinterpret old commands to implement sandbox timeout policy.

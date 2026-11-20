@@ -8,6 +8,7 @@ import dev.strategos.core.protocol.CommandBatch;
 import dev.strategos.core.protocol.CommandOutcome;
 import dev.strategos.core.protocol.Feedback;
 import dev.strategos.core.protocol.Move;
+import dev.strategos.core.protocol.Resign;
 import dev.strategos.core.protocol.SpawnUnits;
 import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.FactionSlot;
@@ -15,6 +16,7 @@ import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.DiplomacySetup;
 import dev.strategos.core.sim.MatchLifecycle;
+import dev.strategos.core.sim.PlayRules;
 import dev.strategos.core.sim.diplomacy.DiplomacyState;
 import dev.strategos.core.testkit.SimHarness;
 import dev.strategos.gametest.MatchFixture;
@@ -40,10 +42,22 @@ public final class ReconnectRestoreTests {
 
     @StrategosTest(arena = "arena_flat_48", timeoutTicks = 400)
     public static void aRestoredZeroDurationCannotRejoinWhileTheUnexpiredCoopPeerStillCommands(GameTestHelper h) {
+        coop(h, PlayRules.Victory.NONE, "expiry");
+    }
+
+    @StrategosTest(arena = "arena_flat_48", timeoutTicks = 400)
+    public static void aLiveCoopPrimaryPreventsDefaultDefeatWhenAnotherOwnersGraceExpires(GameTestHelper h) {
+        coop(h, PlayRules.Victory.CONQUEST, "cooplive");
+    }
+
+    private static void coop(GameTestHelper h, PlayRules.Victory victory, String prefix) {
         var server = StrategosServer.get();
         var registry = server.matches();
         var kit = MultiplayerHarness.create(
-                h, MatchFixture.options(SimHarness.DEFAULT_SEED, h).withPersistent(true));
+                h,
+                MatchFixture.options(SimHarness.DEFAULT_SEED, h)
+                        .withPersistent(true)
+                        .withPlay(new PlayRules(victory, false, true, false)));
         var rt = kit.match();
         var authority = new DiplomacyState(2)
                 .bind(new PlayerSlot(0), new FactionSlot(0))
@@ -72,7 +86,7 @@ public final class ReconnectRestoreTests {
         h.startSequence()
                 .thenWaitUntil(() ->
                         check(kit.ready() && core(rt).queries().unitHandles().length == 2, "restore fixture not ready"))
-                .thenExecute(() -> kit.admit("expiry", List.of(new PlayerSlot(0), new PlayerSlot(1))))
+                .thenExecute(() -> kit.admit(prefix, List.of(new PlayerSlot(0), new PlayerSlot(1))))
                 .thenExecute(() -> kit.viewer(0).send(move(rt, 1, 40)))
                 .thenWaitUntil(() -> check(accepted(kit.viewer(0), 1), "pre-disconnect actual command control missing"))
                 .thenExecute(() -> {
@@ -97,10 +111,10 @@ public final class ReconnectRestoreTests {
                     var back = registry.restore(h.getLevel(), record, MatchData.load(rt.id(), saved));
                     state.back = back;
                     check(back.lifecycle() == MatchLifecycle.PAUSED, "valid session blob did not restore paused");
-                    var expired = MockViewer.join(h.getLevel(), "expiry-0", at.x, at.y, at.z, 2);
+                    var expired = MockViewer.join(h.getLevel(), prefix + "-0", at.x, at.y, at.z, 2);
                     state.expired = expired;
                     state.revived = back.roster().isConnected(expired.player().getUUID());
-                    var peer = MockViewer.join(h.getLevel(), "expiry-1", at.x + 1, at.y, at.z, 2);
+                    var peer = MockViewer.join(h.getLevel(), prefix + "-1", at.x + 1, at.y, at.z, 2);
                     state.peer = peer;
                     registry.resume(back.id());
                     peer.send(move(back, 1, 36));
@@ -133,11 +147,11 @@ public final class ReconnectRestoreTests {
                     state.hash = core(back).stateHash();
                     state.commands =
                             NetFixtures.envelopes(back, Integer.MIN_VALUE).size();
-                    state.violations = server.net().counters().violations("expiry-0");
+                    state.violations = server.net().counters().violations(prefix + "-0");
                     expired.send(move(back, 1, 12));
                 })
                 .thenWaitUntil(() -> check(
-                        server.net().counters().violations("expiry-0") == state.violations + 1,
+                        server.net().counters().violations(prefix + "-0") == state.violations + 1,
                         "expired peer command never reached its actual refusal handler"))
                 .thenExecute(() -> {
                     var back = Objects.requireNonNull(state.back);
@@ -160,7 +174,17 @@ public final class ReconnectRestoreTests {
                 .thenWaitUntil(() -> check(
                         accepted(Objects.requireNonNull(state.peer), 2),
                         "valid peer stopped after expired login/command"))
-                .thenExecute(() -> {
+                .thenExecuteAfter(5, () -> {
+                    var back = Objects.requireNonNull(state.back);
+                    check(!core(back).queries().factionDefeated(new FactionSlot(0)), "live co-op primary was defeated");
+                    check(
+                            !core(back).queries().computerControlled(new FactionSlot(0)),
+                            "live co-op primary lost control to AI");
+                    check(
+                            NetFixtures.envelopes(back, Integer.MIN_VALUE).stream()
+                                    .noneMatch(e -> e.command() instanceof Resign r
+                                            && r.faction().equals(new FactionSlot(0))),
+                            "expired co-op member queued shared-faction resignation");
                     var peer = Objects.requireNonNull(state.peer);
                     var expired = Objects.requireNonNull(state.expired);
                     check(

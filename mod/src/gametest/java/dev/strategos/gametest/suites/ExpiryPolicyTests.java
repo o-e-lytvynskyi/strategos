@@ -75,9 +75,20 @@ public final class ExpiryPolicyTests {
         resolved(h, computer, PlayRules.Victory.CONQUEST);
     }
 
+    @StrategosTest(arena = "arena_flat_48", timeoutTicks = 400)
+    public static void disablingTakeoverDoesNotRearmExpiryAfterSaveAndRestore(GameTestHelper h) {
+        resolved(h, true, PlayRules.Victory.CONQUEST, true);
+    }
+
     private static void resolved(GameTestHelper h, boolean computer, PlayRules.Victory victory) {
+        resolved(h, computer, victory, false);
+    }
+
+    private static void resolved(GameTestHelper h, boolean computer, PlayRules.Victory victory, boolean disable) {
         var registry = StrategosServer.get().matches();
-        String prefix = computer ? "takeover" : victory == PlayRules.Victory.NONE ? "sandbox" : "resolved";
+        String prefix = disable
+                ? "takeoff"
+                : computer ? "takeover" : victory == PlayRules.Victory.NONE ? "sandbox" : "resolved";
         var base = MatchFixture.options(SimHarness.DEFAULT_SEED, h);
         var options = new MatchOptions(
                 base.seed(),
@@ -99,6 +110,9 @@ public final class ExpiryPolicyTests {
             @Nullable MatchRuntime back;
 
             @Nullable MockViewer peer;
+
+            boolean policyChecked;
+            boolean restored;
         };
         h.onEachTick(() -> {
             var peer = state.peer;
@@ -133,7 +147,7 @@ public final class ExpiryPolicyTests {
                                 ReconnectSettings.DEFAULT_SECONDS, ReconnectSettings.Policy.AI_TAKEOVER));
                         check(
                                 core(back).stateHash() == hash && back.tick() == tick && policyActions(back, true) == 0,
-                                "explicit takeover advanced the paused core or queued a policy action");
+                                "explicit takeover changed the paused core or journal");
                     }
                     registry.resume(back.id());
                     if (computer)
@@ -153,18 +167,38 @@ public final class ExpiryPolicyTests {
                             "third surviving faction did not keep match running");
                     check(policyActions(back, computer) == 1, "first runtime did not issue exactly one expiry command");
                     replays(back);
+                    if (disable) back.submit(PlayerSlot.ADMIN, new SetAi(new FactionSlot(0), "battle", ""));
+                    state.policyChecked = true;
+                })
+                .thenWaitUntil(() -> check(
+                        state.policyChecked
+                                && (!disable
+                                        || !core(Objects.requireNonNull(state.back))
+                                                .queries()
+                                                .computerControlled(new FactionSlot(0))),
+                        "policy validation or deliberate controller disable did not complete"))
+                .thenExecute(() -> {
+                    var back = Objects.requireNonNull(state.back);
                     var peer = Objects.requireNonNull(state.peer);
                     var at = peer.player().position();
                     peer.close();
                     back = restore(h, back, false);
                     state.back = back;
-                    check(resolved(core(back), computer), "save lost resolved ownership");
+                    check(
+                            disable
+                                    ? !core(back).queries().computerControlled(new FactionSlot(0))
+                                            && !core(back).queries().factionDefeated(new FactionSlot(0))
+                                    : resolved(core(back), computer),
+                            "save lost resolved ownership");
                     check(!core(back).queries().factionDefeated(new FactionSlot(1)), "save defeated the live opponent");
                     state.peer = MockViewer.join(h.getLevel(), prefix + "-1", at.x, at.y, at.z, 2);
                     subscribe(Objects.requireNonNull(state.peer), back);
+                    state.restored = true;
                 })
                 .thenWaitUntil(() -> check(
-                        privateControl(Objects.requireNonNull(state.peer), Objects.requireNonNull(state.back)),
+                        state.restored
+                                && privateControl(
+                                        Objects.requireNonNull(state.peer), Objects.requireNonNull(state.back)),
                         "resolved-restore private opponent control missing"))
                 .thenExecute(() -> {
                     var back = Objects.requireNonNull(state.back);
@@ -192,7 +226,8 @@ public final class ExpiryPolicyTests {
         var result = ReplayDriver.replay(c.journal(), c.queries().templates());
         check(
                 result.matches() && result.finalTick() == c.queries().tick() && result.finalHash() == c.stateHash(),
-                "canonical expiry journal did not reproduce its actual final hash/checkpoints");
+                "canonical expiry replay mismatch: " + result + "; live tick="
+                        + c.queries().tick() + " hash=" + c.stateHash());
     }
 
     private static boolean resolved(dev.strategos.core.sim.MatchCore c, boolean computer) {
