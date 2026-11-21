@@ -64,3 +64,11 @@ resume and crash the whole server with RUNNING -> RUNNING, hiding the original
 case from XML. Guard later mutation phases with a flag set only after the prior
 assertions and restore complete. Preserve the original assertion and report its
 actual diagnostic; do not weaken it or make lifecycle transitions idempotent.
+
+A saved-world client can automatically enter its RTS screen during the loading
+phase, before a scenario setup callback runs. A readiness gate that requires
+exactly a null screen deadlocks genuine reconnect tests. Accept the actual RTS
+gameplay screen too while retaining the player/level/all-rendered-section
+conditions. Reopen the saved world through WorldOpenFlows rather than creating
+a fresh same-named world; prove a new runtime and automatic UUID seat reclaim,
+and keep every world switch and the whole scenario bounded.
