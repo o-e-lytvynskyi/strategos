@@ -3,6 +3,7 @@ package dev.strategos.mod.server.commander;
 import dev.strategos.core.sim.vision.VisionGrid;
 import dev.strategos.mod.StrategosServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import org.jspecify.annotations.Nullable;
 
 /** Server-owned vanilla-power decisions; client requests never supply membership or command mode. */
@@ -19,6 +20,34 @@ public final class CommanderGuard {
     public static boolean deniesAttackCamera(ServerPlayer player) {
         StrategosServer holder = current(player);
         return holder != null && member(holder, player) && holder.commanders().commands(player);
+    }
+
+    /** Backstop for accepted vanilla movement and external dimension changes; never applies to first-person play. */
+    public static void onPlayerTick(PlayerTickEvent.Post event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) return;
+        StrategosServer holder = current(player);
+        if (holder == null || !member(holder, player) || !holder.commanders().commands(player)) return;
+        var seat = holder.matches().seatOf(player.getUUID());
+        if (seat == null) return;
+        var space = seat.match().space();
+        var level = holder.server().getLevel(space.level());
+        if (level == null) return;
+        int reach = CommanderService.REACH;
+        double x = bounded(
+                player.getX(), space.origin().getX() - reach, space.origin().getX() + space.sizeX() + reach);
+        double y = bounded(player.getY(), space.minY() - reach, space.maxY() + 2 * reach);
+        double z = bounded(
+                player.getZ(), space.origin().getZ() - reach, space.origin().getZ() + space.sizeZ() + reach);
+        if (!player.level().dimension().equals(space.level())
+                || player.getX() != x
+                || player.getY() != y
+                || player.getZ() != z) {
+            player.teleportTo(level, x, y, z, player.getYRot(), player.getXRot());
+        }
+    }
+
+    static double bounded(double value, double min, double max) {
+        return Double.isFinite(value) ? Math.max(min, Math.min(max, value)) : min + (max - min) / 2;
     }
 
     /** Additional player-body privacy gate; the caller must retain every vanilla eligibility check. */

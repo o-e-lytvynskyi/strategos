@@ -9,10 +9,46 @@ import dev.strategos.mod.StrategosServer;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.Level;
 
 /** Actual accepted vanilla movement across each commander boundary, with an unseated spectator control. */
 public final class CommanderBoundsTests {
     private CommanderBoundsTests() {}
+
+    @StrategosTest(timeoutTicks = 800)
+    public static void aForeignDimensionIsCorrectedWithinOnePlayerTick(GameTestHelper h) {
+        var rt = match(h);
+        var member = FirstPersonTests.commander(h, rt, "guard-level-in");
+        var holder = StrategosServer.get();
+        var foreign = holder.server().getLevel(Level.NETHER);
+        check(foreign != null, "fixture server has no alternate dimension");
+        var destination = java.util.Objects.requireNonNull(foreign);
+        check(
+                !destination.dimension().equals(rt.space().level()),
+                "fixture alternate dimension equals match dimension");
+        var at = member.player().position();
+        h.onEachTick(member::poll);
+        h.startSequence()
+                .thenExecute(() -> {
+                    member.player().teleportTo(destination, at.x, at.y, at.z, 0, 0);
+                    check(
+                            member.player().level().dimension().equals(destination.dimension()),
+                            "foreign-dimension fixture did not move the actual player");
+                    FirstPersonTests.accept(member);
+                })
+                .thenExecuteAfter(1, () -> {
+                    check(
+                            member.player()
+                                    .level()
+                                    .dimension()
+                                    .equals(rt.space().level()),
+                            "commander remained in a foreign dimension after one tick");
+                    check(!member.disconnected(), "dimension correction disconnected the commander");
+                    member.close();
+                    holder.matches().dispose(rt.id());
+                })
+                .thenSucceed();
+    }
 
     @StrategosTest(timeoutTicks = 200)
     public static void allSixCommanderBoundsAreRestoredWithinOneTickWhileVanillaSpectatorsCanCross(GameTestHelper h) {

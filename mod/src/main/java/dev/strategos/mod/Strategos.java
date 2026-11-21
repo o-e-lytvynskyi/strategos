@@ -7,6 +7,7 @@ import dev.strategos.mod.registry.ModTickets;
 import dev.strategos.mod.server.body.BodyEvents;
 import dev.strategos.mod.server.command.DebugCommands;
 import dev.strategos.mod.server.command.StrategosCommands;
+import dev.strategos.mod.server.commander.CommanderGuard;
 import dev.strategos.mod.server.commander.ObserverRules;
 import dev.strategos.mod.server.content.TemplateReloadListener;
 import dev.strategos.mod.server.content.TemplateSync;
@@ -44,6 +45,7 @@ import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.registries.datamaps.DataMapsUpdatedEvent;
 
@@ -69,6 +71,7 @@ public final class Strategos {
         game.addListener(ServerStoppedEvent.class, StrategosServer::onStopped);
         game.addListener(ServerTickEvent.Pre.class, TickDriver::onServerTickPre);
         game.addListener(ServerTickEvent.Post.class, StrategosServer::onTickPost);
+        game.addListener(PlayerTickEvent.Post.class, CommanderGuard::onPlayerTick);
         game.addListener(PlayerEvent.PlayerLoggedInEvent.class, StrategosServer::onLoggedIn);
         game.addListener(PlayerEvent.PlayerLoggedOutEvent.class, StrategosServer::onLoggedOut);
         game.addListener(LevelTickEvent.Pre.class, TickDriver::onLevelTickPre);
