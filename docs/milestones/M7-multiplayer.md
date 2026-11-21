@@ -458,6 +458,13 @@ in_progress for T14's existing ping/team-marker criterion; no criterion is remov
 
 ### 3.5 Reconnect (NET-05)
 
+T10.3b is split into **T10.3b.1** realm/account-scoped, confirmed-match
+client cache and reconnect entry reset, **T10.3b.2** validation of cached group
+handles against the fresh authoritative view, and **T10.3b.3** cloud client
+evidence of actual restoration and realm isolation. The cache foundation has
+five pure contracts; it does not replace generation validation or actual
+reconnect/client evidence. No parent completion is inferred.
+
 T10.3a itself is bounded before endpoint code: **T10.3a.1** validates the
 transport envelope; **T10.3a.2** wires the six scoped payloads, real view
 bindings, client header capture and actual ingress regressions under protocol 7.

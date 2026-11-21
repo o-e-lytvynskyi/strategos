@@ -91,7 +91,7 @@ public final class StrategosClient {
         NeoForge.EVENT_BUS.addListener(ScreenEvent.Init.Post.class, LobbyEntry::onInit);
         NeoForge.EVENT_BUS.addListener(ClientPlayerNetworkEvent.LoggingOut.class, e -> {
             ClientLobby.clear();
-            RTS.remember(); // the match's camera and groups, for a return (MATCH-04)
+            RTS.disconnected(); // save under the old confirmed scope before clearing private state
             match = null;
             matchEpoch = 0;
             PRESENTATION.clear();
@@ -174,6 +174,7 @@ public final class StrategosClient {
     }
 
     public static void match(long epoch, MatchJoin join) {
+        RTS.confirmed(join);
         matchEpoch = epoch;
         MODEL.clear();
         state = null;

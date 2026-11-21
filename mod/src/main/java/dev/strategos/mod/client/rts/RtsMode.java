@@ -37,6 +37,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.storage.LevelResource;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -69,7 +70,7 @@ public final class RtsMode {
 
     private final RtsKeys keys = new RtsKeys();
     private final ControlGroups groups = new ControlGroups();
-    private final ClientResume resume = new ClientResume(); // MATCH-04: each match's camera and groups, as left
+    private final ClientResumeSession resume = new ClientResumeSession();
     private int groupsMatch = -1; // the match the groups are of
     private long commandSequence = 1;
     private final RtsOrders orders = new RtsOrders(this);
@@ -416,11 +417,55 @@ public final class RtsMode {
         MatchJoin join = StrategosClient.match();
         CameraRig r = rig;
         if (join != null && r != null) {
-            resume.save(
+            resume.remember(
                     join.matchId(),
                     new ClientResume.Pose(r.focusX(), r.focusZ(), r.yaw(), r.height()),
                     groups.snapshot());
         }
+    }
+
+    /** A delivered private handshake confirms the cache scope before any restoration. */
+    public void confirmed(MatchJoin join) {
+        leave();
+        Minecraft mc = Minecraft.getInstance();
+        var local = mc.getSingleplayerServer();
+        var remote = mc.getCurrentServer();
+        String realm = local != null
+                ? "local:"
+                        + local.getWorldPath(LevelResource.ROOT)
+                                .toAbsolutePath()
+                                .normalize()
+                : remote != null ? "remote:" + remote.ip : null;
+        resume.joined(
+                realm == null
+                        ? null
+                        : new ClientResumeSession.Scope(realm, mc.getUser().getProfileId()),
+                join.matchId());
+        resetView();
+    }
+
+    /** Save once while the old confirmed identity is still available, then revoke restoration until confirmation. */
+    public void disconnected() {
+        leave();
+        resume.disconnected();
+        resetView();
+    }
+
+    private void resetView() {
+        autoEntered = 0;
+        groupsMatch = -1;
+        groups.restore(java.util.List.of());
+        selection = new Selection(-1);
+        selectionMatch = -1;
+        firstPerson = false;
+        lastMode = null;
+        pendingIdle = -1;
+        pendingIdleTicks = 0;
+        pendingJump = null;
+        zoom = 0;
+        view = null;
+        lastPick = null;
+        placement.cancel();
     }
 
     /** Turns RTS mode on above the player, a spectator, or says why not. */
