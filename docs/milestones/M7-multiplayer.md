@@ -457,6 +457,16 @@ in_progress for T14's existing ping/team-marker criterion; no criterion is remov
 
 ### 3.5 Reconnect (NET-05)
 
+T10.3 is split before code into **T10.3a** the server-issued live-view epoch
+and six match-scoped C2S boundaries, and **T10.3b** confirmed-match camera/group
+restoration with client evidence. T10.3a begins with a transport envelope: a
+fixed eight-byte epoch plus the unchanged bounded body. Its size limit is the
+exact sum, not a larger body allowance; byte accounting must include the header.
+The epoch is data until authenticated against the current player/transport/view,
+never persistent match authority. The envelope primitive alone is not admission
+or protocol acceptance; protocol 7 and endpoint wiring remain pending. This
+adapter work is independent of the running immutable T10.2 S/L6 gates.
+
 Functional checkpoint (2026-11-21): full verify 44837053433 on ec7067f7
 passes 3,022 canonical cases with zero failures/errors/skips. All 23 targeted
 terrain/schema/persistence/expiry/co-op cases were inspected; actual restored
