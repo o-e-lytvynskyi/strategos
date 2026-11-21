@@ -724,7 +724,12 @@ NET-09 enters in_progress under the continuing whole-M7 instruction.
 T13.1 accepted 2026-11-22: cloud verify 44960721926 on fc81d04e passes
 3,055 cases without failures/errors/skips. Both real vanilla packet denials,
 their unseated spectator positives and the unlisted mixin/class-hook inventory
-counterexamples were inspected. T13.2–T13.4 and the parent task remain open.
+counterexamples were inspected.
+
+T13.2 accepted 2026-11-22: cloud verify 44962371158 on 0d676f53 passes
+3,058 cases without failures/errors/skips. The two confirmed pairing defects
+are fixed; all three actual body/co-op refresh scenarios and the strict hook
+inventory pass. T13.3–T13.4 and the parent task remain open.
 
 Proposed files `mod/mixin/ServerGamePacketListenerImplMixin`, `ServerPlayerMixin` and
 `server/commander/CommanderGuard` implement architecture §12.6:
