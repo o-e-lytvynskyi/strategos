@@ -720,6 +720,11 @@ compatibility and applicable S gates. T6/T9 and M6 solo vision are delivered;
 formal human QA-15 remains T19/T25 and is not inferred from the mock kit.
 NET-09 enters in_progress under the continuing whole-M7 instruction.
 
+T13.1 accepted 2026-11-22: cloud verify 44960721926 on fc81d04e passes
+3,055 cases without failures/errors/skips. Both real vanilla packet denials,
+their unseated spectator positives and the unlisted mixin/class-hook inventory
+counterexamples were inspected. T13.2–T13.4 and the parent task remain open.
+
 Proposed files `mod/mixin/ServerGamePacketListenerImplMixin`, `ServerPlayerMixin` and
 `server/commander/CommanderGuard` implement architecture §12.6:
 
