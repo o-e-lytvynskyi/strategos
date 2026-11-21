@@ -10,4 +10,4 @@ Save and Quit/reopen automatically reclaims the same UUID seat under a fresh epo
 
 ![Another world with colliding identities](other_world.png)
 
-The 640 x 360 frames are exact cloud comparison candidates. The scene requires a complete received viewport and rendered sections; spectator chunk generation stays disabled. See evidence.json for checks and image hashes. Normal/altered-golden verification follows adoption of these inspected frames. This is not human/native multiplayer or art acceptance.
+The 640 x 360 frames are exact cloud comparison candidates. The scene requires a complete received viewport and rendered sections; spectator chunk generation stays disabled. See evidence.json for checks and image hashes. Repeat [44918953137](https://github.com/o-e-lytvynskyi/strategos/actions/runs/44918953137) matches all three frames byte-for-byte (NMSE 0); all three inverted copies fail the unchanged 1e-5 threshold. This is not human/native multiplayer or art acceptance.

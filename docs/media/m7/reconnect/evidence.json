@@ -40,5 +40,13 @@
       "width": 640,
       "height": 360
     }
-  }
+  },
+  "comparison_run": "https://github.com/o-e-lytvynskyi/strategos/actions/runs/44918953137",
+  "normal_nmse": {
+    "before_reconnect": 0,
+    "after_reconnect": 0,
+    "other_world": 0
+  },
+  "unchanged_threshold": 1e-05,
+  "all_altered_goldens_rejected": true
 }

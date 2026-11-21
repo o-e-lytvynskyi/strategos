@@ -185,7 +185,8 @@ Multiple-match discovery is outside M7. Recorded in the M7 branch pending mainta
   5. The inventory lists both mixins, and the movement and fog GameTests pass under `-Pcompat`
      (L2).
 - **Tests:** L0, L2, L3, L5 · **Depends on:** NET-02, QA-15 · **Size:** M · **Tier:** T1
-- **Status:** proposed
+- **Status:** in_progress
+- **Implementation:** T13.1 starts on 2026-11-22 under the continuing whole-M7 instruction; accepted T6/T9 and M6 vision supply the implementation dependencies. Formal QA-15/native acceptance remains T19/T25; no hardening criterion is complete yet.
 
 #### MATCH-06 · Teams, diplomacy and shared control
 - **Value:** Play with friends against others, or two humans in one faction: one commands from the

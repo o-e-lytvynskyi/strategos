@@ -462,6 +462,19 @@ in_progress for T14's existing ping/team-marker criterion; no criterion is remov
 
 ### 3.5 Reconnect (NET-05)
 
+T10 automated implementation is complete (2026-11-22). Full verify 44918199224
+passes 3,051 cases with no failures/errors/skips, including nine scoped-cache
+contracts, four bounded/private handle-frame contracts and three actual epoch
+scenes. S 44914443023 passes all 23 jobs: 249 slow/soak cases and twenty distinct
+exact-commit AI/replay seeds totalling 896,421 ticks. Paired L6 44914446919 covers
+30 configurations/28 methods, verified report/manifest hashes and unchanged
+15%/allocation gates; maximum time ratio 1.035635. Later adapter changes retain
+the identical production core. Actual Save and Quit/reopen, automatic UUID
+reclaim, exact camera/group restoration and other-world identity collisions
+pass L4 44918194693. Repeat 44918953137 matches all three inspected goldens
+byte-for-byte (NMSE 0); every inverted copy fails the unchanged 1e-5 threshold.
+NET-05 stays in_progress for its real two-client mid-fight L7 acceptance at T25.
+
 T10.3b is split into **T10.3b.1** realm/account-scoped, confirmed-match
 client cache and reconnect entry reset, **T10.3b.2** validation of cached group
 handles against the fresh authoritative view, and **T10.3b.3** cloud client
@@ -698,6 +711,15 @@ positive control. Unsupported protocol versions fail explicitly.
 
 ### 3.7 Commander/body hardening (NET-09)
 
+T13 is split before code: **T13.1** denies the two vanilla spectator powers
+through actual packet/method boundaries with non-match positive controls;
+**T13.2** composes player-body pairing with vanilla eligibility and current
+primary visibility; **T13.3** enforces one-tick finite/level/body bounds with
+first-person and non-match controls; **T13.4** closes strict hook inventory,
+compatibility and applicable S gates. T6/T9 and M6 solo vision are delivered;
+formal human QA-15 remains T19/T25 and is not inferred from the mock kit.
+NET-09 enters in_progress under the continuing whole-M7 instruction.
+
 Proposed files `mod/mixin/ServerGamePacketListenerImplMixin`, `ServerPlayerMixin` and
 `server/commander/CommanderGuard` implement architecture §12.6:
 
@@ -888,7 +910,7 @@ reviewed implementation task between T17 and T18, keeping the acceptance depende
 - [x] T7 (2026-11-18) · Allied damage and victory; verify 44296700394, full-ci 44296705408, L4 44297120970, matched JMH review 44303346246 and complete 24-scene L6 evidence 44314975700.
 - [x] T8 (2026-11-19) · Co-op authority; verify 44614567652, full-ci 44606455194, inspected L4 repeats 44613485447/44616116638, complete matched JMH 44616013773.
 - [x] T9 · Recipient privacy.
-- [ ] T10 · Reconnect and timeout.
+- [x] T10 (2026-11-22) · Reconnect/expiry, live-view epochs and confirmed client camera/groups; verify 44918199224 (3,051 cases), S 44914443023 (249 cases plus all twenty AI seeds), paired L6 44914446919 and zero-diff/altered-control L4 44918953137. NET-05 L7 remains T25.
 - [x] T11 (2026-11-20) · Ingress validation; full verify 44786479783 (2,927 cases), paired core L6 44774432743 with unchanged gates.
 - [x] T12 (2026-11-20) · Seeded fuzzing; full verify 44791164065 (2,966 cases), 100,008 generated probes plus permanent and actual paused-state/journal controls.
 - [ ] T13 · Commander hardening.
