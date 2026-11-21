@@ -6,12 +6,12 @@
 
 ## Now
 
-- **Independent ready work:** T10.2 configured expiry and policy persistence, with T10.1 reconnect admission/lifecycle complete. T5/T6/T9 are delivered and NET-05 remains in_progress in both roadmap views under the continuing whole-M7 instruction. T12 and NET-06 are complete.
+- **Independent ready work:** T10.3 client reconnect/restoration and its cloud gates; T10.1 and T10.2 are delivered. T13 commander hardening is independently ready after T6/T9. NET-05 remains in_progress under the continuing whole-M7 instruction; T12 and NET-06 are complete.
 
 - **Milestone:** M7 Multiplayer; 14 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md), based on planning PR #32; T3 is split before implementation into independent aggregate and production integration.
 - **In progress:** T10.3: full verify 44913415547 on 9b8deabb passes all 3,043 canonical cases, zero failures/errors/skips. Inspected both core origin cases, all three callback cases, all three actual epoch scenes and five scoped-cache cases. Fresh S and paired L6 were dispatched on this verified core tree. T10.3b.2 adds exact-generation private group validation and camera-jump restoration; cloud acceptance and actual client evidence remain pending. Tests/check builds stay cloud-only; optional T24 remains in scope.
 - **Last finished task:** T12/NET-06: full verify 44791164065 on de4dd109 passes 2,966 canonical cases, including the nine seeded codecs (100,008 generated probes), 27 permanent vectors, exact L3 subset and unchanged paused state/full journal with accepted owner/peer controls. T11 is accepted by 44786479783; existing production core L6 remains unchanged.
-- **Next task:** Finish T10.2 configured expiry/save/restart and required S gate, then T10.3 match epoch/client restoration and the remaining ready M7 work. Parent T10/NET-05 remain open; human L7, D-20 and native acceptance/product gates remain unchanged.
+- **Next task:** Complete T10.3 private group validation and actual cloud client restoration, inspect the fresh S/L6 reports, then T13 commander hardening and remaining ready M7 work. Parent T10/NET-05 remain open; existing human/native/product acceptance gates stay unchanged.
 - **Merged from main last:** d39069e7 (2026-11-15, PR #55/M6); merge 213d0564 is zero commits behind that main. Cloud verify 43756194393 passed: 2,623 canonical XML cases, zero failures/errors/skips, 7m 22s. Prior T2b slow/soak/L6 evidence remains historical; new integration will receive its required gates.
 
 The operator requested ownership of the whole M7 and work on what is currently possible on
@@ -993,3 +993,5 @@ Pending independent review.
 - 2026-11-21 · Verify 44914619279 stops at compileTestJava: a type-use nullable annotation on a nested Scope belongs after the enclosing type qualifier. Correct the test helper parameter to ClientResumeSession.@Nullable Scope; retain all seven cache/negative controls and rerun full verify. The 2,035 completed core cases are not full validation of the new adapter change.
 
 - 2026-11-21 · Client scenario 44914977463 stops before opening a world at the same nested type-use syntax in its saved Pose field. Correct to ClientResume.@Nullable Pose and document the compiler pitfall. Strengthen the actual restoration case to a nondefault 60-block camera height so the initial commander-body reset cannot hide a restoration/rebase error. No runtime/visual acceptance inferred from compilation; rerun the bounded actual scene.
+
+- 2026-11-21 · B12 source audit identifies the new group_restore registration missing from engine-surface.json. Add the exact new payload id to the existing inventory; keep registry-to-inventory equality strict. The current 81039568 verify is an obsolete candidate for this inventory gate and cannot be accepted as green; no check is relaxed. T13 source audit only: pinned engine confirms teleport threading at line 1205, spectator camera attack at 1767 and broadcast eligibility at 957; no T13 code or acceptance yet.

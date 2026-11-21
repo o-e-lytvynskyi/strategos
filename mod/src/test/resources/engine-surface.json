@@ -16,6 +16,7 @@
     "strategos:deposit_state",
     "strategos:feedback",
     "strategos:fx",
+    "strategos:group_restore",
     "strategos:lobby_action",
     "strategos:lobby_reply",
     "strategos:lobby_state",
