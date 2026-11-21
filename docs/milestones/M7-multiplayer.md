@@ -457,6 +457,12 @@ in_progress for T14's existing ping/team-marker criterion; no criterion is remov
 
 ### 3.5 Reconnect (NET-05)
 
+Functional checkpoint (2026-11-21): full verify 44837053433 on ec7067f7
+passes 3,022 canonical cases with zero failures/errors/skips. All 23 targeted
+terrain/schema/persistence/expiry/co-op cases were inspected; actual restored
+match journals reproduce their exact final hashes. T10.2b/c still require S
+and fresh paired L6; parent T10 and the client epoch/restoration work remain open.
+
 T10.2c is split before code after the replay field diagnostic in 44834380667:
 restore correctly knows the old slice hash of an unpublished page, but a new
 snapshot/journal drops that reference. The first recapture then wrongly counts
