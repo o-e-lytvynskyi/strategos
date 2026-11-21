@@ -1,0 +1,44 @@
+{
+  "run": "https://github.com/o-e-lytvynskyi/strategos/actions/runs/44918194693",
+  "commit": "1cb19efd",
+  "scope": "Automated cloud L4; human/native acceptance remains separate",
+  "result": {
+    "expectedCamera": {
+      "focusX": -36.0,
+      "focusZ": -28.0,
+      "yaw": 0.0,
+      "height": 60.0
+    },
+    "actualCamera": {
+      "focusX": -36.0,
+      "focusZ": -28.0,
+      "yaw": 0.0,
+      "height": 60.0
+    },
+    "automaticUuidReclaim": true,
+    "freshEpoch": true,
+    "cameraRestored": true,
+    "groupsRestored": true,
+    "realmIsolation": true,
+    "ok": true,
+    "scenario": "m7-reconnect",
+    "platform": "linux-llvmpipe"
+  },
+  "frames": {
+    "before_reconnect": {
+      "sha256": "2470ce0d2626c4abf405d0cd5384814508efdae40bfde4898cf682831b95184d",
+      "width": 640,
+      "height": 360
+    },
+    "after_reconnect": {
+      "sha256": "01dbfe550d21001202b3341155cf0c052acf10e47d833dba6c03d91fac2cf70d",
+      "width": 640,
+      "height": 360
+    },
+    "other_world": {
+      "sha256": "f37c85250729280d8a368e047f70b3676215848f344bf8256d26bfdc59a6d1eb",
+      "width": 640,
+      "height": 360
+    }
+  }
+}
