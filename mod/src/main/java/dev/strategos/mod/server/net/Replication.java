@@ -311,6 +311,7 @@ public final class Replication {
                 if (next.isEmpty()) continue;
                 PlayerAuthority frame = next.orElseThrow();
                 authorities.put(player, new AuthorityMemory(source, frame));
+                if (last == null) net.restoreGroups(online, seat, visibility(rt));
                 if (last == null || !last.frame().sameAuthority(frame)) {
                     net.send(new Audience.Player(online), new PlayerAuthorityPayload(frame));
                 }

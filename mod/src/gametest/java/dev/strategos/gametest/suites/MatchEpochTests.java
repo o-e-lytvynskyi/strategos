@@ -28,6 +28,7 @@ import dev.strategos.mod.server.net.payload.CameraJumpPayload;
 import dev.strategos.mod.server.net.payload.CommandsPayload;
 import dev.strategos.mod.server.net.payload.DebugSubscribePayload;
 import dev.strategos.mod.server.net.payload.FeedbackPayload;
+import dev.strategos.mod.server.net.payload.GroupRestorePayload;
 import dev.strategos.mod.server.net.payload.MatchControlPayload;
 import dev.strategos.mod.server.net.payload.MatchJoinPayload;
 import dev.strategos.mod.server.net.payload.ModeSwitchPayload;
@@ -83,11 +84,35 @@ public final class MatchEpochTests {
                     server.net().joined(rt, kit.viewer(0).player(), new PlayerSlot(0));
                 })
                 .thenWaitUntil(() -> check(
-                        epoch(kit.viewer(0)) > 0 && epoch(kit.viewer(0)) != state.oldEpoch,
+                        epoch(kit.viewer(0)) > 0
+                                && epoch(kit.viewer(0)) != state.oldEpoch
+                                && NetFixtures.payloads(kit.viewer(0), GroupRestorePayload.class).stream()
+                                        .anyMatch(p -> p.frame().epoch() == epoch(kit.viewer(0))),
                         "same-account/transport full join did not deliver a distinct epoch"))
                 .thenExecute(() -> {
                     var viewer = kit.viewer(0);
                     state.freshEpoch = epoch(viewer);
+                    var restored = NetFixtures.payloads(viewer, GroupRestorePayload.class).stream()
+                            .filter(p -> p.frame().epoch() == state.freshEpoch)
+                            .findFirst()
+                            .orElseThrow()
+                            .frame();
+                    check(
+                            restored.matchId() == rt.id().value()
+                                    && restored.handles()
+                                            .equals(List.of(core(rt).queries().unitHandlesOf(new FactionSlot(0))[0])),
+                            "fresh private group validation leaked foreign identities or missed the live own handle");
+                    var peerFrames = NetFixtures.payloads(kit.viewer(1), GroupRestorePayload.class).stream()
+                            .filter(p -> p.frame().epoch() == epoch(kit.viewer(1)))
+                            .toList();
+                    check(
+                            peerFrames.size() == 1
+                                    && peerFrames
+                                            .getFirst()
+                                            .frame()
+                                            .handles()
+                                            .equals(List.of(core(rt).queries().unitHandlesOf(new FactionSlot(1))[0])),
+                            "peer private group validation missing or contains foreign identities");
                     state.hash = core(rt).stateHash();
                     state.commands =
                             NetFixtures.envelopes(rt, Integer.MIN_VALUE).size();

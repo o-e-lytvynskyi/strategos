@@ -174,7 +174,7 @@ public final class StrategosClient {
     }
 
     public static void match(long epoch, MatchJoin join) {
-        RTS.confirmed(join);
+        RTS.confirmed(epoch, join);
         matchEpoch = epoch;
         MODEL.clear();
         state = null;

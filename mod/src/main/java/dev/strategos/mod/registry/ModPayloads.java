@@ -11,6 +11,7 @@ import dev.strategos.mod.server.net.payload.DepositStatePayload;
 import dev.strategos.mod.server.net.payload.FactionStatePayload;
 import dev.strategos.mod.server.net.payload.FeedbackPayload;
 import dev.strategos.mod.server.net.payload.FxPayload;
+import dev.strategos.mod.server.net.payload.GroupRestorePayload;
 import dev.strategos.mod.server.net.payload.LobbyActionPayload;
 import dev.strategos.mod.server.net.payload.LobbyReplyPayload;
 import dev.strategos.mod.server.net.payload.LobbyStatePayload;
@@ -58,6 +59,7 @@ public final class ModPayloads {
         registrar.playToServer(
                 CommandsPayload.TYPE, CommandsPayload.STREAM_CODEC, C2sHandlers.timed(C2sHandlers::commands));
         registrar.playToClient(MatchJoinPayload.TYPE, MatchJoinPayload.STREAM_CODEC, PayloadArrived::post);
+        registrar.playToClient(GroupRestorePayload.TYPE, GroupRestorePayload.STREAM_CODEC, PayloadArrived::post);
         registrar.playToClient(
                 MatchPresentationPayload.TYPE, MatchPresentationPayload.STREAM_CODEC, PayloadArrived::post);
         registrar.playToClient(PlayerAuthorityPayload.TYPE, PlayerAuthorityPayload.STREAM_CODEC, PayloadArrived::post);
@@ -105,6 +107,7 @@ public final class ModPayloads {
         return List.of(
                 CommandsPayload.SPEC,
                 MatchJoinPayload.SPEC,
+                GroupRestorePayload.SPEC,
                 PlayerAuthorityPayload.SPEC,
                 MatchPresentationPayload.SPEC,
                 MatchStatePayload.SPEC,

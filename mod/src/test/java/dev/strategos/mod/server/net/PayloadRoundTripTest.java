@@ -21,6 +21,7 @@ import dev.strategos.core.protocol.NoticeMsg;
 import dev.strategos.core.protocol.PlayerAuthority;
 import dev.strategos.core.protocol.RejectReason;
 import dev.strategos.core.protocol.UnitSet;
+import dev.strategos.core.protocol.WireCodec;
 import dev.strategos.core.protocol.WireWriter;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.Vec2d;
@@ -29,6 +30,7 @@ import dev.strategos.mod.server.net.payload.DebugFeedPayload;
 import dev.strategos.mod.server.net.payload.DebugSubscribePayload;
 import dev.strategos.mod.server.net.payload.FeedbackPayload;
 import dev.strategos.mod.server.net.payload.FxPayload;
+import dev.strategos.mod.server.net.payload.GroupRestorePayload;
 import dev.strategos.mod.server.net.payload.MatchJoinPayload;
 import dev.strategos.mod.server.net.payload.MatchPresentationPayload;
 import dev.strategos.mod.server.net.payload.MatchStatePayload;
@@ -84,6 +86,11 @@ class PayloadRoundTripTest {
                         FactionPresentation.legacy(2),
                         List.of(new MatchPresentation.Participant(new PlayerSlot(0), 0, "host", true)))),
                 MatchPresentationPayload.SPEC.cap());
+        var restoration = new GroupRestorePayload(new GroupRestoreFrame(7, 1, List.of(1048576)));
+        roundTrip(GroupRestorePayload.STREAM_CODEC, restoration, GroupRestorePayload.SPEC.cap());
+        assertThat(GroupRestorePayload.SPEC.audiences()).containsExactly(Audience.Kind.PLAYER);
+        assertThat(NetGateway.size(restoration))
+                .isEqualTo(WireCodec.encode(GroupRestoreFrame.WIRE, restoration.frame()).length);
         assertThat(MatchPresentationPayload.SPEC.cap()).isLessThanOrEqualTo(4096);
         assertThat(MatchJoinPayload.SPEC.cap()).isLessThanOrEqualTo(4096);
     }

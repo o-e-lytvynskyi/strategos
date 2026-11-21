@@ -93,3 +93,15 @@ changing the result value, wire/save/journal bytes or state hash. Unregistered
 submissions have no callback. Keep already admitted orders; let the original
 recipient guard discard stale feedback. Test old accepted versus fresh refused
 commands with the same number through actual paused registered ingress.
+
+Client resume keys must include the server/world and account, and remain unusable
+until a fresh private match is confirmed. Clear the automatic RTS-entry latch
+on disconnect/full join: numeric match identity alone does not mark a new view.
+The periodic summary has slot indices without generations, so it cannot validate
+old control groups after disconnected slot reuse. A bounded player-only
+group_restore frame carries exact controlled, primary-visible handles under the
+fresh epoch; intersect cached groups only once after that confirmation. Keep
+realm keys in memory, never logs or saves. Restored camera poses still need the
+existing authenticated camera-jump path: commander admission resets the server
+body to the centre, and client-only rig restoration would otherwise be rebased
+back to that body on its first player tick.

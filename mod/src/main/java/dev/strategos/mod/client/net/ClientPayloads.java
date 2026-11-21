@@ -14,6 +14,7 @@ import dev.strategos.mod.server.net.payload.DepositStatePayload;
 import dev.strategos.mod.server.net.payload.FactionStatePayload;
 import dev.strategos.mod.server.net.payload.FeedbackPayload;
 import dev.strategos.mod.server.net.payload.FxPayload;
+import dev.strategos.mod.server.net.payload.GroupRestorePayload;
 import dev.strategos.mod.server.net.payload.LobbyReplyPayload;
 import dev.strategos.mod.server.net.payload.LobbyStatePayload;
 import dev.strategos.mod.server.net.payload.MatchEventPayload;
@@ -47,6 +48,7 @@ public final class ClientPayloads {
     public static void onPayload(PayloadArrived event) {
         switch (event.payload()) {
             case MatchJoinPayload p -> StrategosClient.match(p.epoch(), p.join());
+            case GroupRestorePayload p -> StrategosClient.rts().restoreGroups(p.frame());
             case MatchPresentationPayload p -> StrategosClient.presentation(p.presentation());
             case PlayerAuthorityPayload p -> StrategosClient.authority(p.authority());
             case LobbyStatePayload p -> ClientLobby.accept(p.state());

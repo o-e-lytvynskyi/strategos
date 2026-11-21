@@ -425,7 +425,7 @@ public final class RtsMode {
     }
 
     /** A delivered private handshake confirms the cache scope before any restoration. */
-    public void confirmed(MatchJoin join) {
+    public void confirmed(long epoch, MatchJoin join) {
         leave();
         Minecraft mc = Minecraft.getInstance();
         var local = mc.getSingleplayerServer();
@@ -440,8 +440,14 @@ public final class RtsMode {
                 realm == null
                         ? null
                         : new ClientResumeSession.Scope(realm, mc.getUser().getProfileId()),
-                join.matchId());
+                join.matchId(),
+                epoch);
         resetView();
+    }
+
+    /** Accept only the first exact epoch/match validation frame of the fresh view. */
+    public void restoreGroups(dev.strategos.mod.server.net.GroupRestoreFrame frame) {
+        resume.accept(frame);
     }
 
     /** Save once while the old confirmed identity is still available, then revoke restoration until confirmation. */
@@ -472,7 +478,7 @@ public final class RtsMode {
     public void enter() {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
-        if (player == null || rig != null) {
+        if (player == null || rig != null || (StrategosClient.match() != null && !resume.ready())) {
             return;
         }
         if (!player.isSpectator()) {
@@ -491,6 +497,11 @@ public final class RtsMode {
             rig = new CameraRig(
                     limits(player), p.focusX(), p.focusZ(), ground(p.focusX(), p.focusZ(), player.getY()), p.yaw());
             rig.zoomTo(p.height());
+            CameraPose eye = rig.pose();
+            if (ClientPayloads.toServer(new CameraJumpPayload(
+                    new CameraJump(eye.x(), eye.y(), eye.z(), (float) eye.yaw(), (float) eye.pitch())))) {
+                pendingJump = new double[] {rig.focusX(), rig.focusZ()};
+            }
         }
         if (join != null && join.matchId() != groupsMatch) {
             groups.restore(saved == null ? java.util.List.of() : saved.groups());
@@ -565,7 +576,7 @@ public final class RtsMode {
                 }
             }
             MatchJoin join = StrategosClient.match();
-            if (join != null && join.matchId() != autoEntered && mc.player.isSpectator()) {
+            if (join != null && resume.ready() && join.matchId() != autoEntered && mc.player.isSpectator()) {
                 autoEntered = join.matchId(); // a seat makes a commander: RTS mode, once per match joined
                 enter();
             }

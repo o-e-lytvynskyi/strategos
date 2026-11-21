@@ -32,6 +32,7 @@ import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.core.sim.MatchRules;
+import dev.strategos.core.sim.replicate.Visibility;
 import dev.strategos.core.sim.vision.VisionGrid;
 import dev.strategos.mod.entity.UnitEntity;
 import dev.strategos.mod.registry.ModPayloads;
@@ -42,6 +43,7 @@ import dev.strategos.mod.server.net.payload.CommandsPayload;
 import dev.strategos.mod.server.net.payload.DebugFeedPayload;
 import dev.strategos.mod.server.net.payload.FeedbackPayload;
 import dev.strategos.mod.server.net.payload.FxPayload;
+import dev.strategos.mod.server.net.payload.GroupRestorePayload;
 import dev.strategos.mod.server.net.payload.MatchJoinPayload;
 import dev.strategos.mod.server.net.payload.MatchPresentationPayload;
 import dev.strategos.mod.server.net.payload.MatchStatePayload;
@@ -224,6 +226,26 @@ public final class NetGateway {
         send(new Audience.Player(player), new MatchPresentationPayload(presentation(rt)));
         lastState.remove(rt.id().value());
         lastLooks.remove(rt.id().value());
+    }
+
+    /** Fresh private view validation; no client-supplied cache can create command authority. */
+    public void restoreGroups(ServerPlayer player, MatchRegistry.Seat seat, Visibility visibility) {
+        WireView view = wireViews.get(player.getUUID());
+        MatchCore core = seat.match().core();
+        MatchRegistry registry = matches.get();
+        MatchRegistry.Seat current = registry.seatOf(player.getUUID());
+        if (view == null
+                || core == null
+                || current == null
+                || current.match() != seat.match()
+                || !current.slot().equals(seat.slot())
+                || !view.origin().current(player, registry)) return;
+        var authority = seat.authority();
+        if (authority.isEmpty()) return;
+        send(
+                new Audience.Player(player),
+                new GroupRestorePayload(
+                        GroupRestoreFrame.capture(view.epoch(), authority.orElseThrow(), core.queries(), visibility)));
     }
 
     /** Adapter changes keep ordering even while the simulation is paused. */
@@ -582,6 +604,7 @@ public final class NetGateway {
     static int size(CustomPacketPayload payload) {
         return switch (payload) {
             case MatchPresentationPayload p -> WireCodec.encode(MatchPresentation.WIRE, p.presentation()).length;
+            case GroupRestorePayload p -> WireCodec.encode(GroupRestoreFrame.WIRE, p.frame()).length;
             case MatchJoinPayload p -> Long.BYTES + WireCodec.encode(MatchJoin.WIRE, p.join()).length;
             case PlayerAuthorityPayload p -> WireCodec.encode(PlayerAuthority.WIRE, p.authority()).length;
             case MatchStatePayload p -> WireCodec.encode(MatchStateMsg.WIRE, p.state()).length;
