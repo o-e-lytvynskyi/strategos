@@ -10,6 +10,11 @@ on:
     paths-ignore: ['docs/**', '**/*.md', '.claude/**', 'tools/**']
   workflow_dispatch:
     inputs:
+      compatibility:
+        description: Optional compatibility profile; client mods are exercised by the separate scenario workflow
+        type: choice
+        options: [none, client, server]
+        default: none
       central_alternate:
         description: Use the official repo1 Maven Central alias after pinned formatter checksum validation
         type: boolean
@@ -142,10 +147,17 @@ jobs:
           PINNED_FORMATTER: ${{ github.event_name == 'workflow_dispatch' && inputs.formatter_cache_run != '' }}
           STRATEGOS_FORMATTER_REPOSITORY: ${{ github.workspace }}/build/cloud-formatter-repository
           CENTRAL_ALTERNATE: ${{ github.event_name == 'workflow_dispatch' && inputs.central_alternate }}
+          COMPATIBILITY: ${{ github.event_name == 'workflow_dispatch' && inputs.compatibility || 'none' }}
         run: |
           options=()
           if [ "$PINNED_FORMATTER" = true ]; then options+=(--init-script tools/pinned-formatter.init.gradle); fi
           if [ "$CENTRAL_ALTERNATE" = true ]; then options+=(--init-script tools/maven-central-alternate.init.gradle); fi
+          case "$COMPATIBILITY" in
+            none) ;;
+            client) options+=(-Pcompat) ;;
+            server) options+=(-Pcompat.server) ;;
+            *) echo 'Unknown compatibility profile' >&2; exit 1 ;;
+          esac
           ./gradlew --console=plain --max-workers=2 "${options[@]}" :core:test :mod:test verify
       - name: Existing 15 percent and allocation gates on preserved measurements
         if: github.event_name == 'workflow_dispatch' && inputs.paired_reports_run != ''

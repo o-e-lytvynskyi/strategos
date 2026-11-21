@@ -7,6 +7,10 @@ name: scenario
 on:
   workflow_dispatch:
     inputs:
+      compatibility:
+        description: Load the pinned client compatibility mods in the actual client
+        type: boolean
+        default: false
       scenario:
         description: 'smoke, world_switch, s4_units, s10_steps, rts_basics, rts_select, rts_goldens, overlay_goldens or stall'
         required: true
@@ -42,11 +46,14 @@ jobs:
         env:
           SCENARIO: ${{ inputs.scenario }}
           GOLDENS: ${{ inputs.goldens }}
+          COMPATIBILITY: ${{ inputs.compatibility }}
         run: |
           timeout=180
           if [ "$SCENARIO" = m7-reconnect ]; then timeout=360; fi
+          options=()
+          if [ "$COMPATIBILITY" = true ]; then options+=(-Pcompat); fi
           xvfb-run -a -s "-screen 0 1920x1080x24 +extension GLX +render -noreset" \
-            ./gradlew --console=plain :mod:runScenario -Pscenario="$SCENARIO" \
+            ./gradlew --console=plain "${options[@]}" :mod:runScenario -Pscenario="$SCENARIO" \
             -Pscenario.timeoutSeconds="$timeout" -Pgoldens.root="$PWD/$GOLDENS"
       - name: Preserve normal comparison evidence
         if: always()
