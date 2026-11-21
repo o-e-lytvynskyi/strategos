@@ -114,3 +114,11 @@ authenticated camera jump, place the local body with the same rig-follow
 operation used on every RTS tick; do not leave a stale pending marker for a rig
 already restored locally. Keep normal server correction active and verify with
 a real Save and Quit/reopen, not a replayed DTO.
+
+CameraRig.zoomTo changes height/heightTarget, but its current/last published
+poses are still from the prior tick. On bootstrap, reading pose immediately
+after zoomTo sends a default-height eye while storing the saved height; the
+server echo then shifts focus by the height difference projected through the
+pitch. Materialize the restored rig with jumpTo after zoomTo, before sending
+the jump or positioning the local body. A pure test must inspect the very
+first pose, not only the height field or a later settled tick.

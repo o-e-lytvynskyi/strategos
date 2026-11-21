@@ -1,5 +1,7 @@
 package dev.strategos.mod.client.rts;
 
+import dev.strategos.core.client.camera.CameraLimits;
+import dev.strategos.core.client.camera.CameraRig;
 import dev.strategos.core.client.model.ClientResume;
 import dev.strategos.mod.server.net.GroupRestoreFrame;
 import java.util.List;
@@ -9,6 +11,14 @@ import org.jspecify.annotations.Nullable;
 
 /** Session-only camera/groups cache, available only after an authenticated match confirmation. */
 final class ClientResumeSession {
+    /** Bootstrap every published/interpolated pose at the saved height before a jump or player tick reads it. */
+    static CameraRig camera(ClientResume.Pose saved, CameraLimits limits, double ground) {
+        var rig = new CameraRig(limits, saved.focusX(), saved.focusZ(), ground, saved.yaw());
+        rig.zoomTo(saved.height());
+        rig.jumpTo(rig.focusX(), rig.focusZ(), ground);
+        return rig;
+    }
+
     record Scope(String realm, UUID account) {}
 
     private @Nullable Scope scope;

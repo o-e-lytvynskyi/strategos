@@ -2,6 +2,7 @@ package dev.strategos.mod.client.rts;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import dev.strategos.core.client.camera.CameraLimits;
 import dev.strategos.core.client.model.ClientResume;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.mod.server.net.GroupRestoreFrame;
@@ -11,6 +12,25 @@ import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 class ClientResumeSessionTest {
+    @Test
+    void restoredCameraPublishesTheSavedHeightOnItsVeryFirstPose() {
+        var saved = new ClientResume.Pose(12, 18, 40, 60);
+        var rig = ClientResumeSession.camera(saved, new CameraLimits(0, 0, 96, 96, 0), 12);
+        assertThat(rig.height()).isEqualTo(60);
+        assertThat(rig.pose().y()).isEqualTo(72);
+        assertThat(rig.pose().yaw()).isEqualTo(40);
+        assertThat(rig.pose()).isEqualTo(rig.eyeFor(12, 18, 12));
+    }
+
+    @Test
+    void restoredCameraStillClampsFocusToTheConfirmedMatch() {
+        var rig = ClientResumeSession.camera(
+                new ClientResume.Pose(1000, -1000, 0, 60), new CameraLimits(0, 0, 64, 64, 0), 12);
+        assertThat(rig.focusX()).isEqualTo(64);
+        assertThat(rig.focusZ()).isZero();
+        assertThat(rig.pose()).isEqualTo(rig.eyeFor(64, 0, 12));
+    }
+
     @Test
     void groupsCreatedDuringTheConfirmedViewSurviveTheFirstPersonRoundTrip() {
         var session = new ClientResumeSession();

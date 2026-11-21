@@ -494,9 +494,7 @@ public final class RtsMode {
         ClientResume.Saved saved = join == null ? null : resume.of(join.matchId());
         if (saved != null) { // back in a match left before: the camera where it was, the groups as they were
             ClientResume.Pose p = saved.pose();
-            rig = new CameraRig(
-                    limits(player), p.focusX(), p.focusZ(), ground(p.focusX(), p.focusZ(), player.getY()), p.yaw());
-            rig.zoomTo(p.height());
+            rig = ClientResumeSession.camera(p, limits(player), ground(p.focusX(), p.focusZ(), player.getY()));
             CameraPose eye = rig.pose();
             if (ClientPayloads.toServer(new CameraJumpPayload(
                     new CameraJump(eye.x(), eye.y(), eye.z(), (float) eye.yaw(), (float) eye.pitch())))) {
