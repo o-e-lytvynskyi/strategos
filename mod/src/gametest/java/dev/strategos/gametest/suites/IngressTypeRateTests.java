@@ -106,14 +106,18 @@ public final class IngressTypeRateTests {
         var context = IngressContext.capture(kit.viewer(0).player());
         int own = core(kit.match()).queries().unitHandlesOf(new FactionSlot(0))[0];
         var query = C2sHandlers.<UiQueryPayload>timed(C2sHandlers::uiQuery);
-        for (int i = 0; i < 4; i++) query.handle(new UiQueryPayload(new UiQuery(List.of(own))), context);
-        query.handle(new UiQueryPayload(new UiQuery(List.of())), context); // must not clear the accepted subscription
+        for (int i = 0; i < 4; i++)
+            query.handle(new UiQueryPayload(kit.viewer(0).epoch(), new UiQuery(List.of(own))), context);
+        query.handle(
+                new UiQueryPayload(kit.viewer(0).epoch(), new UiQuery(List.of())),
+                context); // must not clear the accepted subscription
         var debug = C2sHandlers.<DebugSubscribePayload>timed(C2sHandlers::debugSubscribe);
-        var units =
-                new DebugSubscribePayload(new DebugSubscribe(DebugLayer.UNITS.bit(), DebugSubscribe.DEFAULT_RADIUS));
+        var units = new DebugSubscribePayload(
+                kit.viewer(0).epoch(), new DebugSubscribe(DebugLayer.UNITS.bit(), DebugSubscribe.DEFAULT_RADIUS));
         debug.handle(units, context);
         debug.handle(units, context);
-        debug.handle(new DebugSubscribePayload(DebugSubscribe.NONE), context); // must not unsubscribe
+        debug.handle(
+                new DebugSubscribePayload(kit.viewer(0).epoch(), DebugSubscribe.NONE), context); // must not unsubscribe
     }
 
     private static boolean positive(MultiplayerHarness kit, int sequence) {

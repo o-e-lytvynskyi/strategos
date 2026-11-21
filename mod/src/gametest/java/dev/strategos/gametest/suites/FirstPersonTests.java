@@ -332,6 +332,9 @@ public final class FirstPersonTests {
         MockViewer viewer = MockViewer.join(h.getLevel(), name, at.x, at.y, at.z, 4);
         StrategosServer.get().matches().join(rt, viewer.player().getUUID(), new PlayerSlot(0));
         StrategosServer.get().commanders().enter(viewer.player(), rt);
+        StrategosServer.get().net().joined(rt, viewer.player(), new PlayerSlot(0));
+        StrategosServer.get().net().flush();
+        viewer.poll();
         return viewer;
     }
 

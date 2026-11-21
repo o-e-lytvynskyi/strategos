@@ -197,6 +197,11 @@ public final class MockViewer implements AutoCloseable {
         return !channel.isOpen();
     }
 
+    /** The epoch learned from the last actually delivered private MatchJoin, zero before any. */
+    public long epoch() {
+        return epoch;
+    }
+
     public ServerPlayer player() {
         return player;
     }

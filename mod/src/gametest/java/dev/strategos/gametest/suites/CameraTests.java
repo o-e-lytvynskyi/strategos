@@ -57,6 +57,10 @@ public final class CameraTests {
         double x = s.origin().getX() + 20.5;
         double z = s.origin().getZ() + 12.5;
         long refused = commanders.refused();
+        long unseatedViolations = StrategosServer.get()
+                .net()
+                .counters()
+                .violations(plain.player().getGameProfile().getName());
         h.startSequence()
                 .thenExecute(() -> {
                     accept(viewer);
@@ -74,7 +78,16 @@ public final class CameraTests {
                     }
                 })
                 .thenExecuteAfter(1, () -> {
-                    check(commanders.refused() - refused == 2, "refused " + (commanders.refused() - refused));
+                    check(commanders.refused() - refused == 1, "refused " + (commanders.refused() - refused));
+                    check(
+                            StrategosServer.get()
+                                            .net()
+                                            .counters()
+                                            .violations(plain.player()
+                                                    .getGameProfile()
+                                                    .getName())
+                                    == unseatedViolations + 1,
+                            "unseated intent bypassed epoch admission");
                     check(
                             plain.player().getY() > 90,
                             "the unseated player moved to " + plain.player().position());
@@ -399,6 +412,9 @@ public final class CameraTests {
         MockViewer viewer = MockViewer.join(h.getLevel(), name, at.x, at.y, at.z, 4);
         StrategosServer.get().matches().join(rt, viewer.player().getUUID(), new PlayerSlot(0));
         StrategosServer.get().commanders().enter(viewer.player(), rt);
+        StrategosServer.get().net().joined(rt, viewer.player(), new PlayerSlot(0));
+        StrategosServer.get().net().flush();
+        viewer.poll();
         return viewer;
     }
 

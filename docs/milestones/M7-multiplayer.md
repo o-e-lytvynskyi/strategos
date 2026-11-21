@@ -77,7 +77,7 @@ Final standard cloud L6 run 40972197958 passed in 1h 1m 55s on 33ecb12: all 22 r
 | D-05 | T10.2 defeat must also resolve an expired human faction under `Victory.NONE`, while released human/admin `Resign` remains unsupported there | Implement a trusted, journaled faction-expiry input with a new append-only tag; preserve every existing tag and command meaning. Persist defeat in the existing core outcome without automatically ending a sandbox. The ordinary victory-enabled policy continues to journal `Resign`; AI takeover carries the shipped battle script in `SetAi`. All branches require pause/once/restore/replay evidence; pending implementation/acceptance |
 | D-06 | Current computer control is not proof that an earlier timeout action has never run: an administrator can later disable that controller | Persist completed expiry actions in adapter blob 3, independent of current core controller/outcome. Keep core snapshot 7 and protocol 6; migrate valid blob 1/2 without inventing history or renewing saved grace, preserve all blob-2 launch/session guards, and require strict canonical metadata in blob 3. Record completion only after a canonical effect is present at a completed core tick. Validate the actual disable/save/restore counterexample and malformed metadata; pending implementation/acceptance |
 | D-07 | Actual restored-match journals lose known but unpublished terrain references: live lastPageChange stays 1, replay advances it to 4 and may also re-arm a unit path | Split T10.2c before code: core schema 8 distinguishes pending terrain references from published pages, migrates schema 7 published references explicitly, and preserves pending geometry absence through snapshots and journal starts/segments. Published pages still require their actual slice; only an explicitly pending reference is geometry-free. Keep existing command/input meanings and exact final-hash gates, test the no-expiry control and both unchanged/changed first captures, then repeat S/J. T10.2b remains pending this prerequisite |
-| D-08 | A fresh recipient window may reuse a client sequence while an older admitted command is still paused; a single callback keyed only by issuer/sequence can overwrite its origin | Add an actual paused-inbox counterexample: old own-unit command and fresh foreign-unit command share a sequence but require different outcomes and recipient origins. Route each result to its original submission in canonical/FIFO order, including no-reply placeholders; keep the old admitted order and drop only its stale private response. No core command/hash change is needed; pending counterexample and repair |
+| D-08 | A fresh recipient window may reuse a client sequence while an older admitted command is still paused; a single callback keyed only by issuer/sequence can overwrite its origin | Add an actual paused-inbox counterexample: old own-unit command and fresh foreign-unit command share a sequence but require different outcomes and recipient origins. Route each result by the exact in-memory CommandEnvelope identity, retaining it only as transient result metadata. FIFO by issuer/sequence is insufficient: core-generated AI and restored/no-reply commands can reuse those values too. Keep the old admitted order and drop only its stale private response. Core result values, commands, journal/snapshot formats and hashes stay unchanged; the changed core allocation path requires fresh S/L6 evidence. Pending counterexample and repair |
 
 ## 2. Baseline and dependencies
 
@@ -477,8 +477,12 @@ adapter work is independent of the running immutable T10.2 S/L6 gates.
 Functional checkpoint (2026-11-21): full verify 44837053433 on ec7067f7
 passes 3,022 canonical cases with zero failures/errors/skips. All 23 targeted
 terrain/schema/persistence/expiry/co-op cases were inspected; actual restored
-match journals reproduce their exact final hashes. T10.2b/c still require S
-and fresh paired L6; parent T10 and the client epoch/restoration work remain open.
+match journals reproduce their exact final hashes. T10.2b/c S is accepted by
+44906327499 (all 24 jobs, 249 slow/soak XML cases, twenty exact-commit AI/replay
+seeds totalling 896,421 ticks). Paired L6 44907123792 covers all 30 configurations
+and 28 methods with verified report hashes and unchanged allocation/15% gates;
+maximum time ratio 1.05911. These candidates share the ec7067f7 core tree.
+Parent T10 and the client epoch/restoration work remain open.
 
 T10.2c is split before code after the replay field diagnostic in 44834380667:
 restore correctly knows the old slice hash of an unpublished page, but a new
@@ -488,14 +492,14 @@ schema 8, including paused re-save and journal segment boundaries, with strict
 published-slice validation and exact hash continuation. This is a prerequisite
 for T10.2b replay acceptance; no policy or parent completion is inferred.
 
-T10.2b functional verification is pending. Blob 3 adds a strict canonical
+T10.2b functional verification is accepted by 44837053433. Blob 3 adds a strict canonical
 completed-expiry envelope so an administrator disabling takeover cannot re-arm
 the timeout after restore. Valid blob 1/2 retain their migration and session
 guards; network protocol 6 is unchanged. Core schema 8 pending-terrain
 preservation is tracked separately in D-07; see D-05/D-06 for policy semantics.
 The six trusted-expiry core/codec cases pass in 44831846476, whose GameTest
 server crash is not L3 acceptance; guarded diagnostics run on 7dc964b8.
-Fresh S and paired L6 remain required for the changed core ingress/codec tree.
+S and paired L6 for this ingress/codec tree are accepted above. Later core changes require fresh gates.
 
 T10.2a configuration passes full verify 44825483804 on ddccefe8
 (2,982 canonical cases, zero issues). Nine typed duration/policy/default/schema

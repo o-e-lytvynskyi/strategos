@@ -61,7 +61,7 @@ public final class MultiplayerKitTests {
                 .thenExecute(() -> {
                     String name = kit.viewer(0).player().getGameProfile().getName();
                     violations[0] = counters.violations(name);
-                    kit.sendCommandBytes(0, new byte[dev.strategos.core.protocol.Limits.BATCH_BYTES + 1]);
+                    kit.sendCommandBytes(0, new byte[dev.strategos.core.protocol.Limits.BATCH_BYTES + Long.BYTES + 1]);
                     kit.sendCommandBytes(0, new byte[] {0, 1, (byte) 255});
                     kit.sendCommands(0, move(kit, 2));
                 })
@@ -69,7 +69,8 @@ public final class MultiplayerKitTests {
                 .thenExecute(() -> kit.sendPacket(
                         0,
                         new net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket(
-                                dev.strategos.mod.server.net.payload.CommandsPayload.of(move(kit, 3)))))
+                                dev.strategos.mod.server.net.payload.CommandsPayload.of(
+                                        move(kit, 3), kit.viewer(0).epoch()))))
                 .thenWaitUntil(() -> check(accepted(kit, 3), "generic packet route bypassed or missed real ingress"))
                 .thenExecute(() -> {
                     var commands = NetFixtures.envelopes(kit.match(), 0);

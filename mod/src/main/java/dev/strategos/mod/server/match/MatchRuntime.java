@@ -35,10 +35,8 @@ import dev.strategos.mod.server.tick.InputCollector;
 import dev.strategos.mod.server.tick.OutputAppliers;
 import dev.strategos.mod.server.world.PageJobs;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -76,7 +74,7 @@ public final class MatchRuntime {
     private final Set<FactionSlot> expiryIssued = new HashSet<>();
     private final List<FactionExpiry> expiryInputs = new ArrayList<>();
     private final List<ExternalDamage> damage = new ArrayList<>();
-    private final Map<ReplyKey, Consumer<CommandResult>> replies = new HashMap<>();
+    private final CommandReplies replies = new CommandReplies();
     private final List<Consumer<TickOutputs>> listeners = new ArrayList<>();
     private MatchLifecycle lifecycle = MatchLifecycle.CREATED;
     private @Nullable String faultMessage;
@@ -286,20 +284,22 @@ public final class MatchRuntime {
         if (lifecycle != MatchLifecycle.RUNNING && lifecycle != MatchLifecycle.PAUSED) {
             throw new MatchRefusedException("match " + id + " is " + lifecycle + " and takes no commands");
         }
-        inbox.add(new CommandEnvelope(issuer, clientSeq, requireCore().queries().tick(), command));
-        replies.put(new ReplyKey(issuer.value(), clientSeq), reply);
+        CommandEnvelope submission =
+                new CommandEnvelope(issuer, clientSeq, requireCore().queries().tick(), command);
+        inbox.add(submission);
+        replies.register(submission, reply);
     }
 
     /** As {@link #submit(PlayerSlot, Command)}, and {@code reply} gets the command's result after its step. */
     public int submit(PlayerSlot issuer, Command command, Consumer<CommandResult> reply) {
         int seq = submit(issuer, command);
-        replies.put(new ReplyKey(issuer.value(), seq), reply);
+        replies.register(inbox.getLast(), reply);
         return seq;
     }
 
     /** The reply registered for a result, removed; null when the command had none. */
     public @Nullable Consumer<CommandResult> takeReply(CommandResult result) {
-        return replies.remove(new ReplyKey(result.issuer().value(), result.clientSeq()));
+        return replies.take(result);
     }
 
     /** Tests and debug tools: every step's outputs, after they were applied. */
@@ -481,6 +481,4 @@ public final class MatchRuntime {
         }
         return c;
     }
-
-    private record ReplyKey(int issuer, int clientSeq) {}
 }

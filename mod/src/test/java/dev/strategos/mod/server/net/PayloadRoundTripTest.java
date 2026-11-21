@@ -124,7 +124,8 @@ class PayloadRoundTripTest {
 
     @Test
     void anUnreadableBatchArrivesAsARefusal() {
-        byte[] thirtyThree = new WireWriter().writeVarInt(0).writeVarInt(33).toByteArray();
+        byte[] thirtyThree =
+                new WireWriter().writeLong(1).writeVarInt(0).writeVarInt(33).toByteArray();
         CommandsPayload malformed = read(thirtyThree);
         assertThat(malformed.ok()).isFalse();
         assertThat(malformed.problem()).isNotEmpty();

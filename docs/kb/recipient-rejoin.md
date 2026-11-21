@@ -83,3 +83,13 @@ can disable it after takeover, and a later restore must not re-arm expiry.
 Record completion after the canonical core effect, never merely on queueing.
 Released Resign rejects Victory.NONE:
 do not reinterpret old commands to implement sandbox timeout policy.
+
+A fresh view can reuse an issuer/sequence while an older admitted command is
+still paused. A callback map keyed only by those numbers overwrites the old
+origin; a FIFO under that key also risks consumption by core-generated AI or
+restored/no-reply commands. Bind transient callbacks to the exact submitted
+CommandEnvelope object and retain that identity in its core result, without
+changing the result value, wire/save/journal bytes or state hash. Unregistered
+submissions have no callback. Keep already admitted orders; let the original
+recipient guard discard stale feedback. Test old accepted versus fresh refused
+commands with the same number through actual paused registered ingress.

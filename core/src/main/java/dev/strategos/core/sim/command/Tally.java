@@ -32,14 +32,12 @@ final class Tally {
         CommandOutcome outcome = accepted > 0 && rejected == 0
                 ? CommandOutcome.ACCEPTED
                 : accepted > 0 ? CommandOutcome.PARTIAL : CommandOutcome.REJECTED;
-        return new CommandResult(
-                envelope.issuer(), envelope.clientSeq(), kind.id(), outcome, accepted, rejected, firstReason);
+        return new CommandResult(envelope, kind.id(), outcome, accepted, rejected, firstReason, List.of());
     }
 
     /** A command that applied to all its {@code units}. */
     static CommandResult acceptAll(CommandEnvelope envelope, CommandKind<?> kind, int units) {
-        return new CommandResult(
-                envelope.issuer(), envelope.clientSeq(), kind.id(), CommandOutcome.ACCEPTED, units, 0, null);
+        return new CommandResult(envelope, kind.id(), CommandOutcome.ACCEPTED, units, 0, null, List.of());
     }
 
     /** A resource refusal: exact amounts only for primary controllers or trusted ADMIN, never a granted ally. */
@@ -58,19 +56,11 @@ final class Tally {
             lack.add(m);
         }
         return new CommandResult(
-                envelope.issuer(),
-                envelope.clientSeq(),
-                kind.id(),
-                CommandOutcome.REJECTED,
-                0,
-                units,
-                RejectReason.NOT_ENOUGH_RESOURCES,
-                lack);
+                envelope, kind.id(), CommandOutcome.REJECTED, 0, units, RejectReason.NOT_ENOUGH_RESOURCES, lack);
     }
 
     /** A whole-command refusal: no unit accepted, {@code units} refused. */
     static CommandResult rejectAll(CommandEnvelope envelope, CommandKind<?> kind, int units, RejectReason reason) {
-        return new CommandResult(
-                envelope.issuer(), envelope.clientSeq(), kind.id(), CommandOutcome.REJECTED, 0, units, reason);
+        return new CommandResult(envelope, kind.id(), CommandOutcome.REJECTED, 0, units, reason, List.of());
     }
 }

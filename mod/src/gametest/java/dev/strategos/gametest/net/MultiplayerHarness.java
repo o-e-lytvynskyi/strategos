@@ -162,7 +162,7 @@ public final class MultiplayerHarness implements AutoCloseable {
     /** At most one byte over the protocol limit, enough to exercise oversized refusal without an unbounded probe. */
     public void sendCommandBytes(int player, byte[] bytes) {
         requireOpen();
-        if (bytes.length > Limits.BATCH_BYTES + 1)
+        if (bytes.length > Limits.BATCH_BYTES + Long.BYTES + 1)
             throw new IllegalArgumentException("hostile probe exceeds harness bound");
         RegistryFriendlyByteBuf buffer = new RegistryFriendlyByteBuf(
                 Unpooled.wrappedBuffer(bytes), helper.getLevel().registryAccess(), ConnectionType.NEOFORGE);
