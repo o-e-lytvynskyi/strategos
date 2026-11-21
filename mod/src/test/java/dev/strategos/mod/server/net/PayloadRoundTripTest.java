@@ -131,7 +131,7 @@ class PayloadRoundTripTest {
 
         CommandsPayload oversized = read(new byte[Limits.BATCH_BYTES + 100]);
         assertThat(oversized.ok()).isFalse();
-        assertThat(oversized.problem()).contains("above the batch's 4096");
+        assertThat(oversized.problem()).contains("above the framed batch's 4104");
     }
 
     private static CommandsPayload read(byte[] bytes) {
