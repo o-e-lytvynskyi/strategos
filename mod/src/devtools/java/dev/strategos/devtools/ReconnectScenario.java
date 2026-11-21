@@ -132,6 +132,18 @@ final class ReconnectScenario implements Scenario {
                 return fail(ctx, "reopened connection did not deliver a fresh confirmed match epoch");
             if (!rts.groups().members(1).equals(List.of(unit)))
                 return fail(ctx, "actual reconnect lost the valid client-owned control group");
+            var expected = new com.google.gson.JsonObject();
+            expected.addProperty("focusX", pose.focusX());
+            expected.addProperty("focusZ", pose.focusZ());
+            expected.addProperty("yaw", pose.yaw());
+            expected.addProperty("height", pose.height());
+            var actual = new com.google.gson.JsonObject();
+            actual.addProperty("focusX", rig.focusX());
+            actual.addProperty("focusZ", rig.focusZ());
+            actual.addProperty("yaw", rig.yaw());
+            actual.addProperty("height", rig.height());
+            ctx.result.add("expectedCamera", expected);
+            ctx.result.add("actualCamera", actual);
             if (Math.abs(rig.focusX() - pose.focusX()) > 0.5
                     || Math.abs(rig.focusZ() - pose.focusZ()) > 0.5
                     || Math.abs(rig.height() - pose.height()) > 0.5

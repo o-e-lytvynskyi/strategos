@@ -105,3 +105,12 @@ realm keys in memory, never logs or saves. Restored camera poses still need the
 existing authenticated camera-jump path: commander admission resets the server
 body to the centre, and client-only rig restoration would otherwise be rebased
 back to that body on its first player tick.
+
+The actual 60-block-height reopen scenario also exposes a first-player-tick
+ordering trap: assigning the saved rig and a pending far jump leaves the local
+body at the admission centre. That tick consumes the pending marker before the
+server echo, and the later echo rebases the camera. After requesting the normal
+authenticated camera jump, place the local body with the same rig-follow
+operation used on every RTS tick; do not leave a stale pending marker for a rig
+already restored locally. Keep normal server correction active and verify with
+a real Save and Quit/reopen, not a replayed DTO.

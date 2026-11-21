@@ -500,7 +500,8 @@ public final class RtsMode {
             CameraPose eye = rig.pose();
             if (ClientPayloads.toServer(new CameraJumpPayload(
                     new CameraJump(eye.x(), eye.y(), eye.z(), (float) eye.yaw(), (float) eye.pitch())))) {
-                pendingJump = new double[] {rig.focusX(), rig.focusZ()};
+                followCamera(player, eye);
+                pendingJump = null;
             }
         }
         if (join != null && join.matchId() != groupsMatch) {
@@ -681,7 +682,11 @@ public final class RtsMode {
                         options.rotateSpeed.get()),
                 (x, z) -> ground(x, z, r.pose().y()));
         zoom = 0;
-        CameraPose eye = r.pose();
+        followCamera(player, r.pose());
+    }
+
+    /** Keep the local body at its rig before the next tick can mistake restoration for an external teleport. */
+    private static void followCamera(LocalPlayer player, CameraPose eye) {
         player.setPos(eye.x(), eye.y() - player.getEyeHeight(), eye.z());
         player.setYRot((float) eye.yaw());
         player.setXRot((float) eye.pitch());

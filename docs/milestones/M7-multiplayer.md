@@ -81,6 +81,8 @@ Final standard cloud L6 run 40972197958 passed in 1h 1m 55s on 33ecb12: all 22 r
 
 | D-09 | UnitSummary identifies slots without generations, so it cannot validate cached group handles after disconnected unit-slot reuse | Add a bounded private group_restore frame after each full join: the current epoch/match and exact currently controlled, primary-visible unit handles, at most the existing 2,048-unit view bound. Gate group restoration on that fresh confirmation, intersect cached handles exactly, and keep pose restoration client-owned and clamped. Observers receive an empty list; no hidden allied identities are exposed. Preserve periodic summary layout/cadence and all existing body caps; the new cold-path frame has its own exact 8,207-byte maximum and byte accounting. Validate codec bounds, epoch/match rejection, reused generations and actual private delivery before acceptance |
 
+| D-10 | Actual saved-world reopen reclaims the UUID and group but loses the cached 60-block camera pose: the first local player tick sees the reset server body and consumes the pending jump before its echo | Keep the authenticated camera-jump request and normal server limits, and immediately place the local player at the restored rig using the same body-follow operation as every RTS player tick. No pending far-jump marker is needed for an already restored local rig; normal server corrections remain active. Actual counterexample 44915473101; repeat the same real reopen/realm isolation scenario without loosening pose tolerances |
+
 ## 2. Baseline and dependencies
 
 ### 2.1 Inspected baseline
