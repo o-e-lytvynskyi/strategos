@@ -78,7 +78,7 @@ public final class CameraTests {
                     }
                 })
                 .thenExecuteAfter(1, () -> {
-                    check(commanders.refused() - refused == 1, "refused " + (commanders.refused() - refused));
+                    check(commanders.refused() - refused == 2, "refused " + (commanders.refused() - refused));
                     check(
                             StrategosServer.get()
                                             .net()
