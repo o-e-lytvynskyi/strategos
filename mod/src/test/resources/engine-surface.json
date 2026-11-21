@@ -5,6 +5,16 @@
   "savedData": ["strategos_registry", "strategos_match_<id>"],
   "commands": ["strategos"],
   "mixinConfigs": ["strategos.mixins.json"],
+  "mixins": [
+    "dev.strategos.mod.mixin.LevelChunkMixin",
+    "dev.strategos.mod.mixin.ServerGamePacketListenerImplMixin",
+    "dev.strategos.mod.mixin.ServerPlayerMixin"
+  ],
+  "mixinHooks": [
+    "dev.strategos.mod.mixin.LevelChunkMixin#setBlockState",
+    "dev.strategos.mod.mixin.ServerGamePacketListenerImplMixin#handleTeleportToEntityPacket",
+    "dev.strategos.mod.mixin.ServerPlayerMixin#attack"
+  ],
   "accessTransformers": [],
   "payloads": [
     "strategos:building_state",

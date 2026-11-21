@@ -122,3 +122,10 @@ server echo then shifts focus by the height difference projected through the
 pitch. Materialize the restored rig with jumpTo after zoomTo, before sending
 the jump or positioning the local body. A pure test must inspect the very
 first pose, not only the height field or a later settled tick.
+
+A spectator teleport injection must not consult match maps on the network
+thread. The pinned handler first calls PacketUtils.ensureRunningOnSameThread
+with the ServerLevel overload; off-thread calls re-enqueue the packet and
+throw before returning. Inject after that exact invocation and before the
+entity UUID lookup. Verify its erased descriptor in the pinned class bytecode,
+and keep an actual unseated vanilla positive alongside each member denial.
