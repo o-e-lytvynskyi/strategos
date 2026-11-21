@@ -72,3 +72,11 @@ gameplay screen too while retaining the player/level/all-rendered-section
 conditions. Reopen the saved world through WorldOpenFlows rather than creating
 a fresh same-named world; prove a new runtime and automatic UUID seat reclaim,
 and keep every world switch and the whole scenario bounded.
+
+An empty renderer build queue does not prove a returned spectator has received
+its viewport chunks: missing chunks contribute no queued mesh work. A real
+reconnect capture can therefore pass loading readiness while showing sky holes.
+For an isolated flat visual fixture, keep a bounded forced viewport loaded
+across world reopen, require every chunk in the engine view mask and then a
+quiet renderer, and wait for HUD/capture completion. Do not enable spectator
+chunk generation or weaken image comparisons to hide incomplete streaming.

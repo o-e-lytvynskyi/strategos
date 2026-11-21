@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Objects;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.server.IntegratedServer;
+import net.minecraft.server.level.ChunkTrackingView;
 import org.jspecify.annotations.Nullable;
 
 /** Real Save and Quit/reopen, automatic UUID reclaim, then a different world with colliding identities. */
@@ -26,6 +27,7 @@ final class ReconnectScenario implements Scenario {
     private long oldEpoch;
     private int phase;
     private int age;
+    private int configuredWorld = -1;
 
     @Override
     public String name() {
@@ -60,6 +62,10 @@ final class ReconnectScenario implements Scenario {
             prepared = true;
             return;
         }
+        // A bounded flat fixture viewport, persisted across reopen; spectator chunk generation stays disabled.
+        ScenarioWorld.run(server, "gamerule doMobSpawning false");
+        ScenarioWorld.run(server, "kill @e[type=!minecraft:player]");
+        ScenarioWorld.run(server, "forceload add -128 -160 95 95"); // 224 chunks, below vanilla's 256 limit
         var match = ScenarioWorld.matchAtAnchor(server, 96, world == 0 ? 2 : 1, world == 0);
         if (world == 0) {
             original = match;
@@ -93,6 +99,15 @@ final class ReconnectScenario implements Scenario {
                 || rig == null
                 || !rts.active()
                 || StrategosClient.model().units().isEmpty()) return false;
+        if (configuredWorld != world) {
+            ScenarioWorld.renderDistance(mc, 4);
+            configuredWorld = world;
+            return false;
+        }
+        if ((phase == 1 || phase == 3 || phase == 5) && !rendered(mc)) {
+            age = 0;
+            return false;
+        }
         if (phase == 0) {
             if (join.matchId() != matchId || join.primaryFaction() != 0 || StrategosClient.epoch() <= 0)
                 return fail(ctx, "initial private handshake did not confirm the actual match/primary");
@@ -111,13 +126,13 @@ final class ReconnectScenario implements Scenario {
             if (!rts.groups().members(1).equals(List.of(unit)))
                 return fail(ctx, "original control group did not contain the real owned handle");
             saved = new ClientResume.Pose(rig.focusX(), rig.focusZ(), rig.yaw(), rig.height());
-            ctx.capture("before_reconnect");
             phase = 2;
             age = 0;
             return false;
         }
         if (phase == 2) {
-            if (++age < 4) return false;
+            if (++age == 3) ctx.capture("before_reconnect");
+            if (age < 7 || ctx.captureName != null) return false;
             world = 1;
             prepared = false;
             ctx.switchWorld(worldName(), seed());
@@ -159,7 +174,7 @@ final class ReconnectScenario implements Scenario {
             return false;
         }
         if (phase == 4) {
-            if (++age < 4) return false;
+            if (++age < 4 || ctx.captureName != null) return false;
             world = 2;
             prepared = false;
             ctx.switchWorld("strategos-m7-reconnect-other", seed() + 1);
@@ -180,7 +195,7 @@ final class ReconnectScenario implements Scenario {
             age = 0;
             return false;
         }
-        if (++age < 4) return false;
+        if (++age < 4 || ctx.captureName != null) return false;
         ctx.result.addProperty("ok", true);
         return true;
     }
@@ -188,6 +203,18 @@ final class ReconnectScenario implements Scenario {
     private static boolean fail(ScenarioContext ctx, String reason) {
         ctx.result.addProperty("ok", false);
         ctx.result.addProperty("reason", reason);
+        return true;
+    }
+
+    /** Every chunk in the actual view, not just an empty renderer work queue, must have arrived. */
+    private static boolean rendered(Minecraft mc) {
+        if (mc.level == null || mc.player == null || !mc.levelRenderer.hasRenderedAllSections()) return false;
+        int cx = (int) Math.floor(mc.player.getX()) >> 4;
+        int cz = (int) Math.floor(mc.player.getZ()) >> 4;
+        for (int x = cx - 5; x <= cx + 5; x++)
+            for (int z = cz - 5; z <= cz + 5; z++)
+                if (ChunkTrackingView.isInViewDistance(cx, cz, 4, x, z)
+                        && !mc.level.getChunkSource().hasChunk(x, z)) return false;
         return true;
     }
 }
