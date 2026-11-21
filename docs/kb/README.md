@@ -12,7 +12,12 @@ written in the same session, into the file of its area (a branch does it on the 
 |---|---|
 | Versions and toolchain, server config, block batches, chunk unloading, Brigadier roots and `word()` against `=`, protecting blocks with events (where cancelling does not work), licences | [minecraft-mod.md](minecraft-mod.md) |
 | Build: sources jar, Spotless, the dev runtime, MDG, the Spotless/compile race, `:mod:test` as a server, ErrorProne, `build/` in `.gitignore` and a package named `build`, two worktrees and one smoke port | [minecraft-mod-build.md](minecraft-mod-build.md) |
-| Save/reload: stable template identities, legacy custom indices, atomic reload guards and terminal lifecycle | [save-reload-identities.md](save-reload-identities.md) |
+| Save/reload: stable template identities, legacy custom indices, atomic reload guards, terminal lifecycle and pending terrain baselines | [save-reload-identities.md](save-reload-identities.md) |
+| Recipient boundaries: queued and asynchronous origins, per-player generations, full-join snapshots and co-op vision deltas | [recipient-rejoin.md](recipient-rejoin.md) |
+| Cloud gates: aggregate deadlines, concurrent test JVMs and incomplete XML evidence | [cloud-gates.md](cloud-gates.md) |
+| JMH: a CPU-load profiler can contaminate the allocation gate; reusable Linux cumulative counters | [jmh-profiler-allocation.md](jmh-profiler-allocation.md) |
+| Lobby: detached readiness, configuration versus state revisions, runtime admission and launch durability | [lobby-readiness.md](lobby-readiness.md) |
+| Team damage: frozen-shot source provenance and dead/reused shooter migration | [frozen-damage-authority.md](frozen-damage-authority.md) |
 | Data: SavedData, an unreadable file, the IO worker, DFU, a reload listener at start-up, test datapacks with errors, a data map without `synced` is invisible to the client, the 16-field limit of `RecordCodecBuilder`, finding a mismatch after loading | [minecraft-mod-data.md](minecraft-mod-data.md) |
 | GameTest and measurements: verdict from the report, shared per-tick budgets (wait, no fixed delay), retries, chunks, tickets, mass generation, CPU load, blocks next to a moving unit, tick pacing for measurements, work in Post outside MSPT, a batch without its after-batch hook, fog pairing within the tracking range | [minecraft-mod-gametest.md](minecraft-mod-gametest.md) |
 | GameTest arena and players: coordinates, barriers, the roof and vanilla trees, the heightmap, a large arena, FakePlayer, a mock player with packets, names ≤ 16, operator level 0, batches on one spot and shared services, the heightmap of an unloaded chunk, blocks above the arena | [minecraft-mod-gametest-arena.md](minecraft-mod-gametest-arena.md) |
@@ -24,3 +29,5 @@ written in the same session, into the file of its area (a branch does it on the 
 | Analytic combat: used-empty shot allocators, release/movement phase alignment, circular and layered hit footprints | [rts-sim-combat.md](rts-sim-combat.md) |
 | RTS economy and construction: buildable ground ≠ walkable ground, demolition in the grid with a `pageK` delay, a target on a blocked cell, order news for an empty queue, AI slots, worker shares and the silence watchdog, expansion with storehouses and territory | [rts-sim-economy.md](rts-sim-economy.md) |
 | Performance fixtures: first asynchronous tick interval, idle warm-up and CPU sampling, equal probe working sets, no wall-clock comparison in a unit test, keeping a Mac awake, invalid measurements | [perf-tick-spacing.md](perf-tick-spacing.md) |
+
+- [Diplomacy restore](diplomacy-restore.md): immutable authority, current-save validation versus legacy migration, live Play writers, first-tick setup and legacy state hashes.

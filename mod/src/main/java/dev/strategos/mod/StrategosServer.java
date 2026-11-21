@@ -23,6 +23,8 @@ import dev.strategos.mod.server.fog.TrackerRefresher;
 import dev.strategos.mod.server.jobs.PathThreads;
 import dev.strategos.mod.server.match.MapImports;
 import dev.strategos.mod.server.match.MatchRegistry;
+import dev.strategos.mod.server.match.ReconnectService;
+import dev.strategos.mod.server.match.ServerLobby;
 import dev.strategos.mod.server.match.Skirmishes;
 import dev.strategos.mod.server.net.NetGateway;
 import dev.strategos.mod.server.net.Replication;
@@ -78,7 +80,9 @@ public final class StrategosServer {
     private final TemplateSync templateSync = new TemplateSync();
     private final CommanderService commanders = new CommanderService();
     private final Skirmishes skirmishes = new Skirmishes();
+    private final ServerLobby lobby;
     private final NetGateway net;
+    private final ReconnectService reconnects;
     private final InterestSets interest = new InterestSets();
     private final DebugFeed debug;
     private final Replication replication;
@@ -113,6 +117,8 @@ public final class StrategosServer {
             }
         });
         this.net = new NetGateway(server, () -> this.matches, faults);
+        this.reconnects = new ReconnectService(server, matches, commanders, net);
+        this.lobby = new ServerLobby(this);
         this.debug =
                 new DebugFeed(server, () -> this.matches, net, StrategosConfig.INSTANCE.debugPermission.getAsInt());
         this.perf = new PerfDump(server, () -> this.matches);
@@ -161,6 +167,11 @@ public final class StrategosServer {
     /** The server's template set, its id table and the last load's problems (DATA-03). */
     public ServerTemplates templates() {
         return templates;
+    }
+
+    /** The server-owned authenticated multiplayer lobby and transient launch transaction. */
+    public ServerLobby lobby() {
+        return lobby;
     }
 
     /** The skirmishes waiting for their import to be set up (QA-11.5). */
@@ -405,13 +416,7 @@ public final class StrategosServer {
     public static void onLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
         StrategosServer s = current;
         if (s != null && event.getEntity() instanceof ServerPlayer player) {
-            MatchRegistry.Seat seat = s.matches.seatOf(player.getUUID());
-            if (seat != null) {
-                s.commanders.enter(player, seat.match());
-                s.net.joined(seat.match(), player, seat.slot());
-            } else {
-                s.commanders.leave(s.server, player); // its match ended while it was away
-            }
+            s.reconnects.loggedIn(player);
         }
     }
 
@@ -419,6 +424,8 @@ public final class StrategosServer {
     public static void onLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
         StrategosServer s = current;
         if (s != null && event.getEntity() instanceof ServerPlayer player) {
+            if (!s.net.acceptsLogout(player)) return;
+            s.matches.connection(player.getUUID(), false);
             s.net.forget(player);
             s.commanders.forget(player);
             s.templateSync.forget(player);
@@ -446,6 +453,7 @@ public final class StrategosServer {
     public static void onStopping(ServerStoppingEvent event) {
         StrategosServer s = current;
         if (s != null) {
+            s.lobby.shutdown();
             s.matches.prepareSave();
         }
     }

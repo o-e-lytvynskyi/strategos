@@ -12,6 +12,20 @@ violation in a minute), the codec reads softly: whatever is left in the buffer i
 above the limit — `skipBytes` and a "reject"; broken data — catch it and also return a
 "reject", and the handler on the server thread counts it.
 
+All registered C2S codecs need that rule, not only commands and lobby intents.
+Use the bounded `ByteBufWire.serverCodec` for a consumed refusal value; check the
+value before any handler state/permission operation and count a stable reason
+through the existing gateway policy. Refusal values are never encoded back to
+the client. Keep S2C decoding strict. Exercise each registered codec with valid
+byte-exact controls as well as empty, truncated, over-cap and trailing input.
+
+`WireReader` deliberately preserves raw IEEE values, including NaN. Put numeric
+request invariants in their typed records rather than globally changing the
+primitive reader. When a record constructor rejects malformed wire values,
+translate its IllegalArgumentException into WireException in that record's
+reader; the server codec then returns the same bounded refusal. Check unused
+numeric fields too, so a mode-switch column cannot carry non-finite values.
+
 ## Client S2C handlers cannot be named in common code
 
 21.1 has no separate event for registering client handlers: `playToClient(type, codec, handler)`
@@ -123,3 +137,25 @@ yourself: `ServerChunkCache#broadcast(entity, new ClientboundSetEquipmentPacket(
 List.of(Pair.of(slot, stack))))` — the audience is the same as for tracking. The client handler
 calls `setItemSlot` (ClientPacketListener.java:1398), so the body's `setItemSlot` must store the
 hands on the client too.
+
+## Captured state can precede a queued spawn
+
+MockViewer capture begins at admission, while SpawnDeposit applies on the next
+core tick. The initial deposit frame may therefore be empty even when the later
+fixture-ready condition succeeds. Do not index its first element blindly: this
+threw from GameTestSequence.thenExecuteAfter and crashed the whole server in
+44306541248. Check every captured state against its same-tick server state;
+permit only the initial empty prefix, then require the expected deposit count,
+continued presence and monotonically decreasing stock. Keep the mining positive
+control. Do not add sleeps, retries or remove the early publication frames.
+
+## An integrated server is still singleplayer after LAN publication
+
+MinecraftServer.isSingleplayer() checks only whether its singleplayer profile
+exists. IntegratedServer.isPublished() independently checks publishedPort > -1.
+Therefore isSingleplayer() alone cannot authorize a player to change server-wide
+time: a published LAN world still passes. For the existing singleplayer-only
+pause/speed contract, also require the unpublished world's owner and an active
+RUNNING/PAUSED match. Verify both APIs in the pinned 1.21.1 sources; do not use
+a client's local-world flag as server authority. Covered by MatchControlPolicyTest
+and the dedicated-server semantic-refusal fixture in IngressAuditTests.

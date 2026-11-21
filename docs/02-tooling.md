@@ -72,7 +72,8 @@ JOML or Netty ([ADR-0003](adr/0003-module-layout-and-core-merge.md)).
   ModernFix 5.27.26 and FerriteCore 7.0.3 on the server.
 - **Config and mixins** (M1): `serverconfig/strategos-server.toml` per world (`pathThreads`,
   `journal`, `writerBudget`, `importBudget`, the command limits `commandRate`, `commandBurst`,
-  `handleRate`, `violationsPerMinute`, `maxMatches`, `debugPermission`) and
+  `handleRate`, `violationsPerMinute`, `maxMatches`, `debugPermission`,
+  `reconnectSeconds`, `reconnectPolicy`) and
   `config/strategos-client.toml` (`panSpeed`, `rotateSpeed`, `edgePan`), both NeoForge
   `ModConfigSpec`s with the generated screen. One mixin, `LevelChunkMixin` in
   `strategos.mixins.json`, routes block changes in match spaces (BLD-15, PATH-15).

@@ -5,11 +5,15 @@ import dev.strategos.core.content.Footprint;
 import dev.strategos.core.content.StartSlot;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.diag.MatchLog;
+import dev.strategos.core.protocol.FactionPresentation;
+import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.sim.build.BuildingLife;
 import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.combat.Damage;
+import dev.strategos.core.sim.combat.DamageOrigins;
 import dev.strategos.core.sim.combat.HealthStore;
 import dev.strategos.core.sim.combat.ShotStore;
+import dev.strategos.core.sim.diplomacy.DiplomacyState;
 import dev.strategos.core.sim.econ.Amount;
 import dev.strategos.core.sim.econ.CarryStore;
 import dev.strategos.core.sim.econ.Costs;
@@ -51,6 +55,9 @@ public final class MatchState {
 
     private long tick;
     private MatchConfig config;
+    private DiplomacyState diplomacy;
+    private FactionPresentation presentation;
+    private boolean presentationConfigured;
     private final Outcome outcome = new Outcome();
     private final AiSlots aiSlots = new AiSlots();
     private final MatchStats matchStats;
@@ -103,6 +110,8 @@ public final class MatchState {
 
     MatchState(MatchConfig config, TemplateSet templates, EntityStore entities, MatchLog log) {
         this.config = config;
+        this.diplomacy = DiplomacyState.identity(config.factions());
+        this.presentation = FactionPresentation.legacy(config.factions());
         this.templates = templates;
         mobilityCache.rebuild();
         this.entities = entities;
@@ -441,7 +450,7 @@ public final class MatchState {
 
     /** A damage packet for this tick's COMBAT phase, after those already queued. */
     public void queueDamage(Damage packet) {
-        damage.add(packet);
+        damage.add(DamageOrigins.captureQueued(this, packet));
     }
 
     /** This tick's damage packets, in their order; the queue is empty after. */
@@ -533,6 +542,50 @@ public final class MatchState {
 
     public long tick() {
         return tick;
+    }
+
+    public DiplomacyState diplomacy() {
+        return diplomacy;
+    }
+
+    public FactionPresentation presentation() {
+        return presentation;
+    }
+
+    void configurePresentation(PresentationSetup setup) {
+        if (tick != 1 || presentationConfigured || setup.presentation().styles().size() != config.factions()) {
+            log.warn(tick, "ignored presentation setup: late, duplicate or wrong faction count");
+            return;
+        }
+        presentation = setup.presentation();
+        presentationConfigured = true;
+    }
+
+    void restorePresentation(FactionPresentation saved) {
+        if (saved.styles().size() != config.factions())
+            throw new IllegalArgumentException("saved presentation faction count differs from match config");
+        presentation = saved;
+        presentationConfigured = tick > 0 || !saved.isLegacy();
+    }
+
+    /** Single-writer application of a validated journaled control command; bindings and teams never change. */
+    public void setControl(PlayerSlot grantor, PlayerSlot recipient, boolean granted) {
+        diplomacy = granted ? diplomacy.grant(grantor, recipient) : diplomacy.revoke(grantor, recipient);
+    }
+
+    void configureDiplomacy(DiplomacySetup setup) {
+        if (tick != 1 || diplomacy.teamsLocked() || setup.snapshot().teams().size() != config.factions()) {
+            log.warn(tick, "ignored diplomacy setup: late, duplicate or wrong faction count");
+            return;
+        }
+        diplomacy = DiplomacyState.restore(setup.snapshot());
+    }
+
+    void restoreDiplomacy(DiplomacyState saved) {
+        if (saved.factions() != config.factions()) {
+            throw new IllegalArgumentException("saved diplomacy faction count differs from match config");
+        }
+        diplomacy = saved;
     }
 
     public MatchConfig config() {

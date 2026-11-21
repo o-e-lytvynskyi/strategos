@@ -2,11 +2,16 @@ package dev.strategos.mod.client;
 
 import com.google.gson.JsonParser;
 import com.mojang.serialization.JsonOps;
+import dev.strategos.core.client.look.FactionPalette;
 import dev.strategos.core.client.model.ClientMatchModel;
+import dev.strategos.core.client.model.ClientPresentation;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.FactionLook;
+import dev.strategos.core.protocol.FactionPresentation;
 import dev.strategos.core.protocol.MatchJoin;
+import dev.strategos.core.protocol.MatchPresentation;
 import dev.strategos.core.protocol.MatchStateMsg;
+import dev.strategos.core.protocol.PlayerAuthority;
 import dev.strategos.core.sim.MatchRules;
 import dev.strategos.core.sim.econ.ResourceDef;
 import dev.strategos.mod.Strategos;
@@ -18,6 +23,8 @@ import dev.strategos.mod.client.fx.ShotArcRenderer;
 import dev.strategos.mod.client.fx.ShotArcs;
 import dev.strategos.mod.client.hud.RtsHud;
 import dev.strategos.mod.client.menu.ArenaWorldLauncher;
+import dev.strategos.mod.client.menu.ClientLobby;
+import dev.strategos.mod.client.menu.LobbyEntry;
 import dev.strategos.mod.client.menu.SkirmishEntry;
 import dev.strategos.mod.client.net.ClientPayloads;
 import dev.strategos.mod.client.overlay.FarMarkers;
@@ -46,6 +53,8 @@ import org.jspecify.annotations.Nullable;
  */
 @Mod(value = Strategos.MOD_ID, dist = Dist.CLIENT)
 public final class StrategosClient {
+    private static final FactionPalette LEGACY_PALETTE = new FactionPalette(FactionPresentation.legacy(16));
+    private static final ClientPresentation PRESENTATION = new ClientPresentation();
     private static final ClientDebugState DEBUG = new ClientDebugState();
     private static final RtsMode RTS = new RtsMode();
     private static final RtsHud HUD = new RtsHud(RTS);
@@ -58,6 +67,7 @@ public final class StrategosClient {
     private static final UnitLod LOD = new UnitLod();
     private static final ArenaWorldLauncher ARENA = new ArenaWorldLauncher();
     private static volatile @Nullable MatchJoin match;
+    private static volatile long matchEpoch;
     private static volatile List<String> resources = List.of();
     private static volatile @Nullable MatchStateMsg state;
     private static volatile TemplateSet templates = TemplateSet.builtin();
@@ -78,9 +88,13 @@ public final class StrategosClient {
         NeoForge.EVENT_BUS.addListener(
                 ClientPlayerNetworkEvent.LoggingIn.class, e -> ARENA.onLoggedIn(Minecraft.getInstance()));
         NeoForge.EVENT_BUS.addListener(ScreenEvent.Init.Post.class, SkirmishEntry::onInit);
+        NeoForge.EVENT_BUS.addListener(ScreenEvent.Init.Post.class, LobbyEntry::onInit);
         NeoForge.EVENT_BUS.addListener(ClientPlayerNetworkEvent.LoggingOut.class, e -> {
-            RTS.remember(); // the match's camera and groups, for a return (MATCH-04)
+            ClientLobby.clear();
+            RTS.disconnected(); // save under the old confirmed scope before clearing private state
             match = null;
+            matchEpoch = 0;
+            PRESENTATION.clear();
             resources = List.of();
             state = null;
             DEBUG.reset();
@@ -151,10 +165,47 @@ public final class StrategosClient {
         return match;
     }
 
+    public static long epoch() {
+        return matchEpoch;
+    }
+
     public static void match(MatchJoin join) {
+        match(matchEpoch, join);
+    }
+
+    public static void match(long epoch, MatchJoin join) {
+        RTS.confirmed(epoch, join);
+        matchEpoch = epoch;
+        MODEL.clear();
+        state = null;
+        DEBUG.reset();
         match = join;
+        PRESENTATION.joined(join.matchId(), join.factions());
         ARCS.joined(join.matchId());
         resources = resources(join);
+    }
+
+    public static @Nullable MatchPresentation presentation() {
+        return PRESENTATION.view();
+    }
+
+    public static void presentation(MatchPresentation frame) {
+        PRESENTATION.accept(frame);
+    }
+
+    public static int colour(int faction) {
+        return PRESENTATION.palette().colour(faction);
+    }
+
+    public static FactionPalette palette(int matchId) {
+        MatchJoin joined = match;
+        return joined != null && joined.matchId() == matchId ? PRESENTATION.palette() : LEGACY_PALETTE;
+    }
+
+    /** A permission update changes neither the joined world nor its private primary perspective. */
+    public static void authority(PlayerAuthority authority) {
+        MatchJoin joined = match;
+        if (joined != null) match = joined.withAuthority(authority);
     }
 
     /** The joined match's resources in their order, from the rules it was joined with; empty before a join. */
@@ -187,6 +238,8 @@ public final class StrategosClient {
 
     public static void state(MatchStateMsg update) {
         state = update;
+        MatchJoin joined = match;
+        if (joined != null) MODEL.accept(update, joined.matchId());
         if (update.lifecycle() == MatchStateMsg.Lifecycle.ENDED) {
             ARCS.clear();
         }

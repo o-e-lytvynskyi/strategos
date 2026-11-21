@@ -1,6 +1,6 @@
 # L6 on Linux (M0 T12 and T18, QA-08): JMH and the CI-to-M4 Pro speed ratio, then the perf GameTests at
 # 3x the budgets. Since 2026-10-25 by hand or on a hand-in pull request labelled `perf` by a maintainer (no schedule):
-# it costs about 50 minutes, so it runs when a milestone touching the hot paths is reviewed. Actions are pinned to the
+# the 24-scene serial suite includes a full thirty-minute MVP soak, so it runs when hot-path work is reviewed. Actions are pinned to the
 # commit of the tag in the comment.
 name: perf
 
@@ -9,19 +9,38 @@ on:
     branches: [main]
     types: [labeled]
   workflow_dispatch:
+    inputs:
+      template_diagnostic:
+        description: Four fixed identical-binary samples; diagnostic only, never acceptance
+        type: boolean
+        default: false
+      complete_t7:
+        description: Complete only the three T7 scenes interrupted by the outer time limit
+        type: boolean
+        default: false
+      paired_jmh:
+        description: 'M7 same-host comparison against the verified T5 checkpoint (15% gate)'
+        type: boolean
+        default: false
+      dependency_cache_run:
+        description: 'Successful same-branch full-ci producer of Maven modules for paired/completion runs'
+        type: string
+        default: '44641218952'
 
 concurrency:
-  group: perf-${{ github.ref }}
+  group: perf-${{ github.ref }}-${{ inputs.template_diagnostic && 'template-diagnostic' || inputs.complete_t7 && 't7-completion' || inputs.paired_jmh && 'paired-jmh' || 'standard' }}
   cancel-in-progress: true
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   perf:
-    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.draft == false && github.event.label.name == 'perf')
+    if: (github.event_name == 'workflow_dispatch' && !inputs.paired_jmh && !inputs.complete_t7 && !inputs.template_diagnostic) || (github.event.pull_request.draft == false && github.event.label.name == 'perf')
     runs-on: ubuntu-24.04
-    timeout-minutes: 55
+    # Outlive the existing 150-minute process bound plus build/report overhead; all measured gates stay unchanged.
+    timeout-minutes: 180
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
@@ -49,3 +68,246 @@ jobs:
             core/build/reports/perf/
             mod/build/reports/perf/
             mod/build/gametest-perf/logs/
+            mod/build/test-results/gametest-perf/
+
+  paired-jmh:
+    # Supplemental same-host evidence for M7 T7.1 frozen-damage authority, not a replacement for the approved Mac baseline.
+    # Both checkouts are trusted repository commits; the control is pinned to the verified T5 checkpoint.
+    if: github.event_name == 'workflow_dispatch' && inputs.paired_jmh && !inputs.template_diagnostic
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: candidate
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: d7a8911ba4000bc759a10913652327c266d54066
+          path: control
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          cache-provider: basic
+      - name: Paired report guard counterexamples
+        run: python3 -m unittest discover -s candidate/tools/tests -p test_jmh_pair_reports.py -v
+      - name: Validate the successful same-branch dependency producer
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEPENDENCY_CACHE_RUN: ${{ inputs.dependency_cache_run }}
+        run: python3 candidate/tools/ci_dependency_cache.py validate --run "$DEPENDENCY_CACHE_RUN" --repository "$GITHUB_REPOSITORY" --branch "$GITHUB_REF_NAME"
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: cloud-gradle-modules
+          path: build/cloud-dependencies
+          run-id: ${{ inputs.dependency_cache_run }}
+          github-token: ${{ github.token }}
+      - name: Restore validated dependency modules only
+        run: python3 candidate/tools/ci_dependency_cache.py restore --archive build/cloud-dependencies/cloud-gradle-modules.tar.gz --caches "$HOME/.gradle/caches"
+      - name: Record commits and runner
+        run: |
+          mkdir -p evidence
+          git -C control rev-parse HEAD > evidence/control-commit.txt
+          git -C candidate rev-parse HEAD > evidence/candidate-commit.txt
+          lscpu > evidence/cpu.txt
+          java -version 2> evidence/java.txt
+      - name: Build both benchmark jars before measuring
+        run: |
+          ./control/gradlew -p control --no-daemon --console=plain --max-workers=2 :core:compileJmhJava
+          ./candidate/gradlew -p candidate --no-daemon --console=plain --max-workers=2 :core:compileJmhJava
+      - name: Candidate JMH
+        run: |
+          vmstat -w 1 > evidence/candidate-vmstat.txt &
+          monitor=$!
+          trap 'kill "$monitor" 2>/dev/null || true' EXIT
+          ./candidate/gradlew -p candidate --no-daemon --console=plain --max-workers=2 :core:jmh
+      - name: Control JMH
+        run: |
+          vmstat -w 1 > evidence/control-vmstat.txt &
+          monitor=$!
+          trap 'kill "$monitor" 2>/dev/null || true' EXIT
+          ./control/gradlew -p control --no-daemon --console=plain --max-workers=2 :core:jmh
+      - name: Require comparable complete results
+        run: >-
+          python3 candidate/tools/jmh_pair_reports.py reports --root .
+          --manifest candidate/perf/jmh-suite.json --sources candidate/core/src/jmh/java
+          --control d7a8911ba4000bc759a10913652327c266d54066 --candidate "$GITHUB_SHA"
+          --output evidence/report-guard.json
+      - name: Existing 15 percent and allocation gates
+        run: >-
+          ./candidate/gradlew -p candidate --no-daemon --console=plain --max-workers=2 :core:jmhCompare
+          -Pjmh.baseline=../control/core/build/reports/jmh/result.json
+      - name: Paired reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: paired-jmh-reports
+          retention-days: 7
+          if-no-files-found: warn
+          path: |
+            evidence/
+            control/core/build/reports/jmh/
+            candidate/core/build/reports/jmh/
+
+  t7-completion:
+    if: github.event_name == 'workflow_dispatch' && inputs.complete_t7 && !inputs.paired_jmh && !inputs.template_diagnostic
+    runs-on: ubuntu-24.04
+    timeout-minutes: 65
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Completion and cache guard counterexamples
+        run: |
+          python3 -m unittest discover -s tools/tests -p test_t7_perf_completion.py -v
+          python3 -m unittest discover -s tools/tests -p test_ci_dependency_cache.py -v
+      - name: Validate original measurements and dependency producer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 tools/t7_perf_completion.py producer --repository "$GITHUB_REPOSITORY" --branch "$GITHUB_REF_NAME"
+          python3 tools/ci_dependency_cache.py validate --run 44296705408 --repository "$GITHUB_REPOSITORY" --branch "$GITHUB_REF_NAME"
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: perf-reports
+          path: build/t7-original
+          run-id: 44296716682
+          github-token: ${{ github.token }}
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 4dd51afa9f2b8165042e4792ee750b9cf317e187
+          path: measured
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          cache-provider: basic
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: cloud-gradle-modules
+          path: build/cloud-dependencies
+          run-id: 44296705408
+          github-token: ${{ github.token }}
+      - name: Restore validated module cache
+        run: python3 tools/ci_dependency_cache.py restore --archive build/cloud-dependencies/cloud-gradle-modules.tar.gz --caches "$HOME/.gradle/caches"
+      - name: Record measured source and runner
+        run: |
+          mkdir -p build/t7-evidence
+          git -C measured rev-parse HEAD > build/t7-evidence/source.txt
+          test "$(cat build/t7-evidence/source.txt)" = 4dd51afa9f2b8165042e4792ee750b9cf317e187
+          lscpu > build/t7-evidence/cpu.txt
+          java -version 2> build/t7-evidence/java.txt
+      - name: Three unfinished scenes with original lengths and gates
+        run: >-
+          ./measured/gradlew -p measured --console=plain --max-workers=2 :mod:runGameTestPerf
+          '-Pperf.filter=(battle_soak|group_paths_budget_d|mvp_soak)$'
+          -Pperf.ciFactor=3 -Psoak.ticks=2400 -Ploop.ticks=3600
+      - name: Require all 24 unchanged-source measurements
+        run: python3 tools/t7_perf_completion.py complete --run "$GITHUB_RUN_ID"
+      - name: Complete evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: t7-l6-completion
+          retention-days: 7
+          if-no-files-found: error
+          path: |
+            build/t7-original/
+            build/t7-evidence/
+            build/t7-l6-complete.json
+            measured/mod/build/reports/perf/
+            measured/mod/build/test-results/gametest-perf/
+            measured/mod/build/gametest-perf/logs/
+
+  identical-binary-samples:
+    if: github.event_name == 'workflow_dispatch' && inputs.template_diagnostic
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: d7a8911ba4000bc759a10913652327c266d54066
+          path: control
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          cache-provider: basic
+          cache-read-only: true
+      - name: Validate the successful same-branch dependency producer
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEPENDENCY_CACHE_RUN: ${{ inputs.dependency_cache_run }}
+        run: python3 tools/ci_dependency_cache.py validate --run "$DEPENDENCY_CACHE_RUN" --repository "$GITHUB_REPOSITORY" --branch "$GITHUB_REF_NAME"
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: cloud-gradle-modules
+          path: build/cloud-dependencies
+          run-id: ${{ inputs.dependency_cache_run }}
+          github-token: ${{ github.token }}
+      - name: Restore validated dependency modules only
+        run: python3 tools/ci_dependency_cache.py restore --archive build/cloud-dependencies/cloud-gradle-modules.tar.gz --caches "$HOME/.gradle/caches"
+      - name: Fixed control/candidate/candidate/control attribution with the existing JMH parameters
+        run: |
+          mkdir -p build/reports/template-diagnostic
+          git rev-parse HEAD > build/reports/template-diagnostic/source.txt
+          lscpu > build/reports/template-diagnostic/cpu.txt
+          java -version 2> build/reports/template-diagnostic/java.txt
+          vmstat -wt 1 > build/reports/template-diagnostic/vmstat.txt &
+          monitor=$!
+          trap 'kill "$monitor" 2>/dev/null || true' EXIT
+          ./control/gradlew -p control --no-daemon --console=plain --max-workers=2 :core:compileJmhJava
+          ./gradlew --no-daemon --console=plain --max-workers=2 :core:compileJmhJava
+          sample=0
+          for checkout in control . . control; do
+            sample=$((sample + 1))
+            printf '%s\n' "$checkout" > "build/reports/template-diagnostic/run-$sample-checkout.txt"
+            date -u +%FT%TZ > "build/reports/template-diagnostic/run-$sample-start.txt"
+            ./gradlew -p "$checkout" --no-daemon --console=plain --max-workers=2 :core:jmh \
+              -Pjmh.include=dev.strategos.core.bench.TemplateCompileBench.compile500
+            cp "$checkout/core/build/reports/jmh/result.json" "build/reports/template-diagnostic/run-$sample.json"
+            (cd "$checkout/core/build/classes/java/main" &&
+              find dev/strategos/core/content -type f -name '*.class' -print0 | sort -z | xargs -0 sha256sum) \
+              > "build/reports/template-diagnostic/run-$sample-bytecode.txt"
+          done
+      - name: Summarize diagnostic data without accepting a candidate
+        run: |
+          python3 - <<'PY'
+          import json, statistics
+          from pathlib import Path
+          root = Path('build/reports/template-diagnostic')
+          samples = []
+          for index in range(1, 5):
+              rows = json.loads((root / f'run-{index}.json').read_text())
+              if len(rows) != 1 or not rows[0]['benchmark'].endswith('TemplateCompileBench.compile500'):
+                  raise ValueError('diagnostic did not measure exactly the intended benchmark')
+              row = rows[0]
+              samples.append({'run': index, 'checkout': (root / f'run-{index}-checkout.txt').read_text().strip(), 'score': row['primaryMetric']['score'],
+                              'error': row['primaryMetric']['scoreError'],
+                              'forkMeans': [statistics.mean(fork) for fork in row['primaryMetric']['rawData']],
+                              'jvmArgs': row['jvmArgs'], 'forks': row['forks'],
+                              'warmupIterations': row['warmupIterations'],
+                              'measurementIterations': row['measurementIterations'],
+                              'secondary': {key: value['score'] for key, value in row['secondaryMetrics'].items()}})
+          checksums = {(root / f'run-{index}-bytecode.txt').read_text() for index in range(1, 5)}
+          if len(checksums) != 1:
+              raise ValueError('the content package bytecode differs between control and candidate')
+          summary = {'diagnosticOnly': True, 'candidateAccepted': False,
+                     'source': (root / 'source.txt').read_text().strip(),
+                     'contentBytecodeIdentical': True, 'plan': 'control,candidate,candidate,control', 'samples': samples}
+          (root / 'summary.json').write_text(json.dumps(summary, indent=2) + '\n')
+          print(json.dumps(summary, indent=2))
+          PY
+      - name: Diagnostic reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: template-aa-reports
+          retention-days: 7
+          if-no-files-found: error
+          path: build/reports/template-diagnostic/

@@ -2,20 +2,27 @@ package dev.strategos.core.sim.journal;
 
 import dev.strategos.core.content.TemplateIdTable;
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.protocol.FactionPresentation;
 import dev.strategos.core.protocol.TemplateSetView;
 import dev.strategos.core.protocol.WireException;
 import dev.strategos.core.protocol.WireReader;
 import dev.strategos.core.protocol.WireWriter;
+import dev.strategos.core.shared.FactionSlot;
+import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.sim.Agent;
 import dev.strategos.core.sim.AgentUpdate;
 import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.ContentSwap;
+import dev.strategos.core.sim.DiplomacySetup;
 import dev.strategos.core.sim.ExternalDamage;
+import dev.strategos.core.sim.FactionExpiry;
 import dev.strategos.core.sim.InputEvent;
 import dev.strategos.core.sim.JobDelivery;
 import dev.strategos.core.sim.LeaderUpdate;
+import dev.strategos.core.sim.PresentationSetup;
 import dev.strategos.core.sim.SliceSource;
 import dev.strategos.core.sim.TerrainPage;
+import dev.strategos.core.sim.diplomacy.DiplomacyState;
 import dev.strategos.core.sim.nav.PageCoord;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +32,10 @@ import java.util.List;
  * coordinates and its slice's hash, the slice itself in the segment's 'L' records and the page rebuilt from it when
  * read; 3 a path delivery, a count and the ids ascending, each as its gap from the one before; 4 a template set swapped
  * in, as its {@link TemplateSetView}, whose version is checked when read; 5 the tick's agents, a count and each one's
- * id and six floats; 6 damage a body took, as its handle, kind, amount and source kind.
+ * id and six floats; 6 damage a body took, as its handle, kind, amount and source kind; 7 a leader pose;
+ * 8 a sampled terrain page; 9 a bounded, canonical first-tick diplomacy setup; 10 external damage with its
+ * authenticated source faction; 11 public first-tick faction presentation; 12 trusted faction expiry.
+ * Existing tags never change meaning.
  */
 final class InputCodec {
     private static final int COMMAND = 1;
@@ -37,6 +47,11 @@ final class InputCodec {
     private static final int LEADER_UPDATE = 7;
     /** A terrain page with its capture's sample tick (M3): written only when the tick is known. */
     private static final int TERRAIN_PAGE_SAMPLED = 8;
+
+    private static final int DIPLOMACY_SETUP = 9;
+    private static final int ATTRIBUTED_EXTERNAL_DAMAGE = 10;
+    private static final int PRESENTATION_SETUP = 11;
+    private static final int FACTION_EXPIRY = 12;
 
     private InputCodec() {}
 
@@ -69,11 +84,13 @@ final class InputCodec {
                 }
             }
             case ExternalDamage damage -> {
-                out.writeByte(EXTERNAL_DAMAGE);
+                boolean attributed = damage.sourceFaction() >= 0;
+                out.writeByte(attributed ? ATTRIBUTED_EXTERNAL_DAMAGE : EXTERNAL_DAMAGE);
                 out.writeInt(damage.handle());
                 out.writeByte(damage.kind().code());
                 out.writeFloat(damage.amount());
                 out.writeByte(damage.sourceKind().code());
+                if (attributed) out.writeVarInt(damage.sourceFaction());
             }
             case ContentSwap swap -> {
                 out.writeByte(CONTENT_SWAP);
@@ -86,6 +103,31 @@ final class InputCodec {
                 out.writeFloat(leader.z());
                 out.writeFloat(leader.yaw());
             }
+            case FactionExpiry expiry -> {
+                out.writeByte(FACTION_EXPIRY);
+                out.writeVarInt(expiry.faction().value());
+            }
+            case PresentationSetup setup -> {
+                out.writeByte(PRESENTATION_SETUP);
+                FactionPresentation.WIRE.write(out, setup.presentation());
+            }
+            case DiplomacySetup setup -> {
+                out.writeByte(DIPLOMACY_SETUP);
+                var saved = setup.snapshot();
+                out.writeVarInt(saved.teams().size());
+                for (int team : saved.teams()) out.writeVarInt(team);
+                out.writeBoolean(saved.teamsLocked());
+                out.writeVarInt(saved.bindings().size());
+                for (var binding : saved.bindings()) {
+                    out.writeVarInt(binding.player().value())
+                            .writeVarInt(binding.faction().value());
+                }
+                out.writeVarInt(saved.grants().size());
+                for (var grant : saved.grants()) {
+                    out.writeVarInt(grant.faction().value())
+                            .writeVarInt(grant.recipient().value());
+                }
+            }
             case JobDelivery delivery -> {
                 out.writeByte(JOB_DELIVERY);
                 out.writeVarInt(delivery.count());
@@ -95,6 +137,31 @@ final class InputCodec {
                     last = delivery.id(k);
                 }
             }
+        }
+    }
+
+    private static DiplomacySetup readDiplomacy(WireReader in) {
+        int n = in.readVarInt(FactionSlot.MAX + 1);
+        if (n == 0) throw new WireException("empty diplomacy factions");
+        List<Integer> teams = new ArrayList<>(n);
+        for (int f = 0; f < n; f++) teams.add(in.readVarInt(FactionSlot.MAX));
+        boolean locked = in.readBoolean();
+        int players = in.readVarInt(FactionSlot.MAX + 1);
+        List<DiplomacyState.Binding> bindings = new ArrayList<>(players);
+        for (int p = 0; p < players; p++) {
+            bindings.add(new DiplomacyState.Binding(
+                    new PlayerSlot(in.readVarInt(FactionSlot.MAX)), new FactionSlot(in.readVarInt(FactionSlot.MAX))));
+        }
+        int count = in.readVarInt((FactionSlot.MAX + 1) * (FactionSlot.MAX + 1));
+        List<DiplomacyState.Grant> grants = new ArrayList<>(count);
+        for (int g = 0; g < count; g++) {
+            grants.add(new DiplomacyState.Grant(
+                    new FactionSlot(in.readVarInt(FactionSlot.MAX)), new PlayerSlot(in.readVarInt(FactionSlot.MAX))));
+        }
+        try {
+            return new DiplomacySetup(new DiplomacyState.Snapshot(teams, bindings, grants, locked));
+        } catch (IllegalArgumentException e) {
+            throw new WireException("invalid diplomacy input: " + e.getMessage());
         }
     }
 
@@ -148,7 +215,7 @@ final class InputCodec {
                     throw new WireException("leader update: " + e.getMessage());
                 }
             }
-            case EXTERNAL_DAMAGE -> {
+            case EXTERNAL_DAMAGE, ATTRIBUTED_EXTERNAL_DAMAGE -> {
                 int handle = in.readInt();
                 int damageKind = in.readUnsignedByte();
                 float amount = in.readFloat();
@@ -158,7 +225,10 @@ final class InputCodec {
                             handle,
                             ExternalDamage.Kind.ofCode(damageKind),
                             amount,
-                            ExternalDamage.SourceKind.ofCode(source));
+                            ExternalDamage.SourceKind.ofCode(source),
+                            kind == ATTRIBUTED_EXTERNAL_DAMAGE
+                                    ? in.readVarInt(FactionSlot.MAX + 1)
+                                    : dev.strategos.core.sim.combat.Damage.UNATTRIBUTED);
                 } catch (IllegalArgumentException e) {
                     throw new WireException("external damage: " + e.getMessage());
                 }
@@ -191,6 +261,9 @@ final class InputCodec {
                 }
                 yield new JobDelivery(ids);
             }
+            case FACTION_EXPIRY -> new FactionExpiry(new FactionSlot(in.readVarInt(FactionSlot.MAX)));
+            case DIPLOMACY_SETUP -> readDiplomacy(in);
+            case PRESENTATION_SETUP -> new PresentationSetup(FactionPresentation.WIRE.read(in));
             default -> throw new WireException("unknown input kind " + kind);
         };
     }

@@ -112,6 +112,14 @@ Useful options:
 | `mod/src/archTest` | ArchUnit rules on the compiled classes |
 | `mod/src/scenario/golden/<platform>/` | approved golden images per platform |
 
+QA-15's `MultiplayerHarness` in `mod/src/gametest/java/dev/strategos/gametest/net/` owns
+one match and up to four QA-19 viewers. Wait for `ready()`, admit bound distinct player
+slots, then use per-player `payloads`, the existing byte counters and typed/raw/generic
+packet ingress. It polls/acknowledges automatically; payload reads drain first. Raw command
+probes are bounded to one byte above the protocol limit. Close explicitly in the final
+asynchronous sequence action: a try-with-resources block around sequence registration
+would close before the callbacks run. Closing never calls global player cleanup.
+
 ## Fixture catalogue
 
 Every committed fixture, where it lives, what writes it and how it may change (QA-17.4; M0 spec
@@ -135,6 +143,7 @@ broken inputs in `gradle/selftest/fixtures/`.
 | ArchUnit violating fixtures and stubs | `core/src/test/java/.../archfixture/`, `mod/src/archTest/java/` | written by hand | one per rule and per banned API; a new rule brings its fixture |
 | JMH self-test results | `core/src/jmh/resources/selftest/` | written by hand | fixed |
 | Harness self-test inputs | `gradle/selftest/fixtures/` | written by hand | fixed |
+| JMH suite inventory | `perf/jmh-suite.json` | declared benchmark methods and explicit parameter configurations, reviewed against sources | changes only with the full suite; contains no scores and never replaces an approved baseline |
 | JMH baseline | `perf/baseline-<machine>.json` | `:core:jmh`, copied after the owner approves | only with the owner's approval |
 | GameTest journals (binary `.strj`), perf and smoke results | `mod/build/gametest/journals/`, `mod/build/reports/perf/`, `mod/build/server-smoke/` | every run | build output, never committed |
 
@@ -225,3 +234,15 @@ L0 and L5 run on every change, because both are part of `verify`. In short, a ch
 when its behaviour is tested at the lowest level that can express it, every required level
 passes, there are no new ErrorProne or NullAway findings, and the affected docs and the knowledge
 base are updated in the same session ([03-design-process.md](03-design-process.md)).
+
+### Complete AI soak on cloud runners
+
+The `full-ci` workflow executes `verifySlow` and the 200-seed core replay soak in its existing
+bounded job. QA-12.4's twenty AI seeds run in separate isolated jobs, each retaining the
+conquest/45-game-minute limit, fault checks and replay/live-hash equality. The final
+`complete-soak` job requires every constituent job and verifies the exact seed set 1..20,
+XML/log evidence and manifests from one commit with `tools/ai_soak_reports.py`.
+A missing, failed, cancelled, skipped or duplicate shard cannot make the gate green.
+Per-seed logs survive failures. The normal local `verifySoak` still executes all twenty AI
+seeds; `-Paisoak.firstSeed=<1..20> -Paisoak.seeds=<count>` selects a bounded range only for
+an explicit shard or investigation. A single shard is never complete verifySoak evidence.

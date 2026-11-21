@@ -1,0 +1,15 @@
+// Optional CI-only official Maven Central endpoint alias. No version, content filter or other repository changes.
+import org.gradle.api.artifacts.repositories.MavenArtifactRepository
+
+def useOfficialAlias = { MavenArtifactRepository repository ->
+    if (repository.url.toString().replaceAll('/+$', '') == 'https://repo.maven.apache.org/maven2') {
+        repository.url = uri('https://repo1.maven.org/maven2')
+    }
+}
+gradle.settingsEvaluated { settings ->
+    settings.dependencyResolutionManagement.repositories.withType(MavenArtifactRepository).configureEach(useOfficialAlias)
+    settings.pluginManagement.repositories.withType(MavenArtifactRepository).configureEach(useOfficialAlias)
+}
+gradle.beforeProject { project ->
+    project.repositories.withType(MavenArtifactRepository).configureEach(useOfficialAlias)
+}

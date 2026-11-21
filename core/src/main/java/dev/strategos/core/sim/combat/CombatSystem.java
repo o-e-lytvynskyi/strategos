@@ -23,7 +23,8 @@ import java.util.List;
 
 /**
  * The COMBAT phase's damage (CMB-01): every packet queued this tick, vanilla blows from INGEST and the units' own hits,
- * applies in its order to a target still alive, as {@link DamageFormula} gives it or, lethal, all that is left. Each
+ * applies in its order to a target still alive when current locked-team authority permits it, as
+ * {@link DamageFormula} gives it or, lethal, all that is left. Each
  * hit is a {@link UnitHurt}, and a unit that lives through another unit's hit hears it as {@link Attacked}; a unit
  * whose hit points reach 0 takes no more this tick, and once all have applied the
  * dead leave the match in handle order, each a {@link UnitDied} and a notice to its faction. No hit is ever lost:
@@ -54,6 +55,7 @@ public final class CombatSystem implements MatchSystem {
         List<Integer> falling = new ArrayList<>();
         double[] resistance = new double[3]; // a unit's hack, pierce and crush: no unit takes fire
         for (Damage d : packets) {
+            if (!DamageOrigins.permits(s, d)) continue;
             int target = d.target();
             if (BuildingStore.isBuilding(target)) {
                 hitBuilding(s, d, falling);

@@ -19,3 +19,7 @@ core/src/test/resources/fixtures/match_v3.json
 core/src/test/resources/fixtures/match_v3.expected.json
 mod/src/test/resources/fixtures/match_v3.nbt
 mod/src/test/resources/fixtures/match_v3.expected.json
+core/src/test/resources/fixtures/match_v4.json
+core/src/test/resources/fixtures/match_v4.expected.json
+mod/src/test/resources/fixtures/match_v4.nbt
+mod/src/test/resources/fixtures/match_v4.expected.json

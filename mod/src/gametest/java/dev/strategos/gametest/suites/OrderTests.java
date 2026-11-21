@@ -57,6 +57,9 @@ public final class OrderTests {
         Vec3 at = h.absoluteVec(new Vec3(16.5, 2, 16.5));
         MockViewer player = MockViewer.join(h.getLevel(), "strategos-orders", at.x, at.y, at.z, 2);
         StrategosServer.get().matches().join(rt, player.player().getUUID(), new PlayerSlot(0));
+        StrategosServer.get().net().joined(rt, player.player(), new PlayerSlot(0));
+        StrategosServer.get().net().flush();
+        player.poll();
         var state = new Object() {
             long sentAt = -1;
             boolean applied;

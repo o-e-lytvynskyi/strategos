@@ -1,0 +1,276 @@
+{
+  "buildings": [
+    {
+      "production": {
+        "queue": [
+          2,
+          2
+        ],
+        "trained": 8,
+        "reserved": true
+      },
+      "state": 2,
+      "progress": 1000,
+      "damage": 0.0,
+      "x": 2,
+      "z": 2,
+      "rotation": 0,
+      "baseY": 0,
+      "generation": 1,
+      "alive": true,
+      "template": 4,
+      "faction": 0
+    },
+    {
+      "state": 2,
+      "progress": 1000,
+      "damage": 0.0,
+      "x": 48,
+      "z": 48,
+      "rotation": 0,
+      "baseY": 0,
+      "generation": 1,
+      "alive": true,
+      "template": 4,
+      "faction": 1
+    }
+  ],
+  "templateBindings": [
+    {
+      "index": 0,
+      "id": "strategos:unit/debug_walker"
+    },
+    {
+      "index": 1,
+      "id": "strategos:unit/infantry"
+    },
+    {
+      "index": 2,
+      "id": "strategos:unit/worker"
+    },
+    {
+      "index": 3,
+      "id": "strategos:building/barracks"
+    },
+    {
+      "index": 4,
+      "id": "strategos:building/civic_centre"
+    },
+    {
+      "index": 5,
+      "id": "strategos:building/field"
+    },
+    {
+      "index": 6,
+      "id": "strategos:building/house"
+    },
+    {
+      "index": 7,
+      "id": "strategos:building/iron_mine"
+    },
+    {
+      "index": 8,
+      "id": "strategos:building/iron_mine_large"
+    },
+    {
+      "index": 9,
+      "id": "strategos:building/quarry"
+    },
+    {
+      "index": 10,
+      "id": "strategos:building/quarry_large"
+    },
+    {
+      "index": 11,
+      "id": "strategos:unit/chicken"
+    },
+    {
+      "index": 12,
+      "id": "strategos:unit/pig"
+    },
+    {
+      "index": 13,
+      "id": "strategos:unit/sheep"
+    },
+    {
+      "index": 14,
+      "id": "strategos:building/farmstead"
+    },
+    {
+      "index": 15,
+      "id": "strategos:building/storehouse"
+    }
+  ],
+  "treasury": [
+    880000,
+    1000000,
+    0,
+    120000,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "units": [],
+  "pendingCommands": [],
+  "pages": [
+    {
+      "x": 0,
+      "z": 0,
+      "slice": "ddf5c859b1731495"
+    },
+    {
+      "x": 1,
+      "z": 0,
+      "slice": "ddf5c859b1731495"
+    },
+    {
+      "x": 2,
+      "z": 0,
+      "slice": "ddf5c859b1731495"
+    },
+    {
+      "x": 3,
+      "z": 0,
+      "slice": "ddf5c859b1731495"
+    },
+    {
+      "x": 0,
+      "z": 1,
+      "slice": "ddf5c859b1731495"
+    },
+    {
+      "x": 1,
+      "z": 1,
+      "slice": "ddf5c859b1731495"
+    },
+    {
+      "x": 2,
+      "z": 1,
+      "slice": "ddf5c859b1731495"
+    },
+    {
+      "x": 3,
+      "z": 1,
+      "slice": "ddf5c859b1731495"
+    },
+    {
+      "x": 0,
+      "z": 2,
+      "slice": "ddf5c859b1731495"
+    },
+    {
+      "x": 1,
+      "z": 2,
+      "slice": "ddf5c859b1731495"
+    },
+    {
+      "x": 2,
+      "z": 2,
+      "slice": "ddf5c859b1731495"
+    },
+    {
+      "x": 3,
+      "z": 2,
+      "slice": "ddf5c859b1731495"
+    },
+    {
+      "x": 0,
+      "z": 3,
+      "slice": "ddf5c859b1731495"
+    },
+    {
+      "x": 1,
+      "z": 3,
+      "slice": "ddf5c859b1731495"
+    },
+    {
+      "x": 2,
+      "z": 3,
+      "slice": "ddf5c859b1731495"
+    },
+    {
+      "x": 3,
+      "z": 3,
+      "slice": "ddf5c859b1731495"
+    }
+  ],
+  "paths": {
+    "lastPageChange": 4
+  },
+  "config": {
+    "bounds": {
+      "minY": 0,
+      "maxY": 31,
+      "flatFloorY": 1.0,
+      "sizeX": 64,
+      "sizeZ": 64
+    },
+    "factions": 2,
+    "rules": {
+      "commandsPerTick": 256,
+      "unitCap": 4096
+    },
+    "id": 1,
+    "seed": "000000000000002a"
+  },
+  "tick": 9,
+  "templateSetHash": "b4dc5f372084f6e5",
+  "slots": {
+    "generations": [],
+    "free": []
+  },
+  "v": 4,
+  "play": {
+    "diplomacy": {
+      "teams": [
+        0,
+        1
+      ],
+      "bindings": [
+        {
+          "player": 0,
+          "faction": 0
+        },
+        {
+          "player": 1,
+          "faction": 1
+        }
+      ],
+      "grants": [],
+      "locked": false
+    }
+  }
+}

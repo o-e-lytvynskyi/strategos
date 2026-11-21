@@ -271,7 +271,8 @@ public final class MatchSnapshotCodec {
     private static final Codec<PageRef> PAGE = RecordCodecBuilder.create(i -> i.group(
                     Codec.INT.fieldOf("x").forGetter(PageRef::x),
                     Codec.INT.fieldOf("z").forGetter(PageRef::z),
-                    Hex64.CODEC.fieldOf("slice").forGetter(PageRef::slice))
+                    Hex64.CODEC.fieldOf("slice").forGetter(PageRef::slice),
+                    Codec.BOOL.optionalFieldOf("pending", false).forGetter(PageRef::pending))
             .apply(i, PageRef::new));
 
     /** A node's deposit or animal (ECO-08, -16), as two flat optional fields: a builder takes at most sixteen. */
@@ -417,7 +418,10 @@ public final class MatchSnapshotCodec {
                     Codec.FLOAT.fieldOf("crush").forGetter(Damage::crush),
                     Codec.FLOAT.fieldOf("fire").forGetter(Damage::fire),
                     SHOT_BONUS.listOf().fieldOf("bonuses").forGetter(Damage::bonuses),
-                    Codec.BOOL.fieldOf("lethal").forGetter(Damage::lethal))
+                    Codec.BOOL.fieldOf("lethal").forGetter(Damage::lethal),
+                    Codec.intRange(Damage.UNATTRIBUTED, FactionSlot.MAX + 1)
+                            .optionalFieldOf("sourceFaction", Damage.UNATTRIBUTED)
+                            .forGetter(Damage::sourceFaction))
             .apply(i, Damage::new));
 
     private static final Codec<ShotStore.Release> RELEASE = RecordCodecBuilder.create(i -> i.group(
@@ -442,7 +446,7 @@ public final class MatchSnapshotCodec {
                     (id, shooter, target, landTick, x, y, z, damage, release) ->
                             new ShotStore.Shot(id, shooter, target, landTick, x, y, z, damage, release.orElse(null))));
 
-    private static final Codec<ShotStore.Snapshot> SHOTS = RecordCodecBuilder.create(i -> i.group(
+    static final Codec<ShotStore.Snapshot> SHOTS = RecordCodecBuilder.create(i -> i.group(
                     Codec.LONG.fieldOf("nextId").forGetter(ShotStore.Snapshot::nextId),
                     SHOT.listOf().fieldOf("rows").forGetter(ShotStore.Snapshot::rows))
             .apply(i, ShotStore.Snapshot::new));
@@ -473,7 +477,13 @@ public final class MatchSnapshotCodec {
                     Codec.LONG.listOf().optionalFieldOf("vision", List.of()).forGetter(MatchSnapshot.Play::vision),
                     SHOTS.optionalFieldOf("shots", ShotStore.Snapshot.EMPTY).forGetter(MatchSnapshot.Play::shots),
                     STANCE.listOf().optionalFieldOf("stances", List.of()).forGetter(MatchSnapshot.Play::stances),
-                    GARRISON.listOf().optionalFieldOf("garrisons", List.of()).forGetter(MatchSnapshot.Play::garrisons))
+                    GARRISON.listOf().optionalFieldOf("garrisons", List.of()).forGetter(MatchSnapshot.Play::garrisons),
+                    DiplomacyCodec.STATE
+                            .fieldOf("diplomacy")
+                            .forGetter(p -> java.util.Objects.requireNonNull(p.diplomacy())),
+                    PresentationCodec.STATE
+                            .fieldOf("presentation")
+                            .forGetter(p -> java.util.Objects.requireNonNull(p.presentation())))
             .apply(i, MatchSnapshot.Play::new));
 
     private static final Codec<MatchSnapshot.TemplateBinding> BINDING = RecordCodecBuilder.create(i -> i.group(
@@ -568,12 +578,61 @@ public final class MatchSnapshotCodec {
         try {
             return migrations
                     .migrate(raw, SchemaVersion.CURRENT)
-                    .flatMap(CODEC::parse)
+                    .flatMap(migrated -> {
+                        if (migrated.get("play").get("diplomacy").result().isEmpty()) {
+                            return DataResult.error(() -> "schema 4 snapshot needs diplomacy");
+                        }
+                        if (migrated.get("play").get("presentation").result().isEmpty()) {
+                            return DataResult.error(() -> "schema 7 snapshot needs presentation");
+                        }
+                        return CODEC.parse(migrated);
+                    })
                     .flatMap(snapshot -> {
+                        List<Long> outcome = snapshot.play().outcome();
+                        if (!outcome.isEmpty()) {
+                            if (outcome.size() != 6) {
+                                return DataResult.error(() -> "schema 6 outcome needs its full winner mask");
+                            }
+                            var restored = new dev.strategos.core.sim.Outcome();
+                            restored.restore(outcome);
+                            long allowed = (1L << snapshot.config().factions()) - 1;
+                            if (((outcome.get(0) | outcome.get(1) | outcome.get(5)) & ~allowed) != 0
+                                    || outcome.get(2) < 0
+                                    || outcome.get(2) > 1
+                                    || outcome.get(4) < 0
+                                    || outcome.get(4) > snapshot.tick()
+                                    || (outcome.get(5) & outcome.get(1)) != 0
+                                    || (outcome.get(5) & ~outcome.get(0)) != 0
+                                    || (!restored.ended() && outcome.get(4) != 0)) {
+                                return DataResult.error(() -> "invalid terminal outcome metadata");
+                            }
+                            if (restored.winners().size() > 1) {
+                                if (!snapshot.diplomacy().teamsLocked()) {
+                                    return DataResult.error(() -> "coalition outcome requires locked teams");
+                                }
+                                for (int faction : restored.winners()) {
+                                    if (!snapshot.diplomacy().alliedFactions(restored.winner(), faction)) {
+                                        return DataResult.error(() -> "coalition winners must be allied");
+                                    }
+                                }
+                            }
+                        }
                         if (snapshot.templateBindings().isEmpty()
                                 && snapshot.buildings().stream().anyMatch(BuildingStore.Saved::alive)) {
                             return DataResult.error(
                                     () -> "schema 3 snapshot with live buildings needs template bindings");
+                        }
+                        for (ShotStore.Shot shot : snapshot.play().shots().rows()) {
+                            int source = shot.damage().sourceFaction();
+                            if (source > snapshot.config().factions()) {
+                                return DataResult.error(() -> "shot source faction is outside the match");
+                            }
+                            if (snapshot.diplomacy().teamsLocked()
+                                    && shot.shooter() != dev.strategos.core.shared.Handle.NONE
+                                    && source == Damage.UNATTRIBUTED) {
+                                return DataResult.error(
+                                        () -> "current locked-team shot needs its explicit source faction");
+                            }
                         }
                         return DataResult.success(snapshot);
                     });

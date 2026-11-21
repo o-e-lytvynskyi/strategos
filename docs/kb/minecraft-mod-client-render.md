@@ -130,3 +130,14 @@ and in the renderer's `setupRotations`: `hasPose(DYING) && deathTime == 0` →
   pixels. In Strategos an "empty" click landed under the HUD panel and did not clear the
   selection from M3 to M4, and the golden image was recorded with this error. After a run, look
   at `"ok"` in the result, not only at the diff.
+
+## Screen background dispatch can blur custom labels twice
+
+In pinned Minecraft 1.21.1 sources, `Screen.render` calls the virtual
+`renderBackground` before rendering widgets. A screen that explicitly calls
+`super.renderBackground`, paints its labels, then calls `super.render` therefore
+blurs those labels in the second background pass while buttons remain sharp.
+For that ordering, override the virtual background pass as empty and draw the
+superclass background once before custom content. Inspect the actual PNG rather
+than accepting a reference that normalizes the blur. M7's control-sharing panel
+exposed this; the corrected raw and normalized cloud captures were inspected.

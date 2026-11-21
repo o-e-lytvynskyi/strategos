@@ -39,3 +39,62 @@ Restoring every healthy blob as PAUSED revives ENDED matches. Preserve an ENDED 
 terminal saved victory outcome even when the registry is older. Such a match must neither
 resume nor accept commands; active matches still restore PAUSED. FAULTED and quarantined saves
 retain their existing fault paths.
+
+## Validate persisted membership before publishing its index
+
+A UUID occurs once in a saved roster, even if duplicate entries name the same seat. Do
+not use normal live reseating to decode duplicates: it silently replaces the first row.
+Distinguish an absent legacy roster from a present value with the wrong NBT type;
+`getList(key, TAG_COMPOUND)` can turn an incompatible list into an empty one. Validate
+the original tag and element type before decoding. Each non-administrator player seat
+must have a primary binding in the decoded snapshot authority; a numeric slot alone
+does not establish one. Invalid blobs retain the ordinary raw-preserving quarantine.
+
+Check cross-match UUID conflicts before restoring the core or reconciling world state.
+Retain a refused restore as a faulted diagnostic runtime, but never publish its roster
+into the server membership index. Otherwise even the fault path can replace another
+match's valid UUID mapping. An unrelated saved roster must still restore normally.
+
+## Save remaining time, and keep incomplete launches distinguishable
+
+Store a disconnected reservation's remaining monotonic duration, not `nanoTime()`'s
+process-local origin or a wall-clock timestamp. On load, anchor that duration to the new
+clock and keep the connection disconnected. Subtract elapsed time so counter wrap is
+handled correctly; repeated disconnect notifications must not refill the budget. Login
+and logout must mark a paused blob dirty too. Connection metadata does not replace
+authenticated rejoin, session invalidation or the once-only expiry action.
+
+A core snapshot at tick zero does not contain its adapter's queued diplomacy setup.
+Persist a launch-pending marker before queuing setup and keep it until complete admission
+and the initial replication period. Refuse an interrupted saved launch without rewriting
+its raw tag; never infer completed identity authority merely because the snapshot itself
+decodes. Normal shutdown cancellation and crash-time detection cover different cases.
+
+## Compare completed ticks, and preserve the full terminal coalition
+
+A snapshot represents a completed simulation tick. A test that removes an entity directly
+between ticks can leave vision/hysteresis derived from the previous tick; comparing that
+mutated live state's hash with a restored snapshot tests an invalid boundary. Queue the
+intended death through ExternalDamage and step normally before snapshotting. Keep the exact
+hash comparison and compare identical continuation inputs; do not drop the assertion.
+
+Terminal results are also state. Persist the full ordered surviving winner set, not only
+its first faction. Validate the mask against held/defeated factions, match bounds and locked
+allied relations. A newer terminal blob must override an older paused registry record and
+refuse resume. Rejoining clients reconstruct the banner from terminal state instead of
+requiring an old one-time end notification. See ADR-0031.
+
+## Preserve a restored terrain baseline while its geometry is pending
+
+A restored match can know a page's old slice hash before its geometry is
+recaptured. That baseline prevents an unchanged first capture from being treated
+as a terrain edit. Saving only published pages drops this information: a journal
+replay then advances paths.lastPageChange and can request a different path even
+though the same TerrainPage inputs were recorded. Exact final hashes catch it
+before the first periodic checkpoint; ReplayResult.matches alone does not.
+
+Schema 8 PageRef.pending records geometry absence explicitly. Preserve it through
+a paused re-save and journal segment boundaries; even an available shared slice
+must not publish a pending page early. Published references still require their
+actual journal slice. Schema 7 references migrate as published, regardless of an
+unknown extra pending field. Test both unchanged and genuinely changed captures.

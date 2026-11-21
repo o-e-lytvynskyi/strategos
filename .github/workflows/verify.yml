@@ -9,6 +9,23 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
     paths-ignore: ['docs/**', '**/*.md', '.claude/**', 'tools/**']
   workflow_dispatch:
+    inputs:
+      central_alternate:
+        description: Use the official repo1 Maven Central alias after pinned formatter checksum validation
+        type: boolean
+        default: false
+      formatter_cache_run:
+        description: 'Optional successful same-branch verify producer of checksum-approved formatter reports'
+        type: string
+        default: ''
+      dependency_cache_run:
+        description: 'Optional successful same-branch full-ci nightly producer of cloud-gradle-modules'
+        type: string
+        default: ''
+      paired_reports_run:
+        description: 'Optional archived paired JMH run that failed only its completeness wrapper'
+        type: string
+        default: ''
 
 # A newer push to the same pull request cancels the older run.
 concurrency:
@@ -18,6 +35,7 @@ concurrency:
 permissions:
   contents: read
   checks: write
+  actions: read
 
 jobs:
   verify:
@@ -34,9 +52,108 @@ jobs:
       - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
         with:
           cache-provider: basic
+          # Manual development runs may save their branch-scoped dependency cache; PR runs remain read-only.
+          cache-read-only: ${{ github.event_name != 'workflow_dispatch' }}
+      - name: Dependency cache guard counterexamples
+        run: python3 -m unittest discover -s tools/tests -p test_ci_dependency_cache.py -v
+      - name: Pinned formatter cache counterexamples
+        run: python3 -m unittest discover -s tools/tests -p test_ci_formatter_cache.py -v
+      - name: Paired measurement guard counterexamples
+        run: python3 -m unittest discover -s tools/tests -p test_jmh_pair_reports.py -v
+      - name: Validate optional dependency producer
+        if: github.event_name == 'workflow_dispatch' && inputs.dependency_cache_run != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CACHE_RUN: ${{ inputs.dependency_cache_run }}
+        run: python3 tools/ci_dependency_cache.py validate --run "$CACHE_RUN" --repository "$GITHUB_REPOSITORY" --branch "$GITHUB_REF_NAME"
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        if: github.event_name == 'workflow_dispatch' && inputs.dependency_cache_run != ''
+        with:
+          name: cloud-gradle-modules
+          path: build/cloud-dependencies
+          run-id: ${{ inputs.dependency_cache_run }}
+          github-token: ${{ github.token }}
+      - name: Restore validated dependency modules only
+        if: github.event_name == 'workflow_dispatch' && inputs.dependency_cache_run != ''
+        run: python3 tools/ci_dependency_cache.py restore --archive build/cloud-dependencies/cloud-gradle-modules.tar.gz --caches "$HOME/.gradle/caches"
+      - name: Validate optional pinned formatter producer
+        if: github.event_name == 'workflow_dispatch' && inputs.formatter_cache_run != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FORMATTER_RUN: ${{ inputs.formatter_cache_run }}
+        run: python3 tools/ci_formatter_cache.py validate --run "$FORMATTER_RUN" --repository "$GITHUB_REPOSITORY" --branch "$GITHUB_REF_NAME"
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        if: github.event_name == 'workflow_dispatch' && inputs.formatter_cache_run != ''
+        with:
+          name: verify-reports
+          path: build/cloud-formatter-source
+          run-id: ${{ inputs.formatter_cache_run }}
+          github-token: ${{ github.token }}
+      - name: Recover exact pinned formatter coordinate
+        if: github.event_name == 'workflow_dispatch' && inputs.formatter_cache_run != ''
+        run: python3 tools/ci_formatter_cache.py restore --source build/cloud-formatter-source --repository build/cloud-formatter-repository
+      - name: Discard producer reports before candidate verification
+        if: github.event_name == 'workflow_dispatch' && inputs.formatter_cache_run != ''
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import shutil
+          source = Path('build/cloud-formatter-source')
+          if source.is_symlink() or source.resolve().parent != Path('build').resolve():
+              raise ValueError('unexpected formatter producer directory')
+          shutil.rmtree(source)
+          PY
+      - name: Validate optional archived measurement producer
+        id: paired_producer
+        if: github.event_name == 'workflow_dispatch' && inputs.paired_reports_run != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPORTS_RUN: ${{ inputs.paired_reports_run }}
+        run: python3 tools/jmh_pair_reports.py producer --run "$REPORTS_RUN" --repository "$GITHUB_REPOSITORY" --branch "$GITHUB_REF_NAME" --github-output "$GITHUB_OUTPUT"
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        if: github.event_name == 'workflow_dispatch' && inputs.paired_reports_run != ''
+        with:
+          name: paired-jmh-reports
+          path: build/paired-review
+          run-id: ${{ inputs.paired_reports_run }}
+          github-token: ${{ github.token }}
+      - name: Validate full original paired measurement matrix
+        if: github.event_name == 'workflow_dispatch' && inputs.paired_reports_run != ''
+        env:
+          MEASURED_SHA: ${{ steps.paired_producer.outputs.candidate_sha }}
+        run: >-
+          python3 tools/jmh_pair_reports.py reports --root build/paired-review
+          --manifest perf/jmh-suite.json --sources core/src/jmh/java
+          --control d7a8911ba4000bc759a10913652327c266d54066 --candidate "$MEASURED_SHA"
+          --output build/reports/paired-review/evidence.json
       # Two workers: the runner has 2 cores and 7 GB, and every GameTest or smoke run is a server JVM.
+      - name: Validate optional official Central endpoint
+        if: github.event_name == 'workflow_dispatch' && inputs.central_alternate
+        run: |
+          mkdir -p build/reports/central-endpoint
+          base=https://repo1.maven.org/maven2/com/palantir/javaformat/palantir-java-format/2.102.0
+          curl --fail --location --silent --show-error "$base/palantir-java-format-2.102.0.pom" -o build/reports/central-endpoint/formatter.pom
+          curl --fail --location --silent --show-error "$base/palantir-java-format-2.102.0.jar" -o build/reports/central-endpoint/formatter.jar
+          cd build/reports/central-endpoint
+          echo 'fe8d312e5310946775e6ba35053b6358f166336accd944b02ee82a0064d2c3f8  formatter.pom' | sha256sum --check
+          echo '8074d7e21832edcad422f8dbf6002d296551963bec410daad97317210a55b5c1  formatter.jar' | sha256sum --check
       - name: verify
-        run: ./gradlew --console=plain --max-workers=2 verify
+        env:
+          PINNED_FORMATTER: ${{ github.event_name == 'workflow_dispatch' && inputs.formatter_cache_run != '' }}
+          STRATEGOS_FORMATTER_REPOSITORY: ${{ github.workspace }}/build/cloud-formatter-repository
+          CENTRAL_ALTERNATE: ${{ github.event_name == 'workflow_dispatch' && inputs.central_alternate }}
+        run: |
+          options=()
+          if [ "$PINNED_FORMATTER" = true ]; then options+=(--init-script tools/pinned-formatter.init.gradle); fi
+          if [ "$CENTRAL_ALTERNATE" = true ]; then options+=(--init-script tools/maven-central-alternate.init.gradle); fi
+          ./gradlew --console=plain --max-workers=2 "${options[@]}" :core:test :mod:test verify
+      - name: Existing 15 percent and allocation gates on preserved measurements
+        if: github.event_name == 'workflow_dispatch' && inputs.paired_reports_run != ''
+        run: |
+          ./gradlew --console=plain --max-workers=2 :core:jmhCompare \
+            -Pjmh.result=build/paired-review/candidate/core/build/reports/jmh/result.json \
+            -Pjmh.baseline=build/paired-review/control/core/build/reports/jmh/result.json \
+            | tee build/reports/paired-review/comparison.log
       - name: Test results (L1, L2, L3, L5)
         if: always()
         # A fork's token cannot write checks; the artifact below still carries the reports.

@@ -54,6 +54,17 @@ class PayloadAudienceTest {
     }
 
     @Test
+    void publicPresentationAndPrivateAuthorityAreExplicitRecipientOnlyFrames() {
+        for (PayloadSpec spec : java.util.List.of(
+                dev.strategos.mod.server.net.payload.MatchPresentationPayload.SPEC,
+                dev.strategos.mod.server.net.payload.PlayerAuthorityPayload.SPEC)) {
+            assertThat(spec.toClient()).isTrue();
+            assertThat(spec.audiences()).containsExactly(Audience.Kind.PLAYER);
+            assertThat(ModPayloads.spec(spec.id())).isEqualTo(spec);
+        }
+    }
+
+    @Test
     void theGatewayRefusesAnyOtherAudience() {
         for (PayloadSpec spec : ModPayloads.specs()) {
             for (Audience.Kind kind : Audience.Kind.values()) {

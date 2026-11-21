@@ -1,6 +1,7 @@
 package dev.strategos.mod.server.persist;
 
 import dev.strategos.core.shared.MatchId;
+import dev.strategos.mod.server.match.MatchRoster;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -28,12 +29,16 @@ public final class Quarantine {
     }
 
     public static LoadResult loadMatch(ServerLevel level, MatchId id, long epoch) {
+        return loadMatch(level, id, epoch, MatchRoster.DEFAULT_RECONNECT_NANOS);
+    }
+
+    public static LoadResult loadMatch(ServerLevel level, MatchId id, long epoch, long reclaimNanos) {
         String name = MatchData.name(id);
         Path file = dataFile(level, name);
         if (!Files.exists(file)) {
             return new Missing();
         }
-        MatchData data = level.getDataStorage().get(MatchData.factory(id), name);
+        MatchData data = level.getDataStorage().get(MatchData.factory(id, reclaimNanos), name);
         if (data == null) {
             return new CorruptFile(copy(file, epoch), "vanilla could not read " + file.getFileName());
         }

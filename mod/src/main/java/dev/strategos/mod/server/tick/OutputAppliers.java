@@ -175,7 +175,10 @@ public final class OutputAppliers {
                                             out.tick(),
                                             MatchNews.ENDED,
                                             ended.winner(),
-                                            ended.ticks())));
+                                            ended.ticks(),
+                                            0,
+                                            0,
+                                            ended.winners())));
                     StrategosServer.get().matches().end(rt.id());
                 }
                 case BuildingDestroyed destroyed ->

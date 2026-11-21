@@ -63,6 +63,11 @@ public final class UnitRenderer extends LivingEntityRenderer<UnitEntity, PlayerM
     public void render(
             UnitEntity entity, float yaw, float partialTicks, PoseStack pose, MultiBufferSource buffers, int light) {
         UnitSpawnData data = entity.spawnData();
+        if (data != null) {
+            var palette = StrategosClient.palette(data.matchId());
+            entity.factionColourOnClient(
+                    palette.hasExplicitColour(data.faction()) ? (palette.colour(data.faction()) & 0xFFFFFF) : -1);
+        }
         int tiers = data == null ? 0 : tiers(StrategosClient.looks(data.faction()));
         if (!entity.dressed() || entity.dressedTiers() != tiers) {
             dress(entity, tiers);
@@ -124,6 +129,9 @@ public final class UnitRenderer extends LivingEntityRenderer<UnitEntity, PlayerM
         }
         UnitLook look = UnitLook.of(
                 templates.byIndex(data.templateIndex()).classes(), data.faction(), tiers & 15, tiers >> 4 & 15);
+        var palette = StrategosClient.palette(data.matchId());
+        if (palette.hasExplicitColour(data.faction()))
+            look = look.tinted(palette.colour(data.faction()), palette.dyeName(data.faction()));
         entity.dress(
                 item(look.head(), look),
                 item(look.chest(), look),

@@ -9,6 +9,8 @@ import dev.strategos.mod.server.match.MatchRuntime;
 import dev.strategos.mod.server.net.payload.CameraJumpPayload;
 import dev.strategos.mod.server.net.payload.CommandsPayload;
 import dev.strategos.mod.server.net.payload.DebugSubscribePayload;
+import dev.strategos.mod.server.net.payload.LobbyActionPayload;
+import dev.strategos.mod.server.net.payload.LobbyReplyPayload;
 import dev.strategos.mod.server.net.payload.MatchControlPayload;
 import dev.strategos.mod.server.net.payload.ModeSwitchPayload;
 import dev.strategos.mod.server.net.payload.SkirmishPayload;
@@ -37,6 +39,19 @@ public final class C2sHandlers {
         return (payload, context) -> {
             long start = System.nanoTime();
             try {
+                StrategosServer active = StrategosServer.getOrNull();
+                if (active != null
+                        && context.player() instanceof ServerPlayer player
+                        && !active.net().acceptsSender(player, context.connection())) return;
+                if (active != null
+                        && context.player() instanceof ServerPlayer player
+                        && payload instanceof MatchScopedPayload scoped
+                        && scoped.decoded()) {
+                    boolean globalDebug = payload instanceof DebugSubscribePayload
+                            && scoped.epoch() == 0
+                            && active.matches().seatOf(player.getUUID()) == null;
+                    if (!globalDebug && !active.net().acceptsEpoch(player, scoped.epoch())) return;
+                }
                 handler.handle(payload, context);
             } finally {
                 StrategosServer server = StrategosServer.getOrNull();
@@ -65,8 +80,14 @@ public final class C2sHandlers {
         if (server == null || !(context.player() instanceof ServerPlayer player)) {
             return;
         }
+        var message = payload.ack();
+        if (message == null) {
+            server.net().refused(player, IngressReason.INVALID_TEMPLATE_ACK);
+            return;
+        }
+        if (!server.net().allowAuxiliaryIntent(player)) return;
         try {
-            server.templateSync().ack(server, player, payload.ack());
+            server.templateSync().ack(server, player, message);
         } catch (RuntimeException e) {
             LOG.error("the template ack of {} failed", player.getGameProfile().getName(), e);
         }
@@ -78,10 +99,17 @@ public final class C2sHandlers {
         if (server == null || !(context.player() instanceof ServerPlayer player)) {
             return;
         }
+        var message = payload.jump();
+        if (message == null) {
+            server.net().refused(player, IngressReason.INVALID_CAMERA_JUMP);
+            return;
+        }
+        if (!server.net().allowAuxiliaryIntent(player)) return;
         MatchRegistry.Seat seat = server.matches().seatOf(player.getUUID());
-        if (seat != null) {
-            server.commanders()
-                    .jump(player, seat.match(), payload.jump(), server.server().getTickCount());
+        if (seat == null
+                || !server.commanders()
+                        .jump(player, seat.match(), message, server.server().getTickCount())) {
+            server.net().rejected(player, IngressReason.CAMERA_REFUSED);
         }
     }
 
@@ -91,32 +119,47 @@ public final class C2sHandlers {
         if (server == null || !(context.player() instanceof ServerPlayer player)) {
             return;
         }
+        var message = payload.query();
+        if (message == null) {
+            server.net().refused(player, IngressReason.INVALID_UI_QUERY);
+            return;
+        }
+        if (!server.net().allowAuxiliaryIntent(player)) return;
         MatchRegistry.Seat seat = server.matches().seatOf(player.getUUID());
         if (seat != null) {
-            server.replication()
-                    .query(player, seat, payload.query(), server.server().getTickCount());
+            server.replication().query(player, seat, message, server.server().getTickCount());
+        } else {
+            server.net().rejected(player, IngressReason.UI_QUERY_UNAVAILABLE);
         }
     }
 
     /**
-     * A seated player's pause, resume or game speed (MATCH-05), in singleplayer only: a pause stops its match's steps
+     * A seated player's pause, resume or game speed (MATCH-05), for the owner of an unpublished singleplayer world only: a pause stops its match's steps
      * while commands keep coming in, a resume steps it again, and a speed offered sets the server's tick rate, which
      * in singleplayer is this match's alone. A match that is neither running nor paused, or a speed not offered, is
      * ignored.
      */
     public static void matchControl(MatchControlPayload payload, IPayloadContext context) {
         StrategosServer server = StrategosServer.getOrNull();
-        if (server == null
-                || !(context.player() instanceof ServerPlayer player)
-                || !server.server().isSingleplayer()) {
+        if (server == null || !(context.player() instanceof ServerPlayer player)) {
             return;
         }
+        var message = payload.control();
+        if (message == null) {
+            server.net().refused(player, IngressReason.INVALID_MATCH_CONTROL);
+            return;
+        }
+        if (!server.net().allowAuxiliaryIntent(player)) return;
         MatchRegistry.Seat seat = server.matches().seatOf(player.getUUID());
         MatchRuntime rt = seat == null ? null : seat.match();
-        if (rt == null) {
+        if (rt == null
+                || !MatchControlPolicy.allows(
+                        server.server().isSingleplayer(), server.server().isPublished(),
+                        server.server().isSingleplayerOwner(player.getGameProfile()), rt.lifecycle())) {
+            server.net().rejected(player, IngressReason.MATCH_CONTROL_UNAVAILABLE);
             return;
         }
-        MatchControl c = payload.control();
+        MatchControl c = message;
         switch (c.action()) {
             case MatchControl.PAUSE -> {
                 if (rt.lifecycle() == MatchLifecycle.RUNNING) {
@@ -142,14 +185,18 @@ public final class C2sHandlers {
         if (server == null || !(context.player() instanceof ServerPlayer player)) {
             return;
         }
+        var message = payload.request();
+        if (message == null) {
+            server.net().refused(player, IngressReason.INVALID_MODE_SWITCH);
+            return;
+        }
+        if (!server.net().allowAuxiliaryIntent(player)) return;
         MatchRegistry.Seat seat = server.matches().seatOf(player.getUUID());
-        if (seat != null) {
-            server.commanders()
-                    .switchMode(
-                            player,
-                            seat.match(),
-                            payload.request(),
-                            server.server().getTickCount());
+        if (seat == null
+                || !server.commanders()
+                        .switchMode(
+                                player, seat.match(), message, server.server().getTickCount())) {
+            server.net().rejected(player, IngressReason.MODE_REFUSED);
         }
     }
 
@@ -162,15 +209,51 @@ public final class C2sHandlers {
         if (server == null || !(context.player() instanceof ServerPlayer player)) {
             return;
         }
+        var message = payload.setup();
+        if (message == null) {
+            server.net().refused(player, IngressReason.INVALID_SKIRMISH);
+            return;
+        }
+        if (!server.net().allowAuxiliaryIntent(player)) return;
         boolean owner = server.server().isSingleplayerOwner(player.getGameProfile());
         if (!owner && !player.hasPermissions(2)) {
+            server.net().rejected(player, IngressReason.SKIRMISH_PERMISSION);
             LOG.warn("{} asked for a skirmish without being the host or an operator", player.getScoreboardName());
             return;
         }
         try {
-            server.skirmishes().start(server, payload.setup(), player);
+            server.skirmishes().start(server, message, player);
         } catch (MatchRefusedException e) {
+            server.net().rejected(player, IngressReason.SKIRMISH_REFUSED);
             player.sendSystemMessage(Component.literal("[Strategos] skirmish refused: " + e.getMessage()));
+        }
+    }
+
+    /** Connection-authenticated lobby ingress: bounded refusals never expose backend exception details. */
+    public static void lobby(LobbyActionPayload payload, IPayloadContext context) {
+        StrategosServer server = StrategosServer.getOrNull();
+        if (server == null || !(context.player() instanceof ServerPlayer player)) return;
+        if (!server.net().allowLobbyIntent(player)) {
+            server.net().send(new Audience.Player(player), new LobbyReplyPayload(LobbyReply.RATE_LIMITED));
+            return;
+        }
+        LobbyAction action = payload.action();
+        if (action == null) {
+            server.net().refused(player, IngressReason.INVALID_LOBBY_ACTION);
+            server.net().send(new Audience.Player(player), new LobbyReplyPayload(LobbyReply.INVALID));
+            player.sendSystemMessage(Component.translatable("message.strategos.invalid_lobby_action"));
+            return;
+        }
+        try {
+            server.lobby().accept(player.getUUID(), action);
+        } catch (IllegalArgumentException | IllegalStateException refused) {
+            server.net().refused(player, IngressReason.LOBBY_REFUSED);
+            server.net().send(new Audience.Player(player), new LobbyReplyPayload(LobbyReply.REFUSED));
+            player.sendSystemMessage(Component.translatable("message.strategos.lobby_refused"));
+        } catch (RuntimeException failure) {
+            LOG.error("Lobby intent failed", failure);
+            server.net().send(new Audience.Player(player), new LobbyReplyPayload(LobbyReply.ERROR));
+            player.sendSystemMessage(Component.translatable("message.strategos.lobby_error"));
         }
     }
 
@@ -180,8 +263,14 @@ public final class C2sHandlers {
         if (server == null || !(context.player() instanceof ServerPlayer player)) {
             return;
         }
+        var message = payload.request();
+        if (message == null) {
+            server.net().refused(player, IngressReason.INVALID_DEBUG_SUBSCRIBE);
+            return;
+        }
+        if (!server.net().allowAuxiliaryIntent(player)) return;
         try {
-            server.debug().subscribe(player, payload.request());
+            server.debug().subscribe(player, message);
         } catch (RuntimeException e) {
             LOG.error(
                     "the debug subscription of {} failed",

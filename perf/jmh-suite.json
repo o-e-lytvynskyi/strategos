@@ -1,0 +1,132 @@
+{
+  "schema": 1,
+  "benchmarkMethods": 28,
+  "configurations": [
+    {
+      "benchmark": "dev.strategos.core.bench.AttackLinesBench.extract300",
+      "params": {}
+    },
+    {
+      "benchmark": "dev.strategos.core.bench.CrossingBench.cross384",
+      "params": {}
+    },
+    {
+      "benchmark": "dev.strategos.core.bench.CrossingBench.cross512",
+      "params": {}
+    },
+    {
+      "benchmark": "dev.strategos.core.bench.CrossingBench.flat384",
+      "params": {}
+    },
+    {
+      "benchmark": "dev.strategos.core.bench.CrossingBench.flat512",
+      "params": {}
+    },
+    {
+      "benchmark": "dev.strategos.core.bench.HealthBarBench.bars300",
+      "params": {}
+    },
+    {
+      "benchmark": "dev.strategos.core.bench.HudBench.hudFrame200",
+      "params": {}
+    },
+    {
+      "benchmark": "dev.strategos.core.bench.MatchBusBench.publish1000",
+      "params": {}
+    },
+    {
+      "benchmark": "dev.strategos.core.bench.MinimapBench.tile",
+      "params": {}
+    },
+    {
+      "benchmark": "dev.strategos.core.bench.MovementBench.step600",
+      "params": {}
+    },
+    {
+      "benchmark": "dev.strategos.core.bench.NodeDiscoveryBench.provingGround",
+      "params": {}
+    },
+    {
+      "benchmark": "dev.strategos.core.bench.PageBuilderBench.build",
+      "params": {}
+    },
+    {
+      "benchmark": "dev.strategos.core.bench.PageBuilderBench.buildBothMobilityClasses",
+      "params": {}
+    },
+    {
+      "benchmark": "dev.strategos.core.bench.PhaseTimersBench.overhead",
+      "params": {}
+    },
+    {
+      "benchmark": "dev.strategos.core.bench.ShroudBench.extract384",
+      "params": {}
+    },
+    {
+      "benchmark": "dev.strategos.core.bench.SnapshotCodecBench.encode500",
+      "params": {}
+    },
+    {
+      "benchmark": "dev.strategos.core.bench.SpatialBench.query1000",
+      "params": {}
+    },
+    {
+      "benchmark": "dev.strategos.core.bench.SpatialBench.rebuild1000",
+      "params": {}
+    },
+    {
+      "benchmark": "dev.strategos.core.bench.StatReadBench.cachedRead",
+      "params": {}
+    },
+    {
+      "benchmark": "dev.strategos.core.bench.StateHashBench.hash600",
+      "params": {}
+    },
+    {
+      "benchmark": "dev.strategos.core.bench.TemplateCompileBench.compile500",
+      "params": {}
+    },
+    {
+      "benchmark": "dev.strategos.core.bench.VisionBench.moveAndRestamp",
+      "params": {}
+    },
+    {
+      "benchmark": "dev.strategos.core.sim.IdleBench.step300",
+      "params": {}
+    },
+    {
+      "benchmark": "dev.strategos.core.sim.MotionBench.step600",
+      "params": {}
+    },
+    {
+      "benchmark": "dev.strategos.core.sim.OrcaBench.step600",
+      "params": {}
+    },
+    {
+      "benchmark": "dev.strategos.core.sim.ShotBench.hashActive300",
+      "params": {}
+    },
+    {
+      "benchmark": "dev.strategos.core.sim.ShotBench.volley60",
+      "params": {
+        "mode": "collateral"
+      }
+    },
+    {
+      "benchmark": "dev.strategos.core.sim.ShotBench.volley60",
+      "params": {
+        "mode": "miss"
+      }
+    },
+    {
+      "benchmark": "dev.strategos.core.sim.ShotBench.volley60",
+      "params": {
+        "mode": "preferred"
+      }
+    },
+    {
+      "benchmark": "dev.strategos.core.sim.TerrainEditBench.rebuildOnePage",
+      "params": {}
+    }
+  ]
+}

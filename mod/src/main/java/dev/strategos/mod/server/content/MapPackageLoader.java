@@ -70,16 +70,25 @@ public final class MapPackageLoader {
         return new ArrayList<>(ids);
     }
 
-    public static MapPackage load(MinecraftServer server, ResourceLocation id) {
-        Path exported = exports(server).resolve(id.getNamespace());
-        Path manifestFile = exported.resolve(id.getPath() + ".json");
-        boolean inWorld = Files.isRegularFile(manifestFile);
-        MapManifest manifest;
+    /** Metadata only: validates the manifest, not its block states or tiles. Full creation still calls load. */
+    public static MapManifest manifest(MinecraftServer server, ResourceLocation id) {
+        Path file = exports(server).resolve(id.getNamespace()).resolve(id.getPath() + ".json");
+        return readManifest(server, id, file, Files.isRegularFile(file));
+    }
+
+    private static MapManifest readManifest(MinecraftServer server, ResourceLocation id, Path file, boolean inWorld) {
         try {
-            manifest = decode(id, inWorld ? read(manifestFile) : readResource(server, manifestLocation(id)));
+            return decode(id, inWorld ? read(file) : readResource(server, manifestLocation(id)));
         } catch (IOException e) {
             throw new IllegalArgumentException("map " + id + ": cannot read its manifest: " + e.getMessage(), e);
         }
+    }
+
+    public static MapPackage load(MinecraftServer server, ResourceLocation id) {
+        Path exported = exports(server).resolve(id.getNamespace());
+        Path file = exported.resolve(id.getPath() + ".json");
+        boolean inWorld = Files.isRegularFile(file);
+        MapManifest manifest = readManifest(server, id, file, inWorld);
         List<List<MapTile.Placed>> tiles = new ArrayList<>();
         for (int j = 0; j < manifest.tilesZ(); j++) {
             for (int i = 0; i < manifest.tilesX(); i++) {

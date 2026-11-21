@@ -9,8 +9,15 @@ public final class SchemaVersion {
      * 3 persists stable template bindings for building slots and production queues (#25). Older
      * builds must refuse these saves rather than silently interpreting the session indices.
      * Versions 1 and 2 migrate without inventing identities; legacy custom indices fail explicitly.
+     * <p>4 (M7): explicit diplomacy authority; older versions migrate to identity bindings, while a current save
+     * must contain its authority block. Older readers reject this version instead of dropping control rights.
+     * <p>5 freezes hostile shot source factions for locked-team combat. Legacy unlocked shots retain their
+     * behavior; a locked legacy shot needs a matching saved live source identity for conservative migration.
+     * <p>6 records an explicit terminal winner mask; legacy individual/draw hashes remain unchanged.
+     * <p>7 requires public faction presentation; older matches migrate with unchanged legacy colours and hashes.
+     * <p>8 preserves known terrain references whose restored geometry is still pending, including in journal starts.
      */
-    public static final int CURRENT = 3;
+    public static final int CURRENT = 8;
 
     private SchemaVersion() {}
 }

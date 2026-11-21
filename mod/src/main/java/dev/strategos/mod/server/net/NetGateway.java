@@ -17,8 +17,10 @@ import dev.strategos.core.protocol.Follow;
 import dev.strategos.core.protocol.Fx;
 import dev.strategos.core.protocol.Garrison;
 import dev.strategos.core.protocol.MatchJoin;
+import dev.strategos.core.protocol.MatchPresentation;
 import dev.strategos.core.protocol.MatchStateMsg;
 import dev.strategos.core.protocol.Move;
+import dev.strategos.core.protocol.PlayerAuthority;
 import dev.strategos.core.protocol.RingBell;
 import dev.strategos.core.protocol.SetStance;
 import dev.strategos.core.protocol.Stop;
@@ -30,6 +32,8 @@ import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.core.sim.MatchRules;
+import dev.strategos.core.sim.replicate.Visibility;
+import dev.strategos.core.sim.vision.VisionGrid;
 import dev.strategos.mod.entity.UnitEntity;
 import dev.strategos.mod.registry.ModPayloads;
 import dev.strategos.mod.server.match.MatchRegistry;
@@ -39,9 +43,13 @@ import dev.strategos.mod.server.net.payload.CommandsPayload;
 import dev.strategos.mod.server.net.payload.DebugFeedPayload;
 import dev.strategos.mod.server.net.payload.FeedbackPayload;
 import dev.strategos.mod.server.net.payload.FxPayload;
+import dev.strategos.mod.server.net.payload.GroupRestorePayload;
 import dev.strategos.mod.server.net.payload.MatchJoinPayload;
+import dev.strategos.mod.server.net.payload.MatchPresentationPayload;
 import dev.strategos.mod.server.net.payload.MatchStatePayload;
+import dev.strategos.mod.server.net.payload.PlayerAuthorityPayload;
 import dev.strategos.mod.server.tick.FaultBarrier;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -49,7 +57,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Supplier;
+import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket;
 import net.minecraft.resources.ResourceLocation;
@@ -73,6 +83,7 @@ import org.jspecify.annotations.Nullable;
  * in step (04 §12.2).
  */
 public final class NetGateway {
+    private final Map<Integer, MatchPresentation> publicPresentations = new HashMap<>();
     /** The reason a player hears when it is disconnected for its violations. */
     public static final String TOO_MANY = "strategos: too many invalid packets";
 
@@ -87,11 +98,26 @@ public final class NetGateway {
     private final MinecraftServer server;
     private final Supplier<MatchRegistry> matches;
     private final FaultBarrier faults;
-    private final Map<UUID, List<CustomPacketPayload>> queued = new LinkedHashMap<>();
+
+    private record QueuedFrame(CustomPacketPayload payload, RecipientContext recipient) {}
+
+    private record SequencedRecipient(RecipientContext origin, CommandSequenceWindow window) {}
+
+    private final Map<UUID, SequencedRecipient> commandSequences = new HashMap<>();
+
+    private record WireView(long epoch, RecipientContext origin) {}
+
+    private final Map<UUID, WireView> wireViews = new HashMap<>();
+    // A fresh boot namespace prevents an old client's retained epoch from being reused after a server restart.
+    // The counter then has at least 2^62 increments of positive headroom; neither value is game state.
+    private long nextEpoch = new SecureRandom().nextLong() & 0x3fff_ffff_ffff_ffffL;
+
+    private final Map<UUID, List<QueuedFrame>> queued = new LinkedHashMap<>();
     private final Map<Integer, MatchLifecycle> lastState = new HashMap<>();
     private final Map<Integer, List<FactionLook>> lastLooks = new HashMap<>();
     private final NetCounters counters = new NetCounters();
     private final RateLimiter limiter = new RateLimiter();
+    private final RateLimiter auxiliaryLimiter = new RateLimiter();
 
     public NetGateway(MinecraftServer server, Supplier<MatchRegistry> matches, FaultBarrier faults) {
         this.server = server;
@@ -103,19 +129,20 @@ public final class NetGateway {
     public void send(Audience audience, CustomPacketPayload payload) {
         check(ModPayloads.spec(payload.type().id()), payload.type().id(), audience.kind());
         switch (audience) {
-            case Audience.Player p -> queue(p.player().getUUID(), payload);
+            case Audience.Player p -> queue(p.player(), payload);
             case Audience.TrackersOf t -> toTrackers(t, payload);
             case Audience.Faction f -> {
                 MatchRuntime rt = matches.get().get(f.match());
                 if (rt != null) {
-                    rt.roster().of(f.faction()).forEach(player -> queue(player, payload));
+                    MatchCore core = rt.core();
+                    if (core != null)
+                        rt.roster()
+                                .of(f.faction(), core.queries().diplomacy())
+                                .forEach(player -> queue(player, payload));
                 }
             }
-            case Audience.SeesCell c ->
-                toMembers(c.match(), payload); // TODO fog-filter: send only to factions that see the cell (FOW-03, M8)
-            case Audience.SeesEither
-                    e -> // AFTER-M8: deliver to the union of the two cells' viewers once fog of war exists
-                toMembers(e.match(), payload);
+            case Audience.SeesCell c -> toVisibleEvents(c.match(), payload, false);
+            case Audience.SeesEither e -> toVisibleEvents(e.match(), payload, true);
             case Audience.Match m -> toMembers(m.match(), payload);
         }
     }
@@ -160,26 +187,81 @@ public final class NetGateway {
         if (core == null) {
             return;
         }
+        MatchRegistry registry = matches.get();
+        MatchRegistry.Seat current = registry.seatOf(player.getUUID());
+        if (current == null
+                || current.match() != rt
+                || !current.slot().equals(slot)
+                || !rt.roster().isConnected(player.getUUID())) return;
+        ServerPlayer online = server.getPlayerList().getPlayer(player.getUUID());
+        RecipientContext origin = RecipientContext.capture(player, registry);
+        if (online == null || !origin.current(online, registry)) return;
+        var authority = current.authority();
+        if (authority.isEmpty()) return;
+        registry.renewRecipient(player.getUUID());
+        long epoch = Math.incrementExact(nextEpoch);
+        nextEpoch = epoch;
+        wireViews.put(player.getUUID(), new WireView(epoch, RecipientContext.capture(player, registry)));
         MatchSpace space = rt.space();
         String rules = CanonicalJson.write(MatchRules.CODEC
                 .encodeStart(JsonOps.INSTANCE, core.queries().config().rules())
                 .getOrThrow());
         send(
                 new Audience.Player(player),
-                new MatchJoinPayload(new MatchJoin(
-                        rt.id().value(),
-                        space.origin().getX(),
-                        space.origin().getY(),
-                        space.origin().getZ(),
-                        space.sizeX(),
-                        space.sizeZ(),
-                        space.minY(),
-                        space.maxY(),
-                        core.queries().config().factions(),
-                        slot,
-                        rules)));
+                new MatchJoinPayload(
+                        epoch,
+                        new MatchJoin(
+                                rt.id().value(),
+                                space.origin().getX(),
+                                space.origin().getY(),
+                                space.origin().getZ(),
+                                space.sizeX(),
+                                space.sizeZ(),
+                                space.minY(),
+                                space.maxY(),
+                                core.queries().config().factions(),
+                                slot,
+                                rules,
+                                authority.orElseThrow())));
+        send(new Audience.Player(player), new MatchPresentationPayload(presentation(rt)));
         lastState.remove(rt.id().value());
         lastLooks.remove(rt.id().value());
+    }
+
+    /** Fresh private view validation; no client-supplied cache can create command authority. */
+    public void restoreGroups(ServerPlayer player, MatchRegistry.Seat seat, Visibility visibility) {
+        WireView view = wireViews.get(player.getUUID());
+        MatchCore core = seat.match().core();
+        MatchRegistry registry = matches.get();
+        MatchRegistry.Seat current = registry.seatOf(player.getUUID());
+        if (view == null
+                || core == null
+                || current == null
+                || current.match() != seat.match()
+                || !current.slot().equals(seat.slot())
+                || !view.origin().current(player, registry)) return;
+        var authority = seat.authority();
+        if (authority.isEmpty()) return;
+        send(
+                new Audience.Player(player),
+                new GroupRestorePayload(
+                        GroupRestoreFrame.capture(view.epoch(), authority.orElseThrow(), core.queries(), visibility)));
+    }
+
+    /** Adapter changes keep ordering even while the simulation is paused. */
+    MatchPresentation presentation(MatchRuntime match) {
+        MatchPresentation next = PublicPresentation.of(server, match);
+        MatchPresentation previous = publicPresentations.get(match.id().value());
+        if (previous != null && previous.sameView(next)) return previous;
+        long revision = previous == null ? 1 : Math.addExact(previous.revision(), 1);
+        var published = new MatchPresentation(next.matchId(), revision, next.factions(), next.participants());
+        publicPresentations.put(match.id().value(), published);
+        return published;
+    }
+
+    /** Bounded player-name team packets; the caller owns an isolated board, never a global broadcast. */
+    void sendPlayerPacket(ServerPlayer player, Packet<?> packet) {
+        player.connection.send(packet);
     }
 
     /** Refuses a payload type the server does not send ({@code spec} null or client-to-server) or an audience it lacks. */
@@ -198,6 +280,15 @@ public final class NetGateway {
      */
     public void flush() {
         int tick = server.getTickCount();
+        MatchRegistry registry = matches.get();
+        commandSequences.entrySet().removeIf(entry -> {
+            ServerPlayer online = server.getPlayerList().getPlayer(entry.getKey());
+            return online == null || !entry.getValue().origin().current(online, registry);
+        });
+        wireViews.entrySet().removeIf(entry -> {
+            ServerPlayer online = server.getPlayerList().getPlayer(entry.getKey());
+            return online == null || !entry.getValue().origin().current(online, registry);
+        });
         Map<Integer, MatchLifecycle> now = new HashMap<>();
         Map<Integer, List<FactionLook>> nowLooks = new HashMap<>();
         for (MatchRuntime rt : matches.get().all()) {
@@ -211,17 +302,20 @@ public final class NetGateway {
                 send(new Audience.Match(rt.id()), state(rt, looks));
             }
         }
+        publicPresentations.keySet().retainAll(now.keySet());
         lastState.clear();
         lastState.putAll(now); // a disposed match is forgotten
         lastLooks.clear();
         lastLooks.putAll(nowLooks);
-        for (Map.Entry<UUID, List<CustomPacketPayload>> e : queued.entrySet()) {
+        for (Map.Entry<UUID, List<QueuedFrame>> e : queued.entrySet()) {
             ServerPlayer player = server.getPlayerList().getPlayer(e.getKey());
             if (player == null) {
                 continue; // it left this tick
             }
             List<CustomPacketPayload> sendable = new ArrayList<>();
-            for (CustomPacketPayload p : e.getValue()) {
+            for (QueuedFrame frame : e.getValue()) {
+                if (!frame.recipient().current(player, matches.get())) continue;
+                CustomPacketPayload p = frame.payload();
                 if (player.connection.hasChannel(p)) {
                     sendable.add(p);
                     counters.sent(p.type().id(), player.getGameProfile().getName(), size(p));
@@ -237,12 +331,58 @@ public final class NetGateway {
         queued.clear();
     }
 
-    /** A batch a client sent, on the server thread. */
+    /** A lifecycle notification may initialize modes only for the current open transport; it is not a packet violation. */
+    public boolean acceptsLogin(ServerPlayer player) {
+        return currentTransport(player, player.connection.getConnection());
+    }
+
+    /** Logout may follow a closed transport, but never owns a newer player's UUID-scoped state. */
+    public boolean acceptsLogout(ServerPlayer player) {
+        ServerPlayer online = server.getPlayerList().getPlayer(player.getUUID());
+        return online == null || RecipientContext.samePlayer(online, player);
+    }
+
+    /** The live transport may speak before match admission; freshness alone confers no match authority. */
+    public boolean acceptsSender(ServerPlayer player, Connection transport) {
+        if (currentTransport(player, transport)) return true;
+        // Do not let an old handler spend the replacement connection's rate or kick budget.
+        counters.violation(player.getGameProfile().getName(), IngressReason.STALE_CONNECTION);
+        return false;
+    }
+
+    private boolean currentTransport(ServerPlayer player, Connection transport) {
+        ServerPlayer online = server.getPlayerList().getPlayer(player.getUUID());
+        return online != null && RecipientContext.capture(player, matches.get()).connectionCurrent(online, transport);
+    }
+
+    /** A wire epoch authorizes only the exact currently authenticated full view, never a later runtime or seat. */
+    public boolean acceptsEpoch(ServerPlayer player, long epoch) {
+        WireView view = wireViews.get(player.getUUID());
+        ServerPlayer online = server.getPlayerList().getPlayer(player.getUUID());
+        if (epoch > 0
+                && view != null
+                && view.epoch() == epoch
+                && online != null
+                && view.origin().current(online, matches.get())) return true;
+        if (epoch <= 0) refused(player, IngressReason.STALE_MATCH_EPOCH);
+        else rejected(player, IngressReason.STALE_MATCH_EPOCH);
+        return false;
+    }
+
+    /** A batch dispatched after the registered handler's epoch gate, on the server thread. */
     public void commands(ServerPlayer player, CommandsPayload payload) {
+        MatchRegistry registry = matches.get();
+        RecipientContext origin = RecipientContext.capture(player, registry);
+        ServerPlayer online = server.getPlayerList().getPlayer(player.getUUID());
+        if (online == null || !origin.current(online, registry)) {
+            // A stale handler must not mutate the new seat or spend the replacement's violation budget.
+            counters.violation(player.getGameProfile().getName(), IngressReason.STALE_CONNECTION);
+            return;
+        }
         long tick = server.getTickCount();
         CommandBatch batch = payload.batch();
         if (batch == null) {
-            refuse(player, tick, "unreadable");
+            refuse(player, tick, IngressReason.UNREADABLE);
             return;
         }
         int handles = 0;
@@ -250,37 +390,45 @@ public final class NetGateway {
             handles += handles(command);
         }
         if (!limiter.take(player.getUUID(), tick, batch.commands().size(), handles)) {
-            refuse(player, tick, "over rate");
+            refuse(player, tick, IngressReason.COMMAND_RATE);
             return;
         }
         MatchRegistry.Seat seat = matches.get().seatOf(player.getUUID());
         if (seat == null) {
-            refuse(player, tick, "unseated");
+            refuse(player, tick, IngressReason.UNSEATED);
             return;
         }
         if (seat.slot().isAdmin()) {
             // the admin's slot seats watchers, whose commands would rule every faction: dropped, not a fault
-            counters.violation(player.getGameProfile().getName(), "observer");
+            counters.violation(player.getGameProfile().getName(), IngressReason.OBSERVER);
             return;
         }
         MatchRuntime rt = seat.match();
         if (rt.lifecycle() != MatchLifecycle.RUNNING && rt.lifecycle() != MatchLifecycle.PAUSED) {
-            counters.violation(player.getGameProfile().getName(), "match " + rt.lifecycle()); // dropped, not a fault
+            counters.violation(player.getGameProfile().getName(), IngressReason.INACTIVE_MATCH); // dropped, not a fault
             return;
         }
-        UUID id = player.getUUID();
+        SequencedRecipient sequenced = commandSequences.get(player.getUUID());
+        if (sequenced == null || !sequenced.origin().current(player, registry)) {
+            sequenced = new SequencedRecipient(origin, new CommandSequenceWindow());
+        }
+        if (!sequenced.window().take(batch.clientSeq(), batch.commands().size())) {
+            refuse(player, tick, IngressReason.COMMAND_SEQUENCE);
+            return;
+        }
+        commandSequences.put(player.getUUID(), sequenced);
         faults.run(rt, "commands", () -> {
             for (int k = 0; k < batch.commands().size(); k++) {
                 int seq = batch.clientSeq() + k;
-                rt.submit(seat.slot(), batch.commands().get(k), seq, result -> feedback(id, seq, result));
+                rt.submit(seat.slot(), batch.commands().get(k), seq, result -> feedback(origin, seq, result));
             }
         });
     }
 
     /** A command's result for the player who sent it, if it is still here. */
-    private void feedback(UUID player, int seq, CommandResult result) {
-        ServerPlayer online = server.getPlayerList().getPlayer(player);
-        if (online != null) {
+    private void feedback(RecipientContext origin, int seq, CommandResult result) {
+        ServerPlayer online = server.getPlayerList().getPlayer(origin.player().getUUID());
+        if (online != null && origin.current(online, matches.get())) {
             send(
                     new Audience.Player(online),
                     new FeedbackPayload(new Feedback(
@@ -297,27 +445,103 @@ public final class NetGateway {
         return counters;
     }
 
+    /** Drop unsent match data during preparation rollback without resetting the incoming violation budget. */
+    public void discardQueued(UUID player) {
+        queued.remove(player);
+    }
+
     /** A player who left starts afresh. */
     public void forget(ServerPlayer player) {
+        commandSequences.remove(player.getUUID());
+        wireViews.remove(player.getUUID());
         limiter.forget(player.getUUID());
+        auxiliaryLimiter.forget(player.getUUID());
         queued.remove(player.getUUID());
     }
 
+    /** Lobby intents use the auxiliary budget, independently of simulation commands and handle costs. */
+    public boolean allowLobbyIntent(ServerPlayer player) {
+        return takeAuxiliaryIntent(player, IngressReason.LOBBY_RATE);
+    }
+
+    /** A well-formed auxiliary request, before its type-specific permission/rate/state checks. */
+    public boolean allowAuxiliaryIntent(ServerPlayer player) {
+        return takeAuxiliaryIntent(player, IngressReason.AUXILIARY_RATE);
+    }
+
+    private boolean takeAuxiliaryIntent(ServerPlayer player, IngressReason reason) {
+        if (auxiliaryLimiter.take(player.getUUID(), server.getTickCount(), 1, 0)) return true;
+        refused(player, reason);
+        return false;
+    }
+
+    /** A normal unavailable action is audited without charging the protocol kick budget. */
+    public void rejected(ServerPlayer player, IngressReason reason) {
+        counters.rejected(player.getGameProfile().getName(), reason);
+    }
+
     /** Another handler refused what {@code player} sent: a violation, counted as the gateway's own are. */
-    public void refused(ServerPlayer player, String reason) {
+    public void refused(ServerPlayer player, IngressReason reason) {
         refuse(player, server.getTickCount(), reason);
     }
 
-    private void refuse(ServerPlayer player, long tick, String reason) {
+    private void refuse(ServerPlayer player, long tick, IngressReason reason) {
         counters.violation(player.getGameProfile().getName(), reason);
         if (limiter.violation(player.getUUID(), tick)) {
             limiter.forget(player.getUUID());
+            auxiliaryLimiter.forget(player.getUUID());
             player.connection.disconnect(Component.literal(TOO_MANY));
         }
     }
 
     private void queue(UUID player, CustomPacketPayload payload) {
-        queued.computeIfAbsent(player, k -> new ArrayList<>()).add(payload);
+        ServerPlayer online = server.getPlayerList().getPlayer(player);
+        if (online != null) queue(online, payload);
+    }
+
+    private void queue(ServerPlayer player, CustomPacketPayload payload) {
+        RecipientContext context = RecipientContext.capture(player, matches.get());
+        queued.computeIfAbsent(player.getUUID(), k -> new ArrayList<>()).add(new QueuedFrame(payload, context));
+    }
+
+    /** Project each event, not its coarse batching page; a control grant never grants vision. */
+    private void toVisibleEvents(MatchId match, CustomPacketPayload payload, boolean eitherEnd) {
+        if (!(payload instanceof FxPayload frame)) {
+            throw new IllegalArgumentException("visibility audiences require an fx payload");
+        }
+        if (frame.fx().matchId() != match.value()) {
+            throw new IllegalArgumentException("fx audience and match differ");
+        }
+        MatchRegistry registry = matches.get();
+        MatchRuntime rt = registry.get(match);
+        if (rt == null) return;
+        MatchCore core = rt.core();
+        if (core == null) return;
+        boolean revealed = core.queries().config().rules().play().revealMap();
+        var vision = core.vision();
+        for (UUID player : rt.roster().members()) {
+            MatchRegistry.Seat seat = registry.seatOf(player);
+            if (seat == null || seat.match() != rt) continue;
+            if (seat.slot().isAdmin() || revealed) {
+                queue(player, payload);
+                continue;
+            }
+            var primary = seat.primaryFaction();
+            if (primary.isEmpty() || vision == null) continue;
+            VisionGrid grid = vision.grid(primary.orElseThrow().value());
+            List<Fx.Event> visible = frame.fx().events().stream()
+                    .filter(event -> seesEvent(grid, event, eitherEnd))
+                    .toList();
+            if (!visible.isEmpty()) {
+                queue(player, new FxPayload(new Fx(match.value(), visible)));
+            }
+        }
+    }
+
+    private static boolean seesEvent(VisionGrid grid, Fx.Event event, boolean eitherEnd) {
+        // Protocol coordinates are eighths of a block; vision cells are four blocks, not 16-block FX pages.
+        return grid.count(event.x8() >> 5, event.z8() >> 5) > 0
+                || (eitherEnd && event.kind().carriesPath() && grid.count(event.toX8() >> 5, event.toZ8() >> 5) > 0);
     }
 
     private void toMembers(MatchId match, CustomPacketPayload payload) {
@@ -379,7 +603,10 @@ public final class NetGateway {
     /** A payload's record bytes, as the wire carries them. */
     static int size(CustomPacketPayload payload) {
         return switch (payload) {
-            case MatchJoinPayload p -> WireCodec.encode(MatchJoin.WIRE, p.join()).length;
+            case MatchPresentationPayload p -> WireCodec.encode(MatchPresentation.WIRE, p.presentation()).length;
+            case GroupRestorePayload p -> WireCodec.encode(GroupRestoreFrame.WIRE, p.frame()).length;
+            case MatchJoinPayload p -> Long.BYTES + WireCodec.encode(MatchJoin.WIRE, p.join()).length;
+            case PlayerAuthorityPayload p -> WireCodec.encode(PlayerAuthority.WIRE, p.authority()).length;
             case MatchStatePayload p -> WireCodec.encode(MatchStateMsg.WIRE, p.state()).length;
             case FeedbackPayload p -> WireCodec.encode(FeedbackMsg.WIRE, p.message()).length;
             case DebugFeedPayload p -> WireCodec.encode(DebugFeedMsg.WIRE, p.message()).length;

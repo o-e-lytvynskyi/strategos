@@ -27,6 +27,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.network.registration.NetworkRegistry;
+import net.neoforged.neoforge.registries.NeoForgeRegistries;
 import net.neoforged.neoforge.registries.RegistryManager;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
@@ -46,6 +47,12 @@ class EngineSurfaceInventoryTest {
 
     private static List<String> entityTypes() {
         return BuiltInRegistries.ENTITY_TYPE.keySet().stream()
+                .map(ResourceLocation::toString)
+                .toList();
+    }
+
+    private static List<String> attachmentTypes() {
+        return NeoForgeRegistries.ATTACHMENT_TYPES.keySet().stream()
                 .map(ResourceLocation::toString)
                 .toList();
     }
@@ -139,8 +146,18 @@ class EngineSurfaceInventoryTest {
 
     private static EngineSurface code(
             List<String> entityTypes, String modsToml, @Nullable String transformers, List<String> worldgen) {
+        return code(entityTypes, modsToml, transformers, worldgen, attachmentTypes());
+    }
+
+    private static EngineSurface code(
+            List<String> entityTypes,
+            String modsToml,
+            @Nullable String transformers,
+            List<String> worldgen,
+            List<String> attachments) {
         return EngineSurface.ofCode(
                 entityTypes,
+                attachments,
                 savedData(),
                 commandRoots(),
                 dataMaps(),
@@ -188,6 +205,16 @@ class EngineSurfaceInventoryTest {
 
         assertThat(EngineSurface.diff(inventory(), code(types, modsToml(), accessTransformers())))
                 .containsExactly("entityTypes: strategos:unit_spy is in the code but not in the inventory");
+    }
+
+    @Test
+    void anUnlistedAttachmentTypeIsReported() throws IOException {
+        List<String> attachments = new ArrayList<>(attachmentTypes());
+        attachments.add("strategos:unlisted_attachment");
+        assertThat(EngineSurface.diff(
+                        inventory(), code(entityTypes(), modsToml(), accessTransformers(), worldgen(), attachments)))
+                .containsExactly(
+                        "attachmentTypes: strategos:unlisted_attachment is in the code but not in the inventory");
     }
 
     @Test

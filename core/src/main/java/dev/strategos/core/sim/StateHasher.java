@@ -23,6 +23,8 @@ import java.util.ArrayDeque;
  * left out, so the L1 twin of a GameTest match agrees; so are the terrain grid, which the twin rebuilds from the same
  * pages, and the results in flight, which a job may not have computed yet. The unit loop mixes a plain {@code long},
  * so a hash without pending commands or path requests in flight allocates nothing.
+ * <p>Non-default diplomacy contributes in fixed slot order; exact legacy identity is omitted to preserve released
+ * hashes. Its immutable value caches that predicate, and its primitive mixer allocates nothing.
  */
 @HotPath
 public final class StateHasher {
@@ -170,6 +172,10 @@ public final class StateHasher {
                     h = Hasher.mix(h, Float.floatToIntBits(bonus.multiplier()));
                 }
                 h = Hasher.mix(h, damage.lethal() ? 1 : 0);
+                if (damage.sourceFaction() != Damage.UNATTRIBUTED) {
+                    h = Hasher.mix(h, 0x534F55524345L);
+                    h = Hasher.mix(h, damage.sourceFaction());
+                }
                 ShotStore.Release release = shot.release();
                 if (release != null) { // a release-less shot hashes as before
                     h = Hasher.mix(h, 1);
@@ -205,6 +211,10 @@ public final class StateHasher {
             }
             h = hasher.state();
         }
+        if (!s.diplomacy().isLegacyIdentity()) {
+            h = s.diplomacy().mixHash(h);
+        }
+        if (!s.presentation().isLegacy()) h = s.presentation().mixHash(h);
         return Hasher.finish(h);
     }
 

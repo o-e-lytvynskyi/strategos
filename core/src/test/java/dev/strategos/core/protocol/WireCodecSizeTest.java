@@ -98,7 +98,7 @@ class WireCodecSizeTest {
                         "strategos:move=1,strategos:stop=2,strategos:spawn_units=3,"
                                 + "strategos:attack=4,strategos:attack_move=5,strategos:follow=6,strategos:grant=7,"
                                 + "strategos:spawn_building=8,strategos:gather=9,strategos:place_building=10,strategos:train=11,"
-                                + "strategos:cancel_train=12,strategos:set_rally=13,strategos:reseed=14,strategos:resign=15,strategos:rule_change=16,strategos:announce_wave=17,strategos:set_ai=18,strategos:build=19,strategos:cancel_building=20,strategos:demolish=21,strategos:set_auto_reseed=22,strategos:train_batch=23,strategos:spawn_deposit=24,strategos:set_stance=25,strategos:garrison=26,strategos:ungarrison=27,strategos:ring_bell=28,strategos:all_clear=29,strategos:attack_spread=30,strategos:research=31");
+                                + "strategos:cancel_train=12,strategos:set_rally=13,strategos:reseed=14,strategos:resign=15,strategos:rule_change=16,strategos:announce_wave=17,strategos:set_ai=18,strategos:build=19,strategos:cancel_building=20,strategos:demolish=21,strategos:set_auto_reseed=22,strategos:train_batch=23,strategos:spawn_deposit=24,strategos:set_stance=25,strategos:garrison=26,strategos:ungarrison=27,strategos:ring_bell=28,strategos:all_clear=29,strategos:attack_spread=30,strategos:research=31,strategos:set_control=32");
         assertThat(CommandKinds.DEFAULT.reads("strategos:move=1,strategos:stop=2,strategos:spawn_units=3"))
                 .as("M1's journals read")
                 .isTrue();
@@ -153,8 +153,8 @@ class WireCodecSizeTest {
                 .as("kind, notice kind, handle, text with its length")
                 .isEqualTo(1 + 1 + 4 + 1 + 8);
         assertThat(size(MatchJoin.WIRE, new MatchJoin(1, 100, -60, -200, 48, 48, -64, 319, 2, new PlayerSlot(1), "{}")))
-                .as("id, origin, size, band, factions, slot, rules")
-                .isEqualTo(1 + 2 + 1 + 2 + 1 + 1 + 1 + 2 + 1 + 1 + 3);
+                .as("id, origin, size, band, factions, slot, rules, bounded initial authority")
+                .isEqualTo(1 + 2 + 1 + 2 + 1 + 1 + 1 + 2 + 1 + 1 + 3 + 6);
     }
 
     /** TECH-03, row 5: {@code looks} are appended to {@code match_state}, a byte a faction, after any results. */
@@ -211,8 +211,9 @@ class WireCodecSizeTest {
                 Integer.MIN_VALUE,
                 Integer.MIN_VALUE,
                 Integer.MAX_VALUE,
-                PlayerSlot.ADMIN,
-                "r".repeat(MatchJoin.RULES_BYTES));
+                new PlayerSlot(15),
+                "r".repeat(MatchJoin.RULES_BYTES),
+                new PlayerAuthority(Integer.MAX_VALUE, new PlayerSlot(15), Long.MAX_VALUE, 15, 65535, 65535));
         assertThat(size(MatchJoin.WIRE, widest)).isEqualTo(MatchJoin.WIRE.maxSize());
         assertThat(roundTrip(MatchJoin.WIRE, widest)).isEqualTo(widest);
         NoticeMsg longest = new NoticeMsg(NoticeKind.ORDER_FAILED, -1, "d".repeat(NoticeMsg.DETAIL_BYTES));

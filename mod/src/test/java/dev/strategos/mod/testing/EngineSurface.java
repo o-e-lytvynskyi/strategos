@@ -28,6 +28,7 @@ public record EngineSurface(Map<String, List<String>> kinds) {
     /** Every kind, in the inventory's order. */
     public static final List<String> KINDS = List.of(
             "entityTypes",
+            "attachmentTypes",
             "savedData",
             "commands",
             "mixinConfigs",
@@ -45,6 +46,7 @@ public record EngineSurface(Map<String, List<String>> kinds) {
     /** The kinds the code side reads. */
     public static final List<String> PROBED = List.of(
             "entityTypes",
+            "attachmentTypes",
             "savedData",
             "commands",
             "mixinConfigs",
@@ -102,6 +104,7 @@ public record EngineSurface(Map<String, List<String>> kinds) {
      */
     public static EngineSurface ofCode(
             Collection<String> entityTypeIds,
+            Collection<String> attachmentTypeIds,
             List<String> savedData,
             Collection<String> commandRoots,
             Collection<String> dataMapIds,
@@ -117,6 +120,11 @@ public record EngineSurface(Map<String, List<String>> kinds) {
         kinds.put(
                 "entityTypes",
                 entityTypeIds.stream().filter(id -> id.startsWith("strategos:")).toList());
+        kinds.put(
+                "attachmentTypes",
+                attachmentTypeIds.stream()
+                        .filter(id -> id.startsWith("strategos:"))
+                        .toList());
         kinds.put("savedData", savedData);
         kinds.put("commands", List.copyOf(commandRoots));
         kinds.put("mixinConfigs", tomlEntries(modsToml, "mixins", "config"));

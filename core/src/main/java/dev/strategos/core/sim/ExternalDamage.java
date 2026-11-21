@@ -1,6 +1,8 @@
 package dev.strategos.core.sim;
 
 import dev.strategos.core.shared.CoreApi;
+import dev.strategos.core.shared.FactionSlot;
+import dev.strategos.core.sim.combat.Damage;
 
 /**
  * Vanilla damage that reached a unit's body (04 §6.7, UNIT-09): a player's or a mob's blow, a projectile, an explosion
@@ -8,11 +10,23 @@ import dev.strategos.core.shared.CoreApi;
  * records it, and CMB-01 applies it.
  */
 @CoreApi
-public record ExternalDamage(int handle, Kind kind, float amount, SourceKind sourceKind) implements InputEvent {
+public record ExternalDamage(int handle, Kind kind, float amount, SourceKind sourceKind, int sourceFaction)
+        implements InputEvent {
+    public ExternalDamage(int handle, Kind kind, float amount, SourceKind sourceKind) {
+        this(handle, kind, amount, sourceKind, Damage.UNATTRIBUTED);
+    }
+
     public ExternalDamage {
+        if (sourceFaction < Damage.UNATTRIBUTED || sourceFaction > FactionSlot.MAX + 1) {
+            throw new IllegalArgumentException("external source faction outside the supported range");
+        }
         if (!(amount >= 0) || Float.isInfinite(amount)) {
             throw new IllegalArgumentException("damage " + amount + " is not a finite amount");
         }
+    }
+
+    public ExternalDamage withSourceFaction(int faction) {
+        return faction == sourceFaction ? this : new ExternalDamage(handle, kind, amount, sourceKind, faction);
     }
 
     /** The damage type it deals: melee hacks, projectiles pierce, explosions crush, a kill is lethal. */

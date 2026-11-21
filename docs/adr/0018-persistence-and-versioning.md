@@ -4,7 +4,7 @@ Date: 2026-10-21
 
 ## Status
 
-Accepted; amended by [ADR-0027](0027-save-template-identities.md) (template identities)
+Accepted; amended by [ADR-0027](0027-save-template-identities.md) (template identities) and [ADR-0028](0028-diplomacy-authority-persistence.md) (diplomacy authority)
 
 ## Context
 
@@ -81,3 +81,18 @@ Accepted; amended by [ADR-0027](0027-save-template-identities.md) (template iden
 | Chunk attachments for territory and exploration | Gone while chunks are unloaded; unusable for map-wide data |
 | Vanilla `DataFixer`s | Built for vanilla's schema types; DFU `Dynamic` migrations on our own versions are simpler and testable in L1 |
 | Trusting `computeIfAbsent` as is | Silently resets a match after any decode error |
+
+## M7 authority extension, 2026-10-29
+
+[ADR-0028](0028-diplomacy-authority-persistence.md) defines schema 4: mandatory diplomacy authority, explicit identity migration for schemas 1–3, immutable snapshot sharing and trusted journaled first-tick setup. Old template-identity restrictions remain in force. Runtime command/grant routing and UUID roster persistence retain their separate M7 tasks.
+
+## Schema 8: pending terrain references (M7 T10.2c)
+
+A known saved slice hash and published geometry are distinct states. PageRef
+records an explicit pending flag while geometry awaits recapture; schema 7
+references migrate to their released published meaning. Snapshots and journal
+segments retain a pending baseline without requiring geometry that the live
+match does not yet have. Every published reference still requires its actual
+slice. This preserves change detection and deterministic continuation after a
+paused re-save, rather than interpreting an unchanged recapture as a new edit.
+The M7 specification D-07 records implementation and its required cloud gates.

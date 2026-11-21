@@ -2,32 +2,43 @@ package dev.strategos.mod.server.match;
 
 import dev.strategos.core.diag.MatchLog;
 import dev.strategos.core.protocol.Command;
+import dev.strategos.core.protocol.CommandOutcome;
+import dev.strategos.core.protocol.Resign;
+import dev.strategos.core.protocol.SetAi;
+import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.MatchId;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.sim.AgentUpdate;
 import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.ContentSwap;
+import dev.strategos.core.sim.DiplomacySetup;
 import dev.strategos.core.sim.ExternalDamage;
+import dev.strategos.core.sim.FactionExpiry;
+import dev.strategos.core.sim.InputEvent;
 import dev.strategos.core.sim.JobDelivery;
 import dev.strategos.core.sim.LeaderUpdate;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.core.sim.MatchRules;
+import dev.strategos.core.sim.PresentationSetup;
+import dev.strategos.core.sim.TickInputs;
 import dev.strategos.core.sim.TickOutputs;
 import dev.strategos.core.sim.nav.DeliveryMode;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.server.body.AgentTracker;
 import dev.strategos.mod.server.body.BodyRegistry;
 import dev.strategos.mod.server.body.SpawnBudget;
+import dev.strategos.mod.server.content.Scenarios;
 import dev.strategos.mod.server.persist.MatchData;
 import dev.strategos.mod.server.tick.InputCollector;
 import dev.strategos.mod.server.tick.OutputAppliers;
 import dev.strategos.mod.server.world.PageJobs;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import net.minecraft.resources.ResourceLocation;
@@ -42,6 +53,8 @@ import org.slf4j.LoggerFactory;
  */
 public final class MatchRuntime {
     private dev.strategos.mod.server.world.WorldReconciler.@org.jspecify.annotations.Nullable Result reconciled;
+    private @Nullable DiplomacySetup diplomacySetup;
+    private @Nullable PresentationSetup presentationSetup;
     private @Nullable ContentSwap swap; // a reload's set, for the next step
     private final MatchId id;
     private final MatchSpace space;
@@ -58,8 +71,10 @@ public final class MatchRuntime {
     private final MatchRoster roster;
     private final AgentTracker agents;
     private final List<CommandEnvelope> inbox = new ArrayList<>();
+    private final Set<FactionSlot> expiryIssued = new HashSet<>();
+    private final List<FactionExpiry> expiryInputs = new ArrayList<>();
     private final List<ExternalDamage> damage = new ArrayList<>();
-    private final Map<ReplyKey, Consumer<CommandResult>> replies = new HashMap<>();
+    private final CommandReplies replies = new CommandReplies();
     private final List<Consumer<TickOutputs>> listeners = new ArrayList<>();
     private MatchLifecycle lifecycle = MatchLifecycle.CREATED;
     private @Nullable String faultMessage;
@@ -79,7 +94,8 @@ public final class MatchRuntime {
             @Nullable MatchCore core,
             @Nullable MatchData data,
             SpawnBudget spawnBudget,
-            @Nullable ResourceLocation map) {
+            @Nullable ResourceLocation map,
+            long reclaimNanos) {
         this.map = map;
         this.pages = new PageJobs(
                 space, core != null ? core.queries().config().rules().pageK() : MatchRules.DEFAULTS.pageK());
@@ -93,7 +109,7 @@ public final class MatchRuntime {
         this.spawnBudget = spawnBudget;
         this.bodies = new BodyRegistry(id, space);
         this.log = new MatchLog(LoggerFactory.getLogger(MatchRuntime.class), id);
-        this.roster = data != null ? data.roster() : new MatchRoster();
+        this.roster = data != null ? data.roster() : new MatchRoster(System::nanoTime, reclaimNanos);
         this.agents = new AgentTracker(space);
     }
 
@@ -198,11 +214,47 @@ public final class MatchRuntime {
     }
 
     /**
+     * Trusted lobby setup for a fresh, unseated runtime. The tick driver journals and installs it before the first
+     * tick's commands; no connection may be admitted while it is queued. Production preparation brackets setup and
+     * admission in a durable launch transaction; an interrupted saved launch fails closed. This transient queue
+     * itself is not a restorable lobby.
+     */
+    public void initializeDiplomacy(DiplomacySetup setup) {
+        MatchCore c = requireCore();
+        if ((lifecycle != MatchLifecycle.RUNNING && lifecycle != MatchLifecycle.PREPARING)
+                || c.queries().tick() != 0
+                || diplomacySetup != null
+                || c.queries().diplomacy().teamsLocked()
+                || !roster.isEmpty()
+                || !inbox.isEmpty()) {
+            throw new IllegalStateException("authority can only initialize a fresh, unseated runtime once");
+        }
+        if (setup.snapshot().teams().size() != c.queries().config().factions()) {
+            throw new IllegalArgumentException("authority faction count differs from match config");
+        }
+        diplomacySetup = setup;
+    }
+
+    /** Atomically queue validated public appearance with the existing fresh-runtime authority transaction. */
+    public void initializeDiplomacy(DiplomacySetup setup, PresentationSetup presentation) {
+        if (presentation.presentation().styles().size()
+                != requireCore().queries().config().factions())
+            throw new IllegalArgumentException("presentation faction count differs from match config");
+        initializeDiplomacy(setup);
+        presentationSetup = presentation;
+    }
+
+    boolean initializingDiplomacy() {
+        return diplomacySetup != null;
+    }
+
+    /**
      * Queues a command for the next step, received this tick with this match's next sequence number; returns that
-     * number. Only a RUNNING or PAUSED match takes commands.
+     * number. RUNNING/PAUSED matches take commands; a fresh importing lobby also takes trusted admin initialization.
      */
     public int submit(PlayerSlot issuer, Command command) {
-        if (lifecycle != MatchLifecycle.RUNNING && lifecycle != MatchLifecycle.PAUSED) {
+        boolean initializing = lifecycle == MatchLifecycle.PREPARING && issuer.isAdmin() && diplomacySetup != null;
+        if (lifecycle != MatchLifecycle.RUNNING && lifecycle != MatchLifecycle.PAUSED && !initializing) {
             throw new MatchRefusedException("match " + id + " is " + lifecycle + " and takes no commands");
         }
         int seq = nextClientSeq++;
@@ -232,20 +284,22 @@ public final class MatchRuntime {
         if (lifecycle != MatchLifecycle.RUNNING && lifecycle != MatchLifecycle.PAUSED) {
             throw new MatchRefusedException("match " + id + " is " + lifecycle + " and takes no commands");
         }
-        inbox.add(new CommandEnvelope(issuer, clientSeq, requireCore().queries().tick(), command));
-        replies.put(new ReplyKey(issuer.value(), clientSeq), reply);
+        CommandEnvelope submission =
+                new CommandEnvelope(issuer, clientSeq, requireCore().queries().tick(), command);
+        inbox.add(submission);
+        replies.register(submission, reply);
     }
 
     /** As {@link #submit(PlayerSlot, Command)}, and {@code reply} gets the command's result after its step. */
     public int submit(PlayerSlot issuer, Command command, Consumer<CommandResult> reply) {
         int seq = submit(issuer, command);
-        replies.put(new ReplyKey(issuer.value(), seq), reply);
+        replies.register(inbox.getLast(), reply);
         return seq;
     }
 
     /** The reply registered for a result, removed; null when the command had none. */
     public @Nullable Consumer<CommandResult> takeReply(CommandResult result) {
-        return replies.remove(new ReplyKey(result.issuer().value(), result.clientSeq()));
+        return replies.take(result);
     }
 
     /** Tests and debug tools: every step's outputs, after they were applied. */
@@ -269,12 +323,37 @@ public final class MatchRuntime {
                 throw new IllegalStateException("published template swap cannot be applied: " + problem);
             }
         }
+        expireDisconnected(StrategosServer.get().settings().reconnect());
         long next = c.queries().tick() + 1;
         AgentUpdate agents = this.agents.track(level, roster.members());
         ContentSwap swap = this.swap;
         this.swap = null;
-        TickOutputs out = c.step(InputCollector.collect(
-                next, inbox, pages.due(next), agents, leaders(level), damage, delivery(c, next), swap));
+        TickInputs inputs = InputCollector.collect(
+                next, inbox, pages.due(next), agents, leaders(level), damage, delivery(c, next), swap);
+        if (!expiryInputs.isEmpty()) {
+            var events = new ArrayList<InputEvent>(inputs.events());
+            events.addAll(expiryInputs);
+            expiryInputs.clear();
+            inputs = new TickInputs(next, events);
+        }
+        DiplomacySetup setup = diplomacySetup;
+        if (setup != null) {
+            List<InputEvent> events = new ArrayList<>(inputs.events().size() + 2);
+            events.add(setup);
+            if (presentationSetup != null) events.add(presentationSetup);
+            events.addAll(inputs.events());
+            inputs = new TickInputs(next, events);
+            diplomacySetup = null;
+            presentationSetup = null;
+        }
+        TickOutputs out = c.step(inputs);
+        MatchData blob = data;
+        if (blob != null) {
+            for (FactionSlot faction : expiryIssued)
+                if (!blob.expiryResolved(faction)
+                        && (c.queries().factionDefeated(faction) || c.queries().computerControlled(faction)))
+                    blob.recordExpiry(faction);
+        }
         long start = System.nanoTime();
         OutputAppliers.apply(this, level, out);
         bodies.materialise(level, c.queries(), spawnBudget);
@@ -284,6 +363,42 @@ public final class MatchRuntime {
         c.timers().recordAdapter(System.nanoTime() - start);
         for (Consumer<TickOutputs> listener : listeners) {
             listener.accept(out);
+        }
+    }
+
+    /** Resolve elapsed primary reservations only at a real simulation boundary, never while paused. */
+    public void expireDisconnected(ReconnectSettings settings) {
+        if (lifecycle != MatchLifecycle.RUNNING) return;
+        MatchCore c = requireCore();
+        var members = new ArrayList<FactionExpiryPlan.Member>();
+        for (UUID player : roster.members()) {
+            PlayerSlot slot = roster.slotOf(player);
+            if (slot == null) continue;
+            members.add(new FactionExpiryPlan.Member(
+                    c.queries().diplomacy().factionOf(slot).orElse(null),
+                    roster.isConnected(player),
+                    roster.remainingNanos(player)));
+        }
+        for (FactionSlot faction : FactionExpiryPlan.due(members)) {
+            if (data != null && data.expiryResolved(faction)) continue;
+            if (c.queries().factionDefeated(faction) || c.queries().computerControlled(faction)) {
+                if (data != null) data.recordExpiry(faction);
+                continue;
+            }
+            if (!expiryIssued.add(faction)) continue;
+            if (settings.policy() == ReconnectSettings.Policy.AI_TAKEOVER) {
+                String script = Objects.requireNonNull(
+                        Scenarios.script(StrategosServer.get().server(), "battle"),
+                        "reconnect takeover requires the shipped battle strategy");
+                submit(PlayerSlot.ADMIN, new SetAi(faction, "battle", script), result -> {
+                    if (result.outcome() != CommandOutcome.ACCEPTED)
+                        throw new IllegalStateException("reconnect takeover refused for faction " + faction.value());
+                });
+            } else if (c.queries().config().rules().play().victory() == dev.strategos.core.sim.PlayRules.Victory.NONE) {
+                expiryInputs.add(new FactionExpiry(faction));
+            } else {
+                submit(PlayerSlot.ADMIN, new Resign(faction));
+            }
         }
     }
 
@@ -366,6 +481,4 @@ public final class MatchRuntime {
         }
         return c;
     }
-
-    private record ReplyKey(int issuer, int clientSeq) {}
 }

@@ -5,6 +5,7 @@ import dev.strategos.core.content.Footprint;
 import dev.strategos.core.content.StartSlot;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.FactionLook;
+import dev.strategos.core.protocol.FactionPresentation;
 import dev.strategos.core.protocol.MatchResults;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
@@ -13,6 +14,7 @@ import dev.strategos.core.shared.TechId;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.build.BuildingView;
+import dev.strategos.core.sim.diplomacy.DiplomacyView;
 import dev.strategos.core.sim.econ.EconomyRules;
 import dev.strategos.core.sim.econ.FactionTreasury;
 import dev.strategos.core.sim.econ.GatherSlots;
@@ -55,6 +57,16 @@ final class QueriesImpl implements MatchQueries {
     @Override
     public @Nullable String templateSwapProblem(TemplateSet next) {
         return state.templateSwapProblem(next);
+    }
+
+    @Override
+    public FactionPresentation presentation() {
+        return state.presentation();
+    }
+
+    @Override
+    public DiplomacyView diplomacy() {
+        return state.diplomacy();
     }
 
     @Override
@@ -394,6 +406,16 @@ final class QueriesImpl implements MatchQueries {
     }
 
     @Override
+    public boolean computerControlled(FactionSlot faction) {
+        return state.aiSlots().get(faction.value()) != null;
+    }
+
+    @Override
+    public boolean factionDefeated(FactionSlot faction) {
+        return faction.value() < state.config().factions() && state.outcome().defeated(faction.value());
+    }
+
+    @Override
     public @Nullable MatchResults matchResults() {
         Outcome o = state.outcome();
         if (!o.ended()) {
@@ -418,7 +440,7 @@ final class QueriesImpl implements MatchQueries {
             perFaction.add(new MatchResults.FactionStats(
                     ms.unitsTrained(f), ms.unitsLost(f), ms.buildingsBuilt(f), ms.buildingsLost(f), gathered, phases));
         }
-        return new MatchResults(o.winner(), o.endedAt(), perFaction);
+        return new MatchResults(o.winners(), o.endedAt(), perFaction);
     }
 
     @Override

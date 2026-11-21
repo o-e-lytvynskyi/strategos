@@ -6,6 +6,7 @@ import com.mojang.blaze3d.platform.NativeImage;
 import dev.strategos.core.client.HintBook;
 import dev.strategos.mod.Strategos;
 import dev.strategos.mod.client.StrategosClientConfig;
+import dev.strategos.mod.client.rts.RtsScreen;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
@@ -107,6 +108,10 @@ public final class ScenarioRunner {
             case "arena_world" -> new ArenaWorldScenario();
             case "m6_goldens" -> new M6GoldensScenario();
             case "skirmish_flow" -> new SkirmishFlowScenario();
+            case "m7-lobby" -> new LobbyScenario();
+            case "m7-results" -> new CoalitionResultScenario();
+            case "m7-coop" -> new CoopControlScenario();
+            case "m7-reconnect" -> new ReconnectScenario();
             case "rts_frame_shroud" -> new RtsFrameScenario("rts_frame_shroud", RtsFrameScenario.EXPLORED);
             default -> null;
         };
@@ -247,7 +252,7 @@ public final class ScenarioRunner {
                 if (r.scenario.server() != null) {
                     if (mc.level != null
                             && mc.player != null
-                            && mc.screen == null
+                            && (mc.screen == null || mc.screen instanceof RtsScreen)
                             && mc.levelRenderer.hasRenderedAllSections()) {
                         markHintsSeen();
                         r.scenario.joined(mc, r.ctx);
@@ -260,7 +265,7 @@ public final class ScenarioRunner {
                 if (server != null
                         && mc.level != null
                         && mc.player != null
-                        && mc.screen == null
+                        && (mc.screen == null || mc.screen instanceof RtsScreen)
                         && mc.levelRenderer.hasRenderedAllSections()) {
                     markHintsSeen();
                     server.execute(() -> r.scenario.setup(server, r.ctx));

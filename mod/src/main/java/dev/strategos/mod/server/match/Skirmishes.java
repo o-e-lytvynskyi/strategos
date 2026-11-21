@@ -56,6 +56,7 @@ public final class Skirmishes {
 
     /** {@code player}'s skirmish in the arena's next slot. */
     public MatchRuntime start(StrategosServer server, SkirmishSetup setup, ServerPlayer player) {
+        server.lobby().requireSoloStartAllowed();
         return start(
                 server,
                 setup,

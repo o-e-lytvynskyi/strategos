@@ -28,6 +28,7 @@ public final class UnitEntity extends LivingEntity implements IEntityWithComplex
     private boolean removedByRegistry;
 
     private boolean selectedOnClient;
+    private int factionColourOnClient = -1;
     private ItemStack mainHand = ItemStack.EMPTY;
     private ItemStack offHand = ItemStack.EMPTY;
 
@@ -74,9 +75,18 @@ public final class UnitEntity extends LivingEntity implements IEntityWithComplex
         return level().isClientSide() ? selectedOnClient : super.isCurrentlyGlowing();
     }
 
+    /** Client-only presentation; no entity attachment or scoreboard membership is synchronized. */
+    public void factionColourOnClient(int rgb) {
+        if (factionColourOnClient != rgb) {
+            factionColourOnClient = rgb;
+            dressed = false;
+        }
+    }
+
     /** The outline's colour: its faction's (blue, red, green, yellow, purple, orange, cyan; beyond them, white). */
     @Override
     public int getTeamColor() {
+        if (level().isClientSide() && factionColourOnClient >= 0) return factionColourOnClient;
         UnitSpawnData data = spawnData;
         return switch (data == null ? -1 : data.faction()) {
             case 0 -> 0x3B82F6;

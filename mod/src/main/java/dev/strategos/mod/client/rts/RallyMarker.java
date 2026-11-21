@@ -2,7 +2,6 @@ package dev.strategos.mod.client.rts;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import dev.strategos.core.client.hud.HudTheme;
 import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.mod.client.StrategosClient;
@@ -31,7 +30,6 @@ final class RallyMarker {
     private static final int POLE_COLOUR = 0xFFF0F0F0;
 
     private final RtsMode mode;
-    private final HudTheme theme = HudTheme.DEFAULT;
 
     RallyMarker(RtsMode mode) {
         this.mode = mode;
@@ -62,7 +60,7 @@ final class RallyMarker {
         if (at == null || b == null) {
             return;
         }
-        int colour = (theme.faction(b.faction()) & 0x00FFFFFF) | 0xFF000000;
+        int colour = (StrategosClient.colour(b.faction()) & 0x00FFFFFF) | 0xFF000000;
         MultiBufferSource.BufferSource buffers =
                 Minecraft.getInstance().renderBuffers().bufferSource();
         VertexConsumer quads = buffers.getBuffer(RenderType.debugQuads());
@@ -104,7 +102,7 @@ final class RallyMarker {
             return null;
         }
         for (BuildingState.Entry b : StrategosClient.model().buildings()) {
-            if (b.handle() == handle && b.rally() && b.faction() == join.slot().value()) {
+            if (b.handle() == handle && b.rally() && b.faction() == join.primaryFaction()) {
                 return b;
             }
         }

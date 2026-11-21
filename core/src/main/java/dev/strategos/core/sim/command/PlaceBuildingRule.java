@@ -31,9 +31,9 @@ final class PlaceBuildingRule implements CommandRule<PlaceBuilding> {
 
     @Override
     public CommandResult apply(CommandEnvelope envelope, PlaceBuilding place, MatchState state) {
-        int faction = envelope.issuer().value();
+        int faction = state.diplomacy().primaryFaction(envelope.issuer());
         UnitSet builders = place.builders();
-        if (envelope.issuer().isAdmin() || faction >= state.config().factions()) {
+        if (faction < 0 || faction >= state.config().factions()) {
             return Tally.rejectAll(envelope, kind(), builders.size(), RejectReason.NOT_PERMITTED);
         }
         UnitTemplate template = state.templates().byId(place.template());
@@ -61,7 +61,8 @@ final class PlaceBuildingRule implements CommandRule<PlaceBuilding> {
         long[] cost = state.costs().of(state.stats(), template.netIndex(), faction);
         if (failed == PlacementRules.Rule.AFFORDABLE) {
             long[] missing = state.treasury().missing(faction, cost);
-            return Tally.unaffordable(envelope, kind(), builders.size(), missing == null ? new long[0] : missing);
+            return Tally.unaffordable(
+                    envelope, kind(), builders.size(), missing == null ? new long[0] : missing, state, faction);
         }
         if (failed != null) {
             return Tally.rejectAll(envelope, kind(), builders.size(), reason(failed));

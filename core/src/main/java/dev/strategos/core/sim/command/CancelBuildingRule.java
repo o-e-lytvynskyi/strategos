@@ -4,7 +4,6 @@ import dev.strategos.core.protocol.CancelBuilding;
 import dev.strategos.core.protocol.CommandKind;
 import dev.strategos.core.protocol.CommandKinds;
 import dev.strategos.core.protocol.RejectReason;
-import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.sim.CommandEnvelope;
 import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.MatchState;
@@ -30,8 +29,9 @@ final class CancelBuildingRule implements CommandRule<CancelBuilding> {
             return Tally.rejectAll(envelope, kind(), 1, RejectReason.UNKNOWN_TARGET);
         }
         int faction = buildings.faction(handle);
-        if (!envelope.issuer().controls(new FactionSlot(faction))) {
-            return Tally.rejectAll(envelope, kind(), 1, RejectReason.NOT_OWNER);
+        var authority = Ownership.building(envelope.issuer(), handle, state);
+        if (authority != null) {
+            return Tally.rejectAll(envelope, kind(), 1, authority);
         }
         if (buildings.state(handle) == BuildingStore.COMPLETE) {
             return Tally.rejectAll(envelope, kind(), 1, RejectReason.UNSUPPORTED);

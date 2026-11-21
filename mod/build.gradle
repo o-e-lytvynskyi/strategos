@@ -142,6 +142,7 @@ neoForge {
             systemProperty 'strategos.faults.rethrow', 'true'
             systemProperty 'strategos.gametest.filter', '^aisoak[.]'
             systemProperty 'strategos.aisoak.seeds', providers.gradleProperty('aisoak.seeds').getOrElse('20')
+            systemProperty 'strategos.aisoak.firstSeed', providers.gradleProperty('aisoak.firstSeed').getOrElse('1')
         }
         // [T3]
         serverSmoke {
@@ -348,6 +349,7 @@ dependencies {
     testImplementation libs.assertj
     testRuntimeOnly libs.junit.platform.launcher
     testImplementation sourceSets.devtools.output   // the demo's catalog (DemoCatalogTest)
+    testImplementation sourceSets.gametest.output   // pure soak shard selection contracts
 
     gametestImplementation sourceSets.main.output
     gametestImplementation core

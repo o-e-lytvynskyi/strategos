@@ -81,7 +81,7 @@ final class HudBanners {
                 ? null
                 : RaidBar.of(
                         StrategosClient.model().wave(),
-                        joined.slot().value(),
+                        joined.primaryFaction(),
                         StrategosClient.model().tick());
         if (bar == null) {
             return;
@@ -116,7 +116,7 @@ final class HudBanners {
         MatchNews wave = StrategosClient.model().wave();
         MatchJoin joined = StrategosClient.match();
         long matchTick = StrategosClient.model().tick();
-        if (wave != null && joined != null && wave.faction() != joined.slot().value() && wave.ticks() > matchTick) {
+        if (wave != null && joined != null && !joined.alliedFaction(wave.faction()) && wave.ticks() > matchTick) {
             String text = "Attack coming: " + (wave.ticks() - matchTick + 19) / 20 + " s"; // AI-17's countdown
             int w = font.width(text) + 2 * theme.padding();
             x -= w;
@@ -170,10 +170,19 @@ final class HudBanners {
             return;
         }
         Font font = mc.font;
-        int own = join.slot().value();
-        String title = end.faction() == own ? "Victory" : end.faction() < 0 ? "The match is over" : "Defeat";
-        int titleColor = end.faction() == own ? theme.accent() : theme.text();
-        String winner = end.faction() < 0 ? "Nobody won" : "Faction " + (end.faction() + 1) + " wins";
+        int own = join.primaryFaction();
+        boolean won = end.winners().contains(own);
+        String title = won ? "Victory" : end.winners().isEmpty() ? "The match is over" : "Defeat";
+        int titleColor = won ? theme.accent() : theme.text();
+        String winner = end.winners().isEmpty()
+                ? "Nobody won"
+                : end.winners().size() == 1
+                        ? "Faction " + (end.faction() + 1) + " wins"
+                        : "Factions "
+                                + end.winners().stream()
+                                        .map(f -> Integer.toString(f + 1))
+                                        .collect(java.util.stream.Collectors.joining(", "))
+                                + " win";
         long seconds = end.ticks() / 20;
         String time = "After " + seconds / 60 + ":" + String.format(Locale.ROOT, "%02d", seconds % 60);
 
@@ -208,7 +217,7 @@ final class HudBanners {
                     line,
                     px + (pw - font.width(winner)) / 2 - 3,
                     line + 7,
-                    theme.faction(end.faction()));
+                    StrategosClient.colour(end.faction()));
         }
         g.drawString(font, winner, px + (pw - font.width(winner)) / 2, line, theme.text(), false);
         g.drawString(font, time, px + (pw - font.width(time)) / 2, line + font.lineHeight + 2, theme.dimText(), false);
@@ -224,7 +233,7 @@ final class HudBanners {
             g.drawString(font, "", tableX, hdrY, theme.dimText(), false);
             for (int f = 0; f < factions; f++) {
                 int cx = tableX + labelW + colW * f + (colW - font.width(headers[f])) / 2;
-                g.fill(cx - 2, hdrY, cx - 2 + 4, hdrY + font.lineHeight, theme.faction(f));
+                g.fill(cx - 2, hdrY, cx - 2 + 4, hdrY + font.lineHeight, StrategosClient.colour(f));
                 g.drawString(font, headers[f], cx + 5, hdrY, theme.text(), false);
             }
             String[] labels = {"Units trained", "Units lost", "Buildings built", "Buildings lost"};

@@ -2,7 +2,6 @@ package dev.strategos.mod.client.overlay;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import dev.strategos.core.client.hud.HudTheme;
 import dev.strategos.core.client.model.ClientMatchModel;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.UnitSummary;
@@ -35,7 +34,6 @@ public final class FarMarkers {
     private static final float LIFT = 0.06F;
 
     private final ClientMatchModel model;
-    private final HudTheme theme = HudTheme.DEFAULT;
     private IntOpenHashSet drawn = new IntOpenHashSet();
 
     /** One marker: the unit's index, world position and colour. */
@@ -111,7 +109,8 @@ public final class FarMarkers {
                 continue;
             }
             int ground = level.getHeight(Heightmap.Types.MOTION_BLOCKING, bx, bz);
-            out.add(new Marker(u.index(), x, ground, z, (theme.faction(u.faction()) & 0x00FFFFFF) | 0xE0000000));
+            out.add(new Marker(
+                    u.index(), x, ground, z, (StrategosClient.colour(u.faction()) & 0x00FFFFFF) | 0xE0000000));
         }
         return out;
     }

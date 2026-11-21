@@ -86,7 +86,9 @@ final class Snapshots {
                         s.visionSystem() != null ? s.visionSystem().save() : List.of(),
                         s.shots().save(),
                         s.stances().save(),
-                        s.garrison().save()),
+                        s.garrison().save(),
+                        s.diplomacy(),
+                        s.presentation()),
                 s.buildings().empty()
                         ? List.of()
                         : s.templates().all().stream()
@@ -150,6 +152,8 @@ final class Snapshots {
         EntityStore entities = EntityStore.restore(snapshot.slots(), alive);
         MatchState state = new MatchState(snapshot.config(), templates, entities, log);
         state.setTick(snapshot.tick());
+        state.restoreDiplomacy(snapshot.diplomacy());
+        state.restorePresentation(snapshot.presentation());
         state.setNextGroup(snapshot.nextGroup());
         state.progress().restore(snapshot.play().progress());
         state.matchStats().restore(snapshot.play().matchStats());
@@ -225,6 +229,11 @@ final class Snapshots {
         int missing = 0;
         List<TerrainPage> pages = new ArrayList<>();
         for (PageRef ref : snapshot.pages()) {
+            if (ref.pending()) {
+                state.expect(ref);
+                missing++;
+                continue;
+            }
             byte[] slice = slices.slice(ref.slice());
             if (slice == null) {
                 state.expect(ref);

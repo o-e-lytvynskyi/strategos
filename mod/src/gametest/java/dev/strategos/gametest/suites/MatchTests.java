@@ -26,6 +26,108 @@ import net.minecraft.world.phys.AABB;
 
 /** The match container in a real server (CORE-01): its holder, its space and its lifecycle. */
 public final class MatchTests {
+    /** T7.2: both surviving allies and the defeated player receive one full result; outsiders receive none. */
+    @StrategosTest(arena = "arena_flat_48", timeoutTicks = 180)
+    public static void coalitionResultReachesEveryParticipantOnlyOnce(GameTestHelper h) {
+        var rt = MatchFixture.create(
+                h,
+                new MatchOptions(
+                        SimHarness.DEFAULT_SEED,
+                        3,
+                        false,
+                        dev.strategos.mod.server.match.MatchSource.GAMETEST,
+                        null,
+                        dev.strategos.core.port.MetricsSink.none(),
+                        Math.floor(h.getBounds().minY) + 1,
+                        null,
+                        MatchOptions.GAMETEST_PLAY));
+        rt.initializeDiplomacy(
+                new dev.strategos.core.sim.DiplomacySetup(dev.strategos.core.sim.diplomacy.DiplomacyState.identity(3)
+                        .withTeam(new dev.strategos.core.shared.FactionSlot(1), 0)
+                        .lockTeams()
+                        .snapshot()));
+        rt.submit(
+                dev.strategos.core.shared.PlayerSlot.ADMIN,
+                new dev.strategos.core.protocol.RuleChange("victory", "conquest"));
+        for (int faction = 0; faction < 3; faction++) {
+            rt.submit(
+                    dev.strategos.core.shared.PlayerSlot.ADMIN,
+                    new dev.strategos.core.protocol.SpawnUnits(
+                            dev.strategos.core.content.TemplateSet.DEBUG_WALKER,
+                            new dev.strategos.core.shared.FactionSlot(faction),
+                            new dev.strategos.core.shared.Vec2d(5 + faction * 12, 8),
+                            1,
+                            0));
+        }
+        var viewers = new java.util.ArrayList<dev.strategos.gametest.net.MockViewer>();
+        var at = h.absolutePos(new net.minecraft.core.BlockPos(8, 20, 8));
+        var outsider = dev.strategos.gametest.net.MockViewer.join(
+                h.getLevel(), "m7-end-outsider", at.getX(), at.getY(), at.getZ(), 2);
+        long[] terminalTick = {-1};
+        h.onEachTick(() -> {
+            for (var viewer : viewers) viewer.poll();
+            outsider.poll();
+        });
+        h.startSequence()
+                .thenWaitUntil(() -> check(
+                        core(rt).queries().tick() >= 15 && core(rt).queries().unitHandles().length == 3,
+                        "no held factions yet"))
+                .thenExecute(() -> {
+                    for (int faction = 0; faction < 3; faction++)
+                        viewers.add(BuildingTests.seated(h, rt, "m7-end-" + faction, faction));
+                    int enemy = core(rt).queries().unitHandlesOf(new dev.strategos.core.shared.FactionSlot(2))[0];
+                    rt.damage(new dev.strategos.core.sim.ExternalDamage(
+                            enemy,
+                            dev.strategos.core.sim.ExternalDamage.Kind.LETHAL,
+                            0,
+                            dev.strategos.core.sim.ExternalDamage.SourceKind.NONE));
+                })
+                .thenWaitUntil(() -> check(rt.lifecycle() == MatchLifecycle.ENDED, "coalition did not end"))
+                .thenExecuteAfter(3, () -> {
+                    for (var viewer : viewers) {
+                        var ends =
+                                NetFixtures.payloads(
+                                                viewer, dev.strategos.mod.server.net.payload.MatchEventPayload.class)
+                                        .stream()
+                                        .map(dev.strategos.mod.server.net.payload.MatchEventPayload::news)
+                                        .filter(n -> n.matchId() == rt.id().value()
+                                                && n.kind() == dev.strategos.core.protocol.MatchNews.ENDED)
+                                        .toList();
+                        check(
+                                ends.size() == 1 && ends.getFirst().winners().equals(java.util.List.of(0, 1)),
+                                "participant received wrong terminal set: " + ends);
+                        check(
+                                NetFixtures.payloads(
+                                                viewer, dev.strategos.mod.server.net.payload.MatchStatePayload.class)
+                                        .stream()
+                                        .anyMatch(p -> p.state().matchId()
+                                                        == rt.id().value()
+                                                && p.state().results() != null
+                                                && p.state().results().winners().equals(java.util.List.of(0, 1))),
+                                "terminal state omitted coalition");
+                    }
+                    check(
+                            NetFixtures.payloads(outsider, dev.strategos.mod.server.net.payload.MatchEventPayload.class)
+                                    .stream()
+                                    .noneMatch(
+                                            p -> p.news().matchId() == rt.id().value()),
+                            "outsider received match news");
+                    check(
+                            NetFixtures.payloads(outsider, dev.strategos.mod.server.net.payload.MatchStatePayload.class)
+                                    .stream()
+                                    .noneMatch(
+                                            p -> p.state().matchId() == rt.id().value()),
+                            "outsider received terminal state");
+                    terminalTick[0] = core(rt).queries().tick();
+                })
+                .thenExecuteAfter(10, () -> {
+                    check(core(rt).queries().tick() == terminalTick[0], "terminal core advanced");
+                    for (var viewer : viewers) viewer.close();
+                    outsider.close();
+                })
+                .thenSucceed();
+    }
+
     private MatchTests() {}
 
     /** CORE-01.4: the holder belongs to this server; a disposed match leaves no runtime and no body behind. */
