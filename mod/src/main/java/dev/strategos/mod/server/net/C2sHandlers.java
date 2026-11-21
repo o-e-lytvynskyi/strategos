@@ -43,6 +43,15 @@ public final class C2sHandlers {
                 if (active != null
                         && context.player() instanceof ServerPlayer player
                         && !active.net().acceptsSender(player, context.connection())) return;
+                if (active != null
+                        && context.player() instanceof ServerPlayer player
+                        && payload instanceof MatchScopedPayload scoped
+                        && scoped.decoded()) {
+                    boolean globalDebug = payload instanceof DebugSubscribePayload
+                            && scoped.epoch() == 0
+                            && active.matches().seatOf(player.getUUID()) == null;
+                    if (!globalDebug && !active.net().acceptsEpoch(player, scoped.epoch())) return;
+                }
                 handler.handle(payload, context);
             } finally {
                 StrategosServer server = StrategosServer.getOrNull();

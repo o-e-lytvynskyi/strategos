@@ -83,6 +83,10 @@ public final class MultiplayerHarness implements AutoCloseable {
                 StrategosServer.get().matches().join(match, viewer.player().getUUID(), slots.get(i));
                 StrategosServer.get().net().joined(match, viewer.player(), slots.get(i));
             }
+            // Complete the initial group's real queued handshake before client intents use its epoch.
+            // This only dispatches packets; it does not advance the core or the server clock.
+            StrategosServer.get().net().flush();
+            for (MockViewer viewer : viewers) viewer.poll();
         } catch (RuntimeException failure) {
             try {
                 close();

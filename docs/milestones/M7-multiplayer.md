@@ -77,6 +77,7 @@ Final standard cloud L6 run 40972197958 passed in 1h 1m 55s on 33ecb12: all 22 r
 | D-05 | T10.2 defeat must also resolve an expired human faction under `Victory.NONE`, while released human/admin `Resign` remains unsupported there | Implement a trusted, journaled faction-expiry input with a new append-only tag; preserve every existing tag and command meaning. Persist defeat in the existing core outcome without automatically ending a sandbox. The ordinary victory-enabled policy continues to journal `Resign`; AI takeover carries the shipped battle script in `SetAi`. All branches require pause/once/restore/replay evidence; pending implementation/acceptance |
 | D-06 | Current computer control is not proof that an earlier timeout action has never run: an administrator can later disable that controller | Persist completed expiry actions in adapter blob 3, independent of current core controller/outcome. Keep core snapshot 7 and protocol 6; migrate valid blob 1/2 without inventing history or renewing saved grace, preserve all blob-2 launch/session guards, and require strict canonical metadata in blob 3. Record completion only after a canonical effect is present at a completed core tick. Validate the actual disable/save/restore counterexample and malformed metadata; pending implementation/acceptance |
 | D-07 | Actual restored-match journals lose known but unpublished terrain references: live lastPageChange stays 1, replay advances it to 4 and may also re-arm a unit path | Split T10.2c before code: core schema 8 distinguishes pending terrain references from published pages, migrates schema 7 published references explicitly, and preserves pending geometry absence through snapshots and journal starts/segments. Published pages still require their actual slice; only an explicitly pending reference is geometry-free. Keep existing command/input meanings and exact final-hash gates, test the no-expiry control and both unchanged/changed first captures, then repeat S/J. T10.2b remains pending this prerequisite |
+| D-08 | A fresh recipient window may reuse a client sequence while an older admitted command is still paused; a single callback keyed only by issuer/sequence can overwrite its origin | Add an actual paused-inbox counterexample: old own-unit command and fresh foreign-unit command share a sequence but require different outcomes and recipient origins. Route each result to its original submission in canonical/FIFO order, including no-reply placeholders; keep the old admitted order and drop only its stale private response. No core command/hash change is needed; pending counterexample and repair |
 
 ## 2. Baseline and dependencies
 
@@ -456,6 +457,12 @@ primary visibility is the floor; M8 shared vision remains separate. NET-03 stays
 in_progress for T14's existing ping/team-marker criterion; no criterion is removed.
 
 ### 3.5 Reconnect (NET-05)
+
+T10.3a itself is bounded before endpoint code: **T10.3a.1** validates the
+transport envelope; **T10.3a.2** wires the six scoped payloads, real view
+bindings, client header capture and actual ingress regressions under protocol 7.
+The body limits remain unchanged; only the exact required eight-byte header is
+added to each corresponding transport cap and byte counter.
 
 T10.3 is split before code into **T10.3a** the server-issued live-view epoch
 and six match-scoped C2S boundaries, and **T10.3b** confirmed-match camera/group

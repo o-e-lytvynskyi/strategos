@@ -1,8 +1,12 @@
 package dev.strategos.gametest.net;
 
 import com.mojang.authlib.GameProfile;
+import dev.strategos.mod.StrategosServer;
+import dev.strategos.mod.server.net.MatchScopedPayload;
+import dev.strategos.mod.server.net.payload.MatchJoinPayload;
 import io.netty.channel.embedded.EmbeddedChannel;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -12,6 +16,7 @@ import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.BundlePacket;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.network.protocol.game.ClientboundChunkBatchFinishedPacket;
@@ -54,6 +59,8 @@ public final class MockViewer implements AutoCloseable {
     private final Set<ChunkPos> chunks = new HashSet<>();
     private int batches;
     private boolean operator;
+    private long epoch;
+    private final ArrayDeque<MatchScopedPayload> waitingForJoin = new ArrayDeque<>();
 
     private MockViewer(MinecraftServer server, ServerPlayer player, EmbeddedChannel channel, boolean acknowledging) {
         this.server = server;
@@ -123,6 +130,13 @@ public final class MockViewer implements AutoCloseable {
             return;
         }
         capture.add(packet);
+        if (packet instanceof ClientboundCustomPayloadPacket custom
+                && custom.payload() instanceof MatchJoinPayload join) {
+            epoch = join.epoch();
+            while (!waitingForJoin.isEmpty())
+                sendPacket(new ServerboundCustomPayloadPacket(
+                        waitingForJoin.removeFirst().withEpoch(epoch)));
+        }
         bytes.count(packet);
         if (packet instanceof ClientboundLevelChunkWithLightPacket chunk) {
             chunks.add(new ChunkPos(chunk.getX(), chunk.getZ()));
@@ -146,6 +160,19 @@ public final class MockViewer implements AutoCloseable {
 
     /** As the client would send {@code payload}: the server's connection reads it, on the server thread. */
     public void send(CustomPacketPayload payload) {
+        if (payload instanceof MatchScopedPayload scoped && scoped.decoded() && scoped.epoch() == 0) {
+            poll();
+            if (epoch > 0) payload = scoped.withEpoch(epoch);
+            else {
+                var seat = StrategosServer.get().matches().seatOf(player.getUUID());
+                if (seat != null && seat.match().roster().isConnected(player.getUUID())) {
+                    if (waitingForJoin.size() >= 256)
+                        throw new IllegalStateException("too many intents before a private join");
+                    waitingForJoin.addLast(scoped);
+                    return;
+                }
+            }
+        }
         sendPacket(new ServerboundCustomPayloadPacket(payload));
     }
 
@@ -196,6 +223,7 @@ public final class MockViewer implements AutoCloseable {
     @Override
     public void close() {
         if (OPEN.remove(this)) {
+            waitingForJoin.clear();
             if (operator) {
                 server.getPlayerList().getOps().remove(player.getGameProfile());
             }

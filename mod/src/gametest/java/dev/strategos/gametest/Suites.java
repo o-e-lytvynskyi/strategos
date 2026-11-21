@@ -34,6 +34,7 @@ import dev.strategos.gametest.suites.LobbyAdmissionTests;
 import dev.strategos.gametest.suites.LobbyNetworkTests;
 import dev.strategos.gametest.suites.LobbyPreparationTests;
 import dev.strategos.gametest.suites.MapTests;
+import dev.strategos.gametest.suites.MatchEpochTests;
 import dev.strategos.gametest.suites.MatchTests;
 import dev.strategos.gametest.suites.MultiplayerKitTests;
 import dev.strategos.gametest.suites.NavTests;
@@ -117,6 +118,7 @@ public final class Suites {
                         RecipientFxTests.class,
                         RecipientQueueTests.class,
                         RecipientRejoinTests.class,
+                        MatchEpochTests.class,
                         ReconnectLifecycleTests.class,
                         ReconnectRestoreTests.class,
                         ExpiryPolicyTests.class,

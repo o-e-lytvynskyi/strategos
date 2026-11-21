@@ -47,6 +47,7 @@ import dev.strategos.mod.server.net.payload.MatchPresentationPayload;
 import dev.strategos.mod.server.net.payload.MatchStatePayload;
 import dev.strategos.mod.server.net.payload.PlayerAuthorityPayload;
 import dev.strategos.mod.server.tick.FaultBarrier;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -101,6 +102,13 @@ public final class NetGateway {
     private record SequencedRecipient(RecipientContext origin, CommandSequenceWindow window) {}
 
     private final Map<UUID, SequencedRecipient> commandSequences = new HashMap<>();
+
+    private record WireView(long epoch, RecipientContext origin) {}
+
+    private final Map<UUID, WireView> wireViews = new HashMap<>();
+    // A fresh boot namespace prevents an old client's retained epoch from being reused after a server restart.
+    // The counter then has at least 2^62 increments of positive headroom; neither value is game state.
+    private long nextEpoch = new SecureRandom().nextLong() & 0x3fff_ffff_ffff_ffffL;
 
     private final Map<UUID, List<QueuedFrame>> queued = new LinkedHashMap<>();
     private final Map<Integer, MatchLifecycle> lastState = new HashMap<>();
@@ -189,25 +197,30 @@ public final class NetGateway {
         var authority = current.authority();
         if (authority.isEmpty()) return;
         registry.renewRecipient(player.getUUID());
+        long epoch = Math.incrementExact(nextEpoch);
+        nextEpoch = epoch;
+        wireViews.put(player.getUUID(), new WireView(epoch, RecipientContext.capture(player, registry)));
         MatchSpace space = rt.space();
         String rules = CanonicalJson.write(MatchRules.CODEC
                 .encodeStart(JsonOps.INSTANCE, core.queries().config().rules())
                 .getOrThrow());
         send(
                 new Audience.Player(player),
-                new MatchJoinPayload(new MatchJoin(
-                        rt.id().value(),
-                        space.origin().getX(),
-                        space.origin().getY(),
-                        space.origin().getZ(),
-                        space.sizeX(),
-                        space.sizeZ(),
-                        space.minY(),
-                        space.maxY(),
-                        core.queries().config().factions(),
-                        slot,
-                        rules,
-                        authority.orElseThrow())));
+                new MatchJoinPayload(
+                        epoch,
+                        new MatchJoin(
+                                rt.id().value(),
+                                space.origin().getX(),
+                                space.origin().getY(),
+                                space.origin().getZ(),
+                                space.sizeX(),
+                                space.sizeZ(),
+                                space.minY(),
+                                space.maxY(),
+                                core.queries().config().factions(),
+                                slot,
+                                rules,
+                                authority.orElseThrow())));
         send(new Audience.Player(player), new MatchPresentationPayload(presentation(rt)));
         lastState.remove(rt.id().value());
         lastLooks.remove(rt.id().value());
@@ -247,6 +260,10 @@ public final class NetGateway {
         int tick = server.getTickCount();
         MatchRegistry registry = matches.get();
         commandSequences.entrySet().removeIf(entry -> {
+            ServerPlayer online = server.getPlayerList().getPlayer(entry.getKey());
+            return online == null || !entry.getValue().origin().current(online, registry);
+        });
+        wireViews.entrySet().removeIf(entry -> {
             ServerPlayer online = server.getPlayerList().getPlayer(entry.getKey());
             return online == null || !entry.getValue().origin().current(online, registry);
         });
@@ -316,7 +333,21 @@ public final class NetGateway {
         return online != null && RecipientContext.capture(player, matches.get()).connectionCurrent(online, transport);
     }
 
-    /** A batch a client sent, on the server thread. */
+    /** A wire epoch authorizes only the exact currently authenticated full view, never a later runtime or seat. */
+    public boolean acceptsEpoch(ServerPlayer player, long epoch) {
+        WireView view = wireViews.get(player.getUUID());
+        ServerPlayer online = server.getPlayerList().getPlayer(player.getUUID());
+        if (epoch > 0
+                && view != null
+                && view.epoch() == epoch
+                && online != null
+                && view.origin().current(online, matches.get())) return true;
+        if (epoch <= 0) refused(player, IngressReason.STALE_MATCH_EPOCH);
+        else rejected(player, IngressReason.STALE_MATCH_EPOCH);
+        return false;
+    }
+
+    /** A batch dispatched after the registered handler's epoch gate, on the server thread. */
     public void commands(ServerPlayer player, CommandsPayload payload) {
         MatchRegistry registry = matches.get();
         RecipientContext origin = RecipientContext.capture(player, registry);
@@ -400,6 +431,7 @@ public final class NetGateway {
     /** A player who left starts afresh. */
     public void forget(ServerPlayer player) {
         commandSequences.remove(player.getUUID());
+        wireViews.remove(player.getUUID());
         limiter.forget(player.getUUID());
         auxiliaryLimiter.forget(player.getUUID());
         queued.remove(player.getUUID());
@@ -550,7 +582,7 @@ public final class NetGateway {
     static int size(CustomPacketPayload payload) {
         return switch (payload) {
             case MatchPresentationPayload p -> WireCodec.encode(MatchPresentation.WIRE, p.presentation()).length;
-            case MatchJoinPayload p -> WireCodec.encode(MatchJoin.WIRE, p.join()).length;
+            case MatchJoinPayload p -> Long.BYTES + WireCodec.encode(MatchJoin.WIRE, p.join()).length;
             case PlayerAuthorityPayload p -> WireCodec.encode(PlayerAuthority.WIRE, p.authority()).length;
             case MatchStatePayload p -> WireCodec.encode(MatchStateMsg.WIRE, p.state()).length;
             case FeedbackPayload p -> WireCodec.encode(FeedbackMsg.WIRE, p.message()).length;

@@ -67,6 +67,7 @@ public final class StrategosClient {
     private static final UnitLod LOD = new UnitLod();
     private static final ArenaWorldLauncher ARENA = new ArenaWorldLauncher();
     private static volatile @Nullable MatchJoin match;
+    private static volatile long matchEpoch;
     private static volatile List<String> resources = List.of();
     private static volatile @Nullable MatchStateMsg state;
     private static volatile TemplateSet templates = TemplateSet.builtin();
@@ -92,6 +93,7 @@ public final class StrategosClient {
             ClientLobby.clear();
             RTS.remember(); // the match's camera and groups, for a return (MATCH-04)
             match = null;
+            matchEpoch = 0;
             PRESENTATION.clear();
             resources = List.of();
             state = null;
@@ -163,7 +165,16 @@ public final class StrategosClient {
         return match;
     }
 
+    public static long epoch() {
+        return matchEpoch;
+    }
+
     public static void match(MatchJoin join) {
+        match(matchEpoch, join);
+    }
+
+    public static void match(long epoch, MatchJoin join) {
+        matchEpoch = epoch;
         MODEL.clear();
         state = null;
         DEBUG.reset();

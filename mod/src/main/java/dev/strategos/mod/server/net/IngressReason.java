@@ -4,6 +4,7 @@ package dev.strategos.mod.server.net;
 public enum IngressReason {
     UNREADABLE("unreadable"),
     STALE_CONNECTION("stale_connection"),
+    STALE_MATCH_EPOCH("stale_match_epoch"),
     COMMAND_RATE("command_rate"),
     UNSEATED("unseated"),
     OBSERVER("observer"),
