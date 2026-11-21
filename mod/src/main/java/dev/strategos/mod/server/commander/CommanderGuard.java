@@ -20,12 +20,10 @@ public final class CommanderGuard {
         return holder != null && member(holder, player) && holder.commanders().commands(player);
     }
 
+    // The gateway pins the exact player/listener/open transport to this server, not just a matching UUID.
     private static @Nullable StrategosServer current(ServerPlayer player) {
         StrategosServer holder = StrategosServer.getOrNull();
-        if (holder == null
-                || holder.server() != player.server
-                || !holder.server().isSameThread()
-                || !holder.net().acceptsLogin(player)) return null;
+        if (holder == null || !holder.server().isSameThread() || !holder.net().acceptsLogin(player)) return null;
         return holder;
     }
 
