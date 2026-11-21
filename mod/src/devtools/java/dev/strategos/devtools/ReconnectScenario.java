@@ -22,7 +22,7 @@ final class ReconnectScenario implements Scenario {
     private volatile int unit;
     private volatile @Nullable MatchRuntime original;
     private volatile @Nullable String setupFailure;
-    private @Nullable ClientResume.Pose saved;
+    private ClientResume.@Nullable Pose saved;
     private long oldEpoch;
     private int phase;
     private int age;
@@ -97,7 +97,7 @@ final class ReconnectScenario implements Scenario {
             if (join.matchId() != matchId || join.primaryFaction() != 0 || StrategosClient.epoch() <= 0)
                 return fail(ctx, "initial private handshake did not confirm the actual match/primary");
             oldEpoch = StrategosClient.epoch();
-            rig.zoomTo(36);
+            rig.zoomTo(60);
             rts.centreOn(join.originX() + 12, join.originZ() + 20);
             phase = 1;
             age = 0;
