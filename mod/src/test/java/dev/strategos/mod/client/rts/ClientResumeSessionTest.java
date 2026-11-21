@@ -7,6 +7,7 @@ import dev.strategos.core.shared.Handle;
 import dev.strategos.mod.server.net.GroupRestoreFrame;
 import java.util.List;
 import java.util.UUID;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 class ClientResumeSessionTest {
@@ -43,10 +44,7 @@ class ClientResumeSessionTest {
         assertThat(session.of(1)).isEqualTo(restored);
     }
 
-    private static void confirm(
-            ClientResumeSession session,
-            @org.jspecify.annotations.Nullable ClientResumeSession.Scope scope,
-            int matchId) {
+    private static void confirm(ClientResumeSession session, ClientResumeSession.@Nullable Scope scope, int matchId) {
         session.joined(scope, matchId, 10);
         session.accept(new GroupRestoreFrame(10, matchId, GROUPS.getFirst()));
     }
