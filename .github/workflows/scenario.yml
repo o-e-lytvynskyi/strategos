@@ -64,11 +64,14 @@ jobs:
         env:
           SCENARIO: ${{ inputs.scenario }}
           GOLDENS: ${{ inputs.goldens }}
+          COMPATIBILITY: ${{ inputs.compatibility }}
         run: |
-          goldens="$GOLDENS/linux-llvmpipe/$SCENARIO"
-          if [ ! -d "$goldens" ]; then echo "no linux-llvmpipe goldens for $SCENARIO"; exit 0; fi
+          platform=linux-llvmpipe
+          if [ "$COMPATIBILITY" = true ]; then platform=linux-llvmpipe-sodium; fi
+          goldens="$GOLDENS/$platform/$SCENARIO"
+          if [ ! -d "$goldens" ]; then echo "no $platform goldens for $SCENARIO"; exit 0; fi
           altered="$RUNNER_TEMP/altered"
-          mkdir -p "$altered/linux-llvmpipe" && cp -R "$goldens" "$altered/linux-llvmpipe/"
+          mkdir -p "$altered/$platform" && cp -R "$goldens" "$altered/$platform/"
           python3 tools/alter_golden.py "$altered"
           if ./gradlew --console=plain :mod:scenarioDiff -Pscenario="$SCENARIO" -Pgoldens.root="$altered"; then
             echo "scenarioDiff passed an altered golden"; exit 1
