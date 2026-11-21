@@ -71,6 +71,55 @@ public final class CommanderPairingTests {
         return java.util.Objects.requireNonNull(vision).grid(0).count(VisionGrid.cellOf(x), VisionGrid.cellOf(z)) > 0;
     }
 
+    @StrategosTest(timeoutTicks = 400)
+    public static void aStationaryCoopViewerRefreshesUnitsForItsPrimaryFactionRatherThanItsPlayerSlot(
+            GameTestHelper h) {
+        var rt = match(h);
+        spawn(rt, 1, 24, 4);
+        var viewers = new java.util.ArrayList<MockViewer>();
+        int[] own = {0}, enemy = {0};
+        h.startSequence()
+                .thenWaitUntil(() -> {
+                    check(core(rt).queries().tick() > 0, "waiting for initial core tick");
+                    own[0] = core(rt).queries().unitHandlesOf(new FactionSlot(0))[0];
+                    enemy[0] = core(rt).queries().unitHandlesOf(new FactionSlot(1))[0];
+                    check(rt.bodies().get(enemy[0]) != null, "waiting for enemy unit body");
+                    check(
+                            !java.util.Objects.requireNonNull(core(rt).vision())
+                                    .visibility(0)
+                                    .isVisible(enemy[0]),
+                            "enemy starts visible");
+                })
+                .thenExecute(() -> {
+                    viewers.add(join(h, rt, "pair-unit-2", 2, 4, 4));
+                    viewers.get(0).player().setGameMode(GameType.SPECTATOR);
+                })
+                .thenWaitUntil(() -> {
+                    viewers.get(0).moved();
+                    check(added(viewers.get(0), Units.body(rt, own[0]).getId()), "own unit positive not paired");
+                })
+                .thenExecuteAfter(10, () -> {
+                    check(
+                            !added(viewers.get(0), Units.body(rt, enemy[0]).getId()),
+                            "hidden enemy unit paired initially");
+                    viewers.get(0).capture().clear();
+                    rt.submit(PlayerSlot.ADMIN, Move.replace(UnitSet.of(own[0]), new Vec2d(18, 4)));
+                })
+                .thenWaitUntil(() -> check(
+                        java.util.Objects.requireNonNull(core(rt).vision())
+                                .visibility(0)
+                                .isVisible(enemy[0]),
+                        "waiting for primary faction visibility"))
+                .thenExecuteAfter(10, () -> {
+                    check(
+                            added(viewers.get(0), Units.body(rt, enemy[0]).getId()),
+                            "stationary P2-to-F0 viewer did not receive newly visible unit");
+                    viewers.get(0).close();
+                    StrategosServer.get().matches().dispose(rt.id());
+                })
+                .thenSucceed();
+    }
+
     @StrategosTest(timeoutTicks = 240)
     public static void visibleEnemyBodyIsRemovedWhenItEntersCommanderModeButCoopCommanderRemains(GameTestHelper h) {
         var rt = match(h);

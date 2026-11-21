@@ -13,7 +13,8 @@
   "mixinHooks": [
     "dev.strategos.mod.mixin.LevelChunkMixin#setBlockState",
     "dev.strategos.mod.mixin.ServerGamePacketListenerImplMixin#handleTeleportToEntityPacket",
-    "dev.strategos.mod.mixin.ServerPlayerMixin#attack"
+    "dev.strategos.mod.mixin.ServerPlayerMixin#attack",
+    "dev.strategos.mod.mixin.ServerPlayerMixin#broadcastToPlayer"
   ],
   "accessTransformers": [],
   "payloads": [
