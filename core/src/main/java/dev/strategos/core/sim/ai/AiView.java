@@ -28,6 +28,7 @@ import org.jspecify.annotations.Nullable;
 public final class AiView {
     private final MatchQueries q;
     private final int faction;
+    private final int hostileFactions;
     private final AiBudget budget;
     private @Nullable List<UnitView> units;
     private @Nullable List<UnitView> enemies;
@@ -49,10 +50,25 @@ public final class AiView {
         this.q = q;
         this.faction = faction;
         this.budget = budget;
+        var diplomacy = q.diplomacy();
+        int team = diplomacy.teamOf(new FactionSlot(faction));
+        int hostile = 0;
+        for (int candidate = 0; candidate < diplomacy.factions(); candidate++) {
+            if (diplomacy.teamOf(new FactionSlot(candidate)) != team) hostile |= 1 << candidate;
+        }
+        hostileFactions = hostile;
     }
 
     public int faction() {
         return faction;
+    }
+
+    boolean hostileFaction(int candidate) {
+        return candidate >= 0 && candidate <= FactionSlot.MAX && (hostileFactions & (1 << candidate)) != 0;
+    }
+
+    boolean hasAlliedFaction() {
+        return Integer.bitCount(hostileFactions) < q.config().factions() - 1;
     }
 
     public long tick() {
@@ -136,7 +152,7 @@ public final class AiView {
                 if (u != null && u.faction().value() == faction) {
                     own.add(u);
                 } else if (u != null
-                        && u.faction().value() < q.config().factions() // Gaia's animals are no enemy
+                        && hostileFaction(u.faction().value())
                         && q.visibleUnit(faction, h)) {
                     others.add(u);
                 }
@@ -148,7 +164,7 @@ public final class AiView {
         return units;
     }
 
-    /** The other factions' units this faction can see (AI-18). */
+    /** Opposing units this faction can see (AI-06, AI-18). */
     public List<UnitView> enemyUnits() {
         units();
         return enemies == null ? List.of() : enemies;
@@ -159,7 +175,7 @@ public final class AiView {
         return buildingsOf(true);
     }
 
-    /** The other factions' buildings this faction can see (AI-18). */
+    /** Opposing buildings this faction can see (AI-06, AI-18). */
     public List<BuildingView> enemyBuildings() {
         return buildingsOf(false);
     }
@@ -171,7 +187,7 @@ public final class AiView {
         }
         List<BuildingView> out = new ArrayList<>();
         for (BuildingView b : all) {
-            if ((b.faction() == faction) == own && (own || q.visibleBuilding(faction, b))) {
+            if (own ? b.faction() == faction : hostileFaction(b.faction()) && q.visibleBuilding(faction, b)) {
                 out.add(b);
             }
         }

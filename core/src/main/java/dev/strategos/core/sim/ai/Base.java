@@ -102,8 +102,8 @@ record Base(
     }
 
     /**
-     * The start slot to attack toward when no enemy building is visible (AI-18): not this faction's own start when the
-     * slots are indexed by faction, else the farthest start from the civic centre.
+     * The opposing start to approach when no enemy building is visible (AI-06, AI-18). A scenario without indexed
+     * starts keeps the legacy distant fallback only where there are no allied factions.
      */
     static @Nullable StartSlot enemyStart(AiView view, double x, double z) {
         List<StartSlot> starts = view.startPositions();
@@ -115,7 +115,7 @@ record Base(
             StartSlot best = null;
             double bestD = Double.POSITIVE_INFINITY;
             for (int i = 0; i < starts.size(); i++) {
-                if (i == faction) {
+                if (!view.hostileFaction(i)) {
                     continue;
                 }
                 StartSlot s = starts.get(i);
@@ -127,6 +127,7 @@ record Base(
             }
             return best;
         }
+        if (view.hasAlliedFaction()) return null;
         StartSlot best = null;
         double bestD = -1;
         for (StartSlot s : starts) {

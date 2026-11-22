@@ -8,8 +8,9 @@
 
 - **Milestone:** M7 Multiplayer; 16 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md).
 - **Last finished task:** T13 commander hardening (NET-09). Normal, server and client-profile verify each pass 3,063 cases. Full S passes all 23 jobs, with 249 nightly cases and 20 seeds (896,421 ticks). Actual Sodium movement and fog pass with inspected captures. See [T13 evidence](../milestones/M7-multiplayer.md#37-commanderbody-hardening-net-09).
-- **In progress since 2026-11-22:** T14 team ping routing, roster and marker rendering are implemented, with acceptance pending. Initial verify 45030253494 identified missing ping coverage in the strict architecture inventory and the two permanent ingress corpora; those inputs now include the new wire type. Cloud visual scenario 45030768799 uses 2963fa98. The next full verify covers the corrected inventory/corpora plus the HUD and protocol 8. Tests, builds and client runs stay cloud-only; optional T24 stays in scope. The inherited main records error remains For the owner item 6.
+- **T14 verification:** Actual scenario 45030768799 passed the mini-map click, echo and expiry. Proposed llvmpipe references compare at zero difference in 45031368831 and 45031720298, with all altered references rejected. Owner approval for promotion is pending. The modal co-op regression is fixed in 5c8b53d6 and the old goldens pass on 45031953038. Full verify 45032045463 on 98337aad and paired JMH 45031059530 are pending. Tests, builds and client runs stay cloud-only; optional T24 stays in scope. The inherited main records error remains For the owner item 6.
 
+- **In progress since 2026-11-22:** Independent T15.1 (AI-06), allied target and indexed-start filtering. T15.2 assistance and T15.3 wave coordination remain pending.
 - **Merged from main last:** d39069e7 (2026-11-15, PR #55/M6); merge 213d0564 is zero commits behind that main. Cloud verify 43756194393 passed: 2,623 canonical XML cases, zero failures/errors/skips, 7m 22s. Prior T2b slow/soak/L6 evidence remains historical; new integration will receive its required gates.
 
 The operator requested ownership of the whole M7 and work on what is currently possible on
@@ -35,6 +36,12 @@ before implementing them. T2 does not certify friendly-fire, allied victory, com
 or replication privacy; those retain their own integration tests and dependencies.
 
 ## Log
+
+### 2026-11-22 — T14 cloud evidence and T15.1 start
+
+- The full verify repaired missing ping inventory/corpus coverage, then exposed a nine-character mock prefix exceeding the test harness's eight-character cap. The 98337aad fixture uses a valid prefix and retains all delivery and cooldown assertions. Formatter recovery uses the verified pinned bytes from 44417846067. No test gates were weakened.
+- Client run 45030768799 supplies inspected baseline candidates. Two exact repeats pass with no pixel differences and reject all intentionally inverted copies at the unchanged 1e-5 threshold. Candidates are in goldens-proposed, pending owner approval. Co-op 45031507337 exposed duplicate roster information behind the sharing modal. The fix restricts roster rendering to the RTS input screen. Co-op 45031953038 passes all four existing comparisons and their altered controls, with changed candidates inspected.
+- Independently begin T15.1. Filter visible allied units/buildings and allied indexed starts from AI attack candidates. Preserve fog checks and the distant fallback on maps without indexed starts when no ally exists. T15.1 verification, T15.2 defence and T15.3 wave coordination remain pending.
 
 ### 2026-11-22 — Close T13 and NET-09
 

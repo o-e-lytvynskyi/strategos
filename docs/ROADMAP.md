@@ -459,7 +459,7 @@ for review; the cards below remain `proposed` until owner approval and opening f
 | NET-09 | Commander hardening against modified clients | M | NET-02, QA-15 | done |
 | MATCH-06 | Teams, diplomacy and shared control | M | MATCH-03, CORE-01 | done |
 | UI-15 | Multiplayer HUD and pings | M | UI-20, NET-02 | in_progress |
-| AI-06 | AI in team games | M | AI-05, MATCH-06 | proposed |
+| AI-06 | AI in team games | M | AI-05, MATCH-06 | in_progress |
 | QA-15 | Multiplayer test kit | M | QA-19, NET-02 | in_progress |
 | PERF-10 | Multiplayer perf and bandwidth gate | S | NET-04, QA-15, PERF-09 | proposed |
 | ART-03 | Civilisation 1 art pass (beside M7, after the MVP verdict) | L | QA-13, D-03, D-04 | proposed |

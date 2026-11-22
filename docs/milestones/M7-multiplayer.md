@@ -806,6 +806,13 @@ background. `PingPayload` passes through the existing timed gateway and the
 recipient-private `TeamPingPayload` puts the same marker in the world and on
 the minimap. A rejected ping leaves match state unchanged.
 
+T15 is split ahead of implementation. T15.1 filters allied units, buildings
+and indexed starting positions from hostile target selection while preserving
+the existing visibility checks. T15.2 adds observed allied-base threats and
+idle-only assistance with the 600-tick bound. T15.3 coordinates eligible waves
+in stable faction order and verifies the 1,200-tick bound and replay. Each
+substep keeps the current difficulty and deterministic simulation gates.
+
 Extend the M6 `AiView`/wave scheduler with immutable diplomacy and observed allied-threat
 inputs. Never hand it unrestricted enemy queries. AI selects no allied attack target; an idle
 army helps an allied base within 600 ticks, and allied AI waves launch within 1,200 ticks of
