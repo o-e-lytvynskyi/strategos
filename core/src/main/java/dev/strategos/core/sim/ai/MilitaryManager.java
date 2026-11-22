@@ -35,7 +35,14 @@ final class MilitaryManager implements AiModule {
         if (base == null || budget.exhausted()) {
             return;
         }
-        if (base.enemy() == null && Base.enemyStart(view, base.x(), base.z()) == null) {
+        if (view.hasAlliedFaction()
+                && memory.get(Slots.MUSTER) == 0
+                && memory.get(Slots.FIGHT) == 0
+                && !DefenceManager.defending(memory, view.tick())
+                && DefenceManager.assistAlly(view, budget, sink, base)) {
+            return;
+        }
+        if (budget.exhausted() || (base.enemy() == null && Base.enemyStart(view, base.x(), base.z()) == null)) {
             return; // no visible enemy and no start to march on
         }
         StrategyScript.Attack a = script.attack();

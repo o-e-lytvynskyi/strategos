@@ -101,6 +101,44 @@ final class DefenceManager implements AiModule {
         allClear(budget, sink, base, enemies, tick);
     }
 
+    /** Sends an idle army to a threat that its own faction observes near an allied civic centre. */
+    static boolean assistAlly(AiView view, AiBudget budget, CommandSink sink, Base home) {
+        List<BuildingView> centres = view.alliedCentres();
+        if (centres.isEmpty()) return false;
+
+        List<Integer> soldiers = new ArrayList<>();
+        for (UnitView unit : view.units()) {
+            if (unit.state() == UnitState.GARRISONED || view.role(unit) == AiView.ROLE_NONE) continue;
+            if (!view.idle(unit)) return false;
+            if (view.health(unit) >= WOUNDED) soldiers.add(unit.handle());
+        }
+        if (soldiers.isEmpty()) return false;
+
+        UnitView threat = null;
+        double closest = Double.POSITIVE_INFINITY;
+        List<UnitView> enemies = view.enemyUnits();
+        for (BuildingView centre : centres) {
+            var footprint = centre.footprint();
+            double x = footprint.anchorX() + footprint.spanX() / 2.0;
+            double z = footprint.anchorZ() + footprint.spanZ() / 2.0;
+            for (UnitView enemy : enemies) {
+                if (!budget.spend(1)) return false;
+                if (enemy.state() == UnitState.GARRISONED
+                        || view.role(enemy) == AiView.ROLE_NONE
+                        || DetMath.length(enemy.x() - x, enemy.z() - z) > NEAR) continue;
+                double distance = DetMath.length(enemy.x() - home.x(), enemy.z() - home.z());
+                if (distance < closest) {
+                    closest = distance;
+                    threat = enemy;
+                }
+            }
+        }
+        if (threat == null || !budget.spend(10)) return false;
+        var units = UnitSet.of(soldiers.stream().mapToInt(Integer::intValue).toArray());
+        sink.send(AttackMove.replace(units, new Vec2d(threat.x(), threat.z())));
+        return true;
+    }
+
     /** Commits the soldiers and sends the wounded home. */
     private void defend(
             AiView view, AiBudget budget, CommandSink sink, Base base, List<Hit> blows, List<UnitView> enemies) {

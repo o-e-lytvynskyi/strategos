@@ -10,6 +10,7 @@ import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.sim.DefenceLog;
 import dev.strategos.core.sim.MatchBounds;
 import dev.strategos.core.sim.MatchQueries;
+import dev.strategos.core.sim.UnitState;
 import dev.strategos.core.sim.UnitView;
 import dev.strategos.core.sim.build.BuildingView;
 import dev.strategos.core.sim.econ.NodeView;
@@ -151,9 +152,7 @@ public final class AiView {
                 read += u == null ? 0 : 1;
                 if (u != null && u.faction().value() == faction) {
                     own.add(u);
-                } else if (u != null
-                        && hostileFaction(u.faction().value())
-                        && q.visibleUnit(faction, h)) {
+                } else if (u != null && hostileFaction(u.faction().value()) && q.visibleUnit(faction, h)) {
                     others.add(u);
                 }
             }
@@ -180,13 +179,37 @@ public final class AiView {
         return buildingsOf(false);
     }
 
-    private List<BuildingView> buildingsOf(boolean own) {
+    /** Finished allied civic centres within this faction's own building visibility. */
+    List<BuildingView> alliedCentres() {
+        List<BuildingView> centres = new ArrayList<>();
+        for (BuildingView building : allBuildings()) {
+            if (building.faction() >= 0
+                    && building.faction() != faction
+                    && !hostileFaction(building.faction())
+                    && building.state() == 2
+                    && is(building.template(), Base.CENTRE)
+                    && q.visibleBuilding(faction, building)) {
+                centres.add(building);
+            }
+        }
+        return centres;
+    }
+
+    boolean idle(UnitView unit) {
+        return unit.state() == UnitState.IDLE && q.orders(unit.handle()).isEmpty();
+    }
+
+    private List<BuildingView> allBuildings() {
         if (all == null) {
             all = q.buildings();
             budget.spend(all.size());
         }
+        return all;
+    }
+
+    private List<BuildingView> buildingsOf(boolean own) {
         List<BuildingView> out = new ArrayList<>();
-        for (BuildingView b : all) {
+        for (BuildingView b : allBuildings()) {
             if (own ? b.faction() == faction : hostileFaction(b.faction()) && q.visibleBuilding(faction, b)) {
                 out.add(b);
             }
