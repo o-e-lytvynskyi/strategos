@@ -24,7 +24,18 @@ public final class CommanderGuard {
 
     /** Backstop for accepted vanilla movement and external dimension changes; never applies to first-person play. */
     public static void onPlayerTick(PlayerTickEvent.Post event) {
-        if (!(event.getEntity() instanceof ServerPlayer player)) return;
+        if (event.getEntity() instanceof ServerPlayer player) correct(player);
+    }
+
+    /** Spectators next to an unloaded chunk skip Player.tick and its Post event entirely. */
+    public static void tick(StrategosServer holder) {
+        for (ServerPlayer player : holder.server().getPlayerList().getPlayers()) {
+            if (holder.commanders().commands(player)) correct(player);
+        }
+    }
+
+    private static void correct(ServerPlayer player) {
+        if (!player.isSpectator()) return;
         StrategosServer holder = current(player);
         if (holder == null || !member(holder, player) || !holder.commanders().commands(player)) return;
         var seat = holder.matches().seatOf(player.getUUID());

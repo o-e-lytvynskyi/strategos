@@ -10,6 +10,7 @@ import dev.strategos.core.port.JobExecutor;
 import dev.strategos.core.sim.econ.EconomyRules;
 import dev.strategos.mod.registry.ModDataMaps;
 import dev.strategos.mod.server.body.SpawnBudget;
+import dev.strategos.mod.server.commander.CommanderGuard;
 import dev.strategos.mod.server.commander.CommanderService;
 import dev.strategos.mod.server.content.ResourceFiles;
 import dev.strategos.mod.server.content.ServerTemplates;
@@ -394,6 +395,7 @@ public final class StrategosServer {
         StrategosServer s = current;
         if (s != null) {
             long start = System.nanoTime();
+            CommanderGuard.tick(s); // also covers spectators whose Player.tick/Post was skipped
             s.protection.restoreAll(s); // the backstop: protected blocks changed behind the writer (BLD-07)
             s.perf.tick();
             s.debug.tick();
