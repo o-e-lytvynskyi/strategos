@@ -730,7 +730,14 @@ counterexamples were inspected.
 T13.2 accepted 2026-11-22: cloud verify 44962371158 on 0d676f53 passes
 3,058 cases without failures/errors/skips. The two confirmed pairing defects
 are fixed; all three actual body/co-op refresh scenarios and the strict hook
-inventory pass. T13.3–T13.4 and the parent task remain open.
+inventory pass.
+
+T13.3 accepted 2026-11-22: full cloud verify 44966352132 on 715bede7 passes
+3,063 cases without failures/errors/skips. Actual accepted vanilla moves cover
+all six limits, foreign-dimension repair and the real unloaded-neighbour branch
+that skips Player.tick/Post; two numeric cases cover finite and nonfinite
+recovery. Both Post hooks preserve the current authenticated commander gate and
+the listener's corrected origin. T13.4 and the parent task remain open.
 
 Proposed files `mod/mixin/ServerGamePacketListenerImplMixin`, `ServerPlayerMixin` and
 `server/commander/CommanderGuard` implement architecture §12.6:
