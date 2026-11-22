@@ -924,7 +924,11 @@ Non-reference hardware results are diagnostic until the owner accepts another re
 Run the standard reference gate with the M7 selection:
 `./gradlew verifyPerf '-Pperf.filter=(m_7_multiplayer|m_7_multiplayer_stress|path_budget_d)$' -Pperf.gates=a,b,c,d,e,g`.
 The four-faction fixture reuses the M6 roster at 150 population and 30 finished buildings per
-faction (300 and 60 in stress). It verifies this scale before enabling AI. Measure 24,000 game
+faction (300 and 60 in stress). It verifies this scale before enabling AI. The fixture tops up
+casualties and restores destroyed structures at clear town sites every five ticks. The report
+records the actual population, living roster and finished structures per faction every second.
+It rejects a measurement if any faction falls below the specified mean population or building
+count, loses its entire live roster in a census, or has a fixture command refused. Measure 24,000 game
 ticks after 200 warm-up ticks in the baseline and 6,000 measured ticks under 2× stress. E uses
 each viewer's exact gameplay bytes and measured duration. The dedicated 100-unit order test
 enforces the five-tick latency behind 200 requests. The PERF-10 report guard checks the complete

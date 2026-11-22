@@ -550,6 +550,9 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Decisions taken
 
+- 2026-11-22 · Do not use the first PERF-10 diagnostic (45064656511) as a reference. Its numeric budgets passed at 24,000 and 6,000 measured ticks, but standard play fell from 560 to 58 live units. Keep all existing budgets and add fixture replenishment plus second-by-second census validation. This changes only the test workload and its evidence, preserving production rules. Undo together with the sustained-load requirement if the owner formally revises it.
+
+
 - 2026-11-22 · T21 updates the four inspected editing-state lobby images only where the civilisation control is now enabled. The exact changed bounds are x=356–413 and y=119–202 at 640×360. The three other lobby images are identical. The scenario also selects Roman in the actual lobby and checks its loaded public style. Undo the fixture images with the UI control change if the selection design is reverted.
 
 - 2026-11-22 · Roman art uses the existing faction style and keeps original building footprints, collision classes and damage ranks. The palette is shared by construction, repair and restore. Existing saves and neutral fixtures keep their original appearance; new lobby matches can select Roman per faction. To undo, remove the selectable style and retain its material mapping for saves that already chose it.

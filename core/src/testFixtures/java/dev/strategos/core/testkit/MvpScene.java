@@ -207,8 +207,7 @@ public final class MvpScene implements SoakScene {
         spawn(out, TemplateSet.WORKER, faction, workers, config.workers(), WORKER_SPREAD);
     }
 
-    private static void spawn(
-            List<Issue> out, TemplateId template, FactionSlot faction, Vec2d at, int count, double r) {
+    static void spawn(List<Issue> out, TemplateId template, FactionSlot faction, Vec2d at, int count, double r) {
         for (int left = count; left > 0; left -= 300) { // a spawn takes at most 300
             out.add(admin(new SpawnUnits(template, faction, at, Math.min(left, 300), r)));
         }

@@ -25,6 +25,14 @@ def soak(folder, name, population, buildings, samples):
     require(report["samples"] == samples and report["ticks"] == samples + 200,
             f"{name}: incomplete measurement window")
     require(report["terrainExcludedFromE"], f"{name}: missing terrain accounting")
+    workload = report["workload"]
+    require(workload["samples"] * 20 == samples, f"{name}: missing workload censuses")
+    require([faction["faction"] for faction in workload["factions"]] == list(range(4)),
+            f"{name}: incomplete faction census")
+    for faction in workload["factions"]:
+        require(faction["population"]["mean"] >= population and faction["livingUnits"]["min"] > 0
+                and faction["finishedBuildings"]["mean"] >= buildings, f"{name}: workload fell below scale")
+
     return report["budgets"]
 
 

@@ -2,9 +2,13 @@ package dev.strategos.gametest.suites;
 
 import static dev.strategos.gametest.suites.Units.core;
 
+import dev.strategos.core.shared.FactionSlot;
+import dev.strategos.core.sim.MatchQueries;
 import dev.strategos.core.sim.Stuck;
+import dev.strategos.core.testkit.MultiplayerScene;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
@@ -38,6 +42,67 @@ final class SoakResult {
     private final @Nullable Path journal;
     private final long[] fights;
     private final @Nullable SoakCosts costs;
+    private final @Nullable MultiplayerLoad multiplayerLoad;
+
+    static final class MultiplayerLoad {
+        private int samples;
+        private long unitReplacements;
+        private long buildingReplacements;
+
+        void replacements(long units, long buildings) {
+            unitReplacements = units;
+            buildingReplacements = buildings;
+        }
+
+        long unitReplacements() {
+            return unitReplacements;
+        }
+
+        long buildingReplacements() {
+            return buildingReplacements;
+        }
+
+        private final int[][] minimum = new int[3][MultiplayerScene.FACTIONS];
+        private final int[][] maximum = new int[3][MultiplayerScene.FACTIONS];
+        private final long[][] total = new long[3][MultiplayerScene.FACTIONS];
+
+        MultiplayerLoad() {
+            for (int[] row : minimum) Arrays.fill(row, Integer.MAX_VALUE);
+        }
+
+        void sample(MatchQueries q) {
+            int[] buildings = MultiplayerScene.finishedBuildings(q);
+            for (int f = 0; f < MultiplayerScene.FACTIONS; f++) {
+                var faction = new FactionSlot(f);
+                add(0, f, q.populationUsed(faction));
+                add(1, f, q.unitHandlesOf(faction).length);
+                add(2, f, buildings[f]);
+            }
+            samples++;
+        }
+
+        private void add(int metric, int faction, int value) {
+            minimum[metric][faction] = Math.min(minimum[metric][faction], value);
+            maximum[metric][faction] = Math.max(maximum[metric][faction], value);
+            total[metric][faction] += value;
+        }
+
+        int samples() {
+            return samples;
+        }
+
+        int minimum(int metric, int faction) {
+            return minimum[metric][faction];
+        }
+
+        int maximum(int metric, int faction) {
+            return maximum[metric][faction];
+        }
+
+        double mean(int metric, int faction) {
+            return (double) total[metric][faction] / samples;
+        }
+    }
 
     SoakResult(
             CrowdSoak.Config config,
@@ -61,7 +126,8 @@ final class SoakResult {
             int units,
             @Nullable Path journal,
             long[] fights,
-            @Nullable SoakCosts costs) {
+            @Nullable SoakCosts costs,
+            @Nullable MultiplayerLoad multiplayerLoad) {
         this.config = config;
         this.seed = seed;
         this.core = core;
@@ -84,6 +150,11 @@ final class SoakResult {
         this.journal = journal;
         this.fights = fights;
         this.costs = costs;
+        this.multiplayerLoad = multiplayerLoad;
+    }
+
+    @Nullable MultiplayerLoad multiplayerLoad() {
+        return multiplayerLoad;
     }
 
     /** The first loop's costs; null for the other soaks. */
@@ -172,6 +243,10 @@ final class SoakResult {
 
     @Nullable Path journal() {
         return journal;
+    }
+
+    long refusedOrders() {
+        return refused;
     }
 
     long failedOrders() {

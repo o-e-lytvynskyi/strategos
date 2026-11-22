@@ -194,6 +194,9 @@ final class CrowdSoak {
     private final boolean battle;
     private final boolean mvp;
     private final boolean multiplayer;
+    private final SoakResult.@Nullable MultiplayerLoad multiplayerLoad;
+    private long unitReplacementsBefore;
+    private long buildingReplacementsBefore;
     private final long[] trackers;
     private long trackersBefore;
     private final long[][] combat;
@@ -220,6 +223,7 @@ final class CrowdSoak {
         this.seed = Seeds.set("soak").skip(config.seedLine()).findFirst().orElseThrow();
         boolean skirmish = config.scene() instanceof MvpScene.Config; // PERF-09 plays MAP-02, not the proving ground
         this.multiplayer = config.scene() instanceof MultiplayerScene.Config;
+        this.multiplayerLoad = multiplayer ? new SoakResult.MultiplayerLoad() : null;
         this.rt = multiplayer
                 ? MapTests.multiplayerPerfGround(h, config.lane(), MultiplayerScene.FACTIONS)
                 : skirmish
@@ -367,6 +371,10 @@ final class CrowdSoak {
             shotsBefore = shots;
             hitsBefore = hits;
             deathsBefore = deaths;
+            if (scene instanceof MultiplayerScene loadScene) {
+                unitReplacementsBefore = loadScene.unitReplacements();
+                buildingReplacementsBefore = loadScene.buildingReplacements();
+            }
             windowStarts.run();
         }
         if (t >= WARM_UP) {
@@ -402,6 +410,7 @@ final class CrowdSoak {
             }
             sampled++;
             if (sampled % 20 == 0) {
+                if (multiplayerLoad != null) multiplayerLoad.sample(q);
                 everySecond.run();
                 for (MockViewer viewer : viewers) {
                     int seen = StrategosServer.get()
@@ -483,6 +492,11 @@ final class CrowdSoak {
                 .toArray();
         if (multiplayer) viewers.forEach(v -> check(v.bytes().failures().isEmpty(), "PERF-10 unencodable packet"));
         viewers.forEach(MockViewer::close);
+        if (multiplayerLoad != null && scene instanceof MultiplayerScene loadScene) {
+            multiplayerLoad.replacements(
+                    loadScene.unitReplacements() - unitReplacementsBefore,
+                    loadScene.buildingReplacements() - buildingReplacementsBefore);
+        }
         done.accept(new SoakResult(
                 config,
                 seed,
@@ -505,7 +519,8 @@ final class CrowdSoak {
                 q.unitCount(),
                 exportJournal(),
                 fights(),
-                costs(q)));
+                costs(q),
+                multiplayerLoad));
     }
 
     private @Nullable SoakCosts costs(MatchQueries q) {

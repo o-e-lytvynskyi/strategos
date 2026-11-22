@@ -6,6 +6,7 @@ import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.CommandOutcome;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.sim.CommandResult;
+import dev.strategos.core.sim.ExternalDamage;
 import dev.strategos.core.sim.MatchRules;
 import dev.strategos.core.sim.PlayRules;
 import dev.strategos.core.sim.build.BuildingStore;
@@ -68,5 +69,29 @@ final class MultiplayerSceneTest {
                     .isEqualTo(scale.unitsPerFaction());
         }
         assertThat(scene.next(q)).isEmpty();
+
+        var faction = new FactionSlot(2);
+        int unit = q.unitHandlesOf(faction)[0];
+        int house = q.buildings().stream()
+                .filter(b -> b.faction() == faction.value() && b.template().equals(MvpScene.HOUSE))
+                .findFirst()
+                .orElseThrow()
+                .handle();
+        h.damage(new ExternalDamage(unit, ExternalDamage.Kind.LETHAL, 0, ExternalDamage.SourceKind.NONE));
+        h.damage(new ExternalDamage(house, ExternalDamage.Kind.LETHAL, 0, ExternalDamage.SourceKind.NONE));
+        h.step();
+        assertThat(q.unitCount()).isEqualTo(config.unitsAtStart() - 1);
+        assertThat(MultiplayerScene.finishedBuildings(q)[2]).isEqualTo(scale.buildings() - 1);
+        for (int i = 0; i < 6; i++) {
+            scene.next(q).forEach(order -> h.submit(order.issuer(), order.command()));
+            for (var event : h.step().events()) {
+                if (event instanceof CommandResult result) {
+                    assertThat(result.outcome()).as(result.toString()).isEqualTo(CommandOutcome.ACCEPTED);
+                }
+            }
+        }
+        assertThat(q.populationUsed(faction)).isEqualTo(scale.population());
+        assertThat(q.unitCount()).isEqualTo(config.unitsAtStart());
+        assertThat(MultiplayerScene.finishedBuildings(q)[2]).isEqualTo(scale.buildings());
     }
 }

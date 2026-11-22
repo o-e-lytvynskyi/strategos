@@ -1,5 +1,6 @@
 package dev.strategos.core.testkit;
 
+import dev.strategos.core.content.Footprint;
 import dev.strategos.core.content.StartSlot;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.Grant;
@@ -12,8 +13,10 @@ import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.MatchQueries;
 import dev.strategos.core.sim.ai.Levels;
+import dev.strategos.core.sim.build.BuildingStore;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /** The PERF-10 map has one town and a full MVP roster for each of four primary factions. */
 public final class MultiplayerScene implements SoakScene {
@@ -22,7 +25,24 @@ public final class MultiplayerScene implements SoakScene {
     private static final int CAMP_START = 20;
     private static final int BUILD_GRID = 7;
     private static final int BUILD_STEP = 13;
+    private static final int REFILL_TICKS = 5;
     private final Config config;
+    private final List<RosterPart> roster;
+    private final List<List<TownSite>> sites = new ArrayList<>();
+    private long unitReplacements;
+    private long buildingReplacements;
+
+    private record RosterPart(TemplateId template, int count, boolean workers) {}
+
+    private record TownSite(SpawnBuilding spawn, int[] columns) {
+        boolean free(MatchQueries q) {
+            for (int cell : columns) {
+                if (q.footprintAt(cell >>> 16, cell & 0xFFFF)) return false;
+            }
+            return true;
+        }
+    }
+
     private boolean startedAi;
 
     public record Config(MvpScene.Config scale) implements SoakScene.Spec {
@@ -44,6 +64,13 @@ public final class MultiplayerScene implements SoakScene {
 
     private MultiplayerScene(Config config) {
         this.config = config;
+        var scale = config.scale();
+        roster = List.of(
+                new RosterPart(TemplateSet.INFANTRY, scale.spearmen(), false),
+                new RosterPart(BattleScene.ARCHER, scale.archers(), false),
+                new RosterPart(BattleScene.HORSEMAN, scale.horsemen(), false),
+                new RosterPart(MvpScene.RAM, scale.rams(), false),
+                new RosterPart(TemplateSet.WORKER, scale.workers(), true));
     }
 
     public static Vec2d viewer(int faction) {
@@ -72,15 +99,17 @@ public final class MultiplayerScene implements SoakScene {
             var faction = new FactionSlot(f);
             int x = campX(f);
             int z = campZ(f);
+            var town = new ArrayList<TownSite>();
+            sites.add(town);
             for (int i = 0; i < layout.size(); i++) {
-                out.add(new Issue(
-                        PlayerSlot.ADMIN,
-                        new SpawnBuilding(
-                                layout.get(i),
-                                faction,
-                                x + i % BUILD_GRID * BUILD_STEP,
-                                z + i / BUILD_GRID * BUILD_STEP,
-                                0)));
+                TemplateId id = layout.get(i);
+                int bx = x + i % BUILD_GRID * BUILD_STEP;
+                int bz = z + i / BUILD_GRID * BUILD_STEP;
+                var spawn = new SpawnBuilding(id, faction, bx, bz, 0);
+                var template = Objects.requireNonNull(templates.byId(id));
+                var blueprint = Objects.requireNonNull(templates.blueprint(template.netIndex()));
+                town.add(new TownSite(spawn, Footprint.of(blueprint, bx, bz, 0).columns(blueprint)));
+                out.add(new Issue(PlayerSlot.ADMIN, spawn));
             }
             out.add(new Issue(PlayerSlot.ADMIN, new SpawnDeposit(MvpScene.QUARRY, x + 8, z + 119)));
             out.add(new Issue(PlayerSlot.ADMIN, new SpawnDeposit(MvpScene.IRON_MINE, x + 20, z + 119)));
@@ -94,18 +123,64 @@ public final class MultiplayerScene implements SoakScene {
 
     @Override
     public List<Issue> next(MatchQueries q) {
-        // Start the bots after the roster and construction are present, so the measurement can verify the required
-        // scale.
-        if (startedAi || config.scale().ai().isEmpty() || q.unitCount() < config.unitsAtStart()) return List.of();
-        startedAi = true;
+        if (!startedAi && !config.scale().ai().isEmpty() && q.unitCount() >= config.unitsAtStart()) {
+            startedAi = true;
+            var out = new ArrayList<Issue>();
+            for (int f = 0; f < FACTIONS; f++) {
+                out.add(new Issue(
+                        PlayerSlot.ADMIN,
+                        new SetAi(
+                                new FactionSlot(f),
+                                Levels.PROFILE,
+                                config.scale().ai())));
+            }
+            return out;
+        }
+        if (q.tick() % REFILL_TICKS != 0) return List.of();
+
         var out = new ArrayList<Issue>();
+        int[] complete = finishedBuildings(q);
         for (int f = 0; f < FACTIONS; f++) {
             var faction = new FactionSlot(f);
-            out.add(new Issue(
-                    PlayerSlot.ADMIN,
-                    new SetAi(faction, Levels.PROFILE, config.scale().ai())));
+            var counts = new java.util.HashMap<TemplateId, Integer>();
+            for (int handle : q.unitHandlesOf(faction)) {
+                var unit = q.unit(handle);
+                if (unit != null) counts.merge(unit.template(), 1, Integer::sum);
+            }
+            for (RosterPart part : roster) {
+                int need = part.count() - counts.getOrDefault(part.template(), 0);
+                if (need <= 0) continue;
+                var yard = new Vec2d(campX(f) + (part.workers() ? 32 : 52), campZ(f) + 122);
+                MvpScene.spawn(out, part.template(), faction, yard, need, part.workers() ? 7 : 9);
+                unitReplacements += need;
+            }
+            int missingBuildings = config.scale().buildings() - complete[f];
+            for (TownSite site : sites.get(f)) {
+                if (missingBuildings <= 0) break;
+                if (site.free(q)) {
+                    out.add(new Issue(PlayerSlot.ADMIN, site.spawn()));
+                    missingBuildings--;
+                    buildingReplacements++;
+                }
+            }
         }
         return out;
+    }
+
+    public static int[] finishedBuildings(MatchQueries queries) {
+        int[] result = new int[FACTIONS];
+        for (var building : queries.buildings()) {
+            if (building.state() == BuildingStore.COMPLETE) result[building.faction()]++;
+        }
+        return result;
+    }
+
+    public long unitReplacements() {
+        return unitReplacements;
+    }
+
+    public long buildingReplacements() {
+        return buildingReplacements;
     }
 
     @Override

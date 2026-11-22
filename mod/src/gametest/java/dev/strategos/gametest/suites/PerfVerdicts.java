@@ -21,6 +21,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import net.minecraft.gametest.framework.GameTestHelper;
 import org.jspecify.annotations.Nullable;
@@ -141,6 +142,9 @@ final class PerfVerdicts {
             json.addProperty("populationPerFactionAtStart", setup.scale().population());
             json.addProperty("buildingsPerFactionAtStart", setup.scale().buildings());
             json.addProperty("terrainExcludedFromE", true);
+            var load = Objects.requireNonNull(r.multiplayerLoad());
+            json.add("workload", multiplayerLoad(setup, load, broken));
+            if (r.refusedOrders() != 0) broken.add("PERF-10 workload commands refused: " + r.refusedOrders());
         }
         json.addProperty("baselineTickP50", without);
         json.addProperty("baselineTickP95", Percentiles.percentile(r.baseline(), 0.95));
@@ -204,6 +208,35 @@ final class PerfVerdicts {
         } else {
             h.succeed();
         }
+    }
+
+    private static JsonObject multiplayerLoad(
+            MultiplayerScene.Config config, SoakResult.MultiplayerLoad load, List<String> broken) {
+        String[] metrics = {"population", "livingUnits", "finishedBuildings"};
+        var factions = new JsonArray();
+        for (int f = 0; f < MultiplayerScene.FACTIONS; f++) {
+            var row = new JsonObject();
+            row.addProperty("faction", f);
+            for (int metric = 0; metric < metrics.length; metric++) {
+                var range = new JsonObject();
+                range.addProperty("min", load.minimum(metric, f));
+                range.addProperty("max", load.maximum(metric, f));
+                range.addProperty("mean", load.mean(metric, f));
+                row.add(metrics[metric], range);
+            }
+            if (load.mean(0, f) < config.scale().population()
+                    || load.minimum(1, f) == 0
+                    || load.mean(2, f) < config.scale().buildings()) {
+                broken.add("PERF-10 faction " + f + " fell below the measured workload");
+            }
+            factions.add(row);
+        }
+        var result = new JsonObject();
+        result.addProperty("samples", load.samples());
+        result.addProperty("unitReplacements", load.unitReplacements());
+        result.addProperty("buildingReplacements", load.buildingReplacements());
+        result.add("factions", factions);
+        return result;
     }
 
     /**
