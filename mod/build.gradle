@@ -104,6 +104,7 @@ neoForge {
         server {
             server()
             gameDirectory = file('run/server')
+            systemProperty 'strategos.s11.live', providers.gradleProperty('s11.live').getOrElse('false')
             programArgument('--nogui')
             jvmArgument('-Xmx3G')
             systemProperty 'strategos.faults.rethrow', 'true'

@@ -24,21 +24,45 @@ this playtest.
 
 ## S11 live capture (T18)
 
-Use the measured scenes and durations from [S11](../spikes/S11-bandwidth.md).
-On the dedicated server record the same declared warm-up and 1,200 measured
-core ticks for each scene. Use JFR with `minecraft.PacketSent` and
-`minecraft.NetworkSummary` enabled. Note start and end ticks, elapsed wall
-time and capture offsets for each run. Keep a mapping from each real
-connection to A or B in the operator's local evidence only.
+Use an isolated dedicated dev server with dev-only map resources and two real client
+connections. An operator starts the processes using the QA-09 launch path with
+`-Ps11.live=true` on `:mod:runServer`. Both viewers set render distance to 12.
+The server sorts their login names to assign the first connection to A and the other
+to B. Record the name-to-role and socket-to-role mappings locally.
 
-Record gameplay and terrain separately by peer and packet type. Preserve the
-per-tick peak and maximum rolling 20-tick window. Count vanilla block updates
-and entity tracking in gameplay. Compare pre-compression packet bytes with
-the same QA-19 definition, and explain any difference from transport totals
-using packet framing, compression, bundles, sampling and the observed
-scene. Keep raw captures out of git and remove connection addresses from the
-review report. Report the 100 KiB/s gameplay mean for each peer, then record
-the evidence supporting the tier-4 decision.
+Start one JFR recording for each scene. From the server console, run
+`jfr start` followed by `s11-live battle`, `s11-live pan`, `s11-live fog`,
+or `s11-live construction`. The dev fixture imports the proving ground, admits
+both clients as commanders, drives the corresponding mock workload and records
+1,201 JFR boundaries for 1,200 core ticks after 200 ticks of warm-up.
+Keep cameras still except in the pan scene. For pan, start at the north ford and
+use normal RTS horizontal movement back and forth across the 96-block route,
+targeting 40 blocks/s. The report records each eye's actual horizontal travel per
+game-second. Record departures from the route or target speed before comparing
+that run with the mock pan. Stop the recording with `jfr stop` after the
+completion message, and run `s11-live clear` before the next scene.
+
+Export the JFR from JDK 21 and run the local comparison tool. The address
+mapping is JSON with exactly the keys A and B and the corresponding opaque
+`remoteAddress` values from the export.
+
+```text
+jfr print --json --events minecraft.PacketSent,minecraft.NetworkSummary,strategos.S11Tick recording.jfr > events.json
+python tools/s11_native.py s11_battle events.json addresses.json s11_battle.json comparison.json
+```
+
+`PacketSent` reports the encoded packet before compression and framing.
+`NetworkSummary` is a periodic aggregate from that same encoder, so compare
+its totals with the packet events over the whole recording. JFR identifies
+custom payloads as a group. QA-19 also identifies their individual Strategos
+payload IDs. For the scene window, group each packet by the timestamp between
+consecutive output boundaries. Write down scheduling and aggregation differences
+that matter to the comparison. Transport bytes would additionally include
+compression, framing and overhead. Keep the JFR file, JSON export and address
+map out of git. The comparison uses only A and B as peer labels.
+
+After all four scenes, record both clients' gameplay means against 100 KiB/s,
+the captured peaks and the evidence supporting the decision on tier 4.
 
 ## Acceptance record
 
