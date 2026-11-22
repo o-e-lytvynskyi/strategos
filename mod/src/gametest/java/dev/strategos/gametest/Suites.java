@@ -61,6 +61,7 @@ import dev.strategos.gametest.suites.RetryNoReasonSelfTest;
 import dev.strategos.gametest.suites.SelfTests;
 import dev.strategos.gametest.suites.SharedBatchSelfTest;
 import dev.strategos.gametest.suites.SkirmishTests;
+import dev.strategos.gametest.suites.TeamPingTests;
 import dev.strategos.gametest.suites.TechTests;
 import dev.strategos.gametest.suites.TicketLeakSelfTest;
 import dev.strategos.gametest.suites.WriterTests;
@@ -117,6 +118,7 @@ public final class Suites {
                         IngressOriginTests.class,
                         IngressRateTests.class,
                         IngressTypeRateTests.class,
+                        TeamPingTests.class,
                         IngressDecodeTests.class,
                         IngressAuditTests.class,
                         IngressCorpusTests.class,

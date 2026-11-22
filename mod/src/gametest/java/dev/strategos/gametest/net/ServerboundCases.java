@@ -20,6 +20,7 @@ import dev.strategos.mod.server.net.payload.DebugSubscribePayload;
 import dev.strategos.mod.server.net.payload.LobbyActionPayload;
 import dev.strategos.mod.server.net.payload.MatchControlPayload;
 import dev.strategos.mod.server.net.payload.ModeSwitchPayload;
+import dev.strategos.mod.server.net.payload.PingPayload;
 import dev.strategos.mod.server.net.payload.SkirmishPayload;
 import dev.strategos.mod.server.net.payload.TemplateAckPayload;
 import dev.strategos.mod.server.net.payload.UiQueryPayload;
@@ -64,6 +65,7 @@ public final class ServerboundCases {
                         CameraJumpPayload.STREAM_CODEC,
                         new CameraJumpPayload(new CameraJump(1, 2, 3, 0, 0)),
                         p -> p.jump() == null),
+                new Input<>(PingPayload.SPEC, PingPayload.STREAM_CODEC, new PingPayload(1, 5, 7), p -> !p.decoded()),
                 new Input<>(
                         ModeSwitchPayload.SPEC,
                         ModeSwitchPayload.STREAM_CODEC,

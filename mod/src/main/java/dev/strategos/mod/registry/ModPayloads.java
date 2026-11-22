@@ -22,8 +22,10 @@ import dev.strategos.mod.server.net.payload.MatchPresentationPayload;
 import dev.strategos.mod.server.net.payload.MatchStatePayload;
 import dev.strategos.mod.server.net.payload.ModeSwitchPayload;
 import dev.strategos.mod.server.net.payload.PayloadArrived;
+import dev.strategos.mod.server.net.payload.PingPayload;
 import dev.strategos.mod.server.net.payload.PlayerAuthorityPayload;
 import dev.strategos.mod.server.net.payload.SkirmishPayload;
+import dev.strategos.mod.server.net.payload.TeamPingPayload;
 import dev.strategos.mod.server.net.payload.TemplateAckPayload;
 import dev.strategos.mod.server.net.payload.TemplateSetPayload;
 import dev.strategos.mod.server.net.payload.UiQueryPayload;
@@ -78,6 +80,8 @@ public final class ModPayloads {
         registrar.playToClient(UnitDetailPayload.TYPE, UnitDetailPayload.STREAM_CODEC, PayloadArrived::post);
         registrar.playToClient(FxPayload.TYPE, FxPayload.STREAM_CODEC, PayloadArrived::post);
         registrar.playToClient(MatchEventPayload.TYPE, MatchEventPayload.STREAM_CODEC, PayloadArrived::post);
+        registrar.playToClient(TeamPingPayload.TYPE, TeamPingPayload.STREAM_CODEC, PayloadArrived::post);
+        registrar.playToServer(PingPayload.TYPE, PingPayload.STREAM_CODEC, C2sHandlers.timed(C2sHandlers::ping));
         registrar.playToClient(VisionDeltaPayload.TYPE, VisionDeltaPayload.STREAM_CODEC, PayloadArrived::post);
         registrar.playToServer(
                 UiQueryPayload.TYPE, UiQueryPayload.STREAM_CODEC, C2sHandlers.timed(C2sHandlers::uiQuery));
@@ -125,6 +129,8 @@ public final class ModPayloads {
                 UiQueryPayload.SPEC,
                 TemplateAckPayload.SPEC,
                 CameraJumpPayload.SPEC,
+                PingPayload.SPEC,
+                TeamPingPayload.SPEC,
                 ModeSwitchPayload.SPEC,
                 MatchControlPayload.SPEC,
                 SkirmishPayload.SPEC,

@@ -2074,7 +2074,8 @@ placing; the events are the second line of defence.
 | `strategos:ui_query` | Detail subscription: selected own units, one visible entity, an own building | ≤ 32 handles; 4/s | M2 |
 | `strategos:match_control` | Ready, pause and resume (singleplayer), surrender | 1/s | M3 |
 | `strategos:lobby_action` | Open/edit configuration, join own seat or request a vacant human seat, ready revision, leave, start and idempotent own-request cancellation; sender from connection | ≤ 687 bytes; 4 seats; shared command ingress budget (40/s, burst 80); malformed bytes become bounded refusals | M7 T3b.2 |
-| `strategos:ping` | Minimap ping | 1 per 2 s | M7 |
+| `strategos:ping` | Match-local minimap coordinates, with the sender's current epoch | 16 B; one accepted ping per player seat per 40 server ticks | M7 |
+| `strategos:team_ping` | Server-projected marker with the receiving ally's current view epoch | 21 B; connected primary allies only, including co-op and the sender | M7 |
 | `strategos:debug_subscribe` | Overlay layers and area | Operators only, dev builds; optional | M1 |
 
 **Server to client (state):**

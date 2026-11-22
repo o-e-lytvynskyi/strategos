@@ -13,6 +13,7 @@ import dev.strategos.mod.server.net.payload.LobbyActionPayload;
 import dev.strategos.mod.server.net.payload.LobbyReplyPayload;
 import dev.strategos.mod.server.net.payload.MatchControlPayload;
 import dev.strategos.mod.server.net.payload.ModeSwitchPayload;
+import dev.strategos.mod.server.net.payload.PingPayload;
 import dev.strategos.mod.server.net.payload.SkirmishPayload;
 import dev.strategos.mod.server.net.payload.TemplateAckPayload;
 import dev.strategos.mod.server.net.payload.UiQueryPayload;
@@ -111,6 +112,17 @@ public final class C2sHandlers {
                         .jump(player, seat.match(), message, server.server().getTickCount())) {
             server.net().rejected(player, IngressReason.CAMERA_REFUSED);
         }
+    }
+
+    public static void ping(PingPayload payload, IPayloadContext context) {
+        StrategosServer server = StrategosServer.getOrNull();
+        if (server == null || !(context.player() instanceof ServerPlayer player)) return;
+        var point = payload.point();
+        if (point == null) {
+            server.net().refused(player, IngressReason.INVALID_PING);
+            return;
+        }
+        if (server.net().allowAuxiliaryIntent(player)) server.net().ping(player, point);
     }
 
     /** A seated player's detail subscription (NET-08), kept by replication within its rate. */

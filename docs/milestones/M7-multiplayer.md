@@ -788,6 +788,13 @@ starts before these gates pass, including under `-Pcompat`.
 
 ### 3.8 Team UI and AI
 
+T14 is split before code, using the delivered lobby, recipient/epoch and minimap
+contracts. T14.1 delivers the bounded C2S coordinates, authenticated primary-team
+routing, recipient epoch and exact 40-server-tick cooldown. T14.2 projects the
+existing public player roster and handles minimap input, map/world markers
+and expiry/reset by match, team and session. T14.3 runs and inspects the cloud
+team-HUD scenario and its platform goldens. The owner's L7 ping use stays T25.
+
 `client/hud/MultiplayerHudModel` and lobby view-models receive player colours, teams and status;
 `PingPayload` uses the existing gateway with server-derived team fan-out and one ping per
 player per two seconds. Validate coordinates and lifetime, render on minimap and in-world,

@@ -26,6 +26,7 @@ import dev.strategos.core.protocol.SetStance;
 import dev.strategos.core.protocol.Stop;
 import dev.strategos.core.protocol.Ungarrison;
 import dev.strategos.core.protocol.WireCodec;
+import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.MatchId;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.sim.CommandResult;
@@ -47,7 +48,9 @@ import dev.strategos.mod.server.net.payload.GroupRestorePayload;
 import dev.strategos.mod.server.net.payload.MatchJoinPayload;
 import dev.strategos.mod.server.net.payload.MatchPresentationPayload;
 import dev.strategos.mod.server.net.payload.MatchStatePayload;
+import dev.strategos.mod.server.net.payload.PingPayload;
 import dev.strategos.mod.server.net.payload.PlayerAuthorityPayload;
+import dev.strategos.mod.server.net.payload.TeamPingPayload;
 import dev.strategos.mod.server.tick.FaultBarrier;
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -118,6 +121,8 @@ public final class NetGateway {
     private final NetCounters counters = new NetCounters();
     private final RateLimiter limiter = new RateLimiter();
     private final RateLimiter auxiliaryLimiter = new RateLimiter();
+    private static final int PING_COOLDOWN = 40;
+    private final Map<Integer, long[]> pingAllowedAt = new HashMap<>();
 
     public NetGateway(MinecraftServer server, Supplier<MatchRegistry> matches, FaultBarrier faults) {
         this.server = server;
@@ -303,6 +308,7 @@ public final class NetGateway {
             }
         }
         publicPresentations.keySet().retainAll(now.keySet());
+        pingAllowedAt.keySet().retainAll(now.keySet());
         lastState.clear();
         lastState.putAll(now); // a disposed match is forgotten
         lastLooks.clear();
@@ -464,6 +470,58 @@ public final class NetGateway {
         return takeAuxiliaryIntent(player, IngressReason.LOBBY_RATE);
     }
 
+    /** Admit a map-local intent from the timed handler and project it to current primary allies. */
+    void ping(ServerPlayer player, PingPayload.Point point) {
+        var registry = matches.get();
+        var seat = registry.seatOf(player.getUUID());
+        if (seat == null || seat.slot().isAdmin()) {
+            rejected(player, IngressReason.PING_UNAVAILABLE);
+            return;
+        }
+        var match = seat.match();
+        var space = match.space();
+        var core = match.core();
+        var primary = seat.primaryFaction();
+        var lifecycle = match.lifecycle();
+        if (core == null
+                || primary.isEmpty()
+                || (lifecycle != MatchLifecycle.RUNNING && lifecycle != MatchLifecycle.PAUSED)
+                || !player.level().dimension().equals(space.level())
+                || point.x() < 0
+                || point.z() < 0
+                || point.x() >= space.sizeX()
+                || point.z() >= space.sizeZ()) {
+            rejected(player, IngressReason.PING_UNAVAILABLE);
+            return;
+        }
+
+        int matchId = match.id().value();
+        int slot = seat.slot().value();
+        long tick = Integer.toUnsignedLong(server.getTickCount());
+        long[] next = pingAllowedAt.computeIfAbsent(matchId, id -> new long[FactionSlot.MAX + 1]);
+        if (tick < next[slot]) {
+            rejected(player, IngressReason.PING_RATE);
+            return;
+        }
+        next[slot] = tick + PING_COOLDOWN;
+
+        var diplomacy = core.queries().diplomacy();
+        var from = primary.orElseThrow();
+        var ping = new TeamPingPayload.Ping(matchId, seat.slot(), point.x(), point.z());
+        for (UUID member : match.roster().members()) {
+            if (!match.roster().isConnected(member)) continue;
+            var online = server.getPlayerList().getPlayer(member);
+            var view = wireViews.get(member);
+            if (online == null || view == null || !view.origin().current(online, registry)) continue;
+            var recipient = view.origin().seat();
+            if (recipient == null || recipient.match() != match) continue;
+            var faction = recipient.primaryFaction();
+            if (faction.isPresent() && diplomacy.allied(from, faction.orElseThrow())) {
+                send(new Audience.Player(online), new TeamPingPayload(view.epoch(), ping));
+            }
+        }
+    }
+
     /** A well-formed auxiliary request, before its type-specific permission/rate/state checks. */
     public boolean allowAuxiliaryIntent(ServerPlayer player) {
         return takeAuxiliaryIntent(player, IngressReason.AUXILIARY_RATE);
@@ -603,6 +661,7 @@ public final class NetGateway {
     /** A payload's record bytes, as the wire carries them. */
     static int size(CustomPacketPayload payload) {
         return switch (payload) {
+            case TeamPingPayload p -> TeamPingPayload.SPEC.cap();
             case MatchPresentationPayload p -> WireCodec.encode(MatchPresentation.WIRE, p.presentation()).length;
             case GroupRestorePayload p -> WireCodec.encode(GroupRestoreFrame.WIRE, p.frame()).length;
             case MatchJoinPayload p -> Long.BYTES + WireCodec.encode(MatchJoin.WIRE, p.join()).length;

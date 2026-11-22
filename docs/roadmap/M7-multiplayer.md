@@ -221,7 +221,8 @@ Multiple-match discovery is outside M7. Recorded in the M7 branch pending mainta
   3. The owner's two-client session uses pings (L7, acceptance).
 - **Tests:** L0, L1, L3, L4 (consent), L7 · **Depends on:** UI-20, NET-02 · **Size:** M ·
   **Tier:** T1
-- **Status:** proposed
+- **Status:** in_progress
+- **Implementation:** T14 starts 2026-11-22 under the continuing whole-M7 instruction.
 
 #### AI-06 · AI in team games
 - **Value:** AI allies and opponents behave sensibly in team games.
