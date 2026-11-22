@@ -6,12 +6,10 @@
 
 ## Now
 
-- **Paused by the operator, 2026-11-22:** handoff to another chat; do not close the current phase or release the claim. Read [the continuation checkpoint](../handoffs/m7-2026-11-22.md) first. T13.4 closing records are the exact next step; T14 has not started.
+- **Milestone:** M7 Multiplayer; 16 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md).
+- **Last finished task:** T13 commander hardening (NET-09). Normal, server and client-profile verify each pass 3,063 cases. Full S passes all 23 jobs, with 249 nightly cases and 20 seeds (896,421 ticks). Actual Sodium movement and fog pass with inspected captures. See [T13 evidence](../milestones/M7-multiplayer.md#37-commanderbody-hardening-net-09).
+- **Next:** T14 team HUD and allied pings. Split routing, client integration and visual acceptance before code. Tests, builds and client runs stay cloud-only; optional T24 stays in scope. The inherited main records error remains For the owner item 6.
 
-- **Milestone:** M7 Multiplayer; 15 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md), based on planning PR #32; T3 is split before implementation into independent aggregate and production integration.
-- **In progress, paused:** M7 T13.4 closing records. Normal/server/client-profile verify each pass 3,063 cases; actual Sodium movement/fog scenes pass and captures are inspected. Full S 44966357778 completed all 23 jobs successfully, 249 nightly cases and all 20 seeds/896,421 ticks. Details and immutable source hashes are in the handoff. T13 stays unchecked and the count stays 15/28 at the operator's request. Tests/check builds/windows remain cloud-only; optional T24 stays in scope.
-- **Last finished task:** T10 automated reconnect and timeout: exact UUID reclaim, continuing orders, configured once-only expiry, protocol-7 epochs and confirmed camera/groups. NET-05 native L7 remains T25; no whole-epic/native/art acceptance is implied.
-- **Next step on resume:** reconcile T13.4/NET-09 closing records from the handoff, preserving the inherited main records error (For the owner, item 6); then continue the next ready T14 team HUD/ping work. Do not repeat unchanged accepted tests.
 - **Merged from main last:** d39069e7 (2026-11-15, PR #55/M6); merge 213d0564 is zero commits behind that main. Cloud verify 43756194393 passed: 2,623 canonical XML cases, zero failures/errors/skips, 7m 22s. Prior T2b slow/soak/L6 evidence remains historical; new integration will receive its required gates.
 
 The operator requested ownership of the whole M7 and work on what is currently possible on
@@ -37,6 +35,12 @@ before implementing them. T2 does not certify friendly-fire, allied victory, com
 or replication privacy; those retain their own integration tests and dependencies.
 
 ## Log
+
+### 2026-11-22 — Close T13 and NET-09
+
+- Closed T13.4 using the [archived cloud evidence](../handoffs/m7-2026-11-22.md). Normal 44966352132, server compatibility 44967370715 and client profile 44968393924 each pass 3,063 cases. Actual Sodium movement 44968610434 and fog 44968388209 pass with inspected captures; these scenes have no Sodium goldens. Full S 44966357778 passes all 23 jobs, including 249 nightly cases and 20 seeds, with 896,421 ticks. No production or core tree changed during records reconciliation.
+- NET-09 is done in both roadmap views. M7 progress is 16/28. The current claims checker still reports the single inherited M6 status error recorded in For the owner item 6.
+- **Next:** T14 team HUD and allied pings.
 
 ### 2026-11-19 — Complete T8 and MATCH-06; begin T9 contracts
 

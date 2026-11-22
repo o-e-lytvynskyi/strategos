@@ -78,8 +78,8 @@ Final standard cloud L6 run 40972197958 passed in 1h 1m 55s on 33ecb12: all 22 r
 | D-06 | Current computer control is not proof that an earlier timeout action has never run: an administrator can later disable that controller | Persist completed expiry actions in adapter blob 3, independent of current core controller/outcome. Keep core snapshot 7 and protocol 6; migrate valid blob 1/2 without inventing history or renewing saved grace, preserve all blob-2 launch/session guards, and require strict canonical metadata in blob 3. Record completion only after a canonical effect is present at a completed core tick. Validate the actual disable/save/restore counterexample and malformed metadata; pending implementation/acceptance |
 | D-07 | Actual restored-match journals lose known but unpublished terrain references: live lastPageChange stays 1, replay advances it to 4 and may also re-arm a unit path | Split T10.2c before code: core schema 8 distinguishes pending terrain references from published pages, migrates schema 7 published references explicitly, and preserves pending geometry absence through snapshots and journal starts/segments. Published pages still require their actual slice; only an explicitly pending reference is geometry-free. Keep existing command/input meanings and exact final-hash gates, test the no-expiry control and both unchanged/changed first captures, then repeat S/J. T10.2b remains pending this prerequisite |
 | D-08 | A fresh recipient window may reuse a client sequence while an older admitted command is still paused; a single callback keyed only by issuer/sequence can overwrite its origin | Add an actual paused-inbox counterexample: old own-unit command and fresh foreign-unit command share a sequence but require different outcomes and recipient origins. Route each result by the exact in-memory CommandEnvelope identity, retaining it only as transient result metadata. FIFO by issuer/sequence is insufficient: core-generated AI and restored/no-reply commands can reuse those values too. Keep the old admitted order and drop only its stale private response. Core result values, commands, journal/snapshot formats and hashes stay unchanged; the changed core allocation path requires fresh S/L6 evidence. Pending counterexample and repair |
-| D-09 | The existing tracker refresh indexes factions by player slot, and player-body visibility can change without changing any core-unit visibility bit | T13.2 derives the recipient's current primary faction and compares denied player subjects every existing five-tick pass, scoped to the viewer's match, roster generation and exact transport. Refresh each affected viewer once through the existing public zero-AT move fallback; do not cancel tracker updates or grant vanilla eligibility. Test a stationary P2-to-F0 unit reveal and a player-body fog removal/return with an unchanged unit visibility version. Shared vision remains M8; pending cloud acceptance |
-| D-10 | ServerPlayer.doTick skips Player.tick/Post when a spectator touches an unloaded neighbour; the listener also restores firstGood coordinates after doTick | Retain the player Post guard and add a bounded existing-server-Post backstop for the skipped-event path. Publish corrected coordinates with the public listener resetPosition after a teleport. Exercise a real unloaded neighbour and full listener tick, then require repair at the next server tick. No core timing, event cancellation or client movement authority is introduced; pending cloud counterexample and acceptance |
+| D-09 | The existing tracker refresh indexes factions by player slot, and player-body visibility can change without changing any core-unit visibility bit | T13.2 derives the recipient's current primary faction and compares denied player subjects every existing five-tick pass, scoped to the viewer's match, roster generation and exact transport. Refresh each affected viewer once through the existing public zero-AT move fallback; do not cancel tracker updates or grant vanilla eligibility. Test a stationary P2-to-F0 unit reveal and a player-body fog removal/return with an unchanged unit visibility version. Cloud verify 44962371158 accepts all three body/co-op scenarios. Shared vision remains M8 |
+| D-10 | ServerPlayer.doTick skips Player.tick/Post when a spectator touches an unloaded neighbour; the listener also restores firstGood coordinates after doTick | Retain the player Post guard and add a bounded existing-server-Post backstop for the skipped-event path. Publish corrected coordinates with the public listener resetPosition after a teleport. Exercise a real unloaded neighbour and full listener tick, then require repair at the next server tick. No core timing, event cancellation or client movement authority is introduced; Cloud 44965704920 confirms the counterexample; verify 44966352132 accepts the repair |
 
 | D-09 | UnitSummary identifies slots without generations, so it cannot validate cached group handles after disconnected unit-slot reuse | Add a bounded private group_restore frame after each full join: the current epoch/match and exact currently controlled, primary-visible unit handles, at most the existing 2,048-unit view bound. Gate group restoration on that fresh confirmation, intersect cached handles exactly, and keep pose restoration client-owned and clamped. Observers receive an empty list; no hidden allied identities are exposed. Preserve periodic summary layout/cadence and all existing body caps; the new cold-path frame has its own exact 8,207-byte maximum and byte accounting. Validate codec bounds, epoch/match rejection, reused generations and actual private delivery before acceptance |
 
@@ -720,7 +720,7 @@ primary visibility; **T13.3** enforces one-tick finite/level/body bounds with
 first-person and non-match controls; **T13.4** closes strict hook inventory,
 compatibility and applicable S gates. T6/T9 and M6 solo vision are delivered;
 formal human QA-15 remains T19/T25 and is not inferred from the mock kit.
-NET-09 enters in_progress under the continuing whole-M7 instruction.
+T13 delivers NET-09 under the continuing whole-M7 instruction.
 
 T13.1 accepted 2026-11-22: cloud verify 44960721926 on fc81d04e passes
 3,055 cases without failures/errors/skips. Both real vanilla packet denials,
@@ -737,7 +737,30 @@ T13.3 accepted 2026-11-22: full cloud verify 44966352132 on 715bede7 passes
 all six limits, foreign-dimension repair and the real unloaded-neighbour branch
 that skips Player.tick/Post; two numeric cases cover finite and nonfinite
 recovery. Both Post hooks preserve the current authenticated commander gate and
-the listener's corrected origin. T13.4 and the parent task remain open.
+the listener's corrected origin.
+
+T13.4 and T13 complete 2026-11-22. Server compatibility
+[44967370715](https://github.com/o-e-lytvynskyi/strategos/actions/runs/44967370715)
+on 0e864739 and client-profile verify
+[44968393924](https://github.com/o-e-lytvynskyi/strategos/actions/runs/44968393924)
+on bda6fae5 each pass all 3,063 cases with zero failures, errors or skips,
+including the strict hook inventory and movement/fog cases. Full S
+[44966357778](https://github.com/o-e-lytvynskyi/strategos/actions/runs/44966357778)
+on 715bede7 passes all 23 jobs, including 249 nightly cases without failures,
+errors or skips and 20 exact-commit seeds (1-20, 896,421 ticks).
+
+Actual Sodium client movement
+[44968610434](https://github.com/o-e-lytvynskyi/strategos/actions/runs/44968610434)
+reports ten exact picks, chat/pause return and zero server attacks/uses. The fog
+and Town scenario
+[44968388209](https://github.com/o-e-lytvynskyi/strategos/actions/runs/44968388209)
+reports both gates successful, with 155 explored and 70 visible cells of 1,024
+at the end. Both client runs use bda6fae5. Unique candidate captures were
+inspected, including the critical fog frames at native resolution. The Sodium
+scenes have no platform goldens. The existing FOW-06 building-block visibility
+limitation still applies. The [handoff](../handoffs/m7-2026-11-22.md) records the
+identical production and core trees across the accepted runs and the inherited
+main claim-record error. T21 retains cross-feature compatibility regression.
 
 Proposed files `mod/mixin/ServerGamePacketListenerImplMixin`, `ServerPlayerMixin` and
 `server/commander/CommanderGuard` implement architecture §12.6:
@@ -932,7 +955,7 @@ reviewed implementation task between T17 and T18, keeping the acceptance depende
 - [x] T10 (2026-11-22) · Reconnect/expiry, live-view epochs and confirmed client camera/groups; verify 44918199224 (3,051 cases), S 44914443023 (249 cases plus all twenty AI seeds), paired L6 44914446919 and zero-diff/altered-control L4 44918953137. NET-05 L7 remains T25.
 - [x] T11 (2026-11-20) · Ingress validation; full verify 44786479783 (2,927 cases), paired core L6 44774432743 with unchanged gates.
 - [x] T12 (2026-11-20) · Seeded fuzzing; full verify 44791164065 (2,966 cases), 100,008 generated probes plus permanent and actual paused-state/journal controls.
-- [ ] T13 · Commander hardening.
+- [x] T13 (2026-11-22) · Commander hardening; normal/server/client verify (3,063 cases each), actual Sodium movement/fog and complete S. See §3.7.
 - [ ] T14 · Team HUD and pings.
 - [ ] T15 · Team AI.
 - [ ] T16 · Channel budgets and pending state.

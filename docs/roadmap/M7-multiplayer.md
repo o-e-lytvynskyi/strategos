@@ -185,8 +185,13 @@ Multiple-match discovery is outside M7. Recorded in the M7 branch pending mainta
   5. The inventory lists both mixins, and the movement and fog GameTests pass under `-Pcompat`
      (L2).
 - **Tests:** L0, L2, L3, L5 · **Depends on:** NET-02, QA-15 · **Size:** M · **Tier:** T1
-- **Status:** in_progress
-- **Implementation:** T13.1 starts on 2026-11-22 under the continuing whole-M7 instruction; accepted T6/T9 and M6 vision supply the implementation dependencies. Formal QA-15/native acceptance remains T19/T25; no hardening criterion is complete yet.
+- **Status:** done
+- **Done:** 2026-11-22 — [T13 evidence](../milestones/M7-multiplayer.md#37-commanderbody-hardening-net-09)
+  covers actual teleport/attack denials with vanilla controls, commander and first-person pairing
+  with visible/own controls, and one-tick repair including an unloaded neighbour. The strict
+  inventory and movement/fog cases pass normal and compatibility verify (3,063 cases each);
+  full S and actual Sodium movement/fog pass, with inspected captures. Cross-feature compatibility
+  remains T21, and formal QA-15/native acceptance remains T19/T25.
 
 #### MATCH-06 · Teams, diplomacy and shared control
 - **Value:** Play with friends against others, or two humans in one faction: one commands from the
