@@ -227,6 +227,26 @@ public final class StrategosGameTests {
         afterBatch(level, "perf_economy_stress");
     }
 
+    @AfterBatch(batch = "perf_s11_battle")
+    public static void afterPerfS11Battle(ServerLevel level) {
+        afterBatch(level, "perf_s11_battle");
+    }
+
+    @AfterBatch(batch = "perf_s11_pan")
+    public static void afterPerfS11Pan(ServerLevel level) {
+        afterBatch(level, "perf_s11_pan");
+    }
+
+    @AfterBatch(batch = "perf_s11_fog")
+    public static void afterPerfS11Fog(ServerLevel level) {
+        afterBatch(level, "perf_s11_fog");
+    }
+
+    @AfterBatch(batch = "perf_s11_construction")
+    public static void afterPerfS11Construction(ServerLevel level) {
+        afterBatch(level, "perf_s11_construction");
+    }
+
     @AfterBatch(batch = "perf_battle")
     public static void afterPerfBattle(ServerLevel level) {
         afterBatch(level, "perf_battle");
