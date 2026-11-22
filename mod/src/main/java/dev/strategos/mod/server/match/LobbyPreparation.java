@@ -1,5 +1,6 @@
 package dev.strategos.mod.server.match;
 
+import dev.strategos.core.content.CivilisationArt;
 import dev.strategos.core.content.MapManifest;
 import dev.strategos.core.content.StartSlot;
 import dev.strategos.core.port.MetricsSink;
@@ -77,7 +78,7 @@ public final class LobbyPreparation implements LobbyService.Preparation {
                 Scenarios.load(server.server(), scenario),
                 manifest.startSlots(),
                 server.templates().set(),
-                Set.of("strategos:placeholder"),
+                Set.of(CivilisationArt.PLACEHOLDER, CivilisationArt.ROMAN),
                 Scenarios.script(server.server(), Levels.PROFILE));
         List<MatchLobby.Seat> humans = lobby.seats().stream()
                 .filter(s -> s.kind() == MatchLobby.Kind.HUMAN)

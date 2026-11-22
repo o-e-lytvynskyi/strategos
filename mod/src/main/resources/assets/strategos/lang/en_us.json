@@ -167,6 +167,7 @@
   "strategos.lobby.kind.closed": "Closed",
   "strategos.lobby.team_value": "Team %s",
   "strategos.lobby.civilisation_default": "Default",
+  "strategos.lobby.civilisation_roman": "Roman",
   "strategos.lobby.civilisation_server": "Server choice",
   "strategos.lobby.ai": "AI difficulty",
   "strategos.lobby.ai_value": "AI: %s",

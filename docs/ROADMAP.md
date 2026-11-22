@@ -197,7 +197,7 @@ gathering and building are data, so citizen-soldiers can arrive as a civilisatio
 custom models only where needed, recommended; villager-look workers offered. D-10: food, wood,
 stone, iron, recommended. D-05 (by M6): Village → Town → City, with material tiers for equipment.
 D-03 (by M7): antiquity, Romans and Gauls, if the owner accepts the largest art bill; biome cultures
-are the cheapest distinctive choice. **Owner:** D-04, D-10 and D-05 as recommended (2026-10-21); D-03 stays open (needed by M7)
+are the cheapest distinctive choice. **Owner:** D-04, D-10 and D-05 as recommended (2026-10-21); the owner selected Roman antiquity for civilisation 1 on 2026-11-22.
 
 **D-11 · Pacing** ([details](roadmap/M3-first-loop.md#d-11--pacing-and-scale)). Options: 35–45
 minutes; median 20–35 with every match within 45; slower. Recommended: median 20–35, within 45 in
@@ -226,7 +226,7 @@ singleplayer; no pause in multiplayer at first. **Owner:** as recommended (2026-
 | D-17 Arena size | M6 | 384² for 1 v 1; 512² after PERF-12 (with D-13) | [M1](roadmap/M1-movement.md#d-17--arena-size) | as recommended (2026-10-21) |
 | D-19 AI fairness | M6 | Open penalties at every level; bonuses only at a labelled top level; fog-fair once fog exists | [M6](roadmap/M6-first-skirmish.md#d-19--ai-fairness-and-difficulty) | as recommended (2026-10-21) |
 | D-24 Exploration in the MVP | M6 | (c) solo-grade fog: five cards, +9 card-days (with D-08) | [M2](roadmap/M2-command.md#d-24--exploration-in-the-mvp) | as recommended (2026-10-21) |
-| D-03 Civilisation themes | M7 (ART-03) | Antiquity if its art bill is accepted, else biome cultures (theme bundle) | [M3](roadmap/M3-first-loop.md#theme-bundle-d-03-d-04-d-05-d-10) | pending |
+| D-03 Civilisation themes | M7 (ART-03) | Antiquity if its art bill is accepted, else biome cultures (theme bundle) | [M3](roadmap/M3-first-loop.md#theme-bundle-d-03-d-04-d-05-d-10) | Roman antiquity for civilisation 1 · 2026-11-22 |
 | D-20 Multiplayer hosting | M7 | Dedicated servers first, Open to LAN supported | [M7](roadmap/M7-multiplayer.md#d-20--multiplayer-hosting) | pending |
 | D-07 Licence | first public release | MPL-2.0 for code; assets all rights reserved with modpack permission | [M8](roadmap/M8-fog-of-war.md#d-07--licence) | decided by the owner (2026-10-25): PolyForm Noncommercial 1.0.0 until the full release |
 | D-21 Public release and name | first public release | Friends from M6; public alpha after M8; keep "Strategos" after the checks | [M8](roadmap/M8-fog-of-war.md#d-21--public-release-and-name) | pending |
@@ -462,7 +462,7 @@ for review; the cards below remain `proposed` until owner approval and opening f
 | AI-06 | AI in team games | M | AI-05, MATCH-06 | done |
 | QA-15 | Multiplayer test kit | M | QA-19, NET-02 | in_progress |
 | PERF-10 | Multiplayer perf and bandwidth gate | S | NET-04, QA-15, PERF-09 | proposed |
-| ART-03 | Civilisation 1 art pass (beside M7, after the MVP verdict) | L | QA-13, D-03, D-04 | proposed |
+| ART-03 | Civilisation 1 art pass (beside M7, after the MVP verdict) | L | QA-13, D-03, D-04 | in_progress |
 
 ### M8 · Fog of war
 

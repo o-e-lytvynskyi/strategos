@@ -156,7 +156,7 @@ on both sides (a mirror match) in placeholder art (ART-01, ART-02); ART-03 follo
 
 **Affects:** ART-01 to ART-05, UNIT-06, CIV-01, CIV-02, TECH-02, TECH-03, UI-13, ECO-01.
 
-**Decided (2026-10-21):** D-04, D-10 and D-05 as recommended, by the owner; D-03 stays open until M7.
+**Decided (2026-10-21):** D-04, D-10 and D-05 as recommended, by the owner; the owner selected Roman antiquity for the first civilisation on 2026-11-22.
 
 ### D-11 · Pacing and scale
 

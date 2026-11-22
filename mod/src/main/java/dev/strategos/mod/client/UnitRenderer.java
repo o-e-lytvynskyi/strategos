@@ -2,6 +2,7 @@ package dev.strategos.mod.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.strategos.core.client.look.UnitLook;
+import dev.strategos.core.content.CivilisationArt;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.FactionLook;
 import dev.strategos.mod.entity.UnitEntity;
@@ -19,13 +20,17 @@ import net.minecraft.client.renderer.entity.layers.ItemInHandLayer;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.DyedItemColor;
+import net.minecraft.world.level.block.entity.BannerPatternLayers;
+import net.minecraft.world.level.block.entity.BannerPatterns;
 import net.minecraft.world.phys.Vec3;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The unit renderer for the RTS view (UNIT-03, ART-01): the placeholder player model with the wide Steve skin, read from
@@ -39,6 +44,10 @@ public final class UnitRenderer extends LivingEntityRenderer<UnitEntity, PlayerM
     /** Referenced at run time, never copied into the mod (ADR-0005). */
     private static final ResourceLocation TEXTURE =
             ResourceLocation.withDefaultNamespace("textures/entity/player/wide/steve.png");
+
+    private static final ResourceLocation ROMAN_TEXTURE =
+            ResourceLocation.fromNamespaceAndPath("strategos", "textures/entity/roman.png");
+    private static final int ROMAN_LOOK = 1 << 8;
 
     private boolean detailed = true; // this frame's verdict for the body being drawn (UnitLod)
 
@@ -69,8 +78,9 @@ public final class UnitRenderer extends LivingEntityRenderer<UnitEntity, PlayerM
                     palette.hasExplicitColour(data.faction()) ? (palette.colour(data.faction()) & 0xFFFFFF) : -1);
         }
         int tiers = data == null ? 0 : tiers(StrategosClient.looks(data.faction()));
-        if (!entity.dressed() || entity.dressedTiers() != tiers) {
-            dress(entity, tiers);
+        int appearance = isRoman(data) ? tiers | ROMAN_LOOK : tiers;
+        if (!entity.dressed() || entity.dressedTiers() != appearance) {
+            dress(entity, appearance);
         }
         Vec3 camera = entityRenderDispatcher.camera.getPosition();
         detailed = StrategosClient.unitLod().detailed(entity.position(), camera);
@@ -132,13 +142,23 @@ public final class UnitRenderer extends LivingEntityRenderer<UnitEntity, PlayerM
         var palette = StrategosClient.palette(data.matchId());
         if (palette.hasExplicitColour(data.faction()))
             look = look.tinted(palette.colour(data.faction()), palette.dyeName(data.faction()));
+        ItemStack shield = item(look.shield(), look);
+        if ((tiers & ROMAN_LOOK) != 0 && shield.is(Items.SHIELD)) {
+            var patterns = entity.level().registryAccess().lookupOrThrow(Registries.BANNER_PATTERN);
+            shield.set(
+                    DataComponents.BANNER_PATTERNS,
+                    new BannerPatternLayers.Builder()
+                            .addIfRegistered(patterns, BannerPatterns.BORDER, DyeColor.YELLOW)
+                            .addIfRegistered(patterns, BannerPatterns.STRIPE_CENTER, DyeColor.YELLOW)
+                            .build());
+        }
         entity.dress(
                 item(look.head(), look),
                 item(look.chest(), look),
                 item(look.legs(), look),
                 item(look.feet(), look),
                 item(look.rest(), look),
-                item(look.shield(), look),
+                shield,
                 tiers);
     }
 
@@ -165,7 +185,15 @@ public final class UnitRenderer extends LivingEntityRenderer<UnitEntity, PlayerM
 
     @Override
     public ResourceLocation getTextureLocation(UnitEntity entity) {
-        return TEXTURE;
+        return isRoman(entity.spawnData()) ? ROMAN_TEXTURE : TEXTURE;
+    }
+
+    private static boolean isRoman(@Nullable UnitSpawnData data) {
+        var presentation = StrategosClient.presentation();
+        return data != null
+                && presentation != null
+                && presentation.matchId() == data.matchId()
+                && CivilisationArt.isRoman(presentation.factions(), data.faction());
     }
 
     /** No name tag: vanilla shows one over every living entity within 64 blocks, a crowd of labels from above (UNIT-03). */

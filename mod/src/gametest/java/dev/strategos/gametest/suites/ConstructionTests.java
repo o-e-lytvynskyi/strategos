@@ -8,6 +8,7 @@ import static dev.strategos.gametest.suites.Units.unit;
 import com.google.gson.JsonObject;
 import dev.strategos.core.client.build.ClientPlacement;
 import dev.strategos.core.content.Blueprint;
+import dev.strategos.core.content.CivilisationArt;
 import dev.strategos.core.content.Footprint;
 import dev.strategos.core.content.PlacementRules;
 import dev.strategos.core.content.TemplateCompiler;
@@ -15,6 +16,7 @@ import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.protocol.Build;
 import dev.strategos.core.protocol.CommandOutcome;
+import dev.strategos.core.protocol.FactionPresentation;
 import dev.strategos.core.protocol.Grant;
 import dev.strategos.core.protocol.PlaceBuilding;
 import dev.strategos.core.protocol.QueueMode;
@@ -28,9 +30,12 @@ import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.ContentSwap;
+import dev.strategos.core.sim.DiplomacySetup;
 import dev.strategos.core.sim.MatchCore;
+import dev.strategos.core.sim.PresentationSetup;
 import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.build.BuildingView;
+import dev.strategos.core.sim.diplomacy.DiplomacyState;
 import dev.strategos.core.testkit.SimHarness;
 import dev.strategos.gametest.MatchFixture;
 import dev.strategos.gametest.StrategosTest;
@@ -93,6 +98,8 @@ public final class ConstructionTests {
         Footprint at = house.footprint();
         BlockWriter writer = StrategosServer.get().writer();
         BlockPos origin = rt.space().origin();
+        String civilisation =
+                core.queries().presentation().style(house.faction()).civilisation();
         boolean[] filled = new boolean[b.sizeX() * b.sizeY() * b.sizeZ()];
         for (int k = 0; k < b.count(); k++) {
             filled[(b.x(k) * b.sizeY() + b.y(k)) * b.sizeZ() + b.z(k)] = true;
@@ -100,7 +107,8 @@ public final class ConstructionTests {
                     origin.getX() + at.worldX(b.x(k), b.z(k)),
                     house.baseY() + b.y(k),
                     origin.getZ() + at.worldZ(b.x(k), b.z(k)));
-            BlockState want = writer.state(b.palette().get(b.state(k)));
+            BlockState want = writer.state(
+                    CivilisationArt.material(civilisation, b.id(), b.palette().get(b.state(k))));
             BlockState got = h.getLevel().getBlockState(pos);
             check(
                     (cropAgeFree && want.is(Blocks.WHEAT)) ? got.is(Blocks.WHEAT) : got.equals(want),
@@ -564,9 +572,29 @@ public final class ConstructionTests {
      */
     @StrategosTest(batch = "construction", timeoutTicks = 6_000)
     public static void stagesAndRepairSurviveSave(GameTestHelper h) {
+        stagesAndRepairSurviveSave(h, false);
+    }
+
+    @StrategosTest(batch = "construction", timeoutTicks = 6_000)
+    public static void romanStagesAndRepairSurviveSave(GameTestHelper h) {
+        stagesAndRepairSurviveSave(h, true);
+    }
+
+    private static void romanTown(MatchRuntime rt) {
+        var factions = new FactionPresentation(List.of(
+                new FactionPresentation.Style(CivilisationArt.ROMAN, 0),
+                new FactionPresentation.Style(CivilisationArt.PLACEHOLDER, 1)));
+        rt.initializeDiplomacy(
+                new DiplomacySetup(DiplomacyState.identity(2).lockTeams().snapshot()), new PresentationSetup(factions));
+    }
+
+    private static void stagesAndRepairSurviveSave(GameTestHelper h, boolean roman) {
         MatchRegistry registry = StrategosServer.get().matches();
         MatchRuntime rt = MatchFixture.create(
                 h, MatchFixture.options(SimHarness.DEFAULT_SEED, h).withPersistent(true));
+        if (roman) {
+            romanTown(rt);
+        }
         town(rt, 2);
         rt.submit(PlayerSlot.ADMIN, new SpawnBuilding(HOUSE, new FactionSlot(0), 20, 20, 0));
         rt.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.INFANTRY, new FactionSlot(1), new Vec2d(22, 28), 8, 2));
@@ -766,7 +794,19 @@ public final class ConstructionTests {
 
     /** Four workers raise {@code id} at (20, 20) on 1,000 wood and 200 stone; finished, it equals its blueprint. */
     private static void builtEqualsBlueprint(GameTestHelper h, TemplateId id, boolean cropAgeFree) {
+        builtEqualsBlueprint(h, id, cropAgeFree, false);
+    }
+
+    @StrategosTest(batch = "construction", timeoutTicks = 4_000)
+    public static void romanWorkersRaiseAnArsenal(GameTestHelper h) {
+        builtEqualsBlueprint(h, ARSENAL, false, true);
+    }
+
+    private static void builtEqualsBlueprint(GameTestHelper h, TemplateId id, boolean cropAgeFree, boolean roman) {
         MatchRuntime rt = Units.match(h);
+        if (roman) {
+            romanTown(rt);
+        }
         town(rt, 4);
         rt.submit(PlayerSlot.ADMIN, new Grant(new FactionSlot(0), "stone", 200));
         rt.queueSwap(new ContentSwap(openToVillage(id)));

@@ -282,7 +282,7 @@ public final class Construction {
                             at.worldX(b.x(k), b.z(k)),
                             baseY + b.y(k),
                             at.worldZ(b.x(k), b.z(k)),
-                            b.palette().get(b.state(k)),
+                            s.buildingMaterial(handle, b, k),
                             handle));
         }
         buildings.setPlaced(handle, Math.max(buildings.placed(handle), target));

@@ -1,6 +1,7 @@
 package dev.strategos.core.sim;
 
 import dev.strategos.core.content.Blueprint;
+import dev.strategos.core.content.CivilisationArt;
 import dev.strategos.core.content.Footprint;
 import dev.strategos.core.content.StartSlot;
 import dev.strategos.core.content.TemplateSet;
@@ -241,6 +242,15 @@ public final class MatchState {
     public Blueprint blueprintOf(int handle) {
         return Objects.requireNonNull(
                 templates.blueprint(buildings.template(handle)), "a building template without a blueprint");
+    }
+
+    /** The actual material of a building block, shared by construction, repair and restore. Owner zero is neutral. */
+    public String buildingMaterial(int owner, Blueprint blueprint, int block) {
+        String state = blueprint.palette().get(blueprint.state(block));
+        return owner == 0
+                ? state
+                : CivilisationArt.material(
+                        presentation.style(buildings.faction(owner)).civilisation(), blueprint.id(), state);
     }
 
     /** The live under-attack alerts (UI-12). */

@@ -1,5 +1,6 @@
 package dev.strategos.mod.client.menu;
 
+import dev.strategos.core.content.CivilisationArt;
 import dev.strategos.core.protocol.SkirmishSetup;
 import dev.strategos.mod.server.net.LobbyAction;
 import dev.strategos.mod.server.net.LobbyConfiguration;
@@ -16,11 +17,15 @@ import net.minecraft.client.gui.components.CycleButton;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.DyeColor;
 import org.jspecify.annotations.Nullable;
 
 /** Canonical private lobby view with bounded intents; it never assigns occupants or acknowledges settings locally. */
 public final class MultiplayerLobbyScreen extends Screen {
+    private static final ResourceLocation ROMAN_BADGE =
+            ResourceLocation.fromNamespaceAndPath("strategos", "textures/gui/roman_badge.png");
+
     private final @Nullable Screen parent;
     private @Nullable LobbyScreenModel shown;
     private @Nullable LobbyReply error;
@@ -175,11 +180,13 @@ public final class MultiplayerLobbyScreen extends Screen {
                                         s.player(), s.kind(), s.faction(), v, s.civilisation(), s.colour()))));
         team.active = edit && seat.kind() != LobbyConfiguration.Kind.CLOSED;
         if (!compact) {
+            String civilisationKey = switch (seat.civilisation()) {
+                case CivilisationArt.PLACEHOLDER -> "civilisation_default";
+                case CivilisationArt.ROMAN -> "civilisation_roman";
+                default -> "civilisation_server";
+            };
             var civilisation = addRenderableWidget(Button.builder(
-                            text(
-                                    seat.civilisation().equals("strategos:placeholder")
-                                            ? "civilisation_default"
-                                            : "civilisation_server"),
+                            text(civilisationKey),
                             b -> changeFaction(
                                     seat.player(),
                                     s -> new LobbyConfiguration.Seat(
@@ -187,13 +194,13 @@ public final class MultiplayerLobbyScreen extends Screen {
                                             s.kind(),
                                             s.faction(),
                                             s.team(),
-                                            "strategos:placeholder",
+                                            s.civilisation().equals(CivilisationArt.PLACEHOLDER)
+                                                    ? CivilisationArt.ROMAN
+                                                    : CivilisationArt.PLACEHOLDER,
                                             s.colour())))
                     .bounds(column(4), y, columns[4], 20)
                     .build());
-            civilisation.active = edit
-                    && seat.kind() != LobbyConfiguration.Kind.CLOSED
-                    && !seat.civilisation().equals("strategos:placeholder");
+            civilisation.active = edit && seat.kind() != LobbyConfiguration.Kind.CLOSED;
         }
         int colourColumn = compact ? 4 : 5;
         var choices = IntStream.range(0, 16)
@@ -389,6 +396,9 @@ public final class MultiplayerLobbyScreen extends Screen {
                 nameText =
                         font.plainSubstrByWidth((row.configuration().player() + 1) + ". " + nameText, columns[0] - 6);
                 g.drawCenteredString(font, nameText, column(0) + columns[0] / 2, y, row.self() ? 0xAAFFAA : 0xFFFFFF);
+                if (!compact && CivilisationArt.ROMAN.equals(row.configuration().civilisation())) {
+                    g.blit(ROMAN_BADGE, column(4) + 1, y - 2, 12, 12, 0, 0, 16, 16, 16, 16);
+                }
                 int readyColumn = columns.length - 1;
                 Component ready = row.configuration().kind() != LobbyConfiguration.Kind.HUMAN
                         ? text("not_applicable")
