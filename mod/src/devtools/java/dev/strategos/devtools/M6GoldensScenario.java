@@ -636,6 +636,23 @@ final class M6GoldensScenario implements Scenario {
                 return true;
             }
             if (inStep > limit) {
+                if (what.equals("the client to settle")) {
+                    ctx.result.addProperty("settleRendered", mc.levelRenderer.hasRenderedAllSections());
+                    ctx.result.addProperty("settleBuilt", allBuilt());
+                    ctx.result.addProperty(
+                            "settleMinimapCorner", StrategosClient.hud().minimapPixel(1, 1));
+                    ctx.result.addProperty("settleMinimapHash", minimapHash());
+                    ctx.result.addProperty("settleCalmTicks", calm);
+                    ctx.result.addProperty(
+                            "settleBuildings",
+                            StrategosClient.model().buildings().size());
+                    ctx.result.addProperty(
+                            "settleIncompleteBuildings",
+                            StrategosClient.model().buildings().stream()
+                                    .filter(e -> e.state() != CommandCard.COMPLETE)
+                                    .count());
+                    ctx.capture("failure_settle");
+                }
                 failures.append("no ")
                         .append(what)
                         .append(" within ")
