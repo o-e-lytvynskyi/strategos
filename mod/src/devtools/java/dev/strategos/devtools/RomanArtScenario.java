@@ -37,6 +37,7 @@ final class RomanArtScenario implements Scenario {
     private static final int HEIGHT = 60;
     private static final int FOCUS_X = 64;
     private static final int FOCUS_Z = 64;
+    private static final int ROLES_Z = 104;
     private static final int NEW_HOUSE_X = 70;
     private static final int NEW_HOUSE_Z = 68;
     private static final long STOP_PROGRESS = 380;
@@ -91,10 +92,10 @@ final class RomanArtScenario implements Scenario {
                             new TemplateId("strategos:building/" + site.type()), BLUE, site.x(), site.z(), 0));
         }
         rt.submit(PlayerSlot.ADMIN, new Grant(BLUE, "wood", 1_000));
-        ScenarioWorld.spawnSpaced(rt, TemplateSet.WORKER, BLUE, new Vec2d(64, 76), 4, 4, 2.5);
-        ScenarioWorld.spawnSpaced(rt, TemplateSet.INFANTRY, BLUE, new Vec2d(64, 80), 4, 4, 2.5);
-        ScenarioWorld.spawnSpaced(rt, ARCHER, RED, new Vec2d(64, 84), 4, 4, 2.5);
-        ScenarioWorld.spawnSpaced(rt, HORSEMAN, RED, new Vec2d(64, 88), 4, 4, 2.5);
+        ScenarioWorld.spawnSpaced(rt, TemplateSet.WORKER, BLUE, new Vec2d(49, ROLES_Z), 4, 2, 3.0);
+        ScenarioWorld.spawnSpaced(rt, TemplateSet.INFANTRY, BLUE, new Vec2d(59, ROLES_Z), 4, 2, 3.0);
+        ScenarioWorld.spawnSpaced(rt, ARCHER, RED, new Vec2d(69, ROLES_Z), 4, 2, 3.0);
+        ScenarioWorld.spawnSpaced(rt, HORSEMAN, RED, new Vec2d(79, ROLES_Z), 4, 2, 3.0);
         rt.addListener(out -> {
             if (out.tick() == 1) {
                 var player = ScenarioWorld.player(server);
@@ -178,14 +179,16 @@ final class RomanArtScenario implements Scenario {
         var rig = rts.rig();
         if (rig == null) return false;
         double x = joined.originX() + FOCUS_X + 0.5;
-        double z = joined.originZ() + FOCUS_Z + 0.5;
+        double townZ = joined.originZ() + FOCUS_Z + 0.5;
+        double rolesZ = joined.originZ() + ROLES_Z + 0.5;
         if (stage == 0) {
-            rts.centreOn(x, z);
+            rts.centreOn(x, townZ);
             rig.zoomTo(HEIGHT);
             mc.options.hideGui = true;
             stage++;
             return false;
         }
+        double z = stage == 3 || stage == 4 ? rolesZ : townZ;
         boolean settled = Math.abs(rig.height() - HEIGHT) < 0.01
                 && Math.hypot(rig.focusX() - x, rig.focusZ() - z) < 0.5
                 && Math.hypot(
@@ -196,32 +199,47 @@ final class RomanArtScenario implements Scenario {
         calm = settled && townReady ? calm + 1 : 0;
         if (calm < 30) return false;
         if (stage == 1) {
-            int shields = 0;
-            for (var entity : mc.level.entitiesForRendering()) {
-                if (entity instanceof UnitEntity body) {
-                    var shield = body.getItemBySlot(EquipmentSlot.OFFHAND);
-                    if (shield.is(Items.SHIELD) && shield.has(DataComponents.BANNER_PATTERNS)) shields++;
-                }
-            }
-            if (shields < 4 || !view.factions().hasCivilisation(BLUE.value(), CivilisationArt.ROMAN)) return false;
-            RtsGoldensScenario.pinBodies(mc);
-            ctx.result.addProperty("romanShields", shields);
             ctx.result.addProperty("cameraHeight", rig.height());
             ctx.capture("roman_town_60");
             stage++;
         } else if (stage == 2) {
+            rts.centreOn(x, rolesZ);
+            calm = 0;
+            stage++;
+        } else if (stage == 3) {
+            int shields = 0;
+            int dressed = 0;
+            for (var entity : mc.level.entitiesForRendering()) {
+                if (entity instanceof UnitEntity body && body.dressed()) {
+                    dressed++;
+                    var shield = body.getItemBySlot(EquipmentSlot.OFFHAND);
+                    if (shield.is(Items.SHIELD) && shield.has(DataComponents.BANNER_PATTERNS)) shields++;
+                }
+            }
+            if (shields != 8
+                    || dressed != 16
+                    || !view.factions().hasCivilisation(BLUE.value(), CivilisationArt.ROMAN)) {
+                return false;
+            }
+            RtsGoldensScenario.pinBodies(mc);
+            ctx.result.addProperty("romanShields", shields);
+            ctx.result.addProperty("rolesDressed", dressed);
+            ctx.capture("roman_roles_60");
+            stage++;
+        } else if (stage == 4) {
             var server = mc.getSingleplayerServer();
             var rt = match;
             if (server == null || rt == null) return false;
+            rts.centreOn(x, townZ);
             server.execute(() -> stageTown(rt));
             calm = 0;
             stage++;
-        } else if (stage == 3 && construction > 0) {
+        } else if (stage == 5 && construction > 0) {
             RtsGoldensScenario.pinBodies(mc);
             ctx.result.addProperty("constructionPermille", construction);
             ctx.capture("roman_stages_60");
             stage++;
-        } else if (stage == 4) {
+        } else if (stage == 6) {
             mc.options.hideGui = false;
             ctx.result.addProperty("ok", true);
             return true;
