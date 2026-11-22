@@ -799,11 +799,12 @@ require protocol 8. The presentation contains no new private state.
 T14.3 runs and inspects the cloud
 team-HUD scenario and its platform goldens. The owner's L7 ping use stays T25.
 
-`client/hud/MultiplayerHudModel` and lobby view-models receive player colours, teams and status;
-`PingPayload` uses the existing gateway with server-derived team fan-out and one ping per
-player per two seconds. Validate coordinates and lifetime, render on minimap and in-world,
-expire by tick, and clear on match/team/session change. Preserve M6 minimap behavior; no text
-or voice subsystem is added. A rejected ping changes no private state and reaches no opponent.
+The team roster uses the existing public presentation and authenticated private
+authority to show player colours, teams, connection status and diplomacy while
+the RTS input screen owns the HUD. Modal screens retain their existing
+background. `PingPayload` passes through the existing timed gateway and the
+recipient-private `TeamPingPayload` puts the same marker in the world and on
+the minimap. A rejected ping leaves match state unchanged.
 
 Extend the M6 `AiView`/wave scheduler with immutable diplomacy and observed allied-threat
 inputs. Never hand it unrestricted enemy queries. AI selects no allied attack target; an idle

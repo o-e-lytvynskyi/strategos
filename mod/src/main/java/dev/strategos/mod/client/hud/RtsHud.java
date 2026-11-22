@@ -37,6 +37,7 @@ import dev.strategos.core.sim.UnitState;
 import dev.strategos.mod.client.StrategosClient;
 import dev.strategos.mod.client.net.ClientPayloads;
 import dev.strategos.mod.client.rts.RtsMode;
+import dev.strategos.mod.client.rts.RtsScreen;
 import dev.strategos.mod.entity.UnitEntity;
 import dev.strategos.mod.entity.UnitSpawnData;
 import dev.strategos.mod.platform.Ids;
@@ -786,7 +787,7 @@ public final class RtsHud {
 
     private void drawMinimap(GuiGraphics g, DeltaTracker delta) {
         if (shown()) {
-            teamRoster.draw(g, layout(), paint);
+            if (Minecraft.getInstance().screen instanceof RtsScreen) teamRoster.draw(g, layout(), paint);
             minimap.draw(g, mode, paint, clientTicks, news.alertAt());
         }
     }
