@@ -1043,10 +1043,10 @@ reviewed implementation task between T17 and T18, keeping the acceptance depende
 - [x] T16 (2026-11-22) · Channel budgets and pending state. Verify 45058126895 passes 3,089 cases on c2d56f5b.
 - [ ] T17 · S11 mock measurement.
 - [ ] T18 · S11 real-client comparison and reserve decision.
-- [ ] T19 · Two-client protocol.
+- [x] T19 (2026-11-22) · Two-client [protocol and evidence map](../testing/m7-multiplayer.md); verify [45060561545](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45060561545), 3,089 cases. L7 stays T25.
 - [ ] T20 · Multiplayer performance gate.
 - [ ] T21 · Integration and compatibility.
-- [ ] T22 · Civilisation assets (parallel after MVP/decisions).
+- [ ] T22 · Roman art (in progress). Asset and engine work covers unit/lobby identity, masonry and icons. T23 covers the 60-block client review.
 - [ ] T23 · Art acceptance.
 - [ ] T24 · Floating platform gate (independent; not in M7 Done).
 - [ ] T25 · Milestone handoff and owner acceptance.

@@ -6,12 +6,14 @@
 
 ## Now
 
-- **Milestone:** M7 Multiplayer; 19 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md).
+- **Milestone:** M7 Multiplayer; 20 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md).
 - **Last finished task:** T13 commander hardening (NET-09). Normal, server and client-profile verify each pass 3,063 cases. Full S passes all 23 jobs, with 249 nightly cases and 20 seeds (896,421 ticks). Actual Sodium movement and fog pass with inspected captures. See [T13 evidence](../milestones/M7-multiplayer.md#37-commanderbody-hardening-net-09).
 - **T14 complete:** the owner approved all three llvmpipe goldens on 2026-11-22. 45059965221 passes with zero diff, rejects all three inverted copies and reproduces the inspected captures. UI-15 human two-client acceptance is T25. Tests, builds and client runs stay cloud-only; optional T24 stays in scope.
 
 - **Previously finished:** T15 team AI (AI-06). Verify 45034358354, full S 45034406274 and paired JMH 45034212255 all pass on 8313bfb5.
 - **Last finished task:** T16 channel budgets and live summary deferral. Verify 45058126895 passes 3,089 cases on c2d56f5b.
+- **T19 complete:** The [two-client protocol](../testing/m7-multiplayer.md) and step-to-evidence review pass Verify 45060561545 (3,089 cases, zero failures, errors or skips). QA-15 L7 stays T25.
+- **T22 in progress:** Roman appearance and unit assets, material palette and command icons. The later T23 client batch supplies the 60-block frames and owner verdict.
 - **In progress since 2026-11-22:** T17 S11 mock measurements (NET-04). Add the fixed-window QA-19 sampler and workload checks, then run moving battle, 40-block/s pan, fog-edge battle and construction under the unchanged E gate.
 - **Merged from main last:** d39069e7 (2026-11-15, PR #55/M6); merge 213d0564 is zero commits behind that main. Cloud verify 43756194393 passed: 2,623 canonical XML cases, zero failures/errors/skips, 7m 22s. Prior T2b slow/soak/L6 evidence remains historical; new integration will receive its required gates.
 
