@@ -10,6 +10,10 @@ on:
     types: [labeled]
   workflow_dispatch:
     inputs:
+      m7:
+        description: PERF-10 20-minute four-player workload, exact budgets and 2x stress (host diagnostic)
+        type: boolean
+        default: false
       s11:
         description: Run the four M7 S11 bandwidth scenes with fixed measurement windows
         type: boolean
@@ -32,7 +36,7 @@ on:
         default: '44641218952'
 
 concurrency:
-  group: perf-${{ github.ref }}-${{ inputs.s11 && 's11' || inputs.template_diagnostic && 'template-diagnostic' || inputs.complete_t7 && 't7-completion' || inputs.paired_jmh && 'paired-jmh' || 'standard' }}
+  group: perf-${{ github.ref }}-${{ inputs.m7 && 'm7' || inputs.s11 && 's11' || inputs.template_diagnostic && 'template-diagnostic' || inputs.complete_t7 && 't7-completion' || inputs.paired_jmh && 'paired-jmh' || 'standard' }}
   cancel-in-progress: true
 
 permissions:
@@ -41,7 +45,7 @@ permissions:
 
 jobs:
   perf:
-    if: (github.event_name == 'workflow_dispatch' && !inputs.paired_jmh && !inputs.complete_t7 && !inputs.template_diagnostic && !inputs.s11) || (github.event.pull_request.draft == false && github.event.label.name == 'perf')
+    if: (github.event_name == 'workflow_dispatch' && !inputs.paired_jmh && !inputs.complete_t7 && !inputs.template_diagnostic && !inputs.s11 && !inputs.m7) || (github.event.pull_request.draft == false && github.event.label.name == 'perf')
     runs-on: ubuntu-24.04
     # Outlive the existing 150-minute process bound plus build/report overhead; all measured gates stay unchanged.
     timeout-minutes: 180
@@ -74,6 +78,37 @@ jobs:
             mod/build/gametest-perf/logs/
             mod/build/test-results/gametest-perf/
 
+  m7:
+    if: github.event_name == 'workflow_dispatch' && inputs.m7
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          cache-provider: basic
+      - name: Run full multiplayer workload and the existing latency test
+        run: >-
+          ./gradlew --console=plain --max-workers=2 :mod:runGameTestPerf
+          '-Pperf.filter=(m_7_multiplayer|m_7_multiplayer_stress|path_budget_d)$'
+          -Pperf.gates=a,b,c,d,e,g -Pperf.ciFactor=1
+      - name: Validate complete PERF-10 measurement
+        run: python3 tools/m7_perf_reports.py mod/build/reports/perf
+      - name: PERF-10 reports and logs
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: m7-perf-reports
+          retention-days: 14
+          path: |
+            mod/build/reports/perf/m7_*
+            mod/build/reports/perf/path_budget_d.json
+            mod/build/gametest-perf/logs/
+            mod/build/test-results/gametest-perf/
   s11:
     if: github.event_name == 'workflow_dispatch' && inputs.s11
     runs-on: ubuntu-24.04

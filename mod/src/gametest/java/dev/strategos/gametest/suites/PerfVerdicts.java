@@ -10,6 +10,7 @@ import dev.strategos.core.testkit.EconomyScene;
 import dev.strategos.core.testkit.ForeignLoad;
 import dev.strategos.core.testkit.ForeignLoad.Assessment;
 import dev.strategos.core.testkit.ForeignLoad.Reading;
+import dev.strategos.core.testkit.MultiplayerScene;
 import dev.strategos.core.testkit.MvpScene;
 import dev.strategos.core.testkit.Percentiles;
 import java.io.IOException;
@@ -69,6 +70,7 @@ final class PerfVerdicts {
      * a second gates only budget C, its p95 at most 23 ms over the speed (MATCH-05.4: 15.3 ms at 1.5).
      */
     static void judgeSoak(GameTestHelper h, SoakResult r, Window window, boolean stress) {
+        boolean multiplayer = r.config().scene() instanceof MultiplayerScene.Config;
         boolean melee = r.config().melee();
         boolean loose = melee || r.config().firstLoop();
         boolean fast = r.config().speed() > 1;
@@ -132,6 +134,12 @@ final class PerfVerdicts {
         json.addProperty("units", r.units());
         json.addProperty("ticks", r.config().ticks());
         json.addProperty("samples", r.tick().length);
+        if (r.config().scene() instanceof MultiplayerScene.Config setup) {
+            json.addProperty("factions", MultiplayerScene.FACTIONS);
+            json.addProperty("populationPerFactionAtStart", setup.scale().population());
+            json.addProperty("buildingsPerFactionAtStart", setup.scale().buildings());
+            json.addProperty("terrainExcludedFromE", true);
+        }
         json.addProperty("baselineTickP50", without);
         json.addProperty("baselineTickP95", Percentiles.percentile(r.baseline(), 0.95));
         json.addProperty("tickP50", Percentiles.percentile(r.tick(), 0.50));
@@ -157,11 +165,15 @@ final class PerfVerdicts {
         SoakCosts costs = r.costs();
         if (costs != null) {
             json.add(
-                    r.config().scene() instanceof MvpScene.Config
-                            ? "mvp"
-                            : r.config().scene() instanceof BattleScene.Config
-                                    ? "battle"
-                                    : r.config().scene() instanceof EconomyScene.Config ? "economy" : "firstLoop",
+                    multiplayer
+                            ? "multiplayer"
+                            : r.config().scene() instanceof MvpScene.Config
+                                    ? "mvp"
+                                    : r.config().scene() instanceof BattleScene.Config
+                                            ? "battle"
+                                            : r.config().scene() instanceof EconomyScene.Config
+                                                    ? "economy"
+                                                    : "firstLoop",
                     firstLoop(r, costs, b, broken, !stress && !fast));
         }
         if (melee) {
@@ -236,7 +248,7 @@ final class PerfVerdicts {
         if (gates && gated("g") && costs.saveNanos() > scaled(100 * MS)) {
             broken.add("budget G: the save took " + costs.saveNanos() + " ns, above " + scaled(100 * MS));
         }
-        if (r.config().scene() instanceof MvpScene.Config) {
+        if (r.config().scene() instanceof MvpScene.Config || r.config().scene() instanceof MultiplayerScene.Config) {
             mvp(json, r, costs, b, broken, gates);
             return json;
         }
@@ -244,7 +256,7 @@ final class PerfVerdicts {
         boolean m4 = battle || r.config().scene() instanceof EconomyScene.Config;
         double aBase = battle ? M4_A_PER_UNIT : M3_A_PER_UNIT;
         double bBase = battle ? M4_B_PER_UNIT : M3_B_PER_UNIT;
-        int units = 2 * r.config().perFaction();
+        int units = r.config().expectedUnits();
         int ai = costs.phaseNames().indexOf("AI");
         long[] withoutAi = new long[Math.min(r.core().length, costs.phases().length)];
         for (int i = 0; i < withoutAi.length; i++) { // M6's AI is a new system, reported in systemsPerTick
@@ -308,7 +320,7 @@ final class PerfVerdicts {
                 "vision is the WORLD phase (vision, then terrain edits, gear and alerts); the trackers' refresh runs one"
                         + " tick in five, so read its meanPerTick");
         json.add("systemsPerTick", systems);
-        int units = 2 * r.config().perFaction();
+        int units = r.config().expectedUnits();
         int ai = costs.phaseNames().indexOf("AI");
         long[] withoutAi = new long[Math.min(r.core().length, costs.phases().length)];
         for (int i = 0; i < withoutAi.length; i++) { // M6's AI is a new system, reported in systemsPerTick

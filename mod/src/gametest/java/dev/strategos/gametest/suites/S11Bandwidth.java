@@ -362,7 +362,7 @@ final class S11Bandwidth {
         return peak;
     }
 
-    private static long terrainBytes(ByteCounter bytes) {
+    static long terrainBytes(ByteCounter bytes) {
         long total = 0;
         for (String key : TERRAIN) total += bytes.bytes(key);
         return total;

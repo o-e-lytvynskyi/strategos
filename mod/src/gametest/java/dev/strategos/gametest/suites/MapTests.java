@@ -869,6 +869,33 @@ public final class MapTests {
         return MatchFixture.create(h, space, options);
     }
 
+    /** A four-faction proving ground for PERF-10, under fog and with save costs enabled. */
+    static MatchRuntime multiplayerPerfGround(GameTestHelper h, int lane, int factions) {
+        MapManifest m = manifest(h);
+        BlockPos corner = h.absolutePos(BlockPos.ZERO);
+        var origin = new BlockPos(corner.getX() + lane * FAR, corner.getY(), corner.getZ());
+        var space = new MatchSpace(
+                h.getLevel().dimension(), origin, m.sizeX(), m.sizeZ(), origin.getY(), origin.getY() + m.height() - 1);
+        var play = MatchFixture.fogOptions(SimHarness.DEFAULT_SEED, h)
+                .withMap(
+                        PROVING_GROUND,
+                        origin.getY() + m.startSlots().getFirst().y())
+                .withPersistent(true);
+        return MatchFixture.create(
+                h,
+                space,
+                new MatchOptions(
+                        play.seed(),
+                        factions,
+                        play.persistent(),
+                        play.source(),
+                        play.faultPolicy(),
+                        play.metrics(),
+                        play.flatFloorY(),
+                        play.map(),
+                        play.play()));
+    }
+
     static MapManifest manifest(GameTestHelper h) {
         return MapPackageLoader.load(h.getLevel().getServer(), PROVING_GROUND).manifest();
     }

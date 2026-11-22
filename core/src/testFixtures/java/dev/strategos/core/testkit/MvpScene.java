@@ -196,12 +196,15 @@ public final class MvpScene implements SoakScene {
     }
 
     private void units(List<Issue> out, FactionSlot faction, boolean east) {
-        Vec2d soldiers = at(SOLDIER_YARD, east);
+        spawnRoster(out, config, faction, at(SOLDIER_YARD, east), at(WORKER_YARD, east));
+    }
+
+    static void spawnRoster(List<Issue> out, Config config, FactionSlot faction, Vec2d soldiers, Vec2d workers) {
         spawn(out, TemplateSet.INFANTRY, faction, soldiers, config.spearmen(), SOLDIER_SPREAD);
         spawn(out, BattleScene.ARCHER, faction, soldiers, config.archers(), SOLDIER_SPREAD);
         spawn(out, BattleScene.HORSEMAN, faction, soldiers, config.horsemen(), SOLDIER_SPREAD);
         spawn(out, RAM, faction, soldiers, config.rams(), SOLDIER_SPREAD);
-        spawn(out, TemplateSet.WORKER, faction, at(WORKER_YARD, east), config.workers(), WORKER_SPREAD);
+        spawn(out, TemplateSet.WORKER, faction, workers, config.workers(), WORKER_SPREAD);
     }
 
     private static void spawn(

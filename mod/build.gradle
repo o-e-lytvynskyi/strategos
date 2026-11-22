@@ -165,7 +165,7 @@ neoForge {
             systemProperty 'strategos.gametest.report', file('build/test-results/gametest-perf/TEST-gametest-perf.xml').absolutePath
             systemProperty 'strategos.gametest.perf', 'true'
             // no backslash: MDG writes it doubled into the VM-args file, and the regex then never matches
-            systemProperty 'strategos.gametest.filter', '^perftests[.]' + providers.gradleProperty('perf.filter').getOrElse('')
+            systemProperty 'strategos.gametest.filter', '^perftests[.]' + providers.gradleProperty('perf.filter').getOrElse('(?!m_7_)')
             systemProperty 'strategos.perf.out', file('build/reports/perf').absolutePath
             systemProperty 'strategos.perf.ciFactor', providers.gradleProperty('perf.ciFactor').getOrElse('1')
             // [M1 T26] the crowd soak's length; CI's nightly run shortens it to fit its job

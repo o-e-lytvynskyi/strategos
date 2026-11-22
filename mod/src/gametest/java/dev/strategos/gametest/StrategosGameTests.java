@@ -227,6 +227,16 @@ public final class StrategosGameTests {
         afterBatch(level, "perf_economy_stress");
     }
 
+    @AfterBatch(batch = "perf_m7_multiplayer")
+    public static void afterPerfM7Multiplayer(ServerLevel level) {
+        afterBatch(level, "perf_m7_multiplayer");
+    }
+
+    @AfterBatch(batch = "perf_m7_stress")
+    public static void afterPerfM7Stress(ServerLevel level) {
+        afterBatch(level, "perf_m7_stress");
+    }
+
     @AfterBatch(batch = "perf_s11_battle")
     public static void afterPerfS11Battle(ServerLevel level) {
         afterBatch(level, "perf_s11_battle");
