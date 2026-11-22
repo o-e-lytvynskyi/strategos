@@ -162,6 +162,24 @@
       "payload": "strategos:debug_subscribe",
       "hex": "ffffffffffffffffffff",
       "refused": true
+    },
+    {
+      "id": "ping-empty",
+      "payload": "strategos:ping",
+      "hex": "",
+      "refused": true
+    },
+    {
+      "id": "ping-truncated-point",
+      "payload": "strategos:ping",
+      "hex": "000000000000000100000003000000",
+      "refused": true
+    },
+    {
+      "id": "ping-trailing-byte",
+      "payload": "strategos:ping",
+      "hex": "0000000000000001000000030000000400",
+      "refused": true
     }
   ]
 }

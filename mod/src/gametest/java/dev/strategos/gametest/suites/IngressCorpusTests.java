@@ -97,6 +97,7 @@ public final class IngressCorpusTests {
                             "unreadable",
                             "invalid_lobby_action",
                             "invalid_camera_jump",
+                            "invalid_ping",
                             "invalid_mode_switch",
                             "invalid_match_control",
                             "invalid_skirmish",
