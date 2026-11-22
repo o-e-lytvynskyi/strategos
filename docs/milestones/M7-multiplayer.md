@@ -1047,7 +1047,7 @@ reviewed implementation task between T17 and T18, keeping the acceptance depende
 - [ ] T20 · Multiplayer performance gate.
 - [ ] T21 · Integration and compatibility.
 - [x] T22 (2026-11-22) · [Roman assets](../art/roman.md) and engine coverage; Verify [45062739294](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45062739294) passes 3,095 cases. T23 holds the visual verdict.
-- [ ] T23 · Art acceptance. [Cloud frames 45063031385](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45063031385) at 60 blocks inspected; owner verdict and canonical comparison pending.
+- [x] T23 (2026-11-22) · The owner approved Roman styling, silhouettes and three 60-block frames. [Canonical comparison 45063579435](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45063579435) passes all frames and rejects all three inverted controls.
 - [ ] T24 · Floating platform gate (independent; not in M7 Done).
 - [ ] T25 · Milestone handoff and owner acceptance.
 

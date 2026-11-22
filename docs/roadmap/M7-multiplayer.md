@@ -299,7 +299,7 @@ Multiple-match discovery is outside M7. Recorded in the M7 branch pending mainta
   4. The owner approves the look and finds the silhouettes distinct (L7, acceptance).
 - **Tests:** L2, L3, L4 (consent), L7 · **Depends on:** QA-13, D-03, D-04 · **Size:** L ·
   **Tier:** T1
-- **Status:** in_progress
-- **Progress:** 2026-11-22 — Roman antiquity approved for civilisation 1. The owner described
-  the M6 loop as playable but difficult and assigned the full art pass to the developer.
-  The 60-block frames and owner silhouette verdict are T23.
+- **Status:** done
+- **Done:** 2026-11-22 — Roman style and all three 60-block frames approved by the owner.
+  Verify 45062739294 passes lint, construction, damage/restore/repair and command-card icons.
+  Scenario 45063579435 passes the approved frames and rejects all three inverted controls.

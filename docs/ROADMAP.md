@@ -462,7 +462,7 @@ for review; the cards below remain `proposed` until owner approval and opening f
 | AI-06 | AI in team games | M | AI-05, MATCH-06 | done |
 | QA-15 | Multiplayer test kit | M | QA-19, NET-02 | in_progress |
 | PERF-10 | Multiplayer perf and bandwidth gate | S | NET-04, QA-15, PERF-09 | proposed |
-| ART-03 | Civilisation 1 art pass (beside M7, after the MVP verdict) | L | QA-13, D-03, D-04 | in_progress |
+| ART-03 | Civilisation 1 art pass (beside M7, after the MVP verdict) | L | QA-13, D-03, D-04 | done |
 
 ### M8 · Fog of war
 
