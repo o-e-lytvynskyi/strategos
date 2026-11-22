@@ -137,7 +137,8 @@ Multiple-match discovery is outside M7. Recorded in the M7 branch pending mainta
   3. Two real clients confirm the mock counts (R, consent).
   4. The report decides on the tier-4 reserve (R).
 - **Tests:** L1, L6, R · **Depends on:** NET-03, QA-19, PERF-01 · **Size:** M · **Tier:** T1
-- **Status:** proposed
+- **Status:** in_progress
+- **Implementation:** T16 begins with separate recipient channel budgets. T17 and T18 retain the S11 measurement and native comparison.
 
 #### NET-05 · Reconnect and rejoin
 - **Value:** A dropped connection doesn't end your game.

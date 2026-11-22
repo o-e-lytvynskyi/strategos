@@ -7,7 +7,10 @@ import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.port.MetricsSink;
 import dev.strategos.core.protocol.Fx;
 import dev.strategos.core.protocol.FxKind;
+import dev.strategos.core.protocol.NoticeKind;
+import dev.strategos.core.protocol.NoticeMsg;
 import dev.strategos.core.protocol.SpawnUnits;
+import dev.strategos.core.protocol.WireCodec;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.Vec2d;
@@ -16,6 +19,7 @@ import dev.strategos.core.sim.PlayRules;
 import dev.strategos.core.sim.diplomacy.DiplomacyState;
 import dev.strategos.core.sim.vision.VisionGrid;
 import dev.strategos.core.testkit.SimHarness;
+import dev.strategos.gametest.MatchFixture;
 import dev.strategos.gametest.StrategosTest;
 import dev.strategos.gametest.net.MockViewer;
 import dev.strategos.gametest.net.MultiplayerHarness;
@@ -23,6 +27,7 @@ import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.server.match.MatchOptions;
 import dev.strategos.mod.server.match.MatchSource;
 import dev.strategos.mod.server.net.Audience;
+import dev.strategos.mod.server.net.payload.FeedbackPayload;
 import dev.strategos.mod.server.net.payload.FxPayload;
 import java.util.List;
 import net.minecraft.core.BlockPos;
@@ -31,6 +36,42 @@ import net.minecraft.gametest.framework.GameTestHelper;
 /** A page is a batching unit, never permission to reveal its hidden events. */
 public final class RecipientFxTests {
     private RecipientFxTests() {}
+
+    @StrategosTest(arena = "arena_flat_48", timeoutTicks = 400)
+    public static void overBudgetEffectsDoNotDelayCriticalFramesOrAnotherRecipient(GameTestHelper h) {
+        var kit = MultiplayerHarness.create(h, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
+        var net = StrategosServer.get().net();
+        var events = java.util.Collections.nCopies(Fx.MAX_EVENTS, Fx.Event.at(FxKind.FLAME, 8, 7, 8));
+        var effects = new FxPayload(new Fx(kit.match().id().value(), events));
+        int bytes = WireCodec.encode(Fx.WIRE, effects.fx()).length;
+        int burst = FxPayload.SPEC.cap() / bytes;
+        var critical = new FeedbackPayload(new NoticeMsg(NoticeKind.STUCK, 12345, "feedback control"));
+        h.startSequence()
+                .thenWaitUntil(() -> check(kit.ready(), "FX budget fixture not ready"))
+                .thenExecute(() -> kit.admit("fxcap", List.of(new PlayerSlot(0), new PlayerSlot(1))))
+                .thenExecute(() -> {
+                    var first = new Audience.Player(kit.viewer(0).player());
+                    var second = new Audience.Player(kit.viewer(1).player());
+                    for (int i = 0; i < burst + 3; i++) net.send(first, effects);
+                    net.send(first, critical);
+                    net.send(second, effects);
+                    net.flush();
+                    check(kit.payloads(0, FxPayload.class).size() == burst, "first FX burst differs from the byte cap");
+                    check(kit.payloads(1, FxPayload.class).equals(List.of(effects)), "second recipient lost its FX");
+                    check(kit.payloads(0, FeedbackPayload.class).contains(critical), "critical feedback was delayed");
+                    check(net.counters().droppedFx("fxcap-0") == 3, "FX pressure drops were not counted");
+                    check(net.counters().droppedFx("fxcap-1") == 0, "drops were charged to another recipient");
+                })
+                .thenExecuteAfter(10, () -> {
+                    net.flush();
+                    check(kit.payloads(0, FxPayload.class).size() == burst, "expired FX were replayed");
+                    net.send(new Audience.Player(kit.viewer(0).player()), effects);
+                    net.flush();
+                    check(kit.payloads(0, FxPayload.class).size() == burst + 1, "refilled channel did not deliver");
+                })
+                .thenExecute(kit::close)
+                .thenSucceed();
+    }
 
     @StrategosTest(arena = "arena_flat_48", timeoutTicks = 400)
     public static void worldAndShotBatchesContainOnlyEventsVisibleToTheirRecipient(GameTestHelper h) {

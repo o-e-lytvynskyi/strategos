@@ -102,7 +102,13 @@ public final class NetGateway {
     private final Supplier<MatchRegistry> matches;
     private final FaultBarrier faults;
 
-    private record QueuedFrame(CustomPacketPayload payload, RecipientContext recipient) {}
+    private static final int FX_BYTES_PER_TICK = 512;
+
+    private record QueuedFrame(CustomPacketPayload payload, RecipientContext recipient, int encodedFxBytes) {}
+
+    private record FxLane(RecipientContext recipient, ChannelBudget budget) {}
+
+    private final Map<UUID, FxLane> fxLanes = new HashMap<>();
 
     private record SequencedRecipient(RecipientContext origin, CommandSequenceWindow window) {}
 
@@ -294,6 +300,10 @@ public final class NetGateway {
             ServerPlayer online = server.getPlayerList().getPlayer(entry.getKey());
             return online == null || !entry.getValue().origin().current(online, registry);
         });
+        fxLanes.entrySet().removeIf(entry -> {
+            ServerPlayer online = server.getPlayerList().getPlayer(entry.getKey());
+            return online == null || !entry.getValue().recipient().current(online, registry);
+        });
         Map<Integer, MatchLifecycle> now = new HashMap<>();
         Map<Integer, List<FactionLook>> nowLooks = new HashMap<>();
         for (MatchRuntime rt : matches.get().all()) {
@@ -324,7 +334,8 @@ public final class NetGateway {
                 CustomPacketPayload p = frame.payload();
                 if (player.connection.hasChannel(p)) {
                     sendable.add(p);
-                    counters.sent(p.type().id(), player.getGameProfile().getName(), size(p));
+                    int bytes = frame.encodedFxBytes() >= 0 ? frame.encodedFxBytes() : size(p);
+                    counters.sent(p.type().id(), player.getGameProfile().getName(), bytes);
                 }
             }
             if (!sendable.isEmpty()) {
@@ -463,6 +474,7 @@ public final class NetGateway {
         limiter.forget(player.getUUID());
         auxiliaryLimiter.forget(player.getUUID());
         queued.remove(player.getUUID());
+        fxLanes.remove(player.getUUID());
     }
 
     /** Lobby intents use the auxiliary budget, independently of simulation commands and handle costs. */
@@ -559,7 +571,23 @@ public final class NetGateway {
 
     private void queue(ServerPlayer player, CustomPacketPayload payload) {
         RecipientContext context = RecipientContext.capture(player, matches.get());
-        queued.computeIfAbsent(player.getUUID(), k -> new ArrayList<>()).add(new QueuedFrame(payload, context));
+        int fxBytes = -1;
+        if (payload instanceof FxPayload) {
+            fxBytes = size(payload);
+            int now = server.getTickCount();
+            UUID id = player.getUUID();
+            FxLane lane = fxLanes.get(id);
+            if (lane == null || !lane.recipient().current(player, matches.get())) {
+                lane = new FxLane(context, new ChannelBudget(FX_BYTES_PER_TICK, FxPayload.SPEC.cap(), now));
+                fxLanes.put(id, lane);
+            }
+            if (!lane.budget().take(now, fxBytes)) {
+                counters.dropFx(player.getGameProfile().getName(), fxBytes);
+                return;
+            }
+        }
+        queued.computeIfAbsent(player.getUUID(), k -> new ArrayList<>())
+                .add(new QueuedFrame(payload, context, fxBytes));
     }
 
     /** Project each event, not its coarse batching page; a control grant never grants vision. */

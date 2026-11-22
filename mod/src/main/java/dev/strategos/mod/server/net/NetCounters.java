@@ -11,6 +11,7 @@ import net.minecraft.resources.ResourceLocation;
  */
 public final class NetCounters {
     private final Map<String, long[]> sent = new TreeMap<>(); // "type player": payloads, bytes
+    private final Map<String, long[]> droppedFx = new TreeMap<>();
     private final Map<String, Integer> violations = new TreeMap<>(); // "player reason"
     private final Map<String, Integer> rejections = new TreeMap<>(); // includes semantic refusals
 
@@ -19,6 +20,18 @@ public final class NetCounters {
         long[] c = sent.computeIfAbsent(type + " " + who, k -> new long[2]);
         c[0]++;
         c[1] += bytes;
+    }
+
+    void dropFx(String player, int bytes) {
+        long[] count = droppedFx.computeIfAbsent(player, key -> new long[2]);
+        count[0]++;
+        count[1] += bytes;
+    }
+
+    /** Expendable effects dropped under this client's FX byte pressure. */
+    public long droppedFx(String player) {
+        long[] count = droppedFx.get(player);
+        return count == null ? 0 : count[0];
     }
 
     void violation(String player, IngressReason reason) {
@@ -71,6 +84,14 @@ public final class NetCounters {
             s.add(e.getKey(), c);
         }
         json.add("sent", s);
+        JsonObject fx = new JsonObject();
+        droppedFx.forEach((player, count) -> {
+            JsonObject entry = new JsonObject();
+            entry.addProperty("payloads", count[0]);
+            entry.addProperty("bytes", count[1]);
+            fx.add(player, entry);
+        });
+        json.add("droppedFx", fx);
         JsonObject v = new JsonObject();
         violations.forEach(v::addProperty);
         json.add("violations", v);

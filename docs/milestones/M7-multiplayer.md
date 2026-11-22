@@ -861,6 +861,13 @@ ratio is 1.02257 at idle step300. Existing allocation thresholds pass.
 
 ### 3.9 Bandwidth and S11 (NET-04)
 
+Split T16 before code. T16.1 establishes bounded byte credits and an expendable
+FX lane with distinct drop accounting and recipient isolation. T16.2 adds the
+pending summary lane, replacing superseded full state and reprojecting against
+current visibility after deferral. T16.3 proves delivery and removals under
+backpressure, stale-view invalidation and the continued delivery of critical
+frames. T17 measures the result under the existing E budget.
+
 Extend `NetGateway` with `ChannelBudget` and per-recipient pending state. Preserve critical
 lifecycle/control delivery; defer low-priority summary/far-FX work when its channel allowance
 is exhausted. State deltas are cumulative against the last actually sent revision, never the
