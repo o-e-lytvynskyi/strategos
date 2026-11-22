@@ -10,6 +10,10 @@ on:
     types: [labeled]
   workflow_dispatch:
     inputs:
+      s11:
+        description: Run the four M7 S11 bandwidth scenes with fixed measurement windows
+        type: boolean
+        default: false
       template_diagnostic:
         description: Four fixed identical-binary samples; diagnostic only, never acceptance
         type: boolean
@@ -28,7 +32,7 @@ on:
         default: '44641218952'
 
 concurrency:
-  group: perf-${{ github.ref }}-${{ inputs.template_diagnostic && 'template-diagnostic' || inputs.complete_t7 && 't7-completion' || inputs.paired_jmh && 'paired-jmh' || 'standard' }}
+  group: perf-${{ github.ref }}-${{ inputs.s11 && 's11' || inputs.template_diagnostic && 'template-diagnostic' || inputs.complete_t7 && 't7-completion' || inputs.paired_jmh && 'paired-jmh' || 'standard' }}
   cancel-in-progress: true
 
 permissions:
@@ -37,7 +41,7 @@ permissions:
 
 jobs:
   perf:
-    if: (github.event_name == 'workflow_dispatch' && !inputs.paired_jmh && !inputs.complete_t7 && !inputs.template_diagnostic) || (github.event.pull_request.draft == false && github.event.label.name == 'perf')
+    if: (github.event_name == 'workflow_dispatch' && !inputs.paired_jmh && !inputs.complete_t7 && !inputs.template_diagnostic && !inputs.s11) || (github.event.pull_request.draft == false && github.event.label.name == 'perf')
     runs-on: ubuntu-24.04
     # Outlive the existing 150-minute process bound plus build/report overhead; all measured gates stay unchanged.
     timeout-minutes: 180
@@ -70,6 +74,35 @@ jobs:
             mod/build/gametest-perf/logs/
             mod/build/test-results/gametest-perf/
 
+  s11:
+    if: github.event_name == 'workflow_dispatch' && inputs.s11
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          cache-provider: basic
+      - name: Verify S11 report guard counterexamples
+        run: python3 -m unittest discover -s tools/tests -p test_s11_reports.py
+      - name: Measure all S11 scenes
+        run: ./gradlew --console=plain --max-workers=2 :mod:runGameTestPerf '-Pperf.filter=s11_(battle|pan|fog|construction)$'
+      - name: Check reports against all ticks and packet types
+        run: python3 tools/s11_reports.py mod/build/reports/perf --commit "$GITHUB_SHA"
+      - name: S11 reports and logs
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: s11-reports
+          retention-days: 14
+          path: |
+            mod/build/reports/perf/s11_*.json
+            mod/build/gametest-perf/logs/
+            mod/build/test-results/gametest-perf/
   paired-jmh:
     # Supplemental same-host evidence for M7 T7.1 frozen-damage authority, not a replacement for the approved Mac baseline.
     # Both checkouts are trusted repository commits; the control is pinned to the verified T5 checkpoint.

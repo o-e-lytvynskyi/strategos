@@ -12,7 +12,7 @@
 
 - **Previously finished:** T15 team AI (AI-06). Verify 45034358354, full S 45034406274 and paired JMH 45034212255 all pass on 8313bfb5.
 - **Last finished task:** T16 channel budgets and live summary deferral. Verify 45058126895 passes 3,089 cases on c2d56f5b.
-- **Next ready:** T17 S11 mock measurements (NET-04), including 600 units, four acknowledging viewers, exact measurement windows and separated terrain traffic.
+- **In progress since 2026-11-22:** T17 S11 mock measurements (NET-04). Add the fixed-window QA-19 sampler and workload checks, then run moving battle, 40-block/s pan, fog-edge battle and construction under the unchanged E gate.
 - **Merged from main last:** d39069e7 (2026-11-15, PR #55/M6); merge 213d0564 is zero commits behind that main. Cloud verify 43756194393 passed: 2,623 canonical XML cases, zero failures/errors/skips, 7m 22s. Prior T2b slow/soak/L6 evidence remains historical; new integration will receive its required gates.
 
 The operator requested ownership of the whole M7 and work on what is currently possible on
@@ -534,7 +534,9 @@ or replication privacy; those retain their own integration tests and dependencie
 
 7. **Resolved 2026-11-16:** full cloud soak 43763260481 passed the complete 20-seed set and aggregate evidence gate. The operator authorized the repair and continuation; no decision is pending here. Review the workflow/harness changes normally with the M7 hand-in.
 
-8. Pending owner approval of the three inspected Linux/llvmpipe team HUD frames in `mod/src/devtools/goldens-proposed/linux-llvmpipe/m7-team-hud`. The comparisons at 45032048869 match exactly and reject each altered frame. T25 retains the owner two-client ping acceptance.
+8. Resolved 2026-11-22. The owner approved the three inspected Linux/llvmpipe team HUD frames. T25 retains the real two-client ping acceptance.
+
+9. D-03 and artwork scope resolved 2026-11-22. The first civilisation is Roman antiquity. The owner described M6 as playable but difficult and delegated all ART-03 assets to this session. The existing vanilla-faithful D-04 direction applies. QA-13 retains its other release-candidate checks.
 
 ## Decisions taken
 
