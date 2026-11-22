@@ -57,7 +57,7 @@ public final class TeamPingTests {
         h.startSequence()
                 .thenWaitUntil(() -> check(kit.ready(), "ping fixture not ready"))
                 .thenExecute(() -> {
-                    kit.admit("team-ping", List.of(p0, p1, p2, p3));
+                    kit.admit("teamping", List.of(p0, p1, p2, p3));
                     server.matches().join(kit.match(), observer.player().getUUID(), PlayerSlot.ADMIN);
                     server.net().joined(kit.match(), observer.player(), PlayerSlot.ADMIN);
                     server.net().flush();
