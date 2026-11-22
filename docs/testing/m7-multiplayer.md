@@ -64,6 +64,22 @@ map out of git. The comparison uses only A and B as peer labels.
 After all four scenes, record both clients' gameplay means against 100 KiB/s,
 the captured peaks and the evidence supporting the decision on tier 4.
 
+## Recipient and reconnect regression inventory
+
+| Surface | Boundary checked | Engine regression |
+|---|---|---|
+| Lobby | Connection identity supplies the seat. Private lobby state is restricted to admitted members. Outsiders and cancelled starts leave no partial match or seats. | `LobbyNetworkTests`, `LobbyAdmissionTests`, `LobbyPreparationTests` |
+| Economy, queue and unit detail | The primary faction sees its private state, including co-op primaries sharing that faction. Delegation changes issuing authority. Opponents and ordinary spectators have no private view. | `ReplicationTests`, `CoopReplicationTests`, `RecipientAccessTests` |
+| Fog, bodies and effects | Visibility gates each entity and effect for that recipient. Stationary cameras still lose sight immediately, including a body's change to commander mode. | `FogTests`, `CommanderPairingTests`, `RecipientFxTests` |
+| Public match context and team pings | Match membership bounds the roster and colours. Current team membership bounds ping delivery and lifetime, including co-op and opponents. | `LobbyPreparationTests`, `TeamPingTests` |
+| Deferred and per-connection messages | Saturation preserves critical events and other recipients. Revoked or stale contexts cannot recover summaries, queued frames, feedback or detail, even with a reused unit ID. | `RecipientQueueTests`, `RecipientTransferTests`, `RecipientRejoinTests`, `RecipientFxTests` |
+| Rejoin, save and observer transition | Reclaim renews private snapshots and sequence windows. Old transport events cannot revoke the new seat. An expired owner cannot reclaim, and a live co-op peer retains command. | `ReconnectLifecycleTests`, `ReconnectRestoreTests`, `RecipientRejoinTests`, `RecipientTransferTests` |
+| Commander powers | RTS cameras cannot inherit vanilla spectate or attack powers. Ordinary spectator behaviour and the explicitly admitted observer path have their own checks. | `CommanderPowerTests`, `CommanderBoundsTests`, `RecipientAccessTests` |
+
+Each row uses the actual server adapter and recipient connections. The
+compatibility Verify jobs rerun this matrix, and the client scenarios
+exercise the lobby and RTS screens under a real client.
+
 ## Acceptance record
 
 Copy the following fields once per session. Add observations from both

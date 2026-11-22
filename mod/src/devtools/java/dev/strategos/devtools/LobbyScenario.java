@@ -1,5 +1,6 @@
 package dev.strategos.devtools;
 
+import dev.strategos.core.content.CivilisationArt;
 import dev.strategos.core.protocol.SkirmishSetup;
 import dev.strategos.mod.client.StrategosClient;
 import dev.strategos.mod.client.menu.ArenaWorldLauncher;
@@ -196,9 +197,22 @@ final class LobbyScenario implements Scenario {
                         && model.state().configuration().seats().get(1).kind() == LobbyConfiguration.Kind.AI
                         && !ClientLobby.session().waiting()
                         && mc.screen != null
-                        && click(mc.screen, "strategos.lobby.ready")) next();
+                        && click(mc.screen, "strategos.lobby.civilisation_default")) next();
             }
             case 12 -> {
+                var model = ClientLobby.session().model();
+                if (model != null
+                        && model.state()
+                                .configuration()
+                                .seats()
+                                .getFirst()
+                                .civilisation()
+                                .equals(CivilisationArt.ROMAN)
+                        && !ClientLobby.session().waiting()
+                        && mc.screen != null
+                        && click(mc.screen, "strategos.lobby.ready")) next();
+            }
+            case 13 -> {
                 var model = ClientLobby.session().model();
                 if (model != null
                         && model.mayStart()
@@ -206,15 +220,21 @@ final class LobbyScenario implements Scenario {
                         && mc.screen != null
                         && click(mc.screen, "strategos.lobby.start")) next();
             }
-            case 13 -> {
+            case 14 -> {
                 var model = ClientLobby.session().model();
                 var join = StrategosClient.match();
+                var presentation = StrategosClient.presentation();
                 if (model != null
                         && model.state().phase() == LobbyState.Phase.STARTED
                         && join != null
+                        && presentation != null
+                        && presentation.matchId() == join.matchId()
                         && mc.screen instanceof RtsScreen
                         && StrategosClient.rts().rig() != null) {
                     if (join.slot().value() != 0 || join.factions() != 2) failures.append("wrong real admission; ");
+                    boolean roman = presentation.factions().hasCivilisation(0, CivilisationArt.ROMAN);
+                    ctx.result.addProperty("romanThroughProductionLobby", roman);
+                    if (!roman) failures.append("Roman choice was lost on real admission; ");
                     return done(ctx, true);
                 }
             }
