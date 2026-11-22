@@ -40,7 +40,8 @@ def verify(folder):
                                    ("c", 0.95, 23), ("d", 0.99, 2)):
         check_budget(budgets[key], percentile, limit * 1_000_000)
     require(len(budgets["e"]) == 4 and all(
-        item["limit"] == LIMIT and 0 < item["bytesPerSecond"] <= LIMIT for item in budgets["e"]
+        item["limit"] == LIMIT and 0 < item["bytesPerSecond"] <= LIMIT
+        and 0 < item["totalGameplayBytes"] <= LIMIT * 1_200 for item in budgets["e"]
     ), "budget E needs four passing, active recipients")
     stress = soak(folder, STRESS, 300, 60, 6_000)
     check_budget(stress["c"], 0.95, 50_000_000)

@@ -920,6 +920,17 @@ order latency p95 ≤5 ticks with 200 requests queued; E ≤100 KB/s per client.
 pass with C p95 ≤50 ms. Keep the existing per-unit comparisons and validity guards, record
 hardware/CPU interference, reports and crashes, and archive the accepted multiplayer reference.
 Non-reference hardware results are diagnostic until the owner accepts another reference.
+
+Run the standard reference gate with the M7 selection:
+`./gradlew verifyPerf '-Pperf.filter=(m_7_multiplayer|m_7_multiplayer_stress|path_budget_d)$' -Pperf.gates=a,b,c,d,e,g`.
+The four-faction fixture reuses the M6 roster at 150 population and 30 finished buildings per
+faction (300 and 60 in stress). It verifies this scale before enabling AI. Measure 24,000 game
+ticks after 200 warm-up ticks in the baseline and 6,000 measured ticks under 2× stress. E uses
+each viewer's exact gameplay bytes and measured duration. The dedicated 100-unit order test
+enforces the five-tick latency behind 200 requests. The PERF-10 report guard checks the complete
+windows, all four recipient budgets and the existing timing and latency limits. The GitHub-hosted
+`perf` workflow's `m7` input runs these GameTests as a diagnostic with factor 1.
+
 No M8 fog-cost certification or threshold/baseline change is implied.
 
 ART-03 follows ART-01, D-03 and D-04 after the MVP fun verdict: skins/banners, starting buildings,

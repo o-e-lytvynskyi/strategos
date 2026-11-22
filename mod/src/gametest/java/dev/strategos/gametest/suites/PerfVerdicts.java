@@ -116,7 +116,9 @@ final class PerfVerdicts {
                 JsonObject viewer = new JsonObject();
                 viewer.addProperty("bytesPerSecond", perSecond);
                 viewer.addProperty("limit", 100 * 1024);
-                if (perSecond > 100 * 1024 && gated("e") && !melee) {
+                if (multiplayer) viewer.addProperty("totalGameplayBytes", bytes);
+                boolean exceeds = multiplayer ? bytes > (100 * 1024) * seconds : perSecond > 100 * 1024;
+                if (exceeds && gated("e") && !melee) {
                     broken.add("budget E: " + perSecond + " bytes per second for a viewer, above 102,400");
                 }
                 viewers.add(viewer);
