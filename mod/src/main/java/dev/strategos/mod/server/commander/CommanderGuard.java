@@ -43,6 +43,8 @@ public final class CommanderGuard {
                 || player.getY() != y
                 || player.getZ() != z) {
             player.teleportTo(level, x, y, z, player.getYRot(), player.getXRot());
+            // The listener restores firstGood* after doTick returns; publish the corrected origin as well.
+            player.connection.resetPosition();
         }
     }
 

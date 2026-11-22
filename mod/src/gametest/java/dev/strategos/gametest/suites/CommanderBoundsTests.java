@@ -27,7 +27,11 @@ public final class CommanderBoundsTests {
                 !destination.dimension().equals(rt.space().level()),
                 "fixture alternate dimension equals match dimension");
         var at = member.player().position();
-        h.onEachTick(member::poll);
+        h.onEachTick(() -> {
+            // Embedded transports are not in ServerConnectionListener's accepted socket list.
+            member.player().connection.tick();
+            member.poll();
+        });
         h.startSequence()
                 .thenExecute(() -> {
                     member.player().teleportTo(destination, at.x, at.y, at.z, 0, 0);
@@ -58,6 +62,8 @@ public final class CommanderBoundsTests {
         var vanilla = MockViewer.join(h.getLevel(), "guard-bounds-out", at.x, at.y, at.z, 2);
         vanilla.player().setGameMode(GameType.SPECTATOR);
         h.onEachTick(() -> {
+            member.player().connection.tick();
+            vanilla.player().connection.tick();
             member.poll();
             vanilla.poll();
         });
