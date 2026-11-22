@@ -91,6 +91,25 @@ jobs:
       - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
         with:
           cache-provider: basic
+      - name: Validate same-branch dependency cache
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEPENDENCY_CACHE_RUN: ${{ inputs.dependency_cache_run }}
+        run: python3 tools/ci_dependency_cache.py validate --run "$DEPENDENCY_CACHE_RUN" --repository "$GITHUB_REPOSITORY" --branch "$GITHUB_REF_NAME"
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: cloud-gradle-modules
+          path: build/cloud-dependencies
+          run-id: ${{ inputs.dependency_cache_run }}
+          github-token: ${{ github.token }}
+      - name: Restore validated dependency modules only
+        run: python3 tools/ci_dependency_cache.py restore --archive build/cloud-dependencies/cloud-gradle-modules.tar.gz --caches "$HOME/.gradle/caches"
+      - name: Record diagnostic host and commit
+        run: |
+          mkdir -p build/m7-measurement
+          git rev-parse HEAD > build/m7-measurement/commit.txt
+          lscpu > build/m7-measurement/cpu.txt
+          java -version 2> build/m7-measurement/java.txt
       - name: Run full multiplayer workload and the existing latency test
         run: >-
           ./gradlew --console=plain --max-workers=2 :mod:runGameTestPerf
@@ -105,6 +124,7 @@ jobs:
           name: m7-perf-reports
           retention-days: 14
           path: |
+            build/m7-measurement/
             mod/build/reports/perf/m7_*
             mod/build/reports/perf/path_budget_d.json
             mod/build/gametest-perf/logs/
