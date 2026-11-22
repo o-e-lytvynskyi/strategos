@@ -374,6 +374,8 @@ final class M6GoldensScenario implements Scenario {
     @Override
     public boolean tick(Minecraft mc, ScenarioContext ctx, int tick) {
         RtsMode rts = StrategosClient.rts();
+        // Initial config loading can replace an early override; keep this scripted input invariant throughout.
+        if (StrategosClientConfig.INSTANCE.edgePan.get()) StrategosClientConfig.INSTANCE.edgePan.set(false);
         long window = mc.getWindow().getWindow();
         // the cursor rests mid-window, as a player's does; a screen's widgets would light under it, so it waits aside
         GLFW.glfwSetCursorPos(
@@ -382,8 +384,6 @@ final class M6GoldensScenario implements Scenario {
                 cursorAside ? 4.0 : mc.getWindow().getScreenHeight() / 2.0);
         if (tick == 1) {
             ScenarioWorld.renderDistance(mc, 12);
-            // Warping the cursor away from widgets must not pan this fixture's scripted camera.
-            StrategosClientConfig.INSTANCE.edgePan.set(false);
             // the hints would show in whatever frame the first selection or the first spare house falls in
             StrategosClientConfig.INSTANCE.seenHints.set(List.of("first_order", "idle_worker", "build_house"));
             steps = fog ? fogSteps() : townSteps();

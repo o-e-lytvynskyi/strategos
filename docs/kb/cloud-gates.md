@@ -88,3 +88,6 @@ Force-loading the server's fixture does not prove that the client received it.
 Wait for its actual cache before freezing a large map. Static visual scenarios
 that warp the cursor away from widgets must also disable incidental edge panning;
 the cached mouse position can otherwise drive the camera to its match limit.
+Record the effective setting when a fixture fails: an override at the first
+scenario tick can be replaced later. Maintain required scripted-input settings
+throughout the scenario, writing only when the effective value differs.
