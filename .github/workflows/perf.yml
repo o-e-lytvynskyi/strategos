@@ -90,7 +90,7 @@ jobs:
       - name: Verify S11 report guard counterexamples
         run: python3 -m unittest discover -s tools/tests -p test_s11_reports.py
       - name: Measure all S11 scenes
-        run: ./gradlew --console=plain --max-workers=2 :mod:runGameTestPerf '-Pperf.filter=s11_(battle|pan|fog|construction)$'
+        run: ./gradlew --console=plain --max-workers=2 :mod:runGameTestPerf '-Pperf.filter=s_11_(battle|pan|fog|construction)$'
       - name: Check reports against all ticks and packet types
         run: python3 tools/s11_reports.py mod/build/reports/perf --commit "$GITHUB_SHA"
       - name: S11 reports and logs
