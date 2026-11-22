@@ -10,15 +10,19 @@ import java.util.Objects;
 /** Public match identity for admitted recipients; never UUIDs, private economy or outgoing grants. */
 public record MatchPresentation(
         int matchId, long revision, FactionPresentation factions, List<Participant> participants) {
-    public record Participant(PlayerSlot player, int faction, String name, boolean connected) {
+    public record Participant(PlayerSlot player, int faction, int team, String name, boolean connected) {
         public Participant {
-            if (player.isAdmin() || faction < 0 || faction > 15)
+            if (player.isAdmin() || faction < 0 || faction > 15 || team < 0 || team > 15)
                 throw new IllegalArgumentException("invalid human binding");
             if (name.isBlank() || name.getBytes(StandardCharsets.UTF_8).length > 64)
                 throw new IllegalArgumentException("display name must be bounded and nonblank");
             for (int i = 0; i < name.length(); i++)
                 if (Character.isISOControl(name.charAt(i)))
                     throw new IllegalArgumentException("control in display name");
+        }
+
+        public Participant(PlayerSlot player, int faction, String name, boolean connected) {
+            this(player, faction, faction, name, connected);
         }
     }
 
@@ -53,6 +57,7 @@ public record MatchPresentation(
             for (Participant participant : value.participants()) {
                 out.writeByte(participant.player().value())
                         .writeByte(participant.faction())
+                        .writeByte(participant.team())
                         .writeString(participant.name(), 64)
                         .writeBoolean(participant.connected());
             }
@@ -70,6 +75,7 @@ public record MatchPresentation(
                     participants.add(new Participant(
                             new PlayerSlot(in.readUnsignedByte()),
                             in.readUnsignedByte(),
+                            in.readUnsignedByte(),
                             in.readString(64),
                             in.readBoolean()));
                 return new MatchPresentation(match, revision, factions, participants);
@@ -80,7 +86,7 @@ public record MatchPresentation(
 
         @Override
         public int maxSize() {
-            return 5 + 9 + FactionPresentation.WIRE.maxSize() + 1 + 16 * (1 + 1 + 1 + 64 + 1);
+            return 5 + 9 + FactionPresentation.WIRE.maxSize() + 1 + 16 * (1 + 1 + 1 + 1 + 64 + 1);
         }
     };
 }

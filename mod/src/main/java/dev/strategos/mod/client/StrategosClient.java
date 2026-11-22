@@ -22,6 +22,8 @@ import dev.strategos.mod.client.fog.ShroudRenderer;
 import dev.strategos.mod.client.fx.ShotArcRenderer;
 import dev.strategos.mod.client.fx.ShotArcs;
 import dev.strategos.mod.client.hud.RtsHud;
+import dev.strategos.mod.client.hud.TeamPingModel;
+import dev.strategos.mod.client.hud.TeamPingRenderer;
 import dev.strategos.mod.client.menu.ArenaWorldLauncher;
 import dev.strategos.mod.client.menu.ClientLobby;
 import dev.strategos.mod.client.menu.LobbyEntry;
@@ -58,6 +60,7 @@ public final class StrategosClient {
     private static final ClientDebugState DEBUG = new ClientDebugState();
     private static final RtsMode RTS = new RtsMode();
     private static final RtsHud HUD = new RtsHud(RTS);
+    private static final TeamPingModel TEAM_PINGS = new TeamPingModel();
     private static final ClientMatchModel MODEL = new ClientMatchModel();
     private static final FarMarkers FAR = new FarMarkers(MODEL);
     private static final HealthBarOverlay BARS = new HealthBarOverlay(MODEL, RTS);
@@ -95,6 +98,7 @@ public final class StrategosClient {
             match = null;
             matchEpoch = 0;
             PRESENTATION.clear();
+            TEAM_PINGS.clear();
             resources = List.of();
             state = null;
             DEBUG.reset();
@@ -102,6 +106,7 @@ public final class StrategosClient {
             ARCS.clear();
         });
         NeoForge.EVENT_BUS.addListener(RenderLevelStageEvent.class, new ShotArcRenderer(ARCS)::render);
+        NeoForge.EVENT_BUS.addListener(RenderLevelStageEvent.class, TeamPingRenderer::render);
         new DebugOverlayHost(modBus, DEBUG);
         RTS.register(modBus);
         HUD.register(modBus); // after RTS mode: its tick builds from the tick RTS mode just ran
@@ -181,8 +186,13 @@ public final class StrategosClient {
         DEBUG.reset();
         match = join;
         PRESENTATION.joined(join.matchId(), join.factions());
+        TEAM_PINGS.join(epoch, join);
         ARCS.joined(join.matchId());
         resources = resources(join);
+    }
+
+    public static TeamPingModel teamPings() {
+        return TEAM_PINGS;
     }
 
     public static @Nullable MatchPresentation presentation() {
@@ -205,7 +215,11 @@ public final class StrategosClient {
     /** A permission update changes neither the joined world nor its private primary perspective. */
     public static void authority(PlayerAuthority authority) {
         MatchJoin joined = match;
-        if (joined != null) match = joined.withAuthority(authority);
+        if (joined != null) {
+            MatchJoin current = joined.withAuthority(authority);
+            match = current;
+            TEAM_PINGS.authority(current.authority());
+        }
     }
 
     /** The joined match's resources in their order, from the rules it was joined with; empty before a join. */
@@ -240,6 +254,11 @@ public final class StrategosClient {
         state = update;
         MatchJoin joined = match;
         if (joined != null) MODEL.accept(update, joined.matchId());
+        if (update.lifecycle() == MatchStateMsg.Lifecycle.ENDED
+                || update.lifecycle() == MatchStateMsg.Lifecycle.FAULTED
+                || update.lifecycle() == MatchStateMsg.Lifecycle.DISPOSED) {
+            TEAM_PINGS.clear();
+        }
         if (update.lifecycle() == MatchStateMsg.Lifecycle.ENDED) {
             ARCS.clear();
         }

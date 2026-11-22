@@ -8,7 +8,7 @@
 
 - **Milestone:** M7 Multiplayer; 16 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md).
 - **Last finished task:** T13 commander hardening (NET-09). Normal, server and client-profile verify each pass 3,063 cases. Full S passes all 23 jobs, with 249 nightly cases and 20 seeds (896,421 ticks). Actual Sodium movement and fog pass with inspected captures. See [T13 evidence](../milestones/M7-multiplayer.md#37-commanderbody-hardening-net-09).
-- **In progress since 2026-11-22:** T14.1 team ping wire, authenticated allied routing and rate. T14.2 implements HUD/input/lifetime and T14.3 verifies the visual scenario. Tests, builds and client runs stay cloud-only; optional T24 stays in scope. The inherited main records error remains For the owner item 6.
+- **In progress since 2026-11-22:** T14.1 allied routing and exact rate are implemented in b7094afe and being cloud-verified in run 45030253494. T14.2 adds public roster teams and the same marker in both views. T14.3 cloud visual acceptance is pending. Tests, builds and client runs stay cloud-only; optional T24 stays in scope. The inherited main records error remains For the owner item 6.
 
 - **Merged from main last:** d39069e7 (2026-11-15, PR #55/M6); merge 213d0564 is zero commits behind that main. Cloud verify 43756194393 passed: 2,623 canonical XML cases, zero failures/errors/skips, 7m 22s. Prior T2b slow/soak/L6 evidence remains historical; new integration will receive its required gates.
 
@@ -516,6 +516,8 @@ or replication privacy; those retain their own integration tests and dependencie
 7. **Resolved 2026-11-16:** full cloud soak 43763260481 passed the complete 20-seed set and aggregate evidence gate. The operator authorized the repair and continuation; no decision is pending here. Review the workflow/harness changes normally with the M7 hand-in.
 
 ## Decisions taken
+
+- 2026-11-22 · T14 uses a middle click on the RTS minimap, a 40-server-tick cooldown per match seat that survives reconnect, and one visible marker per sender for 100 client ticks. Middle click preserves camera and order controls. Reuse the existing bounded public roster, with one team byte per human and protocol 8 for its changed layout. Private perspective still comes from the authenticated primary. Reverting these changes restores the previous roster layout and protocol 7.
 
 - 2026-11-21 · Adopt the three inspected 640 x 360 llvmpipe m7-reconnect frames from 44918194693 as automated behavior goldens: a preserved 1:1 group and exact camera after actual reopen, reset selection/private details, then an empty group/default camera in another world with colliding identities. The forced fixture viewport has no missing chunks. Keep the existing global image threshold and require normal plus inverted-copy rejection before accepting the visual gate. Human/native multiplayer and art acceptance stay separate. Undo by replacing/removing only this scene goldens and evidence; rerun the same image gates.
 

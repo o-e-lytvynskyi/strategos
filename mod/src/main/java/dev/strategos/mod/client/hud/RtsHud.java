@@ -40,6 +40,7 @@ import dev.strategos.mod.client.rts.RtsMode;
 import dev.strategos.mod.entity.UnitEntity;
 import dev.strategos.mod.entity.UnitSpawnData;
 import dev.strategos.mod.platform.Ids;
+import dev.strategos.mod.server.net.payload.PingPayload;
 import dev.strategos.mod.server.net.payload.UiQueryPayload;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -126,6 +127,7 @@ public final class RtsHud {
     private List<EconomyNotices.Shown> shownNotices = List.of();
     private long clientTicks;
     private final RtsMinimap minimap = new RtsMinimap();
+    private final TeamRosterHud teamRoster = new TeamRosterHud();
     private @Nullable PhasePanel phasePanel;
 
     private @Nullable Inspect inspect;
@@ -211,6 +213,9 @@ public final class RtsHud {
                                 mode.selection().handles(),
                                 net.minecraft.client.gui.screens.Screen.hasShiftDown())
                         .ifPresent(mode::send); // UI-20: one move of the selection, Shift queues
+            } else if (button == 2 && m.contains(x, y) && !join.slot().isAdmin()) {
+                double[] at = m.toWorld(x, y);
+                ClientPayloads.toServer(new PingPayload(0, (int) at[0], (int) at[1]));
             }
             return true;
         }
@@ -299,6 +304,7 @@ public final class RtsHud {
     private void build() {
         long start = System.nanoTime();
         clientTicks++;
+        StrategosClient.teamPings().tick();
         Minecraft client = Minecraft.getInstance();
         minimap.tick(client);
         news.poll(clientTicks);
@@ -780,6 +786,7 @@ public final class RtsHud {
 
     private void drawMinimap(GuiGraphics g, DeltaTracker delta) {
         if (shown()) {
+            teamRoster.draw(g, layout(), paint);
             minimap.draw(g, mode, paint, clientTicks, news.alertAt());
         }
     }

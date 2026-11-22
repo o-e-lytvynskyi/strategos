@@ -35,6 +35,7 @@ import dev.strategos.mod.server.net.payload.MatchJoinPayload;
 import dev.strategos.mod.server.net.payload.MatchPresentationPayload;
 import dev.strategos.mod.server.net.payload.MatchStatePayload;
 import dev.strategos.mod.server.net.payload.PlayerAuthorityPayload;
+import dev.strategos.mod.server.net.payload.TeamPingPayload;
 import io.netty.buffer.Unpooled;
 import java.util.List;
 import net.minecraft.core.RegistryAccess;
@@ -86,6 +87,10 @@ class PayloadRoundTripTest {
                         FactionPresentation.legacy(2),
                         List.of(new MatchPresentation.Participant(new PlayerSlot(0), 0, "host", true)))),
                 MatchPresentationPayload.SPEC.cap());
+        var ping = new TeamPingPayload(7, new TeamPingPayload.Ping(1, new PlayerSlot(15), 256, 512));
+        roundTrip(TeamPingPayload.STREAM_CODEC, ping, TeamPingPayload.SPEC.cap());
+        assertThat(TeamPingPayload.SPEC.audiences()).containsExactly(Audience.Kind.PLAYER);
+        assertThat(NetGateway.size(ping)).isEqualTo(21);
         var restoration = new GroupRestorePayload(new GroupRestoreFrame(7, 1, List.of(1048576)));
         roundTrip(GroupRestorePayload.STREAM_CODEC, restoration, GroupRestorePayload.SPEC.cap());
         assertThat(GroupRestorePayload.SPEC.audiences()).containsExactly(Audience.Kind.PLAYER);

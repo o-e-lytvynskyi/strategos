@@ -32,8 +32,9 @@ final class PublicPresentation {
                             .map(profile -> profile.getName())
                             .orElse("—");
             }
+            var faction = primary.orElseThrow();
             participants.add(new MatchPresentation.Participant(
-                    slot, primary.orElseThrow().value(), name, connected));
+                    slot, faction.value(), queries.diplomacy().teamOf(faction), name, connected));
         }
         return new MatchPresentation(match.id().value(), 0, queries.presentation(), participants);
     }

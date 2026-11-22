@@ -12,14 +12,17 @@ class MatchPresentationTest {
     @Test
     void coopNamesKeepDistinctPlayersAndOnePrimaryWhileOnlyPublicFieldsRoundTrip() {
         var names = new ArrayList<>(List.of(
-                new MatchPresentation.Participant(new PlayerSlot(1), 0, "peer", true),
-                new MatchPresentation.Participant(new PlayerSlot(0), 0, "host", true)));
+                new MatchPresentation.Participant(new PlayerSlot(1), 0, 9, "peer", true),
+                new MatchPresentation.Participant(new PlayerSlot(0), 0, 9, "host", true)));
         var view = new MatchPresentation(3, 8, FactionPresentation.legacy(2), names);
         names.clear();
         assertThat(view.participants()).extracting(p -> p.player().value()).containsExactly(0, 1);
         assertThat(view.participants())
                 .extracting(MatchPresentation.Participant::faction)
                 .containsExactly(0, 0);
+        assertThat(view.participants())
+                .extracting(MatchPresentation.Participant::team)
+                .containsExactly(9, 9);
         var out = new WireWriter(MatchPresentation.WIRE.maxSize());
         MatchPresentation.WIRE.write(out, view);
         assertThat(MatchPresentation.WIRE.read(new WireReader(out.toByteArray())))
@@ -61,7 +64,7 @@ class MatchPresentationTest {
                 new MatchPresentation(Integer.MAX_VALUE, Long.MAX_VALUE, new FactionPresentation(styles), participants);
         var out = new WireWriter(MatchPresentation.WIRE.maxSize());
         MatchPresentation.WIRE.write(out, view);
-        assertThat(out.toByteArray()).hasSize(MatchPresentation.WIRE.maxSize());
+        assertThat(out.toByteArray()).hasSize(3216).hasSize(MatchPresentation.WIRE.maxSize());
         assertThat(MatchPresentation.WIRE.maxSize()).isLessThan(4096);
         assertThat(MatchPresentation.WIRE.read(new WireReader(out.toByteArray())))
                 .isEqualTo(view);

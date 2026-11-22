@@ -23,6 +23,7 @@ import dev.strategos.mod.server.net.payload.MatchPresentationPayload;
 import dev.strategos.mod.server.net.payload.MatchStatePayload;
 import dev.strategos.mod.server.net.payload.PayloadArrived;
 import dev.strategos.mod.server.net.payload.PlayerAuthorityPayload;
+import dev.strategos.mod.server.net.payload.TeamPingPayload;
 import dev.strategos.mod.server.net.payload.TemplateAckPayload;
 import dev.strategos.mod.server.net.payload.TemplateSetPayload;
 import dev.strategos.mod.server.net.payload.UnitDetailPayload;
@@ -49,6 +50,7 @@ public final class ClientPayloads {
         switch (event.payload()) {
             case MatchJoinPayload p -> StrategosClient.match(p.epoch(), p.join());
             case GroupRestorePayload p -> StrategosClient.rts().restoreGroups(p.frame());
+            case TeamPingPayload p -> StrategosClient.teamPings().accept(p);
             case MatchPresentationPayload p -> StrategosClient.presentation(p.presentation());
             case PlayerAuthorityPayload p -> StrategosClient.authority(p.authority());
             case LobbyStatePayload p -> ClientLobby.accept(p.state());
