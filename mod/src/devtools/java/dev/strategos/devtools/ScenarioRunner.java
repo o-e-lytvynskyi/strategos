@@ -113,6 +113,7 @@ public final class ScenarioRunner {
             case "m7-coop" -> new CoopControlScenario();
             case "m7-reconnect" -> new ReconnectScenario();
             case "m7-team-hud" -> new TeamHudScenario();
+            case "m7-art" -> new RomanArtScenario();
             case "rts_frame_shroud" -> new RtsFrameScenario("rts_frame_shroud", RtsFrameScenario.EXPLORED);
             default -> null;
         };
