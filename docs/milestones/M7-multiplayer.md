@@ -866,7 +866,15 @@ FX lane with distinct drop accounting and recipient isolation. T16.2 adds the
 pending summary lane, replacing superseded full state and reprojecting against
 current visibility after deferral. T16.3 proves delivery and removals under
 backpressure, stale-view invalidation and the continued delivery of critical
-frames. T17 measures the result under the existing E budget.
+frames. The initial per-recipient credits are 512 encoded record bytes per
+server tick in each lane, with a burst capped at one maximum-sized frame.
+A full private view renews the summary allowance and retires the old pending
+offer. There is at most one live projection request per view and its age is
+bounded to 100 server ticks. Summary frames are already full snapshots, so
+a fresh one carries all current removals. Vision deltas remain critical and
+retain their delivery and revision cadence. Over-budget one-tick FX expire
+with separate frame and byte counts. T17 measures the result under the
+existing E budget, including vanilla traffic and packet overhead.
 
 Extend `NetGateway` with `ChannelBudget` and per-recipient pending state. Preserve critical
 lifecycle/control delivery; defer low-priority summary/far-FX work when its channel allowance

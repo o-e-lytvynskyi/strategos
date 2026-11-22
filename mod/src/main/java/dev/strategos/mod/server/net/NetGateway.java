@@ -25,7 +25,9 @@ import dev.strategos.core.protocol.RingBell;
 import dev.strategos.core.protocol.SetStance;
 import dev.strategos.core.protocol.Stop;
 import dev.strategos.core.protocol.Ungarrison;
+import dev.strategos.core.protocol.UnitSummary;
 import dev.strategos.core.protocol.WireCodec;
+import dev.strategos.core.protocol.WireWriter;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.MatchId;
 import dev.strategos.core.shared.PlayerSlot;
@@ -51,6 +53,7 @@ import dev.strategos.mod.server.net.payload.MatchStatePayload;
 import dev.strategos.mod.server.net.payload.PingPayload;
 import dev.strategos.mod.server.net.payload.PlayerAuthorityPayload;
 import dev.strategos.mod.server.net.payload.TeamPingPayload;
+import dev.strategos.mod.server.net.payload.UnitSummaryPayload;
 import dev.strategos.mod.server.tick.FaultBarrier;
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -103,8 +106,10 @@ public final class NetGateway {
     private final FaultBarrier faults;
 
     private static final int FX_BYTES_PER_TICK = 512;
+    private static final int SUMMARY_BYTES_PER_TICK = 512;
+    private static final int SUMMARY_MAX_AGE = 100;
 
-    private record QueuedFrame(CustomPacketPayload payload, RecipientContext recipient, int encodedFxBytes) {}
+    private record QueuedFrame(CustomPacketPayload payload, RecipientContext recipient, int encodedBytes) {}
 
     private record FxLane(RecipientContext recipient, ChannelBudget budget) {}
 
@@ -114,7 +119,21 @@ public final class NetGateway {
 
     private final Map<UUID, SequencedRecipient> commandSequences = new HashMap<>();
 
-    private record WireView(long epoch, RecipientContext origin) {}
+    private record WireView(long epoch, RecipientContext origin, SummaryLane summaries) {}
+
+    private record SummaryOffer(MatchRuntime match, Supplier<UnitSummaryPayload> project, int tick) {}
+
+    private record SummaryFrame(UnitSummaryPayload payload, int bytes) {}
+
+    private static final class SummaryLane {
+        private final ChannelBudget budget;
+        private @Nullable SummaryOffer pending;
+        private int retryAt;
+
+        SummaryLane(int tick) {
+            budget = new ChannelBudget(SUMMARY_BYTES_PER_TICK, UnitSummaryPayload.SPEC.cap(), tick);
+        }
+    }
 
     private final Map<UUID, WireView> wireViews = new HashMap<>();
     // A fresh boot namespace prevents an old client's retained epoch from being reused after a server restart.
@@ -138,6 +157,9 @@ public final class NetGateway {
 
     /** Sends {@code payload} to {@code audience}; a type that does not declare the audience is refused. */
     public void send(Audience audience, CustomPacketPayload payload) {
+        if (payload instanceof UnitSummaryPayload) {
+            throw new IllegalArgumentException("unit summaries require a live projection");
+        }
         check(ModPayloads.spec(payload.type().id()), payload.type().id(), audience.kind());
         switch (audience) {
             case Audience.Player p -> queue(p.player(), payload);
@@ -212,7 +234,10 @@ public final class NetGateway {
         registry.renewRecipient(player.getUUID());
         long epoch = Math.incrementExact(nextEpoch);
         nextEpoch = epoch;
-        wireViews.put(player.getUUID(), new WireView(epoch, RecipientContext.capture(player, registry)));
+        wireViews.put(
+                player.getUUID(),
+                new WireView(
+                        epoch, RecipientContext.capture(player, registry), new SummaryLane(server.getTickCount())));
         MatchSpace space = rt.space();
         String rules = CanonicalJson.write(MatchRules.CODEC
                 .encodeStart(JsonOps.INSTANCE, core.queries().config().rules())
@@ -323,6 +348,7 @@ public final class NetGateway {
         lastState.putAll(now); // a disposed match is forgotten
         lastLooks.clear();
         lastLooks.putAll(nowLooks);
+        flushSummaries(tick);
         for (Map.Entry<UUID, List<QueuedFrame>> e : queued.entrySet()) {
             ServerPlayer player = server.getPlayerList().getPlayer(e.getKey());
             if (player == null) {
@@ -334,7 +360,7 @@ public final class NetGateway {
                 CustomPacketPayload p = frame.payload();
                 if (player.connection.hasChannel(p)) {
                     sendable.add(p);
-                    int bytes = frame.encodedFxBytes() >= 0 ? frame.encodedFxBytes() : size(p);
+                    int bytes = frame.encodedBytes() >= 0 ? frame.encodedBytes() : size(p);
                     counters.sent(p.type().id(), player.getGameProfile().getName(), bytes);
                 }
             }
@@ -465,6 +491,8 @@ public final class NetGateway {
     /** Drop unsent match data during preparation rollback without resetting the incoming violation budget. */
     public void discardQueued(UUID player) {
         queued.remove(player);
+        WireView view = wireViews.get(player);
+        if (view != null) view.summaries().pending = null;
     }
 
     /** A player who left starts afresh. */
@@ -590,6 +618,58 @@ public final class NetGateway {
                 .add(new QueuedFrame(payload, context, fxBytes));
     }
 
+    /** Offers this faction's live full projection to each authenticated current view. */
+    public void offerSummary(MatchRuntime match, FactionSlot faction, Supplier<UnitSummaryPayload> project) {
+        var core = match.core();
+        if (core == null) return;
+        int tick = server.getTickCount();
+        var offer = new SummaryOffer(match, project, tick);
+        for (UUID player : match.roster().of(faction, core.queries().diplomacy())) {
+            var view = wireViews.get(player);
+            if (view == null || view.origin().primary() != faction.value()) continue;
+            var seat = view.origin().seat();
+            if (seat == null || seat.match() != match) continue;
+            var lane = view.summaries();
+            lane.pending = offer;
+            lane.retryAt = tick;
+        }
+    }
+
+    private void flushSummaries(int tick) {
+        Map<SummaryOffer, SummaryFrame> projected = new HashMap<>();
+        for (var entry : wireViews.entrySet()) {
+            var lane = entry.getValue().summaries();
+            var offer = lane.pending;
+            if (offer == null) continue;
+            var phase = offer.match().lifecycle();
+            if (Integer.toUnsignedLong(tick - offer.tick()) > SUMMARY_MAX_AGE
+                    || (phase != MatchLifecycle.RUNNING && phase != MatchLifecycle.PAUSED)) {
+                lane.pending = null;
+                continue;
+            }
+            if (tick - lane.retryAt < 0) continue;
+            var origin = entry.getValue().origin();
+            if (!origin.connection().hasChannel(UnitSummaryPayload.TYPE)) {
+                lane.pending = null;
+                continue;
+            }
+            var frame = projected.computeIfAbsent(offer, live -> {
+                UnitSummaryPayload payload = live.project().get();
+                if (payload.summary().matchId() != live.match().id().value()) {
+                    throw new IllegalStateException("summary belongs to another match");
+                }
+                return new SummaryFrame(payload, size(payload));
+            });
+            if (!lane.budget.take(tick, frame.bytes())) {
+                lane.retryAt = tick + Math.min(Replication.SUMMARY_EVERY, lane.budget.ticksUntil(frame.bytes()));
+                continue;
+            }
+            queued.computeIfAbsent(entry.getKey(), key -> new ArrayList<>())
+                    .add(new QueuedFrame(frame.payload(), origin, frame.bytes()));
+            lane.pending = null;
+        }
+    }
+
     /** Project each event, not its coarse batching page; a control grant never grants vision. */
     private void toVisibleEvents(MatchId match, CustomPacketPayload payload, boolean eitherEnd) {
         if (!(payload instanceof FxPayload frame)) {
@@ -689,6 +769,11 @@ public final class NetGateway {
     /** A payload's record bytes, as the wire carries them. */
     static int size(CustomPacketPayload payload) {
         return switch (payload) {
+            case UnitSummaryPayload p -> {
+                WireWriter out = new WireWriter(16 + 8 * p.summary().units().size());
+                UnitSummary.WIRE.write(out, p.summary());
+                yield out.size();
+            }
             case TeamPingPayload p -> TeamPingPayload.SPEC.cap();
             case MatchPresentationPayload p -> WireCodec.encode(MatchPresentation.WIRE, p.presentation()).length;
             case GroupRestorePayload p -> WireCodec.encode(GroupRestoreFrame.WIRE, p.frame()).length;

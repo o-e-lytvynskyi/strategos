@@ -17,6 +17,11 @@ final class ChannelBudget {
         available = burst;
     }
 
+    int ticksUntil(int bytes) {
+        if (bytes > burst) throw new IllegalArgumentException("frame exceeds channel burst");
+        return Math.ceilDiv(Math.max(0, bytes - available), bytesPerTick);
+    }
+
     boolean take(int now, int bytes) {
         if (bytes < 0) throw new IllegalArgumentException("negative channel charge");
         long elapsed = Integer.toUnsignedLong(now - tick);

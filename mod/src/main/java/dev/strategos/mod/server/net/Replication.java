@@ -248,9 +248,10 @@ public final class Replication {
                 if (rt.roster().of(faction, core.queries().diplomacy()).isEmpty()) {
                     continue;
                 }
-                net.send(
-                        new Audience.Faction(rt.id(), faction),
-                        new UnitSummaryPayload(ReplicationService.summary(
+                net.offerSummary(
+                        rt,
+                        faction,
+                        () -> new UnitSummaryPayload(ReplicationService.summary(
                                 core.queries(), rt.id().value(), faction, visibility(rt))));
                 if (vision != null) {
                     long trackerKey = ((long) rt.id().value() << 8) | f;

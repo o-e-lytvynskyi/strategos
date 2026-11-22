@@ -22,6 +22,7 @@ class ChannelBudgetTest {
         var budget = new ChannelBudget(100, 400, 0);
         assertThat(budget.take(0, 400)).isTrue();
         assertThat(budget.take(3, 400)).isFalse();
+        assertThat(budget.ticksUntil(400)).isEqualTo(1);
         assertThat(budget.take(4, 400)).isTrue();
         assertThat(budget.take(1_000, 401)).isFalse();
         assertThat(budget.take(1_000, 400)).isTrue();

@@ -11,7 +11,7 @@
 - **T14:** Full verify 45032045463 passes 3,076 cases with zero failures/errors/skips, and paired JMH 45031059530 passes all 30 configurations with unchanged gates. NET-03 is done. The latest visual repeat 45032048869 has zero difference and rejects all three inverted copies; prior co-op goldens pass 45031953038. Proposed llvmpipe references await owner approval, so T14 remains unchecked. Tests, builds and client runs stay cloud-only; optional T24 stays in scope. The inherited main records error remains For the owner item 6.
 
 - **Last finished task:** T15 team AI (AI-06). Verify 45034358354, full S 45034406274 and paired JMH 45034212255 all pass on 8313bfb5.
-- **In progress since 2026-11-22:** T16.1 recipient byte credits and separately counted expendable FX. T16.2 adds cumulative summary deferral and T16.3 proves recipient isolation and convergence.
+- **In progress since 2026-11-22:** T16 recipient byte credits, separately counted expendable FX, and bounded live summary deferral are implemented. Verify 45057449370 covers the FX checkpoint; final verification must cover coalesced removals, fresh reprojection, critical delivery and epoch isolation. T17 retains S11 measurements.
 - **Merged from main last:** d39069e7 (2026-11-15, PR #55/M6); merge 213d0564 is zero commits behind that main. Cloud verify 43756194393 passed: 2,623 canonical XML cases, zero failures/errors/skips, 7m 22s. Prior T2b slow/soak/L6 evidence remains historical; new integration will receive its required gates.
 
 The operator requested ownership of the whole M7 and work on what is currently possible on
