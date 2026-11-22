@@ -189,7 +189,11 @@ final class S11Bandwidth {
             viewer.capture().keep(scene == Scene.PAN);
             var slot = new PlayerSlot(i);
             server.matches().join(match, viewer.player().getUUID(), slot);
-            if (scene == Scene.PAN) server.commanders().enter(viewer.player(), match);
+            if (scene == Scene.PAN) {
+                server.commanders().enter(viewer.player(), match);
+                // Commander entry teleports to the admission camera. Start the measured route at its own anchor.
+                viewer.player().connection.teleport(panX, panY, panZ, 0, 55);
+            }
             server.net().joined(match, viewer.player(), slot);
         }
         issue(workload.setup(queries.templates()));
