@@ -233,7 +233,7 @@ Multiple-match discovery is outside M7. Recorded in the M7 branch pending mainta
 - **Status:** in_progress
 - **Implementation:** 2026-11-22 — T14 server and client checks pass, and the proposed
   llvmpipe frames compare at zero difference. See [T14 evidence](../milestones/M7-multiplayer.md#38-team-ui-and-ai).
-  Owner approval of the proposed goldens and the T25 two-client ping acceptance remain pending.
+  The owner approved the three Linux/llvmpipe goldens on 2026-11-22. Cloud 45059965221 passes the approved comparison and all altered-frame controls. The T25 two-client ping acceptance remains pending.
 
 #### AI-06 · AI in team games
 - **Value:** AI allies and opponents behave sensibly in team games.

@@ -5,6 +5,8 @@ recorded so that sessions compare (QA-09). It serves M6's gate ([M6 §1.3](../mi
 one match per level, the audio checklist (UI-21.4), a newcomer's first five minutes (UI-14.4), and a
 report with no score of 2 or less.
 
+For team play, reconnect and S11 use the [M7 multiplayer extension](m7-multiplayer.md).
+
 The demo chapters of M6 (`-Pdemo=m6`: Research, Town, Fog, Raid, Siege, Tower, Notices) show each mechanic
 alone and are a quick way to see what to look for before a match; they replace no part of this protocol.
 

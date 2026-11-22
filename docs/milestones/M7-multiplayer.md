@@ -825,8 +825,11 @@ llvmpipe candidates were inspected. Repeats 45031368831, 45031720298 and
 references at the unchanged 1e-5 threshold. The latest capture bytes match
 the inspected originals. Existing co-op goldens also pass in 45031953038
 after confining roster display to the RTS input screen. The reference files
-are under goldens-proposed pending owner approval. T14 remains unchecked
-until this approval. UI-15's real two-client acceptance remains T25.
+were approved by the owner on 2026-11-22 and promoted on feaa4cfa.
+[Cloud 45059965221](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45059965221)
+compares all three approved frames at zero difference and rejects each
+altered frame independently. T14 is complete. UI-15's real two-client
+acceptance remains T25.
 
 T15 is split ahead of implementation. T15.1 filters allied units, buildings
 and indexed starting positions from hostile target selection while preserving
@@ -1035,7 +1038,7 @@ reviewed implementation task between T17 and T18, keeping the acceptance depende
 - [x] T11 (2026-11-20) · Ingress validation; full verify 44786479783 (2,927 cases), paired core L6 44774432743 with unchanged gates.
 - [x] T12 (2026-11-20) · Seeded fuzzing; full verify 44791164065 (2,966 cases), 100,008 generated probes plus permanent and actual paused-state/journal controls.
 - [x] T13 (2026-11-22) · Commander hardening; normal/server/client verify (3,063 cases each), actual Sodium movement/fog and complete S. See §3.7.
-- [ ] T14 · Team HUD and pings.
+- [x] T14 (2026-11-22) · Team HUD and allied pings. Verify 45032045463 and approved cloud goldens 45059965221 pass.
 - [x] T15 (2026-11-22) · Team AI. Verify 45034358354, full S 45034406274 and paired JMH 45034212255 pass on 8313bfb5.
 - [x] T16 (2026-11-22) · Channel budgets and pending state. Verify 45058126895 passes 3,089 cases on c2d56f5b.
 - [ ] T17 · S11 mock measurement.
@@ -1079,8 +1082,10 @@ reviewed implementation task between T17 and T18, keeping the acceptance depende
 - D-20: accepted by the owner in the M7 session on 2026-10-30: dedicated first-class plus
   Open to LAN through one service, one active match per server. Dedicated tests are authoritative.
   The maintainer reconciles the main STATE record at review; M6 start integration remains separate.
-- D-03/D-04: theme and applicable style direction; name any owner-supplied asset work and record
-  the M6 fun verdict before ART-03 starts. Do not invent approval for unresolved parts.
+- D-03/D-04: the owner selected Roman antiquity on 2026-11-22 for the first civilisation
+  and delegated all ART-03 assets. The existing vanilla-faithful style with custom work where
+  needed applies. The owner described M6 as playable but difficult. This is the ART-03 timing
+  verdict. QA-13 retains its other release-candidate checks.
 - Co-op avatar: resolve the roadmap demo's fighting/scouting wording against D-08 and deferred
   CMB-08. This plan uses the existing observer avatar; adding combat or vision requires an
   explicit scope decision and its own card/task, not an implicit expansion of MATCH-06.

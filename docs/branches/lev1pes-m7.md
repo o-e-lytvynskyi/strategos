@@ -6,9 +6,9 @@
 
 ## Now
 
-- **Milestone:** M7 Multiplayer; 18 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md).
+- **Milestone:** M7 Multiplayer; 19 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md).
 - **Last finished task:** T13 commander hardening (NET-09). Normal, server and client-profile verify each pass 3,063 cases. Full S passes all 23 jobs, with 249 nightly cases and 20 seeds (896,421 ticks). Actual Sodium movement and fog pass with inspected captures. See [T13 evidence](../milestones/M7-multiplayer.md#37-commanderbody-hardening-net-09).
-- **T14:** Full verify 45032045463 passes 3,076 cases with zero failures/errors/skips, and paired JMH 45031059530 passes all 30 configurations with unchanged gates. NET-03 is done. The latest visual repeat 45032048869 has zero difference and rejects all three inverted copies; prior co-op goldens pass 45031953038. Proposed llvmpipe references await owner approval, so T14 remains unchecked. Tests, builds and client runs stay cloud-only; optional T24 stays in scope. The inherited main records error remains For the owner item 6.
+- **T14 complete:** the owner approved all three llvmpipe goldens on 2026-11-22. 45059965221 passes with zero diff, rejects all three inverted copies and reproduces the inspected captures. UI-15 human two-client acceptance is T25. Tests, builds and client runs stay cloud-only; optional T24 stays in scope.
 
 - **Previously finished:** T15 team AI (AI-06). Verify 45034358354, full S 45034406274 and paired JMH 45034212255 all pass on 8313bfb5.
 - **Last finished task:** T16 channel budgets and live summary deferral. Verify 45058126895 passes 3,089 cases on c2d56f5b.
@@ -38,6 +38,12 @@ before implementing them. T2 does not certify friendly-fire, allied victory, com
 or replication privacy; those retain their own integration tests and dependencies.
 
 ## Log
+
+### 2026-11-22 — Complete T14 and start the two-client protocol
+
+- The owner approved all three T14 llvmpipe goldens, promoted intact in feaa4cfa. Default-path scenario 45059965221 passes at zero difference and rejects every altered frame. T14 is complete (19/28). T25 retains actual two-client ping usage.
+- The owner selected Roman antiquity, delegated all art assets and recorded the M6 timing verdict as playable but difficult. T22 can start under the existing D-04 style. QA-13's other release-candidate evidence still applies.
+- T19 begins the two-client protocol while T17 runs in cloud. It records the fixture-to-manual evidence map and separates QA-15/NET-05/UI-15 hand-in evidence from the S11 real-client byte comparison.
 
 ### 2026-11-22 — Complete T16 channel budgets and pending state
 
