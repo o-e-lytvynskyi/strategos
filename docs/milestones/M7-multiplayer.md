@@ -834,6 +834,10 @@ the existing visibility checks. T15.2 adds observed allied-base threats and
 idle-only assistance with the 600-tick bound. T15.3 coordinates eligible waves
 in stable faction order and verifies the 1,200-tick bound and replay. Each
 substep keeps the current difficulty and deterministic simulation gates.
+Coordination uses only allied bots' expected departures for the same wave
+ordinal. A normal muster can wait at most 1,200 ticks beyond its own schedule
+to approach the latest allied departure. Warnings keep their original length.
+Departures already under way and opportunistic early attacks keep their timing.
 
 Extend the M6 `AiView`/wave scheduler with immutable diplomacy and observed allied-threat
 inputs. Never hand it unrestricted enemy queries. AI selects no allied attack target; an idle

@@ -57,7 +57,10 @@ final class AiSystem implements MatchSystem {
             int[] k = {0};
             AiBudget budget = new AiBudget(AiBudget.CAP);
             player.think(
-                    new AiView(queries, f, budget),
+                    new AiView(queries, f, budget, (ally, wave) -> {
+                        ComputerPlayer peer = slots.get(ally);
+                        return peer == null || s.outcome().defeated(ally) ? 0 : peer.projectedWaveLaunch(wave);
+                    }),
                     budget,
                     command -> s.pendingCommands()
                             .addLast(new CommandEnvelope(issuer, (int) ((tick << 7) | k[0]++), tick, command)));

@@ -27,10 +27,17 @@ import org.jspecify.annotations.Nullable;
  * budget per entry, once a think: the list is kept for the rest of it.
  */
 public final class AiView {
+    /** Bounded timing from another bot's own wave schedule. Zero means it has no matching wave. */
+    @FunctionalInterface
+    public interface WaveForecast {
+        long launch(int faction, long wave);
+    }
+
     private final MatchQueries q;
     private final int faction;
     private final int hostileFactions;
     private final AiBudget budget;
+    private final WaveForecast waves;
     private @Nullable List<UnitView> units;
     private @Nullable List<UnitView> enemies;
     private @Nullable List<BuildingView> all;
@@ -48,9 +55,14 @@ public final class AiView {
     public static final int ROLE_HORSE = 3;
 
     public AiView(MatchQueries q, int faction, AiBudget budget) {
+        this(q, faction, budget, (other, wave) -> 0);
+    }
+
+    public AiView(MatchQueries q, int faction, AiBudget budget, WaveForecast waves) {
         this.q = q;
         this.faction = faction;
         this.budget = budget;
+        this.waves = waves;
         var diplomacy = q.diplomacy();
         int team = diplomacy.teamOf(new FactionSlot(faction));
         int hostile = 0;
@@ -70,6 +82,16 @@ public final class AiView {
 
     boolean hasAlliedFaction() {
         return Integer.bitCount(hostileFactions) < q.config().factions() - 1;
+    }
+
+    long latestAlliedLaunch(long wave) {
+        long latest = 0;
+        for (int ally = 0; ally < q.config().factions(); ally++) {
+            if (ally != faction && !hostileFaction(ally)) {
+                latest = Math.max(latest, waves.launch(ally, wave));
+            }
+        }
+        return latest;
     }
 
     public long tick() {

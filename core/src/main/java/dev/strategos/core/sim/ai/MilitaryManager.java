@@ -21,6 +21,12 @@ import java.util.List;
  * on the schedule until the match is won.
  */
 final class MilitaryManager implements AiModule {
+    private static final long MAX_ALLIED_DELAY = 1_200;
+
+    static long nominalMuster(StrategyScript.Attack attack, long wave) {
+        return 20L * (attack.first() + wave * attack.every());
+    }
+
     private final StrategyScript script;
     private final AiMemory memory;
 
@@ -82,7 +88,8 @@ final class MilitaryManager implements AiModule {
         int[] handles = army.stream().mapToInt(Integer::intValue).toArray();
         long mustered = memory.get(Slots.MUSTER);
         if (mustered == 0) {
-            long due = 20L * (a.first() + memory.get(Slots.WAVE) * a.every());
+            long wave = memory.get(Slots.WAVE);
+            long due = nominalMuster(a, wave);
             boolean waveDue = tick >= due && army.size() >= a.min() && strongEnough(view, battle, soldiers);
             waveDue |= battle.finish() && outnumbers(memory, army.size(), tick) && strongEnough(view, battle, soldiers);
             // AI-18: between waves, keep marching on the enemy start, or burn the centre once seen
@@ -98,6 +105,11 @@ final class MilitaryManager implements AiModule {
             }
             if (DefenceManager.defending(memory, tick)) {
                 return; // the base is under attack: its soldiers stay to defend it (AI-04)
+            }
+            if (tick >= due && view.hasAlliedFaction()) {
+                long allyMuster = view.latestAlliedLaunch(wave) - 20L * a.announce();
+                long dueWithAllies = Math.min(due + MAX_ALLIED_DELAY, allyMuster);
+                if (tick < dueWithAllies) return;
             }
             int[] camp =
                     CampSite.find(view, budget, base, a.muster(), script.camp().minDistance());
