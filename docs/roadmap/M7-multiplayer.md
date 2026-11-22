@@ -114,7 +114,12 @@ Multiple-match discovery is outside M7. Recorded in the M7 branch pending mainta
   2. Allies receive the shared data of the rules table and nothing more (L3).
   3. No Strategos attachment type syncs to clients (L2, inventory).
 - **Tests:** L0, L2, L3 · **Depends on:** NET-08, MATCH-06 · **Size:** M · **Tier:** T1
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-11-22 — T9 supplies the treasury, queue, research, attachment and recipient
+  matrix. T14 supplies the gateway's allied pings and markers. Cloud verify
+  [45032045463](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45032045463)
+  passes 3,076 cases, including actual sender, co-op, allied, enemy and observer controls
+  at the exact rate boundary, recipient epochs and the expanded ingress corpus.
 
 #### NET-04 · Spike S11: bandwidth and per-channel byte budgets
 - **Value:** Smooth games over home internet with whole armies on the move.
@@ -222,7 +227,9 @@ Multiple-match discovery is outside M7. Recorded in the M7 branch pending mainta
 - **Tests:** L0, L1, L3, L4 (consent), L7 · **Depends on:** UI-20, NET-02 · **Size:** M ·
   **Tier:** T1
 - **Status:** in_progress
-- **Implementation:** T14 starts 2026-11-22 under the continuing whole-M7 instruction.
+- **Implementation:** 2026-11-22 — T14 server and client checks pass, and the proposed
+  llvmpipe frames compare at zero difference. See [T14 evidence](../milestones/M7-multiplayer.md#38-team-ui-and-ai).
+  Owner approval of the proposed goldens and the T25 two-client ping acceptance remain pending.
 
 #### AI-06 · AI in team games
 - **Value:** AI allies and opponents behave sensibly in team games.

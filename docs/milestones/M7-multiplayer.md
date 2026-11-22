@@ -459,8 +459,8 @@ observers, co-op/granted/enemy visibility and individually projected world/shot
 FX. Attachment registrations and attachment-builder sync calls are structurally
 checked. Client same-match private-view reset retains inspected scenario
 44629985316 and its unchanged positive/altered-reference gates. Existing M6
-primary visibility is the floor; M8 shared vision remains separate. NET-03 stays
-in_progress for T14's existing ping/team-marker criterion; no criterion is removed.
+primary visibility is the floor; M8 shared vision remains separate. NET-03 is
+complete with the T14 ping and marker evidence in §3.8.
 
 ### 3.5 Reconnect (NET-05)
 
@@ -805,6 +805,28 @@ the RTS input screen owns the HUD. Modal screens retain their existing
 background. `PingPayload` passes through the existing timed gateway and the
 recipient-private `TeamPingPayload` puts the same marker in the world and on
 the minimap. A rejected ping leaves match state unchanged.
+
+T14 functional verification passes
+[45032045463](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45032045463)
+on 98337aad: 3,076 cases, zero failures, errors or skips. Inspected the actual
+team-ping audience/cooldown test, the paused ingress corpus, all three client
+marker-model tests and the exact 3,216-byte public roster cap. NET-03 is
+complete. The matching core tree passes paired JMH
+[45031059530](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45031059530)
+on bd125b99: 30 configurations, 28 methods, maximum candidate/control ratio
+1.01979 and existing allocation gates green.
+
+Actual client run
+[45030768799](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45030768799)
+shows the real minimap click and server echo at (24, 23), followed by expiry
+in both views. The offline ally roster row is a visual fixture. All three
+llvmpipe candidates were inspected. Repeats 45031368831, 45031720298 and
+45032048869 match with zero difference and reject all three inverted
+references at the unchanged 1e-5 threshold. The latest capture bytes match
+the inspected originals. Existing co-op goldens also pass in 45031953038
+after confining roster display to the RTS input screen. The reference files
+are under goldens-proposed pending owner approval. T14 remains unchecked
+until this approval. UI-15's real two-client acceptance remains T25.
 
 T15 is split ahead of implementation. T15.1 filters allied units, buildings
 and indexed starting positions from hostile target selection while preserving
