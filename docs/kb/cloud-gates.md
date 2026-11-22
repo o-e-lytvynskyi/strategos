@@ -80,3 +80,11 @@ For an isolated flat visual fixture, keep a bounded forced viewport loaded
 across world reopen, require every chunk in the engine view mask and then a
 quiet renderer, and wait for HUD/capture completion. Do not enable spectator
 chunk generation or weaken image comparisons to hide incomplete streaming.
+
+`ClientLevel.hasChunk(x, z)` always returns true in 1.21.1 (ClientLevel.java:343).
+For a visual fixture's delivery gate use `level.getChunkSource().hasChunk(x, z)`:
+ChunkSource.java:30 requests a present FULL chunk without the empty-chunk fallback.
+Force-loading the server's fixture does not prove that the client received it.
+Wait for its actual cache before freezing a large map. Static visual scenarios
+that warp the cursor away from widgets must also disable incidental edge panning;
+the cached mouse position can otherwise drive the camera to its match limit.

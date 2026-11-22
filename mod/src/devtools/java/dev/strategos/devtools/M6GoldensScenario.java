@@ -382,6 +382,8 @@ final class M6GoldensScenario implements Scenario {
                 cursorAside ? 4.0 : mc.getWindow().getScreenHeight() / 2.0);
         if (tick == 1) {
             ScenarioWorld.renderDistance(mc, 12);
+            // Warping the cursor away from widgets must not pan this fixture's scripted camera.
+            StrategosClientConfig.INSTANCE.edgePan.set(false);
             // the hints would show in whatever frame the first selection or the first spare house falls in
             StrategosClientConfig.INSTANCE.seenHints.set(List.of("first_order", "idle_worker", "build_house"));
             steps = fog ? fogSteps() : townSteps();
@@ -445,6 +447,7 @@ final class M6GoldensScenario implements Scenario {
                         && ownBuilding(STOREHOUSE) != null
                         && ownBuilding(FARMSTEAD) != null
                         && bodies(mc, 0, SPEARMEN_Z) >= SPEARMEN));
+        s.add(until("the complete town minimap terrain", LIMIT, M6GoldensScenario::mapChunksReady));
         freeze(s);
         // the spearman with the starting gear
         s.add(act((mc, ctx) -> frame(0, SPEARMEN_Z, SPEARMEN_HEIGHT)));
@@ -585,6 +588,7 @@ final class M6GoldensScenario implements Scenario {
             var core = rt.core();
             scout = core == null ? -1 : scoutOf(core.queries());
         })));
+        s.add(until("the complete fog minimap terrain", LIMIT, M6GoldensScenario::mapChunksReady));
         freeze(s);
         s.add(act((mc, ctx) -> {
             StrategosClient.rts().centreOn(-8, 0);
@@ -674,7 +678,8 @@ final class M6GoldensScenario implements Scenario {
                     ctx.result.addProperty("settleOriginX", join.originX());
                     ctx.result.addProperty("settleOriginZ", join.originZ());
                     ctx.result.addProperty(
-                            "settleClientCornerChunk", level.hasChunk(join.originX() >> 4, join.originZ() >> 4));
+                            "settleClientCornerChunk",
+                            level.getChunkSource().hasChunk(join.originX() >> 4, join.originZ() >> 4));
                     var corner = new BlockPos(
                             join.originX() + 1,
                             level.getHeight(Heightmap.Types.WORLD_SURFACE, join.originX() + 1, join.originZ() + 1) - 1,
@@ -760,6 +765,19 @@ final class M6GoldensScenario implements Scenario {
             return calm >= CALM_WORLD;
         }));
         s.add(wait(ARRIVE));
+    }
+
+    /** ClientLevel.hasChunk is always true; inspect the actual cache before freezing the server. */
+    private static boolean mapChunksReady(Minecraft mc) {
+        var join = StrategosClient.match();
+        var level = mc.level;
+        if (join == null || level == null) return false;
+        for (int x = join.originX() >> 4; x <= (join.originX() + join.sizeX() - 1) >> 4; x++) {
+            for (int z = join.originZ() >> 4; z <= (join.originZ() + join.sizeZ() - 1) >> 4; z++) {
+                if (!level.getChunkSource().hasChunk(x, z)) return false;
+            }
+        }
+        return true;
     }
 
     /** Whether every building the client knows of is finished. */
