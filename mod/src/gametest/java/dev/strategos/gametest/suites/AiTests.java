@@ -8,6 +8,7 @@ import dev.strategos.core.content.MapManifest;
 import dev.strategos.core.content.Scenario;
 import dev.strategos.core.content.StartSlot;
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.port.MetricsSink;
 import dev.strategos.core.protocol.AnnounceWave;
 import dev.strategos.core.protocol.Command;
 import dev.strategos.core.protocol.Grant;
@@ -15,11 +16,13 @@ import dev.strategos.core.protocol.MatchNews;
 import dev.strategos.core.protocol.SetAi;
 import dev.strategos.core.protocol.SpawnBuilding;
 import dev.strategos.core.protocol.SpawnUnits;
+import dev.strategos.core.shared.DetMath;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.CommandResult;
+import dev.strategos.core.sim.DiplomacySetup;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.core.sim.PlayRules;
@@ -28,6 +31,7 @@ import dev.strategos.core.sim.WaveAnnounced;
 import dev.strategos.core.sim.ai.AiBudget;
 import dev.strategos.core.sim.ai.AiView;
 import dev.strategos.core.sim.command.ScenarioSetup;
+import dev.strategos.core.sim.diplomacy.DiplomacyState;
 import dev.strategos.core.sim.journal.ReplayDriver;
 import dev.strategos.core.sim.journal.ReplayResult;
 import dev.strategos.core.testkit.SimHarness;
@@ -39,6 +43,7 @@ import dev.strategos.mod.server.content.MapPackageLoader;
 import dev.strategos.mod.server.content.Scenarios;
 import dev.strategos.mod.server.match.MatchOptions;
 import dev.strategos.mod.server.match.MatchRuntime;
+import dev.strategos.mod.server.match.MatchSource;
 import dev.strategos.mod.server.match.MatchSpace;
 import dev.strategos.mod.server.net.payload.MatchEventPayload;
 import java.util.ArrayList;
@@ -251,6 +256,63 @@ public final class AiTests {
     private static final String WAVER = """
             {"maxWorkers":0,"ratio":{},"build":[],"housingMargin":0,
              "attack":{"first":5,"every":3000,"min":1,"muster":8,"announce":30},"sites":[]}""".replace("\n", "");
+
+    @StrategosTest(arena = "arena_flat_48", timeoutTicks = 850)
+    public static void anIdleBotReachesAnObservedAlliedThreatAndReplays(GameTestHelper h) {
+        var options = new MatchOptions(
+                SimHarness.DEFAULT_SEED,
+                3,
+                false,
+                MatchSource.GAMETEST,
+                null,
+                MetricsSink.none(),
+                Math.floor(h.getBounds().minY) + 1,
+                null,
+                AI_SEES);
+        var match = MatchFixture.create(h, options);
+        var own = new FactionSlot(0);
+        var ally = new FactionSlot(1);
+        var enemy = new FactionSlot(2);
+        match.initializeDiplomacy(new DiplomacySetup(
+                DiplomacyState.identity(3).withTeam(ally, 0).lockTeams().snapshot()));
+        match.submit(PlayerSlot.ADMIN, new SpawnBuilding(CENTRE, own, 3, 3, 0));
+        match.submit(PlayerSlot.ADMIN, new SpawnBuilding(CENTRE, ally, 35, 32, 0));
+        match.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.INFANTRY, own, new Vec2d(11, 10), 1, 0));
+        var threat = new Vec2d(38, 41);
+        match.submit(PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.INFANTRY, enemy, threat, 1, 0));
+
+        long[] began = {-1};
+        h.startSequence()
+                .thenWaitUntil(() -> {
+                    var queries = core(match).queries();
+                    check(queries.buildings().size() == 2, "allied centres not present");
+                    check(
+                            queries.unitHandlesOf(own).length == 1 && queries.unitHandlesOf(enemy).length == 1,
+                            "allied defence troop fixture not ready");
+                })
+                .thenExecute(() -> {
+                    began[0] = core(match).queries().tick();
+                    match.submit(PlayerSlot.ADMIN, new SetAi(own, "allydefence", WAVER));
+                })
+                .thenWaitUntil(() -> {
+                    var queries = core(match).queries();
+                    int[] ownUnits = queries.unitHandlesOf(own);
+                    check(ownUnits.length == 1, "allied defence soldier is absent");
+                    var soldier = queries.unit(ownUnits[0]);
+                    check(
+                            soldier != null && DetMath.length(soldier.x() - threat.x(), soldier.z() - threat.z()) <= 8,
+                            "idle army has not reached the threat");
+                })
+                .thenExecute(() -> {
+                    var sim = core(match);
+                    long elapsed = sim.queries().tick() - began[0];
+                    check(elapsed <= 600, "allied defence took " + elapsed + " ticks");
+                    var replay =
+                            ReplayDriver.replay(sim.journal(), sim.queries().templates());
+                    check(replay.matches() && replay.finalHash() == sim.stateHash(), "allied defence replay diverged");
+                })
+                .thenSucceed();
+    }
 
     /**
      * AI-04.5: the raid bar's news (the WAVE {@code match_event}) reaches every participant of the match whose wave it
