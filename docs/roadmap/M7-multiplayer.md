@@ -241,8 +241,13 @@ Multiple-match discovery is outside M7. Recorded in the M7 branch pending mainta
   2. With an idle army, the AI joins the defence of an allied base within 30 s (L1).
   3. Allied AIs launch their waves within 60 s of each other (L1).
 - **Tests:** L0, L1, L3 · **Depends on:** AI-05, MATCH-06 · **Size:** M · **Tier:** T1
-- **Status:** in_progress
-- **Implementation:** T15.1 starts 2026-11-22 with hostile target and fallback filtering.
+- **Status:** done
+- **Done:** 2026-11-22 — [T15 evidence](../milestones/M7-multiplayer.md#38-team-ui-and-ai).
+  The AI excludes allied units, buildings and indexed starts from hostile selection. An idle
+  army reaches an observed threat at a visible allied base within 600 ticks in L1 and L3,
+  while active and unobserved controls issue no assistance order. Allied waves launch
+  within 1,200 ticks in the staggered-schedule contract. Functional verification, exact
+  replay, full slow/soak and paired JMH all pass on 8313bfb5.
 
 #### QA-15 · Multiplayer test kit
 - **Value:** Multiplayer behaviour is tested on every change, not only in sessions with friends.

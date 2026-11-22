@@ -847,6 +847,18 @@ and deterministic replay. Active armies are not reassigned by the idle-help rule
 fixed scenarios where movement/distance makes these deadlines feasible; distinguish a decision
 deadline from unsupported teleportation. No coordination through human pings is added.
 
+T15 is complete. On 8313bfb5, [verify 45034358354](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45034358354)
+passes 3,082 cases with zero failures, errors or skips. The observed target and
+indexed-start tests pass. Idle assistance passes the 600-tick arrival bound in
+both L1 and the live adapter GameTest. Active and unobserved controls pass.
+The staggered allied waves pass the 1,200-tick launch bound. The wave and
+adapter-defence replays match the exact state hashes.
+[Full S 45034406274](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45034406274)
+passes 23 jobs and 249 nightly cases. Its aggregate contains all 20 exact-commit
+runs (896,421 ticks). [Paired JMH 45034212255](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45034212255)
+passes all 30 configurations across 28 methods. Maximum candidate/control
+ratio is 1.02257 at idle step300. Existing allocation thresholds pass.
+
 ### 3.9 Bandwidth and S11 (NET-04)
 
 Extend `NetGateway` with `ChannelBudget` and per-recipient pending state. Preserve critical
@@ -1002,7 +1014,7 @@ reviewed implementation task between T17 and T18, keeping the acceptance depende
 - [x] T12 (2026-11-20) · Seeded fuzzing; full verify 44791164065 (2,966 cases), 100,008 generated probes plus permanent and actual paused-state/journal controls.
 - [x] T13 (2026-11-22) · Commander hardening; normal/server/client verify (3,063 cases each), actual Sodium movement/fog and complete S. See §3.7.
 - [ ] T14 · Team HUD and pings.
-- [ ] T15 · Team AI.
+- [x] T15 (2026-11-22) · Team AI. Verify 45034358354, full S 45034406274 and paired JMH 45034212255 pass on 8313bfb5.
 - [ ] T16 · Channel budgets and pending state.
 - [ ] T17 · S11 mock measurement.
 - [ ] T18 · S11 real-client comparison and reserve decision.

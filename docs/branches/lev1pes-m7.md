@@ -6,11 +6,12 @@
 
 ## Now
 
-- **Milestone:** M7 Multiplayer; 16 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md).
+- **Milestone:** M7 Multiplayer; 17 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md).
 - **Last finished task:** T13 commander hardening (NET-09). Normal, server and client-profile verify each pass 3,063 cases. Full S passes all 23 jobs, with 249 nightly cases and 20 seeds (896,421 ticks). Actual Sodium movement and fog pass with inspected captures. See [T13 evidence](../milestones/M7-multiplayer.md#37-commanderbody-hardening-net-09).
 - **T14:** Full verify 45032045463 passes 3,076 cases with zero failures/errors/skips, and paired JMH 45031059530 passes all 30 configurations with unchanged gates. NET-03 is done. The latest visual repeat 45032048869 has zero difference and rejects all three inverted copies; prior co-op goldens pass 45031953038. Proposed llvmpipe references await owner approval, so T14 remains unchecked. Tests, builds and client runs stay cloud-only; optional T24 stays in scope. The inherited main records error remains For the owner item 6.
 
-- **In progress since 2026-11-22:** Independent T15.1 (AI-06) filters allied targets and indexed starts. Its first verify 45033028018 caught a formatting-only violation. T15.2 adds assistance only for idle armies, from threats seen near a visible allied civic centre. Its L1 contract covers the 600-tick arrival deadline and active/hidden controls. Full S 45032894009 covers T15.1. Verify 45033605491 covers T15.1–T15.2 L1, and a3585aab adds the L3 real-match/replay fixture. T15.3 now coordinates matching allied waves with a bounded delay before muster, and has an opposing-schedule control. Final combined V/S/J remain pending.
+- **Last finished task:** T15 team AI (AI-06). Verify 45034358354, full S 45034406274 and paired JMH 45034212255 all pass on 8313bfb5.
+- **Next:** T16 per-recipient channel budgeting, cumulative pending state and backpressure (NET-04).
 - **Merged from main last:** d39069e7 (2026-11-15, PR #55/M6); merge 213d0564 is zero commits behind that main. Cloud verify 43756194393 passed: 2,623 canonical XML cases, zero failures/errors/skips, 7m 22s. Prior T2b slow/soak/L6 evidence remains historical; new integration will receive its required gates.
 
 The operator requested ownership of the whole M7 and work on what is currently possible on
@@ -36,6 +37,11 @@ before implementing them. T2 does not certify friendly-fire, allied victory, com
 or replication privacy; those retain their own integration tests and dependencies.
 
 ## Log
+
+### 2026-11-22 — Complete T15 and AI-06
+
+- Verify 45034358354 on 8313bfb5 passes 3,082 cases. Inspected the target filtering, idle/active/hidden defence, live adapter and staggered-wave replay cases. Full S 45034406274 passes all 23 jobs, with 249 nightly cases and 20 exact-commit matches over 896,421 ticks. Paired JMH 45034212255 passes unchanged timing and allocation gates (30 configurations, 28 methods, maximum ratio 1.02257). Checked both archived report hashes and commit identities.
+- AI-06 is done in both roadmap views. M7 progress is 17/28. T14 visual references still need owner approval. Next ready task is T16 (NET-04).
 
 ### 2026-11-22 — T14 cloud evidence and T15.1 start
 
@@ -522,7 +528,11 @@ or replication privacy; those retain their own integration tests and dependencie
 
 7. **Resolved 2026-11-16:** full cloud soak 43763260481 passed the complete 20-seed set and aggregate evidence gate. The operator authorized the repair and continuation; no decision is pending here. Review the workflow/harness changes normally with the M7 hand-in.
 
+8. Pending owner approval of the three inspected Linux/llvmpipe team HUD frames in `mod/src/devtools/goldens-proposed/linux-llvmpipe/m7-team-hud`. The comparisons at 45032048869 match exactly and reject each altered frame. T25 retains the owner two-client ping acceptance.
+
 ## Decisions taken
+
+- 2026-11-22 · T15 assistance requires an idle army, a visible allied civic centre and a visible hostile soldier near it. Own defence and active waves have priority. Wave coordination reads only peer bots' forecast departure times for the same wave ordinal, with a 1,200-tick limit on delaying nominal muster. The existing warning durations, faction ordering and opportunistic early attacks retain their timing. Revert the allied forecast and assistance hooks independently to restore the previous schedule.
 
 - 2026-11-22 · T14 uses a middle click on the RTS minimap, a 40-server-tick cooldown per match seat that survives reconnect, and one visible marker per sender for 100 client ticks. Middle click preserves camera and order controls. Reuse the existing bounded public roster, with one team byte per human and protocol 8 for its changed layout. Private perspective still comes from the authenticated primary. Reverting these changes restores the previous roster layout and protocol 7.
 
