@@ -193,7 +193,7 @@ public final class UnitRenderer extends LivingEntityRenderer<UnitEntity, PlayerM
         return data != null
                 && presentation != null
                 && presentation.matchId() == data.matchId()
-                && CivilisationArt.isRoman(presentation.factions(), data.faction());
+                && presentation.factions().hasCivilisation(data.faction(), CivilisationArt.ROMAN);
     }
 
     /** No name tag: vanilla shows one over every living entity within 64 blocks, a crowd of labels from above (UNIT-03). */

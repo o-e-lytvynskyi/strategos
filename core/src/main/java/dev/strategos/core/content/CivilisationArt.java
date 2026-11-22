@@ -1,19 +1,11 @@
 package dev.strategos.core.content;
 
-import dev.strategos.core.protocol.FactionPresentation;
-
 /** Material palette for the original Roman art on the built-in blueprints. */
 public final class CivilisationArt {
     public static final String PLACEHOLDER = "strategos:placeholder";
     public static final String ROMAN = "strategos:roman";
 
     private CivilisationArt() {}
-
-    public static boolean isRoman(FactionPresentation factions, int faction) {
-        return faction >= 0
-                && faction < factions.styles().size()
-                && ROMAN.equals(factions.style(faction).civilisation());
-    }
 
     /** Maps only full, solid building blocks. Footprints, door and spawn markers, and crop states are shared. */
     public static String material(String civilisation, String blueprint, String state) {

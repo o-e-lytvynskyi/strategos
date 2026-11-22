@@ -48,6 +48,12 @@ public final class FactionPresentation {
         return styles.get(faction);
     }
 
+    public boolean hasCivilisation(int faction, String civilisation) {
+        return faction >= 0
+                && faction < styles.size()
+                && civilisation.equals(style(faction).civilisation());
+    }
+
     public boolean isLegacy() {
         return legacy;
     }

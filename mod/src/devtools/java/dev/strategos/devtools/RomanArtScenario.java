@@ -203,7 +203,7 @@ final class RomanArtScenario implements Scenario {
                     if (shield.is(Items.SHIELD) && shield.has(DataComponents.BANNER_PATTERNS)) shields++;
                 }
             }
-            if (shields < 4 || !CivilisationArt.isRoman(view.factions(), BLUE.value())) return false;
+            if (shields < 4 || !view.factions().hasCivilisation(BLUE.value(), CivilisationArt.ROMAN)) return false;
             RtsGoldensScenario.pinBodies(mc);
             ctx.result.addProperty("romanShields", shields);
             ctx.result.addProperty("cameraHeight", rig.height());

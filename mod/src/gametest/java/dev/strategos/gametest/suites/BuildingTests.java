@@ -43,7 +43,7 @@ public final class BuildingTests {
 
     private BuildingTests() {}
 
-    @StrategosTest(batch = "buildings", timeoutTicks = 400)
+    @StrategosTest(batch = "buildings", arena = "arena_flat_48", timeoutTicks = 400)
     public static void romanTownUsesItsPaletteForEveryBuilding(GameTestHelper h) {
         MatchRuntime rt = match(h);
         var styles = new FactionPresentation(List.of(
