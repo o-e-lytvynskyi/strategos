@@ -14,6 +14,7 @@ written in the same session, into the file of its area (a branch does it on the 
 | Build: sources jar, Spotless, the dev runtime, MDG, the Spotless/compile race, `:mod:test` as a server, ErrorProne, `build/` in `.gitignore` and a package named `build`, two worktrees and one smoke port | [minecraft-mod-build.md](minecraft-mod-build.md) |
 | Save/reload: stable template identities, legacy custom indices, atomic reload guards, terminal lifecycle and pending terrain baselines | [save-reload-identities.md](save-reload-identities.md) |
 | Recipient boundaries: queued and asynchronous origins, per-player generations, full-join snapshots and co-op vision deltas | [recipient-rejoin.md](recipient-rejoin.md) |
+| Commander bodies: complete mock connection ticks, listener position restoration, skipped spectator ticks and player-body fog refresh | [commander-body-guards.md](commander-body-guards.md) |
 | Cloud gates: aggregate deadlines, concurrent test JVMs and incomplete XML evidence | [cloud-gates.md](cloud-gates.md) |
 | JMH: a CPU-load profiler can contaminate the allocation gate; reusable Linux cumulative counters | [jmh-profiler-allocation.md](jmh-profiler-allocation.md) |
 | Lobby: detached readiness, configuration versus state revisions, runtime admission and launch durability | [lobby-readiness.md](lobby-readiness.md) |

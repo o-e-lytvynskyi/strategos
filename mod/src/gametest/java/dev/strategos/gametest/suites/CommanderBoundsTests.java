@@ -15,6 +15,37 @@ import net.minecraft.world.level.Level;
 public final class CommanderBoundsTests {
     private CommanderBoundsTests() {}
 
+    @StrategosTest(timeoutTicks = 200)
+    public static void anUnloadedChunkEdgeCannotSuppressTheOneTickCorrection(GameTestHelper h) {
+        var rt = match(h);
+        var member = FirstPersonTests.commander(h, rt, "guard-unloaded");
+        var space = rt.space();
+        double farX = (Math.floorDiv(space.origin().getX(), 16) + 64) * 16 + 15.75;
+        var at = member.player().position();
+        h.onEachTick(member::poll);
+        h.startSequence()
+                .thenExecute(() -> {
+                    member.player().connection.teleport(farX, at.y, at.z, 0, 0);
+                    FirstPersonTests.accept(member);
+                    check(
+                            member.player().touchingUnloadedChunk(),
+                            "fixture did not reach an actual unloaded neighbour chunk");
+                    member.player().connection.tick();
+                    check(
+                            Math.abs(member.player().getX() - farX) < 1e-6,
+                            "fixture did not exercise the engine's skipped player-tick branch");
+                })
+                .thenExecuteAfter(1, () -> {
+                    check(
+                            Math.abs(member.player().getX() - (space.origin().getX() + space.sizeX() + 32)) < 1e-6,
+                            "skipping the player tick left the commander outside bounds for a full server tick");
+                    check(!member.disconnected(), "unloaded-boundary correction disconnected the commander");
+                    member.close();
+                    StrategosServer.get().matches().dispose(rt.id());
+                })
+                .thenSucceed();
+    }
+
     @StrategosTest(timeoutTicks = 800)
     public static void aForeignDimensionIsCorrectedWithinOnePlayerTick(GameTestHelper h) {
         var rt = match(h);

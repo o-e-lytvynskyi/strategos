@@ -179,6 +179,7 @@ final class M6GoldensScenario implements Scenario {
         ScenarioWorld.run(server, "gamerule sendCommandFeedback false");
         ScenarioWorld.run(server, "gamerule doDaylightCycle false");
         ScenarioWorld.run(server, "gamerule doWeatherCycle false");
+        ScenarioWorld.run(server, "gamerule doMobSpawning false");
         ScenarioWorld.run(server, "time set 6000");
         ScenarioWorld.run(server, "weather clear");
         int floor = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, 0, 0);
@@ -193,6 +194,14 @@ final class M6GoldensScenario implements Scenario {
                         new MatchOptions(
                                 5L, 2, false, MatchSource.GAMETEST, null, MetricsSink.none(), floor, null, play));
         match = rt;
+        // The minimap must sample the whole fixture even though spectator chunk generation is disabled.
+        // Town is 16 by 16 chunks (256); the fog world is smaller. Keep vanilla's command limit intact.
+        var space = rt.space();
+        ScenarioWorld.run(
+                server,
+                "forceload add " + space.origin().getX() + " " + space.origin().getZ()
+                        + " " + (space.origin().getX() + space.sizeX() - 1) + " "
+                        + (space.origin().getZ() + space.sizeZ() - 1));
         researched.clear();
         town = 0;
         scout = -1;
@@ -418,6 +427,7 @@ final class M6GoldensScenario implements Scenario {
             RtsMode rts = StrategosClient.rts();
             return rts.active() && rts.view() != null && rts.rig() != null;
         }));
+        s.add(act((mc, ctx) -> frame(0, 0, CameraRig.DEFAULT_HEIGHT)));
         s.add(act((mc, ctx) -> onServer(mc, (server, rt) -> spawnTown(rt))));
         s.add(until(
                 "the town and its spearmen",
@@ -556,6 +566,7 @@ final class M6GoldensScenario implements Scenario {
                     && StrategosClient.model().visionCellsX() > 0
                     && rendered(mc);
         }));
+        s.add(act((mc, ctx) -> frame(0, 0, CameraRig.DEFAULT_HEIGHT)));
         s.add(act((mc, ctx) -> onServer(mc, (server, rt) -> spawnFog(rt))));
         s.add(until(
                 "the two centres and the scout",
