@@ -884,6 +884,13 @@ coalesce superseded state. Recheck audience, membership and epoch at flush so a 
 private frame cannot survive a revoke/rejoin. Report dropped expendable effects separately;
 authoritative state and removals must eventually converge without loss.
 
+T16 passes [verify 45058126895](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45058126895)
+on c2d56f5b, with 3,089 cases and zero failures, errors or skips. The actual
+gateway GameTests confirm isolated credit, uninterrupted critical feedback,
+separate FX drop counts, coalesced removals, exact epoch invalidation and
+a fresh projection at the next eligible tick. Verify 45057449370 separately
+passed the FX and L1 credit checkpoint (3,087 cases).
+
 Measure S11 in `docs/spikes/S11-bandwidth.md`: four acknowledging byte-counting mock players,
 600 moving/fighting units; pan 40 blocks/s, fog-edge fight and construction storm. Report all
 clientbound traffic (vanilla and Strategos) per player/type/channel; separate terrain streaming
@@ -1030,7 +1037,7 @@ reviewed implementation task between T17 and T18, keeping the acceptance depende
 - [x] T13 (2026-11-22) · Commander hardening; normal/server/client verify (3,063 cases each), actual Sodium movement/fog and complete S. See §3.7.
 - [ ] T14 · Team HUD and pings.
 - [x] T15 (2026-11-22) · Team AI. Verify 45034358354, full S 45034406274 and paired JMH 45034212255 pass on 8313bfb5.
-- [ ] T16 · Channel budgets and pending state.
+- [x] T16 (2026-11-22) · Channel budgets and pending state. Verify 45058126895 passes 3,089 cases on c2d56f5b.
 - [ ] T17 · S11 mock measurement.
 - [ ] T18 · S11 real-client comparison and reserve decision.
 - [ ] T19 · Two-client protocol.

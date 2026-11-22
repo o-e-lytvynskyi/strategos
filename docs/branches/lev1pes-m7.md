@@ -6,12 +6,13 @@
 
 ## Now
 
-- **Milestone:** M7 Multiplayer; 17 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md).
+- **Milestone:** M7 Multiplayer; 18 of 28 implementation steps complete. Specification: [M7](../milestones/M7-multiplayer.md).
 - **Last finished task:** T13 commander hardening (NET-09). Normal, server and client-profile verify each pass 3,063 cases. Full S passes all 23 jobs, with 249 nightly cases and 20 seeds (896,421 ticks). Actual Sodium movement and fog pass with inspected captures. See [T13 evidence](../milestones/M7-multiplayer.md#37-commanderbody-hardening-net-09).
 - **T14:** Full verify 45032045463 passes 3,076 cases with zero failures/errors/skips, and paired JMH 45031059530 passes all 30 configurations with unchanged gates. NET-03 is done. The latest visual repeat 45032048869 has zero difference and rejects all three inverted copies; prior co-op goldens pass 45031953038. Proposed llvmpipe references await owner approval, so T14 remains unchecked. Tests, builds and client runs stay cloud-only; optional T24 stays in scope. The inherited main records error remains For the owner item 6.
 
-- **Last finished task:** T15 team AI (AI-06). Verify 45034358354, full S 45034406274 and paired JMH 45034212255 all pass on 8313bfb5.
-- **In progress since 2026-11-22:** T16 recipient byte credits, separately counted expendable FX, and bounded live summary deferral are implemented. Verify 45057449370 covers the FX checkpoint; final verification must cover coalesced removals, fresh reprojection, critical delivery and epoch isolation. T17 retains S11 measurements.
+- **Previously finished:** T15 team AI (AI-06). Verify 45034358354, full S 45034406274 and paired JMH 45034212255 all pass on 8313bfb5.
+- **Last finished task:** T16 channel budgets and live summary deferral. Verify 45058126895 passes 3,089 cases on c2d56f5b.
+- **Next ready:** T17 S11 mock measurements (NET-04), including 600 units, four acknowledging viewers, exact measurement windows and separated terrain traffic.
 - **Merged from main last:** d39069e7 (2026-11-15, PR #55/M6); merge 213d0564 is zero commits behind that main. Cloud verify 43756194393 passed: 2,623 canonical XML cases, zero failures/errors/skips, 7m 22s. Prior T2b slow/soak/L6 evidence remains historical; new integration will receive its required gates.
 
 The operator requested ownership of the whole M7 and work on what is currently possible on
@@ -37,6 +38,11 @@ before implementing them. T2 does not certify friendly-fire, allied victory, com
 or replication privacy; those retain their own integration tests and dependencies.
 
 ## Log
+
+### 2026-11-22 — Complete T16 channel budgets and pending state
+
+- Verify 45058126895 on c2d56f5b passes 3,089 cases with zero failures, errors or skips. Inspected the FX/critical delivery, coalesced removal/epoch and fresh-reprojection GameTests. The earlier FX/credit checkpoint 45057449370 passes 3,087 cases. Record the visibility pitfall in [recipient boundaries](../kb/recipient-rejoin.md).
+- T16 is complete. M7 progress is 18/28. NET-04 remains in progress for T17 mock S11 measurements and T18 native comparison. T14's cloud evidence is ready, with golden promotion pending owner approval.
 
 ### 2026-11-22 — Complete T15 and AI-06
 
@@ -531,6 +537,8 @@ or replication privacy; those retain their own integration tests and dependencie
 8. Pending owner approval of the three inspected Linux/llvmpipe team HUD frames in `mod/src/devtools/goldens-proposed/linux-llvmpipe/m7-team-hud`. The comparisons at 45032048869 match exactly and reject each altered frame. T25 retains the owner two-client ping acceptance.
 
 ## Decisions taken
+
+- 2026-11-22 · T16 uses separate 512-byte-per-tick allowances per recipient for summary records and queued FX. Capacity allows one wire-cap-sized frame, and summary retries keep at most one live offer for 100 ticks. The next full snapshot carries removals, and vision deltas keep their existing ordered delivery. FX under pressure expire with separate counts. These allowances can be tuned with S11 evidence without changing the E threshold. Revert the two lanes independently to restore the previous eager delivery.
 
 - 2026-11-22 · T15 assistance requires an idle army, a visible allied civic centre and a visible hostile soldier near it. Own defence and active waves have priority. Wave coordination reads only peer bots' forecast departure times for the same wave ordinal, with a 1,200-tick limit on delaying nominal muster. The existing warning durations, faction ordering and opportunistic early attacks retain their timing. Revert the allied forecast and assistance hooks independently to restore the previous schedule.
 

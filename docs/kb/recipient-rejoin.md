@@ -129,3 +129,11 @@ with the ServerLevel overload; off-thread calls re-enqueue the packet and
 throw before returning. Inject after that exact invocation and before the
 entity UUID lookup. Verify its erased descriptor in the pinned class bytecode,
 and keep an actual unseated vanilla positive alongside each member denial.
+
+A deferred full unit summary keeps a live projection request in its original
+private view. Recompute it under current primary visibility when its byte
+credit allows delivery. A previously projected frame can outlive the enemy's
+visibility or the unit itself even while the recipient's epoch stays current.
+A newer full snapshot carries removals by omission. Preserve the delivery
+cadence of incremental vision deltas, whose next frame depends on the previous
+one. Expire over-budget visual effects and account for those drops separately.

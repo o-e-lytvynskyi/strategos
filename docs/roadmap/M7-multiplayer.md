@@ -138,7 +138,10 @@ Multiple-match discovery is outside M7. Recorded in the M7 branch pending mainta
   4. The report decides on the tier-4 reserve (R).
 - **Tests:** L1, L6, R · **Depends on:** NET-03, QA-19, PERF-01 · **Size:** M · **Tier:** T1
 - **Status:** in_progress
-- **Implementation:** T16 begins with separate recipient channel budgets. T17 and T18 retain the S11 measurement and native comparison.
+- **Implementation:** T16 passes [verify 45058126895](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45058126895)
+  with independent recipient credits, current summary reconstruction and removals under pressure,
+  stale-epoch rejection and FX drop accounting. T17 and T18 retain the S11 measurement and native
+  comparison. NET-04 remains in progress.
 
 #### NET-05 · Reconnect and rejoin
 - **Value:** A dropped connection doesn't end your game.
