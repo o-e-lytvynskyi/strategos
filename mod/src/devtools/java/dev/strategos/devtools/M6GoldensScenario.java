@@ -439,6 +439,7 @@ final class M6GoldensScenario implements Scenario {
             return rts.active() && rts.view() != null && rts.rig() != null;
         }));
         s.add(act((mc, ctx) -> frame(0, 0, CameraRig.DEFAULT_HEIGHT)));
+        s.add(until("the town camera at its fixed origin", LIMIT, mc -> cameraAt(mc, 0, 0)));
         s.add(act((mc, ctx) -> onServer(mc, (server, rt) -> spawnTown(rt))));
         s.add(until(
                 "the town and its spearmen",
@@ -579,6 +580,7 @@ final class M6GoldensScenario implements Scenario {
                     && rendered(mc);
         }));
         s.add(act((mc, ctx) -> frame(0, 0, CameraRig.DEFAULT_HEIGHT)));
+        s.add(until("the fog camera at its fixed origin", LIMIT, mc -> cameraAt(mc, 0, 0)));
         s.add(act((mc, ctx) -> onServer(mc, (server, rt) -> spawnFog(rt))));
         s.add(until(
                 "the two centres and the scout",
@@ -660,7 +662,7 @@ final class M6GoldensScenario implements Scenario {
                 return true;
             }
             if (inStep > limit) {
-                if (what.equals("the client to settle")) {
+                if (what.equals("the client to settle") || what.contains("camera at its fixed origin")) {
                     ctx.result.addProperty("settleRendered", mc.levelRenderer.hasRenderedAllSections());
                     ctx.result.addProperty("settleBuilt", allBuilt());
                     ctx.result.addProperty(
@@ -689,6 +691,12 @@ final class M6GoldensScenario implements Scenario {
                     var player = Objects.requireNonNull(mc.player);
                     ctx.result.addProperty("settlePlayerX", player.getX());
                     ctx.result.addProperty("settlePlayerZ", player.getZ());
+                    ctx.result.addProperty("settleEdgePan", StrategosClientConfig.INSTANCE.edgePan.get());
+                    var rig = StrategosClient.rts().rig();
+                    if (rig != null) {
+                        ctx.result.addProperty("settleFocusX", rig.focusX());
+                        ctx.result.addProperty("settleFocusZ", rig.focusZ());
+                    }
                     ctx.result.addProperty("settleCalmTicks", calm);
                     ctx.result.addProperty(
                             "settleBuildings",
@@ -765,6 +773,18 @@ final class M6GoldensScenario implements Scenario {
             return calm >= CALM_WORLD;
         }));
         s.add(wait(ARRIVE));
+    }
+
+    /** A far centreOn is asynchronous; the server must accept it before the visual fixture freezes its ticks. */
+    private static boolean cameraAt(Minecraft mc, double x, double z) {
+        var rig = StrategosClient.rts().rig();
+        var player = mc.player;
+        if (rig == null || player == null) return false;
+        return Math.hypot(rig.focusX() - x, rig.focusZ() - z) < 0.5
+                && Math.hypot(
+                                player.getX() - rig.pose().x(),
+                                player.getZ() - rig.pose().z())
+                        < 0.5;
     }
 
     /** ClientLevel.hasChunk is always true; inspect the actual cache before freezing the server. */
