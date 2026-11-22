@@ -550,6 +550,13 @@ or replication privacy; those retain their own integration tests and dependencie
 
 ## Decisions taken
 
+- 2026-11-22 · T21 updates the four inspected editing-state lobby images only where the civilisation control is now enabled. The exact changed bounds are x=356–413 and y=119–202 at 640×360. The three other lobby images are identical. The scenario also selects Roman in the actual lobby and checks its loaded public style. Undo the fixture images with the UI control change if the selection design is reverted.
+
+- 2026-11-22 · Roman art uses the existing faction style and keeps original building footprints, collision classes and damage ranks. The palette is shared by construction, repair and restore. Existing saves and neutral fixtures keep their original appearance; new lobby matches can select Roman per faction. To undo, remove the selectable style and retain its material mapping for saves that already chose it.
+
+- 2026-11-22 · Keep the full validated S11 mock reports as losslessly compressed files beside the summary. T18 can still compare against the same sample after the temporary cloud artifact expires. Remove this archive only with a replacement accepted mock baseline.
+
+
 - 2026-11-22 · T16 uses separate 512-byte-per-tick allowances per recipient for summary records and queued FX. Capacity allows one wire-cap-sized frame, and summary retries keep at most one live offer for 100 ticks. The next full snapshot carries removals, and vision deltas keep their existing ordered delivery. FX under pressure expire with separate counts. These allowances can be tuned with S11 evidence without changing the E threshold. Revert the two lanes independently to restore the previous eager delivery.
 
 - 2026-11-22 · T15 assistance requires an idle army, a visible allied civic centre and a visible hostile soldier near it. Own defence and active waves have priority. Wave coordination reads only peer bots' forecast departure times for the same wave ordinal, with a 1,200-tick limit on delaying nominal muster. The existing warning durations, faction ordering and opportunistic early attacks retain their timing. Revert the allied forecast and assistance hooks independently to restore the previous schedule.

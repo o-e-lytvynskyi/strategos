@@ -4,6 +4,7 @@ import argparse
 from bisect import bisect_right
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
+import gzip
 import json
 import math
 from pathlib import Path
@@ -136,6 +137,9 @@ def compare(scene, events, addresses, mock):
 
 
 def read(path):
+    if path.suffix == ".gz":
+        with gzip.open(path, "rt", encoding="utf-8") as archive:
+            return json.load(archive)
     return json.loads(path.read_text(encoding="utf-8"))
 
 

@@ -48,7 +48,7 @@ mapping is JSON with exactly the keys A and B and the corresponding opaque
 
 ```text
 jfr print --json --events minecraft.PacketSent,minecraft.NetworkSummary,strategos.S11Tick recording.jfr > events.json
-python tools/s11_native.py s11_battle events.json addresses.json s11_battle.json comparison.json
+python tools/s11_native.py s11_battle events.json addresses.json perf/s11/s11_battle.json.gz comparison.json
 ```
 
 `PacketSent` reports the encoded packet before compression and framing.

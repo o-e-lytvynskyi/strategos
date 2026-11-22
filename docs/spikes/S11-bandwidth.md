@@ -34,6 +34,8 @@ comparison and tier-4 decision are T18.
 [Cloud run 45062182584](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45062182584)
 measured commit `1267fbce`. Artifact 14770610886 contains every per-tick and
 per-type count, the GameTest evidence and the independently recomputed report.
+The four complete raw mock reports and their summary are retained in
+[`perf/s11`](../../perf/s11) for the later native comparison.
 The SHA-256 of `s11_complete.json` is
 `4c4c9466659c7e1a8b7001c2ce15b4b49ca0756ed39722dd505aa1bf9ae82a92`.
 
