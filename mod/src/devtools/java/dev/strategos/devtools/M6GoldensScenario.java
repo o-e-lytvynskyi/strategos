@@ -150,6 +150,9 @@ final class M6GoldensScenario implements Scenario {
     private volatile boolean freezeOnIdle;
 
     private volatile boolean frozenIdle;
+    private volatile boolean mapCornerOnServerAtFreeze;
+    private volatile int forcedChunksAtFreeze;
+    private volatile int serverViewAtFreeze;
     private int idleSteps;
     private volatile int endStage;
     private volatile long endTick;
@@ -231,6 +234,12 @@ final class M6GoldensScenario implements Scenario {
             idleSteps = StrategosServer.get().writer().pending(server.overworld()) == 0 ? idleSteps + 1 : 0;
             if (idleSteps >= IDLE_STEPS) { // longer than a site's 4-tick burst interval
                 freezeOnIdle = false;
+                mapCornerOnServerAtFreeze = server.overworld()
+                        .hasChunk(
+                                rt.space().origin().getX() >> 4,
+                                rt.space().origin().getZ() >> 4);
+                forcedChunksAtFreeze = server.overworld().getForcedChunks().size();
+                serverViewAtFreeze = server.getPlayerList().getViewDistance();
                 ScenarioWorld.run(server, "tick freeze");
                 frozenIdle = true;
             }
@@ -653,6 +662,28 @@ final class M6GoldensScenario implements Scenario {
                     ctx.result.addProperty(
                             "settleMinimapCorner", StrategosClient.hud().minimapPixel(1, 1));
                     ctx.result.addProperty("settleMinimapHash", minimapHash());
+                    ctx.result.addProperty(
+                            "settleHudTicks", StrategosClient.hud().clientTicks());
+                    ctx.result.addProperty("settleServerMapCorner", mapCornerOnServerAtFreeze);
+                    ctx.result.addProperty("settleForcedChunks", forcedChunksAtFreeze);
+                    ctx.result.addProperty("settleServerView", serverViewAtFreeze);
+                    ctx.result.addProperty(
+                            "settleClientView", mc.options.renderDistance().get());
+                    var join = Objects.requireNonNull(StrategosClient.match());
+                    var level = Objects.requireNonNull(mc.level);
+                    ctx.result.addProperty("settleOriginX", join.originX());
+                    ctx.result.addProperty("settleOriginZ", join.originZ());
+                    ctx.result.addProperty(
+                            "settleClientCornerChunk", level.hasChunk(join.originX() >> 4, join.originZ() >> 4));
+                    var corner = new BlockPos(
+                            join.originX() + 1,
+                            level.getHeight(Heightmap.Types.WORLD_SURFACE, join.originX() + 1, join.originZ() + 1) - 1,
+                            join.originZ() + 1);
+                    ctx.result.addProperty(
+                            "settleCornerBlock", level.getBlockState(corner).toString());
+                    var player = Objects.requireNonNull(mc.player);
+                    ctx.result.addProperty("settlePlayerX", player.getX());
+                    ctx.result.addProperty("settlePlayerZ", player.getZ());
                     ctx.result.addProperty("settleCalmTicks", calm);
                     ctx.result.addProperty(
                             "settleBuildings",
