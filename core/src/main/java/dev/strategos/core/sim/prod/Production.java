@@ -18,6 +18,7 @@ import dev.strategos.core.sim.build.Construction;
 import dev.strategos.core.sim.build.Placing;
 import dev.strategos.core.sim.econ.Dropsites;
 import dev.strategos.core.sim.econ.Fields;
+import dev.strategos.core.sim.garrison.Garrisons;
 import dev.strategos.core.sim.order.OrderKind;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
@@ -185,7 +186,7 @@ public final class Production {
         return Construction.nearestFree(s, at, cx, cz, mobility);
     }
 
-    /** New unit {@code unit} takes building {@code handle}'s rally orders: walk there, gather there, or go to it. */
+    /** New unit {@code unit} takes building {@code handle}'s rally orders: walk there, gather there, go to it, or garrison in it. */
     static void rally(MatchState s, int handle, int unit) {
         BuildingStore b = s.buildings();
         int i = Handle.index(unit);
@@ -211,6 +212,12 @@ public final class Production {
             case BuildingStore.RALLY_BUILDING -> {
                 if (!b.alive(target)) {
                     return;
+                }
+                int[] door = Garrisons.door(s, target);
+                if (door != null && Garrisons.admits(s, i, target) && !Garrisons.full(s, target)) {
+                    // an own or allied holder with room: walk to its door and go in (BLD-10)
+                    s.orders().replace(i, OrderKind.GARRISON, door[0] + 0.5, door[1] + 0.5, 0, 0, target);
+                    break;
                 }
                 double[] edge = Dropsites.dropPoint(
                         s, target, s.motion().x(i), s.motion().z(i));

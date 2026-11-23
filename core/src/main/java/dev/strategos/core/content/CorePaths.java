@@ -104,6 +104,14 @@ public final class CorePaths {
     public static final String GARRISON_CLASSES = "GarrisonHolder/classes";
 
     /**
+     * What a garrison does for those inside (BLD-10, M9 spec §2.7): {@code heal} hit points a second for each occupant,
+     * and {@code ejectBelow}, the share of its most hit points under which a building lets everyone out. Optional.
+     */
+    public static final String GARRISON_HEAL = "GarrisonHolder/heal";
+
+    public static final String GARRISON_EJECT_BELOW = "GarrisonHolder/ejectBelow";
+
+    /**
      * A building's territory influence (TERR-01, M9 spec §2.2): its weight, its radius in blocks, and whether it is a
      * root (1) that connects the land around it. A building without {@code radius} claims none. Optional.
      */
@@ -191,6 +199,8 @@ public final class CorePaths {
                     BUILDING_RANGE,
                     BUILDING_SPREAD,
                     GARRISON_CAPACITY,
+                    GARRISON_HEAL,
+                    GARRISON_EJECT_BELOW,
                     TERRITORY_WEIGHT,
                     TERRITORY_RADIUS,
                     TERRITORY_ROOT -> 0;
@@ -210,6 +220,8 @@ public final class CorePaths {
             case RANGED_RANGE, BUILDING_RANGE -> 128;
             case BUILDING_ARROWS, BUILDING_PER_GARRISONED -> 32;
             case GARRISON_CAPACITY -> 200;
+            case GARRISON_HEAL -> 1_000;
+            case GARRISON_EJECT_BELOW -> 1;
             case TERRITORY_WEIGHT -> 65_535;
             case TERRITORY_RADIUS -> 256;
             case TERRITORY_ROOT -> 1;

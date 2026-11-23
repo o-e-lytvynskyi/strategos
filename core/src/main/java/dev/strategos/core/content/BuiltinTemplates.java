@@ -162,6 +162,7 @@ final class BuiltinTemplates {
               "Identity": { "classes": "Structure" },
               "Building": { "material": "stone" },
               "Placement": { "territory": 1 },
+              "GarrisonHolder": { "ejectBelow": 0.1 },
               "Health": { "max": 500 },
               "Resistance": { "fire": 7 },
               "DamageStages": { "first": 85, "second": 65, "third": 35 }
@@ -179,7 +180,7 @@ final class BuiltinTemplates {
               "Cost": { "resources": { "wood": 300, "stone": 200, "iron": 100 }, "time": 150 },
               "Dropsite": { "resources": "food wood stone iron" },
               "Housing": { "capacity": 20 },
-              "GarrisonHolder": { "capacity": 20, "classes": "Worker Infantry" },
+              "GarrisonHolder": { "capacity": 20, "classes": "Worker Infantry", "heal": 1 },
               "Trainer": { "units": "strategos:unit/worker", "batchExponent": 0.8 },
               "Limit": { "count": 1 },
               "Researcher": { "techs": "strategos:phase_town" }
@@ -206,7 +207,8 @@ final class BuiltinTemplates {
               "Resistance": { "fire": 0 },
               "Health": { "max": 400 },
               "Cost": { "resources": { "wood": 80 }, "time": 30 },
-              "Housing": { "capacity": 5 }
+              "Housing": { "capacity": 5 },
+              "GarrisonHolder": { "capacity": 5, "classes": "Worker" }
             }
             """;
     static final String BARRACKS = """
@@ -235,7 +237,8 @@ final class BuiltinTemplates {
               "TerritoryInfluence": { "weight": 400, "radius": 24, "root": 0 },
               "Health": { "max": 1000 },
               "Vision": { "range": 24 },
-              "Attack": { "Building": { "arrows": 1, "interval": 40, "pierce": 10, "range": 28 } },
+              "Attack": { "Building": { "arrows": 1, "perGarrisoned": 1, "interval": 40, "pierce": 10, "range": 28 } },
+              "GarrisonHolder": { "capacity": 5, "classes": "Infantry" },
               "Cost": { "resources": { "wood": 100, "stone": 150 }, "time": 75 }
             }
             """;

@@ -11,6 +11,7 @@ import dev.strategos.core.sim.combat.ShotSystem;
 import dev.strategos.core.sim.combat.TownArrows;
 import dev.strategos.core.sim.command.CommandRules;
 import dev.strategos.core.sim.command.CommandSystem;
+import dev.strategos.core.sim.garrison.GarrisonSystem;
 import dev.strategos.core.sim.journal.Journal;
 import dev.strategos.core.sim.journal.JournalWriter;
 import dev.strategos.core.sim.move.MotionSystem;
@@ -80,6 +81,7 @@ final class MatchCoreImpl implements MatchCore {
         scheduler.register(new ShotSystem(state));
         scheduler.register(new CombatSystem());
         scheduler.register(new EconomySystem());
+        scheduler.register(new GarrisonSystem()); // BLD-10: heals and ejects, after the tick's blows
         scheduler.register(vision); // FOW-01: the grids and the visibility, before the terrain's edits
         scheduler.register(territory); // TERR-01: after vision, as 04 §10.6 orders the WORLD phase
         scheduler.register(new TerrainSystem());

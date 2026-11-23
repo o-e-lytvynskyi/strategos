@@ -109,7 +109,7 @@ CMB-10 → BLD-10 → AI-08 (26 card-days).
   3. Garrisoned units raise capture regeneration (L1).
   4. A rally point on a building garrisons new units (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** BLD-16, CMB-10 · **Size:** M · **Tier:** T1
-- **Status:** specified
+- **Status:** in_progress
 
 #### BLD-12 · Sentry tower and tower upgrades
 - **Value:** Hold chokepoints and protect your economy with towers (P4).

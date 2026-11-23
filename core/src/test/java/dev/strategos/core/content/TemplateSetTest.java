@@ -179,9 +179,11 @@ class TemplateSetTest {
     }
 
     // M5 combat content (horseman, barracks roster, town bell) without $techs / Researcher — pin after M5+M6 merge;
-    // M9 T2: the buildings' TerritoryInfluence (TERR-01); M9 T5: Placement/territory (TERR-02).
+    // M9 T2: the buildings' TerritoryInfluence (TERR-01); M9 T5: Placement/territory (TERR-02); M9 T10: the garrison's
+    // heal and ejectBelow,
+    // the houses' and the tower's holders (BLD-10).
     private static final String BUILTIN_VERSION_BEFORE_TECH_01 =
-            "3b88dc4f888c3d4f45fd8155c40e513a34beb637b99256a40411c61185066cb8";
+            "52367d692819db2565822bab2930e709c2c14e81efe8158789d948c4ea02f35c";
 
     // M4: the farmstead's reach (ECO-17); M5: the town bell block in the civic centre's blueprint (BLD-16), on the
     // horseman's set (UNIT-06, UNIT-07); the barracks trains the roster, spearman, archer and horseman (AI-03); M6
@@ -189,10 +191,12 @@ class TemplateSetTest {
     // civic centre's Researcher; M6 T20: the defence tower (BLD-17) and its blueprint; M6
     // T19: the worker's build list, Town's additions to it, the arsenal and the ram (CMB-09); M6 T23: Town costs 600
     // wood, not 500 (QA-12's tuning); M9 T2: the buildings' TerritoryInfluence (TERR-01); M9 T5: Placement/territory
-    // and Town's second centre (TERR-02). Rebaselined after merging
+    // and Town's second centre (TERR-02); M9 T10: the garrison's heal and ejectBelow, the houses' and the tower's
+    // holders
+    // (BLD-10). Rebaselined after merging
     // M5
     // combat content into BuiltinTemplates.
-    private static final String BUILTIN_VERSION = "b4ef44c1a4db8e0c39ba4cff0b5c4b2a377266ab93ff0d9c8540a685dcd11412";
+    private static final String BUILTIN_VERSION = "3ab479247ad6f94c210b6cc30ff007befc7a1dd05970bf91842408568405bf2f";
 
     private static TemplateSet set(UnitTemplate template) {
         return new TemplateSet(List.of(template));

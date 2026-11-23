@@ -156,7 +156,8 @@
     "TerritoryInfluence/weight": "The highest weight: nothing outweighs a civic centre (TERR-01)",
     "TerritoryInfluence/radius": "A root of 56 blocks: 0 A.D.'s 140 m at the ×0.4 of M9's scale (spec §1.6 row 6); the highest weight, so a centre's land is its own (TERR-01)",
     "TerritoryInfluence/root": "A root: land flood-connected to a centre is connected (TERR-01)",
-    "Placement/territory": "Own or neutral land, 0 A.D.'s rule: a new centre claims ground nobody holds, never an enemy's (TERR-02)"
+    "Placement/territory": "Own or neutral land, 0 A.D.'s rule: a new centre claims ground nobody holds, never an enemy's (TERR-02)",
+    "GarrisonHolder/heal": "One hit point a second for each unit inside: 0 A.D.'s civic centre heals garrisoned units 1 HP/s (research second-pass 1.13), so a wounded squad recovers in the town while it holds (BLD-10)"
   },
   "strategos:template/building_base": {
     "Resistance/fire": "Stone: 0.9^7 lets 48 % of a torch's fire through, so wood burns more than twice as fast per hit point (CMB-03)",
@@ -164,7 +165,8 @@
     "DamageStages/first": "The first blocks fall once a seventh of the building is gone, early enough to show an attack is working (BLD-05, 04 §11.8)",
     "DamageStages/second": "Two thirds of its hit points left: a third of its blocks down, the building plainly hurt",
     "DamageStages/third": "A third left: most of it down but its walls' foot, a ruin still standing until its last hit points",
-    "Placement/territory": "Own territory only, 0 A.D.'s rule: a town grows inside its borders (TERR-02, replacing BLD-02's 48-block stand-in)"
+    "Placement/territory": "Own territory only, 0 A.D.'s rule: a town grows inside its borders (TERR-02, replacing BLD-02's 48-block stand-in)",
+    "GarrisonHolder/ejectBelow": "A tenth of its health: 0 A.D.'s garrison holders let everyone out below 10 % (research second-pass 1.13), so a falling building does not bury its garrison (BLD-10)"
   },
   "strategos:building/house": {
     "Health/max": "Four hundred: a house burns in well under a minute to a squad (CMB-03)",
@@ -174,7 +176,8 @@
     "Resistance/fire": "Timber and thatch: fire's whole blow lands, twice as fast per hit point as stone (CMB-03)",
     "TerritoryInfluence/weight": "A building's weight: below a centre's, above a quarry's (TERR-01)",
     "TerritoryInfluence/radius": "Sixteen blocks: 0 A.D.'s 16–20 m houses at ×0.4, rounded up so a house still claims its own tiles beside a road (TERR-01)",
-    "TerritoryInfluence/root": "Not a root: its land is connected only through a centre's (TERR-01)"
+    "TerritoryInfluence/root": "Not a root: its land is connected only through a centre's (TERR-01)",
+    "GarrisonHolder/capacity": "Five workers: 0 A.D.'s houses hold three to six support units (research second-pass 1.13), workers only, so a house shelters a raid's victims at the edge of town and no soldier hides in it (BLD-10)"
   },
   "strategos:building/field": {
     "Health/max": "Two hundred: a field burns quickly, a cheap thing to raid",
@@ -210,7 +213,9 @@
     "Cost/time": "A minute and a quarter for one builder: slower than a barracks, so a tower is raised before the raid, not during it",
     "TerritoryInfluence/weight": "A building's weight: below a centre's, above a quarry's (TERR-01)",
     "TerritoryInfluence/radius": "Twenty-four blocks: as the barracks; a tower holds its chokepoint's land (TERR-01)",
-    "TerritoryInfluence/root": "Not a root: its land is connected only through a centre's (TERR-01)"
+    "TerritoryInfluence/root": "Not a root: its land is connected only through a centre's (TERR-01)",
+    "GarrisonHolder/capacity": "Five infantry: 0 A.D.'s towers hold three to five infantry (research second-pass 1.13), the top of that range for a Town building, infantry only (BLD-10)",
+    "Attack/Building/perGarrisoned": "One more arrow for each unit inside: 0 A.D.'s towers add an arrow per garrisoned infantry (research second-pass 1.13), so a full tower fires six (BLD-11)"
   },
   "strategos:building/arsenal": {
     "Health/max": "Fifteen hundred: a stone workshop, tougher than a barracks (1,200), so the siege line is not lost to the first raid that reaches it (CMB-09)",

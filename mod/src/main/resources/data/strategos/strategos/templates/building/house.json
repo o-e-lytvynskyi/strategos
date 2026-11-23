@@ -6,5 +6,6 @@
   "Resistance": { "fire": 0 },
   "Health": { "max": 400 },
   "Cost": { "resources": { "wood": 80 }, "time": 30 },
-  "Housing": { "capacity": 5 }
+  "Housing": { "capacity": 5 },
+  "GarrisonHolder": { "capacity": 5, "classes": "Worker" }
 }

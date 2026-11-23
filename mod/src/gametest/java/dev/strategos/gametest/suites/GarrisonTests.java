@@ -11,11 +11,14 @@ import dev.strategos.core.protocol.AllClear;
 import dev.strategos.core.protocol.Attack;
 import dev.strategos.core.protocol.Garrison;
 import dev.strategos.core.protocol.Gather;
+import dev.strategos.core.protocol.Grant;
 import dev.strategos.core.protocol.ModeSwitch;
 import dev.strategos.core.protocol.RingBell;
+import dev.strategos.core.protocol.SetRally;
 import dev.strategos.core.protocol.SpawnBuilding;
 import dev.strategos.core.protocol.SpawnDeposit;
 import dev.strategos.core.protocol.SpawnUnits;
+import dev.strategos.core.protocol.Train;
 import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
@@ -204,6 +207,32 @@ public final class GarrisonTests {
                     long took = core(rt).queries().tick() - run.cleared;
                     LOG.info("GARR all clear: back on the node {} ticks after it", took);
                     check(took <= BACK_TICKS, "the workers took " + took + " ticks to get back, not " + BACK_TICKS);
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * BLD-10.4: a worker trained at a civic centre whose rally point is the centre itself walks to its door and goes in:
+     * the unit ends GARRISONED (the centre is the only building) with no body in the level.
+     */
+    @StrategosTest(timeoutTicks = 3_000)
+    public static void rally_garrisons(GameTestHelper h) {
+        MatchRuntime rt = MatchFixture.create(h, MatchFixture.options(SimHarness.DEFAULT_SEED, h));
+        rt.submit(PlayerSlot.ADMIN, new SpawnBuilding(CENTRE, F0, 18, 18, 0));
+        rt.submit(PlayerSlot.ADMIN, new Grant(F0, "food", 1_000));
+        h.startSequence()
+                .thenWaitUntil(() -> centre(rt))
+                .thenExecute(() -> {
+                    int centre = centre(rt);
+                    rt.submit(P0, new SetRally(UnitSet.of(centre), 19, 2, 19));
+                    rt.submit(P0, new Train(centre, dev.strategos.core.content.TemplateSet.WORKER));
+                })
+                .thenWaitUntil(() -> {
+                    check(handles(rt).length == 1, "the worker is not trained yet");
+                    check(unit(rt, handles(rt)[0]).state() == UnitState.GARRISONED, "the worker is not inside yet");
+                })
+                .thenExecute(() -> {
+                    check(rt.bodies().get(handles(rt)[0]) == null, "the garrisoned worker still has a body");
                 })
                 .thenSucceed();
     }
