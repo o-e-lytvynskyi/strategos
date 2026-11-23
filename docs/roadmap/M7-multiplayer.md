@@ -279,7 +279,9 @@ Multiple-match discovery is outside M7. Recorded in the M7 branch pending mainta
   2. The stress pass holds C p95 ≤ 50 ms (L6).
   3. The report is archived as the multiplayer baseline (R).
 - **Tests:** L6, R · **Depends on:** NET-04, QA-15, PERF-09 · **Size:** S · **Tier:** T1
-- **Status:** proposed
+- **Status:** in_progress
+- **Progress:** The four-faction fixture, A–E report and 2× stress scene are wired. The first
+  diagnostics identified loss of workload. The sustained census and reference gate are pending.
 
 ### Beside M7
 
