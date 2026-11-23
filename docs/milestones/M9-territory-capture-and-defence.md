@@ -115,6 +115,7 @@ The demo chapters (`-Pdemo=m9`): `territory`, `capture`, `garrison_heal`, `tower
 
 | 7 | M6's follow-ups | M6 asked for a fake `DemoStage` in the next milestone's first task; `DemoStage` is a class over a `ServerLevel` | T17, with the new chapters; T1 keeps the moves |
 
+| 9 | Territory and fog (T4) | The cards do not say whether enemy land shows through the fog | Territory is public in M9, one grid for every client, as the shroud does not hide terrain; AFTER-M8: FOW-05's leak audit decides |
 | 8 | The territory hash (T2, T3) | Mixing the grid into the state hash would change every saved journal's hashes; the grid is a function of saved state | The grid is never hashed; `Play.territory` saves the delivered and the pending source sets, and a restore rebuilds both grids exactly (§2.3 amended) |
 
 New rows are added as tasks find them.
@@ -425,7 +426,7 @@ Results, the health check, the hand-in. Size: records.
 
 ### 7.3 Progress
 
-- [x] T1 (2026-11-24) · [x] T2 (2026-11-24) · [ ] T3 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T10 · [ ] T11 · [ ] T12 · [ ] T7
+- [x] T1 (2026-11-24) · [x] T2 (2026-11-24) · [x] T3 (2026-11-24) · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T10 · [ ] T11 · [ ] T12 · [ ] T7
 - [ ] T8 · [ ] T9 · [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17 · [ ] T18 · [ ] T19 · [ ] T20
 
 ## 8. Acceptance checklist (M9 exit)

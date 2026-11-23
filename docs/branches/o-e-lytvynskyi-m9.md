@@ -6,10 +6,10 @@
 
 ## Now
 
-- **Milestone:** M9 Territory, capture and defence, 2 of 20 tasks done; spec [M9](../milestones/M9-territory-capture-and-defence.md).
+- **Milestone:** M9 Territory, capture and defence, 3 of 20 tasks done; spec [M9](../milestones/M9-territory-capture-and-defence.md).
 - **In progress:** none.
-- **Last finished task:** T2 (2026-11-24).
-- **Next task:** T3 · TERR-01 · The system, the job and the save.
+- **Last finished task:** T3 (2026-11-24).
+- **Next task:** T4 · TERR-01 · The payload and the client grid (the core's codec is in; the mod's payload next).
 - **Merged from main last:** 05cd50b (2026-11-24).
 
 ## Depends on unfinished work
@@ -27,7 +27,9 @@ From the assessment before the claim (procedure §2a step 0). Every other depend
 
 Newest first; one entry per session in the worklog's shape.
 
-### 2026-11-24 — M9 spec, T1–T2
+### 2026-11-24 — M9 spec, T1–T3
+
+- **M9 T3 · TERR-01 · The system, the job and the save** — `TerritorySystem` in `WORLD` after vision: sources gathered on a building or stats change, a recompute at most once per 20 ticks as a `PureJob` joined on the next tick, the first grid at once; `Play.territory` (the delivered and pending source sets; SchemaVersion stays 3); `TerritoryGrid` moved to `core.shared` (rule B3 keeps the client out of `sim`); `MatchCore.territory()`; `TerritorySystemTest`: the same grid every tick on 0, 1 and 4 threads, the cadence, a save mid-recompute restores the same future; `verify` green, 1 min 43 s. **`jmhCompare` invalid:** 20 of 21 benchmarks over ADR-0026's 7.5 % foreign load (7.6–9.9 %, the machine in use); the one valid comparison, `SpatialBench.rebuild1000` 4.77 → 5.90 µs (+24 %), measures code M9 has not touched, so it is put down to the same load until a quiet rerun (T18, `tools/longrun.sh`).
 
 - **M9 T2 · TERR-01 · The kernel and the reference** — TERR-01 in progress; `Allies` (the M7 seam, `MatchState.allies()`), `FakeAllies`; `TerritoryGrid`, `TerritorySources`, `TerritoryKernel` (`@HotPath`, integer fixed point, stamping by bounding box); `TerritoryReference` equals the kernel on 500 random layouts (64² to 1,024², 1–4 factions, 1–60 sources); `TerritoryInfluence` on eleven buildings with provenance, the balance sheet regenerated, the template set's two pins rebaselined; `verify` green, 1 min 54 s.
 - **M9 T1 · Health check moves** — `MotionSystem` 910 → 658 (`MotionMoves`), `PathService` 837 → 752 (`PathRoutes`), `BuildingStore` 798 → 576 (`BuildingQueues`, `buildings.queues()`); moves only, hash and save formats unchanged; `verify verifySlow` green, 4 min 58 s (in a worktree).

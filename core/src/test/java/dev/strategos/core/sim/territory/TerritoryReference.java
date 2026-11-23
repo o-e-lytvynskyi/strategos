@@ -1,5 +1,7 @@
 package dev.strategos.core.sim.territory;
 
+import dev.strategos.core.shared.TerritoryGrid;
+
 /**
  * The naive territory (M9 spec §2.2): every tile against every source, owners by the highest sum, connectivity by a
  * recursive-free flood from each root over a fresh visited set. Slow and obvious; {@link TerritoryKernel} must equal

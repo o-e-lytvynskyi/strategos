@@ -33,6 +33,7 @@ import dev.strategos.core.sim.order.StanceStore;
 import dev.strategos.core.sim.prod.Population;
 import dev.strategos.core.sim.spatial.SpatialQueries;
 import dev.strategos.core.sim.stats.StatService;
+import dev.strategos.core.sim.territory.TerritorySystem;
 import dev.strategos.core.sim.unitai.ActivityTiers;
 import dev.strategos.core.sim.vision.VisionSystem;
 import java.util.ArrayDeque;
@@ -77,6 +78,7 @@ public final class MatchState {
     private final MatchBus bus = new MatchBus();
     private final StatService stats;
     private @Nullable VisionSystem visionSystem;
+    private @Nullable TerritorySystem territorySystem;
     /** The map's start slots (AI-18); not saved — a restored match sets them from the map again. */
     private final SpatialQueries spatial;
 
@@ -627,6 +629,15 @@ public final class MatchState {
 
     void setVisionSystem(VisionSystem vision) {
         this.visionSystem = vision;
+    }
+
+    /** Territory (TERR-01), once the core has made it. */
+    public @Nullable TerritorySystem territorySystem() {
+        return territorySystem;
+    }
+
+    void setTerritorySystem(TerritorySystem territory) {
+        this.territorySystem = territory;
     }
 
     /** The map's start slots for the AI (AI-18), the config's; empty for a match on no map. */

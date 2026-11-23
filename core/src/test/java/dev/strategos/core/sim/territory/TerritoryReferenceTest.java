@@ -2,6 +2,7 @@ package dev.strategos.core.sim.territory;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import dev.strategos.core.shared.TerritoryGrid;
 import java.util.SplittableRandom;
 import org.junit.jupiter.api.Test;
 

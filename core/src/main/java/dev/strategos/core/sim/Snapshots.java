@@ -86,7 +86,8 @@ final class Snapshots {
                         s.visionSystem() != null ? s.visionSystem().save() : List.of(),
                         s.shots().save(),
                         s.stances().save(),
-                        s.garrison().save()),
+                        s.garrison().save(),
+                        s.territorySystem() != null ? s.territorySystem().save() : List.of()),
                 s.buildings().empty()
                         ? List.of()
                         : s.templates().all().stream()

@@ -2,6 +2,7 @@ package dev.strategos.core.sim.territory;
 
 import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.HotPath;
+import dev.strategos.core.shared.TerritoryGrid;
 import java.util.Arrays;
 
 /**
