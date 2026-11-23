@@ -115,6 +115,8 @@ The demo chapters (`-Pdemo=m9`): `territory`, `capture`, `garrison_heal`, `tower
 
 | 7 | M6's follow-ups | M6 asked for a fake `DemoStage` in the next milestone's first task; `DemoStage` is a class over a `ServerLevel` | T17, with the new chapters; T1 keeps the moves |
 
+| 8 | The territory hash (T2, T3) | Mixing the grid into the state hash would change every saved journal's hashes; the grid is a function of saved state | The grid is never hashed; `Play.territory` saves the delivered and the pending source sets, and a restore rebuilds both grids exactly (§2.3 amended) |
+
 New rows are added as tasks find them.
 
 ### 1.7 Consent plan
@@ -165,9 +167,8 @@ garrisons (an ally may garrison, BLD-10), gates (PATH-12), arrows (`TownArrows` 
   tick and 0, 1 and 4 threads give the same grid on the same tick. Inline (0 threads) it runs at delivery.
 - **Readers** (placement, the AI, capture's future decay) read only the delivered grid: `Queries.territory(x, z)`
   → owner and connected.
-- **Save and hash.** The grid is re-derived at restore from the saved sources (the buildings), by a synchronous
-  recompute; `Play.territory` keeps the version and the delivered grid's hash, and restore checks the hash. The
-  delivered grid mixes into the state hash.
+- **Save, no hash** (§1.6 row 8). `Play.territory` saves the delivered grid's sources and a pending job's; a restore
+  recomputes both at once, so the next tick delivers what it would have. The grid is derived and not hashed.
 - **Tests.** `TerritoryThreadsTest` (0, 1, 4 threads; ADAPTIVE replay as `ThreadCountHashTest`),
   `TerritoryCadenceTest` (ten completions in one tick cause one recompute; a change 5 ticks after a start waits
   until tick 20).
@@ -424,7 +425,7 @@ Results, the health check, the hand-in. Size: records.
 
 ### 7.3 Progress
 
-- [ ] T1 · [ ] T2 · [ ] T3 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T10 · [ ] T11 · [ ] T12 · [ ] T7
+- [x] T1 (2026-11-24) · [x] T2 (2026-11-24) · [ ] T3 · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T10 · [ ] T11 · [ ] T12 · [ ] T7
 - [ ] T8 · [ ] T9 · [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17 · [ ] T18 · [ ] T19 · [ ] T20
 
 ## 8. Acceptance checklist (M9 exit)

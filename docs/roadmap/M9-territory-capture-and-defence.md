@@ -50,7 +50,7 @@ CMB-10 → BLD-10 → AI-08 (26 card-days).
      tick on a 384² map (L6).
   4. An update payload stays under 8 KB (L2).
 - **Tests:** L0, L1, L2, L6 · **Depends on:** BLD-08, CORE-02 · **Size:** L · **Tier:** T1
-- **Status:** specified
+- **Status:** in_progress
 
 #### TERR-02 · Territory build rules
 - **Value:** Expansion is a strategic choice: you build in your territory, and new civic centres

@@ -482,7 +482,7 @@ Cards: [roadmap/M9-territory-capture-and-defence.md](roadmap/M9-territory-captur
 
 | ID | Feature | Size | Depends on | Status |
 |---|---|---|---|---|
-| TERR-01 | Territory influence grid | L | BLD-08, CORE-02 | specified |
+| TERR-01 | Territory influence grid | L | BLD-08, CORE-02 | in_progress |
 | TERR-02 | Territory build rules | M | TERR-01, BLD-02, AI-02 | specified |
 | TERR-03 | Borders on terrain and minimap | M | TERR-01, UI-20 | specified |
 | CMB-10 | Capturing buildings | L | CMB-03, TERR-01, MATCH-06 | specified |

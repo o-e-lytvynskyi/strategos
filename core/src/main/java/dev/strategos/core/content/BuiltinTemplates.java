@@ -172,6 +172,7 @@ final class BuiltinTemplates {
               "parent": "strategos:template/building_base",
               "Identity": { "name": "strategos.building.civic_centre", "icon": "minecraft:bell", "classes": "+CivicCentre" },
               "Building": { "blueprint": "strategos:civic_centre" },
+              "TerritoryInfluence": { "weight": 65535, "radius": 56, "root": 1 },
               "Placement": { "civicReach": 0, "spacing": 64 },
               "Health": { "max": 2000 },
               "Attack": { "Building": { "arrows": 3, "perGarrisoned": 1, "interval": 80, "pierce": 8, "range": 24 } },
@@ -201,6 +202,7 @@ final class BuiltinTemplates {
               "parent": "strategos:template/building_base",
               "Identity": { "name": "strategos.building.house", "icon": "minecraft:oak_door", "classes": "+House +Village" },
               "Building": { "blueprint": "strategos:house", "material": "wood" },
+              "TerritoryInfluence": { "weight": 400, "radius": 16, "root": 0 },
               "Resistance": { "fire": 0 },
               "Health": { "max": 400 },
               "Cost": { "resources": { "wood": 80 }, "time": 30 },
@@ -212,6 +214,7 @@ final class BuiltinTemplates {
               "parent": "strategos:template/building_base",
               "Identity": { "name": "strategos.building.barracks", "icon": "minecraft:shield", "classes": "+Barracks +Village" },
               "Building": { "blueprint": "strategos:barracks", "material": "wood" },
+              "TerritoryInfluence": { "weight": 400, "radius": 24, "root": 0 },
               "Resistance": { "fire": 0 },
               "Health": { "max": 1200 },
               "Cost": { "resources": { "wood": 200, "stone": 100, "iron": 50 }, "time": 60 },
@@ -229,6 +232,7 @@ final class BuiltinTemplates {
               "parent": "strategos:template/building_base",
               "Identity": { "name": "strategos.building.tower", "icon": "minecraft:crossbow", "classes": "+Tower" },
               "Building": { "blueprint": "strategos:tower" },
+              "TerritoryInfluence": { "weight": 400, "radius": 24, "root": 0 },
               "Health": { "max": 1000 },
               "Vision": { "range": 24 },
               "Attack": { "Building": { "arrows": 1, "interval": 40, "pierce": 10, "range": 28 } },
@@ -241,6 +245,7 @@ final class BuiltinTemplates {
               "parent": "strategos:template/building_base",
               "Identity": { "name": "strategos.building.arsenal", "icon": "minecraft:anvil", "classes": "+Arsenal" },
               "Building": { "blueprint": "strategos:arsenal" },
+              "TerritoryInfluence": { "weight": 400, "radius": 24, "root": 0 },
               "Health": { "max": 1500 },
               "Cost": { "resources": { "wood": 200, "stone": 150 }, "time": 90 },
               "Trainer": { "units": "strategos:unit/ram", "batchExponent": 0.8 }
@@ -268,6 +273,7 @@ final class BuiltinTemplates {
               "parent": "strategos:template/building_base",
               "Identity": { "name": "strategos.building.storehouse", "icon": "minecraft:barrel", "classes": "+Storehouse +Village" },
               "Building": { "blueprint": "strategos:storehouse" },
+              "TerritoryInfluence": { "weight": 400, "radius": 20, "root": 0 },
               "Health": { "max": 800 },
               "Cost": { "resources": { "wood": 100, "stone": 50 }, "time": 40 },
               "Dropsite": { "resources": "wood stone iron" },
@@ -403,6 +409,7 @@ final class BuiltinTemplates {
               "parent": "strategos:template/building_base",
               "Identity": { "name": "strategos.building.farmstead", "icon": "minecraft:hay_block", "classes": "+Farmstead +Village" },
               "Building": { "blueprint": "strategos:farmstead" },
+              "TerritoryInfluence": { "weight": 400, "radius": 20, "root": 0 },
               "Health": { "max": 600 },
               "Cost": { "resources": { "wood": 100 }, "time": 35 },
               "Dropsite": { "resources": "food" },
@@ -415,6 +422,7 @@ final class BuiltinTemplates {
               "parent": "strategos:template/building_base",
               "Identity": { "name": "strategos.building.quarry", "icon": "minecraft:stone", "classes": "+Deposit" },
               "Building": { "blueprint": "strategos:quarry" },
+              "TerritoryInfluence": { "weight": 200, "radius": 12, "root": 0 },
               "Deposit": { "resource": "stone", "subtype": "rock", "amount": 1000, "slots": 3, "depleted": "minecraft:gravel" }
             }
             """;
@@ -424,6 +432,7 @@ final class BuiltinTemplates {
               "parent": "strategos:template/building_base",
               "Identity": { "name": "strategos.building.quarry_large", "icon": "minecraft:stone", "classes": "+Deposit" },
               "Building": { "blueprint": "strategos:quarry_large" },
+              "TerritoryInfluence": { "weight": 200, "radius": 12, "root": 0 },
               "Deposit": { "resource": "stone", "subtype": "rock", "amount": 5000, "slots": 6, "depleted": "minecraft:gravel" }
             }
             """;
@@ -432,6 +441,7 @@ final class BuiltinTemplates {
               "parent": "strategos:template/building_base",
               "Identity": { "name": "strategos.building.iron_mine", "icon": "minecraft:iron_ore", "classes": "+Deposit" },
               "Building": { "blueprint": "strategos:iron_mine" },
+              "TerritoryInfluence": { "weight": 200, "radius": 12, "root": 0 },
               "Deposit": { "resource": "iron", "subtype": "ore", "amount": 1000, "slots": 3, "depleted": "minecraft:stone" }
             }
             """;
@@ -440,6 +450,7 @@ final class BuiltinTemplates {
               "parent": "strategos:template/building_base",
               "Identity": { "name": "strategos.building.iron_mine_large", "icon": "minecraft:iron_ore", "classes": "+Deposit" },
               "Building": { "blueprint": "strategos:iron_mine_large" },
+              "TerritoryInfluence": { "weight": 200, "radius": 12, "root": 0 },
               "Deposit": { "resource": "iron", "subtype": "ore", "amount": 5000, "slots": 6, "depleted": "minecraft:stone" }
             }
             """;

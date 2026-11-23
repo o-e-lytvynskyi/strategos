@@ -51,6 +51,7 @@ public final class MatchState {
 
     private long tick;
     private MatchConfig config;
+    private Allies allies;
     private final Outcome outcome = new Outcome();
     private final AiSlots aiSlots = new AiSlots();
     private final MatchStats matchStats;
@@ -103,6 +104,7 @@ public final class MatchState {
 
     MatchState(MatchConfig config, TemplateSet templates, EntityStore entities, MatchLog log) {
         this.config = config;
+        this.allies = Allies.sameFaction(config.factions());
         this.templates = templates;
         mobilityCache.rebuild();
         this.entities = entities;
@@ -476,6 +478,16 @@ public final class MatchState {
      */
     public int gaia() {
         return config.factions();
+    }
+
+    /** Who is a friend (M9 spec §2.1). AFTER-M7: MATCH-06's diplomacy answers instead of the same faction. */
+    public Allies allies() {
+        return allies;
+    }
+
+    /** Tests only: a match with other alliances than the same faction (FakeAllies), until MATCH-06. */
+    public void setAllies(Allies allies) {
+        this.allies = allies;
     }
 
     /** What unit {@code i} takes of its faction's population: its {@code Cost/population}, 0 for none (ECO-06). */

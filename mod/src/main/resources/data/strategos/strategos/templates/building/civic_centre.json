@@ -2,6 +2,7 @@
   "parent": "strategos:template/building_base",
   "Identity": { "name": "strategos.building.civic_centre", "icon": "minecraft:bell", "classes": "+CivicCentre" },
   "Building": { "blueprint": "strategos:civic_centre" },
+  "TerritoryInfluence": { "weight": 65535, "radius": 56, "root": 1 },
   "Placement": { "civicReach": 0, "spacing": 64 },
   "Health": { "max": 2000 },
   "Attack": { "Building": { "arrows": 3, "perGarrisoned": 1, "interval": 80, "pierce": 8, "range": 24 } },

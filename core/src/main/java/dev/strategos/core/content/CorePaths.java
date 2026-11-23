@@ -103,6 +103,15 @@ public final class CorePaths {
 
     public static final String GARRISON_CLASSES = "GarrisonHolder/classes";
 
+    /**
+     * A building's territory influence (TERR-01, M9 spec §2.2): its weight, its radius in blocks, and whether it is a
+     * root (1) that connects the land around it. A building without {@code radius} claims none. Optional.
+     */
+    public static final String TERRITORY_WEIGHT = "TerritoryInfluence/weight";
+
+    public static final String TERRITORY_RADIUS = "TerritoryInfluence/radius";
+    public static final String TERRITORY_ROOT = "TerritoryInfluence/root";
+
     public static final double DEFAULT_HEALTH = 100;
     public static final double MAX_RESISTANCE = 20;
     public static final double DEFAULT_REACH = 1;
@@ -181,7 +190,10 @@ public final class CorePaths {
                     BUILDING_PIERCE,
                     BUILDING_RANGE,
                     BUILDING_SPREAD,
-                    GARRISON_CAPACITY -> 0;
+                    GARRISON_CAPACITY,
+                    TERRITORY_WEIGHT,
+                    TERRITORY_RADIUS,
+                    TERRITORY_ROOT -> 0;
             case HEALTH, MELEE_REPEAT, RANGED_REPEAT, BUILDING_INTERVAL -> 1;
             case RANGED_SPEED, BUILDING_SPEED -> 0.01;
             case RESIST_HACK, RESIST_PIERCE, RESIST_CRUSH -> -MAX_RESISTANCE;
@@ -198,6 +210,9 @@ public final class CorePaths {
             case RANGED_RANGE, BUILDING_RANGE -> 128;
             case BUILDING_ARROWS, BUILDING_PER_GARRISONED -> 32;
             case GARRISON_CAPACITY -> 200;
+            case TERRITORY_WEIGHT -> 65_535;
+            case TERRITORY_RADIUS -> 256;
+            case TERRITORY_ROOT -> 1;
             case BUILDING_INTERVAL -> 1_200;
             case BUILDING_PIERCE -> Float.MAX_VALUE;
             case RANGED_PREPARE, RANGED_REPEAT -> 200;

@@ -6,10 +6,10 @@
 
 ## Now
 
-- **Milestone:** M9 Territory, capture and defence, 0 of 20 tasks done; spec [M9](../milestones/M9-territory-capture-and-defence.md).
+- **Milestone:** M9 Territory, capture and defence, 2 of 20 tasks done; spec [M9](../milestones/M9-territory-capture-and-defence.md).
 - **In progress:** none.
-- **Last finished task:** the M9 spec (2026-11-24).
-- **Next task:** T1 · Health check moves (M6 follow-ups).
+- **Last finished task:** T2 (2026-11-24).
+- **Next task:** T3 · TERR-01 · The system, the job and the save.
 - **Merged from main last:** 05cd50b (2026-11-24).
 
 ## Depends on unfinished work
@@ -27,7 +27,10 @@ From the assessment before the claim (procedure §2a step 0). Every other depend
 
 Newest first; one entry per session in the worklog's shape.
 
-### 2026-11-24 — M9 spec
+### 2026-11-24 — M9 spec, T1–T2
+
+- **M9 T2 · TERR-01 · The kernel and the reference** — TERR-01 in progress; `Allies` (the M7 seam, `MatchState.allies()`), `FakeAllies`; `TerritoryGrid`, `TerritorySources`, `TerritoryKernel` (`@HotPath`, integer fixed point, stamping by bounding box); `TerritoryReference` equals the kernel on 500 random layouts (64² to 1,024², 1–4 factions, 1–60 sources); `TerritoryInfluence` on eleven buildings with provenance, the balance sheet regenerated, the template set's two pins rebaselined; `verify` green, 1 min 54 s.
+- **M9 T1 · Health check moves** — `MotionSystem` 910 → 658 (`MotionMoves`), `PathService` 837 → 752 (`PathRoutes`), `BuildingStore` 798 → 576 (`BuildingQueues`, `buildings.queues()`); moves only, hash and save formats unchanged; `verify verifySlow` green, 4 min 58 s (in a worktree).
 
 - **M9 spec** — the ten cards approved by the owner and `specified`; 20 tasks, T1 the M6 health check's moves; six §1.6 rows (relations, ownership transfer, the capture key, the payload split, building colour, scale); M7 met by the `Allies` contract.
 - **Next:** T1.
@@ -39,6 +42,8 @@ Newest first; one entry per session in the worklog's shape.
 ## Decisions taken
 
 - 2026-11-24 · M9's numbers at ×0.4 of 0 A.D.'s distances and its capture ratios to Health (spec §1.6 row 6) — the first map is 384 blocks against ~1,000 m — undo: new provenance notes and `:core:balanceSheet`.
+- 2026-11-24 · trial implementer: pass — T1's three moves in a worktree at the branch head, first try, gate green.
+- 2026-11-24 · the territory grid is not hashed (spec §1.6 row 8): it is a function of the saved source sets, and hashing it would change every journal's hashes — undo: mix `TerritoryGrid.hash()` in `StateHasher` once a grid exists.
 - 2026-11-24 · right-click attacks a building, the capture key captures (spec §1.6 row 3), as 0 A.D. since Alpha 27 — undo: swap the default in the client's order mapping.
 - 2026-11-24 · territory updates as deltas split above 7 KB (spec §1.6 row 4) — the card's 8 KB cannot hold a full 1,024² grid — undo: raise the cap, which is the owner's.
 

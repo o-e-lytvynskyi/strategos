@@ -2,6 +2,7 @@
   "parent": "strategos:template/building_base",
   "Identity": { "name": "strategos.building.arsenal", "icon": "minecraft:anvil", "classes": "+Arsenal" },
   "Building": { "blueprint": "strategos:arsenal" },
+  "TerritoryInfluence": { "weight": 400, "radius": 24, "root": 0 },
   "Health": { "max": 1500 },
   "Cost": { "resources": { "wood": 200, "stone": 150 }, "time": 90 },
   "Trainer": { "units": "strategos:unit/ram", "batchExponent": 0.8 }

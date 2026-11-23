@@ -153,7 +153,10 @@
     "Placement/spacing": "Sixty-four blocks between centres: a second centre claims new ground, not a corner of the first's",
     "Cost/resources/iron": "A hundred iron: a second centre's tools and fittings, a late investment (ECO-08)",
     "Limit/count": "One civic centre a faction until phases (Town) allow more, as in the classics (BLD-08)",
-    "Trainer/batchExponent": "Five in 5^0.8 ≈ 3.6 units' time: a batch saves 28 %, worth tying the money up for (PROD-02, as the classics)"
+    "Trainer/batchExponent": "Five in 5^0.8 ≈ 3.6 units' time: a batch saves 28 %, worth tying the money up for (PROD-02, as the classics)",
+    "TerritoryInfluence/weight": "The highest weight: nothing outweighs a civic centre (TERR-01)",
+    "TerritoryInfluence/radius": "A root of 56 blocks: 0 A.D.'s 140 m at the ×0.4 of M9's scale (spec §1.6 row 6); the highest weight, so a centre's land is its own (TERR-01)",
+    "TerritoryInfluence/root": "A root: land flood-connected to a centre is connected (TERR-01)"
   },
   "strategos:template/building_base": {
     "Placement/civicReach": "Within 48 blocks of an own centre's footprint: a town grows round its centre, the stand-in for territory until TERR-02",
@@ -168,7 +171,10 @@
     "Cost/resources/wood": "Eighty wood: a worker's first trip or two to a tree; the first house by 1:30 (the timing target)",
     "Cost/time": "Thirty seconds for one builder",
     "Housing/capacity": "Five: a house a few trainings, so housing paces growth",
-    "Resistance/fire": "Timber and thatch: fire's whole blow lands, twice as fast per hit point as stone (CMB-03)"
+    "Resistance/fire": "Timber and thatch: fire's whole blow lands, twice as fast per hit point as stone (CMB-03)",
+    "TerritoryInfluence/weight": "A building's weight: below a centre's, above a quarry's (TERR-01)",
+    "TerritoryInfluence/radius": "Sixteen blocks: 0 A.D.'s 16–20 m houses at ×0.4, rounded up so a house still claims its own tiles beside a road (TERR-01)",
+    "TerritoryInfluence/root": "Not a root: its land is connected only through a centre's (TERR-01)"
   },
   "strategos:building/field": {
     "Health/max": "Two hundred: a field burns quickly, a cheap thing to raid",
@@ -187,7 +193,10 @@
     "Cost/time": "A minute for one builder",
     "Resistance/fire": "Timber and thatch: fire's whole blow lands, twice as fast per hit point as stone (CMB-03)",
     "Cost/resources/iron": "Fifty iron: the spear points and helmets of the barracks' armoury; the first loop's starts bring a hundred (ECO-08)",
-    "Trainer/batchExponent": "As the civic centre's: one rule for every trainer until a technology changes it (TECH-05)"
+    "Trainer/batchExponent": "As the civic centre's: one rule for every trainer until a technology changes it (TECH-05)",
+    "TerritoryInfluence/weight": "A building's weight: below a centre's, above a quarry's (TERR-01)",
+    "TerritoryInfluence/radius": "Twenty-four blocks: a military building claims more than a house, three tiles each way (TERR-01)",
+    "TerritoryInfluence/root": "Not a root: its land is connected only through a centre's (TERR-01)"
   },
   "strategos:building/tower": {
     "Attack/Building/arrows": "One arrow a shot: a tower is a single bowman on a wall, so it wears a raid down but never stops one (BLD-17, CMB-07)",
@@ -198,30 +207,48 @@
     "Health/max": "A thousand: half the centre's, as much as a barracks and a bit less; ten torch-bearers take half a minute to tear it down (CMB-03)",
     "Cost/resources/wood": "A hundred wood: the beams and the platform, cheap enough to place several (BLD-17)",
     "Cost/resources/stone": "A hundred and fifty stone: stone is the tower's price, so a boom player's quarry buys defence (P4, BLD-17)",
-    "Cost/time": "A minute and a quarter for one builder: slower than a barracks, so a tower is raised before the raid, not during it"
+    "Cost/time": "A minute and a quarter for one builder: slower than a barracks, so a tower is raised before the raid, not during it",
+    "TerritoryInfluence/weight": "A building's weight: below a centre's, above a quarry's (TERR-01)",
+    "TerritoryInfluence/radius": "Twenty-four blocks: as the barracks; a tower holds its chokepoint's land (TERR-01)",
+    "TerritoryInfluence/root": "Not a root: its land is connected only through a centre's (TERR-01)"
   },
   "strategos:building/arsenal": {
     "Health/max": "Fifteen hundred: a stone workshop, tougher than a barracks (1,200), so the siege line is not lost to the first raid that reaches it (CMB-09)",
     "Cost/resources/wood": "Two hundred wood: the frames and the beams a ram is hung from, as a barracks' (CMB-09)",
     "Cost/resources/stone": "A hundred and fifty stone: the arsenal is a Town building, paid for from the quarry as the tower is (CMB-09, D-12)",
     "Cost/time": "A minute and a half for one builder: the longest build of the town, so rams come after the army, not before it (CMB-09)",
-    "Trainer/batchExponent": "As the civic centre's: one rule for every trainer until a technology changes it (TECH-05)"
+    "Trainer/batchExponent": "As the civic centre's: one rule for every trainer until a technology changes it (TECH-05)",
+    "TerritoryInfluence/weight": "A building's weight: below a centre's, above a quarry's (TERR-01)",
+    "TerritoryInfluence/radius": "Twenty-four blocks: as the barracks (TERR-01)",
+    "TerritoryInfluence/root": "Not a root: its land is connected only through a centre's (TERR-01)"
   },
   "strategos:building/quarry": {
     "Deposit/amount": "A thousand stone, two hundred quarried blocks' worth: a small quarry pays a civic centre five times over and lasts a match's opening (ECO-08)",
-    "Deposit/slots": "Three workers at a small quarry: a third of a field's, so stone comes slower than food"
+    "Deposit/slots": "Three workers at a small quarry: a third of a field's, so stone comes slower than food",
+    "TerritoryInfluence/weight": "A building's weight: below a centre's, above a quarry's (TERR-01)",
+    "TerritoryInfluence/radius": "Twelve blocks, a low weight: a quarry claims only its own pit, never land away from a centre (TERR-01)",
+    "TerritoryInfluence/root": "Not a root: its land is connected only through a centre's (TERR-01)"
   },
   "strategos:building/quarry_large": {
     "Deposit/amount": "Five thousand stone: the contested deposit a town grows towards (ECO-08)",
-    "Deposit/slots": "Six workers at a large quarry, twice a small one's"
+    "Deposit/slots": "Six workers at a large quarry, twice a small one's",
+    "TerritoryInfluence/weight": "A building's weight: below a centre's, above a quarry's (TERR-01)",
+    "TerritoryInfluence/radius": "Twelve blocks, a low weight: as the quarry (TERR-01)",
+    "TerritoryInfluence/root": "Not a root: its land is connected only through a centre's (TERR-01)"
   },
   "strategos:building/iron_mine": {
     "Deposit/amount": "A thousand iron: a small mine pays for twenty spearmen's iron and a centre's (ECO-08)",
-    "Deposit/slots": "Three workers at a small mine, as at a small quarry"
+    "Deposit/slots": "Three workers at a small mine, as at a small quarry",
+    "TerritoryInfluence/weight": "A building's weight: below a centre's, above a quarry's (TERR-01)",
+    "TerritoryInfluence/radius": "Twelve blocks, a low weight: as the quarry (TERR-01)",
+    "TerritoryInfluence/root": "Not a root: its land is connected only through a centre's (TERR-01)"
   },
   "strategos:building/iron_mine_large": {
     "Deposit/amount": "Five thousand iron: the contested mine of the middle game (ECO-08)",
-    "Deposit/slots": "Six workers at a large mine, twice a small one's"
+    "Deposit/slots": "Six workers at a large mine, twice a small one's",
+    "TerritoryInfluence/weight": "A building's weight: below a centre's, above a quarry's (TERR-01)",
+    "TerritoryInfluence/radius": "Twelve blocks, a low weight: as the quarry (TERR-01)",
+    "TerritoryInfluence/root": "Not a root: its land is connected only through a centre's (TERR-01)"
   },
   "strategos:template/unit_fauna": {
     "UnitMotion/walkSpeed": "Two blocks a second, an animal's amble; they stand where they are put until they wander (spec §1.6 row 11)"
@@ -254,13 +281,19 @@
     "Health/max": "Between a house and a barracks: a stone store, worth raiding",
     "Cost/resources/wood": "A house's and a fifth: the first building a growing economy adds by its woods and rocks",
     "Cost/resources/stone": "Half a barracks' stone: stone's third buyer, so a quarry pays for itself early",
-    "Cost/time": "Forty seconds, 3.2 blocks a second for its 128 (the style guide's 1.5–6)"
+    "Cost/time": "Forty seconds, 3.2 blocks a second for its 128 (the style guide's 1.5–6)",
+    "TerritoryInfluence/weight": "A building's weight: below a centre's, above a quarry's (TERR-01)",
+    "TerritoryInfluence/radius": "Twenty blocks: 0 A.D.'s storehouse radius at ×0.4, rounded up to the next tile size; a forward dropsite claims a little land (TERR-01)",
+    "TerritoryInfluence/root": "Not a root: its land is connected only through a centre's (TERR-01)"
   },
   "strategos:building/farmstead": {
     "Health/max": "A house's and a half: a farm building of mud and brick",
     "Cost/resources/wood": "As a storehouse: the food side's dropsite costs what the other side's does, less its stone",
     "Cost/time": "Thirty-five seconds, 2.5 blocks a second for its 88",
-    "Reseeder/reach": "Twenty-four blocks: a ring of fields round the farmstead, as the classics' farm by the mill (ECO-17, D-14)"
+    "Reseeder/reach": "Twenty-four blocks: a ring of fields round the farmstead, as the classics' farm by the mill (ECO-17, D-14)",
+    "TerritoryInfluence/weight": "A building's weight: below a centre's, above a quarry's (TERR-01)",
+    "TerritoryInfluence/radius": "Twenty blocks: as the storehouse, 0 A.D.'s farmstead radius at ×0.4 rounded up (TERR-01)",
+    "TerritoryInfluence/root": "Not a root: its land is connected only through a centre's (TERR-01)"
   },
   "strategos:gather_wood_1": {
     "cost/food": "100 food: what the classic first wood-gathering tech costs, 100 food and 50 wood (docs/research/mechanics.md §1.3, the Double-Bit Axe row)",

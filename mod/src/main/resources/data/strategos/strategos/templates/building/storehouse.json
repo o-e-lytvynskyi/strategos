@@ -2,6 +2,7 @@
   "parent": "strategos:template/building_base",
   "Identity": { "name": "strategos.building.storehouse", "icon": "minecraft:barrel", "classes": "+Storehouse +Village" },
   "Building": { "blueprint": "strategos:storehouse" },
+  "TerritoryInfluence": { "weight": 400, "radius": 20, "root": 0 },
   "Health": { "max": 800 },
   "Cost": { "resources": { "wood": 100, "stone": 50 }, "time": 40 },
   "Dropsite": { "resources": "wood stone iron" },
