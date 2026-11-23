@@ -1,12 +1,12 @@
-package dev.strategos.core.sim.territory;
+package dev.strategos.core.shared;
 
-import dev.strategos.core.shared.CoreApi;
 import java.util.Arrays;
 
 /**
  * Who owns each 8 × 8-block tile (M9 spec §2.2): a faction or nobody, and whether the tile is connected to one of its
  * owner's roots. Tile (0, 0) covers blocks 0..7 on both axes of the match's bounds. A value per tile: bit 7 set is
- * neutral; otherwise bits 0..5 are the owner and bit 6 is "connected".
+ * neutral; otherwise bits 0..5 are the owner and bit 6 is "connected". Shared by the simulation, the payload and the
+ * client (rule B3 keeps the client out of {@code sim}).
  */
 @CoreApi
 public final class TerritoryGrid {
@@ -17,8 +17,8 @@ public final class TerritoryGrid {
     /** The most factions a tile can name. */
     public static final int MAX_FACTIONS = 64;
 
-    static final int CONNECTED = 0x40;
-    static final int OWNER = 0x3F;
+    public static final int CONNECTED = 0x40;
+    public static final int OWNER = 0x3F;
 
     private final int tilesX;
     private final int tilesZ;
@@ -87,7 +87,8 @@ public final class TerritoryGrid {
         return tiles.length;
     }
 
-    void set(int index, byte value) {
+    /** Sets tile {@code index}'s raw value: for the kernel and the payload's decoder. */
+    public void set(int index, byte value) {
         tiles[index] = value;
     }
 
