@@ -1,0 +1,71 @@
+# A draft, not in use: the long runs on a self-hosted GitLab runner (docs/05-testing.md "Long runs").
+# Inactive until the owner sets this file as a GitLab project's CI configuration path
+# (Settings → CI/CD → General pipelines → "CI/CD configuration file": ci/gitlab/long-runs.gitlab-ci.yml)
+# on a mirror of this repository, and registers a runner with the tags below.
+#
+# Assumptions to check when the runner exists:
+# - a shell executor on a machine with JDK 21 on PATH and at least 8 GB per concurrent soak job (each JVM -Xmx6G);
+# - the runner's `concurrent` setting decides how many shards run side by side;
+# - the `strategos-perf` runner, if any, is the owner's baseline Mac (ADR-0019, ADR-0026), and runs nothing else
+#   during a perf job: its resource_group keeps perf jobs one at a time, but other runners on the same machine
+#   must be paused by hand.
+# Pipelines start only by hand or by the API (never on push): the project's rule that tests are local until a
+# milestone is done still holds; this only moves where a long local run executes.
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "web" || $CI_PIPELINE_SOURCE == "api" || $CI_PIPELINE_SOURCE == "trigger"
+
+variables:
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false"
+  # Which runs a pipeline takes: any of slow, soak, perf (space-separated).
+  LONG_RUNS: "slow soak"
+  AISOAK_SEEDS: "20"
+
+stages: [long]
+
+.gradle:
+  stage: long
+  tags: [strategos]
+  artifacts:
+    when: always
+    expire_in: 7 days
+    reports:
+      junit: "**/build/test-results/**/TEST-*.xml"
+    paths:
+      - "**/build/test-results/"
+      - "**/build/reports/"
+      - mod/build/gametest*/logs/
+
+slow:
+  extends: .gradle
+  rules:
+    - if: $LONG_RUNS =~ /slow/
+  timeout: 1h
+  script:
+    - ./gradlew --console=plain verifySlow :core:soak
+
+# QA-12.4's AI soak in ten shards of two seeds; CI_NODE_INDEX runs 1..10.
+aisoak:
+  extends: .gradle
+  rules:
+    - if: $LONG_RUNS =~ /soak/
+  parallel: 10
+  timeout: 2h
+  script:
+    - per=$(( (AISOAK_SEEDS + CI_NODE_TOTAL - 1) / CI_NODE_TOTAL ))
+    - first=$(( 1 + (CI_NODE_INDEX - 1) * per ))
+    - count=$(( AISOAK_SEEDS - first + 1 < per ? AISOAK_SEEDS - first + 1 : per ))
+    - if [ "$count" -le 0 ]; then echo "no seeds for this shard"; exit 0; fi
+    - ./gradlew --console=plain :mod:runGameTestSoak -Paisoak.firstSeed=$first -Paisoak.seeds=$count
+
+# The L6 batch: only on the baseline machine, alone.
+perf:
+  extends: .gradle
+  tags: [strategos-perf]
+  rules:
+    - if: $LONG_RUNS =~ /perf/
+  resource_group: strategos-perf
+  timeout: 4h
+  script:
+    - ./gradlew --console=plain :core:jmh :core:jmhCompare :mod:runGameTestPerf

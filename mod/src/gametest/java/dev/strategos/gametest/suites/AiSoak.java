@@ -79,13 +79,14 @@ public final class AiSoak {
         }
         Scenario computers = new Scenario(scenario.map(), scenario.victory(), slots);
         BlockPos corner = h.absolutePos(BlockPos.ZERO);
-        int seeds = Integer.getInteger("strategos.aisoak.seeds", SEEDS); // fewer only for a trial run
+        int seeds = Integer.getInteger("strategos.aisoak.seeds", SEEDS); // fewer for a trial run or a shard
+        long firstSeed = Long.getLong("strategos.aisoak.firstSeed", 1L); // a shard's first seed (05-testing.md)
         int window = Integer.getInteger("strategos.aisoak.parallel", PARALLEL);
         Game[] games = new Game[seeds];
         int[] next = {0};
         Runnable opener = () -> {
             int k = next[0]++;
-            long seed = k + 1L;
+            long seed = firstSeed + k;
             BlockPos origin = new BlockPos(corner.getX() + (FIRST_LANE + k) * FAR, corner.getY(), corner.getZ());
             MatchSpace space = new MatchSpace(
                     h.getLevel().dimension(),
