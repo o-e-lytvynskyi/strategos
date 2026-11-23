@@ -84,9 +84,9 @@ final class PlaceBuildingRule implements CommandRule<PlaceBuilding> {
             case FREE -> RejectReason.BLOCKED;
             case LAND -> RejectReason.NOT_ON_LAND;
             case EXPLORED -> RejectReason.NOT_EXPLORED;
+            case TERRITORY -> RejectReason.OUTSIDE_TERRITORY;
             case FLAT -> RejectReason.NOT_FLAT;
             case SPACING -> RejectReason.TOO_CLOSE;
-            case REACH -> RejectReason.OUT_OF_REACH;
             case AFFORDABLE -> RejectReason.NOT_ENOUGH_RESOURCES;
         };
     }

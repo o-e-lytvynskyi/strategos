@@ -38,7 +38,7 @@ M6 §0.3 holds. Additions:
 | Randomness | None: territory, capture and gates are deterministic without a stream |
 | AI memory | `AiMemory.SIZE` 31 → 34: `CAPTURE` 31 (the target being captured), `CAPTURE_SINCE` 32, `GARRISONED` 33 (the tick of the last defensive garrison) |
 | Payloads | New S2C `strategos:territory` (§2.4); `BuildingState.Entry` gains the capture fraction per faction (a byte per faction present, at most 8) and the upgrade's progress; every cap pinned in `WireCodecSizeTest` and `PayloadRoundTripTest` |
-| Template paths | `TerritoryInfluence/{weight,radius,root}`, `Placement/territory` (`own` or `ownOrNeutral`), `Capturable/{points,regen,garrisonRegen}`, `Capture/strength`, `GarrisonHolder/{heal,ejectBelow}`, `Upgrade/{to,time}` with the cost under `Upgrade/Cost`, `Wall/{segment,gate}`; constants in `CorePaths`, provenance in `provenance.json` |
+| Template paths | `TerritoryInfluence/{weight,radius,root}`, `Placement/territory` (0 anywhere, 1 own, 2 own or neutral), `Capturable/{points,regen,garrisonRegen}`, `Capture/strength`, `GarrisonHolder/{heal,ejectBelow}`, `Upgrade/{to,time}` with the cost under `Upgrade/Cost`, `Wall/{segment,gate}`; constants in `CorePaths`, provenance in `provenance.json` |
 | Balance | Every new number has its provenance note and its sheet row (`:core:balanceSheet`) |
 | Relations | Every new "friend or foe" question goes through `Allies` (§2.1), never a faction `==` |
 
@@ -115,6 +115,7 @@ The demo chapters (`-Pdemo=m9`): `territory`, `capture`, `garrison_heal`, `tower
 
 | 7 | M6's follow-ups | M6 asked for a fake `DemoStage` in the next milestone's first task; `DemoStage` is a class over a `ServerLevel` | T17, with the new chapters; T1 keeps the moves |
 
+| 10 | The first land (T5) | The first grid was computed on a match's first tick, before its centres came, so the centres waited out the cadence and nothing could be placed for 20 ticks | A recompute is immediate while no source has ever been delivered (§2.3) |
 | 9 | Territory and fog (T4) | The cards do not say whether enemy land shows through the fog | Territory is public in M9, one grid for every client, as the shroud does not hide terrain; AFTER-M8: FOW-05's leak audit decides |
 | 8 | The territory hash (T2, T3) | Mixing the grid into the state hash would change every saved journal's hashes; the grid is a function of saved state | The grid is never hashed; `Play.territory` saves the delivered and the pending source sets, and a restore rebuilds both grids exactly (§2.3 amended) |
 
@@ -426,7 +427,7 @@ Results, the health check, the hand-in. Size: records.
 
 ### 7.3 Progress
 
-- [x] T1 (2026-11-24) · [x] T2 (2026-11-24) · [x] T3 (2026-11-24) · [x] T4 (2026-11-24) · [ ] T5 · [ ] T6 · [ ] T10 · [ ] T11 · [ ] T12 · [ ] T7
+- [x] T1 (2026-11-24) · [x] T2 (2026-11-24) · [x] T3 (2026-11-24) · [x] T4 (2026-11-24) · [x] T5 (2026-11-24) · [ ] T6 · [ ] T10 · [ ] T11 · [ ] T12 · [ ] T7
 - [ ] T8 · [ ] T9 · [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17 · [ ] T18 · [ ] T19 · [ ] T20
 
 ## 8. Acceptance checklist (M9 exit)

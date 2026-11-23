@@ -161,7 +161,7 @@ final class BuiltinTemplates {
               "abstract": true,
               "Identity": { "classes": "Structure" },
               "Building": { "material": "stone" },
-              "Placement": { "civicReach": 48 },
+              "Placement": { "territory": 1 },
               "Health": { "max": 500 },
               "Resistance": { "fire": 7 },
               "DamageStages": { "first": 85, "second": 65, "third": 35 }
@@ -173,7 +173,7 @@ final class BuiltinTemplates {
               "Identity": { "name": "strategos.building.civic_centre", "icon": "minecraft:bell", "classes": "+CivicCentre" },
               "Building": { "blueprint": "strategos:civic_centre" },
               "TerritoryInfluence": { "weight": 65535, "radius": 56, "root": 1 },
-              "Placement": { "civicReach": 0, "spacing": 64 },
+              "Placement": { "territory": 2, "spacing": 64 },
               "Health": { "max": 2000 },
               "Attack": { "Building": { "arrows": 3, "perGarrisoned": 1, "interval": 80, "pierce": 8, "range": 24 } },
               "Cost": { "resources": { "wood": 300, "stone": 200, "iron": 100 }, "time": 150 },
@@ -398,7 +398,8 @@ final class BuiltinTemplates {
                 { "path": "Health/max", "op": "mul", "value": 1.1, "filter": "Structure+!Field" },
                 { "path": "Vision/range", "op": "add", "value": 2, "filter": "Structure+!Field" },
                 { "path": "Researcher/techs", "op": "tokens", "tokens": "+strategos:iron_weapons +strategos:chainmail", "filter": "Barracks" },
-                { "path": "Builder/buildings", "op": "tokens", "tokens": "+strategos:building/tower +strategos:building/arsenal", "filter": "Builder" }
+                { "path": "Builder/buildings", "op": "tokens", "tokens": "+strategos:building/tower +strategos:building/arsenal", "filter": "Builder" },
+                { "path": "Limit/count", "op": "add", "value": 1, "filter": "CivicCentre" }
               ],
               "unlocks": ["strategos:iron_weapons", "strategos:chainmail", "strategos:building/tower", "strategos:building/arsenal"]
             }

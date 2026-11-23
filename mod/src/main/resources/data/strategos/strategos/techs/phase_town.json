@@ -10,7 +10,8 @@
     { "path": "Health/max", "op": "mul", "value": 1.1, "filter": "Structure+!Field" },
     { "path": "Vision/range", "op": "add", "value": 2, "filter": "Structure+!Field" },
     { "path": "Researcher/techs", "op": "tokens", "tokens": "+strategos:iron_weapons +strategos:chainmail", "filter": "Barracks" },
-    { "path": "Builder/buildings", "op": "tokens", "tokens": "+strategos:building/tower +strategos:building/arsenal", "filter": "Builder" }
+    { "path": "Builder/buildings", "op": "tokens", "tokens": "+strategos:building/tower +strategos:building/arsenal", "filter": "Builder" },
+    { "path": "Limit/count", "op": "add", "value": 1, "filter": "CivicCentre" }
   ],
   "unlocks": ["strategos:iron_weapons", "strategos:chainmail", "strategos:building/tower", "strategos:building/arsenal"]
 }

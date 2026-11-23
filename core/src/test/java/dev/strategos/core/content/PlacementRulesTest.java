@@ -26,16 +26,24 @@ import org.junit.jupiter.params.provider.MethodSource;
 class PlacementRulesTest {
     static final Blueprint HOUSE = PlaceholderBlueprints.house(); // 5 x 5
     static final Blueprint CENTRE = PlaceholderBlueprints.civicCentre(); // 11 x 11
-    static final Params HOUSE_PARAMS = new Params(false, 0, 48, true);
-    static final Params CENTRE_PARAMS = new Params(true, 64, 0, true);
+    static final Params HOUSE_PARAMS = new Params(false, 0, PlacementRules.OWN, true);
+    static final Params CENTRE_PARAMS = new Params(true, 64, PlacementRules.OWN_OR_NEUTRAL, true);
 
-    /** A test world: its floors, taken cells, explored cells and civic centres. */
+    /**
+     * A test world: its floors, taken cells, explored cells and civic centres; its territory faction 0's west of x 64,
+     * nobody's to x 96, faction 1's east of it (TERR-02).
+     */
     record World(
             ToDoubleBiFunction<Integer, Integer> floors,
             BiPredicate<Integer, Integer> taken,
             BiPredicate<Integer, Integer> seen,
             List<Centre> centres)
             implements PlacementRules.World {
+        @Override
+        public int territory(int x, int z) {
+            return x < 64 ? 0 : x < 96 ? -1 : 1;
+        }
+
         @Override
         public int sizeX() {
             return 128;
@@ -125,17 +133,31 @@ class PlacementRulesTest {
                 10,
                 HOUSE_PARAMS,
                 Rule.FLAT));
-        // the house's footprint 69..73 is 48 from the centre's edge at 21; one block on, 49
-        rows.add(row("48 from its centre", flat(OWN), HOUSE, 69, 10, HOUSE_PARAMS, null));
-        rows.add(row("49 from its centre", flat(OWN), HOUSE, 70, 10, HOUSE_PARAMS, Rule.REACH));
+        // the house's footprint 59..63 is the last inside its own land; one block on, a column is neutral
+        rows.add(row("inside its own land", flat(OWN), HOUSE, 59, 10, HOUSE_PARAMS, null));
+        rows.add(row("a column over the border", flat(OWN), HOUSE, 60, 10, HOUSE_PARAMS, Rule.TERRITORY));
+        rows.add(row("on an enemy's land", flat(OWN), HOUSE, 100, 10, HOUSE_PARAMS, Rule.TERRITORY));
         rows.add(row(
-                "near only an enemy's centre", flat(new Centre(OWN.at(), 1)), HOUSE, 30, 10, HOUSE_PARAMS, Rule.REACH));
-        rows.add(row("with no reach rule", flat(), HOUSE, 30, 10, new Params(false, 0, 0, true), null));
+                "with no territory rule",
+                flat(),
+                HOUSE,
+                100,
+                10,
+                new Params(false, 0, PlacementRules.ANYWHERE, true),
+                null));
+        rows.add(row("a centre on neutral land", flat(), CENTRE, 66, 74, CENTRE_PARAMS, null));
+        rows.add(row("a centre on an enemy's land", flat(), CENTRE, 100, 74, CENTRE_PARAMS, Rule.TERRITORY));
         // centres' centres: (15.5, 15.5) and (x + 5.5, 15.5)
         rows.add(row("a centre 64 from another", flat(OWN), CENTRE, 74, 10, CENTRE_PARAMS, null));
         rows.add(row("a centre 63 from another", flat(OWN), CENTRE, 73, 10, CENTRE_PARAMS, Rule.SPACING));
-        rows.add(row("a centre needs no reach", flat(), CENTRE, 74, 74, CENTRE_PARAMS, null));
-        rows.add(row("unaffordable", flat(OWN), HOUSE, 30, 10, new Params(false, 0, 48, false), Rule.AFFORDABLE));
+        rows.add(row(
+                "unaffordable",
+                flat(OWN),
+                HOUSE,
+                30,
+                10,
+                new Params(false, 0, PlacementRules.OWN, false),
+                Rule.AFFORDABLE));
         rows.add(row(
                 "taken and steep: taken is told",
                 new World((x, z) -> x == 34 ? 20 : 10, (x, z) -> x == 30, (x, z) -> true, List.of(OWN)),
@@ -145,13 +167,13 @@ class PlacementRulesTest {
                 HOUSE_PARAMS,
                 Rule.FREE));
         rows.add(row(
-                "steep and too far: steep is told",
+                "steep and outside: outside is told, a column rule",
                 new World((x, z) -> x == 74 ? 20 : 10, (x, z) -> false, (x, z) -> true, List.of(OWN)),
                 HOUSE,
                 70,
                 10,
                 HOUSE_PARAMS,
-                Rule.FLAT));
+                Rule.TERRITORY));
         return rows.stream();
     }
 
@@ -174,7 +196,7 @@ class PlacementRulesTest {
             assertThat(v.perCell().get(k)).as("cell %d", k).isEqualTo(corner ? Rule.FREE : null);
         }
         Verdict far = PlacementRules.check(flat(OWN), HOUSE, Footprint.of(HOUSE, 70, 10, 0), 0, HOUSE_PARAMS);
-        assertThat(far.perCell()).containsOnly(Rule.REACH);
+        assertThat(far.perCell()).containsOnly(Rule.TERRITORY);
     }
 
     @Test

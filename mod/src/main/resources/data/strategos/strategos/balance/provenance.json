@@ -149,22 +149,22 @@
     "Cost/resources/stone": "Two hundred stone: stone matters from M4; until then only the starting centre exists",
     "Cost/time": "Two and a half minutes: the largest build of the first loop",
     "Housing/capacity": "Twenty: the five starting workers and fifteen more before the first house is needed",
-    "Placement/civicReach": "None: a civic centre stands where its spacing allows, not near another",
     "Placement/spacing": "Sixty-four blocks between centres: a second centre claims new ground, not a corner of the first's",
     "Cost/resources/iron": "A hundred iron: a second centre's tools and fittings, a late investment (ECO-08)",
     "Limit/count": "One civic centre a faction until phases (Town) allow more, as in the classics (BLD-08)",
     "Trainer/batchExponent": "Five in 5^0.8 ≈ 3.6 units' time: a batch saves 28 %, worth tying the money up for (PROD-02, as the classics)",
     "TerritoryInfluence/weight": "The highest weight: nothing outweighs a civic centre (TERR-01)",
     "TerritoryInfluence/radius": "A root of 56 blocks: 0 A.D.'s 140 m at the ×0.4 of M9's scale (spec §1.6 row 6); the highest weight, so a centre's land is its own (TERR-01)",
-    "TerritoryInfluence/root": "A root: land flood-connected to a centre is connected (TERR-01)"
+    "TerritoryInfluence/root": "A root: land flood-connected to a centre is connected (TERR-01)",
+    "Placement/territory": "Own or neutral land, 0 A.D.'s rule: a new centre claims ground nobody holds, never an enemy's (TERR-02)"
   },
   "strategos:template/building_base": {
-    "Placement/civicReach": "Within 48 blocks of an own centre's footprint: a town grows round its centre, the stand-in for territory until TERR-02",
     "Resistance/fire": "Stone: 0.9^7 lets 48 % of a torch's fire through, so wood burns more than twice as fast per hit point (CMB-03)",
     "Health/max": "Five hundred: what a structure without its own figure holds; a deposit has it too, though nothing in M4 attacks one",
     "DamageStages/first": "The first blocks fall once a seventh of the building is gone, early enough to show an attack is working (BLD-05, 04 §11.8)",
     "DamageStages/second": "Two thirds of its hit points left: a third of its blocks down, the building plainly hurt",
-    "DamageStages/third": "A third left: most of it down but its walls' foot, a ruin still standing until its last hit points"
+    "DamageStages/third": "A third left: most of it down but its walls' foot, a ruin still standing until its last hit points",
+    "Placement/territory": "Own territory only, 0 A.D.'s rule: a town grows inside its borders (TERR-02, replacing BLD-02's 48-block stand-in)"
   },
   "strategos:building/house": {
     "Health/max": "Four hundred: a house burns in well under a minute to a squad (CMB-03)",
@@ -309,7 +309,8 @@
     "time": "Sixty seconds: twice the classic Town phase's 30 s (docs/research/mechanics.md §1.7), since ours costs stone and iron too; our own starting value, tuned against QA-12 in M6 T23",
     "requires/buildings/count": "Five Village buildings: the classic Town phase requires five Village-class structures (docs/research/mechanics.md §1.7)",
     "effects/0/value": "A tenth more building hit points, fields excepted (a crop is not a building to harden): the classics' phase bonuses are small and per structure (docs/research/mechanics.md §1.7); ours is a modest first step, our own starting value, tuned against QA-12 in M6 T23",
-    "effects/1/value": "Two blocks more sight for buildings, fields excepted, so a Town sees an approaching raid sooner; our own starting value, tuned against QA-12 in M6 T23"
+    "effects/1/value": "Two blocks more sight for buildings, fields excepted, so a Town sees an approaching raid sooner; our own starting value, tuned against QA-12 in M6 T23",
+    "effects/4/value": "One more civic centre from Town: 0 A.D.'s second centre comes with the phase, a choice of where to expand (TERR-02)"
   },
   "strategos:phase_village": {
     "time": "One second, never run: Village is the phase of a faction with none researched, so the tech exists only for its name and icon (spec row 19)"

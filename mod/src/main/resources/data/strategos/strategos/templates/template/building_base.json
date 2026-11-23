@@ -2,7 +2,7 @@
   "abstract": true,
   "Identity": { "classes": "Structure" },
   "Building": { "material": "stone" },
-  "Placement": { "civicReach": 48 },
+  "Placement": { "territory": 1 },
   "Health": { "max": 500 },
   "Resistance": { "fire": 7 },
   "DamageStages": { "first": 85, "second": 65, "third": 35 }

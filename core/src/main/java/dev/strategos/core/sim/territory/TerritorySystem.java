@@ -18,8 +18,8 @@ import org.jspecify.annotations.Nullable;
  * building whose template has a territory radius, at its faction's stats — and, when they differ from the last
  * recompute's and that one started {@value #CADENCE} or more ticks ago, submits a recompute as a pure job on a frozen
  * copy. The job is joined on the next tick, whatever thread ran it, so 0, 1 and 4 threads deliver the same grid on
- * the same tick and a slow recompute never blocks the tick that started it. The very first grid, and the grid after a
- * restore, are computed at once.
+ * the same tick and a slow recompute never blocks the tick that started it. The very first grid, the first with any
+ * source (a match's first centres), and the grid after a restore are computed at once.
  *
  * <p>The grid is derived: the saved state is the two source sets (the delivered grid's and a pending job's), from
  * which a restore rebuilds both exactly ({@link #save()}, {@link #restore}).
@@ -83,7 +83,8 @@ public final class TerritorySystem implements MatchSystem {
         if (ready && same(gathered, latest)) {
             return;
         }
-        if (!ready) { // the first grid: at once, so a match's first tick already has its land
+        if (!ready
+                || (delivered.size() == 0 && pending == null)) { // the first land: at once, so it is there to build on
             delivered = gathered.copy();
             kernel.compute(delivered, factions, grid);
             ready = true;

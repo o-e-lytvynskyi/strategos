@@ -64,7 +64,7 @@ CMB-10 → BLD-10 → AI-08 (26 card-days).
   3. AI placement respects the rules (L1).
   4. A refused placement in a GameTest shows the reason (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** TERR-01, BLD-02, AI-02 · **Size:** M · **Tier:** T1
-- **Status:** specified
+- **Status:** in_progress
 
 #### TERR-03 · Borders on terrain and minimap
 - **Value:** Borders are visible where they matter, on the ground and on the minimap (P2).

@@ -6,10 +6,10 @@
 
 ## Now
 
-- **Milestone:** M9 Territory, capture and defence, 4 of 20 tasks done; spec [M9](../milestones/M9-territory-capture-and-defence.md).
+- **Milestone:** M9 Territory, capture and defence, 5 of 20 tasks done; spec [M9](../milestones/M9-territory-capture-and-defence.md).
 - **In progress:** none.
-- **Last finished task:** T4 (2026-11-24).
-- **Next task:** T5 · TERR-02 · The build rule.
+- **Last finished task:** T5 (2026-11-24).
+- **Next task:** T6 · TERR-03 · Borders.
 - **Merged from main last:** 05cd50b (2026-11-24).
 
 ## Depends on unfinished work
@@ -27,7 +27,9 @@ From the assessment before the claim (procedure §2a step 0). Every other depend
 
 Newest first; one entry per session in the worklog's shape.
 
-### 2026-11-24 — M9 spec, T1–T4
+### 2026-11-24 — M9 spec, T1–T5
+
+- **M9 T5 · TERR-02 · The build rule** — TERR-02 in progress (criterion 3 waits for T15's AI test); `PlacementRules.Rule.TERRITORY`, a column rule in place of BLD-02's `REACH`; `Placement/territory` 1 (own) on every building, 2 (own or neutral) on the civic centre; Town's `Limit/count +1` on civic centres; `RejectReason.OUTSIDE_TERRITORY` (wire 19; `OUT_OF_REACH` kept unused); the client's prediction reads the sent grid; `PlacementTerritoryTest` (2), `PlacementRulesTest` rewritten, `territorytests.refused_outside`; the first land immediate (spec §1.6 row 10); `verify` green, 1 min 20 s, 259 GameTests.
 
 - **M9 T4 · TERR-01 · The payload and the client grid** — `strategos:territory` (S2C, public, cap 8 KB): full runs at join, deltas after, a version split into parts above 7 KB, one part a tick per player (`TerritoryFeed`); `ClientTerritory` in `ClientMatchModel`; `TerritoryCodecTest` (40 versions of churn on 384² and 1,024², a full 128² checkerboard in parts), `TerritoryFeedTest` (4), the payload's cap pinned; the 04 payload table and inventory; `verify` green, 1 min 19 s. Commits 76a9c5b and b691c18 do not build (the moved grid's edits were left unstaged); 4e6dcca fixes them.
 
@@ -48,6 +50,7 @@ Newest first; one entry per session in the worklog's shape.
 - 2026-11-24 · M9's numbers at ×0.4 of 0 A.D.'s distances and its capture ratios to Health (spec §1.6 row 6) — the first map is 384 blocks against ~1,000 m — undo: new provenance notes and `:core:balanceSheet`.
 - 2026-11-24 · trial implementer: pass — T1's three moves in a worktree at the branch head, first try, gate green.
 - 2026-11-24 · trial implementer: pass — T4's mod payload in a worktree, first try; it found the 04 §2.5 inventory line the brief missed.
+- 2026-11-24 · `Placement/territory` is a number (0, 1, 2), not a token, as every other placement value — undo: a token path and its parser.
 - 2026-11-24 · territory is public (spec §1.6 row 9): one grid for every client — undo: per-faction audiences once FOW-05 (M8) asks.
 - 2026-11-24 · the territory grid is not hashed (spec §1.6 row 8): it is a function of the saved source sets, and hashing it would change every journal's hashes — undo: mix `TerritoryGrid.hash()` in `StateHasher` once a grid exists.
 - 2026-11-24 · right-click attacks a building, the capture key captures (spec §1.6 row 3), as 0 A.D. since Alpha 27 — undo: swap the default in the client's order mapping.

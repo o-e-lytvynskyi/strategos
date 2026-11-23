@@ -37,6 +37,7 @@ import dev.strategos.gametest.suites.SelfTests;
 import dev.strategos.gametest.suites.SharedBatchSelfTest;
 import dev.strategos.gametest.suites.SkirmishTests;
 import dev.strategos.gametest.suites.TechTests;
+import dev.strategos.gametest.suites.TerritoryTests;
 import dev.strategos.gametest.suites.TicketLeakSelfTest;
 import dev.strategos.gametest.suites.WriterTests;
 import java.util.List;
@@ -72,6 +73,7 @@ public final class Suites {
                         CommandTests.class,
                         ContentTests.class,
                         ConstructionTests.class,
+                        TerritoryTests.class,
                         ProdTests.class,
                         DebugTests.class,
                         EcoTests.class,

@@ -15,6 +15,7 @@ import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.PlaceBuilding;
 import dev.strategos.core.protocol.QueueMode;
 import dev.strategos.core.protocol.UnitSet;
+import dev.strategos.core.shared.TerritoryGrid;
 import dev.strategos.mod.client.StrategosClient;
 import dev.strategos.mod.client.net.ClientPayloads;
 import dev.strategos.mod.registry.ModDataMaps;
@@ -285,6 +286,12 @@ final class RtsPlacement {
         @Override
         public boolean explored(int x, int z) {
             return ClientPlacement.explored(StrategosClient.model(), x, z);
+        }
+
+        @Override
+        public int territory(int x, int z) { // the grid the server sent (TERR-02's prediction)
+            TerritoryGrid land = StrategosClient.model().territory().grid();
+            return land == null ? PlacementRules.NO_GRID : land.ownerAt(x, z);
         }
     }
 }
