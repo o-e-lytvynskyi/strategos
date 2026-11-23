@@ -200,6 +200,7 @@ class WireCodecSizeTest {
                 .as("match_state")
                 .isLessThanOrEqualTo(1056); // results 1024, looks 21 (TECH-03)
         assertThat(FeedbackMsg.WIRE.maxSize()).as("feedback").isLessThanOrEqualTo(1024);
+        assertThat(TerritoryUpdate.WIRE.maxSize()).as("territory").isEqualTo(8192);
 
         MatchJoin widest = new MatchJoin(
                 Integer.MAX_VALUE,

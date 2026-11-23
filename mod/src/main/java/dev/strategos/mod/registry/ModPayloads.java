@@ -20,6 +20,7 @@ import dev.strategos.mod.server.net.payload.PayloadArrived;
 import dev.strategos.mod.server.net.payload.SkirmishPayload;
 import dev.strategos.mod.server.net.payload.TemplateAckPayload;
 import dev.strategos.mod.server.net.payload.TemplateSetPayload;
+import dev.strategos.mod.server.net.payload.TerritoryPayload;
 import dev.strategos.mod.server.net.payload.UiQueryPayload;
 import dev.strategos.mod.server.net.payload.UnitDetailPayload;
 import dev.strategos.mod.server.net.payload.UnitHudPayload;
@@ -65,6 +66,7 @@ public final class ModPayloads {
         registrar.playToClient(FxPayload.TYPE, FxPayload.STREAM_CODEC, PayloadArrived::post);
         registrar.playToClient(MatchEventPayload.TYPE, MatchEventPayload.STREAM_CODEC, PayloadArrived::post);
         registrar.playToClient(VisionDeltaPayload.TYPE, VisionDeltaPayload.STREAM_CODEC, PayloadArrived::post);
+        registrar.playToClient(TerritoryPayload.TYPE, TerritoryPayload.STREAM_CODEC, PayloadArrived::post);
         registrar.playToServer(
                 UiQueryPayload.TYPE, UiQueryPayload.STREAM_CODEC, C2sHandlers.timed(C2sHandlers::uiQuery));
         registrar.playToServer(
@@ -105,6 +107,7 @@ public final class ModPayloads {
                 FxPayload.SPEC,
                 MatchEventPayload.SPEC,
                 VisionDeltaPayload.SPEC,
+                TerritoryPayload.SPEC,
                 UiQueryPayload.SPEC,
                 TemplateAckPayload.SPEC,
                 CameraJumpPayload.SPEC,

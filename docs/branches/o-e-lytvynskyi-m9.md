@@ -6,10 +6,10 @@
 
 ## Now
 
-- **Milestone:** M9 Territory, capture and defence, 3 of 20 tasks done; spec [M9](../milestones/M9-territory-capture-and-defence.md).
+- **Milestone:** M9 Territory, capture and defence, 4 of 20 tasks done; spec [M9](../milestones/M9-territory-capture-and-defence.md).
 - **In progress:** none.
-- **Last finished task:** T3 (2026-11-24).
-- **Next task:** T4 · TERR-01 · The payload and the client grid (the core's codec is in; the mod's payload next).
+- **Last finished task:** T4 (2026-11-24).
+- **Next task:** T5 · TERR-02 · The build rule.
 - **Merged from main last:** 05cd50b (2026-11-24).
 
 ## Depends on unfinished work
@@ -27,7 +27,9 @@ From the assessment before the claim (procedure §2a step 0). Every other depend
 
 Newest first; one entry per session in the worklog's shape.
 
-### 2026-11-24 — M9 spec, T1–T3
+### 2026-11-24 — M9 spec, T1–T4
+
+- **M9 T4 · TERR-01 · The payload and the client grid** — `strategos:territory` (S2C, public, cap 8 KB): full runs at join, deltas after, a version split into parts above 7 KB, one part a tick per player (`TerritoryFeed`); `ClientTerritory` in `ClientMatchModel`; `TerritoryCodecTest` (40 versions of churn on 384² and 1,024², a full 128² checkerboard in parts), `TerritoryFeedTest` (4), the payload's cap pinned; the 04 payload table and inventory; `verify` green, 1 min 19 s. Commits 76a9c5b and b691c18 do not build (the moved grid's edits were left unstaged); 4e6dcca fixes them.
 
 - **M9 T3 · TERR-01 · The system, the job and the save** — `TerritorySystem` in `WORLD` after vision: sources gathered on a building or stats change, a recompute at most once per 20 ticks as a `PureJob` joined on the next tick, the first grid at once; `Play.territory` (the delivered and pending source sets; SchemaVersion stays 3); `TerritoryGrid` moved to `core.shared` (rule B3 keeps the client out of `sim`); `MatchCore.territory()`; `TerritorySystemTest`: the same grid every tick on 0, 1 and 4 threads, the cadence, a save mid-recompute restores the same future; `verify` green, 1 min 43 s. **`jmhCompare` invalid:** 20 of 21 benchmarks over ADR-0026's 7.5 % foreign load (7.6–9.9 %, the machine in use); the one valid comparison, `SpatialBench.rebuild1000` 4.77 → 5.90 µs (+24 %), measures code M9 has not touched, so it is put down to the same load until a quiet rerun (T18, `tools/longrun.sh`).
 
@@ -45,6 +47,8 @@ Newest first; one entry per session in the worklog's shape.
 
 - 2026-11-24 · M9's numbers at ×0.4 of 0 A.D.'s distances and its capture ratios to Health (spec §1.6 row 6) — the first map is 384 blocks against ~1,000 m — undo: new provenance notes and `:core:balanceSheet`.
 - 2026-11-24 · trial implementer: pass — T1's three moves in a worktree at the branch head, first try, gate green.
+- 2026-11-24 · trial implementer: pass — T4's mod payload in a worktree, first try; it found the 04 §2.5 inventory line the brief missed.
+- 2026-11-24 · territory is public (spec §1.6 row 9): one grid for every client — undo: per-faction audiences once FOW-05 (M8) asks.
 - 2026-11-24 · the territory grid is not hashed (spec §1.6 row 8): it is a function of the saved source sets, and hashing it would change every journal's hashes — undo: mix `TerritoryGrid.hash()` in `StateHasher` once a grid exists.
 - 2026-11-24 · right-click attacks a building, the capture key captures (spec §1.6 row 3), as 0 A.D. since Alpha 27 — undo: swap the default in the client's order mapping.
 - 2026-11-24 · territory updates as deltas split above 7 KB (spec §1.6 row 4) — the card's 8 KB cannot hold a full 1,024² grid — undo: raise the cap, which is the owner's.

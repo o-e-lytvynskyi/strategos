@@ -23,6 +23,7 @@
     "strategos:skirmish",
     "strategos:template_ack",
     "strategos:template_set",
+    "strategos:territory",
     "strategos:ui_query",
     "strategos:unit_detail",
     "strategos:unit_hud",

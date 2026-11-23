@@ -17,6 +17,7 @@ import dev.strategos.mod.server.net.payload.MatchStatePayload;
 import dev.strategos.mod.server.net.payload.PayloadArrived;
 import dev.strategos.mod.server.net.payload.TemplateAckPayload;
 import dev.strategos.mod.server.net.payload.TemplateSetPayload;
+import dev.strategos.mod.server.net.payload.TerritoryPayload;
 import dev.strategos.mod.server.net.payload.UnitDetailPayload;
 import dev.strategos.mod.server.net.payload.UnitHudPayload;
 import dev.strategos.mod.server.net.payload.UnitSummaryPayload;
@@ -102,6 +103,12 @@ public final class ClientPayloads {
                 MatchJoin join = StrategosClient.match();
                 if (join != null) {
                     StrategosClient.model().acceptVision(p.delta(), join.matchId());
+                }
+            }
+            case TerritoryPayload p -> {
+                MatchJoin join = StrategosClient.match();
+                if (join != null) {
+                    StrategosClient.model().acceptTerritory(p.update(), join.matchId());
                 }
             }
             default -> LOG.debug("unhandled payload {}", event.payload().type().id());

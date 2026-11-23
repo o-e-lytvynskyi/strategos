@@ -426,7 +426,7 @@ Results, the health check, the hand-in. Size: records.
 
 ### 7.3 Progress
 
-- [x] T1 (2026-11-24) · [x] T2 (2026-11-24) · [x] T3 (2026-11-24) · [ ] T4 · [ ] T5 · [ ] T6 · [ ] T10 · [ ] T11 · [ ] T12 · [ ] T7
+- [x] T1 (2026-11-24) · [x] T2 (2026-11-24) · [x] T3 (2026-11-24) · [x] T4 (2026-11-24) · [ ] T5 · [ ] T6 · [ ] T10 · [ ] T11 · [ ] T12 · [ ] T7
 - [ ] T8 · [ ] T9 · [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17 · [ ] T18 · [ ] T19 · [ ] T20
 
 ## 8. Acceptance checklist (M9 exit)
