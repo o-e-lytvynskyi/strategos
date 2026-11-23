@@ -1,6 +1,7 @@
 {
   "parent": "strategos:template/unit_base",
   "Identity": { "name": "strategos.unit.horseman", "icon": "minecraft:saddle", "classes": "+Cavalry +Melee +Organic" },
+  "Capture": { "strength": 1.75 },
   "Health": { "max": 200 },
   "UnitMotion": { "walkSpeed": 0.34, "mobility": "large" },
   "Attack": { "Melee": { "hack": 10, "reach": 1.5, "prepare": 8, "repeat": 18 } },

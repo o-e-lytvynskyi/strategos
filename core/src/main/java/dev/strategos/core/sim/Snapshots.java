@@ -87,7 +87,8 @@ final class Snapshots {
                         s.shots().save(),
                         s.stances().save(),
                         s.garrison().save(),
-                        s.territorySystem() != null ? s.territorySystem().save() : List.of()),
+                        s.territorySystem() != null ? s.territorySystem().save() : List.of(),
+                        s.capture().save()),
                 s.buildings().empty()
                         ? List.of()
                         : s.templates().all().stream()
@@ -213,6 +214,7 @@ final class Snapshots {
         state.shots().restore(snapshot.play().shots());
         state.stances().restore(snapshot.play().stances(), Handle::index);
         Garrisons.restore(state, snapshot.play().garrisons());
+        state.capture().restore(snapshot.play().capture());
         for (CarryStore.Saved load : snapshot.carried()) {
             if (!state.entities().isAlive(load.handle())) {
                 throw new IllegalArgumentException(

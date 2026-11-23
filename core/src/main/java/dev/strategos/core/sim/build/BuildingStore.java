@@ -366,6 +366,12 @@ public final class BuildingStore {
         damage[at(handle)] = value;
     }
 
+    /** Building {@code handle} changes owner (CMB-10): only {@link BuildingLife#transfer} calls this. */
+    void setFaction(int handle, int faction) {
+        this.faction[at(handle)] = faction;
+        changes++;
+    }
+
     public void setState(int handle, int value, long progress) {
         int k = at(handle);
         if (state[k] != value) {

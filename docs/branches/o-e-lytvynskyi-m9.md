@@ -6,9 +6,9 @@
 
 ## Now
 
-- **Milestone:** M9 Territory, capture and defence, 7 of 20 tasks done; spec [M9](../milestones/M9-territory-capture-and-defence.md).
+- **Milestone:** M9 Territory, capture and defence, 8 of 20 tasks done; spec [M9](../milestones/M9-territory-capture-and-defence.md).
 - **In progress:** none.
-- **Last finished task:** T6 (2026-11-24).
+- **Last finished task:** T7 (2026-11-24).
 - **Next task:** T6 · TERR-03 · Borders.
 - **Merged from main last:** 05cd50b (2026-11-24).
 
@@ -27,7 +27,9 @@ From the assessment before the claim (procedure §2a step 0). Every other depend
 
 Newest first; one entry per session in the worklog's shape.
 
-### 2026-11-24 — M9 spec, T1–T6, T10
+### 2026-11-24 — M9 spec, T1–T7, T10
+
+- **M9 T7 · CMB-10 · Transfer and capture maths** — CMB-10 in progress, BLD-10 done; `BuildingLife.transfer` (eject, refund, unhouse, rally cleared, rehouse; vision, territory and stats follow); `CaptureMaths` (effect ÷ (0.1 + 0.9 × health), owner first, ownership only at zero, ties to the lowest index, allies never), `CaptureStore` (hashed and saved only while a capture runs; `Play.capture`), `CaptureSystem` in COMBAT once a second per building with the garrison's regeneration; data: `Capturable` on seven buildings, `Capture/strength` on four units, Town +0.5 garrison regeneration; `CaptureMathsTest` (6: 20 infantry take an empty centre in 98–100 s, 12 make no progress at full health and take it at half in 80–83 s), `TransferTest`, `CaptureRegenTest` (2).
 
 - **M9 T6 · TERR-03 · Borders** — TERR-03 in progress (goldens and PERF-14's border scene in T19's consent batch); `BorderGeometry` (`@HotPath`): strips inside each owned tile on a differing edge, own/ally/enemy colours, dashed when unconnected, wound counter-clockwise from above; `BorderRenderer` on `AddSectionGeometryEvent` with immutable copies, `setSectionDirty` over the match's band; the minimap's 1-pixel owner outline; `BorderGeometryTest` (7, its hash pinned), `MinimapBordersTest` (3); `BorderBench.extractSection` 0.08–0.17 µs/op, 0 B/op, in `hotPathKernels`; engine names in spec §0.4; `verify` green, 1 min 21 s (in a worktree).
 

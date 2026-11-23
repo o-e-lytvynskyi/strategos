@@ -52,7 +52,8 @@
     "Cost/population": "One house's room for one soldier, as for a worker",
     "Attack/Structure/fire": "Six fire a blow: ten spearmen burn a wooden house in 7 s and a stone civic centre in about a minute and a quarter. Measured in M6 T23 (QA-12): a squad of four at three fire needed 1.7 to 4.4 minutes for a barracks, storehouse or arsenal and 5.9 for a civic centre, longer than the 8 to 12 minutes the winner has left after a centre falls, so matches did not end; doubled so a squad of four burns a wooden building in about a minute. A raid still hurts and takes several minutes to end a base (CMB-03, D-12); our own value, tuned against QA-12",
     "Attack/Structure/prepare": "Half a second to light the torch and reach the wall, as the spear's wind-up",
-    "Attack/Structure/repeat": "A blow of fire a second, the spear's rhythm"
+    "Attack/Structure/repeat": "A blow of fire a second, the spear's rhythm",
+    "Capture/strength": "Two and a half a second, 0 A.D.'s infantry: the unit that captures (CMB-10)"
   },
   "strategos:unit/archer": {
     "Health/max": "Seventy hit points, tuned up from fifty (duel matrix, M5 UNIT-07): archers must outlast the spearmen's approach and a hill duel must run long enough for height to tell, yet stay under a spearman's hundred",
@@ -70,7 +71,8 @@
     "Cost/resources/food": "Sixty food: the same provision as a worker or spearman (M5 UNIT-07)",
     "Cost/resources/wood": "Forty wood: the bow and its ammunition, as much wood as a spearman (M5 UNIT-07)",
     "Cost/resources/iron": "Twenty iron: arrowheads add an iron cost to ranged troops (M5 UNIT-07)",
-    "Cost/population": "One house's room for one archer, as for other infantry"
+    "Cost/population": "One house's room for one archer, as for other infantry",
+    "Capture/strength": "Two and a half, as 0 A.D.'s ranged infantry (CMB-10)"
   },
   "strategos:unit/horseman": {
     "Look/weapon": "Zero: the starting equipment tier of the weapon, raised to one by iron weapons (TECH-03); a tier, not a stat, so it carries no balance of its own",
@@ -90,7 +92,8 @@
     "Cost/population": "One house's room for one rider, as for a foot soldier; the horse needs none (UNIT-06)",
     "Body/width": "A horse's hit box, 1.4 blocks, the mounted body's size (ADR-0011, UNIT-06)",
     "Body/height": "Two blocks: a horse and the rider above its saddle (ADR-0011, UNIT-06)",
-    "Body/radius": "The large class's avoidance radius, 0.7: half the body's width (PATH-11)"
+    "Body/radius": "The large class's avoidance radius, 0.7: half the body's width (PATH-11)",
+    "Capture/strength": "One and three quarters, 0 A.D.'s cavalry: raiders burn rather than take (CMB-10)"
   },
   "strategos:unit/ram": {
     "Health/max": "Five hundred hit points: ten times a worker, two and a half horsemen; a ram is slow, so it has to outlast the arrows on the way to the wall (CMB-09)",
@@ -127,7 +130,8 @@
     "ResourceGatherer/rates/iron/ore": "A little slower than stone: a mine's iron is the scarcest resource, so iron sets the pace of an army (ECO-08)",
     "ResourceGatherer/capacities/iron": "Ten iron a trip, as stone",
     "ResourceGatherer/rates/food/meat": "As fruit's: a carcass is the quickest food once killed, which pays for the walk to the herd",
-    "ResourceGatherer/slaughter": "Hit points a blow, one a second: a sheep in four, a chicken in two"
+    "ResourceGatherer/slaughter": "Hit points a blow, one a second: a sheep in four, a chicken in two",
+    "Capture/strength": "One a second, 0 A.D.'s civilian: workers can take an empty house, slowly (CMB-10)"
   },
   "resource_yield": {
     "#minecraft:logs": "Twenty wood a log: an oak of four or five logs holds about ninety, a few minutes of one worker's chopping",
@@ -157,7 +161,10 @@
     "TerritoryInfluence/radius": "A root of 56 blocks: 0 A.D.'s 140 m at the ×0.4 of M9's scale (spec §1.6 row 6); the highest weight, so a centre's land is its own (TERR-01)",
     "TerritoryInfluence/root": "A root: land flood-connected to a centre is connected (TERR-01)",
     "Placement/territory": "Own or neutral land, 0 A.D.'s rule: a new centre claims ground nobody holds, never an enemy's (TERR-02)",
-    "GarrisonHolder/heal": "One hit point a second for each unit inside: 0 A.D.'s civic centre heals garrisoned units 1 HP/s (research second-pass 1.13), so a wounded squad recovers in the town while it holds (BLD-10)"
+    "GarrisonHolder/heal": "One hit point a second for each unit inside: 0 A.D.'s civic centre heals garrisoned units 1 HP/s (research second-pass 1.13), so a wounded squad recovers in the town while it holds (BLD-10)",
+    "Capturable/points": "Two thousand points, its own health: 0 A.D.'s centre holds 2,500 against 3,000 health, ours keeps the ratio near one (CMB-10, M9 spec §2.6)",
+    "Capturable/regen": "Thirty a second, 0 A.D.'s R28 centre: twenty infantry (50 a second) take an empty centre in 100 s (CMB-10)",
+    "Capturable/garrisonRegen": "Each unit inside adds its own capture strength to the regeneration, 0 A.D.'s rate of 1 (BLD-10)"
   },
   "strategos:template/building_base": {
     "Resistance/fire": "Stone: 0.9^7 lets 48 % of a torch's fire through, so wood burns more than twice as fast per hit point (CMB-03)",
@@ -177,7 +184,10 @@
     "TerritoryInfluence/weight": "A building's weight: below a centre's, above a quarry's (TERR-01)",
     "TerritoryInfluence/radius": "Sixteen blocks: 0 A.D.'s 16–20 m houses at ×0.4, rounded up so a house still claims its own tiles beside a road (TERR-01)",
     "TerritoryInfluence/root": "Not a root: its land is connected only through a centre's (TERR-01)",
-    "GarrisonHolder/capacity": "Five workers: 0 A.D.'s houses hold three to six support units (research second-pass 1.13), workers only, so a house shelters a raid's victims at the edge of town and no soldier hides in it (BLD-10)"
+    "GarrisonHolder/capacity": "Five workers: 0 A.D.'s houses hold three to six support units (research second-pass 1.13), workers only, so a house shelters a raid's victims at the edge of town and no soldier hides in it (BLD-10)",
+    "Capturable/points": "Four hundred: a house falls to a handful of soldiers (CMB-10; 0 A.D.'s default 500, scaled to a house's 400 health)",
+    "Capturable/regen": "Five a second, 0 A.D.'s default (CMB-10)",
+    "Capturable/garrisonRegen": "Each unit inside adds its own capture strength to the regeneration, 0 A.D.'s rate of 1 (BLD-10)"
   },
   "strategos:building/field": {
     "Health/max": "Two hundred: a field burns quickly, a cheap thing to raid",
@@ -199,7 +209,10 @@
     "Trainer/batchExponent": "As the civic centre's: one rule for every trainer until a technology changes it (TECH-05)",
     "TerritoryInfluence/weight": "A building's weight: below a centre's, above a quarry's (TERR-01)",
     "TerritoryInfluence/radius": "Twenty-four blocks: a military building claims more than a house, three tiles each way (TERR-01)",
-    "TerritoryInfluence/root": "Not a root: its land is connected only through a centre's (TERR-01)"
+    "TerritoryInfluence/root": "Not a root: its land is connected only through a centre's (TERR-01)",
+    "Capturable/points": "Eight hundred: a military building is worth holding, more than a house (CMB-10; 0 A.D.'s default 500 at our larger health)",
+    "Capturable/regen": "Ten a second, 0 A.D.'s barracks and towers (CMB-10)",
+    "Capturable/garrisonRegen": "Each unit inside adds its own capture strength to the regeneration, 0 A.D.'s rate of 1 (BLD-10)"
   },
   "strategos:building/tower": {
     "Attack/Building/arrows": "One arrow a shot: a tower is a single bowman on a wall, so it wears a raid down but never stops one (BLD-17, CMB-07)",
@@ -215,7 +228,10 @@
     "TerritoryInfluence/radius": "Twenty-four blocks: as the barracks; a tower holds its chokepoint's land (TERR-01)",
     "TerritoryInfluence/root": "Not a root: its land is connected only through a centre's (TERR-01)",
     "GarrisonHolder/capacity": "Five infantry: 0 A.D.'s towers hold three to five infantry (research second-pass 1.13), the top of that range for a Town building, infantry only (BLD-10)",
-    "Attack/Building/perGarrisoned": "One more arrow for each unit inside: 0 A.D.'s towers add an arrow per garrisoned infantry (research second-pass 1.13), so a full tower fires six (BLD-11)"
+    "Attack/Building/perGarrisoned": "One more arrow for each unit inside: 0 A.D.'s towers add an arrow per garrisoned infantry (research second-pass 1.13), so a full tower fires six (BLD-11)",
+    "Capturable/points": "Eight hundred: as the barracks (CMB-10)",
+    "Capturable/regen": "Ten a second, 0 A.D.'s towers (CMB-10)",
+    "Capturable/garrisonRegen": "Each unit inside adds its own capture strength to the regeneration, 0 A.D.'s rate of 1 (BLD-10)"
   },
   "strategos:building/arsenal": {
     "Health/max": "Fifteen hundred: a stone workshop, tougher than a barracks (1,200), so the siege line is not lost to the first raid that reaches it (CMB-09)",
@@ -225,7 +241,10 @@
     "Trainer/batchExponent": "As the civic centre's: one rule for every trainer until a technology changes it (TECH-05)",
     "TerritoryInfluence/weight": "A building's weight: below a centre's, above a quarry's (TERR-01)",
     "TerritoryInfluence/radius": "Twenty-four blocks: as the barracks (TERR-01)",
-    "TerritoryInfluence/root": "Not a root: its land is connected only through a centre's (TERR-01)"
+    "TerritoryInfluence/root": "Not a root: its land is connected only through a centre's (TERR-01)",
+    "Capturable/points": "Eight hundred: as the barracks (CMB-10)",
+    "Capturable/regen": "Ten a second: as the barracks (CMB-10)",
+    "Capturable/garrisonRegen": "Each unit inside adds its own capture strength to the regeneration, 0 A.D.'s rate of 1 (BLD-10)"
   },
   "strategos:building/quarry": {
     "Deposit/amount": "A thousand stone, two hundred quarried blocks' worth: a small quarry pays a civic centre five times over and lasts a match's opening (ECO-08)",
@@ -289,7 +308,10 @@
     "Cost/time": "Forty seconds, 3.2 blocks a second for its 128 (the style guide's 1.5–6)",
     "TerritoryInfluence/weight": "A building's weight: below a centre's, above a quarry's (TERR-01)",
     "TerritoryInfluence/radius": "Twenty blocks: 0 A.D.'s storehouse radius at ×0.4, rounded up to the next tile size; a forward dropsite claims a little land (TERR-01)",
-    "TerritoryInfluence/root": "Not a root: its land is connected only through a centre's (TERR-01)"
+    "TerritoryInfluence/root": "Not a root: its land is connected only through a centre's (TERR-01)",
+    "Capturable/points": "Four hundred: as a house (CMB-10)",
+    "Capturable/regen": "Five a second, 0 A.D.'s default (CMB-10)",
+    "Capturable/garrisonRegen": "Each unit inside adds its own capture strength to the regeneration, 0 A.D.'s rate of 1 (BLD-10)"
   },
   "strategos:building/farmstead": {
     "Health/max": "A house's and a half: a farm building of mud and brick",
@@ -298,7 +320,10 @@
     "Reseeder/reach": "Twenty-four blocks: a ring of fields round the farmstead, as the classics' farm by the mill (ECO-17, D-14)",
     "TerritoryInfluence/weight": "A building's weight: below a centre's, above a quarry's (TERR-01)",
     "TerritoryInfluence/radius": "Twenty blocks: as the storehouse, 0 A.D.'s farmstead radius at ×0.4 rounded up (TERR-01)",
-    "TerritoryInfluence/root": "Not a root: its land is connected only through a centre's (TERR-01)"
+    "TerritoryInfluence/root": "Not a root: its land is connected only through a centre's (TERR-01)",
+    "Capturable/points": "Three hundred, 0 A.D.'s farmstead (CMB-10)",
+    "Capturable/regen": "Five a second, 0 A.D.'s default (CMB-10)",
+    "Capturable/garrisonRegen": "Each unit inside adds its own capture strength to the regeneration, 0 A.D.'s rate of 1 (BLD-10)"
   },
   "strategos:gather_wood_1": {
     "cost/food": "100 food: what the classic first wood-gathering tech costs, 100 food and 50 wood (docs/research/mechanics.md §1.3, the Double-Bit Axe row)",
@@ -315,7 +340,8 @@
     "requires/buildings/count": "Five Village buildings: the classic Town phase requires five Village-class structures (docs/research/mechanics.md §1.7)",
     "effects/0/value": "A tenth more building hit points, fields excepted (a crop is not a building to harden): the classics' phase bonuses are small and per structure (docs/research/mechanics.md §1.7); ours is a modest first step, our own starting value, tuned against QA-12 in M6 T23",
     "effects/1/value": "Two blocks more sight for buildings, fields excepted, so a Town sees an approaching raid sooner; our own starting value, tuned against QA-12 in M6 T23",
-    "effects/4/value": "One more civic centre from Town: 0 A.D.'s second centre comes with the phase, a choice of where to expand (TERR-02)"
+    "effects/4/value": "One more civic centre from Town: 0 A.D.'s second centre comes with the phase, a choice of where to expand (TERR-02)",
+    "effects/5/value": "Half a point more garrison regeneration a unit in Town, 0 A.D.'s phase bonus (BLD-10)"
   },
   "strategos:phase_village": {
     "time": "One second, never run: Village is the phase of a faction with none researched, so the tech exists only for its name and icon (spec row 19)"

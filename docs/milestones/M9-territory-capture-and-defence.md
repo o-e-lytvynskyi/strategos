@@ -432,7 +432,7 @@ Results, the health check, the hand-in. Size: records.
 
 ### 7.3 Progress
 
-- [x] T1 (2026-11-24) · [x] T2 (2026-11-24) · [x] T3 (2026-11-24) · [x] T4 (2026-11-24) · [x] T5 (2026-11-24) · [x] T6 (2026-11-24, goldens in T19) · [x] T10 (2026-11-24, regeneration with T7) · [ ] T11 · [ ] T12 · [ ] T7
+- [x] T1 (2026-11-24) · [x] T2 (2026-11-24) · [x] T3 (2026-11-24) · [x] T4 (2026-11-24) · [x] T5 (2026-11-24) · [x] T6 (2026-11-24, goldens in T19) · [x] T10 (2026-11-24, regeneration with T7) · [ ] T11 · [ ] T12 · [x] T7 (2026-11-24)
 - [ ] T8 · [ ] T9 · [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17 · [ ] T18 · [ ] T19 · [ ] T20
 
 ## 8. Acceptance checklist (M9 exit)

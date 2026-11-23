@@ -55,6 +55,28 @@ public final class BuildingLife {
     }
 
     /**
+     * Building {@code handle} changes owner to faction {@code to} (CMB-10, M9 spec §2.5), the one way a building does:
+     * the units inside come out; the old owner loses its housing and gets its queue refunded; the rally point is
+     * cleared; then the new owner holds it and its housing. Vision, territory and stats follow the faction on their
+     * own (they read it each tick). Limits are not checked: a captured second centre stays.
+     */
+    public static void transfer(MatchState s, int handle, int to) {
+        BuildingStore b = s.buildings();
+        if (b.faction(handle) == to) {
+            return;
+        }
+        if (!s.garrison().empty()) {
+            Garrisons.ejectAll(s, handle);
+        }
+        Production.lost(s, handle);
+        b.queues().setRally(handle, BuildingStore.RALLY_NONE, 0, 0, 0);
+        b.setFaction(handle, to);
+        if (b.state(handle) == BuildingStore.COMPLETE) {
+            s.population().house(to, Production.housing(s, handle));
+        }
+    }
+
+    /**
      * Building {@code handle} falls (BLD-01: 0 hit points): its blocks above its floor layer go, the floor stays as a
      * foundation; its columns are released, and the core's terrain gets the air the writer will leave.
      */

@@ -95,7 +95,7 @@ CMB-10 → BLD-10 → AI-08 (26 card-days).
   2. A building changes owner only at zero owner points, never on a majority (L1).
   3. A captured barracks trains for its new owner (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** CMB-03, TERR-01, MATCH-06 · **Size:** L · **Tier:** T1
-- **Status:** specified
+- **Status:** in_progress
 
 #### BLD-10 · Garrison: healing, ejection and capture regeneration
 - **Value:** Garrisons protect and restore your army, and they hold buildings against capture
@@ -109,7 +109,8 @@ CMB-10 → BLD-10 → AI-08 (26 card-days).
   3. Garrisoned units raise capture regeneration (L1).
   4. A rally point on a building garrisons new units (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** BLD-16, CMB-10 · **Size:** M · **Tier:** T1
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-11-24 — M9 T10, T7: `GarrisonHealTest` (1), `GarrisonEjectTest` (2), `CaptureRegenTest.fiveInfantryInsideAddTwelveAndAHalfASecond` (3), `garrisontests.rally_garrisons` (4); allies inside with `FakeAllies` (AFTER-M7 for real teams)
 
 #### BLD-12 · Sentry tower and tower upgrades
 - **Value:** Hold chokepoints and protect your economy with towers (P4).

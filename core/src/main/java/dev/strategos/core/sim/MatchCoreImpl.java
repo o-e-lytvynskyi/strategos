@@ -6,6 +6,7 @@ import dev.strategos.core.diag.PhaseTimers;
 import dev.strategos.core.port.MetricsSink;
 import dev.strategos.core.protocol.CommandKinds;
 import dev.strategos.core.shared.TerritoryGrid;
+import dev.strategos.core.sim.capture.CaptureSystem;
 import dev.strategos.core.sim.combat.CombatSystem;
 import dev.strategos.core.sim.combat.ShotSystem;
 import dev.strategos.core.sim.combat.TownArrows;
@@ -80,6 +81,7 @@ final class MatchCoreImpl implements MatchCore {
         scheduler.register(state.spatial()); // the grid's rebuild ends MOVEMENT
         scheduler.register(new ShotSystem(state));
         scheduler.register(new CombatSystem());
+        scheduler.register(new CaptureSystem()); // CMB-10: after the blows, so this tick's damage speeds capture
         scheduler.register(new EconomySystem());
         scheduler.register(new GarrisonSystem()); // BLD-10: heals and ejects, after the tick's blows
         scheduler.register(vision); // FOW-01: the grids and the visibility, before the terrain's edits

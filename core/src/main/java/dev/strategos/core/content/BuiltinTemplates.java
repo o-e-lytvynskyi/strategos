@@ -41,6 +41,7 @@ final class BuiltinTemplates {
             {
               "parent": "strategos:template/unit_infantry",
               "Identity": { "name": "strategos.unit.infantry", "icon": "minecraft:trident", "classes": "+Spearman" },
+              "Capture": { "strength": 2.5 },
               "Attack": {
                 "Melee": {
                   "hack": 3,
@@ -72,6 +73,7 @@ final class BuiltinTemplates {
             {
               "parent": "strategos:template/unit_infantry",
               "Identity": { "name": "strategos.unit.archer", "icon": "minecraft:bow", "classes": "+Archer" },
+              "Capture": { "strength": 2.5 },
               "Health": { "max": 70 },
               "UnitMotion": { "walkSpeed": 0.2 },
               "Attack": { "Ranged": { "pierce": 16, "range": 20, "prepare": 16, "repeat": 20, "speed": 4, "spread": 2.25 } },
@@ -89,6 +91,7 @@ final class BuiltinTemplates {
             {
               "parent": "strategos:template/unit_base",
               "Identity": { "name": "strategos.unit.horseman", "icon": "minecraft:saddle", "classes": "+Cavalry +Melee +Organic" },
+              "Capture": { "strength": 1.75 },
               "Health": { "max": 200 },
               "UnitMotion": { "walkSpeed": 0.34, "mobility": "large" },
               "Attack": { "Melee": { "hack": 10, "reach": 1.5, "prepare": 8, "repeat": 18 } },
@@ -106,6 +109,7 @@ final class BuiltinTemplates {
             {
               "parent": "strategos:template/unit_base",
               "Identity": { "name": "strategos.unit.worker", "icon": "minecraft:wooden_axe", "classes": "+Worker +Gatherer +Builder +Organic" },
+              "Capture": { "strength": 1.0 },
               "Health": { "max": 50 },
               "Behaviour": { "flee": 8, "stance": "passive" },
               "Cost": { "resources": { "food": 60 }, "population": 1, "time": 10 },
@@ -173,6 +177,7 @@ final class BuiltinTemplates {
               "parent": "strategos:template/building_base",
               "Identity": { "name": "strategos.building.civic_centre", "icon": "minecraft:bell", "classes": "+CivicCentre" },
               "Building": { "blueprint": "strategos:civic_centre" },
+              "Capturable": { "points": 2000, "regen": 30, "garrisonRegen": 1 },
               "TerritoryInfluence": { "weight": 65535, "radius": 56, "root": 1 },
               "Placement": { "territory": 2, "spacing": 64 },
               "Health": { "max": 2000 },
@@ -203,6 +208,7 @@ final class BuiltinTemplates {
               "parent": "strategos:template/building_base",
               "Identity": { "name": "strategos.building.house", "icon": "minecraft:oak_door", "classes": "+House +Village" },
               "Building": { "blueprint": "strategos:house", "material": "wood" },
+              "Capturable": { "points": 400, "regen": 5, "garrisonRegen": 1 },
               "TerritoryInfluence": { "weight": 400, "radius": 16, "root": 0 },
               "Resistance": { "fire": 0 },
               "Health": { "max": 400 },
@@ -216,6 +222,7 @@ final class BuiltinTemplates {
               "parent": "strategos:template/building_base",
               "Identity": { "name": "strategos.building.barracks", "icon": "minecraft:shield", "classes": "+Barracks +Village" },
               "Building": { "blueprint": "strategos:barracks", "material": "wood" },
+              "Capturable": { "points": 800, "regen": 10, "garrisonRegen": 1 },
               "TerritoryInfluence": { "weight": 400, "radius": 24, "root": 0 },
               "Resistance": { "fire": 0 },
               "Health": { "max": 1200 },
@@ -234,6 +241,7 @@ final class BuiltinTemplates {
               "parent": "strategos:template/building_base",
               "Identity": { "name": "strategos.building.tower", "icon": "minecraft:crossbow", "classes": "+Tower" },
               "Building": { "blueprint": "strategos:tower" },
+              "Capturable": { "points": 800, "regen": 10, "garrisonRegen": 1 },
               "TerritoryInfluence": { "weight": 400, "radius": 24, "root": 0 },
               "Health": { "max": 1000 },
               "Vision": { "range": 24 },
@@ -248,6 +256,7 @@ final class BuiltinTemplates {
               "parent": "strategos:template/building_base",
               "Identity": { "name": "strategos.building.arsenal", "icon": "minecraft:anvil", "classes": "+Arsenal" },
               "Building": { "blueprint": "strategos:arsenal" },
+              "Capturable": { "points": 800, "regen": 10, "garrisonRegen": 1 },
               "TerritoryInfluence": { "weight": 400, "radius": 24, "root": 0 },
               "Health": { "max": 1500 },
               "Cost": { "resources": { "wood": 200, "stone": 150 }, "time": 90 },
@@ -276,6 +285,7 @@ final class BuiltinTemplates {
               "parent": "strategos:template/building_base",
               "Identity": { "name": "strategos.building.storehouse", "icon": "minecraft:barrel", "classes": "+Storehouse +Village" },
               "Building": { "blueprint": "strategos:storehouse" },
+              "Capturable": { "points": 400, "regen": 5, "garrisonRegen": 1 },
               "TerritoryInfluence": { "weight": 400, "radius": 20, "root": 0 },
               "Health": { "max": 800 },
               "Cost": { "resources": { "wood": 100, "stone": 50 }, "time": 40 },
@@ -402,7 +412,8 @@ final class BuiltinTemplates {
                 { "path": "Vision/range", "op": "add", "value": 2, "filter": "Structure+!Field" },
                 { "path": "Researcher/techs", "op": "tokens", "tokens": "+strategos:iron_weapons +strategos:chainmail", "filter": "Barracks" },
                 { "path": "Builder/buildings", "op": "tokens", "tokens": "+strategos:building/tower +strategos:building/arsenal", "filter": "Builder" },
-                { "path": "Limit/count", "op": "add", "value": 1, "filter": "CivicCentre" }
+                { "path": "Limit/count", "op": "add", "value": 1, "filter": "CivicCentre" },
+                { "path": "Capturable/garrisonRegen", "op": "add", "value": 0.5, "filter": "Structure" }
               ],
               "unlocks": ["strategos:iron_weapons", "strategos:chainmail", "strategos:building/tower", "strategos:building/arsenal"]
             }
@@ -413,6 +424,7 @@ final class BuiltinTemplates {
               "parent": "strategos:template/building_base",
               "Identity": { "name": "strategos.building.farmstead", "icon": "minecraft:hay_block", "classes": "+Farmstead +Village" },
               "Building": { "blueprint": "strategos:farmstead" },
+              "Capturable": { "points": 300, "regen": 5, "garrisonRegen": 1 },
               "TerritoryInfluence": { "weight": 400, "radius": 20, "root": 0 },
               "Health": { "max": 600 },
               "Cost": { "resources": { "wood": 100 }, "time": 35 },

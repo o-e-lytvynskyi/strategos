@@ -7,6 +7,7 @@ import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.diag.MatchLog;
 import dev.strategos.core.sim.build.BuildingLife;
 import dev.strategos.core.sim.build.BuildingStore;
+import dev.strategos.core.sim.capture.CaptureStore;
 import dev.strategos.core.sim.combat.Damage;
 import dev.strategos.core.sim.combat.HealthStore;
 import dev.strategos.core.sim.combat.ShotStore;
@@ -53,6 +54,7 @@ public final class MatchState {
     private long tick;
     private MatchConfig config;
     private Allies allies;
+    private final CaptureStore capture;
     private final Outcome outcome = new Outcome();
     private final AiSlots aiSlots = new AiSlots();
     private final MatchStats matchStats;
@@ -107,6 +109,7 @@ public final class MatchState {
     MatchState(MatchConfig config, TemplateSet templates, EntityStore entities, MatchLog log) {
         this.config = config;
         this.allies = Allies.sameFaction(config.factions());
+        this.capture = new CaptureStore(config.factions());
         this.templates = templates;
         mobilityCache.rebuild();
         this.entities = entities;
@@ -480,6 +483,11 @@ public final class MatchState {
      */
     public int gaia() {
         return config.factions();
+    }
+
+    /** The buildings being captured (CMB-10). */
+    public CaptureStore capture() {
+        return capture;
     }
 
     /** Who is a friend (M9 spec §2.1). AFTER-M7: MATCH-06's diplomacy answers instead of the same faction. */
