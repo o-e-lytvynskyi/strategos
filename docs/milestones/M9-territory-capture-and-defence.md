@@ -113,6 +113,8 @@ The demo chapters (`-Pdemo=m9`): `territory`, `capture`, `garrison_heal`, `tower
 | 5 | Building colour | Buildings carry no owner colour in the world, only on the minimap | The capture bar and the minimap show ownership; an owner banner on buildings is a proposal (For the owner), not M9 scope |
 | 6 | Scale | 0 A.D.'s numbers are in metres on maps three times ours | Distances × 0.4 (the first map is 384 blocks against 0 A.D.'s ~1,000 m); capture points and rates keep 0 A.D.'s ratios to Health (§2.6), each with its provenance note |
 
+| 7 | M6's follow-ups | M6 asked for a fake `DemoStage` in the next milestone's first task; `DemoStage` is a class over a `ServerLevel` | T17, with the new chapters; T1 keeps the moves |
+
 New rows are added as tasks find them.
 
 ### 1.7 Consent plan
@@ -340,8 +342,9 @@ T20. T10 needs T7 only for its regeneration criterion, which it finishes after T
 
 #### T1 · Health check moves (M6 follow-ups)
 Split `MotionSystem` (910) and `PathService` (837) under 800 lines and move `BuildingStore`'s queue and rally code to
-`BuildingQueues`, by moves only; a fake `DemoStage` so each demo chapter's script runs at L1 (M6 row 72). Verify:
-`verify verifySlow`, the core's hash unchanged on the soak seeds. Size: 600 moved lines, 150 new.
+`BuildingQueues`, by moves only. Verify: `verify verifySlow`, the core's hash unchanged on the soak seeds. Size: 600
+moved lines. (M6's other first-task follow-up, a fake `DemoStage`, is T17's: `DemoStage` is bound to a
+`ServerLevel`, so the fake needs an interface over it, which the new chapters use first; §1.6 row 7.)
 
 #### T2 · TERR-01 · The kernel and the reference
 `Allies` (§2.1) and `FakeAllies`; `sim/territory`: `TerritoryGrid`, `TerritoryKernel`, `TerritoryReference`; the
@@ -406,8 +409,8 @@ still within its rows). Size: 500.
 on a quiet machine. Size: 400.
 
 #### T17 · The demo chapters
-`territory`, `capture`, `garrison_heal`, `towers`, `palisade` (§1.3), each with its L1 script check (T1's fake
-stage). Verify: `DemoCatalogTest`. Size: 400.
+`territory`, `capture`, `garrison_heal`, `towers`, `palisade` (§1.3); an interface over `DemoStage` and a fake of
+it, so each chapter's script runs at L1 (M6 row 72). Verify: `DemoCatalogTest`, the chapters' script tests. Size: 600.
 
 #### T18 · The close's long runs
 `verify verifySlow`; `verifySoak` (`tools/longrun.sh --shards 2`); `:core:jmh :core:jmhCompare`; the perf batch.
