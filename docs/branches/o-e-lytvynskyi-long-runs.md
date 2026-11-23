@@ -1,6 +1,6 @@
 # long-runs on dev/o-e-lytvynskyi/long-runs
 
-**Developer:** o-e-lytvynskyi (Claude Code, Opus) · **Branch:** dev/o-e-lytvynskyi/long-runs · **Work:** long-runs · **Base:** main @ d39069e · **Claimed:** 2026-11-24 · **Status:** claimed
+**Developer:** o-e-lytvynskyi (Claude Code, Opus) · **Branch:** dev/o-e-lytvynskyi/long-runs · **Work:** long-runs · **Base:** main @ d39069e · **Claimed:** 2026-11-24 · **Status:** ready for review
 
 **Note:** the owner's word in the developer session, 2026-11-24: «я помню там были трехчасовые тесты, надо что-то возможно придумать, чтобы их или на внешней машине делать или в целом в параллель их ставить, чтобы работа не стопорилась от тестов», then «я буду готовить раннер гитлаба локальный … но только на потом. пока максимум можно сделать заготовки»; claim and delivery in one pull request on that word, as perf-validity.
 
@@ -25,6 +25,7 @@
 - **`full-ci`** — the job `nightly` runs `verifySlow :core:soak` (25 min as before); a new matrix job `aisoak` runs ten shards of two seeds, 90 min each at most. Before it the job ran `verifySoak` whole under a 25-minute limit, which M6's 3-hour soak cannot meet: `full-ci` was never run on M6's code.
 - **`ci/gitlab/long-runs.gitlab-ci.yml`** — a draft for the owner's self-hosted GitLab runner: slow, ten soak shards, perf on a `strategos-perf` runner one at a time; by hand only; inactive until a mirror points at it.
 - **Docs** — 05-testing.md "Long runs".
+- **Gates and trial** (M4 Pro): `verify` green, 1 min 18 s; `tools/longrun.sh --shards 2` with `AISOAK_SEEDS=2` on da21ab8: two worktrees side by side, seed 1 conquered at tick 33,393 and seed 2 at tick 36,253, both replayed to their hashes, 10 min 0 s and 10 min 52 s including a cold build; `--clean` removed both worktrees.
 
 ## For the owner
 
