@@ -70,6 +70,7 @@ neoForge {
         testedMod = mods.strategos
     }
 
+    def s11Native = providers.gradleProperty('s11.live').map { it == 'true' }.getOrElse(false)
     runs {
         configureEach {
             systemProperty 'neoforge.enabledGameTestNamespaces', 'strategos'
@@ -86,9 +87,10 @@ neoForge {
         }
         client2 {
             client()
-            gameDirectory = file('run/client2')
+            gameDirectory = file(s11Native ? 'build/s11-live/client2' : 'run/client2')
             // The second client of the multiplayer launch (QA-09.1): joins the dev server by Quick Play.
-            programArguments.addAll('--username', 'Dev2', '--quickPlayMultiplayer', 'localhost:25565')
+            programArguments.addAll('--username', 'Dev2', '--quickPlayMultiplayer', (s11Native ? '127.0.0.1:25576' : 'localhost:25565'))
+            if (s11Native) systemProperty 'strategos.s11.client', 'true'
             jvmArgument('-Xmx3G')
             systemProperty 'strategos.faults.rethrow', 'true'
         }
@@ -96,14 +98,15 @@ neoForge {
         // It shares client's game directory, so Dev1 keeps one set of options and worlds.
         clientJoin {
             client()
-            gameDirectory = file('run/client')
-            programArguments.addAll('--username', 'Dev1', '--quickPlayMultiplayer', 'localhost:25565')
+            gameDirectory = file(s11Native ? 'build/s11-live/client' : 'run/client')
+            programArguments.addAll('--username', 'Dev1', '--quickPlayMultiplayer', (s11Native ? '127.0.0.1:25576' : 'localhost:25565'))
+            if (s11Native) systemProperty 'strategos.s11.client', 'true'
             jvmArgument('-Xmx4G')
             systemProperty 'strategos.faults.rethrow', 'true'
         }
         server {
             server()
-            gameDirectory = file('run/server')
+            gameDirectory = file(s11Native ? 'build/s11-live/server' : 'run/server')
             systemProperty 'strategos.s11.live', providers.gradleProperty('s11.live').getOrElse('false')
             programArgument('--nogui')
             jvmArgument('-Xmx3G')

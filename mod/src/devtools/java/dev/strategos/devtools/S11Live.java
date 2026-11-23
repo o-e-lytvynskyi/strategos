@@ -40,6 +40,8 @@ import org.jspecify.annotations.Nullable;
 @EventBusSubscriber(modid = Strategos.MOD_ID)
 public final class S11Live {
     private static final ResourceLocation MAP = ResourceLocation.fromNamespaceAndPath("strategos", "proving_ground");
+    static final int LANE_SPACING = 2_048;
+    static final int PAN_LANE = 2;
     private static final int WARMUP = 200;
     private static final int TICKS = 1_200;
     private static final int UNITS = 600;
@@ -73,7 +75,7 @@ public final class S11Live {
         var server = source.getServer();
         var level = server.overworld();
         var manifest = MapPackageLoader.load(server, MAP).manifest();
-        var origin = new BlockPos(2_048 * lane, level.getMinBuildHeight() + 8, 2_048);
+        var origin = new BlockPos(LANE_SPACING * lane, level.getMinBuildHeight() + 8, 2_048);
         var space = new MatchSpace(
                 level.dimension(),
                 origin,
@@ -145,7 +147,9 @@ public final class S11Live {
         if (peers.size() != 2
                 || peers.stream()
                         .anyMatch(p -> StrategosServer.get().matches().seatOf(p.getUUID()) != null
-                                || p.serverLevel() != source.getServer().overworld())) {
+                                || !p.serverLevel()
+                                        .dimension()
+                                        .equals(source.getServer().overworld().dimension()))) {
             source.sendFailure(Component.literal("S11 needs two unseated clients in the overworld"));
             return 0;
         }

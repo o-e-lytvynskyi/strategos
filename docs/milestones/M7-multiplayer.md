@@ -1057,7 +1057,7 @@ reviewed implementation task between T17 and T18, keeping the acceptance depende
 - [x] T15 (2026-11-22) · Team AI. Verify 45034358354, full S 45034406274 and paired JMH 45034212255 pass on 8313bfb5.
 - [x] T16 (2026-11-22) · Channel budgets and pending state. Verify 45058126895 passes 3,089 cases on c2d56f5b.
 - [x] T17 (2026-11-22) · [Four-peer S11 archive](../spikes/S11-bandwidth.md#four-peer-result), cloud run 45062182584. Every peer stays within E in all four scenes; the worst mean was 34,341.80 B/s.
-- [ ] T18 · S11 real-client comparison and reserve decision.
+- [x] T18 (2026-11-23) · [Dedicated server and two real clients](../spikes/S11-bandwidth.md#dedicated-server-and-two-real-clients). All eight measurements pass E; highest 62,639.93 B/s. Tier 4 stays in reserve.
 - [x] T19 (2026-11-22) · Two-client [protocol and evidence map](../testing/m7-multiplayer.md); verify [45060561545](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45060561545), 3,089 cases. L7 stays T25.
 - [ ] T20 · Multiplayer performance gate.
 - [ ] T21 · Integration and compatibility.

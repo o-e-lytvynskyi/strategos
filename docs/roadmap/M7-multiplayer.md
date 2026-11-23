@@ -137,11 +137,12 @@ Multiple-match discovery is outside M7. Recorded in the M7 branch pending mainta
   3. Two real clients confirm the mock counts (R, consent).
   4. The report decides on the tier-4 reserve (R).
 - **Tests:** L1, L6, R · **Depends on:** NET-03, QA-19, PERF-01 · **Size:** M · **Tier:** T1
-- **Status:** in_progress
-- **Implementation:** T16 passes [verify 45058126895](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45058126895)
+- **Status:** done
+- **Done:** T16 passes [verify 45058126895](https://github.com/o-e-lytvynskyi/strategos/actions/runs/45058126895)
   with independent recipient credits, current summary reconstruction and removals under pressure,
-  stale-epoch rejection and FX drop accounting. T17 and T18 retain the S11 measurement and native
-  comparison. NET-04 remains in progress.
+  stale-epoch rejection and FX drop accounting. [S11](../spikes/S11-bandwidth.md) records
+  four passing mock scenes and the two dedicated client comparisons on 2026-11-23.
+  The maximum real gameplay mean is 62,639.93 B/s and tier 4 stays in reserve.
 
 #### NET-05 · Reconnect and rejoin
 - **Value:** A dropped connection doesn't end your game.
