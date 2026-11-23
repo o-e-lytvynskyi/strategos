@@ -6,9 +6,9 @@
 
 ## Now
 
-- **Milestone:** M9 Territory, capture and defence, 6 of 20 tasks done; spec [M9](../milestones/M9-territory-capture-and-defence.md).
+- **Milestone:** M9 Territory, capture and defence, 7 of 20 tasks done; spec [M9](../milestones/M9-territory-capture-and-defence.md).
 - **In progress:** none.
-- **Last finished task:** T10 (2026-11-24).
+- **Last finished task:** T6 (2026-11-24).
 - **Next task:** T6 · TERR-03 · Borders.
 - **Merged from main last:** 05cd50b (2026-11-24).
 
@@ -27,7 +27,9 @@ From the assessment before the claim (procedure §2a step 0). Every other depend
 
 Newest first; one entry per session in the worklog's shape.
 
-### 2026-11-24 — M9 spec, T1–T5, T10
+### 2026-11-24 — M9 spec, T1–T6, T10
+
+- **M9 T6 · TERR-03 · Borders** — TERR-03 in progress (goldens and PERF-14's border scene in T19's consent batch); `BorderGeometry` (`@HotPath`): strips inside each owned tile on a differing edge, own/ally/enemy colours, dashed when unconnected, wound counter-clockwise from above; `BorderRenderer` on `AddSectionGeometryEvent` with immutable copies, `setSectionDirty` over the match's band; the minimap's 1-pixel owner outline; `BorderGeometryTest` (7, its hash pinned), `MinimapBordersTest` (3); `BorderBench.extractSection` 0.08–0.17 µs/op, 0 B/op, in `hotPathKernels`; engine names in spec §0.4; `verify` green, 1 min 21 s (in a worktree).
 
 - **M9 T10 · BLD-10 · The garrison finished** — BLD-10 in progress (criterion 3, capture regeneration, comes with T7's capture system); `GarrisonSystem` in ECONOMY: healing (`GarrisonHolder/heal`, the centre 1 HP/s) and ejection below `ejectBelow` (0.1); a rally point on a building garrisons the trained unit; houses hold 5 workers, the defence tower 5 infantry with one more arrow each; allies garrison (`Allies` in `admits`, `GarrisonRule`, restore); `GarrisonHealTest` (2), `GarrisonEjectTest`, `GarrisonRallyTest` (4), the ally test with `FakeAllies`, `garrisontests.rally_garrisons`; `verify` green, 1 min 18 s, 260 GameTests (in a worktree).
 
@@ -53,6 +55,8 @@ Newest first; one entry per session in the worklog's shape.
 - 2026-11-24 · trial implementer: pass — T1's three moves in a worktree at the branch head, first try, gate green.
 - 2026-11-24 · trial implementer: pass — T4's mod payload in a worktree, first try; it found the 04 §2.5 inventory line the brief missed.
 - 2026-11-24 · trial implementer: pass — T10 in a worktree; it widened the command rule for allied garrisons beyond the brief, recorded as spec §1.6 row 11.
+- 2026-11-24 · trial implementer: pass — T6 in a worktree; it found the dirty-section count wrong in the brief (spec §1.6 row 12) and the off-grid match origin.
+- 2026-11-24 · `BorderBench` in `hotPathKernels` (the 0 B/op gate) with no time baseline yet — a baseline is proposed with T18's quiet JMH run — undo: drop the token in core/build.gradle.
 - 2026-11-24 · `Placement/territory` is a number (0, 1, 2), not a token, as every other placement value — undo: a token path and its parser.
 - 2026-11-24 · territory is public (spec §1.6 row 9): one grid for every client — undo: per-faction audiences once FOW-05 (M8) asks.
 - 2026-11-24 · the territory grid is not hashed (spec §1.6 row 8): it is a function of the saved source sets, and hashing it would change every journal's hashes — undo: mix `TerritoryGrid.hash()` in `StateHasher` once a grid exists.

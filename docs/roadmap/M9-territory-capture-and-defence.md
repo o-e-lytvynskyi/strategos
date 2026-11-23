@@ -80,7 +80,7 @@ CMB-10 → BLD-10 → AI-08 (26 card-days).
   4. Goldens, also under Sodium (L4, consent).
 - **Tests:** L0, L1, L4 (consent), L6 · **Depends on:** TERR-01, UI-20 · **Size:** M ·
   **Tier:** T1
-- **Status:** specified
+- **Status:** in_progress
 
 #### CMB-10 · Capturing buildings
 - **Value:** Take enemy buildings instead of razing them, as in 0 A.D. (P4).

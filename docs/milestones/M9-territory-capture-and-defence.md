@@ -44,10 +44,13 @@ M6 §0.3 holds. Additions:
 
 ### 0.4 Engine names to check (T6, T13; `api-lookup`)
 
-`AddSectionGeometryEvent#addRenderer` and its `SectionRenderingContext` (04 §10.6 cites
-AddSectionGeometryEvent.java:72); `LevelRenderer#setSectionDirty(int, int, int)` (LevelRenderer.java:2543);
-`FenceGateBlock.OPEN`; Sodium's handling of `AddSectionGeometryEvent` (the L4 goldens under Sodium answer it).
-Checked names and their lines go into this section when T6 runs.
+`FenceGateBlock.OPEN` and Sodium's handling of `AddSectionGeometryEvent` (the L4 goldens under Sodium answer it) are
+still to check (T13). Checked (2026-11-24, NeoForge 21.1.264 sources): `AddSectionGeometryEvent` (game bus, client only,
+fired on the main thread; `getSectionOrigin()`, `getLevel()` main thread only, `addRenderer(AdditionalSectionRenderer)`
+:72, renderers run on chunk-build threads) with `SectionRenderingContext#getOrCreateChunkBuffer(RenderType)` (chunk
+layers only) and `getPoseStack()`; `LevelRenderer#setSectionDirty(int, int, int)` (:2543, public);
+`RenderType.translucent()`; `VertexConsumer#addVertex(PoseStack.Pose, float, float, float)`, `setColor(int)`,
+`setUv`, `setLight(int)`, `setNormal(float, float, float)`.
 
 ---
 
@@ -115,6 +118,7 @@ The demo chapters (`-Pdemo=m9`): `territory`, `capture`, `garrison_heal`, `tower
 
 | 7 | M6's follow-ups | M6 asked for a fake `DemoStage` in the next milestone's first task; `DemoStage` is a class over a `ServerLevel` | T17, with the new chapters; T1 keeps the moves |
 
+| 12 | Dirty sections (T6) | Tiles are 8 blocks, sections 16: every tile lies on two section edges, and a changed tile dirties 1 to 3 section columns (4-neighbour edges), not up to 4 | `BorderGeometry.sectionsTouched` as found; a match origin off the 16-grid is cut from up to four match-local columns |
 | 11 | The garrison (T10) | `ejectBelow` in `building_base` makes every building a `GarrisonHolder` holding nobody; an ally's garrison needs the command rule too, not only `admits` | `Fields` accepts a holder with neither capacity nor classes; `GarrisonRule` asks for a faction allied with the building's |
 | 10 | The first land (T5) | The first grid was computed on a match's first tick, before its centres came, so the centres waited out the cadence and nothing could be placed for 20 ticks | A recompute is immediate while no source has ever been delivered (§2.3) |
 | 9 | Territory and fog (T4) | The cards do not say whether enemy land shows through the fog | Territory is public in M9, one grid for every client, as the shroud does not hide terrain; AFTER-M8: FOW-05's leak audit decides |
@@ -428,7 +432,7 @@ Results, the health check, the hand-in. Size: records.
 
 ### 7.3 Progress
 
-- [x] T1 (2026-11-24) · [x] T2 (2026-11-24) · [x] T3 (2026-11-24) · [x] T4 (2026-11-24) · [x] T5 (2026-11-24) · [ ] T6 · [x] T10 (2026-11-24, regeneration with T7) · [ ] T11 · [ ] T12 · [ ] T7
+- [x] T1 (2026-11-24) · [x] T2 (2026-11-24) · [x] T3 (2026-11-24) · [x] T4 (2026-11-24) · [x] T5 (2026-11-24) · [x] T6 (2026-11-24, goldens in T19) · [x] T10 (2026-11-24, regeneration with T7) · [ ] T11 · [ ] T12 · [ ] T7
 - [ ] T8 · [ ] T9 · [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17 · [ ] T18 · [ ] T19 · [ ] T20
 
 ## 8. Acceptance checklist (M9 exit)

@@ -23,6 +23,7 @@ import dev.strategos.mod.client.net.ClientPayloads;
 import dev.strategos.mod.client.overlay.FarMarkers;
 import dev.strategos.mod.client.overlay.HealthBarOverlay;
 import dev.strategos.mod.client.rts.RtsMode;
+import dev.strategos.mod.client.territory.BorderRenderer;
 import dev.strategos.mod.registry.ModEntityTypes;
 import dev.strategos.mod.server.net.payload.PayloadArrived;
 import java.util.List;
@@ -93,6 +94,7 @@ public final class StrategosClient {
         HUD.register(modBus); // after RTS mode: its tick builds from the tick RTS mode just ran
         FAR.register();
         SHROUD.register();
+        BorderRenderer.register();
         NeoForge.EVENT_BUS.addListener(RenderFrameEvent.Pre.class, e -> LOD.frame());
         BARS.register();
     }

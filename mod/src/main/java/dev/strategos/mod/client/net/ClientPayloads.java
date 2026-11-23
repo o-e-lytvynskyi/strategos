@@ -5,6 +5,7 @@ import dev.strategos.core.protocol.Feedback;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.TemplateAck;
 import dev.strategos.mod.client.StrategosClient;
+import dev.strategos.mod.client.territory.BorderRenderer;
 import dev.strategos.mod.server.net.payload.BuildingStatePayload;
 import dev.strategos.mod.server.net.payload.DebugFeedPayload;
 import dev.strategos.mod.server.net.payload.DepositStatePayload;
@@ -108,7 +109,12 @@ public final class ClientPayloads {
             case TerritoryPayload p -> {
                 MatchJoin join = StrategosClient.match();
                 if (join != null) {
+                    var territory = StrategosClient.model().territory();
+                    int before = territory.version();
                     StrategosClient.model().acceptTerritory(p.update(), join.matchId());
+                    if (territory.version() != before) {
+                        BorderRenderer.territoryChanged(territory, join); // TERR-03: the borders' sections rebuild
+                    }
                 }
             }
             default -> LOG.debug("unhandled payload {}", event.payload().type().id());
