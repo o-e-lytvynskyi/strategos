@@ -34,7 +34,15 @@ public final class MultiplayerScene implements SoakScene {
 
     private record RosterPart(TemplateId template, int count, boolean workers) {}
 
-    private record TownSite(SpawnBuilding spawn, int[] columns) {
+    private static final class TownSite {
+        final SpawnBuilding spawn;
+        private final int[] columns;
+
+        TownSite(SpawnBuilding spawn, int[] columns) {
+            this.spawn = spawn;
+            this.columns = columns;
+        }
+
         boolean free(MatchQueries q) {
             for (int cell : columns) {
                 if (q.footprintAt(cell >>> 16, cell & 0xFFFF)) return false;
@@ -148,7 +156,10 @@ public final class MultiplayerScene implements SoakScene {
                 if (unit != null) counts.merge(unit.template(), 1, Integer::sum);
             }
             for (RosterPart part : roster) {
-                int need = part.count() - counts.getOrDefault(part.template(), 0);
+                // One worker stays in reserve while the AI is active, so losses between refills
+                // do not reduce the time-weighted workload below the exact starting scale.
+                int reserve = startedAi && part.workers() ? 1 : 0;
+                int need = part.count() + reserve - counts.getOrDefault(part.template(), 0);
                 if (need <= 0) continue;
                 var yard = new Vec2d(campX(f) + (part.workers() ? 32 : 52), campZ(f) + 122);
                 MvpScene.spawn(out, part.template(), faction, yard, need, part.workers() ? 7 : 9);
@@ -158,7 +169,7 @@ public final class MultiplayerScene implements SoakScene {
             for (TownSite site : sites.get(f)) {
                 if (missingBuildings <= 0) break;
                 if (site.free(q)) {
-                    out.add(new Issue(PlayerSlot.ADMIN, site.spawn()));
+                    out.add(new Issue(PlayerSlot.ADMIN, site.spawn));
                     missingBuildings--;
                     buildingReplacements++;
                 }
