@@ -82,16 +82,16 @@ final class QueriesImpl implements MatchQueries {
                             ? List.of()
                             : List.of(drops.trim().split("\\s+")),
                     Double.isFinite(house) ? house : 0,
-                    java.util.Arrays.stream(b.queue(handle)).boxed().toList(),
+                    java.util.Arrays.stream(b.queues().queue(handle)).boxed().toList(),
                     trainedThousandths(handle),
-                    b.rallyKind(handle),
-                    b.rallyX(handle),
-                    b.rallyZ(handle),
+                    b.queues().rallyKind(handle),
+                    b.queues().rallyX(handle),
+                    b.queues().rallyZ(handle),
                     b.field(handle) == 0 ? -1 : state.nodes().amount(b.field(handle)),
                     b.field(handle) == 0 ? 0 : state.nodes().ripening(b.field(handle)),
                     b.autoReseed(handle),
-                    java.util.stream.IntStream.range(0, b.queueSize(handle))
-                            .mapToObj(k -> b.batch(handle, k))
+                    java.util.stream.IntStream.range(0, b.queues().queueSize(handle))
+                            .mapToObj(k -> b.queues().batch(handle, k))
                             .toList()));
         }
         return out;
@@ -139,12 +139,12 @@ final class QueriesImpl implements MatchQueries {
     /** The head entry's progress, in thousandths of its training. */
     private long trainedThousandths(int handle) {
         BuildingStore b = state.buildings();
-        if (b.queueSize(handle) == 0) {
+        if (b.queues().queueSize(handle) == 0) {
             return 0;
         }
-        long ticks =
-                dev.strategos.core.sim.prod.Production.ticks(state, handle, b.queue(handle)[0], b.batch(handle, 0));
-        return Math.min(BuildingStore.FULL, b.trained(handle) * BuildingStore.FULL / ticks);
+        long ticks = dev.strategos.core.sim.prod.Production.ticks(
+                state, handle, b.queues().queue(handle)[0], b.queues().batch(handle, 0));
+        return Math.min(BuildingStore.FULL, b.queues().trained(handle) * BuildingStore.FULL / ticks);
     }
 
     @Override

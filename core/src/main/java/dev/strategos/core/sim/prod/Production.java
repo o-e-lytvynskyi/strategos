@@ -100,32 +100,32 @@ public final class Production {
     /** One tick of building {@code handle}'s queue. */
     public static void step(MatchState s, int handle) {
         BuildingStore b = s.buildings();
-        if (b.state(handle) != BuildingStore.COMPLETE || b.queueSize(handle) == 0) {
+        if (b.state(handle) != BuildingStore.COMPLETE || b.queues().queueSize(handle) == 0) {
             return;
         }
         int faction = b.faction(handle);
-        int template = b.queue(handle)[0];
+        int template = b.queues().queue(handle)[0];
         if (QueueEntry.isTech(template)) {
             stepTech(s, handle, template);
             return;
         }
-        int count = b.batch(handle, 0);
+        int count = b.queues().batch(handle, 0);
         Population pop = s.population();
-        if (!b.reserved(handle)) {
+        if (!b.queues().reserved(handle)) {
             int need = s.templatePopulation(template, faction) * count;
             if (!pop.fits(faction, need)) {
-                if (!b.waiting(handle)) {
-                    b.setWaiting(handle, true);
+                if (!b.queues().waiting(handle)) {
+                    b.queues().setWaiting(handle, true);
                     s.outputs().add(new Notice(new FactionSlot(faction), NoticeKind.HOUSING_NEEDED, handle, ""));
                 }
                 return; // it keeps its progress
             }
             pop.add(faction, need);
-            b.setReserved(handle, true);
-            b.setWaiting(handle, false);
+            b.queues().setReserved(handle, true);
+            b.queues().setWaiting(handle, false);
         }
-        long done = b.trained(handle) + 1;
-        b.setTrained(handle, done);
+        long done = b.queues().trained(handle) + 1;
+        b.queues().setTrained(handle, done);
         if (done < ticks(s, handle, template, count)) {
             return;
         }
@@ -136,7 +136,7 @@ public final class Production {
             return; // walled in: it waits at the door for ground to free
         }
         pop.remove(faction, s.templatePopulation(template, faction) * count); // the reservation becomes the units' own
-        b.dequeue(handle, 0);
+        b.queues().dequeue(handle, 0);
         double floor = Placing.floor(s.surfaces(mobility), s.config().bounds(), door[0], door[1]);
         double y = Double.isNaN(floor) ? s.config().bounds().flatFloorY() : floor;
         for (int n = 0; n < count; n++) { // a batch steps out together, the crowd spreading it
@@ -156,15 +156,15 @@ public final class Production {
         BuildingStore b = s.buildings();
         TechDef tech = Techs.of(s, entry);
         if (tech == null) { // a content change retired it: the entry goes, the cost is unknown
-            b.dequeue(handle, 0);
+            b.queues().dequeue(handle, 0);
             return;
         }
-        long done = b.trained(handle) + 1;
-        b.setTrained(handle, done);
+        long done = b.queues().trained(handle) + 1;
+        b.queues().setTrained(handle, done);
         if (done < tech.ticks()) {
             return;
         }
-        b.dequeue(handle, 0);
+        b.queues().dequeue(handle, 0);
         Techs.complete(s, b.faction(handle), tech);
     }
 
@@ -189,10 +189,10 @@ public final class Production {
     static void rally(MatchState s, int handle, int unit) {
         BuildingStore b = s.buildings();
         int i = Handle.index(unit);
-        double x = b.rallyX(handle);
-        double z = b.rallyZ(handle);
-        int target = b.rallyTarget(handle);
-        switch (b.rallyKind(handle)) {
+        double x = b.queues().rallyX(handle);
+        double z = b.queues().rallyZ(handle);
+        int target = b.queues().rallyTarget(handle);
+        switch (b.queues().rallyKind(handle)) {
             case BuildingStore.RALLY_POINT -> s.orders().replace(i, OrderKind.MOVE, x, z, 0, 0);
             case BuildingStore.RALLY_NODE -> {
                 if (target >= 1
@@ -256,8 +256,8 @@ public final class Production {
             s.population().unhouse(faction, housing(s, handle));
         }
         Fields.lost(s, handle);
-        while (b.queueSize(handle) > 0) {
-            cancel(s, handle, b.queueSize(handle) - 1);
+        while (b.queues().queueSize(handle) > 0) {
+            cancel(s, handle, b.queues().queueSize(handle) - 1);
         }
     }
 
@@ -265,18 +265,19 @@ public final class Production {
     public static void cancel(MatchState s, int handle, int index) {
         BuildingStore b = s.buildings();
         int faction = b.faction(handle);
-        int count = b.batch(handle, index);
-        if (QueueEntry.isTech(b.queue(handle)[index])) { // a tech entry (TECH-01): its cost back, no population
-            TechDef tech = Techs.of(s, b.dequeue(handle, index));
+        int count = b.queues().batch(handle, index);
+        if (QueueEntry.isTech(
+                b.queues().queue(handle)[index])) { // a tech entry (TECH-01): its cost back, no population
+            TechDef tech = Techs.of(s, b.queues().dequeue(handle, index));
             if (tech != null) {
                 s.treasury().refund(faction, s.costs().ofTech(tech));
             }
             return;
         }
-        if (index == 0 && b.reserved(handle)) {
-            s.population().remove(faction, s.templatePopulation(b.queue(handle)[0], faction) * count);
+        if (index == 0 && b.queues().reserved(handle)) {
+            s.population().remove(faction, s.templatePopulation(b.queues().queue(handle)[0], faction) * count);
         }
-        int template = b.dequeue(handle, index);
+        int template = b.queues().dequeue(handle, index);
         long[] cost = s.costs().of(s.stats(), template, faction);
         for (int r = 0; r < cost.length; r++) {
             cost[r] = Math.multiplyExact(cost[r], count);
@@ -298,10 +299,13 @@ public final class Production {
             if (b.state(handle) == BuildingStore.COMPLETE) {
                 pop.house(b.faction(handle), housing(s, handle));
             }
-            if (b.queueSize(handle) > 0 && b.reserved(handle) && !QueueEntry.isTech(b.queue(handle)[0])) {
+            if (b.queues().queueSize(handle) > 0
+                    && b.queues().reserved(handle)
+                    && !QueueEntry.isTech(b.queues().queue(handle)[0])) {
                 pop.add(
                         b.faction(handle),
-                        s.templatePopulation(b.queue(handle)[0], b.faction(handle)) * b.batch(handle, 0));
+                        s.templatePopulation(b.queues().queue(handle)[0], b.faction(handle))
+                                * b.queues().batch(handle, 0));
             }
         }
     }

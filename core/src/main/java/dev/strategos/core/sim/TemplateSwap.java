@@ -50,7 +50,7 @@ final class TemplateSwap {
             if (problem != null) {
                 return problem;
             }
-            for (int queued : buildings.queue(handle)) {
+            for (int queued : buildings.queues().queue(handle)) {
                 problem = referenceProblem(state, next, queued);
                 if (problem != null) {
                     return problem;

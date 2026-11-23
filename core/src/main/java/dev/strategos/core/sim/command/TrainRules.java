@@ -60,7 +60,7 @@ final class TrainRules {
                     || !Production.trains(state, train.building(), template.netIndex())) {
                 return Tally.rejectAll(envelope, kind(), 1, RejectReason.UNSUPPORTED);
             }
-            if (b.queueSize(train.building()) >= BuildingStore.QUEUE_MAX) {
+            if (b.queues().queueSize(train.building()) >= BuildingStore.QUEUE_MAX) {
                 return Tally.rejectAll(envelope, kind(), 1, RejectReason.QUEUE_FULL);
             }
             int faction = b.faction(train.building());
@@ -70,7 +70,7 @@ final class TrainRules {
                 return Tally.unaffordable(envelope, kind(), 1, missing);
             }
             state.treasury().pay(faction, cost);
-            b.enqueue(train.building(), template.netIndex());
+            b.queues().enqueue(train.building(), template.netIndex());
             return Tally.acceptAll(envelope, kind(), 1);
         }
     }
@@ -103,7 +103,7 @@ final class TrainRules {
                     || !Production.trains(state, train.building(), template.netIndex())) {
                 return Tally.rejectAll(envelope, kind(), 1, RejectReason.UNSUPPORTED);
             }
-            if (b.queueSize(train.building()) >= BuildingStore.QUEUE_MAX) {
+            if (b.queues().queueSize(train.building()) >= BuildingStore.QUEUE_MAX) {
                 return Tally.rejectAll(envelope, kind(), 1, RejectReason.QUEUE_FULL);
             }
             int faction = b.faction(train.building());
@@ -116,7 +116,7 @@ final class TrainRules {
                 return Tally.unaffordable(envelope, kind(), 1, missing);
             }
             state.treasury().pay(faction, cost);
-            b.enqueue(train.building(), template.netIndex(), train.count());
+            b.queues().enqueue(train.building(), template.netIndex(), train.count());
             return Tally.acceptAll(envelope, kind(), 1);
         }
     }
@@ -154,7 +154,8 @@ final class TrainRules {
             if (reason != null) {
                 return Tally.rejectAll(envelope, kind(), 1, reason);
             }
-            if (cancel.index() < 0 || cancel.index() >= state.buildings().queueSize(cancel.building())) {
+            if (cancel.index() < 0
+                    || cancel.index() >= state.buildings().queues().queueSize(cancel.building())) {
                 return Tally.rejectAll(envelope, kind(), 1, RejectReason.INVALID_ARGUMENT);
             }
             Production.cancel(state, cancel.building(), cancel.index());
@@ -233,7 +234,7 @@ final class TrainRules {
                     tally.reject(reason);
                     continue;
                 }
-                state.buildings().setRally(handle, kind, x, z, target);
+                state.buildings().queues().setRally(handle, kind, x, z, target);
                 tally.accept();
             }
             return tally.result(envelope, kind());
