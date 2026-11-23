@@ -63,6 +63,25 @@ join it later. The roadmap's
 [test aggregates](roadmap/M0-foundation.md#test-aggregates-and-wall-time-budgets) give the
 contents and wall-time budget of every aggregate.
 
+### Long runs
+
+Since M6 `verifySoak` takes about 3 h 13 min on the M4 Pro (almost all of it QA-12.4's AI soak: 20
+matches on one server thread) and `runGameTestPerf` about 2 h 11 min. Neither runs in the working
+copy:
+- **Locally:** `tools/longrun.sh -- <tasks>` runs the committed HEAD in a git worktree beside the
+  repository (`../strategos-longrun/`), blocks until it ends and prints the verdict; start it in
+  the background and go on working. `--shards N` splits the AI soak's seeds into N JVMs
+  (`-Paisoak.firstSeed`, `-Paisoak.seeds`), so shard only `:mod:runGameTestSoak` and run
+  `verifySlow :core:soak` unsharded; two shards fit 24 GB beside a desktop. A perf batch runs
+  alone on a quiet machine (ADR-0026): never beside a long run.
+- **`full-ci` on GitHub** (a maintainer's label on a hand-in, or by hand): the slow job runs
+  `verifySlow :core:soak`, and the AI soak runs as ten shards of two seeds side by side.
+- **A self-hosted runner** (planned by the owner): `ci/gitlab/long-runs.gitlab-ci.yml` is a draft,
+  inactive until a GitLab mirror points at it; pipelines start only by hand.
+
+A shard passes when its seeds end without a fault and replay to their hashes; `verifySoak` passes
+when every shard does.
+
 Useful options:
 - `-Pgametest.filter='<regex>'` runs a subset of GameTests. Names are the suite class in lower
   case, a dot and the method in snake case, for example `bodytests.body_never_saved`, so
