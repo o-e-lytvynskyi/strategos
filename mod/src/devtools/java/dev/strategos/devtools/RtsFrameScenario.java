@@ -4,14 +4,19 @@ import com.google.gson.JsonObject;
 import com.mojang.blaze3d.platform.GlUtil;
 import dev.strategos.core.client.pick.Picking;
 import dev.strategos.core.client.pick.View;
+import dev.strategos.core.content.Blueprint;
+import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.port.MetricsSink;
 import dev.strategos.core.protocol.Move;
 import dev.strategos.core.protocol.QueueMode;
+import dev.strategos.core.protocol.SpawnBuilding;
 import dev.strategos.core.protocol.SpawnUnits;
 import dev.strategos.core.protocol.UnitSet;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.TemplateId;
+import dev.strategos.core.shared.TerritoryGrid;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.PlayRules;
 import dev.strategos.mod.StrategosServer;
@@ -24,6 +29,7 @@ import dev.strategos.mod.server.match.MatchRuntime;
 import dev.strategos.mod.server.match.MatchSource;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.ParticleStatus;
 import net.minecraft.client.gui.screens.Screen;
@@ -45,6 +51,12 @@ import org.lwjgl.glfw.GLFW;
  * GPU; the frame is the rts window's. The client tick is timed in one more window after rts, at vanilla's default
  * limit of {@link #TICK_CAP} frames a second (rtsCapped): with no limit the GPU never idles, and vanilla's
  * animated-texture upload in the tick waits for it (M2 §1.6). The card's budgets decide {@code ok}.
+ *
+ * <p>The border scene ({@code rts_frame_borders}, M9 TERR-03.3) is the same run with two civic centres 96 blocks apart
+ * on the armies' row, so the territory's border runs through the walk, and borders are drawn on the terrain and on the
+ * minimap in every window, the base one included: our drawing in the rts window then holds the borders' cost, and the
+ * run's numbers are read against {@code rts_frame}'s. It waits for the borders to be meshed (the territory as the
+ * scene's and the section compiler idle for {@value #BORDER_CALM} ticks) before the base window.
  */
 final class RtsFrameScenario implements Scenario {
     private static final int PER_SIDE = 100;
@@ -61,6 +73,15 @@ final class RtsFrameScenario implements Scenario {
     private static final int LOAD_MIN = 300;
 
     private static final int RENDER_DISTANCE = 16;
+    /** The border scene's centres, match-local, on the armies' row: the border is the line X = 128. */
+    private static final TemplateId CENTRE = new TemplateId("strategos:building/civic_centre");
+
+    private static final int CENTRE_X_MID = 128;
+    private static final int OWN_CENTRE_X = 80;
+    private static final int ENEMY_CENTRE_X = 176;
+    private static final int CENTRE_Z = 144;
+    /** Consecutive ticks the territory must be the scene's and the section compiler idle before the base window. */
+    private static final int BORDER_CALM = 60;
     /** Up to 2,500 frames a second over a window. */
     private static final int CAPACITY = 20_000;
     /** The armies' rows and the ends of their walks, in match-local blocks; the camera's focus is at (128, 144). */
@@ -135,6 +156,8 @@ final class RtsFrameScenario implements Scenario {
 
     private final String name;
     private final PlayRules play;
+    private final boolean borders;
+    private int borderCalm;
     private final StringBuilder failures = new StringBuilder();
     private volatile @Nullable MatchRuntime match;
     private volatile int bodiesOnServer;
@@ -151,8 +174,14 @@ final class RtsFrameScenario implements Scenario {
     private double @Nullable [] focus;
 
     RtsFrameScenario(String name, PlayRules play) {
+        this(name, play, false);
+    }
+
+    /** {@code borders}: PERF-14's border scene, two civic centres whose territories meet in the armies' view. */
+    RtsFrameScenario(String name, PlayRules play, boolean borders) {
         this.name = name;
         this.play = play;
+        this.borders = borders;
     }
 
     @Override
@@ -230,6 +259,9 @@ final class RtsFrameScenario implements Scenario {
             ScenarioWorld.renderDistance(mc, RENDER_DISTANCE);
             mc.options.framerateLimit().set(UNLIMITED);
             mc.options.particles().set(ParticleStatus.ALL); // a player's default
+            if (borders) {
+                spawnCentres();
+            }
         }
         // the cursor rests mid-window, as a player's does: at an edge it would pan the camera off the armies
         GLFW.glfwSetCursorPos(
@@ -253,8 +285,10 @@ final class RtsFrameScenario implements Scenario {
                 if (inStage >= LOAD_MIN
                         && rts.active()
                         && rts.view() != null
-                        && mc.levelRenderer.hasRenderedAllSections()) {
+                        && mc.levelRenderer.hasRenderedAllSections()
+                        && bordersMeshed()) {
                     ctx.result.addProperty("loadTicks", tick);
+                    ctx.result.addProperty("borders", borders);
                     next(Stage.BASE, true);
                 }
             }
@@ -372,6 +406,46 @@ final class RtsFrameScenario implements Scenario {
         }
         sample = null;
         pending = null;
+    }
+
+    /** The border scene's two civic centres, finished, on the armies' row (server thread via the server's queue). */
+    private void spawnCentres() {
+        MatchRuntime rt = match;
+        IntegratedServer server = Minecraft.getInstance().getSingleplayerServer();
+        if (rt == null || server == null) {
+            return;
+        }
+        server.execute(() -> {
+            TemplateSet templates = StrategosServer.get().templates().set();
+            UnitTemplate t = Objects.requireNonNull(templates.byId(CENTRE), CENTRE.value());
+            Blueprint bp = Objects.requireNonNull(templates.blueprint(t.netIndex()), CENTRE.value());
+            int cornerZ = CENTRE_Z - bp.sizeZ() / 2;
+            rt.submit(
+                    PlayerSlot.ADMIN,
+                    new SpawnBuilding(CENTRE, new FactionSlot(0), OWN_CENTRE_X - bp.sizeX() / 2, cornerZ, 0));
+            rt.submit(
+                    PlayerSlot.ADMIN,
+                    new SpawnBuilding(CENTRE, new FactionSlot(1), ENEMY_CENTRE_X - bp.sizeX() / 2, cornerZ, 0));
+        });
+    }
+
+    /**
+     * True without borders; with them, once the client's territory has each centre's ground its owner's and the border's
+     * two sides the two owners for {@value #BORDER_CALM} ticks running (the section compiler is idle by the caller's
+     * own test, and a territory version dirties its sections, so the meshes are done by then).
+     */
+    private boolean bordersMeshed() {
+        if (!borders) {
+            return true;
+        }
+        TerritoryGrid grid = StrategosClient.model().territory().grid();
+        boolean held = grid != null
+                && grid.ownerAt(OWN_CENTRE_X, CENTRE_Z) == 0
+                && grid.ownerAt(ENEMY_CENTRE_X, CENTRE_Z) == 1
+                && grid.ownerAt(CENTRE_X_MID - 8, CENTRE_Z) == 0
+                && grid.ownerAt(CENTRE_X_MID + 8, CENTRE_Z) == 1;
+        borderCalm = held ? borderCalm + 1 : 0;
+        return borderCalm >= BORDER_CALM;
     }
 
     private void spawn() {
