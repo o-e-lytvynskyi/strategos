@@ -487,7 +487,7 @@ Cards: [roadmap/M9-territory-capture-and-defence.md](roadmap/M9-territory-captur
 | TERR-03 | Borders on terrain and minimap | M | TERR-01, UI-20 | in_progress |
 | CMB-10 | Capturing buildings | L | CMB-03, TERR-01, MATCH-06 | in_progress |
 | BLD-10 | Garrison: healing, ejection and capture regeneration | M | BLD-16, CMB-10 | done |
-| BLD-12 | Sentry tower and tower upgrades | M | BLD-17, BLD-11 | specified |
+| BLD-12 | Sentry tower and tower upgrades | M | BLD-17, BLD-11 | done |
 | BLD-13 | Palisades and gates | L | BLD-04, PATH-12 | specified |
 | PATH-12 | Gates and doors in navigation | M | PATH-04, MATCH-06 | in_progress |
 | AI-08 | AI uses territory and capture | M | AI-05, CMB-10, BLD-10, TERR-02 | specified |

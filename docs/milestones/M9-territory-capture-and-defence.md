@@ -118,6 +118,7 @@ The demo chapters (`-Pdemo=m9`): `territory`, `capture`, `garrison_heal`, `tower
 
 | 7 | M6's follow-ups | M6 asked for a fake `DemoStage` in the next milestone's first task; `DemoStage` is a class over a `ServerLevel` | T17, with the new chapters; T1 keeps the moves |
 
+| 16 | The upgrade (T11) | 0 A.D.'s sentry-to-defence upgrade takes 100 s (mechanics §1.6); an upgrade needs a queue entry the wire already carries | 50 s at our time scale (the tower builds in 75 s against 0 A.D.'s 150 s); the entry is the target template's index, told apart as a building template, so the wire, the save and the hash keep their formats |
 | 15 | Group paths and gates (T12) | `GroupJob` and `GroupPaths` treat gates as walls; `LineOfWalk`, `StringPuller` and `PathRoutes` do not know crossings | T14 teaches the path checks that a segment through an open allied gate is walkable; group paths through gates follow if the L3 shows a need |
 | 14 | HPA* with gates (T12) | A requester with a usable gate searches flat with the full cap | Kept: gates are few; a gate-aware HPA* if PERF-16 shows the cost |
 | 13 | Gate crossings (T12) | A gate column cannot be a door surface: its columns are blocked so components split | A crossing is a jump edge between the surfaces beside the gate at door cost 1.5 a block |
@@ -435,7 +436,7 @@ Results, the health check, the hand-in. Size: records.
 
 ### 7.3 Progress
 
-- [x] T1 (2026-11-24) · [x] T2 (2026-11-24) · [x] T3 (2026-11-24) · [x] T4 (2026-11-24) · [x] T5 (2026-11-24) · [x] T6 (2026-11-24, goldens in T19) · [x] T10 (2026-11-24, regeneration with T7) · [ ] T11 · [x] T12 (2026-11-24) · [x] T7 (2026-11-24)
+- [x] T1 (2026-11-24) · [x] T2 (2026-11-24) · [x] T3 (2026-11-24) · [x] T4 (2026-11-24) · [x] T5 (2026-11-24) · [x] T6 (2026-11-24, goldens in T19) · [x] T10 (2026-11-24, regeneration with T7) · [x] T11 (2026-11-24) · [x] T12 (2026-11-24) · [x] T7 (2026-11-24)
 - [ ] T8 · [ ] T9 · [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17 · [ ] T18 · [ ] T19 · [ ] T20
 
 ## 8. Acceptance checklist (M9 exit)

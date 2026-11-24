@@ -20,6 +20,7 @@ public final class PlaceholderBlueprints {
     public static final String STOREHOUSE = "strategos:storehouse";
     public static final String FARMSTEAD = "strategos:farmstead";
     public static final String TOWER = "strategos:tower";
+    public static final String SENTRY_TOWER = "strategos:sentry_tower";
     public static final String ARSENAL = "strategos:arsenal";
     public static final String QUARRY = "strategos:quarry";
     public static final String QUARRY_LARGE = "strategos:quarry_large";
@@ -38,6 +39,7 @@ public final class PlaceholderBlueprints {
                 storehouse(),
                 farmstead(),
                 tower(),
+                sentryTower(),
                 arsenal(),
                 deposit(QUARRY, 3, "minecraft:stone", "minecraft:andesite"),
                 deposit(QUARRY_LARGE, 5, "minecraft:stone", "minecraft:andesite"),
@@ -200,6 +202,36 @@ public final class PlaceholderBlueprints {
             g.set(4, 8, i, 0);
         }
         return g.blueprint(TOWER, 2, 1, 0);
+    }
+
+    /**
+     * 5 x 7 x 5 (BLD-12): a wooden lookout on a cobblestone footing, crimson-plank walls with a doorway on the north
+     * side, a plank platform and a railing between four stem posts (crimson wood never burns). Lower than the defence
+     * tower, on the same footprint, so an upgrade rewrites it in place.
+     */
+    public static Blueprint sentryTower() {
+        Grid g = new Grid(
+                5,
+                7,
+                5,
+                List.of(
+                        "minecraft:crimson_planks",
+                        "minecraft:stripped_crimson_stem[axis=y]",
+                        "minecraft:cobblestone"));
+        g.fill(0, 0, 0, 4, 0, 4, 2);
+        for (int y = 1; y <= 3; y++) {
+            g.ring(0, y, 0, 4, 4, 0);
+        }
+        g.clear(2, 1, 0, 2, 2, 0); // the doorway
+        g.fill(0, 4, 0, 4, 4, 4, 0);
+        g.ring(0, 5, 0, 4, 4, 0);
+        for (int y = 1; y <= 6; y++) { // the corner posts
+            g.set(0, y, 0, 1);
+            g.set(4, y, 0, 1);
+            g.set(0, y, 4, 1);
+            g.set(4, y, 4, 1);
+        }
+        return g.blueprint(SENTRY_TOWER, 2, 1, 0);
     }
 
     /**

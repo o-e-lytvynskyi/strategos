@@ -113,7 +113,7 @@ final class BuiltinTemplates {
               "Health": { "max": 50 },
               "Behaviour": { "flee": 8, "stance": "passive" },
               "Cost": { "resources": { "food": 60 }, "population": 1, "time": 10 },
-              "Builder": { "rate": 1, "buildings": "strategos:building/civic_centre strategos:building/house strategos:building/barracks strategos:building/storehouse strategos:building/farmstead strategos:building/field" },
+              "Builder": { "rate": 1, "buildings": "strategos:building/civic_centre strategos:building/house strategos:building/barracks strategos:building/storehouse strategos:building/farmstead strategos:building/field strategos:building/sentry_tower" },
               "ResourceGatherer": {
                 "rates": { "food": { "fruit": 1, "grain": 0.5, "meat": 1 }, "wood": { "tree": 0.6 }, "stone": { "rock": 0.4 }, "iron": { "ore": 0.35 } },
                 "capacities": { "food": 10, "wood": 10, "stone": 10, "iron": 10 },
@@ -248,6 +248,28 @@ final class BuiltinTemplates {
               "Attack": { "Building": { "arrows": 1, "perGarrisoned": 1, "interval": 40, "pierce": 10, "range": 28 } },
               "GarrisonHolder": { "capacity": 5, "classes": "Infantry" },
               "Cost": { "resources": { "wood": 100, "stone": 150 }, "time": 75 }
+            }
+            """;
+
+    static final String SENTRY_TOWER = """
+            {
+              "parent": "strategos:template/building_base",
+              "Identity": { "name": "strategos.building.sentry_tower", "icon": "minecraft:bow", "classes": "+Tower" },
+              "Building": { "blueprint": "strategos:sentry_tower", "material": "wood" },
+              "Capturable": { "points": 400, "regen": 5, "garrisonRegen": 1 },
+              "TerritoryInfluence": { "weight": 400, "radius": 20, "root": 0 },
+              "Resistance": { "fire": 0 },
+              "Health": { "max": 400 },
+              "Vision": { "range": 20 },
+              "Attack": { "Building": { "arrows": 1, "perGarrisoned": 1, "interval": 40, "pierce": 8, "range": 24 } },
+              "GarrisonHolder": { "capacity": 3, "classes": "Infantry" },
+              "Cost": { "resources": { "wood": 100 }, "time": 40 },
+              "Upgrade": {
+                "to": "strategos:building/tower",
+                "time": 50,
+                "requires": "strategos:phase_town",
+                "Cost": { "resources": { "wood": 50, "stone": 100 } }
+              }
             }
             """;
 
@@ -496,7 +518,8 @@ final class BuiltinTemplates {
             new TemplateId("strategos:unit/horseman"),
             new TemplateId("strategos:building/tower"), // M6 T20
             new TemplateId("strategos:building/arsenal"), // M6 T19
-            new TemplateId("strategos:unit/ram")));
+            new TemplateId("strategos:unit/ram"),
+            new TemplateId("strategos:building/sentry_tower"))); // M9 T11
 
     /** The indices the built-in techs were given, kept as {@link #PINNED} keeps the templates' (row 20). */
     private static final TechIdTable PINNED_TECHS = new TechIdTable(List.of(
@@ -548,6 +571,8 @@ final class BuiltinTemplates {
             templates.add(raw("strategos:building/tower", TOWER)); // on the build list Town adds (BLD-17)
             templates.add(raw("strategos:building/arsenal", ARSENAL)); // M6 T19
             templates.add(raw("strategos:unit/ram", RAM));
+            templates.add(
+                    raw("strategos:building/sentry_tower", SENTRY_TOWER)); // on the Village worker's list (BLD-12)
         }
         TemplateCompiler.Result result = TemplateCompiler.compile(
                 templates,

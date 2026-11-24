@@ -85,6 +85,31 @@ public final class BuildingQueues {
         return true;
     }
 
+    /**
+     * Puts an entry of one at the queue's head, the others behind it (BLD-12); false when it is full. Whatever the old
+     * head had trained, held or waited for starts afresh: the caller gives back what it held.
+     */
+    public boolean enqueueHead(int handle, int entry) {
+        int k = owner.at(handle);
+        if (queue[k].length >= BuildingStore.QUEUE_MAX) {
+            return false;
+        }
+        int[] q = new int[queue[k].length + 1];
+        int[] counts = new int[q.length];
+        q[0] = entry;
+        counts[0] = 1;
+        System.arraycopy(queue[k], 0, q, 1, queue[k].length);
+        for (int e = 0; e < queue[k].length; e++) {
+            counts[e + 1] = batch(handle, e);
+        }
+        queue[k] = q;
+        batch[k] = counts;
+        trained[k] = 0;
+        reserved[k] = false;
+        waiting[k] = false;
+        return true;
+    }
+
     /** Every entry's batch count, the head first (PROD-02). */
     public List<Integer> batches(int handle) {
         int k = owner.at(handle);

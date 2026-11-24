@@ -233,6 +233,28 @@
     "Capturable/regen": "Ten a second, 0 A.D.'s towers (CMB-10)",
     "Capturable/garrisonRegen": "Each unit inside adds its own capture strength to the regeneration, 0 A.D.'s rate of 1 (BLD-10)"
   },
+  "strategos:building/sentry_tower": {
+    "Attack/Building/arrows": "One arrow a shot and one more for each of its three garrisoned infantry: a sentry post is a lookout with a bow, so it warns and wears a raid down but, empty, is no defence (BLD-12, BLD-11)",
+    "Attack/Building/perGarrisoned": "One more arrow for each unit inside, as the defence tower's: 0 A.D.'s sentry tower adds an arrow per garrisoned infantry too (research second-pass 1.6), so a full one fires four (BLD-12)",
+    "Attack/Building/interval": "Forty ticks (two seconds) between arrows, the defence tower's pace: the two differ in reach, health and garrison, not in rhythm (BLD-12)",
+    "Attack/Building/pierce": "Eight pierce an arrow, the centre's and under the defence tower's ten: wood and a lighter bow hit softer than stone (BLD-12)",
+    "Attack/Building/range": "Twenty-four blocks, four under the defence tower's: it covers a chokepoint but not the ground beyond it (BLD-12)",
+    "Vision/range": "Twenty: a lookout sees well past a house but four blocks short of the defence tower (BLD-12)",
+    "Health/max": "Four hundred: 0 A.D.'s sentry tower holds 400 against the defence tower's 1,000 (research second-pass 1.6); a house's, so a squad with torches takes it down in well under a minute (BLD-12, CMB-03)",
+    "Resistance/fire": "Timber: fire's whole blow lands, as on a house (CMB-03)",
+    "Cost/resources/wood": "A hundred wood: 0 A.D.'s sentry tower costs 100 wood (research second-pass 1.6); wood alone, so it is a Village building a lone woodcutter's camp can afford (BLD-12)",
+    "Cost/time": "Forty seconds for one builder: just over half the defence tower's seventy-five, a post to be raised on the way to a ford (BLD-12)",
+    "TerritoryInfluence/weight": "A building's weight: below a centre's, as a house's (TERR-01)",
+    "TerritoryInfluence/radius": "Twenty blocks: between a house's sixteen and a tower's twenty-four, a lookout holds some of its ground (TERR-01)",
+    "TerritoryInfluence/root": "Not a root: its land is connected only through a centre's (TERR-01)",
+    "GarrisonHolder/capacity": "Three infantry: the low end of 0 A.D.'s three to five for towers (research second-pass 1.13), infantry only (BLD-10, BLD-12)",
+    "Capturable/points": "Four hundred: as a house's; it is half the defence tower's points, so the upgrade doubles what a raid must take (CMB-10, BLD-12)",
+    "Capturable/regen": "Five a second: as a house's, half a tower's (CMB-10)",
+    "Capturable/garrisonRegen": "Each unit inside adds its own capture strength to the regeneration, 0 A.D.'s rate of 1 (BLD-10)",
+    "Upgrade/time": "Fifty seconds: two thirds of the defence tower's build time, since the frame stands and only the stone is fitted; 0 A.D.'s own upgrade takes longer, but a held chokepoint must not stay unmanned for long (BLD-12)",
+    "Upgrade/Cost/resources/wood": "Fifty wood: 0 A.D.'s tower upgrade costs 50 wood and 100 stone (research second-pass 1.6) (BLD-12)",
+    "Upgrade/Cost/resources/stone": "A hundred stone: 0 A.D.'s upgrade price (research second-pass 1.6); with the post's hundred wood and the upgrade's fifty, a defence tower reached through the sentry costs 150 wood and 100 stone, a little more wood than building it outright (BLD-12)"
+  },
   "strategos:building/arsenal": {
     "Health/max": "Fifteen hundred: a stone workshop, tougher than a barracks (1,200), so the siege line is not lost to the first raid that reaches it (CMB-09)",
     "Cost/resources/wood": "Two hundred wood: the frames and the beams a ram is hung from, as a barracks' (CMB-09)",

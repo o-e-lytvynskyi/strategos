@@ -120,6 +120,16 @@ public final class CorePaths {
     public static final String TERRITORY_RADIUS = "TerritoryInfluence/radius";
     public static final String TERRITORY_ROOT = "TerritoryInfluence/root";
 
+    /**
+     * A building's upgrade (BLD-12, M9 spec §2.8): the template {@code to} it becomes (a token), the seconds it takes,
+     * the phase techs it {@code requires} (tokens) and its cost, {@code Upgrade/Cost/resources/<id>}. Optional.
+     */
+    public static final String UPGRADE_TO = "Upgrade/to";
+
+    public static final String UPGRADE_TIME = "Upgrade/time";
+    public static final String UPGRADE_REQUIRES = "Upgrade/requires";
+    public static final String UPGRADE_COST_PREFIX = "Upgrade/Cost/resources/";
+
     public static final double DEFAULT_HEALTH = 100;
     public static final double MAX_RESISTANCE = 20;
     public static final double DEFAULT_REACH = 1;

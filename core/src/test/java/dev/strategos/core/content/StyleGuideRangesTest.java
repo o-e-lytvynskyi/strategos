@@ -57,6 +57,6 @@ class StyleGuideRangesTest {
             }
             checked++;
         }
-        assertThat(checked).isEqualTo(12);
+        assertThat(checked).isEqualTo(13);
     }
 }

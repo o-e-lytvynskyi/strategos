@@ -122,7 +122,8 @@ CMB-10 → BLD-10 → AI-08 (26 card-days).
   2. Upgrading keeps the garrison and the health ratio (L3).
   3. Tower blueprints pass the construction and damage-stage tests (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** BLD-17, BLD-11 · **Size:** M · **Tier:** T1
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-11-24 — M9 T11: `TowerDataTest` (1), `UpgradeTest` and `towertests.upgrade_keeps_garrison` (2), `constructiontests.sentry_tower_is_built_and_equals_its_blueprint` and `…_damage_stages_remove_its_ranked_blocks` with the defence tower's (3)
 
 #### BLD-13 · Palisades and gates
 - **Value:** Wall off chokepoints with wooden palisades and let your own units through the gates

@@ -36,7 +36,7 @@ class TemplateSetTest {
                 .as("ids sort the worker after the infantry: M2's indices stay")
                 .isEqualTo(2);
         assertThat(worker.classes()).containsExactly("Builder", "Gatherer", "Organic", "Unit", "Worker");
-        assertThat(set.all()).hasSize(21);
+        assertThat(set.all()).hasSize(22);
         assertThat(set.all().subList(0, 3)).containsExactly(walker, infantry, worker);
         assertThat(set.all().subList(3, 7))
                 .as("the buildings, appended after M2's pinned units, in id order")
@@ -175,12 +175,13 @@ class TemplateSetTest {
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> set(new UnitTemplate(walker.id(), 0, walker.bodyType(), 0, 0.6f, 1.8f)))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> TemplateSet.builtin().byIndex(21)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> TemplateSet.builtin().byIndex(22)).isInstanceOf(IllegalArgumentException.class);
     }
 
     // M5 combat content (horseman, barracks roster, town bell) without $techs / Researcher — pin after M5+M6 merge;
     // M9 T2: the buildings' TerritoryInfluence (TERR-01); M9 T5: Placement/territory (TERR-02); M9 T10: the garrison's
     // heal and ejectBelow, the houses' and the tower's holders (BLD-10); M9 T7: Capturable and Capture (CMB-10).
+    // M9 T11: unchanged (the sentry tower is in the tech set only, BLD-12).
     private static final String BUILTIN_VERSION_BEFORE_TECH_01 =
             "426ba9a4b4049c6504b4f0d3de7770ecbfb5734b6b4b26faa976cc70eaf1b8b7";
 
@@ -191,9 +192,10 @@ class TemplateSetTest {
     // T19: the worker's build list, Town's additions to it, the arsenal and the ram (CMB-09); M6 T23: Town costs 600
     // wood, not 500 (QA-12's tuning); M9 T2: the buildings' TerritoryInfluence (TERR-01); M9 T5: Placement/territory
     // and Town's second centre (TERR-02); M9 T10: the garrison's heal and ejectBelow, the houses' and the tower's
-    // holders (BLD-10); M9 T7: Capturable and Capture, Town's garrison regeneration (CMB-10). Rebaselined after merging
+    // holders (BLD-10); M9 T7: Capturable and Capture, Town's garrison regeneration (CMB-10); M9 T11: the sentry tower,
+    // its blueprint, its place on the Village worker's list and its Upgrade (BLD-12). Rebaselined after merging
     // M5 combat content into BuiltinTemplates.
-    private static final String BUILTIN_VERSION = "5134a75d9da2dd4ce518d522533423a5e5ee1d373853fddeb40977db580273e0";
+    private static final String BUILTIN_VERSION = "4dc4a9a5b5fa2ef541438c7392f3dad2fa4f1f7c3bcf71879d35df8f1956074d";
 
     private static TemplateSet set(UnitTemplate template) {
         return new TemplateSet(List.of(template));

@@ -69,6 +69,9 @@ public final class Production {
             TechDef tech = Techs.of(s, template);
             return tech == null ? 1 : tech.ticks();
         }
+        if (Upgrades.isUpgrade(s, template)) { // an upgrade entry (BLD-12): the building's own Upgrade/time
+            return Upgrades.ticks(s, handle);
+        }
         BuildingStore b = s.buildings();
         int faction = b.faction(handle);
         if (count <= 1) {
@@ -108,6 +111,10 @@ public final class Production {
         int template = b.queues().queue(handle)[0];
         if (QueueEntry.isTech(template)) {
             stepTech(s, handle, template);
+            return;
+        }
+        if (Upgrades.isUpgrade(s, template)) {
+            Upgrades.step(s, handle, template);
             return;
         }
         int count = b.queues().batch(handle, 0);
@@ -279,6 +286,12 @@ public final class Production {
             if (tech != null) {
                 s.treasury().refund(faction, s.costs().ofTech(tech));
             }
+            return;
+        }
+        if (Upgrades.isUpgrade(s, b.queues().queue(handle)[index])) { // an upgrade entry (BLD-12): its cost back
+            long[] upgrade = Upgrades.cost(s, handle);
+            b.queues().dequeue(handle, index);
+            s.treasury().refund(faction, upgrade);
             return;
         }
         if (index == 0 && b.queues().reserved(handle)) {

@@ -372,6 +372,12 @@ public final class BuildingStore {
         changes++;
     }
 
+    /** Building {@code handle} becomes another template in place (BLD-12): only {@code Upgrades} calls this. */
+    public void setTemplate(int handle, int template) {
+        this.template[at(handle)] = template;
+        changes++;
+    }
+
     public void setState(int handle, int value, long progress) {
         int k = at(handle);
         if (state[k] != value) {
