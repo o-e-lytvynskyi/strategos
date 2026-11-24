@@ -50,7 +50,8 @@ CMB-10 → BLD-10 → AI-08 (26 card-days).
      tick on a 384² map (L6).
   4. An update payload stays under 8 KB (L2).
 - **Tests:** L0, L1, L2, L6 · **Depends on:** BLD-08, CORE-02 · **Size:** L · **Tier:** T1
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-11-24 — `TerritoryReferenceTest` (1), `TerritoryThreadsTest` (2), `perf_territory` — the territory system's p99 16.5 µs, the tick's join on the job p99 0 and max 25 µs, never more than 1 recompute in 20 ticks on the 384² map (3), `TerritoryCodecTest` (4); M9 T2–T4, T16, T18.
 
 #### TERR-02 · Territory build rules
 - **Value:** Expansion is a strategic choice: you build in your territory, and new civic centres
@@ -178,4 +179,5 @@ CMB-10 → BLD-10 → AI-08 (26 card-days).
   2. The stress pass holds C p95 ≤ 50 ms (L6).
   3. The report lists territory and garrison costs (R).
 - **Tests:** L6, R · **Depends on:** TERR-01, BLD-10, PERF-10 · **Size:** S · **Tier:** T1
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-11-24 — `perf_territory` A p50 0.93 ms, A p99 9.89 ms, C p95 9.12 ms, E 3.8 KB/s at most; `perf_territory_stress` C p95 9.0 ms (≤ 50); the report's `systems.territory` (p99 16.5 µs, join max 25 µs, 53 recomputes, at most 1 per 20 ticks) and `systems.garrison` (p99 24 µs, capture p99 1.4 µs); M9 T16, T18; the four-client pass is AFTER-M7 (PERF-10, spec §1.5).
