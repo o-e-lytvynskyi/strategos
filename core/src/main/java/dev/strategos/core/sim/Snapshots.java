@@ -90,7 +90,7 @@ final class Snapshots {
                         s.territorySystem() != null ? s.territorySystem().save() : List.of(),
                         s.capture().save(),
                         s.gates().save(),
-                        s.breaches().save()),
+                        s.breaches().save(entities::isAlive)),
                 s.buildings().empty()
                         ? List.of()
                         : s.templates().all().stream()
@@ -247,7 +247,7 @@ final class Snapshots {
         }
         state.publishAll(pages);
         state.paths().restore(snapshot.paths()); // after the pages, whose publication must not count as a change
-        state.spatial().rebuild(state); // as the saved tick's movement left it
+        state.spatial().rebuild(state); // from the poses, as each tick's first rebuild does (spec M9 §1.6 row 24)
         if (missing > 0) {
             log.info(
                     snapshot.tick(),

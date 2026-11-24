@@ -262,7 +262,8 @@ final class RtsFrameScenario implements Scenario {
             mc.options.framerateLimit().set(UNLIMITED);
             mc.options.particles().set(ParticleStatus.ALL); // a player's default
         }
-        if (borders && !centresSent && match != null && match.lifecycle() == MatchLifecycle.RUNNING) {
+        MatchRuntime live = match;
+        if (borders && !centresSent && live != null && live.lifecycle() == MatchLifecycle.RUNNING) {
             centresSent = true; // a match takes commands once it runs, not while it prepares
             spawnCentres();
         }
@@ -567,7 +568,7 @@ final class RtsFrameScenario implements Scenario {
             if (e instanceof UnitEntity body
                     && body.spawnData() != null
                     && body.spawnData().faction() == 0) {
-                // the box's own rule (Seen.inBox): the feet or the head on screen, so a unit at the edge counts alike
+                // the box's own rule (Seen.inside): the feet or the head on screen, so a unit at the edge counts alike
                 if (inside(v, Picking.project(v, e.getX(), e.getY(), e.getZ()))
                         || inside(v, Picking.project(v, e.getX(), e.getBoundingBox().maxY, e.getZ()))) {
                     n++;

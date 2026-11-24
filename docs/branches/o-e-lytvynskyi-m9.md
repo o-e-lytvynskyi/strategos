@@ -9,7 +9,7 @@
 - **Milestone:** M9 Territory, capture and defence, 17 of 20 tasks done; spec [M9](../milestones/M9-territory-capture-and-defence.md).
 - **In progress:** none.
 - **Last finished task:** T17 (2026-11-24).
-- **Next task:** T18 · the close's long runs (the AI soak again after the `BreachLog` fix; then the perf batch and JMH alone); T19 · the consent batch.
+- **Next task:** T18's last run, the full AI soak on 7b61227f (after both replay fixes, in a worktree); then T20's hand-in. T19 is done.
 - **Merged from main last:** 05cd50b (2026-11-24).
 
 ## Depends on unfinished work
@@ -28,6 +28,8 @@ From the assessment before the claim (procedure §2a step 0). Every other depend
 Newest first; one entry per session in the worklog's shape.
 
 ### 2026-11-24 — M9 spec, T1–T19
+
+- **M9 T20 · the close's review** — a reviewer read the T18 and T19 fixes (c2085736..3ac26001): no major finding. Applied: `BreachLog` saves and hashes living units' records only (a dead breacher's record is inert and would have grown every save), and refuses a repeated or oversized handle (`BreachLogTest`); stale comments in `Snapshots` and `MatchCoreImpl`; `RtsFrameScenario` reads its volatile match once; `BorderEcho` clears on any other join, not only another match id. `:core:test verify` green, 2 min 38 s. These follow the soak's start, so the soak runs 7b61227f: the save-side change touches only dead units' records, which no step reads.
 
 - **M9 T19 · the consent batch** — windows one at a time, announced. Found and fixed: (1) `rts_frame_borders` hung to its timeout: it sent its two civic centres on tick 1 while the match was still PREPARING, and `MatchRuntime.submit`'s refusal died silently on the server thread; it now sends them once the match runs. (2) The demo's palisade chapter: the 9th segment (four blocks from +16, the last one reaching past the line's end) stood on the north rock, `NOT_FLAT`; the rock now starts at +20. The L1 fake has no terrain, so `DemoScriptsTest` could not see it. (3) The border scene's selection check counted a unit on screen by its mid-height point while the box takes the feet or the head (`Seen.inBox`): 100 selected of "99"; it now counts by the box's own rule. (4) Under Sodium the border goldens showed gaps that a full re-mesh closed: some first dirty marks were lost to builds already in flight; `BorderRenderer` now dirties the touched sections once more 10 client ticks later, and the Sodium frames match vanilla's. Results: `m9_goldens` (six frames, macos and macos-sodium) looked at and taken; reruns give nmse 0 on every frame, with the two top corners of `m9_borders_meet` masked (the horizon's unloaded chunks show sky in some runs, as `rider_high`'s). PERF-14's `rts_frame_borders` (200 units, 100 selected of 100): vanilla frame p50 3.72 / p99 8.88 ms, ours 0.72, units 2.21, client tick p50 0.97; Sodium p50 1.75 / p99 4.70 ms, ours 0.68, units 0.43, client tick p50 1.00 — budget F holds (16.7 / 25, 3, 6, 1). The demo `-Pdemo=m9`: five chapters shown, none failed (7 min 34 s).
 
@@ -98,6 +100,7 @@ Newest first; one entry per session in the worklog's shape.
 - 2026-11-24 · `BreachLog`, a per-match store for the breach cooldown, first transient; since T18 saved (`Play.breaches`) and hashed, as any state a step reads must be (spec §1.6 row 23) — undo: drop it and the cooldown.
 - 2026-11-24 · trial reviewer: pass — the walls' review found a unit restored mid-gate stuck for good and the missing enemy, ram and cooldown tests.
 - 2026-11-24 · trial implementer: pass ×3 — T8+T9, T11 and T12 in three worktrees side by side; the smoke runs' fixed port made each rerun once. trial reviewer: pass — T12's review found a major bug (a gate over a footprint unblocked by one release), now being fixed.
+- 2026-11-24 · trial reviewer: pass — the close's review of the replay and border fixes: no major, eight minor or nit findings, all applied but the untested echo (recorded).
 - 2026-11-24 · trial implementer: pass — T15; `Seize` (a class the brief did not name) and a public `CaptureSystem.regen` accepted as the cleanest shape.
 - 2026-11-24 · the scene's ownership churn is a demolish and a spawn for the next faction (no admin transfer command): the territory sees the same source change, and `TransferTest` covers the transfer itself — undo: an admin `Transfer` command.
 - 2026-11-24 · the sentry tower builds in 40 s with pierce 8 (the spec gave neither), carries no `Village` class (it does not count towards Town), and is wood like the house — undo: its template and provenance.

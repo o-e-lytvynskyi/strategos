@@ -141,7 +141,7 @@ public final class StateHasher {
             h = s.gates().mix(h);
         }
         if (!s.breaches().empty()) { // only once a unit breached a wall (BLD-13)
-            h = s.breaches().mix(h);
+            h = s.breaches().mix(h, s.entities()::isAlive);
         }
         if (!s.capture().empty()) { // only while a building is being captured (CMB-10)
             h = s.capture().mix(h);

@@ -128,9 +128,9 @@ final class MatchCoreImpl implements MatchCore {
         }
         state.beginTick(in);
         // The unit grid is rebuilt where MOVEMENT ends; a unit set down, born, garrisoned or killed after that leaves
-        // it
-        // behind until then, and a match restored from this tick's snapshot builds it from the state. Rebuilt here as
-        // well, every tick starts from the grid a restore would build, so a journal started mid-match replays.
+        // the
+        // grid behind until then, while a match restored from this tick's snapshot builds it from the poses. Rebuilt
+        // here as well, every tick starts from the grid a restore builds, so a journal started mid-match replays.
         state.spatial().rebuild(state);
         timers.beginTick();
         for (int i = 0; i < phases.length; i++) {

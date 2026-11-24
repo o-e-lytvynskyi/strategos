@@ -19,7 +19,7 @@ public final class BorderEcho {
     /** A version touched {@code touched}: they are dirtied again once the count-down from now ends. */
     public void arm(BitSet touched, int sectionsX, MatchJoin join) {
         MatchJoin last = this.join;
-        if (last != null && (last.matchId() != join.matchId() || this.sectionsX != sectionsX)) {
+        if (last != null && (!last.equals(join) || this.sectionsX != sectionsX)) { // another match, or placed anew
             sections.clear();
         }
         sections.or(touched);
