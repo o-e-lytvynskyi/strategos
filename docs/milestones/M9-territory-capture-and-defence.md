@@ -450,11 +450,11 @@ Results, the health check, the hand-in. Size: records.
 
 ## 8. Acceptance checklist (M9 exit)
 
-- [ ] Every acceptance criterion of the ten cards passes at its level (§1.4), except the AFTER-M7 items of §1.5.
-- [ ] L1: territory equals the reference; identical with 0, 1 and 4 threads; ownership only at zero owner points.
-- [ ] L3: a garrison round trip keeps every unit's state; gates open for allies only (with `FakeAllies` until M7).
-- [ ] L6: `perf_territory` within A–C and E; territory never blocks a tick; the stress pass holds.
-- [ ] Consent batch: border goldens, also under Sodium; PERF-14's border scene.
+- [x] Every acceptance criterion of the ten cards passes at its level (§1.4), except the AFTER-M7 items of §1.5.
+- [x] L1: territory equals the reference; identical with 0, 1 and 4 threads; ownership only at zero owner points.
+- [x] L3: a garrison round trip keeps every unit's state; gates open for allies only (with `FakeAllies` until M7).
+- [x] L6: `perf_territory` within A–C and E; territory never blocks a tick; the stress pass holds.
+- [x] Consent batch: border goldens, also under Sodium; PERF-14's border scene.
 - [ ] Cumulative: `verify verifySlow verifySoak`, `jmhCompare`, the earlier milestones' gates.
 - [ ] Owner: a playtest with the questionnaire; no P0 or P1 open.
 
@@ -465,4 +465,64 @@ Results, the health check, the hand-in. Size: records.
 
 ## 10. Implementation results
 
-Written at the close (T20).
+Written at the close (T20), 2026-11-24, on `dev/o-e-lytvynskyi/m9`.
+
+### 10.1 What was built
+
+All ten cards: TERR-01, TERR-02, TERR-03, CMB-10, BLD-10, BLD-12, BLD-13, PATH-12, AI-08 and PERF-16 are
+`done`. Their AFTER-M7 parts (allied capture, gates and garrisons in a real team match; PERF-16's
+four-client pass) wait for MATCH-06 and PERF-10 behind the `Allies` contract (§1.5, §2.1); the markers
+are listed in the branch file.
+
+### 10.2 Numbers
+
+| What | Result | Bound |
+|---|---|---|
+| `perf_territory` (18,000 ticks, 134 units, 156 buildings) | A p50 0.93 ms, A p99 9.89 ms, C p95 9.12 ms, E ≤ 3.8 KB/s | 5, 10, 23 ms; 100 KB/s |
+| the territory system / the tick's join on its job | p99 16.5 µs / p99 0, max 25 µs; ≤ 1 recompute in 20 ticks | join p99 0.5 ms |
+| `perf_territory_stress` (223 units) | C p95 9.0 ms; territory p99 119 µs | 50 ms |
+| garrisons and capture in the soak scene | p99 24 µs, capture p99 1.4 µs | reported (R) |
+| `BorderBench.extractSection` | 0.069 µs/op, 0 B/op | baseline proposed |
+| `SpatialBench.rebuild1000` (now twice a tick) | 5.2 µs/op | — |
+| PERF-14 `rts_frame_borders`, vanilla / Sodium | frame p50 3.72 / 1.75 ms, p99 8.88 / 4.70 ms, ours 0.72 / 0.68 ms | F: 16.7, 25, 3 ms |
+| `m9_goldens`, macos and macos-sodium | six frames each, nmse 0 on rerun | 1e-5 |
+| the AI soak, 20 seeds | see §10.5 | every journal replays |
+| `verify` / `verify verifySlow` | 2 min 39 s / 5 min 14 s | 5 min for `verify` |
+
+### 10.3 Deviations
+
+Findings rows 1–25 (§1.6). The ones a reviewer should read first:
+
+- **Rows 23–24, the AI soak's replay divergence (T18).** The soak's seed 13 diverged 20 ticks after its
+  journal start: the journal ring had rolled, so the replay began from a mid-match snapshot, and two
+  things the live run held were not in it. `BreachLog` (the breach cooldowns) is now saved and hashed;
+  and the unit grid, rebuilt only where MOVEMENT ends, lagged the poses after a unit was set down later
+  in the tick (gate put-outs, garrison exits), so the core now rebuilds it before each tick's first phase
+  too. Both have L1 tests that save mid-behaviour, restore and step both runs to the same hash.
+- **Row 25, the borders under Sodium (T19).** Some first dirty marks were lost to section builds in
+  flight; the touched sections are dirtied again 10 client ticks later.
+- **Row 4,** territory deltas split above 7 KB: the card's 8 KB cannot hold a full 1,024² grid.
+- **Rows 8–9,** the grid is public and not hashed (a function of the saved sources).
+
+### 10.4 Follow-ups
+
+1. Split `MatchState` (815 lines, over the 800 limit): the territory, capture, gate and breach accessors
+   into a play-state facet. The first task of the next milestone that touches the core.
+2. AFTER-M7: the `Allies` adapter over `DiplomacyView.allied`, `GateOverlay.touch()` on a relation
+   change, the allied GameTests with real teams, and PERF-10's four-client pass of `perf_territory`.
+3. A shared check for "every store a step reads is saved": the two soak findings were stores outside the
+   snapshot. Candidate: an L1 test that restores mid-match on every seeded scene and compares hashes over
+   the next ticks.
+4. Client tick work under Sodium in the border scene is p50 1.00 ms against F's 1 ms: at the edge; watch it
+   in the next client milestone.
+5. The demo chapters' L1 fake has no terrain (the palisade chapter's wall on a rock passed there).
+
+### 10.5 The AI soak
+
+Pending at the time of writing; filled in with T18's tick.
+
+### 10.6 Planned against actual
+
+Twenty tasks, as planned; T6, T16 and T10 closed with parts moved to T19 and T18 as the plan said. The
+code tasks' sizes held their 400–700-line estimates within about a third; the surprise was T18, planned
+as runs only, which found the two replay bugs and took most of the close's time.

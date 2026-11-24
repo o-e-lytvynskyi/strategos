@@ -20,8 +20,8 @@ From the assessment before the claim (procedure §2a step 0). Every other depend
 
 | Milestone | What this work needs from it | Plan: independent / against a contract / after | `AFTER-M<n>` markers |
 |---|---|---|---|
-| M7 | MATCH-06 teams and diplomacy: who is an ally for capture (CMB-10), allied gates (PATH-12, BLD-13) | against a contract: `Allies` (spec §2.1), the same faction today, `FakeAllies` in the tests; an adapter over M7's `DiplomacyView.allied` | `AFTER-M7` at `Allies` and at the allied GameTests (spec §1.5) |
-| M7 | PERF-10 multiplayer perf gate: PERF-16's final run builds on it | after, for its multiplayer pass only: PERF-16's one-server scene with four AI factions first (spec §2.13) | `AFTER-M7` at `perf_territory` |
+| M7 | MATCH-06 teams and diplomacy: who is an ally for capture (CMB-10), allied gates (PATH-12, BLD-13) | against a contract: `Allies` (spec §2.1), the same faction today, `FakeAllies` in the tests; an adapter over M7's `DiplomacyView.allied` | `AFTER-M7` at `core/.../sim/Allies.java:10`, `MatchState.java:541` (`allies()`), `nav/GateOverlay.java:126` (`touch()` on a relation change), `GarrisonRallyTest.java:65`, `GarrisonTest.java:147`, `testkit/FakeAllies.java:7` (spec §1.5) |
+| M7 | PERF-10 multiplayer perf gate: PERF-16's final run builds on it | after, for its multiplayer pass only: PERF-16's one-server scene with four AI factions first (spec §2.13) | `AFTER-M7` at `testkit/TerritoryScene.java:42` (PERF-10's four-client pass of `perf_territory`) |
 
 ## Log
 
@@ -75,7 +75,18 @@ Newest first; one entry per session in the worklog's shape.
 
 ## For the owner
 
-1. **Proposal: an owner banner on buildings.** Buildings show their owner only on the minimap and the capture bar (spec §1.6 row 5); a captured barracks looks the same in the world. A banner block in the owner's colour on every blueprint would add scope (a card). Nothing is blocked.
+1. **The demo and the playtest.** `scripts/playtest.sh` for a free game; the M9 chapters in a window:
+   `./gradlew :mod:runScenario -Pscenario=demo -Pdemo=m9 -Pscenario.timeoutSeconds=3600` — territory, capture,
+   garrison_heal, towers, palisade (all five shown, none failed, 7 min 34 s). The milestone's last open item is
+   the owner's playtest with the questionnaire (spec §1.3, §8).
+2. **The JMH baseline.** `perf/baseline-m4pro.proposed.json` adds `BorderBench.extractSection` (0.069 µs/op);
+   recommended: rename it over `perf/baseline-m4pro.json`, so `jmhCompare` watches its time, not only its
+   0 B/op.
+3. **Long runs (PR #57).** The sharded soak and the GitLab draft wait on that pull request; M9's soak ran
+   unsharded in a worktree meanwhile.
+4. **`main`'s record of M6.** On `main`, M6's branch file still reads "ready for review", which turns the claim
+   check red on every claim pull request; a maintainer's fix.
+5. **Proposal: an owner banner on buildings.** Buildings show their owner only on the minimap and the capture bar (spec §1.6 row 5); a captured barracks looks the same in the world. A banner block in the owner's colour on every blueprint would add scope (a card). Nothing is blocked.
 
 ## Decisions taken
 
