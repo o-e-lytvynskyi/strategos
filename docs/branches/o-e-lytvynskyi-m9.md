@@ -9,7 +9,7 @@
 - **Milestone:** M9 Territory, capture and defence, 12 of 20 tasks done; spec [M9](../milestones/M9-territory-capture-and-defence.md).
 - **In progress:** none.
 - **Last finished task:** T8, T9 (2026-11-24).
-- **Next task:** T13 · BLD-13 · Walls in the core (T12's review fixes in a worktree).
+- **Next task:** T13 · BLD-13 · Walls in the core (T15 in a worktree).
 - **Merged from main last:** 05cd50b (2026-11-24).
 
 ## Depends on unfinished work
@@ -28,6 +28,8 @@ From the assessment before the claim (procedure §2a step 0). Every other depend
 Newest first; one entry per session in the worklog's shape.
 
 ### 2026-11-24 — M9 spec, T1–T12
+
+- **M9 T12 · review fixes** — the reviewer's eight findings on 46e8a0f0: `FootprintOverlay` counts per column (a gate over a footprint stays blocked until both go), `GridAStar` tests `closed` before `step` again, gates validated before anything is blocked (owner, bounds, repeats, at most 64), crossings only between opposite sides, the AFTER-M7 note at `GateOverlay.touch()`, the restored hash asserted, `GateThreadCountHashTest` (0, 1, 4 threads), spec §1.6 row 18 for the API; `FootprintOverlayTest`, `GateValidationTest`; `CrossingBench` cross384 0.52 ms, flat384 4.81 ms (no earlier numbers); `verify verifySlow` green, 4 min 48 s (in a worktree), `verify` 2 min 14 s merged. A unit does not walk through a gate yet: the movement side is T14's.
 
 - **M9 T8, T9 · CMB-10 · The capture order and capture in the game** — CMB-10 done; `Capture` (wire 32), `CaptureRule`, the order kind and UnitAi's CAPTURE states (walk, then capture within reach); `BuildingState.Entry`'s capture shares (a byte a faction, only while captured); the capture bar in the building card; the capture key N (spec §1.6 row 17); `CaptureOrderTest` (20 infantry take an undefended barracks in 17–32 s and go idle), `CaptureTransitionRows` (~60), `CaptureShareTest`, `CaptureBarTest`, `capturetests.captured_barracks_trains`; merged with T11's `UpgradeBuilding` (33); `verify` green, 2 min 5 s.
 

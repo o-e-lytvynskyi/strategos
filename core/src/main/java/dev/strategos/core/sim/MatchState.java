@@ -56,7 +56,7 @@ public final class MatchState {
     private MatchConfig config;
     private Allies allies;
     private final CaptureStore capture;
-    private final GateOverlay gates = new GateOverlay();
+    private final GateOverlay gates;
     private final Outcome outcome = new Outcome();
     private final AiSlots aiSlots = new AiSlots();
     private final MatchStats matchStats;
@@ -112,6 +112,8 @@ public final class MatchState {
         this.config = config;
         this.allies = Allies.sameFaction(config.factions());
         this.capture = new CaptureStore(config.factions());
+        this.gates = new GateOverlay(
+                config.factions(), config.bounds().sizeX(), config.bounds().sizeZ());
         this.templates = templates;
         mobilityCache.rebuild();
         this.entities = entities;
@@ -494,10 +496,11 @@ public final class MatchState {
 
     /** Adds a gate of {@code owner} over {@code columns} ({@code x << 16 | z}), blocking them for everyone; its id. */
     public int addGate(int owner, int[] columns) {
+        int id = gates.add(owner, columns); // validates first: nothing is blocked for a bad gate
         for (int c : columns) {
             blockColumn(c >>> 16, c & 0xFFFF);
         }
-        return gates.add(owner, columns);
+        return id;
     }
 
     /** Removes gate {@code id} and releases its columns. */

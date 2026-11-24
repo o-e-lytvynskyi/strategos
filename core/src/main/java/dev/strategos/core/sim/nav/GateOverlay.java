@@ -6,7 +6,9 @@ import dev.strategos.core.sim.Allies;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -21,6 +23,9 @@ import org.jspecify.annotations.Nullable;
  */
 @CoreApi
 public final class GateOverlay {
+    /** Spec §6: the most gates a match holds. */
+    public static final int MAX_GATES = 64;
+
     private static final int MAX_CACHED_GRIDS = 8;
 
     private static final class Gate {
@@ -33,16 +38,69 @@ public final class GateOverlay {
         }
     }
 
+    private final int players;
+    private final int sizeX;
+    private final int sizeZ;
     private final Map<Integer, Gate> gates = new TreeMap<>();
     private int version;
     private final List<GateLinks> links = new ArrayList<>(); // by grid, compared by identity: an array, not a hash
     private int linksVersion = -1;
 
-    /** Adds a gate of {@code owner} over {@code columns} (packed {@code x << 16 | z}); returns its id. */
-    public int add(int owner, int[] columns) {
+    /** An overlay that takes any owner and any column a packed value holds; for tests of the gate graph alone. */
+    public GateOverlay() {
+        this(Integer.MAX_VALUE, 1 << 16, 1 << 16);
+    }
+
+    /** An overlay for a match of {@code players} factions on {@code sizeX} by {@code sizeZ} columns. */
+    public GateOverlay(int players, int sizeX, int sizeZ) {
+        this.players = players;
+        this.sizeX = sizeX;
+        this.sizeZ = sizeZ;
+    }
+
+    /**
+     * Throws unless {@code owner} is a player faction and {@code columns} are inside the bounds, each once, and not
+     * among {@code taken}.
+     */
+    private void check(int owner, int[] columns, Set<Integer> taken) {
+        if (owner < 0 || owner >= players) {
+            throw new IllegalArgumentException("gate owner " + owner + " is not a player faction");
+        }
         if (columns.length == 0) {
             throw new IllegalArgumentException("a gate needs at least one column");
         }
+        for (int c : columns) {
+            int x = c >>> 16;
+            int z = c & 0xFFFF;
+            if (x >= sizeX || z >= sizeZ) {
+                throw new IllegalArgumentException("gate column (" + x + ", " + z + ") is outside the match");
+            }
+            if (!taken.add(c)) {
+                throw new IllegalArgumentException("gate column (" + x + ", " + z + ") is already in a gate");
+            }
+        }
+    }
+
+    private Set<Integer> columnsTaken() {
+        Set<Integer> taken = new TreeSet<>();
+        for (Gate g : gates.values()) {
+            for (int c : g.columns) {
+                taken.add(c);
+            }
+        }
+        return taken;
+    }
+
+    /**
+     * Adds a gate of {@code owner} over {@code columns} (packed {@code x << 16 | z}); returns its id. Throws {@link
+     * IllegalArgumentException}, changing nothing, for a non-player owner, a column outside the match or in a gate
+     * already, a repeated column, or a {@value #MAX_GATES}th-and-more gate.
+     */
+    public int add(int owner, int[] columns) {
+        if (gates.size() >= MAX_GATES) {
+            throw new IllegalArgumentException("at most " + MAX_GATES + " gates");
+        }
+        check(owner, columns, columnsTaken());
         int id = 0;
         while (gates.containsKey(id)) {
             id++;
@@ -61,7 +119,11 @@ public final class GateOverlay {
         return true;
     }
 
-    /** Moves the version: for a change the overlay cannot see, such as the diplomacy {@link Allies} answers by. */
+    /**
+     * Moves the version: for a change the overlay cannot see, such as the diplomacy {@link Allies} answers by.
+     * {@link GateLinks#pass} caches per faction per version with the alliances baked in.
+     */
+    // AFTER-M7: MATCH-06's diplomacy adapter calls gates().touch() on every relation change.
     public void touch() {
         version++;
     }
@@ -177,8 +239,10 @@ public final class GateOverlay {
         return out;
     }
 
+    /** Replaces the gates by a saved set; throws, changing nothing, when it breaks {@link #add}'s rules. */
     public void restore(List<Long> saved) {
-        gates.clear();
+        Map<Integer, Gate> restored = new TreeMap<>();
+        Set<Integer> taken = new TreeSet<>();
         int i = 0;
         while (i < saved.size()) {
             if (i + 3 > saved.size()) {
@@ -194,9 +258,15 @@ public final class GateOverlay {
             for (int k = 0; k < n; k++) {
                 columns[k] = (int) (long) saved.get(i + 3 + k);
             }
-            gates.put(id, new Gate(owner, columns));
+            if (restored.size() >= MAX_GATES || restored.containsKey(id)) {
+                throw new IllegalArgumentException("gate " + id + " is one too many or repeated");
+            }
+            check(owner, columns, taken);
+            restored.put(id, new Gate(owner, columns));
             i += 3 + n;
         }
+        gates.clear();
+        gates.putAll(restored);
         version++;
     }
 }

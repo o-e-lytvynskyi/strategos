@@ -8,7 +8,8 @@ import dev.strategos.core.shared.CoreApi;
  * the players') is allied with nobody, itself included.
  *
  * <p>AFTER-M7: an adapter over MATCH-06's {@code DiplomacyView.allied(FactionSlot, FactionSlot)} replaces {@link
- * #sameFaction} in {@link MatchState#allies()}; nothing else in M9 changes.
+ * #sameFaction} in {@link MatchState#allies()}; nothing else in M9 changes. Its relation changes must call {@code gates().touch()}: {@code GateLinks.Pass}
+ * caches per faction with these answers baked in.
  */
 @CoreApi
 @FunctionalInterface

@@ -159,7 +159,11 @@ public final class GridAStar {
                 if (pageX >= 0 && ((nx >> 4) != pageX || (nz >> 4) != pageZ)) {
                     continue;
                 }
-                relax(s, slot(grid.node(nx, nz, nl), nx, nz), step(here, grid.surface(nx, nz, nl), dir));
+                int n = slot(grid.node(nx, nz, nl), nx, nz);
+                if (closed[n]) {
+                    continue; // no step cost for a neighbour already settled
+                }
+                relax(s, n, step(here, grid.surface(nx, nz, nl), dir));
             }
             int gate = pass == null ? -1 : pass.indexOf(node[s]);
             if (pass != null && gate >= 0) { // beside a gate it may use: across it, at the door's cost

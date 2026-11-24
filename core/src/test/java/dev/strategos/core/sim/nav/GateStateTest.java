@@ -42,6 +42,9 @@ class GateStateTest {
         assertThat(restored.gates().owner(id)).isZero();
         assertThat(restored.gates().columns(id)).containsExactly(GATE);
         assertThat(restored.footprintAt(40, 41)).isTrue();
+        assertThat(twin.stateHash())
+                .as("the restored state hashes as the saved one")
+                .isEqualTo(withGate);
 
         s.removeGate(id);
         h.runTicks(5);

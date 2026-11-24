@@ -207,4 +207,41 @@ class GateReachabilityTest {
         assertThat(Reach.reachable(g, gates, ALLIES, 2, west, east)).isFalse();
         assertThat(path.status()).isEqualTo(PathStatus.OK);
     }
+
+    @Test
+    void aFourColumnGateCrossesOnlyBetweenOppositeSides() {
+        VoxelWorld w = VoxelFixtures.flat(SIZE, SIZE, 16, 1);
+        w.fill(24, 1, 0, 24, 5, SIZE - 1, VoxelFixtures.SOLID);
+        int[] wide = {24 << 16 | 20, 24 << 16 | 21, 24 << 16 | 22, 24 << 16 | 23};
+        NavOverlay.Builder b = NavOverlay.builder();
+        for (int c : wide) {
+            w.fill(24, 1, c & 0xFFFF, 24, 5, c & 0xFFFF, VoxelFixtures.AIR);
+            b.block(c >>> 16, c & 0xFFFF);
+        }
+        SurfaceGrid g = w.grid(MobilityClass.INFANTRY, b.build());
+        GateOverlay gates = new GateOverlay();
+        gates.add(0, wide);
+
+        GateLinks.Pass pass = gates.passFor(g, 0, ALLIES);
+
+        assertThat(pass).isNotNull();
+        int crossings = 0;
+        for (int x = 0; x < SIZE; x++) {
+            for (int z = 0; z < SIZE; z++) {
+                for (int layer = 0; layer < g.count(x, z); layer++) {
+                    int index = pass.indexOf(g.node(x, z, layer));
+                    if (index < 0) {
+                        continue;
+                    }
+                    for (int target : pass.targets(index)) {
+                        assertThat(Integer.signum(g.nodeX(target) - 24))
+                                .as("(%s, %s) to x %s", x, z, g.nodeX(target))
+                                .isEqualTo(-Integer.signum(x - 24));
+                        crossings++;
+                    }
+                }
+            }
+        }
+        assertThat(crossings).isPositive();
+    }
 }

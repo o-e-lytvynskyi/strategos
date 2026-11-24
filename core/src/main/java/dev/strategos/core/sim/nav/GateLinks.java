@@ -23,16 +23,19 @@ public final class GateLinks {
     private final SurfaceGrid grid;
     private final int[] owners;
     private final int[][] sides; // per gate: the nodes beside it, ascending
+    private final int[][] columns; // per gate: its columns packed x << 16 | z, ascending
     private final Map<Integer, Pass> passes = new TreeMap<>();
 
-    private GateLinks(SurfaceGrid grid, int[] owners, int[][] sides) {
+    private GateLinks(SurfaceGrid grid, int[] owners, int[][] sides, int[][] columns) {
         this.grid = grid;
         this.owners = owners;
         this.sides = sides;
+        this.columns = columns;
     }
 
     static GateLinks of(SurfaceGrid grid, int[] ids, int[] owners, int[][] columns) {
         int[][] sides = new int[ids.length][];
+        int[][] sorted = new int[ids.length][];
         for (int g = 0; g < ids.length; g++) {
             java.util.TreeSet<Integer> nodes = new java.util.TreeSet<>();
             java.util.Set<Integer> own = new java.util.TreeSet<>();
@@ -57,8 +60,10 @@ public final class GateLinks {
                 }
             }
             sides[g] = nodes.stream().mapToInt(Integer::intValue).toArray();
+            sorted[g] = columns[g].clone();
+            Arrays.sort(sorted[g]);
         }
-        return new GateLinks(grid, owners, sides);
+        return new GateLinks(grid, owners, sides, sorted);
     }
 
     SurfaceGrid grid() {
@@ -86,6 +91,9 @@ public final class GateLinks {
                     int bz = grid.nodeZ(b);
                     if (Math.max(Math.abs(ax - bx), Math.abs(az - bz)) < 2) {
                         continue; // beside each other: walked, not crossed
+                    }
+                    if (!crosses(columns[g], ax, az, bx, bz)) {
+                        continue; // the same side of the gate: nothing to cross
                     }
                     int rise = Math.abs(Surface.floor(grid.surface(ax, az, SurfaceGrid.nodeLayer(a)))
                             - Surface.floor(grid.surface(bx, bz, SurfaceGrid.nodeLayer(b))));
@@ -119,6 +127,34 @@ public final class GateLinks {
         }
         long[] pairs = componentPairs.stream().mapToLong(Long::longValue).toArray();
         return new Pass(from, to, cost, pairs);
+    }
+
+    /** Whether the straight segment between two columns passes through a column of the gate (sorted, packed). */
+    private static boolean crosses(int[] gate, int ax, int az, int bx, int bz) {
+        int dx = Math.abs(bx - ax);
+        int dz = Math.abs(bz - az);
+        int sx = Integer.compare(bx, ax);
+        int sz = Integer.compare(bz, az);
+        int err = dx - dz;
+        int x = ax;
+        int z = az;
+        while (true) {
+            if (Arrays.binarySearch(gate, x << 16 | z) >= 0) {
+                return true;
+            }
+            if (x == bx && z == bz) {
+                return false;
+            }
+            int e2 = 2 * err;
+            if (e2 > -dz) {
+                err -= dz;
+                x += sx;
+            }
+            if (e2 < dx) {
+                err += dx;
+                z += sz;
+            }
+        }
     }
 
     /** One faction's crossings: from a node beside an allied gate to the nodes across it, and the same between components. */
