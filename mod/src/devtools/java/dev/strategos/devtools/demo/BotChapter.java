@@ -56,7 +56,7 @@ final class BotChapter implements DemoChapter {
     }
 
     /** The computer's finished buildings bar its civic centre. */
-    private static long built(DemoStage st) {
+    private static long built(Stage st) {
         return st.q().buildings().stream()
                 .filter(b -> b.faction() == 1
                         && b.state() == BuildingStore.COMPLETE

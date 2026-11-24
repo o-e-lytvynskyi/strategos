@@ -23,7 +23,7 @@ final class AttackLinesChapter implements DemoChapter {
 
     @Override
     public void script(DemoScript s) {
-        s.run(DemoStage::match)
+        s.run(Stage::match)
                 .run(st -> {
                     st.units(Ids.INFANTRY, 0, -10, 0, 6, 2);
                     st.units(Ids.INFANTRY, 1, 10, 0, 4, 2);

@@ -5,7 +5,6 @@ import dev.strategos.core.shared.TechId;
 import dev.strategos.core.sim.Notice;
 import dev.strategos.core.sim.TechResearched;
 import dev.strategos.core.sim.WaveAnnounced;
-import dev.strategos.mod.server.match.MatchRuntime;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -20,9 +19,9 @@ final class Watch {
     private final Map<NoticeKind, Integer> notices = new ConcurrentHashMap<>();
     private final AtomicLong waveLeaves = new AtomicLong(-1);
 
-    /** Starts listening to {@code rt}'s outputs. */
-    void attach(MatchRuntime rt) {
-        rt.addListener(out -> out.events().forEach(e -> {
+    /** Starts listening to the stage's match outputs. */
+    void attach(Stage stage) {
+        stage.listen(out -> out.events().forEach(e -> {
             if (e instanceof TechResearched t) {
                 techs.add(t.tech());
             } else if (e instanceof Notice n) {

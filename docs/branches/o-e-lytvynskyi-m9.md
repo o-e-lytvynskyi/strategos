@@ -27,7 +27,9 @@ From the assessment before the claim (procedure §2a step 0). Every other depend
 
 Newest first; one entry per session in the worklog's shape.
 
-### 2026-11-24 — M9 spec, T1–T16
+### 2026-11-24 — M9 spec, T1–T16, T17 (part)
+
+- **M9 T17 (part) · the demo chapters** — `Stage`, an interface over `DemoStage` (helpers as default methods, so the fake runs the same code), `FakeStage` on a core harness; chapters `territory`, `capture`, `garrison_heal`, `towers` (group `m9`); `DemoScriptsTest` (6: each new chapter to its end, `tower` and `garrison` as the fake's guard), `DemoCatalogTest` (8); the fake caught a capture chapter with no housing and villages placed off the map before any window; `verify` green, 1 min 21 s merged. The `palisade` chapter follows the walls' fixes; windows wait for T19.
 
 - **M9 T13, T14 · BLD-13, PATH-12 · Palisades and gates** — BLD-13 and PATH-12 in progress until the review's fixes; `WallLine`, `PlaceWall` (wire 34), `palisade` and `palisade_gate` (a completed gate registers its middle columns), movement through allied gates without a stop (eviction exempt, `LineOfWalk` and group jobs take the pass), the breach (an attack-move that ends short attacks a wall), door blocks from `GateDoors`, the client's drag mode; `WallLineTest` (7), `PlaceWallTest` (10), `WallGateTest` (8), `GateMovementTest` (9), `ClientWallTest` (5), `walltests.segments_match_layout`, `walltests.gate_allies_only` (allies at L1, AFTER-M7 in the GameTest), `walltests.enemies_around_or_through`, `pathtests.own_gate_no_stop`; spec §1.6 rows 20–21; `verify verifySlow` green, 5 min 20 s merged, 268 GameTests. The reviewer found a unit restored mid-gate stuck (its floor not restored) and missing tests; fixes follow.
 

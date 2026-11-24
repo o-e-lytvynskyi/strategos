@@ -28,7 +28,7 @@ final class FogChapter implements DemoChapter {
 
     @Override
     public void script(DemoScript s) {
-        s.run(DemoStage::fogMatch)
+        s.run(Stage::fogMatch)
                 .run(st -> {
                     st.building(Ids.CIVIC_CENTRE, 0, -34, 0);
                     st.units(Ids.WORKER, 0, -34, 10, 4, 1.5);
@@ -54,11 +54,11 @@ final class FogChapter implements DemoChapter {
                 .pause(3);
     }
 
-    private static void ride(DemoStage st, double dx, double dz) {
+    private static void ride(Stage st, double dx, double dz) {
         st.admin(Move.replace(UnitSet.of(st.handles(0, Ids.HORSEMAN)), st.at(dx, dz)));
     }
 
-    private static boolean scoutNear(DemoStage st, double dx, double dz, double radius) {
+    private static boolean scoutNear(Stage st, double dx, double dz, double radius) {
         return st.near(st.handles(0, Ids.HORSEMAN), dx, dz, radius) == 1;
     }
 }

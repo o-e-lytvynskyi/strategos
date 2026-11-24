@@ -26,7 +26,7 @@ final class RepairChapter implements DemoChapter {
 
     @Override
     public void script(DemoScript s) {
-        s.run(DemoStage::match)
+        s.run(Stage::match)
                 .run(st -> {
                     st.building(Ids.HOUSE, 0, 0, 0);
                     st.units(Ids.WORKER, 0, -8, 6, 3, 1);
@@ -61,7 +61,7 @@ final class RepairChapter implements DemoChapter {
                 .pause(3);
     }
 
-    private static void hit(DemoStage st, double share) {
+    private static void hit(Stage st, double share) {
         BuildingView h = house(st);
         if (h == null) {
             throw new IllegalStateException("no house to hit");
@@ -74,7 +74,7 @@ final class RepairChapter implements DemoChapter {
                         ExternalDamage.SourceKind.NONE));
     }
 
-    static @Nullable BuildingView house(DemoStage st) {
+    static @Nullable BuildingView house(Stage st) {
         List<BuildingView> houses = st.buildings(0, Ids.HOUSE);
         return houses.isEmpty() ? null : houses.getFirst();
     }

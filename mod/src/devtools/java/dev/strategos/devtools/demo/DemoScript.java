@@ -14,7 +14,7 @@ import java.util.function.Predicate;
 public final class DemoScript {
     /** One step; {@code tick} counts from 0 within it, true when it is done. */
     interface Step {
-        boolean tick(DemoStage stage, int tick);
+        boolean tick(Stage stage, int tick);
     }
 
     /** What a camera step asks of the client: the view's centre, world blocks, and its distance from it. */
@@ -38,7 +38,7 @@ public final class DemoScript {
     }
 
     /** Anything on the stage, once. */
-    public DemoScript run(Consumer<DemoStage> action) {
+    public DemoScript run(Consumer<Stage> action) {
         steps.add((stage, tick) -> {
             action.accept(stage);
             return true;
@@ -64,13 +64,13 @@ public final class DemoScript {
     }
 
     /** Waits at the normal pace until {@code done} holds, at most {@code seconds}; past them the chapter fails. */
-    public DemoScript until(String what, double seconds, Predicate<DemoStage> done) {
+    public DemoScript until(String what, double seconds, Predicate<Stage> done) {
         steps.add(wait(what, seconds, done));
         return this;
     }
 
     /** As {@link #until}, the server sprinting meanwhile; {@code seconds} of game time. */
-    public DemoScript fast(String what, double seconds, Predicate<DemoStage> done) {
+    public DemoScript fast(String what, double seconds, Predicate<Stage> done) {
         Step wait = wait(what, seconds, done);
         steps.add((stage, tick) -> {
             if (tick == 0) {
@@ -91,7 +91,7 @@ public final class DemoScript {
         return this;
     }
 
-    private static Step wait(String what, double seconds, Predicate<DemoStage> done) {
+    private static Step wait(String what, double seconds, Predicate<Stage> done) {
         int ticks = (int) Math.round(seconds * 20);
         return (stage, tick) -> {
             if (stage.queries() != null && done.test(stage)) {

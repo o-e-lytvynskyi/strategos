@@ -31,7 +31,10 @@ final class RaidChapter implements DemoChapter {
     @Override
     public void script(DemoScript s) {
         Watch watch = new Watch();
-        s.run(st -> watch.attach(st.match()))
+        s.run(st -> {
+                    st.match();
+                    watch.attach(st);
+                })
                 .run(st -> {
                     st.building(Ids.CIVIC_CENTRE, 0, -30, 0);
                     st.units(Ids.WORKER, 0, -30, 10, 4, 1.5);

@@ -19,7 +19,7 @@ class DemoCatalogTest {
     void everyChapterIsWellFormed() {
         Set<String> ids = new HashSet<>();
         for (DemoChapter c : ALL) {
-            assertThat(c.id()).matches("[a-z][a-z0-9-]*");
+            assertThat(c.id()).matches("[a-z][a-z0-9_-]*");
             assertThat(ids.add(c.id())).as("a second chapter %s", c.id()).isTrue();
             assertThat(c.version()).isPositive();
             assertThat(c.title()).isNotBlank().hasSizeLessThanOrEqualTo(40);
@@ -53,6 +53,13 @@ class DemoCatalogTest {
         for (int k = 0; k < m6.size(); k++) {
             assertThat(listed.get(k)).contains(m6.get(k).id(), m6.get(k).title(), "m6");
         }
+    }
+
+    @Test
+    void m9IsFourChaptersInTheOrderOfTheSpecsScript() {
+        List<DemoChapter> m9 = DemoCatalog.pick(ALL, "m9", "", Set.of());
+        assertThat(ids(m9)).containsExactly("territory", "capture", "garrison_heal", "towers");
+        assertThat(m9).allMatch(c -> c.version() == 1 && c.groups().getFirst().equals("m9"));
     }
 
     @Test

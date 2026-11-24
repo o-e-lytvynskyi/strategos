@@ -6,29 +6,20 @@ import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.port.MetricsSink;
 import dev.strategos.core.protocol.Command;
-import dev.strategos.core.protocol.Gather;
-import dev.strategos.core.protocol.SpawnBuilding;
-import dev.strategos.core.protocol.SpawnUnits;
-import dev.strategos.core.protocol.UnitSet;
-import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.TemplateId;
-import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchQueries;
 import dev.strategos.core.sim.PlayRules;
-import dev.strategos.core.sim.UnitView;
-import dev.strategos.core.sim.build.BuildingView;
-import dev.strategos.core.sim.econ.NodeView;
+import dev.strategos.core.sim.TickOutputs;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.server.command.StrategosCommands;
 import dev.strategos.mod.server.match.MatchOptions;
 import dev.strategos.mod.server.match.MatchRuntime;
 import dev.strategos.mod.server.match.MatchSource;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -47,7 +38,7 @@ import org.slf4j.Logger;
  * ({@link #match}), which seats the watching player in slot 0; after that it speaks in the plot's own coordinates,
  * blocks from the plot's middle, which {@link #x} and {@link #z} turn into the match's. Server thread only.
  */
-public final class DemoStage {
+public final class DemoStage implements Stage {
     /** A plot's side, in blocks: a match's square at most. */
     public static final int PLOT = 192;
 
@@ -71,25 +62,30 @@ public final class DemoStage {
     }
 
     /** The plot's middle on the ground: (0, 0) of its coordinates. */
+    @Override
     public BlockPos centre() {
         return centre;
     }
 
     /** The ground's height, the first free block above the floor. */
+    @Override
     public int floor() {
         return centre.getY();
     }
 
+    @Override
     public ServerLevel level() {
         return level;
     }
 
     /** A block at plot (dx, dy above the floor, dz); before {@link #match}, so the match's pages hold it. */
+    @Override
     public void block(int dx, int dy, int dz, BlockState state) {
         level.setBlockAndUpdate(centre.offset(dx, dy, dz), state);
     }
 
     /** A box of {@code state} from (x0, y0, z0) to (x1, y1, z1), plot coordinates, ends included. */
+    @Override
     public void fill(int x0, int y0, int z0, int x1, int y1, int z1, BlockState state) {
         for (int x = Math.min(x0, x1); x <= Math.max(x0, x1); x++) {
             for (int y = Math.min(y0, y1); y <= Math.max(y0, y1); y++) {
@@ -101,6 +97,7 @@ public final class DemoStage {
     }
 
     /** An oak at plot (dx, dz): a trunk of {@code trunk} logs and a small crown. */
+    @Override
     public void oak(int dx, int dz, int trunk) {
         for (int y = 0; y < trunk; y++) {
             block(dx, y, dz, Blocks.OAK_LOG.defaultBlockState());
@@ -117,6 +114,7 @@ public final class DemoStage {
     }
 
     /** A ripe berry bush at plot (dx, dz). */
+    @Override
     public void bush(int dx, int dz) {
         block(dx, 0, dz, Blocks.SWEET_BERRY_BUSH.defaultBlockState().setValue(SweetBerryBushBlock.AGE, 3));
     }
@@ -125,18 +123,26 @@ public final class DemoStage {
      * The plot's match, two factions on a square of {@link #SIZE} round its middle, made now, with the watching player
      * seated in slot 0 and in command of it.
      */
-    public MatchRuntime match() {
-        return match(SIZE);
+    @Override
+    public void match() {
+        match(SIZE);
     }
 
     /** As {@link #match()}, on a square of side {@code size}, {@link #PLOT} at most; the map is revealed. */
-    public MatchRuntime match(int size) {
-        return match(size, rules(false));
+    @Override
+    public void match(int size) {
+        make(size, rules(false));
     }
 
     /** As {@link #match()} under Fog: only the chapter about fog opts in. */
-    public MatchRuntime fogMatch() {
-        return match(SIZE, rules(true));
+    @Override
+    public void fogMatch() {
+        make(SIZE, rules(true));
+    }
+
+    @Override
+    public void listen(Consumer<TickOutputs> listener) {
+        rt().addListener(listener);
     }
 
     /** The play rules of a chapter's match: the map revealed, so the scene shows everything, unless {@code fog}. */
@@ -144,7 +150,7 @@ public final class DemoStage {
         return new PlayRules(PlayRules.Victory.NONE, !fog, false, false);
     }
 
-    private MatchRuntime match(int size, PlayRules play) {
+    private void make(int size, PlayRules play) {
         MatchRuntime rt = StrategosServer.get()
                 .matches()
                 .create(
@@ -168,65 +174,53 @@ public final class DemoStage {
         StrategosServer.get().matches().join(rt, player.getUUID(), new PlayerSlot(0));
         StrategosServer.get().commanders().enter(player, rt);
         StrategosServer.get().net().joined(rt, player, new PlayerSlot(0));
-        return rt;
     }
 
     /** The match, once made. */
+    @Override
     public MatchRuntime rt() {
         return Objects.requireNonNull(match, "the chapter made no match yet");
     }
 
     /** Its queries, or null until the match steps. */
+    @Override
     public @Nullable MatchQueries queries() {
         MatchCore core = match == null ? null : match.core();
         return core == null ? null : core.queries();
     }
 
     /** As {@link #queries}, for a step that runs once the match does. */
+    @Override
     public MatchQueries q() {
         return Objects.requireNonNull(queries(), "the match does not step yet");
     }
 
     /** Plot X {@code dx} as the match's X. */
+    @Override
     public double x(double dx) {
         return rt().space().localX(centre.getX() + dx);
     }
 
     /** Plot Z {@code dz} as the match's Z. */
+    @Override
     public double z(double dz) {
         return rt().space().localZ(centre.getZ() + dz);
     }
 
-    /** Plot (dx, dz) as the match's point. */
-    public Vec2d at(double dx, double dz) {
-        return new Vec2d(x(dx), z(dz));
-    }
-
     /** A command from the admin: spawns, grants, the world's hand. */
+    @Override
     public void admin(Command command) {
         rt().submit(PlayerSlot.ADMIN, command);
     }
 
     /** A command from faction {@code faction}'s seat, as its player would send it. */
+    @Override
     public void order(int faction, Command command) {
         rt().submit(new PlayerSlot(faction), command);
     }
 
-    /**
-     * {@code count} units of {@code template} for {@code faction} at plot (dx, dz): a command, so the units exist from
-     * the next tick, and an order to them waits for a later step.
-     */
-    public void units(TemplateId template, int faction, double dx, double dz, int count, double spread) {
-        admin(new SpawnUnits(template, new FactionSlot(faction), at(dx, dz), count, spread));
-    }
-
-    /** A finished building of {@code template} for {@code faction}, its middle at plot (dx, dz). */
-    public void building(TemplateId template, int faction, double dx, double dz) {
-        int[] corner = corner(template, dx, dz);
-        admin(new SpawnBuilding(template, new FactionSlot(faction), corner[0], corner[1], 0));
-    }
-
     /** The match corner of {@code template}'s footprint with its middle at plot (dx, dz). */
+    @Override
     public int[] corner(TemplateId template, double dx, double dz) {
         TemplateSet templates = StrategosServer.get().templates().set();
         UnitTemplate t = Objects.requireNonNull(templates.byId(template), template.value());
@@ -234,160 +228,25 @@ public final class DemoStage {
         return new int[] {(int) Math.floor(x(dx)) - bp.sizeX() / 2, (int) Math.floor(z(dz)) - bp.sizeZ() / 2};
     }
 
-    /** Faction {@code faction}'s live units of {@code template}, by handle. */
-    public int[] handles(int faction, TemplateId template) {
-        MatchQueries q = q();
-        List<Integer> out = new ArrayList<>();
-        for (int h : q.unitHandlesOf(new FactionSlot(faction))) {
-            UnitView u = q.unit(h);
-            if (u != null && q.isAlive(h) && u.template().equals(template)) {
-                out.add(h);
-            }
-        }
-        return out.stream().mapToInt(Integer::intValue).toArray();
-    }
-
-    /** Faction {@code faction}'s buildings of {@code template}. */
-    public List<BuildingView> buildings(int faction, TemplateId template) {
-        List<BuildingView> out = new ArrayList<>();
-        for (BuildingView b : q().buildings()) {
-            if (b.faction() == faction && b.template().equals(template)) {
-                out.add(b);
-            }
-        }
-        return out;
-    }
-
-    /** The live node of {@code resource} nearest plot (dx, dz) that has a block to gather, or null. */
-    public @Nullable NodeView node(String resource, double dx, double dz) {
-        NodeView best = null;
-        double bestD = Double.POSITIVE_INFINITY;
-        for (NodeView n : q().nodes()) {
-            if (!n.resource().equals(resource) || n.amount() <= 0 || !n.hasBlock()) {
-                continue;
-            }
-            double d = Math.hypot(n.anchorX() - x(dx), n.anchorZ() - z(dz));
-            if (d < bestD) {
-                bestD = d;
-                best = n;
-            }
-        }
-        return best;
-    }
-
-    /** How much of {@code resource} faction {@code faction} has gathered so far, whole units. */
-    public long gathered(int faction, String resource) {
-        MatchQueries q = q();
-        List<String> ids = new ArrayList<>();
-        q.config().rules().economy().resources().forEach(r -> ids.add(r.id()));
-        int k = ids.indexOf(resource);
-        return k < 0 ? 0 : q.treasury(new FactionSlot(faction)).gathered().get(k) / 1000;
-    }
-
-    /** How many of {@code units} stand alive within {@code radius} of plot (dx, dz). */
-    public int near(int[] units, double dx, double dz, double radius) {
-        MatchQueries q = q();
-        int n = 0;
-        for (int h : units) {
-            UnitView u = q.unit(h);
-            if (u != null && Math.hypot(u.x() - x(dx), u.z() - z(dz)) <= radius) {
-                n++;
-            }
-        }
-        return n;
-    }
-
-    /** Sends {@code units} to gather node {@code n}, as a player's right click on its block. */
-    public void gather(int[] units, NodeView n) {
-        admin(Gather.replace(UnitSet.of(units), n.topX(), n.topY(), n.topZ()));
-    }
-
-    /** The nearest live node of {@code resource} to plot (dx, dz), or a failure of the chapter. */
-    public NodeView needNode(String resource, double dx, double dz) {
-        NodeView n = node(resource, dx, dz);
-        if (n == null) {
-            throw new IllegalStateException("no " + resource + " node near " + dx + ", " + dz);
-        }
-        return n;
-    }
-
     /** {@code units[from..to)}. */
     public static int[] part(int[] units, int from, int to) {
         return java.util.Arrays.copyOfRange(units, Math.min(from, units.length), Math.min(to, units.length));
     }
 
-    /** The match at a glance, for a failed chapter's log: units by state, nodes near the middle, the treasuries. */
-    public String describe() {
-        MatchQueries q = queries();
-        if (q == null) {
-            return "no match stepping";
-        }
-        StringBuilder out = new StringBuilder("tick ").append(q.tick());
-        for (int f = 0; f < 3; f++) {
-            java.util.Map<String, Integer> states = new java.util.TreeMap<>();
-            for (int h : q.unitHandlesOf(new FactionSlot(f))) {
-                UnitView u = q.unit(h);
-                if (u != null) {
-                    states.merge(
-                            u.template().value().replace("strategos:unit/", "") + " " + u.state(), 1, Integer::sum);
-                }
-            }
-            out.append("; faction ").append(f).append(' ').append(states);
-            if (f < 2) {
-                out.append(" gathered ").append(q.treasury(new FactionSlot(f)).gathered());
-            }
-        }
-        out.append("; first orders");
-        for (int f = 0; f < 2; f++) {
-            int[] own = q.unitHandlesOf(new FactionSlot(f));
-            if (own.length > 0) {
-                out.append(' ').append(q.orders(own[0]));
-            }
-        }
-        out.append("; floor ")
-                .append(floor())
-                .append(" minY ")
-                .append(q.config().bounds().minY());
-        out.append("; buildings");
-        for (BuildingView b : q.buildings()) {
-            out.append(' ')
-                    .append(b.faction())
-                    .append(':')
-                    .append(b.template().value().replace("strategos:building/", ""))
-                    .append('/')
-                    .append(b.state());
-        }
-        out.append("; nodes");
-        for (NodeView n : q.nodes()) {
-            if (Math.hypot(n.anchorX() - x(0), n.anchorZ() - z(0)) <= 32) {
-                out.append(String.format(
-                        java.util.Locale.ROOT,
-                        " %s@%.0f,%.0f=%d free %d/%d top %d,%d,%d",
-                        n.resource(),
-                        n.anchorX() - x(0),
-                        n.anchorZ() - z(0),
-                        n.amount() / 1000,
-                        n.freeSlots(),
-                        n.slots(),
-                        n.topX(),
-                        n.topY(),
-                        n.topZ()));
-            }
-        }
-        return out.toString();
-    }
-
     /** A server command, its output kept out of the chat. */
+    @Override
     public void command(String command) {
         server.getCommands()
                 .performPrefixedCommand(server.createCommandSourceStack().withSuppressedOutput(), command);
     }
 
+    @Override
     public MinecraftServer server() {
         return server;
     }
 
     /** The watching player. */
+    @Override
     public ServerPlayer player() {
         return player;
     }

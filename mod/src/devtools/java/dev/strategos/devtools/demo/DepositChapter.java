@@ -21,7 +21,7 @@ final class DepositChapter implements DemoChapter {
 
     @Override
     public void script(DemoScript s) {
-        s.run(DemoStage::match)
+        s.run(Stage::match)
                 .run(st -> {
                     st.admin(
                             new dev.strategos.core.protocol.SpawnDeposit(Ids.IRON_MINE, (int) st.x(6), (int) st.z(-6)));
