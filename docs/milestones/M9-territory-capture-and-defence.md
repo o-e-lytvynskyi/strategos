@@ -447,7 +447,7 @@ Results, the health check, the hand-in. Size: records.
 ### 7.3 Progress
 
 - [x] T1 (2026-11-24) · [x] T2 (2026-11-24) · [x] T3 (2026-11-24) · [x] T4 (2026-11-24) · [x] T5 (2026-11-24) · [x] T6 (2026-11-24, goldens in T19) · [x] T10 (2026-11-24, regeneration with T7) · [x] T11 (2026-11-24) · [x] T12 (2026-11-24) · [x] T7 (2026-11-24)
-- [x] T8 (2026-11-24) · [x] T9 (2026-11-24) · [x] T13 (2026-11-24) · [x] T14 (2026-11-24) · [x] T15 (2026-11-24) · [x] T16 (2026-11-24, the measured run in T18) · [x] T17 (2026-11-24) · [ ] T18 · [x] T19 (2026-11-24) · [ ] T20
+- [x] T8 (2026-11-24) · [x] T9 (2026-11-24) · [x] T13 (2026-11-24) · [x] T14 (2026-11-24) · [x] T15 (2026-11-24) · [x] T16 (2026-11-24, the measured run in T18) · [x] T17 (2026-11-24) · [x] T18 (2026-11-24) · [x] T19 (2026-11-24) · [ ] T20
 
 ## 8. Acceptance checklist (M9 exit)
 
@@ -492,7 +492,7 @@ are listed in the branch file.
 
 ### 10.3 Deviations
 
-Findings rows 1–25 (§1.6). The ones a reviewer should read first:
+Findings rows 1–26 (§1.6). The ones a reviewer should read first:
 
 - **Rows 23–24, the AI soak's replay divergence (T18).** The soak's seed 13 diverged 20 ticks after its
   journal start: the journal ring had rolled, so the replay began from a mid-match snapshot, and two
@@ -500,6 +500,10 @@ Findings rows 1–25 (§1.6). The ones a reviewer should read first:
   and the unit grid, rebuilt only where MOVEMENT ends, lagged the poses after a unit was set down later
   in the tick (gate put-outs, garrison exits), so the core now rebuilds it before each tick's first phase
   too. Both have L1 tests that save mid-behaviour, restore and step both runs to the same hash.
+- **Row 26, the third (T18).** With those fixed, seed 15 diverged on the first tick after its journal
+  start: the path store's "ask for a path" flag, set in MOVEMENT and the combat phases after the tick's
+  request pass, outlived its tick unsaved, and a restored archer gave its attack up as settled. It is
+  saved with the unit's path and hashed when set.
 - **Row 25, the borders under Sodium (T19).** Some first dirty marks were lost to section builds in
   flight; the touched sections are dirtied again 10 client ticks later.
 - **Row 4,** territory deltas split above 7 KB: the card's 8 KB cannot hold a full 1,024² grid.
@@ -511,7 +515,7 @@ Findings rows 1–25 (§1.6). The ones a reviewer should read first:
    into a play-state facet. The first task of the next milestone that touches the core.
 2. AFTER-M7: the `Allies` adapter over `DiplomacyView.allied`, `GateOverlay.touch()` on a relation
    change, the allied GameTests with real teams, and PERF-10's four-client pass of `perf_territory`.
-3. A shared check for "every store a step reads is saved": the two soak findings were stores outside the
+3. A shared check for "every store a step reads is saved": the three soak findings were state outside the
    snapshot. Candidate: an L1 test that restores mid-match on every seeded scene and compares hashes over
    the next ticks.
 4. Client tick work under Sodium in the border scene is p50 1.00 ms against F's 1 ms: at the edge; watch it
@@ -520,10 +524,15 @@ Findings rows 1–25 (§1.6). The ones a reviewer should read first:
 
 ### 10.5 The AI soak
 
-Pending at the time of writing; filled in with T18's tick.
+`:mod:runGameTestSoak` on bade2c53, unsharded in a worktree, 3 h 12 min: green. 20 matches of Normal
+against Normal, 18 by conquest (27.9–43.5 min, median about 34 min), seeds 7 and 8 at the 45-minute limit;
+856,314 game ticks in all; every journal replays to the live hash, the rolled ones from their mid-match
+start. Two earlier runs were red and each found a replay bug: 9f0c53f8 at seed 13 (rows 23–24) and
+1c819323 at seed 15 (row 26). The grid rebuild changes live play; the path-wish save does not, and the
+last two runs' seeds 1–14 ended on the same ticks.
 
 ### 10.6 Planned against actual
 
 Twenty tasks, as planned; T6, T16 and T10 closed with parts moved to T19 and T18 as the plan said. The
 code tasks' sizes held their 400–700-line estimates within about a third; the surprise was T18, planned
-as runs only, which found the two replay bugs and took most of the close's time.
+as runs only, which found the three replay bugs and took most of the close's time.

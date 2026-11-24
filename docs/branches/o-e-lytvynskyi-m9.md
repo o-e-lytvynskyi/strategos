@@ -6,10 +6,10 @@
 
 ## Now
 
-- **Milestone:** M9 Territory, capture and defence, 17 of 20 tasks done; spec [M9](../milestones/M9-territory-capture-and-defence.md).
+- **Milestone:** M9 Territory, capture and defence, 19 of 20 tasks done; spec [M9](../milestones/M9-territory-capture-and-defence.md).
 - **In progress:** none.
-- **Last finished task:** T19 (2026-11-24).
-- **Next task:** T18's last run, the full AI soak again after the path-wish fix (seed 15); then T20's cumulative perf batch, the client smoke and the hand-in.
+- **Last finished task:** T18 (2026-11-24).
+- **Next task:** T20: the cumulative perf batch (unfiltered), the client smoke, then the hand-in.
 - **Merged from main last:** 05cd50b (2026-11-24).
 
 ## Depends on unfinished work
@@ -29,6 +29,7 @@ Newest first; one entry per session in the worklog's shape.
 
 ### 2026-11-24 — M9 spec, T1–T19
 
+- **M9 T18 · the AI soak, green** — `:mod:runGameTestSoak` on bade2c53 (worktree, unsharded, 3 h 12 min): 20 matches, 18 by conquest at 27.9–43.5 min, seeds 7 and 8 at the 45-minute limit, 856,314 game ticks, every journal replays; `verifySlow` 3 min 57 s green on the fix. T18 done.
 - **M9 T18 · the AI soak's second divergence** — the soak on 1c819323 (2 h 38 min) ran seeds 1–14 green, replays matching (12 by conquest at 27.9–43.0 min, seeds 7 and 8 at the 45-minute limit; seed 13 now conquers at 35.7 min), then seed 15's replay diverged at checkpoint 21620. Alone with the per-component diagnostic it diverged on tick 21601, the first after its journal start: one archer. A stack trace at `finishOrder` showed the restored archer giving its attack up through `PathService.failSettled`, while the live one asked for a path: `PathStore.wanted`, set in MOVEMENT and the combat phases after the tick's request pass, outlived its tick unsaved. Fixed: `UnitPath.wanted` saved (codec field, default false) and hashed when set (spec §1.6 row 26); `MidTickMoveRestoreTest.aPathAskedForAfterTheRequestPass…` failed before the fix.
 - **M9 T20 · the cumulative gates** — `:core:openingBalance` on 1c819323 (after the grid fix, which changes every match): every criterion holds; 1,000 matches in 11.7 min; openings 76, 72, 81 of 200 against each other; Hard 141 of 200 against Normal, Normal 182 against Easy; no start above 92 of 200; medians 23:54–37:37.
 
