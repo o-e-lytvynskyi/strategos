@@ -70,6 +70,9 @@ public final class StateHasher {
                 if (paths.lastRequest(i) != PathStore.NEVER) {
                     h = mixPath(h, paths, i);
                 }
+                if (paths.wanted(i)) { // a path asked for after this tick's request pass, for the next (row 26)
+                    h = Hasher.mix(h, 0x57A47EDL);
+                }
                 if (!motion.untouched(i)) {
                     h = mixMotion(h, motion, i);
                 }

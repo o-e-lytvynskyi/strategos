@@ -8,8 +8,8 @@
 
 - **Milestone:** M9 Territory, capture and defence, 17 of 20 tasks done; spec [M9](../milestones/M9-territory-capture-and-defence.md).
 - **In progress:** none.
-- **Last finished task:** T17 (2026-11-24).
-- **Next task:** T18's last run, the full AI soak on 7b61227f (after both replay fixes, in a worktree); then T20's hand-in. T19 is done.
+- **Last finished task:** T19 (2026-11-24).
+- **Next task:** T18's last run, the full AI soak again after the path-wish fix (seed 15); then T20's cumulative perf batch, the client smoke and the hand-in.
 - **Merged from main last:** 05cd50b (2026-11-24).
 
 ## Depends on unfinished work
@@ -29,6 +29,7 @@ Newest first; one entry per session in the worklog's shape.
 
 ### 2026-11-24 — M9 spec, T1–T19
 
+- **M9 T18 · the AI soak's second divergence** — the soak on 1c819323 (2 h 38 min) ran seeds 1–14 green, replays matching (12 by conquest at 27.9–43.0 min, seeds 7 and 8 at the 45-minute limit; seed 13 now conquers at 35.7 min), then seed 15's replay diverged at checkpoint 21620. Alone with the per-component diagnostic it diverged on tick 21601, the first after its journal start: one archer. A stack trace at `finishOrder` showed the restored archer giving its attack up through `PathService.failSettled`, while the live one asked for a path: `PathStore.wanted`, set in MOVEMENT and the combat phases after the tick's request pass, outlived its tick unsaved. Fixed: `UnitPath.wanted` saved (codec field, default false) and hashed when set (spec §1.6 row 26); `MidTickMoveRestoreTest.aPathAskedForAfterTheRequestPass…` failed before the fix.
 - **M9 T20 · the cumulative gates** — `:core:openingBalance` on 1c819323 (after the grid fix, which changes every match): every criterion holds; 1,000 matches in 11.7 min; openings 76, 72, 81 of 200 against each other; Hard 141 of 200 against Normal, Normal 182 against Easy; no start above 92 of 200; medians 23:54–37:37.
 
 - **M9 T20 · the close's review** — a reviewer read the T18 and T19 fixes (c2085736..3ac26001): no major finding. Applied: `BreachLog` saves and hashes living units' records only (a dead breacher's record is inert and would have grown every save), and refuses a repeated or oversized handle (`BreachLogTest`); stale comments in `Snapshots` and `MatchCoreImpl`; `RtsFrameScenario` reads its volatile match once; `BorderEcho` clears on any other join, not only another match id. `:core:test verify` green, 2 min 38 s. These follow the soak's start, so the soak runs 7b61227f: the save-side change touches only dead units' records, which no step reads.
@@ -121,6 +122,7 @@ Newest first; one entry per session in the worklog's shape.
 
 ## Pitfalls
 
+- docs/kb/save-reload-identities.md — a "this tick" flag set after its reader's phase crosses the tick and must be saved (M9 T18, the AI soak's seed 15).
 - docs/kb/minecraft-mod-client-render.md — section geometry under Sodium: a dirty mark can be lost (M9 T19).
 - docs/kb/minecraft-mod-gametest-arena.md — a command sent to a match that is still preparing is lost without a word; a demo chapter's L1 fake has no terrain (M9 T19).
 - docs/kb/save-reload-identities.md — "Not saved, changes nothing else" is a replay divergence (M9 T18, the AI soak's seed 13).

@@ -90,7 +90,8 @@ public final class MatchSnapshotCodec {
                     Codec.LONG
                             .optionalFieldOf("lastRequest", PathStore.NEVER)
                             .forGetter(PathStore.UnitPath::lastRequest),
-                    Codec.BOOL.optionalFieldOf("repath", false).forGetter(PathStore.UnitPath::repath))
+                    Codec.BOOL.optionalFieldOf("repath", false).forGetter(PathStore.UnitPath::repath),
+                    Codec.BOOL.optionalFieldOf("wanted", false).forGetter(PathStore.UnitPath::wanted))
             .apply(i, PathStore.UnitPath::new));
 
     private static final Codec<PathRequest> REQUEST = RecordCodecBuilder.create(i -> i.group(

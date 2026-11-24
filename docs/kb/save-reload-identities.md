@@ -59,3 +59,13 @@ exit) leaves the live grid behind the poses until the next tick's rebuild, while
 it from the poses. Seed 13's real divergence was this one, on the first tick after the journal
 start. A cache a restore rebuilds must also be rebuilt at the point a restore resumes from: the
 core now rebuilds the grid before each tick's first phase (`MidTickMoveRestoreTest`).
+
+A per-tick flag that a later phase sets for the next tick's pass is the same case. `PathStore`'s
+`wanted` ("ask for a path in the request pass") is set in MOVEMENT and in the combat phases,
+after that tick's pass, so it lives into the next tick; it was not saved. Seed 15 diverged on the
+first tick after its journal start: the live archer asked for a path to its new place, the
+restored one found its path spent and gave the attack up. For every "this tick" flag, check who
+sets it and in which phase: one set after its reader runs crosses a tick boundary and must be
+saved (`MidTickMoveRestoreTest.aPathAskedForAfterTheRequestPass…`). A per-tick `parts` dump only
+finds the tick; a stack trace at the diverging decision (`finishOrder`, guarded by the unit and
+tick) names the code path in one more run.
