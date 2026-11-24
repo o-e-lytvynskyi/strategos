@@ -6,10 +6,10 @@
 
 ## Now
 
-- **Milestone:** M9 Territory, capture and defence, 12 of 20 tasks done; spec [M9](../milestones/M9-territory-capture-and-defence.md).
+- **Milestone:** M9 Territory, capture and defence, 13 of 20 tasks done; spec [M9](../milestones/M9-territory-capture-and-defence.md).
 - **In progress:** none.
-- **Last finished task:** T8, T9 (2026-11-24).
-- **Next task:** T13 · BLD-13 · Walls in the core (T15 in a worktree).
+- **Last finished task:** T15 (2026-11-24).
+- **Next task:** T13, T14 · BLD-13 · Walls (in a worktree); then T16 · PERF-16.
 - **Merged from main last:** 05cd50b (2026-11-24).
 
 ## Depends on unfinished work
@@ -27,7 +27,9 @@ From the assessment before the claim (procedure §2a step 0). Every other depend
 
 Newest first; one entry per session in the worklog's shape.
 
-### 2026-11-24 — M9 spec, T1–T12
+### 2026-11-24 — M9 spec, T1–T12, T15
+
+- **M9 T15 · AI-08 · The AI uses territory and capture** — AI-08 and TERR-02 done; `Seize` (capture when the squad's effect beats 1.5 × the regeneration, burn otherwise or after 90 s), waves and the mop-up capture barracks and towers, `DefenceManager` garrisons attacked towers and houses (once per 200 ticks), a second centre on neutral land in Town; read-only queries on `MatchQueries`/`AiView`; `AiMemory.SIZE` 34; `AiCaptureTest` (3), `AiGarrisonTowerTest` (3), `AiTerritoryPlacementTest` (2); `:core:openingBalance` every criterion holds, 10 min 36 s (rush–boom 88/200, normal–easy 176/200, hard–normal 135/200, Town 11:30–11:31); `verify` green, 2 min 36 s merged.
 
 - **M9 T12 · review fixes** — the reviewer's eight findings on 46e8a0f0: `FootprintOverlay` counts per column (a gate over a footprint stays blocked until both go), `GridAStar` tests `closed` before `step` again, gates validated before anything is blocked (owner, bounds, repeats, at most 64), crossings only between opposite sides, the AFTER-M7 note at `GateOverlay.touch()`, the restored hash asserted, `GateThreadCountHashTest` (0, 1, 4 threads), spec §1.6 row 18 for the API; `FootprintOverlayTest`, `GateValidationTest`; `CrossingBench` cross384 0.52 ms, flat384 4.81 ms (no earlier numbers); `verify verifySlow` green, 4 min 48 s (in a worktree), `verify` 2 min 14 s merged. A unit does not walk through a gate yet: the movement side is T14's.
 
@@ -67,6 +69,7 @@ Newest first; one entry per session in the worklog's shape.
 - 2026-11-24 · trial implementer: pass — T10 in a worktree; it widened the command rule for allied garrisons beyond the brief, recorded as spec §1.6 row 11.
 - 2026-11-24 · trial implementer: pass — T6 in a worktree; it found the dirty-section count wrong in the brief (spec §1.6 row 12) and the off-grid match origin.
 - 2026-11-24 · trial implementer: pass ×3 — T8+T9, T11 and T12 in three worktrees side by side; the smoke runs' fixed port made each rerun once. trial reviewer: pass — T12's review found a major bug (a gate over a footprint unblocked by one release), now being fixed.
+- 2026-11-24 · trial implementer: pass — T15; `Seize` (a class the brief did not name) and a public `CaptureSystem.regen` accepted as the cleanest shape.
 - 2026-11-24 · the sentry tower builds in 40 s with pierce 8 (the spec gave neither), carries no `Village` class (it does not count towards Town), and is wood like the house — undo: its template and provenance.
 - 2026-11-24 · `BorderBench` in `hotPathKernels` (the 0 B/op gate) with no time baseline yet — a baseline is proposed with T18's quiet JMH run — undo: drop the token in core/build.gradle.
 - 2026-11-24 · `Placement/territory` is a number (0, 1, 2), not a token, as every other placement value — undo: a token path and its parser.

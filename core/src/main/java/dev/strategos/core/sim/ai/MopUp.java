@@ -55,6 +55,7 @@ final class MopUp {
         List<UnitView> idle = new ArrayList<>();
         List<UnitView> rams = new ArrayList<>();
         Map<Integer, Integer> burners = new TreeMap<>(); // building -> own units on it
+        java.util.Set<Integer> taking = new java.util.TreeSet<>(); // the buildings own units capture
         for (UnitView u : view.units()) {
             boolean ram = view.is(u.template(), "Ram");
             if (!ram && !soldiers.contains(u)) {
@@ -67,11 +68,14 @@ final class MopUp {
                 (ram ? rams : idle).add(u);
             }
             for (BuildingView b : buildings) {
-                if (view.burning(u, b.handle()) || view.attackTarget(u) == b.handle()) {
+                if (view.capturing(u, b.handle())) {
+                    taking.add(b.handle());
+                } else if (view.burning(u, b.handle()) || view.attackTarget(u) == b.handle()) {
                     burners.merge(b.handle(), 1, Integer::sum);
                 }
             }
         }
+        buildings.removeIf(b -> taking.contains(b.handle())); // what is being captured is not burnt meanwhile
         budget.spend(soldiers.size() + buildings.size());
         if (idle.isEmpty() && rams.isEmpty()) {
             return false;
@@ -115,8 +119,15 @@ final class MopUp {
             if (prey != null) {
                 sink.send(Attack.replace(handles(group), prey.handle()));
             } else if (b != null) {
+                List<UnitView> more = captured(view, b) ? reinforce(view, b, group, left) : null;
+                if (more != null) {
+                    group.addAll(more);
+                    sink.send(Seize.order(handles(group).toArray(), b, true));
+                    buildings.remove(b); // the other squads leave it be
+                } else {
+                    sendAtBuilding(sink, group, view, b);
+                }
                 burners.merge(b.handle(), group.size(), Integer::sum);
-                sendAtBuilding(sink, group, view, b);
             } else {
                 if (places == null) {
                     places = sweepPlaces(view, base);
@@ -127,6 +138,37 @@ final class MopUp {
             sent = true;
         }
         return sent;
+    }
+
+    /**
+     * AI-08: whether the mop-up takes {@code b} rather than burns it: a barracks or a tower that can be captured; the
+     * rest burn.
+     */
+    private static boolean captured(AiView view, BuildingView b) {
+        return Seize.capturable(view, b) && (view.is(b.template(), "Barracks") || view.is(b.template(), "Tower"));
+    }
+
+    /**
+     * The soldiers of {@code left}, nearest first (it is sorted so), that a squad {@code group} needs to take {@code b}
+     * by half faster than it regenerates, removed from {@code left}; null when all of them would not do (the squad
+     * burns it then).
+     */
+    private static @org.jspecify.annotations.Nullable List<UnitView> reinforce(
+            AiView view, BuildingView b, List<UnitView> group, List<UnitView> left) {
+        long strength = Seize.strength(view, handles(group).toArray());
+        List<UnitView> more = new ArrayList<>();
+        for (UnitView u : left) {
+            if (Seize.beats(view, strength, b)) {
+                break;
+            }
+            strength += view.captureStrength(u.handle());
+            more.add(u);
+        }
+        if (!Seize.beats(view, strength, b)) {
+            return null;
+        }
+        left.removeAll(more);
+        return more;
     }
 
     /** The idle soldier nearest a building no own unit burns yet; the first by handle when none is unburned. */

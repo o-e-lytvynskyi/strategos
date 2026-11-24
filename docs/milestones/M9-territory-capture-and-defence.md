@@ -118,6 +118,7 @@ The demo chapters (`-Pdemo=m9`): `territory`, `capture`, `garrison_heal`, `tower
 
 | 7 | M6's follow-ups | M6 asked for a fake `DemoStage` in the next milestone's first task; `DemoStage` is a class over a `ServerLevel` | T17, with the new chapters; T1 keeps the moves |
 
+| 19 | The AI's view (T15) | The AI could not read `Limit/count`, capture totals or garrison room | Read-only queries on `MatchQueries`/`AiView`; `Seize` decides capture or burn (effect > 1.5 × regeneration, give up after 90 s); a mop-up squad too weak to beat a barracks' regeneration is reinforced from idle soldiers; the second centre comes once the build order is done and twice its price is in stock |
 | 18 | Gate API (T12 review) | §2.9 names `Reach.reachable(from, to, faction)` and a faction passed to `GridAStar` | `Reach.reachable(grid, gates, allies, faction, from, to)`; `GridAStar` takes a `GateLinks.Pass` rather than a faction; no request-key change, the pass travels with the job |
 | 17 | The capture key and refusals (T8, T9) | C is vanilla's `key.saveToolbarActivator` (UNIVERSAL), which `DefaultKeysTest` (UI-01.2) refuses; Attack refuses an own target as INVALID_ARGUMENT | The capture key is N; own and allied buildings are refused as INVALID_ARGUMENT, a building or unit without capture as UNSUPPORTED; capturers keep capturing under fire (no retaliation) |
 | 16 | The upgrade (T11) | 0 A.D.'s sentry-to-defence upgrade takes 100 s (mechanics §1.6); an upgrade needs a queue entry the wire already carries | 50 s at our time scale (the tower builds in 75 s against 0 A.D.'s 150 s); the entry is the target template's index, told apart as a building template, so the wire, the save and the hash keep their formats |
@@ -439,7 +440,7 @@ Results, the health check, the hand-in. Size: records.
 ### 7.3 Progress
 
 - [x] T1 (2026-11-24) · [x] T2 (2026-11-24) · [x] T3 (2026-11-24) · [x] T4 (2026-11-24) · [x] T5 (2026-11-24) · [x] T6 (2026-11-24, goldens in T19) · [x] T10 (2026-11-24, regeneration with T7) · [x] T11 (2026-11-24) · [x] T12 (2026-11-24) · [x] T7 (2026-11-24)
-- [x] T8 (2026-11-24) · [x] T9 (2026-11-24) · [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17 · [ ] T18 · [ ] T19 · [ ] T20
+- [x] T8 (2026-11-24) · [x] T9 (2026-11-24) · [ ] T13 · [ ] T14 · [x] T15 (2026-11-24) · [ ] T16 · [ ] T17 · [ ] T18 · [ ] T19 · [ ] T20
 
 ## 8. Acceptance checklist (M9 exit)
 

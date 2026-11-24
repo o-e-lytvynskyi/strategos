@@ -168,6 +168,36 @@ public interface MatchQueries {
         return null;
     }
 
+    /** Building {@code building}'s capture points in thousandths, 0 for one that cannot be captured or is dead (AI-08). */
+    default long captureTotal(int building) {
+        return 0;
+    }
+
+    /** Building {@code building}'s owner's regeneration a second in thousandths, its garrison's included; 0 for none (AI-08). */
+    default long captureRegen(int building) {
+        return 0;
+    }
+
+    /** Live unit {@code unit}'s capture strength in thousandths a second, 0 for none or a dead unit (AI-08). */
+    default long captureStrength(int unit) {
+        return 0;
+    }
+
+    /** The places free in building {@code building} for live unit {@code unit}: 0 when it does not admit it or is full (AI-08). */
+    default int garrisonRoom(int unit, int building) {
+        return 0;
+    }
+
+    /** The faction owning the territory tile of match-local column ({@code x}, {@code z}), -1 for neutral or no grid (AI-08). */
+    default int territoryOwner(int x, int z) {
+        return -1;
+    }
+
+    /** The most buildings of template {@code template} faction {@code faction} may have, 0 for no limit (AI-08). */
+    default int buildingLimit(int template, int faction) {
+        return 0;
+    }
+
     /** The standing height of match-local column ({@code x}, {@code z}), NaN for none: for reachability (AI-02). */
     default double floorAt(int x, int z) {
         return Double.NaN;

@@ -64,7 +64,8 @@ CMB-10 → BLD-10 → AI-08 (26 card-days).
   3. AI placement respects the rules (L1).
   4. A refused placement in a GameTest shows the reason (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** TERR-01, BLD-02, AI-02 · **Size:** M · **Tier:** T1
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-11-24 — M9 T5, T15: `PlacementTerritoryTest` (1, 2), `AiTerritoryPlacementTest` (3: 100 seeded matches, no territory refusal), `territorytests.refused_outside` (4)
 
 #### TERR-03 · Borders on terrain and minimap
 - **Value:** Borders are visible where they matter, on the ground and on the minimap (P2).
@@ -162,7 +163,8 @@ CMB-10 → BLD-10 → AI-08 (26 card-days).
   3. The AI garrisons a tower under attack (L1).
 - **Tests:** L0, L1, L3 · **Depends on:** AI-05, CMB-10, BLD-10, TERR-02 · **Size:** M ·
   **Tier:** T1
-- **Status:** specified
+- **Status:** done
+- **Done:** 2026-11-24 — M9 T15: `AiCaptureTest` (1), `AiTerritoryPlacementTest` (2), `AiGarrisonTowerTest` (3); `:core:openingBalance` holds every criterion (normal beats easy 176 of 200, Town at 11:31)
 
 #### PERF-16 · Territory and garrison perf gate
 - **Value:** Territory and garrisons cost no tick rate.

@@ -21,6 +21,7 @@ import dev.strategos.core.sim.econ.GatherSlots;
 import dev.strategos.core.sim.econ.NodeStore;
 import dev.strategos.core.sim.econ.NodeView;
 import dev.strategos.core.sim.econ.ResourceDef;
+import dev.strategos.core.sim.garrison.Garrisons;
 import dev.strategos.core.sim.nav.PathService;
 import dev.strategos.core.sim.nav.PathStore;
 import dev.strategos.core.sim.nav.SurfaceGrid;
@@ -530,6 +531,47 @@ final class QueriesImpl implements MatchQueries {
             placementSurfaces = state.surfaces();
         }
         return cached;
+    }
+
+    @Override
+    public long captureTotal(int building) {
+        return state.buildings().alive(building) ? CaptureSystem.total(state, building) : 0;
+    }
+
+    @Override
+    public long captureRegen(int building) {
+        return state.buildings().alive(building) && CaptureSystem.total(state, building) > 0
+                ? CaptureSystem.regen(state, building, state.buildings().faction(building))
+                : 0;
+    }
+
+    @Override
+    public long captureStrength(int unit) {
+        return state.entities().isAlive(unit) ? CaptureSystem.strength(state, Handle.index(unit)) : 0;
+    }
+
+    @Override
+    public int garrisonRoom(int unit, int building) {
+        if (!state.entities().isAlive(unit)
+                || !state.buildings().alive(building)
+                || !Garrisons.admits(state, Handle.index(unit), building)) {
+            return 0;
+        }
+        return Math.max(
+                0, Garrisons.capacity(state, building) - state.garrison().count(building));
+    }
+
+    @Override
+    public int buildingLimit(int template, int faction) {
+        return dev.strategos.core.sim.build.Placing.limit(state, template, faction);
+    }
+
+    @Override
+    public int territoryOwner(int x, int z) {
+        var territory = state.territorySystem();
+        return territory == null || territory.recomputes() == 0
+                ? -1
+                : territory.grid().ownerAt(x, z);
     }
 
     @Override

@@ -89,7 +89,7 @@ public final class CaptureSystem implements MatchSystem {
     }
 
     /** The owner's regeneration of building {@code handle} a second, in thousandths, its garrison's included. */
-    static long regen(MatchState s, int handle, int owner) {
+    public static long regen(MatchState s, int handle, int owner) {
         long r = thousandths(s, handle, REGEN);
         int gp = s.stats().path(GARRISON_REGEN);
         double rate = gp < 0 ? Double.NaN : s.stats().blockValue(s.buildings().template(handle), owner, gp);
