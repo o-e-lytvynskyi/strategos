@@ -29,6 +29,7 @@ Newest first; one entry per session in the worklog's shape.
 
 ### 2026-11-24 — M9 spec, T1–T19
 
+- **M9 T20 · the cumulative perf batch and the client smoke** — the unfiltered `:mod:runGameTestPerf` ran 25 of 26 scenes without a failure in 148 minutes and was stopped by the task's 150-minute timeout in `perf_battle`; the timeout is now 180 (a Decisions line). `perf_battle` and `perf_battle_stress` alone passed their tests but were INVALID (foreign CPU load 9.8–10.1 % above 7.5 %: the machine was in use); the full batch reruns on a quiet machine. `runClientSmokeJar` green (the title screen, no dev class loaded).
 - **M9 T18 · the AI soak, green** — `:mod:runGameTestSoak` on bade2c53 (worktree, unsharded, 3 h 12 min): 20 matches, 18 by conquest at 27.9–43.5 min, seeds 7 and 8 at the 45-minute limit, 856,314 game ticks, every journal replays; `verifySlow` 3 min 57 s green on the fix. T18 done.
 - **M9 T18 · the AI soak's second divergence** — the soak on 1c819323 (2 h 38 min) ran seeds 1–14 green, replays matching (12 by conquest at 27.9–43.0 min, seeds 7 and 8 at the 45-minute limit; seed 13 now conquers at 35.7 min), then seed 15's replay diverged at checkpoint 21620. Alone with the per-component diagnostic it diverged on tick 21601, the first after its journal start: one archer. A stack trace at `finishOrder` showed the restored archer giving its attack up through `PathService.failSettled`, while the live one asked for a path: `PathStore.wanted`, set in MOVEMENT and the combat phases after the tick's request pass, outlived its tick unsaved. Fixed: `UnitPath.wanted` saved (codec field, default false) and hashed when set (spec §1.6 row 26); `MidTickMoveRestoreTest.aPathAskedForAfterTheRequestPass…` failed before the fix.
 - **M9 T20 · the cumulative gates** — `:core:openingBalance` on 1c819323 (after the grid fix, which changes every match): every criterion holds; 1,000 matches in 11.7 min; openings 76, 72, 81 of 200 against each other; Hard 141 of 200 against Normal, Normal 182 against Easy; no start above 92 of 200; medians 23:54–37:37.
@@ -96,6 +97,7 @@ Newest first; one entry per session in the worklog's shape.
 
 ## Decisions taken
 
+- 2026-11-24 · `runGameTestPerf`'s task timeout 150 → 180 minutes (`mod/build.gradle`), as M1, M3, M4 and M6 each raised it for their scenes: M9's territory scene and its stress pass add 24 minutes and the batch no longer fits. A wall-clock guard, no budget changed. Undo: set it back and drop a scene from the batch.
 - 2026-11-24 · M9's numbers at ×0.4 of 0 A.D.'s distances and its capture ratios to Health (spec §1.6 row 6) — the first map is 384 blocks against ~1,000 m — undo: new provenance notes and `:core:balanceSheet`.
 - 2026-11-24 · trial implementer: pass — T1's three moves in a worktree at the branch head, first try, gate green.
 - 2026-11-24 · trial implementer: pass — T4's mod payload in a worktree, first try; it found the 04 §2.5 inventory line the brief missed.
