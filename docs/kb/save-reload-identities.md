@@ -39,3 +39,16 @@ Restoring every healthy blob as PAUSED revives ENDED matches. Preserve an ENDED 
 terminal saved victory outcome even when the registry is older. Such a match must neither
 resume nor accept commands; active matches still restore PAUSED. FAULTED and quarantined saves
 retain their existing fault paths.
+
+## "Not saved, changes nothing else" is a replay divergence
+
+Any field a system reads on the next step belongs in the snapshot and the state hash, even a
+cooldown whose loss "only costs one retry". A journal is a ring: a long match replays from a
+snapshot taken mid-match, so the replay restores and the live run does not, and the retry it
+allows moves units by a fraction of a block. M9's `BreachLog` (wall-breach cooldowns) was left
+out and the AI soak's seed 13 diverged 20 ticks after its journal start at tick 31200; short L1
+replays start at tick 0 and never saw it. For a new per-unit store, add an L1 test that saves
+mid-behaviour, round-trips through the codec, restores and steps both runs to the same hash
+(`GateMovementTest.aBreachCooldownSurvivesASave…`). To find such a divergence, record each
+snapshot component's `toString` at the live checkpoints and compare them in a stepped replay:
+the first differing component names the store.

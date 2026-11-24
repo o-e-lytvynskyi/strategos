@@ -9,7 +9,7 @@
 - **Milestone:** M9 Territory, capture and defence, 17 of 20 tasks done; spec [M9](../milestones/M9-territory-capture-and-defence.md).
 - **In progress:** none.
 - **Last finished task:** T17 (2026-11-24).
-- **Next task:** T18 · the close's long runs (the AI soak in a worktree now; then the perf batch and JMH alone); T19 · the consent batch.
+- **Next task:** T18 · the close's long runs (the AI soak again after the `BreachLog` fix; then the perf batch and JMH alone); T19 · the consent batch.
 - **Merged from main last:** 05cd50b (2026-11-24).
 
 ## Depends on unfinished work
@@ -27,7 +27,9 @@ From the assessment before the claim (procedure §2a step 0). Every other depend
 
 Newest first; one entry per session in the worklog's shape.
 
-### 2026-11-24 — M9 spec, T1–T17
+### 2026-11-24 — M9 spec, T1–T18
+
+- **M9 T18 · the AI soak's replay divergence** — the unsharded soak (worktree, 2 h 13 min) ran 12 seeds green (9 by conquest at 28.7–38.0 min, seeds 1, 3, 7 to the limit) and failed on seed 13: its replay diverged at tick 31220, 20 ticks after the journal's start at 31200 (the ring had rolled, so the replay began from a mid-match snapshot). A diagnostic run of seed 13 alone (a throwaway worktree, per-component snapshot text at each checkpoint) reproduced it and showed an archer's place and yaw differing by 0.005 blocks and 1.2°: `BreachLog`, the wall-breach cooldowns, was neither saved nor hashed, so the restored match tried a segment again. Fixed: `Play.breaches` (codec field optional, older saves read empty), restored and mixed into the hash while non-empty; `GateMovementTest.aBreachCooldownSurvivesASaveSoTheRestoredMatchWalksTheSame` fails without the restore and passes with it; kb `save-reload-identities.md` gains the pitfall.
 
 - **M9 T17 · the palisade chapter** — `PalisadeChapter` (a wall with a gate across a gap, own units through the gate, raiders at the wall), the m9 group's five chapters; `DemoScriptsTest` runs it in the fake (9 segments with the gate complete and registered); the fake has no terrain, so whether raiders stop at the wall is for the window (T19); `verify` green, 2 min 31 s (worktree).
 
@@ -93,6 +95,6 @@ Newest first; one entry per session in the worklog's shape.
 
 ## Pitfalls
 
-- None.
+- docs/kb/save-reload-identities.md — "Not saved, changes nothing else" is a replay divergence (M9 T18, the AI soak's seed 13).
 
 ## Review

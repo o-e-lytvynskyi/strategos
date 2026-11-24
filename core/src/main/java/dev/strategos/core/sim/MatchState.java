@@ -80,7 +80,7 @@ public final class MatchState {
     private final Population population;
     private final List<Damage> damage = new ArrayList<>();
     private final MatchBus bus = new MatchBus();
-    private final BreachLog breaches = new BreachLog(); // not saved, not hashed
+    private final BreachLog breaches = new BreachLog(); // saved and hashed (Play.breaches)
     private final StatService stats;
     private @Nullable VisionSystem visionSystem;
     private @Nullable TerritorySystem territorySystem;

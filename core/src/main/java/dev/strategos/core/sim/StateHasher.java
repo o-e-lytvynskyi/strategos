@@ -140,6 +140,9 @@ public final class StateHasher {
         if (!s.gates().empty()) { // only while a gate stands (PATH-12)
             h = s.gates().mix(h);
         }
+        if (!s.breaches().empty()) { // only once a unit breached a wall (BLD-13)
+            h = s.breaches().mix(h);
+        }
         if (!s.capture().empty()) { // only while a building is being captured (CMB-10)
             h = s.capture().mix(h);
         }

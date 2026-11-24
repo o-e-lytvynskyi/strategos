@@ -23,7 +23,7 @@ import java.util.List;
  * faction cannot reach ({@link Reach}: its own ground and the gates of its allies) breaches: a unit that ends short of
  * its goal for crowding leaves the wall alone. It strikes the nearest segment on the goal's side of it, and a segment whose
  * attack failed is not struck again by that unit for {@value #COOLDOWN} ticks, so a breach that cannot succeed does not
- * loop. The cooldowns are {@link dev.strategos.core.sim.BreachLog}'s, not saved: a restored match may try one segment again early.
+ * loop. The cooldowns are {@link dev.strategos.core.sim.BreachLog}'s, saved with the match.
  */
 final class Breaching {
     /** The class the segments of a wall have. */

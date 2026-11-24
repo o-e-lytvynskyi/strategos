@@ -328,6 +328,37 @@ class GateMovementTest {
         assertThat(s.orders().target(idx)).isNotEqualTo(segment);
     }
 
+    @Test
+    void aBreachCooldownSurvivesASaveSoTheRestoredMatchWalksTheSame() {
+        // the M9 AI soak's seed 13: a journal restored mid-match diverged 20 ticks on, the cooldowns forgotten
+        int u = spawnSquad(2, 34.5, 20.5, 1)[0];
+        int idx = Handle.index(u);
+        h.submit(PlayerSlot.ADMIN, AttackMove.replace(UnitSet.of(u), new Vec2d(52.5, 20.5)));
+        assertThat(h.runUntil(() -> s.orders().kind(idx) == OrderKind.BURN, 600))
+                .isTrue();
+        int segment = s.orders().target(idx);
+        s.orders().pop(idx); // the attempt fails
+        s.bus().publish(new OrderReceived(u));
+        h.step();
+        MatchSnapshot saved = roundTrip(h.core().snapshot());
+        assertThat(saved.play().breaches())
+                .as("the cooldown is saved")
+                .hasSize(3)
+                .contains((long) u, (long) segment);
+        SimHarness back = SimHarness.restore(saved, TemplateSet.builtin());
+        assertThat(back.stateHash()).as("restored to the same hash").isEqualTo(h.stateHash());
+        back.publishAll(world);
+        MatchState r = KernelAccess.state(back.core());
+        boolean again = false;
+        for (int t = 0; t < 150; t++) {
+            back.step();
+            h.step();
+            again |= r.orders().kind(idx) == OrderKind.BURN && r.orders().target(idx) == segment;
+        }
+        assertThat(again).as("the restored unit keeps the cooldown").isFalse();
+        assertThat(back.stateHash()).as("the same state as the unsaved run").isEqualTo(h.stateHash());
+    }
+
     int fixtureGate() {
         for (int handle : s.buildings().handles()) {
             if (s.buildings().template(handle) == s.templates().byId(GATE).netIndex()) {

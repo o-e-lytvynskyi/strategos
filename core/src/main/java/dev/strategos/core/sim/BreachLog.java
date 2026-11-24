@@ -1,12 +1,17 @@
 package dev.strategos.core.sim;
 
+import dev.strategos.core.shared.Hasher;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
 /**
  * What the units of one match have breached (BLD-13): per unit handle, the wall segment its last breach attacked and
- * the tick before which it does not attack that segment again. Not saved and not hashed: a restored match forgets it,
- * so a unit may try one segment again early, which costs one attempt and changes nothing else.
+ * the tick before which it does not attack that segment again. Saved ({@code Play.breaches}) and hashed while it holds
+ * any record: a unit's next step reads it, so a match restored without it would walk otherwise (the M9 AI soak's seed 13
+ * diverged 20 ticks after a journal restore). A record stays until its unit's walk takes it, expired or not, because
+ * {@link #take} answers whether one was there.
  */
 public final class BreachLog {
     private final Map<Integer, long[]> last = new TreeMap<>();
@@ -20,6 +25,42 @@ public final class BreachLog {
     public boolean resting(int unit, int segment, long tick) {
         long[] e = last.get(unit);
         return e != null && e[0] == segment && tick < e[1];
+    }
+
+    public boolean empty() {
+        return last.isEmpty();
+    }
+
+    /** The state hash with this log mixed in, in handle order. */
+    public long mix(long h) {
+        for (Map.Entry<Integer, long[]> e : last.entrySet()) {
+            h = Hasher.mix(h, e.getKey());
+            h = Hasher.mix(h, e.getValue()[0]);
+            h = Hasher.mix(h, e.getValue()[1]);
+        }
+        return h;
+    }
+
+    /** The saved form: per record, the unit handle, the segment and the tick of leave, in handle order. */
+    public List<Long> save() {
+        List<Long> out = new ArrayList<>(3 * last.size());
+        for (Map.Entry<Integer, long[]> e : last.entrySet()) {
+            out.add((long) e.getKey());
+            out.add(e.getValue()[0]);
+            out.add(e.getValue()[1]);
+        }
+        return out;
+    }
+
+    /** Replaces this log with a saved one ({@link #save}). */
+    public void restore(List<Long> saved) {
+        if (saved.size() % 3 != 0) {
+            throw new IllegalArgumentException("breaches: " + saved.size() + " numbers, not a multiple of 3");
+        }
+        last.clear();
+        for (int k = 0; k < saved.size(); k += 3) {
+            last.put(Math.toIntExact(saved.get(k)), new long[] {saved.get(k + 1), saved.get(k + 2)});
+        }
     }
 
     /** Takes unit {@code unit}'s record away; whether it had one. */

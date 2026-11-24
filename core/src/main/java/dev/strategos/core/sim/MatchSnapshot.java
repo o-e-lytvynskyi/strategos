@@ -53,7 +53,8 @@ public record MatchSnapshot(
             List<GarrisonStore.Saved> garrisons,
             List<Long> territory,
             List<Long> capture,
-            List<Long> gates) {
+            List<Long> gates,
+            List<Long> breaches) {
         public static final Play EMPTY = new Play(
                 List.of(),
                 List.of(),
@@ -67,7 +68,40 @@ public record MatchSnapshot(
                 List.of(),
                 List.of(),
                 List.of(),
+                List.of(),
                 List.of());
+
+        /** A play without breaches, as before the M9 soak's fix saved them (BLD-13). */
+        public Play(
+                List<Long> outcome,
+                List<AiSlots.Saved> ai,
+                long aiWake,
+                List<Long> alerts,
+                List<List<String>> progress,
+                List<Long> matchStats,
+                List<Long> vision,
+                ShotStore.Snapshot shots,
+                List<StanceStore.Saved> stances,
+                List<GarrisonStore.Saved> garrisons,
+                List<Long> territory,
+                List<Long> capture,
+                List<Long> gates) {
+            this(
+                    outcome,
+                    ai,
+                    aiWake,
+                    alerts,
+                    progress,
+                    matchStats,
+                    vision,
+                    shots,
+                    stances,
+                    garrisons,
+                    territory,
+                    capture,
+                    gates,
+                    List.of());
+        }
 
         /** A play without gates, as before PATH-12 saved them (M9 spec §2.9). */
         public Play(
@@ -288,6 +322,7 @@ public record MatchSnapshot(
             territory = List.copyOf(territory);
             capture = List.copyOf(capture);
             gates = List.copyOf(gates);
+            breaches = List.copyOf(breaches);
         }
     }
 
