@@ -82,4 +82,14 @@ class DemoScriptsTest {
         assertThat(Chapters.garrisoned(st, 0)).isGreaterThanOrEqualTo(TowersChapter.GARRISON);
         assertThat(st.blocks()).as("the chokepoint's walls").isPositive();
     }
+
+    @Test
+    void thePalisadeChapterBuildsTheWallWithItsGateAndTheRaidIsPlayedOut() {
+        FakeStage st = FakeStage.run(new PalisadeChapter());
+        assertThat(PalisadeChapter.wallDone(st))
+                .as("every segment and the gate complete")
+                .isTrue();
+        assertThat(st.q().gateDoors()).as("the gate is registered").hasSize(1);
+        assertThat(st.blocks()).as("the gap's rocks").isPositive();
+    }
 }

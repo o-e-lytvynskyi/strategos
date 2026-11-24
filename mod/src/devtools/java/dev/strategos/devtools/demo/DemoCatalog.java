@@ -50,7 +50,8 @@ public final class DemoCatalog {
             new TerritoryChapter(),
             new CaptureChapter(),
             new GarrisonHealChapter(),
-            new TowersChapter());
+            new TowersChapter(),
+            new PalisadeChapter());
 
     private DemoCatalog() {}
 

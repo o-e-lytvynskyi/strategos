@@ -6,10 +6,10 @@
 
 ## Now
 
-- **Milestone:** M9 Territory, capture and defence, 16 of 20 tasks done; spec [M9](../milestones/M9-territory-capture-and-defence.md).
+- **Milestone:** M9 Territory, capture and defence, 17 of 20 tasks done; spec [M9](../milestones/M9-territory-capture-and-defence.md).
 - **In progress:** none.
-- **Last finished task:** T13, T14 (2026-11-24).
-- **Next task:** T13, T14 · BLD-13 · Walls (in a worktree); then T17 · the demo chapters; T18's long runs on a quiet machine.
+- **Last finished task:** T17 (2026-11-24).
+- **Next task:** T18 · the close's long runs (the AI soak in a worktree now; then the perf batch and JMH alone); T19 · the consent batch.
 - **Merged from main last:** 05cd50b (2026-11-24).
 
 ## Depends on unfinished work
@@ -27,7 +27,9 @@ From the assessment before the claim (procedure §2a step 0). Every other depend
 
 Newest first; one entry per session in the worklog's shape.
 
-### 2026-11-24 — M9 spec, T1–T16, T17 (part)
+### 2026-11-24 — M9 spec, T1–T17
+
+- **M9 T17 · the palisade chapter** — `PalisadeChapter` (a wall with a gate across a gap, own units through the gate, raiders at the wall), the m9 group's five chapters; `DemoScriptsTest` runs it in the fake (9 segments with the gate complete and registered); the fake has no terrain, so whether raiders stop at the wall is for the window (T19); `verify` green, 2 min 31 s (worktree).
 
 - **M9 T13, T14 · review fixes** — BLD-13 and PATH-12 done; a unit restored inside a gate takes its floor from y and finishes its crossing (its test failed before the fix); an enemy in a gate when it completes or changes hands is put out; a ram never enters a 2-column gate; the breach only when the goal is unreachable, on the goal's side, with a 200-tick cooldown (`BreachLog`, transient); `WallLine` counts in long, `PlaceWall` refuses fewer than 1 or more than 64 segments and a gate past 64 with LIMIT; `GateDoorBlocks` prunes and retries; the selection box hidden only in wall mode; style guide §4 gains the Wall row; spec §1.6 row 22; the once-seen `constructiontests.field_is_built_and_equals_its_blueprint` failure did not recur (3 runs of the suite, 1 full run, 268 GameTests); `verify verifySlow` green, 4 min 49 s (worktree), `verify` 2 min 24 s merged.
 

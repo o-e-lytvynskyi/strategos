@@ -56,9 +56,9 @@ class DemoCatalogTest {
     }
 
     @Test
-    void m9IsFourChaptersInTheOrderOfTheSpecsScript() {
+    void m9IsFiveChaptersInTheOrderOfTheSpecsScript() {
         List<DemoChapter> m9 = DemoCatalog.pick(ALL, "m9", "", Set.of());
-        assertThat(ids(m9)).containsExactly("territory", "capture", "garrison_heal", "towers");
+        assertThat(ids(m9)).containsExactly("territory", "capture", "garrison_heal", "towers", "palisade");
         assertThat(m9).allMatch(c -> c.version() == 1 && c.groups().getFirst().equals("m9"));
     }
 
