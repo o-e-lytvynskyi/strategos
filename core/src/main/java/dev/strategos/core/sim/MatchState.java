@@ -107,6 +107,7 @@ public final class MatchState {
     private final EconomyTimes economyTimes = new EconomyTimes();
     private final dev.strategos.core.sim.combat.CombatTimes combatTimes =
             new dev.strategos.core.sim.combat.CombatTimes();
+    private final dev.strategos.core.diag.SystemTimes systemTimes = new dev.strategos.core.diag.SystemTimes();
 
     MatchState(MatchConfig config, TemplateSet templates, EntityStore entities, MatchLog log) {
         this.config = config;
@@ -319,6 +320,11 @@ public final class MatchState {
     /** PERF-08's times of the combat systems; measured, never saved or hashed. */
     public dev.strategos.core.sim.combat.CombatTimes combatTimes() {
         return combatTimes;
+    }
+
+    /** PERF-16's times of the territory, garrison and capture systems; measured, never saved or hashed. */
+    public dev.strategos.core.diag.SystemTimes systemTimes() {
+        return systemTimes;
     }
 
     /** Where the nodes are, built on first use after discovery or a restore. */

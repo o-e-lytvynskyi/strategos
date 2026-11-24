@@ -591,6 +591,17 @@ final class QueriesImpl implements MatchQueries {
     }
 
     @Override
+    public dev.strategos.core.diag.SystemTimes.Stats systemTimes() {
+        return state.systemTimes().stats();
+    }
+
+    @Override
+    public long territoryRecomputes() {
+        var territory = state.territorySystem();
+        return territory == null ? 0 : territory.recomputes();
+    }
+
+    @Override
     public dev.strategos.core.sim.econ.EconomyTimes.Stats economyTimes() {
         return state.economyTimes().stats();
     }

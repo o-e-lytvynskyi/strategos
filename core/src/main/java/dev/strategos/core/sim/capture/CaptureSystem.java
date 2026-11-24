@@ -43,6 +43,12 @@ public final class CaptureSystem implements MatchSystem {
 
     @Override
     public void run(MatchState s) {
+        long start = s.systemTimes().start();
+        step(s);
+        s.systemTimes().capture(start);
+    }
+
+    private void step(MatchState s) {
         CaptureStore store = s.capture();
         if (store.empty()) {
             return;

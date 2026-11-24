@@ -213,6 +213,16 @@ public interface MatchQueries {
         return new dev.strategos.core.sim.combat.CombatTimes.Stats(0, 0, 0, 0, 0);
     }
 
+    /** PERF-16's territory, join, garrison and capture times so far. */
+    default dev.strategos.core.diag.SystemTimes.Stats systemTimes() {
+        return new dev.strategos.core.diag.SystemTimes.Stats(0, 0, 0, 0);
+    }
+
+    /** How many territory grids were delivered so far (0 before the first): PERF-16's cadence check. */
+    default long territoryRecomputes() {
+        return 0;
+    }
+
     /** PERF-07.4's node index and dropsite query times so far. */
     default EconomyTimes.Stats economyTimes() {
         return new EconomyTimes.Stats(0, 0, 0, 0, 0, 0);

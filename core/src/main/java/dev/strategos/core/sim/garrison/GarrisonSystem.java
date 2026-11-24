@@ -23,6 +23,12 @@ public final class GarrisonSystem implements MatchSystem {
 
     @Override
     public void run(MatchState s) {
+        long start = s.systemTimes().start();
+        step(s);
+        s.systemTimes().garrison(start);
+    }
+
+    private void step(MatchState s) {
         if (s.garrison().empty()) {
             return;
         }

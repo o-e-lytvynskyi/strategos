@@ -491,7 +491,7 @@ Cards: [roadmap/M9-territory-capture-and-defence.md](roadmap/M9-territory-captur
 | BLD-13 | Palisades and gates | L | BLD-04, PATH-12 | specified |
 | PATH-12 | Gates and doors in navigation | M | PATH-04, MATCH-06 | in_progress |
 | AI-08 | AI uses territory and capture | M | AI-05, CMB-10, BLD-10, TERR-02 | done |
-| PERF-16 | Territory and garrison perf gate | S | TERR-01, BLD-10, PERF-10 | specified |
+| PERF-16 | Territory and garrison perf gate | S | TERR-01, BLD-10, PERF-10 | in_progress |
 
 > 2026-11-24: the owner approved all ten cards («Одобряю все 10»); specified the same day in
 > [M9's spec](milestones/M9-territory-capture-and-defence.md). MATCH-06 and PERF-10 (M7) are built against a contract (spec §2.1, §1.5).

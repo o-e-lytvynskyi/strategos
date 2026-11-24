@@ -67,9 +67,18 @@ public final class TerritorySystem implements MatchSystem {
 
     @Override
     public void run(MatchState s) {
+        long start = s.systemTimes().start();
+        step(s);
+        s.systemTimes().territory(start);
+    }
+
+    private void step(MatchState s) {
         long tick = s.tick();
         if (pending != null && tick >= due) {
-            grid.copyFrom(pending.join());
+            long joinStart = s.systemTimes().start();
+            TerritoryGrid computed = pending.join();
+            s.systemTimes().joined(joinStart); // PERF-16: the tick thread's wait on the job, near zero when it is done
+            grid.copyFrom(computed);
             delivered = java.util.Objects.requireNonNull(pendingSources);
             pending = null;
             pendingSources = null;

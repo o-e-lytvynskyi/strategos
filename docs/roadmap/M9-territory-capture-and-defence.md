@@ -176,4 +176,4 @@ CMB-10 → BLD-10 → AI-08 (26 card-days).
   2. The stress pass holds C p95 ≤ 50 ms (L6).
   3. The report lists territory and garrison costs (R).
 - **Tests:** L6, R · **Depends on:** TERR-01, BLD-10, PERF-10 · **Size:** S · **Tier:** T1
-- **Status:** specified
+- **Status:** in_progress

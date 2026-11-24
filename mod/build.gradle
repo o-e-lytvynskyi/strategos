@@ -171,6 +171,9 @@ neoForge {
             // [M4 T28] the first loop's and the economy's soaks' length, which CI's weekly run shortens the same way
             systemProperty 'strategos.firstLoop.ticks', providers.gradleProperty('loop.ticks').getOrElse('18000')
             systemProperty 'strategos.economy.ticks', providers.gradleProperty('loop.ticks').getOrElse('18000')
+            // [M9 T16] the territory soak's and its stress pass's length: 15 game minutes and 5, shortened for a trial run
+            systemProperty 'strategos.territory.ticks', providers.gradleProperty('territory.ticks').getOrElse('18000')
+            systemProperty 'strategos.territoryStress.ticks', providers.gradleProperty('territory.stressTicks').getOrElse('6000')
             // gates that fail on a breach; the others only report (QA-07: enabled after 5 stable runs)
             systemProperty 'strategos.perf.gates', providers.gradleProperty('perf.gates').getOrElse('a,c,d,e,g') // d from M1 T27 (QA-07: 4.7 % over five runs); c and e by the owner, 2026-10-23
             // dev only: replaces the measured foreign CPU load, for the invalid-run check (QA-07.3)
