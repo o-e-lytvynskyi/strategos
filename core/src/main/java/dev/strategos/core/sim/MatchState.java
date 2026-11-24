@@ -23,6 +23,7 @@ import dev.strategos.core.sim.econ.NodeIndex;
 import dev.strategos.core.sim.econ.NodeStore;
 import dev.strategos.core.sim.econ.Treasury;
 import dev.strategos.core.sim.garrison.GarrisonStore;
+import dev.strategos.core.sim.nav.GateOverlay;
 import dev.strategos.core.sim.nav.Material;
 import dev.strategos.core.sim.nav.MaterialKind;
 import dev.strategos.core.sim.nav.MobilityClass;
@@ -55,6 +56,7 @@ public final class MatchState {
     private MatchConfig config;
     private Allies allies;
     private final CaptureStore capture;
+    private final GateOverlay gates = new GateOverlay();
     private final Outcome outcome = new Outcome();
     private final AiSlots aiSlots = new AiSlots();
     private final MatchStats matchStats;
@@ -483,6 +485,37 @@ public final class MatchState {
      */
     public int gaia() {
         return config.factions();
+    }
+
+    /** The gates of palisades and walls (PATH-12). */
+    public GateOverlay gates() {
+        return gates;
+    }
+
+    /** Adds a gate of {@code owner} over {@code columns} ({@code x << 16 | z}), blocking them for everyone; its id. */
+    public int addGate(int owner, int[] columns) {
+        for (int c : columns) {
+            blockColumn(c >>> 16, c & 0xFFFF);
+        }
+        return gates.add(owner, columns);
+    }
+
+    /** Removes gate {@code id} and releases its columns. */
+    public void removeGate(int id) {
+        for (int c : gates.columns(id)) {
+            releaseColumn(c >>> 16, c & 0xFFFF);
+        }
+        gates.remove(id);
+    }
+
+    /** A snapshot's gates, their columns blocked again, before the pages are published. */
+    void restoreGates(List<Long> saved) {
+        gates.restore(saved);
+        for (int id : gates.ids()) {
+            for (int c : gates.columns(id)) {
+                restoreColumn(c >>> 16, c & 0xFFFF);
+            }
+        }
     }
 
     /** The buildings being captured (CMB-10). */

@@ -137,6 +137,9 @@ public final class StateHasher {
         if (!s.stances().empty()) { // only once a stance was set or a defensive unit holds a spot (CMB-05)
             h = s.stances().mix(h);
         }
+        if (!s.gates().empty()) { // only while a gate stands (PATH-12)
+            h = s.gates().mix(h);
+        }
         if (!s.capture().empty()) { // only while a building is being captured (CMB-10)
             h = s.capture().mix(h);
         }

@@ -118,6 +118,9 @@ The demo chapters (`-Pdemo=m9`): `territory`, `capture`, `garrison_heal`, `tower
 
 | 7 | M6's follow-ups | M6 asked for a fake `DemoStage` in the next milestone's first task; `DemoStage` is a class over a `ServerLevel` | T17, with the new chapters; T1 keeps the moves |
 
+| 15 | Group paths and gates (T12) | `GroupJob` and `GroupPaths` treat gates as walls; `LineOfWalk`, `StringPuller` and `PathRoutes` do not know crossings | T14 teaches the path checks that a segment through an open allied gate is walkable; group paths through gates follow if the L3 shows a need |
+| 14 | HPA* with gates (T12) | A requester with a usable gate searches flat with the full cap | Kept: gates are few; a gate-aware HPA* if PERF-16 shows the cost |
+| 13 | Gate crossings (T12) | A gate column cannot be a door surface: its columns are blocked so components split | A crossing is a jump edge between the surfaces beside the gate at door cost 1.5 a block |
 | 12 | Dirty sections (T6) | Tiles are 8 blocks, sections 16: every tile lies on two section edges, and a changed tile dirties 1 to 3 section columns (4-neighbour edges), not up to 4 | `BorderGeometry.sectionsTouched` as found; a match origin off the 16-grid is cut from up to four match-local columns |
 | 11 | The garrison (T10) | `ejectBelow` in `building_base` makes every building a `GarrisonHolder` holding nobody; an ally's garrison needs the command rule too, not only `admits` | `Fields` accepts a holder with neither capacity nor classes; `GarrisonRule` asks for a faction allied with the building's |
 | 10 | The first land (T5) | The first grid was computed on a match's first tick, before its centres came, so the centres waited out the cadence and nothing could be placed for 20 ticks | A recompute is immediate while no source has ever been delivered (§2.3) |
@@ -432,7 +435,7 @@ Results, the health check, the hand-in. Size: records.
 
 ### 7.3 Progress
 
-- [x] T1 (2026-11-24) · [x] T2 (2026-11-24) · [x] T3 (2026-11-24) · [x] T4 (2026-11-24) · [x] T5 (2026-11-24) · [x] T6 (2026-11-24, goldens in T19) · [x] T10 (2026-11-24, regeneration with T7) · [ ] T11 · [ ] T12 · [x] T7 (2026-11-24)
+- [x] T1 (2026-11-24) · [x] T2 (2026-11-24) · [x] T3 (2026-11-24) · [x] T4 (2026-11-24) · [x] T5 (2026-11-24) · [x] T6 (2026-11-24, goldens in T19) · [x] T10 (2026-11-24, regeneration with T7) · [ ] T11 · [x] T12 (2026-11-24) · [x] T7 (2026-11-24)
 - [ ] T8 · [ ] T9 · [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17 · [ ] T18 · [ ] T19 · [ ] T20
 
 ## 8. Acceptance checklist (M9 exit)

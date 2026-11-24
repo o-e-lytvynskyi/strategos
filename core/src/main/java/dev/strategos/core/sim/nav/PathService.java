@@ -693,7 +693,8 @@ public final class PathService {
                 rules.searchCap(),
                 0,
                 false);
-        paths.put(new PathStore.Pending(r, tick + rules.pathK(), jobs.submit(new PathJob(grid, r))));
+        GateLinks.Pass gates = s.gates().passFor(grid, s.identity().faction(i), s.allies()); // PATH-12; null: none
+        paths.put(new PathStore.Pending(r, tick + rules.pathK(), jobs.submit(new PathJob(grid, r, gates))));
     }
 
     /** The queue is full: the unit keeps its path, or steers at its target, and asks again after {@code busyRetry}. */

@@ -6,9 +6,9 @@
 
 ## Now
 
-- **Milestone:** M9 Territory, capture and defence, 8 of 20 tasks done; spec [M9](../milestones/M9-territory-capture-and-defence.md).
+- **Milestone:** M9 Territory, capture and defence, 9 of 20 tasks done; spec [M9](../milestones/M9-territory-capture-and-defence.md).
 - **In progress:** none.
-- **Last finished task:** T7 (2026-11-24).
+- **Last finished task:** T12 (2026-11-24).
 - **Next task:** T6 · TERR-03 · Borders.
 - **Merged from main last:** 05cd50b (2026-11-24).
 
@@ -27,7 +27,9 @@ From the assessment before the claim (procedure §2a step 0). Every other depend
 
 Newest first; one entry per session in the worklog's shape.
 
-### 2026-11-24 — M9 spec, T1–T7, T10
+### 2026-11-24 — M9 spec, T1–T7, T10, T12
+
+- **M9 T12 · PATH-12 · Gates in navigation** — PATH-12 in progress (acceptance 2 with T14's palisades); `GateOverlay` (gates blocked in the base grid, saved and hashed only when present), `GateLinks` (crossings beside a gate at door cost), `Reach` per faction through allied gates, `GridAStar` and `PathJob` take the requester's pass, `GateDoors.open` (an allied unit within 3 blocks); `GateReachabilityTest` (7), `GateStateTest` (2); 63 gates: links 1.9 ms, reach 0.02 ms, a 7-wall path 4.6 ms; with no gates paths and hashes are unchanged; `verify verifySlow` green, 5 min 12 s (in a worktree). `verifySoak` for the movement change runs with T18's long runs.
 
 - **M9 T7 · CMB-10 · Transfer and capture maths** — CMB-10 in progress, BLD-10 done; `BuildingLife.transfer` (eject, refund, unhouse, rally cleared, rehouse; vision, territory and stats follow); `CaptureMaths` (effect ÷ (0.1 + 0.9 × health), owner first, ownership only at zero, ties to the lowest index, allies never), `CaptureStore` (hashed and saved only while a capture runs; `Play.capture`), `CaptureSystem` in COMBAT once a second per building with the garrison's regeneration; data: `Capturable` on seven buildings, `Capture/strength` on four units, Town +0.5 garrison regeneration; `CaptureMathsTest` (6: 20 infantry take an empty centre in 98–100 s, 12 make no progress at full health and take it at half in 80–83 s), `TransferTest`, `CaptureRegenTest` (2).
 

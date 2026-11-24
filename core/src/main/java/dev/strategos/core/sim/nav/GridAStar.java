@@ -2,6 +2,7 @@ package dev.strategos.core.sim.nav;
 
 import dev.strategos.core.shared.HotPath;
 import java.util.Arrays;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A* over the surfaces of a {@link SurfaceGrid} (04 §9.3, spec §5.6). Eight neighbours along the grid's links; a step
@@ -82,7 +83,15 @@ public final class GridAStar {
      * most {@code cap} nodes.
      */
     public Result search(SurfaceGrid grid, int from, int goalX, int goalZ, int cap) {
-        return run(grid, from, goalX, goalZ, -1, -1, -1, cap);
+        return run(grid, from, goalX, goalZ, -1, -1, -1, cap, null);
+    }
+
+    /**
+     * As {@link #search(SurfaceGrid, int, int, int, int)}, for a unit that may also cross the gates of {@code pass}
+     * (PATH-12): beside a gate, a crossing to the surfaces across it at the door's cost. Null: no gates.
+     */
+    public Result search(SurfaceGrid grid, int from, int goalX, int goalZ, int cap, GateLinks.@Nullable Pass pass) {
+        return run(grid, from, goalX, goalZ, -1, -1, -1, cap, pass);
     }
 
     /**
@@ -90,15 +99,24 @@ public final class GridAStar {
      * surfaces of page ({@code pageX}, {@code pageZ}) only: a hierarchical path's refinement inside one page.
      */
     public Result searchInPage(SurfaceGrid grid, int from, int goalX, int goalZ, int pageX, int pageZ, int cap) {
-        return run(grid, from, goalX, goalZ, -1, pageX, pageZ, cap);
+        return run(grid, from, goalX, goalZ, -1, pageX, pageZ, cap, null);
     }
 
     /** As {@link #searchInPage}, to node {@code to} itself. */
     public Result searchInPage(SurfaceGrid grid, int from, int to, int pageX, int pageZ, int cap) {
-        return run(grid, from, grid.nodeX(to), grid.nodeZ(to), to, pageX, pageZ, cap);
+        return run(grid, from, grid.nodeX(to), grid.nodeZ(to), to, pageX, pageZ, cap, null);
     }
 
-    private Result run(SurfaceGrid grid, int from, int goalX, int goalZ, int goalNode, int pageX, int pageZ, int cap) {
+    private Result run(
+            SurfaceGrid grid,
+            int from,
+            int goalX,
+            int goalZ,
+            int goalNode,
+            int pageX,
+            int pageZ,
+            int cap,
+            GateLinks.@Nullable Pass pass) {
         this.goalX = goalX;
         this.goalZ = goalZ;
         size = 0;
@@ -141,25 +159,37 @@ public final class GridAStar {
                 if (pageX >= 0 && ((nx >> 4) != pageX || (nz >> 4) != pageZ)) {
                     continue;
                 }
-                int n = slot(grid.node(nx, nz, nl), nx, nz);
-                if (closed[n]) {
-                    continue;
-                }
-                double ng = g[s] + step(here, grid.surface(nx, nz, nl), dir);
-                if (heapAt[n] < 0 && parent[n] == -2) { // discovered just now
-                    g[n] = ng;
-                    f[n] = ng + h[n];
-                    parent[n] = s;
-                    push(n);
-                } else if (ng < g[n]) {
-                    g[n] = ng;
-                    f[n] = ng + h[n];
-                    parent[n] = s;
-                    up(heapAt[n]);
+                relax(s, slot(grid.node(nx, nz, nl), nx, nz), step(here, grid.surface(nx, nz, nl), dir));
+            }
+            int gate = pass == null ? -1 : pass.indexOf(node[s]);
+            if (pass != null && gate >= 0) { // beside a gate it may use: across it, at the door's cost
+                int[] across = pass.targets(gate);
+                double[] costs = pass.costs(gate);
+                for (int k = 0; k < across.length; k++) {
+                    relax(s, slot(across[k], grid.nodeX(across[k]), grid.nodeZ(across[k])), costs[k]);
                 }
             }
         }
         return end(PathStatus.NO_PATH, best, start, expansions);
+    }
+
+    /** Offers slot {@code n} a path through {@code s} at {@code stepCost} more. */
+    private void relax(int s, int n, double stepCost) {
+        if (closed[n]) {
+            return;
+        }
+        double ng = g[s] + stepCost;
+        if (heapAt[n] < 0 && parent[n] == -2) { // discovered just now
+            g[n] = ng;
+            f[n] = ng + h[n];
+            parent[n] = s;
+            push(n);
+        } else if (ng < g[n]) {
+            g[n] = ng;
+            f[n] = ng + h[n];
+            parent[n] = s;
+            up(heapAt[n]);
+        }
     }
 
     /** The cost of a step in direction {@code dir} from surface {@code from} onto surface {@code to}. */

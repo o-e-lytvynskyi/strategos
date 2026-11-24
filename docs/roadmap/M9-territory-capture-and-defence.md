@@ -147,7 +147,7 @@ CMB-10 → BLD-10 → AI-08 (26 card-days).
   1. Reachability per faction respects gates (L1).
   2. Units pass their own gates without stopping (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** PATH-04, MATCH-06 · **Size:** M · **Tier:** T1
-- **Status:** specified
+- **Status:** in_progress
 
 #### AI-08 · AI uses territory and capture
 - **Value:** The AI attacks and defends with the new systems instead of ignoring them (P5).

@@ -88,7 +88,8 @@ final class Snapshots {
                         s.stances().save(),
                         s.garrison().save(),
                         s.territorySystem() != null ? s.territorySystem().save() : List.of(),
-                        s.capture().save()),
+                        s.capture().save(),
+                        s.gates().save()),
                 s.buildings().empty()
                         ? List.of()
                         : s.templates().all().stream()
@@ -207,6 +208,7 @@ final class Snapshots {
             state.restoreBuildings(SavedTemplates.buildings(
                     snapshot, templates)); // before the pages, so their footprints are laid over them
         }
+        state.restoreGates(snapshot.play().gates()); // before the pages too (PATH-12)
         state.outcome().restore(snapshot.play().outcome());
         state.aiSlots().restore(snapshot.play().ai(), snapshot.play().aiWake());
         AiHandicap.reapply(state); // the stats start empty: each computer player's open handicap (AI-05)

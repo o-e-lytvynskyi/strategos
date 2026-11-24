@@ -478,7 +478,8 @@ public final class MatchSnapshotCodec {
                             .listOf()
                             .optionalFieldOf("territory", List.of())
                             .forGetter(MatchSnapshot.Play::territory),
-                    Codec.LONG.listOf().optionalFieldOf("capture", List.of()).forGetter(MatchSnapshot.Play::capture))
+                    Codec.LONG.listOf().optionalFieldOf("capture", List.of()).forGetter(MatchSnapshot.Play::capture),
+                    Codec.LONG.listOf().optionalFieldOf("gates", List.of()).forGetter(MatchSnapshot.Play::gates))
             .apply(i, MatchSnapshot.Play::new));
 
     private static final Codec<MatchSnapshot.TemplateBinding> BINDING = RecordCodecBuilder.create(i -> i.group(
