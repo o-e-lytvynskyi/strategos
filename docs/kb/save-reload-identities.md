@@ -46,9 +46,16 @@ Any field a system reads on the next step belongs in the snapshot and the state 
 cooldown whose loss "only costs one retry". A journal is a ring: a long match replays from a
 snapshot taken mid-match, so the replay restores and the live run does not, and the retry it
 allows moves units by a fraction of a block. M9's `BreachLog` (wall-breach cooldowns) was left
-out and the AI soak's seed 13 diverged 20 ticks after its journal start at tick 31200; short L1
-replays start at tick 0 and never saw it. For a new per-unit store, add an L1 test that saves
+out; it turned up while chasing the AI soak's seed 13, whose replay diverged 20 ticks after its
+journal start at tick 31200. Short L1 replays start at tick 0 and never see such a store. For a new per-unit store, add an L1 test that saves
 mid-behaviour, round-trips through the codec, restores and steps both runs to the same hash
 (`GateMovementTest.aBreachCooldownSurvivesASave…`). To find such a divergence, record each
 snapshot component's `toString` at the live checkpoints and compare them in a stepped replay:
 the first differing component names the store.
+
+The same holds for a derived cache built at a fixed point of the tick. The unit grid is rebuilt
+where MOVEMENT ends; a system that sets a unit down afterwards (a put-out from a gate, a garrison
+exit) leaves the live grid behind the poses until the next tick's rebuild, while a restore builds
+it from the poses. Seed 13's real divergence was this one, on the first tick after the journal
+start. A cache a restore rebuilds must also be rebuilt at the point a restore resumes from: the
+core now rebuilds the grid before each tick's first phase (`MidTickMoveRestoreTest`).
