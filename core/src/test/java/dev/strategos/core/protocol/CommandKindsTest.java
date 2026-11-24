@@ -49,7 +49,8 @@ class CommandKindsTest {
                         "strategos:attack_spread",
                         "strategos:research",
                         "strategos:capture",
-                        "strategos:upgrade_building");
+                        "strategos:upgrade_building",
+                        "strategos:place_wall");
     }
 
     @Test

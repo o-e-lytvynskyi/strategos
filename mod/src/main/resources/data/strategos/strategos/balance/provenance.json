@@ -255,6 +255,21 @@
     "Upgrade/Cost/resources/wood": "Fifty wood: 0 A.D.'s tower upgrade costs 50 wood and 100 stone (research second-pass 1.6) (BLD-12)",
     "Upgrade/Cost/resources/stone": "A hundred stone: 0 A.D.'s upgrade price (research second-pass 1.6); with the post's hundred wood and the upgrade's fifty, a defence tower reached through the sentry costs 150 wood and 100 stone, a little more wood than building it outright (BLD-12)"
   },
+  "strategos:building/palisade": {
+    "Health/max": "Three hundred a segment: under a house's four hundred, so a squad with torches or a ram opens a segment in seconds yet a lone raider does not get through (BLD-13, CMB-03)",
+    "Resistance/fire": "Timber: fire's whole blow lands, as on a house (CMB-03)",
+    "Cost/resources/wood": "Fourteen wood a four-block segment, wood alone: a palisade is a Village structure (research second-pass 1.6), cheap enough that a line of twenty blocks is seventy wood and a starting economy can wall a chokepoint (BLD-13)",
+    "Cost/time": "Eight seconds for one builder: a segment goes up faster than a house (30 s) so a line is raised in the minutes before a raid, not after it (BLD-13)",
+    "Wall/segment": "Four blocks a segment: a wall's unit of length, whole blocks so a line cuts into end-to-end segments with no gap (BLD-13)"
+  },
+  "strategos:building/palisade_gate": {
+    "Health/max": "Five hundred: a little over a segment's three hundred, so a gate is a line's strong point rather than the first thing a raid breaks (BLD-13)",
+    "Resistance/fire": "Timber: fire's whole blow lands, as on a house (CMB-03)",
+    "Cost/resources/wood": "Twenty wood: a segment's fourteen and a share for the hinges, so a gate costs a little over a segment (BLD-13)",
+    "Cost/time": "Ten seconds for one builder: a little over a segment's eight (BLD-13)",
+    "Wall/segment": "Four blocks, as a segment: a gate replaces one in a line and fills its place exactly (BLD-13)",
+    "Wall/gate": "Marks the segment's middle two columns as a gate: 0 A.D.'s gates open for allies (research second-pass 1.6), so its owner and allies pass and enemies do not (PATH-12, BLD-13)"
+  },
   "strategos:building/arsenal": {
     "Health/max": "Fifteen hundred: a stone workshop, tougher than a barracks (1,200), so the siege line is not lost to the first raid that reaches it (CMB-09)",
     "Cost/resources/wood": "Two hundred wood: the frames and the beams a ram is hung from, as a barracks' (CMB-09)",

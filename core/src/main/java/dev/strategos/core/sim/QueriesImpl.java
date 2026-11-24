@@ -487,6 +487,11 @@ final class QueriesImpl implements MatchQueries {
     }
 
     @Override
+    public List<dev.strategos.core.sim.build.GateDoor> gateDoors() {
+        return dev.strategos.core.sim.build.WallGates.doors(state);
+    }
+
+    @Override
     public List<WorldEffect> worldClaims() {
         return WorldClaims.of(state);
     }

@@ -4,11 +4,13 @@ import dev.strategos.core.shared.DetMath;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.MotionStore;
 import dev.strategos.core.sim.nav.Dir;
+import dev.strategos.core.sim.nav.GateLinks;
 import dev.strategos.core.sim.nav.LineOfWalk;
 import dev.strategos.core.sim.nav.PathStatus;
 import dev.strategos.core.sim.nav.PathStore;
 import dev.strategos.core.sim.nav.Surface;
 import dev.strategos.core.sim.nav.SurfaceGrid;
+import org.jspecify.annotations.Nullable;
 
 /** The movement helpers of {@link MotionSystem}: the floor, one step across a column edge, the stuck monitor, turning. */
 final class MotionMoves {
@@ -79,6 +81,10 @@ final class MotionMoves {
             return false;
         }
         if (!grounded && !ground(s, i)) {
+            GateLinks.Pass gates = gates(s, i);
+            if (gates != null && gates.gate((int) Math.floor(x), (int) Math.floor(z))) {
+                return inGate(s, i, gates, nx, nz) || inGate(s, i, gates, nx, z) || inGate(s, i, gates, x, nz);
+            }
             motion.set(i, nx, motion.y(i), nz, motion.yaw(i));
             return true;
         }
@@ -110,9 +116,62 @@ final class MotionMoves {
         int layer = layerOf(grid, cx, cz, motion.floor(i));
         int nl = grid.neighbour(cx, cz, layer, direction(ncx - cx, ncz - cz));
         if (nl < 0) {
+            GateLinks.Pass gates = ncx != cx && ncz != cz ? null : gates(s, i);
+            if (gates != null && gates.gate(ncx, ncz)) {
+                motion.set(i, nx, motion.y(i), nz, motion.yaw(i)); // into the gate, its floor kept
+                return true;
+            }
             return false;
         }
         motion.setFloor(i, Surface.floor(grid.surface(ncx, ncz, nl)));
+        motion.set(i, nx, motion.y(i), nz, motion.yaw(i));
+        return true;
+    }
+
+    /** What unit {@code i} may walk through of the gates of its allies (PATH-12), null while there are none. */
+    static GateLinks.@Nullable Pass gates(MatchState s, int i) {
+        return s.gates().empty()
+                ? null
+                : s.gates().passFor(s.surfacesFor(i), s.identity().faction(i), s.allies());
+    }
+
+    /**
+     * One step of a unit standing in a gate's columns (it has no surface there): on through the gate's columns, or out
+     * onto a surface within a block of its floor, never into a column the gate does not own that has none.
+     */
+    private static boolean inGate(MatchState s, int i, GateLinks.Pass gates, double nx, double nz) {
+        MotionStore motion = s.motion();
+        int ncx = (int) Math.floor(nx);
+        int ncz = (int) Math.floor(nz);
+        int cx = (int) Math.floor(motion.x(i));
+        int cz = (int) Math.floor(motion.z(i));
+        if (ncx == cx && ncz == cz) {
+            motion.set(i, nx, motion.y(i), nz, motion.yaw(i));
+            return true;
+        }
+        if (Math.abs(ncx - cx) > 1 || Math.abs(ncz - cz) > 1 || (ncx != cx && ncz != cz)) {
+            return false;
+        }
+        if (gates.gate(ncx, ncz)) {
+            motion.set(i, nx, motion.y(i), nz, motion.yaw(i));
+            return true;
+        }
+        SurfaceGrid grid = s.surfacesFor(i);
+        int best = MotionStore.NO_FLOOR;
+        for (int layer = 0; layer < grid.count(ncx, ncz); layer++) {
+            int surface = grid.surface(ncx, ncz, layer);
+            int f = Surface.floor(surface);
+            if (Surface.passable(surface)
+                    && Math.abs(f - motion.floor(i)) <= Footing.STEP_UP
+                    && (best == MotionStore.NO_FLOOR
+                            || Math.abs(f - motion.floor(i)) < Math.abs(best - motion.floor(i)))) {
+                best = f;
+            }
+        }
+        if (best == MotionStore.NO_FLOOR) {
+            return false;
+        }
+        motion.setFloor(i, best);
         motion.set(i, nx, motion.y(i), nz, motion.yaw(i));
         return true;
     }
@@ -223,7 +282,7 @@ final class MotionMoves {
         int cx = (int) Math.floor(px);
         int cz = (int) Math.floor(pz);
         int layer = layerOf(grid, cx, cz, path.floor(cursor - 1));
-        if (layer < 0 || LineOfWalk.walk(grid, grid.node(cx, cz, layer), px, pz, tx, tz) < 0) {
+        if (layer < 0 || LineOfWalk.walk(grid, grid.node(cx, cz, layer), px, pz, tx, tz, gates(s, i)) < 0) {
             return null;
         }
         return new double[] {px, pz};
@@ -236,7 +295,8 @@ final class MotionMoves {
         int cx = (int) Math.floor(motion.x(i));
         int cz = (int) Math.floor(motion.z(i));
         int layer = motion.floor(i) == MotionStore.NO_FLOOR ? -1 : layerOf(grid, cx, cz, motion.floor(i));
-        return layer >= 0 && LineOfWalk.walk(grid, grid.node(cx, cz, layer), motion.x(i), motion.z(i), tx, tz) >= 0;
+        return layer >= 0
+                && LineOfWalk.walk(grid, grid.node(cx, cz, layer), motion.x(i), motion.z(i), tx, tz, gates(s, i)) >= 0;
     }
 
     /** The layer of the column's surface with this floor, or -1. */

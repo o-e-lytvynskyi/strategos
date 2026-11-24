@@ -78,6 +78,8 @@ public final class CommandKinds {
             UpgradeBuilding.CODEC,
             UpgradeBuilding.WIRE,
             false);
+    public static final CommandKind<PlaceWall> PLACE_WALL =
+            new CommandKind<>("strategos:place_wall", 34, PlaceWall.class, PlaceWall.CODEC, PlaceWall.WIRE, false);
     public static final CommandKinds DEFAULT = new CommandKinds(List.of(
             MOVE,
             STOP,
@@ -111,7 +113,8 @@ public final class CommandKinds {
             ATTACK_SPREAD,
             RESEARCH,
             CAPTURE,
-            UPGRADE_BUILDING));
+            UPGRADE_BUILDING,
+            PLACE_WALL));
 
     private final List<CommandKind<?>> kinds;
     private final Codec<Command> codec;

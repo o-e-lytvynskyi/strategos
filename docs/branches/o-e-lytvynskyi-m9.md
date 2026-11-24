@@ -6,9 +6,9 @@
 
 ## Now
 
-- **Milestone:** M9 Territory, capture and defence, 14 of 20 tasks done; spec [M9](../milestones/M9-territory-capture-and-defence.md).
+- **Milestone:** M9 Territory, capture and defence, 16 of 20 tasks done; spec [M9](../milestones/M9-territory-capture-and-defence.md).
 - **In progress:** none.
-- **Last finished task:** T16 (2026-11-24).
+- **Last finished task:** T13, T14 (2026-11-24).
 - **Next task:** T13, T14 · BLD-13 · Walls (in a worktree); then T17 · the demo chapters; T18's long runs on a quiet machine.
 - **Merged from main last:** 05cd50b (2026-11-24).
 
@@ -27,7 +27,9 @@ From the assessment before the claim (procedure §2a step 0). Every other depend
 
 Newest first; one entry per session in the worklog's shape.
 
-### 2026-11-24 — M9 spec, T1–T12, T15, T16
+### 2026-11-24 — M9 spec, T1–T16
+
+- **M9 T13, T14 · BLD-13, PATH-12 · Palisades and gates** — BLD-13 and PATH-12 in progress until the review's fixes; `WallLine`, `PlaceWall` (wire 34), `palisade` and `palisade_gate` (a completed gate registers its middle columns), movement through allied gates without a stop (eviction exempt, `LineOfWalk` and group jobs take the pass), the breach (an attack-move that ends short attacks a wall), door blocks from `GateDoors`, the client's drag mode; `WallLineTest` (7), `PlaceWallTest` (10), `WallGateTest` (8), `GateMovementTest` (9), `ClientWallTest` (5), `walltests.segments_match_layout`, `walltests.gate_allies_only` (allies at L1, AFTER-M7 in the GameTest), `walltests.enemies_around_or_through`, `pathtests.own_gate_no_stop`; spec §1.6 rows 20–21; `verify verifySlow` green, 5 min 20 s merged, 268 GameTests. The reviewer found a unit restored mid-gate stuck (its floor not restored) and missing tests; fixes follow.
 
 - **M9 T16 · PERF-16 · The perf gate's scene** — PERF-16 in progress (the measured run on a quiet machine, T18; the four-client pass AFTER-M7); `TerritoryScene` (four Hard AI factions of 150 on MAP-02, churn every 30 s, 40 garrisoned; stress: every 15 s, 80), `perf_territory` and `perf_territory_stress` with A–C and E, C p95 ≤ 50 ms under stress, the territory join p99 ≤ 0.5 ms and one recompute per 20 ticks at most; `SystemTimes` (territory run and join, garrison, capture) and the report's `systems.territory` and `systems.garrison`; `TerritorySceneTest` (3), `SystemTimesTest` (2); a 2-minute trial ran both batches in 6 min 15 s, both `invalid environment` (foreign load 32 % and 9 %), territory run p99 99 µs, join max 6.8 µs, 13 recomputes; `verify` green, 2 min 51 s merged. The full run: `tools/longrun.sh -- :mod:runGameTestPerf -Pperf.filter=territory` on a quiet machine.
 

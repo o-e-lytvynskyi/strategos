@@ -39,4 +39,5 @@ public sealed interface Command extends Hashable
                 AttackSpread,
                 Research,
                 Capture,
-                UpgradeBuilding {}
+                UpgradeBuilding,
+                PlaceWall {}

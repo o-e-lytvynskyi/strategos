@@ -1,10 +1,18 @@
 package dev.strategos.core.sim.nav;
 
 import dev.strategos.core.sim.MatchState;
+import org.jspecify.annotations.Nullable;
 
 /** The checks of a delivered path against the unit and the grid: where it starts, whether it can be walked, crossed pages. */
 final class PathRoutes {
     private PathRoutes() {}
+
+    /** What unit {@code i} may cross of the gates of its allies (PATH-12), null while there are none. */
+    static GateLinks.@Nullable Pass gates(MatchState s, int i) {
+        return s.gates().empty()
+                ? null
+                : s.gates().passFor(s.surfacesFor(i), s.identity().faction(i), s.allies());
+    }
 
     /**
      * The waypoints a unit follows from where it now stands: a path searched from where it stood when it asked, which
@@ -21,7 +29,7 @@ final class PathRoutes {
         double z = s.motion().z(i);
         int node = PathService.startNode(
                 grid, x, s.motion().y(i), z, s.config().bounds().minY());
-        if (node >= 0 && LineOfWalk.walk(grid, node, x, z, w.x(0), w.z(0)) >= 0) {
+        if (node >= 0 && LineOfWalk.walk(grid, node, x, z, w.x(0), w.z(0), gates(s, i)) >= 0) {
             return w;
         }
         if (SurfaceGrid.nodeLayer(fromNode) >= grid.count(grid.nodeX(fromNode), grid.nodeZ(fromNode))) {
@@ -51,8 +59,9 @@ final class PathRoutes {
         double z = s.motion().z(i);
         int node = PathService.startNode(
                 grid, x, s.motion().y(i), z, s.config().bounds().minY());
+        GateLinks.Pass gates = gates(s, i);
         for (int k = 0; k < w.count() && node >= 0; k++) {
-            node = LineOfWalk.walk(grid, node, x, z, w.x(k), w.z(k));
+            node = LineOfWalk.walk(grid, node, x, z, w.x(k), w.z(k), gates);
             x = w.x(k);
             z = w.z(k);
         }

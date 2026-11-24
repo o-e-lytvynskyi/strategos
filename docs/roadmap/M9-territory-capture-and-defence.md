@@ -139,7 +139,7 @@ CMB-10 → BLD-10 → AI-08 (26 card-days).
   3. Gates open for allies and stay shut for enemies (L3).
   4. Enemies path around a palisade or attack it (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** BLD-04, PATH-12 · **Size:** L · **Tier:** T1
-- **Status:** specified
+- **Status:** in_progress
 
 #### PATH-12 · Gates and doors in navigation
 - **Value:** Units pass their own gates without stopping and treat enemy gates as walls.

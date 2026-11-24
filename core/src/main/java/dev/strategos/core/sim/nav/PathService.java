@@ -666,7 +666,13 @@ public final class PathService {
                 .put(new PathStore.Pending(
                         r,
                         s.tick() + rules.pathK(),
-                        jobs.submit(new GroupJob(grid, r, standing, rules.joinCap(), joins))));
+                        jobs.submit(new GroupJob(
+                                grid,
+                                r,
+                                standing,
+                                rules.joinCap(),
+                                joins,
+                                s.gates().passFor(grid, s.identity().faction(members.getInt(0)), s.allies())))));
     }
 
     private void submit(MatchState s, int i, PathStore.Waiting w) {
@@ -677,7 +683,12 @@ public final class PathService {
         double x = motion.x(i);
         double z = motion.z(i);
         int from = startNode(grid, x, motion.y(i), z, s.config().bounds().minY());
+        GateLinks.Pass gates = s.gates().passFor(grid, s.identity().faction(i), s.allies()); // PATH-12; null: none
         if (from < 0) {
+            if (gates != null && gates.gate((int) Math.floor(x), (int) Math.floor(z))) {
+                busy(s, i); // in a gate's columns: it keeps its path across and asks again on the far side
+                return;
+            }
             decide(s, i, PathStore.Waypoints.NONE, PathStatus.NO_PATH); // it stands on no surface now
             return;
         }
@@ -693,7 +704,6 @@ public final class PathService {
                 rules.searchCap(),
                 0,
                 false);
-        GateLinks.Pass gates = s.gates().passFor(grid, s.identity().faction(i), s.allies()); // PATH-12; null: none
         paths.put(new PathStore.Pending(r, tick + rules.pathK(), jobs.submit(new PathJob(grid, r, gates))));
     }
 

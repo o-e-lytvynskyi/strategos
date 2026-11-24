@@ -118,6 +118,8 @@ The demo chapters (`-Pdemo=m9`): `territory`, `capture`, `garrison_heal`, `tower
 
 | 7 | M6's follow-ups | M6 asked for a fake `DemoStage` in the next milestone's first task; `DemoStage` is a class over a `ServerLevel` | T17, with the new chapters; T1 keeps the moves |
 
+| 21 | Walls in the game (T14) | Units stopped at an allied gate because `Construction.evictBlocked` put them out of its columns every tick; group paths ignored gates; the spec named spruce fences, which `TemplateLint` refuses (they burn) | Allied gate columns are exempt from eviction and walkable in `LineOfWalk`, `PathRoutes`, `MotionMoves` and group jobs; crimson stems and fences; an attack-move that ends short attacks the nearest enemy wall within 6 blocks; doors set `FenceGateBlock.OPEN` every 4 ticks on change |
+| 20 | Walls in the core (T13) | A per-segment list does not fit the command result; a diagonal line; the gate's 3-high blueprint fails the style guide's rise rate | `PlaceWall` reports counts (laid, refused) and the first reason, PARTIAL on a mix, at most 64 segments; a diagonal snaps to its dominant axis; the gate is 4×4×1; walls are `Wall Decoration` (no conquest, skipped by the AI's mop-up) and not `Village` |
 | 19 | The AI's view (T15) | The AI could not read `Limit/count`, capture totals or garrison room | Read-only queries on `MatchQueries`/`AiView`; `Seize` decides capture or burn (effect > 1.5 × regeneration, give up after 90 s); a mop-up squad too weak to beat a barracks' regeneration is reinforced from idle soldiers; the second centre comes once the build order is done and twice its price is in stock |
 | 18 | Gate API (T12 review) | §2.9 names `Reach.reachable(from, to, faction)` and a faction passed to `GridAStar` | `Reach.reachable(grid, gates, allies, faction, from, to)`; `GridAStar` takes a `GateLinks.Pass` rather than a faction; no request-key change, the pass travels with the job |
 | 17 | The capture key and refusals (T8, T9) | C is vanilla's `key.saveToolbarActivator` (UNIVERSAL), which `DefaultKeysTest` (UI-01.2) refuses; Attack refuses an own target as INVALID_ARGUMENT | The capture key is N; own and allied buildings are refused as INVALID_ARGUMENT, a building or unit without capture as UNSUPPORTED; capturers keep capturing under fire (no retaliation) |
@@ -440,7 +442,7 @@ Results, the health check, the hand-in. Size: records.
 ### 7.3 Progress
 
 - [x] T1 (2026-11-24) · [x] T2 (2026-11-24) · [x] T3 (2026-11-24) · [x] T4 (2026-11-24) · [x] T5 (2026-11-24) · [x] T6 (2026-11-24, goldens in T19) · [x] T10 (2026-11-24, regeneration with T7) · [x] T11 (2026-11-24) · [x] T12 (2026-11-24) · [x] T7 (2026-11-24)
-- [x] T8 (2026-11-24) · [x] T9 (2026-11-24) · [ ] T13 · [ ] T14 · [x] T15 (2026-11-24) · [x] T16 (2026-11-24, the measured run in T18) · [ ] T17 · [ ] T18 · [ ] T19 · [ ] T20
+- [x] T8 (2026-11-24) · [x] T9 (2026-11-24) · [x] T13 (2026-11-24) · [x] T14 (2026-11-24) · [x] T15 (2026-11-24) · [x] T16 (2026-11-24, the measured run in T18) · [ ] T17 · [ ] T18 · [ ] T19 · [ ] T20
 
 ## 8. Acceptance checklist (M9 exit)
 

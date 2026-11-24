@@ -17,6 +17,8 @@
   "strategos.building.barracks": "Barracks",
   "strategos.building.tower": "Defence tower",
   "strategos.building.sentry_tower": "Sentry tower",
+  "strategos.building.palisade": "Palisade",
+  "strategos.building.palisade_gate": "Palisade gate",
   "strategos.building.arsenal": "Arsenal",
   "strategos.building.field": "Field",
   "strategos.building.quarry": "Quarry",

@@ -113,7 +113,7 @@ final class BuiltinTemplates {
               "Health": { "max": 50 },
               "Behaviour": { "flee": 8, "stance": "passive" },
               "Cost": { "resources": { "food": 60 }, "population": 1, "time": 10 },
-              "Builder": { "rate": 1, "buildings": "strategos:building/civic_centre strategos:building/house strategos:building/barracks strategos:building/storehouse strategos:building/farmstead strategos:building/field strategos:building/sentry_tower" },
+              "Builder": { "rate": 1, "buildings": "strategos:building/civic_centre strategos:building/house strategos:building/barracks strategos:building/storehouse strategos:building/farmstead strategos:building/field strategos:building/sentry_tower strategos:building/palisade strategos:building/palisade_gate" },
               "ResourceGatherer": {
                 "rates": { "food": { "fruit": 1, "grain": 0.5, "meat": 1 }, "wood": { "tree": 0.6 }, "stone": { "rock": 0.4 }, "iron": { "ore": 0.35 } },
                 "capacities": { "food": 10, "wood": 10, "stone": 10, "iron": 10 },
@@ -270,6 +270,30 @@ final class BuiltinTemplates {
                 "requires": "strategos:phase_town",
                 "Cost": { "resources": { "wood": 50, "stone": 100 } }
               }
+            }
+            """;
+
+    static final String PALISADE = """
+            {
+              "parent": "strategos:template/building_base",
+              "Identity": { "name": "strategos.building.palisade", "icon": "minecraft:crimson_fence", "classes": "+Wall +Decoration" },
+              "Building": { "blueprint": "strategos:palisade", "material": "wood" },
+              "Resistance": { "fire": 0 },
+              "Health": { "max": 300 },
+              "Cost": { "resources": { "wood": 14 }, "time": 8 },
+              "Wall": { "segment": 4 }
+            }
+            """;
+
+    static final String PALISADE_GATE = """
+            {
+              "parent": "strategos:template/building_base",
+              "Identity": { "name": "strategos.building.palisade_gate", "icon": "minecraft:crimson_fence_gate", "classes": "+Wall +Decoration" },
+              "Building": { "blueprint": "strategos:palisade_gate", "material": "wood" },
+              "Resistance": { "fire": 0 },
+              "Health": { "max": 500 },
+              "Cost": { "resources": { "wood": 20 }, "time": 10 },
+              "Wall": { "segment": 4, "gate": 1 }
             }
             """;
 
@@ -519,7 +543,9 @@ final class BuiltinTemplates {
             new TemplateId("strategos:building/tower"), // M6 T20
             new TemplateId("strategos:building/arsenal"), // M6 T19
             new TemplateId("strategos:unit/ram"),
-            new TemplateId("strategos:building/sentry_tower"))); // M9 T11
+            new TemplateId("strategos:building/sentry_tower"), // M9 T11
+            new TemplateId("strategos:building/palisade"), // M9 T13
+            new TemplateId("strategos:building/palisade_gate")));
 
     /** The indices the built-in techs were given, kept as {@link #PINNED} keeps the templates' (row 20). */
     private static final TechIdTable PINNED_TECHS = new TechIdTable(List.of(
@@ -573,6 +599,8 @@ final class BuiltinTemplates {
             templates.add(raw("strategos:unit/ram", RAM));
             templates.add(
                     raw("strategos:building/sentry_tower", SENTRY_TOWER)); // on the Village worker's list (BLD-12)
+            templates.add(raw("strategos:building/palisade", PALISADE)); // BLD-13
+            templates.add(raw("strategos:building/palisade_gate", PALISADE_GATE));
         }
         TemplateCompiler.Result result = TemplateCompiler.compile(
                 templates,

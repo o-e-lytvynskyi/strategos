@@ -22,6 +22,8 @@ public final class PlaceholderBlueprints {
     public static final String TOWER = "strategos:tower";
     public static final String SENTRY_TOWER = "strategos:sentry_tower";
     public static final String ARSENAL = "strategos:arsenal";
+    public static final String PALISADE = "strategos:palisade";
+    public static final String PALISADE_GATE = "strategos:palisade_gate";
     public static final String QUARRY = "strategos:quarry";
     public static final String QUARRY_LARGE = "strategos:quarry_large";
     public static final String IRON_MINE = "strategos:iron_mine";
@@ -40,6 +42,8 @@ public final class PlaceholderBlueprints {
                 farmstead(),
                 tower(),
                 sentryTower(),
+                palisade(),
+                palisadeGate(),
                 arsenal(),
                 deposit(QUARRY, 3, "minecraft:stone", "minecraft:andesite"),
                 deposit(QUARRY_LARGE, 5, "minecraft:stone", "minecraft:andesite"),
@@ -232,6 +236,41 @@ public final class PlaceholderBlueprints {
             g.set(4, y, 4, 1);
         }
         return g.blueprint(SENTRY_TOWER, 2, 1, 0);
+    }
+
+    /** The palette of the walls (BLD-13): crimson wood never burns, so posts and rails are crimson stem and fence. */
+    private static List<String> wallPalette() {
+        return List.of(
+                "minecraft:stripped_crimson_stem[axis=y]",
+                "minecraft:crimson_fence[east=false,north=false,south=false,waterlogged=false,west=false]",
+                "minecraft:crimson_fence_gate[facing=north,in_wall=false,open=false,powered=false]");
+    }
+
+    /**
+     * 4 x 3 x 1 (BLD-13): a palisade segment along X, a stem post at each end and fence between, three high. A segment
+     * is turned a quarter to run along Z; its blocks are not, and fences join their neighbours by themselves. Its door
+     * marker is a formality (nobody enters a wall).
+     */
+    public static Blueprint palisade() {
+        Grid g = new Grid(4, 3, 1, wallPalette());
+        g.fill(0, 0, 0, 3, 2, 0, 1);
+        g.fill(0, 0, 0, 0, 2, 0, 0);
+        g.fill(3, 0, 0, 3, 2, 0, 0);
+        return g.blueprint(PALISADE, 1, 0, 0);
+    }
+
+    /**
+     * 4 x 4 x 1 (BLD-13): a palisade segment a block taller, its middle two columns fence gates two high under a
+     * two-high fence lintel; the core opens and shuts them (the mod sets their {@code open} state), and units pass the
+     * two columns as a gate.
+     */
+    public static Blueprint palisadeGate() {
+        Grid g = new Grid(4, 4, 1, wallPalette());
+        g.fill(0, 0, 0, 3, 3, 0, 1);
+        g.fill(0, 0, 0, 0, 3, 0, 0);
+        g.fill(3, 0, 0, 3, 3, 0, 0);
+        g.fill(1, 0, 0, 2, 1, 0, 2);
+        return g.blueprint(PALISADE_GATE, 1, 0, 0);
     }
 
     /**

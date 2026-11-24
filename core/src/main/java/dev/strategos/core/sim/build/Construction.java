@@ -153,12 +153,22 @@ public final class Construction {
             }
             int cx = (int) Math.floor(motion.x(i));
             int cz = (int) Math.floor(motion.z(i));
-            if (s.footprintAt(cx, cz)
+            if ((s.footprintAt(cx, cz) && !passingGate(s, i, cx, cz))
                     || (s.mobility(i) == dev.strategos.core.sim.nav.MobilityClass.LARGE
                             && !largeFootprintFits(s, cx, cz))) {
                 putOut(s, i, nearestFree(s, new Footprint(cx, cz, 0, 1, 1), cx, cz, s.mobility(i)));
             }
         }
+    }
+
+    /** Whether column (cx, cz) is one of a gate that unit {@code i} may walk through (PATH-12): it is no obstruction. */
+    private static boolean passingGate(MatchState s, int i, int cx, int cz) {
+        if (s.gates().empty()) {
+            return false;
+        }
+        dev.strategos.core.sim.nav.GateLinks.Pass pass =
+                s.gates().passFor(s.surfacesFor(i), s.identity().faction(i), s.allies());
+        return pass != null && pass.gate(cx, cz);
     }
 
     private static void putOut(MatchState s, int i, int @Nullable [] cell) {
@@ -295,6 +305,7 @@ public final class Construction {
         if (finished) {
             s.matchStats().buildingBuilt(s.buildings().faction(handle));
             Production.finished(s, handle); // its housing counts and a field ripens, as an instant building's do
+            WallGates.finished(s, handle); // a palisade gate opens its way (BLD-13)
             s.outputs()
                     .add(new Notice(
                             new FactionSlot(s.buildings().faction(handle)),

@@ -128,8 +128,8 @@ public final class UnitAi {
                         StateDef.<MatchState>child(WALKING_AND_FIGHTING, INDIVIDUAL)
                                 .thinkEvery(5)
                                 .think(UnitAi::engageNearest)
-                                .on(Arrived.class, (ctx, m) -> finishOrder(ctx, false))
-                                .on(Stuck.class, UnitAi::giveUp)
+                                .on(Arrived.class, UnitAi::arrivedOrBreach)
+                                .on(Stuck.class, UnitAi::giveUpOrBreach)
                                 .on(PathInvalidated.class, UnitAi::repath)
                                 .on(Attacked.class, (ctx, m) -> CombatActions.retaliate(ctx, m.attacker()))
                                 .transitions(next())
@@ -336,6 +336,22 @@ public final class UnitAi {
         if (m.rung() == Stuck.GIVE_UP) {
             finishOrder(ctx, true);
         }
+    }
+
+    /** An attack-move that ends short of its goal (no way nearer) attacks the wall in its way before it is done (BLD-13). */
+    private static void arrivedOrBreach(Context<MatchState> ctx, Arrived m) {
+        if (Breaching.shortOfGoal(ctx) && Breaching.breach(ctx)) {
+            return;
+        }
+        finishOrder(ctx, false);
+    }
+
+    /** An attack-move that cannot get nearer its goal attacks the wall in its way before it gives the order up (BLD-13). */
+    private static void giveUpOrBreach(Context<MatchState> ctx, Stuck m) {
+        if (m.rung() == Stuck.GIVE_UP && Breaching.breach(ctx)) {
+            return;
+        }
+        giveUp(ctx, m);
     }
 
     private static void repath(Context<MatchState> ctx, PathInvalidated m) {

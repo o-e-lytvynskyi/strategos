@@ -41,6 +41,7 @@ import dev.strategos.gametest.suites.TechTests;
 import dev.strategos.gametest.suites.TerritoryTests;
 import dev.strategos.gametest.suites.TicketLeakSelfTest;
 import dev.strategos.gametest.suites.TowerTests;
+import dev.strategos.gametest.suites.WallTests;
 import dev.strategos.gametest.suites.WriterTests;
 import java.util.List;
 
@@ -95,6 +96,7 @@ public final class Suites {
                         ProtectionTests.class,
                         SkirmishTests.class,
                         TechTests.class,
+                        WallTests.class,
                         WriterTests.class);
         };
     }

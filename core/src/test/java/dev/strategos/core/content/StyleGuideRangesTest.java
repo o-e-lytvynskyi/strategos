@@ -24,7 +24,8 @@ class StyleGuideRangesTest {
             new Range("CivicCentre", 9, 15, 6, 10, 300, 800),
             new Range("Tower", 5, 7, 7, 12, 100, 260),
             new Range("Arsenal", 9, 13, 6, 9, 250, 500),
-            new Range("Deposit", 3, 6, 2, 4, 18, 90));
+            new Range("Deposit", 3, 6, 2, 4, 18, 90),
+            new Range("Wall", 4, 4, 3, 4, 12, 16)); // M9 T13: a palisade segment and its gate (BLD-13)
 
     static final double RISE_MIN = 1.5;
     static final double RISE_MAX = 6;
@@ -57,6 +58,6 @@ class StyleGuideRangesTest {
             }
             checked++;
         }
-        assertThat(checked).isEqualTo(13);
+        assertThat(checked).isEqualTo(15);
     }
 }

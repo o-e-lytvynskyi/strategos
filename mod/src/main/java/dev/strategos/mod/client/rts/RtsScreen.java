@@ -66,7 +66,7 @@ public final class RtsScreen extends Screen {
             return;
         }
         double[] from = in.dragFrom();
-        if (from.length == 2) {
+        if (from.length == 2 && !mode.placement().armed()) { // a wall's drag is its ghost, not a selection box
             int x0 = (int) Math.min(from[0], mouseX);
             int y0 = (int) Math.min(from[1], mouseY);
             int x1 = (int) Math.max(from[0], mouseX);
@@ -211,7 +211,11 @@ public final class RtsScreen extends Screen {
                         selection.allOfType(onScreen(mode.seen()), unit, shift);
                     }
                 }
-                case BOX_SELECT -> selection.box(mode.seen(), x(e.x()), y(e.y()), x(e.toX()), y(e.toY()), shift);
+                case BOX_SELECT -> {
+                    if (!mode.placement().drag(pickAt(e.x(), e.y()), pickAt(e.toX(), e.toY()), shift)) {
+                        selection.box(mode.seen(), x(e.x()), y(e.y()), x(e.toX()), y(e.toY()), shift);
+                    }
+                }
                 case ORDER_PREVIEW -> mode.preview(true);
                 case ORDER_CONTEXT -> {
                     if (mode.placement().armed()) {

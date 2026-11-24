@@ -78,9 +78,13 @@ public final class GateLinks {
     private Pass buildPass(int faction, Allies allies) {
         TreeMap<Integer, java.util.List<long[]>> byNode = new TreeMap<>(); // node -> {target, cost bits}
         java.util.TreeSet<Long> componentPairs = new java.util.TreeSet<>();
+        java.util.TreeSet<Integer> open = new java.util.TreeSet<>();
         for (int g = 0; g < owners.length; g++) {
             if (!allies.allied(faction, owners[g])) {
                 continue;
+            }
+            for (int c : columns[g]) {
+                open.add(c);
             }
             int[] nodes = sides[g];
             for (int a : nodes) {
@@ -126,7 +130,8 @@ public final class GateLinks {
             k++;
         }
         long[] pairs = componentPairs.stream().mapToLong(Long::longValue).toArray();
-        return new Pass(from, to, cost, pairs);
+        return new Pass(
+                from, to, cost, pairs, open.stream().mapToInt(Integer::intValue).toArray());
     }
 
     /** Whether the straight segment between two columns passes through a column of the gate (sorted, packed). */
@@ -164,12 +169,19 @@ public final class GateLinks {
         private final int[][] to;
         private final double[][] cost;
         private final long[] components;
+        private final int[] open; // the columns of the allied gates, packed x << 16 | z, ascending
 
-        private Pass(int[] from, int[][] to, double[][] cost, long[] components) {
+        private Pass(int[] from, int[][] to, double[][] cost, long[] components, int[] open) {
             this.from = from;
             this.to = to;
             this.cost = cost;
             this.components = components;
+            this.open = open;
+        }
+
+        /** Whether column ({@code x}, {@code z}) is one of an allied gate's: a unit of this faction may walk through it. */
+        public boolean gate(int x, int z) {
+            return Arrays.binarySearch(open, x << 16 | z) >= 0;
         }
 
         public boolean empty() {

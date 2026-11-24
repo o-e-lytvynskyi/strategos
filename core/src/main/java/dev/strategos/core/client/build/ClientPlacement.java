@@ -144,7 +144,8 @@ public final class ClientPlacement {
                 affordable);
     }
 
-    private static double value(TemplateSet templates, int template, String path) {
+    /** A template's value at {@code path} without modifiers, 0 for none. */
+    static double value(TemplateSet templates, int template, String path) {
         ValuePath p = templates.valuePaths().byPath(path);
         double v = p == null ? Double.NaN : templates.value(template, p.id());
         return Double.isFinite(v) ? Math.max(0, v) : 0;
