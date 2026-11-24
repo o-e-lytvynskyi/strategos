@@ -6,10 +6,10 @@
 
 ## Now
 
-- **Milestone:** M9 Territory, capture and defence, 10 of 20 tasks done; spec [M9](../milestones/M9-territory-capture-and-defence.md).
+- **Milestone:** M9 Territory, capture and defence, 12 of 20 tasks done; spec [M9](../milestones/M9-territory-capture-and-defence.md).
 - **In progress:** none.
-- **Last finished task:** T11 (2026-11-24).
-- **Next task:** T6 · TERR-03 · Borders.
+- **Last finished task:** T8, T9 (2026-11-24).
+- **Next task:** T13 · BLD-13 · Walls in the core (T12's review fixes in a worktree).
 - **Merged from main last:** 05cd50b (2026-11-24).
 
 ## Depends on unfinished work
@@ -27,7 +27,9 @@ From the assessment before the claim (procedure §2a step 0). Every other depend
 
 Newest first; one entry per session in the worklog's shape.
 
-### 2026-11-24 — M9 spec, T1–T7, T10–T12
+### 2026-11-24 — M9 spec, T1–T12
+
+- **M9 T8, T9 · CMB-10 · The capture order and capture in the game** — CMB-10 done; `Capture` (wire 32), `CaptureRule`, the order kind and UnitAi's CAPTURE states (walk, then capture within reach); `BuildingState.Entry`'s capture shares (a byte a faction, only while captured); the capture bar in the building card; the capture key N (spec §1.6 row 17); `CaptureOrderTest` (20 infantry take an undefended barracks in 17–32 s and go idle), `CaptureTransitionRows` (~60), `CaptureShareTest`, `CaptureBarTest`, `capturetests.captured_barracks_trains`; merged with T11's `UpgradeBuilding` (33); `verify` green, 2 min 5 s.
 
 - **M9 T11 · BLD-12 · The sentry tower and upgrades** — BLD-12 done; `building/sentry_tower` (Village, 100 wood, 400 health, 1 + garrison arrows, garrison 3, its blueprint 5×7×5); `UpgradeBuilding` (wire 33) puts an upgrade at the head of the queue, `Upgrades.apply` swaps the template in place (health ratio, garrison, capture points kept; the blueprint rewritten); `TowerDataTest` (3), `UpgradeTest` (6), `towertests.upgrade_keeps_garrison`, the sentry tower through the construction and damage-stage GameTests; `verify` green, 1 min 21 s (in a worktree). The kb entry on shared writer budgets gains its M9 case.
 
@@ -62,6 +64,7 @@ Newest first; one entry per session in the worklog's shape.
 - 2026-11-24 · trial implementer: pass — T4's mod payload in a worktree, first try; it found the 04 §2.5 inventory line the brief missed.
 - 2026-11-24 · trial implementer: pass — T10 in a worktree; it widened the command rule for allied garrisons beyond the brief, recorded as spec §1.6 row 11.
 - 2026-11-24 · trial implementer: pass — T6 in a worktree; it found the dirty-section count wrong in the brief (spec §1.6 row 12) and the off-grid match origin.
+- 2026-11-24 · trial implementer: pass ×3 — T8+T9, T11 and T12 in three worktrees side by side; the smoke runs' fixed port made each rerun once. trial reviewer: pass — T12's review found a major bug (a gate over a footprint unblocked by one release), now being fixed.
 - 2026-11-24 · the sentry tower builds in 40 s with pierce 8 (the spec gave neither), carries no `Village` class (it does not count towards Town), and is wood like the house — undo: its template and provenance.
 - 2026-11-24 · `BorderBench` in `hotPathKernels` (the 0 B/op gate) with no time baseline yet — a baseline is proposed with T18's quiet JMH run — undo: drop the token in core/build.gradle.
 - 2026-11-24 · `Placement/territory` is a number (0, 1, 2), not a token, as every other placement value — undo: a token path and its parser.

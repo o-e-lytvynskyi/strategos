@@ -38,4 +38,5 @@ public sealed interface Command extends Hashable
                 AllClear,
                 AttackSpread,
                 Research,
+                Capture,
                 UpgradeBuilding {}

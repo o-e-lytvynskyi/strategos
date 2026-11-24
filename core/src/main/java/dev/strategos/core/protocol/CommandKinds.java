@@ -69,6 +69,8 @@ public final class CommandKinds {
             "strategos:attack_spread", 30, AttackSpread.class, AttackSpread.CODEC, AttackSpread.WIRE, false);
     public static final CommandKind<Research> RESEARCH =
             new CommandKind<>("strategos:research", 31, Research.class, Research.CODEC, Research.WIRE, false);
+    public static final CommandKind<Capture> CAPTURE =
+            new CommandKind<>("strategos:capture", 32, Capture.class, Capture.CODEC, Capture.WIRE, false);
     public static final CommandKind<UpgradeBuilding> UPGRADE_BUILDING = new CommandKind<>(
             "strategos:upgrade_building",
             33,
@@ -108,6 +110,7 @@ public final class CommandKinds {
             ALL_CLEAR,
             ATTACK_SPREAD,
             RESEARCH,
+            CAPTURE,
             UPGRADE_BUILDING));
 
     private final List<CommandKind<?>> kinds;

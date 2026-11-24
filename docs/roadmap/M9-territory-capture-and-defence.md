@@ -95,7 +95,8 @@ CMB-10 → BLD-10 → AI-08 (26 card-days).
   2. A building changes owner only at zero owner points, never on a majority (L1).
   3. A captured barracks trains for its new owner (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** CMB-03, TERR-01, MATCH-06 · **Size:** L · **Tier:** T1
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-11-24 — M9 T7–T9: `CaptureMathsTest` (1), `CaptureMathsTest.aMajorityNeverFlips…` and `CaptureRegenTest.strengthAboveRegeneration…` (2), `capturetests.captured_barracks_trains` (3); the capture order, bar and key; allied capture with `FakeAllies` (AFTER-M7 for real teams)
 
 #### BLD-10 · Garrison: healing, ejection and capture regeneration
 - **Value:** Garrisons protect and restore your army, and they hold buildings against capture

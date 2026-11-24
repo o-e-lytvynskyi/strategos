@@ -184,6 +184,7 @@ public final class RtsScreen extends Screen {
     /** Selection (UI-03), control groups (UI-04) and orders (UI-05). */
     private void handle(List<InputState.Event> events) {
         Selection selection = mode.selection();
+        InputState keys = mode.input();
         for (InputState.Event e : events) {
             mode.fired(e.action());
             boolean shift = Modifiers.shift(e.modifiers());
@@ -217,7 +218,12 @@ public final class RtsScreen extends Screen {
                         mode.placement().cancel(); // a right click while placing disarms, as in the classics
                     } else {
                         mode.order(
-                                x(e.x()), y(e.y()), shift, Modifiers.ctrl(e.modifiers()), Modifiers.alt(e.modifiers()));
+                                x(e.x()),
+                                y(e.y()),
+                                shift,
+                                Modifiers.ctrl(e.modifiers()),
+                                Modifiers.alt(e.modifiers()),
+                                keys != null && keys.held(Action.CAPTURE));
                     }
                 }
                 case BUILD -> mode.placement().cycle();

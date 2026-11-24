@@ -52,6 +52,7 @@
     "key.strategos.camera_centre_on_selection",
     "key.strategos.attack_move",
     "key.strategos.stop",
+    "key.strategos.capture",
     "key.strategos.toggle_first_person",
     "key.strategos.toggle_rts",
     "key.strategos.controls",

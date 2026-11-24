@@ -21,6 +21,7 @@ public final class CommandRules {
                 .register(new StanceRules.SetStanceRule())
                 .register(new GarrisonRules.GarrisonRule())
                 .register(new GarrisonRules.UngarrisonRule())
+                .register(new CaptureRule())
                 .register(new BellRules.RingBellRule())
                 .register(new BellRules.AllClearRule())
                 .register(new SpawnUnitsRule())

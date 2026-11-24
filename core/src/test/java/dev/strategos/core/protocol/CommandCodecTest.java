@@ -54,6 +54,7 @@ class CommandCodecTest {
                 new AllClear(0x80003),
                 new AttackSpread(UnitSet.of(3, 4), 0x300007, QueueMode.QUEUE),
                 new Research(524_294, new TechId("strategos:gather_wood_1")),
+                new Capture(UnitSet.of(3, 4), 0x300007),
                 new UpgradeBuilding(524_295));
     }
 

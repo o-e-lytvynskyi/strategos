@@ -31,6 +31,8 @@ public final class OrderKind {
     public static final int BURN = 9;
     /** Going into a building (BLD-16), whose handle the queue holds as the target: done once the unit is inside. */
     public static final int GARRISON = 10;
+    /** Capturing a building (CMB-10), whose handle the queue holds as the target: done when it changes hands or is lost. */
+    public static final int CAPTURE = 11;
 
     private OrderKind() {}
 
@@ -47,6 +49,7 @@ public final class OrderKind {
             case BUILD -> "build";
             case BURN -> "burn";
             case GARRISON -> "garrison";
+            case CAPTURE -> "capture";
             default -> throw new IllegalArgumentException("no order kind " + kind);
         };
     }
@@ -64,6 +67,7 @@ public final class OrderKind {
             case "build" -> BUILD;
             case "burn" -> BURN;
             case "garrison" -> GARRISON;
+            case "capture" -> CAPTURE;
             default -> null;
         };
     }
@@ -75,7 +79,7 @@ public final class OrderKind {
 
     /**
      * Whether an order of {@code kind} holds a target: the unit it attacks, the player slot it follows, the unit it
-     * flees from, the node it gathers at, or the building it builds, burns or goes into.
+     * flees from, the node it gathers at, or the building it builds, burns, captures or goes into.
      */
     public static boolean targets(int kind) {
         return attacks(kind)
@@ -84,6 +88,7 @@ public final class OrderKind {
                 || kind == GATHER
                 || kind == BUILD
                 || kind == BURN
-                || kind == GARRISON;
+                || kind == GARRISON
+                || kind == CAPTURE;
     }
 }

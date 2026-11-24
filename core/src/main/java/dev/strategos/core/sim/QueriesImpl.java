@@ -4,6 +4,7 @@ import dev.strategos.core.content.CorePaths;
 import dev.strategos.core.content.Footprint;
 import dev.strategos.core.content.StartSlot;
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.FactionLook;
 import dev.strategos.core.protocol.MatchResults;
 import dev.strategos.core.shared.FactionSlot;
@@ -13,6 +14,7 @@ import dev.strategos.core.shared.TechId;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.build.BuildingView;
+import dev.strategos.core.sim.capture.CaptureSystem;
 import dev.strategos.core.sim.econ.EconomyRules;
 import dev.strategos.core.sim.econ.FactionTreasury;
 import dev.strategos.core.sim.econ.GatherSlots;
@@ -92,9 +94,29 @@ final class QueriesImpl implements MatchQueries {
                     b.autoReseed(handle),
                     java.util.stream.IntStream.range(0, b.queues().queueSize(handle))
                             .mapToObj(k -> b.queues().batch(handle, k))
-                            .toList()));
+                            .toList(),
+                    captureShares(handle)));
         }
         return out;
+    }
+
+    /** Each faction's share of building {@code handle}'s capture points in 255ths; empty with no capture open. */
+    private List<Integer> captureShares(int handle) {
+        long[] points = state.capture().points(handle);
+        long total = CaptureSystem.total(state, handle);
+        if (points == null || total <= 0) {
+            return List.of();
+        }
+        int[] shares = new int[Math.min(points.length, BuildingState.MAX_CAPTURE_FACTIONS)];
+        int end = 0;
+        for (int f = 0; f < shares.length; f++) {
+            double share = points[f] * (double) BuildingState.WHOLE_SHARE / total;
+            shares[f] = (int) Math.max(0, Math.min(BuildingState.WHOLE_SHARE, Math.round(share)));
+            if (shares[f] > 0) {
+                end = f + 1; // trailing zeros are left off
+            }
+        }
+        return Arrays.stream(shares, 0, end).boxed().toList();
     }
 
     @Override

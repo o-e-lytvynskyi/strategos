@@ -111,13 +111,14 @@ The demo chapters (`-Pdemo=m9`): `territory`, `capture`, `garrison_heal`, `tower
 |---|---|---|---|
 | 1 | Relations | The core has no ally notion: every friend-or-foe check is a faction `==` (`Garrisons.admits`, `UnitFilter.enemiesOf`) | `Allies` (§2.1), a contract M7's `DiplomacyView` fills |
 | 2 | Ownership | `BuildingStore` has no way to change a building's faction | `BuildingStore.transfer` (§2.5), with every owner-derived state re-derived |
-| 3 | The default building order | CMB-03's torches are the right-click on buildings | As 0 A.D. since Alpha 27: right-click attacks, holding the capture key (`key.strategos.capture`, C) captures; the AI chooses by the target (§2.12) |
+| 3 | The default building order | CMB-03's torches are the right-click on buildings | As 0 A.D. since Alpha 27: right-click attacks, holding the capture key (`key.strategos.capture`, N; §1.6 row 17) captures; the AI chooses by the target (§2.12) |
 | 4 | Payload cap | TERR-01 asks an update under 8 KB; a full grid of a 1,024² map is 16 K tiles | Deltas of changed tiles; an update over 7 KB is split across ticks (§2.4) |
 | 5 | Building colour | Buildings carry no owner colour in the world, only on the minimap | The capture bar and the minimap show ownership; an owner banner on buildings is a proposal (For the owner), not M9 scope |
 | 6 | Scale | 0 A.D.'s numbers are in metres on maps three times ours | Distances × 0.4 (the first map is 384 blocks against 0 A.D.'s ~1,000 m); capture points and rates keep 0 A.D.'s ratios to Health (§2.6), each with its provenance note |
 
 | 7 | M6's follow-ups | M6 asked for a fake `DemoStage` in the next milestone's first task; `DemoStage` is a class over a `ServerLevel` | T17, with the new chapters; T1 keeps the moves |
 
+| 17 | The capture key and refusals (T8, T9) | C is vanilla's `key.saveToolbarActivator` (UNIVERSAL), which `DefaultKeysTest` (UI-01.2) refuses; Attack refuses an own target as INVALID_ARGUMENT | The capture key is N; own and allied buildings are refused as INVALID_ARGUMENT, a building or unit without capture as UNSUPPORTED; capturers keep capturing under fire (no retaliation) |
 | 16 | The upgrade (T11) | 0 A.D.'s sentry-to-defence upgrade takes 100 s (mechanics §1.6); an upgrade needs a queue entry the wire already carries | 50 s at our time scale (the tower builds in 75 s against 0 A.D.'s 150 s); the entry is the target template's index, told apart as a building template, so the wire, the save and the hash keep their formats |
 | 15 | Group paths and gates (T12) | `GroupJob` and `GroupPaths` treat gates as walls; `LineOfWalk`, `StringPuller` and `PathRoutes` do not know crossings | T14 teaches the path checks that a segment through an open allied gate is walkable; group paths through gates follow if the L3 shows a need |
 | 14 | HPA* with gates (T12) | A requester with a usable gate searches flat with the full cap | Kept: gates are few; a gate-aware HPA* if PERF-16 shows the cost |
@@ -224,7 +225,7 @@ emit a `NoticeKind` for both owners. Limits are checked only at placement: a cap
   `CAPTURE` activity; when the target changes owner to the unit's faction or an ally, the unit goes idle.
 - **Client.** The capture bar in `HudBuildingCard` and over the building in `HealthBarOverlay` (the owner's share and
   each other faction's, in `HudTheme` colours), from `BuildingState.Entry`'s capture bytes; the capture key
-  (`key.strategos.capture`, C) turns a right-click on a building into `Capture`.
+  (`key.strategos.capture`, N; §1.6 row 17) turns a right-click on a building into `Capture`.
 
 ### 2.7 The garrison, finished (BLD-10)
 
@@ -437,7 +438,7 @@ Results, the health check, the hand-in. Size: records.
 ### 7.3 Progress
 
 - [x] T1 (2026-11-24) · [x] T2 (2026-11-24) · [x] T3 (2026-11-24) · [x] T4 (2026-11-24) · [x] T5 (2026-11-24) · [x] T6 (2026-11-24, goldens in T19) · [x] T10 (2026-11-24, regeneration with T7) · [x] T11 (2026-11-24) · [x] T12 (2026-11-24) · [x] T7 (2026-11-24)
-- [ ] T8 · [ ] T9 · [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17 · [ ] T18 · [ ] T19 · [ ] T20
+- [x] T8 (2026-11-24) · [x] T9 (2026-11-24) · [ ] T13 · [ ] T14 · [ ] T15 · [ ] T16 · [ ] T17 · [ ] T18 · [ ] T19 · [ ] T20
 
 ## 8. Acceptance checklist (M9 exit)
 

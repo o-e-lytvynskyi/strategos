@@ -50,6 +50,7 @@
   "key.strategos.camera_centre_on_selection": "Centre on the selection",
   "key.strategos.attack_move": "Attack-move",
   "key.strategos.stop": "Stop",
+  "key.strategos.capture": "Capture (hold, right-click a building)",
   "key.strategos.card_1": "Command card 1 (Q)",
   "key.strategos.card_2": "Command card 2 (W)",
   "key.strategos.card_3": "Command card 3 (E)",

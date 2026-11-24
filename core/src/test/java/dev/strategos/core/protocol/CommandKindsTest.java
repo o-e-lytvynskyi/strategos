@@ -48,6 +48,7 @@ class CommandKindsTest {
                         "strategos:all_clear",
                         "strategos:attack_spread",
                         "strategos:research",
+                        "strategos:capture",
                         "strategos:upgrade_building");
     }
 
