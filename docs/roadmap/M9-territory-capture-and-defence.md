@@ -82,7 +82,8 @@ CMB-10 → BLD-10 → AI-08 (26 card-days).
   4. Goldens, also under Sodium (L4, consent).
 - **Tests:** L0, L1, L4 (consent), L6 · **Depends on:** TERR-01, UI-20 · **Size:** M ·
   **Tier:** T1
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-11-24 — 1 `BorderGeometryTest.layoutGeometryEqualsItsStoredHash`; 2 `BorderGeometryTest.aChangedTileDirtiesOnlyTheSectionsItsEdgesTouch`; 3 `BorderBench.extractSection` 0.069 µs/op at 0 B/op, and PERF-14's `rts_frame_borders`: vanilla frame p50 3.72 / p99 8.88 ms, Sodium 1.75 / 4.70 ms, ours ≤ 0.72 ms — budget F; 4 `m9_goldens`, six frames on macos and macos-sodium (nmse 0 on rerun); M9 T6, T19.
 
 #### CMB-10 · Capturing buildings
 - **Value:** Take enemy buildings instead of razing them, as in 0 A.D. (P4).

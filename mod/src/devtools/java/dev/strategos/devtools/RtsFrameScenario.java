@@ -18,6 +18,7 @@ import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.TerritoryGrid;
 import dev.strategos.core.shared.Vec2d;
+import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.core.sim.PlayRules;
 import dev.strategos.mod.StrategosServer;
 import dev.strategos.mod.client.StrategosClient;
@@ -157,6 +158,7 @@ final class RtsFrameScenario implements Scenario {
     private final String name;
     private final PlayRules play;
     private final boolean borders;
+    private boolean centresSent;
     private int borderCalm;
     private final StringBuilder failures = new StringBuilder();
     private volatile @Nullable MatchRuntime match;
@@ -259,9 +261,10 @@ final class RtsFrameScenario implements Scenario {
             ScenarioWorld.renderDistance(mc, RENDER_DISTANCE);
             mc.options.framerateLimit().set(UNLIMITED);
             mc.options.particles().set(ParticleStatus.ALL); // a player's default
-            if (borders) {
-                spawnCentres();
-            }
+        }
+        if (borders && !centresSent && match != null && match.lifecycle() == MatchLifecycle.RUNNING) {
+            centresSent = true; // a match takes commands once it runs, not while it prepares
+            spawnCentres();
         }
         // the cursor rests mid-window, as a player's does: at an edge it would pan the camera off the armies
         GLFW.glfwSetCursorPos(
@@ -564,7 +567,9 @@ final class RtsFrameScenario implements Scenario {
             if (e instanceof UnitEntity body
                     && body.spawnData() != null
                     && body.spawnData().faction() == 0) {
-                if (inside(v, Picking.project(v, e.getX(), e.getY() + e.getBbHeight() / 2, e.getZ()))) {
+                // the box's own rule (Seen.inBox): the feet or the head on screen, so a unit at the edge counts alike
+                if (inside(v, Picking.project(v, e.getX(), e.getY(), e.getZ()))
+                        || inside(v, Picking.project(v, e.getX(), e.getBoundingBox().maxY, e.getZ()))) {
                     n++;
                 }
             }

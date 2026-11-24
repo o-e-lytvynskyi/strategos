@@ -67,8 +67,9 @@ final class PalisadeChapter implements DemoChapter {
     public void script(DemoScript s) {
         s.run(st -> {
                     var stone = Blocks.COBBLESTONE.defaultBlockState();
+                    // the rocks meet the wall's ends: the last segment, four blocks from +HALF, ends at HALF + 3
                     st.fill(WALL_DX, 0, -30, WALL_DX, 3, -HALF - 1, stone);
-                    st.fill(WALL_DX, 0, HALF + 1, WALL_DX, 3, 30, stone);
+                    st.fill(WALL_DX, 0, HALF + 4, WALL_DX, 3, 30, stone);
                     st.match();
                 })
                 .run(st -> {

@@ -23,6 +23,7 @@ import dev.strategos.mod.client.net.ClientPayloads;
 import dev.strategos.mod.client.overlay.FarMarkers;
 import dev.strategos.mod.client.overlay.HealthBarOverlay;
 import dev.strategos.mod.client.rts.RtsMode;
+import dev.strategos.mod.client.territory.BorderEcho;
 import dev.strategos.mod.client.territory.BorderRenderer;
 import dev.strategos.mod.registry.ModEntityTypes;
 import dev.strategos.mod.server.net.payload.PayloadArrived;
@@ -58,6 +59,7 @@ public final class StrategosClient {
     private static final FxPlayer SOUNDS = new FxPlayer(RTS, ARCS);
     private static final UnitLod LOD = new UnitLod();
     private static final ArenaWorldLauncher ARENA = new ArenaWorldLauncher();
+    private static final BorderEcho BORDER_ECHO = new BorderEcho();
     private static volatile @Nullable MatchJoin match;
     private static volatile List<String> resources = List.of();
     private static volatile @Nullable MatchStateMsg state;
@@ -97,6 +99,11 @@ public final class StrategosClient {
         BorderRenderer.register();
         NeoForge.EVENT_BUS.addListener(RenderFrameEvent.Pre.class, e -> LOD.frame());
         BARS.register();
+    }
+
+    /** The borders' second dirty pass (TERR-03). */
+    public static BorderEcho borderEcho() {
+        return BORDER_ECHO;
     }
 
     /** The fog shroud (FOW-07); the client thread's only. */

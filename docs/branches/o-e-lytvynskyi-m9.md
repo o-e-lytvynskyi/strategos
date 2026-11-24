@@ -27,7 +27,9 @@ From the assessment before the claim (procedure §2a step 0). Every other depend
 
 Newest first; one entry per session in the worklog's shape.
 
-### 2026-11-24 — M9 spec, T1–T18
+### 2026-11-24 — M9 spec, T1–T19
+
+- **M9 T19 · the consent batch** — windows one at a time, announced. Found and fixed: (1) `rts_frame_borders` hung to its timeout: it sent its two civic centres on tick 1 while the match was still PREPARING, and `MatchRuntime.submit`'s refusal died silently on the server thread; it now sends them once the match runs. (2) The demo's palisade chapter: the 9th segment (four blocks from +16, the last one reaching past the line's end) stood on the north rock, `NOT_FLAT`; the rock now starts at +20. The L1 fake has no terrain, so `DemoScriptsTest` could not see it. (3) The border scene's selection check counted a unit on screen by its mid-height point while the box takes the feet or the head (`Seen.inBox`): 100 selected of "99"; it now counts by the box's own rule. (4) Under Sodium the border goldens showed gaps that a full re-mesh closed: some first dirty marks were lost to builds already in flight; `BorderRenderer` now dirties the touched sections once more 10 client ticks later, and the Sodium frames match vanilla's. Results: `m9_goldens` (six frames, macos and macos-sodium) looked at and taken; reruns give nmse 0 on every frame, with the two top corners of `m9_borders_meet` masked (the horizon's unloaded chunks show sky in some runs, as `rider_high`'s). PERF-14's `rts_frame_borders` (200 units, 100 selected of 100): vanilla frame p50 3.72 / p99 8.88 ms, ours 0.72, units 2.21, client tick p50 0.97; Sodium p50 1.75 / p99 4.70 ms, ours 0.68, units 0.43, client tick p50 1.00 — budget F holds (16.7 / 25, 3, 6, 1). The demo `-Pdemo=m9`: five chapters shown, none failed (7 min 34 s).
 
 - **M9 T18 · perf and JMH** — alone on a quiet machine after the fixes: `runGameTestPerf -Pperf.filter=territory` green in 25 min 24 s. `perf_territory` (18,000 ticks, 134 units, 156 buildings at the end): A p50 0.93 ms (limit 5), A p99 9.89 ms (limit 10), C p95 9.12 ms (limit 23), B p95 4.91 ms and D p99 0.19 ms report-only, E 2.9 and 3.8 KB/s (limit 100); territory system p50 0.4 µs, p99 16.5 µs, max 123 µs; the tick's join on the job p99 0, max 25 µs (limit p99 0.5 ms); 53 recomputes, never more than 1 in a 20-tick window; A per unit 0.94 × M5's base. `perf_territory_stress` (6,000 ticks, 223 units): C p95 9.0 ms (limit 50), territory p99 119 µs, join max 13 µs, 33 recomputes; foreign CPU 5 %. `:core:jmh :core:jmhCompare` green in 9 min 9 s; `BorderBench.extractSection` 0.069 µs/op (no baseline yet: proposed), `SpatialBench.rebuild1000` 5.2 µs/op.
 
@@ -98,8 +100,13 @@ Newest first; one entry per session in the worklog's shape.
 - 2026-11-24 · the unit grid is rebuilt before each tick's first phase as well as where MOVEMENT ends (spec §1.6 row 24): one more O(units) rebuild a tick, 5.2 µs for 1,000 units (`SpatialBench.rebuild1000`), so a mid-match journal replays — undo: a rebuild only when a pose, the living set or the garrisons changed since the last one.
 - 2026-11-24 · `perf/baseline-m4pro.proposed.json`: the baseline plus `BorderBench.extractSection` at 0.069 µs/op from T18's quiet run (the 30 entries unchanged), so `jmhCompare` watches its time; recommended — to apply, the owner renames it over `baseline-m4pro.json` — undo: delete the proposed file.
 
+- 2026-11-24 · `m9_goldens` taken as the goldens for macos and macos-sodium after looking at every frame (borders meeting in two colours, the dashed unconnected island, the border over the steps, the minimap); the top corners of `m9_borders_meet` masked for the horizon — undo: delete `mod/src/devtools/goldens/*/m9_goldens`.
+- 2026-11-24 · the border sections are dirtied twice, the second time 10 client ticks after a territory version (Sodium lost some first marks) — undo: drop the echo in `BorderRenderer`.
+
 ## Pitfalls
 
+- docs/kb/minecraft-mod-client-render.md — section geometry under Sodium: a dirty mark can be lost (M9 T19).
+- docs/kb/minecraft-mod-gametest-arena.md — a command sent to a match that is still preparing is lost without a word; a demo chapter's L1 fake has no terrain (M9 T19).
 - docs/kb/save-reload-identities.md — "Not saved, changes nothing else" is a replay divergence (M9 T18, the AI soak's seed 13).
 
 ## Review

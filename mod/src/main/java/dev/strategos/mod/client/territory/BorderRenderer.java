@@ -21,6 +21,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.neoforged.neoforge.client.event.AddSectionGeometryEvent;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.common.NeoForge;
 
 /**
@@ -30,15 +31,22 @@ import net.neoforged.neoforge.common.NeoForge;
  * array; the renderer, which runs on a chunk-build thread, reads nothing else. A completed territory version dirties
  * the sections its changed tiles touch ({@link BorderGeometry#sectionsTouched}) over the match's height band. Match
  * space is not section-aligned in the world, so a world section is cut from the match-local columns it overlaps.
+ *
+ * <p>The same sections are dirtied once more {@value #ECHO_TICKS} client ticks later. Under Sodium some first marks were
+ * lost: a section whose build had already taken the old borders was uploaded with them and stayed so (M9 T19's
+ * goldens showed gaps that a full re-mesh closed); the echo re-meshes those once the in-flight builds are done.
  */
 public final class BorderRenderer {
     private static final ResourceLocation WHITE = ResourceLocation.withDefaultNamespace("block/white_wool");
+    static final int ECHO_TICKS = 10;
 
     private BorderRenderer() {}
 
     /** Subscribes to the section geometry event (the game bus, the client's only). */
     public static void register() {
         NeoForge.EVENT_BUS.addListener(AddSectionGeometryEvent.class, BorderRenderer::onSection);
+        NeoForge.EVENT_BUS.addListener(
+                ClientTickEvent.Post.class, e -> StrategosClient.borderEcho().tick());
     }
 
     /** What a chunk-build thread draws: quads of 12 section-relative floats and one ARGB each, and the sprite's UV. */
@@ -163,6 +171,11 @@ public final class BorderRenderer {
         LevelRenderer renderer = mc.levelRenderer;
         int sectionsX = BorderGeometry.sectionsFor(grid.tilesX());
         BitSet touched = BorderGeometry.sectionsTouched(territory.changed(), grid.tilesX(), grid.tilesZ());
+        dirty(renderer, touched, sectionsX, join);
+        StrategosClient.borderEcho().arm(touched, sectionsX, join);
+    }
+
+    static void dirty(LevelRenderer renderer, BitSet touched, int sectionsX, MatchJoin join) {
         int minSy = Math.floorDiv(join.minY(), 16);
         int maxSy = Math.floorDiv(join.maxY(), 16);
         for (int s = touched.nextSetBit(0); s >= 0; s = touched.nextSetBit(s + 1)) {
