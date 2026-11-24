@@ -139,7 +139,8 @@ CMB-10 → BLD-10 → AI-08 (26 card-days).
   3. Gates open for allies and stay shut for enemies (L3).
   4. Enemies path around a palisade or attack it (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** BLD-04, PATH-12 · **Size:** L · **Tier:** T1
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-11-24 — M9 T13, T14: `WallLineTest` (1), `walltests.segments_match_layout` (2), `walltests.gate_allies_only` with `GateMovementTest`'s allies (3; AFTER-M7 for real teams), `walltests.enemies_around_or_through` (4)
 
 #### PATH-12 · Gates and doors in navigation
 - **Value:** Units pass their own gates without stopping and treat enemy gates as walls.
@@ -150,7 +151,8 @@ CMB-10 → BLD-10 → AI-08 (26 card-days).
   1. Reachability per faction respects gates (L1).
   2. Units pass their own gates without stopping (L3).
 - **Tests:** L0, L1, L3 · **Depends on:** PATH-04, MATCH-06 · **Size:** M · **Tier:** T1
-- **Status:** in_progress
+- **Status:** done
+- **Done:** 2026-11-24 — M9 T12–T14: `GateReachabilityTest` (1), `pathtests.own_gate_no_stop` (2); 0/1/4 threads in `GateThreadCountHashTest`; allies with `FakeAllies` (AFTER-M7 for real teams)
 
 #### AI-08 · AI uses territory and capture
 - **Value:** The AI attacks and defends with the new systems instead of ignoring them (P5).

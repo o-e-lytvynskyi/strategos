@@ -157,14 +157,17 @@ final class MotionMoves {
             return true;
         }
         SurfaceGrid grid = s.surfacesFor(i);
+        int floor = motion.floor(i) != MotionStore.NO_FLOOR
+                ? motion.floor(i)
+                : (int) Math.round(
+                        (motion.y(i) - s.config().bounds().minY()) * 16); // a restored unit: its feet, as ground()
         int best = MotionStore.NO_FLOOR;
         for (int layer = 0; layer < grid.count(ncx, ncz); layer++) {
             int surface = grid.surface(ncx, ncz, layer);
             int f = Surface.floor(surface);
             if (Surface.passable(surface)
-                    && Math.abs(f - motion.floor(i)) <= Footing.STEP_UP
-                    && (best == MotionStore.NO_FLOOR
-                            || Math.abs(f - motion.floor(i)) < Math.abs(best - motion.floor(i)))) {
+                    && Math.abs(f - floor) <= Footing.STEP_UP
+                    && (best == MotionStore.NO_FLOOR || Math.abs(f - floor) < Math.abs(best - floor))) {
                 best = f;
             }
         }

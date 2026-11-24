@@ -56,6 +56,17 @@ class WallLineTest {
     }
 
     @Test
+    void theCountIsLongArithmeticSoExtremeCoordinatesNeverWrap() {
+        assertThat(WallLine.count(Integer.MIN_VALUE, 0, Integer.MAX_VALUE, 0, 4))
+                .isEqualTo(1 << 30);
+        assertThat(WallLine.count(0, Integer.MIN_VALUE, 0, Integer.MAX_VALUE, 1))
+                .isEqualTo(Integer.MAX_VALUE);
+        assertThat(WallLine.count(Integer.MAX_VALUE, 5, Integer.MIN_VALUE, 5, 1))
+                .isEqualTo(Integer.MAX_VALUE);
+        assertThat(WallLine.count(3, 3, 3, 3, 0)).as("no length, no segments").isZero();
+    }
+
+    @Test
     void aSinglePointIsOneSegmentAlongX() {
         List<WallLine.Segment> one = WallLine.of(30, 40, 30, 40, 4, List.of(), FLAT);
         assertThat(one).hasSize(1);

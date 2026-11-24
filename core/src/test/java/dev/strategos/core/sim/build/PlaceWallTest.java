@@ -18,6 +18,7 @@ import dev.strategos.core.sim.CommandResult;
 import dev.strategos.core.sim.KernelAccess;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.UnitCreated;
+import dev.strategos.core.sim.nav.GateOverlay;
 import dev.strategos.core.testkit.SimHarness;
 import dev.strategos.core.testkit.VoxelFixtures;
 import java.util.ArrayList;
@@ -192,6 +193,13 @@ class PlaceWallTest {
                         .firstReason())
                 .as("more than 64 segments")
                 .isEqualTo(RejectReason.INVALID_ARGUMENT);
+        assertThat(wall(PALISADE, Integer.MIN_VALUE, 90, Integer.MAX_VALUE, 90, List.of(), UnitSet.of())
+                        .firstReason())
+                .as("a run longer than an int")
+                .isEqualTo(RejectReason.INVALID_ARGUMENT);
+        assertThat(wall(PALISADE, 90, Integer.MAX_VALUE, 90, Integer.MIN_VALUE, List.of(), UnitSet.of())
+                        .firstReason())
+                .isEqualTo(RejectReason.INVALID_ARGUMENT);
         assertThat(wall(PALISADE, 60, 90, 75, 90, List.of(4), UnitSet.of()).firstReason())
                 .as("a gate index past the last segment")
                 .isEqualTo(RejectReason.INVALID_ARGUMENT);
@@ -205,6 +213,26 @@ class PlaceWallTest {
                 .isEqualTo(RejectReason.UNKNOWN_TEMPLATE);
         assertThat(s.treasury().stock(0, WOOD)).isEqualTo(before);
         assertThat(foundations()).isEmpty();
+    }
+
+    @Test
+    void aGateSegmentPastTheGateLimitIsRefusedNotLaidAsAPlainWall() {
+        fund(5_000);
+        for (int k = 0; k < GateOverlay.MAX_GATES - 1; k++) {
+            s.addGate(0, new int[] {200 << 16 | 2 * k, 200 << 16 | 2 * k + 1}); // 63 gates stand elsewhere
+        }
+        CommandResult result = wall(PALISADE, 60, 90, 75, 90, List.of(1, 3), UnitSet.of());
+        assertThat(result.outcome()).isEqualTo(CommandOutcome.PARTIAL);
+        assertThat(result.accepted()).isEqualTo(3);
+        assertThat(result.rejected()).isEqualTo(1);
+        assertThat(result.firstReason()).isEqualTo(RejectReason.LIMIT);
+        assertThat(foundations())
+                .extracting(f -> f[1])
+                .as("one gate, the rest plain")
+                .containsExactly(0, 1, 0);
+        CommandResult again = wall(PALISADE, 60, 94, 75, 94, List.of(0), UnitSet.of());
+        assertThat(again.firstReason()).as("the queued gate foundation counts").isEqualTo(RejectReason.LIMIT);
+        assertThat(again.accepted()).isEqualTo(3);
     }
 
     @Test

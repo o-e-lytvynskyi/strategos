@@ -37,10 +37,17 @@ public final class WallLine {
     @CoreApi
     public record Segment(int index, int x, int z, int rotation, int baseY, boolean gate) {}
 
-    /** How many segments the run from (x1, z1) to (x2, z2) needs for {@code length}-block segments, at least one. */
+    /**
+     * How many segments the run from (x1, z1) to (x2, z2) needs for {@code length}-block segments, at least one,
+     * counted in {@code long} so no pair of coordinates wraps and capped at {@link Integer#MAX_VALUE}; 0 for a length
+     * below 1.
+     */
     public static int count(int x1, int z1, int x2, int z2, int length) {
-        int run = Math.max(Math.abs(x2 - x1), Math.abs(z2 - z1)) + 1;
-        return (run + length - 1) / length;
+        if (length < 1) {
+            return 0;
+        }
+        long run = Math.max(Math.abs((long) x2 - x1), Math.abs((long) z2 - z1)) + 1;
+        return (int) Math.min(Integer.MAX_VALUE, (run + length - 1) / length);
     }
 
     /** The segments of the run, in order; none for a length below 1. */

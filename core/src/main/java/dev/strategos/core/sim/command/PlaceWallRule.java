@@ -19,6 +19,8 @@ import dev.strategos.core.sim.MatchBounds;
 import dev.strategos.core.sim.MatchState;
 import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.build.Placing;
+import dev.strategos.core.sim.build.WallGates;
+import dev.strategos.core.sim.nav.GateOverlay;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
@@ -53,7 +55,7 @@ final class PlaceWallRule implements CommandRule<PlaceWall> {
             return Tally.rejectAll(envelope, kind(), builders.size(), RejectReason.UNSUPPORTED);
         }
         int count = WallLine.count(place.x1(), place.z1(), place.x2(), place.z2(), length);
-        if (count > PlaceWall.MAX_SEGMENTS) {
+        if (count < 1 || count > PlaceWall.MAX_SEGMENTS) {
             return Tally.rejectAll(envelope, kind(), builders.size(), RejectReason.INVALID_ARGUMENT);
         }
         for (int gate : place.gates()) {
@@ -78,6 +80,7 @@ final class PlaceWallRule implements CommandRule<PlaceWall> {
         List<WallLine.Segment> segments =
                 WallLine.of(place.x1(), place.z1(), place.x2(), place.z2(), length, place.gates(), floor);
         PlacementRules.World world = Placing.world(state, faction); // segments never overlap: one reading serves all
+        int gatesStanding = standingAndQueuedGates(state);
         int laid = 0;
         int refused = 0;
         RejectReason first = null;
@@ -85,6 +88,13 @@ final class PlaceWallRule implements CommandRule<PlaceWall> {
         for (WallLine.Segment segment : segments) {
             UnitTemplate template = segment.gate() ? gate : wall;
             Blueprint b = segment.gate() ? gateBlueprint : wallBlueprint;
+            if (segment.gate() && gatesStanding >= GateOverlay.MAX_GATES) {
+                refused++; // the overlay holds no more: never a gate that finishes as a plain wall
+                if (first == null) {
+                    first = RejectReason.LIMIT;
+                }
+                continue;
+            }
             Footprint at = Footprint.of(b, segment.x(), segment.z(), segment.rotation());
             PlacementRules.Verdict verdict =
                     PlacementRules.check(world, b, at, faction, Placing.params(state, template.netIndex(), faction));
@@ -108,6 +118,7 @@ final class PlaceWallRule implements CommandRule<PlaceWall> {
                 Builders.assign(envelope, state, builders, handle, at, laid == 0 ? QueueMode.REPLACE : QueueMode.QUEUE);
             }
             laid++;
+            gatesStanding += segment.gate() ? 1 : 0;
         }
         CommandOutcome outcome =
                 refused == 0 ? CommandOutcome.ACCEPTED : laid > 0 ? CommandOutcome.PARTIAL : CommandOutcome.REJECTED;
@@ -122,6 +133,18 @@ final class PlaceWallRule implements CommandRule<PlaceWall> {
                 missing == null
                         ? List.of()
                         : java.util.Arrays.stream(missing).boxed().toList());
+    }
+
+    // The gates in the overlay plus the gate buildings still to be finished, which will join it.
+    private static int standingAndQueuedGates(MatchState state) {
+        int n = state.gates().count();
+        BuildingStore b = state.buildings();
+        for (int handle : b.handles()) {
+            if (b.state(handle) != BuildingStore.COMPLETE && WallGates.isGate(state, handle)) {
+                n++;
+            }
+        }
+        return n;
     }
 
     // How many blocks a segment of the wall template is long, its Wall/segment; 0 for a template that is no wall.

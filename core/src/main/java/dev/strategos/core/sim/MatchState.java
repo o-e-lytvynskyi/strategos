@@ -80,6 +80,7 @@ public final class MatchState {
     private final Population population;
     private final List<Damage> damage = new ArrayList<>();
     private final MatchBus bus = new MatchBus();
+    private final BreachLog breaches = new BreachLog(); // not saved, not hashed
     private final StatService stats;
     private @Nullable VisionSystem visionSystem;
     private @Nullable TerritorySystem territorySystem;
@@ -493,6 +494,11 @@ public final class MatchState {
      */
     public int gaia() {
         return config.factions();
+    }
+
+    /** What the units have breached lately (BLD-13). */
+    public BreachLog breaches() {
+        return breaches;
     }
 
     /** The gates of palisades and walls (PATH-12). */

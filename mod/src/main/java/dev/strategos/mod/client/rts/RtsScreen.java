@@ -66,7 +66,7 @@ public final class RtsScreen extends Screen {
             return;
         }
         double[] from = in.dragFrom();
-        if (from.length == 2 && !mode.placement().armed()) { // a wall's drag is its ghost, not a selection box
+        if (from.length == 2 && !mode.placement().isWall()) { // a wall's drag is its ghost, not a selection box
             int x0 = (int) Math.min(from[0], mouseX);
             int y0 = (int) Math.min(from[1], mouseY);
             int x1 = (int) Math.max(from[0], mouseX);
