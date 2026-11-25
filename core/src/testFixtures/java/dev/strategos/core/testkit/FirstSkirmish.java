@@ -101,11 +101,13 @@ public final class FirstSkirmish {
     private final int[] top = new int[SIZE * SIZE];
     private final Map<String, MapWaypoint> waypoints = new TreeMap<>();
     private final List<StartSlot> startSlots;
+    private final List<Integer> townOffsets;
 
-    private FirstSkirmish() {
+    private FirstSkirmish(List<Integer> townOffsets) {
+        this.townOffsets = townOffsets;
         for (int x = 0; x < SIZE; x++) {
             for (int z = 0; z < SIZE; z++) {
-                int h = height(x, z);
+                int h = height(x, z, townOffsets);
                 ground[x * SIZE + z] = h;
                 for (int y = 0; y < h; y++) {
                     set(x, y, z, STONE);
@@ -115,7 +117,7 @@ public final class FirstSkirmish {
         }
         river();
         forestLines();
-        groves();
+        for (int offset : townOffsets) groves(offset);
         noGrassUnderBlocks();
         for (int x = 0; x < SIZE; x++) {
             for (int z = 0; z < SIZE; z++) {
@@ -126,21 +128,33 @@ public final class FirstSkirmish {
                 top[x * SIZE + z] = y;
             }
         }
-        startSlots = List.of(
-                new StartSlot(START_X, floor(START_X, START_Z), START_Z, 270f),
-                new StartSlot(mirror(START_X), floor(mirror(START_X), mirror(START_Z)), mirror(START_Z), 90f));
-        pair("start", START_X, START_Z);
-        pair("dropsite_wood", 56, 126);
-        pair("dropsite_stone", 36, 126);
-        pair("dropsite_iron", 52, 122);
-        pair("dropsite_food", 54, 156);
+        List<StartSlot> starts = new ArrayList<>();
+        for (int offset : townOffsets) {
+            int z = START_Z + offset;
+            int first = starts.size();
+            starts.add(new StartSlot(START_X, floor(START_X, z), z, 270f));
+            starts.add(new StartSlot(mirror(START_X), floor(mirror(START_X), mirror(z)), mirror(z), 90f));
+            pair("dropsite_wood", 56, 126 + offset, first);
+            pair("dropsite_stone", 36, 126 + offset, first);
+            pair("dropsite_iron", 52, 122 + offset, first);
+            pair("dropsite_food", 54, 156 + offset, first);
+        }
+        startSlots = List.copyOf(starts);
+        waypoints.put("west", new MapWaypoint(START_X, floor(START_X, START_Z), START_Z));
+        waypoints.put(
+                "east", new MapWaypoint(mirror(START_X), floor(mirror(START_X), mirror(START_Z)), mirror(START_Z)));
         waypoints.put("ford_west", new MapWaypoint(163, WATER_TOP, (FORD_Z0 + FORD_Z1) / 2));
         waypoints.put("ford_east", new MapWaypoint(mirror(163), WATER_TOP, mirror((FORD_Z0 + FORD_Z1) / 2)));
         waypoints.put("hill", new MapWaypoint(191, floor(191, 191), 191));
     }
 
     public static FirstSkirmish generate() {
-        return new FirstSkirmish();
+        return new FirstSkirmish(List.of(0));
+    }
+
+    /** Two towns on each side, using the same mirrored terrain design as the solo map. */
+    public static FirstSkirmish generateTeamSkirmish() {
+        return new FirstSkirmish(List.of(0, 126));
     }
 
     public static int mirror(int c) {
@@ -197,16 +211,17 @@ public final class FirstSkirmish {
         jobs.add(river(WATER_RECTS[4], 0));
         jobs.add(river(WATER_RECTS[5], 0));
         jobs.add(TerrainJob.resource("iron", 192, 192, 12, 5_000));
-        for (int k = 0; k < 2; k++) {
-            int x = k == 0 ? START_X : mirror(START_X);
-            int z = k == 0 ? START_Z : mirror(START_Z);
-            jobs.add(TerrainJob.resource("wood", x, z, MapChecker.RESOURCE_RADIUS, 1_000));
-            jobs.add(TerrainJob.resource("food", x, z, MapChecker.RESOURCE_RADIUS, 600));
-            jobs.add(TerrainJob.resource("stone", x, z, MapChecker.RESOURCE_RADIUS, 1_000));
-            jobs.add(TerrainJob.resource("iron", x, z, MapChecker.RESOURCE_RADIUS, 1_000));
+        for (StartSlot start : startSlots) {
+            jobs.add(TerrainJob.resource("wood", start.x(), start.z(), MapChecker.RESOURCE_RADIUS, 1_000));
+            jobs.add(TerrainJob.resource("food", start.x(), start.z(), MapChecker.RESOURCE_RADIUS, 600));
+            jobs.add(TerrainJob.resource("stone", start.x(), start.z(), MapChecker.RESOURCE_RADIUS, 1_000));
+            jobs.add(TerrainJob.resource("iron", start.x(), start.z(), MapChecker.RESOURCE_RADIUS, 1_000));
         }
-        jobs.add(TerrainJob.room(ROOM[0], ROOM[1], ROOM[2], ROOM[3], 6, 9));
-        jobs.add(TerrainJob.room(mirror(ROOM[2]), mirror(ROOM[3]), mirror(ROOM[0]), mirror(ROOM[1]), 6, 9));
+        for (int offset : townOffsets) {
+            jobs.add(TerrainJob.room(ROOM[0], ROOM[1] + offset, ROOM[2], ROOM[3] + offset, 6, 9));
+            jobs.add(TerrainJob.room(
+                    mirror(ROOM[2]), mirror(ROOM[3] + offset), mirror(ROOM[0]), mirror(ROOM[1] + offset), 6, 9));
+        }
         return jobs;
     }
 
@@ -262,7 +277,7 @@ public final class FirstSkirmish {
             }
         }
         List<Map<String, MapWaypoint>> dropsites = new ArrayList<>();
-        for (int k = 0; k < 2; k++) {
+        for (int k = 0; k < startSlots.size(); k++) {
             Map<String, MapWaypoint> sites = new TreeMap<>();
             for (String kind : List.of("wood", "stone", "iron", "food")) {
                 sites.put(kind, waypoints.get("dropsite_" + kind + "_" + k));
@@ -303,7 +318,7 @@ public final class FirstSkirmish {
     }
 
     /** The ground's top: symmetric low hills, the start pads level at 15, the island's hill, the banks of the water. */
-    private static int height(int x, int z) {
+    private static int height(int x, int z, List<Integer> townOffsets) {
         int mx = mirror(x);
         int mz = mirror(z);
         double hills = 0.9 * (DetMath.sin(2 * Math.PI * x / 89 + 0.4) + DetMath.sin(2 * Math.PI * mx / 89 + 0.4))
@@ -312,8 +327,13 @@ public final class FirstSkirmish {
                         * (DetMath.sin(2 * Math.PI * (x + z) / 53 + 2.1)
                                 + DetMath.sin(2 * Math.PI * (mx + mz) / 53 + 2.1));
         int g = BASE + (int) Math.round(hills);
-        g = level(g, BASE, distance(x, z, PAD[0], PAD[1], PAD[2], PAD[3]));
-        g = level(g, BASE, distance(x, z, mirror(PAD[2]), mirror(PAD[3]), mirror(PAD[0]), mirror(PAD[1])));
+        for (int offset : townOffsets) {
+            g = level(g, BASE, distance(x, z, PAD[0], PAD[1] + offset, PAD[2], PAD[3] + offset));
+            g = level(
+                    g,
+                    BASE,
+                    distance(x, z, mirror(PAD[2]), mirror(PAD[3] + offset), mirror(PAD[0]), mirror(PAD[1] + offset)));
+        }
         if (inside(x, z, ISLAND)) {
             g = Math.max(13, HILL_TOP - distance(x, z, PLATEAU[0], PLATEAU[1], PLATEAU[2], PLATEAU[3]));
         }
@@ -402,20 +422,20 @@ public final class FirstSkirmish {
      * Near each start two groves of nine oaks, 6 apart, north-east and south-west of it, and eight berry bushes south
      * of the civic centre; all within 48 blocks, clear of the scenario's deposits and animals and of the fields' room.
      */
-    private void groves() {
+    private void groves(int offset) {
         for (int cx = 0; cx < 3; cx++) {
             for (int cz = 0; cz < 3; cz++) {
                 int trunk = 4 + (cx + cz) % 2;
-                oak(60 + cx * 6, 108 + cz * 6, trunk);
-                oak(mirror(60 + cx * 6), mirror(108 + cz * 6), trunk);
-                oak(22 + cx * 6, 154 + cz * 6, trunk);
-                oak(mirror(22 + cx * 6), mirror(154 + cz * 6), trunk);
+                oak(60 + cx * 6, 108 + offset + cz * 6, trunk);
+                oak(mirror(60 + cx * 6), mirror(108 + offset + cz * 6), trunk);
+                oak(22 + cx * 6, 154 + offset + cz * 6, trunk);
+                oak(mirror(22 + cx * 6), mirror(154 + offset + cz * 6), trunk);
             }
         }
         for (int x : new int[] {58, 61}) {
             for (int z : new int[] {146, 149, 152, 155}) {
-                bush(x, z);
-                bush(mirror(x), mirror(z));
+                bush(x, z + offset);
+                bush(mirror(x), mirror(z + offset));
             }
         }
     }
@@ -490,14 +510,9 @@ public final class FirstSkirmish {
         return Math.max(dx, dz);
     }
 
-    private void pair(String name, int x, int z) {
-        if (name.equals("start")) {
-            waypoints.put("west", new MapWaypoint(x, floor(x, z), z));
-            waypoints.put("east", new MapWaypoint(mirror(x), floor(mirror(x), mirror(z)), mirror(z)));
-            return;
-        }
-        waypoints.put(name + "_0", new MapWaypoint(x, floor(x, z), z));
-        waypoints.put(name + "_1", new MapWaypoint(mirror(x), floor(mirror(x), mirror(z)), mirror(z)));
+    private void pair(String name, int x, int z, int first) {
+        waypoints.put(name + "_" + first, new MapWaypoint(x, floor(x, z), z));
+        waypoints.put(name + "_" + (first + 1), new MapWaypoint(mirror(x), floor(mirror(x), mirror(z)), mirror(z)));
     }
 
     /** The block a unit stands in at a column: above its top. */

@@ -14,6 +14,7 @@ import java.util.function.ToIntFunction;
 public record SkirmishSetup(
         String map, Level level, StartResources resources, int populationCap, Visibility visibility) {
     public static final String FIRST_SKIRMISH = "strategos:first_skirmish";
+    public static final String TEAM_SKIRMISH = "strategos:team_skirmish";
     public static final int MIN_POPULATION = 50;
     public static final int MAX_POPULATION = 200;
     public static final int DEFAULT_POPULATION = 150;

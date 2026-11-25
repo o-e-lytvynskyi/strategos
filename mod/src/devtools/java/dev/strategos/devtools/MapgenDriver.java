@@ -39,7 +39,8 @@ import org.slf4j.LoggerFactory;
  * data/strategos/strategos/maps/<map>.json} and the tiles of 32 x 64 x 32 at {@code
  * data/strategos/structure/strategos/maps/<map>/}, each column storing its blocks from the lowest that is not stone.
  * {@code strategos.mapgen} names the map: {@code proving_ground} ({@link ProvingGround}, the devtools resources) or
- * {@code first_skirmish} ({@link FirstSkirmish}, the mod's own resources). A server, because the tiles hold vanilla
+ * {@code first_skirmish} and {@code team_skirmish} ({@link FirstSkirmish}, the mod's own resources). A server,
+ * because the tiles hold vanilla
  * block states and the data version; its marker names the hash for the run's guard.
  */
 @EventBusSubscriber(modid = Strategos.MOD_ID)
@@ -121,8 +122,9 @@ public final class MapgenDriver {
                         g.terrainHash(),
                         List.of());
             }
-            case "first_skirmish" -> {
-                FirstSkirmish g = FirstSkirmish.generate();
+            case "first_skirmish", "team_skirmish" -> {
+                FirstSkirmish g =
+                        map.equals("team_skirmish") ? FirstSkirmish.generateTeamSkirmish() : FirstSkirmish.generate();
                 yield new Source(
                         map,
                         FirstSkirmish.SIZE,
@@ -138,7 +140,9 @@ public final class MapgenDriver {
                         g.terrainHash(),
                         g.terrainJobs());
             }
-            default -> throw new IllegalArgumentException("mapgen knows proving_ground and first_skirmish, not " + map);
+            default ->
+                throw new IllegalArgumentException(
+                        "mapgen knows proving_ground, first_skirmish and team_skirmish, not " + map);
         };
     }
 
