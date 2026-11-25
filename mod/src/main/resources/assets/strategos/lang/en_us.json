@@ -121,6 +121,7 @@
   "strategos.feed.researched": "Researched: %s",
   "strategos.feed.not_enough": "Not enough %s",
   "strategos.feed.population_capped": "Population capped: build houses",
+  "strategos.feed.population_limit": "Population limit reached",
   "strategos.feed.worker_idle": "A worker is idle",
   "strategos.phase.0": "Village",
   "strategos.phase.1": "Town",

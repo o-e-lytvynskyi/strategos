@@ -16,6 +16,7 @@ import dev.strategos.core.sim.OrderReceived;
 import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.build.Construction;
 import dev.strategos.core.sim.build.Placing;
+import dev.strategos.core.sim.civ.PopulationRule;
 import dev.strategos.core.sim.econ.Dropsites;
 import dev.strategos.core.sim.econ.Fields;
 import dev.strategos.core.sim.garrison.Garrisons;
@@ -127,10 +128,11 @@ public final class Production {
         Population pop = s.population();
         if (!b.queues().reserved(handle)) {
             int need = s.templatePopulation(template, faction) * count;
-            if (!pop.fits(faction, need)) {
+            PopulationRule rule = s.civs().rules(faction).population();
+            if (!rule.fits(pop, faction, need)) {
                 if (!b.queues().waiting(handle)) {
                     b.queues().setWaiting(handle, true);
-                    s.outputs().add(new Notice(new FactionSlot(faction), NoticeKind.HOUSING_NEEDED, handle, ""));
+                    s.outputs().add(new Notice(new FactionSlot(faction), rule.refusal(), handle, ""));
                 }
                 return; // it keeps its progress
             }

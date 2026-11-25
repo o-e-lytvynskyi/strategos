@@ -44,8 +44,22 @@ public final class RuleCatalogue {
         for (SeamKind k : SeamKind.values()) {
             m.put(k, new TreeMap<>());
         }
-        add(m, SeamKind.POPULATION, RuleFactory.fixed(DEFAULT_ID, Object.class, new Object())); // T6
-        add(m, SeamKind.DELIVERY, RuleFactory.fixed(DEFAULT_ID, Object.class, new Object())); // T6
+        add(m, SeamKind.POPULATION, RuleFactory.of(DEFAULT_ID, PopulationRule.class, p -> {
+            int base = RuleParams.integer(p, "base", 0);
+            if (base < 0) {
+                throw new RuleFactory.BadParams("/params/base: expected an integer of at least 0, got " + base);
+            }
+            return base == 0 ? PopulationRule.DEFAULT : PopulationRule.housing(base);
+        }));
+        add(m, SeamKind.POPULATION, RuleFactory.of("fixed", PopulationRule.class, p -> {
+            int cap = RuleParams.requiredInteger(p, "cap");
+            if (cap < 0) {
+                throw new RuleFactory.BadParams("/params/cap: expected an integer of at least 0, got " + cap);
+            }
+            return PopulationRule.fixed(cap);
+        }));
+        add(m, SeamKind.DELIVERY, RuleFactory.fixed(DEFAULT_ID, DeliveryRule.class, DeliveryRule.DEFAULT));
+        add(m, SeamKind.DELIVERY, RuleFactory.fixed("direct", DeliveryRule.class, DeliveryRule.DIRECT));
         add(m, SeamKind.CONSTRUCTION, RuleFactory.fixed(DEFAULT_ID, Object.class, new Object())); // T7
         add(m, SeamKind.UPKEEP, RuleFactory.fixed(DEFAULT_ID, UpkeepRule.class, UpkeepRule.DEFAULT));
         add(m, SeamKind.RESOURCES, RuleFactory.fixed(DEFAULT_ID, ResourceRule.class, ResourceRule.DEFAULT));
@@ -99,6 +113,8 @@ public final class RuleCatalogue {
             return CivRules.DEFAULTS;
         }
         return new CivRules(
+                create(civ, SeamKind.POPULATION, PopulationRule.class),
+                create(civ, SeamKind.DELIVERY, DeliveryRule.class),
                 create(civ, SeamKind.UPKEEP, UpkeepRule.class),
                 create(civ, SeamKind.RESOURCES, ResourceRule.class),
                 create(civ, SeamKind.PHASE, PhaseRule.class),

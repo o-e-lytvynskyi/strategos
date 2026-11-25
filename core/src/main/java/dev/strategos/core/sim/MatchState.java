@@ -525,6 +525,11 @@ public final class MatchState {
         return PopulationCost.ofTemplate(stats, template, faction);
     }
 
+    /** The most population {@code faction} may use now: its {@code PopulationRule}'s cap, the one source of it. */
+    public int populationCap(int faction) {
+        return civs.rules(faction).population().cap(population, faction);
+    }
+
     /** The factions' population counters (ECO-06). */
     public Population population() {
         return population;

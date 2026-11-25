@@ -206,7 +206,7 @@ final class QueriesImpl implements MatchQueries {
 
     @Override
     public int populationCap(FactionSlot faction) {
-        return state.population().cap(faction.value());
+        return state.populationCap(faction.value());
     }
 
     @Override

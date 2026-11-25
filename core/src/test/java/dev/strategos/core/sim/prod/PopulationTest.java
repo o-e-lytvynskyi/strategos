@@ -91,7 +91,7 @@ class PopulationTest {
                 PlayerSlot.ADMIN, new SpawnUnits(TemplateSet.INFANTRY, new FactionSlot(0), new Vec2d(40, 40), 19, 4));
         p.h.step();
         assertThat(p.s.population().used(0)).isEqualTo(19);
-        assertThat(p.s.population().cap(0)).as("the centre's twenty").isEqualTo(20);
+        assertThat(p.s.populationCap(0)).as("the centre's twenty").isEqualTo(20);
         assertThat(p.train().outcome()).isEqualTo(CommandOutcome.ACCEPTED);
         assertThat(p.train().outcome()).isEqualTo(CommandOutcome.ACCEPTED);
         p.h.runTicks(201); // the first worker's 10 s
@@ -110,7 +110,7 @@ class PopulationTest {
                 .isZero();
         p.h.submit(PlayerSlot.ADMIN, new SpawnBuilding(ProdScene.HOUSE, new FactionSlot(0), 30, 30, 0));
         p.h.step();
-        assertThat(p.s.population().cap(0)).isEqualTo(25);
+        assertThat(p.s.populationCap(0)).isEqualTo(25);
         p.h.runTicks(201);
         assertThat(p.s.population().used(0)).as("the second trained").isEqualTo(21);
         assertThat(p.s.buildings().queues().queueSize(p.centre)).isZero();
@@ -127,11 +127,11 @@ class PopulationTest {
         }
         p.h.step();
         assertThat(p.s.population().housing(0)).as("20 + 6 × 5").isEqualTo(50);
-        assertThat(p.s.population().cap(0)).isEqualTo(30);
+        assertThat(p.s.populationCap(0)).isEqualTo(30);
         int house = p.s.buildings().handles()[1];
         p.s.destroyBuilding(house);
         assertThat(p.s.population().housing(0)).isEqualTo(45);
-        assertThat(p.s.population().cap(0)).isEqualTo(30);
+        assertThat(p.s.populationCap(0)).isEqualTo(30);
         assertThat(p.s.buildings().state(p.centre)).isEqualTo(BuildingStore.COMPLETE);
     }
 }

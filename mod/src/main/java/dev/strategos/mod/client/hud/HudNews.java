@@ -180,6 +180,7 @@ final class HudNews {
         return switch (s.cause()) {
             case NOT_ENOUGH_RESOURCES -> "strategos.feed.not_enough";
             case POPULATION_CAPPED -> "strategos.feed.population_capped";
+            case POPULATION_LIMIT -> "strategos.feed.population_limit";
             case DEPOSIT_EXHAUSTED -> "strategos.feed.worker_idle";
         };
     }

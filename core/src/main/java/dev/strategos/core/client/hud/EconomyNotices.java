@@ -26,6 +26,7 @@ public final class EconomyNotices {
     public enum Cause {
         NOT_ENOUGH_RESOURCES,
         POPULATION_CAPPED,
+        POPULATION_LIMIT,
         DEPOSIT_EXHAUSTED
     }
 
@@ -45,6 +46,7 @@ public final class EconomyNotices {
             when f.reason() == RejectReason.NOT_ENOUGH_RESOURCES ->
                 raise(Cause.NOT_ENOUGH_RESOURCES, lacking(f.missing(), resources), now);
             case NoticeMsg n when n.kind() == NoticeKind.HOUSING_NEEDED -> raise(Cause.POPULATION_CAPPED, "", now);
+            case NoticeMsg n when n.kind() == NoticeKind.POPULATION_CAP -> raise(Cause.POPULATION_LIMIT, "", now);
             case NoticeMsg n when n.kind() == NoticeKind.IDLE_WORKER -> raise(Cause.DEPOSIT_EXHAUSTED, "", now);
             default -> {}
         }
@@ -53,16 +55,20 @@ public final class EconomyNotices {
     /** The faction's population now: below its cap, the cap's notice lapses. */
     public void population(int used, int cap) {
         if (used < cap) {
-            live.removeIf(s -> s.cause() == Cause.POPULATION_CAPPED);
+            live.removeIf(s -> isCap(s.cause()));
         }
     }
 
     /** The notices live at client tick {@code now}, the newest first, at most {@value #MOST}. */
     public List<Shown> shown(long now) {
-        live.removeIf(s -> s.cause() != Cause.POPULATION_CAPPED && now - s.last() >= SHOW_TICKS);
+        live.removeIf(s -> !isCap(s.cause()) && now - s.last() >= SHOW_TICKS);
         List<Shown> out = new ArrayList<>(live);
         out.sort((a, b) -> Long.compare(b.last(), a.last()));
         return List.copyOf(out.size() > MOST ? out.subList(0, MOST) : out);
+    }
+
+    private static boolean isCap(Cause cause) {
+        return cause == Cause.POPULATION_CAPPED || cause == Cause.POPULATION_LIMIT;
     }
 
     /** How many fired notices are kept, the newest. */

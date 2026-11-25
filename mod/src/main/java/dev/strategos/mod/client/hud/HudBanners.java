@@ -136,6 +136,7 @@ final class HudBanners {
             String text = switch (s.cause()) {
                 case NOT_ENOUGH_RESOURCES -> "Not enough " + s.detail();
                 case POPULATION_CAPPED -> "Population capped: build houses";
+                case POPULATION_LIMIT -> "Population limit reached";
                 case DEPOSIT_EXHAUSTED -> s.count() > 1 ? "Workers idle (" + s.count() + ")" : "A worker is idle";
             };
             int w = font.width(text) + 2 * theme.padding();

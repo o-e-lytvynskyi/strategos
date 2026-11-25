@@ -6,14 +6,13 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * The eight places a civilisation may vary the rules (ADR-0028), each with the name a civilisation file keys it by
- * ({@code rules.<name>}) and the interface its variants implement. The population, delivery and construction seams
- * arrive with M10 T6 and T7: their names are accepted in data now, with only the id {@code default}, which makes
- * nothing yet.
+ * ({@code rules.<name>}) and the interface its variants implement. The construction seam arrives with M10 T7: its name is accepted in data now, with only the id {@code default}, which
+ * makes nothing yet.
  */
 @CoreApi
 public enum SeamKind {
-    POPULATION("population", Object.class),
-    DELIVERY("delivery", Object.class),
+    POPULATION("population", PopulationRule.class),
+    DELIVERY("delivery", DeliveryRule.class),
     CONSTRUCTION("construction", Object.class),
     UPKEEP("upkeep", UpkeepRule.class),
     RESOURCES("resources", ResourceRule.class),

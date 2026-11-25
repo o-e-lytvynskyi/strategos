@@ -23,7 +23,14 @@ class RuleCatalogueTest {
     void theDefaultCataloguePinsItsIds() {
         // Removing an id breaks the journals recorded with it: add ids (name@2 for a changed behaviour), never remove.
         for (SeamKind k : SeamKind.values()) {
-            assertThat(RuleCatalogue.DEFAULT.ids(k)).as(k.dataName()).containsExactly("default");
+            assertThat(RuleCatalogue.DEFAULT.ids(k))
+                    .as(k.dataName())
+                    .containsExactlyElementsOf(
+                            switch (k) {
+                                case POPULATION -> List.of("default", "fixed");
+                                case DELIVERY -> List.of("default", "direct");
+                                default -> List.of("default");
+                            });
         }
         assertThat(SeamKind.values())
                 .extracting(SeamKind::dataName)
@@ -110,6 +117,34 @@ class RuleCatalogueTest {
         assertThat(wider.problems(civ("{\"upkeep\":{\"id\":\"income\"}}"))).hasSize(1);
         assertThat(wider.problems(civ("{\"upkeep\":{\"id\":\"income\",\"params\":{\"index\":1,\"amount\":2}}}")))
                 .isEmpty();
+    }
+
+    @Test
+    void theFixedPopulationRuleNeedsAnIntegerCapAndTheDefaultAnOptionalBase() {
+        RuleCatalogue c = RuleCatalogue.DEFAULT;
+        assertThat(c.problems(civ("{\"population\":{\"id\":\"fixed\",\"params\":{\"cap\":30}}}")))
+                .isEmpty();
+        assertThat(c.problems(civ("{\"population\":{\"id\":\"default\",\"params\":{\"base\":5}}}")))
+                .isEmpty();
+        assertThat(c.problems(civ("{\"delivery\":{\"id\":\"direct\"}}"))).isEmpty();
+
+        List<TemplateProblem> missing = c.problems(civ("{\"population\":{\"id\":\"fixed\"}}"), "f.json");
+        assertThat(missing).hasSize(1);
+        assertThat(missing.get(0).pointer()).isEqualTo("/rules/population/params");
+        assertThat(missing.get(0).message()).contains("/params/cap").contains("required");
+        for (String bad : List.of("\"x\"", "{}", "[1]", "1.5", "true", "null", "-1")) {
+            assertThat(c.problems(civ("{\"population\":{\"id\":\"fixed\",\"params\":{\"cap\":" + bad + "}}}")))
+                    .as("cap %s", bad)
+                    .hasSize(1);
+        }
+        for (String bad : List.of("\"x\"", "[1]", "0.5", "-2")) {
+            assertThat(c.problems(civ("{\"population\":{\"id\":\"default\",\"params\":{\"base\":" + bad + "}}}")))
+                    .as("base %s", bad)
+                    .hasSize(1);
+        }
+        assertThat(c.problems(civ("{\"delivery\":{\"id\":\"direct\",\"params\":{\"x\":1}}}")))
+                .as("direct takes none")
+                .hasSize(1);
     }
 
     @Test

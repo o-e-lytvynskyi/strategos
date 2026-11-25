@@ -292,6 +292,7 @@ public final class WireCodecs {
                         case TRAINED -> 5;
                         case BUILT -> 6;
                         case RESEARCHED -> 7;
+                        case POPULATION_CAP -> 8;
                     });
         }
 
@@ -307,6 +308,7 @@ public final class WireCodecs {
                 case 5 -> NoticeKind.TRAINED;
                 case 6 -> NoticeKind.BUILT;
                 case 7 -> NoticeKind.RESEARCHED;
+                case 8 -> NoticeKind.POPULATION_CAP;
                 default -> throw new WireException("unknown notice kind " + code);
             };
         }

@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import dev.strategos.core.content.CivDef;
 import dev.strategos.core.content.TemplateSet;
+import dev.strategos.core.protocol.NoticeKind;
 import dev.strategos.core.protocol.SpawnBuilding;
 import dev.strategos.core.shared.CivId;
 import dev.strategos.core.shared.FactionSlot;
@@ -126,6 +127,43 @@ class SeamDefaultsTest {
         assertThat(h.stateHash()).isEqualTo(before);
         assertThat(s.civs().rules(0)).isEqualTo(CivRules.DEFAULTS);
         assertThat(s.civs().rules(5)).isEqualTo(CivRules.DEFAULTS);
+    }
+
+    @Test
+    void thePopulationDefaultIsHousingUnderTheMatchMaximumRefusedAsHousingNeeded() {
+        SimHarness h = match();
+        MatchState s = KernelAccess.state(h.core());
+        long before = h.stateHash();
+
+        assertThat(s.civs().rules(0).population()).isSameAs(PopulationRule.DEFAULT);
+        assertThat(PopulationRule.DEFAULT.refusal()).isEqualTo(NoticeKind.HOUSING_NEEDED);
+        for (int f = 0; f < 2; f++) {
+            assertThat(s.populationCap(f))
+                    .as("the centre's twenty")
+                    .isEqualTo(
+                            Math.min(s.population().housing(f), s.population().max()))
+                    .isEqualTo(20);
+        }
+        s.population().house(0, 7);
+        assertThat(s.populationCap(0)).isEqualTo(27);
+        s.population().setMax(10);
+        assertThat(s.populationCap(0)).as("the match maximum caps it").isEqualTo(10);
+        assertThat(PopulationRule.DEFAULT.fits(
+                        s.population(), 0, 10 - s.population().used(0)))
+                .isTrue();
+        assertThat(PopulationRule.DEFAULT.fits(
+                        s.population(), 0, 11 - s.population().used(0)))
+                .isFalse();
+        assertThat(h.stateHash()).as("the counters are not hashed").isEqualTo(before);
+    }
+
+    @Test
+    void theDeliveryDefaultCreditsNothingInPlaceSoTheLoadGoesToADropsite() {
+        SimHarness h = match();
+        MatchState s = KernelAccess.state(h.core());
+
+        assertThat(s.civs().rules(0).delivery()).isSameAs(DeliveryRule.DEFAULT);
+        assertThat(DeliveryRule.DEFAULT.creditInPlace(s, 0)).isFalse();
     }
 
     @Test
