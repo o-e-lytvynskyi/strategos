@@ -98,6 +98,14 @@ public final class AiView {
         return is(b.template(), q.centreClass(new FactionSlot(b.faction())));
     }
 
+    /**
+     * The template its faction's civilisation gives {@code role} (a {@code CivRoles} name), null when it has none:
+     * the behaviour that needs the role is then skipped (CIV-05).
+     */
+    public @Nullable TemplateId civRole(String role) {
+        return q.role(new FactionSlot(faction), role);
+    }
+
     /** Whether its faction's civilisation uses resource {@code id}: it gathers none it does not (CIV-05). */
     public boolean uses(String id) {
         return q.usesResource(new FactionSlot(faction), id);

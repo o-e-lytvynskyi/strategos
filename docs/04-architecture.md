@@ -1520,9 +1520,36 @@ NeoForge data maps on `minecraft:block`, registered in `RegisterDataMapTypesEven
   `civRules().of(faction)`; nothing outside `core.sim.civ` and `core.content` reads a civilisation id, and core rules
   name roles or class tokens, never template ids (ArchUnit). The placement seam is a parameter of the pure
   `PlacementRules`, so the client preview runs the same variant.
-- **The engine's vocabulary.** The class tokens the core reads are engine words, fixed like the value paths:
-  `Gatherer`, `Builder`, `Structure`, `Phase`, `Village` (the implicit phase), `Organic`, `Fauna`; M10 T8 lists each
-  with the seam or system that reads it.
+- **The engine's vocabulary.** The class tokens the core reads as words are engine words, fixed like the value
+  paths; template ids are content and appear in no rule (`TemplateIdLiteralTest`), only as a civilisation's roles
+  (`CivRoles`: `centre`, `house`, `worker`, `infantry`, `ranged`, `cavalry`, `siege`, and the content-side names).
+  Every token below is matched against a template's `Identity/classes`; a civilisation or a mod may add classes of its
+  own, which no engine code reads.
+
+  | Token | Read by | Meaning |
+  |---|---|---|
+  | `Gatherer` | `StatService` (`gathers`), `EconomyManager`, client `IdleWorkers` | the unit gathers resources; idle ones are sent to work and counted |
+  | `Builder` | `StatService` (`builds`), `Placing`, `BuildManager`, client `CommandCard` | the unit builds and repairs; the placement's builder check, the AI's free workers, the build menu |
+  | `Phase` | `TechDef` (`PHASE_CLASS`) | the tech is a phase: it has an ordinal, and no other tech has one |
+  | `CivicCentre` | `CivDef` (`DEFAULT_CENTRE_CLASS`) | a civilisation's default `centreClass`: its buildings are the centres that territory, placement, defeat and the AI read through `FactionCivs.centreClass` |
+  | `Field` | `ConquestCount`, `Base`, `MopUp` | a field: it does not count toward conquest and the AI does not mop it up or measure its base by it |
+  | `Decoration` | `ConquestCount`, `Base`, `MopUp` | a building of no consequence: the same three exclusions as `Field` |
+  | `Farmstead` | `EconomyManager` | a food dropsite the AI sends gatherers to |
+  | `Tower` | `DefenceManager`, `MopUp` | a defence the AI garrisons first and capturing it is a goal |
+  | `House` | `DefenceManager` | a building the AI garrisons for shelter, after towers |
+  | `Barracks` | `MopUp` | a building whose capture the mop-up seeks |
+  | `Wall` | `Breaching` | a building that units breach when it blocks their way |
+  | `Ram` | `MilitaryManager`, `MopUp` | a siege unit the AI sends with the army and keeps garrisoned until the strike |
+  | `Infantry` | `AiView` (role), `MilitaryManager`, `Tactics`, client `UnitLook` | a foot soldier: the army's core, the spearman's role |
+  | `Archer` | `AiView` (role), client `UnitLook` | a ranged soldier: the archer's role, kept behind the line |
+  | `Cavalry` | `AiView` (role), client `UnitLook` | a mounted soldier: the horseman's role |
+  | `Spearman`, `Organic` | client `UnitLook` | which body model a unit is drawn with |
+  | `Deposit` | client `CommandCard` | a building that is not buildable by the menu (a resource deposit) |
+  | `Worker` | `Bell` (`WORKER`, unread today) | the class the alarm bell calls in |
+
+  Value-path components (`Attack/Structure/*`, `Fauna/meat`, `ResourceGatherer`, `Trainer`, `Researcher`) and the
+  filter words a data file writes (`Structure`, `Village`) are content, read through the value-path and filter
+  tables, not engine vocabulary.
 - **A new civilisation** is data; a new mechanic is one variant class in the catalogue with its tests; a mechanic
   that fits no seam is a new seam, reviewed as a change to `core.sim.civ`.
 

@@ -73,7 +73,7 @@ class AiGarrisonTowerTest {
     @Test
     void anAttackedHouseGetsItsNearbyWorkersGarrisoned() {
         SimHarness h = BattleBotTest.ground(TemplateSet.builtin());
-        int house = building(h, BuildManager.HOUSE, 30, 30);
+        int house = building(h, new TemplateId("strategos:building/house"), 30, 30);
         BattleBotTest.spawn(h, TemplateSet.WORKER, 0, 26.5, 26.5, 3);
         h.submit(PlayerSlot.ADMIN, new SetAi(new FactionSlot(0), "defence", DefenceTest.QUIET));
         raid(h, house, BattleBotTest.SPEAR);

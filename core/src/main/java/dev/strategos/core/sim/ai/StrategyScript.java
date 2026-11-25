@@ -319,16 +319,12 @@ public record StrategyScript(
     }
 
     public static final Codec<StrategyScript> CODEC = RecordCodecBuilder.create(i -> i.group(
-                    Codec.STRING
-                            .optionalFieldOf("worker", "strategos:unit/worker")
-                            .forGetter(StrategyScript::worker),
+                    Codec.STRING.optionalFieldOf("worker", "").forGetter(StrategyScript::worker),
                     Codec.INT.optionalFieldOf("maxWorkers", 20).forGetter(StrategyScript::maxWorkers),
                     Codec.unboundedMap(Codec.STRING, Codec.INT).fieldOf("ratio").forGetter(StrategyScript::ratio),
                     Step.CODEC.listOf().fieldOf("build").forGetter(StrategyScript::build),
                     Codec.INT.optionalFieldOf("housingMargin", 2).forGetter(StrategyScript::housingMargin),
-                    Codec.STRING
-                            .optionalFieldOf("soldier", "strategos:unit/infantry")
-                            .forGetter(StrategyScript::soldier),
+                    Codec.STRING.optionalFieldOf("soldier", "").forGetter(StrategyScript::soldier),
                     Codec.INT.optionalFieldOf("soldierQueue", 2).forGetter(StrategyScript::soldierQueue),
                     Attack.CODEC.fieldOf("attack").forGetter(StrategyScript::attack),
                     Codec.INT

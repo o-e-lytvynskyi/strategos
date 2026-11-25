@@ -84,7 +84,14 @@ class AiCaptureTest {
     @Test
     void aHouseIsBurntNotCaptured() {
         SimHarness h = BattleBotTest.ground(TemplateSet.builtin());
-        h.submit(PlayerSlot.ADMIN, new SpawnBuilding(BuildManager.HOUSE, new FactionSlot(1), 60, 60, 0));
+        h.submit(
+                PlayerSlot.ADMIN,
+                new SpawnBuilding(
+                        new dev.strategos.core.shared.TemplateId("strategos:building/house"),
+                        new FactionSlot(1),
+                        60,
+                        60,
+                        0));
         h.step();
         List<UnitView> army = army(h, 20);
         AiView view = new AiView(h.core().queries(), 0, new AiBudget(AiBudget.CAP));

@@ -9,6 +9,7 @@ import dev.strategos.core.shared.CoreApi;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Stance;
 import dev.strategos.core.shared.TechId;
+import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.sim.build.BuildingView;
 import dev.strategos.core.sim.econ.EconomyTimes;
 import dev.strategos.core.sim.econ.FactionTreasury;
@@ -132,6 +133,9 @@ public interface MatchQueries {
 
     /** The class token of {@code faction}'s centres, from its civilisation (CIV-01). */
     String centreClass(FactionSlot faction);
+
+    /** The template {@code faction}'s civilisation gives {@code role} (CIV-05), null when it has none. */
+    @Nullable TemplateId role(FactionSlot faction, String role);
 
     /** Whether {@code faction}'s civilisation uses resource {@code resource} (an id of the match's economy), CIV-05. */
     boolean usesResource(FactionSlot faction, String resource);

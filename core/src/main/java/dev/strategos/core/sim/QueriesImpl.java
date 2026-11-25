@@ -12,6 +12,7 @@ import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.Stance;
 import dev.strategos.core.shared.TechId;
+import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.build.BuildingView;
@@ -125,6 +126,12 @@ final class QueriesImpl implements MatchQueries {
     @Override
     public String centreClass(FactionSlot faction) {
         return state.civs().centreClass(faction.value());
+    }
+
+    @Override
+    public @Nullable TemplateId role(FactionSlot faction, String role) {
+        CivDef def = state.civs().of(faction.value());
+        return def == null ? null : def.roles().get(role);
     }
 
     @Override

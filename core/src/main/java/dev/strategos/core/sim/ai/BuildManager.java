@@ -1,6 +1,7 @@
 package dev.strategos.core.sim.ai;
 
 import dev.strategos.core.content.Blueprint;
+import dev.strategos.core.content.CivRoles;
 import dev.strategos.core.content.Footprint;
 import dev.strategos.core.content.TechDef;
 import dev.strategos.core.content.UnitTemplate;
@@ -32,8 +33,6 @@ import org.jspecify.annotations.Nullable;
  * before the build order, the script's {@code dropsite} goes up by a resource running out near its dropsites (AI-02).
  */
 final class BuildManager implements AiModule {
-    static final TemplateId HOUSE = new TemplateId("strategos:building/house");
-
     /** Ticks to wait before trying another site. */
     static final long RETRY = 100;
 
@@ -65,11 +64,13 @@ final class BuildManager implements AiModule {
         staff(view, budget, sink);
         long tick = view.tick();
         boolean waited = memory.get(Slots.PLACED) == 0 || tick - (memory.get(Slots.PLACED) - 1) >= RETRY;
+        TemplateId house = view.civRole(CivRoles.HOUSE); // a civilisation with no house role builds none (CIV-05)
         if (waited
+                && house != null
                 && view.populationCap() - view.populationUsed() <= script.housingMargin()
-                && !building(view, HOUSE)
-                && view.affords(HOUSE)) {
-            place(view, budget, sink, base, HOUSE, ""); // no room to grow comes first
+                && !building(view, house)
+                && view.affords(house)) {
+            place(view, budget, sink, base, house, ""); // no room to grow comes first
             return;
         }
         if (waited && !script.dropsite().isEmpty() && expand(view, budget, sink, base)) {
@@ -106,25 +107,24 @@ final class BuildManager implements AiModule {
         }
     }
 
-    static final TemplateId CENTRE = new TemplateId("strategos:building/civic_centre");
-
     /**
      * AI-08: once the build order is done and Town has raised the civic centre limit above the centres it has, with the
      * stock twice the price of one (so soldiers are not starved), a second civic centre goes up on the neutral land
      * nearest the base ({@link SiteFinder#neutral}). One at a time, none while one stands unfinished.
      */
     private void expandCentre(AiView view, AiBudget budget, CommandSink sink, Base base) {
-        if (count(view, CENTRE) >= view.buildingLimit(CENTRE) || building(view, CENTRE)) {
+        TemplateId centre = view.civRole(CivRoles.CENTRE);
+        if (centre == null || count(view, centre) >= view.buildingLimit(centre) || building(view, centre)) {
             return;
         }
         for (String r : view.resources()) {
-            if (view.stock(r) < 2 * view.cost(CENTRE, r)) {
+            if (view.stock(r) < 2 * view.cost(centre, r)) {
                 return;
             }
         }
-        int[] at = SiteFinder.neutral(view, budget, base, CENTRE);
+        int[] at = SiteFinder.neutral(view, budget, base, centre);
         memory.set(Slots.PLACED, view.tick() + 1);
-        UnitTemplate t = view.templates().byId(CENTRE);
+        UnitTemplate t = view.templates().byId(centre);
         Blueprint bp = t == null ? null : view.templates().blueprint(t.netIndex());
         if (at == null || bp == null) {
             return;
@@ -136,7 +136,7 @@ final class BuildManager implements AiModule {
         }
         budget.spend(20);
         sink.send(new PlaceBuilding(
-                CENTRE,
+                centre,
                 at[0],
                 at[1],
                 0,
