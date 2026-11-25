@@ -51,6 +51,9 @@ final class ResearchRules {
                 return Tally.rejectAll(envelope, kind(), 1, RejectReason.UNSUPPORTED);
             }
             int faction = b.faction(research.building());
+            if (!state.civs().hasTech(faction, tech.netIndex())) { // outside the owner's civilisation's roster (CIV-01)
+                return Tally.rejectAll(envelope, kind(), 1, RejectReason.UNSUPPORTED);
+            }
             if (state.progress().researched(faction, tech.id()) || Techs.pending(state, faction, tech)) {
                 return Tally.rejectAll(envelope, kind(), 1, RejectReason.LIMIT);
             }

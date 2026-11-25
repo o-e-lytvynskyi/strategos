@@ -2,6 +2,7 @@ package dev.strategos.mod.client.hud;
 
 import dev.strategos.core.client.hud.EconomyNotices;
 import dev.strategos.core.client.hud.NotificationFeed;
+import dev.strategos.core.client.hud.PhasePanel;
 import dev.strategos.core.content.TechDef;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.UnitTemplate;
@@ -95,7 +96,7 @@ final class HudNews {
                         clientTicks,
                         NotificationFeed.Kind.PHASE,
                         own ? "strategos.feed.phase.own" : "strategos.feed.phase.enemy",
-                        List.of("strategos.phase." + phase.ticks()),
+                        List.of(PhasePanel.phaseKey(StrategosClient.civ(phase.faction()), (int) phase.ticks())),
                         null,
                         phase.faction() + ":" + phase.ticks());
             }

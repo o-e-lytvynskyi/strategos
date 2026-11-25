@@ -58,6 +58,22 @@ class PayloadRoundTripTest {
                         new MatchJoin(1, 100, -60, -200, 48, 48, -64, 319, 2, new PlayerSlot(0), "{\"a\":1}")),
                 MatchJoinPayload.SPEC.cap());
         roundTrip(
+                MatchJoinPayload.STREAM_CODEC,
+                new MatchJoinPayload(new MatchJoin(
+                        1,
+                        100,
+                        -60,
+                        -200,
+                        48,
+                        48,
+                        -64,
+                        319,
+                        2,
+                        new PlayerSlot(0),
+                        "{}",
+                        List.of("strategos:default", "t:lean"))),
+                MatchJoinPayload.SPEC.cap());
+        roundTrip(
                 MatchStatePayload.STREAM_CODEC,
                 new MatchStatePayload(new MatchStateMsg(1, MatchStateMsg.Lifecycle.PAUSED, 77)),
                 MatchStatePayload.SPEC.cap());

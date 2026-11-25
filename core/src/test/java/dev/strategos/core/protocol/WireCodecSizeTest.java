@@ -158,6 +158,54 @@ class WireCodecSizeTest {
                 .isEqualTo(1 + 2 + 1 + 2 + 1 + 1 + 1 + 2 + 1 + 1 + 3);
     }
 
+    /** CIV-01: each faction's civilisation id is appended to {@code match_join}, absent when all play the default. */
+    @Test
+    void matchJoinCarriesTheCivilisationsAppendedAndOldBytesStillRead() {
+        MatchJoin withCivs = new MatchJoin(
+                1,
+                100,
+                -60,
+                -200,
+                48,
+                48,
+                -64,
+                319,
+                2,
+                new PlayerSlot(1),
+                "{}",
+                List.of("t:lean", "strategos:default"));
+        assertThat(size(MatchJoin.WIRE, withCivs))
+                .as("the base, the count, a length and the bytes of each id")
+                .isEqualTo(1 + 2 + 1 + 2 + 1 + 1 + 1 + 2 + 1 + 1 + 3 + 1 + (1 + 6) + (1 + 17));
+        assertThat(roundTrip(MatchJoin.WIRE, withCivs)).isEqualTo(withCivs);
+        MatchJoin plain = new MatchJoin(1, 100, -60, -200, 48, 48, -64, 319, 2, new PlayerSlot(1), "{}");
+        assertThat(plain.civs()).isEmpty();
+        assertThat(roundTrip(MatchJoin.WIRE, plain))
+                .as("bytes from before civilisations")
+                .isEqualTo(plain);
+        assertThat(plain.civ(0)).isEqualTo(dev.strategos.core.shared.CivId.DEFAULT);
+        assertThat(withCivs.civ(0).value()).isEqualTo("t:lean");
+
+        byte[] bytes = WireCodec.encode(
+                MatchJoin.WIRE,
+                new MatchJoin(
+                        1,
+                        100,
+                        -60,
+                        -200,
+                        48,
+                        48,
+                        -64,
+                        319,
+                        2,
+                        new PlayerSlot(1),
+                        "{}",
+                        List.of("NOT AN ID", "t:lean")));
+        assertThat(WireCodec.decode(MatchJoin.WIRE, bytes).civs())
+                .as("an entry that is no id reads as the default; the join still decodes")
+                .containsExactly("strategos:default", "t:lean");
+    }
+
     /** TECH-03, row 5: {@code looks} are appended to {@code match_state}, a byte a faction, after any results. */
     @Test
     void matchStateCarriesTheFactionTiersAppended() {
@@ -214,7 +262,9 @@ class WireCodecSizeTest {
                 Integer.MIN_VALUE,
                 Integer.MAX_VALUE,
                 PlayerSlot.ADMIN,
-                "r".repeat(MatchJoin.RULES_BYTES));
+                "r".repeat(MatchJoin.RULES_BYTES),
+                java.util.Collections.nCopies(
+                        dev.strategos.core.sim.MatchConfig.MAX_FACTIONS, "a:" + "c".repeat(MatchJoin.CIV_BYTES - 2)));
         assertThat(size(MatchJoin.WIRE, widest)).isEqualTo(MatchJoin.WIRE.maxSize());
         assertThat(roundTrip(MatchJoin.WIRE, widest)).isEqualTo(widest);
         NoticeMsg longest = new NoticeMsg(NoticeKind.ORDER_FAILED, -1, "d".repeat(NoticeMsg.DETAIL_BYTES));

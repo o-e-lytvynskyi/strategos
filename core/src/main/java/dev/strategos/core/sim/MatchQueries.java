@@ -1,5 +1,6 @@
 package dev.strategos.core.sim;
 
+import dev.strategos.core.content.CivDef;
 import dev.strategos.core.content.StartSlot;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.FactionLook;
@@ -128,6 +129,14 @@ public interface MatchQueries {
 
     /** The technology whose modifiers carry {@code sourceId} (TECH-01), or null for any other source. */
     default @Nullable TechId techOf(int sourceId) {
+        return null;
+    }
+
+    /**
+     * The civilisation whose bonuses carry {@code sourceId} for {@code faction} (CIV-01), or null for any other source:
+     * what a stat breakdown names instead of the number.
+     */
+    default @Nullable CivDef civOf(int sourceId, FactionSlot faction) {
         return null;
     }
 

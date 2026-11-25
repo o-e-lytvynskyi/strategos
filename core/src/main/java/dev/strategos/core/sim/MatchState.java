@@ -7,6 +7,8 @@ import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.diag.MatchLog;
 import dev.strategos.core.sim.build.BuildingLife;
 import dev.strategos.core.sim.build.BuildingStore;
+import dev.strategos.core.sim.civ.CivBonuses;
+import dev.strategos.core.sim.civ.FactionCivs;
 import dev.strategos.core.sim.combat.Damage;
 import dev.strategos.core.sim.combat.HealthStore;
 import dev.strategos.core.sim.combat.ShotStore;
@@ -93,6 +95,7 @@ public final class MatchState {
     private final ActivityTiers tiers = new ActivityTiers();
     private final List<JobDelivery> deliveries = new ArrayList<>();
     private final MatchTerrain terrain;
+    private FactionCivs civs;
     private final MobilityCache mobilityCache = new MobilityCache(this);
     private final NodeStore nodes = new NodeStore();
     private final BuildingStore buildings = new BuildingStore();
@@ -106,6 +109,7 @@ public final class MatchState {
 
     MatchState(MatchConfig config, TemplateSet templates, EntityStore entities, MatchLog log) {
         this.config = config;
+        this.civs = FactionCivs.bind(config, templates); // refuses a civilisation the set lacks
         this.allies = Allies.sameFaction(config.factions());
         this.play = new PlayState(this, config);
         this.templates = templates;
@@ -136,6 +140,7 @@ public final class MatchState {
         this.input = TickInputs.empty(0);
         this.terrain = new MatchTerrain(this);
         ensureCapacity(entities.highWater());
+        CivBonuses.reapply(this); // the civilisations' bonuses, derived at the start as at every restore (CIV-01)
     }
 
     /** The published terrain: a copy-on-write grid, so a job keeps the one it captured. */
@@ -566,8 +571,7 @@ public final class MatchState {
 
     /** A journaled rule change's rules (MATCH-01): the config carries them, and the population takes its maximum. */
     public void setRules(MatchRules rules) {
-        config =
-                new MatchConfig(config.id(), config.seed(), config.bounds(), config.factions(), rules, config.starts());
+        config = config.withRules(rules);
         population.setMax(rules.economy().populationMax());
     }
 
@@ -592,6 +596,11 @@ public final class MatchState {
 
     public TemplateSet templates() {
         return templates;
+    }
+
+    /** Each faction's civilisation bound to the set (CIV-01). */
+    public FactionCivs civs() {
+        return civs;
     }
 
     public EntityStore entities() {
@@ -729,6 +738,7 @@ public final class MatchState {
 
     void setTemplates(TemplateSet set) {
         templates = set;
+        civs = FactionCivs.bind(config, set); // TemplateSwap checked that the set has every civilisation in use
     }
 
     /** One guard for both the server reload and INGEST, before any template-dependent state changes. */

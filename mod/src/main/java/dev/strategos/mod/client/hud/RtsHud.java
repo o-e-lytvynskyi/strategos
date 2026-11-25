@@ -363,7 +363,8 @@ public final class RtsHud {
                         controller.buildPage(),
                         StrategosClient.model().buildings(),
                         own != null && controller.demolishAsked(own.handle()),
-                        CardController.shared(stances)),
+                        CardController.shared(stances),
+                        StrategosClient.viewerCiv()),
                 own);
         phasePanel = PhasePanel.of( // UI-13: the next phase's checklist, the server's own evaluation
                 templates,

@@ -3,10 +3,13 @@ package dev.strategos.mod.client;
 import com.google.gson.JsonParser;
 import com.mojang.serialization.JsonOps;
 import dev.strategos.core.client.model.ClientMatchModel;
+import dev.strategos.core.content.CivDef;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.FactionLook;
+import dev.strategos.core.protocol.FactionState;
 import dev.strategos.core.protocol.MatchJoin;
 import dev.strategos.core.protocol.MatchStateMsg;
+import dev.strategos.core.shared.CivId;
 import dev.strategos.core.sim.MatchRules;
 import dev.strategos.core.sim.econ.ResourceDef;
 import dev.strategos.mod.Strategos;
@@ -164,6 +167,22 @@ public final class StrategosClient {
         match = join;
         ARCS.joined(join.matchId());
         resources = resources(join);
+    }
+
+    /**
+     * Faction {@code faction}'s civilisation as the joined match lists it (CIV-01), from the client's copy of the set;
+     * the default's when the match lists none; null when the set lacks it (a stale copy: the roster is then not narrowed).
+     */
+    public static @Nullable CivDef civ(int faction) {
+        MatchJoin join = match;
+        TemplateSet set = templates;
+        return set.civ(join == null ? CivId.DEFAULT : join.civ(faction));
+    }
+
+    /** The viewer's civilisation; the default's before the first {@code faction_state}. */
+    public static @Nullable CivDef viewerCiv() {
+        FactionState f = MODEL.faction();
+        return civ(f == null ? 0 : f.faction());
     }
 
     /** The joined match's resources in their order, from the rules it was joined with; empty before a join. */

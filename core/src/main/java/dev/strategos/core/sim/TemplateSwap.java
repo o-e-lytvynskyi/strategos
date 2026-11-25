@@ -3,6 +3,8 @@ package dev.strategos.core.sim;
 import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.content.UnitTemplate;
 import dev.strategos.core.shared.QueueEntry;
+import dev.strategos.core.sim.civ.CivBonuses;
+import dev.strategos.core.sim.civ.FactionCivs;
 import dev.strategos.core.sim.prod.Techs;
 import org.jspecify.annotations.Nullable;
 
@@ -28,6 +30,7 @@ final class TemplateSwap {
         Techs.reapply(state, old); // the researched techs' effects, from the new set (spec row 22)
         Techs.dropRetired(state, old);
         AiHandicap.reapply(state); // the computer players' open handicaps, from the new set (AI-05)
+        CivBonuses.reapply(state); // the civilisations' bonuses, from the new set (CIV-01)
         state.costs().swap(state.stats());
         state.gatherRates().swap(state.stats());
         state.spatial().swap(set);
@@ -35,6 +38,10 @@ final class TemplateSwap {
 
     /** Why {@code next} cannot replace the match's set, or null when it can. */
     static @Nullable String problem(MatchState state, TemplateSet next) {
+        String civ = FactionCivs.problem(state.config(), next); // a civilisation in use must survive the swap
+        if (civ != null) {
+            return civ;
+        }
         EntityStore entities = state.entities();
         for (int i = 0; i < entities.highWater(); i++) {
             if (entities.aliveAt(i)) {

@@ -208,6 +208,14 @@ public final class StateHasher {
             h = Hasher.mix(h, rules.economy().populationMax());
         }
 
+        if (config.hasCustomCivs()) { // the civilisations by id string, in faction order; the default hashes as before
+            for (int f = 0; f < config.factions(); f++) {
+                String civ = config.civ(f).value();
+                h = Hasher.mix(h, civ.length());
+                for (int k = 0; k < civ.length(); k++) h = Hasher.mix(h, civ.charAt(k));
+            }
+        }
+
         ArrayDeque<CommandEnvelope> pending = s.pendingCommands();
         h = Hasher.mix(h, pending.size());
         if (!pending.isEmpty()) {

@@ -1,5 +1,6 @@
 package dev.strategos.core.client.hud;
 
+import dev.strategos.core.content.CivDef;
 import dev.strategos.core.content.CorePaths;
 import dev.strategos.core.content.Requirements;
 import dev.strategos.core.content.TechDef;
@@ -118,7 +119,8 @@ public record CommandCard(Page page, List<Button> buttons) {
     /**
      * What the card is built from: the templates, the match's resources in order, the faction's last state (null
      * before the first), the selected units' templates, whether the build page is open, and the stance the whole
-     * selection shares as far as the client knows (null for none: a mixed selection).
+     * selection shares as far as the client knows (null for none: a mixed selection), and the viewer's civilisation
+     * (null: the roster is not narrowed), whose roster hides what its faction may not own (CIV-01).
      */
     public record Input(
             TemplateSet templates,
@@ -128,7 +130,8 @@ public record CommandCard(Page page, List<Button> buttons) {
             boolean buildPage,
             List<BuildingState.Entry> buildings,
             boolean demolishAsked,
-            @Nullable Stance stance) {
+            @Nullable Stance stance,
+            @Nullable CivDef civ) {
         public Input {
             resources = List.copyOf(resources);
             unitTemplates = List.copyOf(unitTemplates);
@@ -142,7 +145,20 @@ public record CommandCard(Page page, List<Button> buttons) {
                 @Nullable FactionState faction,
                 List<Integer> unitTemplates,
                 boolean buildPage) {
-            this(templates, resources, faction, unitTemplates, buildPage, List.of(), false, null);
+            this(templates, resources, faction, unitTemplates, buildPage, List.of(), false, null, null);
+        }
+
+        /** An input of a viewer whose civilisation is not narrowed. */
+        public Input(
+                TemplateSet templates,
+                List<String> resources,
+                @Nullable FactionState faction,
+                List<Integer> unitTemplates,
+                boolean buildPage,
+                List<BuildingState.Entry> buildings,
+                boolean demolishAsked,
+                @Nullable Stance stance) {
+            this(templates, resources, faction, unitTemplates, buildPage, buildings, demolishAsked, stance, null);
         }
 
         /** An input whose selection's shared stance is not known. */
@@ -154,7 +170,7 @@ public record CommandCard(Page page, List<Button> buttons) {
                 boolean buildPage,
                 List<BuildingState.Entry> buildings,
                 boolean demolishAsked) {
-            this(templates, resources, faction, unitTemplates, buildPage, buildings, demolishAsked, null);
+            this(templates, resources, faction, unitTemplates, buildPage, buildings, demolishAsked, null, null);
         }
     }
 
@@ -184,7 +200,7 @@ public record CommandCard(Page page, List<Button> buttons) {
                 if (slot == SLOTS - 1) {
                     break;
                 }
-                String gate = gate(in.templates(), in.faction(), in.unitTemplates(), t);
+                String gate = gate(in.templates(), in.faction(), in.civ(), in.unitTemplates(), t);
                 if (HIDDEN.equals(gate)) {
                     continue; // on no list a research adds to
                 }
@@ -234,6 +250,9 @@ public record CommandCard(Page page, List<Button> buttons) {
             if (slot == SLOTS - 1) {
                 break;
             }
+            if (outside(in.civ(), in.templates(), t)) {
+                continue; // not in the viewer's civilisation's roster (CIV-01)
+            }
             Button train = button(in, Kind.TRAIN, slot++, t, cost(in, t, "Cost/resources/"));
             if (train.reason() == null && b.queue().size() >= QUEUE_MAX) {
                 train = disabled(train, "Queue full");
@@ -247,8 +266,9 @@ public record CommandCard(Page page, List<Button> buttons) {
             if (slot >= SLOTS - 3) { // the bell, the all clear and demolish keep their cells
                 break;
             }
-            if (view.researched(tech.id())) {
-                continue;
+            if (view.researched(tech.id())
+                    || (in.civ() != null && !in.civ().roster().hasTech(tech.id()))) {
+                continue; // done, or outside the viewer's civilisation's roster (CIV-01)
             }
             Button research = button(in, Kind.RESEARCH, slot++, tech.netIndex(), techCost(in, tech));
             if (b.queue().contains(QueueEntry.techEntry(tech.netIndex()))) {
@@ -313,6 +333,11 @@ public record CommandCard(Page page, List<Button> buttons) {
      * {@link #buildings} that some builder template's build list, or a tech the faction researched, names.
      */
     public static List<Integer> placeable(TemplateSet templates, @Nullable FactionState faction) {
+        return placeable(templates, faction, null);
+    }
+
+    /** As {@link #placeable(TemplateSet, FactionState)}, without what {@code civ}'s roster lacks. */
+    public static List<Integer> placeable(TemplateSet templates, @Nullable FactionState faction, @Nullable CivDef civ) {
         List<Integer> builders = new ArrayList<>();
         for (UnitTemplate t : templates.all()) {
             if (!t.isBuilding() && t.classes().contains("Builder")) {
@@ -321,11 +346,17 @@ public record CommandCard(Page page, List<Button> buttons) {
         }
         List<Integer> out = new ArrayList<>();
         for (int t : buildings(templates)) {
-            if (gate(templates, faction, builders, t) == null) {
+            if (gate(templates, faction, civ, builders, t) == null) {
                 out.add(t);
             }
         }
         return out;
+    }
+
+    /** Whether {@code civ}'s roster lacks template {@code template}; a null civilisation lacks nothing. */
+    private static boolean outside(@Nullable CivDef civ, TemplateSet templates, int template) {
+        return civ != null
+                && !civ.roster().hasTemplate(templates.byIndex(template).id());
     }
 
     /** What {@link #gate} returns for a building no list the faction can reach names. */
@@ -337,7 +368,14 @@ public record CommandCard(Page page, List<Button> buttons) {
      * phase not yet reached would add it; {@link #HIDDEN} when nothing does. A set with no build list gates nothing.
      */
     private static @Nullable String gate(
-            TemplateSet templates, @Nullable FactionState f, List<Integer> unitTemplates, int template) {
+            TemplateSet templates,
+            @Nullable FactionState f,
+            @Nullable CivDef civ,
+            List<Integer> unitTemplates,
+            int template) {
+        if (outside(civ, templates, template)) {
+            return HIDDEN; // the civilisation's roster lacks it (CIV-01)
+        }
         ValuePath path = templates.tokenPaths().byPath("Builder/buildings");
         if (path == null) {
             return null;

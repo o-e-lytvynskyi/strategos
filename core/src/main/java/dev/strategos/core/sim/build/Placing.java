@@ -184,9 +184,12 @@ public final class Placing {
 
     /**
      * Whether {@code faction} may place building {@code template}: the effective {@code Builder/buildings} of one of its
-     * builder templates names it, as the phase it has reached adds to it. A set with no build list gates nothing.
+     * builder templates names it, as the phase it has reached adds to it, and its civilisation's roster has it. A set with no build list gates nothing.
      */
     public static boolean listed(MatchState s, int template, int faction) {
+        if (!s.civs().hasTemplate(faction, template)) { // outside the faction's civilisation's roster (CIV-01)
+            return false;
+        }
         int path = s.stats().tokenPath(BUILD_LIST);
         if (path < 0) {
             return true;

@@ -26,9 +26,11 @@ import dev.strategos.core.protocol.SetStance;
 import dev.strategos.core.protocol.Stop;
 import dev.strategos.core.protocol.Ungarrison;
 import dev.strategos.core.protocol.WireCodec;
+import dev.strategos.core.shared.CivId;
 import dev.strategos.core.shared.MatchId;
 import dev.strategos.core.shared.PlayerSlot;
 import dev.strategos.core.sim.CommandResult;
+import dev.strategos.core.sim.MatchConfig;
 import dev.strategos.core.sim.MatchCore;
 import dev.strategos.core.sim.MatchLifecycle;
 import dev.strategos.core.sim.MatchRules;
@@ -153,6 +155,14 @@ public final class NetGateway {
     }
 
     /**
+     * The civilisations a join lists: none when every faction plays the default, so such a join is the bytes a client
+     * from before civilisations reads (it rejects trailing bytes).
+     */
+    static List<String> civs(MatchConfig config) {
+        return config.hasCustomCivs() ? config.civs().stream().map(CivId::value).toList() : List.of();
+    }
+
+    /**
      * Tells {@code player}, just seated in {@code rt} at {@code slot}, which match it is in ({@code match_join}); the
      * next flush sends the match's state to its members, the player among them, as {@code match_state} goes only to a
      * match.
@@ -179,7 +189,8 @@ public final class NetGateway {
                         space.maxY(),
                         core.queries().config().factions(),
                         slot,
-                        rules)));
+                        rules,
+                        civs(core.queries().config()))));
         lastState.remove(rt.id().value());
         lastLooks.remove(rt.id().value());
     }

@@ -8,6 +8,7 @@ import dev.strategos.core.port.JournalSink;
 import dev.strategos.core.port.MetricsSink;
 import dev.strategos.core.protocol.Command;
 import dev.strategos.core.protocol.SpawnUnits;
+import dev.strategos.core.shared.CivId;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.MatchId;
 import dev.strategos.core.shared.PlayerSlot;
@@ -316,6 +317,7 @@ public final class SimHarness implements ScenarioContext {
         private JobExecutor jobs = JobExecutor.inline();
         private MatchId id = new MatchId(1);
         private List<StartSlot> starts = List.of();
+        private List<CivId> civs = List.of();
         private JournalSink journal = JournalSink.MEMORY;
 
         private Builder() {}
@@ -388,8 +390,14 @@ public final class SimHarness implements ScenarioContext {
             return this;
         }
 
+        /** Each faction's civilisation (CIV-01), one per faction; none: every faction plays the default. */
+        public Builder civs(List<CivId> civs) {
+            this.civs = List.copyOf(civs);
+            return this;
+        }
+
         public SimHarness build() {
-            MatchConfig config = new MatchConfig(id, seed, bounds, factions, rules, starts);
+            MatchConfig config = new MatchConfig(id, seed, bounds, factions, rules, starts, civs);
             return new SimHarness(MatchCore.create(config, templates, new CorePorts(metrics, clock, jobs, journal)));
         }
     }

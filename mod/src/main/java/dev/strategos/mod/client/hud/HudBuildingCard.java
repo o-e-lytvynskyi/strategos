@@ -9,6 +9,7 @@ import dev.strategos.core.content.TemplateSet;
 import dev.strategos.core.protocol.BuildingState;
 import dev.strategos.core.protocol.UnitHud;
 import dev.strategos.core.shared.QueueEntry;
+import dev.strategos.mod.client.StrategosClient;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
@@ -82,7 +83,7 @@ final class HudBuildingCard {
         int y = r.y() + theme.padding();
         g.drawString(
                 font,
-                Component.translatable(p.phase().name()).getString() + " — "
+                Component.translatable(p.title(StrategosClient.viewerCiv())).getString() + " — "
                         + (p.rows().isEmpty() ? "ready" : "needs"),
                 x,
                 y,

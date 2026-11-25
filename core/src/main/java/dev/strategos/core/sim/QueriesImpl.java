@@ -1,5 +1,6 @@
 package dev.strategos.core.sim;
 
+import dev.strategos.core.content.CivDef;
 import dev.strategos.core.content.CorePaths;
 import dev.strategos.core.content.Footprint;
 import dev.strategos.core.content.StartSlot;
@@ -15,6 +16,7 @@ import dev.strategos.core.shared.Vec2d;
 import dev.strategos.core.sim.build.BuildingStore;
 import dev.strategos.core.sim.build.BuildingView;
 import dev.strategos.core.sim.capture.CaptureSystem;
+import dev.strategos.core.sim.civ.CivBonuses;
 import dev.strategos.core.sim.econ.EconomyRules;
 import dev.strategos.core.sim.econ.FactionTreasury;
 import dev.strategos.core.sim.econ.GatherSlots;
@@ -123,6 +125,11 @@ final class QueriesImpl implements MatchQueries {
     @Override
     public List<TechId> researched(FactionSlot faction) {
         return faction.value() < state.config().factions() ? state.progress().of(faction.value()) : List.of();
+    }
+
+    @Override
+    public @Nullable CivDef civOf(int sourceId, FactionSlot faction) {
+        return sourceId == CivBonuses.SOURCE ? state.civs().of(faction.value()) : null;
     }
 
     @Override

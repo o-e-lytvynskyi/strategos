@@ -8,6 +8,7 @@ import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.Handle;
 import dev.strategos.core.shared.TemplateId;
 import dev.strategos.core.shared.Vec2d;
+import dev.strategos.core.sim.civ.CivBonuses;
 import dev.strategos.core.sim.econ.CarryStore;
 import dev.strategos.core.sim.garrison.Garrisons;
 import dev.strategos.core.sim.nav.PageCoord;
@@ -215,6 +216,7 @@ final class Snapshots {
         state.outcome().restore(snapshot.play().outcome());
         state.aiSlots().restore(snapshot.play().ai(), snapshot.play().aiWake());
         AiHandicap.reapply(state); // the stats start empty: each computer player's open handicap (AI-05)
+        CivBonuses.reapply(state); // and each civilisation's bonuses (CIV-01)
         state.alerts().restore(snapshot.play().alerts());
         state.shots().restore(snapshot.play().shots());
         state.stances().restore(snapshot.play().stances(), Handle::index);

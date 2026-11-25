@@ -184,7 +184,9 @@ scene two or three times, never more (D-22).
 - **The roster rule.** `Production.trains`, `Placing.listed` and `ResearchRules` add one check, `roster.has(...)` of
   the faction's civilisation (a bitset over template and tech indices, built at binding); the command card hides what
   the roster lacks. The roster belongs to the faction, not the building: a captured building (M9) trains only what
-  its new owner's roster has. The default's roster is the wildcard, so nothing changes.
+  its new owner's roster has. Admin spawns (`SpawnUnits`, `SpawnBuilding`, a scenario's or a kit's entities) bypass the
+  roster on purpose: a scenario may hand any faction anything; the AI acts through commands and is checked. The
+  default's roster is the wildcard, so nothing changes.
 - **CIV-01's other in-scope items** are data on this frame: house size is a bonus on `Housing/capacity`;
   citizen-soldiers (D-02) are the `Gatherer` class on a soldier template (the probe's infantry has it, T9b); unique
   abilities are roster templates carrying UNIT-10's abilities (T11).
@@ -199,13 +201,15 @@ scene two or three times, never more (D-22).
 - **Setup.** `SkirmishSetup` gains `civs` per slot (default: the default civilisation); `SkirmishScreen` shows a
   selector per slot (one entry today); `/strategos skirmish … civ=<id>[,<id>]`; `MatchRegistry` writes them into
   `MatchConfig`. The AI profile per slot comes from the civilisation's `ai` (`Skirmishes` today forces `skirmish`).
-- **Start kits.** A scenario slot gains `civ` and `kit: true`; `ScenarioSetup` expands the kit — the civilisation's
-  own entities by role or template, in the start slot's frame — into the same admin commands it emits today
-  (`SpawnBuilding`, `SpawnUnits`, `Grant`). Map extras (deposits such as `first_skirmish`'s `iron_mine_large`, which
-  only one slot has) stay in the scenario's list. Today's offsets are mirrored by hand and `ScenarioSetup` does no
-  rotation, so T4 first checks whether one mirror rule (the slot's yaw) reproduces `first_skirmish`'s civilisation
-  entities: if it does, that part moves to the kit and a test pins its commands as identical; if it does not,
-  `first_skirmish` keeps its explicit lists, kits serve the scenarios that ask for them, and §1.6 gets a row.
+- **Start kits.** A scenario slot gains `civ` (the civilisation it was written for, default `strategos:default`) and
+  its civilisation's own entries carry `"civ": true` (in `first_skirmish`: the civic centre, the workers, the horseman
+  and the livestock; deposits such as `iron_mine_large`, which only one slot has, stay unflagged map extras). A slot
+  that plays the civilisation it was written for emits its list as written — the identical commands in the identical
+  order, which keeps every hash. A slot that plays another civilisation drops its flagged entries and emits that
+  civilisation's kit in place of the first of them, and takes the kit's starting resources. Kit offsets are in the
+  slot's frame: they turn with the slot's yaw (`first_skirmish`'s two slots differ by 180°, `(dx, dz) → (−dx, −dz)`),
+  which T4 checks against today's hand-mirrored offsets. A new scenario may write `kit: true` with no flagged entries;
+  the kit then comes first.
 
 ### 2.3 The rule catalogue and the seams (CIV-05)
 
@@ -560,7 +564,7 @@ Results (§10), the cards' statuses, the hand-in. Size: docs.
 
 - [x] T1 (2026-11-25)
 - [x] T2 (2026-11-25)
-- [ ] T3
+- [x] T3 (2026-11-25)
 - [ ] T4
 - [ ] T5
 - [ ] T6

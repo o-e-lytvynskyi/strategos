@@ -38,9 +38,15 @@ public final class Production {
 
     private Production() {}
 
-    /** Whether building {@code handle} trains template {@code template}: its {@code Trainer/units} names it. */
+    /**
+     * Whether building {@code handle} trains template {@code template}: its {@code Trainer/units} names it, and its
+     * owner's civilisation has the template in its roster (a captured building trains its new owner's, CIV-01).
+     */
     public static boolean trains(MatchState s, int handle, int template) {
         BuildingStore b = s.buildings();
+        if (!s.civs().hasTemplate(b.faction(handle), template)) {
+            return false;
+        }
         int path = s.stats().tokenPath(TRAINER);
         List<String> units = path < 0 ? null : s.stats().blockTokens(b.template(handle), b.faction(handle), path);
         return units != null
