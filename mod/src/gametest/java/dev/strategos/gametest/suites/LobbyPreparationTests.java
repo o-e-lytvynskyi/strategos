@@ -3,6 +3,8 @@ package dev.strategos.gametest.suites;
 import static dev.strategos.gametest.suites.Units.check;
 import static dev.strategos.gametest.suites.Units.core;
 
+import dev.strategos.core.protocol.MatchNews;
+import dev.strategos.core.protocol.Resign;
 import dev.strategos.core.protocol.SkirmishSetup;
 import dev.strategos.core.shared.FactionSlot;
 import dev.strategos.core.shared.PlayerSlot;
@@ -25,6 +27,7 @@ import dev.strategos.mod.server.match.ServerLobby;
 import dev.strategos.mod.server.match.Skirmishes;
 import dev.strategos.mod.server.net.LobbyState;
 import dev.strategos.mod.server.net.payload.LobbyStatePayload;
+import dev.strategos.mod.server.net.payload.MatchEventPayload;
 import dev.strategos.mod.server.net.payload.MatchJoinPayload;
 import dev.strategos.mod.server.persist.MatchData;
 import java.util.List;
@@ -218,6 +221,110 @@ public final class LobbyPreparationTests {
     @StrategosTest(batch = "map_lobby_coop", solo = true, timeoutTicks = 40000)
     public static void coopHumansReceiveTheirPrimaryStateThroughProductionLobby(GameTestHelper h) {
         fourHumanLaunch(h, true);
+    }
+
+    @StrategosTest(batch = "map_team_skirmish", solo = true, timeoutTicks = 40000)
+    public static void shippedTeamSkirmishSeatsTwoAlliesAndTwoComputers(GameTestHelper h) {
+        StrategosServer server = StrategosServer.get();
+        BlockPos at = h.absolutePos(BlockPos.ZERO);
+        MockViewer host = MockViewer.join(h.getLevel(), "stg-team-west1", at.getX(), at.getY() + 16, at.getZ(), 2);
+        MockViewer peer = MockViewer.join(h.getLevel(), "stg-team-west2", at.getX(), at.getY() + 16, at.getZ(), 2);
+        host.operator(2);
+        UUID hostId = host.player().getUUID();
+        UUID peerId = peer.player().getUUID();
+        FactionSlot west1 = new FactionSlot(0);
+        FactionSlot east1 = new FactionSlot(1);
+        FactionSlot west2 = new FactionSlot(2);
+        FactionSlot east2 = new FactionSlot(3);
+        String civilisation = "strategos:placeholder";
+        MatchRuntime[] allocated = new MatchRuntime[1];
+        Skirmishes.Placer actual = placer(h, 25);
+        ServerLobby facade = new ServerLobby(server, (map, options) -> allocated[0] = actual.place(map, options));
+        LobbyService service = facade.service();
+        var setup = new SkirmishSetup(
+                SkirmishSetup.TEAM_SKIRMISH,
+                SkirmishSetup.Level.NORMAL,
+                SkirmishSetup.StartResources.MAP,
+                SkirmishSetup.DEFAULT_POPULATION,
+                SkirmishSetup.Visibility.FOG);
+        service.open(
+                hostId,
+                4,
+                List.of(
+                        new MatchLobby.Seat(
+                                new PlayerSlot(0), MatchLobby.Kind.HUMAN, hostId, west1, 0, civilisation, 0),
+                        new MatchLobby.Seat(new PlayerSlot(1), MatchLobby.Kind.HUMAN, null, west2, 0, civilisation, 2),
+                        new MatchLobby.Seat(new PlayerSlot(2), MatchLobby.Kind.AI, null, east1, 1, civilisation, 1),
+                        new MatchLobby.Seat(new PlayerSlot(3), MatchLobby.Kind.AI, null, east2, 1, civilisation, 3)),
+                setup);
+        service.join(peerId, new PlayerSlot(1));
+        long revision = service.snapshot().lobby().configurationRevision();
+        service.ready(hostId, true, revision);
+        service.ready(peerId, true, revision);
+        long started = System.nanoTime();
+        service.start(hostId);
+        MatchRuntime rt = java.util.Objects.requireNonNull(allocated[0]);
+        h.onEachTick(() -> {
+            facade.tick();
+            host.poll();
+            peer.poll();
+        });
+        h.startSequence()
+                .thenWaitUntil(() -> {
+                    long elapsed = java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started);
+                    check(elapsed < 10_000, "team skirmish exceeded ten seconds: " + elapsed + " ms");
+                    check(service.snapshot().state() == LobbyService.State.STARTED, "team skirmish not started");
+                    for (MockViewer viewer : List.of(host, peer)) {
+                        check(
+                                !NetFixtures.payloads(viewer, MatchJoinPayload.class)
+                                        .isEmpty(),
+                                "missing team admission");
+                    }
+                })
+                .thenExecute(() -> {
+                    var queries = core(rt).queries();
+                    var diplomacy = queries.diplomacy();
+                    check(
+                            diplomacy.allied(west1, west2)
+                                    && diplomacy.allied(east1, east2)
+                                    && !diplomacy.allied(west1, east1),
+                            "wrong team skirmish alliances");
+                    check(
+                            diplomacy.factionOf(new PlayerSlot(0)).orElseThrow().equals(west1)
+                                    && diplomacy
+                                            .factionOf(new PlayerSlot(1))
+                                            .orElseThrow()
+                                            .equals(west2),
+                            "wrong human factions");
+                    check(
+                            queries.computerControlled(east1)
+                                    && queries.computerControlled(east2)
+                                    && !queries.computerControlled(west1)
+                                    && !queries.computerControlled(west2),
+                            "wrong AI factions");
+                    var towns = queries.buildings().stream()
+                            .filter(b -> b.template().value().equals("strategos:building/civic_centre"))
+                            .map(b -> b.faction())
+                            .sorted()
+                            .toList();
+                    check(towns.equals(List.of(0, 1, 2, 3)), "expected one civic centre per faction: " + towns);
+                    rt.submit(PlayerSlot.ADMIN, new Resign(east1));
+                    rt.submit(PlayerSlot.ADMIN, new Resign(east2));
+                })
+                .thenWaitUntil(() -> {
+                    for (MockViewer viewer : List.of(host, peer)) {
+                        boolean received = NetFixtures.payloads(viewer, MatchEventPayload.class).stream()
+                                .map(MatchEventPayload::news)
+                                .anyMatch(news -> news.matchId() == rt.id().value()
+                                        && news.kind() == MatchNews.ENDED
+                                        && news.winners().equals(List.of(0, 2)));
+                        check(
+                                received,
+                                "missing team victory for "
+                                        + viewer.player().getGameProfile().getName());
+                    }
+                })
+                .thenSucceed();
     }
 
     private static void fourHumanLaunch(GameTestHelper h, boolean coop) {

@@ -98,31 +98,28 @@ public final class MultiplayerLobbyScreen extends Screen {
 
     private void entry() {
         int part = (panelWidth - 20) / 2;
-        var create = addRenderableWidget(
-                Button.builder(text("create"), b -> ClientLobby.request(new LobbyAction.Open(defaultConfiguration())))
-                        .bounds(left + 8, top + 56, part, 20)
-                        .build());
+        var create = addRenderableWidget(Button.builder(
+                        text("create"),
+                        b -> ClientLobby.request(new LobbyAction.Open(LobbyScreenModel.defaultConfiguration())))
+                .bounds(left + 8, top + 56, part, 20)
+                .build());
         create.active = ClientLobby.available() && ClientLobby.mayHost() && !waiting;
         var join = addRenderableWidget(
                 Button.builder(text("join"), b -> ClientLobby.request(new LobbyAction.JoinAvailable()))
                         .bounds(left + 12 + part, top + 56, part, 20)
                         .build());
         join.active = ClientLobby.available() && !waiting;
-        footerY = top + 82;
-        statusY = top + 110;
+        var teamSkirmish = addRenderableWidget(Button.builder(
+                        text("create_team_skirmish"),
+                        b -> ClientLobby.request(new LobbyAction.Open(LobbyScreenModel.teamSkirmishConfiguration())))
+                .bounds(left + 8, top + 82, panelWidth - 16, 20)
+                .build());
+        teamSkirmish.active = ClientLobby.available() && ClientLobby.mayHost() && !waiting;
+        footerY = top + 108;
+        statusY = top + 136;
         addRenderableWidget(Button.builder(text("back"), b -> onClose())
                 .bounds(left + 8, footerY, panelWidth - 16, 20)
                 .build());
-    }
-
-    private static LobbyConfiguration defaultConfiguration() {
-        return new LobbyConfiguration(
-                2,
-                List.of(
-                        new LobbyConfiguration.Seat(0, LobbyConfiguration.Kind.HUMAN, 0, 0, "strategos:placeholder", 0),
-                        new LobbyConfiguration.Seat(
-                                1, LobbyConfiguration.Kind.HUMAN, 1, 1, "strategos:placeholder", 1)),
-                SkirmishSetup.DEFAULTS);
     }
 
     private int column(int index) {
@@ -379,9 +376,14 @@ public final class MultiplayerLobbyScreen extends Screen {
             g.drawWordWrap(font, text("entry_hint"), left + 10, top + 25, panelWidth - 20, 0xCDD5DD);
         } else {
             String map = model.state().configuration().setup().map();
-            Component name = map.equals(SkirmishSetup.FIRST_SKIRMISH)
-                    ? Component.translatable("strategos.map.first_skirmish")
-                    : text("server_map");
+            Component name;
+            if (map.equals(SkirmishSetup.FIRST_SKIRMISH)) {
+                name = Component.translatable("strategos.map.first_skirmish");
+            } else if (map.equals(SkirmishSetup.TEAM_SKIRMISH)) {
+                name = text("team_skirmish");
+            } else {
+                name = text("server_map");
+            }
             g.drawCenteredString(
                     font, Component.translatable("strategos.lobby.map_value", name), width / 2, top + 24, 0xB9C7D4);
             String[] labels = compact

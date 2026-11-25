@@ -39,6 +39,28 @@ class LobbyScreenModelTest {
     }
 
     @Test
+    void lobbyPresetsKeepTwoPlayerCreateAndOfferTheTeamSkirmishTwoByTwoLayout() {
+        var standard = LobbyScreenModel.defaultConfiguration();
+        assertThat(standard.factionCapacity()).isEqualTo(2);
+        assertThat(standard.seats())
+                .containsExactly(
+                        new LobbyConfiguration.Seat(0, LobbyConfiguration.Kind.HUMAN, 0, 0, "strategos:placeholder", 0),
+                        new LobbyConfiguration.Seat(
+                                1, LobbyConfiguration.Kind.HUMAN, 1, 1, "strategos:placeholder", 1));
+        assertThat(standard.setup()).isEqualTo(SkirmishSetup.DEFAULTS);
+
+        var teams = LobbyScreenModel.teamSkirmishConfiguration();
+        assertThat(teams.factionCapacity()).isEqualTo(4);
+        assertThat(teams.setup().map()).isEqualTo(SkirmishSetup.TEAM_SKIRMISH);
+        assertThat(teams.seats())
+                .containsExactly(
+                        new LobbyConfiguration.Seat(0, LobbyConfiguration.Kind.HUMAN, 0, 0, "strategos:placeholder", 0),
+                        new LobbyConfiguration.Seat(1, LobbyConfiguration.Kind.HUMAN, 2, 0, "strategos:placeholder", 2),
+                        new LobbyConfiguration.Seat(2, LobbyConfiguration.Kind.AI, 1, 1, "strategos:placeholder", 1),
+                        new LobbyConfiguration.Seat(3, LobbyConfiguration.Kind.AI, 3, 1, "strategos:placeholder", 3));
+    }
+
+    @Test
     void startRequiresEditablePermissionAndEveryHumanAcknowledgement() {
         assertThat(new LobbyScreenModel(state(LobbyState.Phase.EDITING, true, false, 0, true, "")).mayStart())
                 .isFalse();

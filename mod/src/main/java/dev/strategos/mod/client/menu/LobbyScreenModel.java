@@ -1,5 +1,6 @@
 package dev.strategos.mod.client.menu;
 
+import dev.strategos.core.protocol.SkirmishSetup;
 import dev.strategos.mod.server.net.LobbyAction;
 import dev.strategos.mod.server.net.LobbyConfiguration;
 import dev.strategos.mod.server.net.LobbyState;
@@ -20,6 +21,32 @@ public record LobbyScreenModel(LobbyState state) {
 
     public LobbyScreenModel {
         Objects.requireNonNull(state);
+    }
+
+    static LobbyConfiguration defaultConfiguration() {
+        return new LobbyConfiguration(
+                2,
+                List.of(
+                        new LobbyConfiguration.Seat(0, LobbyConfiguration.Kind.HUMAN, 0, 0, "strategos:placeholder", 0),
+                        new LobbyConfiguration.Seat(
+                                1, LobbyConfiguration.Kind.HUMAN, 1, 1, "strategos:placeholder", 1)),
+                SkirmishSetup.DEFAULTS);
+    }
+
+    static LobbyConfiguration teamSkirmishConfiguration() {
+        return new LobbyConfiguration(
+                4,
+                List.of(
+                        new LobbyConfiguration.Seat(0, LobbyConfiguration.Kind.HUMAN, 0, 0, "strategos:placeholder", 0),
+                        new LobbyConfiguration.Seat(1, LobbyConfiguration.Kind.HUMAN, 2, 0, "strategos:placeholder", 2),
+                        new LobbyConfiguration.Seat(2, LobbyConfiguration.Kind.AI, 1, 1, "strategos:placeholder", 1),
+                        new LobbyConfiguration.Seat(3, LobbyConfiguration.Kind.AI, 3, 1, "strategos:placeholder", 3)),
+                new SkirmishSetup(
+                        SkirmishSetup.TEAM_SKIRMISH,
+                        SkirmishSetup.Level.NORMAL,
+                        SkirmishSetup.StartResources.MAP,
+                        SkirmishSetup.DEFAULT_POPULATION,
+                        SkirmishSetup.Visibility.FOG));
     }
 
     public List<Row> rows() {

@@ -142,6 +142,8 @@
   "strategos.lobby.button": "Match lobby",
   "strategos.lobby.title": "Multiplayer lobby",
   "strategos.lobby.create": "Create lobby",
+  "strategos.lobby.create_team_skirmish": "Create 2v2 lobby",
+  "strategos.lobby.team_skirmish": "Team Skirmish",
   "strategos.lobby.join": "Join lobby",
   "strategos.lobby.back": "Back",
   "strategos.lobby.leave": "Leave lobby",

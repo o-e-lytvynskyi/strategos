@@ -89,6 +89,7 @@ final class LobbyScenario implements Scenario {
         if (screen.isPauseScreen()) failures.append("lobby pauses the server; ");
         if (phase == 0) {
             expectButton(screen, "strategos.lobby.create", true);
+            expectButton(screen, "strategos.lobby.create_team_skirmish", true);
             expectButton(screen, "strategos.lobby.join", true);
         } else {
             expectButton(screen, "strategos.lobby.start", phase == 2);

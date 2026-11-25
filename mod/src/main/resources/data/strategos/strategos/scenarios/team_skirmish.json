@@ -32,7 +32,7 @@
       ]
     },
     {
-      "player": "human",
+      "player": "ai:first_loop",
       "resources": {"food": 300, "stone": 100, "iron": 100},
       "entities": [
         {"template": "strategos:building/civic_centre"},
